@@ -134,7 +134,7 @@ class DataEditor(NoSSRComponent):
         *children,
         rows: Optional[Union[Var[int], int]] = None,
         columns: Optional[
-            Union[Var[list[Dict[str, Any]]], list[Dict[str, Any]]]
+            Union[Var[list[dict[str, Any]]], list[dict[str, Any]]]
         ] = None,
         data: Optional[Union[Var[list[list[Any]]], list[list[Any]]]] = None,
         get_cell_content: Optional[Union[Var[str], str]] = None,
@@ -180,7 +180,7 @@ class DataEditor(NoSSRComponent):
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
-        custom_attrs: Optional[Dict[str, Union[Var, Any]]] = None,
+        custom_attrs: Optional[dict[str, Union[Var, Any]]] = None,
         on_blur: Optional[EventType[()]] = None,
         on_cell_activated: Optional[
             Union[EventType[()], EventType[tuple[int, int]]]

@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Dict, Tuple, TypeVar, Union
+from typing import Tuple, TypeVar, Union
 
 breakpoints_values = ["30em", "48em", "62em", "80em", "96em"]
 breakpoint_names = ["xs", "sm", "md", "lg", "xl"]
@@ -22,7 +22,7 @@ K = TypeVar("K", bound=str)
 V = TypeVar("V")
 
 
-class Breakpoints(Dict[K, V]):
+class Breakpoints(dict[K, V]):
     """A responsive styling helper."""
 
     def factorize(self):
@@ -46,7 +46,7 @@ class Breakpoints(Dict[K, V]):
     @classmethod
     def create(
         cls,
-        custom: Dict[K, V] | None = None,
+        custom: dict[K, V] | None = None,
         initial: V | None = None,
         xs: V | None = None,
         sm: V | None = None,

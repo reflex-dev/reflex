@@ -173,7 +173,7 @@ class DataEditor(NoSSRComponent):
     rows: Var[int]
 
     # Headers of the columns for the data grid.
-    columns: Var[list[Dict[str, Any]]]
+    columns: Var[list[dict[str, Any]]]
 
     # The data.
     data: Var[list[list[Any]]]

@@ -1,7 +1,7 @@
 import json
 import math
 import typing
-from typing import Dict, List, Mapping, Optional, Set, Tuple, Union, cast
+from typing import List, Mapping, Optional, Set, Tuple, Union, cast
 
 import pytest
 from pandas import DataFrame
@@ -52,7 +52,7 @@ class ATestState(BaseState):
     """Test state."""
 
     value: str
-    dict_val: Dict[str, List] = {}
+    dict_val: dict[str, List] = {}
 
 
 @pytest.fixture
@@ -598,7 +598,7 @@ def test_computed_var_replace_with_invalid_kwargs():
         ),
         (
             Var(_js_expr="lst", _var_type=list[int]).guess_type(),
-            Var(_js_expr="dict_var", _var_type=Dict[str, str]).guess_type(),
+            Var(_js_expr="dict_var", _var_type=dict[str, str]).guess_type(),
         ),
         (Var(_js_expr="str", _var_type=str).guess_type(), [1, 2]),
         (Var(_js_expr="lst", _var_type=str).guess_type(), {"name": "dict"}),
@@ -679,7 +679,7 @@ def test_str_var_slicing():
 
 def test_dict_indexing():
     """Test that we can index into dict vars."""
-    dct = Var(_js_expr="dct").to(ObjectVar, Dict[str, str])
+    dct = Var(_js_expr="dct").to(ObjectVar, dict[str, str])
 
     # Check correct indexing.
     assert str(dct["a"]) == 'dct["a"]'
@@ -690,35 +690,35 @@ def test_dict_indexing():
     "var, index",
     [
         (
-            Var(_js_expr="dict", _var_type=Dict[str, str]).guess_type(),
+            Var(_js_expr="dict", _var_type=dict[str, str]).guess_type(),
             [1, 2],
         ),
         (
-            Var(_js_expr="dict", _var_type=Dict[str, str]).guess_type(),
+            Var(_js_expr="dict", _var_type=dict[str, str]).guess_type(),
             {"name": "dict"},
         ),
         (
-            Var(_js_expr="dict", _var_type=Dict[str, str]).guess_type(),
+            Var(_js_expr="dict", _var_type=dict[str, str]).guess_type(),
             {"set"},
         ),
         (
-            Var(_js_expr="dict", _var_type=Dict[str, str]).guess_type(),
+            Var(_js_expr="dict", _var_type=dict[str, str]).guess_type(),
             (
                 1,
                 2,
             ),
         ),
         (
-            Var(_js_expr="lst", _var_type=Dict[str, str]).guess_type(),
+            Var(_js_expr="lst", _var_type=dict[str, str]).guess_type(),
             Var(_js_expr="list_var", _var_type=list[int]).guess_type(),
         ),
         (
-            Var(_js_expr="lst", _var_type=Dict[str, str]).guess_type(),
+            Var(_js_expr="lst", _var_type=dict[str, str]).guess_type(),
             Var(_js_expr="set_var", _var_type=Set[str]).guess_type(),
         ),
         (
-            Var(_js_expr="lst", _var_type=Dict[str, str]).guess_type(),
-            Var(_js_expr="dict_var", _var_type=Dict[str, str]).guess_type(),
+            Var(_js_expr="lst", _var_type=dict[str, str]).guess_type(),
+            Var(_js_expr="dict_var", _var_type=dict[str, str]).guess_type(),
         ),
         (
             Var(_js_expr="df", _var_type=DataFrame).guess_type(),
@@ -749,7 +749,7 @@ def test_dict_indexing():
         ),
         (
             Var(_js_expr="df", _var_type=DataFrame).guess_type(),
-            Var(_js_expr="dict_var", _var_type=Dict[str, str]).guess_type(),
+            Var(_js_expr="dict_var", _var_type=dict[str, str]).guess_type(),
         ),
     ],
 )
@@ -1153,7 +1153,7 @@ def test_type_chains():
 
 
 def test_nested_dict():
-    arr = LiteralArrayVar.create([{"bar": ["foo", "bar"]}], list[Dict[str, list[str]]])
+    arr = LiteralArrayVar.create([{"bar": ["foo", "bar"]}], list[dict[str, list[str]]])
 
     assert (
         str(arr[0]["bar"][0]) == '[({ ["bar"] : ["foo", "bar"] })].at(0)["bar"].at(0)'  # pyright: ignore [reportIndexIssue]

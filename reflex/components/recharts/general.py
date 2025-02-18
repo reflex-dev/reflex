@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any, Dict, Union
+from typing import Any, Union
 
 from reflex.components.component import MemoizationLeaf
 from reflex.constants.colors import Color
@@ -92,7 +92,7 @@ class Legend(Recharts):
     icon_type: Var[LiteralIconType]
 
     # The source data of the content to be displayed in the legend, usually calculated internally. Default: []
-    payload: Var[list[Dict[str, Any]]]
+    payload: Var[list[dict[str, Any]]]
 
     # The width of chart container, usually calculated internally.
     chart_width: Var[int]
@@ -101,7 +101,7 @@ class Legend(Recharts):
     chart_height: Var[int]
 
     # The margin of chart container, usually calculated internally.
-    margin: Var[Dict[str, Any]]
+    margin: Var[dict[str, Any]]
 
     # The customized event handler of click on the items in this group
     on_click: EventHandler[no_args_event_spec]
@@ -145,7 +145,7 @@ class GraphingTooltip(Recharts):
     filter_null: Var[bool]
 
     # If set false, no cursor will be drawn when tooltip is active. Default: {"strokeWidth": 1, "fill": rx.color("gray", 3)}
-    cursor: Var[Union[Dict[str, Any], bool]] = LiteralVar.create(
+    cursor: Var[Union[dict[str, Any], bool]] = LiteralVar.create(
         {
             "strokeWidth": 1,
             "fill": Color("gray", 3),
@@ -153,20 +153,20 @@ class GraphingTooltip(Recharts):
     )
 
     # The box of viewing area, which has the shape of {x: someVal, y: someVal, width: someVal, height: someVal}, usually calculated internally.
-    view_box: Var[Dict[str, Any]]
+    view_box: Var[dict[str, Any]]
 
     # The style of default tooltip content item which is a li element. Default: {"color": rx.color("gray", 12)}
-    item_style: Var[Dict[str, Any]] = LiteralVar.create(
+    item_style: Var[dict[str, Any]] = LiteralVar.create(
         {
             "color": Color("gray", 12),
         }
     )
 
     # The style of tooltip wrapper which is a dom element. Default: {}
-    wrapper_style: Var[Dict[str, Any]]
+    wrapper_style: Var[dict[str, Any]]
 
     # The style of tooltip content which is a dom element. Default: {"background": rx.color("gray", 1), "borderColor": rx.color("gray", 4), "borderRadius": "8px"}
-    content_style: Var[Dict[str, Any]] = LiteralVar.create(
+    content_style: Var[dict[str, Any]] = LiteralVar.create(
         {
             "background": Color("gray", 1),
             "borderColor": Color("gray", 4),
@@ -175,19 +175,19 @@ class GraphingTooltip(Recharts):
     )
 
     # The style of default tooltip label which is a p element. Default: {"color": rx.color("gray", 11)}
-    label_style: Var[Dict[str, Any]] = LiteralVar.create({"color": Color("gray", 11)})
+    label_style: Var[dict[str, Any]] = LiteralVar.create({"color": Color("gray", 11)})
 
     # This option allows the tooltip to extend beyond the viewBox of the chart itself. Default: {"x": False, "y": False}
-    allow_escape_view_box: Var[Dict[str, bool]]
+    allow_escape_view_box: Var[dict[str, bool]]
 
     # If set true, the tooltip is displayed. If set false, the tooltip is hidden, usually calculated internally. Default: False
     active: Var[bool]
 
     # If this field is set, the tooltip position will be fixed and will not move anymore.
-    position: Var[Dict[str, Any]]
+    position: Var[dict[str, Any]]
 
     # The coordinate of tooltip which is usually calculated internally. Default: {"x": 0, "y": 0}
-    coordinate: Var[Dict[str, Any]]
+    coordinate: Var[dict[str, Any]]
 
     # If set false, animation of tooltip will be disabled. Default: True
     is_animation_active: Var[bool]
@@ -207,7 +207,7 @@ class Label(Recharts):
     alias = "RechartsLabel"
 
     # The box of viewing area, which has the shape of {x: someVal, y: someVal, width: someVal, height: someVal}, usually calculated internally.
-    view_box: Var[Dict[str, Any]]
+    view_box: Var[dict[str, Any]]
 
     # The value of label, which can be specified by this props or the children of <Label />
     value: Var[str]

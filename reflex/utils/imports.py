@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import dataclasses
 from collections import defaultdict
-from typing import DefaultDict, Dict, Optional, Tuple, Union
+from typing import DefaultDict, Optional, Tuple, Union
 
 
 def merge_imports(
@@ -132,6 +132,6 @@ class ImportVar:
 
 
 ImportTypes = Union[str, ImportVar, list[Union[str, ImportVar]], list[ImportVar]]
-ImportDict = Dict[str, ImportTypes]
-ParsedImportDict = Dict[str, list[ImportVar]]
+ImportDict = dict[str, ImportTypes]
+ParsedImportDict = dict[str, list[ImportVar]]
 ImmutableParsedImportDict = Tuple[Tuple[str, Tuple[ImportVar, ...]], ...]

@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any, Dict, List, Union
+from typing import Any, List, Union
 
 from reflex.constants import EventTriggers
 from reflex.constants.colors import Color
@@ -73,7 +73,7 @@ class Axis(Recharts):
     reversed: Var[bool]
 
     # The label of axis, which appears next to the axis.
-    label: Var[Union[str, int, Dict[str, Any]]]
+    label: Var[Union[str, int, dict[str, Any]]]
 
     # If 'auto' set, the scale function is decided by the type of chart, and the props type. 'auto' | 'linear' | 'pow' | 'sqrt' | 'log' | 'identity' | 'time' | 'band' | 'point' | 'ordinal' | 'quantile' | 'quantize' | 'utc' | 'sequential' | 'threshold'. Default: "auto"
     scale: Var[LiteralScale]
@@ -150,7 +150,7 @@ class XAxis(Axis):
     angle: Var[int]
 
     # Specify the padding of x-axis. Default: {"left": 0, "right": 0}
-    padding: Var[Dict[str, int]]
+    padding: Var[dict[str, int]]
 
 
 class YAxis(Axis):
@@ -167,7 +167,7 @@ class YAxis(Axis):
     y_axis_id: Var[Union[str, int]]
 
     # Specify the padding of y-axis. Default: {"top": 0, "bottom": 0}
-    padding: Var[Dict[str, int]]
+    padding: Var[dict[str, int]]
 
 
 class ZAxis(Recharts):
@@ -343,10 +343,10 @@ class Area(Cartesian):
     type_: Var[LiteralAreaType] = LiteralVar.create("monotone")
 
     # If false set, dots will not be drawn. If true set, dots will be drawn which have the props calculated internally. Default: False
-    dot: Var[Union[bool, Dict[str, Any]]]
+    dot: Var[Union[bool, dict[str, Any]]]
 
     # The dot is shown when user enter an area chart and this chart has tooltip. If false set, no active dot will not be drawn. If true set, active dot will be drawn which have the props calculated internally. Default: {stroke: rx.color("accent", 2), fill: rx.color("accent", 10)}
-    active_dot: Var[Union[bool, Dict[str, Any]]] = LiteralVar.create(
+    active_dot: Var[Union[bool, dict[str, Any]]] = LiteralVar.create(
         {
             "stroke": Color("accent", 2),
             "fill": Color("accent", 10),
@@ -357,10 +357,10 @@ class Area(Cartesian):
     label: Var[bool]
 
     # The value which can describle the line, usually calculated internally.
-    base_line: Var[Union[str, list[Dict[str, Any]]]]
+    base_line: Var[Union[str, list[dict[str, Any]]]]
 
     # The coordinates of all the points in the area, usually calculated internally.
-    points: Var[list[Dict[str, Any]]]
+    points: Var[list[dict[str, Any]]]
 
     # The stack id of area, when two areas have the same value axis and same stack_id, then the two areas are stacked in order.
     stack_id: Var[Union[str, int]]
@@ -416,7 +416,7 @@ class Bar(Cartesian):
     radius: Var[Union[int, list[int]]]
 
     # The active bar is shown when a user enters a bar chart and this chart has tooltip. If set to false, no active bar will be drawn. If set to true, active bar will be drawn with the props calculated internally. If passed an object, active bar will be drawn, and the internally calculated props will be merged with the key value pairs of the passed object.
-    # active_bar: Var[Union[bool, Dict[str, Any]]] #noqa: ERA001
+    # active_bar: Var[Union[bool, dict[str, Any]]] #noqa: ERA001
 
     # Valid children components
     _valid_children: list[str] = ["Cell", "LabelList", "ErrorBar"]
@@ -439,7 +439,7 @@ class Line(Cartesian):
     stroke_width: Var[int]
 
     # The dot is shown when mouse enter a line chart and this chart has tooltip. If false set, no active dot will not be drawn. If true set, active dot will be drawn which have the props calculated internally. Default: {"stroke": rx.color("accent", 10), "fill": rx.color("accent", 4)}
-    dot: Var[Union[bool, Dict[str, Any]]] = LiteralVar.create(
+    dot: Var[Union[bool, dict[str, Any]]] = LiteralVar.create(
         {
             "stroke": Color("accent", 10),
             "fill": Color("accent", 4),
@@ -447,7 +447,7 @@ class Line(Cartesian):
     )
 
     # The dot is shown when user enter an area chart and this chart has tooltip. If false set, no active dot will not be drawn. If true set, active dot will be drawn which have the props calculated internally. Default: {"stroke": rx.color("accent", 2), "fill": rx.color("accent", 10)}
-    active_dot: Var[Union[bool, Dict[str, Any]]] = LiteralVar.create(
+    active_dot: Var[Union[bool, dict[str, Any]]] = LiteralVar.create(
         {
             "stroke": Color("accent", 2),
             "fill": Color("accent", 10),
@@ -467,7 +467,7 @@ class Line(Cartesian):
     unit: Var[Union[str, int]]
 
     # The coordinates of all the points in the line, usually calculated internally.
-    points: Var[list[Dict[str, Any]]]
+    points: Var[list[dict[str, Any]]]
 
     # The pattern of dashes and gaps used to paint the line.
     stroke_dasharray: Var[str]
@@ -484,7 +484,7 @@ class Scatter(Recharts):
     alias = "RechartsScatter"
 
     # The source data, in which each element is an object.
-    data: Var[list[Dict[str, Any]]]
+    data: Var[list[dict[str, Any]]]
 
     # The type of icon in legend. If set to 'none', no legend item will be rendered. 'line' | 'plainline' | 'square' | 'rect'| 'circle' | 'cross' | 'diamond' | 'square' | 'star' | 'triangle' | 'wye' | 'none'. Default: "circle"
     legend_type: Var[LiteralLegendType]
@@ -558,7 +558,7 @@ class Funnel(Recharts):
     alias = "RechartsFunnel"
 
     # The source data, in which each element is an object.
-    data: Var[list[Dict[str, Any]]]
+    data: Var[list[dict[str, Any]]]
 
     # The key or getter of a group of data which should be unique in a FunnelChart.
     data_key: Var[Union[str, int]]
@@ -585,7 +585,7 @@ class Funnel(Recharts):
     stroke: Var[Union[str, Color]] = LiteralVar.create(Color("gray", 3))
 
     # The coordinates of all the trapezoids in the funnel, usually calculated internally.
-    trapezoids: Var[list[Dict[str, Any]]]
+    trapezoids: Var[list[dict[str, Any]]]
 
     # Valid children components
     _valid_children: list[str] = ["LabelList", "Cell"]
@@ -842,7 +842,7 @@ class CartesianAxis(Grid):
     orientation: Var[LiteralOrientationTopBottomLeftRight]
 
     # The box of viewing area. Default: {"x": 0, "y": 0, "width": 0, "height": 0}
-    view_box: Var[Dict[str, Any]]
+    view_box: Var[dict[str, Any]]
 
     # If set false, no axis line will be drawn. If set a object, the option is the configuration of axis line. Default: True
     axis_line: Var[bool]

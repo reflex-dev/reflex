@@ -292,7 +292,7 @@ class UnevaluatedPage:
     description: Union[Var, str, None]
     image: str
     on_load: Union[EventType[()], None]
-    meta: list[Dict[str, str]]
+    meta: list[dict[str, str]]
 
 
 @dataclasses.dataclass()
@@ -337,7 +337,7 @@ class App(MiddlewareMixin, LifespanMixin):
     error_boundary: Optional[ComponentCallable] = dataclasses.field(default=None)
 
     # App wraps to be applied to the whole app. Expected to be a dictionary of (order, name) to a function that takes whether the state is enabled and optionally returns a component.
-    app_wraps: Dict[tuple[int, str], Callable[[bool], Optional[Component]]] = (
+    app_wraps: dict[tuple[int, str], Callable[[bool], Optional[Component]]] = (
         dataclasses.field(
             default_factory=lambda: {
                 (55, "ErrorBoundary"): (
@@ -361,15 +361,15 @@ class App(MiddlewareMixin, LifespanMixin):
     html_lang: Optional[str] = None
 
     # Attributes to add to the html root tag of every page.
-    html_custom_attrs: Optional[Dict[str, str]] = None
+    html_custom_attrs: Optional[dict[str, str]] = None
 
     # A map from a route to an unevaluated page.
-    _unevaluated_pages: Dict[str, UnevaluatedPage] = dataclasses.field(
+    _unevaluated_pages: dict[str, UnevaluatedPage] = dataclasses.field(
         default_factory=dict
     )
 
     # A map from a page route to the component to render. Users should use `add_page`.
-    _pages: Dict[str, Component] = dataclasses.field(default_factory=dict)
+    _pages: dict[str, Component] = dataclasses.field(default_factory=dict)
 
     # The backend API object.
     _api: FastAPI | None = None
@@ -381,7 +381,7 @@ class App(MiddlewareMixin, LifespanMixin):
     _state_manager: Optional[StateManager] = None
 
     # Mapping from a route to event handlers to trigger when the page loads.
-    _load_events: Dict[str, list[IndividualEventType[()]]] = dataclasses.field(
+    _load_events: dict[str, list[IndividualEventType[()]]] = dataclasses.field(
         default_factory=dict
     )
 
@@ -875,7 +875,7 @@ class App(MiddlewareMixin, LifespanMixin):
 
             admin.mount_to(self.api)
 
-    def _get_frontend_packages(self, imports: Dict[str, set[ImportVar]]):
+    def _get_frontend_packages(self, imports: dict[str, set[ImportVar]]):
         """Gets the frontend packages to be installed and filters out the unnecessary ones.
 
         Args:
@@ -1046,7 +1046,7 @@ class App(MiddlewareMixin, LifespanMixin):
         self.style = evaluate_style_namespaces(self.style)
 
         # Add the app wrappers.
-        app_wrappers: Dict[tuple[int, str], Component] = {
+        app_wrappers: dict[tuple[int, str], Component] = {
             # Default app wrap component renders {children}
             (0, "AppWrap"): AppWrap.create()
         }

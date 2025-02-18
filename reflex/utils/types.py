@@ -852,7 +852,7 @@ def typehint_issubclass(possible_subclass: Any, possible_superclass: Any) -> boo
             Union if accepted_type_origin is types.UnionType else accepted_type_origin
         )
 
-    # Get type arguments (e.g., [float, int] for Dict[float, int])
+    # Get type arguments (e.g., [float, int] for dict[float, int])
     provided_args = get_args(possible_subclass)
     accepted_args = get_args(possible_superclass)
 

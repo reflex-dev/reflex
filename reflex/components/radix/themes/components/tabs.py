@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any, Dict, Literal
+from typing import Any, Literal
 
 from reflex.components.component import Component, ComponentNamespace
 from reflex.components.core.breakpoints import Responsive
@@ -42,7 +42,7 @@ class TabsRoot(RadixThemesComponent):
     # Fired when the value of the tabs changes.
     on_change: EventHandler[passthrough_event_spec(str)]
 
-    def add_style(self) -> Dict[str, Any] | None:
+    def add_style(self) -> dict[str, Any] | None:
         """Add style for the component.
 
         Returns:
@@ -117,7 +117,7 @@ class TabsTrigger(RadixThemesComponent):
     def _exclude_props(self) -> list[str]:
         return ["color_scheme"]
 
-    def add_style(self) -> Dict[str, Any] | None:
+    def add_style(self) -> dict[str, Any] | None:
         """Add style for the component.
 
         Returns:

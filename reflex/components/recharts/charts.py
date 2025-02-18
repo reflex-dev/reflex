@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any, Dict, Union
+from typing import Any, Union
 
 from reflex.components.component import Component
 from reflex.components.recharts.general import ResponsiveContainer
@@ -104,10 +104,10 @@ class CategoricalChartBase(ChartBase):
     """A component that wraps a Categorical Recharts charts."""
 
     # The source data, in which each element is an object.
-    data: Var[list[Dict[str, Any]]]
+    data: Var[list[dict[str, Any]]]
 
     # The sizes of whitespace around the chart, i.e. {"top": 50, "right": 30, "left": 20, "bottom": 5}.
-    margin: Var[Dict[str, Any]]
+    margin: Var[dict[str, Any]]
 
     # If any two categorical charts(rx.line_chart, rx.area_chart, rx.bar_chart, rx.composed_chart) have the same sync_id, these two charts can sync the position GraphingTooltip, and the start_index, end_index of Brush.
     sync_id: Var[str]
@@ -257,7 +257,7 @@ class PieChart(ChartBase):
     alias = "RechartsPieChart"
 
     # The sizes of whitespace around the chart, i.e. {"top": 50, "right": 30, "left": 20, "bottom": 5}.
-    margin: Var[Dict[str, Any]]
+    margin: Var[dict[str, Any]]
 
     # Valid children components
     _valid_children: list[str] = [
@@ -290,10 +290,10 @@ class RadarChart(ChartBase):
     alias = "RechartsRadarChart"
 
     # The source data, in which each element is an object.
-    data: Var[list[Dict[str, Any]]]
+    data: Var[list[dict[str, Any]]]
 
     # The sizes of whitespace around the chart, i.e. {"top": 50, "right": 30, "left": 20, "bottom": 5}. Default: {"top": 0, "right": 0, "left": 0, "bottom": 0}
-    margin: Var[Dict[str, Any]]
+    margin: Var[dict[str, Any]]
 
     # The The x-coordinate of center. If set a percentage, the final value is obtained by multiplying the percentage of width. Number | Percentage. Default: "50%"
     cx: Var[Union[int, str]]
@@ -344,10 +344,10 @@ class RadialBarChart(ChartBase):
     alias = "RechartsRadialBarChart"
 
     # The source data which each element is an object.
-    data: Var[list[Dict[str, Any]]]
+    data: Var[list[dict[str, Any]]]
 
     # The sizes of whitespace around the chart. Default: {"top": 5, "right": 5, "left": 5 "bottom": 5}
-    margin: Var[Dict[str, Any]]
+    margin: Var[dict[str, Any]]
 
     # The The x-coordinate of center. If set a percentage, the final value is obtained by multiplying the percentage of width. Number | Percentage. Default: "50%"
     cx: Var[Union[int, str]]
@@ -395,7 +395,7 @@ class ScatterChart(ChartBase):
     alias = "RechartsScatterChart"
 
     # The sizes of whitespace around the chart. Default: {"top": 5, "right": 5, "bottom": 5, "left": 5}
-    margin: Var[Dict[str, Any]]
+    margin: Var[dict[str, Any]]
 
     # Valid children components
     _valid_children: list[str] = [
@@ -441,7 +441,7 @@ class FunnelChart(ChartBase):
     layout: Var[str]
 
     # The sizes of whitespace around the chart. Default: {"top": 5, "right": 5, "bottom": 5, "left": 5}
-    margin: Var[Dict[str, Any]]
+    margin: Var[dict[str, Any]]
 
     # The stroke color of each bar. String | Object
     stroke: Var[Union[str, Color]]
@@ -464,7 +464,7 @@ class Treemap(RechartsCharts):
     height: Var[Union[str, int]] = Var.create("100%")
 
     # data of treemap. Array
-    data: Var[list[Dict[str, Any]]]
+    data: Var[list[dict[str, Any]]]
 
     # The key of a group of data which should be unique in a treemap. String | Number. Default: "value"
     data_key: Var[Union[str, int]]

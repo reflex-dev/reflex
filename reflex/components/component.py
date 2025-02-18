@@ -13,7 +13,6 @@ from typing import (
     Any,
     Callable,
     ClassVar,
-    Dict,
     Iterator,
     List,
     Optional,
@@ -171,7 +170,7 @@ def evaluate_style_namespaces(style: ComponentStyle) -> dict:
 
 
 # Map from component to styling.
-ComponentStyle = Dict[
+ComponentStyle = dict[
     Union[str, Type[BaseComponent], Callable, ComponentNamespace], Any
 ]
 ComponentChild = Union[types.PrimitiveType, Var, BaseComponent]
@@ -198,7 +197,7 @@ class Component(BaseComponent, ABC):
     style: Style = Style()
 
     # A mapping from event triggers to event chains.
-    event_triggers: Dict[str, Union[EventChain, Var]] = {}
+    event_triggers: dict[str, Union[EventChain, Var]] = {}
 
     # The alias for the tag.
     alias: Optional[str] = None
@@ -231,10 +230,10 @@ class Component(BaseComponent, ABC):
     _valid_parents: list[str] = []
 
     # props to change the name of
-    _rename_props: Dict[str, str] = {}
+    _rename_props: dict[str, str] = {}
 
     # custom attribute
-    custom_attrs: Dict[str, Union[Var, Any]] = {}
+    custom_attrs: dict[str, Union[Var, Any]] = {}
 
     # When to memoize this component and its children.
     _memoization_mode: MemoizationMode = MemoizationMode()
@@ -537,13 +536,13 @@ class Component(BaseComponent, ABC):
 
     def get_event_triggers(
         self,
-    ) -> Dict[str, types.ArgsSpec | Sequence[types.ArgsSpec]]:
+    ) -> dict[str, types.ArgsSpec | Sequence[types.ArgsSpec]]:
         """Get the event triggers for the component.
 
         Returns:
             The event triggers.
         """
-        default_triggers: Dict[str, types.ArgsSpec | Sequence[types.ArgsSpec]] = {
+        default_triggers: dict[str, types.ArgsSpec | Sequence[types.ArgsSpec]] = {
             EventTriggers.ON_FOCUS: no_args_event_spec,
             EventTriggers.ON_BLUR: no_args_event_spec,
             EventTriggers.ON_CLICK: no_args_event_spec,
@@ -1612,10 +1611,10 @@ class CustomComponent(Component):
     component_fn: Callable[..., Component] = Component.create
 
     # The props of the component.
-    props: Dict[str, Any] = {}
+    props: dict[str, Any] = {}
 
     # Props that reference other components.
-    component_props: Dict[str, Component] = {}
+    component_props: dict[str, Component] = {}
 
     def __init__(self, *args, **kwargs):
         """Initialize the custom component.
@@ -1889,7 +1888,7 @@ class StatefulComponent(BaseComponent):
     """
 
     # A lookup table to caching memoized component instances.
-    tag_to_stateful_component: ClassVar[Dict[str, StatefulComponent]] = {}
+    tag_to_stateful_component: ClassVar[dict[str, StatefulComponent]] = {}
 
     # Reference to the original component that was memoized into this component.
     component: Component

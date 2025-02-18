@@ -2955,7 +2955,7 @@ _decode_var_pattern_re = (
 _decode_var_pattern = re.compile(_decode_var_pattern_re, flags=re.DOTALL)
 
 # Defined global immutable vars.
-_global_vars: Dict[int, Var] = {}
+_global_vars: dict[int, Var] = {}
 
 
 def _extract_var_data(value: Iterable) -> list[VarData | None]:
@@ -2993,7 +2993,7 @@ def _extract_var_data(value: Iterable) -> list[VarData | None]:
     return var_datas
 
 
-dispatchers: Dict[GenericType, Callable[[Var], Var]] = {}
+dispatchers: dict[GenericType, Callable[[Var], Var]] = {}
 
 
 def transform(fn: Callable[[Var], Var]) -> Callable[[Var], Var]:
@@ -3038,7 +3038,7 @@ def transform(fn: Callable[[Var], Var]) -> Callable[[Var], Var]:
 
 def generic_type_to_actual_type_map(
     generic_type: GenericType, actual_type: GenericType
-) -> Dict[TypeVar, GenericType]:
+) -> dict[TypeVar, GenericType]:
     """Map the generic type to the actual type.
 
     Args:
@@ -3079,7 +3079,7 @@ def generic_type_to_actual_type_map(
 
 
 def resolve_generic_type_with_mapping(
-    generic_type: GenericType, type_mapping: Dict[TypeVar, GenericType]
+    generic_type: GenericType, type_mapping: dict[TypeVar, GenericType]
 ):
     """Resolve a generic type with a type mapping.
 

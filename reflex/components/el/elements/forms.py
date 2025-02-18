@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from hashlib import md5
-from typing import Any, Dict, Iterator, Literal, Set, Tuple, Union
+from typing import Any, Iterator, Literal, Set, Tuple, Union
 
 from jinja2 import Environment
 
@@ -232,7 +232,7 @@ class Form(BaseHTML):
             )
         return render_tag
 
-    def _get_form_refs(self) -> Dict[str, Any]:
+    def _get_form_refs(self) -> dict[str, Any]:
         # Send all the input refs to the handler.
         form_refs = {}
         for ref in self._get_all_refs():

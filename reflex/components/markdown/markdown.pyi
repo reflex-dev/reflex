@@ -5,7 +5,7 @@
 # ------------------------------------------------------
 import dataclasses
 from functools import lru_cache
-from typing import Any, Callable, Dict, Optional, Sequence, Union, overload
+from typing import Any, Callable, Optional, Sequence, Union, overload
 
 from reflex.components.component import Component
 from reflex.event import EventType
@@ -52,14 +52,14 @@ class Markdown(Component):
     def create(  # type: ignore
         cls,
         *children,
-        component_map: Optional[Dict[str, Any]] = None,
+        component_map: Optional[dict[str, Any]] = None,
         component_map_hash: Optional[str] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
-        custom_attrs: Optional[Dict[str, Union[Var, Any]]] = None,
+        custom_attrs: Optional[dict[str, Union[Var, Any]]] = None,
         on_blur: Optional[EventType[()]] = None,
         on_click: Optional[EventType[()]] = None,
         on_context_menu: Optional[EventType[()]] = None,

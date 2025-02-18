@@ -1,4 +1,4 @@
-from typing import Any, Dict, Literal, Tuple, Union
+from typing import Any, Literal, Tuple, Union
 
 import pytest
 
@@ -81,7 +81,7 @@ class ChildGenericDict(GenericDict):
         (list[int], True),
         (Union[int, str], True),
         (Union[str, int], True),
-        (Dict[str, int], True),
+        (dict[str, int], True),
         (CustomDict, True),
         (ChildCustomDict, True),
         (GenericDict, False),

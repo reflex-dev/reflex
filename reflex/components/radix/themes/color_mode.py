@@ -17,7 +17,7 @@ rx.text(
 
 from __future__ import annotations
 
-from typing import Any, Dict, Literal, Optional, Union, get_args
+from typing import Any, Literal, Optional, Union, get_args
 
 from reflex.components.component import BaseComponent
 from reflex.components.core.cond import Cond, color_mode_cond, cond
@@ -68,7 +68,7 @@ LiteralPosition = Literal["top-left", "top-right", "bottom-left", "bottom-right"
 
 position_values: list[str] = list(get_args(LiteralPosition))
 
-position_map: Dict[str, list[str]] = {
+position_map: dict[str, list[str]] = {
     "position": position_values,
     "left": ["top-left", "bottom-left"],
     "right": ["top-right", "bottom-right"],

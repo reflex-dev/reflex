@@ -144,7 +144,7 @@ class CustomVar(rx.Base):
 
     foo: str = ""
     array: list[str] = []
-    hashmap: Dict[str, str] = {}
+    hashmap: dict[str, str] = {}
     test_set: Set[str] = set()
     custom: OtherBase = OtherBase()
 
@@ -162,14 +162,14 @@ class MutableSQLAModel(MutableSQLABase):
 
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     strlist: Mapped[list[str]] = mapped_column(ARRAY(String))
-    hashmap: Mapped[Dict[str, str]] = mapped_column(JSON)
+    hashmap: Mapped[dict[str, str]] = mapped_column(JSON)
     test_set: Mapped[Set[str]] = mapped_column(ARRAY(String))
 
 
 @serializer
 def serialize_mutable_sqla_model(
     model: MutableSQLAModel,
-) -> Dict[str, Union[list[str], Dict[str, str]]]:
+) -> dict[str, Union[list[str], dict[str, str]]]:
     """Serialize the MutableSQLAModel.
 
     Args:
@@ -184,12 +184,12 @@ def serialize_mutable_sqla_model(
 class MutableTestState(BaseState):
     """A test state."""
 
-    array: list[Union[str, int, List, Dict[str, str]]] = [
+    array: list[Union[str, int, List, dict[str, str]]] = [
         "value",
         [1, 2, 3],
         {"key": "value"},
     ]
-    hashmap: Dict[str, Union[List, str, Dict[str, Union[str, Dict]]]] = {
+    hashmap: dict[str, Union[List, str, dict[str, Union[str, Dict]]]] = {
         "key": ["list", "of", "values"],
         "another_key": "another_value",
         "third_key": {"key": "value"},

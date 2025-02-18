@@ -1,5 +1,5 @@
 from contextlib import nullcontext
-from typing import Any, Dict, Optional, Type, Union
+from typing import Any, Optional, Type, Union
 
 import pytest
 
@@ -109,7 +109,7 @@ def component2() -> Type[Component]:
 
         on_prop_event: EventHandler[on_prop_event_spec]
 
-        def get_event_triggers(self) -> Dict[str, Any]:
+        def get_event_triggers(self) -> dict[str, Any]:
             """Test controlled triggers.
 
             Returns:
@@ -854,7 +854,7 @@ def test_component_event_trigger_arbitrary_args():
         library = "/local"
         tag = "C1"
 
-        def get_event_triggers(self) -> Dict[str, Any]:
+        def get_event_triggers(self) -> dict[str, Any]:
             return {
                 **super().get_event_triggers(),
                 "on_foo": on_foo_spec,
@@ -1246,10 +1246,10 @@ FORMATTED_TEST_VAR_LIST_OF_DICT = LiteralVar.create([{"a": "footestbar"}])._repl
 class ComponentNestedVar(Component):
     """A component with nested Var types."""
 
-    dict_of_dict: Var[Dict[str, Dict[str, str]]]
+    dict_of_dict: Var[dict[str, dict[str, str]]]
     list_of_list: Var[list[list[str]]]
     list_of_list_of_list: Var[list[list[list[str]]]]
-    list_of_dict: Var[list[Dict[str, str]]]
+    list_of_dict: Var[list[dict[str, str]]]
 
 
 class EventState(rx.State):
@@ -1802,7 +1802,7 @@ def test_custom_component_get_imports():
 
 def test_custom_component_declare_event_handlers_in_fields():
     class ReferenceComponent(Component):
-        def get_event_triggers(self) -> Dict[str, Any]:
+        def get_event_triggers(self) -> dict[str, Any]:
             """Test controlled triggers.
 
             Returns:
@@ -1838,7 +1838,7 @@ def test_invalid_event_trigger():
     class TriggerComponent(Component):
         on_push: Var[bool]
 
-        def get_event_triggers(self) -> Dict[str, Any]:
+        def get_event_triggers(self) -> dict[str, Any]:
             """Test controlled triggers.
 
             Returns:
@@ -1885,13 +1885,13 @@ def test_component_add_imports(tags):
     class TestBase(Component):
         def add_imports(  # pyright: ignore [reportIncompatibleMethodOverride]
             self,
-        ) -> Dict[str, Union[str, ImportVar, list[str], list[ImportVar]]]:
+        ) -> dict[str, Union[str, ImportVar, list[str], list[ImportVar]]]:
             return {"foo": "bar"}
 
     class Test(TestBase):
         def add_imports(
             self,
-        ) -> Dict[str, Union[str, ImportVar, list[str], list[ImportVar]]]:
+        ) -> dict[str, Union[str, ImportVar, list[str], list[ImportVar]]]:
             return {"react": (tags[0] if len(tags) == 1 else tags)}
 
     baseline = Reference.create()

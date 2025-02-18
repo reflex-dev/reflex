@@ -13,7 +13,6 @@ from typing import (
     Annotated,
     Any,
     Callable,
-    Dict,
     Generic,
     List,
     Optional,
@@ -70,10 +69,10 @@ class Event:
     name: str
 
     # The routing data where event occurred
-    router_data: Dict[str, Any] = dataclasses.field(default_factory=dict)
+    router_data: dict[str, Any] = dataclasses.field(default_factory=dict)
 
     # The event payload.
-    payload: Dict[str, Any] = dataclasses.field(default_factory=dict)
+    payload: dict[str, Any] = dataclasses.field(default_factory=dict)
 
     @property
     def substate_token(self) -> str:
@@ -99,7 +98,7 @@ class EventActionsMixin:
     """Mixin for DOM event actions."""
 
     # Whether to `preventDefault` or `stopPropagation` on the event.
-    event_actions: Dict[str, Union[bool, int]] = dataclasses.field(default_factory=dict)
+    event_actions: dict[str, Union[bool, int]] = dataclasses.field(default_factory=dict)
 
     @property
     def stop_propagation(self) -> Self:
@@ -266,7 +265,7 @@ class EventSpec(EventActionsMixin):
     def __init__(
         self,
         handler: EventHandler,
-        event_actions: Dict[str, Union[bool, int]] | None = None,
+        event_actions: dict[str, Union[bool, int]] | None = None,
         client_handler_name: str = "",
         args: Tuple[Tuple[Var, Var], ...] = (),
     ):
@@ -671,7 +670,7 @@ class FileUpload:
     on_upload_progress: Optional[Union[EventHandler, Callable]] = None
 
     @staticmethod
-    def on_upload_progress_args_spec(_prog: Var[Dict[str, Union[int, float, bool]]]):
+    def on_upload_progress_args_spec(_prog: Var[dict[str, Union[int, float, bool]]]):
         """Args spec for on_upload_progress event handler.
 
         Returns:
@@ -702,7 +701,7 @@ class FileUpload:
                 Var(_js_expr="files"),
                 Var(
                     _js_expr="filesById",
-                    _var_type=Dict[str, Any],
+                    _var_type=dict[str, Any],
                     _var_data=VarData.merge(upload_files_context_var_data),
                 ).to(ObjectVar)[LiteralVar.create(upload_id)],
             ),

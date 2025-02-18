@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Dict, Optional, Type, Union
+from typing import Optional, Type, Union
 
 import attrs
 import pydantic.v1
@@ -27,13 +27,13 @@ class SQLAType(TypeDecorator):
     impl = JSON
 
     @property
-    def python_type(self) -> Type[Dict[str, str]]:
+    def python_type(self) -> Type[dict[str, str]]:
         """Python type.
 
         Returns:
             Python Type of the column.
         """
-        return Dict[str, str]
+        return dict[str, str]
 
 
 class SQLABase(DeclarativeBase):
@@ -42,7 +42,7 @@ class SQLABase(DeclarativeBase):
     type_annotation_map = {
         # do not use lower case dict here!
         # https://github.com/sqlalchemy/sqlalchemy/issues/9902
-        Dict[str, str]: SQLAType,
+        dict[str, str]: SQLAType,
     }
 
 
@@ -86,7 +86,7 @@ class SQLAClass(SQLABase):
     labels: Mapped[list[SQLALabel]] = relationship(back_populates="test")
     # do not use lower case dict here!
     # https://github.com/sqlalchemy/sqlalchemy/issues/9902
-    dict_str_str: Mapped[Dict[str, str]] = mapped_column()
+    dict_str_str: Mapped[dict[str, str]] = mapped_column()
 
     @property
     def str_property(self) -> str:
@@ -135,7 +135,7 @@ class SQLAClassDataclass(MappedAsDataclass, SQLABase):
     labels: Mapped[list[SQLALabel]] = relationship(back_populates="test_dataclass")
     # do not use lower case dict here!
     # https://github.com/sqlalchemy/sqlalchemy/issues/9902
-    dict_str_str: Mapped[Dict[str, str]] = mapped_column()
+    dict_str_str: Mapped[dict[str, str]] = mapped_column()
     default_factory: Mapped[list[int]] = mapped_column(
         sqlalchemy.types.ARRAY(item_type=sqlalchemy.INTEGER),
         default_factory=list,
@@ -181,7 +181,7 @@ class ModelClass(rx.Model):
     optional_int: Optional[int] = None
     sqla_tag: Optional[SQLATag] = None
     labels: list[SQLALabel] = []
-    dict_str_str: Dict[str, str] = {}
+    dict_str_str: dict[str, str] = {}
     default_factory: list[int] = sqlmodel.Field(default_factory=list)
 
     @property
@@ -223,7 +223,7 @@ class BaseClass(rx.Base):
     optional_int: Optional[int] = None
     sqla_tag: Optional[SQLATag] = None
     labels: list[SQLALabel] = []
-    dict_str_str: Dict[str, str] = {}
+    dict_str_str: dict[str, str] = {}
     default_factory: list[int] = pydantic.v1.Field(default_factory=list)
 
     @property
@@ -264,7 +264,7 @@ class BareClass:
     optional_int: Optional[int] = None
     sqla_tag: Optional[SQLATag] = None
     labels: list[SQLALabel] = []
-    dict_str_str: Dict[str, str] = {}
+    dict_str_str: dict[str, str] = {}
 
     @property
     def str_property(self) -> str:
@@ -305,7 +305,7 @@ class AttrClass:
     optional_int: Optional[int] = None
     sqla_tag: Optional[SQLATag] = None
     labels: list[SQLALabel] = []
-    dict_str_str: Dict[str, str] = {}
+    dict_str_str: dict[str, str] = {}
     default_factory: list[int] = attrs.field(factory=list)
 
     @property
@@ -357,7 +357,7 @@ class AttrClass:
         pytest.param("optional_int", Optional[int], id="Optional[int]"),
         pytest.param("sqla_tag", Optional[SQLATag], id="Optional[SQLATag]"),
         pytest.param("labels", list[SQLALabel], id="list[SQLALabel]"),
-        pytest.param("dict_str_str", Dict[str, str], id="Dict[str, str]"),
+        pytest.param("dict_str_str", dict[str, str], id="dict[str, str]"),
         pytest.param("str_property", str, id="str_property"),
         pytest.param("str_or_int_property", Union[str, int], id="str_or_int_property"),
         pytest.param("first_label", Optional[SQLALabel], id="first_label"),

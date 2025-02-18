@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import dataclasses
-from typing import Any, Dict, List, Mapping, Optional, Sequence
+from typing import Any, List, Mapping, Optional, Sequence
 
 from reflex.event import EventChain
 from reflex.utils import format, types
@@ -38,7 +38,7 @@ class Tag:
     name: str = ""
 
     # The props of the tag.
-    props: Dict[str, Any] = dataclasses.field(default_factory=dict)
+    props: dict[str, Any] = dataclasses.field(default_factory=dict)
 
     # The inner contents of the tag.
     contents: str = ""

@@ -126,7 +126,7 @@ class Editor(NoSSRComponent):
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
-        custom_attrs: Optional[Dict[str, Union[Var, Any]]] = None,
+        custom_attrs: Optional[dict[str, Union[Var, Any]]] = None,
         on_blur: Optional[Union[EventType[()], EventType[str]]] = None,
         on_change: Optional[Union[EventType[()], EventType[str]]] = None,
         on_click: Optional[EventType[()]] = None,

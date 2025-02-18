@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any, Dict, Union
+from typing import Any, Union
 
 from reflex.constants import EventTriggers
 from reflex.constants.colors import Color
@@ -28,7 +28,7 @@ class Pie(Recharts):
     alias = "RechartsPie"
 
     # The source data which each element is an object.
-    data: Var[list[Dict[str, Any]]]
+    data: Var[list[dict[str, Any]]]
 
     # The key of each sector's value.
     data_key: Var[Union[str, int]]
@@ -70,7 +70,7 @@ class Pie(Recharts):
     label_line: Var[bool]
 
     # The index of active sector in Pie, this option can be changed in mouse event handlers.
-    data: Var[list[Dict[str, Any]]]
+    data: Var[list[dict[str, Any]]]
 
     # Valid children components
     _valid_children: list[str] = ["Cell", "LabelList", "Bare"]
@@ -125,7 +125,7 @@ class Radar(Recharts):
     data_key: Var[Union[str, int]]
 
     # The coordinates of all the vertices of the radar shape, like [{ x, y }].
-    points: Var[list[Dict[str, Any]]]
+    points: Var[list[dict[str, Any]]]
 
     # If false set, dots will not be drawn. Default: True
     dot: Var[bool]
@@ -180,7 +180,7 @@ class RadialBar(Recharts):
     alias = "RechartsRadialBar"
 
     # The source data which each element is an object.
-    data: Var[list[Dict[str, Any]]]
+    data: Var[list[dict[str, Any]]]
 
     # The key of a group of data which should be unique to show the meaning of angle axis.
     data_key: Var[Union[str, int]]
@@ -192,10 +192,10 @@ class RadialBar(Recharts):
     legend_type: Var[LiteralLegendType]
 
     # If false set, labels will not be drawn. If true set, labels will be drawn which have the props calculated internally. Default: False
-    label: Var[Union[bool, Dict[str, Any]]]
+    label: Var[Union[bool, dict[str, Any]]]
 
     # If false set, background sector will not be drawn. Default: False
-    background: Var[Union[bool, Dict[str, Any]]]
+    background: Var[Union[bool, dict[str, Any]]]
 
     # If set false, animation of radial bars will be disabled. Default: True
     is_animation_active: Var[bool]
@@ -250,19 +250,19 @@ class PolarAngleAxis(Recharts):
     radius: Var[Union[int, str]]
 
     # If false set, axis line will not be drawn. If true set, axis line will be drawn which have the props calculated internally. If object set, axis line will be drawn which have the props mergered by the internal calculated props and the option. Default: True
-    axis_line: Var[Union[bool, Dict[str, Any]]]
+    axis_line: Var[Union[bool, dict[str, Any]]]
 
     # The type of axis line. Default: "polygon"
     axis_line_type: Var[LiteralGridType]
 
     # If false set, tick lines will not be drawn. If true set, tick lines will be drawn which have the props calculated internally. If object set, tick lines will be drawn which have the props mergered by the internal calculated props and the option. Default: False
-    tick_line: Var[Union[bool, Dict[str, Any]]] = LiteralVar.create(False)
+    tick_line: Var[Union[bool, dict[str, Any]]] = LiteralVar.create(False)
 
     # If false set, ticks will not be drawn. If true set, ticks will be drawn which have the props calculated internally. If object set, ticks will be drawn which have the props mergered by the internal calculated props and the option. Default: True
-    tick: Var[Union[bool, Dict[str, Any]]]
+    tick: Var[Union[bool, dict[str, Any]]]
 
     # The array of every tick's value and angle.
-    ticks: Var[list[Dict[str, Any]]]
+    ticks: Var[list[dict[str, Any]]]
 
     # The orientation of axis text. Default: "outer"
     orientation: Var[str]
@@ -365,10 +365,10 @@ class PolarRadiusAxis(Recharts):
     orientation: Var[LiteralOrientationLeftRightMiddle]
 
     # If false set, axis line will not be drawn. If true set, axis line will be drawn which have the props calculated internally. If object set, axis line will be drawn which have the props mergered by the internal calculated props and the option. Default: True
-    axis_line: Var[Union[bool, Dict[str, Any]]]
+    axis_line: Var[Union[bool, dict[str, Any]]]
 
     # If false set, ticks will not be drawn. If true set, ticks will be drawn which have the props calculated internally. If object set, ticks will be drawn which have the props mergered by the internal calculated props and the option. Default: True
-    tick: Var[Union[bool, Dict[str, Any]]]
+    tick: Var[Union[bool, dict[str, Any]]]
 
     # The count of axis ticks. Not used if 'type' is 'category'. Default: 5
     tick_count: Var[int]

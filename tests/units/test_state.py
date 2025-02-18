@@ -10,17 +10,7 @@ import os
 import sys
 import threading
 from textwrap import dedent
-from typing import (
-    Any,
-    AsyncGenerator,
-    Callable,
-    ClassVar,
-    Dict,
-    Optional,
-    Set,
-    Tuple,
-    Union,
-)
+from typing import Any, AsyncGenerator, Callable, ClassVar, Optional, Set, Tuple, Union
 from unittest.mock import AsyncMock, Mock
 
 import pytest
@@ -121,9 +111,9 @@ class TestState(BaseState):
     key: str
     map_key: str = "a"
     array: list[float] = [1, 2, 3.14]
-    mapping: Dict[str, list[int]] = {"a": [1, 2, 3], "b": [4, 5, 6]}
+    mapping: dict[str, list[int]] = {"a": [1, 2, 3], "b": [4, 5, 6]}
     obj: Object = Object()
-    complex: Dict[int, Object] = {1: Object(), 2: Object()}
+    complex: dict[int, Object] = {1: Object(), 2: Object()}
     fig: Figure = Figure()
     dt: datetime.datetime = datetime.datetime.fromisoformat("1989-11-09T18:53:00+01:00")
     _backend: int = 0
@@ -959,7 +949,7 @@ def test_add_var():
     assert ds2.dynamic_list == [5, 10, 15]
     assert DynamicState().dynamic_list == [5, 10]
 
-    ds1.add_var("dynamic_dict", Dict[str, int], {"k1": 5, "k2": 10})
+    ds1.add_var("dynamic_dict", dict[str, int], {"k1": 5, "k2": 10})
     assert ds1.dynamic_dict.equals(DynamicState.dynamic_dict)  # pyright: ignore [reportAttributeAccessIssue]
     assert ds2.dynamic_dict.equals(DynamicState.dynamic_dict)  # pyright: ignore [reportAttributeAccessIssue]
     assert DynamicState().dynamic_dict == {"k1": 5, "k2": 10}
@@ -2048,7 +2038,7 @@ class BackgroundTaskState(BaseState):
     """A state with a background task."""
 
     order: list[str] = []
-    dict_list: Dict[str, list[int]] = {"foo": [1, 2, 3]}
+    dict_list: dict[str, list[int]] = {"foo": [1, 2, 3]}
     dc: ModelDC = ModelDC()
 
     def __init__(self, **kwargs):  # noqa: D107
@@ -2813,7 +2803,7 @@ def test_set_base_field_via_setter():
     assert "c2" in bfss.dirty_vars
 
 
-def exp_is_hydrated(state: BaseState, is_hydrated: bool = True) -> Dict[str, Any]:
+def exp_is_hydrated(state: BaseState, is_hydrated: bool = True) -> dict[str, Any]:
     """Expected IS_HYDRATED delta that would be emitted by HydrateMiddleware.
 
     Args:
@@ -3889,7 +3879,7 @@ class Table(rx.ComponentState):
     data: ClassVar[Var]
 
     @rx.var(cache=True, auto_deps=False)
-    async def rows(self) -> list[Dict[str, Any]]:
+    async def rows(self) -> list[dict[str, Any]]:
         """Computed var over the given rows.
 
         Returns:
@@ -3924,7 +3914,7 @@ async def test_async_computed_var_get_var_value(mock_app: rx.App, token: str):
     class OtherState(rx.State):
         """A state with a var."""
 
-        data: list[Dict[str, Any]] = [{"foo": "bar"}]
+        data: list[dict[str, Any]] = [{"foo": "bar"}]
 
     mock_app.state_manager.state = mock_app._state = rx.State
     comp = Table.create(data=OtherState.data)

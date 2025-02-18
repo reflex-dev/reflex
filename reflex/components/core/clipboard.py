@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Dict, Tuple, Union
+from typing import Tuple, Union
 
 from reflex.components.base.fragment import Fragment
 from reflex.components.tags.tag import Tag
@@ -24,7 +24,7 @@ class Clipboard(Fragment):
     on_paste: EventHandler[passthrough_event_spec(list[Tuple[str, str]])]
 
     # Save the original event actions for the on_paste event.
-    on_paste_event_actions: Var[Dict[str, Union[bool, int]]]
+    on_paste_event_actions: Var[dict[str, Union[bool, int]]]
 
     @classmethod
     def create(cls, *children, **props):

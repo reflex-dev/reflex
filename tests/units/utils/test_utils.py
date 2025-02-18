@@ -2,7 +2,7 @@ import os
 import typing
 from functools import cached_property
 from pathlib import Path
-from typing import Any, ClassVar, Dict, List, Literal, Type, Union
+from typing import Any, ClassVar, List, Literal, Type, Union
 
 import pytest
 import typer
@@ -102,13 +102,13 @@ def test_is_generic_alias(cls: type, expected: bool):
         (Union[int, float], list[Union[int, float]], False),
         (Union[int, float], Union[int, float, str], True),
         (Union[int, float], Union[str, float], False),
-        (Dict[str, int], Dict[str, int], True),
-        (Dict[str, bool], Dict[str, int], True),
-        (Dict[str, int], Dict[str, bool], False),
-        (Dict[str, Any], dict[str, str], False),
-        (Dict[str, str], dict[str, str], True),
-        (Dict[str, str], dict[str, Any], True),
-        (Dict[str, Any], dict[str, Any], True),
+        (dict[str, int], dict[str, int], True),
+        (dict[str, bool], dict[str, int], True),
+        (dict[str, int], dict[str, bool], False),
+        (dict[str, Any], dict[str, str], False),
+        (dict[str, str], dict[str, str], True),
+        (dict[str, str], dict[str, Any], True),
+        (dict[str, Any], dict[str, Any], True),
     ],
 )
 def test_typehint_issubclass(subclass, superclass, expected):

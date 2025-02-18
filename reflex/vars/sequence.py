@@ -10,7 +10,6 @@ import typing
 from typing import (
     TYPE_CHECKING,
     Any,
-    Dict,
     Literal,
     NoReturn,
     Sequence,
@@ -1035,9 +1034,9 @@ class ArrayVar(Var[ARRAY_VAR_TYPE], python_types=(list, tuple, set)):
 
     @overload
     def __getitem__(
-        self: ARRAY_VAR_OF_LIST_ELEMENT[Dict[KEY_TYPE, VALUE_TYPE]],
+        self: ARRAY_VAR_OF_LIST_ELEMENT[dict[KEY_TYPE, VALUE_TYPE]],
         i: int | NumberVar,
-    ) -> ObjectVar[Dict[KEY_TYPE, VALUE_TYPE]]: ...
+    ) -> ObjectVar[dict[KEY_TYPE, VALUE_TYPE]]: ...
 
     @overload
     def __getitem__(

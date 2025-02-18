@@ -1,4 +1,4 @@
-from typing import Dict, Set, Tuple, Union
+from typing import Set, Tuple, Union
 
 import pydantic.v1
 import pytest
@@ -31,19 +31,19 @@ class ForEachState(BaseState):
 
     colors_list: list[str] = ["red", "yellow"]
     nested_colors_list: list[list[str]] = [["red", "yellow"], ["blue", "green"]]
-    colors_dict_list: list[Dict[str, str]] = [
+    colors_dict_list: list[dict[str, str]] = [
         {
             "name": "red",
         },
         {"name": "yellow"},
     ]
-    colors_nested_dict_list: list[Dict[str, list[str]]] = [{"shades": ["light-red"]}]
-    primary_color: Dict[str, str] = {"category": "primary", "name": "red"}
-    color_with_shades: Dict[str, list[str]] = {
+    colors_nested_dict_list: list[dict[str, list[str]]] = [{"shades": ["light-red"]}]
+    primary_color: dict[str, str] = {"category": "primary", "name": "red"}
+    color_with_shades: dict[str, list[str]] = {
         "red": ["orange", "yellow"],
         "yellow": ["orange", "green"],
     }
-    nested_colors_with_shades: Dict[str, Dict[str, list[Dict[str, str]]]] = {
+    nested_colors_with_shades: dict[str, dict[str, list[dict[str, str]]]] = {
         "primary": {"red": [{"shade": "dark"}]}
     }
     color_tuple: Tuple[str, str] = (
@@ -82,12 +82,12 @@ def display_color(color):
 
 
 def display_color_name(color):
-    assert color._var_type == Dict[str, str]
+    assert color._var_type == dict[str, str]
     return box(text(color["name"]))
 
 
 def display_shade(color):
-    assert color._var_type == Dict[str, list[str]]
+    assert color._var_type == dict[str, list[str]]
     return box(text(color["shades"][0]))
 
 
@@ -102,7 +102,7 @@ def display_color_with_shades(color):
 
 
 def display_nested_color_with_shades(color):
-    assert color._var_type == Tuple[str, Dict[str, list[Dict[str, str]]]]
+    assert color._var_type == Tuple[str, dict[str, list[dict[str, str]]]]
     return box(text(color[0]), text(color[1]["red"][0]["shade"]))
 
 
@@ -111,7 +111,7 @@ def show_shade(item):
 
 
 def display_nested_color_with_shades_v2(color):
-    assert color._var_type == Tuple[str, Dict[str, list[Dict[str, str]]]]
+    assert color._var_type == Tuple[str, dict[str, list[dict[str, str]]]]
     return box(text(foreach(color[1], show_shade)))
 
 

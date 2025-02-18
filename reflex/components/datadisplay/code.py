@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import dataclasses
 import typing
-from typing import ClassVar, Dict, Literal, Optional, Union
+from typing import ClassVar, Literal, Optional, Union
 
 from reflex.components.component import Component, ComponentNamespace
 from reflex.components.core.cond import color_mode_cond
@@ -408,10 +408,10 @@ class CodeBlock(Component, MarkdownComponentMap):
     wrap_long_lines: Var[bool]
 
     # A custom style for the code block.
-    custom_style: Dict[str, Union[str, Var, Color]] = {}
+    custom_style: dict[str, Union[str, Var, Color]] = {}
 
     # Props passed down to the code tag.
-    code_tag_props: Var[Dict[str, str]]
+    code_tag_props: Var[dict[str, str]]
 
     # Whether a copy button should appear.
     can_copy: Optional[bool] = False

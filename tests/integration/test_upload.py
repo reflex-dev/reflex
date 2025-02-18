@@ -19,14 +19,12 @@ from .utils import poll_for_navigation
 
 def UploadFile():
     """App for testing dynamic routes."""
-    from typing import Dict
-
     import reflex as rx
 
     LARGE_DATA = "DUMMY" * 1024 * 512
 
     class UploadState(rx.State):
-        _file_data: Dict[str, str] = {}
+        _file_data: dict[str, str] = {}
         event_order: rx.Field[list[str]] = rx.field([])
         progress_dicts: list[dict] = []
         disabled: bool = False

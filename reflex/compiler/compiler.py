@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from datetime import datetime
 from pathlib import Path
-from typing import TYPE_CHECKING, Dict, Iterable, Optional, Sequence, Tuple, Type, Union
+from typing import TYPE_CHECKING, Iterable, Optional, Sequence, Tuple, Type, Union
 
 from reflex import constants
 from reflex.compiler import templates, utils
@@ -219,7 +219,7 @@ def _compile_component(component: Component | StatefulComponent) -> str:
 
 def _compile_components(
     components: set[CustomComponent],
-) -> tuple[str, Dict[str, list[ImportVar]]]:
+) -> tuple[str, dict[str, list[ImportVar]]]:
     """Compile the components.
 
     Args:
@@ -353,7 +353,7 @@ def _compile_tailwind(
 def compile_document_root(
     head_components: list[Component],
     html_lang: Optional[str] = None,
-    html_custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
+    html_custom_attrs: Optional[dict[str, Union[Var, str]]] = None,
 ) -> tuple[str, str]:
     """Compile the document root.
 
@@ -456,7 +456,7 @@ def compile_page(
 
 def compile_components(
     components: set[CustomComponent],
-) -> tuple[str, str, Dict[str, list[ImportVar]]]:
+) -> tuple[str, str, dict[str, list[ImportVar]]]:
     """Compile the custom components.
 
     Args:
@@ -679,8 +679,8 @@ class ExecutorSafeFunctions:
 
     """
 
-    COMPONENTS: Dict[str, BaseComponent] = {}
-    UNCOMPILED_PAGES: Dict[str, UnevaluatedPage] = {}
+    COMPONENTS: dict[str, BaseComponent] = {}
+    UNCOMPILED_PAGES: dict[str, UnevaluatedPage] = {}
     STATE: Optional[Type[BaseState]] = None
 
     @classmethod
