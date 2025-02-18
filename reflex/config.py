@@ -23,7 +23,6 @@ from typing import (
     Any,
     Callable,
     Generic,
-    Optional,
     TypeVar,
     get_args,
     get_origin,
@@ -789,7 +788,7 @@ class Config(Base):
     cors_allowed_origins: list[str] = ["*"]
 
     # Tailwind config.
-    tailwind: Optional[dict[str, Any]] = {"plugins": ["@tailwindcss/typography"]}
+    tailwind: dict[str, Any] | None = {"plugins": ["@tailwindcss/typography"]}
 
     # Timeout when launching the gunicorn server. TODO(rename this to backend_timeout?)
     timeout: int = 120

@@ -9,17 +9,7 @@ from abc import ABC, abstractmethod
 from functools import lru_cache, wraps
 from hashlib import md5
 from types import SimpleNamespace
-from typing import (
-    Any,
-    Callable,
-    ClassVar,
-    Iterator,
-    List,
-    Optional,
-    Sequence,
-    Type,
-    Union,
-)
+from typing import Any, Callable, ClassVar, Iterator, List, Sequence, Type, Union
 
 from typing_extensions import Self
 
@@ -238,7 +228,7 @@ class Component(BaseComponent, ABC):
     _memoization_mode: MemoizationMode = MemoizationMode()
 
     # State class associated with this component instance
-    State: Optional[Type[reflex.state.State]] = None
+    State: Type[reflex.state.State] | None = None
 
     def add_imports(self) -> ImportDict | list[ImportDict]:
         """Add imports for the component.

@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from enum import Enum
-from typing import Any, Dict, Literal, Optional, TypedDict
+from typing import Any, Dict, Literal, TypedDict
 
 from reflex.base import Base
 from reflex.components.component import Component, NoSSRComponent
@@ -148,7 +148,7 @@ class GroupHeaderClickedEventArgs(TypedDict):
 class GridCell(TypedDict):
     """The grid cell."""
 
-    span: Optional[list[int]]
+    span: list[int] | None
 
 
 class GridColumn(TypedDict):

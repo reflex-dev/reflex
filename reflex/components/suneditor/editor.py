@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import enum
-from typing import Any, Dict, Literal, Optional, Union
+from typing import Any, Dict, Literal, Union
 
 from reflex.base import Base
 from reflex.components.component import Component, NoSSRComponent
@@ -65,7 +65,7 @@ class EditorOptions(Base):
     rtl: bool | None = None
 
     # List of buttons to use in the toolbar.
-    button_list: Optional[list[Union[list[str], str]]]
+    button_list: list[Union[list[str], str]] | None
 
 
 def on_blur_spec(e: Var, content: Var[str]) -> tuple[Var[str]]:

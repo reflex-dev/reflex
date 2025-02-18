@@ -118,7 +118,7 @@ class GroupHeaderClickedEventArgs(TypedDict):
     scrollEdge: tuple[int, int]
 
 class GridCell(TypedDict):
-    span: Optional[list[int]]
+    span: list[int] | None
 
 class GridColumn(TypedDict):
     title: str

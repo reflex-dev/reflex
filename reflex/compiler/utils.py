@@ -7,7 +7,7 @@ import concurrent.futures
 import traceback
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Callable, Optional, Type
+from typing import Any, Callable, Type
 from urllib.parse import urlparse
 
 from pydantic.v1.fields import ModelField
@@ -346,7 +346,7 @@ def compile_custom_component(
 def create_document_root(
     head_components: list[Component] | None = None,
     html_lang: str | None = None,
-    html_custom_attrs: Optional[dict[str, Var | str]] = None,
+    html_custom_attrs: dict[str, Var | str] | None = None,
 ) -> Component:
     """Create the document root.
 

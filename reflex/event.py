@@ -15,7 +15,6 @@ from typing import (
     Callable,
     Generic,
     List,
-    Optional,
     Protocol,
     Sequence,
     Type,
@@ -341,7 +340,7 @@ class CallableEventSpec(EventSpec):
     API with functions that return a family of EventSpec.
     """
 
-    fn: Optional[Callable[..., EventSpec]] = None
+    fn: Callable[..., EventSpec] | None = None
 
     def __init__(self, fn: Callable[..., EventSpec] | None = None, **kwargs):
         """Initialize a CallableEventSpec.
@@ -394,7 +393,7 @@ class EventChain(EventActionsMixin):
         default_factory=list
     )
 
-    args_spec: Optional[Union[Callable, Sequence[Callable]]] = dataclasses.field(
+    args_spec: Union[Callable, Sequence[Callable]] | None = dataclasses.field(
         default=None
     )
 

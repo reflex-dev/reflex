@@ -26,7 +26,6 @@ from typing import (
     Coroutine,
     Dict,
     MutableMapping,
-    Optional,
     Type,
     Union,
     get_args,
@@ -360,7 +359,7 @@ class App(MiddlewareMixin, LifespanMixin):
     html_lang: str | None = None
 
     # Attributes to add to the html root tag of every page.
-    html_custom_attrs: Optional[dict[str, str]] = None
+    html_custom_attrs: dict[str, str] | None = None
 
     # A map from a route to an unevaluated page.
     _unevaluated_pages: dict[str, UnevaluatedPage] = dataclasses.field(
@@ -374,7 +373,7 @@ class App(MiddlewareMixin, LifespanMixin):
     _api: FastAPI | None = None
 
     # The state class to use for the app.
-    _state: Optional[Type[BaseState]] = None
+    _state: Type[BaseState] | None = None
 
     # Class to manage many client states.
     _state_manager: StateManager | None = None
@@ -985,9 +984,7 @@ class App(MiddlewareMixin, LifespanMixin):
         for render, kwargs in DECORATED_PAGES[get_config().app_name]:
             self.add_page(render, **kwargs)
 
-    def _validate_var_dependencies(
-        self, state: Optional[Type[BaseState]] = None
-    ) -> None:
+    def _validate_var_dependencies(self, state: Type[BaseState] | None = None) -> None:
         """Validate the dependencies of the vars in the app.
 
         Args:

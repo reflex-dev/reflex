@@ -42,7 +42,7 @@ class EditorOptions(Base):
     default_tag: str | None
     mode: str | None
     rtl: bool | None
-    button_list: Optional[list[Union[list[str], str]]]
+    button_list: list[Union[list[str], str]] | None
 
 def on_blur_spec(e: Var, content: Var[str]) -> tuple[Var[str]]: ...
 def on_paste_spec(

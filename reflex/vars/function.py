@@ -9,7 +9,6 @@ from typing import (
     Callable,
     Concatenate,
     Generic,
-    Optional,
     ParamSpec,
     Protocol,
     Sequence,
@@ -242,7 +241,7 @@ class FunctionStringVar(FunctionVar[CALLABLE_TYPE]):
 class VarOperationCall(Generic[P, R], CachedVarOperation, Var[R]):
     """Base class for immutable vars that are the result of a function call."""
 
-    _func: Optional[FunctionVar[ReflexCallable[P, R]]] = dataclasses.field(default=None)
+    _func: FunctionVar[ReflexCallable[P, R]] | None = dataclasses.field(default=None)
     _args: tuple[Var | Any, ...] = dataclasses.field(default_factory=tuple)
 
     @cached_property_no_lock

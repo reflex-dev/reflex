@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from datetime import datetime
 from pathlib import Path
-from typing import TYPE_CHECKING, Iterable, Optional, Sequence, Type
+from typing import TYPE_CHECKING, Iterable, Sequence, Type
 
 from reflex import constants
 from reflex.compiler import templates, utils
@@ -94,7 +94,7 @@ def _compile_theme(theme: str) -> str:
     return templates.THEME.render(theme=theme)
 
 
-def _compile_contexts(state: Optional[Type[BaseState]], theme: Component | None) -> str:
+def _compile_contexts(state: Type[BaseState] | None, theme: Component | None) -> str:
     """Compile the initial state and contexts.
 
     Args:
@@ -353,7 +353,7 @@ def _compile_tailwind(
 def compile_document_root(
     head_components: list[Component],
     html_lang: str | None = None,
-    html_custom_attrs: Optional[dict[str, Var | str]] = None,
+    html_custom_attrs: dict[str, Var | str] | None = None,
 ) -> tuple[str, str]:
     """Compile the document root.
 
@@ -415,7 +415,7 @@ def compile_theme(style: ComponentStyle) -> tuple[str, str]:
 
 
 def compile_contexts(
-    state: Optional[Type[BaseState]],
+    state: Type[BaseState] | None,
     theme: Component | None,
 ) -> tuple[str, str]:
     """Compile the initial state / context.
@@ -681,7 +681,7 @@ class ExecutorSafeFunctions:
 
     COMPONENTS: dict[str, BaseComponent] = {}
     UNCOMPILED_PAGES: dict[str, UnevaluatedPage] = {}
-    STATE: Optional[Type[BaseState]] = None
+    STATE: Type[BaseState] | None = None
 
     @classmethod
     def compile_page(cls, route: str) -> tuple[str, str]:
