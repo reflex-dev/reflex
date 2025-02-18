@@ -257,7 +257,7 @@ class DrawerSidebar(DrawerRoot):
         | None = None,
         dismissible: Var[bool] | bool | None = None,
         handle_only: Var[bool] | bool | None = None,
-        snap_points: Optional[list[float | str]] = None,
+        snap_points: list[float | str] | None = None,
         fade_from_index: Var[int] | int | None = None,
         scroll_lock_timeout: Var[int] | int | None = None,
         prevent_scroll_restoration: Var[bool] | bool | None = None,
@@ -354,7 +354,7 @@ class Layout(Box):
     def create(  # type: ignore
         cls,
         *children,
-        sidebar: Optional[Component] = None,
+        sidebar: Component | None = None,
         access_key: Var[str] | str | None = None,
         auto_capitalize: Literal[
             "characters", "none", "off", "on", "sentences", "words"
@@ -576,7 +576,7 @@ class LayoutNamespace(ComponentNamespace):
     @staticmethod
     def __call__(
         *children,
-        sidebar: Optional[Component] = None,
+        sidebar: Component | None = None,
         access_key: Var[str] | str | None = None,
         auto_capitalize: Literal[
             "characters", "none", "off", "on", "sentences", "words"

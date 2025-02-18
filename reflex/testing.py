@@ -116,9 +116,9 @@ class AppHarness:
     """AppHarness executes a reflex app in-process for testing."""
 
     app_name: str
-    app_source: Optional[
-        Callable[[], None] | types.ModuleType | str | functools.partial[Any]
-    ]
+    app_source: (
+        Callable[[], None] | types.ModuleType | str | functools.partial[Any] | None
+    )
     app_path: Path
     app_module_path: Path
     app_module: types.ModuleType | None = None
@@ -136,9 +136,9 @@ class AppHarness:
     def create(
         cls,
         root: Path,
-        app_source: Optional[
-            Callable[[], None] | types.ModuleType | str | functools.partial[Any]
-        ] = None,
+        app_source: (
+            Callable[[], None] | types.ModuleType | str | functools.partial[Any] | None
+        ) = None,
         app_name: str | None = None,
     ) -> "AppHarness":
         """Create an AppHarness instance at root.

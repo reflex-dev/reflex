@@ -139,7 +139,7 @@ class Upload(MemoizationLeaf):
     def create(  # type: ignore
         cls,
         *children,
-        accept: Var[Optional[dict[str, List]]] | dict[str, List] | None = None,
+        accept: Var[dict[str, List] | None] | dict[str, List] | None = None,
         disabled: Var[bool] | bool | None = None,
         max_files: Var[int] | int | None = None,
         max_size: Var[int] | int | None = None,
@@ -205,7 +205,7 @@ class StyledUpload(Upload):
     def create(  # type: ignore
         cls,
         *children,
-        accept: Var[Optional[dict[str, List]]] | dict[str, List] | None = None,
+        accept: Var[dict[str, List] | None] | dict[str, List] | None = None,
         disabled: Var[bool] | bool | None = None,
         max_files: Var[int] | int | None = None,
         max_size: Var[int] | int | None = None,
@@ -271,7 +271,7 @@ class UploadNamespace(ComponentNamespace):
     @staticmethod
     def __call__(
         *children,
-        accept: Var[Optional[dict[str, List]]] | dict[str, List] | None = None,
+        accept: Var[dict[str, List] | None] | dict[str, List] | None = None,
         disabled: Var[bool] | bool | None = None,
         max_files: Var[int] | int | None = None,
         max_size: Var[int] | int | None = None,

@@ -62,7 +62,7 @@ class Html(NextDocumentLib):
     def create(  # type: ignore
         cls,
         *children,
-        lang: Optional[str] = None,
+        lang: str | None = None,
         style: Style | None = None,
         key: Any | None = None,
         id: Any | None = None,

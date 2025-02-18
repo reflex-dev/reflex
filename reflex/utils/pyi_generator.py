@@ -144,7 +144,7 @@ def _get_type_hint(
             ]
             res_args.sort()
             if len(res_args) == 1:
-                return f"Optional[{res_args[0]}]"
+                return f"{res_args[0]} | None"
             else:
                 res = f"{' | '.join(res_args)}"
                 return f"{res} | None"
@@ -212,7 +212,7 @@ def _get_type_hint(
         )
     else:
         res = value.__name__
-    if is_optional and not res.startswith("Optional"):
+    if is_optional and not res.startswith("Optional") and not res.endswith("| None"):
         res = f"{res} | None"
     return res
 

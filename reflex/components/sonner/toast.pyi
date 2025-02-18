@@ -182,7 +182,7 @@ class ToastNamespace(ComponentNamespace):
 
     @staticmethod
     def __call__(
-        message: str | Var = "", level: Optional[str] = None, **props
+        message: str | Var = "", level: str | None = None, **props
     ) -> "EventSpec":
         """Send a toast message.
 

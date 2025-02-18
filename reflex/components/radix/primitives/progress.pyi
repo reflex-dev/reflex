@@ -119,8 +119,8 @@ class ProgressIndicator(ProgressComponent):
     def create(  # type: ignore
         cls,
         *children,
-        value: Var[Optional[int]] | int | None = None,
-        max: Var[Optional[int]] | int | None = None,
+        value: Var[int | None] | int | None = None,
+        max: Var[int | None] | int | None = None,
         color_scheme: Literal[
             "amber",
             "blue",
@@ -290,8 +290,8 @@ class Progress(ProgressRoot):
             ]
         ]
         | None = None,
-        value: Var[Optional[int]] | int | None = None,
-        max: Var[Optional[int]] | int | None = None,
+        value: Var[int | None] | int | None = None,
+        max: Var[int | None] | int | None = None,
         radius: Literal["full", "large", "medium", "none", "small"]
         | Var[Literal["full", "large", "medium", "none", "small"]]
         | None = None,
@@ -406,8 +406,8 @@ class ProgressNamespace(ComponentNamespace):
             ]
         ]
         | None = None,
-        value: Var[Optional[int]] | int | None = None,
-        max: Var[Optional[int]] | int | None = None,
+        value: Var[int | None] | int | None = None,
+        max: Var[int | None] | int | None = None,
         radius: Literal["full", "large", "medium", "none", "small"]
         | Var[Literal["full", "large", "medium", "none", "small"]]
         | None = None,

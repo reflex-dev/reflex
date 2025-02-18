@@ -19,7 +19,7 @@ class Video(NextComponent):
         cls,
         *children,
         src: Var[str] | str | None = None,
-        as_: Optional[Component] = None,
+        as_: Component | None = None,
         style: Style | None = None,
         key: Any | None = None,
         id: Any | None = None,

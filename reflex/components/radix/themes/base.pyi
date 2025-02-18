@@ -369,7 +369,7 @@ class Theme(RadixThemesComponent):
     def create(  # type: ignore
         cls,
         *children,
-        color_mode: Optional[Literal["dark", "inherit", "light"]] = None,
+        color_mode: Literal["dark", "inherit", "light"] | None = None,
         theme_panel: bool | None = False,
         has_background: Var[bool] | bool | None = None,
         appearance: Literal["dark", "inherit", "light"]

@@ -102,7 +102,7 @@ class Slider(RadixThemesComponent):
         | None = None,
         value: Var[list[float | int]] | list[float | int] | None = None,
         name: Var[str] | str | None = None,
-        width: Var[Optional[str]] | str | None = None,
+        width: Var[str | None] | str | None = None,
         min: Var[float | int] | float | int | None = None,
         max: Var[float | int] | float | int | None = None,
         step: Var[float | int] | float | int | None = None,
