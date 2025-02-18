@@ -3,9 +3,7 @@
 from __future__ import annotations
 
 from enum import Enum
-from typing import Any, Dict, List, Literal, Optional, Tuple, Union
-
-from typing_extensions import TypedDict
+from typing import Any, Dict, List, Literal, Optional, Tuple, TypedDict, Union
 
 from reflex.base import Base
 from reflex.components.component import Component, NoSSRComponent

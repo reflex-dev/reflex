@@ -10,16 +10,7 @@ from pathlib import Path
 from typing import Any, Callable, Dict, Optional, Type, Union
 from urllib.parse import urlparse
 
-from reflex.utils.exec import is_in_app_harness
-from reflex.utils.prerequisites import get_web_dir
-from reflex.vars.base import Var
-
-try:
-    from pydantic.v1.fields import ModelField
-except ModuleNotFoundError:
-    from pydantic.fields import (
-        ModelField,  # pyright: ignore [reportAttributeAccessIssue]
-    )
+from pydantic.v1.fields import ModelField
 
 from reflex import constants
 from reflex.components.base import (
@@ -39,7 +30,10 @@ from reflex.istate.storage import Cookie, LocalStorage, SessionStorage
 from reflex.state import BaseState, _resolve_delta
 from reflex.style import Style
 from reflex.utils import console, format, imports, path_ops
+from reflex.utils.exec import is_in_app_harness
 from reflex.utils.imports import ImportVar, ParsedImportDict
+from reflex.utils.prerequisites import get_web_dir
+from reflex.vars.base import Var
 
 # To re-export this function.
 merge_imports = imports.merge_imports

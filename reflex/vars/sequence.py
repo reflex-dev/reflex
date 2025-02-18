@@ -17,11 +17,12 @@ from typing import (
     Sequence,
     Tuple,
     Type,
+    TypeVar,
     Union,
     overload,
 )
 
-from typing_extensions import TypeVar
+from typing_extensions import TypeVar as TypingExtensionsTypeVar
 
 from reflex import constants
 from reflex.constants.base import REFLEX_VAR_OPENING_TAG
@@ -58,7 +59,7 @@ if TYPE_CHECKING:
     from .object import ObjectVar
 
 
-STRING_TYPE = TypeVar("STRING_TYPE", default=str)
+STRING_TYPE = TypingExtensionsTypeVar("STRING_TYPE", default=str)
 
 
 class StringVar(Var[STRING_TYPE], python_types=str):

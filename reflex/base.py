@@ -5,15 +5,9 @@ from __future__ import annotations
 import os
 from typing import TYPE_CHECKING, Any, List, Type
 
-try:
-    import pydantic.v1.main as pydantic_main
-    from pydantic.v1 import BaseModel
-    from pydantic.v1.fields import ModelField
-except ModuleNotFoundError:
-    if not TYPE_CHECKING:
-        import pydantic.main as pydantic_main
-        from pydantic import BaseModel
-        from pydantic.fields import ModelField
+import pydantic.v1.main as pydantic_main
+from pydantic.v1 import BaseModel
+from pydantic.v1.fields import ModelField
 
 
 def validate_field_name(bases: List[Type["BaseModel"]], field_name: str) -> None:
