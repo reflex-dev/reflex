@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from hashlib import md5
-from typing import Any, Iterator, Literal, Set, Tuple, Union
+from typing import Any, Iterator, Literal, Tuple, Union
 
 from jinja2 import Environment
 
@@ -720,7 +720,7 @@ class Textarea(BaseHTML):
             "enter_key_submit",
         ]
 
-    def _get_all_custom_code(self) -> Set[str]:
+    def _get_all_custom_code(self) -> set[str]:
         """Include the custom code for auto_height and enter_key_submit functionality.
 
         Returns:

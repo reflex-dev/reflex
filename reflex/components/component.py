@@ -17,7 +17,6 @@ from typing import (
     List,
     Optional,
     Sequence,
-    Set,
     Type,
     Union,
 )
@@ -646,7 +645,7 @@ class Component(BaseComponent, ABC):
 
     @classmethod
     @lru_cache(maxsize=None)
-    def get_props(cls) -> Set[str]:
+    def get_props(cls) -> set[str]:
         """Get the unique fields for the component.
 
         Returns:
@@ -656,7 +655,7 @@ class Component(BaseComponent, ABC):
 
     @classmethod
     @lru_cache(maxsize=None)
-    def get_initial_props(cls) -> Set[str]:
+    def get_initial_props(cls) -> set[str]:
         """Get the initial props to set for the component.
 
         Returns:
@@ -1155,7 +1154,7 @@ class Component(BaseComponent, ABC):
         """
         return None
 
-    def _get_all_dynamic_imports(self) -> Set[str]:
+    def _get_all_dynamic_imports(self) -> set[str]:
         """Get dynamic imports for the component and its children.
 
         Returns:
@@ -1531,7 +1530,7 @@ class Component(BaseComponent, ABC):
 
     def _get_all_custom_components(
         self, seen: set[str] | None = None
-    ) -> Set[CustomComponent]:
+    ) -> set[CustomComponent]:
         """Get all the custom components used by the component.
 
         Args:
@@ -1697,7 +1696,7 @@ class CustomComponent(Component):
         return hash(self.tag)
 
     @classmethod
-    def get_props(cls) -> Set[str]:  # pyright: ignore [reportIncompatibleVariableOverride]
+    def get_props(cls) -> set[str]:  # pyright: ignore [reportIncompatibleVariableOverride]
         """Get the props for the component.
 
         Returns:
@@ -1707,7 +1706,7 @@ class CustomComponent(Component):
 
     def _get_all_custom_components(
         self, seen: set[str] | None = None
-    ) -> Set[CustomComponent]:
+    ) -> set[CustomComponent]:
         """Get all the custom components used by the component.
 
         Args:

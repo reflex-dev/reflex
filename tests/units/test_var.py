@@ -1,7 +1,7 @@
 import json
 import math
 import typing
-from typing import List, Mapping, Optional, Set, Tuple, Union, cast
+from typing import List, Mapping, Optional, Tuple, Union, cast
 
 import pytest
 from pandas import DataFrame
@@ -594,7 +594,7 @@ def test_computed_var_replace_with_invalid_kwargs():
         ),
         (
             Var(_js_expr="lst", _var_type=list[int]).guess_type(),
-            Var(_js_expr="set_var", _var_type=Set[str]).guess_type(),
+            Var(_js_expr="set_var", _var_type=set[str]).guess_type(),
         ),
         (
             Var(_js_expr="lst", _var_type=list[int]).guess_type(),
@@ -714,7 +714,7 @@ def test_dict_indexing():
         ),
         (
             Var(_js_expr="lst", _var_type=dict[str, str]).guess_type(),
-            Var(_js_expr="set_var", _var_type=Set[str]).guess_type(),
+            Var(_js_expr="set_var", _var_type=set[str]).guess_type(),
         ),
         (
             Var(_js_expr="lst", _var_type=dict[str, str]).guess_type(),
@@ -745,7 +745,7 @@ def test_dict_indexing():
         ),
         (
             Var(_js_expr="df", _var_type=DataFrame).guess_type(),
-            Var(_js_expr="set_var", _var_type=Set[str]).guess_type(),
+            Var(_js_expr="set_var", _var_type=set[str]).guess_type(),
         ),
         (
             Var(_js_expr="df", _var_type=DataFrame).guess_type(),
@@ -1813,7 +1813,7 @@ def cv_fget(state: BaseState) -> int:
         ([ComputedVar(fget=cv_fget)], {None: {"cv_fget"}}),
     ],
 )
-def test_computed_var_deps(deps: list[Union[str, Var]], expected: Set[str]):
+def test_computed_var_deps(deps: list[Union[str, Var]], expected: set[str]):
     @computed_var(deps=deps)
     def test_var(state) -> int:
         return 1

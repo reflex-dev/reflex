@@ -24,7 +24,6 @@ from typing import (
     Callable,
     Generic,
     Optional,
-    Set,
     TypeVar,
     get_args,
     get_origin,
@@ -836,7 +835,7 @@ class Config(Base):
     redis_token_expiration: int = constants.Expiration.TOKEN
 
     # Attributes that were explicitly set by the user.
-    _non_default_attributes: Set[str] = pydantic.PrivateAttr(set())
+    _non_default_attributes: set[str] = pydantic.PrivateAttr(set())
 
     # Path to file containing key-values pairs to override in the environment; Dotenv format.
     env_file: Optional[str] = None

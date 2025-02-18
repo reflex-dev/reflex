@@ -1678,7 +1678,7 @@ def figure_out_type(value: Any) -> types.GenericType:
     if isinstance(value, list):
         return list[unionize(*(figure_out_type(v) for v in value))]
     if isinstance(value, set):
-        return Set[unionize(*(figure_out_type(v) for v in value))]
+        return set[unionize(*(figure_out_type(v) for v in value))]
     if isinstance(value, tuple):
         return Tuple[unionize(*(figure_out_type(v) for v in value)), ...]
     if isinstance(value, Mapping):
@@ -3269,7 +3269,7 @@ class Field(Generic[FIELD_TYPE]):
 
     @overload
     def __get__(
-        self: Field[list[V]] | Field[Set[V]] | Field[Tuple[V, ...]],
+        self: Field[list[V]] | Field[set[V]] | Field[Tuple[V, ...]],
         instance: None,
         owner: Any,
     ) -> ArrayVar[list[V]]: ...

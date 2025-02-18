@@ -117,7 +117,7 @@ if environment.REFLEX_PERF_MODE.get() != PerformanceMode.OFF:
     # If the state is this large, it's considered a performance issue.
     TOO_LARGE_SERIALIZED_STATE = environment.REFLEX_STATE_SIZE_LIMIT.get() * 1024
     # Only warn about each state class size once.
-    _WARNED_ABOUT_STATE_SIZE: Set[str] = set()
+    _WARNED_ABOUT_STATE_SIZE: set[str] = set()
 
 # Errors caught during pickling of state
 HANDLED_PICKLE_ERRORS = (
@@ -351,19 +351,19 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
     event_handlers: ClassVar[Dict[str, EventHandler]] = {}
 
     # A set of subclassses of this class.
-    class_subclasses: ClassVar[Set[Type[BaseState]]] = set()
+    class_subclasses: ClassVar[set[Type[BaseState]]] = set()
 
     # Mapping of var name to set of (state_full_name, var_name) that depend on it.
-    _var_dependencies: ClassVar[Dict[str, Set[Tuple[str, str]]]] = {}
+    _var_dependencies: ClassVar[Dict[str, set[Tuple[str, str]]]] = {}
 
     # Set of vars which always need to be recomputed
-    _always_dirty_computed_vars: ClassVar[Set[str]] = set()
+    _always_dirty_computed_vars: ClassVar[set[str]] = set()
 
     # Set of substates which always need to be recomputed
-    _always_dirty_substates: ClassVar[Set[str]] = set()
+    _always_dirty_substates: ClassVar[set[str]] = set()
 
     # Set of states which might need to be recomputed if vars in this state change.
-    _potentially_dirty_states: ClassVar[Set[str]] = set()
+    _potentially_dirty_states: ClassVar[set[str]] = set()
 
     # The parent state.
     parent_state: Optional[BaseState] = None
@@ -372,10 +372,10 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
     substates: Dict[str, BaseState] = {}
 
     # The set of dirty vars.
-    dirty_vars: Set[str] = set()
+    dirty_vars: set[str] = set()
 
     # The set of dirty substates.
-    dirty_substates: Set[str] = set()
+    dirty_substates: set[str] = set()
 
     # The routing path that triggered the state
     router_data: Dict[str, Any] = {}
@@ -3208,7 +3208,7 @@ class StateManagerRedis(StateManager):
     )
 
     # These events indicate that a lock is no longer held
-    _redis_keyspace_lock_release_events: Set[bytes] = {
+    _redis_keyspace_lock_release_events: set[bytes] = {
         b"del",
         b"expire",
         b"expired",

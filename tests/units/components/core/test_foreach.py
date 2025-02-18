@@ -1,4 +1,4 @@
-from typing import Set, Tuple, Union
+from typing import Tuple, Union
 
 import pydantic.v1
 import pytest
@@ -50,7 +50,7 @@ class ForEachState(BaseState):
         "red",
         "yellow",
     )
-    colors_set: Set[str] = {"red", "green"}
+    colors_set: set[str] = {"red", "green"}
     bad_annotation_list: list = [["red", "orange"], ["yellow", "blue"]]
     color_index_tuple: Tuple[int, str] = (0, "red")
 

@@ -1,6 +1,6 @@
 """Test states for mutable vars."""
 
-from typing import Dict, List, Set, Union
+from typing import Dict, List, Union
 
 from sqlalchemy import ARRAY, JSON, String
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
@@ -145,7 +145,7 @@ class CustomVar(rx.Base):
     foo: str = ""
     array: list[str] = []
     hashmap: dict[str, str] = {}
-    test_set: Set[str] = set()
+    test_set: set[str] = set()
     custom: OtherBase = OtherBase()
 
 
@@ -163,7 +163,7 @@ class MutableSQLAModel(MutableSQLABase):
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     strlist: Mapped[list[str]] = mapped_column(ARRAY(String))
     hashmap: Mapped[dict[str, str]] = mapped_column(JSON)
-    test_set: Mapped[Set[str]] = mapped_column(ARRAY(String))
+    test_set: Mapped[set[str]] = mapped_column(ARRAY(String))
 
 
 @serializer
@@ -194,7 +194,7 @@ class MutableTestState(BaseState):
         "another_key": "another_value",
         "third_key": {"key": "value"},
     }
-    test_set: Set[Union[str, int]] = {1, 2, 3, 4, "five"}
+    test_set: set[Union[str, int]] = {1, 2, 3, 4, "five"}
     custom: CustomVar = CustomVar()
     _be_custom: CustomVar = CustomVar()
     sqla_model: MutableSQLAModel = MutableSQLAModel(

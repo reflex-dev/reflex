@@ -27,7 +27,6 @@ from typing import (
     Dict,
     MutableMapping,
     Optional,
-    Set,
     Type,
     Union,
     get_args,
@@ -392,7 +391,7 @@ class App(MiddlewareMixin, LifespanMixin):
     _event_namespace: Optional[EventNamespace] = None
 
     # Background tasks that are currently running.
-    _background_tasks: Set[asyncio.Task] = dataclasses.field(default_factory=set)
+    _background_tasks: set[asyncio.Task] = dataclasses.field(default_factory=set)
 
     # Frontend Error Handler Function
     frontend_exception_handler: Callable[[Exception], None] = (
