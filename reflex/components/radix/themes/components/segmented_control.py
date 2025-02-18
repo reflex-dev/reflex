@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from types import SimpleNamespace
-from typing import Literal, Tuple, Union
+from typing import Literal, Union
 
 from reflex.components.core.breakpoints import Responsive
 from reflex.event import EventHandler
@@ -14,7 +14,7 @@ from ..base import LiteralAccentColor, RadixThemesComponent
 
 def on_value_change(
     value: Var[Union[str, list[str]]],
-) -> Tuple[Var[Union[str, list[str]]]]:
+) -> tuple[Var[Union[str, list[str]]]]:
     """Handle the on_value_change event.
 
     Args:

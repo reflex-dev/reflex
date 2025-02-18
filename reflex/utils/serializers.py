@@ -16,7 +16,6 @@ from typing import (
     Literal,
     Optional,
     Set,
-    Tuple,
     Type,
     TypeVar,
     Union,
@@ -114,7 +113,7 @@ def serializer(
 @overload
 def serialize(
     value: Any, get_type: Literal[True]
-) -> Tuple[Optional[SerializedType], Optional[types.GenericType]]: ...
+) -> tuple[Optional[SerializedType], Optional[types.GenericType]]: ...
 
 
 @overload
@@ -129,7 +128,7 @@ def serialize(
     value: Any, get_type: bool = False
 ) -> Union[
     Optional[SerializedType],
-    Tuple[Optional[SerializedType], Optional[types.GenericType]],
+    tuple[Optional[SerializedType], Optional[types.GenericType]],
 ]:
     """Serialize the value to a JSON string.
 

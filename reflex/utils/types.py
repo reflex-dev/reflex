@@ -805,7 +805,7 @@ StateBases = get_base_class(StateVar)
 StateIterBases = get_base_class(StateIterVar)
 
 
-def safe_issubclass(cls: Type, cls_check: Type | Tuple[Type, ...]):
+def safe_issubclass(cls: Type, cls_check: Type | tuple[Type, ...]):
     """Check if a class is a subclass of another class. Returns False if internal error occurs.
 
     Args:

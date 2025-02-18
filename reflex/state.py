@@ -354,7 +354,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
     class_subclasses: ClassVar[set[Type[BaseState]]] = set()
 
     # Mapping of var name to set of (state_full_name, var_name) that depend on it.
-    _var_dependencies: ClassVar[Dict[str, set[Tuple[str, str]]]] = {}
+    _var_dependencies: ClassVar[Dict[str, set[tuple[str, str]]]] = {}
 
     # Set of vars which always need to be recomputed
     _always_dirty_computed_vars: ClassVar[set[str]] = set()
@@ -2144,7 +2144,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
 
         def _field_tuple(
             field_name: str,
-        ) -> Tuple[str, str, Any, Union[bool, None], Any]:
+        ) -> tuple[str, str, Any, Union[bool, None], Any]:
             model_field = cls.__fields__[field_name]
             return (
                 field_name,

@@ -529,8 +529,12 @@ def _generate_component_create_functiondef(
                 id=f"Union[{', '.join(map(ast.unparse, all_count_args_type))}]"
             )
 
-        if isinstance(annotation, str) and annotation.startswith("Tuple["):
-            inside_of_tuple = annotation.removeprefix("Tuple[").removesuffix("]")
+        if isinstance(annotation, str) and annotation.lower().startswith("tuple["):
+            inside_of_tuple = (
+                annotation.removeprefix("tuple[")
+                .removeprefix("Tuple[")
+                .removesuffix("]")
+            )
 
             if inside_of_tuple == "()":
                 return ast.Name(id="EventType[()]")

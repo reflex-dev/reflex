@@ -9,7 +9,7 @@ import sys
 from collections import namedtuple
 from contextlib import contextmanager
 from pathlib import Path
-from typing import Optional, Tuple
+from typing import Optional
 
 import httpx
 import tomlkit
@@ -927,7 +927,7 @@ def _validate_url_with_protocol_prefix(url: str | None) -> bool:
     return not url or (url.startswith("http://") or url.startswith("https://"))
 
 
-def _get_file_from_prompt_in_loop() -> Tuple[bytes, str] | None:
+def _get_file_from_prompt_in_loop() -> tuple[bytes, str] | None:
     image_file = file_extension = None
     while image_file is None:
         image_filepath = Path(

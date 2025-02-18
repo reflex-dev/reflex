@@ -83,7 +83,7 @@ class Tag:
         """Iterate over the tag's fields.
 
         Yields:
-            Tuple[str, Any]: The field name and value.
+            tuple[str, Any]: The field name and value.
         """
         for field in dataclasses.fields(self):
             rendered_value = render_prop(getattr(self, field.name))

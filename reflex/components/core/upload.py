@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Any, Callable, ClassVar, List, Optional, Tuple
+from typing import Any, Callable, ClassVar, List, Optional
 
 from reflex.components.base.fragment import Fragment
 from reflex.components.component import (
@@ -161,7 +161,7 @@ def get_upload_url(file_path: str | Var[str]) -> Var[str]:
     return Var.create(f"{uploaded_files_url_prefix}/{file_path}")
 
 
-def _on_drop_spec(files: Var) -> Tuple[Var[Any]]:
+def _on_drop_spec(files: Var) -> tuple[Var[Any]]:
     """Args spec for the on_drop event trigger.
 
     Args:

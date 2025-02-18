@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from enum import Enum
-from typing import Any, Dict, Literal, Optional, Tuple, TypedDict, Union
+from typing import Any, Dict, Literal, Optional, TypedDict, Union
 
 from reflex.base import Base
 from reflex.components.component import Component, NoSSRComponent
@@ -260,20 +260,20 @@ class DataEditor(NoSSRComponent):
     theme: Var[Union[DataEditorTheme, Dict]]
 
     # Fired when a cell is activated.
-    on_cell_activated: EventHandler[passthrough_event_spec(Tuple[int, int])]
+    on_cell_activated: EventHandler[passthrough_event_spec(tuple[int, int])]
 
     # Fired when a cell is clicked.
-    on_cell_clicked: EventHandler[passthrough_event_spec(Tuple[int, int])]
+    on_cell_clicked: EventHandler[passthrough_event_spec(tuple[int, int])]
 
     # Fired when a cell is right-clicked.
-    on_cell_context_menu: EventHandler[passthrough_event_spec(Tuple[int, int])]
+    on_cell_context_menu: EventHandler[passthrough_event_spec(tuple[int, int])]
 
     # Fired when a cell is edited.
-    on_cell_edited: EventHandler[passthrough_event_spec(Tuple[int, int], GridCell)]
+    on_cell_edited: EventHandler[passthrough_event_spec(tuple[int, int], GridCell)]
 
     # Fired when a group header is clicked.
     on_group_header_clicked: EventHandler[
-        passthrough_event_spec(Tuple[int, int], GridCell)
+        passthrough_event_spec(tuple[int, int], GridCell)
     ]
 
     # Fired when a group header is right-clicked.
@@ -285,16 +285,16 @@ class DataEditor(NoSSRComponent):
     on_group_header_renamed: EventHandler[passthrough_event_spec(str, str)]
 
     # Fired when a header is clicked.
-    on_header_clicked: EventHandler[passthrough_event_spec(Tuple[int, int])]
+    on_header_clicked: EventHandler[passthrough_event_spec(tuple[int, int])]
 
     # Fired when a header is right-clicked.
-    on_header_context_menu: EventHandler[passthrough_event_spec(Tuple[int, int])]
+    on_header_context_menu: EventHandler[passthrough_event_spec(tuple[int, int])]
 
     # Fired when a header menu item is clicked.
     on_header_menu_click: EventHandler[passthrough_event_spec(int, Rectangle)]
 
     # Fired when an item is hovered.
-    on_item_hovered: EventHandler[passthrough_event_spec(Tuple[int, int])]
+    on_item_hovered: EventHandler[passthrough_event_spec(tuple[int, int])]
 
     # Fired when a selection is deleted.
     on_delete: EventHandler[passthrough_event_spec(GridSelection)]

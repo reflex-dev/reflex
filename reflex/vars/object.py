@@ -5,17 +5,7 @@ from __future__ import annotations
 import dataclasses
 import typing
 from inspect import isclass
-from typing import (
-    Any,
-    Mapping,
-    NoReturn,
-    Tuple,
-    Type,
-    TypeVar,
-    Union,
-    get_args,
-    overload,
-)
+from typing import Any, Mapping, NoReturn, Type, TypeVar, Union, get_args, overload
 
 from typing_extensions import is_typeddict
 
@@ -109,7 +99,7 @@ class ObjectVar(Var[OBJECT_TYPE], python_types=Mapping):
     @overload
     def entries(
         self: ObjectVar[Mapping[Any, VALUE_TYPE]],
-    ) -> ArrayVar[list[Tuple[str, VALUE_TYPE]]]: ...
+    ) -> ArrayVar[list[tuple[str, VALUE_TYPE]]]: ...
 
     @overload
     def entries(self) -> ArrayVar: ...
@@ -458,7 +448,7 @@ def object_entries_operation(value: ObjectVar):
     """
     return var_operation_return(
         js_expression=f"Object.entries({value})",
-        var_type=list[Tuple[str, value._value_type()]],
+        var_type=list[tuple[str, value._value_type()]],
     )
 
 

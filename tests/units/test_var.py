@@ -1,7 +1,7 @@
 import json
 import math
 import typing
-from typing import List, Mapping, Optional, Tuple, Union, cast
+from typing import List, Mapping, Optional, Union, cast
 
 import pytest
 from pandas import DataFrame
@@ -483,7 +483,7 @@ def test_dict_contains(var, expected):
     "var",
     [
         Var(_js_expr="list", _var_type=list[int]).guess_type(),
-        Var(_js_expr="tuple", _var_type=Tuple[int, int]).guess_type(),
+        Var(_js_expr="tuple", _var_type=tuple[int, int]).guess_type(),
         Var(_js_expr="str", _var_type=str).guess_type(),
     ],
 )
@@ -506,7 +506,7 @@ def test_var_indexing_lists(var):
     [
         (Var(_js_expr="list", _var_type=list[int]).guess_type(), [int, int]),
         (
-            Var(_js_expr="tuple", _var_type=Tuple[int, str]).guess_type(),
+            Var(_js_expr="tuple", _var_type=tuple[int, str]).guess_type(),
             [int, str],
         ),
     ],
@@ -611,18 +611,18 @@ def test_computed_var_replace_with_invalid_kwargs():
             Var(_js_expr="lst", _var_type=str).guess_type(),
             Var(_js_expr="float_var", _var_type=float).guess_type(),
         ),
-        (Var(_js_expr="str", _var_type=Tuple[str]).guess_type(), [1, 2]),
+        (Var(_js_expr="str", _var_type=tuple[str]).guess_type(), [1, 2]),
         (
-            Var(_js_expr="lst", _var_type=Tuple[str]).guess_type(),
+            Var(_js_expr="lst", _var_type=tuple[str]).guess_type(),
             {"name": "dict"},
         ),
-        (Var(_js_expr="lst", _var_type=Tuple[str]).guess_type(), {"set"}),
+        (Var(_js_expr="lst", _var_type=tuple[str]).guess_type(), {"set"}),
         (
-            Var(_js_expr="lst", _var_type=Tuple[str]).guess_type(),
+            Var(_js_expr="lst", _var_type=tuple[str]).guess_type(),
             Var(_js_expr="string_var", _var_type=str).guess_type(),
         ),
         (
-            Var(_js_expr="lst", _var_type=Tuple[str]).guess_type(),
+            Var(_js_expr="lst", _var_type=tuple[str]).guess_type(),
             Var(_js_expr="float_var", _var_type=float).guess_type(),
         ),
     ],
@@ -642,7 +642,7 @@ def test_var_unsupported_indexing_lists(var, index):
     "var",
     [
         Var(_js_expr="lst", _var_type=list[int]).guess_type(),
-        Var(_js_expr="tuple", _var_type=Tuple[int, int]).guess_type(),
+        Var(_js_expr="tuple", _var_type=tuple[int, int]).guess_type(),
     ],
 )
 def test_var_list_slicing(var):

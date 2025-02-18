@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any, Literal, Tuple, Type
+from typing import Any, Literal, Type
 
 from reflex import constants
 from reflex.components.core.breakpoints import Breakpoints, breakpoints_values
@@ -226,7 +226,7 @@ def convert(
     return out, var_data
 
 
-def format_style_key(key: str) -> Tuple[str, ...]:
+def format_style_key(key: str) -> tuple[str, ...]:
     """Convert style keys to camel case and convert shorthand
     styles names to their corresponding css names.
 

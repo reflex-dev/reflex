@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any, Literal, Tuple, Union
+from typing import Any, Literal, Union
 
 from reflex.components.component import Component, ComponentNamespace
 from reflex.components.core.colors import color
@@ -72,7 +72,7 @@ class AccordionComponent(RadixPrimitiveComponent):
         return ["color_scheme", "variant"]
 
 
-def on_value_change(value: Var[str | list[str]]) -> Tuple[Var[str | list[str]]]:
+def on_value_change(value: Var[str | list[str]]) -> tuple[Var[str | list[str]]]:
     """Handle the on_value_change event.
 
     Args:

@@ -100,11 +100,11 @@ class VarSubclassEntry:
 
     var_subclass: Type[Var]
     to_var_subclass: Type[ToOperation]
-    python_types: Tuple[GenericType, ...]
+    python_types: tuple[GenericType, ...]
 
 
 _var_subclasses: list[VarSubclassEntry] = []
-_var_literal_subclasses: list[Tuple[Type[LiteralVar], VarSubclassEntry]] = []
+_var_literal_subclasses: list[tuple[Type[LiteralVar], VarSubclassEntry]] = []
 
 
 @dataclasses.dataclass(
@@ -124,10 +124,10 @@ class VarData:
     imports: ImmutableParsedImportDict = dataclasses.field(default_factory=tuple)
 
     # Hooks that need to be present in the component to render this var
-    hooks: Tuple[str, ...] = dataclasses.field(default_factory=tuple)
+    hooks: tuple[str, ...] = dataclasses.field(default_factory=tuple)
 
     # Dependencies of the var
-    deps: Tuple[Var, ...] = dataclasses.field(default_factory=tuple)
+    deps: tuple[Var, ...] = dataclasses.field(default_factory=tuple)
 
     # Position of the hook in the component
     position: Hooks.HookPosition | None = None
@@ -429,7 +429,7 @@ class Var(Generic[VAR_TYPE]):
 
     def __init_subclass__(
         cls,
-        python_types: Tuple[GenericType, ...] | GenericType = types.Unset(),
+        python_types: tuple[GenericType, ...] | GenericType = types.Unset(),
         default_type: GenericType = types.Unset(),
         **kwargs,
     ):
@@ -1680,7 +1680,7 @@ def figure_out_type(value: Any) -> types.GenericType:
     if isinstance(value, set):
         return set[unionize(*(figure_out_type(v) for v in value))]
     if isinstance(value, tuple):
-        return Tuple[unionize(*(figure_out_type(v) for v in value)), ...]
+        return tuple[unionize(*(figure_out_type(v) for v in value)), ...]
     if isinstance(value, Mapping):
         return Mapping[
             unionize(*(figure_out_type(k) for k in value)),
@@ -2720,7 +2720,7 @@ class CustomVarOperation(CachedVarOperation, Var[T]):
 
     _name: str = dataclasses.field(default="")
 
-    _args: Tuple[Tuple[str, Var], ...] = dataclasses.field(default_factory=tuple)
+    _args: tuple[tuple[str, Var], ...] = dataclasses.field(default_factory=tuple)
 
     _return: CustomVarOperationReturn[T] = dataclasses.field(
         default_factory=lambda: CustomVarOperationReturn.create("")
@@ -2752,7 +2752,7 @@ class CustomVarOperation(CachedVarOperation, Var[T]):
     def create(
         cls,
         name: str,
-        args: Tuple[Tuple[str, Var], ...],
+        args: tuple[tuple[str, Var], ...],
         return_var: CustomVarOperationReturn[T],
         _var_data: VarData | None = None,
     ) -> CustomVarOperation[T]:
@@ -3269,7 +3269,7 @@ class Field(Generic[FIELD_TYPE]):
 
     @overload
     def __get__(
-        self: Field[list[V]] | Field[set[V]] | Field[Tuple[V, ...]],
+        self: Field[list[V]] | Field[set[V]] | Field[tuple[V, ...]],
         instance: None,
         owner: Any,
     ) -> ArrayVar[list[V]]: ...

@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from hashlib import md5
-from typing import Any, Iterator, Literal, Tuple, Union
+from typing import Any, Iterator, Literal, Union
 
 from jinja2 import Environment
 
@@ -104,7 +104,7 @@ class Fieldset(Element):
     name: Var[str]
 
 
-def on_submit_event_spec() -> Tuple[Var[dict[str, Any]]]:
+def on_submit_event_spec() -> tuple[Var[dict[str, Any]]]:
     """Event handler spec for the on_submit event.
 
     Returns:
@@ -113,7 +113,7 @@ def on_submit_event_spec() -> Tuple[Var[dict[str, Any]]]:
     return (FORM_DATA,)
 
 
-def on_submit_string_event_spec() -> Tuple[Var[dict[str, str]]]:
+def on_submit_string_event_spec() -> tuple[Var[dict[str, str]]]:
     """Event handler spec for the on_submit event.
 
     Returns:

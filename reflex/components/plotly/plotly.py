@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any, Dict, Tuple, TypedDict, TypeVar, Union
+from typing import Any, Dict, TypedDict, TypeVar, Union
 
 from reflex.components.component import Component, NoSSRComponent
 from reflex.components.core.cond import color_mode_cond
@@ -21,7 +21,7 @@ except ImportError:
     Template = Any
 
 
-def _event_points_data_signature(e0: Var) -> Tuple[Var[list[Point]]]:
+def _event_points_data_signature(e0: Var) -> tuple[Var[list[Point]]]:
     """For plotly events with event data containing a point array.
 
     Args:

@@ -9,7 +9,7 @@ import unittest.mock
 import uuid
 from contextlib import nullcontext as does_not_raise
 from pathlib import Path
-from typing import Generator, Tuple, Type
+from typing import Generator, Type
 from unittest.mock import AsyncMock
 
 import pytest
@@ -570,7 +570,7 @@ async def test_dynamic_var_event(test_state: Type[ATestState], token: str):
     ],
 )
 async def test_list_mutation_detection__plain_list(
-    event_tuples: list[Tuple[str, list[str]]],
+    event_tuples: list[tuple[str, list[str]]],
     list_mutation_state: State,
     token: str,
 ):
@@ -695,7 +695,7 @@ async def test_list_mutation_detection__plain_list(
     ],
 )
 async def test_dict_mutation_detection__plain_list(
-    event_tuples: list[Tuple[str, list[str]]],
+    event_tuples: list[tuple[str, list[str]]],
     dict_mutation_state: State,
     token: str,
 ):

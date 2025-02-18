@@ -1,7 +1,7 @@
 """rx.match."""
 
 import textwrap
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional, Union
 
 from reflex.components.base import Fragment
 from reflex.components.component import BaseComponent, Component, MemoizationLeaf
@@ -77,7 +77,7 @@ class Match(MemoizationLeaf):
     @classmethod
     def _process_cases(
         cls, cases: List
-    ) -> Tuple[List, Optional[Union[Var, BaseComponent]]]:
+    ) -> tuple[List, Optional[Union[Var, BaseComponent]]]:
         """Process the list of match cases and the catchall default case.
 
         Args:

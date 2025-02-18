@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Tuple, Union
+from typing import Union
 
 from reflex.components.base.fragment import Fragment
 from reflex.components.tags.tag import Tag
@@ -21,7 +21,7 @@ class Clipboard(Fragment):
     targets: Var[list[str]]
 
     # Called when the user pastes data into the document. Data is a list of tuples of (mime_type, data). Binary types will be base64 encoded as a data uri.
-    on_paste: EventHandler[passthrough_event_spec(list[Tuple[str, str]])]
+    on_paste: EventHandler[passthrough_event_spec(list[tuple[str, str]])]
 
     # Save the original event actions for the on_paste event.
     on_paste_event_actions: Var[dict[str, Union[bool, int]]]

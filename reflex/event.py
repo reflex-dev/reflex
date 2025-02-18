@@ -18,7 +18,6 @@ from typing import (
     Optional,
     Protocol,
     Sequence,
-    Tuple,
     Type,
     TypedDict,
     TypeVar,
@@ -260,14 +259,14 @@ class EventSpec(EventActionsMixin):
     client_handler_name: str = dataclasses.field(default="")
 
     # The arguments to pass to the function.
-    args: Tuple[Tuple[Var, Var], ...] = dataclasses.field(default_factory=tuple)
+    args: tuple[tuple[Var, Var], ...] = dataclasses.field(default_factory=tuple)
 
     def __init__(
         self,
         handler: EventHandler,
         event_actions: dict[str, Union[bool, int]] | None = None,
         client_handler_name: str = "",
-        args: Tuple[Tuple[Var, Var], ...] = (),
+        args: tuple[tuple[Var, Var], ...] = (),
     ):
         """Initialize an EventSpec.
 
@@ -284,7 +283,7 @@ class EventSpec(EventActionsMixin):
         object.__setattr__(self, "client_handler_name", client_handler_name)
         object.__setattr__(self, "args", args or ())
 
-    def with_args(self, args: Tuple[Tuple[Var, Var], ...]) -> EventSpec:
+    def with_args(self, args: tuple[tuple[Var, Var], ...]) -> EventSpec:
         """Copy the event spec, with updated args.
 
         Args:
@@ -531,7 +530,7 @@ class JavasciptKeyboardEvent:
     shiftKey: bool = False  # noqa: N815
 
 
-def input_event(e: ObjectVar[JavascriptInputEvent]) -> Tuple[Var[str]]:
+def input_event(e: ObjectVar[JavascriptInputEvent]) -> tuple[Var[str]]:
     """Get the value from an input event.
 
     Args:
@@ -554,7 +553,7 @@ class KeyInputInfo(TypedDict):
 
 def key_event(
     e: ObjectVar[JavasciptKeyboardEvent],
-) -> Tuple[Var[str], Var[KeyInputInfo]]:
+) -> tuple[Var[str], Var[KeyInputInfo]]:
     """Get the key from a keyboard event.
 
     Args:
@@ -576,7 +575,7 @@ def key_event(
     )
 
 
-def no_args_event_spec() -> Tuple[()]:
+def no_args_event_spec() -> tuple[()]:
     """Empty event handler.
 
     Returns:
@@ -597,7 +596,7 @@ U = TypeVar("U")
 class IdentityEventReturn(Generic[T], Protocol):
     """Protocol for an identity event return."""
 
-    def __call__(self, *values: Var[T]) -> Tuple[Var[T], ...]:
+    def __call__(self, *values: Var[T]) -> tuple[Var[T], ...]:
         """Return the input values.
 
         Args:
@@ -612,13 +611,13 @@ class IdentityEventReturn(Generic[T], Protocol):
 @overload
 def passthrough_event_spec(  # pyright: ignore [reportOverlappingOverload]
     event_type: Type[T], /
-) -> Callable[[Var[T]], Tuple[Var[T]]]: ...
+) -> Callable[[Var[T]], tuple[Var[T]]]: ...
 
 
 @overload
 def passthrough_event_spec(
     event_type_1: Type[T], event_type2: Type[U], /
-) -> Callable[[Var[T], Var[U]], Tuple[Var[T], Var[U]]]: ...
+) -> Callable[[Var[T], Var[U]], tuple[Var[T], Var[U]]]: ...
 
 
 @overload
@@ -635,11 +634,11 @@ def passthrough_event_spec(*event_types: Type[T]) -> IdentityEventReturn[T]:  # 
         A function that returns the input event as output.
     """
 
-    def inner(*values: Var[T]) -> Tuple[Var[T], ...]:
+    def inner(*values: Var[T]) -> tuple[Var[T], ...]:
         return values
 
     inner_type = tuple(Var[event_type] for event_type in event_types)
-    return_annotation = Tuple[inner_type]
+    return_annotation = tuple[inner_type]
 
     inner.__signature__ = inspect.signature(inner).replace(  # pyright: ignore [reportFunctionMemberAccess]
         parameters=[

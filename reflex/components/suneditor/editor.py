@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import enum
-from typing import Any, Dict, Literal, Optional, Tuple, Union
+from typing import Any, Dict, Literal, Optional, Union
 
 from reflex.base import Base
 from reflex.components.component import Component, NoSSRComponent
@@ -68,7 +68,7 @@ class EditorOptions(Base):
     button_list: Optional[list[Union[list[str], str]]]
 
 
-def on_blur_spec(e: Var, content: Var[str]) -> Tuple[Var[str]]:
+def on_blur_spec(e: Var, content: Var[str]) -> tuple[Var[str]]:
     """A helper function to specify the on_blur event handler.
 
     Args:
@@ -83,7 +83,7 @@ def on_blur_spec(e: Var, content: Var[str]) -> Tuple[Var[str]]:
 
 def on_paste_spec(
     e: Var, clean_data: Var[str], max_char_count: Var[bool]
-) -> Tuple[Var[str], Var[bool]]:
+) -> tuple[Var[str], Var[bool]]:
     """A helper function to specify the on_paste event handler.
 
     Args:

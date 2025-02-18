@@ -13,7 +13,6 @@ from typing import (
     ParamSpec,
     Protocol,
     Sequence,
-    Tuple,
     Type,
     TypeVar,
     Union,
@@ -244,7 +243,7 @@ class VarOperationCall(Generic[P, R], CachedVarOperation, Var[R]):
     """Base class for immutable vars that are the result of a function call."""
 
     _func: Optional[FunctionVar[ReflexCallable[P, R]]] = dataclasses.field(default=None)
-    _args: Tuple[Union[Var, Any], ...] = dataclasses.field(default_factory=tuple)
+    _args: tuple[Union[Var, Any], ...] = dataclasses.field(default_factory=tuple)
 
     @cached_property_no_lock
     def _cached_var_name(self) -> str:
@@ -306,7 +305,7 @@ class VarOperationCall(Generic[P, R], CachedVarOperation, Var[R]):
 class DestructuredArg:
     """Class for destructured arguments."""
 
-    fields: Tuple[str, ...] = ()
+    fields: tuple[str, ...] = ()
     rest: Optional[str] = None
 
     def to_javascript(self) -> str:
@@ -328,7 +327,7 @@ class DestructuredArg:
 class FunctionArgs:
     """Class for function arguments."""
 
-    args: Tuple[Union[str, DestructuredArg], ...] = ()
+    args: tuple[Union[str, DestructuredArg], ...] = ()
     rest: Optional[str] = None
 
 

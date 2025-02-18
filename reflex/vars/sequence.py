@@ -13,7 +13,6 @@ from typing import (
     Literal,
     NoReturn,
     Sequence,
-    Tuple,
     Type,
     TypeVar,
     Union,
@@ -799,7 +798,7 @@ class LiteralStringVar(LiteralVar, StringVar[str]):
 class ConcatVarOperation(CachedVarOperation, StringVar[str]):
     """Representing a concatenation of literal string vars."""
 
-    _var_value: Tuple[Var, ...] = dataclasses.field(default_factory=tuple)
+    _var_value: tuple[Var, ...] = dataclasses.field(default_factory=tuple)
 
     @cached_property_no_lock
     def _cached_var_name(self) -> str:
@@ -957,41 +956,41 @@ class ArrayVar(Var[ARRAY_VAR_TYPE], python_types=(list, tuple, set)):
     @overload
     def __getitem__(
         self: (
-            ArrayVar[Tuple[int, OTHER_TUPLE]]
-            | ArrayVar[Tuple[float, OTHER_TUPLE]]
-            | ArrayVar[Tuple[int | float, OTHER_TUPLE]]
+            ArrayVar[tuple[int, OTHER_TUPLE]]
+            | ArrayVar[tuple[float, OTHER_TUPLE]]
+            | ArrayVar[tuple[int | float, OTHER_TUPLE]]
         ),
         i: Literal[0, -2],
     ) -> NumberVar: ...
 
     @overload
     def __getitem__(
-        self: ArrayVar[Tuple[Any, bool]], i: Literal[1, -1]
+        self: ArrayVar[tuple[Any, bool]], i: Literal[1, -1]
     ) -> BooleanVar: ...
 
     @overload
     def __getitem__(
         self: (
-            ArrayVar[Tuple[Any, int]]
-            | ArrayVar[Tuple[Any, float]]
-            | ArrayVar[Tuple[Any, int | float]]
+            ArrayVar[tuple[Any, int]]
+            | ArrayVar[tuple[Any, float]]
+            | ArrayVar[tuple[Any, int | float]]
         ),
         i: Literal[1, -1],
     ) -> NumberVar: ...
 
     @overload
     def __getitem__(
-        self: ArrayVar[Tuple[str, Any]], i: Literal[0, -2]
+        self: ArrayVar[tuple[str, Any]], i: Literal[0, -2]
     ) -> StringVar: ...
 
     @overload
     def __getitem__(
-        self: ArrayVar[Tuple[Any, str]], i: Literal[1, -1]
+        self: ArrayVar[tuple[Any, str]], i: Literal[1, -1]
     ) -> StringVar: ...
 
     @overload
     def __getitem__(
-        self: ArrayVar[Tuple[bool, Any]], i: Literal[0, -2]
+        self: ArrayVar[tuple[bool, Any]], i: Literal[0, -2]
     ) -> BooleanVar: ...
 
     @overload
@@ -1022,15 +1021,15 @@ class ArrayVar(Var[ARRAY_VAR_TYPE], python_types=(list, tuple, set)):
 
     @overload
     def __getitem__(
-        self: ARRAY_VAR_OF_LIST_ELEMENT[Tuple[KEY_TYPE, VALUE_TYPE]],
+        self: ARRAY_VAR_OF_LIST_ELEMENT[tuple[KEY_TYPE, VALUE_TYPE]],
         i: int | NumberVar,
-    ) -> ArrayVar[Tuple[KEY_TYPE, VALUE_TYPE]]: ...
+    ) -> ArrayVar[tuple[KEY_TYPE, VALUE_TYPE]]: ...
 
     @overload
     def __getitem__(
-        self: ARRAY_VAR_OF_LIST_ELEMENT[Tuple[INNER_ARRAY_VAR, ...]],
+        self: ARRAY_VAR_OF_LIST_ELEMENT[tuple[INNER_ARRAY_VAR, ...]],
         i: int | NumberVar,
-    ) -> ArrayVar[Tuple[INNER_ARRAY_VAR, ...]]: ...
+    ) -> ArrayVar[tuple[INNER_ARRAY_VAR, ...]]: ...
 
     @overload
     def __getitem__(

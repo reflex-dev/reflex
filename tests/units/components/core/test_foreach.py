@@ -1,4 +1,4 @@
-from typing import Tuple, Union
+from typing import Union
 
 import pydantic.v1
 import pytest
@@ -46,13 +46,13 @@ class ForEachState(BaseState):
     nested_colors_with_shades: dict[str, dict[str, list[dict[str, str]]]] = {
         "primary": {"red": [{"shade": "dark"}]}
     }
-    color_tuple: Tuple[str, str] = (
+    color_tuple: tuple[str, str] = (
         "red",
         "yellow",
     )
     colors_set: set[str] = {"red", "green"}
     bad_annotation_list: list = [["red", "orange"], ["yellow", "blue"]]
-    color_index_tuple: Tuple[int, str] = (0, "red")
+    color_index_tuple: tuple[int, str] = (0, "red")
 
     default_factory_list: list[ForEachTag] = pydantic.v1.Field(default_factory=list)
 
@@ -92,17 +92,17 @@ def display_shade(color):
 
 
 def display_primary_colors(color):
-    assert color._var_type == Tuple[str, str]
+    assert color._var_type == tuple[str, str]
     return box(text(color[0]), text(color[1]))
 
 
 def display_color_with_shades(color):
-    assert color._var_type == Tuple[str, list[str]]
+    assert color._var_type == tuple[str, list[str]]
     return box(text(color[0]), text(color[1][0]))
 
 
 def display_nested_color_with_shades(color):
-    assert color._var_type == Tuple[str, dict[str, list[dict[str, str]]]]
+    assert color._var_type == tuple[str, dict[str, list[dict[str, str]]]]
     return box(text(color[0]), text(color[1]["red"][0]["shade"]))
 
 
@@ -111,7 +111,7 @@ def show_shade(item):
 
 
 def display_nested_color_with_shades_v2(color):
-    assert color._var_type == Tuple[str, dict[str, list[dict[str, str]]]]
+    assert color._var_type == tuple[str, dict[str, list[dict[str, str]]]]
     return box(text(foreach(color[1], show_shade)))
 
 

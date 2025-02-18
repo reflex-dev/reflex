@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from datetime import datetime
 from pathlib import Path
-from typing import TYPE_CHECKING, Iterable, Optional, Sequence, Tuple, Type, Union
+from typing import TYPE_CHECKING, Iterable, Optional, Sequence, Type, Union
 
 from reflex import constants
 from reflex.compiler import templates, utils
@@ -594,7 +594,7 @@ def compile_unevaluated_page(
     state: Type[BaseState] | None = None,
     style: ComponentStyle | None = None,
     theme: Component | None = None,
-) -> Tuple[Component, bool]:
+) -> tuple[Component, bool]:
     """Compiles an uncompiled page into a component and adds meta information.
 
     Args:
