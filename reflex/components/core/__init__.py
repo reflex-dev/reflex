@@ -48,6 +48,7 @@ _SUBMOD_ATTRS: dict[str, list[str]] = {
         "get_upload_url",
         "selected_files",
     ],
+    "auto_scroll": ["auto_scroll"],
 }
 
 __getattr__, __dir__, __all__ = lazy_loader.attach(
