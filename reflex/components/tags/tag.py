@@ -101,7 +101,7 @@ class Tag:
         """
         self.props.update(
             {
-                format.to_camel_case(name, allow_hyphens=True): (
+                format.to_camel_case(name, treat_hyphens_as_underscores=False): (
                     prop
                     if types._isinstance(prop, (EventChain, Mapping))
                     else LiteralVar.create(prop)

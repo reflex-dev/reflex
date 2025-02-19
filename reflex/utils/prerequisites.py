@@ -99,6 +99,15 @@ def get_states_dir() -> Path:
     return environment.REFLEX_STATES_WORKDIR.get()
 
 
+def get_backend_dir() -> Path:
+    """Get the working directory for the backend.
+
+    Returns:
+        The working directory.
+    """
+    return get_web_dir() / constants.Dirs.BACKEND
+
+
 def check_latest_package_version(package_name: str):
     """Check if the latest version of the package is installed.
 
@@ -2001,6 +2010,22 @@ def is_generation_hash(template: str) -> bool:
     return re.match(r"^[0-9a-f]{32,}$", template) is not None
 
 
+def get_user_tier():
+    """Get the current user's tier.
+
+    Returns:
+        The current user's tier.
+    """
+    from reflex_cli.v2.utils import hosting
+
+    authenticated_token = hosting.authenticated_token()
+    return (
+        authenticated_token[1].get("tier", "").lower()
+        if authenticated_token[0]
+        else "anonymous"
+    )
+
+
 def check_config_option_in_tier(
     option_name: str,
     allowed_tiers: list[str],
@@ -2015,23 +2040,21 @@ def check_config_option_in_tier(
         fallback_value: The fallback value if the option is not allowed.
         help_link: The help link to show to a user that is authenticated.
     """
-    from reflex_cli.v2.utils import hosting
-
     config = get_config()
-    authenticated_token = hosting.authenticated_token()
-    if not authenticated_token[0]:
+    current_tier = get_user_tier()
+
+    if current_tier == "anonymous":
         the_remedy = (
             "You are currently logged out. Run `reflex login` to access this option."
         )
-        current_tier = "anonymous"
     else:
-        current_tier = authenticated_token[1].get("tier", "").lower()
         the_remedy = (
             f"Your current subscription tier is `{current_tier}`. "
             f"Please upgrade to {allowed_tiers} to access this option. "
         )
         if help_link:
             the_remedy += f"See {help_link} for more information."
+
     if current_tier not in allowed_tiers:
         console.warn(f"Config option `{option_name}` is restricted. {the_remedy}")
         setattr(config, option_name, fallback_value)

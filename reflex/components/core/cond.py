@@ -61,14 +61,6 @@ class Cond(MemoizationLeaf):
             )
         )
 
-    def _get_props_imports(self):
-        """Get the imports needed for component's props.
-
-        Returns:
-            The imports for the component's props of the component.
-        """
-        return []
-
     def _render(self) -> Tag:
         return CondTag(
             cond=self.cond,
