@@ -584,3 +584,12 @@ def is_prod_mode() -> bool:
     """
     current_mode = environment.REFLEX_ENV_MODE.get()
     return current_mode == constants.Env.PROD
+
+
+def get_compile_context() -> constants.CompileContext:
+    """Check if the app is compiled for deploy.
+
+    Returns:
+        Whether the app is being compiled for deploy.
+    """
+    return environment.REFLEX_COMPILE_CONTEXT.get()
