@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing_extensions import TypedDict
+from typing import TypedDict
 
 from reflex.components.component import NoSSRComponent
 from reflex.event import EventHandler, no_args_event_spec, passthrough_event_spec

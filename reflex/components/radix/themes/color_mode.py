@@ -144,7 +144,7 @@ class ColorModeIconButton(IconButton):
 
         if allow_system:
 
-            def color_mode_item(_color_mode: str):
+            def color_mode_item(_color_mode: Literal["light", "dark", "system"]):
                 return dropdown_menu.item(
                     _color_mode.title(), on_click=set_color_mode(_color_mode)
                 )

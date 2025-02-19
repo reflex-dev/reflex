@@ -11,17 +11,17 @@ import functools
 import inspect
 import io
 import json
-import multiprocessing
-import platform
 import sys
 import traceback
 from datetime import datetime
 from pathlib import Path
+from timeit import default_timer as timer
 from types import SimpleNamespace
 from typing import (
     TYPE_CHECKING,
     Any,
     AsyncIterator,
+    BinaryIO,
     Callable,
     Coroutine,
     Dict,
@@ -35,12 +35,15 @@ from typing import (
     get_type_hints,
 )
 
-from fastapi import FastAPI, HTTPException, Request, UploadFile
+from fastapi import FastAPI, HTTPException, Request
+from fastapi import UploadFile as FastAPIUploadFile
 from fastapi.middleware import cors
 from fastapi.responses import JSONResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from rich.progress import MofNCompleteColumn, Progress, TimeElapsedColumn
 from socketio import ASGIApp, AsyncNamespace, AsyncServer
+from starlette.datastructures import Headers
+from starlette.datastructures import UploadFile as StarletteUploadFile
 from starlette_admin.contrib.sqla.admin import Admin
 from starlette_admin.contrib.sqla.view import ModelView
 
@@ -72,7 +75,7 @@ from reflex.components.core.client_side_routing import (
 from reflex.components.core.sticky import sticky
 from reflex.components.core.upload import Upload, get_upload_dir
 from reflex.components.radix import themes
-from reflex.config import environment, get_config
+from reflex.config import ExecutorType, environment, get_config
 from reflex.event import (
     _EVENT_FIELDS,
     Event,
@@ -108,7 +111,7 @@ from reflex.utils import (
     prerequisites,
     types,
 )
-from reflex.utils.exec import is_prod_mode, is_testing_env
+from reflex.utils.exec import get_compile_context, is_prod_mode, is_testing_env
 from reflex.utils.imports import ImportVar
 
 if TYPE_CHECKING:
@@ -198,14 +201,17 @@ def default_overlay_component() -> Component:
     Returns:
         The default overlay_component, which is a connection_modal.
     """
-    config = get_config()
     from reflex.components.component import memo
 
     def default_overlay_components():
         return Fragment.create(
             connection_pulser(),
             connection_toaster(),
-            *([backend_disabled()] if config.is_reflex_cloud else []),
+            *(
+                [backend_disabled()]
+                if get_compile_context() == constants.CompileContext.DEPLOY
+                else []
+            ),
             *codespaces.codespaces_auto_redirect(),
         )
 
@@ -229,6 +235,53 @@ class OverlayFragment(Fragment):
     """Alias for Fragment, used to wrap the overlay_component."""
 
     pass
+
+
+@dataclasses.dataclass(frozen=True)
+class UploadFile(StarletteUploadFile):
+    """A file uploaded to the server.
+
+    Args:
+        file: The standard Python file object (non-async).
+        filename: The original file name.
+        size: The size of the file in bytes.
+        headers: The headers of the request.
+    """
+
+    file: BinaryIO
+
+    path: Optional[Path] = dataclasses.field(default=None)
+
+    _deprecated_filename: Optional[str] = dataclasses.field(default=None)
+
+    size: Optional[int] = dataclasses.field(default=None)
+
+    headers: Headers = dataclasses.field(default_factory=Headers)
+
+    @property
+    def name(self) -> Optional[str]:
+        """Get the name of the uploaded file.
+
+        Returns:
+            The name of the uploaded file.
+        """
+        if self.path:
+            return self.path.name
+
+    @property
+    def filename(self) -> Optional[str]:
+        """Get the filename of the uploaded file.
+
+        Returns:
+            The filename of the uploaded file.
+        """
+        console.deprecate(
+            feature_name="UploadFile.filename",
+            reason="Use UploadFile.name instead.",
+            deprecation_version="0.7.1",
+            removal_version="0.8.0",
+        )
+        return self._deprecated_filename
 
 
 @dataclasses.dataclass(
@@ -591,7 +644,9 @@ class App(MiddlewareMixin, LifespanMixin):
         Returns:
             The generated component.
         """
-        return component if isinstance(component, Component) else component()
+        from reflex.compiler.compiler import into_component
+
+        return into_component(component)
 
     def add_page(
         self,
@@ -1061,23 +1116,46 @@ class App(MiddlewareMixin, LifespanMixin):
             app_wrappers[(1, "ToasterProvider")] = toast_provider
 
         with console.timing("Evaluate Pages (Frontend)"):
+            performance_metrics: list[tuple[str, float]] = []
             for route in self._unevaluated_pages:
                 console.debug(f"Evaluating page: {route}")
+                start = timer()
                 self._compile_page(route, save_page=should_compile)
+                end = timer()
+                performance_metrics.append((route, end - start))
                 progress.advance(task)
+            console.debug(
+                "Slowest pages:\n"
+                + "\n".join(
+                    f"{route}: {time * 1000:.1f}ms"
+                    for route, time in sorted(
+                        performance_metrics, key=lambda x: x[1], reverse=True
+                    )[:10]
+                )
+            )
 
         # Add the optional endpoints (_upload)
         self._add_optional_endpoints()
 
         self._validate_var_dependencies()
         self._setup_overlay_component()
+
+        if config.show_built_with_reflex is None:
+            if (
+                get_compile_context() == constants.CompileContext.DEPLOY
+                and prerequisites.get_user_tier() in ["pro", "team", "enterprise"]
+            ):
+                config.show_built_with_reflex = False
+            else:
+                config.show_built_with_reflex = True
+
         if is_prod_mode() and config.show_built_with_reflex:
             self._setup_sticky_badge()
 
         progress.advance(task)
 
         # Store the compile results.
-        compile_results = []
+        compile_results: list[tuple[str, str]] = []
 
         progress.advance(task)
 
@@ -1156,33 +1234,19 @@ class App(MiddlewareMixin, LifespanMixin):
                     ),
                 )
 
-        # Use a forking process pool, if possible.  Much faster, especially for large sites.
-        # Fallback to ThreadPoolExecutor as something that will always work.
-        executor = None
-        if (
-            platform.system() in ("Linux", "Darwin")
-            and (number_of_processes := environment.REFLEX_COMPILE_PROCESSES.get())
-            is not None
-        ):
-            executor = concurrent.futures.ProcessPoolExecutor(
-                max_workers=number_of_processes or None,
-                mp_context=multiprocessing.get_context("fork"),
-            )
-        else:
-            executor = concurrent.futures.ThreadPoolExecutor(
-                max_workers=environment.REFLEX_COMPILE_THREADS.get() or None
-            )
+        executor = ExecutorType.get_executor_from_environment()
 
         for route, component in zip(self._pages, page_components, strict=True):
             ExecutorSafeFunctions.COMPONENTS[route] = component
 
         ExecutorSafeFunctions.STATE = self._state
 
-        with executor:
-            result_futures = []
+        with console.timing("Compile to Javascript"), executor as executor:
+            result_futures: list[concurrent.futures.Future[tuple[str, str]]] = []
 
-            def _submit_work(fn: Callable, *args, **kwargs):
+            def _submit_work(fn: Callable[..., tuple[str, str]], *args, **kwargs):
                 f = executor.submit(fn, *args, **kwargs)
+                f.add_done_callback(lambda _: progress.advance(task))
                 result_futures.append(f)
 
             # Compile the pre-compiled pages.
@@ -1208,10 +1272,10 @@ class App(MiddlewareMixin, LifespanMixin):
                 _submit_work(compiler.remove_tailwind_from_postcss)
 
             # Wait for all compilation tasks to complete.
-            with console.timing("Compile to Javascript"):
-                for future in concurrent.futures.as_completed(result_futures):
-                    compile_results.append(future.result())
-                    progress.advance(task)
+            compile_results.extend(
+                future.result()
+                for future in concurrent.futures.as_completed(result_futures)
+            )
 
         app_root = self._app_root(app_wrappers=app_wrappers)
 
@@ -1236,10 +1300,12 @@ class App(MiddlewareMixin, LifespanMixin):
         progress.advance(task)
 
         # Compile custom components.
-        *custom_components_result, custom_components_imports = (
-            compiler.compile_components(custom_components)
-        )
-        compile_results.append(custom_components_result)
+        (
+            custom_components_output,
+            custom_components_result,
+            custom_components_imports,
+        ) = compiler.compile_components(custom_components)
+        compile_results.append((custom_components_output, custom_components_result))
         all_imports.update(custom_components_imports)
 
         progress.advance(task)
@@ -1583,7 +1649,7 @@ def upload(app: App):
         The upload function.
     """
 
-    async def upload_file(request: Request, files: List[UploadFile]):
+    async def upload_file(request: Request, files: List[FastAPIUploadFile]):
         """Upload a file.
 
         Args:
@@ -1659,7 +1725,8 @@ def upload(app: App):
             file_copies.append(
                 UploadFile(
                     file=content_copy,
-                    filename=file.filename,
+                    path=Path(file.filename.lstrip("/")) if file.filename else None,
+                    _deprecated_filename=file.filename,
                     size=file.size,
                     headers=file.headers,
                 )

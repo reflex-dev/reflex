@@ -13,14 +13,12 @@ from reflex.event import CallableEventSpec, EventSpec, EventType
 from reflex.style import Style
 from reflex.utils.imports import ImportVar
 from reflex.vars import VarData
-from reflex.vars.base import CallableVar, Var
+from reflex.vars.base import Var
 
 DEFAULT_UPLOAD_ID: str
 upload_files_context_var_data: VarData
 
-@CallableVar
 def upload_file(id_: str = DEFAULT_UPLOAD_ID) -> Var: ...
-@CallableVar
 def selected_files(id_: str = DEFAULT_UPLOAD_ID) -> Var: ...
 @CallableEventSpec
 def clear_selected_files(id_: str = DEFAULT_UPLOAD_ID) -> EventSpec: ...
@@ -37,7 +35,7 @@ uploaded_files_url_prefix = Var(
     ),
 ).to(str)
 
-def get_upload_url(file_path: str) -> Var[str]: ...
+def get_upload_url(file_path: str | Var[str]) -> Var[str]: ...
 
 class UploadFilesProvider(Component):
     @overload

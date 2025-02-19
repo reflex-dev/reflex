@@ -51,13 +51,7 @@ from reflex.event import (
 )
 from reflex.style import Style, format_as_emotion
 from reflex.utils import format, imports, types
-from reflex.utils.imports import (
-    ImmutableParsedImportDict,
-    ImportDict,
-    ImportVar,
-    ParsedImportDict,
-    parse_imports,
-)
+from reflex.utils.imports import ImportDict, ImportVar, ParsedImportDict, parse_imports
 from reflex.vars import VarData
 from reflex.vars.base import (
     CachedVarOperation,
@@ -1208,7 +1202,7 @@ class Component(BaseComponent, ABC):
         Returns:
             True if the dependency should be transpiled.
         """
-        return (
+        return bool(self.transpile_packages) and (
             dep in self.transpile_packages
             or format.format_library_name(dep or "") in self.transpile_packages
         )
@@ -1291,9 +1285,10 @@ class Component(BaseComponent, ABC):
         event_imports = Imports.EVENTS if self.event_triggers else {}
 
         # Collect imports from Vars used directly by this component.
-        var_datas = [var._get_all_var_data() for var in self._get_vars()]
-        var_imports: List[ImmutableParsedImportDict] = [
-            var_data.imports for var_data in var_datas if var_data is not None
+        var_imports = [
+            var_data.imports
+            for var in self._get_vars()
+            if (var_data := var._get_all_var_data()) is not None
         ]
 
         added_import_dicts: list[ParsedImportDict] = []

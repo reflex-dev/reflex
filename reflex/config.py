@@ -2,20 +2,26 @@
 
 from __future__ import annotations
 
+import concurrent.futures
 import dataclasses
 import enum
 import importlib
 import inspect
+import multiprocessing
 import os
+import platform
 import sys
 import threading
 import urllib.parse
+from functools import lru_cache
 from importlib.util import find_spec
 from pathlib import Path
 from types import ModuleType
 from typing import (
     TYPE_CHECKING,
+    Annotated,
     Any,
+    Callable,
     Dict,
     Generic,
     List,
@@ -24,22 +30,17 @@ from typing import (
     TypeVar,
     get_args,
     get_origin,
+    get_type_hints,
 )
 
+import pydantic.v1 as pydantic
 from reflex_cli.constants.hosting import Hosting
-from typing_extensions import Annotated, get_type_hints
 
 from reflex import constants
 from reflex.base import Base
 from reflex.utils import console
 from reflex.utils.exceptions import ConfigError, EnvironmentVarValueError
 from reflex.utils.types import GenericType, is_union, value_inside_optional
-
-try:
-    import pydantic.v1 as pydantic
-except ModuleNotFoundError:
-    import pydantic
-
 
 try:
     from dotenv import load_dotenv  # pyright: ignore [reportMissingImports]
@@ -408,6 +409,19 @@ class EnvVar(Generic[T]):
             os.environ[self.name] = str_value
 
 
+@lru_cache()
+def get_type_hints_environment(cls: type) -> dict[str, Any]:
+    """Get the type hints for the environment variables.
+
+    Args:
+        cls: The class.
+
+    Returns:
+        The type hints.
+    """
+    return get_type_hints(cls)
+
+
 class env_var:  # noqa: N801 # pyright: ignore [reportRedeclaration]
     """Descriptor for environment variables."""
 
@@ -434,7 +448,9 @@ class env_var:  # noqa: N801 # pyright: ignore [reportRedeclaration]
         """
         self.name = name
 
-    def __get__(self, instance: Any, owner: Any):
+    def __get__(
+        self, instance: EnvironmentVariables, owner: type[EnvironmentVariables]
+    ):
         """Get the EnvVar instance.
 
         Args:
@@ -444,7 +460,7 @@ class env_var:  # noqa: N801 # pyright: ignore [reportRedeclaration]
         Returns:
             The EnvVar instance.
         """
-        type_ = get_args(get_type_hints(owner)[self.name])[0]
+        type_ = get_args(get_type_hints_environment(owner)[self.name])[0]
         env_name = self.name
         if self.internal:
             env_name = f"__{env_name}"
@@ -481,8 +497,102 @@ class PerformanceMode(enum.Enum):
     OFF = "off"
 
 
+class ExecutorType(enum.Enum):
+    """Executor for compiling the frontend."""
+
+    THREAD = "thread"
+    PROCESS = "process"
+    MAIN_THREAD = "main_thread"
+
+    @classmethod
+    def get_executor_from_environment(cls):
+        """Get the executor based on the environment variables.
+
+        Returns:
+            The executor.
+        """
+        executor_type = environment.REFLEX_COMPILE_EXECUTOR.get()
+
+        reflex_compile_processes = environment.REFLEX_COMPILE_PROCESSES.get()
+        reflex_compile_threads = environment.REFLEX_COMPILE_THREADS.get()
+        # By default, use the main thread. Unless the user has specified a different executor.
+        # Using a process pool is much faster, but not supported on all platforms. It's gated behind a flag.
+        if executor_type is None:
+            if (
+                platform.system() not in ("Linux", "Darwin")
+                and reflex_compile_processes is not None
+            ):
+                console.warn("Multiprocessing is only supported on Linux and MacOS.")
+
+            if (
+                platform.system() in ("Linux", "Darwin")
+                and reflex_compile_processes is not None
+            ):
+                if reflex_compile_processes == 0:
+                    console.warn(
+                        "Number of processes must be greater than 0. If you want to use the default number of processes, set REFLEX_COMPILE_EXECUTOR to 'process'. Defaulting to None."
+                    )
+                    reflex_compile_processes = None
+                elif reflex_compile_processes < 0:
+                    console.warn(
+                        "Number of processes must be greater than 0. Defaulting to None."
+                    )
+                    reflex_compile_processes = None
+                executor_type = ExecutorType.PROCESS
+            elif reflex_compile_threads is not None:
+                if reflex_compile_threads == 0:
+                    console.warn(
+                        "Number of threads must be greater than 0. If you want to use the default number of threads, set REFLEX_COMPILE_EXECUTOR to 'thread'. Defaulting to None."
+                    )
+                    reflex_compile_threads = None
+                elif reflex_compile_threads < 0:
+                    console.warn(
+                        "Number of threads must be greater than 0. Defaulting to None."
+                    )
+                    reflex_compile_threads = None
+                executor_type = ExecutorType.THREAD
+            else:
+                executor_type = ExecutorType.MAIN_THREAD
+
+        match executor_type:
+            case ExecutorType.PROCESS:
+                executor = concurrent.futures.ProcessPoolExecutor(
+                    max_workers=reflex_compile_processes,
+                    mp_context=multiprocessing.get_context("fork"),
+                )
+            case ExecutorType.THREAD:
+                executor = concurrent.futures.ThreadPoolExecutor(
+                    max_workers=reflex_compile_threads
+                )
+            case ExecutorType.MAIN_THREAD:
+                FUTURE_RESULT_TYPE = TypeVar("FUTURE_RESULT_TYPE")
+
+                class MainThreadExecutor:
+                    def __enter__(self):
+                        return self
+
+                    def __exit__(self, *args):
+                        pass
+
+                    def submit(
+                        self, fn: Callable[..., FUTURE_RESULT_TYPE], *args, **kwargs
+                    ) -> concurrent.futures.Future[FUTURE_RESULT_TYPE]:
+                        future_job = concurrent.futures.Future()
+                        future_job.set_result(fn(*args, **kwargs))
+                        return future_job
+
+                executor = MainThreadExecutor()
+
+        return executor
+
+
 class EnvironmentVariables:
     """Environment variables class to instantiate environment variables."""
+
+    # Indicate the current command that was invoked in the reflex CLI.
+    REFLEX_COMPILE_CONTEXT: EnvVar[constants.CompileContext] = env_var(
+        constants.CompileContext.UNDEFINED, internal=True
+    )
 
     # Whether to use npm over bun to install frontend packages.
     REFLEX_USE_NPM: EnvVar[bool] = env_var(False)
@@ -522,6 +632,8 @@ class EnvironmentVariables:
         Path(constants.Dirs.UPLOADED_FILES)
     )
 
+    REFLEX_COMPILE_EXECUTOR: EnvVar[Optional[ExecutorType]] = env_var(None)
+
     # Whether to use separate processes to compile the frontend and how many. If not set, defaults to thread executor.
     REFLEX_COMPILE_PROCESSES: EnvVar[Optional[int]] = env_var(None)
 
@@ -529,7 +641,7 @@ class EnvironmentVariables:
     REFLEX_COMPILE_THREADS: EnvVar[Optional[int]] = env_var(None)
 
     # The directory to store reflex dependencies.
-    REFLEX_DIR: EnvVar[Path] = env_var(Path(constants.Reflex.DIR))
+    REFLEX_DIR: EnvVar[Path] = env_var(constants.Reflex.DIR)
 
     # Whether to print the SQL queries if the log level is INFO or lower.
     SQLALCHEMY_ECHO: EnvVar[bool] = env_var(False)
@@ -743,7 +855,7 @@ class Config(Base):
     env_file: Optional[str] = None
 
     # Whether to display the sticky "Built with Reflex" badge on all pages.
-    show_built_with_reflex: bool = True
+    show_built_with_reflex: Optional[bool] = None
 
     # Whether the app is running in the reflex cloud environment.
     is_reflex_cloud: bool = False

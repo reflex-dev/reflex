@@ -40,50 +40,22 @@ from typing import (
     get_type_hints,
 )
 
+import pydantic.v1 as pydantic
+import wrapt
+from pydantic import BaseModel as BaseModelV2
+from pydantic.v1 import BaseModel as BaseModelV1
+from pydantic.v1 import validator
+from pydantic.v1.fields import ModelField
+from redis.asyncio import Redis
 from redis.asyncio.client import PubSub
+from redis.exceptions import ResponseError
 from sqlalchemy.orm import DeclarativeBase
 from typing_extensions import Self
 
-from reflex import event
-from reflex.config import PerformanceMode, get_config
-from reflex.istate.data import RouterData
-from reflex.istate.storage import ClientStorageBase
-from reflex.model import Model
-from reflex.vars.base import (
-    ComputedVar,
-    DynamicRouteVar,
-    Var,
-    computed_var,
-    dispatch,
-    get_unique_variable_name,
-    is_computed_var,
-)
-
-try:
-    import pydantic.v1 as pydantic
-except ModuleNotFoundError:
-    import pydantic
-
-from pydantic import BaseModel as BaseModelV2
-
-try:
-    from pydantic.v1 import BaseModel as BaseModelV1
-except ModuleNotFoundError:
-    BaseModelV1 = BaseModelV2
-
-try:
-    from pydantic.v1 import validator
-except ModuleNotFoundError:
-    from pydantic import validator
-
-import wrapt
-from redis.asyncio import Redis
-from redis.exceptions import ResponseError
-
 import reflex.istate.dynamic
-from reflex import constants
+from reflex import constants, event
 from reflex.base import Base
-from reflex.config import environment
+from reflex.config import PerformanceMode, environment, get_config
 from reflex.event import (
     BACKGROUND_TASK_MARKER,
     Event,
@@ -91,6 +63,9 @@ from reflex.event import (
     EventSpec,
     fix_events,
 )
+from reflex.istate.data import RouterData
+from reflex.istate.storage import ClientStorageBase
+from reflex.model import Model
 from reflex.utils import console, format, path_ops, prerequisites, types
 from reflex.utils.exceptions import (
     ComputedVarShadowsBaseVarsError,
@@ -121,6 +96,15 @@ from reflex.utils.types import (
     value_inside_optional,
 )
 from reflex.vars import VarData
+from reflex.vars.base import (
+    ComputedVar,
+    DynamicRouteVar,
+    Var,
+    computed_var,
+    dispatch,
+    get_unique_variable_name,
+    is_computed_var,
+)
 
 if TYPE_CHECKING:
     from reflex.components.component import Component
@@ -287,10 +271,6 @@ class EventHandlerSetVar(EventHandler):
                 )
 
         return super().__call__(*args)
-
-
-if TYPE_CHECKING:
-    from pydantic.v1.fields import ModelField
 
 
 def _unwrap_field_type(type_: Type) -> Type:
@@ -1742,6 +1722,9 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
 
         Yields:
             StateUpdate object
+
+        Raises:
+            ValueError: If a string value is received for an int or float type and cannot be converted.
         """
         from reflex.utils import telemetry
 
@@ -1779,12 +1762,25 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
                     hinted_args, (Base, BaseModelV1, BaseModelV2)
                 ):
                     payload[arg] = hinted_args(**value)
-            if isinstance(value, list) and (hinted_args is set or hinted_args is Set):
+            elif isinstance(value, list) and (hinted_args is set or hinted_args is Set):
                 payload[arg] = set(value)
-            if isinstance(value, list) and (
+            elif isinstance(value, list) and (
                 hinted_args is tuple or hinted_args is Tuple
             ):
                 payload[arg] = tuple(value)
+            elif isinstance(value, str) and (
+                hinted_args is int or hinted_args is float
+            ):
+                try:
+                    payload[arg] = hinted_args(value)
+                except ValueError:
+                    raise ValueError(
+                        f"Received a string value ({value}) for {arg} but expected a {hinted_args}"
+                    ) from None
+                else:
+                    console.warn(
+                        f"Received a string value ({value}) for {arg} but expected a {hinted_args}. A simple conversion was successful."
+                    )
 
         # Wrap the function in a try/except block.
         try:
@@ -2459,6 +2455,8 @@ class ComponentState(State, mixin=True):
         Returns:
             A new instance of the Component with an independent copy of the State.
         """
+        from reflex.compiler.compiler import into_component
+
         cls._per_component_state_instance_count += 1
         state_cls_name = f"{cls.__name__}_n{cls._per_component_state_instance_count}"
         component_state = type(
@@ -2470,6 +2468,7 @@ class ComponentState(State, mixin=True):
         # Save a reference to the dynamic state for pickle/unpickle.
         setattr(reflex.istate.dynamic, state_cls_name, component_state)
         component = component_state.get_component(*children, **props)
+        component = into_component(component)
         component.State = component_state
         return component
 

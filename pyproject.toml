@@ -23,23 +23,20 @@ fastapi = ">=0.96.0,!=0.111.0,!=0.111.1"
 gunicorn = ">=20.1.0,<24.0"
 jinja2 = ">=3.1.2,<4.0"
 psutil = ">=5.9.4,<7.0"
-pydantic = ">=1.10.2,<3.0"
+pydantic = ">=1.10.21,<3.0"
 python-multipart = ">=0.0.5,<0.1"
 python-socketio = ">=5.7.0,<6.0"
 redis = ">=4.3.5,<6.0"
 rich = ">=13.0.0,<14.0"
 sqlmodel = ">=0.0.14,<0.1"
-typer = ">=0.4.2,<1.0"
+typer = ">=0.15.1,<1.0"
 uvicorn = ">=0.20.0"
 starlette-admin = ">=0.11.0,<1.0"
 alembic = ">=1.11.1,<2.0"
 platformdirs = ">=3.10.0,<5.0"
 distro = { version = ">=1.8.0,<2.0", platform = "linux" }
 python-engineio = "!=4.6.0"
-wrapt = [
-  { version = ">=1.14.0,<2.0", python = ">=3.11" },
-  { version = ">=1.11.0,<2.0", python = "<3.11" },
-]
+wrapt = ">=1.17.0,<2.0"
 packaging = ">=23.1,<25.0"
 reflex-hosting-cli = ">=0.1.29"
 charset-normalizer = ">=3.3.2,<4.0"
@@ -55,13 +52,13 @@ typing_extensions = ">=4.6.0"
 [tool.poetry.group.dev.dependencies]
 pytest = ">=7.1.2,<9.0"
 pytest-mock = ">=3.10.0,<4.0"
-pyright = ">=1.1.392, <1.2"
+pyright = ">=1.1.394, <1.2"
 darglint = ">=1.8.1,<2.0"
 dill = ">=0.3.8"
 toml = ">=0.10.2,<1.0"
 pytest-asyncio = ">=0.24.0"
 pytest-cov = ">=4.0.0,<7.0"
-ruff = "0.9.3"
+ruff = "0.9.6"
 pandas = ">=2.1.1,<3.0"
 pillow = ">=10.0.0,<12.0"
 plotly = ">=5.13.0,<6.0"
@@ -87,8 +84,37 @@ reportIncompatibleMethodOverride = false
 target-version = "py310"
 output-format = "concise"
 lint.isort.split-on-trailing-comma = false
-lint.select = ["ANN001","B", "C4", "D", "E", "ERA", "F", "FURB", "I", "N", "PERF", "PGH", "PTH", "RUF", "SIM", "T", "TRY", "W"]
-lint.ignore = ["B008", "D205", "E501", "F403", "SIM115", "RUF006", "RUF008", "RUF012", "TRY0"]
+lint.select = [
+  "ANN001",
+  "B",
+  "C4",
+  "D",
+  "E",
+  "ERA",
+  "F",
+  "FURB",
+  "I",
+  "N",
+  "PERF",
+  "PGH",
+  "PTH",
+  "RUF",
+  "SIM",
+  "T",
+  "TRY",
+  "W",
+]
+lint.ignore = [
+  "B008",
+  "D205",
+  "E501",
+  "F403",
+  "SIM115",
+  "RUF006",
+  "RUF008",
+  "RUF012",
+  "TRY0",
+]
 lint.pydocstyle.convention = "google"
 
 [tool.ruff.lint.per-file-ignores]

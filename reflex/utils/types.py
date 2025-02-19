@@ -2,12 +2,12 @@
 
 from __future__ import annotations
 
-import contextlib
 import dataclasses
 import inspect
 import sys
 import types
 from functools import cached_property, lru_cache, wraps
+from types import GenericAlias
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -25,66 +25,29 @@ from typing import (
     Type,
     Union,
     _GenericAlias,  # pyright: ignore [reportAttributeAccessIssue]
+    _SpecialGenericAlias,  # pyright: ignore [reportAttributeAccessIssue]
     get_args,
     get_type_hints,
 )
 from typing import get_origin as get_origin_og
 
 import sqlalchemy
-from typing_extensions import is_typeddict
-
-import reflex
-from reflex.components.core.breakpoints import Breakpoints
-
-try:
-    from pydantic.v1.fields import ModelField
-except ModuleNotFoundError:
-    from pydantic.fields import (
-        ModelField,  # pyright: ignore [reportAttributeAccessIssue]
-    )
-
+from pydantic.v1.fields import ModelField
 from sqlalchemy.ext.associationproxy import AssociationProxyInstance
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import DeclarativeBase, Mapped, QueryableAttribute, Relationship
+from typing_extensions import Self as Self
+from typing_extensions import is_typeddict
+from typing_extensions import override as override
 
+import reflex
 from reflex import constants
 from reflex.base import Base
+from reflex.components.core.breakpoints import Breakpoints
 from reflex.utils import console
 
-if sys.version_info >= (3, 12):
-    from typing import override as override
-else:
-
-    def override(func: Callable) -> Callable:
-        """Fallback for @override decorator.
-
-        Args:
-            func: The function to decorate.
-
-        Returns:
-            The unmodified function.
-        """
-        return func
-
-
 # Potential GenericAlias types for isinstance checks.
-GenericAliasTypes = [_GenericAlias]
-
-with contextlib.suppress(ImportError):
-    # For newer versions of Python.
-    from types import GenericAlias
-
-    GenericAliasTypes.append(GenericAlias)
-
-with contextlib.suppress(ImportError):
-    # For older versions of Python.
-    from typing import (
-        _SpecialGenericAlias,  # pyright: ignore [reportAttributeAccessIssue]
-    )
-
-    GenericAliasTypes.append(_SpecialGenericAlias)
-
-GenericAliasTypes = tuple(GenericAliasTypes)
+GenericAliasTypes = (_GenericAlias, GenericAlias, _SpecialGenericAlias)
 
 # Potential Union types for isinstance checks (UnionType added in py3.10).
 UnionTypes = (Union, types.UnionType) if hasattr(types, "UnionType") else (Union,)
@@ -127,11 +90,6 @@ RESERVED_BACKEND_VAR_NAMES = {
     "_backend_vars",
     "_was_touched",
 }
-
-if sys.version_info >= (3, 11):
-    from typing import Self as Self
-else:
-    from typing_extensions import Self as Self
 
 
 class Unset:

@@ -10,31 +10,27 @@ from base64 import b64encode
 from functools import partial
 from typing import (
     TYPE_CHECKING,
+    Annotated,
     Any,
     Callable,
     Dict,
     Generic,
     List,
     Optional,
+    Protocol,
     Sequence,
     Tuple,
     Type,
+    TypedDict,
+    TypeVar,
     Union,
+    get_args,
+    get_origin,
     get_type_hints,
     overload,
 )
 
-from typing_extensions import (
-    Protocol,
-    Self,
-    TypeAliasType,
-    TypedDict,
-    TypeVar,
-    TypeVarTuple,
-    Unpack,
-    get_args,
-    get_origin,
-)
+from typing_extensions import Self, TypeAliasType, TypeVarTuple, Unpack
 
 from reflex import constants
 from reflex.constants.compiler import CompileVars, Hooks, Imports
@@ -58,11 +54,6 @@ from reflex.vars.function import (
     VarOperationCall,
 )
 from reflex.vars.object import ObjectVar
-
-try:
-    from typing import Annotated
-except ImportError:
-    from typing_extensions import Annotated
 
 
 @dataclasses.dataclass(

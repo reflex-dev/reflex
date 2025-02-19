@@ -20,11 +20,8 @@ from reflex.utils import console, telemetry
 typer.core.rich = None  # pyright: ignore [reportPrivateImportUsage]
 
 # Create the app.
-try:
-    cli = typer.Typer(add_completion=False, pretty_exceptions_enable=False)
-except TypeError:
-    # Fallback for older typer versions.
-    cli = typer.Typer(add_completion=False)
+cli = typer.Typer(add_completion=False, pretty_exceptions_enable=False)
+
 
 SHOW_BUILT_WITH_REFLEX_INFO = "https://reflex.dev/docs/hosting/reflex-branding/"
 
@@ -196,7 +193,7 @@ def _run(
     prerequisites.check_latest_package_version(constants.Reflex.MODULE_NAME)
 
     if frontend:
-        if not config.show_built_with_reflex:
+        if config.show_built_with_reflex is False:
             # The sticky badge may be disabled at runtime for team/enterprise tiers.
             prerequisites.check_config_option_in_tier(
                 option_name="show_built_with_reflex",
@@ -306,6 +303,8 @@ def run(
     if frontend and backend:
         console.error("Cannot use both --frontend-only and --backend-only options.")
         raise typer.Exit(1)
+
+    environment.REFLEX_COMPILE_CONTEXT.set(constants.CompileContext.RUN)
     environment.REFLEX_BACKEND_ONLY.set(backend)
     environment.REFLEX_FRONTEND_ONLY.set(frontend)
 
@@ -352,17 +351,19 @@ def export(
     from reflex.utils import export as export_utils
     from reflex.utils import prerequisites
 
+    environment.REFLEX_COMPILE_CONTEXT.set(constants.CompileContext.EXPORT)
+
     frontend, backend = prerequisites.check_running_mode(frontend, backend)
 
     if prerequisites.needs_reinit(frontend=frontend or not backend):
         _init(name=config.app_name, loglevel=loglevel)
 
-    if frontend and not config.show_built_with_reflex:
+    if frontend and config.show_built_with_reflex is False:
         # The sticky badge may be disabled on export for team/enterprise tiers.
         prerequisites.check_config_option_in_tier(
             option_name="show_built_with_reflex",
             allowed_tiers=["team", "enterprise"],
-            fallback_value=False,
+            fallback_value=True,
             help_link=SHOW_BUILT_WITH_REFLEX_INFO,
         )
 
@@ -559,6 +560,8 @@ def deploy(
     from reflex.utils import prerequisites
 
     check_version()
+
+    environment.REFLEX_COMPILE_CONTEXT.set(constants.CompileContext.DEPLOY)
 
     if not config.show_built_with_reflex:
         # The sticky badge may be disabled on deploy for pro/team/enterprise tiers.
