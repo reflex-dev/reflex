@@ -227,7 +227,7 @@ class ContextMenuItem(RadixThemesComponent):
     # Optional text used for typeahead purposes. By default the typeahead behavior will use the content of the item. Use this when the content is complex, or you have non-textual content inside.
     text_value: Var[str]
 
-    _valid_parents: List[str] = [
+    _valid_parents: list[str] = [
         "ContextMenuContent",
         "ContextMenuSubContent",
         "ContextMenuGroup",
@@ -269,7 +269,7 @@ class ContextMenuGroup(RadixThemesComponent):
     # Change the default rendered element for the one passed as a child, merging their props and behavior. Defaults to False.
     as_child: Var[bool]
 
-    _valid_parents: List[str] = ["ContextMenuContent", "ContextMenuSubContent"]
+    _valid_parents: list[str] = ["ContextMenuContent", "ContextMenuSubContent"]
 
 
 class ContextMenuRadioGroup(RadixThemesComponent):
@@ -289,7 +289,7 @@ class ContextMenuRadioGroup(RadixThemesComponent):
     # Fired when the value of the radio group changes.
     on_change: EventHandler[passthrough_event_spec(str)]
 
-    _valid_parents: List[str] = [
+    _valid_parents: list[str] = [
         "ContextMenuRadioItem",
         "ContextMenuSubContent",
         "ContextMenuContent",

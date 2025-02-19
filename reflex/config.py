@@ -846,7 +846,7 @@ class Config(Base):
     env_file: str | None = None
 
     # Whether to display the sticky "Built with Reflex" badge on all pages.
-    show_built_with_reflex: Optional[bool] = None
+    show_built_with_reflex: bool | None = None
 
     # Whether the app is running in the reflex cloud environment.
     is_reflex_cloud: bool = False
