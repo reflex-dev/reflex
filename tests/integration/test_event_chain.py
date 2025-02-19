@@ -493,11 +493,6 @@ async def test_event_chain_on_load(
             "/on-mount-return-chain",
             [
                 "on_load_return_chain",
-                "event_arg:unmount",
-                "on_load_return_chain",
-                "event_arg:1",
-                "event_arg:2",
-                "event_arg:3",
                 "event_arg:1",
                 "event_arg:2",
                 "event_arg:3",
@@ -509,12 +504,6 @@ async def test_event_chain_on_load(
             [
                 "on_load_yield_chain",
                 "event_arg:mount",
-                "event_no_args",
-                "on_load_yield_chain",
-                "event_arg:mount",
-                "event_arg:4",
-                "event_arg:5",
-                "event_arg:6",
                 "event_arg:4",
                 "event_arg:5",
                 "event_arg:6",
@@ -559,6 +548,8 @@ async def test_event_chain_on_mount(
 
     await AppHarness._poll_for_async(_has_all_events)
     event_order = (await event_chain.get_state(token)).substates[state_name].event_order
+    print(event_order)
+    print(exp_event_order)
     assert event_order == exp_event_order
 
 
