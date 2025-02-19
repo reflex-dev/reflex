@@ -110,7 +110,7 @@ class ConnectionToaster(Toaster):
             id=toast_id,
         )  # pyright: ignore [reportCallIssue]
 
-        if environment.DOES_BACKEND_COLD_START.get():
+        if environment.REFLEX_DOES_BACKEND_COLD_START.get():
             loading_message = Var.create("Backend is starting.")
             backend_is_loading_toast_var = Var(
                 f"toast.loading({loading_message!s}, {{...toast_props, description: '', closeButton: false, onDismiss: () => setUserDismissed(true)}},)"
@@ -130,7 +130,7 @@ setTimeout(() => {{
     if ({has_too_many_connection_errors!s}) {{
         setWaitedForBackend(true);
     }}
-}}, {environment.BACKEND_COLD_START_TIMEOUT.get() * 1000});
+}}, {environment.REFLEX_BACKEND_COLD_START_TIMEOUT.get() * 1000});
 """
             )
         else:

@@ -714,10 +714,10 @@ class EnvironmentVariables:
     REFLEX_HOT_RELOAD_EXCLUDE_PATHS: EnvVar[List[Path]] = env_var([])
 
     # Enables different behavior for when the backend would do a cold start if it was inactive.
-    DOES_BACKEND_COLD_START: EnvVar[bool] = env_var(False)
+    REFLEX_DOES_BACKEND_COLD_START: EnvVar[bool] = env_var(False)
 
     # The timeout for the backend to do a cold start in seconds.
-    BACKEND_COLD_START_TIMEOUT: EnvVar[int] = env_var(10)
+    REFLEX_BACKEND_COLD_START_TIMEOUT: EnvVar[int] = env_var(10)
 
     # Used by flexgen to enumerate the pages.
     REFLEX_ADD_ALL_ROUTES_ENDPOINT: EnvVar[bool] = env_var(False)
