@@ -1299,10 +1299,10 @@ def call_event_handler(
                     compare_result = typehint_issubclass(
                         args_types_without_vars[i], type_hints_of_provided_callback[arg]
                     )
-                except TypeError as te:  # codespell:ignore te
+                except TypeError as e:
                     raise TypeError(
                         f"Could not compare types {args_types_without_vars[i]} and {type_hints_of_provided_callback[arg]} for argument {arg} of {event_callback.fn.__qualname__} provided for {key}."
-                    ) from te  # codespell:ignore te
+                    ) from e
 
                 if compare_result:
                     type_match_found[arg] = True

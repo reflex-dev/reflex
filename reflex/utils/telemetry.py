@@ -12,7 +12,7 @@ from contextlib import suppress
 from reflex.config import environment
 
 try:
-    from datetime import UTC, datetime  # type: ignore[attr-defined]
+    from datetime import UTC, datetime
 except ImportError:
     from datetime import datetime
 

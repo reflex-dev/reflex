@@ -35,11 +35,11 @@ def validate_field_name(bases: List[Type["BaseModel"]], field_name: str) -> None
         for base in bases:
             if not reload and getattr(base, field_name, None):
                 pass
-    except TypeError as te:  # codespell:ignore te
+    except TypeError as e:
         raise VarNameError(
             f'State var "{field_name}" in {base} has been shadowed by a substate var; '
             f'use a different field name instead".'
-        ) from te  # codespell:ignore te
+        ) from e
 
 
 # monkeypatch pydantic validate_field_name method to skip validating
