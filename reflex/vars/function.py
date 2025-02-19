@@ -4,9 +4,21 @@ from __future__ import annotations
 
 import dataclasses
 import sys
-from typing import Any, Callable, Optional, Sequence, Tuple, Type, Union, overload
-
-from typing_extensions import Concatenate, Generic, ParamSpec, Protocol, TypeVar
+from typing import (
+    Any,
+    Callable,
+    Concatenate,
+    Generic,
+    Optional,
+    ParamSpec,
+    Protocol,
+    Sequence,
+    Tuple,
+    Type,
+    TypeVar,
+    Union,
+    overload,
+)
 
 from reflex.utils import format
 from reflex.utils.types import GenericType
@@ -29,9 +41,9 @@ class ReflexCallable(Protocol[P, R]):
     __call__: Callable[P, R]
 
 
-CALLABLE_TYPE = TypeVar("CALLABLE_TYPE", bound=ReflexCallable, infer_variance=True)
+CALLABLE_TYPE = TypeVar("CALLABLE_TYPE", bound=ReflexCallable, covariant=True)
 OTHER_CALLABLE_TYPE = TypeVar(
-    "OTHER_CALLABLE_TYPE", bound=ReflexCallable, infer_variance=True
+    "OTHER_CALLABLE_TYPE", bound=ReflexCallable, covariant=True
 )
 
 

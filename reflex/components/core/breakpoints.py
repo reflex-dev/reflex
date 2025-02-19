@@ -18,7 +18,7 @@ def set_breakpoints(values: Tuple[str, str, str, str, str]):
     breakpoints_values.extend(values)
 
 
-K = TypeVar("K")
+K = TypeVar("K", bound=str)
 V = TypeVar("V")
 
 

@@ -8,23 +8,17 @@ import multiprocessing
 import platform
 import warnings
 from contextlib import suppress
-
-from reflex.config import environment
-
-try:
-    from datetime import UTC, datetime
-except ImportError:
-    from datetime import datetime
-
-    UTC = None
+from datetime import datetime, timezone
 
 import httpx
 import psutil
 
 from reflex import constants
+from reflex.config import environment
 from reflex.utils import console
 from reflex.utils.prerequisites import ensure_reflex_installation_id, get_project_hash
 
+UTC = timezone.utc
 POSTHOG_API_URL: str = "https://app.posthog.com/capture/"
 
 
@@ -121,12 +115,7 @@ def _prepare_event(event: str, **kwargs) -> dict:
         )
         return {}
 
-    if UTC is None:
-        # for python 3.10
-        stamp = datetime.utcnow().isoformat()
-    else:
-        # for python 3.11 & 3.12
-        stamp = datetime.now(UTC).isoformat()
+    stamp = datetime.now(UTC).isoformat()
 
     cpuinfo = get_cpu_info()
 

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import contextlib
 import dataclasses
 import functools
 import json
@@ -23,6 +24,9 @@ from typing import (
     get_type_hints,
     overload,
 )
+
+from pydantic import BaseModel as BaseModelV2
+from pydantic.v1 import BaseModel as BaseModelV1
 
 from reflex.base import Base
 from reflex.constants.colors import Color, format_color
@@ -270,12 +274,24 @@ def serialize_base(value: Base) -> dict:
     }
 
 
-try:
-    from pydantic.v1 import BaseModel as BaseModelV1
+@serializer(to=dict)
+def serialize_base_model_v1(model: BaseModelV1) -> dict:
+    """Serialize a pydantic v1 BaseModel instance.
+
+    Args:
+        model: The BaseModel to serialize.
+
+    Returns:
+        The serialized BaseModel.
+    """
+    return model.dict()
+
+
+if BaseModelV1 is not BaseModelV2:
 
     @serializer(to=dict)
-    def serialize_base_model_v1(model: BaseModelV1) -> dict:
-        """Serialize a pydantic v1 BaseModel instance.
+    def serialize_base_model_v2(model: BaseModelV2) -> dict:
+        """Serialize a pydantic v2 BaseModel instance.
 
         Args:
             model: The BaseModel to serialize.
@@ -283,38 +299,7 @@ try:
         Returns:
             The serialized BaseModel.
         """
-        return model.dict()
-
-    from pydantic import BaseModel as BaseModelV2
-
-    if BaseModelV1 is not BaseModelV2:
-
-        @serializer(to=dict)
-        def serialize_base_model_v2(model: BaseModelV2) -> dict:
-            """Serialize a pydantic v2 BaseModel instance.
-
-            Args:
-                model: The BaseModel to serialize.
-
-            Returns:
-                The serialized BaseModel.
-            """
-            return model.model_dump()
-except ImportError:
-    # Older pydantic v1 import
-    from pydantic import BaseModel as BaseModelV1
-
-    @serializer(to=dict)
-    def serialize_base_model_v1(model: BaseModelV1) -> dict:
-        """Serialize a pydantic v1 BaseModel instance.
-
-        Args:
-            model: The BaseModel to serialize.
-
-        Returns:
-            The serialized BaseModel.
-        """
-        return model.dict()
+        return model.model_dump()
 
 
 @serializer
@@ -382,7 +367,7 @@ def serialize_color(color: Color) -> str:
     return format_color(color.color, color.shade, color.alpha)
 
 
-try:
+with contextlib.suppress(ImportError):
     from pandas import DataFrame
 
     def format_dataframe_values(df: DataFrame) -> List[List[Any]]:
@@ -414,10 +399,8 @@ try:
             "data": format_dataframe_values(df),
         }
 
-except ImportError:
-    pass
 
-try:
+with contextlib.suppress(ImportError):
     from plotly.graph_objects import Figure, layout
     from plotly.io import to_json
 
@@ -448,11 +431,8 @@ try:
             "layout": json.loads(str(to_json(template.layout))),
         }
 
-except ImportError:
-    pass
 
-
-try:
+with contextlib.suppress(ImportError):
     import base64
     import io
 
@@ -489,6 +469,3 @@ try:
                 mime_type = "image/png"
 
         return f"data:{mime_type};base64,{base64_image}"
-
-except ImportError:
-    pass

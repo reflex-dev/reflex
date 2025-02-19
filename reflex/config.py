@@ -19,6 +19,7 @@ from pathlib import Path
 from types import ModuleType
 from typing import (
     TYPE_CHECKING,
+    Annotated,
     Any,
     Callable,
     Dict,
@@ -29,22 +30,17 @@ from typing import (
     TypeVar,
     get_args,
     get_origin,
+    get_type_hints,
 )
 
+import pydantic.v1 as pydantic
 from reflex_cli.constants.hosting import Hosting
-from typing_extensions import Annotated, get_type_hints
 
 from reflex import constants
 from reflex.base import Base
 from reflex.utils import console
 from reflex.utils.exceptions import ConfigError, EnvironmentVarValueError
 from reflex.utils.types import GenericType, is_union, value_inside_optional
-
-try:
-    import pydantic.v1 as pydantic
-except ModuleNotFoundError:
-    import pydantic
-
 
 try:
     from dotenv import load_dotenv  # pyright: ignore [reportMissingImports]
@@ -593,6 +589,11 @@ class ExecutorType(enum.Enum):
 class EnvironmentVariables:
     """Environment variables class to instantiate environment variables."""
 
+    # Indicate the current command that was invoked in the reflex CLI.
+    REFLEX_COMPILE_CONTEXT: EnvVar[constants.CompileContext] = env_var(
+        constants.CompileContext.UNDEFINED, internal=True
+    )
+
     # Whether to use npm over bun to install frontend packages.
     REFLEX_USE_NPM: EnvVar[bool] = env_var(False)
 
@@ -640,7 +641,7 @@ class EnvironmentVariables:
     REFLEX_COMPILE_THREADS: EnvVar[Optional[int]] = env_var(None)
 
     # The directory to store reflex dependencies.
-    REFLEX_DIR: EnvVar[Path] = env_var(Path(constants.Reflex.DIR))
+    REFLEX_DIR: EnvVar[Path] = env_var(constants.Reflex.DIR)
 
     # Whether to print the SQL queries if the log level is INFO or lower.
     SQLALCHEMY_ECHO: EnvVar[bool] = env_var(False)
@@ -848,7 +849,7 @@ class Config(Base):
     env_file: Optional[str] = None
 
     # Whether to display the sticky "Built with Reflex" badge on all pages.
-    show_built_with_reflex: bool = True
+    show_built_with_reflex: Optional[bool] = None
 
     # Whether the app is running in the reflex cloud environment.
     is_reflex_cloud: bool = False

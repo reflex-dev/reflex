@@ -2,9 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any, Dict, List, Tuple, Union
-
-from typing_extensions import TypedDict, TypeVar
+from typing import Any, Dict, List, Tuple, TypedDict, TypeVar, Union
 
 from reflex.components.component import Component, NoSSRComponent
 from reflex.components.core.cond import color_mode_cond

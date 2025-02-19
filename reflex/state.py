@@ -40,50 +40,22 @@ from typing import (
     get_type_hints,
 )
 
+import pydantic.v1 as pydantic
+import wrapt
+from pydantic import BaseModel as BaseModelV2
+from pydantic.v1 import BaseModel as BaseModelV1
+from pydantic.v1 import validator
+from pydantic.v1.fields import ModelField
+from redis.asyncio import Redis
 from redis.asyncio.client import PubSub
+from redis.exceptions import ResponseError
 from sqlalchemy.orm import DeclarativeBase
 from typing_extensions import Self
 
-from reflex import event
-from reflex.config import PerformanceMode, get_config
-from reflex.istate.data import RouterData
-from reflex.istate.storage import ClientStorageBase
-from reflex.model import Model
-from reflex.vars.base import (
-    ComputedVar,
-    DynamicRouteVar,
-    Var,
-    computed_var,
-    dispatch,
-    get_unique_variable_name,
-    is_computed_var,
-)
-
-try:
-    import pydantic.v1 as pydantic
-except ModuleNotFoundError:
-    import pydantic
-
-from pydantic import BaseModel as BaseModelV2
-
-try:
-    from pydantic.v1 import BaseModel as BaseModelV1
-except ModuleNotFoundError:
-    BaseModelV1 = BaseModelV2
-
-try:
-    from pydantic.v1 import validator
-except ModuleNotFoundError:
-    from pydantic import validator
-
-import wrapt
-from redis.asyncio import Redis
-from redis.exceptions import ResponseError
-
 import reflex.istate.dynamic
-from reflex import constants
+from reflex import constants, event
 from reflex.base import Base
-from reflex.config import environment
+from reflex.config import PerformanceMode, environment, get_config
 from reflex.event import (
     BACKGROUND_TASK_MARKER,
     Event,
@@ -91,6 +63,9 @@ from reflex.event import (
     EventSpec,
     fix_events,
 )
+from reflex.istate.data import RouterData
+from reflex.istate.storage import ClientStorageBase
+from reflex.model import Model
 from reflex.utils import console, format, path_ops, prerequisites, types
 from reflex.utils.exceptions import (
     ComputedVarShadowsBaseVarsError,
@@ -121,6 +96,15 @@ from reflex.utils.types import (
     value_inside_optional,
 )
 from reflex.vars import VarData
+from reflex.vars.base import (
+    ComputedVar,
+    DynamicRouteVar,
+    Var,
+    computed_var,
+    dispatch,
+    get_unique_variable_name,
+    is_computed_var,
+)
 
 if TYPE_CHECKING:
     from reflex.components.component import Component
@@ -287,10 +271,6 @@ class EventHandlerSetVar(EventHandler):
                 )
 
         return super().__call__(*args)
-
-
-if TYPE_CHECKING:
-    from pydantic.v1.fields import ModelField
 
 
 def _unwrap_field_type(type_: Type) -> Type:
