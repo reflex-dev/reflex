@@ -292,6 +292,8 @@ def run(
     if frontend and backend:
         console.error("Cannot use both --frontend-only and --backend-only options.")
         raise typer.Exit(1)
+
+    environment.REFLEX_COMPILE_CONTEXT.set(constants.CompileContext.RUN)
     environment.REFLEX_BACKEND_ONLY.set(backend)
     environment.REFLEX_FRONTEND_ONLY.set(frontend)
 
@@ -337,6 +339,8 @@ def export(
     """Export the app to a zip file."""
     from reflex.utils import export as export_utils
     from reflex.utils import prerequisites
+
+    environment.REFLEX_COMPILE_CONTEXT.set(constants.CompileContext.EXPORT)
 
     frontend, backend = prerequisites.check_running_mode(frontend, backend)
 
@@ -536,6 +540,8 @@ def deploy(
     from reflex.utils import prerequisites
 
     check_version()
+
+    environment.REFLEX_COMPILE_CONTEXT.set(constants.CompileContext.DEPLOY)
 
     # Set the log level.
     console.set_log_level(loglevel)
