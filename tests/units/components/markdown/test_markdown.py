@@ -157,7 +157,7 @@ def test_create_map_fn_var_subclass(cls, fn_body, fn_args, explicit_return, expe
                     value, **props
                 )
             },
-            r"""(({node, inline, className, children, ...props}) => { const match = (className || '').match(/language-(?<lang>.*)/); let _language = match ? match[1] : '';  ;             return inline ? (                 <RadixThemesCode {...props}>{children}</RadixThemesCode>             ) : (                 <RadixThemesBox css={({ ["pre"] : ({ ["margin"] : "0", ["padding"] : "24px", ["background"] : "transparent", ["overflow-x"] : "auto", ["border-radius"] : "6px" }) })} {...props}><ShikiCode code={((Array.isArray(children)) ? children.join("\n") : children)} decorations={[]} language={_language} theme={((resolvedColorMode === "light") ? "one-light" : "one-dark-pro")} transformers={[]}/></RadixThemesBox>             );         })""",
+            r"""(({node, inline, className, children, ...props}) => { const match = (className || '').match(/language-(?<lang>.*)/); let _language = match ? match[1] : '';  ;             return inline ? (                 <RadixThemesCode {...props}>{children}</RadixThemesCode>             ) : (                 <RadixThemesBox css={({ ["pre"] : ({ ["margin"] : "0", ["padding"] : "24px", ["background"] : "transparent", ["overflowX"] : "auto", ["borderRadius"] : "6px" }) })} {...props}><ShikiCode code={((Array.isArray(children)) ? children.join("\n") : children)} decorations={[]} language={_language} theme={((resolvedColorMode === "light") ? "one-light" : "one-dark-pro")} transformers={[]}/></RadixThemesBox>             );         })""",
         ),
         (
             "h1",

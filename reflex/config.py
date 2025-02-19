@@ -719,6 +719,9 @@ class EnvironmentVariables:
     # The timeout for the backend to do a cold start in seconds.
     BACKEND_COLD_START_TIMEOUT: EnvVar[int] = env_var(10)
 
+    # Used by flexgen to enumerate the pages.
+    REFLEX_ADD_ALL_ROUTES_ENDPOINT: EnvVar[bool] = env_var(False)
+
 
 environment = EnvironmentVariables()
 

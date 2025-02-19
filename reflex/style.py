@@ -190,11 +190,12 @@ def convert(
     for key, value in style_dict.items():
         keys = (
             format_style_key(key)
-            if not isinstance(value, (dict, ObjectVar))
+            if not isinstance(value, (dict, ObjectVar, list))
             or (
                 isinstance(value, Breakpoints)
                 and all(not isinstance(v, dict) for v in value.values())
             )
+            or (isinstance(value, list) and all(not isinstance(v, dict) for v in value))
             or (
                 isinstance(value, ObjectVar)
                 and not issubclass(get_origin(value._var_type) or value._var_type, dict)
@@ -236,7 +237,9 @@ def format_style_key(key: str) -> Tuple[str, ...]:
     Returns:
         Tuple of css style names corresponding to the key provided.
     """
-    key = format.to_camel_case(key, allow_hyphens=True)
+    if key.startswith("--"):
+        return (key,)
+    key = format.to_camel_case(key)
     return STYLE_PROP_SHORTHAND_MAPPING.get(key, (key,))
 
 
