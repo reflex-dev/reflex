@@ -36,17 +36,17 @@ export default function RadixThemesColorModeProvider({ children }) {
     const allowedModes = ["light", "dark", "system"];
     if (!allowedModes.includes(mode)) {
       console.error(
-        `Invalid color mode "${mode}". Defaulting to "${defaultColorMode}".`
+        `Invalid color mode "${mode}". Defaulting to "${defaultColorMode}".`,
       );
       mode = defaultColorMode;
     }
     setTheme(mode);
   };
   return (
-    <ColorModeContext.Provider
+    <ColorModeContext
       value={{ rawColorMode, resolvedColorMode, toggleColorMode, setColorMode }}
     >
       {children}
-    </ColorModeContext.Provider>
+    </ColorModeContext>
   );
 }
