@@ -1,6 +1,6 @@
 """Media classes."""
 
-from typing import Any, Literal, Union
+from typing import Any, Literal
 
 from reflex import Component, ComponentNamespace
 from reflex.components.el.elements.inline import ReferrerPolicy
@@ -472,7 +472,7 @@ class Stop(BaseHTML):
     stop_color: Var[str | Color | bool]
 
     # Opacity of the gradient stop.
-    stop_opacity: Var[Union[str, float, int, bool]]
+    stop_opacity: Var[str | float | int | bool]
 
 
 class Path(BaseHTML):

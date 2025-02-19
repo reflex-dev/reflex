@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any, Dict, TypedDict, TypeVar, Union
+from typing import Any, Dict, TypedDict, TypeVar
 
 from reflex.components.component import Component, NoSSRComponent
 from reflex.components.core.cond import color_mode_cond
@@ -35,7 +35,7 @@ def _event_points_data_signature(e0: Var) -> tuple[Var[list[Point]]]:
 
 T = TypeVar("T")
 
-ItemOrList = Union[T, list[T]]
+ItemOrList = T | list[T]
 
 
 class BBox(TypedDict):
@@ -59,33 +59,10 @@ class Point(TypedDict):
     lon: float | int | None
     curveNumber: int | None
     pointNumber: int | None
-    pointNumbers: Union[list[int], None]
+    pointNumbers: list[int] | None
     pointIndex: int | None
-    markerColor: Union[
-        ItemOrList[
-            ItemOrList[
-                Union[
-                    float,
-                    int,
-                    str,
-                    None,
-                ]
-            ]
-        ],
-        None,
-    ]
-    markerSize: Union[
-        ItemOrList[
-            ItemOrList[
-                Union[
-                    float,
-                    int,
-                    None,
-                ]
-            ]
-        ],
-        None,
-    ]
+    markerColor: ItemOrList[ItemOrList[float | int | str | None]] | None
+    markerSize: ItemOrList[ItemOrList[float | int | None,]] | None
     bbox: BBox | None
 
 

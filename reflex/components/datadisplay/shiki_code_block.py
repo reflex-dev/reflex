@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import re
 from collections import defaultdict
-from typing import Any, Literal, Union
+from typing import Any, Literal
 
 from reflex.base import Base
 from reflex.components.component import Component, ComponentNamespace
@@ -547,15 +547,13 @@ class ShikiCodeBlock(Component, MarkdownComponentMap):
     theme: Var[LiteralCodeTheme] = Var.create("one-light")
 
     # The set of themes to use for different modes.
-    themes: Var[Union[list[dict[str, Any]], dict[str, str]]]
+    themes: Var[list[dict[str, Any]] | dict[str, str]]
 
     # The code to display.
     code: Var[str]
 
     # The transformers to use for the syntax highlighter.
-    transformers: Var[list[Union[ShikiBaseTransformers, dict[str, Any]]]] = Var.create(
-        []
-    )
+    transformers: Var[list[ShikiBaseTransformers | dict[str, Any]]] = Var.create([])
 
     # The decorations to use for the syntax highlighter.
     decorations: Var[list[ShikiDecorations]] = Var.create([])

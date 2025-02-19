@@ -2,7 +2,6 @@
 
 import dataclasses
 from datetime import date, datetime, time, timedelta
-from typing import Union
 
 from reflex.components.component import NoSSRComponent
 from reflex.event import EventHandler, passthrough_event_spec
@@ -79,7 +78,7 @@ class Moment(NoSSRComponent):
     duration: Var[str]
 
     # The date to display (also work if passed as children).
-    date: Var[Union[str, datetime, date, time, timedelta]]
+    date: Var[str | datetime | date | time | timedelta]
 
     # Shows the duration (elapsed time) between now and the provided datetime.
     duration_from_now: Var[bool]

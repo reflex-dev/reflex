@@ -9,7 +9,7 @@ from abc import ABC, abstractmethod
 from functools import lru_cache, wraps
 from hashlib import md5
 from types import SimpleNamespace
-from typing import Any, Callable, ClassVar, Iterator, List, Sequence, Type, Union
+from typing import Any, Callable, ClassVar, Iterator, List, Sequence, Type
 
 from typing_extensions import Self
 
@@ -159,9 +159,7 @@ def evaluate_style_namespaces(style: ComponentStyle) -> dict:
 
 
 # Map from component to styling.
-ComponentStyle = dict[
-    Union[str, Type[BaseComponent], Callable, ComponentNamespace], Any
-]
+ComponentStyle = dict[str | Type[BaseComponent] | Callable | ComponentNamespace, Any]
 ComponentChild = types.PrimitiveType | Var | BaseComponent
 ComponentChildTypes = (*types.PrimitiveTypes, Var, BaseComponent)
 

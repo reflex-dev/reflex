@@ -413,7 +413,7 @@ class Bar(Cartesian):
     max_bar_size: Var[int]
 
     # If set a value, the option is the radius of all the rounded corners. If set a array, the option are in turn the radiuses of top-left corner, top-right corner, bottom-right corner, bottom-left corner. Default: 0
-    radius: Var[Union[int, list[int]]]
+    radius: Var[int | list[int]]
 
     # The active bar is shown when a user enters a bar chart and this chart has tooltip. If set to false, no active bar will be drawn. If set to true, active bar will be drawn with the props calculated internally. If passed an object, active bar will be drawn, and the internally calculated props will be merged with the key value pairs of the passed object.
     # active_bar: Var[Union[bool, dict[str, Any]]] #noqa: ERA001

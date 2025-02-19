@@ -14,7 +14,6 @@ from typing import (
     Sequence,
     Type,
     TypeVar,
-    Union,
     overload,
 )
 
@@ -54,52 +53,52 @@ class FunctionVar(Var[CALLABLE_TYPE], default_type=ReflexCallable[Any, Any]):
     @overload
     def partial(
         self: FunctionVar[ReflexCallable[Concatenate[V1, P], R]],
-        arg1: Union[V1, Var[V1]],
+        arg1: V1 | Var[V1],
     ) -> FunctionVar[ReflexCallable[P, R]]: ...
 
     @overload
     def partial(
         self: FunctionVar[ReflexCallable[Concatenate[V1, V2, P], R]],
-        arg1: Union[V1, Var[V1]],
-        arg2: Union[V2, Var[V2]],
+        arg1: V1 | Var[V1],
+        arg2: V2 | Var[V2],
     ) -> FunctionVar[ReflexCallable[P, R]]: ...
 
     @overload
     def partial(
         self: FunctionVar[ReflexCallable[Concatenate[V1, V2, V3, P], R]],
-        arg1: Union[V1, Var[V1]],
-        arg2: Union[V2, Var[V2]],
-        arg3: Union[V3, Var[V3]],
+        arg1: V1 | Var[V1],
+        arg2: V2 | Var[V2],
+        arg3: V3 | Var[V3],
     ) -> FunctionVar[ReflexCallable[P, R]]: ...
 
     @overload
     def partial(
         self: FunctionVar[ReflexCallable[Concatenate[V1, V2, V3, V4, P], R]],
-        arg1: Union[V1, Var[V1]],
-        arg2: Union[V2, Var[V2]],
-        arg3: Union[V3, Var[V3]],
-        arg4: Union[V4, Var[V4]],
+        arg1: V1 | Var[V1],
+        arg2: V2 | Var[V2],
+        arg3: V3 | Var[V3],
+        arg4: V4 | Var[V4],
     ) -> FunctionVar[ReflexCallable[P, R]]: ...
 
     @overload
     def partial(
         self: FunctionVar[ReflexCallable[Concatenate[V1, V2, V3, V4, V5, P], R]],
-        arg1: Union[V1, Var[V1]],
-        arg2: Union[V2, Var[V2]],
-        arg3: Union[V3, Var[V3]],
-        arg4: Union[V4, Var[V4]],
-        arg5: Union[V5, Var[V5]],
+        arg1: V1 | Var[V1],
+        arg2: V2 | Var[V2],
+        arg3: V3 | Var[V3],
+        arg4: V4 | Var[V4],
+        arg5: V5 | Var[V5],
     ) -> FunctionVar[ReflexCallable[P, R]]: ...
 
     @overload
     def partial(
         self: FunctionVar[ReflexCallable[Concatenate[V1, V2, V3, V4, V5, V6, P], R]],
-        arg1: Union[V1, Var[V1]],
-        arg2: Union[V2, Var[V2]],
-        arg3: Union[V3, Var[V3]],
-        arg4: Union[V4, Var[V4]],
-        arg5: Union[V5, Var[V5]],
-        arg6: Union[V6, Var[V6]],
+        arg1: V1 | Var[V1],
+        arg2: V2 | Var[V2],
+        arg3: V3 | Var[V3],
+        arg4: V4 | Var[V4],
+        arg5: V5 | Var[V5],
+        arg6: V6 | Var[V6],
     ) -> FunctionVar[ReflexCallable[P, R]]: ...
 
     @overload
@@ -128,52 +127,52 @@ class FunctionVar(Var[CALLABLE_TYPE], default_type=ReflexCallable[Any, Any]):
 
     @overload
     def call(
-        self: FunctionVar[ReflexCallable[[V1], R]], arg1: Union[V1, Var[V1]]
+        self: FunctionVar[ReflexCallable[[V1], R]], arg1: V1 | Var[V1]
     ) -> VarOperationCall[[V1], R]: ...
 
     @overload
     def call(
         self: FunctionVar[ReflexCallable[[V1, V2], R]],
-        arg1: Union[V1, Var[V1]],
-        arg2: Union[V2, Var[V2]],
+        arg1: V1 | Var[V1],
+        arg2: V2 | Var[V2],
     ) -> VarOperationCall[[V1, V2], R]: ...
 
     @overload
     def call(
         self: FunctionVar[ReflexCallable[[V1, V2, V3], R]],
-        arg1: Union[V1, Var[V1]],
-        arg2: Union[V2, Var[V2]],
-        arg3: Union[V3, Var[V3]],
+        arg1: V1 | Var[V1],
+        arg2: V2 | Var[V2],
+        arg3: V3 | Var[V3],
     ) -> VarOperationCall[[V1, V2, V3], R]: ...
 
     @overload
     def call(
         self: FunctionVar[ReflexCallable[[V1, V2, V3, V4], R]],
-        arg1: Union[V1, Var[V1]],
-        arg2: Union[V2, Var[V2]],
-        arg3: Union[V3, Var[V3]],
-        arg4: Union[V4, Var[V4]],
+        arg1: V1 | Var[V1],
+        arg2: V2 | Var[V2],
+        arg3: V3 | Var[V3],
+        arg4: V4 | Var[V4],
     ) -> VarOperationCall[[V1, V2, V3, V4], R]: ...
 
     @overload
     def call(
         self: FunctionVar[ReflexCallable[[V1, V2, V3, V4, V5], R]],
-        arg1: Union[V1, Var[V1]],
-        arg2: Union[V2, Var[V2]],
-        arg3: Union[V3, Var[V3]],
-        arg4: Union[V4, Var[V4]],
-        arg5: Union[V5, Var[V5]],
+        arg1: V1 | Var[V1],
+        arg2: V2 | Var[V2],
+        arg3: V3 | Var[V3],
+        arg4: V4 | Var[V4],
+        arg5: V5 | Var[V5],
     ) -> VarOperationCall[[V1, V2, V3, V4, V5], R]: ...
 
     @overload
     def call(
         self: FunctionVar[ReflexCallable[[V1, V2, V3, V4, V5, V6], R]],
-        arg1: Union[V1, Var[V1]],
-        arg2: Union[V2, Var[V2]],
-        arg3: Union[V3, Var[V3]],
-        arg4: Union[V4, Var[V4]],
-        arg5: Union[V5, Var[V5]],
-        arg6: Union[V6, Var[V6]],
+        arg1: V1 | Var[V1],
+        arg2: V2 | Var[V2],
+        arg3: V3 | Var[V3],
+        arg4: V4 | Var[V4],
+        arg5: V5 | Var[V5],
+        arg6: V6 | Var[V6],
     ) -> VarOperationCall[[V1, V2, V3, V4, V5, V6], R]: ...
 
     @overload

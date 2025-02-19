@@ -33,7 +33,6 @@ from typing import (
     Tuple,
     Type,
     TypeVar,
-    Union,
     cast,
     get_args,
     get_type_hints,
@@ -1694,7 +1693,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
                 return StateUpdate()
 
             event_specs_correct_type = cast(
-                Union[list[EventSpec | EventHandler], None],
+                list[EventSpec | EventHandler] | None,
                 [event_specs] if isinstance(event_specs, EventSpec) else event_specs,
             )
             fixed_events = fix_events(

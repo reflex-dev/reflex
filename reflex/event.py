@@ -20,7 +20,6 @@ from typing import (
     Type,
     TypedDict,
     TypeVar,
-    Union,
     get_args,
     get_origin,
     get_type_hints,
@@ -393,9 +392,7 @@ class EventChain(EventActionsMixin):
         default_factory=list
     )
 
-    args_spec: Union[Callable, Sequence[Callable]] | None = dataclasses.field(
-        default=None
-    )
+    args_spec: Callable | Sequence[Callable] | None = dataclasses.field(default=None)
 
     invocation: Var | None = dataclasses.field(default=None)
 
@@ -979,7 +976,7 @@ def remove_session_storage(key: str) -> EventSpec:
     )
 
 
-def set_clipboard(content: Union[str, Var[str]]) -> EventSpec:
+def set_clipboard(content: str | Var[str]) -> EventSpec:
     """Set the text in content in the clipboard.
 
     Args:
@@ -1943,10 +1940,10 @@ class EventNamespace(types.SimpleNamespace):
         func: Callable[[BASE_STATE, Unpack[P]], Any] | None = None,
         *,
         background: bool | None = None,
-    ) -> Union[
-        EventCallback[Unpack[P]],
-        Callable[[Callable[[BASE_STATE, Unpack[P]], Any]], EventCallback[Unpack[P]]],
-    ]:
+    ) -> (
+        EventCallback[Unpack[P]]
+        | Callable[[Callable[[BASE_STATE, Unpack[P]], Any]], EventCallback[Unpack[P]]]
+    ):
         """Wrap a function to be used as an event.
 
         Args:

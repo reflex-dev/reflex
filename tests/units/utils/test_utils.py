@@ -255,7 +255,7 @@ def test_is_backend_base_variable(
         (list[int], list[int], True),
         (list[int], list[float], True),
         (int | float, int | float, False),
-        (Union[int, Var[int]], Var[int], False),
+        (int | Var[int], Var[int], False),
         (int, Any, True),
         (Any, Any, True),
         (int | float, Any, True),

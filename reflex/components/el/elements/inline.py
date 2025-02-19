@@ -1,6 +1,6 @@
 """Inline classes."""
 
-from typing import Literal, Union
+from typing import Literal
 
 from reflex.vars.base import Var
 
@@ -46,7 +46,7 @@ class A(BaseHTML):  # Inherits common attributes from BaseMeta
     rel: Var[str]
 
     # Specifies where to open the linked document
-    target: Var[Union[str, Literal["_self", "_blank", "_parent", "_top"]]]
+    target: Var[str | Literal["_self", "_blank", "_parent", "_top"]]
 
 
 class Abbr(BaseHTML):

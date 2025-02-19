@@ -2405,7 +2405,7 @@ class ComputedVar(Var[RETURN_TYPE]):
         return self._fget
 
 
-class DynamicRouteVar(ComputedVar[Union[str, list[str]]]):
+class DynamicRouteVar(ComputedVar[str | list[str]]):
     """A ComputedVar that represents a dynamic route."""
 
     pass

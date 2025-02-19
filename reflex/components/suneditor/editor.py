@@ -65,7 +65,7 @@ class EditorOptions(Base):
     rtl: bool | None = None
 
     # List of buttons to use in the toolbar.
-    button_list: list[Union[list[str], str]] | None
+    button_list: list[list[str] | str] | None
 
 
 def on_blur_spec(e: Var, content: Var[str]) -> tuple[Var[str]]:

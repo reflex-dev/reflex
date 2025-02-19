@@ -17,7 +17,7 @@ rx.text(
 
 from __future__ import annotations
 
-from typing import Any, Literal, Union, get_args
+from typing import Any, Literal, get_args
 
 from reflex.components.component import BaseComponent
 from reflex.components.core.cond import Cond, color_mode_cond, cond
@@ -99,7 +99,7 @@ class ColorModeIconButton(IconButton):
     """Icon Button for toggling light / dark mode via toggle_color_mode."""
 
     # The position of the icon button. Follow document flow if None.
-    position: Union[LiteralPosition, Var[LiteralPosition]] | None = None
+    position: LiteralPosition | Var[LiteralPosition] | None = None
 
     # Allow picking the "system" value for the color mode.
     allow_system: bool = False

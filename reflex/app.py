@@ -27,7 +27,6 @@ from typing import (
     Dict,
     MutableMapping,
     Type,
-    Union,
     get_args,
     get_type_hints,
 )
@@ -289,7 +288,7 @@ class UnevaluatedPage:
     title: Var | str | None
     description: Var | str | None
     image: str
-    on_load: Union[EventType[()], None]
+    on_load: EventType[()] | None
     meta: list[dict[str, str]]
 
 
@@ -399,7 +398,7 @@ class App(MiddlewareMixin, LifespanMixin):
 
     # Backend Error Handler Function
     backend_exception_handler: Callable[
-        [Exception], Union[EventSpec, list[EventSpec], None]
+        [Exception], EventSpec | list[EventSpec] | None
     ] = default_backend_exception_handler
 
     # Put the toast provider in the app wrap.
@@ -1491,7 +1490,7 @@ class App(MiddlewareMixin, LifespanMixin):
                 if not valid:
                     raise ValueError(
                         f"Provided custom {handler_domain} exception handler `{_fn_name}` has the wrong return type."
-                        f"Expected `Union[EventSpec, list[EventSpec], None]` but got `{return_type}`"
+                        f"Expected `EventSpec | list[EventSpec] | None` but got `{return_type}`"
                     )
 
 

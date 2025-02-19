@@ -5,7 +5,7 @@ from __future__ import annotations
 import re
 from collections import defaultdict
 from contextlib import suppress
-from typing import Any, ClassVar, Type, Union
+from typing import Any, ClassVar, Type
 
 import alembic.autogenerate
 import alembic.command
@@ -161,9 +161,7 @@ async def get_db_status() -> dict[str, bool]:
     return {"db": status}
 
 
-SQLModelOrSqlAlchemy = Union[
-    Type[sqlmodel.SQLModel], Type[sqlalchemy.orm.DeclarativeBase]
-]
+SQLModelOrSqlAlchemy = Type[sqlmodel.SQLModel] | Type[sqlalchemy.orm.DeclarativeBase]
 
 
 class ModelRegistry:

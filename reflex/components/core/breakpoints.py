@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import TypeVar, Union
+from typing import TypeVar
 
 breakpoints_values = ["30em", "48em", "62em", "80em", "96em"]
 breakpoint_names = ["xs", "sm", "md", "lg", "xl"]
@@ -94,4 +94,4 @@ breakpoints = Breakpoints.create
 
 T = TypeVar("T")
 
-Responsive = Union[T, Breakpoints[str, T]]
+Responsive = T | Breakpoints[str, T]
