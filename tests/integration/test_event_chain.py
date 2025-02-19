@@ -548,8 +548,6 @@ async def test_event_chain_on_mount(
 
     await AppHarness._poll_for_async(_has_all_events)
     event_order = (await event_chain.get_state(token)).substates[state_name].event_order
-    print(event_order)
-    print(exp_event_order)
     assert event_order == exp_event_order
 
 
