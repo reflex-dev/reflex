@@ -604,6 +604,9 @@ class EnvironmentVariables:
     # Enables different behavior for when the backend would do a cold start if it was inactive.
     DOES_BACKEND_COLD_START: EnvVar[bool] = env_var(False)
 
+    # The timeout for the backend to do a cold start in seconds.
+    BACKEND_COLD_START_TIMEOUT: EnvVar[int] = env_var(10)
+
 
 environment = EnvironmentVariables()
 

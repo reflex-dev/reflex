@@ -111,19 +111,40 @@ class ConnectionToaster(Toaster):
         )  # pyright: ignore [reportCallIssue]
 
         if environment.DOES_BACKEND_COLD_START.get():
-            error_message = Var.create("Backend is starting.")
+            loading_message = Var.create("Backend is starting.")
+            backend_is_loading_toast_var = Var(
+                f"toast.loading({loading_message!s}, {{...toast_props, description: '', closeButton: false, onDismiss: () => setUserDismissed(true)}},)"
+            )
+            backend_is_not_responding = Var.create("Backend is not responding.")
+            backend_is_down_toast_var = Var(
+                f"toast.error({backend_is_not_responding!s}, {{...toast_props, description: '', onDismiss: () => setUserDismissed(true)}},)"
+            )
             toast_var = Var(
-                f"toast.loading({error_message!s}, {{...toast_props, description: '', closeButton: false, onDismiss: () => setUserDismissed(true)}},)"
+                f"""
+if (waitedForBackend) {{
+    {backend_is_down_toast_var!s}
+}} else {{
+    {backend_is_loading_toast_var!s};
+}}
+setTimeout(() => {{
+    if ({has_too_many_connection_errors!s}) {{
+        setWaitedForBackend(true);
+    }}
+}}, {environment.BACKEND_COLD_START_TIMEOUT.get() * 1000});
+"""
             )
         else:
-            error_message = Var.create(f"Cannot connect to server: {connection_error}.")
+            loading_message = Var.create(
+                f"Cannot connect to server: {connection_error}."
+            )
             toast_var = Var(
-                f"toast.error({error_message!s}, {{...toast_props, onDismiss: () => setUserDismissed(true)}},)"
+                f"toast.error({loading_message!s}, {{...toast_props, onDismiss: () => setUserDismissed(true)}},)"
             )
 
         individual_hooks = [
             f"const toast_props = {LiteralVar.create(props)!s};",
             "const [userDismissed, setUserDismissed] = useState(false);",
+            "const [waitedForBackend, setWaitedForBackend] = useState(false);",
             FunctionStringVar(
                 "useEffect",
                 _var_data=VarData(
@@ -148,7 +169,7 @@ class ConnectionToaster(Toaster):
 }}
 """
                 ),
-                LiteralArrayVar.create([connect_errors]),
+                LiteralArrayVar.create([connect_errors, Var("waitedForBackend")]),
             ),
         ]
 
