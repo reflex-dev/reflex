@@ -17,6 +17,7 @@ from reflex.components.radix.themes.components.dialog import (
 from reflex.components.radix.themes.layout.flex import Flex
 from reflex.components.radix.themes.typography.text import Text
 from reflex.components.sonner.toast import Toaster, ToastProps
+from reflex.config import environment
 from reflex.constants import Dirs, Hooks, Imports
 from reflex.constants.compiler import CompileVars
 from reflex.utils.imports import ImportVar
@@ -109,9 +110,41 @@ class ConnectionToaster(Toaster):
             id=toast_id,
         )  # pyright: ignore [reportCallIssue]
 
+        if environment.REFLEX_DOES_BACKEND_COLD_START.get():
+            loading_message = Var.create("Backend is starting.")
+            backend_is_loading_toast_var = Var(
+                f"toast.loading({loading_message!s}, {{...toast_props, description: '', closeButton: false, onDismiss: () => setUserDismissed(true)}},)"
+            )
+            backend_is_not_responding = Var.create("Backend is not responding.")
+            backend_is_down_toast_var = Var(
+                f"toast.error({backend_is_not_responding!s}, {{...toast_props, description: '', onDismiss: () => setUserDismissed(true)}},)"
+            )
+            toast_var = Var(
+                f"""
+if (waitedForBackend) {{
+    {backend_is_down_toast_var!s}
+}} else {{
+    {backend_is_loading_toast_var!s};
+}}
+setTimeout(() => {{
+    if ({has_too_many_connection_errors!s}) {{
+        setWaitedForBackend(true);
+    }}
+}}, {environment.REFLEX_BACKEND_COLD_START_TIMEOUT.get() * 1000});
+"""
+            )
+        else:
+            loading_message = Var.create(
+                f"Cannot connect to server: {connection_error}."
+            )
+            toast_var = Var(
+                f"toast.error({loading_message!s}, {{...toast_props, onDismiss: () => setUserDismissed(true)}},)"
+            )
+
         individual_hooks = [
             f"const toast_props = {LiteralVar.create(props)!s};",
             "const [userDismissed, setUserDismissed] = useState(false);",
+            "const [waitedForBackend, setWaitedForBackend] = useState(false);",
             FunctionStringVar(
                 "useEffect",
                 _var_data=VarData(
@@ -127,10 +160,7 @@ class ConnectionToaster(Toaster):
 () => {{
     if ({has_too_many_connection_errors!s}) {{
         if (!userDismissed) {{
-            toast.error(
-                `Cannot connect to server: ${{{connection_error}}}.`,
-                {{...toast_props, onDismiss: () => setUserDismissed(true)}},
-            )
+            {toast_var!s}
         }}
     }} else {{
         toast.dismiss("{toast_id}");
@@ -139,7 +169,7 @@ class ConnectionToaster(Toaster):
 }}
 """
                 ),
-                LiteralArrayVar.create([connect_errors]),
+                LiteralArrayVar.create([connect_errors, Var("waitedForBackend")]),
             ),
         ]
 
