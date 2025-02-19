@@ -871,7 +871,7 @@ def test_create_custom_component(my_component):
     """
     component = CustomComponent(component_fn=my_component, prop1="test", prop2=1)
     assert component.tag == "MyComponent"
-    assert component.get_props() == set()
+    assert component.get_props() == {"prop1", "prop2"}
     assert component._get_all_custom_components() == {component}
 
 
