@@ -23,8 +23,6 @@ typer.core.rich = None  # pyright: ignore [reportPrivateImportUsage]
 cli = typer.Typer(add_completion=False, pretty_exceptions_enable=False)
 
 
-SHOW_BUILT_WITH_REFLEX_INFO = "https://reflex.dev/docs/hosting/reflex-branding/"
-
 # Get the config.
 config = get_config()
 
@@ -193,15 +191,6 @@ def _run(
     prerequisites.check_latest_package_version(constants.Reflex.MODULE_NAME)
 
     if frontend:
-        if config.show_built_with_reflex is False:
-            # The sticky badge may be disabled at runtime for team/enterprise tiers.
-            prerequisites.check_config_option_in_tier(
-                option_name="show_built_with_reflex",
-                allowed_tiers=["team", "enterprise"],
-                fallback_value=True,
-                help_link=SHOW_BUILT_WITH_REFLEX_INFO,
-            )
-
         # Get the app module.
         prerequisites.get_compiled_app()
 
@@ -357,15 +346,6 @@ def export(
 
     if prerequisites.needs_reinit(frontend=frontend or not backend):
         _init(name=config.app_name, loglevel=loglevel)
-
-    if frontend and config.show_built_with_reflex is False:
-        # The sticky badge may be disabled on export for team/enterprise tiers.
-        prerequisites.check_config_option_in_tier(
-            option_name="show_built_with_reflex",
-            allowed_tiers=["team", "enterprise"],
-            fallback_value=True,
-            help_link=SHOW_BUILT_WITH_REFLEX_INFO,
-        )
 
     export_utils.export(
         zipping=zipping,
@@ -562,15 +542,6 @@ def deploy(
     check_version()
 
     environment.REFLEX_COMPILE_CONTEXT.set(constants.CompileContext.DEPLOY)
-
-    if not config.show_built_with_reflex:
-        # The sticky badge may be disabled on deploy for pro/team/enterprise tiers.
-        prerequisites.check_config_option_in_tier(
-            option_name="show_built_with_reflex",
-            allowed_tiers=["pro", "team", "enterprise"],
-            fallback_value=True,
-            help_link=SHOW_BUILT_WITH_REFLEX_INFO,
-        )
 
     # Set the log level.
     console.set_log_level(loglevel)
