@@ -10,6 +10,7 @@ from reflex.vars.base import Var
 
 from ..base import LiteralAccentColor, RadixThemesComponent
 from .checkbox import Checkbox
+from .radio_group import HighLevelRadioGroup
 
 LiteralDirType = Literal["ltr", "rtl"]
 
@@ -226,7 +227,11 @@ class ContextMenuItem(RadixThemesComponent):
     # Optional text used for typeahead purposes. By default the typeahead behavior will use the content of the item. Use this when the content is complex, or you have non-textual content inside.
     text_value: Var[str]
 
-    _valid_parents: List[str] = ["ContextMenuContent", "ContextMenuSubContent"]
+    _valid_parents: List[str] = [
+        "ContextMenuContent",
+        "ContextMenuSubContent",
+        "ContextMenuGroup",
+    ]
 
     # Fired when the item is selected.
     on_select: EventHandler[no_args_event_spec]
@@ -247,6 +252,75 @@ class ContextMenuCheckbox(Checkbox):
     shortcut: Var[str]
 
 
+class ContextMenuLabel(RadixThemesComponent):
+    """The component that contains the label."""
+
+    tag = "ContextMenu.Label"
+
+    # Change the default rendered element for the one passed as a child, merging their props and behavior. Defaults to False.
+    as_child: Var[bool]
+
+
+class ContextMenuGroup(RadixThemesComponent):
+    """The component that contains the group."""
+
+    tag = "ContextMenu.Group"
+
+    # Change the default rendered element for the one passed as a child, merging their props and behavior. Defaults to False.
+    as_child: Var[bool]
+
+    _valid_parents: List[str] = ["ContextMenuContent", "ContextMenuSubContent"]
+
+
+class ContextMenuRadioGroup(RadixThemesComponent):
+    """The component that contains context menu radio items."""
+
+    tag = "ContextMenu.RadioGroup"
+
+    # Change the default rendered element for the one passed as a child, merging their props and behavior. Defaults to False.
+    as_child: Var[bool]
+
+    # The value of the selected item in the group.
+    value: Var[str]
+
+    # Props to rename
+    _rename_props = {"onChange": "onValueChange"}
+
+    # Fired when the value of the radio group changes.
+    on_change: EventHandler[passthrough_event_spec(str)]
+
+    _valid_parents: List[str] = [
+        "ContextMenuRadioItem",
+        "ContextMenuSubContent",
+        "ContextMenuContent",
+        "ContextMenuSub",
+    ]
+
+
+class ContextMenuRadioItem(HighLevelRadioGroup):
+    """The component that contains context menu radio items."""
+
+    tag = "ContextMenu.RadioItem"
+
+    # Override theme color for Dropdown Menu Content
+    color_scheme: Var[LiteralAccentColor]
+
+    # Change the default rendered element for the one passed as a child, merging their props and behavior. Defaults to False.
+    as_child: Var[bool]
+
+    # The unique value of the item.
+    value: Var[str]
+
+    # When true, prevents the user from interacting with the item.
+    disabled: Var[bool]
+
+    # Event handler called when the user selects an item (via mouse or keyboard). Calling event.preventDefault in this handler will prevent the context menu from closing when selecting that item.
+    on_select: EventHandler[no_args_event_spec]
+
+    # Optional text used for typeahead purposes. By default the typeahead behavior will use the .textContent of the item. Use this when the content is complex, or you have non-textual content inside.
+    text_value: Var[str]
+
+
 class ContextMenu(ComponentNamespace):
     """Menu representing a set of actions, displayed at the origin of a pointer right-click or long-press."""
 
@@ -259,6 +333,10 @@ class ContextMenu(ComponentNamespace):
     item = staticmethod(ContextMenuItem.create)
     separator = staticmethod(ContextMenuSeparator.create)
     checkbox = staticmethod(ContextMenuCheckbox.create)
+    label = staticmethod(ContextMenuLabel.create)
+    group = staticmethod(ContextMenuGroup.create)
+    radio_group = staticmethod(ContextMenuRadioGroup.create)
+    radio = staticmethod(ContextMenuRadioItem.create)
 
 
 context_menu = ContextMenu()
