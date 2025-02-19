@@ -590,6 +590,7 @@ def no_args_event_spec() -> Tuple[()]:
 stop_propagation = EventChain(events=[], args_spec=no_args_event_spec).stop_propagation
 prevent_default = EventChain(events=[], args_spec=no_args_event_spec).prevent_default
 
+
 T = TypeVar("T")
 U = TypeVar("U")
 
@@ -1290,10 +1291,10 @@ def call_event_handler(
                     compare_result = typehint_issubclass(
                         args_types_without_vars[i], type_hints_of_provided_callback[arg]
                     )
-                except TypeError as e:
+                except TypeError as te:
                     raise TypeError(
                         f"Could not compare types {args_types_without_vars[i]} and {type_hints_of_provided_callback[arg]} for argument {arg} of {event_callback.fn.__qualname__} provided for {key}."
-                    ) from e
+                    ) from te
 
                 if compare_result:
                     type_match_found[arg] = True
@@ -1877,6 +1878,7 @@ class LambdaEventCallback(Protocol[Unpack[P]]):
 
 ARGS = TypeVarTuple("ARGS")
 
+
 LAMBDA_OR_STATE = TypeAliasType(
     "LAMBDA_OR_STATE",
     LambdaEventCallback[Unpack[ARGS]] | EventCallback[Unpack[ARGS]],
@@ -1898,6 +1900,7 @@ IndividualEventType = TypeAliasType(
 EventType = TypeAliasType(
     "EventType", ItemOrList[IndividualEventType[Unpack[ARGS]]], type_params=(ARGS,)
 )
+
 
 if TYPE_CHECKING:
     from reflex.state import BaseState
