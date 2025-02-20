@@ -278,7 +278,15 @@ class Toaster(Component):
             toast = ternary_operation(
                 toast_ref.bool(),
                 toast,
-                FunctionVar("window.alert").call(message),
+                FunctionVar("window.alert").call(
+                    Var.create(
+                        message
+                        if isinstance(message, str) and message
+                        else props.get("title", props.get("description", ""))
+                    )
+                    .to(str)
+                    .replace("<br/>", "\n")
+                ),
             )
 
         return run_script(toast)
