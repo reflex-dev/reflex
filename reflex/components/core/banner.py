@@ -17,7 +17,7 @@ from reflex.components.radix.themes.components.dialog import (
 )
 from reflex.components.radix.themes.layout.flex import Flex
 from reflex.components.radix.themes.typography.text import Text
-from reflex.components.sonner.toast import ToastProps
+from reflex.components.sonner.toast import ToastProps, toast_ref
 from reflex.config import environment
 from reflex.constants import Dirs, Hooks, Imports
 from reflex.constants.compiler import CompileVars
@@ -114,11 +114,11 @@ class ConnectionToaster(Fragment):
         if environment.REFLEX_DOES_BACKEND_COLD_START.get():
             loading_message = Var.create("Backend is starting.")
             backend_is_loading_toast_var = Var(
-                f"toast.loading({loading_message!s}, {{...toast_props, description: '', closeButton: false, onDismiss: () => setUserDismissed(true)}},)"
+                f"toast?.loading({loading_message!s}, {{...toast_props, description: '', closeButton: false, onDismiss: () => setUserDismissed(true)}},)"
             )
             backend_is_not_responding = Var.create("Backend is not responding.")
             backend_is_down_toast_var = Var(
-                f"toast.error({backend_is_not_responding!s}, {{...toast_props, description: '', onDismiss: () => setUserDismissed(true)}},)"
+                f"toast?.error({backend_is_not_responding!s}, {{...toast_props, description: '', onDismiss: () => setUserDismissed(true)}},)"
             )
             toast_var = Var(
                 f"""
@@ -139,10 +139,11 @@ setTimeout(() => {{
                 f"Cannot connect to server: {connection_error}."
             )
             toast_var = Var(
-                f"toast.error({loading_message!s}, {{...toast_props, onDismiss: () => setUserDismissed(true)}},)"
+                f"toast?.error({loading_message!s}, {{...toast_props, onDismiss: () => setUserDismissed(true)}},)"
             )
 
         individual_hooks = [
+            Var(f"const toast = {toast_ref};"),
             f"const toast_props = {LiteralVar.create(props)!s};",
             "const [userDismissed, setUserDismissed] = useState(false);",
             "const [waitedForBackend, setWaitedForBackend] = useState(false);",
@@ -164,7 +165,7 @@ setTimeout(() => {{
             {toast_var!s}
         }}
     }} else {{
-        toast.dismiss("{toast_id}");
+        toast?.dismiss("{toast_id}");
         setUserDismissed(false);  // after reconnection reset dismissed state
     }}
 }}

@@ -383,7 +383,6 @@ class Toaster(Component):
         Returns:
             The toaster component.
         """
-        cls.is_used = True
         return super().create(*children, **props)
 
 

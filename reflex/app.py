@@ -75,6 +75,7 @@ from reflex.components.core.client_side_routing import (
 from reflex.components.core.sticky import sticky
 from reflex.components.core.upload import Upload, get_upload_dir
 from reflex.components.radix import themes
+from reflex.components.sonner.toast import toast
 from reflex.config import ExecutorType, environment, get_config
 from reflex.event import (
     _EVENT_FIELDS,
@@ -411,7 +412,7 @@ class App(MiddlewareMixin, LifespanMixin):
     ] = default_backend_exception_handler
 
     # Put the toast provider in the app wrap.
-    bundle_toaster: bool = True
+    toaster: Component | None = dataclasses.field(default_factory=toast.provider)
 
     @property
     def api(self) -> FastAPI | None:
@@ -1186,15 +1187,12 @@ class App(MiddlewareMixin, LifespanMixin):
             # Add the custom components from the page to the set.
             custom_components |= component._get_all_custom_components()
 
-        if self.bundle_toaster:
+        if (toaster := self.toaster) is not None:
             from reflex.components.component import memo
-            from reflex.components.sonner.toast import toast
-
-            internal_toast_provider = toast.provider()
 
             @memo
             def memoized_toast_provider():
-                return internal_toast_provider
+                return toaster
 
             toast_provider = Fragment.create(memoized_toast_provider())
 
