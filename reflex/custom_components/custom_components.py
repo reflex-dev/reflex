@@ -14,7 +14,7 @@ from typing import Optional, Tuple
 import httpx
 import tomlkit
 import typer
-from tomlkit.exceptions import TOMLKitError
+from tomlkit.exceptions import NonExistentKey, TOMLKitError
 
 from reflex import constants
 from reflex.config import environment, get_config
@@ -83,7 +83,7 @@ def _get_package_config(exit_on_fail: bool = True) -> dict:
         The package configuration.
 
     Raises:
-        Exit: If the pyproject.toml file is not found.
+        Exit: If the pyproject.toml file is not found and exit_on_fail is True.
     """
     pyproject = Path(CustomComponents.PYPROJECT_TOML)
     try:
@@ -421,12 +421,13 @@ def _run_commands_in_subprocess(cmds: list[str]) -> bool:
     console.debug(f"Running command: {' '.join(cmds)}")
     try:
         result = subprocess.run(cmds, capture_output=True, text=True, check=True)
-        console.debug(result.stdout)
-        return True
     except subprocess.CalledProcessError as cpe:
         console.error(cpe.stdout)
         console.error(cpe.stderr)
         return False
+    else:
+        console.debug(result.stdout)
+        return True
 
 
 def _make_pyi_files():
@@ -532,7 +533,13 @@ def _get_version_to_publish() -> str:
     Returns:
         The version to publish.
     """
-    return _get_package_config()["project"]["version"]
+    try:
+        return _get_package_config()["project"]["version"]
+    except NonExistentKey:
+        # Try to get the version from dynamic sources
+        import build.util
+
+        return build.util.project_wheel_metadata(".", isolated=True)["version"]
 
 
 def _ensure_dist_dir(version_to_publish: str, build: bool):
@@ -755,7 +762,7 @@ def _min_validate_project_info():
         )
         raise typer.Exit(code=1)
 
-    if not project.get("version"):
+    if not project.get("version") and "version" not in project.get("dynamic", []):
         console.error(
             f"The project version is not found in {CustomComponents.PYPROJECT_TOML}"
         )
@@ -771,7 +778,7 @@ def _validate_project_info():
     pyproject_toml = _get_package_config()
     project = pyproject_toml["project"]
     console.print(
-        f'Double check the information before publishing: {project["name"]} version {project["version"]}'
+        f"Double check the information before publishing: {project['name']} version {_get_version_to_publish()}"
     )
 
     console.print("Update or enter to keep the current information.")
@@ -783,7 +790,7 @@ def _validate_project_info():
     author["name"] = console.ask("Author Name", default=author.get("name", ""))
     author["email"] = console.ask("Author Email", default=author.get("email", ""))
 
-    console.print(f'Current keywords are: {project.get("keywords") or []}')
+    console.print(f"Current keywords are: {project.get('keywords') or []}")
     keyword_action = console.ask(
         "Keep, replace or append?", choices=["k", "r", "a"], default="k"
     )
@@ -924,17 +931,18 @@ def _get_file_from_prompt_in_loop() -> Tuple[bytes, str] | None:
     image_file = file_extension = None
     while image_file is None:
         image_filepath = Path(
-            console.ask("Upload a preview image of your demo app (enter to skip)")
+            console.ask("Upload a preview image of your demo app (enter to skip)")  # pyright: ignore [reportArgumentType]
         )
         if not image_filepath:
             break
         file_extension = image_filepath.suffix
         try:
             image_file = image_filepath.read_bytes()
-            return image_file, file_extension
         except OSError as ose:
             console.error(f"Unable to read the {file_extension} file due to {ose}")
             raise typer.Exit(code=1) from ose
+        else:
+            return image_file, file_extension
 
     console.debug(f"File extension detected: {file_extension}")
     return None

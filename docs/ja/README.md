@@ -37,7 +37,7 @@ Reflex がどのように動作しているかを知るには、[アーキテク
 
 ## ⚙️ インストール
 
-ターミナルを開いて以下のコマンドを実行してください。（Python 3.9 以上が必要です。）:
+ターミナルを開いて以下のコマンドを実行してください。（Python 3.10 以上が必要です。）:
 
 ```bash
 pip install reflex
@@ -222,7 +222,7 @@ app.add_page(index, title="DALL-E")
 
 <div align="center">
 
-📑 [Docs](https://reflex.dev/docs/getting-started/introduction) &nbsp; | &nbsp; 🗞️ [Blog](https://reflex.dev/blog) &nbsp; | &nbsp; 📱 [Component Library](https://reflex.dev/docs/library) &nbsp; | &nbsp; 🖼️ [Gallery](https://reflex.dev/docs/gallery) &nbsp; | &nbsp; 🛸 [Deployment](https://reflex.dev/docs/hosting/deploy-quick-start) &nbsp;
+📑 [Docs](https://reflex.dev/docs/getting-started/introduction) &nbsp; | &nbsp; 🗞️ [Blog](https://reflex.dev/blog) &nbsp; | &nbsp; 📱 [Component Library](https://reflex.dev/docs/library) &nbsp; | &nbsp; 🖼️ [Templates](https://reflex.dev/templates/) &nbsp; | &nbsp; 🛸 [Deployment](https://reflex.dev/docs/hosting/deploy-quick-start) &nbsp;
 
 </div>
 
@@ -242,7 +242,7 @@ Reflex は毎週、新しいリリースや機能追加を行っています！�
 - **GitHub Discussions**: GitHub Discussions では、追加したい機能や、複雑で解明が必要な事柄についての議論に適している場所です。
 - **GitHub Issues**: [Issues](https://github.com/reflex-dev/reflex/issues)はバグの報告に適している場所です。また、課題を解決した PR のサブミットにチャレンジしていただくことも、可能です。
 
-スキルや経験に関わらず、私たちはコントリビュータを積極的に探しています。コントリビュートするために、[CONTIBUTING.md](https://github.com/reflex-dev/reflex/blob/main/CONTRIBUTING.md)をご覧ください。
+CONTスキルや経験に関わらず、私たちはコントリビュータを積極的に探しています。コントリビュートするために、[CONTRIBUTING.md](https://github.com/reflex-dev/reflex/blob/main/CONTRIBUTING.md)をご覧ください。
 
 ## 私たちのコントリビュータに感謝！:
 

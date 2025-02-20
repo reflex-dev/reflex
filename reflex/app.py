@@ -11,24 +11,24 @@ import functools
 import inspect
 import io
 import json
-import multiprocessing
-import platform
 import sys
 import traceback
 import urllib.parse
 import uuid
 from datetime import datetime
 from pathlib import Path
+from timeit import default_timer as timer
 from types import SimpleNamespace
 from typing import (
     TYPE_CHECKING,
     Any,
     AsyncIterator,
+    BinaryIO,
     Callable,
     Coroutine,
     Dict,
-    Generic,
     List,
+    MutableMapping,
     Optional,
     Set,
     Type,
@@ -37,12 +37,15 @@ from typing import (
     get_type_hints,
 )
 
-from fastapi import FastAPI, HTTPException, Request, UploadFile
+from fastapi import FastAPI, HTTPException, Request
+from fastapi import UploadFile as FastAPIUploadFile
 from fastapi.middleware import cors
 from fastapi.responses import JSONResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from rich.progress import MofNCompleteColumn, Progress, TimeElapsedColumn
 from socketio import ASGIApp, AsyncNamespace, AsyncServer
+from starlette.datastructures import Headers
+from starlette.datastructures import UploadFile as StarletteUploadFile
 from starlette_admin.contrib.sqla.admin import Admin
 from starlette_admin.contrib.sqla.view import ModelView
 
@@ -55,22 +58,28 @@ from reflex.compiler.compiler import ExecutorSafeFunctions, compile_theme
 from reflex.components.base.app_wrap import AppWrap
 from reflex.components.base.error_boundary import ErrorBoundary
 from reflex.components.base.fragment import Fragment
+from reflex.components.base.strict_mode import StrictMode
 from reflex.components.component import (
     Component,
     ComponentStyle,
     evaluate_style_namespaces,
 )
-from reflex.components.core.banner import connection_pulser, connection_toaster
+from reflex.components.core.banner import (
+    backend_disabled,
+    connection_pulser,
+    connection_toaster,
+)
 from reflex.components.core.breakpoints import set_breakpoints
 from reflex.components.core.client_side_routing import (
     Default404Page,
     wait_for_client_redirect,
 )
+from reflex.components.core.sticky import sticky
 from reflex.components.core.upload import Upload, get_upload_dir
 from reflex.components.radix import themes
-from reflex.config import environment, get_config
+from reflex.config import ExecutorType, environment, get_config
 from reflex.event import (
-    BASE_STATE,
+    _EVENT_FIELDS,
     Event,
     EventHandler,
     EventSpec,
@@ -93,14 +102,24 @@ from reflex.state import (
     StateManager,
     StateUpdate,
     _substate_key,
+    all_base_state_classes,
     code_uses_state_contexts,
 )
-from reflex.utils import codespaces, console, exceptions, format, prerequisites, types
-from reflex.utils.exec import is_prod_mode, is_testing_env
+from reflex.utils import (
+    codespaces,
+    console,
+    exceptions,
+    format,
+    path_ops,
+    prerequisites,
+    types,
+)
+from reflex.utils.exec import get_compile_context, is_prod_mode, is_testing_env
 from reflex.utils.imports import ImportVar
 
 if TYPE_CHECKING:
     from reflex.vars import Var
+
 
 # Define custom types.
 ComponentCallable = Callable[[], Component]
@@ -146,10 +165,38 @@ def default_backend_exception_handler(exception: Exception) -> EventSpec:
             position="top-center",
             id="backend_error",
             style={"width": "500px"},
-        )  # type: ignore
+        )
     else:
         error_message.insert(0, "An error occurred.")
         return window_alert("\n".join(error_message))
+
+
+def extra_overlay_function() -> Optional[Component]:
+    """Extra overlay function to add to the overlay component.
+
+    Returns:
+        The extra overlay function.
+    """
+    config = get_config()
+
+    extra_config = config.extra_overlay_function
+    config_overlay = None
+    if extra_config:
+        module, _, function_name = extra_config.rpartition(".")
+        try:
+            module = __import__(module)
+            config_overlay = Fragment.create(getattr(module, function_name)())
+            config_overlay._get_all_imports()
+        except Exception as e:
+            from reflex.compiler.utils import save_error
+
+            log_path = save_error(e)
+
+            console.error(
+                f"Error loading extra_overlay_function {extra_config}. Error saved to {log_path}"
+            )
+
+    return config_overlay
 
 
 def default_overlay_component() -> Component:
@@ -158,11 +205,21 @@ def default_overlay_component() -> Component:
     Returns:
         The default overlay_component, which is a connection_modal.
     """
-    return Fragment.create(
-        connection_pulser(),
-        connection_toaster(),
-        *codespaces.codespaces_auto_redirect(),
-    )
+    from reflex.components.component import memo
+
+    def default_overlay_components():
+        return Fragment.create(
+            connection_pulser(),
+            connection_toaster(),
+            *(
+                [backend_disabled()]
+                if get_compile_context() == constants.CompileContext.DEPLOY
+                else []
+            ),
+            *codespaces.codespaces_auto_redirect(),
+        )
+
+    return Fragment.create(memo(default_overlay_components)())
 
 
 def default_error_boundary(*children: Component) -> Component:
@@ -184,10 +241,57 @@ class OverlayFragment(Fragment):
     pass
 
 
+@dataclasses.dataclass(frozen=True)
+class UploadFile(StarletteUploadFile):
+    """A file uploaded to the server.
+
+    Args:
+        file: The standard Python file object (non-async).
+        filename: The original file name.
+        size: The size of the file in bytes.
+        headers: The headers of the request.
+    """
+
+    file: BinaryIO
+
+    path: Optional[Path] = dataclasses.field(default=None)
+
+    _deprecated_filename: Optional[str] = dataclasses.field(default=None)
+
+    size: Optional[int] = dataclasses.field(default=None)
+
+    headers: Headers = dataclasses.field(default_factory=Headers)
+
+    @property
+    def name(self) -> Optional[str]:
+        """Get the name of the uploaded file.
+
+        Returns:
+            The name of the uploaded file.
+        """
+        if self.path:
+            return self.path.name
+
+    @property
+    def filename(self) -> Optional[str]:
+        """Get the filename of the uploaded file.
+
+        Returns:
+            The filename of the uploaded file.
+        """
+        console.deprecate(
+            feature_name="UploadFile.filename",
+            reason="Use UploadFile.name instead.",
+            deprecation_version="0.7.1",
+            removal_version="0.8.0",
+        )
+        return self._deprecated_filename
+
+
 @dataclasses.dataclass(
     frozen=True,
 )
-class UnevaluatedPage(Generic[BASE_STATE]):
+class UnevaluatedPage:
     """An uncompiled page."""
 
     component: Union[Component, ComponentCallable]
@@ -195,7 +299,7 @@ class UnevaluatedPage(Generic[BASE_STATE]):
     title: Union[Var, str, None]
     description: Union[Var, str, None]
     image: str
-    on_load: Union[EventType[[], BASE_STATE], None]
+    on_load: Union[EventType[()], None]
     meta: List[Dict[str, str]]
 
 
@@ -234,11 +338,26 @@ class App(MiddlewareMixin, LifespanMixin):
 
     # A component that is present on every page (defaults to the Connection Error banner).
     overlay_component: Optional[Union[Component, ComponentCallable]] = (
-        dataclasses.field(default_factory=default_overlay_component)
+        dataclasses.field(default=None)
     )
 
     # Error boundary component to wrap the app with.
-    error_boundary: Optional[ComponentCallable] = default_error_boundary
+    error_boundary: Optional[ComponentCallable] = dataclasses.field(default=None)
+
+    # App wraps to be applied to the whole app. Expected to be a dictionary of (order, name) to a function that takes whether the state is enabled and optionally returns a component.
+    app_wraps: Dict[tuple[int, str], Callable[[bool], Optional[Component]]] = (
+        dataclasses.field(
+            default_factory=lambda: {
+                (55, "ErrorBoundary"): (
+                    lambda stateful: default_error_boundary() if stateful else None
+                ),
+                (5, "Overlay"): (
+                    lambda stateful: default_overlay_component() if stateful else None
+                ),
+                (4, "ExtraOverlay"): lambda stateful: extra_overlay_function(),
+            }
+        )
+    )
 
     # Components to add to the head of every page.
     head_components: List[Component] = dataclasses.field(default_factory=list)
@@ -252,36 +371,39 @@ class App(MiddlewareMixin, LifespanMixin):
     # Attributes to add to the html root tag of every page.
     html_custom_attrs: Optional[Dict[str, str]] = None
 
-    # A map from a route to an unevaluated page. PRIVATE.
-    unevaluated_pages: Dict[str, UnevaluatedPage] = dataclasses.field(
+    # A map from a route to an unevaluated page.
+    _unevaluated_pages: Dict[str, UnevaluatedPage] = dataclasses.field(
         default_factory=dict
     )
 
-    # A map from a page route to the component to render. Users should use `add_page`. PRIVATE.
-    pages: Dict[str, Component] = dataclasses.field(default_factory=dict)
+    # A map from a page route to the component to render. Users should use `add_page`.
+    _pages: Dict[str, Component] = dataclasses.field(default_factory=dict)
 
-    # The backend API object. PRIVATE.
-    api: FastAPI = None  # type: ignore
+    # A mapping of pages which created states as they were being evaluated.
+    _stateful_pages: Dict[str, None] = dataclasses.field(default_factory=dict)
 
-    # The state class to use for the app. PRIVATE.
-    state: Optional[Type[BaseState]] = None
+    # The backend API object.
+    _api: FastAPI | None = None
+
+    # The state class to use for the app.
+    _state: Optional[Type[BaseState]] = None
 
     # Class to manage many client states.
     _state_manager: Optional[StateManager] = None
 
-    # Mapping from a route to event handlers to trigger when the page loads. PRIVATE.
-    load_events: Dict[str, List[IndividualEventType[[], Any]]] = dataclasses.field(
+    # Mapping from a route to event handlers to trigger when the page loads.
+    _load_events: Dict[str, List[IndividualEventType[()]]] = dataclasses.field(
         default_factory=dict
     )
 
-    # Admin dashboard to view and manage the database. PRIVATE.
+    # Admin dashboard to view and manage the database.
     admin_dash: Optional[AdminDash] = None
 
-    # The async server name space. PRIVATE.
-    event_namespace: Optional[EventNamespace] = None
+    # The async server name space.
+    _event_namespace: Optional[EventNamespace] = None
 
-    # Background tasks that are currently running. PRIVATE.
-    background_tasks: Set[asyncio.Task] = dataclasses.field(default_factory=set)
+    # Background tasks that are currently running.
+    _background_tasks: Set[asyncio.Task] = dataclasses.field(default_factory=set)
 
     # Frontend Error Handler Function
     frontend_exception_handler: Callable[[Exception], None] = (
@@ -292,6 +414,27 @@ class App(MiddlewareMixin, LifespanMixin):
     backend_exception_handler: Callable[
         [Exception], Union[EventSpec, List[EventSpec], None]
     ] = default_backend_exception_handler
+
+    # Put the toast provider in the app wrap.
+    bundle_toaster: bool = True
+
+    @property
+    def api(self) -> FastAPI | None:
+        """Get the backend api.
+
+        Returns:
+            The backend api.
+        """
+        return self._api
+
+    @property
+    def event_namespace(self) -> EventNamespace | None:
+        """Get the event namespace.
+
+        Returns:
+            The event namespace.
+        """
+        return self._event_namespace
 
     def __post_init__(self):
         """Initialize the app.
@@ -312,7 +455,7 @@ class App(MiddlewareMixin, LifespanMixin):
             set_breakpoints(self.style.pop("breakpoints"))
 
         # Set up the API.
-        self.api = FastAPI(lifespan=self._run_lifespan_tasks)
+        self._api = FastAPI(lifespan=self._run_lifespan_tasks)
         self._add_cors()
         self._add_default_endpoints()
 
@@ -333,16 +476,10 @@ class App(MiddlewareMixin, LifespanMixin):
 
             self.register_lifespan_task(windows_hot_reload_lifespan_hack)
 
-        # Enable proxying to frontend server.
-        if not environment.REFLEX_BACKEND_ONLY.get():
-            from reflex.proxy import proxy_middleware
-
-            self.register_lifespan_task(proxy_middleware)
-
     def _enable_state(self) -> None:
         """Enable state for the app."""
-        if not self.state:
-            self.state = State
+        if not self._state:
+            self._state = State
             self._setup_state()
 
     def _setup_state(self) -> None:
@@ -351,13 +488,13 @@ class App(MiddlewareMixin, LifespanMixin):
         Raises:
             RuntimeError: If the socket server is invalid.
         """
-        if not self.state:
+        if not self._state:
             return
 
         config = get_config()
 
         # Set up the state manager.
-        self._state_manager = StateManager.create(state=self.state)
+        self._state_manager = StateManager.create(state=self._state)
 
         # Set up the Socket.IO AsyncServer.
         if not self.sio:
@@ -388,12 +525,42 @@ class App(MiddlewareMixin, LifespanMixin):
         namespace = config.get_event_namespace()
 
         # Create the event namespace and attach the main app. Not related to any paths.
-        self.event_namespace = EventNamespace(namespace, self)
+        self._event_namespace = EventNamespace(namespace, self)
 
         # Register the event namespace with the socket.
         self.sio.register_namespace(self.event_namespace)
         # Mount the socket app with the API.
-        self.api.mount(str(constants.Endpoint.EVENT), socket_app)
+        if self.api:
+
+            class HeaderMiddleware:
+                def __init__(self, app: ASGIApp):
+                    self.app = app
+
+                async def __call__(
+                    self, scope: MutableMapping[str, Any], receive: Any, send: Callable
+                ):
+                    original_send = send
+
+                    async def modified_send(message: dict):
+                        if message["type"] == "websocket.accept":
+                            if scope.get("subprotocols"):
+                                # The following *does* say "subprotocol" instead of "subprotocols", intentionally.
+                                message["subprotocol"] = scope["subprotocols"][0]
+
+                            headers = dict(message.get("headers", []))
+                            header_key = b"sec-websocket-protocol"
+                            if subprotocol := headers.get(header_key):
+                                message["headers"] = [
+                                    *message.get("headers", []),
+                                    (header_key, subprotocol),
+                                ]
+
+                        return await original_send(message)
+
+                    return await self.app(scope, receive, modified_send)
+
+            socket_app_with_headers = HeaderMiddleware(socket_app)
+            self.api.mount(str(constants.Endpoint.EVENT), socket_app_with_headers)
 
         # Check the exception handlers
         self._validate_exception_handlers()
@@ -404,25 +571,38 @@ class App(MiddlewareMixin, LifespanMixin):
         Returns:
             The string representation of the app.
         """
-        return f"<App state={self.state.__name__ if self.state else None}>"
+        return f"<App state={self._state.__name__ if self._state else None}>"
 
     def __call__(self) -> FastAPI:
         """Run the backend api instance.
 
+        Raises:
+            ValueError: If the app has not been initialized.
+
         Returns:
             The backend api.
         """
+        if not self.api:
+            raise ValueError("The app has not been initialized.")
         return self.api
 
     def _add_default_endpoints(self):
         """Add default api endpoints (ping)."""
         # To test the server.
+        if not self.api:
+            return
+
         self.api.get(str(constants.Endpoint.PING))(ping)
         self.api.get(str(constants.Endpoint.HEALTH))(health)
 
     def _add_optional_endpoints(self):
         """Add optional api endpoints (_upload)."""
-        if Upload.is_used:
+        if not self.api:
+            return
+        upload_is_used_marker = (
+            prerequisites.get_backend_dir() / constants.Dirs.UPLOAD_IS_USED
+        )
+        if Upload.is_used or upload_is_used_marker.exists():
             # To upload files.
             self.api.post(str(constants.Endpoint.UPLOAD))(upload(self))
 
@@ -432,13 +612,20 @@ class App(MiddlewareMixin, LifespanMixin):
                 StaticFiles(directory=get_upload_dir()),
                 name="uploaded_files",
             )
+
+            upload_is_used_marker.parent.mkdir(parents=True, exist_ok=True)
+            upload_is_used_marker.touch()
         if codespaces.is_running_in_codespaces():
             self.api.get(str(constants.Endpoint.AUTH_CODESPACE))(
                 codespaces.auth_codespace
             )
+        if environment.REFLEX_ADD_ALL_ROUTES_ENDPOINT.get():
+            self.add_all_routes_endpoint()
 
     def _add_cors(self):
         """Add CORS middleware to the app."""
+        if not self.api:
+            return
         self.api.add_middleware(
             cors.CORSMiddleware,
             allow_credentials=True,
@@ -470,14 +657,10 @@ class App(MiddlewareMixin, LifespanMixin):
 
         Returns:
             The generated component.
-
-        Raises:
-            exceptions.MatchTypeError: If the return types of match cases in rx.match are different.
         """
-        try:
-            return component if isinstance(component, Component) else component()
-        except exceptions.MatchTypeError:
-            raise
+        from reflex.compiler.compiler import into_component
+
+        return into_component(component)
 
     def add_page(
         self,
@@ -486,7 +669,7 @@ class App(MiddlewareMixin, LifespanMixin):
         title: str | Var | None = None,
         description: str | Var | None = None,
         image: str = constants.DefaultPage.IMAGE,
-        on_load: EventType[[], BASE_STATE] | None = None,
+        on_load: EventType[()] | None = None,
         meta: list[dict[str, str]] = constants.DefaultPage.META_LIST,
     ):
         """Add a page to the app.
@@ -534,13 +717,13 @@ class App(MiddlewareMixin, LifespanMixin):
         # Check if the route given is valid
         verify_route_validity(route)
 
-        if route in self.unevaluated_pages and environment.RELOAD_CONFIG.is_set():
+        if route in self._unevaluated_pages and environment.RELOAD_CONFIG.is_set():
             # when the app is reloaded(typically for app harness tests), we should maintain
             # the latest render function of a route.This applies typically to decorated pages
             # since they are only added when app._compile is called.
-            self.unevaluated_pages.pop(route)
+            self._unevaluated_pages.pop(route)
 
-        if route in self.unevaluated_pages:
+        if route in self._unevaluated_pages:
             route_name = (
                 f"`{route}` or `/`"
                 if route == constants.PageNames.INDEX_ROUTE
@@ -553,15 +736,15 @@ class App(MiddlewareMixin, LifespanMixin):
 
         # Setup dynamic args for the route.
         # this state assignment is only required for tests using the deprecated state kwarg for App
-        state = self.state if self.state else State
+        state = self._state if self._state else State
         state.setup_dynamic_args(get_route_args(route))
 
         if on_load:
-            self.load_events[route] = (
+            self._load_events[route] = (
                 on_load if isinstance(on_load, list) else [on_load]
             )
 
-        self.unevaluated_pages[route] = UnevaluatedPage(
+        self._unevaluated_pages[route] = UnevaluatedPage(
             component=component,
             route=route,
             title=title,
@@ -571,24 +754,32 @@ class App(MiddlewareMixin, LifespanMixin):
             meta=meta,
         )
 
-    def _compile_page(self, route: str):
+    def _compile_page(self, route: str, save_page: bool = True):
         """Compile a page.
 
         Args:
             route: The route of the page to compile.
+            save_page: If True, the compiled page is saved to self._pages.
         """
+        n_states_before = len(all_base_state_classes)
         component, enable_state = compiler.compile_unevaluated_page(
-            route, self.unevaluated_pages[route], self.state, self.style, self.theme
+            route, self._unevaluated_pages[route], self._state, self.style, self.theme
         )
 
+        # Indicate that the app should use state.
         if enable_state:
             self._enable_state()
 
+        # Indicate that evaluating this page creates one or more state classes.
+        if len(all_base_state_classes) > n_states_before:
+            self._stateful_pages[route] = None
+
         # Add the page.
         self._check_routes_conflict(route)
-        self.pages[route] = component
+        if save_page:
+            self._pages[route] = component
 
-    def get_load_events(self, route: str) -> list[IndividualEventType[[], Any]]:
+    def get_load_events(self, route: str) -> list[IndividualEventType[()]]:
         """Get the load events for a route.
 
         Args:
@@ -600,7 +791,7 @@ class App(MiddlewareMixin, LifespanMixin):
         route = route.lstrip("/")
         if route == "":
             route = constants.PageNames.INDEX_ROUTE
-        return self.load_events.get(route, [])
+        return self._load_events.get(route, [])
 
     def _check_routes_conflict(self, new_route: str):
         """Verify if there is any conflict between the new route and any existing route.
@@ -624,10 +815,13 @@ class App(MiddlewareMixin, LifespanMixin):
             constants.RouteRegex.SINGLE_CATCHALL_SEGMENT,
             constants.RouteRegex.DOUBLE_CATCHALL_SEGMENT,
         )
-        for route in self.pages:
+        for route in self._pages:
             replaced_route = replace_brackets_with_keywords(route)
             for rw, r, nr in zip(
-                replaced_route.split("/"), route.split("/"), new_route.split("/")
+                replaced_route.split("/"),
+                route.split("/"),
+                new_route.split("/"),
+                strict=False,
             ):
                 if rw in segments and r != nr:
                     # If the slugs in the segments of both routes are not the same, then the route is invalid
@@ -647,7 +841,7 @@ class App(MiddlewareMixin, LifespanMixin):
         title: str = constants.Page404.TITLE,
         image: str = constants.Page404.IMAGE,
         description: str = constants.Page404.DESCRIPTION,
-        on_load: EventType[[], BASE_STATE] | None = None,
+        on_load: EventType[()] | None = None,
         meta: list[dict[str, str]] = constants.DefaultPage.META_LIST,
     ):
         """Define a custom 404 page for any url having no match.
@@ -658,8 +852,8 @@ class App(MiddlewareMixin, LifespanMixin):
         Args:
             component: The component to display at the page.
             title: The title of the page.
-            description: The description of the page.
             image: The image to display on the page.
+            description: The description of the page.
             on_load: The event handler(s) that will be called each time the page load.
             meta: The metadata of the page.
         """
@@ -682,6 +876,9 @@ class App(MiddlewareMixin, LifespanMixin):
     def _setup_admin_dash(self):
         """Setup the admin dash."""
         # Get the admin dash.
+        if not self.api:
+            return
+
         admin_dash = self.admin_dash
 
         if admin_dash and admin_dash.models:
@@ -723,7 +920,7 @@ class App(MiddlewareMixin, LifespanMixin):
         frontend_packages = get_config().frontend_packages
         _frontend_packages = []
         for package in frontend_packages:
-            if package in (get_config().tailwind or {}).get("plugins", []):  # type: ignore
+            if package in (get_config().tailwind or {}).get("plugins", []):
                 console.warn(
                     f"Tailwind packages are inferred from 'plugins', remove `{package}` from `frontend_packages`"
                 )
@@ -786,29 +983,19 @@ class App(MiddlewareMixin, LifespanMixin):
 
     def _setup_overlay_component(self):
         """If a State is not used and no overlay_component is specified, do not render the connection modal."""
-        if self.state is None and self.overlay_component is default_overlay_component:
+        if self._state is None and self.overlay_component is default_overlay_component:
             self.overlay_component = None
-        for k, component in self.pages.items():
-            self.pages[k] = self._add_overlay_to_component(component)
+        for k, component in self._pages.items():
+            self._pages[k] = self._add_overlay_to_component(component)
 
-    def _add_error_boundary_to_component(self, component: Component) -> Component:
-        if self.error_boundary is None:
-            return component
-
-        component = self.error_boundary(*component.children)
-
-        return component
-
-    def _setup_error_boundary(self):
-        """If a State is not used and no error_boundary is specified, do not render the error boundary."""
-        if self.state is None and self.error_boundary is default_error_boundary:
-            self.error_boundary = None
-
-        for k, component in self.pages.items():
-            # Skip the 404 page
-            if k == constants.Page404.SLUG:
-                continue
-            self.pages[k] = self._add_error_boundary_to_component(component)
+    def _setup_sticky_badge(self):
+        """Add the sticky badge to the app."""
+        for k, component in self._pages.items():
+            # Would be nice to share single sticky_badge across all pages, but
+            # it bungles the StatefulComponent compile step.
+            sticky_badge = sticky()
+            sticky_badge._add_style_recursive({})
+            self._pages[k] = Fragment.create(sticky_badge, component)
 
     def _apply_decorated_pages(self):
         """Add @rx.page decorated pages to the app.
@@ -834,21 +1021,27 @@ class App(MiddlewareMixin, LifespanMixin):
         Raises:
             VarDependencyError: When a computed var has an invalid dependency.
         """
-        if not self.state:
+        if not self._state:
             return
 
         if not state:
-            state = self.state
+            state = self._state
 
         for var in state.computed_vars.values():
             if not var._cache:
                 continue
             deps = var._deps(objclass=state)
-            for dep in deps:
-                if dep not in state.vars and dep not in state.backend_vars:
-                    raise exceptions.VarDependencyError(
-                        f"ComputedVar {var._js_expr} on state {state.__name__} has an invalid dependency {dep}"
-                    )
+            for state_name, dep_set in deps.items():
+                state_cls = (
+                    state.get_root_state().get_class_substate(state_name)
+                    if state_name != state.get_full_name()
+                    else state
+                )
+                for dep in dep_set:
+                    if dep not in state_cls.vars and dep not in state_cls.backend_vars:
+                        raise exceptions.VarDependencyError(
+                            f"ComputedVar {var._js_expr} on state {state.__name__} has an invalid dependency {state_name}.{dep}"
+                        )
 
         for substate in state.class_subclasses:
             self._validate_var_dependencies(substate)
@@ -864,13 +1057,27 @@ class App(MiddlewareMixin, LifespanMixin):
         """
         from reflex.utils.exceptions import ReflexRuntimeError
 
-        self.pages = {}
+        self._pages = {}
 
         def get_compilation_time() -> str:
             return str(datetime.now().time()).split(".")[0]
 
+        should_compile = self._should_compile()
+        backend_dir = prerequisites.get_backend_dir()
+        if not should_compile and backend_dir.exists():
+            stateful_pages_marker = backend_dir / constants.Dirs.STATEFUL_PAGES
+            if stateful_pages_marker.exists():
+                with stateful_pages_marker.open("r") as f:
+                    stateful_pages = json.load(f)
+                for route in stateful_pages:
+                    console.info(f"BE Evaluating stateful page: {route}")
+                    self._compile_page(route, save_page=False)
+                self._enable_state()
+            self._add_optional_endpoints()
+            return
+
         # Render a default 404 page if the user didn't supply one
-        if constants.Page404.SLUG not in self.unevaluated_pages:
+        if constants.Page404.SLUG not in self._unevaluated_pages:
             self.add_page(route=constants.Page404.SLUG)
 
         # Fix up the style.
@@ -886,19 +1093,28 @@ class App(MiddlewareMixin, LifespanMixin):
             # If a theme component was provided, wrap the app with it
             app_wrappers[(20, "Theme")] = self.theme
 
-        for route in self.unevaluated_pages:
-            console.debug(f"Evaluating page: {route}")
-            self._compile_page(route)
+        # Get the env mode.
+        config = get_config()
 
-        # Add the optional endpoints (_upload)
-        self._add_optional_endpoints()
+        if config.react_strict_mode:
+            app_wrappers[(200, "StrictMode")] = StrictMode.create()
 
-        if not self._should_compile():
+        should_compile = self._should_compile()
+
+        if not should_compile:
+            if self.bundle_toaster:
+                from reflex.components.sonner.toast import Toaster
+
+                Toaster.is_used = True
+            with console.timing("Evaluate Pages (Backend)"):
+                for route in self._unevaluated_pages:
+                    console.debug(f"Evaluating page: {route}")
+                    self._compile_page(route, save_page=should_compile)
+
+            # Add the optional endpoints (_upload)
+            self._add_optional_endpoints()
+
             return
-
-        self._validate_var_dependencies()
-        self._setup_overlay_component()
-        self._setup_error_boundary()
 
         # Create a progress bar.
         progress = Progress(
@@ -908,21 +1124,72 @@ class App(MiddlewareMixin, LifespanMixin):
         )
 
         # try to be somewhat accurate - but still not 100%
-        adhoc_steps_without_executor = 6
+        adhoc_steps_without_executor = 7
         fixed_pages_within_executor = 5
         progress.start()
         task = progress.add_task(
             f"[{get_compilation_time()}] Compiling:",
-            total=len(self.pages)
+            total=len(self._pages)
+            + (len(self._unevaluated_pages) * 2)
             + fixed_pages_within_executor
             + adhoc_steps_without_executor,
         )
 
-        # Get the env mode.
-        config = get_config()
+        if self.bundle_toaster:
+            from reflex.components.component import memo
+            from reflex.components.sonner.toast import toast
+
+            internal_toast_provider = toast.provider()
+
+            @memo
+            def memoized_toast_provider():
+                return internal_toast_provider
+
+            toast_provider = Fragment.create(memoized_toast_provider())
+
+            app_wrappers[(1, "ToasterProvider")] = toast_provider
+
+        with console.timing("Evaluate Pages (Frontend)"):
+            performance_metrics: list[tuple[str, float]] = []
+            for route in self._unevaluated_pages:
+                console.debug(f"Evaluating page: {route}")
+                start = timer()
+                self._compile_page(route, save_page=should_compile)
+                end = timer()
+                performance_metrics.append((route, end - start))
+                progress.advance(task)
+            console.debug(
+                "Slowest pages:\n"
+                + "\n".join(
+                    f"{route}: {time * 1000:.1f}ms"
+                    for route, time in sorted(
+                        performance_metrics, key=lambda x: x[1], reverse=True
+                    )[:10]
+                )
+            )
+
+        # Add the optional endpoints (_upload)
+        self._add_optional_endpoints()
+
+        self._validate_var_dependencies()
+        self._setup_overlay_component()
+
+        if config.show_built_with_reflex is None:
+            if (
+                get_compile_context() == constants.CompileContext.DEPLOY
+                and prerequisites.get_user_tier() in ["pro", "team", "enterprise"]
+            ):
+                config.show_built_with_reflex = False
+            else:
+                config.show_built_with_reflex = True
+
+        if is_prod_mode() and config.show_built_with_reflex:
+            self._setup_sticky_badge()
+
+        progress.advance(task)
 
         # Store the compile results.
-        compile_results = []
+        compile_results: list[tuple[str, str]] = []
 
         progress.advance(task)
 
@@ -932,7 +1199,7 @@ class App(MiddlewareMixin, LifespanMixin):
 
         # This has to happen before compiling stateful components as that
         # prevents recursive functions from reaching all components.
-        for component in self.pages.values():
+        for component in self._pages.values():
             # Add component._get_all_imports() to all_imports.
             all_imports.update(component._get_all_imports())
 
@@ -942,17 +1209,35 @@ class App(MiddlewareMixin, LifespanMixin):
             # Add the custom components from the page to the set.
             custom_components |= component._get_all_custom_components()
 
-        # Perform auto-memoization of stateful components.
-        (
-            stateful_components_path,
-            stateful_components_code,
-            page_components,
-        ) = compiler.compile_stateful_components(self.pages.values())
+        # Add the app wraps to the app.
+        for key, app_wrap in self.app_wraps.items():
+            component = app_wrap(self._state is not None)
+            if component is not None:
+                app_wrappers[key] = component
 
-        progress.advance(task)
+        for component in app_wrappers.values():
+            custom_components |= component._get_all_custom_components()
+
+        if self.error_boundary:
+            console.deprecate(
+                feature_name="App.error_boundary",
+                reason="Use app_wraps instead.",
+                deprecation_version="0.7.1",
+                removal_version="0.8.0",
+            )
+            app_wrappers[(55, "ErrorBoundary")] = self.error_boundary()
+
+        # Perform auto-memoization of stateful components.
+        with console.timing("Auto-memoize StatefulComponents"):
+            (
+                stateful_components_path,
+                stateful_components_code,
+                page_components,
+            ) = compiler.compile_stateful_components(self._pages.values())
+            progress.advance(task)
 
         # Catch "static" apps (that do not define a rx.State subclass) which are trying to access rx.State.
-        if code_uses_state_contexts(stateful_components_code) and self.state is None:
+        if code_uses_state_contexts(stateful_components_code) and self._state is None:
             raise ReflexRuntimeError(
                 "To access rx.State in frontend components, at least one "
                 "subclass of rx.State must be defined in the app."
@@ -966,43 +1251,40 @@ class App(MiddlewareMixin, LifespanMixin):
             compiler.compile_document_root(
                 self.head_components,
                 html_lang=self.html_lang,
-                html_custom_attrs=self.html_custom_attrs,  # type: ignore
+                html_custom_attrs=self.html_custom_attrs,  # pyright: ignore [reportArgumentType]
             )
         )
 
         progress.advance(task)
 
-        # Use a forking process pool, if possible.  Much faster, especially for large sites.
-        # Fallback to ThreadPoolExecutor as something that will always work.
-        executor = None
-        if (
-            platform.system() in ("Linux", "Darwin")
-            and (number_of_processes := environment.REFLEX_COMPILE_PROCESSES.get())
-            is not None
-        ):
-            executor = concurrent.futures.ProcessPoolExecutor(
-                max_workers=number_of_processes or None,
-                mp_context=multiprocessing.get_context("fork"),
-            )
-        else:
-            executor = concurrent.futures.ThreadPoolExecutor(
-                max_workers=environment.REFLEX_COMPILE_THREADS.get() or None
-            )
+        # Copy the assets.
+        assets_src = Path.cwd() / constants.Dirs.APP_ASSETS
+        if assets_src.is_dir():
+            with console.timing("Copy assets"):
+                path_ops.update_directory_tree(
+                    src=assets_src,
+                    dest=(
+                        Path.cwd() / prerequisites.get_web_dir() / constants.Dirs.PUBLIC
+                    ),
+                )
 
-        for route, component in zip(self.pages, page_components):
+        executor = ExecutorType.get_executor_from_environment()
+
+        for route, component in zip(self._pages, page_components, strict=True):
             ExecutorSafeFunctions.COMPONENTS[route] = component
 
-        ExecutorSafeFunctions.STATE = self.state
+        ExecutorSafeFunctions.STATE = self._state
 
-        with executor:
-            result_futures = []
+        with console.timing("Compile to Javascript"), executor as executor:
+            result_futures: list[concurrent.futures.Future[tuple[str, str]]] = []
 
-            def _submit_work(fn, *args, **kwargs):
+            def _submit_work(fn: Callable[..., tuple[str, str]], *args, **kwargs):
                 f = executor.submit(fn, *args, **kwargs)
+                f.add_done_callback(lambda _: progress.advance(task))
                 result_futures.append(f)
 
             # Compile the pre-compiled pages.
-            for route in self.pages:
+            for route in self._pages:
                 _submit_work(
                     ExecutorSafeFunctions.compile_page,
                     route,
@@ -1024,9 +1306,10 @@ class App(MiddlewareMixin, LifespanMixin):
                 _submit_work(compiler.remove_tailwind_from_postcss)
 
             # Wait for all compilation tasks to complete.
-            for future in concurrent.futures.as_completed(result_futures):
-                compile_results.append(future.result())
-                progress.advance(task)
+            compile_results.extend(
+                future.result()
+                for future in concurrent.futures.as_completed(result_futures)
+            )
 
         app_root = self._app_root(app_wrappers=app_wrappers)
 
@@ -1037,7 +1320,7 @@ class App(MiddlewareMixin, LifespanMixin):
 
         # Compile the contexts.
         compile_results.append(
-            compiler.compile_contexts(self.state, self.theme),
+            compiler.compile_contexts(self._state, self.theme),
         )
         if self.theme is not None:
             # Fix #2992 by removing the top-level appearance prop
@@ -1051,17 +1334,20 @@ class App(MiddlewareMixin, LifespanMixin):
         progress.advance(task)
 
         # Compile custom components.
-        *custom_components_result, custom_components_imports = (
-            compiler.compile_components(custom_components)
-        )
-        compile_results.append(custom_components_result)
+        (
+            custom_components_output,
+            custom_components_result,
+            custom_components_imports,
+        ) = compiler.compile_components(custom_components)
+        compile_results.append((custom_components_output, custom_components_result))
         all_imports.update(custom_components_imports)
 
         progress.advance(task)
         progress.stop()
 
         # Install frontend packages.
-        self._get_frontend_packages(all_imports)
+        with console.timing("Install Frontend Packages"):
+            self._get_frontend_packages(all_imports)
 
         # Setup the next.config.js
         transpile_packages = [
@@ -1087,8 +1373,27 @@ class App(MiddlewareMixin, LifespanMixin):
                     # Remove pages that are no longer in the app.
                     p.unlink()
 
-        for output_path, code in compile_results:
-            compiler_utils.write_page(output_path, code)
+        with console.timing("Write to Disk"):
+            for output_path, code in compile_results:
+                compiler_utils.write_page(output_path, code)
+
+        # Write list of routes that create dynamic states for backend to use.
+        if self._state is not None:
+            stateful_pages_marker = (
+                prerequisites.get_backend_dir() / constants.Dirs.STATEFUL_PAGES
+            )
+            stateful_pages_marker.parent.mkdir(parents=True, exist_ok=True)
+            with stateful_pages_marker.open("w") as f:
+                json.dump(list(self._stateful_pages), f)
+
+    def add_all_routes_endpoint(self):
+        """Add an endpoint to the app that returns all the routes."""
+        if not self.api:
+            return
+
+        @self.api.get(str(constants.Endpoint.ALL_ROUTES))
+        async def all_routes():
+            return list(self._unevaluated_pages.keys())
 
     @contextlib.asynccontextmanager
     async def modify_state(self, token: str) -> AsyncIterator[BaseState]:
@@ -1159,9 +1464,9 @@ class App(MiddlewareMixin, LifespanMixin):
                 )
 
         task = asyncio.create_task(_coro())
-        self.background_tasks.add(task)
+        self._background_tasks.add(task)
         # Clean up task from background_tasks set when complete.
-        task.add_done_callback(self.background_tasks.discard)
+        task.add_done_callback(self._background_tasks.discard)
         return task
 
     def _validate_exception_handlers(self):
@@ -1171,11 +1476,11 @@ class App(MiddlewareMixin, LifespanMixin):
             ValueError: If the custom exception handlers are invalid.
 
         """
-        FRONTEND_ARG_SPEC = {
+        frontend_arg_spec = {
             "exception": Exception,
         }
 
-        BACKEND_ARG_SPEC = {
+        backend_arg_spec = {
             "exception": Exception,
         }
 
@@ -1183,9 +1488,10 @@ class App(MiddlewareMixin, LifespanMixin):
             ["frontend", "backend"],
             [self.frontend_exception_handler, self.backend_exception_handler],
             [
-                FRONTEND_ARG_SPEC,
-                BACKEND_ARG_SPEC,
+                frontend_arg_spec,
+                backend_arg_spec,
             ],
+            strict=True,
         ):
             if hasattr(handler_fn, "__name__"):
                 _fn_name = handler_fn.__name__
@@ -1226,7 +1532,7 @@ class App(MiddlewareMixin, LifespanMixin):
                 ):
                     raise ValueError(
                         f"Provided custom {handler_domain} exception handler `{_fn_name}` has the wrong argument order."
-                        f"Expected `{required_arg}` as the {required_arg_index+1} argument but got `{list(arg_annotations.keys())[required_arg_index]}`"
+                        f"Expected `{required_arg}` as the {required_arg_index + 1} argument but got `{list(arg_annotations.keys())[required_arg_index]}`"
                     )
 
                 if not issubclass(arg_annotations[required_arg], Exception):
@@ -1327,15 +1633,14 @@ async def process(
                 if app._process_background(state, event) is not None:
                     # `final=True` allows the frontend send more events immediately.
                     yield StateUpdate(final=True)
-                    return
+                else:
+                    # Process the event synchronously.
+                    async for update in state._process(event):
+                        # Postprocess the event.
+                        update = await app._postprocess(state, event, update)
 
-                # Process the event synchronously.
-                async for update in state._process(event):
-                    # Postprocess the event.
-                    update = await app._postprocess(state, event, update)
-
-                    # Yield the update.
-                    yield update
+                        # Yield the update.
+                        yield update
     except Exception as ex:
         telemetry.send_error(ex, context="backend")
 
@@ -1396,7 +1701,7 @@ def upload(app: App):
         The upload function.
     """
 
-    async def upload_file(request: Request, files: List[UploadFile]):
+    async def upload_file(request: Request, files: List[FastAPIUploadFile]):
         """Upload a file.
 
         Args:
@@ -1472,7 +1777,8 @@ def upload(app: App):
             file_copies.append(
                 UploadFile(
                     file=content_copy,
-                    filename=file.filename,
+                    path=Path(file.filename.lstrip("/")) if file.filename else None,
+                    _deprecated_filename=file.filename,
                     size=file.size,
                     headers=file.headers,
                 )
@@ -1530,7 +1836,7 @@ class EventNamespace(AsyncNamespace):
         self.sid_to_token = {}
         self.app = app
 
-    async def on_connect(self, sid, environ):
+    async def on_connect(self, sid: str, environ: dict):
         """Event for when the websocket is connected.
 
         Args:
@@ -1540,7 +1846,13 @@ class EventNamespace(AsyncNamespace):
         query_params = urllib.parse.parse_qs(environ.get("QUERY_STRING"))
         await self.link_token_to_sid(sid, query_params.get("token", [])[0])
 
-    def on_disconnect(self, sid):
+        subprotocol = environ.get("HTTP_SEC_WEBSOCKET_PROTOCOL")
+        if subprotocol and subprotocol != constants.Reflex.VERSION:
+            console.warn(
+                f"Frontend version {subprotocol} for session {sid} does not match the backend version {constants.Reflex.VERSION}."
+            )
+
+    def on_disconnect(self, sid: str):
         """Event for when the websocket disconnects.
 
         Args:
@@ -1562,7 +1874,7 @@ class EventNamespace(AsyncNamespace):
             self.emit(str(constants.SocketEvent.EVENT), update, to=sid)
         )
 
-    async def on_event(self, sid, data):
+    async def on_event(self, sid: str, data: Any):
         """Event for receiving front-end websocket events.
 
         Raises:
@@ -1571,12 +1883,36 @@ class EventNamespace(AsyncNamespace):
         Args:
             sid: The Socket.IO session id.
             data: The event data.
+
+        Raises:
+            EventDeserializationError: If the event data is not a dictionary.
         """
         fields = data
-        # Get the event.
-        event = Event(
-            **{k: v for k, v in fields.items() if k not in ("handler", "event_actions")}
-        )
+
+        if isinstance(fields, str):
+            console.warn(
+                "Received event data as a string. This generally should not happen and may indicate a bug."
+                f" Event data: {fields}"
+            )
+            try:
+                fields = json.loads(fields)
+            except json.JSONDecodeError as ex:
+                raise exceptions.EventDeserializationError(
+                    f"Failed to deserialize event data: {fields}."
+                ) from ex
+
+        if not isinstance(fields, dict):
+            raise exceptions.EventDeserializationError(
+                f"Event data must be a dictionary, but received {fields} of type {type(fields)}."
+            )
+
+        try:
+            # Get the event.
+            event = Event(**{k: v for k, v in fields.items() if k in _EVENT_FIELDS})
+        except (TypeError, ValueError) as ex:
+            raise exceptions.EventDeserializationError(
+                f"Failed to deserialize event data: {fields}."
+            ) from ex
 
         # Get the event environment.
         if self.app.sio is None:
@@ -1602,7 +1938,7 @@ class EventNamespace(AsyncNamespace):
             # Emit the update from processing the event.
             await self.emit_update(update=update, sid=sid)
 
-    async def on_ping(self, sid):
+    async def on_ping(self, sid: str):
         """Event for testing the API endpoint.
 
         Args:

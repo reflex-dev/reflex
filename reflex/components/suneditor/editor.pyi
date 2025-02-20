@@ -8,7 +8,7 @@ from typing import Any, Dict, List, Literal, Optional, Tuple, Union, overload
 
 from reflex.base import Base
 from reflex.components.component import NoSSRComponent
-from reflex.event import BASE_STATE, EventType
+from reflex.event import EventType
 from reflex.style import Style
 from reflex.utils.imports import ImportDict
 from reflex.vars.base import Var
@@ -127,52 +127,38 @@ class Editor(NoSSRComponent):
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
         custom_attrs: Optional[Dict[str, Union[Var, Any]]] = None,
-        on_blur: Optional[
-            Union[EventType[[], BASE_STATE], EventType[[str], BASE_STATE]]
-        ] = None,
-        on_change: Optional[
-            Union[EventType[[], BASE_STATE], EventType[[str], BASE_STATE]]
-        ] = None,
-        on_click: Optional[EventType[[], BASE_STATE]] = None,
-        on_context_menu: Optional[EventType[[], BASE_STATE]] = None,
-        on_copy: Optional[EventType[[], BASE_STATE]] = None,
-        on_cut: Optional[EventType[[], BASE_STATE]] = None,
-        on_double_click: Optional[EventType[[], BASE_STATE]] = None,
-        on_focus: Optional[EventType[[], BASE_STATE]] = None,
-        on_input: Optional[EventType[[], BASE_STATE]] = None,
-        on_load: Optional[
-            Union[EventType[[], BASE_STATE], EventType[[bool], BASE_STATE]]
-        ] = None,
-        on_mount: Optional[EventType[[], BASE_STATE]] = None,
-        on_mouse_down: Optional[EventType[[], BASE_STATE]] = None,
-        on_mouse_enter: Optional[EventType[[], BASE_STATE]] = None,
-        on_mouse_leave: Optional[EventType[[], BASE_STATE]] = None,
-        on_mouse_move: Optional[EventType[[], BASE_STATE]] = None,
-        on_mouse_out: Optional[EventType[[], BASE_STATE]] = None,
-        on_mouse_over: Optional[EventType[[], BASE_STATE]] = None,
-        on_mouse_up: Optional[EventType[[], BASE_STATE]] = None,
+        on_blur: Optional[Union[EventType[()], EventType[str]]] = None,
+        on_change: Optional[Union[EventType[()], EventType[str]]] = None,
+        on_click: Optional[EventType[()]] = None,
+        on_context_menu: Optional[EventType[()]] = None,
+        on_copy: Optional[EventType[()]] = None,
+        on_cut: Optional[EventType[()]] = None,
+        on_double_click: Optional[EventType[()]] = None,
+        on_focus: Optional[EventType[()]] = None,
+        on_input: Optional[EventType[()]] = None,
+        on_load: Optional[Union[EventType[()], EventType[bool]]] = None,
+        on_mount: Optional[EventType[()]] = None,
+        on_mouse_down: Optional[EventType[()]] = None,
+        on_mouse_enter: Optional[EventType[()]] = None,
+        on_mouse_leave: Optional[EventType[()]] = None,
+        on_mouse_move: Optional[EventType[()]] = None,
+        on_mouse_out: Optional[EventType[()]] = None,
+        on_mouse_over: Optional[EventType[()]] = None,
+        on_mouse_up: Optional[EventType[()]] = None,
         on_paste: Optional[
-            Union[
-                EventType[[], BASE_STATE],
-                EventType[[str], BASE_STATE],
-                EventType[[str, bool], BASE_STATE],
-            ]
+            Union[EventType[()], EventType[str], EventType[str, bool]]
         ] = None,
-        on_scroll: Optional[EventType[[], BASE_STATE]] = None,
-        on_unmount: Optional[EventType[[], BASE_STATE]] = None,
-        toggle_code_view: Optional[
-            Union[EventType[[], BASE_STATE], EventType[[bool], BASE_STATE]]
-        ] = None,
-        toggle_full_screen: Optional[
-            Union[EventType[[], BASE_STATE], EventType[[bool], BASE_STATE]]
-        ] = None,
+        on_scroll: Optional[EventType[()]] = None,
+        on_unmount: Optional[EventType[()]] = None,
+        toggle_code_view: Optional[Union[EventType[()], EventType[bool]]] = None,
+        toggle_full_screen: Optional[Union[EventType[()], EventType[bool]]] = None,
         **props,
     ) -> "Editor":
         """Create an instance of Editor. No children allowed.
 
         Args:
-            set_options(Optional[EditorOptions]): Configuration object to further configure the instance.
-            lang: Language of the editor.  Alternatively to a string, a dict of your language can be passed to this prop.  Please refer to the library docs for this.  options: "en" | "da" | "de" | "es" | "fr" | "ja" | "ko" | "pt_br" |   "ru" | "zh_cn" | "ro" | "pl" | "ckb" | "lv" | "se" | "ua" | "he" | "it"  default: "en".
+            set_options: Configuration object to further configure the instance.
+            lang: Language of the editor.  Alternatively to a string, a dict of your language can be passed to this prop.  Please refer to the library docs for this.  options: "en" | "da" | "de" | "es" | "fr" | "ja" | "ko" | "pt_br" |  "ru" | "zh_cn" | "ro" | "pl" | "ckb" | "lv" | "se" | "ua" | "he" | "it"  default: "en".
             name: This is used to set the HTML form name of the editor.  This means on HTML form submission,  it will be submitted together with contents of the editor by the name provided.
             default_value: Sets the default value of the editor.  This is useful if you don't want the on_change method to be called on render.  If you want the on_change method to be called on render please use the set_contents prop
             width: Sets the width of the editor.  px and percentage values are accepted, eg width="100%" or width="500px"  default: 100%

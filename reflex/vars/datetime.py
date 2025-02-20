@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import dataclasses
-import sys
 from datetime import date, datetime
 from typing import Any, NoReturn, TypeVar, Union, overload
 
@@ -40,7 +39,7 @@ class DateTimeVar(Var[DATETIME_T], python_types=(datetime, date)):
     def __lt__(self, other: datetime_types) -> BooleanVar: ...
 
     @overload
-    def __lt__(self, other: NoReturn) -> NoReturn: ...
+    def __lt__(self, other: NoReturn) -> NoReturn: ...  # pyright: ignore [reportOverlappingOverload]
 
     def __lt__(self, other: Any):
         """Less than comparison.
@@ -59,7 +58,7 @@ class DateTimeVar(Var[DATETIME_T], python_types=(datetime, date)):
     def __le__(self, other: datetime_types) -> BooleanVar: ...
 
     @overload
-    def __le__(self, other: NoReturn) -> NoReturn: ...
+    def __le__(self, other: NoReturn) -> NoReturn: ...  # pyright: ignore [reportOverlappingOverload]
 
     def __le__(self, other: Any):
         """Less than or equal comparison.
@@ -78,7 +77,7 @@ class DateTimeVar(Var[DATETIME_T], python_types=(datetime, date)):
     def __gt__(self, other: datetime_types) -> BooleanVar: ...
 
     @overload
-    def __gt__(self, other: NoReturn) -> NoReturn: ...
+    def __gt__(self, other: NoReturn) -> NoReturn: ...  # pyright: ignore [reportOverlappingOverload]
 
     def __gt__(self, other: Any):
         """Greater than comparison.
@@ -97,7 +96,7 @@ class DateTimeVar(Var[DATETIME_T], python_types=(datetime, date)):
     def __ge__(self, other: datetime_types) -> BooleanVar: ...
 
     @overload
-    def __ge__(self, other: NoReturn) -> NoReturn: ...
+    def __ge__(self, other: NoReturn) -> NoReturn: ...  # pyright: ignore [reportOverlappingOverload]
 
     def __ge__(self, other: Any):
         """Greater than or equal comparison.
@@ -185,7 +184,7 @@ def date_compare_operation(
         The result of the operation.
     """
     return var_operation_return(
-        f"({lhs} { '<' if strict else '<='} {rhs})",
+        f"({lhs} {'<' if strict else '<='} {rhs})",
         bool,
     )
 
@@ -193,7 +192,7 @@ def date_compare_operation(
 @dataclasses.dataclass(
     eq=False,
     frozen=True,
-    **{"slots": True} if sys.version_info >= (3, 10) else {},
+    slots=True,
 )
 class LiteralDatetimeVar(LiteralVar, DateTimeVar):
     """Base class for immutable datetime and date vars."""

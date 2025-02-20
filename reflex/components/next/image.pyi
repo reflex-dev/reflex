@@ -5,11 +5,13 @@
 # ------------------------------------------------------
 from typing import Any, Dict, Literal, Optional, Union, overload
 
-from reflex.event import BASE_STATE, EventType
+from reflex.event import EventType
 from reflex.style import Style
 from reflex.vars.base import Var
 
 from .base import NextComponent
+
+DEFAULT_W_H = "100%"
 
 class Image(NextComponent):
     @overload
@@ -30,30 +32,30 @@ class Image(NextComponent):
         loading: Optional[
             Union[Literal["eager", "lazy"], Var[Literal["eager", "lazy"]]]
         ] = None,
-        blurDataURL: Optional[Union[Var[str], str]] = None,
+        blur_data_url: Optional[Union[Var[str], str]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
         custom_attrs: Optional[Dict[str, Union[Var, Any]]] = None,
-        on_blur: Optional[EventType[[], BASE_STATE]] = None,
-        on_click: Optional[EventType[[], BASE_STATE]] = None,
-        on_context_menu: Optional[EventType[[], BASE_STATE]] = None,
-        on_double_click: Optional[EventType[[], BASE_STATE]] = None,
-        on_error: Optional[EventType[[], BASE_STATE]] = None,
-        on_focus: Optional[EventType[[], BASE_STATE]] = None,
-        on_load: Optional[EventType[[], BASE_STATE]] = None,
-        on_mount: Optional[EventType[[], BASE_STATE]] = None,
-        on_mouse_down: Optional[EventType[[], BASE_STATE]] = None,
-        on_mouse_enter: Optional[EventType[[], BASE_STATE]] = None,
-        on_mouse_leave: Optional[EventType[[], BASE_STATE]] = None,
-        on_mouse_move: Optional[EventType[[], BASE_STATE]] = None,
-        on_mouse_out: Optional[EventType[[], BASE_STATE]] = None,
-        on_mouse_over: Optional[EventType[[], BASE_STATE]] = None,
-        on_mouse_up: Optional[EventType[[], BASE_STATE]] = None,
-        on_scroll: Optional[EventType[[], BASE_STATE]] = None,
-        on_unmount: Optional[EventType[[], BASE_STATE]] = None,
+        on_blur: Optional[EventType[()]] = None,
+        on_click: Optional[EventType[()]] = None,
+        on_context_menu: Optional[EventType[()]] = None,
+        on_double_click: Optional[EventType[()]] = None,
+        on_error: Optional[EventType[()]] = None,
+        on_focus: Optional[EventType[()]] = None,
+        on_load: Optional[EventType[()]] = None,
+        on_mount: Optional[EventType[()]] = None,
+        on_mouse_down: Optional[EventType[()]] = None,
+        on_mouse_enter: Optional[EventType[()]] = None,
+        on_mouse_leave: Optional[EventType[()]] = None,
+        on_mouse_move: Optional[EventType[()]] = None,
+        on_mouse_out: Optional[EventType[()]] = None,
+        on_mouse_over: Optional[EventType[()]] = None,
+        on_mouse_up: Optional[EventType[()]] = None,
+        on_scroll: Optional[EventType[()]] = None,
+        on_unmount: Optional[EventType[()]] = None,
         **props,
     ) -> "Image":
         """Create an Image component from next/image.
@@ -71,7 +73,7 @@ class Image(NextComponent):
             priority: When true, the image will be considered high priority and preload. Lazy loading is automatically disabled for images using priority.
             placeholder: A placeholder to use while the image is loading. Possible values are blur, empty, or data:image/.... Defaults to empty.
             loading: The loading behavior of the image. Defaults to lazy. Can hurt performance, recommended to use `priority` instead.
-            blurDataURL: A Data URL to be used as a placeholder image before the src image successfully loads. Only takes effect when combined with placeholder="blur".
+            blur_data_url: A Data URL to be used as a placeholder image before the src image successfully loads. Only takes effect when combined with placeholder="blur".
             on_load: Fires when the image has loaded.
             on_error: Fires when the image has an error.
             style: The style of the component.

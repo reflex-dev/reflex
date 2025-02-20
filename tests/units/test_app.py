@@ -133,7 +133,7 @@ def test_model() -> Type[Model]:
         A default model.
     """
 
-    class TestModel(Model, table=True):  # type: ignore
+    class TestModel(Model, table=True):
         pass
 
     return TestModel
@@ -147,7 +147,7 @@ def test_model_auth() -> Type[Model]:
         A default model.
     """
 
-    class TestModelAuth(Model, table=True):  # type: ignore
+    class TestModelAuth(Model, table=True):
         """A test model with auth."""
 
         pass
@@ -185,19 +185,19 @@ def test_custom_auth_admin() -> Type[AuthProvider]:
         login_path: str = "/login"
         logout_path: str = "/logout"
 
-        def login(self):
+        def login(self):  # pyright: ignore [reportIncompatibleMethodOverride]
             """Login."""
             pass
 
-        def is_authenticated(self):
+        def is_authenticated(self):  # pyright: ignore [reportIncompatibleMethodOverride]
             """Is authenticated."""
             pass
 
-        def get_admin_user(self):
+        def get_admin_user(self):  # pyright: ignore [reportIncompatibleMethodOverride]
             """Get admin user."""
             pass
 
-        def logout(self):
+        def logout(self):  # pyright: ignore [reportIncompatibleMethodOverride]
             """Logout."""
             pass
 
@@ -236,14 +236,14 @@ def test_add_page_default_route(app: App, index_page, about_page):
         index_page: The index page.
         about_page: The about page.
     """
-    assert app.pages == {}
-    assert app.unevaluated_pages == {}
+    assert app._pages == {}
+    assert app._unevaluated_pages == {}
     app.add_page(index_page)
     app._compile_page("index")
-    assert app.pages.keys() == {"index"}
+    assert app._pages.keys() == {"index"}
     app.add_page(about_page)
     app._compile_page("about")
-    assert app.pages.keys() == {"index", "about"}
+    assert app._pages.keys() == {"index", "about"}
 
 
 def test_add_page_set_route(app: App, index_page, windows_platform: bool):
@@ -255,10 +255,10 @@ def test_add_page_set_route(app: App, index_page, windows_platform: bool):
         windows_platform: Whether the system is windows.
     """
     route = "test" if windows_platform else "/test"
-    assert app.unevaluated_pages == {}
+    assert app._unevaluated_pages == {}
     app.add_page(index_page, route=route)
     app._compile_page("test")
-    assert app.pages.keys() == {"test"}
+    assert app._pages.keys() == {"test"}
 
 
 def test_add_page_set_route_dynamic(index_page, windows_platform: bool):
@@ -268,18 +268,18 @@ def test_add_page_set_route_dynamic(index_page, windows_platform: bool):
         index_page: The index page.
         windows_platform: Whether the system is windows.
     """
-    app = App(state=EmptyState)
-    assert app.state is not None
+    app = App(_state=EmptyState)
+    assert app._state is not None
     route = "/test/[dynamic]"
-    assert app.unevaluated_pages == {}
+    assert app._unevaluated_pages == {}
     app.add_page(index_page, route=route)
     app._compile_page("test/[dynamic]")
-    assert app.pages.keys() == {"test/[dynamic]"}
-    assert "dynamic" in app.state.computed_vars
-    assert app.state.computed_vars["dynamic"]._deps(objclass=EmptyState) == {
-        constants.ROUTER
+    assert app._pages.keys() == {"test/[dynamic]"}
+    assert "dynamic" in app._state.computed_vars
+    assert app._state.computed_vars["dynamic"]._deps(objclass=EmptyState) == {
+        EmptyState.get_full_name(): {constants.ROUTER},
     }
-    assert constants.ROUTER in app.state()._computed_var_dependencies
+    assert constants.ROUTER in app._state()._var_dependencies
 
 
 def test_add_page_set_route_nested(app: App, index_page, windows_platform: bool):
@@ -291,9 +291,9 @@ def test_add_page_set_route_nested(app: App, index_page, windows_platform: bool)
         windows_platform: Whether the system is windows.
     """
     route = "test\\nested" if windows_platform else "/test/nested"
-    assert app.unevaluated_pages == {}
+    assert app._unevaluated_pages == {}
     app.add_page(index_page, route=route)
-    assert app.unevaluated_pages.keys() == {route.strip(os.path.sep)}
+    assert app._unevaluated_pages.keys() == {route.strip(os.path.sep)}
 
 
 def test_add_page_invalid_api_route(app: App, index_page):
@@ -413,13 +413,13 @@ async def test_initialize_with_state(test_state: Type[ATestState], token: str):
         test_state: The default state.
         token: a Token.
     """
-    app = App(state=test_state)
-    assert app.state == test_state
+    app = App(_state=test_state)
+    assert app._state == test_state
 
     # Get a state for a given token.
     state = await app.state_manager.get_state(_substate_key(token, test_state))
     assert isinstance(state, test_state)
-    assert state.var == 0  # type: ignore
+    assert state.var == 0
 
     if isinstance(app.state_manager, StateManagerRedis):
         await app.state_manager.close()
@@ -432,7 +432,7 @@ async def test_set_and_get_state(test_state):
     Args:
         test_state: The default state.
     """
-    app = App(state=test_state)
+    app = App(_state=test_state)
 
     # Create two tokens.
     token1 = str(uuid.uuid4()) + f"_{test_state.get_full_name()}"
@@ -441,8 +441,8 @@ async def test_set_and_get_state(test_state):
     # Get the default state for each token.
     state1 = await app.state_manager.get_state(token1)
     state2 = await app.state_manager.get_state(token2)
-    assert state1.var == 0  # type: ignore
-    assert state2.var == 0  # type: ignore
+    assert state1.var == 0
+    assert state2.var == 0
 
     # Set the vars to different values.
     state1.var = 1
@@ -453,8 +453,8 @@ async def test_set_and_get_state(test_state):
     # Get the states again and check the values.
     state1 = await app.state_manager.get_state(token1)
     state2 = await app.state_manager.get_state(token2)
-    assert state1.var == 1  # type: ignore
-    assert state2.var == 2  # type: ignore
+    assert state1.var == 1
+    assert state2.var == 2
 
     if isinstance(app.state_manager, StateManagerRedis):
         await app.state_manager.close()
@@ -469,17 +469,17 @@ async def test_dynamic_var_event(test_state: Type[ATestState], token: str):
         test_state: State Fixture.
         token: a Token.
     """
-    state = test_state()  # type: ignore
+    state = test_state()  # pyright: ignore [reportCallIssue]
     state.add_var("int_val", int, 0)
-    result = await state._process(
+    async for result in state._process(
         Event(
             token=token,
             name=f"{test_state.get_name()}.set_int_val",
             router_data={"pathname": "/", "query": {}},
             payload={"value": 50},
         )
-    ).__anext__()
-    assert result.delta == {test_state.get_name(): {"int_val": 50}}
+    ):
+        assert result.delta == {test_state.get_name(): {"int_val": 50}}
 
 
 @pytest.mark.asyncio
@@ -583,18 +583,17 @@ async def test_list_mutation_detection__plain_list(
         token: a Token.
     """
     for event_name, expected_delta in event_tuples:
-        result = await list_mutation_state._process(
+        async for result in list_mutation_state._process(
             Event(
                 token=token,
                 name=f"{list_mutation_state.get_name()}.{event_name}",
                 router_data={"pathname": "/", "query": {}},
                 payload={},
             )
-        ).__anext__()
-
-        # prefix keys in expected_delta with the state name
-        expected_delta = {list_mutation_state.get_name(): expected_delta}
-        assert result.delta == expected_delta
+        ):
+            # prefix keys in expected_delta with the state name
+            expected_delta = {list_mutation_state.get_name(): expected_delta}
+            assert result.delta == expected_delta
 
 
 @pytest.mark.asyncio
@@ -709,19 +708,18 @@ async def test_dict_mutation_detection__plain_list(
         token: a Token.
     """
     for event_name, expected_delta in event_tuples:
-        result = await dict_mutation_state._process(
+        async for result in dict_mutation_state._process(
             Event(
                 token=token,
                 name=f"{dict_mutation_state.get_name()}.{event_name}",
                 router_data={"pathname": "/", "query": {}},
                 payload={},
             )
-        ).__anext__()
+        ):
+            # prefix keys in expected_delta with the state name
+            expected_delta = {dict_mutation_state.get_name(): expected_delta}
 
-        # prefix keys in expected_delta with the state name
-        expected_delta = {dict_mutation_state.get_name(): expected_delta}
-
-        assert result.delta == expected_delta
+            assert result.delta == expected_delta
 
 
 @pytest.mark.asyncio
@@ -772,7 +770,7 @@ async def test_upload_file(tmp_path, state, delta, token: str, mocker):
     # The App state must be the "root" of the state tree
     app = App()
     app._enable_state()
-    app.event_namespace.emit = AsyncMock()  # type: ignore
+    app.event_namespace.emit = AsyncMock()  # pyright: ignore [reportOptionalMemberAccess]
     current_state = await app.state_manager.get_state(_substate_key(token, state))
     data = b"This is binary data"
 
@@ -795,7 +793,7 @@ async def test_upload_file(tmp_path, state, delta, token: str, mocker):
         file=bio,
     )
     upload_fn = upload(app)
-    streaming_response = await upload_fn(request_mock, [file1, file2])
+    streaming_response = await upload_fn(request_mock, [file1, file2])  # pyright: ignore [reportFunctionMemberAccess]
     async for state_update in streaming_response.body_iterator:
         assert (
             state_update
@@ -827,7 +825,7 @@ async def test_upload_file_without_annotation(state, tmp_path, token):
         token: a Token.
     """
     state._tmp_path = tmp_path
-    app = App(state=State)
+    app = App(_state=State)
 
     request_mock = unittest.mock.Mock()
     request_mock.headers = {
@@ -861,7 +859,7 @@ async def test_upload_file_background(state, tmp_path, token):
         token: a Token.
     """
     state._tmp_path = tmp_path
-    app = App(state=State)
+    app = App(_state=State)
 
     request_mock = unittest.mock.Mock()
     request_mock.headers = {
@@ -899,6 +897,7 @@ class DynamicState(BaseState):
     loaded: int = 0
     counter: int = 0
 
+    @rx.event
     def on_load(self):
         """Event handler for page on_load, should trigger for all navigation events."""
         self.loaded = self.loaded + 1
@@ -908,7 +907,7 @@ class DynamicState(BaseState):
         """Increment the counter var."""
         self.counter = self.counter + 1
 
-    @computed_var(cache=True)
+    @computed_var
     def comp_dynamic(self) -> str:
         """A computed var that depends on the dynamic var.
 
@@ -917,7 +916,7 @@ class DynamicState(BaseState):
         """
         return self.dynamic
 
-    on_load_internal = OnLoadInternalState.on_load_internal.fn
+    on_load_internal = OnLoadInternalState.on_load_internal.fn  # pyright: ignore [reportFunctionMemberAccess]
 
 
 def test_dynamic_arg_shadow(
@@ -938,10 +937,10 @@ def test_dynamic_arg_shadow(
     """
     arg_name = "counter"
     route = f"/test/[{arg_name}]"
-    app = app_module_mock.app = App(state=DynamicState)
-    assert app.state is not None
+    app = app_module_mock.app = App(_state=DynamicState)
+    assert app._state is not None
     with pytest.raises(NameError):
-        app.add_page(index_page, route=route, on_load=DynamicState.on_load)  # type: ignore
+        app.add_page(index_page, route=route, on_load=DynamicState.on_load)
 
 
 def test_multiple_dynamic_args(
@@ -963,7 +962,7 @@ def test_multiple_dynamic_args(
     arg_name = "my_arg"
     route = f"/test/[{arg_name}]"
     route2 = f"/test2/[{arg_name}]"
-    app = app_module_mock.app = App(state=EmptyState)
+    app = app_module_mock.app = App(_state=EmptyState)
     app.add_page(index_page, route=route)
     app.add_page(index_page, route=route2)
 
@@ -990,16 +989,16 @@ async def test_dynamic_route_var_route_change_completed_on_load(
     """
     arg_name = "dynamic"
     route = f"/test/[{arg_name}]"
-    app = app_module_mock.app = App(state=DynamicState)
-    assert app.state is not None
-    assert arg_name not in app.state.vars
-    app.add_page(index_page, route=route, on_load=DynamicState.on_load)  # type: ignore
-    assert arg_name in app.state.vars
-    assert arg_name in app.state.computed_vars
-    assert app.state.computed_vars[arg_name]._deps(objclass=DynamicState) == {
-        constants.ROUTER
+    app = app_module_mock.app = App(_state=DynamicState)
+    assert app._state is not None
+    assert arg_name not in app._state.vars
+    app.add_page(index_page, route=route, on_load=DynamicState.on_load)
+    assert arg_name in app._state.vars
+    assert arg_name in app._state.computed_vars
+    assert app._state.computed_vars[arg_name]._deps(objclass=DynamicState) == {
+        DynamicState.get_full_name(): {constants.ROUTER},
     }
-    assert constants.ROUTER in app.state()._computed_var_dependencies
+    assert constants.ROUTER in app._state()._var_dependencies
 
     substate_token = _substate_key(token, DynamicState)
     sid = "mock_sid"
@@ -1022,7 +1021,7 @@ async def test_dynamic_route_var_route_change_completed_on_load(
 
     def _dynamic_state_event(name, val, **kwargs):
         return _event(
-            name=format.format_event_handler(getattr(DynamicState, name)),  # type: ignore
+            name=format.format_event_handler(getattr(DynamicState, name)),
             val=val,
             **kwargs,
         )
@@ -1174,7 +1173,7 @@ async def test_process_events(mocker, token: str):
         "headers": {},
         "ip": "127.0.0.1",
     }
-    app = App(state=GenState)
+    app = App(_state=GenState)
 
     mocker.patch.object(app, "_postprocess", AsyncMock())
     event = Event(
@@ -1190,7 +1189,7 @@ async def test_process_events(mocker, token: str):
         pass
 
     assert (await app.state_manager.get_state(event.substate_token)).value == 5
-    assert app._postprocess.call_count == 6
+    assert app._postprocess.call_count == 6  # pyright: ignore [reportFunctionMemberAccess]
 
     if isinstance(app.state_manager, StateManagerRedis):
         await app.state_manager.close()
@@ -1220,13 +1219,13 @@ def test_overlay_component(
         overlay_component: The overlay_component to pass to App.
         exp_page_child: The type of the expected child in the page fragment.
     """
-    app = App(state=state, overlay_component=overlay_component)
+    app = App(_state=state, overlay_component=overlay_component)
     app._setup_overlay_component()
     if exp_page_child is None:
         assert app.overlay_component is None
     elif isinstance(exp_page_child, OverlayFragment):
         assert app.overlay_component is not None
-        generated_component = app._generate_component(app.overlay_component)  # type: ignore
+        generated_component = app._generate_component(app.overlay_component)
         assert isinstance(generated_component, OverlayFragment)
         assert isinstance(
             generated_component.children[0],
@@ -1235,7 +1234,7 @@ def test_overlay_component(
     else:
         assert app.overlay_component is not None
         assert isinstance(
-            app._generate_component(app.overlay_component),  # type: ignore
+            app._generate_component(app.overlay_component),
             exp_page_child,
         )
 
@@ -1243,12 +1242,12 @@ def test_overlay_component(
     # overlay components are wrapped during compile only
     app._compile_page("test")
     app._setup_overlay_component()
-    page = app.pages["test"]
+    page = app._pages["test"]
 
     if exp_page_child is not None:
         assert len(page.children) == 3
         children_types = (type(child) for child in page.children)
-        assert exp_page_child in children_types
+        assert exp_page_child in children_types  # pyright: ignore [reportOperatorIssue]
     else:
         assert len(page.children) == 2
 
@@ -1276,12 +1275,23 @@ def compilable_app(tmp_path) -> Generator[tuple[App, Path], None, None]:
         yield app, web_dir
 
 
-def test_app_wrap_compile_theme(compilable_app: tuple[App, Path]):
+@pytest.mark.parametrize(
+    "react_strict_mode",
+    [True, False],
+)
+def test_app_wrap_compile_theme(
+    react_strict_mode: bool, compilable_app: tuple[App, Path], mocker
+):
     """Test that the radix theme component wraps the app.
 
     Args:
+        react_strict_mode: Whether to use React Strict Mode.
         compilable_app: compilable_app fixture.
+        mocker: pytest mocker object.
     """
+    conf = rx.Config(app_name="testing", react_strict_mode=react_strict_mode)
+    mocker.patch("reflex.config._get_config", return_value=conf)
+
     app, web_dir = compilable_app
     app.theme = rx.theme(accent_color="plum")
     app._compile()
@@ -1289,45 +1299,62 @@ def test_app_wrap_compile_theme(compilable_app: tuple[App, Path]):
     app_js_lines = [
         line.strip() for line in app_js_contents.splitlines() if line.strip()
     ]
+    lines = "".join(app_js_lines)
     assert (
         "function AppWrap({children}) {"
         "return ("
-        "<RadixThemesColorModeProvider>"
+        + ("<StrictMode>" if react_strict_mode else "")
+        + "<RadixThemesColorModeProvider>"
         "<RadixThemesTheme accentColor={\"plum\"} css={{...theme.styles.global[':root'], ...theme.styles.global.body}}>"
+        "<Fragment>"
+        "<MemoizedToastProvider/>"
         "<Fragment>"
         "{children}"
         "</Fragment>"
+        "</Fragment>"
         "</RadixThemesTheme>"
         "</RadixThemesColorModeProvider>"
-        ")"
+        + ("</StrictMode>" if react_strict_mode else "")
+        + ")"
         "}"
-    ) in "".join(app_js_lines)
+    ) in lines
 
 
-def test_app_wrap_priority(compilable_app: tuple[App, Path]):
+@pytest.mark.parametrize(
+    "react_strict_mode",
+    [True, False],
+)
+def test_app_wrap_priority(
+    react_strict_mode: bool, compilable_app: tuple[App, Path], mocker
+):
     """Test that the app wrap components are wrapped in the correct order.
 
     Args:
+        react_strict_mode: Whether to use React Strict Mode.
         compilable_app: compilable_app fixture.
+        mocker: pytest mocker object.
     """
+    conf = rx.Config(app_name="testing", react_strict_mode=react_strict_mode)
+    mocker.patch("reflex.config._get_config", return_value=conf)
+
     app, web_dir = compilable_app
 
     class Fragment1(Component):
         tag = "Fragment1"
 
-        def _get_app_wrap_components(self) -> dict[tuple[int, str], Component]:
+        def _get_app_wrap_components(self) -> dict[tuple[int, str], Component]:  # pyright: ignore [reportIncompatibleMethodOverride]
             return {(99, "Box"): rx.box()}
 
     class Fragment2(Component):
         tag = "Fragment2"
 
-        def _get_app_wrap_components(self) -> dict[tuple[int, str], Component]:
+        def _get_app_wrap_components(self) -> dict[tuple[int, str], Component]:  # pyright: ignore [reportIncompatibleMethodOverride]
             return {(50, "Text"): rx.text()}
 
     class Fragment3(Component):
         tag = "Fragment3"
 
-        def _get_app_wrap_components(self) -> dict[tuple[int, str], Component]:
+        def _get_app_wrap_components(self) -> dict[tuple[int, str], Component]:  # pyright: ignore [reportIncompatibleMethodOverride]
             return {(10, "Fragment2"): Fragment2.create()}
 
     def page():
@@ -1339,74 +1366,75 @@ def test_app_wrap_priority(compilable_app: tuple[App, Path]):
     app_js_lines = [
         line.strip() for line in app_js_contents.splitlines() if line.strip()
     ]
+    lines = "".join(app_js_lines)
     assert (
         "function AppWrap({children}) {"
-        "return ("
-        "<RadixThemesBox>"
+        "return (" + ("<StrictMode>" if react_strict_mode else "") + "<RadixThemesBox>"
         '<RadixThemesText as={"p"}>'
         "<RadixThemesColorModeProvider>"
         "<Fragment2>"
         "<Fragment>"
+        "<MemoizedToastProvider/>"
+        "<Fragment>"
         "{children}"
+        "</Fragment>"
         "</Fragment>"
         "</Fragment2>"
         "</RadixThemesColorModeProvider>"
         "</RadixThemesText>"
-        "</RadixThemesBox>"
-        ")"
-        "}"
-    ) in "".join(app_js_lines)
+        "</RadixThemesBox>" + ("</StrictMode>" if react_strict_mode else "")
+    ) in lines
 
 
 def test_app_state_determination():
     """Test that the stateless status of an app is determined correctly."""
     a1 = App()
-    assert a1.state is None
+    assert a1._state is None
 
     # No state, no router, no event handlers.
     a1.add_page(rx.box("Index"), route="/")
-    assert a1.state is None
+    assert a1._state is None
 
     # Add a page with `on_load` enables state.
     a1.add_page(rx.box("About"), route="/about", on_load=rx.console_log(""))
     a1._compile_page("about")
-    assert a1.state is not None
+    assert a1._state is not None
 
     a2 = App()
-    assert a2.state is None
+    assert a2._state is None
 
     # Referencing a state Var enables state.
     a2.add_page(rx.box(rx.text(GenState.value)), route="/")
     a2._compile_page("index")
-    assert a2.state is not None
+    assert a2._state is not None
 
     a3 = App()
-    assert a3.state is None
+    assert a3._state is None
 
     # Referencing router enables state.
     a3.add_page(rx.box(rx.text(State.router.page.full_path)), route="/")
     a3._compile_page("index")
-    assert a3.state is not None
+    assert a3._state is not None
 
     a4 = App()
-    assert a4.state is None
+    assert a4._state is None
 
     a4.add_page(rx.box(rx.button("Click", on_click=rx.console_log(""))), route="/")
-    assert a4.state is None
+    assert a4._state is None
 
     a4.add_page(
         rx.box(rx.button("Click", on_click=DynamicState.on_counter)), route="/page2"
     )
     a4._compile_page("page2")
-    assert a4.state is not None
+    assert a4._state is not None
 
 
 def test_raise_on_state():
     """Test that the state is set."""
     # state kwargs is deprecated, we just make sure the app is created anyway.
-    _app = App(state=State)
-    assert _app.state is not None
-    assert issubclass(_app.state, State)
+    _app = App(_state=State)
+    assert _app._state is not None
+    assert issubclass(_app._state, State)
 
 
 def test_call_app():
@@ -1448,11 +1476,11 @@ def test_generate_component():
             "Bar",
         )
 
-    comp = App._generate_component(index)  # type: ignore
+    comp = App._generate_component(index)
     assert isinstance(comp, Component)
 
     with pytest.raises(exceptions.MatchTypeError):
-        App._generate_component(index_mismatch)  # type: ignore
+        App._generate_component(index_mismatch)  # pyright: ignore [reportArgumentType]
 
 
 def test_add_page_component_returning_tuple():
@@ -1467,27 +1495,27 @@ def test_add_page_component_returning_tuple():
     def page2():
         return (rx.text("third"),)
 
-    app.add_page(index)  # type: ignore
-    app.add_page(page2)  # type: ignore
+    app.add_page(index)  # pyright: ignore [reportArgumentType]
+    app.add_page(page2)  # pyright: ignore [reportArgumentType]
 
     app._compile_page("index")
     app._compile_page("page2")
 
-    fragment_wrapper = app.pages["index"].children[0]
+    fragment_wrapper = app._pages["index"].children[0]
     assert isinstance(fragment_wrapper, Fragment)
     first_text = fragment_wrapper.children[0]
     assert isinstance(first_text, Text)
-    assert str(first_text.children[0].contents) == '"first"'  # type: ignore
+    assert str(first_text.children[0].contents) == '"first"'  # pyright: ignore [reportAttributeAccessIssue]
     second_text = fragment_wrapper.children[1]
     assert isinstance(second_text, Text)
-    assert str(second_text.children[0].contents) == '"second"'  # type: ignore
+    assert str(second_text.children[0].contents) == '"second"'  # pyright: ignore [reportAttributeAccessIssue]
 
     # Test page with trailing comma.
-    page2_fragment_wrapper = app.pages["page2"].children[0]
+    page2_fragment_wrapper = app._pages["page2"].children[0]
     assert isinstance(page2_fragment_wrapper, Fragment)
     third_text = page2_fragment_wrapper.children[0]
     assert isinstance(third_text, Text)
-    assert str(third_text.children[0].contents) == '"third"'  # type: ignore
+    assert str(third_text.children[0].contents) == '"third"'  # pyright: ignore [reportAttributeAccessIssue]
 
 
 @pytest.mark.parametrize("export", (True, False))
@@ -1525,7 +1553,7 @@ def test_app_with_transpile_packages(compilable_app: tuple[App, Path], export: b
 
     next_config = (web_dir / "next.config.js").read_text()
     transpile_packages_match = re.search(r"transpilePackages: (\[.*?\])", next_config)
-    transpile_packages_json = transpile_packages_match.group(1)  # type: ignore
+    transpile_packages_json = transpile_packages_match.group(1)  # pyright: ignore [reportOptionalMemberAccess]
     transpile_packages = sorted(json.loads(transpile_packages_json))
 
     assert transpile_packages == [
@@ -1549,15 +1577,25 @@ def test_app_with_valid_var_dependencies(compilable_app: tuple[App, Path]):
         base: int = 0
         _backend: int = 0
 
-        @computed_var(cache=True)
+        @computed_var()
         def foo(self) -> str:
             return "foo"
 
-        @computed_var(deps=["_backend", "base", foo], cache=True)
+        @computed_var(deps=["_backend", "base", foo])
         def bar(self) -> str:
             return "bar"
 
-    app.state = ValidDepState
+    class Child1(ValidDepState):
+        @computed_var(deps=["base", ValidDepState.bar])
+        def other(self) -> str:
+            return "other"
+
+    class Child2(ValidDepState):
+        @computed_var(deps=["base", Child1.other])
+        def other(self) -> str:
+            return "other"
+
+    app._state = ValidDepState
     app._compile()
 
 
@@ -1565,11 +1603,11 @@ def test_app_with_invalid_var_dependencies(compilable_app: tuple[App, Path]):
     app, _ = compilable_app
 
     class InvalidDepState(BaseState):
-        @computed_var(deps=["foolksjdf"], cache=True)
+        @computed_var(deps=["foolksjdf"])
         def bar(self) -> str:
             return "bar"
 
-    app.state = InvalidDepState
+    app._state = InvalidDepState
     with pytest.raises(exceptions.VarDependencyError):
         app._compile()
 

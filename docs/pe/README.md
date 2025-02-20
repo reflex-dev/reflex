@@ -34,7 +34,7 @@
 
 ## ⚙️ Installation - نصب و راه اندازی
 
-یک ترمینال را باز کنید و اجرا کنید (نیازمند Python 3.9+):
+یک ترمینال را باز کنید و اجرا کنید (نیازمند Python 3.10+):
 
 ```bash
 pip install reflex
@@ -249,7 +249,7 @@ app.add_page(index, title="DALL-E")
 -   **بحث های GitHub**: راهی عالی برای صحبت در مورد ویژگی هایی که می خواهید اضافه کنید یا چیزهایی که گیج کننده هستند/نیاز به توضیح دارند.
 -   **قسمت مشکلات GitHub**: [قسمت مشکلات](https://github.com/reflex-dev/reflex/issues) یک راه عالی برای گزارش اشکال هستند. علاوه بر این، می توانید یک مشکل موجود را حل کنید و یک PR(pull request) ارسال کنید.
 
-ما فعالانه به دنبال مشارکت کنندگان هستیم، فارغ از سطح مهارت یا تجربه شما. برای مشارکت  [CONTIBUTING.md](https://github.com/reflex-dev/reflex/blob/main/CONTRIBUTING.md) را بررسی کنید.
+ما فعالانه به دنبال مشارکت کنندگان هستیم، فارغ از سطح مهارت یا تجربه شما. برای مشارکت  [CONTRIBUTING.md](https://github.com/reflex-dev/reflex/blob/main/CONTRIBUTING.md) را بررسی کنید.
 
 
 ## All Thanks To Our Contributors - با تشکر از همکاران ما:

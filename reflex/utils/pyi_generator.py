@@ -75,7 +75,6 @@ DEFAULT_IMPORTS = {
         "EventHandler",
         "EventSpec",
         "EventType",
-        "BASE_STATE",
         "KeyInputInfo",
     ],
     "reflex.style": ["Style"],
@@ -83,7 +82,7 @@ DEFAULT_IMPORTS = {
 }
 
 
-def _walk_files(path):
+def _walk_files(path: str | Path):
     """Walk all files in a path.
     This can be replaced with Path.walk() in python3.12.
 
@@ -114,7 +113,9 @@ def _relative_to_pwd(path: Path) -> Path:
     return path
 
 
-def _get_type_hint(value, type_hint_globals, is_optional=True) -> str:
+def _get_type_hint(
+    value: Any, type_hint_globals: dict, is_optional: bool = True
+) -> str:
     """Resolve the type hint for value.
 
     Args:
@@ -229,7 +230,7 @@ def _generate_imports(
     """
     return [
         *[
-            ast.ImportFrom(module=name, names=[ast.alias(name=val) for val in values])
+            ast.ImportFrom(module=name, names=[ast.alias(name=val) for val in values])  # pyright: ignore [reportCallIssue]
             for name, values in DEFAULT_IMPORTS.items()
         ],
         ast.Import([ast.alias("reflex")]),
@@ -367,7 +368,7 @@ def _extract_class_props_as_ast_nodes(
                     # Try to get default from pydantic field definition.
                     default = target_class.__fields__[name].default
                     if isinstance(default, Var):
-                        default = default._decode()  # type: ignore
+                        default = default._decode()
 
             kwargs.append(
                 (
@@ -383,7 +384,7 @@ def _extract_class_props_as_ast_nodes(
     return kwargs
 
 
-def type_to_ast(typ, cls: type) -> ast.AST:
+def type_to_ast(typ: Any, cls: type) -> ast.AST:
     """Converts any type annotation into its AST representation.
     Handles nested generic types, unions, etc.
 
@@ -434,14 +435,16 @@ def type_to_ast(typ, cls: type) -> ast.AST:
     if len(arg_nodes) == 1:
         slice_value = arg_nodes[0]
     else:
-        slice_value = ast.Tuple(elts=arg_nodes, ctx=ast.Load())
+        slice_value = ast.Tuple(elts=arg_nodes, ctx=ast.Load())  # pyright: ignore [reportArgumentType]
 
     return ast.Subscript(
-        value=ast.Name(id=base_name), slice=ast.Index(value=slice_value), ctx=ast.Load()
+        value=ast.Name(id=base_name),
+        slice=ast.Index(value=slice_value),  # pyright: ignore [reportArgumentType]
+        ctx=ast.Load(),
     )
 
 
-def _get_parent_imports(func):
+def _get_parent_imports(func: Callable):
     _imports = {"reflex.vars": ["Var"]}
     for type_hint in inspect.get_annotations(func).values():
         try:
@@ -498,7 +501,7 @@ def _generate_component_create_functiondef(
 
     def figure_out_return_type(annotation: Any):
         if inspect.isclass(annotation) and issubclass(annotation, inspect._empty):
-            return ast.Name(id="EventType[..., BASE_STATE]")
+            return ast.Name(id="EventType[Any]")
 
         if not isinstance(annotation, str) and get_origin(annotation) is tuple:
             arguments = get_args(annotation)
@@ -514,8 +517,10 @@ def _generate_component_create_functiondef(
             # Get all prefixes of the type arguments
             all_count_args_type = [
                 ast.Name(
-                    f"EventType[[{', '.join([ast.unparse(arg) for arg in type_args[:i]])}], BASE_STATE]"
+                    f"EventType[{', '.join([ast.unparse(arg) for arg in type_args[:i]])}]"
                 )
+                if i > 0
+                else ast.Name("EventType[()]")
                 for i in range(len(type_args) + 1)
             ]
 
@@ -528,7 +533,7 @@ def _generate_component_create_functiondef(
             inside_of_tuple = annotation.removeprefix("Tuple[").removesuffix("]")
 
             if inside_of_tuple == "()":
-                return ast.Name(id="EventType[[], BASE_STATE]")
+                return ast.Name(id="EventType[()]")
 
             arguments = [""]
 
@@ -555,16 +560,16 @@ def _generate_component_create_functiondef(
             ]
 
             all_count_args_type = [
-                ast.Name(
-                    f"EventType[[{', '.join(arguments_without_var[:i])}], BASE_STATE]"
-                )
+                ast.Name(f"EventType[{', '.join(arguments_without_var[:i])}]")
+                if i > 0
+                else ast.Name("EventType[()]")
                 for i in range(len(arguments) + 1)
             ]
 
             return ast.Name(
                 id=f"Union[{', '.join(map(ast.unparse, all_count_args_type))}]"
             )
-        return ast.Name(id="EventType[..., BASE_STATE]")
+        return ast.Name(id="EventType[Any]")
 
     event_triggers = clz().get_event_triggers()
 
@@ -575,7 +580,7 @@ def _generate_component_create_functiondef(
                 arg=trigger,
                 annotation=ast.Subscript(
                     ast.Name("Optional"),
-                    ast.Index(  # type: ignore
+                    ast.Index(  # pyright: ignore [reportArgumentType]
                         value=ast.Name(
                             id=ast.unparse(
                                 figure_out_return_type(
@@ -618,10 +623,10 @@ def _generate_component_create_functiondef(
         defaults=[],
     )
 
-    definition = ast.FunctionDef(
+    definition = ast.FunctionDef(  # pyright: ignore [reportCallIssue]
         name="create",
         args=create_args,
-        body=[
+        body=[  # pyright: ignore [reportArgumentType]
             ast.Expr(
                 value=ast.Constant(
                     value=_generate_docstrings(
@@ -630,7 +635,7 @@ def _generate_component_create_functiondef(
                 ),
             ),
             ast.Expr(
-                value=ast.Ellipsis(),
+                value=ast.Constant(value=Ellipsis),
             ),
         ],
         decorator_list=[
@@ -641,7 +646,7 @@ def _generate_component_create_functiondef(
                 else [ast.Name(id="classmethod")]
             ),
         ],
-        lineno=node.lineno if node is not None else None,
+        lineno=node.lineno if node is not None else None,  # pyright: ignore [reportArgumentType]
         returns=ast.Constant(value=clz.__name__),
     )
     return definition
@@ -680,7 +685,7 @@ def _generate_staticmethod_call_functiondef(
             else []
         ),
     )
-    definition = ast.FunctionDef(
+    definition = ast.FunctionDef(  # pyright: ignore [reportCallIssue]
         name="__call__",
         args=call_args,
         body=[
@@ -690,11 +695,12 @@ def _generate_staticmethod_call_functiondef(
             ),
         ],
         decorator_list=[ast.Name(id="staticmethod")],
-        lineno=node.lineno if node is not None else None,
+        lineno=node.lineno if node is not None else None,  # pyright: ignore [reportArgumentType]
         returns=ast.Constant(
             value=_get_type_hint(
                 typing.get_type_hints(clz.__call__).get("return", None),
                 type_hint_globals,
+                is_optional=False,
             )
         ),
     )
@@ -726,17 +732,17 @@ def _generate_namespace_call_functiondef(
     clz = classes[clz_name]
 
     if not hasattr(clz.__call__, "__self__"):
-        return _generate_staticmethod_call_functiondef(node, clz, type_hint_globals)  # type: ignore
+        return _generate_staticmethod_call_functiondef(node, clz, type_hint_globals)  # pyright: ignore [reportArgumentType]
 
     # Determine which class is wrapped by the namespace __call__ method
     component_clz = clz.__call__.__self__
 
-    if clz.__call__.__func__.__name__ != "create":
+    if clz.__call__.__func__.__name__ != "create":  # pyright: ignore [reportFunctionMemberAccess]
         return None
 
     definition = _generate_component_create_functiondef(
         node=None,
-        clz=component_clz,  # type: ignore
+        clz=component_clz,  # pyright: ignore [reportArgumentType]
         type_hint_globals=type_hint_globals,
     )
     definition.name = "__call__"
@@ -816,7 +822,7 @@ class StubGenerator(ast.NodeTransformer):
             The modified Module node.
         """
         self.generic_visit(node)
-        return self._remove_docstring(node)  # type: ignore
+        return self._remove_docstring(node)  # pyright: ignore [reportReturnType]
 
     def visit_Import(
         self, node: ast.Import | ast.ImportFrom
@@ -914,7 +920,7 @@ class StubGenerator(ast.NodeTransformer):
             node.body.append(call_definition)
         if not node.body:
             # We should never return an empty body.
-            node.body.append(ast.Expr(value=ast.Ellipsis()))
+            node.body.append(ast.Expr(value=ast.Constant(value=Ellipsis)))
         self.current_class = None
         return node
 
@@ -941,9 +947,9 @@ class StubGenerator(ast.NodeTransformer):
             if node.name.startswith("_") and node.name != "__call__":
                 return None  # remove private methods
 
-            if node.body[-1] != ast.Expr(value=ast.Ellipsis()):
+            if node.body[-1] != ast.Expr(value=ast.Constant(value=Ellipsis)):
                 # Blank out the function body for public functions.
-                node.body = [ast.Expr(value=ast.Ellipsis())]
+                node.body = [ast.Expr(value=ast.Constant(value=Ellipsis))]
         return node
 
     def visit_Assign(self, node: ast.Assign) -> ast.Assign | None:
@@ -1050,7 +1056,7 @@ class PyiGenerator:
         pyi_path.write_text(pyi_content)
         logger.info(f"Wrote {relpath}")
 
-    def _get_init_lazy_imports(self, mod, new_tree):
+    def _get_init_lazy_imports(self, mod: tuple | ModuleType, new_tree: ast.AST):
         # retrieve the _SUBMODULES and _SUBMOD_ATTRS from an init file if present.
         sub_mods = getattr(mod, "_SUBMODULES", None)
         sub_mod_attrs = getattr(mod, "_SUBMOD_ATTRS", None)
@@ -1077,7 +1083,7 @@ class PyiGenerator:
                 + (
                     "  # type: ignore"
                     if mod in pyright_ignore_imports
-                    else "  # noqa"  # ignore ruff formatting here for cases like rx.list.
+                    else "  # noqa: F401"  # ignore ruff formatting here for cases like rx.list.
                     if isinstance(mod, tuple)
                     else ""
                 )
@@ -1136,7 +1142,7 @@ class PyiGenerator:
             if pyi_path:
                 self.written_files.append(pyi_path)
 
-    def scan_all(self, targets, changed_files: list[Path] | None = None):
+    def scan_all(self, targets: list, changed_files: list[Path] | None = None):
         """Scan all targets for class inheriting Component and generate the .pyi files.
 
         Args:

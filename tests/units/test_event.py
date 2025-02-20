@@ -3,6 +3,7 @@ from typing import Callable, List
 import pytest
 
 import reflex as rx
+from reflex.constants.compiler import Hooks, Imports
 from reflex.event import (
     Event,
     EventChain,
@@ -14,7 +15,7 @@ from reflex.event import (
 )
 from reflex.state import BaseState
 from reflex.utils import format
-from reflex.vars.base import Field, LiteralVar, Var, field
+from reflex.vars.base import Field, LiteralVar, Var, VarData, field
 
 
 def make_var(value) -> Var:
@@ -72,7 +73,7 @@ def test_call_event_handler():
     )
 
     # Passing args as strings should format differently.
-    event_spec = handler("first", "second")  # type: ignore
+    event_spec = handler("first", "second")
     assert (
         format.format_event(event_spec)
         == 'Event("test_fn_with_args", {arg1:"first",arg2:"second"})'
@@ -80,7 +81,7 @@ def test_call_event_handler():
 
     first, second = 123, "456"
     handler = EventHandler(fn=test_fn_with_args)
-    event_spec = handler(first, second)  # type: ignore
+    event_spec = handler(first, second)
     assert (
         format.format_event(event_spec)
         == 'Event("test_fn_with_args", {arg1:123,arg2:"456"})'
@@ -94,7 +95,7 @@ def test_call_event_handler():
 
     handler = EventHandler(fn=test_fn_with_args)
     with pytest.raises(TypeError):
-        handler(test_fn)  # type: ignore
+        handler(test_fn)
 
 
 def test_call_event_handler_partial():
@@ -199,16 +200,15 @@ def test_event_redirect(input, output):
         input: The input for running the test.
         output: The expected output to validate the test.
     """
-    path, external, replace = input
+    path, is_external, replace = input
     kwargs = {}
-    if external is not None:
-        kwargs["external"] = external
+    if is_external is not None:
+        kwargs["is_external"] = is_external
     if replace is not None:
         kwargs["replace"] = replace
     spec = event.redirect(path, **kwargs)
     assert isinstance(spec, EventSpec)
     assert spec.handler.fn.__qualname__ == "_redirect"
-
     assert format.format_event(spec) == output
 
 
@@ -417,7 +417,7 @@ def test_event_actions_on_state():
     assert isinstance(handler, EventHandler)
     assert not handler.event_actions
 
-    sp_handler = EventActionState.handler.stop_propagation
+    sp_handler = EventActionState.handler.stop_propagation  # pyright: ignore [reportFunctionMemberAccess]
     assert sp_handler.event_actions == {"stopPropagation": True}
     # should NOT affect other references to the handler
     assert not handler.event_actions
@@ -444,8 +444,27 @@ def test_event_var_data():
         return (value,)
 
     # Ensure chain carries _var_data
-    chain_var = Var.create(EventChain(events=[S.s(S.x)], args_spec=_args_spec))
+    chain_var = Var.create(
+        EventChain(
+            events=[S.s(S.x)],
+            args_spec=_args_spec,
+            invocation=rx.vars.FunctionStringVar.create(""),
+        )
+    )
     assert chain_var._get_all_var_data() == S.x._get_all_var_data()
+
+    chain_var_data = Var.create(
+        EventChain(
+            events=[],
+            args_spec=_args_spec,
+        )
+    )._get_all_var_data()
+    assert chain_var_data is not None
+
+    assert chain_var_data == VarData(
+        imports=Imports.EVENTS,
+        hooks={Hooks.EVENTS: None},
+    )
 
 
 def test_event_bound_method() -> None:
@@ -455,7 +474,7 @@ def test_event_bound_method() -> None:
             print(arg)
 
     class Wrapper:
-        def get_handler(self, arg: str):
+        def get_handler(self, arg: Var[str]):
             return S.e(arg)
 
     w = Wrapper()

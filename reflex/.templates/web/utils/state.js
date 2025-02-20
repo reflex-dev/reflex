@@ -3,6 +3,7 @@ import axios from "axios";
 import io from "socket.io-client";
 import JSON5 from "json5";
 import env from "$/env.json";
+import reflexEnvironment from "$/reflex.json";
 import Cookies from "universal-cookie";
 import { useEffect, useRef, useState } from "react";
 import Router, { useRouter } from "next/router";
@@ -103,6 +104,18 @@ export const getBackendURL = (url_str) => {
     }
   }
   return endpoint;
+};
+
+/**
+ * Check if the backend is disabled.
+ *
+ * @returns True if the backend is disabled, false otherwise.
+ */
+export const isBackendDisabled = () => {
+  const cookie = document.cookie
+    .split("; ")
+    .find((row) => row.startsWith("backend-enabled="));
+  return cookie !== undefined && cookie.split("=")[1] == "false";
 };
 
 /**
@@ -404,11 +417,19 @@ export const connect = async (
   socket.current = io(endpoint.href, {
     path: endpoint["pathname"],
     transports: transports,
+    protocols: [reflexEnvironment.version],
     autoUnref: false,
     query: { token: getToken() },
   });
   // Ensure undefined fields in events are sent as null instead of removed
   socket.current.io.encoder.replacer = (k, v) => (v === undefined ? null : v);
+  socket.current.io.decoder.tryParse = (str) => {
+    try {
+      return JSON5.parse(str);
+    } catch (e) {
+      return false;
+    }
+  };
 
   function checkVisibility() {
     if (document.visibilityState === "visible") {
@@ -801,14 +822,10 @@ export const useEventLoop = (
     };
   }, []);
 
-  // Main event loop.
+  // Handle socket connect/disconnect.
   useEffect(() => {
-    // Skip if the router is not ready.
-    if (!router.isReady) {
-      return;
-    }
-    // only use websockets if state is present
-    if (Object.keys(initialState).length > 1) {
+    // only use websockets if state is present and backend is not disabled (reflex cloud).
+    if (Object.keys(initialState).length > 1 && !isBackendDisabled()) {
       // Initialize the websocket connection.
       if (!socket.current) {
         connect(
@@ -819,13 +836,28 @@ export const useEventLoop = (
           client_storage
         );
       }
-      (async () => {
-        // Process all outstanding events.
-        while (event_queue.length > 0 && !event_processing) {
-          await processEvent(socket.current);
-        }
-      })();
     }
+
+    // Cleanup function.
+    return () => {
+      if (socket.current) {
+        socket.current.disconnect();
+      }
+    };
+  }, []);
+
+  // Main event loop.
+  useEffect(() => {
+    // Skip if the router is not ready.
+    if (!router.isReady || isBackendDisabled()) {
+      return;
+    }
+    (async () => {
+      // Process all outstanding events.
+      while (event_queue.length > 0 && !event_processing) {
+        await processEvent(socket.current);
+      }
+    })();
   });
 
   // localStorage event handling

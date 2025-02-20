@@ -1,6 +1,7 @@
 """The constants package."""
 
 from .base import (
+    APP_HARNESS_FLAG,
     COOKIES,
     IS_LINUX,
     IS_MACOS,
@@ -24,6 +25,7 @@ from .base import (
 from .compiler import (
     NOCOMPILE_FILE,
     SETTER_PREFIX,
+    CompileContext,
     CompileVars,
     ComponentName,
     Ext,
@@ -64,6 +66,7 @@ __ALL__ = [
     ColorMode,
     Config,
     COOKIES,
+    CompileContext,
     ComponentName,
     CustomComponents,
     DefaultPage,

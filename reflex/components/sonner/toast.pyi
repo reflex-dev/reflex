@@ -9,9 +9,12 @@ from reflex.base import Base
 from reflex.components.component import Component, ComponentNamespace
 from reflex.components.lucide.icon import Icon
 from reflex.components.props import NoExtrasAllowedProps, PropsBase
-from reflex.event import BASE_STATE, EventSpec, EventType
+from reflex.constants.base import Dirs
+from reflex.event import EventSpec, EventType
 from reflex.style import Style
+from reflex.utils.imports import ImportVar
 from reflex.utils.serializers import serializer
+from reflex.vars import VarData
 from reflex.vars.base import Var
 
 LiteralPosition = Literal[
@@ -22,7 +25,10 @@ LiteralPosition = Literal[
     "bottom-center",
     "bottom-right",
 ]
-toast_ref = Var(_js_expr="refs['__toast']")
+toast_ref = Var(
+    _js_expr="refs['__toast']",
+    _var_data=VarData(imports={f"$/{Dirs.STATE_PATH}": [ImportVar(tag="refs")]}),
+)
 
 class ToastAction(Base):
     label: str
@@ -51,7 +57,7 @@ class ToastProps(PropsBase, NoExtrasAllowedProps):
     on_dismiss: Optional[Any]
     on_auto_close: Optional[Any]
 
-    def dict(self, *args, **kwargs) -> dict[str, Any]: ...
+    def dict(self, *args: Any, **kwargs: Any) -> dict[str, Any]: ...
 
 class Toaster(Component):
     is_used: ClassVar[bool] = False
@@ -62,13 +68,15 @@ class Toaster(Component):
         message: str | Var = "", level: str | None = None, **props
     ) -> EventSpec: ...
     @staticmethod
-    def toast_info(message: str | Var = "", **kwargs): ...
+    def toast_info(message: str | Var = "", **kwargs: Any): ...
     @staticmethod
-    def toast_warning(message: str | Var = "", **kwargs): ...
+    def toast_warning(message: str | Var = "", **kwargs: Any): ...
     @staticmethod
-    def toast_error(message: str | Var = "", **kwargs): ...
+    def toast_error(message: str | Var = "", **kwargs: Any): ...
     @staticmethod
-    def toast_success(message: str | Var = "", **kwargs): ...
+    def toast_success(message: str | Var = "", **kwargs: Any): ...
+    @staticmethod
+    def toast_loading(message: str | Var = "", **kwargs: Any): ...
     @staticmethod
     def toast_dismiss(id: Var | str | None = None): ...
     @overload
@@ -117,21 +125,21 @@ class Toaster(Component):
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
         custom_attrs: Optional[Dict[str, Union[Var, Any]]] = None,
-        on_blur: Optional[EventType[[], BASE_STATE]] = None,
-        on_click: Optional[EventType[[], BASE_STATE]] = None,
-        on_context_menu: Optional[EventType[[], BASE_STATE]] = None,
-        on_double_click: Optional[EventType[[], BASE_STATE]] = None,
-        on_focus: Optional[EventType[[], BASE_STATE]] = None,
-        on_mount: Optional[EventType[[], BASE_STATE]] = None,
-        on_mouse_down: Optional[EventType[[], BASE_STATE]] = None,
-        on_mouse_enter: Optional[EventType[[], BASE_STATE]] = None,
-        on_mouse_leave: Optional[EventType[[], BASE_STATE]] = None,
-        on_mouse_move: Optional[EventType[[], BASE_STATE]] = None,
-        on_mouse_out: Optional[EventType[[], BASE_STATE]] = None,
-        on_mouse_over: Optional[EventType[[], BASE_STATE]] = None,
-        on_mouse_up: Optional[EventType[[], BASE_STATE]] = None,
-        on_scroll: Optional[EventType[[], BASE_STATE]] = None,
-        on_unmount: Optional[EventType[[], BASE_STATE]] = None,
+        on_blur: Optional[EventType[()]] = None,
+        on_click: Optional[EventType[()]] = None,
+        on_context_menu: Optional[EventType[()]] = None,
+        on_double_click: Optional[EventType[()]] = None,
+        on_focus: Optional[EventType[()]] = None,
+        on_mount: Optional[EventType[()]] = None,
+        on_mouse_down: Optional[EventType[()]] = None,
+        on_mouse_enter: Optional[EventType[()]] = None,
+        on_mouse_leave: Optional[EventType[()]] = None,
+        on_mouse_move: Optional[EventType[()]] = None,
+        on_mouse_out: Optional[EventType[()]] = None,
+        on_mouse_over: Optional[EventType[()]] = None,
+        on_mouse_up: Optional[EventType[()]] = None,
+        on_scroll: Optional[EventType[()]] = None,
+        on_unmount: Optional[EventType[()]] = None,
         **props,
     ) -> "Toaster":
         """Create a toaster component.
@@ -172,12 +180,13 @@ class ToastNamespace(ComponentNamespace):
     warning = staticmethod(Toaster.toast_warning)
     error = staticmethod(Toaster.toast_error)
     success = staticmethod(Toaster.toast_success)
+    loading = staticmethod(Toaster.toast_loading)
     dismiss = staticmethod(Toaster.toast_dismiss)
 
     @staticmethod
     def __call__(
         message: Union[str, Var] = "", level: Optional[str] = None, **props
-    ) -> "Optional[EventSpec]":
+    ) -> "EventSpec":
         """Send a toast message.
 
         Args:

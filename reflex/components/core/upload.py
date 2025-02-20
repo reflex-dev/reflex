@@ -29,7 +29,7 @@ from reflex.event import (
 from reflex.utils import format
 from reflex.utils.imports import ImportVar
 from reflex.vars import VarData
-from reflex.vars.base import CallableVar, Var, get_unique_variable_name
+from reflex.vars.base import Var, get_unique_variable_name
 from reflex.vars.sequence import LiteralStringVar
 
 DEFAULT_UPLOAD_ID: str = "default"
@@ -45,7 +45,6 @@ upload_files_context_var_data: VarData = VarData(
 )
 
 
-@CallableVar
 def upload_file(id_: str = DEFAULT_UPLOAD_ID) -> Var:
     """Get the file upload drop trigger.
 
@@ -75,7 +74,6 @@ def upload_file(id_: str = DEFAULT_UPLOAD_ID) -> Var:
     )
 
 
-@CallableVar
 def selected_files(id_: str = DEFAULT_UPLOAD_ID) -> Var:
     """Get the list of selected files.
 
@@ -149,7 +147,7 @@ uploaded_files_url_prefix = Var(
 ).to(str)
 
 
-def get_upload_url(file_path: str) -> Var[str]:
+def get_upload_url(file_path: str | Var[str]) -> Var[str]:
     """Get the URL of an uploaded file.
 
     Args:
@@ -160,7 +158,7 @@ def get_upload_url(file_path: str) -> Var[str]:
     """
     Upload.is_used = True
 
-    return uploaded_files_url_prefix + "/" + file_path
+    return Var.create(f"{uploaded_files_url_prefix}/{file_path}")
 
 
 def _on_drop_spec(files: Var) -> Tuple[Var[Any]]:
@@ -192,7 +190,7 @@ class GhostUpload(Fragment):
 class Upload(MemoizationLeaf):
     """A file upload component."""
 
-    library = "react-dropzone@14.2.10"
+    library = "react-dropzone@14.3.5"
 
     tag = ""
 
@@ -269,7 +267,7 @@ class Upload(MemoizationLeaf):
             on_drop = upload_props["on_drop"]
             if isinstance(on_drop, Callable):
                 # Call the lambda to get the event chain.
-                on_drop = call_event_fn(on_drop, _on_drop_spec)  # type: ignore
+                on_drop = call_event_fn(on_drop, _on_drop_spec)
             if isinstance(on_drop, EventSpec):
                 # Update the provided args for direct use with on_drop.
                 on_drop = on_drop.with_args(

@@ -2,7 +2,13 @@
 
 from __future__ import annotations
 
+import contextlib
+import inspect
 import os
+import shutil
+import time
+from pathlib import Path
+from types import FrameType
 
 from rich.console import Console
 from rich.progress import MofNCompleteColumn, Progress, TimeElapsedColumn
@@ -14,7 +20,7 @@ from reflex.constants import LogLevel
 _console = Console()
 
 # The current log level.
-_LOG_LEVEL = LogLevel.DEFAULT
+_LOG_LEVEL = LogLevel.INFO
 
 # Deprecated features who's warning has been printed.
 _EMITTED_DEPRECATION_WARNINGS = set()
@@ -48,23 +54,15 @@ def set_log_level(log_level: LogLevel):
         log_level: The log level to set.
 
     Raises:
-        ValueError: If the log level is invalid.
+        TypeError: If the log level is a string.
     """
     if not isinstance(log_level, LogLevel):
-        deprecate(
-            feature_name="Passing a string to set_log_level",
-            reason="use reflex.constants.LogLevel enum instead",
-            deprecation_version="0.6.6",
-            removal_version="0.7.0",
+        raise TypeError(
+            f"log_level must be a LogLevel enum value, got {log_level} of type {type(log_level)} instead."
         )
-        try:
-            log_level = getattr(LogLevel, log_level.upper())
-        except AttributeError as ae:
-            raise ValueError(f"Invalid log level: {log_level}") from ae
-
     global _LOG_LEVEL
     if log_level != _LOG_LEVEL:
-        # Set the loglevel persistently for subprocesses
+        # Set the loglevel persistenly for subprocesses.
         os.environ["LOGLEVEL"] = log_level.value
     _LOG_LEVEL = log_level
 
@@ -193,6 +191,33 @@ def warn(msg: str, dedupe: bool = False, **kwargs):
         print(f"[orange1]Warning: {msg}[/orange1]", **kwargs)
 
 
+def _get_first_non_framework_frame() -> FrameType | None:
+    import click
+    import typer
+    import typing_extensions
+
+    import reflex as rx
+
+    # Exclude utility modules that should never be the source of deprecated reflex usage.
+    exclude_modules = [click, rx, typer, typing_extensions]
+    exclude_roots = [
+        p.parent.resolve()
+        if (p := Path(m.__file__)).name == "__init__.py"  # pyright: ignore [reportArgumentType]
+        else p.resolve()
+        for m in exclude_modules
+    ]
+    # Specifically exclude the reflex cli module.
+    if reflex_bin := shutil.which(b"reflex"):
+        exclude_roots.append(Path(reflex_bin.decode()))
+
+    frame = inspect.currentframe()
+    while frame := frame and frame.f_back:
+        frame_path = Path(inspect.getfile(frame)).resolve()
+        if not any(frame_path.is_relative_to(root) for root in exclude_roots):
+            break
+    return frame
+
+
 def deprecate(
     feature_name: str,
     reason: str,
@@ -211,15 +236,27 @@ def deprecate(
         dedupe: If True, suppress multiple console logs of deprecation message.
         kwargs: Keyword arguments to pass to the print function.
     """
-    if feature_name not in _EMITTED_DEPRECATION_WARNINGS:
+    dedupe_key = feature_name
+    loc = ""
+
+    # See if we can find where the deprecation exists in "user code"
+    origin_frame = _get_first_non_framework_frame()
+    if origin_frame is not None:
+        filename = Path(origin_frame.f_code.co_filename)
+        if filename.is_relative_to(Path.cwd()):
+            filename = filename.relative_to(Path.cwd())
+        loc = f"{filename}:{origin_frame.f_lineno}"
+        dedupe_key = f"{dedupe_key} {loc}"
+
+    if dedupe_key not in _EMITTED_DEPRECATION_WARNINGS:
         msg = (
             f"{feature_name} has been deprecated in version {deprecation_version} {reason.rstrip('.')}. It will be completely "
-            f"removed in {removal_version}"
+            f"removed in {removal_version}. ({loc})"
         )
         if _LOG_LEVEL <= LogLevel.WARNING:
             print(f"[yellow]DeprecationWarning: {msg}[/yellow]", **kwargs)
         if dedupe:
-            _EMITTED_DEPRECATION_WARNINGS.add(feature_name)
+            _EMITTED_DEPRECATION_WARNINGS.add(dedupe_key)
 
 
 def error(msg: str, dedupe: bool = False, **kwargs):
@@ -244,7 +281,7 @@ def ask(
     choices: list[str] | None = None,
     default: str | None = None,
     show_choices: bool = True,
-) -> str:
+) -> str | None:
     """Takes a prompt question and optionally a list of choices
      and returns the user input.
 
@@ -259,7 +296,7 @@ def ask(
     """
     return Prompt.ask(
         question, choices=choices, default=default, show_choices=show_choices
-    )  # type: ignore
+    )
 
 
 def progress():
@@ -286,3 +323,20 @@ def status(*args, **kwargs):
         A new status.
     """
     return _console.status(*args, **kwargs)
+
+
+@contextlib.contextmanager
+def timing(msg: str):
+    """Create a context manager to time a block of code.
+
+    Args:
+        msg: The message to display.
+
+    Yields:
+        None.
+    """
+    start = time.time()
+    try:
+        yield
+    finally:
+        debug(f"[white]\\[timing] {msg}: {time.time() - start:.2f}s[/white]")

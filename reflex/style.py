@@ -6,13 +6,13 @@ from typing import Any, Literal, Tuple, Type
 
 from reflex import constants
 from reflex.components.core.breakpoints import Breakpoints, breakpoints_values
-from reflex.event import EventChain, EventHandler
+from reflex.event import EventChain, EventHandler, EventSpec, run_script
 from reflex.utils import format
 from reflex.utils.exceptions import ReflexError
 from reflex.utils.imports import ImportVar
 from reflex.utils.types import get_origin
 from reflex.vars import VarData
-from reflex.vars.base import CallableVar, LiteralVar, Var
+from reflex.vars.base import LiteralVar, Var
 from reflex.vars.function import FunctionVar
 from reflex.vars.object import ObjectVar
 
@@ -48,11 +48,10 @@ def _color_mode_var(_js_expr: str, _var_type: Type = str) -> Var:
     ).guess_type()
 
 
-@CallableVar
 def set_color_mode(
-    new_color_mode: LiteralColorMode | Var[LiteralColorMode] | None = None,
-) -> Var[EventChain]:
-    """Create an EventChain Var that sets the color mode to a specific value.
+    new_color_mode: LiteralColorMode | Var[LiteralColorMode],
+) -> EventSpec:
+    """Create an EventSpec Var that sets the color mode to a specific value.
 
     Note: `set_color_mode` is not a real event and cannot be triggered from a
     backend event handler.
@@ -61,24 +60,15 @@ def set_color_mode(
         new_color_mode: The color mode to set.
 
     Returns:
-        The EventChain Var that can be passed to an event trigger.
+        The EventSpec Var that can be passed to an event trigger.
     """
     base_setter = _color_mode_var(
         _js_expr=constants.ColorMode.SET,
-        _var_type=EventChain,
+    ).to(FunctionVar)
+
+    return run_script(
+        base_setter.call(new_color_mode),
     )
-    if new_color_mode is None:
-        return base_setter
-
-    if not isinstance(new_color_mode, Var):
-        new_color_mode = LiteralVar.create(new_color_mode)
-
-    return Var(
-        f"() => {base_setter!s}({new_color_mode!s})",
-        _var_data=VarData.merge(
-            base_setter._get_all_var_data(), new_color_mode._get_all_var_data()
-        ),
-    ).to(FunctionVar, EventChain)  # type: ignore
 
 
 # Var resolves to the current color mode for the app ("light", "dark" or "system")
@@ -182,18 +172,21 @@ def convert(
     var_data = None  # Track import/hook data from any Vars in the style dict.
     out = {}
 
-    def update_out_dict(return_value, keys_to_update):
+    def update_out_dict(
+        return_value: Var | dict | list | str, keys_to_update: tuple[str, ...]
+    ):
         for k in keys_to_update:
             out[k] = return_value
 
     for key, value in style_dict.items():
         keys = (
             format_style_key(key)
-            if not isinstance(value, (dict, ObjectVar))
+            if not isinstance(value, (dict, ObjectVar, list))
             or (
                 isinstance(value, Breakpoints)
                 and all(not isinstance(v, dict) for v in value.values())
             )
+            or (isinstance(value, list) and all(not isinstance(v, dict) for v in value))
             or (
                 isinstance(value, ObjectVar)
                 and not issubclass(get_origin(value._var_type) or value._var_type, dict)
@@ -235,7 +228,9 @@ def format_style_key(key: str) -> Tuple[str, ...]:
     Returns:
         Tuple of css style names corresponding to the key provided.
     """
-    key = format.to_camel_case(key, allow_hyphens=True)
+    if key.startswith("--"):
+        return (key,)
+    key = format.to_camel_case(key)
     return STYLE_PROP_SHORTHAND_MAPPING.get(key, (key,))
 
 
@@ -287,8 +282,30 @@ class Style(dict):
         _var = LiteralVar.create(value)
         if _var is not None:
             # Carry the imports/hooks when setting a Var as a value.
-            self._var_data = VarData.merge(self._var_data, _var._get_all_var_data())
+            self._var_data = VarData.merge(
+                getattr(self, "_var_data", None), _var._get_all_var_data()
+            )
         super().__setitem__(key, value)
+
+    def __or__(self, other: Style | dict) -> Style:
+        """Combine two styles.
+
+        Args:
+            other: The other style to combine.
+
+        Returns:
+            The combined style.
+        """
+        other_var_data = None
+        if not isinstance(other, Style):
+            other_dict, other_var_data = convert(other)
+        else:
+            other_dict, other_var_data = other, other._var_data
+
+        new_style = Style(super().__or__(other_dict))
+        if self._var_data or other_var_data:
+            new_style._var_data = VarData.merge(self._var_data, other_var_data)
+        return new_style
 
 
 def _format_emotion_style_pseudo_selector(key: str) -> str:

@@ -20,7 +20,11 @@ def BackgroundTask():
     class State(rx.State):
         counter: int = 0
         _task_id: int = 0
-        iterations: int = 10
+        iterations: rx.Field[int] = rx.field(10)
+
+        @rx.event
+        def set_iterations(self, value: str):
+            self.iterations = int(value)
 
         @rx.event(background=True)
         async def handle_event(self):
@@ -37,9 +41,9 @@ def BackgroundTask():
                 self._task_id += 1
             for ix in range(int(self.iterations)):
                 if ix % 2 == 0:
-                    yield State.increment_arbitrary(1)  # type: ignore
+                    yield State.increment_arbitrary(1)
                 else:
-                    yield State.increment()  # type: ignore
+                    yield State.increment()
                 await asyncio.sleep(0.005)
 
         @rx.event
@@ -125,8 +129,8 @@ def BackgroundTask():
             rx.input(
                 id="iterations",
                 placeholder="Iterations",
-                value=State.iterations.to_string(),  # type: ignore
-                on_change=State.set_iterations,  # type: ignore
+                value=State.iterations.to_string(),
+                on_change=State.set_iterations,
             ),
             rx.button(
                 "Delayed Increment",
@@ -172,7 +176,7 @@ def BackgroundTask():
             rx.button("Reset", on_click=State.reset_counter, id="reset"),
         )
 
-    app = rx.App(state=rx.State)
+    app = rx.App(_state=rx.State)
     app.add_page(index)
 
 
@@ -288,7 +292,7 @@ def test_background_task(
     assert background_task._poll_for(lambda: counter.text == "620", timeout=40)
     # all tasks should have exited and cleaned up
     assert background_task._poll_for(
-        lambda: not background_task.app_instance.background_tasks  # type: ignore
+        lambda: not background_task.app_instance._background_tasks  # pyright: ignore [reportOptionalMemberAccess]
     )
 
 

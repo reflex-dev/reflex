@@ -3,6 +3,7 @@
 from typing import Dict, Literal, Union
 
 from reflex.components.component import Component
+from reflex.constants.compiler import MemoizationMode
 from reflex.event import EventHandler, no_args_event_spec, passthrough_event_spec
 from reflex.utils import format
 from reflex.vars.base import Var
@@ -26,6 +27,9 @@ LiteralStickyType = Literal[
     "partial",
     "always",
 ]
+
+
+ARIA_LABEL_KEY = "aria_label"
 
 
 # The Tooltip inherits props from the Tooltip.Root, Tooltip.Portal, Tooltip.Content
@@ -91,6 +95,8 @@ class Tooltip(RadixThemesComponent):
     # Fired when the pointer is down outside the tooltip.
     on_pointer_down_outside: EventHandler[no_args_event_spec]
 
+    _memoization_mode = MemoizationMode(recursive=False)
+
     @classmethod
     def create(cls, *children, **props) -> Component:
         """Initialize the Tooltip component.
@@ -104,7 +110,6 @@ class Tooltip(RadixThemesComponent):
         Returns:
             The created component.
         """
-        ARIA_LABEL_KEY = "aria_label"
         if props.get(ARIA_LABEL_KEY) is not None:
             props[format.to_kebab_case(ARIA_LABEL_KEY)] = props.pop(ARIA_LABEL_KEY)
 

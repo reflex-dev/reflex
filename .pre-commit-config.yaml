@@ -3,7 +3,7 @@ fail_fast: true
 repos:
 
   - repo: https://github.com/charliermarsh/ruff-pre-commit
-    rev: v0.8.2
+    rev: v0.9.6
     hooks:
       - id: ruff-format
         args: [reflex, tests]
@@ -24,11 +24,12 @@ repos:
         name: update-pyi-files
         always_run: true
         language: system
+        require_serial: true
         description: 'Update pyi files as needed'
         entry: python3 scripts/make_pyi.py
 
   - repo: https://github.com/RobertCraigie/pyright-python
-    rev: v1.1.313
+    rev: v1.1.393
     hooks:
       - id: pyright
         args: [reflex, tests]

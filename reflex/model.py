@@ -18,6 +18,7 @@ import sqlalchemy
 import sqlalchemy.exc
 import sqlalchemy.ext.asyncio
 import sqlalchemy.orm
+from alembic.runtime.migration import MigrationContext
 
 from reflex.base import Base
 from reflex.config import environment, get_config
@@ -242,7 +243,7 @@ class ModelRegistry:
         return metadata
 
 
-class Model(Base, sqlmodel.SQLModel):  # pyright: ignore [reportGeneralTypeIssues]
+class Model(Base, sqlmodel.SQLModel):  # pyright: ignore [reportGeneralTypeIssues,reportIncompatibleVariableOverride]
     """Base class to define a table in the database."""
 
     # The primary key for the table.
@@ -261,7 +262,7 @@ class Model(Base, sqlmodel.SQLModel):  # pyright: ignore [reportGeneralTypeIssue
         super().__init_subclass__()
 
     @classmethod
-    def _dict_recursive(cls, value):
+    def _dict_recursive(cls, value: Any):
         """Recursively serialize the relationship object(s).
 
         Args:
@@ -393,7 +394,11 @@ class Model(Base, sqlmodel.SQLModel):  # pyright: ignore [reportGeneralTypeIssue
         writer = alembic.autogenerate.rewriter.Rewriter()
 
         @writer.rewrites(alembic.operations.ops.AddColumnOp)
-        def render_add_column_with_server_default(context, revision, op):
+        def render_add_column_with_server_default(
+            context: MigrationContext,
+            revision: str | None,
+            op: Any,
+        ):
             # Carry the sqlmodel default as server_default so that newly added
             # columns get the desired default value in existing rows.
             if op.column.default is not None and op.column.server_default is None:
@@ -402,7 +407,7 @@ class Model(Base, sqlmodel.SQLModel):  # pyright: ignore [reportGeneralTypeIssue
                 )
             return op
 
-        def run_autogenerate(rev, context):
+        def run_autogenerate(rev: str, context: MigrationContext):
             revision_context.run_autogenerate(rev, context)
             return []
 
@@ -415,7 +420,7 @@ class Model(Base, sqlmodel.SQLModel):  # pyright: ignore [reportGeneralTypeIssue
                 connection=connection,
                 target_metadata=ModelRegistry.get_metadata(),
                 render_item=cls._alembic_render_item,
-                process_revision_directives=writer,  # type: ignore
+                process_revision_directives=writer,
                 compare_type=False,
                 render_as_batch=True,  # for sqlite compatibility
             )
@@ -444,7 +449,7 @@ class Model(Base, sqlmodel.SQLModel):  # pyright: ignore [reportGeneralTypeIssue
         """
         config, script_directory = cls._alembic_config()
 
-        def run_upgrade(rev, context):
+        def run_upgrade(rev: str, context: MigrationContext):
             return script_directory._upgrade_revs(to_rev, rev)
 
         with alembic.runtime.environment.EnvironmentContext(

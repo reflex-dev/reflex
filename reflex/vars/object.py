@@ -3,13 +3,12 @@
 from __future__ import annotations
 
 import dataclasses
-import sys
 import typing
 from inspect import isclass
 from typing import (
     Any,
-    Dict,
     List,
+    Mapping,
     NoReturn,
     Tuple,
     Type,
@@ -19,9 +18,16 @@ from typing import (
     overload,
 )
 
+from typing_extensions import is_typeddict
+
 from reflex.utils import types
 from reflex.utils.exceptions import VarAttributeError
-from reflex.utils.types import GenericType, get_attribute_access_type, get_origin
+from reflex.utils.types import (
+    GenericType,
+    get_attribute_access_type,
+    get_origin,
+    safe_issubclass,
+)
 
 from .base import (
     CachedVarOperation,
@@ -36,7 +42,7 @@ from .base import (
 from .number import BooleanVar, NumberVar, raise_unsupported_operand_types
 from .sequence import ArrayVar, StringVar
 
-OBJECT_TYPE = TypeVar("OBJECT_TYPE")
+OBJECT_TYPE = TypeVar("OBJECT_TYPE", covariant=True)
 
 KEY_TYPE = TypeVar("KEY_TYPE")
 VALUE_TYPE = TypeVar("VALUE_TYPE")
@@ -46,7 +52,7 @@ ARRAY_INNER_TYPE = TypeVar("ARRAY_INNER_TYPE")
 OTHER_KEY_TYPE = TypeVar("OTHER_KEY_TYPE")
 
 
-class ObjectVar(Var[OBJECT_TYPE], python_types=dict):
+class ObjectVar(Var[OBJECT_TYPE], python_types=Mapping):
     """Base class for immutable object vars."""
 
     def _key_type(self) -> Type:
@@ -59,7 +65,7 @@ class ObjectVar(Var[OBJECT_TYPE], python_types=dict):
 
     @overload
     def _value_type(
-        self: ObjectVar[Dict[Any, VALUE_TYPE]],
+        self: ObjectVar[Mapping[Any, VALUE_TYPE]],
     ) -> Type[VALUE_TYPE]: ...
 
     @overload
@@ -73,9 +79,9 @@ class ObjectVar(Var[OBJECT_TYPE], python_types=dict):
         """
         fixed_type = get_origin(self._var_type) or self._var_type
         if not isclass(fixed_type):
-            return Any
-        args = get_args(self._var_type) if issubclass(fixed_type, dict) else ()
-        return args[1] if args else Any
+            return Any  # pyright: ignore [reportReturnType]
+        args = get_args(self._var_type) if issubclass(fixed_type, Mapping) else ()
+        return args[1] if args else Any  # pyright: ignore [reportReturnType]
 
     def keys(self) -> ArrayVar[List[str]]:
         """Get the keys of the object.
@@ -87,7 +93,7 @@ class ObjectVar(Var[OBJECT_TYPE], python_types=dict):
 
     @overload
     def values(
-        self: ObjectVar[Dict[Any, VALUE_TYPE]],
+        self: ObjectVar[Mapping[Any, VALUE_TYPE]],
     ) -> ArrayVar[List[VALUE_TYPE]]: ...
 
     @overload
@@ -103,7 +109,7 @@ class ObjectVar(Var[OBJECT_TYPE], python_types=dict):
 
     @overload
     def entries(
-        self: ObjectVar[Dict[Any, VALUE_TYPE]],
+        self: ObjectVar[Mapping[Any, VALUE_TYPE]],
     ) -> ArrayVar[List[Tuple[str, VALUE_TYPE]]]: ...
 
     @overload
@@ -132,50 +138,50 @@ class ObjectVar(Var[OBJECT_TYPE], python_types=dict):
 
     # NoReturn is used here to catch when key value is Any
     @overload
-    def __getitem__(
-        self: ObjectVar[Dict[Any, NoReturn]],
+    def __getitem__(  # pyright: ignore [reportOverlappingOverload]
+        self: ObjectVar[Mapping[Any, NoReturn]],
         key: Var | Any,
     ) -> Var: ...
 
     @overload
     def __getitem__(
+        self: (ObjectVar[Mapping[Any, bool]]),
+        key: Var | Any,
+    ) -> BooleanVar: ...
+
+    @overload
+    def __getitem__(
         self: (
-            ObjectVar[Dict[Any, int]]
-            | ObjectVar[Dict[Any, float]]
-            | ObjectVar[Dict[Any, int | float]]
+            ObjectVar[Mapping[Any, int]]
+            | ObjectVar[Mapping[Any, float]]
+            | ObjectVar[Mapping[Any, int | float]]
         ),
         key: Var | Any,
     ) -> NumberVar: ...
 
     @overload
     def __getitem__(
-        self: ObjectVar[Dict[Any, str]],
+        self: ObjectVar[Mapping[Any, str]],
         key: Var | Any,
     ) -> StringVar: ...
 
     @overload
     def __getitem__(
-        self: ObjectVar[Dict[Any, list[ARRAY_INNER_TYPE]]],
+        self: ObjectVar[Mapping[Any, list[ARRAY_INNER_TYPE]]],
         key: Var | Any,
     ) -> ArrayVar[list[ARRAY_INNER_TYPE]]: ...
 
     @overload
     def __getitem__(
-        self: ObjectVar[Dict[Any, set[ARRAY_INNER_TYPE]]],
-        key: Var | Any,
-    ) -> ArrayVar[set[ARRAY_INNER_TYPE]]: ...
-
-    @overload
-    def __getitem__(
-        self: ObjectVar[Dict[Any, tuple[ARRAY_INNER_TYPE, ...]]],
+        self: ObjectVar[Mapping[Any, tuple[ARRAY_INNER_TYPE, ...]]],
         key: Var | Any,
     ) -> ArrayVar[tuple[ARRAY_INNER_TYPE, ...]]: ...
 
     @overload
     def __getitem__(
-        self: ObjectVar[Dict[Any, dict[OTHER_KEY_TYPE, VALUE_TYPE]]],
+        self: ObjectVar[Mapping[Any, Mapping[OTHER_KEY_TYPE, VALUE_TYPE]]],
         key: Var | Any,
-    ) -> ObjectVar[dict[OTHER_KEY_TYPE, VALUE_TYPE]]: ...
+    ) -> ObjectVar[Mapping[OTHER_KEY_TYPE, VALUE_TYPE]]: ...
 
     def __getitem__(self, key: Var | Any) -> Var:
         """Get an item from the object.
@@ -186,58 +192,56 @@ class ObjectVar(Var[OBJECT_TYPE], python_types=dict):
         Returns:
             The item from the object.
         """
+        from .sequence import LiteralStringVar
+
         if not isinstance(key, (StringVar, str, int, NumberVar)) or (
             isinstance(key, NumberVar) and key._is_strict_float()
         ):
             raise_unsupported_operand_types("[]", (type(self), type(key)))
+        if isinstance(key, str) and isinstance(Var.create(key), LiteralStringVar):
+            return self.__getattr__(key)
         return ObjectItemOperation.create(self, key).guess_type()
 
     # NoReturn is used here to catch when key value is Any
     @overload
-    def __getattr__(
-        self: ObjectVar[Dict[Any, NoReturn]],
+    def __getattr__(  # pyright: ignore [reportOverlappingOverload]
+        self: ObjectVar[Mapping[Any, NoReturn]],
         name: str,
     ) -> Var: ...
 
     @overload
     def __getattr__(
         self: (
-            ObjectVar[Dict[Any, int]]
-            | ObjectVar[Dict[Any, float]]
-            | ObjectVar[Dict[Any, int | float]]
+            ObjectVar[Mapping[Any, int]]
+            | ObjectVar[Mapping[Any, float]]
+            | ObjectVar[Mapping[Any, int | float]]
         ),
         name: str,
     ) -> NumberVar: ...
 
     @overload
     def __getattr__(
-        self: ObjectVar[Dict[Any, str]],
+        self: ObjectVar[Mapping[Any, str]],
         name: str,
     ) -> StringVar: ...
 
     @overload
     def __getattr__(
-        self: ObjectVar[Dict[Any, list[ARRAY_INNER_TYPE]]],
+        self: ObjectVar[Mapping[Any, list[ARRAY_INNER_TYPE]]],
         name: str,
     ) -> ArrayVar[list[ARRAY_INNER_TYPE]]: ...
 
     @overload
     def __getattr__(
-        self: ObjectVar[Dict[Any, set[ARRAY_INNER_TYPE]]],
-        name: str,
-    ) -> ArrayVar[set[ARRAY_INNER_TYPE]]: ...
-
-    @overload
-    def __getattr__(
-        self: ObjectVar[Dict[Any, tuple[ARRAY_INNER_TYPE, ...]]],
+        self: ObjectVar[Mapping[Any, tuple[ARRAY_INNER_TYPE, ...]]],
         name: str,
     ) -> ArrayVar[tuple[ARRAY_INNER_TYPE, ...]]: ...
 
     @overload
     def __getattr__(
-        self: ObjectVar[Dict[Any, dict[OTHER_KEY_TYPE, VALUE_TYPE]]],
+        self: ObjectVar[Mapping[Any, Mapping[OTHER_KEY_TYPE, VALUE_TYPE]]],
         name: str,
-    ) -> ObjectVar[dict[OTHER_KEY_TYPE, VALUE_TYPE]]: ...
+    ) -> ObjectVar[Mapping[OTHER_KEY_TYPE, VALUE_TYPE]]: ...
 
     @overload
     def __getattr__(
@@ -245,7 +249,7 @@ class ObjectVar(Var[OBJECT_TYPE], python_types=dict):
         name: str,
     ) -> ObjectItemOperation: ...
 
-    def __getattr__(self, name) -> Var:
+    def __getattr__(self, name: str) -> Var:
         """Get an attribute of the var.
 
         Args:
@@ -265,9 +269,12 @@ class ObjectVar(Var[OBJECT_TYPE], python_types=dict):
         if types.is_optional(var_type):
             var_type = get_args(var_type)[0]
 
-        fixed_type = var_type if isclass(var_type) else get_origin(var_type)
-        if (isclass(fixed_type) and not issubclass(fixed_type, dict)) or (
-            fixed_type in types.UnionTypes
+        fixed_type = get_origin(var_type) or var_type
+
+        if (
+            is_typeddict(fixed_type)
+            or (isclass(fixed_type) and not safe_issubclass(fixed_type, Mapping))
+            or (fixed_type in types.UnionTypes)
         ):
             attribute_type = get_attribute_access_type(var_type, name)
             if attribute_type is None:
@@ -294,12 +301,12 @@ class ObjectVar(Var[OBJECT_TYPE], python_types=dict):
 @dataclasses.dataclass(
     eq=False,
     frozen=True,
-    **{"slots": True} if sys.version_info >= (3, 10) else {},
+    slots=True,
 )
 class LiteralObjectVar(CachedVarOperation, ObjectVar[OBJECT_TYPE], LiteralVar):
     """Base class for immutable literal object vars."""
 
-    _var_value: Dict[Union[Var, Any], Union[Var, Any]] = dataclasses.field(
+    _var_value: Mapping[Union[Var, Any], Union[Var, Any]] = dataclasses.field(
         default_factory=dict
     )
 
@@ -310,7 +317,7 @@ class LiteralObjectVar(CachedVarOperation, ObjectVar[OBJECT_TYPE], LiteralVar):
             The type of the keys of the object.
         """
         args_list = typing.get_args(self._var_type)
-        return args_list[0] if args_list else Any
+        return args_list[0] if args_list else Any  # pyright: ignore [reportReturnType]
 
     def _value_type(self) -> Type:
         """Get the type of the values of the object.
@@ -319,7 +326,7 @@ class LiteralObjectVar(CachedVarOperation, ObjectVar[OBJECT_TYPE], LiteralVar):
             The type of the values of the object.
         """
         args_list = typing.get_args(self._var_type)
-        return args_list[1] if args_list else Any
+        return args_list[1] if args_list else Any  # pyright: ignore [reportReturnType]
 
     @cached_property_no_lock
     def _cached_var_name(self) -> str:
@@ -344,17 +351,20 @@ class LiteralObjectVar(CachedVarOperation, ObjectVar[OBJECT_TYPE], LiteralVar):
 
         Returns:
             The JSON representation of the object.
+
+        Raises:
+            TypeError: The keys and values of the object must be literal vars to get the JSON representation
         """
-        return (
-            "{"
-            + ", ".join(
-                [
-                    f"{LiteralVar.create(key).json()}:{LiteralVar.create(value).json()}"
-                    for key, value in self._var_value.items()
-                ]
-            )
-            + "}"
-        )
+        keys_and_values = []
+        for key, value in self._var_value.items():
+            key = LiteralVar.create(key)
+            value = LiteralVar.create(value)
+            if not isinstance(key, LiteralVar) or not isinstance(value, LiteralVar):
+                raise TypeError(
+                    "The keys and values of the object must be literal vars to get the JSON representation."
+                )
+            keys_and_values.append(f"{key.json()}:{value.json()}")
+        return "{" + ", ".join(keys_and_values) + "}"
 
     def __hash__(self) -> int:
         """Get the hash of the var.
@@ -383,7 +393,7 @@ class LiteralObjectVar(CachedVarOperation, ObjectVar[OBJECT_TYPE], LiteralVar):
     @classmethod
     def create(
         cls,
-        _var_value: dict,
+        _var_value: Mapping,
         _var_type: Type[OBJECT_TYPE] | None = None,
         _var_data: VarData | None = None,
     ) -> LiteralObjectVar[OBJECT_TYPE]:
@@ -466,7 +476,7 @@ def object_merge_operation(lhs: ObjectVar, rhs: ObjectVar):
     """
     return var_operation_return(
         js_expression=f"({{...{lhs}, ...{rhs}}})",
-        var_type=Dict[
+        var_type=Mapping[
             Union[lhs._key_type(), rhs._key_type()],
             Union[lhs._value_type(), rhs._value_type()],
         ],
@@ -476,7 +486,7 @@ def object_merge_operation(lhs: ObjectVar, rhs: ObjectVar):
 @dataclasses.dataclass(
     eq=False,
     frozen=True,
-    **{"slots": True} if sys.version_info >= (3, 10) else {},
+    slots=True,
 )
 class ObjectItemOperation(CachedVarOperation, Var):
     """Operation to get an item from an object."""

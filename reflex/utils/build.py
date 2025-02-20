@@ -13,17 +13,21 @@ from rich.progress import MofNCompleteColumn, Progress, TimeElapsedColumn
 from reflex import constants
 from reflex.config import get_config
 from reflex.utils import console, path_ops, prerequisites, processes
+from reflex.utils.exec import is_in_app_harness
 
 
 def set_env_json():
     """Write the upload url to a REFLEX_JSON."""
     path_ops.update_json_file(
         str(prerequisites.get_web_dir() / constants.Dirs.ENV_JSON),
-        {endpoint.name: endpoint.get_url() for endpoint in constants.Endpoint},
+        {
+            **{endpoint.name: endpoint.get_url() for endpoint in constants.Endpoint},
+            "TEST_MODE": is_in_app_harness(),
+        },
     )
 
 
-def generate_sitemap_config(deploy_url: str, export=False):
+def generate_sitemap_config(deploy_url: str, export: bool = False):
     """Generate the sitemap config file.
 
     Args:
@@ -56,6 +60,7 @@ def _zip(
     dirs_to_exclude: set[str] | None = None,
     files_to_exclude: set[str] | None = None,
     top_level_dirs_to_exclude: set[str] | None = None,
+    globs_to_include: list[str] | None = None,
 ) -> None:
     """Zip utility function.
 
@@ -68,6 +73,7 @@ def _zip(
         dirs_to_exclude: The directories to exclude.
         files_to_exclude: The files to exclude.
         top_level_dirs_to_exclude: The top level directory names immediately under root_dir to exclude. Do not exclude folders by these names further in the sub-directories.
+        globs_to_include: Apply these globs from the root_dir and always include them in the zip.
 
     """
     target = Path(target)
@@ -99,6 +105,13 @@ def _zip(
         files_to_zip += [
             str(root / file) for file in files if file not in files_to_exclude
         ]
+    if globs_to_include:
+        for glob in globs_to_include:
+            files_to_zip += [
+                str(file)
+                for file in root_dir.glob(glob)
+                if file.name not in files_to_exclude
+            ]
 
     # Create a progress bar for zipping the component.
     progress = Progress(
@@ -156,6 +169,9 @@ def zip_app(
             top_level_dirs_to_exclude={"assets"},
             exclude_venv_dirs=True,
             upload_db_file=upload_db_file,
+            globs_to_include=[
+                str(Path(constants.Dirs.WEB) / constants.Dirs.BACKEND / "*")
+            ],
         )
 
 

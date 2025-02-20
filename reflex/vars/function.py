@@ -4,9 +4,21 @@ from __future__ import annotations
 
 import dataclasses
 import sys
-from typing import Any, Callable, Optional, Sequence, Tuple, Type, Union, overload
-
-from typing_extensions import Concatenate, Generic, ParamSpec, Protocol, TypeVar
+from typing import (
+    Any,
+    Callable,
+    Concatenate,
+    Generic,
+    Optional,
+    ParamSpec,
+    Protocol,
+    Sequence,
+    Tuple,
+    Type,
+    TypeVar,
+    Union,
+    overload,
+)
 
 from reflex.utils import format
 from reflex.utils.types import GenericType
@@ -29,9 +41,9 @@ class ReflexCallable(Protocol[P, R]):
     __call__: Callable[P, R]
 
 
-CALLABLE_TYPE = TypeVar("CALLABLE_TYPE", bound=ReflexCallable, infer_variance=True)
+CALLABLE_TYPE = TypeVar("CALLABLE_TYPE", bound=ReflexCallable, covariant=True)
 OTHER_CALLABLE_TYPE = TypeVar(
-    "OTHER_CALLABLE_TYPE", bound=ReflexCallable, infer_variance=True
+    "OTHER_CALLABLE_TYPE", bound=ReflexCallable, covariant=True
 )
 
 
@@ -100,7 +112,7 @@ class FunctionVar(Var[CALLABLE_TYPE], default_type=ReflexCallable[Any, Any]):
     @overload
     def partial(self, *args: Var | Any) -> FunctionVar: ...
 
-    def partial(self, *args: Var | Any) -> FunctionVar:  # type: ignore
+    def partial(self, *args: Var | Any) -> FunctionVar:  # pyright: ignore [reportInconsistentOverload]
         """Partially apply the function with the given arguments.
 
         Args:
@@ -174,7 +186,7 @@ class FunctionVar(Var[CALLABLE_TYPE], default_type=ReflexCallable[Any, Any]):
     @overload
     def call(self, *args: Var | Any) -> Var: ...
 
-    def call(self, *args: Var | Any) -> Var:  # type: ignore
+    def call(self, *args: Var | Any) -> Var:  # pyright: ignore [reportInconsistentOverload]
         """Call the function with the given arguments.
 
         Args:
@@ -210,6 +222,7 @@ class FunctionStringVar(FunctionVar[CALLABLE_TYPE]):
 
         Args:
             func: The function to call.
+            _var_type: The type of the Var.
             _var_data: Additional hooks and imports associated with the Var.
 
         Returns:
@@ -225,7 +238,7 @@ class FunctionStringVar(FunctionVar[CALLABLE_TYPE]):
 @dataclasses.dataclass(
     eq=False,
     frozen=True,
-    **{"slots": True} if sys.version_info >= (3, 10) else {},
+    slots=True,
 )
 class VarOperationCall(Generic[P, R], CachedVarOperation, Var[R]):
     """Base class for immutable vars that are the result of a function call."""
@@ -268,6 +281,7 @@ class VarOperationCall(Generic[P, R], CachedVarOperation, Var[R]):
         Args:
             func: The function to call.
             *args: The arguments to call the function with.
+            _var_type: The type of the Var.
             _var_data: Additional hooks and imports associated with the Var.
 
         Returns:
@@ -348,7 +362,7 @@ def format_args_function_operation(
 @dataclasses.dataclass(
     eq=False,
     frozen=True,
-    **{"slots": True} if sys.version_info >= (3, 10) else {},
+    slots=True,
 )
 class ArgsFunctionOperation(CachedVarOperation, FunctionVar):
     """Base class for immutable function defined via arguments and return expression."""
@@ -385,11 +399,13 @@ class ArgsFunctionOperation(CachedVarOperation, FunctionVar):
             return_expr: The return expression of the function.
             rest: The name of the rest argument.
             explicit_return: Whether to use explicit return syntax.
+            _var_type: The type of the Var.
             _var_data: Additional hooks and imports associated with the Var.
 
         Returns:
             The function var.
         """
+        return_expr = Var.create(return_expr)
         return cls(
             _js_expr="",
             _var_type=_var_type,
@@ -403,7 +419,7 @@ class ArgsFunctionOperation(CachedVarOperation, FunctionVar):
 @dataclasses.dataclass(
     eq=False,
     frozen=True,
-    **{"slots": True} if sys.version_info >= (3, 10) else {},
+    slots=True,
 )
 class ArgsFunctionOperationBuilder(CachedVarOperation, BuilderFunctionVar):
     """Base class for immutable function defined via arguments and return expression with the builder pattern."""
@@ -440,11 +456,13 @@ class ArgsFunctionOperationBuilder(CachedVarOperation, BuilderFunctionVar):
             return_expr: The return expression of the function.
             rest: The name of the rest argument.
             explicit_return: Whether to use explicit return syntax.
+            _var_type: The type of the Var.
             _var_data: Additional hooks and imports associated with the Var.
 
         Returns:
             The function var.
         """
+        return_expr = Var.create(return_expr)
         return cls(
             _js_expr="",
             _var_type=_var_type,

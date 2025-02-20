@@ -70,7 +70,7 @@ class TextFieldRoot(elements.Input, RadixThemesComponent):
     value: Var[Union[str, int, float]]
 
     # References a datalist for suggested options
-    list: Var[Union[str, int, bool]]
+    list: Var[str]
 
     # Fired when the value of the textarea changes.
     on_change: EventHandler[input_event]
@@ -105,7 +105,7 @@ class TextFieldRoot(elements.Input, RadixThemesComponent):
             (value_var := Var.create(value))._var_type
         ):
             props["value"] = ternary_operation(
-                (value_var != Var.create(None))  # pyright: ignore [reportGeneralTypeIssues]
+                (value_var != Var.create(None))  # pyright: ignore [reportArgumentType]
                 & (value_var != Var(_js_expr="undefined")),
                 value,
                 Var.create(""),

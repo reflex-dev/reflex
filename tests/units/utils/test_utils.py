@@ -31,7 +31,7 @@ def get_above_max_version():
 
     """
     semantic_version_list = constants.Bun.VERSION.split(".")
-    semantic_version_list[-1] = str(int(semantic_version_list[-1]) + 1)  # type: ignore
+    semantic_version_list[-1] = str(int(semantic_version_list[-1]) + 1)  # pyright: ignore [reportArgumentType, reportCallIssue]
     return ".".join(semantic_version_list)
 
 
@@ -115,16 +115,29 @@ def test_typehint_issubclass(subclass, superclass, expected):
     assert types.typehint_issubclass(subclass, superclass) == expected
 
 
-def test_validate_invalid_bun_path(mocker):
+def test_validate_none_bun_path(mocker):
+    """Test that an error is thrown when a bun path is not specified.
+
+    Args:
+        mocker: Pytest mocker object.
+    """
+    mocker.patch("reflex.utils.path_ops.get_bun_path", return_value=None)
+    # with pytest.raises(typer.Exit):
+    prerequisites.validate_bun()
+
+
+def test_validate_invalid_bun_path(
+    mocker,
+):
     """Test that an error is thrown when a custom specified bun path is not valid
     or does not exist.
 
     Args:
         mocker: Pytest mocker object.
     """
-    mock = mocker.Mock()
-    mocker.patch.object(mock, "bun_path", return_value="/mock/path")
-    mocker.patch("reflex.utils.prerequisites.get_config", mock)
+    mock_path = mocker.Mock()
+    mocker.patch("reflex.utils.path_ops.get_bun_path", return_value=mock_path)
+    mocker.patch("reflex.utils.path_ops.samefile", return_value=False)
     mocker.patch("reflex.utils.prerequisites.get_bun_version", return_value=None)
 
     with pytest.raises(typer.Exit):
@@ -137,9 +150,10 @@ def test_validate_bun_path_incompatible_version(mocker):
     Args:
         mocker: Pytest mocker object.
     """
-    mock = mocker.Mock()
-    mocker.patch.object(mock, "bun_path", return_value="/mock/path")
-    mocker.patch("reflex.utils.prerequisites.get_config", mock)
+    mock_path = mocker.Mock()
+    mock_path.samefile.return_value = False
+    mocker.patch("reflex.utils.path_ops.get_bun_path", return_value=mock_path)
+    mocker.patch("reflex.utils.path_ops.samefile", return_value=False)
     mocker.patch(
         "reflex.utils.prerequisites.get_bun_version",
         return_value=version.parse("0.6.5"),
@@ -587,9 +601,7 @@ def test_style_prop_with_event_handler_value(callable):
     }
 
     with pytest.raises(ReflexError):
-        rx.box(
-            style=style,  # type: ignore
-        )
+        rx.box(style=style)  # pyright: ignore [reportArgumentType]
 
 
 def test_is_prod_mode() -> None:

@@ -1,6 +1,6 @@
 """Interactive components provided by @radix-ui/themes."""
 
-from typing import Literal, Union
+from typing import Literal
 
 from reflex.components.component import Component
 from reflex.components.core.breakpoints import Responsive
@@ -51,7 +51,7 @@ class TextArea(RadixThemesComponent, elements.Textarea):
     disabled: Var[bool]
 
     # Associates the textarea with a form (by id)
-    form: Var[Union[str, int, bool]]
+    form: Var[str]
 
     # Maximum number of characters allowed in the textarea
     max_length: Var[int]
@@ -95,6 +95,18 @@ class TextArea(RadixThemesComponent, elements.Textarea):
             # create a debounced input if the user requests full control to avoid typing jank
             return DebounceInput.create(super().create(*children, **props))
         return super().create(*children, **props)
+
+    def add_style(self):
+        """Add the style to the component.
+
+        Returns:
+            The style of the component.
+        """
+        added_style: dict[str, dict] = {}
+        added_style.setdefault("& textarea", {})
+        if "padding" in self.style:
+            added_style["& textarea"]["padding"] = self.style.pop("padding")
+        return added_style
 
 
 text_area = TextArea.create

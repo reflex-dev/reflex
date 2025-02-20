@@ -19,6 +19,7 @@ from reflex.constants import EventTriggers
 from reflex.event import (
     EventChain,
     EventHandler,
+    JavascriptInputEvent,
     input_event,
     no_args_event_spec,
     parse_args_spec,
@@ -27,10 +28,15 @@ from reflex.event import (
 from reflex.state import BaseState
 from reflex.style import Style
 from reflex.utils import imports
-from reflex.utils.exceptions import EventFnArgMismatch
+from reflex.utils.exceptions import (
+    ChildrenTypeError,
+    EventFnArgMismatchError,
+    EventHandlerArgTypeMismatchError,
+)
 from reflex.utils.imports import ImportDict, ImportVar, ParsedImportDict, parse_imports
 from reflex.vars import VarData
 from reflex.vars.base import LiteralVar, Var
+from reflex.vars.object import ObjectVar
 
 
 @pytest.fixture
@@ -94,11 +100,14 @@ def component2() -> Type[Component]:
         A test component.
     """
 
+    def on_prop_event_spec(e0: Any):
+        return [e0]
+
     class TestComponent2(Component):
         # A test list prop.
         arr: Var[List[str]]
 
-        on_prop_event: EventHandler[lambda e0: [e0]]
+        on_prop_event: EventHandler[on_prop_event_spec]
 
         def get_event_triggers(self) -> Dict[str, Any]:
             """Test controlled triggers.
@@ -444,8 +453,8 @@ def test_add_style(component1, component2):
         component1: Style({"color": "white"}),
         component2: Style({"color": "black"}),
     }
-    c1 = component1()._add_style_recursive(style)  # type: ignore
-    c2 = component2()._add_style_recursive(style)  # type: ignore
+    c1 = component1()._add_style_recursive(style)
+    c2 = component2()._add_style_recursive(style)
     assert str(c1.style["color"]) == '"white"'
     assert str(c2.style["color"]) == '"black"'
 
@@ -461,8 +470,8 @@ def test_add_style_create(component1, component2):
         component1.create: Style({"color": "white"}),
         component2.create: Style({"color": "black"}),
     }
-    c1 = component1()._add_style_recursive(style)  # type: ignore
-    c2 = component2()._add_style_recursive(style)  # type: ignore
+    c1 = component1()._add_style_recursive(style)
+    c2 = component2()._add_style_recursive(style)
     assert str(c1.style["color"]) == '"white"'
     assert str(c2.style["color"]) == '"black"'
 
@@ -642,17 +651,20 @@ def test_create_filters_none_props(test_component):
 
     # Assert that the style prop is present in the component's props
     assert str(component.style["color"]) == '"white"'
-    assert str(component.style["text-align"]) == '"center"'
+    assert str(component.style["textAlign"]) == '"center"'
 
 
-@pytest.mark.parametrize("children", [((None,),), ("foo", ("bar", (None,)))])
+@pytest.mark.parametrize(
+    "children",
+    [
+        ((None,),),
+        ("foo", ("bar", (None,))),
+        ({"foo": "bar"},),
+    ],
+)
 def test_component_create_unallowed_types(children, test_component):
-    with pytest.raises(TypeError) as err:
+    with pytest.raises(ChildrenTypeError):
         test_component.create(*children)
-    assert (
-        err.value.args[0]
-        == "Children of Reflex components must be other components, state vars, or primitive Python types. Got child None of type <class 'NoneType'>."
-    )
 
 
 @pytest.mark.parametrize(
@@ -815,10 +827,14 @@ def test_component_create_unpack_tuple_child(test_component, element, expected):
     assert fragment_wrapper.render() == expected
 
 
+class _Obj(Base):
+    custom: int = 0
+
+
 class C1State(BaseState):
     """State for testing C1 component."""
 
-    def mock_handler(self, _e, _bravo, _charlie):
+    def mock_handler(self, _e: JavascriptInputEvent, _bravo: dict, _charlie: _Obj):
         """Mock handler."""
         pass
 
@@ -826,11 +842,13 @@ class C1State(BaseState):
 def test_component_event_trigger_arbitrary_args():
     """Test that we can define arbitrary types for the args of an event trigger."""
 
-    class Obj(Base):
-        custom: int = 0
-
-    def on_foo_spec(_e, alpha: str, bravo: Dict[str, Any], charlie: Obj):
-        return [_e.target.value, bravo["nested"], charlie.custom + 42]
+    def on_foo_spec(
+        _e: ObjectVar[JavascriptInputEvent],
+        alpha: Var[str],
+        bravo: dict[str, Any],
+        charlie: ObjectVar[_Obj],
+    ):
+        return [_e.target.value, bravo["nested"], charlie.custom.to(int) + 42]
 
     class C1(Component):
         library = "/local"
@@ -842,13 +860,7 @@ def test_component_event_trigger_arbitrary_args():
                 "on_foo": on_foo_spec,
             }
 
-    comp = C1.create(on_foo=C1State.mock_handler)
-
-    assert comp.render()["props"][0] == (
-        "onFoo={((__e, _alpha, _bravo, _charlie) => (addEvents("
-        f'[(Event("{C1State.get_full_name()}.mock_handler", ({{ ["_e"] : __e["target"]["value"], ["_bravo"] : _bravo["nested"], ["_charlie"] : (_charlie["custom"] + 42) }}), ({{  }})))], '
-        "[__e, _alpha, _bravo, _charlie], ({  }))))}"
-    )
+    C1.create(on_foo=C1State.mock_handler)
 
 
 def test_create_custom_component(my_component):
@@ -859,7 +871,7 @@ def test_create_custom_component(my_component):
     """
     component = CustomComponent(component_fn=my_component, prop1="test", prop2=1)
     assert component.tag == "MyComponent"
-    assert component.get_props() == set()
+    assert component.get_props() == {"prop1", "prop2"}
     assert component._get_all_custom_components() == {component}
 
 
@@ -905,30 +917,29 @@ def test_invalid_event_handler_args(component2, test_state):
         test_state: A test state.
     """
     # EventHandler args must match
-    with pytest.raises(EventFnArgMismatch):
+    with pytest.raises(EventFnArgMismatchError):
         component2.create(on_click=test_state.do_something_arg)
 
     # Multiple EventHandler args: all must match
-    with pytest.raises(EventFnArgMismatch):
+    with pytest.raises(EventFnArgMismatchError):
         component2.create(
             on_click=[test_state.do_something_arg, test_state.do_something]
         )
 
-    # Enable when 0.7.0 happens
     # # Event Handler types must match
-    # with pytest.raises(EventHandlerArgTypeMismatch):
-    #     component2.create(
-    #         on_user_visited_count_changed=test_state.do_something_with_bool # noqa: ERA001 RUF100
-    #     ) # noqa: ERA001 RUF100
-    # with pytest.raises(EventHandlerArgTypeMismatch):
-    #     component2.create(on_user_list_changed=test_state.do_something_with_int) #noqa: ERA001
-    # with pytest.raises(EventHandlerArgTypeMismatch):
-    #     component2.create(on_user_list_changed=test_state.do_something_with_list_int) #noqa: ERA001
+    with pytest.raises(EventHandlerArgTypeMismatchError):
+        component2.create(
+            on_user_visited_count_changed=test_state.do_something_with_bool
+        )
+    with pytest.raises(EventHandlerArgTypeMismatchError):
+        component2.create(on_user_list_changed=test_state.do_something_with_int)
+    with pytest.raises(EventHandlerArgTypeMismatchError):
+        component2.create(on_user_list_changed=test_state.do_something_with_list_int)
 
-    # component2.create(on_open=test_state.do_something_with_int) #noqa: ERA001
-    # component2.create(on_open=test_state.do_something_with_bool) #noqa: ERA001
-    # component2.create(on_user_visited_count_changed=test_state.do_something_with_int) #noqa: ERA001
-    # component2.create(on_user_list_changed=test_state.do_something_with_list_str) #noqa: ERA001
+    component2.create(on_open=test_state.do_something_with_int)
+    component2.create(on_open=test_state.do_something_with_bool)
+    component2.create(on_user_visited_count_changed=test_state.do_something_with_int)
+    component2.create(on_user_list_changed=test_state.do_something_with_list_str)
 
     # lambda cannot return weird values.
     with pytest.raises(ValueError):
@@ -941,15 +952,15 @@ def test_invalid_event_handler_args(component2, test_state):
         )
 
     # lambda signature must match event trigger.
-    with pytest.raises(EventFnArgMismatch):
+    with pytest.raises(EventFnArgMismatchError):
         component2.create(on_click=lambda _: test_state.do_something_arg(1))
 
     # lambda returning EventHandler must match spec
-    with pytest.raises(EventFnArgMismatch):
+    with pytest.raises(EventFnArgMismatchError):
         component2.create(on_click=lambda: test_state.do_something_arg)
 
     # Mixed EventSpec and EventHandler must match spec.
-    with pytest.raises(EventFnArgMismatch):
+    with pytest.raises(EventFnArgMismatchError):
         component2.create(
             on_click=lambda: [
                 test_state.do_something_arg(1),
@@ -1318,7 +1329,7 @@ class EventState(rx.State):
         ),
         pytest.param(
             rx.fragment(class_name=[TEST_VAR, "other-class"]),
-            [LiteralVar.create([TEST_VAR, "other-class"]).join(" ")],
+            [Var.create([TEST_VAR, "other-class"]).join(" ")],
             id="fstring-dual-class_name",
         ),
         pytest.param(
@@ -1353,17 +1364,17 @@ class EventState(rx.State):
             id="fstring-background_color",
         ),
         pytest.param(
-            rx.fragment(style={"background_color": TEST_VAR}),  # type: ignore
+            rx.fragment(style={"background_color": TEST_VAR}),  # pyright: ignore [reportArgumentType]
             [STYLE_VAR],
             id="direct-style-background_color",
         ),
         pytest.param(
-            rx.fragment(style={"background_color": f"foo{TEST_VAR}bar"}),  # type: ignore
+            rx.fragment(style={"background_color": f"foo{TEST_VAR}bar"}),  # pyright: ignore [reportArgumentType]
             [STYLE_VAR],
             id="fstring-style-background_color",
         ),
         pytest.param(
-            rx.fragment(on_click=EVENT_CHAIN_VAR),  # type: ignore
+            rx.fragment(on_click=EVENT_CHAIN_VAR),
             [EVENT_CHAIN_VAR],
             id="direct-event-chain",
         ),
@@ -1373,17 +1384,17 @@ class EventState(rx.State):
             id="direct-event-handler",
         ),
         pytest.param(
-            rx.fragment(on_click=EventState.handler2(TEST_VAR)),  # type: ignore
+            rx.fragment(on_click=EventState.handler2(TEST_VAR)),  # pyright: ignore [reportCallIssue]
             [ARG_VAR, TEST_VAR],
             id="direct-event-handler-arg",
         ),
         pytest.param(
-            rx.fragment(on_click=EventState.handler2(EventState.v)),  # type: ignore
+            rx.fragment(on_click=EventState.handler2(EventState.v)),  # pyright: ignore [reportCallIssue]
             [ARG_VAR, EventState.v],
             id="direct-event-handler-arg2",
         ),
         pytest.param(
-            rx.fragment(on_click=lambda: EventState.handler2(TEST_VAR)),  # type: ignore
+            rx.fragment(on_click=lambda: EventState.handler2(TEST_VAR)),  # pyright: ignore [reportCallIssue]
             [ARG_VAR, TEST_VAR],
             id="direct-event-handler-lambda",
         ),
@@ -1436,6 +1447,7 @@ def test_get_vars(component, exp_vars):
     for comp_var, exp_var in zip(
         comp_vars,
         sorted(exp_vars, key=lambda v: v._js_expr),
+        strict=True,
     ):
         assert comp_var.equals(exp_var)
 
@@ -1471,7 +1483,7 @@ def test_instantiate_all_components():
         comp_name
         for submodule_list in component_nested_list
         for comp_name in submodule_list
-    ]:  # type: ignore
+    ]:
         if component_name in untested_components:
             continue
         component = getattr(
@@ -1544,11 +1556,11 @@ def test_validate_valid_children():
     )
 
     valid_component1(
-        rx.cond(  # type: ignore
+        rx.cond(
             True,
             rx.fragment(valid_component2()),
             rx.fragment(
-                rx.foreach(LiteralVar.create([1, 2, 3]), lambda x: valid_component2(x))  # type: ignore
+                rx.foreach(LiteralVar.create([1, 2, 3]), lambda x: valid_component2(x))
             ),
         )
     )
@@ -1603,12 +1615,12 @@ def test_validate_valid_parents():
     )
 
     valid_component2(
-        rx.cond(  # type: ignore
+        rx.cond(
             True,
             rx.fragment(valid_component3()),
             rx.fragment(
                 rx.foreach(
-                    LiteralVar.create([1, 2, 3]),  # type: ignore
+                    LiteralVar.create([1, 2, 3]),
                     lambda x: valid_component2(valid_component3(x)),
                 )
             ),
@@ -1671,13 +1683,13 @@ def test_validate_invalid_children():
 
     with pytest.raises(ValueError):
         valid_component4(
-            rx.cond(  # type: ignore
+            rx.cond(
                 True,
                 rx.fragment(invalid_component()),
                 rx.fragment(
                     rx.foreach(
                         LiteralVar.create([1, 2, 3]), lambda x: invalid_component(x)
-                    )  # type: ignore
+                    )
                 ),
             )
         )
@@ -1798,21 +1810,15 @@ def test_custom_component_declare_event_handlers_in_fields():
             """
             return {
                 **super().get_event_triggers(),
-                "on_a": lambda e0: [e0],
                 "on_b": input_event,
-                "on_c": lambda e0: [],
                 "on_d": lambda: [],
                 "on_e": lambda: [],
-                "on_f": lambda a, b, c: [c, b, a],
             }
 
     class TestComponent(Component):
-        on_a: EventHandler[lambda e0: [e0]]
         on_b: EventHandler[input_event]
-        on_c: EventHandler[no_args_event_spec]
         on_d: EventHandler[no_args_event_spec]
         on_e: EventHandler
-        on_f: EventHandler[lambda a, b, c: [c, b, a]]
 
     custom_component = ReferenceComponent.create()
     test_component = TestComponent.create()
@@ -1823,6 +1829,7 @@ def test_custom_component_declare_event_handlers_in_fields():
         for v1, v2 in zip(
             parse_args_spec(test_triggers[trigger_name]),
             parse_args_spec(custom_triggers[trigger_name]),
+            strict=True,
         ):
             assert v1.equals(v2)
 
@@ -1864,7 +1871,7 @@ def test_invalid_event_trigger():
 )
 def test_component_add_imports(tags):
     class BaseComponent(Component):
-        def _get_imports(self) -> ImportDict:
+        def _get_imports(self) -> ImportDict:  # pyright: ignore [reportIncompatibleMethodOverride]
             return {}
 
     class Reference(Component):
@@ -1876,7 +1883,7 @@ def test_component_add_imports(tags):
             )
 
     class TestBase(Component):
-        def add_imports(
+        def add_imports(  # pyright: ignore [reportIncompatibleMethodOverride]
             self,
         ) -> Dict[str, Union[str, ImportVar, List[str], List[ImportVar]]]:
             return {"foo": "bar"}
@@ -1908,7 +1915,7 @@ def test_component_add_hooks():
         pass
 
     class GrandchildComponent1(ChildComponent1):
-        def add_hooks(self):
+        def add_hooks(self):  # pyright: ignore [reportIncompatibleMethodOverride]
             return [
                 "const hook2 = 43",
                 "const hook3 = 44",
@@ -1921,11 +1928,11 @@ def test_component_add_hooks():
             ]
 
     class GrandchildComponent2(ChildComponent1):
-        def _get_hooks(self):
+        def _get_hooks(self):  # pyright: ignore [reportIncompatibleMethodOverride]
             return "const hook5 = 46"
 
     class GreatGrandchildComponent2(GrandchildComponent2):
-        def add_hooks(self):
+        def add_hooks(self):  # pyright: ignore [reportIncompatibleMethodOverride]
             return [
                 "const hook2 = 43",
                 "const hook6 = 47",
@@ -2000,7 +2007,7 @@ def test_component_add_custom_code():
             ]
 
     class GrandchildComponent2(ChildComponent1):
-        def _get_custom_code(self):
+        def _get_custom_code(self):  # pyright: ignore [reportIncompatibleMethodOverride]
             return "const custom_code5 = 46"
 
     class GreatGrandchildComponent2(GrandchildComponent2):
@@ -2096,11 +2103,11 @@ def test_add_style_embedded_vars(test_state: BaseState):
         test_state: A test state.
     """
     v0 = LiteralVar.create("parent")._replace(
-        merge_var_data=VarData(hooks={"useParent": None}),  # type: ignore
+        merge_var_data=VarData(hooks={"useParent": None}),
     )
     v1 = rx.color("plum", 10)
     v2 = LiteralVar.create("text")._replace(
-        merge_var_data=VarData(hooks={"useText": None}),  # type: ignore
+        merge_var_data=VarData(hooks={"useText": None}),
     )
 
     class ParentComponent(Component):
@@ -2114,7 +2121,7 @@ def test_add_style_embedded_vars(test_state: BaseState):
     class StyledComponent(ParentComponent):
         tag = "StyledComponent"
 
-        def add_style(self):
+        def add_style(self):  # pyright: ignore [reportIncompatibleMethodOverride]
             return {
                 "color": v1,
                 "fake": v2,

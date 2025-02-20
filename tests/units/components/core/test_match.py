@@ -1,8 +1,9 @@
-from typing import Dict, List, Tuple
+from typing import List, Mapping, Tuple
 
 import pytest
 
 import reflex as rx
+from reflex.components.component import Component
 from reflex.components.core.match import Match
 from reflex.state import BaseState
 from reflex.utils.exceptions import MatchTypeError
@@ -29,7 +30,9 @@ def test_match_components():
         rx.text("default value"),
     )
     match_comp = Match.create(MatchState.value, *match_case_tuples)
-    match_dict = match_comp.render()  # type: ignore
+
+    assert isinstance(match_comp, Component)
+    match_dict = match_comp.render()
     assert match_dict["name"] == "Fragment"
 
     [match_child] = match_dict["children"]
@@ -42,7 +45,7 @@ def test_match_components():
 
     assert match_cases[0][0]._js_expr == "1"
     assert match_cases[0][0]._var_type is int
-    first_return_value_render = match_cases[0][1].render()
+    first_return_value_render = match_cases[0][1]
     assert first_return_value_render["name"] == "RadixThemesText"
     assert first_return_value_render["children"][0]["contents"] == '{"first value"}'
 
@@ -50,35 +53,35 @@ def test_match_components():
     assert match_cases[1][0]._var_type is int
     assert match_cases[1][1]._js_expr == "3"
     assert match_cases[1][1]._var_type is int
-    second_return_value_render = match_cases[1][2].render()
+    second_return_value_render = match_cases[1][2]
     assert second_return_value_render["name"] == "RadixThemesText"
     assert second_return_value_render["children"][0]["contents"] == '{"second value"}'
 
     assert match_cases[2][0]._js_expr == "[1, 2]"
     assert match_cases[2][0]._var_type == List[int]
-    third_return_value_render = match_cases[2][1].render()
+    third_return_value_render = match_cases[2][1]
     assert third_return_value_render["name"] == "RadixThemesText"
     assert third_return_value_render["children"][0]["contents"] == '{"third value"}'
 
     assert match_cases[3][0]._js_expr == '"random"'
     assert match_cases[3][0]._var_type is str
-    fourth_return_value_render = match_cases[3][1].render()
+    fourth_return_value_render = match_cases[3][1]
     assert fourth_return_value_render["name"] == "RadixThemesText"
     assert fourth_return_value_render["children"][0]["contents"] == '{"fourth value"}'
 
     assert match_cases[4][0]._js_expr == '({ ["foo"] : "bar" })'
-    assert match_cases[4][0]._var_type == Dict[str, str]
-    fifth_return_value_render = match_cases[4][1].render()
+    assert match_cases[4][0]._var_type == Mapping[str, str]
+    fifth_return_value_render = match_cases[4][1]
     assert fifth_return_value_render["name"] == "RadixThemesText"
     assert fifth_return_value_render["children"][0]["contents"] == '{"fifth value"}'
 
     assert match_cases[5][0]._js_expr == f"({MatchState.get_name()}.num + 1)"
     assert match_cases[5][0]._var_type is int
-    fifth_return_value_render = match_cases[5][1].render()
+    fifth_return_value_render = match_cases[5][1]
     assert fifth_return_value_render["name"] == "RadixThemesText"
     assert fifth_return_value_render["children"][0]["contents"] == '{"sixth value"}'
 
-    default = match_child["default"].render()
+    default = match_child["default"]
 
     assert default["name"] == "RadixThemesText"
     assert default["children"][0]["contents"] == '{"default value"}'
@@ -151,9 +154,10 @@ def test_match_on_component_without_default():
     )
 
     match_comp = Match.create(MatchState.value, *match_case_tuples)
-    default = match_comp.render()["children"][0]["default"]  # type: ignore
+    assert isinstance(match_comp, Component)
+    default = match_comp.render()["children"][0]["default"]
 
-    assert isinstance(default, Fragment)
+    assert isinstance(default, dict) and default["name"] == Fragment.__name__
 
 
 def test_match_on_var_no_default():

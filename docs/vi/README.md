@@ -34,7 +34,7 @@ Các tính năng chính:
 
 ## ⚙️ Cài đặt
 
-Mở cửa sổ lệnh và chạy (Yêu cầu Python phiên bản 3.9+):
+Mở cửa sổ lệnh và chạy (Yêu cầu Python phiên bản 3.10+):
 
 ```bash
 pip install reflex
@@ -232,7 +232,7 @@ Bạn có thể tạo một ứng dụng nhiều trang bằng cách thêm trang.
 
 <div align="center">
 
-📑 [Docs](https://reflex.dev/docs/getting-started/introduction) &nbsp; |  &nbsp; 🗞️ [Blog](https://reflex.dev/blog) &nbsp; |  &nbsp; 📱 [Component Library](https://reflex.dev/docs/library) &nbsp; |  &nbsp; 🖼️ [Gallery](https://reflex.dev/docs/gallery) &nbsp; |  &nbsp; 🛸 [Deployment](https://reflex.dev/docs/hosting/deploy-quick-start)  &nbsp;   
+📑 [Docs](https://reflex.dev/docs/getting-started/introduction) &nbsp; |  &nbsp; 🗞️ [Blog](https://reflex.dev/blog) &nbsp; |  &nbsp; 📱 [Component Library](https://reflex.dev/docs/library) &nbsp; |  &nbsp; 🖼️ [Templates](https://reflex.dev/templates/) &nbsp; |  &nbsp; 🛸 [Deployment](https://reflex.dev/docs/hosting/deploy-quick-start)  &nbsp;   
 
 </div>
 
@@ -254,7 +254,7 @@ Chúng tôi chào đón mọi đóng góp dù lớn hay nhỏ. Dưới đây là
 -   **GitHub Issues**: [Issues](https://github.com/reflex-dev/reflex/issues) là nơi tốt nhất để thông báo. Ngoài ra bạn có thể sửa chữa các vấn đề bằng cách tạo PR.
 
 Chúng tôi luôn sẵn sàng tìm kiếm các contributor, bất kể kinh nghiệm. Để tham gia đóng góp, xin mời xem 
-[CONTIBUTING.md](https://github.com/reflex-dev/reflex/blob/main/CONTRIBUTING.md)
+[CONTRIBUTING.md](https://github.com/reflex-dev/reflex/blob/main/CONTRIBUTING.md)
 
 
 ## Xin cảm ơn các Contributors:

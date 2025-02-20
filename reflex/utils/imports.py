@@ -90,7 +90,7 @@ def collapse_imports(
     }
 
 
-@dataclasses.dataclass(order=True, frozen=True)
+@dataclasses.dataclass(frozen=True)
 class ImportVar:
     """An import var."""
 
@@ -109,6 +109,9 @@ class ImportVar:
     # whether this import should be rendered or not
     render: Optional[bool] = True
 
+    # The path of the package to import from.
+    package_path: str = "/"
+
     # whether this import package should be added to transpilePackages in next.config.js
     # https://nextjs.org/docs/app/api-reference/next-config-js/transpilePackages
     transpile: Optional[bool] = False
@@ -122,7 +125,7 @@ class ImportVar:
         """
         if self.alias:
             return (
-                self.alias if self.is_default else " as ".join([self.tag, self.alias])  # type: ignore
+                self.alias if self.is_default else " as ".join([self.tag, self.alias])  # pyright: ignore [reportCallIssue,reportArgumentType]
             )
         else:
             return self.tag or ""

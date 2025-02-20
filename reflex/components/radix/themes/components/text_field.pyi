@@ -8,7 +8,7 @@ from typing import Any, Dict, Literal, Optional, Union, overload
 from reflex.components.component import ComponentNamespace
 from reflex.components.core.breakpoints import Breakpoints
 from reflex.components.el import elements
-from reflex.event import BASE_STATE, EventType, KeyInputInfo
+from reflex.event import EventType, KeyInputInfo
 from reflex.style import Style
 from reflex.vars.base import Var
 
@@ -119,97 +119,263 @@ class TextFieldRoot(elements.Input, RadixThemesComponent):
         required: Optional[Union[Var[bool], bool]] = None,
         type: Optional[Union[Var[str], str]] = None,
         value: Optional[Union[Var[Union[float, int, str]], float, int, str]] = None,
-        list: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
-        accept: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
-        alt: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
-        auto_focus: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
-        capture: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
-        checked: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
+        list: Optional[Union[Var[str], str]] = None,
+        accept: Optional[Union[Var[str], str]] = None,
+        alt: Optional[Union[Var[str], str]] = None,
+        auto_focus: Optional[Union[Var[bool], bool]] = None,
+        capture: Optional[
+            Union[
+                Literal["environment", "user", False, True],
+                Var[Literal["environment", "user", False, True]],
+            ]
+        ] = None,
+        checked: Optional[Union[Var[bool], bool]] = None,
         default_checked: Optional[Union[Var[bool], bool]] = None,
-        dirname: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
-        form: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
-        form_action: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
-        form_enc_type: Optional[
-            Union[Var[Union[bool, int, str]], bool, int, str]
-        ] = None,
-        form_method: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
-        form_no_validate: Optional[
-            Union[Var[Union[bool, int, str]], bool, int, str]
-        ] = None,
-        form_target: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
-        max: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
-        min: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
-        multiple: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
-        pattern: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
-        src: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
-        step: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
-        use_map: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
-        access_key: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
+        form: Optional[Union[Var[str], str]] = None,
+        form_action: Optional[Union[Var[str], str]] = None,
+        form_enc_type: Optional[Union[Var[str], str]] = None,
+        form_method: Optional[Union[Var[str], str]] = None,
+        form_no_validate: Optional[Union[Var[bool], bool]] = None,
+        form_target: Optional[Union[Var[str], str]] = None,
+        max: Optional[Union[Var[Union[float, int, str]], float, int, str]] = None,
+        min: Optional[Union[Var[Union[float, int, str]], float, int, str]] = None,
+        multiple: Optional[Union[Var[bool], bool]] = None,
+        pattern: Optional[Union[Var[str], str]] = None,
+        src: Optional[Union[Var[str], str]] = None,
+        step: Optional[Union[Var[Union[float, int, str]], float, int, str]] = None,
+        access_key: Optional[Union[Var[str], str]] = None,
         auto_capitalize: Optional[
-            Union[Var[Union[bool, int, str]], bool, int, str]
+            Union[
+                Literal["characters", "none", "off", "on", "sentences", "words"],
+                Var[Literal["characters", "none", "off", "on", "sentences", "words"]],
+            ]
         ] = None,
         content_editable: Optional[
-            Union[Var[Union[bool, int, str]], bool, int, str]
+            Union[
+                Literal["inherit", "plaintext-only", False, True],
+                Var[Literal["inherit", "plaintext-only", False, True]],
+            ]
         ] = None,
-        context_menu: Optional[
-            Union[Var[Union[bool, int, str]], bool, int, str]
-        ] = None,
-        dir: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
-        draggable: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
+        context_menu: Optional[Union[Var[str], str]] = None,
+        dir: Optional[Union[Var[str], str]] = None,
+        draggable: Optional[Union[Var[bool], bool]] = None,
         enter_key_hint: Optional[
-            Union[Var[Union[bool, int, str]], bool, int, str]
+            Union[
+                Literal["done", "enter", "go", "next", "previous", "search", "send"],
+                Var[
+                    Literal["done", "enter", "go", "next", "previous", "search", "send"]
+                ],
+            ]
         ] = None,
-        hidden: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
-        input_mode: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
-        item_prop: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
-        lang: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
-        role: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
-        slot: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
-        spell_check: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
-        tab_index: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
-        title: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
+        hidden: Optional[Union[Var[bool], bool]] = None,
+        input_mode: Optional[
+            Union[
+                Literal[
+                    "decimal",
+                    "email",
+                    "none",
+                    "numeric",
+                    "search",
+                    "tel",
+                    "text",
+                    "url",
+                ],
+                Var[
+                    Literal[
+                        "decimal",
+                        "email",
+                        "none",
+                        "numeric",
+                        "search",
+                        "tel",
+                        "text",
+                        "url",
+                    ]
+                ],
+            ]
+        ] = None,
+        item_prop: Optional[Union[Var[str], str]] = None,
+        lang: Optional[Union[Var[str], str]] = None,
+        role: Optional[
+            Union[
+                Literal[
+                    "alert",
+                    "alertdialog",
+                    "application",
+                    "article",
+                    "banner",
+                    "button",
+                    "cell",
+                    "checkbox",
+                    "columnheader",
+                    "combobox",
+                    "complementary",
+                    "contentinfo",
+                    "definition",
+                    "dialog",
+                    "directory",
+                    "document",
+                    "feed",
+                    "figure",
+                    "form",
+                    "grid",
+                    "gridcell",
+                    "group",
+                    "heading",
+                    "img",
+                    "link",
+                    "list",
+                    "listbox",
+                    "listitem",
+                    "log",
+                    "main",
+                    "marquee",
+                    "math",
+                    "menu",
+                    "menubar",
+                    "menuitem",
+                    "menuitemcheckbox",
+                    "menuitemradio",
+                    "navigation",
+                    "none",
+                    "note",
+                    "option",
+                    "presentation",
+                    "progressbar",
+                    "radio",
+                    "radiogroup",
+                    "region",
+                    "row",
+                    "rowgroup",
+                    "rowheader",
+                    "scrollbar",
+                    "search",
+                    "searchbox",
+                    "separator",
+                    "slider",
+                    "spinbutton",
+                    "status",
+                    "switch",
+                    "tab",
+                    "table",
+                    "tablist",
+                    "tabpanel",
+                    "term",
+                    "textbox",
+                    "timer",
+                    "toolbar",
+                    "tooltip",
+                    "tree",
+                    "treegrid",
+                    "treeitem",
+                ],
+                Var[
+                    Literal[
+                        "alert",
+                        "alertdialog",
+                        "application",
+                        "article",
+                        "banner",
+                        "button",
+                        "cell",
+                        "checkbox",
+                        "columnheader",
+                        "combobox",
+                        "complementary",
+                        "contentinfo",
+                        "definition",
+                        "dialog",
+                        "directory",
+                        "document",
+                        "feed",
+                        "figure",
+                        "form",
+                        "grid",
+                        "gridcell",
+                        "group",
+                        "heading",
+                        "img",
+                        "link",
+                        "list",
+                        "listbox",
+                        "listitem",
+                        "log",
+                        "main",
+                        "marquee",
+                        "math",
+                        "menu",
+                        "menubar",
+                        "menuitem",
+                        "menuitemcheckbox",
+                        "menuitemradio",
+                        "navigation",
+                        "none",
+                        "note",
+                        "option",
+                        "presentation",
+                        "progressbar",
+                        "radio",
+                        "radiogroup",
+                        "region",
+                        "row",
+                        "rowgroup",
+                        "rowheader",
+                        "scrollbar",
+                        "search",
+                        "searchbox",
+                        "separator",
+                        "slider",
+                        "spinbutton",
+                        "status",
+                        "switch",
+                        "tab",
+                        "table",
+                        "tablist",
+                        "tabpanel",
+                        "term",
+                        "textbox",
+                        "timer",
+                        "toolbar",
+                        "tooltip",
+                        "tree",
+                        "treegrid",
+                        "treeitem",
+                    ]
+                ],
+            ]
+        ] = None,
+        slot: Optional[Union[Var[str], str]] = None,
+        spell_check: Optional[Union[Var[bool], bool]] = None,
+        tab_index: Optional[Union[Var[int], int]] = None,
+        title: Optional[Union[Var[str], str]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
         custom_attrs: Optional[Dict[str, Union[Var, Any]]] = None,
-        on_blur: Optional[
-            Union[EventType[[], BASE_STATE], EventType[[str], BASE_STATE]]
-        ] = None,
-        on_change: Optional[
-            Union[EventType[[], BASE_STATE], EventType[[str], BASE_STATE]]
-        ] = None,
-        on_click: Optional[EventType[[], BASE_STATE]] = None,
-        on_context_menu: Optional[EventType[[], BASE_STATE]] = None,
-        on_double_click: Optional[EventType[[], BASE_STATE]] = None,
-        on_focus: Optional[
-            Union[EventType[[], BASE_STATE], EventType[[str], BASE_STATE]]
-        ] = None,
+        on_blur: Optional[Union[EventType[()], EventType[str]]] = None,
+        on_change: Optional[Union[EventType[()], EventType[str]]] = None,
+        on_click: Optional[EventType[()]] = None,
+        on_context_menu: Optional[EventType[()]] = None,
+        on_double_click: Optional[EventType[()]] = None,
+        on_focus: Optional[Union[EventType[()], EventType[str]]] = None,
         on_key_down: Optional[
-            Union[
-                EventType[[], BASE_STATE],
-                EventType[[str], BASE_STATE],
-                EventType[[str, KeyInputInfo], BASE_STATE],
-            ]
+            Union[EventType[()], EventType[str], EventType[str, KeyInputInfo]]
         ] = None,
         on_key_up: Optional[
-            Union[
-                EventType[[], BASE_STATE],
-                EventType[[str], BASE_STATE],
-                EventType[[str, KeyInputInfo], BASE_STATE],
-            ]
+            Union[EventType[()], EventType[str], EventType[str, KeyInputInfo]]
         ] = None,
-        on_mount: Optional[EventType[[], BASE_STATE]] = None,
-        on_mouse_down: Optional[EventType[[], BASE_STATE]] = None,
-        on_mouse_enter: Optional[EventType[[], BASE_STATE]] = None,
-        on_mouse_leave: Optional[EventType[[], BASE_STATE]] = None,
-        on_mouse_move: Optional[EventType[[], BASE_STATE]] = None,
-        on_mouse_out: Optional[EventType[[], BASE_STATE]] = None,
-        on_mouse_over: Optional[EventType[[], BASE_STATE]] = None,
-        on_mouse_up: Optional[EventType[[], BASE_STATE]] = None,
-        on_scroll: Optional[EventType[[], BASE_STATE]] = None,
-        on_unmount: Optional[EventType[[], BASE_STATE]] = None,
+        on_mount: Optional[EventType[()]] = None,
+        on_mouse_down: Optional[EventType[()]] = None,
+        on_mouse_enter: Optional[EventType[()]] = None,
+        on_mouse_leave: Optional[EventType[()]] = None,
+        on_mouse_move: Optional[EventType[()]] = None,
+        on_mouse_out: Optional[EventType[()]] = None,
+        on_mouse_over: Optional[EventType[()]] = None,
+        on_mouse_up: Optional[EventType[()]] = None,
+        on_scroll: Optional[EventType[()]] = None,
+        on_unmount: Optional[EventType[()]] = None,
         **props,
     ) -> "TextFieldRoot":
         """Create an Input component.
@@ -243,7 +409,6 @@ class TextFieldRoot(elements.Input, RadixThemesComponent):
             capture: Captures media from the user (camera or microphone)
             checked: Indicates whether the input is checked (for checkboxes and radio buttons)
             default_checked: The initial value (for checkboxes and radio buttons)
-            dirname: Name part of the input to submit in 'dir' and 'name' pair when form is submitted
             form: Associates the input with a form (by id)
             form_action: URL to send the form data to (for type="submit" buttons)
             form_enc_type: How the form data should be encoded when submitting to the server (for type="submit" buttons)
@@ -256,7 +421,6 @@ class TextFieldRoot(elements.Input, RadixThemesComponent):
             pattern: Regex pattern the input's value must match to be valid
             src: URL for image inputs
             step: Specifies the legal number intervals for an input
-            use_map: Name of the image map used with the input
             access_key: Provides a hint for generating a keyboard shortcut for the current element.
             auto_capitalize: Controls whether and how text input is automatically capitalized as it is entered/edited by the user.
             content_editable: Indicates whether the element's content is editable.
@@ -360,21 +524,21 @@ class TextFieldSlot(RadixThemesComponent):
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
         custom_attrs: Optional[Dict[str, Union[Var, Any]]] = None,
-        on_blur: Optional[EventType[[], BASE_STATE]] = None,
-        on_click: Optional[EventType[[], BASE_STATE]] = None,
-        on_context_menu: Optional[EventType[[], BASE_STATE]] = None,
-        on_double_click: Optional[EventType[[], BASE_STATE]] = None,
-        on_focus: Optional[EventType[[], BASE_STATE]] = None,
-        on_mount: Optional[EventType[[], BASE_STATE]] = None,
-        on_mouse_down: Optional[EventType[[], BASE_STATE]] = None,
-        on_mouse_enter: Optional[EventType[[], BASE_STATE]] = None,
-        on_mouse_leave: Optional[EventType[[], BASE_STATE]] = None,
-        on_mouse_move: Optional[EventType[[], BASE_STATE]] = None,
-        on_mouse_out: Optional[EventType[[], BASE_STATE]] = None,
-        on_mouse_over: Optional[EventType[[], BASE_STATE]] = None,
-        on_mouse_up: Optional[EventType[[], BASE_STATE]] = None,
-        on_scroll: Optional[EventType[[], BASE_STATE]] = None,
-        on_unmount: Optional[EventType[[], BASE_STATE]] = None,
+        on_blur: Optional[EventType[()]] = None,
+        on_click: Optional[EventType[()]] = None,
+        on_context_menu: Optional[EventType[()]] = None,
+        on_double_click: Optional[EventType[()]] = None,
+        on_focus: Optional[EventType[()]] = None,
+        on_mount: Optional[EventType[()]] = None,
+        on_mouse_down: Optional[EventType[()]] = None,
+        on_mouse_enter: Optional[EventType[()]] = None,
+        on_mouse_leave: Optional[EventType[()]] = None,
+        on_mouse_move: Optional[EventType[()]] = None,
+        on_mouse_out: Optional[EventType[()]] = None,
+        on_mouse_over: Optional[EventType[()]] = None,
+        on_mouse_up: Optional[EventType[()]] = None,
+        on_scroll: Optional[EventType[()]] = None,
+        on_unmount: Optional[EventType[()]] = None,
         **props,
     ) -> "TextFieldSlot":
         """Create a new component instance.
@@ -500,97 +664,263 @@ class TextField(ComponentNamespace):
         required: Optional[Union[Var[bool], bool]] = None,
         type: Optional[Union[Var[str], str]] = None,
         value: Optional[Union[Var[Union[float, int, str]], float, int, str]] = None,
-        list: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
-        accept: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
-        alt: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
-        auto_focus: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
-        capture: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
-        checked: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
+        list: Optional[Union[Var[str], str]] = None,
+        accept: Optional[Union[Var[str], str]] = None,
+        alt: Optional[Union[Var[str], str]] = None,
+        auto_focus: Optional[Union[Var[bool], bool]] = None,
+        capture: Optional[
+            Union[
+                Literal["environment", "user", False, True],
+                Var[Literal["environment", "user", False, True]],
+            ]
+        ] = None,
+        checked: Optional[Union[Var[bool], bool]] = None,
         default_checked: Optional[Union[Var[bool], bool]] = None,
-        dirname: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
-        form: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
-        form_action: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
-        form_enc_type: Optional[
-            Union[Var[Union[bool, int, str]], bool, int, str]
-        ] = None,
-        form_method: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
-        form_no_validate: Optional[
-            Union[Var[Union[bool, int, str]], bool, int, str]
-        ] = None,
-        form_target: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
-        max: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
-        min: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
-        multiple: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
-        pattern: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
-        src: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
-        step: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
-        use_map: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
-        access_key: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
+        form: Optional[Union[Var[str], str]] = None,
+        form_action: Optional[Union[Var[str], str]] = None,
+        form_enc_type: Optional[Union[Var[str], str]] = None,
+        form_method: Optional[Union[Var[str], str]] = None,
+        form_no_validate: Optional[Union[Var[bool], bool]] = None,
+        form_target: Optional[Union[Var[str], str]] = None,
+        max: Optional[Union[Var[Union[float, int, str]], float, int, str]] = None,
+        min: Optional[Union[Var[Union[float, int, str]], float, int, str]] = None,
+        multiple: Optional[Union[Var[bool], bool]] = None,
+        pattern: Optional[Union[Var[str], str]] = None,
+        src: Optional[Union[Var[str], str]] = None,
+        step: Optional[Union[Var[Union[float, int, str]], float, int, str]] = None,
+        access_key: Optional[Union[Var[str], str]] = None,
         auto_capitalize: Optional[
-            Union[Var[Union[bool, int, str]], bool, int, str]
+            Union[
+                Literal["characters", "none", "off", "on", "sentences", "words"],
+                Var[Literal["characters", "none", "off", "on", "sentences", "words"]],
+            ]
         ] = None,
         content_editable: Optional[
-            Union[Var[Union[bool, int, str]], bool, int, str]
+            Union[
+                Literal["inherit", "plaintext-only", False, True],
+                Var[Literal["inherit", "plaintext-only", False, True]],
+            ]
         ] = None,
-        context_menu: Optional[
-            Union[Var[Union[bool, int, str]], bool, int, str]
-        ] = None,
-        dir: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
-        draggable: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
+        context_menu: Optional[Union[Var[str], str]] = None,
+        dir: Optional[Union[Var[str], str]] = None,
+        draggable: Optional[Union[Var[bool], bool]] = None,
         enter_key_hint: Optional[
-            Union[Var[Union[bool, int, str]], bool, int, str]
+            Union[
+                Literal["done", "enter", "go", "next", "previous", "search", "send"],
+                Var[
+                    Literal["done", "enter", "go", "next", "previous", "search", "send"]
+                ],
+            ]
         ] = None,
-        hidden: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
-        input_mode: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
-        item_prop: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
-        lang: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
-        role: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
-        slot: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
-        spell_check: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
-        tab_index: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
-        title: Optional[Union[Var[Union[bool, int, str]], bool, int, str]] = None,
+        hidden: Optional[Union[Var[bool], bool]] = None,
+        input_mode: Optional[
+            Union[
+                Literal[
+                    "decimal",
+                    "email",
+                    "none",
+                    "numeric",
+                    "search",
+                    "tel",
+                    "text",
+                    "url",
+                ],
+                Var[
+                    Literal[
+                        "decimal",
+                        "email",
+                        "none",
+                        "numeric",
+                        "search",
+                        "tel",
+                        "text",
+                        "url",
+                    ]
+                ],
+            ]
+        ] = None,
+        item_prop: Optional[Union[Var[str], str]] = None,
+        lang: Optional[Union[Var[str], str]] = None,
+        role: Optional[
+            Union[
+                Literal[
+                    "alert",
+                    "alertdialog",
+                    "application",
+                    "article",
+                    "banner",
+                    "button",
+                    "cell",
+                    "checkbox",
+                    "columnheader",
+                    "combobox",
+                    "complementary",
+                    "contentinfo",
+                    "definition",
+                    "dialog",
+                    "directory",
+                    "document",
+                    "feed",
+                    "figure",
+                    "form",
+                    "grid",
+                    "gridcell",
+                    "group",
+                    "heading",
+                    "img",
+                    "link",
+                    "list",
+                    "listbox",
+                    "listitem",
+                    "log",
+                    "main",
+                    "marquee",
+                    "math",
+                    "menu",
+                    "menubar",
+                    "menuitem",
+                    "menuitemcheckbox",
+                    "menuitemradio",
+                    "navigation",
+                    "none",
+                    "note",
+                    "option",
+                    "presentation",
+                    "progressbar",
+                    "radio",
+                    "radiogroup",
+                    "region",
+                    "row",
+                    "rowgroup",
+                    "rowheader",
+                    "scrollbar",
+                    "search",
+                    "searchbox",
+                    "separator",
+                    "slider",
+                    "spinbutton",
+                    "status",
+                    "switch",
+                    "tab",
+                    "table",
+                    "tablist",
+                    "tabpanel",
+                    "term",
+                    "textbox",
+                    "timer",
+                    "toolbar",
+                    "tooltip",
+                    "tree",
+                    "treegrid",
+                    "treeitem",
+                ],
+                Var[
+                    Literal[
+                        "alert",
+                        "alertdialog",
+                        "application",
+                        "article",
+                        "banner",
+                        "button",
+                        "cell",
+                        "checkbox",
+                        "columnheader",
+                        "combobox",
+                        "complementary",
+                        "contentinfo",
+                        "definition",
+                        "dialog",
+                        "directory",
+                        "document",
+                        "feed",
+                        "figure",
+                        "form",
+                        "grid",
+                        "gridcell",
+                        "group",
+                        "heading",
+                        "img",
+                        "link",
+                        "list",
+                        "listbox",
+                        "listitem",
+                        "log",
+                        "main",
+                        "marquee",
+                        "math",
+                        "menu",
+                        "menubar",
+                        "menuitem",
+                        "menuitemcheckbox",
+                        "menuitemradio",
+                        "navigation",
+                        "none",
+                        "note",
+                        "option",
+                        "presentation",
+                        "progressbar",
+                        "radio",
+                        "radiogroup",
+                        "region",
+                        "row",
+                        "rowgroup",
+                        "rowheader",
+                        "scrollbar",
+                        "search",
+                        "searchbox",
+                        "separator",
+                        "slider",
+                        "spinbutton",
+                        "status",
+                        "switch",
+                        "tab",
+                        "table",
+                        "tablist",
+                        "tabpanel",
+                        "term",
+                        "textbox",
+                        "timer",
+                        "toolbar",
+                        "tooltip",
+                        "tree",
+                        "treegrid",
+                        "treeitem",
+                    ]
+                ],
+            ]
+        ] = None,
+        slot: Optional[Union[Var[str], str]] = None,
+        spell_check: Optional[Union[Var[bool], bool]] = None,
+        tab_index: Optional[Union[Var[int], int]] = None,
+        title: Optional[Union[Var[str], str]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
         custom_attrs: Optional[Dict[str, Union[Var, Any]]] = None,
-        on_blur: Optional[
-            Union[EventType[[], BASE_STATE], EventType[[str], BASE_STATE]]
-        ] = None,
-        on_change: Optional[
-            Union[EventType[[], BASE_STATE], EventType[[str], BASE_STATE]]
-        ] = None,
-        on_click: Optional[EventType[[], BASE_STATE]] = None,
-        on_context_menu: Optional[EventType[[], BASE_STATE]] = None,
-        on_double_click: Optional[EventType[[], BASE_STATE]] = None,
-        on_focus: Optional[
-            Union[EventType[[], BASE_STATE], EventType[[str], BASE_STATE]]
-        ] = None,
+        on_blur: Optional[Union[EventType[()], EventType[str]]] = None,
+        on_change: Optional[Union[EventType[()], EventType[str]]] = None,
+        on_click: Optional[EventType[()]] = None,
+        on_context_menu: Optional[EventType[()]] = None,
+        on_double_click: Optional[EventType[()]] = None,
+        on_focus: Optional[Union[EventType[()], EventType[str]]] = None,
         on_key_down: Optional[
-            Union[
-                EventType[[], BASE_STATE],
-                EventType[[str], BASE_STATE],
-                EventType[[str, KeyInputInfo], BASE_STATE],
-            ]
+            Union[EventType[()], EventType[str], EventType[str, KeyInputInfo]]
         ] = None,
         on_key_up: Optional[
-            Union[
-                EventType[[], BASE_STATE],
-                EventType[[str], BASE_STATE],
-                EventType[[str, KeyInputInfo], BASE_STATE],
-            ]
+            Union[EventType[()], EventType[str], EventType[str, KeyInputInfo]]
         ] = None,
-        on_mount: Optional[EventType[[], BASE_STATE]] = None,
-        on_mouse_down: Optional[EventType[[], BASE_STATE]] = None,
-        on_mouse_enter: Optional[EventType[[], BASE_STATE]] = None,
-        on_mouse_leave: Optional[EventType[[], BASE_STATE]] = None,
-        on_mouse_move: Optional[EventType[[], BASE_STATE]] = None,
-        on_mouse_out: Optional[EventType[[], BASE_STATE]] = None,
-        on_mouse_over: Optional[EventType[[], BASE_STATE]] = None,
-        on_mouse_up: Optional[EventType[[], BASE_STATE]] = None,
-        on_scroll: Optional[EventType[[], BASE_STATE]] = None,
-        on_unmount: Optional[EventType[[], BASE_STATE]] = None,
+        on_mount: Optional[EventType[()]] = None,
+        on_mouse_down: Optional[EventType[()]] = None,
+        on_mouse_enter: Optional[EventType[()]] = None,
+        on_mouse_leave: Optional[EventType[()]] = None,
+        on_mouse_move: Optional[EventType[()]] = None,
+        on_mouse_out: Optional[EventType[()]] = None,
+        on_mouse_over: Optional[EventType[()]] = None,
+        on_mouse_up: Optional[EventType[()]] = None,
+        on_scroll: Optional[EventType[()]] = None,
+        on_unmount: Optional[EventType[()]] = None,
         **props,
     ) -> "TextFieldRoot":
         """Create an Input component.
@@ -624,7 +954,6 @@ class TextField(ComponentNamespace):
             capture: Captures media from the user (camera or microphone)
             checked: Indicates whether the input is checked (for checkboxes and radio buttons)
             default_checked: The initial value (for checkboxes and radio buttons)
-            dirname: Name part of the input to submit in 'dir' and 'name' pair when form is submitted
             form: Associates the input with a form (by id)
             form_action: URL to send the form data to (for type="submit" buttons)
             form_enc_type: How the form data should be encoded when submitting to the server (for type="submit" buttons)
@@ -637,7 +966,6 @@ class TextField(ComponentNamespace):
             pattern: Regex pattern the input's value must match to be valid
             src: URL for image inputs
             step: Specifies the legal number intervals for an input
-            use_map: Name of the image map used with the input
             access_key: Provides a hint for generating a keyboard shortcut for the current element.
             auto_capitalize: Controls whether and how text input is automatically capitalized as it is entered/edited by the user.
             content_editable: Indicates whether the element's content is editable.

@@ -1,10 +1,10 @@
 """Compiler variables."""
 
+import dataclasses
 import enum
 from enum import Enum
 from types import SimpleNamespace
 
-from reflex.base import Base
 from reflex.constants import Dirs
 from reflex.utils.imports import ImportVar
 
@@ -28,6 +28,8 @@ class Ext(SimpleNamespace):
     ZIP = ".zip"
     # The extension for executable files on Windows.
     EXE = ".exe"
+    # The extension for markdown files.
+    MD = ".md"
 
 
 class CompileVars(SimpleNamespace):
@@ -109,6 +111,15 @@ class ComponentName(Enum):
         return self.value.lower() + Ext.ZIP
 
 
+class CompileContext(str, Enum):
+    """The context in which the compiler is running."""
+
+    RUN = "run"
+    EXPORT = "export"
+    DEPLOY = "deploy"
+    UNDEFINED = "undefined"
+
+
 class Imports(SimpleNamespace):
     """Common sets of import vars."""
 
@@ -149,7 +160,8 @@ class MemoizationDisposition(enum.Enum):
     NEVER = "never"
 
 
-class MemoizationMode(Base):
+@dataclasses.dataclass(frozen=True)
+class MemoizationMode:
     """The mode for memoizing a Component."""
 
     # The conditions under which the component should be memoized.

@@ -59,6 +59,7 @@ def StateInheritance():
         def computed_mixin(self) -> str:
             return "computed_mixin"
 
+        @rx.event
         def on_click_mixin(self):
             return rx.call_script("alert('clicked')")
 
@@ -70,6 +71,7 @@ def StateInheritance():
         def computed_other_mixin(self) -> str:
             return self.other_mixin
 
+        @rx.event
         def on_click_other_mixin(self):
             self.other_mixin_clicks += 1
             self.other_mixin = (
@@ -131,7 +133,7 @@ def StateInheritance():
             rx.heading(Base1.child_mixin, id="base1-child-mixin"),
             rx.button(
                 "Base1.on_click_mixin",
-                on_click=Base1.on_click_mixin,  # type: ignore
+                on_click=Base1.on_click_mixin,
                 id="base1-mixin-btn",
             ),
             rx.heading(
@@ -153,7 +155,7 @@ def StateInheritance():
             rx.heading(Child1.child_mixin, id="child1-child-mixin"),
             rx.button(
                 "Child1.on_click_other_mixin",
-                on_click=Child1.on_click_other_mixin,  # type: ignore
+                on_click=Child1.on_click_other_mixin,
                 id="child1-other-mixin-btn",
             ),
             # Child 2 (Mixin, ChildMixin, OtherMixin)
@@ -166,12 +168,12 @@ def StateInheritance():
             rx.heading(Child2.child_mixin, id="child2-child-mixin"),
             rx.button(
                 "Child2.on_click_mixin",
-                on_click=Child2.on_click_mixin,  # type: ignore
+                on_click=Child2.on_click_mixin,
                 id="child2-mixin-btn",
             ),
             rx.button(
                 "Child2.on_click_other_mixin",
-                on_click=Child2.on_click_other_mixin,  # type: ignore
+                on_click=Child2.on_click_other_mixin,
                 id="child2-other-mixin-btn",
             ),
             # Child 3 (Mixin, ChildMixin, OtherMixin)
@@ -186,12 +188,12 @@ def StateInheritance():
             rx.heading(Child3.child_mixin, id="child3-child-mixin"),
             rx.button(
                 "Child3.on_click_mixin",
-                on_click=Child3.on_click_mixin,  # type: ignore
+                on_click=Child3.on_click_mixin,
                 id="child3-mixin-btn",
             ),
             rx.button(
                 "Child3.on_click_other_mixin",
-                on_click=Child3.on_click_other_mixin,  # type: ignore
+                on_click=Child3.on_click_other_mixin,
                 id="child3-other-mixin-btn",
             ),
             rx.heading(

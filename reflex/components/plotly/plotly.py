@@ -2,14 +2,13 @@
 
 from __future__ import annotations
 
-from typing import Any, Dict, List, Tuple, Union
-
-from typing_extensions import TypedDict, TypeVar
+from typing import Any, Dict, List, Tuple, TypedDict, TypeVar, Union
 
 from reflex.components.component import Component, NoSSRComponent
 from reflex.components.core.cond import color_mode_cond
 from reflex.event import EventHandler, no_args_event_spec
 from reflex.utils import console
+from reflex.utils.imports import ImportDict, ImportVar
 from reflex.vars.base import LiteralVar, Var
 
 try:
@@ -18,8 +17,8 @@ try:
     Template = layout.Template
 except ImportError:
     console.warn("Plotly is not installed. Please run `pip install plotly`.")
-    Figure = Any  # type: ignore
-    Template = Any  # type: ignore
+    Figure = Any
+    Template = Any
 
 
 def _event_points_data_signature(e0: Var) -> Tuple[Var[List[Point]]]:
@@ -95,20 +94,20 @@ class Plotly(NoSSRComponent):
 
     library = "react-plotly.js@2.6.0"
 
-    lib_dependencies: List[str] = ["plotly.js@2.35.2"]
+    lib_dependencies: List[str] = ["plotly.js@2.35.3"]
 
     tag = "Plot"
 
     is_default = True
 
     # The figure to display. This can be a plotly figure or a plotly data json.
-    data: Var[Figure]  # type: ignore
+    data: Var[Figure]  # pyright: ignore [reportInvalidTypeForm]
 
     # The layout of the graph.
     layout: Var[Dict]
 
     # The template for visual appearance of the graph.
-    template: Var[Template]  # type: ignore
+    template: Var[Template]  # pyright: ignore [reportInvalidTypeForm]
 
     # The config of the graph.
     config: Var[Dict]
@@ -278,3 +277,237 @@ const extractPoints = (points) => {
             # Spread the figure dict over props, nothing to merge.
             tag.special_props.append(Var(_js_expr=f"{{...{figure!s}}}"))
         return tag
+
+
+CREATE_PLOTLY_COMPONENT: ImportDict = {
+    "react-plotly.js": [
+        ImportVar(
+            tag="createPlotlyComponent",
+            is_default=True,
+            package_path="/factory",
+        ),
+    ]
+}
+
+
+def dynamic_plotly_import(name: str, package: str) -> str:
+    """Create a dynamic import for a plotly component.
+
+    Args:
+        name: The name of the component.
+        package: The package path of the component.
+
+    Returns:
+        The dynamic import for the plotly component.
+    """
+    return f"""
+const {name} = dynamic(() => import('{package}').then(mod => createPlotlyComponent(mod)), {{ssr: false}})
+"""
+
+
+class PlotlyBasic(Plotly):
+    """Display a basic plotly graph."""
+
+    tag: str = "BasicPlotlyPlot"
+
+    library = "react-plotly.js@2.6.0"
+
+    lib_dependencies: list[str] = ["plotly.js-basic-dist-min@3.0.0"]
+
+    def add_imports(self) -> ImportDict | list[ImportDict]:
+        """Add imports for the plotly basic component.
+
+        Returns:
+            The imports for the plotly basic component.
+        """
+        return CREATE_PLOTLY_COMPONENT
+
+    def _get_dynamic_imports(self) -> str:
+        """Get the dynamic imports for the plotly basic component.
+
+        Returns:
+            The dynamic imports for the plotly basic component.
+        """
+        return dynamic_plotly_import(self.tag, "plotly.js-basic-dist-min")
+
+
+class PlotlyCartesian(Plotly):
+    """Display a plotly cartesian graph."""
+
+    tag: str = "CartesianPlotlyPlot"
+
+    library = "react-plotly.js@2.6.0"
+
+    lib_dependencies: list[str] = ["plotly.js-cartesian-dist-min@3.0.0"]
+
+    def add_imports(self) -> ImportDict | list[ImportDict]:
+        """Add imports for the plotly cartesian component.
+
+        Returns:
+            The imports for the plotly cartesian component.
+        """
+        return CREATE_PLOTLY_COMPONENT
+
+    def _get_dynamic_imports(self) -> str:
+        """Get the dynamic imports for the plotly cartesian component.
+
+        Returns:
+            The dynamic imports for the plotly cartesian component.
+        """
+        return dynamic_plotly_import(self.tag, "plotly.js-cartesian-dist-min")
+
+
+class PlotlyGeo(Plotly):
+    """Display a plotly geo graph."""
+
+    tag: str = "GeoPlotlyPlot"
+
+    library = "react-plotly.js@2.6.0"
+
+    lib_dependencies: list[str] = ["plotly.js-geo-dist-min@3.0.0"]
+
+    def add_imports(self) -> ImportDict | list[ImportDict]:
+        """Add imports for the plotly geo component.
+
+        Returns:
+            The imports for the plotly geo component.
+        """
+        return CREATE_PLOTLY_COMPONENT
+
+    def _get_dynamic_imports(self) -> str:
+        """Get the dynamic imports for the plotly geo component.
+
+        Returns:
+            The dynamic imports for the plotly geo component.
+        """
+        return dynamic_plotly_import(self.tag, "plotly.js-geo-dist-min")
+
+
+class PlotlyGl3d(Plotly):
+    """Display a plotly 3d graph."""
+
+    tag: str = "Gl3dPlotlyPlot"
+
+    library = "react-plotly.js@2.6.0"
+
+    lib_dependencies: list[str] = ["plotly.js-gl3d-dist-min@3.0.0"]
+
+    def add_imports(self) -> ImportDict | list[ImportDict]:
+        """Add imports for the plotly 3d component.
+
+        Returns:
+            The imports for the plotly 3d component.
+        """
+        return CREATE_PLOTLY_COMPONENT
+
+    def _get_dynamic_imports(self) -> str:
+        """Get the dynamic imports for the plotly 3d component.
+
+        Returns:
+            The dynamic imports for the plotly 3d component.
+        """
+        return dynamic_plotly_import(self.tag, "plotly.js-gl3d-dist-min")
+
+
+class PlotlyGl2d(Plotly):
+    """Display a plotly 2d graph."""
+
+    tag: str = "Gl2dPlotlyPlot"
+
+    library = "react-plotly.js@2.6.0"
+
+    lib_dependencies: list[str] = ["plotly.js-gl2d-dist-min@3.0.0"]
+
+    def add_imports(self) -> ImportDict | list[ImportDict]:
+        """Add imports for the plotly 2d component.
+
+        Returns:
+            The imports for the plotly 2d component.
+        """
+        return CREATE_PLOTLY_COMPONENT
+
+    def _get_dynamic_imports(self) -> str:
+        """Get the dynamic imports for the plotly 2d component.
+
+        Returns:
+            The dynamic imports for the plotly 2d component.
+        """
+        return dynamic_plotly_import(self.tag, "plotly.js-gl2d-dist-min")
+
+
+class PlotlyMapbox(Plotly):
+    """Display a plotly mapbox graph."""
+
+    tag: str = "MapboxPlotlyPlot"
+
+    library = "react-plotly.js@2.6.0"
+
+    lib_dependencies: list[str] = ["plotly.js-mapbox-dist-min@3.0.0"]
+
+    def add_imports(self) -> ImportDict | list[ImportDict]:
+        """Add imports for the plotly mapbox component.
+
+        Returns:
+            The imports for the plotly mapbox component.
+        """
+        return CREATE_PLOTLY_COMPONENT
+
+    def _get_dynamic_imports(self) -> str:
+        """Get the dynamic imports for the plotly mapbox component.
+
+        Returns:
+            The dynamic imports for the plotly mapbox component.
+        """
+        return dynamic_plotly_import(self.tag, "plotly.js-mapbox-dist-min")
+
+
+class PlotlyFinance(Plotly):
+    """Display a plotly finance graph."""
+
+    tag: str = "FinancePlotlyPlot"
+
+    library = "react-plotly.js@2.6.0"
+
+    lib_dependencies: list[str] = ["plotly.js-finance-dist-min@3.0.0"]
+
+    def add_imports(self) -> ImportDict | list[ImportDict]:
+        """Add imports for the plotly finance component.
+
+        Returns:
+            The imports for the plotly finance component.
+        """
+        return CREATE_PLOTLY_COMPONENT
+
+    def _get_dynamic_imports(self) -> str:
+        """Get the dynamic imports for the plotly finance component.
+
+        Returns:
+            The dynamic imports for the plotly finance component.
+        """
+        return dynamic_plotly_import(self.tag, "plotly.js-finance-dist-min")
+
+
+class PlotlyStrict(Plotly):
+    """Display a plotly strict graph."""
+
+    tag: str = "StrictPlotlyPlot"
+
+    library = "react-plotly.js@2.6.0"
+
+    lib_dependencies: list[str] = ["plotly.js-strict-dist-min@3.0.0"]
+
+    def add_imports(self) -> ImportDict | list[ImportDict]:
+        """Add imports for the plotly strict component.
+
+        Returns:
+            The imports for the plotly strict component.
+        """
+        return CREATE_PLOTLY_COMPONENT
+
+    def _get_dynamic_imports(self) -> str:
+        """Get the dynamic imports for the plotly strict component.
+
+        Returns:
+            The dynamic imports for the plotly strict component.
+        """
+        return dynamic_plotly_import(self.tag, "plotly.js-strict-dist-min")

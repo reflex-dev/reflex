@@ -63,16 +63,16 @@ def TestEventAction():
             rx.button(
                 "Stop Prop Only",
                 id="btn-stop-prop-only",
-                on_click=rx.stop_propagation,  # type: ignore
+                on_click=rx.stop_propagation,  # pyright: ignore [reportArgumentType]
             ),
             rx.button(
                 "Click event",
-                on_click=EventActionState.on_click("no_event_actions"),  # type: ignore
+                on_click=EventActionState.on_click("no_event_actions"),  # pyright: ignore [reportCallIssue]
                 id="btn-click-event",
             ),
             rx.button(
                 "Click stop propagation",
-                on_click=EventActionState.on_click("stop_propagation").stop_propagation,  # type: ignore
+                on_click=EventActionState.on_click("stop_propagation").stop_propagation,  # pyright: ignore [reportCallIssue]
                 id="btn-click-stop-propagation",
             ),
             rx.button(
@@ -88,13 +88,13 @@ def TestEventAction():
             rx.link(
                 "Link",
                 href="#",
-                on_click=EventActionState.on_click("link_no_event_actions"),  # type: ignore
+                on_click=EventActionState.on_click("link_no_event_actions"),  # pyright: ignore [reportCallIssue]
                 id="link",
             ),
             rx.link(
                 "Link Stop Propagation",
                 href="#",
-                on_click=EventActionState.on_click(  # type: ignore
+                on_click=EventActionState.on_click(  # pyright: ignore [reportCallIssue]
                     "link_stop_propagation"
                 ).stop_propagation,
                 id="link-stop-propagation",
@@ -102,13 +102,13 @@ def TestEventAction():
             rx.link(
                 "Link Prevent Default Only",
                 href="/invalid",
-                on_click=rx.prevent_default,  # type: ignore
+                on_click=rx.prevent_default,  # pyright: ignore [reportArgumentType]
                 id="link-prevent-default-only",
             ),
             rx.link(
                 "Link Prevent Default",
                 href="/invalid",
-                on_click=EventActionState.on_click(  # type: ignore
+                on_click=EventActionState.on_click(  # pyright: ignore [reportCallIssue]
                     "link_prevent_default"
                 ).prevent_default,
                 id="link-prevent-default",
@@ -116,47 +116,47 @@ def TestEventAction():
             rx.link(
                 "Link Both",
                 href="/invalid",
-                on_click=EventActionState.on_click(  # type: ignore
+                on_click=EventActionState.on_click(  # pyright: ignore [reportCallIssue]
                     "link_both"
                 ).stop_propagation.prevent_default,
                 id="link-stop-propagation-prevent-default",
             ),
             EventFiringComponent.create(
                 id="custom-stop-propagation",
-                on_click=EventActionState.on_click(  # type: ignore
+                on_click=EventActionState.on_click(  # pyright: ignore [reportCallIssue]
                     "custom-stop-propagation"
                 ).stop_propagation,
             ),
             EventFiringComponent.create(
                 id="custom-prevent-default",
-                on_click=EventActionState.on_click(  # type: ignore
+                on_click=EventActionState.on_click(  # pyright: ignore [reportCallIssue]
                     "custom-prevent-default"
                 ).prevent_default,
             ),
             rx.button(
                 "Throttle",
                 id="btn-throttle",
-                on_click=lambda: EventActionState.on_click_throttle.throttle(
+                on_click=lambda: EventActionState.on_click_throttle.throttle(  # pyright: ignore [reportFunctionMemberAccess]
                     200
                 ).stop_propagation,
             ),
             rx.button(
                 "Debounce",
                 id="btn-debounce",
-                on_click=EventActionState.on_click_debounce.debounce(
+                on_click=EventActionState.on_click_debounce.debounce(  # pyright: ignore [reportFunctionMemberAccess]
                     200
                 ).stop_propagation,
             ),
-            rx.list(  # type: ignore
+            rx.list(  # pyright: ignore [reportAttributeAccessIssue]
                 rx.foreach(
-                    EventActionState.order,  # type: ignore
+                    EventActionState.order,
                     rx.list_item,
                 ),
             ),
-            on_click=EventActionState.on_click("outer"),  # type: ignore
+            on_click=EventActionState.on_click("outer"),  # pyright: ignore [reportCallIssue]
         )
 
-    app = rx.App(state=rx.State)
+    app = rx.App(_state=rx.State)
     app.add_page(index)
 
 

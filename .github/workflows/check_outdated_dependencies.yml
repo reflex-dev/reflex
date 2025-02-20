@@ -16,7 +16,7 @@ jobs:
 
       - uses: ./.github/actions/setup_build_env
         with:
-          python-version: "3.9.21"
+          python-version: '3.10'
           run-poetry-install: true
           create-venv-at-path: .venv
 
@@ -55,7 +55,7 @@ jobs:
           path: reflex-web
       - name: Install Requirements for reflex-web
         working-directory: ./reflex-web
-        run: poetry run uv pip install -r requirements.txt
+        run: poetry run uv pip install $(grep -ivE "reflex " requirements.txt)
       - name: Install additional dependencies for DB access
         run: poetry run uv pip install psycopg
       - name: Init Website for reflex-web
@@ -73,7 +73,7 @@ jobs:
           echo "$outdated"
 
           # Ignore 3rd party dependencies that are not updated.
-          filtered_outdated=$(echo "$outdated" | grep -vE 'Package|@chakra-ui|lucide-react|@splinetool/runtime|ag-grid-react|framer-motion|react-markdown|remark-math|remark-gfm|rehype-katex|rehype-raw|remark-unwrap-images' || true)
+          filtered_outdated=$(echo "$outdated" | grep -vE 'Package|@chakra-ui|lucide-react|@splinetool/runtime|ag-grid-react|framer-motion|react-markdown|remark-math|remark-gfm|rehype-katex|rehype-raw|remark-unwrap-images|ag-grid' || true)
           no_extra=$(echo "$filtered_outdated" | grep -vE '\|\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-' || true)
 
 

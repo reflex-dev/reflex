@@ -33,7 +33,7 @@ env:
   PR_TITLE: ${{ github.event.pull_request.title }}
 
 jobs:
-  example-counter:
+  example-counter-and-nba-proxy:
     env:
       OUTPUT_FILE: import_benchmark.json
     timeout-minutes: 30
@@ -43,22 +43,17 @@ jobs:
       matrix:
         # Show OS combos first in GUI
         os: [ubuntu-latest, windows-latest]
-        python-version: ["3.9.21", "3.10.16", "3.11.11", "3.12.8", "3.13.1"]
-        # Windows is a bit behind on Python version availability in Github
+        python-version: ['3.10.16', '3.11.11', '3.12.8', '3.13.1']
         exclude:
           - os: windows-latest
             python-version: "3.11.11"
           - os: windows-latest
-            python-version: "3.10.16"
-          - os: windows-latest
-            python-version: "3.9.21"
+            python-version: '3.10.16'
         include:
           - os: windows-latest
             python-version: "3.11.9"
           - os: windows-latest
-            python-version: "3.10.11"
-          - os: windows-latest
-            python-version: "3.9.13"
+            python-version: '3.10.11'
 
     runs-on: ${{ matrix.os }}
     steps:
@@ -84,8 +79,6 @@ jobs:
         run: |
           poetry run reflex export --backend-only
       - name: Check run --backend-only before init for counter example
-        env:
-          WAIT_FOR_LISTENING_PORT_ARGS: --path ping
         run: |
           poetry run bash scripts/integration.sh ./reflex-examples/counter dev 8001 --backend-only --backend-port 8001
       - name: Init Website for counter example
@@ -101,26 +94,26 @@ jobs:
           # Check that npm is home
           npm -v
           poetry run bash scripts/integration.sh ./reflex-examples/counter dev
-      - name: Measure and upload .web size
-        run:
-          poetry run python benchmarks/benchmark_web_size.py --os "${{ matrix.os }}"
-          --python-version "${{ matrix.python-version }}" --commit-sha "${{ github.sha }}"
-          --pr-id "${{ github.event.pull_request.id }}"
-          --branch-name "${{ github.head_ref || github.ref_name }}"
-          --path ./reflex-examples/counter/.web
-          --app-name "counter"
-      - name: Install hyperfine
-        run: cargo install hyperfine
-      - name: Benchmark imports
-        working-directory: ./reflex-examples/counter
-        run: hyperfine --warmup 3 "export POETRY_VIRTUALENVS_PATH=../../.venv; poetry run python counter/counter.py" --show-output --export-json "${{ env.OUTPUT_FILE }}" --shell bash
-      - name: Upload Benchmarks
-        run:
-          poetry run python benchmarks/benchmark_imports.py --os "${{ matrix.os }}"
-          --python-version "${{ matrix.python-version }}" --commit-sha "${{ github.sha }}"
-          --benchmark-json "./reflex-examples/counter/${{ env.OUTPUT_FILE }}"
-          --branch-name "${{ github.head_ref || github.ref_name }}" --pr-id "${{ github.event.pull_request.id }}"
-          --app-name "counter"
+      - name: Install requirements for nba proxy example
+        working-directory: ./reflex-examples/nba-proxy
+        run: |
+          poetry run uv pip install -r requirements.txt
+      - name: Install additional dependencies for DB access
+        run: poetry run uv pip install psycopg
+      - name: Check export --backend-only before init for nba-proxy example
+        working-directory: ./reflex-examples/nba-proxy
+        run: |
+          poetry run reflex export --backend-only
+      - name: Init Website for nba-proxy example
+        working-directory: ./reflex-examples/nba-proxy
+        run: |
+          poetry run reflex init --loglevel debug
+      - name: Run Website and Check for errors
+        run: |
+          # Check that npm is home
+          npm -v
+          poetry run bash scripts/integration.sh ./reflex-examples/nba-proxy dev
+
 
   reflex-web:
     strategy:
@@ -161,12 +154,6 @@ jobs:
           # Check that npm is home
           npm -v
           poetry run bash scripts/integration.sh ./reflex-web prod
-      - name: Measure and upload .web size
-        run:
-          poetry run python benchmarks/benchmark_web_size.py --os "${{ matrix.os }}"
-          --python-version "${{ matrix.python-version }}" --commit-sha "${{ github.sha }}"
-          --pr-id "${{ github.event.pull_request.id }}" --branch-name "${{ github.head_ref || github.ref_name }}"
-          --app-name "reflex-web" --path ./reflex-web/.web
 
   rx-shout-from-template:
     strategy:
@@ -230,9 +217,3 @@ jobs:
           # Check that npm is home
           npm -v
           poetry run bash scripts/integration.sh ./reflex-web prod
-      - name: Measure and upload .web size
-        run:
-          poetry run python benchmarks/benchmark_web_size.py --os "${{ matrix.os }}"
-          --python-version "${{ matrix.python-version }}" --commit-sha "${{ github.sha }}"
-          --pr-id "${{ github.event.pull_request.id }}" --branch-name "${{ github.head_ref || github.ref_name }}"
-          --app-name "reflex-web" --path ./reflex-web/.web

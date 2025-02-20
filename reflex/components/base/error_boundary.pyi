@@ -6,12 +6,13 @@
 from typing import Any, Dict, Optional, Tuple, Union, overload
 
 from reflex.components.component import Component
-from reflex.event import BASE_STATE, EventType
+from reflex.event import EventType
 from reflex.style import Style
 from reflex.vars.base import Var
+from reflex.vars.object import ObjectVar
 
 def on_error_spec(
-    error: Var[Dict[str, str]], info: Var[Dict[str, str]]
+    error: ObjectVar[Dict[str, str]], info: ObjectVar[Dict[str, str]]
 ) -> Tuple[Var[str], Var[str]]: ...
 
 class ErrorBoundary(Component):
@@ -27,28 +28,24 @@ class ErrorBoundary(Component):
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
         custom_attrs: Optional[Dict[str, Union[Var, Any]]] = None,
-        on_blur: Optional[EventType[[], BASE_STATE]] = None,
-        on_click: Optional[EventType[[], BASE_STATE]] = None,
-        on_context_menu: Optional[EventType[[], BASE_STATE]] = None,
-        on_double_click: Optional[EventType[[], BASE_STATE]] = None,
+        on_blur: Optional[EventType[()]] = None,
+        on_click: Optional[EventType[()]] = None,
+        on_context_menu: Optional[EventType[()]] = None,
+        on_double_click: Optional[EventType[()]] = None,
         on_error: Optional[
-            Union[
-                EventType[[], BASE_STATE],
-                EventType[[str], BASE_STATE],
-                EventType[[str, str], BASE_STATE],
-            ]
+            Union[EventType[()], EventType[str], EventType[str, str]]
         ] = None,
-        on_focus: Optional[EventType[[], BASE_STATE]] = None,
-        on_mount: Optional[EventType[[], BASE_STATE]] = None,
-        on_mouse_down: Optional[EventType[[], BASE_STATE]] = None,
-        on_mouse_enter: Optional[EventType[[], BASE_STATE]] = None,
-        on_mouse_leave: Optional[EventType[[], BASE_STATE]] = None,
-        on_mouse_move: Optional[EventType[[], BASE_STATE]] = None,
-        on_mouse_out: Optional[EventType[[], BASE_STATE]] = None,
-        on_mouse_over: Optional[EventType[[], BASE_STATE]] = None,
-        on_mouse_up: Optional[EventType[[], BASE_STATE]] = None,
-        on_scroll: Optional[EventType[[], BASE_STATE]] = None,
-        on_unmount: Optional[EventType[[], BASE_STATE]] = None,
+        on_focus: Optional[EventType[()]] = None,
+        on_mount: Optional[EventType[()]] = None,
+        on_mouse_down: Optional[EventType[()]] = None,
+        on_mouse_enter: Optional[EventType[()]] = None,
+        on_mouse_leave: Optional[EventType[()]] = None,
+        on_mouse_move: Optional[EventType[()]] = None,
+        on_mouse_out: Optional[EventType[()]] = None,
+        on_mouse_over: Optional[EventType[()]] = None,
+        on_mouse_up: Optional[EventType[()]] = None,
+        on_scroll: Optional[EventType[()]] = None,
+        on_unmount: Optional[EventType[()]] = None,
         **props,
     ) -> "ErrorBoundary":
         """Create an ErrorBoundary component.

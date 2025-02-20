@@ -21,7 +21,7 @@ from reflex.constants import Endpoint, Env
 def test_requires_app_name():
     """Test that a config requires an app_name."""
     with pytest.raises(ValueError):
-        rx.Config()  # type: ignore
+        rx.Config()
 
 
 def test_set_app_name(base_config_values):
@@ -207,7 +207,7 @@ def test_replace_defaults(
         exp_config_values: The expected config values.
     """
     mock_os_env = os.environ.copy()
-    monkeypatch.setattr(reflex.config.os, "environ", mock_os_env)  # type: ignore
+    monkeypatch.setattr(reflex.config.os, "environ", mock_os_env)
     mock_os_env.update({k: str(v) for k, v in env_vars.items()})
     c = rx.Config(app_name="a", **config_kwargs)
     c._set_persistent(**set_persistent_vars)
@@ -252,6 +252,7 @@ def test_env_var():
         BLUBB: EnvVar[str] = env_var("default")
         INTERNAL: EnvVar[str] = env_var("default", internal=True)
         BOOLEAN: EnvVar[bool] = env_var(False)
+        LIST: EnvVar[list[int]] = env_var([1, 2, 3])
 
     assert TestEnv.BLUBB.get() == "default"
     assert TestEnv.BLUBB.name == "BLUBB"
@@ -280,3 +281,11 @@ def test_env_var():
     assert TestEnv.BOOLEAN.get() is False
     TestEnv.BOOLEAN.set(None)
     assert "BOOLEAN" not in os.environ
+
+    assert TestEnv.LIST.get() == [1, 2, 3]
+    assert TestEnv.LIST.name == "LIST"
+    TestEnv.LIST.set([4, 5, 6])
+    assert os.environ.get("LIST") == "4:5:6"
+    assert TestEnv.LIST.get() == [4, 5, 6]
+    TestEnv.LIST.set(None)
+    assert "LIST" not in os.environ

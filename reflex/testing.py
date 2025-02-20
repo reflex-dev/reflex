@@ -43,8 +43,8 @@ import reflex.utils.exec
 import reflex.utils.format
 import reflex.utils.prerequisites
 import reflex.utils.processes
+from reflex.components.component import CustomComponent
 from reflex.config import environment
-from reflex.proxy import proxy_middleware
 from reflex.state import (
     BaseState,
     StateManager,
@@ -81,17 +81,17 @@ T = TypeVar("T")
 TimeoutType = Optional[Union[int, float]]
 
 if platform.system() == "Windows":
-    FRONTEND_POPEN_ARGS["creationflags"] = subprocess.CREATE_NEW_PROCESS_GROUP  # type: ignore
+    FRONTEND_POPEN_ARGS["creationflags"] = subprocess.CREATE_NEW_PROCESS_GROUP  # pyright: ignore [reportAttributeAccessIssue]
     FRONTEND_POPEN_ARGS["shell"] = True
 else:
     FRONTEND_POPEN_ARGS["start_new_session"] = True
 
 
 # borrowed from py3.11
-class chdir(contextlib.AbstractContextManager):
+class chdir(contextlib.AbstractContextManager):  # noqa: N801
     """Non thread-safe context manager to change the current working directory."""
 
-    def __init__(self, path):
+    def __init__(self, path: str | Path):
         """Prepare contextmanager.
 
         Args:
@@ -255,11 +255,12 @@ class AppHarness:
         # disable telemetry reporting for tests
 
         os.environ["TELEMETRY_ENABLED"] = "false"
+        CustomComponent.create().get_component.cache_clear()
         self.app_path.mkdir(parents=True, exist_ok=True)
         if self.app_source is not None:
             app_globals = self._get_globals_from_signature(self.app_source)
             if isinstance(self.app_source, functools.partial):
-                self.app_source = self.app_source.func  # type: ignore
+                self.app_source = self.app_source.func
             # get the source from a function or module object
             source_code = "\n".join(
                 [
@@ -283,6 +284,7 @@ class AppHarness:
             before_decorated_pages = reflex.app.DECORATED_PAGES[self.app_name].copy()
             # Ensure the AppHarness test does not skip State assignment due to running via pytest
             os.environ.pop(reflex.constants.PYTEST_CURRENT_TEST, None)
+            os.environ[reflex.constants.APP_HARNESS_FLAG] = "true"
             self.app_module = reflex.utils.prerequisites.get_compiled_app(
                 # Do not reload the module for pre-existing apps (only apps generated from source)
                 reload=self.app_source is not None
@@ -294,14 +296,15 @@ class AppHarness:
                 if p not in before_decorated_pages
             ]
         self.app_instance = self.app_module.app
-        if isinstance(self.app_instance._state_manager, StateManagerRedis):
+        if self.app_instance and isinstance(
+            self.app_instance._state_manager, StateManagerRedis
+        ):
             # Create our own redis connection for testing.
-            self.state_manager = StateManagerRedis.create(self.app_instance.state)
+            self.state_manager = StateManagerRedis.create(self.app_instance._state)  # pyright: ignore [reportArgumentType]
         else:
-            self.state_manager = self.app_instance._state_manager
-        # Disable proxy for app harness tests.
-        if proxy_middleware in self.app_instance.lifespan_tasks:
-            self.app_instance.lifespan_tasks.remove(proxy_middleware)
+            self.state_manager = (
+                self.app_instance._state_manager if self.app_instance else None
+            )
 
     def _reload_state_module(self):
         """Reload the rx.State module to avoid conflict when reloading."""
@@ -326,8 +329,8 @@ class AppHarness:
 
         return _shutdown_redis
 
-    def _start_backend(self, port=0):
-        if self.app_instance is None:
+    def _start_backend(self, port: int = 0):
+        if self.app_instance is None or self.app_instance.api is None:
             raise RuntimeError("App was not initialized.")
         self.backend = uvicorn.Server(
             uvicorn.Config(
@@ -356,12 +359,12 @@ class AppHarness:
                 self.app_instance.state_manager,
                 StateManagerRedis,
             )
-            and self.app_instance.state is not None
+            and self.app_instance._state is not None
         ):
             with contextlib.suppress(RuntimeError):
                 await self.app_instance.state_manager.close()
             self.app_instance._state_manager = StateManagerRedis.create(
-                state=self.app_instance.state,
+                state=self.app_instance._state,
             )
             if not isinstance(self.app_instance.state_manager, StateManagerRedis):
                 raise RuntimeError("Failed to reset state manager.")
@@ -369,12 +372,9 @@ class AppHarness:
     def _start_frontend(self):
         # Set up the frontend.
         with chdir(self.app_path):
-            backend_host, backend_port = self._poll_for_servers().getsockname()
             config = reflex.config.get_config()
-            config.backend_port = backend_port
             config.api_url = "http://{0}:{1}".format(
-                backend_host,
-                backend_port,
+                *self._poll_for_servers().getsockname(),
             )
             reflex.utils.build.setup_frontend(self.app_path)
 
@@ -399,7 +399,6 @@ class AppHarness:
                 self.frontend_url = m.group(1)
                 config = reflex.config.get_config()
                 config.deploy_url = self.frontend_url
-                config.frontend_port = int(self.frontend_url.rpartition(":")[2])
                 break
         if self.frontend_url is None:
             raise RuntimeError("Frontend did not start")
@@ -433,7 +432,7 @@ class AppHarness:
         return self
 
     @staticmethod
-    def get_app_global_source(key, value):
+    def get_app_global_source(key: str, value: Any):
         """Get the source code of a global object.
         If value is a function or class we render the actual
         source of value otherwise we assign value to key.
@@ -628,23 +627,23 @@ class AppHarness:
             want_headless = True
         if driver_clz is None:
             requested_driver = environment.APP_HARNESS_DRIVER.get()
-            driver_clz = getattr(webdriver, requested_driver)
+            driver_clz = getattr(webdriver, requested_driver)  # pyright: ignore [reportPossiblyUnboundVariable]
             if driver_options is None:
-                driver_options = getattr(webdriver, f"{requested_driver}Options")()
-        if driver_clz is webdriver.Chrome:
+                driver_options = getattr(webdriver, f"{requested_driver}Options")()  # pyright: ignore [reportPossiblyUnboundVariable]
+        if driver_clz is webdriver.Chrome:  # pyright: ignore [reportPossiblyUnboundVariable]
             if driver_options is None:
-                driver_options = webdriver.ChromeOptions()
+                driver_options = webdriver.ChromeOptions()  # pyright: ignore [reportPossiblyUnboundVariable]
             driver_options.add_argument("--class=AppHarness")
             if want_headless:
                 driver_options.add_argument("--headless=new")
-        elif driver_clz is webdriver.Firefox:
+        elif driver_clz is webdriver.Firefox:  # pyright: ignore [reportPossiblyUnboundVariable]
             if driver_options is None:
-                driver_options = webdriver.FirefoxOptions()
+                driver_options = webdriver.FirefoxOptions()  # pyright: ignore [reportPossiblyUnboundVariable]
             if want_headless:
                 driver_options.add_argument("-headless")
-        elif driver_clz is webdriver.Edge:
+        elif driver_clz is webdriver.Edge:  # pyright: ignore [reportPossiblyUnboundVariable]
             if driver_options is None:
-                driver_options = webdriver.EdgeOptions()
+                driver_options = webdriver.EdgeOptions()  # pyright: ignore [reportPossiblyUnboundVariable]
             if want_headless:
                 driver_options.add_argument("headless")
         if driver_options is None:
@@ -660,7 +659,7 @@ class AppHarness:
                 driver_options.set_capability(key, value)
         if driver_kwargs is None:
             driver_kwargs = {}
-        driver = driver_clz(options=driver_options, **driver_kwargs)  # type: ignore
+        driver = driver_clz(options=driver_options, **driver_kwargs)  # pyright: ignore [reportOptionalCall, reportArgumentType]
         driver.get(self.frontend_url)
         self._frontends.append(driver)
         return driver
@@ -892,8 +891,8 @@ class Subdir404TCPServer(socketserver.TCPServer):
             request,
             client_address,
             self,
-            directory=str(self.root),  # type: ignore
-            error_page_map=self.error_page_map,  # type: ignore
+            directory=str(self.root),  # pyright: ignore [reportCallIssue]
+            error_page_map=self.error_page_map,  # pyright: ignore [reportCallIssue]
         )
 
 
@@ -923,26 +922,24 @@ class AppHarnessProd(AppHarness):
             root=web_root,
             error_page_map=error_page_map,
         ) as self.frontend_server:
-            config = reflex.config.get_config()
-            config.frontend_port = self.frontend_server.server_address[1]
-            self.frontend_url = f"http://localhost:{config.frontend_port}"
+            self.frontend_url = "http://localhost:{1}".format(
+                *self.frontend_server.socket.getsockname()
+            )
             self.frontend_server.serve_forever()
 
     def _start_frontend(self):
         # Set up the frontend.
         with chdir(self.app_path):
-            backend_host, backend_port = self._poll_for_servers().getsockname()
             config = reflex.config.get_config()
-            config.backend_port = backend_port
             config.api_url = "http://{0}:{1}".format(
-                backend_host,
-                backend_port,
+                *self._poll_for_servers().getsockname(),
             )
             reflex.reflex.export(
                 zipping=False,
                 frontend=True,
                 backend=False,
                 loglevel=reflex.constants.LogLevel.INFO,
+                env=reflex.constants.Env.PROD,
             )
 
         self.frontend_thread = threading.Thread(target=self._run_frontend)

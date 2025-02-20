@@ -36,7 +36,7 @@ def LifespanApp():
         print("Lifespan global started.")
         try:
             while True:
-                lifespan_task_global += inc  # pyright: ignore[reportUnboundVariable]
+                lifespan_task_global += inc  # pyright: ignore[reportUnboundVariable, reportPossiblyUnboundVariable]
                 await asyncio.sleep(0.1)
         except asyncio.CancelledError as ce:
             print(f"Lifespan global cancelled: {ce}.")
@@ -45,11 +45,11 @@ def LifespanApp():
     class LifespanState(rx.State):
         interval: int = 100
 
-        @rx.var
+        @rx.var(cache=False)
         def task_global(self) -> int:
             return lifespan_task_global
 
-        @rx.var
+        @rx.var(cache=False)
         def context_global(self) -> int:
             return lifespan_context_global
 
@@ -65,7 +65,7 @@ def LifespanApp():
                 rx.moment(
                     interval=LifespanState.interval, on_change=LifespanState.tick
                 ),
-                on_click=LifespanState.set_interval(  # type: ignore
+                on_click=LifespanState.set_interval(  # pyright: ignore [reportAttributeAccessIssue]
                     rx.cond(LifespanState.interval, 0, 100)
                 ),
                 id="toggle-tick",
@@ -113,13 +113,13 @@ async def test_lifespan(lifespan_app: AppHarness):
     task_global = driver.find_element(By.ID, "task_global")
 
     assert context_global.text == "2"
-    assert lifespan_app.app_module.lifespan_context_global == 2  # type: ignore
+    assert lifespan_app.app_module.lifespan_context_global == 2
 
     original_task_global_text = task_global.text
     original_task_global_value = int(original_task_global_text)
     lifespan_app.poll_for_content(task_global, exp_not_equal=original_task_global_text)
     driver.find_element(By.ID, "toggle-tick").click()  # avoid teardown errors
-    assert lifespan_app.app_module.lifespan_task_global > original_task_global_value  # type: ignore
+    assert lifespan_app.app_module.lifespan_task_global > original_task_global_value
     assert int(task_global.text) > original_task_global_value
 
     # Kill the backend

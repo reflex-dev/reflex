@@ -1,17 +1,20 @@
 import json
 import math
-import sys
 import typing
-from typing import Dict, List, Optional, Set, Tuple, Union, cast
+from typing import Dict, List, Mapping, Optional, Set, Tuple, Union, cast
 
 import pytest
 from pandas import DataFrame
 
 import reflex as rx
 from reflex.base import Base
+from reflex.config import PerformanceMode
 from reflex.constants.base import REFLEX_VAR_CLOSING_TAG, REFLEX_VAR_OPENING_TAG
 from reflex.state import BaseState
-from reflex.utils.exceptions import PrimitiveUnserializableToJSON
+from reflex.utils.exceptions import (
+    PrimitiveUnserializableToJSONError,
+    UntypedComputedVarError,
+)
 from reflex.utils.imports import ImportVar
 from reflex.vars import VarData
 from reflex.vars.base import (
@@ -185,6 +188,7 @@ def ChildWithRuntimeOnlyVar(StateWithRuntimeOnlyVar):
             "state.local",
             "local2",
         ],
+        strict=True,
     ),
 )
 def test_full_name(prop, expected):
@@ -202,6 +206,7 @@ def test_full_name(prop, expected):
     zip(
         test_vars,
         ["prop1", "key", "state.value", "state.local", "local2"],
+        strict=True,
     ),
 )
 def test_str(prop, expected):
@@ -248,6 +253,7 @@ def test_default_value(prop: Var, expected):
             "state.set_local",
             "set_local2",
         ],
+        strict=True,
     ),
 )
 def test_get_setter(prop: Var, expected):
@@ -270,7 +276,7 @@ def test_get_setter(prop: Var, expected):
         ([1, 2, 3], Var(_js_expr="[1, 2, 3]", _var_type=List[int])),
         (
             {"a": 1, "b": 2},
-            Var(_js_expr='({ ["a"] : 1, ["b"] : 2 })', _var_type=Dict[str, int]),
+            Var(_js_expr='({ ["a"] : 1, ["b"] : 2 })', _var_type=Mapping[str, int]),
         ),
     ],
 )
@@ -282,7 +288,7 @@ def test_create(value, expected):
         expected: The expected name of the setter function.
     """
     prop = LiteralVar.create(value)
-    assert prop.equals(expected)  # type: ignore
+    assert prop.equals(expected)
 
 
 def test_create_type_error():
@@ -416,19 +422,13 @@ class Bar(rx.Base):
 
 @pytest.mark.parametrize(
     ("var", "var_type"),
-    (
-        [
-            (Var(_js_expr="", _var_type=Foo | Bar).guess_type(), Foo | Bar),
-            (Var(_js_expr="", _var_type=Foo | Bar).guess_type().bar, Union[int, str]),
-        ]
-        if sys.version_info >= (3, 10)
-        else []
-    )
-    + [
-        (Var(_js_expr="", _var_type=Union[Foo, Bar]).guess_type(), Union[Foo, Bar]),
-        (Var(_js_expr="", _var_type=Union[Foo, Bar]).guess_type().baz, str),
+    [
+        (Var(_js_expr="").to(Foo | Bar), Foo | Bar),
+        (Var(_js_expr="").to(Foo | Bar).bar, Union[int, str]),
+        (Var(_js_expr="").to(Union[Foo, Bar]), Union[Foo, Bar]),
+        (Var(_js_expr="").to(Union[Foo, Bar]).baz, str),
         (
-            Var(_js_expr="", _var_type=Union[Foo, Bar]).guess_type().foo,
+            Var(_js_expr="").to(Union[Foo, Bar]).foo,
             Union[int, None],
         ),
     ],
@@ -804,7 +804,7 @@ def test_shadow_computed_var_error(request: pytest.FixtureRequest, fixture: str)
         request: Fixture Request.
         fixture: The state fixture.
     """
-    with pytest.raises(NameError):
+    with pytest.raises(UntypedComputedVarError):
         state = request.getfixturevalue(fixture)
         state.var_without_annotation.foo
 
@@ -1004,7 +1004,7 @@ def test_all_number_operations():
 
     assert (
         str(even_more_complicated_number)
-        == "!(((Math.abs(Math.floor(((Math.floor(((-((-5.4 + 1)) * 2) / 3) / 2) % 3) ** 2))) || (2 && Math.round(((Math.floor(((-((-5.4 + 1)) * 2) / 3) / 2) % 3) ** 2)))) !== 0))"
+        == "!(isTrue((Math.abs(Math.floor(((Math.floor(((-((-5.4 + 1)) * 2) / 3) / 2) % 3) ** 2))) || (2 && Math.round(((Math.floor(((-((-5.4 + 1)) * 2) / 3) / 2) % 3) ** 2))))))"
     )
 
     assert str(LiteralNumberVar.create(5) > False) == "(5 > 0)"
@@ -1058,7 +1058,7 @@ def test_inf_and_nan(var, expected_js):
     assert str(var) == expected_js
     assert isinstance(var, NumberVar)
     assert isinstance(var, LiteralVar)
-    with pytest.raises(PrimitiveUnserializableToJSON):
+    with pytest.raises(PrimitiveUnserializableToJSONError):
         var.json()
 
 
@@ -1070,19 +1070,19 @@ def test_array_operations():
     assert str(array_var.reverse()) == "[1, 2, 3, 4, 5].slice().reverse()"
     assert (
         str(ArrayVar.range(10))
-        == "Array.from({ length: (10 - 0) / 1 }, (_, i) => 0 + i * 1)"
+        == "Array.from({ length: Math.ceil((10 - 0) / 1) }, (_, i) => 0 + i * 1)"
     )
     assert (
         str(ArrayVar.range(1, 10))
-        == "Array.from({ length: (10 - 1) / 1 }, (_, i) => 1 + i * 1)"
+        == "Array.from({ length: Math.ceil((10 - 1) / 1) }, (_, i) => 1 + i * 1)"
     )
     assert (
         str(ArrayVar.range(1, 10, 2))
-        == "Array.from({ length: (10 - 1) / 2 }, (_, i) => 1 + i * 2)"
+        == "Array.from({ length: Math.ceil((10 - 1) / 2) }, (_, i) => 1 + i * 2)"
     )
     assert (
         str(ArrayVar.range(1, 10, -1))
-        == "Array.from({ length: (10 - 1) / -1 }, (_, i) => 1 + i * -1)"
+        == "Array.from({ length: Math.ceil((10 - 1) / -1) }, (_, i) => 1 + i * -1)"
     )
 
 
@@ -1127,7 +1127,7 @@ def test_var_component():
             for _, imported_objects in var_data.imports
         )
 
-    has_eval_react_component(ComponentVarState.field_var)  # type: ignore
+    has_eval_react_component(ComponentVarState.field_var)  # pyright: ignore [reportArgumentType]
     has_eval_react_component(ComponentVarState.computed_var)
 
 
@@ -1139,15 +1139,15 @@ def test_type_chains():
         List[int],
     )
     assert (
-        str(object_var.keys()[0].upper())  # type: ignore
+        str(object_var.keys()[0].upper())
         == 'Object.keys(({ ["a"] : 1, ["b"] : 2, ["c"] : 3 })).at(0).toUpperCase()'
     )
     assert (
-        str(object_var.entries()[1][1] - 1)  # type: ignore
+        str(object_var.entries()[1][1] - 1)
         == '(Object.entries(({ ["a"] : 1, ["b"] : 2, ["c"] : 3 })).at(1).at(1) - 1)'
     )
     assert (
-        str(object_var["c"] + object_var["b"])  # type: ignore
+        str(object_var["c"] + object_var["b"])  # pyright: ignore [reportCallIssue, reportOperatorIssue]
         == '(({ ["a"] : 1, ["b"] : 2, ["c"] : 3 })["c"] + ({ ["a"] : 1, ["b"] : 2, ["c"] : 3 })["b"])'
     )
 
@@ -1156,7 +1156,7 @@ def test_nested_dict():
     arr = LiteralArrayVar.create([{"bar": ["foo", "bar"]}], List[Dict[str, List[str]]])
 
     assert (
-        str(arr[0]["bar"][0]) == '[({ ["bar"] : ["foo", "bar"] })].at(0)["bar"].at(0)'
+        str(arr[0]["bar"][0]) == '[({ ["bar"] : ["foo", "bar"] })].at(0)["bar"].at(0)'  # pyright: ignore [reportIndexIssue]
     )
 
 
@@ -1352,7 +1352,7 @@ def test_unsupported_types_for_contains(var: Var):
         var: The base var.
     """
     with pytest.raises(TypeError) as err:
-        assert var.contains(1)
+        assert var.contains(1)  # pyright: ignore [reportAttributeAccessIssue]
     assert (
         err.value.args[0]
         == f"Var of type {var._var_type} does not support contains check."
@@ -1382,7 +1382,7 @@ def test_unsupported_types_for_string_contains(other):
 
 def test_unsupported_default_contains():
     with pytest.raises(TypeError) as err:
-        assert 1 in Var(_js_expr="var", _var_type=str).guess_type()
+        assert 1 in Var(_js_expr="var", _var_type=str).guess_type()  # pyright: ignore [reportOperatorIssue]
     assert (
         err.value.args[0]
         == "'in' operator not supported for Var types, use Var.contains() instead."
@@ -1808,16 +1808,13 @@ def cv_fget(state: BaseState) -> int:
 @pytest.mark.parametrize(
     "deps,expected",
     [
-        (["a"], {"a"}),
-        (["b"], {"b"}),
-        ([ComputedVar(fget=cv_fget)], {"cv_fget"}),
+        (["a"], {None: {"a"}}),
+        (["b"], {None: {"b"}}),
+        ([ComputedVar(fget=cv_fget)], {None: {"cv_fget"}}),
     ],
 )
 def test_computed_var_deps(deps: List[Union[str, Var]], expected: Set[str]):
-    @computed_var(
-        deps=deps,
-        cache=True,
-    )
+    @computed_var(deps=deps)
     def test_var(state) -> int:
         return 1
 
@@ -1835,10 +1832,7 @@ def test_computed_var_deps(deps: List[Union[str, Var]], expected: Set[str]):
 def test_invalid_computed_var_deps(deps: List):
     with pytest.raises(TypeError):
 
-        @computed_var(
-            deps=deps,
-            cache=True,
-        )
+        @computed_var(deps=deps)
         def test_var(state) -> int:
             return 1
 
@@ -1862,3 +1856,65 @@ def test_to_string_operation():
 
     single_var = Var.create(Email())
     assert single_var._var_type == Email
+
+
+@pytest.mark.asyncio
+async def test_async_computed_var():
+    side_effect_counter = 0
+
+    class AsyncComputedVarState(BaseState):
+        v: int = 1
+
+        @computed_var(cache=True)
+        async def async_computed_var(self) -> int:
+            nonlocal side_effect_counter
+            side_effect_counter += 1
+            return self.v + 1
+
+    my_state = AsyncComputedVarState()
+    assert await my_state.async_computed_var == 2
+    assert await my_state.async_computed_var == 2
+    my_state.v = 2
+    assert await my_state.async_computed_var == 3
+    assert await my_state.async_computed_var == 3
+    assert side_effect_counter == 2
+
+
+def test_var_data_hooks():
+    var_data_str = VarData(hooks="what")
+    var_data_list = VarData(hooks=["what"])
+    var_data_dict = VarData(hooks={"what": None})
+    assert var_data_str == var_data_list == var_data_dict
+
+    var_data_list_multiple = VarData(hooks=["what", "whot"])
+    var_data_dict_multiple = VarData(hooks={"what": None, "whot": None})
+    assert var_data_list_multiple == var_data_dict_multiple
+
+
+def test_var_data_with_hooks_value():
+    var_data = VarData(hooks={"what": VarData(hooks={"whot": VarData(hooks="whott")})})
+    assert var_data == VarData(hooks=["what", "whot", "whott"])
+
+
+def test_str_var_in_components(mocker):
+    class StateWithVar(rx.State):
+        field: int = 1
+
+    mocker.patch(
+        "reflex.components.base.bare.get_performance_mode",
+        return_value=PerformanceMode.RAISE,
+    )
+
+    with pytest.raises(ValueError):
+        rx.vstack(
+            str(StateWithVar.field),
+        )
+
+    mocker.patch(
+        "reflex.components.base.bare.get_performance_mode",
+        return_value=PerformanceMode.OFF,
+    )
+
+    rx.vstack(
+        str(StateWithVar.field),
+    )

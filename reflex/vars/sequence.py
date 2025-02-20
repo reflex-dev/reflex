@@ -6,7 +6,6 @@ import dataclasses
 import inspect
 import json
 import re
-import sys
 import typing
 from typing import (
     TYPE_CHECKING,
@@ -15,14 +14,15 @@ from typing import (
     List,
     Literal,
     NoReturn,
-    Set,
+    Sequence,
     Tuple,
     Type,
+    TypeVar,
     Union,
     overload,
 )
 
-from typing_extensions import TypeVar
+from typing_extensions import TypeVar as TypingExtensionsTypeVar
 
 from reflex import constants
 from reflex.constants.base import REFLEX_VAR_OPENING_TAG
@@ -54,9 +54,12 @@ from .number import (
 )
 
 if TYPE_CHECKING:
+    from .base import BASE_TYPE, DATACLASS_TYPE, SQLA_TYPE
+    from .function import FunctionVar
     from .object import ObjectVar
 
-STRING_TYPE = TypeVar("STRING_TYPE", default=str)
+
+STRING_TYPE = TypingExtensionsTypeVar("STRING_TYPE", default=str)
 
 
 class StringVar(Var[STRING_TYPE], python_types=str):
@@ -66,7 +69,7 @@ class StringVar(Var[STRING_TYPE], python_types=str):
     def __add__(self, other: StringVar | str) -> ConcatVarOperation: ...
 
     @overload
-    def __add__(self, other: NoReturn) -> NoReturn: ...
+    def __add__(self, other: NoReturn) -> NoReturn: ...  # pyright: ignore [reportOverlappingOverload]
 
     def __add__(self, other: Any) -> ConcatVarOperation:
         """Concatenate two strings.
@@ -86,7 +89,7 @@ class StringVar(Var[STRING_TYPE], python_types=str):
     def __radd__(self, other: StringVar | str) -> ConcatVarOperation: ...
 
     @overload
-    def __radd__(self, other: NoReturn) -> NoReturn: ...
+    def __radd__(self, other: NoReturn) -> NoReturn: ...  # pyright: ignore [reportOverlappingOverload]
 
     def __radd__(self, other: Any) -> ConcatVarOperation:
         """Concatenate two strings.
@@ -106,7 +109,7 @@ class StringVar(Var[STRING_TYPE], python_types=str):
     def __mul__(self, other: NumberVar | int) -> StringVar: ...
 
     @overload
-    def __mul__(self, other: NoReturn) -> NoReturn: ...
+    def __mul__(self, other: NoReturn) -> NoReturn: ...  # pyright: ignore [reportOverlappingOverload]
 
     def __mul__(self, other: Any) -> StringVar:
         """Multiply the sequence by a number or an integer.
@@ -126,7 +129,7 @@ class StringVar(Var[STRING_TYPE], python_types=str):
     def __rmul__(self, other: NumberVar | int) -> StringVar: ...
 
     @overload
-    def __rmul__(self, other: NoReturn) -> NoReturn: ...
+    def __rmul__(self, other: NoReturn) -> NoReturn: ...  # pyright: ignore [reportOverlappingOverload]
 
     def __rmul__(self, other: Any) -> StringVar:
         """Multiply the sequence by a number or an integer.
@@ -189,6 +192,22 @@ class StringVar(Var[STRING_TYPE], python_types=str):
         """
         return string_upper_operation(self)
 
+    def title(self) -> StringVar:
+        """Convert the string to title case.
+
+        Returns:
+            The string title operation.
+        """
+        return string_title_operation(self)
+
+    def capitalize(self) -> StringVar:
+        """Capitalize the string.
+
+        Returns:
+            The string capitalize operation.
+        """
+        return string_capitalize_operation(self)
+
     def strip(self) -> StringVar:
         """Strip the string.
 
@@ -211,7 +230,7 @@ class StringVar(Var[STRING_TYPE], python_types=str):
     ) -> BooleanVar: ...
 
     @overload
-    def contains(
+    def contains(  # pyright: ignore [reportOverlappingOverload]
         self, other: NoReturn, field: StringVar | str | None = None
     ) -> NoReturn: ...
 
@@ -237,7 +256,7 @@ class StringVar(Var[STRING_TYPE], python_types=str):
     def split(self, separator: StringVar | str = "") -> ArrayVar[List[str]]: ...
 
     @overload
-    def split(self, separator: NoReturn) -> NoReturn: ...
+    def split(self, separator: NoReturn) -> NoReturn: ...  # pyright: ignore [reportOverlappingOverload]
 
     def split(self, separator: Any = "") -> ArrayVar[List[str]]:
         """Split the string.
@@ -256,7 +275,7 @@ class StringVar(Var[STRING_TYPE], python_types=str):
     def startswith(self, prefix: StringVar | str) -> BooleanVar: ...
 
     @overload
-    def startswith(self, prefix: NoReturn) -> NoReturn: ...
+    def startswith(self, prefix: NoReturn) -> NoReturn: ...  # pyright: ignore [reportOverlappingOverload]
 
     def startswith(self, prefix: Any) -> BooleanVar:
         """Check if the string starts with a prefix.
@@ -275,7 +294,7 @@ class StringVar(Var[STRING_TYPE], python_types=str):
     def endswith(self, suffix: StringVar | str) -> BooleanVar: ...
 
     @overload
-    def endswith(self, suffix: NoReturn) -> NoReturn: ...
+    def endswith(self, suffix: NoReturn) -> NoReturn: ...  # pyright: ignore [reportOverlappingOverload]
 
     def endswith(self, suffix: Any) -> BooleanVar:
         """Check if the string ends with a suffix.
@@ -294,7 +313,7 @@ class StringVar(Var[STRING_TYPE], python_types=str):
     def __lt__(self, other: StringVar | str) -> BooleanVar: ...
 
     @overload
-    def __lt__(self, other: NoReturn) -> NoReturn: ...
+    def __lt__(self, other: NoReturn) -> NoReturn: ...  # pyright: ignore [reportOverlappingOverload]
 
     def __lt__(self, other: Any):
         """Check if the string is less than another string.
@@ -314,7 +333,7 @@ class StringVar(Var[STRING_TYPE], python_types=str):
     def __gt__(self, other: StringVar | str) -> BooleanVar: ...
 
     @overload
-    def __gt__(self, other: NoReturn) -> NoReturn: ...
+    def __gt__(self, other: NoReturn) -> NoReturn: ...  # pyright: ignore [reportOverlappingOverload]
 
     def __gt__(self, other: Any):
         """Check if the string is greater than another string.
@@ -334,7 +353,7 @@ class StringVar(Var[STRING_TYPE], python_types=str):
     def __le__(self, other: StringVar | str) -> BooleanVar: ...
 
     @overload
-    def __le__(self, other: NoReturn) -> NoReturn: ...
+    def __le__(self, other: NoReturn) -> NoReturn: ...  # pyright: ignore [reportOverlappingOverload]
 
     def __le__(self, other: Any):
         """Check if the string is less than or equal to another string.
@@ -354,7 +373,7 @@ class StringVar(Var[STRING_TYPE], python_types=str):
     def __ge__(self, other: StringVar | str) -> BooleanVar: ...
 
     @overload
-    def __ge__(self, other: NoReturn) -> NoReturn: ...
+    def __ge__(self, other: NoReturn) -> NoReturn: ...  # pyright: ignore [reportOverlappingOverload]
 
     def __ge__(self, other: Any):
         """Check if the string is greater than or equal to another string.
@@ -369,6 +388,33 @@ class StringVar(Var[STRING_TYPE], python_types=str):
             raise_unsupported_operand_types(">=", (type(self), type(other)))
 
         return string_ge_operation(self, other)
+
+    @overload
+    def replace(  # pyright: ignore [reportOverlappingOverload]
+        self, search_value: StringVar | str, new_value: StringVar | str
+    ) -> StringVar: ...
+
+    @overload
+    def replace(
+        self, search_value: Any, new_value: Any
+    ) -> CustomVarOperationReturn[StringVar]: ...
+
+    def replace(self, search_value: Any, new_value: Any) -> StringVar:  # pyright: ignore [reportInconsistentOverload]
+        """Replace a string with a value.
+
+        Args:
+            search_value: The string to search.
+            new_value: The value to be replaced with.
+
+        Returns:
+            The string replace operation.
+        """
+        if not isinstance(search_value, (StringVar, str)):
+            raise_unsupported_operand_types("replace", (type(self), type(search_value)))
+        if not isinstance(new_value, (StringVar, str)):
+            raise_unsupported_operand_types("replace", (type(self), type(new_value)))
+
+        return string_replace_operation(self, search_value, new_value)
 
 
 @var_operation
@@ -451,6 +497,38 @@ def string_upper_operation(string: StringVar[Any]):
         The uppercase string.
     """
     return var_operation_return(js_expression=f"{string}.toUpperCase()", var_type=str)
+
+
+@var_operation
+def string_title_operation(string: StringVar[Any]):
+    """Convert a string to title case.
+
+    Args:
+        string: The string to convert.
+
+    Returns:
+        The title case string.
+    """
+    return var_operation_return(
+        js_expression=f"{string}.split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()).join(' ')",
+        var_type=str,
+    )
+
+
+@var_operation
+def string_capitalize_operation(string: StringVar[Any]):
+    """Capitalize a string.
+
+    Args:
+        string: The string to capitalize.
+
+    Returns:
+        The capitalized string.
+    """
+    return var_operation_return(
+        js_expression=f"(((s) => s.charAt(0).toUpperCase() + s.slice(1).toLowerCase())({string}))",
+        var_type=str,
+    )
 
 
 @var_operation
@@ -568,7 +646,7 @@ def array_join_operation(array: ArrayVar, sep: StringVar[Any] | str = ""):
 
 @var_operation
 def string_replace_operation(
-    string: StringVar, search_value: StringVar | str, new_value: StringVar | str
+    string: StringVar[Any], search_value: StringVar | str, new_value: StringVar | str
 ):
     """Replace a string with a value.
 
@@ -581,7 +659,7 @@ def string_replace_operation(
         The string replace operation.
     """
     return var_operation_return(
-        js_expression=f"{string}.replace({search_value}, {new_value})",
+        js_expression=f"{string}.replaceAll({search_value}, {new_value})",
         var_type=str,
     )
 
@@ -596,7 +674,7 @@ _decode_var_pattern = re.compile(_decode_var_pattern_re, flags=re.DOTALL)
 @dataclasses.dataclass(
     eq=False,
     frozen=True,
-    **{"slots": True} if sys.version_info >= (3, 10) else {},
+    slots=True,
 )
 class LiteralStringVar(LiteralVar, StringVar[str]):
     """Base class for immutable literal string vars."""
@@ -718,7 +796,7 @@ class LiteralStringVar(LiteralVar, StringVar[str]):
 @dataclasses.dataclass(
     eq=False,
     frozen=True,
-    **{"slots": True} if sys.version_info >= (3, 10) else {},
+    slots=True,
 )
 class ConcatVarOperation(CachedVarOperation, StringVar[str]):
     """Representing a concatenation of literal string vars."""
@@ -780,7 +858,7 @@ class ConcatVarOperation(CachedVarOperation, StringVar[str]):
         """Create a var from a string value.
 
         Args:
-            value: The values to concatenate.
+            *value: The values to concatenate.
             _var_data: Additional hooks and imports associated with the Var.
 
         Returns:
@@ -794,7 +872,8 @@ class ConcatVarOperation(CachedVarOperation, StringVar[str]):
         )
 
 
-ARRAY_VAR_TYPE = TypeVar("ARRAY_VAR_TYPE", bound=Union[List, Tuple, Set])
+ARRAY_VAR_TYPE = TypeVar("ARRAY_VAR_TYPE", bound=Sequence, covariant=True)
+OTHER_ARRAY_VAR_TYPE = TypeVar("OTHER_ARRAY_VAR_TYPE", bound=Sequence)
 
 OTHER_TUPLE = TypeVar("OTHER_TUPLE")
 
@@ -811,7 +890,7 @@ class ArrayVar(Var[ARRAY_VAR_TYPE], python_types=(list, tuple, set)):
     def join(self, sep: StringVar | str = "") -> StringVar: ...
 
     @overload
-    def join(self, sep: NoReturn) -> NoReturn: ...
+    def join(self, sep: NoReturn) -> NoReturn: ...  # pyright: ignore [reportOverlappingOverload]
 
     def join(self, sep: Any = "") -> StringVar:
         """Join the elements of the array.
@@ -858,7 +937,7 @@ class ArrayVar(Var[ARRAY_VAR_TYPE], python_types=(list, tuple, set)):
     def __add__(self, other: ArrayVar[ARRAY_VAR_TYPE]) -> ArrayVar[ARRAY_VAR_TYPE]: ...
 
     @overload
-    def __add__(self, other: NoReturn) -> NoReturn: ...
+    def __add__(self, other: NoReturn) -> NoReturn: ...  # pyright: ignore [reportOverlappingOverload]
 
     def __add__(self, other: Any) -> ArrayVar[ARRAY_VAR_TYPE]:
         """Concatenate two arrays.
@@ -889,6 +968,11 @@ class ArrayVar(Var[ARRAY_VAR_TYPE], python_types=(list, tuple, set)):
 
     @overload
     def __getitem__(
+        self: ArrayVar[Tuple[Any, bool]], i: Literal[1, -1]
+    ) -> BooleanVar: ...
+
+    @overload
+    def __getitem__(
         self: (
             ArrayVar[Tuple[Any, int]]
             | ArrayVar[Tuple[Any, float]]
@@ -914,7 +998,7 @@ class ArrayVar(Var[ARRAY_VAR_TYPE], python_types=(list, tuple, set)):
 
     @overload
     def __getitem__(
-        self: ArrayVar[Tuple[Any, bool]], i: Literal[1, -1]
+        self: ARRAY_VAR_OF_LIST_ELEMENT[bool], i: int | NumberVar
     ) -> BooleanVar: ...
 
     @overload
@@ -934,20 +1018,9 @@ class ArrayVar(Var[ARRAY_VAR_TYPE], python_types=(list, tuple, set)):
 
     @overload
     def __getitem__(
-        self: ARRAY_VAR_OF_LIST_ELEMENT[bool], i: int | NumberVar
-    ) -> BooleanVar: ...
-
-    @overload
-    def __getitem__(
         self: ARRAY_VAR_OF_LIST_ELEMENT[List[INNER_ARRAY_VAR]],
         i: int | NumberVar,
     ) -> ArrayVar[List[INNER_ARRAY_VAR]]: ...
-
-    @overload
-    def __getitem__(
-        self: ARRAY_VAR_OF_LIST_ELEMENT[Set[INNER_ARRAY_VAR]],
-        i: int | NumberVar,
-    ) -> ArrayVar[Set[INNER_ARRAY_VAR]]: ...
 
     @overload
     def __getitem__(
@@ -966,6 +1039,24 @@ class ArrayVar(Var[ARRAY_VAR_TYPE], python_types=(list, tuple, set)):
         self: ARRAY_VAR_OF_LIST_ELEMENT[Dict[KEY_TYPE, VALUE_TYPE]],
         i: int | NumberVar,
     ) -> ObjectVar[Dict[KEY_TYPE, VALUE_TYPE]]: ...
+
+    @overload
+    def __getitem__(
+        self: ARRAY_VAR_OF_LIST_ELEMENT[BASE_TYPE],
+        i: int | NumberVar,
+    ) -> ObjectVar[BASE_TYPE]: ...
+
+    @overload
+    def __getitem__(
+        self: ARRAY_VAR_OF_LIST_ELEMENT[SQLA_TYPE],
+        i: int | NumberVar,
+    ) -> ObjectVar[SQLA_TYPE]: ...
+
+    @overload
+    def __getitem__(
+        self: ARRAY_VAR_OF_LIST_ELEMENT[DATACLASS_TYPE],
+        i: int | NumberVar,
+    ) -> ObjectVar[DATACLASS_TYPE]: ...
 
     @overload
     def __getitem__(self, i: int | NumberVar) -> Var: ...
@@ -987,7 +1078,7 @@ class ArrayVar(Var[ARRAY_VAR_TYPE], python_types=(list, tuple, set)):
             raise_unsupported_operand_types("[]", (type(self), type(i)))
         return array_item_operation(self, i)
 
-    def length(self) -> NumberVar:
+    def length(self) -> NumberVar[int]:
         """Get the length of the array.
 
         Returns:
@@ -1089,7 +1180,7 @@ class ArrayVar(Var[ARRAY_VAR_TYPE], python_types=(list, tuple, set)):
     def __mul__(self, other: NumberVar | int) -> ArrayVar[ARRAY_VAR_TYPE]: ...
 
     @overload
-    def __mul__(self, other: NoReturn) -> NoReturn: ...
+    def __mul__(self, other: NoReturn) -> NoReturn: ...  # pyright: ignore [reportOverlappingOverload]
 
     def __mul__(self, other: Any) -> ArrayVar[ARRAY_VAR_TYPE]:
         """Multiply the sequence by a number or integer.
@@ -1107,7 +1198,7 @@ class ArrayVar(Var[ARRAY_VAR_TYPE], python_types=(list, tuple, set)):
 
         return repeat_array_operation(self, other)
 
-    __rmul__ = __mul__  # type: ignore
+    __rmul__ = __mul__
 
     @overload
     def __lt__(self, other: ArrayVar[ARRAY_VAR_TYPE]) -> BooleanVar: ...
@@ -1239,26 +1330,18 @@ class ArrayVar(Var[ARRAY_VAR_TYPE], python_types=(list, tuple, set)):
 
 LIST_ELEMENT = TypeVar("LIST_ELEMENT")
 
-ARRAY_VAR_OF_LIST_ELEMENT = Union[
-    ArrayVar[List[LIST_ELEMENT]],
-    ArrayVar[Set[LIST_ELEMENT]],
-    ArrayVar[Tuple[LIST_ELEMENT, ...]],
-]
+ARRAY_VAR_OF_LIST_ELEMENT = ArrayVar[Sequence[LIST_ELEMENT]]
 
 
 @dataclasses.dataclass(
     eq=False,
     frozen=True,
-    **{"slots": True} if sys.version_info >= (3, 10) else {},
+    slots=True,
 )
 class LiteralArrayVar(CachedVarOperation, LiteralVar, ArrayVar[ARRAY_VAR_TYPE]):
     """Base class for immutable literal array vars."""
 
-    _var_value: Union[
-        List[Union[Var, Any]],
-        Set[Union[Var, Any]],
-        Tuple[Union[Var, Any], ...],
-    ] = dataclasses.field(default_factory=list)
+    _var_value: Sequence[Union[Var, Any]] = dataclasses.field(default=())
 
     @cached_property_no_lock
     def _cached_var_name(self) -> str:
@@ -1303,32 +1386,39 @@ class LiteralArrayVar(CachedVarOperation, LiteralVar, ArrayVar[ARRAY_VAR_TYPE]):
 
         Returns:
             The JSON representation of the var.
+
+        Raises:
+            TypeError: If the array elements are not of type LiteralVar.
         """
-        return (
-            "["
-            + ", ".join(
-                [LiteralVar.create(element).json() for element in self._var_value]
-            )
-            + "]"
-        )
+        elements = []
+        for element in self._var_value:
+            element_var = LiteralVar.create(element)
+            if not isinstance(element_var, LiteralVar):
+                raise TypeError(
+                    f"Array elements must be of type LiteralVar, not {type(element_var)}"
+                )
+            elements.append(element_var.json())
+
+        return "[" + ", ".join(elements) + "]"
 
     @classmethod
     def create(
         cls,
-        value: ARRAY_VAR_TYPE,
-        _var_type: Type[ARRAY_VAR_TYPE] | None = None,
+        value: OTHER_ARRAY_VAR_TYPE,
+        _var_type: Type[OTHER_ARRAY_VAR_TYPE] | None = None,
         _var_data: VarData | None = None,
-    ) -> LiteralArrayVar[ARRAY_VAR_TYPE]:
+    ) -> LiteralArrayVar[OTHER_ARRAY_VAR_TYPE]:
         """Create a var from a string value.
 
         Args:
             value: The value to create the var from.
+            _var_type: The type of the var.
             _var_data: Additional hooks and imports associated with the Var.
 
         Returns:
             The var.
         """
-        return cls(
+        return LiteralArrayVar(
             _js_expr="",
             _var_type=figure_out_type(value) if _var_type is None else _var_type,
             _var_data=_var_data,
@@ -1355,7 +1445,7 @@ def string_split_operation(string: StringVar[Any], sep: StringVar | str = ""):
 @dataclasses.dataclass(
     eq=False,
     frozen=True,
-    **{"slots": True} if sys.version_info >= (3, 10) else {},
+    slots=True,
 )
 class ArraySliceOperation(CachedVarOperation, ArrayVar):
     """Base class for immutable string vars that are the result of a string slice operation."""
@@ -1592,7 +1682,7 @@ def array_range_operation(
         The range of numbers.
     """
     return var_operation_return(
-        js_expression=f"Array.from({{ length: ({stop!s} - {start!s}) / {step!s} }}, (_, i) => {start!s} + i * {step!s})",
+        js_expression=f"Array.from({{ length: Math.ceil(({stop!s} - {start!s}) / {step!s}) }}, (_, i) => {start!s} + i * {step!s})",
         var_type=List[int],
     )
 
@@ -1618,7 +1708,9 @@ def array_contains_field_operation(
 
 
 @var_operation
-def array_contains_operation(haystack: ArrayVar, needle: Any | Var):
+def array_contains_operation(
+    haystack: ArrayVar, needle: Any | Var
+) -> CustomVarOperationReturn[bool]:
     """Check if an array contains an element.
 
     Args:
@@ -1653,15 +1745,11 @@ def repeat_array_operation(
     )
 
 
-if TYPE_CHECKING:
-    from .function import FunctionVar
-
-
 @var_operation
 def map_array_operation(
     array: ArrayVar[ARRAY_VAR_TYPE],
     function: FunctionVar,
-):
+) -> CustomVarOperationReturn[List[Any]]:
     """Map a function over an array.
 
     Args:
@@ -1691,7 +1779,7 @@ def array_concat_operation(
     """
     return var_operation_return(
         js_expression=f"[...{lhs}, ...{rhs}]",
-        var_type=Union[lhs._var_type, rhs._var_type],
+        var_type=Union[lhs._var_type, rhs._var_type],  # pyright: ignore [reportArgumentType]
     )
 
 
@@ -1702,7 +1790,7 @@ class ColorVar(StringVar[Color], python_types=Color):
 @dataclasses.dataclass(
     eq=False,
     frozen=True,
-    **{"slots": True} if sys.version_info >= (3, 10) else {},
+    slots=True,
 )
 class LiteralColorVar(CachedVarOperation, LiteralVar, ColorVar):
     """Base class for immutable literal color vars."""

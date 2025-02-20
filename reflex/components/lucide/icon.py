@@ -2,13 +2,15 @@
 
 from reflex.components.component import Component
 from reflex.utils import format
-from reflex.vars.base import Var
+from reflex.utils.imports import ImportVar
+from reflex.vars.base import LiteralVar, Var
+from reflex.vars.sequence import LiteralStringVar, StringVar
 
 
 class LucideIconComponent(Component):
     """Lucide Icon Component."""
 
-    library = "lucide-react@0.469.0"
+    library = "lucide-react@0.471.1"
 
 
 class Icon(LucideIconComponent):
@@ -32,14 +34,19 @@ class Icon(LucideIconComponent):
         Raises:
             AttributeError: The errors tied to bad usage of the Icon component.
             ValueError: If the icon tag is invalid.
+            TypeError: If the icon name is not a string.
 
         Returns:
             The created component.
         """
         if children:
-            if len(children) == 1 and isinstance(children[0], str):
+            if len(children) == 1:
+                child = Var.create(children[0]).guess_type()
+                if not isinstance(child, StringVar):
+                    raise AttributeError(
+                        f"Icon name must be a string, got {children[0]._var_type if isinstance(children[0], Var) else children[0]}"
+                    )
                 props["tag"] = children[0]
-                children = []
             else:
                 raise AttributeError(
                     f"Passing multiple children to Icon component is not allowed: remove positional arguments {children[1:]} to fix"
@@ -47,19 +54,57 @@ class Icon(LucideIconComponent):
         if "tag" not in props:
             raise AttributeError("Missing 'tag' keyword-argument for Icon")
 
+        tag: str | Var | LiteralVar = Var.create(props.pop("tag"))
+        if isinstance(tag, LiteralVar):
+            if isinstance(tag, LiteralStringVar):
+                tag = tag._var_value
+            else:
+                raise TypeError(f"Icon name must be a string, got {type(tag)}")
+        elif isinstance(tag, Var):
+            tag_stringified = tag.guess_type()
+            if not isinstance(tag_stringified, StringVar):
+                raise TypeError(f"Icon name must be a string, got {tag._var_type}")
+            return DynamicIcon.create(name=tag_stringified.replace("_", "-"), **props)
+
         if (
-            not isinstance(props["tag"], str)
-            or format.to_snake_case(props["tag"]) not in LUCIDE_ICON_LIST
+            not isinstance(tag, str)
+            or format.to_snake_case(tag) not in LUCIDE_ICON_LIST
         ):
+            if isinstance(tag, str):
+                icons_sorted = sorted(
+                    LUCIDE_ICON_LIST,
+                    key=lambda s: format.length_of_largest_common_substring(tag, s),
+                    reverse=True,
+                )
+            else:
+                icons_sorted = LUCIDE_ICON_LIST
             raise ValueError(
-                f"Invalid icon tag: {props['tag']}. Please use one of the following: {', '.join(LUCIDE_ICON_LIST[0:25])}, ..."
-                "\nSee full list at https://lucide.dev/icons."
+                f"Invalid icon tag: {tag}. Please use one of the following: {', '.join(icons_sorted[0:25])}, ..."
+                "\nSee full list at https://reflex.dev/docs/library/data-display/icon/#icons-list."
             )
 
-        props["tag"] = format.to_title_case(format.to_snake_case(props["tag"])) + "Icon"
+        if tag in LUCIDE_ICON_MAPPING_OVERRIDE:
+            props["tag"] = LUCIDE_ICON_MAPPING_OVERRIDE[tag]
+        else:
+            props["tag"] = format.to_title_case(format.to_snake_case(tag)) + "Icon"
         props["alias"] = f"Lucide{props['tag']}"
         props.setdefault("color", "var(--current-color)")
-        return super().create(*children, **props)
+        return super().create(**props)
+
+
+class DynamicIcon(LucideIconComponent):
+    """A DynamicIcon component."""
+
+    tag = "DynamicIcon"
+
+    name: Var[str]
+
+    def _get_imports(self):
+        _imports = super()._get_imports()
+        if self.library:
+            _imports.pop(self.library)
+        _imports["lucide-react/dynamic"] = [ImportVar("DynamicIcon", install=False)]
+        return _imports
 
 
 LUCIDE_ICON_LIST = [
@@ -841,6 +886,7 @@ LUCIDE_ICON_LIST = [
     "house",
     "house_plug",
     "house_plus",
+    "house_wifi",
     "ice_cream_bowl",
     "ice_cream_cone",
     "id_card",
@@ -1529,6 +1575,7 @@ LUCIDE_ICON_LIST = [
     "trending_up_down",
     "triangle",
     "triangle_alert",
+    "triangle_dashed",
     "triangle_right",
     "trophy",
     "truck",
@@ -1634,3 +1681,10 @@ LUCIDE_ICON_LIST = [
     "zoom_in",
     "zoom_out",
 ]
+
+# The default transformation of some icon names doesn't match how the
+# icons are exported from Lucide. Manual overrides can go here.
+LUCIDE_ICON_MAPPING_OVERRIDE = {
+    "grid_2x_2_check": "Grid2x2Check",
+    "grid_2x_2_x": "Grid2x2X",
+}

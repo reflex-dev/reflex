@@ -3,11 +3,31 @@
 from __future__ import annotations
 
 import dataclasses
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Mapping, Optional, Sequence
 
 from reflex.event import EventChain
 from reflex.utils import format, types
 from reflex.vars.base import LiteralVar, Var
+
+
+def render_prop(value: Any) -> Any:
+    """Render the prop.
+
+    Args:
+        value: The value to render.
+
+    Returns:
+        The rendered value.
+    """
+    from reflex.components.component import BaseComponent
+
+    if isinstance(value, BaseComponent):
+        return value.render()
+    if isinstance(value, Sequence) and not isinstance(value, str):
+        return [render_prop(v) for v in value]
+    if callable(value) and not isinstance(value, Var):
+        return None
+    return value
 
 
 @dataclasses.dataclass()
@@ -49,7 +69,7 @@ class Tag:
         """Set the tag's fields.
 
         Args:
-            kwargs: The fields to set.
+            **kwargs: The fields to set.
 
         Returns:
             The tag with the fields
@@ -66,7 +86,9 @@ class Tag:
             Tuple[str, Any]: The field name and value.
         """
         for field in dataclasses.fields(self):
-            yield field.name, getattr(self, field.name)
+            rendered_value = render_prop(getattr(self, field.name))
+            if rendered_value is not None:
+                yield field.name, rendered_value
 
     def add_props(self, **kwargs: Optional[Any]) -> Tag:
         """Add props to the tag.
@@ -79,9 +101,9 @@ class Tag:
         """
         self.props.update(
             {
-                format.to_camel_case(name, allow_hyphens=True): (
+                format.to_camel_case(name, treat_hyphens_as_underscores=False): (
                     prop
-                    if types._isinstance(prop, Union[EventChain, dict])
+                    if types._isinstance(prop, (EventChain, Mapping))
                     else LiteralVar.create(prop)
                 )  # rx.color is always a string
                 for name, prop in kwargs.items()

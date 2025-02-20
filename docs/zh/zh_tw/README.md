@@ -36,7 +36,7 @@ Reflex 是一個可以用純 Python 構建全端網頁應用程式的函式庫�
 
 ## ⚙️ 安裝
 
-開啟一個終端機並且執行 (需要 Python 3.9+):
+開啟一個終端機並且執行 (需要 Python 3.10+):
 
 ```bash
 pip install reflex
@@ -229,7 +229,7 @@ app.add_page(index, title="DALL-E")
 
 <div align="center">
 
-📑 [Docs](https://reflex.dev/docs/getting-started/introduction) &nbsp; |  &nbsp; 🗞️ [Blog](https://reflex.dev/blog) &nbsp; |  &nbsp; 📱 [Component Library](https://reflex.dev/docs/library) &nbsp; |  &nbsp; 🖼️ [Gallery](https://reflex.dev/docs/gallery) &nbsp; |  &nbsp; 🛸 [Deployment](https://reflex.dev/docs/hosting/deploy-quick-start)  &nbsp;   
+📑 [Docs](https://reflex.dev/docs/getting-started/introduction) &nbsp; |  &nbsp; 🗞️ [Blog](https://reflex.dev/blog) &nbsp; |  &nbsp; 📱 [Component Library](https://reflex.dev/docs/library) &nbsp; |  &nbsp; 🖼️ [Templates](https://reflex.dev/templates/) &nbsp; |  &nbsp; 🛸 [Deployment](https://reflex.dev/docs/hosting/deploy-quick-start)  &nbsp;   
 
 </div>
 
@@ -251,7 +251,7 @@ Reflex 每周都有新功能和釋出新版本! 確保你按下 :star: 和 :eyes
 -   **GitHub Discussions**: 這是一個討論您想新增的功能或對於一些困惑/需要澄清事項的好方法。
 -   **GitHub Issues**: 在 [Issues](https://github.com/reflex-dev/reflex/issues) 頁面報告錯誤是一個絕佳的方式。此外，您也可以嘗試解決現有 Issue 並提交 PR。
 
-我們積極尋找貢獻者，不論您的技能水平或經驗如何。要貢獻，請查看 [CONTIBUTING.md](https://github.com/reflex-dev/reflex/blob/main/CONTRIBUTING.md)
+我們積極尋找貢獻者，不論您的技能水平或經驗如何。要貢獻，請查看 [CONTRIBUTING.md](https://github.com/reflex-dev/reflex/blob/main/CONTRIBUTING.md)
 
 
 ## 感謝所有貢獻者:

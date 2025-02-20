@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import dataclasses
+import typing
 from typing import ClassVar, Dict, Literal, Optional, Union
 
 from reflex.components.component import Component, ComponentNamespace
@@ -14,7 +15,7 @@ from reflex.components.radix.themes.layout.box import Box
 from reflex.constants.colors import Color
 from reflex.event import set_clipboard
 from reflex.style import Style
-from reflex.utils import console, format
+from reflex.utils import format
 from reflex.utils.imports import ImportVar
 from reflex.vars.base import LiteralVar, Var, VarData
 
@@ -382,7 +383,7 @@ for theme_name in dir(Theme):
 class CodeBlock(Component, MarkdownComponentMap):
     """A code block."""
 
-    library = "react-syntax-highlighter@15.6.0"
+    library = "react-syntax-highlighter@15.6.1"
 
     tag = "PrismAsyncLight"
 
@@ -438,6 +439,8 @@ class CodeBlock(Component, MarkdownComponentMap):
         can_copy = props.pop("can_copy", False)
         copy_button = props.pop("copy_button", None)
 
+        # react-syntax-highlighter doesn't have an explicit "light" or "dark" theme so we use one-light and one-dark
+        # themes respectively to ensure code compatibility.
         if "theme" not in props:
             # Default color scheme responds to global color mode.
             props["theme"] = color_mode_cond(
@@ -445,20 +448,9 @@ class CodeBlock(Component, MarkdownComponentMap):
                 dark=Theme.one_dark,
             )
 
-        # react-syntax-highlighter doesn't have an explicit "light" or "dark" theme so we use one-light and one-dark
-        # themes respectively to ensure code compatibility.
-        if "theme" in props and not isinstance(props["theme"], Var):
-            props["theme"] = getattr(Theme, format.to_snake_case(props["theme"]))  # type: ignore
-            console.deprecate(
-                feature_name="theme prop as string",
-                reason="Use code_block.themes instead.",
-                deprecation_version="0.6.0",
-                removal_version="0.7.0",
-            )
-
         if can_copy:
             code = children[0]
-            copy_button = (  # type: ignore
+            copy_button = (
                 copy_button
                 if copy_button is not None
                 else Button.create(
@@ -512,7 +504,7 @@ class CodeBlock(Component, MarkdownComponentMap):
         return ["can_copy", "copy_button"]
 
     @classmethod
-    def _get_language_registration_hook(cls, language_var: Var = _LANGUAGE) -> str:
+    def _get_language_registration_hook(cls, language_var: Var = _LANGUAGE) -> Var:
         """Get the hook to register the language.
 
         Args:
@@ -523,21 +515,46 @@ class CodeBlock(Component, MarkdownComponentMap):
         Returns:
             The hook to register the language.
         """
-        return f"""
- if ({language_var!s}) {{
-    (async () => {{
-      try {{
+        language_in_there = Var.create(typing.get_args(LiteralCodeLanguage)).contains(
+            language_var
+        )
+        async_load = f"""
+(async () => {{
+    try {{
         const module = await import(`react-syntax-highlighter/dist/cjs/languages/prism/${{{language_var!s}}}`);
         SyntaxHighlighter.registerLanguage({language_var!s}, module.default);
-      }} catch (error) {{
-        console.error(`Error importing language module for ${{{language_var!s}}}:`, error);
-      }}
-    }})();
+    }} catch (error) {{
+        console.error(`Language ${{{language_var!s}}} is not supported for code blocks inside of markdown: `, error);
+    }}
+}})();
+"""
+        return Var(
+            f"""
+ if ({language_var!s}) {{
+    if (!{language_in_there!s}) {{
+        console.warn(`Language \\`${{{language_var!s}}}\\` is not supported for code blocks inside of markdown.`);
+        {language_var!s} = '';
+    }} else {{
+        {async_load!s}
+    }}
   }}
 """
+            if not isinstance(language_var, LiteralVar)
+            else f"""
+if ({language_var!s}) {{
+    {async_load!s}
+}}""",
+            _var_data=VarData(
+                imports={
+                    cls.__fields__["library"].default: [
+                        ImportVar(tag="PrismAsyncLight", alias="SyntaxHighlighter")
+                    ]
+                },
+            ),
+        )
 
     @classmethod
-    def get_component_map_custom_code(cls) -> str:
+    def get_component_map_custom_code(cls) -> Var:
         """Get the custom code for the component.
 
         Returns:

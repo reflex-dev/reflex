@@ -60,7 +60,7 @@
 {# Args: #}
 {#     component: component dictionary #}
 {% macro render_iterable_tag(component) %}
-<>{ {%- if component.iterable_type == 'dict' -%}Object.entries({{- component.iterable_state }}){%- else -%}{{- component.iterable_state }}{%- endif -%}.map(({{ component.arg_name }}, {{ component.arg_index }}) => (
+<>{ {{ component.iterable_state }}.map(({{ component.arg_name }}, {{ component.arg_index }}) => (
   {% for child in component.children %}
   {{ render(child) }}
   {% endfor %}
@@ -86,11 +86,11 @@
             {% for condition in case[:-1] %}
                 case JSON.stringify({{ condition._js_expr }}):
             {% endfor %}
-                return {{ case[-1] }};
+                return {{ render(case[-1]) }};
                 break;
         {% endfor %}
             default:
-                return {{ component.default }};
+                return {{ render(component.default) }};
                 break;
         }
     })()

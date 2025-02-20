@@ -11,7 +11,6 @@ from typing import TYPE_CHECKING, Any, List, Optional, Union
 from reflex import constants
 from reflex.constants.state import FRONTEND_EVENT_STATE
 from reflex.utils import exceptions
-from reflex.utils.console import deprecate
 
 if TYPE_CHECKING:
     from reflex.components.component import ComponentStyle
@@ -26,6 +25,36 @@ WRAP_MAP = {
     "'": "'",
     "`": "`",
 }
+
+
+def length_of_largest_common_substring(str1: str, str2: str) -> int:
+    """Find the length of the largest common substring between two strings.
+
+    Args:
+        str1: The first string.
+        str2: The second string.
+
+    Returns:
+        The length of the largest common substring.
+    """
+    if not str1 or not str2:
+        return 0
+
+    # Create a matrix of size (len(str1) + 1) x (len(str2) + 1)
+    dp = [[0] * (len(str2) + 1) for _ in range(len(str1) + 1)]
+
+    # Variables to keep track of maximum length and ending position
+    max_length = 0
+
+    # Fill the dp matrix
+    for i in range(1, len(str1) + 1):
+        for j in range(1, len(str2) + 1):
+            if str1[i - 1] == str2[j - 1]:
+                dp[i][j] = dp[i - 1][j - 1] + 1
+                if dp[i][j] > max_length:
+                    max_length = dp[i][j]
+
+    return max_length
 
 
 def get_close_char(open: str, close: str | None = None) -> str:
@@ -139,7 +168,7 @@ def to_snake_case(text: str) -> str:
     return re.sub("([a-z0-9])([A-Z])", r"\1_\2", s1).lower().replace("-", "_")
 
 
-def to_camel_case(text: str, allow_hyphens: bool = False) -> str:
+def to_camel_case(text: str, treat_hyphens_as_underscores: bool = True) -> str:
     """Convert a string to camel case.
 
     The first word in the text is converted to lowercase and
@@ -147,17 +176,16 @@ def to_camel_case(text: str, allow_hyphens: bool = False) -> str:
 
     Args:
         text: The string to convert.
-        allow_hyphens: Whether to allow hyphens in the string.
+        treat_hyphens_as_underscores: Whether to allow hyphens in the string.
 
     Returns:
         The camel case string.
     """
-    char = "_" if allow_hyphens else "-_"
-    words = re.split(f"[{char}]", text.lstrip(char))
-    leading_underscores_or_hyphens = "".join(re.findall(rf"^[{char}]+", text))
+    char = "_" if not treat_hyphens_as_underscores else "-_"
+    words = re.split(f"[{char}]", text)
     # Capitalize the first letter of each word except the first one
     converted_word = words[0] + "".join(x.capitalize() for x in words[1:])
-    return leading_underscores_or_hyphens + converted_word
+    return converted_word
 
 
 def to_title_case(text: str, sep: str = "") -> str:
@@ -221,7 +249,7 @@ def _escape_js_string(string: str) -> str:
     """
 
     # TODO: we may need to re-vist this logic after new Var API is implemented.
-    def escape_outside_segments(segment):
+    def escape_outside_segments(segment: str):
         """Escape backticks in segments outside of `${}`.
 
         Args:
@@ -284,7 +312,7 @@ def format_var(var: Var) -> str:
     return str(var)
 
 
-def format_route(route: str, format_case=True) -> str:
+def format_route(route: str, format_case: bool = True) -> str:
     """Format the given route.
 
     Args:
@@ -378,7 +406,7 @@ def format_prop(
 
         # For dictionaries, convert any properties to strings.
         elif isinstance(prop, dict):
-            prop = serializers.serialize_dict(prop)  # type: ignore
+            prop = serializers.serialize_dict(prop)  # pyright: ignore [reportAttributeAccessIssue]
 
         else:
             # Dump the prop as JSON.
@@ -502,39 +530,8 @@ if TYPE_CHECKING:
     from reflex.vars import Var
 
 
-def format_event_chain(
-    event_chain: EventChain | Var[EventChain],
-    event_arg: Var | None = None,
-) -> str:
-    """DEPRECATED: format an event chain as a javascript invocation.
-
-    Use str(rx.Var.create(event_chain)) instead.
-
-    Args:
-        event_chain: The event chain to format.
-        event_arg: this argument is ignored.
-
-    Returns:
-        Compiled javascript code to queue the given event chain on the frontend.
-    """
-    deprecate(
-        feature_name="format_event_chain",
-        reason="Use str(rx.Var.create(event_chain)) instead",
-        deprecation_version="0.6.0",
-        removal_version="0.7.0",
-    )
-
-    from reflex.vars import Var
-    from reflex.vars.function import ArgsFunctionOperation
-
-    result = Var.create(event_chain)
-    if isinstance(result, ArgsFunctionOperation):
-        result = result._return_expr
-    return str(result)
-
-
 def format_queue_events(
-    events: EventType | None = None,
+    events: EventType[Any] | None = None,
     args_spec: Optional[ArgsSpec] = None,
 ) -> Var[EventChain]:
     """Format a list of event handler / event spec as a javascript callback.
@@ -565,14 +562,14 @@ def format_queue_events(
     from reflex.vars import FunctionVar, Var
 
     if not events:
-        return Var("(() => null)").to(FunctionVar, EventChain)  # type: ignore
+        return Var("(() => null)").to(FunctionVar, EventChain)
 
     # If no spec is provided, the function will take no arguments.
     def _default_args_spec():
         return []
 
     # Construct the arguments that the function accepts.
-    sig = inspect.signature(args_spec or _default_args_spec)  # type: ignore
+    sig = inspect.signature(args_spec or _default_args_spec)
     if sig.parameters:
         arg_def = ",".join(f"_{p}" for p in sig.parameters)
         arg_def = f"({arg_def})"
@@ -589,7 +586,7 @@ def format_queue_events(
         if isinstance(spec, (EventHandler, EventSpec)):
             specs = [call_event_handler(spec, args_spec or _default_args_spec)]
         elif isinstance(spec, type(lambda: None)):
-            specs = call_event_fn(spec, args_spec or _default_args_spec)  # type: ignore
+            specs = call_event_fn(spec, args_spec or _default_args_spec)  # pyright: ignore [reportAssignmentType, reportArgumentType]
             if isinstance(specs, Var):
                 raise ValueError(
                     f"Invalid event spec: {specs}. Expected a list of EventSpecs."
@@ -601,7 +598,7 @@ def format_queue_events(
     return Var(
         f"{arg_def} => {{queueEvents([{','.join(payloads)}], {constants.CompileVars.SOCKET}); "
         f"processEvent({constants.CompileVars.SOCKET})}}",
-    ).to(FunctionVar, EventChain)  # type: ignore
+    ).to(FunctionVar, EventChain)
 
 
 def format_query_params(router_data: dict[str, Any]) -> dict[str, str]:

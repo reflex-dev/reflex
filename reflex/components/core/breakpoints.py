@@ -18,7 +18,7 @@ def set_breakpoints(values: Tuple[str, str, str, str, str]):
     breakpoints_values.extend(values)
 
 
-K = TypeVar("K")
+K = TypeVar("K", bound=str)
 V = TypeVar("V")
 
 
@@ -82,7 +82,9 @@ class Breakpoints(Dict[K, V]):
             return Breakpoints(
                 {
                     k: v
-                    for k, v in zip(["initial", *breakpoint_names], thresholds)
+                    for k, v in zip(
+                        ["initial", *breakpoint_names], thresholds, strict=True
+                    )
                     if v is not None
                 }
             )

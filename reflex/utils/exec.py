@@ -10,6 +10,7 @@ import re
 import subprocess
 import sys
 from pathlib import Path
+from typing import Sequence
 from urllib.parse import urljoin
 
 import psutil
@@ -71,7 +72,9 @@ def notify_backend():
 # run_process_and_launch_url is assumed to be used
 # only to launch the frontend
 # If this is not the case, might have to change the logic
-def run_process_and_launch_url(run_command: list[str], backend_present=True):
+def run_process_and_launch_url(
+    run_command: list[str | None], backend_present: bool = True
+):
     """Run the process and launch the URL.
 
     Args:
@@ -89,7 +92,7 @@ def run_process_and_launch_url(run_command: list[str], backend_present=True):
         if process is None:
             kwargs = {}
             if constants.IS_WINDOWS and backend_present:
-                kwargs["creationflags"] = subprocess.CREATE_NEW_PROCESS_GROUP  # type: ignore
+                kwargs["creationflags"] = subprocess.CREATE_NEW_PROCESS_GROUP  # pyright: ignore [reportAttributeAccessIssue]
             process = processes.new_process(
                 run_command,
                 cwd=get_web_dir(),
@@ -134,7 +137,7 @@ def run_process_and_launch_url(run_command: list[str], backend_present=True):
             break  # while True
 
 
-def run_frontend(root: Path, port: str, backend_present=True):
+def run_frontend(root: Path, port: str, backend_present: bool = True):
     """Run the frontend.
 
     Args:
@@ -151,12 +154,12 @@ def run_frontend(root: Path, port: str, backend_present=True):
     console.rule("[bold green]App Running")
     os.environ["PORT"] = str(get_config().frontend_port if port is None else port)
     run_process_and_launch_url(
-        [prerequisites.get_package_manager(), "run", "dev"],  # type: ignore
+        [prerequisites.get_package_manager(), "run", "dev"],
         backend_present,
     )
 
 
-def run_frontend_prod(root: Path, port: str, backend_present=True):
+def run_frontend_prod(root: Path, port: str, backend_present: bool = True):
     """Run the frontend.
 
     Args:
@@ -173,7 +176,7 @@ def run_frontend_prod(root: Path, port: str, backend_present=True):
     # Run the frontend in production mode.
     console.rule("[bold green]App Running")
     run_process_and_launch_url(
-        [prerequisites.get_package_manager(), "run", "prod"],  # type: ignore
+        [prerequisites.get_package_manager(), "run", "prod"],
         backend_present,
     )
 
@@ -240,7 +243,66 @@ def run_backend(
         run_uvicorn_backend(host, port, loglevel)
 
 
-def run_uvicorn_backend(host, port, loglevel: LogLevel):
+def get_reload_paths() -> Sequence[Path]:
+    """Get the reload paths for the backend.
+
+    Returns:
+        The reload paths for the backend.
+    """
+    config = get_config()
+    reload_paths = [Path(config.app_name).parent]
+    if config.app_module is not None and config.app_module.__file__:
+        module_path = Path(config.app_module.__file__).resolve().parent
+
+        while module_path.parent.name and any(
+            sibling_file.name == "__init__.py"
+            for sibling_file in module_path.parent.iterdir()
+        ):
+            # go up a level to find dir without `__init__.py`
+            module_path = module_path.parent
+
+        reload_paths = [module_path]
+
+    include_dirs = tuple(
+        map(Path.absolute, environment.REFLEX_HOT_RELOAD_INCLUDE_PATHS.get())
+    )
+    exclude_dirs = tuple(
+        map(Path.absolute, environment.REFLEX_HOT_RELOAD_EXCLUDE_PATHS.get())
+    )
+
+    def is_excluded_by_default(path: Path) -> bool:
+        if path.is_dir():
+            if path.name.startswith("."):
+                # exclude hidden directories
+                return True
+            if path.name.startswith("__"):
+                # ignore things like __pycache__
+                return True
+        return path.name in (".gitignore", "uploaded_files")
+
+    reload_paths = (
+        tuple(
+            path.absolute()
+            for dir in reload_paths
+            for path in dir.iterdir()
+            if not is_excluded_by_default(path)
+        )
+        + include_dirs
+    )
+
+    if exclude_dirs:
+        reload_paths = tuple(
+            path
+            for path in reload_paths
+            if all(not path.samefile(exclude) for exclude in exclude_dirs)
+        )
+
+    console.debug(f"Reload paths: {list(map(str, reload_paths))}")
+
+    return reload_paths
+
+
+def run_uvicorn_backend(host: str, port: int, loglevel: LogLevel):
     """Run the backend in development mode using Uvicorn.
 
     Args:
@@ -256,11 +318,11 @@ def run_uvicorn_backend(host, port, loglevel: LogLevel):
         port=port,
         log_level=loglevel.value,
         reload=True,
-        reload_dirs=[get_config().app_name],
+        reload_dirs=list(map(str, get_reload_paths())),
     )
 
 
-def run_granian_backend(host, port, loglevel: LogLevel):
+def run_granian_backend(host: str, port: int, loglevel: LogLevel):
     """Run the backend in development mode using Granian.
 
     Args:
@@ -270,9 +332,11 @@ def run_granian_backend(host, port, loglevel: LogLevel):
     """
     console.debug("Using Granian for backend")
     try:
-        from granian import Granian  # type: ignore
-        from granian.constants import Interfaces  # type: ignore
-        from granian.log import LogLevels  # type: ignore
+        from granian import Granian  # pyright: ignore [reportMissingImports]
+        from granian.constants import (  # pyright: ignore [reportMissingImports]
+            Interfaces,
+        )
+        from granian.log import LogLevels  # pyright: ignore [reportMissingImports]
 
         Granian(
             target=get_granian_target(),
@@ -281,8 +345,7 @@ def run_granian_backend(host, port, loglevel: LogLevel):
             interface=Interfaces.ASGI,
             log_level=LogLevels(loglevel.value),
             reload=True,
-            reload_paths=[Path(get_config().app_name)],
-            reload_ignore_dirs=[".web"],
+            reload_paths=get_reload_paths(),
         ).serve()
     except ImportError:
         console.error(
@@ -325,7 +388,7 @@ def run_backend_prod(
         run_uvicorn_backend_prod(host, port, loglevel)
 
 
-def run_uvicorn_backend_prod(host, port, loglevel):
+def run_uvicorn_backend_prod(host: str, port: int, loglevel: LogLevel):
     """Run the backend in production mode using Uvicorn.
 
     Args:
@@ -339,34 +402,49 @@ def run_uvicorn_backend_prod(host, port, loglevel):
 
     app_module = get_app_module()
 
-    RUN_BACKEND_PROD = f"gunicorn --worker-class {config.gunicorn_worker_class} --max-requests {config.gunicorn_max_requests} --max-requests-jitter {config.gunicorn_max_requests_jitter} --preload --timeout {config.timeout} --log-level critical".split()
-    RUN_BACKEND_PROD_WINDOWS = f"uvicorn --limit-max-requests {config.gunicorn_max_requests} --timeout-keep-alive {config.timeout}".split()
     command = (
         [
-            *RUN_BACKEND_PROD_WINDOWS,
-            "--host",
-            host,
-            "--port",
-            str(port),
+            "uvicorn",
+            *(
+                [
+                    "--limit-max-requests",
+                    str(config.gunicorn_max_requests),
+                ]
+                if config.gunicorn_max_requests > 0
+                else []
+            ),
+            *("--timeout-keep-alive", str(config.timeout)),
+            *("--host", host),
+            *("--port", str(port)),
+            *("--workers", str(_get_backend_workers())),
             app_module,
         ]
         if constants.IS_WINDOWS
         else [
-            *RUN_BACKEND_PROD,
-            "--bind",
-            f"{host}:{port}",
-            "--threads",
-            str(_get_backend_workers()),
+            "gunicorn",
+            *("--worker-class", config.gunicorn_worker_class),
+            *(
+                [
+                    "--max-requests",
+                    str(config.gunicorn_max_requests),
+                    "--max-requests-jitter",
+                    str(config.gunicorn_max_requests_jitter),
+                ]
+                if config.gunicorn_max_requests > 0
+                else []
+            ),
+            "--preload",
+            *("--timeout", str(config.timeout)),
+            *("--bind", f"{host}:{port}"),
+            *("--threads", str(_get_backend_workers())),
             f"{app_module}()",
         ]
     )
 
     command += [
-        "--log-level",
-        loglevel.value,
-        "--workers",
-        str(_get_backend_workers()),
+        *("--log-level", loglevel.value),
     ]
+
     processes.new_process(
         command,
         run=True,
@@ -377,7 +455,7 @@ def run_uvicorn_backend_prod(host, port, loglevel):
     )
 
 
-def run_granian_backend_prod(host, port, loglevel):
+def run_granian_backend_prod(host: str, port: int, loglevel: LogLevel):
     """Run the backend in production mode using Granian.
 
     Args:
@@ -388,7 +466,9 @@ def run_granian_backend_prod(host, port, loglevel):
     from reflex.utils import processes
 
     try:
-        from granian.constants import Interfaces  # type: ignore
+        from granian.constants import (  # pyright: ignore [reportMissingImports]
+            Interfaces,
+        )
 
         command = [
             "granian",
@@ -442,22 +522,22 @@ def output_system_info():
 
     system = platform.system()
 
+    fnm_info = f"[FNM {prerequisites.get_fnm_version()} (Expected: {constants.Fnm.VERSION}) (PATH: {constants.Fnm.EXE})]"
+
     if system != "Windows" or (
         system == "Windows" and prerequisites.is_windows_bun_supported()
     ):
         dependencies.extend(
             [
-                f"[FNM {prerequisites.get_fnm_version()} (Expected: {constants.Fnm.VERSION}) (PATH: {constants.Fnm.EXE})]",
-                f"[Bun {prerequisites.get_bun_version()} (Expected: {constants.Bun.VERSION}) (PATH: {config.bun_path})]",
+                fnm_info,
+                f"[Bun {prerequisites.get_bun_version()} (Expected: {constants.Bun.VERSION}) (PATH: {path_ops.get_bun_path()})]",
             ],
         )
     else:
-        dependencies.append(
-            f"[FNM {prerequisites.get_fnm_version()} (Expected: {constants.Fnm.VERSION}) (PATH: {constants.Fnm.EXE})]",
-        )
+        dependencies.append(fnm_info)
 
     if system == "Linux":
-        import distro  # type: ignore
+        import distro  # pyright: ignore[reportMissingImports]
 
         os_version = distro.name(pretty=True)
     else:
@@ -469,11 +549,11 @@ def output_system_info():
         console.debug(f"{dep}")
 
     console.debug(
-        f"Using package installer at: {prerequisites.get_install_package_manager(on_failure_return_none=True)}"  # type: ignore
+        f"Using package installer at: {prerequisites.get_install_package_manager(on_failure_return_none=True)}"
     )
     console.debug(
         f"Using package executer at: {prerequisites.get_package_manager(on_failure_return_none=True)}"
-    )  # type: ignore
+    )
     if system != "Windows":
         console.debug(f"Unzip path: {path_ops.which('unzip')}")
 
@@ -487,6 +567,15 @@ def is_testing_env() -> bool:
     return constants.PYTEST_CURRENT_TEST in os.environ
 
 
+def is_in_app_harness() -> bool:
+    """Whether the app is running in the app harness.
+
+    Returns:
+        True if the app is running in the app harness.
+    """
+    return constants.APP_HARNESS_FLAG in os.environ
+
+
 def is_prod_mode() -> bool:
     """Check if the app is running in production mode.
 
@@ -497,46 +586,10 @@ def is_prod_mode() -> bool:
     return current_mode == constants.Env.PROD
 
 
-def is_frontend_only() -> bool:
-    """Check if the app is running in frontend-only mode.
+def get_compile_context() -> constants.CompileContext:
+    """Check if the app is compiled for deploy.
 
     Returns:
-        True if the app is running in frontend-only mode.
+        Whether the app is being compiled for deploy.
     """
-    console.deprecate(
-        "is_frontend_only() is deprecated and will be removed in a future release.",
-        reason="Use `environment.REFLEX_FRONTEND_ONLY.get()` instead.",
-        deprecation_version="0.6.5",
-        removal_version="0.7.0",
-    )
-    return environment.REFLEX_FRONTEND_ONLY.get()
-
-
-def is_backend_only() -> bool:
-    """Check if the app is running in backend-only mode.
-
-    Returns:
-        True if the app is running in backend-only mode.
-    """
-    console.deprecate(
-        "is_backend_only() is deprecated and will be removed in a future release.",
-        reason="Use `environment.REFLEX_BACKEND_ONLY.get()` instead.",
-        deprecation_version="0.6.5",
-        removal_version="0.7.0",
-    )
-    return environment.REFLEX_BACKEND_ONLY.get()
-
-
-def should_skip_compile() -> bool:
-    """Whether the app should skip compile.
-
-    Returns:
-        True if the app should skip compile.
-    """
-    console.deprecate(
-        "should_skip_compile() is deprecated and will be removed in a future release.",
-        reason="Use `environment.REFLEX_SKIP_COMPILE.get()` instead.",
-        deprecation_version="0.6.5",
-        removal_version="0.7.0",
-    )
-    return environment.REFLEX_SKIP_COMPILE.get()
+    return environment.REFLEX_COMPILE_CONTEXT.get()

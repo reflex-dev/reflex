@@ -25,10 +25,10 @@ class ChartBase(RechartsCharts):
     """A component that wraps a Recharts charts."""
 
     # The width of chart container. String or Integer
-    width: Var[Union[str, int]] = "100%"  # type: ignore
+    width: Var[Union[str, int]] = Var.create("100%")
 
     # The height of chart container.
-    height: Var[Union[str, int]] = "100%"  # type: ignore
+    height: Var[Union[str, int]] = Var.create("100%")
 
     # The customized event handler of click on the component in this chart
     on_click: EventHandler[no_args_event_spec]
@@ -69,7 +69,7 @@ class ChartBase(RechartsCharts):
         )
 
     @classmethod
-    def create(cls, *children, **props) -> Component:
+    def create(cls, *children: Any, **props: Any) -> Component:
         """Create a chart component.
 
         Args:
@@ -84,19 +84,19 @@ class ChartBase(RechartsCharts):
         cls._ensure_valid_dimension("width", width)
         cls._ensure_valid_dimension("height", height)
 
-        dim_props = {
-            "width": width if width is not None else "100%",
-            "height": height if height is not None else "100%",
-        }
-        # Provide min dimensions so the graph always appears, even if the outer container is zero-size.
-        if width is None:
-            dim_props["min_width"] = 200
-        if height is None:
-            dim_props["min_height"] = 100
+        # Ensure that the min_height and min_width are set to prevent the chart from collapsing.
+        # We are using small values so that height and width can still be used over min_height and min_width.
+        # Without this, sometimes the chart will not be visible. Causing confusion to the user.
+        # With this, the user will see a small chart and can adjust the height and width and can figure out that the issue is with the size.
+        min_height = props.pop("min_height", 10)
+        min_width = props.pop("min_width", 10)
 
         return ResponsiveContainer.create(
             super().create(*children, **props),
-            **dim_props,  # type: ignore
+            width=width if width is not None else "100%",
+            height=height if height is not None else "100%",
+            min_width=min_width,
+            min_height=min_height,
         )
 
 
@@ -458,10 +458,10 @@ class Treemap(RechartsCharts):
     alias = "RechartsTreemap"
 
     # The width of chart container. String or Integer. Default: "100%"
-    width: Var[Union[str, int]] = "100%"  # type: ignore
+    width: Var[Union[str, int]] = Var.create("100%")
 
     # The height of chart container. String or Integer. Default: "100%"
-    height: Var[Union[str, int]] = "100%"  # type: ignore
+    height: Var[Union[str, int]] = Var.create("100%")
 
     # data of treemap. Array
     data: Var[List[Dict[str, Any]]]

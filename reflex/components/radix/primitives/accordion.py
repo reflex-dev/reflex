@@ -10,6 +10,7 @@ from reflex.components.core.cond import cond
 from reflex.components.lucide.icon import Icon
 from reflex.components.radix.primitives.base import RadixPrimitiveComponent
 from reflex.components.radix.themes.base import LiteralAccentColor, LiteralRadius
+from reflex.constants.compiler import MemoizationMode
 from reflex.event import EventHandler
 from reflex.style import Style
 from reflex.vars import get_uuid_string_var
@@ -196,8 +197,9 @@ class AccordionItem(AccordionComponent):
 
     # The header of the accordion item.
     header: Var[Union[Component, str]]
+
     # The content of the accordion item.
-    content: Var[Union[Component, str]] = Var.create(None)
+    content: Var[Union[Component, str, None]] = Var.create(None)
 
     _valid_children: List[str] = [
         "AccordionHeader",
@@ -340,6 +342,8 @@ class AccordionTrigger(AccordionComponent):
     tag = "Trigger"
 
     alias = "RadixAccordionTrigger"
+
+    _memoization_mode = MemoizationMode(recursive=False)
 
     @classmethod
     def create(cls, *children, **props) -> Component:
@@ -485,11 +489,11 @@ to {
         Returns:
             The style of the component.
         """
-        slideDown = LiteralVar.create(
+        slide_down = LiteralVar.create(
             "${slideDown} var(--animation-duration) var(--animation-easing)",
         )
 
-        slideUp = LiteralVar.create(
+        slide_up = LiteralVar.create(
             "${slideUp} var(--animation-duration) var(--animation-easing)",
         )
 
@@ -503,8 +507,8 @@ to {
                 "display": "block",
                 "height": "var(--space-3)",
             },
-            "&[data-state='open']": {"animation": slideDown},
-            "&[data-state='closed']": {"animation": slideUp},
+            "&[data-state='open']": {"animation": slide_down},
+            "&[data-state='closed']": {"animation": slide_up},
             _inherited_variant_selector("classic"): {
                 "color": "var(--accent-contrast)",
             },

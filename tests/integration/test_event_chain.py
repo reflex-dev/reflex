@@ -43,32 +43,32 @@ def EventChain():
         def event_nested_1(self):
             self.event_order.append("event_nested_1")
             yield State.event_nested_2
-            yield State.event_arg("nested_1")  # type: ignore
+            yield State.event_arg("nested_1")
 
         @rx.event
         def event_nested_2(self):
             self.event_order.append("event_nested_2")
             yield State.event_nested_3
             yield rx.console_log("event_nested_2")
-            yield State.event_arg("nested_2")  # type: ignore
+            yield State.event_arg("nested_2")
 
         @rx.event
         def event_nested_3(self):
             self.event_order.append("event_nested_3")
             yield State.event_no_args
-            yield State.event_arg("nested_3")  # type: ignore
+            yield State.event_arg("nested_3")
 
         @rx.event
         def on_load_return_chain(self):
             self.event_order.append("on_load_return_chain")
-            return [State.event_arg(1), State.event_arg(2), State.event_arg(3)]  # type: ignore
+            return [State.event_arg(1), State.event_arg(2), State.event_arg(3)]
 
         @rx.event
         def on_load_yield_chain(self):
             self.event_order.append("on_load_yield_chain")
-            yield State.event_arg(4)  # type: ignore
-            yield State.event_arg(5)  # type: ignore
-            yield State.event_arg(6)  # type: ignore
+            yield State.event_arg(4)
+            yield State.event_arg(5)
+            yield State.event_arg(6)
 
         @rx.event
         def click_return_event(self):
@@ -79,28 +79,28 @@ def EventChain():
         def click_return_events(self):
             self.event_order.append("click_return_events")
             return [
-                State.event_arg(7),  # type: ignore
+                State.event_arg(7),
                 rx.console_log("click_return_events"),
-                State.event_arg(8),  # type: ignore
-                State.event_arg(9),  # type: ignore
+                State.event_arg(8),
+                State.event_arg(9),
             ]
 
         @rx.event
         def click_yield_chain(self):
             self.event_order.append("click_yield_chain:0")
-            yield State.event_arg(10)  # type: ignore
+            yield State.event_arg(10)
             self.event_order.append("click_yield_chain:1")
             yield rx.console_log("click_yield_chain")
-            yield State.event_arg(11)  # type: ignore
+            yield State.event_arg(11)
             self.event_order.append("click_yield_chain:2")
-            yield State.event_arg(12)  # type: ignore
+            yield State.event_arg(12)
             self.event_order.append("click_yield_chain:3")
 
         @rx.event
         def click_yield_many_events(self):
             self.event_order.append("click_yield_many_events")
             for ix in range(MANY_EVENTS):
-                yield State.event_arg(ix)  # type: ignore
+                yield State.event_arg(ix)
                 yield rx.console_log(f"many_events_{ix}")
             self.event_order.append("click_yield_many_events_done")
 
@@ -108,7 +108,7 @@ def EventChain():
         def click_yield_nested(self):
             self.event_order.append("click_yield_nested")
             yield State.event_nested_1
-            yield State.event_arg("yield_nested")  # type: ignore
+            yield State.event_arg("yield_nested")
 
         @rx.event
         def redirect_return_chain(self):
@@ -123,12 +123,12 @@ def EventChain():
         @rx.event
         def click_return_int_type(self):
             self.event_order.append("click_return_int_type")
-            return State.event_arg_repr_type(1)  # type: ignore
+            return State.event_arg_repr_type(1)
 
         @rx.event
         def click_return_dict_type(self):
             self.event_order.append("click_return_dict_type")
-            return State.event_arg_repr_type({"a": 1})  # type: ignore
+            return State.event_arg_repr_type({"a": 1})
 
         @rx.event
         async def click_yield_interim_value_async(self):
@@ -144,7 +144,7 @@ def EventChain():
             time.sleep(0.5)
             self.interim_value = "final"
 
-    app = rx.App(state=rx.State)
+    app = rx.App(_state=rx.State)
 
     token_input = rx.input(
         value=State.router.session.client_token, is_read_only=True, id="token"
@@ -193,12 +193,12 @@ def EventChain():
             rx.button(
                 "Click Int Type",
                 id="click_int_type",
-                on_click=lambda: State.event_arg_repr_type(1),  # type: ignore
+                on_click=lambda: State.event_arg_repr_type(1),
             ),
             rx.button(
                 "Click Dict Type",
                 id="click_dict_type",
-                on_click=lambda: State.event_arg_repr_type({"a": 1}),  # type: ignore
+                on_click=lambda: State.event_arg_repr_type({"a": 1}),
             ),
             rx.button(
                 "Return Chain Int Type",
@@ -239,7 +239,7 @@ def EventChain():
             rx.text(
                 "return",
                 on_mount=State.on_load_return_chain,
-                on_unmount=lambda: State.event_arg("unmount"),  # type: ignore
+                on_unmount=lambda: State.event_arg("unmount"),
             ),
             token_input,
             rx.button("Unmount", on_click=rx.redirect("/"), id="unmount"),
@@ -251,7 +251,7 @@ def EventChain():
                 "yield",
                 on_mount=[
                     State.on_load_yield_chain,
-                    lambda: State.event_arg("mount"),  # type: ignore
+                    lambda: State.event_arg("mount"),
                 ],
                 on_unmount=State.event_no_args,
             ),
@@ -259,8 +259,8 @@ def EventChain():
             rx.button("Unmount", on_click=rx.redirect("/"), id="unmount"),
         )
 
-    app.add_page(on_load_return_chain, on_load=State.on_load_return_chain)  # type: ignore
-    app.add_page(on_load_yield_chain, on_load=State.on_load_yield_chain)  # type: ignore
+    app.add_page(on_load_return_chain, on_load=State.on_load_return_chain)
+    app.add_page(on_load_yield_chain, on_load=State.on_load_yield_chain)
     app.add_page(on_mount_return_chain)
     app.add_page(on_mount_yield_chain)
 
@@ -493,11 +493,6 @@ async def test_event_chain_on_load(
             "/on-mount-return-chain",
             [
                 "on_load_return_chain",
-                "event_arg:unmount",
-                "on_load_return_chain",
-                "event_arg:1",
-                "event_arg:2",
-                "event_arg:3",
                 "event_arg:1",
                 "event_arg:2",
                 "event_arg:3",
@@ -509,12 +504,6 @@ async def test_event_chain_on_load(
             [
                 "on_load_yield_chain",
                 "event_arg:mount",
-                "event_no_args",
-                "on_load_yield_chain",
-                "event_arg:mount",
-                "event_arg:4",
-                "event_arg:5",
-                "event_arg:6",
                 "event_arg:4",
                 "event_arg:5",
                 "event_arg:6",
