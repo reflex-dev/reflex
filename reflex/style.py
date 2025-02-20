@@ -6,7 +6,7 @@ from typing import Any, Literal, Tuple, Type
 
 from reflex import constants
 from reflex.components.core.breakpoints import Breakpoints, breakpoints_values
-from reflex.event import EventChain, EventHandler
+from reflex.event import EventChain, EventHandler, EventSpec, run_script
 from reflex.utils import format
 from reflex.utils.exceptions import ReflexError
 from reflex.utils.imports import ImportVar
@@ -49,9 +49,9 @@ def _color_mode_var(_js_expr: str, _var_type: Type = str) -> Var:
 
 
 def set_color_mode(
-    new_color_mode: LiteralColorMode | Var[LiteralColorMode] | None = None,
-) -> Var[EventChain]:
-    """Create an EventChain Var that sets the color mode to a specific value.
+    new_color_mode: LiteralColorMode | Var[LiteralColorMode],
+) -> EventSpec:
+    """Create an EventSpec Var that sets the color mode to a specific value.
 
     Note: `set_color_mode` is not a real event and cannot be triggered from a
     backend event handler.
@@ -60,24 +60,15 @@ def set_color_mode(
         new_color_mode: The color mode to set.
 
     Returns:
-        The EventChain Var that can be passed to an event trigger.
+        The EventSpec Var that can be passed to an event trigger.
     """
     base_setter = _color_mode_var(
         _js_expr=constants.ColorMode.SET,
-        _var_type=EventChain,
+    ).to(FunctionVar)
+
+    return run_script(
+        base_setter.call(new_color_mode),
     )
-    if new_color_mode is None:
-        return base_setter
-
-    if not isinstance(new_color_mode, Var):
-        new_color_mode = LiteralVar.create(new_color_mode)
-
-    return Var(
-        f"() => {base_setter!s}({new_color_mode!s})",
-        _var_data=VarData.merge(
-            base_setter._get_all_var_data(), new_color_mode._get_all_var_data()
-        ),
-    ).to(FunctionVar, EventChain)
 
 
 # Var resolves to the current color mode for the app ("light", "dark" or "system")
