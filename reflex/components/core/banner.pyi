@@ -5,10 +5,10 @@
 # ------------------------------------------------------
 from typing import Any, Dict, Literal, Optional, Union, overload
 
+from reflex.components.base.fragment import Fragment
 from reflex.components.component import Component
 from reflex.components.el.elements.typography import Div
 from reflex.components.lucide.icon import Icon
-from reflex.components.sonner.toast import Toaster, ToastProps
 from reflex.constants.compiler import CompileVars
 from reflex.event import EventType
 from reflex.style import Style
@@ -41,48 +41,13 @@ class WebsocketTargetURL(Var):
 
 def default_connection_error() -> list[str | Var | Component]: ...
 
-class ConnectionToaster(Toaster):
+class ConnectionToaster(Fragment):
     def add_hooks(self) -> list[str | Var]: ...
     @overload
     @classmethod
     def create(  # type: ignore
         cls,
         *children,
-        theme: Optional[Union[Var[str], str]] = None,
-        rich_colors: Optional[Union[Var[bool], bool]] = None,
-        expand: Optional[Union[Var[bool], bool]] = None,
-        visible_toasts: Optional[Union[Var[int], int]] = None,
-        position: Optional[
-            Union[
-                Literal[
-                    "bottom-center",
-                    "bottom-left",
-                    "bottom-right",
-                    "top-center",
-                    "top-left",
-                    "top-right",
-                ],
-                Var[
-                    Literal[
-                        "bottom-center",
-                        "bottom-left",
-                        "bottom-right",
-                        "top-center",
-                        "top-left",
-                        "top-right",
-                    ]
-                ],
-            ]
-        ] = None,
-        close_button: Optional[Union[Var[bool], bool]] = None,
-        offset: Optional[Union[Var[str], str]] = None,
-        dir: Optional[Union[Var[str], str]] = None,
-        hotkey: Optional[Union[Var[str], str]] = None,
-        invert: Optional[Union[Var[bool], bool]] = None,
-        toast_options: Optional[Union[ToastProps, Var[ToastProps]]] = None,
-        gap: Optional[Union[Var[int], int]] = None,
-        loading_icon: Optional[Union[Icon, Var[Icon]]] = None,
-        pause_when_page_is_hidden: Optional[Union[Var[bool], bool]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -110,20 +75,6 @@ class ConnectionToaster(Toaster):
 
         Args:
             *children: The children of the component.
-            theme: the theme of the toast
-            rich_colors: whether to show rich colors
-            expand: whether to expand the toast
-            visible_toasts: the number of toasts that are currently visible
-            position: the position of the toast
-            close_button: whether to show the close button
-            offset: offset of the toast
-            dir: directionality of the toast (default: ltr)
-            hotkey: Keyboard shortcut that will move focus to the toaster area.
-            invert: Dark toasts in light mode and vice versa.
-            toast_options: These will act as default options for all toasts. See toast() for all available options.
-            gap: Gap between toasts when expanded
-            loading_icon: Changes the default loading icon
-            pause_when_page_is_hidden: Pauses toast timers when the page is hidden, e.g., when the tab is backgrounded, the browser is minimized, or the OS is locked.
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.

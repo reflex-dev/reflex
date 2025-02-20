@@ -75,6 +75,7 @@ from reflex.components.core.client_side_routing import (
 from reflex.components.core.sticky import sticky
 from reflex.components.core.upload import Upload, get_upload_dir
 from reflex.components.radix import themes
+from reflex.components.sonner.toast import toast
 from reflex.config import ExecutorType, environment, get_config
 from reflex.event import (
     _EVENT_FIELDS,
@@ -84,7 +85,6 @@ from reflex.event import (
     EventType,
     IndividualEventType,
     get_hydrate_event,
-    window_alert,
 )
 from reflex.model import Model, get_db_status
 from reflex.page import DECORATED_PAGES
@@ -144,7 +144,7 @@ def default_backend_exception_handler(exception: Exception) -> EventSpec:
         EventSpec: The window alert event.
 
     """
-    from reflex.components.sonner.toast import Toaster, toast
+    from reflex.components.sonner.toast import toast
 
     error = traceback.format_exc()
 
@@ -155,18 +155,16 @@ def default_backend_exception_handler(exception: Exception) -> EventSpec:
         if is_prod_mode()
         else [f"{type(exception).__name__}: {exception}.", "See logs for details."]
     )
-    if Toaster.is_used:
-        return toast(
-            "An error occurred.",
-            level="error",
-            description="<br/>".join(error_message),
-            position="top-center",
-            id="backend_error",
-            style={"width": "500px"},
-        )
-    else:
-        error_message.insert(0, "An error occurred.")
-        return window_alert("\n".join(error_message))
+
+    return toast(
+        "An error occurred.",
+        level="error",
+        fallback_to_alert=True,
+        description="<br/>".join(error_message),
+        position="top-center",
+        id="backend_error",
+        style={"width": "500px"},
+    )
 
 
 def extra_overlay_function() -> Optional[Component]:
@@ -414,7 +412,7 @@ class App(MiddlewareMixin, LifespanMixin):
     ] = default_backend_exception_handler
 
     # Put the toast provider in the app wrap.
-    bundle_toaster: bool = True
+    toaster: Component | None = dataclasses.field(default_factory=toast.provider)
 
     @property
     def api(self) -> FastAPI | None:
@@ -1100,10 +1098,6 @@ class App(MiddlewareMixin, LifespanMixin):
         should_compile = self._should_compile()
 
         if not should_compile:
-            if self.bundle_toaster:
-                from reflex.components.sonner.toast import Toaster
-
-                Toaster.is_used = True
             with console.timing("Evaluate Pages (Backend)"):
                 for route in self._unevaluated_pages:
                     console.debug(f"Evaluating page: {route}")
@@ -1132,20 +1126,6 @@ class App(MiddlewareMixin, LifespanMixin):
             + fixed_pages_within_executor
             + adhoc_steps_without_executor,
         )
-
-        if self.bundle_toaster:
-            from reflex.components.component import memo
-            from reflex.components.sonner.toast import toast
-
-            internal_toast_provider = toast.provider()
-
-            @memo
-            def memoized_toast_provider():
-                return internal_toast_provider
-
-            toast_provider = Fragment.create(memoized_toast_provider())
-
-            app_wrappers[(1, "ToasterProvider")] = toast_provider
 
         with console.timing("Evaluate Pages (Frontend)"):
             performance_metrics: list[tuple[str, float]] = []
@@ -1206,6 +1186,17 @@ class App(MiddlewareMixin, LifespanMixin):
 
             # Add the custom components from the page to the set.
             custom_components |= component._get_all_custom_components()
+
+        if (toaster := self.toaster) is not None:
+            from reflex.components.component import memo
+
+            @memo
+            def memoized_toast_provider():
+                return toaster
+
+            toast_provider = Fragment.create(memoized_toast_provider())
+
+            app_wrappers[(1, "ToasterProvider")] = toast_provider
 
         # Add the app wraps to the app.
         for key, app_wrap in self.app_wraps.items():
