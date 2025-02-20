@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any, ClassVar, Literal, Optional, Union
+from typing import Any, Literal, Optional, Union
 
 from reflex.base import Base
 from reflex.components.component import Component, ComponentNamespace
@@ -17,6 +17,7 @@ from reflex.utils.serializers import serializer
 from reflex.vars import VarData
 from reflex.vars.base import LiteralVar, Var
 from reflex.vars.function import FunctionVar
+from reflex.vars.number import ternary_operation
 from reflex.vars.object import ObjectVar
 
 LiteralPosition = Literal[
@@ -217,9 +218,6 @@ class Toaster(Component):
     # Pauses toast timers when the page is hidden, e.g., when the tab is backgrounded, the browser is minimized, or the OS is locked.
     pause_when_page_is_hidden: Var[bool]
 
-    # Marked True when any Toast component is created.
-    is_used: ClassVar[bool] = False
-
     def add_hooks(self) -> list[Var | str]:
         """Add hooks for the toaster component.
 
@@ -241,13 +239,17 @@ class Toaster(Component):
 
     @staticmethod
     def send_toast(
-        message: str | Var = "", level: str | None = None, **props
+        message: str | Var = "",
+        level: str | None = None,
+        fallback_to_alert: bool = False,
+        **props,
     ) -> EventSpec:
         """Send a toast message.
 
         Args:
             message: The message to display.
             level: The level of the toast.
+            fallback_to_alert: Whether to fallback to an alert if the toaster is not created.
             **props: The options for the toast.
 
         Raises:
@@ -256,11 +258,6 @@ class Toaster(Component):
         Returns:
             The toast event.
         """
-        if not Toaster.is_used:
-            raise ValueError(
-                "Toaster component must be created before sending a toast. (use `rx.toast.provider()`)"
-            )
-
         toast_command = (
             ObjectVar.__getattr__(toast_ref.to(dict), level) if level else toast_ref
         ).to(FunctionVar)
@@ -276,6 +273,13 @@ class Toaster(Component):
             toast = toast_command.call(message, args)
         else:
             toast = toast_command.call(message)
+
+        if fallback_to_alert:
+            toast = ternary_operation(
+                toast_ref.bool(),
+                toast,
+                FunctionVar("window.alert").call(message),
+            )
 
         return run_script(toast)
 

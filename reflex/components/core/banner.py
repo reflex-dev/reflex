@@ -5,6 +5,7 @@ from __future__ import annotations
 from typing import Optional
 
 from reflex import constants
+from reflex.components.base.fragment import Fragment
 from reflex.components.component import Component
 from reflex.components.core.cond import cond
 from reflex.components.el.elements.typography import Div
@@ -16,7 +17,7 @@ from reflex.components.radix.themes.components.dialog import (
 )
 from reflex.components.radix.themes.layout.flex import Flex
 from reflex.components.radix.themes.typography.text import Text
-from reflex.components.sonner.toast import Toaster, ToastProps
+from reflex.components.sonner.toast import ToastProps
 from reflex.config import environment
 from reflex.constants import Dirs, Hooks, Imports
 from reflex.constants.compiler import CompileVars
@@ -90,7 +91,7 @@ def default_connection_error() -> list[str | Var | Component]:
     ]
 
 
-class ConnectionToaster(Toaster):
+class ConnectionToaster(Fragment):
     """A connection toaster component."""
 
     def add_hooks(self) -> list[str | Var]:
@@ -189,7 +190,6 @@ setTimeout(() => {{
         Returns:
             The connection toaster component.
         """
-        Toaster.is_used = True
         return super().create(*children, **props)
 
 
