@@ -17,7 +17,11 @@ from typing import (
 )
 
 from reflex.constants.base import Dirs
-from reflex.utils.exceptions import PrimitiveUnserializableToJSONError, VarTypeError
+from reflex.utils.exceptions import (
+    PrimitiveUnserializableToJSONError,
+    VarTypeError,
+    VarValueError,
+)
 from reflex.utils.imports import ImportDict, ImportVar
 
 from .base import (
@@ -529,6 +533,53 @@ class NumberVar(Var[NUMBER_T], python_types=(int, float)):
             bool: True if the number is an int.
         """
         return issubclass(self._var_type, int)
+
+    def __format__(self, format_spec: str) -> str:
+        """Format the number.
+
+        Args:
+            format_spec: The format specifier.
+
+        Returns:
+            The formatted number.
+        """
+        if (
+            format_spec
+            and format_spec[-1] == "f"
+            and format_spec[0] == "."
+            and format_spec[1:-1].isdigit()
+        ):
+            how_many_decimals = int(format_spec[1:-1])
+            return (
+                f"{get_decimal_string_operation(self, Var.create(how_many_decimals))}"
+            )
+
+        if format_spec:
+            raise VarValueError(
+                (
+                    "Unknown format code '{}' for object of type 'NumberVar'. It is only supported to use '.f' for float numbers."
+                    "If possible, use computed variables instead: https://reflex.dev/docs/vars/computed-vars/"
+                ).format(format_spec)
+            )
+
+        return super().__format__(format_spec)
+
+
+@var_operation
+def get_decimal_string_operation(value: NumberVar, decimals: NumberVar):
+    """Get the decimal string of the number.
+
+    Args:
+        value: The number.
+        decimals: The number of decimals.
+
+    Returns:
+        The decimal string of the number.
+    """
+    return var_operation_return(
+        js_expression=f"({value}.toFixed({decimals}))",
+        var_type=str,
+    )
 
 
 def binary_number_operation(
