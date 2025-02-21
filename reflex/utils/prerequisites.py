@@ -846,6 +846,7 @@ def _compile_package_json():
         },
         dependencies=constants.PackageJson.DEPENDENCIES,
         dev_dependencies=constants.PackageJson.DEV_DEPENDENCIES,
+        overrides=constants.PackageJson.OVERRIDES,
     )
 
 
