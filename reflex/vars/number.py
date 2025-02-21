@@ -542,6 +542,9 @@ class NumberVar(Var[NUMBER_T], python_types=(int, float)):
 
         Returns:
             The formatted number.
+
+        Raises:
+            VarValueError: If the format specifier is not supported.
         """
         if (
             format_spec
