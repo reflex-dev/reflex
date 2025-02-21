@@ -11,7 +11,9 @@ from reflex.vars.base import Var, get_unique_variable_name
 class AutoScroll(Div):
     """A div that automatically scrolls to the bottom when new content is added."""
 
-    _memoization_mode = MemoizationMode(disposition=MemoizationDisposition.ALWAYS)
+    _memoization_mode = MemoizationMode(
+        disposition=MemoizationDisposition.ALWAYS, recursive=False
+    )
 
     @classmethod
     def create(cls, *children, **props):
@@ -44,7 +46,6 @@ class AutoScroll(Div):
         """
         ref_name = self.get_ref()
         return [
-            "const containerRef = useRef(null);",
             "const wasNearBottom = useRef(false);",
             "const hadScrollbar = useRef(false);",
             f"""
@@ -84,6 +85,8 @@ const scrollToBottomIfNeeded = () => {{
 useEffect(() => {{
     const container = {ref_name}.current;
     if (!container) return;
+
+    scrollToBottomIfNeeded();
 
     // Create ResizeObserver to detect height changes
     const resizeObserver = new ResizeObserver(() => {{
