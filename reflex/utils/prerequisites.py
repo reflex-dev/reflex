@@ -1968,7 +1968,6 @@ def get_cpu_info() -> CpuInfo | None:
             )
     except Exception as err:
         console.error(f"Failed to retrieve CPU info. {err}")
-        raise typer.Exit(1) from err  # TODO: REMOVE THIS AFTER MAKING SURE IT WORKS
         return None
 
     return (
