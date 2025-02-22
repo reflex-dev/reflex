@@ -510,13 +510,16 @@ def does_obj_satisfy_typed_dict(obj: Any, cls: GenericType) -> bool:
     return required_keys.issubset(required_keys)
 
 
-def _isinstance(obj: Any, cls: GenericType, nested: int = 0) -> bool:
+def _isinstance(
+    obj: Any, cls: GenericType, *, nested: int = 0, treat_var_as_type: bool = True
+) -> bool:
     """Check if an object is an instance of a class.
 
     Args:
         obj: The object to check.
         cls: The class to check against.
         nested: How many levels deep to check.
+        treat_var_as_type: Whether to treat Var as the type it represents, i.e. _var_type.
 
     Returns:
         Whether the object is an instance of the class.
@@ -529,15 +532,20 @@ def _isinstance(obj: Any, cls: GenericType, nested: int = 0) -> bool:
     if cls is Var:
         return isinstance(obj, Var)
     if isinstance(obj, LiteralVar):
-        return _isinstance(obj._var_value, cls, nested=nested)
+        return treat_var_as_type and _isinstance(
+            obj._var_value, cls, nested=nested, treat_var_as_type=True
+        )
     if isinstance(obj, Var):
-        return _issubclass(obj._var_type, cls)
+        return treat_var_as_type and _issubclass(obj._var_type, cls)
 
     if cls is None or cls is type(None):
         return obj is None
 
     if cls and is_union(cls):
-        return any(_isinstance(obj, arg, nested=nested) for arg in get_args(cls))
+        return any(
+            _isinstance(obj, arg, nested=nested, treat_var_as_type=treat_var_as_type)
+            for arg in get_args(cls)
+        )
 
     if is_literal(cls):
         return obj in get_args(cls)
@@ -567,37 +575,69 @@ def _isinstance(obj: Any, cls: GenericType, nested: int = 0) -> bool:
     if nested > 0 and args:
         if origin is list:
             return isinstance(obj, list) and all(
-                _isinstance(item, args[0], nested=nested - 1) for item in obj
+                _isinstance(
+                    item,
+                    args[0],
+                    nested=nested - 1,
+                    treat_var_as_type=treat_var_as_type,
+                )
+                for item in obj
             )
         if origin is tuple:
             if args[-1] is Ellipsis:
                 return isinstance(obj, tuple) and all(
-                    _isinstance(item, args[0], nested=nested - 1) for item in obj
+                    _isinstance(
+                        item,
+                        args[0],
+                        nested=nested - 1,
+                        treat_var_as_type=treat_var_as_type,
+                    )
+                    for item in obj
                 )
             return (
                 isinstance(obj, tuple)
                 and len(obj) == len(args)
                 and all(
-                    _isinstance(item, arg, nested=nested - 1)
+                    _isinstance(
+                        item,
+                        arg,
+                        nested=nested - 1,
+                        treat_var_as_type=treat_var_as_type,
+                    )
                     for item, arg in zip(obj, args, strict=True)
                 )
             )
         if origin in (dict, Mapping, Breakpoints):
             return isinstance(obj, Mapping) and all(
-                _isinstance(key, args[0], nested=nested - 1)
-                and _isinstance(value, args[1], nested=nested - 1)
+                _isinstance(
+                    key, args[0], nested=nested - 1, treat_var_as_type=treat_var_as_type
+                )
+                and _isinstance(
+                    value,
+                    args[1],
+                    nested=nested - 1,
+                    treat_var_as_type=treat_var_as_type,
+                )
                 for key, value in obj.items()
             )
         if origin is set:
             return isinstance(obj, set) and all(
-                _isinstance(item, args[0], nested=nested - 1) for item in obj
+                _isinstance(
+                    item,
+                    args[0],
+                    nested=nested - 1,
+                    treat_var_as_type=treat_var_as_type,
+                )
+                for item in obj
             )
 
     if args:
         from reflex.vars import Field
 
         if origin is Field:
-            return _isinstance(obj, args[0], nested=nested)
+            return _isinstance(
+                obj, args[0], nested=nested, treat_var_as_type=treat_var_as_type
+            )
 
     return isinstance(obj, get_base_class(cls))
 

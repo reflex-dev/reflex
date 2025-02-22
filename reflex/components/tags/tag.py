@@ -6,7 +6,7 @@ import dataclasses
 from typing import Any, Dict, List, Mapping, Optional, Sequence
 
 from reflex.event import EventChain
-from reflex.utils import format, types
+from reflex.utils import format
 from reflex.vars.base import LiteralVar, Var
 
 
@@ -103,9 +103,9 @@ class Tag:
             {
                 format.to_camel_case(name, treat_hyphens_as_underscores=False): (
                     prop
-                    if types._isinstance(prop, (EventChain, Mapping))
+                    if isinstance(prop, (EventChain, Mapping))
                     else LiteralVar.create(prop)
-                )  # rx.color is always a string
+                )
                 for name, prop in kwargs.items()
                 if self.is_valid_prop(prop)
             }
