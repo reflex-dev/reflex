@@ -195,3 +195,7 @@ class PackageJson(SimpleNamespace):
         "postcss": "8.5.1",
         "postcss-import": "16.1.0",
     }
+    OVERRIDES = {
+        # This should always match the `react` version in DEPENDENCIES for recharts compatibility.
+        "react-is": "19.0.0"
+    }
