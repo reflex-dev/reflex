@@ -1936,13 +1936,13 @@ def get_cpu_info() -> CpuInfo | None:
     cpuinfo = {}
     try:
         if platform_os == "Windows":
-            cmd = "wmic cpu get addresswidth,caption,manufacturer /FORMAT:csv"
+            cmd = 'powershell -Command "Get-CimInstance Win32_Processor | Select-Object AddressWidth,Manufacturer,Name | ConvertTo-Json"'
             output = processes.execute_command_and_return_output(cmd)
             if output:
-                val = output.splitlines()[-1].split(",")[1:]
-                cpuinfo["manufacturer_id"] = val[2]
-                cpuinfo["model_name"] = val[1].split("Family")[0].strip()
-                cpuinfo["address_width"] = format_address_width(val[0])
+                cpu_data = json.loads(output)
+                cpuinfo["address_width"] = cpu_data["AddressWidth"]
+                cpuinfo["manufacturer_id"] = cpu_data["Manufacturer"]
+                cpuinfo["model_name"] = cpu_data["Name"]
         elif platform_os == "Linux":
             output = processes.execute_command_and_return_output("lscpu")
             if output:
@@ -1968,6 +1968,7 @@ def get_cpu_info() -> CpuInfo | None:
             )
     except Exception as err:
         console.error(f"Failed to retrieve CPU info. {err}")
+        raise typer.Exit(1) from err  # TODO: REMOVE THIS AFTER MAKING SURE IT WORKS
         return None
 
     return (
