@@ -82,7 +82,7 @@ class ObjectVar(Var[OBJECT_TYPE], python_types=Mapping):
         fixed_type = get_origin(self._var_type) or self._var_type
         if not isclass(fixed_type):
             return Any  # pyright: ignore [reportReturnType]
-        if is_typeddict(fixed_type):
+        if is_typeddict(fixed_type) or dataclasses.is_dataclass(fixed_type):
             annotations = get_type_hints(fixed_type)
             return unionize(*annotations.values())
         args = get_args(self._var_type) if issubclass(fixed_type, Mapping) else ()
