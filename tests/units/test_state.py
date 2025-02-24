@@ -413,9 +413,9 @@ def test_dict(test_state: TestState):
     test_state_dict = test_state.dict()
     assert set(test_state_dict) == substates
     assert set(test_state_dict[test_state.get_name()]) == set(test_state.vars)
-    assert set(test_state.dict(include_computed=False)[test_state.get_name()]) == set(
+    assert set(test_state.dict(call_computed=False)[test_state.get_name()]) == set(
         test_state.base_vars
-    )
+    ) | {"sum", "upper"}
 
 
 def test_default_setters(test_state):

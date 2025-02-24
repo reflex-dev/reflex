@@ -1999,24 +1999,24 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         return value
 
     def dict(
-        self, include_computed: bool = True, initial: bool = False, **kwargs
+        self, call_computed: bool = True, initial: bool = False, **kwargs
     ) -> dict[str, Any]:
         """Convert the object to a dictionary.
 
         Args:
-            include_computed: Whether to include computed vars.
+            call_computed: Whether to call computed vars to get their values.
             initial: Whether to get the initial value of computed vars.
             **kwargs: Kwargs to pass to the pydantic dict method.
 
         Returns:
             The object as a dictionary.
         """
-        if include_computed:
+        if call_computed:
             self._mark_dirty_computed_vars()
         base_vars = {
             prop_name: self.get_value(prop_name) for prop_name in self.base_vars
         }
-        if initial and include_computed:
+        if initial and call_computed:
             computed_vars = {
                 # Include initial computed vars.
                 prop_name: (
@@ -2028,7 +2028,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
                 for prop_name, cv in self.computed_vars.items()
                 if not cv._backend
             }
-        elif include_computed:
+        elif call_computed:
             computed_vars = {
                 # Include the computed vars.
                 prop_name: self.get_value(prop_name)
@@ -2036,13 +2036,25 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
                 if not cv._backend
             }
         else:
-            computed_vars = {}
+            no_default = object()
+
+            def get_default(prop_name: str):
+                if prop_name in self.computed_vars:
+                    return self.computed_vars[prop_name]._get_default_value()
+                return no_default
+
+            computed_vars = {
+                prop_name: default_value
+                for prop_name, cv in self.computed_vars.items()
+                if not cv._backend
+                and (default_value := get_default(prop_name)) is not no_default
+            }
         variables = {**base_vars, **computed_vars}
         d = {
             self.get_full_name(): {k: variables[k] for k in sorted(variables)},
         }
         for substate_d in [
-            v.dict(include_computed=include_computed, initial=initial, **kwargs)
+            v.dict(call_computed=call_computed, initial=initial, **kwargs)
             for v in self.substates.values()
         ]:
             d.update(substate_d)

@@ -191,11 +191,11 @@ def compile_state(state: Type[BaseState]) -> dict:
         initial_state = state(_reflex_internal_init=True).dict(initial=True)
     except Exception as e:
         log_path = save_error(e)
-        console.warn(
+        console.error(
             f"Failed to compile initial state with computed vars. Error log saved to {log_path}"
         )
         initial_state = state(_reflex_internal_init=True).dict(
-            initial=True, include_computed=False
+            initial=True, call_computed=False
         )
     try:
         _ = asyncio.get_running_loop()
