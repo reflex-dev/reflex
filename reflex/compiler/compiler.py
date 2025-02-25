@@ -577,6 +577,8 @@ def into_component(component: Component | ComponentCallable) -> Component:
 
     Raises:
         TypeError: If the component is not a Component.
+
+    # noqa: DAR401
     """
     if (converted := _into_component_once(component)) is not None:
         return converted
