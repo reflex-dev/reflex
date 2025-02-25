@@ -591,7 +591,7 @@ def into_component(component: Component | ComponentCallable) -> Component:
         if key is not None and isinstance(key, Var):
             raise TypeError(
                 "Cannot access a primitive map with a Var. Consider calling rx.Var.create() on the map."
-            ) from e
+            ).with_traceback(e.__traceback__) from None
         raise
     except TypeError as e:
         message = e.args[0] if e.args else None
@@ -603,7 +603,7 @@ def into_component(component: Component | ComponentCallable) -> Component:
             ):
                 raise TypeError(
                     "Cannot pass a Var to a built-in function. Consider using .length() for accessing the length of an iterable Var."
-                ) from e
+                ).with_traceback(e.__traceback__) from None
             if message.endswith(
                 "indices must be integers or slices, not NumberCastedVar"
             ) or message.endswith(
@@ -611,11 +611,11 @@ def into_component(component: Component | ComponentCallable) -> Component:
             ):
                 raise TypeError(
                     "Cannot index into a primitive sequence with a Var. Consider calling rx.Var.create() on the sequence."
-                ) from e
+                ).with_traceback(e.__traceback__) from None
         if "CastedVar" in str(e):
             raise TypeError(
                 "Cannot pass a Var to a built-in function. Consider moving the operation to the backend, using existing Var operations, or defining a custom Var operation."
-            ) from e
+            ).with_traceback(e.__traceback__) from None
         raise
 
     raise TypeError(f"Expected a Component, got {type(component)}")
