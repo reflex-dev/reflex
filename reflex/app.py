@@ -986,12 +986,15 @@ class App(MiddlewareMixin, LifespanMixin):
 
     def _setup_sticky_badge(self):
         """Add the sticky badge to the app."""
-        for k, component in self._pages.items():
-            # Would be nice to share single sticky_badge across all pages, but
-            # it bungles the StatefulComponent compile step.
+        from reflex.components.component import memo
+
+        @memo
+        def memoized_badge():
             sticky_badge = sticky()
             sticky_badge._add_style_recursive({})
-            self._pages[k] = Fragment.create(sticky_badge, component)
+            return sticky_badge
+
+        self.app_wraps[(0, "StickyBadge")] = lambda _: memoized_badge()
 
     def _apply_decorated_pages(self):
         """Add @rx.page decorated pages to the app.
