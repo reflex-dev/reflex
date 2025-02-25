@@ -6,6 +6,7 @@ import asyncio
 import contextlib
 import copy
 import dataclasses
+import datetime
 import functools
 import inspect
 import json
@@ -3188,6 +3189,11 @@ def _default_lock_warning_threshold() -> int:
     return get_config().redis_lock_warning_threshold
 
 
+def timestamp_print(*args, **kwargs):
+    """Print with a timestamp."""
+    print(f"[{datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] ", *args, **kwargs)
+
+
 class StateManagerRedis(StateManager):
     """A state manager that stores states in redis."""
 
@@ -3517,12 +3523,14 @@ class StateManagerRedis(StateManager):
         Returns:
             True if the lock was obtained.
         """
-        return await self.redis.set(
+        result = await self.redis.set(
             lock_key,
             lock_id,
             px=self.lock_expiration,
             nx=True,  # only set if it doesn't exist
         )
+        timestamp_print(f"Tried to get lock {lock_key}, was_successful={result}.")
+        return result
 
     async def _get_pubsub_message(
         self, pubsub: PubSub, timeout: float | None = None
@@ -3540,6 +3548,7 @@ class StateManagerRedis(StateManager):
             timeout = self.lock_expiration / 1000.0
 
         started = time.time()
+        timestamp_print(f"Waiting {timeout} seconds for pubsub message on {pubsub}.")
         message = await pubsub.get_message(
             ignore_subscribe_messages=True,
             timeout=timeout,
@@ -3550,8 +3559,10 @@ class StateManagerRedis(StateManager):
         ):
             remaining = timeout - (time.time() - started)
             if remaining <= 0:
+                timestamp_print(f"Timed out waiting for pubsub message on {pubsub}.")
                 return
             await self._get_pubsub_message(pubsub, timeout=remaining)
+        timestamp_print(f"Got pubsub message {message} on {pubsub}.")
 
     async def _wait_lock(self, lock_key: bytes, lock_id: bytes) -> None:
         """Wait for a redis lock to be released via pubsub.
@@ -3577,6 +3588,7 @@ class StateManagerRedis(StateManager):
             if not environment.REFLEX_IGNORE_REDIS_CONFIG_ERROR.get():
                 raise
         async with self.redis.pubsub() as pubsub:
+            timestamp_print(f"Waiting for lock {lock_key} via psubscribe.")
             await pubsub.psubscribe(lock_key_channel)
             # wait for the lock to be released
             while True:
