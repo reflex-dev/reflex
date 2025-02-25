@@ -1164,8 +1164,7 @@ class App(MiddlewareMixin, LifespanMixin):
             else:
                 config.show_built_with_reflex = True
 
-        # if is_prod_mode() and
-        if config.show_built_with_reflex:
+        if is_prod_mode() and config.show_built_with_reflex:
             self._setup_sticky_badge()
 
         progress.advance(task)
