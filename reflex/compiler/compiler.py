@@ -580,11 +580,44 @@ def into_component(component: Component | ComponentCallable) -> Component:
     """
     if (converted := _into_component_once(component)) is not None:
         return converted
-    if (
-        callable(component)
-        and (converted := _into_component_once(component())) is not None
-    ):
-        return converted
+    try:
+        if (
+            callable(component)
+            and (converted := _into_component_once(component())) is not None
+        ):
+            return converted
+    except KeyError as e:
+        key = e.args[0] if e.args else None
+        if key is not None and isinstance(key, Var):
+            raise TypeError(
+                "Cannot access a primitive map with a Var. Consider calling rx.Var.create() on the map."
+            ) from e
+        raise
+    except TypeError as e:
+        message = e.args[0] if e.args else None
+        if message and isinstance(message, str):
+            if message.endswith("has no len()") and (
+                "ArrayCastedVar" in message
+                or "ObjectCastedVar" in message
+                or "StringCastedVar" in message
+            ):
+                raise TypeError(
+                    "Cannot pass a Var to a built-in function. Consider using .length() for accessing the length of an iterable Var."
+                ) from e
+            if message.endswith(
+                "indices must be integers or slices, not NumberCastedVar"
+            ) or message.endswith(
+                "indices must be integers or slices, not BooleanCastedVar"
+            ):
+                raise TypeError(
+                    "Cannot index into a primitive sequence with a Var. Consider calling rx.Var.create() on the sequence."
+                ) from e
+        if "CastedVar" in str(e):
+            raise TypeError(
+                "Cannot pass a Var to a built-in function. Consider moving the operation to the backend, using existing Var operations, or defining a custom Var operation."
+            ) from e
+        raise
+
     raise TypeError(f"Expected a Component, got {type(component)}")
 
 
