@@ -6,11 +6,9 @@ import dataclasses
 from typing import TYPE_CHECKING, Optional
 
 from reflex import constants
-from reflex.compiler.utils import save_error
 from reflex.event import Event, get_hydrate_event
 from reflex.middleware.middleware import Middleware
 from reflex.state import BaseState, StateUpdate, _resolve_delta
-from reflex.utils import console
 
 if TYPE_CHECKING:
     from reflex.app import App
@@ -43,18 +41,8 @@ class HydrateMiddleware(Middleware):
         # Mark state as not hydrated (until on_loads are complete)
         setattr(state, constants.CompileVars.IS_HYDRATED, False)
 
-        try:
-            initial_state = state.dict()
-        except Exception as e:
-            log_path = save_error(e)
-            console.error(
-                f"Failed to compile initial state with computed vars. Error log saved to {log_path}"
-            )
-            initial_state = state.dict(call_computed=False)
-
         # Get the initial state.
-        delta = await _resolve_delta(initial_state)
-
+        delta = await _resolve_delta(state.dict())
         # since a full dict was captured, clean any dirtiness
         state._clean()
 

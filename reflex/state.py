@@ -1999,24 +1999,24 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         return value
 
     def dict(
-        self, call_computed: bool = True, initial: bool = False, **kwargs
+        self, include_computed: bool = True, initial: bool = False, **kwargs
     ) -> dict[str, Any]:
         """Convert the object to a dictionary.
 
         Args:
-            call_computed: Whether to call computed vars to get their values.
+            include_computed: Whether to include computed vars.
             initial: Whether to get the initial value of computed vars.
             **kwargs: Kwargs to pass to the pydantic dict method.
 
         Returns:
             The object as a dictionary.
         """
-        if call_computed:
+        if include_computed:
             self._mark_dirty_computed_vars()
         base_vars = {
             prop_name: self.get_value(prop_name) for prop_name in self.base_vars
         }
-        if initial and call_computed:
+        if initial and include_computed:
             computed_vars = {
                 # Include initial computed vars.
                 prop_name: (
@@ -2028,7 +2028,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
                 for prop_name, cv in self.computed_vars.items()
                 if not cv._backend
             }
-        elif call_computed:
+        elif include_computed:
             computed_vars = {
                 # Include the computed vars.
                 prop_name: self.get_value(prop_name)
@@ -2036,25 +2036,13 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
                 if not cv._backend
             }
         else:
-            no_default = object()
-
-            def get_default(prop_name: str):
-                if prop_name in self.computed_vars:
-                    return self.computed_vars[prop_name]._get_default_value()
-                return no_default
-
-            computed_vars = {
-                prop_name: default_value
-                for prop_name, cv in self.computed_vars.items()
-                if not cv._backend
-                and (default_value := get_default(prop_name)) is not no_default
-            }
+            computed_vars = {}
         variables = {**base_vars, **computed_vars}
         d = {
             self.get_full_name(): {k: variables[k] for k in sorted(variables)},
         }
         for substate_d in [
-            v.dict(call_computed=call_computed, initial=initial, **kwargs)
+            v.dict(include_computed=include_computed, initial=initial, **kwargs)
             for v in self.substates.values()
         ]:
             d.update(substate_d)
@@ -3217,7 +3205,7 @@ class StateManagerRedis(StateManager):
         default_factory=_default_lock_warning_threshold
     )
 
-    # The keyspace subscription string when redis is waiting for lock to be released
+    # The keyspace subscription string when redis is waiting for lock to be released.
     _redis_notify_keyspace_events: str = (
         "K"  # Enable keyspace notifications (target a particular key)
         "g"  # For generic commands (DEL, EXPIRE, etc)
@@ -3225,13 +3213,19 @@ class StateManagerRedis(StateManager):
         "e"  # For evicted events (i.e. maxmemory exceeded)
     )
 
-    # These events indicate that a lock is no longer held
+    # These events indicate that a lock is no longer held.
     _redis_keyspace_lock_release_events: Set[bytes] = {
         b"del",
         b"expire",
         b"expired",
         b"evicted",
     }
+
+    # Whether keyspace notifications have been enabled.
+    _redis_notify_keyspace_events_enabled: bool = False
+
+    # The logical database number used by the redis client.
+    _redis_db: int = 0
 
     def _get_required_state_classes(
         self,
@@ -3565,20 +3559,17 @@ class StateManagerRedis(StateManager):
                 return
             await self._get_pubsub_message(pubsub, timeout=remaining)
 
-    async def _wait_lock(self, lock_key: bytes, lock_id: bytes) -> None:
-        """Wait for a redis lock to be released via pubsub.
-
-        Coroutine will not return until the lock is obtained.
-
-        Args:
-            lock_key: The redis key for the lock.
-            lock_id: The ID of the lock.
+    async def _enable_keyspace_notifications(self):
+        """Enable keyspace notifications for the redis server.
 
         Raises:
             ResponseError: when the keyspace config cannot be set.
         """
-        lock_key_channel = f"__keyspace@0__:{lock_key.decode()}"
-        # Enable keyspace notifications for the lock key, so we know when it is available.
+        if self._redis_notify_keyspace_events_enabled:
+            return
+        # Find out which logical database index is being used.
+        self._redis_db = self.redis.get_connection_kwargs().get("db", self._redis_db)
+
         try:
             await self.redis.config_set(
                 "notify-keyspace-events",
@@ -3588,6 +3579,20 @@ class StateManagerRedis(StateManager):
             # Some redis servers only allow out-of-band configuration, so ignore errors here.
             if not environment.REFLEX_IGNORE_REDIS_CONFIG_ERROR.get():
                 raise
+        self._redis_notify_keyspace_events_enabled = True
+
+    async def _wait_lock(self, lock_key: bytes, lock_id: bytes) -> None:
+        """Wait for a redis lock to be released via pubsub.
+
+        Coroutine will not return until the lock is obtained.
+
+        Args:
+            lock_key: The redis key for the lock.
+            lock_id: The ID of the lock.
+        """
+        # Enable keyspace notifications for the lock key, so we know when it is available.
+        await self._enable_keyspace_notifications()
+        lock_key_channel = f"__keyspace@{self._redis_db}__:{lock_key.decode()}"
         async with self.redis.pubsub() as pubsub:
             await pubsub.psubscribe(lock_key_channel)
             # wait for the lock to be released

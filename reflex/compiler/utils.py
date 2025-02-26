@@ -187,16 +187,7 @@ def compile_state(state: Type[BaseState]) -> dict:
     Returns:
         A dictionary of the compiled state.
     """
-    try:
-        initial_state = state(_reflex_internal_init=True).dict(initial=True)
-    except Exception as e:
-        log_path = save_error(e)
-        console.error(
-            f"Failed to compile initial state with computed vars. Error log saved to {log_path}"
-        )
-        initial_state = state(_reflex_internal_init=True).dict(
-            initial=True, call_computed=False
-        )
+    initial_state = state(_reflex_internal_init=True).dict(initial=True)
     try:
         _ = asyncio.get_running_loop()
     except RuntimeError:
