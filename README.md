@@ -234,7 +234,7 @@ You can create a multi-page app by adding more pages.
 
 Reflex launched in December 2022 with the name Pynecone.
 
-Beginning in 2025, [Reflex Clould](https://reflex.cloud) has launched to provide the best hosting experience for Reflex apps. We will continue to develop it and implement more features.
+Beginning in 2025, [Reflex Cloud](https://cloud.reflex.dev) has launched to provide the best hosting experience for Reflex apps. We will continue to develop it and implement more features.
 
 Reflex has new releases and features coming every other week! Make sure to :star: star and :eyes: watch this repository to stay up to date.
 
