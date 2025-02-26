@@ -986,12 +986,15 @@ class App(MiddlewareMixin, LifespanMixin):
 
     def _setup_sticky_badge(self):
         """Add the sticky badge to the app."""
-        for k, component in self._pages.items():
-            # Would be nice to share single sticky_badge across all pages, but
-            # it bungles the StatefulComponent compile step.
+        from reflex.components.component import memo
+
+        @memo
+        def memoized_badge():
             sticky_badge = sticky()
             sticky_badge._add_style_recursive({})
-            self._pages[k] = Fragment.create(sticky_badge, component)
+            return sticky_badge
+
+        self.app_wraps[(0, "StickyBadge")] = lambda _: memoized_badge()
 
     def _apply_decorated_pages(self):
         """Add @rx.page decorated pages to the app.
@@ -1103,6 +1106,9 @@ class App(MiddlewareMixin, LifespanMixin):
                     console.debug(f"Evaluating page: {route}")
                     self._compile_page(route, save_page=should_compile)
 
+            # Save the pages which created new states at eval time.
+            self._write_stateful_pages_marker()
+
             # Add the optional endpoints (_upload)
             self._add_optional_endpoints()
 
@@ -1145,6 +1151,8 @@ class App(MiddlewareMixin, LifespanMixin):
                     )[:10]
                 )
             )
+            # Save the pages which created new states at eval time.
+            self._write_stateful_pages_marker()
 
         # Add the optional endpoints (_upload)
         self._add_optional_endpoints()
@@ -1366,7 +1374,8 @@ class App(MiddlewareMixin, LifespanMixin):
             for output_path, code in compile_results:
                 compiler_utils.write_page(output_path, code)
 
-        # Write list of routes that create dynamic states for backend to use.
+    def _write_stateful_pages_marker(self):
+        """Write list of routes that create dynamic states for the backend to use later."""
         if self._state is not None:
             stateful_pages_marker = (
                 prerequisites.get_backend_dir() / constants.Dirs.STATEFUL_PAGES
