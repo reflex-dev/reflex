@@ -5,10 +5,10 @@
 # ------------------------------------------------------
 from typing import Any, Literal, Optional, overload
 
+from reflex.components.base.fragment import Fragment
 from reflex.components.component import Component
 from reflex.components.el.elements.typography import Div
 from reflex.components.lucide.icon import Icon
-from reflex.components.sonner.toast import Toaster, ToastProps
 from reflex.constants.compiler import CompileVars
 from reflex.event import EventType
 from reflex.style import Style
@@ -41,45 +41,13 @@ class WebsocketTargetURL(Var):
 
 def default_connection_error() -> list[str | Var | Component]: ...
 
-class ConnectionToaster(Toaster):
+class ConnectionToaster(Fragment):
     def add_hooks(self) -> list[str | Var]: ...
     @overload
     @classmethod
     def create(  # type: ignore
         cls,
         *children,
-        theme: Var[str] | str | None = None,
-        rich_colors: Var[bool] | bool | None = None,
-        expand: Var[bool] | bool | None = None,
-        visible_toasts: Var[int] | int | None = None,
-        position: Literal[
-            "bottom-center",
-            "bottom-left",
-            "bottom-right",
-            "top-center",
-            "top-left",
-            "top-right",
-        ]
-        | Var[
-            Literal[
-                "bottom-center",
-                "bottom-left",
-                "bottom-right",
-                "top-center",
-                "top-left",
-                "top-right",
-            ]
-        ]
-        | None = None,
-        close_button: Var[bool] | bool | None = None,
-        offset: Var[str] | str | None = None,
-        dir: Var[str] | str | None = None,
-        hotkey: Var[str] | str | None = None,
-        invert: Var[bool] | bool | None = None,
-        toast_options: ToastProps | Var[ToastProps] | None = None,
-        gap: Var[int] | int | None = None,
-        loading_icon: Icon | Var[Icon] | None = None,
-        pause_when_page_is_hidden: Var[bool] | bool | None = None,
         style: Style | None = None,
         key: Any | None = None,
         id: Any | None = None,
@@ -107,20 +75,6 @@ class ConnectionToaster(Toaster):
 
         Args:
             *children: The children of the component.
-            theme: the theme of the toast
-            rich_colors: whether to show rich colors
-            expand: whether to expand the toast
-            visible_toasts: the number of toasts that are currently visible
-            position: the position of the toast
-            close_button: whether to show the close button
-            offset: offset of the toast
-            dir: directionality of the toast (default: ltr)
-            hotkey: Keyboard shortcut that will move focus to the toaster area.
-            invert: Dark toasts in light mode and vice versa.
-            toast_options: These will act as default options for all toasts. See toast() for all available options.
-            gap: Gap between toasts when expanded
-            loading_icon: Changes the default loading icon
-            pause_when_page_is_hidden: Pauses toast timers when the page is hidden, e.g., when the tab is backgrounded, the browser is minimized, or the OS is locked.
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.

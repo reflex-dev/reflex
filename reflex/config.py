@@ -709,6 +709,12 @@ class EnvironmentVariables:
     # Paths to exclude from the hot reload. Takes precedence over include paths. Separated by a colon.
     REFLEX_HOT_RELOAD_EXCLUDE_PATHS: EnvVar[list[Path]] = env_var([])
 
+    # Enables different behavior for when the backend would do a cold start if it was inactive.
+    REFLEX_DOES_BACKEND_COLD_START: EnvVar[bool] = env_var(False)
+
+    # The timeout for the backend to do a cold start in seconds.
+    REFLEX_BACKEND_COLD_START_TIMEOUT: EnvVar[int] = env_var(10)
+
     # Used by flexgen to enumerate the pages.
     REFLEX_ADD_ALL_ROUTES_ENDPOINT: EnvVar[bool] = env_var(False)
 
