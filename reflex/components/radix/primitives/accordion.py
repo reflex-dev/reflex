@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any, List, Literal, Tuple, Union
+from typing import Any, List, Literal, Sequence, Tuple, Union
 
 from reflex.components.component import Component, ComponentNamespace
 from reflex.components.core.colors import color
@@ -95,10 +95,10 @@ class AccordionRoot(AccordionComponent):
     type: Var[LiteralAccordionType]
 
     # The value of the item to expand.
-    value: Var[Union[str, List[str]]]
+    value: Var[Union[str, Sequence[str]]]
 
     # The default value of the item to expand.
-    default_value: Var[Union[str, List[str]]]
+    default_value: Var[Union[str, Sequence[str]]]
 
     # Whether or not the accordion is collapsible.
     collapsible: Var[bool]

@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any, List, Literal, Tuple
+from typing import Any, List, Literal, Sequence, Tuple
 
 from reflex.components.component import Component, ComponentNamespace
 from reflex.components.radix.primitives.base import RadixPrimitiveComponentWithClassName
@@ -39,9 +39,9 @@ class SliderRoot(SliderComponent):
     tag = "Root"
     alias = "RadixSliderRoot"
 
-    default_value: Var[List[int]]
+    default_value: Var[Sequence[int]]
 
-    value: Var[List[int]]
+    value: Var[Sequence[int]]
 
     name: Var[str]
 

@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any, Dict, List, Union
+from typing import Any, Dict, List, Sequence, Union
 
 from reflex.constants import EventTriggers
 from reflex.constants.colors import Color
@@ -61,7 +61,7 @@ class Axis(Recharts):
     allow_duplicated_category: Var[bool]
 
     # The range of the axis. Work best in conjunction with allow_data_overflow. Default: [0, "auto"]
-    domain: Var[List]
+    domain: Var[Sequence]
 
     # If set false, no axis line will be drawn. Default: True
     axis_line: Var[bool]
@@ -85,7 +85,7 @@ class Axis(Recharts):
     name: Var[Union[str, int]]
 
     # Set the values of axis ticks manually.
-    ticks: Var[List[Union[str, int]]]
+    ticks: Var[Sequence[Union[str, int]]]
 
     # If set false, no ticks will be drawn.
     tick: Var[bool]
@@ -184,7 +184,7 @@ class ZAxis(Recharts):
     z_axis_id: Var[Union[str, int]]
 
     # The range of axis. Default: [10, 10]
-    range: Var[List[int]]
+    range: Var[Sequence[int]]
 
     # The unit of data displayed in the axis. This option will be used to represent an index unit in a scatter chart.
     unit: Var[Union[str, int]]
@@ -225,7 +225,7 @@ class Brush(Recharts):
     height: Var[int]
 
     # The original data of a LineChart, a BarChart or an AreaChart.
-    data: Var[List[Any]]
+    data: Var[Sequence[Any]]
 
     # The width of each traveller. Default: 5
     traveller_width: Var[int]
@@ -357,10 +357,10 @@ class Area(Cartesian):
     label: Var[bool]
 
     # The value which can describle the line, usually calculated internally.
-    base_line: Var[Union[str, List[Dict[str, Any]]]]
+    base_line: Var[Union[str, Sequence[Dict[str, Any]]]]
 
     # The coordinates of all the points in the area, usually calculated internally.
-    points: Var[List[Dict[str, Any]]]
+    points: Var[Sequence[Dict[str, Any]]]
 
     # The stack id of area, when two areas have the same value axis and same stack_id, then the two areas are stacked in order.
     stack_id: Var[Union[str, int]]
@@ -413,7 +413,7 @@ class Bar(Cartesian):
     max_bar_size: Var[int]
 
     # If set a value, the option is the radius of all the rounded corners. If set a array, the option are in turn the radiuses of top-left corner, top-right corner, bottom-right corner, bottom-left corner. Default: 0
-    radius: Var[Union[int, List[int]]]
+    radius: Var[Union[int, Sequence[int]]]
 
     # The active bar is shown when a user enters a bar chart and this chart has tooltip. If set to false, no active bar will be drawn. If set to true, active bar will be drawn with the props calculated internally. If passed an object, active bar will be drawn, and the internally calculated props will be merged with the key value pairs of the passed object.
     # active_bar: Var[Union[bool, Dict[str, Any]]] #noqa: ERA001
@@ -467,7 +467,7 @@ class Line(Cartesian):
     unit: Var[Union[str, int]]
 
     # The coordinates of all the points in the line, usually calculated internally.
-    points: Var[List[Dict[str, Any]]]
+    points: Var[Sequence[Dict[str, Any]]]
 
     # The pattern of dashes and gaps used to paint the line.
     stroke_dasharray: Var[str]
@@ -484,7 +484,7 @@ class Scatter(Recharts):
     alias = "RechartsScatter"
 
     # The source data, in which each element is an object.
-    data: Var[List[Dict[str, Any]]]
+    data: Var[Sequence[Dict[str, Any]]]
 
     # The type of icon in legend. If set to 'none', no legend item will be rendered. 'line' | 'plainline' | 'square' | 'rect'| 'circle' | 'cross' | 'diamond' | 'square' | 'star' | 'triangle' | 'wye' | 'none'. Default: "circle"
     legend_type: Var[LiteralLegendType]
@@ -558,7 +558,7 @@ class Funnel(Recharts):
     alias = "RechartsFunnel"
 
     # The source data, in which each element is an object.
-    data: Var[List[Dict[str, Any]]]
+    data: Var[Sequence[Dict[str, Any]]]
 
     # The key or getter of a group of data which should be unique in a FunnelChart.
     data_key: Var[Union[str, int]]
@@ -585,7 +585,7 @@ class Funnel(Recharts):
     stroke: Var[Union[str, Color]] = LiteralVar.create(Color("gray", 3))
 
     # The coordinates of all the trapezoids in the funnel, usually calculated internally.
-    trapezoids: Var[List[Dict[str, Any]]]
+    trapezoids: Var[Sequence[Dict[str, Any]]]
 
     # Valid children components
     _valid_children: List[str] = ["LabelList", "Cell"]
@@ -686,7 +686,7 @@ class ReferenceLine(Reference):
     _valid_children: List[str] = ["Label"]
 
     # Array of endpoints in { x, y } format. These endpoints would be used to draw the ReferenceLine.
-    segment: List[Any] = []
+    segment: Sequence[Any] = []
 
 
 class ReferenceDot(Reference):
@@ -813,10 +813,10 @@ class CartesianGrid(Grid):
     vertical: Var[bool]
 
     # The x-coordinates in pixel values of all vertical lines. Default: []
-    vertical_points: Var[List[Union[str, int]]]
+    vertical_points: Var[Sequence[Union[str, int]]]
 
     # The x-coordinates in pixel values of all vertical lines. Default: []
-    horizontal_points: Var[List[Union[str, int]]]
+    horizontal_points: Var[Sequence[Union[str, int]]]
 
     # The background of grid.
     fill: Var[Union[str, Color]]
