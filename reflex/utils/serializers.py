@@ -16,6 +16,7 @@ from typing import (
     List,
     Literal,
     Optional,
+    Sequence,
     Set,
     Tuple,
     Type,
@@ -308,6 +309,19 @@ def serialize_set(value: Set) -> list:
 
     Args:
         value: The set to serialize.
+
+    Returns:
+        The serialized list.
+    """
+    return list(value)
+
+
+@serializer
+def serialize_sequence(value: Sequence) -> list:
+    """Serialize a sequence to a JSON serializable list.
+
+    Args:
+        value: The sequence to serialize.
 
     Returns:
         The serialized list.

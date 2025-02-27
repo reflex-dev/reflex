@@ -1,4 +1,4 @@
-from typing import List, Mapping, Tuple
+from typing import Mapping, Sequence, Tuple
 
 import pytest
 
@@ -58,7 +58,7 @@ def test_match_components():
     assert second_return_value_render["children"][0]["contents"] == '{"second value"}'
 
     assert match_cases[2][0]._js_expr == "[1, 2]"
-    assert match_cases[2][0]._var_type == List[int]
+    assert match_cases[2][0]._var_type == Sequence[int]
     third_return_value_render = match_cases[2][1]
     assert third_return_value_render["name"] == "RadixThemesText"
     assert third_return_value_render["children"][0]["contents"] == '{"third value"}'

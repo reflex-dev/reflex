@@ -1,7 +1,7 @@
 import json
 import math
 import typing
-from typing import Dict, List, Mapping, Optional, Set, Tuple, Union, cast
+from typing import Dict, List, Mapping, Optional, Sequence, Set, Tuple, Union, cast
 
 import pytest
 from pandas import DataFrame
@@ -273,7 +273,7 @@ def test_get_setter(prop: Var, expected):
         (1, Var(_js_expr="1", _var_type=int)),
         ("key", Var(_js_expr='"key"', _var_type=str)),
         (3.14, Var(_js_expr="3.14", _var_type=float)),
-        ([1, 2, 3], Var(_js_expr="[1, 2, 3]", _var_type=List[int])),
+        ([1, 2, 3], Var(_js_expr="[1, 2, 3]", _var_type=Sequence[int])),
         (
             {"a": 1, "b": 2},
             Var(_js_expr='({ ["a"] : 1, ["b"] : 2 })', _var_type=Mapping[str, int]),
