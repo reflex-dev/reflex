@@ -106,7 +106,7 @@ def test_compile_imports(import_dict: ParsedImportDict, test_dicts: list[dict]):
         assert sorted(import_dict["rest"]) == test_dict["rest"]  # pyright: ignore [reportArgumentType]
 
 
-def test_compile_stylesheets(tmp_path, mocker):
+def test_compile_stylesheets(tmp_path: Path, mocker):
     """Test that stylesheets compile correctly.
 
     Args:
@@ -119,7 +119,9 @@ def test_compile_stylesheets(tmp_path, mocker):
     assets_dir = project / "assets"
     assets_dir.mkdir()
 
-    (assets_dir / "styles.css").touch()
+    (assets_dir / "styles.css").write_text(
+        "button.rt-Button {\n\tborder-radius:unset !important;\n}"
+    )
     mocker.patch("reflex.compiler.compiler.Path.cwd", return_value=project)
 
     stylesheets = [
@@ -134,9 +136,81 @@ def test_compile_stylesheets(tmp_path, mocker):
         "@import url('./tailwind.css'); \n"
         "@import url('https://fonts.googleapis.com/css?family=Sofia&effect=neon|outline|emboss|shadow-multiple'); \n"
         "@import url('https://cdn.jsdelivr.net/npm/bootstrap@3.3.7/dist/css/bootstrap.min.css'); \n"
-        "@import url('../public/styles.css'); \n"
+        "@import url('./styles.css'); \n"
         "@import url('https://cdn.jsdelivr.net/npm/bootstrap@3.3.7/dist/css/bootstrap-theme.min.css'); \n",
     )
+
+    assert (project / ".web" / "styles" / "styles.css").read_text() == (
+        assets_dir / "styles.css"
+    ).read_text()
+
+
+def test_compile_stylesheets_scss_sass(tmp_path: Path, mocker):
+    try:
+        import sass  # noqa: F401
+    except ImportError:
+        pytest.skip(
+            'The `libsass` package is required to compile sass/scss stylesheet files. Run `pip install "libsass>=0.23.0"`.'
+        )
+
+    project = tmp_path / "test_project"
+    project.mkdir()
+
+    assets_dir = project / "assets"
+    assets_dir.mkdir()
+
+    assets_preprocess_dir = assets_dir / "preprocess"
+    assets_preprocess_dir.mkdir()
+
+    (assets_dir / "styles.css").write_text(
+        "button.rt-Button {\n\tborder-radius:unset !important;\n}"
+    )
+    (assets_preprocess_dir / "styles_a.sass").write_text(
+        "button.rt-Button\n\tborder-radius:unset !important"
+    )
+    (assets_preprocess_dir / "styles_b.scss").write_text(
+        "button.rt-Button {\n\tborder-radius:unset !important;\n}"
+    )
+    mocker.patch("reflex.compiler.compiler.Path.cwd", return_value=project)
+
+    stylesheets = [
+        "/styles.css",
+        "/preprocess/styles_a.sass",
+        "/preprocess/styles_b.scss",
+    ]
+
+    assert compiler.compile_root_stylesheet(stylesheets) == (
+        str(Path(".web") / "styles" / "styles.css"),
+        "@import url('./tailwind.css'); \n"
+        "@import url('./styles.css'); \n"
+        "@import url('./preprocess/styles_a.css'); \n"
+        "@import url('./preprocess/styles_b.css'); \n",
+    )
+
+    stylesheets = [
+        "/styles.css",
+        "/preprocess",  # this is a folder containing "styles_a.sass" and "styles_b.scss"
+    ]
+
+    assert compiler.compile_root_stylesheet(stylesheets) == (
+        str(Path(".web") / "styles" / "styles.css"),
+        "@import url('./tailwind.css'); \n"
+        "@import url('./styles.css'); \n"
+        "@import url('./preprocess/styles_b.css'); \n"
+        "@import url('./preprocess/styles_a.css'); \n",
+    )
+
+    assert (project / ".web" / "styles" / "styles.css").read_text() == (
+        assets_dir / "styles.css"
+    ).read_text()
+
+    expected_result = "button.rt-Button{border-radius:unset !important}\n"
+    assert (
+        project / ".web" / "styles" / "preprocess" / "styles_a.css"
+    ).read_text() == expected_result
+    assert (
+        project / ".web" / "styles" / "preprocess" / "styles_b.css"
+    ).read_text() == expected_result
 
 
 def test_compile_stylesheets_exclude_tailwind(tmp_path, mocker):
@@ -165,7 +239,7 @@ def test_compile_stylesheets_exclude_tailwind(tmp_path, mocker):
 
     assert compiler.compile_root_stylesheet(stylesheets) == (
         str(Path(".web") / "styles" / "styles.css"),
-        "@import url('../public/styles.css'); \n",
+        "@import url('./styles.css'); \n",
     )
 
 
