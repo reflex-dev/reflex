@@ -1376,7 +1376,7 @@ def test_unsupported_types_for_string_contains(other):
         assert Var(_js_expr="var").to(str).contains(other)
     assert (
         err.value.args[0]
-        == f"Unsupported Operand type(s) for contains: ToStringOperation, {type(other).__name__}"
+        == f"Unsupported Operand type(s) for contains: StringCastedVar, {type(other).__name__}"
     )
 
 

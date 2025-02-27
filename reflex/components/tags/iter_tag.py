@@ -107,12 +107,14 @@ class IterTag(Tag):
 
         Raises:
             ValueError: If the render function takes more than 2 arguments.
+            ValueError: If the render function doesn't return a component.
 
         Returns:
             The rendered component.
         """
         # Import here to avoid circular imports.
         from reflex.components.base.fragment import Fragment
+        from reflex.components.component import Component
         from reflex.components.core.cond import Cond
         from reflex.components.core.foreach import Foreach
 
@@ -137,6 +139,9 @@ class IterTag(Tag):
         # If the component is a tuple, unpack and wrap it in a fragment.
         if isinstance(component, tuple):
             component = Fragment.create(*component)
+
+        if not isinstance(component, Component):
+            raise ValueError("The render function must return a component.")
 
         # Set the component key.
         if component.key is None:

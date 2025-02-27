@@ -14,6 +14,7 @@ import sys
 import time
 import typing
 import uuid
+import warnings
 from abc import ABC, abstractmethod
 from hashlib import md5
 from pathlib import Path
@@ -1645,14 +1646,26 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
 
         if events is None or _is_valid_type(events):
             return events
+
+        if not isinstance(events, Sequence):
+            events = [events]
+
         try:
             if all(_is_valid_type(e) for e in events):
                 return events
         except TypeError:
             pass
 
+        coroutines = [e for e in events if asyncio.iscoroutine(e)]
+
+        for coroutine in coroutines:
+            coroutine_name = coroutine.__qualname__
+            warnings.filterwarnings(
+                "ignore", message=f"coroutine '{coroutine_name}' was never awaited"
+            )
+
         raise TypeError(
-            f"Your handler {handler.fn.__qualname__} must only return/yield: None, Events or other EventHandlers referenced by their class (not using `self`)"
+            f"Your handler {handler.fn.__qualname__} must only return/yield: None, Events or other EventHandlers referenced by their class (i.e. using `type(self)` or other class references)."
         )
 
     async def _as_state_update(
