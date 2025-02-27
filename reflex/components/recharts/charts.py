@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any, Dict, List, Union
+from typing import Any, Dict, List, Sequence, Union
 
 from reflex.components.component import Component
 from reflex.components.recharts.general import ResponsiveContainer
@@ -104,7 +104,7 @@ class CategoricalChartBase(ChartBase):
     """A component that wraps a Categorical Recharts charts."""
 
     # The source data, in which each element is an object.
-    data: Var[List[Dict[str, Any]]]
+    data: Var[Sequence[Dict[str, Any]]]
 
     # The sizes of whitespace around the chart, i.e. {"top": 50, "right": 30, "left": 20, "bottom": 5}.
     margin: Var[Dict[str, Any]]
@@ -290,7 +290,7 @@ class RadarChart(ChartBase):
     alias = "RechartsRadarChart"
 
     # The source data, in which each element is an object.
-    data: Var[List[Dict[str, Any]]]
+    data: Var[Sequence[Dict[str, Any]]]
 
     # The sizes of whitespace around the chart, i.e. {"top": 50, "right": 30, "left": 20, "bottom": 5}. Default: {"top": 0, "right": 0, "left": 0, "bottom": 0}
     margin: Var[Dict[str, Any]]
@@ -344,7 +344,7 @@ class RadialBarChart(ChartBase):
     alias = "RechartsRadialBarChart"
 
     # The source data which each element is an object.
-    data: Var[List[Dict[str, Any]]]
+    data: Var[Sequence[Dict[str, Any]]]
 
     # The sizes of whitespace around the chart. Default: {"top": 5, "right": 5, "left": 5 "bottom": 5}
     margin: Var[Dict[str, Any]]
@@ -464,7 +464,7 @@ class Treemap(RechartsCharts):
     height: Var[Union[str, int]] = Var.create("100%")
 
     # data of treemap. Array
-    data: Var[List[Dict[str, Any]]]
+    data: Var[Sequence[Dict[str, Any]]]
 
     # The key of a group of data which should be unique in a treemap. String | Number. Default: "value"
     data_key: Var[Union[str, int]]

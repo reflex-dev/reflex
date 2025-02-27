@@ -1,6 +1,6 @@
 """Interactive components provided by @radix-ui/themes."""
 
-from typing import List, Literal, Union
+from typing import List, Literal, Sequence, Union
 
 import reflex as rx
 from reflex.components.component import Component, ComponentNamespace
@@ -152,7 +152,7 @@ class HighLevelSelect(SelectRoot):
     """High level wrapper for the Select component."""
 
     # The items of the select.
-    items: Var[List[str]]
+    items: Var[Sequence[str]]
 
     # The placeholder of the select.
     placeholder: Var[str]

@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any, Dict, List, Union
+from typing import Any, Dict, List, Sequence, Union
 
 from reflex.constants import EventTriggers
 from reflex.constants.colors import Color
@@ -28,7 +28,7 @@ class Pie(Recharts):
     alias = "RechartsPie"
 
     # The source data which each element is an object.
-    data: Var[List[Dict[str, Any]]]
+    data: Var[Sequence[Dict[str, Any]]]
 
     # The key of each sector's value.
     data_key: Var[Union[str, int]]
@@ -68,9 +68,6 @@ class Pie(Recharts):
 
     # If false set, label lines will not be drawn. If true set, label lines will be drawn which have the props calculated internally. Default: False
     label_line: Var[bool]
-
-    # The index of active sector in Pie, this option can be changed in mouse event handlers.
-    data: Var[List[Dict[str, Any]]]
 
     # Valid children components
     _valid_children: List[str] = ["Cell", "LabelList", "Bare"]
@@ -125,7 +122,7 @@ class Radar(Recharts):
     data_key: Var[Union[str, int]]
 
     # The coordinates of all the vertices of the radar shape, like [{ x, y }].
-    points: Var[List[Dict[str, Any]]]
+    points: Var[Sequence[Dict[str, Any]]]
 
     # If false set, dots will not be drawn. Default: True
     dot: Var[bool]
@@ -180,7 +177,7 @@ class RadialBar(Recharts):
     alias = "RechartsRadialBar"
 
     # The source data which each element is an object.
-    data: Var[List[Dict[str, Any]]]
+    data: Var[Sequence[Dict[str, Any]]]
 
     # The key of a group of data which should be unique to show the meaning of angle axis.
     data_key: Var[Union[str, int]]
@@ -262,7 +259,7 @@ class PolarAngleAxis(Recharts):
     tick: Var[Union[bool, Dict[str, Any]]]
 
     # The array of every tick's value and angle.
-    ticks: Var[List[Dict[str, Any]]]
+    ticks: Var[Sequence[Dict[str, Any]]]
 
     # The orientation of axis text. Default: "outer"
     orientation: Var[str]
@@ -321,10 +318,10 @@ class PolarGrid(Recharts):
     outer_radius: Var[int]
 
     # The array of every line grid's angle.
-    polar_angles: Var[List[int]]
+    polar_angles: Var[Sequence[int]]
 
     # The array of every line grid's radius.
-    polar_radius: Var[List[int]]
+    polar_radius: Var[Sequence[int]]
 
     # The type of polar grids. 'polygon' | 'circle'. Default: "polygon"
     grid_type: Var[LiteralGridType]
@@ -380,7 +377,7 @@ class PolarRadiusAxis(Recharts):
     _valid_children: List[str] = ["Label"]
 
     # The domain of the polar radius axis, specifying the minimum and maximum values. Default: [0, "auto"]
-    domain: Var[List[Union[int, str]]]
+    domain: Var[Sequence[Union[int, str]]]
 
     # The stroke color of axis. Default: rx.color("gray", 10)
     stroke: Var[Union[str, Color]] = LiteralVar.create(Color("gray", 10))

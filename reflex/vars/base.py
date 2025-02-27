@@ -1211,7 +1211,7 @@ class Var(Generic[VAR_TYPE]):
 
     @overload
     @classmethod
-    def range(cls, stop: int | NumberVar, /) -> ArrayVar[List[int]]: ...
+    def range(cls, stop: int | NumberVar, /) -> ArrayVar[Sequence[int]]: ...
 
     @overload
     @classmethod
@@ -1221,7 +1221,7 @@ class Var(Generic[VAR_TYPE]):
         end: int | NumberVar,
         step: int | NumberVar = 1,
         /,
-    ) -> ArrayVar[List[int]]: ...
+    ) -> ArrayVar[Sequence[int]]: ...
 
     @classmethod
     def range(
@@ -1229,7 +1229,7 @@ class Var(Generic[VAR_TYPE]):
         first_endpoint: int | NumberVar,
         second_endpoint: int | NumberVar | None = None,
         step: int | NumberVar | None = None,
-    ) -> ArrayVar[List[int]]:
+    ) -> ArrayVar[Sequence[int]]:
         """Create a range of numbers.
 
         Args:
@@ -1687,7 +1687,7 @@ def figure_out_type(value: Any) -> types.GenericType:
     if has_args(type_):
         return type_
     if isinstance(value, list):
-        return List[unionize(*(figure_out_type(v) for v in value))]
+        return Sequence[unionize(*(figure_out_type(v) for v in value))]
     if isinstance(value, set):
         return Set[unionize(*(figure_out_type(v) for v in value))]
     if isinstance(value, tuple):
@@ -3280,10 +3280,17 @@ class Field(Generic[FIELD_TYPE]):
 
     @overload
     def __get__(
-        self: Field[List[V]] | Field[Set[V]] | Field[Tuple[V, ...]],
+        self: Field[List[V]] | Field[Set[V]],
         instance: None,
         owner: Any,
-    ) -> ArrayVar[List[V]]: ...
+    ) -> ArrayVar[Sequence[V]]: ...
+
+    @overload
+    def __get__(
+        self: Field[SEQUENCE_TYPE],
+        instance: None,
+        owner: Any,
+    ) -> ArrayVar[SEQUENCE_TYPE]: ...
 
     @overload
     def __get__(
