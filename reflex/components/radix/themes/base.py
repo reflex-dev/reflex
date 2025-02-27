@@ -112,9 +112,6 @@ class RadixThemesComponent(Component):
 
     library = "@radix-ui/themes@^3.0.0"
 
-    # Temporary pin < 3.1.5 until radix-ui/themes#627 is resolved.
-    library = library + " && <3.1.5"
-
     # "Fake" prop color_scheme is used to avoid shadowing CSS prop "color".
     _rename_props: dict[str, str] = {"colorScheme": "color"}
 
