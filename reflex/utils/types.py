@@ -19,7 +19,6 @@ from typing import (
     List,
     Literal,
     Mapping,
-    Optional,
     Sequence,
     Tuple,
     Type,
@@ -53,14 +52,14 @@ GenericAliasTypes = (_GenericAlias, GenericAlias, _SpecialGenericAlias)
 UnionTypes = (Union, types.UnionType) if hasattr(types, "UnionType") else (Union,)
 
 # Union of generic types.
-GenericType = Union[Type, _GenericAlias]
+GenericType = Type | _GenericAlias
 
 # Valid state var types.
 JSONType = {str, int, float, bool}
 PrimitiveType = Union[int, float, bool, str, list, dict, set, tuple]
 PrimitiveTypes = (int, float, bool, str, list, dict, set, tuple)
-StateVar = Union[PrimitiveType, Base, None]
-StateIterVar = Union[list, set, tuple]
+StateVar = PrimitiveType | Base | None
+StateIterVar = list | set | tuple
 
 if TYPE_CHECKING:
     from reflex.vars.base import Var
@@ -76,7 +75,7 @@ if TYPE_CHECKING:
         | Callable[[Var, Var, Var, Var, Var, Var, Var], Sequence[Var]]
     )
 else:
-    ArgsSpec = Callable[..., List[Any]]
+    ArgsSpec = Callable[..., list[Any]]
 
 
 PrimitiveToAnnotation = {
@@ -299,7 +298,7 @@ def get_attribute_access_type(cls: GenericType, name: str) -> GenericType | None
             and field.default_factory is None
         ):
             # Ensure frontend uses null coalescing when accessing.
-            type_ = Optional[type_]
+            type_ = type_ | None
         return type_
     elif isinstance(cls, type) and issubclass(cls, DeclarativeBase):
         insp = sqlalchemy.inspect(cls)
@@ -322,7 +321,7 @@ def get_attribute_access_type(cls: GenericType, name: str) -> GenericType | None
                             type_ = PrimitiveToAnnotation[type_]
                         type_ = type_[item_type]  # pyright: ignore [reportIndexIssue]
                 if column.nullable:
-                    type_ = Optional[type_]
+                    type_ = type_ | None
                 return type_
         if name in insp.all_orm_descriptors:
             descriptor = insp.all_orm_descriptors[name]
@@ -333,10 +332,10 @@ def get_attribute_access_type(cls: GenericType, name: str) -> GenericType | None
                 if isinstance(prop, Relationship):
                     type_ = prop.mapper.class_
                     # TODO: check for nullable?
-                    type_ = List[type_] if prop.uselist else Optional[type_]
+                    type_ = list[type_] if prop.uselist else type_ | None
                     return type_
             if isinstance(attr, AssociationProxyInstance):
-                return List[
+                return list[
                     get_attribute_access_type(
                         attr.target_class,
                         attr.remote_attr.key,  # type: ignore[attr-defined]
@@ -805,7 +804,7 @@ StateBases = get_base_class(StateVar)
 StateIterBases = get_base_class(StateIterVar)
 
 
-def safe_issubclass(cls: Type, cls_check: Type | Tuple[Type, ...]):
+def safe_issubclass(cls: Type, cls_check: Type | tuple[Type, ...]):
     """Check if a class is a subclass of another class. Returns False if internal error occurs.
 
     Args:
@@ -852,7 +851,7 @@ def typehint_issubclass(possible_subclass: Any, possible_superclass: Any) -> boo
             Union if accepted_type_origin is types.UnionType else accepted_type_origin
         )
 
-    # Get type arguments (e.g., [float, int] for Dict[float, int])
+    # Get type arguments (e.g., [float, int] for dict[float, int])
     provided_args = get_args(possible_subclass)
     accepted_args = get_args(possible_superclass)
 
@@ -870,7 +869,7 @@ def typehint_issubclass(possible_subclass: Any, possible_superclass: Any) -> boo
             for provided_arg in provided_args
         )
 
-    # Check if the origin of both types is the same (e.g., list for List[int])
+    # Check if the origin of both types is the same (e.g., list for list[int])
     # This probably should be issubclass instead of ==
     if (provided_type_origin or possible_subclass) != (
         accepted_type_origin or possible_superclass

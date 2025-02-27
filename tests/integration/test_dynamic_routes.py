@@ -16,12 +16,10 @@ from .utils import poll_for_navigation
 
 def DynamicRoute():
     """App for testing dynamic routes."""
-    from typing import List
-
     import reflex as rx
 
     class DynamicState(rx.State):
-        order: List[str] = []
+        order: list[str] = []
 
         @rx.event
         def on_load(self):

@@ -1,5 +1,4 @@
 from pathlib import Path
-from typing import List
 
 import pytest
 
@@ -32,7 +31,7 @@ from reflex.utils.imports import ImportVar, ParsedImportDict
     ],
 )
 def test_compile_import_statement(
-    fields: List[ImportVar], test_default: str, test_rest: str
+    fields: list[ImportVar], test_default: str, test_rest: str
 ):
     """Test the compile_import_statement function.
 

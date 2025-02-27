@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Literal, Union
+from typing import Literal
 
 from reflex.components.component import Component, ComponentNamespace
 from reflex.components.core.breakpoints import Responsive
@@ -67,7 +67,7 @@ class TextFieldRoot(elements.Input, RadixThemesComponent):
     type: Var[str]
 
     # Value of the input
-    value: Var[Union[str, int, float]]
+    value: Var[str | int | float]
 
     # References a datalist for suggested options
     list: Var[str]

@@ -14,10 +14,8 @@ from typing import (
     Any,
     Callable,
     ClassVar,
-    Dict,
     Iterator,
     List,
-    Optional,
     Sequence,
     Set,
     Type,
@@ -76,19 +74,19 @@ class BaseComponent(Base, ABC):
     """
 
     # The children nested within the component.
-    children: List[BaseComponent] = []
+    children: list[BaseComponent] = []
 
     # The library that the component is based on.
-    library: Optional[str] = None
+    library: str | None = None
 
     # List here the non-react dependency needed by `library`
-    lib_dependencies: List[str] = []
+    lib_dependencies: list[str] = []
 
     # List here the dependencies that need to be transpiled by Next.js
-    transpile_packages: List[str] = []
+    transpile_packages: list[str] = []
 
     # The tag to use when rendering the component.
-    tag: Optional[str] = None
+    tag: str | None = None
 
     @abstractmethod
     def render(self) -> dict:
@@ -175,10 +173,8 @@ def evaluate_style_namespaces(style: ComponentStyle) -> dict:
 
 
 # Map from component to styling.
-ComponentStyle = Dict[
-    Union[str, Type[BaseComponent], Callable, ComponentNamespace], Any
-]
-ComponentChild = Union[types.PrimitiveType, Var, BaseComponent]
+ComponentStyle = dict[str | Type[BaseComponent] | Callable | ComponentNamespace, Any]
+ComponentChild = types.PrimitiveType | Var | BaseComponent
 ComponentChildTypes = (*types.PrimitiveTypes, Var, BaseComponent)
 
 
@@ -221,13 +217,13 @@ class Component(BaseComponent, ABC):
     style: Style = Style()
 
     # A mapping from event triggers to event chains.
-    event_triggers: Dict[str, Union[EventChain, Var]] = {}
+    event_triggers: dict[str, EventChain | Var] = {}
 
     # The alias for the tag.
-    alias: Optional[str] = None
+    alias: str | None = None
 
     # Whether the import is default or named.
-    is_default: Optional[bool] = False
+    is_default: bool | None = False
 
     # A unique key for the component.
     key: Any = None
@@ -239,31 +235,31 @@ class Component(BaseComponent, ABC):
     class_name: Any = None
 
     # Special component props.
-    special_props: List[Var] = []
+    special_props: list[Var] = []
 
     # Whether the component should take the focus once the page is loaded
     autofocus: bool = False
 
     # components that cannot be children
-    _invalid_children: List[str] = []
+    _invalid_children: list[str] = []
 
     # only components that are allowed as children
-    _valid_children: List[str] = []
+    _valid_children: list[str] = []
 
     # only components that are allowed as parent
-    _valid_parents: List[str] = []
+    _valid_parents: list[str] = []
 
     # props to change the name of
-    _rename_props: Dict[str, str] = {}
+    _rename_props: dict[str, str] = {}
 
     # custom attribute
-    custom_attrs: Dict[str, Union[Var, Any]] = {}
+    custom_attrs: dict[str, Var | Any] = {}
 
     # When to memoize this component and its children.
     _memoization_mode: MemoizationMode = MemoizationMode()
 
     # State class associated with this component instance
-    State: Optional[Type[reflex.state.State]] = None
+    State: Type[reflex.state.State] | None = None
 
     def add_imports(self) -> ImportDict | list[ImportDict]:
         """Add imports for the component.
@@ -550,7 +546,7 @@ class Component(BaseComponent, ABC):
         if isinstance(class_name, (List, tuple)):
             if any(isinstance(c, Var) for c in class_name):
                 kwargs["class_name"] = LiteralArrayVar.create(
-                    class_name, _var_type=List[str]
+                    class_name, _var_type=list[str]
                 ).join(" ")
             else:
                 kwargs["class_name"] = " ".join(class_name)
@@ -560,13 +556,13 @@ class Component(BaseComponent, ABC):
 
     def get_event_triggers(
         self,
-    ) -> Dict[str, types.ArgsSpec | Sequence[types.ArgsSpec]]:
+    ) -> dict[str, types.ArgsSpec | Sequence[types.ArgsSpec]]:
         """Get the event triggers for the component.
 
         Returns:
             The event triggers.
         """
-        default_triggers: Dict[str, types.ArgsSpec | Sequence[types.ArgsSpec]] = {
+        default_triggers: dict[str, types.ArgsSpec | Sequence[types.ArgsSpec]] = {
             EventTriggers.ON_FOCUS: no_args_event_spec,
             EventTriggers.ON_BLUR: no_args_event_spec,
             EventTriggers.ON_CLICK: no_args_event_spec,
@@ -670,7 +666,7 @@ class Component(BaseComponent, ABC):
 
     @classmethod
     @lru_cache(maxsize=None)
-    def get_props(cls) -> Set[str]:
+    def get_props(cls) -> set[str]:
         """Get the unique fields for the component.
 
         Returns:
@@ -680,7 +676,7 @@ class Component(BaseComponent, ABC):
 
     @classmethod
     @lru_cache(maxsize=None)
-    def get_initial_props(cls) -> Set[str]:
+    def get_initial_props(cls) -> set[str]:
         """Get the initial props to set for the component.
 
         Returns:
@@ -829,7 +825,7 @@ class Component(BaseComponent, ABC):
         return component_style
 
     def _add_style_recursive(
-        self, style: ComponentStyle, theme: Optional[Component] = None
+        self, style: ComponentStyle, theme: Component | None = None
     ) -> Component:
         """Add additional style to the component and its children.
 
@@ -928,7 +924,7 @@ class Component(BaseComponent, ABC):
                 if prop.startswith(old_prop):
                     rendered_dict["props"][ix] = prop.replace(old_prop, new_prop, 1)
 
-    def _validate_component_children(self, children: List[Component]):
+    def _validate_component_children(self, children: list[Component]):
         """Validate the children components.
 
         Args:
@@ -1038,7 +1034,7 @@ class Component(BaseComponent, ABC):
             Each var referenced by the component (props, styles, event handlers).
         """
         ignore_ids = ignore_ids or set()
-        vars: List[Var] | None = getattr(self, "__vars", None)
+        vars: list[Var] | None = getattr(self, "__vars", None)
         if vars is not None:
             yield from vars
         vars = self.__vars = []
@@ -1211,7 +1207,7 @@ class Component(BaseComponent, ABC):
         """
         return None
 
-    def _get_all_dynamic_imports(self) -> Set[str]:
+    def _get_all_dynamic_imports(self) -> set[str]:
         """Get dynamic imports for the component and its children.
 
         Returns:
@@ -1578,7 +1574,7 @@ class Component(BaseComponent, ABC):
 
     def _get_all_custom_components(
         self, seen: set[str] | None = None
-    ) -> Set[CustomComponent]:
+    ) -> set[CustomComponent]:
         """Get all the custom components used by the component.
 
         Args:
@@ -1661,7 +1657,7 @@ class CustomComponent(Component):
     component_fn: Callable[..., Component] = Component.create
 
     # The props of the component.
-    props: Dict[str, Any] = {}
+    props: dict[str, Any] = {}
 
     def __init__(self, **kwargs):
         """Initialize the custom component.
@@ -1780,7 +1776,7 @@ class CustomComponent(Component):
         return hash(self.tag)
 
     @classmethod
-    def get_props(cls) -> Set[str]:
+    def get_props(cls) -> set[str]:
         """Get the props for the component.
 
         Returns:
@@ -1790,7 +1786,7 @@ class CustomComponent(Component):
 
     def _get_all_custom_components(
         self, seen: set[str] | None = None
-    ) -> Set[CustomComponent]:
+    ) -> set[CustomComponent]:
         """Get all the custom components used by the component.
 
         Args:
@@ -1942,7 +1938,7 @@ class StatefulComponent(BaseComponent):
     """
 
     # A lookup table to caching memoized component instances.
-    tag_to_stateful_component: ClassVar[Dict[str, StatefulComponent]] = {}
+    tag_to_stateful_component: ClassVar[dict[str, StatefulComponent]] = {}
 
     # Reference to the original component that was memoized into this component.
     component: Component

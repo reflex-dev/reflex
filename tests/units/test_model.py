@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Optional, Type
+from typing import Type
 from unittest import mock
 
 import pytest
@@ -34,7 +34,7 @@ def model_custom_primary() -> Model:
     """
 
     class ChildModel(Model):
-        custom_id: Optional[int] = sqlmodel.Field(default=None, primary_key=True)
+        custom_id: int | None = sqlmodel.Field(default=None, primary_key=True)
         name: str
 
     return ChildModel(name="name")
@@ -106,7 +106,7 @@ def test_automigration(
 
     # Create column t2, mark t1 as optional with default
     class AlembicThing(Model, table=True):  # pyright: ignore [reportRedeclaration]
-        t1: Optional[str] = "default"
+        t1: str | None = "default"
         t2: str = "bar"
 
     assert Model.migrate(autogenerate=True)

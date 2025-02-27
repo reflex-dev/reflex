@@ -25,12 +25,8 @@ from typing import (
     Callable,
     Coroutine,
     Dict,
-    List,
     MutableMapping,
-    Optional,
-    Set,
     Type,
-    Union,
     get_args,
     get_type_hints,
 )
@@ -167,7 +163,7 @@ def default_backend_exception_handler(exception: Exception) -> EventSpec:
     )
 
 
-def extra_overlay_function() -> Optional[Component]:
+def extra_overlay_function() -> Component | None:
     """Extra overlay function to add to the overlay component.
 
     Returns:
@@ -250,16 +246,16 @@ class UploadFile(StarletteUploadFile):
 
     file: BinaryIO
 
-    path: Optional[Path] = dataclasses.field(default=None)
+    path: Path | None = dataclasses.field(default=None)
 
-    _deprecated_filename: Optional[str] = dataclasses.field(default=None)
+    _deprecated_filename: str | None = dataclasses.field(default=None)
 
-    size: Optional[int] = dataclasses.field(default=None)
+    size: int | None = dataclasses.field(default=None)
 
     headers: Headers = dataclasses.field(default_factory=Headers)
 
     @property
-    def name(self) -> Optional[str]:
+    def name(self) -> str | None:
         """Get the name of the uploaded file.
 
         Returns:
@@ -269,7 +265,7 @@ class UploadFile(StarletteUploadFile):
             return self.path.name
 
     @property
-    def filename(self) -> Optional[str]:
+    def filename(self) -> str | None:
         """Get the filename of the uploaded file.
 
         Returns:
@@ -290,13 +286,13 @@ class UploadFile(StarletteUploadFile):
 class UnevaluatedPage:
     """An uncompiled page."""
 
-    component: Union[Component, ComponentCallable]
+    component: Component | ComponentCallable
     route: str
-    title: Union[Var, str, None]
-    description: Union[Var, str, None]
+    title: Var | str | None
+    description: Var | str | None
     image: str
-    on_load: Union[EventType[()], None]
-    meta: List[Dict[str, str]]
+    on_load: EventType[()] | None
+    meta: list[dict[str, str]]
 
 
 @dataclasses.dataclass()
@@ -322,7 +318,7 @@ class App(MiddlewareMixin, LifespanMixin):
     """
 
     # The global [theme](https://reflex.dev/docs/styling/theming/#theme) for the entire app.
-    theme: Optional[Component] = dataclasses.field(
+    theme: Component | None = dataclasses.field(
         default_factory=lambda: themes.theme(accent_color="blue")
     )
 
@@ -330,18 +326,18 @@ class App(MiddlewareMixin, LifespanMixin):
     style: ComponentStyle = dataclasses.field(default_factory=dict)
 
     # A list of URLs to [stylesheets](https://reflex.dev/docs/styling/custom-stylesheets/) to include in the app.
-    stylesheets: List[str] = dataclasses.field(default_factory=list)
+    stylesheets: list[str] = dataclasses.field(default_factory=list)
 
     # A component that is present on every page (defaults to the Connection Error banner).
-    overlay_component: Optional[Union[Component, ComponentCallable]] = (
-        dataclasses.field(default=None)
+    overlay_component: Component | ComponentCallable | None = dataclasses.field(
+        default=None
     )
 
     # Error boundary component to wrap the app with.
-    error_boundary: Optional[ComponentCallable] = dataclasses.field(default=None)
+    error_boundary: ComponentCallable | None = dataclasses.field(default=None)
 
     # App wraps to be applied to the whole app. Expected to be a dictionary of (order, name) to a function that takes whether the state is enabled and optionally returns a component.
-    app_wraps: Dict[tuple[int, str], Callable[[bool], Optional[Component]]] = (
+    app_wraps: dict[tuple[int, str], Callable[[bool], Component | None]] = (
         dataclasses.field(
             default_factory=lambda: {
                 (55, "ErrorBoundary"): (
@@ -356,24 +352,24 @@ class App(MiddlewareMixin, LifespanMixin):
     )
 
     # Components to add to the head of every page.
-    head_components: List[Component] = dataclasses.field(default_factory=list)
+    head_components: list[Component] = dataclasses.field(default_factory=list)
 
     # The Socket.IO AsyncServer instance.
-    sio: Optional[AsyncServer] = None
+    sio: AsyncServer | None = None
 
     # The language to add to the html root tag of every page.
-    html_lang: Optional[str] = None
+    html_lang: str | None = None
 
     # Attributes to add to the html root tag of every page.
-    html_custom_attrs: Optional[Dict[str, str]] = None
+    html_custom_attrs: dict[str, str] | None = None
 
     # A map from a route to an unevaluated page.
-    _unevaluated_pages: Dict[str, UnevaluatedPage] = dataclasses.field(
+    _unevaluated_pages: dict[str, UnevaluatedPage] = dataclasses.field(
         default_factory=dict
     )
 
     # A map from a page route to the component to render. Users should use `add_page`.
-    _pages: Dict[str, Component] = dataclasses.field(default_factory=dict)
+    _pages: dict[str, Component] = dataclasses.field(default_factory=dict)
 
     # A mapping of pages which created states as they were being evaluated.
     _stateful_pages: Dict[str, None] = dataclasses.field(default_factory=dict)
@@ -382,24 +378,24 @@ class App(MiddlewareMixin, LifespanMixin):
     _api: FastAPI | None = None
 
     # The state class to use for the app.
-    _state: Optional[Type[BaseState]] = None
+    _state: Type[BaseState] | None = None
 
     # Class to manage many client states.
-    _state_manager: Optional[StateManager] = None
+    _state_manager: StateManager | None = None
 
     # Mapping from a route to event handlers to trigger when the page loads.
-    _load_events: Dict[str, List[IndividualEventType[()]]] = dataclasses.field(
+    _load_events: dict[str, list[IndividualEventType[()]]] = dataclasses.field(
         default_factory=dict
     )
 
     # Admin dashboard to view and manage the database.
-    admin_dash: Optional[AdminDash] = None
+    admin_dash: AdminDash | None = None
 
     # The async server name space.
-    _event_namespace: Optional[EventNamespace] = None
+    _event_namespace: EventNamespace | None = None
 
     # Background tasks that are currently running.
-    _background_tasks: Set[asyncio.Task] = dataclasses.field(default_factory=set)
+    _background_tasks: set[asyncio.Task] = dataclasses.field(default_factory=set)
 
     # Frontend Error Handler Function
     frontend_exception_handler: Callable[[Exception], None] = (
@@ -408,7 +404,7 @@ class App(MiddlewareMixin, LifespanMixin):
 
     # Backend Error Handler Function
     backend_exception_handler: Callable[
-        [Exception], Union[EventSpec, List[EventSpec], None]
+        [Exception], EventSpec | list[EventSpec] | None
     ] = default_backend_exception_handler
 
     # Put the toast provider in the app wrap.
@@ -895,7 +891,7 @@ class App(MiddlewareMixin, LifespanMixin):
 
             admin.mount_to(self.api)
 
-    def _get_frontend_packages(self, imports: Dict[str, set[ImportVar]]):
+    def _get_frontend_packages(self, imports: dict[str, set[ImportVar]]):
         """Gets the frontend packages to be installed and filters out the unnecessary ones.
 
         Args:
@@ -1009,9 +1005,7 @@ class App(MiddlewareMixin, LifespanMixin):
         for render, kwargs in DECORATED_PAGES[get_config().app_name]:
             self.add_page(render, **kwargs)
 
-    def _validate_var_dependencies(
-        self, state: Optional[Type[BaseState]] = None
-    ) -> None:
+    def _validate_var_dependencies(self, state: Type[BaseState] | None = None) -> None:
         """Validate the dependencies of the vars in the app.
 
         Args:
@@ -1083,7 +1077,7 @@ class App(MiddlewareMixin, LifespanMixin):
         self.style = evaluate_style_namespaces(self.style)
 
         # Add the app wrappers.
-        app_wrappers: Dict[tuple[int, str], Component] = {
+        app_wrappers: dict[tuple[int, str], Component] = {
             # Default app wrap component renders {children}
             (0, "AppWrap"): AppWrap.create()
         }
@@ -1550,8 +1544,8 @@ class App(MiddlewareMixin, LifespanMixin):
 
                 valid = bool(
                     return_type == EventSpec
-                    or return_type == Optional[EventSpec]
-                    or return_type == List[EventSpec]
+                    or return_type == EventSpec | None
+                    or return_type == list[EventSpec]
                     or return_type == inspect.Signature.empty
                     or return_type is None
                 )
@@ -1559,7 +1553,7 @@ class App(MiddlewareMixin, LifespanMixin):
                 if not valid:
                     raise ValueError(
                         f"Provided custom {handler_domain} exception handler `{_fn_name}` has the wrong return type."
-                        f"Expected `Union[EventSpec, List[EventSpec], None]` but got `{return_type}`"
+                        f"Expected `EventSpec | list[EventSpec] | None` but got `{return_type}`"
                     )
 
 
@@ -1699,7 +1693,7 @@ def upload(app: App):
         The upload function.
     """
 
-    async def upload_file(request: Request, files: List[FastAPIUploadFile]):
+    async def upload_file(request: Request, files: list[FastAPIUploadFile]):
         """Upload a file.
 
         Args:
@@ -1739,7 +1733,7 @@ def upload(app: App):
         # get handler function
         func = getattr(type(current_state), handler.split(".")[-1])
 
-        # check if there exists any handler args with annotation, List[UploadFile]
+        # check if there exists any handler args with annotation, list[UploadFile]
         if isinstance(func, EventHandler):
             if func.is_background:
                 raise UploadTypeError(
@@ -1759,7 +1753,7 @@ def upload(app: App):
         if not handler_upload_param:
             raise UploadValueError(
                 f"`{handler}` handler should have a parameter annotated as "
-                "List[rx.UploadFile]"
+                "list[rx.UploadFile]"
             )
 
         # Make a copy of the files as they are closed after the request.

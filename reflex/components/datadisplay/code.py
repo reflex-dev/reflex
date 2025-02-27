@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import dataclasses
 import typing
-from typing import ClassVar, Dict, Literal, Optional, Union
+from typing import ClassVar, Literal
 
 from reflex.components.component import Component, ComponentNamespace
 from reflex.components.core.cond import color_mode_cond
@@ -390,7 +390,7 @@ class CodeBlock(Component, MarkdownComponentMap):
     alias = "SyntaxHighlighter"
 
     # The theme to use ("light" or "dark").
-    theme: Var[Union[Theme, str]] = Theme.one_light
+    theme: Var[Theme | str] = Theme.one_light
 
     # The language to use.
     language: Var[LiteralCodeLanguage] = Var.create("python")
@@ -408,16 +408,16 @@ class CodeBlock(Component, MarkdownComponentMap):
     wrap_long_lines: Var[bool]
 
     # A custom style for the code block.
-    custom_style: Dict[str, Union[str, Var, Color]] = {}
+    custom_style: dict[str, str | Var | Color] = {}
 
     # Props passed down to the code tag.
-    code_tag_props: Var[Dict[str, str]]
+    code_tag_props: Var[dict[str, str]]
 
     # Whether a copy button should appear.
-    can_copy: Optional[bool] = False
+    can_copy: bool | None = False
 
     # A custom copy button to override the default one.
-    copy_button: Optional[Union[bool, Component]] = None
+    copy_button: bool | Component | None = None
 
     @classmethod
     def create(

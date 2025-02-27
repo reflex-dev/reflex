@@ -1,7 +1,6 @@
 """This module contains the dataclasses representing the router object."""
 
 import dataclasses
-from typing import Optional
 
 from reflex import constants
 from reflex.utils import format
@@ -25,7 +24,7 @@ class HeaderData:
     accept_encoding: str = ""
     accept_language: str = ""
 
-    def __init__(self, router_data: Optional[dict] = None):
+    def __init__(self, router_data: dict | None = None):
         """Initialize the HeaderData object based on router_data.
 
         Args:
@@ -50,7 +49,7 @@ class PageData:
     full_raw_path: str = ""
     params: dict = dataclasses.field(default_factory=dict)
 
-    def __init__(self, router_data: Optional[dict] = None):
+    def __init__(self, router_data: dict | None = None):
         """Initialize the PageData object based on router_data.
 
         Args:
@@ -90,7 +89,7 @@ class SessionData:
     client_ip: str = ""
     session_id: str = ""
 
-    def __init__(self, router_data: Optional[dict] = None):
+    def __init__(self, router_data: dict | None = None):
         """Initialize the SessionData object based on router_data.
 
         Args:
@@ -115,7 +114,7 @@ class RouterData:
     headers: HeaderData = dataclasses.field(default_factory=HeaderData)
     page: PageData = dataclasses.field(default_factory=PageData)
 
-    def __init__(self, router_data: Optional[dict] = None):
+    def __init__(self, router_data: dict | None = None):
         """Initialize the RouterData object.
 
         Args:

@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any, List, Literal, Tuple
+from typing import Any, Literal
 
 from reflex.components.component import Component, ComponentNamespace
 from reflex.components.radix.primitives.base import RadixPrimitiveComponentWithClassName
@@ -20,8 +20,8 @@ class SliderComponent(RadixPrimitiveComponentWithClassName):
 
 
 def on_value_event_spec(
-    value: Var[List[int]],
-) -> Tuple[Var[List[int]]]:
+    value: Var[list[int]],
+) -> tuple[Var[list[int]]]:
     """Event handler spec for the value event.
 
     Args:
@@ -39,9 +39,9 @@ class SliderRoot(SliderComponent):
     tag = "Root"
     alias = "RadixSliderRoot"
 
-    default_value: Var[List[int]]
+    default_value: Var[list[int]]
 
-    value: Var[List[int]]
+    value: Var[list[int]]
 
     name: Var[str]
 

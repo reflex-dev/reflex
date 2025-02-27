@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import dataclasses
 import re
-from typing import Any, Callable, Union
+from typing import Any, Callable
 
 from reflex import constants
 from reflex.event import EventChain, EventHandler, EventSpec, run_script
@@ -253,9 +253,7 @@ class ClientStateVar(Var):
         """
         return self.set_value()
 
-    def retrieve(
-        self, callback: Union[EventHandler, Callable, None] = None
-    ) -> EventSpec:
+    def retrieve(self, callback: EventHandler | Callable | None = None) -> EventSpec:
         """Pass the value of the client state variable to a backend EventHandler.
 
         The event handler must `yield` or `return` the EventSpec to trigger the event.

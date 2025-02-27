@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any, Literal, Optional, Union
+from typing import Any, Literal
 
 from reflex.event import EventHandler, no_args_event_spec
 from reflex.utils import console, types
@@ -69,8 +69,8 @@ class Image(NextComponent):
     def create(
         cls,
         *children,
-        width: Optional[Union[int, str]] = None,
-        height: Optional[Union[int, str]] = None,
+        width: int | str | None = None,
+        height: int | str | None = None,
         **props,
     ):
         """Create an Image component from next/image.

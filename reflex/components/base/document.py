@@ -1,7 +1,5 @@
 """Document components."""
 
-from typing import Optional
-
 from reflex.components.component import Component
 
 
@@ -16,7 +14,7 @@ class Html(NextDocumentLib):
 
     tag = "Html"
 
-    lang: Optional[str]
+    lang: str | None
 
 
 class DocumentHead(NextDocumentLib):

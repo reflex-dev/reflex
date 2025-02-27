@@ -16,7 +16,6 @@ from .utils import SessionStorage
 def CallScript():
     """A test app for browser javascript integration."""
     from pathlib import Path
-    from typing import Optional, Union
 
     import reflex as rx
 
@@ -43,7 +42,7 @@ def CallScript():
     external_scripts = inline_scripts.replace("inline", "external")
 
     class CallScriptState(rx.State):
-        results: rx.Field[list[Optional[Union[str, dict, list]]]] = rx.field([])
+        results: rx.Field[list[str | dict | list | None]] = rx.field([])
         inline_counter: rx.Field[int] = rx.field(0)
         external_counter: rx.Field[int] = rx.field(0)
         value: str = "Initial"

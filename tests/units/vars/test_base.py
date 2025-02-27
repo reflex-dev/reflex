@@ -1,4 +1,4 @@
-from typing import List, Mapping, Union
+from typing import Mapping
 
 import pytest
 
@@ -36,10 +36,10 @@ class ChildGenericDict(GenericDict):
         (1, int),
         (1.0, float),
         ("a", str),
-        ([1, 2, 3], List[int]),
-        ([1, 2.0, "a"], List[Union[int, float, str]]),
+        ([1, 2, 3], list[int]),
+        ([1, 2.0, "a"], list[int | float | str]),
         ({"a": 1, "b": 2}, Mapping[str, int]),
-        ({"a": 1, 2: "b"}, Mapping[Union[int, str], Union[str, int]]),
+        ({"a": 1, 2: "b"}, Mapping[int | str, str | int]),
         (CustomDict(), CustomDict),
         (ChildCustomDict(), ChildCustomDict),
         (GenericDict({1: 1}), Mapping[int, int]),

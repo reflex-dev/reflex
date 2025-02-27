@@ -1,7 +1,5 @@
 """Metadata classes."""
 
-from typing import List
-
 from reflex.components.el.element import Element
 from reflex.components.el.elements.inline import ReferrerPolicy
 from reflex.components.el.elements.media import CrossOrigin
@@ -91,7 +89,7 @@ class StyleEl(Element):
 
     media: Var[str]
 
-    special_props: List[Var] = [Var(_js_expr="suppressHydrationWarning")]
+    special_props: list[Var] = [Var(_js_expr="suppressHydrationWarning")]
 
 
 base = Base.create

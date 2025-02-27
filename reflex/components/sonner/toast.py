@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any, Literal, Optional, Union
+from typing import Any, Literal
 
 from reflex.base import Base
 from reflex.components.component import Component, ComponentNamespace
@@ -78,64 +78,64 @@ class ToastProps(PropsBase, NoExtrasAllowedProps):
     """Props for the toast component."""
 
     # Toast's title, renders above the description.
-    title: Optional[Union[str, Var]]
+    title: str | Var | None
 
     # Toast's description, renders underneath the title.
-    description: Optional[Union[str, Var]]
+    description: str | Var | None
 
     # Whether to show the close button.
-    close_button: Optional[bool]
+    close_button: bool | None
 
     # Dark toast in light mode and vice versa.
-    invert: Optional[bool]
+    invert: bool | None
 
     # Control the sensitivity of the toast for screen readers
-    important: Optional[bool]
+    important: bool | None
 
     # Time in milliseconds that should elapse before automatically closing the toast.
-    duration: Optional[int]
+    duration: int | None
 
     # Position of the toast.
-    position: Optional[LiteralPosition]
+    position: LiteralPosition | None
 
     # If false, it'll prevent the user from dismissing the toast.
-    dismissible: Optional[bool]
+    dismissible: bool | None
 
     # TODO: fix serialization of icons for toast? (might not be possible yet)
     # Icon displayed in front of toast's text, aligned vertically.
-    # icon: Optional[Icon] = None # noqa: ERA001
+    # icon: Icon | None = None # noqa: ERA001
 
     # TODO: fix implementation for action / cancel buttons
     # Renders a primary button, clicking it will close the toast.
-    action: Optional[ToastAction]
+    action: ToastAction | None
 
     # Renders a secondary button, clicking it will close the toast.
-    cancel: Optional[ToastAction]
+    cancel: ToastAction | None
 
     # Custom id for the toast.
-    id: Optional[Union[str, Var]]
+    id: str | Var | None
 
     # Removes the default styling, which allows for easier customization.
-    unstyled: Optional[bool]
+    unstyled: bool | None
 
     # Custom style for the toast.
-    style: Optional[Style]
+    style: Style | None
 
     # Class name for the toast.
-    class_name: Optional[str]
+    class_name: str | None
 
     # XXX: These still do not seem to work
     # Custom style for the toast primary button.
-    action_button_styles: Optional[Style]
+    action_button_styles: Style | None
 
     # Custom style for the toast secondary button.
-    cancel_button_styles: Optional[Style]
+    cancel_button_styles: Style | None
 
     # The function gets called when either the close button is clicked, or the toast is swiped.
-    on_dismiss: Optional[Any]
+    on_dismiss: Any | None
 
     # Function that gets called when the toast disappears automatically after it's timeout (duration` prop).
-    on_auto_close: Optional[Any]
+    on_auto_close: Any | None
 
     def dict(self, *args: Any, **kwargs: Any) -> dict[str, Any]:
         """Convert the object to a dictionary.

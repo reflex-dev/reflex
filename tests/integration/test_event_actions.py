@@ -14,12 +14,10 @@ from reflex.testing import AppHarness, WebDriver
 
 def TestEventAction():
     """App for testing event_actions."""
-    from typing import List, Optional
-
     import reflex as rx
 
     class EventActionState(rx.State):
-        order: List[str]
+        order: list[str]
 
         def on_click(self, ev):
             self.order.append(f"on_click:{ev}")
@@ -39,7 +37,7 @@ def TestEventAction():
 
         tag = "EventFiringComponent"
 
-        def _get_custom_code(self) -> Optional[str]:
+        def _get_custom_code(self) -> str | None:
             return """
                 function EventFiringComponent(props) {
                     return (

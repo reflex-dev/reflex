@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import dataclasses
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 from reflex import constants
 from reflex.event import Event, get_hydrate_event
@@ -20,7 +20,7 @@ class HydrateMiddleware(Middleware):
 
     async def preprocess(
         self, app: App, state: BaseState, event: Event
-    ) -> Optional[StateUpdate]:
+    ) -> StateUpdate | None:
         """Preprocess the event.
 
         Args:

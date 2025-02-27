@@ -1,6 +1,6 @@
 """Interactive components provided by @radix-ui/themes."""
 
-from typing import Dict, Literal, Union
+from typing import Literal, Union
 
 from reflex.components.component import Component
 from reflex.constants.compiler import MemoizationMode
@@ -51,22 +51,22 @@ class Tooltip(RadixThemesComponent):
     side: Var[LiteralSideType]
 
     # The distance in pixels from the trigger. Defaults to 0.
-    side_offset: Var[Union[float, int]]
+    side_offset: Var[float | int]
 
     # The preferred alignment against the trigger. May change when collisions occur. Defaults to "center".
     align: Var[LiteralAlignType]
 
     # An offset in pixels from the "start" or "end" alignment options.
-    align_offset: Var[Union[float, int]]
+    align_offset: Var[float | int]
 
     # When true, overrides the side and align preferences to prevent collisions with boundary edges. Defaults to True.
     avoid_collisions: Var[bool]
 
     # The distance in pixels from the boundary edges where collision detection should occur. Accepts a number (same for all sides), or a partial padding object, for example: { "top": 20, "left": 20 }. Defaults to 0.
-    collision_padding: Var[Union[float, int, Dict[str, Union[float, int]]]]
+    collision_padding: Var[Union[float, int, dict[str, float | int]]]
 
     # The padding between the arrow and the edges of the content. If your content has border-radius, this will prevent it from overflowing the corners. Defaults to 0.
-    arrow_padding: Var[Union[float, int]]
+    arrow_padding: Var[float | int]
 
     # The sticky behavior on the align axis. "partial" will keep the content in the boundary as long as the trigger is at least partially in the boundary whilst "always" will keep the content in the boundary regardless. Defaults to "partial".
     sticky: Var[LiteralStickyType]
@@ -75,7 +75,7 @@ class Tooltip(RadixThemesComponent):
     hide_when_detached: Var[bool]
 
     # Override the duration in milliseconds to customize the open delay for a specific tooltip. Default is 700.
-    delay_duration: Var[Union[float, int]]
+    delay_duration: Var[float | int]
 
     # Prevents Tooltip content from remaining open when hovering.
     disable_hoverable_content: Var[bool]

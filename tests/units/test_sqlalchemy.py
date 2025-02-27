@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Optional, Type
+from typing import Type
 from unittest import mock
 
 import pytest
@@ -56,7 +56,7 @@ def test_automigration(
 
     class ModelBase(Base, MappedAsDataclass):
         __abstract__ = True
-        id: Mapped[Optional[int]] = mapped_column(primary_key=True, default=None)
+        id: Mapped[int | None] = mapped_column(primary_key=True, default=None)
 
     # initial table
     class AlembicThing(ModelBase):  # pyright: ignore[reportRedeclaration]
@@ -79,7 +79,7 @@ def test_automigration(
 
     # Create column t2, mark t1 as optional with default
     class AlembicThing(ModelBase):  # pyright: ignore[reportRedeclaration]
-        t1: Mapped[Optional[str]] = mapped_column(default="default")
+        t1: Mapped[str | None] = mapped_column(default="default")
         t2: Mapped[str] = mapped_column(default="bar")
 
     assert Model.migrate(autogenerate=True)

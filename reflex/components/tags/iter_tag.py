@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import dataclasses
 import inspect
-from typing import TYPE_CHECKING, Any, Callable, Iterable, Tuple, Type, Union, get_args
+from typing import TYPE_CHECKING, Any, Callable, Iterable, Type, Union, get_args
 
 from reflex.components.tags.tag import Tag
 from reflex.vars import LiteralArrayVar, Var, get_unique_variable_name
@@ -41,7 +41,7 @@ class IterTag(Tag):
         try:
             if iterable._var_type.mro()[0] is dict:
                 # Arg is a tuple of (key, value).
-                return Tuple[get_args(iterable._var_type)]  # pyright: ignore [reportReturnType]
+                return tuple[get_args(iterable._var_type)]  # pyright: ignore [reportReturnType]
             elif iterable._var_type.mro()[0] is tuple:
                 # Arg is a union of any possible values in the tuple.
                 return Union[get_args(iterable._var_type)]  # pyright: ignore [reportReturnType]

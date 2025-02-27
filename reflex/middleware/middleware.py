@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 from reflex.event import Event
 from reflex.state import BaseState, StateUpdate
@@ -18,7 +18,7 @@ class Middleware(ABC):
     @abstractmethod
     async def preprocess(
         self, app: App, state: BaseState, event: Event
-    ) -> Optional[StateUpdate]:
+    ) -> StateUpdate | None:
         """Preprocess the event.
 
         Args:
