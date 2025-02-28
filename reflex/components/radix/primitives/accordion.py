@@ -489,12 +489,12 @@ to {
         Returns:
             The style of the component.
         """
-        slide_down = LiteralVar.create(
-            "${slideDown} var(--animation-duration) var(--animation-easing)",
+        slide_down = Var("slideDown").to(str) + Var.create(
+            " var(--animation-duration) var(--animation-easing)",
         )
 
-        slide_up = LiteralVar.create(
-            "${slideUp} var(--animation-duration) var(--animation-easing)",
+        slide_up = Var("slideUp").to(str) + Var.create(
+            " var(--animation-duration) var(--animation-easing)",
         )
 
         return {
