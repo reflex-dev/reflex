@@ -5,6 +5,7 @@ from __future__ import annotations
 import contextlib
 import dataclasses
 import functools
+import inspect
 import json
 import warnings
 from datetime import date, datetime, time, timedelta
@@ -97,7 +98,21 @@ def serializer(
             message = f"Overwriting serializer for type {type_} from {registered_fn.__module__}:{registered_fn.__qualname__} to {fn.__module__}:{fn.__qualname__}."
             if overwrite is False:
                 raise ValueError(message)
-            console.warn(message)
+            caller_frame = next(
+                filter(
+                    lambda frame: frame.filename != __file__,
+                    inspect.getouterframes(inspect.currentframe()),
+                ),
+                None,
+            )
+            file_info = (
+                f'Called in file "{caller_frame.filename}", line {caller_frame.lineno}.'
+                if caller_frame
+                else ""
+            )
+            console.warn(
+                f"{message} Call rx.serializer with `overwrite=True` if this is intentional. {file_info}"
+            )
 
         to_type = to or type_hints.get("return")
 
