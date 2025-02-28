@@ -1349,6 +1349,7 @@ class Scatter(Recharts):
         cls,
         *children,
         data: Optional[Union[List[Dict[str, Any]], Var[List[Dict[str, Any]]]]] = None,
+        name: Optional[Union[Var[str], str]] = None,
         legend_type: Optional[
             Union[
                 Literal[
@@ -1444,6 +1445,7 @@ class Scatter(Recharts):
         Args:
             *children: The children of the component.
             data: The source data, in which each element is an object.
+            name: The name of the data. It is used to represent the scatter in legend.
             legend_type: The type of icon in legend. If set to 'none', no legend item will be rendered. 'line' | 'plainline' | 'square' | 'rect'| 'circle' | 'cross' | 'diamond' | 'square' | 'star' | 'triangle' | 'wye' | 'none'. Default: "circle"
             x_axis_id: The id of x-axis which is corresponding to the data. Default: 0
             y_axis_id: The id of y-axis which is corresponding to the data. Default: 0
