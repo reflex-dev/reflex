@@ -1190,8 +1190,9 @@ class PyiGenerator:
             self._scan_files_multiprocess(file_targets)
 
         # Fix generated pyi files with ruff.
-        subprocess.run(["ruff", "format", *self.written_files])
-        subprocess.run(["ruff", "check", "--fix", *self.written_files])
+        if self.written_files:
+            subprocess.run(["ruff", "format", *self.written_files])
+            subprocess.run(["ruff", "check", "--fix", *self.written_files])
 
         # For some reason, we need to format the __init__.pyi files again after fixing...
         init_files = [f for f in self.written_files if "/__init__.pyi" in f]
