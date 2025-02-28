@@ -106,7 +106,7 @@ def serializer(
                 None,
             )
             file_info = (
-                f'Called in file "{caller_frame.filename}", line {caller_frame.lineno}.'
+                f"(at {caller_frame.filename}:{caller_frame.lineno})"
                 if caller_frame
                 else ""
             )
