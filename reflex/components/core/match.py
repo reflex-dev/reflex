@@ -75,7 +75,7 @@ class Match(MemoizationLeaf):
         return match_cond_var
 
     @classmethod
-    def _process_cases(cls, cases: List) -> tuple[List, Var | BaseComponent | None]:
+    def _process_cases(cls, cases: list) -> tuple[list, Var | BaseComponent | None]:
         """Process the list of match cases and the catchall default case.
 
         Args:
