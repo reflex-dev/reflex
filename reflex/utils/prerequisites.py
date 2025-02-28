@@ -1200,7 +1200,7 @@ def install_frontend_packages(packages: set[str], config: Config):
     )
 
     processes.run_process_with_fallback(
-        [install_package_manager, "install"],
+        [install_package_manager, "install", "--legacy-peer-deps"],
         fallback=fallback_command,
         analytics_enabled=True,
         show_status_message="Installing base frontend packages",
@@ -1213,6 +1213,7 @@ def install_frontend_packages(packages: set[str], config: Config):
             [
                 install_package_manager,
                 "add",
+                "--legacy-peer-deps",
                 "-d",
                 constants.Tailwind.VERSION,
                 *((config.tailwind or {}).get("plugins", [])),
@@ -1227,7 +1228,7 @@ def install_frontend_packages(packages: set[str], config: Config):
     # Install custom packages defined in frontend_packages
     if len(packages) > 0:
         processes.run_process_with_fallback(
-            [install_package_manager, "add", *packages],
+            [install_package_manager, "add", "--legacy-peer-deps", *packages],
             fallback=fallback_command,
             analytics_enabled=True,
             show_status_message="Installing frontend packages from config and components",
