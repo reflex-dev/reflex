@@ -63,7 +63,7 @@ def test_state():
             pass
 
         def do_something_required_optional(
-            self, required_arg: int, optional_arg: Optional[int] = None
+            self, required_arg: int, optional_arg: int | None = None
         ):
             pass
 
