@@ -1275,7 +1275,9 @@ def call_event_handler(
             ]
 
             # check that args of event handler are matching the spec if type hints are provided
-            for i, arg in enumerate(event_callback_spec.args[1:]):
+            for i, arg in enumerate(
+                event_callback_spec.args[1 : len(args_types_without_vars) + 1]
+            ):
                 if arg not in type_hints_of_provided_callback:
                     continue
 
