@@ -41,6 +41,7 @@ from reflex.state import (
     OnLoadInternalState,
     RouterData,
     State,
+    StateDelta,
     StateManagerDisk,
     StateManagerMemory,
     StateManagerRedis,
@@ -1050,14 +1051,16 @@ async def test_dynamic_route_var_route_change_completed_on_load(
         update = await process_coro.__anext__()
         # route change (on_load_internal) triggers: [call on_load events, call set_is_hydrated(True)]
         assert update == StateUpdate(
-            delta={
-                state.get_name(): {
-                    arg_name: exp_val,
-                    f"comp_{arg_name}": exp_val,
-                    constants.CompileVars.IS_HYDRATED: False,
-                    "router": exp_router,
+            delta=StateDelta(
+                {
+                    state.get_name(): {
+                        arg_name: exp_val,
+                        f"comp_{arg_name}": exp_val,
+                        constants.CompileVars.IS_HYDRATED: False,
+                        "router": exp_router,
+                    }
                 }
-            },
+            ),
             events=[
                 _dynamic_state_event(
                     name="on_load",
@@ -1093,11 +1096,13 @@ async def test_dynamic_route_var_route_change_completed_on_load(
         )
         on_load_update = await process_coro.__anext__()
         assert on_load_update == StateUpdate(
-            delta={
-                state.get_name(): {
-                    "loaded": exp_index + 1,
-                },
-            },
+            delta=StateDelta(
+                {
+                    state.get_name(): {
+                        "loaded": exp_index + 1,
+                    },
+                }
+            ),
             events=[],
         )
         # complete the processing
@@ -1114,11 +1119,13 @@ async def test_dynamic_route_var_route_change_completed_on_load(
         )
         on_set_is_hydrated_update = await process_coro.__anext__()
         assert on_set_is_hydrated_update == StateUpdate(
-            delta={
-                state.get_name(): {
-                    "is_hydrated": True,
-                },
-            },
+            delta=StateDelta(
+                {
+                    state.get_name(): {
+                        "is_hydrated": True,
+                    },
+                }
+            ),
             events=[],
         )
         # complete the processing
@@ -1135,11 +1142,13 @@ async def test_dynamic_route_var_route_change_completed_on_load(
         )
         update = await process_coro.__anext__()
         assert update == StateUpdate(
-            delta={
-                state.get_name(): {
-                    "counter": exp_index + 1,
+            delta=StateDelta(
+                {
+                    state.get_name(): {
+                        "counter": exp_index + 1,
+                    }
                 }
-            },
+            ),
             events=[],
         )
         # complete the processing

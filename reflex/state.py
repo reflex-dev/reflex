@@ -40,6 +40,7 @@ from typing import (
 
 import pydantic.v1 as pydantic
 import wrapt
+from jsonpatch import make_patch
 from pydantic import BaseModel as BaseModelV2
 from pydantic.v1 import BaseModel as BaseModelV1
 from pydantic.v1 import validator
@@ -108,8 +109,133 @@ if TYPE_CHECKING:
     from reflex.components.component import Component
 
 
-Delta = dict[str, Any]
 var = computed_var
+
+
+@dataclasses.dataclass
+class StateDelta:
+    """A dictionary representing the state delta."""
+
+    data: dict[str, Any] = dataclasses.field(default_factory=dict)
+    reflex_delta_token: str | None = dataclasses.field(default=None)
+    flush: bool = dataclasses.field(default=False)
+
+    def __getitem__(self, key: str) -> Any:
+        """Get the item from the delta.
+
+        Args:
+            key: The key to get.
+
+        Returns:
+            The item from the delta.
+        """
+        return self.data[key]
+
+    def __setitem__(self, key: str, value: Any):
+        """Set the item in the delta.
+
+        Args:
+            key: The key to set.
+            value: The value to set.
+        """
+        self.data[key] = value
+
+    def __delitem__(self, key: str):
+        """Delete the item from the delta.
+
+        Args:
+            key: The key to delete.
+        """
+        del self.data[key]
+
+    def __iter__(self) -> Any:
+        """Iterate over the delta.
+
+        Returns:
+            The iterator over the delta.
+        """
+        return iter(self.data)
+
+    def __len__(self) -> int:
+        """Get the length of the delta.
+
+        Returns:
+            The length of the delta.
+        """
+        return len(self.data)
+
+    def __contains__(self, key: str) -> bool:
+        """Check if the delta contains the key.
+
+        Args:
+            key: The key to check.
+
+        Returns:
+            Whether the delta contains the key.
+        """
+        return key in self.data
+
+    def keys(self):
+        """Get the keys of the delta.
+
+        Returns:
+            The keys of the delta.
+        """
+        return self.data.keys()
+
+    def __reversed__(self):
+        """Reverse the delta.
+
+        Returns:
+            The reversed delta.
+        """
+        return reversed(self.data)
+
+    def values(self):
+        """Get the values of the delta.
+
+        Returns:
+            The values of the delta.
+        """
+        return self.data.values()
+
+    def items(self):
+        """Get the items of the delta.
+
+        Returns:
+            The items of the delta.
+        """
+        return self.data.items()
+
+
+LAST_DELTA_CACHE: dict[str, StateDelta] = {}
+
+
+@serializer(to=dict)
+def serialize_state_delta(delta: StateDelta) -> dict[str, Any]:
+    """Serialize the state delta.
+
+    Args:
+        delta: The state delta to serialize.
+
+    Returns:
+        The serialized state delta.
+    """
+    if delta.reflex_delta_token is not None and environment.REFLEX_USE_JSON_PATCH.get():
+        full_delta = {}
+        for state_name, new_state_value in delta.items():
+            new_state_value = json.loads(format.json_dumps(new_state_value))
+            key = delta.reflex_delta_token + state_name
+            previous_delta = LAST_DELTA_CACHE.get(key)
+            LAST_DELTA_CACHE[key] = new_state_value
+            if previous_delta is not None and not delta.flush:
+                full_delta[state_name] = {
+                    "__patch": make_patch(previous_delta, new_state_value).patch
+                }
+            else:
+                full_delta[state_name] = new_state_value
+        return full_delta
+    return delta.data
 
 
 if environment.REFLEX_PERF_MODE.get() != PerformanceMode.OFF:
@@ -306,7 +432,7 @@ def get_var_for_field(cls: Type[BaseState], f: ModelField):
     )
 
 
-async def _resolve_delta(delta: Delta) -> Delta:
+async def _resolve_delta(delta: StateDelta) -> StateDelta:
     """Await all coroutines in the delta.
 
     Args:
@@ -1679,7 +1805,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
 
         try:
             # Get the delta after processing the event.
-            delta = await _resolve_delta(state.get_delta())
+            delta = await _resolve_delta(state.get_delta(token=token))
             state._clean()
 
             return StateUpdate(
@@ -1888,8 +2014,11 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             if include_backend or not self.computed_vars[cvar]._backend
         }
 
-    def get_delta(self) -> Delta:
+    def get_delta(self, *, token: str | None = None) -> StateDelta:
         """Get the delta for the state.
+
+        Args:
+            token: The reflex delta
 
         Returns:
             The delta for the state.
@@ -1922,7 +2051,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             delta.update(substates[substate].get_delta())
 
         # Return the delta.
-        return delta
+        return StateDelta(delta, reflex_delta_token=token)
 
     def _mark_dirty(self):
         """Mark the substate and all parent states as dirty."""
@@ -2753,7 +2882,7 @@ class StateUpdate:
     """A state update sent to the frontend."""
 
     # The state delta.
-    delta: Delta = dataclasses.field(default_factory=dict)
+    delta: StateDelta = dataclasses.field(default_factory=StateDelta)
 
     # Events to be added to the event queue.
     events: list[Event] = dataclasses.field(default_factory=list)

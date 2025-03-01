@@ -34,6 +34,7 @@ from reflex.state import (
     OnLoadInternalState,
     RouterData,
     State,
+    StateDelta,
     StateManager,
     StateManagerDisk,
     StateManagerMemory,
@@ -2012,14 +2013,16 @@ async def test_state_proxy(grandchild_state: GrandchildState, mock_app: rx.App):
     mcall = mock_app.event_namespace.emit.mock_calls[0]  # pyright: ignore [reportFunctionMemberAccess]
     assert mcall.args[0] == str(SocketEvent.EVENT)
     assert mcall.args[1] == StateUpdate(
-        delta={
-            grandchild_state.get_full_name(): {
-                "value2": "42",
-            },
-            GrandchildState3.get_full_name(): {
-                "computed": "",
-            },
-        }
+        delta=StateDelta(
+            {
+                grandchild_state.get_full_name(): {
+                    "value2": "42",
+                },
+                GrandchildState3.get_full_name(): {
+                    "computed": "",
+                },
+            }
+        )
     )
     assert mcall.kwargs["to"] == grandchild_state.router.session.session_id
 
@@ -2174,18 +2177,20 @@ async def test_background_task_no_block(mock_app: rx.App, token: str):
     ):
         # other task returns delta
         assert update == StateUpdate(
-            delta={
-                BackgroundTaskState.get_full_name(): {
-                    "order": [
-                        "background_task:start",
-                        "other",
-                    ],
-                    "computed_order": [
-                        "background_task:start",
-                        "other",
-                    ],
+            delta=StateDelta(
+                {
+                    BackgroundTaskState.get_full_name(): {
+                        "order": [
+                            "background_task:start",
+                            "other",
+                        ],
+                        "computed_order": [
+                            "background_task:start",
+                            "other",
+                        ],
+                    }
                 }
-            }
+            )
         )
 
     # Explicit wait for background tasks
@@ -2216,42 +2221,50 @@ async def test_background_task_no_block(mock_app: rx.App, token: str):
         is not None
     )
     assert first_ws_message == StateUpdate(
-        delta={
-            BackgroundTaskState.get_full_name(): {
-                "order": ["background_task:start"],
-                "computed_order": ["background_task:start"],
+        delta=StateDelta(
+            {
+                BackgroundTaskState.get_full_name(): {
+                    "order": ["background_task:start"],
+                    "computed_order": ["background_task:start"],
+                }
             }
-        },
+        ),
         events=[],
         final=True,
     )
     for call in emit_mock.mock_calls[1:5]:  # pyright: ignore [reportFunctionMemberAccess]
         assert call.args[1] == StateUpdate(
-            delta={
-                BackgroundTaskState.get_full_name(): {
-                    "computed_order": ["background_task:start"],
+            delta=StateDelta(
+                {
+                    BackgroundTaskState.get_full_name(): {
+                        "computed_order": ["background_task:start"],
+                    }
                 }
-            },
+            ),
             events=[],
             final=True,
         )
     assert emit_mock.mock_calls[-2].args[1] == StateUpdate(  # pyright: ignore [reportFunctionMemberAccess]
-        delta={
-            BackgroundTaskState.get_full_name(): {
-                "order": exp_order,
-                "computed_order": exp_order,
-                "dict_list": {},
+        delta=StateDelta(
+            {
+                BackgroundTaskState.get_full_name(): {
+                    "order": exp_order,
+                    "computed_order": exp_order,
+                    "dict_list": {},
+                }
             }
-        },
+        ),
         events=[],
         final=True,
     )
     assert emit_mock.mock_calls[-1].args[1] == StateUpdate(  # pyright: ignore [reportFunctionMemberAccess]
-        delta={
-            BackgroundTaskState.get_full_name(): {
-                "computed_order": exp_order,
-            },
-        },
+        delta=StateDelta(
+            {
+                BackgroundTaskState.get_full_name(): {
+                    "computed_order": exp_order,
+                },
+            }
+        ),
         events=[],
         final=True,
     )
