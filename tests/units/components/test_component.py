@@ -62,6 +62,11 @@ def test_state():
         def do_something_with_list_str(self, arg: list[str]):
             pass
 
+        def do_something_required_optional(
+            self, required_arg: int, optional_arg: Optional[int] = None
+        ):
+            pass
+
     return TestState
 
 
@@ -120,6 +125,7 @@ def component2() -> Type[Component]:
                 "on_open": passthrough_event_spec(bool),
                 "on_close": passthrough_event_spec(bool),
                 "on_user_visited_count_changed": passthrough_event_spec(int),
+                "on_two_args": passthrough_event_spec(int, int),
                 "on_user_list_changed": passthrough_event_spec(List[str]),
             }
 
@@ -611,6 +617,7 @@ def test_get_event_triggers(component1, component2):
             "on_close",
             "on_prop_event",
             "on_user_visited_count_changed",
+            "on_two_args",
             "on_user_list_changed",
         }
         | default_triggers
@@ -920,6 +927,10 @@ def test_invalid_event_handler_args(component2, test_state):
     with pytest.raises(EventFnArgMismatchError):
         component2.create(on_click=test_state.do_something_arg)
 
+    # EventHandler args must have at least as many default args as the spec.
+    with pytest.raises(EventFnArgMismatchError):
+        component2.create(on_click=test_state.do_something_required_optional)
+
     # Multiple EventHandler args: all must match
     with pytest.raises(EventFnArgMismatchError):
         component2.create(
@@ -983,6 +994,12 @@ def test_valid_event_handler_args(component2, test_state):
     # Does not raise because event handlers are allowed to have less args than the spec.
     component2.create(on_open=test_state.do_something)
     component2.create(on_prop_event=test_state.do_something)
+
+    # Does not raise because event handlers can have optional args.
+    component2.create(
+        on_user_visited_count_changed=test_state.do_something_required_optional
+    )
+    component2.create(on_two_args=test_state.do_something_required_optional)
 
     # Controlled event handlers should take args.
     component2.create(on_open=test_state.do_something_arg)
