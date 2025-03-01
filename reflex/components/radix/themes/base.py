@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any, Dict, Literal
+from typing import Any, Literal
 
 from reflex.components import Component
 from reflex.components.core.breakpoints import Responsive
@@ -112,11 +112,8 @@ class RadixThemesComponent(Component):
 
     library = "@radix-ui/themes@^3.0.0"
 
-    # Temporary pin < 3.1.5 until radix-ui/themes#627 is resolved.
-    library = library + " && <3.1.5"
-
     # "Fake" prop color_scheme is used to avoid shadowing CSS prop "color".
-    _rename_props: Dict[str, str] = {"colorScheme": "color"}
+    _rename_props: dict[str, str] = {"colorScheme": "color"}
 
     @classmethod
     def create(

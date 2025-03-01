@@ -6,7 +6,7 @@ import dataclasses
 import textwrap
 from functools import lru_cache
 from hashlib import md5
-from typing import Any, Callable, Dict, Sequence
+from typing import Any, Callable, Sequence
 
 from reflex.components.component import BaseComponent, Component, CustomComponent
 from reflex.components.tags.tag import Tag
@@ -149,7 +149,7 @@ class Markdown(Component):
     is_default = True
 
     # The component map from a tag to a lambda that creates a component.
-    component_map: Dict[str, Any] = {}
+    component_map: dict[str, Any] = {}
 
     # The hash of the component map, generated at create() time.
     component_map_hash: str = ""

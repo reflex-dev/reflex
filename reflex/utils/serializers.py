@@ -13,11 +13,8 @@ from pathlib import Path
 from typing import (
     Any,
     Callable,
-    List,
     Literal,
-    Optional,
     Set,
-    Tuple,
     Type,
     TypeVar,
     Union,
@@ -115,22 +112,22 @@ def serializer(
 @overload
 def serialize(
     value: Any, get_type: Literal[True]
-) -> Tuple[Optional[SerializedType], Optional[types.GenericType]]: ...
+) -> tuple[SerializedType | None, types.GenericType | None]: ...
 
 
 @overload
-def serialize(value: Any, get_type: Literal[False]) -> Optional[SerializedType]: ...
+def serialize(value: Any, get_type: Literal[False]) -> SerializedType | None: ...
 
 
 @overload
-def serialize(value: Any) -> Optional[SerializedType]: ...
+def serialize(value: Any) -> SerializedType | None: ...
 
 
 def serialize(
     value: Any, get_type: bool = False
 ) -> Union[
-    Optional[SerializedType],
-    Tuple[Optional[SerializedType], Optional[types.GenericType]],
+    SerializedType | None,
+    tuple[SerializedType | None, types.GenericType | None],
 ]:
     """Serialize the value to a JSON string.
 
@@ -164,7 +161,7 @@ def serialize(
 
 
 @functools.lru_cache
-def get_serializer(type_: Type) -> Optional[Serializer]:
+def get_serializer(type_: Type) -> Serializer | None:
     """Get the serializer for the type.
 
     Args:
@@ -188,7 +185,7 @@ def get_serializer(type_: Type) -> Optional[Serializer]:
 
 
 @functools.lru_cache
-def get_serializer_type(type_: Type) -> Optional[Type]:
+def get_serializer_type(type_: Type) -> Type | None:
     """Get the converted type for the type after serializing.
 
     Args:
@@ -370,7 +367,7 @@ def serialize_color(color: Color) -> str:
 with contextlib.suppress(ImportError):
     from pandas import DataFrame
 
-    def format_dataframe_values(df: DataFrame) -> List[List[Any]]:
+    def format_dataframe_values(df: DataFrame) -> list[list[Any]]:
         """Format dataframe values to a list of lists.
 
         Args:

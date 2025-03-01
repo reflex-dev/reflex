@@ -23,7 +23,7 @@ import zipfile
 from datetime import datetime
 from pathlib import Path
 from types import ModuleType
-from typing import Any, Callable, List, NamedTuple, Optional
+from typing import Callable, NamedTuple
 from urllib.parse import urlparse
 
 import httpx
@@ -72,9 +72,9 @@ class Template:
 class CpuInfo:
     """Model to save cpu info."""
 
-    manufacturer_id: Optional[str]
-    model_name: Optional[str]
-    address_width: Optional[int]
+    manufacturer_id: str | None
+    model_name: str | None
+    address_width: int | None
 
 
 def get_web_dir() -> Path:
@@ -896,7 +896,7 @@ def init_reflex_json(project_hash: int | None):
 
 
 def update_next_config(
-    export: bool = False, transpile_packages: Optional[List[str]] = None
+    export: bool = False, transpile_packages: list[str] | None = None
 ):
     """Update Next.js config from Reflex config.
 
@@ -918,7 +918,7 @@ def update_next_config(
 
 
 def _update_next_config(
-    config: Config, export: bool = False, transpile_packages: Optional[List[str]] = None
+    config: Config, export: bool = False, transpile_packages: list[str] | None = None
 ):
     next_config = {
         "basePath": config.frontend_path or "",
@@ -1200,7 +1200,7 @@ def install_frontend_packages(packages: set[str], config: Config):
     )
 
     processes.run_process_with_fallback(
-        [install_package_manager, "install"],
+        [install_package_manager, "install", "--legacy-peer-deps"],
         fallback=fallback_command,
         analytics_enabled=True,
         show_status_message="Installing base frontend packages",
@@ -1213,6 +1213,7 @@ def install_frontend_packages(packages: set[str], config: Config):
             [
                 install_package_manager,
                 "add",
+                "--legacy-peer-deps",
                 "-d",
                 constants.Tailwind.VERSION,
                 *((config.tailwind or {}).get("plugins", [])),
@@ -1227,7 +1228,7 @@ def install_frontend_packages(packages: set[str], config: Config):
     # Install custom packages defined in frontend_packages
     if len(packages) > 0:
         processes.run_process_with_fallback(
-            [install_package_manager, "add", *packages],
+            [install_package_manager, "add", "--legacy-peer-deps", *packages],
             fallback=fallback_command,
             analytics_enabled=True,
             show_status_message="Installing frontend packages from config and components",
@@ -1371,7 +1372,7 @@ def validate_frontend_dependencies(init: bool = True):
         validate_bun()
 
 
-def ensure_reflex_installation_id() -> Optional[int]:
+def ensure_reflex_installation_id() -> int | None:
     """Ensures that a reflex distinct id has been generated and stored in the reflex directory.
 
     Returns:
@@ -2025,38 +2026,3 @@ def get_user_tier():
         if authenticated_token[0]
         else "anonymous"
     )
-
-
-def check_config_option_in_tier(
-    option_name: str,
-    allowed_tiers: list[str],
-    fallback_value: Any,
-    help_link: str | None = None,
-):
-    """Check if a config option is allowed for the authenticated user's current tier.
-
-    Args:
-        option_name: The name of the option to check.
-        allowed_tiers: The tiers that are allowed to use the option.
-        fallback_value: The fallback value if the option is not allowed.
-        help_link: The help link to show to a user that is authenticated.
-    """
-    config = get_config()
-    current_tier = get_user_tier()
-
-    if current_tier == "anonymous":
-        the_remedy = (
-            "You are currently logged out. Run `reflex login` to access this option."
-        )
-    else:
-        the_remedy = (
-            f"Your current subscription tier is `{current_tier}`. "
-            f"Please upgrade to {allowed_tiers} to access this option. "
-        )
-        if help_link:
-            the_remedy += f"See {help_link} for more information."
-
-    if current_tier not in allowed_tiers:
-        console.warn(f"Config option `{option_name}` is restricted. {the_remedy}")
-        setattr(config, option_name, fallback_value)
-        config._set_persistent(**{option_name: fallback_value})

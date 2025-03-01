@@ -1,6 +1,3 @@
-```diff
-+ Pynecone을 찾고 계신가요? 이곳이 맞습니다. Pynecone은 이제 Reflex로 불립니다. +
-```
 
 <div align="center">
 <img src="https://raw.githubusercontent.com/reflex-dev/reflex/main/docs/images/reflex_dark.svg#gh-light-mode-only" alt="Reflex Logo" width="300px">
