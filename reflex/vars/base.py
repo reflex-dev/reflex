@@ -475,7 +475,7 @@ class Var(Generic[VAR_TYPE]):
 
                 _default_var_type: ClassVar[GenericType] = default_type
 
-            new_to_var_operation_name = f"To{cls.__name__.removesuffix('Var')}Operation"
+            new_to_var_operation_name = f"{cls.__name__.removesuffix('Var')}CastedVar"
             ToVarOperation.__qualname__ = (
                 ToVarOperation.__qualname__.removesuffix(ToVarOperation.__name__)
                 + new_to_var_operation_name
