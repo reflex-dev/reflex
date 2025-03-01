@@ -480,7 +480,7 @@ async def test_dynamic_var_event(test_state: Type[ATestState], token: str):
             payload={"value": 50},
         )
     ):
-        assert result.delta == {test_state.get_name(): {"int_val": 50}}
+        assert result.delta.data == {test_state.get_name(): {"int_val": 50}}
 
 
 @pytest.mark.asyncio
@@ -594,7 +594,7 @@ async def test_list_mutation_detection__plain_list(
         ):
             # prefix keys in expected_delta with the state name
             expected_delta = {list_mutation_state.get_name(): expected_delta}
-            assert result.delta == expected_delta
+            assert result.delta.data == expected_delta
 
 
 @pytest.mark.asyncio
@@ -720,7 +720,7 @@ async def test_dict_mutation_detection__plain_list(
             # prefix keys in expected_delta with the state name
             expected_delta = {dict_mutation_state.get_name(): expected_delta}
 
-            assert result.delta == expected_delta
+            assert result.delta.data == expected_delta
 
 
 @pytest.mark.asyncio
@@ -1059,7 +1059,8 @@ async def test_dynamic_route_var_route_change_completed_on_load(
                         constants.CompileVars.IS_HYDRATED: False,
                         "router": exp_router,
                     }
-                }
+                },
+                reflex_delta_token=token,
             ),
             events=[
                 _dynamic_state_event(
@@ -1101,7 +1102,8 @@ async def test_dynamic_route_var_route_change_completed_on_load(
                     state.get_name(): {
                         "loaded": exp_index + 1,
                     },
-                }
+                },
+                reflex_delta_token=token,
             ),
             events=[],
         )
@@ -1124,7 +1126,8 @@ async def test_dynamic_route_var_route_change_completed_on_load(
                     state.get_name(): {
                         "is_hydrated": True,
                     },
-                }
+                },
+                reflex_delta_token=token,
             ),
             events=[],
         )
@@ -1147,7 +1150,8 @@ async def test_dynamic_route_var_route_change_completed_on_load(
                     state.get_name(): {
                         "counter": exp_index + 1,
                     }
-                }
+                },
+                reflex_delta_token=token,
             ),
             events=[],
         )

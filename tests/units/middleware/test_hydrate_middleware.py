@@ -46,5 +46,5 @@ async def test_preprocess_no_events(hydrate_middleware, event1, mocker):
         state=state,
     )
     assert isinstance(update, StateUpdate)
-    assert update.delta == state.dict()
+    assert update.delta.data == state.dict()
     assert not update.events
