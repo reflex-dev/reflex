@@ -13,6 +13,8 @@ import io
 import json
 import sys
 import traceback
+import urllib.parse
+import uuid
 from datetime import datetime
 from pathlib import Path
 from timeit import default_timer as timer
@@ -1828,13 +1830,16 @@ class EventNamespace(AsyncNamespace):
         self.sid_to_token = {}
         self.app = app
 
-    def on_connect(self, sid: str, environ: dict):
+    async def on_connect(self, sid: str, environ: dict):
         """Event for when the websocket is connected.
 
         Args:
             sid: The Socket.IO session id.
             environ: The request information, including HTTP headers.
         """
+        query_params = urllib.parse.parse_qs(environ.get("QUERY_STRING"))
+        await self.link_token_to_sid(sid, query_params.get("token", [])[0])
+
         subprotocol = environ.get("HTTP_SEC_WEBSOCKET_PROTOCOL")
         if subprotocol and subprotocol != constants.Reflex.VERSION:
             console.warn(
@@ -1903,9 +1908,6 @@ class EventNamespace(AsyncNamespace):
                 f"Failed to deserialize event data: {fields}."
             ) from ex
 
-        self.token_to_sid[event.token] = sid
-        self.sid_to_token[sid] = event.token
-
         # Get the event environment.
         if self.app.sio is None:
             raise RuntimeError("Socket.IO is not initialized.")
@@ -1938,3 +1940,17 @@ class EventNamespace(AsyncNamespace):
         """
         # Emit the test event.
         await self.emit(str(constants.SocketEvent.PING), "pong", to=sid)
+
+    async def link_token_to_sid(self, sid: str, token: str):
+        """Link a token to a session id.
+
+        Args:
+            sid: The Socket.IO session id.
+            token: The client token.
+        """
+        if token in self.sid_to_token.values() and sid != self.token_to_sid.get(token):
+            token = str(uuid.uuid4())
+            await self.emit("new_token", token, to=sid)
+
+        self.token_to_sid[token] = sid
+        self.sid_to_token[sid] = token
