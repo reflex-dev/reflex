@@ -5,6 +5,7 @@ from __future__ import annotations
 import contextlib
 import dataclasses
 import functools
+import inspect
 import json
 import warnings
 from datetime import date, datetime, time, timedelta
@@ -21,13 +22,14 @@ from typing import (
     get_type_hints,
     overload,
 )
+from uuid import UUID
 
 from pydantic import BaseModel as BaseModelV2
 from pydantic.v1 import BaseModel as BaseModelV1
 
 from reflex.base import Base
 from reflex.constants.colors import Color, format_color
-from reflex.utils import types
+from reflex.utils import console, types
 
 # Mapping from type to a serializer.
 # The serializer should convert the type to a JSON object.
@@ -47,6 +49,7 @@ SERIALIZED_FUNCTION = TypeVar("SERIALIZED_FUNCTION", bound=Serializer)
 def serializer(
     fn: None = None,
     to: Type[SerializedType] | None = None,
+    overwrite: bool | None = None,
 ) -> Callable[[SERIALIZED_FUNCTION], SERIALIZED_FUNCTION]: ...
 
 
@@ -54,18 +57,21 @@ def serializer(
 def serializer(
     fn: SERIALIZED_FUNCTION,
     to: Type[SerializedType] | None = None,
+    overwrite: bool | None = None,
 ) -> SERIALIZED_FUNCTION: ...
 
 
 def serializer(
     fn: SERIALIZED_FUNCTION | None = None,
     to: Any = None,
+    overwrite: bool | None = None,
 ) -> SERIALIZED_FUNCTION | Callable[[SERIALIZED_FUNCTION], SERIALIZED_FUNCTION]:
     """Decorator to add a serializer for a given type.
 
     Args:
         fn: The function to decorate.
         to: The type returned by the serializer. If this is `str`, then any Var created from this type will be treated as a string.
+        overwrite: Whether to overwrite the existing serializer.
 
     Returns:
         The decorated function.
@@ -85,9 +91,24 @@ def serializer(
 
         # Make sure the type is not already registered.
         registered_fn = SERIALIZERS.get(type_)
-        if registered_fn is not None and registered_fn != fn:
-            raise ValueError(
-                f"Serializer for type {type_} is already registered as {registered_fn.__qualname__}."
+        if registered_fn is not None and registered_fn != fn and overwrite is not True:
+            message = f"Overwriting serializer for type {type_} from {registered_fn.__module__}:{registered_fn.__qualname__} to {fn.__module__}:{fn.__qualname__}."
+            if overwrite is False:
+                raise ValueError(message)
+            caller_frame = next(
+                filter(
+                    lambda frame: frame.filename != __file__,
+                    inspect.getouterframes(inspect.currentframe()),
+                ),
+                None,
+            )
+            file_info = (
+                f"(at {caller_frame.filename}:{caller_frame.lineno})"
+                if caller_frame
+                else ""
+            )
+            console.warn(
+                f"{message} Call rx.serializer with `overwrite=True` if this is intentional. {file_info}"
             )
 
         to_type = to or type_hints.get("return")
@@ -349,6 +370,19 @@ def serialize_enum(en: Enum) -> str:
         The serialized enum.
     """
     return en.value
+
+
+@serializer(to=str)
+def serialize_uuid(uuid: UUID) -> str:
+    """Serialize a UUID to a JSON string.
+
+    Args:
+        uuid: The UUID to serialize.
+
+    Returns:
+        The serialized UUID.
+    """
+    return str(uuid)
 
 
 @serializer(to=str)
