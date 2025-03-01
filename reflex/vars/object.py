@@ -5,7 +5,16 @@ from __future__ import annotations
 import dataclasses
 import typing
 from inspect import isclass
-from typing import Any, Mapping, NoReturn, Type, TypeVar, get_args, overload
+from typing import (
+    Any,
+    Mapping,
+    NoReturn,
+    Type,
+    TypeVar,
+    get_args,
+    get_type_hints,
+    overload,
+)
 
 from typing_extensions import is_typeddict
 
@@ -16,6 +25,7 @@ from reflex.utils.types import (
     get_attribute_access_type,
     get_origin,
     safe_issubclass,
+    unionize,
 )
 
 from .base import (
@@ -69,6 +79,9 @@ class ObjectVar(Var[OBJECT_TYPE], python_types=Mapping):
         fixed_type = get_origin(self._var_type) or self._var_type
         if not isclass(fixed_type):
             return Any  # pyright: ignore [reportReturnType]
+        if is_typeddict(fixed_type) or dataclasses.is_dataclass(fixed_type):
+            annotations = get_type_hints(fixed_type)
+            return unionize(*annotations.values())
         args = get_args(self._var_type) if issubclass(fixed_type, Mapping) else ()
         return args[1] if args else Any  # pyright: ignore [reportReturnType]
 
