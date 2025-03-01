@@ -7,13 +7,10 @@ import typing
 from inspect import isclass
 from typing import (
     Any,
-    List,
     Mapping,
     NoReturn,
-    Tuple,
     Type,
     TypeVar,
-    Union,
     get_args,
     get_type_hints,
     overload,
