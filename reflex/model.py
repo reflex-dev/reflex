@@ -5,7 +5,7 @@ from __future__ import annotations
 import re
 from collections import defaultdict
 from contextlib import suppress
-from typing import Any, ClassVar, Optional, Type, Union
+from typing import Any, ClassVar, Type
 
 import alembic.autogenerate
 import alembic.command
@@ -161,9 +161,7 @@ async def get_db_status() -> dict[str, bool]:
     return {"db": status}
 
 
-SQLModelOrSqlAlchemy = Union[
-    Type[sqlmodel.SQLModel], Type[sqlalchemy.orm.DeclarativeBase]
-]
+SQLModelOrSqlAlchemy = Type[sqlmodel.SQLModel] | Type[sqlalchemy.orm.DeclarativeBase]
 
 
 class ModelRegistry:
@@ -247,7 +245,7 @@ class Model(Base, sqlmodel.SQLModel):  # pyright: ignore [reportGeneralTypeIssue
     """Base class to define a table in the database."""
 
     # The primary key for the table.
-    id: Optional[int] = sqlmodel.Field(default=None, primary_key=True)
+    id: int | None = sqlmodel.Field(default=None, primary_key=True)
 
     def __init_subclass__(cls):
         """Drop the default primary key field if any primary key field is defined."""

@@ -1,6 +1,3 @@
-```diff
-+ 寻找 Pynecone 吗？您来对了.Pynecone 已经更名为 Reflex.+
-```
 
 <div align="center">
 <img src="https://raw.githubusercontent.com/reflex-dev/reflex/main/docs/images/reflex_dark.svg#gh-light-mode-only" alt="Reflex Logo" width="300px">

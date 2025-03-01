@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any, Type, Union
+from typing import Any, Type
 
 from reflex.components.component import Component
 from reflex.constants import EventTriggers
@@ -37,7 +37,7 @@ class DebounceInput(Component):
     force_notify_on_blur: Var[bool]
 
     # If provided, create a fully-controlled input
-    value: Var[Union[str, int, float]]
+    value: Var[str | int | float]
 
     # The ref to attach to the created input
     input_ref: Var[str]

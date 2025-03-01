@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-from typing import Dict, Tuple
-
 from reflex.components.component import Component
 from reflex.components.datadisplay.logo import svg_logo
 from reflex.components.el import a, button, details, div, h2, hr, p, pre, summary
@@ -15,8 +13,8 @@ from reflex.vars.object import ObjectVar
 
 
 def on_error_spec(
-    error: ObjectVar[Dict[str, str]], info: ObjectVar[Dict[str, str]]
-) -> Tuple[Var[str], Var[str]]:
+    error: ObjectVar[dict[str, str]], info: ObjectVar[dict[str, str]]
+) -> tuple[Var[str], Var[str]]:
     """The spec for the on_error event handler.
 
     Args:
