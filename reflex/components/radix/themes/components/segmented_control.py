@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from types import SimpleNamespace
-from typing import Literal
+from typing import Literal, Sequence
 
 from reflex.components.core.breakpoints import Responsive
 from reflex.event import EventHandler
@@ -47,10 +47,10 @@ class SegmentedControlRoot(RadixThemesComponent):
     radius: Var[Literal["none", "small", "medium", "large", "full"]]
 
     # The default value of the segmented control.
-    default_value: Var[str | list[str]]
+    default_value: Var[str | Sequence[str]]
 
     # The current value of the segmented control.
-    value: Var[str | list[str]]
+    value: Var[str | Sequence[str]]
 
     # Handles the `onChange` event for the SegmentedControl component.
     on_change: EventHandler[on_value_change]

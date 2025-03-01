@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from typing import Sequence
+
 from reflex.components.base.fragment import Fragment
 from reflex.components.tags.tag import Tag
 from reflex.constants.compiler import Hooks
@@ -16,7 +18,7 @@ class Clipboard(Fragment):
     """Clipboard component."""
 
     # The element ids to attach the event listener to. Defaults to all child components or the document.
-    targets: Var[list[str]]
+    targets: Var[Sequence[str]]
 
     # Called when the user pastes data into the document. Data is a list of tuples of (mime_type, data). Binary types will be base64 encoded as a data uri.
     on_paste: EventHandler[passthrough_event_spec(list[tuple[str, str]])]

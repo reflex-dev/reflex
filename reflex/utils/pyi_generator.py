@@ -61,6 +61,7 @@ DEFAULT_TYPING_IMPORTS = {
     "Callable",
     "Dict",
     # "List",
+    "Sequence",
     "Literal",
     "Optional",
     "Union",

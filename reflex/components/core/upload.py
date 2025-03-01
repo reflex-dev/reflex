@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Any, Callable, ClassVar, List
+from typing import Any, Callable, ClassVar, Sequence
 
 from reflex.components.base.fragment import Fragment
 from reflex.components.component import (
@@ -197,7 +197,7 @@ class Upload(MemoizationLeaf):
     # The list of accepted file types. This should be a dictionary of MIME types as keys and array of file formats as
     # values.
     # supported MIME types: https://developer.mozilla.org/en-US/docs/Web/HTTP/Basics_of_HTTP/MIME_types/Common_types
-    accept: Var[dict[str, List] | None]
+    accept: Var[dict[str, Sequence] | None]
 
     # Whether the dropzone is disabled.
     disabled: Var[bool]

@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Literal
+from typing import Literal, Sequence
 
 import reflex as rx
 from reflex.components.component import Component, ComponentNamespace
@@ -77,7 +77,7 @@ class HighLevelRadioGroup(RadixThemesComponent):
     """High level wrapper for the RadioGroup component."""
 
     # The items of the radio group.
-    items: Var[list[str]]
+    items: Var[Sequence[str]]
 
     # The direction of the radio group.
     direction: Var[LiteralFlexDirection] = LiteralVar.create("row")
@@ -118,7 +118,7 @@ class HighLevelRadioGroup(RadixThemesComponent):
     @classmethod
     def create(
         cls,
-        items: Var[list[str | int | float | list | dict | bool | None]],
+        items: Var[Sequence[str | int | float | list | dict | bool | None]],
         **props,
     ) -> Component:
         """Create a radio group component.

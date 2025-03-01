@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any, Union
+from typing import Any, Sequence, Union
 
 from reflex.components.component import MemoizationLeaf
 from reflex.constants.colors import Color
@@ -92,7 +92,7 @@ class Legend(Recharts):
     icon_type: Var[LiteralIconType]
 
     # The source data of the content to be displayed in the legend, usually calculated internally. Default: []
-    payload: Var[list[dict[str, Any]]]
+    payload: Var[Sequence[dict[str, Any]]]
 
     # The width of chart container, usually calculated internally.
     chart_width: Var[int]

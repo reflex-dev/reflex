@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Literal, Union
+from typing import Literal, Sequence
 
 from reflex.components.component import Component
 from reflex.components.core.breakpoints import Responsive
@@ -42,10 +42,10 @@ class Slider(RadixThemesComponent):
     radius: Var[Literal["none", "small", "full"]]
 
     # The value of the slider when initially rendered. Use when you do not need to control the state of the slider.
-    default_value: Var[Union[list[float | int], float, int]]
+    default_value: Var[Sequence[float | int] | float | int]
 
     # The controlled value of the slider. Must be used in conjunction with onValueChange.
-    value: Var[list[float | int]]
+    value: Var[Sequence[float | int]]
 
     # The name of the slider. Submitted with its owning form as part of a name/value pair.
     name: Var[str]
