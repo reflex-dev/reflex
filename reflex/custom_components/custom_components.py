@@ -9,7 +9,6 @@ import sys
 from collections import namedtuple
 from contextlib import contextmanager
 from pathlib import Path
-from typing import Optional, Tuple
 
 import httpx
 import tomlkit
@@ -311,7 +310,7 @@ def _populate_custom_component_project(name_variants: NameVariants):
 
 @custom_components_cli.command(name="init")
 def init(
-    library_name: Optional[str] = typer.Option(
+    library_name: str | None = typer.Option(
         None,
         help="The name of your library. On PyPI, package will be published as `reflex-{library-name}`.",
     ),
@@ -604,26 +603,26 @@ def _ensure_dist_dir(version_to_publish: str, build: bool):
 
 @custom_components_cli.command(name="publish")
 def publish(
-    repository: Optional[str] = typer.Option(
+    repository: str | None = typer.Option(
         None,
         "-r",
         "--repository",
         help="The name of the repository. Defaults to pypi. Only supports pypi and testpypi (Test PyPI) for now.",
     ),
-    token: Optional[str] = typer.Option(
+    token: str | None = typer.Option(
         None,
         "-t",
         "--token",
         help="The API token to use for authentication on python package repository. If token is provided, no username/password should be provided at the same time",
     ),
-    username: Optional[str] = typer.Option(
+    username: str | None = typer.Option(
         environment.TWINE_USERNAME.get(),
         "-u",
         "--username",
         show_default="TWINE_USERNAME environment variable value if set",
         help="The username to use for authentication on python package repository. Username and password must both be provided.",
     ),
-    password: Optional[str] = typer.Option(
+    password: str | None = typer.Option(
         environment.TWINE_PASSWORD.get(),
         "-p",
         "--password",
@@ -927,7 +926,7 @@ def _validate_url_with_protocol_prefix(url: str | None) -> bool:
     return not url or (url.startswith("http://") or url.startswith("https://"))
 
 
-def _get_file_from_prompt_in_loop() -> Tuple[bytes, str] | None:
+def _get_file_from_prompt_in_loop() -> tuple[bytes, str] | None:
     image_file = file_extension = None
     while image_file is None:
         image_filepath = Path(

@@ -39,7 +39,7 @@ class ChildGenericDict(GenericDict):
         ([1, 2, 3], Sequence[int]),
         ([1, 2.0, "a"], Sequence[Union[int, float, str]]),
         ({"a": 1, "b": 2}, Mapping[str, int]),
-        ({"a": 1, 2: "b"}, Mapping[Union[int, str], Union[str, int]]),
+        ({"a": 1, 2: "b"}, Mapping[int | str, str | int]),
         (CustomDict(), CustomDict),
         (ChildCustomDict(), ChildCustomDict),
         (GenericDict({1: 1}), Mapping[int, int]),

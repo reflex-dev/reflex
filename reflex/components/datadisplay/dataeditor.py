@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from enum import Enum
-from typing import Any, Dict, List, Literal, Optional, Sequence, Tuple, TypedDict, Union
+from typing import Any, Dict, Literal, Sequence, TypedDict
 
 from reflex.base import Base
 from reflex.components.component import Component, NoSSRComponent
@@ -52,38 +52,38 @@ class GridColumnIcons(Enum):
 class DataEditorTheme(Base):
     """The theme for the DataEditor component."""
 
-    accent_color: Optional[str] = None
-    accent_fg: Optional[str] = None
-    accent_light: Optional[str] = None
-    base_font_style: Optional[str] = None
-    bg_bubble: Optional[str] = None
-    bg_bubble_selected: Optional[str] = None
-    bg_cell: Optional[str] = None
-    bg_cell_medium: Optional[str] = None
-    bg_header: Optional[str] = None
-    bg_header_has_focus: Optional[str] = None
-    bg_header_hovered: Optional[str] = None
-    bg_icon_header: Optional[str] = None
-    bg_search_result: Optional[str] = None
-    border_color: Optional[str] = None
-    cell_horizontal_padding: Optional[int] = None
-    cell_vertical_padding: Optional[int] = None
-    drilldown_border: Optional[str] = None
-    editor_font_size: Optional[str] = None
-    fg_icon_header: Optional[str] = None
-    font_family: Optional[str] = None
-    header_bottom_border_color: Optional[str] = None
-    header_font_style: Optional[str] = None
-    horizontal_border_color: Optional[str] = None
-    line_height: Optional[int] = None
-    link_color: Optional[str] = None
-    text_bubble: Optional[str] = None
-    text_dark: Optional[str] = None
-    text_group_header: Optional[str] = None
-    text_header: Optional[str] = None
-    text_header_selected: Optional[str] = None
-    text_light: Optional[str] = None
-    text_medium: Optional[str] = None
+    accent_color: str | None = None
+    accent_fg: str | None = None
+    accent_light: str | None = None
+    base_font_style: str | None = None
+    bg_bubble: str | None = None
+    bg_bubble_selected: str | None = None
+    bg_cell: str | None = None
+    bg_cell_medium: str | None = None
+    bg_header: str | None = None
+    bg_header_has_focus: str | None = None
+    bg_header_hovered: str | None = None
+    bg_icon_header: str | None = None
+    bg_search_result: str | None = None
+    border_color: str | None = None
+    cell_horizontal_padding: int | None = None
+    cell_vertical_padding: int | None = None
+    drilldown_border: str | None = None
+    editor_font_size: str | None = None
+    fg_icon_header: str | None = None
+    font_family: str | None = None
+    header_bottom_border_color: str | None = None
+    header_font_style: str | None = None
+    horizontal_border_color: str | None = None
+    line_height: int | None = None
+    link_color: str | None = None
+    text_bubble: str | None = None
+    text_dark: str | None = None
+    text_group_header: str | None = None
+    text_header: str | None = None
+    text_header_selected: str | None = None
+    text_light: str | None = None
+    text_medium: str | None = None
 
 
 class Bounds(TypedDict):
@@ -121,7 +121,7 @@ class GridSelectionCurrent(TypedDict):
 class GridSelection(TypedDict):
     """The grid selection."""
 
-    current: Optional[GridSelectionCurrent]
+    current: GridSelectionCurrent | None
     columns: CompatSelection
     rows: CompatSelection
 
@@ -148,14 +148,14 @@ class GroupHeaderClickedEventArgs(TypedDict):
 class GridCell(TypedDict):
     """The grid cell."""
 
-    span: Optional[List[int]]
+    span: list[int] | None
 
 
 class GridColumn(TypedDict):
     """The grid column."""
 
     title: str
-    group: Optional[str]
+    group: str | None
 
 
 class DataEditor(NoSSRComponent):
@@ -164,7 +164,7 @@ class DataEditor(NoSSRComponent):
     tag = "DataEditor"
     is_default = True
     library: str | None = "@glideapps/glide-data-grid@^6.0.3"
-    lib_dependencies: List[str] = [
+    lib_dependencies: list[str] = [
         "lodash@^4.17.21",
         "react-responsive-carousel@^3.2.7",
     ]
@@ -173,7 +173,7 @@ class DataEditor(NoSSRComponent):
     rows: Var[int]
 
     # Headers of the columns for the data grid.
-    columns: Var[Sequence[Dict[str, Any]]]
+    columns: Var[Sequence[dict[str, Any]]]
 
     # The data.
     data: Var[Sequence[Sequence[Any]]]
@@ -257,23 +257,23 @@ class DataEditor(NoSSRComponent):
     scroll_offset_y: Var[int]
 
     # global theme
-    theme: Var[Union[DataEditorTheme, Dict]]
+    theme: Var[DataEditorTheme | Dict]
 
     # Fired when a cell is activated.
-    on_cell_activated: EventHandler[passthrough_event_spec(Tuple[int, int])]
+    on_cell_activated: EventHandler[passthrough_event_spec(tuple[int, int])]
 
     # Fired when a cell is clicked.
-    on_cell_clicked: EventHandler[passthrough_event_spec(Tuple[int, int])]
+    on_cell_clicked: EventHandler[passthrough_event_spec(tuple[int, int])]
 
     # Fired when a cell is right-clicked.
-    on_cell_context_menu: EventHandler[passthrough_event_spec(Tuple[int, int])]
+    on_cell_context_menu: EventHandler[passthrough_event_spec(tuple[int, int])]
 
     # Fired when a cell is edited.
-    on_cell_edited: EventHandler[passthrough_event_spec(Tuple[int, int], GridCell)]
+    on_cell_edited: EventHandler[passthrough_event_spec(tuple[int, int], GridCell)]
 
     # Fired when a group header is clicked.
     on_group_header_clicked: EventHandler[
-        passthrough_event_spec(Tuple[int, int], GridCell)
+        passthrough_event_spec(tuple[int, int], GridCell)
     ]
 
     # Fired when a group header is right-clicked.
@@ -285,23 +285,23 @@ class DataEditor(NoSSRComponent):
     on_group_header_renamed: EventHandler[passthrough_event_spec(str, str)]
 
     # Fired when a header is clicked.
-    on_header_clicked: EventHandler[passthrough_event_spec(Tuple[int, int])]
+    on_header_clicked: EventHandler[passthrough_event_spec(tuple[int, int])]
 
     # Fired when a header is right-clicked.
-    on_header_context_menu: EventHandler[passthrough_event_spec(Tuple[int, int])]
+    on_header_context_menu: EventHandler[passthrough_event_spec(tuple[int, int])]
 
     # Fired when a header menu item is clicked.
     on_header_menu_click: EventHandler[passthrough_event_spec(int, Rectangle)]
 
     # Fired when an item is hovered.
-    on_item_hovered: EventHandler[passthrough_event_spec(Tuple[int, int])]
+    on_item_hovered: EventHandler[passthrough_event_spec(tuple[int, int])]
 
     # Fired when a selection is deleted.
     on_delete: EventHandler[passthrough_event_spec(GridSelection)]
 
     # Fired when editing is finished.
     on_finished_editing: EventHandler[
-        passthrough_event_spec(Union[GridCell, None], tuple[int, int])
+        passthrough_event_spec(GridCell | None, tuple[int, int])
     ]
 
     # Fired when a row is appended.

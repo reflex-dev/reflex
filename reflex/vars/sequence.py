@@ -15,7 +15,6 @@ from typing import (
     Mapping,
     NoReturn,
     Sequence,
-    Tuple,
     Type,
     TypeVar,
     Union,
@@ -147,41 +146,41 @@ class ArrayVar(Var[ARRAY_VAR_TYPE], python_types=(Sequence, set)):
     @overload
     def __getitem__(
         self: (
-            ArrayVar[Tuple[int, OTHER_TUPLE]]
-            | ArrayVar[Tuple[float, OTHER_TUPLE]]
-            | ArrayVar[Tuple[int | float, OTHER_TUPLE]]
+            ArrayVar[tuple[int, OTHER_TUPLE]]
+            | ArrayVar[tuple[float, OTHER_TUPLE]]
+            | ArrayVar[tuple[int | float, OTHER_TUPLE]]
         ),
         i: Literal[0, -2],
     ) -> NumberVar: ...
 
     @overload
     def __getitem__(
-        self: ArrayVar[Tuple[Any, bool]], i: Literal[1, -1]
+        self: ArrayVar[tuple[Any, bool]], i: Literal[1, -1]
     ) -> BooleanVar: ...
 
     @overload
     def __getitem__(
         self: (
-            ArrayVar[Tuple[Any, int]]
-            | ArrayVar[Tuple[Any, float]]
-            | ArrayVar[Tuple[Any, int | float]]
+            ArrayVar[tuple[Any, int]]
+            | ArrayVar[tuple[Any, float]]
+            | ArrayVar[tuple[Any, int | float]]
         ),
         i: Literal[1, -1],
     ) -> NumberVar: ...
 
     @overload
     def __getitem__(  # pyright: ignore [reportOverlappingOverload]
-        self: ArrayVar[Tuple[str, Any]], i: Literal[0, -2]
+        self: ArrayVar[tuple[str, Any]], i: Literal[0, -2]
     ) -> StringVar: ...
 
     @overload
     def __getitem__(
-        self: ArrayVar[Tuple[Any, str]], i: Literal[1, -1]
+        self: ArrayVar[tuple[Any, str]], i: Literal[1, -1]
     ) -> StringVar: ...
 
     @overload
     def __getitem__(
-        self: ArrayVar[Tuple[bool, Any]], i: Literal[0, -2]
+        self: ArrayVar[tuple[bool, Any]], i: Literal[0, -2]
     ) -> BooleanVar: ...
 
     @overload
@@ -789,12 +788,12 @@ class StringVar(Var[STRING_TYPE], python_types=str):
         return string_contains_operation(self, other)
 
     @overload
-    def split(self, separator: StringVar | str = "") -> ArrayVar[List[str]]: ...
+    def split(self, separator: StringVar | str = "") -> ArrayVar[list[str]]: ...
 
     @overload
     def split(self, separator: NoReturn) -> NoReturn: ...  # pyright: ignore [reportOverlappingOverload]
 
-    def split(self, separator: Any = "") -> ArrayVar[List[str]]:
+    def split(self, separator: Any = "") -> ArrayVar[list[str]]:
         """Split the string.
 
         Args:
@@ -1337,7 +1336,7 @@ class LiteralStringVar(LiteralVar, StringVar[str]):
 class ConcatVarOperation(CachedVarOperation, StringVar[str]):
     """Representing a concatenation of literal string vars."""
 
-    _var_value: Tuple[Var, ...] = dataclasses.field(default_factory=tuple)
+    _var_value: tuple[Var, ...] = dataclasses.field(default_factory=tuple)
 
     @cached_property_no_lock
     def _cached_var_name(self) -> str:
@@ -1346,7 +1345,7 @@ class ConcatVarOperation(CachedVarOperation, StringVar[str]):
         Returns:
             The name of the var.
         """
-        list_of_strs: List[Union[str, Var]] = []
+        list_of_strs: list[str | Var] = []
         last_string = ""
         for var in self._var_value:
             if isinstance(var, LiteralStringVar):
@@ -1420,7 +1419,7 @@ def string_split_operation(string: StringVar[Any], sep: StringVar | str = ""):
         The split string.
     """
     return var_operation_return(
-        js_expression=f"{string}.split({sep})", var_type=List[str]
+        js_expression=f"{string}.split({sep})", var_type=list[str]
     )
 
 
@@ -1620,8 +1619,6 @@ def is_tuple_type(t: GenericType) -> bool:
     Returns:
         Whether the type is a tuple type.
     """
-    if inspect.isclass(t):
-        return issubclass(t, tuple)
     return get_origin(t) is tuple
 
 
@@ -1665,7 +1662,7 @@ def array_range_operation(
     """
     return var_operation_return(
         js_expression=f"Array.from({{ length: Math.ceil(({stop!s} - {start!s}) / {step!s}) }}, (_, i) => {start!s} + i * {step!s})",
-        var_type=List[int],
+        var_type=list[int],
     )
 
 
@@ -1731,7 +1728,7 @@ def repeat_array_operation(
 def map_array_operation(
     array: ArrayVar[ARRAY_VAR_TYPE],
     function: FunctionVar,
-) -> CustomVarOperationReturn[List[Any]]:
+) -> CustomVarOperationReturn[list[Any]]:
     """Map a function over an array.
 
     Args:
@@ -1742,7 +1739,7 @@ def map_array_operation(
         The mapped array.
     """
     return var_operation_return(
-        js_expression=f"{array}.map({function})", var_type=List[Any]
+        js_expression=f"{array}.map({function})", var_type=list[Any]
     )
 
 

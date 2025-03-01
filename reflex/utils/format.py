@@ -6,7 +6,7 @@ import inspect
 import json
 import os
 import re
-from typing import TYPE_CHECKING, Any, List, Optional, Union
+from typing import TYPE_CHECKING, Any, Union
 
 from reflex import constants
 from reflex.constants.state import FRONTEND_EVENT_STATE
@@ -336,7 +336,7 @@ def format_route(route: str, format_case: bool = True) -> str:
 
 def format_match(
     cond: str | Var,
-    match_cases: List[List[Var]],
+    match_cases: list[list[Var]],
     default: Var,
 ) -> str:
     """Format a match expression whose return type is a Var.
@@ -370,7 +370,7 @@ def format_match(
 
 def format_prop(
     prop: Union[Var, EventChain, ComponentStyle, str],
-) -> Union[int, float, str]:
+) -> int | float | str:
     """Format a prop.
 
     Args:
@@ -532,7 +532,7 @@ if TYPE_CHECKING:
 
 def format_queue_events(
     events: EventType[Any] | None = None,
-    args_spec: Optional[ArgsSpec] = None,
+    args_spec: ArgsSpec | None = None,
 ) -> Var[EventChain]:
     """Format a list of event handler / event spec as a javascript callback.
 
