@@ -23,7 +23,7 @@ import zipfile
 from datetime import datetime
 from pathlib import Path
 from types import ModuleType
-from typing import Callable, List, NamedTuple, Optional
+from typing import Callable, NamedTuple
 from urllib.parse import urlparse
 
 import httpx
@@ -72,9 +72,9 @@ class Template:
 class CpuInfo:
     """Model to save cpu info."""
 
-    manufacturer_id: Optional[str]
-    model_name: Optional[str]
-    address_width: Optional[int]
+    manufacturer_id: str | None
+    model_name: str | None
+    address_width: int | None
 
 
 def get_web_dir() -> Path:
@@ -896,7 +896,7 @@ def init_reflex_json(project_hash: int | None):
 
 
 def update_next_config(
-    export: bool = False, transpile_packages: Optional[List[str]] = None
+    export: bool = False, transpile_packages: list[str] | None = None
 ):
     """Update Next.js config from Reflex config.
 
@@ -918,7 +918,7 @@ def update_next_config(
 
 
 def _update_next_config(
-    config: Config, export: bool = False, transpile_packages: Optional[List[str]] = None
+    config: Config, export: bool = False, transpile_packages: list[str] | None = None
 ):
     next_config = {
         "basePath": config.frontend_path or "",
@@ -1372,7 +1372,7 @@ def validate_frontend_dependencies(init: bool = True):
         validate_bun()
 
 
-def ensure_reflex_installation_id() -> Optional[int]:
+def ensure_reflex_installation_id() -> int | None:
     """Ensures that a reflex distinct id has been generated and stored in the reflex directory.
 
     Returns:

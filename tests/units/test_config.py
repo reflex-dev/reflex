@@ -1,7 +1,7 @@
 import multiprocessing
 import os
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any
 
 import pytest
 
@@ -52,7 +52,7 @@ def test_set_app_name(base_config_values):
     ],
 )
 def test_update_from_env(
-    base_config_values: Dict[str, Any],
+    base_config_values: dict[str, Any],
     monkeypatch: pytest.MonkeyPatch,
     env_var: str,
     value: Any,
@@ -72,7 +72,7 @@ def test_update_from_env(
 
 
 def test_update_from_env_path(
-    base_config_values: Dict[str, Any],
+    base_config_values: dict[str, Any],
     monkeypatch: pytest.MonkeyPatch,
     tmp_path: Path,
 ):

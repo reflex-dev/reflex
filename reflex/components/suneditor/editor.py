@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import enum
-from typing import Any, Dict, List, Literal, Optional, Tuple, Union
+from typing import Any, Dict, Literal, Union
 
 from reflex.base import Base
 from reflex.components.component import Component, NoSSRComponent
@@ -54,21 +54,21 @@ class EditorOptions(Base):
 
     # Specifies default tag name of the editor.
     # default: 'p' {String}
-    default_tag: Optional[str] = None
+    default_tag: str | None = None
 
     # The mode of the editor ('classic', 'inline', 'balloon', 'balloon-always').
     # default: 'classic' {String}
-    mode: Optional[str] = None
+    mode: str | None = None
 
     # If true, the editor is set to RTL(Right To Left) mode.
     # default: false {Boolean}
-    rtl: Optional[bool] = None
+    rtl: bool | None = None
 
     # List of buttons to use in the toolbar.
-    button_list: Optional[List[Union[List[str], str]]]
+    button_list: list[list[str] | str] | None
 
 
-def on_blur_spec(e: Var, content: Var[str]) -> Tuple[Var[str]]:
+def on_blur_spec(e: Var, content: Var[str]) -> tuple[Var[str]]:
     """A helper function to specify the on_blur event handler.
 
     Args:
@@ -83,7 +83,7 @@ def on_blur_spec(e: Var, content: Var[str]) -> Tuple[Var[str]]:
 
 def on_paste_spec(
     e: Var, clean_data: Var[str], max_char_count: Var[bool]
-) -> Tuple[Var[str], Var[bool]]:
+) -> tuple[Var[str], Var[bool]]:
     """A helper function to specify the on_paste event handler.
 
     Args:
@@ -109,7 +109,7 @@ class Editor(NoSSRComponent):
 
     is_default = True
 
-    lib_dependencies: List[str] = ["suneditor"]
+    lib_dependencies: list[str] = ["suneditor"]
 
     # Language of the editor.
     # Alternatively to a string, a dict of your language can be passed to this prop.
@@ -245,7 +245,7 @@ class Editor(NoSSRComponent):
 
     @classmethod
     def create(
-        cls, set_options: Optional[EditorOptions] = None, **props: Any
+        cls, set_options: EditorOptions | None = None, **props: Any
     ) -> Component:
         """Create an instance of Editor. No children allowed.
 

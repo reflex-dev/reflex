@@ -16,7 +16,6 @@ def EventChain():
     """App with chained event handlers."""
     import asyncio
     import time
-    from typing import List
 
     import reflex as rx
 
@@ -24,7 +23,7 @@ def EventChain():
     MANY_EVENTS = 50
 
     class State(rx.State):
-        event_order: List[str] = []
+        event_order: list[str] = []
         interim_value: str = ""
 
         @rx.event
