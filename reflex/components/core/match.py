@@ -1,7 +1,7 @@
 """rx.match."""
 
 import textwrap
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, List
 
 from reflex.components.base import Fragment
 from reflex.components.component import BaseComponent, Component, MemoizationLeaf
@@ -21,13 +21,13 @@ class Match(MemoizationLeaf):
     cond: Var[Any]
 
     # The list of match cases to be matched.
-    match_cases: List[Any] = []
+    match_cases: list[Any] = []
 
     # The catchall case to match.
     default: Any
 
     @classmethod
-    def create(cls, cond: Any, *cases) -> Union[Component, Var]:
+    def create(cls, cond: Any, *cases) -> Component | Var:
         """Create a Match Component.
 
         Args:
@@ -75,9 +75,7 @@ class Match(MemoizationLeaf):
         return match_cond_var
 
     @classmethod
-    def _process_cases(
-        cls, cases: List
-    ) -> Tuple[List, Optional[Union[Var, BaseComponent]]]:
+    def _process_cases(cls, cases: list) -> tuple[list, Var | BaseComponent | None]:
         """Process the list of match cases and the catchall default case.
 
         Args:
@@ -125,7 +123,7 @@ class Match(MemoizationLeaf):
         return case_element
 
     @classmethod
-    def _process_match_cases(cls, cases: List) -> List[List[Var]]:
+    def _process_match_cases(cls, cases: List) -> list[list[Var]]:
         """Process the individual match cases.
 
         Args:
@@ -166,7 +164,7 @@ class Match(MemoizationLeaf):
         return match_cases
 
     @classmethod
-    def _validate_return_types(cls, match_cases: List[List[Var]]) -> None:
+    def _validate_return_types(cls, match_cases: list[list[Var]]) -> None:
         """Validate that match cases have the same return types.
 
         Args:
@@ -195,9 +193,9 @@ class Match(MemoizationLeaf):
     def _create_match_cond_var_or_component(
         cls,
         match_cond_var: Var,
-        match_cases: List[List[Var]],
-        default: Optional[Union[Var, BaseComponent]],
-    ) -> Union[Component, Var]:
+        match_cases: list[list[Var]],
+        default: Var | BaseComponent | None,
+    ) -> Component | Var:
         """Create and return the match condition var or component.
 
         Args:

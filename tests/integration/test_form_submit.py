@@ -18,14 +18,14 @@ def FormSubmit(form_component):
     Args:
         form_component: The str name of the form component to use.
     """
-    from typing import Dict, List
+    from typing import Dict
 
     import reflex as rx
 
     class FormState(rx.State):
         form_data: Dict = {}
 
-        var_options: List[str] = ["option3", "option4"]
+        var_options: list[str] = ["option3", "option4"]
 
         def form_submit(self, form_data: Dict):
             self.form_data = form_data
@@ -78,14 +78,14 @@ def FormSubmitName(form_component):
     Args:
         form_component: The str name of the form component to use.
     """
-    from typing import Dict, List
+    from typing import Dict
 
     import reflex as rx
 
     class FormState(rx.State):
         form_data: Dict = {}
         val: str = "foo"
-        options: List[str] = ["option1", "option2"]
+        options: list[str] = ["option1", "option2"]
 
         def form_submit(self, form_data: Dict):
             self.form_data = form_data

@@ -1,5 +1,5 @@
 from contextlib import nullcontext
-from typing import Any, Dict, List, Optional, Type, Union
+from typing import Any, Type, Union
 
 import pytest
 
@@ -86,7 +86,7 @@ def component1() -> Type[Component]:
         number: Var[int]
 
         # A test string/number prop.
-        text_or_number: Var[Union[int, str]]
+        text_or_number: Var[int | str]
 
         def _get_imports(self) -> ParsedImportDict:
             return {"react": [ImportVar(tag="Component")]}
@@ -110,11 +110,11 @@ def component2() -> Type[Component]:
 
     class TestComponent2(Component):
         # A test list prop.
-        arr: Var[List[str]]
+        arr: Var[list[str]]
 
         on_prop_event: EventHandler[on_prop_event_spec]
 
-        def get_event_triggers(self) -> Dict[str, Any]:
+        def get_event_triggers(self) -> dict[str, Any]:
             """Test controlled triggers.
 
             Returns:
@@ -126,7 +126,7 @@ def component2() -> Type[Component]:
                 "on_close": passthrough_event_spec(bool),
                 "on_user_visited_count_changed": passthrough_event_spec(int),
                 "on_two_args": passthrough_event_spec(int, int),
-                "on_user_list_changed": passthrough_event_spec(List[str]),
+                "on_user_list_changed": passthrough_event_spec(list[str]),
             }
 
         def _get_imports(self) -> ParsedImportDict:
@@ -179,11 +179,11 @@ def component5() -> Type[Component]:
     class TestComponent5(Component):
         tag = "RandomComponent"
 
-        _invalid_children: List[str] = ["Text"]
+        _invalid_children: list[str] = ["Text"]
 
-        _valid_children: List[str] = ["Text"]
+        _valid_children: list[str] = ["Text"]
 
-        _valid_parents: List[str] = ["Text"]
+        _valid_parents: list[str] = ["Text"]
 
     return TestComponent5
 
@@ -199,7 +199,7 @@ def component6() -> Type[Component]:
     class TestComponent6(Component):
         tag = "RandomComponent"
 
-        _invalid_children: List[str] = ["Text"]
+        _invalid_children: list[str] = ["Text"]
 
     return TestComponent6
 
@@ -215,7 +215,7 @@ def component7() -> Type[Component]:
     class TestComponent7(Component):
         tag = "RandomComponent"
 
-        _valid_children: List[str] = ["Text"]
+        _valid_children: list[str] = ["Text"]
 
     return TestComponent7
 
@@ -311,19 +311,19 @@ def test_create_component(component1):
         ),
         pytest.param(
             "text",
-            Var(_js_expr="hello", _var_type=Optional[str]),
+            Var(_js_expr="hello", _var_type=str | None),
             None,
             id="text-optional",
         ),
         pytest.param(
             "text",
-            Var(_js_expr="hello", _var_type=Union[str, None]),
+            Var(_js_expr="hello", _var_type=str | None),
             None,
             id="text-union-str-none",
         ),
         pytest.param(
             "text",
-            Var(_js_expr="hello", _var_type=Union[None, str]),
+            Var(_js_expr="hello", _var_type=None | str),
             None,
             id="text-union-none-str",
         ),
@@ -341,19 +341,19 @@ def test_create_component(component1):
         ),
         pytest.param(
             "number",
-            Var(_js_expr="1", _var_type=Optional[int]),
+            Var(_js_expr="1", _var_type=int | None),
             None,
             id="number-optional",
         ),
         pytest.param(
             "number",
-            Var(_js_expr="1", _var_type=Union[int, None]),
+            Var(_js_expr="1", _var_type=int | None),
             None,
             id="number-union-int-none",
         ),
         pytest.param(
             "number",
-            Var(_js_expr="1", _var_type=Union[None, int]),
+            Var(_js_expr="1", _var_type=None | int),
             None,
             id="number-union-none-int",
         ),
@@ -377,37 +377,37 @@ def test_create_component(component1):
         ),
         pytest.param(
             "text_or_number",
-            Var(_js_expr="hello", _var_type=Optional[str]),
+            Var(_js_expr="hello", _var_type=str | None),
             None,
             id="text_or_number-optional-str",
         ),
         pytest.param(
             "text_or_number",
-            Var(_js_expr="hello", _var_type=Union[str, None]),
+            Var(_js_expr="hello", _var_type=str | None),
             None,
             id="text_or_number-union-str-none",
         ),
         pytest.param(
             "text_or_number",
-            Var(_js_expr="hello", _var_type=Union[None, str]),
+            Var(_js_expr="hello", _var_type=None | str),
             None,
             id="text_or_number-union-none-str",
         ),
         pytest.param(
             "text_or_number",
-            Var(_js_expr="1", _var_type=Optional[int]),
+            Var(_js_expr="1", _var_type=int | None),
             None,
             id="text_or_number-optional-int",
         ),
         pytest.param(
             "text_or_number",
-            Var(_js_expr="1", _var_type=Union[int, None]),
+            Var(_js_expr="1", _var_type=int | None),
             None,
             id="text_or_number-union-int-none",
         ),
         pytest.param(
             "text_or_number",
-            Var(_js_expr="1", _var_type=Union[None, int]),
+            Var(_js_expr="1", _var_type=None | int),
             None,
             id="text_or_number-union-none-int",
         ),
@@ -419,7 +419,7 @@ def test_create_component(component1):
         ),
         pytest.param(
             "text_or_number",
-            Var(_js_expr="hello", _var_type=Optional[Union[str, int]]),
+            Var(_js_expr="hello", _var_type=str | int | None),
             None,
             id="text_or_number-optional-union-str-int",
         ),
@@ -428,7 +428,7 @@ def test_create_component(component1):
 def test_create_component_prop_validation(
     component1: Type[Component],
     prop_name: str,
-    var: Union[Var, str, int],
+    var: Var | str | int,
     expected: Type[Exception],
 ):
     """Test that component props are validated correctly.
@@ -861,7 +861,7 @@ def test_component_event_trigger_arbitrary_args():
         library = "/local"
         tag = "C1"
 
-        def get_event_triggers(self) -> Dict[str, Any]:
+        def get_event_triggers(self) -> dict[str, Any]:
             return {
                 **super().get_event_triggers(),
                 "on_foo": on_foo_spec,
@@ -1263,10 +1263,10 @@ FORMATTED_TEST_VAR_LIST_OF_DICT = LiteralVar.create([{"a": "footestbar"}])._repl
 class ComponentNestedVar(Component):
     """A component with nested Var types."""
 
-    dict_of_dict: Var[Dict[str, Dict[str, str]]]
-    list_of_list: Var[List[List[str]]]
-    list_of_list_of_list: Var[List[List[List[str]]]]
-    list_of_dict: Var[List[Dict[str, str]]]
+    dict_of_dict: Var[dict[str, dict[str, str]]]
+    list_of_list: Var[list[list[str]]]
+    list_of_list_of_list: Var[list[list[list[str]]]]
+    list_of_dict: Var[list[dict[str, str]]]
 
 
 class EventState(rx.State):
@@ -1819,7 +1819,7 @@ def test_custom_component_get_imports():
 
 def test_custom_component_declare_event_handlers_in_fields():
     class ReferenceComponent(Component):
-        def get_event_triggers(self) -> Dict[str, Any]:
+        def get_event_triggers(self) -> dict[str, Any]:
             """Test controlled triggers.
 
             Returns:
@@ -1855,7 +1855,7 @@ def test_invalid_event_trigger():
     class TriggerComponent(Component):
         on_push: Var[bool]
 
-        def get_event_triggers(self) -> Dict[str, Any]:
+        def get_event_triggers(self) -> dict[str, Any]:
             """Test controlled triggers.
 
             Returns:
@@ -1902,13 +1902,13 @@ def test_component_add_imports(tags):
     class TestBase(Component):
         def add_imports(  # pyright: ignore [reportIncompatibleMethodOverride]
             self,
-        ) -> Dict[str, Union[str, ImportVar, List[str], List[ImportVar]]]:
+        ) -> dict[str, Union[str, ImportVar, list[str], list[ImportVar]]]:
             return {"foo": "bar"}
 
     class Test(TestBase):
         def add_imports(
             self,
-        ) -> Dict[str, Union[str, ImportVar, List[str], List[ImportVar]]]:
+        ) -> dict[str, Union[str, ImportVar, list[str], list[ImportVar]]]:
             return {"react": (tags[0] if len(tags) == 1 else tags)}
 
     baseline = Reference.create()

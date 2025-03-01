@@ -1,6 +1,6 @@
 """Media classes."""
 
-from typing import Any, Literal, Union
+from typing import Any, Literal
 
 from reflex import Component, ComponentNamespace
 from reflex.components.el.elements.inline import ReferrerPolicy
@@ -22,7 +22,7 @@ class Area(BaseHTML):
     coords: Var[str]
 
     # Specifies that the target will be downloaded when clicked
-    download: Var[Union[str, bool]]
+    download: Var[str | bool]
 
     # Hyperlink reference for the area
     href: Var[str]
@@ -291,9 +291,9 @@ class Svg(BaseHTML):
 
     tag = "svg"
     # The width of the svg.
-    width: Var[Union[str, int]]
+    width: Var[str | int]
     # The height of the svg.
-    height: Var[Union[str, int]]
+    height: Var[str | int]
     # The XML namespace declaration.
     xmlns: Var[str]
 
@@ -303,19 +303,19 @@ class Text(BaseHTML):
 
     tag = "text"
     # The x coordinate of the starting point of the text baseline.
-    x: Var[Union[str, int]]
+    x: Var[str | int]
     # The y coordinate of the starting point of the text baseline.
-    y: Var[Union[str, int]]
+    y: Var[str | int]
     # Shifts the text position horizontally from a previous text element.
-    dx: Var[Union[str, int]]
+    dx: Var[str | int]
     # Shifts the text position vertically from a previous text element.
-    dy: Var[Union[str, int]]
+    dy: Var[str | int]
     # Rotates orientation of each individual glyph.
-    rotate: Var[Union[str, int]]
+    rotate: Var[str | int]
     # How the text is stretched or compressed to fit the width defined by the text_length attribute.
     length_adjust: Var[str]
     # A width that the text should be scaled to fit.
-    text_length: Var[Union[str, int]]
+    text_length: Var[str | int]
 
 
 class Line(BaseHTML):
@@ -323,13 +323,13 @@ class Line(BaseHTML):
 
     tag = "line"
     # The x-axis coordinate of the line starting point.
-    x1: Var[Union[str, int]]
+    x1: Var[str | int]
     # The x-axis coordinate of the the line ending point.
-    x2: Var[Union[str, int]]
+    x2: Var[str | int]
     # The y-axis coordinate of the line starting point.
-    y1: Var[Union[str, int]]
+    y1: Var[str | int]
     # The y-axis coordinate of the the line ending point.
-    y2: Var[Union[str, int]]
+    y2: Var[str | int]
     # The total path length, in user units.
     path_length: Var[int]
 
@@ -339,11 +339,11 @@ class Circle(BaseHTML):
 
     tag = "circle"
     # The x-axis coordinate of the center of the circle.
-    cx: Var[Union[str, int]]
+    cx: Var[str | int]
     # The y-axis coordinate of the center of the circle.
-    cy: Var[Union[str, int]]
+    cy: Var[str | int]
     # The radius of the circle.
-    r: Var[Union[str, int]]
+    r: Var[str | int]
     # The total length for the circle's circumference, in user units.
     path_length: Var[int]
 
@@ -353,13 +353,13 @@ class Ellipse(BaseHTML):
 
     tag = "ellipse"
     # The x position of the center of the ellipse.
-    cx: Var[Union[str, int]]
+    cx: Var[str | int]
     # The y position of the center of the ellipse.
-    cy: Var[Union[str, int]]
+    cy: Var[str | int]
     # The radius of the ellipse on the x axis.
-    rx: Var[Union[str, int]]
+    rx: Var[str | int]
     # The radius of the ellipse on the y axis.
-    ry: Var[Union[str, int]]
+    ry: Var[str | int]
     # The total length for the ellipse's circumference, in user units.
     path_length: Var[int]
 
@@ -369,17 +369,17 @@ class Rect(BaseHTML):
 
     tag = "rect"
     # The x coordinate of the rect.
-    x: Var[Union[str, int]]
+    x: Var[str | int]
     # The y coordinate of the rect.
-    y: Var[Union[str, int]]
+    y: Var[str | int]
     # The width of the rect
-    width: Var[Union[str, int]]
+    width: Var[str | int]
     # The height of the rect.
-    height: Var[Union[str, int]]
+    height: Var[str | int]
     # The horizontal corner radius of the rect. Defaults to ry if it is specified.
-    rx: Var[Union[str, int]]
+    rx: Var[str | int]
     # The vertical corner radius of the rect. Defaults to rx if it is specified.
-    ry: Var[Union[str, int]]
+    ry: Var[str | int]
     # The total length of the rectangle's perimeter, in user units.
     path_length: Var[int]
 
@@ -406,25 +406,25 @@ class LinearGradient(BaseHTML):
     tag = "linearGradient"
 
     # Units for the gradient.
-    gradient_units: Var[Union[str, bool]]
+    gradient_units: Var[str | bool]
 
     # Transform applied to the gradient.
-    gradient_transform: Var[Union[str, bool]]
+    gradient_transform: Var[str | bool]
 
     # Method used to spread the gradient.
-    spread_method: Var[Union[str, bool]]
+    spread_method: Var[str | bool]
 
     # X coordinate of the starting point of the gradient.
-    x1: Var[Union[str, int, float]]
+    x1: Var[str | int | float]
 
     # X coordinate of the ending point of the gradient.
-    x2: Var[Union[str, int, float]]
+    x2: Var[str | int | float]
 
     # Y coordinate of the starting point of the gradient.
-    y1: Var[Union[str, int, float]]
+    y1: Var[str | int | float]
 
     # Y coordinate of the ending point of the gradient.
-    y2: Var[Union[str, int, float]]
+    y2: Var[str | int | float]
 
 
 class RadialGradient(BaseHTML):
@@ -433,31 +433,31 @@ class RadialGradient(BaseHTML):
     tag = "radialGradient"
 
     # The x coordinate of the end circle of the radial gradient.
-    cx: Var[Union[str, int, float]]
+    cx: Var[str | int | float]
 
     # The y coordinate of the end circle of the radial gradient.
-    cy: Var[Union[str, int, float]]
+    cy: Var[str | int | float]
 
     # The radius of the start circle of the radial gradient.
-    fr: Var[Union[str, int, float]]
+    fr: Var[str | int | float]
 
     # The x coordinate of the start circle of the radial gradient.
-    fx: Var[Union[str, int, float]]
+    fx: Var[str | int | float]
 
     # The y coordinate of the start circle of the radial gradient.
-    fy: Var[Union[str, int, float]]
+    fy: Var[str | int | float]
 
     # Units for the gradient.
-    gradient_units: Var[Union[str, bool]]
+    gradient_units: Var[str | bool]
 
     # Transform applied to the gradient.
-    gradient_transform: Var[Union[str, bool]]
+    gradient_transform: Var[str | bool]
 
     # The radius of the end circle of the radial gradient.
-    r: Var[Union[str, int, float]]
+    r: Var[str | int | float]
 
     # Method used to spread the gradient.
-    spread_method: Var[Union[str, bool]]
+    spread_method: Var[str | bool]
 
 
 class Stop(BaseHTML):
@@ -466,13 +466,13 @@ class Stop(BaseHTML):
     tag = "stop"
 
     # Offset of the gradient stop.
-    offset: Var[Union[str, float, int]]
+    offset: Var[str | float | int]
 
     # Color of the gradient stop.
-    stop_color: Var[Union[str, Color, bool]]
+    stop_color: Var[str | Color | bool]
 
     # Opacity of the gradient stop.
-    stop_opacity: Var[Union[str, float, int, bool]]
+    stop_opacity: Var[str | float | int | bool]
 
 
 class Path(BaseHTML):
@@ -481,7 +481,7 @@ class Path(BaseHTML):
     tag = "path"
 
     # Defines the shape of the path.
-    d: Var[Union[str, int, float]]
+    d: Var[str | int | float]
 
 
 class SVG(ComponentNamespace):
