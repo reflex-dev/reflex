@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from datetime import datetime
 from pathlib import Path
-from typing import TYPE_CHECKING, Dict, Iterable, Optional, Sequence, Tuple, Type, Union
+from typing import TYPE_CHECKING, Iterable, Sequence, Type
 
 from reflex import constants
 from reflex.compiler import templates, utils
@@ -94,7 +94,7 @@ def _compile_theme(theme: str) -> str:
     return templates.THEME.render(theme=theme)
 
 
-def _compile_contexts(state: Optional[Type[BaseState]], theme: Component | None) -> str:
+def _compile_contexts(state: Type[BaseState] | None, theme: Component | None) -> str:
     """Compile the initial state and contexts.
 
     Args:
@@ -219,7 +219,7 @@ def _compile_component(component: Component | StatefulComponent) -> str:
 
 def _compile_components(
     components: set[CustomComponent],
-) -> tuple[str, Dict[str, list[ImportVar]]]:
+) -> tuple[str, dict[str, list[ImportVar]]]:
     """Compile the components.
 
     Args:
@@ -352,8 +352,8 @@ def _compile_tailwind(
 
 def compile_document_root(
     head_components: list[Component],
-    html_lang: Optional[str] = None,
-    html_custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
+    html_lang: str | None = None,
+    html_custom_attrs: dict[str, Var | str] | None = None,
 ) -> tuple[str, str]:
     """Compile the document root.
 
@@ -415,7 +415,7 @@ def compile_theme(style: ComponentStyle) -> tuple[str, str]:
 
 
 def compile_contexts(
-    state: Optional[Type[BaseState]],
+    state: Type[BaseState] | None,
     theme: Component | None,
 ) -> tuple[str, str]:
     """Compile the initial state / context.
@@ -456,7 +456,7 @@ def compile_page(
 
 def compile_components(
     components: set[CustomComponent],
-) -> tuple[str, str, Dict[str, list[ImportVar]]]:
+) -> tuple[str, str, dict[str, list[ImportVar]]]:
     """Compile the custom components.
 
     Args:
@@ -594,7 +594,7 @@ def compile_unevaluated_page(
     state: Type[BaseState] | None = None,
     style: ComponentStyle | None = None,
     theme: Component | None = None,
-) -> Tuple[Component, bool]:
+) -> tuple[Component, bool]:
     """Compiles an uncompiled page into a component and adds meta information.
 
     Args:
@@ -679,9 +679,9 @@ class ExecutorSafeFunctions:
 
     """
 
-    COMPONENTS: Dict[str, BaseComponent] = {}
-    UNCOMPILED_PAGES: Dict[str, UnevaluatedPage] = {}
-    STATE: Optional[Type[BaseState]] = None
+    COMPONENTS: dict[str, BaseComponent] = {}
+    UNCOMPILED_PAGES: dict[str, UnevaluatedPage] = {}
+    STATE: Type[BaseState] | None = None
 
     @classmethod
     def compile_page(cls, route: str) -> tuple[str, str]:

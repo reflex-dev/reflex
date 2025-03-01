@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import dataclasses
 from datetime import date, datetime
-from typing import Any, NoReturn, TypeVar, Union, overload
+from typing import Any, NoReturn, TypeVar, overload
 
 from reflex.utils.exceptions import VarTypeError
 from reflex.vars.number import BooleanVar
@@ -20,7 +20,7 @@ from .base import (
 
 DATETIME_T = TypeVar("DATETIME_T", datetime, date)
 
-datetime_types = Union[datetime, date]
+datetime_types = datetime | date
 
 
 def raise_var_type_error():
