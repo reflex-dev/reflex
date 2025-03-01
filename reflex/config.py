@@ -718,6 +718,9 @@ class EnvironmentVariables:
     # Used by flexgen to enumerate the pages.
     REFLEX_ADD_ALL_ROUTES_ENDPOINT: EnvVar[bool] = env_var(False)
 
+    # Use the JSON patch format for websocket messages.
+    REFLEX_USE_JSON_PATCH: EnvVar[bool] = env_var(False)
+
 
 environment = EnvironmentVariables()
 

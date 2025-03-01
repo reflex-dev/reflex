@@ -41,6 +41,7 @@ from reflex.state import (
     OnLoadInternalState,
     RouterData,
     State,
+    StateDelta,
     StateManagerDisk,
     StateManagerMemory,
     StateManagerRedis,
@@ -479,7 +480,7 @@ async def test_dynamic_var_event(test_state: Type[ATestState], token: str):
             payload={"value": 50},
         )
     ):
-        assert result.delta == {test_state.get_name(): {"int_val": 50}}
+        assert result.delta.data == {test_state.get_name(): {"int_val": 50}}
 
 
 @pytest.mark.asyncio
@@ -593,7 +594,7 @@ async def test_list_mutation_detection__plain_list(
         ):
             # prefix keys in expected_delta with the state name
             expected_delta = {list_mutation_state.get_name(): expected_delta}
-            assert result.delta == expected_delta
+            assert result.delta.data == expected_delta
 
 
 @pytest.mark.asyncio
@@ -719,7 +720,7 @@ async def test_dict_mutation_detection__plain_list(
             # prefix keys in expected_delta with the state name
             expected_delta = {dict_mutation_state.get_name(): expected_delta}
 
-            assert result.delta == expected_delta
+            assert result.delta.data == expected_delta
 
 
 @pytest.mark.asyncio
@@ -1050,14 +1051,17 @@ async def test_dynamic_route_var_route_change_completed_on_load(
         update = await process_coro.__anext__()
         # route change (on_load_internal) triggers: [call on_load events, call set_is_hydrated(True)]
         assert update == StateUpdate(
-            delta={
-                state.get_name(): {
-                    arg_name: exp_val,
-                    f"comp_{arg_name}": exp_val,
-                    constants.CompileVars.IS_HYDRATED: False,
-                    "router": exp_router,
-                }
-            },
+            delta=StateDelta(
+                {
+                    state.get_name(): {
+                        arg_name: exp_val,
+                        f"comp_{arg_name}": exp_val,
+                        constants.CompileVars.IS_HYDRATED: False,
+                        "router": exp_router,
+                    }
+                },
+                reflex_delta_token=token,
+            ),
             events=[
                 _dynamic_state_event(
                     name="on_load",
@@ -1093,11 +1097,14 @@ async def test_dynamic_route_var_route_change_completed_on_load(
         )
         on_load_update = await process_coro.__anext__()
         assert on_load_update == StateUpdate(
-            delta={
-                state.get_name(): {
-                    "loaded": exp_index + 1,
+            delta=StateDelta(
+                {
+                    state.get_name(): {
+                        "loaded": exp_index + 1,
+                    },
                 },
-            },
+                reflex_delta_token=token,
+            ),
             events=[],
         )
         # complete the processing
@@ -1114,11 +1121,14 @@ async def test_dynamic_route_var_route_change_completed_on_load(
         )
         on_set_is_hydrated_update = await process_coro.__anext__()
         assert on_set_is_hydrated_update == StateUpdate(
-            delta={
-                state.get_name(): {
-                    "is_hydrated": True,
+            delta=StateDelta(
+                {
+                    state.get_name(): {
+                        "is_hydrated": True,
+                    },
                 },
-            },
+                reflex_delta_token=token,
+            ),
             events=[],
         )
         # complete the processing
@@ -1135,11 +1145,14 @@ async def test_dynamic_route_var_route_change_completed_on_load(
         )
         update = await process_coro.__anext__()
         assert update == StateUpdate(
-            delta={
-                state.get_name(): {
-                    "counter": exp_index + 1,
-                }
-            },
+            delta=StateDelta(
+                {
+                    state.get_name(): {
+                        "counter": exp_index + 1,
+                    }
+                },
+                reflex_delta_token=token,
+            ),
             events=[],
         )
         # complete the processing
