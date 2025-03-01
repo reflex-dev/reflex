@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import dataclasses
+
 from reflex.components.el.elements.typography import Div
 from reflex.constants.compiler import MemoizationDisposition, MemoizationMode
 from reflex.utils.imports import ImportDict
@@ -28,7 +30,12 @@ class AutoScroll(Div):
         """
         props.setdefault("overflow", "auto")
         props.setdefault("id", get_unique_variable_name())
-        return super().create(*children, **props)
+        component = super().create(*children, **props)
+        if "key" in props:
+            component._memoization_mode = dataclasses.replace(
+                component._memoization_mode, recursive=True
+            )
+        return component
 
     def add_imports(self) -> ImportDict | list[ImportDict]:
         """Add imports required for the component.
