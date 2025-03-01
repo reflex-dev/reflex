@@ -2,7 +2,6 @@
 
 import dataclasses
 from datetime import date, datetime, time, timedelta
-from typing import List, Optional, Union
 
 from reflex.components.component import NoSSRComponent
 from reflex.event import EventHandler, passthrough_event_spec
@@ -14,15 +13,15 @@ from reflex.vars.base import LiteralVar, Var
 class MomentDelta:
     """A delta used for add/subtract prop in Moment."""
 
-    years: Optional[int] = dataclasses.field(default=None)
-    quarters: Optional[int] = dataclasses.field(default=None)
-    months: Optional[int] = dataclasses.field(default=None)
-    weeks: Optional[int] = dataclasses.field(default=None)
-    days: Optional[int] = dataclasses.field(default=None)
-    hours: Optional[int] = dataclasses.field(default=None)
-    minutes: Optional[int] = dataclasses.field(default=None)
-    seconds: Optional[int] = dataclasses.field(default=None)
-    milliseconds: Optional[int] = dataclasses.field(default=None)
+    years: int | None = dataclasses.field(default=None)
+    quarters: int | None = dataclasses.field(default=None)
+    months: int | None = dataclasses.field(default=None)
+    weeks: int | None = dataclasses.field(default=None)
+    days: int | None = dataclasses.field(default=None)
+    hours: int | None = dataclasses.field(default=None)
+    minutes: int | None = dataclasses.field(default=None)
+    seconds: int | None = dataclasses.field(default=None)
+    milliseconds: int | None = dataclasses.field(default=None)
 
 
 class Moment(NoSSRComponent):
@@ -31,7 +30,7 @@ class Moment(NoSSRComponent):
     tag: str | None = "Moment"
     is_default = True
     library: str | None = "react-moment"
-    lib_dependencies: List[str] = ["moment"]
+    lib_dependencies: list[str] = ["moment"]
 
     # How often the date update (how often time update / 0 to disable).
     interval: Var[int]
@@ -79,7 +78,7 @@ class Moment(NoSSRComponent):
     duration: Var[str]
 
     # The date to display (also work if passed as children).
-    date: Var[Union[str, datetime, date, time, timedelta]]
+    date: Var[str | datetime | date | time | timedelta]
 
     # Shows the duration (elapsed time) between now and the provided datetime.
     duration_from_now: Var[bool]

@@ -1,6 +1,6 @@
 """Interactive components provided by @radix-ui/themes."""
 
-from typing import Literal, Union
+from typing import Literal
 
 import reflex as rx
 from reflex.components.component import Component, ComponentNamespace
@@ -57,7 +57,7 @@ class Callout(CalloutRoot):
     icon: Var[str]
 
     @classmethod
-    def create(cls, text: Union[str, Var[str]], **props) -> Component:
+    def create(cls, text: str | Var[str], **props) -> Component:
         """Create a callout component.
 
         Args:

@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any, Dict, Optional, overload
+from typing import Any, Dict, overload
 
 from reflex.components.base.fragment import Fragment
 from reflex.components.component import BaseComponent, Component, MemoizationLeaf
@@ -35,7 +35,7 @@ class Cond(MemoizationLeaf):
         cls,
         cond: Var,
         comp1: BaseComponent,
-        comp2: Optional[BaseComponent] = None,
+        comp2: BaseComponent | None = None,
     ) -> Component:
         """Create a conditional component.
 

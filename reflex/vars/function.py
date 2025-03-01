@@ -9,14 +9,11 @@ from typing import (
     Callable,
     Concatenate,
     Generic,
-    Optional,
     ParamSpec,
     Protocol,
     Sequence,
-    Tuple,
     Type,
     TypeVar,
-    Union,
     overload,
 )
 
@@ -56,52 +53,52 @@ class FunctionVar(Var[CALLABLE_TYPE], default_type=ReflexCallable[Any, Any]):
     @overload
     def partial(
         self: FunctionVar[ReflexCallable[Concatenate[V1, P], R]],
-        arg1: Union[V1, Var[V1]],
+        arg1: V1 | Var[V1],
     ) -> FunctionVar[ReflexCallable[P, R]]: ...
 
     @overload
     def partial(
         self: FunctionVar[ReflexCallable[Concatenate[V1, V2, P], R]],
-        arg1: Union[V1, Var[V1]],
-        arg2: Union[V2, Var[V2]],
+        arg1: V1 | Var[V1],
+        arg2: V2 | Var[V2],
     ) -> FunctionVar[ReflexCallable[P, R]]: ...
 
     @overload
     def partial(
         self: FunctionVar[ReflexCallable[Concatenate[V1, V2, V3, P], R]],
-        arg1: Union[V1, Var[V1]],
-        arg2: Union[V2, Var[V2]],
-        arg3: Union[V3, Var[V3]],
+        arg1: V1 | Var[V1],
+        arg2: V2 | Var[V2],
+        arg3: V3 | Var[V3],
     ) -> FunctionVar[ReflexCallable[P, R]]: ...
 
     @overload
     def partial(
         self: FunctionVar[ReflexCallable[Concatenate[V1, V2, V3, V4, P], R]],
-        arg1: Union[V1, Var[V1]],
-        arg2: Union[V2, Var[V2]],
-        arg3: Union[V3, Var[V3]],
-        arg4: Union[V4, Var[V4]],
+        arg1: V1 | Var[V1],
+        arg2: V2 | Var[V2],
+        arg3: V3 | Var[V3],
+        arg4: V4 | Var[V4],
     ) -> FunctionVar[ReflexCallable[P, R]]: ...
 
     @overload
     def partial(
         self: FunctionVar[ReflexCallable[Concatenate[V1, V2, V3, V4, V5, P], R]],
-        arg1: Union[V1, Var[V1]],
-        arg2: Union[V2, Var[V2]],
-        arg3: Union[V3, Var[V3]],
-        arg4: Union[V4, Var[V4]],
-        arg5: Union[V5, Var[V5]],
+        arg1: V1 | Var[V1],
+        arg2: V2 | Var[V2],
+        arg3: V3 | Var[V3],
+        arg4: V4 | Var[V4],
+        arg5: V5 | Var[V5],
     ) -> FunctionVar[ReflexCallable[P, R]]: ...
 
     @overload
     def partial(
         self: FunctionVar[ReflexCallable[Concatenate[V1, V2, V3, V4, V5, V6, P], R]],
-        arg1: Union[V1, Var[V1]],
-        arg2: Union[V2, Var[V2]],
-        arg3: Union[V3, Var[V3]],
-        arg4: Union[V4, Var[V4]],
-        arg5: Union[V5, Var[V5]],
-        arg6: Union[V6, Var[V6]],
+        arg1: V1 | Var[V1],
+        arg2: V2 | Var[V2],
+        arg3: V3 | Var[V3],
+        arg4: V4 | Var[V4],
+        arg5: V5 | Var[V5],
+        arg6: V6 | Var[V6],
     ) -> FunctionVar[ReflexCallable[P, R]]: ...
 
     @overload
@@ -130,52 +127,52 @@ class FunctionVar(Var[CALLABLE_TYPE], default_type=ReflexCallable[Any, Any]):
 
     @overload
     def call(
-        self: FunctionVar[ReflexCallable[[V1], R]], arg1: Union[V1, Var[V1]]
+        self: FunctionVar[ReflexCallable[[V1], R]], arg1: V1 | Var[V1]
     ) -> VarOperationCall[[V1], R]: ...
 
     @overload
     def call(
         self: FunctionVar[ReflexCallable[[V1, V2], R]],
-        arg1: Union[V1, Var[V1]],
-        arg2: Union[V2, Var[V2]],
+        arg1: V1 | Var[V1],
+        arg2: V2 | Var[V2],
     ) -> VarOperationCall[[V1, V2], R]: ...
 
     @overload
     def call(
         self: FunctionVar[ReflexCallable[[V1, V2, V3], R]],
-        arg1: Union[V1, Var[V1]],
-        arg2: Union[V2, Var[V2]],
-        arg3: Union[V3, Var[V3]],
+        arg1: V1 | Var[V1],
+        arg2: V2 | Var[V2],
+        arg3: V3 | Var[V3],
     ) -> VarOperationCall[[V1, V2, V3], R]: ...
 
     @overload
     def call(
         self: FunctionVar[ReflexCallable[[V1, V2, V3, V4], R]],
-        arg1: Union[V1, Var[V1]],
-        arg2: Union[V2, Var[V2]],
-        arg3: Union[V3, Var[V3]],
-        arg4: Union[V4, Var[V4]],
+        arg1: V1 | Var[V1],
+        arg2: V2 | Var[V2],
+        arg3: V3 | Var[V3],
+        arg4: V4 | Var[V4],
     ) -> VarOperationCall[[V1, V2, V3, V4], R]: ...
 
     @overload
     def call(
         self: FunctionVar[ReflexCallable[[V1, V2, V3, V4, V5], R]],
-        arg1: Union[V1, Var[V1]],
-        arg2: Union[V2, Var[V2]],
-        arg3: Union[V3, Var[V3]],
-        arg4: Union[V4, Var[V4]],
-        arg5: Union[V5, Var[V5]],
+        arg1: V1 | Var[V1],
+        arg2: V2 | Var[V2],
+        arg3: V3 | Var[V3],
+        arg4: V4 | Var[V4],
+        arg5: V5 | Var[V5],
     ) -> VarOperationCall[[V1, V2, V3, V4, V5], R]: ...
 
     @overload
     def call(
         self: FunctionVar[ReflexCallable[[V1, V2, V3, V4, V5, V6], R]],
-        arg1: Union[V1, Var[V1]],
-        arg2: Union[V2, Var[V2]],
-        arg3: Union[V3, Var[V3]],
-        arg4: Union[V4, Var[V4]],
-        arg5: Union[V5, Var[V5]],
-        arg6: Union[V6, Var[V6]],
+        arg1: V1 | Var[V1],
+        arg2: V2 | Var[V2],
+        arg3: V3 | Var[V3],
+        arg4: V4 | Var[V4],
+        arg5: V5 | Var[V5],
+        arg6: V6 | Var[V6],
     ) -> VarOperationCall[[V1, V2, V3, V4, V5, V6], R]: ...
 
     @overload
@@ -243,8 +240,8 @@ class FunctionStringVar(FunctionVar[CALLABLE_TYPE]):
 class VarOperationCall(Generic[P, R], CachedVarOperation, Var[R]):
     """Base class for immutable vars that are the result of a function call."""
 
-    _func: Optional[FunctionVar[ReflexCallable[P, R]]] = dataclasses.field(default=None)
-    _args: Tuple[Union[Var, Any], ...] = dataclasses.field(default_factory=tuple)
+    _func: FunctionVar[ReflexCallable[P, R]] | None = dataclasses.field(default=None)
+    _args: tuple[Var | Any, ...] = dataclasses.field(default_factory=tuple)
 
     @cached_property_no_lock
     def _cached_var_name(self) -> str:
@@ -306,8 +303,8 @@ class VarOperationCall(Generic[P, R], CachedVarOperation, Var[R]):
 class DestructuredArg:
     """Class for destructured arguments."""
 
-    fields: Tuple[str, ...] = ()
-    rest: Optional[str] = None
+    fields: tuple[str, ...] = ()
+    rest: str | None = None
 
     def to_javascript(self) -> str:
         """Convert the destructured argument to JavaScript.
@@ -328,8 +325,8 @@ class DestructuredArg:
 class FunctionArgs:
     """Class for function arguments."""
 
-    args: Tuple[Union[str, DestructuredArg], ...] = ()
-    rest: Optional[str] = None
+    args: tuple[str | DestructuredArg, ...] = ()
+    rest: str | None = None
 
 
 def format_args_function_operation(
@@ -368,7 +365,7 @@ class ArgsFunctionOperation(CachedVarOperation, FunctionVar):
     """Base class for immutable function defined via arguments and return expression."""
 
     _args: FunctionArgs = dataclasses.field(default_factory=FunctionArgs)
-    _return_expr: Union[Var, Any] = dataclasses.field(default=None)
+    _return_expr: Var | Any = dataclasses.field(default=None)
     _explicit_return: bool = dataclasses.field(default=False)
 
     @cached_property_no_lock
@@ -385,7 +382,7 @@ class ArgsFunctionOperation(CachedVarOperation, FunctionVar):
     @classmethod
     def create(
         cls,
-        args_names: Sequence[Union[str, DestructuredArg]],
+        args_names: Sequence[str | DestructuredArg],
         return_expr: Var | Any,
         rest: str | None = None,
         explicit_return: bool = False,
@@ -425,7 +422,7 @@ class ArgsFunctionOperationBuilder(CachedVarOperation, BuilderFunctionVar):
     """Base class for immutable function defined via arguments and return expression with the builder pattern."""
 
     _args: FunctionArgs = dataclasses.field(default_factory=FunctionArgs)
-    _return_expr: Union[Var, Any] = dataclasses.field(default=None)
+    _return_expr: Var | Any = dataclasses.field(default=None)
     _explicit_return: bool = dataclasses.field(default=False)
 
     @cached_property_no_lock
@@ -442,7 +439,7 @@ class ArgsFunctionOperationBuilder(CachedVarOperation, BuilderFunctionVar):
     @classmethod
     def create(
         cls,
-        args_names: Sequence[Union[str, DestructuredArg]],
+        args_names: Sequence[str | DestructuredArg],
         return_expr: Var | Any,
         rest: str | None = None,
         explicit_return: bool = False,
