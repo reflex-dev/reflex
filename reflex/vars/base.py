@@ -3279,7 +3279,7 @@ class Field(Generic[FIELD_TYPE]):
 
     @overload
     def __get__(
-        self: Field[list[V]] | Field[Set[V]],
+        self: Field[list[V]] | Field[set[V]],
         instance: None,
         owner: Any,
     ) -> ArrayVar[Sequence[V]]: ...
