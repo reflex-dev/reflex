@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import contextlib
 import inspect
+import os
 import shutil
 import time
 from pathlib import Path
@@ -60,6 +61,9 @@ def set_log_level(log_level: LogLevel):
             f"log_level must be a LogLevel enum value, got {log_level} of type {type(log_level)} instead."
         )
     global _LOG_LEVEL
+    if log_level != _LOG_LEVEL:
+        # Set the loglevel persistenly for subprocesses.
+        os.environ["LOGLEVEL"] = log_level.value
     _LOG_LEVEL = log_level
 
 

@@ -7,23 +7,18 @@ import pytest
 from selenium.common.exceptions import NoSuchElementException
 from selenium.webdriver.common.by import By
 
+from reflex import constants
+from reflex.config import environment
 from reflex.testing import AppHarness, WebDriver
 
 from .utils import SessionStorage
 
 
-def ConnectionBanner(is_reflex_cloud: bool = False):
-    """App with a connection banner.
-
-    Args:
-        is_reflex_cloud: The value for config.is_reflex_cloud.
-    """
+def ConnectionBanner():
+    """App with a connection banner."""
     import asyncio
 
     import reflex as rx
-
-    # Simulate reflex cloud deploy
-    rx.config.get_config().is_reflex_cloud = is_reflex_cloud
 
     class State(rx.State):
         foo: int = 0
@@ -49,16 +44,17 @@ def ConnectionBanner(is_reflex_cloud: bool = False):
 
 
 @pytest.fixture(
-    params=[False, True], ids=["reflex_cloud_disabled", "reflex_cloud_enabled"]
+    params=[constants.CompileContext.RUN, constants.CompileContext.DEPLOY],
+    ids=["compile_context_run", "compile_context_deploy"],
 )
-def simulate_is_reflex_cloud(request) -> bool:
+def simulate_compile_context(request) -> constants.CompileContext:
     """Fixture to simulate reflex cloud deployment.
 
     Args:
         request: pytest request fixture.
 
     Returns:
-        True if reflex cloud is enabled, False otherwise.
+        The context to run the app with.
     """
     return request.param
 
@@ -66,25 +62,27 @@ def simulate_is_reflex_cloud(request) -> bool:
 @pytest.fixture()
 def connection_banner(
     tmp_path,
-    simulate_is_reflex_cloud: bool,
+    simulate_compile_context: constants.CompileContext,
 ) -> Generator[AppHarness, None, None]:
     """Start ConnectionBanner app at tmp_path via AppHarness.
 
     Args:
         tmp_path: pytest tmp_path fixture
-        simulate_is_reflex_cloud: Whether is_reflex_cloud is set for the app.
+        simulate_compile_context: Which context to run the app with.
 
     Yields:
         running AppHarness instance
     """
+    environment.REFLEX_COMPILE_CONTEXT.set(simulate_compile_context)
+
     with AppHarness.create(
         root=tmp_path,
-        app_source=functools.partial(
-            ConnectionBanner, is_reflex_cloud=simulate_is_reflex_cloud
+        app_source=functools.partial(ConnectionBanner),
+        app_name=(
+            "connection_banner_reflex_cloud"
+            if simulate_compile_context == constants.CompileContext.DEPLOY
+            else "connection_banner"
         ),
-        app_name="connection_banner_reflex_cloud"
-        if simulate_is_reflex_cloud
-        else "connection_banner",
     ) as harness:
         yield harness
 
@@ -194,13 +192,13 @@ async def test_connection_banner(connection_banner: AppHarness):
 
 @pytest.mark.asyncio
 async def test_cloud_banner(
-    connection_banner: AppHarness, simulate_is_reflex_cloud: bool
+    connection_banner: AppHarness, simulate_compile_context: constants.CompileContext
 ):
     """Test that the connection banner is displayed when the websocket drops.
 
     Args:
         connection_banner: AppHarness instance.
-        simulate_is_reflex_cloud: Whether is_reflex_cloud is set for the app.
+        simulate_compile_context: Which context to set for the app.
     """
     assert connection_banner.app_instance is not None
     assert connection_banner.backend is not None
@@ -213,7 +211,7 @@ async def test_cloud_banner(
 
     driver.add_cookie({"name": "backend-enabled", "value": "false"})
     driver.refresh()
-    if simulate_is_reflex_cloud:
+    if simulate_compile_context == constants.CompileContext.DEPLOY:
         assert connection_banner._poll_for(lambda: has_cloud_banner(driver))
     else:
         _assert_token(connection_banner, driver)

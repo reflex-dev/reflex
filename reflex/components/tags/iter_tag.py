@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import dataclasses
 import inspect
-from typing import TYPE_CHECKING, Any, Callable, Iterable, Tuple, Type, Union, get_args
+from typing import TYPE_CHECKING, Any, Callable, Iterable, Type, Union, get_args
 
 from reflex.components.tags.tag import Tag
 from reflex.vars import LiteralArrayVar, Var, get_unique_variable_name
@@ -41,7 +41,7 @@ class IterTag(Tag):
         try:
             if iterable._var_type.mro()[0] is dict:
                 # Arg is a tuple of (key, value).
-                return Tuple[get_args(iterable._var_type)]  # pyright: ignore [reportReturnType]
+                return tuple[get_args(iterable._var_type)]  # pyright: ignore [reportReturnType]
             elif iterable._var_type.mro()[0] is tuple:
                 # Arg is a union of any possible values in the tuple.
                 return Union[get_args(iterable._var_type)]  # pyright: ignore [reportReturnType]
@@ -107,12 +107,14 @@ class IterTag(Tag):
 
         Raises:
             ValueError: If the render function takes more than 2 arguments.
+            ValueError: If the render function doesn't return a component.
 
         Returns:
             The rendered component.
         """
         # Import here to avoid circular imports.
         from reflex.components.base.fragment import Fragment
+        from reflex.components.component import Component
         from reflex.components.core.cond import Cond
         from reflex.components.core.foreach import Foreach
 
@@ -133,6 +135,13 @@ class IterTag(Tag):
         # Nested foreach components or cond must be wrapped in fragments.
         if isinstance(component, (Foreach, Cond)):
             component = Fragment.create(component)
+
+        # If the component is a tuple, unpack and wrap it in a fragment.
+        if isinstance(component, tuple):
+            component = Fragment.create(*component)
+
+        if not isinstance(component, Component):
+            raise ValueError("The render function must return a component.")
 
         # Set the component key.
         if component.key is None:

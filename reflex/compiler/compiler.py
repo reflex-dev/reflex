@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from datetime import datetime
 from pathlib import Path
-from typing import TYPE_CHECKING, Dict, Iterable, Optional, Tuple, Type, Union
+from typing import TYPE_CHECKING, Iterable, Sequence, Type
 
 from reflex import constants
 from reflex.compiler import templates, utils
@@ -78,6 +78,7 @@ def _compile_app(app_root: Component) -> str:
         hooks=app_root._get_all_hooks(),
         window_libraries=window_libraries,
         render=app_root.render(),
+        dynamic_imports=app_root._get_all_dynamic_imports(),
     )
 
 
@@ -93,7 +94,7 @@ def _compile_theme(theme: str) -> str:
     return templates.THEME.render(theme=theme)
 
 
-def _compile_contexts(state: Optional[Type[BaseState]], theme: Component | None) -> str:
+def _compile_contexts(state: Type[BaseState] | None, theme: Component | None) -> str:
     """Compile the initial state and contexts.
 
     Args:
@@ -218,7 +219,7 @@ def _compile_component(component: Component | StatefulComponent) -> str:
 
 def _compile_components(
     components: set[CustomComponent],
-) -> tuple[str, Dict[str, list[ImportVar]]]:
+) -> tuple[str, dict[str, list[ImportVar]]]:
     """Compile the components.
 
     Args:
@@ -351,8 +352,8 @@ def _compile_tailwind(
 
 def compile_document_root(
     head_components: list[Component],
-    html_lang: Optional[str] = None,
-    html_custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
+    html_lang: str | None = None,
+    html_custom_attrs: dict[str, Var | str] | None = None,
 ) -> tuple[str, str]:
     """Compile the document root.
 
@@ -414,7 +415,7 @@ def compile_theme(style: ComponentStyle) -> tuple[str, str]:
 
 
 def compile_contexts(
-    state: Optional[Type[BaseState]],
+    state: Type[BaseState] | None,
     theme: Component | None,
 ) -> tuple[str, str]:
     """Compile the initial state / context.
@@ -455,7 +456,7 @@ def compile_page(
 
 def compile_components(
     components: set[CustomComponent],
-) -> tuple[str, str, Dict[str, list[ImportVar]]]:
+) -> tuple[str, str, dict[str, list[ImportVar]]]:
     """Compile the custom components.
 
     Args:
@@ -507,7 +508,7 @@ def compile_tailwind(
         The compiled Tailwind config.
     """
     # Get the path for the output file.
-    output_path = get_web_dir() / constants.Tailwind.CONFIG
+    output_path = str((get_web_dir() / constants.Tailwind.CONFIG).absolute())
 
     # Compile the config.
     code = _compile_tailwind(config)
@@ -544,7 +545,82 @@ def purge_web_pages_dir():
 
 
 if TYPE_CHECKING:
-    from reflex.app import UnevaluatedPage
+    from reflex.app import ComponentCallable, UnevaluatedPage
+
+
+def _into_component_once(component: Component | ComponentCallable) -> Component | None:
+    """Convert a component to a Component.
+
+    Args:
+        component: The component to convert.
+
+    Returns:
+        The converted component.
+    """
+    if isinstance(component, Component):
+        return component
+    if isinstance(component, (Var, int, float, str)):
+        return Fragment.create(component)
+    if isinstance(component, Sequence):
+        return Fragment.create(*component)
+    return None
+
+
+def into_component(component: Component | ComponentCallable) -> Component:
+    """Convert a component to a Component.
+
+    Args:
+        component: The component to convert.
+
+    Returns:
+        The converted component.
+
+    Raises:
+        TypeError: If the component is not a Component.
+
+    # noqa: DAR401
+    """
+    if (converted := _into_component_once(component)) is not None:
+        return converted
+    try:
+        if (
+            callable(component)
+            and (converted := _into_component_once(component())) is not None
+        ):
+            return converted
+    except KeyError as e:
+        key = e.args[0] if e.args else None
+        if key is not None and isinstance(key, Var):
+            raise TypeError(
+                "Cannot access a primitive map with a Var. Consider calling rx.Var.create() on the map."
+            ).with_traceback(e.__traceback__) from None
+        raise
+    except TypeError as e:
+        message = e.args[0] if e.args else None
+        if message and isinstance(message, str):
+            if message.endswith("has no len()") and (
+                "ArrayCastedVar" in message
+                or "ObjectCastedVar" in message
+                or "StringCastedVar" in message
+            ):
+                raise TypeError(
+                    "Cannot pass a Var to a built-in function. Consider using .length() for accessing the length of an iterable Var."
+                ).with_traceback(e.__traceback__) from None
+            if message.endswith(
+                "indices must be integers or slices, not NumberCastedVar"
+            ) or message.endswith(
+                "indices must be integers or slices, not BooleanCastedVar"
+            ):
+                raise TypeError(
+                    "Cannot index into a primitive sequence with a Var. Consider calling rx.Var.create() on the sequence."
+                ).with_traceback(e.__traceback__) from None
+        if "CastedVar" in str(e):
+            raise TypeError(
+                "Cannot pass a Var to a built-in function. Consider moving the operation to the backend, using existing Var operations, or defining a custom Var operation."
+            ).with_traceback(e.__traceback__) from None
+        raise
+
+    raise TypeError(f"Expected a Component, got {type(component)}")
 
 
 def compile_unevaluated_page(
@@ -553,7 +629,7 @@ def compile_unevaluated_page(
     state: Type[BaseState] | None = None,
     style: ComponentStyle | None = None,
     theme: Component | None = None,
-) -> Tuple[Component, bool]:
+) -> tuple[Component, bool]:
     """Compiles an uncompiled page into a component and adds meta information.
 
     Args:
@@ -567,12 +643,7 @@ def compile_unevaluated_page(
         The compiled component and whether state should be enabled.
     """
     # Generate the component if it is a callable.
-    component = page.component
-    component = component if isinstance(component, Component) else component()
-
-    # unpack components that return tuples in an rx.fragment.
-    if isinstance(component, tuple):
-        component = Fragment.create(*component)
+    component = into_component(page.component)
 
     component._add_style_recursive(style or {}, theme)
 
@@ -643,9 +714,9 @@ class ExecutorSafeFunctions:
 
     """
 
-    COMPONENTS: Dict[str, BaseComponent] = {}
-    UNCOMPILED_PAGES: Dict[str, UnevaluatedPage] = {}
-    STATE: Optional[Type[BaseState]] = None
+    COMPONENTS: dict[str, BaseComponent] = {}
+    UNCOMPILED_PAGES: dict[str, UnevaluatedPage] = {}
+    STATE: Type[BaseState] | None = None
 
     @classmethod
     def compile_page(cls, route: str) -> tuple[str, str]:
@@ -677,10 +748,8 @@ class ExecutorSafeFunctions:
             The route, compiled component, and compiled page.
         """
         component, enable_state = compile_unevaluated_page(
-            route, cls.UNCOMPILED_PAGES[route]
+            route, cls.UNCOMPILED_PAGES[route], cls.STATE, style, theme
         )
-        component = component if isinstance(component, Component) else component()
-        component._add_style_recursive(style, theme)
         return route, component, compile_page(route, component, cls.STATE)
 
     @classmethod

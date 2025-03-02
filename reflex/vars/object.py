@@ -7,14 +7,12 @@ import typing
 from inspect import isclass
 from typing import (
     Any,
-    List,
     Mapping,
     NoReturn,
-    Tuple,
     Type,
     TypeVar,
-    Union,
     get_args,
+    get_type_hints,
     overload,
 )
 
@@ -27,6 +25,7 @@ from reflex.utils.types import (
     get_attribute_access_type,
     get_origin,
     safe_issubclass,
+    unionize,
 )
 
 from .base import (
@@ -80,10 +79,13 @@ class ObjectVar(Var[OBJECT_TYPE], python_types=Mapping):
         fixed_type = get_origin(self._var_type) or self._var_type
         if not isclass(fixed_type):
             return Any  # pyright: ignore [reportReturnType]
+        if is_typeddict(fixed_type) or dataclasses.is_dataclass(fixed_type):
+            annotations = get_type_hints(fixed_type)
+            return unionize(*annotations.values())
         args = get_args(self._var_type) if issubclass(fixed_type, Mapping) else ()
         return args[1] if args else Any  # pyright: ignore [reportReturnType]
 
-    def keys(self) -> ArrayVar[List[str]]:
+    def keys(self) -> ArrayVar[list[str]]:
         """Get the keys of the object.
 
         Returns:
@@ -94,7 +96,7 @@ class ObjectVar(Var[OBJECT_TYPE], python_types=Mapping):
     @overload
     def values(
         self: ObjectVar[Mapping[Any, VALUE_TYPE]],
-    ) -> ArrayVar[List[VALUE_TYPE]]: ...
+    ) -> ArrayVar[list[VALUE_TYPE]]: ...
 
     @overload
     def values(self) -> ArrayVar: ...
@@ -110,7 +112,7 @@ class ObjectVar(Var[OBJECT_TYPE], python_types=Mapping):
     @overload
     def entries(
         self: ObjectVar[Mapping[Any, VALUE_TYPE]],
-    ) -> ArrayVar[List[Tuple[str, VALUE_TYPE]]]: ...
+    ) -> ArrayVar[list[tuple[str, VALUE_TYPE]]]: ...
 
     @overload
     def entries(self) -> ArrayVar: ...
@@ -306,9 +308,7 @@ class ObjectVar(Var[OBJECT_TYPE], python_types=Mapping):
 class LiteralObjectVar(CachedVarOperation, ObjectVar[OBJECT_TYPE], LiteralVar):
     """Base class for immutable literal object vars."""
 
-    _var_value: Mapping[Union[Var, Any], Union[Var, Any]] = dataclasses.field(
-        default_factory=dict
-    )
+    _var_value: Mapping[Var | Any, Var | Any] = dataclasses.field(default_factory=dict)
 
     def _key_type(self) -> Type:
         """Get the type of the keys of the object.
@@ -427,7 +427,7 @@ def object_keys_operation(value: ObjectVar):
     """
     return var_operation_return(
         js_expression=f"Object.keys({value})",
-        var_type=List[str],
+        var_type=list[str],
     )
 
 
@@ -443,7 +443,7 @@ def object_values_operation(value: ObjectVar):
     """
     return var_operation_return(
         js_expression=f"Object.values({value})",
-        var_type=List[value._value_type()],
+        var_type=list[value._value_type()],
     )
 
 
@@ -459,7 +459,7 @@ def object_entries_operation(value: ObjectVar):
     """
     return var_operation_return(
         js_expression=f"Object.entries({value})",
-        var_type=List[Tuple[str, value._value_type()]],
+        var_type=list[tuple[str, value._value_type()]],
     )
 
 
@@ -477,8 +477,8 @@ def object_merge_operation(lhs: ObjectVar, rhs: ObjectVar):
     return var_operation_return(
         js_expression=f"({{...{lhs}, ...{rhs}}})",
         var_type=Mapping[
-            Union[lhs._key_type(), rhs._key_type()],
-            Union[lhs._value_type(), rhs._value_type()],
+            lhs._key_type() | rhs._key_type(),
+            lhs._value_type() | rhs._value_type(),
         ],
     )
 

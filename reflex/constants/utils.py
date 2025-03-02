@@ -1,8 +1,6 @@
 """Utility functions for constants."""
 
-from typing import Any, Callable, Generic, Type
-
-from typing_extensions import TypeVar
+from typing import Any, Callable, Generic, Type, TypeVar
 
 T = TypeVar("T")
 V = TypeVar("V")

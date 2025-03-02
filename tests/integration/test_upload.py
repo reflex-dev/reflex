@@ -19,25 +19,23 @@ from .utils import poll_for_navigation
 
 def UploadFile():
     """App for testing dynamic routes."""
-    from typing import Dict, List
-
     import reflex as rx
 
     LARGE_DATA = "DUMMY" * 1024 * 512
 
     class UploadState(rx.State):
-        _file_data: Dict[str, str] = {}
-        event_order: rx.Field[List[str]] = rx.field([])
-        progress_dicts: List[dict] = []
+        _file_data: dict[str, str] = {}
+        event_order: rx.Field[list[str]] = rx.field([])
+        progress_dicts: list[dict] = []
         disabled: bool = False
         large_data: str = ""
 
-        async def handle_upload(self, files: List[rx.UploadFile]):
+        async def handle_upload(self, files: list[rx.UploadFile]):
             for file in files:
                 upload_data = await file.read()
                 self._file_data[file.filename or ""] = upload_data.decode("utf-8")
 
-        async def handle_upload_secondary(self, files: List[rx.UploadFile]):
+        async def handle_upload_secondary(self, files: list[rx.UploadFile]):
             for file in files:
                 upload_data = await file.read()
                 self._file_data[file.filename or ""] = upload_data.decode("utf-8")
@@ -55,7 +53,7 @@ def UploadFile():
             self.event_order.append("chain_event")
 
         @rx.event
-        async def handle_upload_tertiary(self, files: List[rx.UploadFile]):
+        async def handle_upload_tertiary(self, files: list[rx.UploadFile]):
             for file in files:
                 (rx.get_upload_dir() / (file.filename or "INVALID")).write_bytes(
                     await file.read()
@@ -87,7 +85,7 @@ def UploadFile():
             ),
             rx.box(
                 rx.foreach(
-                    rx.selected_files,
+                    rx.selected_files(),
                     lambda f: rx.text(f, as_="p"),
                 ),
                 id="selected_files",

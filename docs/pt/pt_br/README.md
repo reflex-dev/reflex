@@ -1,6 +1,3 @@
-```diff
-+ Está procurando pelo Pynecone? Este é o repositório certo. Pynecone foi renomeado para Reflex. +
-```
 
 <div align="center">
 <img src="https://raw.githubusercontent.com/reflex-dev/reflex/main/docs/images/reflex_dark.svg#gh-light-mode-only" alt="Reflex Logo" width="300px">

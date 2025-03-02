@@ -248,6 +248,7 @@ COMPONENTS_CORE_MAPPING: dict = {
         "selected_files",
         "upload",
     ],
+    "components.core.auto_scroll": ["auto_scroll"],
 }
 
 COMPONENTS_BASE_MAPPING: dict = {

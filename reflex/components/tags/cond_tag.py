@@ -1,7 +1,7 @@
 """Tag to conditionally render components."""
 
 import dataclasses
-from typing import Any, Dict, Optional
+from typing import Any, Dict
 
 from reflex.components.tags.tag import Tag
 from reflex.vars.base import Var
@@ -18,4 +18,4 @@ class CondTag(Tag):
     true_value: Dict = dataclasses.field(default_factory=dict)
 
     # The code to render if the condition is false.
-    false_value: Optional[Dict] = None
+    false_value: Dict | None = None

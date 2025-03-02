@@ -25,6 +25,7 @@ from .base import (
 from .compiler import (
     NOCOMPILE_FILE,
     SETTER_PREFIX,
+    CompileContext,
     CompileVars,
     ComponentName,
     Ext,
@@ -65,6 +66,7 @@ __ALL__ = [
     ColorMode,
     Config,
     COOKIES,
+    CompileContext,
     ComponentName,
     CustomComponents,
     DefaultPage,

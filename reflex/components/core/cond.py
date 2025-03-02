@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any, Dict, Optional, overload
+from typing import Any, Dict, overload
 
 from reflex.components.base.fragment import Fragment
 from reflex.components.component import BaseComponent, Component, MemoizationLeaf
@@ -35,7 +35,7 @@ class Cond(MemoizationLeaf):
         cls,
         cond: Var,
         comp1: BaseComponent,
-        comp2: Optional[BaseComponent] = None,
+        comp2: BaseComponent | None = None,
     ) -> Component:
         """Create a conditional component.
 
@@ -60,14 +60,6 @@ class Cond(MemoizationLeaf):
                 children=[comp1, comp2],
             )
         )
-
-    def _get_props_imports(self):
-        """Get the imports needed for component's props.
-
-        Returns:
-            The imports for the component's props of the component.
-        """
-        return []
 
     def _render(self) -> Tag:
         return CondTag(

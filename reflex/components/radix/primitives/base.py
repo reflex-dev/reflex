@@ -1,7 +1,5 @@
 """The base component for Radix primitives."""
 
-from typing import List
-
 from reflex.components.component import Component
 from reflex.components.tags.tag import Tag
 from reflex.utils import format
@@ -14,7 +12,7 @@ class RadixPrimitiveComponent(Component):
     # Change the default rendered element for the one passed as a child.
     as_child: Var[bool]
 
-    lib_dependencies: List[str] = ["@emotion/react@^11.11.1"]
+    lib_dependencies: list[str] = ["@emotion/react@^11.11.1"]
 
 
 class RadixPrimitiveComponentWithClassName(RadixPrimitiveComponent):
