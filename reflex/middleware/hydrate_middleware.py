@@ -8,7 +8,7 @@ from typing import TYPE_CHECKING
 from reflex import constants
 from reflex.event import Event, get_hydrate_event
 from reflex.middleware.middleware import Middleware
-from reflex.state import BaseState, StateUpdate, _resolve_delta
+from reflex.state import BaseState, StateDelta, StateUpdate, _resolve_delta
 
 if TYPE_CHECKING:
     from reflex.app import App
@@ -42,7 +42,13 @@ class HydrateMiddleware(Middleware):
         setattr(state, constants.CompileVars.IS_HYDRATED, False)
 
         # Get the initial state.
-        delta = await _resolve_delta(state.dict())
+        delta = await _resolve_delta(
+            StateDelta(
+                state.dict(),
+                reflex_delta_token=state.router.session.client_token,
+                flush=True,
+            )
+        )
         # since a full dict was captured, clean any dirtiness
         state._clean()
 
