@@ -26,6 +26,7 @@ from typing import (
     Callable,
     ClassVar,
     Dict,
+    Mapping,
     NamedTuple,
     Optional,
     Sequence,
@@ -117,7 +118,7 @@ var = computed_var
 class StateDelta:
     """A dictionary representing the state delta."""
 
-    data: dict[str, Any] = dataclasses.field(default_factory=dict)
+    data: Mapping[str, Any] = dataclasses.field(default_factory=dict)
     client_token: str | None = dataclasses.field(default=None)
     flush: bool = dataclasses.field(default=False)
 
@@ -131,23 +132,6 @@ class StateDelta:
             The item from the delta.
         """
         return self.data[key]
-
-    def __setitem__(self, key: str, value: Any):
-        """Set the item in the delta.
-
-        Args:
-            key: The key to set.
-            value: The value to set.
-        """
-        self.data[key] = value
-
-    def __delitem__(self, key: str):
-        """Delete the item from the delta.
-
-        Args:
-            key: The key to delete.
-        """
-        del self.data[key]
 
     def __iter__(self) -> Any:
         """Iterate over the delta.
@@ -190,7 +174,7 @@ class StateDelta:
         Returns:
             The reversed delta.
         """
-        return reversed(self.data)
+        return reversed(dict(**self.data))
 
     def values(self):
         """Get the values of the delta.

@@ -471,12 +471,7 @@ export const connect = async (
   const getSubstateFromUpdate = (update, substate_name) => {
     if (update.__patch) {
       if (last_substate_hash[substate_name] !== update.__previous_hash) {
-        throw new Error(
-          "Patch received out of order" +
-            update.__hash +
-            " " +
-            last_substate_hash[substate_name]
-        );
+        throw new Error("Patch received out of order");
       }
       last_substate_hash[substate_name] = update.__hash;
       return applyPatch(last_substate_info, update.__patch).newDocument;
@@ -488,14 +483,22 @@ export const connect = async (
 
   // On each received message, queue the updates and events.
   socket.current.on("event", async (update) => {
+    const failed_states = [];
     for (const substate in update.delta) {
-      const new_substate_info = getSubstateFromUpdate(
-        update.delta[substate],
-        substate
-      );
+      try {
+        const new_substate_info = getSubstateFromUpdate(
+          update.delta[substate],
+          substate
+        );
+      } catch (e) {
+        console.error("Received patch out of order", e);
+        states_failed.push(substate);
+        continue;
+      }
       last_substate_info[substate] = new_substate_info;
       dispatch[substate](new_substate_info);
     }
+    // TODO: Handle failed states
     applyClientStorageDelta(client_storage, update.delta);
     event_processing = !update.final;
     if (update.events) {

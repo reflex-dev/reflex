@@ -202,10 +202,10 @@ def compile_state(state: Type[BaseState]) -> dict:
                 console.warn(
                     f"Had to get initial state in a thread 🤮 {resolved_initial_state}",
                 )
-                return resolved_initial_state.data
+                return dict(**resolved_initial_state.data)
 
     # Normally the compile runs before any event loop starts, we asyncio.run is available for calling.
-    return asyncio.run(_resolve_delta(initial_state)).data
+    return dict(**asyncio.run(_resolve_delta(initial_state)).data)
 
 
 def _compile_client_storage_field(
