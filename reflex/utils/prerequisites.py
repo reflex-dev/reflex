@@ -1985,7 +1985,7 @@ def get_cpu_info() -> CpuInfo | None:
     """Get the CPU info of the underlining host.
 
     Returns:
-         The CPU info.
+        The CPU info.
     """
     cpu_info_file = environment.REFLEX_DIR.get() / "cpu_info.json"
     if cpu_info_file.exists() and (cpu_info := json.loads(cpu_info_file.read_text())):
