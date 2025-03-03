@@ -1925,12 +1925,11 @@ def format_address_width(address_width: str | None) -> int | None:
         return None
 
 
-@functools.lru_cache(maxsize=None)
-def get_cpu_info() -> CpuInfo | None:
-    """Get the CPU info of the underlining host.
+def _load_cpu_info() -> CpuInfo | None:
+    """Load the CPU info of the underlining host.
 
     Returns:
-         The CPU info.
+        The CPU info.
     """
     platform_os = platform.system()
     cpuinfo = {}
@@ -1979,6 +1978,22 @@ def get_cpu_info() -> CpuInfo | None:
         if cpuinfo
         else None
     )
+
+
+@functools.lru_cache(maxsize=None)
+def get_cpu_info() -> CpuInfo | None:
+    """Get the CPU info of the underlining host.
+
+    Returns:
+         The CPU info.
+    """
+    cpu_info_file = environment.REFLEX_DIR.get() / "cpu_info.json"
+    if cpu_info_file.exists() and (cpu_info := json.loads(cpu_info_file.read_text())):
+        return CpuInfo(**cpu_info)
+    cpu_info = _load_cpu_info()
+    if cpu_info:
+        cpu_info_file.write_text(json.dumps(dataclasses.asdict(cpu_info)))
+    return cpu_info
 
 
 @functools.lru_cache(maxsize=None)
