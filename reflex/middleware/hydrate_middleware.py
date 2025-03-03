@@ -84,7 +84,7 @@ class PartialHyderateMiddleware(Middleware):
         substates = [
             substate
             for substate_name in substates_names
-            if (substate := state.get_substate(substate_name)) is not None
+            if (substate := state.get_substate(substate_name.split("."))) is not None
         ]
 
         delta = await _resolve_delta(

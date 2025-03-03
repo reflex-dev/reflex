@@ -197,7 +197,7 @@ class DeltaCache(NamedTuple):
     """A named tuple representing the delta cache."""
 
     hash: int
-    delta: StateDelta
+    delta: dict[str, Any]
 
 
 LAST_DELTA_CACHE: dict[str, DeltaCache] = {}
@@ -221,10 +221,13 @@ def serialize_state_delta(delta: StateDelta) -> dict[str, Any]:
             key = delta.client_token + state_name
             cached = LAST_DELTA_CACHE.get(key)
             hash_value = hash(json_str)
-            LAST_DELTA_CACHE[key] = DeltaCache(hash_value, delta)
+            LAST_DELTA_CACHE[key] = DeltaCache(hash_value, new_state_value)
             if cached is not None and not delta.flush:
+                patch = make_patch(cached.delta, new_state_value).patch
+                if not patch:
+                    continue
                 full_delta[state_name] = {
-                    "__patch": make_patch(cached.delta.data, new_state_value).patch,
+                    "__patch": patch,
                     "__previous_hash": cached.hash,
                     "__hash": hash_value,
                 }
@@ -2031,11 +2034,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             name for name, cv in self.computed_vars.items() if not cv._backend
         }
 
-        # Return the dirty vars for this instance, any cached/dependent computed vars,
-        # and always dirty computed vars (cache=False)
-        delta_vars = self.dirty_vars.intersection(self.base_vars).union(
-            self.dirty_vars.intersection(frontend_computed_vars)
-        )
+        delta_vars = frontend_computed_vars.union(self.base_vars)
 
         subdelta: dict[str, Any] = {
             prop: self.get_value(prop)
