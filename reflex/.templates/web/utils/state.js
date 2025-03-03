@@ -476,7 +476,7 @@ export const connect = async (
             last_substate_info[substate],
             update.delta[substate].__patch
           ).newDocument
-        : update.delta[substate];
+        : update.delta[substate].__full;
       last_substate_info[substate] = new_substate_info;
       dispatch[substate](new_substate_info);
     }

@@ -731,7 +731,7 @@ async def test_dict_mutation_detection__plain_list(
             FileUploadState,
             {
                 FileUploadState.get_full_name(): {
-                    "img_list": ["image1.jpg", "image2.jpg"]
+                    "__full": {"img_list": ["image1.jpg", "image2.jpg"]}
                 }
             },
         ),
@@ -739,7 +739,7 @@ async def test_dict_mutation_detection__plain_list(
             ChildFileUploadState,
             {
                 ChildFileUploadState.get_full_name(): {
-                    "img_list": ["image1.jpg", "image2.jpg"]
+                    "__full": {"img_list": ["image1.jpg", "image2.jpg"]}
                 }
             },
         ),
@@ -747,7 +747,7 @@ async def test_dict_mutation_detection__plain_list(
             GrandChildFileUploadState,
             {
                 GrandChildFileUploadState.get_full_name(): {
-                    "img_list": ["image1.jpg", "image2.jpg"]
+                    "__full": {"img_list": ["image1.jpg", "image2.jpg"]}
                 }
             },
         ),

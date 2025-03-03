@@ -233,9 +233,11 @@ def serialize_state_delta(delta: StateDelta) -> dict[str, Any]:
                     "__patch": make_patch(previous_delta, new_state_value).patch
                 }
             else:
-                full_delta[state_name] = new_state_value
+                full_delta[state_name] = {"__full": new_state_value}
         return full_delta
-    return delta.data
+    return {
+        state_name: {"__full": state_value} for state_name, state_value in delta.items()
+    }
 
 
 if environment.REFLEX_PERF_MODE.get() != PerformanceMode.OFF:
