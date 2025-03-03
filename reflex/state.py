@@ -2035,6 +2035,8 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         }
 
         delta_vars = frontend_computed_vars.union(self.base_vars)
+        if not environment.REFLEX_USE_JSON_PATCH.get():
+            delta_vars = self.dirty_vars.intersection(delta_vars)
 
         subdelta: dict[str, Any] = {
             prop: self.get_value(prop)
