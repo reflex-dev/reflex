@@ -1912,8 +1912,8 @@ def format_address_width(address_width: str | None) -> int | None:
         return None
 
 
-def _load_cpu_info() -> CpuInfo | None:
-    """Load the CPU info of the underlying host.
+def _retrieve_cpu_info() -> CpuInfo | None:
+    """Retrieve the CPU info of the host.
 
     Returns:
         The CPU info.
@@ -1977,7 +1977,7 @@ def get_cpu_info() -> CpuInfo | None:
     cpu_info_file = environment.REFLEX_DIR.get() / "cpu_info.json"
     if cpu_info_file.exists() and (cpu_info := json.loads(cpu_info_file.read_text())):
         return CpuInfo(**cpu_info)
-    cpu_info = _load_cpu_info()
+    cpu_info = _retrieve_cpu_info()
     if cpu_info:
         cpu_info_file.parent.mkdir(parents=True, exist_ok=True)
         cpu_info_file.write_text(json.dumps(dataclasses.asdict(cpu_info)))
