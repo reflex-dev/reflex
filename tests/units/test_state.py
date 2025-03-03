@@ -2022,7 +2022,7 @@ async def test_state_proxy(grandchild_state: GrandchildState, mock_app: rx.App):
                     "computed": "",
                 },
             },
-            reflex_delta_token="_" + grandchild_state.get_full_name(),
+            client_token="_" + grandchild_state.get_full_name(),
         )
     )
     assert mcall.kwargs["to"] == grandchild_state.router.session.session_id
@@ -2191,7 +2191,7 @@ async def test_background_task_no_block(mock_app: rx.App, token: str):
                         ],
                     }
                 },
-                reflex_delta_token=token,
+                client_token=token,
             )
         )
 
@@ -2230,7 +2230,7 @@ async def test_background_task_no_block(mock_app: rx.App, token: str):
                     "computed_order": ["background_task:start"],
                 }
             },
-            reflex_delta_token=token + "_" + BackgroundTaskState.get_full_name(),
+            client_token=token + "_" + BackgroundTaskState.get_full_name(),
         ),
         events=[],
         final=True,
@@ -2243,7 +2243,7 @@ async def test_background_task_no_block(mock_app: rx.App, token: str):
                         "computed_order": ["background_task:start"],
                     }
                 },
-                reflex_delta_token=token + "_" + BackgroundTaskState.get_full_name(),
+                client_token=token + "_" + BackgroundTaskState.get_full_name(),
             ),
             events=[],
             final=True,
@@ -2257,7 +2257,7 @@ async def test_background_task_no_block(mock_app: rx.App, token: str):
                     "dict_list": {},
                 }
             },
-            reflex_delta_token=token + "_" + BackgroundTaskState.get_full_name(),
+            client_token=token + "_" + BackgroundTaskState.get_full_name(),
         ),
         events=[],
         final=True,
@@ -2269,7 +2269,7 @@ async def test_background_task_no_block(mock_app: rx.App, token: str):
                     "computed_order": exp_order,
                 },
             },
-            reflex_delta_token=token,
+            client_token=token,
         ),
         events=[],
         final=True,

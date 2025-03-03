@@ -1060,7 +1060,7 @@ async def test_dynamic_route_var_route_change_completed_on_load(
                         "router": exp_router,
                     }
                 },
-                reflex_delta_token=token,
+                client_token=token,
             ),
             events=[
                 _dynamic_state_event(
@@ -1103,7 +1103,7 @@ async def test_dynamic_route_var_route_change_completed_on_load(
                         "loaded": exp_index + 1,
                     },
                 },
-                reflex_delta_token=token,
+                client_token=token,
             ),
             events=[],
         )
@@ -1127,7 +1127,7 @@ async def test_dynamic_route_var_route_change_completed_on_load(
                         "is_hydrated": True,
                     },
                 },
-                reflex_delta_token=token,
+                client_token=token,
             ),
             events=[],
         )
@@ -1151,7 +1151,7 @@ async def test_dynamic_route_var_route_change_completed_on_load(
                         "counter": exp_index + 1,
                     }
                 },
-                reflex_delta_token=token,
+                client_token=token,
             ),
             events=[],
         )

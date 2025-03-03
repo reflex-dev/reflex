@@ -45,7 +45,7 @@ class HydrateMiddleware(Middleware):
         delta = await _resolve_delta(
             StateDelta(
                 state.dict(),
-                reflex_delta_token=state.router.session.client_token,
+                client_token=state.router.session.client_token,
                 flush=True,
             )
         )

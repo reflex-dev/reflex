@@ -117,7 +117,7 @@ class StateDelta:
     """A dictionary representing the state delta."""
 
     data: dict[str, Any] = dataclasses.field(default_factory=dict)
-    reflex_delta_token: str | None = dataclasses.field(default=None)
+    client_token: str | None = dataclasses.field(default=None)
     flush: bool = dataclasses.field(default=False)
 
     def __getitem__(self, key: str) -> Any:
@@ -221,11 +221,11 @@ def serialize_state_delta(delta: StateDelta) -> dict[str, Any]:
     Returns:
         The serialized state delta.
     """
-    if delta.reflex_delta_token is not None and environment.REFLEX_USE_JSON_PATCH.get():
+    if delta.client_token is not None and environment.REFLEX_USE_JSON_PATCH.get():
         full_delta = {}
         for state_name, new_state_value in delta.items():
             new_state_value = json.loads(format.json_dumps(new_state_value))
-            key = delta.reflex_delta_token + state_name
+            key = delta.client_token + state_name
             previous_delta = LAST_DELTA_CACHE.get(key)
             LAST_DELTA_CACHE[key] = new_state_value
             if previous_delta is not None and not delta.flush:
@@ -2018,7 +2018,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         """Get the delta for the state.
 
         Args:
-            token: The reflex delta
+            token: The client token.
 
         Returns:
             The delta for the state.
@@ -2051,7 +2051,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             delta.update(substates[substate].get_delta())
 
         # Return the delta.
-        return StateDelta(delta, reflex_delta_token=token)
+        return StateDelta(delta, client_token=token)
 
     def _mark_dirty(self):
         """Mark the substate and all parent states as dirty."""
