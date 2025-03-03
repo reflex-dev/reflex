@@ -242,9 +242,7 @@ def get_install_package_manager(on_failure_return_none: bool = False) -> str | N
         The path to the package manager.
     """
     if constants.IS_WINDOWS and (
-        not is_windows_bun_supported()
-        or windows_check_onedrive_in_path()
-        or windows_npm_escape_hatch()
+        windows_check_onedrive_in_path() or windows_npm_escape_hatch()
     ):
         return get_package_manager(on_failure_return_none)
     return str(get_config().bun_path)
@@ -1064,17 +1062,11 @@ def install_bun():
     Raises:
         SystemPackageMissingError: If "unzip" is missing.
     """
-    win_supported = is_windows_bun_supported()
     one_drive_in_path = windows_check_onedrive_in_path()
-    if constants.IS_WINDOWS and (not win_supported or one_drive_in_path):
-        if not win_supported:
-            console.warn(
-                "Bun for Windows is currently only available for x86 64-bit Windows. Installation will fall back on npm."
-            )
-        if one_drive_in_path:
-            console.warn(
-                "Creating project directories in OneDrive is not recommended for bun usage on windows. This will fallback to npm."
-            )
+    if constants.IS_WINDOWS and one_drive_in_path:
+        console.warn(
+            "Creating project directories in OneDrive is not recommended for bun usage on windows. This will fallback to npm."
+        )
 
     # Skip if bun is already installed.
     if get_bun_version() == version.parse(constants.Bun.VERSION):
@@ -1176,12 +1168,7 @@ def install_frontend_packages(packages: set[str], config: Config):
         get_package_manager(on_failure_return_none=True)
         if (
             not constants.IS_WINDOWS
-            or (
-                constants.IS_WINDOWS
-                and (
-                    is_windows_bun_supported() and not windows_check_onedrive_in_path()
-                )
-            )
+            or (constants.IS_WINDOWS and not windows_check_onedrive_in_path())
         )
         else None
     )
@@ -1995,24 +1982,6 @@ def get_cpu_info() -> CpuInfo | None:
         cpu_info_file.parent.mkdir(parents=True, exist_ok=True)
         cpu_info_file.write_text(json.dumps(dataclasses.asdict(cpu_info)))
     return cpu_info
-
-
-@functools.lru_cache(maxsize=None)
-def is_windows_bun_supported() -> bool:
-    """Check whether the underlining host running windows qualifies to run bun.
-    We typically do not run bun on ARM or 32 bit devices that use windows.
-
-    Returns:
-        Whether the host is qualified to use bun.
-    """
-    cpu_info = get_cpu_info()
-    return (
-        constants.IS_WINDOWS
-        and cpu_info is not None
-        and cpu_info.address_width == 64
-        and cpu_info.model_name is not None
-        and "ARM" not in cpu_info.model_name
-    )
 
 
 def is_generation_hash(template: str) -> bool:
