@@ -35,6 +35,7 @@ from reflex.components.core.cond import Cond
 from reflex.components.radix.themes.typography.text import Text
 from reflex.event import Event
 from reflex.middleware import HydrateMiddleware
+from reflex.middleware.hydrate_middleware import PartialHyderateMiddleware
 from reflex.model import Model
 from reflex.state import (
     BaseState,
@@ -211,7 +212,7 @@ def test_default_app(app: App):
     Args:
         app: The app to test.
     """
-    assert app.middleware == [HydrateMiddleware()]
+    assert app.middleware == [HydrateMiddleware(), PartialHyderateMiddleware()]
     assert app.style == Style()
     assert app.admin_dash is None
 
