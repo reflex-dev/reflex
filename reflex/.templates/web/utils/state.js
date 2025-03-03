@@ -466,17 +466,33 @@ export const connect = async (
   });
 
   const last_substate_info = {};
+  const last_substate_hash = {};
+
+  const getSubstateFromUpdate = (update, substate_name) => {
+    if (update.__patch) {
+      if (last_substate_hash[substate_name] !== update.__previous_hash) {
+        throw new Error(
+          "Patch received out of order" +
+            update.__hash +
+            " " +
+            last_substate_hash[substate_name]
+        );
+      }
+      last_substate_hash[substate_name] = update.__hash;
+      return applyPatch(last_substate_info, update.__patch).newDocument;
+    } else {
+      last_substate_hash[substate_name] = update.__hash;
+      return update.__full;
+    }
+  };
 
   // On each received message, queue the updates and events.
   socket.current.on("event", async (update) => {
     for (const substate in update.delta) {
-      console.log(last_substate_info[substate]);
-      const new_substate_info = update.delta[substate].__patch
-        ? applyPatch(
-            last_substate_info[substate],
-            update.delta[substate].__patch
-          ).newDocument
-        : update.delta[substate].__full;
+      const new_substate_info = getSubstateFromUpdate(
+        update.delta[substate],
+        substate
+      );
       last_substate_info[substate] = new_substate_info;
       dispatch[substate](new_substate_info);
     }

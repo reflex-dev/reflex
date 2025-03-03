@@ -26,6 +26,7 @@ from typing import (
     Callable,
     ClassVar,
     Dict,
+    NamedTuple,
     Optional,
     Sequence,
     Set,
@@ -208,7 +209,14 @@ class StateDelta:
         return self.data.items()
 
 
-LAST_DELTA_CACHE: dict[str, StateDelta] = {}
+class DeltaCache(NamedTuple):
+    """A named tuple representing the delta cache."""
+
+    hash: int
+    delta: StateDelta
+
+
+LAST_DELTA_CACHE: dict[str, DeltaCache] = {}
 
 
 @serializer(to=dict)
@@ -224,16 +232,23 @@ def serialize_state_delta(delta: StateDelta) -> dict[str, Any]:
     if delta.client_token is not None and environment.REFLEX_USE_JSON_PATCH.get():
         full_delta = {}
         for state_name, new_state_value in delta.items():
-            new_state_value = json.loads(format.json_dumps(new_state_value))
+            json_str = format.json_dumps(new_state_value)
+            new_state_value = json.loads(json_str)
             key = delta.client_token + state_name
-            previous_delta = LAST_DELTA_CACHE.get(key)
-            LAST_DELTA_CACHE[key] = new_state_value
-            if previous_delta is not None and not delta.flush:
+            cached = LAST_DELTA_CACHE.get(key)
+            hash_value = hash(json_str)
+            LAST_DELTA_CACHE[key] = DeltaCache(hash_value, delta)
+            if cached is not None and not delta.flush:
                 full_delta[state_name] = {
-                    "__patch": make_patch(previous_delta, new_state_value).patch
+                    "__patch": make_patch(cached.delta.data, new_state_value).patch,
+                    "__previous_hash": cached.hash,
+                    "__hash": hash_value,
                 }
             else:
-                full_delta[state_name] = {"__full": new_state_value}
+                full_delta[state_name] = {
+                    "__full": new_state_value,
+                    "__hash": hash_value,
+                }
         return full_delta
     return {
         state_name: {"__full": state_value} for state_name, state_value in delta.items()
