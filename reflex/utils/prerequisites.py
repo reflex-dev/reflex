@@ -1992,6 +1992,7 @@ def get_cpu_info() -> CpuInfo | None:
         return CpuInfo(**cpu_info)
     cpu_info = _load_cpu_info()
     if cpu_info:
+        cpu_info_file.parent.mkdir(parents=True, exist_ok=True)
         cpu_info_file.write_text(json.dumps(dataclasses.asdict(cpu_info)))
     return cpu_info
 
