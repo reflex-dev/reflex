@@ -1913,7 +1913,7 @@ def format_address_width(address_width: str | None) -> int | None:
 
 
 def _load_cpu_info() -> CpuInfo | None:
-    """Load the CPU info of the underlining host.
+    """Load the CPU info of the underlying host.
 
     Returns:
         The CPU info.
