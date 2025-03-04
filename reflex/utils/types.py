@@ -20,6 +20,7 @@ from typing import (
     List,
     Literal,
     Mapping,
+    Optional,
     Sequence,
     Tuple,
     Type,

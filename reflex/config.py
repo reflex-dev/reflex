@@ -36,7 +36,12 @@ from reflex import constants
 from reflex.base import Base
 from reflex.utils import console
 from reflex.utils.exceptions import ConfigError, EnvironmentVarValueError
-from reflex.utils.types import GenericType, is_union, value_inside_optional
+from reflex.utils.types import (
+    GenericType,
+    is_union,
+    true_type_for_pydantic_field,
+    value_inside_optional,
+)
 
 try:
     from dotenv import load_dotenv  # pyright: ignore [reportMissingImports]
