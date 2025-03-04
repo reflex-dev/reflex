@@ -10,6 +10,7 @@ import re
 import subprocess
 import sys
 from pathlib import Path
+from typing import Sequence
 from urllib.parse import urljoin
 
 import psutil
@@ -242,29 +243,63 @@ def run_backend(
         run_uvicorn_backend(host, port, loglevel)
 
 
-def get_reload_dirs() -> list[Path]:
-    """Get the reload directories for the backend.
+def get_reload_paths() -> Sequence[Path]:
+    """Get the reload paths for the backend.
 
     Returns:
-        The reload directories for the backend.
+        The reload paths for the backend.
     """
     config = get_config()
-    reload_dirs = [Path(config.app_name)]
+    reload_paths = [Path(config.app_name).parent]
     if config.app_module is not None and config.app_module.__file__:
         module_path = Path(config.app_module.__file__).resolve().parent
 
-        while module_path.parent.name:
-            if any(
-                sibling_file.name == "__init__.py"
-                for sibling_file in module_path.parent.iterdir()
-            ):
-                # go up a level to find dir without `__init__.py`
-                module_path = module_path.parent
-            else:
-                break
+        while module_path.parent.name and any(
+            sibling_file.name == "__init__.py"
+            for sibling_file in module_path.parent.iterdir()
+        ):
+            # go up a level to find dir without `__init__.py`
+            module_path = module_path.parent
 
-        reload_dirs = [module_path]
-    return reload_dirs
+        reload_paths = [module_path]
+
+    include_dirs = tuple(
+        map(Path.absolute, environment.REFLEX_HOT_RELOAD_INCLUDE_PATHS.get())
+    )
+    exclude_dirs = tuple(
+        map(Path.absolute, environment.REFLEX_HOT_RELOAD_EXCLUDE_PATHS.get())
+    )
+
+    def is_excluded_by_default(path: Path) -> bool:
+        if path.is_dir():
+            if path.name.startswith("."):
+                # exclude hidden directories
+                return True
+            if path.name.startswith("__"):
+                # ignore things like __pycache__
+                return True
+        return path.name in (".gitignore", "uploaded_files")
+
+    reload_paths = (
+        tuple(
+            path.absolute()
+            for dir in reload_paths
+            for path in dir.iterdir()
+            if not is_excluded_by_default(path)
+        )
+        + include_dirs
+    )
+
+    if exclude_dirs:
+        reload_paths = tuple(
+            path
+            for path in reload_paths
+            if all(not path.samefile(exclude) for exclude in exclude_dirs)
+        )
+
+    console.debug(f"Reload paths: {list(map(str, reload_paths))}")
+
+    return reload_paths
 
 
 def run_uvicorn_backend(host: str, port: int, loglevel: LogLevel):
@@ -283,7 +318,7 @@ def run_uvicorn_backend(host: str, port: int, loglevel: LogLevel):
         port=port,
         log_level=loglevel.value,
         reload=True,
-        reload_dirs=list(map(str, get_reload_dirs())),
+        reload_dirs=list(map(str, get_reload_paths())),
     )
 
 
@@ -310,8 +345,7 @@ def run_granian_backend(host: str, port: int, loglevel: LogLevel):
             interface=Interfaces.ASGI,
             log_level=LogLevels(loglevel.value),
             reload=True,
-            reload_paths=get_reload_dirs(),
-            reload_ignore_dirs=[".web", ".states"],
+            reload_paths=get_reload_paths(),
         ).serve()
     except ImportError:
         console.error(
@@ -368,34 +402,49 @@ def run_uvicorn_backend_prod(host: str, port: int, loglevel: LogLevel):
 
     app_module = get_app_module()
 
-    run_backend_prod = f"gunicorn --worker-class {config.gunicorn_worker_class} --max-requests {config.gunicorn_max_requests} --max-requests-jitter {config.gunicorn_max_requests_jitter} --preload --timeout {config.timeout} --log-level critical".split()
-    run_backend_prod_windows = f"uvicorn --limit-max-requests {config.gunicorn_max_requests} --timeout-keep-alive {config.timeout}".split()
     command = (
         [
-            *run_backend_prod_windows,
-            "--host",
-            host,
-            "--port",
-            str(port),
+            "uvicorn",
+            *(
+                [
+                    "--limit-max-requests",
+                    str(config.gunicorn_max_requests),
+                ]
+                if config.gunicorn_max_requests > 0
+                else []
+            ),
+            *("--timeout-keep-alive", str(config.timeout)),
+            *("--host", host),
+            *("--port", str(port)),
+            *("--workers", str(_get_backend_workers())),
             app_module,
         ]
         if constants.IS_WINDOWS
         else [
-            *run_backend_prod,
-            "--bind",
-            f"{host}:{port}",
-            "--threads",
-            str(_get_backend_workers()),
+            "gunicorn",
+            *("--worker-class", config.gunicorn_worker_class),
+            *(
+                [
+                    "--max-requests",
+                    str(config.gunicorn_max_requests),
+                    "--max-requests-jitter",
+                    str(config.gunicorn_max_requests_jitter),
+                ]
+                if config.gunicorn_max_requests > 0
+                else []
+            ),
+            "--preload",
+            *("--timeout", str(config.timeout)),
+            *("--bind", f"{host}:{port}"),
+            *("--threads", str(_get_backend_workers())),
             f"{app_module}()",
         ]
     )
 
     command += [
-        "--log-level",
-        loglevel.value,
-        "--workers",
-        str(_get_backend_workers()),
+        *("--log-level", loglevel.value),
     ]
+
     processes.new_process(
         command,
         run=True,
@@ -535,3 +584,12 @@ def is_prod_mode() -> bool:
     """
     current_mode = environment.REFLEX_ENV_MODE.get()
     return current_mode == constants.Env.PROD
+
+
+def get_compile_context() -> constants.CompileContext:
+    """Check if the app is compiled for deploy.
+
+    Returns:
+        Whether the app is being compiled for deploy.
+    """
+    return environment.REFLEX_COMPILE_CONTEXT.get()

@@ -14,6 +14,7 @@ import sys
 import time
 import typing
 import uuid
+import warnings
 from abc import ABC, abstractmethod
 from hashlib import md5
 from pathlib import Path
@@ -26,7 +27,6 @@ from typing import (
     Callable,
     ClassVar,
     Dict,
-    List,
     Optional,
     Sequence,
     Set,
@@ -34,56 +34,27 @@ from typing import (
     Tuple,
     Type,
     TypeVar,
-    Union,
     cast,
     get_args,
     get_type_hints,
 )
 
+import pydantic.v1 as pydantic
+import wrapt
+from pydantic import BaseModel as BaseModelV2
+from pydantic.v1 import BaseModel as BaseModelV1
+from pydantic.v1 import validator
+from pydantic.v1.fields import ModelField
+from redis.asyncio import Redis
 from redis.asyncio.client import PubSub
+from redis.exceptions import ResponseError
 from sqlalchemy.orm import DeclarativeBase
 from typing_extensions import Self
 
-from reflex import event
-from reflex.config import PerformanceMode, get_config
-from reflex.istate.data import RouterData
-from reflex.istate.storage import ClientStorageBase
-from reflex.model import Model
-from reflex.vars.base import (
-    ComputedVar,
-    DynamicRouteVar,
-    Var,
-    computed_var,
-    dispatch,
-    get_unique_variable_name,
-    is_computed_var,
-)
-
-try:
-    import pydantic.v1 as pydantic
-except ModuleNotFoundError:
-    import pydantic
-
-from pydantic import BaseModel as BaseModelV2
-
-try:
-    from pydantic.v1 import BaseModel as BaseModelV1
-except ModuleNotFoundError:
-    BaseModelV1 = BaseModelV2
-
-try:
-    from pydantic.v1 import validator
-except ModuleNotFoundError:
-    from pydantic import validator
-
-import wrapt
-from redis.asyncio import Redis
-from redis.exceptions import ResponseError
-
 import reflex.istate.dynamic
-from reflex import constants
+from reflex import constants, event
 from reflex.base import Base
-from reflex.config import environment
+from reflex.config import PerformanceMode, environment, get_config
 from reflex.event import (
     BACKGROUND_TASK_MARKER,
     Event,
@@ -91,6 +62,9 @@ from reflex.event import (
     EventSpec,
     fix_events,
 )
+from reflex.istate.data import RouterData
+from reflex.istate.storage import ClientStorageBase
+from reflex.model import Model
 from reflex.utils import console, format, path_ops, prerequisites, types
 from reflex.utils.exceptions import (
     ComputedVarShadowsBaseVarsError,
@@ -121,12 +95,21 @@ from reflex.utils.types import (
     value_inside_optional,
 )
 from reflex.vars import VarData
+from reflex.vars.base import (
+    ComputedVar,
+    DynamicRouteVar,
+    Var,
+    computed_var,
+    dispatch,
+    get_unique_variable_name,
+    is_computed_var,
+)
 
 if TYPE_CHECKING:
     from reflex.components.component import Component
 
 
-Delta = Dict[str, Any]
+Delta = dict[str, Any]
 var = computed_var
 
 
@@ -134,7 +117,7 @@ if environment.REFLEX_PERF_MODE.get() != PerformanceMode.OFF:
     # If the state is this large, it's considered a performance issue.
     TOO_LARGE_SERIALIZED_STATE = environment.REFLEX_STATE_SIZE_LIMIT.get() * 1024
     # Only warn about each state class size once.
-    _WARNED_ABOUT_STATE_SIZE: Set[str] = set()
+    _WARNED_ABOUT_STATE_SIZE: set[str] = set()
 
 # Errors caught during pickling of state
 HANDLED_PICKLE_ERRORS = (
@@ -289,10 +272,6 @@ class EventHandlerSetVar(EventHandler):
         return super().__call__(*args)
 
 
-if TYPE_CHECKING:
-    from pydantic.v1.fields import ModelField
-
-
 def _unwrap_field_type(type_: Type) -> Type:
     """Unwrap rx.Field type annotations.
 
@@ -347,6 +326,9 @@ async def _resolve_delta(delta: Delta) -> Delta:
     return delta
 
 
+all_base_state_classes: dict[str, None] = {}
+
+
 class BaseState(Base, ABC, extra=pydantic.Extra.allow):
     """The state of the app."""
 
@@ -372,31 +354,31 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
     event_handlers: ClassVar[Dict[str, EventHandler]] = {}
 
     # A set of subclassses of this class.
-    class_subclasses: ClassVar[Set[Type[BaseState]]] = set()
+    class_subclasses: ClassVar[set[Type[BaseState]]] = set()
 
     # Mapping of var name to set of (state_full_name, var_name) that depend on it.
-    _var_dependencies: ClassVar[Dict[str, Set[Tuple[str, str]]]] = {}
+    _var_dependencies: ClassVar[Dict[str, set[tuple[str, str]]]] = {}
 
     # Set of vars which always need to be recomputed
-    _always_dirty_computed_vars: ClassVar[Set[str]] = set()
+    _always_dirty_computed_vars: ClassVar[set[str]] = set()
 
     # Set of substates which always need to be recomputed
-    _always_dirty_substates: ClassVar[Set[str]] = set()
+    _always_dirty_substates: ClassVar[set[str]] = set()
 
     # Set of states which might need to be recomputed if vars in this state change.
-    _potentially_dirty_states: ClassVar[Set[str]] = set()
+    _potentially_dirty_states: ClassVar[set[str]] = set()
 
     # The parent state.
-    parent_state: Optional[BaseState] = None
+    parent_state: BaseState | None = None
 
     # The substates of the state.
     substates: Dict[str, BaseState] = {}
 
     # The set of dirty vars.
-    dirty_vars: Set[str] = set()
+    dirty_vars: set[str] = set()
 
     # The set of dirty substates.
-    dirty_substates: Set[str] = set()
+    dirty_substates: set[str] = set()
 
     # The routing path that triggered the state
     router_data: Dict[str, Any] = {}
@@ -644,6 +626,8 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         cls._var_dependencies = {}
         cls._init_var_dependency_dicts()
 
+        all_base_state_classes[cls.get_full_name()] = None
+
     @staticmethod
     def _copy_fn(fn: Callable) -> Callable:
         """Copy a function. Used to copy ComputedVars and EventHandlers from mixins.
@@ -685,9 +669,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         )
 
     @classmethod
-    def _evaluate(
-        cls, f: Callable[[Self], Any], of_type: Union[type, None] = None
-    ) -> Var:
+    def _evaluate(cls, f: Callable[[Self], Any], of_type: type | None = None) -> Var:
         """Evaluate a function to a ComputedVar. Experimental.
 
         Args:
@@ -727,7 +709,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         return getattr(cls, unique_var_name)
 
     @classmethod
-    def _mixins(cls) -> List[Type]:
+    def _mixins(cls) -> list[Type]:
         """Get the mixin classes of the state.
 
         Returns:
@@ -1214,7 +1196,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             return inner_func
 
         def arglist_factory(param: str):
-            def inner_func(self: BaseState) -> List[str]:
+            def inner_func(self: BaseState) -> list[str]:
                 return self.router.page.params.get(param, [])
 
             return inner_func
@@ -1370,7 +1352,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             field = fields[name]
             field_type = _unwrap_field_type(field.outer_type_)
             if field.allow_none and not is_optional(field_type):
-                field_type = Union[field_type, None]
+                field_type = field_type | None
             if not _isinstance(value, field_type):
                 console.error(
                     f"Expected field '{type(self).__name__}.{name}' to receive type '{field_type}',"
@@ -1660,14 +1642,26 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
 
         if events is None or _is_valid_type(events):
             return events
+
+        if not isinstance(events, Sequence):
+            events = [events]
+
         try:
             if all(_is_valid_type(e) for e in events):
                 return events
         except TypeError:
             pass
 
+        coroutines = [e for e in events if asyncio.iscoroutine(e)]
+
+        for coroutine in coroutines:
+            coroutine_name = coroutine.__qualname__
+            warnings.filterwarnings(
+                "ignore", message=f"coroutine '{coroutine_name}' was never awaited"
+            )
+
         raise TypeError(
-            f"Your handler {handler.fn.__qualname__} must only return/yield: None, Events or other EventHandlers referenced by their class (not using `self`)"
+            f"Your handler {handler.fn.__qualname__} must only return/yield: None, Events or other EventHandlers referenced by their class (i.e. using `type(self)` or other class references)."
         )
 
     async def _as_state_update(
@@ -1717,7 +1711,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
                 return StateUpdate()
 
             event_specs_correct_type = cast(
-                Union[List[Union[EventSpec, EventHandler]], None],
+                list[EventSpec | EventHandler] | None,
                 [event_specs] if isinstance(event_specs, EventSpec) else event_specs,
             )
             fixed_events = fix_events(
@@ -1742,6 +1736,9 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
 
         Yields:
             StateUpdate object
+
+        Raises:
+            ValueError: If a string value is received for an int or float type and cannot be converted.
         """
         from reflex.utils import telemetry
 
@@ -1779,12 +1776,25 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
                     hinted_args, (Base, BaseModelV1, BaseModelV2)
                 ):
                     payload[arg] = hinted_args(**value)
-            if isinstance(value, list) and (hinted_args is set or hinted_args is Set):
+            elif isinstance(value, list) and (hinted_args is set or hinted_args is Set):
                 payload[arg] = set(value)
-            if isinstance(value, list) and (
+            elif isinstance(value, list) and (
                 hinted_args is tuple or hinted_args is Tuple
             ):
                 payload[arg] = tuple(value)
+            elif isinstance(value, str) and (
+                hinted_args is int or hinted_args is float
+            ):
+                try:
+                    payload[arg] = hinted_args(value)
+                except ValueError:
+                    raise ValueError(
+                        f"Received a string value ({value}) for {arg} but expected a {hinted_args}"
+                    ) from None
+                else:
+                    console.warn(
+                        f"Received a string value ({value}) for {arg} but expected a {hinted_args}. A simple conversion was successful."
+                    )
 
         # Wrap the function in a try/except block.
         try:
@@ -1910,7 +1920,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             self.dirty_vars.intersection(frontend_computed_vars)
         )
 
-        subdelta: Dict[str, Any] = {
+        subdelta: dict[str, Any] = {
             prop: self.get_value(prop)
             for prop in delta_vars
             if not types.is_backend_base_variable(prop, type(self))
@@ -2149,7 +2159,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
 
         def _field_tuple(
             field_name: str,
-        ) -> Tuple[str, str, Any, Union[bool, None], Any]:
+        ) -> tuple[str, str, Any, bool | None, Any]:
             model_field = cls.__fields__[field_name]
             return (
                 field_name,
@@ -2356,7 +2366,7 @@ class OnLoadInternalState(State):
         self.is_hydrated = False
         return [
             *fix_events(
-                cast(list[Union[EventSpec, EventHandler]], load_events),
+                cast(list[EventSpec | EventHandler], load_events),
                 self.router.session.client_token,
                 router_data=self.router_data,
             ),
@@ -2459,6 +2469,8 @@ class ComponentState(State, mixin=True):
         Returns:
             A new instance of the Component with an independent copy of the State.
         """
+        from reflex.compiler.compiler import into_component
+
         cls._per_component_state_instance_count += 1
         state_cls_name = f"{cls.__name__}_n{cls._per_component_state_instance_count}"
         component_state = type(
@@ -2470,6 +2482,7 @@ class ComponentState(State, mixin=True):
         # Save a reference to the dynamic state for pickle/unpickle.
         setattr(reflex.istate.dynamic, state_cls_name, component_state)
         component = component_state.get_component(*children, **props)
+        component = into_component(component)
         component.State = component_state
         return component
 
@@ -2756,7 +2769,7 @@ class StateUpdate:
     delta: Delta = dataclasses.field(default_factory=dict)
 
     # Events to be added to the event queue.
-    events: List[Event] = dataclasses.field(default_factory=list)
+    events: list[Event] = dataclasses.field(default_factory=list)
 
     # Whether this is the final state update for the event.
     final: bool = True
@@ -2851,13 +2864,13 @@ class StateManagerMemory(StateManager):
     """A state manager that stores states in memory."""
 
     # The mapping of client ids to states.
-    states: Dict[str, BaseState] = {}
+    states: dict[str, BaseState] = {}
 
     # The mutex ensures the dict of mutexes is updated exclusively
     _state_manager_lock = asyncio.Lock()
 
     # The dict of mutexes for each client
-    _states_locks: Dict[str, asyncio.Lock] = pydantic.PrivateAttr({})
+    _states_locks: dict[str, asyncio.Lock] = pydantic.PrivateAttr({})
 
     class Config:  # pyright: ignore [reportIncompatibleVariableOverride]
         """The Pydantic config."""
@@ -2966,13 +2979,13 @@ class StateManagerDisk(StateManager):
     """A state manager that stores states in memory."""
 
     # The mapping of client ids to states.
-    states: Dict[str, BaseState] = {}
+    states: dict[str, BaseState] = {}
 
     # The mutex ensures the dict of mutexes is updated exclusively
     _state_manager_lock = asyncio.Lock()
 
     # The dict of mutexes for each client
-    _states_locks: Dict[str, asyncio.Lock] = pydantic.PrivateAttr({})
+    _states_locks: dict[str, asyncio.Lock] = pydantic.PrivateAttr({})
 
     # The token expiration time (s).
     token_expiration: int = pydantic.Field(default_factory=_default_token_expiration)
@@ -3201,7 +3214,7 @@ class StateManagerRedis(StateManager):
         default_factory=_default_lock_warning_threshold
     )
 
-    # The keyspace subscription string when redis is waiting for lock to be released
+    # The keyspace subscription string when redis is waiting for lock to be released.
     _redis_notify_keyspace_events: str = (
         "K"  # Enable keyspace notifications (target a particular key)
         "g"  # For generic commands (DEL, EXPIRE, etc)
@@ -3209,13 +3222,19 @@ class StateManagerRedis(StateManager):
         "e"  # For evicted events (i.e. maxmemory exceeded)
     )
 
-    # These events indicate that a lock is no longer held
-    _redis_keyspace_lock_release_events: Set[bytes] = {
+    # These events indicate that a lock is no longer held.
+    _redis_keyspace_lock_release_events: set[bytes] = {
         b"del",
         b"expire",
         b"expired",
         b"evicted",
     }
+
+    # Whether keyspace notifications have been enabled.
+    _redis_notify_keyspace_events_enabled: bool = False
+
+    # The logical database number used by the redis client.
+    _redis_db: int = 0
 
     def _get_required_state_classes(
         self,
@@ -3549,20 +3568,17 @@ class StateManagerRedis(StateManager):
                 return
             await self._get_pubsub_message(pubsub, timeout=remaining)
 
-    async def _wait_lock(self, lock_key: bytes, lock_id: bytes) -> None:
-        """Wait for a redis lock to be released via pubsub.
-
-        Coroutine will not return until the lock is obtained.
-
-        Args:
-            lock_key: The redis key for the lock.
-            lock_id: The ID of the lock.
+    async def _enable_keyspace_notifications(self):
+        """Enable keyspace notifications for the redis server.
 
         Raises:
             ResponseError: when the keyspace config cannot be set.
         """
-        lock_key_channel = f"__keyspace@0__:{lock_key.decode()}"
-        # Enable keyspace notifications for the lock key, so we know when it is available.
+        if self._redis_notify_keyspace_events_enabled:
+            return
+        # Find out which logical database index is being used.
+        self._redis_db = self.redis.get_connection_kwargs().get("db", self._redis_db)
+
         try:
             await self.redis.config_set(
                 "notify-keyspace-events",
@@ -3572,6 +3588,20 @@ class StateManagerRedis(StateManager):
             # Some redis servers only allow out-of-band configuration, so ignore errors here.
             if not environment.REFLEX_IGNORE_REDIS_CONFIG_ERROR.get():
                 raise
+        self._redis_notify_keyspace_events_enabled = True
+
+    async def _wait_lock(self, lock_key: bytes, lock_id: bytes) -> None:
+        """Wait for a redis lock to be released via pubsub.
+
+        Coroutine will not return until the lock is obtained.
+
+        Args:
+            lock_key: The redis key for the lock.
+            lock_id: The ID of the lock.
+        """
+        # Enable keyspace notifications for the lock key, so we know when it is available.
+        await self._enable_keyspace_notifications()
+        lock_key_channel = f"__keyspace@{self._redis_db}__:{lock_key.decode()}"
         async with self.redis.pubsub() as pubsub:
             await pubsub.psubscribe(lock_key_channel)
             # wait for the lock to be released
@@ -3683,7 +3713,7 @@ class MutableProxy(wrapt.ObjectProxy):
     )
 
     # Dynamically generated classes for tracking dataclass mutations.
-    __dataclass_proxies__: Dict[type, type] = {}
+    __dataclass_proxies__: dict[type, type] = {}
 
     def __new__(cls, wrapped: Any, *args, **kwargs) -> MutableProxy:
         """Create a proxy instance for a mutable object that tracks changes.
@@ -4088,6 +4118,7 @@ def reload_state_module(
     for subclass in tuple(state.class_subclasses):
         reload_state_module(module=module, state=subclass)
         if subclass.__module__ == module and module is not None:
+            all_base_state_classes.pop(subclass.get_full_name(), None)
             state.class_subclasses.remove(subclass)
             state._always_dirty_substates.discard(subclass.get_name())
             state._var_dependencies = {}

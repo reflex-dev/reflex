@@ -78,9 +78,9 @@ export function UploadFilesProvider({ children }) {
     return newFilesById
   })
   return (
-    <UploadFilesContext.Provider value={[filesById, setFilesById]}>
+    <UploadFilesContext value={[filesById, setFilesById]}>
       {children}
-    </UploadFilesContext.Provider>
+    </UploadFilesContext>
   )
 }
 
@@ -92,9 +92,9 @@ export function EventLoopProvider({ children }) {
     clientStorage,
   )
   return (
-    <EventLoopContext.Provider value={[addEvents, connectErrors]}>
+    <EventLoopContext value={[addEvents, connectErrors]}>
       {children}
-    </EventLoopContext.Provider>
+    </EventLoopContext>
   )
 }
 
@@ -112,13 +112,13 @@ export function StateProvider({ children }) {
 
   return (
     {% for state_name in initial_state %}
-    <StateContexts.{{state_name|var_name}}.Provider value={ {{state_name|var_name}} }>
+    <StateContexts.{{state_name|var_name}} value={ {{state_name|var_name}} }>
     {% endfor %}
-      <DispatchContext.Provider value={dispatchers}>
+      <DispatchContext value={dispatchers}>
         {children}
-      </DispatchContext.Provider>
+      </DispatchContext>
     {% for state_name in initial_state|reverse %}
-    </StateContexts.{{state_name|var_name}}.Provider>
+    </StateContexts.{{state_name|var_name}}>
     {% endfor %}
   )
 }

@@ -23,7 +23,8 @@ import zipfile
 from datetime import datetime
 from pathlib import Path
 from types import ModuleType
-from typing import Any, Callable, List, NamedTuple, Optional
+from typing import Callable, NamedTuple
+from urllib.parse import urlparse
 
 import httpx
 import typer
@@ -71,9 +72,9 @@ class Template:
 class CpuInfo:
     """Model to save cpu info."""
 
-    manufacturer_id: Optional[str]
-    model_name: Optional[str]
-    address_width: Optional[int]
+    manufacturer_id: str | None
+    model_name: str | None
+    address_width: int | None
 
 
 def get_web_dir() -> Path:
@@ -96,6 +97,15 @@ def get_states_dir() -> Path:
         The working directory.
     """
     return environment.REFLEX_STATES_WORKDIR.get()
+
+
+def get_backend_dir() -> Path:
+    """Get the working directory for the backend.
+
+    Returns:
+        The working directory.
+    """
+    return get_web_dir() / constants.Dirs.BACKEND
 
 
 def check_latest_package_version(package_name: str):
@@ -836,6 +846,7 @@ def _compile_package_json():
         },
         dependencies=constants.PackageJson.DEPENDENCIES,
         dev_dependencies=constants.PackageJson.DEV_DEPENDENCIES,
+        overrides=constants.PackageJson.OVERRIDES,
     )
 
 
@@ -885,7 +896,7 @@ def init_reflex_json(project_hash: int | None):
 
 
 def update_next_config(
-    export: bool = False, transpile_packages: Optional[List[str]] = None
+    export: bool = False, transpile_packages: list[str] | None = None
 ):
     """Update Next.js config from Reflex config.
 
@@ -907,7 +918,7 @@ def update_next_config(
 
 
 def _update_next_config(
-    config: Config, export: bool = False, transpile_packages: Optional[List[str]] = None
+    config: Config, export: bool = False, transpile_packages: list[str] | None = None
 ):
     next_config = {
         "basePath": config.frontend_path or "",
@@ -1189,7 +1200,7 @@ def install_frontend_packages(packages: set[str], config: Config):
     )
 
     processes.run_process_with_fallback(
-        [install_package_manager, "install"],
+        [install_package_manager, "install", "--legacy-peer-deps"],
         fallback=fallback_command,
         analytics_enabled=True,
         show_status_message="Installing base frontend packages",
@@ -1202,6 +1213,7 @@ def install_frontend_packages(packages: set[str], config: Config):
             [
                 install_package_manager,
                 "add",
+                "--legacy-peer-deps",
                 "-d",
                 constants.Tailwind.VERSION,
                 *((config.tailwind or {}).get("plugins", [])),
@@ -1216,13 +1228,28 @@ def install_frontend_packages(packages: set[str], config: Config):
     # Install custom packages defined in frontend_packages
     if len(packages) > 0:
         processes.run_process_with_fallback(
-            [install_package_manager, "add", *packages],
+            [install_package_manager, "add", "--legacy-peer-deps", *packages],
             fallback=fallback_command,
             analytics_enabled=True,
             show_status_message="Installing frontend packages from config and components",
             cwd=get_web_dir(),
             shell=constants.IS_WINDOWS,
         )
+
+
+def check_running_mode(frontend: bool, backend: bool) -> tuple[bool, bool]:
+    """Check if the app is running in frontend or backend mode.
+
+    Args:
+        frontend: Whether to run the frontend of the app.
+        backend: Whether to run the backend of the app.
+
+    Returns:
+        The running modes.
+    """
+    if not frontend and not backend:
+        return True, True
+    return frontend, backend
 
 
 def needs_reinit(frontend: bool = True) -> bool:
@@ -1293,10 +1320,13 @@ def validate_bun():
     """
     bun_path = path_ops.get_bun_path()
 
-    if bun_path and not bun_path.samefile(constants.Bun.DEFAULT_PATH):
+    if bun_path is None:
+        return
+
+    if not path_ops.samefile(bun_path, constants.Bun.DEFAULT_PATH):
         console.info(f"Using custom Bun path: {bun_path}")
         bun_version = get_bun_version()
-        if not bun_version:
+        if bun_version is None:
             console.error(
                 "Failed to obtain bun version. Make sure the specified bun path in your config is correct."
             )
@@ -1342,7 +1372,7 @@ def validate_frontend_dependencies(init: bool = True):
         validate_bun()
 
 
-def ensure_reflex_installation_id() -> Optional[int]:
+def ensure_reflex_installation_id() -> int | None:
     """Ensures that a reflex distinct id has been generated and stored in the reflex directory.
 
     Returns:
@@ -1661,9 +1691,11 @@ def validate_and_create_app_using_remote_template(
 
         template_url = templates[template].code_url
     else:
+        template_parsed_url = urlparse(template)
         # Check if the template is a github repo.
-        if template.startswith("https://github.com"):
-            template_url = f"{template.strip('/').replace('.git', '')}/archive/main.zip"
+        if template_parsed_url.hostname == "github.com":
+            path = template_parsed_url.path.strip("/").removesuffix(".git")
+            template_url = f"https://github.com/{path}/archive/main.zip"
         else:
             console.error(f"Template `{template}` not found or invalid.")
             raise typer.Exit(1)
@@ -1980,38 +2012,17 @@ def is_generation_hash(template: str) -> bool:
     return re.match(r"^[0-9a-f]{32,}$", template) is not None
 
 
-def check_config_option_in_tier(
-    option_name: str,
-    allowed_tiers: list[str],
-    fallback_value: Any,
-    help_link: str | None = None,
-):
-    """Check if a config option is allowed for the authenticated user's current tier.
+def get_user_tier():
+    """Get the current user's tier.
 
-    Args:
-        option_name: The name of the option to check.
-        allowed_tiers: The tiers that are allowed to use the option.
-        fallback_value: The fallback value if the option is not allowed.
-        help_link: The help link to show to a user that is authenticated.
+    Returns:
+        The current user's tier.
     """
     from reflex_cli.v2.utils import hosting
 
-    config = get_config()
     authenticated_token = hosting.authenticated_token()
-    if not authenticated_token[0]:
-        the_remedy = (
-            "You are currently logged out. Run `reflex login` to access this option."
-        )
-        current_tier = "anonymous"
-    else:
-        current_tier = authenticated_token[1].get("tier", "").lower()
-        the_remedy = (
-            f"Your current subscription tier is `{current_tier}`. "
-            f"Please upgrade to {allowed_tiers} to access this option. "
-        )
-        if help_link:
-            the_remedy += f"See {help_link} for more information."
-    if current_tier not in allowed_tiers:
-        console.warn(f"Config option `{option_name}` is restricted. {the_remedy}")
-        setattr(config, option_name, fallback_value)
-        config._set_persistent(**{option_name: fallback_value})
+    return (
+        authenticated_token[1].get("tier", "").lower()
+        if authenticated_token[0]
+        else "anonymous"
+    )

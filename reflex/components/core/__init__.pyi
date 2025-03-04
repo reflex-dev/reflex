@@ -4,6 +4,7 @@
 # ------------------------------------------------------
 
 from . import layout as layout
+from .auto_scroll import auto_scroll as auto_scroll
 from .banner import ConnectionBanner as ConnectionBanner
 from .banner import ConnectionModal as ConnectionModal
 from .banner import ConnectionPulser as ConnectionPulser

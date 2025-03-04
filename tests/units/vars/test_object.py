@@ -1,4 +1,5 @@
 import dataclasses
+from typing import Sequence
 
 import pytest
 from sqlalchemy.orm import DeclarativeBase, Mapped, MappedAsDataclass, mapped_column
@@ -74,11 +75,11 @@ class ObjectState(rx.State):
 
 
 @pytest.mark.parametrize("type_", [Base, Bare, SqlaModel, Dataclass])
-def test_var_create(type_: GenericType) -> None:
+def test_var_create(type_: type[Base | Bare | SqlaModel | Dataclass]) -> None:
     my_object = type_()
     var = Var.create(my_object)
     assert var._var_type is type_
-
+    assert isinstance(var, ObjectVar)
     quantity = var.quantity
     assert quantity._var_type is int
 
@@ -94,12 +95,12 @@ def test_literal_create(type_: GenericType) -> None:
 
 
 @pytest.mark.parametrize("type_", [Base, Bare, SqlaModel, Dataclass])
-def test_guess(type_: GenericType) -> None:
+def test_guess(type_: type[Base | Bare | SqlaModel | Dataclass]) -> None:
     my_object = type_()
     var = Var.create(my_object)
     var = var.guess_type()
     assert var._var_type is type_
-
+    assert isinstance(var, ObjectVar)
     quantity = var.quantity
     assert quantity._var_type is int
 
@@ -137,7 +138,7 @@ def test_typing() -> None:
     optional_var = ObjectState.base_optional
     _ = assert_type(optional_var, ObjectVar[Base | None])
     list_var = ObjectState.base_list
-    _ = assert_type(list_var, ArrayVar[list[Base]])
+    _ = assert_type(list_var, ArrayVar[Sequence[Base]])
     list_var_0 = list_var[0]
     _ = assert_type(list_var_0, ObjectVar[Base])
 
@@ -147,7 +148,7 @@ def test_typing() -> None:
     optional_var = ObjectState.sqlamodel_optional
     _ = assert_type(optional_var, ObjectVar[SqlaModel | None])
     list_var = ObjectState.base_list
-    _ = assert_type(list_var, ArrayVar[list[Base]])
+    _ = assert_type(list_var, ArrayVar[Sequence[Base]])
     list_var_0 = list_var[0]
     _ = assert_type(list_var_0, ObjectVar[Base])
 
@@ -157,6 +158,6 @@ def test_typing() -> None:
     optional_var = ObjectState.dataclass_optional
     _ = assert_type(optional_var, ObjectVar[Dataclass | None])
     list_var = ObjectState.base_list
-    _ = assert_type(list_var, ArrayVar[list[Base]])
+    _ = assert_type(list_var, ArrayVar[Sequence[Base]])
     list_var_0 = list_var[0]
     _ = assert_type(list_var_0, ObjectVar[Base])

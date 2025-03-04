@@ -10,30 +10,23 @@ from base64 import b64encode
 from functools import partial
 from typing import (
     TYPE_CHECKING,
+    Annotated,
     Any,
     Callable,
-    Dict,
     Generic,
     List,
-    Optional,
+    Protocol,
     Sequence,
-    Tuple,
     Type,
-    Union,
+    TypedDict,
+    TypeVar,
+    get_args,
+    get_origin,
     get_type_hints,
     overload,
 )
 
-from typing_extensions import (
-    Protocol,
-    TypeAliasType,
-    TypedDict,
-    TypeVar,
-    TypeVarTuple,
-    Unpack,
-    get_args,
-    get_origin,
-)
+from typing_extensions import Self, TypeAliasType, TypeVarTuple, Unpack
 
 from reflex import constants
 from reflex.constants.compiler import CompileVars, Hooks, Imports
@@ -58,11 +51,6 @@ from reflex.vars.function import (
 )
 from reflex.vars.object import ObjectVar
 
-try:
-    from typing import Annotated
-except ImportError:
-    from typing_extensions import Annotated
-
 
 @dataclasses.dataclass(
     init=True,
@@ -78,10 +66,10 @@ class Event:
     name: str
 
     # The routing data where event occurred
-    router_data: Dict[str, Any] = dataclasses.field(default_factory=dict)
+    router_data: dict[str, Any] = dataclasses.field(default_factory=dict)
 
     # The event payload.
-    payload: Dict[str, Any] = dataclasses.field(default_factory=dict)
+    payload: dict[str, Any] = dataclasses.field(default_factory=dict)
 
     @property
     def substate_token(self) -> str:
@@ -107,10 +95,10 @@ class EventActionsMixin:
     """Mixin for DOM event actions."""
 
     # Whether to `preventDefault` or `stopPropagation` on the event.
-    event_actions: Dict[str, Union[bool, int]] = dataclasses.field(default_factory=dict)
+    event_actions: dict[str, bool | int] = dataclasses.field(default_factory=dict)
 
     @property
-    def stop_propagation(self):
+    def stop_propagation(self) -> Self:
         """Stop the event from bubbling up the DOM tree.
 
         Returns:
@@ -122,7 +110,7 @@ class EventActionsMixin:
         )
 
     @property
-    def prevent_default(self):
+    def prevent_default(self) -> Self:
         """Prevent the default behavior of the event.
 
         Returns:
@@ -133,7 +121,7 @@ class EventActionsMixin:
             event_actions={"preventDefault": True, **self.event_actions},
         )
 
-    def throttle(self, limit_ms: int):
+    def throttle(self, limit_ms: int) -> Self:
         """Throttle the event handler.
 
         Args:
@@ -147,7 +135,7 @@ class EventActionsMixin:
             event_actions={"throttle": limit_ms, **self.event_actions},
         )
 
-    def debounce(self, delay_ms: int):
+    def debounce(self, delay_ms: int) -> Self:
         """Debounce the event handler.
 
         Args:
@@ -162,7 +150,7 @@ class EventActionsMixin:
         )
 
     @property
-    def temporal(self):
+    def temporal(self) -> Self:
         """Do not queue the event if the backend is down.
 
         Returns:
@@ -269,14 +257,14 @@ class EventSpec(EventActionsMixin):
     client_handler_name: str = dataclasses.field(default="")
 
     # The arguments to pass to the function.
-    args: Tuple[Tuple[Var, Var], ...] = dataclasses.field(default_factory=tuple)
+    args: tuple[tuple[Var, Var], ...] = dataclasses.field(default_factory=tuple)
 
     def __init__(
         self,
         handler: EventHandler,
-        event_actions: Dict[str, Union[bool, int]] | None = None,
+        event_actions: dict[str, bool | int] | None = None,
         client_handler_name: str = "",
-        args: Tuple[Tuple[Var, Var], ...] = (),
+        args: tuple[tuple[Var, Var], ...] = (),
     ):
         """Initialize an EventSpec.
 
@@ -293,7 +281,7 @@ class EventSpec(EventActionsMixin):
         object.__setattr__(self, "client_handler_name", client_handler_name)
         object.__setattr__(self, "args", args or ())
 
-    def with_args(self, args: Tuple[Tuple[Var, Var], ...]) -> EventSpec:
+    def with_args(self, args: tuple[tuple[Var, Var], ...]) -> EventSpec:
         """Copy the event spec, with updated args.
 
         Args:
@@ -351,7 +339,7 @@ class CallableEventSpec(EventSpec):
     API with functions that return a family of EventSpec.
     """
 
-    fn: Optional[Callable[..., EventSpec]] = None
+    fn: Callable[..., EventSpec] | None = None
 
     def __init__(self, fn: Callable[..., EventSpec] | None = None, **kwargs):
         """Initialize a CallableEventSpec.
@@ -400,24 +388,22 @@ class CallableEventSpec(EventSpec):
 class EventChain(EventActionsMixin):
     """Container for a chain of events that will be executed in order."""
 
-    events: Sequence[Union[EventSpec, EventVar, EventCallback]] = dataclasses.field(
+    events: Sequence[EventSpec | EventVar | EventCallback] = dataclasses.field(
         default_factory=list
     )
 
-    args_spec: Optional[Union[Callable, Sequence[Callable]]] = dataclasses.field(
-        default=None
-    )
+    args_spec: Callable | Sequence[Callable] | None = dataclasses.field(default=None)
 
-    invocation: Optional[Var] = dataclasses.field(default=None)
+    invocation: Var | None = dataclasses.field(default=None)
 
     @classmethod
     def create(
         cls,
         value: EventType,
         args_spec: ArgsSpec | Sequence[ArgsSpec],
-        key: Optional[str] = None,
+        key: str | None = None,
         **event_chain_kwargs,
-    ) -> Union[EventChain, Var]:
+    ) -> EventChain | Var:
         """Create an event chain from a variety of input types.
 
         Args:
@@ -459,7 +445,7 @@ class EventChain(EventActionsMixin):
 
         # If the input is a list of event handlers, create an event chain.
         if isinstance(value, List):
-            events: List[Union[EventSpec, EventVar]] = []
+            events: list[EventSpec | EventVar] = []
             for v in value:
                 if isinstance(v, (EventHandler, EventSpec)):
                     # Call the event handler to get the event.
@@ -540,7 +526,7 @@ class JavasciptKeyboardEvent:
     shiftKey: bool = False  # noqa: N815
 
 
-def input_event(e: ObjectVar[JavascriptInputEvent]) -> Tuple[Var[str]]:
+def input_event(e: ObjectVar[JavascriptInputEvent]) -> tuple[Var[str]]:
     """Get the value from an input event.
 
     Args:
@@ -563,7 +549,7 @@ class KeyInputInfo(TypedDict):
 
 def key_event(
     e: ObjectVar[JavasciptKeyboardEvent],
-) -> Tuple[Var[str], Var[KeyInputInfo]]:
+) -> tuple[Var[str], Var[KeyInputInfo]]:
     """Get the key from a keyboard event.
 
     Args:
@@ -585,7 +571,7 @@ def key_event(
     )
 
 
-def no_args_event_spec() -> Tuple[()]:
+def no_args_event_spec() -> tuple[()]:
     """Empty event handler.
 
     Returns:
@@ -606,7 +592,7 @@ U = TypeVar("U")
 class IdentityEventReturn(Generic[T], Protocol):
     """Protocol for an identity event return."""
 
-    def __call__(self, *values: Var[T]) -> Tuple[Var[T], ...]:
+    def __call__(self, *values: Var[T]) -> tuple[Var[T], ...]:
         """Return the input values.
 
         Args:
@@ -621,13 +607,13 @@ class IdentityEventReturn(Generic[T], Protocol):
 @overload
 def passthrough_event_spec(  # pyright: ignore [reportOverlappingOverload]
     event_type: Type[T], /
-) -> Callable[[Var[T]], Tuple[Var[T]]]: ...
+) -> Callable[[Var[T]], tuple[Var[T]]]: ...
 
 
 @overload
 def passthrough_event_spec(
     event_type_1: Type[T], event_type2: Type[U], /
-) -> Callable[[Var[T], Var[U]], Tuple[Var[T], Var[U]]]: ...
+) -> Callable[[Var[T], Var[U]], tuple[Var[T], Var[U]]]: ...
 
 
 @overload
@@ -644,11 +630,11 @@ def passthrough_event_spec(*event_types: Type[T]) -> IdentityEventReturn[T]:  # 
         A function that returns the input event as output.
     """
 
-    def inner(*values: Var[T]) -> Tuple[Var[T], ...]:
+    def inner(*values: Var[T]) -> tuple[Var[T], ...]:
         return values
 
     inner_type = tuple(Var[event_type] for event_type in event_types)
-    return_annotation = Tuple[inner_type]
+    return_annotation = tuple[inner_type]
 
     inner.__signature__ = inspect.signature(inner).replace(  # pyright: ignore [reportFunctionMemberAccess]
         parameters=[
@@ -675,11 +661,11 @@ def passthrough_event_spec(*event_types: Type[T]) -> IdentityEventReturn[T]:  # 
 class FileUpload:
     """Class to represent a file upload."""
 
-    upload_id: Optional[str] = None
-    on_upload_progress: Optional[Union[EventHandler, Callable]] = None
+    upload_id: str | None = None
+    on_upload_progress: EventHandler | Callable | None = None
 
     @staticmethod
-    def on_upload_progress_args_spec(_prog: Var[Dict[str, Union[int, float, bool]]]):
+    def on_upload_progress_args_spec(_prog: Var[dict[str, int | float | bool]]):
         """Args spec for on_upload_progress event handler.
 
         Returns:
@@ -710,7 +696,7 @@ class FileUpload:
                 Var(_js_expr="files"),
                 Var(
                     _js_expr="filesById",
-                    _var_type=Dict[str, Any],
+                    _var_type=dict[str, Any],
                     _var_data=VarData.merge(upload_files_context_var_data),
                 ).to(ObjectVar)[LiteralVar.create(upload_id)],
             ),
@@ -990,7 +976,7 @@ def remove_session_storage(key: str) -> EventSpec:
     )
 
 
-def set_clipboard(content: Union[str, Var[str]]) -> EventSpec:
+def set_clipboard(content: str | Var[str]) -> EventSpec:
     """Set the text in content in the clipboard.
 
     Args:
@@ -1010,7 +996,7 @@ def set_clipboard(content: Union[str, Var[str]]) -> EventSpec:
 
 def download(
     url: str | Var | None = None,
-    filename: Optional[str | Var] = None,
+    filename: str | Var | None = None,
     data: str | bytes | Var | None = None,
 ) -> EventSpec:
     """Download the file at a given path or with the specified data.
@@ -1211,7 +1197,7 @@ def get_hydrate_event(state: BaseState) -> str:
 def call_event_handler(
     event_callback: EventHandler | EventSpec,
     event_spec: ArgsSpec | Sequence[ArgsSpec],
-    key: Optional[str] = None,
+    key: str | None = None,
 ) -> EventSpec:
     """Call an event handler to get the event spec.
 
@@ -1289,7 +1275,9 @@ def call_event_handler(
             ]
 
             # check that args of event handler are matching the spec if type hints are provided
-            for i, arg in enumerate(event_callback_spec.args[1:]):
+            for i, arg in enumerate(
+                event_callback_spec.args[1 : len(args_types_without_vars) + 1]
+            ):
                 if arg not in type_hints_of_provided_callback:
                     continue
 
@@ -1460,7 +1448,7 @@ def check_fn_match_arg_spec(
 def call_event_fn(
     fn: Callable,
     arg_spec: ArgsSpec | Sequence[ArgsSpec],
-    key: Optional[str] = None,
+    key: str | None = None,
 ) -> list[EventSpec] | Var:
     """Call a function to a list of event specs.
 
@@ -1773,7 +1761,7 @@ V4 = TypeVar("V4")
 V5 = TypeVar("V5")
 
 
-class EventCallback(Generic[Unpack[P]]):
+class EventCallback(Generic[Unpack[P]], EventActionsMixin):
     """A descriptor that wraps a function to be used as an event."""
 
     def __init__(self, func: Callable[[Any, Unpack[P]], Any]):
@@ -1783,24 +1771,6 @@ class EventCallback(Generic[Unpack[P]]):
             func: The function to be wrapped.
         """
         self.func = func
-
-    @property
-    def prevent_default(self):
-        """Prevent default behavior.
-
-        Returns:
-            The event callback with prevent default behavior.
-        """
-        return self
-
-    @property
-    def stop_propagation(self):
-        """Stop event propagation.
-
-        Returns:
-            The event callback with stop propagation behavior.
-        """
-        return self
 
     @overload
     def __call__(
@@ -1911,7 +1881,7 @@ LAMBDA_OR_STATE = TypeAliasType(
     type_params=(ARGS,),
 )
 
-ItemOrList = V | List[V]
+ItemOrList = V | list[V]
 
 BASIC_EVENT_TYPES = TypeAliasType(
     "BASIC_EVENT_TYPES", EventSpec | EventHandler | Var[Any], type_params=()
@@ -1972,10 +1942,10 @@ class EventNamespace(types.SimpleNamespace):
         func: Callable[[BASE_STATE, Unpack[P]], Any] | None = None,
         *,
         background: bool | None = None,
-    ) -> Union[
-        EventCallback[Unpack[P]],
-        Callable[[Callable[[BASE_STATE, Unpack[P]], Any]], EventCallback[Unpack[P]]],
-    ]:
+    ) -> (
+        EventCallback[Unpack[P]]
+        | Callable[[Callable[[BASE_STATE, Unpack[P]], Any]], EventCallback[Unpack[P]]]
+    ):
         """Wrap a function to be used as an event.
 
         Args:

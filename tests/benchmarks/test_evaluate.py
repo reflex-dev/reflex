@@ -1,9 +1,11 @@
-import pytest
+from typing import Callable
 
-from .fixtures import _complicated_page, _simple_page
+from pytest_codspeed import BenchmarkFixture
+
+from reflex.components.component import Component
 
 
-@pytest.mark.benchmark
-@pytest.mark.parametrize("page", [_simple_page, _complicated_page])
-def test_evaluate_page(page):
-    page()
+def test_evaluate_page(
+    unevaluated_page: Callable[[], Component], benchmark: BenchmarkFixture
+):
+    benchmark(unevaluated_page)

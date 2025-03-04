@@ -10,7 +10,7 @@ import signal
 import subprocess
 from concurrent import futures
 from pathlib import Path
-from typing import Callable, Generator, List, Optional, Tuple, Union
+from typing import Callable, Generator, Tuple
 
 import psutil
 import typer
@@ -50,7 +50,7 @@ def get_num_workers() -> int:
     return (os.cpu_count() or 1) * 2 + 1
 
 
-def get_process_on_port(port: int) -> Optional[psutil.Process]:
+def get_process_on_port(port: int) -> psutil.Process | None:
     """Get the process on the given port.
 
     Args:
@@ -116,17 +116,14 @@ def change_port(port: int, _type: str) -> int:
     return new_port
 
 
-def handle_port(service_name: str, port: int, default_port: int) -> int:
+def handle_port(service_name: str, port: int, auto_increment: bool) -> int:
     """Change port if the specified port is in use and is not explicitly specified as a CLI arg or config arg.
-    otherwise tell the user the port is in use and exit the app.
-
-    We make an assumption that when port is the default port,then it hasn't been explicitly set since its not straightforward
-    to know whether a port was explicitly provided by the user unless its any other than the default.
+    Otherwise tell the user the port is in use and exit the app.
 
     Args:
         service_name: The frontend or backend.
         port: The provided port.
-        default_port: The default port number associated with the specified service.
+        auto_increment: Whether to automatically increment the port.
 
     Returns:
         The port to run the service on.
@@ -134,13 +131,15 @@ def handle_port(service_name: str, port: int, default_port: int) -> int:
     Raises:
         Exit:when the port is in use.
     """
-    if is_process_on_port(port):
-        if port == int(default_port):
-            return change_port(port, service_name)
-        else:
-            console.error(f"{service_name.capitalize()} port: {port} is already in use")
-            raise typer.Exit()
-    return port
+    if (process := get_process_on_port(port)) is None:
+        return port
+    if auto_increment:
+        return change_port(port, service_name)
+    else:
+        console.error(
+            f"{service_name.capitalize()} port: {port} is already in use by PID: {process.pid}."
+        )
+        raise typer.Exit()
 
 
 def new_process(
@@ -203,7 +202,7 @@ def new_process(
 
 @contextlib.contextmanager
 def run_concurrently_context(
-    *fns: Union[Callable, Tuple],
+    *fns: Callable | Tuple,
 ) -> Generator[list[futures.Future], None, None]:
     """Run functions concurrently in a thread pool.
 
@@ -241,7 +240,7 @@ def run_concurrently_context(
             executor.shutdown(wait=False)
 
 
-def run_concurrently(*fns: Union[Callable, Tuple]) -> None:
+def run_concurrently(*fns: Callable | Tuple) -> None:
     """Run functions concurrently in a thread pool.
 
     Args:
@@ -336,7 +335,7 @@ def show_status(
             status.update(f"{message} {line}")
 
 
-def show_progress(message: str, process: subprocess.Popen, checkpoints: List[str]):
+def show_progress(message: str, process: subprocess.Popen, checkpoints: list[str]):
     """Show a progress bar for a process.
 
     Args:

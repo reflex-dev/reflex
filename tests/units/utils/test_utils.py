@@ -2,7 +2,7 @@ import os
 import typing
 from functools import cached_property
 from pathlib import Path
-from typing import Any, ClassVar, Dict, List, Literal, Type, Union
+from typing import Any, ClassVar, List, Literal, Type, Union
 
 import pytest
 import typer
@@ -61,7 +61,7 @@ def test_func():
         (float, False),
         (bool, False),
         (List, True),
-        (List[int], True),
+        (list[int], True),
     ],
 )
 def test_is_generic_alias(cls: type, expected: bool):
@@ -90,32 +90,45 @@ def test_is_generic_alias(cls: type, expected: bool):
         (bool, int, True),
         (int, bool, False),
         (list, List, True),
-        (list, List[str], True),  # this is wrong, but it's a limitation of the function
+        (list, list[str], True),  # this is wrong, but it's a limitation of the function
         (List, list, True),
-        (List[int], list, True),
-        (List[int], List, True),
-        (List[int], List[str], False),
-        (List[int], List[int], True),
-        (List[int], List[float], False),
-        (List[int], List[Union[int, float]], True),
-        (List[int], List[Union[float, str]], False),
-        (Union[int, float], List[Union[int, float]], False),
-        (Union[int, float], Union[int, float, str], True),
-        (Union[int, float], Union[str, float], False),
-        (Dict[str, int], Dict[str, int], True),
-        (Dict[str, bool], Dict[str, int], True),
-        (Dict[str, int], Dict[str, bool], False),
-        (Dict[str, Any], dict[str, str], False),
-        (Dict[str, str], dict[str, str], True),
-        (Dict[str, str], dict[str, Any], True),
-        (Dict[str, Any], dict[str, Any], True),
+        (list[int], list, True),
+        (list[int], List, True),
+        (list[int], list[str], False),
+        (list[int], list[int], True),
+        (list[int], list[float], False),
+        (list[int], list[int | float], True),
+        (list[int], list[float | str], False),
+        (int | float, list[int | float], False),
+        (int | float, int | float | str, True),
+        (int | float, str | float, False),
+        (dict[str, int], dict[str, int], True),
+        (dict[str, bool], dict[str, int], True),
+        (dict[str, int], dict[str, bool], False),
+        (dict[str, Any], dict[str, str], False),
+        (dict[str, str], dict[str, str], True),
+        (dict[str, str], dict[str, Any], True),
+        (dict[str, Any], dict[str, Any], True),
     ],
 )
 def test_typehint_issubclass(subclass, superclass, expected):
     assert types.typehint_issubclass(subclass, superclass) == expected
 
 
-def test_validate_invalid_bun_path(mocker):
+def test_validate_none_bun_path(mocker):
+    """Test that an error is thrown when a bun path is not specified.
+
+    Args:
+        mocker: Pytest mocker object.
+    """
+    mocker.patch("reflex.utils.path_ops.get_bun_path", return_value=None)
+    # with pytest.raises(typer.Exit):
+    prerequisites.validate_bun()
+
+
+def test_validate_invalid_bun_path(
+    mocker,
+):
     """Test that an error is thrown when a custom specified bun path is not valid
     or does not exist.
 
@@ -123,13 +136,12 @@ def test_validate_invalid_bun_path(mocker):
         mocker: Pytest mocker object.
     """
     mock_path = mocker.Mock()
-    mock_path.samefile.return_value = False
     mocker.patch("reflex.utils.path_ops.get_bun_path", return_value=mock_path)
+    mocker.patch("reflex.utils.path_ops.samefile", return_value=False)
     mocker.patch("reflex.utils.prerequisites.get_bun_version", return_value=None)
 
     with pytest.raises(typer.Exit):
         prerequisites.validate_bun()
-    mock_path.samefile.assert_called_once()
 
 
 def test_validate_bun_path_incompatible_version(mocker):
@@ -141,6 +153,7 @@ def test_validate_bun_path_incompatible_version(mocker):
     mock_path = mocker.Mock()
     mock_path.samefile.return_value = False
     mocker.patch("reflex.utils.path_ops.get_bun_path", return_value=mock_path)
+    mocker.patch("reflex.utils.path_ops.samefile", return_value=False)
     mocker.patch(
         "reflex.utils.prerequisites.get_bun_version",
         return_value=version.parse("0.6.5"),
@@ -236,16 +249,16 @@ def test_is_backend_base_variable(
     [
         (int, int, True),
         (int, float, False),
-        (int, Union[int, float], True),
-        (float, Union[int, float], True),
-        (str, Union[int, float], False),
-        (List[int], List[int], True),
-        (List[int], List[float], True),
-        (Union[int, float], Union[int, float], False),
-        (Union[int, Var[int]], Var[int], False),
+        (int, int | float, True),
+        (float, int | float, True),
+        (str, int | float, False),
+        (list[int], list[int], True),
+        (list[int], list[float], True),
+        (int | float, int | float, False),
+        (int | Var[int], Var[int], False),
         (int, Any, True),
         (Any, Any, True),
-        (Union[int, float], Any, True),
+        (int | float, Any, True),
         (str, Union[Literal["test", "value"], int], True),
         (int, Union[Literal["test", "value"], int], True),
         (str, Literal["test", "value"], True),

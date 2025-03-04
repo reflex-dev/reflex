@@ -974,7 +974,7 @@ def boolean_not_operation(value: BooleanVar):
     frozen=True,
     slots=True,
 )
-class LiteralNumberVar(LiteralVar, NumberVar):
+class LiteralNumberVar(LiteralVar, NumberVar[NUMBER_T]):
     """Base class for immutable literal number vars."""
 
     _var_value: float | int = dataclasses.field(default=0)
@@ -1073,8 +1073,8 @@ class LiteralBooleanVar(LiteralVar, BooleanVar):
         )
 
 
-number_types = Union[NumberVar, int, float]
-boolean_types = Union[BooleanVar, bool]
+number_types = NumberVar | int | float
+boolean_types = BooleanVar | bool
 
 
 _IS_TRUE_IMPORT: ImportDict = {
@@ -1106,7 +1106,7 @@ U = TypeVar("U")
 @var_operation
 def ternary_operation(
     condition: BooleanVar, if_true: Var[T], if_false: Var[U]
-) -> CustomVarOperationReturn[Union[T, U]]:
+) -> CustomVarOperationReturn[T | U]:
     """Create a ternary operation.
 
     Args:
@@ -1120,7 +1120,7 @@ def ternary_operation(
     type_value: Union[Type[T], Type[U]] = unionize(
         if_true._var_type, if_false._var_type
     )
-    value: CustomVarOperationReturn[Union[T, U]] = var_operation_return(
+    value: CustomVarOperationReturn[T | U] = var_operation_return(
         js_expression=f"({condition} ? {if_true} : {if_false})",
         var_type=type_value,
     )

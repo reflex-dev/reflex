@@ -1,6 +1,6 @@
 """Interactive components provided by @radix-ui/themes."""
 
-from typing import Literal, Union
+from typing import Literal
 
 from reflex.components.component import Component
 from reflex.components.core.breakpoints import Responsive
@@ -51,7 +51,7 @@ class TextArea(RadixThemesComponent, elements.Textarea):
     disabled: Var[bool]
 
     # Associates the textarea with a form (by id)
-    form: Var[Union[str, int, bool]]
+    form: Var[str]
 
     # Maximum number of characters allowed in the textarea
     max_length: Var[int]

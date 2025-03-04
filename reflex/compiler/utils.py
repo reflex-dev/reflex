@@ -7,19 +7,10 @@ import concurrent.futures
 import traceback
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Callable, Dict, Optional, Type, Union
+from typing import Any, Callable, Type
 from urllib.parse import urlparse
 
-from reflex.utils.exec import is_in_app_harness
-from reflex.utils.prerequisites import get_web_dir
-from reflex.vars.base import Var
-
-try:
-    from pydantic.v1.fields import ModelField
-except ModuleNotFoundError:
-    from pydantic.fields import (
-        ModelField,  # pyright: ignore [reportAttributeAccessIssue]
-    )
+from pydantic.v1.fields import ModelField
 
 from reflex import constants
 from reflex.components.base import (
@@ -39,7 +30,10 @@ from reflex.istate.storage import Cookie, LocalStorage, SessionStorage
 from reflex.state import BaseState, _resolve_delta
 from reflex.style import Style
 from reflex.utils import console, format, imports, path_ops
+from reflex.utils.exec import is_in_app_harness
 from reflex.utils.imports import ImportVar, ParsedImportDict
+from reflex.utils.prerequisites import get_web_dir
+from reflex.vars.base import Var
 
 # To re-export this function.
 merge_imports = imports.merge_imports
@@ -119,24 +113,34 @@ def compile_imports(import_dict: ParsedImportDict) -> list[dict]:
     validate_imports(collapsed_import_dict)
     import_dicts = []
     for lib, fields in collapsed_import_dict.items():
-        default, rest = compile_import_statement(fields)
-
         # prevent lib from being rendered on the page if all imports are non rendered kind
         if not any(f.render for f in fields):
             continue
 
-        if not lib:
-            if default:
-                raise ValueError("No default field allowed for empty library.")
-            if rest is None or len(rest) == 0:
-                raise ValueError("No fields to import.")
-            import_dicts.extend(get_import_dict(module) for module in sorted(rest))
-            continue
+        lib_paths: dict[str, list[ImportVar]] = {}
 
-        # remove the version before rendering the package imports
-        lib = format.format_library_name(lib)
+        for field in fields:
+            lib_paths.setdefault(field.package_path, []).append(field)
 
-        import_dicts.append(get_import_dict(lib, default, rest))
+        compiled = {
+            path: compile_import_statement(fields) for path, fields in lib_paths.items()
+        }
+
+        for path, (default, rest) in compiled.items():
+            if not lib:
+                if default:
+                    raise ValueError("No default field allowed for empty library.")
+                if rest is None or len(rest) == 0:
+                    raise ValueError("No fields to import.")
+                import_dicts.extend(get_import_dict(module) for module in sorted(rest))
+                continue
+
+            # remove the version before rendering the package imports
+            formatted_lib = format.format_library_name(lib) + (
+                path if path != "/" else ""
+            )
+
+            import_dicts.append(get_import_dict(formatted_lib, default, rest))
     return import_dicts
 
 
@@ -183,16 +187,7 @@ def compile_state(state: Type[BaseState]) -> dict:
     Returns:
         A dictionary of the compiled state.
     """
-    try:
-        initial_state = state(_reflex_internal_init=True).dict(initial=True)
-    except Exception as e:
-        log_path = save_error(e)
-        console.warn(
-            f"Failed to compile initial state with computed vars. Error log saved to {log_path}"
-        )
-        initial_state = state(_reflex_internal_init=True).dict(
-            initial=True, include_computed=False
-        )
+    initial_state = state(_reflex_internal_init=True).dict(initial=True)
     try:
         _ = asyncio.get_running_loop()
     except RuntimeError:
@@ -341,8 +336,8 @@ def compile_custom_component(
 
 def create_document_root(
     head_components: list[Component] | None = None,
-    html_lang: Optional[str] = None,
-    html_custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
+    html_lang: str | None = None,
+    html_custom_attrs: dict[str, Var | str] | None = None,
 ) -> Component:
     """Create the document root.
 
@@ -513,6 +508,8 @@ def write_page(path: str | Path, code: str):
     """
     path = Path(path)
     path_ops.mkdir(path.parent)
+    if path.exists() and path.read_text(encoding="utf-8") == code:
+        return
     path.write_text(code, encoding="utf-8")
 
 
