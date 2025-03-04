@@ -886,6 +886,7 @@ export const useEventLoop = (
     (async () => {
       // Process all outstanding events.
       while (event_queue.length > 0 && !event_processing) {
+        await new Promise((resolve) => setTimeout(resolve, 0));
         await processEvent(socket.current);
       }
     })();

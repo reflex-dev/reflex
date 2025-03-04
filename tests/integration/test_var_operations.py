@@ -44,7 +44,7 @@ def VarOperations():
             [{"name": "Alice", "age": 30}, {"name": "Bob", "age": 25}]
         )
 
-    app = rx.App(_state=rx.State)
+    app = rx.App()
 
     @rx.memo
     def memo_comp(list1: list[int], int_var1: int, id: str):
