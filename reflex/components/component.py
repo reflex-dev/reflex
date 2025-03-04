@@ -593,9 +593,9 @@ class Component(BaseComponent, ABC):
         triggers = DEFAULT_TRIGGERS.copy()
         # Look for component specific triggers,
         # e.g. variable declared as EventHandler types.
-        for name, field in self.get_fields().items():
-            if types._issubclass(
-                types.value_inside_optional(types.get_field_type(type(self), name)),
+        for field in self.get_fields().values():
+            if types.safe_issubclass(
+                field.type_,
                 EventHandler,
             ):
                 args_spec = None
