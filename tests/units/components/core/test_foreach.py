@@ -1,8 +1,8 @@
-from typing import Dict, List, Set, Tuple, Union
-
+import pydantic.v1
 import pytest
 
 from reflex import el
+from reflex.base import Base
 from reflex.components.component import Component
 from reflex.components.core.foreach import (
     Foreach,
@@ -18,33 +18,41 @@ from reflex.vars.number import NumberVar
 from reflex.vars.sequence import ArrayVar
 
 
+class ForEachTag(Base):
+    """A tag for testing the ForEach component."""
+
+    name: str = ""
+
+
 class ForEachState(BaseState):
     """A state for testing the ForEach component."""
 
-    colors_list: List[str] = ["red", "yellow"]
-    nested_colors_list: List[List[str]] = [["red", "yellow"], ["blue", "green"]]
-    colors_dict_list: List[Dict[str, str]] = [
+    colors_list: list[str] = ["red", "yellow"]
+    nested_colors_list: list[list[str]] = [["red", "yellow"], ["blue", "green"]]
+    colors_dict_list: list[dict[str, str]] = [
         {
             "name": "red",
         },
         {"name": "yellow"},
     ]
-    colors_nested_dict_list: List[Dict[str, List[str]]] = [{"shades": ["light-red"]}]
-    primary_color: Dict[str, str] = {"category": "primary", "name": "red"}
-    color_with_shades: Dict[str, List[str]] = {
+    colors_nested_dict_list: list[dict[str, list[str]]] = [{"shades": ["light-red"]}]
+    primary_color: dict[str, str] = {"category": "primary", "name": "red"}
+    color_with_shades: dict[str, list[str]] = {
         "red": ["orange", "yellow"],
         "yellow": ["orange", "green"],
     }
-    nested_colors_with_shades: Dict[str, Dict[str, List[Dict[str, str]]]] = {
+    nested_colors_with_shades: dict[str, dict[str, list[dict[str, str]]]] = {
         "primary": {"red": [{"shade": "dark"}]}
     }
-    color_tuple: Tuple[str, str] = (
+    color_tuple: tuple[str, str] = (
         "red",
         "yellow",
     )
-    colors_set: Set[str] = {"red", "green"}
+    colors_set: set[str] = {"red", "green"}
     bad_annotation_list: list = [["red", "orange"], ["yellow", "blue"]]
-    color_index_tuple: Tuple[int, str] = (0, "red")
+    color_index_tuple: tuple[int, str] = (0, "red")
+
+    default_factory_list: list[ForEachTag] = pydantic.v1.Field(default_factory=list)
 
 
 class ComponentStateTest(ComponentState):
@@ -72,27 +80,27 @@ def display_color(color):
 
 
 def display_color_name(color):
-    assert color._var_type == Dict[str, str]
+    assert color._var_type == dict[str, str]
     return box(text(color["name"]))
 
 
 def display_shade(color):
-    assert color._var_type == Dict[str, List[str]]
+    assert color._var_type == dict[str, list[str]]
     return box(text(color["shades"][0]))
 
 
 def display_primary_colors(color):
-    assert color._var_type == Tuple[str, str]
+    assert color._var_type == tuple[str, str]
     return box(text(color[0]), text(color[1]))
 
 
 def display_color_with_shades(color):
-    assert color._var_type == Tuple[str, List[str]]
+    assert color._var_type == tuple[str, list[str]]
     return box(text(color[0]), text(color[1][0]))
 
 
 def display_nested_color_with_shades(color):
-    assert color._var_type == Tuple[str, Dict[str, List[Dict[str, str]]]]
+    assert color._var_type == tuple[str, dict[str, list[dict[str, str]]]]
     return box(text(color[0]), text(color[1]["red"][0]["shade"]))
 
 
@@ -101,7 +109,7 @@ def show_shade(item):
 
 
 def display_nested_color_with_shades_v2(color):
-    assert color._var_type == Tuple[str, Dict[str, List[Dict[str, str]]]]
+    assert color._var_type == tuple[str, dict[str, list[dict[str, str]]]]
     return box(text(foreach(color[1], show_shade)))
 
 
@@ -115,14 +123,14 @@ def display_colors_set(color):
     return box(text(color))
 
 
-def display_nested_list_element(element: ArrayVar[List[str]], index: NumberVar[int]):
-    assert element._var_type == List[str]
+def display_nested_list_element(element: ArrayVar[list[str]], index: NumberVar[int]):
+    assert element._var_type == list[str]
     assert index._var_type is int
     return box(text(element[index]))
 
 
 def display_color_index_tuple(color):
-    assert color._var_type == Union[int, str]
+    assert color._var_type == int | str
     return box(text(color))
 
 
@@ -160,32 +168,32 @@ seen_index_vars = set()
             ForEachState.primary_color,
             display_primary_colors,
             {
-                "iterable_state": f"{ForEachState.get_full_name()}.primary_color",
-                "iterable_type": "dict",
+                "iterable_state": f"Object.entries({ForEachState.get_full_name()}.primary_color)",
+                "iterable_type": "list",
             },
         ),
         (
             ForEachState.color_with_shades,
             display_color_with_shades,
             {
-                "iterable_state": f"{ForEachState.get_full_name()}.color_with_shades",
-                "iterable_type": "dict",
+                "iterable_state": f"Object.entries({ForEachState.get_full_name()}.color_with_shades)",
+                "iterable_type": "list",
             },
         ),
         (
             ForEachState.nested_colors_with_shades,
             display_nested_color_with_shades,
             {
-                "iterable_state": f"{ForEachState.get_full_name()}.nested_colors_with_shades",
-                "iterable_type": "dict",
+                "iterable_state": f"Object.entries({ForEachState.get_full_name()}.nested_colors_with_shades)",
+                "iterable_type": "list",
             },
         ),
         (
             ForEachState.nested_colors_with_shades,
             display_nested_color_with_shades_v2,
             {
-                "iterable_state": f"{ForEachState.get_full_name()}.nested_colors_with_shades",
-                "iterable_type": "dict",
+                "iterable_state": f"Object.entries({ForEachState.get_full_name()}.nested_colors_with_shades)",
+                "iterable_type": "list",
             },
         ),
         (
@@ -290,3 +298,11 @@ def test_foreach_component_state():
             ForEachState.colors_list,
             ComponentStateTest.create,
         )
+
+
+def test_foreach_default_factory():
+    """Test that the default factory is called."""
+    _ = Foreach.create(
+        ForEachState.default_factory_list,
+        lambda tag: text(tag.name),
+    )

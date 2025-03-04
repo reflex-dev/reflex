@@ -4,7 +4,8 @@ from __future__ import annotations
 
 import re
 from collections import defaultdict
-from typing import Any, ClassVar, Optional, Type, Union
+from contextlib import suppress
+from typing import Any, ClassVar, Type
 
 import alembic.autogenerate
 import alembic.command
@@ -17,6 +18,7 @@ import sqlalchemy
 import sqlalchemy.exc
 import sqlalchemy.ext.asyncio
 import sqlalchemy.orm
+from alembic.runtime.migration import MigrationContext
 
 from reflex.base import Base
 from reflex.config import environment, get_config
@@ -52,12 +54,12 @@ def get_engine_args(url: str | None = None) -> dict[str, Any]:
     Returns:
         The database engine arguments as a dict.
     """
-    kwargs: dict[str, Any] = dict(
+    kwargs: dict[str, Any] = {
         # Print the SQL queries if the log level is INFO or lower.
-        echo=environment.SQLALCHEMY_ECHO.get(),
+        "echo": environment.SQLALCHEMY_ECHO.get(),
         # Check connections before returning them.
-        pool_pre_ping=environment.SQLALCHEMY_POOL_PRE_PING.get(),
-    )
+        "pool_pre_ping": environment.SQLALCHEMY_POOL_PRE_PING.get(),
+    }
     conf = get_config()
     url = url or conf.db_url
     if url is not None and url.startswith("sqlite"):
@@ -140,15 +142,13 @@ def get_async_engine(url: str | None) -> sqlalchemy.ext.asyncio.AsyncEngine:
     return _ASYNC_ENGINE[url]
 
 
-async def get_db_status() -> bool:
+async def get_db_status() -> dict[str, bool]:
     """Checks the status of the database connection.
 
     Attempts to connect to the database and execute a simple query to verify connectivity.
 
     Returns:
-        bool: The status of the database connection:
-            - True: The database is accessible.
-            - False: The database is not accessible.
+        The status of the database connection.
     """
     status = True
     try:
@@ -158,12 +158,10 @@ async def get_db_status() -> bool:
     except sqlalchemy.exc.OperationalError:
         status = False
 
-    return status
+    return {"db": status}
 
 
-SQLModelOrSqlAlchemy = Union[
-    Type[sqlmodel.SQLModel], Type[sqlalchemy.orm.DeclarativeBase]
-]
+SQLModelOrSqlAlchemy = Type[sqlmodel.SQLModel] | Type[sqlalchemy.orm.DeclarativeBase]
 
 
 class ModelRegistry:
@@ -243,11 +241,11 @@ class ModelRegistry:
         return metadata
 
 
-class Model(Base, sqlmodel.SQLModel):  # pyright: ignore [reportGeneralTypeIssues]
+class Model(Base, sqlmodel.SQLModel):  # pyright: ignore [reportGeneralTypeIssues,reportIncompatibleVariableOverride]
     """Base class to define a table in the database."""
 
     # The primary key for the table.
-    id: Optional[int] = sqlmodel.Field(default=None, primary_key=True)
+    id: int | None = sqlmodel.Field(default=None, primary_key=True)
 
     def __init_subclass__(cls):
         """Drop the default primary key field if any primary key field is defined."""
@@ -262,7 +260,7 @@ class Model(Base, sqlmodel.SQLModel):  # pyright: ignore [reportGeneralTypeIssue
         super().__init_subclass__()
 
     @classmethod
-    def _dict_recursive(cls, value):
+    def _dict_recursive(cls, value: Any):
         """Recursively serialize the relationship object(s).
 
         Args:
@@ -290,11 +288,10 @@ class Model(Base, sqlmodel.SQLModel):  # pyright: ignore [reportGeneralTypeIssue
         relationships = {}
         # SQLModel relationships do not appear in __fields__, but should be included if present.
         for name in self.__sqlmodel_relationships__:
-            try:
+            with suppress(
+                sqlalchemy.orm.exc.DetachedInstanceError  # This happens when the relationship was never loaded and the session is closed.
+            ):
                 relationships[name] = self._dict_recursive(getattr(self, name))
-            except sqlalchemy.orm.exc.DetachedInstanceError:
-                # This happens when the relationship was never loaded and the session is closed.
-                continue
         return {
             **base_fields,
             **relationships,
@@ -395,7 +392,11 @@ class Model(Base, sqlmodel.SQLModel):  # pyright: ignore [reportGeneralTypeIssue
         writer = alembic.autogenerate.rewriter.Rewriter()
 
         @writer.rewrites(alembic.operations.ops.AddColumnOp)
-        def render_add_column_with_server_default(context, revision, op):
+        def render_add_column_with_server_default(
+            context: MigrationContext,
+            revision: str | None,
+            op: Any,
+        ):
             # Carry the sqlmodel default as server_default so that newly added
             # columns get the desired default value in existing rows.
             if op.column.default is not None and op.column.server_default is None:
@@ -404,7 +405,7 @@ class Model(Base, sqlmodel.SQLModel):  # pyright: ignore [reportGeneralTypeIssue
                 )
             return op
 
-        def run_autogenerate(rev, context):
+        def run_autogenerate(rev: str, context: MigrationContext):
             revision_context.run_autogenerate(rev, context)
             return []
 
@@ -417,7 +418,7 @@ class Model(Base, sqlmodel.SQLModel):  # pyright: ignore [reportGeneralTypeIssue
                 connection=connection,
                 target_metadata=ModelRegistry.get_metadata(),
                 render_item=cls._alembic_render_item,
-                process_revision_directives=writer,  # type: ignore
+                process_revision_directives=writer,
                 compare_type=False,
                 render_as_batch=True,  # for sqlite compatibility
             )
@@ -446,7 +447,7 @@ class Model(Base, sqlmodel.SQLModel):  # pyright: ignore [reportGeneralTypeIssue
         """
         config, script_directory = cls._alembic_config()
 
-        def run_upgrade(rev, context):
+        def run_upgrade(rev: str, context: MigrationContext):
             return script_directory._upgrade_revs(to_rev, rev)
 
         with alembic.runtime.environment.EnvironmentContext(
@@ -535,6 +536,7 @@ def asession(url: str | None = None) -> AsyncSession:
         _AsyncSessionLocal[url] = sqlalchemy.ext.asyncio.async_sessionmaker(
             bind=get_async_engine(url),
             class_=AsyncSession,
+            expire_on_commit=False,
             autocommit=False,
             autoflush=False,
         )

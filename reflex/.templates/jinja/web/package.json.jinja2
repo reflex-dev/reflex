@@ -15,7 +15,13 @@
   "devDependencies": {
     {% for package, version in dev_dependencies.items() %}
     "{{ package }}": "{{ version }}"{% if not loop.last %},{% endif %}
-    
+
+    {% endfor %}
+  },
+  "overrides": {
+    {% for package, version in overrides.items() %}
+    "{{ package }}": "{{ version }}"{% if not loop.last %},{% endif %}
+
     {% endfor %}
   }
 }

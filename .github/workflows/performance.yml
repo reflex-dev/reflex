@@ -1,0 +1,34 @@
+name: performance-tests
+
+on:
+  push:
+    branches:
+      - "main" # or "master"
+    paths-ignore:
+      - "**/*.md"
+  pull_request:
+  workflow_dispatch:
+
+env:
+  TELEMETRY_ENABLED: false
+  NODE_OPTIONS: "--max_old_space_size=8192"
+  PR_TITLE: ${{ github.event.pull_request.title }}
+  APP_HARNESS_HEADLESS: 1
+  PYTHONUNBUFFERED: 1
+
+jobs:
+  benchmarks:
+    name: Run benchmarks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup_build_env
+        with:
+          python-version: 3.12.8
+          run-poetry-install: true
+          create-venv-at-path: .venv
+      - name: Run benchmarks
+        uses: CodSpeedHQ/action@v3
+        with:
+          token: ${{ secrets.CODSPEED_TOKEN }}
+          run: poetry run pytest tests/benchmarks --codspeed

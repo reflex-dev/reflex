@@ -5,7 +5,6 @@ from __future__ import annotations
 import dataclasses
 import json
 import math
-import sys
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -18,9 +17,12 @@ from typing import (
 )
 
 from reflex.constants.base import Dirs
-from reflex.utils.exceptions import PrimitiveUnserializableToJSON, VarTypeError
+from reflex.utils.exceptions import (
+    PrimitiveUnserializableToJSONError,
+    VarTypeError,
+    VarValueError,
+)
 from reflex.utils.imports import ImportDict, ImportVar
-from reflex.utils.types import is_optional
 
 from .base import (
     CustomVarOperationReturn,
@@ -32,7 +34,7 @@ from .base import (
     var_operation_return,
 )
 
-NUMBER_T = TypeVar("NUMBER_T", int, float, Union[int, float], bool)
+NUMBER_T = TypeVar("NUMBER_T", int, float, bool)
 
 if TYPE_CHECKING:
     from .sequence import ArrayVar
@@ -51,7 +53,7 @@ def raise_unsupported_operand_types(
         VarTypeError: The operand types are unsupported.
     """
     raise VarTypeError(
-        f"Unsupported Operand type(s) for {operator}: {', '.join(map(lambda t: t.__name__, operands_types))}"
+        f"Unsupported Operand type(s) for {operator}: {', '.join(t.__name__ for t in operands_types)}"
     )
 
 
@@ -62,7 +64,7 @@ class NumberVar(Var[NUMBER_T], python_types=(int, float)):
     def __add__(self, other: number_types) -> NumberVar: ...
 
     @overload
-    def __add__(self, other: NoReturn) -> NoReturn: ...
+    def __add__(self, other: NoReturn) -> NoReturn: ...  # pyright: ignore [reportOverlappingOverload]
 
     def __add__(self, other: Any):
         """Add two numbers.
@@ -81,7 +83,7 @@ class NumberVar(Var[NUMBER_T], python_types=(int, float)):
     def __radd__(self, other: number_types) -> NumberVar: ...
 
     @overload
-    def __radd__(self, other: NoReturn) -> NoReturn: ...
+    def __radd__(self, other: NoReturn) -> NoReturn: ...  # pyright: ignore [reportOverlappingOverload]
 
     def __radd__(self, other: Any):
         """Add two numbers.
@@ -100,7 +102,7 @@ class NumberVar(Var[NUMBER_T], python_types=(int, float)):
     def __sub__(self, other: number_types) -> NumberVar: ...
 
     @overload
-    def __sub__(self, other: NoReturn) -> NoReturn: ...
+    def __sub__(self, other: NoReturn) -> NoReturn: ...  # pyright: ignore [reportOverlappingOverload]
 
     def __sub__(self, other: Any):
         """Subtract two numbers.
@@ -120,7 +122,7 @@ class NumberVar(Var[NUMBER_T], python_types=(int, float)):
     def __rsub__(self, other: number_types) -> NumberVar: ...
 
     @overload
-    def __rsub__(self, other: NoReturn) -> NoReturn: ...
+    def __rsub__(self, other: NoReturn) -> NoReturn: ...  # pyright: ignore [reportOverlappingOverload]
 
     def __rsub__(self, other: Any):
         """Subtract two numbers.
@@ -161,7 +163,7 @@ class NumberVar(Var[NUMBER_T], python_types=(int, float)):
         """
         from .sequence import ArrayVar, LiteralArrayVar
 
-        if isinstance(other, (list, tuple, set, ArrayVar)):
+        if isinstance(other, (list, tuple, ArrayVar)):
             if isinstance(other, ArrayVar):
                 return other * self
             return LiteralArrayVar.create(other) * self
@@ -188,7 +190,7 @@ class NumberVar(Var[NUMBER_T], python_types=(int, float)):
         """
         from .sequence import ArrayVar, LiteralArrayVar
 
-        if isinstance(other, (list, tuple, set, ArrayVar)):
+        if isinstance(other, (list, tuple, ArrayVar)):
             if isinstance(other, ArrayVar):
                 return other * self
             return LiteralArrayVar.create(other) * self
@@ -202,7 +204,7 @@ class NumberVar(Var[NUMBER_T], python_types=(int, float)):
     def __truediv__(self, other: number_types) -> NumberVar: ...
 
     @overload
-    def __truediv__(self, other: NoReturn) -> NoReturn: ...
+    def __truediv__(self, other: NoReturn) -> NoReturn: ...  # pyright: ignore [reportOverlappingOverload]
 
     def __truediv__(self, other: Any):
         """Divide two numbers.
@@ -222,7 +224,7 @@ class NumberVar(Var[NUMBER_T], python_types=(int, float)):
     def __rtruediv__(self, other: number_types) -> NumberVar: ...
 
     @overload
-    def __rtruediv__(self, other: NoReturn) -> NoReturn: ...
+    def __rtruediv__(self, other: NoReturn) -> NoReturn: ...  # pyright: ignore [reportOverlappingOverload]
 
     def __rtruediv__(self, other: Any):
         """Divide two numbers.
@@ -242,7 +244,7 @@ class NumberVar(Var[NUMBER_T], python_types=(int, float)):
     def __floordiv__(self, other: number_types) -> NumberVar: ...
 
     @overload
-    def __floordiv__(self, other: NoReturn) -> NoReturn: ...
+    def __floordiv__(self, other: NoReturn) -> NoReturn: ...  # pyright: ignore [reportOverlappingOverload]
 
     def __floordiv__(self, other: Any):
         """Floor divide two numbers.
@@ -262,7 +264,7 @@ class NumberVar(Var[NUMBER_T], python_types=(int, float)):
     def __rfloordiv__(self, other: number_types) -> NumberVar: ...
 
     @overload
-    def __rfloordiv__(self, other: NoReturn) -> NoReturn: ...
+    def __rfloordiv__(self, other: NoReturn) -> NoReturn: ...  # pyright: ignore [reportOverlappingOverload]
 
     def __rfloordiv__(self, other: Any):
         """Floor divide two numbers.
@@ -282,7 +284,7 @@ class NumberVar(Var[NUMBER_T], python_types=(int, float)):
     def __mod__(self, other: number_types) -> NumberVar: ...
 
     @overload
-    def __mod__(self, other: NoReturn) -> NoReturn: ...
+    def __mod__(self, other: NoReturn) -> NoReturn: ...  # pyright: ignore [reportOverlappingOverload]
 
     def __mod__(self, other: Any):
         """Modulo two numbers.
@@ -302,7 +304,7 @@ class NumberVar(Var[NUMBER_T], python_types=(int, float)):
     def __rmod__(self, other: number_types) -> NumberVar: ...
 
     @overload
-    def __rmod__(self, other: NoReturn) -> NoReturn: ...
+    def __rmod__(self, other: NoReturn) -> NoReturn: ...  # pyright: ignore [reportOverlappingOverload]
 
     def __rmod__(self, other: Any):
         """Modulo two numbers.
@@ -322,7 +324,7 @@ class NumberVar(Var[NUMBER_T], python_types=(int, float)):
     def __pow__(self, other: number_types) -> NumberVar: ...
 
     @overload
-    def __pow__(self, other: NoReturn) -> NoReturn: ...
+    def __pow__(self, other: NoReturn) -> NoReturn: ...  # pyright: ignore [reportOverlappingOverload]
 
     def __pow__(self, other: Any):
         """Exponentiate two numbers.
@@ -342,7 +344,7 @@ class NumberVar(Var[NUMBER_T], python_types=(int, float)):
     def __rpow__(self, other: number_types) -> NumberVar: ...
 
     @overload
-    def __rpow__(self, other: NoReturn) -> NoReturn: ...
+    def __rpow__(self, other: NoReturn) -> NoReturn: ...  # pyright: ignore [reportOverlappingOverload]
 
     def __rpow__(self, other: Any):
         """Exponentiate two numbers.
@@ -418,7 +420,7 @@ class NumberVar(Var[NUMBER_T], python_types=(int, float)):
     def __lt__(self, other: number_types) -> BooleanVar: ...
 
     @overload
-    def __lt__(self, other: NoReturn) -> NoReturn: ...
+    def __lt__(self, other: NoReturn) -> NoReturn: ...  # pyright: ignore [reportOverlappingOverload]
 
     def __lt__(self, other: Any):
         """Less than comparison.
@@ -431,13 +433,13 @@ class NumberVar(Var[NUMBER_T], python_types=(int, float)):
         """
         if not isinstance(other, NUMBER_TYPES):
             raise_unsupported_operand_types("<", (type(self), type(other)))
-        return less_than_operation(self, +other)
+        return less_than_operation(+self, +other)
 
     @overload
     def __le__(self, other: number_types) -> BooleanVar: ...
 
     @overload
-    def __le__(self, other: NoReturn) -> NoReturn: ...
+    def __le__(self, other: NoReturn) -> NoReturn: ...  # pyright: ignore [reportOverlappingOverload]
 
     def __le__(self, other: Any):
         """Less than or equal comparison.
@@ -450,7 +452,7 @@ class NumberVar(Var[NUMBER_T], python_types=(int, float)):
         """
         if not isinstance(other, NUMBER_TYPES):
             raise_unsupported_operand_types("<=", (type(self), type(other)))
-        return less_than_or_equal_operation(self, +other)
+        return less_than_or_equal_operation(+self, +other)
 
     def __eq__(self, other: Any):
         """Equal comparison.
@@ -462,7 +464,7 @@ class NumberVar(Var[NUMBER_T], python_types=(int, float)):
             The result of the comparison.
         """
         if isinstance(other, NUMBER_TYPES):
-            return equal_operation(self, +other)
+            return equal_operation(+self, +other)
         return equal_operation(self, other)
 
     def __ne__(self, other: Any):
@@ -475,14 +477,14 @@ class NumberVar(Var[NUMBER_T], python_types=(int, float)):
             The result of the comparison.
         """
         if isinstance(other, NUMBER_TYPES):
-            return not_equal_operation(self, +other)
+            return not_equal_operation(+self, +other)
         return not_equal_operation(self, other)
 
     @overload
     def __gt__(self, other: number_types) -> BooleanVar: ...
 
     @overload
-    def __gt__(self, other: NoReturn) -> NoReturn: ...
+    def __gt__(self, other: NoReturn) -> NoReturn: ...  # pyright: ignore [reportOverlappingOverload]
 
     def __gt__(self, other: Any):
         """Greater than comparison.
@@ -495,13 +497,13 @@ class NumberVar(Var[NUMBER_T], python_types=(int, float)):
         """
         if not isinstance(other, NUMBER_TYPES):
             raise_unsupported_operand_types(">", (type(self), type(other)))
-        return greater_than_operation(self, +other)
+        return greater_than_operation(+self, +other)
 
     @overload
     def __ge__(self, other: number_types) -> BooleanVar: ...
 
     @overload
-    def __ge__(self, other: NoReturn) -> NoReturn: ...
+    def __ge__(self, other: NoReturn) -> NoReturn: ...  # pyright: ignore [reportOverlappingOverload]
 
     def __ge__(self, other: Any):
         """Greater than or equal comparison.
@@ -514,17 +516,7 @@ class NumberVar(Var[NUMBER_T], python_types=(int, float)):
         """
         if not isinstance(other, NUMBER_TYPES):
             raise_unsupported_operand_types(">=", (type(self), type(other)))
-        return greater_than_or_equal_operation(self, +other)
-
-    def bool(self):
-        """Boolean conversion.
-
-        Returns:
-            The boolean value of the number.
-        """
-        if is_optional(self._var_type):
-            return boolify((self != None) & (self != 0))  # noqa: E711
-        return self != 0
+        return greater_than_or_equal_operation(+self, +other)
 
     def _is_strict_float(self) -> bool:
         """Check if the number is a float.
@@ -541,6 +533,56 @@ class NumberVar(Var[NUMBER_T], python_types=(int, float)):
             bool: True if the number is an int.
         """
         return issubclass(self._var_type, int)
+
+    def __format__(self, format_spec: str) -> str:
+        """Format the number.
+
+        Args:
+            format_spec: The format specifier.
+
+        Returns:
+            The formatted number.
+
+        Raises:
+            VarValueError: If the format specifier is not supported.
+        """
+        if (
+            format_spec
+            and format_spec[-1] == "f"
+            and format_spec[0] == "."
+            and format_spec[1:-1].isdigit()
+        ):
+            how_many_decimals = int(format_spec[1:-1])
+            return (
+                f"{get_decimal_string_operation(self, Var.create(how_many_decimals))}"
+            )
+
+        if format_spec:
+            raise VarValueError(
+                (
+                    "Unknown format code '{}' for object of type 'NumberVar'. It is only supported to use '.f' for float numbers."
+                    "If possible, use computed variables instead: https://reflex.dev/docs/vars/computed-vars/"
+                ).format(format_spec)
+            )
+
+        return super().__format__(format_spec)
+
+
+@var_operation
+def get_decimal_string_operation(value: NumberVar, decimals: NumberVar):
+    """Get the decimal string of the number.
+
+    Args:
+        value: The number.
+        decimals: The number of decimals.
+
+    Returns:
+        The decimal string of the number.
+    """
+    return var_operation_return(
+        js_expression=f"({value}.toFixed({decimals}))",
+        var_type=str,
+    )
 
 
 def binary_number_operation(
@@ -572,7 +614,7 @@ def binary_number_operation(
         Returns:
             The binary number operation.
         """
-        return operation(lhs, rhs)  # type: ignore
+        return operation(lhs, rhs)  # pyright: ignore [reportReturnType, reportArgumentType]
 
     return wrapper
 
@@ -984,9 +1026,9 @@ def boolean_not_operation(value: BooleanVar):
 @dataclasses.dataclass(
     eq=False,
     frozen=True,
-    **{"slots": True} if sys.version_info >= (3, 10) else {},
+    slots=True,
 )
-class LiteralNumberVar(LiteralVar, NumberVar):
+class LiteralNumberVar(LiteralVar, NumberVar[NUMBER_T]):
     """Base class for immutable literal number vars."""
 
     _var_value: float | int = dataclasses.field(default=0)
@@ -998,10 +1040,10 @@ class LiteralNumberVar(LiteralVar, NumberVar):
             The JSON representation of the var.
 
         Raises:
-            PrimitiveUnserializableToJSON: If the var is unserializable to JSON.
+            PrimitiveUnserializableToJSONError: If the var is unserializable to JSON.
         """
         if math.isinf(self._var_value) or math.isnan(self._var_value):
-            raise PrimitiveUnserializableToJSON(
+            raise PrimitiveUnserializableToJSONError(
                 f"No valid JSON representation for {self}"
             )
         return json.dumps(self._var_value)
@@ -1043,7 +1085,7 @@ class LiteralNumberVar(LiteralVar, NumberVar):
 @dataclasses.dataclass(
     eq=False,
     frozen=True,
-    **{"slots": True} if sys.version_info >= (3, 10) else {},
+    slots=True,
 )
 class LiteralBooleanVar(LiteralVar, BooleanVar):
     """Base class for immutable literal boolean vars."""
@@ -1085,8 +1127,8 @@ class LiteralBooleanVar(LiteralVar, BooleanVar):
         )
 
 
-number_types = Union[NumberVar, int, float]
-boolean_types = Union[BooleanVar, bool]
+number_types = NumberVar | int | float
+boolean_types = BooleanVar | bool
 
 
 _IS_TRUE_IMPORT: ImportDict = {
@@ -1118,7 +1160,7 @@ U = TypeVar("U")
 @var_operation
 def ternary_operation(
     condition: BooleanVar, if_true: Var[T], if_false: Var[U]
-) -> CustomVarOperationReturn[Union[T, U]]:
+) -> CustomVarOperationReturn[T | U]:
     """Create a ternary operation.
 
     Args:
@@ -1132,7 +1174,7 @@ def ternary_operation(
     type_value: Union[Type[T], Type[U]] = unionize(
         if_true._var_type, if_false._var_type
     )
-    value: CustomVarOperationReturn[Union[T, U]] = var_operation_return(
+    value: CustomVarOperationReturn[T | U] = var_operation_return(
         js_expression=f"({condition} ? {if_true} : {if_false})",
         var_type=type_value,
     )

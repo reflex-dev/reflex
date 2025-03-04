@@ -3,11 +3,31 @@
 from __future__ import annotations
 
 import dataclasses
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, List, Mapping, Sequence
 
 from reflex.event import EventChain
-from reflex.utils import format, types
+from reflex.utils import format
 from reflex.vars.base import LiteralVar, Var
+
+
+def render_prop(value: Any) -> Any:
+    """Render the prop.
+
+    Args:
+        value: The value to render.
+
+    Returns:
+        The rendered value.
+    """
+    from reflex.components.component import BaseComponent
+
+    if isinstance(value, BaseComponent):
+        return value.render()
+    if isinstance(value, Sequence) and not isinstance(value, str):
+        return [render_prop(v) for v in value]
+    if callable(value) and not isinstance(value, Var):
+        return None
+    return value
 
 
 @dataclasses.dataclass()
@@ -18,16 +38,16 @@ class Tag:
     name: str = ""
 
     # The props of the tag.
-    props: Dict[str, Any] = dataclasses.field(default_factory=dict)
+    props: dict[str, Any] = dataclasses.field(default_factory=dict)
 
     # The inner contents of the tag.
     contents: str = ""
 
     # Special props that aren't key value pairs.
-    special_props: List[Var] = dataclasses.field(default_factory=list)
+    special_props: list[Var] = dataclasses.field(default_factory=list)
 
     # The children components.
-    children: List[Any] = dataclasses.field(default_factory=list)
+    children: list[Any] = dataclasses.field(default_factory=list)
 
     def __post_init__(self):
         """Post initialize the tag."""
@@ -49,7 +69,7 @@ class Tag:
         """Set the tag's fields.
 
         Args:
-            kwargs: The fields to set.
+            **kwargs: The fields to set.
 
         Returns:
             The tag with the fields
@@ -63,12 +83,14 @@ class Tag:
         """Iterate over the tag's fields.
 
         Yields:
-            Tuple[str, Any]: The field name and value.
+            tuple[str, Any]: The field name and value.
         """
         for field in dataclasses.fields(self):
-            yield field.name, getattr(self, field.name)
+            rendered_value = render_prop(getattr(self, field.name))
+            if rendered_value is not None:
+                yield field.name, rendered_value
 
-    def add_props(self, **kwargs: Optional[Any]) -> Tag:
+    def add_props(self, **kwargs: Any | None) -> Tag:
         """Add props to the tag.
 
         Args:
@@ -79,11 +101,11 @@ class Tag:
         """
         self.props.update(
             {
-                format.to_camel_case(name, allow_hyphens=True): (
+                format.to_camel_case(name, treat_hyphens_as_underscores=False): (
                     prop
-                    if types._isinstance(prop, Union[EventChain, dict])
+                    if isinstance(prop, (EventChain, Mapping))
                     else LiteralVar.create(prop)
-                )  # rx.color is always a string
+                )
                 for name, prop in kwargs.items()
                 if self.is_valid_prop(prop)
             }
@@ -106,7 +128,7 @@ class Tag:
         return self
 
     @staticmethod
-    def is_valid_prop(prop: Optional[Var]) -> bool:
+    def is_valid_prop(prop: Var | None) -> bool:
         """Check if the prop is valid.
 
         Args:

@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any, Iterable, Literal, Union
+from typing import Any, Iterable, Literal
 
 from reflex.components.component import Component, ComponentNamespace
 from reflex.components.core.foreach import Foreach
@@ -44,7 +44,7 @@ class BaseList(Component, MarkdownComponentMap):
 
     # The style of the list. Default to "none".
     list_style_type: Var[
-        Union[LiteralListStyleTypeUnordered, LiteralListStyleTypeOrdered]
+        LiteralListStyleTypeUnordered | LiteralListStyleTypeOrdered
     ] = Var.create("none")
 
     # A list of items to add to the list.
@@ -72,7 +72,7 @@ class BaseList(Component, MarkdownComponentMap):
             if isinstance(items, Var):
                 children = [Foreach.create(items, ListItem.create)]
             else:
-                children = [ListItem.create(item) for item in items]  # type: ignore
+                children = [ListItem.create(item) for item in items]
         props["direction"] = "column"
         style = props.setdefault("style", {})
         style["list_style_type"] = list_style_type
@@ -189,7 +189,7 @@ ordered_list = list_ns.ordered
 unordered_list = list_ns.unordered
 
 
-def __getattr__(name):
+def __getattr__(name: Any):
     # special case for when accessing list to avoid shadowing
     # python's built in list object.
     if name == "list":

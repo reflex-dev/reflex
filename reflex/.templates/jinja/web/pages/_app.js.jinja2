@@ -1,4 +1,5 @@
 {% extends "web/pages/base_page.js.jinja2" %}
+{% from "web/pages/macros.js.jinja2" import renderHooks %}
 
 {% block early_imports %}
 import '$/styles/styles.css'
@@ -18,10 +19,7 @@ import * as {{library_alias}} from "{{library_path}}";
 
 {% block export %}
 function AppWrap({children}) {
-
-  {% for hook in hooks %}
-  {{ hook }}
-  {% endfor %}
+  {{ renderHooks(hooks) }}
 
   return (
     {{utils.render(render, indent_width=0)}}
@@ -40,13 +38,13 @@ export default function MyApp({ Component, pageProps }) {
   }, []);
   return (
     <ThemeProvider defaultTheme={ defaultColorMode } attribute="class">
-      <AppWrap>
-        <StateProvider>
-          <EventLoopProvider>
-            <Component {...pageProps} />
-          </EventLoopProvider>
-        </StateProvider>
-      </AppWrap>
+      <StateProvider>
+        <EventLoopProvider>
+            <AppWrap>
+              <Component {...pageProps} />
+            </AppWrap>
+        </EventLoopProvider>
+      </StateProvider>
     </ThemeProvider>
   );
 }

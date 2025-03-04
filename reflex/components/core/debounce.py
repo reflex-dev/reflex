@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any, Type, Union
+from typing import Any, Type
 
 from reflex.components.component import Component
 from reflex.constants import EventTriggers
@@ -28,7 +28,7 @@ class DebounceInput(Component):
     min_length: Var[int]
 
     # Time to wait between end of input and triggering on_change
-    debounce_timeout: Var[int] = DEFAULT_DEBOUNCE_TIMEOUT  # type: ignore
+    debounce_timeout: Var[int] = Var.create(DEFAULT_DEBOUNCE_TIMEOUT)
 
     # If true, notify when Enter key is pressed
     force_notify_by_enter: Var[bool]
@@ -37,7 +37,7 @@ class DebounceInput(Component):
     force_notify_on_blur: Var[bool]
 
     # If provided, create a fully-controlled input
-    value: Var[Union[str, int, float]]
+    value: Var[str | int | float]
 
     # The ref to attach to the created input
     input_ref: Var[str]

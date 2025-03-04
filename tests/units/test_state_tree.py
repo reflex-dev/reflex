@@ -42,7 +42,7 @@ class SubA_A_A_A(SubA_A_A):
 class SubA_A_A_B(SubA_A_A):
     """SubA_A_A_B is a child of SubA_A_A."""
 
-    @rx.var(cache=True)
+    @rx.var
     def sub_a_a_a_cached(self) -> int:
         """A cached var.
 
@@ -117,7 +117,7 @@ class TreeD(Root):
 
     d: int
 
-    @rx.var
+    @rx.var(cache=False)
     def d_var(self) -> int:
         """A computed var.
 
@@ -156,7 +156,7 @@ class SubE_A_A_A_A(SubE_A_A_A):
 
     sub_e_a_a_a_a: int
 
-    @rx.var
+    @rx.var(cache=False)
     def sub_e_a_a_a_a_var(self) -> int:
         """A computed var.
 
@@ -183,7 +183,7 @@ class SubE_A_A_A_D(SubE_A_A_A):
 
     sub_e_a_a_a_d: int
 
-    @rx.var(cache=True)
+    @rx.var
     def sub_e_a_a_a_d_var(self) -> int:
         """A computed var.
 
@@ -222,7 +222,7 @@ async def state_manager_redis(
     Yields:
         A state manager instance
     """
-    app_module_mock.app = rx.App(state=Root)
+    app_module_mock.app = rx.App(_state=Root)
     state_manager = app_module_mock.app.state_manager
 
     if not isinstance(state_manager, StateManagerRedis):

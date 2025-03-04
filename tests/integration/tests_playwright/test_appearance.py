@@ -61,7 +61,7 @@ def ColorToggleApp():
                     rx.icon(tag="moon", size=20),
                     value="dark",
                 ),
-                on_change=set_color_mode,
+                on_change=set_color_mode,  # pyright: ignore[reportArgumentType]
                 variant="classic",
                 radius="large",
                 value=color_mode,
@@ -85,7 +85,7 @@ def light_mode_app(tmp_path_factory) -> Generator[AppHarness, None, None]:
     """
     with AppHarness.create(
         root=tmp_path_factory.mktemp("appearance_app"),
-        app_source=DefaultLightModeApp,  # type: ignore
+        app_source=DefaultLightModeApp,
     ) as harness:
         assert harness.app_instance is not None, "app is not running"
         yield harness
@@ -104,7 +104,7 @@ def dark_mode_app(tmp_path_factory) -> Generator[AppHarness, None, None]:
     """
     with AppHarness.create(
         root=tmp_path_factory.mktemp("appearance_app"),
-        app_source=DefaultDarkModeApp,  # type: ignore
+        app_source=DefaultDarkModeApp,
     ) as harness:
         assert harness.app_instance is not None, "app is not running"
         yield harness
@@ -123,7 +123,7 @@ def system_mode_app(tmp_path_factory) -> Generator[AppHarness, None, None]:
     """
     with AppHarness.create(
         root=tmp_path_factory.mktemp("appearance_app"),
-        app_source=DefaultSystemModeApp,  # type: ignore
+        app_source=DefaultSystemModeApp,
     ) as harness:
         assert harness.app_instance is not None, "app is not running"
         yield harness
@@ -142,7 +142,7 @@ def color_toggle_app(tmp_path_factory) -> Generator[AppHarness, None, None]:
     """
     with AppHarness.create(
         root=tmp_path_factory.mktemp("appearance_app"),
-        app_source=ColorToggleApp,  # type: ignore
+        app_source=ColorToggleApp,
     ) as harness:
         assert harness.app_instance is not None, "app is not running"
         yield harness

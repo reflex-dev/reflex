@@ -22,8 +22,8 @@ jobs:
     timeout-minutes: 30
     strategy:
       matrix:
-        state_manager: ['redis', 'memory']
-        python-version: ['3.11.5', '3.12.0', '3.13.0']
+        state_manager: ["redis", "memory"]
+        python-version: ["3.11.11", "3.12.8", "3.13.1"]
         split_index: [1, 2]
       fail-fast: false
     runs-on: ubuntu-22.04
@@ -47,17 +47,10 @@ jobs:
           python-version: ${{ matrix.python-version }}
           run-poetry-install: true
           create-venv-at-path: .venv
-      - run: poetry run uv pip install pyvirtualdisplay pillow pytest-split
+      - run: poetry run uv pip install pyvirtualdisplay pillow pytest-split pytest-retry
       - name: Run app harness tests
         env:
-          SCREENSHOT_DIR: /tmp/screenshots/${{ matrix.state_manager }}/${{ matrix.python-version }}/${{ matrix.split_index }}
           REDIS_URL: ${{ matrix.state_manager == 'redis' && 'redis://localhost:6379' || '' }}
         run: |
-          poetry run playwright install --with-deps
-          poetry run pytest tests/integration --splits 2 --group ${{matrix.split_index}}
-      - uses: actions/upload-artifact@v4
-        name: Upload failed test screenshots
-        if: always()
-        with:
-          name: failed_test_screenshots
-          path: /tmp/screenshots
+          poetry run playwright install chromium
+          poetry run pytest tests/integration --retries 3 --maxfail=5 --splits 2 --group ${{matrix.split_index}}

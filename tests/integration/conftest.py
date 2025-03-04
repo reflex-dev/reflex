@@ -1,11 +1,10 @@
 """Shared conftest for all integration tests."""
 
 import os
-import re
-from pathlib import Path
 
 import pytest
 
+import reflex.app
 from reflex.config import environment
 from reflex.testing import AppHarness, AppHarnessProd
 
@@ -35,34 +34,6 @@ def xvfb():
         yield None
 
 
-def pytest_exception_interact(node, call, report):
-    """Take and upload screenshot when tests fail.
-
-    Args:
-        node: The pytest item that failed.
-        call: The pytest call describing when/where the test was invoked.
-        report: The pytest log report object.
-    """
-    screenshot_dir = environment.SCREENSHOT_DIR.get()
-    if DISPLAY is None or screenshot_dir is None:
-        return
-
-    screenshot_dir = Path(screenshot_dir)
-    screenshot_dir.mkdir(parents=True, exist_ok=True)
-    safe_filename = re.sub(
-        r"(?u)[^-\w.]",
-        "_",
-        str(node.nodeid).strip().replace(" ", "_").replace(":", "_").replace(".py", ""),
-    )
-
-    try:
-        DISPLAY.waitgrab().save(
-            (Path(screenshot_dir) / safe_filename).with_suffix(".png"),
-        )
-    except Exception as e:
-        print(f"Failed to take screenshot for {node}: {e}")
-
-
 @pytest.fixture(
     scope="session", params=[AppHarness, AppHarnessProd], ids=["dev", "prod"]
 )
@@ -76,3 +47,25 @@ def app_harness_env(request):
         The AppHarness class to use for the test.
     """
     return request.param
+
+
+@pytest.fixture(autouse=True)
+def raise_console_error(request, mocker):
+    """Spy on calls to `console.error` used by the framework.
+
+    Help catch spurious error conditions that might otherwise go unnoticed.
+
+    If a test is marked with `ignore_console_error`, the spy will be ignored
+    after the test.
+
+    Args:
+        request: The pytest request object.
+        mocker: The pytest mocker object.
+
+    Yields:
+        control to the test function.
+    """
+    spy = mocker.spy(reflex.app.console, "error")
+    yield
+    if "ignore_console_error" not in request.keywords:
+        spy.assert_not_called()

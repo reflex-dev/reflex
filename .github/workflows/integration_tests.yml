@@ -2,13 +2,13 @@ name: integration-tests
 
 on:
   push:
-    branches: ['main']
+    branches: ["main"]
     paths-ignore:
-      - '**/*.md'
+      - "**/*.md"
   pull_request:
-    branches: ['main']
+    branches: ["main"]
     paths-ignore:
-      - '**/*.md'
+      - "**/*.md"
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.id }}
@@ -27,13 +27,13 @@ env:
   # TODO: can we fix windows encoding natively within reflex? Bug above can hit real users too (less common, but possible)
   # - Catch encoding errors when printing logs
   # - Best effort print lines that contain illegal chars (map to some default char, etc.)
-  PYTHONIOENCODING: 'utf8'
+  PYTHONIOENCODING: "utf8"
   TELEMETRY_ENABLED: false
-  NODE_OPTIONS: '--max_old_space_size=8192'
+  NODE_OPTIONS: "--max_old_space_size=8192"
   PR_TITLE: ${{ github.event.pull_request.title }}
 
 jobs:
-  example-counter:
+  example-counter-and-nba-proxy:
     env:
       OUTPUT_FILE: import_benchmark.json
     timeout-minutes: 30
@@ -43,17 +43,17 @@ jobs:
       matrix:
         # Show OS combos first in GUI
         os: [ubuntu-latest, windows-latest]
-        python-version: ['3.9.18', '3.10.13', '3.11.5', '3.12.0', '3.13.0']
+        python-version: ['3.10.16', '3.11.11', '3.12.8', '3.13.1']
         exclude:
           - os: windows-latest
-            python-version: '3.10.13'
+            python-version: "3.11.11"
           - os: windows-latest
-            python-version: '3.9.18'
+            python-version: '3.10.16'
         include:
           - os: windows-latest
-            python-version: '3.10.11'
+            python-version: "3.11.9"
           - os: windows-latest
-            python-version: '3.9.13'
+            python-version: '3.10.11'
 
     runs-on: ${{ matrix.os }}
     steps:
@@ -94,27 +94,25 @@ jobs:
           # Check that npm is home
           npm -v
           poetry run bash scripts/integration.sh ./reflex-examples/counter dev
-      - name: Measure and upload .web size
-        run:
-          poetry run python benchmarks/benchmark_web_size.py --os "${{ matrix.os }}"
-          --python-version "${{ matrix.python-version }}" --commit-sha "${{ github.sha }}"
-          --pr-id "${{ github.event.pull_request.id }}"
-          --branch-name "${{ github.head_ref || github.ref_name }}"
-          --path ./reflex-examples/counter/.web
-          --app-name "counter"
-      - name: Install hyperfine
-        run: cargo install hyperfine
-      - name: Benchmark imports
-        working-directory: ./reflex-examples/counter
-        run: hyperfine --warmup 3 "export POETRY_VIRTUALENVS_PATH=../../.venv; poetry run python counter/counter.py" --show-output --export-json "${{ env.OUTPUT_FILE }}" --shell bash
-      - name: Upload Benchmarks
-        run:
-          poetry run python benchmarks/benchmark_imports.py --os "${{ matrix.os }}"
-          --python-version "${{ matrix.python-version }}" --commit-sha "${{ github.sha }}"
-          --benchmark-json "./reflex-examples/counter/${{ env.OUTPUT_FILE }}"
-          --branch-name "${{ github.head_ref || github.ref_name }}" --pr-id "${{ github.event.pull_request.id }}"
-          --app-name "counter"
-
+      - name: Install requirements for nba proxy example
+        working-directory: ./reflex-examples/nba-proxy
+        run: |
+          poetry run uv pip install -r requirements.txt
+      - name: Install additional dependencies for DB access
+        run: poetry run uv pip install psycopg
+      - name: Check export --backend-only before init for nba-proxy example
+        working-directory: ./reflex-examples/nba-proxy
+        run: |
+          poetry run reflex export --backend-only
+      - name: Init Website for nba-proxy example
+        working-directory: ./reflex-examples/nba-proxy
+        run: |
+          poetry run reflex init --loglevel debug
+      - name: Run Website and Check for errors
+        run: |
+          # Check that npm is home
+          npm -v
+          poetry run bash scripts/integration.sh ./reflex-examples/nba-proxy dev
 
 
   reflex-web:
@@ -123,10 +121,10 @@ jobs:
       matrix:
         # Show OS combos first in GUI
         os: [ubuntu-latest]
-        python-version: ['3.10.11', '3.11.4']
+        python-version: ["3.11.11", "3.12.8"]
 
     env:
-      REFLEX_WEB_WINDOWS_OVERRIDE: '1'
+      REFLEX_WEB_WINDOWS_OVERRIDE: "1"
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
@@ -156,12 +154,6 @@ jobs:
           # Check that npm is home
           npm -v
           poetry run bash scripts/integration.sh ./reflex-web prod
-      - name: Measure and upload .web size
-        run:
-          poetry run python benchmarks/benchmark_web_size.py --os "${{ matrix.os }}"
-          --python-version "${{ matrix.python-version }}" --commit-sha "${{ github.sha }}"
-          --pr-id "${{ github.event.pull_request.id }}" --branch-name "${{ github.head_ref || github.ref_name }}"
-          --app-name "reflex-web" --path ./reflex-web/.web
 
   rx-shout-from-template:
     strategy:
@@ -171,7 +163,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/setup_build_env
         with:
-          python-version: '3.11.4'
+          python-version: "3.11.11"
           run-poetry-install: true
           create-venv-at-path: .venv
       - name: Create app directory
@@ -190,14 +182,14 @@ jobs:
           # Check that npm is home
           npm -v
           poetry run bash scripts/integration.sh ./rx-shout-from-template prod
-  
 
   reflex-web-macos:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     strategy:
       fail-fast: false
       matrix:
-        python-version: ['3.11.5', '3.12.0']
+        # Note: py311 version chosen due to available arm64 darwin builds.
+        python-version: ["3.11.9", "3.12.8"]
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
@@ -225,10 +217,3 @@ jobs:
           # Check that npm is home
           npm -v
           poetry run bash scripts/integration.sh ./reflex-web prod
-      - name: Measure and upload .web size
-        run:
-          poetry run python benchmarks/benchmark_web_size.py --os "${{ matrix.os }}"
-          --python-version "${{ matrix.python-version }}" --commit-sha "${{ github.sha }}"
-          --pr-id "${{ github.event.pull_request.id }}" --branch-name "${{ github.head_ref || github.ref_name }}"
-          --app-name "reflex-web" --path ./reflex-web/.web
-  

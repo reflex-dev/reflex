@@ -5,6 +5,7 @@ from typing import Literal
 from reflex.components.component import ComponentNamespace
 from reflex.components.core.breakpoints import Responsive
 from reflex.components.el import elements
+from reflex.constants.compiler import MemoizationMode
 from reflex.event import EventHandler, no_args_event_spec, passthrough_event_spec
 from reflex.vars.base import Var
 
@@ -32,6 +33,8 @@ class AlertDialogTrigger(RadixThemesTriggerComponent):
     """Wraps the control that will open the dialog."""
 
     tag = "AlertDialog.Trigger"
+
+    _memoization_mode = MemoizationMode(recursive=False)
 
 
 class AlertDialogContent(elements.Div, RadixThemesComponent):

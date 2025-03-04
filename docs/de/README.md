@@ -1,6 +1,3 @@
-```diff
-+ Suchst du nach Pynecone? Dann bist du hier in der richtigen Repository. Pynecone wurde in Reflex umbenannt. +
-```
 
 <div align="center">
 <img src="https://raw.githubusercontent.com/reflex-dev/reflex/main/docs/images/reflex_dark.svg#gh-light-mode-only" alt="Reflex Logo" width="300px">
@@ -34,7 +31,7 @@ Auf unserer [Architektur-Seite](https://reflex.dev/blog/2024-03-21-reflex-archit
 
 ## ⚙️ Installation
 
-Öffne ein Terminal und führe den folgenden Befehl aus (benötigt Python 3.9+):
+Öffne ein Terminal und führe den folgenden Befehl aus (benötigt Python 3.10+):
 
 ```bash
 pip install reflex

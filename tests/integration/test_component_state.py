@@ -30,7 +30,7 @@ def ComponentStateApp():
         @rx.event
         def increment(self):
             self.count += 1
-            self._be = self.count  # type: ignore
+            self._be = self.count  # pyright: ignore [reportAttributeAccessIssue]
 
         @classmethod
         def get_component(cls, *children, **props):
@@ -72,7 +72,7 @@ def ComponentStateApp():
             State=_Counter,
         )
 
-    app = rx.App(state=rx.State)  # noqa
+    app = rx.App(_state=rx.State)  # noqa: F841
 
     @rx.page()
     def index():
@@ -89,7 +89,7 @@ def ComponentStateApp():
             mc_d,
             rx.button(
                 "Inc A",
-                on_click=mc_a.State.increment,  # type: ignore
+                on_click=mc_a.State.increment,  # pyright: ignore [reportAttributeAccessIssue, reportOptionalMemberAccess]
                 id="inc-a",
             ),
             rx.text(

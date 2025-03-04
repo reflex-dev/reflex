@@ -1,5 +1,4 @@
 from pathlib import Path
-from typing import List
 
 import pytest
 
@@ -32,7 +31,7 @@ from reflex.utils.imports import ImportVar, ParsedImportDict
     ],
 )
 def test_compile_import_statement(
-    fields: List[ImportVar], test_default: str, test_rest: str
+    fields: list[ImportVar], test_default: str, test_rest: str
 ):
     """Test the compile_import_statement function.
 
@@ -92,7 +91,7 @@ def test_compile_import_statement(
         ),
     ],
 )
-def test_compile_imports(import_dict: ParsedImportDict, test_dicts: List[dict]):
+def test_compile_imports(import_dict: ParsedImportDict, test_dicts: list[dict]):
     """Test the compile_imports function.
 
     Args:
@@ -100,10 +99,10 @@ def test_compile_imports(import_dict: ParsedImportDict, test_dicts: List[dict]):
         test_dicts: The expected output.
     """
     imports = utils.compile_imports(import_dict)
-    for import_dict, test_dict in zip(imports, test_dicts):
+    for import_dict, test_dict in zip(imports, test_dicts, strict=True):
         assert import_dict["lib"] == test_dict["lib"]
         assert import_dict["default"] == test_dict["default"]
-        assert sorted(import_dict["rest"]) == test_dict["rest"]  # type: ignore
+        assert sorted(import_dict["rest"]) == test_dict["rest"]  # pyright: ignore [reportArgumentType]
 
 
 def test_compile_stylesheets(tmp_path, mocker):
@@ -198,7 +197,7 @@ def test_create_document_root():
     assert isinstance(root, utils.Html)
     assert isinstance(root.children[0], utils.DocumentHead)
     # Default language.
-    assert root.lang == "en"  # type: ignore
+    assert root.lang == "en"  # pyright: ignore [reportAttributeAccessIssue]
     # No children in head.
     assert len(root.children[0].children) == 0
 
@@ -208,13 +207,13 @@ def test_create_document_root():
         utils.NextScript.create(src="bar.js"),
     ]
     root = utils.create_document_root(
-        head_components=comps,  # type: ignore
+        head_components=comps,  # pyright: ignore [reportArgumentType]
         html_lang="rx",
         html_custom_attrs={"project": "reflex"},
     )
     # Two children in head.
     assert isinstance(root, utils.Html)
     assert len(root.children[0].children) == 2
-    assert root.lang == "rx"  # type: ignore
+    assert root.lang == "rx"  # pyright: ignore [reportAttributeAccessIssue]
     assert isinstance(root.custom_attrs, dict)
     assert root.custom_attrs == {"project": "reflex"}

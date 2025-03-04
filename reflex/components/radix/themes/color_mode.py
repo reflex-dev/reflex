@@ -17,7 +17,7 @@ rx.text(
 
 from __future__ import annotations
 
-from typing import Dict, List, Literal, Optional, Union, get_args
+from typing import Any, Literal, get_args
 
 from reflex.components.component import BaseComponent
 from reflex.components.core.cond import Cond, color_mode_cond, cond
@@ -66,9 +66,9 @@ class ColorModeIcon(Cond):
 
 LiteralPosition = Literal["top-left", "top-right", "bottom-left", "bottom-right"]
 
-position_values: List[str] = list(get_args(LiteralPosition))
+position_values: list[str] = list(get_args(LiteralPosition))
 
-position_map: Dict[str, List[str]] = {
+position_map: dict[str, list[str]] = {
     "position": position_values,
     "left": ["top-left", "bottom-left"],
     "right": ["top-right", "bottom-right"],
@@ -78,17 +78,19 @@ position_map: Dict[str, List[str]] = {
 
 
 # needed to inverse contains for find
-def _find(const: List[str], var):
+def _find(const: list[str], var: Any):
     return LiteralArrayVar.create(const).contains(var)
 
 
-def _set_var_default(props, position, prop, default1, default2=""):
+def _set_var_default(
+    props: dict, position: Any, prop: str, default1: str, default2: str = ""
+):
     props.setdefault(
         prop, cond(_find(position_map[prop], position), default1, default2)
     )
 
 
-def _set_static_default(props, position, prop, default):
+def _set_static_default(props: dict, position: Any, prop: str, default: str):
     if prop in position:
         props.setdefault(prop, default)
 
@@ -97,7 +99,7 @@ class ColorModeIconButton(IconButton):
     """Icon Button for toggling light / dark mode via toggle_color_mode."""
 
     # The position of the icon button. Follow document flow if None.
-    position: Optional[Union[LiteralPosition, Var[LiteralPosition]]] = None
+    position: LiteralPosition | Var[LiteralPosition] | None = None
 
     # Allow picking the "system" value for the color mode.
     allow_system: bool = False
@@ -115,12 +117,12 @@ class ColorModeIconButton(IconButton):
         Returns:
             The button component.
         """
-        position = props.pop("position", None)
+        position: str | Var = props.pop("position", None)
         allow_system = props.pop("allow_system", False)
 
         # position is used to set nice defaults for positioning the icon button
         if isinstance(position, Var):
-            _set_var_default(props, position, "position", "fixed", position)  # type: ignore
+            _set_var_default(props, position, "position", "fixed", position)  # pyright: ignore [reportArgumentType]
             _set_var_default(props, position, "bottom", "2rem")
             _set_var_default(props, position, "top", "2rem")
             _set_var_default(props, position, "left", "2rem")
@@ -142,7 +144,7 @@ class ColorModeIconButton(IconButton):
 
         if allow_system:
 
-            def color_mode_item(_color_mode):
+            def color_mode_item(_color_mode: Literal["light", "dark", "system"]):
                 return dropdown_menu.item(
                     _color_mode.title(), on_click=set_color_mode(_color_mode)
                 )
@@ -151,8 +153,8 @@ class ColorModeIconButton(IconButton):
                 dropdown_menu.trigger(
                     super().create(
                         ColorModeIcon.create(),
-                        **props,
-                    )
+                    ),
+                    **props,
                 ),
                 dropdown_menu.content(
                     color_mode_item("light"),

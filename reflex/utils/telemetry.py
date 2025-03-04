@@ -7,23 +7,18 @@ import dataclasses
 import multiprocessing
 import platform
 import warnings
-
-from reflex.config import environment
-
-try:
-    from datetime import UTC, datetime
-except ImportError:
-    from datetime import datetime
-
-    UTC = None
+from contextlib import suppress
+from datetime import datetime, timezone
 
 import httpx
 import psutil
 
 from reflex import constants
+from reflex.config import environment
 from reflex.utils import console
 from reflex.utils.prerequisites import ensure_reflex_installation_id, get_project_hash
 
+UTC = timezone.utc
 POSTHOG_API_URL: str = "https://app.posthog.com/capture/"
 
 
@@ -120,12 +115,7 @@ def _prepare_event(event: str, **kwargs) -> dict:
         )
         return {}
 
-    if UTC is None:
-        # for python 3.9 & 3.10
-        stamp = datetime.utcnow().isoformat()
-    else:
-        # for python 3.11 & 3.12
-        stamp = datetime.now(UTC).isoformat()
+    stamp = datetime.now(UTC).isoformat()
 
     cpuinfo = get_cpu_info()
 
@@ -155,12 +145,13 @@ def _prepare_event(event: str, **kwargs) -> dict:
 def _send_event(event_data: dict) -> bool:
     try:
         httpx.post(POSTHOG_API_URL, json=event_data)
-        return True
     except Exception:
         return False
+    else:
+        return True
 
 
-def _send(event, telemetry_enabled, **kwargs):
+def _send(event: str, telemetry_enabled: bool | None, **kwargs):
     from reflex.config import get_config
 
     # Get the telemetry_enabled from the config if it is not specified.
@@ -171,10 +162,11 @@ def _send(event, telemetry_enabled, **kwargs):
     if not telemetry_enabled:
         return False
 
-    event_data = _prepare_event(event, **kwargs)
-    if not event_data:
-        return False
-    return _send_event(event_data)
+    with suppress(Exception):
+        event_data = _prepare_event(event, **kwargs)
+        if not event_data:
+            return False
+        return _send_event(event_data)
 
 
 def send(event: str, telemetry_enabled: bool | None = None, **kwargs):
@@ -186,7 +178,7 @@ def send(event: str, telemetry_enabled: bool | None = None, **kwargs):
         kwargs: Additional data to send with the event.
     """
 
-    async def async_send(event, telemetry_enabled, **kwargs):
+    async def async_send(event: str, telemetry_enabled: bool | None, **kwargs):
         return _send(event, telemetry_enabled, **kwargs)
 
     try:

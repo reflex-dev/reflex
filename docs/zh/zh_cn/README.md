@@ -1,6 +1,3 @@
-```diff
-+ 寻找 Pynecone 吗？您来对了.Pynecone 已经更名为 Reflex.+
-```
 
 <div align="center">
 <img src="https://raw.githubusercontent.com/reflex-dev/reflex/main/docs/images/reflex_dark.svg#gh-light-mode-only" alt="Reflex Logo" width="300px">
@@ -34,7 +31,7 @@ Reflex 是一个使用纯Python构建全栈web应用的库。
 
 ## ⚙️ 安装
 
-打开一个终端并且运行(要求Python3.9+):
+打开一个终端并且运行(要求Python3.10+):
 
 ```bash
 pip install reflex

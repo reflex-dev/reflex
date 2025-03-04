@@ -22,15 +22,15 @@ def latency(registry: str) -> int:
         return 10_000_000
 
 
-def average_latency(registry, attempts: int = 3) -> int:
+def average_latency(registry: str, attempts: int = 3) -> int:
     """Get the average latency of a registry.
 
     Args:
-        registry (str): The URL of the registry.
-        attempts (int): The number of attempts to make. Defaults to 10.
+        registry: The URL of the registry.
+        attempts: The number of attempts to make. Defaults to 10.
 
     Returns:
-        int: The average latency of the registry in microseconds.
+        The average latency of the registry in microseconds.
     """
     return sum(latency(registry) for _ in range(attempts)) // attempts
 

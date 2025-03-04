@@ -10,17 +10,7 @@ import os
 import sys
 import threading
 from textwrap import dedent
-from typing import (
-    Any,
-    AsyncGenerator,
-    Callable,
-    Dict,
-    List,
-    Optional,
-    Set,
-    Tuple,
-    Union,
-)
+from typing import Any, AsyncGenerator, Callable, ClassVar, Set, Tuple
 from unittest.mock import AsyncMock, Mock
 
 import pytest
@@ -34,7 +24,6 @@ import reflex.config
 from reflex import constants
 from reflex.app import App
 from reflex.base import Base
-from reflex.components.sonner.toast import Toaster
 from reflex.constants import CompileVars, RouteVar, SocketEvent
 from reflex.event import Event, EventHandler
 from reflex.state import (
@@ -56,9 +45,11 @@ from reflex.state import (
 from reflex.testing import chdir
 from reflex.utils import format, prerequisites, types
 from reflex.utils.exceptions import (
+    InvalidLockWarningThresholdError,
     ReflexRuntimeError,
     SetUndefinedStateVarError,
     StateSerializationError,
+    UnretrievableVarValueError,
 )
 from reflex.utils.format import json_dumps
 from reflex.vars.base import Var, computed_var
@@ -67,7 +58,9 @@ from tests.units.states.mutation import MutableSQLAModel, MutableTestState
 from .states import GenState
 
 CI = bool(os.environ.get("CI", False))
-LOCK_EXPIRATION = 2000 if CI else 300
+LOCK_EXPIRATION = 2500 if CI else 300
+LOCK_WARNING_THRESHOLD = 1000 if CI else 100
+LOCK_WARN_SLEEP = 1.5 if CI else 0.15
 LOCK_EXPIRE_SLEEP = 2.5 if CI else 0.4
 
 
@@ -112,14 +105,14 @@ class TestState(BaseState):
     # Set this class as not test one
     __test__ = False
 
-    num1: int
+    num1: rx.Field[int]
     num2: float = 3.14
     key: str
     map_key: str = "a"
-    array: List[float] = [1, 2, 3.14]
-    mapping: Dict[str, List[int]] = {"a": [1, 2, 3], "b": [4, 5, 6]}
+    array: list[float] = [1, 2, 3.14]
+    mapping: dict[str, list[int]] = {"a": [1, 2, 3], "b": [4, 5, 6]}
     obj: Object = Object()
-    complex: Dict[int, Object] = {1: Object(), 2: Object()}
+    complex: dict[int, Object] = {1: Object(), 2: Object()}
     fig: Figure = Figure()
     dt: datetime.datetime = datetime.datetime.fromisoformat("1989-11-09T18:53:00+01:00")
     _backend: int = 0
@@ -160,7 +153,7 @@ class ChildState(TestState):
     """A child state fixture."""
 
     value: str
-    count: int = 23
+    count: rx.Field[int] = rx.field(23)
 
     def change_both(self, value: str, count: int):
         """Change both the value and count.
@@ -198,7 +191,7 @@ class GrandchildState(ChildState):
 class GrandchildState2(ChildState2):
     """A grandchild state fixture."""
 
-    @rx.var(cache=True)
+    @rx.var
     def cached(self) -> str:
         """A cached var.
 
@@ -211,7 +204,7 @@ class GrandchildState2(ChildState2):
 class GrandchildState3(ChildState3):
     """A great grandchild state fixture."""
 
-    @rx.var
+    @rx.var(cache=False)
     def computed(self) -> str:
         """A computed var.
 
@@ -237,7 +230,7 @@ def test_state() -> TestState:
     Returns:
         A test state.
     """
-    return TestState()  # type: ignore
+    return TestState()  # pyright: ignore [reportCallIssue]
 
 
 @pytest.fixture
@@ -427,10 +420,10 @@ def test_default_setters(test_state):
 
 def test_class_indexing_with_vars():
     """Test that we can index into a state var with another var."""
-    prop = TestState.array[TestState.num1]
+    prop = TestState.array[TestState.num1]  # pyright: ignore [reportCallIssue, reportArgumentType]
     assert str(prop) == f"{TestState.get_name()}.array.at({TestState.get_name()}.num1)"
 
-    prop = TestState.mapping["a"][TestState.num1]
+    prop = TestState.mapping["a"][TestState.num1]  # pyright: ignore [reportCallIssue, reportArgumentType]
     assert (
         str(prop)
         == f'{TestState.get_name()}.mapping["a"].at({TestState.get_name()}.num1)'
@@ -550,9 +543,9 @@ def test_get_class_var():
 def test_set_class_var():
     """Test setting the var of a class."""
     with pytest.raises(AttributeError):
-        TestState.num3  # type: ignore
+        TestState.num3  # pyright: ignore [reportAttributeAccessIssue]
     TestState._set_var(Var(_js_expr="num3", _var_type=int)._var_set_state(TestState))
-    var = TestState.num3  # type: ignore
+    var = TestState.num3  # pyright: ignore [reportAttributeAccessIssue]
     assert var._js_expr == TestState.get_full_name() + ".num3"
     assert var._var_type is int
     assert var._var_state == TestState.get_full_name()
@@ -785,17 +778,16 @@ async def test_process_event_simple(test_state):
     assert test_state.num1 == 0
 
     event = Event(token="t", name="set_num1", payload={"value": 69})
-    update = await test_state._process(event).__anext__()
+    async for update in test_state._process(event):
+        # The event should update the value.
+        assert test_state.num1 == 69
 
-    # The event should update the value.
-    assert test_state.num1 == 69
-
-    # The delta should contain the changes, including computed vars.
-    assert update.delta == {
-        TestState.get_full_name(): {"num1": 69, "sum": 72.14, "upper": ""},
-        GrandchildState3.get_full_name(): {"computed": ""},
-    }
-    assert update.events == []
+        # The delta should contain the changes, including computed vars.
+        assert update.delta == {
+            TestState.get_full_name(): {"num1": 69, "sum": 72.14},
+            GrandchildState3.get_full_name(): {"computed": ""},
+        }
+        assert update.events == []
 
 
 @pytest.mark.asyncio
@@ -815,15 +807,15 @@ async def test_process_event_substate(test_state, child_state, grandchild_state)
         name=f"{ChildState.get_name()}.change_both",
         payload={"value": "hi", "count": 12},
     )
-    update = await test_state._process(event).__anext__()
-    assert child_state.value == "HI"
-    assert child_state.count == 24
-    assert update.delta == {
-        TestState.get_full_name(): {"sum": 3.14, "upper": ""},
-        ChildState.get_full_name(): {"value": "HI", "count": 24},
-        GrandchildState3.get_full_name(): {"computed": ""},
-    }
-    test_state._clean()
+    async for update in test_state._process(event):
+        assert child_state.value == "HI"
+        assert child_state.count == 24
+        assert update.delta == {
+            # TestState.get_full_name(): {"sum": 3.14, "upper": ""},
+            ChildState.get_full_name(): {"value": "HI", "count": 24},
+            GrandchildState3.get_full_name(): {"computed": ""},
+        }
+        test_state._clean()
 
     # Test with the granchild state.
     assert grandchild_state.value2 == ""
@@ -832,19 +824,19 @@ async def test_process_event_substate(test_state, child_state, grandchild_state)
         name=f"{GrandchildState.get_full_name()}.set_value2",
         payload={"value": "new"},
     )
-    update = await test_state._process(event).__anext__()
-    assert grandchild_state.value2 == "new"
-    assert update.delta == {
-        TestState.get_full_name(): {"sum": 3.14, "upper": ""},
-        GrandchildState.get_full_name(): {"value2": "new"},
-        GrandchildState3.get_full_name(): {"computed": ""},
-    }
+    async for update in test_state._process(event):
+        assert grandchild_state.value2 == "new"
+        assert update.delta == {
+            # TestState.get_full_name(): {"sum": 3.14, "upper": ""},
+            GrandchildState.get_full_name(): {"value2": "new"},
+            GrandchildState3.get_full_name(): {"computed": ""},
+        }
 
 
 @pytest.mark.asyncio
 async def test_process_event_generator():
     """Test event handlers that generate multiple updates."""
-    gen_state = GenState()  # type: ignore
+    gen_state = GenState()  # pyright: ignore [reportCallIssue]
     event = Event(
         token="t",
         name="go",
@@ -944,21 +936,21 @@ def test_add_var():
     assert not hasattr(ds1, "dynamic_int")
     ds1.add_var("dynamic_int", int, 42)
     # Existing instances get the BaseVar
-    assert ds1.dynamic_int.equals(DynamicState.dynamic_int)  # type: ignore
+    assert ds1.dynamic_int.equals(DynamicState.dynamic_int)  # pyright: ignore [reportAttributeAccessIssue]
     # New instances get an actual value with the default
     assert DynamicState().dynamic_int == 42
 
-    ds1.add_var("dynamic_list", List[int], [5, 10])
-    assert ds1.dynamic_list.equals(DynamicState.dynamic_list)  # type: ignore
+    ds1.add_var("dynamic_list", list[int], [5, 10])
+    assert ds1.dynamic_list.equals(DynamicState.dynamic_list)  # pyright: ignore [reportAttributeAccessIssue]
     ds2 = DynamicState()
     assert ds2.dynamic_list == [5, 10]
     ds2.dynamic_list.append(15)
     assert ds2.dynamic_list == [5, 10, 15]
     assert DynamicState().dynamic_list == [5, 10]
 
-    ds1.add_var("dynamic_dict", Dict[str, int], {"k1": 5, "k2": 10})
-    assert ds1.dynamic_dict.equals(DynamicState.dynamic_dict)  # type: ignore
-    assert ds2.dynamic_dict.equals(DynamicState.dynamic_dict)  # type: ignore
+    ds1.add_var("dynamic_dict", dict[str, int], {"k1": 5, "k2": 10})
+    assert ds1.dynamic_dict.equals(DynamicState.dynamic_dict)  # pyright: ignore [reportAttributeAccessIssue]
+    assert ds2.dynamic_dict.equals(DynamicState.dynamic_dict)  # pyright: ignore [reportAttributeAccessIssue]
     assert DynamicState().dynamic_dict == {"k1": 5, "k2": 10}
     assert DynamicState().dynamic_dict == {"k1": 5, "k2": 10}
 
@@ -973,7 +965,7 @@ class InterdependentState(BaseState):
     """A state with 3 vars and 3 computed vars.
 
     x: a variable that no computed var depends on
-    v1: a varable that one computed var directly depeneds on
+    v1: a variable that one computed var directly depends on
     _v2: a backend variable that one computed var directly depends on
 
     v1x2: a computed var that depends on v1
@@ -985,7 +977,7 @@ class InterdependentState(BaseState):
     v1: int = 0
     _v2: int = 1
 
-    @rx.var(cache=True)
+    @rx.var
     def v1x2(self) -> int:
         """Depends on var v1.
 
@@ -994,7 +986,7 @@ class InterdependentState(BaseState):
         """
         return self.v1 * 2
 
-    @rx.var(cache=True)
+    @rx.var
     def v2x2(self) -> int:
         """Depends on backend var _v2.
 
@@ -1003,7 +995,7 @@ class InterdependentState(BaseState):
         """
         return self._v2 * 2
 
-    @rx.var(cache=True, backend=True)
+    @rx.var(backend=True)
     def v2x2_backend(self) -> int:
         """Depends on backend var _v2.
 
@@ -1012,16 +1004,16 @@ class InterdependentState(BaseState):
         """
         return self._v2 * 2
 
-    @rx.var(cache=True)
+    @rx.var
     def v1x2x2(self) -> int:
         """Depends on ComputedVar v1x2.
 
         Returns:
             ComputedVar v1x2 multiplied by 2
         """
-        return self.v1x2 * 2  # type: ignore
+        return self.v1x2 * 2
 
-    @rx.var(cache=True)
+    @rx.var
     def _v3(self) -> int:
         """Depends on backend var _v2.
 
@@ -1030,7 +1022,7 @@ class InterdependentState(BaseState):
         """
         return self._v2
 
-    @rx.var(cache=True)
+    @rx.var
     def v3x2(self) -> int:
         """Depends on ComputedVar _v3.
 
@@ -1140,7 +1132,7 @@ def test_child_state():
 
     class ChildState(MainState):
         @computed_var
-        def rendered_var(self):
+        def rendered_var(self) -> int:
             return self.v
 
     ms = MainState()
@@ -1166,13 +1158,17 @@ def test_conditional_computed_vars():
 
     ms = MainState()
     # Initially there are no dirty computed vars.
-    assert ms._dirty_computed_vars(from_vars={"flag"}) == {"rendered_var"}
-    assert ms._dirty_computed_vars(from_vars={"t2"}) == {"rendered_var"}
-    assert ms._dirty_computed_vars(from_vars={"t1"}) == {"rendered_var"}
+    assert ms._dirty_computed_vars(from_vars={"flag"}) == {
+        (MainState.get_full_name(), "rendered_var")
+    }
+    assert ms._dirty_computed_vars(from_vars={"t2"}) == {
+        (MainState.get_full_name(), "rendered_var")
+    }
+    assert ms._dirty_computed_vars(from_vars={"t1"}) == {
+        (MainState.get_full_name(), "rendered_var")
+    }
     assert ms.computed_vars["rendered_var"]._deps(objclass=MainState) == {
-        "flag",
-        "t1",
-        "t2",
+        MainState.get_full_name(): {"flag", "t1", "t2"}
     }
 
 
@@ -1235,7 +1231,7 @@ def test_computed_var_cached():
     class ComputedState(BaseState):
         v: int = 0
 
-        @rx.var(cache=True)
+        @rx.var
         def comp_v(self) -> int:
             nonlocal comp_v_calls
             comp_v_calls += 1
@@ -1260,15 +1256,15 @@ def test_computed_var_cached_depends_on_non_cached():
     class ComputedState(BaseState):
         v: int = 0
 
-        @rx.var
+        @rx.var(cache=False)
         def no_cache_v(self) -> int:
             return self.v
 
-        @rx.var(cache=True)
+        @rx.var
         def dep_v(self) -> int:
-            return self.no_cache_v  # type: ignore
+            return self.no_cache_v
 
-        @rx.var(cache=True)
+        @rx.var
         def comp_v(self) -> int:
             return self.v
 
@@ -1300,16 +1296,16 @@ def test_computed_var_depends_on_parent_non_cached():
     counter = 0
 
     class ParentState(BaseState):
-        @rx.var
+        @rx.var(cache=False)
         def no_cache_v(self) -> int:
             nonlocal counter
             counter += 1
             return counter
 
     class ChildState(ParentState):
-        @rx.var(cache=True)
+        @rx.var
         def dep_v(self) -> int:
-            return self.no_cache_v  # type: ignore
+            return self.no_cache_v
 
     ps = ParentState()
     cs = ps.substates[ChildState.get_name()]
@@ -1353,7 +1349,7 @@ def test_cached_var_depends_on_event_handler(use_partial: bool):
         def handler(self):
             self.x = self.x + 1
 
-        @rx.var(cache=True)
+        @rx.var
         def cached_x_side_effect(self) -> int:
             self.handler()
             nonlocal counter
@@ -1361,13 +1357,16 @@ def test_cached_var_depends_on_event_handler(use_partial: bool):
             return counter
 
     if use_partial:
-        HandlerState.handler = functools.partial(HandlerState.handler.fn)
+        HandlerState.handler = functools.partial(HandlerState.handler.fn)  # pyright: ignore [reportFunctionMemberAccess]
         assert isinstance(HandlerState.handler, functools.partial)
     else:
         assert isinstance(HandlerState.handler, EventHandler)
 
     s = HandlerState()
-    assert "cached_x_side_effect" in s._computed_var_dependencies["x"]
+    assert (
+        HandlerState.get_full_name(),
+        "cached_x_side_effect",
+    ) in s._var_dependencies["x"]
     assert s.cached_x_side_effect == 1
     assert s.x == 43
     s.handler()
@@ -1382,14 +1381,14 @@ def test_computed_var_dependencies():
         v: int = 0
         w: int = 0
         x: int = 0
-        y: List[int] = [1, 2, 3]
-        _z: List[int] = [1, 2, 3]
+        y: list[int] = [1, 2, 3]
+        _z: list[int] = [1, 2, 3]
 
         @property
         def testprop(self) -> int:
             return self.v
 
-        @rx.var(cache=True)
+        @rx.var
         def comp_v(self) -> int:
             """Direct access.
 
@@ -1398,7 +1397,7 @@ def test_computed_var_dependencies():
             """
             return self.v
 
-        @rx.var(cache=True, backend=True)
+        @rx.var(backend=True)
         def comp_v_backend(self) -> int:
             """Direct access backend var.
 
@@ -1407,7 +1406,7 @@ def test_computed_var_dependencies():
             """
             return self.v
 
-        @rx.var(cache=True)
+        @rx.var
         def comp_v_via_property(self) -> int:
             """Access v via property.
 
@@ -1416,8 +1415,8 @@ def test_computed_var_dependencies():
             """
             return self.testprop
 
-        @rx.var(cache=True)
-        def comp_w(self):
+        @rx.var
+        def comp_w(self) -> Callable[[], int]:
             """Nested lambda.
 
             Returns:
@@ -1425,8 +1424,8 @@ def test_computed_var_dependencies():
             """
             return lambda: self.w
 
-        @rx.var(cache=True)
-        def comp_x(self):
+        @rx.var
+        def comp_x(self) -> Callable[[], int]:
             """Nested function.
 
             Returns:
@@ -1438,8 +1437,8 @@ def test_computed_var_dependencies():
 
             return _
 
-        @rx.var(cache=True)
-        def comp_y(self) -> List[int]:
+        @rx.var
+        def comp_y(self) -> list[int]:
             """Comprehension iterating over attribute.
 
             Returns:
@@ -1447,8 +1446,8 @@ def test_computed_var_dependencies():
             """
             return [round(y) for y in self.y]
 
-        @rx.var(cache=True)
-        def comp_z(self) -> List[bool]:
+        @rx.var
+        def comp_z(self) -> list[bool]:
             """Comprehension accesses attribute.
 
             Returns:
@@ -1457,15 +1456,15 @@ def test_computed_var_dependencies():
             return [z in self._z for z in range(5)]
 
     cs = ComputedState()
-    assert cs._computed_var_dependencies["v"] == {
-        "comp_v",
-        "comp_v_backend",
-        "comp_v_via_property",
+    assert cs._var_dependencies["v"] == {
+        (ComputedState.get_full_name(), "comp_v"),
+        (ComputedState.get_full_name(), "comp_v_backend"),
+        (ComputedState.get_full_name(), "comp_v_via_property"),
     }
-    assert cs._computed_var_dependencies["w"] == {"comp_w"}
-    assert cs._computed_var_dependencies["x"] == {"comp_x"}
-    assert cs._computed_var_dependencies["y"] == {"comp_y"}
-    assert cs._computed_var_dependencies["_z"] == {"comp_z"}
+    assert cs._var_dependencies["w"] == {(ComputedState.get_full_name(), "comp_w")}
+    assert cs._var_dependencies["x"] == {(ComputedState.get_full_name(), "comp_x")}
+    assert cs._var_dependencies["y"] == {(ComputedState.get_full_name(), "comp_y")}
+    assert cs._var_dependencies["_z"] == {(ComputedState.get_full_name(), "comp_z")}
 
 
 def test_backend_method():
@@ -1602,29 +1601,20 @@ async def test_state_with_invalid_yield(capsys, mock_app):
         rx.event.Event(token="fake_token", name="invalid_handler")
     ):
         assert not update.delta
-        if Toaster.is_used:
-            assert update.events == rx.event.fix_events(
-                [
-                    rx.toast(
-                        "An error occurred.",
-                        description="TypeError: Your handler test_state_with_invalid_yield.<locals>.StateWithInvalidYield.invalid_handler must only return/yield: None, Events or other EventHandlers referenced by their class (not using `self`).<br/>See logs for details.",
-                        level="error",
-                        id="backend_error",
-                        position="top-center",
-                        style={"width": "500px"},
-                    )  # type: ignore
-                ],
-                token="",
-            )
-        else:
-            assert update.events == rx.event.fix_events(
-                [
-                    rx.window_alert(
-                        "An error occurred.\nContact the website administrator."
-                    )
-                ],
-                token="",
-            )
+        assert update.events == rx.event.fix_events(
+            [
+                rx.toast(
+                    "An error occurred.",
+                    level="error",
+                    fallback_to_alert=True,
+                    description="TypeError: Your handler test_state_with_invalid_yield.<locals>.StateWithInvalidYield.invalid_handler must only return/yield: None, Events or other EventHandlers referenced by their class (i.e. using `type(self)` or other class references)..<br/>See logs for details.",
+                    id="backend_error",
+                    position="top-center",
+                    style={"width": "500px"},
+                )
+            ],
+            token="",
+        )
     captured = capsys.readouterr()
     assert "must only return/yield: None, Events or other EventHandlers" in captured.out
 
@@ -1660,7 +1650,7 @@ async def state_manager(request) -> AsyncGenerator[StateManager, None]:
 
 
 @pytest.fixture()
-def substate_token(state_manager, token):
+def substate_token(state_manager, token) -> str:
     """A token + substate name for looking up in state manager.
 
     Args:
@@ -1787,6 +1777,7 @@ async def test_state_manager_lock_expire(
         substate_token_redis: A token + substate name for looking up in state manager.
     """
     state_manager_redis.lock_expiration = LOCK_EXPIRATION
+    state_manager_redis.lock_warning_threshold = LOCK_WARNING_THRESHOLD
 
     async with state_manager_redis.modify_state(substate_token_redis):
         await asyncio.sleep(0.01)
@@ -1811,6 +1802,7 @@ async def test_state_manager_lock_expire_contend(
     unexp_num1 = 666
 
     state_manager_redis.lock_expiration = LOCK_EXPIRATION
+    state_manager_redis.lock_warning_threshold = LOCK_WARNING_THRESHOLD
 
     order = []
 
@@ -1838,6 +1830,39 @@ async def test_state_manager_lock_expire_contend(
 
     assert order == ["blocker", "waiter"]
     assert (await state_manager_redis.get_state(substate_token_redis)).num1 == exp_num1
+
+
+@pytest.mark.asyncio
+async def test_state_manager_lock_warning_threshold_contend(
+    state_manager_redis: StateManager, token: str, substate_token_redis: str, mocker
+):
+    """Test that the state manager triggers a warning when lock contention exceeds the warning threshold.
+
+    Args:
+        state_manager_redis: A state manager instance.
+        token: A token.
+        substate_token_redis: A token + substate name for looking up in state manager.
+        mocker: Pytest mocker object.
+    """
+    console_warn = mocker.patch("reflex.utils.console.warn")
+
+    state_manager_redis.lock_expiration = LOCK_EXPIRATION
+    state_manager_redis.lock_warning_threshold = LOCK_WARNING_THRESHOLD
+
+    order = []
+
+    async def _coro_blocker():
+        async with state_manager_redis.modify_state(substate_token_redis):
+            order.append("blocker")
+            await asyncio.sleep(LOCK_WARN_SLEEP)
+
+    tasks = [
+        asyncio.create_task(_coro_blocker()),
+    ]
+
+    await tasks[0]
+    console_warn.assert_called()
+    assert console_warn.call_count == 7
 
 
 class CopyingAsyncMock(AsyncMock):
@@ -1868,13 +1893,13 @@ def mock_app_simple(monkeypatch) -> rx.App:
     Returns:
         The app, after mocking out prerequisites.get_app()
     """
-    app = App(state=TestState)
+    app = App(_state=TestState)
 
     app_module = Mock()
 
     setattr(app_module, CompileVars.APP, app)
-    app.state = TestState
-    app.event_namespace.emit = CopyingAsyncMock()  # type: ignore
+    app._state = TestState
+    app.event_namespace.emit = CopyingAsyncMock()  # pyright: ignore [reportOptionalMemberAccess]
 
     def _mock_get_app(*args, **kwargs):
         return app_module
@@ -1896,6 +1921,14 @@ def mock_app(mock_app_simple: rx.App, state_manager: StateManager) -> rx.App:
     """
     mock_app_simple._state_manager = state_manager
     return mock_app_simple
+
+
+@dataclasses.dataclass
+class ModelDC:
+    """A dataclass."""
+
+    foo: str = "bar"
+    ls: list[dict] = dataclasses.field(default_factory=list)
 
 
 @pytest.mark.asyncio
@@ -1975,15 +2008,11 @@ async def test_state_proxy(grandchild_state: GrandchildState, mock_app: rx.App):
 
     # ensure state update was emitted
     assert mock_app.event_namespace is not None
-    mock_app.event_namespace.emit.assert_called_once()
-    mcall = mock_app.event_namespace.emit.mock_calls[0]
+    mock_app.event_namespace.emit.assert_called_once()  # pyright: ignore [reportFunctionMemberAccess]
+    mcall = mock_app.event_namespace.emit.mock_calls[0]  # pyright: ignore [reportFunctionMemberAccess]
     assert mcall.args[0] == str(SocketEvent.EVENT)
     assert mcall.args[1] == StateUpdate(
         delta={
-            parent_state.get_full_name(): {
-                "upper": "",
-                "sum": 3.14,
-            },
             grandchild_state.get_full_name(): {
                 "value2": "42",
             },
@@ -1998,15 +2027,16 @@ async def test_state_proxy(grandchild_state: GrandchildState, mock_app: rx.App):
 class BackgroundTaskState(BaseState):
     """A state with a background task."""
 
-    order: List[str] = []
-    dict_list: Dict[str, List[int]] = {"foo": [1, 2, 3]}
+    order: list[str] = []
+    dict_list: dict[str, list[int]] = {"foo": [1, 2, 3]}
+    dc: ModelDC = ModelDC()
 
     def __init__(self, **kwargs):  # noqa: D107
         super().__init__(**kwargs)
         self.router_data = {"simulate": "hydrate"}
 
-    @rx.var
-    def computed_order(self) -> List[str]:
+    @rx.var(cache=False)
+    def computed_order(self) -> list[str]:
         """Get the order as a computed var.
 
         Returns:
@@ -2026,8 +2056,16 @@ class BackgroundTaskState(BaseState):
             self.order.append("bad idea")
 
         with pytest.raises(ImmutableStateError):
+            # Cannot manipulate dataclass attributes.
+            self.dc.foo = "baz"
+
+        with pytest.raises(ImmutableStateError):
             # Even nested access to mutables raises an exception.
             self.dict_list["foo"].append(42)
+
+        with pytest.raises(ImmutableStateError):
+            # Cannot modify dataclass list attribute.
+            self.dc.ls.append({"foo": "bar"})
 
         with pytest.raises(ImmutableStateError):
             # Direct calling another handler that modifies state raises an exception.
@@ -2101,8 +2139,8 @@ async def test_background_task_no_block(mock_app: rx.App, token: str):
         token: A token.
     """
     router_data = {"query": {}}
-    mock_app.state_manager.state = mock_app.state = BackgroundTaskState
-    async for update in rx.app.process(  # type: ignore
+    mock_app.state_manager.state = mock_app._state = BackgroundTaskState
+    async for update in rx.app.process(
         mock_app,
         Event(
             token=token,
@@ -2119,10 +2157,10 @@ async def test_background_task_no_block(mock_app: rx.App, token: str):
 
     # wait for the coroutine to start
     await asyncio.sleep(0.5 if CI else 0.1)
-    assert len(mock_app.background_tasks) == 1
+    assert len(mock_app._background_tasks) == 1
 
     # Process another normal event
-    async for update in rx.app.process(  # type: ignore
+    async for update in rx.app.process(
         mock_app,
         Event(
             token=token,
@@ -2151,9 +2189,9 @@ async def test_background_task_no_block(mock_app: rx.App, token: str):
         )
 
     # Explicit wait for background tasks
-    for task in tuple(mock_app.background_tasks):
+    for task in tuple(mock_app._background_tasks):
         await task
-    assert not mock_app.background_tasks
+    assert not mock_app._background_tasks
 
     exp_order = [
         "background_task:start",
@@ -2172,7 +2210,7 @@ async def test_background_task_no_block(mock_app: rx.App, token: str):
     assert mock_app.event_namespace is not None
     emit_mock = mock_app.event_namespace.emit
 
-    first_ws_message = emit_mock.mock_calls[0].args[1]
+    first_ws_message = emit_mock.mock_calls[0].args[1]  # pyright: ignore [reportFunctionMemberAccess]
     assert (
         first_ws_message.delta[BackgroundTaskState.get_full_name()].pop("router")
         is not None
@@ -2187,7 +2225,7 @@ async def test_background_task_no_block(mock_app: rx.App, token: str):
         events=[],
         final=True,
     )
-    for call in emit_mock.mock_calls[1:5]:
+    for call in emit_mock.mock_calls[1:5]:  # pyright: ignore [reportFunctionMemberAccess]
         assert call.args[1] == StateUpdate(
             delta={
                 BackgroundTaskState.get_full_name(): {
@@ -2197,7 +2235,7 @@ async def test_background_task_no_block(mock_app: rx.App, token: str):
             events=[],
             final=True,
         )
-    assert emit_mock.mock_calls[-2].args[1] == StateUpdate(
+    assert emit_mock.mock_calls[-2].args[1] == StateUpdate(  # pyright: ignore [reportFunctionMemberAccess]
         delta={
             BackgroundTaskState.get_full_name(): {
                 "order": exp_order,
@@ -2208,7 +2246,7 @@ async def test_background_task_no_block(mock_app: rx.App, token: str):
         events=[],
         final=True,
     )
-    assert emit_mock.mock_calls[-1].args[1] == StateUpdate(
+    assert emit_mock.mock_calls[-1].args[1] == StateUpdate(  # pyright: ignore [reportFunctionMemberAccess]
         delta={
             BackgroundTaskState.get_full_name(): {
                 "computed_order": exp_order,
@@ -2228,8 +2266,8 @@ async def test_background_task_reset(mock_app: rx.App, token: str):
         token: A token.
     """
     router_data = {"query": {}}
-    mock_app.state_manager.state = mock_app.state = BackgroundTaskState
-    async for update in rx.app.process(  # type: ignore
+    mock_app.state_manager.state = mock_app._state = BackgroundTaskState
+    async for update in rx.app.process(
         mock_app,
         Event(
             token=token,
@@ -2245,9 +2283,9 @@ async def test_background_task_reset(mock_app: rx.App, token: str):
         assert update == StateUpdate()
 
     # Explicit wait for background tasks
-    for task in tuple(mock_app.background_tasks):
+    for task in tuple(mock_app._background_tasks):
         await task
-    assert not mock_app.background_tasks
+    assert not mock_app._background_tasks
 
     assert (
         await mock_app.state_manager.get_state(
@@ -2571,10 +2609,10 @@ def test_duplicate_substate_class(mocker):
         class TestState(BaseState):
             pass
 
-        class ChildTestState(TestState):  # type: ignore
+        class ChildTestState(TestState):  # pyright: ignore [reportRedeclaration]
             pass
 
-        class ChildTestState(TestState):  # type: ignore # noqa
+        class ChildTestState(TestState):  # noqa: F811
             pass
 
         return TestState
@@ -2583,14 +2621,14 @@ def test_duplicate_substate_class(mocker):
 class Foo(Base):
     """A class containing a list of str."""
 
-    tags: List[str] = ["123", "456"]
+    tags: list[str] = ["123", "456"]
 
 
 def test_json_dumps_with_mutables():
     """Test that json.dumps works with Base vars inside mutable types."""
 
     class MutableContainsBase(BaseState):
-        items: List[Foo] = [Foo()]
+        items: list[Foo] = [Foo()]
 
     dict_val = MutableContainsBase().dict()
     assert isinstance(dict_val[MutableContainsBase.get_full_name()]["items"][0], Foo)
@@ -2609,24 +2647,24 @@ def test_reset_with_mutables():
     copied_default = copy.deepcopy(default)
 
     class MutableResetState(BaseState):
-        items: List[List[int]] = default
+        items: list[list[int]] = default
 
     instance = MutableResetState()
-    assert instance.items.__wrapped__ is not default  # type: ignore
+    assert instance.items.__wrapped__ is not default  # pyright: ignore [reportAttributeAccessIssue]
     assert instance.items == default == copied_default
     instance.items.append([3, 3])
     assert instance.items != default
     assert instance.items != copied_default
 
     instance.reset()
-    assert instance.items.__wrapped__ is not default  # type: ignore
+    assert instance.items.__wrapped__ is not default  # pyright: ignore [reportAttributeAccessIssue]
     assert instance.items == default == copied_default
     instance.items.append([3, 3])
     assert instance.items != default
     assert instance.items != copied_default
 
     instance.reset()
-    assert instance.items.__wrapped__ is not default  # type: ignore
+    assert instance.items.__wrapped__ is not default  # pyright: ignore [reportAttributeAccessIssue]
     assert instance.items == default == copied_default
     instance.items.append([3, 3])
     assert instance.items != default
@@ -2647,7 +2685,7 @@ class Custom1(Base):
         self.foo = val
 
     def double_foo(self) -> str:
-        """Concantenate foo with foo.
+        """Concatenate foo with foo.
 
         Returns:
             foo + foo
@@ -2658,7 +2696,7 @@ class Custom1(Base):
 class Custom2(Base):
     """A custom class with a Custom1 field."""
 
-    c1: Optional[Custom1] = None
+    c1: Custom1 | None = None
     c1r: Custom1
 
     def set_c1r_foo(self, val: str):
@@ -2673,7 +2711,7 @@ class Custom2(Base):
 class Custom3(Base):
     """A custom class with a Custom2 field."""
 
-    c2: Optional[Custom2] = None
+    c2: Custom2 | None = None
     c2r: Custom2
 
 
@@ -2681,37 +2719,37 @@ def test_state_union_optional():
     """Test that state can be defined with Union and Optional vars."""
 
     class UnionState(BaseState):
-        int_float: Union[int, float] = 0
-        opt_int: Optional[int]
-        c3: Optional[Custom3]
+        int_float: int | float = 0
+        opt_int: int | None
+        c3: Custom3 | None
         c3i: Custom3  # implicitly required
         c3r: Custom3 = Custom3(c2r=Custom2(c1r=Custom1(foo="")))
-        custom_union: Union[Custom1, Custom2, Custom3] = Custom1(foo="")
+        custom_union: Custom1 | Custom2 | Custom3 = Custom1(foo="")
 
-    assert str(UnionState.c3.c2) == f'{UnionState.c3!s}?.["c2"]'  # type: ignore
-    assert str(UnionState.c3.c2.c1) == f'{UnionState.c3!s}?.["c2"]?.["c1"]'  # type: ignore
+    assert str(UnionState.c3.c2) == f'{UnionState.c3!s}?.["c2"]'  # pyright: ignore [reportOptionalMemberAccess]
+    assert str(UnionState.c3.c2.c1) == f'{UnionState.c3!s}?.["c2"]?.["c1"]'  # pyright: ignore [reportOptionalMemberAccess]
     assert (
-        str(UnionState.c3.c2.c1.foo) == f'{UnionState.c3!s}?.["c2"]?.["c1"]?.["foo"]'  # type: ignore
+        str(UnionState.c3.c2.c1.foo) == f'{UnionState.c3!s}?.["c2"]?.["c1"]?.["foo"]'  # pyright: ignore [reportOptionalMemberAccess]
     )
     assert (
-        str(UnionState.c3.c2.c1r.foo) == f'{UnionState.c3!s}?.["c2"]?.["c1r"]["foo"]'  # type: ignore
+        str(UnionState.c3.c2.c1r.foo) == f'{UnionState.c3!s}?.["c2"]?.["c1r"]["foo"]'  # pyright: ignore [reportOptionalMemberAccess]
     )
-    assert str(UnionState.c3.c2r.c1) == f'{UnionState.c3!s}?.["c2r"]["c1"]'  # type: ignore
+    assert str(UnionState.c3.c2r.c1) == f'{UnionState.c3!s}?.["c2r"]["c1"]'  # pyright: ignore [reportOptionalMemberAccess]
     assert (
-        str(UnionState.c3.c2r.c1.foo) == f'{UnionState.c3!s}?.["c2r"]["c1"]?.["foo"]'  # type: ignore
+        str(UnionState.c3.c2r.c1.foo) == f'{UnionState.c3!s}?.["c2r"]["c1"]?.["foo"]'  # pyright: ignore [reportOptionalMemberAccess]
     )
     assert (
-        str(UnionState.c3.c2r.c1r.foo) == f'{UnionState.c3!s}?.["c2r"]["c1r"]["foo"]'  # type: ignore
+        str(UnionState.c3.c2r.c1r.foo) == f'{UnionState.c3!s}?.["c2r"]["c1r"]["foo"]'  # pyright: ignore [reportOptionalMemberAccess]
     )
-    assert str(UnionState.c3i.c2) == f'{UnionState.c3i!s}["c2"]'  # type: ignore
-    assert str(UnionState.c3r.c2) == f'{UnionState.c3r!s}["c2"]'  # type: ignore
-    assert UnionState.custom_union.foo is not None  # type: ignore
-    assert UnionState.custom_union.c1 is not None  # type: ignore
-    assert UnionState.custom_union.c1r is not None  # type: ignore
-    assert UnionState.custom_union.c2 is not None  # type: ignore
-    assert UnionState.custom_union.c2r is not None  # type: ignore
-    assert types.is_optional(UnionState.opt_int._var_type)  # type: ignore
-    assert types.is_union(UnionState.int_float._var_type)  # type: ignore
+    assert str(UnionState.c3i.c2) == f'{UnionState.c3i!s}["c2"]'
+    assert str(UnionState.c3r.c2) == f'{UnionState.c3r!s}["c2"]'
+    assert UnionState.custom_union.foo is not None  # pyright: ignore [reportAttributeAccessIssue]
+    assert UnionState.custom_union.c1 is not None  # pyright: ignore [reportAttributeAccessIssue]
+    assert UnionState.custom_union.c1r is not None  # pyright: ignore [reportAttributeAccessIssue]
+    assert UnionState.custom_union.c2 is not None  # pyright: ignore [reportAttributeAccessIssue]
+    assert UnionState.custom_union.c2r is not None  # pyright: ignore [reportAttributeAccessIssue]
+    assert types.is_optional(UnionState.opt_int._var_type)  # pyright: ignore [reportAttributeAccessIssue, reportOptionalMemberAccess]
+    assert types.is_union(UnionState.int_float._var_type)  # pyright: ignore [reportAttributeAccessIssue]
 
 
 def test_set_base_field_via_setter():
@@ -2755,7 +2793,7 @@ def test_set_base_field_via_setter():
     assert "c2" in bfss.dirty_vars
 
 
-def exp_is_hydrated(state: BaseState, is_hydrated: bool = True) -> Dict[str, Any]:
+def exp_is_hydrated(state: BaseState, is_hydrated: bool = True) -> dict[str, Any]:
     """Expected IS_HYDRATED delta that would be emitted by HydrateMiddleware.
 
     Args:
@@ -2832,7 +2870,7 @@ async def test_preprocess(app_module_mock, token, test_state, expected, mocker):
         "reflex.state.State.class_subclasses", {test_state, OnLoadInternalState}
     )
     app = app_module_mock.app = App(
-        state=State, load_events={"index": [test_state.test_handler]}
+        _state=State, _load_events={"index": [test_state.test_handler]}
     )
     async with app.state_manager.modify_state(_substate_key(token, State)) as state:
         state.router_data = {"simulate": "hydrate"}
@@ -2857,10 +2895,10 @@ async def test_preprocess(app_module_mock, token, test_state, expected, mocker):
 
     events = updates[0].events
     assert len(events) == 2
-    assert (await state._process(events[0]).__anext__()).delta == {
-        test_state.get_full_name(): {"num": 1}
-    }
-    assert (await state._process(events[1]).__anext__()).delta == exp_is_hydrated(state)
+    async for update in state._process(events[0]):
+        assert update.delta == {test_state.get_full_name(): {"num": 1}}
+    async for update in state._process(events[1]):
+        assert update.delta == exp_is_hydrated(state)
 
     if isinstance(app.state_manager, StateManagerRedis):
         await app.state_manager.close()
@@ -2879,8 +2917,8 @@ async def test_preprocess_multiple_load_events(app_module_mock, token, mocker):
         "reflex.state.State.class_subclasses", {OnLoadState, OnLoadInternalState}
     )
     app = app_module_mock.app = App(
-        state=State,
-        load_events={"index": [OnLoadState.test_handler, OnLoadState.test_handler]},
+        _state=State,
+        _load_events={"index": [OnLoadState.test_handler, OnLoadState.test_handler]},
     )
     async with app.state_manager.modify_state(_substate_key(token, State)) as state:
         state.router_data = {"simulate": "hydrate"}
@@ -2905,13 +2943,12 @@ async def test_preprocess_multiple_load_events(app_module_mock, token, mocker):
 
     events = updates[0].events
     assert len(events) == 3
-    assert (await state._process(events[0]).__anext__()).delta == {
-        OnLoadState.get_full_name(): {"num": 1}
-    }
-    assert (await state._process(events[1]).__anext__()).delta == {
-        OnLoadState.get_full_name(): {"num": 2}
-    }
-    assert (await state._process(events[2]).__anext__()).delta == exp_is_hydrated(state)
+    async for update in state._process(events[0]):
+        assert update.delta == {OnLoadState.get_full_name(): {"num": 1}}
+    async for update in state._process(events[1]):
+        assert update.delta == {OnLoadState.get_full_name(): {"num": 2}}
+    async for update in state._process(events[2]):
+        assert update.delta == exp_is_hydrated(state)
 
     if isinstance(app.state_manager, StateManagerRedis):
         await app.state_manager.close()
@@ -2925,7 +2962,7 @@ async def test_get_state(mock_app: rx.App, token: str):
         mock_app: An app that will be returned by `get_app()`
         token: A token.
     """
-    mock_app.state_manager.state = mock_app.state = TestState
+    mock_app.state_manager.state = mock_app._state = TestState
 
     # Get instance of ChildState2.
     test_state = await mock_app.state_manager.get_state(
@@ -2984,10 +3021,6 @@ async def test_get_state(mock_app: rx.App, token: str):
     grandchild_state.value2 = "set_value"
 
     assert test_state.get_delta() == {
-        TestState.get_full_name(): {
-            "sum": 3.14,
-            "upper": "",
-        },
         GrandchildState.get_full_name(): {
             "value2": "set_value",
         },
@@ -3025,10 +3058,6 @@ async def test_get_state(mock_app: rx.App, token: str):
     child_state2.value = "set_c2_value"
 
     assert new_test_state.get_delta() == {
-        TestState.get_full_name(): {
-            "sum": 3.14,
-            "upper": "",
-        },
         ChildState2.get_full_name(): {
             "value": "set_c2_value",
         },
@@ -3083,8 +3112,8 @@ async def test_get_state_from_sibling_not_cached(mock_app: rx.App, token: str):
 
         child3_var: int = 0
 
-        @rx.var
-        def v(self):
+        @rx.var(cache=False)
+        def v(self) -> None:
             pass
 
     class Grandchild3(Child3):
@@ -3103,7 +3132,7 @@ async def test_get_state_from_sibling_not_cached(mock_app: rx.App, token: str):
 
         pass
 
-    mock_app.state_manager.state = mock_app.state = Parent
+    mock_app.state_manager.state = mock_app._state = Parent
 
     # Get the top level state via unconnected sibling.
     root = await mock_app.state_manager.get_state(_substate_key(token, Child))
@@ -3138,7 +3167,7 @@ async def test_get_state_from_sibling_not_cached(mock_app: rx.App, token: str):
 RxState = State
 
 
-def test_potentially_dirty_substates():
+def test_potentially_dirty_states():
     """Test that potentially_dirty_substates returns the correct substates.
 
     Even if the name "State" is shadowed, it should still work correctly.
@@ -3154,13 +3183,19 @@ def test_potentially_dirty_substates():
         def bar(self) -> str:
             return ""
 
-    assert RxState._potentially_dirty_substates() == {State}
-    assert State._potentially_dirty_substates() == {C1}
-    assert C1._potentially_dirty_substates() == set()
+    assert RxState._get_potentially_dirty_states() == set()
+    assert State._get_potentially_dirty_states() == set()
+    assert C1._get_potentially_dirty_states() == set()
 
 
-def test_router_var_dep() -> None:
-    """Test that router var dependencies are correctly tracked."""
+@pytest.mark.asyncio
+async def test_router_var_dep(state_manager: StateManager, token: str) -> None:
+    """Test that router var dependencies are correctly tracked.
+
+    Args:
+        state_manager: A state manager.
+        token: A token.
+    """
 
     class RouterVarParentState(State):
         """A parent state for testing router var dependency."""
@@ -3170,37 +3205,34 @@ def test_router_var_dep() -> None:
     class RouterVarDepState(RouterVarParentState):
         """A state with a router var dependency."""
 
-        @rx.var(cache=True)
+        @rx.var
         def foo(self) -> str:
             return self.router.page.params.get("foo", "")
 
     foo = RouterVarDepState.computed_vars["foo"]
     State._init_var_dependency_dicts()
 
-    assert foo._deps(objclass=RouterVarDepState) == {"router"}
-    assert RouterVarParentState._potentially_dirty_substates() == {RouterVarDepState}
-    assert RouterVarParentState._substate_var_dependencies == {
-        "router": {RouterVarDepState.get_name()}
+    assert foo._deps(objclass=RouterVarDepState) == {
+        RouterVarDepState.get_full_name(): {"router"}
     }
-    assert RouterVarDepState._computed_var_dependencies == {
-        "router": {"foo"},
-    }
+    assert (RouterVarDepState.get_full_name(), "foo") in State._var_dependencies[
+        "router"
+    ]
 
-    rx_state = State()
-    parent_state = RouterVarParentState()
-    state = RouterVarDepState()
-
-    # link states
-    rx_state.substates = {RouterVarParentState.get_name(): parent_state}
-    parent_state.parent_state = rx_state
-    state.parent_state = parent_state
-    parent_state.substates = {RouterVarDepState.get_name(): state}
+    # Get state from state manager.
+    state_manager.state = State
+    rx_state = await state_manager.get_state(_substate_key(token, State))
+    assert RouterVarParentState.get_name() in rx_state.substates
+    parent_state = rx_state.substates[RouterVarParentState.get_name()]
+    assert RouterVarDepState.get_name() in parent_state.substates
+    state = parent_state.substates[RouterVarDepState.get_name()]
 
     assert state.dirty_vars == set()
 
     # Reassign router var
     state.router = state.router
-    assert state.dirty_vars == {"foo", "router"}
+    assert rx_state.dirty_vars == {"router"}
+    assert state.dirty_vars == {"foo"}
     assert parent_state.dirty_substates == {RouterVarDepState.get_name()}
 
 
@@ -3229,9 +3261,9 @@ async def test_setvar(mock_app: rx.App, token: str):
             print(update)
     assert state.array == [43]
 
-    # Cannot setvar for non-existant var
+    # Cannot setvar for non-existent var
     with pytest.raises(AttributeError):
-        TestState.setvar("non_existant_var")
+        TestState.setvar("non_existent_var")
 
     # Cannot setvar for computed vars
     with pytest.raises(AttributeError):
@@ -3253,12 +3285,42 @@ async def test_setvar_async_setter():
 @pytest.mark.parametrize(
     "expiration_kwargs, expected_values",
     [
-        ({"redis_lock_expiration": 20000}, (20000, constants.Expiration.TOKEN)),
+        (
+            {"redis_lock_expiration": 20000},
+            (
+                20000,
+                constants.Expiration.TOKEN,
+                constants.Expiration.LOCK_WARNING_THRESHOLD,
+            ),
+        ),
         (
             {"redis_lock_expiration": 50000, "redis_token_expiration": 5600},
-            (50000, 5600),
+            (50000, 5600, constants.Expiration.LOCK_WARNING_THRESHOLD),
         ),
-        ({"redis_token_expiration": 7600}, (constants.Expiration.LOCK, 7600)),
+        (
+            {"redis_token_expiration": 7600},
+            (
+                constants.Expiration.LOCK,
+                7600,
+                constants.Expiration.LOCK_WARNING_THRESHOLD,
+            ),
+        ),
+        (
+            {"redis_lock_expiration": 50000, "redis_lock_warning_threshold": 1500},
+            (50000, constants.Expiration.TOKEN, 1500),
+        ),
+        (
+            {"redis_token_expiration": 5600, "redis_lock_warning_threshold": 3000},
+            (constants.Expiration.LOCK, 5600, 3000),
+        ),
+        (
+            {
+                "redis_lock_expiration": 50000,
+                "redis_token_expiration": 5600,
+                "redis_lock_warning_threshold": 2000,
+            },
+            (50000, 5600, 2000),
+        ),
     ],
 )
 def test_redis_state_manager_config_knobs(tmp_path, expiration_kwargs, expected_values):
@@ -3286,8 +3348,46 @@ config = rx.Config(
         from reflex.state import State, StateManager
 
         state_manager = StateManager.create(state=State)
-        assert state_manager.lock_expiration == expected_values[0]  # type: ignore
-        assert state_manager.token_expiration == expected_values[1]  # type: ignore
+        assert state_manager.lock_expiration == expected_values[0]  # pyright: ignore [reportAttributeAccessIssue]
+        assert state_manager.token_expiration == expected_values[1]  # pyright: ignore [reportAttributeAccessIssue]
+        assert state_manager.lock_warning_threshold == expected_values[2]  # pyright: ignore [reportAttributeAccessIssue]
+
+
+@pytest.mark.skipif("REDIS_URL" not in os.environ, reason="Test requires redis")
+@pytest.mark.parametrize(
+    "redis_lock_expiration, redis_lock_warning_threshold",
+    [
+        (10000, 10000),
+        (20000, 30000),
+    ],
+)
+def test_redis_state_manager_config_knobs_invalid_lock_warning_threshold(
+    tmp_path, redis_lock_expiration, redis_lock_warning_threshold
+):
+    proj_root = tmp_path / "project1"
+    proj_root.mkdir()
+
+    config_string = f"""
+import reflex as rx
+config = rx.Config(
+    app_name="project1",
+    redis_url="redis://localhost:6379",
+    state_manager_mode="redis",
+    redis_lock_expiration = {redis_lock_expiration},
+    redis_lock_warning_threshold = {redis_lock_warning_threshold},
+)
+    """
+
+    (proj_root / "rxconfig.py").write_text(dedent(config_string))
+
+    with chdir(proj_root):
+        # reload config for each parameter to avoid stale values
+        reflex.config.get_config(reload=True)
+        from reflex.state import State, StateManager
+
+        with pytest.raises(InvalidLockWarningThresholdError):
+            StateManager.create(state=State)
+        del sys.modules[constants.Config.MODULE]
 
 
 class MixinState(State, mixin=True):
@@ -3297,7 +3397,7 @@ class MixinState(State, mixin=True):
     _backend: int = 0
     _backend_no_default: dict
 
-    @rx.var(cache=True)
+    @rx.var
     def computed(self) -> str:
         """A computed var on mixin state.
 
@@ -3329,7 +3429,7 @@ def test_mixin_state() -> None:
     assert "computed" in UsesMixinState.vars
 
     assert (
-        UsesMixinState(_reflex_internal_init=True)._backend_no_default  # type: ignore
+        UsesMixinState(_reflex_internal_init=True)._backend_no_default  # pyright: ignore [reportCallIssue]
         is not UsesMixinState.backend_vars["_backend_no_default"]
     )
 
@@ -3349,7 +3449,7 @@ def test_assignment_to_undeclared_vars():
     class State(BaseState):
         val: str
         _val: str
-        __val: str  # type: ignore
+        __val: str  # pyright: ignore [reportGeneralTypeIssues]
 
         def handle_supported_regular_vars(self):
             self.val = "no underscore"
@@ -3369,8 +3469,8 @@ def test_assignment_to_undeclared_vars():
         def handle_var(self):
             self.value = 20
 
-    state = State()  # type: ignore
-    sub_state = Substate()  # type: ignore
+    state = State()  # pyright: ignore [reportCallIssue]
+    sub_state = Substate()  # pyright: ignore [reportCallIssue]
 
     with pytest.raises(SetUndefinedStateVarError):
         state.handle_regular_var()
@@ -3428,11 +3528,11 @@ def test_fallback_pickle():
     """Test that state serialization will fall back to dill."""
 
     class DillState(BaseState):
-        _o: Optional[Obj] = None
-        _f: Optional[Callable] = None
+        _o: Obj | None = None
+        _f: Callable | None = None
         _g: Any = None
 
-    state = DillState(_reflex_internal_init=True)  # type: ignore
+    state = DillState(_reflex_internal_init=True)  # pyright: ignore [reportCallIssue]
     state._o = Obj(_f=lambda: 42)
     state._f = lambda: 420
 
@@ -3443,14 +3543,14 @@ def test_fallback_pickle():
     assert unpickled_state._o._f() == 42
 
     # Threading locks are unpicklable normally, and raise TypeError instead of PicklingError.
-    state2 = DillState(_reflex_internal_init=True)  # type: ignore
+    state2 = DillState(_reflex_internal_init=True)  # pyright: ignore [reportCallIssue]
     state2._g = threading.Lock()
     pk2 = state2._serialize()
     unpickled_state2 = BaseState._deserialize(pk2)
     assert isinstance(unpickled_state2._g, type(threading.Lock()))
 
     # Some object, like generator, are still unpicklable with dill.
-    state3 = DillState(_reflex_internal_init=True)  # type: ignore
+    state3 = DillState(_reflex_internal_init=True)  # pyright: ignore [reportCallIssue]
     state3._g = (i for i in range(10))
 
     with pytest.raises(StateSerializationError):
@@ -3476,13 +3576,6 @@ class ModelV2(BaseModelV2):
     foo: str = "bar"
 
 
-@dataclasses.dataclass
-class ModelDC:
-    """A dataclass."""
-
-    foo: str = "bar"
-
-
 class PydanticState(rx.State):
     """A state with pydantic BaseModel vars."""
 
@@ -3504,11 +3597,22 @@ def test_mutable_models():
     assert state.dirty_vars == {"v2"}
     state.dirty_vars.clear()
 
-    # Not yet supported ENG-4083
-    # assert isinstance(state.dc, MutableProxy) #noqa: ERA001
-    # state.dc.foo = "baz" #noqa: ERA001
-    # assert state.dirty_vars == {"dc"} #noqa: ERA001
-    # state.dirty_vars.clear() #noqa: ERA001
+    assert isinstance(state.dc, MutableProxy)
+    state.dc.foo = "baz"
+    assert state.dirty_vars == {"dc"}
+    state.dirty_vars.clear()
+    assert state.dirty_vars == set()
+    state.dc.ls.append({"hi": "reflex"})
+    assert state.dirty_vars == {"dc"}
+    state.dirty_vars.clear()
+    assert state.dirty_vars == set()
+    assert dataclasses.asdict(state.dc) == {"foo": "baz", "ls": [{"hi": "reflex"}]}
+    assert dataclasses.astuple(state.dc) == ("baz", [{"hi": "reflex"}])
+    # creating a new instance shouldn't mark the state dirty
+    assert dataclasses.replace(state.dc, foo="quuc") == ModelDC(
+        foo="quuc", ls=[{"hi": "reflex"}]
+    )
+    assert state.dirty_vars == set()
 
 
 def test_get_value():
@@ -3576,7 +3680,7 @@ class UpcastState(rx.State):
         assert isinstance(o, Object)
         self.passed = True
 
-    def rx_base_or_none(self, o: Optional[Object]):  # noqa: D102
+    def rx_base_or_none(self, o: Object | None):  # noqa: D102
         if o is not None:
             assert isinstance(o, Object)
         self.passed = True
@@ -3621,7 +3725,7 @@ class UpcastState(rx.State):
         assert isinstance(a, list)
         self.passed = True
 
-    def py_unresolvable(self, u: "Unresolvable"):  # noqa: D102, F821  # type: ignore
+    def py_unresolvable(self, u: "Unresolvable"):  # noqa: D102, F821 # pyright: ignore [reportUndefinedVariable]
         assert isinstance(u, list)
         self.passed = True
 
@@ -3658,3 +3762,157 @@ async def test_upcast_event_handler_arg(handler, payload):
     state = UpcastState()
     async for update in state._process_event(handler, state, payload):
         assert update.delta == {UpcastState.get_full_name(): {"passed": True}}
+
+
+@pytest.mark.asyncio
+async def test_get_var_value(state_manager: StateManager, substate_token: str):
+    """Test that get_var_value works correctly.
+
+    Args:
+        state_manager: The state manager to use.
+        substate_token: Token for the substate used by state_manager.
+    """
+    state = await state_manager.get_state(substate_token)
+
+    # State Var from same state
+    assert await state.get_var_value(TestState.num1) == 0
+    state.num1 = 42
+    assert await state.get_var_value(TestState.num1) == 42
+
+    # State Var from another state
+    child_state = await state.get_state(ChildState)
+    assert await state.get_var_value(ChildState.count) == 23
+    child_state.count = 66
+    assert await state.get_var_value(ChildState.count) == 66
+
+    # LiteralVar with known value
+    assert await state.get_var_value(rx.Var.create([1, 2, 3])) == [1, 2, 3]
+
+    # Generic Var with no state
+    with pytest.raises(UnretrievableVarValueError):
+        await state.get_var_value(rx.Var("undefined"))
+
+
+@pytest.mark.asyncio
+async def test_async_computed_var_get_state(mock_app: rx.App, token: str):
+    """A test where an async computed var depends on a var in another state.
+
+    Args:
+        mock_app: An app that will be returned by `get_app()`
+        token: A token.
+    """
+
+    class Parent(BaseState):
+        """A root state like rx.State."""
+
+        parent_var: int = 0
+
+    class Child2(Parent):
+        """An unconnected child state."""
+
+        pass
+
+    class Child3(Parent):
+        """A child state with a computed var causing it to be pre-fetched.
+
+        If child3_var gets set to a value, and `get_state` erroneously
+        re-fetches it from redis, the value will be lost.
+        """
+
+        child3_var: int = 0
+
+        @rx.var(cache=True)
+        def v(self) -> int:
+            return self.child3_var
+
+    class Child(Parent):
+        """A state simulating UpdateVarsInternalState."""
+
+        @rx.var(cache=True)
+        async def v(self) -> int:
+            p = await self.get_state(Parent)
+            child3 = await self.get_state(Child3)
+            return child3.child3_var + p.parent_var
+
+    mock_app.state_manager.state = mock_app._state = Parent
+
+    # Get the top level state via unconnected sibling.
+    root = await mock_app.state_manager.get_state(_substate_key(token, Child))
+    # Set value in parent_var to assert it does not get refetched later.
+    root.parent_var = 1
+
+    if isinstance(mock_app.state_manager, StateManagerRedis):
+        # When redis is used, only states with uncached computed vars are pre-fetched.
+        assert Child2.get_name() not in root.substates
+        assert Child3.get_name() not in root.substates
+
+    # Get the unconnected sibling state, which will be used to `get_state` other instances.
+    child = root.get_substate(Child.get_full_name().split("."))
+
+    # Get an uncached child state.
+    child2 = await child.get_state(Child2)
+    assert child2.parent_var == 1
+
+    # Set value on already-cached Child3 state (prefetched because it has a Computed Var).
+    child3 = await child.get_state(Child3)
+    child3.child3_var = 1
+
+    assert await child.v == 2
+    assert await child.v == 2
+    root.parent_var = 2
+    assert await child.v == 3
+
+
+class Table(rx.ComponentState):
+    """A table state."""
+
+    data: ClassVar[Var]
+
+    @rx.var(cache=True, auto_deps=False)
+    async def rows(self) -> list[dict[str, Any]]:
+        """Computed var over the given rows.
+
+        Returns:
+            The data rows.
+        """
+        return await self.get_var_value(self.data)
+
+    @classmethod
+    def get_component(cls, data: Var) -> rx.Component:
+        """Get the component for the table.
+
+        Args:
+            data: The data var.
+
+        Returns:
+            The component.
+        """
+        cls.data = data
+        cls.computed_vars["rows"].add_dependency(cls, data)
+        return rx.foreach(data, lambda d: rx.text(d.to_string()))
+
+
+@pytest.mark.asyncio
+async def test_async_computed_var_get_var_value(mock_app: rx.App, token: str):
+    """A test where an async computed var depends on a var in another state.
+
+    Args:
+        mock_app: An app that will be returned by `get_app()`
+        token: A token.
+    """
+
+    class OtherState(rx.State):
+        """A state with a var."""
+
+        data: list[dict[str, Any]] = [{"foo": "bar"}]
+
+    mock_app.state_manager.state = mock_app._state = rx.State
+    comp = Table.create(data=OtherState.data)
+    state = await mock_app.state_manager.get_state(_substate_key(token, OtherState))
+    other_state = await state.get_state(OtherState)
+    assert comp.State is not None
+    comp_state = await state.get_state(comp.State)
+    assert comp_state.dirty_vars == set()
+
+    other_state.data.append({"foo": "baz"})
+    assert "rows" in comp_state.dirty_vars
