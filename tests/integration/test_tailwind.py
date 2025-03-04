@@ -10,7 +10,7 @@ from reflex.testing import AppHarness
 
 PARAGRAPH_TEXT = "Tailwind Is Cool"
 PARAGRAPH_CLASS_NAME = "text-red-500"
-TEXT_RED_500_COLOR = ["rgba(239, 68, 68, 1)", "rgb(239, 68, 68)"]
+TEXT_RED_500_COLOR = ["oklch(0.637 0.237 25.331)"]
 
 
 def TailwindApp(
