@@ -210,6 +210,25 @@ def _components_from(
     return ()
 
 
+DEFAULT_TRIGGERS: dict[str, types.ArgsSpec | Sequence[types.ArgsSpec]] = {
+    EventTriggers.ON_FOCUS: no_args_event_spec,
+    EventTriggers.ON_BLUR: no_args_event_spec,
+    EventTriggers.ON_CLICK: no_args_event_spec,
+    EventTriggers.ON_CONTEXT_MENU: no_args_event_spec,
+    EventTriggers.ON_DOUBLE_CLICK: no_args_event_spec,
+    EventTriggers.ON_MOUSE_DOWN: no_args_event_spec,
+    EventTriggers.ON_MOUSE_ENTER: no_args_event_spec,
+    EventTriggers.ON_MOUSE_LEAVE: no_args_event_spec,
+    EventTriggers.ON_MOUSE_MOVE: no_args_event_spec,
+    EventTriggers.ON_MOUSE_OUT: no_args_event_spec,
+    EventTriggers.ON_MOUSE_OVER: no_args_event_spec,
+    EventTriggers.ON_MOUSE_UP: no_args_event_spec,
+    EventTriggers.ON_SCROLL: no_args_event_spec,
+    EventTriggers.ON_MOUNT: no_args_event_spec,
+    EventTriggers.ON_UNMOUNT: no_args_event_spec,
+}
+
+
 class Component(BaseComponent, ABC):
     """A component with style, event trigger and other props."""
 
@@ -571,24 +590,7 @@ class Component(BaseComponent, ABC):
         Returns:
             The event triggers.
         """
-        default_triggers: dict[str, types.ArgsSpec | Sequence[types.ArgsSpec]] = {
-            EventTriggers.ON_FOCUS: no_args_event_spec,
-            EventTriggers.ON_BLUR: no_args_event_spec,
-            EventTriggers.ON_CLICK: no_args_event_spec,
-            EventTriggers.ON_CONTEXT_MENU: no_args_event_spec,
-            EventTriggers.ON_DOUBLE_CLICK: no_args_event_spec,
-            EventTriggers.ON_MOUSE_DOWN: no_args_event_spec,
-            EventTriggers.ON_MOUSE_ENTER: no_args_event_spec,
-            EventTriggers.ON_MOUSE_LEAVE: no_args_event_spec,
-            EventTriggers.ON_MOUSE_MOVE: no_args_event_spec,
-            EventTriggers.ON_MOUSE_OUT: no_args_event_spec,
-            EventTriggers.ON_MOUSE_OVER: no_args_event_spec,
-            EventTriggers.ON_MOUSE_UP: no_args_event_spec,
-            EventTriggers.ON_SCROLL: no_args_event_spec,
-            EventTriggers.ON_MOUNT: no_args_event_spec,
-            EventTriggers.ON_UNMOUNT: no_args_event_spec,
-        }
-
+        triggers = DEFAULT_TRIGGERS.copy()
         # Look for component specific triggers,
         # e.g. variable declared as EventHandler types.
         for name, field in self.get_fields().items():
@@ -600,8 +602,8 @@ class Component(BaseComponent, ABC):
                 annotation = field.annotation
                 if (metadata := getattr(annotation, "__metadata__", None)) is not None:
                     args_spec = metadata[0]
-                default_triggers[field.name] = args_spec or (no_args_event_spec)
-        return default_triggers
+                triggers[field.name] = args_spec or (no_args_event_spec)
+        return triggers
 
     def __repr__(self) -> str:
         """Represent the component in React.
