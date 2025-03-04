@@ -1922,7 +1922,7 @@ def _retrieve_cpu_info() -> CpuInfo | None:
     cpuinfo = {}
     try:
         if platform_os == "Windows":
-            cmd = 'powershell -Command "Get-CimInstance Win32_Processor | Select-Object AddressWidth,Manufacturer,Name | ConvertTo-Json"'
+            cmd = 'powershell -Command "Get-CimInstance Win32_Processor | Select-Object -First 1 | Select-Object AddressWidth,Manufacturer,Name | ConvertTo-Json"'
             output = processes.execute_command_and_return_output(cmd)
             if output:
                 cpu_data = json.loads(output)
