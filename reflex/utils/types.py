@@ -50,8 +50,8 @@ from reflex.utils import console
 # Potential GenericAlias types for isinstance checks.
 GenericAliasTypes = (_GenericAlias, GenericAlias, _SpecialGenericAlias)
 
-# Potential Union types for isinstance checks (UnionType added in py3.10).
-UnionTypes = (Union, types.UnionType) if hasattr(types, "UnionType") else (Union,)
+# Potential Union types for isinstance checks.
+UnionTypes = (Union, types.UnionType)
 
 # Union of generic types.
 GenericType = Type | _GenericAlias
@@ -283,6 +283,8 @@ def value_inside_optional(cls: GenericType) -> GenericType:
         The value inside the Optional type or the original type.
     """
     if is_union(cls) and len(args := get_args(cls)) >= 2 and type(None) in args:
+        if len(args) == 2:
+            return args[0] if args[1] is type(None) else args[1]
         return unionize(*[arg for arg in args if arg is not type(None)])
     return cls
 
@@ -305,9 +307,7 @@ def get_field_type(cls: GenericType, field_name: str) -> GenericType | None:
     ):
         return cls.__fields__[field_name].annotation
     type_hints = get_type_hints(cls)
-    if field_name in type_hints:
-        return type_hints[field_name]
-    return None
+    return type_hints.get(field_name, None)
 
 
 def get_property_hint(attr: Any | None) -> GenericType | None:
