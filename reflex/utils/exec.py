@@ -524,17 +524,12 @@ def output_system_info():
 
     fnm_info = f"[FNM {prerequisites.get_fnm_version()} (Expected: {constants.Fnm.VERSION}) (PATH: {constants.Fnm.EXE})]"
 
-    if system != "Windows" or (
-        system == "Windows" and prerequisites.is_windows_bun_supported()
-    ):
-        dependencies.extend(
-            [
-                fnm_info,
-                f"[Bun {prerequisites.get_bun_version()} (Expected: {constants.Bun.VERSION}) (PATH: {path_ops.get_bun_path()})]",
-            ],
-        )
-    else:
-        dependencies.append(fnm_info)
+    dependencies.extend(
+        [
+            fnm_info,
+            f"[Bun {prerequisites.get_bun_version()} (Expected: {constants.Bun.VERSION}) (PATH: {path_ops.get_bun_path()})]",
+        ],
+    )
 
     if system == "Linux":
         import distro  # pyright: ignore[reportMissingImports]
