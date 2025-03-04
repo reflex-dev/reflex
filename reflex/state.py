@@ -1355,7 +1355,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         if name in fields:
             field = fields[name]
             field_type = _unwrap_field_type(true_type_for_pydantic_field(field))
-            if not _isinstance(value, field_type):
+            if not _isinstance(value, field_type, nested=1, treat_var_as_type=False):
                 console.error(
                     f"Expected field '{type(self).__name__}.{name}' to receive type '{field_type}',"
                     f" but got '{value}' of type '{type(value)}'."
