@@ -692,7 +692,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         def computed_var_func(state: Self):
             result = f(state)
 
-            if not _isinstance(result, of_type):
+            if not _isinstance(result, of_type, nested=1, treat_var_as_type=False):
                 console.warn(
                     f"Inline ComputedVar {f} expected type {of_type}, got {type(result)}. "
                     "You can specify expected type with `of_type` argument."
@@ -1353,7 +1353,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             field_type = _unwrap_field_type(field.outer_type_)
             if field.allow_none and not is_optional(field_type):
                 field_type = field_type | None
-            if not _isinstance(value, field_type):
+            if not _isinstance(value, field_type, nested=1, treat_var_as_type=False):
                 console.error(
                     f"Expected field '{type(self).__name__}.{name}' to receive type '{field_type}',"
                     f" but got '{value}' of type '{type(value)}'."
