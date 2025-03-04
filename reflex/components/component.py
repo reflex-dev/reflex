@@ -188,7 +188,15 @@ def satisfies_type_hint(obj: Any, type_hint: Any) -> bool:
     Returns:
         Whether the object satisfies the type hint.
     """
-    return types._isinstance(obj, type_hint, nested=1, treat_var_as_type=True)
+    return types._isinstance(
+        obj,
+        type_hint,
+        nested=1,
+        treat_var_as_type=True,
+        treat_mutable_obj_as_immutable=(
+            isinstance(obj, Var) and not isinstance(obj, LiteralVar)
+        ),
+    )
 
 
 def _components_from(

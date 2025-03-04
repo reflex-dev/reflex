@@ -510,7 +510,12 @@ def does_obj_satisfy_typed_dict(obj: Any, cls: GenericType) -> bool:
 
 
 def _isinstance(
-    obj: Any, cls: GenericType, *, nested: int = 0, treat_var_as_type: bool = True
+    obj: Any,
+    cls: GenericType,
+    *,
+    nested: int = 0,
+    treat_var_as_type: bool = True,
+    treat_mutable_obj_as_immutable: bool = False,
 ) -> bool:
     """Check if an object is an instance of a class.
 
@@ -519,6 +524,7 @@ def _isinstance(
         cls: The class to check against.
         nested: How many levels deep to check.
         treat_var_as_type: Whether to treat Var as the type it represents, i.e. _var_type.
+        treat_mutable_obj_as_immutable: Whether to treat mutable objects as immutable. Useful if a component declares a mutable object as a prop, but the value is not expected to change.
 
     Returns:
         Whether the object is an instance of the class.
@@ -535,7 +541,11 @@ def _isinstance(
             obj._var_value, cls, nested=nested, treat_var_as_type=True
         )
     if isinstance(obj, Var):
-        return treat_var_as_type and _issubclass(obj._var_type, cls)
+        return treat_var_as_type and typehint_issubclass(
+            obj._var_type,
+            cls,
+            treat_mutable_superclasss_as_immutable=treat_mutable_obj_as_immutable,
+        )
 
     if cls is None or cls is type(None):
         return obj is None
@@ -568,12 +578,18 @@ def _isinstance(
     args = get_args(cls)
 
     if not args:
+        if treat_mutable_obj_as_immutable:
+            if origin is dict:
+                origin = Mapping
+            elif origin is list or origin is set:
+                origin = Sequence
         # cls is a simple generic class
         return isinstance(obj, origin)
 
     if nested > 0 and args:
         if origin is list:
-            return isinstance(obj, list) and all(
+            expected_class = Sequence if treat_mutable_obj_as_immutable else list
+            return isinstance(obj, expected_class) and all(
                 _isinstance(
                     item,
                     args[0],
@@ -607,7 +623,12 @@ def _isinstance(
                 )
             )
         if origin in (dict, Mapping, Breakpoints):
-            return isinstance(obj, Mapping) and all(
+            expected_class = (
+                dict
+                if origin is dict and not treat_mutable_obj_as_immutable
+                else Mapping
+            )
+            return isinstance(obj, expected_class) and all(
                 _isinstance(
                     key, args[0], nested=nested - 1, treat_var_as_type=treat_var_as_type
                 )
@@ -620,7 +641,8 @@ def _isinstance(
                 for key, value in obj.items()
             )
         if origin is set:
-            return isinstance(obj, set) and all(
+            expected_class = Sequence if treat_mutable_obj_as_immutable else set
+            return isinstance(obj, expected_class) and all(
                 _isinstance(
                     item,
                     args[0],
@@ -860,12 +882,17 @@ def safe_issubclass(cls: Type, cls_check: Type | tuple[Type, ...]):
         return False
 
 
-def typehint_issubclass(possible_subclass: Any, possible_superclass: Any) -> bool:
+def typehint_issubclass(
+    possible_subclass: Any,
+    possible_superclass: Any,
+    treat_mutable_superclasss_as_immutable: bool = False,
+) -> bool:
     """Check if a type hint is a subclass of another type hint.
 
     Args:
         possible_subclass: The type hint to check.
         possible_superclass: The type hint to check against.
+        treat_mutable_superclasss_as_immutable: Whether to treat target classes as immutable.
 
     Returns:
         Whether the type hint is a subclass of the other type hint.
@@ -909,10 +936,16 @@ def typehint_issubclass(possible_subclass: Any, possible_superclass: Any) -> boo
             for provided_arg in provided_args
         )
 
+    if treat_mutable_superclasss_as_immutable:
+        if accepted_type_origin is dict:
+            accepted_type_origin = Mapping
+        elif accepted_type_origin is list or accepted_type_origin is set:
+            accepted_type_origin = Sequence
+
     # Check if the origin of both types is the same (e.g., list for list[int])
-    # This probably should be issubclass instead of ==
-    if (provided_type_origin or possible_subclass) != (
-        accepted_type_origin or possible_superclass
+    if not safe_issubclass(
+        provided_type_origin or possible_subclass,  # pyright: ignore [reportArgumentType]
+        accepted_type_origin or possible_superclass,  # pyright: ignore [reportArgumentType]
     ):
         return False
 
