@@ -28,9 +28,9 @@ from typing import (
     _GenericAlias,  # pyright: ignore [reportAttributeAccessIssue]
     _SpecialGenericAlias,  # pyright: ignore [reportAttributeAccessIssue]
     get_args,
-    get_type_hints,
 )
 from typing import get_origin as get_origin_og
+from typing import get_type_hints as get_type_hints_og
 
 import sqlalchemy
 from pydantic.v1.fields import ModelField
@@ -140,6 +140,19 @@ def is_generic_alias(cls: GenericType) -> bool:
         Whether the class is a generic alias.
     """
     return isinstance(cls, GenericAliasTypes)  # pyright: ignore [reportArgumentType]
+
+
+@lru_cache()
+def get_type_hints(obj: Any) -> Dict[str, Any]:
+    """Get the type hints of a class.
+
+    Args:
+        obj: The class to get the type hints of.
+
+    Returns:
+        The type hints of the class.
+    """
+    return get_type_hints_og(obj)
 
 
 def unionize(*args: GenericType) -> Type:
