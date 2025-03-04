@@ -1356,12 +1356,9 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             field = fields[name]
             field_type = _unwrap_field_type(true_type_for_pydantic_field(field))
             if not _isinstance(value, field_type):
-                console.deprecate(
-                    "mismatched-type-assignment",
-                    f"Tried to assign value {value} of type {type(value)} to field {type(self).__name__}.{name} of type {field_type}."
-                    " This might lead to unexpected behavior.",
-                    "0.6.5",
-                    "0.7.0",
+                console.error(
+                    f"Expected field '{type(self).__name__}.{name}' to receive type '{field_type}',"
+                    f" but got '{value}' of type '{type(value)}'."
                 )
 
         # Set the attribute.
