@@ -1194,6 +1194,18 @@ def get_hydrate_event(state: BaseState) -> str:
     return get_event(state, constants.CompileVars.HYDRATE)
 
 
+def get_partial_hydrate_event(state: BaseState) -> str:
+    """Get the name of the partial hydrate event for the state.
+
+    Args:
+        state: The state.
+
+    Returns:
+        The name of the partial hydrate event.
+    """
+    return get_event(state, constants.CompileVars.PARTIAL_HYDRATE)
+
+
 def call_event_handler(
     event_callback: EventHandler | EventSpec,
     event_spec: ArgsSpec | Sequence[ArgsSpec],

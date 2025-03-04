@@ -48,6 +48,7 @@ twine = ">=4.0.0,<7.0"
 tomlkit = ">=0.12.4,<1.0"
 lazy_loader = ">=0.4"
 typing_extensions = ">=4.6.0"
+jsonpatch = "^1.33"
 
 [tool.poetry.group.dev.dependencies]
 pytest = ">=7.1.2,<9.0"
