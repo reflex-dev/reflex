@@ -1686,12 +1686,16 @@ def figure_out_type(value: Any) -> types.GenericType:
     if has_args(type_):
         return type_
     if isinstance(value, list):
+        if not value:
+            return Sequence[NoReturn]
         return Sequence[unionize(*(figure_out_type(v) for v in value))]
     if isinstance(value, set):
         return set[unionize(*(figure_out_type(v) for v in value))]
     if isinstance(value, tuple):
         return tuple[unionize(*(figure_out_type(v) for v in value)), ...]
     if isinstance(value, Mapping):
+        if not value:
+            return Mapping[NoReturn, NoReturn]
         return Mapping[
             unionize(*(figure_out_type(k) for k in value)),
             unionize(*(figure_out_type(v) for v in value.values())),
