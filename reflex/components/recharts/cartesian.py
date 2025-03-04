@@ -183,8 +183,8 @@ class ZAxis(Recharts):
     # The unique id of z-axis. Default: 0
     z_axis_id: Var[str | int]
 
-    # The range of axis. Default: [10, 10]
-    range: Var[Sequence[int]]
+    # The range of axis. Default: [60, 400]
+    range: Var[Sequence[int]] = LiteralVar.create([60, 400])
 
     # The unit of data displayed in the axis. This option will be used to represent an index unit in a scatter chart.
     unit: Var[str | int]
@@ -485,6 +485,9 @@ class Scatter(Recharts):
 
     # The source data, in which each element is an object.
     data: Var[Sequence[dict[str, Any]]]
+
+    # The name of the data. It is used to represent the scatter in legend.
+    name: Var[str]
 
     # The type of icon in legend. If set to 'none', no legend item will be rendered. 'line' | 'plainline' | 'square' | 'rect'| 'circle' | 'cross' | 'diamond' | 'square' | 'star' | 'triangle' | 'wye' | 'none'. Default: "circle"
     legend_type: Var[LiteralLegendType]

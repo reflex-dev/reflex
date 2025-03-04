@@ -598,7 +598,7 @@ class ZAxis(Recharts):
             *children: The children of the component.
             data_key: The key of data displayed in the axis.
             z_axis_id: The unique id of z-axis. Default: 0
-            range: The range of axis. Default: [10, 10]
+            range: The range of axis. Default: [60, 400]
             unit: The unit of data displayed in the axis. This option will be used to represent an index unit in a scatter chart.
             name: The name of data displayed in the axis. This option will be used to represent an index in a scatter chart.
             scale: If 'auto' set, the scale function is decided by the type of chart, and the props type. Default: "auto"
@@ -1272,6 +1272,7 @@ class Scatter(Recharts):
         cls,
         *children,
         data: Sequence[dict[str, Any]] | Var[Sequence[dict[str, Any]]] | None = None,
+        name: Var[str] | str | None = None,
         legend_type: Literal[
             "circle",
             "cross",
@@ -1352,6 +1353,7 @@ class Scatter(Recharts):
         Args:
             *children: The children of the component.
             data: The source data, in which each element is an object.
+            name: The name of the data. It is used to represent the scatter in legend.
             legend_type: The type of icon in legend. If set to 'none', no legend item will be rendered. 'line' | 'plainline' | 'square' | 'rect'| 'circle' | 'cross' | 'diamond' | 'square' | 'star' | 'triangle' | 'wye' | 'none'. Default: "circle"
             x_axis_id: The id of x-axis which is corresponding to the data. Default: 0
             y_axis_id: The id of y-axis which is corresponding to the data. Default: 0
