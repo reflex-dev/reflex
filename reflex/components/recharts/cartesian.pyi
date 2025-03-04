@@ -1272,7 +1272,7 @@ class Scatter(Recharts):
         cls,
         *children,
         data: Sequence[dict[str, Any]] | Var[Sequence[dict[str, Any]]] | None = None,
-        name: Optional[Union[Var[str], str]] = None,
+        name: Var[str] | str | None = None,
         legend_type: Literal[
             "circle",
             "cross",
