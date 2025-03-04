@@ -183,7 +183,7 @@ class ZAxis(Recharts):
     # The unique id of z-axis. Default: 0
     z_axis_id: Var[str | int]
 
-    # The range of axis. Default: [10, 10]
+    # The range of axis. Default: [60, 400]
     range: Var[Sequence[int]] = LiteralVar.create([60, 400])
 
     # The unit of data displayed in the axis. This option will be used to represent an index unit in a scatter chart.

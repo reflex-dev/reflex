@@ -598,7 +598,7 @@ class ZAxis(Recharts):
             *children: The children of the component.
             data_key: The key of data displayed in the axis.
             z_axis_id: The unique id of z-axis. Default: 0
-            range: The range of axis. Default: [10, 10]
+            range: The range of axis. Default: [60, 400]
             unit: The unit of data displayed in the axis. This option will be used to represent an index unit in a scatter chart.
             name: The name of data displayed in the axis. This option will be used to represent an index in a scatter chart.
             scale: If 'auto' set, the scale function is decided by the type of chart, and the props type. Default: "auto"
