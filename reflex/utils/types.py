@@ -19,6 +19,7 @@ from typing import (
     List,
     Literal,
     Mapping,
+    NoReturn,
     Sequence,
     Tuple,
     Type,
@@ -885,6 +886,7 @@ def safe_issubclass(cls: Type, cls_check: Type | tuple[Type, ...]):
 def typehint_issubclass(
     possible_subclass: Any,
     possible_superclass: Any,
+    *,
     treat_mutable_superclasss_as_immutable: bool = False,
 ) -> bool:
     """Check if a type hint is a subclass of another type hint.
@@ -901,6 +903,8 @@ def typehint_issubclass(
         return True
     if possible_subclass is Any:
         return False
+    if possible_subclass is NoReturn:
+        return True
 
     provided_type_origin = get_origin(possible_subclass)
     accepted_type_origin = get_origin(possible_superclass)
@@ -925,16 +929,36 @@ def typehint_issubclass(
     if accepted_type_origin is Union:
         if provided_type_origin is not Union:
             return any(
-                typehint_issubclass(possible_subclass, accepted_arg)
+                typehint_issubclass(
+                    possible_subclass,
+                    accepted_arg,
+                    treat_mutable_superclasss_as_immutable=treat_mutable_superclasss_as_immutable,
+                )
                 for accepted_arg in accepted_args
             )
         return all(
             any(
-                typehint_issubclass(provided_arg, accepted_arg)
+                typehint_issubclass(
+                    provided_arg,
+                    accepted_arg,
+                    treat_mutable_superclasss_as_immutable=treat_mutable_superclasss_as_immutable,
+                )
                 for accepted_arg in accepted_args
             )
             for provided_arg in provided_args
         )
+    if provided_type_origin is Union:
+        return all(
+            typehint_issubclass(
+                provided_arg,
+                possible_superclass,
+                treat_mutable_superclasss_as_immutable=treat_mutable_superclasss_as_immutable,
+            )
+            for provided_arg in provided_args
+        )
+
+    provided_type_origin = provided_type_origin or possible_subclass
+    accepted_type_origin = accepted_type_origin or possible_superclass
 
     if treat_mutable_superclasss_as_immutable:
         if accepted_type_origin is dict:
@@ -953,7 +977,11 @@ def typehint_issubclass(
     # Note this is not necessarily correct, as it doesn't check against contravariance and covariance
     # It also ignores when the length of the arguments is different
     return all(
-        typehint_issubclass(provided_arg, accepted_arg)
+        typehint_issubclass(
+            provided_arg,
+            accepted_arg,
+            treat_mutable_superclasss_as_immutable=treat_mutable_superclasss_as_immutable,
+        )
         for provided_arg, accepted_arg in zip(
             provided_args, accepted_args, strict=False
         )

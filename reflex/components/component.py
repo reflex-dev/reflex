@@ -458,8 +458,6 @@ class Component(BaseComponent, ABC):
 
             # Check whether the key is a component prop.
             if types._issubclass(field_type, Var):
-                # Used to store the passed types if var type is a union.
-                passed_types = None
                 try:
                     kwargs[key] = determine_key(value)
 
@@ -479,21 +477,8 @@ class Component(BaseComponent, ABC):
                     # If it is not a valid var, check the base types.
                     passed_type = type(value)
                     expected_type = fields[key].outer_type_
-                if types.is_union(passed_type):
-                    # We need to check all possible types in the union.
-                    passed_types = (
-                        arg for arg in passed_type.__args__ if arg is not type(None)
-                    )
-                if (
-                    # If the passed var is a union, check if all possible types are valid.
-                    passed_types
-                    and not all(
-                        types._issubclass(pt, expected_type) for pt in passed_types
-                    )
-                ) or (
-                    # Else just check if the passed var type is valid.
-                    not passed_types and not satisfies_type_hint(value, expected_type)
-                ):
+
+                if not satisfies_type_hint(value, expected_type):
                     value_name = value._js_expr if isinstance(value, Var) else value
 
                     additional_info = (
