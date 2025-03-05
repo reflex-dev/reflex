@@ -8,9 +8,11 @@ from typing import Any, Callable, Iterable
 
 from reflex.components.base.fragment import Fragment
 from reflex.components.component import Component
+from reflex.components.core.cond import cond
 from reflex.components.tags import IterTag
 from reflex.constants import MemoizationMode
 from reflex.state import ComponentState
+from reflex.utils import types
 from reflex.utils.exceptions import UntypedVarError
 from reflex.vars.base import LiteralVar, Var
 
@@ -84,6 +86,9 @@ class Foreach(Component):
                 f"Could not foreach over var `{iterable!s}` of type {iterable._var_type}. "
                 "See https://reflex.dev/docs/library/dynamic-rendering/foreach/"
             )
+
+        if types.is_optional(iterable._var_type):
+            iterable = cond(iterable, iterable, [])
 
         component = cls(
             iterable=iterable,

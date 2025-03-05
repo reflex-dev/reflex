@@ -1588,7 +1588,14 @@ def var_operation(  # pyright: ignore [reportOverlappingOverload]
 
 @overload
 def var_operation(
-    func: Callable[P, CustomVarOperationReturn[bool]],
+    func: Callable[P, CustomVarOperationReturn[None]],
+) -> Callable[P, NoneVar]: ...
+
+
+@overload
+def var_operation(  # pyright: ignore [reportOverlappingOverload]
+    func: Callable[P, CustomVarOperationReturn[bool]]
+    | Callable[P, CustomVarOperationReturn[bool | None]],
 ) -> Callable[P, BooleanVar]: ...
 
 
@@ -1597,13 +1604,15 @@ NUMBER_T = TypeVar("NUMBER_T", int, float, int | float)
 
 @overload
 def var_operation(
-    func: Callable[P, CustomVarOperationReturn[NUMBER_T]],
+    func: Callable[P, CustomVarOperationReturn[NUMBER_T]]
+    | Callable[P, CustomVarOperationReturn[NUMBER_T | None]],
 ) -> Callable[P, NumberVar[NUMBER_T]]: ...
 
 
 @overload
 def var_operation(
-    func: Callable[P, CustomVarOperationReturn[str]],
+    func: Callable[P, CustomVarOperationReturn[str]]
+    | Callable[P, CustomVarOperationReturn[str | None]],
 ) -> Callable[P, StringVar]: ...
 
 
@@ -1612,7 +1621,8 @@ LIST_T = TypeVar("LIST_T", bound=Sequence)
 
 @overload
 def var_operation(
-    func: Callable[P, CustomVarOperationReturn[LIST_T]],
+    func: Callable[P, CustomVarOperationReturn[LIST_T]]
+    | Callable[P, CustomVarOperationReturn[LIST_T | None]],
 ) -> Callable[P, ArrayVar[LIST_T]]: ...
 
 
@@ -1621,13 +1631,15 @@ OBJECT_TYPE = TypeVar("OBJECT_TYPE", bound=Mapping)
 
 @overload
 def var_operation(
-    func: Callable[P, CustomVarOperationReturn[OBJECT_TYPE]],
+    func: Callable[P, CustomVarOperationReturn[OBJECT_TYPE]]
+    | Callable[P, CustomVarOperationReturn[OBJECT_TYPE | None]],
 ) -> Callable[P, ObjectVar[OBJECT_TYPE]]: ...
 
 
 @overload
 def var_operation(
-    func: Callable[P, CustomVarOperationReturn[T]],
+    func: Callable[P, CustomVarOperationReturn[T]]
+    | Callable[P, CustomVarOperationReturn[T | None]],
 ) -> Callable[P, Var[T]]: ...
 
 
@@ -2700,7 +2712,7 @@ class CustomVarOperationReturn(Var[RETURN]):
 
 def var_operation_return(
     js_expression: str,
-    var_type: Type[RETURN] | None = None,
+    var_type: Type[RETURN] | GenericType | None = None,
     var_data: VarData | None = None,
 ) -> CustomVarOperationReturn[RETURN]:
     """Shortcut for creating a CustomVarOperationReturn.
@@ -3264,53 +3276,71 @@ class Field(Generic[FIELD_TYPE]):
         """
 
     @overload
-    def __get__(self: Field[bool], instance: None, owner: Any) -> BooleanVar: ...
-
-    @overload
-    def __get__(
-        self: Field[int] | Field[float] | Field[int | float], instance: None, owner: Any
-    ) -> NumberVar: ...
-
-    @overload
-    def __get__(self: Field[str], instance: None, owner: Any) -> StringVar: ...
-
-    @overload
     def __get__(self: Field[None], instance: None, owner: Any) -> NoneVar: ...
 
     @overload
     def __get__(
-        self: Field[list[V]] | Field[set[V]],
+        self: Field[bool] | Field[bool | None], instance: None, owner: Any
+    ) -> BooleanVar: ...
+
+    @overload
+    def __get__(
+        self: Field[int]
+        | Field[float]
+        | Field[int | float]
+        | Field[int | None]
+        | Field[float | None]
+        | Field[int | float | None],
+        instance: None,
+        owner: Any,
+    ) -> NumberVar: ...
+
+    @overload
+    def __get__(
+        self: Field[str] | Field[str | None], instance: None, owner: Any
+    ) -> StringVar: ...
+
+    @overload
+    def __get__(
+        self: Field[list[V]]
+        | Field[set[V]]
+        | Field[list[V] | None]
+        | Field[set[V] | None],
         instance: None,
         owner: Any,
     ) -> ArrayVar[Sequence[V]]: ...
 
     @overload
     def __get__(
-        self: Field[SEQUENCE_TYPE],
+        self: Field[SEQUENCE_TYPE] | Field[SEQUENCE_TYPE | None],
         instance: None,
         owner: Any,
     ) -> ArrayVar[SEQUENCE_TYPE]: ...
 
     @overload
     def __get__(
-        self: Field[MAPPING_TYPE], instance: None, owner: Any
+        self: Field[MAPPING_TYPE] | Field[MAPPING_TYPE | None],
+        instance: None,
+        owner: Any,
     ) -> ObjectVar[MAPPING_TYPE]: ...
 
     @overload
     def __get__(
-        self: Field[BASE_TYPE], instance: None, owner: Any
+        self: Field[BASE_TYPE] | Field[BASE_TYPE | None], instance: None, owner: Any
     ) -> ObjectVar[BASE_TYPE]: ...
 
     @overload
     def __get__(
-        self: Field[SQLA_TYPE], instance: None, owner: Any
+        self: Field[SQLA_TYPE] | Field[SQLA_TYPE | None], instance: None, owner: Any
     ) -> ObjectVar[SQLA_TYPE]: ...
 
     if TYPE_CHECKING:
 
         @overload
         def __get__(
-            self: Field[DATACLASS_TYPE], instance: None, owner: Any
+            self: Field[DATACLASS_TYPE] | Field[DATACLASS_TYPE | None],
+            instance: None,
+            owner: Any,
         ) -> ObjectVar[DATACLASS_TYPE]: ...
 
     @overload

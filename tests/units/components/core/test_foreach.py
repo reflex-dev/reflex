@@ -1,6 +1,7 @@
 import pydantic.v1
 import pytest
 
+import reflex as rx
 from reflex import el
 from reflex.base import Base
 from reflex.components.component import Component
@@ -53,6 +54,11 @@ class ForEachState(BaseState):
     color_index_tuple: tuple[int, str] = (0, "red")
 
     default_factory_list: list[ForEachTag] = pydantic.v1.Field(default_factory=list)
+
+    optional_list: rx.Field[list[str] | None] = rx.field(None)
+    optional_list_value: rx.Field[list[str] | None] = rx.field(["red", "yellow"])
+    optional_dict: rx.Field[dict[str, str] | None] = rx.field(None)
+    optional_dict_value: rx.Field[dict[str, str] | None] = rx.field({"name": "red"})
 
 
 class ComponentStateTest(ComponentState):
@@ -305,4 +311,29 @@ def test_foreach_default_factory():
     _ = Foreach.create(
         ForEachState.default_factory_list,
         lambda tag: text(tag.name),
+    )
+
+
+def test_optional_list():
+    """Test that the foreach component works with optional lists."""
+    Foreach.create(
+        ForEachState.optional_list,
+        lambda color: text(color),
+    )
+
+    Foreach.create(
+        ForEachState.optional_list_value,
+        lambda color: text(color),
+    )
+
+    print(repr(ForEachState.optional_dict.entries()._var_type))
+
+    Foreach.create(
+        ForEachState.optional_dict,
+        lambda color: text(color[0], color[1]),
+    )
+
+    Foreach.create(
+        ForEachState.optional_dict_value,
+        lambda color: text(color[0], color[1]),
     )

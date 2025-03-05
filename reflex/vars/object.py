@@ -76,13 +76,14 @@ class ObjectVar(Var[OBJECT_TYPE], python_types=Mapping):
         Returns:
             The type of the values of the object.
         """
-        fixed_type = get_origin(self._var_type) or self._var_type
+        var_type = types.value_inside_optional(self._var_type)
+        fixed_type = get_origin(var_type) or var_type
         if not isclass(fixed_type):
             return Any  # pyright: ignore [reportReturnType]
         if is_typeddict(fixed_type) or dataclasses.is_dataclass(fixed_type):
             annotations = get_type_hints(fixed_type)
             return unionize(*annotations.values())
-        args = get_args(self._var_type) if issubclass(fixed_type, Mapping) else ()
+        args = get_args(var_type) if issubclass(fixed_type, Mapping) else ()
         return args[1] if args else Any  # pyright: ignore [reportReturnType]
 
     def keys(self) -> ArrayVar[list[str]]:
@@ -425,9 +426,14 @@ def object_keys_operation(value: ObjectVar):
     Returns:
         The keys of the object.
     """
+    if not types.is_optional(value._var_type):
+        return var_operation_return(
+            js_expression=f"Object.keys({value})",
+            var_type=list[str],
+        )
     return var_operation_return(
-        js_expression=f"Object.keys({value})",
-        var_type=list[str],
+        js_expression=f"((value) => value ?? undefined === undefined ? undefined : Object.keys(value))({value})",
+        var_type=(list[str] | None),
     )
 
 
@@ -441,9 +447,14 @@ def object_values_operation(value: ObjectVar):
     Returns:
         The values of the object.
     """
+    if not types.is_optional(value._var_type):
+        return var_operation_return(
+            js_expression=f"Object.values({value})",
+            var_type=list[value._value_type()],
+        )
     return var_operation_return(
-        js_expression=f"Object.values({value})",
-        var_type=list[value._value_type()],
+        js_expression=f"((value) => value ?? undefined === undefined ? undefined : Object.values(value))({value})",
+        var_type=(list[value._value_type()] | None),
     )
 
 
@@ -457,9 +468,14 @@ def object_entries_operation(value: ObjectVar):
     Returns:
         The entries of the object.
     """
+    if not types.is_optional(value._var_type):
+        return var_operation_return(
+            js_expression=f"Object.entries({value})",
+            var_type=list[tuple[str, value._value_type()]],
+        )
     return var_operation_return(
-        js_expression=f"Object.entries({value})",
-        var_type=list[tuple[str, value._value_type()]],
+        js_expression=f"((value) => value ?? undefined === undefined ? undefined : Object.entries(value))({value})",
+        var_type=(list[tuple[str, value._value_type()]] | None),
     )
 
 
