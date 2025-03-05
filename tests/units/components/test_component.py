@@ -268,7 +268,7 @@ def test_set_style_attrs(component1):
     Args:
         component1: A test component.
     """
-    component = component1(color="white", text_align="center")
+    component = component1.create(color="white", text_align="center")
     assert str(component.style["color"]) == '"white"'
     assert str(component.style["textAlign"]) == '"center"'
 
@@ -876,7 +876,7 @@ def test_create_custom_component(my_component):
     Args:
         my_component: A test custom component.
     """
-    component = CustomComponent(component_fn=my_component, prop1="test", prop2=1)
+    component = rx.memo(my_component)(prop1="test", prop2=1)
     assert component.tag == "MyComponent"
     assert component.get_props() == {"prop1", "prop2"}
     assert component._get_all_custom_components() == {component}
@@ -888,8 +888,8 @@ def test_custom_component_hash(my_component):
     Args:
         my_component: A test custom component.
     """
-    component1 = CustomComponent(component_fn=my_component, prop1="test", prop2=1)
-    component2 = CustomComponent(component_fn=my_component, prop1="test", prop2=2)
+    component1 = rx.memo(my_component)(prop1="test", prop2=1)
+    component2 = rx.memo(my_component)(prop1="test", prop2=2)
     assert {component1, component2} == {component1}
 
 
