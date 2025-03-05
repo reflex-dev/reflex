@@ -122,6 +122,10 @@ def test_is_generic_alias(cls: type, expected: bool):
         (Mapping[str, int], dict[str, int], False),
         (Sequence[int], list[int], False),
         (Sequence[int] | list[int], list[int], False),
+        (str, Literal["test", "value"], True),
+        (str, Literal["test", "value", 2, 3], True),
+        (int, Literal["test", "value"], False),
+        (int, Literal["test", "value", 2, 3], True),
         *[
             (NoReturn, super_class, True)
             for super_class in [int, float, str, bool, list, dict, object, Any]
@@ -174,6 +178,10 @@ def test_typehint_issubclass(subclass, superclass, expected):
         (Mapping[str, int], dict[str, int], True),
         (Sequence[int], list[int], True),
         (Sequence[int] | list[int], list[int], True),
+        (str, Literal["test", "value"], True),
+        (str, Literal["test", "value", 2, 3], True),
+        (int, Literal["test", "value"], False),
+        (int, Literal["test", "value", 2, 3], True),
         *[
             (NoReturn, super_class, True)
             for super_class in [int, float, str, bool, list, dict, object, Any]

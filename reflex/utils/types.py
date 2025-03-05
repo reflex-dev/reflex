@@ -938,6 +938,7 @@ def typehint_issubclass(
     possible_superclass: Any,
     *,
     treat_mutable_superclasss_as_immutable: bool = False,
+    treat_literals_as_union_of_types: bool = True,
 ) -> bool:
     """Check if a type hint is a subclass of another type hint.
 
@@ -945,6 +946,7 @@ def typehint_issubclass(
         possible_subclass: The type hint to check.
         possible_superclass: The type hint to check against.
         treat_mutable_superclasss_as_immutable: Whether to treat target classes as immutable.
+        treat_literals_as_union_of_types: Whether to treat literals as a union of their types.
 
     Returns:
         Whether the type hint is a subclass of the other type hint.
@@ -962,6 +964,17 @@ def typehint_issubclass(
     if provided_type_origin is None and accepted_type_origin is None:
         # In this case, we are dealing with a non-generic type, so we can use issubclass
         return issubclass(possible_subclass, possible_superclass)
+
+    if treat_literals_as_union_of_types and is_literal(possible_superclass):
+        args = get_args(possible_superclass)
+        return any(
+            typehint_issubclass(
+                possible_subclass,
+                type(arg),
+                treat_mutable_superclasss_as_immutable=treat_mutable_superclasss_as_immutable,
+            )
+            for arg in args
+        )
 
     # Remove this check when Python 3.10 is the minimum supported version
     if hasattr(types, "UnionType"):
