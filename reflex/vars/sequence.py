@@ -49,6 +49,7 @@ from .base import (
 )
 from .number import (
     BooleanVar,
+    LiteralNumberVar,
     NumberVar,
     raise_unsupported_operand_types,
     ternary_operation,
@@ -1624,7 +1625,9 @@ def is_tuple_type(t: GenericType) -> bool:
     return get_origin(t) is tuple
 
 
-def _determine_value_of_array_index(var_type: GenericType, index: int | None = None):
+def _determine_value_of_array_index(
+    var_type: GenericType, index: int | float | None = None
+):
     """Determine the value of an array index.
 
     Args:
@@ -1647,7 +1650,7 @@ def _determine_value_of_array_index(var_type: GenericType, index: int | None = N
         Sequence,
         Iterable,
         list,
-        tuple,
+        set,
         collections.abc.Sequence,
         collections.abc.Iterable,
     ]:
@@ -1655,7 +1658,11 @@ def _determine_value_of_array_index(var_type: GenericType, index: int | None = N
         return args[0] if args else Any
     if origin_var_type is tuple:
         args = get_args(var_type)
-        return args[index % len(args)] if args and index is not None else Any
+        return (
+            args[int(index) % len(args)]
+            if args and index is not None
+            else (unionize(*args) if args else Any)
+        )
     return Any
 
 
@@ -1671,7 +1678,12 @@ def array_item_operation(array: ArrayVar, index: NumberVar | int):
         The item from the array.
     """
     element_type = _determine_value_of_array_index(
-        array._var_type, index if isinstance(index, int) else None
+        array._var_type,
+        (
+            index
+            if isinstance(index, int)
+            else (index._var_value if isinstance(index, LiteralNumberVar) else None)
+        ),
     )
 
     return var_operation_return(
