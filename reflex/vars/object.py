@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import collections.abc
 import dataclasses
 import typing
 from inspect import isclass
@@ -51,6 +52,29 @@ ARRAY_INNER_TYPE = TypeVar("ARRAY_INNER_TYPE")
 OTHER_KEY_TYPE = TypeVar("OTHER_KEY_TYPE")
 
 
+def _determine_value_type(var_type: GenericType):
+    origin_var_type = get_origin(var_type) or var_type
+
+    if origin_var_type in types.UnionTypes:
+        return unionize(
+            *[
+                _determine_value_type(arg)
+                for arg in get_args(var_type)
+                if arg is not type(None)
+            ]
+        )
+
+    if is_typeddict(origin_var_type) or dataclasses.is_dataclass(origin_var_type):
+        annotations = get_type_hints(origin_var_type)
+        return unionize(*annotations.values())
+
+    if origin_var_type in [dict, Mapping, collections.abc.Mapping]:
+        args = get_args(var_type)
+        return args[1] if args else Any
+
+    return Any
+
+
 class ObjectVar(Var[OBJECT_TYPE], python_types=Mapping):
     """Base class for immutable object vars."""
 
@@ -68,22 +92,15 @@ class ObjectVar(Var[OBJECT_TYPE], python_types=Mapping):
     ) -> Type[VALUE_TYPE]: ...
 
     @overload
-    def _value_type(self) -> Type: ...
+    def _value_type(self) -> GenericType: ...
 
-    def _value_type(self) -> Type:
+    def _value_type(self) -> GenericType:
         """Get the type of the values of the object.
 
         Returns:
             The type of the values of the object.
         """
-        fixed_type = get_origin(self._var_type) or self._var_type
-        if not isclass(fixed_type):
-            return Any  # pyright: ignore [reportReturnType]
-        if is_typeddict(fixed_type) or dataclasses.is_dataclass(fixed_type):
-            annotations = get_type_hints(fixed_type)
-            return unionize(*annotations.values())
-        args = get_args(self._var_type) if issubclass(fixed_type, Mapping) else ()
-        return args[1] if args else Any  # pyright: ignore [reportReturnType]
+        return _determine_value_type(self._var_type)
 
     def keys(self) -> ArrayVar[list[str]]:
         """Get the keys of the object.
