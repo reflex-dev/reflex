@@ -359,7 +359,7 @@ def can_use_in_object_var(cls: GenericType) -> bool:
         return all(can_use_in_object_var(t) for t in types.get_args(cls))
     return (
         inspect.isclass(cls)
-        and not issubclass(cls, Var)
+        and not safe_issubclass(cls, Var)
         and serializers.can_serialize(cls, dict)
     )
 
@@ -796,7 +796,7 @@ class Var(Generic[VAR_TYPE]):
 
         if inspect.isclass(output):
             for var_subclass in _var_subclasses[::-1]:
-                if issubclass(output, var_subclass.var_subclass):
+                if safe_issubclass(output, var_subclass.var_subclass):
                     current_var_type = self._var_type
                     if current_var_type is Any:
                         new_var_type = var_type
@@ -808,7 +808,7 @@ class Var(Generic[VAR_TYPE]):
                     return to_operation_return  # pyright: ignore [reportReturnType]
 
             # If we can't determine the first argument, we just replace the _var_type.
-            if not issubclass(output, Var) or var_type is None:
+            if not safe_issubclass(output, Var) or var_type is None:
                 return dataclasses.replace(
                     self,
                     _var_type=output,
@@ -850,7 +850,6 @@ class Var(Generic[VAR_TYPE]):
         Raises:
             TypeError: If the type is not supported for guessing.
         """
-        from .number import NumberVar
         from .object import ObjectVar
 
         var_type = self._var_type
@@ -868,11 +867,20 @@ class Var(Generic[VAR_TYPE]):
 
         if fixed_type in types.UnionTypes:
             inner_types = get_args(var_type)
+            non_optional_inner_types = [
+                types.value_inside_optional(inner_type) for inner_type in inner_types
+            ]
+            fixed_inner_types = [
+                get_origin(inner_type) or inner_type
+                for inner_type in non_optional_inner_types
+            ]
 
-            if all(
-                inspect.isclass(t) and issubclass(t, (int, float)) for t in inner_types
-            ):
-                return self.to(NumberVar, self._var_type)
+            for var_subclass in _var_subclasses[::-1]:
+                if all(
+                    safe_issubclass(t, var_subclass.python_types)
+                    for t in fixed_inner_types
+                ):
+                    return self.to(var_subclass.var_subclass, self._var_type)
 
             if can_use_in_object_var(var_type):
                 return self.to(ObjectVar, self._var_type)
@@ -890,7 +898,7 @@ class Var(Generic[VAR_TYPE]):
             return self.to(None)
 
         for var_subclass in _var_subclasses[::-1]:
-            if issubclass(fixed_type, var_subclass.python_types):
+            if safe_issubclass(fixed_type, var_subclass.python_types):
                 return self.to(var_subclass.var_subclass, self._var_type)
 
         if can_use_in_object_var(fixed_type):
@@ -918,17 +926,17 @@ class Var(Generic[VAR_TYPE]):
         if type_ is Literal:
             args = get_args(self._var_type)
             return args[0] if args else None
-        if issubclass(type_, str):
+        if safe_issubclass(type_, str):
             return ""
-        if issubclass(type_, types.get_args(int | float)):
+        if safe_issubclass(type_, types.get_args(int | float)):
             return 0
-        if issubclass(type_, bool):
+        if safe_issubclass(type_, bool):
             return False
-        if issubclass(type_, list):
+        if safe_issubclass(type_, list):
             return []
-        if issubclass(type_, Mapping):
+        if safe_issubclass(type_, Mapping):
             return {}
-        if issubclass(type_, tuple):
+        if safe_issubclass(type_, tuple):
             return ()
         if types.is_dataframe(type_):
             try:
@@ -939,7 +947,7 @@ class Var(Generic[VAR_TYPE]):
                 raise ImportError(
                     "Please install pandas to use dataframes in your app."
                 ) from e
-        return set() if issubclass(type_, set) else None
+        return set() if safe_issubclass(type_, set) else None
 
     def _get_setter_name(self, include_state: bool = True) -> str:
         """Get the name of the var's generated setter function.
@@ -1412,7 +1420,7 @@ class LiteralVar(Var):
         possible_bases = [
             base
             for base in bases_normalized
-            if issubclass(base, Var) and base != LiteralVar
+            if safe_issubclass(base, Var) and base != LiteralVar
         ]
 
         if not possible_bases:
@@ -2706,7 +2714,7 @@ class CustomVarOperationReturn(Var[RETURN]):
 
 def var_operation_return(
     js_expression: str,
-    var_type: Type[RETURN] | None = None,
+    var_type: Type[RETURN] | GenericType | None = None,
     var_data: VarData | None = None,
 ) -> CustomVarOperationReturn[RETURN]:
     """Shortcut for creating a CustomVarOperationReturn.

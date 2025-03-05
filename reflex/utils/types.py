@@ -156,15 +156,7 @@ def get_type_hints(obj: Any) -> Dict[str, Any]:
     return get_type_hints_og(obj)
 
 
-def unionize(*args: GenericType) -> Type:
-    """Unionize the types.
-
-    Args:
-        args: The types to unionize.
-
-    Returns:
-        The unionized types.
-    """
+def _unionize(args: list[GenericType]) -> Type:
     if not args:
         return Any  # pyright: ignore [reportReturnType]
     if len(args) == 1:
@@ -174,6 +166,18 @@ def unionize(*args: GenericType) -> Type:
     midpoint = len(args) // 2
     first_half, second_half = args[:midpoint], args[midpoint:]
     return Union[unionize(*first_half), unionize(*second_half)]  # pyright: ignore [reportReturnType]
+
+
+def unionize(*args: GenericType) -> Type:
+    """Unionize the types.
+
+    Args:
+        args: The types to unionize.
+
+    Returns:
+        The unionized types.
+    """
+    return _unionize([arg for arg in args if arg is not NoReturn])
 
 
 def is_none(cls: GenericType) -> bool:
