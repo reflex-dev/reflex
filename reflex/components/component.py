@@ -19,12 +19,11 @@ from typing import (
     Sequence,
     Set,
     Type,
+    TypeVar,
     Union,
     get_args,
     get_origin,
 )
-
-from typing_extensions import Self
 
 import reflex.state
 from reflex.base import Base
@@ -228,6 +227,8 @@ DEFAULT_TRIGGERS: dict[str, types.ArgsSpec | Sequence[types.ArgsSpec]] = {
     EventTriggers.ON_UNMOUNT: no_args_event_spec,
 }
 
+T = TypeVar("T", bound="Component")
+
 
 class Component(BaseComponent, ABC):
     """A component with style, event trigger and other props."""
@@ -403,7 +404,7 @@ class Component(BaseComponent, ABC):
                     inherited_rename_props.update(parent._rename_props)
             cls._rename_props = inherited_rename_props
 
-    def __init__(self, *args, **kwargs):
+    def _post_init(self, *args, **kwargs):
         """Initialize the component.
 
         Args:
@@ -416,16 +417,6 @@ class Component(BaseComponent, ABC):
         """
         # Set the id and children initially.
         children = kwargs.get("children", [])
-        initial_kwargs = {
-            "id": kwargs.get("id"),
-            "children": children,
-            **{
-                prop: LiteralVar.create(kwargs[prop])
-                for prop in self.get_initial_props()
-                if prop in kwargs
-            },
-        }
-        super().__init__(**initial_kwargs)
 
         self._validate_component_children(children)
 
@@ -580,7 +571,8 @@ class Component(BaseComponent, ABC):
                 kwargs["class_name"] = " ".join(class_name)
 
         # Construct the component.
-        super().__init__(*args, **kwargs)
+        for key, value in kwargs.items():
+            setattr(self, key, value)
 
     def get_event_triggers(
         self,
@@ -742,7 +734,7 @@ class Component(BaseComponent, ABC):
         ]
 
     @classmethod
-    def create(cls, *children, **props) -> Self:
+    def create(cls: Type[T], *children, **props) -> T:
         """Create the component.
 
         Args:
@@ -787,7 +779,22 @@ class Component(BaseComponent, ABC):
             for child in children
         ]
 
-        return cls(children=children, **props)
+        return cls._create(children, **props)
+
+    @classmethod
+    def _create(cls: Type[T], children: list[Component], **props: Any) -> T:
+        """Create the component.
+
+        Args:
+            children: The children of the component.
+            **props: The props of the component.
+
+        Returns:
+            The component.
+        """
+        comp = cls.construct(id=props.get("id"), children=children)
+        comp._post_init(children=children, **props)
+        return comp
 
     def add_style(self) -> dict[str, Any] | None:
         """Add style to the component.
@@ -1672,7 +1679,7 @@ class CustomComponent(Component):
     # The props of the component.
     props: dict[str, Any] = {}
 
-    def __init__(self, **kwargs):
+    def _post_init(self, **kwargs):
         """Initialize the custom component.
 
         Args:
@@ -1715,7 +1722,7 @@ class CustomComponent(Component):
                 )
             )
 
-        super().__init__(
+        super()._post_init(
             event_triggers={
                 key: EventChain.create(
                     value=props[key],
@@ -1876,7 +1883,9 @@ def custom_component(
     def wrapper(*children, **props) -> CustomComponent:
         # Remove the children from the props.
         props.pop("children", None)
-        return CustomComponent(component_fn=component_fn, children=children, **props)
+        return CustomComponent._create(
+            children=list(children), component_fn=component_fn, **props
+        )
 
     return wrapper
 
