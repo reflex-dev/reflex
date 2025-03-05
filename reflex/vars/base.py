@@ -858,8 +858,8 @@ class Var(Generic[VAR_TYPE]):
             return self.to(None)
         if var_type is NoReturn:
             return self.to(Any)
-        if types.is_optional(var_type):
-            var_type = types.get_args(var_type)[0]
+
+        var_type = types.value_inside_optional(var_type)
 
         if var_type is Any:
             return self
