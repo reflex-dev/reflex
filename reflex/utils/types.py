@@ -596,6 +596,8 @@ def _isinstance(
             obj._var_type,
             cls,
             treat_mutable_superclasss_as_immutable=treat_mutable_obj_as_immutable,
+            treat_literals_as_union_of_types=True,
+            treat_any_as_subtype_of_everything=True,
         )
 
     if cls is None or cls is type(None):
@@ -939,6 +941,7 @@ def typehint_issubclass(
     *,
     treat_mutable_superclasss_as_immutable: bool = False,
     treat_literals_as_union_of_types: bool = True,
+    treat_any_as_subtype_of_everything: bool = False,
 ) -> bool:
     """Check if a type hint is a subclass of another type hint.
 
@@ -947,6 +950,7 @@ def typehint_issubclass(
         possible_superclass: The type hint to check against.
         treat_mutable_superclasss_as_immutable: Whether to treat target classes as immutable.
         treat_literals_as_union_of_types: Whether to treat literals as a union of their types.
+        treat_any_as_subtype_of_everything: Whether to treat Any as a subtype of everything. This is the default behavior in Python.
 
     Returns:
         Whether the type hint is a subclass of the other type hint.
@@ -954,7 +958,7 @@ def typehint_issubclass(
     if possible_superclass is Any:
         return True
     if possible_subclass is Any:
-        return False
+        return treat_any_as_subtype_of_everything
     if possible_subclass is NoReturn:
         return True
 
@@ -972,6 +976,8 @@ def typehint_issubclass(
                 possible_subclass,
                 type(arg),
                 treat_mutable_superclasss_as_immutable=treat_mutable_superclasss_as_immutable,
+                treat_literals_as_union_of_types=treat_literals_as_union_of_types,
+                treat_any_as_subtype_of_everything=treat_any_as_subtype_of_everything,
             )
             for arg in args
         )
@@ -996,6 +1002,8 @@ def typehint_issubclass(
                     possible_subclass,
                     accepted_arg,
                     treat_mutable_superclasss_as_immutable=treat_mutable_superclasss_as_immutable,
+                    treat_literals_as_union_of_types=treat_literals_as_union_of_types,
+                    treat_any_as_subtype_of_everything=treat_any_as_subtype_of_everything,
                 )
                 for accepted_arg in accepted_args
             )
@@ -1005,6 +1013,8 @@ def typehint_issubclass(
                     provided_arg,
                     accepted_arg,
                     treat_mutable_superclasss_as_immutable=treat_mutable_superclasss_as_immutable,
+                    treat_literals_as_union_of_types=treat_literals_as_union_of_types,
+                    treat_any_as_subtype_of_everything=treat_any_as_subtype_of_everything,
                 )
                 for accepted_arg in accepted_args
             )
@@ -1016,6 +1026,8 @@ def typehint_issubclass(
                 provided_arg,
                 possible_superclass,
                 treat_mutable_superclasss_as_immutable=treat_mutable_superclasss_as_immutable,
+                treat_literals_as_union_of_types=treat_literals_as_union_of_types,
+                treat_any_as_subtype_of_everything=treat_any_as_subtype_of_everything,
             )
             for provided_arg in provided_args
         )
@@ -1044,6 +1056,8 @@ def typehint_issubclass(
             provided_arg,
             accepted_arg,
             treat_mutable_superclasss_as_immutable=treat_mutable_superclasss_as_immutable,
+            treat_literals_as_union_of_types=treat_literals_as_union_of_types,
+            treat_any_as_subtype_of_everything=treat_any_as_subtype_of_everything,
         )
         for provided_arg, accepted_arg in zip(
             provided_args, accepted_args, strict=False
