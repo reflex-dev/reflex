@@ -2,14 +2,15 @@
 
 from __future__ import annotations
 
+import collections.abc
 import dataclasses
 import inspect
 import json
 import re
-import typing
 from typing import (
     TYPE_CHECKING,
     Any,
+    Iterable,
     List,
     Literal,
     Mapping,
@@ -18,6 +19,7 @@ from typing import (
     Type,
     TypeVar,
     Union,
+    get_args,
     overload,
 )
 
@@ -26,6 +28,7 @@ from typing_extensions import TypeVar as TypingExtensionsTypeVar
 from reflex import constants
 from reflex.constants.base import REFLEX_VAR_OPENING_TAG
 from reflex.constants.colors import Color
+from reflex.utils import types
 from reflex.utils.exceptions import VarTypeError
 from reflex.utils.types import GenericType, get_origin
 
@@ -1622,6 +1625,47 @@ def is_tuple_type(t: GenericType) -> bool:
     return get_origin(t) is tuple
 
 
+def _determine_value_of_array_index(
+    var_type: GenericType, index: int | float | None = None
+):
+    """Determine the value of an array index.
+
+    Args:
+        var_type: The type of the array.
+        index: The index of the array.
+
+    Returns:
+        The value of the array index.
+    """
+    origin_var_type = get_origin(var_type) or var_type
+    if origin_var_type in types.UnionTypes:
+        return unionize(
+            *[
+                _determine_value_of_array_index(t, index)
+                for t in get_args(var_type)
+                if t is not type(None)
+            ]
+        )
+    if origin_var_type in [
+        Sequence,
+        Iterable,
+        list,
+        set,
+        collections.abc.Sequence,
+        collections.abc.Iterable,
+    ]:
+        args = get_args(var_type)
+        return args[0] if args else Any
+    if origin_var_type is tuple:
+        args = get_args(var_type)
+        return (
+            args[int(index) % len(args)]
+            if args and index is not None
+            else (unionize(*args) if args else Any)
+        )
+    return Any
+
+
 @var_operation
 def array_item_operation(array: ArrayVar, index: NumberVar | int):
     """Get an item from an array.
@@ -1633,12 +1677,14 @@ def array_item_operation(array: ArrayVar, index: NumberVar | int):
     Returns:
         The item from the array.
     """
-    args = typing.get_args(array._var_type)
-    if args and isinstance(index, LiteralNumberVar) and is_tuple_type(array._var_type):
-        index_value = int(index._var_value)
-        element_type = args[index_value % len(args)]
-    else:
-        element_type = unionize(*args)
+    element_type = _determine_value_of_array_index(
+        array._var_type,
+        (
+            index
+            if isinstance(index, int)
+            else (index._var_value if isinstance(index, LiteralNumberVar) else None)
+        ),
+    )
 
     return var_operation_return(
         js_expression=f"{array!s}.at({index!s})",
