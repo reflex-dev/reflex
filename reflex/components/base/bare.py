@@ -76,7 +76,7 @@ class Bare(Component):
                 validate_str(contents)
             contents = str(contents) if contents is not None else ""
 
-        return cls(contents=contents)
+        return cls._create(children=[], contents=contents)
 
     def _get_all_hooks_internal(self) -> dict[str, VarData | None]:
         """Include the hooks for the component.

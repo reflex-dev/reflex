@@ -36,7 +36,12 @@ from reflex import constants
 from reflex.base import Base
 from reflex.utils import console
 from reflex.utils.exceptions import ConfigError, EnvironmentVarValueError
-from reflex.utils.types import GenericType, is_union, value_inside_optional
+from reflex.utils.types import (
+    GenericType,
+    is_union,
+    true_type_for_pydantic_field,
+    value_inside_optional,
+)
 
 try:
     from dotenv import load_dotenv  # pyright: ignore [reportMissingImports]
@@ -943,7 +948,9 @@ class Config(Base):
             # If the env var is set, override the config value.
             if env_var is not None:
                 # Interpret the value.
-                value = interpret_env_var_value(env_var, field.outer_type_, field.name)
+                value = interpret_env_var_value(
+                    env_var, true_type_for_pydantic_field(field), field.name
+                )
 
                 # Set the value.
                 updated_values[key] = value

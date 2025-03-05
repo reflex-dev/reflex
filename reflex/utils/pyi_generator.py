@@ -65,6 +65,7 @@ DEFAULT_TYPING_IMPORTS = {
     "Literal",
     "Optional",
     "Union",
+    "Annotated",
 }
 
 # TODO: fix import ordering and unused imports with ruff later
