@@ -56,6 +56,7 @@ class ResponsiveContainer(Recharts, MemoizationLeaf):
         "PieChart",
         "RadarChart",
         "RadialBarChart",
+        "ResponsiveContainer",
         "ScatterChart",
         "Treemap",
         "ComposedChart",

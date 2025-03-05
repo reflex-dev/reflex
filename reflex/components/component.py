@@ -51,7 +51,7 @@ from reflex.event import (
     no_args_event_spec,
 )
 from reflex.style import Style, format_as_emotion
-from reflex.utils import format, imports, types
+from reflex.utils import console, format, imports, types
 from reflex.utils.imports import ImportDict, ImportVar, ParsedImportDict, parse_imports
 from reflex.vars import VarData
 from reflex.vars.base import (
@@ -177,6 +177,18 @@ ComponentChild = types.PrimitiveType | Var | BaseComponent
 ComponentChildTypes = (*types.PrimitiveTypes, Var, BaseComponent)
 
 
+def _satisfies_type_hint(obj: Any, type_hint: Any) -> bool:
+    return types._isinstance(
+        obj,
+        type_hint,
+        nested=1,
+        treat_var_as_type=True,
+        treat_mutable_obj_as_immutable=(
+            isinstance(obj, Var) and not isinstance(obj, LiteralVar)
+        ),
+    )
+
+
 def satisfies_type_hint(obj: Any, type_hint: Any) -> bool:
     """Check if an object satisfies a type hint.
 
@@ -187,7 +199,23 @@ def satisfies_type_hint(obj: Any, type_hint: Any) -> bool:
     Returns:
         Whether the object satisfies the type hint.
     """
-    return types._isinstance(obj, type_hint, nested=1, treat_var_as_type=True)
+    if _satisfies_type_hint(obj, type_hint):
+        return True
+    if _satisfies_type_hint(obj, type_hint | None):
+        obj = (
+            obj
+            if not isinstance(obj, Var)
+            else (obj._var_value if isinstance(obj, LiteralVar) else obj)
+        )
+        console.deprecate(
+            "implicit-none-for-component-fields",
+            reason="Passing Vars with possible None values to component fields not explicitly marked as Optional is deprecated. "
+            + f"Passed {obj!s} of type {type(obj) if not isinstance(obj, Var) else obj._var_type} to {type_hint}.",
+            deprecation_version="0.7.2",
+            removal_version="0.8.0",
+        )
+        return True
+    return False
 
 
 def _components_from(
@@ -466,8 +494,6 @@ class Component(BaseComponent, ABC):
 
             # Check whether the key is a component prop.
             if types._issubclass(field_type, Var):
-                # Used to store the passed types if var type is a union.
-                passed_types = None
                 try:
                     kwargs[key] = determine_key(value)
 
@@ -490,21 +516,8 @@ class Component(BaseComponent, ABC):
                     # If it is not a valid var, check the base types.
                     passed_type = type(value)
                     expected_type = types.get_field_type(type(self), key)
-                if types.is_union(passed_type):
-                    # We need to check all possible types in the union.
-                    passed_types = (
-                        arg for arg in passed_type.__args__ if arg is not type(None)
-                    )
-                if (
-                    # If the passed var is a union, check if all possible types are valid.
-                    passed_types
-                    and not all(
-                        types._issubclass(pt, expected_type) for pt in passed_types
-                    )
-                ) or (
-                    # Else just check if the passed var type is valid.
-                    not passed_types and not satisfies_type_hint(value, expected_type)
-                ):
+
+                if not satisfies_type_hint(value, expected_type):
                     value_name = value._js_expr if isinstance(value, Var) else value
 
                     additional_info = (

@@ -2,7 +2,17 @@ import os
 import typing
 from functools import cached_property
 from pathlib import Path
-from typing import Any, ClassVar, List, Literal, Type, Union
+from typing import (
+    Any,
+    ClassVar,
+    List,
+    Literal,
+    Mapping,
+    NoReturn,
+    Sequence,
+    Type,
+    Union,
+)
 
 import pytest
 import typer
@@ -109,10 +119,86 @@ def test_is_generic_alias(cls: type, expected: bool):
         (dict[str, str], dict[str, str], True),
         (dict[str, str], dict[str, Any], True),
         (dict[str, Any], dict[str, Any], True),
+        (Mapping[str, int], dict[str, int], False),
+        (Sequence[int], list[int], False),
+        (Sequence[int] | list[int], list[int], False),
+        (str, Literal["test", "value"], True),
+        (str, Literal["test", "value", 2, 3], True),
+        (int, Literal["test", "value"], False),
+        (int, Literal["test", "value", 2, 3], True),
+        *[
+            (NoReturn, super_class, True)
+            for super_class in [int, float, str, bool, list, dict, object, Any]
+        ],
+        *[
+            (list[NoReturn], list[super_class], True)
+            for super_class in [int, float, str, bool, list, dict, object, Any]
+        ],
     ],
 )
 def test_typehint_issubclass(subclass, superclass, expected):
     assert types.typehint_issubclass(subclass, superclass) == expected
+
+
+@pytest.mark.parametrize(
+    ("subclass", "superclass", "expected"),
+    [
+        *[
+            (base_type, base_type, True)
+            for base_type in [int, float, str, bool, list, dict]
+        ],
+        *[
+            (one_type, another_type, False)
+            for one_type in [int, float, str, list, dict]
+            for another_type in [int, float, str, list, dict]
+            if one_type != another_type
+        ],
+        (bool, int, True),
+        (int, bool, False),
+        (list, List, True),
+        (list, list[str], True),  # this is wrong, but it's a limitation of the function
+        (List, list, True),
+        (list[int], list, True),
+        (list[int], List, True),
+        (list[int], list[str], False),
+        (list[int], list[int], True),
+        (list[int], list[float], False),
+        (list[int], list[int | float], True),
+        (list[int], list[float | str], False),
+        (int | float, list[int | float], False),
+        (int | float, int | float | str, True),
+        (int | float, str | float, False),
+        (dict[str, int], dict[str, int], True),
+        (dict[str, bool], dict[str, int], True),
+        (dict[str, int], dict[str, bool], False),
+        (dict[str, Any], dict[str, str], False),
+        (dict[str, str], dict[str, str], True),
+        (dict[str, str], dict[str, Any], True),
+        (dict[str, Any], dict[str, Any], True),
+        (Mapping[str, int], dict[str, int], True),
+        (Sequence[int], list[int], True),
+        (Sequence[int] | list[int], list[int], True),
+        (str, Literal["test", "value"], True),
+        (str, Literal["test", "value", 2, 3], True),
+        (int, Literal["test", "value"], False),
+        (int, Literal["test", "value", 2, 3], True),
+        *[
+            (NoReturn, super_class, True)
+            for super_class in [int, float, str, bool, list, dict, object, Any]
+        ],
+        *[
+            (list[NoReturn], list[super_class], True)
+            for super_class in [int, float, str, bool, list, dict, object, Any]
+        ],
+    ],
+)
+def test_typehint_issubclass_mutable_as_immutable(subclass, superclass, expected):
+    assert (
+        types.typehint_issubclass(
+            subclass, superclass, treat_mutable_superclasss_as_immutable=True
+        )
+        == expected
+    )
 
 
 def test_validate_none_bun_path(mocker):
