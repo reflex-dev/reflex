@@ -45,7 +45,7 @@ from .config import (
 )
 from .custom_components import CustomComponents
 from .event import Endpoint, EventTriggers, SocketEvent
-from .installer import Bun, Fnm, Node, PackageJson
+from .installer import Bun, Node, PackageJson
 from .route import (
     ROUTE_NOT_FOUND,
     ROUTER,
@@ -77,7 +77,6 @@ __ALL__ = [
     EventTriggers,
     Expiration,
     Ext,
-    Fnm,
     REFLEX_VAR_CLOSING_TAG,
     REFLEX_VAR_OPENING_TAG,
     GitIgnore,

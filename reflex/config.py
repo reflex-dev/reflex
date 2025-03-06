@@ -595,7 +595,7 @@ class EnvironmentVariables:
         constants.CompileContext.UNDEFINED, internal=True
     )
 
-    # Whether to use npm over bun to install frontend packages.
+    # Whether to use npm over bun to install and run the frontend.
     REFLEX_USE_NPM: EnvVar[bool] = env_var(False)
 
     # The npm registry to use.

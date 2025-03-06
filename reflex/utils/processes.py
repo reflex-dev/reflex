@@ -10,7 +10,7 @@ import signal
 import subprocess
 from concurrent import futures
 from pathlib import Path
-from typing import Callable, Generator, Tuple
+from typing import Callable, Generator, Sequence, Tuple
 
 import psutil
 import typer
@@ -380,11 +380,11 @@ def get_command_with_loglevel(command: list[str]) -> list[str]:
     return command
 
 
-def run_process_with_fallback(
+def run_process_with_fallbacks(
     args: list[str],
     *,
     show_status_message: str,
-    fallback: str | list | None = None,
+    fallbacks: str | Sequence[str] | Sequence[Sequence[str]] | None = None,
     analytics_enabled: bool = False,
     **kwargs,
 ):
@@ -393,12 +393,12 @@ def run_process_with_fallback(
     Args:
         args: A string, or a sequence of program arguments.
         show_status_message: The status message to be displayed in the console.
-        fallback: The fallback command to run.
+        fallbacks: The fallback command to run if the initial command fails.
         analytics_enabled: Whether analytics are enabled for this command.
         kwargs: Kwargs to pass to new_process function.
     """
     process = new_process(get_command_with_loglevel(args), **kwargs)
-    if fallback is None:
+    if not fallbacks:
         # No fallback given, or this _is_ the fallback command.
         show_status(
             show_status_message,
@@ -408,16 +408,24 @@ def run_process_with_fallback(
     else:
         # Suppress errors for initial command, because we will try to fallback
         show_status(show_status_message, process, suppress_errors=True)
+
+        current_fallback = fallbacks[0] if not isinstance(fallbacks, str) else fallbacks
+        next_fallbacks = fallbacks[1:] if not isinstance(fallbacks, str) else None
+
         if process.returncode != 0:
             # retry with fallback command.
-            fallback_args = [fallback, *args[1:]]
-            console.warn(
-                f"There was an error running command: {args}. Falling back to: {fallback_args}."
+            fallback_with_args = (
+                [current_fallback, *args[1:]]
+                if isinstance(fallbacks, str)
+                else [*current_fallback, *args[1:]]
             )
-            run_process_with_fallback(
-                fallback_args,
+            console.warn(
+                f"There was an error running command: {args}. Falling back to: {fallback_with_args}."
+            )
+            run_process_with_fallbacks(
+                fallback_with_args,
                 show_status_message=show_status_message,
-                fallback=None,
+                fallbacks=next_fallbacks,
                 analytics_enabled=analytics_enabled,
                 **kwargs,
             )

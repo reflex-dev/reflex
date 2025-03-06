@@ -9,7 +9,6 @@ import shutil
 import stat
 from pathlib import Path
 
-from reflex import constants
 from reflex.config import environment, get_config
 
 # Shorthand for join.
@@ -170,11 +169,7 @@ def get_node_bin_path() -> Path | None:
     Returns:
         The path to the node bin folder.
     """
-    bin_path = Path(constants.Node.BIN_PATH)
-    if not bin_path.exists():
-        path = which("node")
-        return path.parent.absolute() if path else None
-    return bin_path.absolute()
+    return bin_path.parent.absolute() if (bin_path := get_node_path()) else None
 
 
 def get_node_path() -> Path | None:
@@ -183,10 +178,7 @@ def get_node_path() -> Path | None:
     Returns:
         The path to the node binary file.
     """
-    node_path = Path(constants.Node.PATH)
-    if use_system_node() or not node_path.exists():
-        node_path = which("node")
-    return node_path
+    return which("node")
 
 
 def get_npm_path() -> Path | None:
@@ -195,10 +187,7 @@ def get_npm_path() -> Path | None:
     Returns:
         The path to the npm binary file.
     """
-    npm_path = Path(constants.Node.NPM_PATH)
-    if use_system_node() or not npm_path.exists():
-        npm_path = which("npm")
-    return npm_path.absolute() if npm_path else None
+    return npm_path.absolute() if (npm_path := which("npm")) else None
 
 
 def get_bun_path() -> Path | None:
