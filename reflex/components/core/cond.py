@@ -9,6 +9,7 @@ from reflex.components.component import BaseComponent, Component, MemoizationLea
 from reflex.components.tags import CondTag, Tag
 from reflex.constants import Dirs
 from reflex.style import LIGHT_COLOR_MODE, resolved_color_mode
+from reflex.utils import types
 from reflex.utils.imports import ImportDict, ImportVar
 from reflex.vars import VarData
 from reflex.vars.base import LiteralVar, Var
@@ -138,18 +139,18 @@ def cond(condition: Any, c1: Any, c2: Any = None) -> Component | Var:
     if c2 is None:
         raise ValueError("For conditional vars, the second argument must be set.")
 
-    def create_var(cond_part: Any) -> Var[Any]:
-        return LiteralVar.create(cond_part)
-
     # convert the truth and false cond parts into vars so the _var_data can be obtained.
-    c1 = create_var(c1)
-    c2 = create_var(c2)
+    c1_var = Var.create(c1)
+    c2_var = Var.create(c2)
+
+    if condition is c1_var:
+        c1_var = c1_var.to(types.value_inside_optional(c1_var._var_type))
 
     # Create the conditional var.
     return ternary_operation(
         cond_var.bool(),
-        c1,
-        c2,
+        c1_var,
+        c2_var,
     )
 
 
