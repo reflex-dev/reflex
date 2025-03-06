@@ -274,7 +274,7 @@ def get_js_package_executor(raise_on_none: bool = False) -> Sequence[Sequence[st
         FileNotFoundError: If no package managers are found and raise_on_none is True.
     """
     bun_package_manager = (
-        [str(bun_path), "--bun"] if (bun_path := path_ops.get_bun_path()) else None
+        [str(bun_path)] if (bun_path := path_ops.get_bun_path()) else None
     )
 
     npm_package_manager = (
