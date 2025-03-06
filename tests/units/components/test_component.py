@@ -1,5 +1,5 @@
 from contextlib import nullcontext
-from typing import Any, Type, Union
+from typing import Any, ClassVar, Type, Union
 
 import pytest
 
@@ -179,11 +179,11 @@ def component5() -> Type[Component]:
     class TestComponent5(Component):
         tag = "RandomComponent"
 
-        _invalid_children: list[str] = ["Text"]
+        _invalid_children: ClassVar[list[str]] = ["Text"]
 
-        _valid_children: list[str] = ["Text"]
+        _valid_children: ClassVar[list[str]] = ["Text"]
 
-        _valid_parents: list[str] = ["Text"]
+        _valid_parents: ClassVar[list[str]] = ["Text"]
 
     return TestComponent5
 
@@ -199,7 +199,7 @@ def component6() -> Type[Component]:
     class TestComponent6(Component):
         tag = "RandomComponent"
 
-        _invalid_children: list[str] = ["Text"]
+        _invalid_children: ClassVar[list[str]] = ["Text"]
 
     return TestComponent6
 
@@ -215,7 +215,7 @@ def component7() -> Type[Component]:
     class TestComponent7(Component):
         tag = "RandomComponent"
 
-        _valid_children: list[str] = ["Text"]
+        _valid_children: ClassVar[list[str]] = ["Text"]
 
     return TestComponent7
 
