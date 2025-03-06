@@ -171,14 +171,9 @@ def new_process(
 
     # Add node_bin_path to the PATH environment variable.
     if not environment.REFLEX_BACKEND_ONLY.get():
-        node_bin_path = str(path_ops.get_node_bin_path())
-        if not node_bin_path and not prerequisites.CURRENTLY_INSTALLING_NODE:
-            console.warn(
-                "The path to the Node binary could not be found. Please ensure that Node is properly "
-                "installed and added to your system's PATH environment variable or try running "
-                "`reflex init` again."
-            )
-        path_env = os.pathsep.join([node_bin_path, path_env])
+        node_bin_path = path_ops.get_node_bin_path()
+        if node_bin_path:
+            path_env = os.pathsep.join([str(node_bin_path), path_env])
 
     env: dict[str, str] = {
         **os.environ,

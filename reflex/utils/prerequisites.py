@@ -47,8 +47,6 @@ from reflex.utils.registry import _get_npm_registry
 if typing.TYPE_CHECKING:
     from reflex.app import App
 
-CURRENTLY_INSTALLING_NODE = False
-
 
 class AppInfo(NamedTuple):
     """A tuple containing the app instance and module."""
@@ -1319,12 +1317,8 @@ def initialize_frontend_dependencies():
     """Initialize all the frontend dependencies."""
     # validate dependencies before install
     validate_frontend_dependencies()
-    # Avoid warning about Node installation while we're trying to install it.
-    global CURRENTLY_INSTALLING_NODE
-    CURRENTLY_INSTALLING_NODE = True
     # Install the frontend dependencies.
     processes.run_concurrently(install_bun)
-    CURRENTLY_INSTALLING_NODE = False
     # Set up the web directory.
     initialize_web_directory()
 
