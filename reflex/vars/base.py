@@ -2318,7 +2318,7 @@ class ComputedVar(Var[RETURN_TYPE]):
         if not _isinstance(value, self._var_type, nested=1, treat_var_as_type=False):
             console.error(
                 f"Computed var '{type(instance).__name__}.{self._js_expr}' must return"
-                f" type '{self._var_type}', got '{type(value)}'."
+                f" a value of type '{self._var_type}', got '{value}' of type {type(value)}."
             )
 
     def _deps(
