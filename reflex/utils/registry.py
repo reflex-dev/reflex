@@ -35,11 +35,11 @@ def average_latency(registry: str, attempts: int = 3) -> int:
     return sum(latency(registry) for _ in range(attempts)) // attempts
 
 
-def get_best_registry() -> str:
+def _get_best_registry() -> str:
     """Get the best registry based on latency.
 
     Returns:
-        str: The best registry.
+        The best registry.
     """
     registries = [
         "https://registry.npmjs.org",
@@ -49,10 +49,10 @@ def get_best_registry() -> str:
     return min(registries, key=average_latency)
 
 
-def _get_npm_registry() -> str:
+def get_npm_registry() -> str:
     """Get npm registry. If environment variable is set, use it first.
 
     Returns:
-        str:
+        The npm registry.
     """
-    return environment.NPM_CONFIG_REGISTRY.get() or get_best_registry()
+    return environment.NPM_CONFIG_REGISTRY.get() or _get_best_registry()

@@ -42,7 +42,7 @@ from reflex.utils.exceptions import (
     SystemPackageMissingError,
 )
 from reflex.utils.format import format_library_name
-from reflex.utils.registry import _get_npm_registry
+from reflex.utils.registry import get_npm_registry
 
 if typing.TYPE_CHECKING:
     from reflex.app import App
@@ -887,7 +887,7 @@ def initialize_bun_config():
         bunfig_content = custom_bunfig.read_text()
         console.info(f"Copying custom bunfig.toml inside {get_web_dir()} folder")
     else:
-        best_registry = _get_npm_registry()
+        best_registry = get_npm_registry()
         bunfig_content = constants.Bun.DEFAULT_CONFIG.format(registry=best_registry)
 
     bun_config_path.write_text(bunfig_content)
