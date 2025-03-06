@@ -21,9 +21,13 @@ from typing import (
     Type,
     TypeVar,
     Union,
+    cast,
     get_args,
     get_origin,
 )
+
+import pydantic.v1
+import pydantic.v1.fields
 
 import reflex.state
 from reflex.base import Base
@@ -73,16 +77,16 @@ class BaseComponent(Base, ABC):
     """
 
     # The children nested within the component.
-    children: list[BaseComponent] = []
+    children: list[BaseComponent] = pydantic.v1.Field(default_factory=list)
 
     # The library that the component is based on.
     library: str | None = None
 
     # List here the non-react dependency needed by `library`
-    lib_dependencies: list[str] = []
+    lib_dependencies: list[str] = pydantic.v1.Field(default_factory=list)
 
     # List here the dependencies that need to be transpiled by Next.js
-    transpile_packages: list[str] = []
+    transpile_packages: list[str] = pydantic.v1.Field(default_factory=list)
 
     # The tag to use when rendering the component.
     tag: str | None = None
@@ -262,10 +266,12 @@ class Component(BaseComponent, ABC):
     """A component with style, event trigger and other props."""
 
     # The style of the component.
-    style: Style = Style()
+    style: Style = pydantic.v1.Field(default_factory=Style)
 
     # A mapping from event triggers to event chains.
-    event_triggers: dict[str, EventChain | Var] = {}
+    event_triggers: dict[str, EventChain | Var] = pydantic.v1.Field(
+        default_factory=dict
+    )
 
     # The alias for the tag.
     alias: str | None = None
@@ -283,28 +289,30 @@ class Component(BaseComponent, ABC):
     class_name: Any = None
 
     # Special component props.
-    special_props: list[Var] = []
+    special_props: list[Var] = pydantic.v1.Field(default_factory=list)
 
     # Whether the component should take the focus once the page is loaded
     autofocus: bool = False
 
     # components that cannot be children
-    _invalid_children: list[str] = []
+    _invalid_children: ClassVar[list[str]] = []
 
     # only components that are allowed as children
-    _valid_children: list[str] = []
+    _valid_children: ClassVar[list[str]] = []
 
     # only components that are allowed as parent
-    _valid_parents: list[str] = []
+    _valid_parents: ClassVar[list[str]] = []
 
     # props to change the name of
-    _rename_props: dict[str, str] = {}
+    _rename_props: ClassVar[dict[str, str]] = {}
 
     # custom attribute
-    custom_attrs: dict[str, Var | Any] = {}
+    custom_attrs: dict[str, Var | Any] = pydantic.v1.Field(default_factory=dict)
 
     # When to memoize this component and its children.
-    _memoization_mode: MemoizationMode = MemoizationMode()
+    _memoization_mode: MemoizationMode = pydantic.v1.PrivateAttr(
+        default_factory=MemoizationMode
+    )
 
     # State class associated with this component instance
     State: Type[reflex.state.State] | None = None
@@ -582,9 +590,15 @@ class Component(BaseComponent, ABC):
                 "&": style,
             }
 
+        fields_style = self.get_fields()["style"]
+
         kwargs["style"] = Style(
             {
-                **self.get_fields()["style"].default,
+                **(
+                    fields_style.default_factory()
+                    if fields_style.default_factory
+                    else fields_style.default
+                ),
                 **style,
                 **{attr: value for attr, value in kwargs.items() if attr not in fields},
             }
