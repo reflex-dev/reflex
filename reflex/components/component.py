@@ -417,16 +417,12 @@ class Component(BaseComponent, ABC):
             if field.name not in props:
                 continue
 
-            field_type = types.value_inside_optional(
-                types.get_field_type(cls, field.name)
-            )
-
             # Set default values for any props.
-            if types._issubclass(field_type, Var):
+            if field.type_ is Var:
                 field.required = False
                 if field.default is not None:
                     field.default = LiteralVar.create(field.default)
-            elif types._issubclass(field_type, EventHandler):
+            elif field.type_ is EventHandler:
                 field.required = False
 
         # Ensure renamed props from parent classes are applied to the subclass.
@@ -494,13 +490,10 @@ class Component(BaseComponent, ABC):
                 )
             if key in component_specific_triggers:
                 # Event triggers are bound to event chains.
-                field_type = EventChain
+                is_var = False
             elif key in props:
                 # Set the field type.
-                field_type = types.value_inside_optional(
-                    types.get_field_type(type(self), key)
-                )
-
+                is_var = field.type_ is Var if (field := fields.get(key)) else False
             else:
                 continue
 
@@ -515,7 +508,7 @@ class Component(BaseComponent, ABC):
                 return key
 
             # Check whether the key is a component prop.
-            if types._issubclass(field_type, Var):
+            if is_var:
                 try:
                     kwargs[key] = determine_key(value)
 
@@ -1037,8 +1030,8 @@ class Component(BaseComponent, ABC):
                     validate_child(c)
 
             if isinstance(child, Cond):
-                validate_child(child.comp1)
-                validate_child(child.comp2)
+                validate_child(child.children[0])
+                validate_child(child.children[1])
 
             if isinstance(child, Match):
                 for cases in child.match_cases:
@@ -1815,7 +1808,7 @@ class CustomComponent(Component):
             type_ = props_types[key]
 
             # Handle event chains.
-            if types._issubclass(type_, EventActionsMixin):
+            if type_ is EventHandler:
                 inspect.getfullargspec(component_fn).annotations[key]
                 self.props[camel_cased_key] = EventChain.create(
                     value=value, args_spec=get_args_spec(key), key=key

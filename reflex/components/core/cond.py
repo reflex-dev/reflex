@@ -25,11 +25,6 @@ class Cond(MemoizationLeaf):
     # The cond to determine which component to render.
     cond: Var[Any]
 
-    # The component to render if the cond is true.
-    comp1: BaseComponent | None = None
-    # The component to render if the cond is false.
-    comp2: BaseComponent | None = None
-
     @classmethod
     def create(
         cls,
@@ -56,16 +51,14 @@ class Cond(MemoizationLeaf):
             cls._create(
                 children=[comp1, comp2],
                 cond=cond,
-                comp1=comp1,
-                comp2=comp2,
             )
         )
 
     def _render(self) -> Tag:
         return CondTag(
             cond=self.cond,
-            true_value=self.comp1.render(),  # pyright: ignore [reportOptionalMemberAccess]
-            false_value=self.comp2.render(),  # pyright: ignore [reportOptionalMemberAccess]
+            true_value=self.children[0].render(),
+            false_value=self.children[1].render(),
         )
 
     def render(self) -> Dict:
@@ -85,7 +78,7 @@ class Cond(MemoizationLeaf):
             ).set(
                 props=tag.format_props(),
             ),
-            cond_state=f"isTrue({self.cond!s})",
+            cond_state=str(self.cond),
         )
 
     def add_imports(self) -> ImportDict:
@@ -136,7 +129,7 @@ def cond(condition: Any, c1: Any, c2: Any = None) -> Component | Var:
     if isinstance(c1, BaseComponent):
         if c2 is not None and not isinstance(c2, BaseComponent):
             raise ValueError("Both arguments must be components.")
-        return Cond.create(cond_var, c1, c2)
+        return Cond.create(cond_var.bool(), c1, c2)
 
     # Otherwise, create a conditional Var.
     # Check that the second argument is valid.
@@ -154,9 +147,7 @@ def cond(condition: Any, c1: Any, c2: Any = None) -> Component | Var:
 
     # Create the conditional var.
     return ternary_operation(
-        cond_var.bool()._replace(
-            merge_var_data=VarData(imports=_IS_TRUE_IMPORT),
-        ),
+        cond_var.bool(),
         c1,
         c2,
     )
