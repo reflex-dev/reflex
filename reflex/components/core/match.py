@@ -7,7 +7,7 @@ from reflex.components.base import Fragment
 from reflex.components.component import BaseComponent, Component, MemoizationLeaf
 from reflex.components.tags import MatchTag, Tag
 from reflex.style import Style
-from reflex.utils import format, types
+from reflex.utils import format
 from reflex.utils.exceptions import MatchTypeError
 from reflex.utils.imports import ImportDict
 from reflex.vars import VarData
@@ -46,7 +46,7 @@ class Match(MemoizationLeaf):
 
         cls._validate_return_types(match_cases)
 
-        if default is None and types._issubclass(type(match_cases[0][-1]), Var):
+        if default is None and isinstance(match_cases[0][-1], Var):
             raise ValueError(
                 "For cases with return types as Vars, a default case must be provided"
             )
@@ -182,7 +182,7 @@ class Match(MemoizationLeaf):
             return_type = Var
 
         for index, case in enumerate(match_cases):
-            if not types._issubclass(type(case[-1]), return_type):
+            if not isinstance(case[-1], return_type):
                 raise MatchTypeError(
                     f"Match cases should have the same return types. Case {index} with return "
                     f"value `{case[-1]._js_expr if isinstance(case[-1], Var) else textwrap.shorten(str(case[-1]), width=250)}`"
@@ -209,14 +209,12 @@ class Match(MemoizationLeaf):
         Raises:
             ValueError: If the return types are not vars when creating a match var for Var types.
         """
-        if default is None and types._issubclass(
-            type(match_cases[0][-1]), BaseComponent
-        ):
+        if default is None and isinstance(match_cases[0][-1], BaseComponent):
             default = Fragment.create()
 
-        if types._issubclass(type(match_cases[0][-1]), BaseComponent):
+        if isinstance(match_cases[0][-1], BaseComponent):
             return Fragment.create(
-                cls(
+                cls._create(
                     cond=match_cond_var,
                     match_cases=match_cases,
                     default=default,

@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any, Sequence
+from typing import Any, ClassVar, Sequence
 
 from reflex.components.component import Component
 from reflex.components.recharts.general import ResponsiveContainer
@@ -133,7 +133,7 @@ class AreaChart(CategoricalChartBase):
     base_value: Var[int | LiteralComposedChartBaseValue]
 
     # Valid children components
-    _valid_children: list[str] = [
+    _valid_children: ClassVar[list[str]] = [
         "XAxis",
         "YAxis",
         "ReferenceArea",
@@ -174,7 +174,7 @@ class BarChart(CategoricalChartBase):
     reverse_stack_order: Var[bool]
 
     # Valid children components
-    _valid_children: list[str] = [
+    _valid_children: ClassVar[list[str]] = [
         "XAxis",
         "YAxis",
         "ReferenceArea",
@@ -196,7 +196,7 @@ class LineChart(CategoricalChartBase):
     alias = "RechartsLineChart"
 
     # Valid children components
-    _valid_children: list[str] = [
+    _valid_children: ClassVar[list[str]] = [
         "XAxis",
         "YAxis",
         "ReferenceArea",
@@ -233,7 +233,7 @@ class ComposedChart(CategoricalChartBase):
     reverse_stack_order: Var[bool]
 
     # Valid children components
-    _valid_children: list[str] = [
+    _valid_children: ClassVar[list[str]] = [
         "XAxis",
         "YAxis",
         "ReferenceArea",
@@ -260,7 +260,7 @@ class PieChart(ChartBase):
     margin: Var[dict[str, Any]]
 
     # Valid children components
-    _valid_children: list[str] = [
+    _valid_children: ClassVar[list[str]] = [
         "PolarAngleAxis",
         "PolarRadiusAxis",
         "PolarGrid",
@@ -314,7 +314,7 @@ class RadarChart(ChartBase):
     outer_radius: Var[int | str]
 
     # Valid children components
-    _valid_children: list[str] = [
+    _valid_children: ClassVar[list[str]] = [
         "PolarAngleAxis",
         "PolarRadiusAxis",
         "PolarGrid",
@@ -377,7 +377,7 @@ class RadialBarChart(ChartBase):
     bar_size: Var[int]
 
     # Valid children components
-    _valid_children: list[str] = [
+    _valid_children: ClassVar[list[str]] = [
         "PolarAngleAxis",
         "PolarRadiusAxis",
         "PolarGrid",
@@ -398,7 +398,7 @@ class ScatterChart(ChartBase):
     margin: Var[dict[str, Any]]
 
     # Valid children components
-    _valid_children: list[str] = [
+    _valid_children: ClassVar[list[str]] = [
         "XAxis",
         "YAxis",
         "ZAxis",
@@ -447,7 +447,7 @@ class FunnelChart(ChartBase):
     stroke: Var[str | Color]
 
     # Valid children components
-    _valid_children: list[str] = ["Legend", "GraphingTooltip", "Funnel"]
+    _valid_children: ClassVar[list[str]] = ["Legend", "GraphingTooltip", "Funnel"]
 
 
 class Treemap(RechartsCharts):

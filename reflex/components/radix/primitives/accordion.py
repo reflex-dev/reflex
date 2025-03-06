@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any, Literal, Sequence
+from typing import Any, ClassVar, Literal, Sequence
 
 from reflex.components.component import Component, ComponentNamespace
 from reflex.components.core.colors import color
@@ -124,7 +124,7 @@ class AccordionRoot(AccordionComponent):
     # Whether to show divider lines between items.
     show_dividers: Var[bool]
 
-    _valid_children: list[str] = ["AccordionItem"]
+    _valid_children: ClassVar[list[str]] = ["AccordionItem"]
 
     # Fired when the opened the accordions changes.
     on_value_change: EventHandler[on_value_change]
@@ -201,13 +201,13 @@ class AccordionItem(AccordionComponent):
     # The content of the accordion item.
     content: Var[Component | str | None] = Var.create(None)
 
-    _valid_children: list[str] = [
+    _valid_children: ClassVar[list[str]] = [
         "AccordionHeader",
         "AccordionTrigger",
         "AccordionContent",
     ]
 
-    _valid_parents: list[str] = ["AccordionRoot"]
+    _valid_parents: ClassVar[list[str]] = ["AccordionRoot"]
 
     @classmethod
     def create(

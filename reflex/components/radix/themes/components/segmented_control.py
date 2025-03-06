@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from types import SimpleNamespace
-from typing import Literal, Sequence
+from typing import ClassVar, Literal, Sequence
 
 from reflex.components.core.breakpoints import Responsive
 from reflex.event import EventHandler
@@ -66,7 +66,7 @@ class SegmentedControlItem(RadixThemesComponent):
     # The value of the item.
     value: Var[str]
 
-    _valid_parents: list[str] = ["SegmentedControlRoot"]
+    _valid_parents: ClassVar[list[str]] = ["SegmentedControlRoot"]
 
 
 class SegmentedControl(SimpleNamespace):

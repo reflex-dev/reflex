@@ -91,7 +91,7 @@ class DataTable(Gridjs):
         # If data is a list and columns are not provided, throw an error
         if (
             (isinstance(data, Var) and types._issubclass(data._var_type, List))
-            or issubclass(type(data), List)
+            or isinstance(data, list)
         ) and columns is None:
             raise ValueError(
                 "column field should be specified when the data field is a list type"
