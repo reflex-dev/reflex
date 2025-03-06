@@ -432,6 +432,23 @@ class Component(BaseComponent, ABC):
                     inherited_rename_props.update(parent._rename_props)
             cls._rename_props = inherited_rename_props
 
+    def __init__(self, **kwargs):
+        """Initialize the custom component.
+
+        Args:
+            **kwargs: The kwargs to pass to the component.
+        """
+        console.deprecate(
+            "component-direct-instantiation",
+            reason="Use the `create` method instead.",
+            deprecation_version="0.7.2",
+            removal_version="0.8.0",
+        )
+        super().__init__(
+            children=kwargs.get("children", []),
+        )
+        self._post_init(**kwargs)
+
     def _post_init(self, *args, **kwargs):
         """Initialize the component.
 
@@ -779,7 +796,7 @@ class Component(BaseComponent, ABC):
         # Validate all the children.
         validate_children(children)
 
-        children = [
+        children_normalized = [
             (
                 child
                 if isinstance(child, Component)
@@ -792,10 +809,10 @@ class Component(BaseComponent, ABC):
             for child in children
         ]
 
-        return cls._create(children, **props)
+        return cls._create(children_normalized, **props)
 
     @classmethod
-    def _create(cls: Type[T], children: list[Component], **props: Any) -> T:
+    def _create(cls: Type[T], children: Sequence[BaseComponent], **props: Any) -> T:
         """Create the component.
 
         Args:
@@ -805,8 +822,8 @@ class Component(BaseComponent, ABC):
         Returns:
             The component.
         """
-        comp = cls.construct(id=props.get("id"), children=children)
-        comp._post_init(children=children, **props)
+        comp = cls.construct(id=props.get("id"), children=list(children))
+        comp._post_init(children=list(children), **props)
         return comp
 
     def add_style(self) -> dict[str, Any] | None:

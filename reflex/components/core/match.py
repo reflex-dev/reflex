@@ -216,7 +216,7 @@ class Match(MemoizationLeaf):
 
         if types._issubclass(type(match_cases[0][-1]), BaseComponent):
             return Fragment.create(
-                cls(
+                cls._create(
                     cond=match_cond_var,
                     match_cases=match_cases,
                     default=default,

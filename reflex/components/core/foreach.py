@@ -85,7 +85,8 @@ class Foreach(Component):
                 "See https://reflex.dev/docs/library/dynamic-rendering/foreach/"
             )
 
-        component = cls(
+        component = cls._create(
+            children=[],
             iterable=iterable,
             render_fn=render_fn,
         )

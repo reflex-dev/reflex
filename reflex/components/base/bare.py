@@ -70,7 +70,7 @@ class Bare(Component):
         if isinstance(contents, Var):
             if isinstance(contents, LiteralStringVar):
                 validate_str(contents._var_value)
-            return cls(contents=contents)
+            return cls._create(children=[], contents=contents)
         else:
             if isinstance(contents, str):
                 validate_str(contents)

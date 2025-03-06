@@ -53,11 +53,11 @@ class Cond(MemoizationLeaf):
         if comp2 is None or type(comp2).__name__ != "Fragment":
             comp2 = Fragment.create(comp2) if comp2 else Fragment.create()
         return Fragment.create(
-            cls(
+            cls._create(
+                children=[comp1, comp2],
                 cond=cond,
                 comp1=comp1,
                 comp2=comp2,
-                children=[comp1, comp2],
             )
         )
 

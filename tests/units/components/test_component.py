@@ -279,7 +279,7 @@ def test_custom_attrs(component1):
     Args:
         component1: A test component.
     """
-    component = component1(custom_attrs={"attr1": "1", "attr2": "attr2"})
+    component = component1.create(custom_attrs={"attr1": "1", "attr2": "attr2"})
     assert component.custom_attrs == {"attr1": "1", "attr2": "attr2"}
 
 
@@ -289,7 +289,7 @@ def test_create_component(component1):
     Args:
         component1: A test component.
     """
-    children = [component1() for _ in range(3)]
+    children = [component1.create() for _ in range(3)]
     attrs = {"color": "white", "text_align": "center"}
     c = component1.create(*children, **attrs)
     assert isinstance(c, component1)
@@ -459,8 +459,8 @@ def test_add_style(component1, component2):
         component1: Style({"color": "white"}),
         component2: Style({"color": "black"}),
     }
-    c1 = component1()._add_style_recursive(style)
-    c2 = component2()._add_style_recursive(style)
+    c1 = component1.create()._add_style_recursive(style)
+    c2 = component2.create()._add_style_recursive(style)
     assert str(c1.style["color"]) == '"white"'
     assert str(c2.style["color"]) == '"black"'
 
@@ -476,8 +476,8 @@ def test_add_style_create(component1, component2):
         component1.create: Style({"color": "white"}),
         component2.create: Style({"color": "black"}),
     }
-    c1 = component1()._add_style_recursive(style)
-    c2 = component2()._add_style_recursive(style)
+    c1 = component1.create()._add_style_recursive(style)
+    c2 = component2.create()._add_style_recursive(style)
     assert str(c1.style["color"]) == '"white"'
     assert str(c2.style["color"]) == '"black"'
 
@@ -609,9 +609,9 @@ def test_get_event_triggers(component1, component2):
         EventTriggers.ON_MOUNT,
         EventTriggers.ON_UNMOUNT,
     }
-    assert component1().get_event_triggers().keys() == default_triggers
+    assert component1.create().get_event_triggers().keys() == default_triggers
     assert (
-        component2().get_event_triggers().keys()
+        component2.create().get_event_triggers().keys()
         == {
             "on_open",
             "on_close",
@@ -640,8 +640,8 @@ def test_component() -> Type[Component]:
 
 # Write a test case to check if the create method filters out None props
 def test_create_filters_none_props(test_component):
-    child1 = test_component()
-    child2 = test_component()
+    child1 = test_component.create()
+    child2 = test_component.create()
     props = {
         "prop1": "value1",
         "prop2": None,
@@ -1082,7 +1082,7 @@ def test_get_hooks_nested(component1, component2, component3):
         text="a",
         number=1,
     )
-    assert c._get_all_hooks() == component3()._get_all_hooks()
+    assert c._get_all_hooks() == component3.create()._get_all_hooks()
 
 
 def test_get_hooks_nested2(component3, component4):
@@ -1092,7 +1092,10 @@ def test_get_hooks_nested2(component3, component4):
         component3: component with hooks defined.
         component4: component with different hooks defined.
     """
-    exp_hooks = {**component3()._get_all_hooks(), **component4()._get_all_hooks()}
+    exp_hooks = {
+        **component3.create()._get_all_hooks(),
+        **component4.create()._get_all_hooks(),
+    }
     assert component3.create(component4.create())._get_all_hooks() == exp_hooks
     assert component4.create(component3.create())._get_all_hooks() == exp_hooks
     assert (
@@ -1955,29 +1958,29 @@ def test_component_add_hooks():
                 "const hook6 = 47",
             ]
 
-    assert list(BaseComponent()._get_all_hooks()) == ["const hook1 = 42"]
-    assert list(ChildComponent1()._get_all_hooks()) == ["const hook1 = 42"]
-    assert list(GrandchildComponent1()._get_all_hooks()) == [
+    assert list(BaseComponent.create()._get_all_hooks()) == ["const hook1 = 42"]
+    assert list(ChildComponent1.create()._get_all_hooks()) == ["const hook1 = 42"]
+    assert list(GrandchildComponent1.create()._get_all_hooks()) == [
         "const hook1 = 42",
         "const hook2 = 43",
         "const hook3 = 44",
     ]
-    assert list(GreatGrandchildComponent1()._get_all_hooks()) == [
+    assert list(GreatGrandchildComponent1.create()._get_all_hooks()) == [
         "const hook1 = 42",
         "const hook2 = 43",
         "const hook3 = 44",
         "const hook4 = 45",
     ]
-    assert list(GrandchildComponent2()._get_all_hooks()) == ["const hook5 = 46"]
-    assert list(GreatGrandchildComponent2()._get_all_hooks()) == [
+    assert list(GrandchildComponent2.create()._get_all_hooks()) == ["const hook5 = 46"]
+    assert list(GreatGrandchildComponent2.create()._get_all_hooks()) == [
         "const hook5 = 46",
         "const hook2 = 43",
         "const hook6 = 47",
     ]
     assert list(
         BaseComponent.create(
-            GrandchildComponent1.create(GreatGrandchildComponent2()),
-            GreatGrandchildComponent1(),
+            GrandchildComponent1.create(GreatGrandchildComponent2.create()),
+            GreatGrandchildComponent1.create(),
         )._get_all_hooks(),
     ) == [
         "const hook1 = 42",
@@ -1989,8 +1992,8 @@ def test_component_add_hooks():
     ]
     assert list(
         Fragment.create(
-            GreatGrandchildComponent2(),
-            GreatGrandchildComponent1(),
+            GreatGrandchildComponent2.create(),
+            GreatGrandchildComponent1.create(),
         )._get_all_hooks()
     ) == [
         "const hook5 = 46",
@@ -2034,28 +2037,32 @@ def test_component_add_custom_code():
                 "const custom_code6 = 47",
             ]
 
-    assert BaseComponent()._get_all_custom_code() == {"const custom_code1 = 42"}
-    assert ChildComponent1()._get_all_custom_code() == {"const custom_code1 = 42"}
-    assert GrandchildComponent1()._get_all_custom_code() == {
+    assert BaseComponent.create()._get_all_custom_code() == {"const custom_code1 = 42"}
+    assert ChildComponent1.create()._get_all_custom_code() == {
+        "const custom_code1 = 42"
+    }
+    assert GrandchildComponent1.create()._get_all_custom_code() == {
         "const custom_code1 = 42",
         "const custom_code2 = 43",
         "const custom_code3 = 44",
     }
-    assert GreatGrandchildComponent1()._get_all_custom_code() == {
+    assert GreatGrandchildComponent1.create()._get_all_custom_code() == {
         "const custom_code1 = 42",
         "const custom_code2 = 43",
         "const custom_code3 = 44",
         "const custom_code4 = 45",
     }
-    assert GrandchildComponent2()._get_all_custom_code() == {"const custom_code5 = 46"}
-    assert GreatGrandchildComponent2()._get_all_custom_code() == {
+    assert GrandchildComponent2.create()._get_all_custom_code() == {
+        "const custom_code5 = 46"
+    }
+    assert GreatGrandchildComponent2.create()._get_all_custom_code() == {
         "const custom_code2 = 43",
         "const custom_code5 = 46",
         "const custom_code6 = 47",
     }
     assert BaseComponent.create(
-        GrandchildComponent1.create(GreatGrandchildComponent2()),
-        GreatGrandchildComponent1(),
+        GrandchildComponent1.create(GreatGrandchildComponent2.create()),
+        GreatGrandchildComponent1.create(),
     )._get_all_custom_code() == {
         "const custom_code1 = 42",
         "const custom_code2 = 43",
@@ -2065,8 +2072,8 @@ def test_component_add_custom_code():
         "const custom_code6 = 47",
     }
     assert Fragment.create(
-        GreatGrandchildComponent2(),
-        GreatGrandchildComponent1(),
+        GreatGrandchildComponent2.create(),
+        GreatGrandchildComponent1.create(),
     )._get_all_custom_code() == {
         "const custom_code1 = 42",
         "const custom_code2 = 43",
@@ -2099,13 +2106,13 @@ def test_component_add_hooks_var():
                 ),
             ]
 
-    assert list(HookComponent()._get_all_hooks()) == [
+    assert list(HookComponent.create()._get_all_hooks()) == [
         "const hook3 = useRef(null)",
         "const hook1 = 42",
         "const hook2 = 43",
         "useEffect(() => () => {}, [])",
     ]
-    imports = HookComponent()._get_all_imports()
+    imports = HookComponent.create()._get_all_imports()
     assert len(imports) == 1
     assert "react" in imports
     assert len(imports["react"]) == 2
