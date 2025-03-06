@@ -145,15 +145,6 @@ def which(program: str | Path) -> Path | None:
     return Path(which_result) if which_result else None
 
 
-def use_system_node() -> bool:
-    """Check if the system node should be used.
-
-    Returns:
-        Whether the system node should be used.
-    """
-    return environment.REFLEX_USE_SYSTEM_NODE.get()
-
-
 def use_system_bun() -> bool:
     """Check if the system bun should be used.
 

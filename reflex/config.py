@@ -613,9 +613,6 @@ class EnvironmentVariables:
     # Whether to use the system installed bun. If set to false, bun will be bundled with the app.
     REFLEX_USE_SYSTEM_BUN: EnvVar[bool] = env_var(False)
 
-    # Whether to use the system installed node and npm. If set to false, node and npm will be bundled with the app.
-    REFLEX_USE_SYSTEM_NODE: EnvVar[bool] = env_var(False)
-
     # The working directory for the next.js commands.
     REFLEX_WEB_WORKDIR: EnvVar[Path] = env_var(Path(constants.Dirs.WEB))
 
