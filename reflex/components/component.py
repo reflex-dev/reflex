@@ -309,9 +309,7 @@ class Component(BaseComponent, ABC):
     custom_attrs: dict[str, Var | Any] = pydantic.v1.Field(default_factory=dict)
 
     # When to memoize this component and its children.
-    _memoization_mode: MemoizationMode = pydantic.v1.PrivateAttr(
-        default_factory=MemoizationMode
-    )
+    _memoization_mode: MemoizationMode = MemoizationMode()
 
     # State class associated with this component instance
     State: Type[reflex.state.State] | None = None
