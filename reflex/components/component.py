@@ -826,6 +826,24 @@ class Component(BaseComponent, ABC):
         comp._post_init(children=list(children), **props)
         return comp
 
+    @classmethod
+    def _unsafe_create(
+        cls: Type[T], children: Sequence[BaseComponent], **props: Any
+    ) -> T:
+        """Create the component without running post_init.
+
+        Args:
+            children: The children of the component.
+            **props: The props of the component.
+
+        Returns:
+            The component.
+        """
+        comp = cls.construct(id=props.get("id"), children=list(children))
+        for prop, value in props.items():
+            setattr(comp, prop, value)
+        return comp
+
     def add_style(self) -> dict[str, Any] | None:
         """Add style to the component.
 
