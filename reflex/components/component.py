@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import copy
 import dataclasses
+import functools
 import inspect
 import typing
 from abc import ABC, abstractmethod
@@ -24,6 +25,9 @@ from typing import (
     get_args,
     get_origin,
 )
+
+import pydantic.v1
+import pydantic.v1.fields
 
 import reflex.state
 from reflex.base import Base
@@ -73,19 +77,19 @@ class BaseComponent(Base, ABC):
     """
 
     # The children nested within the component.
-    children: list[BaseComponent] = []
+    children: list[BaseComponent] = pydantic.v1.Field(default_factory=list)
 
     # The library that the component is based on.
-    library: str | None = None
+    library: str | None = pydantic.v1.Field(default_factory=lambda: None)
 
     # List here the non-react dependency needed by `library`
-    lib_dependencies: list[str] = []
+    lib_dependencies: list[str] = pydantic.v1.Field(default_factory=list)
 
     # List here the dependencies that need to be transpiled by Next.js
-    transpile_packages: list[str] = []
+    transpile_packages: list[str] = pydantic.v1.Field(default_factory=list)
 
     # The tag to use when rendering the component.
-    tag: str | None = None
+    tag: str | None = pydantic.v1.Field(default_factory=lambda: None)
 
     @abstractmethod
     def render(self) -> dict:
@@ -262,52 +266,56 @@ class Component(BaseComponent, ABC):
     """A component with style, event trigger and other props."""
 
     # The style of the component.
-    style: Style = Style()
+    style: Style = pydantic.v1.Field(default_factory=Style)
 
     # A mapping from event triggers to event chains.
-    event_triggers: dict[str, EventChain | Var] = {}
+    event_triggers: dict[str, EventChain | Var] = pydantic.v1.Field(
+        default_factory=dict
+    )
 
     # The alias for the tag.
-    alias: str | None = None
+    alias: str | None = pydantic.v1.Field(default_factory=lambda: None)
 
     # Whether the import is default or named.
-    is_default: bool | None = False
+    is_default: bool | None = pydantic.v1.Field(default_factory=lambda: False)
 
     # A unique key for the component.
-    key: Any = None
+    key: Any = pydantic.v1.Field(default_factory=lambda: None)
 
     # The id for the component.
-    id: Any = None
+    id: Any = pydantic.v1.Field(default_factory=lambda: None)
 
     # The class name for the component.
-    class_name: Any = None
+    class_name: Any = pydantic.v1.Field(default_factory=lambda: None)
 
     # Special component props.
-    special_props: list[Var] = []
+    special_props: list[Var] = pydantic.v1.Field(default_factory=list)
 
     # Whether the component should take the focus once the page is loaded
-    autofocus: bool = False
+    autofocus: bool = pydantic.v1.Field(default_factory=lambda: False)
 
     # components that cannot be children
-    _invalid_children: list[str] = []
+    _invalid_children: ClassVar[list[str]] = []
 
     # only components that are allowed as children
-    _valid_children: list[str] = []
+    _valid_children: ClassVar[list[str]] = []
 
     # only components that are allowed as parent
-    _valid_parents: list[str] = []
+    _valid_parents: ClassVar[list[str]] = []
 
     # props to change the name of
-    _rename_props: dict[str, str] = {}
+    _rename_props: ClassVar[dict[str, str]] = {}
 
     # custom attribute
-    custom_attrs: dict[str, Var | Any] = {}
+    custom_attrs: dict[str, Var | Any] = pydantic.v1.Field(default_factory=dict)
 
     # When to memoize this component and its children.
     _memoization_mode: MemoizationMode = MemoizationMode()
 
     # State class associated with this component instance
-    State: Type[reflex.state.State] | None = None
+    State: Type[reflex.state.State] | None = pydantic.v1.Field(
+        default_factory=lambda: None
+    )
 
     def add_imports(self) -> ImportDict | list[ImportDict]:
         """Add imports for the component.
@@ -412,16 +420,14 @@ class Component(BaseComponent, ABC):
             if field.name not in props:
                 continue
 
-            field_type = types.value_inside_optional(
-                types.get_field_type(cls, field.name)
-            )
-
             # Set default values for any props.
-            if types._issubclass(field_type, Var):
+            if field.type_ is Var:
                 field.required = False
                 if field.default is not None:
-                    field.default = LiteralVar.create(field.default)
-            elif types._issubclass(field_type, EventHandler):
+                    field.default_factory = functools.partial(
+                        LiteralVar.create, field.default
+                    )
+            elif field.type_ is EventHandler:
                 field.required = False
 
         # Ensure renamed props from parent classes are applied to the subclass.
@@ -431,6 +437,23 @@ class Component(BaseComponent, ABC):
                 if issubclass(parent, Component) and parent._rename_props:
                     inherited_rename_props.update(parent._rename_props)
             cls._rename_props = inherited_rename_props
+
+    def __init__(self, **kwargs):
+        """Initialize the custom component.
+
+        Args:
+            **kwargs: The kwargs to pass to the component.
+        """
+        console.deprecate(
+            "component-direct-instantiation",
+            reason="Use the `create` method instead.",
+            deprecation_version="0.7.2",
+            removal_version="0.8.0",
+        )
+        super().__init__(
+            children=kwargs.get("children", []),
+        )
+        self._post_init(**kwargs)
 
     def _post_init(self, *args, **kwargs):
         """Initialize the component.
@@ -472,13 +495,10 @@ class Component(BaseComponent, ABC):
                 )
             if key in component_specific_triggers:
                 # Event triggers are bound to event chains.
-                field_type = EventChain
+                is_var = False
             elif key in props:
                 # Set the field type.
-                field_type = types.value_inside_optional(
-                    types.get_field_type(type(self), key)
-                )
-
+                is_var = field.type_ is Var if (field := fields.get(key)) else False
             else:
                 continue
 
@@ -493,7 +513,7 @@ class Component(BaseComponent, ABC):
                 return key
 
             # Check whether the key is a component prop.
-            if types._issubclass(field_type, Var):
+            if is_var:
                 try:
                     kwargs[key] = determine_key(value)
 
@@ -565,9 +585,15 @@ class Component(BaseComponent, ABC):
                 "&": style,
             }
 
+        fields_style = self.get_fields()["style"]
+
         kwargs["style"] = Style(
             {
-                **self.get_fields()["style"].default,
+                **(
+                    fields_style.default_factory()
+                    if fields_style.default_factory
+                    else fields_style.default
+                ),
                 **style,
                 **{attr: value for attr, value in kwargs.items() if attr not in fields},
             }
@@ -779,7 +805,7 @@ class Component(BaseComponent, ABC):
         # Validate all the children.
         validate_children(children)
 
-        children = [
+        children_normalized = [
             (
                 child
                 if isinstance(child, Component)
@@ -792,10 +818,10 @@ class Component(BaseComponent, ABC):
             for child in children
         ]
 
-        return cls._create(children, **props)
+        return cls._create(children_normalized, **props)
 
     @classmethod
-    def _create(cls: Type[T], children: list[Component], **props: Any) -> T:
+    def _create(cls: Type[T], children: Sequence[BaseComponent], **props: Any) -> T:
         """Create the component.
 
         Args:
@@ -805,8 +831,26 @@ class Component(BaseComponent, ABC):
         Returns:
             The component.
         """
-        comp = cls.construct(id=props.get("id"), children=children)
-        comp._post_init(children=children, **props)
+        comp = cls.construct(id=props.get("id"), children=list(children))
+        comp._post_init(children=list(children), **props)
+        return comp
+
+    @classmethod
+    def _unsafe_create(
+        cls: Type[T], children: Sequence[BaseComponent], **props: Any
+    ) -> T:
+        """Create the component without running post_init.
+
+        Args:
+            children: The children of the component.
+            **props: The props of the component.
+
+        Returns:
+            The component.
+        """
+        comp = cls.construct(id=props.get("id"), children=list(children))
+        for prop, value in props.items():
+            setattr(comp, prop, value)
         return comp
 
     def add_style(self) -> dict[str, Any] | None:
@@ -991,8 +1035,8 @@ class Component(BaseComponent, ABC):
                     validate_child(c)
 
             if isinstance(child, Cond):
-                validate_child(child.comp1)
-                validate_child(child.comp2)
+                validate_child(child.children[0])
+                validate_child(child.children[1])
 
             if isinstance(child, Match):
                 for cases in child.match_cases:
@@ -1769,7 +1813,7 @@ class CustomComponent(Component):
             type_ = props_types[key]
 
             # Handle event chains.
-            if types._issubclass(type_, EventActionsMixin):
+            if type_ is EventHandler:
                 inspect.getfullargspec(component_fn).annotations[key]
                 self.props[camel_cased_key] = EventChain.create(
                     value=value, args_spec=get_args_spec(key), key=key

@@ -234,6 +234,9 @@ def format_style_key(key: str) -> tuple[str, ...]:
     return STYLE_PROP_SHORTHAND_MAPPING.get(key, (key,))
 
 
+EMPTY_VAR_DATA = VarData()
+
+
 class Style(dict):
     """A style dictionary."""
 
@@ -248,7 +251,10 @@ class Style(dict):
             style_dict.update(kwargs)
         else:
             style_dict = kwargs
-        style_dict, self._var_data = convert(style_dict or {})
+        if style_dict:
+            style_dict, self._var_data = convert(style_dict)
+        else:
+            self._var_data = EMPTY_VAR_DATA
         super().__init__(style_dict)
 
     def update(self, style_dict: dict | None, **kwargs):

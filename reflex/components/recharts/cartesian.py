@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any, Sequence, Union
+from typing import Any, ClassVar, Sequence, Union
 
 from reflex.constants import EventTriggers
 from reflex.constants.colors import Color
@@ -369,7 +369,7 @@ class Area(Cartesian):
     connect_nulls: Var[bool]
 
     # Valid children components
-    _valid_children: list[str] = ["LabelList"]
+    _valid_children: ClassVar[list[str]] = ["LabelList"]
 
 
 class Bar(Cartesian):
@@ -419,7 +419,7 @@ class Bar(Cartesian):
     # active_bar: Var[Union[bool, dict[str, Any]]] #noqa: ERA001
 
     # Valid children components
-    _valid_children: list[str] = ["Cell", "LabelList", "ErrorBar"]
+    _valid_children: ClassVar[list[str]] = ["Cell", "LabelList", "ErrorBar"]
 
 
 class Line(Cartesian):
@@ -473,7 +473,7 @@ class Line(Cartesian):
     stroke_dasharray: Var[str]
 
     # Valid children components
-    _valid_children: list[str] = ["LabelList", "ErrorBar"]
+    _valid_children: ClassVar[list[str]] = ["LabelList", "ErrorBar"]
 
 
 class Scatter(Recharts):
@@ -514,7 +514,7 @@ class Scatter(Recharts):
     fill: Var[str | Color] = LiteralVar.create(Color("accent", 9))
 
     # Valid children components.
-    _valid_children: list[str] = ["LabelList", "ErrorBar"]
+    _valid_children: ClassVar[list[str]] = ["LabelList", "ErrorBar"]
 
     # If set false, animation of bar will be disabled. Default: True in CSR, False in SSR
     is_animation_active: Var[bool]
@@ -591,7 +591,7 @@ class Funnel(Recharts):
     trapezoids: Var[Sequence[dict[str, Any]]]
 
     # Valid children components
-    _valid_children: list[str] = ["LabelList", "Cell"]
+    _valid_children: ClassVar[list[str]] = ["LabelList", "Cell"]
 
     # The customized event handler of animation start
     on_animation_start: EventHandler[no_args_event_spec]
@@ -686,7 +686,7 @@ class ReferenceLine(Reference):
     stroke_width: Var[str | int]
 
     # Valid children components
-    _valid_children: list[str] = ["Label"]
+    _valid_children: ClassVar[list[str]] = ["Label"]
 
     # Array of endpoints in { x, y } format. These endpoints would be used to draw the ReferenceLine.
     segment: Sequence[Any] = []
@@ -715,7 +715,7 @@ class ReferenceDot(Reference):
     stroke: Var[str | Color]
 
     # Valid children components
-    _valid_children: list[str] = ["Label"]
+    _valid_children: ClassVar[list[str]] = ["Label"]
 
     # The customized event handler of click on the component in this chart
     on_click: EventHandler[no_args_event_spec]
@@ -783,7 +783,7 @@ class ReferenceArea(Recharts):
     is_front: Var[bool]
 
     # Valid children components
-    _valid_children: list[str] = ["Label"]
+    _valid_children: ClassVar[list[str]] = ["Label"]
 
 
 class Grid(Recharts):

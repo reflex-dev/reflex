@@ -5,7 +5,6 @@
 # ------------------------------------------------------
 from typing import Any, Literal, Optional, overload
 
-from reflex.components.component import BaseComponent
 from reflex.components.core.breakpoints import Breakpoints
 from reflex.components.core.cond import Cond
 from reflex.components.lucide.icon import Icon
@@ -26,8 +25,6 @@ class ColorModeIcon(Cond):
         cls,
         *children,
         cond: Any | Var[Any] | None = None,
-        comp1: BaseComponent | None = None,
-        comp2: BaseComponent | None = None,
         style: Style | None = None,
         key: Any | None = None,
         id: Any | None = None,

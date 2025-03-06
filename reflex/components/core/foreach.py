@@ -90,7 +90,8 @@ class Foreach(Component):
         if types.is_optional(iterable._var_type):
             iterable = cond(iterable, iterable, [])
 
-        component = cls(
+        component = cls._create(
+            children=[],
             iterable=iterable,
             render_fn=render_fn,
         )

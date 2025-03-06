@@ -1,6 +1,6 @@
 """Interactive components provided by @radix-ui/themes."""
 
-from typing import Literal
+from typing import ClassVar, Literal
 
 from reflex.components.component import ComponentNamespace
 from reflex.components.core.breakpoints import Responsive
@@ -36,7 +36,7 @@ class ContextMenuRoot(RadixThemesComponent):
     # The modality of the context menu. When set to true, interaction with outside elements will be disabled and only menu content will be visible to screen readers.
     modal: Var[bool]
 
-    _invalid_children: list[str] = ["ContextMenuItem"]
+    _invalid_children: ClassVar[list[str]] = ["ContextMenuItem"]
 
     # Fired when the open state changes.
     on_open_change: EventHandler[passthrough_event_spec(bool)]
@@ -53,9 +53,9 @@ class ContextMenuTrigger(RadixThemesComponent):
     # Whether the trigger is disabled
     disabled: Var[bool]
 
-    _valid_parents: list[str] = ["ContextMenuRoot"]
+    _valid_parents: ClassVar[list[str]] = ["ContextMenuRoot"]
 
-    _invalid_children: list[str] = ["ContextMenuContent"]
+    _invalid_children: ClassVar[list[str]] = ["ContextMenuContent"]
 
     _memoization_mode = MemoizationMode(recursive=False)
 
@@ -155,7 +155,7 @@ class ContextMenuSubTrigger(RadixThemesComponent):
     # Optional text used for typeahead purposes. By default the typeahead behavior will use the .textContent of the item. Use this when the content is complex, or you have non-textual content inside.
     text_value: Var[str]
 
-    _valid_parents: list[str] = ["ContextMenuContent", "ContextMenuSub"]
+    _valid_parents: ClassVar[list[str]] = ["ContextMenuContent", "ContextMenuSub"]
 
     _memoization_mode = MemoizationMode(recursive=False)
 
@@ -192,7 +192,7 @@ class ContextMenuSubContent(RadixThemesComponent):
     # Whether to hide the content when the trigger becomes fully occluded. Defaults to False.
     hide_when_detached: Var[bool]
 
-    _valid_parents: list[str] = ["ContextMenuSub"]
+    _valid_parents: ClassVar[list[str]] = ["ContextMenuSub"]
 
     # Fired when the escape key is pressed.
     on_escape_key_down: EventHandler[no_args_event_spec]
@@ -227,7 +227,7 @@ class ContextMenuItem(RadixThemesComponent):
     # Optional text used for typeahead purposes. By default the typeahead behavior will use the content of the item. Use this when the content is complex, or you have non-textual content inside.
     text_value: Var[str]
 
-    _valid_parents: list[str] = [
+    _valid_parents: ClassVar[list[str]] = [
         "ContextMenuContent",
         "ContextMenuSubContent",
         "ContextMenuGroup",
@@ -269,7 +269,10 @@ class ContextMenuGroup(RadixThemesComponent):
     # Change the default rendered element for the one passed as a child, merging their props and behavior. Defaults to False.
     as_child: Var[bool]
 
-    _valid_parents: list[str] = ["ContextMenuContent", "ContextMenuSubContent"]
+    _valid_parents: ClassVar[list[str]] = [
+        "ContextMenuContent",
+        "ContextMenuSubContent",
+    ]
 
 
 class ContextMenuRadioGroup(RadixThemesComponent):
@@ -289,7 +292,7 @@ class ContextMenuRadioGroup(RadixThemesComponent):
     # Fired when the value of the radio group changes.
     on_change: EventHandler[passthrough_event_spec(str)]
 
-    _valid_parents: list[str] = [
+    _valid_parents: ClassVar[list[str]] = [
         "ContextMenuRadioItem",
         "ContextMenuSubContent",
         "ContextMenuContent",
