@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import copy
 import dataclasses
+import functools
 import inspect
 import typing
 from abc import ABC, abstractmethod
@@ -423,10 +424,8 @@ class Component(BaseComponent, ABC):
             if field.type_ is Var:
                 field.required = False
                 if field.default is not None:
-                    field.default_factory = (
-                        lambda default_value=field.default: LiteralVar.create(
-                            default_value
-                        )
+                    field.default_factory = functools.partial(
+                        LiteralVar.create, field.default
                     )
             elif field.type_ is EventHandler:
                 field.required = False
