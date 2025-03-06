@@ -13,10 +13,10 @@ class Bun(SimpleNamespace):
     """Bun constants."""
 
     # The Bun version.
-    VERSION = "1.2.0"
+    VERSION = "1.2.4"
 
     # Min Bun Version
-    MIN_VERSION = "1.1.0"
+    MIN_VERSION = "1.2.4"
 
     # URL to bun install script.
     INSTALL_URL = "https://raw.githubusercontent.com/reflex-dev/reflex/main/scripts/bun_install.sh"
