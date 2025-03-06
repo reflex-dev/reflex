@@ -886,6 +886,12 @@ class StubGenerator(ast.NodeTransformer):
         call_definition = None
         for child in node.body[:]:
             found_call = False
+            if (
+                isinstance(child, ast.AnnAssign)
+                and isinstance(child.target, ast.Name)
+                and child.target.id.startswith("_")
+            ):
+                node.body.remove(child)
             if isinstance(child, ast.Assign):
                 for target in child.targets[:]:
                     if isinstance(target, ast.Name) and target.id == "__call__":
