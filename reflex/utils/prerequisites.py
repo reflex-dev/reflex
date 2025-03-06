@@ -23,7 +23,8 @@ import zipfile
 from datetime import datetime
 from pathlib import Path
 from types import ModuleType
-from typing import Any, Callable, List, NamedTuple, Optional
+from typing import Callable, NamedTuple
+from urllib.parse import urlparse
 
 import httpx
 import typer
@@ -71,9 +72,9 @@ class Template:
 class CpuInfo:
     """Model to save cpu info."""
 
-    manufacturer_id: Optional[str]
-    model_name: Optional[str]
-    address_width: Optional[int]
+    manufacturer_id: str | None
+    model_name: str | None
+    address_width: int | None
 
 
 def get_web_dir() -> Path:
@@ -96,6 +97,15 @@ def get_states_dir() -> Path:
         The working directory.
     """
     return environment.REFLEX_STATES_WORKDIR.get()
+
+
+def get_backend_dir() -> Path:
+    """Get the working directory for the backend.
+
+    Returns:
+        The working directory.
+    """
+    return get_web_dir() / constants.Dirs.BACKEND
 
 
 def check_latest_package_version(package_name: str):
@@ -232,9 +242,7 @@ def get_install_package_manager(on_failure_return_none: bool = False) -> str | N
         The path to the package manager.
     """
     if constants.IS_WINDOWS and (
-        not is_windows_bun_supported()
-        or windows_check_onedrive_in_path()
-        or windows_npm_escape_hatch()
+        windows_check_onedrive_in_path() or windows_npm_escape_hatch()
     ):
         return get_package_manager(on_failure_return_none)
     return str(get_config().bun_path)
@@ -836,6 +844,7 @@ def _compile_package_json():
         },
         dependencies=constants.PackageJson.DEPENDENCIES,
         dev_dependencies=constants.PackageJson.DEV_DEPENDENCIES,
+        overrides=constants.PackageJson.OVERRIDES,
     )
 
 
@@ -885,7 +894,7 @@ def init_reflex_json(project_hash: int | None):
 
 
 def update_next_config(
-    export: bool = False, transpile_packages: Optional[List[str]] = None
+    export: bool = False, transpile_packages: list[str] | None = None
 ):
     """Update Next.js config from Reflex config.
 
@@ -907,7 +916,7 @@ def update_next_config(
 
 
 def _update_next_config(
-    config: Config, export: bool = False, transpile_packages: Optional[List[str]] = None
+    config: Config, export: bool = False, transpile_packages: list[str] | None = None
 ):
     next_config = {
         "basePath": config.frontend_path or "",
@@ -1053,17 +1062,11 @@ def install_bun():
     Raises:
         SystemPackageMissingError: If "unzip" is missing.
     """
-    win_supported = is_windows_bun_supported()
     one_drive_in_path = windows_check_onedrive_in_path()
-    if constants.IS_WINDOWS and (not win_supported or one_drive_in_path):
-        if not win_supported:
-            console.warn(
-                "Bun for Windows is currently only available for x86 64-bit Windows. Installation will fall back on npm."
-            )
-        if one_drive_in_path:
-            console.warn(
-                "Creating project directories in OneDrive is not recommended for bun usage on windows. This will fallback to npm."
-            )
+    if constants.IS_WINDOWS and one_drive_in_path:
+        console.warn(
+            "Creating project directories in OneDrive is not recommended for bun usage on windows. This will fallback to npm."
+        )
 
     # Skip if bun is already installed.
     if get_bun_version() == version.parse(constants.Bun.VERSION):
@@ -1165,12 +1168,7 @@ def install_frontend_packages(packages: set[str], config: Config):
         get_package_manager(on_failure_return_none=True)
         if (
             not constants.IS_WINDOWS
-            or (
-                constants.IS_WINDOWS
-                and (
-                    is_windows_bun_supported() and not windows_check_onedrive_in_path()
-                )
-            )
+            or (constants.IS_WINDOWS and not windows_check_onedrive_in_path())
         )
         else None
     )
@@ -1189,7 +1187,7 @@ def install_frontend_packages(packages: set[str], config: Config):
     )
 
     processes.run_process_with_fallback(
-        [install_package_manager, "install"],
+        [install_package_manager, "install", "--legacy-peer-deps"],
         fallback=fallback_command,
         analytics_enabled=True,
         show_status_message="Installing base frontend packages",
@@ -1202,6 +1200,7 @@ def install_frontend_packages(packages: set[str], config: Config):
             [
                 install_package_manager,
                 "add",
+                "--legacy-peer-deps",
                 "-d",
                 constants.Tailwind.VERSION,
                 *((config.tailwind or {}).get("plugins", [])),
@@ -1216,7 +1215,7 @@ def install_frontend_packages(packages: set[str], config: Config):
     # Install custom packages defined in frontend_packages
     if len(packages) > 0:
         processes.run_process_with_fallback(
-            [install_package_manager, "add", *packages],
+            [install_package_manager, "add", "--legacy-peer-deps", *packages],
             fallback=fallback_command,
             analytics_enabled=True,
             show_status_message="Installing frontend packages from config and components",
@@ -1360,7 +1359,7 @@ def validate_frontend_dependencies(init: bool = True):
         validate_bun()
 
 
-def ensure_reflex_installation_id() -> Optional[int]:
+def ensure_reflex_installation_id() -> int | None:
     """Ensures that a reflex distinct id has been generated and stored in the reflex directory.
 
     Returns:
@@ -1679,9 +1678,11 @@ def validate_and_create_app_using_remote_template(
 
         template_url = templates[template].code_url
     else:
+        template_parsed_url = urlparse(template)
         # Check if the template is a github repo.
-        if template.startswith("https://github.com"):
-            template_url = f"{template.strip('/').replace('.git', '')}/archive/main.zip"
+        if template_parsed_url.hostname == "github.com":
+            path = template_parsed_url.path.strip("/").removesuffix(".git")
+            template_url = f"https://github.com/{path}/archive/main.zip"
         else:
             console.error(f"Template `{template}` not found or invalid.")
             raise typer.Exit(1)
@@ -1912,24 +1913,23 @@ def format_address_width(address_width: str | None) -> int | None:
         return None
 
 
-@functools.lru_cache(maxsize=None)
-def get_cpu_info() -> CpuInfo | None:
-    """Get the CPU info of the underlining host.
+def _retrieve_cpu_info() -> CpuInfo | None:
+    """Retrieve the CPU info of the host.
 
     Returns:
-         The CPU info.
+        The CPU info.
     """
     platform_os = platform.system()
     cpuinfo = {}
     try:
         if platform_os == "Windows":
-            cmd = "wmic cpu get addresswidth,caption,manufacturer /FORMAT:csv"
+            cmd = 'powershell -Command "Get-CimInstance Win32_Processor | Select-Object -First 1 | Select-Object AddressWidth,Manufacturer,Name | ConvertTo-Json"'
             output = processes.execute_command_and_return_output(cmd)
             if output:
-                val = output.splitlines()[-1].split(",")[1:]
-                cpuinfo["manufacturer_id"] = val[2]
-                cpuinfo["model_name"] = val[1].split("Family")[0].strip()
-                cpuinfo["address_width"] = format_address_width(val[0])
+                cpu_data = json.loads(output)
+                cpuinfo["address_width"] = cpu_data["AddressWidth"]
+                cpuinfo["manufacturer_id"] = cpu_data["Manufacturer"]
+                cpuinfo["model_name"] = cpu_data["Name"]
         elif platform_os == "Linux":
             output = processes.execute_command_and_return_output("lscpu")
             if output:
@@ -1969,21 +1969,20 @@ def get_cpu_info() -> CpuInfo | None:
 
 
 @functools.lru_cache(maxsize=None)
-def is_windows_bun_supported() -> bool:
-    """Check whether the underlining host running windows qualifies to run bun.
-    We typically do not run bun on ARM or 32 bit devices that use windows.
+def get_cpu_info() -> CpuInfo | None:
+    """Get the CPU info of the underlining host.
 
     Returns:
-        Whether the host is qualified to use bun.
+        The CPU info.
     """
-    cpu_info = get_cpu_info()
-    return (
-        constants.IS_WINDOWS
-        and cpu_info is not None
-        and cpu_info.address_width == 64
-        and cpu_info.model_name is not None
-        and "ARM" not in cpu_info.model_name
-    )
+    cpu_info_file = environment.REFLEX_DIR.get() / "cpu_info.json"
+    if cpu_info_file.exists() and (cpu_info := json.loads(cpu_info_file.read_text())):
+        return CpuInfo(**cpu_info)
+    cpu_info = _retrieve_cpu_info()
+    if cpu_info:
+        cpu_info_file.parent.mkdir(parents=True, exist_ok=True)
+        cpu_info_file.write_text(json.dumps(dataclasses.asdict(cpu_info)))
+    return cpu_info
 
 
 def is_generation_hash(template: str) -> bool:
@@ -1998,38 +1997,17 @@ def is_generation_hash(template: str) -> bool:
     return re.match(r"^[0-9a-f]{32,}$", template) is not None
 
 
-def check_config_option_in_tier(
-    option_name: str,
-    allowed_tiers: list[str],
-    fallback_value: Any,
-    help_link: str | None = None,
-):
-    """Check if a config option is allowed for the authenticated user's current tier.
+def get_user_tier():
+    """Get the current user's tier.
 
-    Args:
-        option_name: The name of the option to check.
-        allowed_tiers: The tiers that are allowed to use the option.
-        fallback_value: The fallback value if the option is not allowed.
-        help_link: The help link to show to a user that is authenticated.
+    Returns:
+        The current user's tier.
     """
     from reflex_cli.v2.utils import hosting
 
-    config = get_config()
     authenticated_token = hosting.authenticated_token()
-    if not authenticated_token[0]:
-        the_remedy = (
-            "You are currently logged out. Run `reflex login` to access this option."
-        )
-        current_tier = "anonymous"
-    else:
-        current_tier = authenticated_token[1].get("tier", "").lower()
-        the_remedy = (
-            f"Your current subscription tier is `{current_tier}`. "
-            f"Please upgrade to {allowed_tiers} to access this option. "
-        )
-        if help_link:
-            the_remedy += f"See {help_link} for more information."
-    if current_tier not in allowed_tiers:
-        console.warn(f"Config option `{option_name}` is restricted. {the_remedy}")
-        setattr(config, option_name, fallback_value)
-        config._set_persistent(**{option_name: fallback_value})
+    return (
+        authenticated_token[1].get("tier", "").lower()
+        if authenticated_token[0]
+        else "anonymous"
+    )

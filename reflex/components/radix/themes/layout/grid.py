@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Dict, Literal
+from typing import ClassVar, Literal
 
 from reflex.components.core.breakpoints import Responsive
 from reflex.components.el import elements
@@ -46,7 +46,7 @@ class Grid(elements.Div, RadixThemesComponent):
     spacing_y: Var[Responsive[LiteralSpacing]]
 
     # Reflex maps the "spacing" prop to "gap" prop.
-    _rename_props: Dict[str, str] = {
+    _rename_props: ClassVar[dict[str, str]] = {
         "spacing": "gap",
         "spacing_x": "gap_x",
         "spacing_y": "gap_y",

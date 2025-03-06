@@ -16,7 +16,6 @@ def EventChain():
     """App with chained event handlers."""
     import asyncio
     import time
-    from typing import List
 
     import reflex as rx
 
@@ -24,7 +23,7 @@ def EventChain():
     MANY_EVENTS = 50
 
     class State(rx.State):
-        event_order: List[str] = []
+        event_order: list[str] = []
         interim_value: str = ""
 
         @rx.event
@@ -493,11 +492,6 @@ async def test_event_chain_on_load(
             "/on-mount-return-chain",
             [
                 "on_load_return_chain",
-                "event_arg:unmount",
-                "on_load_return_chain",
-                "event_arg:1",
-                "event_arg:2",
-                "event_arg:3",
                 "event_arg:1",
                 "event_arg:2",
                 "event_arg:3",
@@ -509,12 +503,6 @@ async def test_event_chain_on_load(
             [
                 "on_load_yield_chain",
                 "event_arg:mount",
-                "event_no_args",
-                "on_load_yield_chain",
-                "event_arg:mount",
-                "event_arg:4",
-                "event_arg:5",
-                "event_arg:6",
                 "event_arg:4",
                 "event_arg:5",
                 "event_arg:6",

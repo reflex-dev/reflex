@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-from typing import Optional
-
 from reflex.components.base.bare import Bare
 from reflex.components.component import Component
 
@@ -34,19 +32,19 @@ class Meta(Component):
     tag = "meta"
 
     # The description of character encoding.
-    char_set: Optional[str] = None
+    char_set: str | None = None
 
     # The value of meta.
-    content: Optional[str] = None
+    content: str | None = None
 
     # The name of metadata.
-    name: Optional[str] = None
+    name: str | None = None
 
     # The type of metadata value.
-    property: Optional[str] = None
+    property: str | None = None
 
     # The type of metadata value.
-    http_equiv: Optional[str] = None
+    http_equiv: str | None = None
 
 
 class Description(Meta):

@@ -54,7 +54,7 @@ class Icon(LucideIconComponent):
         if "tag" not in props:
             raise AttributeError("Missing 'tag' keyword-argument for Icon")
 
-        tag: str | Var | LiteralVar = props.pop("tag")
+        tag: str | Var | LiteralVar = Var.create(props.pop("tag"))
         if isinstance(tag, LiteralVar):
             if isinstance(tag, LiteralStringVar):
                 tag = tag._var_value
@@ -70,9 +70,17 @@ class Icon(LucideIconComponent):
             not isinstance(tag, str)
             or format.to_snake_case(tag) not in LUCIDE_ICON_LIST
         ):
+            if isinstance(tag, str):
+                icons_sorted = sorted(
+                    LUCIDE_ICON_LIST,
+                    key=lambda s: format.length_of_largest_common_substring(tag, s),
+                    reverse=True,
+                )
+            else:
+                icons_sorted = LUCIDE_ICON_LIST
             raise ValueError(
-                f"Invalid icon tag: {tag}. Please use one of the following: {', '.join(LUCIDE_ICON_LIST[0:25])}, ..."
-                "\nSee full list at https://lucide.dev/icons."
+                f"Invalid icon tag: {tag}. Please use one of the following: {', '.join(icons_sorted[0:25])}, ..."
+                "\nSee full list at https://reflex.dev/docs/library/data-display/icon/#icons-list."
             )
 
         if tag in LUCIDE_ICON_MAPPING_OVERRIDE:

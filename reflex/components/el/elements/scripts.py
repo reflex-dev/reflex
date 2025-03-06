@@ -1,7 +1,7 @@
 """Scripts classes."""
 
-from typing import Union
-
+from reflex.components.el.elements.inline import ReferrerPolicy
+from reflex.components.el.elements.media import CrossOrigin
 from reflex.vars.base import Var
 
 from .base import BaseHTML
@@ -25,31 +25,28 @@ class Script(BaseHTML):
     tag = "script"
 
     # Indicates that the script should be executed asynchronously
-    async_: Var[Union[str, int, bool]]
+    async_: Var[bool]
 
     # Character encoding of the external script
-    char_set: Var[Union[str, int, bool]]
+    char_set: Var[str]
 
     # Configures the CORS requests for the script
-    cross_origin: Var[Union[str, int, bool]]
+    cross_origin: Var[CrossOrigin]
 
     # Indicates that the script should be executed after the page has finished parsing
-    defer: Var[Union[str, int, bool]]
+    defer: Var[bool]
 
     # Security feature allowing browsers to verify what they fetch
-    integrity: Var[Union[str, int, bool]]
-
-    # Specifies the scripting language used in the type attribute
-    language: Var[Union[str, int, bool]]
+    integrity: Var[str]
 
     # Specifies which referrer information to send when fetching the script
-    referrer_policy: Var[Union[str, int, bool]]
+    referrer_policy: Var[ReferrerPolicy]
 
     # URL of an external script
-    src: Var[Union[str, int, bool]]
+    src: Var[str]
 
     # Specifies the MIME type of the script
-    type: Var[Union[str, int, bool]]
+    type: Var[str]
 
 
 canvas = Canvas.create

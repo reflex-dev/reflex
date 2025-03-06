@@ -118,7 +118,7 @@ def test_event_triggers():
         )
     )
     assert tuple(debounced_input.get_event_triggers()) == (
-        *rx.Component().get_event_triggers(),  # default event triggers
+        *rx.Component.create().get_event_triggers(),  # default event triggers
         "on_change",
     )
 

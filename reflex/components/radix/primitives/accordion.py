@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any, List, Literal, Tuple, Union
+from typing import Any, ClassVar, Literal, Sequence
 
 from reflex.components.component import Component, ComponentNamespace
 from reflex.components.core.colors import color
@@ -53,7 +53,7 @@ def _inherited_variant_selector(
 class AccordionComponent(RadixPrimitiveComponent):
     """Base class for all @radix-ui/accordion components."""
 
-    library = "@radix-ui/react-accordion@^1.1.2"
+    library = "@radix-ui/react-accordion@^1.2.3"
 
     # The color scheme of the component.
     color_scheme: Var[LiteralAccentColor]
@@ -72,7 +72,7 @@ class AccordionComponent(RadixPrimitiveComponent):
         return ["color_scheme", "variant"]
 
 
-def on_value_change(value: Var[str | List[str]]) -> Tuple[Var[str | List[str]]]:
+def on_value_change(value: Var[str | list[str]]) -> tuple[Var[str | list[str]]]:
     """Handle the on_value_change event.
 
     Args:
@@ -95,10 +95,10 @@ class AccordionRoot(AccordionComponent):
     type: Var[LiteralAccordionType]
 
     # The value of the item to expand.
-    value: Var[Union[str, List[str]]]
+    value: Var[str | Sequence[str]]
 
     # The default value of the item to expand.
-    default_value: Var[Union[str, List[str]]]
+    default_value: Var[str | Sequence[str]]
 
     # Whether or not the accordion is collapsible.
     collapsible: Var[bool]
@@ -124,7 +124,7 @@ class AccordionRoot(AccordionComponent):
     # Whether to show divider lines between items.
     show_dividers: Var[bool]
 
-    _valid_children: List[str] = ["AccordionItem"]
+    _valid_children: ClassVar[list[str]] = ["AccordionItem"]
 
     # Fired when the opened the accordions changes.
     on_value_change: EventHandler[on_value_change]
@@ -196,18 +196,18 @@ class AccordionItem(AccordionComponent):
     disabled: Var[bool]
 
     # The header of the accordion item.
-    header: Var[Union[Component, str]]
+    header: Var[Component | str]
 
     # The content of the accordion item.
-    content: Var[Union[Component, str, None]] = Var.create(None)
+    content: Var[Component | str | None] = Var.create(None)
 
-    _valid_children: List[str] = [
+    _valid_children: ClassVar[list[str]] = [
         "AccordionHeader",
         "AccordionTrigger",
         "AccordionContent",
     ]
 
-    _valid_parents: List[str] = ["AccordionRoot"]
+    _valid_parents: ClassVar[list[str]] = ["AccordionRoot"]
 
     @classmethod
     def create(
@@ -489,12 +489,12 @@ to {
         Returns:
             The style of the component.
         """
-        slide_down = LiteralVar.create(
-            "${slideDown} var(--animation-duration) var(--animation-easing)",
+        slide_down = Var("slideDown").to(str) + Var.create(
+            " var(--animation-duration) var(--animation-easing)",
         )
 
-        slide_up = LiteralVar.create(
-            "${slideUp} var(--animation-duration) var(--animation-easing)",
+        slide_up = Var("slideUp").to(str) + Var.create(
+            " var(--animation-duration) var(--animation-easing)",
         )
 
         return {

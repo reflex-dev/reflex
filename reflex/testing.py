@@ -26,11 +26,9 @@ from typing import (
     AsyncIterator,
     Callable,
     Coroutine,
-    List,
     Optional,
     Type,
     TypeVar,
-    Union,
 )
 
 import psutil
@@ -43,6 +41,7 @@ import reflex.utils.exec
 import reflex.utils.format
 import reflex.utils.prerequisites
 import reflex.utils.processes
+from reflex.components.component import CustomComponent
 from reflex.config import environment
 from reflex.state import (
     BaseState,
@@ -77,8 +76,7 @@ DEFAULT_TIMEOUT = 15
 POLL_INTERVAL = 0.25
 FRONTEND_POPEN_ARGS = {}
 T = TypeVar("T")
-TimeoutType = Optional[Union[int, float]]
-
+TimeoutType = int | float | None
 if platform.system() == "Windows":
     FRONTEND_POPEN_ARGS["creationflags"] = subprocess.CREATE_NEW_PROCESS_GROUP  # pyright: ignore [reportAttributeAccessIssue]
     FRONTEND_POPEN_ARGS["shell"] = True
@@ -118,19 +116,19 @@ class AppHarness:
     """AppHarness executes a reflex app in-process for testing."""
 
     app_name: str
-    app_source: Optional[
-        Callable[[], None] | types.ModuleType | str | functools.partial[Any]
-    ]
+    app_source: (
+        Callable[[], None] | types.ModuleType | str | functools.partial[Any] | None
+    )
     app_path: Path
     app_module_path: Path
-    app_module: Optional[types.ModuleType] = None
-    app_instance: Optional[reflex.App] = None
-    frontend_process: Optional[subprocess.Popen] = None
-    frontend_url: Optional[str] = None
-    frontend_output_thread: Optional[threading.Thread] = None
-    backend_thread: Optional[threading.Thread] = None
-    backend: Optional[uvicorn.Server] = None
-    state_manager: Optional[StateManager] = None
+    app_module: types.ModuleType | None = None
+    app_instance: reflex.App | None = None
+    frontend_process: subprocess.Popen | None = None
+    frontend_url: str | None = None
+    frontend_output_thread: threading.Thread | None = None
+    backend_thread: threading.Thread | None = None
+    backend: uvicorn.Server | None = None
+    state_manager: StateManager | None = None
     _frontends: list["WebDriver"] = dataclasses.field(default_factory=list)
     _decorated_pages: list = dataclasses.field(default_factory=list)
 
@@ -138,10 +136,10 @@ class AppHarness:
     def create(
         cls,
         root: Path,
-        app_source: Optional[
-            Callable[[], None] | types.ModuleType | str | functools.partial[Any]
-        ] = None,
-        app_name: Optional[str] = None,
+        app_source: (
+            Callable[[], None] | types.ModuleType | str | functools.partial[Any] | None
+        ) = None,
+        app_name: str | None = None,
     ) -> "AppHarness":
         """Create an AppHarness instance at root.
 
@@ -197,7 +195,7 @@ class AppHarness:
             f"{self.app_name}___{self.app_name}___" + state_cls_name
         )
 
-    def get_full_state_name(self, path: List[str]) -> str:
+    def get_full_state_name(self, path: list[str]) -> str:
         """Get the full state name for the given state class name.
 
         Args:
@@ -254,6 +252,7 @@ class AppHarness:
         # disable telemetry reporting for tests
 
         os.environ["TELEMETRY_ENABLED"] = "false"
+        CustomComponent.create().get_component.cache_clear()
         self.app_path.mkdir(parents=True, exist_ok=True)
         if self.app_source is not None:
             app_globals = self._get_globals_from_signature(self.app_source)
@@ -594,7 +593,7 @@ class AppHarness:
         driver_clz: Optional[Type["WebDriver"]] = None,
         driver_kwargs: dict[str, Any] | None = None,
         driver_options: ArgOptions | None = None,
-        driver_option_args: List[str] | None = None,
+        driver_option_args: list[str] | None = None,
         driver_option_capabilities: dict[str, Any] | None = None,
     ) -> "WebDriver":
         """Get a selenium webdriver instance pointed at the app.
@@ -766,7 +765,7 @@ class AppHarness:
         element: "WebElement",
         timeout: TimeoutType = None,
         exp_not_equal: str = "",
-    ) -> Optional[str]:
+    ) -> str | None:
         """Poll element.get_attribute("value") for change.
 
         Args:
@@ -902,8 +901,8 @@ class AppHarnessProd(AppHarness):
     handling. Additionally, the backend runs in multi-worker mode.
     """
 
-    frontend_thread: Optional[threading.Thread] = None
-    frontend_server: Optional[Subdir404TCPServer] = None
+    frontend_thread: threading.Thread | None = None
+    frontend_server: Subdir404TCPServer | None = None
 
     def _run_frontend(self):
         web_root = (

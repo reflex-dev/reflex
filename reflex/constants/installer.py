@@ -178,16 +178,15 @@ class PackageJson(SimpleNamespace):
     PATH = "package.json"
 
     DEPENDENCIES = {
-        "@babel/standalone": "7.26.6",
         "@emotion/react": "11.14.0",
         "axios": "1.7.9",
         "json5": "2.2.3",
-        "next": "15.1.6",
+        "next": "15.1.7",
         "next-sitemap": "4.2.3",
         "next-themes": "0.4.4",
-        "react": "18.3.1",
-        "react-dom": "18.3.1",
-        "react-focus-lock": "2.13.5",
+        "react": "19.0.0",
+        "react-dom": "19.0.0",
+        "react-focus-lock": "2.13.6",
         "socket.io-client": "4.8.1",
         "universal-cookie": "7.2.2",
     }
@@ -195,4 +194,8 @@ class PackageJson(SimpleNamespace):
         "autoprefixer": "10.4.20",
         "postcss": "8.5.1",
         "postcss-import": "16.1.0",
+    }
+    OVERRIDES = {
+        # This should always match the `react` version in DEPENDENCIES for recharts compatibility.
+        "react-is": "19.0.0"
     }

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import datetime
 import json
-from typing import Any, List
+from typing import Any
 
 import plotly.graph_objects as go
 import pytest
@@ -189,11 +189,11 @@ def test_to_snake_case(input: str, output: str):
         ("kebab-case", "kebabCase"),
         ("kebab-case-two", "kebabCaseTwo"),
         ("snake_kebab-case", "snakeKebabCase"),
-        ("_hover", "_hover"),
-        ("-starts-with-hyphen", "-startsWithHyphen"),
-        ("--starts-with-double-hyphen", "--startsWithDoubleHyphen"),
-        ("_starts_with_underscore", "_startsWithUnderscore"),
-        ("__starts_with_double_underscore", "__startsWithDoubleUnderscore"),
+        ("_hover", "Hover"),
+        ("-starts-with-hyphen", "StartsWithHyphen"),
+        ("--starts-with-double-hyphen", "StartsWithDoubleHyphen"),
+        ("_starts_with_underscore", "StartsWithUnderscore"),
+        ("__starts_with_double_underscore", "StartsWithDoubleUnderscore"),
         (":start-with-colon", ":startWithColon"),
         (":-start-with-colon-dash", ":StartWithColonDash"),
     ],
@@ -334,7 +334,7 @@ def test_format_route(route: str, format_case: bool, expected: bool):
 )
 def test_format_match(
     condition: str,
-    match_cases: List[List[Var]],
+    match_cases: list[list[Var]],
     default: Var,
     expected: str,
 ):

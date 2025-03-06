@@ -33,6 +33,10 @@ def VarOperations():
         list2: rx.Field[list] = rx.field([3, 4])
         list3: rx.Field[list] = rx.field(["first", "second", "third"])
         list4: rx.Field[list] = rx.field([Object(name="obj_1"), Object(name="obj_2")])
+        optional_list: rx.Field[list | None] = rx.field(None)
+        optional_dict: rx.Field[dict[str, str] | None] = rx.field(None)
+        optional_list_value: rx.Field[list[str] | None] = rx.field(["red", "yellow"])
+        optional_dict_value: rx.Field[dict[str, str] | None] = rx.field({"name": "red"})
         str_var1: rx.Field[str] = rx.field("first")
         str_var2: rx.Field[str] = rx.field("second")
         str_var3: rx.Field[str] = rx.field("ThIrD")
@@ -644,6 +648,22 @@ def VarOperations():
                     ),
                 ),
                 id="typed_dict_in_foreach",
+            ),
+            rx.box(
+                rx.foreach(VarOperationState.optional_list, rx.text.span),
+                id="optional_list",
+            ),
+            rx.box(
+                rx.foreach(VarOperationState.optional_dict, rx.text.span),
+                id="optional_dict",
+            ),
+            rx.box(
+                rx.foreach(VarOperationState.optional_list_value, rx.text.span),
+                id="optional_list_value",
+            ),
+            rx.box(
+                rx.foreach(VarOperationState.optional_dict_value, rx.text.span),
+                id="optional_dict_value",
             ),
         )
 

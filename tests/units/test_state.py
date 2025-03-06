@@ -10,18 +10,7 @@ import os
 import sys
 import threading
 from textwrap import dedent
-from typing import (
-    Any,
-    AsyncGenerator,
-    Callable,
-    ClassVar,
-    Dict,
-    List,
-    Optional,
-    Set,
-    Tuple,
-    Union,
-)
+from typing import Any, AsyncGenerator, Callable, ClassVar, Set, Tuple
 from unittest.mock import AsyncMock, Mock
 
 import pytest
@@ -35,7 +24,6 @@ import reflex.config
 from reflex import constants
 from reflex.app import App
 from reflex.base import Base
-from reflex.components.sonner.toast import Toaster
 from reflex.constants import CompileVars, RouteVar, SocketEvent
 from reflex.event import Event, EventHandler
 from reflex.state import (
@@ -121,10 +109,10 @@ class TestState(BaseState):
     num2: float = 3.14
     key: str
     map_key: str = "a"
-    array: List[float] = [1, 2, 3.14]
-    mapping: Dict[str, List[int]] = {"a": [1, 2, 3], "b": [4, 5, 6]}
+    array: list[float] = [1, 2, 3.14]
+    mapping: dict[str, list[int]] = {"a": [1, 2, 3], "b": [4, 5, 6]}
     obj: Object = Object()
-    complex: Dict[int, Object] = {1: Object(), 2: Object()}
+    complex: dict[int, Object] = {1: Object(), 2: Object()}
     fig: Figure = Figure()
     dt: datetime.datetime = datetime.datetime.fromisoformat("1989-11-09T18:53:00+01:00")
     _backend: int = 0
@@ -952,7 +940,7 @@ def test_add_var():
     # New instances get an actual value with the default
     assert DynamicState().dynamic_int == 42
 
-    ds1.add_var("dynamic_list", List[int], [5, 10])
+    ds1.add_var("dynamic_list", list[int], [5, 10])
     assert ds1.dynamic_list.equals(DynamicState.dynamic_list)  # pyright: ignore [reportAttributeAccessIssue]
     ds2 = DynamicState()
     assert ds2.dynamic_list == [5, 10]
@@ -960,7 +948,7 @@ def test_add_var():
     assert ds2.dynamic_list == [5, 10, 15]
     assert DynamicState().dynamic_list == [5, 10]
 
-    ds1.add_var("dynamic_dict", Dict[str, int], {"k1": 5, "k2": 10})
+    ds1.add_var("dynamic_dict", dict[str, int], {"k1": 5, "k2": 10})
     assert ds1.dynamic_dict.equals(DynamicState.dynamic_dict)  # pyright: ignore [reportAttributeAccessIssue]
     assert ds2.dynamic_dict.equals(DynamicState.dynamic_dict)  # pyright: ignore [reportAttributeAccessIssue]
     assert DynamicState().dynamic_dict == {"k1": 5, "k2": 10}
@@ -1393,8 +1381,8 @@ def test_computed_var_dependencies():
         v: int = 0
         w: int = 0
         x: int = 0
-        y: List[int] = [1, 2, 3]
-        _z: List[int] = [1, 2, 3]
+        y: list[int] = [1, 2, 3]
+        _z: list[int] = [1, 2, 3]
 
         @property
         def testprop(self) -> int:
@@ -1459,7 +1447,7 @@ def test_computed_var_dependencies():
             return [round(y) for y in self.y]
 
         @rx.var
-        def comp_z(self) -> List[bool]:
+        def comp_z(self) -> list[bool]:
             """Comprehension accesses attribute.
 
             Returns:
@@ -1613,29 +1601,20 @@ async def test_state_with_invalid_yield(capsys, mock_app):
         rx.event.Event(token="fake_token", name="invalid_handler")
     ):
         assert not update.delta
-        if Toaster.is_used:
-            assert update.events == rx.event.fix_events(
-                [
-                    rx.toast(
-                        "An error occurred.",
-                        description="TypeError: Your handler test_state_with_invalid_yield.<locals>.StateWithInvalidYield.invalid_handler must only return/yield: None, Events or other EventHandlers referenced by their class (not using `self`).<br/>See logs for details.",
-                        level="error",
-                        id="backend_error",
-                        position="top-center",
-                        style={"width": "500px"},
-                    )
-                ],
-                token="",
-            )
-        else:
-            assert update.events == rx.event.fix_events(
-                [
-                    rx.window_alert(
-                        "An error occurred.\nContact the website administrator."
-                    )
-                ],
-                token="",
-            )
+        assert update.events == rx.event.fix_events(
+            [
+                rx.toast(
+                    "An error occurred.",
+                    level="error",
+                    fallback_to_alert=True,
+                    description="TypeError: Your handler test_state_with_invalid_yield.<locals>.StateWithInvalidYield.invalid_handler must only return/yield: None, Events or other EventHandlers referenced by their class (i.e. using `type(self)` or other class references)..<br/>See logs for details.",
+                    id="backend_error",
+                    position="top-center",
+                    style={"width": "500px"},
+                )
+            ],
+            token="",
+        )
     captured = capsys.readouterr()
     assert "must only return/yield: None, Events or other EventHandlers" in captured.out
 
@@ -2048,8 +2027,8 @@ async def test_state_proxy(grandchild_state: GrandchildState, mock_app: rx.App):
 class BackgroundTaskState(BaseState):
     """A state with a background task."""
 
-    order: List[str] = []
-    dict_list: Dict[str, List[int]] = {"foo": [1, 2, 3]}
+    order: list[str] = []
+    dict_list: dict[str, list[int]] = {"foo": [1, 2, 3]}
     dc: ModelDC = ModelDC()
 
     def __init__(self, **kwargs):  # noqa: D107
@@ -2057,7 +2036,7 @@ class BackgroundTaskState(BaseState):
         self.router_data = {"simulate": "hydrate"}
 
     @rx.var(cache=False)
-    def computed_order(self) -> List[str]:
+    def computed_order(self) -> list[str]:
         """Get the order as a computed var.
 
         Returns:
@@ -2642,14 +2621,14 @@ def test_duplicate_substate_class(mocker):
 class Foo(Base):
     """A class containing a list of str."""
 
-    tags: List[str] = ["123", "456"]
+    tags: list[str] = ["123", "456"]
 
 
 def test_json_dumps_with_mutables():
     """Test that json.dumps works with Base vars inside mutable types."""
 
     class MutableContainsBase(BaseState):
-        items: List[Foo] = [Foo()]
+        items: list[Foo] = [Foo()]
 
     dict_val = MutableContainsBase().dict()
     assert isinstance(dict_val[MutableContainsBase.get_full_name()]["items"][0], Foo)
@@ -2668,7 +2647,7 @@ def test_reset_with_mutables():
     copied_default = copy.deepcopy(default)
 
     class MutableResetState(BaseState):
-        items: List[List[int]] = default
+        items: list[list[int]] = default
 
     instance = MutableResetState()
     assert instance.items.__wrapped__ is not default  # pyright: ignore [reportAttributeAccessIssue]
@@ -2717,7 +2696,7 @@ class Custom1(Base):
 class Custom2(Base):
     """A custom class with a Custom1 field."""
 
-    c1: Optional[Custom1] = None
+    c1: Custom1 | None = None
     c1r: Custom1
 
     def set_c1r_foo(self, val: str):
@@ -2732,7 +2711,7 @@ class Custom2(Base):
 class Custom3(Base):
     """A custom class with a Custom2 field."""
 
-    c2: Optional[Custom2] = None
+    c2: Custom2 | None = None
     c2r: Custom2
 
 
@@ -2740,12 +2719,12 @@ def test_state_union_optional():
     """Test that state can be defined with Union and Optional vars."""
 
     class UnionState(BaseState):
-        int_float: Union[int, float] = 0
-        opt_int: Optional[int]
-        c3: Optional[Custom3]
+        int_float: int | float = 0
+        opt_int: int | None
+        c3: Custom3 | None
         c3i: Custom3  # implicitly required
         c3r: Custom3 = Custom3(c2r=Custom2(c1r=Custom1(foo="")))
-        custom_union: Union[Custom1, Custom2, Custom3] = Custom1(foo="")
+        custom_union: Custom1 | Custom2 | Custom3 = Custom1(foo="")
 
     assert str(UnionState.c3.c2) == f'{UnionState.c3!s}?.["c2"]'  # pyright: ignore [reportOptionalMemberAccess]
     assert str(UnionState.c3.c2.c1) == f'{UnionState.c3!s}?.["c2"]?.["c1"]'  # pyright: ignore [reportOptionalMemberAccess]
@@ -2814,7 +2793,7 @@ def test_set_base_field_via_setter():
     assert "c2" in bfss.dirty_vars
 
 
-def exp_is_hydrated(state: BaseState, is_hydrated: bool = True) -> Dict[str, Any]:
+def exp_is_hydrated(state: BaseState, is_hydrated: bool = True) -> dict[str, Any]:
     """Expected IS_HYDRATED delta that would be emitted by HydrateMiddleware.
 
     Args:
@@ -3549,8 +3528,8 @@ def test_fallback_pickle():
     """Test that state serialization will fall back to dill."""
 
     class DillState(BaseState):
-        _o: Optional[Obj] = None
-        _f: Optional[Callable] = None
+        _o: Obj | None = None
+        _f: Callable | None = None
         _g: Any = None
 
     state = DillState(_reflex_internal_init=True)  # pyright: ignore [reportCallIssue]
@@ -3701,7 +3680,7 @@ class UpcastState(rx.State):
         assert isinstance(o, Object)
         self.passed = True
 
-    def rx_base_or_none(self, o: Optional[Object]):  # noqa: D102
+    def rx_base_or_none(self, o: Object | None):  # noqa: D102
         if o is not None:
             assert isinstance(o, Object)
         self.passed = True
@@ -3890,7 +3869,7 @@ class Table(rx.ComponentState):
     data: ClassVar[Var]
 
     @rx.var(cache=True, auto_deps=False)
-    async def rows(self) -> List[Dict[str, Any]]:
+    async def rows(self) -> list[dict[str, Any]]:
         """Computed var over the given rows.
 
         Returns:
@@ -3925,7 +3904,7 @@ async def test_async_computed_var_get_var_value(mock_app: rx.App, token: str):
     class OtherState(rx.State):
         """A state with a var."""
 
-        data: List[Dict[str, Any]] = [{"foo": "bar"}]
+        data: list[dict[str, Any]] = [{"foo": "bar"}]
 
     mock_app.state_manager.state = mock_app._state = rx.State
     comp = Table.create(data=OtherState.data)

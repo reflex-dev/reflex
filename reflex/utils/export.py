@@ -1,7 +1,6 @@
 """Export utilities."""
 
 from pathlib import Path
-from typing import Optional
 
 from reflex import constants
 from reflex.config import environment, get_config
@@ -16,8 +15,8 @@ def export(
     backend: bool = True,
     zip_dest_dir: str = str(Path.cwd()),
     upload_db_file: bool = False,
-    api_url: Optional[str] = None,
-    deploy_url: Optional[str] = None,
+    api_url: str | None = None,
+    deploy_url: str | None = None,
     env: constants.Env = constants.Env.PROD,
     loglevel: constants.LogLevel = console._LOG_LEVEL,
 ):

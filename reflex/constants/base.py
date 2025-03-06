@@ -53,6 +53,12 @@ class Dirs(SimpleNamespace):
     POSTCSS_JS = "postcss.config.js"
     # The name of the states directory.
     STATES = ".states"
+    # Where compilation artifacts for the backend are stored.
+    BACKEND = "backend"
+    # JSON-encoded list of page routes that need to be evaluated on the backend.
+    STATEFUL_PAGES = "stateful_pages.json"
+    # Marker file indicating that upload component was used in the frontend.
+    UPLOAD_IS_USED = "upload_is_used"
 
 
 class Reflex(SimpleNamespace):
