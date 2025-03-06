@@ -79,7 +79,7 @@ class BaseComponent(Base, ABC):
     children: list[BaseComponent] = pydantic.v1.Field(default_factory=list)
 
     # The library that the component is based on.
-    library: str | None = None
+    library: str | None = pydantic.v1.Field(default_factory=lambda: None)
 
     # List here the non-react dependency needed by `library`
     lib_dependencies: list[str] = pydantic.v1.Field(default_factory=list)
@@ -88,7 +88,7 @@ class BaseComponent(Base, ABC):
     transpile_packages: list[str] = pydantic.v1.Field(default_factory=list)
 
     # The tag to use when rendering the component.
-    tag: str | None = None
+    tag: str | None = pydantic.v1.Field(default_factory=lambda: None)
 
     @abstractmethod
     def render(self) -> dict:
@@ -273,25 +273,25 @@ class Component(BaseComponent, ABC):
     )
 
     # The alias for the tag.
-    alias: str | None = None
+    alias: str | None = pydantic.v1.Field(default_factory=lambda: None)
 
     # Whether the import is default or named.
-    is_default: bool | None = False
+    is_default: bool | None = pydantic.v1.Field(default_factory=lambda: False)
 
     # A unique key for the component.
-    key: Any = None
+    key: Any = pydantic.v1.Field(default_factory=lambda: None)
 
     # The id for the component.
-    id: Any = None
+    id: Any = pydantic.v1.Field(default_factory=lambda: None)
 
     # The class name for the component.
-    class_name: Any = None
+    class_name: Any = pydantic.v1.Field(default_factory=lambda: None)
 
     # Special component props.
     special_props: list[Var] = pydantic.v1.Field(default_factory=list)
 
     # Whether the component should take the focus once the page is loaded
-    autofocus: bool = False
+    autofocus: bool = pydantic.v1.Field(default_factory=lambda: False)
 
     # components that cannot be children
     _invalid_children: ClassVar[list[str]] = []
@@ -312,7 +312,9 @@ class Component(BaseComponent, ABC):
     _memoization_mode: MemoizationMode = MemoizationMode()
 
     # State class associated with this component instance
-    State: Type[reflex.state.State] | None = None
+    State: Type[reflex.state.State] | None = pydantic.v1.Field(
+        default_factory=lambda: None
+    )
 
     def add_imports(self) -> ImportDict | list[ImportDict]:
         """Add imports for the component.
@@ -421,7 +423,11 @@ class Component(BaseComponent, ABC):
             if field.type_ is Var:
                 field.required = False
                 if field.default is not None:
-                    field.default = LiteralVar.create(field.default)
+                    field.default_factory = (
+                        lambda default_value=field.default: LiteralVar.create(
+                            default_value
+                        )
+                    )
             elif field.type_ is EventHandler:
                 field.required = False
 
