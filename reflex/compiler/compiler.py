@@ -248,10 +248,9 @@ def _compile_components(
     }
 
     custom_codes = {
-        comp_import: None
+        comp_custom_code: None
         for comp_render in component_renders
-        if "custom_code" in comp_render
-        for comp_import in comp_render["custom_code"]
+        for comp_custom_code in comp_render.get("custom_code", [])
     }
 
     # Compile the components page.
