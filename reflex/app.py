@@ -28,10 +28,10 @@ from typing import (
     MutableMapping,
     Type,
     get_args,
-    get_type_hints,
+    get_type_hints, List,
 )
 
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import FastAPI, HTTPException, Request, Response
 from fastapi import UploadFile as FastAPIUploadFile
 from fastapi.middleware import cors
 from fastapi.responses import JSONResponse, StreamingResponse
@@ -110,6 +110,10 @@ from reflex.utils import (
 )
 from reflex.utils.exec import get_compile_context, is_prod_mode, is_testing_env
 from reflex.utils.imports import ImportVar
+
+from xml.dom import minidom
+from xml.etree.ElementTree import Element, SubElement, tostring
+
 
 if TYPE_CHECKING:
     from reflex.vars import Var
@@ -653,6 +657,105 @@ class App(MiddlewareMixin, LifespanMixin):
         from reflex.compiler.compiler import into_component
 
         return into_component(component)
+
+    def _generate_xml(self, links: List[Dict[str, Any]]) -> str:
+        """Generate an XML sitemap from a list of links.
+        Args:
+            links (List[Dict[str, Any]]): A list of dictionaries where each dictionary contains
+                'loc' (URL of the page), 'changefreq' (frequency of changes), and 'priority' (priority of the page).
+        Returns:
+            str: A pretty-printed XML string representing the sitemap.
+        """
+        urlset = Element("urlset", xmlns="https://www.sitemaps.org/schemas/sitemap/0.9")
+        for link in links:
+            url = SubElement(urlset, "url")
+            loc = SubElement(url, "loc")
+            loc.text = link["loc"]
+            changefreq = SubElement(url, "changefreq")
+            changefreq.text = link["changefreq"]
+            priority = SubElement(url, "priority")
+            priority.text = str(link["priority"])
+        rough_string = tostring(urlset, "utf-8")
+        reparsed = minidom.parseString(rough_string)
+        return reparsed.toprettyxml(indent="  ")
+
+    def _generate_links_for_sitemap(self) -> List[dict[str, str]]:
+        """Generate a sitemap for the application based on its registered pages.
+
+        This function loops through the registered routes in the app and generates a list of
+        links with their respective sitemap properties such as location (URL), change frequency,
+        and priority. Dynamic routes and the 404 page are excluded from the sitemap.
+
+        Args:
+            app (App): The application instance containing the page routes and their components.
+
+        Returns:
+            str: An XML string representation of the sitemap.
+        """
+        links = []
+
+        # find link of pages that are not dynamicaly created.
+        for route, component in self._pages.items():
+            # Ignore dynamic routes and 404
+            if ("[" in route and "]" in route) or route == "404":
+                continue
+
+            # Handle the index route
+            if route == "index":
+                route = "/"
+
+            if not route.startswith("/"):
+                route = f"/{route}"
+
+            # Check for explicit sitemap settings
+            sitemap_priority = getattr(component, "sitemap_priority", None)
+            sitemap_changefreq = getattr(component, "sitemap_changefreq", "weekly")
+
+            # Calculate priority if not explicitly set
+            if sitemap_priority is None:
+                depth = route.count("/")
+                sitemap_priority = max(0.5, 1.0 - (depth * 0.1))
+
+            deploy_url = get_config().deploy_url  # pick domain url from the config file.
+
+            links.append(
+                {
+                    "loc": f"{deploy_url}{route}",
+                    "changefreq": sitemap_changefreq,
+                    "priority": sitemap_priority,
+                }
+            )
+        return links
+
+    def add_sitemap(self):
+        """Register the `/sitemap.xml` endpoint in the application.
+        This method adds a route to the application that serves the dynamically generated sitemap.
+        When a GET request is made to `/sitemap.xml`, the `serve_sitemap` function is called to
+        generate and return the sitemap in XML format.
+
+        Args:
+            None
+        """
+
+        @self.api.get("/sitemap.xml")
+        async def sitemap():
+            return await self.serve_sitemap()
+
+    async def serve_sitemap(self) -> Response:
+        """Asynchronously serve the sitemap as an XML response.
+
+        This function generates the sitemap for the application. It then serves the sitemap as an XML response.
+
+        Args:
+            app (App): The application instance containing the registered pages.
+
+        Returns:
+            Response: An HTTP response with the XML sitemap content and the media type set to "application/xml".
+        """
+        pages_links = self._generate_links_for_sitemap()
+        sitemaps = self._generate_xml(pages_links)
+        return Response(content=sitemaps, media_type="application/xml")
+
 
     def add_page(
         self,
