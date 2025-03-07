@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import contextlib
+import copy
 import dataclasses
 import datetime
 import functools
@@ -2146,7 +2147,7 @@ class ComputedVar(Var[RETURN_TYPE]):
             "fget": kwargs.pop("fget", self._fget),
             "initial_value": kwargs.pop("initial_value", self._initial_value),
             "cache": kwargs.pop("cache", self._cache),
-            "deps": kwargs.pop("deps", self._static_deps),
+            "deps": kwargs.pop("deps", copy.copy(self._static_deps)),
             "auto_deps": kwargs.pop("auto_deps", self._auto_deps),
             "interval": kwargs.pop("interval", self._update_interval),
             "backend": kwargs.pop("backend", self._backend),
