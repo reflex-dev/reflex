@@ -12,6 +12,7 @@ from pathlib import Path
 from typing import Generator, Type
 from unittest.mock import AsyncMock
 
+import fastapi
 import pytest
 import sqlmodel
 from fastapi import FastAPI, UploadFile
@@ -59,7 +60,6 @@ from .states import (
     GenState,
     GrandChildFileUploadState,
 )
-from fastapi import Response
 
 
 class EmptyState(BaseState):
@@ -1774,7 +1774,8 @@ def test_backend_exception_handler_validation(handler_fn, expected):
     with expected:
         rx.App(backend_exception_handler=handler_fn)._validate_exception_handlers()
 
-def test_generate_xml(app: App ):
+
+def test_generate_xml(app: App):
     """Test the generate_xml function."""
     # Test data for the generate_xml function
     test_links = [
@@ -1790,19 +1791,21 @@ def test_generate_xml(app: App ):
         },
     ]
 
-    expected_xml = """<?xml version="1.0" ?>
-    <urlset xmlns="https://www.sitemaps.org/schemas/sitemap/0.9">
-      <url>
-        <loc>http://www.google.com:3000/</loc>
-        <changefreq>weekly</changefreq>
-        <priority>0.7</priority>
-      </url>
-      <url>
-        <loc>http://www.google.com:3000/about</loc>
-        <changefreq>yearly</changefreq>
-        <priority>0.9</priority>
-      </url>
-    </urlset>"""
+    expected_xml = """
+    <?xml version="1.0" ?>
+<urlset xmlns="https://www.sitemaps.org/schemas/sitemap/0.9">
+  <url>
+    <loc>http://www.google.com:3000/</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>http://www.google.com:3000/about</loc>
+    <changefreq>yearly</changefreq>
+    <priority>0.9</priority>
+  </url>
+</urlset>
+    """
 
     result = app._generate_xml(test_links)
     assert result.strip() == expected_xml.strip()
@@ -1840,24 +1843,37 @@ async def test_serve_sitemap(app_instance, index_page, about_page):
 """
 
     # Mock `_generate_links_for_sitemap` and `_generate_xml` methods
-    with unittest.mock.patch.object(app_instance, '_generate_links_for_sitemap', return_value=mock_links), \
-            unittest.mock.patch.object(app_instance, '_generate_xml', return_value=mock_xml):
+    with (
+        unittest.mock.patch.object(
+            app_instance, "_generate_links_for_sitemap", return_value=mock_links
+        ),
+        unittest.mock.patch.object(
+            app_instance, "_generate_xml", return_value=mock_xml
+        ),
+    ):
         # Call the `serve_sitemap` method
-        response: Response = await app_instance.serve_sitemap()
+        response: fastapi.Response = await app_instance.serve_sitemap()
 
         # Assert that the response is of type `Response`
-        assert isinstance(response, Response)
+        assert isinstance(response, fastapi.Response)
 
         # Assert the content type is 'application/xml'
-        assert response.media_type == 'application/xml'
+        assert response.media_type == "application/xml"
+
+        # Convert memoryview to bytes explicitly (if it's a memoryview)
+        if isinstance(response.body, memoryview):
+            response_body = response.body.tobytes().decode("utf-8")
+        else:
+            # If it's already bytes, decode directly
+            response_body = response.body.decode("utf-8")
 
         # Assert that the XML content is correct (mocked value)
-        assert response.body.decode('utf-8') == mock_xml
+        assert response_body == mock_xml
 
 
 def test_generate_links_for_sitemap(app_instance, index_page, about_page):
     # Add pages to the app
-    pages = {'index': index_page, 'about': about_page}
+    pages = {"index": index_page, "about": about_page}
 
     # mock self._pages to return the dictionary pages.
     with unittest.mock.patch.object(app_instance, "_pages", pages):
@@ -1866,5 +1882,9 @@ def test_generate_links_for_sitemap(app_instance, index_page, about_page):
         # Assert that the links are generated correctly
         assert links == [
             {"loc": "http://localhost:3000/", "changefreq": "weekly", "priority": 0.9},
-            {"loc": "http://localhost:3000/about", "changefreq": "weekly", "priority": 0.9},
+            {
+                "loc": "http://localhost:3000/about",
+                "changefreq": "weekly",
+                "priority": 0.9,
+            },
         ]

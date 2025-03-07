@@ -25,11 +25,14 @@ from typing import (
     Callable,
     Coroutine,
     Dict,
+    List,
     MutableMapping,
     Type,
     get_args,
-    get_type_hints, List,
+    get_type_hints,
 )
+from xml.dom import minidom
+from xml.etree.ElementTree import Element, SubElement, tostring
 
 from fastapi import FastAPI, HTTPException, Request, Response
 from fastapi import UploadFile as FastAPIUploadFile
@@ -110,10 +113,6 @@ from reflex.utils import (
 )
 from reflex.utils.exec import get_compile_context, is_prod_mode, is_testing_env
 from reflex.utils.imports import ImportVar
-
-from xml.dom import minidom
-from xml.etree.ElementTree import Element, SubElement, tostring
-
 
 if TYPE_CHECKING:
     from reflex.vars import Var
@@ -582,6 +581,10 @@ class App(MiddlewareMixin, LifespanMixin):
             raise ValueError("The app has not been initialized.")
         return self.api
 
+    async def add_sitemap(self):
+        """Return Sitemap when the user request for it."""
+        return await self.serve_sitemap()
+
     def _add_default_endpoints(self):
         """Add default api endpoints (ping)."""
         # To test the server.
@@ -590,6 +593,7 @@ class App(MiddlewareMixin, LifespanMixin):
 
         self.api.get(str(constants.Endpoint.PING))(ping)
         self.api.get(str(constants.Endpoint.HEALTH))(health)
+        self.api.get(str(constants.Endpoint.SITEMAP))(self.serve_sitemap)
 
     def _add_optional_endpoints(self):
         """Add optional api endpoints (_upload)."""
@@ -660,9 +664,11 @@ class App(MiddlewareMixin, LifespanMixin):
 
     def _generate_xml(self, links: List[Dict[str, Any]]) -> str:
         """Generate an XML sitemap from a list of links.
+
         Args:
             links (List[Dict[str, Any]]): A list of dictionaries where each dictionary contains
                 'loc' (URL of the page), 'changefreq' (frequency of changes), and 'priority' (priority of the page).
+
         Returns:
             str: A pretty-printed XML string representing the sitemap.
         """
@@ -716,7 +722,9 @@ class App(MiddlewareMixin, LifespanMixin):
                 depth = route.count("/")
                 sitemap_priority = max(0.5, 1.0 - (depth * 0.1))
 
-            deploy_url = get_config().deploy_url  # pick domain url from the config file.
+            deploy_url = (
+                get_config().deploy_url
+            )  # pick domain url from the config file.
 
             links.append(
                 {
@@ -726,20 +734,6 @@ class App(MiddlewareMixin, LifespanMixin):
                 }
             )
         return links
-
-    def add_sitemap(self):
-        """Register the `/sitemap.xml` endpoint in the application.
-        This method adds a route to the application that serves the dynamically generated sitemap.
-        When a GET request is made to `/sitemap.xml`, the `serve_sitemap` function is called to
-        generate and return the sitemap in XML format.
-
-        Args:
-            None
-        """
-
-        @self.api.get("/sitemap.xml")
-        async def sitemap():
-            return await self.serve_sitemap()
 
     async def serve_sitemap(self) -> Response:
         """Asynchronously serve the sitemap as an XML response.
@@ -755,7 +749,6 @@ class App(MiddlewareMixin, LifespanMixin):
         pages_links = self._generate_links_for_sitemap()
         sitemaps = self._generate_xml(pages_links)
         return Response(content=sitemaps, media_type="application/xml")
-
 
     def add_page(
         self,
