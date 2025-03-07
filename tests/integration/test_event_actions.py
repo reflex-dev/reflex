@@ -154,7 +154,7 @@ def TestEventAction():
             on_click=EventActionState.on_click("outer"),  # pyright: ignore [reportCallIssue]
         )
 
-    app = rx.App(_state=rx.State)
+    app = rx.App()
     app.add_page(index)
 
 

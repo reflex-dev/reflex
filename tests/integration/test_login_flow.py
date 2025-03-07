@@ -45,7 +45,7 @@ def LoginSample():
             rx.button("Do it", on_click=State.login, id="doit"),
         )
 
-    app = rx.App(_state=rx.State)
+    app = rx.App()
     app.add_page(index)
     app.add_page(login)
 

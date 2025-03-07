@@ -16,7 +16,7 @@ def DatetimeOperationsApp():
         date2: datetime = datetime(2031, 1, 1)
         date3: datetime = datetime(2021, 1, 1)
 
-    app = rx.App(_state=DtOperationsState)
+    app = rx.App()
 
     @app.add_page
     def index():
