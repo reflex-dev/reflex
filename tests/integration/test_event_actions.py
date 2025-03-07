@@ -9,6 +9,8 @@ from typing import Callable, Coroutine, Generator
 import pytest
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.support.wait import WebDriverWait
 
 from reflex.testing import AppHarness, WebDriver
 
@@ -371,11 +373,13 @@ async def test_event_actions_dialog_form_in_form(
     """
     open_dialog_id = "btn-dialog"
     submit_button_id = "btn-submit"
+    wait = WebDriverWait(driver, 10)
 
     driver.find_element(By.ID, open_dialog_id).click()
-    el = AppHarness._poll_for(lambda: driver.find_element(By.ID, submit_button_id))
+    el = wait.until(EC.element_to_be_clickable((By.ID, submit_button_id)))
     el.click()  # pyright: ignore[reportAttributeAccessIssue]
     el.send_keys(Keys.ESCAPE)  # pyright: ignore[reportAttributeAccessIssue]
 
-    AppHarness._poll_for(lambda: driver.find_element(By.ID, "btn-no-events")).click()  # pyright: ignore[reportAttributeAccessIssue]
+    btn_no_events = wait.until(EC.element_to_be_clickable((By.ID, "btn-no-events")))
+    btn_no_events.click()
     await poll_for_order(["on_submit", "on_click:outer"])
