@@ -154,7 +154,11 @@ def run_frontend(root: Path, port: str, backend_present: bool = True):
     console.rule("[bold green]App Running")
     os.environ["PORT"] = str(get_config().frontend_port if port is None else port)
     run_process_and_launch_url(
-        [prerequisites.get_package_manager(), "run", "dev"],
+        [
+            *prerequisites.get_js_package_executor(raise_on_none=True)[0],
+            "run",
+            "dev",
+        ],
         backend_present,
     )
 
@@ -176,7 +180,7 @@ def run_frontend_prod(root: Path, port: str, backend_present: bool = True):
     # Run the frontend in production mode.
     console.rule("[bold green]App Running")
     run_process_and_launch_url(
-        [prerequisites.get_package_manager(), "run", "prod"],
+        [*prerequisites.get_js_package_executor(raise_on_none=True)[0], "run", "prod"],
         backend_present,
     )
 
@@ -522,13 +526,8 @@ def output_system_info():
 
     system = platform.system()
 
-    fnm_info = f"[FNM {prerequisites.get_fnm_version()} (Expected: {constants.Fnm.VERSION}) (PATH: {constants.Fnm.EXE})]"
-
-    dependencies.extend(
-        [
-            fnm_info,
-            f"[Bun {prerequisites.get_bun_version()} (Expected: {constants.Bun.VERSION}) (PATH: {path_ops.get_bun_path()})]",
-        ],
+    dependencies.append(
+        f"[Bun {prerequisites.get_bun_version()} (Expected: {constants.Bun.VERSION}) (PATH: {path_ops.get_bun_path()})]"
     )
 
     if system == "Linux":
@@ -544,10 +543,10 @@ def output_system_info():
         console.debug(f"{dep}")
 
     console.debug(
-        f"Using package installer at: {prerequisites.get_install_package_manager(on_failure_return_none=True)}"
+        f"Using package installer at: {prerequisites.get_nodejs_compatible_package_managers(raise_on_none=False)}"
     )
     console.debug(
-        f"Using package executer at: {prerequisites.get_package_manager(on_failure_return_none=True)}"
+        f"Using package executer at: {prerequisites.get_js_package_executor(raise_on_none=False)}"
     )
     if system != "Windows":
         console.debug(f"Unzip path: {path_ops.which('unzip')}")

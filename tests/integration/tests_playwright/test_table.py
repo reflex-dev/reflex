@@ -87,6 +87,7 @@ def test_table(page: Page, table_app: AppHarness):
     table = page.get_by_role("table")
 
     # Check column headers
+    expect(table.get_by_role("columnheader")).to_have_count(3)
     headers = table.get_by_role("columnheader")
     for header, exp_value in zip(headers.all(), expected_col_headers, strict=True):
         expect(header).to_have_text(exp_value)
