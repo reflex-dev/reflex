@@ -8,12 +8,15 @@ from typing import Callable, Coroutine, Generator
 
 import pytest
 from selenium.webdriver.common.by import By
+from selenium.webdriver.common.keys import Keys
 
 from reflex.testing import AppHarness, WebDriver
 
 
 def TestEventAction():
     """App for testing event_actions."""
+    from typing import Any
+
     import reflex as rx
 
     class EventActionState(rx.State):
@@ -31,6 +34,10 @@ def TestEventAction():
 
         def on_click_debounce(self):
             self.order.append("on_click_debounce")
+
+        @rx.event
+        def on_submit(self, form_data: dict[str, Any]):
+            self.order.append("on_submit")
 
     class EventFiringComponent(rx.Component):
         """A component that fires onClick event without passing DOM event."""
@@ -152,10 +159,26 @@ def TestEventAction():
                 ),
             ),
             on_click=EventActionState.on_click("outer"),  # pyright: ignore [reportCallIssue]
+        ), rx.form(
+            rx.dialog.root(
+                rx.dialog.trigger(
+                    rx.button("Open Dialog", type="button", id="btn-dialog"),
+                    on_click=rx.stop_propagation,  # pyright: ignore [reportArgumentType]
+                ),
+                rx.dialog.content(
+                    rx.dialog.close(
+                        rx.form(
+                            rx.button("Submit", id="btn-submit"),
+                            on_submit=EventActionState.on_submit.stop_propagation,  # pyright: ignore [reportCallIssue]
+                        ),
+                    ),
+                ),
+            ),
+            on_submit=EventActionState.on_submit,  # pyright: ignore [reportCallIssue]
         )
 
     app = rx.App(_state=rx.State)
-    app.add_page(index)
+    app.add_page(index)  # pyright: ignore [reportArgumentType]
 
 
 @pytest.fixture(scope="module")
@@ -332,3 +355,27 @@ async def test_event_actions_throttle_debounce(
         await poll_for_order(
             ["on_click_throttle"] * (exp_events - 1) + ["on_click_debounce"]
         )
+
+
+@pytest.mark.usefixtures("token")
+@pytest.mark.asyncio
+async def test_event_actions_dialog_form_in_form(
+    driver: WebDriver,
+    poll_for_order: Callable[[list[str]], Coroutine[None, None, None]],
+):
+    """Click links and buttons and assert on fired events.
+
+    Args:
+        driver: WebDriver instance.
+        poll_for_order: function that polls for the order list to match the expected order.
+    """
+    open_dialog_id = "btn-dialog"
+    submit_button_id = "btn-submit"
+
+    driver.find_element(By.ID, open_dialog_id).click()
+    el = AppHarness._poll_for(lambda: driver.find_element(By.ID, submit_button_id))
+    el.click()  # pyright: ignore[reportAttributeAccessIssue]
+    el.send_keys(Keys.ESCAPE)  # pyright: ignore[reportAttributeAccessIssue]
+
+    AppHarness._poll_for(lambda: driver.find_element(By.ID, "btn-no-events")).click()  # pyright: ignore[reportAttributeAccessIssue]
+    await poll_for_order(["on_submit", "on_click:outer"])
