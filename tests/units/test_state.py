@@ -3916,3 +3916,22 @@ async def test_async_computed_var_get_var_value(mock_app: rx.App, token: str):
 
     other_state.data.append({"foo": "baz"})
     assert "rows" in comp_state.dirty_vars
+
+
+def test_computed_var_mutability() -> None:
+    class CvMixin(rx.State, mixin=True):
+        @rx.var(cache=True, deps=["hi"])
+        def cv(self) -> int:
+            return 42
+
+    class FirstCvState(CvMixin, rx.State):
+        pass
+
+    class SecondCvState(CvMixin, rx.State):
+        pass
+
+    first_cv = FirstCvState.computed_vars["cv"]
+    second_cv = SecondCvState.computed_vars["cv"]
+
+    assert first_cv is not second_cv
+    assert first_cv._static_deps is not second_cv._static_deps
