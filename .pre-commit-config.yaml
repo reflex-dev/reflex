@@ -1,7 +1,6 @@
 fail_fast: true
 
 repos:
-
   - repo: https://github.com/charliermarsh/ruff-pre-commit
     rev: v0.9.6
     hooks:
@@ -9,7 +8,7 @@ repos:
         args: [reflex, tests]
       - id: ruff
         args: ["--fix", "--exit-non-zero-on-fix"]
-        exclude: '^integration/benchmarks/'
+        exclude: "^integration/benchmarks/"
 
   - repo: https://github.com/codespell-project/codespell
     rev: v2.3.0
@@ -25,7 +24,7 @@ repos:
         always_run: true
         language: system
         require_serial: true
-        description: 'Update pyi files as needed'
+        description: "Update pyi files as needed"
         entry: python3 scripts/make_pyi.py
 
   - repo: https://github.com/RobertCraigie/pyright-python
@@ -39,5 +38,4 @@ repos:
     rev: v1.8.1
     hooks:
       - id: darglint
-        exclude: '^reflex/reflex.py'
-
+        exclude: "^reflex/reflex.py"

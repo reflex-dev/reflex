@@ -1,4 +1,3 @@
-
 <div align="center">
 <img src="https://raw.githubusercontent.com/reflex-dev/reflex/main/docs/images/reflex_dark.svg#gh-light-mode-only" alt="Reflex Logo" width="300px">
 <img src="https://raw.githubusercontent.com/reflex-dev/reflex/main/docs/images/reflex_light.svg#gh-dark-mode-only" alt="Reflex Logo" width="300px">
@@ -6,15 +5,18 @@
 <hr>
 
 ### **✨ 순수 Python으로 고성능 사용자 정의 웹앱을 만들어 보세요. 몇 초만에 배포 가능합니다. ✨**
+
 [![PyPI version](https://badge.fury.io/py/reflex.svg)](https://badge.fury.io/py/reflex)
 ![versions](https://img.shields.io/pypi/pyversions/reflex.svg)
 [![Documentaiton](https://img.shields.io/badge/Documentation%20-Introduction%20-%20%23007ec6)](https://reflex.dev/docs/getting-started/introduction)
 [![Discord](https://img.shields.io/discord/1029853095527727165?color=%237289da&label=Discord)](https://discord.gg/T5WSbC2YtQ)
+
 </div>
 
 ---
-[English](https://github.com/reflex-dev/reflex/blob/main/README.md) | [简体中文](https://github.com/reflex-dev/reflex/blob/main/docs/zh/zh_cn/README.md) | [繁體中文](https://github.com/reflex-dev/reflex/blob/main/docs/zh/zh_tw/README.md) | [Türkçe](https://github.com/reflex-dev/reflex/blob/main/docs/tr/README.md) | [हिंदी](https://github.com/reflex-dev/reflex/blob/main/docs/in/README.md) | [Português (Brasil)](https://github.com/reflex-dev/reflex/blob/main/docs/pt/pt_br/README.md) | [Italiano](https://github.com/reflex-dev/reflex/blob/main/docs/it/README.md) | [한국어](https://github.com/reflex-dev/reflex/blob/main/docs/kr/README.md) | [日本語](https://github.com/reflex-dev/reflex/blob/main/docs/ja/README.md) | [Deutsch](https://github.com/reflex-dev/reflex/blob/main/docs/de/README.md) | [Persian (پارسی)](https://github.com/reflex-dev/reflex/blob/main/docs/pe/README.md)
----
+
+## [English](https://github.com/reflex-dev/reflex/blob/main/README.md) | [简体中文](https://github.com/reflex-dev/reflex/blob/main/docs/zh/zh_cn/README.md) | [繁體中文](https://github.com/reflex-dev/reflex/blob/main/docs/zh/zh_tw/README.md) | [Türkçe](https://github.com/reflex-dev/reflex/blob/main/docs/tr/README.md) | [हिंदी](https://github.com/reflex-dev/reflex/blob/main/docs/in/README.md) | [Português (Brasil)](https://github.com/reflex-dev/reflex/blob/main/docs/pt/pt_br/README.md) | [Italiano](https://github.com/reflex-dev/reflex/blob/main/docs/it/README.md) | [한국어](https://github.com/reflex-dev/reflex/blob/main/docs/kr/README.md) | [日本語](https://github.com/reflex-dev/reflex/blob/main/docs/ja/README.md) | [Deutsch](https://github.com/reflex-dev/reflex/blob/main/docs/de/README.md) | [Persian (پارسی)](https://github.com/reflex-dev/reflex/blob/main/docs/pe/README.md)
+
 ## ⚙️ 설치
 
 터미널을 열고 실행하세요. (Python 3.10+ 필요):
@@ -46,7 +48,6 @@ reflex run
 http://localhost:3000 에서 앱이 실행 됩니다.
 
 이제 `my_app_name/my_app_name.py`에서 소스코드를 수정할 수 있습니다. Reflex는 빠른 새로고침을 지원하므로 코드를 저장할 때마다 즉시 변경 사항을 볼 수 있습니다.
-
 
 ## 🫧 예시 앱
 
@@ -101,7 +102,7 @@ def index():
                 width="25em",
             ),
             rx.button(
-                "Generate Image", 
+                "Generate Image",
                 on_click=State.get_image,
                 width="25em",
                 loading=State.processing
@@ -136,10 +137,9 @@ def index():
 
 `index` 함수는 앱의 프론트엔드를 정의합니다.
 
-`center`, `vstack`, `input`, `button`과 같은 다양한 컴포넌트를 사용하여 프론트엔드를 구축합니다. 
-컴포넌트들은 복잡한 레이아웃을 만들기 위해 서로 중첩될 수 있습니다. 
+`center`, `vstack`, `input`, `button`과 같은 다양한 컴포넌트를 사용하여 프론트엔드를 구축합니다.
+컴포넌트들은 복잡한 레이아웃을 만들기 위해 서로 중첩될 수 있습니다.
 그리고 키워드 인자를 사용하여 CSS의 모든 기능을 사용하여 스타일을 지정할 수 있습니다.
-
 
 Reflex는 시작하기 위한 [60개 이상의 기본 컴포넌트](https://reflex.dev/docs/library)를 제공하고 있습니다. 더 많은 컴포넌트를 추가하고 있으며, [자신만의 컴포넌트를 생성하는 것](https://reflex.dev/docs/wrapping-react/overview/)도 쉽습니다.
 
@@ -201,13 +201,9 @@ app.add_page(index, title="DALL-E")
 
 <div align="center">
 
-📑 [문서](https://reflex.dev/docs/getting-started/introduction) &nbsp; |  &nbsp; 🗞️ [블로그](https://reflex.dev/blog) &nbsp; |  &nbsp; 📱 [컴포넌트 라이브러리](https://reflex.dev/docs/library) &nbsp; |  &nbsp; 🖼️ [갤러리](https://reflex.dev/docs/gallery) &nbsp; |  &nbsp; 🛸 [배포](https://reflex.dev/docs/hosting/deploy)  &nbsp;   
+📑 [문서](https://reflex.dev/docs/getting-started/introduction) &nbsp; | &nbsp; 🗞️ [블로그](https://reflex.dev/blog) &nbsp; | &nbsp; 📱 [컴포넌트 라이브러리](https://reflex.dev/docs/library) &nbsp; | &nbsp; 🖼️ [갤러리](https://reflex.dev/docs/gallery) &nbsp; | &nbsp; 🛸 [배포](https://reflex.dev/docs/hosting/deploy) &nbsp;
 
 </div>
-
-
-
-
 
 ## ✅ 상태
 
@@ -215,10 +211,10 @@ Reflex는 2022년 12월 Pynecone이라는 이름으로 출시되었습니다.
 
 2023년 7월 현재, 우리는 **Public Beta** 상태에 있습니다.
 
--   :white_check_mark: **Public Alpha**: 누구나 Reflex를 설치하고 사용할 수 있습니다. 문제가 발생할 수도 있지만 적극적으로 수정합니다.
--   :large_orange_diamond: **Public Beta**: 비상업적 용도로 충분히 안정적입니다.
--   **Public Hosting Beta**: _선택적으로_, Reflex에서 앱을 배포하고 호스팅할 수 있습니다!
--   **Public** : Reflex는 프로덕션 준비를 마쳤습니다.
+- :white_check_mark: **Public Alpha**: 누구나 Reflex를 설치하고 사용할 수 있습니다. 문제가 발생할 수도 있지만 적극적으로 수정합니다.
+- :large_orange_diamond: **Public Beta**: 비상업적 용도로 충분히 안정적입니다.
+- **Public Hosting Beta**: _선택적으로_, Reflex에서 앱을 배포하고 호스팅할 수 있습니다!
+- **Public** : Reflex는 프로덕션 준비를 마쳤습니다.
 
 Reflex는 매주 새로운 릴리즈와 기능을 제공합니다! 최신 정보를 확인하려면 :star: Star와 :eyes: Watch를 눌러 이 저장소를 확인하세요.
 
@@ -226,9 +222,9 @@ Reflex는 매주 새로운 릴리즈와 기능을 제공합니다! 최신 정보
 
 우리는 모든 기여를 환영합니다! 아래는 Reflex 커뮤니티에 참여하는 좋은 방법입니다.
 
--   **Discord 참여**: 우리의 [Discord](https://discord.gg/T5WSbC2YtQ)는 Reflex 프로젝트에 대한 도움을 받고 기여하는 방법을 논의하는 최고의 장소입니다.
--   **GitHub Discussions**: 추가하고 싶은 기능이나 혼란스럽거나 해결이 필요한 것들에 대해 이야기하는 좋은 방법입니다.
--   **GitHub Issues**: 이것은 버그를 보고하는 훌륭한 방법입니다. 또한, 기존의 이슈를 해결하고 PR을 제출할 수 있습니다.
+- **Discord 참여**: 우리의 [Discord](https://discord.gg/T5WSbC2YtQ)는 Reflex 프로젝트에 대한 도움을 받고 기여하는 방법을 논의하는 최고의 장소입니다.
+- **GitHub Discussions**: 추가하고 싶은 기능이나 혼란스럽거나 해결이 필요한 것들에 대해 이야기하는 좋은 방법입니다.
+- **GitHub Issues**: 이것은 버그를 보고하는 훌륭한 방법입니다. 또한, 기존의 이슈를 해결하고 PR을 제출할 수 있습니다.
 
 우리는 능력이나 경험에 상관없이 적극적으로 기여자를 찾고 있습니다.
 

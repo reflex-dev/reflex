@@ -12,17 +12,17 @@ app with breakpoints.
 
 ```json
 {
-    "version": "0.2.0",
-    "configurations": [
-        {
-            "name": "Reflex App",
-            "type": "python",
-            "request": "launch",
-            "module": "reflex",
-            "args": "run --env dev",
-            "justMyCode": true,
-            "cwd": "${fileDirname}/.."
-        }
-    ]
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Reflex App",
+      "type": "python",
+      "request": "launch",
+      "module": "reflex",
+      "args": "run --env dev",
+      "justMyCode": true,
+      "cwd": "${fileDirname}/.."
+    }
+  ]
 }
 ```

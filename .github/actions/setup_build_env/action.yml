@@ -9,27 +9,27 @@
 # - Poetry of version `poetry-version` is ready to be invoked as `poetry`.
 # - If `run-poetry-install` is true, deps as defined in `pyproject.toml` will have been installed into the venv at `create-venv-at-path`.
 
-name: 'Setup Reflex build environment'
-description: 'Sets up Python, install poetry (cached), install project deps (cached)'
+name: "Setup Reflex build environment"
+description: "Sets up Python, install poetry (cached), install project deps (cached)"
 inputs:
   python-version:
-    description: 'Python version setup'
+    description: "Python version setup"
     required: true
   poetry-version:
-    description: 'Poetry version to install'
+    description: "Poetry version to install"
     required: false
-    default: '1.8.3'
+    default: "1.8.3"
   run-poetry-install:
-    description: 'Whether to run poetry install on current dir'
+    description: "Whether to run poetry install on current dir"
     required: false
     default: false
   create-venv-at-path:
-    description: 'Path to venv (if poetry install is enabled)'
+    description: "Path to venv (if poetry install is enabled)"
     required: false
-    default: '.venv'
+    default: ".venv"
 
 runs:
-  using: 'composite'
+  using: "composite"
   steps:
     - name: Set up Python ${{ inputs.python-version }}
       uses: actions/setup-python@v5
