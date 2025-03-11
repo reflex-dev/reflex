@@ -26,7 +26,7 @@ dependencies = [
   "psutil >=5.9.4,<8.0",
   "pydantic >=1.10.21,<3.0",
   "python-multipart >=0.0.5,<0.1",
-  " python-socketio>=5.7.0,<6.0",
+  "python-socketio >=5.7.0,<6.0",
   "redis >=4.3.5,<6.0",
   "rich >=13.0.0,<14.0",
   "sqlmodel >=0.0.14,<0.1",
@@ -58,7 +58,7 @@ repository = "https://github.com/reflex-dev/reflex"
 documentation = "https://reflex.dev/docs/getting-started/introduction"
 
 [project.scripts]
-reflex = "reflex = reflex.reflex:cli"
+reflex = "reflex.reflex:cli"
 
 [tool.poetry.dependencies]
 python = ">=3.10,<4.0"
