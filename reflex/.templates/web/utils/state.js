@@ -360,9 +360,7 @@ export const queueEvents = async (events, socket, prepend) => {
     events = [...events, ...Array.from({length: event_queue.length}).map(() => event_queue.shift())];
   }
   event_queue.push(...events);
-  if (socket.current) {
-    await processEvent(socket.current);
-  }
+  await processEvent(socket.current);
 };
 
 /**
