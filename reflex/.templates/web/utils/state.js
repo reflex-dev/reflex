@@ -357,7 +357,7 @@ export const applyRestEvent = async (event, socket) => {
 export const queueEvents = async (events, socket, prepend) => {
   if (prepend) {
     // Drain the existing queue and place it after the given events.
-    events = [...events, ...Array.from({length: event_queue.length}).map(() => event_queue.pop())];
+    events = [...events, ...Array.from({length: event_queue.length}).map(() => event_queue.shift())];
   }
   event_queue.push(...events);
   if (socket.current) {
