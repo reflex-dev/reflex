@@ -32,7 +32,7 @@ HANDLE_SUBMIT_JS_JINJA2 = Environment().from_string(
         ev.preventDefault()
         const {{ form_data }} = {...Object.fromEntries(new FormData($form).entries()), ...{{ field_ref_mapping }}};
 
-        ({{ on_submit_event_chain }}());
+        ({{ on_submit_event_chain }}(ev));
 
         if ({{ reset_on_submit }}) {
             $form.reset()
