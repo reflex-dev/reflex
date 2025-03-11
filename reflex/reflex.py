@@ -13,7 +13,7 @@ from reflex import constants
 from reflex.config import environment, get_config
 from reflex.custom_components.custom_components import custom_components_cli
 from reflex.state import reset_disk_state_manager
-from reflex.utils import console, telemetry
+from reflex.utils import console, redir, telemetry
 
 # Disable typer+rich integration for help panels
 typer.core.rich = None  # pyright: ignore [reportPrivateImportUsage]
@@ -70,6 +70,10 @@ def _init(
     # Show system info
     exec.output_system_info()
 
+    if ai:
+        redir.reflex_build_redirect()
+        return
+
     # Validate the app name.
     app_name = prerequisites.validate_app_name(name)
     console.rule(f"[bold]Initializing {app_name}")
@@ -83,7 +87,7 @@ def _init(
     prerequisites.initialize_frontend_dependencies()
 
     # Initialize the app.
-    template = prerequisites.initialize_app(app_name, template, ai)
+    template = prerequisites.initialize_app(app_name, template)
 
     # Initialize the .gitignore.
     prerequisites.initialize_gitignore()

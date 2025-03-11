@@ -37,7 +37,7 @@ from redis.exceptions import RedisError
 from reflex import constants, model
 from reflex.compiler import templates
 from reflex.config import Config, environment, get_config
-from reflex.utils import console, net, path_ops, processes, redir
+from reflex.utils import console, net, path_ops, processes
 from reflex.utils.exceptions import (
     GeneratedCodeHasNoFunctionDefsError,
     SystemPackageMissingError,
@@ -1695,31 +1695,6 @@ def validate_and_create_app_using_remote_template(
     )
 
 
-def generate_template_using_ai(template: str | None = None) -> str:
-    """Generate a template using AI(Flexgen).
-
-    Args:
-        template: The name of the template.
-
-    Returns:
-        The generation hash.
-
-    Raises:
-        Exit: If the template and ai flags are used.
-    """
-    if template is None:
-        # If AI is requested and no template specified, redirect the user to reflex.build.
-        return redir.reflex_build_redirect()
-    elif is_generation_hash(template):
-        # Otherwise treat the template as a generation hash.
-        return template
-    else:
-        console.error(
-            "Cannot use `--template` option with `--ai` option. Please remove `--template` option."
-        )
-        raise typer.Exit(2)
-
-
 def fetch_remote_templates(
     template: str,
 ) -> tuple[str, dict[str, Template]]:
@@ -1744,15 +1719,12 @@ def fetch_remote_templates(
     return template, available_templates
 
 
-def initialize_app(
-    app_name: str, template: str | None = None, ai: bool = False
-) -> str | None:
+def initialize_app(app_name: str, template: str | None = None) -> str | None:
     """Initialize the app either from a remote template or a blank app. If the config file exists, it is considered as reinit.
 
     Args:
         app_name: The name of the app.
         template: The name of the template to use.
-        ai: Whether to use AI to generate the template.
 
     Returns:
         The name of the template.
@@ -1768,11 +1740,6 @@ def initialize_app(
         telemetry.send("reinit")
         return
 
-    generation_hash = None
-    if ai:
-        generation_hash = generate_template_using_ai(template)
-        template = constants.Templates.DEFAULT
-
     templates: dict[str, Template] = {}
 
     # Don't fetch app templates if the user directly asked for DEFAULT.
@@ -1781,11 +1748,7 @@ def initialize_app(
 
     if template is None:
         template = prompt_for_template_options(get_init_cli_prompt_options())
-        if template == constants.Templates.AI:
-            generation_hash = generate_template_using_ai()
-            # change to the default to allow creation of default app
-            template = constants.Templates.DEFAULT
-        elif template == constants.Templates.CHOOSE_TEMPLATES:
+        if template == constants.Templates.CHOOSE_TEMPLATES:
             console.print(
                 f"Go to the templates page ({constants.Templates.REFLEX_TEMPLATES_URL}) and copy the command to init with a template."
             )
@@ -1800,11 +1763,6 @@ def initialize_app(
             app_name=app_name, template=template, templates=templates
         )
 
-    # If a reflex.build generation hash is available, download the code and apply it to the main module.
-    if generation_hash:
-        initialize_main_module_index_from_generation(
-            app_name, generation_hash=generation_hash
-        )
     telemetry.send("init", template=template)
 
     return template
