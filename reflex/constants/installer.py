@@ -82,11 +82,11 @@ class PackageJson(SimpleNamespace):
 
     DEPENDENCIES = {
         "@emotion/react": "11.14.0",
-        "axios": "1.7.9",
+        "axios": "1.8.3",
         "json5": "2.2.3",
-        "next": "15.1.7",
+        "next": "15.2.2",
         "next-sitemap": "4.2.3",
-        "next-themes": "0.4.4",
+        "next-themes": "0.4.6",
         "react": "19.0.0",
         "react-dom": "19.0.0",
         "react-focus-lock": "2.13.6",
@@ -94,8 +94,8 @@ class PackageJson(SimpleNamespace):
         "universal-cookie": "7.2.2",
     }
     DEV_DEPENDENCIES = {
-        "autoprefixer": "10.4.20",
-        "postcss": "8.5.1",
+        "autoprefixer": "10.4.21",
+        "postcss": "8.5.3",
         "postcss-import": "16.1.0",
     }
     OVERRIDES = {
