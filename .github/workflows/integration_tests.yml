@@ -61,8 +61,8 @@ jobs:
       - uses: ./.github/actions/setup_build_env
         with:
           python-version: ${{ matrix.python-version }}
-          run-poetry-install: true
-          create-venv-at-path: .venv
+          run-uv-install: true
+
       - name: Clone Reflex Examples Repo
         uses: actions/checkout@v4
         with:
@@ -71,48 +71,48 @@ jobs:
       - name: Install requirements for counter example
         working-directory: ./reflex-examples/counter
         run: |
-          poetry run uv pip install -r requirements.txt
+          uv pip install -r requirements.txt
       - name: Install additional dependencies for DB access
-        run: poetry run uv pip install psycopg
+        run: uv pip install psycopg
       - name: Check export --backend-only before init for counter example
         working-directory: ./reflex-examples/counter
         run: |
-          poetry run reflex export --backend-only
+          uv run reflex export --backend-only
       - name: Check run --backend-only before init for counter example
         run: |
-          poetry run bash scripts/integration.sh ./reflex-examples/counter dev 8001 --backend-only --backend-port 8001
+          uv run bash scripts/integration.sh ./reflex-examples/counter dev 8001 --backend-only --backend-port 8001
       - name: Init Website for counter example
         working-directory: ./reflex-examples/counter
         run: |
-          poetry run reflex init --loglevel debug
+          uv run reflex init --loglevel debug
       - name: Check export for counter example
         working-directory: ./reflex-examples/counter
         run: |
-          poetry run reflex export
+          uv run reflex export
       - name: Run Website and Check for errors
         run: |
           # Check that npm is home
           npm -v
-          poetry run bash scripts/integration.sh ./reflex-examples/counter dev
+          uv run bash scripts/integration.sh ./reflex-examples/counter dev
       - name: Install requirements for nba proxy example
         working-directory: ./reflex-examples/nba-proxy
         run: |
-          poetry run uv pip install -r requirements.txt
+          uv pip install -r requirements.txt
       - name: Install additional dependencies for DB access
-        run: poetry run uv pip install psycopg
+        run: uv pip install psycopg
       - name: Check export --backend-only before init for nba-proxy example
         working-directory: ./reflex-examples/nba-proxy
         run: |
-          poetry run reflex export --backend-only
+          uv run reflex export --backend-only
       - name: Init Website for nba-proxy example
         working-directory: ./reflex-examples/nba-proxy
         run: |
-          poetry run reflex init --loglevel debug
+          uv run reflex init --loglevel debug
       - name: Run Website and Check for errors
         run: |
           # Check that npm is home
           npm -v
-          poetry run bash scripts/integration.sh ./reflex-examples/nba-proxy dev
+          uv run bash scripts/integration.sh ./reflex-examples/nba-proxy dev
 
 
   reflex-web:
@@ -131,8 +131,8 @@ jobs:
       - uses: ./.github/actions/setup_build_env
         with:
           python-version: ${{ matrix.python-version }}
-          run-poetry-install: true
-          create-venv-at-path: .venv
+          run-uv-install: true
+
 
       - name: Clone Reflex Website Repo
         uses: actions/checkout@v4
@@ -143,17 +143,17 @@ jobs:
 
       - name: Install Requirements for reflex-web
         working-directory: ./reflex-web
-        run: poetry run uv pip install $(grep -ivE "reflex " requirements.txt)
+        run: uv pip install $(grep -ivE "reflex " requirements.txt)
       - name: Install additional dependencies for DB access
-        run: poetry run uv pip install psycopg
+        run: uv pip install psycopg
       - name: Init Website for reflex-web
         working-directory: ./reflex-web
-        run: poetry run reflex init
+        run: uv run reflex init
       - name: Run Website and Check for errors
         run: |
           # Check that npm is home
           npm -v
-          poetry run bash scripts/integration.sh ./reflex-web prod
+          uv run bash scripts/integration.sh ./reflex-web prod
 
   rx-shout-from-template:
     strategy:
@@ -164,24 +164,24 @@ jobs:
       - uses: ./.github/actions/setup_build_env
         with:
           python-version: "3.11.11"
-          run-poetry-install: true
-          create-venv-at-path: .venv
+          run-uv-install: true
+
       - name: Create app directory
         run: mkdir rx-shout-from-template
       - name: Init reflex-web from template
-        run: poetry run reflex init --template https://github.com/masenf/rx_shout
+        run: uv run reflex init --template https://github.com/masenf/rx_shout
         working-directory: ./rx-shout-from-template
       - name: ignore reflex pin in requirements
         run: sed -i -e '/reflex==/d' requirements.txt
         working-directory: ./rx-shout-from-template
       - name: Install additional dependencies
-        run: poetry run uv pip install -r requirements.txt
+        run: uv pip install -r requirements.txt
         working-directory: ./rx-shout-from-template
       - name: Run Website and Check for errors
         run: |
           # Check that npm is home
           npm -v
-          poetry run bash scripts/integration.sh ./rx-shout-from-template prod
+          uv run bash scripts/integration.sh ./rx-shout-from-template prod
 
   reflex-web-macos:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
@@ -196,8 +196,8 @@ jobs:
       - uses: ./.github/actions/setup_build_env
         with:
           python-version: ${{ matrix.python-version }}
-          run-poetry-install: true
-          create-venv-at-path: .venv
+          run-uv-install: true
+
       - name: Clone Reflex Website Repo
         uses: actions/checkout@v4
         with:
@@ -206,14 +206,14 @@ jobs:
           path: reflex-web
       - name: Install Requirements for reflex-web
         working-directory: ./reflex-web
-        run: poetry run uv pip install -r requirements.txt
+        run: uv pip install -r requirements.txt
       - name: Install additional dependencies for DB access
-        run: poetry run uv pip install psycopg
+        run: uv pip install psycopg
       - name: Init Website for reflex-web
         working-directory: ./reflex-web
-        run: poetry run reflex init
+        run: uv run reflex init
       - name: Run Website and Check for errors
         run: |
           # Check that npm is home
           npm -v
-          poetry run bash scripts/integration.sh ./reflex-web prod
+          uv run bash scripts/integration.sh ./reflex-web prod

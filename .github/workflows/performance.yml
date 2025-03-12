@@ -25,10 +25,10 @@ jobs:
       - uses: ./.github/actions/setup_build_env
         with:
           python-version: 3.12.8
-          run-poetry-install: true
-          create-venv-at-path: .venv
+          run-uv-install: true
+
       - name: Run benchmarks
         uses: CodSpeedHQ/action@v3
         with:
           token: ${{ secrets.CODSPEED_TOKEN }}
-          run: poetry run pytest tests/benchmarks --codspeed
+          run: uv run pytest tests/benchmarks --codspeed

@@ -45,12 +45,12 @@ jobs:
       - uses: ./.github/actions/setup_build_env
         with:
           python-version: ${{ matrix.python-version }}
-          run-poetry-install: true
-          create-venv-at-path: .venv
-      - run: poetry run uv pip install pyvirtualdisplay pillow pytest-split pytest-retry
+          run-uv-install: true
+
+      - run: uv pip install pyvirtualdisplay pillow pytest-split pytest-retry
       - name: Run app harness tests
         env:
           REDIS_URL: ${{ matrix.state_manager == 'redis' && 'redis://localhost:6379' || '' }}
         run: |
-          poetry run playwright install chromium
-          poetry run pytest tests/integration --retries 3 --maxfail=5 --splits 2 --group ${{matrix.split_index}}
+          uv run playwright install chromium
+          uv run pytest tests/integration --retries 3 --maxfail=5 --splits 2 --group ${{matrix.split_index}}

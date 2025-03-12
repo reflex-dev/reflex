@@ -61,26 +61,26 @@ jobs:
       - uses: ./.github/actions/setup_build_env
         with:
           python-version: ${{ matrix.python-version }}
-          run-poetry-install: true
-          create-venv-at-path: .venv
+          run-uv-install: true
+
       - name: Run unit tests
         run: |
           export PYTHONUNBUFFERED=1
-          poetry run pytest tests/units --cov --no-cov-on-fail --cov-report=
+          uv run pytest tests/units --cov --no-cov-on-fail --cov-report=
       - name: Run unit tests w/ redis
         if: ${{ matrix.os == 'ubuntu-latest' }}
         run: |
           export PYTHONUNBUFFERED=1
           export REDIS_URL=redis://localhost:6379
-          poetry run pytest tests/units --cov --no-cov-on-fail --cov-report=
+          uv run pytest tests/units --cov --no-cov-on-fail --cov-report=
       # Change to explicitly install v1 when reflex-hosting-cli is compatible with v2
       - name: Run unit tests w/ pydantic v1
         run: |
           export PYTHONUNBUFFERED=1
-          poetry run uv pip install "pydantic~=1.10"
-          poetry run pytest tests/units --cov --no-cov-on-fail --cov-report=
+          uv pip install "pydantic~=1.10"
+          uv run pytest tests/units --cov --no-cov-on-fail --cov-report=
       - name: Generate coverage report
-        run: poetry run coverage html
+        run: uv run coverage html
 
   unit-tests-macos:
     timeout-minutes: 30
@@ -96,14 +96,14 @@ jobs:
       - uses: ./.github/actions/setup_build_env
         with:
           python-version: ${{ matrix.python-version }}
-          run-poetry-install: true
-          create-venv-at-path: .venv
+          run-uv-install: true
+
       - name: Run unit tests
         run: |
           export PYTHONUNBUFFERED=1
-          poetry run pytest tests/units --cov --no-cov-on-fail --cov-report=
+          uv run pytest tests/units --cov --no-cov-on-fail --cov-report=
       - name: Run unit tests w/ pydantic v1
         run: |
           export PYTHONUNBUFFERED=1
-          poetry run uv pip install "pydantic~=1.10"
-          poetry run pytest tests/units --cov --no-cov-on-fail --cov-report=
+          uv pip install "pydantic~=1.10"
+          uv run pytest tests/units --cov --no-cov-on-fail --cov-report=
