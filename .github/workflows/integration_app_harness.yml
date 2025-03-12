@@ -47,7 +47,7 @@ jobs:
           python-version: ${{ matrix.python-version }}
           run-uv-sync: true
 
-      - run: uv pip install pyvirtualdisplay pillow pytest-split pytest-retry
+      - run: uv pip install pyvirtualdisplay
       - name: Run app harness tests
         env:
           REDIS_URL: ${{ matrix.state_manager == 'redis' && 'redis://localhost:6379' || '' }}

@@ -33,7 +33,7 @@ jobs:
         with:
           node-version: ${{ matrix.node-version }}
       - run: |
-          uv pip install pyvirtualdisplay pillow pytest-split
+          uv pip install pyvirtualdisplay
           uv run playwright install --with-deps
       - run: |
           uv run pytest tests/test_node_version.py

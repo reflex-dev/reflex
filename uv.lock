@@ -1507,6 +1507,30 @@ wheels = [
 ]
 
 [[package]]
+name = "pytest-retry"
+version = "1.7.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "pytest" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/c5/5b/607b017994cca28de3a1ad22a3eee8418e5d428dcd8ec25b26b18e995a73/pytest_retry-1.7.0.tar.gz", hash = "sha256:f8d52339f01e949df47c11ba9ee8d5b362f5824dff580d3870ec9ae0057df80f", size = 19977 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/7c/ff/3266c8a73b9b93c4b14160a7e2b31d1e1088e28ed29f4c2d93ae34093bfd/pytest_retry-1.7.0-py3-none-any.whl", hash = "sha256:a2dac85b79a4e2375943f1429479c65beb6c69553e7dae6b8332be47a60954f4", size = 13775 },
+]
+
+[[package]]
+name = "pytest-split"
+version = "0.10.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "pytest" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/46/d7/e30ba44adf83f15aee3f636daea54efadf735769edc0f0a7d98163f61038/pytest_split-0.10.0.tar.gz", hash = "sha256:adf80ba9fef7be89500d571e705b4f963dfa05038edf35e4925817e6b34ea66f", size = 13903 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/d6/a7/cad88e9c1109a5c2a320d608daa32e5ee008ccbc766310f54b1cd6b3d69c/pytest_split-0.10.0-py3-none-any.whl", hash = "sha256:466096b086a7147bcd423c6e6c2e57fc62af1c5ea2e256b4ed50fc030fc3dddc", size = 11961 },
+]
+
+[[package]]
 name = "python-dateutil"
 version = "2.9.0.post0"
 source = { registry = "https://pypi.org/simple" }
@@ -1708,6 +1732,8 @@ dev = [
     { name = "pytest-cov" },
     { name = "pytest-mock" },
     { name = "pytest-playwright" },
+    { name = "pytest-retry" },
+    { name = "pytest-split" },
     { name = "ruff" },
     { name = "selenium" },
     { name = "toml" },
@@ -1754,9 +1780,11 @@ dev = [
     { name = "granian", extras = ["reload"], specifier = ">=2.0.0" },
     { name = "pandas", specifier = ">=2.1.1,<3.0" },
     { name = "pillow", specifier = ">=10.0.0,<12.0" },
+    { name = "pillow", specifier = ">=11.0.0,<12.0" },
     { name = "playwright", specifier = ">=1.46.0" },
     { name = "plotly", specifier = ">=5.13.0,<6.0" },
     { name = "pre-commit", specifier = ">=3.2.1" },
+    { name = "pre-commit", specifier = ">=4.1.0,<5.0" },
     { name = "psycopg", extras = ["binary"], specifier = ">=3.2.6,<4.0" },
     { name = "pyright", specifier = ">=1.1.394,<1.2" },
     { name = "pytest", specifier = ">=7.1.2,<9.0" },
@@ -1766,6 +1794,8 @@ dev = [
     { name = "pytest-cov", specifier = ">=4.0.0,<7.0" },
     { name = "pytest-mock", specifier = ">=3.10.0,<4.0" },
     { name = "pytest-playwright", specifier = ">=0.5.1" },
+    { name = "pytest-retry", specifier = ">=1.7.0,<2.0" },
+    { name = "pytest-split", specifier = ">=0.10.0,<1.0" },
     { name = "ruff", specifier = "==0.9.10" },
     { name = "selenium", specifier = ">=4.11.0,<5.0" },
     { name = "toml", specifier = ">=0.10.2,<1.0" },
