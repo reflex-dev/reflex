@@ -41,7 +41,7 @@ jobs:
       - uses: ./.github/actions/setup_build_env
         with:
           python-version: ${{ matrix.python-version }}
-          run-uv-install: true
+          run-uv-sync: true
 
 
       - name: Clone Reflex Website Repo
@@ -82,7 +82,7 @@ jobs:
       - uses: ./.github/actions/setup_build_env
         with:
           python-version: 3.12.8
-          run-uv-install: true
+          run-uv-sync: true
 
       - name: Build reflex
         run: |

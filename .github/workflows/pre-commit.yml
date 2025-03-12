@@ -24,7 +24,7 @@ jobs:
           # running vs. one version of Python is OK
           # i.e. ruff, black, etc.
           python-version: 3.12.8
-          run-uv-install: true
+          run-uv-sync: true
 
       # TODO pre-commit related stuff can be cached too (not a bottleneck yet)
       - run: |

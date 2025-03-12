@@ -61,7 +61,7 @@ jobs:
       - uses: ./.github/actions/setup_build_env
         with:
           python-version: ${{ matrix.python-version }}
-          run-uv-install: true
+          run-uv-sync: true
 
       - name: Run unit tests
         run: |
@@ -96,7 +96,7 @@ jobs:
       - uses: ./.github/actions/setup_build_env
         with:
           python-version: ${{ matrix.python-version }}
-          run-uv-install: true
+          run-uv-sync: true
 
       - name: Run unit tests
         run: |

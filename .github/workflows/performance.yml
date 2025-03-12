@@ -25,7 +25,7 @@ jobs:
       - uses: ./.github/actions/setup_build_env
         with:
           python-version: 3.12.8
-          run-uv-install: true
+          run-uv-sync: true
 
       - name: Run benchmarks
         uses: CodSpeedHQ/action@v3

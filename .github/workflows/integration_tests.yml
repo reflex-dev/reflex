@@ -61,7 +61,7 @@ jobs:
       - uses: ./.github/actions/setup_build_env
         with:
           python-version: ${{ matrix.python-version }}
-          run-uv-install: true
+          run-uv-sync: true
 
       - name: Clone Reflex Examples Repo
         uses: actions/checkout@v4
@@ -131,7 +131,7 @@ jobs:
       - uses: ./.github/actions/setup_build_env
         with:
           python-version: ${{ matrix.python-version }}
-          run-uv-install: true
+          run-uv-sync: true
 
 
       - name: Clone Reflex Website Repo
@@ -164,7 +164,7 @@ jobs:
       - uses: ./.github/actions/setup_build_env
         with:
           python-version: "3.11.11"
-          run-uv-install: true
+          run-uv-sync: true
 
       - name: Create app directory
         run: mkdir rx-shout-from-template
@@ -196,7 +196,7 @@ jobs:
       - uses: ./.github/actions/setup_build_env
         with:
           python-version: ${{ matrix.python-version }}
-          run-uv-install: true
+          run-uv-sync: true
 
       - name: Clone Reflex Website Repo
         uses: actions/checkout@v4

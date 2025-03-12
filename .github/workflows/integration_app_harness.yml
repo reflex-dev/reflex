@@ -45,7 +45,7 @@ jobs:
       - uses: ./.github/actions/setup_build_env
         with:
           python-version: ${{ matrix.python-version }}
-          run-uv-install: true
+          run-uv-sync: true
 
       - run: uv pip install pyvirtualdisplay pillow pytest-split pytest-retry
       - name: Run app harness tests

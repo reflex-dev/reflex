@@ -26,7 +26,7 @@ jobs:
       - uses: ./.github/actions/setup_build_env
         with:
           python-version: "3.12.8"
-          run-uv-install: true
+          run-uv-sync: true
       - run: |
           uv run python scripts/make_pyi.py
           if [[ $(git status --porcelain) ]]; then
