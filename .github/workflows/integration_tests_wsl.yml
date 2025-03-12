@@ -54,13 +54,13 @@ jobs:
       - name: Install reflex deps
         shell: wsl-bash {0}
         run: |
-          /root/.local/bin/uv sync
+          /root/.local/bin/uv sync --link-mode=copy
 
       - name: Install requirements for counter example
         working-directory: ./reflex-examples/counter
         shell: wsl-bash {0}
         run: |
-          /root/.local/bin/uv pip install -r requirements.txt
+          /root/.local/bin/uv pip install -r requirements.txt --link-mode=copy
       - name: Check export --backend-only before init for counter example
         working-directory: ./reflex-examples/counter
         shell: wsl-bash {0}
