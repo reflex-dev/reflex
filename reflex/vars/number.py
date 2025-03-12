@@ -23,6 +23,7 @@ from reflex.utils.exceptions import (
     VarValueError,
 )
 from reflex.utils.imports import ImportDict, ImportVar
+from reflex.utils.types import safe_issubclass
 
 from .base import (
     CustomVarOperationReturn,
@@ -524,7 +525,7 @@ class NumberVar(Var[NUMBER_T], python_types=(int, float)):
         Returns:
             bool: True if the number is a float.
         """
-        return issubclass(self._var_type, float)
+        return safe_issubclass(self._var_type, float)
 
     def _is_strict_int(self) -> bool:
         """Check if the number is an int.
@@ -532,7 +533,7 @@ class NumberVar(Var[NUMBER_T], python_types=(int, float)):
         Returns:
             bool: True if the number is an int.
         """
-        return issubclass(self._var_type, int)
+        return safe_issubclass(self._var_type, int)
 
     def __format__(self, format_spec: str) -> str:
         """Format the number.
