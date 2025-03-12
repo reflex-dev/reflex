@@ -37,6 +37,7 @@ runs:
         version: ${{ inputs.uv-version }}
         python-version: ${{ inputs.python-version }}
         enable-cache: true
+        prune-cache: false
         cache-dependency-glob: "uv.lock"
 
     - name: Restore cached project python deps
