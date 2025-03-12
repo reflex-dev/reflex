@@ -221,7 +221,7 @@ class ObjectVar(Var[OBJECT_TYPE], python_types=Mapping):
             return self.__getattr__(key)
         return ObjectItemOperation.create(self, key).guess_type()
 
-    def get(self, key: Var | Any, default: Var | Any | None = None) -> Var | None:
+    def get(self, key: Var | Any, default: Var | Any | None = None) -> Var:
         """Get an item from the object.
 
         Args:
