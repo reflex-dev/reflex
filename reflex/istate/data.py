@@ -56,9 +56,11 @@ class HeaderData(_HeaderData):
         """
         super().__init__()
         if router_data:
+            fields_names = [f.name for f in dataclasses.fields(self)]
             for k, v in router_data.get(constants.RouteVar.HEADERS, {}).items():
                 snake_case_key = format.to_snake_case(k)
-                object.__setattr__(self, snake_case_key, v)
+                if snake_case_key in fields_names:
+                    object.__setattr__(self, snake_case_key, v)
             object.__setattr__(
                 self,
                 "raw_headers",
