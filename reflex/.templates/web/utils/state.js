@@ -441,6 +441,13 @@ export const connect = async (
     }
   }
 
+  const disconnectTrigger = (event) => {
+    if (socket.current?.connected) {
+      console.log("Disconnect websocket on unload");
+      socket.current.disconnect();
+    }
+  }
+
   const pagehideHandler = (event) => {
     if (event.persisted && socket.current?.connected) {
       console.log("Disconnect backend before bfcache on navigation");
@@ -452,6 +459,8 @@ export const connect = async (
   socket.current.on("connect", () => {
     setConnectErrors([]);
     window.addEventListener("pagehide", pagehideHandler);
+    window.addEventListener("beforeunload", disconnectTrigger);
+    window.addEventListener("unload", disconnectTrigger);
   });
 
   socket.current.on("connect_error", (error) => {
@@ -461,6 +470,8 @@ export const connect = async (
   // When the socket disconnects reset the event_processing flag
   socket.current.on("disconnect", () => {
     event_processing = false;
+    window.removeEventListener("unload", disconnectTrigger);
+    window.removeEventListener("beforeunload", disconnectTrigger);
     window.removeEventListener("pagehide", pagehideHandler);
   });
 
