@@ -1067,6 +1067,7 @@ def _update_next_config(
         "compress": config.next_compression,
         "trailingSlash": True,
         "staticPageGenerationTimeout": config.static_page_generation_timeout,
+        "devIndicators": config.next_dev_indicators,
     }
     if transpile_packages:
         next_config["transpilePackages"] = list(

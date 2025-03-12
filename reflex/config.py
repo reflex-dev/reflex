@@ -815,6 +815,9 @@ class Config(Base):
     # Whether to enable or disable nextJS gzip compression.
     next_compression: bool = True
 
+    # Whether to enable or disable NextJS dev indicator.
+    next_dev_indicators: bool = False
+
     # Whether to use React strict mode in nextJS
     react_strict_mode: bool = True
 
