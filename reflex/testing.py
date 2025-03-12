@@ -54,18 +54,12 @@ from reflex.state import (
 from reflex.utils import console
 
 try:
-    from selenium import webdriver  # pyright: ignore [reportMissingImports]
-    from selenium.webdriver.remote.webdriver import (  # pyright: ignore [reportMissingImports]
-        WebDriver,
-    )
+    from selenium import webdriver
+    from selenium.webdriver.remote.webdriver import WebDriver
 
     if TYPE_CHECKING:
-        from selenium.webdriver.common.options import (
-            ArgOptions,  # pyright: ignore [reportMissingImports]
-        )
-        from selenium.webdriver.remote.webelement import (  # pyright: ignore [reportMissingImports]
-            WebElement,
-        )
+        from selenium.webdriver.common.options import ArgOptions
+        from selenium.webdriver.remote.webelement import WebElement
 
     has_selenium = True
 except ImportError:

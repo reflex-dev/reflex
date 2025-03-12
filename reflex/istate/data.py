@@ -1,15 +1,31 @@
 """This module contains the dataclasses representing the router object."""
 
 import dataclasses
+from typing import Mapping
 
 from reflex import constants
 from reflex.utils import format
 
 
-@dataclasses.dataclass(frozen=True)
-class HeaderData:
-    """An object containing headers data."""
+@dataclasses.dataclass(frozen=True, init=False)
+class _FrozenDictStrStr(Mapping[str, str]):
+    _data: tuple[tuple[str, str], ...]
 
+    def __init__(self, **kwargs):
+        object.__setattr__(self, "_data", tuple(sorted(kwargs.items())))
+
+    def __getitem__(self, key: str) -> str:
+        return dict(self._data)[key]
+
+    def __iter__(self):
+        return (x[0] for x in self._data)
+
+    def __len__(self):
+        return len(self._data)
+
+
+@dataclasses.dataclass(frozen=True)
+class _HeaderData:
     host: str = ""
     origin: str = ""
     upgrade: str = ""
@@ -23,6 +39,14 @@ class HeaderData:
     sec_websocket_extensions: str = ""
     accept_encoding: str = ""
     accept_language: str = ""
+    raw_headers: Mapping[str, str] = dataclasses.field(
+        default_factory=_FrozenDictStrStr
+    )
+
+
+@dataclasses.dataclass(frozen=True, init=False)
+class HeaderData(_HeaderData):
+    """An object containing headers data."""
 
     def __init__(self, router_data: dict | None = None):
         """Initialize the HeaderData object based on router_data.
@@ -30,12 +54,16 @@ class HeaderData:
         Args:
             router_data: the router_data dict.
         """
+        super().__init__()
         if router_data:
             for k, v in router_data.get(constants.RouteVar.HEADERS, {}).items():
-                object.__setattr__(self, format.to_snake_case(k), v)
-        else:
-            for k in dataclasses.fields(self):
-                object.__setattr__(self, k.name, "")
+                snake_case_key = format.to_snake_case(k)
+                object.__setattr__(self, snake_case_key, v)
+            object.__setattr__(
+                self,
+                "raw_headers",
+                _FrozenDictStrStr(**router_data.get(constants.RouteVar.HEADERS, {})),
+            )
 
 
 @dataclasses.dataclass(frozen=True)
