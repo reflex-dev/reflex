@@ -52,7 +52,7 @@ runs:
       # Root package should not be cached - its content is not reflected in uv.lock / cache key
       shell: bash
       run: |
-        uv syn --all-extras --dev --no-install-project
+        uv sync --all-extras --dev --no-install-project
 
     - if: steps.restore-pydeps-cache.outputs.cache-hit != 'true'
       name: Save Python deps to cache
