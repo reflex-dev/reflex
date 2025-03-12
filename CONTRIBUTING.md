@@ -9,7 +9,7 @@ Here is a quick guide on how to run Reflex repo locally so you can start contrib
 **Prerequisites:**
 
 - Python >= 3.10
-- Poetry version >= 1.4.0 and add it to your path (see [Poetry Docs](https://python-poetry.org/docs/#installation) for more info).
+- Poetry version >= 2.0.0 and add it to your path (see [Poetry Docs](https://python-poetry.org/docs/#installation) for more info).
 
 **1. Fork this repository:**
 Fork this repository by clicking on the `Fork` button on the top right.
