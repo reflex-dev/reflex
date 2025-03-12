@@ -546,6 +546,20 @@ class NumberVar(Var[NUMBER_T], python_types=(int, float)):
         Raises:
             VarValueError: If the format specifier is not supported.
         """
+        from .sequence import (
+            get_decimal_string_operation,
+            get_decimal_string_separator_operation,
+        )
+
+        separator = ""
+
+        if format_spec and format_spec[:1] == ",":
+            separator = ","
+            format_spec = format_spec[1:]
+        elif format_spec and format_spec[:1] == "_":
+            separator = "_"
+            format_spec = format_spec[1:]
+
         if (
             format_spec
             and format_spec[-1] == "f"
@@ -553,36 +567,22 @@ class NumberVar(Var[NUMBER_T], python_types=(int, float)):
             and format_spec[1:-1].isdigit()
         ):
             how_many_decimals = int(format_spec[1:-1])
+            return f"{get_decimal_string_operation(self, Var.create(how_many_decimals), Var.create(separator))}"
+
+        if not format_spec and separator:
             return (
-                f"{get_decimal_string_operation(self, Var.create(how_many_decimals))}"
+                f"{get_decimal_string_separator_operation(self, Var.create(separator))}"
             )
 
         if format_spec:
             raise VarValueError(
                 (
-                    "Unknown format code '{}' for object of type 'NumberVar'. It is only supported to use '.f' for float numbers."
+                    "Unknown format code '{}' for object of type 'NumberVar'. It is only supported to use ',', '_', and '.f' for float numbers."
                     "If possible, use computed variables instead: https://reflex.dev/docs/vars/computed-vars/"
                 ).format(format_spec)
             )
 
         return super().__format__(format_spec)
-
-
-@var_operation
-def get_decimal_string_operation(value: NumberVar, decimals: NumberVar):
-    """Get the decimal string of the number.
-
-    Args:
-        value: The number.
-        decimals: The number of decimals.
-
-    Returns:
-        The decimal string of the number.
-    """
-    return var_operation_return(
-        js_expression=f"({value}.toFixed({decimals}))",
-        var_type=str,
-    )
 
 
 def binary_number_operation(

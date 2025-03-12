@@ -665,6 +665,54 @@ def VarOperations():
                 rx.foreach(VarOperationState.optional_dict_value, rx.text.span),
                 id="optional_dict_value",
             ),
+            rx.box(
+                rx.text.span(f"{rx.Var.create(13212312312.1231231)}"),
+                id="float_format",
+            ),
+            rx.box(
+                rx.text.span(f"{rx.Var.create(13212312312.1231231):.0f}"),
+                id="float_format_0f",
+            ),
+            rx.box(
+                rx.text.span(f"{rx.Var.create(13212312312.1231231):.1f}"),
+                id="float_format_1f",
+            ),
+            rx.box(
+                rx.text.span(f"{rx.Var.create(13212312312.1231231):.2f}"),
+                id="float_format_2f",
+            ),
+            rx.box(
+                rx.text.span(f"{rx.Var.create(13212312312.1231231):,}"),
+                id="float_format_comma",
+            ),
+            rx.box(
+                rx.text.span(f"{rx.Var.create(13212312312.1231231):_}"),
+                id="float_format_underscore",
+            ),
+            rx.box(
+                rx.text.span(f"{rx.Var.create(13212312312.1231231):,.0f}"),
+                id="float_format_comma_0f",
+            ),
+            rx.box(
+                rx.text.span(f"{rx.Var.create(13212312312.1231231):,.1f}"),
+                id="float_format_comma_1f",
+            ),
+            rx.box(
+                rx.text.span(f"{rx.Var.create(13212312312.1231231):,.2f}"),
+                id="float_format_comma_2f",
+            ),
+            rx.box(
+                rx.text.span(f"{rx.Var.create(13212312312.1231231):_.0f}"),
+                id="float_format_underscore_0f",
+            ),
+            rx.box(
+                rx.text.span(f"{rx.Var.create(13212312312.1231231):_.1f}"),
+                id="float_format_underscore_1f",
+            ),
+            rx.box(
+                rx.text.span(f"{rx.Var.create(13212312312.1231231):_.2f}"),
+                id="float_format_underscore_2f",
+            ),
         )
 
 
@@ -875,6 +923,19 @@ def test_var_operations(driver, var_operations: AppHarness):
         ("str_in_foreach", "a b c d e f"),
         ("str_var_in_foreach", "f i r s t"),
         ("typed_dict_in_foreach", "Hello Alice33Hello Bob28"),
+        # fstring operations
+        ("float_format", "13212312312.123123"),
+        ("float_format_0f", "13212312312"),
+        ("float_format_1f", "13212312312.1"),
+        ("float_format_2f", "13212312312.12"),
+        ("float_format_comma", "13,212,312,312.123"),
+        ("float_format_underscore", "13_212_312_312.123"),
+        ("float_format_comma_0f", "13,212,312,312"),
+        ("float_format_comma_1f", "13,212,312,312.1"),
+        ("float_format_comma_2f", "13,212,312,312.12"),
+        ("float_format_underscore_0f", "13_212_312_312"),
+        ("float_format_underscore_1f", "13_212_312_312.1"),
+        ("float_format_underscore_2f", "13_212_312_312.12"),
     ]
 
     for tag, expected in tests:
