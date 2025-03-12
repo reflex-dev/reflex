@@ -143,6 +143,21 @@ def EventChain():
             time.sleep(0.5)
             self.interim_value = "final"
 
+        @rx.event
+        def yield_chain_referential(self):
+            self.event_order.append("yield_chain_referential")
+            yield type(self).event_arg(1)
+            yield type(self).event_arg(2)
+            yield type(self).event_arg(3)
+
+        @rx.event(background=True)
+        async def yield_chain_referential_background(self):
+            async with self:
+                self.event_order.append("yield_chain_referential_background")
+            yield type(self).event_arg(4)
+            yield type(self).event_arg(5)
+            yield type(self).event_arg(6)
+
     app = rx.App(_state=rx.State)
 
     token_input = rx.input(
@@ -218,6 +233,16 @@ def EventChain():
                 "Click Yield Interim Value",
                 id="click_yield_interim_value",
                 on_click=State.click_yield_interim_value,
+            ),
+            rx.button(
+                "Yield Chain Referential",
+                id="yield_chain_referential",
+                on_click=State.yield_chain_referential,
+            ),
+            rx.button(
+                "Yield Chain Referential Background",
+                id="yield_chain_referential_background",
+                on_click=State.yield_chain_referential_background,
             ),
         )
 
@@ -398,6 +423,19 @@ def assert_token(event_chain: AppHarness, driver: WebDriver) -> str:
         (
             "return_dict_type",
             ["click_return_dict_type", "event_arg_repr:{'a': 1}_dict"],
+        ),
+        (
+            "yield_chain_referential",
+            ["yield_chain_referential", "event_arg:1", "event_arg:2", "event_arg:3"],
+        ),
+        (
+            "yield_chain_referential_background",
+            [
+                "yield_chain_referential_background",
+                "event_arg:4",
+                "event_arg:5",
+                "event_arg:6",
+            ],
         ),
     ],
 )
