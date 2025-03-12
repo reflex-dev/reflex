@@ -54,39 +54,39 @@ jobs:
       - name: Install reflex deps
         shell: wsl-bash {0}
         run: |
-          uv sync
+          /root/.local/bin/uv sync
 
       - name: Install requirements for counter example
         working-directory: ./reflex-examples/counter
         shell: wsl-bash {0}
         run: |
-          uv pip install -r requirements.txt
+          /root/.local/bin/uv pip install -r requirements.txt
       - name: Check export --backend-only before init for counter example
         working-directory: ./reflex-examples/counter
         shell: wsl-bash {0}
         run: |
           export TELEMETRY_ENABLED=false
-          uv run reflex export --backend-only
+          /root/.local/bin/uv run reflex export --backend-only
       - name: Check run --backend-only before init for counter example
         shell: wsl-bash {0}
         run: |
           export TELEMETRY_ENABLED=false
           dos2unix scripts/integration.sh
-          uv run bash scripts/integration.sh ./reflex-examples/counter dev 8001 --backend-only --backend-port 8001
+          /root/.local/bin/uv run bash scripts/integration.sh ./reflex-examples/counter dev 8001 --backend-only --backend-port 8001
       - name: Init Website for counter example
         working-directory: ./reflex-examples/counter
         shell: wsl-bash {0}
         run: |
           export TELEMETRY_ENABLED=false
-          uv run reflex init --loglevel debug
+          /root/.local/bin/uv run reflex init --loglevel debug
       - name: Check export for counter example
         working-directory: ./reflex-examples/counter
         shell: wsl-bash {0}
         run: |
           export TELEMETRY_ENABLED=false
-          uv run reflex export --frontend-only --loglevel debug
+          /root/.local/bin/uv run reflex export --frontend-only --loglevel debug
       - name: Run Website and Check for errors
         shell: wsl-bash {0}
         run: |
           export TELEMETRY_ENABLED=false
-          uv run bash scripts/integration.sh ./reflex-examples/counter dev
+          /root/.local/bin/uv run bash scripts/integration.sh ./reflex-examples/counter dev
