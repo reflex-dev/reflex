@@ -221,6 +221,27 @@ class ObjectVar(Var[OBJECT_TYPE], python_types=Mapping):
             return self.__getattr__(key)
         return ObjectItemOperation.create(self, key).guess_type()
 
+    def get(self, key: Var | Any, default: Var | Any | None = None) -> Var | None:
+        """Get an item from the object.
+
+        Args:
+            key: The key to get from the object.
+            default: The default value if the key is not found.
+
+        Returns:
+            The item from the object.
+        """
+        from reflex.components.core.cond import cond
+
+        if default is None:
+            default = Var.create(None)
+
+        return cond(  # pyright: ignore[reportUnknownVariableType,reportCallIssue]
+            self.__getattr__(key),  # pyright: ignore[reportArgumentType]
+            self.__getattr__(key),  # pyright: ignore[reportArgumentType]
+            default,
+        )
+
     # NoReturn is used here to catch when key value is Any
     @overload
     def __getattr__(  # pyright: ignore [reportOverlappingOverload]

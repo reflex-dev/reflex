@@ -18,6 +18,8 @@ def VarOperations():
 
     class Object(rx.Base):
         name: str = "hello"
+        optional_none: str | None = None
+        optional_str: str | None = "hello"
 
     class Person(TypedDict):
         name: str
@@ -47,6 +49,7 @@ def VarOperations():
         people: rx.Field[list[Person]] = rx.field(
             [{"name": "Alice", "age": 30}, {"name": "Bob", "age": 25}]
         )
+        obj: rx.Field[Object] = rx.field(Object())
 
     app = rx.App(_state=rx.State)
 
@@ -713,6 +716,27 @@ def VarOperations():
                 rx.text.span(f"{rx.Var.create(13212312312.1231231):_.2f}"),
                 id="float_format_underscore_2f",
             ),
+            # ObjectVar
+            rx.box(
+                rx.text(VarOperationState.obj.name),
+                id="obj_name",
+            ),
+            rx.box(
+                rx.text(VarOperationState.obj.optional_none),
+                id="obj_optional_none",
+            ),
+            rx.box(
+                rx.text(VarOperationState.obj.optional_str),
+                id="obj_optional_str",
+            ),
+            rx.box(
+                rx.text(VarOperationState.obj.get("optional_none")),
+                id="obj_optional_none_get_none",
+            ),
+            rx.box(
+                rx.text(VarOperationState.obj.get("optional_none", "foo")),
+                id="obj_optional_none_get_foo",
+            ),
         )
 
 
@@ -936,6 +960,11 @@ def test_var_operations(driver, var_operations: AppHarness):
         ("float_format_underscore_0f", "13_212_312_312"),
         ("float_format_underscore_1f", "13_212_312_312.1"),
         ("float_format_underscore_2f", "13_212_312_312.12"),
+        ("obj_name", "hello"),
+        ("obj_optional_none", ""),
+        ("obj_optional_str", "hello"),
+        ("obj_optional_none_get_none", ""),
+        ("obj_optional_none_get_foo", "foo"),
     ]
 
     for tag, expected in tests:
