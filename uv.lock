@@ -1780,7 +1780,6 @@ dev = [
     { name = "granian", extras = ["reload"], specifier = ">=2.0.0" },
     { name = "pandas", specifier = ">=2.1.1,<3.0" },
     { name = "pillow", specifier = ">=10.0.0,<12.0" },
-    { name = "pillow", specifier = ">=11.0.0,<12.0" },
     { name = "playwright", specifier = ">=1.46.0" },
     { name = "plotly", specifier = ">=5.13.0,<6.0" },
     { name = "pre-commit", specifier = ">=3.2.1" },
