@@ -56,8 +56,6 @@ jobs:
       - name: Install Requirements for reflex-web
         working-directory: ./reflex-web
         run: uv pip install $(grep -ivE "reflex " requirements.txt)
-      - name: Install additional dependencies for DB access
-        run: uv pip install psycopg
       - name: Init Website for reflex-web
         working-directory: ./reflex-web
         run: uv run reflex init

@@ -5,6 +5,7 @@ from typing import Mapping
 
 from reflex import constants
 from reflex.utils import format
+from reflex.utils.serializers import serializer
 
 
 @dataclasses.dataclass(frozen=True, init=False)
@@ -64,8 +65,29 @@ class HeaderData(_HeaderData):
             object.__setattr__(
                 self,
                 "raw_headers",
-                _FrozenDictStrStr(**router_data.get(constants.RouteVar.HEADERS, {})),
+                _FrozenDictStrStr(
+                    **{
+                        k: v
+                        for k, v in router_data.get(
+                            constants.RouteVar.HEADERS, {}
+                        ).items()
+                        if v
+                    }
+                ),
             )
+
+
+@serializer(to=dict)
+def serialize_frozen_dict_str_str(obj: _FrozenDictStrStr) -> dict:
+    """Serialize a _FrozenDictStrStr object to a dict.
+
+    Args:
+        obj: the _FrozenDictStrStr object.
+
+    Returns:
+        A dict representation of the _FrozenDictStrStr object.
+    """
+    return dict(obj._data)
 
 
 @dataclasses.dataclass(frozen=True)

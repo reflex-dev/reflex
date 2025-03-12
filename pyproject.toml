@@ -148,4 +148,5 @@ dev = [
   "selenium >=4.11.0,<5.0",
   "toml >=0.10.2,<1.0",
   "granian[reload] >= 2.0.0",
+  "psycopg[binary] >=3.2.6,<4.0",
 ]

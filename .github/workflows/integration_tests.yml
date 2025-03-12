@@ -72,8 +72,6 @@ jobs:
         working-directory: ./reflex-examples/counter
         run: |
           uv pip install -r requirements.txt
-      - name: Install additional dependencies for DB access
-        run: uv pip install psycopg
       - name: Check export --backend-only before init for counter example
         working-directory: ./reflex-examples/counter
         run: |
@@ -98,8 +96,6 @@ jobs:
         working-directory: ./reflex-examples/nba-proxy
         run: |
           uv pip install -r requirements.txt
-      - name: Install additional dependencies for DB access
-        run: uv pip install psycopg
       - name: Check export --backend-only before init for nba-proxy example
         working-directory: ./reflex-examples/nba-proxy
         run: |
@@ -144,8 +140,6 @@ jobs:
       - name: Install Requirements for reflex-web
         working-directory: ./reflex-web
         run: uv pip install $(grep -ivE "reflex " requirements.txt)
-      - name: Install additional dependencies for DB access
-        run: uv pip install psycopg
       - name: Init Website for reflex-web
         working-directory: ./reflex-web
         run: uv run reflex init
@@ -207,8 +201,6 @@ jobs:
       - name: Install Requirements for reflex-web
         working-directory: ./reflex-web
         run: uv pip install -r requirements.txt
-      - name: Install additional dependencies for DB access
-        run: uv pip install psycopg
       - name: Init Website for reflex-web
         working-directory: ./reflex-web
         run: uv run reflex init
