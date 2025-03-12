@@ -1202,6 +1202,43 @@ def string_replace_operation(
     )
 
 
+@var_operation
+def get_decimal_string_separator_operation(value: NumberVar, separator: StringVar):
+    """Get the decimal string separator.
+
+    Args:
+        value: The number.
+        separator: The separator.
+
+    Returns:
+        The decimal string separator.
+    """
+    return var_operation_return(
+        js_expression=f"({value}.toLocaleString('en-US').replaceAll(',', {separator}))",
+        var_type=str,
+    )
+
+
+@var_operation
+def get_decimal_string_operation(
+    value: NumberVar, decimals: NumberVar, separator: StringVar
+):
+    """Get the decimal string of the number.
+
+    Args:
+        value: The number.
+        decimals: The number of decimals.
+        separator: The separator.
+
+    Returns:
+        The decimal string of the number.
+    """
+    return var_operation_return(
+        js_expression=f"({value}.toLocaleString('en-US', ((decimals) => ({{minimumFractionDigits: decimals, maximumFractionDigits: decimals}}))({decimals})).replaceAll(',', {separator}))",
+        var_type=str,
+    )
+
+
 # Compile regex for finding reflex var tags.
 _decode_var_pattern_re = (
     rf"{constants.REFLEX_VAR_OPENING_TAG}(.*?){constants.REFLEX_VAR_CLOSING_TAG}"
