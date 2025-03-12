@@ -9,7 +9,7 @@ Here is a quick guide on how to run Reflex repo locally so you can start contrib
 **Prerequisites:**
 
 - Python >= 3.10
-- Poetry version >= 2.0.0 and add it to your path (see [Poetry Docs](https://python-poetry.org/docs/#installation) for more info).
+- uv version >= 0.6.0 and add it to your path (see [UV Docs](https://docs.astral.sh/uv/getting-started/installation/) for more info).
 
 **1. Fork this repository:**
 Fork this repository by clicking on the `Fork` button on the top right.
@@ -24,7 +24,7 @@ cd reflex
 **3. Install your local Reflex build:**
 
 ``` bash
-poetry install
+uv sync
 ```
 
 **4. Now create an examples folder so you can test the local Python build in this repository.**
@@ -39,8 +39,8 @@ cd examples
 **5. Init and Run**
 
 ``` bash
-poetry run reflex init
-poetry run reflex run
+uv run reflex init
+uv run reflex run
 ```
 
 All the changes you make to the repository will be reflected in your running app.
@@ -69,21 +69,21 @@ In your `reflex` directory run make sure all the unit tests are still passing us
 This will fail if code coverage is below 70%.
 
 ``` bash
-poetry run pytest tests/units --cov --no-cov-on-fail --cov-report= 
+uv run pytest tests/units --cov --no-cov-on-fail --cov-report= 
 ```
 
 Next make sure all the following tests pass. This ensures that every new change has proper documentation and type checking.
 
 ``` bash
-poetry run ruff check .
-poetry run pyright reflex tests
-find reflex tests -name "*.py" -not -path reflex/reflex.py | xargs poetry run darglint
+uv run ruff check .
+uv run pyright reflex tests
+find reflex tests -name "*.py" -not -path reflex/reflex.py | xargs uv run darglint
 ```
 
 Finally, run `ruff` to format your code.
 
 ``` bash
-poetry run ruff format .
+uv run ruff format .
 ```
 
 Consider installing git pre-commit hooks so Ruff, Pyright, Darglint and `make_pyi` will run automatically before each commit.
@@ -112,5 +112,5 @@ For some pull requests when adding new components you will have to generate a py
 (Please check in with the team before adding a new component to Reflex we are cautious about adding new components to Reflex's core.)
 
 ``` bash
-poetry run python scripts/make_pyi.py 
+uv run python scripts/make_pyi.py 
 ```
