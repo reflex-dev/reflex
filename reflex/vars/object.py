@@ -236,9 +236,11 @@ class ObjectVar(Var[OBJECT_TYPE], python_types=Mapping):
         if default is None:
             default = Var.create(None)
 
-        return cond(  # pyright: ignore[reportUnknownVariableType,reportCallIssue]
-            self.__getattr__(key),  # pyright: ignore[reportArgumentType]
-            self.__getattr__(key),  # pyright: ignore[reportArgumentType]
+        value = self.__getattr__(key)  # pyright: ignore[reportArgumentType]
+
+        return cond(  # pyright: ignore[reportUnknownVariableType]
+            value,
+            value,
             default,
         )
 
