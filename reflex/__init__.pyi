@@ -19,6 +19,7 @@ from . import vars as vars
 from .admin import AdminDash as AdminDash
 from .app import App as App
 from .app import UploadFile as UploadFile
+from .assets import asset as asset
 from .base import Base as Base
 from .components import el as el
 from .components import lucide as lucide
@@ -33,6 +34,7 @@ from .components.component import Component as Component
 from .components.component import ComponentNamespace as ComponentNamespace
 from .components.component import NoSSRComponent as NoSSRComponent
 from .components.component import memo as memo
+from .components.core.auto_scroll import auto_scroll as auto_scroll
 from .components.core.banner import connection_banner as connection_banner
 from .components.core.banner import connection_modal as connection_modal
 from .components.core.breakpoints import breakpoints as breakpoints
@@ -130,7 +132,7 @@ from .components.radix.themes.layout.container import container as container
 from .components.radix.themes.layout.flex import flex as flex
 from .components.radix.themes.layout.grid import grid as grid
 from .components.radix.themes.layout.list import list_item as list_item
-from .components.radix.themes.layout.list import list_ns as list  # noqa
+from .components.radix.themes.layout.list import list_ns as list  # noqa: F401
 from .components.radix.themes.layout.list import ordered_list as ordered_list
 from .components.radix.themes.layout.list import unordered_list as unordered_list
 from .components.radix.themes.layout.section import section as section
@@ -155,7 +157,6 @@ from .constants import Env as Env
 from .constants.colors import Color as Color
 from .event import EventChain as EventChain
 from .event import EventHandler as EventHandler
-from .event import background as background
 from .event import call_function as call_function
 from .event import call_script as call_script
 from .event import clear_local_storage as clear_local_storage
@@ -185,6 +186,7 @@ from .istate.wrappers import get_state as get_state
 from .middleware import Middleware as Middleware
 from .middleware import middleware as middleware
 from .model import Model as Model
+from .model import asession as asession
 from .model import session as session
 from .page import page as page
 from .state import ComponentState as ComponentState

@@ -8,7 +8,6 @@ import dataclasses
 import functools
 import inspect
 import os
-import pathlib
 import platform
 import re
 import signal
@@ -20,17 +19,16 @@ import threading
 import time
 import types
 from http.server import SimpleHTTPRequestHandler
+from pathlib import Path
 from typing import (
     TYPE_CHECKING,
     Any,
     AsyncIterator,
     Callable,
     Coroutine,
-    List,
     Optional,
     Type,
     TypeVar,
-    Union,
 )
 
 import psutil
@@ -43,6 +41,7 @@ import reflex.utils.exec
 import reflex.utils.format
 import reflex.utils.prerequisites
 import reflex.utils.processes
+from reflex.components.component import CustomComponent
 from reflex.config import environment
 from reflex.state import (
     BaseState,
@@ -52,20 +51,15 @@ from reflex.state import (
     StateManagerRedis,
     reload_state_module,
 )
+from reflex.utils import console
 
 try:
-    from selenium import webdriver  # pyright: ignore [reportMissingImports]
-    from selenium.webdriver.remote.webdriver import (  # pyright: ignore [reportMissingImports]
-        WebDriver,
-    )
+    from selenium import webdriver
+    from selenium.webdriver.remote.webdriver import WebDriver
 
     if TYPE_CHECKING:
-        from selenium.webdriver.common.options import (
-            ArgOptions,  # pyright: ignore [reportMissingImports]
-        )
-        from selenium.webdriver.remote.webelement import (  # pyright: ignore [reportMissingImports]
-            WebElement,
-        )
+        from selenium.webdriver.common.options import ArgOptions
+        from selenium.webdriver.remote.webelement import WebElement
 
     has_selenium = True
 except ImportError:
@@ -76,20 +70,19 @@ DEFAULT_TIMEOUT = 15
 POLL_INTERVAL = 0.25
 FRONTEND_POPEN_ARGS = {}
 T = TypeVar("T")
-TimeoutType = Optional[Union[int, float]]
-
+TimeoutType = int | float | None
 if platform.system() == "Windows":
-    FRONTEND_POPEN_ARGS["creationflags"] = subprocess.CREATE_NEW_PROCESS_GROUP  # type: ignore
+    FRONTEND_POPEN_ARGS["creationflags"] = subprocess.CREATE_NEW_PROCESS_GROUP  # pyright: ignore [reportAttributeAccessIssue]
     FRONTEND_POPEN_ARGS["shell"] = True
 else:
     FRONTEND_POPEN_ARGS["start_new_session"] = True
 
 
 # borrowed from py3.11
-class chdir(contextlib.AbstractContextManager):
+class chdir(contextlib.AbstractContextManager):  # noqa: N801
     """Non thread-safe context manager to change the current working directory."""
 
-    def __init__(self, path):
+    def __init__(self, path: str | Path):
         """Prepare contextmanager.
 
         Args:
@@ -100,7 +93,7 @@ class chdir(contextlib.AbstractContextManager):
 
     def __enter__(self):
         """Save current directory and perform chdir."""
-        self._old_cwd.append(os.getcwd())
+        self._old_cwd.append(Path.cwd())
         os.chdir(self.path)
 
     def __exit__(self, *excinfo):
@@ -117,30 +110,30 @@ class AppHarness:
     """AppHarness executes a reflex app in-process for testing."""
 
     app_name: str
-    app_source: Optional[
-        Callable[[], None] | types.ModuleType | str | functools.partial[Any]
-    ]
-    app_path: pathlib.Path
-    app_module_path: pathlib.Path
-    app_module: Optional[types.ModuleType] = None
-    app_instance: Optional[reflex.App] = None
-    frontend_process: Optional[subprocess.Popen] = None
-    frontend_url: Optional[str] = None
-    frontend_output_thread: Optional[threading.Thread] = None
-    backend_thread: Optional[threading.Thread] = None
-    backend: Optional[uvicorn.Server] = None
-    state_manager: Optional[StateManager] = None
+    app_source: (
+        Callable[[], None] | types.ModuleType | str | functools.partial[Any] | None
+    )
+    app_path: Path
+    app_module_path: Path
+    app_module: types.ModuleType | None = None
+    app_instance: reflex.App | None = None
+    frontend_process: subprocess.Popen | None = None
+    frontend_url: str | None = None
+    frontend_output_thread: threading.Thread | None = None
+    backend_thread: threading.Thread | None = None
+    backend: uvicorn.Server | None = None
+    state_manager: StateManager | None = None
     _frontends: list["WebDriver"] = dataclasses.field(default_factory=list)
     _decorated_pages: list = dataclasses.field(default_factory=list)
 
     @classmethod
     def create(
         cls,
-        root: pathlib.Path,
-        app_source: Optional[
-            Callable[[], None] | types.ModuleType | str | functools.partial[Any]
-        ] = None,
-        app_name: Optional[str] = None,
+        root: Path,
+        app_source: (
+            Callable[[], None] | types.ModuleType | str | functools.partial[Any] | None
+        ) = None,
+        app_name: str | None = None,
     ) -> "AppHarness":
         """Create an AppHarness instance at root.
 
@@ -196,7 +189,7 @@ class AppHarness:
             f"{self.app_name}___{self.app_name}___" + state_cls_name
         )
 
-    def get_full_state_name(self, path: List[str]) -> str:
+    def get_full_state_name(self, path: list[str]) -> str:
         """Get the full state name for the given state class name.
 
         Args:
@@ -206,7 +199,7 @@ class AppHarness:
             The full state name
         """
         # NOTE: using State.get_name() somehow causes trouble here
-        # path = [State.get_name()] + [self.get_state_name(p) for p in path]
+        # path = [State.get_name()] + [self.get_state_name(p) for p in path] # noqa: ERA001
         path = ["reflex___state____state"] + [self.get_state_name(p) for p in path]
         return ".".join(path)
 
@@ -253,11 +246,12 @@ class AppHarness:
         # disable telemetry reporting for tests
 
         os.environ["TELEMETRY_ENABLED"] = "false"
+        CustomComponent.create().get_component.cache_clear()
         self.app_path.mkdir(parents=True, exist_ok=True)
         if self.app_source is not None:
             app_globals = self._get_globals_from_signature(self.app_source)
             if isinstance(self.app_source, functools.partial):
-                self.app_source = self.app_source.func  # type: ignore
+                self.app_source = self.app_source.func
             # get the source from a function or module object
             source_code = "\n".join(
                 [
@@ -281,6 +275,7 @@ class AppHarness:
             before_decorated_pages = reflex.app.DECORATED_PAGES[self.app_name].copy()
             # Ensure the AppHarness test does not skip State assignment due to running via pytest
             os.environ.pop(reflex.constants.PYTEST_CURRENT_TEST, None)
+            os.environ[reflex.constants.APP_HARNESS_FLAG] = "true"
             self.app_module = reflex.utils.prerequisites.get_compiled_app(
                 # Do not reload the module for pre-existing apps (only apps generated from source)
                 reload=self.app_source is not None
@@ -292,11 +287,15 @@ class AppHarness:
                 if p not in before_decorated_pages
             ]
         self.app_instance = self.app_module.app
-        if isinstance(self.app_instance._state_manager, StateManagerRedis):
+        if self.app_instance and isinstance(
+            self.app_instance._state_manager, StateManagerRedis
+        ):
             # Create our own redis connection for testing.
-            self.state_manager = StateManagerRedis.create(self.app_instance.state)
+            self.state_manager = StateManagerRedis.create(self.app_instance._state)  # pyright: ignore [reportArgumentType]
         else:
-            self.state_manager = self.app_instance._state_manager
+            self.state_manager = (
+                self.app_instance._state_manager if self.app_instance else None
+            )
 
     def _reload_state_module(self):
         """Reload the rx.State module to avoid conflict when reloading."""
@@ -321,8 +320,8 @@ class AppHarness:
 
         return _shutdown_redis
 
-    def _start_backend(self, port=0):
-        if self.app_instance is None:
+    def _start_backend(self, port: int = 0):
+        if self.app_instance is None or self.app_instance.api is None:
             raise RuntimeError("App was not initialized.")
         self.backend = uvicorn.Server(
             uvicorn.Config(
@@ -351,12 +350,12 @@ class AppHarness:
                 self.app_instance.state_manager,
                 StateManagerRedis,
             )
-            and self.app_instance.state is not None
+            and self.app_instance._state is not None
         ):
             with contextlib.suppress(RuntimeError):
                 await self.app_instance.state_manager.close()
             self.app_instance._state_manager = StateManagerRedis.create(
-                state=self.app_instance.state,
+                state=self.app_instance._state,
             )
             if not isinstance(self.app_instance.state_manager, StateManagerRedis):
                 raise RuntimeError("Failed to reset state manager.")
@@ -385,7 +384,7 @@ class AppHarness:
             )
             if not line:
                 break
-            print(line)  # for pytest diagnosis
+            print(line)  # for pytest diagnosis #noqa: T201
             m = re.search(reflex.constants.Next.FRONTEND_LISTENING_REGEX, line)
             if m is not None:
                 self.frontend_url = m.group(1)
@@ -403,11 +402,10 @@ class AppHarness:
                     )
                 # catch I/O operation on closed file.
                 except ValueError as e:
-                    print(e)
+                    console.error(str(e))
                     break
                 if not line:
                     break
-                print(line)
 
         self.frontend_output_thread = threading.Thread(target=consume_frontend_output)
         self.frontend_output_thread.start()
@@ -425,7 +423,7 @@ class AppHarness:
         return self
 
     @staticmethod
-    def get_app_global_source(key, value):
+    def get_app_global_source(key: str, value: Any):
         """Get the source code of a global object.
         If value is a function or class we render the actual
         source of value otherwise we assign value to key.
@@ -436,7 +434,6 @@ class AppHarness:
 
         Returns:
             The rendered app global code.
-
         """
         if not inspect.isclass(value) and not inspect.isfunction(value):
             return f"{key} = {value!r}"
@@ -590,7 +587,7 @@ class AppHarness:
         driver_clz: Optional[Type["WebDriver"]] = None,
         driver_kwargs: dict[str, Any] | None = None,
         driver_options: ArgOptions | None = None,
-        driver_option_args: List[str] | None = None,
+        driver_option_args: list[str] | None = None,
         driver_option_capabilities: dict[str, Any] | None = None,
     ) -> "WebDriver":
         """Get a selenium webdriver instance pointed at the app.
@@ -621,23 +618,23 @@ class AppHarness:
             want_headless = True
         if driver_clz is None:
             requested_driver = environment.APP_HARNESS_DRIVER.get()
-            driver_clz = getattr(webdriver, requested_driver)
+            driver_clz = getattr(webdriver, requested_driver)  # pyright: ignore [reportPossiblyUnboundVariable]
             if driver_options is None:
-                driver_options = getattr(webdriver, f"{requested_driver}Options")()
-        if driver_clz is webdriver.Chrome:
+                driver_options = getattr(webdriver, f"{requested_driver}Options")()  # pyright: ignore [reportPossiblyUnboundVariable]
+        if driver_clz is webdriver.Chrome:  # pyright: ignore [reportPossiblyUnboundVariable]
             if driver_options is None:
-                driver_options = webdriver.ChromeOptions()
+                driver_options = webdriver.ChromeOptions()  # pyright: ignore [reportPossiblyUnboundVariable]
             driver_options.add_argument("--class=AppHarness")
             if want_headless:
                 driver_options.add_argument("--headless=new")
-        elif driver_clz is webdriver.Firefox:
+        elif driver_clz is webdriver.Firefox:  # pyright: ignore [reportPossiblyUnboundVariable]
             if driver_options is None:
-                driver_options = webdriver.FirefoxOptions()
+                driver_options = webdriver.FirefoxOptions()  # pyright: ignore [reportPossiblyUnboundVariable]
             if want_headless:
                 driver_options.add_argument("-headless")
-        elif driver_clz is webdriver.Edge:
+        elif driver_clz is webdriver.Edge:  # pyright: ignore [reportPossiblyUnboundVariable]
             if driver_options is None:
-                driver_options = webdriver.EdgeOptions()
+                driver_options = webdriver.EdgeOptions()  # pyright: ignore [reportPossiblyUnboundVariable]
             if want_headless:
                 driver_options.add_argument("headless")
         if driver_options is None:
@@ -653,7 +650,7 @@ class AppHarness:
                 driver_options.set_capability(key, value)
         if driver_kwargs is None:
             driver_kwargs = {}
-        driver = driver_clz(options=driver_options, **driver_kwargs)  # type: ignore
+        driver = driver_clz(options=driver_options, **driver_kwargs)  # pyright: ignore [reportOptionalCall, reportArgumentType]
         driver.get(self.frontend_url)
         self._frontends.append(driver)
         return driver
@@ -762,7 +759,7 @@ class AppHarness:
         element: "WebElement",
         timeout: TimeoutType = None,
         exp_not_equal: str = "",
-    ) -> Optional[str]:
+    ) -> str | None:
         """Poll element.get_attribute("value") for change.
 
         Args:
@@ -815,7 +812,7 @@ class AppHarness:
 class SimpleHTTPRequestHandlerCustomErrors(SimpleHTTPRequestHandler):
     """SimpleHTTPRequestHandler with custom error page handling."""
 
-    def __init__(self, *args, error_page_map: dict[int, pathlib.Path], **kwargs):
+    def __init__(self, *args, error_page_map: dict[int, Path], **kwargs):
         """Initialize the handler.
 
         Args:
@@ -858,8 +855,8 @@ class Subdir404TCPServer(socketserver.TCPServer):
     def __init__(
         self,
         *args,
-        root: pathlib.Path,
-        error_page_map: dict[int, pathlib.Path] | None,
+        root: Path,
+        error_page_map: dict[int, Path] | None,
         **kwargs,
     ):
         """Initialize the server.
@@ -879,14 +876,14 @@ class Subdir404TCPServer(socketserver.TCPServer):
 
         Args:
             request: the requesting socket
-            client_address: (host, port) referring to the client’s address.
+            client_address: (host, port) referring to the client's address.
         """
         self.RequestHandlerClass(
             request,
             client_address,
             self,
-            directory=str(self.root),  # type: ignore
-            error_page_map=self.error_page_map,  # type: ignore
+            directory=str(self.root),  # pyright: ignore [reportCallIssue]
+            error_page_map=self.error_page_map,  # pyright: ignore [reportCallIssue]
         )
 
 
@@ -898,8 +895,8 @@ class AppHarnessProd(AppHarness):
     handling. Additionally, the backend runs in multi-worker mode.
     """
 
-    frontend_thread: Optional[threading.Thread] = None
-    frontend_server: Optional[Subdir404TCPServer] = None
+    frontend_thread: threading.Thread | None = None
+    frontend_server: Subdir404TCPServer | None = None
 
     def _run_frontend(self):
         web_root = (
@@ -933,6 +930,7 @@ class AppHarnessProd(AppHarness):
                 frontend=True,
                 backend=False,
                 loglevel=reflex.constants.LogLevel.INFO,
+                env=reflex.constants.Env.PROD,
             )
 
         self.frontend_thread = threading.Thread(target=self._run_frontend)

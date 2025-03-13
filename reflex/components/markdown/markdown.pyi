@@ -5,13 +5,13 @@
 # ------------------------------------------------------
 import dataclasses
 from functools import lru_cache
-from typing import Any, Callable, Dict, Optional, Sequence, Union, overload
+from typing import Any, Callable, Optional, Sequence, overload
 
 from reflex.components.component import Component
-from reflex.event import BASE_STATE, EventType
+from reflex.event import EventType
 from reflex.style import Style
 from reflex.utils.imports import ImportDict
-from reflex.vars.base import LiteralVar, Var
+from reflex.vars.base import LiteralVar, Var, VarData
 
 _CHILDREN = Var(_js_expr="children", _var_type=str)
 _PROPS = Var(_js_expr="...props")
@@ -32,13 +32,14 @@ def get_base_component_map() -> dict[str, Callable]: ...
 @dataclasses.dataclass()
 class MarkdownComponentMap:
     @classmethod
-    def get_component_map_custom_code(cls) -> str: ...
+    def get_component_map_custom_code(cls) -> Var: ...
     @classmethod
     def create_map_fn_var(
         cls,
         fn_body: Var | None = None,
         fn_args: Sequence[str] | None = None,
         explicit_return: bool | None = None,
+        var_data: VarData | None = None,
     ) -> Var: ...
     @classmethod
     def get_fn_args(cls) -> Sequence[str]: ...
@@ -51,29 +52,29 @@ class Markdown(Component):
     def create(  # type: ignore
         cls,
         *children,
-        component_map: Optional[Dict[str, Any]] = None,
-        component_map_hash: Optional[str] = None,
-        style: Optional[Style] = None,
-        key: Optional[Any] = None,
-        id: Optional[Any] = None,
-        class_name: Optional[Any] = None,
-        autofocus: Optional[bool] = None,
-        custom_attrs: Optional[Dict[str, Union[Var, Any]]] = None,
-        on_blur: Optional[EventType[[], BASE_STATE]] = None,
-        on_click: Optional[EventType[[], BASE_STATE]] = None,
-        on_context_menu: Optional[EventType[[], BASE_STATE]] = None,
-        on_double_click: Optional[EventType[[], BASE_STATE]] = None,
-        on_focus: Optional[EventType[[], BASE_STATE]] = None,
-        on_mount: Optional[EventType[[], BASE_STATE]] = None,
-        on_mouse_down: Optional[EventType[[], BASE_STATE]] = None,
-        on_mouse_enter: Optional[EventType[[], BASE_STATE]] = None,
-        on_mouse_leave: Optional[EventType[[], BASE_STATE]] = None,
-        on_mouse_move: Optional[EventType[[], BASE_STATE]] = None,
-        on_mouse_out: Optional[EventType[[], BASE_STATE]] = None,
-        on_mouse_over: Optional[EventType[[], BASE_STATE]] = None,
-        on_mouse_up: Optional[EventType[[], BASE_STATE]] = None,
-        on_scroll: Optional[EventType[[], BASE_STATE]] = None,
-        on_unmount: Optional[EventType[[], BASE_STATE]] = None,
+        component_map: dict[str, Any] | None = None,
+        component_map_hash: str | None = None,
+        style: Style | None = None,
+        key: Any | None = None,
+        id: Any | None = None,
+        class_name: Any | None = None,
+        autofocus: bool | None = None,
+        custom_attrs: dict[str, Var | Any] | None = None,
+        on_blur: Optional[EventType[()]] = None,
+        on_click: Optional[EventType[()]] = None,
+        on_context_menu: Optional[EventType[()]] = None,
+        on_double_click: Optional[EventType[()]] = None,
+        on_focus: Optional[EventType[()]] = None,
+        on_mount: Optional[EventType[()]] = None,
+        on_mouse_down: Optional[EventType[()]] = None,
+        on_mouse_enter: Optional[EventType[()]] = None,
+        on_mouse_leave: Optional[EventType[()]] = None,
+        on_mouse_move: Optional[EventType[()]] = None,
+        on_mouse_out: Optional[EventType[()]] = None,
+        on_mouse_over: Optional[EventType[()]] = None,
+        on_mouse_up: Optional[EventType[()]] = None,
+        on_scroll: Optional[EventType[()]] = None,
+        on_unmount: Optional[EventType[()]] = None,
         **props,
     ) -> "Markdown":
         """Create a markdown component.

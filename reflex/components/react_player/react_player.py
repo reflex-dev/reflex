@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing_extensions import TypedDict
+from typing import TypedDict
 
 from reflex.components.component import NoSSRComponent
 from reflex.event import EventHandler, no_args_event_spec, passthrough_event_spec
@@ -39,7 +39,7 @@ class ReactPlayer(NoSSRComponent):
     loop: Var[bool]
 
     # Set to true or false to display native player controls.
-    controls: Var[bool] = True  # type: ignore
+    controls: Var[bool] = Var.create(True)
 
     # Set to true to show just the video thumbnail, which loads the full player on click
     light: Var[bool]

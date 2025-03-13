@@ -1,11 +1,17 @@
 """Module to implement lazy loading in reflex."""
 
+from __future__ import annotations
+
 import copy
 
 import lazy_loader as lazy
 
 
-def attach(package_name, submodules=None, submod_attrs=None):
+def attach(
+    package_name: str,
+    submodules: set | None = None,
+    submod_attrs: dict | None = None,
+):
     """Replaces a package's __getattr__, __dir__, and __all__ attributes using lazy.attach.
     The lazy loader __getattr__ doesn't support tuples as list values. We needed to add
     this functionality (tuples) in Reflex to support 'import as _' statements. This function

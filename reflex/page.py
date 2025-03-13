@@ -3,12 +3,12 @@
 from __future__ import annotations
 
 from collections import defaultdict
-from typing import Any, Dict, List
+from typing import Any, Callable, List
 
 from reflex.config import get_config
-from reflex.event import BASE_STATE, EventType
+from reflex.event import EventType
 
-DECORATED_PAGES: Dict[str, List] = defaultdict(list)
+DECORATED_PAGES: dict[str, List] = defaultdict(list)
 
 
 def page(
@@ -18,7 +18,7 @@ def page(
     description: str | None = None,
     meta: list[Any] | None = None,
     script_tags: list[Any] | None = None,
-    on_load: EventType[[], BASE_STATE] | None = None,
+    on_load: EventType[()] | None = None,
 ):
     """Decorate a function as a page.
 
@@ -42,7 +42,7 @@ def page(
         The decorated function.
     """
 
-    def decorator(render_fn):
+    def decorator(render_fn: Callable):
         kwargs = {}
         if route:
             kwargs["route"] = route
@@ -66,11 +66,11 @@ def page(
     return decorator
 
 
-def get_decorated_pages(omit_implicit_routes=True) -> list[dict[str, Any]]:
+def get_decorated_pages(omit_implicit_routes: bool = True) -> list[dict[str, Any]]:
     """Get the decorated pages.
 
     Args:
-        omit_implicit_routes: Whether to omit pages where the route will be implicitely guessed later.
+        omit_implicit_routes: Whether to omit pages where the route will be implicitly guessed later.
 
     Returns:
         The decorated pages.

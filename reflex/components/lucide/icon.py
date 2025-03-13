@@ -2,13 +2,15 @@
 
 from reflex.components.component import Component
 from reflex.utils import format
-from reflex.vars.base import Var
+from reflex.utils.imports import ImportVar
+from reflex.vars.base import LiteralVar, Var
+from reflex.vars.sequence import LiteralStringVar, StringVar
 
 
 class LucideIconComponent(Component):
     """Lucide Icon Component."""
 
-    library = "lucide-react@0.359.0"
+    library = "lucide-react@0.471.1"
 
 
 class Icon(LucideIconComponent):
@@ -32,14 +34,19 @@ class Icon(LucideIconComponent):
         Raises:
             AttributeError: The errors tied to bad usage of the Icon component.
             ValueError: If the icon tag is invalid.
+            TypeError: If the icon name is not a string.
 
         Returns:
             The created component.
         """
         if children:
-            if len(children) == 1 and isinstance(children[0], str):
+            if len(children) == 1:
+                child = Var.create(children[0]).guess_type()
+                if not isinstance(child, StringVar):
+                    raise AttributeError(
+                        f"Icon name must be a string, got {children[0]._var_type if isinstance(children[0], Var) else children[0]}"
+                    )
                 props["tag"] = children[0]
-                children = []
             else:
                 raise AttributeError(
                     f"Passing multiple children to Icon component is not allowed: remove positional arguments {children[1:]} to fix"
@@ -47,19 +54,57 @@ class Icon(LucideIconComponent):
         if "tag" not in props:
             raise AttributeError("Missing 'tag' keyword-argument for Icon")
 
+        tag: str | Var | LiteralVar = Var.create(props.pop("tag"))
+        if isinstance(tag, LiteralVar):
+            if isinstance(tag, LiteralStringVar):
+                tag = tag._var_value
+            else:
+                raise TypeError(f"Icon name must be a string, got {type(tag)}")
+        elif isinstance(tag, Var):
+            tag_stringified = tag.guess_type()
+            if not isinstance(tag_stringified, StringVar):
+                raise TypeError(f"Icon name must be a string, got {tag._var_type}")
+            return DynamicIcon.create(name=tag_stringified.replace("_", "-"), **props)
+
         if (
-            not isinstance(props["tag"], str)
-            or format.to_snake_case(props["tag"]) not in LUCIDE_ICON_LIST
+            not isinstance(tag, str)
+            or format.to_snake_case(tag) not in LUCIDE_ICON_LIST
         ):
+            if isinstance(tag, str):
+                icons_sorted = sorted(
+                    LUCIDE_ICON_LIST,
+                    key=lambda s: format.length_of_largest_common_substring(tag, s),
+                    reverse=True,
+                )
+            else:
+                icons_sorted = LUCIDE_ICON_LIST
             raise ValueError(
-                f"Invalid icon tag: {props['tag']}. Please use one of the following: {', '.join(LUCIDE_ICON_LIST[0:25])}, ..."
-                "\nSee full list at https://lucide.dev/icons."
+                f"Invalid icon tag: {tag}. Please use one of the following: {', '.join(icons_sorted[0:25])}, ..."
+                "\nSee full list at https://reflex.dev/docs/library/data-display/icon/#icons-list."
             )
 
-        props["tag"] = format.to_title_case(format.to_snake_case(props["tag"])) + "Icon"
+        if tag in LUCIDE_ICON_MAPPING_OVERRIDE:
+            props["tag"] = LUCIDE_ICON_MAPPING_OVERRIDE[tag]
+        else:
+            props["tag"] = format.to_title_case(format.to_snake_case(tag)) + "Icon"
         props["alias"] = f"Lucide{props['tag']}"
         props.setdefault("color", "var(--current-color)")
-        return super().create(*children, **props)
+        return super().create(**props)
+
+
+class DynamicIcon(LucideIconComponent):
+    """A DynamicIcon component."""
+
+    tag = "DynamicIcon"
+
+    name: Var[str]
+
+    def _get_imports(self):
+        _imports = super()._get_imports()
+        if self.library:
+            _imports.pop(self.library)
+        _imports["lucide-react/dynamic"] = [ImportVar("DynamicIcon", install=False)]
+        return _imports
 
 
 LUCIDE_ICON_LIST = [
@@ -106,6 +151,7 @@ LUCIDE_ICON_LIST = [
     "ambulance",
     "ampersand",
     "ampersands",
+    "amphora",
     "anchor",
     "angry",
     "annoyed",
@@ -193,6 +239,7 @@ LUCIDE_ICON_LIST = [
     "baggage_claim",
     "ban",
     "banana",
+    "bandage",
     "banknote",
     "bar_chart",
     "bar_chart_2",
@@ -230,8 +277,10 @@ LUCIDE_ICON_LIST = [
     "between_horizontal_start",
     "between_vertical_end",
     "between_vertical_start",
+    "biceps_flexed",
     "bike",
     "binary",
+    "binoculars",
     "biohazard",
     "bird",
     "bitcoin",
@@ -278,6 +327,7 @@ LUCIDE_ICON_LIST = [
     "boom_box",
     "bot",
     "bot_message_square",
+    "bot_off",
     "box",
     "box_select",
     "boxes",
@@ -289,6 +339,7 @@ LUCIDE_ICON_LIST = [
     "brick_wall",
     "briefcase",
     "briefcase_business",
+    "briefcase_conveyor_belt",
     "briefcase_medical",
     "bring_to_front",
     "brush",
@@ -305,9 +356,13 @@ LUCIDE_ICON_LIST = [
     "cake_slice",
     "calculator",
     "calendar",
+    "calendar_1",
+    "calendar_arrow_down",
+    "calendar_arrow_up",
     "calendar_check",
     "calendar_check_2",
     "calendar_clock",
+    "calendar_cog",
     "calendar_days",
     "calendar_fold",
     "calendar_heart",
@@ -318,6 +373,7 @@ LUCIDE_ICON_LIST = [
     "calendar_plus_2",
     "calendar_range",
     "calendar_search",
+    "calendar_sync",
     "calendar_x",
     "calendar_x_2",
     "camera",
@@ -342,6 +398,29 @@ LUCIDE_ICON_LIST = [
     "castle",
     "cat",
     "cctv",
+    "chart_area",
+    "chart_bar",
+    "chart_bar_big",
+    "chart_bar_decreasing",
+    "chart_bar_increasing",
+    "chart_bar_stacked",
+    "chart_candlestick",
+    "chart_column",
+    "chart_column_big",
+    "chart_column_decreasing",
+    "chart_column_increasing",
+    "chart_column_stacked",
+    "chart_gantt",
+    "chart_line",
+    "chart_network",
+    "chart_no_axes_column",
+    "chart_no_axes_column_decreasing",
+    "chart_no_axes_column_increasing",
+    "chart_no_axes_combined",
+    "chart_no_axes_gantt",
+    "chart_pie",
+    "chart_scatter",
+    "chart_spline",
     "check",
     "check_check",
     "chef_hat",
@@ -356,6 +435,7 @@ LUCIDE_ICON_LIST = [
     "chevrons_down_up",
     "chevrons_left",
     "chevrons_left_right",
+    "chevrons_left_right_ellipsis",
     "chevrons_right",
     "chevrons_right_left",
     "chevrons_up",
@@ -374,8 +454,8 @@ LUCIDE_ICON_LIST = [
     "circle_arrow_out_up_right",
     "circle_arrow_right",
     "circle_arrow_up",
-    "circle_check_big",
     "circle_check",
+    "circle_check_big",
     "circle_chevron_down",
     "circle_chevron_left",
     "circle_chevron_right",
@@ -387,13 +467,14 @@ LUCIDE_ICON_LIST = [
     "circle_dot_dashed",
     "circle_ellipsis",
     "circle_equal",
+    "circle_fading_arrow_up",
     "circle_fading_plus",
     "circle_gauge",
     "circle_help",
     "circle_minus",
     "circle_off",
-    "circle_parking_off",
     "circle_parking",
+    "circle_parking_off",
     "circle_pause",
     "circle_percent",
     "circle_play",
@@ -432,7 +513,11 @@ LUCIDE_ICON_LIST = [
     "clock_7",
     "clock_8",
     "clock_9",
+    "clock_alert",
+    "clock_arrow_down",
+    "clock_arrow_up",
     "cloud",
+    "cloud_alert",
     "cloud_cog",
     "cloud_download",
     "cloud_drizzle",
@@ -503,6 +588,7 @@ LUCIDE_ICON_LIST = [
     "cup_soda",
     "currency",
     "cylinder",
+    "dam",
     "database",
     "database_backup",
     "database_zap",
@@ -510,7 +596,9 @@ LUCIDE_ICON_LIST = [
     "dessert",
     "diameter",
     "diamond",
+    "diamond_minus",
     "diamond_percent",
+    "diamond_plus",
     "dice_1",
     "dice_2",
     "dice_3",
@@ -539,6 +627,7 @@ LUCIDE_ICON_LIST = [
     "dribbble",
     "drill",
     "droplet",
+    "droplet_off",
     "droplets",
     "drum",
     "drumstick",
@@ -554,12 +643,15 @@ LUCIDE_ICON_LIST = [
     "ellipsis",
     "ellipsis_vertical",
     "equal",
+    "equal_approximately",
     "equal_not",
     "eraser",
+    "ethernet_port",
     "euro",
     "expand",
     "external_link",
     "eye",
+    "eye_closed",
     "eye_off",
     "facebook",
     "factory",
@@ -579,6 +671,10 @@ LUCIDE_ICON_LIST = [
     "file_bar_chart",
     "file_bar_chart_2",
     "file_box",
+    "file_chart_column",
+    "file_chart_column_increasing",
+    "file_chart_line",
+    "file_chart_pie",
     "file_check",
     "file_check_2",
     "file_clock",
@@ -620,6 +716,7 @@ LUCIDE_ICON_LIST = [
     "file_type",
     "file_type_2",
     "file_up",
+    "file_user",
     "file_video",
     "file_video_2",
     "file_volume",
@@ -661,6 +758,7 @@ LUCIDE_ICON_LIST = [
     "folder_check",
     "folder_clock",
     "folder_closed",
+    "folder_code",
     "folder_cog",
     "folder_dot",
     "folder_down",
@@ -733,7 +831,12 @@ LUCIDE_ICON_LIST = [
     "graduation_cap",
     "grape",
     "grid_2x2",
+    "grid_2x_2",
+    "grid_2x_2_check",
+    "grid_2x_2_plus",
+    "grid_2x_2_x",
     "grid_3x3",
+    "grid_3x_3",
     "grip",
     "grip_horizontal",
     "grip_vertical",
@@ -762,6 +865,7 @@ LUCIDE_ICON_LIST = [
     "heading_4",
     "heading_5",
     "heading_6",
+    "headphone_off",
     "headphones",
     "headset",
     "heart",
@@ -779,14 +883,21 @@ LUCIDE_ICON_LIST = [
     "hospital",
     "hotel",
     "hourglass",
+    "house",
+    "house_plug",
+    "house_plus",
+    "house_wifi",
     "ice_cream_bowl",
     "ice_cream_cone",
+    "id_card",
     "image",
     "image_down",
     "image_minus",
     "image_off",
+    "image_play",
     "image_plus",
     "image_up",
+    "image_upscale",
     "images",
     "import",
     "inbox",
@@ -808,6 +919,7 @@ LUCIDE_ICON_LIST = [
     "key_square",
     "keyboard",
     "keyboard_music",
+    "keyboard_off",
     "lamp",
     "lamp_ceiling",
     "lamp_desk",
@@ -817,8 +929,9 @@ LUCIDE_ICON_LIST = [
     "land_plot",
     "landmark",
     "languages",
-    "laptop_minimal",
     "laptop",
+    "laptop_minimal",
+    "laptop_minimal_check",
     "lasso",
     "lasso_select",
     "laugh",
@@ -833,6 +946,8 @@ LUCIDE_ICON_LIST = [
     "layout_template",
     "leaf",
     "leafy_green",
+    "lectern",
+    "letter_text",
     "library",
     "library_big",
     "life_buoy",
@@ -845,10 +960,12 @@ LUCIDE_ICON_LIST = [
     "link_2_off",
     "linkedin",
     "list",
+    "list_check",
     "list_checks",
     "list_collapse",
     "list_end",
     "list_filter",
+    "list_filter_plus",
     "list_minus",
     "list_music",
     "list_ordered",
@@ -861,15 +978,17 @@ LUCIDE_ICON_LIST = [
     "list_x",
     "loader",
     "loader_circle",
+    "loader_pinwheel",
     "locate",
     "locate_fixed",
     "locate_off",
     "lock",
-    "lock_keyhole_open",
     "lock_keyhole",
+    "lock_keyhole_open",
     "lock_open",
     "log_in",
     "log_out",
+    "logs",
     "lollipop",
     "luggage",
     "magnet",
@@ -886,7 +1005,16 @@ LUCIDE_ICON_LIST = [
     "mails",
     "map",
     "map_pin",
+    "map_pin_check",
+    "map_pin_check_inside",
+    "map_pin_house",
+    "map_pin_minus",
+    "map_pin_minus_inside",
     "map_pin_off",
+    "map_pin_plus",
+    "map_pin_plus_inside",
+    "map_pin_x",
+    "map_pin_x_inside",
     "map_pinned",
     "martini",
     "maximize",
@@ -915,6 +1043,7 @@ LUCIDE_ICON_LIST = [
     "message_square_diff",
     "message_square_dot",
     "message_square_heart",
+    "message_square_lock",
     "message_square_more",
     "message_square_off",
     "message_square_plus",
@@ -926,8 +1055,9 @@ LUCIDE_ICON_LIST = [
     "message_square_x",
     "messages_square",
     "mic",
-    "mic_vocal",
     "mic_off",
+    "mic_vocal",
+    "microchip",
     "microscope",
     "microwave",
     "milestone",
@@ -938,6 +1068,7 @@ LUCIDE_ICON_LIST = [
     "minus",
     "monitor",
     "monitor_check",
+    "monitor_cog",
     "monitor_dot",
     "monitor_down",
     "monitor_off",
@@ -953,8 +1084,10 @@ LUCIDE_ICON_LIST = [
     "mountain",
     "mountain_snow",
     "mouse",
+    "mouse_off",
     "mouse_pointer",
     "mouse_pointer_2",
+    "mouse_pointer_ban",
     "mouse_pointer_click",
     "move",
     "move_3d",
@@ -991,10 +1124,13 @@ LUCIDE_ICON_LIST = [
     "nut_off",
     "octagon",
     "octagon_alert",
+    "octagon_minus",
     "octagon_pause",
     "octagon_x",
+    "omega",
     "option",
     "orbit",
+    "origami",
     "package",
     "package_2",
     "package_check",
@@ -1007,6 +1143,7 @@ LUCIDE_ICON_LIST = [
     "paint_roller",
     "paintbrush",
     "paintbrush_2",
+    "paintbrush_vertical",
     "palette",
     "panel_bottom",
     "panel_bottom_close",
@@ -1036,13 +1173,16 @@ LUCIDE_ICON_LIST = [
     "pc_case",
     "pen",
     "pen_line",
+    "pen_off",
     "pen_tool",
     "pencil",
     "pencil_line",
+    "pencil_off",
     "pencil_ruler",
     "pentagon",
     "percent",
     "person_standing",
+    "philippine_peso",
     "phone",
     "phone_call",
     "phone_forwarded",
@@ -1058,7 +1198,10 @@ LUCIDE_ICON_LIST = [
     "pie_chart",
     "piggy_bank",
     "pilcrow",
+    "pilcrow_left",
+    "pilcrow_right",
     "pill",
+    "pill_bottle",
     "pin",
     "pin_off",
     "pipette",
@@ -1084,6 +1227,7 @@ LUCIDE_ICON_LIST = [
     "power_off",
     "presentation",
     "printer",
+    "printer_check",
     "projector",
     "proportions",
     "puzzle",
@@ -1158,6 +1302,7 @@ LUCIDE_ICON_LIST = [
     "satellite_dish",
     "save",
     "save_all",
+    "save_off",
     "scale",
     "scale_3d",
     "scaling",
@@ -1165,7 +1310,9 @@ LUCIDE_ICON_LIST = [
     "scan_barcode",
     "scan_eye",
     "scan_face",
+    "scan_heart",
     "scan_line",
+    "scan_qr_code",
     "scan_search",
     "scan_text",
     "scatter_chart",
@@ -1181,6 +1328,7 @@ LUCIDE_ICON_LIST = [
     "search_code",
     "search_slash",
     "search_x",
+    "section",
     "send",
     "send_horizontal",
     "send_to_back",
@@ -1225,6 +1373,7 @@ LUCIDE_ICON_LIST = [
     "signal_low",
     "signal_medium",
     "signal_zero",
+    "signature",
     "signpost",
     "signpost_big",
     "siren",
@@ -1234,8 +1383,8 @@ LUCIDE_ICON_LIST = [
     "slack",
     "slash",
     "slice",
-    "sliders_vertical",
     "sliders_horizontal",
+    "sliders_vertical",
     "smartphone",
     "smartphone_charging",
     "smartphone_nfc",
@@ -1259,29 +1408,31 @@ LUCIDE_ICON_LIST = [
     "sprout",
     "square",
     "square_activity",
+    "square_arrow_down",
     "square_arrow_down_left",
     "square_arrow_down_right",
-    "square_arrow_down",
     "square_arrow_left",
     "square_arrow_out_down_left",
     "square_arrow_out_down_right",
     "square_arrow_out_up_left",
     "square_arrow_out_up_right",
     "square_arrow_right",
+    "square_arrow_up",
     "square_arrow_up_left",
     "square_arrow_up_right",
-    "square_arrow_up",
     "square_asterisk",
     "square_bottom_dashed_scissors",
-    "square_check_big",
+    "square_chart_gantt",
     "square_check",
+    "square_check_big",
     "square_chevron_down",
     "square_chevron_left",
     "square_chevron_right",
     "square_chevron_up",
     "square_code",
-    "square_dashed_bottom_code",
+    "square_dashed",
     "square_dashed_bottom",
+    "square_dashed_bottom_code",
     "square_dashed_kanban",
     "square_dashed_mouse_pointer",
     "square_divide",
@@ -1295,8 +1446,8 @@ LUCIDE_ICON_LIST = [
     "square_menu",
     "square_minus",
     "square_mouse_pointer",
-    "square_parking_off",
     "square_parking",
+    "square_parking_off",
     "square_pen",
     "square_percent",
     "square_pi",
@@ -1310,10 +1461,11 @@ LUCIDE_ICON_LIST = [
     "square_slash",
     "square_split_horizontal",
     "square_split_vertical",
+    "square_square",
     "square_stack",
     "square_terminal",
-    "square_user_round",
     "square_user",
+    "square_user_round",
     "square_x",
     "squircle",
     "squirrel",
@@ -1350,6 +1502,7 @@ LUCIDE_ICON_LIST = [
     "table_cells_merge",
     "table_cells_split",
     "table_columns_split",
+    "table_of_contents",
     "table_properties",
     "table_rows_split",
     "tablet",
@@ -1365,11 +1518,11 @@ LUCIDE_ICON_LIST = [
     "tangent",
     "target",
     "telescope",
+    "tent",
     "tent_tree",
     "terminal",
-    "test_tube_diagonal",
     "test_tube",
-    "tent",
+    "test_tube_diagonal",
     "test_tubes",
     "text",
     "text_cursor",
@@ -1390,11 +1543,14 @@ LUCIDE_ICON_LIST = [
     "ticket_plus",
     "ticket_slash",
     "ticket_x",
+    "tickets",
+    "tickets_plane",
     "timer",
     "timer_off",
     "timer_reset",
     "toggle_left",
     "toggle_right",
+    "toilet",
     "tornado",
     "torus",
     "touchpad",
@@ -1416,17 +1572,22 @@ LUCIDE_ICON_LIST = [
     "trello",
     "trending_down",
     "trending_up",
+    "trending_up_down",
     "triangle",
-    "triangle_right",
     "triangle_alert",
+    "triangle_dashed",
+    "triangle_right",
     "trophy",
     "truck",
     "turtle",
     "tv",
     "tv_2",
+    "tv_minimal",
+    "tv_minimal_play",
     "twitch",
     "twitter",
     "type",
+    "type_outline",
     "umbrella",
     "umbrella_off",
     "underline",
@@ -1437,8 +1598,8 @@ LUCIDE_ICON_LIST = [
     "unfold_vertical",
     "ungroup",
     "university",
-    "unlink_2",
     "unlink",
+    "unlink_2",
     "unplug",
     "upload",
     "usb",
@@ -1446,11 +1607,13 @@ LUCIDE_ICON_LIST = [
     "user_check",
     "user_cog",
     "user_minus",
+    "user_pen",
     "user_plus",
     "user_round",
     "user_round_check",
     "user_round_cog",
     "user_round_minus",
+    "user_round_pen",
     "user_round_plus",
     "user_round_search",
     "user_round_x",
@@ -1472,14 +1635,16 @@ LUCIDE_ICON_LIST = [
     "videotape",
     "view",
     "voicemail",
+    "volleyball",
     "volume",
     "volume_1",
     "volume_2",
+    "volume_off",
     "volume_x",
     "vote",
     "wallet",
-    "wallet_minimal",
     "wallet_cards",
+    "wallet_minimal",
     "wallpaper",
     "wand",
     "wand_sparkles",
@@ -1487,17 +1652,22 @@ LUCIDE_ICON_LIST = [
     "washing_machine",
     "watch",
     "waves",
+    "waves_ladder",
     "waypoints",
     "webcam",
-    "webhook_off",
     "webhook",
+    "webhook_off",
     "weight",
     "wheat",
     "wheat_off",
     "whole_word",
     "wifi",
+    "wifi_high",
+    "wifi_low",
     "wifi_off",
+    "wifi_zero",
     "wind",
+    "wind_arrow_down",
     "wine",
     "wine_off",
     "workflow",
@@ -1511,3 +1681,10 @@ LUCIDE_ICON_LIST = [
     "zoom_in",
     "zoom_out",
 ]
+
+# The default transformation of some icon names doesn't match how the
+# icons are exported from Lucide. Manual overrides can go here.
+LUCIDE_ICON_MAPPING_OVERRIDE = {
+    "grid_2x_2_check": "Grid2x2Check",
+    "grid_2x_2_x": "Grid2x2X",
+}

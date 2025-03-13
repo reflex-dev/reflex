@@ -1,6 +1,3 @@
-```diff
-+ Searching for Pynecone? You are in the right repo. Pynecone has been renamed to Reflex. +
-```
 
 <div align="center">
 <img src="https://raw.githubusercontent.com/reflex-dev/reflex/main/docs/images/reflex_dark.svg#gh-light-mode-only" alt="Reflex Logo" width="300px">
@@ -34,7 +31,7 @@ See our [architecture page](https://reflex.dev/blog/2024-03-21-reflex-architectu
 
 ## ⚙️ Installation
 
-Open a terminal and run (Requires Python 3.9+):
+Open a terminal and run (Requires Python 3.10+):
 
 ```bash
 pip install reflex
@@ -237,9 +234,9 @@ You can create a multi-page app by adding more pages.
 
 Reflex launched in December 2022 with the name Pynecone.
 
-As of February 2024, our hosting service is in alpha! During this time anyone can deploy their apps for free. See our [roadmap](https://github.com/reflex-dev/reflex/issues/2727) to see what's planned.
+Beginning in 2025, [Reflex Cloud](https://cloud.reflex.dev) has launched to provide the best hosting experience for Reflex apps. We will continue to develop it and implement more features.
 
-Reflex has new releases and features coming every week! Make sure to :star: star and :eyes: watch this repository to stay up to date.
+Reflex has new releases and features coming every other week! Make sure to :star: star and :eyes: watch this repository to stay up to date.
 
 ## Contributing
 
@@ -249,7 +246,7 @@ We welcome contributions of any size! Below are some good ways to get started in
 -   **GitHub Discussions**: A great way to talk about features you want added or things that are confusing/need clarification.
 -   **GitHub Issues**: [Issues](https://github.com/reflex-dev/reflex/issues) are an excellent way to report bugs. Additionally, you can try and solve an existing issue and submit a PR.
 
-We are actively looking for contributors, no matter your skill level or experience. To contribute check out [CONTIBUTING.md](https://github.com/reflex-dev/reflex/blob/main/CONTRIBUTING.md)
+We are actively looking for contributors, no matter your skill level or experience. To contribute check out [CONTRIBUTING.md](https://github.com/reflex-dev/reflex/blob/main/CONTRIBUTING.md)
 
 
 ## All Thanks To Our Contributors:

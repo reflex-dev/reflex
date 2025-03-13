@@ -15,7 +15,7 @@ from .utils import SessionStorage
 
 def CallScript():
     """A test app for browser javascript integration."""
-    from typing import Dict, List, Optional, Union
+    from pathlib import Path
 
     import reflex as rx
 
@@ -42,15 +42,17 @@ def CallScript():
     external_scripts = inline_scripts.replace("inline", "external")
 
     class CallScriptState(rx.State):
-        results: List[Optional[Union[str, Dict, List]]] = []
-        inline_counter: int = 0
-        external_counter: int = 0
+        results: rx.Field[list[str | dict | list | None]] = rx.field([])
+        inline_counter: rx.Field[int] = rx.field(0)
+        external_counter: rx.Field[int] = rx.field(0)
         value: str = "Initial"
-        last_result: str = ""
+        last_result: int = 0
 
+        @rx.event
         def call_script_callback(self, result):
             self.results.append(result)
 
+        @rx.event
         def call_script_callback_other_arg(self, result, other_arg):
             self.results.append([other_arg, result])
 
@@ -90,7 +92,7 @@ def CallScript():
         def call_script_inline_return_lambda(self):
             return rx.call_script(
                 "inline2()",
-                callback=lambda result: CallScriptState.call_script_callback_other_arg(  # type: ignore
+                callback=lambda result: CallScriptState.call_script_callback_other_arg(
                     result, "lambda"
                 ),
             )
@@ -99,7 +101,7 @@ def CallScript():
         def get_inline_counter(self):
             return rx.call_script(
                 "inline_counter",
-                callback=CallScriptState.set_inline_counter,  # type: ignore
+                callback=CallScriptState.setvar("inline_counter"),
             )
 
         @rx.event
@@ -138,7 +140,7 @@ def CallScript():
         def call_script_external_return_lambda(self):
             return rx.call_script(
                 "external2()",
-                callback=lambda result: CallScriptState.call_script_callback_other_arg(  # type: ignore
+                callback=lambda result: CallScriptState.call_script_callback_other_arg(
                     result, "lambda"
                 ),
             )
@@ -147,37 +149,37 @@ def CallScript():
         def get_external_counter(self):
             return rx.call_script(
                 "external_counter",
-                callback=CallScriptState.set_external_counter,  # type: ignore
+                callback=CallScriptState.setvar("external_counter"),
             )
 
         @rx.event
         def call_with_var_f_string(self):
             return rx.call_script(
                 f"{rx.Var('inline_counter')} + {rx.Var('external_counter')}",
-                callback=CallScriptState.set_last_result,  # type: ignore
+                callback=CallScriptState.setvar("last_result"),
             )
 
         @rx.event
         def call_with_var_str_cast(self):
             return rx.call_script(
-                f"{str(rx.Var('inline_counter'))} + {str(rx.Var('external_counter'))}",
-                callback=CallScriptState.set_last_result,  # type: ignore
+                f"{rx.Var('inline_counter')!s} + {rx.Var('external_counter')!s}",
+                callback=CallScriptState.setvar("last_result"),
             )
 
         @rx.event
         def call_with_var_f_string_wrapped(self):
             return rx.call_script(
                 rx.Var(f"{rx.Var('inline_counter')} + {rx.Var('external_counter')}"),
-                callback=CallScriptState.set_last_result,  # type: ignore
+                callback=CallScriptState.setvar("last_result"),
             )
 
         @rx.event
         def call_with_var_str_cast_wrapped(self):
             return rx.call_script(
                 rx.Var(
-                    f"{str(rx.Var('inline_counter'))} + {str(rx.Var('external_counter'))}"
+                    f"{rx.Var('inline_counter')!s} + {rx.Var('external_counter')!s}"
                 ),
-                callback=CallScriptState.set_last_result,  # type: ignore
+                callback=CallScriptState.setvar("last_result"),
             )
 
         @rx.event
@@ -185,25 +187,24 @@ def CallScript():
             yield rx.call_script("inline_counter = 0; external_counter = 0")
             self.reset()
 
-    app = rx.App(state=rx.State)
-    with open("assets/external.js", "w") as f:
-        f.write(external_scripts)
+    app = rx.App(_state=rx.State)
+    Path("assets/external.js").write_text(external_scripts)
 
     @app.add_page
     def index():
         return rx.vstack(
             rx.input(
-                value=CallScriptState.inline_counter.to(str),  # type: ignore
+                value=CallScriptState.inline_counter.to(str),
                 id="inline_counter",
                 read_only=True,
             ),
             rx.input(
-                value=CallScriptState.external_counter.to(str),  # type: ignore
+                value=CallScriptState.external_counter.to(str),
                 id="external_counter",
                 read_only=True,
             ),
             rx.text_area(
-                value=CallScriptState.results.to_string(),  # type: ignore
+                value=CallScriptState.results.to_string(),
                 id="results",
                 read_only=True,
             ),
@@ -273,7 +274,7 @@ def CallScript():
                 CallScriptState.value,
                 on_click=rx.call_script(
                     "'updated'",
-                    callback=CallScriptState.set_value,  # type: ignore
+                    callback=CallScriptState.setvar("value"),
                 ),
                 id="update_value",
             ),
@@ -282,7 +283,7 @@ def CallScript():
                 value=CallScriptState.last_result,
                 id="last_result",
                 read_only=True,
-                on_click=CallScriptState.set_last_result(""),  # type: ignore
+                on_click=CallScriptState.setvar("last_result", 0),
             ),
             rx.button(
                 "call_with_var_f_string",
@@ -308,15 +309,15 @@ def CallScript():
                 "call_with_var_f_string_inline",
                 on_click=rx.call_script(
                     f"{rx.Var('inline_counter')} + {CallScriptState.last_result}",
-                    callback=CallScriptState.set_last_result,  # type: ignore
+                    callback=CallScriptState.setvar("last_result"),
                 ),
                 id="call_with_var_f_string_inline",
             ),
             rx.button(
                 "call_with_var_str_cast_inline",
                 on_click=rx.call_script(
-                    f"{str(rx.Var('inline_counter'))} + {str(rx.Var('external_counter'))}",
-                    callback=CallScriptState.set_last_result,  # type: ignore
+                    f"{rx.Var('inline_counter')!s} + {rx.Var('external_counter')!s}",
+                    callback=CallScriptState.setvar("last_result"),
                 ),
                 id="call_with_var_str_cast_inline",
             ),
@@ -326,7 +327,7 @@ def CallScript():
                     rx.Var(
                         f"{rx.Var('inline_counter')} + {CallScriptState.last_result}"
                     ),
-                    callback=CallScriptState.set_last_result,  # type: ignore
+                    callback=CallScriptState.setvar("last_result"),
                 ),
                 id="call_with_var_f_string_wrapped_inline",
             ),
@@ -334,9 +335,9 @@ def CallScript():
                 "call_with_var_str_cast_wrapped_inline",
                 on_click=rx.call_script(
                     rx.Var(
-                        f"{str(rx.Var('inline_counter'))} + {str(rx.Var('external_counter'))}"
+                        f"{rx.Var('inline_counter')!s} + {rx.Var('external_counter')!s}"
                     ),
-                    callback=CallScriptState.set_last_result,  # type: ignore
+                    callback=CallScriptState.setvar("last_result"),
                 ),
                 id="call_with_var_str_cast_wrapped_inline",
             ),
@@ -483,7 +484,7 @@ def test_call_script_w_var(
     """
     assert_token(driver)
     last_result = driver.find_element(By.ID, "last_result")
-    assert last_result.get_attribute("value") == ""
+    assert last_result.get_attribute("value") == "0"
 
     inline_return_button = driver.find_element(By.ID, "inline_return")
 

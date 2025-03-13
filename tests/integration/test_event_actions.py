@@ -8,18 +8,21 @@ from typing import Callable, Coroutine, Generator
 
 import pytest
 from selenium.webdriver.common.by import By
+from selenium.webdriver.common.keys import Keys
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.support.wait import WebDriverWait
 
 from reflex.testing import AppHarness, WebDriver
 
 
 def TestEventAction():
     """App for testing event_actions."""
-    from typing import List, Optional
+    from typing import Any
 
     import reflex as rx
 
     class EventActionState(rx.State):
-        order: List[str]
+        order: list[str]
 
         def on_click(self, ev):
             self.order.append(f"on_click:{ev}")
@@ -34,12 +37,16 @@ def TestEventAction():
         def on_click_debounce(self):
             self.order.append("on_click_debounce")
 
+        @rx.event
+        def on_submit(self, form_data: dict[str, Any]):
+            self.order.append("on_submit")
+
     class EventFiringComponent(rx.Component):
         """A component that fires onClick event without passing DOM event."""
 
         tag = "EventFiringComponent"
 
-        def _get_custom_code(self) -> Optional[str]:
+        def _get_custom_code(self) -> str | None:
             return """
                 function EventFiringComponent(props) {
                     return (
@@ -63,16 +70,16 @@ def TestEventAction():
             rx.button(
                 "Stop Prop Only",
                 id="btn-stop-prop-only",
-                on_click=rx.stop_propagation,  # type: ignore
+                on_click=rx.stop_propagation,  # pyright: ignore [reportArgumentType]
             ),
             rx.button(
                 "Click event",
-                on_click=EventActionState.on_click("no_event_actions"),  # type: ignore
+                on_click=EventActionState.on_click("no_event_actions"),  # pyright: ignore [reportCallIssue]
                 id="btn-click-event",
             ),
             rx.button(
                 "Click stop propagation",
-                on_click=EventActionState.on_click("stop_propagation").stop_propagation,  # type: ignore
+                on_click=EventActionState.on_click("stop_propagation").stop_propagation,  # pyright: ignore [reportCallIssue]
                 id="btn-click-stop-propagation",
             ),
             rx.button(
@@ -88,13 +95,13 @@ def TestEventAction():
             rx.link(
                 "Link",
                 href="#",
-                on_click=EventActionState.on_click("link_no_event_actions"),  # type: ignore
+                on_click=EventActionState.on_click("link_no_event_actions"),  # pyright: ignore [reportCallIssue]
                 id="link",
             ),
             rx.link(
                 "Link Stop Propagation",
                 href="#",
-                on_click=EventActionState.on_click(  # type: ignore
+                on_click=EventActionState.on_click(  # pyright: ignore [reportCallIssue]
                     "link_stop_propagation"
                 ).stop_propagation,
                 id="link-stop-propagation",
@@ -102,13 +109,13 @@ def TestEventAction():
             rx.link(
                 "Link Prevent Default Only",
                 href="/invalid",
-                on_click=rx.prevent_default,  # type: ignore
+                on_click=rx.prevent_default,  # pyright: ignore [reportArgumentType]
                 id="link-prevent-default-only",
             ),
             rx.link(
                 "Link Prevent Default",
                 href="/invalid",
-                on_click=EventActionState.on_click(  # type: ignore
+                on_click=EventActionState.on_click(  # pyright: ignore [reportCallIssue]
                     "link_prevent_default"
                 ).prevent_default,
                 id="link-prevent-default",
@@ -116,48 +123,64 @@ def TestEventAction():
             rx.link(
                 "Link Both",
                 href="/invalid",
-                on_click=EventActionState.on_click(  # type: ignore
+                on_click=EventActionState.on_click(  # pyright: ignore [reportCallIssue]
                     "link_both"
                 ).stop_propagation.prevent_default,
                 id="link-stop-propagation-prevent-default",
             ),
             EventFiringComponent.create(
                 id="custom-stop-propagation",
-                on_click=EventActionState.on_click(  # type: ignore
+                on_click=EventActionState.on_click(  # pyright: ignore [reportCallIssue]
                     "custom-stop-propagation"
                 ).stop_propagation,
             ),
             EventFiringComponent.create(
                 id="custom-prevent-default",
-                on_click=EventActionState.on_click(  # type: ignore
+                on_click=EventActionState.on_click(  # pyright: ignore [reportCallIssue]
                     "custom-prevent-default"
                 ).prevent_default,
             ),
             rx.button(
                 "Throttle",
                 id="btn-throttle",
-                on_click=lambda: EventActionState.on_click_throttle.throttle(
+                on_click=lambda: EventActionState.on_click_throttle.throttle(  # pyright: ignore [reportFunctionMemberAccess]
                     200
                 ).stop_propagation,
             ),
             rx.button(
                 "Debounce",
                 id="btn-debounce",
-                on_click=EventActionState.on_click_debounce.debounce(
+                on_click=EventActionState.on_click_debounce.debounce(  # pyright: ignore [reportFunctionMemberAccess]
                     200
                 ).stop_propagation,
             ),
-            rx.list(  # type: ignore
+            rx.list(  # pyright: ignore [reportAttributeAccessIssue]
                 rx.foreach(
-                    EventActionState.order,  # type: ignore
+                    EventActionState.order,
                     rx.list_item,
                 ),
             ),
-            on_click=EventActionState.on_click("outer"),  # type: ignore
+            on_click=EventActionState.on_click("outer"),  # pyright: ignore [reportCallIssue]
+        ), rx.form(
+            rx.dialog.root(
+                rx.dialog.trigger(
+                    rx.button("Open Dialog", type="button", id="btn-dialog"),
+                    on_click=rx.stop_propagation,  # pyright: ignore [reportArgumentType]
+                ),
+                rx.dialog.content(
+                    rx.dialog.close(
+                        rx.form(
+                            rx.button("Submit", id="btn-submit"),
+                            on_submit=EventActionState.on_submit.stop_propagation,  # pyright: ignore [reportCallIssue]
+                        ),
+                    ),
+                ),
+            ),
+            on_submit=EventActionState.on_submit,  # pyright: ignore [reportCallIssue]
         )
 
-    app = rx.App(state=rx.State)
-    app.add_page(index)
+    app = rx.App(_state=rx.State)
+    app.add_page(index)  # pyright: ignore [reportArgumentType]
 
 
 @pytest.fixture(scope="module")
@@ -334,3 +357,29 @@ async def test_event_actions_throttle_debounce(
         await poll_for_order(
             ["on_click_throttle"] * (exp_events - 1) + ["on_click_debounce"]
         )
+
+
+@pytest.mark.usefixtures("token")
+@pytest.mark.asyncio
+async def test_event_actions_dialog_form_in_form(
+    driver: WebDriver,
+    poll_for_order: Callable[[list[str]], Coroutine[None, None, None]],
+):
+    """Click links and buttons and assert on fired events.
+
+    Args:
+        driver: WebDriver instance.
+        poll_for_order: function that polls for the order list to match the expected order.
+    """
+    open_dialog_id = "btn-dialog"
+    submit_button_id = "btn-submit"
+    wait = WebDriverWait(driver, 10)
+
+    driver.find_element(By.ID, open_dialog_id).click()
+    el = wait.until(EC.element_to_be_clickable((By.ID, submit_button_id)))
+    el.click()  # pyright: ignore[reportAttributeAccessIssue]
+    el.send_keys(Keys.ESCAPE)  # pyright: ignore[reportAttributeAccessIssue]
+
+    btn_no_events = wait.until(EC.element_to_be_clickable((By.ID, "btn-no-events")))
+    btn_no_events.click()
+    await poll_for_order(["on_submit", "on_click:outer"])

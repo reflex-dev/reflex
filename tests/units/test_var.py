@@ -1,17 +1,20 @@
 import json
 import math
-import sys
 import typing
-from typing import Dict, List, Optional, Set, Tuple, Union, cast
+from typing import List, Mapping, Sequence, cast
 
 import pytest
 from pandas import DataFrame
 
 import reflex as rx
 from reflex.base import Base
+from reflex.config import PerformanceMode
 from reflex.constants.base import REFLEX_VAR_CLOSING_TAG, REFLEX_VAR_OPENING_TAG
 from reflex.state import BaseState
-from reflex.utils.exceptions import PrimitiveUnserializableToJSON
+from reflex.utils.exceptions import (
+    PrimitiveUnserializableToJSONError,
+    UntypedComputedVarError,
+)
 from reflex.utils.imports import ImportVar
 from reflex.vars import VarData
 from reflex.vars.base import (
@@ -49,7 +52,7 @@ class ATestState(BaseState):
     """Test state."""
 
     value: str
-    dict_val: Dict[str, List] = {}
+    dict_val: dict[str, List] = {}
 
 
 @pytest.fixture
@@ -185,6 +188,7 @@ def ChildWithRuntimeOnlyVar(StateWithRuntimeOnlyVar):
             "state.local",
             "local2",
         ],
+        strict=True,
     ),
 )
 def test_full_name(prop, expected):
@@ -202,6 +206,7 @@ def test_full_name(prop, expected):
     zip(
         test_vars,
         ["prop1", "key", "state.value", "state.local", "local2"],
+        strict=True,
     ),
 )
 def test_str(prop, expected):
@@ -248,6 +253,7 @@ def test_default_value(prop: Var, expected):
             "state.set_local",
             "set_local2",
         ],
+        strict=True,
     ),
 )
 def test_get_setter(prop: Var, expected):
@@ -267,10 +273,10 @@ def test_get_setter(prop: Var, expected):
         (1, Var(_js_expr="1", _var_type=int)),
         ("key", Var(_js_expr='"key"', _var_type=str)),
         (3.14, Var(_js_expr="3.14", _var_type=float)),
-        ([1, 2, 3], Var(_js_expr="[1, 2, 3]", _var_type=List[int])),
+        ([1, 2, 3], Var(_js_expr="[1, 2, 3]", _var_type=Sequence[int])),
         (
             {"a": 1, "b": 2},
-            Var(_js_expr='({ ["a"] : 1, ["b"] : 2 })', _var_type=Dict[str, int]),
+            Var(_js_expr='({ ["a"] : 1, ["b"] : 2 })', _var_type=Mapping[str, int]),
         ),
     ],
 )
@@ -282,7 +288,7 @@ def test_create(value, expected):
         expected: The expected name of the setter function.
     """
     prop = LiteralVar.create(value)
-    assert prop.equals(expected)  # type: ignore
+    assert prop.equals(expected)
 
 
 def test_create_type_error():
@@ -372,7 +378,7 @@ def test_basic_operations(TestObj):
     "var, expected",
     [
         (v([1, 2, 3]), "[1, 2, 3]"),
-        (v(set([1, 2, 3])), "[1, 2, 3]"),
+        (v({1, 2, 3}), "[1, 2, 3]"),
         (v(["1", "2", "3"]), '["1", "2", "3"]'),
         (
             Var(_js_expr="foo")._var_set_state("state").to(list),
@@ -416,20 +422,14 @@ class Bar(rx.Base):
 
 @pytest.mark.parametrize(
     ("var", "var_type"),
-    (
-        [
-            (Var(_js_expr="", _var_type=Foo | Bar).guess_type(), Foo | Bar),
-            (Var(_js_expr="", _var_type=Foo | Bar).guess_type().bar, Union[int, str]),
-        ]
-        if sys.version_info >= (3, 10)
-        else []
-    )
-    + [
-        (Var(_js_expr="", _var_type=Union[Foo, Bar]).guess_type(), Union[Foo, Bar]),
-        (Var(_js_expr="", _var_type=Union[Foo, Bar]).guess_type().baz, str),
+    [
+        (Var(_js_expr="").to(Foo | Bar), Foo | Bar),
+        (Var(_js_expr="").to(Foo | Bar).bar, int | str),
+        (Var(_js_expr="").to(Foo | Bar), Foo | Bar),
+        (Var(_js_expr="").to(Foo | Bar).baz, str),
         (
-            Var(_js_expr="", _var_type=Union[Foo, Bar]).guess_type().foo,
-            Union[int, None],
+            Var(_js_expr="").to(Foo | Bar).foo,
+            int | None,
         ),
     ],
 )
@@ -482,8 +482,8 @@ def test_dict_contains(var, expected):
 @pytest.mark.parametrize(
     "var",
     [
-        Var(_js_expr="list", _var_type=List[int]).guess_type(),
-        Var(_js_expr="tuple", _var_type=Tuple[int, int]).guess_type(),
+        Var(_js_expr="list", _var_type=list[int]).guess_type(),
+        Var(_js_expr="tuple", _var_type=tuple[int, int]).guess_type(),
         Var(_js_expr="str", _var_type=str).guess_type(),
     ],
 )
@@ -504,9 +504,9 @@ def test_var_indexing_lists(var):
 @pytest.mark.parametrize(
     "var, type_",
     [
-        (Var(_js_expr="list", _var_type=List[int]).guess_type(), [int, int]),
+        (Var(_js_expr="list", _var_type=list[int]).guess_type(), [int, int]),
         (
-            Var(_js_expr="tuple", _var_type=Tuple[int, str]).guess_type(),
+            Var(_js_expr="tuple", _var_type=tuple[int, str]).guess_type(),
             [int, str],
         ),
     ],
@@ -515,7 +515,7 @@ def test_var_indexing_types(var, type_):
     """Test that indexing returns valid types.
 
     Args:
-        var   : The list, typle base var.
+        var   : The list, tuple base var.
         type_ : The type on indexed object.
 
     """
@@ -565,40 +565,40 @@ def test_computed_var_replace_with_invalid_kwargs():
 @pytest.mark.parametrize(
     "var, index",
     [
-        (Var(_js_expr="lst", _var_type=List[int]).guess_type(), [1, 2]),
+        (Var(_js_expr="lst", _var_type=list[int]).guess_type(), [1, 2]),
         (
-            Var(_js_expr="lst", _var_type=List[int]).guess_type(),
+            Var(_js_expr="lst", _var_type=list[int]).guess_type(),
             {"name": "dict"},
         ),
-        (Var(_js_expr="lst", _var_type=List[int]).guess_type(), {"set"}),
+        (Var(_js_expr="lst", _var_type=list[int]).guess_type(), {"set"}),
         (
-            Var(_js_expr="lst", _var_type=List[int]).guess_type(),
+            Var(_js_expr="lst", _var_type=list[int]).guess_type(),
             (
                 1,
                 2,
             ),
         ),
-        (Var(_js_expr="lst", _var_type=List[int]).guess_type(), 1.5),
-        (Var(_js_expr="lst", _var_type=List[int]).guess_type(), "str"),
+        (Var(_js_expr="lst", _var_type=list[int]).guess_type(), 1.5),
+        (Var(_js_expr="lst", _var_type=list[int]).guess_type(), "str"),
         (
-            Var(_js_expr="lst", _var_type=List[int]).guess_type(),
+            Var(_js_expr="lst", _var_type=list[int]).guess_type(),
             Var(_js_expr="string_var", _var_type=str).guess_type(),
         ),
         (
-            Var(_js_expr="lst", _var_type=List[int]).guess_type(),
+            Var(_js_expr="lst", _var_type=list[int]).guess_type(),
             Var(_js_expr="float_var", _var_type=float).guess_type(),
         ),
         (
-            Var(_js_expr="lst", _var_type=List[int]).guess_type(),
-            Var(_js_expr="list_var", _var_type=List[int]).guess_type(),
+            Var(_js_expr="lst", _var_type=list[int]).guess_type(),
+            Var(_js_expr="list_var", _var_type=list[int]).guess_type(),
         ),
         (
-            Var(_js_expr="lst", _var_type=List[int]).guess_type(),
-            Var(_js_expr="set_var", _var_type=Set[str]).guess_type(),
+            Var(_js_expr="lst", _var_type=list[int]).guess_type(),
+            Var(_js_expr="set_var", _var_type=set[str]).guess_type(),
         ),
         (
-            Var(_js_expr="lst", _var_type=List[int]).guess_type(),
-            Var(_js_expr="dict_var", _var_type=Dict[str, str]).guess_type(),
+            Var(_js_expr="lst", _var_type=list[int]).guess_type(),
+            Var(_js_expr="dict_var", _var_type=dict[str, str]).guess_type(),
         ),
         (Var(_js_expr="str", _var_type=str).guess_type(), [1, 2]),
         (Var(_js_expr="lst", _var_type=str).guess_type(), {"name": "dict"}),
@@ -611,18 +611,18 @@ def test_computed_var_replace_with_invalid_kwargs():
             Var(_js_expr="lst", _var_type=str).guess_type(),
             Var(_js_expr="float_var", _var_type=float).guess_type(),
         ),
-        (Var(_js_expr="str", _var_type=Tuple[str]).guess_type(), [1, 2]),
+        (Var(_js_expr="str", _var_type=tuple[str]).guess_type(), [1, 2]),
         (
-            Var(_js_expr="lst", _var_type=Tuple[str]).guess_type(),
+            Var(_js_expr="lst", _var_type=tuple[str]).guess_type(),
             {"name": "dict"},
         ),
-        (Var(_js_expr="lst", _var_type=Tuple[str]).guess_type(), {"set"}),
+        (Var(_js_expr="lst", _var_type=tuple[str]).guess_type(), {"set"}),
         (
-            Var(_js_expr="lst", _var_type=Tuple[str]).guess_type(),
+            Var(_js_expr="lst", _var_type=tuple[str]).guess_type(),
             Var(_js_expr="string_var", _var_type=str).guess_type(),
         ),
         (
-            Var(_js_expr="lst", _var_type=Tuple[str]).guess_type(),
+            Var(_js_expr="lst", _var_type=tuple[str]).guess_type(),
             Var(_js_expr="float_var", _var_type=float).guess_type(),
         ),
     ],
@@ -641,8 +641,8 @@ def test_var_unsupported_indexing_lists(var, index):
 @pytest.mark.parametrize(
     "var",
     [
-        Var(_js_expr="lst", _var_type=List[int]).guess_type(),
-        Var(_js_expr="tuple", _var_type=Tuple[int, int]).guess_type(),
+        Var(_js_expr="lst", _var_type=list[int]).guess_type(),
+        Var(_js_expr="tuple", _var_type=tuple[int, int]).guess_type(),
     ],
 )
 def test_var_list_slicing(var):
@@ -679,7 +679,7 @@ def test_str_var_slicing():
 
 def test_dict_indexing():
     """Test that we can index into dict vars."""
-    dct = Var(_js_expr="dct").to(ObjectVar, Dict[str, str])
+    dct = Var(_js_expr="dct").to(ObjectVar, dict[str, str])
 
     # Check correct indexing.
     assert str(dct["a"]) == 'dct["a"]'
@@ -690,35 +690,35 @@ def test_dict_indexing():
     "var, index",
     [
         (
-            Var(_js_expr="dict", _var_type=Dict[str, str]).guess_type(),
+            Var(_js_expr="dict", _var_type=dict[str, str]).guess_type(),
             [1, 2],
         ),
         (
-            Var(_js_expr="dict", _var_type=Dict[str, str]).guess_type(),
+            Var(_js_expr="dict", _var_type=dict[str, str]).guess_type(),
             {"name": "dict"},
         ),
         (
-            Var(_js_expr="dict", _var_type=Dict[str, str]).guess_type(),
+            Var(_js_expr="dict", _var_type=dict[str, str]).guess_type(),
             {"set"},
         ),
         (
-            Var(_js_expr="dict", _var_type=Dict[str, str]).guess_type(),
+            Var(_js_expr="dict", _var_type=dict[str, str]).guess_type(),
             (
                 1,
                 2,
             ),
         ),
         (
-            Var(_js_expr="lst", _var_type=Dict[str, str]).guess_type(),
-            Var(_js_expr="list_var", _var_type=List[int]).guess_type(),
+            Var(_js_expr="lst", _var_type=dict[str, str]).guess_type(),
+            Var(_js_expr="list_var", _var_type=list[int]).guess_type(),
         ),
         (
-            Var(_js_expr="lst", _var_type=Dict[str, str]).guess_type(),
-            Var(_js_expr="set_var", _var_type=Set[str]).guess_type(),
+            Var(_js_expr="lst", _var_type=dict[str, str]).guess_type(),
+            Var(_js_expr="set_var", _var_type=set[str]).guess_type(),
         ),
         (
-            Var(_js_expr="lst", _var_type=Dict[str, str]).guess_type(),
-            Var(_js_expr="dict_var", _var_type=Dict[str, str]).guess_type(),
+            Var(_js_expr="lst", _var_type=dict[str, str]).guess_type(),
+            Var(_js_expr="dict_var", _var_type=dict[str, str]).guess_type(),
         ),
         (
             Var(_js_expr="df", _var_type=DataFrame).guess_type(),
@@ -741,15 +741,15 @@ def test_dict_indexing():
         ),
         (
             Var(_js_expr="df", _var_type=DataFrame).guess_type(),
-            Var(_js_expr="list_var", _var_type=List[int]).guess_type(),
+            Var(_js_expr="list_var", _var_type=list[int]).guess_type(),
         ),
         (
             Var(_js_expr="df", _var_type=DataFrame).guess_type(),
-            Var(_js_expr="set_var", _var_type=Set[str]).guess_type(),
+            Var(_js_expr="set_var", _var_type=set[str]).guess_type(),
         ),
         (
             Var(_js_expr="df", _var_type=DataFrame).guess_type(),
-            Var(_js_expr="dict_var", _var_type=Dict[str, str]).guess_type(),
+            Var(_js_expr="dict_var", _var_type=dict[str, str]).guess_type(),
         ),
     ],
 )
@@ -804,7 +804,7 @@ def test_shadow_computed_var_error(request: pytest.FixtureRequest, fixture: str)
         request: Fixture Request.
         fixture: The state fixture.
     """
-    with pytest.raises(NameError):
+    with pytest.raises(UntypedComputedVarError):
         state = request.getfixturevalue(fixture)
         state.var_without_annotation.foo
 
@@ -903,7 +903,7 @@ def test_literal_var():
             True,
             False,
             None,
-            set([1, 2, 3]),
+            {1, 2, 3},
         ]
     )
     assert (
@@ -963,7 +963,7 @@ def test_function_var():
 
 def test_var_operation():
     @var_operation
-    def add(a: Union[NumberVar, int], b: Union[NumberVar, int]):
+    def add(a: NumberVar | int, b: NumberVar | int):
         return var_operation_return(js_expression=f"({a} + {b})", var_type=int)
 
     assert str(add(1, 2)) == "(1 + 2)"
@@ -1004,7 +1004,7 @@ def test_all_number_operations():
 
     assert (
         str(even_more_complicated_number)
-        == "!(((Math.abs(Math.floor(((Math.floor(((-((-5.4 + 1)) * 2) / 3) / 2) % 3) ** 2))) || (2 && Math.round(((Math.floor(((-((-5.4 + 1)) * 2) / 3) / 2) % 3) ** 2)))) !== 0))"
+        == "!(isTrue((Math.abs(Math.floor(((Math.floor(((-((-5.4 + 1)) * 2) / 3) / 2) % 3) ** 2))) || (2 && Math.round(((Math.floor(((-((-5.4 + 1)) * 2) / 3) / 2) % 3) ** 2))))))"
     )
 
     assert str(LiteralNumberVar.create(5) > False) == "(5 > 0)"
@@ -1058,7 +1058,7 @@ def test_inf_and_nan(var, expected_js):
     assert str(var) == expected_js
     assert isinstance(var, NumberVar)
     assert isinstance(var, LiteralVar)
-    with pytest.raises(PrimitiveUnserializableToJSON):
+    with pytest.raises(PrimitiveUnserializableToJSONError):
         var.json()
 
 
@@ -1070,19 +1070,19 @@ def test_array_operations():
     assert str(array_var.reverse()) == "[1, 2, 3, 4, 5].slice().reverse()"
     assert (
         str(ArrayVar.range(10))
-        == "Array.from({ length: (10 - 0) / 1 }, (_, i) => 0 + i * 1)"
+        == "Array.from({ length: Math.ceil((10 - 0) / 1) }, (_, i) => 0 + i * 1)"
     )
     assert (
         str(ArrayVar.range(1, 10))
-        == "Array.from({ length: (10 - 1) / 1 }, (_, i) => 1 + i * 1)"
+        == "Array.from({ length: Math.ceil((10 - 1) / 1) }, (_, i) => 1 + i * 1)"
     )
     assert (
         str(ArrayVar.range(1, 10, 2))
-        == "Array.from({ length: (10 - 1) / 2 }, (_, i) => 1 + i * 2)"
+        == "Array.from({ length: Math.ceil((10 - 1) / 2) }, (_, i) => 1 + i * 2)"
     )
     assert (
         str(ArrayVar.range(1, 10, -1))
-        == "Array.from({ length: (10 - 1) / -1 }, (_, i) => 1 + i * -1)"
+        == "Array.from({ length: Math.ceil((10 - 1) / -1) }, (_, i) => 1 + i * -1)"
     )
 
 
@@ -1127,7 +1127,7 @@ def test_var_component():
             for _, imported_objects in var_data.imports
         )
 
-    has_eval_react_component(ComponentVarState.field_var)  # type: ignore
+    has_eval_react_component(ComponentVarState.field_var)  # pyright: ignore [reportArgumentType]
     has_eval_react_component(ComponentVarState.computed_var)
 
 
@@ -1135,28 +1135,28 @@ def test_type_chains():
     object_var = LiteralObjectVar.create({"a": 1, "b": 2, "c": 3})
     assert (object_var._key_type(), object_var._value_type()) == (str, int)
     assert (object_var.keys()._var_type, object_var.values()._var_type) == (
-        List[str],
-        List[int],
+        list[str],
+        list[int],
     )
     assert (
-        str(object_var.keys()[0].upper())  # type: ignore
+        str(object_var.keys()[0].upper())
         == 'Object.keys(({ ["a"] : 1, ["b"] : 2, ["c"] : 3 })).at(0).toUpperCase()'
     )
     assert (
-        str(object_var.entries()[1][1] - 1)  # type: ignore
+        str(object_var.entries()[1][1] - 1)
         == '(Object.entries(({ ["a"] : 1, ["b"] : 2, ["c"] : 3 })).at(1).at(1) - 1)'
     )
     assert (
-        str(object_var["c"] + object_var["b"])  # type: ignore
+        str(object_var["c"] + object_var["b"])  # pyright: ignore [reportCallIssue, reportOperatorIssue]
         == '(({ ["a"] : 1, ["b"] : 2, ["c"] : 3 })["c"] + ({ ["a"] : 1, ["b"] : 2, ["c"] : 3 })["b"])'
     )
 
 
 def test_nested_dict():
-    arr = LiteralArrayVar.create([{"bar": ["foo", "bar"]}], List[Dict[str, List[str]]])
+    arr = LiteralArrayVar.create([{"bar": ["foo", "bar"]}], list[dict[str, list[str]]])
 
     assert (
-        str(arr[0]["bar"][0]) == '[({ ["bar"] : ["foo", "bar"] })].at(0)["bar"].at(0)'
+        str(arr[0]["bar"][0]) == '[({ ["bar"] : ["foo", "bar"] })].at(0)["bar"].at(0)'  # pyright: ignore [reportIndexIssue]
     )
 
 
@@ -1352,7 +1352,7 @@ def test_unsupported_types_for_contains(var: Var):
         var: The base var.
     """
     with pytest.raises(TypeError) as err:
-        assert var.contains(1)
+        assert var.contains(1)  # pyright: ignore [reportAttributeAccessIssue]
     assert (
         err.value.args[0]
         == f"Var of type {var._var_type} does not support contains check."
@@ -1376,13 +1376,13 @@ def test_unsupported_types_for_string_contains(other):
         assert Var(_js_expr="var").to(str).contains(other)
     assert (
         err.value.args[0]
-        == f"Unsupported Operand type(s) for contains: ToStringOperation, {type(other).__name__}"
+        == f"Unsupported Operand type(s) for contains: StringCastedVar, {type(other).__name__}"
     )
 
 
 def test_unsupported_default_contains():
     with pytest.raises(TypeError) as err:
-        assert 1 in Var(_js_expr="var", _var_type=str).guess_type()
+        assert 1 in Var(_js_expr="var", _var_type=str).guess_type()  # pyright: ignore [reportOperatorIssue]
     assert (
         err.value.args[0]
         == "'in' operator not supported for Var types, use Var.contains() instead."
@@ -1474,7 +1474,7 @@ def test_unsupported_default_contains():
         ),
     ],
 )
-def test_valid_var_operations(operand1_var: Var, operand2_var, operators: List[str]):
+def test_valid_var_operations(operand1_var: Var, operand2_var, operators: list[str]):
     """Test that operations do not raise a TypeError.
 
     Args:
@@ -1495,8 +1495,6 @@ def test_valid_var_operations(operand1_var: Var, operand2_var, operators: List[s
         )
         eval(f"operand1_var {operator} operand2_var")
         eval(f"operand2_var {operator} operand1_var")
-        # operand1_var.operation(op=operator, other=operand2_var)
-        # operand1_var.operation(op=operator, other=operand2_var, flip=True)
 
 
 @pytest.mark.parametrize(
@@ -1768,16 +1766,14 @@ def test_valid_var_operations(operand1_var: Var, operand2_var, operators: List[s
         ),
     ],
 )
-def test_invalid_var_operations(operand1_var: Var, operand2_var, operators: List[str]):
+def test_invalid_var_operations(operand1_var: Var, operand2_var, operators: list[str]):
     for operator in operators:
-        print(f"testing {operator} on {str(operand1_var)} and {str(operand2_var)}")
+        print(f"testing {operator} on {operand1_var!s} and {operand2_var!s}")
         with pytest.raises(TypeError):
             print(eval(f"operand1_var {operator} operand2_var"))
-            # operand1_var.operation(op=operator, other=operand2_var)
 
         with pytest.raises(TypeError):
             print(eval(f"operand2_var {operator} operand1_var"))
-            # operand1_var.operation(op=operator, other=operand2_var, flip=True)
 
 
 @pytest.mark.parametrize(
@@ -1812,16 +1808,13 @@ def cv_fget(state: BaseState) -> int:
 @pytest.mark.parametrize(
     "deps,expected",
     [
-        (["a"], {"a"}),
-        (["b"], {"b"}),
-        ([ComputedVar(fget=cv_fget)], {"cv_fget"}),
+        (["a"], {None: {"a"}}),
+        (["b"], {None: {"b"}}),
+        ([ComputedVar(fget=cv_fget)], {None: {"cv_fget"}}),
     ],
 )
-def test_computed_var_deps(deps: List[Union[str, Var]], expected: Set[str]):
-    @computed_var(
-        deps=deps,
-        cache=True,
-    )
+def test_computed_var_deps(deps: list[str | Var], expected: set[str]):
+    @computed_var(deps=deps)
     def test_var(state) -> int:
         return 1
 
@@ -1839,10 +1832,7 @@ def test_computed_var_deps(deps: List[Union[str, Var]], expected: Set[str]):
 def test_invalid_computed_var_deps(deps: List):
     with pytest.raises(TypeError):
 
-        @computed_var(
-            deps=deps,
-            cache=True,
-        )
+        @computed_var(deps=deps)
         def test_var(state) -> int:
             return 1
 
@@ -1851,7 +1841,7 @@ def test_to_string_operation():
     class Email(str): ...
 
     class TestState(BaseState):
-        optional_email: Optional[Email] = None
+        optional_email: Email | None = None
         email: Email = Email("test@reflex.dev")
 
     assert (
@@ -1862,7 +1852,69 @@ def test_to_string_operation():
     assert my_state.email == "test@reflex.dev"
 
     assert cast(Var, TestState.email)._var_type == Email
-    assert cast(Var, TestState.optional_email)._var_type == Optional[Email]
+    assert cast(Var, TestState.optional_email)._var_type == Email | None
 
     single_var = Var.create(Email())
     assert single_var._var_type == Email
+
+
+@pytest.mark.asyncio
+async def test_async_computed_var():
+    side_effect_counter = 0
+
+    class AsyncComputedVarState(BaseState):
+        v: int = 1
+
+        @computed_var(cache=True)
+        async def async_computed_var(self) -> int:
+            nonlocal side_effect_counter
+            side_effect_counter += 1
+            return self.v + 1
+
+    my_state = AsyncComputedVarState()
+    assert await my_state.async_computed_var == 2
+    assert await my_state.async_computed_var == 2
+    my_state.v = 2
+    assert await my_state.async_computed_var == 3
+    assert await my_state.async_computed_var == 3
+    assert side_effect_counter == 2
+
+
+def test_var_data_hooks():
+    var_data_str = VarData(hooks="what")
+    var_data_list = VarData(hooks=["what"])
+    var_data_dict = VarData(hooks={"what": None})
+    assert var_data_str == var_data_list == var_data_dict
+
+    var_data_list_multiple = VarData(hooks=["what", "whot"])
+    var_data_dict_multiple = VarData(hooks={"what": None, "whot": None})
+    assert var_data_list_multiple == var_data_dict_multiple
+
+
+def test_var_data_with_hooks_value():
+    var_data = VarData(hooks={"what": VarData(hooks={"whot": VarData(hooks="whott")})})
+    assert var_data == VarData(hooks=["what", "whot", "whott"])
+
+
+def test_str_var_in_components(mocker):
+    class StateWithVar(rx.State):
+        field: int = 1
+
+    mocker.patch(
+        "reflex.components.base.bare.get_performance_mode",
+        return_value=PerformanceMode.RAISE,
+    )
+
+    with pytest.raises(ValueError):
+        rx.vstack(
+            str(StateWithVar.field),
+        )
+
+    mocker.patch(
+        "reflex.components.base.bare.get_performance_mode",
+        return_value=PerformanceMode.OFF,
+    )
+
+    rx.vstack(
+        str(StateWithVar.field),
+    )

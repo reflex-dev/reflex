@@ -9,12 +9,11 @@ import sys
 from collections import namedtuple
 from contextlib import contextmanager
 from pathlib import Path
-from typing import Optional, Tuple
 
 import httpx
 import tomlkit
 import typer
-from tomlkit.exceptions import TOMLKitError
+from tomlkit.exceptions import NonExistentKey, TOMLKitError
 
 from reflex import constants
 from reflex.config import environment, get_config
@@ -83,7 +82,7 @@ def _get_package_config(exit_on_fail: bool = True) -> dict:
         The package configuration.
 
     Raises:
-        Exit: If the pyproject.toml file is not found.
+        Exit: If the pyproject.toml file is not found and exit_on_fail is True.
     """
     pyproject = Path(CustomComponents.PYPROJECT_TOML)
     try:
@@ -150,27 +149,27 @@ def _populate_demo_app(name_variants: NameVariants):
     from reflex.compiler import templates
     from reflex.reflex import _init
 
-    demo_app_dir = name_variants.demo_app_dir
+    demo_app_dir = Path(name_variants.demo_app_dir)
     demo_app_name = name_variants.demo_app_name
 
-    console.info(f"Creating app for testing: {demo_app_dir}")
+    console.info(f"Creating app for testing: {demo_app_dir!s}")
 
-    os.makedirs(demo_app_dir)
+    demo_app_dir.mkdir(exist_ok=True)
 
     with set_directory(demo_app_dir):
         # We start with the blank template as basis.
         _init(name=demo_app_name, template=constants.Templates.DEFAULT)
         # Then overwrite the app source file with the one we want for testing custom components.
         # This source file is rendered using jinja template file.
-        with open(f"{demo_app_name}/{demo_app_name}.py", "w") as f:
-            f.write(
-                templates.CUSTOM_COMPONENTS_DEMO_APP.render(
-                    custom_component_module_dir=name_variants.custom_component_module_dir,
-                    module_name=name_variants.module_name,
-                )
+        demo_file = Path(f"{demo_app_name}/{demo_app_name}.py")
+        demo_file.write_text(
+            templates.CUSTOM_COMPONENTS_DEMO_APP.render(
+                custom_component_module_dir=name_variants.custom_component_module_dir,
+                module_name=name_variants.module_name,
             )
+        )
         # Append the custom component package to the requirements.txt file.
-        with open(f"{constants.RequirementsTxt.FILE}", "a") as f:
+        with Path(f"{constants.RequirementsTxt.FILE}").open(mode="a") as f:
             f.write(f"{name_variants.package_name}\n")
 
 
@@ -296,13 +295,14 @@ def _populate_custom_component_project(name_variants: NameVariants):
     )
 
     console.info(
-        f"Initializing the component directory: {CustomComponents.SRC_DIR}/{name_variants.custom_component_module_dir}"
+        f"Initializing the component directory: {CustomComponents.SRC_DIR / name_variants.custom_component_module_dir}"
     )
-    os.makedirs(CustomComponents.SRC_DIR)
+    CustomComponents.SRC_DIR.mkdir(exist_ok=True)
     with set_directory(CustomComponents.SRC_DIR):
-        os.makedirs(name_variants.custom_component_module_dir)
+        module_dir = Path(name_variants.custom_component_module_dir)
+        module_dir.mkdir(exist_ok=True, parents=True)
         _write_source_and_init_py(
-            custom_component_src_dir=name_variants.custom_component_module_dir,
+            custom_component_src_dir=module_dir,
             component_class_name=name_variants.component_class_name,
             module_name=name_variants.module_name,
         )
@@ -310,7 +310,7 @@ def _populate_custom_component_project(name_variants: NameVariants):
 
 @custom_components_cli.command(name="init")
 def init(
-    library_name: Optional[str] = typer.Option(
+    library_name: str | None = typer.Option(
         None,
         help="The name of your library. On PyPI, package will be published as `reflex-{library-name}`.",
     ),
@@ -420,12 +420,13 @@ def _run_commands_in_subprocess(cmds: list[str]) -> bool:
     console.debug(f"Running command: {' '.join(cmds)}")
     try:
         result = subprocess.run(cmds, capture_output=True, text=True, check=True)
-        console.debug(result.stdout)
-        return True
     except subprocess.CalledProcessError as cpe:
         console.error(cpe.stdout)
         console.error(cpe.stderr)
         return False
+    else:
+        console.debug(result.stdout)
+        return True
 
 
 def _make_pyi_files():
@@ -531,7 +532,13 @@ def _get_version_to_publish() -> str:
     Returns:
         The version to publish.
     """
-    return _get_package_config()["project"]["version"]
+    try:
+        return _get_package_config()["project"]["version"]
+    except NonExistentKey:
+        # Try to get the version from dynamic sources
+        import build.util
+
+        return build.util.project_wheel_metadata(".", isolated=True)["version"]
 
 
 def _ensure_dist_dir(version_to_publish: str, build: bool):
@@ -596,26 +603,26 @@ def _ensure_dist_dir(version_to_publish: str, build: bool):
 
 @custom_components_cli.command(name="publish")
 def publish(
-    repository: Optional[str] = typer.Option(
+    repository: str | None = typer.Option(
         None,
         "-r",
         "--repository",
         help="The name of the repository. Defaults to pypi. Only supports pypi and testpypi (Test PyPI) for now.",
     ),
-    token: Optional[str] = typer.Option(
+    token: str | None = typer.Option(
         None,
         "-t",
         "--token",
         help="The API token to use for authentication on python package repository. If token is provided, no username/password should be provided at the same time",
     ),
-    username: Optional[str] = typer.Option(
+    username: str | None = typer.Option(
         environment.TWINE_USERNAME.get(),
         "-u",
         "--username",
         show_default="TWINE_USERNAME environment variable value if set",
         help="The username to use for authentication on python package repository. Username and password must both be provided.",
     ),
-    password: Optional[str] = typer.Option(
+    password: str | None = typer.Option(
         environment.TWINE_PASSWORD.get(),
         "-p",
         "--password",
@@ -754,7 +761,7 @@ def _min_validate_project_info():
         )
         raise typer.Exit(code=1)
 
-    if not project.get("version"):
+    if not project.get("version") and "version" not in project.get("dynamic", []):
         console.error(
             f"The project version is not found in {CustomComponents.PYPROJECT_TOML}"
         )
@@ -770,7 +777,7 @@ def _validate_project_info():
     pyproject_toml = _get_package_config()
     project = pyproject_toml["project"]
     console.print(
-        f'Double check the information before publishing: {project["name"]} version {project["version"]}'
+        f"Double check the information before publishing: {project['name']} version {_get_version_to_publish()}"
     )
 
     console.print("Update or enter to keep the current information.")
@@ -782,7 +789,7 @@ def _validate_project_info():
     author["name"] = console.ask("Author Name", default=author.get("name", ""))
     author["email"] = console.ask("Author Email", default=author.get("email", ""))
 
-    console.print(f'Current keywords are: {project.get("keywords") or []}')
+    console.print(f"Current keywords are: {project.get('keywords') or []}")
     keyword_action = console.ask(
         "Keep, replace or append?", choices=["k", "r", "a"], default="k"
     )
@@ -814,7 +821,7 @@ def _validate_project_info():
     )
     pyproject_toml["project"] = project
     try:
-        with open(CustomComponents.PYPROJECT_TOML, "w") as f:
+        with CustomComponents.PYPROJECT_TOML.open("w") as f:
             tomlkit.dump(pyproject_toml, f)
     except (OSError, TOMLKitError) as ex:
         console.error(f"Unable to write to pyproject.toml due to {ex}")
@@ -827,11 +834,11 @@ def _collect_details_for_gallery():
     Raises:
         Exit: If pyproject.toml file is ill-formed or the request to the backend services fails.
     """
-    from reflex.reflex import _login
+    from reflex_cli.utils import hosting
 
     console.rule("[bold]Authentication with Reflex Services")
     console.print("First let's log in to Reflex backend services.")
-    access_token = _login()
+    access_token, _ = hosting.authenticated_token()
 
     console.rule("[bold]Custom Component Information")
     params = {}
@@ -919,22 +926,22 @@ def _validate_url_with_protocol_prefix(url: str | None) -> bool:
     return not url or (url.startswith("http://") or url.startswith("https://"))
 
 
-def _get_file_from_prompt_in_loop() -> Tuple[bytes, str] | None:
+def _get_file_from_prompt_in_loop() -> tuple[bytes, str] | None:
     image_file = file_extension = None
     while image_file is None:
-        image_filepath = console.ask(
-            "Upload a preview image of your demo app (enter to skip)"
+        image_filepath = Path(
+            console.ask("Upload a preview image of your demo app (enter to skip)")  # pyright: ignore [reportArgumentType]
         )
         if not image_filepath:
             break
-        file_extension = image_filepath.split(".")[-1]
+        file_extension = image_filepath.suffix
         try:
-            with open(image_filepath, "rb") as f:
-                image_file = f.read()
-                return image_file, file_extension
+            image_file = image_filepath.read_bytes()
         except OSError as ose:
             console.error(f"Unable to read the {file_extension} file due to {ose}")
             raise typer.Exit(code=1) from ose
+        else:
+            return image_file, file_extension
 
     console.debug(f"File extension detected: {file_extension}")
     return None

@@ -5,25 +5,25 @@
 # ------------------------------------------------------
 import dataclasses
 from datetime import date, datetime, time, timedelta
-from typing import Any, Dict, Optional, Union, overload
+from typing import Any, Optional, overload
 
 from reflex.components.component import NoSSRComponent
-from reflex.event import BASE_STATE, EventType
+from reflex.event import EventType
 from reflex.style import Style
 from reflex.utils.imports import ImportDict
 from reflex.vars.base import Var
 
 @dataclasses.dataclass(frozen=True)
 class MomentDelta:
-    years: Optional[int]
-    quarters: Optional[int]
-    months: Optional[int]
-    weeks: Optional[int]
-    days: Optional[int]
-    hours: Optional[int]
-    minutes: Optional[int]
-    seconds: Optional[int]
-    milliseconds: Optional[int]
+    years: int | None
+    quarters: int | None
+    months: int | None
+    weeks: int | None
+    days: int | None
+    hours: int | None
+    minutes: int | None
+    seconds: int | None
+    milliseconds: int | None
 
 class Moment(NoSSRComponent):
     def add_imports(self) -> ImportDict: ...
@@ -32,60 +32,55 @@ class Moment(NoSSRComponent):
     def create(  # type: ignore
         cls,
         *children,
-        interval: Optional[Union[Var[int], int]] = None,
-        format: Optional[Union[Var[str], str]] = None,
-        trim: Optional[Union[Var[bool], bool]] = None,
-        parse: Optional[Union[Var[str], str]] = None,
-        add: Optional[Union[MomentDelta, Var[MomentDelta]]] = None,
-        subtract: Optional[Union[MomentDelta, Var[MomentDelta]]] = None,
-        from_now: Optional[Union[Var[bool], bool]] = None,
-        from_now_during: Optional[Union[Var[int], int]] = None,
-        to_now: Optional[Union[Var[bool], bool]] = None,
-        with_title: Optional[Union[Var[bool], bool]] = None,
-        title_format: Optional[Union[Var[str], str]] = None,
-        diff: Optional[Union[Var[str], str]] = None,
-        decimal: Optional[Union[Var[bool], bool]] = None,
-        unit: Optional[Union[Var[str], str]] = None,
-        duration: Optional[Union[Var[str], str]] = None,
-        date: Optional[
-            Union[
-                Var[Union[date, datetime, str, time, timedelta]],
-                date,
-                datetime,
-                str,
-                time,
-                timedelta,
-            ]
-        ] = None,
-        duration_from_now: Optional[Union[Var[bool], bool]] = None,
-        unix: Optional[Union[Var[bool], bool]] = None,
-        local: Optional[Union[Var[bool], bool]] = None,
-        tz: Optional[Union[Var[str], str]] = None,
-        locale: Optional[Union[Var[str], str]] = None,
-        style: Optional[Style] = None,
-        key: Optional[Any] = None,
-        id: Optional[Any] = None,
-        class_name: Optional[Any] = None,
-        autofocus: Optional[bool] = None,
-        custom_attrs: Optional[Dict[str, Union[Var, Any]]] = None,
-        on_blur: Optional[EventType[[], BASE_STATE]] = None,
-        on_change: Optional[
-            Union[EventType[[], BASE_STATE], EventType[[str], BASE_STATE]]
-        ] = None,
-        on_click: Optional[EventType[[], BASE_STATE]] = None,
-        on_context_menu: Optional[EventType[[], BASE_STATE]] = None,
-        on_double_click: Optional[EventType[[], BASE_STATE]] = None,
-        on_focus: Optional[EventType[[], BASE_STATE]] = None,
-        on_mount: Optional[EventType[[], BASE_STATE]] = None,
-        on_mouse_down: Optional[EventType[[], BASE_STATE]] = None,
-        on_mouse_enter: Optional[EventType[[], BASE_STATE]] = None,
-        on_mouse_leave: Optional[EventType[[], BASE_STATE]] = None,
-        on_mouse_move: Optional[EventType[[], BASE_STATE]] = None,
-        on_mouse_out: Optional[EventType[[], BASE_STATE]] = None,
-        on_mouse_over: Optional[EventType[[], BASE_STATE]] = None,
-        on_mouse_up: Optional[EventType[[], BASE_STATE]] = None,
-        on_scroll: Optional[EventType[[], BASE_STATE]] = None,
-        on_unmount: Optional[EventType[[], BASE_STATE]] = None,
+        interval: Var[int] | int | None = None,
+        format: Var[str] | str | None = None,
+        trim: Var[bool] | bool | None = None,
+        parse: Var[str] | str | None = None,
+        add: MomentDelta | Var[MomentDelta] | None = None,
+        subtract: MomentDelta | Var[MomentDelta] | None = None,
+        from_now: Var[bool] | bool | None = None,
+        from_now_during: Var[int] | int | None = None,
+        to_now: Var[bool] | bool | None = None,
+        with_title: Var[bool] | bool | None = None,
+        title_format: Var[str] | str | None = None,
+        diff: Var[str] | str | None = None,
+        decimal: Var[bool] | bool | None = None,
+        unit: Var[str] | str | None = None,
+        duration: Var[str] | str | None = None,
+        date: Var[date | datetime | str | time | timedelta]
+        | date
+        | datetime
+        | str
+        | time
+        | timedelta
+        | None = None,
+        duration_from_now: Var[bool] | bool | None = None,
+        unix: Var[bool] | bool | None = None,
+        local: Var[bool] | bool | None = None,
+        tz: Var[str] | str | None = None,
+        locale: Var[str] | str | None = None,
+        style: Style | None = None,
+        key: Any | None = None,
+        id: Any | None = None,
+        class_name: Any | None = None,
+        autofocus: bool | None = None,
+        custom_attrs: dict[str, Var | Any] | None = None,
+        on_blur: Optional[EventType[()]] = None,
+        on_change: Optional[EventType[()] | EventType[str]] = None,
+        on_click: Optional[EventType[()]] = None,
+        on_context_menu: Optional[EventType[()]] = None,
+        on_double_click: Optional[EventType[()]] = None,
+        on_focus: Optional[EventType[()]] = None,
+        on_mount: Optional[EventType[()]] = None,
+        on_mouse_down: Optional[EventType[()]] = None,
+        on_mouse_enter: Optional[EventType[()]] = None,
+        on_mouse_leave: Optional[EventType[()]] = None,
+        on_mouse_move: Optional[EventType[()]] = None,
+        on_mouse_out: Optional[EventType[()]] = None,
+        on_mouse_over: Optional[EventType[()]] = None,
+        on_mouse_up: Optional[EventType[()]] = None,
+        on_scroll: Optional[EventType[()]] = None,
+        on_unmount: Optional[EventType[()]] = None,
         **props,
     ) -> "Moment":
         """Create the component.

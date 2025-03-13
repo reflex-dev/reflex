@@ -27,7 +27,7 @@ class Dirs(SimpleNamespace):
     UPLOADED_FILES = "uploaded_files"
     # The name of the assets directory.
     APP_ASSETS = "assets"
-    # The name of the assets directory for external ressource (a subfolder of APP_ASSETS).
+    # The name of the assets directory for external resources (a subfolder of APP_ASSETS).
     EXTERNAL_APP_ASSETS = "external"
     # The name of the utils file.
     UTILS = "utils"
@@ -52,7 +52,13 @@ class Dirs(SimpleNamespace):
     # The name of the postcss config file.
     POSTCSS_JS = "postcss.config.js"
     # The name of the states directory.
-    STATES = "states"
+    STATES = ".states"
+    # Where compilation artifacts for the backend are stored.
+    BACKEND = "backend"
+    # JSON-encoded list of page routes that need to be evaluated on the backend.
+    STATEFUL_PAGES = "stateful_pages.json"
+    # Marker file indicating that upload component was used in the frontend.
+    UPLOAD_IS_USED = "upload_is_used"
 
 
 class Reflex(SimpleNamespace):
@@ -75,6 +81,8 @@ class Reflex(SimpleNamespace):
     # If user sets REFLEX_DIR envroment variable use that instead.
     DIR = PlatformDirs(MODULE_NAME, False).user_data_path
 
+    LOGS_DIR = DIR / "logs"
+
     # The root directory of the reflex library.
     ROOT_DIR = Path(__file__).parents[2]
 
@@ -96,6 +104,18 @@ class Templates(SimpleNamespace):
 
     # The default template
     DEFAULT = "blank"
+
+    # The AI template
+    AI = "ai"
+
+    # The option for the user to choose a remote template.
+    CHOOSE_TEMPLATES = "choose-templates"
+
+    # The URL to find reflex templates.
+    REFLEX_TEMPLATES_URL = "https://reflex.dev/templates"
+
+    # Demo url for the default template.
+    DEFAULT_TEMPLATE_URL = "https://blank-template.reflex.run"
 
     # The reflex.build frontend host
     REFLEX_BUILD_FRONTEND = "https://flexgen.reflex.run"
@@ -245,6 +265,7 @@ SESSION_STORAGE = "session_storage"
 # Testing variables.
 # Testing os env set by pytest when running a test case.
 PYTEST_CURRENT_TEST = "PYTEST_CURRENT_TEST"
+APP_HARNESS_FLAG = "APP_HARNESS_FLAG"
 
 REFLEX_VAR_OPENING_TAG = "<reflex.Var>"
 REFLEX_VAR_CLOSING_TAG = "</reflex.Var>"

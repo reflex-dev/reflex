@@ -2,7 +2,17 @@ import os
 import typing
 from functools import cached_property
 from pathlib import Path
-from typing import Any, ClassVar, Dict, List, Literal, Type, Union
+from typing import (
+    Any,
+    ClassVar,
+    List,
+    Literal,
+    Mapping,
+    NoReturn,
+    Sequence,
+    Type,
+    Union,
+)
 
 import pytest
 import typer
@@ -31,7 +41,7 @@ def get_above_max_version():
 
     """
     semantic_version_list = constants.Bun.VERSION.split(".")
-    semantic_version_list[-1] = str(int(semantic_version_list[-1]) + 1)  # type: ignore
+    semantic_version_list[-1] = str(int(semantic_version_list[-1]) + 1)  # pyright: ignore [reportArgumentType, reportCallIssue]
     return ".".join(semantic_version_list)
 
 
@@ -61,7 +71,7 @@ def test_func():
         (float, False),
         (bool, False),
         (List, True),
-        (List[int], True),
+        (list[int], True),
     ],
 )
 def test_is_generic_alias(cls: type, expected: bool):
@@ -90,41 +100,130 @@ def test_is_generic_alias(cls: type, expected: bool):
         (bool, int, True),
         (int, bool, False),
         (list, List, True),
-        (list, List[str], True),  # this is wrong, but it's a limitation of the function
+        (list, list[str], True),  # this is wrong, but it's a limitation of the function
         (List, list, True),
-        (List[int], list, True),
-        (List[int], List, True),
-        (List[int], List[str], False),
-        (List[int], List[int], True),
-        (List[int], List[float], False),
-        (List[int], List[Union[int, float]], True),
-        (List[int], List[Union[float, str]], False),
-        (Union[int, float], List[Union[int, float]], False),
-        (Union[int, float], Union[int, float, str], True),
-        (Union[int, float], Union[str, float], False),
-        (Dict[str, int], Dict[str, int], True),
-        (Dict[str, bool], Dict[str, int], True),
-        (Dict[str, int], Dict[str, bool], False),
-        (Dict[str, Any], dict[str, str], False),
-        (Dict[str, str], dict[str, str], True),
-        (Dict[str, str], dict[str, Any], True),
-        (Dict[str, Any], dict[str, Any], True),
+        (list[int], list, True),
+        (list[int], List, True),
+        (list[int], list[str], False),
+        (list[int], list[int], True),
+        (list[int], list[float], False),
+        (list[int], list[int | float], True),
+        (list[int], list[float | str], False),
+        (int | float, list[int | float], False),
+        (int | float, int | float | str, True),
+        (int | float, str | float, False),
+        (dict[str, int], dict[str, int], True),
+        (dict[str, bool], dict[str, int], True),
+        (dict[str, int], dict[str, bool], False),
+        (dict[str, Any], dict[str, str], False),
+        (dict[str, str], dict[str, str], True),
+        (dict[str, str], dict[str, Any], True),
+        (dict[str, Any], dict[str, Any], True),
+        (Mapping[str, int], dict[str, int], False),
+        (Sequence[int], list[int], False),
+        (Sequence[int] | list[int], list[int], False),
+        (str, Literal["test", "value"], True),
+        (str, Literal["test", "value", 2, 3], True),
+        (int, Literal["test", "value"], False),
+        (int, Literal["test", "value", 2, 3], True),
+        *[
+            (NoReturn, super_class, True)
+            for super_class in [int, float, str, bool, list, dict, object, Any]
+        ],
+        *[
+            (list[NoReturn], list[super_class], True)
+            for super_class in [int, float, str, bool, list, dict, object, Any]
+        ],
     ],
 )
 def test_typehint_issubclass(subclass, superclass, expected):
     assert types.typehint_issubclass(subclass, superclass) == expected
 
 
-def test_validate_invalid_bun_path(mocker):
+@pytest.mark.parametrize(
+    ("subclass", "superclass", "expected"),
+    [
+        *[
+            (base_type, base_type, True)
+            for base_type in [int, float, str, bool, list, dict]
+        ],
+        *[
+            (one_type, another_type, False)
+            for one_type in [int, float, str, list, dict]
+            for another_type in [int, float, str, list, dict]
+            if one_type != another_type
+        ],
+        (bool, int, True),
+        (int, bool, False),
+        (list, List, True),
+        (list, list[str], True),  # this is wrong, but it's a limitation of the function
+        (List, list, True),
+        (list[int], list, True),
+        (list[int], List, True),
+        (list[int], list[str], False),
+        (list[int], list[int], True),
+        (list[int], list[float], False),
+        (list[int], list[int | float], True),
+        (list[int], list[float | str], False),
+        (int | float, list[int | float], False),
+        (int | float, int | float | str, True),
+        (int | float, str | float, False),
+        (dict[str, int], dict[str, int], True),
+        (dict[str, bool], dict[str, int], True),
+        (dict[str, int], dict[str, bool], False),
+        (dict[str, Any], dict[str, str], False),
+        (dict[str, str], dict[str, str], True),
+        (dict[str, str], dict[str, Any], True),
+        (dict[str, Any], dict[str, Any], True),
+        (Mapping[str, int], dict[str, int], True),
+        (Sequence[int], list[int], True),
+        (Sequence[int] | list[int], list[int], True),
+        (str, Literal["test", "value"], True),
+        (str, Literal["test", "value", 2, 3], True),
+        (int, Literal["test", "value"], False),
+        (int, Literal["test", "value", 2, 3], True),
+        *[
+            (NoReturn, super_class, True)
+            for super_class in [int, float, str, bool, list, dict, object, Any]
+        ],
+        *[
+            (list[NoReturn], list[super_class], True)
+            for super_class in [int, float, str, bool, list, dict, object, Any]
+        ],
+    ],
+)
+def test_typehint_issubclass_mutable_as_immutable(subclass, superclass, expected):
+    assert (
+        types.typehint_issubclass(
+            subclass, superclass, treat_mutable_superclasss_as_immutable=True
+        )
+        == expected
+    )
+
+
+def test_validate_none_bun_path(mocker):
+    """Test that an error is thrown when a bun path is not specified.
+
+    Args:
+        mocker: Pytest mocker object.
+    """
+    mocker.patch("reflex.utils.path_ops.get_bun_path", return_value=None)
+    # with pytest.raises(typer.Exit):
+    prerequisites.validate_bun()
+
+
+def test_validate_invalid_bun_path(
+    mocker,
+):
     """Test that an error is thrown when a custom specified bun path is not valid
     or does not exist.
 
     Args:
         mocker: Pytest mocker object.
     """
-    mock = mocker.Mock()
-    mocker.patch.object(mock, "bun_path", return_value="/mock/path")
-    mocker.patch("reflex.utils.prerequisites.get_config", mock)
+    mock_path = mocker.Mock()
+    mocker.patch("reflex.utils.path_ops.get_bun_path", return_value=mock_path)
+    mocker.patch("reflex.utils.path_ops.samefile", return_value=False)
     mocker.patch("reflex.utils.prerequisites.get_bun_version", return_value=None)
 
     with pytest.raises(typer.Exit):
@@ -137,9 +236,10 @@ def test_validate_bun_path_incompatible_version(mocker):
     Args:
         mocker: Pytest mocker object.
     """
-    mock = mocker.Mock()
-    mocker.patch.object(mock, "bun_path", return_value="/mock/path")
-    mocker.patch("reflex.utils.prerequisites.get_config", mock)
+    mock_path = mocker.Mock()
+    mock_path.samefile.return_value = False
+    mocker.patch("reflex.utils.path_ops.get_bun_path", return_value=mock_path)
+    mocker.patch("reflex.utils.path_ops.samefile", return_value=False)
     mocker.patch(
         "reflex.utils.prerequisites.get_bun_version",
         return_value=version.parse("0.6.5"),
@@ -235,16 +335,16 @@ def test_is_backend_base_variable(
     [
         (int, int, True),
         (int, float, False),
-        (int, Union[int, float], True),
-        (float, Union[int, float], True),
-        (str, Union[int, float], False),
-        (List[int], List[int], True),
-        (List[int], List[float], True),
-        (Union[int, float], Union[int, float], False),
-        (Union[int, Var[int]], Var[int], False),
+        (int, int | float, True),
+        (float, int | float, True),
+        (str, int | float, False),
+        (list[int], list[int], True),
+        (list[int], list[float], True),
+        (int | float, int | float, False),
+        (int | Var[int], Var[int], False),
         (int, Any, True),
         (Any, Any, True),
-        (Union[int, float], Any, True),
+        (int | float, Any, True),
         (str, Union[Literal["test", "value"], int], True),
         (int, Union[Literal["test", "value"], int], True),
         (str, Literal["test", "value"], True),
@@ -270,7 +370,7 @@ def test_unsupported_literals(cls: type):
         ("appname2.io", "AppnameioConfig"),
     ],
 )
-def test_create_config(app_name, expected_config_name, mocker):
+def test_create_config(app_name: str, expected_config_name: str, mocker):
     """Test templates.RXCONFIG is formatted with correct app name and config class name.
 
     Args:
@@ -278,7 +378,7 @@ def test_create_config(app_name, expected_config_name, mocker):
         expected_config_name: Expected config name.
         mocker: Mocker object.
     """
-    mocker.patch("builtins.open")
+    mocker.patch("pathlib.Path.write_text")
     tmpl_mock = mocker.patch("reflex.compiler.templates.RXCONFIG")
     prerequisites.create_config(app_name)
     tmpl_mock.render.assert_called_with(
@@ -298,7 +398,7 @@ def tmp_working_dir(tmp_path):
     Yields:
         subdirectory of tmp_path which is now the current working directory.
     """
-    old_pwd = Path(".").resolve()
+    old_pwd = Path.cwd()
     working_dir = tmp_path / "working_dir"
     working_dir.mkdir()
     os.chdir(working_dir)
@@ -464,7 +564,7 @@ def test_node_install_unix(tmp_path, mocker, machine, system):
     mocker.patch("httpx.stream", return_value=Resp())
     download = mocker.patch("reflex.utils.prerequisites.download_and_extract_fnm_zip")
     process = mocker.patch("reflex.utils.processes.new_process")
-    chmod = mocker.patch("reflex.utils.prerequisites.os.chmod")
+    chmod = mocker.patch("pathlib.Path.chmod")
     mocker.patch("reflex.utils.processes.stream_logs")
 
     prerequisites.install_node()
@@ -587,9 +687,7 @@ def test_style_prop_with_event_handler_value(callable):
     }
 
     with pytest.raises(ReflexError):
-        rx.box(
-            style=style,  # type: ignore
-        )
+        rx.box(style=style)  # pyright: ignore [reportArgumentType]
 
 
 def test_is_prod_mode() -> None:

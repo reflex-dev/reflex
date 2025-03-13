@@ -31,7 +31,7 @@ class RouteVar(SimpleNamespace):
 
 
 # This subset of router_data is included in chained on_load events.
-ROUTER_DATA_INCLUDE = set((RouteVar.PATH, RouteVar.ORIGIN, RouteVar.QUERY))
+ROUTER_DATA_INCLUDE = {RouteVar.PATH, RouteVar.ORIGIN, RouteVar.QUERY}
 
 
 class RouteRegex(SimpleNamespace):

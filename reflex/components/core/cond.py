@@ -2,13 +2,14 @@
 
 from __future__ import annotations
 
-from typing import Any, Dict, Optional, overload
+from typing import Any, Dict, overload
 
 from reflex.components.base.fragment import Fragment
 from reflex.components.component import BaseComponent, Component, MemoizationLeaf
 from reflex.components.tags import CondTag, Tag
 from reflex.constants import Dirs
 from reflex.style import LIGHT_COLOR_MODE, resolved_color_mode
+from reflex.utils import types
 from reflex.utils.imports import ImportDict, ImportVar
 from reflex.vars import VarData
 from reflex.vars.base import LiteralVar, Var
@@ -25,18 +26,12 @@ class Cond(MemoizationLeaf):
     # The cond to determine which component to render.
     cond: Var[Any]
 
-    # The component to render if the cond is true.
-    comp1: BaseComponent = None  # type: ignore
-
-    # The component to render if the cond is false.
-    comp2: BaseComponent = None  # type: ignore
-
     @classmethod
     def create(
         cls,
         cond: Var,
         comp1: BaseComponent,
-        comp2: Optional[BaseComponent] = None,
+        comp2: BaseComponent | None = None,
     ) -> Component:
         """Create a conditional component.
 
@@ -49,32 +44,22 @@ class Cond(MemoizationLeaf):
             The conditional component.
         """
         # Wrap everything in fragments.
-        if comp1.__class__.__name__ != "Fragment":
+        if type(comp1).__name__ != "Fragment":
             comp1 = Fragment.create(comp1)
-        if comp2 is None or comp2.__class__.__name__ != "Fragment":
+        if comp2 is None or type(comp2).__name__ != "Fragment":
             comp2 = Fragment.create(comp2) if comp2 else Fragment.create()
         return Fragment.create(
-            cls(
-                cond=cond,
-                comp1=comp1,
-                comp2=comp2,
+            cls._create(
                 children=[comp1, comp2],
+                cond=cond,
             )
         )
-
-    def _get_props_imports(self):
-        """Get the imports needed for component's props.
-
-        Returns:
-            The imports for the component's props of the component.
-        """
-        return []
 
     def _render(self) -> Tag:
         return CondTag(
             cond=self.cond,
-            true_value=self.comp1.render(),
-            false_value=self.comp2.render(),
+            true_value=self.children[0].render(),
+            false_value=self.children[1].render(),
         )
 
     def render(self) -> Dict:
@@ -94,7 +79,7 @@ class Cond(MemoizationLeaf):
             ).set(
                 props=tag.format_props(),
             ),
-            cond_state=f"isTrue({str(self.cond)})",
+            cond_state=str(self.cond),
         )
 
     def add_imports(self) -> ImportDict:
@@ -111,7 +96,7 @@ class Cond(MemoizationLeaf):
 
 
 @overload
-def cond(condition: Any, c1: Component, c2: Any) -> Component: ...
+def cond(condition: Any, c1: Component, c2: Any) -> Component: ...  # pyright: ignore [reportOverlappingOverload]
 
 
 @overload
@@ -145,7 +130,7 @@ def cond(condition: Any, c1: Any, c2: Any = None) -> Component | Var:
     if isinstance(c1, BaseComponent):
         if c2 is not None and not isinstance(c2, BaseComponent):
             raise ValueError("Both arguments must be components.")
-        return Cond.create(cond_var, c1, c2)
+        return Cond.create(cond_var.bool(), c1, c2)
 
     # Otherwise, create a conditional Var.
     # Check that the second argument is valid.
@@ -154,25 +139,23 @@ def cond(condition: Any, c1: Any, c2: Any = None) -> Component | Var:
     if c2 is None:
         raise ValueError("For conditional vars, the second argument must be set.")
 
-    def create_var(cond_part):
-        return LiteralVar.create(cond_part)
-
     # convert the truth and false cond parts into vars so the _var_data can be obtained.
-    c1 = create_var(c1)
-    c2 = create_var(c2)
+    c1_var = Var.create(c1)
+    c2_var = Var.create(c2)
+
+    if condition is c1_var:
+        c1_var = c1_var.to(types.value_inside_optional(c1_var._var_type))
 
     # Create the conditional var.
     return ternary_operation(
-        cond_var.bool()._replace(  # type: ignore
-            merge_var_data=VarData(imports=_IS_TRUE_IMPORT),
-        ),  # type: ignore
-        c1,
-        c2,
+        cond_var.bool(),
+        c1_var,
+        c2_var,
     )
 
 
 @overload
-def color_mode_cond(light: Component, dark: Component | None = None) -> Component: ...  # type: ignore
+def color_mode_cond(light: Component, dark: Component | None = None) -> Component: ...  # pyright: ignore [reportOverlappingOverload]
 
 
 @overload

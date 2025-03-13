@@ -222,9 +222,10 @@ def test_serialize(value: Any, expected: str):
             '"2021-01-01 01:01:01.000001"',
             True,
         ),
+        (datetime.date(2021, 1, 1), '"2021-01-01"', True),
         (Color(color="slate", shade=1), '"var(--slate-1)"', True),
         (BaseSubclass, '"BaseSubclass"', True),
-        (Path("."), '"."', True),
+        (Path(), '"."', True),
     ],
 )
 def test_serialize_var_to_str(value: Any, expected: str, exp_var_is_string: bool):

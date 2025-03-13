@@ -1,12 +1,16 @@
 """Image component from next/image."""
 
-from typing import Any, Literal, Optional, Union
+from __future__ import annotations
+
+from typing import Any, Literal
 
 from reflex.event import EventHandler, no_args_event_spec
-from reflex.utils import types
+from reflex.utils import console, types
 from reflex.vars.base import Var
 
 from .base import NextComponent
+
+DEFAULT_W_H = "100%"
 
 
 class Image(NextComponent):
@@ -47,13 +51,13 @@ class Image(NextComponent):
     placeholder: Var[str]
 
     # Allows passing CSS styles to the underlying image element.
-    # style: Var[Any]
+    # style: Var[Any] #noqa: ERA001
 
     # The loading behavior of the image. Defaults to lazy. Can hurt performance, recommended to use `priority` instead.
     loading: Var[Literal["lazy", "eager"]]
 
     # A Data URL to be used as a placeholder image before the src image successfully loads. Only takes effect when combined with placeholder="blur".
-    blurDataURL: Var[str]
+    blur_data_url: Var[str]
 
     # Fires when the image has loaded.
     on_load: EventHandler[no_args_event_spec]
@@ -65,8 +69,8 @@ class Image(NextComponent):
     def create(
         cls,
         *children,
-        width: Optional[Union[int, str]] = None,
-        height: Optional[Union[int, str]] = None,
+        width: int | str | None = None,
+        height: int | str | None = None,
         **props,
     ):
         """Create an Image component from next/image.
@@ -80,10 +84,18 @@ class Image(NextComponent):
         Returns:
             _type_: _description_
         """
-        style = props.get("style", {})
-        DEFAULT_W_H = "100%"
+        if "blurDataURL" in props:
+            console.deprecate(
+                feature_name="blurDataURL",
+                reason="Use blur_data_url instead",
+                deprecation_version="0.7.0",
+                removal_version="0.8.0",
+            )
+            props["blur_data_url"] = props.pop("blurDataURL")
 
-        def check_prop_type(prop_name, prop_value):
+        style = props.get("style", {})
+
+        def check_prop_type(prop_name: str, prop_value: int | str | None):
             if types.check_prop_in_allowed_types(prop_value, allowed_types=[int]):
                 props[prop_name] = prop_value
 

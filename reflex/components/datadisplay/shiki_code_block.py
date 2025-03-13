@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import re
 from collections import defaultdict
-from typing import Any, Literal, Optional, Union
+from typing import Any, Literal
 
 from reflex.base import Base
 from reflex.components.component import Component, ComponentNamespace
@@ -403,8 +403,8 @@ class Position(NoExtrasAllowedProps):
 class ShikiDecorations(NoExtrasAllowedProps):
     """Decorations for the code block."""
 
-    start: Union[int, Position]
-    end: Union[int, Position]
+    start: int | Position
+    end: int | Position
     tag_name: str = "span"
     properties: dict[str, Any] = {}
     always_wrap: bool = False
@@ -415,7 +415,7 @@ class ShikiBaseTransformers(Base):
 
     library: str
     fns: list[FunctionStringVar]
-    style: Optional[Style]
+    style: Style | None
 
 
 class ShikiJsTransformer(ShikiBaseTransformers):
@@ -425,7 +425,7 @@ class ShikiJsTransformer(ShikiBaseTransformers):
     fns: list[FunctionStringVar] = [
         FunctionStringVar.create(fn) for fn in SHIKIJS_TRANSFORMER_FNS
     ]
-    style: Optional[Style] = Style(
+    style: Style | None = Style(
         {
             "code": {"line-height": "1.7", "font-size": "0.875em", "display": "grid"},
             # Diffs
@@ -490,17 +490,17 @@ class ShikiJsTransformer(ShikiBaseTransformers):
             },
             # White Space
             # ".tab, .space": {
-            #     "position": "relative",
+            #     "position": "relative", # noqa: ERA001
             # },
             # ".tab::before": {
-            #     "content": "'⇥'",
-            #     "position": "absolute",
-            #     "opacity": "0.3",
+            #     "content": "'⇥'", # noqa: ERA001
+            #     "position": "absolute", # noqa: ERA001
+            #     "opacity": "0.3",# noqa: ERA001
             # },
             # ".space::before": {
-            #     "content": "'·'",
-            #     "position": "absolute",
-            #     "opacity": "0.3",
+            #     "content": "'·'", # noqa: ERA001
+            #     "position": "absolute", # noqa: ERA001
+            #     "opacity": "0.3", # noqa: ERA001
             # },
         }
     )
@@ -547,15 +547,13 @@ class ShikiCodeBlock(Component, MarkdownComponentMap):
     theme: Var[LiteralCodeTheme] = Var.create("one-light")
 
     # The set of themes to use for different modes.
-    themes: Var[Union[list[dict[str, Any]], dict[str, str]]]
+    themes: Var[list[dict[str, Any]] | dict[str, str]]
 
     # The code to display.
     code: Var[str]
 
     # The transformers to use for the syntax highlighter.
-    transformers: Var[list[Union[ShikiBaseTransformers, dict[str, Any]]]] = Var.create(
-        []
-    )
+    transformers: Var[list[ShikiBaseTransformers | dict[str, Any]]] = Var.create([])
 
     # The decorations to use for the syntax highlighter.
     decorations: Var[list[ShikiDecorations]] = Var.create([])
@@ -602,7 +600,7 @@ class ShikiCodeBlock(Component, MarkdownComponentMap):
 
         transformer_styles = {}
         # Collect styles from transformers and wrapper
-        for transformer in code_block.transformers._var_value:  # type: ignore
+        for transformer in code_block.transformers._var_value:  # pyright: ignore [reportAttributeAccessIssue]
             if isinstance(transformer, ShikiBaseTransformers) and transformer.style:
                 transformer_styles.update(transformer.style)
         transformer_styles.update(code_wrapper_props.pop("style", {}))
@@ -621,18 +619,22 @@ class ShikiCodeBlock(Component, MarkdownComponentMap):
 
         Returns:
             Imports for the component.
+
+        Raises:
+            ValueError: If the transformers are not of type LiteralVar.
         """
         imports = defaultdict(list)
+        if not isinstance(self.transformers, LiteralVar):
+            raise ValueError(
+                f"transformers should be a LiteralVar type. Got {type(self.transformers)} instead."
+            )
         for transformer in self.transformers._var_value:
             if isinstance(transformer, ShikiBaseTransformers):
                 imports[transformer.library].extend(
                     [ImportVar(tag=str(fn)) for fn in transformer.fns]
                 )
-                (
+                if transformer.library not in self.lib_dependencies:
                     self.lib_dependencies.append(transformer.library)
-                    if transformer.library not in self.lib_dependencies
-                    else None
-                )
         return imports
 
     @classmethod
@@ -653,8 +655,9 @@ class ShikiCodeBlock(Component, MarkdownComponentMap):
             raise ValueError(
                 f"the function names should be str names of functions in the specified transformer: {library!r}"
             )
-        return ShikiBaseTransformers(  # type: ignore
-            library=library, fns=[FunctionStringVar.create(fn) for fn in fns]
+        return ShikiBaseTransformers(
+            library=library,
+            fns=[FunctionStringVar.create(fn) for fn in fns],  # pyright: ignore [reportCallIssue]
         )
 
     def _render(self, props: dict[str, Any] | None = None):
@@ -712,7 +715,7 @@ class ShikiHighLevelCodeBlock(ShikiCodeBlock):
     can_copy: bool = False
 
     # copy_button: A custom copy button to override the default one.
-    copy_button: Optional[Union[Component, bool]] = None
+    copy_button: Component | bool | None = None
 
     @classmethod
     def create(
@@ -757,13 +760,13 @@ class ShikiHighLevelCodeBlock(ShikiCodeBlock):
 
         if can_copy:
             code = children[0]
-            copy_button = (  # type: ignore
+            copy_button = (
                 copy_button
                 if copy_button is not None
                 else Button.create(
                     Icon.create(tag="copy", size=16, color=color("gray", 11)),
                     on_click=[
-                        set_clipboard(cls._strip_transformer_triggers(code)),  # type: ignore
+                        set_clipboard(cls._strip_transformer_triggers(code)),
                         copy_script(),
                     ],
                     style=Style(

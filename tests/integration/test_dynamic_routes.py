@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import time
 from typing import Callable, Coroutine, Generator, Type
 from urllib.parse import urlsplit
 
@@ -15,18 +16,18 @@ from .utils import poll_for_navigation
 
 def DynamicRoute():
     """App for testing dynamic routes."""
-    from typing import List
-
     import reflex as rx
 
     class DynamicState(rx.State):
-        order: List[str] = []
+        order: list[str] = []
 
+        @rx.event
         def on_load(self):
             page_data = f"{self.router.page.path}-{self.page_id or 'no page id'}"
             print(f"on_load: {page_data}")
             self.order.append(page_data)
 
+        @rx.event
         def on_load_redir(self):
             query_params = self.router.page.params
             page_data = f"on_load_redir-{query_params}"
@@ -48,7 +49,7 @@ def DynamicRoute():
                 read_only=True,
                 id="token",
             ),
-            rx.input(value=rx.State.page_id, read_only=True, id="page_id"),  # type: ignore
+            rx.input(value=rx.State.page_id, read_only=True, id="page_id"),  # pyright: ignore [reportAttributeAccessIssue]
             rx.input(
                 value=DynamicState.router.page.raw_path,
                 read_only=True,
@@ -59,12 +60,12 @@ def DynamicRoute():
             rx.link(
                 "next",
                 href="/page/" + DynamicState.next_page,
-                id="link_page_next",  # type: ignore
+                id="link_page_next",
             ),
             rx.link("missing", href="/missing", id="link_missing"),
-            rx.list(  # type: ignore
+            rx.list(  # pyright: ignore [reportAttributeAccessIssue]
                 rx.foreach(
-                    DynamicState.order,  # type: ignore
+                    DynamicState.order,  # pyright: ignore [reportAttributeAccessIssue]
                     lambda i: rx.list_item(rx.text(i)),
                 ),
             ),
@@ -73,30 +74,35 @@ def DynamicRoute():
     class ArgState(rx.State):
         """The app state."""
 
-        @rx.var
+        @rx.var(cache=False)
         def arg(self) -> int:
             return int(self.arg_str or 0)
 
     class ArgSubState(ArgState):
-        @rx.var(cache=True)
+        @rx.var
         def cached_arg(self) -> int:
             return self.arg
 
-        @rx.var(cache=True)
+        @rx.var
         def cached_arg_str(self) -> str:
             return self.arg_str
 
     @rx.page(route="/arg/[arg_str]")
     def arg() -> rx.Component:
         return rx.vstack(
+            rx.input(
+                value=DynamicState.router.session.client_token,
+                read_only=True,
+                id="token",
+            ),
             rx.data_list.root(
                 rx.data_list.item(
                     rx.data_list.label("rx.State.arg_str (dynamic)"),
-                    rx.data_list.value(rx.State.arg_str, id="state-arg_str"),  # type: ignore
+                    rx.data_list.value(rx.State.arg_str, id="state-arg_str"),  # pyright: ignore [reportAttributeAccessIssue]
                 ),
                 rx.data_list.item(
                     rx.data_list.label("ArgState.arg_str (dynamic) (inherited)"),
-                    rx.data_list.value(ArgState.arg_str, id="argstate-arg_str"),  # type: ignore
+                    rx.data_list.value(ArgState.arg_str, id="argstate-arg_str"),  # pyright: ignore [reportAttributeAccessIssue]
                 ),
                 rx.data_list.item(
                     rx.data_list.label("ArgState.arg"),
@@ -104,7 +110,7 @@ def DynamicRoute():
                 ),
                 rx.data_list.item(
                     rx.data_list.label("ArgSubState.arg_str (dynamic) (inherited)"),
-                    rx.data_list.value(ArgSubState.arg_str, id="argsubstate-arg_str"),  # type: ignore
+                    rx.data_list.value(ArgSubState.arg_str, id="argsubstate-arg_str"),  # pyright: ignore [reportAttributeAccessIssue]
                 ),
                 rx.data_list.item(
                     rx.data_list.label("ArgSubState.arg (inherited)"),
@@ -128,15 +134,15 @@ def DynamicRoute():
             height="100vh",
         )
 
-    @rx.page(route="/redirect-page/[page_id]", on_load=DynamicState.on_load_redir)  # type: ignore
+    @rx.page(route="/redirect-page/[page_id]", on_load=DynamicState.on_load_redir)
     def redirect_page():
         return rx.fragment(rx.text("redirecting..."))
 
-    app = rx.App(state=rx.State)
-    app.add_page(index, route="/page/[page_id]", on_load=DynamicState.on_load)  # type: ignore
-    app.add_page(index, route="/static/x", on_load=DynamicState.on_load)  # type: ignore
+    app = rx.App(_state=rx.State)
+    app.add_page(index, route="/page/[page_id]", on_load=DynamicState.on_load)
+    app.add_page(index, route="/static/x", on_load=DynamicState.on_load)
     app.add_page(index)
-    app.add_custom_404_page(on_load=DynamicState.on_load)  # type: ignore
+    app.add_custom_404_page(on_load=DynamicState.on_load)
 
 
 @pytest.fixture(scope="module")
@@ -172,6 +178,8 @@ def driver(dynamic_route: AppHarness) -> Generator[WebDriver, None, None]:
     """
     assert dynamic_route.app_instance is not None, "app is not running"
     driver = dynamic_route.frontend()
+    # TODO: drop after flakiness is resolved
+    driver.implicitly_wait(30)
     try:
         yield driver
     finally:
@@ -373,16 +381,21 @@ async def test_on_load_navigate_non_dynamic(
 async def test_render_dynamic_arg(
     dynamic_route: AppHarness,
     driver: WebDriver,
+    token: str,
 ):
     """Assert that dynamic arg var is rendered correctly in different contexts.
 
     Args:
         dynamic_route: harness for DynamicRoute app.
         driver: WebDriver instance.
+        token: The token visible in the driver browser.
     """
     assert dynamic_route.app_instance is not None
     with poll_for_navigation(driver):
         driver.get(f"{dynamic_route.frontend_url}/arg/0")
+
+    # TODO: drop after flakiness is resolved
+    time.sleep(3)
 
     def assert_content(expected: str, expect_not: str):
         ids = [
@@ -398,7 +411,8 @@ async def test_render_dynamic_arg(
             el = driver.find_element(By.ID, id)
             assert el
             assert (
-                dynamic_route.poll_for_content(el, exp_not_equal=expect_not) == expected
+                dynamic_route.poll_for_content(el, timeout=30, exp_not_equal=expect_not)
+                == expected
             )
 
     assert_content("0", "")

@@ -48,7 +48,7 @@ class PropsBase(Base):
 class NoExtrasAllowedProps(Base):
     """A class that holds props to be passed or applied to a component with no extra props allowed."""
 
-    def __init__(self, component_name=None, **kwargs):
+    def __init__(self, component_name: str | None = None, **kwargs):
         """Initialize the props.
 
         Args:
@@ -62,13 +62,13 @@ class NoExtrasAllowedProps(Base):
         try:
             super().__init__(**kwargs)
         except ValidationError as e:
-            invalid_fields = ", ".join([error["loc"][0] for error in e.errors()])  # type: ignore
+            invalid_fields = ", ".join([error["loc"][0] for error in e.errors()])  # pyright: ignore [reportCallIssue, reportArgumentType]
             supported_props_str = ", ".join(f'"{field}"' for field in self.get_fields())
             raise InvalidPropValueError(
                 f"Invalid prop(s) {invalid_fields} for {component_name!r}. Supported props are {supported_props_str}"
             ) from None
 
-    class Config:
+    class Config:  # pyright: ignore [reportIncompatibleVariableOverride]
         """Pydantic config."""
 
         arbitrary_types_allowed = True

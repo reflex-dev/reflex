@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Literal, Tuple, Union
+from typing import Any, Literal
 
 import pytest
 
@@ -17,7 +17,7 @@ def test_validate_literal_error_msg(params, allowed_value_str, value_str):
         types.validate_literal(*params)
 
     assert (
-        err.value.args[0] == f"prop value for {str(params[0])} of the `{params[-1]}` "
+        err.value.args[0] == f"prop value for {params[0]!s} of the `{params[-1]}` "
         f"component should be one of the following: {allowed_value_str}. Got {value_str} instead"
     )
 
@@ -26,19 +26,19 @@ def test_validate_literal_error_msg(params, allowed_value_str, value_str):
     "cls,cls_check,expected",
     [
         (int, Any, True),
-        (Tuple[int], Any, True),
-        (List[int], Any, True),
+        (tuple[int], Any, True),
+        (list[int], Any, True),
         (int, int, True),
         (int, object, True),
-        (int, Union[int, str], True),
-        (int, Union[str, int], True),
-        (str, Union[str, int], True),
-        (str, Union[int, str], True),
-        (int, Union[str, float, int], True),
-        (int, Union[str, float], False),
-        (int, Union[float, str], False),
+        (int, int | str, True),
+        (int, str | int, True),
+        (str, str | int, True),
+        (str, int | str, True),
+        (int, str | float | int, True),
+        (int, str | float, False),
+        (int, float | str, False),
         (int, str, False),
-        (int, List[int], False),
+        (int, list[int], False),
     ],
 )
 def test_issubclass(
@@ -77,11 +77,11 @@ class ChildGenericDict(GenericDict):
         (int, False),
         (str, False),
         (float, False),
-        (Tuple[int], True),
-        (List[int], True),
-        (Union[int, str], True),
-        (Union[str, int], True),
-        (Dict[str, int], True),
+        (tuple[int], True),
+        (list[int], True),
+        (int | str, True),
+        (str | int, True),
+        (dict[str, int], True),
         (CustomDict, True),
         (ChildCustomDict, True),
         (GenericDict, False),

@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING, Union
 
 from reflex import constants
 from reflex.utils import imports
-from reflex.utils.exceptions import DynamicComponentMissingLibrary
+from reflex.utils.exceptions import DynamicComponentMissingLibraryError
 from reflex.utils.format import format_library_name
 from reflex.utils.serializers import serializer
 from reflex.vars import Var, get_unique_variable_name
@@ -36,13 +36,15 @@ def bundle_library(component: Union["Component", str]):
         component: The component to bundle the library with.
 
     Raises:
-        DynamicComponentMissingLibrary: Raised when a dynamic component is missing a library.
+        DynamicComponentMissingLibraryError: Raised when a dynamic component is missing a library.
     """
     if isinstance(component, str):
         bundled_libraries.add(component)
         return
     if component.library is None:
-        raise DynamicComponentMissingLibrary("Component must have a library to bundle.")
+        raise DynamicComponentMissingLibraryError(
+            "Component must have a library to bundle."
+        )
     bundled_libraries.add(format_library_name(component.library))
 
 
@@ -136,6 +138,23 @@ def load_dynamic_serializer():
 
         module_code_lines.insert(0, "const React = window.__reflex.react;")
 
+        function_line = next(
+            index
+            for index, line in enumerate(module_code_lines)
+            if line.startswith("export default function")
+        )
+
+        module_code_lines = [
+            line
+            for _, line in sorted(
+                enumerate(module_code_lines),
+                key=lambda x: (
+                    not (x[1].startswith("import ") and x[0] < function_line),
+                    x[0],
+                ),
+            )
+        ]
+
         return "\n".join(
             [
                 "//__reflex_evaluate",
@@ -173,7 +192,7 @@ def load_dynamic_serializer():
                         f"const [{unique_var_name}, set_{unique_var_name}] = useState(null);": None,
                         "useEffect(() => {"
                         "let isMounted = true;"
-                        f"evalReactComponent({str(js_string)})"
+                        f"evalReactComponent({js_string!s})"
                         ".then((component) => {"
                         "if (isMounted) {"
                         f"set_{unique_var_name}(component);"
@@ -183,7 +202,7 @@ def load_dynamic_serializer():
                         "isMounted = false;"
                         "};"
                         "}"
-                        f", [{str(js_string)}]);": None,
+                        f", [{js_string!s}]);": None,
                     },
                 ),
             ),

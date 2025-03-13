@@ -3,20 +3,14 @@
 from __future__ import annotations
 
 import os
-from typing import TYPE_CHECKING, Any, List, Type
+from typing import TYPE_CHECKING, Any, Type
 
-try:
-    import pydantic.v1.main as pydantic_main
-    from pydantic.v1 import BaseModel
-    from pydantic.v1.fields import ModelField
-except ModuleNotFoundError:
-    if not TYPE_CHECKING:
-        import pydantic.main as pydantic_main
-        from pydantic import BaseModel
-        from pydantic.fields import ModelField  # type: ignore
+import pydantic.v1.main as pydantic_main
+from pydantic.v1 import BaseModel
+from pydantic.v1.fields import ModelField
 
 
-def validate_field_name(bases: List[Type["BaseModel"]], field_name: str) -> None:
+def validate_field_name(bases: list[Type["BaseModel"]], field_name: str) -> None:
     """Ensure that the field's name does not shadow an existing attribute of the model.
 
     Args:
@@ -30,26 +24,27 @@ def validate_field_name(bases: List[Type["BaseModel"]], field_name: str) -> None
 
     # can't use reflex.config.environment here cause of circular import
     reload = os.getenv("__RELOAD_CONFIG", "").lower() == "true"
-    for base in bases:
-        try:
+    base = None
+    try:
+        for base in bases:
             if not reload and getattr(base, field_name, None):
                 pass
-        except TypeError as te:
-            raise VarNameError(
-                f'State var "{field_name}" in {base} has been shadowed by a substate var; '
-                f'use a different field name instead".'
-            ) from te
+    except TypeError as te:
+        raise VarNameError(
+            f'State var "{field_name}" in {base} has been shadowed by a substate var; '
+            f'use a different field name instead".'
+        ) from te
 
 
 # monkeypatch pydantic validate_field_name method to skip validating
 # shadowed state vars when reloading app via utils.prerequisites.get_app(reload=True)
-pydantic_main.validate_field_name = validate_field_name  # type: ignore
+pydantic_main.validate_field_name = validate_field_name  # pyright: ignore [reportPossiblyUnboundVariable, reportPrivateImportUsage]
 
 if TYPE_CHECKING:
     from reflex.vars import Var
 
 
-class Base(BaseModel):  # pyright: ignore [reportUnboundVariable]
+class Base(BaseModel):
     """The base class subclassed by all Reflex classes.
 
     This class wraps Pydantic and provides common methods such as
@@ -74,12 +69,12 @@ class Base(BaseModel):  # pyright: ignore [reportUnboundVariable]
         """
         from reflex.utils.serializers import serialize
 
-        return self.__config__.json_dumps(  # type: ignore
+        return self.__config__.json_dumps(
             self.dict(),
             default=serialize,
         )
 
-    def set(self, **kwargs):
+    def set(self, **kwargs: Any):
         """Set multiple fields and return the object.
 
         Args:
@@ -112,12 +107,12 @@ class Base(BaseModel):  # pyright: ignore [reportUnboundVariable]
             default_value: The default value of the field
         """
         var_name = var._var_field_name
-        new_field = ModelField.infer(
+        new_field = ModelField.infer(  # pyright: ignore [reportPossiblyUnboundVariable]
             name=var_name,
             value=default_value,
             annotation=var._var_type,
             class_validators=None,
-            config=cls.__config__,  # type: ignore
+            config=cls.__config__,
         )
         cls.__fields__.update({var_name: new_field})
 

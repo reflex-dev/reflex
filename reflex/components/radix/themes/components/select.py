@@ -1,10 +1,11 @@
 """Interactive components provided by @radix-ui/themes."""
 
-from typing import List, Literal, Union
+from typing import ClassVar, Literal, Sequence
 
 import reflex as rx
 from reflex.components.component import Component, ComponentNamespace
 from reflex.components.core.breakpoints import Responsive
+from reflex.constants.compiler import MemoizationMode
 from reflex.event import no_args_event_spec, passthrough_event_spec
 from reflex.vars.base import Var
 
@@ -67,7 +68,9 @@ class SelectTrigger(RadixThemesComponent):
     # The placeholder of the select trigger
     placeholder: Var[str]
 
-    _valid_parents: List[str] = ["SelectRoot"]
+    _valid_parents: ClassVar[list[str]] = ["SelectRoot"]
+
+    _memoization_mode = MemoizationMode(recursive=False)
 
 
 class SelectContent(RadixThemesComponent):
@@ -114,7 +117,7 @@ class SelectGroup(RadixThemesComponent):
 
     tag = "Select.Group"
 
-    _valid_parents: List[str] = ["SelectContent"]
+    _valid_parents: ClassVar[list[str]] = ["SelectContent"]
 
 
 class SelectItem(RadixThemesComponent):
@@ -128,7 +131,7 @@ class SelectItem(RadixThemesComponent):
     # Whether the select item is disabled
     disabled: Var[bool]
 
-    _valid_parents: List[str] = ["SelectGroup", "SelectContent"]
+    _valid_parents: ClassVar[list[str]] = ["SelectGroup", "SelectContent"]
 
 
 class SelectLabel(RadixThemesComponent):
@@ -136,7 +139,7 @@ class SelectLabel(RadixThemesComponent):
 
     tag = "Select.Label"
 
-    _valid_parents: List[str] = ["SelectGroup"]
+    _valid_parents: ClassVar[list[str]] = ["SelectGroup"]
 
 
 class SelectSeparator(RadixThemesComponent):
@@ -149,7 +152,7 @@ class HighLevelSelect(SelectRoot):
     """High level wrapper for the Select component."""
 
     # The items of the select.
-    items: Var[List[str]]
+    items: Var[Sequence[str]]
 
     # The placeholder of the select.
     placeholder: Var[str]
@@ -176,7 +179,7 @@ class HighLevelSelect(SelectRoot):
     position: Var[Literal["item-aligned", "popper"]]
 
     @classmethod
-    def create(cls, items: Union[List[str], Var[List[str]]], **props) -> Component:
+    def create(cls, items: list[str] | Var[list[str]], **props) -> Component:
         """Create a select component.
 
         Args:
@@ -187,6 +190,7 @@ class HighLevelSelect(SelectRoot):
             The select component.
         """
         trigger_prop_list = [
+            "id",
             "placeholder",
             "variant",
             "radius",

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import datetime
 import json
-from typing import Any, List
+from typing import Any
 
 import plotly.graph_objects as go
 import pytest
@@ -189,11 +189,11 @@ def test_to_snake_case(input: str, output: str):
         ("kebab-case", "kebabCase"),
         ("kebab-case-two", "kebabCaseTwo"),
         ("snake_kebab-case", "snakeKebabCase"),
-        ("_hover", "_hover"),
-        ("-starts-with-hyphen", "-startsWithHyphen"),
-        ("--starts-with-double-hyphen", "--startsWithDoubleHyphen"),
-        ("_starts_with_underscore", "_startsWithUnderscore"),
-        ("__starts_with_double_underscore", "__startsWithDoubleUnderscore"),
+        ("_hover", "Hover"),
+        ("-starts-with-hyphen", "StartsWithHyphen"),
+        ("--starts-with-double-hyphen", "StartsWithDoubleHyphen"),
+        ("_starts_with_underscore", "StartsWithUnderscore"),
+        ("__starts_with_double_underscore", "StartsWithDoubleUnderscore"),
         (":start-with-colon", ":startWithColon"),
         (":-start-with-colon-dash", ":StartWithColonDash"),
     ],
@@ -262,7 +262,7 @@ def test_to_kebab_case(input: str, output: str):
     ],
 )
 def test_format_string(input: str, output: str):
-    """Test formating the input as JS string literal.
+    """Test formatting the input as JS string literal.
 
     Args:
         input: the input string.
@@ -334,7 +334,7 @@ def test_format_route(route: str, format_case: bool, expected: bool):
 )
 def test_format_match(
     condition: str,
-    match_cases: List[List[Var]],
+    match_cases: list[list[Var]],
     default: Var,
     expected: str,
 ):
@@ -523,7 +523,7 @@ def test_format_event_handler(input, output):
         input: The event handler input.
         output: The expected output.
     """
-    assert format.format_event_handler(input) == output  # type: ignore
+    assert format.format_event_handler(input) == output
 
 
 @pytest.mark.parametrize(
@@ -566,6 +566,7 @@ formatted_router = {
         "sec_websocket_extensions": "",
         "accept_encoding": "",
         "accept_language": "",
+        "raw_headers": {},
     },
     "page": {
         "host": "",
@@ -582,7 +583,7 @@ formatted_router = {
     "input, output",
     [
         (
-            TestState(_reflex_internal_init=True).dict(),  # type: ignore
+            TestState(_reflex_internal_init=True).dict(),  # pyright: ignore [reportCallIssue]
             {
                 TestState.get_full_name(): {
                     "array": [1, 2, 3.14],
@@ -615,7 +616,7 @@ formatted_router = {
             },
         ),
         (
-            DateTimeState(_reflex_internal_init=True).dict(),  # type: ignore
+            DateTimeState(_reflex_internal_init=True).dict(),  # pyright: ignore [reportCallIssue]
             {
                 DateTimeState.get_full_name(): {
                     "d": "1989-11-09",
@@ -680,7 +681,7 @@ def test_format_array_ref(input, output):
     ],
 )
 def test_format_library_name(input: str, output: str):
-    """Test formating a library name to remove the @version part.
+    """Test formatting a library name to remove the @version part.
 
     Args:
         input: the input string.

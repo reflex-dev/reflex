@@ -2,8 +2,10 @@
 
 from __future__ import annotations
 
+import contextlib
 import dataclasses
 import functools
+import inspect
 import json
 import warnings
 from datetime import date, datetime, time, timedelta
@@ -12,21 +14,23 @@ from pathlib import Path
 from typing import (
     Any,
     Callable,
-    List,
     Literal,
-    Optional,
+    Sequence,
     Set,
-    Tuple,
     Type,
     TypeVar,
     Union,
     get_type_hints,
     overload,
 )
+from uuid import UUID
+
+from pydantic import BaseModel as BaseModelV2
+from pydantic.v1 import BaseModel as BaseModelV1
 
 from reflex.base import Base
 from reflex.constants.colors import Color, format_color
-from reflex.utils import types
+from reflex.utils import console, types
 
 # Mapping from type to a serializer.
 # The serializer should convert the type to a JSON object.
@@ -46,6 +50,7 @@ SERIALIZED_FUNCTION = TypeVar("SERIALIZED_FUNCTION", bound=Serializer)
 def serializer(
     fn: None = None,
     to: Type[SerializedType] | None = None,
+    overwrite: bool | None = None,
 ) -> Callable[[SERIALIZED_FUNCTION], SERIALIZED_FUNCTION]: ...
 
 
@@ -53,18 +58,21 @@ def serializer(
 def serializer(
     fn: SERIALIZED_FUNCTION,
     to: Type[SerializedType] | None = None,
+    overwrite: bool | None = None,
 ) -> SERIALIZED_FUNCTION: ...
 
 
 def serializer(
     fn: SERIALIZED_FUNCTION | None = None,
     to: Any = None,
+    overwrite: bool | None = None,
 ) -> SERIALIZED_FUNCTION | Callable[[SERIALIZED_FUNCTION], SERIALIZED_FUNCTION]:
     """Decorator to add a serializer for a given type.
 
     Args:
         fn: The function to decorate.
         to: The type returned by the serializer. If this is `str`, then any Var created from this type will be treated as a string.
+        overwrite: Whether to overwrite the existing serializer.
 
     Returns:
         The decorated function.
@@ -84,9 +92,24 @@ def serializer(
 
         # Make sure the type is not already registered.
         registered_fn = SERIALIZERS.get(type_)
-        if registered_fn is not None and registered_fn != fn:
-            raise ValueError(
-                f"Serializer for type {type_} is already registered as {registered_fn.__qualname__}."
+        if registered_fn is not None and registered_fn != fn and overwrite is not True:
+            message = f"Overwriting serializer for type {type_} from {registered_fn.__module__}:{registered_fn.__qualname__} to {fn.__module__}:{fn.__qualname__}."
+            if overwrite is False:
+                raise ValueError(message)
+            caller_frame = next(
+                filter(
+                    lambda frame: frame.filename != __file__,
+                    inspect.getouterframes(inspect.currentframe()),
+                ),
+                None,
+            )
+            file_info = (
+                f"(at {caller_frame.filename}:{caller_frame.lineno})"
+                if caller_frame
+                else ""
+            )
+            console.warn(
+                f"{message} Call rx.serializer with `overwrite=True` if this is intentional. {file_info}"
             )
 
         to_type = to or type_hints.get("return")
@@ -111,22 +134,22 @@ def serializer(
 @overload
 def serialize(
     value: Any, get_type: Literal[True]
-) -> Tuple[Optional[SerializedType], Optional[types.GenericType]]: ...
+) -> tuple[SerializedType | None, types.GenericType | None]: ...
 
 
 @overload
-def serialize(value: Any, get_type: Literal[False]) -> Optional[SerializedType]: ...
+def serialize(value: Any, get_type: Literal[False]) -> SerializedType | None: ...
 
 
 @overload
-def serialize(value: Any) -> Optional[SerializedType]: ...
+def serialize(value: Any) -> SerializedType | None: ...
 
 
 def serialize(
     value: Any, get_type: bool = False
 ) -> Union[
-    Optional[SerializedType],
-    Tuple[Optional[SerializedType], Optional[types.GenericType]],
+    SerializedType | None,
+    tuple[SerializedType | None, types.GenericType | None],
 ]:
     """Serialize the value to a JSON string.
 
@@ -160,7 +183,7 @@ def serialize(
 
 
 @functools.lru_cache
-def get_serializer(type_: Type) -> Optional[Serializer]:
+def get_serializer(type_: Type) -> Serializer | None:
     """Get the serializer for the type.
 
     Args:
@@ -184,7 +207,7 @@ def get_serializer(type_: Type) -> Optional[Serializer]:
 
 
 @functools.lru_cache
-def get_serializer_type(type_: Type) -> Optional[Type]:
+def get_serializer_type(type_: Type) -> Type | None:
     """Get the converted type for the type after serializing.
 
     Args:
@@ -270,12 +293,53 @@ def serialize_base(value: Base) -> dict:
     }
 
 
+@serializer(to=dict)
+def serialize_base_model_v1(model: BaseModelV1) -> dict:
+    """Serialize a pydantic v1 BaseModel instance.
+
+    Args:
+        model: The BaseModel to serialize.
+
+    Returns:
+        The serialized BaseModel.
+    """
+    return model.dict()
+
+
+if BaseModelV1 is not BaseModelV2:
+
+    @serializer(to=dict)
+    def serialize_base_model_v2(model: BaseModelV2) -> dict:
+        """Serialize a pydantic v2 BaseModel instance.
+
+        Args:
+            model: The BaseModel to serialize.
+
+        Returns:
+            The serialized BaseModel.
+        """
+        return model.model_dump()
+
+
 @serializer
 def serialize_set(value: Set) -> list:
     """Serialize a set to a JSON serializable list.
 
     Args:
         value: The set to serialize.
+
+    Returns:
+        The serialized list.
+    """
+    return list(value)
+
+
+@serializer
+def serialize_sequence(value: Sequence) -> list:
+    """Serialize a sequence to a JSON serializable list.
+
+    Args:
+        value: The sequence to serialize.
 
     Returns:
         The serialized list.
@@ -323,6 +387,19 @@ def serialize_enum(en: Enum) -> str:
 
 
 @serializer(to=str)
+def serialize_uuid(uuid: UUID) -> str:
+    """Serialize a UUID to a JSON string.
+
+    Args:
+        uuid: The UUID to serialize.
+
+    Returns:
+        The serialized UUID.
+    """
+    return str(uuid)
+
+
+@serializer(to=str)
 def serialize_color(color: Color) -> str:
     """Serialize a color.
 
@@ -335,10 +412,10 @@ def serialize_color(color: Color) -> str:
     return format_color(color.color, color.shade, color.alpha)
 
 
-try:
+with contextlib.suppress(ImportError):
     from pandas import DataFrame
 
-    def format_dataframe_values(df: DataFrame) -> List[List[Any]]:
+    def format_dataframe_values(df: DataFrame) -> list[list[Any]]:
         """Format dataframe values to a list of lists.
 
         Args:
@@ -367,10 +444,8 @@ try:
             "data": format_dataframe_values(df),
         }
 
-except ImportError:
-    pass
 
-try:
+with contextlib.suppress(ImportError):
     from plotly.graph_objects import Figure, layout
     from plotly.io import to_json
 
@@ -401,11 +476,8 @@ try:
             "layout": json.loads(str(to_json(template.layout))),
         }
 
-except ImportError:
-    pass
 
-
-try:
+with contextlib.suppress(ImportError):
     import base64
     import io
 
@@ -429,7 +501,7 @@ try:
         base64_image = base64.b64encode(image_bytes).decode("utf-8")
         try:
             # Newer method to get the mime type, but does not always work.
-            mime_type = image.get_format_mimetype()  # type: ignore
+            mime_type = image.get_format_mimetype()  # pyright: ignore [reportAttributeAccessIssue]
         except AttributeError:
             try:
                 # Fallback method
@@ -442,6 +514,3 @@ try:
                 mime_type = "image/png"
 
         return f"data:{mime_type};base64,{base64_image}"
-
-except ImportError:
-    pass

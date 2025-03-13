@@ -1,6 +1,6 @@
 """Interactive components provided by @radix-ui/themes."""
 
-from typing import List, Literal
+from typing import ClassVar, Literal
 
 from reflex.components.component import ComponentNamespace
 from reflex.components.core.breakpoints import Responsive
@@ -27,9 +27,9 @@ class TableHeader(elements.Thead, RadixThemesComponent):
 
     tag = "Table.Header"
 
-    _invalid_children: List[str] = ["TableBody"]
+    _invalid_children: ClassVar[list[str]] = ["TableBody"]
 
-    _valid_parents: List[str] = ["TableRoot"]
+    _valid_parents: ClassVar[list[str]] = ["TableRoot"]
 
 
 class TableRow(elements.Tr, RadixThemesComponent):
@@ -40,7 +40,7 @@ class TableRow(elements.Tr, RadixThemesComponent):
     # The alignment of the row
     align: Var[Literal["start", "center", "end", "baseline"]]
 
-    _invalid_children: List[str] = ["TableBody", "TableHeader", "TableRow"]
+    _invalid_children: ClassVar[list[str]] = ["TableBody", "TableHeader", "TableRow"]
 
 
 class TableColumnHeaderCell(elements.Th, RadixThemesComponent):
@@ -57,7 +57,7 @@ class TableColumnHeaderCell(elements.Th, RadixThemesComponent):
     # The maximum width of the cell
     max_width: Var[Responsive[str]]
 
-    _invalid_children: List[str] = [
+    _invalid_children: ClassVar[list[str]] = [
         "TableBody",
         "TableHeader",
         "TableRow",
@@ -72,14 +72,14 @@ class TableBody(elements.Tbody, RadixThemesComponent):
 
     tag = "Table.Body"
 
-    _invalid_children: List[str] = [
+    _invalid_children: ClassVar[list[str]] = [
         "TableHeader",
         "TableRowHeaderCell",
         "TableColumnHeaderCell",
         "TableCell",
     ]
 
-    _valid_parents: List[str] = ["TableRoot"]
+    _valid_parents: ClassVar[list[str]] = ["TableRoot"]
 
 
 class TableCell(elements.Td, CommonPaddingProps, RadixThemesComponent):
@@ -96,7 +96,7 @@ class TableCell(elements.Td, CommonPaddingProps, RadixThemesComponent):
     # The maximum width of the cell
     max_width: Var[Responsive[str]]
 
-    _invalid_children: List[str] = [
+    _invalid_children: ClassVar[list[str]] = [
         "TableBody",
         "TableHeader",
         "TableRowHeaderCell",
@@ -119,7 +119,7 @@ class TableRowHeaderCell(elements.Th, CommonPaddingProps, RadixThemesComponent):
     # The maximum width of the cell
     max_width: Var[Responsive[str]]
 
-    _invalid_children: List[str] = [
+    _invalid_children: ClassVar[list[str]] = [
         "TableBody",
         "TableHeader",
         "TableRow",

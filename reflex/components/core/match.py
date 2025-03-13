@@ -1,13 +1,13 @@
 """rx.match."""
 
 import textwrap
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, List
 
 from reflex.components.base import Fragment
 from reflex.components.component import BaseComponent, Component, MemoizationLeaf
 from reflex.components.tags import MatchTag, Tag
 from reflex.style import Style
-from reflex.utils import format, types
+from reflex.utils import format
 from reflex.utils.exceptions import MatchTypeError
 from reflex.utils.imports import ImportDict
 from reflex.vars import VarData
@@ -21,13 +21,13 @@ class Match(MemoizationLeaf):
     cond: Var[Any]
 
     # The list of match cases to be matched.
-    match_cases: List[Any] = []
+    match_cases: list[Any] = []
 
     # The catchall case to match.
     default: Any
 
     @classmethod
-    def create(cls, cond: Any, *cases) -> Union[Component, Var]:
+    def create(cls, cond: Any, *cases) -> Component | Var:
         """Create a Match Component.
 
         Args:
@@ -46,7 +46,7 @@ class Match(MemoizationLeaf):
 
         cls._validate_return_types(match_cases)
 
-        if default is None and types._issubclass(type(match_cases[0][-1]), Var):
+        if default is None and isinstance(match_cases[0][-1], Var):
             raise ValueError(
                 "For cases with return types as Vars, a default case must be provided"
             )
@@ -75,9 +75,7 @@ class Match(MemoizationLeaf):
         return match_cond_var
 
     @classmethod
-    def _process_cases(
-        cls, cases: List
-    ) -> Tuple[List, Optional[Union[Var, BaseComponent]]]:
+    def _process_cases(cls, cases: list) -> tuple[list, Var | BaseComponent | None]:
         """Process the list of match cases and the catchall default case.
 
         Args:
@@ -109,7 +107,7 @@ class Match(MemoizationLeaf):
         return cases, default
 
     @classmethod
-    def _create_case_var_with_var_data(cls, case_element):
+    def _create_case_var_with_var_data(cls, case_element: Any) -> Var:
         """Convert a case element into a Var.If the case
         is a Style type, we extract the var data and merge it with the
         newly created Var.
@@ -125,7 +123,7 @@ class Match(MemoizationLeaf):
         return case_element
 
     @classmethod
-    def _process_match_cases(cls, cases: List) -> List[List[Var]]:
+    def _process_match_cases(cls, cases: List) -> list[list[Var]]:
         """Process the individual match cases.
 
         Args:
@@ -166,7 +164,7 @@ class Match(MemoizationLeaf):
         return match_cases
 
     @classmethod
-    def _validate_return_types(cls, match_cases: List[List[Var]]) -> None:
+    def _validate_return_types(cls, match_cases: list[list[Var]]) -> None:
         """Validate that match cases have the same return types.
 
         Args:
@@ -178,13 +176,13 @@ class Match(MemoizationLeaf):
         first_case_return = match_cases[0][-1]
         return_type = type(first_case_return)
 
-        if types._isinstance(first_case_return, BaseComponent):
+        if isinstance(first_case_return, BaseComponent):
             return_type = BaseComponent
-        elif types._isinstance(first_case_return, Var):
+        elif isinstance(first_case_return, Var):
             return_type = Var
 
         for index, case in enumerate(match_cases):
-            if not types._issubclass(type(case[-1]), return_type):
+            if not isinstance(case[-1], return_type):
                 raise MatchTypeError(
                     f"Match cases should have the same return types. Case {index} with return "
                     f"value `{case[-1]._js_expr if isinstance(case[-1], Var) else textwrap.shorten(str(case[-1]), width=250)}`"
@@ -195,9 +193,9 @@ class Match(MemoizationLeaf):
     def _create_match_cond_var_or_component(
         cls,
         match_cond_var: Var,
-        match_cases: List[List[Var]],
-        default: Optional[Union[Var, BaseComponent]],
-    ) -> Union[Component, Var]:
+        match_cases: list[list[Var]],
+        default: Var | BaseComponent | None,
+    ) -> Component | Var:
         """Create and return the match condition var or component.
 
         Args:
@@ -211,38 +209,36 @@ class Match(MemoizationLeaf):
         Raises:
             ValueError: If the return types are not vars when creating a match var for Var types.
         """
-        if default is None and types._issubclass(
-            type(match_cases[0][-1]), BaseComponent
-        ):
+        if default is None and isinstance(match_cases[0][-1], BaseComponent):
             default = Fragment.create()
 
-        if types._issubclass(type(match_cases[0][-1]), BaseComponent):
+        if isinstance(match_cases[0][-1], BaseComponent):
             return Fragment.create(
-                cls(
+                cls._create(
                     cond=match_cond_var,
                     match_cases=match_cases,
                     default=default,
-                    children=[case[-1] for case in match_cases] + [default],  # type: ignore
+                    children=[case[-1] for case in match_cases] + [default],  # pyright: ignore [reportArgumentType]
                 )
             )
 
         # Validate the match cases (as well as the default case) to have Var return types.
         if any(
-            case for case in match_cases if not types._isinstance(case[-1], Var)
-        ) or not types._isinstance(default, Var):
+            case for case in match_cases if not isinstance(case[-1], Var)
+        ) or not isinstance(default, Var):
             raise ValueError("Return types of match cases should be Vars.")
 
         return Var(
             _js_expr=format.format_match(
                 cond=str(match_cond_var),
                 match_cases=match_cases,
-                default=default,  # type: ignore
+                default=default,  # pyright: ignore [reportArgumentType]
             ),
-            _var_type=default._var_type,  # type: ignore
+            _var_type=default._var_type,  # pyright: ignore [reportAttributeAccessIssue,reportOptionalMemberAccess]
             _var_data=VarData.merge(
                 match_cond_var._get_all_var_data(),
                 *[el._get_all_var_data() for case in match_cases for el in case],
-                default._get_all_var_data(),  # type: ignore
+                default._get_all_var_data(),  # pyright: ignore [reportAttributeAccessIssue, reportOptionalMemberAccess]
             ),
         )
 

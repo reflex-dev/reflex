@@ -6,16 +6,16 @@ concurrency:
 
 on:
   push:
-    branches: ['main']
+    branches: ["main"]
     # We don't just trigger on make_pyi.py and the components dir, because
     # there are other things that can change the generator output
     # e.g. black version, reflex.Component, reflex.Var.
     paths-ignore:
-      - '**/*.md'
+      - "**/*.md"
   pull_request:
-    branches: ['main']
+    branches: ["main"]
     paths-ignore:
-      - '**/*.md'
+      - "**/*.md"
 
 jobs:
   check-generated-pyi-components:
@@ -25,11 +25,10 @@ jobs:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/setup_build_env
         with:
-          python-version: '3.11.5'
-          run-poetry-install: true
-          create-venv-at-path: .venv
+          python-version: "3.12.8"
+          run-uv-sync: true
       - run: |
-          poetry run python scripts/make_pyi.py
+          uv run python scripts/make_pyi.py
           if [[ $(git status --porcelain) ]]; then
             git status
             git diff
