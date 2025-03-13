@@ -14,6 +14,7 @@ class State(rx.State):
 def index() -> rx.Component:
     # Welcome Page (Index)
     return rx.container(
+        rx.theme_panel(default_open=False),
         rx.color_mode.button(position="top-right"),
         rx.vstack(
             rx.heading("Welcome to Reflex ✨", size="9"),
@@ -29,7 +30,7 @@ def index() -> rx.Component:
                         rx.avatar(src="https://reflex.dev/reflex_banner.png"),
                         rx.box(
                             rx.heading("Quick Start 🚀"),
-                            rx.text("Get started with Reflex before your coffee ☕"),
+                            rx.text("Get started with Reflex in less than 5 mintues"),
                         ),
                         spacing="3",
                     ),
@@ -39,6 +40,7 @@ def index() -> rx.Component:
                 ),
                 as_child=True,
             ),
+            rx.text("Press T to open theme panel"),
             spacing="5",
             justify="center",
             min_height="85vh",
