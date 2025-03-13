@@ -963,10 +963,11 @@ class Config(Base):
                 if key.upper() in _sensitive_env_vars:
                     env_var = "***"
 
-                console.info(
-                    f"Overriding config value {key} with env var {key.upper()}={env_var}",
-                    dedupe=True,
-                )
+                if value != getattr(self, key):
+                    console.info(
+                        f"Overriding config value {key} with env var {key.upper()}={env_var}",
+                        dedupe=True,
+                    )
 
         return updated_values
 
