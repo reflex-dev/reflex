@@ -566,6 +566,7 @@ formatted_router = {
         "sec_websocket_extensions": "",
         "accept_encoding": "",
         "accept_language": "",
+        "raw_headers": {},
     },
     "page": {
         "host": "",
