@@ -1,7 +1,7 @@
 """Lucide Icon component."""
 
 from reflex.components.component import Component
-from reflex.utils import format
+from reflex.utils import console, format
 from reflex.utils.imports import ImportVar
 from reflex.vars.base import LiteralVar, Var
 from reflex.vars.sequence import LiteralStringVar, StringVar
@@ -73,15 +73,18 @@ class Icon(LucideIconComponent):
             if isinstance(tag, str):
                 icons_sorted = sorted(
                     LUCIDE_ICON_LIST,
-                    key=lambda s: format.length_of_largest_common_substring(tag, s),
+                    key=lambda s, tag=tag: format.length_of_largest_common_substring(
+                        tag, s
+                    ),
                     reverse=True,
                 )
             else:
                 icons_sorted = LUCIDE_ICON_LIST
-            raise ValueError(
-                f"Invalid icon tag: {tag}. Please use one of the following: {', '.join(icons_sorted[0:25])}, ..."
-                "\nSee full list at https://reflex.dev/docs/library/data-display/icon/#icons-list."
+            console.warn(
+                f"Invalid icon tag: {tag}. Please use one of the following: {', '.join(icons_sorted[0:10])}, ..."
+                "\nSee full list at https://reflex.dev/docs/library/data-display/icon/#icons-list. Using 'circle-help' icon instead."
             )
+            tag = "circle-help"
 
         if tag in LUCIDE_ICON_MAPPING_OVERRIDE:
             props["tag"] = LUCIDE_ICON_MAPPING_OVERRIDE[tag]
