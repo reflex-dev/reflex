@@ -1,7 +1,8 @@
 # simple-one-port
 
 This docker deployment runs Reflex in prod mode, exposing a single HTTP port:
-  * `8080` (`$PORT`) - Caddy server hosting the frontend statically and proxying requests to the backend.
+
+- `8080` (`$PORT`) - Caddy server hosting the frontend statically and proxying requests to the backend.
 
 The deployment also runs a local Redis server to store state for each user.
 

@@ -18,3 +18,4 @@ reflex.db
 .codspeed
 .env
 .env.*
+node_modules

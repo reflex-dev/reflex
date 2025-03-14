@@ -27,7 +27,6 @@ jobs:
           run-uv-sync: true
 
       # TODO pre-commit related stuff can be cached too (not a bottleneck yet)
-      - run:
-          uv run pre-commit run --all-files
+      - run: uv run pre-commit run --all-files
         env:
           SKIP: update-pyi-files

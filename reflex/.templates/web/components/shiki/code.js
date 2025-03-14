@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react"
-import { codeToHtml} from "shiki"
+import { useEffect, useState } from "react";
+import { codeToHtml } from "shiki";
 
 /**
  * Code component that uses Shiki to convert code to HTML and render it.
@@ -12,23 +12,28 @@ import { codeToHtml} from "shiki"
  * @param divProps - Additional properties to be passed to the div element.
  * @returns The rendered code block.
  */
-export function Code ({code, theme, language, transformers, decorations, ...divProps}) {
-    const [codeResult, setCodeResult] = useState("")
-    useEffect(() => {
-        async function fetchCode() {
-          const result = await codeToHtml(code, {
-            lang: language,
-            theme,
-            transformers,
-            decorations
-          });
-          setCodeResult(result);
-        }
-        fetchCode();
-      }, [code, language, theme, transformers, decorations]
-
-    )
-    return (
-        <div dangerouslySetInnerHTML={{__html: codeResult}} {...divProps}  ></div>
-    )
+export function Code({
+  code,
+  theme,
+  language,
+  transformers,
+  decorations,
+  ...divProps
+}) {
+  const [codeResult, setCodeResult] = useState("");
+  useEffect(() => {
+    async function fetchCode() {
+      const result = await codeToHtml(code, {
+        lang: language,
+        theme,
+        transformers,
+        decorations,
+      });
+      setCodeResult(result);
+    }
+    fetchCode();
+  }, [code, language, theme, transformers, decorations]);
+  return (
+    <div dangerouslySetInnerHTML={{ __html: codeResult }} {...divProps}></div>
+  );
 }

@@ -6,20 +6,20 @@ concurrency:
 
 on:
   push:
-    branches: ['main']
+    branches: ["main"]
     paths-ignore:
-      - '**/*.md'
+      - "**/*.md"
   pull_request:
-    branches: ['main']
+    branches: ["main"]
     paths-ignore:
-      - '**/*.md'
+      - "**/*.md"
 
 permissions:
   contents: read
 
 env:
   TELEMETRY_ENABLED: false
-  NODE_OPTIONS: '--max_old_space_size=4096'
+  NODE_OPTIONS: "--max_old_space_size=4096"
 
 jobs:
   example-counter-wsl:

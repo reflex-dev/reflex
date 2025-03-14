@@ -7,7 +7,7 @@ services:
     environment:
       POSTGRES_PASSWORD: secret
     volumes:
-       - postgres-data:/var/lib/postgresql/data
+      - postgres-data:/var/lib/postgresql/data
 
   redis:
     image: redis

@@ -48,7 +48,7 @@ export function formatCell(value, column) {
       };
     default:
       console.log(
-        "Warning: column.type is undefined for column.title=" + column.title
+        "Warning: column.type is undefined for column.title=" + column.title,
       );
       return {
         kind: GridCellKind.Text,
