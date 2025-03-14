@@ -11,8 +11,15 @@ from reflex.style import Style
 from reflex.vars import VarData
 from reflex.vars.base import LiteralVar, Var
 
+style_var = rx.Var.create({"height": "42px"})
+
 test_style = [
     ({"a": 1}, {"a": 1}),
+    ({"&": style_var}, {"&": {"height": "42px"}}),
+    (
+        {"&": rx.cond(style_var, style_var, {})},
+        {"&": rx.cond(style_var, style_var, {})},
+    ),
     ({"a": LiteralVar.create("abc")}, {"a": "abc"}),
     ({"test_case": 1}, {"testCase": 1}),
     ({"test_case": {"a": 1}}, {"test_case": {"a": 1}}),

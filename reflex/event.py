@@ -37,7 +37,12 @@ from reflex.utils.exceptions import (
     EventHandlerArgTypeMismatchError,
     MissingAnnotationError,
 )
-from reflex.utils.types import ArgsSpec, GenericType, typehint_issubclass
+from reflex.utils.types import (
+    ArgsSpec,
+    GenericType,
+    safe_issubclass,
+    typehint_issubclass,
+)
 from reflex.vars import VarData
 from reflex.vars.base import LiteralVar, Var
 from reflex.vars.function import (
@@ -424,7 +429,7 @@ class EventChain(EventActionsMixin):
                 return value
             elif isinstance(value, EventVar):
                 value = [value]
-            elif issubclass(value._var_type, (EventChain, EventSpec)):
+            elif safe_issubclass(value._var_type, (EventChain, EventSpec)):
                 return cls.create(
                     value=value.guess_type(),
                     args_spec=args_spec,

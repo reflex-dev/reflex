@@ -80,6 +80,7 @@ formatted_router = {
         "sec_websocket_extensions": "",
         "accept_encoding": "",
         "accept_language": "",
+        "raw_headers": {},
     },
     "page": {
         "host": "",
@@ -897,6 +898,10 @@ def test_get_headers(test_state, router_data, router_data_headers):
     print(test_state.router.headers)
     assert dataclasses.asdict(test_state.router.headers) == {
         format.to_snake_case(k): v for k, v in router_data_headers.items()
+    } | {
+        "raw_headers": {
+            "_data": tuple(sorted((k, v) for k, v in router_data_headers.items()))
+        }
     }
 
 

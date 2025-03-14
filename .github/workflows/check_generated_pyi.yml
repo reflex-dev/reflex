@@ -26,10 +26,9 @@ jobs:
       - uses: ./.github/actions/setup_build_env
         with:
           python-version: "3.12.8"
-          run-poetry-install: true
-          create-venv-at-path: .venv
+          run-uv-sync: true
       - run: |
-          poetry run python scripts/make_pyi.py
+          uv run python scripts/make_pyi.py
           if [[ $(git status --porcelain) ]]; then
             git status
             git diff
