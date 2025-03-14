@@ -22,8 +22,8 @@ def test_icon_missing_tag():
 
 
 def test_icon_invalid_tag():
-    with pytest.raises(ValueError):
-        _ = Icon.create("invalid-tag")
+    invalid = Icon.create("invalid-tag")
+    assert invalid.tag == "CircleHelpIcon"
 
 
 def test_icon_multiple_children():
