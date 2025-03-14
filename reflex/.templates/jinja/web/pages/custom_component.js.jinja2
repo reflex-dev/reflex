@@ -1,11 +1,14 @@
 {% extends "web/pages/base_page.js.jinja2" %}
 {% from "web/pages/macros.js.jinja2" import renderHooks %}
-{% block export %}
-{% for component in components %}
 
-{% for custom_code in component.custom_code %}
+{% block declaration %}
+{% for custom_code in custom_codes %}
 {{custom_code}}
 {% endfor %}
+{% endblock %}
+
+{% block export %}
+{% for component in components %}
 
 export const {{component.name}} = memo(({ {{-component.props|join(", ")-}} }) => {
     {{ renderHooks(component.hooks) }}
