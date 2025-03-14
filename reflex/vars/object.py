@@ -202,6 +202,12 @@ class ObjectVar(Var[OBJECT_TYPE], python_types=Mapping):
         key: Var | Any,
     ) -> ObjectVar[Mapping[OTHER_KEY_TYPE, VALUE_TYPE]]: ...
 
+    @overload
+    def __getitem__(
+        self: ObjectVar[Mapping[Any, VALUE_TYPE]],
+        key: Var | Any,
+    ) -> Var[VALUE_TYPE]: ...
+
     def __getitem__(self, key: Var | Any) -> Var:
         """Get an item from the object.
 
