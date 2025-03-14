@@ -6,8 +6,6 @@ from reflex import constants
 from reflex.config import environment, get_config
 from reflex.utils import build, console, exec, prerequisites, telemetry
 
-config = get_config()
-
 
 def export(
     zipping: bool = True,
@@ -33,6 +31,8 @@ def export(
         env: The environment to use. Defaults to constants.Env.PROD.
         loglevel: The log level to use. Defaults to console._LOG_LEVEL.
     """
+    config = get_config()
+
     # Set the log level.
     console.set_log_level(loglevel)
 
