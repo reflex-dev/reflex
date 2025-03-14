@@ -21,7 +21,7 @@ WORKDIR /app
 COPY requirements.txt .
 RUN pip install -r requirements.txt
 
-# Install reflex helper utilities like bun/fnm/node
+# Install reflex helper utilities like bun/node
 COPY rxconfig.py ./
 RUN reflex init
 

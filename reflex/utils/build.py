@@ -212,7 +212,7 @@ def build(
 
     # Start the subprocess with the progress bar.
     process = processes.new_process(
-        [prerequisites.get_package_manager(), "run", command],
+        [*prerequisites.get_js_package_executor(raise_on_none=True)[0], "run", command],
         cwd=wdir,
         shell=constants.IS_WINDOWS,
     )
@@ -248,7 +248,7 @@ def setup_frontend(
     if disable_telemetry:
         processes.new_process(
             [
-                prerequisites.get_package_manager(),
+                *prerequisites.get_js_package_executor(raise_on_none=True)[0],
                 "run",
                 "next",
                 "telemetry",

@@ -19,7 +19,6 @@ import typer
 from packaging import version
 
 from reflex import constants
-from reflex.base import Base
 from reflex.config import environment
 from reflex.event import EventHandler
 from reflex.state import BaseState
@@ -497,96 +496,6 @@ def test_validate_app_name(tmp_path, mocker):
 
     with pytest.raises(typer.Exit):
         prerequisites.validate_app_name(app_name="1_test")
-
-
-def test_node_install_windows(tmp_path, mocker):
-    """Require user to install node manually for windows if node is not installed.
-
-    Args:
-        tmp_path: Test working dir.
-        mocker: Pytest mocker object.
-    """
-    fnm_root_path = tmp_path / "reflex" / "fnm"
-    fnm_exe = fnm_root_path / "fnm.exe"
-
-    mocker.patch("reflex.utils.prerequisites.constants.Fnm.DIR", fnm_root_path)
-    mocker.patch("reflex.utils.prerequisites.constants.Fnm.EXE", fnm_exe)
-    mocker.patch("reflex.utils.prerequisites.constants.IS_WINDOWS", True)
-    mocker.patch("reflex.utils.processes.new_process")
-    mocker.patch("reflex.utils.processes.stream_logs")
-
-    class Resp(Base):
-        status_code = 200
-        text = "test"
-
-    mocker.patch("httpx.stream", return_value=Resp())
-    download = mocker.patch("reflex.utils.prerequisites.download_and_extract_fnm_zip")
-    mocker.patch("reflex.utils.prerequisites.zipfile.ZipFile")
-    mocker.patch("reflex.utils.prerequisites.path_ops.rm")
-
-    prerequisites.install_node()
-
-    assert fnm_root_path.exists()
-    download.assert_called_once()
-
-
-@pytest.mark.parametrize(
-    "machine, system",
-    [
-        ("x64", "Darwin"),
-        ("arm64", "Darwin"),
-        ("x64", "Windows"),
-        ("arm64", "Windows"),
-        ("armv7", "Linux"),
-        ("armv8-a", "Linux"),
-        ("armv8.1-a", "Linux"),
-        ("armv8.2-a", "Linux"),
-        ("armv8.3-a", "Linux"),
-        ("armv8.4-a", "Linux"),
-        ("aarch64", "Linux"),
-        ("aarch32", "Linux"),
-    ],
-)
-def test_node_install_unix(tmp_path, mocker, machine, system):
-    fnm_root_path = tmp_path / "reflex" / "fnm"
-    fnm_exe = fnm_root_path / "fnm"
-
-    mocker.patch("reflex.utils.prerequisites.constants.Fnm.DIR", fnm_root_path)
-    mocker.patch("reflex.utils.prerequisites.constants.Fnm.EXE", fnm_exe)
-    mocker.patch("reflex.utils.prerequisites.constants.IS_WINDOWS", False)
-    mocker.patch("reflex.utils.prerequisites.platform.machine", return_value=machine)
-    mocker.patch("reflex.utils.prerequisites.platform.system", return_value=system)
-
-    class Resp(Base):
-        status_code = 200
-        text = "test"
-
-    mocker.patch("httpx.stream", return_value=Resp())
-    download = mocker.patch("reflex.utils.prerequisites.download_and_extract_fnm_zip")
-    process = mocker.patch("reflex.utils.processes.new_process")
-    chmod = mocker.patch("pathlib.Path.chmod")
-    mocker.patch("reflex.utils.processes.stream_logs")
-
-    prerequisites.install_node()
-
-    assert fnm_root_path.exists()
-    download.assert_called_once()
-    if system == "Darwin" and machine == "arm64":
-        process.assert_called_with(
-            [
-                fnm_exe,
-                "install",
-                "--arch=arm64",
-                constants.Node.VERSION,
-                "--fnm-dir",
-                fnm_root_path,
-            ]
-        )
-    else:
-        process.assert_called_with(
-            [fnm_exe, "install", constants.Node.VERSION, "--fnm-dir", fnm_root_path]
-        )
-    chmod.assert_called_once()
 
 
 def test_bun_install_without_unzip(mocker):
