@@ -6345,6 +6345,17 @@ class SVG(ComponentNamespace):
         """
         ...
 
+text = Text.create
+line = Line.create
+circle = Circle.create
+ellipse = Ellipse.create
+rect = Rect.create
+polygon = Polygon.create
+path = Path.create
+stop = Stop.create
+linear_gradient = LinearGradient.create
+radial_gradient = RadialGradient.create
+defs = Defs.create
 area = Area.create
 audio = Audio.create
 image = img = Img.create

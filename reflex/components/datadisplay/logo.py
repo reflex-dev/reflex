@@ -18,7 +18,7 @@ def svg_logo(
     """
 
     def logo_path(d: str):
-        return rx.el.svg.path(d=d)
+        return rx.el.path(d=d)
 
     paths = [
         "M0 11.5999V0.399902H8.96V4.8799H6.72V2.6399H2.24V4.8799H6.72V7.1199H2.24V11.5999H0ZM6.72 11.5999V7.1199H8.96V11.5999H6.72Z",
