@@ -23,7 +23,7 @@ cd reflex
 
 **3. Install your local Reflex build:**
 
-``` bash
+```bash
 uv sync
 ```
 
@@ -38,7 +38,7 @@ cd examples
 
 **5. Init and Run**
 
-``` bash
+```bash
 uv run reflex init
 uv run reflex run
 ```
@@ -68,13 +68,13 @@ Before submitting, a pull request, ensure the following steps are taken and test
 In your `reflex` directory run make sure all the unit tests are still passing using the following command.
 This will fail if code coverage is below 70%.
 
-``` bash
-uv run pytest tests/units --cov --no-cov-on-fail --cov-report= 
+```bash
+uv run pytest tests/units --cov --no-cov-on-fail --cov-report=
 ```
 
 Next make sure all the following tests pass. This ensures that every new change has proper documentation and type checking.
 
-``` bash
+```bash
 uv run ruff check .
 uv run pyright reflex tests
 find reflex tests -name "*.py" -not -path reflex/reflex.py | xargs uv run darglint
@@ -82,7 +82,7 @@ find reflex tests -name "*.py" -not -path reflex/reflex.py | xargs uv run dargli
 
 Finally, run `ruff` to format your code.
 
-``` bash
+```bash
 uv run ruff format .
 ```
 
@@ -109,6 +109,6 @@ For some pull requests when adding new components you will have to generate a py
 
 (Please check in with the team before adding a new component to Reflex we are cautious about adding new components to Reflex's core.)
 
-``` bash
-uv run python scripts/make_pyi.py 
+```bash
+uv run python scripts/make_pyi.py
 ```
