@@ -100,8 +100,9 @@ class Foreach(Component):
             component.children = [component._render().render_component()]
         except UntypedVarError as e:
             raise UntypedVarError(
-                f"Could not foreach over var `{iterable!s}` without a type annotation. "
-                "See https://reflex.dev/docs/library/dynamic-rendering/foreach/"
+                iterable,
+                "foreach",
+                "https://reflex.dev/docs/library/dynamic-rendering/foreach/",
             ) from e
         return component
 

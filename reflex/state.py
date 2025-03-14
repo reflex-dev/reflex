@@ -1013,9 +1013,9 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
 
         if not types.is_valid_var_type(prop._var_type):
             raise VarTypeError(
-                "State vars must be primitive Python types, "
-                "Plotly figures, Pandas dataframes, "
-                "or subclasses of rx.Base. "
+                "State vars must be of a serializable type. "
+                "Valid types include strings, numbers, booleans, lists, "
+                "dictionaries, dataclasses, datetime objects, and pydantic models. "
                 f'Found var "{prop._js_expr}" with type {prop._var_type}.'
             )
         cls._set_var(prop)
