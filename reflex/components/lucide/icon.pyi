@@ -103,7 +103,6 @@ class Icon(LucideIconComponent):
 
         Raises:
             AttributeError: The errors tied to bad usage of the Icon component.
-            ValueError: If the icon tag is invalid.
             TypeError: If the icon name is not a string.
 
         Returns:

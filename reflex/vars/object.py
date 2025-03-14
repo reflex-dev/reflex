@@ -202,6 +202,12 @@ class ObjectVar(Var[OBJECT_TYPE], python_types=Mapping):
         key: Var | Any,
     ) -> ObjectVar[Mapping[OTHER_KEY_TYPE, VALUE_TYPE]]: ...
 
+    @overload
+    def __getitem__(
+        self: ObjectVar[Mapping[Any, VALUE_TYPE]],
+        key: Var | Any,
+    ) -> Var[VALUE_TYPE]: ...
+
     def __getitem__(self, key: Var | Any) -> Var:
         """Get an item from the object.
 
@@ -220,6 +226,29 @@ class ObjectVar(Var[OBJECT_TYPE], python_types=Mapping):
         if isinstance(key, str) and isinstance(Var.create(key), LiteralStringVar):
             return self.__getattr__(key)
         return ObjectItemOperation.create(self, key).guess_type()
+
+    def get(self, key: Var | Any, default: Var | Any | None = None) -> Var:
+        """Get an item from the object.
+
+        Args:
+            key: The key to get from the object.
+            default: The default value if the key is not found.
+
+        Returns:
+            The item from the object.
+        """
+        from reflex.components.core.cond import cond
+
+        if default is None:
+            default = Var.create(None)
+
+        value = self.__getitem__(key)  # pyright: ignore[reportUnknownVariableType,reportAttributeAccessIssue,reportUnknownMemberType]
+
+        return cond(  # pyright: ignore[reportUnknownVariableType]
+            value,
+            value,
+            default,
+        )
 
     # NoReturn is used here to catch when key value is Any
     @overload

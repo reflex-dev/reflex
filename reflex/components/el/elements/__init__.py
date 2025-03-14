@@ -66,6 +66,17 @@ _MAPPING = {
         "portal",
         "source",
         "svg",
+        "text",
+        "line",
+        "circle",
+        "ellipse",
+        "rect",
+        "polygon",
+        "path",
+        "stop",
+        "linear_gradient",
+        "radial_gradient",
+        "defs",
     ],
     "metadata": [
         "base",
@@ -128,7 +139,15 @@ _MAPPING = {
 
 EXCLUDE = ["del_", "Del", "image"]
 for v in _MAPPING.values():
-    v.extend([mod.capitalize() for mod in v if mod not in EXCLUDE])
+    from reflex.utils.format import to_camel_case
+
+    v.extend(
+        [
+            to_camel_case(mod)[0].upper() + to_camel_case(mod)[1:]
+            for mod in v
+            if mod not in EXCLUDE
+        ]
+    )
 
 _SUBMOD_ATTRS: dict[str, list[str]] = _MAPPING
 

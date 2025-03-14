@@ -13,17 +13,13 @@ from reflex import constants
 from reflex.config import environment, get_config
 from reflex.custom_components.custom_components import custom_components_cli
 from reflex.state import reset_disk_state_manager
-from reflex.utils import console, telemetry
+from reflex.utils import console, redir, telemetry
 
 # Disable typer+rich integration for help panels
 typer.core.rich = None  # pyright: ignore [reportPrivateImportUsage]
 
 # Create the app.
 cli = typer.Typer(add_completion=False, pretty_exceptions_enable=False)
-
-
-# Get the config.
-config = get_config()
 
 
 def version(value: bool):
@@ -58,17 +54,27 @@ def main(
 def _init(
     name: str,
     template: str | None = None,
-    loglevel: constants.LogLevel = config.loglevel,
+    loglevel: constants.LogLevel | None = None,
     ai: bool = False,
 ):
     """Initialize a new Reflex app in the given directory."""
     from reflex.utils import exec, prerequisites
 
+    if loglevel is not None:
+        console.set_log_level(loglevel)
+
+    config = get_config()
+
     # Set the log level.
+    loglevel = loglevel or config.loglevel
     console.set_log_level(loglevel)
 
     # Show system info
     exec.output_system_info()
+
+    if ai:
+        redir.reflex_build_redirect()
+        return
 
     # Validate the app name.
     app_name = prerequisites.validate_app_name(name)
@@ -83,7 +89,7 @@ def _init(
     prerequisites.initialize_frontend_dependencies()
 
     # Initialize the app.
-    template = prerequisites.initialize_app(app_name, template, ai)
+    template = prerequisites.initialize_app(app_name, template)
 
     # Initialize the .gitignore.
     prerequisites.initialize_gitignore()
@@ -105,8 +111,8 @@ def init(
         None,
         help="The template to initialize the app with.",
     ),
-    loglevel: constants.LogLevel = typer.Option(
-        config.loglevel, help="The log level to use."
+    loglevel: constants.LogLevel | None = typer.Option(
+        None, help="The log level to use."
     ),
     ai: bool = typer.Option(
         False,
@@ -123,11 +129,19 @@ def _run(
     backend: bool = True,
     frontend_port: int | None = None,
     backend_port: int | None = None,
-    backend_host: str = config.backend_host,
-    loglevel: constants.LogLevel = config.loglevel,
+    backend_host: str | None = None,
+    loglevel: constants.LogLevel | None = None,
 ):
     """Run the app in the given directory."""
     from reflex.utils import build, exec, prerequisites, processes
+
+    if loglevel is not None:
+        console.set_log_level(loglevel)
+
+    config = get_config()
+
+    loglevel = loglevel or config.loglevel
+    backend_host = backend_host or config.backend_host
 
     # Set the log level.
     console.set_log_level(loglevel)
@@ -270,27 +284,35 @@ def run(
         help="Execute only backend.",
         envvar=environment.REFLEX_BACKEND_ONLY.name,
     ),
-    frontend_port: int = typer.Option(
-        config.frontend_port,
+    frontend_port: int | None = typer.Option(
+        None,
         help="Specify a different frontend port.",
         envvar=environment.REFLEX_FRONTEND_PORT.name,
     ),
-    backend_port: int = typer.Option(
-        config.backend_port,
+    backend_port: int | None = typer.Option(
+        None,
         help="Specify a different backend port.",
         envvar=environment.REFLEX_BACKEND_PORT.name,
     ),
-    backend_host: str = typer.Option(
-        config.backend_host, help="Specify the backend host."
-    ),
-    loglevel: constants.LogLevel = typer.Option(
-        config.loglevel, help="The log level to use."
+    backend_host: str | None = typer.Option(None, help="Specify the backend host."),
+    loglevel: constants.LogLevel | None = typer.Option(
+        None, help="The log level to use."
     ),
 ):
     """Run the app in the current directory."""
     if frontend and backend:
         console.error("Cannot use both --frontend-only and --backend-only options.")
         raise typer.Exit(1)
+
+    if loglevel is not None:
+        console.set_log_level(loglevel)
+
+    config = get_config()
+
+    frontend_port = frontend_port or config.frontend_port
+    backend_port = backend_port or config.backend_port
+    backend_host = backend_host or config.backend_host
+    loglevel = loglevel or config.loglevel
 
     environment.REFLEX_COMPILE_CONTEXT.set(constants.CompileContext.RUN)
     environment.REFLEX_BACKEND_ONLY.set(backend)
@@ -331,8 +353,8 @@ def export(
     env: constants.Env = typer.Option(
         constants.Env.PROD, help="The environment to export the app in."
     ),
-    loglevel: constants.LogLevel = typer.Option(
-        config.loglevel, help="The log level to use."
+    loglevel: constants.LogLevel | None = typer.Option(
+        None, help="The log level to use."
     ),
 ):
     """Export the app to a zip file."""
@@ -343,8 +365,11 @@ def export(
 
     frontend, backend = prerequisites.check_running_mode(frontend, backend)
 
+    loglevel = loglevel or get_config().loglevel
+    console.set_log_level(loglevel)
+
     if prerequisites.needs_reinit(frontend=frontend or not backend):
-        _init(name=config.app_name, loglevel=loglevel)
+        _init(name=get_config().app_name, loglevel=loglevel)
 
     export_utils.export(
         zipping=zipping,
@@ -358,9 +383,13 @@ def export(
 
 
 @cli.command()
-def login(loglevel: constants.LogLevel = typer.Option(config.loglevel)):
+def login(loglevel: constants.LogLevel | None = typer.Option(None)):
     """Authenticate with experimental Reflex hosting service."""
     from reflex_cli.v2 import cli as hosting_cli
+
+    loglevel = loglevel or get_config().loglevel
+
+    console.set_log_level(loglevel)
 
     check_version()
 
@@ -372,14 +401,16 @@ def login(loglevel: constants.LogLevel = typer.Option(config.loglevel)):
 
 @cli.command()
 def logout(
-    loglevel: constants.LogLevel = typer.Option(
-        config.loglevel, help="The log level to use."
+    loglevel: constants.LogLevel | None = typer.Option(
+        None, help="The log level to use."
     ),
 ):
     """Log out of access to Reflex hosting service."""
     from reflex_cli.v2.cli import logout
 
     check_version()
+
+    loglevel = loglevel or get_config().loglevel
 
     logout(loglevel)  # pyright: ignore [reportArgumentType]
 
@@ -398,6 +429,8 @@ def db_init():
     """Create database schema and migration configuration."""
     from reflex import model
     from reflex.utils import prerequisites
+
+    config = get_config()
 
     # Check the database url.
     if config.db_url is None:
@@ -466,8 +499,8 @@ def makemigrations(
 
 @cli.command()
 def deploy(
-    app_name: str = typer.Option(
-        config.app_name,
+    app_name: str | None = typer.Option(
+        None,
         "--app-name",
         help="The name of the App to deploy under.",
     ),
@@ -506,8 +539,8 @@ def deploy(
         "--envfile",
         help="The path to an env file to use. Will override any envs set manually.",
     ),
-    loglevel: constants.LogLevel = typer.Option(
-        config.loglevel, help="The log level to use."
+    loglevel: constants.LogLevel | None = typer.Option(
+        None, help="The log level to use."
     ),
     project: str | None = typer.Option(
         None,
@@ -537,6 +570,14 @@ def deploy(
 
     from reflex.utils import export as export_utils
     from reflex.utils import prerequisites
+
+    if loglevel is not None:
+        console.set_log_level(loglevel)
+
+    config = get_config()
+
+    loglevel = loglevel or config.loglevel
+    app_name = app_name or config.app_name
 
     check_version()
 
@@ -604,12 +645,14 @@ def deploy(
 @cli.command()
 def rename(
     new_name: str = typer.Argument(..., help="The new name for the app."),
-    loglevel: constants.LogLevel = typer.Option(
-        config.loglevel, help="The log level to use."
+    loglevel: constants.LogLevel | None = typer.Option(
+        None, help="The log level to use."
     ),
 ):
     """Rename the app in the current directory."""
     from reflex.utils import prerequisites
+
+    loglevel = loglevel or get_config().loglevel
 
     prerequisites.validate_app_name(new_name)
     prerequisites.rename_app(new_name, loglevel)

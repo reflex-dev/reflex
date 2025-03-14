@@ -6,12 +6,13 @@ Azure, AWS, or Google Cloud Run.
 ## Architecture
 
 The production deployment consists of a few pieces:
-  * Backend container - built by `Dockerfile` Runs the Reflex backend
-    service on port 8000 and is scalable to multiple instances.
-  * Redis container - A single instance the standard `redis` docker image should
-    share private networking with the backend
-  * Static frontend - HTML/CSS/JS files that are hosted via a CDN or static file
-    server. This is not included in the docker image.
+
+- Backend container - built by `Dockerfile` Runs the Reflex backend
+  service on port 8000 and is scalable to multiple instances.
+- Redis container - A single instance the standard `redis` docker image should
+  share private networking with the backend
+- Static frontend - HTML/CSS/JS files that are hosted via a CDN or static file
+  server. This is not included in the docker image.
 
 ## Deployment
 
@@ -37,7 +38,7 @@ the redis service.
 
 ### Ingress
 
-Configure the load balancer for the app to forward traffic to port 8000 on the 
+Configure the load balancer for the app to forward traffic to port 8000 on the
 backend service replicas. Most platforms will generate an ingress hostname
 automatically. Make sure when you access the ingress endpoint on `/ping` that it
 returns "pong", indicating that the backend is up an available.
@@ -95,19 +96,19 @@ container volume. Use Azure Files and mount it into the container at /app/upload
 
 #### Resource Types
 
-* Create a new vnet with 10.0.0.0/16
-  * Create a new subnet for redis, database, and containers
-* Deploy redis as a Container Instances
-* Deploy database server as "Azure Database for PostgreSQL"
-  * Create a new database for the app
-  * Set db-url as a secret containing the db user/password connection string
-* Deploy Storage account for uploaded files
-  * Enable access from the vnet and container subnet
-  * Create a new file share
-  * In the environment, create a new files share (get the storage key)
-* Deploy the backend as a Container App
-  * Create a custom Container App Environment linked up to the same vnet as the redis container.
-  * Set REDIS_URL and DB_URL environment variables
-  * Add the volume from the environment
-  * Add the volume mount to the container
-* Deploy the frontend as a Static Web App
+- Create a new vnet with 10.0.0.0/16
+  - Create a new subnet for redis, database, and containers
+- Deploy redis as a Container Instances
+- Deploy database server as "Azure Database for PostgreSQL"
+  - Create a new database for the app
+  - Set db-url as a secret containing the db user/password connection string
+- Deploy Storage account for uploaded files
+  - Enable access from the vnet and container subnet
+  - Create a new file share
+  - In the environment, create a new files share (get the storage key)
+- Deploy the backend as a Container App
+  - Create a custom Container App Environment linked up to the same vnet as the redis container.
+  - Set REDIS_URL and DB_URL environment variables
+  - Add the volume from the environment
+  - Add the volume mount to the container
+- Deploy the frontend as a Static Web App

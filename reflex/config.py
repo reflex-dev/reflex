@@ -34,6 +34,7 @@ from reflex_cli.constants.hosting import Hosting
 
 from reflex import constants
 from reflex.base import Base
+from reflex.constants.base import LogLevel
 from reflex.utils import console
 from reflex.utils.exceptions import ConfigError, EnvironmentVarValueError
 from reflex.utils.types import (
@@ -874,6 +875,13 @@ class Config(Base):
         """
         super().__init__(*args, **kwargs)
 
+        # Set the log level for this process
+        env_loglevel = os.environ.get("LOGLEVEL")
+        if env_loglevel is not None:
+            env_loglevel = LogLevel(env_loglevel)
+        if env_loglevel or self.loglevel != LogLevel.DEFAULT:
+            console.set_log_level(env_loglevel or self.loglevel)
+
         # Update the config from environment variables.
         env_kwargs = self.update_from_env()
         for key, env_value in env_kwargs.items():
@@ -883,9 +891,6 @@ class Config(Base):
         kwargs.update(env_kwargs)
         self._non_default_attributes.update(kwargs)
         self._replace_defaults(**kwargs)
-
-        # Set the log level for this process
-        console.set_log_level(self.loglevel)
 
         if (
             self.state_manager_mode == constants.StateManagerMode.REDIS
@@ -955,10 +960,11 @@ class Config(Base):
                 if key.upper() in _sensitive_env_vars:
                     env_var = "***"
 
-                console.info(
-                    f"Overriding config value {key} with env var {key.upper()}={env_var}",
-                    dedupe=True,
-                )
+                if value != getattr(self, key):
+                    console.info(
+                        f"Overriding config value {key} with env var {key.upper()}={env_var}",
+                        dedupe=True,
+                    )
 
         return updated_values
 

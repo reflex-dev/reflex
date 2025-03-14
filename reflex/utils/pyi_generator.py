@@ -348,7 +348,7 @@ def _extract_class_props_as_ast_nodes(
     all_props = []
     kwargs = []
     for target_class in clzs:
-        event_triggers = target_class().get_event_triggers()
+        event_triggers = target_class._create([]).get_event_triggers()
         # Import from the target class to ensure type hints are resolvable.
         exec(f"from {target_class.__module__} import *", type_hint_globals)
         for name, value in target_class.__annotations__.items():
@@ -575,7 +575,7 @@ def _generate_component_create_functiondef(
             return ast.Name(id=f"{' | '.join(map(ast.unparse, all_count_args_type))}")
         return ast.Name(id="EventType[Any]")
 
-    event_triggers = clz().get_event_triggers()
+    event_triggers = clz._create([]).get_event_triggers()
 
     # event handler kwargs
     kwargs.extend(

@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any, Literal, Type
+from typing import Any, Literal, Mapping, Type
 
 from reflex import constants
 from reflex.components.core.breakpoints import Breakpoints, breakpoints_values
@@ -10,7 +10,7 @@ from reflex.event import EventChain, EventHandler, EventSpec, run_script
 from reflex.utils import format
 from reflex.utils.exceptions import ReflexError
 from reflex.utils.imports import ImportVar
-from reflex.utils.types import get_origin
+from reflex.utils.types import typehint_issubclass
 from reflex.vars import VarData
 from reflex.vars.base import LiteralVar, Var
 from reflex.vars.function import FunctionVar
@@ -189,7 +189,7 @@ def convert(
             or (isinstance(value, list) and all(not isinstance(v, dict) for v in value))
             or (
                 isinstance(value, ObjectVar)
-                and not issubclass(get_origin(value._var_type) or value._var_type, dict)
+                and not typehint_issubclass(value._var_type, Mapping)
             )
             else (key,)
         )

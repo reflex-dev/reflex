@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import contextlib
+import copy
 import dataclasses
 import datetime
 import functools
@@ -1255,6 +1256,27 @@ class Var(Generic[VAR_TYPE]):
 
     if not TYPE_CHECKING:
 
+        def __getitem__(self, key: Any) -> Var:
+            """Get the item from the var.
+
+            Args:
+                key: The key to get.
+
+            Raises:
+                UntypedVarError: If the var type is Any.
+                TypeError: If the var type is Any.
+
+            # noqa: DAR101 self
+            """
+            if self._var_type is Any:
+                raise exceptions.UntypedVarError(
+                    self,
+                    f"access the item '{key}'",
+                )
+            raise TypeError(
+                f"Var of type {self._var_type} does not support item access."
+            )
+
         def __getattr__(self, name: str):
             """Get an attribute of the var.
 
@@ -1280,7 +1302,8 @@ class Var(Generic[VAR_TYPE]):
 
             if self._var_type is Any:
                 raise exceptions.UntypedVarError(
-                    f"You must provide an annotation for the state var `{self!s}`. Annotation cannot be `{self._var_type}`."
+                    self,
+                    f"access the attribute '{name}'",
                 )
 
             raise VarAttributeError(
@@ -2146,7 +2169,7 @@ class ComputedVar(Var[RETURN_TYPE]):
             "fget": kwargs.pop("fget", self._fget),
             "initial_value": kwargs.pop("initial_value", self._initial_value),
             "cache": kwargs.pop("cache", self._cache),
-            "deps": kwargs.pop("deps", self._static_deps),
+            "deps": kwargs.pop("deps", copy.copy(self._static_deps)),
             "auto_deps": kwargs.pop("auto_deps", self._auto_deps),
             "interval": kwargs.pop("interval", self._update_interval),
             "backend": kwargs.pop("backend", self._backend),
@@ -2318,7 +2341,7 @@ class ComputedVar(Var[RETURN_TYPE]):
         if not _isinstance(value, self._var_type, nested=1, treat_var_as_type=False):
             console.error(
                 f"Computed var '{type(instance).__name__}.{self._js_expr}' must return"
-                f" type '{self._var_type}', got '{type(value)}'."
+                f" a value of type '{self._var_type}', got '{value}' of type {type(value)}."
             )
 
     def _deps(

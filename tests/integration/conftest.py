@@ -1,37 +1,9 @@
 """Shared conftest for all integration tests."""
 
-import os
-
 import pytest
 
 import reflex.app
-from reflex.config import environment
 from reflex.testing import AppHarness, AppHarnessProd
-
-DISPLAY = None
-XVFB_DIMENSIONS = (800, 600)
-
-
-@pytest.fixture(scope="session", autouse=True)
-def xvfb():
-    """Create virtual X display.
-
-    This function is a no-op unless GITHUB_ACTIONS is set in the environment.
-
-    Yields:
-        the pyvirtualdisplay object that the browser will be open on
-    """
-    if os.environ.get("GITHUB_ACTIONS") and not environment.APP_HARNESS_HEADLESS.get():
-        from pyvirtualdisplay.smartdisplay import (  # pyright: ignore [reportMissingImports]
-            SmartDisplay,
-        )
-
-        global DISPLAY
-        with SmartDisplay(visible=False, size=XVFB_DIMENSIONS) as DISPLAY:
-            yield DISPLAY
-        DISPLAY = None
-    else:
-        yield None
 
 
 @pytest.fixture(
