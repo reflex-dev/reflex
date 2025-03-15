@@ -2,53 +2,62 @@
 name = "reflex"
 version = "0.7.3dev1"
 description = "Web apps in pure Python."
-license = "Apache-2.0"
+license = { text = "Apache-2.0" }
 authors = [
   { name = "Nikhil Rao", email = "nikhil@reflex.dev" },
   { name = "Alek Petuskey", email = "alek@reflex.dev" },
   { name = "Masen Furer", email = "masen@reflex.dev" },
-  { name = "Elijah Ahianyo" },
-  { name = "Thomas Brandého", email = "thomas@reflex.dev" },
+  { name = "Elijah Ahianyo", email = "elijahahianyo@gmail.com" },
+  { name = "Thomas Brandeho", email = "thomas@reflex.dev" },
   { name = "Khaleel Al-Adhami", email = "khaleel@reflex.dev" },
 ]
 maintainers = [
   { name = "Masen Furer", email = "masen@reflex.dev" },
-  { name = "Thomas Brandého", email = "thomas@reflex.dev" },
+  { name = "Thomas Brandeho", email = "thomas@reflex.dev" },
   { name = "Khaleel Al-Adhami", email = "khaleel@reflex.dev" },
 ]
 readme = "README.md"
 keywords = ["web", "framework"]
-requires-python = "<4.0,>=3.10"
+requires-python = ">=3.10,<4.0"
 dependencies = [
+  "alembic >=1.11.1,<2.0",
+  "build >=1.0.3,<2.0",
+  "charset-normalizer >=3.3.2,<4.0",
+  "distro >=1.8.0,<2.0; platform_system == 'Linux'",
   "fastapi >=0.96.0,!=0.111.0,!=0.111.1",
   "gunicorn >=20.1.0,<24.0",
+  "httpx >=0.25.1,<1.0",
   "jinja2 >=3.1.2,<4.0",
+  "lazy_loader >=0.4",
+  "packaging >=23.1,<25.0",
+  "platformdirs >=3.10.0,<5.0",
   "psutil >=5.9.4,<8.0",
   "pydantic >=1.10.21,<3.0",
+  "python-engineio !=4.6.0",
   "python-multipart >=0.0.5,<0.1",
   "python-socketio >=5.7.0,<6.0",
   "redis >=4.3.5,<6.0",
-  "rich >=13.0.0,<14.0",
-  "sqlmodel >=0.0.14,<0.1",
-  "typer >=0.15.1,<1.0",
-  "uvicorn >=0.20.0",
-  "starlette-admin >=0.11.0,<1.0",
-  "alembic >=1.11.1,<2.0",
-  "platformdirs >=3.10.0,<5.0",
-  "distro >=1.8.0,<2.0; platform_system == 'Linux'",
-  "python-engineio !=4.6.0",
-  "wrapt >=1.17.0,<2.0",
-  "packaging >=23.1,<25.0",
   "reflex-hosting-cli >=0.1.29",
-  "charset-normalizer >=3.3.2,<4.0",
-  "wheel >=0.42.0,<1.0",
-  "build >=1.0.3,<2.0",
+  "rich >=13.0.0,<14.0",
   "setuptools >=75.0",
-  "httpx >=0.25.1,<1.0",
-  "twine >=4.0.0,<7.0",
+  "starlette-admin >=0.11.0,<1.0",
+  "sqlmodel >=0.0.14,<0.1",
   "tomlkit >=0.12.4,<1.0",
-  "lazy_loader >=0.4",
+  "twine >=4.0.0,<7.0",
+  "typer >=0.15.1,<1.0",
   "typing_extensions >=4.6.0",
+  "uvicorn >=0.20.0",
+  "wheel >=0.42.0,<1.0",
+  "wrapt >=1.17.0,<2.0",
+]
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "License :: OSI Approved :: Apache Software License",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
 ]
 
 
@@ -60,12 +69,12 @@ documentation = "https://reflex.dev/docs/getting-started/introduction"
 [project.scripts]
 reflex = "reflex.reflex:cli"
 
-
-[tool.pdm.build]
-includes = []
 [build-system]
-requires = ["pdm-backend"]
-build-backend = "pdm.backend"
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build]
+include = ["reflex"]
 
 [tool.pyright]
 reportIncompatibleMethodOverride = false
@@ -131,25 +140,25 @@ dev = [
   "asynctest >=0.13.0,<1.0",
   "darglint >=1.8.1,<2.0",
   "dill >=0.3.8",
+  "granian[reload] >= 2.0.0",
+  "numpy >=2.2.3,<3.0",
   "pandas >=2.1.1,<3.0",
   "pillow >=10.0.0,<12.0",
   "playwright >=1.46.0",
   "plotly >=5.13.0,<6.0",
-  "pre-commit >=3.2.1",
-  "pyright >=1.1.394,<1.2",
+  "pre-commit >=4.1.0,<5.0",
+  "psycopg[binary] >=3.2.6,<4.0",
+  "pyright >=1.1.394,<1.1.395",
   "pytest >=7.1.2,<9.0",
   "pytest-asyncio >=0.24.0",
-  "pytest-mock >=3.10.0,<4.0",
-  "pytest-cov >=4.0.0,<7.0",
   "pytest-benchmark >=4.0.0,<6.0",
-  "pytest-playwright >=0.5.1",
   "pytest-codspeed >=3.1.2,<4.0.0",
+  "pytest-cov >=4.0.0,<7.0",
+  "pytest-mock >=3.10.0,<4.0",
+  "pytest-playwright >=0.5.1",
+  "pytest-retry >=1.7.0,<2.0",
+  "pytest-split >=0.10.0,<1.0",
   "ruff ==0.9.10",
   "selenium >=4.11.0,<5.0",
   "toml >=0.10.2,<1.0",
-  "granian[reload] >= 2.0.0",
-  "psycopg[binary] >=3.2.6,<4.0",
-  "pytest-split >=0.10.0,<1.0",
-  "pytest-retry >=1.7.0,<2.0",
-  "pre-commit >=4.1.0,<5.0",
 ]

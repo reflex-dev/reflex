@@ -1369,15 +1369,15 @@ wheels = [
 
 [[package]]
 name = "pyright"
-version = "1.1.396"
+version = "1.1.394"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "nodeenv" },
     { name = "typing-extensions" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/bd/73/f20cb1dea1bdc1774e7f860fb69dc0718c7d8dea854a345faec845eb086a/pyright-1.1.396.tar.gz", hash = "sha256:142901f5908f5a0895be3d3befcc18bedcdb8cc1798deecaec86ef7233a29b03", size = 3814400 }
+sdist = { url = "https://files.pythonhosted.org/packages/b1/e4/79f4d8a342eed6790fdebdb500e95062f319ee3d7d75ae27304ff995ae8c/pyright-1.1.394.tar.gz", hash = "sha256:56f2a3ab88c5214a451eb71d8f2792b7700434f841ea219119ade7f42ca93608", size = 3809348 }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/80/be/ecb7cfb42d242b7ee764b52e6ff4782beeec00e3b943a3ec832b281f9da6/pyright-1.1.396-py3-none-any.whl", hash = "sha256:c635e473095b9138c471abccca22b9fedbe63858e0b40d4fc4b67da041891844", size = 5689355 },
+    { url = "https://files.pythonhosted.org/packages/d6/4c/50c74e3d589517a9712a61a26143b587dba6285434a17aebf2ce6b82d2c3/pyright-1.1.394-py3-none-any.whl", hash = "sha256:5f74cce0a795a295fb768759bbeeec62561215dea657edcaab48a932b031ddbb", size = 5679540 },
 ]
 
 [[package]]
@@ -1718,6 +1718,7 @@ dev = [
     { name = "darglint" },
     { name = "dill" },
     { name = "granian", extra = ["reload"] },
+    { name = "numpy" },
     { name = "pandas" },
     { name = "pillow" },
     { name = "playwright" },
@@ -1778,14 +1779,14 @@ dev = [
     { name = "darglint", specifier = ">=1.8.1,<2.0" },
     { name = "dill", specifier = ">=0.3.8" },
     { name = "granian", extras = ["reload"], specifier = ">=2.0.0" },
+    { name = "numpy", specifier = ">=2.2.3,<3.0" },
     { name = "pandas", specifier = ">=2.1.1,<3.0" },
     { name = "pillow", specifier = ">=10.0.0,<12.0" },
     { name = "playwright", specifier = ">=1.46.0" },
     { name = "plotly", specifier = ">=5.13.0,<6.0" },
-    { name = "pre-commit", specifier = ">=3.2.1" },
     { name = "pre-commit", specifier = ">=4.1.0,<5.0" },
     { name = "psycopg", extras = ["binary"], specifier = ">=3.2.6,<4.0" },
-    { name = "pyright", specifier = ">=1.1.394,<1.2" },
+    { name = "pyright", specifier = ">=1.1.394,<1.1.395" },
     { name = "pytest", specifier = ">=7.1.2,<9.0" },
     { name = "pytest-asyncio", specifier = ">=0.24.0" },
     { name = "pytest-benchmark", specifier = ">=4.0.0,<6.0" },
