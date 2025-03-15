@@ -1903,6 +1903,10 @@ class EventNamespace(AsyncNamespace):
                 f"Failed to deserialize event data: {fields}."
             ) from ex
 
+        old_sid = self.token_to_sid.get(event.token)
+        if old_sid and old_sid != sid:
+            console.debug(f"Token {event.token} transferring from {old_sid} to {sid}.")
+            await self.disconnect(old_sid)
         self.token_to_sid[event.token] = sid
         self.sid_to_token[sid] = event.token
 
