@@ -74,6 +74,7 @@ class MiddlewareMixin(AppMixin):
         Returns:
             The state update to return.
         """
+        out = update
         for middleware in self._middlewares:
             if asyncio.iscoroutinefunction(middleware.postprocess):
                 out = await middleware.postprocess(
@@ -89,6 +90,4 @@ class MiddlewareMixin(AppMixin):
                     event=event,
                     update=update,
                 )
-            if out is not None:
-                return out  # pyright: ignore [reportReturnType]
-        return update
+        return out  # pyright: ignore[reportReturnType]
