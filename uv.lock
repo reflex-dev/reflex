@@ -1786,7 +1786,7 @@ dev = [
     { name = "plotly", specifier = ">=5.13.0,<6.0" },
     { name = "pre-commit", specifier = ">=4.1.0,<5.0" },
     { name = "psycopg", extras = ["binary"], specifier = ">=3.2.6,<4.0" },
-    { name = "pyright", specifier = ">=1.1.394,<1.1.395" },
+    { name = "pyright", specifier = ">=1.1.394,<1.2" },
     { name = "pytest", specifier = ">=7.1.2,<9.0" },
     { name = "pytest-asyncio", specifier = ">=0.24.0" },
     { name = "pytest-benchmark", specifier = ">=4.0.0,<6.0" },
