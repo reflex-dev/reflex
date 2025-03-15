@@ -31,7 +31,7 @@ from typing import (
     get_type_hints,
 )
 
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import FastAPI, HTTPException, Request, Response
 from fastapi import UploadFile as FastAPIUploadFile
 from fastapi.middleware import cors
 from fastapi.responses import JSONResponse, StreamingResponse
@@ -110,6 +110,12 @@ from reflex.utils import (
 )
 from reflex.utils.exec import get_compile_context, is_prod_mode, is_testing_env
 from reflex.utils.imports import ImportVar
+from reflex.sitemap import (
+    generate_static_sitemap,
+    generate_links_for_sitemap,
+    check_sitemap_file_exists,
+    read_sitemap_file,
+)
 
 if TYPE_CHECKING:
     from reflex.vars import Var
@@ -410,6 +416,8 @@ class App(MiddlewareMixin, LifespanMixin):
     # Put the toast provider in the app wrap.
     toaster: Component | None = dataclasses.field(default_factory=toast.provider)
 
+    sitemap_properties: Dict[str, Dict] = dataclasses.field(default_factory=dict)
+
     @property
     def api(self) -> FastAPI | None:
         """Get the backend api.
@@ -461,6 +469,10 @@ class App(MiddlewareMixin, LifespanMixin):
 
         # Set up the admin dash.
         self._setup_admin_dash()
+
+        # sitemap generation
+        links = generate_links_for_sitemap(self)
+        generate_static_sitemap(links)
 
         if sys.platform == "win32" and not is_prod_mode():
             # Hack to fix Windows hot reload issue.
@@ -586,6 +598,24 @@ class App(MiddlewareMixin, LifespanMixin):
 
         self.api.get(str(constants.Endpoint.PING))(ping)
         self.api.get(str(constants.Endpoint.HEALTH))(health)
+        self.api.get(str(constants.Endpoint.SITEMAP))(self.serve_sitemap)
+
+    async def serve_sitemap(self) -> Response:
+        """Asynchronously serve the sitemap as an XML response.
+
+        This function checks if a sitemap.xml file exists in the root directory of the app. If so, this file is served
+        as a Response. Otherwise, a new sitemap is generated and saved to sitemap.xml before being served.
+
+        Returns:
+            Response: An HTTP response with the XML sitemap content and the media type set to "application/xml".
+        """
+        if not check_sitemap_file_exists():
+            links_sitemaps = generate_links_for_sitemap(self)
+            generate_static_sitemap(links_sitemaps)
+
+        sitemaps = read_sitemap_file()
+
+        return Response(content=sitemaps, media_type="application/xml")
 
     def _add_optional_endpoints(self):
         """Add optional api endpoints (_upload)."""
@@ -663,6 +693,8 @@ class App(MiddlewareMixin, LifespanMixin):
         image: str = constants.DefaultPage.IMAGE,
         on_load: EventType[()] | None = None,
         meta: list[dict[str, str]] = constants.DefaultPage.META_LIST,
+        sitemap_priority: float = constants.DefaultPage.SITEMAP_PRIORITY,
+        sitemap_changefreq: str = constants.DefaultPage.SITEMAP_CHANGEFREQ,
     ):
         """Add a page to the app.
 
@@ -677,6 +709,9 @@ class App(MiddlewareMixin, LifespanMixin):
             image: The image to display on the page.
             on_load: The event handler(s) that will be called each time the page load.
             meta: The metadata of the page.
+            sitemap_priority: The priority of the page in the sitemap. If None, the priority is calculated based on the
+            depth of the route.
+            sitemap_changefreq: The change frequency of the page in the sitemap. Default to 'weekly'
 
         Raises:
             PageValueError: When the component is not set for a non-404 page.
@@ -736,6 +771,11 @@ class App(MiddlewareMixin, LifespanMixin):
                 on_load if isinstance(on_load, list) else [on_load]
             )
 
+        self.sitemap_properties[route] = {
+            "priority": sitemap_priority,
+            "changefreq": sitemap_changefreq,
+        }
+
         self._unevaluated_pages[route] = UnevaluatedPage(
             component=component,
             route=route,
@@ -770,6 +810,14 @@ class App(MiddlewareMixin, LifespanMixin):
         self._check_routes_conflict(route)
         if save_page:
             self._pages[route] = component
+
+    def get_pages(self) -> dict[str, Component]:
+        """Get the pages of the app.
+
+        Returns:
+            The pages of the app.
+        """
+        return self._pages
 
     def get_load_events(self, route: str) -> list[IndividualEventType[()]]:
         """Get the load events for a route.

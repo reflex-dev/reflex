@@ -12,6 +12,7 @@ from pathlib import Path
 from typing import Generator, Type
 from unittest.mock import AsyncMock
 
+import fastapi
 import pytest
 import sqlmodel
 from fastapi import FastAPI, UploadFile
@@ -48,7 +49,7 @@ from reflex.state import (
     _substate_key,
 )
 from reflex.style import Style
-from reflex.utils import exceptions, format
+from reflex.utils import exceptions, format, prerequisites
 from reflex.vars.base import computed_var
 
 from .conftest import chdir
@@ -349,6 +350,20 @@ def test_add_duplicate_page_route_error(app, first_page, second_page, route):
     app.add_page(first_page, route=route)
     with pytest.raises(ValueError):
         app.add_page(second_page, route="/" + route.strip("/") if route else None)
+
+
+def test_add_page_with_sitemap_properties(app):
+    """Test if the sitemap properties of the app instance is set properly or not."""
+    # check with given values.
+    app.add_page(
+        page1, route="/page1", sitemap_priority=0.9, sitemap_changefreq="daily"
+    )
+    assert app.sitemap_properties["page1"] == {"priority": 0.9, "changefreq": "daily"}
+
+    # check default values added.
+    app.add_page(page2, route="/page2")
+    print(app.sitemap_properties)
+    assert app.sitemap_properties["page2"] == {"priority": 10.0, "changefreq": "weekly"}
 
 
 def test_initialize_with_admin_dashboard(test_model):
