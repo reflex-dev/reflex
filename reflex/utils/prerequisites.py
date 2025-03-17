@@ -1611,7 +1611,7 @@ def create_config_init_app_from_remote_template(app_name: str, template_url: str
         console.error(f"Failed to unzip the template: {uze}")
         raise typer.Exit(1) from uze
 
-    if len(subdirs := os.listdir(unzip_dir)) != 1:
+    if len(subdirs := list(unzip_dir.iterdir())) != 1:
         console.error(f"Expected one directory in the zip, found {subdirs}")
         raise typer.Exit(1)
 
