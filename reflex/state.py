@@ -905,7 +905,14 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         ]
         if len(parent_states) >= 2:
             raise ValueError(f"Only one parent state is allowed {parent_states}.")
-        return parent_states[0] if len(parent_states) == 1 else None
+        # The first non-mixin state in the mro is our parent.
+        for base in cls.mro()[1:]:
+            if base._mixin or not issubclass(base, BaseState):
+                continue
+            if base is BaseState:
+                break
+            return base
+        return None  # No known parent
 
     @classmethod
     @functools.lru_cache()
