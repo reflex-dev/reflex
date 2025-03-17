@@ -188,7 +188,7 @@ class PackageJson(SimpleNamespace):
         "react-dom": "19.0.0",
         "react-focus-lock": "2.13.6",
         "socket.io-client": "4.8.1",
-        "universal-cookie": "7.2.2",
+        "universal-cookie": "8.0.0",
     }
     DEV_DEPENDENCIES = {
         "autoprefixer": "10.4.21",
