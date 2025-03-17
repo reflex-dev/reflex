@@ -961,7 +961,7 @@ class Config(Base):
                     env_var = "***"
 
                 if value != getattr(self, key):
-                    console.info(
+                    console.debug(
                         f"Overriding config value {key} with env var {key.upper()}={env_var}",
                         dedupe=True,
                     )

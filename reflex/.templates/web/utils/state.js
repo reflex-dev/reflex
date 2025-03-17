@@ -456,7 +456,7 @@ export const connect = async (
       console.log("Disconnect websocket on unload");
       socket.current.disconnect();
     }
-  }
+  };
 
   const pagehideHandler = (event) => {
     if (event.persisted && socket.current?.connected) {
