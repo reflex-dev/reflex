@@ -28,6 +28,7 @@ dependencies = [
   "gunicorn >=20.1.0,<24.0",
   "httpx >=0.25.1,<1.0",
   "jinja2 >=3.1.2,<4.0",
+  "jsonpatch >=1.33,<2.0",
   "lazy_loader >=0.4",
   "packaging >=23.1,<25.0",
   "platformdirs >=3.10.0,<5.0",
