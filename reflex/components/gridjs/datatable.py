@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Sequence
 
 from reflex.components.component import Component
 from reflex.components.tags import Tag
@@ -32,7 +32,7 @@ class DataTable(Gridjs):
 
     # The list of columns to display. Required if data is a list and should not be provided
     # if the data field is a dataframe
-    columns: Var[List]
+    columns: Var[Sequence]
 
     # Enable a search bar.
     search: Var[bool]
@@ -91,7 +91,7 @@ class DataTable(Gridjs):
         # If data is a list and columns are not provided, throw an error
         if (
             (isinstance(data, Var) and types._issubclass(data._var_type, List))
-            or issubclass(type(data), List)
+            or isinstance(data, list)
         ) and columns is None:
             raise ValueError(
                 "column field should be specified when the data field is a list type"

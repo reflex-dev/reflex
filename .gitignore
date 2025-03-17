@@ -16,3 +16,6 @@ requirements.txt
 .pyi_generator_diff
 reflex.db
 .codspeed
+.env
+.env.*
+node_modules

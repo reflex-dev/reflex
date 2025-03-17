@@ -1,6 +1,7 @@
 import pydantic.v1
 import pytest
 
+import reflex as rx
 from reflex import el
 from reflex.base import Base
 from reflex.components.component import Component
@@ -53,6 +54,11 @@ class ForEachState(BaseState):
     color_index_tuple: tuple[int, str] = (0, "red")
 
     default_factory_list: list[ForEachTag] = pydantic.v1.Field(default_factory=list)
+
+    optional_list: rx.Field[list[str] | None] = rx.field(None)
+    optional_list_value: rx.Field[list[str] | None] = rx.field(["red", "yellow"])
+    optional_dict: rx.Field[dict[str, str] | None] = rx.field(None)
+    optional_dict_value: rx.Field[dict[str, str] | None] = rx.field({"name": "red"})
 
 
 class ComponentStateTest(ComponentState):
@@ -145,7 +151,6 @@ seen_index_vars = set()
             display_color,
             {
                 "iterable_state": f"{ForEachState.get_full_name()}.colors_list",
-                "iterable_type": "list",
             },
         ),
         (
@@ -153,7 +158,6 @@ seen_index_vars = set()
             display_color_name,
             {
                 "iterable_state": f"{ForEachState.get_full_name()}.colors_dict_list",
-                "iterable_type": "list",
             },
         ),
         (
@@ -161,7 +165,6 @@ seen_index_vars = set()
             display_shade,
             {
                 "iterable_state": f"{ForEachState.get_full_name()}.colors_nested_dict_list",
-                "iterable_type": "list",
             },
         ),
         (
@@ -169,7 +172,6 @@ seen_index_vars = set()
             display_primary_colors,
             {
                 "iterable_state": f"Object.entries({ForEachState.get_full_name()}.primary_color)",
-                "iterable_type": "list",
             },
         ),
         (
@@ -177,7 +179,6 @@ seen_index_vars = set()
             display_color_with_shades,
             {
                 "iterable_state": f"Object.entries({ForEachState.get_full_name()}.color_with_shades)",
-                "iterable_type": "list",
             },
         ),
         (
@@ -185,7 +186,6 @@ seen_index_vars = set()
             display_nested_color_with_shades,
             {
                 "iterable_state": f"Object.entries({ForEachState.get_full_name()}.nested_colors_with_shades)",
-                "iterable_type": "list",
             },
         ),
         (
@@ -193,7 +193,6 @@ seen_index_vars = set()
             display_nested_color_with_shades_v2,
             {
                 "iterable_state": f"Object.entries({ForEachState.get_full_name()}.nested_colors_with_shades)",
-                "iterable_type": "list",
             },
         ),
         (
@@ -201,7 +200,6 @@ seen_index_vars = set()
             display_color_tuple,
             {
                 "iterable_state": f"{ForEachState.get_full_name()}.color_tuple",
-                "iterable_type": "tuple",
             },
         ),
         (
@@ -209,7 +207,6 @@ seen_index_vars = set()
             display_colors_set,
             {
                 "iterable_state": f"{ForEachState.get_full_name()}.colors_set",
-                "iterable_type": "set",
             },
         ),
         (
@@ -217,7 +214,6 @@ seen_index_vars = set()
             lambda el, i: display_nested_list_element(el, i),
             {
                 "iterable_state": f"{ForEachState.get_full_name()}.nested_colors_list",
-                "iterable_type": "list",
             },
         ),
         (
@@ -225,7 +221,6 @@ seen_index_vars = set()
             display_color_index_tuple,
             {
                 "iterable_state": f"{ForEachState.get_full_name()}.color_index_tuple",
-                "iterable_type": "tuple",
             },
         ),
     ],
@@ -242,7 +237,6 @@ def test_foreach_render(state_var, render_fn, render_dict):
 
     rend = component.render()
     assert rend["iterable_state"] == render_dict["iterable_state"]
-    assert rend["iterable_type"] == render_dict["iterable_type"]
 
     # Make sure the index vars are unique.
     arg_index = rend["arg_index"]
@@ -305,4 +299,27 @@ def test_foreach_default_factory():
     _ = Foreach.create(
         ForEachState.default_factory_list,
         lambda tag: text(tag.name),
+    )
+
+
+def test_optional_list():
+    """Test that the foreach component works with optional lists."""
+    Foreach.create(
+        ForEachState.optional_list,
+        lambda color: text(color),
+    )
+
+    Foreach.create(
+        ForEachState.optional_list_value,
+        lambda color: text(color),
+    )
+
+    Foreach.create(
+        ForEachState.optional_dict,
+        lambda color: text(color[0], color[1]),
+    )
+
+    Foreach.create(
+        ForEachState.optional_dict_value,
+        lambda color: text(color[0], color[1]),
     )

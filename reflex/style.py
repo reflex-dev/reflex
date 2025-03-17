@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any, Literal, Type
+from typing import Any, Literal, Mapping, Type
 
 from reflex import constants
 from reflex.components.core.breakpoints import Breakpoints, breakpoints_values
@@ -10,7 +10,7 @@ from reflex.event import EventChain, EventHandler, EventSpec, run_script
 from reflex.utils import format
 from reflex.utils.exceptions import ReflexError
 from reflex.utils.imports import ImportVar
-from reflex.utils.types import get_origin
+from reflex.utils.types import typehint_issubclass
 from reflex.vars import VarData
 from reflex.vars.base import LiteralVar, Var
 from reflex.vars.function import FunctionVar
@@ -189,7 +189,7 @@ def convert(
             or (isinstance(value, list) and all(not isinstance(v, dict) for v in value))
             or (
                 isinstance(value, ObjectVar)
-                and not issubclass(get_origin(value._var_type) or value._var_type, dict)
+                and not typehint_issubclass(value._var_type, Mapping)
             )
             else (key,)
         )
@@ -234,6 +234,9 @@ def format_style_key(key: str) -> tuple[str, ...]:
     return STYLE_PROP_SHORTHAND_MAPPING.get(key, (key,))
 
 
+EMPTY_VAR_DATA = VarData()
+
+
 class Style(dict):
     """A style dictionary."""
 
@@ -248,7 +251,10 @@ class Style(dict):
             style_dict.update(kwargs)
         else:
             style_dict = kwargs
-        style_dict, self._var_data = convert(style_dict or {})
+        if style_dict:
+            style_dict, self._var_data = convert(style_dict)
+        else:
+            self._var_data = EMPTY_VAR_DATA
         super().__init__(style_dict)
 
     def update(self, style_dict: dict | None, **kwargs):

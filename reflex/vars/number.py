@@ -17,8 +17,13 @@ from typing import (
 )
 
 from reflex.constants.base import Dirs
-from reflex.utils.exceptions import PrimitiveUnserializableToJSONError, VarTypeError
+from reflex.utils.exceptions import (
+    PrimitiveUnserializableToJSONError,
+    VarTypeError,
+    VarValueError,
+)
 from reflex.utils.imports import ImportDict, ImportVar
+from reflex.utils.types import safe_issubclass
 
 from .base import (
     CustomVarOperationReturn,
@@ -520,7 +525,7 @@ class NumberVar(Var[NUMBER_T], python_types=(int, float)):
         Returns:
             bool: True if the number is a float.
         """
-        return issubclass(self._var_type, float)
+        return safe_issubclass(self._var_type, float)
 
     def _is_strict_int(self) -> bool:
         """Check if the number is an int.
@@ -528,7 +533,57 @@ class NumberVar(Var[NUMBER_T], python_types=(int, float)):
         Returns:
             bool: True if the number is an int.
         """
-        return issubclass(self._var_type, int)
+        return safe_issubclass(self._var_type, int)
+
+    def __format__(self, format_spec: str) -> str:
+        """Format the number.
+
+        Args:
+            format_spec: The format specifier.
+
+        Returns:
+            The formatted number.
+
+        Raises:
+            VarValueError: If the format specifier is not supported.
+        """
+        from .sequence import (
+            get_decimal_string_operation,
+            get_decimal_string_separator_operation,
+        )
+
+        separator = ""
+
+        if format_spec and format_spec[:1] == ",":
+            separator = ","
+            format_spec = format_spec[1:]
+        elif format_spec and format_spec[:1] == "_":
+            separator = "_"
+            format_spec = format_spec[1:]
+
+        if (
+            format_spec
+            and format_spec[-1] == "f"
+            and format_spec[0] == "."
+            and format_spec[1:-1].isdigit()
+        ):
+            how_many_decimals = int(format_spec[1:-1])
+            return f"{get_decimal_string_operation(self, Var.create(how_many_decimals), Var.create(separator))}"
+
+        if not format_spec and separator:
+            return (
+                f"{get_decimal_string_separator_operation(self, Var.create(separator))}"
+            )
+
+        if format_spec:
+            raise VarValueError(
+                (
+                    "Unknown format code '{}' for object of type 'NumberVar'. It is only supported to use ',', '_', and '.f' for float numbers."
+                    "If possible, use computed variables instead: https://reflex.dev/docs/vars/computed-vars/"
+                ).format(format_spec)
+            )
+
+        return super().__format__(format_spec)
 
 
 def binary_number_operation(

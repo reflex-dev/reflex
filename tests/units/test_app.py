@@ -212,7 +212,7 @@ def test_default_app(app: App):
     Args:
         app: The app to test.
     """
-    assert app.middleware == [HydrateMiddleware(), PartialHyderateMiddleware()]
+    assert app._middlewares == [HydrateMiddleware(), PartialHyderateMiddleware()]
     assert app.style == Style()
     assert app.admin_dash is None
 

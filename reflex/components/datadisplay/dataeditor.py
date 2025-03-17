@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from enum import Enum
-from typing import Any, Dict, Literal, TypedDict
+from typing import Any, Dict, Literal, Sequence, TypedDict
 
 from reflex.base import Base
 from reflex.components.component import Component, NoSSRComponent
@@ -173,10 +173,10 @@ class DataEditor(NoSSRComponent):
     rows: Var[int]
 
     # Headers of the columns for the data grid.
-    columns: Var[list[dict[str, Any]]]
+    columns: Var[Sequence[dict[str, Any]]]
 
     # The data.
-    data: Var[list[list[Any]]]
+    data: Var[Sequence[Sequence[Any]]]
 
     # The name of the callback used to find the data to display.
     get_cell_content: Var[str]

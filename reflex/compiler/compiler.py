@@ -247,12 +247,19 @@ def _compile_components(
         for comp_import in comp_render["dynamic_imports"]
     }
 
+    custom_codes = {
+        comp_custom_code: None
+        for comp_render in component_renders
+        for comp_custom_code in comp_render.get("custom_code", [])
+    }
+
     # Compile the components page.
     return (
         templates.COMPONENTS.render(
             imports=utils.compile_imports(imports),
             components=component_renders,
             dynamic_imports=dynamic_imports,
+            custom_codes=custom_codes,
         ),
         imports,
     )
@@ -577,14 +584,49 @@ def into_component(component: Component | ComponentCallable) -> Component:
 
     Raises:
         TypeError: If the component is not a Component.
+
+    # noqa: DAR401
     """
     if (converted := _into_component_once(component)) is not None:
         return converted
-    if (
-        callable(component)
-        and (converted := _into_component_once(component())) is not None
-    ):
-        return converted
+    try:
+        if (
+            callable(component)
+            and (converted := _into_component_once(component())) is not None
+        ):
+            return converted
+    except KeyError as e:
+        key = e.args[0] if e.args else None
+        if key is not None and isinstance(key, Var):
+            raise TypeError(
+                "Cannot access a primitive map with a Var. Consider calling rx.Var.create() on the map."
+            ).with_traceback(e.__traceback__) from None
+        raise
+    except TypeError as e:
+        message = e.args[0] if e.args else None
+        if message and isinstance(message, str):
+            if message.endswith("has no len()") and (
+                "ArrayCastedVar" in message
+                or "ObjectCastedVar" in message
+                or "StringCastedVar" in message
+            ):
+                raise TypeError(
+                    "Cannot pass a Var to a built-in function. Consider using .length() for accessing the length of an iterable Var."
+                ).with_traceback(e.__traceback__) from None
+            if message.endswith(
+                "indices must be integers or slices, not NumberCastedVar"
+            ) or message.endswith(
+                "indices must be integers or slices, not BooleanCastedVar"
+            ):
+                raise TypeError(
+                    "Cannot index into a primitive sequence with a Var. Consider calling rx.Var.create() on the sequence."
+                ).with_traceback(e.__traceback__) from None
+        if "CastedVar" in str(e):
+            raise TypeError(
+                "Cannot pass a Var to a built-in function. Consider moving the operation to the backend, using existing Var operations, or defining a custom Var operation."
+            ).with_traceback(e.__traceback__) from None
+        raise
+
     raise TypeError(f"Expected a Component, got {type(component)}")
 
 

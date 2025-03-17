@@ -1,7 +1,7 @@
 import json
 import math
 import typing
-from typing import List, Mapping, cast
+from typing import List, Mapping, Sequence, cast
 
 import pytest
 from pandas import DataFrame
@@ -273,7 +273,7 @@ def test_get_setter(prop: Var, expected):
         (1, Var(_js_expr="1", _var_type=int)),
         ("key", Var(_js_expr='"key"', _var_type=str)),
         (3.14, Var(_js_expr="3.14", _var_type=float)),
-        ([1, 2, 3], Var(_js_expr="[1, 2, 3]", _var_type=list[int])),
+        ([1, 2, 3], Var(_js_expr="[1, 2, 3]", _var_type=Sequence[int])),
         (
             {"a": 1, "b": 2},
             Var(_js_expr='({ ["a"] : 1, ["b"] : 2 })', _var_type=Mapping[str, int]),
@@ -1376,7 +1376,7 @@ def test_unsupported_types_for_string_contains(other):
         assert Var(_js_expr="var").to(str).contains(other)
     assert (
         err.value.args[0]
-        == f"Unsupported Operand type(s) for contains: ToStringOperation, {type(other).__name__}"
+        == f"Unsupported Operand type(s) for contains: StringCastedVar, {type(other).__name__}"
     )
 
 

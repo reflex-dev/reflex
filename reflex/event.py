@@ -37,7 +37,12 @@ from reflex.utils.exceptions import (
     EventHandlerArgTypeMismatchError,
     MissingAnnotationError,
 )
-from reflex.utils.types import ArgsSpec, GenericType, typehint_issubclass
+from reflex.utils.types import (
+    ArgsSpec,
+    GenericType,
+    safe_issubclass,
+    typehint_issubclass,
+)
 from reflex.vars import VarData
 from reflex.vars.base import LiteralVar, Var
 from reflex.vars.function import (
@@ -424,7 +429,7 @@ class EventChain(EventActionsMixin):
                 return value
             elif isinstance(value, EventVar):
                 value = [value]
-            elif issubclass(value._var_type, (EventChain, EventSpec)):
+            elif safe_issubclass(value._var_type, (EventChain, EventSpec)):
                 return cls.create(
                     value=value.guess_type(),
                     args_spec=args_spec,
@@ -1287,7 +1292,9 @@ def call_event_handler(
             ]
 
             # check that args of event handler are matching the spec if type hints are provided
-            for i, arg in enumerate(event_callback_spec.args[1:]):
+            for i, arg in enumerate(
+                event_callback_spec.args[1 : len(args_types_without_vars) + 1]
+            ):
                 if arg not in type_hints_of_provided_callback:
                     continue
 

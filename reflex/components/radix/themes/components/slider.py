@@ -2,11 +2,12 @@
 
 from __future__ import annotations
 
-from typing import Literal, Union
+from typing import Literal, Sequence
 
 from reflex.components.component import Component
 from reflex.components.core.breakpoints import Responsive
 from reflex.event import EventHandler, passthrough_event_spec
+from reflex.utils.types import typehint_issubclass
 from reflex.vars.base import Var
 
 from ..base import LiteralAccentColor, RadixThemesComponent
@@ -42,10 +43,10 @@ class Slider(RadixThemesComponent):
     radius: Var[Literal["none", "small", "full"]]
 
     # The value of the slider when initially rendered. Use when you do not need to control the state of the slider.
-    default_value: Var[Union[list[float | int], float, int]]
+    default_value: Var[Sequence[float | int] | float | int]
 
     # The controlled value of the slider. Must be used in conjunction with onValueChange.
-    value: Var[list[float | int]]
+    value: Var[Sequence[float | int]]
 
     # The name of the slider. Submitted with its owning form as part of a name/value pair.
     name: Var[str]
@@ -96,7 +97,7 @@ class Slider(RadixThemesComponent):
         width = props.pop("width", "100%")
 
         if isinstance(default_value, Var):
-            if issubclass(default_value._var_type, (int, float)):
+            if typehint_issubclass(default_value._var_type, int | float):
                 default_value = [default_value]
 
         elif isinstance(default_value, (int, float)):

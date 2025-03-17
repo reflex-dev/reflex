@@ -1063,7 +1063,7 @@ class App(MiddlewareMixin, LifespanMixin):
                 with stateful_pages_marker.open("r") as f:
                     stateful_pages = json.load(f)
                 for route in stateful_pages:
-                    console.info(f"BE Evaluating stateful page: {route}")
+                    console.debug(f"BE Evaluating stateful page: {route}")
                     self._compile_page(route, save_page=False)
                 self._enable_state()
             self._add_optional_endpoints()

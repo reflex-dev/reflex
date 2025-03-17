@@ -24,11 +24,9 @@ jobs:
           # running vs. one version of Python is OK
           # i.e. ruff, black, etc.
           python-version: 3.12.8
-          run-poetry-install: true
-          create-venv-at-path: .venv
+          run-uv-sync: true
+
       # TODO pre-commit related stuff can be cached too (not a bottleneck yet)
-      - run: |
-          poetry run uv pip install pre-commit
-          poetry run pre-commit run --all-files
+      - run: uv run pre-commit run --all-files
         env:
           SKIP: update-pyi-files

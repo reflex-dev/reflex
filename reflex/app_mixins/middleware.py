@@ -17,12 +17,12 @@ from .mixin import AppMixin
 class MiddlewareMixin(AppMixin):
     """Middleware Mixin that allow to add middleware to the app."""
 
-    # Middleware to add to the app. Users should use `add_middleware`. PRIVATE.
-    middleware: list[Middleware] = dataclasses.field(default_factory=list)
+    # Middleware to add to the app. Users should use `add_middleware`.
+    _middlewares: list[Middleware] = dataclasses.field(default_factory=list)
 
     def _init_mixin(self):
-        self.middleware.append(HydrateMiddleware())
-        self.middleware.append(PartialHyderateMiddleware())
+        self._middlewares.append(HydrateMiddleware())
+        self._middlewares.append(PartialHyderateMiddleware())
 
     def add_middleware(self, middleware: Middleware, index: int | None = None):
         """Add middleware to the app.
@@ -32,9 +32,9 @@ class MiddlewareMixin(AppMixin):
             index: The index to add the middleware at.
         """
         if index is None:
-            self.middleware.append(middleware)
+            self._middlewares.append(middleware)
         else:
-            self.middleware.insert(index, middleware)
+            self._middlewares.insert(index, middleware)
 
     async def _preprocess(self, state: BaseState, event: Event) -> StateUpdate | None:
         """Preprocess the event.
@@ -52,7 +52,7 @@ class MiddlewareMixin(AppMixin):
         Returns:
             An optional state to return.
         """
-        for middleware in self.middleware:
+        for middleware in self._middlewares:
             if asyncio.iscoroutinefunction(middleware.preprocess):
                 out = await middleware.preprocess(app=self, state=state, event=event)  # pyright: ignore [reportArgumentType]
             else:
@@ -76,7 +76,8 @@ class MiddlewareMixin(AppMixin):
         Returns:
             The state update to return.
         """
-        for middleware in self.middleware:
+        out = update
+        for middleware in self._middlewares:
             if asyncio.iscoroutinefunction(middleware.postprocess):
                 out = await middleware.postprocess(
                     app=self,  # pyright: ignore [reportArgumentType]
@@ -91,6 +92,4 @@ class MiddlewareMixin(AppMixin):
                     event=event,
                     update=update,
                 )
-            if out is not None:
-                return out  # pyright: ignore [reportReturnType]
-        return update
+        return out  # pyright: ignore[reportReturnType]

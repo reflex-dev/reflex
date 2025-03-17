@@ -14,6 +14,7 @@ import sys
 import time
 import typing
 import uuid
+import warnings
 from abc import ABC, abstractmethod
 from hashlib import md5
 from pathlib import Path
@@ -91,9 +92,9 @@ from reflex.utils.serializers import serializer
 from reflex.utils.types import (
     _isinstance,
     get_origin,
-    is_optional,
     is_union,
     override,
+    true_type_for_pydantic_field,
     value_inside_optional,
 )
 from reflex.vars import VarData
@@ -401,7 +402,11 @@ class EventHandlerSetVar(EventHandler):
         return super().__call__(*args)
 
 
-def _unwrap_field_type(type_: Type) -> Type:
+if TYPE_CHECKING:
+    from pydantic.v1.fields import ModelField
+
+
+def _unwrap_field_type(type_: types.GenericType) -> Type:
     """Unwrap rx.Field type annotations.
 
     Args:
@@ -432,7 +437,7 @@ def get_var_for_field(cls: Type[BaseState], f: ModelField):
     return dispatch(
         field_name=field_name,
         var_data=VarData.from_state(cls, f.name),
-        result_var_type=_unwrap_field_type(f.outer_type_),
+        result_var_type=_unwrap_field_type(true_type_for_pydantic_field(f)),
     )
 
 
@@ -821,7 +826,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         def computed_var_func(state: Self):
             result = f(state)
 
-            if not _isinstance(result, of_type):
+            if not _isinstance(result, of_type, nested=1, treat_var_as_type=False):
                 console.warn(
                     f"Inline ComputedVar {f} expected type {of_type}, got {type(result)}. "
                     "You can specify expected type with `of_type` argument."
@@ -1030,7 +1035,14 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         ]
         if len(parent_states) >= 2:
             raise ValueError(f"Only one parent state is allowed {parent_states}.")
-        return parent_states[0] if len(parent_states) == 1 else None
+        # The first non-mixin state in the mro is our parent.
+        for base in cls.mro()[1:]:
+            if base._mixin or not issubclass(base, BaseState):
+                continue
+            if base is BaseState:
+                break
+            return base
+        return None  # No known parent
 
     @classmethod
     @functools.lru_cache()
@@ -1138,9 +1150,9 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
 
         if not types.is_valid_var_type(prop._var_type):
             raise VarTypeError(
-                "State vars must be primitive Python types, "
-                "Plotly figures, Pandas dataframes, "
-                "or subclasses of rx.Base. "
+                "State vars must be of a serializable type. "
+                "Valid types include strings, numbers, booleans, lists, "
+                "dictionaries, dataclasses, datetime objects, and pydantic models. "
                 f'Found var "{prop._js_expr}" with type {prop._var_type}.'
             )
         cls._set_var(prop)
@@ -1479,10 +1491,8 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
 
         if name in fields:
             field = fields[name]
-            field_type = _unwrap_field_type(field.outer_type_)
-            if field.allow_none and not is_optional(field_type):
-                field_type = field_type | None
-            if not _isinstance(value, field_type):
+            field_type = _unwrap_field_type(true_type_for_pydantic_field(field))
+            if not _isinstance(value, field_type, nested=1, treat_var_as_type=False):
                 console.error(
                     f"Expected field '{type(self).__name__}.{name}' to receive type '{field_type}',"
                     f" but got '{value}' of type '{type(value)}'."
@@ -1771,14 +1781,26 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
 
         if events is None or _is_valid_type(events):
             return events
+
+        if not isinstance(events, Sequence):
+            events = [events]
+
         try:
             if all(_is_valid_type(e) for e in events):
                 return events
         except TypeError:
             pass
 
+        coroutines = [e for e in events if asyncio.iscoroutine(e)]
+
+        for coroutine in coroutines:
+            coroutine_name = coroutine.__qualname__
+            warnings.filterwarnings(
+                "ignore", message=f"coroutine '{coroutine_name}' was never awaited"
+            )
+
         raise TypeError(
-            f"Your handler {handler.fn.__qualname__} must only return/yield: None, Events or other EventHandlers referenced by their class (not using `self`)"
+            f"Your handler {handler.fn.__qualname__} must only return/yield: None, Events or other EventHandlers referenced by their class (i.e. using `type(self)` or other class references)."
         )
 
     async def _as_state_update(

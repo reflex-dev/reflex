@@ -34,9 +34,15 @@ from reflex_cli.constants.hosting import Hosting
 
 from reflex import constants
 from reflex.base import Base
+from reflex.constants.base import LogLevel
 from reflex.utils import console
 from reflex.utils.exceptions import ConfigError, EnvironmentVarValueError
-from reflex.utils.types import GenericType, is_union, value_inside_optional
+from reflex.utils.types import (
+    GenericType,
+    is_union,
+    true_type_for_pydantic_field,
+    value_inside_optional,
+)
 
 try:
     from dotenv import load_dotenv  # pyright: ignore [reportMissingImports]
@@ -590,7 +596,7 @@ class EnvironmentVariables:
         constants.CompileContext.UNDEFINED, internal=True
     )
 
-    # Whether to use npm over bun to install frontend packages.
+    # Whether to use npm over bun to install and run the frontend.
     REFLEX_USE_NPM: EnvVar[bool] = env_var(False)
 
     # The npm registry to use.
@@ -607,9 +613,6 @@ class EnvironmentVariables:
 
     # Whether to use the system installed bun. If set to false, bun will be bundled with the app.
     REFLEX_USE_SYSTEM_BUN: EnvVar[bool] = env_var(False)
-
-    # Whether to use the system installed node and npm. If set to false, node and npm will be bundled with the app.
-    REFLEX_USE_SYSTEM_NODE: EnvVar[bool] = env_var(False)
 
     # The working directory for the next.js commands.
     REFLEX_WEB_WORKDIR: EnvVar[Path] = env_var(Path(constants.Dirs.WEB))
@@ -860,7 +863,7 @@ class Config(Base):
     # Whether the app is running in the reflex cloud environment.
     is_reflex_cloud: bool = False
 
-    # Extra overlay function to run after the app is built. Formatted such that `from path_0.path_1... import path[-1]`, and calling it with no arguments would work. For example, "reflex.components.moment.momnet".
+    # Extra overlay function to run after the app is built. Formatted such that `from path_0.path_1... import path[-1]`, and calling it with no arguments would work. For example, "reflex.components.moment.moment".
     extra_overlay_function: str | None = None
 
     def __init__(self, *args, **kwargs):
@@ -875,6 +878,13 @@ class Config(Base):
         """
         super().__init__(*args, **kwargs)
 
+        # Set the log level for this process
+        env_loglevel = os.environ.get("LOGLEVEL")
+        if env_loglevel is not None:
+            env_loglevel = LogLevel(env_loglevel)
+        if env_loglevel or self.loglevel != LogLevel.DEFAULT:
+            console.set_log_level(env_loglevel or self.loglevel)
+
         # Update the config from environment variables.
         env_kwargs = self.update_from_env()
         for key, env_value in env_kwargs.items():
@@ -884,9 +894,6 @@ class Config(Base):
         kwargs.update(env_kwargs)
         self._non_default_attributes.update(kwargs)
         self._replace_defaults(**kwargs)
-
-        # Set the log level for this process
-        console.set_log_level(self.loglevel)
 
         if (
             self.state_manager_mode == constants.StateManagerMode.REDIS
@@ -946,7 +953,9 @@ class Config(Base):
             # If the env var is set, override the config value.
             if env_var is not None:
                 # Interpret the value.
-                value = interpret_env_var_value(env_var, field.outer_type_, field.name)
+                value = interpret_env_var_value(
+                    env_var, true_type_for_pydantic_field(field), field.name
+                )
 
                 # Set the value.
                 updated_values[key] = value
@@ -954,10 +963,11 @@ class Config(Base):
                 if key.upper() in _sensitive_env_vars:
                     env_var = "***"
 
-                console.info(
-                    f"Overriding config value {key} with env var {key.upper()}={env_var}",
-                    dedupe=True,
-                )
+                if value != getattr(self, key):
+                    console.debug(
+                        f"Overriding config value {key} with env var {key.upper()}={env_var}",
+                        dedupe=True,
+                    )
 
         return updated_values
 

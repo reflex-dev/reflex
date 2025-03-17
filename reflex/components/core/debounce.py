@@ -127,7 +127,7 @@ class DebounceInput(Component):
         component._get_style = child._get_style
         component.event_triggers.update(child.event_triggers)
         component.children = child.children
-        component._rename_props = child._rename_props
+        component._rename_props = child._rename_props  # pyright: ignore[reportAttributeAccessIssue]
         outer_get_all_custom_code = component._get_all_custom_code
         component._get_all_custom_code = lambda: outer_get_all_custom_code().union(
             child._get_all_custom_code()

@@ -154,7 +154,11 @@ def run_frontend(root: Path, port: str, backend_present: bool = True):
     console.rule("[bold green]App Running")
     os.environ["PORT"] = str(get_config().frontend_port if port is None else port)
     run_process_and_launch_url(
-        [prerequisites.get_package_manager(), "run", "dev"],
+        [
+            *prerequisites.get_js_package_executor(raise_on_none=True)[0],
+            "run",
+            "dev",
+        ],
         backend_present,
     )
 
@@ -176,7 +180,7 @@ def run_frontend_prod(root: Path, port: str, backend_present: bool = True):
     # Run the frontend in production mode.
     console.rule("[bold green]App Running")
     run_process_and_launch_url(
-        [prerequisites.get_package_manager(), "run", "prod"],
+        [*prerequisites.get_js_package_executor(raise_on_none=True)[0], "run", "prod"],
         backend_present,
     )
 
@@ -332,11 +336,9 @@ def run_granian_backend(host: str, port: int, loglevel: LogLevel):
     """
     console.debug("Using Granian for backend")
     try:
-        from granian import Granian  # pyright: ignore [reportMissingImports]
-        from granian.constants import (  # pyright: ignore [reportMissingImports]
-            Interfaces,
-        )
-        from granian.log import LogLevels  # pyright: ignore [reportMissingImports]
+        from granian.constants import Interfaces
+        from granian.log import LogLevels
+        from granian.server import Server as Granian
 
         Granian(
             target=get_granian_target(),
@@ -466,9 +468,7 @@ def run_granian_backend_prod(host: str, port: int, loglevel: LogLevel):
     from reflex.utils import processes
 
     try:
-        from granian.constants import (  # pyright: ignore [reportMissingImports]
-            Interfaces,
-        )
+        from granian.constants import Interfaces
 
         command = [
             "granian",
@@ -522,19 +522,9 @@ def output_system_info():
 
     system = platform.system()
 
-    fnm_info = f"[FNM {prerequisites.get_fnm_version()} (Expected: {constants.Fnm.VERSION}) (PATH: {constants.Fnm.EXE})]"
-
-    if system != "Windows" or (
-        system == "Windows" and prerequisites.is_windows_bun_supported()
-    ):
-        dependencies.extend(
-            [
-                fnm_info,
-                f"[Bun {prerequisites.get_bun_version()} (Expected: {constants.Bun.VERSION}) (PATH: {path_ops.get_bun_path()})]",
-            ],
-        )
-    else:
-        dependencies.append(fnm_info)
+    dependencies.append(
+        f"[Bun {prerequisites.get_bun_version()} (Expected: {constants.Bun.VERSION}) (PATH: {path_ops.get_bun_path()})]"
+    )
 
     if system == "Linux":
         import distro  # pyright: ignore[reportMissingImports]
@@ -549,10 +539,10 @@ def output_system_info():
         console.debug(f"{dep}")
 
     console.debug(
-        f"Using package installer at: {prerequisites.get_install_package_manager(on_failure_return_none=True)}"
+        f"Using package installer at: {prerequisites.get_nodejs_compatible_package_managers(raise_on_none=False)}"
     )
     console.debug(
-        f"Using package executer at: {prerequisites.get_package_manager(on_failure_return_none=True)}"
+        f"Using package executer at: {prerequisites.get_js_package_executor(raise_on_none=False)}"
     )
     if system != "Windows":
         console.debug(f"Unzip path: {path_ops.which('unzip')}")

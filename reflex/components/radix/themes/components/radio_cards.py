@@ -1,7 +1,7 @@
 """Radio component from Radix Themes."""
 
 from types import SimpleNamespace
-from typing import Literal
+from typing import ClassVar, Literal
 
 from reflex.components.core.breakpoints import Responsive
 from reflex.event import EventHandler, passthrough_event_spec
@@ -81,7 +81,7 @@ class RadioCardsItem(RadixThemesComponent):
     # When true, indicates that the user must check the radio item before the owning form can be submitted.
     required: Var[bool]
 
-    _valid_parents: list[str] = ["RadioCardsRoot"]
+    _valid_parents: ClassVar[list[str]] = ["RadioCardsRoot"]
 
 
 class RadioCards(SimpleNamespace):

@@ -1,4 +1,5 @@
 import dataclasses
+from typing import Sequence
 
 import pytest
 from sqlalchemy.orm import DeclarativeBase, Mapped, MappedAsDataclass, mapped_column
@@ -135,9 +136,9 @@ def test_typing() -> None:
     var = ObjectState.base
     _ = assert_type(var, ObjectVar[Base])
     optional_var = ObjectState.base_optional
-    _ = assert_type(optional_var, ObjectVar[Base | None])
+    _ = assert_type(optional_var, ObjectVar[Base])
     list_var = ObjectState.base_list
-    _ = assert_type(list_var, ArrayVar[list[Base]])
+    _ = assert_type(list_var, ArrayVar[Sequence[Base]])
     list_var_0 = list_var[0]
     _ = assert_type(list_var_0, ObjectVar[Base])
 
@@ -145,9 +146,9 @@ def test_typing() -> None:
     var = ObjectState.sqlamodel
     _ = assert_type(var, ObjectVar[SqlaModel])
     optional_var = ObjectState.sqlamodel_optional
-    _ = assert_type(optional_var, ObjectVar[SqlaModel | None])
+    _ = assert_type(optional_var, ObjectVar[SqlaModel])
     list_var = ObjectState.base_list
-    _ = assert_type(list_var, ArrayVar[list[Base]])
+    _ = assert_type(list_var, ArrayVar[Sequence[Base]])
     list_var_0 = list_var[0]
     _ = assert_type(list_var_0, ObjectVar[Base])
 
@@ -155,8 +156,8 @@ def test_typing() -> None:
     var = ObjectState.dataclass
     _ = assert_type(var, ObjectVar[Dataclass])
     optional_var = ObjectState.dataclass_optional
-    _ = assert_type(optional_var, ObjectVar[Dataclass | None])
+    _ = assert_type(optional_var, ObjectVar[Dataclass])
     list_var = ObjectState.base_list
-    _ = assert_type(list_var, ArrayVar[list[Base]])
+    _ = assert_type(list_var, ArrayVar[Sequence[Base]])
     list_var_0 = list_var[0]
     _ = assert_type(list_var_0, ObjectVar[Base])

@@ -54,18 +54,12 @@ from reflex.state import (
 from reflex.utils import console
 
 try:
-    from selenium import webdriver  # pyright: ignore [reportMissingImports]
-    from selenium.webdriver.remote.webdriver import (  # pyright: ignore [reportMissingImports]
-        WebDriver,
-    )
+    from selenium import webdriver
+    from selenium.webdriver.remote.webdriver import WebDriver
 
     if TYPE_CHECKING:
-        from selenium.webdriver.common.options import (
-            ArgOptions,  # pyright: ignore [reportMissingImports]
-        )
-        from selenium.webdriver.remote.webelement import (  # pyright: ignore [reportMissingImports]
-            WebElement,
-        )
+        from selenium.webdriver.common.options import ArgOptions
+        from selenium.webdriver.remote.webelement import WebElement
 
     has_selenium = True
 except ImportError:
@@ -377,7 +371,13 @@ class AppHarness:
 
         # Start the frontend.
         self.frontend_process = reflex.utils.processes.new_process(
-            [reflex.utils.prerequisites.get_package_manager(), "run", "dev"],
+            [
+                *reflex.utils.prerequisites.get_js_package_executor(raise_on_none=True)[
+                    0
+                ],
+                "run",
+                "dev",
+            ],
             cwd=self.app_path / reflex.utils.prerequisites.get_web_dir(),
             env={"PORT": "0"},
             **FRONTEND_POPEN_ARGS,

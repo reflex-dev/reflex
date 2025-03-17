@@ -81,6 +81,7 @@ formatted_router = {
         "sec_websocket_extensions": "",
         "accept_encoding": "",
         "accept_language": "",
+        "raw_headers": {},
     },
     "page": {
         "host": "",
@@ -898,6 +899,10 @@ def test_get_headers(test_state, router_data, router_data_headers):
     print(test_state.router.headers)
     assert dataclasses.asdict(test_state.router.headers) == {
         format.to_snake_case(k): v for k, v in router_data_headers.items()
+    } | {
+        "raw_headers": {
+            "_data": tuple(sorted((k, v) for k, v in router_data_headers.items()))
+        }
     }
 
 
@@ -1608,7 +1613,7 @@ async def test_state_with_invalid_yield(capsys, mock_app):
                     "An error occurred.",
                     level="error",
                     fallback_to_alert=True,
-                    description="TypeError: Your handler test_state_with_invalid_yield.<locals>.StateWithInvalidYield.invalid_handler must only return/yield: None, Events or other EventHandlers referenced by their class (not using `self`).<br/>See logs for details.",
+                    description="TypeError: Your handler test_state_with_invalid_yield.<locals>.StateWithInvalidYield.invalid_handler must only return/yield: None, Events or other EventHandlers referenced by their class (i.e. using `type(self)` or other class references)..<br/>See logs for details.",
                     id="backend_error",
                     position="top-center",
                     style={"width": "500px"},
@@ -3438,6 +3443,18 @@ class ChildUsesMixinState(UsesMixinState):
     pass
 
 
+class ChildMixinState(ChildUsesMixinState, mixin=True):
+    """A mixin state that inherits from a concrete state that uses mixins."""
+
+    pass
+
+
+class GrandchildUsesMixinState(ChildMixinState):
+    """A grandchild state that uses the mixin state."""
+
+    pass
+
+
 def test_mixin_state() -> None:
     """Test that a mixin state works correctly."""
     assert "num" in UsesMixinState.base_vars
@@ -3452,6 +3469,9 @@ def test_mixin_state() -> None:
         is not UsesMixinState.backend_vars["_backend_no_default"]
     )
 
+    assert UsesMixinState.get_parent_state() == State
+    assert UsesMixinState.get_root_state() == State
+
 
 def test_child_mixin_state() -> None:
     """Test that mixin vars are only applied to the highest state in the hierarchy."""
@@ -3460,6 +3480,24 @@ def test_child_mixin_state() -> None:
 
     assert "computed" in ChildUsesMixinState.inherited_vars
     assert "computed" not in ChildUsesMixinState.computed_vars
+
+    assert ChildUsesMixinState.get_parent_state() == UsesMixinState
+    assert ChildUsesMixinState.get_root_state() == State
+
+
+def test_grandchild_mixin_state() -> None:
+    """Test that a mixin can inherit from a concrete state class."""
+    assert "num" in GrandchildUsesMixinState.inherited_vars
+    assert "num" not in GrandchildUsesMixinState.base_vars
+
+    assert "computed" in GrandchildUsesMixinState.inherited_vars
+    assert "computed" not in GrandchildUsesMixinState.computed_vars
+
+    assert ChildMixinState.get_parent_state() == ChildUsesMixinState
+    assert ChildMixinState.get_root_state() == State
+
+    assert GrandchildUsesMixinState.get_parent_state() == ChildUsesMixinState
+    assert GrandchildUsesMixinState.get_root_state() == State
 
 
 def test_assignment_to_undeclared_vars():
@@ -3935,3 +3973,22 @@ async def test_async_computed_var_get_var_value(mock_app: rx.App, token: str):
 
     other_state.data.append({"foo": "baz"})
     assert "rows" in comp_state.dirty_vars
+
+
+def test_computed_var_mutability() -> None:
+    class CvMixin(rx.State, mixin=True):
+        @rx.var(cache=True, deps=["hi"])
+        def cv(self) -> int:
+            return 42
+
+    class FirstCvState(CvMixin, rx.State):
+        pass
+
+    class SecondCvState(CvMixin, rx.State):
+        pass
+
+    first_cv = FirstCvState.computed_vars["cv"]
+    second_cv = SecondCvState.computed_vars["cv"]
+
+    assert first_cv is not second_cv
+    assert first_cv._static_deps is not second_cv._static_deps
