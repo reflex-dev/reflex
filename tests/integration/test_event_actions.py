@@ -59,124 +59,129 @@ def TestEventAction():
         def get_event_triggers(self):
             return {"on_click": lambda: []}
 
-    def index():
-        return rx.vstack(
-            rx.input(
-                value=EventActionState.router.session.client_token,
-                is_read_only=True,
-                id="token",
-            ),
-            rx.button("No events", id="btn-no-events"),
-            rx.button(
-                "Stop Prop Only",
-                id="btn-stop-prop-only",
-                on_click=rx.stop_propagation,  # pyright: ignore [reportArgumentType]
-            ),
-            rx.button(
-                "Click event",
-                on_click=EventActionState.on_click("no_event_actions"),  # pyright: ignore [reportCallIssue]
-                id="btn-click-event",
-            ),
-            rx.button(
-                "Click stop propagation",
-                on_click=EventActionState.on_click("stop_propagation").stop_propagation,  # pyright: ignore [reportCallIssue]
-                id="btn-click-stop-propagation",
-            ),
-            rx.button(
-                "Click stop propagation2",
-                on_click=EventActionState.on_click2.stop_propagation,
-                id="btn-click-stop-propagation2",
-            ),
-            rx.button(
-                "Click event 2",
-                on_click=EventActionState.on_click2,
-                id="btn-click-event2",
-            ),
-            rx.link(
-                "Link",
-                href="#",
-                on_click=EventActionState.on_click("link_no_event_actions"),  # pyright: ignore [reportCallIssue]
-                id="link",
-            ),
-            rx.link(
-                "Link Stop Propagation",
-                href="#",
-                on_click=EventActionState.on_click(  # pyright: ignore [reportCallIssue]
-                    "link_stop_propagation"
-                ).stop_propagation,
-                id="link-stop-propagation",
-            ),
-            rx.link(
-                "Link Prevent Default Only",
-                href="/invalid",
-                on_click=rx.prevent_default,  # pyright: ignore [reportArgumentType]
-                id="link-prevent-default-only",
-            ),
-            rx.link(
-                "Link Prevent Default",
-                href="/invalid",
-                on_click=EventActionState.on_click(  # pyright: ignore [reportCallIssue]
-                    "link_prevent_default"
-                ).prevent_default,
-                id="link-prevent-default",
-            ),
-            rx.link(
-                "Link Both",
-                href="/invalid",
-                on_click=EventActionState.on_click(  # pyright: ignore [reportCallIssue]
-                    "link_both"
-                ).stop_propagation.prevent_default,
-                id="link-stop-propagation-prevent-default",
-            ),
-            EventFiringComponent.create(
-                id="custom-stop-propagation",
-                on_click=EventActionState.on_click(  # pyright: ignore [reportCallIssue]
-                    "custom-stop-propagation"
-                ).stop_propagation,
-            ),
-            EventFiringComponent.create(
-                id="custom-prevent-default",
-                on_click=EventActionState.on_click(  # pyright: ignore [reportCallIssue]
-                    "custom-prevent-default"
-                ).prevent_default,
-            ),
-            rx.button(
-                "Throttle",
-                id="btn-throttle",
-                on_click=lambda: EventActionState.on_click_throttle.throttle(  # pyright: ignore [reportFunctionMemberAccess]
-                    200
-                ).stop_propagation,
-            ),
-            rx.button(
-                "Debounce",
-                id="btn-debounce",
-                on_click=EventActionState.on_click_debounce.debounce(  # pyright: ignore [reportFunctionMemberAccess]
-                    200
-                ).stop_propagation,
-            ),
-            rx.list(  # pyright: ignore [reportAttributeAccessIssue]
-                rx.foreach(
-                    EventActionState.order,
-                    rx.list_item,
+    def index() -> rx.Component:
+        return rx.fragment(
+            rx.vstack(
+                rx.input(
+                    value=EventActionState.router.session.client_token,
+                    is_read_only=True,
+                    id="token",
                 ),
-            ),
-            on_click=EventActionState.on_click("outer"),  # pyright: ignore [reportCallIssue]
-        ), rx.form(
-            rx.dialog.root(
-                rx.dialog.trigger(
-                    rx.button("Open Dialog", type="button", id="btn-dialog"),
+                rx.button("No events", id="btn-no-events"),
+                rx.button(
+                    "Stop Prop Only",
+                    id="btn-stop-prop-only",
                     on_click=rx.stop_propagation,  # pyright: ignore [reportArgumentType]
                 ),
-                rx.dialog.content(
-                    rx.dialog.close(
-                        rx.form(
-                            rx.button("Submit", id="btn-submit"),
-                            on_submit=EventActionState.on_submit.stop_propagation,  # pyright: ignore [reportCallIssue]
+                rx.button(
+                    "Click event",
+                    on_click=EventActionState.on_click("no_event_actions"),  # pyright: ignore [reportCallIssue]
+                    id="btn-click-event",
+                ),
+                rx.button(
+                    "Click stop propagation",
+                    on_click=EventActionState.on_click(
+                        "stop_propagation"
+                    ).stop_propagation,  # pyright: ignore [reportCallIssue]
+                    id="btn-click-stop-propagation",
+                ),
+                rx.button(
+                    "Click stop propagation2",
+                    on_click=EventActionState.on_click2.stop_propagation,
+                    id="btn-click-stop-propagation2",
+                ),
+                rx.button(
+                    "Click event 2",
+                    on_click=EventActionState.on_click2,
+                    id="btn-click-event2",
+                ),
+                rx.link(
+                    "Link",
+                    href="#",
+                    on_click=EventActionState.on_click("link_no_event_actions"),  # pyright: ignore [reportCallIssue]
+                    id="link",
+                ),
+                rx.link(
+                    "Link Stop Propagation",
+                    href="#",
+                    on_click=EventActionState.on_click(  # pyright: ignore [reportCallIssue]
+                        "link_stop_propagation"
+                    ).stop_propagation,
+                    id="link-stop-propagation",
+                ),
+                rx.link(
+                    "Link Prevent Default Only",
+                    href="/invalid",
+                    on_click=rx.prevent_default,  # pyright: ignore [reportArgumentType]
+                    id="link-prevent-default-only",
+                ),
+                rx.link(
+                    "Link Prevent Default",
+                    href="/invalid",
+                    on_click=EventActionState.on_click(  # pyright: ignore [reportCallIssue]
+                        "link_prevent_default"
+                    ).prevent_default,
+                    id="link-prevent-default",
+                ),
+                rx.link(
+                    "Link Both",
+                    href="/invalid",
+                    on_click=EventActionState.on_click(  # pyright: ignore [reportCallIssue]
+                        "link_both"
+                    ).stop_propagation.prevent_default,
+                    id="link-stop-propagation-prevent-default",
+                ),
+                EventFiringComponent.create(
+                    id="custom-stop-propagation",
+                    on_click=EventActionState.on_click(  # pyright: ignore [reportCallIssue]
+                        "custom-stop-propagation"
+                    ).stop_propagation,
+                ),
+                EventFiringComponent.create(
+                    id="custom-prevent-default",
+                    on_click=EventActionState.on_click(  # pyright: ignore [reportCallIssue]
+                        "custom-prevent-default"
+                    ).prevent_default,
+                ),
+                rx.button(
+                    "Throttle",
+                    id="btn-throttle",
+                    on_click=lambda: EventActionState.on_click_throttle.throttle(  # pyright: ignore [reportFunctionMemberAccess]
+                        200
+                    ).stop_propagation,
+                ),
+                rx.button(
+                    "Debounce",
+                    id="btn-debounce",
+                    on_click=EventActionState.on_click_debounce.debounce(  # pyright: ignore [reportFunctionMemberAccess]
+                        200
+                    ).stop_propagation,
+                ),
+                rx.list(  # pyright: ignore [reportAttributeAccessIssue]
+                    rx.foreach(
+                        EventActionState.order,
+                        rx.list_item,
+                    ),
+                ),
+                on_click=EventActionState.on_click("outer"),  # pyright: ignore [reportCallIssue]
+            ),
+            rx.form(
+                rx.dialog.root(
+                    rx.dialog.trigger(
+                        rx.button("Open Dialog", type="button", id="btn-dialog"),
+                        on_click=rx.stop_propagation,  # pyright: ignore [reportArgumentType]
+                    ),
+                    rx.dialog.content(
+                        rx.dialog.close(
+                            rx.form(
+                                rx.button("Submit", id="btn-submit"),
+                                on_submit=EventActionState.on_submit.stop_propagation,  # pyright: ignore [reportCallIssue]
+                            ),
                         ),
                     ),
                 ),
+                on_submit=EventActionState.on_submit,  # pyright: ignore [reportCallIssue]
             ),
-            on_submit=EventActionState.on_submit,  # pyright: ignore [reportCallIssue]
         )
 
     app = rx.App()
