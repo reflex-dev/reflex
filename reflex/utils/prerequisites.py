@@ -14,7 +14,6 @@ import platform
 import random
 import re
 import shutil
-import stat
 import sys
 import tempfile
 import time
@@ -23,7 +22,7 @@ import zipfile
 from datetime import datetime
 from pathlib import Path
 from types import ModuleType
-from typing import Callable, NamedTuple
+from typing import Callable, NamedTuple, Sequence
 from urllib.parse import urlparse
 
 import httpx
@@ -43,12 +42,10 @@ from reflex.utils.exceptions import (
     SystemPackageMissingError,
 )
 from reflex.utils.format import format_library_name
-from reflex.utils.registry import _get_npm_registry
+from reflex.utils.registry import get_npm_registry
 
 if typing.TYPE_CHECKING:
     from reflex.app import App
-
-CURRENTLY_INSTALLING_NODE = False
 
 
 class AppInfo(NamedTuple):
@@ -191,24 +188,6 @@ def get_node_version() -> version.Version | None:
         return None
 
 
-def get_fnm_version() -> version.Version | None:
-    """Get the version of fnm.
-
-    Returns:
-        The version of FNM.
-    """
-    try:
-        result = processes.new_process([constants.Fnm.EXE, "--version"], run=True)
-        return version.parse(result.stdout.split(" ")[1])  # pyright: ignore [reportOptionalMemberAccess, reportAttributeAccessIssue]
-    except (FileNotFoundError, TypeError):
-        return None
-    except version.InvalidVersion as e:
-        console.warn(
-            f"The detected fnm version ({e.args[0]}) is not valid. Defaulting to None."
-        )
-        return None
-
-
 def get_bun_version() -> version.Version | None:
     """Get the version of bun.
 
@@ -231,42 +210,107 @@ def get_bun_version() -> version.Version | None:
         return None
 
 
-def get_install_package_manager(on_failure_return_none: bool = False) -> str | None:
-    """Get the package manager executable for installation.
-      Currently, bun is used for installation only.
-
-    Args:
-        on_failure_return_none: Whether to return None on failure.
+def prefer_npm_over_bun() -> bool:
+    """Check if npm should be preferred over bun.
 
     Returns:
-        The path to the package manager.
+        If npm should be preferred over bun.
     """
-    if constants.IS_WINDOWS and (
-        windows_check_onedrive_in_path() or windows_npm_escape_hatch()
-    ):
-        return get_package_manager(on_failure_return_none)
-    return str(get_config().bun_path)
+    return npm_escape_hatch() or (
+        constants.IS_WINDOWS and windows_check_onedrive_in_path()
+    )
 
 
-def get_package_manager(on_failure_return_none: bool = False) -> str | None:
-    """Get the package manager executable for running app.
-      Currently on unix systems, npm is used for running the app only.
+def get_nodejs_compatible_package_managers(
+    raise_on_none: bool = True,
+) -> Sequence[str]:
+    """Get the package manager executable for installation. Typically, bun is used for installation.
 
     Args:
-        on_failure_return_none: Whether to return None on failure.
+        raise_on_none: Whether to raise an error if the package manager is not found.
 
     Returns:
         The path to the package manager.
 
     Raises:
-        FileNotFoundError: If the package manager is not found.
+        FileNotFoundError: If the package manager is not found and raise_on_none is True.
     """
-    npm_path = path_ops.get_npm_path()
-    if npm_path is not None:
-        return str(npm_path)
-    if on_failure_return_none:
-        return None
-    raise FileNotFoundError("NPM not found. You may need to run `reflex init`.")
+    bun_package_manager = (
+        str(bun_path) if (bun_path := path_ops.get_bun_path()) else None
+    )
+
+    npm_package_manager = (
+        str(npm_path) if (npm_path := path_ops.get_npm_path()) else None
+    )
+
+    if prefer_npm_over_bun():
+        package_managers = [npm_package_manager, bun_package_manager]
+    else:
+        package_managers = [bun_package_manager, npm_package_manager]
+
+    package_managers = list(filter(None, package_managers))
+
+    if not package_managers and not raise_on_none:
+        raise FileNotFoundError(
+            "Bun or npm not found. You might need to rerun `reflex init` or install either."
+        )
+
+    return package_managers
+
+
+def is_outdated_nodejs_installed():
+    """Check if the installed Node.js version is outdated.
+
+    Returns:
+        If the installed Node.js version is outdated.
+    """
+    current_version = get_node_version()
+    if current_version is not None and current_version < version.parse(
+        constants.Node.MIN_VERSION
+    ):
+        console.warn(
+            f"Your version ({current_version}) of Node.js is out of date. Upgrade to {constants.Node.MIN_VERSION} or higher."
+        )
+        return True
+    return False
+
+
+def get_js_package_executor(raise_on_none: bool = False) -> Sequence[Sequence[str]]:
+    """Get the paths to package managers for running commands. Ordered by preference.
+    This is currently identical to get_install_package_managers, but may change in the future.
+
+    Args:
+        raise_on_none: Whether to raise an error if no package managers is not found.
+
+    Returns:
+        The paths to the package managers as a list of lists, where each list is the command to run and its arguments.
+
+    Raises:
+        FileNotFoundError: If no package managers are found and raise_on_none is True.
+    """
+    bun_package_manager = (
+        [str(bun_path)] + (["--bun"] if is_outdated_nodejs_installed() else [])
+        if (bun_path := path_ops.get_bun_path())
+        else None
+    )
+
+    npm_package_manager = (
+        [str(npm_path)] if (npm_path := path_ops.get_npm_path()) else None
+    )
+
+    if prefer_npm_over_bun():
+        package_managers = [npm_package_manager, bun_package_manager]
+    else:
+        package_managers = [bun_package_manager, npm_package_manager]
+
+    package_managers = list(filter(None, package_managers))
+
+    if not package_managers and raise_on_none:
+        raise FileNotFoundError(
+            "Bun or npm not found. You might need to rerun `reflex init` or install either."
+        )
+
+    return package_managers
 
 
 def windows_check_onedrive_in_path() -> bool:
@@ -278,8 +322,8 @@ def windows_check_onedrive_in_path() -> bool:
     return "onedrive" in str(Path.cwd()).lower()
 
 
-def windows_npm_escape_hatch() -> bool:
-    """For windows, if the user sets REFLEX_USE_NPM, use npm instead of bun.
+def npm_escape_hatch() -> bool:
+    """If the user sets REFLEX_USE_NPM, prefer npm over bun.
 
     Returns:
         If the user has set REFLEX_USE_NPM.
@@ -862,7 +906,7 @@ def initialize_bun_config():
         bunfig_content = custom_bunfig.read_text()
         console.info(f"Copying custom bunfig.toml inside {get_web_dir()} folder")
     else:
-        best_registry = _get_npm_registry()
+        best_registry = get_npm_registry()
         bunfig_content = constants.Bun.DEFAULT_CONFIG.format(registry=best_registry)
 
     bun_config_path.write_text(bunfig_content)
@@ -970,92 +1014,6 @@ def download_and_run(url: str, *args, show_status: bool = False, **env):
     show(f"Installing {url}", process)
 
 
-def download_and_extract_fnm_zip():
-    """Download and run a script.
-
-    Raises:
-        Exit: If an error occurs while downloading or extracting the FNM zip.
-    """
-    # Download the zip file
-    url = constants.Fnm.INSTALL_URL
-    console.debug(f"Downloading {url}")
-    fnm_zip_file: Path = constants.Fnm.DIR / f"{constants.Fnm.FILENAME}.zip"
-    # Function to download and extract the FNM zip release.
-    try:
-        # Download the FNM zip release.
-        # TODO: show progress to improve UX
-        response = net.get(url, follow_redirects=True)
-        response.raise_for_status()
-        with fnm_zip_file.open("wb") as output_file:
-            for chunk in response.iter_bytes():
-                output_file.write(chunk)
-
-        # Extract the downloaded zip file.
-        with zipfile.ZipFile(fnm_zip_file, "r") as zip_ref:
-            zip_ref.extractall(constants.Fnm.DIR)
-
-        console.debug("FNM package downloaded and extracted successfully.")
-    except Exception as e:
-        console.error(f"An error occurred while downloading fnm package: {e}")
-        raise typer.Exit(1) from e
-    finally:
-        # Clean up the downloaded zip file.
-        path_ops.rm(fnm_zip_file)
-
-
-def install_node():
-    """Install fnm and nodejs for use by Reflex.
-    Independent of any existing system installations.
-    """
-    if not constants.Fnm.FILENAME:
-        # fnm only support Linux, macOS and Windows distros.
-        console.debug("")
-        return
-
-    # Skip installation if check_node_version() checks out
-    if check_node_version():
-        console.debug("Skipping node installation as it is already installed.")
-        return
-
-    path_ops.mkdir(constants.Fnm.DIR)
-    if not constants.Fnm.EXE.exists():
-        download_and_extract_fnm_zip()
-
-    if constants.IS_WINDOWS:
-        # Install node
-        fnm_exe = Path(constants.Fnm.EXE).resolve()
-        fnm_dir = Path(constants.Fnm.DIR).resolve()
-        process = processes.new_process(
-            [
-                "powershell",
-                "-Command",
-                f'& "{fnm_exe}" install {constants.Node.VERSION} --fnm-dir "{fnm_dir}"',
-            ],
-        )
-    else:  # All other platforms (Linux, MacOS).
-        # Add execute permissions to fnm executable.
-        constants.Fnm.EXE.chmod(stat.S_IXUSR)
-        # Install node.
-        # Specify arm64 arch explicitly for M1s and M2s.
-        architecture_arg = (
-            ["--arch=arm64"]
-            if platform.system() == "Darwin" and platform.machine() == "arm64"
-            else []
-        )
-
-        process = processes.new_process(
-            [
-                constants.Fnm.EXE,
-                "install",
-                *architecture_arg,
-                constants.Node.VERSION,
-                "--fnm-dir",
-                constants.Fnm.DIR,
-            ],
-        )
-    processes.show_status("Installing node", process)
-
-
 def install_bun():
     """Install bun onto the user's system.
 
@@ -1069,7 +1027,9 @@ def install_bun():
         )
 
     # Skip if bun is already installed.
-    if get_bun_version() == version.parse(constants.Bun.VERSION):
+    if (current_version := get_bun_version()) and current_version >= version.parse(
+        constants.Bun.MIN_VERSION
+    ):
         console.debug("Skipping bun installation as it is already installed.")
         return
 
@@ -1157,38 +1117,19 @@ def install_frontend_packages(packages: set[str], config: Config):
         packages: A list of package names to be installed.
         config: The config object.
 
-    Raises:
-        FileNotFoundError: If the package manager is not found.
-
     Example:
         >>> install_frontend_packages(["react", "react-dom"], get_config())
     """
-    # unsupported archs(arm and 32bit machines) will use npm anyway. so we dont have to run npm twice
-    fallback_command = (
-        get_package_manager(on_failure_return_none=True)
-        if (
-            not constants.IS_WINDOWS
-            or (constants.IS_WINDOWS and not windows_check_onedrive_in_path())
-        )
-        else None
+    install_package_managers = get_nodejs_compatible_package_managers(
+        raise_on_none=True
     )
 
-    install_package_manager = (
-        get_install_package_manager(on_failure_return_none=True) or fallback_command
-    )
+    primary_package_manager = install_package_managers[0]
+    fallbacks = install_package_managers[1:]
 
-    if install_package_manager is None:
-        raise FileNotFoundError(
-            "Could not find a package manager to install frontend packages. You may need to run `reflex init`."
-        )
-
-    fallback_command = (
-        fallback_command if fallback_command is not install_package_manager else None
-    )
-
-    processes.run_process_with_fallback(
-        [install_package_manager, "install", "--legacy-peer-deps"],
-        fallback=fallback_command,
+    processes.run_process_with_fallbacks(
+        [primary_package_manager, "install", "--legacy-peer-deps"],
+        fallbacks=fallbacks,
         analytics_enabled=True,
         show_status_message="Installing base frontend packages",
         cwd=get_web_dir(),
@@ -1196,16 +1137,16 @@ def install_frontend_packages(packages: set[str], config: Config):
     )
 
     if config.tailwind is not None:
-        processes.run_process_with_fallback(
+        processes.run_process_with_fallbacks(
             [
-                install_package_manager,
+                primary_package_manager,
                 "add",
                 "--legacy-peer-deps",
                 "-d",
                 constants.Tailwind.VERSION,
                 *((config.tailwind or {}).get("plugins", [])),
             ],
-            fallback=fallback_command,
+            fallbacks=fallbacks,
             analytics_enabled=True,
             show_status_message="Installing tailwind",
             cwd=get_web_dir(),
@@ -1214,9 +1155,9 @@ def install_frontend_packages(packages: set[str], config: Config):
 
     # Install custom packages defined in frontend_packages
     if len(packages) > 0:
-        processes.run_process_with_fallback(
-            [install_package_manager, "add", "--legacy-peer-deps", *packages],
-            fallback=fallback_command,
+        processes.run_process_with_fallbacks(
+            [primary_package_manager, "add", "--legacy-peer-deps", *packages],
+            fallbacks=fallbacks,
             analytics_enabled=True,
             show_status_message="Installing frontend packages from config and components",
             cwd=get_web_dir(),
@@ -1338,24 +1279,19 @@ def validate_frontend_dependencies(init: bool = True):
         Exit: If the package manager is invalid.
     """
     if not init:
-        # we only need to validate the package manager when running app.
-        # `reflex init` will install the deps anyway(if applied).
-        package_manager = get_package_manager()
-        if not package_manager:
-            console.error(
-                "Could not find NPM package manager. Make sure you have node installed."
-            )
-            raise typer.Exit(1)
+        try:
+            get_js_package_executor(raise_on_none=True)
+        except FileNotFoundError as e:
+            raise typer.Exit(1) from e
 
+    if prefer_npm_over_bun():
         if not check_node_version():
             node_version = get_node_version()
             console.error(
                 f"Reflex requires node version {constants.Node.MIN_VERSION} or higher to run, but the detected version is {node_version}",
             )
             raise typer.Exit(1)
-
-    if init:
-        # we only need bun for package install on `reflex init`.
+    else:
         validate_bun()
 
 
@@ -1400,12 +1336,8 @@ def initialize_frontend_dependencies():
     """Initialize all the frontend dependencies."""
     # validate dependencies before install
     validate_frontend_dependencies()
-    # Avoid warning about Node installation while we're trying to install it.
-    global CURRENTLY_INSTALLING_NODE
-    CURRENTLY_INSTALLING_NODE = True
     # Install the frontend dependencies.
-    processes.run_concurrently(install_node, install_bun)
-    CURRENTLY_INSTALLING_NODE = False
+    processes.run_concurrently(install_bun)
     # Set up the web directory.
     initialize_web_directory()
 

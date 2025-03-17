@@ -371,7 +371,13 @@ class AppHarness:
 
         # Start the frontend.
         self.frontend_process = reflex.utils.processes.new_process(
-            [reflex.utils.prerequisites.get_package_manager(), "run", "dev"],
+            [
+                *reflex.utils.prerequisites.get_js_package_executor(raise_on_none=True)[
+                    0
+                ],
+                "run",
+                "dev",
+            ],
             cwd=self.app_path / reflex.utils.prerequisites.get_web_dir(),
             env={"PORT": "0"},
             **FRONTEND_POPEN_ARGS,
