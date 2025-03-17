@@ -121,7 +121,7 @@ jobs:
       - name: Run uv sync
         shell: bash
         run: |
-          uv install --no-install-project --no-dev
+          uv pip install --no-install-project --no-dev
 
       - name: calculate and upload size
         run:
