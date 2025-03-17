@@ -31,7 +31,7 @@ class Cond(MemoizationLeaf):
         cls,
         cond: Var,
         comp1: BaseComponent,
-        comp2: BaseComponent | None = None,
+        comp2: BaseComponent | types.Unset = types.Unset(),
     ) -> Component:
         """Create a conditional component.
 
@@ -44,10 +44,14 @@ class Cond(MemoizationLeaf):
             The conditional component.
         """
         # Wrap everything in fragments.
-        if type(comp1).__name__ != "Fragment":
+        if type(comp1) is not Fragment:
             comp1 = Fragment.create(comp1)
-        if comp2 is None or type(comp2).__name__ != "Fragment":
-            comp2 = Fragment.create(comp2) if comp2 else Fragment.create()
+        if isinstance(comp2, types.Unset) or type(comp2) is not Fragment:
+            comp2 = (
+                Fragment.create(comp2)
+                if not isinstance(comp2, types.Unset)
+                else Fragment.create()
+            )
         return Fragment.create(
             cls._create(
                 children=[comp1, comp2],
@@ -96,18 +100,22 @@ class Cond(MemoizationLeaf):
 
 
 @overload
-def cond(condition: Any, c1: Component, c2: Any) -> Component: ...  # pyright: ignore [reportOverlappingOverload]
+def cond(condition: Any, c1: Component, c2: Any, /) -> Component: ...  # pyright: ignore [reportOverlappingOverload]
 
 
 @overload
-def cond(condition: Any, c1: Component) -> Component: ...
+def cond(condition: Any, c1: Component, /) -> Component: ...
 
 
 @overload
-def cond(condition: Any, c1: Any, c2: Any) -> Var: ...
+def cond(condition: Any, c1: Any, c2: Component, /) -> Component: ...  # pyright: ignore [reportOverlappingOverload]
 
 
-def cond(condition: Any, c1: Any, c2: Any = None) -> Component | Var:
+@overload
+def cond(condition: Any, c1: Any, c2: Any, /) -> Var: ...
+
+
+def cond(condition: Any, c1: Any, c2: Any = types.Unset(), /) -> Component | Var:
     """Create a conditional component or Prop.
 
     Args:
@@ -128,15 +136,15 @@ def cond(condition: Any, c1: Any, c2: Any = None) -> Component | Var:
 
     # If the first component is a component, create a Cond component.
     if isinstance(c1, BaseComponent):
-        if c2 is not None and not isinstance(c2, BaseComponent):
-            raise ValueError("Both arguments must be components.")
+        if not isinstance(c2, types.Unset) and not isinstance(c2, BaseComponent):
+            return Cond.create(cond_var.bool(), c1, Fragment.create(c2))
         return Cond.create(cond_var.bool(), c1, c2)
 
     # Otherwise, create a conditional Var.
     # Check that the second argument is valid.
     if isinstance(c2, BaseComponent):
-        raise ValueError("Both arguments must be props.")
-    if c2 is None:
+        return Cond.create(cond_var.bool(), Fragment.create(c1), c2)
+    if isinstance(c2, types.Unset):
         raise ValueError("For conditional vars, the second argument must be set.")
 
     # convert the truth and false cond parts into vars so the _var_data can be obtained.
