@@ -258,6 +258,23 @@ def get_nodejs_compatible_package_managers(
     return package_managers
 
 
+def is_outdated_nodejs_installed():
+    """Check if the installed Node.js version is outdated.
+
+    Returns:
+        If the installed Node.js version is outdated.
+    """
+    current_version = get_node_version()
+    if current_version is not None and current_version < version.parse(
+        constants.Node.MIN_VERSION
+    ):
+        console.warn(
+            f"Your version ({current_version}) of Node.js is out of date. Upgrade to {constants.Node.MIN_VERSION} or higher."
+        )
+        return True
+    return False
+
+
 def get_js_package_executor(raise_on_none: bool = False) -> Sequence[Sequence[str]]:
     """Get the paths to package managers for running commands. Ordered by preference.
     This is currently identical to get_install_package_managers, but may change in the future.
@@ -272,7 +289,9 @@ def get_js_package_executor(raise_on_none: bool = False) -> Sequence[Sequence[st
         FileNotFoundError: If no package managers are found and raise_on_none is True.
     """
     bun_package_manager = (
-        [str(bun_path)] if (bun_path := path_ops.get_bun_path()) else None
+        [str(bun_path)] + (["--bun"] if is_outdated_nodejs_installed() else [])
+        if (bun_path := path_ops.get_bun_path())
+        else None
     )
 
     npm_package_manager = (
