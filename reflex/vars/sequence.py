@@ -1683,6 +1683,8 @@ def _determine_value_of_array_index(
                 if t is not type(None)
             ]
         )
+    if origin_var_type is range:
+        return int
     if origin_var_type in [
         Sequence,
         Iterable,
