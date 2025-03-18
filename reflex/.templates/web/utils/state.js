@@ -5,15 +5,16 @@ import JSON5 from "json5";
 import env from "$/env.json";
 import reflexEnvironment from "$/reflex.json";
 import Cookies from "universal-cookie";
-import { useEffect, useRef, useState } from "react";
-import Router, { useRouter } from "next/router";
+import { useEffect, useRef, useState, useContext } from "react";
+import { useNavigate, useLocation, useSearchParams } from "react-router-dom";
+import { UNSAFE_NavigationContext } from "react-router-dom";
 import {
   initialEvents,
   initialState,
   onLoadInternalEvent,
   state_name,
   exception_state_name,
-} from "$/utils/context.js";
+} from "$/utils/context";
 import debounce from "$/utils/helpers/debounce";
 import throttle from "$/utils/helpers/throttle";
 
@@ -172,18 +173,19 @@ export const queueEventIfSocketExists = async (events, socket) => {
  * Handle frontend event or send the event to the backend via Websocket.
  * @param event The event to send.
  * @param socket The socket object to send the event on.
+ * @param navigate The navigate function from useNavigate
  *
  * @returns True if the event was sent, false if it was handled locally.
  */
-export const applyEvent = async (event, socket) => {
+export const applyEvent = async (event, socket, navigate) => {
   // Handle special events
   if (event.name == "_redirect") {
     if (event.payload.external) {
       window.open(event.payload.path, "_blank", "noopener");
     } else if (event.payload.replace) {
-      Router.replace(event.payload.path);
+      navigate(event.payload.path, { replace: true });
     } else {
-      Router.push(event.payload.path);
+      navigate(event.payload.path);
     }
     return false;
   }
@@ -227,8 +229,8 @@ export const applyEvent = async (event, socket) => {
       a.href = eval?.(
         event.payload.url.replace(
           "getBackendURL(env.UPLOAD)",
-          `"${getBackendURL(env.UPLOAD)}"`,
-        ),
+          `"${getBackendURL(env.UPLOAD)}"`
+        )
       );
     }
     a.download = event.payload.filename;
@@ -304,11 +306,12 @@ export const applyEvent = async (event, socket) => {
     event.router_data === undefined ||
     Object.keys(event.router_data).length === 0
   ) {
-    event.router_data = (({ pathname, query, asPath }) => ({
-      pathname,
-      query,
-      asPath,
-    }))(Router);
+    // Since we don't have router directly, we need to get info from our hooks
+    event.router_data = {
+      pathname: window.location.pathname,
+      query: Object.fromEntries(new URLSearchParams(window.location.search)),
+      asPath: window.location.pathname + window.location.search,
+    };
   }
 
   // Send the event to the server.
@@ -341,7 +344,7 @@ export const applyRestEvent = async (event, socket) => {
       event.payload.files,
       event.payload.upload_id,
       event.payload.on_upload_progress,
-      socket,
+      socket
     );
     return false;
   }
@@ -360,7 +363,7 @@ export const queueEvents = async (events, socket, prepend) => {
     events = [
       ...events,
       ...Array.from({ length: event_queue.length }).map(() =>
-        event_queue.shift(),
+        event_queue.shift()
       ),
     ];
   }
@@ -371,8 +374,9 @@ export const queueEvents = async (events, socket, prepend) => {
 /**
  * Process an event off the event queue.
  * @param socket The socket object to send the event on.
+ * @param navigate The navigate function from React Router
  */
-export const processEvent = async (socket) => {
+export const processEvent = async (socket, navigate) => {
   // Only proceed if the socket is up and no event in the queue uses state, otherwise we throw the event into the void
   if (!socket && isStateful()) {
     return;
@@ -394,14 +398,14 @@ export const processEvent = async (socket) => {
   if (event.handler) {
     eventSent = await applyRestEvent(event, socket);
   } else {
-    eventSent = await applyEvent(event, socket);
+    eventSent = await applyEvent(event, socket, navigate);
   }
   // If no event was sent, set processing to false.
   if (!eventSent) {
     event_processing = false;
     // recursively call processEvent to drain the queue, since there is
     // no state update to trigger the useEffect event loop.
-    await processEvent(socket);
+    await processEvent(socket, navigate);
   }
 };
 
@@ -418,7 +422,7 @@ export const connect = async (
   dispatch,
   transports,
   setConnectErrors,
-  client_storage = {},
+  client_storage = {}
 ) => {
   // Get backend URL object from the endpoint.
   const endpoint = getBackendURL(EVENTURL);
@@ -520,7 +524,7 @@ export const uploadFiles = async (
   files,
   upload_id,
   on_upload_progress,
-  socket,
+  socket
 ) => {
   // return if there's no file to upload
   if (files === undefined || files.length === 0) {
@@ -625,7 +629,7 @@ export const Event = (
   name,
   payload = {},
   event_actions = {},
-  handler = null,
+  handler = null
 ) => {
   return { name, payload, handler, event_actions };
 };
@@ -652,7 +656,7 @@ export const hydrateClientStorage = (client_storage) => {
     for (const state_key in client_storage.local_storage) {
       const options = client_storage.local_storage[state_key];
       const local_storage_value = localStorage.getItem(
-        options.name || state_key,
+        options.name || state_key
       );
       if (local_storage_value !== null) {
         client_storage_values[state_key] = local_storage_value;
@@ -663,7 +667,7 @@ export const hydrateClientStorage = (client_storage) => {
     for (const state_key in client_storage.session_storage) {
       const session_options = client_storage.session_storage[state_key];
       const session_storage_value = sessionStorage.getItem(
-        session_options.name || state_key,
+        session_options.name || state_key
       );
       if (session_storage_value != null) {
         client_storage_values[state_key] = session_storage_value;
@@ -688,7 +692,7 @@ export const hydrateClientStorage = (client_storage) => {
 const applyClientStorageDelta = (client_storage, delta) => {
   // find the main state and check for is_hydrated
   const unqualified_states = Object.keys(delta).filter(
-    (key) => key.split(".").length === 1,
+    (key) => key.split(".").length === 1
   );
   if (unqualified_states.length === 1) {
     const main_state = delta[unqualified_states[0]];
@@ -722,7 +726,7 @@ const applyClientStorageDelta = (client_storage, delta) => {
         const session_options = client_storage.session_storage[state_key];
         sessionStorage.setItem(
           session_options.name || state_key,
-          delta[substate][key],
+          delta[substate][key]
         );
       }
     }
@@ -730,7 +734,7 @@ const applyClientStorageDelta = (client_storage, delta) => {
 };
 
 /**
- * Establish websocket event loop for a NextJS page.
+ * Establish websocket event loop for a React Router page.
  * @param dispatch The reducer dispatch function to update state.
  * @param initial_events The initial app events.
  * @param client_storage The client storage object from context.js
@@ -742,10 +746,13 @@ const applyClientStorageDelta = (client_storage, delta) => {
 export const useEventLoop = (
   dispatch,
   initial_events = () => [],
-  client_storage = {},
+  client_storage = {}
 ) => {
   const socket = useRef(null);
-  const router = useRouter();
+  const location = useLocation();
+  const navigate = useNavigate();
+  const prevLocationRef = useRef(location);
+  const [searchParams] = useSearchParams();
   const [connectErrors, setConnectErrors] = useState([]);
 
   // Function to add new events to the event queue.
@@ -756,7 +763,7 @@ export const useEventLoop = (
 
     event_actions = events.reduce(
       (acc, e) => ({ ...acc, ...e.event_actions }),
-      event_actions ?? {},
+      event_actions ?? {}
     );
 
     const _e = args.filter((o) => o?.preventDefault !== undefined)[0];
@@ -784,7 +791,7 @@ export const useEventLoop = (
       debounce(
         combined_name,
         () => queueEvents(events, socket),
-        event_actions.debounce,
+        event_actions.debounce
       );
     } else {
       queueEvents(events, socket);
@@ -793,22 +800,22 @@ export const useEventLoop = (
 
   const sentHydrate = useRef(false); // Avoid double-hydrate due to React strict-mode
   useEffect(() => {
-    if (router.isReady && !sentHydrate.current) {
+    if (!sentHydrate.current) {
       queueEvents(
         initial_events().map((e) => ({
           ...e,
-          router_data: (({ pathname, query, asPath }) => ({
-            pathname,
-            query,
-            asPath,
-          }))(router),
+          router_data: {
+            pathname: location.pathname,
+            query: Object.fromEntries(searchParams.entries()),
+            asPath: location.pathname + location.search,
+          },
         })),
         socket,
-        true,
+        true
       );
       sentHydrate.current = true;
     }
-  }, [router.isReady]);
+  }, []);
 
   // Handle frontend errors and send them to the backend via websocket.
   useEffect(() => {
@@ -850,7 +857,7 @@ export const useEventLoop = (
           dispatch,
           ["websocket"],
           setConnectErrors,
-          client_storage,
+          client_storage
         );
       }
     }
@@ -865,14 +872,14 @@ export const useEventLoop = (
 
   // Main event loop.
   useEffect(() => {
-    // Skip if the router is not ready.
-    if (!router.isReady || isBackendDisabled()) {
+    // Skip if the backend is disabled
+    if (isBackendDisabled()) {
       return;
     }
     (async () => {
       // Process all outstanding events.
       while (event_queue.length > 0 && !event_processing) {
-        await processEvent(socket.current);
+        await processEvent(socket.current, navigate);
       }
     })();
   });
@@ -898,7 +905,7 @@ export const useEventLoop = (
         vars[storage_to_state_map[e.key]] = e.newValue;
         const event = Event(
           `${state_name}.reflex___state____update_vars_internal_state.update_vars_internal`,
-          { vars: vars },
+          { vars: vars }
         );
         addEvents([event], e);
       }
@@ -908,31 +915,27 @@ export const useEventLoop = (
     return () => window.removeEventListener("storage", handleStorage);
   });
 
-  // Route after the initial page hydration.
+  // Route after the initial page hydration
   useEffect(() => {
-    const change_start = () => {
-      const main_state_dispatch = dispatch["reflex___state____state"];
-      if (main_state_dispatch !== undefined) {
-        main_state_dispatch({ is_hydrated: false });
-      }
-    };
-    const change_complete = () => addEvents(onLoadInternalEvent());
-    const change_error = () => {
-      // Remove cached error state from router for this page, otherwise the
-      // page will never send on_load events again.
-      if (router.components[router.pathname].error) {
-        delete router.components[router.pathname].error;
-      }
-    };
-    router.events.on("routeChangeStart", change_start);
-    router.events.on("routeChangeComplete", change_complete);
-    router.events.on("routeChangeError", change_error);
-    return () => {
-      router.events.off("routeChangeStart", change_start);
-      router.events.off("routeChangeComplete", change_complete);
-      router.events.off("routeChangeError", change_error);
-    };
-  }, [router]);
+    // This will run when the location changes
+    if (location !== prevLocationRef.current) {
+      // Equivalent to routeChangeStart - runs when navigation begins
+      const change_start = () => {
+        const main_state_dispatch = dispatch["reflex___state____state"];
+        if (main_state_dispatch !== undefined) {
+          main_state_dispatch({ is_hydrated: false });
+        }
+      };
+      change_start();
+
+      // Equivalent to routeChangeComplete - runs after navigation completes
+      const change_complete = () => addEvents(onLoadInternalEvent());
+      change_complete();
+
+      // Update the ref
+      prevLocationRef.current = location;
+    }
+  }, [location, dispatch, onLoadInternalEvent, addEvents]);
 
   return [addEvents, connectErrors];
 };
@@ -991,7 +994,7 @@ export const getRefValues = (refs) => {
   return refs.map((ref) =>
     ref.current
       ? ref.current.value || ref.current.getAttribute("aria-valuenow")
-      : null,
+      : null
   );
 };
 

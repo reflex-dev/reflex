@@ -1,11 +1,11 @@
-import { useTheme } from "next-themes";
+import { useTheme } from "$/utils/react-theme";
 import { useEffect, useState } from "react";
 import {
   ColorModeContext,
   defaultColorMode,
   isDevMode,
   lastCompiledTimeStamp,
-} from "$/utils/context.js";
+} from "$/utils/context";
 
 export default function RadixThemesColorModeProvider({ children }) {
   const { theme, resolvedTheme, setTheme } = useTheme();

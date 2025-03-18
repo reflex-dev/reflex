@@ -20,6 +20,8 @@ class Ext(SimpleNamespace):
 
     # The extension for JS files.
     JS = ".js"
+    # The extension for JSX files.
+    JSX = ".jsx"
     # The extension for python files.
     PY = ".py"
     # The extension for css files.
@@ -83,7 +85,7 @@ class PageNames(SimpleNamespace):
     # The name of the index page.
     INDEX_ROUTE = "index"
     # The name of the app root page.
-    APP_ROOT = "_app"
+    APP_ROOT = "root.jsx"
     # The root stylesheet filename.
     STYLESHEET_ROOT = "styles"
     # The name of the document root page.

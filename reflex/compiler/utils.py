@@ -13,19 +13,12 @@ from urllib.parse import urlparse
 from pydantic.v1.fields import ModelField
 
 from reflex import constants
-from reflex.components.base import (
-    Body,
-    Description,
-    DocumentHead,
-    Head,
-    Html,
-    Image,
-    Main,
-    Meta,
-    NextScript,
-    Title,
-)
+from reflex.components.base import Description, Image, Meta, Scripts, Title
+from reflex.components.base.document import ScrollRestoration
 from reflex.components.component import Component, ComponentStyle, CustomComponent
+from reflex.components.el.elements.metadata import Head
+from reflex.components.el.elements.other import Html
+from reflex.components.el.elements.sectioning import Body
 from reflex.istate.storage import Cookie, LocalStorage, SessionStorage
 from reflex.state import BaseState, _resolve_delta
 from reflex.style import Style
@@ -351,10 +344,11 @@ def create_document_root(
     """
     head_components = head_components or []
     return Html.create(
-        DocumentHead.create(*head_components),
+        Head.create(*head_components),
         Body.create(
-            Main.create(),
-            NextScript.create(),
+            Var("children"),
+            ScrollRestoration.create(),
+            Scripts.create(),
         ),
         lang=html_lang or "en",
         custom_attrs=html_custom_attrs or {},
@@ -397,7 +391,12 @@ def get_page_path(path: str) -> str:
     Returns:
         The path of the compiled JS file.
     """
-    return str(get_web_dir() / constants.Dirs.PAGES / (path + constants.Ext.JS))
+    return str(
+        get_web_dir()
+        / constants.Dirs.PAGES
+        / constants.Dirs.ROUTES
+        / (path + constants.Ext.JSX)
+    )
 
 
 def get_theme_path() -> str:
@@ -432,7 +431,7 @@ def get_context_path() -> str:
     Returns:
         The path of the context module.
     """
-    return str(get_web_dir() / (constants.Dirs.CONTEXTS_PATH + constants.Ext.JS))
+    return str(get_web_dir() / (constants.Dirs.CONTEXTS_PATH + constants.Ext.JSX))
 
 
 def get_components_path() -> str:
@@ -444,7 +443,7 @@ def get_components_path() -> str:
     return str(
         get_web_dir()
         / constants.Dirs.UTILS
-        / (constants.PageNames.COMPONENTS + constants.Ext.JS),
+        / (constants.PageNames.COMPONENTS + constants.Ext.JSX),
     )
 
 
@@ -457,7 +456,7 @@ def get_stateful_components_path() -> str:
     return str(
         get_web_dir()
         / constants.Dirs.UTILS
-        / (constants.PageNames.STATEFUL_COMPONENTS + constants.Ext.JS)
+        / (constants.PageNames.STATEFUL_COMPONENTS + constants.Ext.JSX)
     )
 
 
@@ -489,12 +488,13 @@ def add_meta(
         children.append(Description.create(content=description))
     children.append(Image.create(content=image))
 
-    page.children.append(
-        Head.create(
-            *children,
-            *meta_tags,
+    if False:
+        page.children.append(
+            Head.create(
+                *children,
+                *meta_tags,
+            )
         )
-    )
 
     return page
 

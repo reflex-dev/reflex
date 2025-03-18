@@ -26,7 +26,7 @@ def get_cdn_url(lib: str) -> str:
     return f"https://cdn.jsdelivr.net/npm/{lib}" + "/+esm"
 
 
-bundled_libraries = {"react", "@radix-ui/themes", "@emotion/react", "next/link"}
+bundled_libraries = {"react", "@radix-ui/themes", "@emotion/react"}
 
 
 def bundle_library(component: Union["Component", str]):

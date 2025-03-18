@@ -8,7 +8,7 @@ _SUBMODULES: set[str] = {"app_wrap", "bare"}
 
 _SUBMOD_ATTRS: dict[str, list[str]] = {
     "body": ["Body"],
-    "document": ["DocumentHead", "Html", "Main", "NextScript"],
+    "document": ["Scripts", "Outlet", "ScrollRestoration", "Links", "Meta"],
     "fragment": [
         "Fragment",
         "fragment",

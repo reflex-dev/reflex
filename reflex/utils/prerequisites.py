@@ -881,7 +881,7 @@ def _turbopack_flag() -> str:
 def _compile_package_json():
     return templates.PACKAGE_JSON.render(
         scripts={
-            "dev": constants.PackageJson.Commands.DEV + _turbopack_flag(),
+            "dev": constants.PackageJson.Commands.DEV,
             "export": constants.PackageJson.Commands.EXPORT,
             "export_sitemap": constants.PackageJson.Commands.EXPORT_SITEMAP,
             "prod": constants.PackageJson.Commands.PROD,

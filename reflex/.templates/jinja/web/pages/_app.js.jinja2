@@ -6,8 +6,9 @@ import '$/styles/styles.css'
 {% endblock %}
 
 {% block declaration %}
-import { EventLoopProvider, StateProvider, defaultColorMode } from "$/utils/context.js";
-import { ThemeProvider } from 'next-themes'
+import { EventLoopProvider, StateProvider, defaultColorMode } from "$/utils/context";
+import { ThemeProvider } from '$/utils/react-theme';
+import { Outlet, Scripts, ScrollRestoration } from 'react-router';
 {% for library_alias, library_path in  window_libraries %}
 import * as {{library_alias}} from "{{library_path}}";
 {% endfor %}
@@ -26,7 +27,20 @@ function AppWrap({children}) {
   )
 }
 
-export default function MyApp({ Component, pageProps }) {
+
+export function Layout({ children }) {
+  return (
+    <html lang={"en"}>
+      <head />
+      <body>
+        {children}
+        <Scripts />
+      </body>
+    </html>
+  );
+}
+
+export default function App() {
   React.useEffect(() => {
     // Make contexts and state objects available globally for dynamic eval'd components
     let windowImports = {
@@ -41,7 +55,7 @@ export default function MyApp({ Component, pageProps }) {
       <StateProvider>
         <EventLoopProvider>
             <AppWrap>
-              <Component {...pageProps} />
+              <Outlet />
             </AppWrap>
         </EventLoopProvider>
       </StateProvider>
