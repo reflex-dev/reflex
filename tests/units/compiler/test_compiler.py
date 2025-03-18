@@ -181,8 +181,8 @@ def test_compile_stylesheets_scss_sass(tmp_path: Path, mocker):
         str(Path(".web") / "styles" / "styles.css"),
         "@import url('./tailwind.css'); \n"
         "@import url('./styles.css'); \n"
-        f"@import url('./{Path('preprocess/styles_a.css')!s}'); \n"
-        f"@import url('./{Path('preprocess/styles_b.css')!s}'); \n",
+        f"@import url('./{Path('preprocess') / Path('styles_a.css')!s}'); \n",
+        f"@import url('./{Path('preprocess') / Path('styles_b.css')!s}'); \n",
     )
 
     stylesheets = [
@@ -194,8 +194,8 @@ def test_compile_stylesheets_scss_sass(tmp_path: Path, mocker):
         str(Path(".web") / "styles" / "styles.css"),
         "@import url('./tailwind.css'); \n"
         "@import url('./styles.css'); \n"
-        f"@import url('./{Path('preprocess/styles_b.css')!s}'); \n"
-        f"@import url('./{Path('preprocess/styles_a.css')!s}'); \n",
+        f"@import url('./{Path('preprocess') / Path('styles_b.css')!s}'); \n"
+        f"@import url('./{Path('preprocess') / Path('styles_a.css')!s}'); \n",
     )
 
     assert (project / ".web" / "styles" / "styles.css").read_text() == (
