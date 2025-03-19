@@ -603,7 +603,7 @@ class EnvironmentVariables:
     NPM_CONFIG_REGISTRY: EnvVar[str | None] = env_var(None)
 
     # Whether to use Granian for the backend. Otherwise, use Uvicorn.
-    REFLEX_USE_GRANIAN: EnvVar[bool] = env_var(False)
+    REFLEX_USE_GRANIAN: EnvVar[bool] = env_var(True)
 
     # The username to use for authentication on python package repository. Username and password must both be provided.
     TWINE_USERNAME: EnvVar[str | None] = env_var(None)
