@@ -1612,7 +1612,7 @@ async def test_state_with_invalid_yield(capsys, mock_app):
                     "An error occurred.",
                     level="error",
                     fallback_to_alert=True,
-                    description="TypeError: Your handler test_state_with_invalid_yield.<locals>.StateWithInvalidYield.invalid_handler must only return/yield: None, Events or other EventHandlers referenced by their class (i.e. using `type(self)` or other class references)..<br/>See logs for details.",
+                    description="TypeError: Your handler test_state_with_invalid_yield.<locals>.StateWithInvalidYield.invalid_handler must only return/yield: None, Events or other EventHandlers referenced by their class (i.e. using `type(self)` or other class references). Returned events of types <class 'int'>..<br/>See logs for details.",
                     id="backend_error",
                     position="top-center",
                     style={"width": "500px"},
