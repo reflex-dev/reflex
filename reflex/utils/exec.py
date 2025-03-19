@@ -357,15 +357,70 @@ def run_granian_backend(host: str, port: int, loglevel: LogLevel):
     ).serve()
 
 
+@once
 def _get_backend_workers():
     from reflex.utils import processes
 
     config = get_config()
+
+    if config.gunicorn_workers is not None:
+        console.deprecate(
+            "config.gunicorn_workers",
+            reason="If you're using Granian, use GRANIAN_WORKERS instead.",
+            deprecation_version="0.7.4",
+            removal_version="0.8.0",
+        )
+
     return (
         processes.get_num_workers()
         if not config.gunicorn_workers
         else config.gunicorn_workers
     )
+
+
+@once
+def _get_backend_timeout():
+    config = get_config()
+
+    if config.timeout is not None:
+        console.deprecate(
+            "config.timeout",
+            reason="If you're using Granian, use GRANIAN_WORKERS_LIFETIME instead.",
+            deprecation_version="0.7.4",
+            removal_version="0.8.0",
+        )
+
+    return config.timeout
+
+
+@once
+def _get_backend_max_requests():
+    config = get_config()
+
+    if config.gunicorn_max_requests is not None:
+        console.deprecate(
+            "config.gunicorn_max_requests",
+            reason="",
+            deprecation_version="0.7.4",
+            removal_version="0.8.0",
+        )
+
+    return config.gunicorn_max_requests
+
+
+@once
+def _get_backend_max_requests_jitter():
+    config = get_config()
+
+    if config.gunicorn_max_requests_jitter is not None:
+        console.deprecate(
+            "config.gunicorn_max_requests_jitter",
+            reason="",
+            deprecation_version="0.7.4",
+            removal_version="0.8.0",
+        )
+
+    return config.gunicorn_max_requests_jitter
 
 
 def run_backend_prod(
@@ -409,14 +464,21 @@ def run_uvicorn_backend_prod(host: str, port: int, loglevel: LogLevel):
         [
             "uvicorn",
             *(
-                [
+                (
                     "--limit-max-requests",
-                    str(config.gunicorn_max_requests),
-                ]
-                if config.gunicorn_max_requests > 0
-                else []
+                    str(max_requessts),
+                )
+                if (
+                    (max_requessts := _get_backend_max_requests()) is not None
+                    and max_requessts > 0
+                )
+                else ()
             ),
-            *("--timeout-keep-alive", str(config.timeout)),
+            *(
+                ("--timeout-keep-alive", str(timeout))
+                if (timeout := _get_backend_timeout()) is not None
+                else ()
+            ),
             *("--host", host),
             *("--port", str(port)),
             *("--workers", str(_get_backend_workers())),
@@ -428,17 +490,34 @@ def run_uvicorn_backend_prod(host: str, port: int, loglevel: LogLevel):
             "gunicorn",
             *("--worker-class", config.gunicorn_worker_class),
             *(
-                [
+                (
                     "--max-requests",
-                    str(config.gunicorn_max_requests),
+                    str(max_requessts),
+                )
+                if (
+                    (max_requessts := _get_backend_max_requests()) is not None
+                    and max_requessts > 0
+                )
+                else ()
+            ),
+            *(
+                (
                     "--max-requests-jitter",
-                    str(config.gunicorn_max_requests_jitter),
-                ]
-                if config.gunicorn_max_requests > 0
-                else []
+                    str(max_requessts_jitter),
+                )
+                if (
+                    (max_requessts_jitter := _get_backend_max_requests_jitter())
+                    is not None
+                    and max_requessts_jitter > 0
+                )
+                else ()
             ),
             "--preload",
-            *("--timeout", str(config.timeout)),
+            *(
+                ("--timeout", str(timeout))
+                if (timeout := _get_backend_timeout()) is not None
+                else ()
+            ),
             *("--bind", f"{host}:{port}"),
             *("--threads", str(_get_backend_workers())),
             f"{app_module}()",
@@ -474,18 +553,12 @@ def run_granian_backend_prod(host: str, port: int, loglevel: LogLevel):
 
         command = [
             "granian",
-            "--workers",
-            str(_get_backend_workers()),
-            "--log-level",
-            "critical",
-            "--host",
-            host,
-            "--port",
-            str(port),
-            "--interface",
-            str(Interfaces.ASGI),
-            "--factory",
-            get_app_module(),
+            *("--workers", str(_get_backend_workers())),
+            *("--log-level", "critical"),
+            *("--host", host),
+            *("--port", str(port)),
+            *("--interface", str(Interfaces.ASGI)),
+            *("--factory", get_app_module()),
         ]
         processes.new_process(
             command,
