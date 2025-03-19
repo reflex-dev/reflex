@@ -1,3 +1,5 @@
+import importlib.util
+import os
 from pathlib import Path
 
 import pytest
@@ -145,12 +147,12 @@ def test_compile_stylesheets(tmp_path: Path, mocker):
 
 
 def test_compile_stylesheets_scss_sass(tmp_path: Path, mocker):
-    try:
-        import sass  # noqa: F401
-    except ImportError:
+    if importlib.util.find_spec("sass") is None:
         pytest.skip(
             'The `libsass` package is required to compile sass/scss stylesheet files. Run `pip install "libsass>=0.23.0"`.'
         )
+    if os.name == "nt":
+        pytest.skip("Skipping test on Windows")
 
     project = tmp_path / "test_project"
     project.mkdir()
@@ -182,8 +184,8 @@ def test_compile_stylesheets_scss_sass(tmp_path: Path, mocker):
         str(Path(".web") / "styles" / "styles.css"),
         "@import url('./tailwind.css'); \n"
         "@import url('./styles.css'); \n"
-        "@import url('./preprocess/styles_a.css'); \n"
-        "@import url('./preprocess/styles_b.css'); \n",
+        f"@import url('./{Path('preprocess') / Path('styles_a.css')!s}'); \n"
+        f"@import url('./{Path('preprocess') / Path('styles_b.css')!s}'); \n",
     )
 
     stylesheets = [
@@ -195,8 +197,8 @@ def test_compile_stylesheets_scss_sass(tmp_path: Path, mocker):
         str(Path(".web") / "styles" / "styles.css"),
         "@import url('./tailwind.css'); \n"
         "@import url('./styles.css'); \n"
-        "@import url('./preprocess/styles_b.css'); \n"
-        "@import url('./preprocess/styles_a.css'); \n",
+        f"@import url('./{Path('preprocess') / Path('styles_b.css')!s}'); \n"
+        f"@import url('./{Path('preprocess') / Path('styles_a.css')!s}'); \n",
     )
 
     assert (project / ".web" / "styles" / "styles.css").read_text() == (

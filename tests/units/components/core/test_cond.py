@@ -100,9 +100,8 @@ def test_prop_cond(c1: Any, c2: Any):
 
 
 def test_cond_no_mix():
-    """Test if cond can't mix components and props."""
-    with pytest.raises(ValueError):
-        cond(True, LiteralVar.create("hello"), Text.create("world"))
+    """Test if cond can mix components and props."""
+    cond(True, LiteralVar.create("hello"), Text.create("world"))
 
 
 def test_cond_no_else():

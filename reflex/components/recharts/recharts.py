@@ -8,7 +8,7 @@ from reflex.components.component import Component, MemoizationLeaf, NoSSRCompone
 class Recharts(Component):
     """A component that wraps a recharts lib."""
 
-    library = "recharts@2.15.0"
+    library = "recharts@2.15.1"
 
     def _get_style(self) -> dict:
         return {"wrapperStyle": self.style}
@@ -17,7 +17,7 @@ class Recharts(Component):
 class RechartsCharts(NoSSRComponent, MemoizationLeaf):
     """A component that wraps a recharts lib."""
 
-    library = "recharts@2.15.0"
+    library = "recharts@2.15.1"
 
 
 LiteralAnimationEasing = Literal["ease", "ease-in", "ease-out", "ease-in-out", "linear"]

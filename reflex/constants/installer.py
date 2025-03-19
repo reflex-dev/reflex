@@ -82,7 +82,7 @@ class PackageJson(SimpleNamespace):
 
     DEPENDENCIES = {
         "@emotion/react": "11.14.0",
-        "axios": "1.7.9",
+        "axios": "1.8.3",
         "json5": "2.2.3",
         "react-router": "7.3.0",
         "react-router-dom": "7.3.0",
@@ -95,8 +95,8 @@ class PackageJson(SimpleNamespace):
         "universal-cookie": "7.2.2",
     }
     DEV_DEPENDENCIES = {
-        "autoprefixer": "10.4.20",
-        "postcss": "8.5.1",
+        "autoprefixer": "10.4.21",
+        "postcss": "8.5.3",
         "postcss-import": "16.1.0",
         "@react-router/dev": "7.3.0",
         "@react-router/fs-routes": "7.3.0",
