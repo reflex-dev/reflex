@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import hashlib
+import importlib.util
 import json
 import os
 import platform
@@ -19,6 +20,7 @@ from reflex import constants
 from reflex.config import environment, get_config
 from reflex.constants.base import LogLevel
 from reflex.utils import console, path_ops
+from reflex.utils.decorator import once
 from reflex.utils.prerequisites import get_web_dir
 
 # For uvicorn windows bug fix (#2335)
@@ -185,13 +187,28 @@ def run_frontend_prod(root: Path, port: str, backend_present: bool = True):
     )
 
 
+@once
+def _warn_user_about_uvicorn():
+    console.warn(
+        "Using Uvicorn for backend as it is installed. This behavior will change in 0.8.0 to use Granian by default."
+    )
+
+
 def should_use_granian():
     """Whether to use Granian for backend.
 
     Returns:
         True if Granian should be used.
     """
-    return environment.REFLEX_USE_GRANIAN.get()
+    if environment.REFLEX_USE_GRANIAN.get():
+        return True
+    if (
+        importlib.util.find_spec("uvicorn") is None
+        or importlib.util.find_spec("gunicorn") is None
+    ):
+        return True
+    _warn_user_about_uvicorn()
+    return False
 
 
 def get_app_module():
@@ -323,26 +340,21 @@ def run_granian_backend(host: str, port: int, loglevel: LogLevel):
         loglevel: The log level.
     """
     console.debug("Using Granian for backend")
-    try:
-        from granian.constants import Interfaces
-        from granian.log import LogLevels
-        from granian.server import Server as Granian
 
-        Granian(
-            target=get_app_module(),
-            factory=True,
-            address=host,
-            port=port,
-            interface=Interfaces.ASGI,
-            log_level=LogLevels(loglevel.value),
-            reload=True,
-            reload_paths=get_reload_paths(),
-        ).serve()
-    except ImportError:
-        console.error(
-            'InstallError: REFLEX_USE_GRANIAN is set but `granian` is not installed. (run `pip install "granian[reload]>=1.6.0"`)'
-        )
-        os._exit(1)
+    from granian.constants import Interfaces
+    from granian.log import LogLevels
+    from granian.server import MPServer as Granian
+
+    Granian(
+        target=get_app_module(),
+        factory=True,
+        address=host,
+        port=port,
+        interface=Interfaces.ASGI,
+        log_level=LogLevels(loglevel.value),
+        reload=True,
+        reload_paths=get_reload_paths(),
+    ).serve()
 
 
 def _get_backend_workers():

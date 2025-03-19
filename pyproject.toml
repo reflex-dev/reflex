@@ -26,7 +26,6 @@ dependencies = [
   "distro >=1.8.0,<2.0; platform_system == 'Linux'",
   "fastapi >=0.96.0,!=0.111.0,!=0.111.1",
   "granian[reload] >=2.0.0",
-  "gunicorn >=20.1.0,<24.0",
   "httpx >=0.25.1,<1.0",
   "jinja2 >=3.1.2,<4.0",
   "lazy_loader >=0.4",
@@ -47,7 +46,6 @@ dependencies = [
   "twine >=4.0.0,<7.0",
   "typer >=0.15.1,<1.0",
   "typing_extensions >=4.6.0",
-  "uvicorn >=0.20.0",
   "wheel >=0.42.0,<1.0",
   "wrapt >=1.17.0,<2.0",
 ]
@@ -162,4 +160,5 @@ dev = [
   "ruff ==0.9.10",
   "selenium >=4.11.0,<5.0",
   "toml >=0.10.2,<1.0",
+  "uvicorn >=0.20.0",
 ]
