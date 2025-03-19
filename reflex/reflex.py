@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import atexit
+import concurrent.futures
 from pathlib import Path
 
 import typer
@@ -14,6 +15,7 @@ from reflex.config import environment, get_config
 from reflex.custom_components.custom_components import custom_components_cli
 from reflex.state import reset_disk_state_manager
 from reflex.utils import console, redir, telemetry
+from reflex.utils.exec import should_use_granian
 
 # Disable typer+rich integration for help panels
 typer.core.rich = None  # pyright: ignore [reportPrivateImportUsage]
@@ -203,9 +205,17 @@ def _run(
 
     prerequisites.check_latest_package_version(constants.Reflex.MODULE_NAME)
 
-    if frontend:
-        # Get the app module.
-        prerequisites.get_compiled_app()
+    # Get the app module.
+    app_task = prerequisites.compile_app if frontend else prerequisites.validate_app
+
+    # Granian fails if the app is already imported.
+    if should_use_granian():
+        compile_future = concurrent.futures.ProcessPoolExecutor(max_workers=1).submit(
+            app_task
+        )
+        compile_future.result()
+    else:
+        app_task()
 
     # Warn if schema is not up to date.
     prerequisites.check_schema_up_to_date()

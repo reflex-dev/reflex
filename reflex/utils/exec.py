@@ -200,22 +200,9 @@ def get_app_module():
     Returns:
         The app module for the backend.
     """
-    return f"reflex.app_module_for_backend:{constants.CompileVars.APP}"
+    config = get_config()
 
-
-def get_granian_target():
-    """Get the Granian target for the backend.
-
-    Returns:
-        The Granian target for the backend.
-    """
-    import reflex
-
-    app_module_path = Path(reflex.__file__).parent / "app_module_for_backend.py"
-
-    return (
-        f"{app_module_path!s}:{constants.CompileVars.APP}.{constants.CompileVars.API}"
-    )
+    return f"{config.module}:{constants.CompileVars.APP}"
 
 
 def run_backend(
@@ -317,7 +304,8 @@ def run_uvicorn_backend(host: str, port: int, loglevel: LogLevel):
     import uvicorn
 
     uvicorn.run(
-        app=f"{get_app_module()}.{constants.CompileVars.API}",
+        app=f"{get_app_module()}",
+        factory=True,
         host=host,
         port=port,
         log_level=loglevel.value,
@@ -341,7 +329,8 @@ def run_granian_backend(host: str, port: int, loglevel: LogLevel):
         from granian.server import Server as Granian
 
         Granian(
-            target=get_granian_target(),
+            target=get_app_module(),
+            factory=True,
             address=host,
             port=port,
             interface=Interfaces.ASGI,
@@ -419,6 +408,7 @@ def run_uvicorn_backend_prod(host: str, port: int, loglevel: LogLevel):
             *("--host", host),
             *("--port", str(port)),
             *("--workers", str(_get_backend_workers())),
+            "--factory",
             app_module,
         ]
         if constants.IS_WINDOWS
@@ -482,7 +472,8 @@ def run_granian_backend_prod(host: str, port: int, loglevel: LogLevel):
             str(port),
             "--interface",
             str(Interfaces.ASGI),
-            get_granian_target(),
+            "--factory",
+            get_app_module(),
         ]
         processes.new_process(
             command,
