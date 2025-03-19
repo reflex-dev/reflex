@@ -229,8 +229,8 @@ export const applyEvent = async (event, socket, navigate) => {
       a.href = eval?.(
         event.payload.url.replace(
           "getBackendURL(env.UPLOAD)",
-          `"${getBackendURL(env.UPLOAD)}"`
-        )
+          `"${getBackendURL(env.UPLOAD)}"`,
+        ),
       );
     }
     a.download = event.payload.filename;
@@ -344,7 +344,7 @@ export const applyRestEvent = async (event, socket) => {
       event.payload.files,
       event.payload.upload_id,
       event.payload.on_upload_progress,
-      socket
+      socket,
     );
     return false;
   }
@@ -363,7 +363,7 @@ export const queueEvents = async (events, socket, prepend) => {
     events = [
       ...events,
       ...Array.from({ length: event_queue.length }).map(() =>
-        event_queue.shift()
+        event_queue.shift(),
       ),
     ];
   }
@@ -422,7 +422,7 @@ export const connect = async (
   dispatch,
   transports,
   setConnectErrors,
-  client_storage = {}
+  client_storage = {},
 ) => {
   // Get backend URL object from the endpoint.
   const endpoint = getBackendURL(EVENTURL);
@@ -524,7 +524,7 @@ export const uploadFiles = async (
   files,
   upload_id,
   on_upload_progress,
-  socket
+  socket,
 ) => {
   // return if there's no file to upload
   if (files === undefined || files.length === 0) {
@@ -629,7 +629,7 @@ export const Event = (
   name,
   payload = {},
   event_actions = {},
-  handler = null
+  handler = null,
 ) => {
   return { name, payload, handler, event_actions };
 };
@@ -656,7 +656,7 @@ export const hydrateClientStorage = (client_storage) => {
     for (const state_key in client_storage.local_storage) {
       const options = client_storage.local_storage[state_key];
       const local_storage_value = localStorage.getItem(
-        options.name || state_key
+        options.name || state_key,
       );
       if (local_storage_value !== null) {
         client_storage_values[state_key] = local_storage_value;
@@ -667,7 +667,7 @@ export const hydrateClientStorage = (client_storage) => {
     for (const state_key in client_storage.session_storage) {
       const session_options = client_storage.session_storage[state_key];
       const session_storage_value = sessionStorage.getItem(
-        session_options.name || state_key
+        session_options.name || state_key,
       );
       if (session_storage_value != null) {
         client_storage_values[state_key] = session_storage_value;
@@ -692,7 +692,7 @@ export const hydrateClientStorage = (client_storage) => {
 const applyClientStorageDelta = (client_storage, delta) => {
   // find the main state and check for is_hydrated
   const unqualified_states = Object.keys(delta).filter(
-    (key) => key.split(".").length === 1
+    (key) => key.split(".").length === 1,
   );
   if (unqualified_states.length === 1) {
     const main_state = delta[unqualified_states[0]];
@@ -726,7 +726,7 @@ const applyClientStorageDelta = (client_storage, delta) => {
         const session_options = client_storage.session_storage[state_key];
         sessionStorage.setItem(
           session_options.name || state_key,
-          delta[substate][key]
+          delta[substate][key],
         );
       }
     }
@@ -746,7 +746,7 @@ const applyClientStorageDelta = (client_storage, delta) => {
 export const useEventLoop = (
   dispatch,
   initial_events = () => [],
-  client_storage = {}
+  client_storage = {},
 ) => {
   const socket = useRef(null);
   const location = useLocation();
@@ -763,7 +763,7 @@ export const useEventLoop = (
 
     event_actions = events.reduce(
       (acc, e) => ({ ...acc, ...e.event_actions }),
-      event_actions ?? {}
+      event_actions ?? {},
     );
 
     const _e = args.filter((o) => o?.preventDefault !== undefined)[0];
@@ -791,7 +791,7 @@ export const useEventLoop = (
       debounce(
         combined_name,
         () => queueEvents(events, socket),
-        event_actions.debounce
+        event_actions.debounce,
       );
     } else {
       queueEvents(events, socket);
@@ -811,7 +811,7 @@ export const useEventLoop = (
           },
         })),
         socket,
-        true
+        true,
       );
       sentHydrate.current = true;
     }
@@ -857,7 +857,7 @@ export const useEventLoop = (
           dispatch,
           ["websocket"],
           setConnectErrors,
-          client_storage
+          client_storage,
         );
       }
     }
@@ -905,7 +905,7 @@ export const useEventLoop = (
         vars[storage_to_state_map[e.key]] = e.newValue;
         const event = Event(
           `${state_name}.reflex___state____update_vars_internal_state.update_vars_internal`,
-          { vars: vars }
+          { vars: vars },
         );
         addEvents([event], e);
       }
@@ -994,7 +994,7 @@ export const getRefValues = (refs) => {
   return refs.map((ref) =>
     ref.current
       ? ref.current.value || ref.current.getAttribute("aria-valuenow")
-      : null
+      : null,
   );
 };
 

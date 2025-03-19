@@ -25,7 +25,11 @@
 {#     component: component dictionary #}
 {% macro render_self_close_tag(component) %}
 {%- if component.name|length %}
-<{{ component.name }} {{- render_props(component.props) }}{% if component.autofocus %} ref={focusRef} {% endif %}/>
+jsx(
+  {{ component.name }},
+  {{- render_props(component.props) }},
+  {{- component.contents }}
+)
 {%- else %}
   {{- component.contents }}
 {%- endif %}
@@ -35,12 +39,16 @@
 {# Args: #}
 {#     component: component dictionary #}
 {% macro render_tag(component) %}
-<{{component.name}} {{- render_props(component.props) }}>
-{{ component.contents }}
-{% for child in component.children %}
-{{ render(child) }}
-{% endfor %}
-</{{component.name}}>
+jsx({{ component.name }}, {{- render_props(component.props) -}},
+  {%- if component.contents|length -%}
+    {{- component.contents -}},
+  {%- endif -%}
+  {%- for child in component.children -%}
+    {%- if child is mapping or child|length %}
+      {{- render(child) -}},
+    {%- endif -%}
+  {%- endfor -%}
+)
 {%- endmacro %}
 
 
@@ -48,11 +56,11 @@
 {# Args: #}
 {#     component: component dictionary #}
 {% macro render_condition_tag(component) %}
-{ {{- component.cond_state }} ? (
+{{- component.cond_state }} ? (
   {{ render(component.true_value) }}
 ) : (
   {{ render(component.false_value) }}
-)}
+)
 {%- endmacro %}
 
 
@@ -60,41 +68,37 @@
 {# Args: #}
 {#     component: component dictionary #}
 {% macro render_iterable_tag(component) %}
-<>{ {{ component.iterable_state }}.map(({{ component.arg_name }}, {{ component.arg_index }}) => (
+{{ component.iterable_state }}.map(({{ component.arg_name }}, {{ component.arg_index }}) => (
   {% for child in component.children %}
   {{ render(child) }}
   {% endfor %}
-))}</>
+))
 {%- endmacro %}
 
 
 {# Rendering props of a component. #}
 {# Args: #}
 {#     component: component dictionary #}
-{% macro render_props(props) %}
-{% if props|length %} {{ props|join(" ") }}{% endif %}
-{% endmacro %}
+{% macro render_props(props) %}{ {%- if props|length -%} {{- props|join(", ") -}}{%- endif -%} }{% endmacro %}
 
 {# Rendering Match component. #}
 {# Args: #}
 {#     component: component dictionary #}
 {% macro render_match_tag(component) %}
-{
-    (() => {
-        switch (JSON.stringify({{ component.cond._js_expr }})) {
-        {% for case in component.match_cases %}
-            {% for condition in case[:-1] %}
-                case JSON.stringify({{ condition._js_expr }}):
-            {% endfor %}
-                return {{ render(case[-1]) }};
-                break;
-        {% endfor %}
-            default:
-                return {{ render(component.default) }};
-                break;
-        }
-    })()
+(() => {
+  switch (JSON.stringify({{ component.cond._js_expr }})) {
+  {% for case in component.match_cases %}
+    {% for condition in case[:-1] %}
+      case JSON.stringify({{ condition._js_expr }}):
+    {% endfor %}
+      return {{ render(case[-1]) }};
+      break;
+  {% endfor %}
+    default:
+      return {{ render(component.default) }};
+      break;
   }
+})()
 {%- endmacro %}
 
 

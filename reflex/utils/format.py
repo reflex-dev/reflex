@@ -437,7 +437,7 @@ def format_props(*single_props, **key_value_props) -> list[str]:
 
     return [
         (
-            f"{name}={{{format_prop(prop if isinstance(prop, Var) else LiteralVar.create(prop))}}}"
+            f"{name}:{format_prop(prop if isinstance(prop, Var) else LiteralVar.create(prop))}"
         )
         for name, prop in sorted(key_value_props.items())
         if prop is not None

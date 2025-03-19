@@ -40,25 +40,19 @@ export function Layout({children}) {
     window["__reflex"] = windowImports;
   }, []);
 
-  return (
-    <AppLayout>
-      <ThemeProvider defaultTheme={ defaultColorMode } attribute="class">
-        <StateProvider>
-          <EventLoopProvider>
-            <AppWrap>
-              {children}
-            </AppWrap>
-          </EventLoopProvider>
-        </StateProvider>
-      </ThemeProvider>
-    </AppLayout>
-  )
+  return jsx(AppLayout, {},
+    jsx(ThemeProvider, {defaultTheme: defaultColorMode, attribute: "class"},
+      jsx(StateProvider, {},
+        jsx(EventLoopProvider, {},
+          jsx(AppWrap, {}, children)
+        )
+      )
+    )
+  );
 }
 
 export default function App() {
-  return (
-    <Outlet />
-  );
+  return jsx(Outlet, {});
 }
 
 {% endblock %}

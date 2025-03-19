@@ -13,11 +13,11 @@ from urllib.parse import urlparse
 from pydantic.v1.fields import ModelField
 
 from reflex import constants
-from reflex.components.base import Description, Image, Meta, Scripts, Title
+from reflex.components.base import Description, Image, Scripts
 from reflex.components.base.document import Links, ScrollRestoration
 from reflex.components.base.document import Meta as ReactMeta
 from reflex.components.component import Component, ComponentStyle, CustomComponent
-from reflex.components.el.elements.metadata import Head
+from reflex.components.el.elements.metadata import Head, Meta, Title
 from reflex.components.el.elements.other import Html
 from reflex.components.el.elements.sectioning import Body
 from reflex.istate.storage import Cookie, LocalStorage, SessionStorage
@@ -401,7 +401,7 @@ def get_page_path(path: str) -> str:
         get_web_dir()
         / constants.Dirs.PAGES
         / constants.Dirs.ROUTES
-        / (path + constants.Ext.JSX)
+        / (path + constants.Ext.JS)
     )
 
 
@@ -449,7 +449,7 @@ def get_components_path() -> str:
     return str(
         get_web_dir()
         / constants.Dirs.UTILS
-        / (constants.PageNames.COMPONENTS + constants.Ext.JSX),
+        / (constants.PageNames.COMPONENTS + constants.Ext.JS),
     )
 
 
@@ -462,7 +462,7 @@ def get_stateful_components_path() -> str:
     return str(
         get_web_dir()
         / constants.Dirs.UTILS
-        / (constants.PageNames.STATEFUL_COMPONENTS + constants.Ext.JSX)
+        / (constants.PageNames.STATEFUL_COMPONENTS + constants.Ext.JS)
     )
 
 
