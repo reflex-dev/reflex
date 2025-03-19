@@ -2,9 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any, Dict, List, Tuple, Union
-
-from typing_extensions import TypedDict, TypeVar
+from typing import Any, Dict, TypedDict, TypeVar
 
 from reflex.components.component import Component, NoSSRComponent
 from reflex.components.core.cond import color_mode_cond
@@ -23,7 +21,7 @@ except ImportError:
     Template = Any
 
 
-def _event_points_data_signature(e0: Var) -> Tuple[Var[List[Point]]]:
+def _event_points_data_signature(e0: Var) -> tuple[Var[list[Point]]]:
     """For plotly events with event data containing a point array.
 
     Args:
@@ -37,58 +35,35 @@ def _event_points_data_signature(e0: Var) -> Tuple[Var[List[Point]]]:
 
 T = TypeVar("T")
 
-ItemOrList = Union[T, List[T]]
+ItemOrList = T | list[T]
 
 
 class BBox(TypedDict):
     """Bounding box for a point in a plotly graph."""
 
-    x0: Union[float, int, None]
-    x1: Union[float, int, None]
-    y0: Union[float, int, None]
-    y1: Union[float, int, None]
-    z0: Union[float, int, None]
-    z1: Union[float, int, None]
+    x0: float | int | None
+    x1: float | int | None
+    y0: float | int | None
+    y1: float | int | None
+    z0: float | int | None
+    z1: float | int | None
 
 
 class Point(TypedDict):
     """A point in a plotly graph."""
 
-    x: Union[float, int, None]
-    y: Union[float, int, None]
-    z: Union[float, int, None]
-    lat: Union[float, int, None]
-    lon: Union[float, int, None]
-    curveNumber: Union[int, None]
-    pointNumber: Union[int, None]
-    pointNumbers: Union[List[int], None]
-    pointIndex: Union[int, None]
-    markerColor: Union[
-        ItemOrList[
-            ItemOrList[
-                Union[
-                    float,
-                    int,
-                    str,
-                    None,
-                ]
-            ]
-        ],
-        None,
-    ]
-    markerSize: Union[
-        ItemOrList[
-            ItemOrList[
-                Union[
-                    float,
-                    int,
-                    None,
-                ]
-            ]
-        ],
-        None,
-    ]
-    bbox: Union[BBox, None]
+    x: float | int | None
+    y: float | int | None
+    z: float | int | None
+    lat: float | int | None
+    lon: float | int | None
+    curveNumber: int | None
+    pointNumber: int | None
+    pointNumbers: list[int] | None
+    pointIndex: int | None
+    markerColor: ItemOrList[ItemOrList[float | int | str | None]] | None
+    markerSize: ItemOrList[ItemOrList[float | int | None,]] | None
+    bbox: BBox | None
 
 
 class Plotly(NoSSRComponent):
@@ -96,7 +71,7 @@ class Plotly(NoSSRComponent):
 
     library = "react-plotly.js@2.6.0"
 
-    lib_dependencies: List[str] = ["plotly.js@2.35.3"]
+    lib_dependencies: list[str] = ["plotly.js@3.0.1"]
 
     tag = "Plot"
 
@@ -314,7 +289,7 @@ class PlotlyBasic(Plotly):
 
     library = "react-plotly.js@2.6.0"
 
-    lib_dependencies: list[str] = ["plotly.js-basic-dist-min@3.0.0"]
+    lib_dependencies: list[str] = ["plotly.js-basic-dist-min@3.0.1"]
 
     def add_imports(self) -> ImportDict | list[ImportDict]:
         """Add imports for the plotly basic component.
@@ -340,7 +315,7 @@ class PlotlyCartesian(Plotly):
 
     library = "react-plotly.js@2.6.0"
 
-    lib_dependencies: list[str] = ["plotly.js-cartesian-dist-min@3.0.0"]
+    lib_dependencies: list[str] = ["plotly.js-cartesian-dist-min@3.0.1"]
 
     def add_imports(self) -> ImportDict | list[ImportDict]:
         """Add imports for the plotly cartesian component.
@@ -366,7 +341,7 @@ class PlotlyGeo(Plotly):
 
     library = "react-plotly.js@2.6.0"
 
-    lib_dependencies: list[str] = ["plotly.js-geo-dist-min@3.0.0"]
+    lib_dependencies: list[str] = ["plotly.js-geo-dist-min@3.0.1"]
 
     def add_imports(self) -> ImportDict | list[ImportDict]:
         """Add imports for the plotly geo component.
@@ -392,7 +367,7 @@ class PlotlyGl3d(Plotly):
 
     library = "react-plotly.js@2.6.0"
 
-    lib_dependencies: list[str] = ["plotly.js-gl3d-dist-min@3.0.0"]
+    lib_dependencies: list[str] = ["plotly.js-gl3d-dist-min@3.0.1"]
 
     def add_imports(self) -> ImportDict | list[ImportDict]:
         """Add imports for the plotly 3d component.
@@ -418,7 +393,7 @@ class PlotlyGl2d(Plotly):
 
     library = "react-plotly.js@2.6.0"
 
-    lib_dependencies: list[str] = ["plotly.js-gl2d-dist-min@3.0.0"]
+    lib_dependencies: list[str] = ["plotly.js-gl2d-dist-min@3.0.1"]
 
     def add_imports(self) -> ImportDict | list[ImportDict]:
         """Add imports for the plotly 2d component.
@@ -444,7 +419,7 @@ class PlotlyMapbox(Plotly):
 
     library = "react-plotly.js@2.6.0"
 
-    lib_dependencies: list[str] = ["plotly.js-mapbox-dist-min@3.0.0"]
+    lib_dependencies: list[str] = ["plotly.js-mapbox-dist-min@3.0.1"]
 
     def add_imports(self) -> ImportDict | list[ImportDict]:
         """Add imports for the plotly mapbox component.
@@ -470,7 +445,7 @@ class PlotlyFinance(Plotly):
 
     library = "react-plotly.js@2.6.0"
 
-    lib_dependencies: list[str] = ["plotly.js-finance-dist-min@3.0.0"]
+    lib_dependencies: list[str] = ["plotly.js-finance-dist-min@3.0.1"]
 
     def add_imports(self) -> ImportDict | list[ImportDict]:
         """Add imports for the plotly finance component.
@@ -496,7 +471,7 @@ class PlotlyStrict(Plotly):
 
     library = "react-plotly.js@2.6.0"
 
-    lib_dependencies: list[str] = ["plotly.js-strict-dist-min@3.0.0"]
+    lib_dependencies: list[str] = ["plotly.js-strict-dist-min@3.0.1"]
 
     def add_imports(self) -> ImportDict | list[ImportDict]:
         """Add imports for the plotly strict component.

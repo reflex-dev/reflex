@@ -179,7 +179,7 @@ export const applyEvent = async (event, socket) => {
   // Handle special events
   if (event.name == "_redirect") {
     if (event.payload.external) {
-      window.open(event.payload.path, "_blank");
+      window.open(event.payload.path, "_blank", "noopener");
     } else if (event.payload.replace) {
       Router.replace(event.payload.path);
     } else {
@@ -352,8 +352,18 @@ export const applyRestEvent = async (event, socket) => {
  * Queue events to be processed and trigger processing of queue.
  * @param events Array of events to queue.
  * @param socket The socket object to send the event on.
+ * @param prepend Whether to place the events at the beginning of the queue.
  */
-export const queueEvents = async (events, socket) => {
+export const queueEvents = async (events, socket, prepend) => {
+  if (prepend) {
+    // Drain the existing queue and place it after the given events.
+    events = [
+      ...events,
+      ...Array.from({ length: event_queue.length }).map(() =>
+        event_queue.shift(),
+      ),
+    ];
+  }
   event_queue.push(...events);
   await processEvent(socket.current);
 };
@@ -441,6 +451,13 @@ export const connect = async (
     }
   }
 
+  const disconnectTrigger = (event) => {
+    if (socket.current?.connected) {
+      console.log("Disconnect websocket on unload");
+      socket.current.disconnect();
+    }
+  };
+
   const pagehideHandler = (event) => {
     if (event.persisted && socket.current?.connected) {
       console.log("Disconnect backend before bfcache on navigation");
@@ -452,6 +469,8 @@ export const connect = async (
   socket.current.on("connect", () => {
     setConnectErrors([]);
     window.addEventListener("pagehide", pagehideHandler);
+    window.addEventListener("beforeunload", disconnectTrigger);
+    window.addEventListener("unload", disconnectTrigger);
   });
 
   socket.current.on("connect_error", (error) => {
@@ -461,6 +480,8 @@ export const connect = async (
   // When the socket disconnects reset the event_processing flag
   socket.current.on("disconnect", () => {
     event_processing = false;
+    window.removeEventListener("unload", disconnectTrigger);
+    window.removeEventListener("beforeunload", disconnectTrigger);
     window.removeEventListener("pagehide", pagehideHandler);
   });
 
@@ -477,7 +498,7 @@ export const connect = async (
   });
   socket.current.on("reload", async (event) => {
     event_processing = false;
-    queueEvents([...initialEvents(), event], socket);
+    queueEvents([...initialEvents(), event], socket, true);
   });
 
   document.addEventListener("visibilitychange", checkVisibility);
@@ -773,9 +794,8 @@ export const useEventLoop = (
   const sentHydrate = useRef(false); // Avoid double-hydrate due to React strict-mode
   useEffect(() => {
     if (router.isReady && !sentHydrate.current) {
-      const events = initial_events();
-      addEvents(
-        events.map((e) => ({
+      queueEvents(
+        initial_events().map((e) => ({
           ...e,
           router_data: (({ pathname, query, asPath }) => ({
             pathname,
@@ -783,6 +803,8 @@ export const useEventLoop = (
             asPath,
           }))(router),
         })),
+        socket,
+        true,
       );
       sentHydrate.current = true;
     }

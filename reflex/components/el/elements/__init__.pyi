@@ -89,29 +89,51 @@ from .inline import u as u
 from .inline import wbr as wbr
 from .media import Area as Area
 from .media import Audio as Audio
+from .media import Circle as Circle
+from .media import Defs as Defs
+from .media import Ellipse as Ellipse
 from .media import Embed as Embed
 from .media import Iframe as Iframe
 from .media import Img as Img
+from .media import Line as Line
+from .media import LinearGradient as LinearGradient
 from .media import Map as Map
 from .media import Object as Object
+from .media import Path as Path
 from .media import Picture as Picture
+from .media import Polygon as Polygon
 from .media import Portal as Portal
+from .media import RadialGradient as RadialGradient
+from .media import Rect as Rect
 from .media import Source as Source
+from .media import Stop as Stop
 from .media import Svg as Svg
+from .media import Text as Text
 from .media import Track as Track
 from .media import Video as Video
 from .media import area as area
 from .media import audio as audio
+from .media import circle as circle
+from .media import defs as defs
+from .media import ellipse as ellipse
 from .media import embed as embed
 from .media import iframe as iframe
 from .media import image as image
 from .media import img as img
+from .media import line as line
+from .media import linear_gradient as linear_gradient
 from .media import map as map
 from .media import object as object
+from .media import path as path
 from .media import picture as picture
+from .media import polygon as polygon
 from .media import portal as portal
+from .media import radial_gradient as radial_gradient
+from .media import rect as rect
 from .media import source as source
+from .media import stop as stop
 from .media import svg as svg
+from .media import text as text
 from .media import track as track
 from .media import video as video
 from .metadata import Base as Base
@@ -287,6 +309,17 @@ _MAPPING = {
         "portal",
         "source",
         "svg",
+        "text",
+        "line",
+        "circle",
+        "ellipse",
+        "rect",
+        "polygon",
+        "path",
+        "stop",
+        "linear_gradient",
+        "radial_gradient",
+        "defs",
     ],
     "metadata": ["base", "head", "link", "meta", "title", "style"],
     "other": ["details", "dialog", "summary", "slot", "template", "math", "html"],
@@ -340,4 +373,12 @@ _MAPPING = {
 }
 EXCLUDE = ["del_", "Del", "image"]
 for v in _MAPPING.values():
-    v.extend([mod.capitalize() for mod in v if mod not in EXCLUDE])
+    from reflex.utils.format import to_camel_case
+
+    v.extend(
+        [
+            to_camel_case(mod)[0].upper() + to_camel_case(mod)[1:]
+            for mod in v
+            if mod not in EXCLUDE
+        ]
+    )

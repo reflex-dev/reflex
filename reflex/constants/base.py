@@ -53,6 +53,12 @@ class Dirs(SimpleNamespace):
     POSTCSS_JS = "postcss.config.js"
     # The name of the states directory.
     STATES = ".states"
+    # Where compilation artifacts for the backend are stored.
+    BACKEND = "backend"
+    # JSON-encoded list of page routes that need to be evaluated on the backend.
+    STATEFUL_PAGES = "stateful_pages.json"
+    # Marker file indicating that upload component was used in the frontend.
+    UPLOAD_IS_USED = "upload_is_used"
 
 
 class Reflex(SimpleNamespace):
@@ -81,6 +87,9 @@ class Reflex(SimpleNamespace):
     ROOT_DIR = Path(__file__).parents[2]
 
     RELEASES_URL = "https://api.github.com/repos/reflex-dev/templates/releases"
+
+    # The reflex stylesheet language supported
+    STYLESHEETS_SUPPORTED = ["css", "sass", "scss"]
 
 
 class ReflexHostingCLI(SimpleNamespace):

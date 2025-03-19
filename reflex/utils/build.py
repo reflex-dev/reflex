@@ -60,6 +60,7 @@ def _zip(
     dirs_to_exclude: set[str] | None = None,
     files_to_exclude: set[str] | None = None,
     top_level_dirs_to_exclude: set[str] | None = None,
+    globs_to_include: list[str] | None = None,
 ) -> None:
     """Zip utility function.
 
@@ -72,6 +73,7 @@ def _zip(
         dirs_to_exclude: The directories to exclude.
         files_to_exclude: The files to exclude.
         top_level_dirs_to_exclude: The top level directory names immediately under root_dir to exclude. Do not exclude folders by these names further in the sub-directories.
+        globs_to_include: Apply these globs from the root_dir and always include them in the zip.
 
     """
     target = Path(target)
@@ -103,6 +105,13 @@ def _zip(
         files_to_zip += [
             str(root / file) for file in files if file not in files_to_exclude
         ]
+    if globs_to_include:
+        for glob in globs_to_include:
+            files_to_zip += [
+                str(file)
+                for file in root_dir.glob(glob)
+                if file.name not in files_to_exclude
+            ]
 
     # Create a progress bar for zipping the component.
     progress = Progress(
@@ -160,6 +169,9 @@ def zip_app(
             top_level_dirs_to_exclude={"assets"},
             exclude_venv_dirs=True,
             upload_db_file=upload_db_file,
+            globs_to_include=[
+                str(Path(constants.Dirs.WEB) / constants.Dirs.BACKEND / "*")
+            ],
         )
 
 
@@ -200,7 +212,7 @@ def build(
 
     # Start the subprocess with the progress bar.
     process = processes.new_process(
-        [prerequisites.get_package_manager(), "run", command],
+        [*prerequisites.get_js_package_executor(raise_on_none=True)[0], "run", command],
         cwd=wdir,
         shell=constants.IS_WINDOWS,
     )
@@ -219,11 +231,10 @@ def setup_frontend(
     """
     # Create the assets dir if it doesn't exist.
     path_ops.mkdir(constants.Dirs.APP_ASSETS)
-
-    # Copy asset files to public folder.
     path_ops.cp(
         src=str(root / constants.Dirs.APP_ASSETS),
         dest=str(root / prerequisites.get_web_dir() / constants.Dirs.PUBLIC),
+        ignore=tuple(f"*.{ext}" for ext in constants.Reflex.STYLESHEETS_SUPPORTED),
     )
 
     # Set the environment variables in client (env.json).
@@ -236,7 +247,7 @@ def setup_frontend(
     if disable_telemetry:
         processes.new_process(
             [
-                prerequisites.get_package_manager(),
+                *prerequisites.get_js_package_executor(raise_on_none=True)[0],
                 "run",
                 "next",
                 "telemetry",

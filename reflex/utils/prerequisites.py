@@ -14,7 +14,6 @@ import platform
 import random
 import re
 import shutil
-import stat
 import sys
 import tempfile
 import time
@@ -23,7 +22,7 @@ import zipfile
 from datetime import datetime
 from pathlib import Path
 from types import ModuleType
-from typing import Any, Callable, List, NamedTuple, Optional
+from typing import Callable, NamedTuple, Sequence
 from urllib.parse import urlparse
 
 import httpx
@@ -37,18 +36,16 @@ from redis.exceptions import RedisError
 from reflex import constants, model
 from reflex.compiler import templates
 from reflex.config import Config, environment, get_config
-from reflex.utils import console, net, path_ops, processes, redir
+from reflex.utils import console, net, path_ops, processes
 from reflex.utils.exceptions import (
     GeneratedCodeHasNoFunctionDefsError,
     SystemPackageMissingError,
 )
 from reflex.utils.format import format_library_name
-from reflex.utils.registry import _get_npm_registry
+from reflex.utils.registry import get_npm_registry
 
 if typing.TYPE_CHECKING:
     from reflex.app import App
-
-CURRENTLY_INSTALLING_NODE = False
 
 
 class AppInfo(NamedTuple):
@@ -72,9 +69,9 @@ class Template:
 class CpuInfo:
     """Model to save cpu info."""
 
-    manufacturer_id: Optional[str]
-    model_name: Optional[str]
-    address_width: Optional[int]
+    manufacturer_id: str | None
+    model_name: str | None
+    address_width: int | None
 
 
 def get_web_dir() -> Path:
@@ -97,6 +94,15 @@ def get_states_dir() -> Path:
         The working directory.
     """
     return environment.REFLEX_STATES_WORKDIR.get()
+
+
+def get_backend_dir() -> Path:
+    """Get the working directory for the backend.
+
+    Returns:
+        The working directory.
+    """
+    return get_web_dir() / constants.Dirs.BACKEND
 
 
 def check_latest_package_version(package_name: str):
@@ -182,24 +188,6 @@ def get_node_version() -> version.Version | None:
         return None
 
 
-def get_fnm_version() -> version.Version | None:
-    """Get the version of fnm.
-
-    Returns:
-        The version of FNM.
-    """
-    try:
-        result = processes.new_process([constants.Fnm.EXE, "--version"], run=True)
-        return version.parse(result.stdout.split(" ")[1])  # pyright: ignore [reportOptionalMemberAccess, reportAttributeAccessIssue]
-    except (FileNotFoundError, TypeError):
-        return None
-    except version.InvalidVersion as e:
-        console.warn(
-            f"The detected fnm version ({e.args[0]}) is not valid. Defaulting to None."
-        )
-        return None
-
-
 def get_bun_version() -> version.Version | None:
     """Get the version of bun.
 
@@ -222,44 +210,107 @@ def get_bun_version() -> version.Version | None:
         return None
 
 
-def get_install_package_manager(on_failure_return_none: bool = False) -> str | None:
-    """Get the package manager executable for installation.
-      Currently, bun is used for installation only.
-
-    Args:
-        on_failure_return_none: Whether to return None on failure.
+def prefer_npm_over_bun() -> bool:
+    """Check if npm should be preferred over bun.
 
     Returns:
-        The path to the package manager.
+        If npm should be preferred over bun.
     """
-    if constants.IS_WINDOWS and (
-        not is_windows_bun_supported()
-        or windows_check_onedrive_in_path()
-        or windows_npm_escape_hatch()
-    ):
-        return get_package_manager(on_failure_return_none)
-    return str(get_config().bun_path)
+    return npm_escape_hatch() or (
+        constants.IS_WINDOWS and windows_check_onedrive_in_path()
+    )
 
 
-def get_package_manager(on_failure_return_none: bool = False) -> str | None:
-    """Get the package manager executable for running app.
-      Currently on unix systems, npm is used for running the app only.
+def get_nodejs_compatible_package_managers(
+    raise_on_none: bool = True,
+) -> Sequence[str]:
+    """Get the package manager executable for installation. Typically, bun is used for installation.
 
     Args:
-        on_failure_return_none: Whether to return None on failure.
+        raise_on_none: Whether to raise an error if the package manager is not found.
 
     Returns:
         The path to the package manager.
 
     Raises:
-        FileNotFoundError: If the package manager is not found.
+        FileNotFoundError: If the package manager is not found and raise_on_none is True.
     """
-    npm_path = path_ops.get_npm_path()
-    if npm_path is not None:
-        return str(npm_path)
-    if on_failure_return_none:
-        return None
-    raise FileNotFoundError("NPM not found. You may need to run `reflex init`.")
+    bun_package_manager = (
+        str(bun_path) if (bun_path := path_ops.get_bun_path()) else None
+    )
+
+    npm_package_manager = (
+        str(npm_path) if (npm_path := path_ops.get_npm_path()) else None
+    )
+
+    if prefer_npm_over_bun():
+        package_managers = [npm_package_manager, bun_package_manager]
+    else:
+        package_managers = [bun_package_manager, npm_package_manager]
+
+    package_managers = list(filter(None, package_managers))
+
+    if not package_managers and not raise_on_none:
+        raise FileNotFoundError(
+            "Bun or npm not found. You might need to rerun `reflex init` or install either."
+        )
+
+    return package_managers
+
+
+def is_outdated_nodejs_installed():
+    """Check if the installed Node.js version is outdated.
+
+    Returns:
+        If the installed Node.js version is outdated.
+    """
+    current_version = get_node_version()
+    if current_version is not None and current_version < version.parse(
+        constants.Node.MIN_VERSION
+    ):
+        console.warn(
+            f"Your version ({current_version}) of Node.js is out of date. Upgrade to {constants.Node.MIN_VERSION} or higher."
+        )
+        return True
+    return False
+
+
+def get_js_package_executor(raise_on_none: bool = False) -> Sequence[Sequence[str]]:
+    """Get the paths to package managers for running commands. Ordered by preference.
+    This is currently identical to get_install_package_managers, but may change in the future.
+
+    Args:
+        raise_on_none: Whether to raise an error if no package managers is not found.
+
+    Returns:
+        The paths to the package managers as a list of lists, where each list is the command to run and its arguments.
+
+    Raises:
+        FileNotFoundError: If no package managers are found and raise_on_none is True.
+    """
+    bun_package_manager = (
+        [str(bun_path)] + (["--bun"] if is_outdated_nodejs_installed() else [])
+        if (bun_path := path_ops.get_bun_path())
+        else None
+    )
+
+    npm_package_manager = (
+        [str(npm_path)] if (npm_path := path_ops.get_npm_path()) else None
+    )
+
+    if prefer_npm_over_bun():
+        package_managers = [npm_package_manager, bun_package_manager]
+    else:
+        package_managers = [bun_package_manager, npm_package_manager]
+
+    package_managers = list(filter(None, package_managers))
+
+    if not package_managers and raise_on_none:
+        raise FileNotFoundError(
+            "Bun or npm not found. You might need to rerun `reflex init` or install either."
+        )
+
+    return package_managers
 
 
 def windows_check_onedrive_in_path() -> bool:
@@ -271,8 +322,8 @@ def windows_check_onedrive_in_path() -> bool:
     return "onedrive" in str(Path.cwd()).lower()
 
 
-def windows_npm_escape_hatch() -> bool:
-    """For windows, if the user sets REFLEX_USE_NPM, use npm instead of bun.
+def npm_escape_hatch() -> bool:
+    """If the user sets REFLEX_USE_NPM, prefer npm over bun.
 
     Returns:
         If the user has set REFLEX_USE_NPM.
@@ -837,6 +888,7 @@ def _compile_package_json():
         },
         dependencies=constants.PackageJson.DEPENDENCIES,
         dev_dependencies=constants.PackageJson.DEV_DEPENDENCIES,
+        overrides=constants.PackageJson.OVERRIDES,
     )
 
 
@@ -854,7 +906,7 @@ def initialize_bun_config():
         bunfig_content = custom_bunfig.read_text()
         console.info(f"Copying custom bunfig.toml inside {get_web_dir()} folder")
     else:
-        best_registry = _get_npm_registry()
+        best_registry = get_npm_registry()
         bunfig_content = constants.Bun.DEFAULT_CONFIG.format(registry=best_registry)
 
     bun_config_path.write_text(bunfig_content)
@@ -886,7 +938,7 @@ def init_reflex_json(project_hash: int | None):
 
 
 def update_next_config(
-    export: bool = False, transpile_packages: Optional[List[str]] = None
+    export: bool = False, transpile_packages: list[str] | None = None
 ):
     """Update Next.js config from Reflex config.
 
@@ -908,7 +960,7 @@ def update_next_config(
 
 
 def _update_next_config(
-    config: Config, export: bool = False, transpile_packages: Optional[List[str]] = None
+    config: Config, export: bool = False, transpile_packages: list[str] | None = None
 ):
     next_config = {
         "basePath": config.frontend_path or "",
@@ -962,112 +1014,22 @@ def download_and_run(url: str, *args, show_status: bool = False, **env):
     show(f"Installing {url}", process)
 
 
-def download_and_extract_fnm_zip():
-    """Download and run a script.
-
-    Raises:
-        Exit: If an error occurs while downloading or extracting the FNM zip.
-    """
-    # Download the zip file
-    url = constants.Fnm.INSTALL_URL
-    console.debug(f"Downloading {url}")
-    fnm_zip_file: Path = constants.Fnm.DIR / f"{constants.Fnm.FILENAME}.zip"
-    # Function to download and extract the FNM zip release.
-    try:
-        # Download the FNM zip release.
-        # TODO: show progress to improve UX
-        response = net.get(url, follow_redirects=True)
-        response.raise_for_status()
-        with fnm_zip_file.open("wb") as output_file:
-            for chunk in response.iter_bytes():
-                output_file.write(chunk)
-
-        # Extract the downloaded zip file.
-        with zipfile.ZipFile(fnm_zip_file, "r") as zip_ref:
-            zip_ref.extractall(constants.Fnm.DIR)
-
-        console.debug("FNM package downloaded and extracted successfully.")
-    except Exception as e:
-        console.error(f"An error occurred while downloading fnm package: {e}")
-        raise typer.Exit(1) from e
-    finally:
-        # Clean up the downloaded zip file.
-        path_ops.rm(fnm_zip_file)
-
-
-def install_node():
-    """Install fnm and nodejs for use by Reflex.
-    Independent of any existing system installations.
-    """
-    if not constants.Fnm.FILENAME:
-        # fnm only support Linux, macOS and Windows distros.
-        console.debug("")
-        return
-
-    # Skip installation if check_node_version() checks out
-    if check_node_version():
-        console.debug("Skipping node installation as it is already installed.")
-        return
-
-    path_ops.mkdir(constants.Fnm.DIR)
-    if not constants.Fnm.EXE.exists():
-        download_and_extract_fnm_zip()
-
-    if constants.IS_WINDOWS:
-        # Install node
-        fnm_exe = Path(constants.Fnm.EXE).resolve()
-        fnm_dir = Path(constants.Fnm.DIR).resolve()
-        process = processes.new_process(
-            [
-                "powershell",
-                "-Command",
-                f'& "{fnm_exe}" install {constants.Node.VERSION} --fnm-dir "{fnm_dir}"',
-            ],
-        )
-    else:  # All other platforms (Linux, MacOS).
-        # Add execute permissions to fnm executable.
-        constants.Fnm.EXE.chmod(stat.S_IXUSR)
-        # Install node.
-        # Specify arm64 arch explicitly for M1s and M2s.
-        architecture_arg = (
-            ["--arch=arm64"]
-            if platform.system() == "Darwin" and platform.machine() == "arm64"
-            else []
-        )
-
-        process = processes.new_process(
-            [
-                constants.Fnm.EXE,
-                "install",
-                *architecture_arg,
-                constants.Node.VERSION,
-                "--fnm-dir",
-                constants.Fnm.DIR,
-            ],
-        )
-    processes.show_status("Installing node", process)
-
-
 def install_bun():
     """Install bun onto the user's system.
 
     Raises:
         SystemPackageMissingError: If "unzip" is missing.
     """
-    win_supported = is_windows_bun_supported()
     one_drive_in_path = windows_check_onedrive_in_path()
-    if constants.IS_WINDOWS and (not win_supported or one_drive_in_path):
-        if not win_supported:
-            console.warn(
-                "Bun for Windows is currently only available for x86 64-bit Windows. Installation will fall back on npm."
-            )
-        if one_drive_in_path:
-            console.warn(
-                "Creating project directories in OneDrive is not recommended for bun usage on windows. This will fallback to npm."
-            )
+    if constants.IS_WINDOWS and one_drive_in_path:
+        console.warn(
+            "Creating project directories in OneDrive is not recommended for bun usage on windows. This will fallback to npm."
+        )
 
     # Skip if bun is already installed.
-    if get_bun_version() == version.parse(constants.Bun.VERSION):
+    if (current_version := get_bun_version()) and current_version >= version.parse(
+        constants.Bun.MIN_VERSION
+    ):
         console.debug("Skipping bun installation as it is already installed.")
         return
 
@@ -1155,43 +1117,19 @@ def install_frontend_packages(packages: set[str], config: Config):
         packages: A list of package names to be installed.
         config: The config object.
 
-    Raises:
-        FileNotFoundError: If the package manager is not found.
-
     Example:
         >>> install_frontend_packages(["react", "react-dom"], get_config())
     """
-    # unsupported archs(arm and 32bit machines) will use npm anyway. so we dont have to run npm twice
-    fallback_command = (
-        get_package_manager(on_failure_return_none=True)
-        if (
-            not constants.IS_WINDOWS
-            or (
-                constants.IS_WINDOWS
-                and (
-                    is_windows_bun_supported() and not windows_check_onedrive_in_path()
-                )
-            )
-        )
-        else None
+    install_package_managers = get_nodejs_compatible_package_managers(
+        raise_on_none=True
     )
 
-    install_package_manager = (
-        get_install_package_manager(on_failure_return_none=True) or fallback_command
-    )
+    primary_package_manager = install_package_managers[0]
+    fallbacks = install_package_managers[1:]
 
-    if install_package_manager is None:
-        raise FileNotFoundError(
-            "Could not find a package manager to install frontend packages. You may need to run `reflex init`."
-        )
-
-    fallback_command = (
-        fallback_command if fallback_command is not install_package_manager else None
-    )
-
-    processes.run_process_with_fallback(
-        [install_package_manager, "install"],
-        fallback=fallback_command,
+    processes.run_process_with_fallbacks(
+        [primary_package_manager, "install", "--legacy-peer-deps"],
+        fallbacks=fallbacks,
         analytics_enabled=True,
         show_status_message="Installing base frontend packages",
         cwd=get_web_dir(),
@@ -1199,15 +1137,16 @@ def install_frontend_packages(packages: set[str], config: Config):
     )
 
     if config.tailwind is not None:
-        processes.run_process_with_fallback(
+        processes.run_process_with_fallbacks(
             [
-                install_package_manager,
+                primary_package_manager,
                 "add",
+                "--legacy-peer-deps",
                 "-d",
                 constants.Tailwind.VERSION,
                 *((config.tailwind or {}).get("plugins", [])),
             ],
-            fallback=fallback_command,
+            fallbacks=fallbacks,
             analytics_enabled=True,
             show_status_message="Installing tailwind",
             cwd=get_web_dir(),
@@ -1216,9 +1155,9 @@ def install_frontend_packages(packages: set[str], config: Config):
 
     # Install custom packages defined in frontend_packages
     if len(packages) > 0:
-        processes.run_process_with_fallback(
-            [install_package_manager, "add", *packages],
-            fallback=fallback_command,
+        processes.run_process_with_fallbacks(
+            [primary_package_manager, "add", "--legacy-peer-deps", *packages],
+            fallbacks=fallbacks,
             analytics_enabled=True,
             show_status_message="Installing frontend packages from config and components",
             cwd=get_web_dir(),
@@ -1340,28 +1279,23 @@ def validate_frontend_dependencies(init: bool = True):
         Exit: If the package manager is invalid.
     """
     if not init:
-        # we only need to validate the package manager when running app.
-        # `reflex init` will install the deps anyway(if applied).
-        package_manager = get_package_manager()
-        if not package_manager:
-            console.error(
-                "Could not find NPM package manager. Make sure you have node installed."
-            )
-            raise typer.Exit(1)
+        try:
+            get_js_package_executor(raise_on_none=True)
+        except FileNotFoundError as e:
+            raise typer.Exit(1) from e
 
+    if prefer_npm_over_bun():
         if not check_node_version():
             node_version = get_node_version()
             console.error(
                 f"Reflex requires node version {constants.Node.MIN_VERSION} or higher to run, but the detected version is {node_version}",
             )
             raise typer.Exit(1)
-
-    if init:
-        # we only need bun for package install on `reflex init`.
+    else:
         validate_bun()
 
 
-def ensure_reflex_installation_id() -> Optional[int]:
+def ensure_reflex_installation_id() -> int | None:
     """Ensures that a reflex distinct id has been generated and stored in the reflex directory.
 
     Returns:
@@ -1402,12 +1336,8 @@ def initialize_frontend_dependencies():
     """Initialize all the frontend dependencies."""
     # validate dependencies before install
     validate_frontend_dependencies()
-    # Avoid warning about Node installation while we're trying to install it.
-    global CURRENTLY_INSTALLING_NODE
-    CURRENTLY_INSTALLING_NODE = True
     # Install the frontend dependencies.
-    processes.run_concurrently(install_node, install_bun)
-    CURRENTLY_INSTALLING_NODE = False
+    processes.run_concurrently(install_bun)
     # Set up the web directory.
     initialize_web_directory()
 
@@ -1697,31 +1627,6 @@ def validate_and_create_app_using_remote_template(
     )
 
 
-def generate_template_using_ai(template: str | None = None) -> str:
-    """Generate a template using AI(Flexgen).
-
-    Args:
-        template: The name of the template.
-
-    Returns:
-        The generation hash.
-
-    Raises:
-        Exit: If the template and ai flags are used.
-    """
-    if template is None:
-        # If AI is requested and no template specified, redirect the user to reflex.build.
-        return redir.reflex_build_redirect()
-    elif is_generation_hash(template):
-        # Otherwise treat the template as a generation hash.
-        return template
-    else:
-        console.error(
-            "Cannot use `--template` option with `--ai` option. Please remove `--template` option."
-        )
-        raise typer.Exit(2)
-
-
 def fetch_remote_templates(
     template: str,
 ) -> tuple[str, dict[str, Template]]:
@@ -1746,15 +1651,12 @@ def fetch_remote_templates(
     return template, available_templates
 
 
-def initialize_app(
-    app_name: str, template: str | None = None, ai: bool = False
-) -> str | None:
+def initialize_app(app_name: str, template: str | None = None) -> str | None:
     """Initialize the app either from a remote template or a blank app. If the config file exists, it is considered as reinit.
 
     Args:
         app_name: The name of the app.
         template: The name of the template to use.
-        ai: Whether to use AI to generate the template.
 
     Returns:
         The name of the template.
@@ -1770,11 +1672,6 @@ def initialize_app(
         telemetry.send("reinit")
         return
 
-    generation_hash = None
-    if ai:
-        generation_hash = generate_template_using_ai(template)
-        template = constants.Templates.DEFAULT
-
     templates: dict[str, Template] = {}
 
     # Don't fetch app templates if the user directly asked for DEFAULT.
@@ -1783,11 +1680,7 @@ def initialize_app(
 
     if template is None:
         template = prompt_for_template_options(get_init_cli_prompt_options())
-        if template == constants.Templates.AI:
-            generation_hash = generate_template_using_ai()
-            # change to the default to allow creation of default app
-            template = constants.Templates.DEFAULT
-        elif template == constants.Templates.CHOOSE_TEMPLATES:
+        if template == constants.Templates.CHOOSE_TEMPLATES:
             console.print(
                 f"Go to the templates page ({constants.Templates.REFLEX_TEMPLATES_URL}) and copy the command to init with a template."
             )
@@ -1802,11 +1695,6 @@ def initialize_app(
             app_name=app_name, template=template, templates=templates
         )
 
-    # If a reflex.build generation hash is available, download the code and apply it to the main module.
-    if generation_hash:
-        initialize_main_module_index_from_generation(
-            app_name, generation_hash=generation_hash
-        )
     telemetry.send("init", template=template)
 
     return template
@@ -1915,24 +1803,23 @@ def format_address_width(address_width: str | None) -> int | None:
         return None
 
 
-@functools.lru_cache(maxsize=None)
-def get_cpu_info() -> CpuInfo | None:
-    """Get the CPU info of the underlining host.
+def _retrieve_cpu_info() -> CpuInfo | None:
+    """Retrieve the CPU info of the host.
 
     Returns:
-         The CPU info.
+        The CPU info.
     """
     platform_os = platform.system()
     cpuinfo = {}
     try:
         if platform_os == "Windows":
-            cmd = "wmic cpu get addresswidth,caption,manufacturer /FORMAT:csv"
+            cmd = 'powershell -Command "Get-CimInstance Win32_Processor | Select-Object -First 1 | Select-Object AddressWidth,Manufacturer,Name | ConvertTo-Json"'
             output = processes.execute_command_and_return_output(cmd)
             if output:
-                val = output.splitlines()[-1].split(",")[1:]
-                cpuinfo["manufacturer_id"] = val[2]
-                cpuinfo["model_name"] = val[1].split("Family")[0].strip()
-                cpuinfo["address_width"] = format_address_width(val[0])
+                cpu_data = json.loads(output)
+                cpuinfo["address_width"] = cpu_data["AddressWidth"]
+                cpuinfo["manufacturer_id"] = cpu_data["Manufacturer"]
+                cpuinfo["model_name"] = cpu_data["Name"]
         elif platform_os == "Linux":
             output = processes.execute_command_and_return_output("lscpu")
             if output:
@@ -1972,21 +1859,20 @@ def get_cpu_info() -> CpuInfo | None:
 
 
 @functools.lru_cache(maxsize=None)
-def is_windows_bun_supported() -> bool:
-    """Check whether the underlining host running windows qualifies to run bun.
-    We typically do not run bun on ARM or 32 bit devices that use windows.
+def get_cpu_info() -> CpuInfo | None:
+    """Get the CPU info of the underlining host.
 
     Returns:
-        Whether the host is qualified to use bun.
+        The CPU info.
     """
-    cpu_info = get_cpu_info()
-    return (
-        constants.IS_WINDOWS
-        and cpu_info is not None
-        and cpu_info.address_width == 64
-        and cpu_info.model_name is not None
-        and "ARM" not in cpu_info.model_name
-    )
+    cpu_info_file = environment.REFLEX_DIR.get() / "cpu_info.json"
+    if cpu_info_file.exists() and (cpu_info := json.loads(cpu_info_file.read_text())):
+        return CpuInfo(**cpu_info)
+    cpu_info = _retrieve_cpu_info()
+    if cpu_info:
+        cpu_info_file.parent.mkdir(parents=True, exist_ok=True)
+        cpu_info_file.write_text(json.dumps(dataclasses.asdict(cpu_info)))
+    return cpu_info
 
 
 def is_generation_hash(template: str) -> bool:
@@ -2001,38 +1887,17 @@ def is_generation_hash(template: str) -> bool:
     return re.match(r"^[0-9a-f]{32,}$", template) is not None
 
 
-def check_config_option_in_tier(
-    option_name: str,
-    allowed_tiers: list[str],
-    fallback_value: Any,
-    help_link: str | None = None,
-):
-    """Check if a config option is allowed for the authenticated user's current tier.
+def get_user_tier():
+    """Get the current user's tier.
 
-    Args:
-        option_name: The name of the option to check.
-        allowed_tiers: The tiers that are allowed to use the option.
-        fallback_value: The fallback value if the option is not allowed.
-        help_link: The help link to show to a user that is authenticated.
+    Returns:
+        The current user's tier.
     """
     from reflex_cli.v2.utils import hosting
 
-    config = get_config()
     authenticated_token = hosting.authenticated_token()
-    if not authenticated_token[0]:
-        the_remedy = (
-            "You are currently logged out. Run `reflex login` to access this option."
-        )
-        current_tier = "anonymous"
-    else:
-        current_tier = authenticated_token[1].get("tier", "").lower()
-        the_remedy = (
-            f"Your current subscription tier is `{current_tier}`. "
-            f"Please upgrade to {allowed_tiers} to access this option. "
-        )
-        if help_link:
-            the_remedy += f"See {help_link} for more information."
-    if current_tier not in allowed_tiers:
-        console.warn(f"Config option `{option_name}` is restricted. {the_remedy}")
-        setattr(config, option_name, fallback_value)
-        config._set_persistent(**{option_name: fallback_value})
+    return (
+        authenticated_token[1].get("tier", "").lower()
+        if authenticated_token[0]
+        else "anonymous"
+    )

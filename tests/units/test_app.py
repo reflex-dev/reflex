@@ -9,7 +9,7 @@ import unittest.mock
 import uuid
 from contextlib import nullcontext as does_not_raise
 from pathlib import Path
-from typing import Generator, List, Tuple, Type
+from typing import Generator, Type
 from unittest.mock import AsyncMock
 
 import pytest
@@ -210,7 +210,7 @@ def test_default_app(app: App):
     Args:
         app: The app to test.
     """
-    assert app.middleware == [HydrateMiddleware()]
+    assert app._middlewares == [HydrateMiddleware()]
     assert app.style == Style()
     assert app.admin_dash is None
 
@@ -570,7 +570,7 @@ async def test_dynamic_var_event(test_state: Type[ATestState], token: str):
     ],
 )
 async def test_list_mutation_detection__plain_list(
-    event_tuples: List[Tuple[str, List[str]]],
+    event_tuples: list[tuple[str, list[str]]],
     list_mutation_state: State,
     token: str,
 ):
@@ -695,7 +695,7 @@ async def test_list_mutation_detection__plain_list(
     ],
 )
 async def test_dict_mutation_detection__plain_list(
-    event_tuples: List[Tuple[str, List[str]]],
+    event_tuples: list[tuple[str, list[str]]],
     dict_mutation_state: State,
     token: str,
 ):
@@ -817,7 +817,7 @@ async def test_upload_file(tmp_path, state, delta, token: str, mocker):
     [FileUploadState, ChildFileUploadState, GrandChildFileUploadState],
 )
 async def test_upload_file_without_annotation(state, tmp_path, token):
-    """Test that an error is thrown when there's no param annotated with rx.UploadFile or List[UploadFile].
+    """Test that an error is thrown when there's no param annotated with rx.UploadFile or list[UploadFile].
 
     Args:
         state: The state class.
@@ -838,7 +838,7 @@ async def test_upload_file_without_annotation(state, tmp_path, token):
         await fn(request_mock, [file_mock])
     assert (
         err.value.args[0]
-        == f"`{state.get_full_name()}.handle_upload2` handler should have a parameter annotated as List[rx.UploadFile]"
+        == f"`{state.get_full_name()}.handle_upload2` handler should have a parameter annotated as list[rx.UploadFile]"
     )
 
     if isinstance(app.state_manager, StateManagerRedis):
@@ -1523,22 +1523,22 @@ def test_app_with_transpile_packages(compilable_app: tuple[App, Path], export: b
     class C1(rx.Component):
         library = "foo@1.2.3"
         tag = "Foo"
-        transpile_packages: List[str] = ["foo"]
+        transpile_packages: list[str] = ["foo"]
 
     class C2(rx.Component):
         library = "bar@4.5.6"
         tag = "Bar"
-        transpile_packages: List[str] = ["bar@4.5.6"]
+        transpile_packages: list[str] = ["bar@4.5.6"]
 
     class C3(rx.NoSSRComponent):
         library = "baz@7.8.10"
         tag = "Baz"
-        transpile_packages: List[str] = ["baz@7.8.9"]
+        transpile_packages: list[str] = ["baz@7.8.9"]
 
     class C4(rx.NoSSRComponent):
         library = "quuc@2.3.4"
         tag = "Quuc"
-        transpile_packages: List[str] = ["quuc"]
+        transpile_packages: list[str] = ["quuc"]
 
     class C5(rx.Component):
         library = "quuc"

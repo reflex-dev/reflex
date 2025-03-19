@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any, Dict, List, Union
+from typing import Any, ClassVar, Sequence, Union
 
 from reflex.constants import EventTriggers
 from reflex.constants.colors import Color
@@ -28,22 +28,22 @@ class Pie(Recharts):
     alias = "RechartsPie"
 
     # The source data which each element is an object.
-    data: Var[List[Dict[str, Any]]]
+    data: Var[Sequence[dict[str, Any]]]
 
     # The key of each sector's value.
-    data_key: Var[Union[str, int]]
+    data_key: Var[str | int]
 
     # The x-coordinate of center. If set a percentage, the final value is obtained by multiplying the percentage of container width. Default: "50%"
-    cx: Var[Union[int, str]]
+    cx: Var[int | str]
 
     # The y-coordinate of center. If set a percentage, the final value is obtained by multiplying the percentage of container height. Default: "50%"
-    cy: Var[Union[int, str]]
+    cy: Var[int | str]
 
     # The inner radius of pie, which can be set to a percent value. Default: 0
-    inner_radius: Var[Union[int, str]]
+    inner_radius: Var[int | str]
 
     # The outer radius of pie, which can be set to a percent value. Default: "80%"
-    outer_radius: Var[Union[int, str]]
+    outer_radius: Var[int | str]
 
     # The angle of first sector. Default: 0
     start_angle: Var[int]
@@ -69,17 +69,14 @@ class Pie(Recharts):
     # If false set, label lines will not be drawn. If true set, label lines will be drawn which have the props calculated internally. Default: False
     label_line: Var[bool]
 
-    # The index of active sector in Pie, this option can be changed in mouse event handlers.
-    data: Var[List[Dict[str, Any]]]
-
     # Valid children components
-    _valid_children: List[str] = ["Cell", "LabelList", "Bare"]
+    _valid_children: ClassVar[list[str]] = ["Cell", "LabelList", "Bare"]
 
     # Stoke color. Default: rx.color("accent", 9)
-    stroke: Var[Union[str, Color]] = LiteralVar.create(Color("accent", 9))
+    stroke: Var[str | Color] = LiteralVar.create(Color("accent", 9))
 
     # Fill color. Default: rx.color("accent", 3)
-    fill: Var[Union[str, Color]] = LiteralVar.create(Color("accent", 3))
+    fill: Var[str | Color] = LiteralVar.create(Color("accent", 3))
 
     # If set false, animation of tooltip will be disabled. Default: true in CSR, and false in SSR
     is_animation_active: Var[bool]
@@ -96,7 +93,7 @@ class Pie(Recharts):
     # The tabindex of wrapper surrounding the cells. Default: 0
     root_tab_index: Var[int]
 
-    def get_event_triggers(self) -> dict[str, Union[Var, Any]]:
+    def get_event_triggers(self) -> dict[str, Var | Any]:
         """Get the event triggers that pass the component's value to the handler.
 
         Returns:
@@ -122,16 +119,16 @@ class Radar(Recharts):
     alias = "RechartsRadar"
 
     # The key of a group of data which should be unique in a radar chart.
-    data_key: Var[Union[str, int]]
+    data_key: Var[str | int]
 
     # The coordinates of all the vertices of the radar shape, like [{ x, y }].
-    points: Var[List[Dict[str, Any]]]
+    points: Var[Sequence[dict[str, Any]]]
 
     # If false set, dots will not be drawn. Default: True
     dot: Var[bool]
 
     # Stoke color. Default: rx.color("accent", 9)
-    stroke: Var[Union[str, Color]] = LiteralVar.create(Color("accent", 9))
+    stroke: Var[str | Color] = LiteralVar.create(Color("accent", 9))
 
     # Fill color. Default: rx.color("accent", 3)
     fill: Var[str] = LiteralVar.create(Color("accent", 3))
@@ -158,9 +155,9 @@ class Radar(Recharts):
     animation_easing: Var[LiteralAnimationEasing]
 
     # Valid children components
-    _valid_children: List[str] = ["LabelList"]
+    _valid_children: ClassVar[list[str]] = ["LabelList"]
 
-    def get_event_triggers(self) -> dict[str, Union[Var, Any]]:
+    def get_event_triggers(self) -> dict[str, Var | Any]:
         """Get the event triggers that pass the component's value to the handler.
 
         Returns:
@@ -180,10 +177,10 @@ class RadialBar(Recharts):
     alias = "RechartsRadialBar"
 
     # The source data which each element is an object.
-    data: Var[List[Dict[str, Any]]]
+    data: Var[Sequence[dict[str, Any]]]
 
     # The key of a group of data which should be unique to show the meaning of angle axis.
-    data_key: Var[Union[str, int]]
+    data_key: Var[str | int]
 
     # Min angle of each bar. A positive value between 0 and 360. Default: 0
     min_angle: Var[int]
@@ -192,10 +189,10 @@ class RadialBar(Recharts):
     legend_type: Var[LiteralLegendType]
 
     # If false set, labels will not be drawn. If true set, labels will be drawn which have the props calculated internally. Default: False
-    label: Var[Union[bool, Dict[str, Any]]]
+    label: Var[Union[bool, dict[str, Any]]]
 
     # If false set, background sector will not be drawn. Default: False
-    background: Var[Union[bool, Dict[str, Any]]]
+    background: Var[Union[bool, dict[str, Any]]]
 
     # If set false, animation of radial bars will be disabled. Default: True
     is_animation_active: Var[bool]
@@ -210,9 +207,9 @@ class RadialBar(Recharts):
     animation_easing: Var[LiteralAnimationEasing]
 
     # Valid children components
-    _valid_children: List[str] = ["Cell", "LabelList"]
+    _valid_children: ClassVar[list[str]] = ["Cell", "LabelList"]
 
-    def get_event_triggers(self) -> dict[str, Union[Var, Any]]:
+    def get_event_triggers(self) -> dict[str, Var | Any]:
         """Get the event triggers that pass the component's value to the handler.
 
         Returns:
@@ -238,43 +235,43 @@ class PolarAngleAxis(Recharts):
     alias = "RechartsPolarAngleAxis"
 
     # The key of a group of data which should be unique to show the meaning of angle axis.
-    data_key: Var[Union[str, int]]
+    data_key: Var[str | int]
 
     # The x-coordinate of center. If set a percentage, the final value is obtained by multiplying the percentage of container width.
-    cx: Var[Union[int, str]]
+    cx: Var[int | str]
 
     # The y-coordinate of center. If set a percentage, the final value is obtained by multiplying the percentage of container height.
-    cy: Var[Union[int, str]]
+    cy: Var[int | str]
 
     # The outer radius of circle grid. If set a percentage, the final value is obtained by multiplying the percentage of maxRadius which is calculated by the width, height, cx, cy.
-    radius: Var[Union[int, str]]
+    radius: Var[int | str]
 
     # If false set, axis line will not be drawn. If true set, axis line will be drawn which have the props calculated internally. If object set, axis line will be drawn which have the props mergered by the internal calculated props and the option. Default: True
-    axis_line: Var[Union[bool, Dict[str, Any]]]
+    axis_line: Var[Union[bool, dict[str, Any]]]
 
     # The type of axis line. Default: "polygon"
     axis_line_type: Var[LiteralGridType]
 
     # If false set, tick lines will not be drawn. If true set, tick lines will be drawn which have the props calculated internally. If object set, tick lines will be drawn which have the props mergered by the internal calculated props and the option. Default: False
-    tick_line: Var[Union[bool, Dict[str, Any]]] = LiteralVar.create(False)
+    tick_line: Var[Union[bool, dict[str, Any]]] = LiteralVar.create(False)
 
     # If false set, ticks will not be drawn. If true set, ticks will be drawn which have the props calculated internally. If object set, ticks will be drawn which have the props mergered by the internal calculated props and the option. Default: True
-    tick: Var[Union[bool, Dict[str, Any]]]
+    tick: Var[Union[bool, dict[str, Any]]]
 
     # The array of every tick's value and angle.
-    ticks: Var[List[Dict[str, Any]]]
+    ticks: Var[Sequence[dict[str, Any]]]
 
     # The orientation of axis text. Default: "outer"
     orientation: Var[str]
 
     # The stroke color of axis. Default: rx.color("gray", 10)
-    stroke: Var[Union[str, Color]] = LiteralVar.create(Color("gray", 10))
+    stroke: Var[str | Color] = LiteralVar.create(Color("gray", 10))
 
     # Allow the axis has duplicated categorys or not when the type of axis is "category". Default: True
     allow_duplicated_category: Var[bool]
 
     # Valid children components.
-    _valid_children: List[str] = ["Label"]
+    _valid_children: ClassVar[list[str]] = ["Label"]
 
     # The customized event handler of click on the ticks of this axis.
     on_click: EventHandler[no_args_event_spec]
@@ -321,19 +318,19 @@ class PolarGrid(Recharts):
     outer_radius: Var[int]
 
     # The array of every line grid's angle.
-    polar_angles: Var[List[int]]
+    polar_angles: Var[Sequence[int]]
 
     # The array of every line grid's radius.
-    polar_radius: Var[List[int]]
+    polar_radius: Var[Sequence[int]]
 
     # The type of polar grids. 'polygon' | 'circle'. Default: "polygon"
     grid_type: Var[LiteralGridType]
 
     # The stroke color of grid. Default: rx.color("gray", 10)
-    stroke: Var[Union[str, Color]] = LiteralVar.create(Color("gray", 10))
+    stroke: Var[str | Color] = LiteralVar.create(Color("gray", 10))
 
     # Valid children components
-    _valid_children: List[str] = ["RadarChart", "RadiarBarChart"]
+    _valid_children: ClassVar[list[str]] = ["RadarChart", "RadiarBarChart"]
 
 
 class PolarRadiusAxis(Recharts):
@@ -365,10 +362,10 @@ class PolarRadiusAxis(Recharts):
     orientation: Var[LiteralOrientationLeftRightMiddle]
 
     # If false set, axis line will not be drawn. If true set, axis line will be drawn which have the props calculated internally. If object set, axis line will be drawn which have the props mergered by the internal calculated props and the option. Default: True
-    axis_line: Var[Union[bool, Dict[str, Any]]]
+    axis_line: Var[Union[bool, dict[str, Any]]]
 
     # If false set, ticks will not be drawn. If true set, ticks will be drawn which have the props calculated internally. If object set, ticks will be drawn which have the props mergered by the internal calculated props and the option. Default: True
-    tick: Var[Union[bool, Dict[str, Any]]]
+    tick: Var[Union[bool, dict[str, Any]]]
 
     # The count of axis ticks. Not used if 'type' is 'category'. Default: 5
     tick_count: Var[int]
@@ -377,15 +374,15 @@ class PolarRadiusAxis(Recharts):
     scale: Var[LiteralScale]
 
     # Valid children components
-    _valid_children: List[str] = ["Label"]
+    _valid_children: ClassVar[list[str]] = ["Label"]
 
     # The domain of the polar radius axis, specifying the minimum and maximum values. Default: [0, "auto"]
-    domain: Var[List[Union[int, str]]]
+    domain: Var[Sequence[int | str]]
 
     # The stroke color of axis. Default: rx.color("gray", 10)
-    stroke: Var[Union[str, Color]] = LiteralVar.create(Color("gray", 10))
+    stroke: Var[str | Color] = LiteralVar.create(Color("gray", 10))
 
-    def get_event_triggers(self) -> dict[str, Union[Var, Any]]:
+    def get_event_triggers(self) -> dict[str, Var | Any]:
         """Get the event triggers that pass the component's value to the handler.
 
         Returns:

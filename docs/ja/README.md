@@ -1,7 +1,3 @@
-```diff
-+ PyneconeはReflexに名前を変えました。Pyneconeを探している方は、今、ご覧のページがPyneconeのリポジトリになります。 +
-```
-
 <div align="center">
 <img src="https://raw.githubusercontent.com/reflex-dev/reflex/main/docs/images/reflex_dark.svg#gh-light-mode-only" alt="Reflex Logo" width="300px">
 <img src="https://raw.githubusercontent.com/reflex-dev/reflex/main/docs/images/reflex_light.svg#gh-dark-mode-only" alt="Reflex Logo" width="300px">

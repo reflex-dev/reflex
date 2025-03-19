@@ -7,19 +7,10 @@ import concurrent.futures
 import traceback
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Callable, Dict, Optional, Type, Union
+from typing import Any, Callable, Type
 from urllib.parse import urlparse
 
-from reflex.utils.exec import is_in_app_harness
-from reflex.utils.prerequisites import get_web_dir
-from reflex.vars.base import Var
-
-try:
-    from pydantic.v1.fields import ModelField
-except ModuleNotFoundError:
-    from pydantic.fields import (
-        ModelField,  # pyright: ignore [reportAttributeAccessIssue]
-    )
+from pydantic.v1.fields import ModelField
 
 from reflex import constants
 from reflex.components.base import (
@@ -39,7 +30,10 @@ from reflex.istate.storage import Cookie, LocalStorage, SessionStorage
 from reflex.state import BaseState, _resolve_delta
 from reflex.style import Style
 from reflex.utils import console, format, imports, path_ops
+from reflex.utils.exec import is_in_app_harness
 from reflex.utils.imports import ImportVar, ParsedImportDict
+from reflex.utils.prerequisites import get_web_dir
+from reflex.vars.base import Var
 
 # To re-export this function.
 merge_imports = imports.merge_imports
@@ -193,16 +187,7 @@ def compile_state(state: Type[BaseState]) -> dict:
     Returns:
         A dictionary of the compiled state.
     """
-    try:
-        initial_state = state(_reflex_internal_init=True).dict(initial=True)
-    except Exception as e:
-        log_path = save_error(e)
-        console.warn(
-            f"Failed to compile initial state with computed vars. Error log saved to {log_path}"
-        )
-        initial_state = state(_reflex_internal_init=True).dict(
-            initial=True, include_computed=False
-        )
+    initial_state = state(_reflex_internal_init=True).dict(initial=True)
     try:
         _ = asyncio.get_running_loop()
     except RuntimeError:
@@ -351,8 +336,8 @@ def compile_custom_component(
 
 def create_document_root(
     head_components: list[Component] | None = None,
-    html_lang: Optional[str] = None,
-    html_custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
+    html_lang: str | None = None,
+    html_custom_attrs: dict[str, Var | str] | None = None,
 ) -> Component:
     """Create the document root.
 

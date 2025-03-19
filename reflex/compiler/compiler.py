@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from datetime import datetime
 from pathlib import Path
-from typing import TYPE_CHECKING, Dict, Iterable, Optional, Sequence, Tuple, Type, Union
+from typing import TYPE_CHECKING, Iterable, Sequence, Type
 
 from reflex import constants
 from reflex.compiler import templates, utils
@@ -19,6 +19,7 @@ from reflex.components.component import (
 from reflex.config import environment, get_config
 from reflex.state import BaseState
 from reflex.style import SYSTEM_COLOR_MODE
+from reflex.utils import console, path_ops
 from reflex.utils.exec import is_prod_mode
 from reflex.utils.imports import ImportVar
 from reflex.utils.prerequisites import get_web_dir
@@ -94,7 +95,7 @@ def _compile_theme(theme: str) -> str:
     return templates.THEME.render(theme=theme)
 
 
-def _compile_contexts(state: Optional[Type[BaseState]], theme: Component | None) -> str:
+def _compile_contexts(state: Type[BaseState] | None, theme: Component | None) -> str:
     """Compile the initial state and contexts.
 
     Args:
@@ -190,18 +191,74 @@ def _compile_root_stylesheet(stylesheets: list[str]) -> str:
         if get_config().tailwind is not None
         else []
     )
+
+    failed_to_import_sass = False
     for stylesheet in stylesheets:
         if not utils.is_valid_url(stylesheet):
             # check if stylesheet provided exists.
-            stylesheet_full_path = (
-                Path.cwd() / constants.Dirs.APP_ASSETS / stylesheet.strip("/")
-            )
+            assets_app_path = Path.cwd() / constants.Dirs.APP_ASSETS
+            stylesheet_full_path = assets_app_path / stylesheet.strip("/")
+
             if not stylesheet_full_path.exists():
                 raise FileNotFoundError(
                     f"The stylesheet file {stylesheet_full_path} does not exist."
                 )
-            stylesheet = f"../{constants.Dirs.PUBLIC}/{stylesheet.strip('/')}"
+
+            if stylesheet_full_path.is_dir():
+                # NOTE: this can create an infinite loop, for example:
+                # assets/
+                #   | dir_a/
+                #   |   | dir_c/ (symlink to "assets/dir_a")
+                #   | dir_b/
+                # so to avoid the infinite loop, we don't include symbolic links
+                stylesheets += [
+                    str(p.relative_to(assets_app_path))
+                    for p in stylesheet_full_path.iterdir()
+                    if not (p.is_symlink() and p.is_dir())
+                ]
+                continue
+
+            if (
+                stylesheet_full_path.suffix[1:].lower()
+                in constants.Reflex.STYLESHEETS_SUPPORTED
+            ):
+                target = (
+                    Path.cwd()
+                    / constants.Dirs.WEB
+                    / constants.Dirs.STYLES
+                    / (stylesheet.rsplit(".", 1)[0].strip("/") + ".css")
+                )
+                target.parent.mkdir(parents=True, exist_ok=True)
+
+                if stylesheet_full_path.suffix == ".css":
+                    path_ops.cp(src=stylesheet_full_path, dest=target, overwrite=True)
+                else:
+                    try:
+                        from sass import compile as sass_compile
+
+                        target.write_text(
+                            data=sass_compile(
+                                filename=str(stylesheet_full_path),
+                                output_style="compressed",
+                            ),
+                            encoding="utf8",
+                        )
+                    except ImportError:
+                        failed_to_import_sass = True
+            else:
+                raise FileNotFoundError(
+                    f'The stylesheet file "{stylesheet_full_path}" is not a valid file.'
+                )
+
+            stylesheet = f"./{stylesheet.rsplit('.', 1)[0].strip('/')}.css"
+
         sheets.append(stylesheet) if stylesheet not in sheets else None
+
+    if failed_to_import_sass:
+        console.error(
+            'The `libsass` package is required to compile sass/scss stylesheet files. Run `pip install "libsass>=0.23.0"`.'
+        )
+
     return templates.STYLE.render(stylesheets=sheets)
 
 
@@ -219,7 +276,7 @@ def _compile_component(component: Component | StatefulComponent) -> str:
 
 def _compile_components(
     components: set[CustomComponent],
-) -> tuple[str, Dict[str, list[ImportVar]]]:
+) -> tuple[str, dict[str, list[ImportVar]]]:
     """Compile the components.
 
     Args:
@@ -247,12 +304,19 @@ def _compile_components(
         for comp_import in comp_render["dynamic_imports"]
     }
 
+    custom_codes = {
+        comp_custom_code: None
+        for comp_render in component_renders
+        for comp_custom_code in comp_render.get("custom_code", [])
+    }
+
     # Compile the components page.
     return (
         templates.COMPONENTS.render(
             imports=utils.compile_imports(imports),
             components=component_renders,
             dynamic_imports=dynamic_imports,
+            custom_codes=custom_codes,
         ),
         imports,
     )
@@ -352,8 +416,8 @@ def _compile_tailwind(
 
 def compile_document_root(
     head_components: list[Component],
-    html_lang: Optional[str] = None,
-    html_custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
+    html_lang: str | None = None,
+    html_custom_attrs: dict[str, Var | str] | None = None,
 ) -> tuple[str, str]:
     """Compile the document root.
 
@@ -415,7 +479,7 @@ def compile_theme(style: ComponentStyle) -> tuple[str, str]:
 
 
 def compile_contexts(
-    state: Optional[Type[BaseState]],
+    state: Type[BaseState] | None,
     theme: Component | None,
 ) -> tuple[str, str]:
     """Compile the initial state / context.
@@ -456,7 +520,7 @@ def compile_page(
 
 def compile_components(
     components: set[CustomComponent],
-) -> tuple[str, str, Dict[str, list[ImportVar]]]:
+) -> tuple[str, str, dict[str, list[ImportVar]]]:
     """Compile the custom components.
 
     Args:
@@ -577,14 +641,49 @@ def into_component(component: Component | ComponentCallable) -> Component:
 
     Raises:
         TypeError: If the component is not a Component.
+
+    # noqa: DAR401
     """
     if (converted := _into_component_once(component)) is not None:
         return converted
-    if (
-        callable(component)
-        and (converted := _into_component_once(component())) is not None
-    ):
-        return converted
+    try:
+        if (
+            callable(component)
+            and (converted := _into_component_once(component())) is not None
+        ):
+            return converted
+    except KeyError as e:
+        key = e.args[0] if e.args else None
+        if key is not None and isinstance(key, Var):
+            raise TypeError(
+                "Cannot access a primitive map with a Var. Consider calling rx.Var.create() on the map."
+            ).with_traceback(e.__traceback__) from None
+        raise
+    except TypeError as e:
+        message = e.args[0] if e.args else None
+        if message and isinstance(message, str):
+            if message.endswith("has no len()") and (
+                "ArrayCastedVar" in message
+                or "ObjectCastedVar" in message
+                or "StringCastedVar" in message
+            ):
+                raise TypeError(
+                    "Cannot pass a Var to a built-in function. Consider using .length() for accessing the length of an iterable Var."
+                ).with_traceback(e.__traceback__) from None
+            if message.endswith(
+                "indices must be integers or slices, not NumberCastedVar"
+            ) or message.endswith(
+                "indices must be integers or slices, not BooleanCastedVar"
+            ):
+                raise TypeError(
+                    "Cannot index into a primitive sequence with a Var. Consider calling rx.Var.create() on the sequence."
+                ).with_traceback(e.__traceback__) from None
+        if "CastedVar" in str(e):
+            raise TypeError(
+                "Cannot pass a Var to a built-in function. Consider moving the operation to the backend, using existing Var operations, or defining a custom Var operation."
+            ).with_traceback(e.__traceback__) from None
+        raise
+
     raise TypeError(f"Expected a Component, got {type(component)}")
 
 
@@ -594,7 +693,7 @@ def compile_unevaluated_page(
     state: Type[BaseState] | None = None,
     style: ComponentStyle | None = None,
     theme: Component | None = None,
-) -> Tuple[Component, bool]:
+) -> tuple[Component, bool]:
     """Compiles an uncompiled page into a component and adds meta information.
 
     Args:
@@ -679,9 +778,9 @@ class ExecutorSafeFunctions:
 
     """
 
-    COMPONENTS: Dict[str, BaseComponent] = {}
-    UNCOMPILED_PAGES: Dict[str, UnevaluatedPage] = {}
-    STATE: Optional[Type[BaseState]] = None
+    COMPONENTS: dict[str, BaseComponent] = {}
+    UNCOMPILED_PAGES: dict[str, UnevaluatedPage] = {}
+    STATE: Type[BaseState] | None = None
 
     @classmethod
     def compile_page(cls, route: str) -> tuple[str, str]:

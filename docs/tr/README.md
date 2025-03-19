@@ -1,7 +1,3 @@
-```diff
-+ Pynecone'u mu arıyorsun? Doğru repodasın. Pynecone, Reflex olarak yeniden adlandırıldı. +
-```
-
 <div align="center">
 <img src="https://raw.githubusercontent.com/reflex-dev/reflex/main/docs/images/reflex_dark.svg#gh-light-mode-only" alt="Reflex Logo" width="300px">
 <img src="https://raw.githubusercontent.com/reflex-dev/reflex/main/docs/images/reflex_light.svg#gh-dark-mode-only" alt="Reflex Logo" width="300px">
@@ -14,6 +10,7 @@
 ![versions](https://img.shields.io/pypi/pyversions/reflex.svg)
 [![Documentaiton](https://img.shields.io/badge/Documentation%20-Introduction%20-%20%23007ec6)](https://reflex.dev/docs/getting-started/introduction)
 [![Discord](https://img.shields.io/discord/1029853095527727165?color=%237289da&label=Discord)](https://discord.gg/T5WSbC2YtQ)
+
 </div>
 
 ---
@@ -91,7 +88,7 @@ class State(rx.State):
         response = openai.Image.create(prompt=self.prompt, n=1, size="1024x1024")
         self.image_url = response["data"][0]["url"]
         self.processing, self.complete = False, True
-        
+
 
 def index():
     return rx.center(
@@ -200,13 +197,9 @@ Daha fazla sayfa ekleyerek çok sayfalı bir uygulama oluşturabilirsiniz.
 
 <div align="center">
 
-📑 [Docs](https://reflex.dev/docs/getting-started/introduction) &nbsp; |  &nbsp; 🗞️ [Blog](https://reflex.dev/blog) &nbsp; |  &nbsp; 📱 [Component Library](https://reflex.dev/docs/library) &nbsp; |  &nbsp; 🖼️ [Templates](https://reflex.dev/templates/) &nbsp; |  &nbsp; 🛸 [Deployment](https://reflex.dev/docs/hosting/deploy)  &nbsp;   
+📑 [Docs](https://reflex.dev/docs/getting-started/introduction) &nbsp; | &nbsp; 🗞️ [Blog](https://reflex.dev/blog) &nbsp; | &nbsp; 📱 [Component Library](https://reflex.dev/docs/library) &nbsp; | &nbsp; 🖼️ [Templates](https://reflex.dev/templates/) &nbsp; | &nbsp; 🛸 [Deployment](https://reflex.dev/docs/hosting/deploy) &nbsp;
 
 </div>
-
-
-
-
 
 ## ✅ Durum
 

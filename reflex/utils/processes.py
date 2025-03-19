@@ -10,7 +10,7 @@ import signal
 import subprocess
 from concurrent import futures
 from pathlib import Path
-from typing import Callable, Generator, List, Optional, Tuple, Union
+from typing import Callable, Generator, Sequence, Tuple
 
 import psutil
 import typer
@@ -50,7 +50,7 @@ def get_num_workers() -> int:
     return (os.cpu_count() or 1) * 2 + 1
 
 
-def get_process_on_port(port: int) -> Optional[psutil.Process]:
+def get_process_on_port(port: int) -> psutil.Process | None:
     """Get the process on the given port.
 
     Args:
@@ -171,14 +171,9 @@ def new_process(
 
     # Add node_bin_path to the PATH environment variable.
     if not environment.REFLEX_BACKEND_ONLY.get():
-        node_bin_path = str(path_ops.get_node_bin_path())
-        if not node_bin_path and not prerequisites.CURRENTLY_INSTALLING_NODE:
-            console.warn(
-                "The path to the Node binary could not be found. Please ensure that Node is properly "
-                "installed and added to your system's PATH environment variable or try running "
-                "`reflex init` again."
-            )
-        path_env = os.pathsep.join([node_bin_path, path_env])
+        node_bin_path = path_ops.get_node_bin_path()
+        if node_bin_path:
+            path_env = os.pathsep.join([str(node_bin_path), path_env])
 
     env: dict[str, str] = {
         **os.environ,
@@ -202,7 +197,7 @@ def new_process(
 
 @contextlib.contextmanager
 def run_concurrently_context(
-    *fns: Union[Callable, Tuple],
+    *fns: Callable | Tuple,
 ) -> Generator[list[futures.Future], None, None]:
     """Run functions concurrently in a thread pool.
 
@@ -240,7 +235,7 @@ def run_concurrently_context(
             executor.shutdown(wait=False)
 
 
-def run_concurrently(*fns: Union[Callable, Tuple]) -> None:
+def run_concurrently(*fns: Callable | Tuple) -> None:
     """Run functions concurrently in a thread pool.
 
     Args:
@@ -335,7 +330,7 @@ def show_status(
             status.update(f"{message} {line}")
 
 
-def show_progress(message: str, process: subprocess.Popen, checkpoints: List[str]):
+def show_progress(message: str, process: subprocess.Popen, checkpoints: list[str]):
     """Show a progress bar for a process.
 
     Args:
@@ -380,11 +375,11 @@ def get_command_with_loglevel(command: list[str]) -> list[str]:
     return command
 
 
-def run_process_with_fallback(
+def run_process_with_fallbacks(
     args: list[str],
     *,
     show_status_message: str,
-    fallback: str | list | None = None,
+    fallbacks: str | Sequence[str] | Sequence[Sequence[str]] | None = None,
     analytics_enabled: bool = False,
     **kwargs,
 ):
@@ -393,12 +388,12 @@ def run_process_with_fallback(
     Args:
         args: A string, or a sequence of program arguments.
         show_status_message: The status message to be displayed in the console.
-        fallback: The fallback command to run.
+        fallbacks: The fallback command to run if the initial command fails.
         analytics_enabled: Whether analytics are enabled for this command.
         kwargs: Kwargs to pass to new_process function.
     """
     process = new_process(get_command_with_loglevel(args), **kwargs)
-    if fallback is None:
+    if not fallbacks:
         # No fallback given, or this _is_ the fallback command.
         show_status(
             show_status_message,
@@ -408,16 +403,24 @@ def run_process_with_fallback(
     else:
         # Suppress errors for initial command, because we will try to fallback
         show_status(show_status_message, process, suppress_errors=True)
+
+        current_fallback = fallbacks[0] if not isinstance(fallbacks, str) else fallbacks
+        next_fallbacks = fallbacks[1:] if not isinstance(fallbacks, str) else None
+
         if process.returncode != 0:
             # retry with fallback command.
-            fallback_args = [fallback, *args[1:]]
-            console.warn(
-                f"There was an error running command: {args}. Falling back to: {fallback_args}."
+            fallback_with_args = (
+                [current_fallback, *args[1:]]
+                if isinstance(fallbacks, str)
+                else [*current_fallback, *args[1:]]
             )
-            run_process_with_fallback(
-                fallback_args,
+            console.warn(
+                f"There was an error running command: {args}. Falling back to: {fallback_with_args}."
+            )
+            run_process_with_fallbacks(
+                fallback_with_args,
                 show_status_message=show_status_message,
-                fallback=None,
+                fallbacks=next_fallbacks,
                 analytics_enabled=analytics_enabled,
                 **kwargs,
             )

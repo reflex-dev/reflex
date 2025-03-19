@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any, Dict, List, Union
+from typing import Any, Dict, List, Sequence
 
 from reflex.components.component import Component
 from reflex.components.tags import Tag
@@ -17,7 +17,7 @@ class Gridjs(Component):
 
     library = "gridjs-react@6.1.1"
 
-    lib_dependencies: List[str] = ["gridjs@6.2.0"]
+    lib_dependencies: list[str] = ["gridjs@6.2.0"]
 
 
 class DataTable(Gridjs):
@@ -32,7 +32,7 @@ class DataTable(Gridjs):
 
     # The list of columns to display. Required if data is a list and should not be provided
     # if the data field is a dataframe
-    columns: Var[List]
+    columns: Var[Sequence]
 
     # Enable a search bar.
     search: Var[bool]
@@ -44,7 +44,7 @@ class DataTable(Gridjs):
     resizable: Var[bool]
 
     # Enable pagination.
-    pagination: Var[Union[bool, Dict]]
+    pagination: Var[bool | Dict]
 
     @classmethod
     def create(cls, *children, **props):
@@ -91,7 +91,7 @@ class DataTable(Gridjs):
         # If data is a list and columns are not provided, throw an error
         if (
             (isinstance(data, Var) and types._issubclass(data._var_type, List))
-            or issubclass(type(data), List)
+            or isinstance(data, list)
         ) and columns is None:
             raise ValueError(
                 "column field should be specified when the data field is a list type"
@@ -115,11 +115,11 @@ class DataTable(Gridjs):
         if isinstance(self.data, Var) and types.is_dataframe(self.data._var_type):
             self.columns = self.data._replace(
                 _js_expr=f"{self.data._js_expr}.columns",
-                _var_type=List[Any],
+                _var_type=list[Any],
             )
             self.data = self.data._replace(
                 _js_expr=f"{self.data._js_expr}.data",
-                _var_type=List[List[Any]],
+                _var_type=list[list[Any]],
             )
         if types.is_dataframe(type(self.data)):
             # If given a pandas df break up the data and columns

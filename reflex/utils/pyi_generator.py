@@ -15,7 +15,7 @@ from inspect import getfullargspec
 from itertools import chain
 from multiprocessing import Pool, cpu_count
 from pathlib import Path
-from types import ModuleType, SimpleNamespace
+from types import ModuleType, SimpleNamespace, UnionType
 from typing import Any, Callable, Iterable, Sequence, Type, get_args, get_origin
 
 from reflex.components.component import Component
@@ -61,9 +61,11 @@ DEFAULT_TYPING_IMPORTS = {
     "Callable",
     "Dict",
     # "List",
+    "Sequence",
     "Literal",
     "Optional",
     "Union",
+    "Annotated",
 }
 
 # TODO: fix import ordering and unused imports with ruff later
@@ -144,17 +146,17 @@ def _get_type_hint(
             ]
             res_args.sort()
             if len(res_args) == 1:
-                return f"Optional[{res_args[0]}]"
+                return f"{res_args[0]} | None"
             else:
-                res = f"Union[{', '.join(res_args)}]"
-                return f"Optional[{res}]"
+                res = f"{' | '.join(res_args)}"
+                return f"{res} | None"
 
         res_args = [
             _get_type_hint(arg, type_hint_globals, rx_types.is_optional(arg))
             for arg in value.__args__
         ]
         res_args.sort()
-        return f"Union[{', '.join(res_args)}]"
+        return f"{' | '.join(res_args)}"
 
     if args:
         inner_container_type_args = (
@@ -192,8 +194,8 @@ def _get_type_hint(
                 if arg is not type(None)
             ]
             if len(types) > 1:
-                res = ", ".join(sorted(types))
-                res = f"Union[{res}]"
+                res = " | ".join(sorted(types))
+
     elif isinstance(value, str):
         ev = eval(value, type_hint_globals)
         if rx_types.is_optional(ev):
@@ -204,7 +206,7 @@ def _get_type_hint(
                 _get_type_hint(arg, type_hint_globals, rx_types.is_optional(arg))
                 for arg in ev.__args__
             ]
-            return f"Union[{', '.join(res)}]"
+            return f"{' | '.join(res)}"
         res = (
             _get_type_hint(ev, type_hint_globals, is_optional=False)
             if ev.__name__ == "Var"
@@ -212,8 +214,8 @@ def _get_type_hint(
         )
     else:
         res = value.__name__
-    if is_optional and not res.startswith("Optional"):
-        res = f"Optional[{res}]"
+    if is_optional and not res.startswith("Optional") and not res.endswith("| None"):
+        res = f"{res} | None"
     return res
 
 
@@ -346,7 +348,7 @@ def _extract_class_props_as_ast_nodes(
     all_props = []
     kwargs = []
     for target_class in clzs:
-        event_triggers = target_class().get_event_triggers()
+        event_triggers = target_class._create([]).get_event_triggers()
         # Import from the target class to ensure type hints are resolvable.
         exec(f"from {target_class.__module__} import *", type_hint_globals)
         for name, value in target_class.__annotations__.items():
@@ -399,6 +401,8 @@ def type_to_ast(typ: Any, cls: type) -> ast.AST:
         return ast.Name(id="None")
 
     origin = get_origin(typ)
+    if origin is UnionType:
+        origin = typing.Union
 
     # Handle plain types (int, str, custom classes, etc.)
     if origin is None:
@@ -419,7 +423,7 @@ def type_to_ast(typ: Any, cls: type) -> ast.AST:
         return ast.Name(id=str(typ))
 
     # Get the base type name (List, Dict, Optional, etc.)
-    base_name = origin._name if hasattr(origin, "_name") else origin.__name__
+    base_name = getattr(origin, "_name", origin.__name__)
 
     # Get type arguments
     args = get_args(typ)
@@ -431,7 +435,7 @@ def type_to_ast(typ: Any, cls: type) -> ast.AST:
     # Convert all type arguments recursively
     arg_nodes = [type_to_ast(arg, cls) for arg in args]
 
-    # Special case for single-argument types (like List[T] or Optional[T])
+    # Special case for single-argument types (like list[T] or Optional[T])
     if len(arg_nodes) == 1:
         slice_value = arg_nodes[0]
     else:
@@ -525,12 +529,14 @@ def _generate_component_create_functiondef(
             ]
 
             # Create EventType using the joined string
-            return ast.Name(
-                id=f"Union[{', '.join(map(ast.unparse, all_count_args_type))}]"
-            )
+            return ast.Name(id=f"{' | '.join(map(ast.unparse, all_count_args_type))}")
 
-        if isinstance(annotation, str) and annotation.startswith("Tuple["):
-            inside_of_tuple = annotation.removeprefix("Tuple[").removesuffix("]")
+        if isinstance(annotation, str) and annotation.lower().startswith("tuple["):
+            inside_of_tuple = (
+                annotation.removeprefix("tuple[")
+                .removeprefix("Tuple[")
+                .removesuffix("]")
+            )
 
             if inside_of_tuple == "()":
                 return ast.Name(id="EventType[()]")
@@ -566,12 +572,10 @@ def _generate_component_create_functiondef(
                 for i in range(len(arguments) + 1)
             ]
 
-            return ast.Name(
-                id=f"Union[{', '.join(map(ast.unparse, all_count_args_type))}]"
-            )
+            return ast.Name(id=f"{' | '.join(map(ast.unparse, all_count_args_type))}")
         return ast.Name(id="EventType[Any]")
 
-    event_triggers = clz().get_event_triggers()
+    event_triggers = clz._create([]).get_event_triggers()
 
     # event handler kwargs
     kwargs.extend(
@@ -882,6 +886,12 @@ class StubGenerator(ast.NodeTransformer):
         call_definition = None
         for child in node.body[:]:
             found_call = False
+            if (
+                isinstance(child, ast.AnnAssign)
+                and isinstance(child.target, ast.Name)
+                and child.target.id.startswith("_")
+            ):
+                node.body.remove(child)
             if isinstance(child, ast.Assign):
                 for target in child.targets[:]:
                     if isinstance(target, ast.Name) and target.id == "__call__":
@@ -1190,8 +1200,9 @@ class PyiGenerator:
             self._scan_files_multiprocess(file_targets)
 
         # Fix generated pyi files with ruff.
-        subprocess.run(["ruff", "format", *self.written_files])
-        subprocess.run(["ruff", "check", "--fix", *self.written_files])
+        if self.written_files:
+            subprocess.run(["ruff", "format", *self.written_files])
+            subprocess.run(["ruff", "check", "--fix", *self.written_files])
 
         # For some reason, we need to format the __init__.pyi files again after fixing...
         init_files = [f for f in self.written_files if "/__init__.pyi" in f]

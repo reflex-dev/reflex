@@ -7,7 +7,7 @@ import contextlib
 import dataclasses
 import functools
 import inspect
-from typing import Callable, Coroutine, Set, Union
+from typing import Callable, Coroutine
 
 from fastapi import FastAPI
 
@@ -22,7 +22,7 @@ class LifespanMixin(AppMixin):
     """A Mixin that allow tasks to run during the whole app lifespan."""
 
     # Lifespan tasks that are planned to run.
-    lifespan_tasks: Set[Union[asyncio.Task, Callable]] = dataclasses.field(
+    lifespan_tasks: set[asyncio.Task | Callable] = dataclasses.field(
         default_factory=set
     )
 

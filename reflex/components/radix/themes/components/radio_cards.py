@@ -1,7 +1,7 @@
 """Radio component from Radix Themes."""
 
 from types import SimpleNamespace
-from typing import Literal, Union
+from typing import ClassVar, Literal
 
 from reflex.components.core.breakpoints import Responsive
 from reflex.event import EventHandler, passthrough_event_spec
@@ -31,14 +31,10 @@ class RadioCardsRoot(RadixThemesComponent):
     high_contrast: Var[bool]
 
     # The number of columns:
-    columns: Var[
-        Responsive[Union[str, Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]]]
-    ]
+    columns: Var[Responsive[str | Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]]]
 
     # The gap between the checkbox cards:
-    gap: Var[
-        Responsive[Union[str, Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]]]
-    ]
+    gap: Var[Responsive[str | Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]]]
 
     default_value: Var[str]
 
@@ -85,7 +81,7 @@ class RadioCardsItem(RadixThemesComponent):
     # When true, indicates that the user must check the radio item before the owning form can be submitted.
     required: Var[bool]
 
-    _valid_parents: list[str] = ["RadioCardsRoot"]
+    _valid_parents: ClassVar[list[str]] = ["RadioCardsRoot"]
 
 
 class RadioCards(SimpleNamespace):

@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any, Iterable, Literal, Union
+from typing import Any, Iterable, Literal
 
 from reflex.components.component import Component, ComponentNamespace
 from reflex.components.core.foreach import Foreach
@@ -44,7 +44,7 @@ class BaseList(Component, MarkdownComponentMap):
 
     # The style of the list. Default to "none".
     list_style_type: Var[
-        Union[LiteralListStyleTypeUnordered, LiteralListStyleTypeOrdered]
+        LiteralListStyleTypeUnordered | LiteralListStyleTypeOrdered
     ] = Var.create("none")
 
     # A list of items to add to the list.

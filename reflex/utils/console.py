@@ -250,7 +250,7 @@ def deprecate(
 
     if dedupe_key not in _EMITTED_DEPRECATION_WARNINGS:
         msg = (
-            f"{feature_name} has been deprecated in version {deprecation_version} {reason.rstrip('.')}. It will be completely "
+            f"{feature_name} has been deprecated in version {deprecation_version}. {reason.rstrip('.').lstrip('. ')}. It will be completely "
             f"removed in {removal_version}. ({loc})"
         )
         if _LOG_LEVEL <= LogLevel.WARNING:

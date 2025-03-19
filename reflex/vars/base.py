@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import contextlib
+import copy
 import dataclasses
 import datetime
 import functools
@@ -28,20 +29,22 @@ from typing import (
     Literal,
     Mapping,
     NoReturn,
-    Optional,
+    ParamSpec,
     Sequence,
     Set,
     Tuple,
     Type,
+    TypeGuard,
     TypeVar,
     Union,
     cast,
     get_args,
+    get_type_hints,
     overload,
 )
 
 from sqlalchemy.orm import DeclarativeBase
-from typing_extensions import ParamSpec, TypeGuard, deprecated, get_type_hints, override
+from typing_extensions import deprecated, override
 
 from reflex import constants
 from reflex.base import Base
@@ -73,6 +76,7 @@ from reflex.utils.types import (
 )
 
 if TYPE_CHECKING:
+    from reflex.components.component import BaseComponent
     from reflex.state import BaseState
 
     from .number import BooleanVar, LiteralBooleanVar, LiteralNumberVar, NumberVar
@@ -97,11 +101,11 @@ class VarSubclassEntry:
 
     var_subclass: Type[Var]
     to_var_subclass: Type[ToOperation]
-    python_types: Tuple[GenericType, ...]
+    python_types: tuple[GenericType, ...]
 
 
-_var_subclasses: List[VarSubclassEntry] = []
-_var_literal_subclasses: List[Tuple[Type[LiteralVar], VarSubclassEntry]] = []
+_var_subclasses: list[VarSubclassEntry] = []
+_var_literal_subclasses: list[tuple[Type[LiteralVar], VarSubclassEntry]] = []
 
 
 @dataclasses.dataclass(
@@ -121,13 +125,16 @@ class VarData:
     imports: ImmutableParsedImportDict = dataclasses.field(default_factory=tuple)
 
     # Hooks that need to be present in the component to render this var
-    hooks: Tuple[str, ...] = dataclasses.field(default_factory=tuple)
+    hooks: tuple[str, ...] = dataclasses.field(default_factory=tuple)
 
     # Dependencies of the var
-    deps: Tuple[Var, ...] = dataclasses.field(default_factory=tuple)
+    deps: tuple[Var, ...] = dataclasses.field(default_factory=tuple)
 
     # Position of the hook in the component
     position: Hooks.HookPosition | None = None
+
+    # Components that are part of this var
+    components: Tuple[BaseComponent, ...] = dataclasses.field(default_factory=tuple)
 
     def __init__(
         self,
@@ -137,6 +144,7 @@ class VarData:
         hooks: Mapping[str, VarData | None] | Sequence[str] | str | None = None,
         deps: list[Var] | None = None,
         position: Hooks.HookPosition | None = None,
+        components: Iterable[BaseComponent] | None = None,
     ):
         """Initialize the var data.
 
@@ -147,6 +155,7 @@ class VarData:
             hooks: Hooks that need to be present in the component to render this var.
             deps: Dependencies of the var for useCallback.
             position: Position of the hook in the component.
+            components: Components that are part of this var.
         """
         if isinstance(hooks, str):
             hooks = [hooks]
@@ -161,6 +170,7 @@ class VarData:
         object.__setattr__(self, "hooks", tuple(hooks or {}))
         object.__setattr__(self, "deps", tuple(deps or []))
         object.__setattr__(self, "position", position or None)
+        object.__setattr__(self, "components", tuple(components or []))
 
         if hooks and any(hooks.values()):
             merged_var_data = VarData.merge(self, *hooks.values())
@@ -171,6 +181,7 @@ class VarData:
                 object.__setattr__(self, "hooks", merged_var_data.hooks)
                 object.__setattr__(self, "deps", merged_var_data.deps)
                 object.__setattr__(self, "position", merged_var_data.position)
+                object.__setattr__(self, "components", merged_var_data.components)
 
     def old_school_imports(self) -> ImportDict:
         """Return the imports as a mutable dict.
@@ -239,17 +250,19 @@ class VarData:
         else:
             position = None
 
-        if state or _imports or hooks or field_name or deps or position:
-            return VarData(
-                state=state,
-                field_name=field_name,
-                imports=_imports,
-                hooks=hooks,
-                deps=deps,
-                position=position,
-            )
+        components = tuple(
+            component for var_data in all_var_datas for component in var_data.components
+        )
 
-        return None
+        return VarData(
+            state=state,
+            field_name=field_name,
+            imports=_imports,
+            hooks=hooks,
+            deps=deps,
+            position=position,
+            components=components,
+        )
 
     def __bool__(self) -> bool:
         """Check if the var data is non-empty.
@@ -264,6 +277,7 @@ class VarData:
             or self.field_name
             or self.deps
             or self.position
+            or self.components
         )
 
     @classmethod
@@ -346,7 +360,7 @@ def can_use_in_object_var(cls: GenericType) -> bool:
         return all(can_use_in_object_var(t) for t in types.get_args(cls))
     return (
         inspect.isclass(cls)
-        and not issubclass(cls, Var)
+        and not safe_issubclass(cls, Var)
         and serializers.can_serialize(cls, dict)
     )
 
@@ -365,7 +379,7 @@ class Var(Generic[VAR_TYPE]):
     _var_type: types.GenericType = dataclasses.field(default=Any)
 
     # Extra metadata associated with the Var
-    _var_data: Optional[VarData] = dataclasses.field(default=None)
+    _var_data: VarData | None = dataclasses.field(default=None)
 
     def __str__(self) -> str:
         """String representation of the var. Guaranteed to be a valid Javascript expression.
@@ -426,7 +440,7 @@ class Var(Generic[VAR_TYPE]):
 
     def __init_subclass__(
         cls,
-        python_types: Tuple[GenericType, ...] | GenericType = types.Unset(),
+        python_types: tuple[GenericType, ...] | GenericType = types.Unset(),
         default_type: GenericType = types.Unset(),
         **kwargs,
     ):
@@ -462,7 +476,7 @@ class Var(Generic[VAR_TYPE]):
 
                 _default_var_type: ClassVar[GenericType] = default_type
 
-            new_to_var_operation_name = f"To{cls.__name__.removesuffix('Var')}Operation"
+            new_to_var_operation_name = f"{cls.__name__.removesuffix('Var')}CastedVar"
             ToVarOperation.__qualname__ = (
                 ToVarOperation.__qualname__.removesuffix(ToVarOperation.__name__)
                 + new_to_var_operation_name
@@ -783,7 +797,7 @@ class Var(Generic[VAR_TYPE]):
 
         if inspect.isclass(output):
             for var_subclass in _var_subclasses[::-1]:
-                if issubclass(output, var_subclass.var_subclass):
+                if safe_issubclass(output, var_subclass.var_subclass):
                     current_var_type = self._var_type
                     if current_var_type is Any:
                         new_var_type = var_type
@@ -795,7 +809,7 @@ class Var(Generic[VAR_TYPE]):
                     return to_operation_return  # pyright: ignore [reportReturnType]
 
             # If we can't determine the first argument, we just replace the _var_type.
-            if not issubclass(output, Var) or var_type is None:
+            if not safe_issubclass(output, Var) or var_type is None:
                 return dataclasses.replace(
                     self,
                     _var_type=output,
@@ -837,14 +851,15 @@ class Var(Generic[VAR_TYPE]):
         Raises:
             TypeError: If the type is not supported for guessing.
         """
-        from .number import NumberVar
         from .object import ObjectVar
 
         var_type = self._var_type
         if var_type is None:
             return self.to(None)
-        if types.is_optional(var_type):
-            var_type = types.get_args(var_type)[0]
+        if var_type is NoReturn:
+            return self.to(Any)
+
+        var_type = types.value_inside_optional(var_type)
 
         if var_type is Any:
             return self
@@ -853,11 +868,20 @@ class Var(Generic[VAR_TYPE]):
 
         if fixed_type in types.UnionTypes:
             inner_types = get_args(var_type)
+            non_optional_inner_types = [
+                types.value_inside_optional(inner_type) for inner_type in inner_types
+            ]
+            fixed_inner_types = [
+                get_origin(inner_type) or inner_type
+                for inner_type in non_optional_inner_types
+            ]
 
-            if all(
-                inspect.isclass(t) and issubclass(t, (int, float)) for t in inner_types
-            ):
-                return self.to(NumberVar, self._var_type)
+            for var_subclass in _var_subclasses[::-1]:
+                if all(
+                    safe_issubclass(t, var_subclass.python_types)
+                    for t in fixed_inner_types
+                ):
+                    return self.to(var_subclass.var_subclass, self._var_type)
 
             if can_use_in_object_var(var_type):
                 return self.to(ObjectVar, self._var_type)
@@ -875,7 +899,7 @@ class Var(Generic[VAR_TYPE]):
             return self.to(None)
 
         for var_subclass in _var_subclasses[::-1]:
-            if issubclass(fixed_type, var_subclass.python_types):
+            if safe_issubclass(fixed_type, var_subclass.python_types):
                 return self.to(var_subclass.var_subclass, self._var_type)
 
         if can_use_in_object_var(fixed_type):
@@ -903,17 +927,17 @@ class Var(Generic[VAR_TYPE]):
         if type_ is Literal:
             args = get_args(self._var_type)
             return args[0] if args else None
-        if issubclass(type_, str):
+        if safe_issubclass(type_, str):
             return ""
-        if issubclass(type_, types.get_args(Union[int, float])):
+        if safe_issubclass(type_, types.get_args(int | float)):
             return 0
-        if issubclass(type_, bool):
+        if safe_issubclass(type_, bool):
             return False
-        if issubclass(type_, list):
+        if safe_issubclass(type_, list):
             return []
-        if issubclass(type_, Mapping):
+        if safe_issubclass(type_, Mapping):
             return {}
-        if issubclass(type_, tuple):
+        if safe_issubclass(type_, tuple):
             return ()
         if types.is_dataframe(type_):
             try:
@@ -924,7 +948,7 @@ class Var(Generic[VAR_TYPE]):
                 raise ImportError(
                     "Please install pandas to use dataframes in your app."
                 ) from e
-        return set() if issubclass(type_, set) else None
+        return set() if safe_issubclass(type_, set) else None
 
     def _get_setter_name(self, include_state: bool = True) -> str:
         """Get the name of the var's generated setter function.
@@ -1197,7 +1221,7 @@ class Var(Generic[VAR_TYPE]):
 
     @overload
     @classmethod
-    def range(cls, stop: int | NumberVar, /) -> ArrayVar[List[int]]: ...
+    def range(cls, stop: int | NumberVar, /) -> ArrayVar[Sequence[int]]: ...
 
     @overload
     @classmethod
@@ -1207,7 +1231,7 @@ class Var(Generic[VAR_TYPE]):
         end: int | NumberVar,
         step: int | NumberVar = 1,
         /,
-    ) -> ArrayVar[List[int]]: ...
+    ) -> ArrayVar[Sequence[int]]: ...
 
     @classmethod
     def range(
@@ -1215,7 +1239,7 @@ class Var(Generic[VAR_TYPE]):
         first_endpoint: int | NumberVar,
         second_endpoint: int | NumberVar | None = None,
         step: int | NumberVar | None = None,
-    ) -> ArrayVar[List[int]]:
+    ) -> ArrayVar[Sequence[int]]:
         """Create a range of numbers.
 
         Args:
@@ -1231,6 +1255,27 @@ class Var(Generic[VAR_TYPE]):
         return ArrayVar.range(first_endpoint, second_endpoint, step)
 
     if not TYPE_CHECKING:
+
+        def __getitem__(self, key: Any) -> Var:
+            """Get the item from the var.
+
+            Args:
+                key: The key to get.
+
+            Raises:
+                UntypedVarError: If the var type is Any.
+                TypeError: If the var type is Any.
+
+            # noqa: DAR101 self
+            """
+            if self._var_type is Any:
+                raise exceptions.UntypedVarError(
+                    self,
+                    f"access the item '{key}'",
+                )
+            raise TypeError(
+                f"Var of type {self._var_type} does not support item access."
+            )
 
         def __getattr__(self, name: str):
             """Get an attribute of the var.
@@ -1257,7 +1302,8 @@ class Var(Generic[VAR_TYPE]):
 
             if self._var_type is Any:
                 raise exceptions.UntypedVarError(
-                    f"You must provide an annotation for the state var `{self!s}`. Annotation cannot be `{self._var_type}`."
+                    self,
+                    f"access the attribute '{name}'",
                 )
 
             raise VarAttributeError(
@@ -1397,7 +1443,7 @@ class LiteralVar(Var):
         possible_bases = [
             base
             for base in bases_normalized
-            if issubclass(base, Var) and base != LiteralVar
+            if safe_issubclass(base, Var) and base != LiteralVar
         ]
 
         if not possible_bases:
@@ -1546,7 +1592,7 @@ def serialize_literal(value: LiteralVar):
     return value._var_value
 
 
-def get_python_literal(value: Union[LiteralVar, Any]) -> Any | None:
+def get_python_literal(value: LiteralVar | Any) -> Any | None:
     """Get the Python literal value.
 
     Args:
@@ -1575,22 +1621,31 @@ def var_operation(  # pyright: ignore [reportOverlappingOverload]
 
 @overload
 def var_operation(
-    func: Callable[P, CustomVarOperationReturn[bool]],
+    func: Callable[P, CustomVarOperationReturn[None]],
+) -> Callable[P, NoneVar]: ...
+
+
+@overload
+def var_operation(  # pyright: ignore [reportOverlappingOverload]
+    func: Callable[P, CustomVarOperationReturn[bool]]
+    | Callable[P, CustomVarOperationReturn[bool | None]],
 ) -> Callable[P, BooleanVar]: ...
 
 
-NUMBER_T = TypeVar("NUMBER_T", int, float, Union[int, float])
+NUMBER_T = TypeVar("NUMBER_T", int, float, int | float)
 
 
 @overload
 def var_operation(
-    func: Callable[P, CustomVarOperationReturn[NUMBER_T]],
+    func: Callable[P, CustomVarOperationReturn[NUMBER_T]]
+    | Callable[P, CustomVarOperationReturn[NUMBER_T | None]],
 ) -> Callable[P, NumberVar[NUMBER_T]]: ...
 
 
 @overload
 def var_operation(
-    func: Callable[P, CustomVarOperationReturn[str]],
+    func: Callable[P, CustomVarOperationReturn[str]]
+    | Callable[P, CustomVarOperationReturn[str | None]],
 ) -> Callable[P, StringVar]: ...
 
 
@@ -1599,7 +1654,8 @@ LIST_T = TypeVar("LIST_T", bound=Sequence)
 
 @overload
 def var_operation(
-    func: Callable[P, CustomVarOperationReturn[LIST_T]],
+    func: Callable[P, CustomVarOperationReturn[LIST_T]]
+    | Callable[P, CustomVarOperationReturn[LIST_T | None]],
 ) -> Callable[P, ArrayVar[LIST_T]]: ...
 
 
@@ -1608,13 +1664,15 @@ OBJECT_TYPE = TypeVar("OBJECT_TYPE", bound=Mapping)
 
 @overload
 def var_operation(
-    func: Callable[P, CustomVarOperationReturn[OBJECT_TYPE]],
+    func: Callable[P, CustomVarOperationReturn[OBJECT_TYPE]]
+    | Callable[P, CustomVarOperationReturn[OBJECT_TYPE | None]],
 ) -> Callable[P, ObjectVar[OBJECT_TYPE]]: ...
 
 
 @overload
 def var_operation(
-    func: Callable[P, CustomVarOperationReturn[T]],
+    func: Callable[P, CustomVarOperationReturn[T]]
+    | Callable[P, CustomVarOperationReturn[T | None]],
 ) -> Callable[P, Var[T]]: ...
 
 
@@ -1673,12 +1731,16 @@ def figure_out_type(value: Any) -> types.GenericType:
     if has_args(type_):
         return type_
     if isinstance(value, list):
-        return List[unionize(*(figure_out_type(v) for v in value))]
+        if not value:
+            return Sequence[NoReturn]
+        return Sequence[unionize(*(figure_out_type(v) for v in value))]
     if isinstance(value, set):
-        return Set[unionize(*(figure_out_type(v) for v in value))]
+        return set[unionize(*(figure_out_type(v) for v in value))]
     if isinstance(value, tuple):
-        return Tuple[unionize(*(figure_out_type(v) for v in value)), ...]
+        return tuple[unionize(*(figure_out_type(v) for v in value)), ...]
     if isinstance(value, Mapping):
+        if not value:
+            return Mapping[NoReturn, NoReturn]
         return Mapping[
             unionize(*(figure_out_type(k) for k in value)),
             unionize(*(figure_out_type(v) for v in value.values())),
@@ -1953,7 +2015,7 @@ class ComputedVar(Var[RETURN_TYPE]):
     _auto_deps: bool = dataclasses.field(default=True)
 
     # Interval at which the computed var should be updated
-    _update_interval: Optional[datetime.timedelta] = dataclasses.field(default=None)
+    _update_interval: datetime.timedelta | None = dataclasses.field(default=None)
 
     _fget: Callable[[BaseState], RETURN_TYPE] = dataclasses.field(
         default_factory=lambda: lambda _: None
@@ -1964,9 +2026,9 @@ class ComputedVar(Var[RETURN_TYPE]):
         fget: Callable[[BASE_STATE], RETURN_TYPE],
         initial_value: RETURN_TYPE | types.Unset = types.Unset(),
         cache: bool = True,
-        deps: Optional[List[Union[str, Var]]] = None,
+        deps: list[str | Var] | None = None,
         auto_deps: bool = True,
-        interval: Optional[Union[int, datetime.timedelta]] = None,
+        interval: int | datetime.timedelta | None = None,
         backend: bool | None = None,
         **kwargs,
     ):
@@ -2028,7 +2090,7 @@ class ComputedVar(Var[RETURN_TYPE]):
 
     def _calculate_static_deps(
         self,
-        deps: Union[List[Union[str, Var]], dict[str | None, set[str]]] | None = None,
+        deps: Union[list[str | Var], dict[str | None, set[str]]] | None = None,
     ) -> dict[str | None, set[str]]:
         """Calculate the static dependencies of the computed var from user input or existing dependencies.
 
@@ -2048,7 +2110,7 @@ class ComputedVar(Var[RETURN_TYPE]):
         return _static_deps
 
     def _add_static_dep(
-        self, dep: Union[str, Var], deps: dict[str | None, set[str]] | None = None
+        self, dep: str | Var, deps: dict[str | None, set[str]] | None = None
     ) -> dict[str | None, set[str]]:
         """Add a static dependency to the computed var or existing dependency set.
 
@@ -2107,7 +2169,7 @@ class ComputedVar(Var[RETURN_TYPE]):
             "fget": kwargs.pop("fget", self._fget),
             "initial_value": kwargs.pop("initial_value", self._initial_value),
             "cache": kwargs.pop("cache", self._cache),
-            "deps": kwargs.pop("deps", self._static_deps),
+            "deps": kwargs.pop("deps", copy.copy(self._static_deps)),
             "auto_deps": kwargs.pop("auto_deps", self._auto_deps),
             "interval": kwargs.pop("interval", self._update_interval),
             "backend": kwargs.pop("backend", self._backend),
@@ -2276,10 +2338,10 @@ class ComputedVar(Var[RETURN_TYPE]):
         return value
 
     def _check_deprecated_return_type(self, instance: BaseState, value: Any) -> None:
-        if not _isinstance(value, self._var_type):
+        if not _isinstance(value, self._var_type, nested=1, treat_var_as_type=False):
             console.error(
                 f"Computed var '{type(instance).__name__}.{self._js_expr}' must return"
-                f" type '{self._var_type}', got '{type(value)}'."
+                f" a value of type '{self._var_type}', got '{value}' of type {type(value)}."
             )
 
     def _deps(
@@ -2403,7 +2465,7 @@ class ComputedVar(Var[RETURN_TYPE]):
         return self._fget
 
 
-class DynamicRouteVar(ComputedVar[Union[str, List[str]]]):
+class DynamicRouteVar(ComputedVar[str | list[str]]):
     """A ComputedVar that represents a dynamic route."""
 
     pass
@@ -2559,9 +2621,9 @@ def computed_var(
     fget: None = None,
     initial_value: Any | types.Unset = types.Unset(),
     cache: bool = True,
-    deps: Optional[List[Union[str, Var]]] = None,
+    deps: list[str | Var] | None = None,
     auto_deps: bool = True,
-    interval: Optional[Union[datetime.timedelta, int]] = None,
+    interval: datetime.timedelta | int | None = None,
     backend: bool | None = None,
     **kwargs,
 ) -> Callable[[Callable[[BASE_STATE], RETURN_TYPE]], ComputedVar[RETURN_TYPE]]: ...  # pyright: ignore [reportInvalidTypeVarUse]
@@ -2572,9 +2634,9 @@ def computed_var(
     fget: Callable[[BASE_STATE], RETURN_TYPE],
     initial_value: RETURN_TYPE | types.Unset = types.Unset(),
     cache: bool = True,
-    deps: Optional[List[Union[str, Var]]] = None,
+    deps: list[str | Var] | None = None,
     auto_deps: bool = True,
-    interval: Optional[Union[datetime.timedelta, int]] = None,
+    interval: datetime.timedelta | int | None = None,
     backend: bool | None = None,
     **kwargs,
 ) -> ComputedVar[RETURN_TYPE]: ...
@@ -2584,9 +2646,9 @@ def computed_var(
     fget: Callable[[BASE_STATE], Any] | None = None,
     initial_value: Any | types.Unset = types.Unset(),
     cache: bool = True,
-    deps: Optional[List[Union[str, Var]]] = None,
+    deps: list[str | Var] | None = None,
     auto_deps: bool = True,
-    interval: Optional[Union[datetime.timedelta, int]] = None,
+    interval: datetime.timedelta | int | None = None,
     backend: bool | None = None,
     **kwargs,
 ) -> ComputedVar | Callable[[Callable[[BASE_STATE], Any]], ComputedVar]:
@@ -2687,7 +2749,7 @@ class CustomVarOperationReturn(Var[RETURN]):
 
 def var_operation_return(
     js_expression: str,
-    var_type: Type[RETURN] | None = None,
+    var_type: Type[RETURN] | GenericType | None = None,
     var_data: VarData | None = None,
 ) -> CustomVarOperationReturn[RETURN]:
     """Shortcut for creating a CustomVarOperationReturn.
@@ -2717,7 +2779,7 @@ class CustomVarOperation(CachedVarOperation, Var[T]):
 
     _name: str = dataclasses.field(default="")
 
-    _args: Tuple[Tuple[str, Var], ...] = dataclasses.field(default_factory=tuple)
+    _args: tuple[tuple[str, Var], ...] = dataclasses.field(default_factory=tuple)
 
     _return: CustomVarOperationReturn[T] = dataclasses.field(
         default_factory=lambda: CustomVarOperationReturn.create("")
@@ -2749,7 +2811,7 @@ class CustomVarOperation(CachedVarOperation, Var[T]):
     def create(
         cls,
         name: str,
-        args: Tuple[Tuple[str, Var], ...],
+        args: tuple[tuple[str, Var], ...],
         return_var: CustomVarOperationReturn[T],
         _var_data: VarData | None = None,
     ) -> CustomVarOperation[T]:
@@ -2952,7 +3014,7 @@ _decode_var_pattern_re = (
 _decode_var_pattern = re.compile(_decode_var_pattern_re, flags=re.DOTALL)
 
 # Defined global immutable vars.
-_global_vars: Dict[int, Var] = {}
+_global_vars: dict[int, Var] = {}
 
 
 def _extract_var_data(value: Iterable) -> list[VarData | None]:
@@ -2990,7 +3052,7 @@ def _extract_var_data(value: Iterable) -> list[VarData | None]:
     return var_datas
 
 
-dispatchers: Dict[GenericType, Callable[[Var], Var]] = {}
+dispatchers: dict[GenericType, Callable[[Var], Var]] = {}
 
 
 def transform(fn: Callable[[Var], Var]) -> Callable[[Var], Var]:
@@ -3035,7 +3097,7 @@ def transform(fn: Callable[[Var], Var]) -> Callable[[Var], Var]:
 
 def generic_type_to_actual_type_map(
     generic_type: GenericType, actual_type: GenericType
-) -> Dict[TypeVar, GenericType]:
+) -> dict[TypeVar, GenericType]:
     """Map the generic type to the actual type.
 
     Args:
@@ -3076,7 +3138,7 @@ def generic_type_to_actual_type_map(
 
 
 def resolve_generic_type_with_mapping(
-    generic_type: GenericType, type_mapping: Dict[TypeVar, GenericType]
+    generic_type: GenericType, type_mapping: dict[TypeVar, GenericType]
 ):
     """Resolve a generic type with a type mapping.
 
@@ -3251,46 +3313,71 @@ class Field(Generic[FIELD_TYPE]):
         """
 
     @overload
-    def __get__(self: Field[bool], instance: None, owner: Any) -> BooleanVar: ...
-
-    @overload
-    def __get__(
-        self: Field[int] | Field[float] | Field[int | float], instance: None, owner: Any
-    ) -> NumberVar: ...
-
-    @overload
-    def __get__(self: Field[str], instance: None, owner: Any) -> StringVar: ...
-
-    @overload
     def __get__(self: Field[None], instance: None, owner: Any) -> NoneVar: ...
 
     @overload
     def __get__(
-        self: Field[List[V]] | Field[Set[V]] | Field[Tuple[V, ...]],
-        instance: None,
-        owner: Any,
-    ) -> ArrayVar[List[V]]: ...
+        self: Field[bool] | Field[bool | None], instance: None, owner: Any
+    ) -> BooleanVar: ...
 
     @overload
     def __get__(
-        self: Field[MAPPING_TYPE], instance: None, owner: Any
+        self: Field[int]
+        | Field[float]
+        | Field[int | float]
+        | Field[int | None]
+        | Field[float | None]
+        | Field[int | float | None],
+        instance: None,
+        owner: Any,
+    ) -> NumberVar: ...
+
+    @overload
+    def __get__(
+        self: Field[str] | Field[str | None], instance: None, owner: Any
+    ) -> StringVar: ...
+
+    @overload
+    def __get__(
+        self: Field[list[V]]
+        | Field[set[V]]
+        | Field[list[V] | None]
+        | Field[set[V] | None],
+        instance: None,
+        owner: Any,
+    ) -> ArrayVar[Sequence[V]]: ...
+
+    @overload
+    def __get__(
+        self: Field[SEQUENCE_TYPE] | Field[SEQUENCE_TYPE | None],
+        instance: None,
+        owner: Any,
+    ) -> ArrayVar[SEQUENCE_TYPE]: ...
+
+    @overload
+    def __get__(
+        self: Field[MAPPING_TYPE] | Field[MAPPING_TYPE | None],
+        instance: None,
+        owner: Any,
     ) -> ObjectVar[MAPPING_TYPE]: ...
 
     @overload
     def __get__(
-        self: Field[BASE_TYPE], instance: None, owner: Any
+        self: Field[BASE_TYPE] | Field[BASE_TYPE | None], instance: None, owner: Any
     ) -> ObjectVar[BASE_TYPE]: ...
 
     @overload
     def __get__(
-        self: Field[SQLA_TYPE], instance: None, owner: Any
+        self: Field[SQLA_TYPE] | Field[SQLA_TYPE | None], instance: None, owner: Any
     ) -> ObjectVar[SQLA_TYPE]: ...
 
     if TYPE_CHECKING:
 
         @overload
         def __get__(
-            self: Field[DATACLASS_TYPE], instance: None, owner: Any
+            self: Field[DATACLASS_TYPE] | Field[DATACLASS_TYPE | None],
+            instance: None,
+            owner: Any,
         ) -> ObjectVar[DATACLASS_TYPE]: ...
 
     @overload

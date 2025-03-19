@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from types import SimpleNamespace
-from typing import List, Literal, Tuple, Union
+from typing import ClassVar, Literal, Sequence
 
 from reflex.components.core.breakpoints import Responsive
 from reflex.event import EventHandler
@@ -13,8 +13,8 @@ from ..base import LiteralAccentColor, RadixThemesComponent
 
 
 def on_value_change(
-    value: Var[Union[str, List[str]]],
-) -> Tuple[Var[Union[str, List[str]]]]:
+    value: Var[str | list[str]],
+) -> tuple[Var[str | list[str]]]:
     """Handle the on_value_change event.
 
     Args:
@@ -47,10 +47,10 @@ class SegmentedControlRoot(RadixThemesComponent):
     radius: Var[Literal["none", "small", "medium", "large", "full"]]
 
     # The default value of the segmented control.
-    default_value: Var[Union[str, List[str]]]
+    default_value: Var[str | Sequence[str]]
 
     # The current value of the segmented control.
-    value: Var[Union[str, List[str]]]
+    value: Var[str | Sequence[str]]
 
     # Handles the `onChange` event for the SegmentedControl component.
     on_change: EventHandler[on_value_change]
@@ -66,7 +66,7 @@ class SegmentedControlItem(RadixThemesComponent):
     # The value of the item.
     value: Var[str]
 
-    _valid_parents: List[str] = ["SegmentedControlRoot"]
+    _valid_parents: ClassVar[list[str]] = ["SegmentedControlRoot"]
 
 
 class SegmentedControl(SimpleNamespace):

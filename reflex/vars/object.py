@@ -2,19 +2,18 @@
 
 from __future__ import annotations
 
+import collections.abc
 import dataclasses
 import typing
 from inspect import isclass
 from typing import (
     Any,
-    List,
     Mapping,
     NoReturn,
-    Tuple,
     Type,
     TypeVar,
-    Union,
     get_args,
+    get_type_hints,
     overload,
 )
 
@@ -27,6 +26,7 @@ from reflex.utils.types import (
     get_attribute_access_type,
     get_origin,
     safe_issubclass,
+    unionize,
 )
 
 from .base import (
@@ -52,6 +52,29 @@ ARRAY_INNER_TYPE = TypeVar("ARRAY_INNER_TYPE")
 OTHER_KEY_TYPE = TypeVar("OTHER_KEY_TYPE")
 
 
+def _determine_value_type(var_type: GenericType):
+    origin_var_type = get_origin(var_type) or var_type
+
+    if origin_var_type in types.UnionTypes:
+        return unionize(
+            *[
+                _determine_value_type(arg)
+                for arg in get_args(var_type)
+                if arg is not type(None)
+            ]
+        )
+
+    if is_typeddict(origin_var_type) or dataclasses.is_dataclass(origin_var_type):
+        annotations = get_type_hints(origin_var_type)
+        return unionize(*annotations.values())
+
+    if origin_var_type in [dict, Mapping, collections.abc.Mapping]:
+        args = get_args(var_type)
+        return args[1] if args else Any
+
+    return Any
+
+
 class ObjectVar(Var[OBJECT_TYPE], python_types=Mapping):
     """Base class for immutable object vars."""
 
@@ -69,21 +92,17 @@ class ObjectVar(Var[OBJECT_TYPE], python_types=Mapping):
     ) -> Type[VALUE_TYPE]: ...
 
     @overload
-    def _value_type(self) -> Type: ...
+    def _value_type(self) -> GenericType: ...
 
-    def _value_type(self) -> Type:
+    def _value_type(self) -> GenericType:
         """Get the type of the values of the object.
 
         Returns:
             The type of the values of the object.
         """
-        fixed_type = get_origin(self._var_type) or self._var_type
-        if not isclass(fixed_type):
-            return Any  # pyright: ignore [reportReturnType]
-        args = get_args(self._var_type) if issubclass(fixed_type, Mapping) else ()
-        return args[1] if args else Any  # pyright: ignore [reportReturnType]
+        return _determine_value_type(self._var_type)
 
-    def keys(self) -> ArrayVar[List[str]]:
+    def keys(self) -> ArrayVar[list[str]]:
         """Get the keys of the object.
 
         Returns:
@@ -94,7 +113,7 @@ class ObjectVar(Var[OBJECT_TYPE], python_types=Mapping):
     @overload
     def values(
         self: ObjectVar[Mapping[Any, VALUE_TYPE]],
-    ) -> ArrayVar[List[VALUE_TYPE]]: ...
+    ) -> ArrayVar[list[VALUE_TYPE]]: ...
 
     @overload
     def values(self) -> ArrayVar: ...
@@ -110,7 +129,7 @@ class ObjectVar(Var[OBJECT_TYPE], python_types=Mapping):
     @overload
     def entries(
         self: ObjectVar[Mapping[Any, VALUE_TYPE]],
-    ) -> ArrayVar[List[Tuple[str, VALUE_TYPE]]]: ...
+    ) -> ArrayVar[list[tuple[str, VALUE_TYPE]]]: ...
 
     @overload
     def entries(self) -> ArrayVar: ...
@@ -183,6 +202,12 @@ class ObjectVar(Var[OBJECT_TYPE], python_types=Mapping):
         key: Var | Any,
     ) -> ObjectVar[Mapping[OTHER_KEY_TYPE, VALUE_TYPE]]: ...
 
+    @overload
+    def __getitem__(
+        self: ObjectVar[Mapping[Any, VALUE_TYPE]],
+        key: Var | Any,
+    ) -> Var[VALUE_TYPE]: ...
+
     def __getitem__(self, key: Var | Any) -> Var:
         """Get an item from the object.
 
@@ -201,6 +226,29 @@ class ObjectVar(Var[OBJECT_TYPE], python_types=Mapping):
         if isinstance(key, str) and isinstance(Var.create(key), LiteralStringVar):
             return self.__getattr__(key)
         return ObjectItemOperation.create(self, key).guess_type()
+
+    def get(self, key: Var | Any, default: Var | Any | None = None) -> Var:
+        """Get an item from the object.
+
+        Args:
+            key: The key to get from the object.
+            default: The default value if the key is not found.
+
+        Returns:
+            The item from the object.
+        """
+        from reflex.components.core.cond import cond
+
+        if default is None:
+            default = Var.create(None)
+
+        value = self.__getitem__(key)  # pyright: ignore[reportUnknownVariableType,reportAttributeAccessIssue,reportUnknownMemberType]
+
+        return cond(  # pyright: ignore[reportUnknownVariableType]
+            value,
+            value,
+            default,
+        )
 
     # NoReturn is used here to catch when key value is Any
     @overload
@@ -266,8 +314,7 @@ class ObjectVar(Var[OBJECT_TYPE], python_types=Mapping):
 
         var_type = self._var_type
 
-        if types.is_optional(var_type):
-            var_type = get_args(var_type)[0]
+        var_type = types.value_inside_optional(var_type)
 
         fixed_type = get_origin(var_type) or var_type
 
@@ -306,9 +353,7 @@ class ObjectVar(Var[OBJECT_TYPE], python_types=Mapping):
 class LiteralObjectVar(CachedVarOperation, ObjectVar[OBJECT_TYPE], LiteralVar):
     """Base class for immutable literal object vars."""
 
-    _var_value: Mapping[Union[Var, Any], Union[Var, Any]] = dataclasses.field(
-        default_factory=dict
-    )
+    _var_value: Mapping[Var | Any, Var | Any] = dataclasses.field(default_factory=dict)
 
     def _key_type(self) -> Type:
         """Get the type of the keys of the object.
@@ -425,9 +470,14 @@ def object_keys_operation(value: ObjectVar):
     Returns:
         The keys of the object.
     """
+    if not types.is_optional(value._var_type):
+        return var_operation_return(
+            js_expression=f"Object.keys({value})",
+            var_type=list[str],
+        )
     return var_operation_return(
-        js_expression=f"Object.keys({value})",
-        var_type=List[str],
+        js_expression=f"((value) => value ?? undefined === undefined ? undefined : Object.keys(value))({value})",
+        var_type=(list[str] | None),
     )
 
 
@@ -441,9 +491,14 @@ def object_values_operation(value: ObjectVar):
     Returns:
         The values of the object.
     """
+    if not types.is_optional(value._var_type):
+        return var_operation_return(
+            js_expression=f"Object.values({value})",
+            var_type=list[value._value_type()],
+        )
     return var_operation_return(
-        js_expression=f"Object.values({value})",
-        var_type=List[value._value_type()],
+        js_expression=f"((value) => value ?? undefined === undefined ? undefined : Object.values(value))({value})",
+        var_type=(list[value._value_type()] | None),
     )
 
 
@@ -457,9 +512,14 @@ def object_entries_operation(value: ObjectVar):
     Returns:
         The entries of the object.
     """
+    if not types.is_optional(value._var_type):
+        return var_operation_return(
+            js_expression=f"Object.entries({value})",
+            var_type=list[tuple[str, value._value_type()]],
+        )
     return var_operation_return(
-        js_expression=f"Object.entries({value})",
-        var_type=List[Tuple[str, value._value_type()]],
+        js_expression=f"((value) => value ?? undefined === undefined ? undefined : Object.entries(value))({value})",
+        var_type=(list[tuple[str, value._value_type()]] | None),
     )
 
 
@@ -477,8 +537,8 @@ def object_merge_operation(lhs: ObjectVar, rhs: ObjectVar):
     return var_operation_return(
         js_expression=f"({{...{lhs}, ...{rhs}}})",
         var_type=Mapping[
-            Union[lhs._key_type(), rhs._key_type()],
-            Union[lhs._value_type(), rhs._value_type()],
+            lhs._key_type() | rhs._key_type(),
+            lhs._value_type() | rhs._value_type(),
         ],
     )
 

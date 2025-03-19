@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Any, Callable, ClassVar, Dict, List, Optional, Tuple
+from typing import Any, Callable, ClassVar, Sequence
 
 from reflex.components.base.fragment import Fragment
 from reflex.components.component import (
@@ -86,7 +86,7 @@ def selected_files(id_: str = DEFAULT_UPLOAD_ID) -> Var:
     id_var = LiteralStringVar.create(id_)
     return Var(
         _js_expr=f"(filesById[{id_var!s}] ? filesById[{id_var!s}].map((f) => (f.path || f.name)) : [])",
-        _var_type=List[str],
+        _var_type=list[str],
         _var_data=VarData.merge(
             upload_files_context_var_data, id_var._get_all_var_data()
         ),
@@ -147,7 +147,7 @@ uploaded_files_url_prefix = Var(
 ).to(str)
 
 
-def get_upload_url(file_path: str) -> Var[str]:
+def get_upload_url(file_path: str | Var[str]) -> Var[str]:
     """Get the URL of an uploaded file.
 
     Args:
@@ -158,10 +158,10 @@ def get_upload_url(file_path: str) -> Var[str]:
     """
     Upload.is_used = True
 
-    return uploaded_files_url_prefix + "/" + file_path
+    return Var.create(f"{uploaded_files_url_prefix}/{file_path}")
 
 
-def _on_drop_spec(files: Var) -> Tuple[Var[Any]]:
+def _on_drop_spec(files: Var) -> tuple[Var[Any]]:
     """Args spec for the on_drop event trigger.
 
     Args:
@@ -190,14 +190,14 @@ class GhostUpload(Fragment):
 class Upload(MemoizationLeaf):
     """A file upload component."""
 
-    library = "react-dropzone@14.3.5"
+    library = "react-dropzone@14.3.8"
 
     tag = ""
 
     # The list of accepted file types. This should be a dictionary of MIME types as keys and array of file formats as
     # values.
     # supported MIME types: https://developer.mozilla.org/en-US/docs/Web/HTTP/Basics_of_HTTP/MIME_types/Common_types
-    accept: Var[Optional[Dict[str, List]]]
+    accept: Var[dict[str, Sequence] | None]
 
     # Whether the dropzone is disabled.
     disabled: Var[bool]

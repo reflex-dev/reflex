@@ -1,6 +1,6 @@
 """Interactive components provided by @radix-ui/themes."""
 
-from typing import Dict, List, Literal, Union
+from typing import ClassVar, Literal
 
 from reflex.components.component import ComponentNamespace
 from reflex.components.core.breakpoints import Responsive
@@ -43,7 +43,7 @@ class DropdownMenuRoot(RadixThemesComponent):
     # The reading direction of submenus when applicable. If omitted, inherits globally from DirectionProvider or assumes LTR (left-to-right) reading mode.
     dir: Var[LiteralDirType]
 
-    _invalid_children: List[str] = ["DropdownMenuItem"]
+    _invalid_children: ClassVar[list[str]] = ["DropdownMenuItem"]
 
     # Fired when the open state changes.
     on_open_change: EventHandler[passthrough_event_spec(bool)]
@@ -57,9 +57,9 @@ class DropdownMenuTrigger(RadixThemesTriggerComponent):
     # Change the default rendered element for the one passed as a child, merging their props and behavior. Defaults to False.
     as_child: Var[bool]
 
-    _valid_parents: List[str] = ["DropdownMenuRoot"]
+    _valid_parents: ClassVar[list[str]] = ["DropdownMenuRoot"]
 
-    _invalid_children: List[str] = ["DropdownMenuContent"]
+    _invalid_children: ClassVar[list[str]] = ["DropdownMenuContent"]
 
     _memoization_mode = MemoizationMode(recursive=False)
 
@@ -94,19 +94,19 @@ class DropdownMenuContent(RadixThemesComponent):
     side: Var[LiteralSideType]
 
     # The distance in pixels from the trigger. Defaults to 0.
-    side_offset: Var[Union[float, int]]
+    side_offset: Var[float | int]
 
     # The preferred alignment against the trigger. May change when collisions occur. Defaults to "center".
     align: Var[LiteralAlignType]
 
     # An offset in pixels from the "start" or "end" alignment options.
-    align_offset: Var[Union[float, int]]
+    align_offset: Var[float | int]
 
     # When true, overrides the side and align preferences to prevent collisions with boundary edges. Defaults to True.
     avoid_collisions: Var[bool]
 
     # The distance in pixels from the boundary edges where collision detection should occur. Accepts a number (same for all sides), or a partial padding object, for example: { "top": 20, "left": 20 }. Defaults to 0.
-    collision_padding: Var[Union[float, int, Dict[str, Union[float, int]]]]
+    collision_padding: Var[float | int | dict[str, float | int]]
 
     # The sticky behavior on the align axis. "partial" will keep the content in the boundary as long as the trigger is at least partially in the boundary whilst "always" will keep the content in the boundary regardless. Defaults to "partial".
     sticky: Var[LiteralStickyType]
@@ -144,7 +144,7 @@ class DropdownMenuSubTrigger(RadixThemesTriggerComponent):
     # Optional text used for typeahead purposes. By default the typeahead behavior will use the .textContent of the item. Use this when the content is complex, or you have non-textual content inside.
     text_value: Var[str]
 
-    _valid_parents: List[str] = ["DropdownMenuContent", "DropdownMenuSub"]
+    _valid_parents: ClassVar[list[str]] = ["DropdownMenuContent", "DropdownMenuSub"]
 
     _memoization_mode = MemoizationMode(recursive=False)
 
@@ -179,16 +179,16 @@ class DropdownMenuSubContent(RadixThemesComponent):
     force_mount: Var[bool]
 
     # The distance in pixels from the trigger. Defaults to 0.
-    side_offset: Var[Union[float, int]]
+    side_offset: Var[float | int]
 
     # An offset in pixels from the "start" or "end" alignment options.
-    align_offset: Var[Union[float, int]]
+    align_offset: Var[float | int]
 
     # When true, overrides the side and align preferences to prevent collisions with boundary edges. Defaults to True.
     avoid_collisions: Var[bool]
 
     # The distance in pixels from the boundary edges where collision detection should occur. Accepts a number (same for all sides), or a partial padding object, for example: { "top": 20, "left": 20 }. Defaults to 0.
-    collision_padding: Var[Union[float, int, Dict[str, Union[float, int]]]]
+    collision_padding: Var[float | int | dict[str, float | int]]
 
     # The sticky behavior on the align axis. "partial" will keep the content in the boundary as long as the trigger is at least partially in the boundary whilst "always" will keep the content in the boundary regardless. Defaults to "partial".
     sticky: Var[LiteralStickyType]
@@ -196,7 +196,7 @@ class DropdownMenuSubContent(RadixThemesComponent):
     # Whether to hide the content when the trigger becomes fully occluded. Defaults to False.
     hide_when_detached: Var[bool]
 
-    _valid_parents: List[str] = ["DropdownMenuSub"]
+    _valid_parents: ClassVar[list[str]] = ["DropdownMenuSub"]
 
     # Fired when the escape key is pressed.
     on_escape_key_down: EventHandler[no_args_event_spec]
@@ -231,7 +231,10 @@ class DropdownMenuItem(RadixThemesComponent):
     # Optional text used for typeahead purposes. By default the typeahead behavior will use the .textContent of the item. Use this when the content is complex, or you have non-textual content inside.
     text_value: Var[str]
 
-    _valid_parents: List[str] = ["DropdownMenuContent", "DropdownMenuSubContent"]
+    _valid_parents: ClassVar[list[str]] = [
+        "DropdownMenuContent",
+        "DropdownMenuSubContent",
+    ]
 
     # Fired when the item is selected.
     on_select: EventHandler[no_args_event_spec]

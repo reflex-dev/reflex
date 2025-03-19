@@ -3,20 +3,14 @@
 from __future__ import annotations
 
 import os
-from typing import TYPE_CHECKING, Any, List, Type
+from typing import TYPE_CHECKING, Any, Type
 
-try:
-    import pydantic.v1.main as pydantic_main
-    from pydantic.v1 import BaseModel
-    from pydantic.v1.fields import ModelField
-except ModuleNotFoundError:
-    if not TYPE_CHECKING:
-        import pydantic.main as pydantic_main
-        from pydantic import BaseModel
-        from pydantic.fields import ModelField
+import pydantic.v1.main as pydantic_main
+from pydantic.v1 import BaseModel
+from pydantic.v1.fields import ModelField
 
 
-def validate_field_name(bases: List[Type["BaseModel"]], field_name: str) -> None:
+def validate_field_name(bases: list[Type["BaseModel"]], field_name: str) -> None:
     """Ensure that the field's name does not shadow an existing attribute of the model.
 
     Args:
@@ -50,7 +44,7 @@ if TYPE_CHECKING:
     from reflex.vars import Var
 
 
-class Base(BaseModel):  # pyright: ignore [reportPossiblyUnboundVariable]
+class Base(BaseModel):
     """The base class subclassed by all Reflex classes.
 
     This class wraps Pydantic and provides common methods such as

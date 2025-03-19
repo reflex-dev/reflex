@@ -4,10 +4,12 @@ from __future__ import annotations
 
 import dataclasses
 import inspect
-from typing import TYPE_CHECKING, Any, Callable, Iterable, Tuple, Type, Union, get_args
+from typing import TYPE_CHECKING, Callable, Iterable
 
 from reflex.components.tags.tag import Tag
+from reflex.utils.types import GenericType
 from reflex.vars import LiteralArrayVar, Var, get_unique_variable_name
+from reflex.vars.sequence import _determine_value_of_array_index
 
 if TYPE_CHECKING:
     from reflex.components.component import Component
@@ -31,24 +33,13 @@ class IterTag(Tag):
     # The name of the index var.
     index_var_name: str = dataclasses.field(default_factory=get_unique_variable_name)
 
-    def get_iterable_var_type(self) -> Type:
+    def get_iterable_var_type(self) -> GenericType:
         """Get the type of the iterable var.
 
         Returns:
             The type of the iterable var.
         """
-        iterable = self.iterable
-        try:
-            if iterable._var_type.mro()[0] is dict:
-                # Arg is a tuple of (key, value).
-                return Tuple[get_args(iterable._var_type)]  # pyright: ignore [reportReturnType]
-            elif iterable._var_type.mro()[0] is tuple:
-                # Arg is a union of any possible values in the tuple.
-                return Union[get_args(iterable._var_type)]  # pyright: ignore [reportReturnType]
-            else:
-                return get_args(iterable._var_type)[0]
-        except Exception:
-            return Any  # pyright: ignore [reportReturnType]
+        return _determine_value_of_array_index(self.iterable._var_type)
 
     def get_index_var(self) -> Var:
         """Get the index var for the tag (with curly braces).
@@ -107,12 +98,14 @@ class IterTag(Tag):
 
         Raises:
             ValueError: If the render function takes more than 2 arguments.
+            ValueError: If the render function doesn't return a component.
 
         Returns:
             The rendered component.
         """
         # Import here to avoid circular imports.
         from reflex.components.base.fragment import Fragment
+        from reflex.components.component import Component
         from reflex.components.core.cond import Cond
         from reflex.components.core.foreach import Foreach
 
@@ -137,6 +130,9 @@ class IterTag(Tag):
         # If the component is a tuple, unpack and wrap it in a fragment.
         if isinstance(component, tuple):
             component = Fragment.create(*component)
+
+        if not isinstance(component, Component):
+            raise ValueError("The render function must return a component.")
 
         # Set the component key.
         if component.key is None:

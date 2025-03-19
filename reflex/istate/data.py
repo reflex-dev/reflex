@@ -1,16 +1,32 @@
 """This module contains the dataclasses representing the router object."""
 
 import dataclasses
-from typing import Optional
+from typing import Mapping
 
 from reflex import constants
 from reflex.utils import format
+from reflex.utils.serializers import serializer
+
+
+@dataclasses.dataclass(frozen=True, init=False)
+class _FrozenDictStrStr(Mapping[str, str]):
+    _data: tuple[tuple[str, str], ...]
+
+    def __init__(self, **kwargs):
+        object.__setattr__(self, "_data", tuple(sorted(kwargs.items())))
+
+    def __getitem__(self, key: str) -> str:
+        return dict(self._data)[key]
+
+    def __iter__(self):
+        return (x[0] for x in self._data)
+
+    def __len__(self):
+        return len(self._data)
 
 
 @dataclasses.dataclass(frozen=True)
-class HeaderData:
-    """An object containing headers data."""
-
+class _HeaderData:
     host: str = ""
     origin: str = ""
     upgrade: str = ""
@@ -24,19 +40,54 @@ class HeaderData:
     sec_websocket_extensions: str = ""
     accept_encoding: str = ""
     accept_language: str = ""
+    raw_headers: Mapping[str, str] = dataclasses.field(
+        default_factory=_FrozenDictStrStr
+    )
 
-    def __init__(self, router_data: Optional[dict] = None):
+
+@dataclasses.dataclass(frozen=True, init=False)
+class HeaderData(_HeaderData):
+    """An object containing headers data."""
+
+    def __init__(self, router_data: dict | None = None):
         """Initialize the HeaderData object based on router_data.
 
         Args:
             router_data: the router_data dict.
         """
+        super().__init__()
         if router_data:
+            fields_names = [f.name for f in dataclasses.fields(self)]
             for k, v in router_data.get(constants.RouteVar.HEADERS, {}).items():
-                object.__setattr__(self, format.to_snake_case(k), v)
-        else:
-            for k in dataclasses.fields(self):
-                object.__setattr__(self, k.name, "")
+                snake_case_key = format.to_snake_case(k)
+                if snake_case_key in fields_names:
+                    object.__setattr__(self, snake_case_key, v)
+            object.__setattr__(
+                self,
+                "raw_headers",
+                _FrozenDictStrStr(
+                    **{
+                        k: v
+                        for k, v in router_data.get(
+                            constants.RouteVar.HEADERS, {}
+                        ).items()
+                        if v
+                    }
+                ),
+            )
+
+
+@serializer(to=dict)
+def serialize_frozen_dict_str_str(obj: _FrozenDictStrStr) -> dict:
+    """Serialize a _FrozenDictStrStr object to a dict.
+
+    Args:
+        obj: the _FrozenDictStrStr object.
+
+    Returns:
+        A dict representation of the _FrozenDictStrStr object.
+    """
+    return dict(obj._data)
 
 
 @dataclasses.dataclass(frozen=True)
@@ -50,7 +101,7 @@ class PageData:
     full_raw_path: str = ""
     params: dict = dataclasses.field(default_factory=dict)
 
-    def __init__(self, router_data: Optional[dict] = None):
+    def __init__(self, router_data: dict | None = None):
         """Initialize the PageData object based on router_data.
 
         Args:
@@ -90,7 +141,7 @@ class SessionData:
     client_ip: str = ""
     session_id: str = ""
 
-    def __init__(self, router_data: Optional[dict] = None):
+    def __init__(self, router_data: dict | None = None):
         """Initialize the SessionData object based on router_data.
 
         Args:
@@ -115,7 +166,7 @@ class RouterData:
     headers: HeaderData = dataclasses.field(default_factory=HeaderData)
     page: PageData = dataclasses.field(default_factory=PageData)
 
-    def __init__(self, router_data: Optional[dict] = None):
+    def __init__(self, router_data: dict | None = None):
         """Initialize the RouterData object.
 
         Args:

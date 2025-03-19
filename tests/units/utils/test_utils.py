@@ -2,14 +2,23 @@ import os
 import typing
 from functools import cached_property
 from pathlib import Path
-from typing import Any, ClassVar, Dict, List, Literal, Type, Union
+from typing import (
+    Any,
+    ClassVar,
+    List,
+    Literal,
+    Mapping,
+    NoReturn,
+    Sequence,
+    Type,
+    Union,
+)
 
 import pytest
 import typer
 from packaging import version
 
 from reflex import constants
-from reflex.base import Base
 from reflex.config import environment
 from reflex.event import EventHandler
 from reflex.state import BaseState
@@ -61,7 +70,7 @@ def test_func():
         (float, False),
         (bool, False),
         (List, True),
-        (List[int], True),
+        (list[int], True),
     ],
 )
 def test_is_generic_alias(cls: type, expected: bool):
@@ -90,29 +99,105 @@ def test_is_generic_alias(cls: type, expected: bool):
         (bool, int, True),
         (int, bool, False),
         (list, List, True),
-        (list, List[str], True),  # this is wrong, but it's a limitation of the function
+        (list, list[str], True),  # this is wrong, but it's a limitation of the function
         (List, list, True),
-        (List[int], list, True),
-        (List[int], List, True),
-        (List[int], List[str], False),
-        (List[int], List[int], True),
-        (List[int], List[float], False),
-        (List[int], List[Union[int, float]], True),
-        (List[int], List[Union[float, str]], False),
-        (Union[int, float], List[Union[int, float]], False),
-        (Union[int, float], Union[int, float, str], True),
-        (Union[int, float], Union[str, float], False),
-        (Dict[str, int], Dict[str, int], True),
-        (Dict[str, bool], Dict[str, int], True),
-        (Dict[str, int], Dict[str, bool], False),
-        (Dict[str, Any], dict[str, str], False),
-        (Dict[str, str], dict[str, str], True),
-        (Dict[str, str], dict[str, Any], True),
-        (Dict[str, Any], dict[str, Any], True),
+        (list[int], list, True),
+        (list[int], List, True),
+        (list[int], list[str], False),
+        (list[int], list[int], True),
+        (list[int], list[float], False),
+        (list[int], list[int | float], True),
+        (list[int], list[float | str], False),
+        (int | float, list[int | float], False),
+        (int | float, int | float | str, True),
+        (int | float, str | float, False),
+        (dict[str, int], dict[str, int], True),
+        (dict[str, bool], dict[str, int], True),
+        (dict[str, int], dict[str, bool], False),
+        (dict[str, Any], dict[str, str], False),
+        (dict[str, str], dict[str, str], True),
+        (dict[str, str], dict[str, Any], True),
+        (dict[str, Any], dict[str, Any], True),
+        (Mapping[str, int], dict[str, int], False),
+        (Sequence[int], list[int], False),
+        (Sequence[int] | list[int], list[int], False),
+        (str, Literal["test", "value"], True),
+        (str, Literal["test", "value", 2, 3], True),
+        (int, Literal["test", "value"], False),
+        (int, Literal["test", "value", 2, 3], True),
+        *[
+            (NoReturn, super_class, True)
+            for super_class in [int, float, str, bool, list, dict, object, Any]
+        ],
+        *[
+            (list[NoReturn], list[super_class], True)
+            for super_class in [int, float, str, bool, list, dict, object, Any]
+        ],
     ],
 )
 def test_typehint_issubclass(subclass, superclass, expected):
     assert types.typehint_issubclass(subclass, superclass) == expected
+
+
+@pytest.mark.parametrize(
+    ("subclass", "superclass", "expected"),
+    [
+        *[
+            (base_type, base_type, True)
+            for base_type in [int, float, str, bool, list, dict]
+        ],
+        *[
+            (one_type, another_type, False)
+            for one_type in [int, float, str, list, dict]
+            for another_type in [int, float, str, list, dict]
+            if one_type != another_type
+        ],
+        (bool, int, True),
+        (int, bool, False),
+        (list, List, True),
+        (list, list[str], True),  # this is wrong, but it's a limitation of the function
+        (List, list, True),
+        (list[int], list, True),
+        (list[int], List, True),
+        (list[int], list[str], False),
+        (list[int], list[int], True),
+        (list[int], list[float], False),
+        (list[int], list[int | float], True),
+        (list[int], list[float | str], False),
+        (int | float, list[int | float], False),
+        (int | float, int | float | str, True),
+        (int | float, str | float, False),
+        (dict[str, int], dict[str, int], True),
+        (dict[str, bool], dict[str, int], True),
+        (dict[str, int], dict[str, bool], False),
+        (dict[str, Any], dict[str, str], False),
+        (dict[str, str], dict[str, str], True),
+        (dict[str, str], dict[str, Any], True),
+        (dict[str, Any], dict[str, Any], True),
+        (Mapping[str, int], dict[str, int], True),
+        (Sequence[int], list[int], True),
+        (Sequence[int] | list[int], list[int], True),
+        (str, Literal["test", "value"], True),
+        (str, Literal["test", "value", 2, 3], True),
+        (int, Literal["test", "value"], False),
+        (int, Literal["test", "value", 2, 3], True),
+        *[
+            (NoReturn, super_class, True)
+            for super_class in [int, float, str, bool, list, dict, object, Any]
+        ],
+        *[
+            (list[NoReturn], list[super_class], True)
+            for super_class in [int, float, str, bool, list, dict, object, Any]
+        ],
+    ],
+)
+def test_typehint_issubclass_mutable_as_immutable(subclass, superclass, expected):
+    assert (
+        types.typehint_issubclass(
+            subclass, superclass, treat_mutable_superclasss_as_immutable=True
+        )
+        == expected
+    )
 
 
 def test_validate_none_bun_path(mocker):
@@ -249,16 +334,16 @@ def test_is_backend_base_variable(
     [
         (int, int, True),
         (int, float, False),
-        (int, Union[int, float], True),
-        (float, Union[int, float], True),
-        (str, Union[int, float], False),
-        (List[int], List[int], True),
-        (List[int], List[float], True),
-        (Union[int, float], Union[int, float], False),
-        (Union[int, Var[int]], Var[int], False),
+        (int, int | float, True),
+        (float, int | float, True),
+        (str, int | float, False),
+        (list[int], list[int], True),
+        (list[int], list[float], True),
+        (int | float, int | float, False),
+        (int | Var[int], Var[int], False),
         (int, Any, True),
         (Any, Any, True),
-        (Union[int, float], Any, True),
+        (int | float, Any, True),
         (str, Union[Literal["test", "value"], int], True),
         (int, Union[Literal["test", "value"], int], True),
         (str, Literal["test", "value"], True),
@@ -411,96 +496,6 @@ def test_validate_app_name(tmp_path, mocker):
 
     with pytest.raises(typer.Exit):
         prerequisites.validate_app_name(app_name="1_test")
-
-
-def test_node_install_windows(tmp_path, mocker):
-    """Require user to install node manually for windows if node is not installed.
-
-    Args:
-        tmp_path: Test working dir.
-        mocker: Pytest mocker object.
-    """
-    fnm_root_path = tmp_path / "reflex" / "fnm"
-    fnm_exe = fnm_root_path / "fnm.exe"
-
-    mocker.patch("reflex.utils.prerequisites.constants.Fnm.DIR", fnm_root_path)
-    mocker.patch("reflex.utils.prerequisites.constants.Fnm.EXE", fnm_exe)
-    mocker.patch("reflex.utils.prerequisites.constants.IS_WINDOWS", True)
-    mocker.patch("reflex.utils.processes.new_process")
-    mocker.patch("reflex.utils.processes.stream_logs")
-
-    class Resp(Base):
-        status_code = 200
-        text = "test"
-
-    mocker.patch("httpx.stream", return_value=Resp())
-    download = mocker.patch("reflex.utils.prerequisites.download_and_extract_fnm_zip")
-    mocker.patch("reflex.utils.prerequisites.zipfile.ZipFile")
-    mocker.patch("reflex.utils.prerequisites.path_ops.rm")
-
-    prerequisites.install_node()
-
-    assert fnm_root_path.exists()
-    download.assert_called_once()
-
-
-@pytest.mark.parametrize(
-    "machine, system",
-    [
-        ("x64", "Darwin"),
-        ("arm64", "Darwin"),
-        ("x64", "Windows"),
-        ("arm64", "Windows"),
-        ("armv7", "Linux"),
-        ("armv8-a", "Linux"),
-        ("armv8.1-a", "Linux"),
-        ("armv8.2-a", "Linux"),
-        ("armv8.3-a", "Linux"),
-        ("armv8.4-a", "Linux"),
-        ("aarch64", "Linux"),
-        ("aarch32", "Linux"),
-    ],
-)
-def test_node_install_unix(tmp_path, mocker, machine, system):
-    fnm_root_path = tmp_path / "reflex" / "fnm"
-    fnm_exe = fnm_root_path / "fnm"
-
-    mocker.patch("reflex.utils.prerequisites.constants.Fnm.DIR", fnm_root_path)
-    mocker.patch("reflex.utils.prerequisites.constants.Fnm.EXE", fnm_exe)
-    mocker.patch("reflex.utils.prerequisites.constants.IS_WINDOWS", False)
-    mocker.patch("reflex.utils.prerequisites.platform.machine", return_value=machine)
-    mocker.patch("reflex.utils.prerequisites.platform.system", return_value=system)
-
-    class Resp(Base):
-        status_code = 200
-        text = "test"
-
-    mocker.patch("httpx.stream", return_value=Resp())
-    download = mocker.patch("reflex.utils.prerequisites.download_and_extract_fnm_zip")
-    process = mocker.patch("reflex.utils.processes.new_process")
-    chmod = mocker.patch("pathlib.Path.chmod")
-    mocker.patch("reflex.utils.processes.stream_logs")
-
-    prerequisites.install_node()
-
-    assert fnm_root_path.exists()
-    download.assert_called_once()
-    if system == "Darwin" and machine == "arm64":
-        process.assert_called_with(
-            [
-                fnm_exe,
-                "install",
-                "--arch=arm64",
-                constants.Node.VERSION,
-                "--fnm-dir",
-                fnm_root_path,
-            ]
-        )
-    else:
-        process.assert_called_with(
-            [fnm_exe, "install", constants.Node.VERSION, "--fnm-dir", fnm_root_path]
-        )
-    chmod.assert_called_once()
 
 
 def test_bun_install_without_unzip(mocker):

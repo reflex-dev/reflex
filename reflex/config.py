@@ -19,32 +19,30 @@ from pathlib import Path
 from types import ModuleType
 from typing import (
     TYPE_CHECKING,
+    Annotated,
     Any,
     Callable,
-    Dict,
     Generic,
-    List,
-    Optional,
-    Set,
     TypeVar,
     get_args,
     get_origin,
+    get_type_hints,
 )
 
+import pydantic.v1 as pydantic
 from reflex_cli.constants.hosting import Hosting
-from typing_extensions import Annotated, get_type_hints
 
 from reflex import constants
 from reflex.base import Base
+from reflex.constants.base import LogLevel
 from reflex.utils import console
 from reflex.utils.exceptions import ConfigError, EnvironmentVarValueError
-from reflex.utils.types import GenericType, is_union, value_inside_optional
-
-try:
-    import pydantic.v1 as pydantic
-except ModuleNotFoundError:
-    import pydantic
-
+from reflex.utils.types import (
+    GenericType,
+    is_union,
+    true_type_for_pydantic_field,
+    value_inside_optional,
+)
 
 try:
     from dotenv import load_dotenv  # pyright: ignore [reportMissingImports]
@@ -56,10 +54,10 @@ class DBConfig(Base):
     """Database config."""
 
     engine: str
-    username: Optional[str] = ""
-    password: Optional[str] = ""
-    host: Optional[str] = ""
-    port: Optional[int] = None
+    username: str | None = ""
+    password: str | None = ""
+    host: str | None = ""
+    port: int | None = None
     database: str
 
     @classmethod
@@ -365,7 +363,7 @@ class EnvVar(Generic[T]):
         """
         return interpret_env_var_value(value, self.type_, self.name)
 
-    def getenv(self) -> Optional[T]:
+    def getenv(self) -> T | None:
         """Get the interpreted environment variable value.
 
         Returns:
@@ -593,26 +591,28 @@ class ExecutorType(enum.Enum):
 class EnvironmentVariables:
     """Environment variables class to instantiate environment variables."""
 
-    # Whether to use npm over bun to install frontend packages.
+    # Indicate the current command that was invoked in the reflex CLI.
+    REFLEX_COMPILE_CONTEXT: EnvVar[constants.CompileContext] = env_var(
+        constants.CompileContext.UNDEFINED, internal=True
+    )
+
+    # Whether to use npm over bun to install and run the frontend.
     REFLEX_USE_NPM: EnvVar[bool] = env_var(False)
 
     # The npm registry to use.
-    NPM_CONFIG_REGISTRY: EnvVar[Optional[str]] = env_var(None)
+    NPM_CONFIG_REGISTRY: EnvVar[str | None] = env_var(None)
 
     # Whether to use Granian for the backend. Otherwise, use Uvicorn.
     REFLEX_USE_GRANIAN: EnvVar[bool] = env_var(False)
 
     # The username to use for authentication on python package repository. Username and password must both be provided.
-    TWINE_USERNAME: EnvVar[Optional[str]] = env_var(None)
+    TWINE_USERNAME: EnvVar[str | None] = env_var(None)
 
     # The password to use for authentication on python package repository. Username and password must both be provided.
-    TWINE_PASSWORD: EnvVar[Optional[str]] = env_var(None)
+    TWINE_PASSWORD: EnvVar[str | None] = env_var(None)
 
     # Whether to use the system installed bun. If set to false, bun will be bundled with the app.
     REFLEX_USE_SYSTEM_BUN: EnvVar[bool] = env_var(False)
-
-    # Whether to use the system installed node and npm. If set to false, node and npm will be bundled with the app.
-    REFLEX_USE_SYSTEM_NODE: EnvVar[bool] = env_var(False)
 
     # The working directory for the next.js commands.
     REFLEX_WEB_WORKDIR: EnvVar[Path] = env_var(Path(constants.Dirs.WEB))
@@ -631,16 +631,16 @@ class EnvironmentVariables:
         Path(constants.Dirs.UPLOADED_FILES)
     )
 
-    REFLEX_COMPILE_EXECUTOR: EnvVar[Optional[ExecutorType]] = env_var(None)
+    REFLEX_COMPILE_EXECUTOR: EnvVar[ExecutorType | None] = env_var(None)
 
     # Whether to use separate processes to compile the frontend and how many. If not set, defaults to thread executor.
-    REFLEX_COMPILE_PROCESSES: EnvVar[Optional[int]] = env_var(None)
+    REFLEX_COMPILE_PROCESSES: EnvVar[int | None] = env_var(None)
 
     # Whether to use separate threads to compile the frontend and how many. Defaults to `min(32, os.cpu_count() + 4)`.
-    REFLEX_COMPILE_THREADS: EnvVar[Optional[int]] = env_var(None)
+    REFLEX_COMPILE_THREADS: EnvVar[int | None] = env_var(None)
 
     # The directory to store reflex dependencies.
-    REFLEX_DIR: EnvVar[Path] = env_var(Path(constants.Reflex.DIR))
+    REFLEX_DIR: EnvVar[Path] = env_var(constants.Reflex.DIR)
 
     # Whether to print the SQL queries if the log level is INFO or lower.
     SQLALCHEMY_ECHO: EnvVar[bool] = env_var(False)
@@ -707,10 +707,19 @@ class EnvironmentVariables:
     REFLEX_USE_TURBOPACK: EnvVar[bool] = env_var(True)
 
     # Additional paths to include in the hot reload. Separated by a colon.
-    REFLEX_HOT_RELOAD_INCLUDE_PATHS: EnvVar[List[Path]] = env_var([])
+    REFLEX_HOT_RELOAD_INCLUDE_PATHS: EnvVar[list[Path]] = env_var([])
 
     # Paths to exclude from the hot reload. Takes precedence over include paths. Separated by a colon.
-    REFLEX_HOT_RELOAD_EXCLUDE_PATHS: EnvVar[List[Path]] = env_var([])
+    REFLEX_HOT_RELOAD_EXCLUDE_PATHS: EnvVar[list[Path]] = env_var([])
+
+    # Enables different behavior for when the backend would do a cold start if it was inactive.
+    REFLEX_DOES_BACKEND_COLD_START: EnvVar[bool] = env_var(False)
+
+    # The timeout for the backend to do a cold start in seconds.
+    REFLEX_BACKEND_COLD_START_TIMEOUT: EnvVar[int] = env_var(10)
+
+    # Used by flexgen to enumerate the pages.
+    REFLEX_ADD_ALL_ROUTES_ENDPOINT: EnvVar[bool] = env_var(False)
 
 
 environment = EnvironmentVariables()
@@ -751,7 +760,7 @@ class Config(Base):
     app_name: str
 
     # The path to the app module.
-    app_module_import: Optional[str] = None
+    app_module_import: str | None = None
 
     # The log level to use.
     loglevel: constants.LogLevel = constants.LogLevel.DEFAULT
@@ -769,21 +778,19 @@ class Config(Base):
     api_url: str = f"http://localhost:{constants.DefaultPorts.BACKEND_PORT}"
 
     # The url the frontend will be hosted on.
-    deploy_url: Optional[str] = (
-        f"http://localhost:{constants.DefaultPorts.FRONTEND_PORT}"
-    )
+    deploy_url: str | None = f"http://localhost:{constants.DefaultPorts.FRONTEND_PORT}"
 
     # The url the backend will be hosted on.
     backend_host: str = "0.0.0.0"
 
     # The database url used by rx.Model.
-    db_url: Optional[str] = "sqlite:///reflex.db"
+    db_url: str | None = "sqlite:///reflex.db"
 
     # The async database url used by rx.Model.
-    async_db_url: Optional[str] = None
+    async_db_url: str | None = None
 
     # The redis url
-    redis_url: Optional[str] = None
+    redis_url: str | None = None
 
     # Telemetry opt-in.
     telemetry_enabled: bool = True
@@ -795,10 +802,10 @@ class Config(Base):
     static_page_generation_timeout: int = 60
 
     # List of origins that are allowed to connect to the backend API.
-    cors_allowed_origins: List[str] = ["*"]
+    cors_allowed_origins: list[str] = ["*"]
 
     # Tailwind config.
-    tailwind: Optional[Dict[str, Any]] = {"plugins": ["@tailwindcss/typography"]}
+    tailwind: dict[str, Any] | None = {"plugins": ["@tailwindcss/typography"]}
 
     # Timeout when launching the gunicorn server. TODO(rename this to backend_timeout?)
     timeout: int = 120
@@ -810,7 +817,7 @@ class Config(Base):
     react_strict_mode: bool = True
 
     # Additional frontend packages to install.
-    frontend_packages: List[str] = []
+    frontend_packages: list[str] = []
 
     # The hosting service backend URL.
     cp_backend_url: str = Hosting.HOSTING_SERVICE
@@ -821,7 +828,7 @@ class Config(Base):
     gunicorn_worker_class: str = "uvicorn.workers.UvicornH11Worker"
 
     # Number of gunicorn workers from user
-    gunicorn_workers: Optional[int] = None
+    gunicorn_workers: int | None = None
 
     # Number of requests before a worker is restarted; set to 0 to disable
     gunicorn_max_requests: int = 100
@@ -842,19 +849,19 @@ class Config(Base):
     redis_token_expiration: int = constants.Expiration.TOKEN
 
     # Attributes that were explicitly set by the user.
-    _non_default_attributes: Set[str] = pydantic.PrivateAttr(set())
+    _non_default_attributes: set[str] = pydantic.PrivateAttr(set())
 
     # Path to file containing key-values pairs to override in the environment; Dotenv format.
-    env_file: Optional[str] = None
+    env_file: str | None = None
 
     # Whether to display the sticky "Built with Reflex" badge on all pages.
-    show_built_with_reflex: bool = True
+    show_built_with_reflex: bool | None = None
 
     # Whether the app is running in the reflex cloud environment.
     is_reflex_cloud: bool = False
 
-    # Extra overlay function to run after the app is built. Formatted such that `from path_0.path_1... import path[-1]`, and calling it with no arguments would work. For example, "reflex.components.moment.momnet".
-    extra_overlay_function: Optional[str] = None
+    # Extra overlay function to run after the app is built. Formatted such that `from path_0.path_1... import path[-1]`, and calling it with no arguments would work. For example, "reflex.components.moment.moment".
+    extra_overlay_function: str | None = None
 
     def __init__(self, *args, **kwargs):
         """Initialize the config values.
@@ -868,6 +875,13 @@ class Config(Base):
         """
         super().__init__(*args, **kwargs)
 
+        # Set the log level for this process
+        env_loglevel = os.environ.get("LOGLEVEL")
+        if env_loglevel is not None:
+            env_loglevel = LogLevel(env_loglevel)
+        if env_loglevel or self.loglevel != LogLevel.DEFAULT:
+            console.set_log_level(env_loglevel or self.loglevel)
+
         # Update the config from environment variables.
         env_kwargs = self.update_from_env()
         for key, env_value in env_kwargs.items():
@@ -877,9 +891,6 @@ class Config(Base):
         kwargs.update(env_kwargs)
         self._non_default_attributes.update(kwargs)
         self._replace_defaults(**kwargs)
-
-        # Set the log level for this process
-        console.set_log_level(self.loglevel)
 
         if (
             self.state_manager_mode == constants.StateManagerMode.REDIS
@@ -939,7 +950,9 @@ class Config(Base):
             # If the env var is set, override the config value.
             if env_var is not None:
                 # Interpret the value.
-                value = interpret_env_var_value(env_var, field.outer_type_, field.name)
+                value = interpret_env_var_value(
+                    env_var, true_type_for_pydantic_field(field), field.name
+                )
 
                 # Set the value.
                 updated_values[key] = value
@@ -947,10 +960,11 @@ class Config(Base):
                 if key.upper() in _sensitive_env_vars:
                     env_var = "***"
 
-                console.info(
-                    f"Overriding config value {key} with env var {key.upper()}={env_var}",
-                    dedupe=True,
-                )
+                if value != getattr(self, key):
+                    console.debug(
+                        f"Overriding config value {key} with env var {key.upper()}={env_var}",
+                        dedupe=True,
+                    )
 
         return updated_values
 

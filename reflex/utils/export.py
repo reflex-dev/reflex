@@ -1,13 +1,10 @@
 """Export utilities."""
 
 from pathlib import Path
-from typing import Optional
 
 from reflex import constants
 from reflex.config import environment, get_config
 from reflex.utils import build, console, exec, prerequisites, telemetry
-
-config = get_config()
 
 
 def export(
@@ -16,8 +13,8 @@ def export(
     backend: bool = True,
     zip_dest_dir: str = str(Path.cwd()),
     upload_db_file: bool = False,
-    api_url: Optional[str] = None,
-    deploy_url: Optional[str] = None,
+    api_url: str | None = None,
+    deploy_url: str | None = None,
     env: constants.Env = constants.Env.PROD,
     loglevel: constants.LogLevel = console._LOG_LEVEL,
 ):
@@ -34,6 +31,8 @@ def export(
         env: The environment to use. Defaults to constants.Env.PROD.
         loglevel: The log level to use. Defaults to console._LOG_LEVEL.
     """
+    config = get_config()
+
     # Set the log level.
     console.set_log_level(loglevel)
 

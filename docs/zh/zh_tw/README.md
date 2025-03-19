@@ -1,14 +1,10 @@
-```diff
-+ 正在尋找 Pynecone？ 你在正確的 repo 中。 Pynecone 已更名為 Reflex。 +
-```
-
 <div align="center">
 <img src="../../images/reflex_dark.svg#gh-light-mode-only" alt="Reflex Logo" width="300px">
 <img src="../../images/reflex_light.svg#gh-dark-mode-only" alt="Reflex Logo" width="300px">
 
 <hr>
 
-**✨ 使用 Python 建立高效且可自訂的網頁應用程式，幾秒鐘內即可部署。✨**  
+**✨ 使用 Python 建立高效且可自訂的網頁應用程式，幾秒鐘內即可部署。✨**
 
 [![PyPI version](https://badge.fury.io/py/reflex.svg)](https://badge.fury.io/py/reflex)
 ![versions](https://img.shields.io/pypi/pyversions/reflex.svg)
@@ -29,10 +25,10 @@ Reflex 是一個可以用純 Python 構建全端網頁應用程式的函式庫�
 
 主要特色：
 
-* **純 Python** - 您可以用 Python 撰寫應用程式的前端和後端，無需學習 Javascript。
-* **完全靈活性** - Reflex 易於上手，但也可以擴展到複雜的應用程式。
-* **立即部署** - 構建後，只需使用[單一指令](https://reflex.dev/docs/hosting/deploy-quick-start/)即可部署您的應用程式，或在您自己的伺服器上託管。
-請參閱我們的[架構頁面](https://reflex.dev/blog/2024-03-21-reflex-architecture/#the-reflex-architecture)了解 Reflex 如何在底層運作。
+- **純 Python** - 您可以用 Python 撰寫應用程式的前端和後端，無需學習 Javascript。
+- **完全靈活性** - Reflex 易於上手，但也可以擴展到複雜的應用程式。
+- **立即部署** - 構建後，只需使用[單一指令](https://reflex.dev/docs/hosting/deploy-quick-start/)即可部署您的應用程式，或在您自己的伺服器上託管。
+  請參閱我們的[架構頁面](https://reflex.dev/blog/2024-03-21-reflex-architecture/#the-reflex-architecture)了解 Reflex 如何在底層運作。
 
 ## ⚙️ 安裝
 
@@ -106,7 +102,7 @@ class State(rx.State):
         )
         self.image_url = response.data[0].url
         self.processing, self.complete = False, True
-        
+
 
 def index():
     return rx.center(
@@ -118,7 +114,7 @@ def index():
                 width="25em",
             ),
             rx.button(
-                "Generate Image", 
+                "Generate Image",
                 on_click=State.get_image,
                 width="25em",
                 loading=State.processing
@@ -138,18 +134,11 @@ app = rx.App()
 app.add_page(index, title="Reflex:DALL-E")
 ```
 
-
-
-
-
-
-
 ## 讓我們來拆解一下。
 
 <div align="center">
 <img src="../../images/dalle_colored_code_example.png" alt="解釋 DALL-E app 的前端和後端部分的區別。" width="900" />
 </div>
-
 
 ### **Reflex 使用者介面**
 
@@ -164,7 +153,7 @@ def index():
 
 這個 `index` 函式定義了應用程式的前端.
 
-我們用不同的元件像是 `center`, `vstack`, `input`, 和 `button` 來建立前端，元件之間可互相套入以建立出複雜的版面配置。並且您可使用關鍵字引數 *keyword args* 運行 CSS 全部功能來設計這些元件們的樣式。
+我們用不同的元件像是 `center`, `vstack`, `input`, 和 `button` 來建立前端，元件之間可互相套入以建立出複雜的版面配置。並且您可使用關鍵字引數 _keyword args_ 運行 CSS 全部功能來設計這些元件們的樣式。
 
 Reflex 擁有 [60+ 內建元件](https://reflex.dev/docs/library) 來幫助你開始建立應用程式。我們正積極添加元件，你也可以簡單地 [創建自己所屬的元件](https://reflex.dev/docs/wrapping-react/overview/)。
 
@@ -229,11 +218,9 @@ app.add_page(index, title="DALL-E")
 
 <div align="center">
 
-📑 [Docs](https://reflex.dev/docs/getting-started/introduction) &nbsp; |  &nbsp; 🗞️ [Blog](https://reflex.dev/blog) &nbsp; |  &nbsp; 📱 [Component Library](https://reflex.dev/docs/library) &nbsp; |  &nbsp; 🖼️ [Templates](https://reflex.dev/templates/) &nbsp; |  &nbsp; 🛸 [Deployment](https://reflex.dev/docs/hosting/deploy-quick-start)  &nbsp;   
+📑 [Docs](https://reflex.dev/docs/getting-started/introduction) &nbsp; | &nbsp; 🗞️ [Blog](https://reflex.dev/blog) &nbsp; | &nbsp; 📱 [Component Library](https://reflex.dev/docs/library) &nbsp; | &nbsp; 🖼️ [Templates](https://reflex.dev/templates/) &nbsp; | &nbsp; 🛸 [Deployment](https://reflex.dev/docs/hosting/deploy-quick-start) &nbsp;
 
 </div>
-
-
 
 ## ✅ 產品狀態
 
@@ -247,14 +234,14 @@ Reflex 每周都有新功能和釋出新版本! 確保你按下 :star: 和 :eyes
 
 我們歡迎任何大小的貢獻，以下是一些加入 Reflex 社群的好方法。
 
--   **加入我們的 Discord**: 我們的 [Discord](https://discord.gg/T5WSbC2YtQ) 是獲取 Reflex 專案幫助和討論如何貢獻的最佳地方。
--   **GitHub Discussions**: 這是一個討論您想新增的功能或對於一些困惑/需要澄清事項的好方法。
--   **GitHub Issues**: 在 [Issues](https://github.com/reflex-dev/reflex/issues) 頁面報告錯誤是一個絕佳的方式。此外，您也可以嘗試解決現有 Issue 並提交 PR。
+- **加入我們的 Discord**: 我們的 [Discord](https://discord.gg/T5WSbC2YtQ) 是獲取 Reflex 專案幫助和討論如何貢獻的最佳地方。
+- **GitHub Discussions**: 這是一個討論您想新增的功能或對於一些困惑/需要澄清事項的好方法。
+- **GitHub Issues**: 在 [Issues](https://github.com/reflex-dev/reflex/issues) 頁面報告錯誤是一個絕佳的方式。此外，您也可以嘗試解決現有 Issue 並提交 PR。
 
 我們積極尋找貢獻者，不論您的技能水平或經驗如何。要貢獻，請查看 [CONTRIBUTING.md](https://github.com/reflex-dev/reflex/blob/main/CONTRIBUTING.md)
 
-
 ## 感謝所有貢獻者:
+
 <a href="https://github.com/reflex-dev/reflex/graphs/contributors">
   <img src="https://contrib.rocks/image?repo=reflex-dev/reflex" />
 </a>

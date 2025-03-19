@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Dict, Literal
+from typing import ClassVar, Literal
 
 from reflex.components.core.breakpoints import Responsive
 from reflex.components.el import elements
@@ -38,7 +38,7 @@ class Flex(elements.Div, RadixThemesComponent):
     spacing: Var[Responsive[LiteralSpacing]]
 
     # Reflex maps the "spacing" prop to "gap" prop.
-    _rename_props: Dict[str, str] = {"spacing": "gap"}
+    _rename_props: ClassVar[dict[str, str]] = {"spacing": "gap"}
 
 
 flex = Flex.create

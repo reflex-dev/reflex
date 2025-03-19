@@ -111,6 +111,15 @@ class ComponentName(Enum):
         return self.value.lower() + Ext.ZIP
 
 
+class CompileContext(str, Enum):
+    """The context in which the compiler is running."""
+
+    RUN = "run"
+    EXPORT = "export"
+    DEPLOY = "deploy"
+    UNDEFINED = "undefined"
+
+
 class Imports(SimpleNamespace):
     """Common sets of import vars."""
 

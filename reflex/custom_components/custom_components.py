@@ -9,7 +9,6 @@ import sys
 from collections import namedtuple
 from contextlib import contextmanager
 from pathlib import Path
-from typing import Optional, Tuple
 
 import httpx
 import tomlkit
@@ -21,16 +20,8 @@ from reflex.config import environment, get_config
 from reflex.constants import CustomComponents
 from reflex.utils import console
 
-config = get_config()
 custom_components_cli = typer.Typer()
 
-POST_CUSTOM_COMPONENTS_GALLERY_ENDPOINT = (
-    f"{config.cp_backend_url}/custom-components/gallery"
-)
-
-GET_CUSTOM_COMPONENTS_GALLERY_BY_NAME_ENDPOINT = (
-    f"{config.cp_backend_url}/custom-components/gallery"
-)
 
 POST_CUSTOM_COMPONENTS_GALLERY_TIMEOUT = 15
 
@@ -311,7 +302,7 @@ def _populate_custom_component_project(name_variants: NameVariants):
 
 @custom_components_cli.command(name="init")
 def init(
-    library_name: Optional[str] = typer.Option(
+    library_name: str | None = typer.Option(
         None,
         help="The name of your library. On PyPI, package will be published as `reflex-{library-name}`.",
     ),
@@ -319,8 +310,8 @@ def init(
         True,
         help="Whether to install package from this local custom component in editable mode.",
     ),
-    loglevel: constants.LogLevel = typer.Option(
-        config.loglevel, help="The log level to use."
+    loglevel: constants.LogLevel | None = typer.Option(
+        None, help="The log level to use."
     ),
 ):
     """Initialize a custom component.
@@ -335,7 +326,7 @@ def init(
     """
     from reflex.utils import exec, prerequisites
 
-    console.set_log_level(loglevel)
+    console.set_log_level(loglevel or get_config().loglevel)
 
     if CustomComponents.PYPROJECT_TOML.exists():
         console.error(f"A {CustomComponents.PYPROJECT_TOML} already exists. Aborting.")
@@ -461,8 +452,8 @@ def _run_build():
 
 @custom_components_cli.command(name="build")
 def build(
-    loglevel: constants.LogLevel = typer.Option(
-        config.loglevel, help="The log level to use."
+    loglevel: constants.LogLevel | None = typer.Option(
+        None, help="The log level to use."
     ),
 ):
     """Build a custom component. Must be run from the project root directory where the pyproject.toml is.
@@ -470,7 +461,7 @@ def build(
     Args:
         loglevel: The log level to use.
     """
-    console.set_log_level(loglevel)
+    console.set_log_level(loglevel or get_config().loglevel)
     _run_build()
 
 
@@ -604,26 +595,26 @@ def _ensure_dist_dir(version_to_publish: str, build: bool):
 
 @custom_components_cli.command(name="publish")
 def publish(
-    repository: Optional[str] = typer.Option(
+    repository: str | None = typer.Option(
         None,
         "-r",
         "--repository",
         help="The name of the repository. Defaults to pypi. Only supports pypi and testpypi (Test PyPI) for now.",
     ),
-    token: Optional[str] = typer.Option(
+    token: str | None = typer.Option(
         None,
         "-t",
         "--token",
         help="The API token to use for authentication on python package repository. If token is provided, no username/password should be provided at the same time",
     ),
-    username: Optional[str] = typer.Option(
+    username: str | None = typer.Option(
         environment.TWINE_USERNAME.get(),
         "-u",
         "--username",
         show_default="TWINE_USERNAME environment variable value if set",
         help="The username to use for authentication on python package repository. Username and password must both be provided.",
     ),
-    password: Optional[str] = typer.Option(
+    password: str | None = typer.Option(
         environment.TWINE_PASSWORD.get(),
         "-p",
         "--password",
@@ -642,8 +633,8 @@ def publish(
         True,
         help="Whether to interactively validate the project information in the pyproject.toml file.",
     ),
-    loglevel: constants.LogLevel = typer.Option(
-        config.loglevel, help="The log level to use."
+    loglevel: constants.LogLevel | None = typer.Option(
+        None, help="The log level to use."
     ),
 ):
     """Publish a custom component. Must be run from the project root directory where the pyproject.toml is.
@@ -661,7 +652,7 @@ def publish(
     Raises:
         Exit: If arguments provided are not correct or the publish fails.
     """
-    console.set_log_level(loglevel)
+    console.set_log_level(loglevel or get_config().loglevel)
 
     # Validate the repository name.
     repository = _validate_repository_name(repository)
@@ -854,6 +845,12 @@ def _collect_details_for_gallery():
     console.print(f"[ Custom component package name ] : {package_name}")
     params["package_name"] = package_name
 
+    config = get_config()
+
+    post_custom_components_gallery_endpoint = (
+        f"{config.cp_backend_url}/custom-components/gallery"
+    )
+
     # Check the backend services if the user is allowed to update information of this package is already shared.
     try:
         console.debug(
@@ -863,7 +860,7 @@ def _collect_details_for_gallery():
         # 1. Check if the package is already shared by the user. If not, the backend will return 403.
         # 2. If this package is not shared before, this request records the package name in the backend.
         response = httpx.post(
-            POST_CUSTOM_COMPONENTS_GALLERY_ENDPOINT,
+            post_custom_components_gallery_endpoint,
             headers={"Authorization": f"Bearer {access_token}"},
             data=params,
         )
@@ -900,7 +897,7 @@ def _collect_details_for_gallery():
     try:
         console.debug(f"Sending custom component data: {params}")
         response = httpx.post(
-            POST_CUSTOM_COMPONENTS_GALLERY_ENDPOINT,
+            post_custom_components_gallery_endpoint,
             headers={"Authorization": f"Bearer {access_token}"},
             data=params,
             files=files,
@@ -927,7 +924,7 @@ def _validate_url_with_protocol_prefix(url: str | None) -> bool:
     return not url or (url.startswith("http://") or url.startswith("https://"))
 
 
-def _get_file_from_prompt_in_loop() -> Tuple[bytes, str] | None:
+def _get_file_from_prompt_in_loop() -> tuple[bytes, str] | None:
     image_file = file_extension = None
     while image_file is None:
         image_filepath = Path(
@@ -950,8 +947,8 @@ def _get_file_from_prompt_in_loop() -> Tuple[bytes, str] | None:
 
 @custom_components_cli.command(name="share")
 def share_more_detail(
-    loglevel: constants.LogLevel = typer.Option(
-        config.loglevel, help="The log level to use."
+    loglevel: constants.LogLevel | None = typer.Option(
+        None, help="The log level to use."
     ),
 ):
     """Collect more details on the published package for gallery.
@@ -959,15 +956,15 @@ def share_more_detail(
     Args:
         loglevel: The log level to use.
     """
-    console.set_log_level(loglevel)
+    console.set_log_level(loglevel or get_config().loglevel)
 
     _collect_details_for_gallery()
 
 
 @custom_components_cli.command()
 def install(
-    loglevel: constants.LogLevel = typer.Option(
-        config.loglevel, help="The log level to use."
+    loglevel: constants.LogLevel | None = typer.Option(
+        None, help="The log level to use."
     ),
 ):
     """Install package from this local custom component in editable mode.
@@ -978,7 +975,7 @@ def install(
     Raises:
         Exit: If unable to install the current directory in editable mode.
     """
-    console.set_log_level(loglevel)
+    console.set_log_level(loglevel or get_config().loglevel)
 
     if _pip_install_on_demand(package_name=".", install_args=["-e"]):
         console.info("Package installed successfully!")

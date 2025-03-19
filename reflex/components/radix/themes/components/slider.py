@@ -2,17 +2,18 @@
 
 from __future__ import annotations
 
-from typing import List, Literal, Optional, Union
+from typing import Literal, Sequence
 
 from reflex.components.component import Component
 from reflex.components.core.breakpoints import Responsive
 from reflex.event import EventHandler, passthrough_event_spec
+from reflex.utils.types import typehint_issubclass
 from reflex.vars.base import Var
 
 from ..base import LiteralAccentColor, RadixThemesComponent
 
 on_value_event_spec = (
-    passthrough_event_spec(list[Union[int, float]]),
+    passthrough_event_spec(list[int | float]),
     passthrough_event_spec(list[int]),
     passthrough_event_spec(list[float]),
 )
@@ -42,25 +43,25 @@ class Slider(RadixThemesComponent):
     radius: Var[Literal["none", "small", "full"]]
 
     # The value of the slider when initially rendered. Use when you do not need to control the state of the slider.
-    default_value: Var[Union[List[Union[float, int]], float, int]]
+    default_value: Var[Sequence[float | int] | float | int]
 
     # The controlled value of the slider. Must be used in conjunction with onValueChange.
-    value: Var[List[Union[float, int]]]
+    value: Var[Sequence[float | int]]
 
     # The name of the slider. Submitted with its owning form as part of a name/value pair.
     name: Var[str]
 
     # The width of the slider.
-    width: Var[Optional[str]] = Var.create("100%")
+    width: Var[str | None] = Var.create("100%")
 
     # The minimum value of the slider.
-    min: Var[Union[float, int]]
+    min: Var[float | int]
 
     # The maximum value of the slider.
-    max: Var[Union[float, int]]
+    max: Var[float | int]
 
     # The step value of the slider.
-    step: Var[Union[float, int]]
+    step: Var[float | int]
 
     # Whether the slider is disabled
     disabled: Var[bool]
@@ -96,7 +97,7 @@ class Slider(RadixThemesComponent):
         width = props.pop("width", "100%")
 
         if isinstance(default_value, Var):
-            if issubclass(default_value._var_type, (int, float)):
+            if typehint_issubclass(default_value._var_type, int | float):
                 default_value = [default_value]
 
         elif isinstance(default_value, (int, float)):
