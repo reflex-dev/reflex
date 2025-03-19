@@ -204,7 +204,7 @@ def _run(
 
     prerequisites.check_latest_package_version(constants.Reflex.MODULE_NAME)
 
-    if frontend and not should_use_granian():
+    if not should_use_granian():
         # Get the app module.
         # Granian fails if the app is already imported.
         prerequisites.get_compiled_app()
