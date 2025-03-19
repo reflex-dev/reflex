@@ -64,7 +64,10 @@ from reflex.components.core.banner import (
     connection_toaster,
 )
 from reflex.components.core.breakpoints import set_breakpoints
-from reflex.components.core.client_side_routing import wait_for_client_redirect
+from reflex.components.core.client_side_routing import (
+    default_404_page,
+    wait_for_client_redirect,
+)
 from reflex.components.core.sticky import sticky
 from reflex.components.core.upload import Upload, get_upload_dir
 from reflex.components.radix import themes
@@ -692,7 +695,7 @@ class App(MiddlewareMixin, LifespanMixin):
 
         if route == constants.Page404.SLUG:
             if component is None:
-                component = Fragment.create()
+                component = default_404_page
             component = wait_for_client_redirect(self._generate_component(component))
             title = title or constants.Page404.TITLE
             description = description or constants.Page404.DESCRIPTION

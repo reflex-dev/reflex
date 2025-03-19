@@ -29,10 +29,7 @@ export const useClientSideRouting = () => {
         .then(() => {
           // Check if we're still on a NotFound route
           // Note: This depends on how your routes are set up
-          if (
-            location.pathname.includes("/not-found") ||
-            location.state?.notFound
-          ) {
+          if (location.pathname === path) {
             setRouteNotFound(true); // Mark as an actual 404
           }
         })
