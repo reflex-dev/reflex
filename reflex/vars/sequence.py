@@ -1683,6 +1683,8 @@ def _determine_value_of_array_index(
                 if t is not type(None)
             ]
         )
+    if origin_var_type is range:
+        return int
     if origin_var_type in [
         Sequence,
         Iterable,
@@ -1974,3 +1976,85 @@ class LiteralColorVar(CachedVarOperation, LiteralVar, ColorVar):
         ):
             raise TypeError("Color is not a valid color.")
         return f"var(--{color}-{'a' if alpha else ''}{shade})"
+
+
+class RangeVar(ArrayVar[Sequence[int]], python_types=range):
+    """Base class for immutable range vars."""
+
+
+@dataclasses.dataclass(
+    eq=False,
+    frozen=True,
+    slots=True,
+)
+class LiteralRangeVar(CachedVarOperation, LiteralVar, RangeVar):
+    """Base class for immutable literal range vars."""
+
+    _var_value: range = dataclasses.field(default_factory=lambda: range(0))
+
+    @classmethod
+    def create(
+        cls,
+        value: range,
+        _var_type: Type[range] | None = None,
+        _var_data: VarData | None = None,
+    ) -> RangeVar:
+        """Create a var from a string value.
+
+        Args:
+            value: The value to create the var from.
+            _var_type: The type of the var.
+            _var_data: Additional hooks and imports associated with the Var.
+
+        Returns:
+            The var.
+        """
+        return cls(
+            _js_expr="",
+            _var_type=_var_type or range,
+            _var_data=_var_data,
+            _var_value=value,
+        )
+
+    def __hash__(self) -> int:
+        """Get the hash of the var.
+
+        Returns:
+            The hash of the var.
+        """
+        return hash(
+            (
+                self.__class__.__name__,
+                self._var_value.start,
+                self._var_value.stop,
+                self._var_value.step,
+            )
+        )
+
+    @cached_property_no_lock
+    def _cached_var_name(self) -> str:
+        """The name of the var.
+
+        Returns:
+            The name of the var.
+        """
+        return f"Array.from({{ length: Math.ceil(({self._var_value.stop!s} - {self._var_value.start!s}) / {self._var_value.step!s}) }}, (_, i) => {self._var_value.start!s} + i * {self._var_value.step!s})"
+
+    @cached_property_no_lock
+    def _cached_get_all_var_data(self) -> VarData | None:
+        """Get all the var data.
+
+        Returns:
+            The var data.
+        """
+        return self._var_data
+
+    def json(self) -> str:
+        """Get the JSON representation of the var.
+
+        Returns:
+            The JSON representation of the var.
+        """
+        return json.dumps(
+            list(self._var_value),
+        )

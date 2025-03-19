@@ -1671,6 +1671,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
 
         raise TypeError(
             f"Your handler {handler.fn.__qualname__} must only return/yield: None, Events or other EventHandlers referenced by their class (i.e. using `type(self)` or other class references)."
+            f" Returned events of types {', '.join(map(str, map(type, events)))!s}."
         )
 
     async def _as_state_update(
