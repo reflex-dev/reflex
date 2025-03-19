@@ -203,13 +203,6 @@ def build(
         "Collecting build traces",
     ]
 
-    # Generate a sitemap if a deploy URL is provided.
-    if deploy_url is not None:
-        generate_sitemap_config(deploy_url, export=for_export)
-        command = "export-sitemap"
-
-        checkpoints.extend(["Loading next-sitemap", "Generation completed"])
-
     # Start the subprocess with the progress bar.
     process = processes.new_process(
         [*prerequisites.get_js_package_executor(raise_on_none=True)[0], "run", command],
