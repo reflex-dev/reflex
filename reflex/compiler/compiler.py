@@ -430,7 +430,9 @@ def compile_document_root(
         The path and code of the compiled document root.
     """
     # Get the path for the output file.
-    output_path = utils.get_page_path(constants.PageNames.DOCUMENT_ROOT)
+    output_path = str(
+        get_web_dir() / constants.Dirs.PAGES / constants.PageNames.DOCUMENT_ROOT
+    )
 
     # Create the document root.
     document_root = utils.create_document_root(

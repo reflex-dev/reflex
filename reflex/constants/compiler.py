@@ -89,7 +89,7 @@ class PageNames(SimpleNamespace):
     # The root stylesheet filename.
     STYLESHEET_ROOT = "styles"
     # The name of the document root page.
-    DOCUMENT_ROOT = "_document"
+    DOCUMENT_ROOT = "_document.jsx"
     # The name of the theme page.
     THEME = "theme"
     # The module containing components.

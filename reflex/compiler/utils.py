@@ -14,7 +14,8 @@ from pydantic.v1.fields import ModelField
 
 from reflex import constants
 from reflex.components.base import Description, Image, Meta, Scripts, Title
-from reflex.components.base.document import ScrollRestoration
+from reflex.components.base.document import Links, ScrollRestoration
+from reflex.components.base.document import Meta as ReactMeta
 from reflex.components.component import Component, ComponentStyle, CustomComponent
 from reflex.components.el.elements.metadata import Head
 from reflex.components.el.elements.other import Html
@@ -342,7 +343,12 @@ def create_document_root(
     Returns:
         The document root.
     """
-    head_components = head_components or []
+    head_components = head_components or [
+        Meta.create(char_set="utf-8"),
+        Meta.create(name="viewport", content="width=device-width, initial-scale=1"),
+        ReactMeta.create(),
+        Links.create(),
+    ]
     return Html.create(
         Head.create(*head_components),
         Body.create(

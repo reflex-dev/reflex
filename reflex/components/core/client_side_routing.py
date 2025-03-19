@@ -60,7 +60,11 @@ def wait_for_client_redirect(component: Component) -> Component:
 
 
 def default_404_page() -> Component:
-    """Render the default 404 page."""
+    """Render the default 404 page.
+
+    Returns:
+        The 404 page component.
+    """
     import reflex as rx
 
     return rx.el.span("404: Page not found")

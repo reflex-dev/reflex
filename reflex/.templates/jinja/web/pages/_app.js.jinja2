@@ -8,7 +8,8 @@ import '$/styles/styles.css'
 {% block declaration %}
 import { EventLoopProvider, StateProvider, defaultColorMode } from "$/utils/context";
 import { ThemeProvider } from '$/utils/react-theme';
-import { Outlet, Scripts, ScrollRestoration } from 'react-router';
+import { Layout as AppLayout } from './_document';
+import { Outlet } from 'react-router';
 {% for library_alias, library_path in  window_libraries %}
 import * as {{library_alias}} from "{{library_path}}";
 {% endfor %}
@@ -28,20 +29,8 @@ function AppWrap({children}) {
 }
 
 
-export function Layout({ children }) {
-  return (
-    <html lang={"en"}>
-      <head />
-      <body>
-        {children}
-        <Scripts />
-      </body>
-    </html>
-  );
-}
-
-export default function App() {
-  React.useEffect(() => {
+export function Layout({children}) {
+    React.useEffect(() => {
     // Make contexts and state objects available globally for dynamic eval'd components
     let windowImports = {
 {% for library_alias, library_path in  window_libraries %}
@@ -50,16 +39,25 @@ export default function App() {
     };
     window["__reflex"] = windowImports;
   }, []);
+
   return (
-    <ThemeProvider defaultTheme={ defaultColorMode } attribute="class">
-      <StateProvider>
-        <EventLoopProvider>
+    <AppLayout>
+      <ThemeProvider defaultTheme={ defaultColorMode } attribute="class">
+        <StateProvider>
+          <EventLoopProvider>
             <AppWrap>
-              <Outlet />
+              {children}
             </AppWrap>
-        </EventLoopProvider>
-      </StateProvider>
-    </ThemeProvider>
+          </EventLoopProvider>
+        </StateProvider>
+      </ThemeProvider>
+    </AppLayout>
+  )
+}
+
+export default function App() {
+  return (
+    <Outlet />
   );
 }
 
