@@ -417,9 +417,6 @@ def validate_app(reload: bool = False) -> None:
 
     Args:
         reload: Re-import the app module from disk
-
-    Raises:
-        RuntimeError: If the app instance is not an instance of rx.App.
     """
     get_and_validate_app(reload=reload)
 
