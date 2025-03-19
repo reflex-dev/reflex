@@ -205,15 +205,12 @@ def _run(
 
     prerequisites.check_latest_package_version(constants.Reflex.MODULE_NAME)
 
-    if frontend:
-        # Get the app module.
-        app_task = prerequisites.get_compiled_app
-    else:
-        app_task = prerequisites.get_and_validate_app
+    # Get the app module.
+    app_task = prerequisites.compile_app if frontend else prerequisites.validate_app
 
     # Granian fails if the app is already imported.
     if should_use_granian():
-        compile_future = concurrent.futures.ThreadPoolExecutor(max_workers=1).submit(
+        compile_future = concurrent.futures.ProcessPoolExecutor(max_workers=1).submit(
             app_task
         )
         compile_future.result()
