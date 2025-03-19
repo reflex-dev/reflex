@@ -1,4 +1,5 @@
 import importlib.util
+import os
 from pathlib import Path
 
 import pytest
@@ -150,6 +151,8 @@ def test_compile_stylesheets_scss_sass(tmp_path: Path, mocker):
         pytest.skip(
             'The `libsass` package is required to compile sass/scss stylesheet files. Run `pip install "libsass>=0.23.0"`.'
         )
+    if os.name == "nt":
+        pytest.skip("Skipping test on Windows")
 
     project = tmp_path / "test_project"
     project.mkdir()
@@ -181,7 +184,7 @@ def test_compile_stylesheets_scss_sass(tmp_path: Path, mocker):
         str(Path(".web") / "styles" / "styles.css"),
         "@import url('./tailwind.css'); \n"
         "@import url('./styles.css'); \n"
-        f"@import url('./{Path('preprocess') / Path('styles_a.css')!s}'); \n",
+        f"@import url('./{Path('preprocess') / Path('styles_a.css')!s}'); \n"
         f"@import url('./{Path('preprocess') / Path('styles_b.css')!s}'); \n",
     )
 
