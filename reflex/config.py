@@ -932,8 +932,14 @@ class Config(Base):
                     """The `python-dotenv` package is required to load environment variables from a file. Run `pip install "python-dotenv>=1.0.1"`."""
                 )
             else:
-                # load env file if exists
-                load_dotenv(env_file, override=True)
+                # load env files in reverse order if they exist
+                for env_file_path in [
+                    Path(p)
+                    for s in reversed(env_file.split(os.pathsep))
+                    if (p := s.strip())
+                ]:
+                    if env_file_path.exists():
+                        load_dotenv(env_file_path, override=True)
 
         updated_values = {}
         # Iterate over the fields.
