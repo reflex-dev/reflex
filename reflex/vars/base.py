@@ -160,7 +160,7 @@ class VarData:
         if isinstance(hooks, str):
             hooks = [hooks]
         if not isinstance(hooks, dict):
-            hooks = {hook: None for hook in (hooks or [])}
+            hooks = dict.fromkeys(hooks or [])
         immutable_imports: ImmutableParsedImportDict = tuple(
             (k, tuple(v)) for k, v in parse_imports(imports or {}).items()
         )
@@ -1791,8 +1791,7 @@ class cached_property:  # noqa: N801
                     if original_del is not None:
                         original_del(this)
                     return
-                if unique_id in GLOBAL_CACHE:
-                    del GLOBAL_CACHE[unique_id]
+                GLOBAL_CACHE.pop(unique_id, None)
 
                 if original_del is not None:
                     original_del(this)

@@ -412,6 +412,15 @@ def get_and_validate_app(reload: bool = False) -> AppInfo:
     return AppInfo(app=app, module=app_module)
 
 
+def validate_app(reload: bool = False) -> None:
+    """Validate the app instance based on the default config.
+
+    Args:
+        reload: Re-import the app module from disk
+    """
+    get_and_validate_app(reload=reload)
+
+
 def get_compiled_app(reload: bool = False, export: bool = False) -> ModuleType:
     """Get the app module based on the default config after first compiling it.
 
@@ -428,6 +437,16 @@ def get_compiled_app(reload: bool = False, export: bool = False) -> ModuleType:
     app._apply_decorated_pages()
     app._compile(export=export)
     return app_module
+
+
+def compile_app(reload: bool = False, export: bool = False) -> None:
+    """Compile the app module based on the default config.
+
+    Args:
+        reload: Re-import the app module from disk
+        export: Compile the app for export
+    """
+    get_compiled_app(reload=reload, export=export)
 
 
 def get_redis() -> Redis | None:
@@ -1542,7 +1561,7 @@ def create_config_init_app_from_remote_template(app_name: str, template_url: str
         console.error(f"Failed to unzip the template: {uze}")
         raise typer.Exit(1) from uze
 
-    if len(subdirs := os.listdir(unzip_dir)) != 1:
+    if len(subdirs := list(unzip_dir.iterdir())) != 1:
         console.error(f"Expected one directory in the zip, found {subdirs}")
         raise typer.Exit(1)
 

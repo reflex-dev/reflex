@@ -72,13 +72,11 @@ def load_dynamic_serializer():
         rendered_components = {}
         # Include dynamic imports in the shared component.
         if dynamic_imports := component._get_all_dynamic_imports():
-            rendered_components.update(
-                {dynamic_import: None for dynamic_import in dynamic_imports}
-            )
+            rendered_components.update(dict.fromkeys(dynamic_imports))
 
         # Include custom code in the shared component.
         rendered_components.update(
-            {code: None for code in component._get_all_custom_code()},
+            dict.fromkeys(component._get_all_custom_code()),
         )
 
         rendered_components[

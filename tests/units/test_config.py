@@ -289,3 +289,79 @@ def test_env_var():
     assert TestEnv.LIST.get() == [4, 5, 6]
     TestEnv.LIST.set(None)
     assert "LIST" not in os.environ
+
+
+@pytest.fixture
+def restore_env():
+    """Fixture to restore the environment variables after the test.
+
+    Yields:
+        None: Placeholder for the test to run.
+    """
+    original_env = os.environ.copy()
+    yield
+    os.environ.clear()
+    os.environ.update(original_env)
+
+
+@pytest.mark.usefixtures("restore_env")
+@pytest.mark.parametrize(
+    ("file_map", "env_file", "exp_env_vars"),
+    [
+        (
+            {
+                ".env": "APP_NAME=my_test_app\nFRONTEND_PORT=3001\nBACKEND_PORT=8001\n",
+            },
+            "{path}/.env",
+            {
+                "APP_NAME": "my_test_app",
+                "FRONTEND_PORT": "3001",
+                "BACKEND_PORT": "8001",
+            },
+        ),
+        (
+            {
+                ".env": "FRONTEND_PORT=4001",
+            },
+            "{path}/.env{sep}{path}/.env.local",
+            {
+                "FRONTEND_PORT": "4001",
+            },
+        ),
+        (
+            {
+                ".env": "APP_NAME=my_test_app\nFRONTEND_PORT=3001\nBACKEND_PORT=8001\n",
+                ".env.local": "FRONTEND_PORT=3002\n",
+            },
+            "{path}/.env.local{sep}{path}/.env",
+            {
+                "APP_NAME": "my_test_app",
+                "FRONTEND_PORT": "3002",  # Overrides .env
+                "BACKEND_PORT": "8001",
+            },
+        ),
+    ],
+)
+def test_env_file(
+    tmp_path: Path,
+    file_map: dict[str, str],
+    env_file: str,
+    exp_env_vars: dict[str, str],
+) -> None:
+    """Test that the env_file method loads environment variables from a file.
+
+    Args:
+        tmp_path: The pytest tmp_path object.
+        file_map: A mapping of file names to their contents.
+        env_file: The path to the environment file to load.
+        exp_env_vars: The expected environment variables after loading the file.
+    """
+    for filename, content in file_map.items():
+        (tmp_path / filename).write_text(content)
+
+    _ = rx.Config(
+        app_name="test_env_file",
+        env_file=env_file.format(path=tmp_path, sep=os.pathsep),
+    )
+    for key, value in exp_env_vars.items():
+        assert os.environ.get(key) == value
