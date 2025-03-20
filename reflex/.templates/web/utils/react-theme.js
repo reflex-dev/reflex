@@ -1,4 +1,10 @@
-import { createContext, useContext, useState, useEffect } from "react";
+import {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  createElement,
+} from "react";
 
 const ThemeContext = createContext();
 
@@ -51,10 +57,10 @@ export function ThemeProvider({ children }) {
     localStorage.setItem("theme", theme);
   }, [theme]);
 
-  return (
-    <ThemeContext.Provider value={{ theme, resolvedTheme, setTheme }}>
-      {children}
-    </ThemeContext.Provider>
+  return createElement(
+    ThemeContext.Provider,
+    { value: { theme, resolvedTheme, setTheme } },
+    children
   );
 }
 

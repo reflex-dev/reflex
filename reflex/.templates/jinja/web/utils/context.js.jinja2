@@ -1,4 +1,4 @@
-import { createContext, useContext, useMemo, useReducer, useState } from "react"
+import { createContext, useContext, useMemo, useReducer, useState, createElement } from "react"
 import { applyDelta, Event, hydrateClientStorage, useEventLoop, refs } from "$/utils/state"
 
 {% if initial_state %}
@@ -77,11 +77,11 @@ export function UploadFilesProvider({ children }) {
     delete newFilesById[id]
     return newFilesById
   })
-  return (
-    <UploadFilesContext value={[filesById, setFilesById]}>
-      {children}
-    </UploadFilesContext>
-  )
+  return createElement(
+    UploadFilesContext.Provider,
+    { value: [filesById, setFilesById] },
+    children
+  );
 }
 
 export function EventLoopProvider({ children }) {
@@ -91,11 +91,11 @@ export function EventLoopProvider({ children }) {
     initialEvents,
     clientStorage,
   )
-  return (
-    <EventLoopContext value={[addEvents, connectErrors]}>
-      {children}
-    </EventLoopContext>
-  )
+  return createElement(
+    EventLoopContext.Provider,
+    { value: [addEvents, connectErrors] },
+    children
+  );
 }
 
 export function StateProvider({ children }) {
@@ -112,13 +112,17 @@ export function StateProvider({ children }) {
 
   return (
     {% for state_name in initial_state %}
-    <StateContexts.{{state_name|var_name}} value={ {{state_name|var_name}} }>
+    createElement(
+      StateContexts.{{state_name|var_name}},
+      { value: {{state_name|var_name}} },
     {% endfor %}
-      <DispatchContext value={dispatchers}>
-        {children}
-      </DispatchContext>
+    createElement(
+      DispatchContext,
+      { value: dispatchers },
+      children
+    )
     {% for state_name in initial_state|reverse %}
-    </StateContexts.{{state_name|var_name}}>
+    )
     {% endfor %}
   )
 }

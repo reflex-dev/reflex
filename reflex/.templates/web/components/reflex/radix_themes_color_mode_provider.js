@@ -1,5 +1,5 @@
 import { useTheme } from "$/utils/react-theme";
-import { useEffect, useState } from "react";
+import { useEffect, useState, createElement } from "react";
 import {
   ColorModeContext,
   defaultColorMode,
@@ -11,7 +11,7 @@ export default function RadixThemesColorModeProvider({ children }) {
   const { theme, resolvedTheme, setTheme } = useTheme();
   const [rawColorMode, setRawColorMode] = useState(defaultColorMode);
   const [resolvedColorMode, setResolvedColorMode] = useState(
-    defaultColorMode === "dark" ? "dark" : "light",
+    defaultColorMode === "dark" ? "dark" : "light"
   );
 
   useEffect(() => {
@@ -36,17 +36,22 @@ export default function RadixThemesColorModeProvider({ children }) {
     const allowedModes = ["light", "dark", "system"];
     if (!allowedModes.includes(mode)) {
       console.error(
-        `Invalid color mode "${mode}". Defaulting to "${defaultColorMode}".`,
+        `Invalid color mode "${mode}". Defaulting to "${defaultColorMode}".`
       );
       mode = defaultColorMode;
     }
     setTheme(mode);
   };
-  return (
-    <ColorModeContext
-      value={{ rawColorMode, resolvedColorMode, toggleColorMode, setColorMode }}
-    >
-      {children}
-    </ColorModeContext>
+  return createElement(
+    ColorModeContext.Provider,
+    {
+      value: {
+        rawColorMode,
+        resolvedColorMode,
+        toggleColorMode,
+        setColorMode,
+      },
+    },
+    children
   );
 }
