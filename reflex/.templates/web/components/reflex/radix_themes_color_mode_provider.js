@@ -11,7 +11,7 @@ export default function RadixThemesColorModeProvider({ children }) {
   const { theme, resolvedTheme, setTheme } = useTheme();
   const [rawColorMode, setRawColorMode] = useState(defaultColorMode);
   const [resolvedColorMode, setResolvedColorMode] = useState(
-    defaultColorMode === "dark" ? "dark" : "light"
+    defaultColorMode === "dark" ? "dark" : "light",
   );
 
   useEffect(() => {
@@ -36,7 +36,7 @@ export default function RadixThemesColorModeProvider({ children }) {
     const allowedModes = ["light", "dark", "system"];
     if (!allowedModes.includes(mode)) {
       console.error(
-        `Invalid color mode "${mode}". Defaulting to "${defaultColorMode}".`
+        `Invalid color mode "${mode}". Defaulting to "${defaultColorMode}".`,
       );
       mode = defaultColorMode;
     }
@@ -52,6 +52,6 @@ export default function RadixThemesColorModeProvider({ children }) {
         setColorMode,
       },
     },
-    children
+    children,
   );
 }

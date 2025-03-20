@@ -448,7 +448,7 @@ def format_props(*single_props, **key_value_props) -> list[str]:
         )
         for name, prop in sorted(key_value_props.items())
         if prop is not None
-    ] + [(f"{LiteralVar.create(prop)!s}") for prop in single_props]
+    ] + [(f"...{LiteralVar.create(prop)!s}") for prop in single_props]
 
 
 def get_event_handler_parts(handler: EventHandler) -> tuple[str, str]:

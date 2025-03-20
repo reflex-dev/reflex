@@ -60,7 +60,7 @@ export function ThemeProvider({ children }) {
   return createElement(
     ThemeContext.Provider,
     { value: { theme, resolvedTheme, setTheme } },
-    children
+    children,
   );
 }
 
