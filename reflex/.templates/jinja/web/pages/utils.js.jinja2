@@ -39,7 +39,13 @@ jsx(
 {# Args: #}
 {#     component: component dictionary #}
 {% macro render_tag(component) %}
-jsx({{ component.name }}, {{- render_props(component.props) -}},
+jsx(
+  {% if component.name|length %}
+  {{ component.name }},
+  {%- else -%}
+  Fragment,
+  {% endif -%}
+  {{- render_props(component.props) -}},
   {%- if component.contents|length -%}
     {{- component.contents -}},
   {%- endif -%}
