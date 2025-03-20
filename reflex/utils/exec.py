@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import hashlib
+import importlib.util
 import json
 import os
 import platform
@@ -19,6 +20,7 @@ from reflex import constants
 from reflex.config import environment, get_config
 from reflex.constants.base import LogLevel
 from reflex.utils import console, path_ops
+from reflex.utils.decorator import once
 from reflex.utils.prerequisites import get_web_dir
 
 # For uvicorn windows bug fix (#2335)
@@ -185,13 +187,28 @@ def run_frontend_prod(root: Path, port: str, backend_present: bool = True):
     )
 
 
+@once
+def _warn_user_about_uvicorn():
+    console.warn(
+        "Using Uvicorn for backend as it is installed. This behavior will change in 0.8.0 to use Granian by default."
+    )
+
+
 def should_use_granian():
     """Whether to use Granian for backend.
 
     Returns:
         True if Granian should be used.
     """
-    return environment.REFLEX_USE_GRANIAN.get()
+    if environment.REFLEX_USE_GRANIAN.get():
+        return True
+    if (
+        importlib.util.find_spec("uvicorn") is None
+        or importlib.util.find_spec("gunicorn") is None
+    ):
+        return True
+    _warn_user_about_uvicorn()
+    return False
 
 
 def get_app_module():
@@ -200,22 +217,9 @@ def get_app_module():
     Returns:
         The app module for the backend.
     """
-    return f"reflex.app_module_for_backend:{constants.CompileVars.APP}"
+    config = get_config()
 
-
-def get_granian_target():
-    """Get the Granian target for the backend.
-
-    Returns:
-        The Granian target for the backend.
-    """
-    import reflex
-
-    app_module_path = Path(reflex.__file__).parent / "app_module_for_backend.py"
-
-    return (
-        f"{app_module_path!s}:{constants.CompileVars.APP}.{constants.CompileVars.API}"
-    )
+    return f"{config.module}:{constants.CompileVars.APP}"
 
 
 def run_backend(
@@ -317,7 +321,8 @@ def run_uvicorn_backend(host: str, port: int, loglevel: LogLevel):
     import uvicorn
 
     uvicorn.run(
-        app=f"{get_app_module()}.{constants.CompileVars.API}",
+        app=f"{get_app_module()}",
+        factory=True,
         host=host,
         port=port,
         log_level=loglevel.value,
@@ -335,36 +340,87 @@ def run_granian_backend(host: str, port: int, loglevel: LogLevel):
         loglevel: The log level.
     """
     console.debug("Using Granian for backend")
-    try:
-        from granian.constants import Interfaces
-        from granian.log import LogLevels
-        from granian.server import Server as Granian
 
-        Granian(
-            target=get_granian_target(),
-            address=host,
-            port=port,
-            interface=Interfaces.ASGI,
-            log_level=LogLevels(loglevel.value),
-            reload=True,
-            reload_paths=get_reload_paths(),
-        ).serve()
-    except ImportError:
-        console.error(
-            'InstallError: REFLEX_USE_GRANIAN is set but `granian` is not installed. (run `pip install "granian[reload]>=1.6.0"`)'
-        )
-        os._exit(1)
+    from granian.constants import Interfaces
+    from granian.log import LogLevels
+    from granian.server import MPServer as Granian
+
+    Granian(
+        target=get_app_module(),
+        factory=True,
+        address=host,
+        port=port,
+        interface=Interfaces.ASGI,
+        log_level=LogLevels(loglevel.value),
+        reload=True,
+        reload_paths=get_reload_paths(),
+    ).serve()
 
 
+@once
 def _get_backend_workers():
     from reflex.utils import processes
 
     config = get_config()
+
+    if config.gunicorn_workers is not None:
+        console.deprecate(
+            "config.gunicorn_workers",
+            reason="If you're using Granian, use GRANIAN_WORKERS instead.",
+            deprecation_version="0.7.4",
+            removal_version="0.8.0",
+        )
+
     return (
         processes.get_num_workers()
         if not config.gunicorn_workers
         else config.gunicorn_workers
     )
+
+
+@once
+def _get_backend_timeout():
+    config = get_config()
+
+    if config.timeout is not None:
+        console.deprecate(
+            "config.timeout",
+            reason="If you're using Granian, use GRANIAN_WORKERS_LIFETIME instead.",
+            deprecation_version="0.7.4",
+            removal_version="0.8.0",
+        )
+
+    return config.timeout
+
+
+@once
+def _get_backend_max_requests():
+    config = get_config()
+
+    if config.gunicorn_max_requests is not None:
+        console.deprecate(
+            "config.gunicorn_max_requests",
+            reason="",
+            deprecation_version="0.7.4",
+            removal_version="0.8.0",
+        )
+
+    return config.gunicorn_max_requests
+
+
+@once
+def _get_backend_max_requests_jitter():
+    config = get_config()
+
+    if config.gunicorn_max_requests_jitter is not None:
+        console.deprecate(
+            "config.gunicorn_max_requests_jitter",
+            reason="",
+            deprecation_version="0.7.4",
+            removal_version="0.8.0",
+        )
+
+    return config.gunicorn_max_requests_jitter
 
 
 def run_backend_prod(
@@ -408,17 +464,25 @@ def run_uvicorn_backend_prod(host: str, port: int, loglevel: LogLevel):
         [
             "uvicorn",
             *(
-                [
+                (
                     "--limit-max-requests",
-                    str(config.gunicorn_max_requests),
-                ]
-                if config.gunicorn_max_requests > 0
-                else []
+                    str(max_requessts),
+                )
+                if (
+                    (max_requessts := _get_backend_max_requests()) is not None
+                    and max_requessts > 0
+                )
+                else ()
             ),
-            *("--timeout-keep-alive", str(config.timeout)),
+            *(
+                ("--timeout-keep-alive", str(timeout))
+                if (timeout := _get_backend_timeout()) is not None
+                else ()
+            ),
             *("--host", host),
             *("--port", str(port)),
             *("--workers", str(_get_backend_workers())),
+            "--factory",
             app_module,
         ]
         if constants.IS_WINDOWS
@@ -426,17 +490,34 @@ def run_uvicorn_backend_prod(host: str, port: int, loglevel: LogLevel):
             "gunicorn",
             *("--worker-class", config.gunicorn_worker_class),
             *(
-                [
+                (
                     "--max-requests",
-                    str(config.gunicorn_max_requests),
+                    str(max_requessts),
+                )
+                if (
+                    (max_requessts := _get_backend_max_requests()) is not None
+                    and max_requessts > 0
+                )
+                else ()
+            ),
+            *(
+                (
                     "--max-requests-jitter",
-                    str(config.gunicorn_max_requests_jitter),
-                ]
-                if config.gunicorn_max_requests > 0
-                else []
+                    str(max_requessts_jitter),
+                )
+                if (
+                    (max_requessts_jitter := _get_backend_max_requests_jitter())
+                    is not None
+                    and max_requessts_jitter > 0
+                )
+                else ()
             ),
             "--preload",
-            *("--timeout", str(config.timeout)),
+            *(
+                ("--timeout", str(timeout))
+                if (timeout := _get_backend_timeout()) is not None
+                else ()
+            ),
             *("--bind", f"{host}:{port}"),
             *("--threads", str(_get_backend_workers())),
             f"{app_module}()",
@@ -472,17 +553,12 @@ def run_granian_backend_prod(host: str, port: int, loglevel: LogLevel):
 
         command = [
             "granian",
-            "--workers",
-            str(_get_backend_workers()),
-            "--log-level",
-            "critical",
-            "--host",
-            host,
-            "--port",
-            str(port),
-            "--interface",
-            str(Interfaces.ASGI),
-            get_granian_target(),
+            *("--workers", str(_get_backend_workers())),
+            *("--log-level", "critical"),
+            *("--host", host),
+            *("--port", str(port)),
+            *("--interface", str(Interfaces.ASGI)),
+            *("--factory", get_app_module()),
         ]
         processes.new_process(
             command,

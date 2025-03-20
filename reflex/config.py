@@ -30,7 +30,6 @@ from typing import (
 )
 
 import pydantic.v1 as pydantic
-from reflex_cli.constants.hosting import Hosting
 
 from reflex import constants
 from reflex.base import Base
@@ -602,7 +601,7 @@ class EnvironmentVariables:
     # The npm registry to use.
     NPM_CONFIG_REGISTRY: EnvVar[str | None] = env_var(None)
 
-    # Whether to use Granian for the backend. Otherwise, use Uvicorn.
+    # Whether to use Granian for the backend. By default, the backend uses Uvicorn if available.
     REFLEX_USE_GRANIAN: EnvVar[bool] = env_var(False)
 
     # The username to use for authentication on python package repository. Username and password must both be provided.
@@ -807,8 +806,8 @@ class Config(Base):
     # Tailwind config.
     tailwind: dict[str, Any] | None = {"plugins": ["@tailwindcss/typography"]}
 
-    # Timeout when launching the gunicorn server. TODO(rename this to backend_timeout?)
-    timeout: int = 120
+    # DEPRECATED. Timeout when launching the gunicorn server.
+    timeout: int | None = None
 
     # Whether to enable or disable nextJS gzip compression.
     next_compression: bool = True
@@ -819,22 +818,17 @@ class Config(Base):
     # Additional frontend packages to install.
     frontend_packages: list[str] = []
 
-    # The hosting service backend URL.
-    cp_backend_url: str = Hosting.HOSTING_SERVICE
-    # The hosting service frontend URL.
-    cp_web_url: str = Hosting.HOSTING_SERVICE_UI
-
-    # The worker class used in production mode
+    # DEPRECATED. The worker class used in production mode
     gunicorn_worker_class: str = "uvicorn.workers.UvicornH11Worker"
 
-    # Number of gunicorn workers from user
+    # DEPRECATED. Number of gunicorn workers from user
     gunicorn_workers: int | None = None
 
-    # Number of requests before a worker is restarted; set to 0 to disable
-    gunicorn_max_requests: int = 100
+    # DEPRECATED. Number of requests before a worker is restarted; set to 0 to disable
+    gunicorn_max_requests: int | None = None
 
-    # Variance limit for max requests; gunicorn only
-    gunicorn_max_requests_jitter: int = 25
+    # DEPRECATED. Variance limit for max requests; gunicorn only
+    gunicorn_max_requests_jitter: int | None = None
 
     # Indicate which type of state manager to use
     state_manager_mode: constants.StateManagerMode = constants.StateManagerMode.DISK

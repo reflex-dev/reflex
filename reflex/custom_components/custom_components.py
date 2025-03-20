@@ -826,11 +826,18 @@ def _collect_details_for_gallery():
     Raises:
         Exit: If pyproject.toml file is ill-formed or the request to the backend services fails.
     """
+    import reflex_cli.constants
     from reflex_cli.utils import hosting
 
     console.rule("[bold]Authentication with Reflex Services")
     console.print("First let's log in to Reflex backend services.")
     access_token, _ = hosting.authenticated_token()
+
+    if not access_token:
+        console.error(
+            "Unable to authenticate with Reflex backend services. Make sure you are logged in."
+        )
+        raise typer.Exit(code=1)
 
     console.rule("[bold]Custom Component Information")
     params = {}
@@ -845,10 +852,8 @@ def _collect_details_for_gallery():
     console.print(f"[ Custom component package name ] : {package_name}")
     params["package_name"] = package_name
 
-    config = get_config()
-
     post_custom_components_gallery_endpoint = (
-        f"{config.cp_backend_url}/custom-components/gallery"
+        f"{reflex_cli.constants.Hosting.HOSTING_SERVICE}/custom-components/gallery"
     )
 
     # Check the backend services if the user is allowed to update information of this package is already shared.
