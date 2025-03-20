@@ -609,7 +609,7 @@ def purge_web_pages_dir():
         return
 
     # Empty out the web pages directory.
-    utils.empty_dir(get_web_dir() / constants.Dirs.PAGES, keep_files=["_app.js"])
+    utils.empty_dir(get_web_dir() / constants.Dirs.PAGES, keep_files=["routes.js"])
 
 
 if TYPE_CHECKING:
