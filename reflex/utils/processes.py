@@ -10,7 +10,7 @@ import signal
 import subprocess
 from concurrent import futures
 from pathlib import Path
-from typing import Callable, Generator, Sequence, Tuple
+from typing import Any, Callable, Generator, Sequence, Tuple
 
 import psutil
 import typer
@@ -197,7 +197,7 @@ def new_process(
 
 @contextlib.contextmanager
 def run_concurrently_context(
-    *fns: Callable | Tuple,
+    *fns: Callable[..., Any] | tuple[Callable[..., Any], ...],
 ) -> Generator[list[futures.Future], None, None]:
     """Run functions concurrently in a thread pool.
 
@@ -213,14 +213,14 @@ def run_concurrently_context(
         return
 
     # Convert the functions to tuples.
-    fns = [fn if isinstance(fn, tuple) else (fn,) for fn in fns]  # pyright: ignore [reportAssignmentType]
+    fns = tuple(fn if isinstance(fn, tuple) else (fn,) for fn in fns)
 
     # Run the functions concurrently.
     executor = None
     try:
         executor = futures.ThreadPoolExecutor(max_workers=len(fns))
         # Submit the tasks.
-        tasks = [executor.submit(*fn) for fn in fns]  # pyright: ignore [reportArgumentType]
+        tasks = [executor.submit(*fn) for fn in fns]
 
         # Yield control back to the main thread while tasks are running.
         yield tasks

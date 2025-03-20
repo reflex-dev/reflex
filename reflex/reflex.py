@@ -3,12 +3,11 @@
 from __future__ import annotations
 
 import atexit
-import concurrent.futures
 from pathlib import Path
 
 import typer
 import typer.core
-from reflex_cli.v2.deployments import check_version, hosting_cli
+from reflex_cli.v2.deployments import hosting_cli
 
 from reflex import constants
 from reflex.config import environment, get_config
@@ -210,6 +209,8 @@ def _run(
 
     # Granian fails if the app is already imported.
     if should_use_granian():
+        import concurrent.futures
+
         compile_future = concurrent.futures.ProcessPoolExecutor(max_workers=1).submit(
             app_task
         )
@@ -396,6 +397,7 @@ def export(
 def login(loglevel: constants.LogLevel | None = typer.Option(None)):
     """Authenticate with experimental Reflex hosting service."""
     from reflex_cli.v2 import cli as hosting_cli
+    from reflex_cli.v2.deployments import check_version
 
     loglevel = loglevel or get_config().loglevel
 
@@ -417,6 +419,7 @@ def logout(
 ):
     """Log out of access to Reflex hosting service."""
     from reflex_cli.v2.cli import logout
+    from reflex_cli.v2.deployments import check_version
 
     check_version()
 
@@ -577,6 +580,7 @@ def deploy(
     from reflex_cli.constants.base import LogLevel as HostingLogLevel
     from reflex_cli.utils import dependency
     from reflex_cli.v2 import cli as hosting_cli
+    from reflex_cli.v2.deployments import check_version
 
     from reflex.utils import export as export_utils
     from reflex.utils import prerequisites
