@@ -5,9 +5,8 @@ import JSON5 from "json5";
 import env from "$/env.json";
 import reflexEnvironment from "$/reflex.json";
 import Cookies from "universal-cookie";
-import { useEffect, useRef, useState, useContext } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate, useLocation, useSearchParams } from "react-router-dom";
-import { UNSAFE_NavigationContext } from "react-router-dom";
 import {
   initialEvents,
   initialState,

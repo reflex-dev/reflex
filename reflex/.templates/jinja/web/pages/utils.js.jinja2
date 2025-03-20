@@ -30,7 +30,7 @@ jsx(
   {{- render_props(component.props) }},
   {{- component.contents }}
 )
-{%- else %}
+{%- elif component.contents|length %}
   {{- component.contents }}
 {%- endif %}
 {% endmacro %}
