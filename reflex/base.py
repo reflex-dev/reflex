@@ -128,5 +128,5 @@ class Base(BaseModel):
         if isinstance(key, str):
             # Seems like this function signature was wrong all along?
             # If the user wants a field that we know of, get it and pass it off to _get_value
-            return getattr(self, key, key)
+            return getattr(self, key)
         return key
