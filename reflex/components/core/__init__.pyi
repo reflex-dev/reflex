@@ -25,6 +25,7 @@ from .debounce import DebounceInput as DebounceInput
 from .debounce import debounce_input as debounce_input
 from .foreach import Foreach as Foreach
 from .foreach import foreach as foreach
+from .helmet import Helmet as Helmet
 from .html import Html as Html
 from .html import html as html
 from .match import Match as Match

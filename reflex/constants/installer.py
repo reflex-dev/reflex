@@ -86,6 +86,7 @@ class PackageJson(SimpleNamespace):
         "json5": "2.2.3",
         "react-router": "7.3.0",
         "react-router-dom": "7.3.0",
+        "react-helmet": "6.1.0",
         "@react-router/node": "7.3.0",
         "@react-router/serve": "7.3.0",
         "react": "19.0.0",
