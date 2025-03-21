@@ -179,7 +179,7 @@ def TestEventAction():
             on_submit=EventActionState.on_submit,  # pyright: ignore [reportCallIssue]
         )
 
-    app = rx.App(_state=rx.State)
+    app = rx.App()
     app.add_page(index)  # pyright: ignore [reportArgumentType]
 
 

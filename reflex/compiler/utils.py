@@ -7,7 +7,7 @@ import concurrent.futures
 import traceback
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Callable, Type
+from typing import Any, Type
 from urllib.parse import urlparse
 
 from pydantic.v1.fields import ModelField
@@ -371,7 +371,7 @@ def create_theme(style: ComponentStyle) -> dict:
         The base style for the app.
     """
     # Get the global style from the style dict.
-    style_rules = Style({k: v for k, v in style.items() if not isinstance(k, Callable)})
+    style_rules = Style({k: v for k, v in style.items() if isinstance(k, str)})
 
     root_style = {
         # Root styles.

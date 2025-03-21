@@ -1,7 +1,7 @@
 """rx.match."""
 
 import textwrap
-from typing import Any, Dict, List
+from typing import Any, Dict
 
 from reflex.components.base import Fragment
 from reflex.components.component import BaseComponent, Component, MemoizationLeaf
@@ -123,7 +123,7 @@ class Match(MemoizationLeaf):
         return case_element
 
     @classmethod
-    def _process_match_cases(cls, cases: List) -> list[list[Var]]:
+    def _process_match_cases(cls, cases: list) -> list[list[Var]]:
         """Process the individual match cases.
 
         Args:

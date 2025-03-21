@@ -55,6 +55,10 @@ EXCLUDED_PROPS = [
     "State",
 ]
 
+OVERWRITE_TYPES = {
+    "style": "Sequence[Mapping[str, Any]] | Mapping[str, Any] | Var[Mapping[str, Any]] | Breakpoints | None",
+}
+
 DEFAULT_TYPING_IMPORTS = {
     "overload",
     "Any",
@@ -62,6 +66,7 @@ DEFAULT_TYPING_IMPORTS = {
     "Dict",
     # "List",
     "Sequence",
+    "Mapping",
     "Literal",
     "Optional",
     "Union",
@@ -377,7 +382,9 @@ def _extract_class_props_as_ast_nodes(
                     ast.arg(
                         arg=name,
                         annotation=ast.Name(
-                            id=_get_type_hint(value, type_hint_globals)
+                            id=OVERWRITE_TYPES.get(
+                                name, _get_type_hint(value, type_hint_globals)
+                            )
                         ),
                     ),
                     ast.Constant(value=default),

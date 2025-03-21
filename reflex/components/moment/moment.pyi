@@ -5,11 +5,11 @@
 # ------------------------------------------------------
 import dataclasses
 from datetime import date, datetime, time, timedelta
-from typing import Any, Optional, overload
+from typing import Any, Mapping, Optional, Sequence, overload
 
 from reflex.components.component import NoSSRComponent
+from reflex.components.core.breakpoints import Breakpoints
 from reflex.event import EventType
-from reflex.style import Style
 from reflex.utils.imports import ImportDict
 from reflex.vars.base import Var
 
@@ -59,7 +59,11 @@ class Moment(NoSSRComponent):
         local: Var[bool] | bool | None = None,
         tz: Var[str] | str | None = None,
         locale: Var[str] | str | None = None,
-        style: Style | None = None,
+        style: Sequence[Mapping[str, Any]]
+        | Mapping[str, Any]
+        | Var[Mapping[str, Any]]
+        | Breakpoints
+        | None = None,
         key: Any | None = None,
         id: Any | None = None,
         class_name: Any | None = None,

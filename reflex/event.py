@@ -14,7 +14,6 @@ from typing import (
     Any,
     Callable,
     Generic,
-    List,
     Protocol,
     Sequence,
     Type,
@@ -449,7 +448,7 @@ class EventChain(EventActionsMixin):
             value = [value]
 
         # If the input is a list of event handlers, create an event chain.
-        if isinstance(value, List):
+        if isinstance(value, list):
             events: list[EventSpec | EventVar] = []
             for v in value:
                 if isinstance(v, (EventHandler, EventSpec)):
@@ -1552,7 +1551,7 @@ def fix_events(
         return []
 
     # If the handler returns a single event, wrap it in a list.
-    if not isinstance(events, List):
+    if not isinstance(events, list):
         events = [events]
 
     # Fix the events created by the handler.

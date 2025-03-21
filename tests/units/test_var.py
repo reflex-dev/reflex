@@ -1829,7 +1829,7 @@ def test_computed_var_deps(deps: list[str | Var], expected: set[str]):
         ["", "abc"],
     ],
 )
-def test_invalid_computed_var_deps(deps: List):
+def test_invalid_computed_var_deps(deps: list):
     with pytest.raises(TypeError):
 
         @computed_var(deps=deps)

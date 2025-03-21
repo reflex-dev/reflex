@@ -25,7 +25,7 @@ def ExtraOverlay():
             ),
         )
 
-    app = rx.App(_state=rx.State)
+    app = rx.App()
     app.add_page(index)
 
 
