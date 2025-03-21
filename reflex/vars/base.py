@@ -3016,41 +3016,6 @@ _decode_var_pattern = re.compile(_decode_var_pattern_re, flags=re.DOTALL)
 _global_vars: dict[int, Var] = {}
 
 
-def _extract_var_data(value: Iterable) -> list[VarData | None]:
-    """Extract the var imports and hooks from an iterable containing a Var.
-
-    Args:
-        value: The iterable to extract the VarData from
-
-    Returns:
-        The extracted VarDatas.
-    """
-    from reflex.style import Style
-    from reflex.vars import Var
-
-    var_datas = []
-    with contextlib.suppress(TypeError):
-        for sub in value:
-            if isinstance(sub, Var):
-                var_datas.append(sub._var_data)
-            elif not isinstance(sub, str):
-                # Recurse into dict values.
-                if hasattr(sub, "values") and callable(sub.values):
-                    var_datas.extend(_extract_var_data(sub.values()))  # pyright: ignore [reportArgumentType]
-                # Recurse into iterable values (or dict keys).
-                var_datas.extend(_extract_var_data(sub))
-
-    # Style objects should already have _var_data.
-    if isinstance(value, Style):
-        var_datas.append(value._var_data)
-    else:
-        # Recurse when value is a dict itself.
-        values = getattr(value, "values", None)
-        if callable(values):
-            var_datas.extend(_extract_var_data(values()))  # pyright: ignore [reportArgumentType]
-    return var_datas
-
-
 dispatchers: dict[GenericType, Callable[[Var], Var]] = {}
 
 

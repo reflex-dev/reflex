@@ -183,7 +183,7 @@ def get_node_version() -> version.Version | None:
     try:
         result = processes.new_process([node_path, "-v"], run=True)
         # The output will be in the form "vX.Y.Z", but version.parse() can handle it
-        return version.parse(result.stdout)  # pyright: ignore [reportArgumentType]
+        return version.parse(result.stdout)
     except (FileNotFoundError, TypeError):
         return None
 
@@ -200,7 +200,7 @@ def get_bun_version() -> version.Version | None:
     try:
         # Run the bun -v command and capture the output
         result = processes.new_process([str(bun_path), "-v"], run=True)
-        return version.parse(str(result.stdout))  # pyright: ignore [reportArgumentType]
+        return version.parse(str(result.stdout))
     except FileNotFoundError:
         return None
     except version.InvalidVersion as e:

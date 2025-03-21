@@ -61,13 +61,7 @@ def raise_unsupported_operand_types(
 class NumberVar(Var[NUMBER_T], python_types=(int, float)):
     """Base class for immutable number vars."""
 
-    @overload
-    def __add__(self, other: number_types) -> NumberVar: ...
-
-    @overload
-    def __add__(self, other: NoReturn) -> NoReturn: ...  # pyright: ignore [reportOverlappingOverload]
-
-    def __add__(self, other: Any):
+    def __add__(self, other: number_types) -> NumberVar:
         """Add two numbers.
 
         Args:
@@ -80,13 +74,7 @@ class NumberVar(Var[NUMBER_T], python_types=(int, float)):
             raise_unsupported_operand_types("+", (type(self), type(other)))
         return number_add_operation(self, +other)
 
-    @overload
-    def __radd__(self, other: number_types) -> NumberVar: ...
-
-    @overload
-    def __radd__(self, other: NoReturn) -> NoReturn: ...  # pyright: ignore [reportOverlappingOverload]
-
-    def __radd__(self, other: Any):
+    def __radd__(self, other: number_types) -> NumberVar:
         """Add two numbers.
 
         Args:
@@ -99,13 +87,7 @@ class NumberVar(Var[NUMBER_T], python_types=(int, float)):
             raise_unsupported_operand_types("+", (type(other), type(self)))
         return number_add_operation(+other, self)
 
-    @overload
-    def __sub__(self, other: number_types) -> NumberVar: ...
-
-    @overload
-    def __sub__(self, other: NoReturn) -> NoReturn: ...  # pyright: ignore [reportOverlappingOverload]
-
-    def __sub__(self, other: Any):
+    def __sub__(self, other: number_types) -> NumberVar:
         """Subtract two numbers.
 
         Args:
@@ -119,13 +101,7 @@ class NumberVar(Var[NUMBER_T], python_types=(int, float)):
 
         return number_subtract_operation(self, +other)
 
-    @overload
-    def __rsub__(self, other: number_types) -> NumberVar: ...
-
-    @overload
-    def __rsub__(self, other: NoReturn) -> NoReturn: ...  # pyright: ignore [reportOverlappingOverload]
-
-    def __rsub__(self, other: Any):
+    def __rsub__(self, other: number_types) -> NumberVar:
         """Subtract two numbers.
 
         Args:
@@ -201,13 +177,7 @@ class NumberVar(Var[NUMBER_T], python_types=(int, float)):
 
         return number_multiply_operation(+other, self)
 
-    @overload
-    def __truediv__(self, other: number_types) -> NumberVar: ...
-
-    @overload
-    def __truediv__(self, other: NoReturn) -> NoReturn: ...  # pyright: ignore [reportOverlappingOverload]
-
-    def __truediv__(self, other: Any):
+    def __truediv__(self, other: number_types) -> NumberVar:
         """Divide two numbers.
 
         Args:
@@ -221,13 +191,7 @@ class NumberVar(Var[NUMBER_T], python_types=(int, float)):
 
         return number_true_division_operation(self, +other)
 
-    @overload
-    def __rtruediv__(self, other: number_types) -> NumberVar: ...
-
-    @overload
-    def __rtruediv__(self, other: NoReturn) -> NoReturn: ...  # pyright: ignore [reportOverlappingOverload]
-
-    def __rtruediv__(self, other: Any):
+    def __rtruediv__(self, other: number_types) -> NumberVar:
         """Divide two numbers.
 
         Args:
@@ -241,13 +205,7 @@ class NumberVar(Var[NUMBER_T], python_types=(int, float)):
 
         return number_true_division_operation(+other, self)
 
-    @overload
-    def __floordiv__(self, other: number_types) -> NumberVar: ...
-
-    @overload
-    def __floordiv__(self, other: NoReturn) -> NoReturn: ...  # pyright: ignore [reportOverlappingOverload]
-
-    def __floordiv__(self, other: Any):
+    def __floordiv__(self, other: number_types) -> NumberVar:
         """Floor divide two numbers.
 
         Args:
@@ -261,13 +219,7 @@ class NumberVar(Var[NUMBER_T], python_types=(int, float)):
 
         return number_floor_division_operation(self, +other)
 
-    @overload
-    def __rfloordiv__(self, other: number_types) -> NumberVar: ...
-
-    @overload
-    def __rfloordiv__(self, other: NoReturn) -> NoReturn: ...  # pyright: ignore [reportOverlappingOverload]
-
-    def __rfloordiv__(self, other: Any):
+    def __rfloordiv__(self, other: number_types) -> NumberVar:
         """Floor divide two numbers.
 
         Args:
@@ -281,13 +233,7 @@ class NumberVar(Var[NUMBER_T], python_types=(int, float)):
 
         return number_floor_division_operation(+other, self)
 
-    @overload
-    def __mod__(self, other: number_types) -> NumberVar: ...
-
-    @overload
-    def __mod__(self, other: NoReturn) -> NoReturn: ...  # pyright: ignore [reportOverlappingOverload]
-
-    def __mod__(self, other: Any):
+    def __mod__(self, other: number_types) -> NumberVar:
         """Modulo two numbers.
 
         Args:
@@ -301,13 +247,7 @@ class NumberVar(Var[NUMBER_T], python_types=(int, float)):
 
         return number_modulo_operation(self, +other)
 
-    @overload
-    def __rmod__(self, other: number_types) -> NumberVar: ...
-
-    @overload
-    def __rmod__(self, other: NoReturn) -> NoReturn: ...  # pyright: ignore [reportOverlappingOverload]
-
-    def __rmod__(self, other: Any):
+    def __rmod__(self, other: number_types) -> NumberVar:
         """Modulo two numbers.
 
         Args:
@@ -321,13 +261,7 @@ class NumberVar(Var[NUMBER_T], python_types=(int, float)):
 
         return number_modulo_operation(+other, self)
 
-    @overload
-    def __pow__(self, other: number_types) -> NumberVar: ...
-
-    @overload
-    def __pow__(self, other: NoReturn) -> NoReturn: ...  # pyright: ignore [reportOverlappingOverload]
-
-    def __pow__(self, other: Any):
+    def __pow__(self, other: number_types) -> NumberVar:
         """Exponentiate two numbers.
 
         Args:
@@ -341,13 +275,7 @@ class NumberVar(Var[NUMBER_T], python_types=(int, float)):
 
         return number_exponent_operation(self, +other)
 
-    @overload
-    def __rpow__(self, other: number_types) -> NumberVar: ...
-
-    @overload
-    def __rpow__(self, other: NoReturn) -> NoReturn: ...  # pyright: ignore [reportOverlappingOverload]
-
-    def __rpow__(self, other: Any):
+    def __rpow__(self, other: number_types) -> NumberVar:
         """Exponentiate two numbers.
 
         Args:
@@ -417,13 +345,7 @@ class NumberVar(Var[NUMBER_T], python_types=(int, float)):
         """
         return number_trunc_operation(self)
 
-    @overload
-    def __lt__(self, other: number_types) -> BooleanVar: ...
-
-    @overload
-    def __lt__(self, other: NoReturn) -> NoReturn: ...  # pyright: ignore [reportOverlappingOverload]
-
-    def __lt__(self, other: Any):
+    def __lt__(self, other: number_types) -> BooleanVar:
         """Less than comparison.
 
         Args:
@@ -436,13 +358,7 @@ class NumberVar(Var[NUMBER_T], python_types=(int, float)):
             raise_unsupported_operand_types("<", (type(self), type(other)))
         return less_than_operation(+self, +other)
 
-    @overload
-    def __le__(self, other: number_types) -> BooleanVar: ...
-
-    @overload
-    def __le__(self, other: NoReturn) -> NoReturn: ...  # pyright: ignore [reportOverlappingOverload]
-
-    def __le__(self, other: Any):
+    def __le__(self, other: number_types) -> BooleanVar:
         """Less than or equal comparison.
 
         Args:
@@ -481,13 +397,7 @@ class NumberVar(Var[NUMBER_T], python_types=(int, float)):
             return not_equal_operation(+self, +other)
         return not_equal_operation(self, other)
 
-    @overload
-    def __gt__(self, other: number_types) -> BooleanVar: ...
-
-    @overload
-    def __gt__(self, other: NoReturn) -> NoReturn: ...  # pyright: ignore [reportOverlappingOverload]
-
-    def __gt__(self, other: Any):
+    def __gt__(self, other: number_types) -> BooleanVar:
         """Greater than comparison.
 
         Args:
@@ -500,13 +410,7 @@ class NumberVar(Var[NUMBER_T], python_types=(int, float)):
             raise_unsupported_operand_types(">", (type(self), type(other)))
         return greater_than_operation(+self, +other)
 
-    @overload
-    def __ge__(self, other: number_types) -> BooleanVar: ...
-
-    @overload
-    def __ge__(self, other: NoReturn) -> NoReturn: ...  # pyright: ignore [reportOverlappingOverload]
-
-    def __ge__(self, other: Any):
+    def __ge__(self, other: number_types) -> BooleanVar:
         """Greater than or equal comparison.
 
         Args:

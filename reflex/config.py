@@ -44,7 +44,7 @@ from reflex.utils.types import (
 )
 
 try:
-    from dotenv import load_dotenv  # pyright: ignore [reportMissingImports]
+    from dotenv import load_dotenv
 except ImportError:
     load_dotenv = None
 

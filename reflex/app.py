@@ -1258,7 +1258,9 @@ class App(MiddlewareMixin, LifespanMixin):
             compiler.compile_document_root(
                 self.head_components,
                 html_lang=self.html_lang,
-                html_custom_attrs=self.html_custom_attrs,  # pyright: ignore [reportArgumentType]
+                html_custom_attrs=(
+                    {**self.html_custom_attrs} if self.html_custom_attrs else {}
+                ),
             )
         )
 
