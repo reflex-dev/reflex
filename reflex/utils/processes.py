@@ -10,7 +10,7 @@ import signal
 import subprocess
 from concurrent import futures
 from pathlib import Path
-from typing import Any, Callable, Generator, Sequence, Tuple
+from typing import Any, Callable, Generator, Literal, Sequence, Tuple, overload
 
 import psutil
 import typer
@@ -142,12 +142,30 @@ def handle_port(service_name: str, port: int, auto_increment: bool) -> int:
         raise typer.Exit()
 
 
+@overload
+def new_process(
+    args: str | list[str] | list[str | None] | list[str | Path | None],
+    run: Literal[False] = False,
+    show_logs: bool = False,
+    **kwargs,
+) -> subprocess.Popen[str]: ...
+
+
+@overload
+def new_process(
+    args: str | list[str] | list[str | None] | list[str | Path | None],
+    run: Literal[True],
+    show_logs: bool = False,
+    **kwargs,
+) -> subprocess.CompletedProcess[str]: ...
+
+
 def new_process(
     args: str | list[str] | list[str | None] | list[str | Path | None],
     run: bool = False,
     show_logs: bool = False,
     **kwargs,
-):
+) -> subprocess.CompletedProcess[str] | subprocess.Popen[str]:
     """Wrapper over subprocess.Popen to unify the launch of child processes.
 
     Args:
@@ -163,7 +181,8 @@ def new_process(
         Exit: When attempting to run a command with a None value.
     """
     # Check for invalid command first.
-    if isinstance(args, list) and None in args:
+    non_empty_args = list(filter(None, args)) if isinstance(args, list) else [args]
+    if isinstance(args, list) and len(non_empty_args) != len(args):
         console.error(f"Invalid command: {args}")
         raise typer.Exit(1)
 
@@ -190,9 +209,15 @@ def new_process(
         "errors": "replace",  # Avoid UnicodeDecodeError in unknown command output
         **kwargs,
     }
-    console.debug(f"Running command: {args}")
-    fn = subprocess.run if run else subprocess.Popen
-    return fn(args, **kwargs)  # pyright: ignore [reportCallIssue, reportArgumentType]
+    console.debug(f"Running command: {non_empty_args}")
+
+    def subprocess_p_open(args: subprocess._CMD, **kwargs):
+        return subprocess.Popen(args, **kwargs)
+
+    fn: Callable[..., subprocess.CompletedProcess[str] | subprocess.Popen[str]] = (
+        subprocess.run if run else subprocess_p_open
+    )
+    return fn(non_empty_args, **kwargs)
 
 
 @contextlib.contextmanager
@@ -311,6 +336,7 @@ def show_status(
     process: subprocess.Popen,
     suppress_errors: bool = False,
     analytics_enabled: bool = False,
+    prior_processes: Tuple[subprocess.Popen, ...] = (),
 ):
     """Show the status of a process.
 
@@ -319,15 +345,17 @@ def show_status(
         process: The process.
         suppress_errors: If True, do not exit if errors are encountered (for fallback).
         analytics_enabled: Whether analytics are enabled for this command.
+        prior_processes: The prior processes that have been run.
     """
-    with console.status(message) as status:
-        for line in stream_logs(
-            message,
-            process,
-            suppress_errors=suppress_errors,
-            analytics_enabled=analytics_enabled,
-        ):
-            status.update(f"{message} {line}")
+    for one_process in (*prior_processes, process):
+        with console.status(message) as status:
+            for line in stream_logs(
+                message,
+                one_process,
+                suppress_errors=suppress_errors,
+                analytics_enabled=analytics_enabled,
+            ):
+                status.update(f"{message} {line}")
 
 
 def show_progress(message: str, process: subprocess.Popen, checkpoints: list[str]):
@@ -381,6 +409,7 @@ def run_process_with_fallbacks(
     show_status_message: str,
     fallbacks: str | Sequence[str] | Sequence[Sequence[str]] | None = None,
     analytics_enabled: bool = False,
+    prior_processes: Tuple[subprocess.Popen, ...] = (),
     **kwargs,
 ):
     """Run subprocess and retry using fallback command if initial command fails.
@@ -390,7 +419,8 @@ def run_process_with_fallbacks(
         show_status_message: The status message to be displayed in the console.
         fallbacks: The fallback command to run if the initial command fails.
         analytics_enabled: Whether analytics are enabled for this command.
-        kwargs: Kwargs to pass to new_process function.
+        prior_processes: The prior processes that have been run.
+        **kwargs: Kwargs to pass to new_process function.
     """
     process = new_process(get_command_with_loglevel(args), **kwargs)
     if not fallbacks:
@@ -399,6 +429,7 @@ def run_process_with_fallbacks(
             show_status_message,
             process,
             analytics_enabled=analytics_enabled,
+            prior_processes=prior_processes,
         )
     else:
         # Suppress errors for initial command, because we will try to fallback
@@ -411,7 +442,7 @@ def run_process_with_fallbacks(
             # retry with fallback command.
             fallback_with_args = (
                 [current_fallback, *args[1:]]
-                if isinstance(fallbacks, str)
+                if isinstance(current_fallback, str)
                 else [*current_fallback, *args[1:]]
             )
             console.warn(
@@ -422,6 +453,7 @@ def run_process_with_fallbacks(
                 show_status_message=show_status_message,
                 fallbacks=next_fallbacks,
                 analytics_enabled=analytics_enabled,
+                prior_processes=(*prior_processes, process),
                 **kwargs,
             )
 
