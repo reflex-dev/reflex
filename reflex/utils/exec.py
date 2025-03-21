@@ -353,11 +353,9 @@ def run_granian_backend(host: str, port: int, loglevel: LogLevel):
         address=host,
         port=port,
         interface=Interfaces.ASGI,
-        log_level=LogLevels.info,
+        log_level=LogLevels(loglevel.value),
         reload=True,
         reload_paths=get_reload_paths(),
-        respawn_failed_workers=True,
-        workers=2,
     ).serve()
 
 
