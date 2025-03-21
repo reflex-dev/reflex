@@ -20,6 +20,7 @@ from reflex.config import environment, get_config
 from reflex.state import BaseState
 from reflex.style import SYSTEM_COLOR_MODE
 from reflex.utils import console, path_ops
+from reflex.utils.exceptions import ReflexError
 from reflex.utils.exec import is_prod_mode
 from reflex.utils.imports import ImportVar
 from reflex.utils.prerequisites import get_web_dir
@@ -655,6 +656,8 @@ def into_component(component: Component | ComponentCallable) -> Component:
         ):
             return converted
     except KeyError as e:
+        if isinstance(e, ReflexError):
+            raise
         key = e.args[0] if e.args else None
         if key is not None and isinstance(key, Var):
             raise TypeError(
@@ -662,6 +665,8 @@ def into_component(component: Component | ComponentCallable) -> Component:
             ).with_traceback(e.__traceback__) from None
         raise
     except TypeError as e:
+        if isinstance(e, ReflexError):
+            raise
         message = e.args[0] if e.args else None
         if message and isinstance(message, str):
             if message.endswith("has no len()") and (
