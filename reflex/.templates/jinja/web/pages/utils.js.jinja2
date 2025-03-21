@@ -24,15 +24,17 @@
 {# Args: #}
 {#     component: component dictionary #}
 {% macro render_self_close_tag(component) %}
-{%- if component.name|length %}
+{%- if component.name|length -%}
 jsx(
   {{ component.name }},
   {{- render_props(component.props) }},
   {{- component.contents }}
 )
-{%- elif component.contents|length %}
+{%- elif component.contents|length -%}
   {{- component.contents }}
-{%- endif %}
+{%- else -%}
+  ""
+{%- endif -%}
 {% endmacro %}
 
 {# Rendering close tag with args and props. #}
