@@ -104,7 +104,13 @@ def test_compile_imports(import_dict: ParsedImportDict, test_dicts: list[dict]):
     for import_dict, test_dict in zip(imports, test_dicts, strict=True):
         assert import_dict["lib"] == test_dict["lib"]
         assert import_dict["default"] == test_dict["default"]
-        assert sorted(import_dict["rest"]) == test_dict["rest"]  # pyright: ignore [reportArgumentType]
+        assert (
+            sorted(
+                import_dict["rest"],
+                key=lambda i: i if isinstance(i, str) else (i.tag or ""),
+            )
+            == test_dict["rest"]
+        )
 
 
 def test_compile_stylesheets(tmp_path: Path, mocker):
@@ -283,7 +289,7 @@ def test_create_document_root():
         utils.NextScript.create(src="bar.js"),
     ]
     root = utils.create_document_root(
-        head_components=comps,  # pyright: ignore [reportArgumentType]
+        head_components=comps,
         html_lang="rx",
         html_custom_attrs={"project": "reflex"},
     )

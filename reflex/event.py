@@ -31,6 +31,7 @@ from reflex import constants
 from reflex.constants.compiler import CompileVars, Hooks, Imports
 from reflex.constants.state import FRONTEND_EVENT_STATE
 from reflex.utils import console, format
+from reflex.utils.decorator import once
 from reflex.utils.exceptions import (
     EventFnArgMismatchError,
     EventHandlerArgTypeMismatchError,
@@ -584,11 +585,6 @@ def no_args_event_spec() -> tuple[()]:
     return ()
 
 
-# These chains can be used for their side effects when no other events are desired.
-stop_propagation = EventChain(events=[], args_spec=no_args_event_spec).stop_propagation
-prevent_default = EventChain(events=[], args_spec=no_args_event_spec).prevent_default
-
-
 T = TypeVar("T")
 U = TypeVar("U")
 
@@ -818,6 +814,7 @@ def console_log(message: str | Var[str]) -> EventSpec:
     return run_script(Var("console").to(dict).log.to(FunctionVar).call(message))
 
 
+@once
 def noop() -> EventSpec:
     """Do nothing.
 
@@ -1604,6 +1601,11 @@ def get_fn_signature(fn: Callable) -> inspect.Signature:
         FRONTEND_EVENT_STATE, inspect.Parameter.POSITIONAL_OR_KEYWORD, annotation=Any
     )
     return signature.replace(parameters=(new_param, *signature.parameters.values()))
+
+
+# These chains can be used for their side effects when no other events are desired.
+stop_propagation = noop().stop_propagation
+prevent_default = noop().prevent_default
 
 
 class EventVar(ObjectVar, python_types=EventSpec):

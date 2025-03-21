@@ -50,7 +50,8 @@ def MediaApp():
         def img_from_url(self) -> Image.Image:
             img_url = "https://picsum.photos/id/1/200/300"
             img_resp = httpx.get(img_url, follow_redirects=True)
-            return Image.open(img_resp)  # pyright: ignore [reportArgumentType]
+            img_bytes = img_resp.content
+            return Image.open(img_bytes)
 
     app = rx.App()
 

@@ -596,7 +596,7 @@ def test_style_prop_with_event_handler_value(callable):
     }
 
     with pytest.raises(ReflexError):
-        rx.box(style=style)  # pyright: ignore [reportArgumentType]
+        rx.box(style=style)
 
 
 def test_is_prod_mode() -> None:

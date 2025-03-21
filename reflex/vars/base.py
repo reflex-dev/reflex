@@ -30,6 +30,7 @@ from typing import (
     Mapping,
     NoReturn,
     ParamSpec,
+    Protocol,
     Sequence,
     Set,
     Tuple,
@@ -1478,7 +1479,7 @@ class LiteralVar(Var):
         _var_literal_subclasses.append((cls, var_subclass))
 
     @classmethod
-    def create(  # pyright: ignore [reportArgumentType]
+    def create(
         cls,
         value: Any,
         _var_data: VarData | None = None,
@@ -1835,6 +1836,21 @@ class cached_property:  # noqa: N801
 cached_property_no_lock = cached_property
 
 
+class VarProtocol(Protocol):
+    """A protocol for Var."""
+
+    __dataclass_fields__: ClassVar[dict[str, dataclasses.Field[Any]]]
+
+    @property
+    def _js_expr(self) -> str: ...
+
+    @property
+    def _var_type(self) -> types.GenericType: ...
+
+    @property
+    def _var_data(self) -> VarData: ...
+
+
 class CachedVarOperation:
     """Base class for cached var operations to lower boilerplate code."""
 
@@ -1869,7 +1885,7 @@ class CachedVarOperation:
         return self._cached_get_all_var_data
 
     @cached_property_no_lock
-    def _cached_get_all_var_data(self) -> VarData | None:
+    def _cached_get_all_var_data(self: VarProtocol) -> VarData | None:
         """Get the cached VarData.
 
         Returns:
@@ -1879,14 +1895,13 @@ class CachedVarOperation:
             *(
                 value._get_all_var_data() if isinstance(value, Var) else None
                 for value in (
-                    getattr(self, field.name)
-                    for field in dataclasses.fields(self)  # pyright: ignore [reportArgumentType]
+                    getattr(self, field.name) for field in dataclasses.fields(self)
                 )
             ),
             self._var_data,
         )
 
-    def __hash__(self) -> int:
+    def __hash__(self: DataclassInstance) -> int:
         """Calculate the hash of the object.
 
         Returns:
@@ -1897,7 +1912,7 @@ class CachedVarOperation:
                 type(self).__name__,
                 *[
                     getattr(self, field.name)
-                    for field in dataclasses.fields(self)  # pyright: ignore [reportArgumentType]
+                    for field in dataclasses.fields(self)
                     if field.name not in ["_js_expr", "_var_data", "_var_type"]
                 ],
             )
@@ -2976,7 +2991,7 @@ def get_uuid_string_var() -> Var:
     unique_uuid_var = get_unique_variable_name()
     unique_uuid_var_data = VarData(
         imports={
-            f"$/{constants.Dirs.STATE_PATH}": {ImportVar(tag="generateUUID")},  # pyright: ignore [reportArgumentType]
+            f"$/{constants.Dirs.STATE_PATH}": ImportVar(tag="generateUUID"),
             "react": "useMemo",
         },
         hooks={f"const {unique_uuid_var} = useMemo(generateUUID, [])": None},

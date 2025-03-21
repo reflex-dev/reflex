@@ -29,7 +29,6 @@ from typing import (
 )
 
 import pydantic.v1
-import pydantic.v1.fields
 
 import reflex.state
 from reflex.base import Base

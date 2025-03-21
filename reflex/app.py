@@ -114,9 +114,11 @@ from reflex.utils.imports import ImportVar
 if TYPE_CHECKING:
     from reflex.vars import Var
 
+    # Define custom types.
+    ComponentCallable = Callable[[], Component | tuple[Component, ...] | str | Var]
+else:
+    ComponentCallable = Callable[[], Component | tuple[Component, ...] | str]
 
-# Define custom types.
-ComponentCallable = Callable[[], Component]
 Reducer = Callable[[Event], Coroutine[Any, Any, StateUpdate]]
 
 
@@ -1226,13 +1228,15 @@ class App(MiddlewareMixin, LifespanMixin):
             custom_components |= component._get_all_custom_components()
 
         if self.error_boundary:
+            from reflex.compiler.compiler import into_component
+
             console.deprecate(
                 feature_name="App.error_boundary",
                 reason="Use app_wraps instead.",
                 deprecation_version="0.7.1",
                 removal_version="0.8.0",
             )
-            app_wrappers[(55, "ErrorBoundary")] = self.error_boundary()
+            app_wrappers[(55, "ErrorBoundary")] = into_component(self.error_boundary)
 
         # Perform auto-memoization of stateful components.
         with console.timing("Auto-memoize StatefulComponents"):

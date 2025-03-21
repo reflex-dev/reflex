@@ -70,7 +70,7 @@ def TestEventAction():
             rx.button(
                 "Stop Prop Only",
                 id="btn-stop-prop-only",
-                on_click=rx.stop_propagation,  # pyright: ignore [reportArgumentType]
+                on_click=rx.stop_propagation,
             ),
             rx.button(
                 "Click event",
@@ -109,7 +109,7 @@ def TestEventAction():
             rx.link(
                 "Link Prevent Default Only",
                 href="/invalid",
-                on_click=rx.prevent_default,  # pyright: ignore [reportArgumentType]
+                on_click=rx.prevent_default,
                 id="link-prevent-default-only",
             ),
             rx.link(
@@ -165,7 +165,7 @@ def TestEventAction():
             rx.dialog.root(
                 rx.dialog.trigger(
                     rx.button("Open Dialog", type="button", id="btn-dialog"),
-                    on_click=rx.stop_propagation,  # pyright: ignore [reportArgumentType]
+                    on_click=rx.stop_propagation,
                 ),
                 rx.dialog.content(
                     rx.dialog.close(
@@ -180,7 +180,7 @@ def TestEventAction():
         )
 
     app = rx.App()
-    app.add_page(index)  # pyright: ignore [reportArgumentType]
+    app.add_page(index)
 
 
 @pytest.fixture(scope="module")
