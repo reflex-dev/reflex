@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import contextlib
 import copy
 import dataclasses
 import functools
@@ -1975,7 +1976,7 @@ class NoSSRComponent(Component):
             The imports for dynamically importing the component at module load time.
         """
         # Next.js dynamic import mechanism.
-        dynamic_import = {"next/dynamic": [ImportVar(tag="dynamic", is_default=True)]}
+        dynamic_import = {"react": [ImportVar(tag="lazy")]}
 
         # The normal imports for this component.
         _imports = super()._get_imports()
@@ -1983,13 +1984,15 @@ class NoSSRComponent(Component):
         # Do NOT import the main library/tag statically.
         import_name = self._get_import_name()
         if import_name is not None:
-            _imports[import_name] = [
-                imports.ImportVar(
+            with contextlib.suppress(ValueError):
+                _imports[import_name].remove(self.import_var)
+            _imports[import_name].append(
+                ImportVar(
                     tag=None,
                     render=False,
                     transpile=self._should_transpile(self.library),
-                ),
-            ]
+                )
+            )
 
         return imports.merge_imports(
             dynamic_import,
@@ -1998,20 +2001,25 @@ class NoSSRComponent(Component):
         )
 
     def _get_dynamic_imports(self) -> str:
-        opts_fragment = ", { ssr: false });"
-
         # extract the correct import name from library name
         base_import_name = self._get_import_name()
         if base_import_name is None:
             raise ValueError("Undefined library for NoSSRComponent")
         import_name = format.format_library_name(base_import_name)
 
-        library_import = f"const {self.alias if self.alias else self.tag} = dynamic(() => import('{import_name}')"
+        library_import = f"import('{import_name}')"
         mod_import = (
             # https://nextjs.org/docs/pages/building-your-application/optimizing/lazy-loading#with-named-exports
-            f".then((mod) => mod.{self.tag})" if not self.is_default else ""
+            f".then((mod) => ({{default: mod.{self.tag}}}))"
+            if not self.is_default
+            else ""
         )
-        return "".join((library_import, mod_import, opts_fragment))
+        return (
+            f"const {self.alias if self.alias else self.tag} = lazy(() => "
+            + library_import
+            + mod_import
+            + ")"
+        )
 
 
 class StatefulComponent(BaseComponent):

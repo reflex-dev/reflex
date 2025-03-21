@@ -85,11 +85,11 @@ class PageNames(SimpleNamespace):
     # The name of the index page.
     INDEX_ROUTE = "index"
     # The name of the app root page.
-    APP_ROOT = "root.jsx"
+    APP_ROOT = "root.js"
     # The root stylesheet filename.
     STYLESHEET_ROOT = "styles"
     # The name of the document root page.
-    DOCUMENT_ROOT = "_document.jsx"
+    DOCUMENT_ROOT = "_document.js"
     # The name of the theme page.
     THEME = "theme"
     # The module containing components.
