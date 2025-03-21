@@ -141,7 +141,7 @@ class Radar(Recharts):
         points: Sequence[dict[str, Any]] | Var[Sequence[dict[str, Any]]] | None = None,
         dot: Var[bool] | bool | None = None,
         stroke: Color | Var[Color | str] | str | None = None,
-        fill: Var[str] | str | None = None,
+        fill: Color | Var[Color | str] | str | None = None,
         fill_opacity: Var[float] | float | None = None,
         legend_type: Literal[
             "circle",

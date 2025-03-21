@@ -1479,7 +1479,7 @@ class LiteralVar(Var):
         _var_literal_subclasses.append((cls, var_subclass))
 
     @classmethod
-    def create(
+    def _create_literal_var(
         cls,
         value: Any,
         _var_data: VarData | None = None,
@@ -1559,6 +1559,9 @@ class LiteralVar(Var):
         raise TypeError(
             f"Unsupported type {type(value)} for LiteralVar. Tried to create a LiteralVar from {value}."
         )
+
+    if not TYPE_CHECKING:
+        create = classmethod(_create_literal_var)
 
     def __post_init__(self):
         """Post-initialize the var."""
