@@ -166,7 +166,7 @@ def UploadFile():
             rx.text(UploadState.event_order.to_string(), id="event-order"),
         )
 
-    app = rx.App(_state=rx.State)
+    app = rx.App()
     app.add_page(index)
 
 

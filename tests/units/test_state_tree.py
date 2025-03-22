@@ -374,7 +374,7 @@ async def test_get_state_tree(
     assert sorted(state.substates) == sorted(exp_root_substates)
 
     # Only computed vars should be returned
-    assert state.get_delta() == ALWAYS_COMPUTED_VARS
+    assert state.get_delta().data == ALWAYS_COMPUTED_VARS
 
     # All of TreeA, TreeD, and TreeE substates should be in the dict
     assert sorted(state.dict()) == sorted(exp_root_dict_keys)

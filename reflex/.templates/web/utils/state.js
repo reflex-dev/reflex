@@ -16,6 +16,7 @@ import {
 } from "$/utils/context.js";
 import debounce from "$/utils/helpers/debounce";
 import throttle from "$/utils/helpers/throttle";
+import { applyPatch } from "fast-json-patch/index.mjs";
 
 // Endpoint URLs.
 const EVENTURL = env.EVENT;
@@ -127,7 +128,7 @@ export const isStateful = () => {
   if (event_queue.length === 0) {
     return false;
   }
-  return event_queue.some((event) => event.name.startsWith("reflex___state"));
+  return event_queue.some((event) => event.name.startsWith(state_name));
 };
 
 /**
@@ -485,13 +486,48 @@ export const connect = async (
     window.removeEventListener("pagehide", pagehideHandler);
   });
 
+  const last_substate_info = {};
+  const last_substate_hash = {};
+
+  const getSubstateFromUpdate = (update, substate_name) => {
+    if (update.__patch) {
+      if (last_substate_hash[substate_name] !== update.__previous_hash) {
+        return null;
+      }
+      last_substate_hash[substate_name] = update.__hash;
+      return applyPatch(last_substate_info[substate_name], update.__patch)
+        .newDocument;
+    } else {
+      last_substate_hash[substate_name] = update.__hash;
+      return update.__full;
+    }
+  };
+
   // On each received message, queue the updates and events.
   socket.current.on("event", async (update) => {
+    const failed_substates = [];
     for (const substate in update.delta) {
-      dispatch[substate](update.delta[substate]);
+      const new_substate_info = getSubstateFromUpdate(
+        update.delta[substate],
+        substate,
+      );
+      if (new_substate_info === null) {
+        console.error("Received patch out of order", update.delta[substate]);
+        failed_substates.push(substate);
+        delete update.delta[substate];
+        continue;
+      }
+      last_substate_info[substate] = new_substate_info;
+      update.delta[substate] = new_substate_info;
+      dispatch[substate](new_substate_info);
     }
     applyClientStorageDelta(client_storage, update.delta);
     event_processing = !update.final;
+    if (failed_substates.length > 0) {
+      update.events.push(
+        Event(state_name + ".partial_hydrate", { states: failed_substates }),
+      );
+    }
     if (update.events) {
       queueEvents(update.events, socket);
     }
@@ -872,6 +908,7 @@ export const useEventLoop = (
     (async () => {
       // Process all outstanding events.
       while (event_queue.length > 0 && !event_processing) {
+        await new Promise((resolve) => setTimeout(resolve, 0));
         await processEvent(socket.current);
       }
     })();
@@ -911,7 +948,7 @@ export const useEventLoop = (
   // Route after the initial page hydration.
   useEffect(() => {
     const change_start = () => {
-      const main_state_dispatch = dispatch["reflex___state____state"];
+      const main_state_dispatch = dispatch[state_name];
       if (main_state_dispatch !== undefined) {
         main_state_dispatch({ is_hydrated: false });
       }

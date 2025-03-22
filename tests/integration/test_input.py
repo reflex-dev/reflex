@@ -16,7 +16,7 @@ def FullyControlledInput():
     class State(rx.State):
         text: str = "initial"
 
-    app = rx.App(_state=rx.State)
+    app = rx.App()
 
     @app.add_page
     def index():

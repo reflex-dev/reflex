@@ -27,6 +27,8 @@ from typing import (
     Callable,
     ClassVar,
     Dict,
+    Mapping,
+    NamedTuple,
     Optional,
     Sequence,
     Set,
@@ -41,6 +43,7 @@ from typing import (
 
 import pydantic.v1 as pydantic
 import wrapt
+from jsonpatch import make_patch
 from pydantic import BaseModel as BaseModelV2
 from pydantic.v1 import BaseModel as BaseModelV1
 from pydantic.v1 import validator
@@ -109,8 +112,135 @@ if TYPE_CHECKING:
     from reflex.components.component import Component
 
 
-Delta = dict[str, Any]
 var = computed_var
+
+
+@dataclasses.dataclass
+class StateDelta:
+    """A dictionary representing the state delta."""
+
+    data: Mapping[str, Any] = dataclasses.field(default_factory=dict)
+    client_token: str | None = dataclasses.field(default=None)
+    flush: bool = dataclasses.field(default=False)
+
+    def __getitem__(self, key: str) -> Any:
+        """Get the item from the delta.
+
+        Args:
+            key: The key to get.
+
+        Returns:
+            The item from the delta.
+        """
+        return self.data[key]
+
+    def __iter__(self) -> Any:
+        """Iterate over the delta.
+
+        Returns:
+            The iterator over the delta.
+        """
+        return iter(self.data)
+
+    def __len__(self) -> int:
+        """Get the length of the delta.
+
+        Returns:
+            The length of the delta.
+        """
+        return len(self.data)
+
+    def __contains__(self, key: str) -> bool:
+        """Check if the delta contains the key.
+
+        Args:
+            key: The key to check.
+
+        Returns:
+            Whether the delta contains the key.
+        """
+        return key in self.data
+
+    def keys(self):
+        """Get the keys of the delta.
+
+        Returns:
+            The keys of the delta.
+        """
+        return self.data.keys()
+
+    def __reversed__(self):
+        """Reverse the delta.
+
+        Returns:
+            The reversed delta.
+        """
+        return reversed(dict(**self.data))
+
+    def values(self):
+        """Get the values of the delta.
+
+        Returns:
+            The values of the delta.
+        """
+        return self.data.values()
+
+    def items(self):
+        """Get the items of the delta.
+
+        Returns:
+            The items of the delta.
+        """
+        return self.data.items()
+
+
+class DeltaCache(NamedTuple):
+    """A named tuple representing the delta cache."""
+
+    hash: int
+    delta: dict[str, Any]
+
+
+LAST_DELTA_CACHE: dict[str, DeltaCache] = {}
+
+
+@serializer(to=dict)
+def serialize_state_delta(delta: StateDelta) -> dict[str, Any]:
+    """Serialize the state delta.
+
+    Args:
+        delta: The state delta to serialize.
+
+    Returns:
+        The serialized state delta.
+    """
+    if delta.client_token is not None and environment.REFLEX_USE_JSON_PATCH.get():
+        full_delta = {}
+        for state_name, new_state_value in delta.items():
+            json_str = format.json_dumps(new_state_value)
+            new_state_value = json.loads(json_str)
+            key = delta.client_token + state_name
+            cached = LAST_DELTA_CACHE.get(key)
+            hash_value = hash(json_str)
+            LAST_DELTA_CACHE[key] = DeltaCache(hash_value, new_state_value)
+            if cached is not None and not delta.flush:
+                patch = make_patch(cached.delta, new_state_value).patch
+                if not patch:
+                    continue
+                full_delta[state_name] = {
+                    "__patch": patch,
+                    "__previous_hash": cached.hash,
+                    "__hash": hash_value,
+                }
+            else:
+                full_delta[state_name] = {
+                    "__full": new_state_value,
+                    "__hash": hash_value,
+                }
+        return full_delta
+    return {
+        state_name: {"__full": state_value} for state_name, state_value in delta.items()
+    }
 
 
 if environment.REFLEX_PERF_MODE.get() != PerformanceMode.OFF:
@@ -311,7 +441,7 @@ def get_var_for_field(cls: Type[BaseState], f: ModelField):
     )
 
 
-async def _resolve_delta(delta: Delta) -> Delta:
+async def _resolve_delta(delta: StateDelta) -> StateDelta:
     """Await all coroutines in the delta.
 
     Args:
@@ -1702,7 +1832,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
 
         try:
             # Get the delta after processing the event.
-            delta = await _resolve_delta(state.get_delta())
+            delta = await _resolve_delta(state.get_delta(token=token))
             state._clean()
 
             return StateUpdate(
@@ -1911,8 +2041,11 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             if include_backend or not self.computed_vars[cvar]._backend
         }
 
-    def get_delta(self) -> Delta:
+    def get_delta(self, *, token: str | None = None) -> StateDelta:
         """Get the delta for the state.
+
+        Args:
+            token: The client token.
 
         Returns:
             The delta for the state.
@@ -1924,11 +2057,9 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             name for name, cv in self.computed_vars.items() if not cv._backend
         }
 
-        # Return the dirty vars for this instance, any cached/dependent computed vars,
-        # and always dirty computed vars (cache=False)
-        delta_vars = self.dirty_vars.intersection(self.base_vars).union(
-            self.dirty_vars.intersection(frontend_computed_vars)
-        )
+        delta_vars = frontend_computed_vars.union(self.base_vars)
+        if not environment.REFLEX_USE_JSON_PATCH.get():
+            delta_vars = self.dirty_vars.intersection(delta_vars)
 
         subdelta: dict[str, Any] = {
             prop: self.get_value(prop)
@@ -1945,7 +2076,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             delta.update(substates[substate].get_delta())
 
         # Return the delta.
-        return delta
+        return StateDelta(delta, client_token=token)
 
     def _mark_dirty(self):
         """Mark the substate and all parent states as dirty."""
@@ -2776,7 +2907,7 @@ class StateUpdate:
     """A state update sent to the frontend."""
 
     # The state delta.
-    delta: Delta = dataclasses.field(default_factory=dict)
+    delta: StateDelta = dataclasses.field(default_factory=StateDelta)
 
     # Events to be added to the event queue.
     events: list[Event] = dataclasses.field(default_factory=list)

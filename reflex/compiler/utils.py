@@ -27,7 +27,7 @@ from reflex.components.base import (
 )
 from reflex.components.component import Component, ComponentStyle, CustomComponent
 from reflex.istate.storage import Cookie, LocalStorage, SessionStorage
-from reflex.state import BaseState, _resolve_delta
+from reflex.state import BaseState, StateDelta, _resolve_delta
 from reflex.style import Style
 from reflex.utils import console, format, imports, path_ops
 from reflex.utils.exec import is_in_app_harness
@@ -187,7 +187,7 @@ def compile_state(state: Type[BaseState]) -> dict:
     Returns:
         A dictionary of the compiled state.
     """
-    initial_state = state(_reflex_internal_init=True).dict(initial=True)
+    initial_state = StateDelta(state(_reflex_internal_init=True).dict(initial=True))
     try:
         _ = asyncio.get_running_loop()
     except RuntimeError:
@@ -202,10 +202,10 @@ def compile_state(state: Type[BaseState]) -> dict:
                 console.warn(
                     f"Had to get initial state in a thread 🤮 {resolved_initial_state}",
                 )
-                return resolved_initial_state
+                return dict(**resolved_initial_state.data)
 
     # Normally the compile runs before any event loop starts, we asyncio.run is available for calling.
-    return asyncio.run(_resolve_delta(initial_state))
+    return dict(**asyncio.run(_resolve_delta(initial_state)).data)
 
 
 def _compile_client_storage_field(
