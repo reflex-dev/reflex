@@ -13,6 +13,14 @@ export default function RadixThemesColorModeProvider({ children }) {
   const [resolvedColorMode, setResolvedColorMode] = useState(
     defaultColorMode === "dark" ? "dark" : "light",
   );
+  const firstUpdate = useRef(true);
+  useEffect(() => {
+    if (firstUpdate.current) {
+      firstUpdate.current = false;
+      setRawColorMode(theme);
+      setResolvedColorMode(resolvedTheme);
+    }
+  });
 
   useEffect(() => {
     if (isDevMode) {

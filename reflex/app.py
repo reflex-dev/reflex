@@ -968,7 +968,7 @@ class App(MiddlewareMixin, LifespanMixin):
         # Check the nocompile file.
         if nocompile.exists():
             # Delete the nocompile file
-            nocompile.unlink()
+            nocompile.unlink(missing_ok=True)
             return False
 
         # By default, compile the app.
