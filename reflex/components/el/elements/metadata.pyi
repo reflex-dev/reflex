@@ -1079,6 +1079,7 @@ class StyleEl(Element):
         cls,
         *children,
         media: Var[str] | str | None = None,
+        suppress_hydration_warning: Var[bool] | bool | None = None,
         style: Style | None = None,
         key: Any | None = None,
         id: Any | None = None,

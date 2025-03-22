@@ -6,14 +6,14 @@ import env from "$/env.json";
 import reflexEnvironment from "$/reflex.json";
 import Cookies from "universal-cookie";
 import { useEffect, useRef, useState } from "react";
-import Router, { useRouter } from "next/router";
+import { useNavigate, useLocation, useSearchParams } from "react-router-dom";
 import {
   initialEvents,
   initialState,
   onLoadInternalEvent,
   state_name,
   exception_state_name,
-} from "$/utils/context.js";
+} from "$/utils/context";
 import debounce from "$/utils/helpers/debounce";
 import throttle from "$/utils/helpers/throttle";
 
@@ -172,18 +172,19 @@ export const queueEventIfSocketExists = async (events, socket) => {
  * Handle frontend event or send the event to the backend via Websocket.
  * @param event The event to send.
  * @param socket The socket object to send the event on.
+ * @param navigate The navigate function from useNavigate
  *
  * @returns True if the event was sent, false if it was handled locally.
  */
-export const applyEvent = async (event, socket) => {
+export const applyEvent = async (event, socket, navigate) => {
   // Handle special events
   if (event.name == "_redirect") {
     if (event.payload.external) {
       window.open(event.payload.path, "_blank", "noopener");
     } else if (event.payload.replace) {
-      Router.replace(event.payload.path);
+      navigate(event.payload.path, { replace: true });
     } else {
-      Router.push(event.payload.path);
+      navigate(event.payload.path);
     }
     return false;
   }
@@ -304,11 +305,12 @@ export const applyEvent = async (event, socket) => {
     event.router_data === undefined ||
     Object.keys(event.router_data).length === 0
   ) {
-    event.router_data = (({ pathname, query, asPath }) => ({
-      pathname,
-      query,
-      asPath,
-    }))(Router);
+    // Since we don't have router directly, we need to get info from our hooks
+    event.router_data = {
+      pathname: window.location.pathname,
+      query: Object.fromEntries(new URLSearchParams(window.location.search)),
+      asPath: window.location.pathname + window.location.search,
+    };
   }
 
   // Send the event to the server.
@@ -371,8 +373,9 @@ export const queueEvents = async (events, socket, prepend) => {
 /**
  * Process an event off the event queue.
  * @param socket The socket object to send the event on.
+ * @param navigate The navigate function from React Router
  */
-export const processEvent = async (socket) => {
+export const processEvent = async (socket, navigate) => {
   // Only proceed if the socket is up and no event in the queue uses state, otherwise we throw the event into the void
   if (!socket && isStateful()) {
     return;
@@ -394,14 +397,14 @@ export const processEvent = async (socket) => {
   if (event.handler) {
     eventSent = await applyRestEvent(event, socket);
   } else {
-    eventSent = await applyEvent(event, socket);
+    eventSent = await applyEvent(event, socket, navigate);
   }
   // If no event was sent, set processing to false.
   if (!eventSent) {
     event_processing = false;
     // recursively call processEvent to drain the queue, since there is
     // no state update to trigger the useEffect event loop.
-    await processEvent(socket);
+    await processEvent(socket, navigate);
   }
 };
 
@@ -730,7 +733,7 @@ const applyClientStorageDelta = (client_storage, delta) => {
 };
 
 /**
- * Establish websocket event loop for a NextJS page.
+ * Establish websocket event loop for a React Router page.
  * @param dispatch The reducer dispatch function to update state.
  * @param initial_events The initial app events.
  * @param client_storage The client storage object from context.js
@@ -745,7 +748,10 @@ export const useEventLoop = (
   client_storage = {},
 ) => {
   const socket = useRef(null);
-  const router = useRouter();
+  const location = useLocation();
+  const navigate = useNavigate();
+  const prevLocationRef = useRef(location);
+  const [searchParams] = useSearchParams();
   const [connectErrors, setConnectErrors] = useState([]);
 
   // Function to add new events to the event queue.
@@ -793,22 +799,22 @@ export const useEventLoop = (
 
   const sentHydrate = useRef(false); // Avoid double-hydrate due to React strict-mode
   useEffect(() => {
-    if (router.isReady && !sentHydrate.current) {
+    if (!sentHydrate.current) {
       queueEvents(
         initial_events().map((e) => ({
           ...e,
-          router_data: (({ pathname, query, asPath }) => ({
-            pathname,
-            query,
-            asPath,
-          }))(router),
+          router_data: {
+            pathname: location.pathname,
+            query: Object.fromEntries(searchParams.entries()),
+            asPath: location.pathname + location.search,
+          },
         })),
         socket,
         true,
       );
       sentHydrate.current = true;
     }
-  }, [router.isReady]);
+  }, []);
 
   // Handle frontend errors and send them to the backend via websocket.
   useEffect(() => {
@@ -865,14 +871,14 @@ export const useEventLoop = (
 
   // Main event loop.
   useEffect(() => {
-    // Skip if the router is not ready.
-    if (!router.isReady || isBackendDisabled()) {
+    // Skip if the backend is disabled
+    if (isBackendDisabled()) {
       return;
     }
     (async () => {
       // Process all outstanding events.
       while (event_queue.length > 0 && !event_processing) {
-        await processEvent(socket.current);
+        await processEvent(socket.current, navigate);
       }
     })();
   });
@@ -908,31 +914,27 @@ export const useEventLoop = (
     return () => window.removeEventListener("storage", handleStorage);
   });
 
-  // Route after the initial page hydration.
+  // Route after the initial page hydration
   useEffect(() => {
-    const change_start = () => {
-      const main_state_dispatch = dispatch["reflex___state____state"];
-      if (main_state_dispatch !== undefined) {
-        main_state_dispatch({ is_hydrated: false });
-      }
-    };
-    const change_complete = () => addEvents(onLoadInternalEvent());
-    const change_error = () => {
-      // Remove cached error state from router for this page, otherwise the
-      // page will never send on_load events again.
-      if (router.components[router.pathname].error) {
-        delete router.components[router.pathname].error;
-      }
-    };
-    router.events.on("routeChangeStart", change_start);
-    router.events.on("routeChangeComplete", change_complete);
-    router.events.on("routeChangeError", change_error);
-    return () => {
-      router.events.off("routeChangeStart", change_start);
-      router.events.off("routeChangeComplete", change_complete);
-      router.events.off("routeChangeError", change_error);
-    };
-  }, [router]);
+    // This will run when the location changes
+    if (location !== prevLocationRef.current) {
+      // Equivalent to routeChangeStart - runs when navigation begins
+      const change_start = () => {
+        const main_state_dispatch = dispatch["reflex___state____state"];
+        if (main_state_dispatch !== undefined) {
+          main_state_dispatch({ is_hydrated: false });
+        }
+      };
+      change_start();
+
+      // Equivalent to routeChangeComplete - runs after navigation completes
+      const change_complete = () => addEvents(onLoadInternalEvent());
+      change_complete();
+
+      // Update the ref
+      prevLocationRef.current = location;
+    }
+  }, [location, dispatch, onLoadInternalEvent, addEvents]);
 
   return [addEvents, connectErrors];
 };

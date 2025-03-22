@@ -288,7 +288,7 @@ def _compile_components(
     """
     imports = {
         "react": [ImportVar(tag="memo")],
-        f"$/{constants.Dirs.STATE_PATH}": [ImportVar(tag="E"), ImportVar(tag="isTrue")],
+        f"$/{constants.Dirs.STATE_PATH}": [ImportVar(tag="isTrue")],
     }
     component_renders = []
 
@@ -429,7 +429,9 @@ def compile_document_root(
         The path and code of the compiled document root.
     """
     # Get the path for the output file.
-    output_path = utils.get_page_path(constants.PageNames.DOCUMENT_ROOT)
+    output_path = str(
+        get_web_dir() / constants.Dirs.PAGES / constants.PageNames.DOCUMENT_ROOT
+    )
 
     # Create the document root.
     document_root = utils.create_document_root(
@@ -451,7 +453,9 @@ def compile_app(app_root: Component) -> tuple[str, str]:
         The path and code of the compiled app wrapper.
     """
     # Get the path for the output file.
-    output_path = utils.get_page_path(constants.PageNames.APP_ROOT)
+    output_path = str(
+        get_web_dir() / constants.Dirs.PAGES / constants.PageNames.APP_ROOT
+    )
 
     # Compile the document root.
     code = _compile_app(app_root)
@@ -510,7 +514,7 @@ def compile_page(
         The path and code of the compiled page.
     """
     # Get the path for the output file.
-    output_path = utils.get_page_path(path)
+    output_path = utils.get_page_path(path if path != "index" else "_index")
 
     # Add the style to the component.
     code = _compile_page(component, state)
@@ -604,7 +608,7 @@ def purge_web_pages_dir():
         return
 
     # Empty out the web pages directory.
-    utils.empty_dir(get_web_dir() / constants.Dirs.PAGES, keep_files=["_app.js"])
+    utils.empty_dir(get_web_dir() / constants.Dirs.PAGES, keep_files=["routes.js"])
 
 
 if TYPE_CHECKING:
@@ -747,7 +751,7 @@ def compile_unevaluated_page(
     if page.description is not None:
         meta_args["description"] = page.description
 
-    # Add meta information to the component.
+    # # Add meta information to the component.
     utils.add_meta(
         component,
         **meta_args,

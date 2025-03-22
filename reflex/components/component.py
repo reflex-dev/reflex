@@ -277,6 +277,9 @@ class Component(BaseComponent, ABC):
     # The alias for the tag.
     alias: str | None = pydantic.v1.Field(default_factory=lambda: None)
 
+    # Whether the component is a global scope tag. True for tags like `html`, `head`, `body`.
+    _is_tag_in_global_scope: bool = pydantic.PrivateAttr(default_factory=lambda: False)
+
     # Whether the import is default or named.
     is_default: bool | None = pydantic.v1.Field(default_factory=lambda: False)
 
@@ -669,9 +672,13 @@ class Component(BaseComponent, ABC):
         Returns:
             The tag to render.
         """
+        name = (self.tag if not self.alias else self.alias) or ""
+        if self._is_tag_in_global_scope and self.library is None:
+            name = '"' + name + '"'
+
         # Create the base tag.
         tag = Tag(
-            name=(self.tag if not self.alias else self.alias) or "",
+            name=name,
             special_props=self.special_props,
         )
 
@@ -1391,11 +1398,13 @@ class Component(BaseComponent, ABC):
         Returns:
             The imports needed by the component.
         """
-        _imports = {}
+        _imports = {
+            "@emotion/react": ImportVar(tag="jsx"),
+        }
 
         # Import this component's tag from the main library.
         if self.library is not None and self.tag is not None:
-            _imports[self.library] = {self.import_var}
+            _imports[self.library] = self.import_var
 
         # Get static imports required for event processing.
         event_imports = Imports.EVENTS if self.event_triggers else {}
@@ -1421,7 +1430,7 @@ class Component(BaseComponent, ABC):
         return imports.merge_imports(
             self._get_dependencies_imports(),
             self._get_hooks_imports(),
-            _imports,
+            {**_imports},
             event_imports,
             *var_imports,
             *added_import_dicts,
@@ -1967,7 +1976,7 @@ class NoSSRComponent(Component):
             The imports for dynamically importing the component at module load time.
         """
         # Next.js dynamic import mechanism.
-        dynamic_import = {"next/dynamic": [ImportVar(tag="dynamic", is_default=True)]}
+        dynamic_import = {"react": [ImportVar(tag="lazy")]}
 
         # The normal imports for this component.
         _imports = super()._get_imports()
@@ -1978,7 +1987,7 @@ class NoSSRComponent(Component):
             with contextlib.suppress(ValueError):
                 _imports[import_name].remove(self.import_var)
             _imports[import_name].append(
-                imports.ImportVar(
+                ImportVar(
                     tag=None,
                     render=False,
                     transpile=self._should_transpile(self.library),
@@ -1992,20 +2001,25 @@ class NoSSRComponent(Component):
         )
 
     def _get_dynamic_imports(self) -> str:
-        opts_fragment = ", { ssr: false });"
-
         # extract the correct import name from library name
         base_import_name = self._get_import_name()
         if base_import_name is None:
             raise ValueError("Undefined library for NoSSRComponent")
         import_name = format.format_library_name(base_import_name)
 
-        library_import = f"const {self.alias if self.alias else self.tag} = dynamic(() => import('{import_name}')"
+        library_import = f"import('{import_name}')"
         mod_import = (
             # https://nextjs.org/docs/pages/building-your-application/optimizing/lazy-loading#with-named-exports
-            f".then((mod) => mod.{self.tag})" if not self.is_default else ""
+            f".then((mod) => ({{default: mod.{self.tag}}}))"
+            if not self.is_default
+            else ""
         )
-        return "".join((library_import, mod_import, opts_fragment))
+        return (
+            f"const {self.alias if self.alias else self.tag} = lazy(() => "
+            + library_import
+            + mod_import
+            + ")"
+        )
 
 
 class StatefulComponent(BaseComponent):
@@ -2537,12 +2551,12 @@ def render_dict_to_var(tag: dict | Component | str, imported_names: set[str]) ->
     special_props = []
 
     for prop_str in tag["props"]:
-        if "=" not in prop_str:
+        if ":" not in prop_str:
             special_props.append(Var(prop_str).to(ObjectVar))
             continue
-        prop = prop_str.index("=")
+        prop = prop_str.index(":")
         key = prop_str[:prop]
-        value = prop_str[prop + 2 : -1]
+        value = prop_str[prop + 1 :]
         props[key] = value
 
     props = Var.create({Var.create(k): Var(v) for k, v in props.items()})
@@ -2550,18 +2564,10 @@ def render_dict_to_var(tag: dict | Component | str, imported_names: set[str]) ->
     for prop in special_props:
         props = props.merge(prop)
 
-    contents = tag["contents"][1:-1] if tag["contents"] else None
+    contents = tag["contents"] if tag["contents"] else None
 
     raw_tag_name = tag.get("name")
     tag_name = Var(raw_tag_name or "Fragment")
-
-    tag_name = (
-        Var.create(raw_tag_name)
-        if raw_tag_name
-        and raw_tag_name.split(".")[0] not in imported_names
-        and raw_tag_name.lower() == raw_tag_name
-        else tag_name
-    )
 
     return FunctionStringVar.create(
         "jsx",

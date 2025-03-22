@@ -271,7 +271,7 @@ def test_create_document_root():
     root = utils.create_document_root()
     root.render()
     assert isinstance(root, utils.Html)
-    assert isinstance(root.children[0], utils.DocumentHead)
+    assert isinstance(root.children[0], utils.Head)
     # Default language.
     assert root.lang == "en"  # pyright: ignore [reportAttributeAccessIssue]
     # No children in head.
@@ -279,8 +279,8 @@ def test_create_document_root():
 
     # Test with components.
     comps = [
-        utils.NextScript.create(src="foo.js"),
-        utils.NextScript.create(src="bar.js"),
+        utils.Scripts.create(src="foo.js"),
+        utils.Scripts.create(src="bar.js"),
     ]
     root = utils.create_document_root(
         head_components=comps,  # pyright: ignore [reportArgumentType]

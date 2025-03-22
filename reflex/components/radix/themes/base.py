@@ -240,7 +240,7 @@ class Theme(RadixThemesComponent):
             The import dict.
         """
         _imports: ImportDict = {
-            "$/utils/theme.js": [ImportVar(tag="theme", is_default=True)],
+            "$/utils/theme": [ImportVar(tag="theme", is_default=True)],
         }
         if get_config().tailwind is None:
             # When tailwind is disabled, import the radix-ui styles directly because they will
@@ -285,7 +285,7 @@ class ThemePanel(RadixThemesComponent):
 class RadixThemesColorModeProvider(Component):
     """Next-themes integration for radix themes components."""
 
-    library = "$/components/reflex/radix_themes_color_mode_provider.js"
+    library = "$/components/reflex/radix_themes_color_mode_provider"
     tag = "RadixThemesColorModeProvider"
     is_default = True
 

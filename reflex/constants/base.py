@@ -44,7 +44,9 @@ class Dirs(SimpleNamespace):
     # The directory where styles are located.
     STYLES = "styles"
     # The name of the pages directory.
-    PAGES = "pages"
+    PAGES = "app"
+    # The name of the routes directory.
+    ROUTES = "routes"
     # The name of the env json file.
     ENV_JSON = "env.json"
     # The name of the reflex json file.

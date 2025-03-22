@@ -10,7 +10,7 @@ from reflex.event import EventType
 from reflex.style import Style
 from reflex.vars.base import Var
 
-class NextDocumentLib(Component):
+class ReactRouterLib(Component):
     @overload
     @classmethod
     def create(  # type: ignore
@@ -38,7 +38,7 @@ class NextDocumentLib(Component):
         on_scroll: Optional[EventType[()]] = None,
         on_unmount: Optional[EventType[()]] = None,
         **props,
-    ) -> "NextDocumentLib":
+    ) -> "ReactRouterLib":
         """Create the component.
 
         Args:
@@ -56,13 +56,12 @@ class NextDocumentLib(Component):
         """
         ...
 
-class Html(NextDocumentLib):
+class Meta(ReactRouterLib):
     @overload
     @classmethod
     def create(  # type: ignore
         cls,
         *children,
-        lang: str | None = None,
         style: Style | None = None,
         key: Any | None = None,
         id: Any | None = None,
@@ -85,7 +84,7 @@ class Html(NextDocumentLib):
         on_scroll: Optional[EventType[()]] = None,
         on_unmount: Optional[EventType[()]] = None,
         **props,
-    ) -> "Html":
+    ) -> "Meta":
         """Create the component.
 
         Args:
@@ -103,7 +102,7 @@ class Html(NextDocumentLib):
         """
         ...
 
-class DocumentHead(NextDocumentLib):
+class Links(ReactRouterLib):
     @overload
     @classmethod
     def create(  # type: ignore
@@ -131,7 +130,7 @@ class DocumentHead(NextDocumentLib):
         on_scroll: Optional[EventType[()]] = None,
         on_unmount: Optional[EventType[()]] = None,
         **props,
-    ) -> "DocumentHead":
+    ) -> "Links":
         """Create the component.
 
         Args:
@@ -149,7 +148,7 @@ class DocumentHead(NextDocumentLib):
         """
         ...
 
-class Main(NextDocumentLib):
+class ScrollRestoration(ReactRouterLib):
     @overload
     @classmethod
     def create(  # type: ignore
@@ -177,7 +176,7 @@ class Main(NextDocumentLib):
         on_scroll: Optional[EventType[()]] = None,
         on_unmount: Optional[EventType[()]] = None,
         **props,
-    ) -> "Main":
+    ) -> "ScrollRestoration":
         """Create the component.
 
         Args:
@@ -195,7 +194,7 @@ class Main(NextDocumentLib):
         """
         ...
 
-class NextScript(NextDocumentLib):
+class Outlet(ReactRouterLib):
     @overload
     @classmethod
     def create(  # type: ignore
@@ -223,7 +222,53 @@ class NextScript(NextDocumentLib):
         on_scroll: Optional[EventType[()]] = None,
         on_unmount: Optional[EventType[()]] = None,
         **props,
-    ) -> "NextScript":
+    ) -> "Outlet":
+        """Create the component.
+
+        Args:
+            *children: The children of the component.
+            style: The style of the component.
+            key: A unique key for the component.
+            id: The id for the component.
+            class_name: The class name for the component.
+            autofocus: Whether the component should take the focus once the page is loaded
+            custom_attrs: custom attribute
+            **props: The props of the component.
+
+        Returns:
+            The component.
+        """
+        ...
+
+class Scripts(ReactRouterLib):
+    @overload
+    @classmethod
+    def create(  # type: ignore
+        cls,
+        *children,
+        style: Style | None = None,
+        key: Any | None = None,
+        id: Any | None = None,
+        class_name: Any | None = None,
+        autofocus: bool | None = None,
+        custom_attrs: dict[str, Var | Any] | None = None,
+        on_blur: Optional[EventType[()]] = None,
+        on_click: Optional[EventType[()]] = None,
+        on_context_menu: Optional[EventType[()]] = None,
+        on_double_click: Optional[EventType[()]] = None,
+        on_focus: Optional[EventType[()]] = None,
+        on_mount: Optional[EventType[()]] = None,
+        on_mouse_down: Optional[EventType[()]] = None,
+        on_mouse_enter: Optional[EventType[()]] = None,
+        on_mouse_leave: Optional[EventType[()]] = None,
+        on_mouse_move: Optional[EventType[()]] = None,
+        on_mouse_out: Optional[EventType[()]] = None,
+        on_mouse_over: Optional[EventType[()]] = None,
+        on_mouse_up: Optional[EventType[()]] = None,
+        on_scroll: Optional[EventType[()]] = None,
+        on_unmount: Optional[EventType[()]] = None,
+        **props,
+    ) -> "Scripts":
         """Create the component.
 
         Args:
