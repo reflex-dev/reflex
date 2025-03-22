@@ -124,4 +124,5 @@ async def test_health(
 
     # Verify the response content and status code
     assert response.status_code == expected_code
-    assert json.loads(bytes(response.body)) == expected_status
+    assert isinstance(response.body, bytes)
+    assert json.loads(response.body) == expected_status

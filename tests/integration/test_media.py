@@ -10,6 +10,8 @@ from reflex.testing import AppHarness
 
 def MediaApp():
     """Reflex app with generated images."""
+    import io
+
     import httpx
     from PIL import Image
 
@@ -51,7 +53,7 @@ def MediaApp():
             img_url = "https://picsum.photos/id/1/200/300"
             img_resp = httpx.get(img_url, follow_redirects=True)
             img_bytes = img_resp.content
-            return Image.open(img_bytes)
+            return Image.open(io.BytesIO(img_bytes))
 
     app = rx.App()
 
