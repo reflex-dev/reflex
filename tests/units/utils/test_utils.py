@@ -28,28 +28,6 @@ from reflex.utils.exceptions import ReflexError, SystemPackageMissingError
 from reflex.vars.base import Var
 
 
-def mock_event(arg):
-    pass
-
-
-def get_above_max_version():
-    """Get the 1 version above the max required bun version.
-
-    Returns:
-        max bun version plus one.
-
-    """
-    semantic_version_list = constants.Bun.VERSION.split(".")
-    semantic_version_list[-1] = str(int(semantic_version_list[-1]) + 1)  # pyright: ignore [reportArgumentType, reportCallIssue]
-    return ".".join(semantic_version_list)
-
-
-V055 = version.parse("0.5.5")
-V059 = version.parse("0.5.9")
-V056 = version.parse("0.5.6")
-VMAXPLUS1 = version.parse(get_above_max_version())
-
-
 class ExampleTestState(BaseState):
     """Test state class."""
 
