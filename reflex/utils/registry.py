@@ -16,10 +16,13 @@ def latency(registry: str) -> int:
         int: The latency of the registry in microseconds.
     """
     try:
-        return net.get(registry).elapsed.microseconds
+        time_to_respond = net.get(registry, timeout=2).elapsed.microseconds
     except httpx.HTTPError:
         console.info(f"Failed to connect to {registry}.")
         return 10_000_000
+    else:
+        console.debug(f"Latency of {registry}: {time_to_respond}")
+        return time_to_respond
 
 
 def average_latency(registry: str, attempts: int = 3) -> int:
@@ -32,7 +35,9 @@ def average_latency(registry: str, attempts: int = 3) -> int:
     Returns:
         The average latency of the registry in microseconds.
     """
-    return sum(latency(registry) for _ in range(attempts)) // attempts
+    registry_latency = sum(latency(registry) for _ in range(attempts)) // attempts
+    console.debug(f"Average latency of {registry}: {registry_latency}")
+    return registry_latency
 
 
 def _get_best_registry() -> str:
@@ -41,12 +46,15 @@ def _get_best_registry() -> str:
     Returns:
         The best registry.
     """
+    console.debug("Getting best registry...")
     registries = [
         "https://registry.npmjs.org",
         "https://r.cnpmjs.org",
     ]
 
-    return min(registries, key=average_latency)
+    best_registry = min(registries, key=average_latency)
+    console.debug(f"Best registry: {best_registry}")
+    return best_registry
 
 
 def get_npm_registry() -> str:

@@ -1,8 +1,13 @@
 """Helpers for downloading files from the network."""
 
+import functools
+import time
+from typing import Callable, ParamSpec, TypeVar
+
 import httpx
 
-from ..config import environment
+from reflex.utils.decorator import once
+
 from . import console
 
 
@@ -12,30 +17,62 @@ def _httpx_verify_kwarg() -> bool:
     Returns:
         True if SSL verification is enabled, False otherwise
     """
+    from ..config import environment
+
     return not environment.SSL_NO_VERIFY.get()
 
 
-def get(url: str, **kwargs) -> httpx.Response:
-    """Make an HTTP GET request.
+_P = ParamSpec("_P")
+_T = TypeVar("_T")
+
+
+def _wrap_https_func(func: Callable[_P, _T]) -> Callable[_P, _T]:
+    """Wrap an HTTPS function with logging.
 
     Args:
-        url: The URL to request.
-        **kwargs: Additional keyword arguments to pass to httpx.get.
+        func: The function to wrap.
 
     Returns:
-        The response object.
-
-    Raises:
-        httpx.ConnectError: If the connection cannot be established.
+        The wrapped function.
     """
-    kwargs.setdefault("verify", _httpx_verify_kwarg())
-    try:
-        return httpx.get(url, **kwargs)
-    except httpx.ConnectError as err:
-        if "CERTIFICATE_VERIFY_FAILED" in str(err):
-            # If the error is a certificate verification error, recommend mitigating steps.
-            console.error(
-                f"Certificate verification failed for {url}. Set environment variable SSL_CERT_FILE to the "
-                "path of the certificate file or SSL_NO_VERIFY=1 to disable verification."
+
+    @functools.wraps(func)
+    def wrapper(*args: _P.args, **kwargs: _P.kwargs) -> _T:
+        url = args[0]
+        console.debug(f"Sending HTTPS request to {args[0]}")
+        initial_time = time.time()
+        try:
+            response = func(*args, **kwargs)
+        except httpx.ConnectError as err:
+            if "CERTIFICATE_VERIFY_FAILED" in str(err):
+                # If the error is a certificate verification error, recommend mitigating steps.
+                console.error(
+                    f"Certificate verification failed for {url}. Set environment variable SSL_CERT_FILE to the "
+                    "path of the certificate file or SSL_NO_VERIFY=1 to disable verification."
+                )
+            raise
+        else:
+            console.debug(
+                f"Received response from {url} in {time.time() - initial_time:.3f} seconds"
             )
-        raise
+            return response
+
+    return wrapper
+
+
+@once
+def _httpx_client() -> httpx.Client:
+    """Get an HTTPX client.
+
+    Returns:
+        An HTTPX client.
+    """
+    return httpx.Client(
+        transport=httpx.HTTPTransport(
+            local_address="0.0.0.0",
+            verify=_httpx_verify_kwarg(),
+        )
+    )
+
+
+get = _wrap_https_func(_httpx_client().get)
