@@ -1,5 +1,5 @@
 import { useTheme } from "$/utils/react-theme";
-import { useEffect, useState, createElement } from "react";
+import { useEffect, useState, createElement, useRef } from "react";
 import {
   ColorModeContext,
   defaultColorMode,
