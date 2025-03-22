@@ -38,7 +38,7 @@ def validate_field_name(bases: list[Type["BaseModel"]], field_name: str) -> None
 
 # monkeypatch pydantic validate_field_name method to skip validating
 # shadowed state vars when reloading app via utils.prerequisites.get_app(reload=True)
-pydantic_main.validate_field_name = validate_field_name  # pyright: ignore [reportPossiblyUnboundVariable, reportPrivateImportUsage]
+pydantic_main.validate_field_name = validate_field_name  # pyright: ignore [reportPrivateImportUsage]
 
 if TYPE_CHECKING:
     from reflex.vars import Var
@@ -107,7 +107,7 @@ class Base(BaseModel):
             default_value: The default value of the field
         """
         var_name = var._var_field_name
-        new_field = ModelField.infer(  # pyright: ignore [reportPossiblyUnboundVariable]
+        new_field = ModelField.infer(
             name=var_name,
             value=default_value,
             annotation=var._var_type,
@@ -128,5 +128,5 @@ class Base(BaseModel):
         if isinstance(key, str):
             # Seems like this function signature was wrong all along?
             # If the user wants a field that we know of, get it and pass it off to _get_value
-            return getattr(self, key, key)
+            return getattr(self, key)
         return key

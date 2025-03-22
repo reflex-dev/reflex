@@ -8,6 +8,7 @@ import functools
 import importlib
 import importlib.metadata
 import importlib.util
+import io
 import json
 import os
 import platform
@@ -183,7 +184,7 @@ def get_node_version() -> version.Version | None:
     try:
         result = processes.new_process([node_path, "-v"], run=True)
         # The output will be in the form "vX.Y.Z", but version.parse() can handle it
-        return version.parse(result.stdout)  # pyright: ignore [reportArgumentType]
+        return version.parse(result.stdout)
     except (FileNotFoundError, TypeError):
         return None
 
@@ -200,7 +201,7 @@ def get_bun_version() -> version.Version | None:
     try:
         # Run the bun -v command and capture the output
         result = processes.new_process([str(bun_path), "-v"], run=True)
-        return version.parse(str(result.stdout))  # pyright: ignore [reportArgumentType]
+        return version.parse(str(result.stdout))
     except FileNotFoundError:
         return None
     except version.InvalidVersion as e:
@@ -447,6 +448,76 @@ def compile_app(reload: bool = False, export: bool = False) -> None:
         export: Compile the app for export
     """
     get_compiled_app(reload=reload, export=export)
+
+
+def _can_colorize() -> bool:
+    """Check if the output can be colorized.
+
+    Copied from _colorize.can_colorize.
+
+    https://raw.githubusercontent.com/python/cpython/refs/heads/main/Lib/_colorize.py
+
+    Returns:
+        If the output can be colorized
+    """
+    file = sys.stdout
+
+    if not sys.flags.ignore_environment:
+        if os.environ.get("PYTHON_COLORS") == "0":
+            return False
+        if os.environ.get("PYTHON_COLORS") == "1":
+            return True
+    if os.environ.get("NO_COLOR"):
+        return False
+    if os.environ.get("FORCE_COLOR"):
+        return True
+    if os.environ.get("TERM") == "dumb":
+        return False
+
+    if not hasattr(file, "fileno"):
+        return False
+
+    if sys.platform == "win32":
+        try:
+            import nt
+
+            if not nt._supports_virtual_terminal():
+                return False
+        except (ImportError, AttributeError):
+            return False
+
+    try:
+        return os.isatty(file.fileno())
+    except io.UnsupportedOperation:
+        return file.isatty()
+
+
+def compile_or_validate_app(compile: bool = False) -> bool:
+    """Compile or validate the app module based on the default config.
+
+    Args:
+        compile: Whether to compile the app.
+
+    Returns:
+        If the app is compiled successfully.
+    """
+    try:
+        if compile:
+            compile_app()
+        else:
+            validate_app()
+    except Exception as e:
+        import traceback
+
+        sys_exception = sys.exception()
+
+        try:
+            colorize = _can_colorize()
+            traceback.print_exception(e, colorize=colorize)  # pyright: ignore[reportCallIssue]
+        except Exception:
+            traceback.print_exception(sys_exception)
+        return False
+    return True
 
 
 def get_redis() -> Redis | None:
