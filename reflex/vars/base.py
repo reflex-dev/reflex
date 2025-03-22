@@ -1561,7 +1561,7 @@ class LiteralVar(Var):
         )
 
     if not TYPE_CHECKING:
-        create = classmethod(_create_literal_var)
+        create = _create_literal_var
 
     def __post_init__(self):
         """Post-initialize the var."""
