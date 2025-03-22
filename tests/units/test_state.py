@@ -3436,6 +3436,30 @@ class GrandchildUsesMixinState(ChildMixinState):
     pass
 
 
+class BareMixin:
+    """A bare mixin which does not inherit from rx.State."""
+
+    _bare_mixin: int = 0
+
+
+class BareStateMixin(BareMixin, rx.State, mixin=True):
+    """A state mixin that uses a bare mixin."""
+
+    pass
+
+
+class BareMixinState(BareStateMixin, State):
+    """A state that uses a bare mixin."""
+
+    pass
+
+
+class ChildBareMixinState(BareMixinState):
+    """A child state that uses a bare mixin."""
+
+    pass
+
+
 def test_mixin_state() -> None:
     """Test that a mixin state works correctly."""
     assert "num" in UsesMixinState.base_vars
@@ -3479,6 +3503,21 @@ def test_grandchild_mixin_state() -> None:
 
     assert GrandchildUsesMixinState.get_parent_state() == ChildUsesMixinState
     assert GrandchildUsesMixinState.get_root_state() == State
+
+
+def test_bare_mixin_state() -> None:
+    """Test that a mixin can inherit from a concrete state class."""
+    assert "_bare_mixin" not in BareMixinState.inherited_vars
+    assert "_bare_mixin" not in BareMixinState.base_vars
+
+    assert BareMixinState.get_parent_state() == State
+    assert BareMixinState.get_root_state() == State
+
+    assert "_bare_mixin" not in ChildBareMixinState.inherited_vars
+    assert "_bare_mixin" not in ChildBareMixinState.base_vars
+
+    assert ChildBareMixinState.get_parent_state() == BareMixinState
+    assert ChildBareMixinState.get_root_state() == State
 
 
 def test_assignment_to_undeclared_vars():
