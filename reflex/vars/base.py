@@ -60,10 +60,11 @@ from reflex.utils.exceptions import (
 )
 from reflex.utils.format import format_state_name
 from reflex.utils.imports import (
+    ImmutableImportDict,
     ImmutableParsedImportDict,
     ImportDict,
     ImportVar,
-    ParsedImportDict,
+    ParsedImportTuple,
     parse_imports,
 )
 from reflex.utils.types import (
@@ -123,7 +124,7 @@ class VarData:
     field_name: str = dataclasses.field(default="")
 
     # Imports needed to render this var
-    imports: ImmutableParsedImportDict = dataclasses.field(default_factory=tuple)
+    imports: ParsedImportTuple = dataclasses.field(default_factory=tuple)
 
     # Hooks that need to be present in the component to render this var
     hooks: tuple[str, ...] = dataclasses.field(default_factory=tuple)
@@ -141,7 +142,7 @@ class VarData:
         self,
         state: str = "",
         field_name: str = "",
-        imports: ImportDict | ParsedImportDict | None = None,
+        imports: ImmutableImportDict | ImmutableParsedImportDict | None = None,
         hooks: Mapping[str, VarData | None] | Sequence[str] | str | None = None,
         deps: list[Var] | None = None,
         position: Hooks.HookPosition | None = None,
@@ -162,7 +163,7 @@ class VarData:
             hooks = [hooks]
         if not isinstance(hooks, dict):
             hooks = dict.fromkeys(hooks or [])
-        immutable_imports: ImmutableParsedImportDict = tuple(
+        immutable_imports: ParsedImportTuple = tuple(
             (k, tuple(v)) for k, v in parse_imports(imports or {}).items()
         )
         object.__setattr__(self, "state", state)
@@ -1059,7 +1060,9 @@ class Var(Generic[VAR_TYPE]):
 
         return boolify(self)
 
-    def __and__(self, other: Var | Any) -> Var:
+    def __and__(
+        self, other: Var[OTHER_VAR_TYPE] | Any
+    ) -> Var[VAR_TYPE | OTHER_VAR_TYPE]:
         """Perform a logical AND operation on the current instance and another variable.
 
         Args:
@@ -1070,7 +1073,9 @@ class Var(Generic[VAR_TYPE]):
         """
         return and_operation(self, other)
 
-    def __rand__(self, other: Var | Any) -> Var:
+    def __rand__(
+        self, other: Var[OTHER_VAR_TYPE] | Any
+    ) -> Var[VAR_TYPE | OTHER_VAR_TYPE]:
         """Perform a logical AND operation on the current instance and another variable.
 
         Args:
@@ -1081,7 +1086,9 @@ class Var(Generic[VAR_TYPE]):
         """
         return and_operation(other, self)
 
-    def __or__(self, other: Var | Any) -> Var:
+    def __or__(
+        self, other: Var[OTHER_VAR_TYPE] | Any
+    ) -> Var[VAR_TYPE | OTHER_VAR_TYPE]:
         """Perform a logical OR operation on the current instance and another variable.
 
         Args:
@@ -1092,7 +1099,9 @@ class Var(Generic[VAR_TYPE]):
         """
         return or_operation(self, other)
 
-    def __ror__(self, other: Var | Any) -> Var:
+    def __ror__(
+        self, other: Var[OTHER_VAR_TYPE] | Any
+    ) -> Var[VAR_TYPE | OTHER_VAR_TYPE]:
         """Perform a logical OR operation on the current instance and another variable.
 
         Args:
@@ -1922,7 +1931,9 @@ class CachedVarOperation:
         )
 
 
-def and_operation(a: Var | Any, b: Var | Any) -> Var:
+def and_operation(
+    a: Var[VAR_TYPE] | Any, b: Var[OTHER_VAR_TYPE] | Any
+) -> Var[VAR_TYPE | OTHER_VAR_TYPE]:
     """Perform a logical AND operation on two variables.
 
     Args:
@@ -1952,7 +1963,9 @@ def _and_operation(a: Var, b: Var):
     )
 
 
-def or_operation(a: Var | Any, b: Var | Any) -> Var:
+def or_operation(
+    a: Var[VAR_TYPE] | Any, b: Var[OTHER_VAR_TYPE] | Any
+) -> Var[VAR_TYPE | OTHER_VAR_TYPE]:
     """Perform a logical OR operation on two variables.
 
     Args:

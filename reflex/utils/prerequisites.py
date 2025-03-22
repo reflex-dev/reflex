@@ -1496,6 +1496,9 @@ def prompt_for_template_options(templates: list[Template]) -> str:
 
     Returns:
         The template name the user selects.
+
+    Raises:
+        Exit: If the user does not select a template.
     """
     # Show the user the URLs of each template to preview.
     console.print("\nGet started with a template:")
@@ -1520,8 +1523,22 @@ def prompt_for_template_options(templates: list[Template]) -> str:
         default="0",
     )
 
+    if not template:
+        console.error("No template selected.")
+        raise typer.Exit(1)
+
+    try:
+        template_index = int(template)
+    except ValueError:
+        console.error("Invalid template selected.")
+        raise typer.Exit(1) from None
+
+    if template_index < 0 or template_index >= len(templates):
+        console.error("Invalid template selected.")
+        raise typer.Exit(1)
+
     # Return the template.
-    return templates[int(template)].name  # pyright: ignore [reportArgumentType]
+    return templates[template_index].name
 
 
 def fetch_app_templates(version: str) -> dict[str, Template]:

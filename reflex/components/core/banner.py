@@ -149,8 +149,12 @@ setTimeout(() => {{
                 "useEffect",
                 _var_data=VarData(
                     imports={
-                        "react": ["useEffect", "useState"],
-                        **dict(target_url._get_all_var_data().imports),  # pyright: ignore [reportArgumentType, reportOptionalMemberAccess]
+                        "react": ("useEffect", "useState"),
+                        **(
+                            dict(var_data.imports)
+                            if (var_data := target_url._get_all_var_data()) is not None
+                            else {}
+                        ),
                     }
                 ),
             ).call(

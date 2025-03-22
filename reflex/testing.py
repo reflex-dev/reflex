@@ -290,8 +290,10 @@ class AppHarness:
         if self.app_instance and isinstance(
             self.app_instance._state_manager, StateManagerRedis
         ):
+            if self.app_instance._state is None:
+                raise RuntimeError("State is not set.")
             # Create our own redis connection for testing.
-            self.state_manager = StateManagerRedis.create(self.app_instance._state)  # pyright: ignore [reportArgumentType]
+            self.state_manager = StateManagerRedis.create(self.app_instance._state)
         else:
             self.state_manager = (
                 self.app_instance._state_manager if self.app_instance else None
