@@ -593,8 +593,8 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             if cls._item_is_event_handler(name, fn)
         }
 
-        for mixin in cls._mixins():  # pyright: ignore [reportAssignmentType]
-            for name, value in mixin.__dict__.items():
+        for mixin_cls in cls._mixins():
+            for name, value in mixin_cls.__dict__.items():
                 if name in cls.inherited_vars:
                     continue
                 if is_computed_var(value):
@@ -605,7 +605,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
                     cls.computed_vars[newcv._js_expr] = newcv
                     cls.vars[newcv._js_expr] = newcv
                     continue
-                if types.is_backend_base_variable(name, mixin):  # pyright: ignore [reportArgumentType]
+                if types.is_backend_base_variable(name, mixin_cls):
                     cls.backend_vars[name] = copy.deepcopy(value)
                     continue
                 if events.get(name) is not None:

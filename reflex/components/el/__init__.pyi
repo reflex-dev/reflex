@@ -141,7 +141,7 @@ from .elements.metadata import Base as Base
 from .elements.metadata import Head as Head
 from .elements.metadata import Link as Link
 from .elements.metadata import Meta as Meta
-from .elements.metadata import Style as Style
+from .elements.metadata import StyleEl as StyleEl
 from .elements.metadata import Title as Title
 from .elements.metadata import base as base
 from .elements.metadata import head as head

@@ -1,5 +1,3 @@
-from typing import Dict, List
-
 import pytest
 
 from reflex.components.tags import CondTag, Tag, tagless
@@ -16,7 +14,7 @@ from reflex.vars.base import LiteralVar, Var
         ({"key": True, "key2": "value2"}, ["key={true}", 'key2={"value2"}']),
     ],
 )
-def test_format_props(props: dict[str, Var], test_props: List):
+def test_format_props(props: dict[str, Var], test_props: list):
     """Test that the formatted props are correct.
 
     Args:
@@ -91,7 +89,7 @@ def test_add_props():
         ),
     ],
 )
-def test_format_tag(tag: Tag, expected: Dict):
+def test_format_tag(tag: Tag, expected: dict):
     """Test that the tag dict is correct.
 
     Args:
@@ -110,7 +108,7 @@ def test_format_cond_tag():
     tag = CondTag(
         true_value=dict(Tag(name="h1", contents="True content")),
         false_value=dict(Tag(name="h2", contents="False content")),
-        cond=Var(_js_expr="logged_in", _var_type=bool),
+        cond=Var("logged_in", _var_type=bool),
     )
     tag_dict = dict(tag)
     cond, true_value, false_value = (

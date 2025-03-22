@@ -5,11 +5,11 @@
 # ------------------------------------------------------
 import dataclasses
 from functools import lru_cache
-from typing import Any, Callable, Optional, Sequence, overload
+from typing import Any, Callable, Mapping, Optional, Sequence, overload
 
 from reflex.components.component import Component
+from reflex.components.core.breakpoints import Breakpoints
 from reflex.event import EventType
-from reflex.style import Style
 from reflex.utils.imports import ImportDict
 from reflex.vars.base import LiteralVar, Var, VarData
 
@@ -54,7 +54,11 @@ class Markdown(Component):
         *children,
         component_map: dict[str, Any] | None = None,
         component_map_hash: str | None = None,
-        style: Style | None = None,
+        style: Sequence[Mapping[str, Any]]
+        | Mapping[str, Any]
+        | Var[Mapping[str, Any]]
+        | Breakpoints
+        | None = None,
         key: Any | None = None,
         id: Any | None = None,
         class_name: Any | None = None,

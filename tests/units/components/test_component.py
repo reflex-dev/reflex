@@ -1384,12 +1384,12 @@ class EventState(rx.State):
             id="fstring-background_color",
         ),
         pytest.param(
-            rx.fragment(style={"background_color": TEST_VAR}),  # pyright: ignore [reportArgumentType]
+            rx.fragment(style={"background_color": TEST_VAR}),
             [STYLE_VAR],
             id="direct-style-background_color",
         ),
         pytest.param(
-            rx.fragment(style={"background_color": f"foo{TEST_VAR}bar"}),  # pyright: ignore [reportArgumentType]
+            rx.fragment(style={"background_color": f"foo{TEST_VAR}bar"}),
             [STYLE_VAR],
             id="fstring-style-background_color",
         ),

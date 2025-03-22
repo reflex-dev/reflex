@@ -140,7 +140,7 @@ from .metadata import Base as Base
 from .metadata import Head as Head
 from .metadata import Link as Link
 from .metadata import Meta as Meta
-from .metadata import Style as Style
+from .metadata import StyleEl as StyleEl
 from .metadata import Title as Title
 from .metadata import base as base
 from .metadata import head as head
@@ -371,7 +371,7 @@ _MAPPING = {
         "Del",
     ],
 }
-EXCLUDE = ["del_", "Del", "image"]
+EXCLUDE = ["del_", "Del", "image", "style"]
 for v in _MAPPING.values():
     from reflex.utils.format import to_camel_case
 
@@ -382,3 +382,4 @@ for v in _MAPPING.values():
             if mod not in EXCLUDE
         ]
     )
+_MAPPING["metadata"].extend(["StyleEl"])

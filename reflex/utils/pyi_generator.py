@@ -55,6 +55,10 @@ EXCLUDED_PROPS = [
     "State",
 ]
 
+OVERWRITE_TYPES = {
+    "style": "Sequence[Mapping[str, Any]] | Mapping[str, Any] | Var[Mapping[str, Any]] | Breakpoints | None",
+}
+
 DEFAULT_TYPING_IMPORTS = {
     "overload",
     "Any",
@@ -62,6 +66,7 @@ DEFAULT_TYPING_IMPORTS = {
     "Dict",
     # "List",
     "Sequence",
+    "Mapping",
     "Literal",
     "Optional",
     "Union",
@@ -377,7 +382,9 @@ def _extract_class_props_as_ast_nodes(
                     ast.arg(
                         arg=name,
                         annotation=ast.Name(
-                            id=_get_type_hint(value, type_hint_globals)
+                            id=OVERWRITE_TYPES.get(
+                                name, _get_type_hint(value, type_hint_globals)
+                            )
                         ),
                     ),
                     ast.Constant(value=default),
@@ -386,7 +393,7 @@ def _extract_class_props_as_ast_nodes(
     return kwargs
 
 
-def type_to_ast(typ: Any, cls: type) -> ast.AST:
+def type_to_ast(typ: Any, cls: type) -> ast.expr:
     """Converts any type annotation into its AST representation.
     Handles nested generic types, unions, etc.
 
@@ -439,11 +446,11 @@ def type_to_ast(typ: Any, cls: type) -> ast.AST:
     if len(arg_nodes) == 1:
         slice_value = arg_nodes[0]
     else:
-        slice_value = ast.Tuple(elts=arg_nodes, ctx=ast.Load())  # pyright: ignore [reportArgumentType]
+        slice_value = ast.Tuple(elts=arg_nodes, ctx=ast.Load())
 
     return ast.Subscript(
         value=ast.Name(id=base_name),
-        slice=ast.Index(value=slice_value),  # pyright: ignore [reportArgumentType]
+        slice=slice_value,
         ctx=ast.Load(),
     )
 
@@ -463,16 +470,18 @@ def _get_parent_imports(func: Callable):
 
 
 def _generate_component_create_functiondef(
-    node: ast.FunctionDef | None,
-    clz: type[Component] | type[SimpleNamespace],
+    clz: type[Component],
     type_hint_globals: dict[str, Any],
+    lineno: int,
+    decorator_list: Sequence[ast.expr] = (ast.Name(id="classmethod"),),
 ) -> ast.FunctionDef:
     """Generate the create function definition for a Component.
 
     Args:
-        node: The existing create functiondef node from the ast
         clz: The Component class to generate the create functiondef for.
         type_hint_globals: The globals to use to resolving a type hint str.
+        lineno: The line number to use for the ast nodes.
+        decorator_list: The list of decorators to apply to the create functiondef.
 
     Returns:
         The create functiondef node for the ast.
@@ -584,28 +593,26 @@ def _generate_component_create_functiondef(
                 arg=trigger,
                 annotation=ast.Subscript(
                     ast.Name("Optional"),
-                    ast.Index(  # pyright: ignore [reportArgumentType]
-                        value=ast.Name(
-                            id=ast.unparse(
-                                figure_out_return_type(
-                                    inspect.signature(event_specs).return_annotation
-                                )
-                                if not isinstance(
-                                    event_specs := event_triggers[trigger], Sequence
-                                )
-                                else ast.Subscript(
-                                    ast.Name("Union"),
-                                    ast.Tuple(
-                                        [
-                                            figure_out_return_type(
-                                                inspect.signature(
-                                                    event_spec
-                                                ).return_annotation
-                                            )
-                                            for event_spec in event_specs
-                                        ]
-                                    ),
-                                )
+                    ast.Name(
+                        id=ast.unparse(
+                            figure_out_return_type(
+                                inspect.signature(event_specs).return_annotation
+                            )
+                            if not isinstance(
+                                event_specs := event_triggers[trigger], Sequence
+                            )
+                            else ast.Subscript(
+                                ast.Name("Union"),
+                                ast.Tuple(
+                                    [
+                                        figure_out_return_type(
+                                            inspect.signature(
+                                                event_spec
+                                            ).return_annotation
+                                        )
+                                        for event_spec in event_specs
+                                    ]
+                                ),
                             )
                         )
                     ),
@@ -630,7 +637,7 @@ def _generate_component_create_functiondef(
     definition = ast.FunctionDef(  # pyright: ignore [reportCallIssue]
         name="create",
         args=create_args,
-        body=[  # pyright: ignore [reportArgumentType]
+        body=[
             ast.Expr(
                 value=ast.Constant(
                     value=_generate_docstrings(
@@ -644,25 +651,19 @@ def _generate_component_create_functiondef(
         ],
         decorator_list=[
             ast.Name(id="overload"),
-            *(
-                node.decorator_list
-                if node is not None
-                else [ast.Name(id="classmethod")]
-            ),
+            *decorator_list,
         ],
-        lineno=node.lineno if node is not None else None,  # pyright: ignore [reportArgumentType]
+        lineno=lineno,
         returns=ast.Constant(value=clz.__name__),
     )
     return definition
 
 
 def _generate_staticmethod_call_functiondef(
-    node: ast.FunctionDef | None,
+    node: ast.ClassDef,
     clz: type[Component] | type[SimpleNamespace],
     type_hint_globals: dict[str, Any],
 ) -> ast.FunctionDef | None:
-    ...
-
     fullspec = getfullargspec(clz.__call__)
 
     call_args = ast.arguments(
@@ -699,7 +700,7 @@ def _generate_staticmethod_call_functiondef(
             ),
         ],
         decorator_list=[ast.Name(id="staticmethod")],
-        lineno=node.lineno if node is not None else None,  # pyright: ignore [reportArgumentType]
+        lineno=node.lineno,
         returns=ast.Constant(
             value=_get_type_hint(
                 typing.get_type_hints(clz.__call__).get("return", None),
@@ -712,7 +713,7 @@ def _generate_staticmethod_call_functiondef(
 
 
 def _generate_namespace_call_functiondef(
-    node: ast.ClassDef | None,
+    node: ast.ClassDef,
     clz_name: str,
     classes: dict[str, type[Component] | type[SimpleNamespace]],
     type_hint_globals: dict[str, Any],
@@ -736,7 +737,7 @@ def _generate_namespace_call_functiondef(
     clz = classes[clz_name]
 
     if not hasattr(clz.__call__, "__self__"):
-        return _generate_staticmethod_call_functiondef(node, clz, type_hint_globals)  # pyright: ignore [reportArgumentType]
+        return _generate_staticmethod_call_functiondef(node, clz, type_hint_globals)
 
     # Determine which class is wrapped by the namespace __call__ method
     component_clz = clz.__call__.__self__
@@ -744,10 +745,14 @@ def _generate_namespace_call_functiondef(
     if clz.__call__.__func__.__name__ != "create":  # pyright: ignore [reportFunctionMemberAccess]
         return None
 
+    if not issubclass(component_clz, Component):
+        return None
+
     definition = _generate_component_create_functiondef(
-        node=None,
-        clz=component_clz,  # pyright: ignore [reportArgumentType]
+        clz=component_clz,
         type_hint_globals=type_hint_globals,
+        lineno=node.lineno,
+        decorator_list=[],
     )
     definition.name = "__call__"
 
@@ -804,17 +809,18 @@ class StubGenerator(ast.NodeTransformer):
             node.body.pop(0)
         return node
 
-    def _current_class_is_component(self) -> bool:
+    def _current_class_is_component(self) -> type[Component] | None:
         """Check if the current class is a Component.
 
         Returns:
             Whether the current class is a Component.
         """
-        return (
+        if (
             self.current_class is not None
             and self.current_class in self.classes
-            and issubclass(self.classes[self.current_class], Component)
-        )
+            and issubclass((clz := self.classes[self.current_class]), Component)
+        ):
+            return clz
 
     def visit_Module(self, node: ast.Module) -> ast.Module:
         """Visit a Module node and remove docstring from body.
@@ -916,14 +922,14 @@ class StubGenerator(ast.NodeTransformer):
                 isinstance(child, ast.FunctionDef) and child.name == "create"
                 for child in node.body
             )
-            and self._current_class_is_component()
+            and (clz := self._current_class_is_component()) is not None
         ):
             # Add a new .create FunctionDef since one does not exist.
             node.body.append(
                 _generate_component_create_functiondef(
-                    node=None,
-                    clz=self.classes[self.current_class],
+                    clz=clz,
                     type_hint_globals=self.type_hint_globals,
+                    lineno=node.lineno,
                 )
             )
         if call_definition is not None:
@@ -949,9 +955,16 @@ class StubGenerator(ast.NodeTransformer):
         Returns:
             The modified FunctionDef node (or None).
         """
-        if node.name == "create" and self.current_class in self.classes:
+        if (
+            node.name == "create"
+            and self.current_class in self.classes
+            and issubclass((clz := self.classes[self.current_class]), Component)
+        ):
             node = _generate_component_create_functiondef(
-                node, self.classes[self.current_class], self.type_hint_globals
+                clz=clz,
+                type_hint_globals=self.type_hint_globals,
+                lineno=node.lineno,
+                decorator_list=node.decorator_list,
             )
         else:
             if node.name.startswith("_") and node.name != "__call__":

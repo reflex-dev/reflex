@@ -83,7 +83,7 @@ def _find(const: list[str], var: Any):
 
 
 def _set_var_default(
-    props: dict, position: Any, prop: str, default1: str, default2: str = ""
+    props: dict, position: Any, prop: str, default1: str, default2: str | Var = ""
 ):
     props.setdefault(
         prop, cond(_find(position_map[prop], position), default1, default2)
@@ -122,7 +122,7 @@ class ColorModeIconButton(IconButton):
 
         # position is used to set nice defaults for positioning the icon button
         if isinstance(position, Var):
-            _set_var_default(props, position, "position", "fixed", position)  # pyright: ignore [reportArgumentType]
+            _set_var_default(props, position, "position", "fixed", position)
             _set_var_default(props, position, "bottom", "2rem")
             _set_var_default(props, position, "top", "2rem")
             _set_var_default(props, position, "left", "2rem")

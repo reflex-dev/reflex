@@ -201,10 +201,9 @@ def _get_first_non_framework_frame() -> FrameType | None:
     # Exclude utility modules that should never be the source of deprecated reflex usage.
     exclude_modules = [click, rx, typer, typing_extensions]
     exclude_roots = [
-        p.parent.resolve()
-        if (p := Path(m.__file__)).name == "__init__.py"  # pyright: ignore [reportArgumentType]
-        else p.resolve()
+        p.parent.resolve() if (p := Path(file)).name == "__init__.py" else p.resolve()
         for m in exclude_modules
+        if (file := m.__file__)
     ]
     # Specifically exclude the reflex cli module.
     if reflex_bin := shutil.which(b"reflex"):

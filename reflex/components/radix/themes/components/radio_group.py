@@ -179,7 +179,12 @@ class HighLevelRadioGroup(RadixThemesComponent):
                 as_="label",
             )
 
-        children = [rx.foreach(LiteralVar.create(items), radio_group_item)]
+        children = [
+            rx.foreach(
+                items,
+                radio_group_item,
+            )
+        ]
 
         return RadioGroupRoot.create(
             Flex.create(

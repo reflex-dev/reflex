@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any, Dict, List, Sequence
+from typing import Any, Dict, Sequence
 
 from reflex.components.component import Component
 from reflex.components.tags import Tag
@@ -90,7 +90,7 @@ class DataTable(Gridjs):
 
         # If data is a list and columns are not provided, throw an error
         if (
-            (isinstance(data, Var) and types._issubclass(data._var_type, List))
+            (isinstance(data, Var) and types.typehint_issubclass(data._var_type, list))
             or isinstance(data, list)
         ) and columns is None:
             raise ValueError(

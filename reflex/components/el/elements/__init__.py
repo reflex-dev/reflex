@@ -137,7 +137,7 @@ _MAPPING = {
 }
 
 
-EXCLUDE = ["del_", "Del", "image"]
+EXCLUDE = ["del_", "Del", "image", "style"]
 for v in _MAPPING.values():
     from reflex.utils.format import to_camel_case
 
@@ -148,6 +148,8 @@ for v in _MAPPING.values():
             if mod not in EXCLUDE
         ]
     )
+
+_MAPPING["metadata"].extend(["StyleEl"])
 
 _SUBMOD_ATTRS: dict[str, list[str]] = _MAPPING
 

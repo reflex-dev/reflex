@@ -1064,7 +1064,7 @@ U = TypeVar("U")
 
 @var_operation
 def ternary_operation(
-    condition: BooleanVar, if_true: Var[T], if_false: Var[U]
+    condition: Var[bool], if_true: Var[T], if_false: Var[U]
 ) -> CustomVarOperationReturn[T | U]:
     """Create a ternary operation.
 
