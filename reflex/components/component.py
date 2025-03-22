@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import contextlib
 import copy
 import dataclasses
 import functools
@@ -1981,13 +1982,15 @@ class NoSSRComponent(Component):
         # Do NOT import the main library/tag statically.
         import_name = self._get_import_name()
         if import_name is not None:
-            _imports[import_name] = [
+            with contextlib.suppress(ValueError):
+                _imports[import_name].remove(self.import_var)
+            _imports[import_name].append(
                 imports.ImportVar(
                     tag=None,
                     render=False,
                     transpile=self._should_transpile(self.library),
-                ),
-            ]
+                )
+            )
 
         return imports.merge_imports(
             dynamic_import,

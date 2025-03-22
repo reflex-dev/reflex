@@ -189,9 +189,11 @@ def run_frontend_prod(root: Path, port: str, backend_present: bool = True):
 
 @once
 def _warn_user_about_uvicorn():
-    console.warn(
-        "Using Uvicorn for backend as it is installed. This behavior will change in 0.8.0 to use Granian by default."
-    )
+    # When we eventually switch to Granian by default, we should enable this warning.
+    if False:
+        console.warn(
+            "Using Uvicorn for backend as it is installed. This behavior will change in 0.8.0 to use Granian by default."
+        )
 
 
 def should_use_granian():
@@ -357,70 +359,74 @@ def run_granian_backend(host: str, port: int, loglevel: LogLevel):
     ).serve()
 
 
+def _deprecate_asgi_config(
+    config_name: str,
+    reason: str = "",
+):
+    # When we eventually switch to Granian by default, we should enable this deprecation.
+    if False:
+        console.deprecate(
+            f"config.{config_name}",
+            reason=reason,
+            deprecation_version="0.7.5",
+            removal_version="0.8.0",
+        )
+
+
 @once
 def _get_backend_workers():
     from reflex.utils import processes
 
     config = get_config()
 
+    gunicorn_workers = config.gunicorn_workers or 0
+
     if config.gunicorn_workers is not None:
-        console.deprecate(
-            "config.gunicorn_workers",
-            reason="If you're using Granian, use GRANIAN_WORKERS instead.",
-            deprecation_version="0.7.4",
-            removal_version="0.8.0",
+        _deprecate_asgi_config(
+            "gunicorn_workers",
+            "If you're using Granian, use GRANIAN_WORKERS instead.",
         )
 
-    return (
-        processes.get_num_workers()
-        if not config.gunicorn_workers
-        else config.gunicorn_workers
-    )
+    return gunicorn_workers if gunicorn_workers else processes.get_num_workers()
 
 
 @once
 def _get_backend_timeout():
     config = get_config()
 
+    timeout = config.timeout or 120
+
     if config.timeout is not None:
-        console.deprecate(
-            "config.timeout",
-            reason="If you're using Granian, use GRANIAN_WORKERS_LIFETIME instead.",
-            deprecation_version="0.7.4",
-            removal_version="0.8.0",
+        _deprecate_asgi_config(
+            "timeout",
+            "If you're using Granian, use GRANIAN_WORKERS_LIFETIME instead.",
         )
 
-    return config.timeout
+    return timeout
 
 
 @once
 def _get_backend_max_requests():
     config = get_config()
 
-    if config.gunicorn_max_requests is not None:
-        console.deprecate(
-            "config.gunicorn_max_requests",
-            reason="",
-            deprecation_version="0.7.4",
-            removal_version="0.8.0",
-        )
+    gunicorn_max_requests = config.gunicorn_max_requests or 120
 
-    return config.gunicorn_max_requests
+    if config.gunicorn_max_requests is not None:
+        _deprecate_asgi_config("gunicorn_max_requests")
+
+    return gunicorn_max_requests
 
 
 @once
 def _get_backend_max_requests_jitter():
     config = get_config()
 
-    if config.gunicorn_max_requests_jitter is not None:
-        console.deprecate(
-            "config.gunicorn_max_requests_jitter",
-            reason="",
-            deprecation_version="0.7.4",
-            removal_version="0.8.0",
-        )
+    gunicorn_max_requests_jitter = config.gunicorn_max_requests_jitter or 25
 
-    return config.gunicorn_max_requests_jitter
+    if config.gunicorn_max_requests_jitter is not None:
+        _deprecate_asgi_config("gunicorn_max_requests_jitter")
+
+    return gunicorn_max_requests_jitter
 
 
 def run_backend_prod(
