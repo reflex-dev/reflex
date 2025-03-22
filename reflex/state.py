@@ -593,7 +593,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             if cls._item_is_event_handler(name, fn)
         }
 
-        for mixin_cls in cls._mixins():  # pyright: ignore [reportAssignmentType]
+        for mixin_cls in cls._mixins():
             for name, value in mixin_cls.__dict__.items():
                 if name in cls.inherited_vars:
                     continue
