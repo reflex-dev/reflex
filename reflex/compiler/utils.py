@@ -312,6 +312,8 @@ def compile_custom_component(
         if lib != component.library
     }
 
+    imports.setdefault("@emotion/react", []).append(ImportVar("jsx"))
+
     # Concatenate the props.
     props = [prop._js_expr for prop in component.get_prop_vars()]
 

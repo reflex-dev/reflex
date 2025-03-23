@@ -1398,9 +1398,7 @@ class Component(BaseComponent, ABC):
         Returns:
             The imports needed by the component.
         """
-        _imports = {
-            "@emotion/react": ImportVar(tag="jsx"),
-        }
+        _imports = {}
 
         # Import this component's tag from the main library.
         if self.library is not None and self.tag is not None:

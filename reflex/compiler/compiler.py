@@ -36,8 +36,10 @@ def _compile_document_root(root: Component) -> str:
     Returns:
         The compiled document root.
     """
+    document_root_imports = root._get_all_imports()
+    document_root_imports.setdefault("@emotion/react", []).append(ImportVar("jsx"))
     return templates.DOCUMENT_ROOT.render(
-        imports=utils.compile_imports(root._get_all_imports()),
+        imports=utils.compile_imports(document_root_imports),
         document=root.render(),
     )
 
@@ -74,8 +76,11 @@ def _compile_app(app_root: Component) -> str:
         ("utils_state", f"$/{constants.Dirs.UTILS}/state"),
     ]
 
+    app_root_imports = app_root._get_all_imports()
+    app_root_imports.setdefault("@emotion/react", []).append(ImportVar("jsx"))
+
     return templates.APP_ROOT.render(
-        imports=utils.compile_imports(app_root._get_all_imports()),
+        imports=utils.compile_imports(app_root_imports),
         custom_codes=app_root._get_all_custom_code(),
         hooks=app_root._get_all_hooks(),
         window_libraries=window_libraries,
@@ -143,6 +148,7 @@ def _compile_page(
         The compiled component.
     """
     imports = component._get_all_imports()
+    imports.setdefault("@emotion/react", []).append(ImportVar("jsx"))
     imports = utils.compile_imports(imports)
 
     # Compile the code to render the component.
