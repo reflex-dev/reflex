@@ -1,3 +1,3 @@
 export default {
-  ssr: false,
+  ssr: true,
 };
