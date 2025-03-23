@@ -26,7 +26,7 @@ def DeployUrlSample() -> None:
             rx.button("GOTO SELF", on_click=State.goto_self, id="goto_self")
         )
 
-    app = rx.App(_state=rx.State)
+    app = rx.App()
     app.add_page(index)
 
 

@@ -714,6 +714,27 @@ wheels = [
 ]
 
 [[package]]
+name = "jsonpatch"
+version = "1.33"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "jsonpointer" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/42/78/18813351fe5d63acad16aec57f94ec2b70a09e53ca98145589e185423873/jsonpatch-1.33.tar.gz", hash = "sha256:9fcd4009c41e6d12348b4a0ff2563ba56a2923a7dfee731d004e212e1ee5030c", size = 21699 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/73/07/02e16ed01e04a374e644b575638ec7987ae846d25ad97bcc9945a3ee4b0e/jsonpatch-1.33-py2.py3-none-any.whl", hash = "sha256:0ae28c0cd062bbd8b8ecc26d7d164fbbea9652a1a3693f3b956c1eae5145dade", size = 12898 },
+]
+
+[[package]]
+name = "jsonpointer"
+version = "3.0.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/6a/0a/eebeb1fa92507ea94016a2a790b93c2ae41a7e18778f85471dc54475ed25/jsonpointer-3.0.0.tar.gz", hash = "sha256:2b2d729f2091522d61c3b31f82e11870f60b68f43fbc705cb76bf4b832af59ef", size = 9114 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/71/92/5e77f98553e9e75130c78900d000368476aed74276eb8ae8796f65f00918/jsonpointer-3.0.0-py2.py3-none-any.whl", hash = "sha256:13e088adc14fca8b6aa8177c044e12701e6ad4b28ff10e65f2267a90109c9942", size = 7595 },
+]
+
+[[package]]
 name = "keyring"
 version = "25.6.0"
 source = { registry = "https://pypi.org/simple" }
@@ -1721,6 +1742,7 @@ dependencies = [
     { name = "gunicorn" },
     { name = "httpx" },
     { name = "jinja2" },
+    { name = "jsonpatch" },
     { name = "lazy-loader" },
     { name = "packaging" },
     { name = "platformdirs" },
@@ -1784,6 +1806,7 @@ requires-dist = [
     { name = "gunicorn", specifier = ">=23.0.0,<24.0.0" },
     { name = "httpx", specifier = ">=0.25.1,<1.0" },
     { name = "jinja2", specifier = ">=3.1.2,<4.0" },
+    { name = "jsonpatch", specifier = ">=1.33,<2.0" },
     { name = "lazy-loader", specifier = ">=0.4" },
     { name = "packaging", specifier = ">=23.1,<25.0" },
     { name = "platformdirs", specifier = ">=3.10.0,<5.0" },

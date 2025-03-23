@@ -91,6 +91,7 @@ class PackageJson(SimpleNamespace):
         "react-dom": "19.0.0",
         "react-focus-lock": "2.13.6",
         "socket.io-client": "4.8.1",
+        "fast-json-patch": "3.1.1",
         "universal-cookie": "7.2.2",
     }
     DEV_DEPENDENCIES = {

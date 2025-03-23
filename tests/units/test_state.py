@@ -34,6 +34,7 @@ from reflex.state import (
     OnLoadInternalState,
     RouterData,
     State,
+    StateDelta,
     StateManager,
     StateManagerDisk,
     StateManagerMemory,
@@ -784,7 +785,7 @@ async def test_process_event_simple(test_state):
         assert test_state.num1 == 69
 
         # The delta should contain the changes, including computed vars.
-        assert update.delta == {
+        assert update.delta.data == {
             TestState.get_full_name(): {"num1": 69, "sum": 72.14},
             GrandchildState3.get_full_name(): {"computed": ""},
         }
@@ -811,7 +812,7 @@ async def test_process_event_substate(test_state, child_state, grandchild_state)
     async for update in test_state._process(event):
         assert child_state.value == "HI"
         assert child_state.count == 24
-        assert update.delta == {
+        assert update.delta.data == {
             # TestState.get_full_name(): {"sum": 3.14, "upper": ""},
             ChildState.get_full_name(): {"value": "HI", "count": 24},
             GrandchildState3.get_full_name(): {"computed": ""},
@@ -827,7 +828,7 @@ async def test_process_event_substate(test_state, child_state, grandchild_state)
     )
     async for update in test_state._process(event):
         assert grandchild_state.value2 == "new"
-        assert update.delta == {
+        assert update.delta.data == {
             # TestState.get_full_name(): {"sum": 3.14, "upper": ""},
             GrandchildState.get_full_name(): {"value2": "new"},
             GrandchildState3.get_full_name(): {"computed": ""},
@@ -849,11 +850,11 @@ async def test_process_event_generator():
     async for update in gen:
         count += 1
         if count == 6:
-            assert update.delta == {}
+            assert update.delta.data == {}
             assert update.final
         else:
             assert gen_state.value == count
-            assert update.delta == {
+            assert update.delta.data == {
                 GenState.get_full_name(): {"value": count},
             }
             assert not update.final
@@ -1073,7 +1074,7 @@ def test_not_dirty_computed_var_from_var(
         interdependent_state: A state with varying Var dependencies.
     """
     interdependent_state.x = 5
-    assert interdependent_state.get_delta() == {
+    assert interdependent_state.get_delta().data == {
         interdependent_state.get_full_name(): {"x": 5},
     }
 
@@ -1088,7 +1089,7 @@ def test_dirty_computed_var_from_var(interdependent_state: InterdependentState) 
         interdependent_state: A state with varying Var dependencies.
     """
     interdependent_state.v1 = 1
-    assert interdependent_state.get_delta() == {
+    assert interdependent_state.get_delta().data == {
         interdependent_state.get_full_name(): {"v1": 1, "v1x2": 2, "v1x2x2": 4},
     }
 
@@ -1104,7 +1105,7 @@ def test_dirty_computed_var_from_backend_var(
     # Accessing ._v3 returns the immutable var it represents instead of the actual computed var
     # assert InterdependentState._v3._backend is True
     interdependent_state._v2 = 2
-    assert interdependent_state.get_delta() == {
+    assert interdependent_state.get_delta().data == {
         interdependent_state.get_full_name(): {"v2x2": 4, "v3x2": 4},
     }
 
@@ -1275,23 +1276,23 @@ def test_computed_var_cached_depends_on_non_cached():
 
     cs = ComputedState()
     assert cs.dirty_vars == set()
-    assert cs.get_delta() == {cs.get_name(): {"no_cache_v": 0, "dep_v": 0}}
+    assert cs.get_delta().data == {cs.get_name(): {"no_cache_v": 0, "dep_v": 0}}
     cs._clean()
     assert cs.dirty_vars == set()
-    assert cs.get_delta() == {cs.get_name(): {"no_cache_v": 0, "dep_v": 0}}
+    assert cs.get_delta().data == {cs.get_name(): {"no_cache_v": 0, "dep_v": 0}}
     cs._clean()
     assert cs.dirty_vars == set()
     cs.v = 1
     assert cs.dirty_vars == {"v", "comp_v", "dep_v", "no_cache_v"}
-    assert cs.get_delta() == {
+    assert cs.get_delta().data == {
         cs.get_name(): {"v": 1, "no_cache_v": 1, "dep_v": 1, "comp_v": 1}
     }
     cs._clean()
     assert cs.dirty_vars == set()
-    assert cs.get_delta() == {cs.get_name(): {"no_cache_v": 1, "dep_v": 1}}
+    assert cs.get_delta().data == {cs.get_name(): {"no_cache_v": 1, "dep_v": 1}}
     cs._clean()
     assert cs.dirty_vars == set()
-    assert cs.get_delta() == {cs.get_name(): {"no_cache_v": 1, "dep_v": 1}}
+    assert cs.get_delta().data == {cs.get_name(): {"no_cache_v": 1, "dep_v": 1}}
     cs._clean()
     assert cs.dirty_vars == set()
 
@@ -2017,14 +2018,17 @@ async def test_state_proxy(grandchild_state: GrandchildState, mock_app: rx.App):
     mcall = mock_app.event_namespace.emit.mock_calls[0]  # pyright: ignore [reportFunctionMemberAccess]
     assert mcall.args[0] == str(SocketEvent.EVENT)
     assert mcall.args[1] == StateUpdate(
-        delta={
-            grandchild_state.get_full_name(): {
-                "value2": "42",
+        delta=StateDelta(
+            {
+                grandchild_state.get_full_name(): {
+                    "value2": "42",
+                },
+                GrandchildState3.get_full_name(): {
+                    "computed": "",
+                },
             },
-            GrandchildState3.get_full_name(): {
-                "computed": "",
-            },
-        }
+            client_token="_" + grandchild_state.get_full_name(),
+        )
     )
     assert mcall.kwargs["to"] == grandchild_state.router.session.session_id
 
@@ -2179,18 +2183,21 @@ async def test_background_task_no_block(mock_app: rx.App, token: str):
     ):
         # other task returns delta
         assert update == StateUpdate(
-            delta={
-                BackgroundTaskState.get_full_name(): {
-                    "order": [
-                        "background_task:start",
-                        "other",
-                    ],
-                    "computed_order": [
-                        "background_task:start",
-                        "other",
-                    ],
-                }
-            }
+            delta=StateDelta(
+                {
+                    BackgroundTaskState.get_full_name(): {
+                        "order": [
+                            "background_task:start",
+                            "other",
+                        ],
+                        "computed_order": [
+                            "background_task:start",
+                            "other",
+                        ],
+                    }
+                },
+                client_token=token,
+            )
         )
 
     # Explicit wait for background tasks
@@ -2221,42 +2228,54 @@ async def test_background_task_no_block(mock_app: rx.App, token: str):
         is not None
     )
     assert first_ws_message == StateUpdate(
-        delta={
-            BackgroundTaskState.get_full_name(): {
-                "order": ["background_task:start"],
-                "computed_order": ["background_task:start"],
-            }
-        },
+        delta=StateDelta(
+            {
+                BackgroundTaskState.get_full_name(): {
+                    "order": ["background_task:start"],
+                    "computed_order": ["background_task:start"],
+                }
+            },
+            client_token=token + "_" + BackgroundTaskState.get_full_name(),
+        ),
         events=[],
         final=True,
     )
     for call in emit_mock.mock_calls[1:5]:  # pyright: ignore [reportFunctionMemberAccess]
         assert call.args[1] == StateUpdate(
-            delta={
-                BackgroundTaskState.get_full_name(): {
-                    "computed_order": ["background_task:start"],
-                }
-            },
+            delta=StateDelta(
+                {
+                    BackgroundTaskState.get_full_name(): {
+                        "computed_order": ["background_task:start"],
+                    }
+                },
+                client_token=token + "_" + BackgroundTaskState.get_full_name(),
+            ),
             events=[],
             final=True,
         )
     assert emit_mock.mock_calls[-2].args[1] == StateUpdate(  # pyright: ignore [reportFunctionMemberAccess]
-        delta={
-            BackgroundTaskState.get_full_name(): {
-                "order": exp_order,
-                "computed_order": exp_order,
-                "dict_list": {},
-            }
-        },
+        delta=StateDelta(
+            {
+                BackgroundTaskState.get_full_name(): {
+                    "order": exp_order,
+                    "computed_order": exp_order,
+                    "dict_list": {},
+                }
+            },
+            client_token=token + "_" + BackgroundTaskState.get_full_name(),
+        ),
         events=[],
         final=True,
     )
     assert emit_mock.mock_calls[-1].args[1] == StateUpdate(  # pyright: ignore [reportFunctionMemberAccess]
-        delta={
-            BackgroundTaskState.get_full_name(): {
-                "computed_order": exp_order,
+        delta=StateDelta(
+            {
+                BackgroundTaskState.get_full_name(): {
+                    "computed_order": exp_order,
+                },
             },
-        },
+            client_token=token,
+        ),
         events=[],
         final=True,
     )
@@ -2896,14 +2915,14 @@ async def test_preprocess(app_module_mock, token, test_state, expected, mocker):
         updates.append(update)
     assert len(updates) == 1
     assert updates[0].delta[State.get_name()].pop("router") is not None
-    assert updates[0].delta == exp_is_hydrated(state, False)
+    assert updates[0].delta.data == exp_is_hydrated(state, False)
 
     events = updates[0].events
     assert len(events) == 2
     async for update in state._process(events[0]):
-        assert update.delta == {test_state.get_full_name(): {"num": 1}}
+        assert update.delta.data == {test_state.get_full_name(): {"num": 1}}
     async for update in state._process(events[1]):
-        assert update.delta == exp_is_hydrated(state)
+        assert update.delta.data == exp_is_hydrated(state)
 
     if isinstance(app.state_manager, StateManagerRedis):
         await app.state_manager.close()
@@ -2944,16 +2963,16 @@ async def test_preprocess_multiple_load_events(app_module_mock, token, mocker):
         updates.append(update)
     assert len(updates) == 1
     assert updates[0].delta[State.get_name()].pop("router") is not None
-    assert updates[0].delta == exp_is_hydrated(state, False)
+    assert updates[0].delta.data == exp_is_hydrated(state, False)
 
     events = updates[0].events
     assert len(events) == 3
     async for update in state._process(events[0]):
-        assert update.delta == {OnLoadState.get_full_name(): {"num": 1}}
+        assert update.delta.data == {OnLoadState.get_full_name(): {"num": 1}}
     async for update in state._process(events[1]):
-        assert update.delta == {OnLoadState.get_full_name(): {"num": 2}}
+        assert update.delta.data == {OnLoadState.get_full_name(): {"num": 2}}
     async for update in state._process(events[2]):
-        assert update.delta == exp_is_hydrated(state)
+        assert update.delta.data == exp_is_hydrated(state)
 
     if isinstance(app.state_manager, StateManagerRedis):
         await app.state_manager.close()
@@ -3025,7 +3044,7 @@ async def test_get_state(mock_app: rx.App, token: str):
     )
     grandchild_state.value2 = "set_value"
 
-    assert test_state.get_delta() == {
+    assert test_state.get_delta().data == {
         GrandchildState.get_full_name(): {
             "value2": "set_value",
         },
@@ -3062,7 +3081,7 @@ async def test_get_state(mock_app: rx.App, token: str):
     child_state2 = new_test_state.get_substate((ChildState2.get_name(),))
     child_state2.value = "set_c2_value"
 
-    assert new_test_state.get_delta() == {
+    assert new_test_state.get_delta().data == {
         ChildState2.get_full_name(): {
             "value": "set_c2_value",
         },
@@ -3705,7 +3724,7 @@ def test_get_value():
             "bar": "BAR",
         }
     }
-    assert state.get_delta() == {}
+    assert state.get_delta().data == {}
 
     state.bar = "foo"
 
@@ -3715,7 +3734,7 @@ def test_get_value():
             "bar": "foo",
         }
     }
-    assert state.get_delta() == {
+    assert state.get_delta().data == {
         state.get_full_name(): {
             "bar": "foo",
         }
@@ -3838,7 +3857,7 @@ async def test_upcast_event_handler_arg(handler, payload):
     """
     state = UpcastState()
     async for update in state._process_event(handler, state, payload):
-        assert update.delta == {UpcastState.get_full_name(): {"passed": True}}
+        assert update.delta.data == {UpcastState.get_full_name(): {"passed": True}}
 
 
 @pytest.mark.asyncio
