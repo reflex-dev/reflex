@@ -81,7 +81,6 @@ class PackageJson(SimpleNamespace):
     PATH = "package.json"
 
     DEPENDENCIES = {
-        "@emotion/react": "11.14.0",
         "axios": "1.8.3",
         "json5": "2.2.3",
         "react-router": "7.4.0",
@@ -96,6 +95,7 @@ class PackageJson(SimpleNamespace):
         "universal-cookie": "7.2.2",
     }
     DEV_DEPENDENCIES = {
+        "@emotion/react": "11.14.0",
         "autoprefixer": "10.4.21",
         "postcss": "8.5.3",
         "postcss-import": "16.1.0",
@@ -105,5 +105,6 @@ class PackageJson(SimpleNamespace):
     }
     OVERRIDES = {
         # This should always match the `react` version in DEPENDENCIES for recharts compatibility.
-        "react-is": "19.0.0"
+        "react-is": "19.0.0",
+        "cookie": "1.0.2",
     }
