@@ -426,6 +426,9 @@ class AppHarness:
         self._start_backend()
         self._start_frontend()
         self._wait_frontend()
+        driver = self.frontend()
+        driver.refresh()
+        driver.close()
         return self
 
     @staticmethod
