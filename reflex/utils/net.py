@@ -71,7 +71,8 @@ def _wrap_https_func(
                 console.error(
                     f"Attempting to send request to {url} using fallback function due to error: {err}"
                 )
-                response = fallback(*args, **kwargs)
+                return fallback(*args, **kwargs)
+            raise
         else:
             console.debug(
                 f"Received response from {url} in {time.time() - initial_time:.3f} seconds"
