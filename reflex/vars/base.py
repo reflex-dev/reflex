@@ -3286,10 +3286,15 @@ class Field(Generic[FIELD_TYPE]):
 
     @overload
     def __get__(
-        self: Field[int]
-        | Field[float]
+        self: Field[int] | Field[int | None],
+        instance: None,
+        owner: Any,
+    ) -> NumberVar[int]: ...
+
+    @overload
+    def __get__(
+        self: Field[float]
         | Field[int | float]
-        | Field[int | None]
         | Field[float | None]
         | Field[int | float | None],
         instance: None,
