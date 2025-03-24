@@ -60,6 +60,10 @@ class DefaultPage(SimpleNamespace):
     IMAGE = "favicon.ico"
     # The default meta list to show for Reflex apps.
     META_LIST = []
+    # The default changefrequency for sitemap generation.
+    SITEMAP_CHANGEFREQ = "weekly"
+    # The default priority for sitemap generation.
+    SITEMAP_PRIORITY = 10.0
 
 
 # 404 variables

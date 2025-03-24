@@ -372,6 +372,23 @@ def test_add_duplicate_page_route_error(app: App, first_page, second_page, route
         app.add_page(second_page, route="/" + route.strip("/") if route else None)
 
 
+def test_add_page_with_sitemap_properties(app):
+    """Test if the sitemap properties of the app instance is set properly or not."""
+    # check with given values.
+    app.add_page(
+        page1, route="/page1", sitemap_priority=0.9, sitemap_changefreq="daily"
+    )
+    assert app._sitemap_properties["page1"] == {"priority": 0.9, "changefreq": "daily"}
+
+    # check default values added.
+    app.add_page(page2, route="/page2")
+    print(app._sitemap_properties)
+    assert app._sitemap_properties["page2"] == {
+        "priority": 10.0,
+        "changefreq": "weekly",
+    }
+
+
 def test_initialize_with_admin_dashboard(test_model):
     """Test setting the admin dashboard of an app.
 
