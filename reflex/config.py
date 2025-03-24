@@ -720,6 +720,9 @@ class EnvironmentVariables:
     # Used by flexgen to enumerate the pages.
     REFLEX_ADD_ALL_ROUTES_ENDPOINT: EnvVar[bool] = env_var(False)
 
+    # The address to bind the HTTP client to. You can set this to "::" to enable IPv6.
+    REFLEX_HTTP_CLIENT_BIND_ADDRESS: EnvVar[str | None] = env_var(None)
+
 
 environment = EnvironmentVariables()
 
