@@ -902,15 +902,12 @@ def initialize_app_directory(
 
     console.debug(f"Using {template_name=} {template_dir=} {template_code_dir_name=}.")
 
-    # Remove all pyc and __pycache__ dirs in template directory.
-    for pyc_file in template_dir.glob("**/*.pyc"):
-        pyc_file.unlink()
-    for dest_pyc_file in Path.cwd().glob("**/*.pyc"):
-        dest_pyc_file.unlink()
-    for pycache_dir in template_dir.glob("**/__pycache__"):
+    # Remove __pycache__ dirs in template directory and current directory.
+    for pycache_dir in [
+        *template_dir.glob("**/__pycache__"),
+        *Path.cwd().glob("**/__pycache__"),
+    ]:
         shutil.rmtree(pycache_dir, ignore_errors=True)
-    for dest_pycache_dir in Path.cwd().glob("**/__pycache__"):
-        shutil.rmtree(dest_pycache_dir, ignore_errors=True)
 
     for file in template_dir.iterdir():
         # Copy the file to current directory but keep the name the same.
