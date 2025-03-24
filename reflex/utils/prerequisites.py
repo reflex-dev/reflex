@@ -115,11 +115,13 @@ def check_latest_package_version(package_name: str):
     if environment.REFLEX_CHECK_LATEST_VERSION.get() is False:
         return
     try:
+        console.debug(f"Checking for the latest version of {package_name}...")
         # Get the latest version from PyPI
         current_version = importlib.metadata.version(package_name)
         url = f"https://pypi.org/pypi/{package_name}/json"
         response = net.get(url)
         latest_version = response.json()["info"]["version"]
+        console.debug(f"Latest version of {package_name}: {latest_version}")
         if get_or_set_last_reflex_version_check_datetime():
             # Versions were already checked and saved in reflex.json, no need to warn again
             return
@@ -129,6 +131,7 @@ def check_latest_package_version(package_name: str):
                 f"Your version ({current_version}) of {package_name} is out of date. Upgrade to {latest_version} with 'pip install {package_name} --upgrade'"
             )
     except Exception:
+        console.debug(f"Failed to check for the latest version of {package_name}.")
         pass
 
 
@@ -902,11 +905,12 @@ def initialize_app_directory(
 
     console.debug(f"Using {template_name=} {template_dir=} {template_code_dir_name=}.")
 
-    # Remove all pyc and __pycache__ dirs in template directory.
-    for pyc_file in template_dir.glob("**/*.pyc"):
-        pyc_file.unlink()
-    for pycache_dir in template_dir.glob("**/__pycache__"):
-        pycache_dir.rmdir()
+    # Remove __pycache__ dirs in template directory and current directory.
+    for pycache_dir in [
+        *template_dir.glob("**/__pycache__"),
+        *Path.cwd().glob("**/__pycache__"),
+    ]:
+        shutil.rmtree(pycache_dir, ignore_errors=True)
 
     for file in template_dir.iterdir():
         # Copy the file to current directory but keep the name the same.
@@ -950,16 +954,22 @@ def initialize_web_directory():
     # Reuse the hash if one is already created, so we don't over-write it when running reflex init
     project_hash = get_project_hash()
 
+    console.debug(f"Copying {constants.Templates.Dirs.WEB_TEMPLATE} to {get_web_dir()}")
     path_ops.cp(constants.Templates.Dirs.WEB_TEMPLATE, str(get_web_dir()))
 
+    console.debug("Initializing the web directory.")
     initialize_package_json()
 
+    console.debug("Initializing the bun config file.")
     initialize_bun_config()
 
+    console.debug("Initializing the public directory.")
     path_ops.mkdir(get_web_dir() / constants.Dirs.PUBLIC)
 
+    console.debug("Initializing the next.config.js file.")
     update_next_config()
 
+    console.debug("Initializing the reflex.json file.")
     # Initialize the reflex json file.
     init_reflex_json(project_hash=project_hash)
 
@@ -1392,6 +1402,7 @@ def ensure_reflex_installation_id() -> int | None:
         Distinct id.
     """
     try:
+        console.debug("Ensuring reflex installation id.")
         initialize_reflex_user_directory()
         installation_id_file = environment.REFLEX_DIR.get() / "installation_id"
 
@@ -1418,6 +1429,7 @@ def ensure_reflex_installation_id() -> int | None:
 
 def initialize_reflex_user_directory():
     """Initialize the reflex user directory."""
+    console.debug(f"Creating {environment.REFLEX_DIR.get()}")
     # Create the reflex directory.
     path_ops.mkdir(environment.REFLEX_DIR.get())
 
@@ -1425,9 +1437,11 @@ def initialize_reflex_user_directory():
 def initialize_frontend_dependencies():
     """Initialize all the frontend dependencies."""
     # validate dependencies before install
+    console.debug("Validating frontend dependencies.")
     validate_frontend_dependencies()
     # Install the frontend dependencies.
-    processes.run_concurrently(install_bun)
+    console.debug("Installing or validating bun.")
+    install_bun()
     # Set up the web directory.
     initialize_web_directory()
 
