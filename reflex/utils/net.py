@@ -22,6 +22,18 @@ def _httpx_verify_kwarg() -> bool:
     return not environment.SSL_NO_VERIFY.get()
 
 
+@once
+def _httpx_local_address_kwarg() -> str:
+    """Get the value of the HTTPX local_address keyword argument.
+
+    Returns:
+        The local address to bind to
+    """
+    from ..config import environment
+
+    return environment.REFLEX_HTTP_CLIENT_BIND_ADDRESS.get()
+
+
 _P = ParamSpec("_P")
 _T = TypeVar("_T")
 
@@ -69,7 +81,7 @@ def _httpx_client() -> httpx.Client:
     """
     return httpx.Client(
         transport=httpx.HTTPTransport(
-            local_address="0.0.0.0",
+            local_address=_httpx_local_address_kwarg(),
             verify=_httpx_verify_kwarg(),
         )
     )
