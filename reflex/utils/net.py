@@ -38,11 +38,14 @@ _P = ParamSpec("_P")
 _T = TypeVar("_T")
 
 
-def _wrap_https_func(func: Callable[_P, _T]) -> Callable[_P, _T]:
+def _wrap_https_func(
+    func: Callable[_P, _T], *, fallback: Callable[_P, _T] | None = None
+) -> Callable[_P, _T]:
     """Wrap an HTTPS function with logging.
 
     Args:
         func: The function to wrap.
+        fallback: The fallback function to call if the wrapped function fails.
 
     Returns:
         The wrapped function.
@@ -63,6 +66,12 @@ def _wrap_https_func(func: Callable[_P, _T]) -> Callable[_P, _T]:
                     "path of the certificate file or SSL_NO_VERIFY=1 to disable verification."
                 )
             raise
+        except Exception as err:
+            if fallback is not None:
+                console.error(
+                    f"Attempting to send request to {url} using fallback function due to error: {err}"
+                )
+                response = fallback(*args, **kwargs)
         else:
             console.debug(
                 f"Received response from {url} in {time.time() - initial_time:.3f} seconds"
@@ -87,4 +96,7 @@ def _httpx_client() -> httpx.Client:
     )
 
 
-get = _wrap_https_func(_httpx_client().get)
+get = _wrap_https_func(
+    _httpx_client().get,
+    fallback=httpx.get,  # pyright: ignore [reportArgumentType]
+)
