@@ -22,18 +22,6 @@ def _httpx_verify_kwarg() -> bool:
     return not environment.SSL_NO_VERIFY.get()
 
 
-@once
-def _httpx_local_address_kwarg() -> str:
-    """Get the value of the HTTPX local_address keyword argument.
-
-    Returns:
-        The local address to bind to
-    """
-    from ..config import environment
-
-    return environment.REFLEX_HTTP_CLIENT_BIND_ADDRESS.get()
-
-
 _P = ParamSpec("_P")
 _T = TypeVar("_T")
 
@@ -64,11 +52,6 @@ def _wrap_https_func(
                     f"Certificate verification failed for {url}. Set environment variable SSL_CERT_FILE to the "
                     "path of the certificate file or SSL_NO_VERIFY=1 to disable verification."
                 )
-            if "Temporary failure in name resolution" in str(err):
-                console.debug(
-                    f"DNS resolution failed for {url}. Check your network connection.\n\nIf your access to the internet "
-                    "can only be done over IPv6, set environment variable REFLEX_HTTP_CLIENT_BIND_ADDRESS to `::`."
-                )
             raise
         else:
             console.debug(
@@ -77,6 +60,56 @@ def _wrap_https_func(
             return response
 
     return wrapper
+
+
+def _is_ipv4_supported() -> bool:
+    """Determine if the system supports IPv4.
+
+    Returns:
+        True if the system supports IPv4, False otherwise.
+    """
+    try:
+        httpx.get("1.1.1.1", timeout=3)
+    except httpx.RequestError:
+        return False
+    else:
+        return True
+
+
+def _is_ipv6_supported() -> bool:
+    """Determine if the system supports IPv6.
+
+    Returns:
+        True if the system supports IPv6, False otherwise.
+    """
+    try:
+        httpx.get("2606:4700:4700::1111", timeout=3)
+    except httpx.RequestError:
+        return False
+    else:
+        return True
+
+
+def _should_use_ipv6() -> bool:
+    """Determine if the system supports IPv6.
+
+    Returns:
+        True if the system supports IPv6, False otherwise.
+    """
+    return not _is_ipv4_supported() and _is_ipv6_supported()
+
+
+def _httpx_local_address_kwarg() -> str:
+    """Get the value of the HTTPX local_address keyword argument.
+
+    Returns:
+        The local address to bind to
+    """
+    from ..config import environment
+
+    return environment.REFLEX_HTTP_CLIENT_BIND_ADDRESS.get() or (
+        "::" if _should_use_ipv6() else "0.0.0.0"
+    )
 
 
 @once

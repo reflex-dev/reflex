@@ -721,7 +721,7 @@ class EnvironmentVariables:
     REFLEX_ADD_ALL_ROUTES_ENDPOINT: EnvVar[bool] = env_var(False)
 
     # The address to bind the HTTP client to. You can set this to "::" to enable IPv6.
-    REFLEX_HTTP_CLIENT_BIND_ADDRESS: EnvVar[str] = env_var("0.0.0.0")
+    REFLEX_HTTP_CLIENT_BIND_ADDRESS: EnvVar[str | None] = env_var(None)
 
 
 environment = EnvironmentVariables()
