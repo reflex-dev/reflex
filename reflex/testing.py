@@ -17,6 +17,7 @@ import subprocess
 import textwrap
 import threading
 import time
+import traceback
 import types
 from http.server import SimpleHTTPRequestHandler
 from pathlib import Path
@@ -32,7 +33,8 @@ from typing import (
 )
 
 import psutil
-import uvicorn
+from granian.constants import Interfaces
+from granian.server import MPServer as Granian
 
 import reflex
 import reflex.reflex
@@ -121,7 +123,7 @@ class AppHarness:
     frontend_url: str | None = None
     frontend_output_thread: threading.Thread | None = None
     backend_thread: threading.Thread | None = None
-    backend: uvicorn.Server | None = None
+    backend: Granian | None = None
     state_manager: StateManager | None = None
     _frontends: list["WebDriver"] = dataclasses.field(default_factory=list)
     _decorated_pages: list = dataclasses.field(default_factory=list)
@@ -301,39 +303,52 @@ class AppHarness:
         """Reload the rx.State module to avoid conflict when reloading."""
         reload_state_module(module=f"{self.app_name}.{self.app_name}")
 
-    def _get_backend_shutdown_handler(self):
-        if self.backend is None:
-            raise RuntimeError("Backend was not initialized.")
-
-        original_shutdown = self.backend.shutdown
-
-        async def _shutdown_redis(*args, **kwargs) -> None:
-            # ensure redis is closed before event loop
-            try:
-                if self.app_instance is not None and isinstance(
-                    self.app_instance.state_manager, StateManagerRedis
-                ):
-                    await self.app_instance.state_manager.close()
-            except ValueError:
-                pass
-            await original_shutdown(*args, **kwargs)
-
-        return _shutdown_redis
-
     def _start_backend(self, port: int = 0):
         if self.app_instance is None or self.app_instance.api is None:
             raise RuntimeError("App was not initialized.")
-        self.backend = uvicorn.Server(
-            uvicorn.Config(
-                app=self.app_instance.api,
-                host="127.0.0.1",
-                port=port,
-            )
-        )
-        self.backend.shutdown = self._get_backend_shutdown_handler()
+
+        async def _run_backend():
+            """Run the backend server."""
+            import granian.server.common
+
+            # Signals not support when running in a thread.
+            granian.server.common.set_main_signals = lambda *args, **kwargs: None
+
+            try:
+                with chdir(self.app_path):
+                    self.backend.serve()
+            except Exception:
+                traceback.print_exc()
+            finally:
+                # ensure redis is closed before event loop
+                try:
+                    if self.app_instance is not None and isinstance(
+                        self.app_instance.state_manager, StateManagerRedis
+                    ):
+                        await self.app_instance.state_manager.close()
+                except ValueError:
+                    pass
+
         with chdir(self.app_path):
-            self.backend_thread = threading.Thread(target=self.backend.run)
+            self.backend = Granian(
+                target=reflex.utils.exec.get_app_module(),
+                factory=True,
+                address="127.0.0.1",
+                port=port,
+                interface=Interfaces.ASGI,
+                pid_file=self.app_path / "granian.pid",
+            )
+
+        self.backend_thread = threading.Thread(
+            target=asyncio.run, args=(_run_backend(),)
+        )
         self.backend_thread.start()
+
+    def _stop_backend(self):
+        """Stop the backend server."""
+        assert self.backend is not None
+        self.backend.interrupt_signal = True
+        self.backend.main_loop_interrupt.set()
 
     async def _reset_backend_state_manager(self):
         """Reset the StateManagerRedis event loop affinity.
@@ -365,7 +380,7 @@ class AppHarness:
         with chdir(self.app_path):
             config = reflex.config.get_config()
             config.api_url = "http://{0}:{1}".format(
-                *self._poll_for_servers().getsockname(),
+                self.backend.bind_addr, self._poll_for_backend_port()
             )
             reflex.utils.build.setup_frontend(self.app_path)
 
@@ -458,7 +473,7 @@ class AppHarness:
         self._reload_state_module()
 
         if self.backend is not None:
-            self.backend.should_exit = True
+            self._stop_backend()
         if self.frontend_process is not None:
             # https://stackoverflow.com/a/70565806
             frontend_children = psutil.Process(self.frontend_process.pid).children(
@@ -558,14 +573,14 @@ class AppHarness:
             await asyncio.sleep(step)
         return False
 
-    def _poll_for_servers(self, timeout: TimeoutType = None) -> socket.socket:
-        """Poll backend server for listening sockets.
+    def _poll_for_backend_port(self, timeout: TimeoutType = None) -> int:
+        """Poll backend server for listening port.
 
         Args:
             timeout: how long to wait for listening socket.
 
         Returns:
-            first active listening socket on the backend
+            latest active listening port on the backend
 
         Raises:
             RuntimeError: when the backend hasn't started running
@@ -573,20 +588,26 @@ class AppHarness:
         """
         if self.backend is None:
             raise RuntimeError("Backend is not running.")
-        backend = self.backend
         # check for servers to be initialized
         if not self._poll_for(
-            target=lambda: getattr(backend, "servers", False),
+            target=lambda: (self.app_path / "granian.pid").exists(),
             timeout=timeout,
         ):
-            raise TimeoutError("Backend servers are not initialized.")
-        # check for sockets to be listening
-        if not self._poll_for(
-            target=lambda: getattr(backend.servers[0], "sockets", False),
+            raise TimeoutError("Backend workers are not initialized.")
+
+        # listen_socket = socket.socket(fileno=backend._shd.get_fd())
+        # listen_socket.
+        proc = psutil.Process(int((self.app_path / "granian.pid").read_text().strip()))
+        connections = self._poll_for(
+            target=lambda: [
+                nc for nc in proc.net_connections() if nc.status == "LISTEN"
+            ],
             timeout=timeout,
-        ):
+        )
+        if not connections:
+            # check for sockets to be listening
             raise TimeoutError("Backend is not listening.")
-        return backend.servers[0].sockets[0]
+        return connections[-1].laddr.port
 
     def frontend(
         self,
@@ -929,7 +950,7 @@ class AppHarnessProd(AppHarness):
         with chdir(self.app_path):
             config = reflex.config.get_config()
             config.api_url = "http://{0}:{1}".format(
-                *self._poll_for_servers().getsockname(),
+                self.backend.bind_addr, self._poll_for_backend_port()
             )
             reflex.reflex.export(
                 zipping=False,
@@ -951,21 +972,19 @@ class AppHarnessProd(AppHarness):
         if self.app_instance is None:
             raise RuntimeError("App was not initialized.")
         environment.REFLEX_SKIP_COMPILE.set(True)
-        self.backend = uvicorn.Server(
-            uvicorn.Config(
-                app=self.app_instance,
-                host="127.0.0.1",
-                port=0,
-                workers=reflex.utils.processes.get_num_workers(),
-            ),
-        )
-        self.backend.shutdown = self._get_backend_shutdown_handler()
-        self.backend_thread = threading.Thread(target=self.backend.run)
-        self.backend_thread.start()
+        super()._start_backend()
 
-    def _poll_for_servers(self, timeout: TimeoutType = None) -> socket.socket:
+    def _poll_for_backend_port(self, timeout: str | None = None) -> int:
+        """Poll backend server for listening port.
+
+        Args:
+            timeout: how long to wait for listening socket.
+
+        Returns:
+            first active listening port on the backend
+        """
         try:
-            return super()._poll_for_servers(timeout)
+            return super()._poll_for_backend_port(timeout)
         finally:
             environment.REFLEX_SKIP_COMPILE.set(None)
 

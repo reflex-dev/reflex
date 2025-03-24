@@ -163,15 +163,18 @@ async def test_connection_banner(connection_banner: AppHarness):
     delay_button.click()
 
     # Get the backend port
-    backend_port = connection_banner._poll_for_servers().getsockname()[1]
+    backend_port = connection_banner._poll_for_backend_port()
 
     # Kill the backend
-    connection_banner.backend.should_exit = True
+    connection_banner._stop_backend()
     if connection_banner.backend_thread is not None:
-        connection_banner.backend_thread.join()
+        connection_banner.backend_thread.join(timeout=30)
+        assert not connection_banner.backend_thread.is_alive(), (
+            "Backend thread did not stop"
+        )
 
     # Error modal should now be displayed
-    assert connection_banner._poll_for(lambda: has_error_modal(driver))
+    assert connection_banner._poll_for(lambda: has_error_modal(driver), timeout=60)
 
     # Increment the counter with backend down
     increment_button.click()
@@ -187,6 +190,7 @@ async def test_connection_banner(connection_banner: AppHarness):
     assert connection_banner._poll_for(lambda: not has_error_modal(driver))
 
     # Count should have incremented after coming back up
+    counter_element = driver.find_element(By.ID, "counter")
     assert connection_banner.poll_for_value(counter_element, exp_not_equal="1") == "2"
 
 
