@@ -1108,8 +1108,6 @@ class App(MiddlewareMixin, LifespanMixin):
         if config.react_strict_mode:
             app_wrappers[(200, "StrictMode")] = StrictMode.create()
 
-        should_compile = self._should_compile()
-
         if not should_compile:
             with console.timing("Evaluate Pages (Backend)"):
                 for route in self._unevaluated_pages:
