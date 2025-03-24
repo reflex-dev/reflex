@@ -1,9 +1,15 @@
 import { fileURLToPath, URL } from "url";
 import { reactRouter } from "@react-router/dev/vite";
 import { defineConfig } from "vite";
+import { nodePolyfills } from "vite-plugin-node-polyfills";
 
 export default defineConfig((config) => ({
-  plugins: [reactRouter()],
+  plugins: [
+    reactRouter(),
+    nodePolyfills({
+      exclude: ["stream"],
+    }),
+  ],
   server: {
     port: process.env.PORT,
   },

@@ -76,7 +76,7 @@ class PackageJson(SimpleNamespace):
         DEV = "react-router dev"
         EXPORT = "react-router build"
         EXPORT_SITEMAP = EXPORT
-        PROD = "react-router-serve ./build/server/index.js"
+        PROD = "serve ./build/client"
 
     PATH = "package.json"
 
@@ -87,7 +87,7 @@ class PackageJson(SimpleNamespace):
         "react-router-dom": "7.4.0",
         "react-helmet": "6.1.0",
         "@react-router/node": "7.4.0",
-        "@react-router/serve": "7.4.0",
+        "serve": "14.2.4",
         "react": "19.0.0",
         "react-dom": "19.0.0",
         "isbot": "5.1.17",
@@ -101,6 +101,7 @@ class PackageJson(SimpleNamespace):
         "postcss-import": "16.1.0",
         "@react-router/dev": "7.3.0",
         "@react-router/fs-routes": "7.3.0",
+        "vite-plugin-node-polyfills": "0.23.0",
         "vite": "^6.2.2",
     }
     OVERRIDES = {
