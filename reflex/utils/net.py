@@ -65,7 +65,7 @@ def _wrap_https_func(
                     "path of the certificate file or SSL_NO_VERIFY=1 to disable verification."
                 )
             if "Temporary failure in name resolution" in str(err):
-                console.error(
+                console.debug(
                     f"DNS resolution failed for {url}. Check your network connection.\n\nIf your access to the internet "
                     "can only be done over IPv6, set environment variable REFLEX_HTTP_CLIENT_BIND_ADDRESS to `::`."
                 )
