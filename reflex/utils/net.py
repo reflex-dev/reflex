@@ -69,7 +69,7 @@ def _is_ipv4_supported() -> bool:
         True if the system supports IPv4, False otherwise.
     """
     try:
-        httpx.get("1.1.1.1", timeout=3)
+        httpx.head("http://1.1.1.1", timeout=3)
     except httpx.RequestError:
         return False
     else:
@@ -83,7 +83,7 @@ def _is_ipv6_supported() -> bool:
         True if the system supports IPv6, False otherwise.
     """
     try:
-        httpx.get("2606:4700:4700::1111", timeout=3)
+        httpx.head("http://[2606:4700:4700::1111]", timeout=3)
     except httpx.RequestError:
         return False
     else:
