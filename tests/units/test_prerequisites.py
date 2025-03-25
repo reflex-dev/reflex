@@ -206,7 +206,7 @@ def test_cached_procedure():
     call_count = 0
 
     @cached_procedure(
-        tempfile.mktemp(),
+        cache_file=tempfile.mktemp(),
         payload_fn=lambda *args, **kwargs: f"{repr(args), repr(kwargs)}",
     )
     def _function_with_some_args(*args, **kwargs):
@@ -220,6 +220,20 @@ def test_cached_procedure():
     _function_with_some_args(100, y=300)
     assert call_count == 2
     _function_with_some_args(100, y=300)
+    assert call_count == 2
+
+    call_count = 0
+
+    @cached_procedure(
+        cache_file=None, cache_file_fn=tempfile.mktemp, payload_fn=lambda: "constant"
+    )
+    def _function_with_no_args_fn():
+        nonlocal call_count
+        call_count += 1
+
+    _function_with_no_args_fn()
+    assert call_count == 1
+    _function_with_no_args_fn()
     assert call_count == 2
 
 
