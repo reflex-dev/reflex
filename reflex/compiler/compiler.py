@@ -224,8 +224,7 @@ def _compile_root_stylesheet(stylesheets: list[str]) -> str:
                 in constants.Reflex.STYLESHEETS_SUPPORTED
             ):
                 target = (
-                    Path.cwd()
-                    / constants.Dirs.WEB
+                    get_web_dir()
                     / constants.Dirs.STYLES
                     / (stylesheet.rsplit(".", 1)[0].strip("/") + ".css")
                 )
