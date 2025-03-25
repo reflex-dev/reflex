@@ -330,6 +330,7 @@ def run_uvicorn_backend(host: str, port: int, loglevel: LogLevel):
         log_level=loglevel.value,
         reload=True,
         reload_dirs=list(map(str, get_reload_paths())),
+        reload_delay=0.1,
     )
 
 
@@ -356,6 +357,8 @@ def run_granian_backend(host: str, port: int, loglevel: LogLevel):
         log_level=LogLevels(loglevel.value),
         reload=True,
         reload_paths=get_reload_paths(),
+        reload_ignore_worker_failure=True,
+        reload_tick=100,
     ).serve()
 
 
