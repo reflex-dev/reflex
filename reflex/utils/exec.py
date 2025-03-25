@@ -359,6 +359,7 @@ def run_granian_backend(host: str, port: int, loglevel: LogLevel):
         reload_paths=get_reload_paths(),
         reload_ignore_worker_failure=True,
         reload_tick=100,
+        workers_kill_timeout=2,
     ).serve()
 
 
