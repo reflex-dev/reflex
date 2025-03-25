@@ -268,6 +268,10 @@ class AppHarness:
                     loglevel=reflex.constants.LogLevel.INFO,
                 )
                 self.app_module_path.write_text(source_code)
+        else:
+            # Just initialize the web folder.
+            with chdir(self.app_path):
+                reflex.utils.prerequisites.initialize_frontend_dependencies()
         with chdir(self.app_path):
             # ensure config and app are reloaded when testing different app
             reflex.config.get_config(reload=True)
