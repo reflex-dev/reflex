@@ -48,12 +48,13 @@ from reflex.constants import (
 from reflex.constants.compiler import SpecialAttributes
 from reflex.constants.state import FRONTEND_EVENT_STATE
 from reflex.event import (
-    EventActionsMixin,
     EventCallback,
     EventChain,
     EventHandler,
     EventSpec,
     no_args_event_spec,
+    parse_args_spec,
+    run_script,
 )
 from reflex.style import Style, format_as_emotion
 from reflex.utils import console, format, imports, types
@@ -65,7 +66,7 @@ from reflex.vars.base import (
     Var,
     cached_property_no_lock,
 )
-from reflex.vars.function import ArgsFunctionOperation, FunctionStringVar
+from reflex.vars.function import ArgsFunctionOperation, FunctionStringVar, FunctionVar
 from reflex.vars.number import ternary_operation
 from reflex.vars.object import ObjectVar
 from reflex.vars.sequence import LiteralArrayVar
@@ -1893,7 +1894,44 @@ class CustomComponent(Component):
 
         return custom_components
 
-    def get_prop_vars(self) -> List[Var]:
+    @staticmethod
+    def _get_event_spec_from_args_spec(name: str, event: EventChain) -> Callable:
+        """Get the event spec from the args spec.
+
+        Args:
+            name: The name of the event
+            event: The args spec.
+
+        Returns:
+            The event spec.
+        """
+
+        def fn(*args):
+            return run_script(Var(name).to(FunctionVar).call(*args))
+
+        if event.args_spec:
+            arg_spec = (
+                event.args_spec
+                if not isinstance(event.args_spec, Sequence)
+                else event.args_spec[0]
+            )
+            names = inspect.getfullargspec(arg_spec).args
+            fn.__signature__ = inspect.Signature(  # pyright: ignore[reportFunctionMemberAccess]
+                parameters=[
+                    inspect.Parameter(
+                        name=name,
+                        kind=inspect.Parameter.POSITIONAL_ONLY,
+                        annotation=arg._var_type,
+                    )
+                    for name, arg in zip(
+                        names, parse_args_spec(event.args_spec), strict=True
+                    )
+                ]
+            )
+
+        return fn
+
+    def get_prop_vars(self) -> List[Var | Callable]:
         """Get the prop vars.
 
         Returns:
@@ -1902,16 +1940,10 @@ class CustomComponent(Component):
         return [
             Var(
                 _js_expr=name,
-                _var_type=(
-                    prop._var_type
-                    if isinstance(prop, Var)
-                    else (
-                        type(prop)
-                        if not isinstance(prop, EventActionsMixin)
-                        else EventChain
-                    )
-                ),
+                _var_type=(prop._var_type if isinstance(prop, Var) else type(prop)),
             ).guess_type()
+            if isinstance(prop, Var) or not isinstance(prop, EventChain)
+            else CustomComponent._get_event_spec_from_args_spec(name, prop)
             for name, prop in self.props.items()
         ]
 
