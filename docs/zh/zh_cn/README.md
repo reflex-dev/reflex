@@ -1,4 +1,3 @@
-
 <div align="center">
 <img src="https://raw.githubusercontent.com/reflex-dev/reflex/main/docs/images/reflex_dark.svg#gh-light-mode-only" alt="Reflex Logo" width="300px">
 <img src="https://raw.githubusercontent.com/reflex-dev/reflex/main/docs/images/reflex_light.svg#gh-dark-mode-only" alt="Reflex Logo" width="300px">
@@ -6,10 +5,12 @@
 <hr>
 
 ### **✨ 使用 Python 创建高效且可自定义的网页应用程序,几秒钟内即可部署.✨**
+
 [![PyPI version](https://badge.fury.io/py/reflex.svg)](https://badge.fury.io/py/reflex)
 ![versions](https://img.shields.io/pypi/pyversions/reflex.svg)
 [![Documentaiton](https://img.shields.io/badge/Documentation%20-Introduction%20-%20%23007ec6)](https://reflex.dev/docs/getting-started/introduction)
 [![Discord](https://img.shields.io/discord/1029853095527727165?color=%237289da&label=Discord)](https://discord.gg/T5WSbC2YtQ)
+
 </div>
 
 ---
@@ -23,9 +24,10 @@
 Reflex 是一个使用纯Python构建全栈web应用的库。
 
 关键特性：
-* **纯Python** - 前端、后端开发全都使用Python，不需要学习Javascript。
-* **完整的灵活性** - Reflex很容易上手, 并且也可以扩展到复杂的应用程序。
-* **立即部署** - 构建后，使用[单个命令](https://reflex.dev/docs/hosting/deploy-quick-start/)就能部署应用程序；或者也可以将其托管在您自己的服务器上。
+
+- **纯Python** - 前端、后端开发全都使用Python，不需要学习Javascript。
+- **完整的灵活性** - Reflex很容易上手, 并且也可以扩展到复杂的应用程序。
+- **立即部署** - 构建后，使用[单个命令](https://reflex.dev/docs/hosting/deploy-quick-start/)就能部署应用程序；或者也可以将其托管在您自己的服务器上。
 
 请参阅我们的[架构页](https://reflex.dev/blog/2024-03-21-reflex-architecture/#the-reflex-architecture)了解Reflex如何工作。
 
@@ -75,9 +77,6 @@ reflex run
 
 这是这个范例的完整代码,只需要一个 Python 文件就可以完成!
 
-
-
-
 ```python
 import reflex as rx
 import openai
@@ -87,7 +86,7 @@ openai_client = openai.OpenAI()
 
 class State(rx.State):
     """The app state."""
-    
+
     prompt = ""
     image_url = ""
     processing = False
@@ -117,7 +116,7 @@ def index():
                 width="25em",
             ),
             rx.button(
-                "Generate Image", 
+                "Generate Image",
                 on_click=State.get_image,
                 width="25em",
                 loading=State.processing
@@ -137,16 +136,11 @@ app = rx.App()
 app.add_page(index, title="Reflex:DALL-E")
 ```
 
-
-
-
-
 ## 让我们分解以上步骤.
 
 <div align="center">
 <img src="../../images/dalle_colored_code_example.png" alt="解释 DALL-E app 的前端和后端部分的区别。" width="900" />
 </div>
-
 
 ### **Reflex UI**
 
@@ -225,10 +219,9 @@ app.add_page(index, title="DALL-E")
 
 <div align="center">
 
-📑 [文档](https://reflex.dev/docs/getting-started/introduction) &nbsp; |  &nbsp; 🗞️ [日志](https://reflex.dev/blog) &nbsp; |  &nbsp; 📱 [组件库](https://reflex.dev/docs/library) &nbsp; |  &nbsp; 🖼️ [展览](https://reflex.dev/docs/gallery) &nbsp; |  &nbsp; 🛸 [部署](https://reflex.dev/docs/hosting/deploy)  &nbsp;   
+📑 [文档](https://reflex.dev/docs/getting-started/introduction) &nbsp; | &nbsp; 🗞️ [日志](https://reflex.dev/blog) &nbsp; | &nbsp; 📱 [组件库](https://reflex.dev/docs/library) &nbsp; | &nbsp; 🖼️ [展览](https://reflex.dev/docs/gallery) &nbsp; | &nbsp; 🛸 [部署](https://reflex.dev/docs/hosting/deploy) &nbsp;
 
 </div>
-
 
 ## ✅ Reflex 的状态
 
@@ -242,14 +235,14 @@ Reflex 每周都有新功能和发布新版本! 确保您按下 :star: 收藏和
 
 我们欢迎任何大小的贡献,以下是几个好的方法来加入 Reflex 社群.
 
--   **加入我们的 Discord**: 我们的 [Discord](https://discord.gg/T5WSbC2YtQ) 是帮助您加入 Reflex 项目和讨论或贡献最棒的地方.
--   **GitHub Discussions**: 一个来讨论您想要添加的功能或是需要澄清的事情的好地方.
--   **GitHub Issues**: [报告错误](https://github.com/reflex-dev/reflex/issues)的绝佳地方,另外您可以试着解决一些 issue 和送出 PR.
+- **加入我们的 Discord**: 我们的 [Discord](https://discord.gg/T5WSbC2YtQ) 是帮助您加入 Reflex 项目和讨论或贡献最棒的地方.
+- **GitHub Discussions**: 一个来讨论您想要添加的功能或是需要澄清的事情的好地方.
+- **GitHub Issues**: [报告错误](https://github.com/reflex-dev/reflex/issues)的绝佳地方,另外您可以试着解决一些 issue 和送出 PR.
 
 我们正在积极寻找贡献者,无关您的技能或经验水平.
 
-
 ## 感谢我们所有的贡献者:
+
 <a href="https://github.com/reflex-dev/reflex/graphs/contributors">
   <img src="https://contrib.rocks/image?repo=reflex-dev/reflex" />
 </a>

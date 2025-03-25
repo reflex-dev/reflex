@@ -212,7 +212,7 @@ def build(
 
     # Start the subprocess with the progress bar.
     process = processes.new_process(
-        [prerequisites.get_package_manager(), "run", command],
+        [*prerequisites.get_js_package_executor(raise_on_none=True)[0], "run", command],
         cwd=wdir,
         shell=constants.IS_WINDOWS,
     )
@@ -231,11 +231,10 @@ def setup_frontend(
     """
     # Create the assets dir if it doesn't exist.
     path_ops.mkdir(constants.Dirs.APP_ASSETS)
-
-    # Copy asset files to public folder.
     path_ops.cp(
         src=str(root / constants.Dirs.APP_ASSETS),
         dest=str(root / prerequisites.get_web_dir() / constants.Dirs.PUBLIC),
+        ignore=tuple(f"*.{ext}" for ext in constants.Reflex.STYLESHEETS_SUPPORTED),
     )
 
     # Set the environment variables in client (env.json).
@@ -248,7 +247,7 @@ def setup_frontend(
     if disable_telemetry:
         processes.new_process(
             [
-                prerequisites.get_package_manager(),
+                *prerequisites.get_js_package_executor(raise_on_none=True)[0],
                 "run",
                 "next",
                 "telemetry",

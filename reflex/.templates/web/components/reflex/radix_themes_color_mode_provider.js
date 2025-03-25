@@ -1,5 +1,5 @@
 import { useTheme } from "next-themes";
-import { useEffect, useState } from "react";
+import { useRef, useEffect, useState } from "react";
 import {
   ColorModeContext,
   defaultColorMode,
@@ -11,8 +11,16 @@ export default function RadixThemesColorModeProvider({ children }) {
   const { theme, resolvedTheme, setTheme } = useTheme();
   const [rawColorMode, setRawColorMode] = useState(defaultColorMode);
   const [resolvedColorMode, setResolvedColorMode] = useState(
-    defaultColorMode === "dark" ? "dark" : "light"
+    defaultColorMode === "dark" ? "dark" : "light",
   );
+  const firstUpdate = useRef(true);
+  useEffect(() => {
+    if (firstUpdate.current) {
+      firstUpdate.current = false;
+      setRawColorMode(theme);
+      setResolvedColorMode(resolvedTheme);
+    }
+  });
 
   useEffect(() => {
     if (isDevMode) {

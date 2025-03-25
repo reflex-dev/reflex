@@ -5,6 +5,8 @@ import webbrowser
 
 import httpx
 
+from reflex.utils import net
+
 from .. import constants
 from . import console
 
@@ -38,7 +40,7 @@ def open_browser_and_wait(
     console.info("[b]Complete the workflow in the browser to continue.[/b]")
     while True:
         try:
-            response = httpx.get(poll_url, follow_redirects=True)
+            response = net.get(poll_url, follow_redirects=True)
             if response.is_success:
                 break
         except httpx.RequestError as err:

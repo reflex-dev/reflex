@@ -197,6 +197,7 @@ from .style import Style as Style
 from .style import toggle_color_mode as toggle_color_mode
 from .utils.imports import ImportDict as ImportDict
 from .utils.imports import ImportVar as ImportVar
+from .utils.misc import run_in_thread as run_in_thread
 from .utils.serializers import serializer as serializer
 from .vars import Field as Field
 from .vars import Var as Var

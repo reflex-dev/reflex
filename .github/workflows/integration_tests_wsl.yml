@@ -6,28 +6,25 @@ concurrency:
 
 on:
   push:
-    branches: ['main']
+    branches: ["main"]
     paths-ignore:
-      - '**/*.md'
+      - "**/*.md"
   pull_request:
-    branches: ['main']
+    branches: ["main"]
     paths-ignore:
-      - '**/*.md'
+      - "**/*.md"
 
 permissions:
   contents: read
 
 env:
   TELEMETRY_ENABLED: false
-  NODE_OPTIONS: '--max_old_space_size=4096'
+  NODE_OPTIONS: "--max_old_space_size=4096"
 
 jobs:
   example-counter-wsl:
-    timeout-minutes: 30
-    # 2019 is more stable with WSL in GH actions
-    # https://github.com/actions/runner-images/issues/5151
-    # Confirmed through trial and error. 2022 has >80% failure rate (probably BSOD)
-    runs-on: windows-2019
+    timeout-minutes: 20
+    runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
       - name: Clone Reflex Examples Repo
@@ -36,15 +33,15 @@ jobs:
           repository: reflex-dev/reflex-examples
           path: reflex-examples
 
-      - uses: Vampire/setup-wsl@v3
+      - uses: Vampire/setup-wsl@v5
         with:
           distribution: Ubuntu-24.04
 
-      - name: Install Python
+      - name: Install packages
         shell: wsl-bash {0}
         run: |
-          apt update
-          apt install -y python3 python3-pip curl dos2unix zip unzip
+          sudo apt-get update
+          sudo apt-get install -y python3 python3-pip curl dos2unix zip unzip
 
       - name: Install Uv
         shell: wsl-bash {0}

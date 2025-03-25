@@ -160,7 +160,7 @@ class VarData:
         if isinstance(hooks, str):
             hooks = [hooks]
         if not isinstance(hooks, dict):
-            hooks = {hook: None for hook in (hooks or [])}
+            hooks = dict.fromkeys(hooks or [])
         immutable_imports: ImmutableParsedImportDict = tuple(
             (k, tuple(v)) for k, v in parse_imports(imports or {}).items()
         )
@@ -1256,6 +1256,27 @@ class Var(Generic[VAR_TYPE]):
 
     if not TYPE_CHECKING:
 
+        def __getitem__(self, key: Any) -> Var:
+            """Get the item from the var.
+
+            Args:
+                key: The key to get.
+
+            Raises:
+                UntypedVarError: If the var type is Any.
+                TypeError: If the var type is Any.
+
+            # noqa: DAR101 self
+            """
+            if self._var_type is Any:
+                raise exceptions.UntypedVarError(
+                    self,
+                    f"access the item '{key}'",
+                )
+            raise TypeError(
+                f"Var of type {self._var_type} does not support item access."
+            )
+
         def __getattr__(self, name: str):
             """Get an attribute of the var.
 
@@ -1281,7 +1302,8 @@ class Var(Generic[VAR_TYPE]):
 
             if self._var_type is Any:
                 raise exceptions.UntypedVarError(
-                    f"You must provide an annotation for the state var `{self!s}`. Annotation cannot be `{self._var_type}`."
+                    self,
+                    f"access the attribute '{name}'",
                 )
 
             raise VarAttributeError(
@@ -1769,8 +1791,7 @@ class cached_property:  # noqa: N801
                     if original_del is not None:
                         original_del(this)
                     return
-                if unique_id in GLOBAL_CACHE:
-                    del GLOBAL_CACHE[unique_id]
+                GLOBAL_CACHE.pop(unique_id, None)
 
                 if original_del is not None:
                     original_del(this)
@@ -2993,41 +3014,6 @@ _decode_var_pattern = re.compile(_decode_var_pattern_re, flags=re.DOTALL)
 
 # Defined global immutable vars.
 _global_vars: dict[int, Var] = {}
-
-
-def _extract_var_data(value: Iterable) -> list[VarData | None]:
-    """Extract the var imports and hooks from an iterable containing a Var.
-
-    Args:
-        value: The iterable to extract the VarData from
-
-    Returns:
-        The extracted VarDatas.
-    """
-    from reflex.style import Style
-    from reflex.vars import Var
-
-    var_datas = []
-    with contextlib.suppress(TypeError):
-        for sub in value:
-            if isinstance(sub, Var):
-                var_datas.append(sub._var_data)
-            elif not isinstance(sub, str):
-                # Recurse into dict values.
-                if hasattr(sub, "values") and callable(sub.values):
-                    var_datas.extend(_extract_var_data(sub.values()))  # pyright: ignore [reportArgumentType]
-                # Recurse into iterable values (or dict keys).
-                var_datas.extend(_extract_var_data(sub))
-
-    # Style objects should already have _var_data.
-    if isinstance(value, Style):
-        var_datas.append(value._var_data)
-    else:
-        # Recurse when value is a dict itself.
-        values = getattr(value, "values", None)
-        if callable(values):
-            var_datas.extend(_extract_var_data(values()))  # pyright: ignore [reportArgumentType]
-    return var_datas
 
 
 dispatchers: dict[GenericType, Callable[[Var], Var]] = {}

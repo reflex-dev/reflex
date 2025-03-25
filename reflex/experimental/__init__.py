@@ -8,10 +8,10 @@ from reflex.components.radix.themes.components.progress import progress as progr
 from reflex.components.sonner.toast import toast as toast
 
 from ..utils.console import warn
+from ..utils.misc import run_in_thread
 from . import hooks as hooks
 from .client_state import ClientStateVar as ClientStateVar
 from .layout import layout as layout
-from .misc import run_in_thread as run_in_thread
 
 
 class ExperimentalNamespace(SimpleNamespace):
@@ -46,15 +46,27 @@ class ExperimentalNamespace(SimpleNamespace):
 
     @property
     def progress(self):
-        """Temporary property returning the toast namespace.
+        """Temporary property returning the progress component.
 
-        Remove this property when toast is fully promoted.
+        Remove this property when progress is fully promoted.
 
         Returns:
-            The toast namespace.
+            The progress component.
         """
         self.register_component_warning("progress")
         return progress
+
+    @property
+    def run_in_thread(self):
+        """Temporary property returning the run_in_thread helper function.
+
+        Remove this property when run_in_thread is fully promoted.
+
+        Returns:
+            The run_in_thread helper function.
+        """
+        self.register_component_warning("run_in_thread")
+        return run_in_thread
 
     @staticmethod
     def register_component_warning(component_name: str):
@@ -62,7 +74,7 @@ class ExperimentalNamespace(SimpleNamespace):
         doesn't exist.
 
         Args:
-             component_name: name of the component.
+            component_name: name of the component.
         """
         warn(
             f"`rx._x.{component_name}` was promoted to `rx.{component_name}`.",
@@ -75,6 +87,5 @@ _x = ExperimentalNamespace(
     hooks=hooks,
     layout=layout,
     PropsBase=PropsBase,
-    run_in_thread=run_in_thread,
     code_block=code_block,
 )

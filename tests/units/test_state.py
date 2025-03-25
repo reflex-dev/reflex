@@ -1612,7 +1612,7 @@ async def test_state_with_invalid_yield(capsys, mock_app):
                     "An error occurred.",
                     level="error",
                     fallback_to_alert=True,
-                    description="TypeError: Your handler test_state_with_invalid_yield.<locals>.StateWithInvalidYield.invalid_handler must only return/yield: None, Events or other EventHandlers referenced by their class (i.e. using `type(self)` or other class references)..<br/>See logs for details.",
+                    description="TypeError: Your handler test_state_with_invalid_yield.<locals>.StateWithInvalidYield.invalid_handler must only return/yield: None, Events or other EventHandlers referenced by their class (i.e. using `type(self)` or other class references). Returned events of types <class 'int'>..<br/>See logs for details.",
                     id="backend_error",
                     position="top-center",
                     style={"width": "500px"},
@@ -3424,6 +3424,42 @@ class ChildUsesMixinState(UsesMixinState):
     pass
 
 
+class ChildMixinState(ChildUsesMixinState, mixin=True):
+    """A mixin state that inherits from a concrete state that uses mixins."""
+
+    pass
+
+
+class GrandchildUsesMixinState(ChildMixinState):
+    """A grandchild state that uses the mixin state."""
+
+    pass
+
+
+class BareMixin:
+    """A bare mixin which does not inherit from rx.State."""
+
+    _bare_mixin: int = 0
+
+
+class BareStateMixin(BareMixin, rx.State, mixin=True):
+    """A state mixin that uses a bare mixin."""
+
+    pass
+
+
+class BareMixinState(BareStateMixin, State):
+    """A state that uses a bare mixin."""
+
+    pass
+
+
+class ChildBareMixinState(BareMixinState):
+    """A child state that uses a bare mixin."""
+
+    pass
+
+
 def test_mixin_state() -> None:
     """Test that a mixin state works correctly."""
     assert "num" in UsesMixinState.base_vars
@@ -3438,6 +3474,9 @@ def test_mixin_state() -> None:
         is not UsesMixinState.backend_vars["_backend_no_default"]
     )
 
+    assert UsesMixinState.get_parent_state() == State
+    assert UsesMixinState.get_root_state() == State
+
 
 def test_child_mixin_state() -> None:
     """Test that mixin vars are only applied to the highest state in the hierarchy."""
@@ -3446,6 +3485,39 @@ def test_child_mixin_state() -> None:
 
     assert "computed" in ChildUsesMixinState.inherited_vars
     assert "computed" not in ChildUsesMixinState.computed_vars
+
+    assert ChildUsesMixinState.get_parent_state() == UsesMixinState
+    assert ChildUsesMixinState.get_root_state() == State
+
+
+def test_grandchild_mixin_state() -> None:
+    """Test that a mixin can inherit from a concrete state class."""
+    assert "num" in GrandchildUsesMixinState.inherited_vars
+    assert "num" not in GrandchildUsesMixinState.base_vars
+
+    assert "computed" in GrandchildUsesMixinState.inherited_vars
+    assert "computed" not in GrandchildUsesMixinState.computed_vars
+
+    assert ChildMixinState.get_parent_state() == ChildUsesMixinState
+    assert ChildMixinState.get_root_state() == State
+
+    assert GrandchildUsesMixinState.get_parent_state() == ChildUsesMixinState
+    assert GrandchildUsesMixinState.get_root_state() == State
+
+
+def test_bare_mixin_state() -> None:
+    """Test that a mixin can inherit from a concrete state class."""
+    assert "_bare_mixin" not in BareMixinState.inherited_vars
+    assert "_bare_mixin" not in BareMixinState.base_vars
+
+    assert BareMixinState.get_parent_state() == State
+    assert BareMixinState.get_root_state() == State
+
+    assert "_bare_mixin" not in ChildBareMixinState.inherited_vars
+    assert "_bare_mixin" not in ChildBareMixinState.base_vars
+
+    assert ChildBareMixinState.get_parent_state() == BareMixinState
+    assert ChildBareMixinState.get_root_state() == State
 
 
 def test_assignment_to_undeclared_vars():

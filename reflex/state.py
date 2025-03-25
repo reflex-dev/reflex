@@ -905,7 +905,14 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         ]
         if len(parent_states) >= 2:
             raise ValueError(f"Only one parent state is allowed {parent_states}.")
-        return parent_states[0] if len(parent_states) == 1 else None
+        # The first non-mixin state in the mro is our parent.
+        for base in cls.mro()[1:]:
+            if not issubclass(base, BaseState) or base._mixin:
+                continue
+            if base is BaseState:
+                break
+            return base
+        return None  # No known parent
 
     @classmethod
     @functools.lru_cache()
@@ -1013,9 +1020,9 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
 
         if not types.is_valid_var_type(prop._var_type):
             raise VarTypeError(
-                "State vars must be primitive Python types, "
-                "Plotly figures, Pandas dataframes, "
-                "or subclasses of rx.Base. "
+                "State vars must be of a serializable type. "
+                "Valid types include strings, numbers, booleans, lists, "
+                "dictionaries, dataclasses, datetime objects, and pydantic models. "
                 f'Found var "{prop._js_expr}" with type {prop._var_type}.'
             )
         cls._set_var(prop)
@@ -1664,6 +1671,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
 
         raise TypeError(
             f"Your handler {handler.fn.__qualname__} must only return/yield: None, Events or other EventHandlers referenced by their class (i.e. using `type(self)` or other class references)."
+            f" Returned events of types {', '.join(map(str, map(type, events)))!s}."
         )
 
     async def _as_state_update(

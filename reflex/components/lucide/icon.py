@@ -1,7 +1,7 @@
 """Lucide Icon component."""
 
 from reflex.components.component import Component
-from reflex.utils import format
+from reflex.utils import console, format
 from reflex.utils.imports import ImportVar
 from reflex.vars.base import LiteralVar, Var
 from reflex.vars.sequence import LiteralStringVar, StringVar
@@ -33,7 +33,6 @@ class Icon(LucideIconComponent):
 
         Raises:
             AttributeError: The errors tied to bad usage of the Icon component.
-            ValueError: If the icon tag is invalid.
             TypeError: If the icon name is not a string.
 
         Returns:
@@ -54,39 +53,35 @@ class Icon(LucideIconComponent):
         if "tag" not in props:
             raise AttributeError("Missing 'tag' keyword-argument for Icon")
 
-        tag: str | Var | LiteralVar = Var.create(props.pop("tag"))
-        if isinstance(tag, LiteralVar):
-            if isinstance(tag, LiteralStringVar):
-                tag = tag._var_value
+        tag_var: Var | LiteralVar = Var.create(props.pop("tag"))
+        if isinstance(tag_var, LiteralVar):
+            if isinstance(tag_var, LiteralStringVar):
+                tag = format.to_snake_case(tag_var._var_value.lower())
             else:
-                raise TypeError(f"Icon name must be a string, got {type(tag)}")
-        elif isinstance(tag, Var):
-            tag_stringified = tag.guess_type()
+                raise TypeError(f"Icon name must be a string, got {type(tag_var)}")
+        elif isinstance(tag_var, Var):
+            tag_stringified = tag_var.guess_type()
             if not isinstance(tag_stringified, StringVar):
-                raise TypeError(f"Icon name must be a string, got {tag._var_type}")
+                raise TypeError(f"Icon name must be a string, got {tag_var._var_type}")
             return DynamicIcon.create(name=tag_stringified.replace("_", "-"), **props)
 
-        if (
-            not isinstance(tag, str)
-            or format.to_snake_case(tag) not in LUCIDE_ICON_LIST
-        ):
-            if isinstance(tag, str):
-                icons_sorted = sorted(
-                    LUCIDE_ICON_LIST,
-                    key=lambda s: format.length_of_largest_common_substring(tag, s),
-                    reverse=True,
-                )
-            else:
-                icons_sorted = LUCIDE_ICON_LIST
-            raise ValueError(
-                f"Invalid icon tag: {tag}. Please use one of the following: {', '.join(icons_sorted[0:25])}, ..."
-                "\nSee full list at https://reflex.dev/docs/library/data-display/icon/#icons-list."
+        if tag not in LUCIDE_ICON_LIST:
+            icons_sorted = sorted(
+                LUCIDE_ICON_LIST,
+                key=lambda s, tag=tag: format.length_of_largest_common_substring(
+                    tag, s
+                ),
+                reverse=True,
             )
+            console.warn(
+                f"Invalid icon tag: {tag}. Please use one of the following: {', '.join(icons_sorted[0:10])}, ..."
+                "\nSee full list at https://reflex.dev/docs/library/data-display/icon/#icons-list. Using 'circle-help' icon instead."
+            )
+            tag = "circle_help"
 
-        if tag in LUCIDE_ICON_MAPPING_OVERRIDE:
-            props["tag"] = LUCIDE_ICON_MAPPING_OVERRIDE[tag]
-        else:
-            props["tag"] = format.to_title_case(format.to_snake_case(tag)) + "Icon"
+        props["tag"] = LUCIDE_ICON_MAPPING_OVERRIDE.get(
+            tag, format.to_title_case(tag) + "Icon"
+        )
         props["alias"] = f"Lucide{props['tag']}"
         props.setdefault("color", "var(--current-color)")
         return super().create(**props)

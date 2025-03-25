@@ -576,6 +576,22 @@ class App(MiddlewareMixin, LifespanMixin):
         """
         if not self.api:
             raise ValueError("The app has not been initialized.")
+
+        # For py3.9 compatibility when redis is used, we MUST add any decorator pages
+        # before compiling the app in a thread to avoid event loop error (REF-2172).
+        self._apply_decorated_pages()
+
+        compile_future = concurrent.futures.ThreadPoolExecutor(max_workers=1).submit(
+            self._compile
+        )
+        compile_future.add_done_callback(
+            # Force background compile errors to print eagerly
+            lambda f: f.result()
+        )
+        # Wait for the compile to finish in prod mode to ensure all optional endpoints are mounted.
+        if is_prod_mode():
+            compile_future.result()
+
         return self.api
 
     def _add_default_endpoints(self):
@@ -952,7 +968,7 @@ class App(MiddlewareMixin, LifespanMixin):
         # Check the nocompile file.
         if nocompile.exists():
             # Delete the nocompile file
-            nocompile.unlink()
+            nocompile.unlink(missing_ok=True)
             return False
 
         # By default, compile the app.
@@ -1063,7 +1079,7 @@ class App(MiddlewareMixin, LifespanMixin):
                 with stateful_pages_marker.open("r") as f:
                     stateful_pages = json.load(f)
                 for route in stateful_pages:
-                    console.info(f"BE Evaluating stateful page: {route}")
+                    console.debug(f"BE Evaluating stateful page: {route}")
                     self._compile_page(route, save_page=False)
                 self._enable_state()
             self._add_optional_endpoints()
@@ -1091,8 +1107,6 @@ class App(MiddlewareMixin, LifespanMixin):
 
         if config.react_strict_mode:
             app_wrappers[(200, "StrictMode")] = StrictMode.create()
-
-        should_compile = self._should_compile()
 
         if not should_compile:
             with console.timing("Evaluate Pages (Backend)"):
@@ -1242,7 +1256,9 @@ class App(MiddlewareMixin, LifespanMixin):
             compiler.compile_document_root(
                 self.head_components,
                 html_lang=self.html_lang,
-                html_custom_attrs=self.html_custom_attrs,  # pyright: ignore [reportArgumentType]
+                html_custom_attrs=(
+                    {**self.html_custom_attrs} if self.html_custom_attrs else {}
+                ),
             )
         )
 

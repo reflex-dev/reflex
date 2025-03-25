@@ -43,7 +43,6 @@ jobs:
           python-version: ${{ matrix.python-version }}
           run-uv-sync: true
 
-
       - name: Clone Reflex Website Repo
         uses: actions/checkout@v4
         with:
@@ -122,7 +121,7 @@ jobs:
       - name: Run uv sync
         shell: bash
         run: |
-          uv install --no-install-project --no-dev
+          uv pip install --no-install-project --no-dev
 
       - name: calculate and upload size
         run:

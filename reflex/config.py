@@ -30,10 +30,10 @@ from typing import (
 )
 
 import pydantic.v1 as pydantic
-from reflex_cli.constants.hosting import Hosting
 
 from reflex import constants
 from reflex.base import Base
+from reflex.constants.base import LogLevel
 from reflex.utils import console
 from reflex.utils.exceptions import ConfigError, EnvironmentVarValueError
 from reflex.utils.types import (
@@ -44,7 +44,7 @@ from reflex.utils.types import (
 )
 
 try:
-    from dotenv import load_dotenv  # pyright: ignore [reportMissingImports]
+    from dotenv import load_dotenv
 except ImportError:
     load_dotenv = None
 
@@ -595,13 +595,13 @@ class EnvironmentVariables:
         constants.CompileContext.UNDEFINED, internal=True
     )
 
-    # Whether to use npm over bun to install frontend packages.
+    # Whether to use npm over bun to install and run the frontend.
     REFLEX_USE_NPM: EnvVar[bool] = env_var(False)
 
     # The npm registry to use.
     NPM_CONFIG_REGISTRY: EnvVar[str | None] = env_var(None)
 
-    # Whether to use Granian for the backend. Otherwise, use Uvicorn.
+    # Whether to use Granian for the backend. By default, the backend uses Uvicorn if available.
     REFLEX_USE_GRANIAN: EnvVar[bool] = env_var(False)
 
     # The username to use for authentication on python package repository. Username and password must both be provided.
@@ -612,9 +612,6 @@ class EnvironmentVariables:
 
     # Whether to use the system installed bun. If set to false, bun will be bundled with the app.
     REFLEX_USE_SYSTEM_BUN: EnvVar[bool] = env_var(False)
-
-    # Whether to use the system installed node and npm. If set to false, node and npm will be bundled with the app.
-    REFLEX_USE_SYSTEM_NODE: EnvVar[bool] = env_var(False)
 
     # The working directory for the next.js commands.
     REFLEX_WEB_WORKDIR: EnvVar[Path] = env_var(Path(constants.Dirs.WEB))
@@ -723,6 +720,9 @@ class EnvironmentVariables:
     # Used by flexgen to enumerate the pages.
     REFLEX_ADD_ALL_ROUTES_ENDPOINT: EnvVar[bool] = env_var(False)
 
+    # The address to bind the HTTP client to. You can set this to "::" to enable IPv6.
+    REFLEX_HTTP_CLIENT_BIND_ADDRESS: EnvVar[str | None] = env_var(None)
+
 
 environment = EnvironmentVariables()
 
@@ -809,8 +809,8 @@ class Config(Base):
     # Tailwind config.
     tailwind: dict[str, Any] | None = {"plugins": ["@tailwindcss/typography"]}
 
-    # Timeout when launching the gunicorn server. TODO(rename this to backend_timeout?)
-    timeout: int = 120
+    # DEPRECATED. Timeout when launching the gunicorn server.
+    timeout: int | None = None
 
     # Whether to enable or disable nextJS gzip compression.
     next_compression: bool = True
@@ -821,22 +821,17 @@ class Config(Base):
     # Additional frontend packages to install.
     frontend_packages: list[str] = []
 
-    # The hosting service backend URL.
-    cp_backend_url: str = Hosting.HOSTING_SERVICE
-    # The hosting service frontend URL.
-    cp_web_url: str = Hosting.HOSTING_SERVICE_UI
-
-    # The worker class used in production mode
+    # DEPRECATED. The worker class used in production mode
     gunicorn_worker_class: str = "uvicorn.workers.UvicornH11Worker"
 
-    # Number of gunicorn workers from user
+    # DEPRECATED. Number of gunicorn workers from user
     gunicorn_workers: int | None = None
 
-    # Number of requests before a worker is restarted; set to 0 to disable
-    gunicorn_max_requests: int = 100
+    # DEPRECATED. Number of requests before a worker is restarted; set to 0 to disable
+    gunicorn_max_requests: int | None = None
 
-    # Variance limit for max requests; gunicorn only
-    gunicorn_max_requests_jitter: int = 25
+    # DEPRECATED. Variance limit for max requests; gunicorn only
+    gunicorn_max_requests_jitter: int | None = None
 
     # Indicate which type of state manager to use
     state_manager_mode: constants.StateManagerMode = constants.StateManagerMode.DISK
@@ -877,6 +872,13 @@ class Config(Base):
         """
         super().__init__(*args, **kwargs)
 
+        # Set the log level for this process
+        env_loglevel = os.environ.get("LOGLEVEL")
+        if env_loglevel is not None:
+            env_loglevel = LogLevel(env_loglevel)
+        if env_loglevel or self.loglevel != LogLevel.DEFAULT:
+            console.set_log_level(env_loglevel or self.loglevel)
+
         # Update the config from environment variables.
         env_kwargs = self.update_from_env()
         for key, env_value in env_kwargs.items():
@@ -886,9 +888,6 @@ class Config(Base):
         kwargs.update(env_kwargs)
         self._non_default_attributes.update(kwargs)
         self._replace_defaults(**kwargs)
-
-        # Set the log level for this process
-        console.set_log_level(self.loglevel)
 
         if (
             self.state_manager_mode == constants.StateManagerMode.REDIS
@@ -936,8 +935,14 @@ class Config(Base):
                     """The `python-dotenv` package is required to load environment variables from a file. Run `pip install "python-dotenv>=1.0.1"`."""
                 )
             else:
-                # load env file if exists
-                load_dotenv(env_file, override=True)
+                # load env files in reverse order if they exist
+                for env_file_path in [
+                    Path(p)
+                    for s in reversed(env_file.split(os.pathsep))
+                    if (p := s.strip())
+                ]:
+                    if env_file_path.exists():
+                        load_dotenv(env_file_path, override=True)
 
         updated_values = {}
         # Iterate over the fields.
@@ -958,10 +963,11 @@ class Config(Base):
                 if key.upper() in _sensitive_env_vars:
                     env_var = "***"
 
-                console.info(
-                    f"Overriding config value {key} with env var {key.upper()}={env_var}",
-                    dedupe=True,
-                )
+                if value != getattr(self, key):
+                    console.debug(
+                        f"Overriding config value {key} with env var {key.upper()}={env_var}",
+                        dedupe=True,
+                    )
 
         return updated_values
 
