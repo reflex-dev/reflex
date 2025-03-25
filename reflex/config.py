@@ -723,6 +723,17 @@ class EnvironmentVariables:
     # The address to bind the HTTP client to. You can set this to "::" to enable IPv6.
     REFLEX_HTTP_CLIENT_BIND_ADDRESS: EnvVar[str | None] = env_var(None)
 
+    # Maximum size of the message in the websocket server in bytes.
+    REFLEX_SOCKET_POLLING_MAX_HTTP_BUFFER_SIZE: EnvVar[int] = env_var(
+        constants.POLLING_MAX_HTTP_BUFFER_SIZE
+    )
+
+    # The interval to send a ping to the websocket server in seconds.
+    REFLEX_SOCKET_INTERVAL: EnvVar[int] = env_var(constants.Ping.INTERVAL)
+
+    # The timeout to wait for a pong from the websocket server in seconds.
+    REFLEX_SOCKET_TIMEOUT: EnvVar[int] = env_var(constants.Ping.TIMEOUT)
+
 
 environment = EnvironmentVariables()
 
