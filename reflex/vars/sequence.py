@@ -1604,6 +1604,8 @@ def _determine_value_of_array_index(
         return args[0] if args else Any
     if origin_var_type is tuple:
         args = get_args(var_type)
+        if len(args) == 2 and isinstance(args[1], type(...)):
+            return args[0]
         return (
             args[int(index) % len(args)]
             if args and index is not None
