@@ -567,9 +567,10 @@ def validate_app_name(app_name: str | None = None) -> str:
     # Make sure the app is not named "reflex".
     if app_name.lower() == constants.Reflex.MODULE_NAME:
         console.error(
-            "The app directory cannot be named "
-            + colored(constants.Reflex.MODULE_NAME, attrs=("bold",))
-            + "."
+            colored("The app directory cannot be named ", "error")
+            + colored(constants.Reflex.MODULE_NAME, "error", attrs=("bold",))
+            + colored(".", "error"),
+            color=None,
         )
         raise typer.Exit(1)
 
@@ -661,7 +662,10 @@ def rename_app(new_app_name: str, loglevel: constants.LogLevel):
     rename_path_up_tree(Path(module_path.origin), config.app_name, new_app_name)
 
     console.success(
-        "App directory renamed to " + colored(new_app_name, attrs=("bold",)) + "."
+        colored("App directory renamed to ", "success")
+        + colored(new_app_name, "success", attrs=("bold",))
+        + colored(".", "success"),
+        color=None,
     )
 
 
@@ -1273,9 +1277,12 @@ def needs_reinit(frontend: bool = True) -> bool:
     if not constants.Config.FILE.exists():
         console.error(
             colored(constants.Config.FILE, "cyan")
-            + " not found. Move to the root folder of your project, or run "
-            + colored(constants.Reflex.MODULE_NAME + " init", attrs=("bold",))
-            + " to start a new project."
+            + colored(
+                " not found. Move to the root folder of your project, or run ", "error"
+            )
+            + colored(constants.Reflex.MODULE_NAME + " init", "error", attrs=("bold",))
+            + colored(" to start a new project.", "error"),
+            color=None,
         )
         raise typer.Exit(1)
 
@@ -1456,9 +1463,10 @@ def check_db_initialized() -> bool:
         and not environment.ALEMBIC_CONFIG.get().exists()
     ):
         console.error(
-            "Database is not initialized. Run "
-            + colored("reflex db init", attrs=("bold",))
-            + " first."
+            colored("Database is not initialized. Run ", "error")
+            + colored("reflex db init", "error", attrs=("bold",))
+            + colored(" first.", "error"),
+            color=None,
         )
         return False
     return True
@@ -1475,16 +1483,18 @@ def check_schema_up_to_date():
                 write_migration_scripts=False,
             ):
                 console.error(
-                    "Detected database schema changes. Run "
-                    + colored("reflex db makemigrations", attrs=("bold",))
-                    + " to generate migration scripts.",
+                    colored("Detected database schema changes. Run ", "error")
+                    + colored("reflex db makemigrations", "error", attrs=("bold",))
+                    + colored(" to generate migration scripts.", "error"),
+                    color=None,
                 )
         except CommandError as command_error:
             if "Target database is not up to date." in str(command_error):
                 console.error(
-                    f"{command_error} Run "
-                    + colored("reflex db migrate", attrs=("bold",))
-                    + " to update database."
+                    colored(f"{command_error} Run ", "error")
+                    + colored("reflex db migrate", "error", attrs=("bold",))
+                    + colored(" to update database.", "error"),
+                    color=None,
                 )
 
 

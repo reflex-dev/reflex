@@ -51,6 +51,11 @@ _Color = Literal[
     "light_magenta",
     "light_cyan",
     "white",
+    "error",
+    "warning",
+    "info",
+    "success",
+    "debug",
 ]
 
 
@@ -71,6 +76,11 @@ _COLORS: dict[_Color, int] = {
     "light_magenta": 95,
     "light_cyan": 96,
     "white": 97,
+    "error": 31,
+    "warning": 33,
+    "info": 36,
+    "success": 32,
+    "debug": 90,
 }
 
 _BackgroundColor = Literal[

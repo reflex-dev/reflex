@@ -458,11 +458,12 @@ def db_init():
     # Check the alembic config.
     if environment.ALEMBIC_CONFIG.get().exists():
         console.error(
-            "Database is already initialized. Use "
-            + colored("reflex db makemigrations", attrs=("bold",))
-            + " to create schema change scripts and "
-            + colored("reflex db migrate", attrs=("bold",))
-            + " to apply migrations to a new or existing database.",
+            colored("Database is already initialized. Use ", "error")
+            + colored("reflex db makemigrations", "error", attrs=("bold",))
+            + colored(" to create schema change scripts and ", "error")
+            + colored("reflex db migrate", "error", attrs=("bold",))
+            + colored(" to apply migrations to a new or existing database.", "error"),
+            color=None,
         )
         return
 
@@ -512,9 +513,10 @@ def makemigrations(
             if "Target database is not up to date." not in str(command_error):
                 raise
             console.error(
-                f"{command_error} Run "
-                + colored("reflex db migrate", attrs=("bold",))
-                + " to update database."
+                colored(f"{command_error} Run ", "error")
+                + colored("reflex db migrate", "error", attrs=("bold",))
+                + colored(" to update database.", "error"),
+                color=None,
             )
 
 

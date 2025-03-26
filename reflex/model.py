@@ -92,9 +92,10 @@ def get_engine(url: str | None = None) -> sqlalchemy.engine.Engine:
 
     if not environment.ALEMBIC_CONFIG.get().exists():
         console.warn(
-            "Database is not initialized, run "
-            + colored("reflex db init", attrs=("bold",))
-            + " first."
+            colored("Database is not initialized, run ", "warning")
+            + colored("reflex db init", "warning", attrs=("bold",))
+            + colored(" first.", "warning"),
+            color=None,
         )
     _ENGINE[url] = sqlmodel.create_engine(
         url,
@@ -136,9 +137,10 @@ def get_async_engine(url: str | None) -> sqlalchemy.ext.asyncio.AsyncEngine:
 
     if not environment.ALEMBIC_CONFIG.get().exists():
         console.warn(
-            "Database is not initialized, run "
-            + colored("reflex db init", attrs=("bold",))
-            + " first."
+            colored("Database is not initialized, run ", "warning")
+            + colored("reflex db init", "warning", attrs=("bold",))
+            + colored(" first.", "warning"),
+            color=None,
         )
     _ASYNC_ENGINE[url] = sqlalchemy.ext.asyncio.create_async_engine(
         url,

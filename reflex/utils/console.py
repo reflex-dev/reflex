@@ -74,6 +74,7 @@ class Status:
 
     message: str = "Loading"
     _reprinter: Reprinter | None = dataclasses.field(default=None, init=False)
+    _parity: int = dataclasses.field(default=0, init=False)
 
     def __enter__(self):
         """Enter the context manager.
@@ -110,7 +111,17 @@ class Status:
             kwargs: Keyword arguments to pass to the print function.
         """
         if self._reprinter:
-            self._reprinter.reprint(f"O {msg}")
+            char = (
+                "◐"
+                if self._parity % 4 == 0
+                else (
+                    "◓"
+                    if self._parity % 4 == 1
+                    else ("◑" if self._parity % 4 == 2 else "◒")
+                )
+            )
+            self._parity += 1
+            self._reprinter.reprint(f"{char} {msg}")
 
 
 @dataclass
@@ -142,8 +153,8 @@ class Console:
         """
         terminal_width = _get_terminal_width()
         remaining_width = (
-            terminal_width - len(title) - 4
-        )  # 4 for the spaces and characters around the title
+            terminal_width - len(title) - 2
+        )  # 2 for the spaces around the title
         left_padding = remaining_width // 2
         right_padding = remaining_width - left_padding
 
@@ -153,13 +164,11 @@ class Console:
         title = colored(title, color, attrs=("bold",) if bold else ())
 
         rule_line = (
-            " "
-            + colored("─" * left_padding, rule_color)
+            colored("─" * left_padding, rule_color)
             + " "
             + title
             + " "
             + colored("─" * right_padding, rule_color)
-            + " "
         )
         self.print(rule_line, **kwargs)
 
@@ -310,7 +319,7 @@ def debug(msg: str, dedupe: bool = False, **kwargs):
                 return
             else:
                 _EMITTED_DEBUG.add(msg)
-        kwargs.setdefault("color", "magenta")
+        kwargs.setdefault("color", "debug")
         print(msg, **kwargs)
 
 
@@ -328,7 +337,7 @@ def info(msg: str, dedupe: bool = False, **kwargs):
                 return
             else:
                 _EMITTED_INFO.add(msg)
-        kwargs.setdefault("color", "cyan")
+        kwargs.setdefault("color", "info")
         print(f"Info: {msg}", **kwargs)
 
 
@@ -346,7 +355,7 @@ def success(msg: str, dedupe: bool = False, **kwargs):
                 return
             else:
                 _EMITTED_SUCCESS.add(msg)
-        kwargs.setdefault("color", "green")
+        kwargs.setdefault("color", "success")
         print(f"Success: {msg}", **kwargs)
 
 
@@ -391,7 +400,7 @@ def warn(msg: str, dedupe: bool = False, **kwargs):
                 return
             else:
                 _EMIITED_WARNINGS.add(msg)
-        kwargs.setdefault("color", "light_yellow")
+        kwargs.setdefault("color", "warning")
         print(f"Warning: {msg}", **kwargs)
 
 
@@ -458,7 +467,7 @@ def deprecate(
             f"removed in {removal_version}. ({loc})"
         )
         if _LOG_LEVEL <= LogLevel.WARNING:
-            kwargs.setdefault("color", "yellow")
+            kwargs.setdefault("color", "warning")
             print(f"DeprecationWarning: {msg}", **kwargs)
         if dedupe:
             _EMITTED_DEPRECATION_WARNINGS.add(dedupe_key)
@@ -478,7 +487,7 @@ def error(msg: str, dedupe: bool = False, **kwargs):
                 return
             else:
                 _EMITTED_ERRORS.add(msg)
-        kwargs.setdefault("color", "red")
+        kwargs.setdefault("color", "error")
         print(f"{msg}", **kwargs)
 
 

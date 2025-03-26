@@ -117,9 +117,10 @@ def change_port(port: int, _type: str) -> int:
     if is_process_on_port(new_port):
         return change_port(new_port, _type)
     console.info(
-        f"The {_type} will run on port "
-        + colored(port, attrs=("bold", "underline"))
-        + "."
+        colored(f"The {_type} will run on port ", "info")
+        + colored(port, "info", attrs=("bold", "underline"))
+        + colored(".", "info"),
+        color=None,
     )
     return new_port
 
@@ -326,9 +327,10 @@ def stream_logs(
         if analytics_enabled:
             telemetry.send("error", context=message)
         console.error(
-            "Run with "
-            + colored("--loglevel debug", attrs=("bold",))
-            + " for the full log."
+            colored("Run with ", "error")
+            + colored("--loglevel debug", "error", attrs=("bold",))
+            + colored(" for the full log.", "error"),
+            color=None,
         )
         raise typer.Exit(1)
 
