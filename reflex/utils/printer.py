@@ -13,19 +13,39 @@ class ProgressBarComponent(Protocol):
     """A protocol for progress bar components."""
 
     def minimum_width(self, current: int, steps: int) -> int:
-        """Return the minimum width of the component."""
+        """Return the minimum width of the component.
+
+        Args:
+            current: The current step.
+            steps: The total number of steps.
+        """
         ...
 
     def requested_width(self, current: int, steps: int) -> int:
-        """Return the requested width of the component."""
+        """Return the requested width of the component.
+
+        Args:
+            current: The current step.
+            steps: The total number of steps.
+        """
         ...
 
     def initialize(self, steps: int) -> None:
-        """Initialize the component."""
+        """Initialize the component.
+
+        Args:
+            steps: The total number of steps.
+        """
         ...
 
     def get_message(self, current: int, steps: int, max_width: int) -> str:
-        """Return the message to display."""
+        """Return the message to display.
+
+        Args:
+            current: The current step.
+            steps: The total number of steps.
+            max_width: The maximum width of the component.
+        """
         ...
 
 
@@ -36,18 +56,47 @@ class MessageComponent(ProgressBarComponent):
     message: str
 
     def minimum_width(self, current: int, steps: int) -> int:
-        """Return the minimum width of the component."""
+        """Return the minimum width of the component.
+
+        Args:
+            current: The current step.
+            steps: The total number of steps.
+
+        Returns:
+            The minimum width of the component.
+        """
         return len(self.message)
 
     def requested_width(self, current: int, steps: int) -> int:
-        """Return the requested width of the component."""
+        """Return the requested width of the component.
+
+        Args:
+            current: The current step.
+            steps: The total number of steps.
+
+        Returns:
+            The requested width of the component.
+        """
         return len(self.message)
 
     def initialize(self, steps: int) -> None:
-        """Initialize the component."""
+        """Initialize the component.
+
+        Args:
+            steps: The total number of steps.
+        """
 
     def get_message(self, current: int, steps: int, max_width: int) -> str:
-        """Return the message to display."""
+        """Return the message to display.
+
+        Args:
+            current: The current step.
+            steps: The total number of steps.
+            max_width: The maximum width of the component.
+
+        Returns:
+            The message to display.
+        """
         return self.message
 
 
@@ -56,18 +105,47 @@ class PercentageComponent(ProgressBarComponent):
     """A component that displays the percentage of completion."""
 
     def minimum_width(self, current: int, steps: int) -> int:
-        """Return the minimum width of the component."""
+        """Return the minimum width of the component.
+
+        Args:
+            current: The current step.
+            steps: The total number of steps.
+
+        Returns:
+            The minimum width of the component.
+        """
         return 4
 
     def requested_width(self, current: int, steps: int) -> int:
-        """Return the requested width of the component."""
+        """Return the requested width of the component.
+
+        Args:
+            current: The current step.
+            steps: The total number of steps.
+
+        Returns:
+            The requested width of the component.
+        """
         return 4
 
     def initialize(self, steps: int) -> None:
-        """Initialize the component."""
+        """Initialize the component.
+
+        Args:
+            steps: The total number of steps.
+        """
 
     def get_message(self, current: int, steps: int, max_width: int) -> str:
-        """Return the message to display."""
+        """Return the message to display.
+
+        Args:
+            current: The current step.
+            steps: The total number of steps.
+            max_width: The maximum width of the component.
+
+        Returns:
+            The message to display.
+        """
         return f"{int(current / steps * 100):3}%"
 
 
@@ -78,23 +156,61 @@ class TimeComponent(ProgressBarComponent):
     initial_time: float | None = None
 
     def minimum_width(self, current: int, steps: int) -> int:
-        """Return the minimum width of the component."""
+        """Return the minimum width of the component.
+
+        Args:
+            current: The current step.
+            steps: The total number of steps.
+
+        Returns:
+            The minimum width of the component.
+
+        Raises:
+            ValueError: If the component is not initialized.
+        """
         if self.initial_time is None:
             raise ValueError("TimeComponent not initialized")
         return len(f"{time.time() - self.initial_time:.1f}s")
 
     def requested_width(self, current: int, steps: int) -> int:
-        """Return the requested width of the component."""
+        """Return the requested width of the component.
+
+        Args:
+            current: The current step.
+            steps: The total number of steps.
+
+        Returns:
+            The requested width of the component.
+
+        Raises:
+            ValueError: If the component is not initialized.
+        """
         if self.initial_time is None:
             raise ValueError("TimeComponent not initialized")
         return len(f"{time.time() - self.initial_time:.1f}s")
 
     def initialize(self, steps: int) -> None:
-        """Initialize the component."""
+        """Initialize the component.
+
+        Args:
+            steps: The total number of steps.
+        """
         self.initial_time = time.time()
 
     def get_message(self, current: int, steps: int, max_width: int) -> str:
-        """Return the message to display."""
+        """Return the message to display.
+
+        Args:
+            current: The current step.
+            steps: The total number of steps.
+            max_width: The maximum width of the component.
+
+        Returns:
+            The message to display.
+
+        Raises:
+            ValueError: If the component is not initialized.
+        """
         if self.initial_time is None:
             raise ValueError("TimeComponent not initialized")
         return f"{time.time() - self.initial_time:.1f}s"
@@ -105,18 +221,47 @@ class CounterComponent(ProgressBarComponent):
     """A component that displays the current step and total steps."""
 
     def minimum_width(self, current: int, steps: int) -> int:
-        """Return the minimum width of the component."""
+        """Return the minimum width of the component.
+
+        Args:
+            current: The current step.
+            steps: The total number of steps.
+
+        Returns:
+            The minimum width of the component.
+        """
         return 1 + 2 * len(str(steps))
 
     def requested_width(self, current: int, steps: int) -> int:
-        """Return the requested width of the component."""
+        """Return the requested width of the component.
+
+        Args:
+            current: The current step.
+            steps: The total number of steps.
+
+        Returns:
+            The requested width of the component.
+        """
         return 1 + 2 * len(str(steps))
 
     def initialize(self, steps: int) -> None:
-        """Initialize the component."""
+        """Initialize the component.
+
+        Args:
+            steps: The total number of steps.
+        """
 
     def get_message(self, current: int, steps: int, max_width: int) -> str:
-        """Return the message to display."""
+        """Return the message to display.
+
+        Args:
+            current: The current step.
+            steps: The total number of steps.
+            max_width: The maximum width of the component.
+
+        Returns:
+            The message to display.
+        """
         return current.__format__(f"{len(str(steps))}") + "/" + str(steps)
 
 
@@ -130,7 +275,15 @@ class SimpleProgressComponent:
     incomplete_str: str = "░"
 
     def minimum_width(self, current: int, steps: int) -> int:
-        """Return the minimum width of the component."""
+        """Return the minimum width of the component.
+
+        Args:
+            current: The current step.
+            steps: The total number of steps.
+
+        Returns:
+            The minimum width of the component.
+        """
         return (
             len(self.starting_str)
             + 2 * len(self.incomplete_str)
@@ -139,7 +292,15 @@ class SimpleProgressComponent:
         )
 
     def requested_width(self, current: int, steps: int) -> int:
-        """Return the requested width of the component."""
+        """Return the requested width of the component.
+
+        Args:
+            current: The current step.
+            steps: The total number of steps.
+
+        Returns:
+            The requested width of the component.
+        """
         return (
             len(self.starting_str)
             + steps * max(len(self.incomplete_str), len(self.complete_str))
@@ -147,10 +308,23 @@ class SimpleProgressComponent:
         )
 
     def initialize(self, steps: int) -> None:
-        """Initialize the component."""
+        """Initialize the component.
+
+        Args:
+            steps: The total number of steps.
+        """
 
     def get_message(self, current: int, steps: int, max_width: int) -> str:
-        """Return the message to display."""
+        """Return the message to display.
+
+        Args:
+            current: The current step.
+            steps: The total number of steps.
+            max_width: The maximum width of the component.
+
+        Returns:
+            The message to display.
+        """
         progress = int(
             current
             / steps
@@ -184,7 +358,15 @@ class FunGuyProgressComponent:
     complete_str: str = " "
 
     def minimum_width(self, current: int, steps: int) -> int:
-        """Return the minimum width of the component."""
+        """Return the minimum width of the component.
+
+        Args:
+            current: The current step.
+            steps: The total number of steps.
+
+        Returns:
+            The minimum width of the component.
+        """
         return (
             len(self.starting_str)
             + len(self.incomplete_str)
@@ -194,14 +376,35 @@ class FunGuyProgressComponent:
         )
 
     def requested_width(self, current: int, steps: int) -> int:
-        """Return the requested width of the component."""
+        """Return the requested width of the component.
+
+        Args:
+            current: The current step.
+            steps: The total number of steps.
+
+        Returns:
+            The requested width of the component.
+        """
         return steps + len(self.starting_str) + len(self.ending_str)
 
     def initialize(self, steps: int) -> None:
-        """Initialize the component."""
+        """Initialize the component.
+
+        Args:
+            steps: The total number of steps.
+        """
 
     def get_message(self, current: int, steps: int, max_width: int) -> str:
-        """Return the message to display."""
+        """Return the message to display.
+
+        Args:
+            current: The current step.
+            steps: The total number of steps.
+            max_width: The maximum width of the component.
+
+        Returns:
+            The message to display.
+        """
         progress = int(
             current
             / steps
@@ -368,7 +571,18 @@ class ProgressBar:
         self._printer.reprint(self.separator.join(messages))
 
     def get_message(self, component: ProgressBarComponent, width: int):
-        """Get the message for a given component."""
+        """Get the message for a given component.
+
+        Args:
+            component: The component to get the message for.
+            width: The width of the component.
+
+        Returns:
+            The message for the component
+
+        Raises:
+            ValueError: If the message is too long.
+        """
         message = component.get_message(self._current, self.steps, width)
         if len(message) > width:
             raise ValueError(
@@ -377,7 +591,11 @@ class ProgressBar:
         return message
 
     def update(self, step: int):
-        """Update the progress bar by a given step."""
+        """Update the progress bar by a given step.
+
+        Args:
+            step: The step to update the progress bar by.
+        """
         self._current += step
         self.print()
 
