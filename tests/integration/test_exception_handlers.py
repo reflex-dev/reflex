@@ -199,6 +199,6 @@ def test_frontend_exception_handler_with_react(
         assert "Error: Minified React error #31" in captured_default_handler_output.out
     else:
         assert (
-            "Error: Objects are not valid as a React child (found: object with keys \n{invalid})"
+            "Error: Objects are not valid as a React child (found: object with keys {invalid})"
             in captured_default_handler_output.out
         )
