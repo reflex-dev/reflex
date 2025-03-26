@@ -1643,6 +1643,9 @@ class LiteralEventVar(VarOperationCall, LiteralVar, EventVar):
 
         Returns:
             The created LiteralEventVar instance.
+
+        Raises:
+            EventFnArgMismatchError: If the event handler takes arguments.
         """
         if isinstance(value, EventHandler):
 
@@ -1652,7 +1655,7 @@ class LiteralEventVar(VarOperationCall, LiteralVar, EventVar):
             try:
                 value = call_event_handler(value, no_args)
             except EventFnArgMismatchError:
-                raise ValueError(
+                raise EventFnArgMismatchError(
                     f"Event handler {value.fn.__qualname__} used inside of a rx.cond() must not take any arguments."
                 ) from None
 
