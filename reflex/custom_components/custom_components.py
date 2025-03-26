@@ -338,7 +338,7 @@ def init(
     # Check the name follows the convention if picked.
     name_variants = _validate_library_name(library_name)
 
-    console.rule(f"[bold]Initializing {name_variants.package_name} project")
+    console.rule(f"Initializing {name_variants.package_name} project", bold=True)
 
     _populate_custom_component_project(name_variants)
 
@@ -351,25 +351,25 @@ def init(
 
     if install:
         package_name = name_variants.package_name
-        console.rule(f"[bold]Installing {package_name} in editable mode.")
+        console.rule(f"Installing {package_name} in editable mode.", bold=True)
         if _pip_install_on_demand(package_name=".", install_args=["-e"]):
             console.info(f"Package {package_name} installed!")
         else:
             raise typer.Exit(code=1)
 
-    console.print("[bold]Custom component initialized successfully!")
-    console.rule("[bold]Project Summary")
+    console.success("Custom component initialized successfully!", bold=True)
+    console.rule("Project Summary", bold=True)
     console.print(
-        f"[ {CustomComponents.PACKAGE_README} ]: Package description. Please add usage examples."
+        f"[{CustomComponents.PACKAGE_README}]: Package description. Please add usage examples."
     )
     console.print(
-        f"[ {CustomComponents.PYPROJECT_TOML} ]: Project configuration file. Please fill in details such as your name, email, homepage URL."
+        f"[{CustomComponents.PYPROJECT_TOML}]: Project configuration file. Please fill in details such as your name, email, homepage URL."
     )
     console.print(
-        f"[ {CustomComponents.SRC_DIR}/ ]: Custom component code template. Start by editing it with your component implementation."
+        f"[{CustomComponents.SRC_DIR}/]: Custom component code template. Start by editing it with your component implementation."
     )
     console.print(
-        f"[ {name_variants.demo_app_dir}/ ]: Demo App. Add more code to this app and test."
+        f"[{name_variants.demo_app_dir}/]: Demo App. Add more code to this app and test."
     )
 
 

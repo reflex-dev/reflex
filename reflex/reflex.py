@@ -79,7 +79,7 @@ def _init(
 
     # Validate the app name.
     app_name = prerequisites.validate_app_name(name)
-    console.rule(f"[bold]Initializing {app_name}")
+    console.rule(f"Initializing {app_name}", bold=True)
 
     # Check prerequisites.
     prerequisites.check_latest_package_version(constants.Reflex.MODULE_NAME)
@@ -200,7 +200,7 @@ def _run(
     # Reload the config to make sure the env vars are persistent.
     get_config(reload=True)
 
-    console.rule("[bold]Starting Reflex App")
+    console.rule("Starting Reflex App", bold=True)
 
     prerequisites.check_latest_package_version(constants.Reflex.MODULE_NAME)
 

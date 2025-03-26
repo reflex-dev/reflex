@@ -153,7 +153,7 @@ def run_frontend(root: Path, port: str, backend_present: bool = True):
     prerequisites.validate_frontend_dependencies(init=False)
 
     # Run the frontend in development mode.
-    console.rule("[bold green]App Running")
+    console.rule("App Running", color="green", bold=True)
     os.environ["PORT"] = str(get_config().frontend_port if port is None else port)
     run_process_and_launch_url(
         [
@@ -180,7 +180,7 @@ def run_frontend_prod(root: Path, port: str, backend_present: bool = True):
     # validate dependencies before run
     prerequisites.validate_frontend_dependencies(init=False)
     # Run the frontend in production mode.
-    console.rule("[bold green]App Running")
+    console.rule("App Running", color="green", bold=True)
     run_process_and_launch_url(
         [*prerequisites.get_js_package_executor(raise_on_none=True)[0], "run", "prod"],
         backend_present,

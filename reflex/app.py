@@ -36,7 +36,6 @@ from fastapi import UploadFile as FastAPIUploadFile
 from fastapi.middleware import cors
 from fastapi.responses import JSONResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
-from rich.progress import MofNCompleteColumn, Progress, TimeElapsedColumn
 from socketio import ASGIApp, AsyncNamespace, AsyncServer
 from starlette.datastructures import Headers
 from starlette.datastructures import UploadFile as StarletteUploadFile
@@ -110,6 +109,13 @@ from reflex.utils import (
 )
 from reflex.utils.exec import get_compile_context, is_prod_mode, is_testing_env
 from reflex.utils.imports import ImportVar
+from reflex.utils.printer import (
+    CounterComponent,
+    FunGuyProgressComponent,
+    MessageComponent,
+    ProgressBar,
+    TimeComponent,
+)
 
 if TYPE_CHECKING:
     from reflex.vars import Var
@@ -1122,23 +1128,24 @@ class App(MiddlewareMixin, LifespanMixin):
 
             return
 
-        # Create a progress bar.
-        progress = Progress(
-            *Progress.get_default_columns()[:-1],
-            MofNCompleteColumn(),
-            TimeElapsedColumn(),
-        )
-
         # try to be somewhat accurate - but still not 100%
         adhoc_steps_without_executor = 7
         fixed_pages_within_executor = 5
-        progress.start()
-        task = progress.add_task(
-            f"[{get_compilation_time()}] Compiling:",
-            total=len(self._pages)
-            + (len(self._unevaluated_pages) * 2)
-            + fixed_pages_within_executor
-            + adhoc_steps_without_executor,
+
+        # Create a progress bar.
+        progress = ProgressBar(
+            steps=(
+                len(self._pages)
+                + (len(self._unevaluated_pages) * 2)
+                + fixed_pages_within_executor
+                + adhoc_steps_without_executor
+            ),
+            components=(
+                (MessageComponent(f"[{get_compilation_time()}] Compiling:"), 0),
+                (FunGuyProgressComponent(), 2),
+                (CounterComponent(), 1),
+                (TimeComponent(), 3),
+            ),
         )
 
         with console.timing("Evaluate Pages (Frontend)"):
@@ -1149,7 +1156,7 @@ class App(MiddlewareMixin, LifespanMixin):
                 self._compile_page(route, save_page=should_compile)
                 end = timer()
                 performance_metrics.append((route, end - start))
-                progress.advance(task)
+                progress.update(1)
             console.debug(
                 "Slowest pages:\n"
                 + "\n".join(
@@ -1180,12 +1187,12 @@ class App(MiddlewareMixin, LifespanMixin):
         if is_prod_mode() and config.show_built_with_reflex:
             self._setup_sticky_badge()
 
-        progress.advance(task)
+        progress.update(1)
 
         # Store the compile results.
         compile_results: list[tuple[str, str]] = []
 
-        progress.advance(task)
+        progress.update(1)
 
         # Track imports and custom components found.
         all_imports = {}
@@ -1239,7 +1246,7 @@ class App(MiddlewareMixin, LifespanMixin):
                 stateful_components_code,
                 page_components,
             ) = compiler.compile_stateful_components(self._pages.values())
-            progress.advance(task)
+            progress.update(1)
 
         # Catch "static" apps (that do not define a rx.State subclass) which are trying to access rx.State.
         if code_uses_state_contexts(stateful_components_code) and self._state is None:
@@ -1249,7 +1256,7 @@ class App(MiddlewareMixin, LifespanMixin):
             )
         compile_results.append((stateful_components_path, stateful_components_code))
 
-        progress.advance(task)
+        progress.update(1)
 
         # Compile the root document before fork.
         compile_results.append(
@@ -1262,7 +1269,7 @@ class App(MiddlewareMixin, LifespanMixin):
             )
         )
 
-        progress.advance(task)
+        progress.update(1)
 
         # Copy the assets.
         assets_src = Path.cwd() / constants.Dirs.APP_ASSETS
@@ -1287,7 +1294,7 @@ class App(MiddlewareMixin, LifespanMixin):
 
             def _submit_work(fn: Callable[..., tuple[str, str]], *args, **kwargs):
                 f = executor.submit(fn, *args, **kwargs)
-                f.add_done_callback(lambda _: progress.advance(task))
+                f.add_done_callback(lambda _: progress.update(1))
                 result_futures.append(f)
 
             # Compile the pre-compiled pages.
@@ -1323,7 +1330,7 @@ class App(MiddlewareMixin, LifespanMixin):
         # Get imports from AppWrap components.
         all_imports.update(app_root._get_all_imports())
 
-        progress.advance(task)
+        progress.update(1)
 
         # Compile the contexts.
         compile_results.append(
@@ -1332,13 +1339,13 @@ class App(MiddlewareMixin, LifespanMixin):
         if self.theme is not None:
             # Fix #2992 by removing the top-level appearance prop
             self.theme.appearance = None
-        progress.advance(task)
+        progress.update(1)
 
         # Compile the app root.
         compile_results.append(
             compiler.compile_app(app_root),
         )
-        progress.advance(task)
+        progress.update(1)
 
         # Compile custom components.
         (
@@ -1349,8 +1356,8 @@ class App(MiddlewareMixin, LifespanMixin):
         compile_results.append((custom_components_output, custom_components_result))
         all_imports.update(custom_components_imports)
 
-        progress.advance(task)
-        progress.stop()
+        progress.update(1)
+        progress.finish()
 
         # Install frontend packages.
         with console.timing("Install Frontend Packages"):
