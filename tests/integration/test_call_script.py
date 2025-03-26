@@ -511,7 +511,7 @@ def test_call_script_w_var(
 
     inline_return_button.click()
     call_with_var_f_string_button.click()
-    assert call_script.poll_for_value(last_result, exp_not_equal="") == "1"
+    assert call_script.poll_for_value(last_result, exp_not_equal=("", "0")) == "1"
 
     inline_return_button.click()
     call_with_var_str_cast_button.click()
