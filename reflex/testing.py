@@ -27,6 +27,7 @@ from typing import (
     Callable,
     Coroutine,
     Optional,
+    Sequence,
     Type,
     TypeVar,
 )
@@ -768,7 +769,7 @@ class AppHarness:
         self,
         element: "WebElement",
         timeout: TimeoutType = None,
-        exp_not_equal: str = "",
+        exp_not_equal: str | Sequence[str] = "",
     ) -> str | None:
         """Poll element.get_attribute("value") for change.
 
@@ -783,8 +784,11 @@ class AppHarness:
         Raises:
             TimeoutError: when the timeout expires before value changes
         """
+        exp_not_equal = (
+            (exp_not_equal,) if isinstance(exp_not_equal, str) else exp_not_equal
+        )
         if not self._poll_for(
-            target=lambda: element.get_attribute("value") != exp_not_equal,
+            target=lambda: element.get_attribute("value") not in exp_not_equal,
             timeout=timeout,
         ):
             raise TimeoutError(
