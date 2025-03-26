@@ -306,10 +306,13 @@ def stream_logs(
         console.debug(message)
         if process.stdout is None:
             return
-        for line in process.stdout:
-            console.debug(line, end="")
-            logs.append(line)
-            yield line
+        try:
+            for line in process.stdout:
+                console.debug(line, end="")
+                logs.append(line)
+                yield line
+        except ValueError as e:
+            console.error(f"Error streaming logs: {e}")
 
     # Check if the process failed (not printing the logs for SIGINT).
 

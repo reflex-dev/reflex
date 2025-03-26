@@ -155,6 +155,30 @@ class TimeComponent(ProgressBarComponent):
 
     initial_time: float | None = None
 
+    _cached_time: float | None = dataclasses.field(default=None, init=False)
+
+    def _minimum_and_requested_string(
+        self, current: int, steps: int
+    ) -> tuple[str, str]:
+        """Return the minimum and requested string length of the component.
+
+        Args:
+            current: The current step.
+            steps: The total number of steps.
+
+        Returns:
+            The minimum and requested string length of the component.
+
+        Raises:
+            ValueError: If the component is not initialized.
+        """
+        if self.initial_time is None or self._cached_time is None:
+            raise ValueError("TimeComponent not initialized")
+        return (
+            f"{int(self._cached_time - self.initial_time)!s}s",
+            f"{int((self._cached_time - self.initial_time) * 1000)!s}ms",
+        )
+
     def minimum_width(self, current: int, steps: int) -> int:
         """Return the minimum width of the component.
 
@@ -170,7 +194,9 @@ class TimeComponent(ProgressBarComponent):
         """
         if self.initial_time is None:
             raise ValueError("TimeComponent not initialized")
-        return len(f"{time.time() - self.initial_time:.1f}s")
+        self._cached_time = time.time()
+        _min, _ = self._minimum_and_requested_string(current, steps)
+        return len(_min)
 
     def requested_width(self, current: int, steps: int) -> int:
         """Return the requested width of the component.
@@ -187,7 +213,8 @@ class TimeComponent(ProgressBarComponent):
         """
         if self.initial_time is None:
             raise ValueError("TimeComponent not initialized")
-        return len(f"{time.time() - self.initial_time:.1f}s")
+        _, _req = self._minimum_and_requested_string(current, steps)
+        return len(_req)
 
     def initialize(self, steps: int) -> None:
         """Initialize the component.
@@ -213,7 +240,10 @@ class TimeComponent(ProgressBarComponent):
         """
         if self.initial_time is None:
             raise ValueError("TimeComponent not initialized")
-        return f"{time.time() - self.initial_time:.1f}s"
+        _min, _req = self._minimum_and_requested_string(current, steps)
+        if len(_req) <= max_width:
+            return _req
+        return _min
 
 
 @dataclasses.dataclass
@@ -579,16 +609,9 @@ class ProgressBar:
 
         Returns:
             The message for the component
-
-        Raises:
-            ValueError: If the message is too long.
         """
         message = component.get_message(self._current, self.steps, width)
-        if len(message) > width:
-            raise ValueError(
-                f"Component message too long: {message} (length: {len(message)}, width: {width})"
-            )
-        return message
+        return message[:width]
 
     def update(self, step: int):
         """Update the progress bar by a given step.
