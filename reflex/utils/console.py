@@ -15,9 +15,8 @@ from dataclasses import dataclass
 from pathlib import Path
 from types import FrameType
 
-from termcolor import colored
-
 from reflex.constants import LogLevel
+from reflex.utils.terminal import colored
 
 
 def _get_terminal_width() -> int:
@@ -74,7 +73,7 @@ class Status:
     """A status class for displaying a spinner."""
 
     message: str = "Loading"
-    _reprinter: Reprinter | None = None
+    _reprinter: Reprinter | None = dataclasses.field(default=None, init=False)
 
     def __enter__(self):
         """Enter the context manager.
@@ -148,7 +147,20 @@ class Console:
         left_padding = remaining_width // 2
         right_padding = remaining_width - left_padding
 
-        rule_line = "─" * left_padding + f" {title} " + "─" * right_padding
+        color = kwargs.pop("color", None)
+        bold = kwargs.pop("bold", True)
+        rule_color = "green" if color is None else color
+        title = colored(title, color, attrs=("bold",) if bold else ())
+
+        rule_line = (
+            " "
+            + colored("─" * left_padding, rule_color)
+            + " "
+            + title
+            + " "
+            + colored("─" * right_padding, rule_color)
+            + " "
+        )
         self.print(rule_line, **kwargs)
 
     def status(self, *args, **kwargs):
@@ -298,7 +310,7 @@ def debug(msg: str, dedupe: bool = False, **kwargs):
                 return
             else:
                 _EMITTED_DEBUG.add(msg)
-        kwargs.setdefault("color", "purple")
+        kwargs.setdefault("color", "magenta")
         print(msg, **kwargs)
 
 

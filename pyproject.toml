@@ -42,7 +42,6 @@ dependencies = [
   "setuptools >=75.0",
   "starlette-admin >=0.11.0,<1.0",
   "sqlmodel >=0.0.14,<0.1",
-  "termcolor >=2.5.0,<2.6",
   "tomlkit >=0.12.4,<1.0",
   "twine >=4.0.0,<7.0",
   "typer >=0.15.1,<1.0",

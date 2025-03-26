@@ -22,6 +22,7 @@ from reflex.constants.base import LogLevel
 from reflex.utils import console, path_ops
 from reflex.utils.decorator import once
 from reflex.utils.prerequisites import get_web_dir
+from reflex.utils.terminal import colored
 
 # For uvicorn windows bug fix (#2335)
 frontend_process = None
@@ -67,7 +68,10 @@ def kill(proc_pid: int):
 def notify_backend():
     """Output a string notifying where the backend is running."""
     console.print(
-        f"Backend running at: [bold green]http://0.0.0.0:{get_config().backend_port}[/bold green]"
+        "Backend running at: "
+        + colored(
+            f"http://0.0.0.0:{get_config().backend_port}", "green", attrs=("bold",)
+        )
     )
 
 
@@ -113,7 +117,9 @@ def run_process_and_launch_url(
                             url = urljoin(url, get_config().frontend_path)
 
                         console.print(
-                            f"App running at: [bold green]{url}[/bold green]{' (Frontend-only mode)' if not backend_present else ''}"
+                            "App running at: "
+                            + colored(url, "green", attrs=("bold",))
+                            + (" (Frontend-only mode)" if not backend_present else "")
                         )
                         if backend_present:
                             notify_backend()
@@ -153,7 +159,7 @@ def run_frontend(root: Path, port: str, backend_present: bool = True):
     prerequisites.validate_frontend_dependencies(init=False)
 
     # Run the frontend in development mode.
-    console.rule("App Running", color="green", bold=True)
+    console.rule("App Running", color="green")
     os.environ["PORT"] = str(get_config().frontend_port if port is None else port)
     run_process_and_launch_url(
         [
@@ -180,7 +186,7 @@ def run_frontend_prod(root: Path, port: str, backend_present: bool = True):
     # validate dependencies before run
     prerequisites.validate_frontend_dependencies(init=False)
     # Run the frontend in production mode.
-    console.rule("App Running", color="green", bold=True)
+    console.rule("App Running", color="green")
     run_process_and_launch_url(
         [*prerequisites.get_js_package_executor(raise_on_none=True)[0], "run", "prod"],
         backend_present,

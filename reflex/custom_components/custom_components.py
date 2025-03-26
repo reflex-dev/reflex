@@ -338,7 +338,7 @@ def init(
     # Check the name follows the convention if picked.
     name_variants = _validate_library_name(library_name)
 
-    console.rule(f"Initializing {name_variants.package_name} project", bold=True)
+    console.rule(f"Initializing {name_variants.package_name} project")
 
     _populate_custom_component_project(name_variants)
 
@@ -351,14 +351,14 @@ def init(
 
     if install:
         package_name = name_variants.package_name
-        console.rule(f"Installing {package_name} in editable mode.", bold=True)
+        console.rule(f"Installing {package_name} in editable mode.")
         if _pip_install_on_demand(package_name=".", install_args=["-e"]):
             console.info(f"Package {package_name} installed!")
         else:
             raise typer.Exit(code=1)
 
     console.success("Custom component initialized successfully!", bold=True)
-    console.rule("Project Summary", bold=True)
+    console.rule("Project Summary")
     console.print(
         f"[{CustomComponents.PACKAGE_README}]: Package description. Please add usage examples."
     )
@@ -829,7 +829,7 @@ def _collect_details_for_gallery():
     import reflex_cli.constants
     from reflex_cli.utils import hosting
 
-    console.rule("[bold]Authentication with Reflex Services")
+    console.rule("Authentication with Reflex Services")
     console.print("First let's log in to Reflex backend services.")
     access_token, _ = hosting.authenticated_token()
 
@@ -839,7 +839,7 @@ def _collect_details_for_gallery():
         )
         raise typer.Exit(code=1)
 
-    console.rule("[bold]Custom Component Information")
+    console.rule("Custom Component Information")
     params = {}
     package_name = None
     try:

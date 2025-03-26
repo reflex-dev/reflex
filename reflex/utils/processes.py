@@ -25,6 +25,7 @@ from reflex.utils.printer import (
     MessageComponent,
     ProgressBar,
 )
+from reflex.utils.terminal import colored
 
 
 def kill(pid: int):
@@ -116,7 +117,9 @@ def change_port(port: int, _type: str) -> int:
     if is_process_on_port(new_port):
         return change_port(new_port, _type)
     console.info(
-        f"The {_type} will run on port [bold underline]{new_port}[/bold underline]."
+        f"The {_type} will run on port "
+        + colored(port, attrs=("bold", "underline"))
+        + "."
     )
     return new_port
 
@@ -319,7 +322,11 @@ def stream_logs(
             console.error(line, end="")
         if analytics_enabled:
             telemetry.send("error", context=message)
-        console.error("Run with [bold]--loglevel debug [/bold] for the full log.")
+        console.error(
+            "Run with "
+            + colored("--loglevel debug", attrs=("bold",))
+            + " for the full log."
+        )
         raise typer.Exit(1)
 
 

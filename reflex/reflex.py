@@ -15,6 +15,7 @@ from reflex.custom_components.custom_components import custom_components_cli
 from reflex.state import reset_disk_state_manager
 from reflex.utils import console, redir, telemetry
 from reflex.utils.exec import should_use_granian
+from reflex.utils.terminal import colored
 
 # Disable typer+rich integration for help panels
 typer.core.rich = None  # pyright: ignore [reportPrivateImportUsage]
@@ -79,7 +80,7 @@ def _init(
 
     # Validate the app name.
     app_name = prerequisites.validate_app_name(name)
-    console.rule(f"Initializing {app_name}", bold=True)
+    console.rule(f"Initializing {app_name}")
 
     # Check prerequisites.
     prerequisites.check_latest_package_version(constants.Reflex.MODULE_NAME)
@@ -200,7 +201,7 @@ def _run(
     # Reload the config to make sure the env vars are persistent.
     get_config(reload=True)
 
-    console.rule("Starting Reflex App", bold=True)
+    console.rule("Starting Reflex App")
 
     prerequisites.check_latest_package_version(constants.Reflex.MODULE_NAME)
 
@@ -458,9 +459,10 @@ def db_init():
     if environment.ALEMBIC_CONFIG.get().exists():
         console.error(
             "Database is already initialized. Use "
-            "[bold]reflex db makemigrations[/bold] to create schema change "
-            "scripts and [bold]reflex db migrate[/bold] to apply migrations "
-            "to a new or existing database.",
+            + colored("reflex db makemigrations", attrs=("bold",))
+            + " to create schema change scripts and "
+            + colored("reflex db migrate", attrs=("bold",))
+            + " to apply migrations to a new or existing database.",
         )
         return
 
@@ -510,7 +512,9 @@ def makemigrations(
             if "Target database is not up to date." not in str(command_error):
                 raise
             console.error(
-                f"{command_error} Run [bold]reflex db migrate[/bold] to update database."
+                f"{command_error} Run "
+                + colored("reflex db migrate", attrs=("bold",))
+                + " to update database."
             )
 
 

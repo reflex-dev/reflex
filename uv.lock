@@ -1734,7 +1734,6 @@ dependencies = [
     { name = "setuptools" },
     { name = "sqlmodel" },
     { name = "starlette-admin" },
-    { name = "termcolor" },
     { name = "tomlkit" },
     { name = "twine" },
     { name = "typer" },
@@ -1797,7 +1796,6 @@ requires-dist = [
     { name = "setuptools", specifier = ">=75.0" },
     { name = "sqlmodel", specifier = ">=0.0.14,<0.1" },
     { name = "starlette-admin", specifier = ">=0.11.0,<1.0" },
-    { name = "termcolor", specifier = ">=2.5.0,<2.6" },
     { name = "tomlkit", specifier = ">=0.12.4,<1.0" },
     { name = "twine", specifier = ">=4.0.0,<7.0" },
     { name = "typer", specifier = ">=0.15.1,<1.0" },
@@ -2108,15 +2106,6 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/ec/fe/802052aecb21e3797b8f7902564ab6ea0d60ff8ca23952079064155d1ae1/tabulate-0.9.0.tar.gz", hash = "sha256:0095b12bf5966de529c0feb1fa08671671b3368eec77d7ef7ab114be2c068b3c", size = 81090 }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/40/44/4a5f08c96eb108af5cb50b41f76142f0afa346dfa99d5296fe7202a11854/tabulate-0.9.0-py3-none-any.whl", hash = "sha256:024ca478df22e9340661486f85298cff5f6dcdba14f3813e8830015b9ed1948f", size = 35252 },
-]
-
-[[package]]
-name = "termcolor"
-version = "2.5.0"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/37/72/88311445fd44c455c7d553e61f95412cf89054308a1aa2434ab835075fc5/termcolor-2.5.0.tar.gz", hash = "sha256:998d8d27da6d48442e8e1f016119076b690d962507531df4890fcd2db2ef8a6f", size = 13057 }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/7f/be/df630c387a0a054815d60be6a97eb4e8f17385d5d6fe660e1c02750062b4/termcolor-2.5.0-py3-none-any.whl", hash = "sha256:37b17b5fc1e604945c2642c872a3764b5d547a48009871aea3edd3afa180afb8", size = 7755 },
 ]
 
 [[package]]
