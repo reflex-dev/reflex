@@ -14,7 +14,6 @@ from typing import (
     Any,
     Callable,
     Generic,
-    List,
     Protocol,
     Sequence,
     Type,
@@ -32,6 +31,7 @@ from reflex import constants
 from reflex.constants.compiler import CompileVars, Hooks, Imports
 from reflex.constants.state import FRONTEND_EVENT_STATE
 from reflex.utils import console, format
+from reflex.utils.decorator import once
 from reflex.utils.exceptions import (
     EventFnArgMismatchError,
     EventHandlerArgTypeMismatchError,
@@ -449,7 +449,7 @@ class EventChain(EventActionsMixin):
             value = [value]
 
         # If the input is a list of event handlers, create an event chain.
-        if isinstance(value, List):
+        if isinstance(value, list):
             events: list[EventSpec | EventVar] = []
             for v in value:
                 if isinstance(v, (EventHandler, EventSpec)):
@@ -583,11 +583,6 @@ def no_args_event_spec() -> tuple[()]:
         An empty tuple.
     """
     return ()
-
-
-# These chains can be used for their side effects when no other events are desired.
-stop_propagation = EventChain(events=[], args_spec=no_args_event_spec).stop_propagation
-prevent_default = EventChain(events=[], args_spec=no_args_event_spec).prevent_default
 
 
 T = TypeVar("T")
@@ -819,6 +814,7 @@ def console_log(message: str | Var[str]) -> EventSpec:
     return run_script(Var("console").to(dict).log.to(FunctionVar).call(message))
 
 
+@once
 def noop() -> EventSpec:
     """Do nothing.
 
@@ -1552,7 +1548,7 @@ def fix_events(
         return []
 
     # If the handler returns a single event, wrap it in a list.
-    if not isinstance(events, List):
+    if not isinstance(events, list):
         events = [events]
 
     # Fix the events created by the handler.
@@ -1605,6 +1601,11 @@ def get_fn_signature(fn: Callable) -> inspect.Signature:
         FRONTEND_EVENT_STATE, inspect.Parameter.POSITIONAL_OR_KEYWORD, annotation=Any
     )
     return signature.replace(parameters=(new_param, *signature.parameters.values()))
+
+
+# These chains can be used for their side effects when no other events are desired.
+stop_propagation = noop().stop_propagation
+prevent_default = noop().prevent_default
 
 
 class EventVar(ObjectVar, python_types=(EventSpec, EventHandler)):

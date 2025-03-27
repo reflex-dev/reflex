@@ -187,7 +187,7 @@ def CallScript():
             yield rx.call_script("inline_counter = 0; external_counter = 0")
             self.reset()
 
-    app = rx.App(_state=rx.State)
+    app = rx.App()
     Path("assets/external.js").write_text(external_scripts)
 
     @app.add_page

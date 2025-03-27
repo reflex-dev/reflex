@@ -81,7 +81,7 @@ def test_color(color, expected, expected_type: Union[Type[str], Type[Color]]):
             '(true ? "var(--mint-7)" : "var(--tomato-5)")',
         ),
         (
-            rx.cond(True, rx.color(ColorState.color), rx.color(ColorState.color, 5)),  # pyright: ignore [reportArgumentType, reportCallIssue]
+            rx.cond(True, rx.color(ColorState.color), rx.color(ColorState.color, 5)),
             f'(true ? ("var(--"+{color_state_name!s}.color+"-7)") : ("var(--"+{color_state_name!s}.color+"-5)"))',
         ),
         (

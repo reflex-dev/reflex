@@ -610,7 +610,15 @@ if TYPE_CHECKING:
     from reflex.app import ComponentCallable, UnevaluatedPage
 
 
-def _into_component_once(component: Component | ComponentCallable) -> Component | None:
+def _into_component_once(
+    component: Component
+    | ComponentCallable
+    | tuple[Component, ...]
+    | str
+    | Var
+    | int
+    | float,
+) -> Component | None:
     """Convert a component to a Component.
 
     Args:

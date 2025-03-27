@@ -143,7 +143,7 @@ def EventChain():
             time.sleep(0.5)
             self.interim_value = "final"
 
-    app = rx.App(_state=rx.State)
+    app = rx.App()
 
     token_input = rx.input(
         value=State.router.session.client_token, is_read_only=True, id="token"

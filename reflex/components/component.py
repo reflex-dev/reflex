@@ -18,17 +18,18 @@ from typing import (
     ClassVar,
     Iterator,
     List,
+    Mapping,
     Sequence,
     Set,
     Type,
     TypeVar,
     Union,
+    cast,
     get_args,
     get_origin,
 )
 
 import pydantic.v1
-import pydantic.v1.fields
 
 import reflex.state
 from reflex.base import Base
@@ -576,9 +577,15 @@ class Component(BaseComponent, ABC):
 
         # Add style props to the component.
         style = kwargs.get("style", {})
-        if isinstance(style, List):
+        if isinstance(style, Sequence):
+            if any(not isinstance(s, Mapping) for s in style):
+                raise TypeError("Style must be a dictionary or a list of dictionaries.")
             # Merge styles, the later ones overriding keys in the earlier ones.
-            style = {k: v for style_dict in style for k, v in style_dict.items()}
+            style = {
+                k: v
+                for style_dict in style
+                for k, v in cast(Mapping, style_dict).items()
+            }
 
         if isinstance(style, (Breakpoints, Var)):
             style = {
@@ -886,7 +893,7 @@ class Component(BaseComponent, ABC):
             _style.update(s)
         return _style
 
-    def _get_component_style(self, styles: ComponentStyle) -> Style | None:
+    def _get_component_style(self, styles: ComponentStyle | Style) -> Style | None:
         """Get the style to the component from `App.style`.
 
         Args:
@@ -896,14 +903,14 @@ class Component(BaseComponent, ABC):
             The style of the component.
         """
         component_style = None
-        if type(self) in styles:
-            component_style = Style(styles[type(self)])
-        if self.create in styles:
-            component_style = Style(styles[self.create])
+        if (style := styles.get(type(self))) is not None:  # pyright: ignore [reportArgumentType]
+            component_style = Style(style)
+        if (style := styles.get(self.create)) is not None:  # pyright: ignore [reportArgumentType]
+            component_style = Style(style)
         return component_style
 
     def _add_style_recursive(
-        self, style: ComponentStyle, theme: Component | None = None
+        self, style: ComponentStyle | Style, theme: Component | None = None
     ) -> Component:
         """Add additional style to the component and its children.
 

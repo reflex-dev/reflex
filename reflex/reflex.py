@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import atexit
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 import typer
 import typer.core
@@ -429,7 +430,7 @@ def logout(
 
     loglevel = loglevel or get_config().loglevel
 
-    logout(loglevel)  # pyright: ignore [reportArgumentType]
+    logout(_convert_reflex_loglevel_to_reflex_cli_loglevel(loglevel))
 
 
 db_cli = typer.Typer()
@@ -581,7 +582,6 @@ def deploy(
     ),
 ):
     """Deploy the app to the Reflex hosting service."""
-    from reflex_cli.constants.base import LogLevel as HostingLogLevel
     from reflex_cli.utils import dependency
     from reflex_cli.v2 import cli as hosting_cli
     from reflex_cli.v2.deployments import check_version
@@ -603,21 +603,6 @@ def deploy(
 
     # Set the log level.
     console.set_log_level(loglevel)
-
-    def convert_reflex_loglevel_to_reflex_cli_loglevel(
-        loglevel: constants.LogLevel,
-    ) -> HostingLogLevel:
-        if loglevel == constants.LogLevel.DEBUG:
-            return HostingLogLevel.DEBUG
-        if loglevel == constants.LogLevel.INFO:
-            return HostingLogLevel.INFO
-        if loglevel == constants.LogLevel.WARNING:
-            return HostingLogLevel.WARNING
-        if loglevel == constants.LogLevel.ERROR:
-            return HostingLogLevel.ERROR
-        if loglevel == constants.LogLevel.CRITICAL:
-            return HostingLogLevel.CRITICAL
-        return HostingLogLevel.INFO
 
     # Only check requirements if interactive.
     # There is user interaction for requirements update.
@@ -652,7 +637,7 @@ def deploy(
         envfile=envfile,
         hostname=hostname,
         interactive=interactive,
-        loglevel=convert_reflex_loglevel_to_reflex_cli_loglevel(loglevel),
+        loglevel=_convert_reflex_loglevel_to_reflex_cli_loglevel(loglevel),
         token=token,
         project=project,
         project_name=project_name,
@@ -674,6 +659,36 @@ def rename(
 
     prerequisites.validate_app_name(new_name)
     prerequisites.rename_app(new_name, loglevel)
+
+
+if TYPE_CHECKING:
+    from reflex_cli.constants.base import LogLevel as HostingLogLevel
+
+
+def _convert_reflex_loglevel_to_reflex_cli_loglevel(
+    loglevel: constants.LogLevel,
+) -> HostingLogLevel:
+    """Convert a Reflex log level to a Reflex CLI log level.
+
+    Args:
+        loglevel: The Reflex log level to convert.
+
+    Returns:
+        The converted Reflex CLI log level.
+    """
+    from reflex_cli.constants.base import LogLevel as HostingLogLevel
+
+    if loglevel == constants.LogLevel.DEBUG:
+        return HostingLogLevel.DEBUG
+    if loglevel == constants.LogLevel.INFO:
+        return HostingLogLevel.INFO
+    if loglevel == constants.LogLevel.WARNING:
+        return HostingLogLevel.WARNING
+    if loglevel == constants.LogLevel.ERROR:
+        return HostingLogLevel.ERROR
+    if loglevel == constants.LogLevel.CRITICAL:
+        return HostingLogLevel.CRITICAL
+    return HostingLogLevel.INFO
 
 
 cli.add_typer(db_cli, name="db", help="Subcommands for managing the database schema.")

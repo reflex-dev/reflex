@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Mapping
+from typing import Any
 
 import pytest
 
@@ -72,7 +72,7 @@ def test_create_style(style_dict, expected):
         expected: The expected formatted style.
     """
     assert LiteralVar.create(style.Style(style_dict)).equals(
-        LiteralVar.create(expected)
+        LiteralVar.create(expected).to(style.Style)
     )
 
 
@@ -363,7 +363,7 @@ def test_style_via_component(
         style_dict: The style_dict to pass to the component.
         expected_get_style: The expected style dict.
     """
-    comp = rx.el.div(style=style_dict, **kwargs)  # pyright: ignore [reportArgumentType]
+    comp = rx.el.div(style=style_dict, **kwargs)
     compare_dict_of_var(comp._get_style(), expected_get_style)
 
 
@@ -386,7 +386,7 @@ class StyleState(rx.State):
             {
                 "css": Var(
                     _js_expr=f'({{ ["color"] : ("dark"+{StyleState.color}) }})'
-                ).to(Mapping[str, str])
+                ).to(Style)
             },
         ),
         (
@@ -522,7 +522,7 @@ def test_evaluate_style_namespaces():
     """Test that namespaces get converted to component create functions."""
     style_dict = {rx.text: {"color": "blue"}}
     assert rx.text.__call__ not in style_dict
-    style_dict = evaluate_style_namespaces(style_dict)  # pyright: ignore [reportArgumentType]
+    style_dict = evaluate_style_namespaces({**style_dict})
     assert rx.text.__call__ in style_dict
 
 

@@ -138,7 +138,7 @@ def DynamicRoute():
     def redirect_page():
         return rx.fragment(rx.text("redirecting..."))
 
-    app = rx.App(_state=rx.State)
+    app = rx.App()
     app.add_page(index, route="/page/[page_id]", on_load=DynamicState.on_load)
     app.add_page(index, route="/static/x", on_load=DynamicState.on_load)
     app.add_page(index)

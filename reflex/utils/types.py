@@ -140,7 +140,7 @@ def is_generic_alias(cls: GenericType) -> bool:
     Returns:
         Whether the class is a generic alias.
     """
-    return isinstance(cls, GenericAliasTypes)  # pyright: ignore [reportArgumentType]
+    return isinstance(cls, GenericAliasTypes)
 
 
 @lru_cache()
@@ -923,7 +923,7 @@ StateBases = get_base_class(StateVar)
 StateIterBases = get_base_class(StateIterVar)
 
 
-def safe_issubclass(cls: Type, cls_check: Type | tuple[Type, ...]):
+def safe_issubclass(cls: Any, cls_check: Any | tuple[Any, ...]):
     """Check if a class is a subclass of another class. Returns False if internal error occurs.
 
     Args:
@@ -1047,8 +1047,8 @@ def typehint_issubclass(
 
     # Check if the origin of both types is the same (e.g., list for list[int])
     if not safe_issubclass(
-        provided_type_origin or possible_subclass,  # pyright: ignore [reportArgumentType]
-        accepted_type_origin or possible_superclass,  # pyright: ignore [reportArgumentType]
+        provided_type_origin or possible_subclass,
+        accepted_type_origin or possible_superclass,
     ):
         return False
 

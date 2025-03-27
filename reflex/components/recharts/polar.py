@@ -131,7 +131,7 @@ class Radar(Recharts):
     stroke: Var[str | Color] = LiteralVar.create(Color("accent", 9))
 
     # Fill color. Default: rx.color("accent", 3)
-    fill: Var[str] = LiteralVar.create(Color("accent", 3))
+    fill: Var[str | Color] = LiteralVar.create(Color("accent", 3))
 
     # The opacity to fill the chart. Default: 0.6
     fill_opacity: Var[float] = LiteralVar.create(0.6)

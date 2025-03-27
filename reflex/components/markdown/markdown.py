@@ -347,7 +347,7 @@ let {_LANGUAGE!s} = match ? match[1] : '';
             if tag != "codeblock"
             # For codeblock, the mapping for some cases returns an array of elements. Let's join them into a string.
             else ternary_operation(
-                ARRAY_ISARRAY.call(_CHILDREN),  # pyright: ignore [reportArgumentType]
+                ARRAY_ISARRAY.call(_CHILDREN),
                 _CHILDREN.to(list).join("\n"),
                 _CHILDREN,
             ).to(str)

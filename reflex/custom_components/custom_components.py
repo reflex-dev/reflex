@@ -931,14 +931,20 @@ def _validate_url_with_protocol_prefix(url: str | None) -> bool:
 def _get_file_from_prompt_in_loop() -> tuple[bytes, str] | None:
     image_file = file_extension = None
     while image_file is None:
-        image_filepath = Path(
-            console.ask("Upload a preview image of your demo app (enter to skip)")  # pyright: ignore [reportArgumentType]
+        image_path_str = console.ask(
+            "Upload a preview image of your demo app (enter to skip)"
         )
-        if not image_filepath:
+        if not image_path_str:
             break
-        file_extension = image_filepath.suffix
+        image_file_path = Path(image_path_str)
+        if not image_file_path:
+            break
+        if not image_file_path.exists():
+            console.error(f"File {image_file_path} does not exist.")
+            continue
+        file_extension = image_file_path.suffix
         try:
-            image_file = image_filepath.read_bytes()
+            image_file = image_file_path.read_bytes()
         except OSError as ose:
             console.error(f"Unable to read the {file_extension} file due to {ose}")
             raise typer.Exit(code=1) from ose
