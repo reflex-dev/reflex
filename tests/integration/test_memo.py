@@ -87,6 +87,7 @@ async def test_memo_app(memo_app: AppHarness):
 
     # check that the output matches
     memo_custom_code_stack = driver.find_element(By.ID, "memo-custom-code")
+    assert memo_app.poll_for_content(memo_custom_code_stack, exp_not_equal="") == "foobarbarbar"
     assert memo_custom_code_stack.text == "foobarbarbar"
 
     # click the button to trigger partial event application
@@ -98,7 +99,6 @@ async def test_memo_app(memo_app: AppHarness):
     # enter text to trigger passed argument to event handler
     textbox = driver.find_element(By.ID, "memo-input")
     textbox.send_keys("new_value")
-    assert (
-        memo_app.poll_for_content(last_value, exp_not_equal="memod_some_value")
-        == "new_value"
+    assert memo_app._poll_for(
+        lambda: memo_app.poll_for_content(last_value) == "new_value"
     )
