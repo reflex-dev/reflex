@@ -26,9 +26,32 @@ def MemoApp():
     def foo_component2(t: str):
         return FooComponent.create(t, rx.Var("foo"))
 
+    class MemoState(rx.State):
+        last_value: str = ""
+
+        @rx.event
+        def set_last_value(self, value: str):
+            self.last_value = value
+
+    @rx.memo
+    def my_memoed_component(
+        some_value: str,
+        event: rx.EventHandler[rx.event.passthrough_event_spec(str)],
+    ) -> rx.Component:
+        return rx.vstack(
+            rx.button(some_value, id="memo-button", on_click=event(some_value)),
+            rx.input(id="memo-input", on_change=event),
+        )
+
     def index() -> rx.Component:
         return rx.vstack(
-            foo_component(t="foo"), foo_component2(t="bar"), id="memo-custom-code"
+            rx.vstack(
+                foo_component(t="foo"), foo_component2(t="bar"), id="memo-custom-code"
+            ),
+            rx.text(MemoState.last_value, id="memo-last-value"),
+            my_memoed_component(
+                some_value="memod_some_value", event=MemoState.set_last_value
+            ),
         )
 
     app = rx.App()
@@ -65,3 +88,17 @@ async def test_memo_app(memo_app: AppHarness):
     # check that the output matches
     memo_custom_code_stack = driver.find_element(By.ID, "memo-custom-code")
     assert memo_custom_code_stack.text == "foobarbarbar"
+
+    # click the button to trigger partial event application
+    button = driver.find_element(By.ID, "memo-button")
+    button.click()
+    last_value = driver.find_element(By.ID, "memo-last-value")
+    assert memo_app.poll_for_content(last_value, exp_not_equal="") == "memod_some_value"
+
+    # enter text to trigger passed argument to event handler
+    textbox = driver.find_element(By.ID, "memo-input")
+    textbox.send_keys("new_value")
+    assert (
+        memo_app.poll_for_content(last_value, exp_not_equal="memod_some_value")
+        == "new_value"
+    )
