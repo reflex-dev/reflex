@@ -1744,6 +1744,9 @@ LUCIDE_ICON_LIST = [
     "zoom_out",
 ]
 LUCIDE_ICON_MAPPING_OVERRIDE = {
-    "grid_2x_2_check": "Grid2x2Check",
-    "grid_2x_2_x": "Grid2x2X",
+    "box_select": "BoxSelectIcon",
+    "grid_2x_2_check": "Grid2x2CheckIcon",
+    "grid_2x_2_x": "Grid2x2XIcon",
+    "grid_2x_2_plus": "Grid2x2PlusIcon",
+    "layers_3": "Layers3Icon",
 }

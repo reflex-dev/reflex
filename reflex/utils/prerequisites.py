@@ -1180,26 +1180,39 @@ def _clear_cached_procedure_file(cache_file: str | Path):
         cache_file.unlink()
 
 
-def cached_procedure(cache_file: str, payload_fn: Callable[..., str]):
+def cached_procedure(
+    cache_file: str | None,
+    payload_fn: Callable[..., str],
+    cache_file_fn: Callable[[], str] | None = None,
+):
     """Decorator to cache the runs of a procedure on disk. Procedures should not have
        a return value.
 
     Args:
         cache_file: The file to store the cache payload in.
-        payload_fn: Function that computes cache payload from function args
+        payload_fn: Function that computes cache payload from function args.
+        cache_file_fn: Function that computes the cache file name at runtime.
 
     Returns:
         The decorated function.
+
+    Raises:
+        ValueError: If both cache_file and cache_file_fn are provided.
     """
+    if cache_file and cache_file_fn is not None:
+        raise ValueError("cache_file and cache_file_fn cannot both be provided.")
 
     def _inner_decorator(func: Callable):
         def _inner(*args, **kwargs):
-            payload = _read_cached_procedure_file(cache_file)
+            _cache_file = cache_file_fn() if cache_file_fn is not None else cache_file
+            if not _cache_file:
+                raise ValueError("Unknown cache file, cannot cache result.")
+            payload = _read_cached_procedure_file(_cache_file)
             new_payload = payload_fn(*args, **kwargs)
             if payload != new_payload:
-                _clear_cached_procedure_file(cache_file)
+                _clear_cached_procedure_file(_cache_file)
                 func(*args, **kwargs)
-                _write_cached_procedure_file(new_payload, cache_file)
+                _write_cached_procedure_file(new_payload, _cache_file)
 
         return _inner
 
@@ -1207,8 +1220,11 @@ def cached_procedure(cache_file: str, payload_fn: Callable[..., str]):
 
 
 @cached_procedure(
-    cache_file=str(get_web_dir() / "reflex.install_frontend_packages.cached"),
+    cache_file_fn=lambda: str(
+        get_web_dir() / "reflex.install_frontend_packages.cached"
+    ),
     payload_fn=lambda p, c: f"{sorted(p)!r},{c.json()}",
+    cache_file=None,
 )
 def install_frontend_packages(packages: set[str], config: Config):
     """Installs the base and custom frontend packages.

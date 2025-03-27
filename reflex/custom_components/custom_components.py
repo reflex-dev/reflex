@@ -826,7 +826,6 @@ def _collect_details_for_gallery():
     Raises:
         Exit: If pyproject.toml file is ill-formed or the request to the backend services fails.
     """
-    import reflex_cli.constants
     from reflex_cli.utils import hosting
 
     console.rule("[bold]Authentication with Reflex Services")
@@ -853,7 +852,7 @@ def _collect_details_for_gallery():
     params["package_name"] = package_name
 
     post_custom_components_gallery_endpoint = (
-        f"{reflex_cli.constants.Hosting.HOSTING_SERVICE}/custom-components/gallery"
+        "https://gallery-backend.reflex.dev/custom-components/gallery"
     )
 
     # Check the backend services if the user is allowed to update information of this package is already shared.

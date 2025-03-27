@@ -4,6 +4,7 @@ from pathlib import Path
 
 import pytest
 
+from reflex import constants
 from reflex.compiler import compiler, utils
 from reflex.utils.imports import ImportVar, ParsedImportDict
 
@@ -130,6 +131,13 @@ def test_compile_stylesheets(tmp_path: Path, mocker):
         "button.rt-Button {\n\tborder-radius:unset !important;\n}"
     )
     mocker.patch("reflex.compiler.compiler.Path.cwd", return_value=project)
+    mocker.patch(
+        "reflex.compiler.compiler.get_web_dir",
+        return_value=project / constants.Dirs.WEB,
+    )
+    mocker.patch(
+        "reflex.compiler.utils.get_web_dir", return_value=project / constants.Dirs.WEB
+    )
 
     stylesheets = [
         "https://fonts.googleapis.com/css?family=Sofia&effect=neon|outline|emboss|shadow-multiple",
@@ -139,7 +147,7 @@ def test_compile_stylesheets(tmp_path: Path, mocker):
     ]
 
     assert compiler.compile_root_stylesheet(stylesheets) == (
-        str(Path(".web") / "styles" / "styles.css"),
+        str(project / constants.Dirs.WEB / "styles" / "styles.css"),
         "@import url('./tailwind.css'); \n"
         "@import url('https://fonts.googleapis.com/css?family=Sofia&effect=neon|outline|emboss|shadow-multiple'); \n"
         "@import url('https://cdn.jsdelivr.net/npm/bootstrap@3.3.7/dist/css/bootstrap.min.css'); \n"
@@ -147,7 +155,7 @@ def test_compile_stylesheets(tmp_path: Path, mocker):
         "@import url('https://cdn.jsdelivr.net/npm/bootstrap@3.3.7/dist/css/bootstrap-theme.min.css'); \n",
     )
 
-    assert (project / ".web" / "styles" / "styles.css").read_text() == (
+    assert (project / constants.Dirs.WEB / "styles" / "styles.css").read_text() == (
         assets_dir / "styles.css"
     ).read_text()
 
@@ -179,6 +187,13 @@ def test_compile_stylesheets_scss_sass(tmp_path: Path, mocker):
         "button.rt-Button {\n\tborder-radius:unset !important;\n}"
     )
     mocker.patch("reflex.compiler.compiler.Path.cwd", return_value=project)
+    mocker.patch(
+        "reflex.compiler.compiler.get_web_dir",
+        return_value=project / constants.Dirs.WEB,
+    )
+    mocker.patch(
+        "reflex.compiler.utils.get_web_dir", return_value=project / constants.Dirs.WEB
+    )
 
     stylesheets = [
         "/styles.css",
@@ -187,7 +202,7 @@ def test_compile_stylesheets_scss_sass(tmp_path: Path, mocker):
     ]
 
     assert compiler.compile_root_stylesheet(stylesheets) == (
-        str(Path(".web") / "styles" / "styles.css"),
+        str(project / constants.Dirs.WEB / "styles" / "styles.css"),
         "@import url('./tailwind.css'); \n"
         "@import url('./styles.css'); \n"
         f"@import url('./{Path('preprocess') / Path('styles_a.css')!s}'); \n"
@@ -200,23 +215,23 @@ def test_compile_stylesheets_scss_sass(tmp_path: Path, mocker):
     ]
 
     assert compiler.compile_root_stylesheet(stylesheets) == (
-        str(Path(".web") / "styles" / "styles.css"),
+        str(project / constants.Dirs.WEB / "styles" / "styles.css"),
         "@import url('./tailwind.css'); \n"
         "@import url('./styles.css'); \n"
         f"@import url('./{Path('preprocess') / Path('styles_b.css')!s}'); \n"
         f"@import url('./{Path('preprocess') / Path('styles_a.css')!s}'); \n",
     )
 
-    assert (project / ".web" / "styles" / "styles.css").read_text() == (
+    assert (project / constants.Dirs.WEB / "styles" / "styles.css").read_text() == (
         assets_dir / "styles.css"
     ).read_text()
 
     expected_result = "button.rt-Button{border-radius:unset !important}\n"
     assert (
-        project / ".web" / "styles" / "preprocess" / "styles_a.css"
+        project / constants.Dirs.WEB / "styles" / "preprocess" / "styles_a.css"
     ).read_text() == expected_result
     assert (
-        project / ".web" / "styles" / "preprocess" / "styles_b.css"
+        project / constants.Dirs.WEB / "styles" / "preprocess" / "styles_b.css"
     ).read_text() == expected_result
 
 

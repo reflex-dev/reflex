@@ -990,7 +990,7 @@ class Var(Generic[VAR_TYPE]):
                     setattr(state, actual_name, value)
                 except ValueError:
                     console.debug(
-                        f"{type(state).__name__}.{self._js_expr}: Failed conversion of {value} to '{self._var_type.__name__}'. Value not set.",
+                        f"{type(state).__name__}.{self._js_expr}: Failed conversion of {value!s} to '{self._var_type.__name__}'. Value not set.",
                     )
             else:
                 setattr(state, actual_name, value)
@@ -2371,7 +2371,7 @@ class ComputedVar(Var[RETURN_TYPE]):
         if not _isinstance(value, self._var_type, nested=1, treat_var_as_type=False):
             console.error(
                 f"Computed var '{type(instance).__name__}.{self._js_expr}' must return"
-                f" a value of type '{self._var_type}', got '{value}' of type {type(value)}."
+                f" a value of type '{self._var_type}', got '{value!s}' of type {type(value)}."
             )
 
     def _deps(

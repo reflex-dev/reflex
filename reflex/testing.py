@@ -27,6 +27,7 @@ from typing import (
     Callable,
     Coroutine,
     Optional,
+    Sequence,
     Type,
     TypeVar,
 )
@@ -268,6 +269,10 @@ class AppHarness:
                     loglevel=reflex.constants.LogLevel.INFO,
                 )
                 self.app_module_path.write_text(source_code)
+        else:
+            # Just initialize the web folder.
+            with chdir(self.app_path):
+                reflex.utils.prerequisites.initialize_frontend_dependencies()
         with chdir(self.app_path):
             # ensure config and app are reloaded when testing different app
             reflex.config.get_config(reload=True)
@@ -766,7 +771,7 @@ class AppHarness:
         self,
         element: "WebElement",
         timeout: TimeoutType = None,
-        exp_not_equal: str = "",
+        exp_not_equal: str | Sequence[str] = "",
     ) -> str | None:
         """Poll element.get_attribute("value") for change.
 
@@ -781,8 +786,11 @@ class AppHarness:
         Raises:
             TimeoutError: when the timeout expires before value changes
         """
+        exp_not_equal = (
+            (exp_not_equal,) if isinstance(exp_not_equal, str) else exp_not_equal
+        )
         if not self._poll_for(
-            target=lambda: element.get_attribute("value") != exp_not_equal,
+            target=lambda: element.get_attribute("value") not in exp_not_equal,
             timeout=timeout,
         ):
             raise TimeoutError(
