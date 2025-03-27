@@ -4,6 +4,7 @@ import httpx
 
 from reflex.config import environment
 from reflex.utils import console, net
+from reflex.utils.decorator import once
 
 
 def latency(registry: str) -> int:
@@ -48,15 +49,16 @@ def _get_best_registry() -> str:
     """
     console.debug("Getting best registry...")
     registries = [
-        "https://registry.npmjs.org",
-        "https://r.cnpmjs.org",
+        ("https://registry.npmjs.org", 1),
+        ("https://registry.npmmirror.com", 2),
     ]
 
-    best_registry = min(registries, key=average_latency)
+    best_registry = min(registries, key=lambda x: average_latency(x[0]) * x[1])[0]
     console.debug(f"Best registry: {best_registry}")
     return best_registry
 
 
+@once
 def get_npm_registry() -> str:
     """Get npm registry. If environment variable is set, use it first.
 

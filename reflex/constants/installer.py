@@ -67,6 +67,14 @@ class Node(SimpleNamespace):
     # The minimum required node version.
     MIN_VERSION = "18.18.0"
 
+    # Path of the node config file.
+    CONFIG_PATH = ".npmrc"
+
+    DEFAULT_CONFIG = """
+registry={registry}
+fetch-retries=0
+"""
+
 
 def _determine_nextjs_version() -> str:
     default_version = "15.2.4"

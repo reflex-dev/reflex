@@ -510,6 +510,9 @@ def compile_or_validate_app(compile: bool = False) -> bool:
         else:
             validate_app()
     except Exception as e:
+        if isinstance(e, typer.Exit):
+            return False
+
         import traceback
 
         sys_exception = sys.exception()
@@ -963,6 +966,9 @@ def initialize_web_directory():
     console.debug("Initializing the bun config file.")
     initialize_bun_config()
 
+    console.debug("Initializing the .npmrc file.")
+    initialize_npmrc()
+
     console.debug("Initializing the public directory.")
     path_ops.mkdir(get_web_dir() / constants.Dirs.PUBLIC)
 
@@ -1010,6 +1016,20 @@ def initialize_bun_config():
         bunfig_content = constants.Bun.DEFAULT_CONFIG.format(registry=best_registry)
 
     bun_config_path.write_text(bunfig_content)
+
+
+def initialize_npmrc():
+    """Initialize the .npmrc file."""
+    npmrc_path = get_web_dir() / constants.Node.CONFIG_PATH
+
+    if (custom_npmrc := Path(constants.Node.CONFIG_PATH)).exists():
+        npmrc_content = custom_npmrc.read_text()
+        console.info(f"Copying custom .npmrc inside {get_web_dir()} folder")
+    else:
+        best_registry = get_npm_registry()
+        npmrc_content = constants.Node.DEFAULT_CONFIG.format(registry=best_registry)
+
+    npmrc_path.write_text(npmrc_content)
 
 
 def init_reflex_json(project_hash: int | None):
@@ -1241,6 +1261,14 @@ def install_frontend_packages(packages: set[str], config: Config):
         raise_on_none=True
     )
 
+    env = (
+        {
+            "NODE_TLS_REJECT_UNAUTHORIZED": "0",
+        }
+        if environment.SSL_NO_VERIFY.get()
+        else {}
+    )
+
     primary_package_manager = install_package_managers[0]
     fallbacks = install_package_managers[1:]
 
@@ -1251,6 +1279,7 @@ def install_frontend_packages(packages: set[str], config: Config):
         show_status_message="Installing base frontend packages",
         cwd=get_web_dir(),
         shell=constants.IS_WINDOWS,
+        env=env,
     )
 
     if config.tailwind is not None:
@@ -1268,6 +1297,7 @@ def install_frontend_packages(packages: set[str], config: Config):
             show_status_message="Installing tailwind",
             cwd=get_web_dir(),
             shell=constants.IS_WINDOWS,
+            env=env,
         )
 
     # Install custom packages defined in frontend_packages
@@ -1279,6 +1309,7 @@ def install_frontend_packages(packages: set[str], config: Config):
             show_status_message="Installing frontend packages from config and components",
             cwd=get_web_dir(),
             shell=constants.IS_WINDOWS,
+            env=env,
         )
 
 
