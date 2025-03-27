@@ -20,6 +20,7 @@ from rich.progress import Progress
 from reflex import constants
 from reflex.config import environment
 from reflex.utils import console, path_ops, prerequisites
+from reflex.utils.registry import get_npm_registry
 
 
 def kill(pid: int):
@@ -276,6 +277,7 @@ def stream_logs(
     progress: Progress | None = None,
     suppress_errors: bool = False,
     analytics_enabled: bool = False,
+    prior_logs: Tuple[tuple[str, ...], ...] = (),
 ):
     """Stream the logs for a process.
 
@@ -285,6 +287,7 @@ def stream_logs(
         progress: The ongoing progress bar if one is being used.
         suppress_errors: If True, do not exit if errors are encountered (for fallback).
         analytics_enabled: Whether analytics are enabled for this command.
+        prior_logs: The logs of the prior processes that have been run.
 
     Yields:
         The lines of the process output.
@@ -312,8 +315,31 @@ def stream_logs(
     accepted_return_codes = [0, -2, 15] if constants.IS_WINDOWS else [0, -2]
     if process.returncode not in accepted_return_codes and not suppress_errors:
         console.error(f"{message} failed with exit code {process.returncode}")
-        for line in logs:
-            console.error(line, end="")
+        if "".join(logs).count("CERT_HAS_EXPIRED") > 0:
+            bunfig = prerequisites.get_web_dir() / constants.Bun.CONFIG_PATH
+            npm_registry_line = next(
+                (
+                    line
+                    for line in bunfig.read_text().splitlines()
+                    if line.startswith("registry")
+                ),
+                None,
+            )
+            if not npm_registry_line or "=" not in npm_registry_line:
+                npm_registry = get_npm_registry()
+            else:
+                npm_registry = npm_registry_line.split("=")[1].strip()
+            console.error(
+                f"Failed to fetch securely from [bold]{npm_registry}[/bold]. Please check your network connection. "
+                "You can try running the command again or changing the registry by setting the "
+                "NPM_CONFIG_REGISTRY environment variable. If TLS is the issue, and you know what "
+                "you are doing, you can disable it by setting the SSL_NO_VERIFY environment variable."
+            )
+            raise typer.Exit(1)
+        for set_of_logs in (*prior_logs, tuple(logs)):
+            for line in set_of_logs:
+                console.error(line, end="")
+            console.error("\n\n")
         if analytics_enabled:
             telemetry.send("error", context=message)
         console.error("Run with [bold]--loglevel debug [/bold] for the full log.")
@@ -336,8 +362,8 @@ def show_status(
     process: subprocess.Popen,
     suppress_errors: bool = False,
     analytics_enabled: bool = False,
-    prior_processes: Tuple[subprocess.Popen, ...] = (),
-):
+    prior_logs: Tuple[tuple[str, ...], ...] = (),
+) -> list[str]:
     """Show the status of a process.
 
     Args:
@@ -345,17 +371,24 @@ def show_status(
         process: The process.
         suppress_errors: If True, do not exit if errors are encountered (for fallback).
         analytics_enabled: Whether analytics are enabled for this command.
-        prior_processes: The prior processes that have been run.
+        prior_logs: The logs of the prior processes that have been run.
+
+    Returns:
+        The lines of the process output.
     """
-    for one_process in (*prior_processes, process):
-        with console.status(message) as status:
-            for line in stream_logs(
-                message,
-                one_process,
-                suppress_errors=suppress_errors,
-                analytics_enabled=analytics_enabled,
-            ):
-                status.update(f"{message} {line}")
+    lines = []
+
+    with console.status(message) as status:
+        for line in stream_logs(
+            message,
+            process,
+            suppress_errors=suppress_errors,
+            analytics_enabled=analytics_enabled,
+            prior_logs=prior_logs,
+        ):
+            status.update(f"{message} {line}")
+            lines.append(line)
+        return lines
 
 
 def show_progress(message: str, process: subprocess.Popen, checkpoints: list[str]):
@@ -409,7 +442,7 @@ def run_process_with_fallbacks(
     show_status_message: str,
     fallbacks: str | Sequence[str] | Sequence[Sequence[str]] | None = None,
     analytics_enabled: bool = False,
-    prior_processes: Tuple[subprocess.Popen, ...] = (),
+    prior_logs: Tuple[tuple[str, ...], ...] = (),
     **kwargs,
 ):
     """Run subprocess and retry using fallback command if initial command fails.
@@ -419,7 +452,7 @@ def run_process_with_fallbacks(
         show_status_message: The status message to be displayed in the console.
         fallbacks: The fallback command to run if the initial command fails.
         analytics_enabled: Whether analytics are enabled for this command.
-        prior_processes: The prior processes that have been run.
+        prior_logs: The logs of the prior processes that have been run.
         **kwargs: Kwargs to pass to new_process function.
     """
     process = new_process(get_command_with_loglevel(args), **kwargs)
@@ -429,11 +462,11 @@ def run_process_with_fallbacks(
             show_status_message,
             process,
             analytics_enabled=analytics_enabled,
-            prior_processes=prior_processes,
+            prior_logs=prior_logs,
         )
     else:
         # Suppress errors for initial command, because we will try to fallback
-        show_status(show_status_message, process, suppress_errors=True)
+        logs = show_status(show_status_message, process, suppress_errors=True)
 
         current_fallback = fallbacks[0] if not isinstance(fallbacks, str) else fallbacks
         next_fallbacks = fallbacks[1:] if not isinstance(fallbacks, str) else None
@@ -453,7 +486,7 @@ def run_process_with_fallbacks(
                 show_status_message=show_status_message,
                 fallbacks=next_fallbacks,
                 analytics_enabled=analytics_enabled,
-                prior_processes=(*prior_processes, process),
+                prior_logs=(*prior_logs, tuple(logs)),
                 **kwargs,
             )
 
