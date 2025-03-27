@@ -640,7 +640,7 @@ name = "importlib-metadata"
 version = "8.6.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "zipp" },
+    { name = "zipp", marker = "python_full_version < '3.12'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/33/08/c1395a292bb23fd03bdf572a1357c5a733d3eecbab877641ceacab23db6e/importlib_metadata-8.6.1.tar.gz", hash = "sha256:310b41d755445d74569f993ccfc22838295d9fe005425094fad953d7f15c8580", size = 55767 }
 wheels = [
@@ -1780,7 +1780,7 @@ requires-dist = [
     { name = "charset-normalizer", specifier = ">=3.3.2,<4.0" },
     { name = "distro", marker = "sys_platform == 'linux'", specifier = ">=1.8.0,<2.0" },
     { name = "fastapi", specifier = ">=0.96.0,!=0.111.0,!=0.111.1" },
-    { name = "granian", extras = ["reload"], specifier = ">=2.0.0" },
+    { name = "granian", extras = ["reload"], specifier = ">=2.2.0" },
     { name = "gunicorn", specifier = ">=23.0.0,<24.0.0" },
     { name = "httpx", specifier = ">=0.25.1,<1.0" },
     { name = "jinja2", specifier = ">=3.1.2,<4.0" },

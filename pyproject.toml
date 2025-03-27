@@ -25,7 +25,7 @@ dependencies = [
   "charset-normalizer >=3.3.2,<4.0",
   "distro >=1.8.0,<2.0; platform_system == 'Linux'",
   "fastapi >=0.96.0,!=0.111.0,!=0.111.1",
-  "granian[reload] >=2.0.0",
+  "granian[reload] >=2.2.0",
   "gunicorn >=23.0.0,<24.0.0",
   "httpx >=0.25.1,<1.0",
   "jinja2 >=3.1.2,<4.0",
