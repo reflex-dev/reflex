@@ -19,7 +19,7 @@ from redis.exceptions import RedisError
 from reflex import constants
 from reflex.config import environment
 from reflex.utils import console, path_ops, prerequisites
-from reflex.utils.printer import (
+from reflex.utils.progress import (
     CounterComponent,
     MessageComponent,
     ProgressBar,

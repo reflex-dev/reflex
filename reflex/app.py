@@ -109,7 +109,7 @@ from reflex.utils import (
 )
 from reflex.utils.exec import get_compile_context, is_prod_mode, is_testing_env
 from reflex.utils.imports import ImportVar
-from reflex.utils.printer import (
+from reflex.utils.progress import (
     CounterComponent,
     MessageComponent,
     ProgressBar,
