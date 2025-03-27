@@ -83,6 +83,9 @@ class Reprinter:
         IS_REPRENTER_ACTIVE = False
 
 
+STATUS_CHARS = ["◐", "◓", "◑", "◒"]
+
+
 @dataclass
 class Status:
     """A status class for displaying a spinner."""
@@ -128,15 +131,7 @@ class Status:
             kwargs: Keyword arguments to pass to the print function.
         """
         if self._reprinter:
-            char = (
-                "◐"
-                if self._parity % 4 == 0
-                else (
-                    "◓"
-                    if self._parity % 4 == 1
-                    else ("◑" if self._parity % 4 == 2 else "◒")
-                )
-            )
+            char = STATUS_CHARS[self._parity % 4]
             self._parity += 1
             self._reprinter.reprint(f"{char} {msg}")
 
