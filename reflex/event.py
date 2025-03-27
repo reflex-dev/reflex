@@ -1607,7 +1607,7 @@ def get_fn_signature(fn: Callable) -> inspect.Signature:
     return signature.replace(parameters=(new_param, *signature.parameters.values()))
 
 
-class EventVar(ObjectVar, python_types=EventSpec):
+class EventVar(ObjectVar, python_types=(EventSpec, EventHandler)):
     """Base class for event vars."""
 
 
@@ -1632,7 +1632,7 @@ class LiteralEventVar(VarOperationCall, LiteralVar, EventVar):
     @classmethod
     def create(
         cls,
-        value: EventSpec,
+        value: EventSpec | EventHandler,
         _var_data: VarData | None = None,
     ) -> LiteralEventVar:
         """Create a new LiteralEventVar instance.
@@ -1643,7 +1643,22 @@ class LiteralEventVar(VarOperationCall, LiteralVar, EventVar):
 
         Returns:
             The created LiteralEventVar instance.
+
+        Raises:
+            EventFnArgMismatchError: If the event handler takes arguments.
         """
+        if isinstance(value, EventHandler):
+
+            def no_args():
+                return ()
+
+            try:
+                value = call_event_handler(value, no_args)
+            except EventFnArgMismatchError:
+                raise EventFnArgMismatchError(
+                    f"Event handler {value.fn.__qualname__} used inside of a rx.cond() must not take any arguments."
+                ) from None
+
         return cls(
             _js_expr="",
             _var_type=EventSpec,
