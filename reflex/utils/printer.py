@@ -2,15 +2,18 @@
 
 import dataclasses
 import time
-from typing import Protocol, Sequence
+from typing import Callable, Sequence
 
 from reflex.utils.console import Reprinter, _get_terminal_width
 
 reprinter = Reprinter()
 
 
-class ProgressBarComponent(Protocol):
+@dataclasses.dataclass(kw_only=True)
+class ProgressBarComponent:
     """A protocol for progress bar components."""
+
+    colorer: Callable[[str], str] = lambda x: x
 
     def minimum_width(self, current: int, steps: int) -> int:
         """Return the minimum width of the component.
@@ -53,7 +56,7 @@ class ProgressBarComponent(Protocol):
 class MessageComponent(ProgressBarComponent):
     """A simple component that displays a message."""
 
-    message: str
+    message: str = ""
 
     def minimum_width(self, current: int, steps: int) -> int:
         """Return the minimum width of the component.
@@ -194,7 +197,7 @@ class TimeComponent(ProgressBarComponent):
         """
         if self.initial_time is None:
             raise ValueError("TimeComponent not initialized")
-        self._cached_time = time.time()
+        self._cached_time = time.monotonic()
         _min, _ = self._minimum_and_requested_string(current, steps)
         return len(_min)
 
@@ -222,7 +225,7 @@ class TimeComponent(ProgressBarComponent):
         Args:
             steps: The total number of steps.
         """
-        self.initial_time = time.time()
+        self.initial_time = time.monotonic()
 
     def get_message(self, current: int, steps: int, max_width: int) -> str:
         """Return the message to display.
@@ -296,7 +299,7 @@ class CounterComponent(ProgressBarComponent):
 
 
 @dataclasses.dataclass
-class SimpleProgressComponent:
+class SimpleProgressComponent(ProgressBarComponent):
     """A component that displays a not so fun guy."""
 
     starting_str: str = ""
@@ -377,88 +380,6 @@ class SimpleProgressComponent:
 
 
 @dataclasses.dataclass
-class FunGuyProgressComponent:
-    """A component that displays a fun guy."""
-
-    starting_str: str = ""
-    ending_str: str = ""
-    fun_guy_running: Sequence[str] = ("🯇", "🯈")
-    fun_guy_finished: str = "🯆"
-    incomplete_str: str = "·"
-    complete_str: str = " "
-
-    def minimum_width(self, current: int, steps: int) -> int:
-        """Return the minimum width of the component.
-
-        Args:
-            current: The current step.
-            steps: The total number of steps.
-
-        Returns:
-            The minimum width of the component.
-        """
-        return (
-            len(self.starting_str)
-            + len(self.incomplete_str)
-            + 1
-            + len(self.complete_str)
-            + len(self.ending_str)
-        )
-
-    def requested_width(self, current: int, steps: int) -> int:
-        """Return the requested width of the component.
-
-        Args:
-            current: The current step.
-            steps: The total number of steps.
-
-        Returns:
-            The requested width of the component.
-        """
-        return steps + len(self.starting_str) + len(self.ending_str)
-
-    def initialize(self, steps: int) -> None:
-        """Initialize the component.
-
-        Args:
-            steps: The total number of steps.
-        """
-
-    def get_message(self, current: int, steps: int, max_width: int) -> str:
-        """Return the message to display.
-
-        Args:
-            current: The current step.
-            steps: The total number of steps.
-            max_width: The maximum width of the component.
-
-        Returns:
-            The message to display.
-        """
-        progress = int(
-            current
-            / steps
-            * (max_width - len(self.starting_str) - len(self.ending_str))
-        )
-        fun_guy = (
-            self.fun_guy_running[progress % len(self.fun_guy_running)]
-            if current != steps
-            else self.fun_guy_finished
-        )
-
-        before_guy = self.complete_str * max(0, progress - len(fun_guy))
-        after_guy = self.incomplete_str * max(
-            0,
-            max_width
-            - len(before_guy)
-            - len(fun_guy)
-            - len(self.starting_str)
-            - len(self.ending_str),
-        )
-        return self.starting_str + before_guy + fun_guy + after_guy + self.ending_str
-
-
-@dataclasses.dataclass
 class ProgressBar:
     """A progress bar that displays the progress of a task."""
 
@@ -467,7 +388,7 @@ class ProgressBar:
     separator: str = " "
     components: Sequence[tuple[ProgressBarComponent, int]] = dataclasses.field(
         default_factory=lambda: [
-            (FunGuyProgressComponent(), 2),
+            (SimpleProgressComponent(), 2),
             (CounterComponent(), 3),
             (PercentageComponent(), 0),
             (TimeComponent(), 1),
@@ -611,7 +532,7 @@ class ProgressBar:
             The message for the component
         """
         message = component.get_message(self._current, self.steps, width)
-        return message[:width]
+        return component.colorer(message[:width])
 
     def update(self, step: int):
         """Update the progress bar by a given step.

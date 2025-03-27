@@ -21,9 +21,9 @@ from reflex.config import environment
 from reflex.utils import console, path_ops, prerequisites
 from reflex.utils.printer import (
     CounterComponent,
-    FunGuyProgressComponent,
     MessageComponent,
     ProgressBar,
+    SimpleProgressComponent,
 )
 from reflex.utils.terminal import colored
 
@@ -386,7 +386,7 @@ def show_progress(message: str, process: subprocess.Popen, checkpoints: list[str
         steps=len(checkpoints),
         components=(
             (MessageComponent(message), 0),
-            (FunGuyProgressComponent(), 2),
+            (SimpleProgressComponent(), 2),
             (CounterComponent(), 1),
         ),
     )

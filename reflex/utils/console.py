@@ -537,8 +537,8 @@ def timing(msg: str):
     Yields:
         None.
     """
-    start = time.time()
+    start = time.monotonic()
     try:
         yield
     finally:
-        debug(f"[timing] {msg}: {time.time() - start:.2f}s", color="white")
+        debug(f"[timing] {msg}: {time.monotonic() - start:.2f}s", color="white")

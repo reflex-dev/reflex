@@ -111,11 +111,12 @@ from reflex.utils.exec import get_compile_context, is_prod_mode, is_testing_env
 from reflex.utils.imports import ImportVar
 from reflex.utils.printer import (
     CounterComponent,
-    FunGuyProgressComponent,
     MessageComponent,
     ProgressBar,
+    SimpleProgressComponent,
     TimeComponent,
 )
+from reflex.utils.terminal import colored
 
 if TYPE_CHECKING:
     from reflex.vars import Var
@@ -1141,10 +1142,24 @@ class App(MiddlewareMixin, LifespanMixin):
                 + adhoc_steps_without_executor
             ),
             components=(
-                (MessageComponent(f"[{get_compilation_time()}] Compiling:"), 0),
-                (FunGuyProgressComponent(), 2),
-                (CounterComponent(), 1),
-                (TimeComponent(), 3),
+                (
+                    MessageComponent(
+                        message=colored(f"[{get_compilation_time()}]", "cyan")
+                        + " Compiling:",
+                    ),
+                    0,
+                ),
+                (
+                    SimpleProgressComponent(
+                        colorer=lambda x: colored(x, "light_green")
+                    ),
+                    2,
+                ),
+                (
+                    CounterComponent(colorer=lambda x: colored(x, "green")),
+                    1,
+                ),
+                (TimeComponent(colorer=lambda x: colored(x, "yellow")), 3),
             ),
         )
 

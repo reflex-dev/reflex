@@ -345,8 +345,8 @@ async def test_event_actions_throttle_debounce(
 
     exp_events = 10
     throttle_duration = exp_events * 0.2  # 200ms throttle
-    throttle_start = time.time()
-    while time.time() - throttle_start < throttle_duration:
+    throttle_start = time.monotonic()
+    while time.monotonic() - throttle_start < throttle_duration:
         btn_throttle.click()
         btn_debounce.click()
 

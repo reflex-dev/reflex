@@ -3564,7 +3564,7 @@ class StateManagerRedis(StateManager):
         if timeout is None:
             timeout = self.lock_expiration / 1000.0
 
-        started = time.time()
+        started = time.monotonic()
         message = await pubsub.get_message(
             ignore_subscribe_messages=True,
             timeout=timeout,
@@ -3573,7 +3573,7 @@ class StateManagerRedis(StateManager):
             message is None
             or message["data"] not in self._redis_keyspace_lock_release_events
         ):
-            remaining = timeout - (time.time() - started)
+            remaining = timeout - (time.monotonic() - started)
             if remaining <= 0:
                 return
             await self._get_pubsub_message(pubsub, timeout=remaining)

@@ -23,16 +23,19 @@ def _pid_exists(pid: int):
 
 
 def _wait_for_port(port: int, server_pid: int, timeout: float) -> tuple[bool, str]:
-    start = time.time()
+    start = time.monotonic()
     print(f"Waiting for up to {timeout} seconds for port {port} to start listening.")  # noqa: T201
     while True:
         if not _pid_exists(server_pid):
             return False, f"Server PID {server_pid} is not running."
         try:
             socket.create_connection(("localhost", port), timeout=0.5)
-            return True, f"Port {port} is listening after {time.time() - start} seconds"
+            return (
+                True,
+                f"Port {port} is listening after {time.monotonic() - start} seconds",
+            )
         except Exception:
-            if time.time() - start > timeout:
+            if time.monotonic() - start > timeout:
                 return (
                     False,
                     f"Port {port} still not listening after {timeout} seconds.",

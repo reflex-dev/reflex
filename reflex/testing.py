@@ -525,8 +525,8 @@ class AppHarness:
             timeout = DEFAULT_TIMEOUT
         if step is None:
             step = POLL_INTERVAL
-        deadline = time.time() + timeout
-        while time.time() < deadline:
+        deadline = time.monotonic() + timeout
+        while time.monotonic() < deadline:
             success = target()
             if success:
                 return success
@@ -554,8 +554,8 @@ class AppHarness:
             timeout = DEFAULT_TIMEOUT
         if step is None:
             step = POLL_INTERVAL
-        deadline = time.time() + timeout
-        while time.time() < deadline:
+        deadline = time.monotonic() + timeout
+        while time.monotonic() < deadline:
             success = await target()
             if success:
                 return success
