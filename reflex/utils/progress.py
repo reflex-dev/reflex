@@ -547,3 +547,4 @@ class ProgressBar:
         """Finish the progress bar."""
         self._current = self.steps
         self.print()
+        self._printer.finish()

@@ -32,6 +32,9 @@ def _get_terminal_width() -> int:
             return 80
 
 
+IS_REPRENTER_ACTIVE = False
+
+
 @dataclasses.dataclass
 class Reprinter:
     """A class that reprints text on the terminal."""
@@ -43,29 +46,41 @@ class Reprinter:
         for _ in range(lines):
             sys.stdout.write("\x1b[A")
 
+    @staticmethod
+    def _movestart():
+        sys.stdout.write("\r")
+
     def reprint(self, text: str):
         """Reprint the text.
 
         Args:
             text: The text to print
         """
-        if not text.endswith("\n"):
-            text += "\n"
+        global IS_REPRENTER_ACTIVE
+        IS_REPRENTER_ACTIVE = True
+        text.removesuffix("\n")
+        number_of_lines = self._text.count("\n") + 1
+        number_of_lines_new = text.count("\n") + 1
 
         # Clear previous text by overwritig non-spaces with spaces
-        self._moveup(self._text.count("\n"))
+        self._moveup(number_of_lines - 1)
+        self._movestart()
         sys.stdout.write(re.sub(r"[^\s]", " ", self._text))
 
         # Print new text
-        lines = min(self._text.count("\n"), text.count("\n"))
-        self._moveup(lines)
+        lines = min(number_of_lines, number_of_lines_new)
+        self._moveup(lines - 1)
+        self._movestart()
         sys.stdout.write(text)
         sys.stdout.flush()
         self._text = text
 
     def finish(self):
         """Finish printing the text."""
-        self._moveup(1)
+        sys.stdout.write("\n")
+        sys.stdout.flush()
+        global IS_REPRENTER_ACTIVE
+        IS_REPRENTER_ACTIVE = False
 
 
 @dataclass
@@ -142,7 +157,10 @@ class Console:
         if color or bold:
             msg = colored(msg, color, attrs=["bold"] if bold else [])
 
-        print(msg, **kwargs)  # noqa: T201
+        if IS_REPRENTER_ACTIVE:
+            print("\n" + msg, flush=True, **kwargs)  # noqa: T201
+        else:
+            print(msg, **kwargs)  # noqa: T201
 
     def rule(self, title: str, **kwargs):
         """Prints a horizontal rule with a title.
