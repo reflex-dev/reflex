@@ -58,7 +58,7 @@ class Reprinter:
         """
         global IS_REPRENTER_ACTIVE
         IS_REPRENTER_ACTIVE = True
-        text.removesuffix("\n")
+        text = text.rstrip("\n")
         number_of_lines = self._text.count("\n") + 1
         number_of_lines_new = text.count("\n") + 1
 
@@ -116,6 +116,8 @@ class Status:
         if self._reprinter:
             self._reprinter.reprint("")
             self._reprinter.finish()
+            self._reprinter._moveup(1)
+            sys.stdout.flush()
             self._reprinter = None
 
     def update(self, msg: str, **kwargs):
