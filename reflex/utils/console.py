@@ -3,18 +3,246 @@
 from __future__ import annotations
 
 import contextlib
+import dataclasses
 import inspect
 import os
+import re
 import shutil
+import sys
 import time
+import types
+from dataclasses import dataclass
 from pathlib import Path
 from types import FrameType
 
-from rich.console import Console
-from rich.progress import MofNCompleteColumn, Progress, TimeElapsedColumn
-from rich.prompt import Prompt
-
 from reflex.constants import LogLevel
+from reflex.utils.terminal import colored
+
+
+def _get_terminal_width() -> int:
+    try:
+        # First try using shutil, which is more reliable across platforms
+        return shutil.get_terminal_size().columns
+    except (AttributeError, ValueError, OSError):
+        try:
+            # Fallback to environment variables
+            return int(os.environ.get("COLUMNS", os.environ.get("TERM_WIDTH", 80)))
+        except (TypeError, ValueError):
+            # Default fallback
+            return 80
+
+
+IS_REPRENTER_ACTIVE = False
+
+
+@dataclasses.dataclass
+class Reprinter:
+    """A class that reprints text on the terminal."""
+
+    _text: str = dataclasses.field(default="", init=False)
+
+    @staticmethod
+    def _moveup(lines: int):
+        for _ in range(lines):
+            sys.stdout.write("\x1b[A")
+
+    @staticmethod
+    def _movestart():
+        sys.stdout.write("\r")
+
+    def reprint(self, text: str):
+        """Reprint the text.
+
+        Args:
+            text: The text to print
+        """
+        global IS_REPRENTER_ACTIVE
+        IS_REPRENTER_ACTIVE = True
+        text = text.rstrip("\n")
+        number_of_lines = self._text.count("\n") + 1
+        number_of_lines_new = text.count("\n") + 1
+
+        # Clear previous text by overwritig non-spaces with spaces
+        self._moveup(number_of_lines - 1)
+        self._movestart()
+        sys.stdout.write(re.sub(r"[^\s]", " ", self._text))
+
+        # Print new text
+        lines = min(number_of_lines, number_of_lines_new)
+        self._moveup(lines - 1)
+        self._movestart()
+        sys.stdout.write(text)
+        sys.stdout.flush()
+        self._text = text
+
+    def finish(self):
+        """Finish printing the text."""
+        sys.stdout.write("\n")
+        sys.stdout.flush()
+        global IS_REPRENTER_ACTIVE
+        IS_REPRENTER_ACTIVE = False
+
+
+STATUS_CHARS = ["◐", "◓", "◑", "◒"]
+
+
+@dataclass
+class Status:
+    """A status class for displaying a spinner."""
+
+    message: str = "Loading"
+    _reprinter: Reprinter | None = dataclasses.field(default=None, init=False)
+    _parity: int = dataclasses.field(default=0, init=False)
+
+    def __enter__(self):
+        """Enter the context manager.
+
+        Returns:
+            The status object.
+        """
+        self._reprinter = Reprinter()
+        return self
+
+    def __exit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc_value: BaseException | None,
+        traceback: types.TracebackType | None,
+    ):
+        """Exit the context manager.
+
+        Args:
+            exc_type: The exception type.
+            exc_value: The exception value.
+            traceback: The traceback.
+        """
+        if self._reprinter:
+            self._reprinter.reprint("")
+            self._reprinter.finish()
+            self._reprinter._moveup(1)
+            sys.stdout.flush()
+            self._reprinter = None
+
+    def update(self, msg: str, **kwargs):
+        """Update the status spinner.
+
+        Args:
+            msg: The message to display.
+            kwargs: Keyword arguments to pass to the print function.
+        """
+        if self._reprinter:
+            char = STATUS_CHARS[self._parity % 4]
+            self._parity += 1
+            self._reprinter.reprint(f"{char} {msg}")
+
+
+@dataclass
+class Console:
+    """A console class for pretty printing."""
+
+    def print(self, msg: str, **kwargs):
+        """Print a message.
+
+        Args:
+            msg: The message to print.
+            kwargs: Keyword arguments to pass to the print function.
+        """
+        from builtins import print
+
+        color = kwargs.pop("color", None)
+        bold = kwargs.pop("bold", False)
+        if color or bold:
+            msg = colored(msg, color, attrs=["bold"] if bold else [])
+
+        if IS_REPRENTER_ACTIVE:
+            print("\n" + msg, flush=True, **kwargs)  # noqa: T201
+        else:
+            print(msg, **kwargs)  # noqa: T201
+
+    def rule(self, title: str, **kwargs):
+        """Prints a horizontal rule with a title.
+
+        Args:
+            title: The title of the rule.
+            kwargs: Keyword arguments to pass to the print function.
+        """
+        terminal_width = _get_terminal_width()
+        remaining_width = (
+            terminal_width - len(title) - 2
+        )  # 2 for the spaces around the title
+        left_padding = remaining_width // 2
+        right_padding = remaining_width - left_padding
+
+        color = kwargs.pop("color", None)
+        bold = kwargs.pop("bold", True)
+        rule_color = "green" if color is None else color
+        title = colored(title, color, attrs=("bold",) if bold else ())
+
+        rule_line = (
+            colored("─" * left_padding, rule_color)
+            + " "
+            + title
+            + " "
+            + colored("─" * right_padding, rule_color)
+        )
+        self.print(rule_line, **kwargs)
+
+    def status(self, *args, **kwargs):
+        """Create a status.
+
+        Args:
+            *args: Args to pass to the status.
+            **kwargs: Kwargs to pass to the status.
+
+        Returns:
+            A new status.
+        """
+        return Status(*args, **kwargs)
+
+
+class Prompt:
+    """A class for prompting the user for input."""
+
+    @staticmethod
+    def ask(
+        question: str,
+        choices: list[str] | None = None,
+        default: str | None = None,
+        show_choices: bool = True,
+    ) -> str | None:
+        """Ask the user a question.
+
+        Args:
+            question: The question to ask the user.
+            choices: A list of choices to select from.
+            default: The default option selected.
+            show_choices: Whether to show the choices.
+
+        Returns:
+            The user's response or the default value.
+        """
+        prompt = question
+
+        if choices and show_choices:
+            choice_str = "/".join(choices)
+            prompt = f"{question} [{choice_str}]"
+
+        if default is not None:
+            prompt = f"{prompt} ({default})"
+
+        prompt = f"{prompt}: "
+
+        response = input(prompt)
+
+        if not response and default is not None:
+            return default
+
+        if choices and response not in choices:
+            print(f"Please choose from: {', '.join(choices)}")
+            return Prompt.ask(question, choices, default, show_choices)
+
+        return response
+
 
 # Console for pretty printing.
 _console = Console()
@@ -101,16 +329,13 @@ def debug(msg: str, dedupe: bool = False, **kwargs):
         kwargs: Keyword arguments to pass to the print function.
     """
     if is_debug():
-        msg_ = f"[purple]Debug: {msg}[/purple]"
         if dedupe:
-            if msg_ in _EMITTED_DEBUG:
+            if msg in _EMITTED_DEBUG:
                 return
             else:
-                _EMITTED_DEBUG.add(msg_)
-        if progress := kwargs.pop("progress", None):
-            progress.console.print(msg_, **kwargs)
-        else:
-            print(msg_, **kwargs)
+                _EMITTED_DEBUG.add(msg)
+        kwargs.setdefault("color", "debug")
+        print(msg, **kwargs)
 
 
 def info(msg: str, dedupe: bool = False, **kwargs):
@@ -127,7 +352,8 @@ def info(msg: str, dedupe: bool = False, **kwargs):
                 return
             else:
                 _EMITTED_INFO.add(msg)
-        print(f"[cyan]Info: {msg}[/cyan]", **kwargs)
+        kwargs.setdefault("color", "info")
+        print(f"Info: {msg}", **kwargs)
 
 
 def success(msg: str, dedupe: bool = False, **kwargs):
@@ -144,7 +370,8 @@ def success(msg: str, dedupe: bool = False, **kwargs):
                 return
             else:
                 _EMITTED_SUCCESS.add(msg)
-        print(f"[green]Success: {msg}[/green]", **kwargs)
+        kwargs.setdefault("color", "success")
+        print(f"Success: {msg}", **kwargs)
 
 
 def log(msg: str, dedupe: bool = False, **kwargs):
@@ -161,7 +388,7 @@ def log(msg: str, dedupe: bool = False, **kwargs):
                 return
             else:
                 _EMITTED_LOGS.add(msg)
-        _console.log(msg, **kwargs)
+        _console.print(msg, **kwargs)
 
 
 def rule(title: str, **kwargs):
@@ -188,7 +415,8 @@ def warn(msg: str, dedupe: bool = False, **kwargs):
                 return
             else:
                 _EMIITED_WARNINGS.add(msg)
-        print(f"[orange1]Warning: {msg}[/orange1]", **kwargs)
+        kwargs.setdefault("color", "warning")
+        print(f"Warning: {msg}", **kwargs)
 
 
 def _get_first_non_framework_frame() -> FrameType | None:
@@ -253,7 +481,8 @@ def deprecate(
             f"removed in {removal_version}. ({loc})"
         )
         if _LOG_LEVEL <= LogLevel.WARNING:
-            print(f"[yellow]DeprecationWarning: {msg}[/yellow]", **kwargs)
+            kwargs.setdefault("color", "warning")
+            print(f"DeprecationWarning: {msg}", **kwargs)
         if dedupe:
             _EMITTED_DEPRECATION_WARNINGS.add(dedupe_key)
 
@@ -272,7 +501,8 @@ def error(msg: str, dedupe: bool = False, **kwargs):
                 return
             else:
                 _EMITTED_ERRORS.add(msg)
-        print(f"[red]{msg}[/red]", **kwargs)
+        kwargs.setdefault("color", "error")
+        print(f"{msg}", **kwargs)
 
 
 def ask(
@@ -295,19 +525,6 @@ def ask(
     """
     return Prompt.ask(
         question, choices=choices, default=default, show_choices=show_choices
-    )
-
-
-def progress():
-    """Create a new progress bar.
-
-    Returns:
-        A new progress bar.
-    """
-    return Progress(
-        *Progress.get_default_columns()[:-1],
-        MofNCompleteColumn(),
-        TimeElapsedColumn(),
     )
 
 
@@ -334,8 +551,8 @@ def timing(msg: str):
     Yields:
         None.
     """
-    start = time.time()
+    start = time.monotonic()
     try:
         yield
     finally:
-        debug(f"[white]\\[timing] {msg}: {time.time() - start:.2f}s[/white]")
+        debug(f"[timing] {msg}: {time.monotonic() - start:.2f}s", color="white")

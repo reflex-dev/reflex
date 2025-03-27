@@ -67,23 +67,23 @@ def test_large_state(var_count: int, tmp_path_factory, benchmark):
             assert large_state.app_instance is not None
             button = driver.find_element(By.ID, "button")
 
-            t = time.time()
+            t = time.monotonic()
             while button.text != "0":
                 time.sleep(0.1)
-                if time.time() - t > 30.0:
+                if time.monotonic() - t > 30.0:
                     raise TimeoutError("Timeout waiting for initial state")
 
             times_clicked = 0
 
             def round_trip(clicks: int, timeout: float):
-                t = time.time()
+                t = time.monotonic()
                 for _ in range(clicks):
                     button.click()
                 nonlocal times_clicked
                 times_clicked += clicks
                 while button.text != str(times_clicked):
                     time.sleep(0.005)
-                    if time.time() - t > timeout:
+                    if time.monotonic() - t > timeout:
                         raise TimeoutError("Timeout waiting for state update")
 
             benchmark(round_trip, clicks=10, timeout=30.0)

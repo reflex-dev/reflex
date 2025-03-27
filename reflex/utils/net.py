@@ -42,7 +42,7 @@ def _wrap_https_func(
     def wrapper(*args: _P.args, **kwargs: _P.kwargs) -> _T:
         url = args[0]
         console.debug(f"Sending HTTPS request to {args[0]}")
-        initial_time = time.time()
+        initial_time = time.monotonic()
         try:
             response = func(*args, **kwargs)
         except httpx.ConnectError as err:
@@ -55,7 +55,7 @@ def _wrap_https_func(
             raise
         else:
             console.debug(
-                f"Received response from {url} in {time.time() - initial_time:.3f} seconds"
+                f"Received response from {url} in {time.monotonic() - initial_time:.3f} seconds"
             )
             return response
 

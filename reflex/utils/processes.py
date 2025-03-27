@@ -15,11 +15,17 @@ from typing import Any, Callable, Generator, Literal, Sequence, Tuple, overload
 import psutil
 import typer
 from redis.exceptions import RedisError
-from rich.progress import Progress
 
 from reflex import constants
 from reflex.config import environment
 from reflex.utils import console, path_ops, prerequisites
+from reflex.utils.progress import (
+    CounterComponent,
+    MessageComponent,
+    ProgressBar,
+    SimpleProgressComponent,
+)
+from reflex.utils.terminal import colored
 
 
 def kill(pid: int):
@@ -111,7 +117,10 @@ def change_port(port: int, _type: str) -> int:
     if is_process_on_port(new_port):
         return change_port(new_port, _type)
     console.info(
-        f"The {_type} will run on port [bold underline]{new_port}[/bold underline]."
+        colored(f"The {_type} will run on port ", "info")
+        + colored(port, "info", attrs=("bold", "underline"))
+        + colored(".", "info"),
+        color=None,
     )
     return new_port
 
@@ -273,7 +282,6 @@ def run_concurrently(*fns: Callable | Tuple) -> None:
 def stream_logs(
     message: str,
     process: subprocess.Popen,
-    progress: Progress | None = None,
     suppress_errors: bool = False,
     analytics_enabled: bool = False,
 ):
@@ -282,7 +290,6 @@ def stream_logs(
     Args:
         message: The message to display.
         process: The process.
-        progress: The ongoing progress bar if one is being used.
         suppress_errors: If True, do not exit if errors are encountered (for fallback).
         analytics_enabled: Whether analytics are enabled for this command.
 
@@ -297,13 +304,16 @@ def stream_logs(
     # Store the tail of the logs.
     logs = collections.deque(maxlen=512)
     with process:
-        console.debug(message, progress=progress)
+        console.debug(message)
         if process.stdout is None:
             return
-        for line in process.stdout:
-            console.debug(line, end="", progress=progress)
-            logs.append(line)
-            yield line
+        try:
+            for line in process.stdout:
+                console.debug(line, end="")
+                logs.append(line)
+                yield line
+        except ValueError as e:
+            console.error(f"Error streaming logs: {e}")
 
     # Check if the process failed (not printing the logs for SIGINT).
 
@@ -316,7 +326,12 @@ def stream_logs(
             console.error(line, end="")
         if analytics_enabled:
             telemetry.send("error", context=message)
-        console.error("Run with [bold]--loglevel debug [/bold] for the full log.")
+        console.error(
+            colored("Run with ", "error")
+            + colored("--loglevel debug", "error", attrs=("bold",))
+            + colored(" for the full log.", "error"),
+            color=None,
+        )
         raise typer.Exit(1)
 
 
@@ -367,16 +382,22 @@ def show_progress(message: str, process: subprocess.Popen, checkpoints: list[str
         checkpoints: The checkpoints to advance the progress bar.
     """
     # Iterate over the process output.
-    with console.progress() as progress:
-        task = progress.add_task(f"{message}: ", total=len(checkpoints))
-        for line in stream_logs(message, process, progress=progress):
-            # Check for special strings and update the progress bar.
-            for special_string in checkpoints:
-                if special_string in line:
-                    progress.update(task, advance=1)
-                    if special_string == checkpoints[-1]:
-                        progress.update(task, completed=len(checkpoints))
-                    break
+    progress = ProgressBar(
+        steps=len(checkpoints),
+        components=(
+            (MessageComponent(message), 0),
+            (SimpleProgressComponent(), 2),
+            (CounterComponent(), 1),
+        ),
+    )
+    for line in stream_logs(message, process):
+        # Check for special strings and update the progress bar.
+        for special_string in checkpoints:
+            if special_string in line:
+                progress.update(1)
+                if special_string == checkpoints[-1]:
+                    progress.finish()
+                break
 
 
 def atexit_handler():

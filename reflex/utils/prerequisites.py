@@ -8,7 +8,6 @@ import functools
 import importlib
 import importlib.metadata
 import importlib.util
-import io
 import json
 import os
 import platform
@@ -44,6 +43,7 @@ from reflex.utils.exceptions import (
 )
 from reflex.utils.format import format_library_name
 from reflex.utils.registry import get_npm_registry
+from reflex.utils.terminal import _can_colorize, colored
 
 if typing.TYPE_CHECKING:
     from reflex.app import App
@@ -453,48 +453,6 @@ def compile_app(reload: bool = False, export: bool = False) -> None:
     get_compiled_app(reload=reload, export=export)
 
 
-def _can_colorize() -> bool:
-    """Check if the output can be colorized.
-
-    Copied from _colorize.can_colorize.
-
-    https://raw.githubusercontent.com/python/cpython/refs/heads/main/Lib/_colorize.py
-
-    Returns:
-        If the output can be colorized
-    """
-    file = sys.stdout
-
-    if not sys.flags.ignore_environment:
-        if os.environ.get("PYTHON_COLORS") == "0":
-            return False
-        if os.environ.get("PYTHON_COLORS") == "1":
-            return True
-    if os.environ.get("NO_COLOR"):
-        return False
-    if os.environ.get("FORCE_COLOR"):
-        return True
-    if os.environ.get("TERM") == "dumb":
-        return False
-
-    if not hasattr(file, "fileno"):
-        return False
-
-    if sys.platform == "win32":
-        try:
-            import nt
-
-            if not nt._supports_virtual_terminal():
-                return False
-        except (ImportError, AttributeError):
-            return False
-
-    try:
-        return os.isatty(file.fileno())
-    except io.UnsupportedOperation:
-        return file.isatty()
-
-
 def compile_or_validate_app(compile: bool = False) -> bool:
     """Compile or validate the app module based on the default config.
 
@@ -609,7 +567,10 @@ def validate_app_name(app_name: str | None = None) -> str:
     # Make sure the app is not named "reflex".
     if app_name.lower() == constants.Reflex.MODULE_NAME:
         console.error(
-            f"The app directory cannot be named [bold]{constants.Reflex.MODULE_NAME}[/bold]."
+            colored("The app directory cannot be named ", "error")
+            + colored(constants.Reflex.MODULE_NAME, "error", attrs=("bold",))
+            + colored(".", "error"),
+            color=None,
         )
         raise typer.Exit(1)
 
@@ -700,7 +661,12 @@ def rename_app(new_app_name: str, loglevel: constants.LogLevel):
 
     rename_path_up_tree(Path(module_path.origin), config.app_name, new_app_name)
 
-    console.success(f"App directory renamed to [bold]{new_app_name}[/bold].")
+    console.success(
+        colored("App directory renamed to ", "success")
+        + colored(new_app_name, "success", attrs=("bold",))
+        + colored(".", "success"),
+        color=None,
+    )
 
 
 def rename_imports_and_app_name(file_path: str | Path, old_name: str, new_name: str):
@@ -1311,7 +1277,13 @@ def needs_reinit(frontend: bool = True) -> bool:
     """
     if not constants.Config.FILE.exists():
         console.error(
-            f"[cyan]{constants.Config.FILE}[/cyan] not found. Move to the root folder of your project, or run [bold]{constants.Reflex.MODULE_NAME} init[/bold] to start a new project."
+            colored(constants.Config.FILE, "cyan")
+            + colored(
+                " not found. Move to the root folder of your project, or run ", "error"
+            )
+            + colored(constants.Reflex.MODULE_NAME + " init", "error", attrs=("bold",))
+            + colored(" to start a new project.", "error"),
+            color=None,
         )
         raise typer.Exit(1)
 
@@ -1492,7 +1464,10 @@ def check_db_initialized() -> bool:
         and not environment.ALEMBIC_CONFIG.get().exists()
     ):
         console.error(
-            "Database is not initialized. Run [bold]reflex db init[/bold] first."
+            colored("Database is not initialized. Run ", "error")
+            + colored("reflex db init", "error", attrs=("bold",))
+            + colored(" first.", "error"),
+            color=None,
         )
         return False
     return True
@@ -1509,13 +1484,18 @@ def check_schema_up_to_date():
                 write_migration_scripts=False,
             ):
                 console.error(
-                    "Detected database schema changes. Run [bold]reflex db makemigrations[/bold] "
-                    "to generate migration scripts.",
+                    colored("Detected database schema changes. Run ", "error")
+                    + colored("reflex db makemigrations", "error", attrs=("bold",))
+                    + colored(" to generate migration scripts.", "error"),
+                    color=None,
                 )
         except CommandError as command_error:
             if "Target database is not up to date." in str(command_error):
                 console.error(
-                    f"{command_error} Run [bold]reflex db migrate[/bold] to update database."
+                    colored(f"{command_error} Run ", "error")
+                    + colored("reflex db migrate", "error", attrs=("bold",))
+                    + colored(" to update database.", "error"),
+                    color=None,
                 )
 
 

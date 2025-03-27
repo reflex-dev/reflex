@@ -24,6 +24,7 @@ from reflex.base import Base
 from reflex.config import environment, get_config
 from reflex.utils import console
 from reflex.utils.compat import sqlmodel, sqlmodel_field_has_primary_key
+from reflex.utils.terminal import colored
 
 _ENGINE: dict[str, sqlalchemy.engine.Engine] = {}
 _ASYNC_ENGINE: dict[str, sqlalchemy.ext.asyncio.AsyncEngine] = {}
@@ -91,7 +92,10 @@ def get_engine(url: str | None = None) -> sqlalchemy.engine.Engine:
 
     if not environment.ALEMBIC_CONFIG.get().exists():
         console.warn(
-            "Database is not initialized, run [bold]reflex db init[/bold] first."
+            colored("Database is not initialized, run ", "warning")
+            + colored("reflex db init", "warning", attrs=("bold",))
+            + colored(" first.", "warning"),
+            color=None,
         )
     _ENGINE[url] = sqlmodel.create_engine(
         url,
@@ -133,7 +137,10 @@ def get_async_engine(url: str | None) -> sqlalchemy.ext.asyncio.AsyncEngine:
 
     if not environment.ALEMBIC_CONFIG.get().exists():
         console.warn(
-            "Database is not initialized, run [bold]reflex db init[/bold] first."
+            colored("Database is not initialized, run ", "warning")
+            + colored("reflex db init", "warning", attrs=("bold",))
+            + colored(" first.", "warning"),
+            color=None,
         )
     _ASYNC_ENGINE[url] = sqlalchemy.ext.asyncio.create_async_engine(
         url,

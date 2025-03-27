@@ -16,6 +16,7 @@ from reflex.custom_components.custom_components import custom_components_cli
 from reflex.state import reset_disk_state_manager
 from reflex.utils import console, redir, telemetry
 from reflex.utils.exec import should_use_granian
+from reflex.utils.terminal import colored
 
 # Disable typer+rich integration for help panels
 typer.core.rich = None  # pyright: ignore [reportPrivateImportUsage]
@@ -80,7 +81,7 @@ def _init(
 
     # Validate the app name.
     app_name = prerequisites.validate_app_name(name)
-    console.rule(f"[bold]Initializing {app_name}")
+    console.rule(f"Initializing {app_name}")
 
     # Check prerequisites.
     prerequisites.check_latest_package_version(constants.Reflex.MODULE_NAME)
@@ -201,7 +202,7 @@ def _run(
     # Reload the config to make sure the env vars are persistent.
     get_config(reload=True)
 
-    console.rule("[bold]Starting Reflex App")
+    console.rule("Starting Reflex App")
 
     prerequisites.check_latest_package_version(constants.Reflex.MODULE_NAME)
 
@@ -458,10 +459,12 @@ def db_init():
     # Check the alembic config.
     if environment.ALEMBIC_CONFIG.get().exists():
         console.error(
-            "Database is already initialized. Use "
-            "[bold]reflex db makemigrations[/bold] to create schema change "
-            "scripts and [bold]reflex db migrate[/bold] to apply migrations "
-            "to a new or existing database.",
+            colored("Database is already initialized. Use ", "error")
+            + colored("reflex db makemigrations", "error", attrs=("bold",))
+            + colored(" to create schema change scripts and ", "error")
+            + colored("reflex db migrate", "error", attrs=("bold",))
+            + colored(" to apply migrations to a new or existing database.", "error"),
+            color=None,
         )
         return
 
@@ -511,7 +514,10 @@ def makemigrations(
             if "Target database is not up to date." not in str(command_error):
                 raise
             console.error(
-                f"{command_error} Run [bold]reflex db migrate[/bold] to update database."
+                colored(f"{command_error} Run ", "error")
+                + colored("reflex db migrate", "error", attrs=("bold",))
+                + colored(" to update database.", "error"),
+                color=None,
             )
 
 

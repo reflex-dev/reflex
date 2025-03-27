@@ -51,7 +51,7 @@ def export(
     exec.output_system_info()
 
     # Compile the app in production mode and export it.
-    console.rule("[bold]Compiling production app and preparing for export.")
+    console.rule("Compiling production app and preparing for export.")
 
     if frontend:
         # Ensure module can be imported and app.compile() is called.
