@@ -1228,7 +1228,9 @@ class Component(BaseComponent, ABC):
         Yields:
             The parent classes that define the method (differently than the base).
         """
-        seen_methods = {getattr(Component, method)}
+        seen_methods = (
+            {getattr(Component, method)} if hasattr(Component, method) else set()
+        )
         for clz in cls.mro():
             if clz is Component:
                 break
