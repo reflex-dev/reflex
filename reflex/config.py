@@ -724,7 +724,7 @@ class EnvironmentVariables:
     REFLEX_HTTP_CLIENT_BIND_ADDRESS: EnvVar[str | None] = env_var(None)
 
     # Maximum size of the message in the websocket server in bytes.
-    REFLEX_SOCKET_POLLING_MAX_HTTP_BUFFER_SIZE: EnvVar[int] = env_var(
+    REFLEX_SOCKET_MAX_HTTP_BUFFER_SIZE: EnvVar[int] = env_var(
         constants.POLLING_MAX_HTTP_BUFFER_SIZE
     )
 

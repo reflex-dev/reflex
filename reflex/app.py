@@ -498,7 +498,7 @@ class App(MiddlewareMixin, LifespanMixin):
                     else config.cors_allowed_origins
                 ),
                 cors_credentials=True,
-                max_http_buffer_size=environment.REFLEX_SOCKET_POLLING_MAX_HTTP_BUFFER_SIZE.get(),
+                max_http_buffer_size=environment.REFLEX_SOCKET_MAX_HTTP_BUFFER_SIZE.get(),
                 ping_interval=environment.REFLEX_SOCKET_INTERVAL.get(),
                 ping_timeout=environment.REFLEX_SOCKET_TIMEOUT.get(),
                 json=SimpleNamespace(
