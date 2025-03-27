@@ -318,7 +318,7 @@ def compile_custom_component(
     }
 
     # Concatenate the props.
-    props = [prop._js_expr for prop in component.get_prop_vars()]
+    props = list(component.props)
 
     # Compile the component.
     return (

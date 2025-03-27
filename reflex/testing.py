@@ -462,6 +462,10 @@ class AppHarness:
 
     def stop(self) -> None:
         """Stop the frontend and backend servers."""
+        # Quit browsers first to avoid any lingering events being sent during shutdown.
+        for driver in self._frontends:
+            driver.quit()
+
         self._reload_state_module()
 
         if self.backend is not None:
@@ -492,8 +496,6 @@ class AppHarness:
             self.backend_thread.join()
         if self.frontend_output_thread is not None:
             self.frontend_output_thread.join()
-        for driver in self._frontends:
-            driver.quit()
 
         # Cleanup decorated pages added during testing
         for page in self._decorated_pages:
