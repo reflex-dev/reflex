@@ -703,7 +703,7 @@ class EnvironmentVariables:
     REFLEX_STATE_SIZE_LIMIT: EnvVar[int] = env_var(1000)
 
     # Whether to use the turbopack bundler.
-    REFLEX_USE_TURBOPACK: EnvVar[bool] = env_var(True)
+    REFLEX_USE_TURBOPACK: EnvVar[bool] = env_var(False)
 
     # Additional paths to include in the hot reload. Separated by a colon.
     REFLEX_HOT_RELOAD_INCLUDE_PATHS: EnvVar[list[Path]] = env_var([])
@@ -825,6 +825,9 @@ class Config(Base):
 
     # Whether to enable or disable nextJS gzip compression.
     next_compression: bool = True
+
+    # Whether to enable or disable NextJS dev indicator.
+    next_dev_indicators: bool = False
 
     # Whether to use React strict mode in nextJS
     react_strict_mode: bool = True

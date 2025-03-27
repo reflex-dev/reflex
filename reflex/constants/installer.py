@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 from types import SimpleNamespace
 
 from .base import IS_WINDOWS
@@ -84,7 +85,7 @@ class PackageJson(SimpleNamespace):
         "@emotion/react": "11.14.0",
         "axios": "1.8.3",
         "json5": "2.2.3",
-        "next": "15.0.4",
+        "next": os.getenv("NEXTJS_VERSION", "15.2.4"),
         "next-sitemap": "4.2.3",
         "next-themes": "0.4.6",
         "react": "19.0.0",
