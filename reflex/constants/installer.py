@@ -69,7 +69,6 @@ class Node(SimpleNamespace):
 
 
 def _determine_nextjs_version() -> str:
-    """Determine the nextjs version to use."""
     default_version = "15.2.4"
     if (version := os.getenv("NEXTJS_VERSION")) and version != default_version:
         from reflex.utils import console
