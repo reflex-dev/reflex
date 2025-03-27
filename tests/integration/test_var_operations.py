@@ -65,6 +65,7 @@ def VarOperations():
     @app.add_page
     def index():
         return rx.vstack(
+            None,  # Testing that None doesn't break everything
             rx.el.input(
                 id="token",
                 value=VarOperationState.router.session.client_token,

@@ -664,8 +664,6 @@ def test_create_filters_none_props(test_component):
 @pytest.mark.parametrize(
     "children",
     [
-        ((None,),),
-        ("foo", ("bar", (None,))),
         ({"foo": "bar"},),
     ],
 )

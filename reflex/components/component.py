@@ -180,7 +180,7 @@ def evaluate_style_namespaces(style: ComponentStyle) -> dict:
 # Map from component to styling.
 ComponentStyle = dict[str | Type[BaseComponent] | Callable | ComponentNamespace, Any]
 ComponentChild = types.PrimitiveType | Var | BaseComponent
-ComponentChildTypes = (*types.PrimitiveTypes, Var, BaseComponent)
+ComponentChildTypes = (*types.PrimitiveTypes, Var, BaseComponent, type(None))
 
 
 def _satisfies_type_hint(obj: Any, type_hint: Any) -> bool:
