@@ -68,6 +68,18 @@ class Node(SimpleNamespace):
     MIN_VERSION = "18.18.0"
 
 
+def _determine_nextjs_version() -> str:
+    default_version = "15.2.4"
+    if (version := os.getenv("NEXTJS_VERSION")) and version != default_version:
+        from reflex.utils import console
+
+        console.warn(
+            f"You have requested next@{version} but the supported version is {default_version}, abandon all hope ye who enter here."
+        )
+        return version
+    return default_version
+
+
 class PackageJson(SimpleNamespace):
     """Constants used to build the package.json file."""
 
@@ -85,7 +97,7 @@ class PackageJson(SimpleNamespace):
         "@emotion/react": "11.14.0",
         "axios": "1.8.3",
         "json5": "2.2.3",
-        "next": os.getenv("NEXTJS_VERSION", "15.2.4"),
+        "next": _determine_nextjs_version(),
         "next-sitemap": "4.2.3",
         "next-themes": "0.4.6",
         "react": "19.0.0",
