@@ -509,6 +509,7 @@ def test_var_indexing_lists(var):
             Var(_js_expr="tuple", _var_type=tuple[int, str]).guess_type(),
             [int, str],
         ),
+        (Var.create((1, 2)), [int, int]),
     ],
 )
 def test_var_indexing_types(var, type_):
