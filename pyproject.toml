@@ -39,13 +39,11 @@ dependencies = [
   "redis >=4.3.5,<6.0",
   "reflex-hosting-cli >=0.1.29",
   "rich >=13.0.0,<14.0",
-  "setuptools >=75.0",
   "starlette-admin >=0.11.0,<1.0",
   "sqlmodel >=0.0.14,<0.1",
   "typer >=0.15.1,<1.0",
   "typing_extensions >=4.6.0",
   "uvicorn >=0.20.0",
-  "wheel >=0.42.0,<1.0",
   "wrapt >=1.17.0,<2.0",
 ]
 classifiers = [

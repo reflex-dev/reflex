@@ -1538,13 +1538,11 @@ dependencies = [
     { name = "redis" },
     { name = "reflex-hosting-cli" },
     { name = "rich" },
-    { name = "setuptools" },
     { name = "sqlmodel" },
     { name = "starlette-admin" },
     { name = "typer" },
     { name = "typing-extensions" },
     { name = "uvicorn" },
-    { name = "wheel" },
     { name = "wrapt" },
 ]
 
@@ -1597,13 +1595,11 @@ requires-dist = [
     { name = "redis", specifier = ">=4.3.5,<6.0" },
     { name = "reflex-hosting-cli", specifier = ">=0.1.29" },
     { name = "rich", specifier = ">=13.0.0,<14.0" },
-    { name = "setuptools", specifier = ">=75.0" },
     { name = "sqlmodel", specifier = ">=0.0.14,<0.1" },
     { name = "starlette-admin", specifier = ">=0.11.0,<1.0" },
     { name = "typer", specifier = ">=0.15.1,<1.0" },
     { name = "typing-extensions", specifier = ">=4.6.0" },
     { name = "uvicorn", specifier = ">=0.20.0" },
-    { name = "wheel", specifier = ">=0.42.0,<1.0" },
     { name = "wrapt", specifier = ">=1.17.0,<2.0" },
 ]
 
@@ -1723,15 +1719,6 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/70/f8/12e5c86f5d4b26758151a2145cb0909d2b811a3ac846b645dd7c63023543/selenium-4.30.0.tar.gz", hash = "sha256:16ab890fc7cb21a01e1b1e9a0fbaa9445fe30837eabc66e90b3bacf12138126a", size = 859424 }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/79/cb/6e9c6f9072eb09d0f0cdfc52e33ad6583a6bd5232a322fccdd378104c6e0/selenium-4.30.0-py3-none-any.whl", hash = "sha256:90bcd3be86a1762100a093b33e5e4530b328226da94208caadb15ce13243dffd", size = 9353816 },
-]
-
-[[package]]
-name = "setuptools"
-version = "78.0.2"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/4c/f4/aa8d364f0dc1f33b2718938648c31202e2db5cd6479a73f0a9ca5a88372d/setuptools-78.0.2.tar.gz", hash = "sha256:137525e6afb9022f019d6e884a319017f9bf879a0d8783985d32cbc8683cab93", size = 1367747 }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/aa/db/2fd473dfe436ad19fda190f4079162d400402aedfcc41e048d38c0a375c6/setuptools-78.0.2-py3-none-any.whl", hash = "sha256:4a612c80e1f1d71b80e4906ce730152e8dec23df439f82731d9d0b608d7b700d", size = 1255965 },
 ]
 
 [[package]]
@@ -2103,15 +2090,6 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/e6/30/fba0d96b4b5fbf5948ed3f4681f7da2f9f64512e1d303f94b4cc174c24a5/websocket_client-1.8.0.tar.gz", hash = "sha256:3239df9f44da632f96012472805d40a23281a991027ce11d2f45a6f24ac4c3da", size = 54648 }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/5a/84/44687a29792a70e111c5c477230a72c4b957d88d16141199bf9acb7537a3/websocket_client-1.8.0-py3-none-any.whl", hash = "sha256:17b44cc997f5c498e809b22cdf2d9c7a9e71c02c8cc2b6c56e7c2d1239bfa526", size = 58826 },
-]
-
-[[package]]
-name = "wheel"
-version = "0.45.1"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/8a/98/2d9906746cdc6a6ef809ae6338005b3f21bb568bea3165cfc6a243fdc25c/wheel-0.45.1.tar.gz", hash = "sha256:661e1abd9198507b1409a20c02106d9670b2576e916d58f520316666abca6729", size = 107545 }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/0b/2c/87f3254fd8ffd29e4c02732eee68a83a1d3c346ae39bc6822dcbcb697f2b/wheel-0.45.1-py3-none-any.whl", hash = "sha256:708e7481cc80179af0e556bbf0cc00b8444c7321e2700b8d8580231d13017248", size = 72494 },
 ]
 
 [[package]]
