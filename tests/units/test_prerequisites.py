@@ -3,12 +3,10 @@ import re
 import shutil
 import tempfile
 from pathlib import Path
-from unittest.mock import Mock, mock_open
 
 import pytest
 from typer.testing import CliRunner
 
-from reflex import constants
 from reflex.config import Config
 from reflex.reflex import cli
 from reflex.testing import chdir
@@ -17,7 +15,6 @@ from reflex.utils.prerequisites import (
     _update_next_config,
     cached_procedure,
     get_cpu_info,
-    initialize_requirements_txt,
     rename_imports_and_app_name,
 )
 
