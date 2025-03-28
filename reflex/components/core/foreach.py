@@ -107,7 +107,7 @@ class Foreach(Component):
                 iterable,
                 "foreach",
                 "https://reflex.dev/docs/library/dynamic-rendering/foreach/",
-            ) from e
+            ).with_traceback(e.__traceback__) from None
         return component
 
     def _render(self) -> IterTag:
