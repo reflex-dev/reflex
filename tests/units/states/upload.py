@@ -19,12 +19,6 @@ class UploadState(BaseState):
         pass
 
 
-class BaseState(BaseState):
-    """The test base state."""
-
-    pass
-
-
 class SubUploadState(BaseState):
     """The test substate."""
 
