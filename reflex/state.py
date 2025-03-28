@@ -1702,7 +1702,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
 
         try:
             # Get the delta after processing the event.
-            delta = await _resolve_delta(state.get_delta())
+            delta = await state._get_resolved_delta()
             state._clean()
 
             return StateUpdate(
@@ -1946,6 +1946,14 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
 
         # Return the delta.
         return delta
+
+    async def _get_resolved_delta(self) -> Delta:
+        """Get the delta for the state after resolving all coroutines.
+
+        Returns:
+            The resolved delta for the state.
+        """
+        return await _resolve_delta(self.get_delta())
 
     def _mark_dirty(self):
         """Mark the substate and all parent states as dirty."""

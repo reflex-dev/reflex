@@ -1427,7 +1427,7 @@ class App(MiddlewareMixin, LifespanMixin):
         async with self.state_manager.modify_state(token) as state:
             # No other event handler can modify the state while in this context.
             yield state
-            delta = state.get_delta()
+            delta = await state._get_resolved_delta()
             if delta:
                 # When the state is modified reset dirty status and emit the delta to the frontend.
                 state._clean()
