@@ -42,7 +42,6 @@ dependencies = [
   "setuptools >=75.0",
   "starlette-admin >=0.11.0,<1.0",
   "sqlmodel >=0.0.14,<0.1",
-  "tomlkit >=0.12.4,<1.0",
   "typer >=0.15.1,<1.0",
   "typing_extensions >=4.6.0",
   "uvicorn >=0.20.0",
@@ -160,5 +159,4 @@ dev = [
   "python-dotenv >=1,<2",
   "ruff >=0.11.2",
   "selenium >=4.11.0,<5.0",
-  "toml >=0.10.2,<1.0",
 ]

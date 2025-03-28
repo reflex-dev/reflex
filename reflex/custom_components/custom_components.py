@@ -11,9 +11,7 @@ from contextlib import contextmanager
 from pathlib import Path
 
 import httpx
-import tomlkit
 import typer
-from tomlkit.exceptions import TOMLKitError
 
 from reflex import constants
 from reflex.config import get_config
@@ -62,28 +60,6 @@ def _create_package_config(module_name: str, package_name: str):
             reflex_version=constants.Reflex.VERSION,
         )
     )
-
-
-def _get_package_config(exit_on_fail: bool = True) -> dict:
-    """Get the package configuration from the pyproject.toml file.
-
-    Args:
-        exit_on_fail: Whether to exit if the pyproject.toml file is not found.
-
-    Returns:
-        The package configuration.
-
-    Raises:
-        Exit: If the pyproject.toml file is not found and exit_on_fail is True.
-    """
-    pyproject = Path(CustomComponents.PYPROJECT_TOML)
-    try:
-        return dict(tomlkit.loads(pyproject.read_bytes()))
-    except (OSError, TOMLKitError) as ex:
-        console.error(f"Unable to read from {pyproject} due to {ex}")
-        if exit_on_fail:
-            raise typer.Exit(code=1) from ex
-        raise
 
 
 def _create_readme(module_name: str, package_name: str):
@@ -425,10 +401,8 @@ def _make_pyi_files():
     """Create pyi files for the custom component."""
     from reflex.utils.pyi_generator import PyiGenerator
 
-    package_name = _get_package_config()["project"]["name"]
-
-    for dir, _, _ in os.walk(f"./{package_name}"):
-        if "__pycache__" in dir:
+    for dir, _, _ in Path.cwd().walk():
+        if "__pycache__" in dir.name:
             continue
         PyiGenerator().scan_all([dir])
 
@@ -485,14 +459,8 @@ def _collect_details_for_gallery():
 
     console.rule("[bold]Custom Component Information")
     params = {}
-    package_name = None
-    try:
-        package_name = _get_package_config(exit_on_fail=False)["project"]["name"]
-    except (TOMLKitError, KeyError) as ex:
-        console.debug(
-            f"Unable to read from pyproject.toml in current directory due to {ex}"
-        )
-        package_name = console.ask("[ Published python package name ]")
+
+    package_name = console.ask("[ Published python package name ]")
     console.print(f"[ Custom component package name ] : {package_name}")
     params["package_name"] = package_name
 
