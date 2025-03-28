@@ -22,7 +22,6 @@ requires-python = ">=3.10,<4.0"
 dependencies = [
   "alembic >=1.11.1,<2.0",
   "build >=1.0.3,<2.0",
-  "charset-normalizer >=3.3.2,<4.0",
   "distro >=1.8.0,<2.0; platform_system == 'Linux'",
   "fastapi >=0.96.0,!=0.111.0,!=0.111.1",
   "granian[reload] >=2.2.0",
@@ -44,7 +43,6 @@ dependencies = [
   "starlette-admin >=0.11.0,<1.0",
   "sqlmodel >=0.0.14,<0.1",
   "tomlkit >=0.12.4,<1.0",
-  "twine >=4.0.0,<7.0",
   "typer >=0.15.1,<1.0",
   "typing_extensions >=4.6.0",
   "uvicorn >=0.20.0",

@@ -838,37 +838,40 @@ def initialize_requirements_txt():
     generate a requirement pinning current version and append to
     the requirements.txt file.
     """
-    fp = Path(constants.RequirementsTxt.FILE)
-    encoding = "utf-8"
-    if not fp.exists():
-        fp.touch()
-    else:
-        # Detect the encoding of the original file
-        import charset_normalizer
+    requirements_file_path = Path(constants.RequirementsTxt.FILE)
+    requirements_file_path.touch(exist_ok=True)
 
-        charset_matches = charset_normalizer.from_path(fp)
-        maybe_charset_match = charset_matches.best()
-        if maybe_charset_match is None:
-            console.debug(f"Unable to detect encoding for {fp}, exiting.")
+    # realistically, these are the only encodings we need to check
+    encodings = [
+        None,
+        "utf-8",
+        "latin1",
+    ]
+    for encoding in encodings:
+        try:
+            content = requirements_file_path.read_text(encoding)
+            break
+        except UnicodeDecodeError:
+            continue
+        except Exception as e:
+            console.error(f"Failed to read {requirements_file_path}.")
+            raise typer.Exit(1) from e
+    else:
+        console.error(f"Failed to read {requirements_file_path}.")
+        raise typer.Exit(1)
+
+    for line in content.splitlines():
+        if re.match(r"^reflex[^a-zA-Z0-9]", line):
+            console.debug(f"{requirements_file_path} already has reflex as dependency.")
             return
-        encoding = maybe_charset_match.encoding
-        console.debug(f"Detected encoding for {fp} as {encoding}.")
-    try:
-        other_requirements_exist = False
-        with fp.open("r", encoding=encoding) as f:
-            for req in f:
-                # Check if we have a package name that is reflex
-                if re.match(r"^reflex[^a-zA-Z0-9]", req):
-                    console.debug(f"{fp} already has reflex as dependency.")
-                    return
-                other_requirements_exist = True
-        with fp.open("a", encoding=encoding) as f:
-            preceding_newline = "\n" if other_requirements_exist else ""
-            f.write(
-                f"{preceding_newline}{constants.RequirementsTxt.DEFAULTS_STUB}{constants.Reflex.VERSION}\n"
-            )
-    except Exception:
-        console.info(f"Unable to check {fp} for reflex dependency.")
+
+    console.debug(
+        f"Appending {constants.RequirementsTxt.DEFAULTS_STUB} to {requirements_file_path}"
+    )
+    with requirements_file_path.open("a", encoding=encoding) as f:
+        f.write(
+            "\n" + constants.RequirementsTxt.DEFAULTS_STUB + constants.Reflex.VERSION
+        )
 
 
 def initialize_app_directory(
