@@ -1873,11 +1873,13 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
                         tuple(state_name.split("."))
                     )
                 defining_state.dirty_vars.add(cvar)
-                dirty_vars.add(cvar)
                 actual_var = defining_state.computed_vars.get(cvar)
                 if actual_var is not None:
                     actual_var.mark_dirty(instance=defining_state)
-                if defining_state is not self:
+                if defining_state is self:
+                    dirty_vars.add(cvar)
+                else:
+                    # mark dirty where this var is defined
                     defining_state._mark_dirty()
 
     def _expired_computed_vars(self) -> set[str]:
