@@ -33,7 +33,6 @@ dependencies = [
   "platformdirs >=3.10.0,<5.0",
   "psutil >=5.9.4,<8.0",
   "pydantic >=1.10.21,<3.0",
-  "python-engineio !=4.6.0",
   "python-socketio >=5.7.0,<6.0",
   "redis >=4.3.5,<6.0",
   "reflex-hosting-cli >=0.1.29",
