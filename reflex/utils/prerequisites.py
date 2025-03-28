@@ -254,7 +254,7 @@ def get_nodejs_compatible_package_managers(
 
     package_managers = list(filter(None, package_managers))
 
-    if not package_managers and not raise_on_none:
+    if not package_managers and raise_on_none:
         raise FileNotFoundError(
             "Bun or npm not found. You might need to rerun `reflex init` or install either."
         )
