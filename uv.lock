@@ -574,18 +574,6 @@ wheels = [
 ]
 
 [[package]]
-name = "lazy-loader"
-version = "0.4"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "packaging" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/6f/6b/c875b30a1ba490860c93da4cabf479e03f584eba06fe5963f6f6644653d8/lazy_loader-0.4.tar.gz", hash = "sha256:47c75182589b91a4e1a85a136c074285a5ad4d9f39c63e0d7fb76391c4574cd1", size = 15431 }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/83/60/d497a310bde3f01cb805196ac61b7ad6dc5dcf8dce66634dc34364b20b4f/lazy_loader-0.4-py3-none-any.whl", hash = "sha256:342aa8e14d543a154047afb4ba8ef17f5563baad3fc610d7b15b213b0f119efc", size = 12097 },
-]
-
-[[package]]
 name = "libsass"
 version = "0.23.0"
 source = { registry = "https://pypi.org/simple" }
@@ -1489,7 +1477,6 @@ dependencies = [
     { name = "gunicorn" },
     { name = "httpx" },
     { name = "jinja2" },
-    { name = "lazy-loader" },
     { name = "packaging" },
     { name = "platformdirs" },
     { name = "psutil" },
@@ -1543,7 +1530,6 @@ requires-dist = [
     { name = "gunicorn", specifier = ">=23.0.0,<24.0.0" },
     { name = "httpx", specifier = ">=0.25.1,<1.0" },
     { name = "jinja2", specifier = ">=3.1.2,<4.0" },
-    { name = "lazy-loader", specifier = ">=0.4" },
     { name = "packaging", specifier = ">=23.1,<25.0" },
     { name = "platformdirs", specifier = ">=3.10.0,<5.0" },
     { name = "psutil", specifier = ">=5.9.4,<8.0" },
