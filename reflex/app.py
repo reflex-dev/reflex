@@ -40,8 +40,6 @@ from rich.progress import MofNCompleteColumn, Progress, TimeElapsedColumn
 from socketio import ASGIApp, AsyncNamespace, AsyncServer
 from starlette.datastructures import Headers
 from starlette.datastructures import UploadFile as StarletteUploadFile
-from starlette_admin.contrib.sqla.admin import Admin
-from starlette_admin.contrib.sqla.view import ModelView
 
 from reflex import constants
 from reflex.admin import AdminDash
@@ -885,6 +883,12 @@ class App(MiddlewareMixin, LifespanMixin):
 
     def _setup_admin_dash(self):
         """Setup the admin dash."""
+        try:
+            from starlette_admin.contrib.sqla.admin import Admin
+            from starlette_admin.contrib.sqla.view import ModelView
+        except ImportError:
+            return
+
         # Get the admin dash.
         if not self.api:
             return
