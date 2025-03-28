@@ -837,6 +837,9 @@ def initialize_requirements_txt():
     If the requirements.txt does not have reflex as dependency,
     generate a requirement pinning current version and append to
     the requirements.txt file.
+
+    Raises:
+        Exit: If the requirements.txt file cannot be read or written to.
     """
     requirements_file_path = Path(constants.RequirementsTxt.FILE)
     requirements_file_path.touch(exist_ok=True)
