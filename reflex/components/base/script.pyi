@@ -7,7 +7,6 @@ from typing import Any, Literal, Optional, overload
 
 from reflex.components import el as elements
 from reflex.event import EventType
-from reflex.style import Style
 from reflex.vars.base import Var
 
 class Script(elements.Script):

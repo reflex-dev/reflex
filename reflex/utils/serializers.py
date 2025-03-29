@@ -16,7 +16,6 @@ from typing import (
     Callable,
     Literal,
     Sequence,
-    Set,
     Type,
     TypeVar,
     Union,
@@ -322,7 +321,7 @@ if BaseModelV1 is not BaseModelV2:
 
 
 @serializer
-def serialize_set(value: Set) -> list:
+def serialize_set(value: set) -> list:
     """Serialize a set to a JSON serializable list.
 
     Args:

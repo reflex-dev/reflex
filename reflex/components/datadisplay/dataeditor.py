@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from enum import Enum
-from typing import Any, Dict, Literal, Sequence, TypedDict
+from typing import Any, Dict, Literal, Mapping, Sequence, TypedDict
 
 from reflex.base import Base
 from reflex.components.component import Component, NoSSRComponent
@@ -402,7 +402,7 @@ class DataEditor(NoSSRComponent):
 
         if "theme" in props:
             theme = props.get("theme")
-            if isinstance(theme, Dict):
+            if isinstance(theme, Mapping):
                 props["theme"] = DataEditorTheme(**theme)
 
         # Allow by default to select a region of cells in the grid.

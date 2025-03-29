@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-import asyncio
 import dataclasses
+import inspect
 
 from reflex.event import Event
 from reflex.middleware import HydrateMiddleware, Middleware
@@ -51,12 +51,11 @@ class MiddlewareMixin(AppMixin):
             An optional state to return.
         """
         for middleware in self._middlewares:
-            if asyncio.iscoroutinefunction(middleware.preprocess):
-                out = await middleware.preprocess(app=self, state=state, event=event)  # pyright: ignore [reportArgumentType]
-            else:
-                out = middleware.preprocess(app=self, state=state, event=event)  # pyright: ignore [reportArgumentType]
+            out = middleware.preprocess(app=self, state=state, event=event)  # pyright: ignore [reportArgumentType]
+            if inspect.isawaitable(out):
+                out = await out
             if out is not None:
-                return out  # pyright: ignore [reportReturnType]
+                return out
 
     async def _postprocess(
         self, state: BaseState, event: Event, update: StateUpdate
@@ -76,18 +75,12 @@ class MiddlewareMixin(AppMixin):
         """
         out = update
         for middleware in self._middlewares:
-            if asyncio.iscoroutinefunction(middleware.postprocess):
-                out = await middleware.postprocess(
-                    app=self,  # pyright: ignore [reportArgumentType]
-                    state=state,
-                    event=event,
-                    update=update,
-                )
-            else:
-                out = middleware.postprocess(
-                    app=self,  # pyright: ignore [reportArgumentType]
-                    state=state,
-                    event=event,
-                    update=update,
-                )
+            out = middleware.postprocess(
+                app=self,  # pyright: ignore [reportArgumentType]
+                state=state,
+                event=event,
+                update=update,
+            )
+            if inspect.isawaitable(out):
+                out = await out
         return out  # pyright: ignore[reportReturnType]

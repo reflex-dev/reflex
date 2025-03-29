@@ -114,9 +114,11 @@ from reflex.utils.imports import ImportVar
 if TYPE_CHECKING:
     from reflex.vars import Var
 
+    # Define custom types.
+    ComponentCallable = Callable[[], Component | tuple[Component, ...] | str | Var]
+else:
+    ComponentCallable = Callable[[], Component | tuple[Component, ...] | str]
 
-# Define custom types.
-ComponentCallable = Callable[[], Component]
 Reducer = Callable[[Event], Coroutine[Any, Any, StateUpdate]]
 
 
@@ -498,9 +500,9 @@ class App(MiddlewareMixin, LifespanMixin):
                     else config.cors_allowed_origins
                 ),
                 cors_credentials=True,
-                max_http_buffer_size=constants.POLLING_MAX_HTTP_BUFFER_SIZE,
-                ping_interval=constants.Ping.INTERVAL,
-                ping_timeout=constants.Ping.TIMEOUT,
+                max_http_buffer_size=environment.REFLEX_SOCKET_MAX_HTTP_BUFFER_SIZE.get(),
+                ping_interval=environment.REFLEX_SOCKET_INTERVAL.get(),
+                ping_timeout=environment.REFLEX_SOCKET_TIMEOUT.get(),
                 json=SimpleNamespace(
                     dumps=staticmethod(format.json_dumps),
                     loads=staticmethod(json.loads),
@@ -1108,8 +1110,6 @@ class App(MiddlewareMixin, LifespanMixin):
         if config.react_strict_mode:
             app_wrappers[(200, "StrictMode")] = StrictMode.create()
 
-        should_compile = self._should_compile()
-
         if not should_compile:
             with console.timing("Evaluate Pages (Backend)"):
                 for route in self._unevaluated_pages:
@@ -1226,13 +1226,15 @@ class App(MiddlewareMixin, LifespanMixin):
             custom_components |= component._get_all_custom_components()
 
         if self.error_boundary:
+            from reflex.compiler.compiler import into_component
+
             console.deprecate(
                 feature_name="App.error_boundary",
                 reason="Use app_wraps instead.",
                 deprecation_version="0.7.1",
                 removal_version="0.8.0",
             )
-            app_wrappers[(55, "ErrorBoundary")] = self.error_boundary()
+            app_wrappers[(55, "ErrorBoundary")] = into_component(self.error_boundary)
 
         # Perform auto-memoization of stateful components.
         with console.timing("Auto-memoize StatefulComponents"):
@@ -1427,7 +1429,7 @@ class App(MiddlewareMixin, LifespanMixin):
         async with self.state_manager.modify_state(token) as state:
             # No other event handler can modify the state while in this context.
             yield state
-            delta = state.get_delta()
+            delta = await state._get_resolved_delta()
             if delta:
                 # When the state is modified reset dirty status and emit the delta to the frontend.
                 state._clean()

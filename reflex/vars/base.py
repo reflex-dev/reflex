@@ -30,6 +30,7 @@ from typing import (
     Mapping,
     NoReturn,
     ParamSpec,
+    Protocol,
     Sequence,
     Set,
     Tuple,
@@ -59,10 +60,11 @@ from reflex.utils.exceptions import (
 )
 from reflex.utils.format import format_state_name
 from reflex.utils.imports import (
+    ImmutableImportDict,
     ImmutableParsedImportDict,
     ImportDict,
     ImportVar,
-    ParsedImportDict,
+    ParsedImportTuple,
     parse_imports,
 )
 from reflex.utils.types import (
@@ -122,7 +124,7 @@ class VarData:
     field_name: str = dataclasses.field(default="")
 
     # Imports needed to render this var
-    imports: ImmutableParsedImportDict = dataclasses.field(default_factory=tuple)
+    imports: ParsedImportTuple = dataclasses.field(default_factory=tuple)
 
     # Hooks that need to be present in the component to render this var
     hooks: tuple[str, ...] = dataclasses.field(default_factory=tuple)
@@ -140,7 +142,7 @@ class VarData:
         self,
         state: str = "",
         field_name: str = "",
-        imports: ImportDict | ParsedImportDict | None = None,
+        imports: ImmutableImportDict | ImmutableParsedImportDict | None = None,
         hooks: Mapping[str, VarData | None] | Sequence[str] | str | None = None,
         deps: list[Var] | None = None,
         position: Hooks.HookPosition | None = None,
@@ -161,7 +163,7 @@ class VarData:
             hooks = [hooks]
         if not isinstance(hooks, dict):
             hooks = dict.fromkeys(hooks or [])
-        immutable_imports: ImmutableParsedImportDict = tuple(
+        immutable_imports: ParsedImportTuple = tuple(
             (k, tuple(v)) for k, v in parse_imports(imports or {}).items()
         )
         object.__setattr__(self, "state", state)
@@ -988,7 +990,7 @@ class Var(Generic[VAR_TYPE]):
                     setattr(state, actual_name, value)
                 except ValueError:
                     console.debug(
-                        f"{type(state).__name__}.{self._js_expr}: Failed conversion of {value} to '{self._var_type.__name__}'. Value not set.",
+                        f"{type(state).__name__}.{self._js_expr}: Failed conversion of {value!s} to '{self._var_type.__name__}'. Value not set.",
                     )
             else:
                 setattr(state, actual_name, value)
@@ -1058,7 +1060,9 @@ class Var(Generic[VAR_TYPE]):
 
         return boolify(self)
 
-    def __and__(self, other: Var | Any) -> Var:
+    def __and__(
+        self, other: Var[OTHER_VAR_TYPE] | Any
+    ) -> Var[VAR_TYPE | OTHER_VAR_TYPE]:
         """Perform a logical AND operation on the current instance and another variable.
 
         Args:
@@ -1069,7 +1073,9 @@ class Var(Generic[VAR_TYPE]):
         """
         return and_operation(self, other)
 
-    def __rand__(self, other: Var | Any) -> Var:
+    def __rand__(
+        self, other: Var[OTHER_VAR_TYPE] | Any
+    ) -> Var[VAR_TYPE | OTHER_VAR_TYPE]:
         """Perform a logical AND operation on the current instance and another variable.
 
         Args:
@@ -1080,7 +1086,9 @@ class Var(Generic[VAR_TYPE]):
         """
         return and_operation(other, self)
 
-    def __or__(self, other: Var | Any) -> Var:
+    def __or__(
+        self, other: Var[OTHER_VAR_TYPE] | Any
+    ) -> Var[VAR_TYPE | OTHER_VAR_TYPE]:
         """Perform a logical OR operation on the current instance and another variable.
 
         Args:
@@ -1091,7 +1099,9 @@ class Var(Generic[VAR_TYPE]):
         """
         return or_operation(self, other)
 
-    def __ror__(self, other: Var | Any) -> Var:
+    def __ror__(
+        self, other: Var[OTHER_VAR_TYPE] | Any
+    ) -> Var[VAR_TYPE | OTHER_VAR_TYPE]:
         """Perform a logical OR operation on the current instance and another variable.
 
         Args:
@@ -1478,7 +1488,7 @@ class LiteralVar(Var):
         _var_literal_subclasses.append((cls, var_subclass))
 
     @classmethod
-    def create(  # pyright: ignore [reportArgumentType]
+    def _create_literal_var(
         cls,
         value: Any,
         _var_data: VarData | None = None,
@@ -1558,6 +1568,9 @@ class LiteralVar(Var):
         raise TypeError(
             f"Unsupported type {type(value)} for LiteralVar. Tried to create a LiteralVar from {value}."
         )
+
+    if not TYPE_CHECKING:
+        create = _create_literal_var
 
     def __post_init__(self):
         """Post-initialize the var."""
@@ -1835,6 +1848,21 @@ class cached_property:  # noqa: N801
 cached_property_no_lock = cached_property
 
 
+class VarProtocol(Protocol):
+    """A protocol for Var."""
+
+    __dataclass_fields__: ClassVar[dict[str, dataclasses.Field[Any]]]
+
+    @property
+    def _js_expr(self) -> str: ...
+
+    @property
+    def _var_type(self) -> types.GenericType: ...
+
+    @property
+    def _var_data(self) -> VarData: ...
+
+
 class CachedVarOperation:
     """Base class for cached var operations to lower boilerplate code."""
 
@@ -1869,7 +1897,7 @@ class CachedVarOperation:
         return self._cached_get_all_var_data
 
     @cached_property_no_lock
-    def _cached_get_all_var_data(self) -> VarData | None:
+    def _cached_get_all_var_data(self: VarProtocol) -> VarData | None:
         """Get the cached VarData.
 
         Returns:
@@ -1879,14 +1907,13 @@ class CachedVarOperation:
             *(
                 value._get_all_var_data() if isinstance(value, Var) else None
                 for value in (
-                    getattr(self, field.name)
-                    for field in dataclasses.fields(self)  # pyright: ignore [reportArgumentType]
+                    getattr(self, field.name) for field in dataclasses.fields(self)
                 )
             ),
             self._var_data,
         )
 
-    def __hash__(self) -> int:
+    def __hash__(self: DataclassInstance) -> int:
         """Calculate the hash of the object.
 
         Returns:
@@ -1897,14 +1924,16 @@ class CachedVarOperation:
                 type(self).__name__,
                 *[
                     getattr(self, field.name)
-                    for field in dataclasses.fields(self)  # pyright: ignore [reportArgumentType]
+                    for field in dataclasses.fields(self)
                     if field.name not in ["_js_expr", "_var_data", "_var_type"]
                 ],
             )
         )
 
 
-def and_operation(a: Var | Any, b: Var | Any) -> Var:
+def and_operation(
+    a: Var[VAR_TYPE] | Any, b: Var[OTHER_VAR_TYPE] | Any
+) -> Var[VAR_TYPE | OTHER_VAR_TYPE]:
     """Perform a logical AND operation on two variables.
 
     Args:
@@ -1934,7 +1963,9 @@ def _and_operation(a: Var, b: Var):
     )
 
 
-def or_operation(a: Var | Any, b: Var | Any) -> Var:
+def or_operation(
+    a: Var[VAR_TYPE] | Any, b: Var[OTHER_VAR_TYPE] | Any
+) -> Var[VAR_TYPE | OTHER_VAR_TYPE]:
     """Perform a logical OR operation on two variables.
 
     Args:
@@ -2340,7 +2371,7 @@ class ComputedVar(Var[RETURN_TYPE]):
         if not _isinstance(value, self._var_type, nested=1, treat_var_as_type=False):
             console.error(
                 f"Computed var '{type(instance).__name__}.{self._js_expr}' must return"
-                f" a value of type '{self._var_type}', got '{value}' of type {type(value)}."
+                f" a value of type '{self._var_type}', got '{value!s}' of type {type(value)}."
             )
 
     def _deps(
@@ -2976,7 +3007,7 @@ def get_uuid_string_var() -> Var:
     unique_uuid_var = get_unique_variable_name()
     unique_uuid_var_data = VarData(
         imports={
-            f"$/{constants.Dirs.STATE_PATH}": {ImportVar(tag="generateUUID")},  # pyright: ignore [reportArgumentType]
+            f"$/{constants.Dirs.STATE_PATH}": ImportVar(tag="generateUUID"),
             "react": "useMemo",
         },
         hooks={f"const {unique_uuid_var} = useMemo(generateUUID, [])": None},
@@ -3286,10 +3317,15 @@ class Field(Generic[FIELD_TYPE]):
 
     @overload
     def __get__(
-        self: Field[int]
-        | Field[float]
+        self: Field[int] | Field[int | None],
+        instance: None,
+        owner: Any,
+    ) -> NumberVar[int]: ...
+
+    @overload
+    def __get__(
+        self: Field[float]
         | Field[int | float]
-        | Field[int | None]
         | Field[float | None]
         | Field[int | float | None],
         instance: None,

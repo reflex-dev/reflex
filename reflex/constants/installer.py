@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 from types import SimpleNamespace
 
 from .base import IS_WINDOWS
@@ -65,6 +66,26 @@ class Node(SimpleNamespace):
     VERSION = "22.11.0"
     # The minimum required node version.
     MIN_VERSION = "18.18.0"
+
+    # Path of the node config file.
+    CONFIG_PATH = ".npmrc"
+
+    DEFAULT_CONFIG = """
+registry={registry}
+fetch-retries=0
+"""
+
+
+def _determine_nextjs_version() -> str:
+    default_version = "15.2.4"
+    if (version := os.getenv("NEXTJS_VERSION")) and version != default_version:
+        from reflex.utils import console
+
+        console.warn(
+            f"You have requested next@{version} but the supported version is {default_version}, abandon all hope ye who enter here."
+        )
+        return version
+    return default_version
 
 
 class PackageJson(SimpleNamespace):

@@ -237,10 +237,10 @@ def format_style_key(key: str) -> tuple[str, ...]:
 EMPTY_VAR_DATA = VarData()
 
 
-class Style(dict):
+class Style(dict[str, Any]):
     """A style dictionary."""
 
-    def __init__(self, style_dict: dict | None = None, **kwargs):
+    def __init__(self, style_dict: dict[str, Any] | None = None, **kwargs):
         """Initialize the style.
 
         Args:

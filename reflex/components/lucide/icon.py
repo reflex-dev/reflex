@@ -79,9 +79,7 @@ class Icon(LucideIconComponent):
             )
             tag = "circle_help"
 
-        props["tag"] = LUCIDE_ICON_MAPPING_OVERRIDE.get(
-            tag, format.to_title_case(tag) + "Icon"
-        )
+        props["tag"] = LUCIDE_ICON_MAPPING_OVERRIDE.get(tag, format.to_title_case(tag))
         props["alias"] = f"Lucide{props['tag']}"
         props.setdefault("color", "var(--current-color)")
         return super().create(**props)
@@ -98,7 +96,7 @@ class DynamicIcon(LucideIconComponent):
         _imports = super()._get_imports()
         if self.library:
             _imports.pop(self.library)
-        _imports["lucide-react/dynamic"] = [ImportVar("DynamicIcon", install=False)]
+        _imports["lucide-react"] = [ImportVar("DynamicIcon", package_path="/dynamic")]
         return _imports
 
 
@@ -1680,6 +1678,9 @@ LUCIDE_ICON_LIST = [
 # The default transformation of some icon names doesn't match how the
 # icons are exported from Lucide. Manual overrides can go here.
 LUCIDE_ICON_MAPPING_OVERRIDE = {
-    "grid_2x_2_check": "Grid2x2Check",
-    "grid_2x_2_x": "Grid2x2X",
+    "box_select": "BoxSelectIcon",
+    "grid_2x_2_check": "Grid2x2CheckIcon",
+    "grid_2x_2_x": "Grid2x2XIcon",
+    "grid_2x_2_plus": "Grid2x2PlusIcon",
+    "layers_3": "Layers3Icon",
 }

@@ -31,6 +31,7 @@ def VarOperations():
         int_var3: rx.Field[int] = rx.field(7)
         float_var1: rx.Field[float] = rx.field(10.5)
         float_var2: rx.Field[float] = rx.field(5.5)
+        long_float: rx.Field[float] = rx.field(13212312312.1231231)
         list1: rx.Field[list] = rx.field([1, 2])
         list2: rx.Field[list] = rx.field([3, 4])
         list3: rx.Field[list] = rx.field(["first", "second", "third"])
@@ -51,7 +52,7 @@ def VarOperations():
         )
         obj: rx.Field[Object] = rx.field(Object())
 
-    app = rx.App(_state=rx.State)
+    app = rx.App()
 
     @rx.memo
     def memo_comp(list1: list[int], int_var1: int, id: str):
@@ -64,6 +65,7 @@ def VarOperations():
     @app.add_page
     def index():
         return rx.vstack(
+            None,  # Testing that None doesn't break everything
             rx.el.input(
                 id="token",
                 value=VarOperationState.router.session.client_token,
@@ -718,24 +720,32 @@ def VarOperations():
             ),
             # ObjectVar
             rx.box(
-                rx.text(VarOperationState.obj.name),
+                rx.text.span(VarOperationState.obj.name),
                 id="obj_name",
             ),
             rx.box(
-                rx.text(VarOperationState.obj.optional_none),
+                rx.text.span(VarOperationState.obj.optional_none),
                 id="obj_optional_none",
             ),
             rx.box(
-                rx.text(VarOperationState.obj.optional_str),
+                rx.text.span(VarOperationState.obj.optional_str),
                 id="obj_optional_str",
             ),
             rx.box(
-                rx.text(VarOperationState.obj.get("optional_none")),
+                rx.text.span(VarOperationState.obj.get("optional_none")),
                 id="obj_optional_none_get_none",
             ),
             rx.box(
-                rx.text(VarOperationState.obj.get("optional_none", "foo")),
+                rx.text.span(VarOperationState.obj.get("optional_none", "foo")),
                 id="obj_optional_none_get_foo",
+            ),
+            rx.box(
+                rx.text.span(round(VarOperationState.long_float)),
+                id="float_round",
+            ),
+            rx.box(
+                rx.text.span(round(VarOperationState.long_float, 2)),
+                id="float_round_2",
             ),
         )
 
@@ -965,6 +975,8 @@ def test_var_operations(driver, var_operations: AppHarness):
         ("obj_optional_str", "hello"),
         ("obj_optional_none_get_none", ""),
         ("obj_optional_none_get_foo", "foo"),
+        ("float_round", "13212312312"),
+        ("float_round_2", "13212312312.12"),
     ]
 
     for tag, expected in tests:

@@ -1,6 +1,6 @@
 [project]
 name = "reflex"
-version = "0.7.4dev1"
+version = "0.7.5dev1"
 description = "Web apps in pure Python."
 license = { text = "Apache-2.0" }
 authors = [
@@ -25,7 +25,7 @@ dependencies = [
   "charset-normalizer >=3.3.2,<4.0",
   "distro >=1.8.0,<2.0; platform_system == 'Linux'",
   "fastapi >=0.96.0,!=0.111.0,!=0.111.1",
-  "granian[reload] >=2.0.0",
+  "granian[reload] >=2.2.0",
   "gunicorn >=23.0.0,<24.0.0",
   "httpx >=0.25.1,<1.0",
   "jinja2 >=3.1.2,<4.0",
@@ -149,7 +149,7 @@ dev = [
   "plotly >=5.13.0,<7.0",
   "pre-commit >=4.1.0,<5.0",
   "psycopg[binary] >=3.2.6,<4.0",
-  "pyright >=1.1.396,<1.2",
+  "pyright >=1.1.397,<1.2",
   "pytest >=7.1.2,<9.0",
   "pytest-asyncio >=0.24.0",
   "pytest-benchmark >=4.0.0,<6.0",
@@ -160,7 +160,7 @@ dev = [
   "pytest-retry >=1.7.0,<2.0",
   "pytest-split >=0.10.0,<1.0",
   "python-dotenv >=1,<2",
-  "ruff ==0.11.0",
+  "ruff >=0.11.2",
   "selenium >=4.11.0,<5.0",
   "toml >=0.10.2,<1.0",
 ]

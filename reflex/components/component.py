@@ -18,17 +18,18 @@ from typing import (
     ClassVar,
     Iterator,
     List,
+    Mapping,
     Sequence,
     Set,
     Type,
     TypeVar,
     Union,
+    cast,
     get_args,
     get_origin,
 )
 
 import pydantic.v1
-import pydantic.v1.fields
 
 import reflex.state
 from reflex.base import Base
@@ -48,12 +49,13 @@ from reflex.constants import (
 from reflex.constants.compiler import SpecialAttributes
 from reflex.constants.state import FRONTEND_EVENT_STATE
 from reflex.event import (
-    EventActionsMixin,
     EventCallback,
     EventChain,
     EventHandler,
     EventSpec,
     no_args_event_spec,
+    parse_args_spec,
+    run_script,
 )
 from reflex.style import Style, format_as_emotion
 from reflex.utils import console, format, imports, types
@@ -65,7 +67,7 @@ from reflex.vars.base import (
     Var,
     cached_property_no_lock,
 )
-from reflex.vars.function import ArgsFunctionOperation, FunctionStringVar
+from reflex.vars.function import ArgsFunctionOperation, FunctionStringVar, FunctionVar
 from reflex.vars.number import ternary_operation
 from reflex.vars.object import ObjectVar
 from reflex.vars.sequence import LiteralArrayVar
@@ -179,7 +181,7 @@ def evaluate_style_namespaces(style: ComponentStyle) -> dict:
 # Map from component to styling.
 ComponentStyle = dict[str | Type[BaseComponent] | Callable | ComponentNamespace, Any]
 ComponentChild = types.PrimitiveType | Var | BaseComponent
-ComponentChildTypes = (*types.PrimitiveTypes, Var, BaseComponent)
+ComponentChildTypes = (*types.PrimitiveTypes, Var, BaseComponent, type(None))
 
 
 def _satisfies_type_hint(obj: Any, type_hint: Any) -> bool:
@@ -579,9 +581,15 @@ class Component(BaseComponent, ABC):
 
         # Add style props to the component.
         style = kwargs.get("style", {})
-        if isinstance(style, List):
+        if isinstance(style, Sequence):
+            if any(not isinstance(s, Mapping) for s in style):
+                raise TypeError("Style must be a dictionary or a list of dictionaries.")
             # Merge styles, the later ones overriding keys in the earlier ones.
-            style = {k: v for style_dict in style for k, v in style_dict.items()}
+            style = {
+                k: v
+                for style_dict in style
+                for k, v in cast(Mapping, style_dict).items()
+            }
 
         if isinstance(style, (Breakpoints, Var)):
             style = {
@@ -893,7 +901,7 @@ class Component(BaseComponent, ABC):
             _style.update(s)
         return _style
 
-    def _get_component_style(self, styles: ComponentStyle) -> Style | None:
+    def _get_component_style(self, styles: ComponentStyle | Style) -> Style | None:
         """Get the style to the component from `App.style`.
 
         Args:
@@ -903,14 +911,14 @@ class Component(BaseComponent, ABC):
             The style of the component.
         """
         component_style = None
-        if type(self) in styles:
-            component_style = Style(styles[type(self)])
-        if self.create in styles:
-            component_style = Style(styles[self.create])
+        if (style := styles.get(type(self))) is not None:  # pyright: ignore [reportArgumentType]
+            component_style = Style(style)
+        if (style := styles.get(self.create)) is not None:  # pyright: ignore [reportArgumentType]
+            component_style = Style(style)
         return component_style
 
     def _add_style_recursive(
-        self, style: ComponentStyle, theme: Component | None = None
+        self, style: ComponentStyle | Style, theme: Component | None = None
     ) -> Component:
         """Add additional style to the component and its children.
 
@@ -1235,7 +1243,9 @@ class Component(BaseComponent, ABC):
         Yields:
             The parent classes that define the method (differently than the base).
         """
-        seen_methods = {getattr(Component, method)}
+        seen_methods = (
+            {getattr(Component, method)} if hasattr(Component, method) else set()
+        )
         for clz in cls.mro():
             if clz is Component:
                 break
@@ -1900,7 +1910,44 @@ class CustomComponent(Component):
 
         return custom_components
 
-    def get_prop_vars(self) -> List[Var]:
+    @staticmethod
+    def _get_event_spec_from_args_spec(name: str, event: EventChain) -> Callable:
+        """Get the event spec from the args spec.
+
+        Args:
+            name: The name of the event
+            event: The args spec.
+
+        Returns:
+            The event spec.
+        """
+
+        def fn(*args):
+            return run_script(Var(name).to(FunctionVar).call(*args))
+
+        if event.args_spec:
+            arg_spec = (
+                event.args_spec
+                if not isinstance(event.args_spec, Sequence)
+                else event.args_spec[0]
+            )
+            names = inspect.getfullargspec(arg_spec).args
+            fn.__signature__ = inspect.Signature(  # pyright: ignore[reportFunctionMemberAccess]
+                parameters=[
+                    inspect.Parameter(
+                        name=name,
+                        kind=inspect.Parameter.POSITIONAL_ONLY,
+                        annotation=arg._var_type,
+                    )
+                    for name, arg in zip(
+                        names, parse_args_spec(event.args_spec), strict=True
+                    )
+                ]
+            )
+
+        return fn
+
+    def get_prop_vars(self) -> List[Var | Callable]:
         """Get the prop vars.
 
         Returns:
@@ -1909,16 +1956,10 @@ class CustomComponent(Component):
         return [
             Var(
                 _js_expr=name,
-                _var_type=(
-                    prop._var_type
-                    if isinstance(prop, Var)
-                    else (
-                        type(prop)
-                        if not isinstance(prop, EventActionsMixin)
-                        else EventChain
-                    )
-                ),
+                _var_type=(prop._var_type if isinstance(prop, Var) else type(prop)),
             ).guess_type()
+            if isinstance(prop, Var) or not isinstance(prop, EventChain)
+            else CustomComponent._get_event_spec_from_args_spec(name, prop)
             for name, prop in self.props.items()
         ]
 

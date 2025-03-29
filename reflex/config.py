@@ -703,7 +703,7 @@ class EnvironmentVariables:
     REFLEX_STATE_SIZE_LIMIT: EnvVar[int] = env_var(1000)
 
     # Whether to use the turbopack bundler.
-    REFLEX_USE_TURBOPACK: EnvVar[bool] = env_var(True)
+    REFLEX_USE_TURBOPACK: EnvVar[bool] = env_var(False)
 
     # Additional paths to include in the hot reload. Separated by a colon.
     REFLEX_HOT_RELOAD_INCLUDE_PATHS: EnvVar[list[Path]] = env_var([])
@@ -719,6 +719,20 @@ class EnvironmentVariables:
 
     # Used by flexgen to enumerate the pages.
     REFLEX_ADD_ALL_ROUTES_ENDPOINT: EnvVar[bool] = env_var(False)
+
+    # The address to bind the HTTP client to. You can set this to "::" to enable IPv6.
+    REFLEX_HTTP_CLIENT_BIND_ADDRESS: EnvVar[str | None] = env_var(None)
+
+    # Maximum size of the message in the websocket server in bytes.
+    REFLEX_SOCKET_MAX_HTTP_BUFFER_SIZE: EnvVar[int] = env_var(
+        constants.POLLING_MAX_HTTP_BUFFER_SIZE
+    )
+
+    # The interval to send a ping to the websocket server in seconds.
+    REFLEX_SOCKET_INTERVAL: EnvVar[int] = env_var(constants.Ping.INTERVAL)
+
+    # The timeout to wait for a pong from the websocket server in seconds.
+    REFLEX_SOCKET_TIMEOUT: EnvVar[int] = env_var(constants.Ping.TIMEOUT)
 
 
 environment = EnvironmentVariables()
@@ -811,6 +825,9 @@ class Config(Base):
 
     # Whether to enable or disable nextJS gzip compression.
     next_compression: bool = True
+
+    # Whether to enable or disable NextJS dev indicator.
+    next_dev_indicators: bool = False
 
     # Whether to use React strict mode in nextJS
     react_strict_mode: bool = True

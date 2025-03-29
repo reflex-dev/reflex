@@ -593,8 +593,8 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             if cls._item_is_event_handler(name, fn)
         }
 
-        for mixin in cls._mixins():  # pyright: ignore [reportAssignmentType]
-            for name, value in mixin.__dict__.items():
+        for mixin_cls in cls._mixins():
+            for name, value in mixin_cls.__dict__.items():
                 if name in cls.inherited_vars:
                     continue
                 if is_computed_var(value):
@@ -605,7 +605,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
                     cls.computed_vars[newcv._js_expr] = newcv
                     cls.vars[newcv._js_expr] = newcv
                     continue
-                if types.is_backend_base_variable(name, mixin):  # pyright: ignore [reportArgumentType]
+                if types.is_backend_base_variable(name, mixin_cls):
                     cls.backend_vars[name] = copy.deepcopy(value)
                     continue
                 if events.get(name) is not None:
@@ -907,7 +907,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             raise ValueError(f"Only one parent state is allowed {parent_states}.")
         # The first non-mixin state in the mro is our parent.
         for base in cls.mro()[1:]:
-            if base._mixin or not issubclass(base, BaseState):
+            if not issubclass(base, BaseState) or base._mixin:
                 continue
             if base is BaseState:
                 break
@@ -1702,7 +1702,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
 
         try:
             # Get the delta after processing the event.
-            delta = await _resolve_delta(state.get_delta())
+            delta = await state._get_resolved_delta()
             state._clean()
 
             return StateUpdate(
@@ -1873,11 +1873,13 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
                         tuple(state_name.split("."))
                     )
                 defining_state.dirty_vars.add(cvar)
-                dirty_vars.add(cvar)
                 actual_var = defining_state.computed_vars.get(cvar)
                 if actual_var is not None:
                     actual_var.mark_dirty(instance=defining_state)
-                if defining_state is not self:
+                if defining_state is self:
+                    dirty_vars.add(cvar)
+                else:
+                    # mark dirty where this var is defined
                     defining_state._mark_dirty()
 
     def _expired_computed_vars(self) -> set[str]:
@@ -1946,6 +1948,14 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
 
         # Return the delta.
         return delta
+
+    async def _get_resolved_delta(self) -> Delta:
+        """Get the delta for the state after resolving all coroutines.
+
+        Returns:
+            The resolved delta for the state.
+        """
+        return await _resolve_delta(self.get_delta())
 
     def _mark_dirty(self):
         """Mark the substate and all parent states as dirty."""

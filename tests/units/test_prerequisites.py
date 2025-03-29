@@ -32,7 +32,7 @@ runner = CliRunner()
                 app_name="test",
             ),
             False,
-            'module.exports = {basePath: "", compress: true, trailingSlash: true, staticPageGenerationTimeout: 60};',
+            'module.exports = {basePath: "", compress: true, trailingSlash: true, staticPageGenerationTimeout: 60, devIndicators: false};',
         ),
         (
             Config(
@@ -40,7 +40,7 @@ runner = CliRunner()
                 static_page_generation_timeout=30,
             ),
             False,
-            'module.exports = {basePath: "", compress: true, trailingSlash: true, staticPageGenerationTimeout: 30};',
+            'module.exports = {basePath: "", compress: true, trailingSlash: true, staticPageGenerationTimeout: 30, devIndicators: false};',
         ),
         (
             Config(
@@ -48,7 +48,7 @@ runner = CliRunner()
                 next_compression=False,
             ),
             False,
-            'module.exports = {basePath: "", compress: false, trailingSlash: true, staticPageGenerationTimeout: 60};',
+            'module.exports = {basePath: "", compress: false, trailingSlash: true, staticPageGenerationTimeout: 60, devIndicators: false};',
         ),
         (
             Config(
@@ -56,7 +56,7 @@ runner = CliRunner()
                 frontend_path="/test",
             ),
             False,
-            'module.exports = {basePath: "/test", compress: true, trailingSlash: true, staticPageGenerationTimeout: 60};',
+            'module.exports = {basePath: "/test", compress: true, trailingSlash: true, staticPageGenerationTimeout: 60, devIndicators: false};',
         ),
         (
             Config(
@@ -65,14 +65,22 @@ runner = CliRunner()
                 next_compression=False,
             ),
             False,
-            'module.exports = {basePath: "/test", compress: false, trailingSlash: true, staticPageGenerationTimeout: 60};',
+            'module.exports = {basePath: "/test", compress: false, trailingSlash: true, staticPageGenerationTimeout: 60, devIndicators: false};',
         ),
         (
             Config(
                 app_name="test",
             ),
             True,
-            'module.exports = {basePath: "", compress: true, trailingSlash: true, staticPageGenerationTimeout: 60, output: "export", distDir: "_static"};',
+            'module.exports = {basePath: "", compress: true, trailingSlash: true, staticPageGenerationTimeout: 60, devIndicators: false, output: "export", distDir: "_static"};',
+        ),
+        (
+            Config(
+                app_name="test",
+                next_dev_indicators=True,
+            ),
+            True,
+            'module.exports = {basePath: "", compress: true, trailingSlash: true, staticPageGenerationTimeout: 60, devIndicators: true, output: "export", distDir: "_static"};',
         ),
     ],
 )
@@ -206,7 +214,7 @@ def test_cached_procedure():
     call_count = 0
 
     @cached_procedure(
-        tempfile.mktemp(),
+        cache_file=tempfile.mktemp(),
         payload_fn=lambda *args, **kwargs: f"{repr(args), repr(kwargs)}",
     )
     def _function_with_some_args(*args, **kwargs):
@@ -220,6 +228,20 @@ def test_cached_procedure():
     _function_with_some_args(100, y=300)
     assert call_count == 2
     _function_with_some_args(100, y=300)
+    assert call_count == 2
+
+    call_count = 0
+
+    @cached_procedure(
+        cache_file=None, cache_file_fn=tempfile.mktemp, payload_fn=lambda: "constant"
+    )
+    def _function_with_no_args_fn():
+        nonlocal call_count
+        call_count += 1
+
+    _function_with_no_args_fn()
+    assert call_count == 1
+    _function_with_no_args_fn()
     assert call_count == 2
 
 

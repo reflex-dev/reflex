@@ -4,6 +4,7 @@ from pathlib import Path
 
 import pytest
 
+from reflex import constants
 from reflex.compiler import compiler, utils
 from reflex.utils.imports import ImportVar, ParsedImportDict
 
@@ -104,7 +105,13 @@ def test_compile_imports(import_dict: ParsedImportDict, test_dicts: list[dict]):
     for import_dict, test_dict in zip(imports, test_dicts, strict=True):
         assert import_dict["lib"] == test_dict["lib"]
         assert import_dict["default"] == test_dict["default"]
-        assert sorted(import_dict["rest"]) == test_dict["rest"]  # pyright: ignore [reportArgumentType]
+        assert (
+            sorted(
+                import_dict["rest"],
+                key=lambda i: i if isinstance(i, str) else (i.tag or ""),
+            )
+            == test_dict["rest"]
+        )
 
 
 def test_compile_stylesheets(tmp_path: Path, mocker):
@@ -124,6 +131,13 @@ def test_compile_stylesheets(tmp_path: Path, mocker):
         "button.rt-Button {\n\tborder-radius:unset !important;\n}"
     )
     mocker.patch("reflex.compiler.compiler.Path.cwd", return_value=project)
+    mocker.patch(
+        "reflex.compiler.compiler.get_web_dir",
+        return_value=project / constants.Dirs.WEB,
+    )
+    mocker.patch(
+        "reflex.compiler.utils.get_web_dir", return_value=project / constants.Dirs.WEB
+    )
 
     stylesheets = [
         "https://fonts.googleapis.com/css?family=Sofia&effect=neon|outline|emboss|shadow-multiple",
@@ -133,7 +147,7 @@ def test_compile_stylesheets(tmp_path: Path, mocker):
     ]
 
     assert compiler.compile_root_stylesheet(stylesheets) == (
-        str(Path(".web") / "styles" / "styles.css"),
+        str(project / constants.Dirs.WEB / "styles" / "styles.css"),
         "@import url('./tailwind.css'); \n"
         "@import url('https://fonts.googleapis.com/css?family=Sofia&effect=neon|outline|emboss|shadow-multiple'); \n"
         "@import url('https://cdn.jsdelivr.net/npm/bootstrap@3.3.7/dist/css/bootstrap.min.css'); \n"
@@ -141,7 +155,7 @@ def test_compile_stylesheets(tmp_path: Path, mocker):
         "@import url('https://cdn.jsdelivr.net/npm/bootstrap@3.3.7/dist/css/bootstrap-theme.min.css'); \n",
     )
 
-    assert (project / ".web" / "styles" / "styles.css").read_text() == (
+    assert (project / constants.Dirs.WEB / "styles" / "styles.css").read_text() == (
         assets_dir / "styles.css"
     ).read_text()
 
@@ -173,6 +187,13 @@ def test_compile_stylesheets_scss_sass(tmp_path: Path, mocker):
         "button.rt-Button {\n\tborder-radius:unset !important;\n}"
     )
     mocker.patch("reflex.compiler.compiler.Path.cwd", return_value=project)
+    mocker.patch(
+        "reflex.compiler.compiler.get_web_dir",
+        return_value=project / constants.Dirs.WEB,
+    )
+    mocker.patch(
+        "reflex.compiler.utils.get_web_dir", return_value=project / constants.Dirs.WEB
+    )
 
     stylesheets = [
         "/styles.css",
@@ -181,7 +202,7 @@ def test_compile_stylesheets_scss_sass(tmp_path: Path, mocker):
     ]
 
     assert compiler.compile_root_stylesheet(stylesheets) == (
-        str(Path(".web") / "styles" / "styles.css"),
+        str(project / constants.Dirs.WEB / "styles" / "styles.css"),
         "@import url('./tailwind.css'); \n"
         "@import url('./styles.css'); \n"
         f"@import url('./{Path('preprocess') / Path('styles_a.css')!s}'); \n"
@@ -194,23 +215,23 @@ def test_compile_stylesheets_scss_sass(tmp_path: Path, mocker):
     ]
 
     assert compiler.compile_root_stylesheet(stylesheets) == (
-        str(Path(".web") / "styles" / "styles.css"),
+        str(project / constants.Dirs.WEB / "styles" / "styles.css"),
         "@import url('./tailwind.css'); \n"
         "@import url('./styles.css'); \n"
         f"@import url('./{Path('preprocess') / Path('styles_b.css')!s}'); \n"
         f"@import url('./{Path('preprocess') / Path('styles_a.css')!s}'); \n",
     )
 
-    assert (project / ".web" / "styles" / "styles.css").read_text() == (
+    assert (project / constants.Dirs.WEB / "styles" / "styles.css").read_text() == (
         assets_dir / "styles.css"
     ).read_text()
 
     expected_result = "button.rt-Button{border-radius:unset !important}\n"
     assert (
-        project / ".web" / "styles" / "preprocess" / "styles_a.css"
+        project / constants.Dirs.WEB / "styles" / "preprocess" / "styles_a.css"
     ).read_text() == expected_result
     assert (
-        project / ".web" / "styles" / "preprocess" / "styles_b.css"
+        project / constants.Dirs.WEB / "styles" / "preprocess" / "styles_b.css"
     ).read_text() == expected_result
 
 
@@ -283,7 +304,7 @@ def test_create_document_root():
         utils.Scripts.create(src="bar.js"),
     ]
     root = utils.create_document_root(
-        head_components=comps,  # pyright: ignore [reportArgumentType]
+        head_components=comps,
         html_lang="rx",
         html_custom_attrs={"project": "reflex"},
     )

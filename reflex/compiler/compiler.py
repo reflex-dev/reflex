@@ -230,8 +230,7 @@ def _compile_root_stylesheet(stylesheets: list[str]) -> str:
                 in constants.Reflex.STYLESHEETS_SUPPORTED
             ):
                 target = (
-                    Path.cwd()
-                    / constants.Dirs.WEB
+                    get_web_dir()
                     / constants.Dirs.STYLES
                     / (stylesheet.rsplit(".", 1)[0].strip("/") + ".css")
                 )
@@ -621,7 +620,15 @@ if TYPE_CHECKING:
     from reflex.app import ComponentCallable, UnevaluatedPage
 
 
-def _into_component_once(component: Component | ComponentCallable) -> Component | None:
+def _into_component_once(
+    component: Component
+    | ComponentCallable
+    | tuple[Component, ...]
+    | str
+    | Var
+    | int
+    | float,
+) -> Component | None:
     """Convert a component to a Component.
 
     Args:
