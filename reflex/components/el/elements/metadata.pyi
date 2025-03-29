@@ -1100,7 +1100,11 @@ class StyleEl(Element):
         *children,
         media: Var[str] | str | None = None,
         suppress_hydration_warning: Var[bool] | bool | None = None,
-        style: Style | None = None,
+        style: Sequence[Mapping[str, Any]]
+        | Mapping[str, Any]
+        | Var[Mapping[str, Any]]
+        | Breakpoints
+        | None = None,
         key: Any | None = None,
         id: Any | None = None,
         class_name: Any | None = None,

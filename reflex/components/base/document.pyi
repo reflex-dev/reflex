@@ -16,7 +16,11 @@ class ReactRouterLib(Component):
     def create(  # type: ignore
         cls,
         *children,
-        style: Style | None = None,
+        style: Sequence[Mapping[str, Any]]
+        | Mapping[str, Any]
+        | Var[Mapping[str, Any]]
+        | Breakpoints
+        | None = None,
         key: Any | None = None,
         id: Any | None = None,
         class_name: Any | None = None,
@@ -62,7 +66,11 @@ class Meta(ReactRouterLib):
     def create(  # type: ignore
         cls,
         *children,
-        style: Style | None = None,
+        style: Sequence[Mapping[str, Any]]
+        | Mapping[str, Any]
+        | Var[Mapping[str, Any]]
+        | Breakpoints
+        | None = None,
         key: Any | None = None,
         id: Any | None = None,
         class_name: Any | None = None,
@@ -108,7 +116,11 @@ class Links(ReactRouterLib):
     def create(  # type: ignore
         cls,
         *children,
-        style: Style | None = None,
+        style: Sequence[Mapping[str, Any]]
+        | Mapping[str, Any]
+        | Var[Mapping[str, Any]]
+        | Breakpoints
+        | None = None,
         key: Any | None = None,
         id: Any | None = None,
         class_name: Any | None = None,
