@@ -3943,16 +3943,25 @@ async def test_async_computed_var_get_state(mock_app: rx.App, token: str):
 class Table(rx.ComponentState):
     """A table state."""
 
-    data: ClassVar[Var]
+    _data: ClassVar[Var]
 
     @rx.var(cache=True, auto_deps=False)
-    async def rows(self) -> list[dict[str, Any]]:
+    async def data(self) -> list[dict[str, Any]]:
         """Computed var over the given rows.
 
         Returns:
             The data rows.
         """
-        return await self.get_var_value(self.data)
+        return await self.get_var_value(self._data)
+
+    @rx.var
+    async def foo(self) -> list[dict[str, Any]]:
+        """Another computed var that depends on data in this state.
+
+        Returns:
+            The data rows.
+        """
+        return await self.data
 
     @classmethod
     def get_component(cls, data: Var) -> rx.Component:
@@ -3964,8 +3973,8 @@ class Table(rx.ComponentState):
         Returns:
             The component.
         """
-        cls.data = data
-        cls.computed_vars["rows"].add_dependency(cls, data)
+        cls._data = data
+        cls.computed_vars["data"].add_dependency(cls, data)
         return rx.foreach(data, lambda d: rx.text(d.to_string()))
 
 
@@ -3992,7 +4001,8 @@ async def test_async_computed_var_get_var_value(mock_app: rx.App, token: str):
     assert comp_state.dirty_vars == set()
 
     other_state.data.append({"foo": "baz"})
-    assert "rows" in comp_state.dirty_vars
+    assert "data" in comp_state.dirty_vars
+    assert "foo" in comp_state.dirty_vars
 
 
 def test_computed_var_mutability() -> None:
