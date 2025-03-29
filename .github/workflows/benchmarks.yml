@@ -116,12 +116,12 @@ jobs:
       - name: Install UV
         uses: astral-sh/setup-uv@v5
         with:
-          version: 0.6.5
+          version: 0.6.9
 
       - name: Run uv sync
         shell: bash
         run: |
-          uv pip install --no-install-project --no-dev
+          uv sync --no-install-project --no-dev
 
       - name: calculate and upload size
         run:
