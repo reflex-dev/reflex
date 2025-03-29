@@ -55,6 +55,9 @@ class Foreach(Component):
             ForeachVarError: If the iterable is of type Any.
             TypeError: If the render function is a ComponentState.
             UntypedVarError: If the iterable is of type Any without a type annotation.
+
+        # noqa: DAR401 with_traceback
+        # noqa: DAR402 UntypedVarError
         """
         from reflex.vars import ArrayVar, ObjectVar, StringVar
 
@@ -107,7 +110,7 @@ class Foreach(Component):
                 iterable,
                 "foreach",
                 "https://reflex.dev/docs/library/dynamic-rendering/foreach/",
-            ) from e
+            ).with_traceback(e.__traceback__) from None
         return component
 
     def _render(self) -> IterTag:
