@@ -1099,6 +1099,7 @@ class StyleEl(Element):
         cls,
         *children,
         media: Var[str] | str | None = None,
+        suppress_hydration_warning: Var[bool] | bool | None = None,
         style: Sequence[Mapping[str, Any]]
         | Mapping[str, Any]
         | Var[Mapping[str, Any]]

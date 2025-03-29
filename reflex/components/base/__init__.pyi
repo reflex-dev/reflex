@@ -6,10 +6,10 @@
 from . import app_wrap as app_wrap
 from . import bare as bare
 from .body import Body as Body
-from .document import DocumentHead as DocumentHead
-from .document import Html as Html
-from .document import Main as Main
-from .document import NextScript as NextScript
+from .document import Links as Links
+from .document import Outlet as Outlet
+from .document import Scripts as Scripts
+from .document import ScrollRestoration as ScrollRestoration
 from .error_boundary import ErrorBoundary as ErrorBoundary
 from .error_boundary import error_boundary as error_boundary
 from .fragment import Fragment as Fragment
