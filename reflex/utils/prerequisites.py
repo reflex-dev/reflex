@@ -831,12 +831,15 @@ def initialize_gitignore(
     gitignore_file.write_text("\n".join(files_to_ignore) + "\n")
 
 
-def initialize_requirements_txt():
+def initialize_requirements_txt() -> bool:
     """Initialize the requirements.txt file.
     If absent, generate one for the user.
     If the requirements.txt does not have reflex as dependency,
     generate a requirement pinning current version and append to
     the requirements.txt file.
+
+    Returns:
+        True if the requirements.txt file was created or updated, False otherwise.
 
     Raises:
         Exit: If the requirements.txt file cannot be read or written to.
@@ -844,13 +847,7 @@ def initialize_requirements_txt():
     requirements_file_path = Path(constants.RequirementsTxt.FILE)
     requirements_file_path.touch(exist_ok=True)
 
-    # realistically, these are the only encodings we need to check
-    encodings = [
-        None,
-        "utf-8",
-        "latin1",
-    ]
-    for encoding in encodings:
+    for encoding in [None, "utf-8"]:
         try:
             content = requirements_file_path.read_text(encoding)
             break
@@ -860,13 +857,12 @@ def initialize_requirements_txt():
             console.error(f"Failed to read {requirements_file_path}.")
             raise typer.Exit(1) from e
     else:
-        console.error(f"Failed to read {requirements_file_path}.")
-        raise typer.Exit(1)
+        return False
 
     for line in content.splitlines():
         if re.match(r"^reflex[^a-zA-Z0-9]", line):
             console.debug(f"{requirements_file_path} already has reflex as dependency.")
-            return
+            return True
 
     console.debug(
         f"Appending {constants.RequirementsTxt.DEFAULTS_STUB} to {requirements_file_path}"
@@ -875,6 +871,8 @@ def initialize_requirements_txt():
         f.write(
             "\n" + constants.RequirementsTxt.DEFAULTS_STUB + constants.Reflex.VERSION
         )
+
+    return True
 
 
 def initialize_app_directory(
