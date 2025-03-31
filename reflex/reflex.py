@@ -97,11 +97,18 @@ def _init(
     prerequisites.initialize_gitignore()
 
     # Initialize the requirements.txt.
-    prerequisites.initialize_requirements_txt()
+    wrote_to_requirements = prerequisites.initialize_requirements_txt()
 
     template_msg = f" using the {template} template" if template else ""
     # Finish initializing the app.
-    console.success(f"Initialized {app_name}{template_msg}")
+    console.success(
+        f"Initialized {app_name}{template_msg}."
+        + (
+            f" Make sure to add {constants.RequirementsTxt.DEFAULTS_STUB + constants.Reflex.VERSION} to your requirements.txt or pyproject.toml file."
+            if not wrote_to_requirements
+            else ""
+        )
+    )
 
 
 @cli.command()

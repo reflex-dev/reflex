@@ -11,12 +11,10 @@ from contextlib import contextmanager
 from pathlib import Path
 
 import httpx
-import tomlkit
 import typer
-from tomlkit.exceptions import NonExistentKey, TOMLKitError
 
 from reflex import constants
-from reflex.config import environment, get_config
+from reflex.config import get_config
 from reflex.constants import CustomComponents
 from reflex.utils import console
 
@@ -62,28 +60,6 @@ def _create_package_config(module_name: str, package_name: str):
             reflex_version=constants.Reflex.VERSION,
         )
     )
-
-
-def _get_package_config(exit_on_fail: bool = True) -> dict:
-    """Get the package configuration from the pyproject.toml file.
-
-    Args:
-        exit_on_fail: Whether to exit if the pyproject.toml file is not found.
-
-    Returns:
-        The package configuration.
-
-    Raises:
-        Exit: If the pyproject.toml file is not found and exit_on_fail is True.
-    """
-    pyproject = Path(CustomComponents.PYPROJECT_TOML)
-    try:
-        return dict(tomlkit.loads(pyproject.read_bytes()))
-    except (OSError, TOMLKitError) as ex:
-        console.error(f"Unable to read from {pyproject} due to {ex}")
-        if exit_on_fail:
-            raise typer.Exit(code=1) from ex
-        raise
 
 
 def _create_readme(module_name: str, package_name: str):
@@ -425,12 +401,13 @@ def _make_pyi_files():
     """Create pyi files for the custom component."""
     from reflex.utils.pyi_generator import PyiGenerator
 
-    package_name = _get_package_config()["project"]["name"]
-
-    for dir, _, _ in os.walk(f"./{package_name}"):
-        if "__pycache__" in dir:
+    for top_level_dir in Path.cwd().iterdir():
+        if not top_level_dir.is_dir() or top_level_dir.name.startswith("."):
             continue
-        PyiGenerator().scan_all([dir])
+        for dir, _, _ in top_level_dir.walk():
+            if "__pycache__" in dir.name:
+                continue
+            PyiGenerator().scan_all([dir])
 
 
 def _run_build():
@@ -465,359 +442,18 @@ def build(
     _run_build()
 
 
-def _validate_repository_name(repository: str | None) -> str:
-    """Validate the repository name.
-
-    Args:
-        repository: The name of the repository.
-
-    Returns:
-        The name of the repository.
+@custom_components_cli.command(name="publish", deprecated=True)
+def publish():
+    """Publish a custom component. This command is deprecated and will be removed in future releases.
 
     Raises:
-        Exit: If the repository name is not supported.
+        Exit: If the publish command fails.
     """
-    if repository is None:
-        return "pypi"
-    elif repository not in CustomComponents.REPO_URLS:
-        console.error(
-            f"Unsupported repository name. Allow {CustomComponents.REPO_URLS.keys()}, got {repository}"
-        )
-        raise typer.Exit(code=1)
-    return repository
-
-
-def _validate_credentials(
-    username: str | None, password: str | None, token: str | None
-) -> tuple[str, str]:
-    """Validate the credentials.
-
-    Args:
-        username: The username to use for authentication on python package repository.
-        password: The password to use for authentication on python package repository.
-        token: The token to use for authentication on python package repository.
-
-    Raises:
-        Exit: If the appropriate combination of credentials is not provided.
-
-    Returns:
-        The username and password.
-    """
-    if token is not None:
-        if username is not None or password is not None:
-            console.error("Cannot use token and username/password at the same time.")
-            raise typer.Exit(code=1)
-        username = "__token__"
-        password = token
-    elif username is None or password is None:
-        console.error(
-            "Must provide both username and password for authentication if not using a token."
-        )
-        raise typer.Exit(code=1)
-
-    return username, password
-
-
-def _get_version_to_publish() -> str:
-    """Get the version to publish from the pyproject.toml.
-
-    Returns:
-        The version to publish.
-    """
-    try:
-        return _get_package_config()["project"]["version"]
-    except NonExistentKey:
-        # Try to get the version from dynamic sources
-        import build.util
-
-        return build.util.project_wheel_metadata(".", isolated=True)["version"]
-
-
-def _ensure_dist_dir(version_to_publish: str, build: bool):
-    """Ensure the distribution directory and the expected files exist.
-
-    Args:
-        version_to_publish: The version to be published.
-        build: Whether to build the package first.
-
-    Raises:
-        Exit: If the distribution directory does not exist, or the expected files are not found.
-    """
-    dist_dir = Path(CustomComponents.DIST_DIR)
-
-    if build:
-        # Need to check if the files here are for the version to be published.
-        if dist_dir.exists():
-            # Check if the distribution files are for the version to be published.
-            needs_rebuild = False
-            for suffix in CustomComponents.DISTRIBUTION_FILE_SUFFIXES:
-                if not list(dist_dir.glob(f"*{version_to_publish}*{suffix}")):
-                    console.debug(
-                        f"Expected distribution file with suffix {suffix} for version {version_to_publish} not found in directory {dist_dir.name}"
-                    )
-                    needs_rebuild = True
-                    break
-        else:
-            needs_rebuild = True
-
-        if not needs_rebuild:
-            needs_rebuild = (
-                console.ask(
-                    "Distribution files for the version to be published already exist. Do you want to rebuild?",
-                    choices=["y", "n"],
-                    default="n",
-                )
-                == "y"
-            )
-        if needs_rebuild:
-            _run_build()
-
-    # Check if the distribution directory exists.
-    if not dist_dir.exists():
-        console.error(f"Directory {dist_dir.name} does not exist. Please build first.")
-        raise typer.Exit(code=1)
-
-    # Check if the distribution directory is indeed a directory.
-    if not dist_dir.is_dir():
-        console.error(
-            f"{dist_dir.name} is not a directory. If this is a file you added, move it and rebuild."
-        )
-        raise typer.Exit(code=1)
-
-    # Check if the distribution files exist.
-    for suffix in CustomComponents.DISTRIBUTION_FILE_SUFFIXES:
-        if not list(dist_dir.glob(f"*{suffix}")):
-            console.error(
-                f"Expected distribution file with suffix {suffix} in directory {dist_dir.name}"
-            )
-            raise typer.Exit(code=1)
-
-
-@custom_components_cli.command(name="publish")
-def publish(
-    repository: str | None = typer.Option(
-        None,
-        "-r",
-        "--repository",
-        help="The name of the repository. Defaults to pypi. Only supports pypi and testpypi (Test PyPI) for now.",
-    ),
-    token: str | None = typer.Option(
-        None,
-        "-t",
-        "--token",
-        help="The API token to use for authentication on python package repository. If token is provided, no username/password should be provided at the same time",
-    ),
-    username: str | None = typer.Option(
-        environment.TWINE_USERNAME.get(),
-        "-u",
-        "--username",
-        show_default="TWINE_USERNAME environment variable value if set",
-        help="The username to use for authentication on python package repository. Username and password must both be provided.",
-    ),
-    password: str | None = typer.Option(
-        environment.TWINE_PASSWORD.get(),
-        "-p",
-        "--password",
-        show_default="TWINE_PASSWORD environment variable value if set",
-        help="The password to use for authentication on python package repository. Username and password must both be provided.",
-    ),
-    build: bool = typer.Option(
-        True,
-        help="Whether to build the package before publishing. If the package is already built, set this to False.",
-    ),
-    share: bool = typer.Option(
-        True,
-        help="Whether to prompt to share more details on the published package. Only applicable when published to PyPI. Defaults to True.",
-    ),
-    validate_project_info: bool = typer.Option(
-        True,
-        help="Whether to interactively validate the project information in the pyproject.toml file.",
-    ),
-    loglevel: constants.LogLevel | None = typer.Option(
-        None, help="The log level to use."
-    ),
-):
-    """Publish a custom component. Must be run from the project root directory where the pyproject.toml is.
-
-    Args:
-        repository: The name of the Python package repository, such pypi, testpypi.
-        token: The token to use for authentication on python package repository. If token is provided, no username/password should be provided at the same time.
-        username: The username to use for authentication on python package repository.
-        password: The password to use for authentication on python package repository.
-        build: Whether to build the distribution files. Defaults to True.
-        share: Whether to prompt to share more details on the published package. Defaults to True.
-        validate_project_info: whether to interactively validate the project information in the pyproject.toml file. Defaults to True.
-        loglevel: The log level to use.
-
-    Raises:
-        Exit: If arguments provided are not correct or the publish fails.
-    """
-    console.set_log_level(loglevel or get_config().loglevel)
-
-    # Validate the repository name.
-    repository = _validate_repository_name(repository)
-    console.print(f"Publishing custom component to {repository}...")
-
-    # Validate the credentials.
-    username, password = _validate_credentials(username, password, token)
-
-    # Minimal Validation of the pyproject.toml.
-    _min_validate_project_info()
-
-    # Get the version to publish from the pyproject.toml.
-    version_to_publish = _get_version_to_publish()
-
-    # Validate the distribution directory.
-    _ensure_dist_dir(version_to_publish=version_to_publish, build=build)
-
-    if validate_project_info and (
-        console.ask(
-            "Would you like to interactively review the package information?",
-            choices=["y", "n"],
-            default="y",
-        )
-        == "y"
-    ):
-        _validate_project_info()
-
-    publish_cmds = [
-        sys.executable,
-        "-m",
-        "twine",
-        "upload",
-        "--repository-url",
-        CustomComponents.REPO_URLS[repository],
-        "--username",
-        username,
-        "--password",
-        password,
-        "--non-interactive",
-        f"{CustomComponents.DIST_DIR}/*{version_to_publish}*",
-    ]
-    if _run_commands_in_subprocess(publish_cmds):
-        console.info("Custom component published successfully!")
-    else:
-        raise typer.Exit(1)
-
-    # Only prompt to share more details on the published package if it is published to PyPI.
-    if repository != "pypi" or not share:
-        return
-
-    # Ask user to share more details on the published package.
-    if (
-        console.ask(
-            "Would you like to include your published component on our gallery?",
-            choices=["y", "n"],
-            default="y",
-        )
-        == "n"
-    ):
-        console.print(
-            "If you decide to do this later, you can run `reflex component share` command. Thank you!"
-        )
-        return
-
-    _collect_details_for_gallery()
-
-
-def _process_entered_list(input: str | None) -> list | None:
-    """Process the user entered comma separated list into a list if applicable.
-
-    Args:
-        input: the user entered comma separated list
-
-    Returns:
-        The list of items or None.
-    """
-    return [t.strip() for t in (input or "").split(",") if t if input] or None
-
-
-def _min_validate_project_info():
-    """Ensures minimal project information in the pyproject.toml file.
-
-    Raises:
-        Exit: If the pyproject.toml file is ill-formed.
-    """
-    pyproject_toml = _get_package_config()
-
-    project = pyproject_toml.get("project")
-    if project is None:
-        console.error(
-            f"The project section is not found in {CustomComponents.PYPROJECT_TOML}"
-        )
-        raise typer.Exit(code=1)
-
-    if not project.get("name"):
-        console.error(
-            f"The project name is not found in {CustomComponents.PYPROJECT_TOML}"
-        )
-        raise typer.Exit(code=1)
-
-    if not project.get("version") and "version" not in project.get("dynamic", []):
-        console.error(
-            f"The project version is not found in {CustomComponents.PYPROJECT_TOML}"
-        )
-        raise typer.Exit(code=1)
-
-
-def _validate_project_info():
-    """Validate the project information in the pyproject.toml file.
-
-    Raises:
-        Exit: If the pyproject.toml file is ill-formed.
-    """
-    pyproject_toml = _get_package_config()
-    project = pyproject_toml["project"]
-    console.print(
-        f"Double check the information before publishing: {project['name']} version {_get_version_to_publish()}"
+    console.error(
+        "The publish command is deprecated. You can use `reflex component build` followed by `twine upload` or a similar publishing command to publish your custom component."
+        "\nIf you want to share your custom component with the Reflex community, please use `reflex component share`."
     )
-
-    console.print("Update or enter to keep the current information.")
-    project["description"] = console.ask(
-        "short description", default=project.get("description", "")
-    )
-    # PyPI only shows the first author.
-    author = project.get("authors", [{}])[0]
-    author["name"] = console.ask("Author Name", default=author.get("name", ""))
-    author["email"] = console.ask("Author Email", default=author.get("email", ""))
-
-    console.print(f"Current keywords are: {project.get('keywords') or []}")
-    keyword_action = console.ask(
-        "Keep, replace or append?", choices=["k", "r", "a"], default="k"
-    )
-    new_keywords = []
-    if keyword_action == "r":
-        new_keywords = (
-            _process_entered_list(
-                console.ask("Enter new set of keywords separated by commas")
-            )
-            or []
-        )
-        project["keywords"] = new_keywords
-    elif keyword_action == "a":
-        new_keywords = (
-            _process_entered_list(
-                console.ask("Enter new set of keywords separated by commas")
-            )
-            or []
-        )
-        project["keywords"] = project.get("keywords", []) + new_keywords
-
-    if not project.get("urls"):
-        project["urls"] = {}
-    project["urls"]["homepage"] = console.ask(
-        "homepage URL", default=project["urls"].get("homepage", "")
-    )
-    project["urls"]["source"] = console.ask(
-        "source code URL", default=project["urls"].get("source", "")
-    )
-    pyproject_toml["project"] = project
-    try:
-        with CustomComponents.PYPROJECT_TOML.open("w") as f:
-            tomlkit.dump(pyproject_toml, f)
-    except (OSError, TOMLKitError) as ex:
-        console.error(f"Unable to write to pyproject.toml due to {ex}")
-        raise typer.Exit(code=1) from ex
+    raise typer.Exit(code=1)
 
 
 def _collect_details_for_gallery():
@@ -840,14 +476,8 @@ def _collect_details_for_gallery():
 
     console.rule("[bold]Custom Component Information")
     params = {}
-    package_name = None
-    try:
-        package_name = _get_package_config(exit_on_fail=False)["project"]["name"]
-    except (TOMLKitError, KeyError) as ex:
-        console.debug(
-            f"Unable to read from pyproject.toml in current directory due to {ex}"
-        )
-        package_name = console.ask("[ Published python package name ]")
+
+    package_name = console.ask("[ Published python package name ]")
     console.print(f"[ Custom component package name ] : {package_name}")
     params["package_name"] = package_name
 

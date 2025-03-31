@@ -370,5 +370,5 @@ getattr, __dir__, __all__ = lazy_loader.attach(
 )
 
 
-def __getattr__(name: ModuleType | Any):
+def __getattr__(name: str):
     return getattr(name)
