@@ -18,7 +18,7 @@ inputs:
   uv-version:
     description: "Uv version to install"
     required: false
-    default: "0.6.5"
+    default: "0.6.9"
   run-uv-sync:
     description: "Whether to run uv sync on current dir"
     required: false
