@@ -13,16 +13,12 @@ from reflex.components.core.colors import color
 from reflex.components.core.cond import cond
 from reflex.components.el.elements.inline import A
 from reflex.components.markdown.markdown import MarkdownComponentMap
-from reflex.components.next.link import NextLink
-from reflex.utils.imports import ImportDict
 from reflex.vars.base import Var
 
 from ..base import LiteralAccentColor, RadixThemesComponent
 from .base import LiteralTextSize, LiteralTextTrim, LiteralTextWeight
 
 LiteralLinkUnderline = Literal["auto", "hover", "always", "none"]
-
-next_link = NextLink.create()
 
 
 class Link(RadixThemesComponent, A, MemoizationLeaf, MarkdownComponentMap):
@@ -54,14 +50,6 @@ class Link(RadixThemesComponent, A, MemoizationLeaf, MarkdownComponentMap):
     # If True, the link will open in a new tab
     is_external: Var[bool]
 
-    def add_imports(self) -> ImportDict:
-        """Add imports for the Link component.
-
-        Returns:
-            The import dict.
-        """
-        return next_link._get_imports()  # pyright: ignore [reportReturnType]
-
     @classmethod
     def create(cls, *children, **props) -> Component:
         """Create a Link component.
@@ -87,21 +75,6 @@ class Link(RadixThemesComponent, A, MemoizationLeaf, MarkdownComponentMap):
         if href is not None:
             if not len(children):
                 raise ValueError("Link without a child will not display")
-
-            if "as_child" not in props:
-                # Extract props for the NextLink, the rest go to the Link/A element.
-                known_next_link_props = NextLink.get_props()
-                next_link_props = {}
-                for prop in props.copy():
-                    if prop in known_next_link_props:
-                        next_link_props[prop] = props.pop(prop)
-
-                # If user does not use `as_child`, by default we render using next_link to avoid page refresh during internal navigation
-                return super().create(
-                    NextLink.create(*children, **next_link_props),
-                    as_child=True,
-                    **props,
-                )
         else:
             props["href"] = "#"
 

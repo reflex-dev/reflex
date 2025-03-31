@@ -1,10 +1,14 @@
 """Base class definition for raw HTML elements."""
 
+import pydantic
+
 from reflex.components.component import Component
 
 
 class Element(Component):
     """The base class for all raw HTML elements."""
+
+    _is_tag_in_global_scope = pydantic.PrivateAttr(default_factory=lambda: True)
 
     def __eq__(self, other: object):
         """Two elements are equal if they have the same tag.

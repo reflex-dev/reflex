@@ -63,7 +63,7 @@ from reflex.components.core.banner import (
 )
 from reflex.components.core.breakpoints import set_breakpoints
 from reflex.components.core.client_side_routing import (
-    Default404Page,
+    default_404_page,
     wait_for_client_redirect,
 )
 from reflex.components.core.sticky import sticky
@@ -711,7 +711,7 @@ class App(MiddlewareMixin, LifespanMixin):
 
         if route == constants.Page404.SLUG:
             if component is None:
-                component = Default404Page.create()
+                component = default_404_page
             component = wait_for_client_redirect(self._generate_component(component))
             title = title or constants.Page404.TITLE
             description = description or constants.Page404.DESCRIPTION
@@ -1381,9 +1381,11 @@ class App(MiddlewareMixin, LifespanMixin):
         else:
             # In dev mode, delete removed pages and update existing pages.
             keep_files = [Path(output_path) for output_path, _ in compile_results]
-            for p in Path(prerequisites.get_web_dir() / constants.Dirs.PAGES).rglob(
-                "*"
-            ):
+            for p in Path(
+                prerequisites.get_web_dir()
+                / constants.Dirs.PAGES
+                / constants.Dirs.ROUTES
+            ).rglob("*"):
                 if p.is_file() and p not in keep_files:
                     # Remove pages that are no longer in the app.
                     p.unlink()

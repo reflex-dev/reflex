@@ -38,13 +38,15 @@ class Dirs(SimpleNamespace):
     # The name of the contexts file.
     CONTEXTS_PATH = "/".join([UTILS, "context"])
     # The name of the output static directory.
-    STATIC = "_static"
+    STATIC = "build/client"
     # The name of the public html directory served at "/"
     PUBLIC = "public"
     # The directory where styles are located.
     STYLES = "styles"
     # The name of the pages directory.
-    PAGES = "pages"
+    PAGES = "app"
+    # The name of the routes directory.
+    ROUTES = "routes"
     # The name of the env json file.
     ENV_JSON = "env.json"
     # The name of the reflex json file.

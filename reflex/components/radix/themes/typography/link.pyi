@@ -9,18 +9,14 @@ from reflex.components.component import MemoizationLeaf
 from reflex.components.core.breakpoints import Breakpoints
 from reflex.components.el.elements.inline import A
 from reflex.components.markdown.markdown import MarkdownComponentMap
-from reflex.components.next.link import NextLink
 from reflex.event import EventType
-from reflex.utils.imports import ImportDict
 from reflex.vars.base import Var
 
 from ..base import RadixThemesComponent
 
 LiteralLinkUnderline = Literal["auto", "hover", "always", "none"]
-next_link = NextLink.create()
 
 class Link(RadixThemesComponent, A, MemoizationLeaf, MarkdownComponentMap):
-    def add_imports(self) -> ImportDict: ...
     @overload
     @classmethod
     def create(  # type: ignore
