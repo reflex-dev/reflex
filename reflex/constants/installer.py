@@ -14,10 +14,10 @@ class Bun(SimpleNamespace):
     """Bun constants."""
 
     # The Bun version.
-    VERSION = "1.2.4"
+    VERSION = "1.2.8"
 
     # Min Bun Version
-    MIN_VERSION = "1.2.4"
+    MIN_VERSION = "1.2.8"
 
     # URL to bun install script.
     INSTALL_URL = "https://raw.githubusercontent.com/reflex-dev/reflex/main/scripts/bun_install.sh"
@@ -62,10 +62,8 @@ registry = "{registry}"
 class Node(SimpleNamespace):
     """Node/ NPM constants."""
 
-    # The Node version.
-    VERSION = "22.11.0"
     # The minimum required node version.
-    MIN_VERSION = "18.18.0"
+    MIN_VERSION = "18.0.0"
 
     # Path of the node config file.
     CONFIG_PATH = ".npmrc"
