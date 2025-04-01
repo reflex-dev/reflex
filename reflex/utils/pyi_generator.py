@@ -1132,7 +1132,10 @@ class PyiGenerator:
             name: obj
             for name, obj in vars(module).items()
             if inspect.isclass(obj)
-            and (issubclass(obj, Component) or issubclass(obj, SimpleNamespace))
+            and (
+                rx_types.safe_issubclass(obj, Component)
+                or rx_types.safe_issubclass(obj, SimpleNamespace)
+            )
             and obj != Component
             and inspect.getmodule(obj) == module
         }
