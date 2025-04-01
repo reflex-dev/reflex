@@ -219,7 +219,7 @@ class EventHandler(EventActionsMixin):
         from reflex.utils.exceptions import EventHandlerTypeError
 
         # Get the function args.
-        fn_args = inspect.getfullargspec(self.fn).args[1:]
+        fn_args = list(inspect.signature(self.fn).parameters)[1:]
         fn_args = (Var(_js_expr=arg) for arg in fn_args)
 
         # Construct the payload.
@@ -317,7 +317,9 @@ class EventSpec(EventActionsMixin):
         from reflex.utils.exceptions import EventHandlerTypeError
 
         # Get the remaining unfilled function args.
-        fn_args = inspect.getfullargspec(self.handler.fn).args[1 + len(self.args) :]
+        fn_args = list(inspect.signature(self.handler.fn).parameters)[
+            1 + len(self.args) :
+        ]
         fn_args = (Var(_js_expr=arg) for arg in fn_args)
 
         # Construct the payload.
@@ -1264,7 +1266,9 @@ def call_event_handler(
         type_hints_of_provided_callback = {}
 
     if event_spec_return_types:
-        event_callback_spec = inspect.getfullargspec(event_callback.fn)
+        event_callback_spec_args = list(
+            inspect.signature(event_callback.fn).parameters.keys()
+        )
 
         for event_spec_index, event_spec_return_type in enumerate(
             event_spec_return_types
@@ -1277,7 +1281,7 @@ def call_event_handler(
 
             # check that args of event handler are matching the spec if type hints are provided
             for i, arg in enumerate(
-                event_callback_spec.args[1 : len(args_types_without_vars) + 1]
+                event_callback_spec_args[1 : len(args_types_without_vars) + 1]
             ):
                 if arg not in type_hints_of_provided_callback:
                     continue
@@ -1320,7 +1324,7 @@ def call_event_handler(
 
                     given_string = ", ".join(
                         repr(type_hints_of_provided_callback.get(arg, Any))
-                        for arg in event_callback_spec.args[1:]
+                        for arg in event_callback_spec_args[1:]
                     ).replace("[", "\\[")
 
                     console.warn(
@@ -1424,12 +1428,16 @@ def check_fn_match_arg_spec(
     Raises:
         EventFnArgMismatchError: Raised if the number of mandatory arguments do not match
     """
-    user_args = inspect.getfullargspec(user_func).args
+    user_args = list(inspect.signature(user_func).parameters)
     # Drop the first argument if it's a bound method
     if inspect.ismethod(user_func) and user_func.__self__ is not None:
         user_args = user_args[1:]
 
-    user_default_args = inspect.getfullargspec(user_func).defaults
+    user_default_args = [
+        p.default
+        for p in inspect.signature(user_func).parameters.values()
+        if p.default is not inspect.Parameter.empty
+    ]
     number_of_user_args = len(user_args) - number_of_bound_args
     number_of_user_default_args = len(user_default_args) if user_default_args else 0
 
@@ -1476,7 +1484,7 @@ def call_event_fn(
 
     parsed_args = parse_args_spec(arg_spec)
 
-    number_of_fn_args = len(inspect.getfullargspec(fn).args)
+    number_of_fn_args = len(inspect.signature(fn).parameters)
 
     # Call the function with the parsed args.
     out = fn(*[*parsed_args][:number_of_fn_args])
@@ -1520,7 +1528,7 @@ def get_handler_args(
     Returns:
         The handler args.
     """
-    args = inspect.getfullargspec(event_spec.handler.fn).args
+    args = inspect.signature(event_spec.handler.fn).parameters
 
     return event_spec.args if len(args) > 1 else ()
 
