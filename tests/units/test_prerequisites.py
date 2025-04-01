@@ -77,7 +77,7 @@ runner = CliRunner()
                 next_dev_indicators=True,
             ),
             True,
-            'module.exports = {basePath: "", compress: true, trailingSlash: true, staticPageGenerationTimeout: 60, devIndicators: true, output: "export", distDir: "_static"};',
+            'module.exports = {basePath: "", compress: true, trailingSlash: true, staticPageGenerationTimeout: 60, output: "export", distDir: "_static"};',
         ),
     ],
 )
