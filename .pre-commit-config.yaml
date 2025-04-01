@@ -18,6 +18,17 @@ repos:
         additional_dependencies:
           - tomli
 
+  # Run pyi check before pyright because pyright can fail if pyi files are wrong.
+  - repo: local
+    hooks:
+      - id: update-pyi-files
+        name: update-pyi-files
+        always_run: true
+        language: system
+        require_serial: true
+        description: "Update pyi files as needed"
+        entry: python3 scripts/make_pyi.py
+
   - repo: https://github.com/RobertCraigie/pyright-python
     rev: v1.1.398
     hooks:
