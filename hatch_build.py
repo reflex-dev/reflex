@@ -1,6 +1,8 @@
 """Custom build hook for Hatch."""
 
 import pathlib
+import subprocess
+import sys
 from typing import Any
 
 from hatchling.builders.hooks.plugin.interface import BuildHookInterface
@@ -27,10 +29,8 @@ class CustomBuilder(BuildHookInterface):
         for file in pathlib.Path(self.root).rglob("**/*.pyi"):
             file.unlink(missing_ok=True)
 
-        import subprocess
 
         subprocess.run(
-            import sys
             [sys.executable, "-m", "reflex.utils.pyi_generator"],
             check=True,
         )
