@@ -31,15 +31,16 @@ from typing import (
     get_type_hints,
 )
 
-from fastapi import FastAPI, HTTPException, Request
-from fastapi import UploadFile as FastAPIUploadFile
-from fastapi.middleware import cors
-from fastapi.responses import JSONResponse, StreamingResponse
-from fastapi.staticfiles import StaticFiles
 from rich.progress import MofNCompleteColumn, Progress, TimeElapsedColumn
 from socketio import ASGIApp, AsyncNamespace, AsyncServer
+from starlette.applications import Starlette
 from starlette.datastructures import Headers
 from starlette.datastructures import UploadFile as StarletteUploadFile
+from starlette.exceptions import HTTPException
+from starlette.middleware import cors
+from starlette.requests import Request
+from starlette.responses import JSONResponse, Response, StreamingResponse
+from starlette.staticfiles import StaticFiles
 
 from reflex import constants
 from reflex.admin import AdminDash
@@ -375,7 +376,7 @@ class App(MiddlewareMixin, LifespanMixin):
     _stateful_pages: Dict[str, None] = dataclasses.field(default_factory=dict)
 
     # The backend API object.
-    _api: FastAPI | None = None
+    _api: Starlette | None = None
 
     # The state class to use for the app.
     _state: Type[BaseState] | None = None
@@ -411,7 +412,7 @@ class App(MiddlewareMixin, LifespanMixin):
     toaster: Component | None = dataclasses.field(default_factory=toast.provider)
 
     @property
-    def api(self) -> FastAPI | None:
+    def api(self) -> Starlette | None:
         """Get the backend api.
 
         Returns:
@@ -447,7 +448,7 @@ class App(MiddlewareMixin, LifespanMixin):
             set_breakpoints(self.style.pop("breakpoints"))
 
         # Set up the API.
-        self._api = FastAPI(lifespan=self._run_lifespan_tasks)
+        self._api = Starlette(lifespan=self._run_lifespan_tasks)
         self._add_cors()
         self._add_default_endpoints()
 
@@ -565,7 +566,7 @@ class App(MiddlewareMixin, LifespanMixin):
         """
         return f"<App state={self._state.__name__ if self._state else None}>"
 
-    def __call__(self) -> FastAPI:
+    def __call__(self) -> Starlette:
         """Run the backend api instance.
 
         Raises:
@@ -600,8 +601,16 @@ class App(MiddlewareMixin, LifespanMixin):
         if not self.api:
             return
 
-        self.api.get(str(constants.Endpoint.PING))(ping)
-        self.api.get(str(constants.Endpoint.HEALTH))(health)
+        self.api.add_route(
+            str(constants.Endpoint.PING),
+            ping,
+            methods=["GET"],
+        )
+        self.api.add_route(
+            str(constants.Endpoint.HEALTH),
+            health,
+            methods=["GET"],
+        )
 
     def _add_optional_endpoints(self):
         """Add optional api endpoints (_upload)."""
@@ -612,7 +621,11 @@ class App(MiddlewareMixin, LifespanMixin):
         )
         if Upload.is_used or upload_is_used_marker.exists():
             # To upload files.
-            self.api.post(str(constants.Endpoint.UPLOAD))(upload(self))
+            self.api.add_route(
+                str(constants.Endpoint.UPLOAD),
+                upload(self),
+                methods=["POST"],
+            )
 
             # To access uploaded files.
             self.api.mount(
@@ -624,8 +637,10 @@ class App(MiddlewareMixin, LifespanMixin):
             upload_is_used_marker.parent.mkdir(parents=True, exist_ok=True)
             upload_is_used_marker.touch()
         if codespaces.is_running_in_codespaces():
-            self.api.get(str(constants.Endpoint.AUTH_CODESPACE))(
-                codespaces.auth_codespace
+            self.api.add_route(
+                str(constants.Endpoint.AUTH_CODESPACE),
+                codespaces.auth_codespace,
+                methods=["GET"],
             )
         if environment.REFLEX_ADD_ALL_ROUTES_ENDPOINT.get():
             self.add_all_routes_endpoint()
@@ -1407,9 +1422,14 @@ class App(MiddlewareMixin, LifespanMixin):
         if not self.api:
             return
 
-        @self.api.get(str(constants.Endpoint.ALL_ROUTES))
-        async def all_routes():
-            return list(self._unevaluated_pages.keys())
+        async def all_routes(_request: Request) -> Response:
+            return Response(
+                content=json.dumps(list(self._unevaluated_pages.keys())),
+            )
+
+        self.api.add_route(
+            str(constants.Endpoint.ALL_ROUTES), all_routes, methods=["GET"]
+        )
 
     @contextlib.asynccontextmanager
     async def modify_state(self, token: str) -> AsyncIterator[BaseState]:
@@ -1664,17 +1684,23 @@ async def process(
         raise
 
 
-async def ping() -> str:
+async def ping(_request: Request) -> Response:
     """Test API endpoint.
+
+    Args:
+        _request: The Starlette request object.
 
     Returns:
         The response.
     """
-    return "pong"
+    return Response(content="pong")
 
 
-async def health() -> JSONResponse:
+async def health(_request: Request) -> JSONResponse:
     """Health check endpoint to assess the status of the database and Redis services.
+
+    Args:
+        _request: The Starlette request object.
 
     Returns:
         JSONResponse: A JSON object with the health status:
@@ -1717,12 +1743,11 @@ def upload(app: App):
         The upload function.
     """
 
-    async def upload_file(request: Request, files: list[FastAPIUploadFile]):
+    async def upload_file(request: Request):
         """Upload a file.
 
         Args:
-            request: The FastAPI request object.
-            files: The file(s) to upload.
+            request: The Starlette request object.
 
         Returns:
             StreamingResponse yielding newline-delimited JSON of StateUpdate
@@ -1734,6 +1759,12 @@ def upload(app: App):
             HTTPException: when the request does not include token / handler headers.
         """
         from reflex.utils.exceptions import UploadTypeError, UploadValueError
+
+        # Get the files from the request.
+        files = await request.form()
+        files = files.getlist("files")
+        if not files:
+            raise UploadValueError("No files were uploaded.")
 
         token = request.headers.get("reflex-client-token")
         handler = request.headers.get("reflex-event-handler")
@@ -1787,6 +1818,10 @@ def upload(app: App):
         # event is handled.
         file_copies = []
         for file in files:
+            if not isinstance(file, StarletteUploadFile):
+                raise UploadValueError(
+                    "Uploaded file is not an UploadFile." + str(file)
+                )
             content_copy = io.BytesIO()
             content_copy.write(await file.read())
             content_copy.seek(0)
