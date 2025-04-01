@@ -443,6 +443,8 @@ class App(MiddlewareMixin, LifespanMixin):
                 "rx.BaseState cannot be subclassed directly. Use rx.State instead"
             )
 
+        get_config(reload=True)
+
         if "breakpoints" in self.style:
             set_breakpoints(self.style.pop("breakpoints"))
 
@@ -576,8 +578,6 @@ class App(MiddlewareMixin, LifespanMixin):
         """
         if not self.api:
             raise ValueError("The app has not been initialized.")
-
-        get_config(reload=True)
 
         # For py3.9 compatibility when redis is used, we MUST add any decorator pages
         # before compiling the app in a thread to avoid event loop error (REF-2172).
