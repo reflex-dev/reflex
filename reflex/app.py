@@ -1691,7 +1691,7 @@ async def ping(_request: Request) -> Response:
     Returns:
         The response.
     """
-    return Response(content="pong")
+    return JSONResponse("pong")
 
 
 async def health(_request: Request) -> JSONResponse:
