@@ -1247,7 +1247,7 @@ class PyiGenerator:
                 json.dumps(
                     dict(
                         zip(
-                            [str(f.relative_to(top_dir)) for f in file_paths],
+                            [str(f.relative_to(top_dir.parent)) for f in file_paths],
                             hashes,
                             strict=True,
                         )
