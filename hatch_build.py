@@ -30,6 +30,7 @@ class CustomBuilder(BuildHookInterface):
         import subprocess
 
         subprocess.run(
-            ["python", "-m", "reflex.utils.pyi_generator"],
+            import sys
+            [sys.executable, "-m", "reflex.utils.pyi_generator"],
             check=True,
         )
