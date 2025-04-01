@@ -41,6 +41,7 @@ from starlette.middleware import cors
 from starlette.requests import Request
 from starlette.responses import JSONResponse, Response, StreamingResponse
 from starlette.staticfiles import StaticFiles
+from starlette.types import ASGIApp as ASGIAppType
 
 from reflex import constants
 from reflex.admin import AdminDash
@@ -411,8 +412,11 @@ class App(MiddlewareMixin, LifespanMixin):
     # Put the toast provider in the app wrap.
     toaster: Component | None = dataclasses.field(default_factory=toast.provider)
 
+    # Transform the ASGI app before running it.
+    asgi_transformer: Callable[[ASGIAppType], ASGIAppType] | None = None
+
     @property
-    def api(self) -> Starlette | None:
+    def api(self) -> ASGIAppType | None:
         """Get the backend api.
 
         Returns:
@@ -523,7 +527,7 @@ class App(MiddlewareMixin, LifespanMixin):
         # Register the event namespace with the socket.
         self.sio.register_namespace(self.event_namespace)
         # Mount the socket app with the API.
-        if self.api:
+        if self._api:
 
             class HeaderMiddleware:
                 def __init__(self, app: ASGIApp):
@@ -553,7 +557,7 @@ class App(MiddlewareMixin, LifespanMixin):
                     return await self.app(scope, receive, modified_send)
 
             socket_app_with_headers = HeaderMiddleware(socket_app)
-            self.api.mount(str(constants.Endpoint.EVENT), socket_app_with_headers)
+            self._api.mount(str(constants.Endpoint.EVENT), socket_app_with_headers)
 
         # Check the exception handlers
         self._validate_exception_handlers()
@@ -566,7 +570,7 @@ class App(MiddlewareMixin, LifespanMixin):
         """
         return f"<App state={self._state.__name__ if self._state else None}>"
 
-    def __call__(self) -> Starlette:
+    def __call__(self) -> ASGIAppType:
         """Run the backend api instance.
 
         Raises:
@@ -575,7 +579,9 @@ class App(MiddlewareMixin, LifespanMixin):
         Returns:
             The backend api.
         """
-        if not self.api:
+        asgi_app = self._api
+
+        if not asgi_app:
             raise ValueError("The app has not been initialized.")
 
         # For py3.9 compatibility when redis is used, we MUST add any decorator pages
@@ -593,20 +599,23 @@ class App(MiddlewareMixin, LifespanMixin):
         if is_prod_mode():
             compile_future.result()
 
-        return self.api
+        if self.asgi_transformer:
+            asgi_app = self.asgi_transformer(asgi_app)
+
+        return asgi_app
 
     def _add_default_endpoints(self):
         """Add default api endpoints (ping)."""
         # To test the server.
-        if not self.api:
+        if not self._api:
             return
 
-        self.api.add_route(
+        self._api.add_route(
             str(constants.Endpoint.PING),
             ping,
             methods=["GET"],
         )
-        self.api.add_route(
+        self._api.add_route(
             str(constants.Endpoint.HEALTH),
             health,
             methods=["GET"],
@@ -614,21 +623,21 @@ class App(MiddlewareMixin, LifespanMixin):
 
     def _add_optional_endpoints(self):
         """Add optional api endpoints (_upload)."""
-        if not self.api:
+        if not self._api:
             return
         upload_is_used_marker = (
             prerequisites.get_backend_dir() / constants.Dirs.UPLOAD_IS_USED
         )
         if Upload.is_used or upload_is_used_marker.exists():
             # To upload files.
-            self.api.add_route(
+            self._api.add_route(
                 str(constants.Endpoint.UPLOAD),
                 upload(self),
                 methods=["POST"],
             )
 
             # To access uploaded files.
-            self.api.mount(
+            self._api.mount(
                 str(constants.Endpoint.UPLOAD),
                 StaticFiles(directory=get_upload_dir()),
                 name="uploaded_files",
@@ -637,7 +646,7 @@ class App(MiddlewareMixin, LifespanMixin):
             upload_is_used_marker.parent.mkdir(parents=True, exist_ok=True)
             upload_is_used_marker.touch()
         if codespaces.is_running_in_codespaces():
-            self.api.add_route(
+            self._api.add_route(
                 str(constants.Endpoint.AUTH_CODESPACE),
                 codespaces.auth_codespace,
                 methods=["GET"],
@@ -647,9 +656,9 @@ class App(MiddlewareMixin, LifespanMixin):
 
     def _add_cors(self):
         """Add CORS middleware to the app."""
-        if not self.api:
+        if not self._api:
             return
-        self.api.add_middleware(
+        self._api.add_middleware(
             cors.CORSMiddleware,
             allow_credentials=True,
             allow_methods=["*"],
@@ -905,7 +914,7 @@ class App(MiddlewareMixin, LifespanMixin):
             return
 
         # Get the admin dash.
-        if not self.api:
+        if not self._api:
             return
 
         admin_dash = self.admin_dash
@@ -926,7 +935,7 @@ class App(MiddlewareMixin, LifespanMixin):
                 view = admin_dash.view_overrides.get(model, ModelView)
                 admin.add_view(view(model))
 
-            admin.mount_to(self.api)
+            admin.mount_to(self._api)
 
     def _get_frontend_packages(self, imports: dict[str, set[ImportVar]]):
         """Gets the frontend packages to be installed and filters out the unnecessary ones.
@@ -1419,13 +1428,13 @@ class App(MiddlewareMixin, LifespanMixin):
 
     def add_all_routes_endpoint(self):
         """Add an endpoint to the app that returns all the routes."""
-        if not self.api:
+        if not self._api:
             return
 
         async def all_routes(_request: Request) -> Response:
             return JSONResponse(list(self._unevaluated_pages.keys()))
 
-        self.api.add_route(
+        self._api.add_route(
             str(constants.Endpoint.ALL_ROUTES), all_routes, methods=["GET"]
         )
 
