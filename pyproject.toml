@@ -32,6 +32,7 @@ dependencies = [
   "psutil >=5.9.4,<8.0",
   "pydantic >=1.10.21,<3.0",
   "python-socketio >=5.7.0,<6.0",
+  "python-multipart >=0.0.20,<1.0",
   "redis >=4.3.5,<6.0",
   "reflex-hosting-cli >=0.1.29",
   "rich >=13.0.0,<14.0",
