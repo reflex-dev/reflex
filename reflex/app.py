@@ -1423,9 +1423,7 @@ class App(MiddlewareMixin, LifespanMixin):
             return
 
         async def all_routes(_request: Request) -> Response:
-            return Response(
-                content=json.dumps(list(self._unevaluated_pages.keys())),
-            )
+            return JSONResponse(list(self._unevaluated_pages.keys()))
 
         self.api.add_route(
             str(constants.Endpoint.ALL_ROUTES), all_routes, methods=["GET"]
