@@ -25,14 +25,14 @@ from typing import (
     Callable,
     Coroutine,
     Dict,
-    MutableMapping,
     Type,
     get_args,
     get_type_hints,
 )
 
 from rich.progress import MofNCompleteColumn, Progress, TimeElapsedColumn
-from socketio import ASGIApp, AsyncNamespace, AsyncServer
+from socketio import ASGIApp as EngineIOApp
+from socketio import AsyncNamespace, AsyncServer
 from starlette.applications import Starlette
 from starlette.datastructures import Headers
 from starlette.datastructures import UploadFile as StarletteUploadFile
@@ -41,7 +41,6 @@ from starlette.middleware import cors
 from starlette.requests import Request
 from starlette.responses import JSONResponse, Response, StreamingResponse
 from starlette.staticfiles import StaticFiles
-from starlette.types import ASGIApp as ASGIAppType
 
 from reflex import constants
 from reflex.admin import AdminDash
@@ -110,6 +109,7 @@ from reflex.utils import (
 )
 from reflex.utils.exec import get_compile_context, is_prod_mode, is_testing_env
 from reflex.utils.imports import ImportVar
+from reflex.utils.types import ASGIApp, Message, Receive, Scope, Send
 
 if TYPE_CHECKING:
     from reflex.vars import Var
@@ -413,10 +413,10 @@ class App(MiddlewareMixin, LifespanMixin):
     toaster: Component | None = dataclasses.field(default_factory=toast.provider)
 
     # Transform the ASGI app before running it.
-    asgi_transformer: Callable[[ASGIAppType], ASGIAppType] | None = None
+    asgi_transformer: Callable[[ASGIApp], ASGIApp] | None = None
 
     @property
-    def api(self) -> ASGIAppType | None:
+    def api(self) -> ASGIApp | None:
         """Get the backend api.
 
         Returns:
@@ -518,7 +518,7 @@ class App(MiddlewareMixin, LifespanMixin):
             )
 
         # Create the socket app. Note event endpoint constant replaces the default 'socket.io' path.
-        socket_app = ASGIApp(self.sio, socketio_path="")
+        socket_app = EngineIOApp(self.sio, socketio_path="")
         namespace = config.get_event_namespace()
 
         # Create the event namespace and attach the main app. Not related to any paths.
@@ -533,12 +533,10 @@ class App(MiddlewareMixin, LifespanMixin):
                 def __init__(self, app: ASGIApp):
                     self.app = app
 
-                async def __call__(
-                    self, scope: MutableMapping[str, Any], receive: Any, send: Callable
-                ):
+                async def __call__(self, scope: Scope, receive: Receive, send: Send):
                     original_send = send
 
-                    async def modified_send(message: dict):
+                    async def modified_send(message: Message):
                         if message["type"] == "websocket.accept":
                             if scope.get("subprotocols"):
                                 # The following *does* say "subprotocol" instead of "subprotocols", intentionally.
@@ -570,7 +568,7 @@ class App(MiddlewareMixin, LifespanMixin):
         """
         return f"<App state={self._state.__name__ if self._state else None}>"
 
-    def __call__(self) -> ASGIAppType:
+    def __call__(self) -> ASGIApp:
         """Run the backend api instance.
 
         Raises:
