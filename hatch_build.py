@@ -29,7 +29,6 @@ class CustomBuilder(BuildHookInterface):
         for file in pathlib.Path(self.root).rglob("**/*.pyi"):
             file.unlink(missing_ok=True)
 
-
         subprocess.run(
             [sys.executable, "-m", "reflex.utils.pyi_generator"],
             check=True,
