@@ -68,6 +68,12 @@ build-backend = "hatchling.build"
 [tool.hatch.build]
 include = ["reflex"]
 
+[tool.hatch.build.targets.sdist]
+artifacts = ["*.pyi"]
+
+[tool.hatch.build.targets.wheel]
+artifacts = ["*.pyi"]
+
 [tool.hatch.build.hooks.custom]
 dependencies = ["plotly"]
 require-runtime-dependencies = true

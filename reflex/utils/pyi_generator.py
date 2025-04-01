@@ -1233,3 +1233,13 @@ class PyiGenerator:
                     ):
                         line = line.rstrip() + "  # type: ignore\n"
                     print(line, end="")  # noqa: T201
+
+
+if __name__ == "__main__":
+    logging.basicConfig(level=logging.DEBUG)
+    logging.getLogger("blib2to3.pgen2.driver").setLevel(logging.INFO)
+
+    gen = PyiGenerator()
+    gen.scan_all(
+        ["reflex/components", "reflex/experimental", "reflex/__init__.py"], None
+    )

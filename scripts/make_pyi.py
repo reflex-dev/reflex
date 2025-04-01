@@ -112,7 +112,7 @@ if __name__ == "__main__":
         logger.info(f"Detected changed files: {changed_files}")
 
     gen = PyiGenerator()
-    gen.scan_all(targets, changed_files or None)
+    gen.scan_all(targets, changed_files)
 
     current_commit_sha = subprocess.run(
         ["git", "rev-parse", "HEAD"], capture_output=True, encoding="utf-8"
