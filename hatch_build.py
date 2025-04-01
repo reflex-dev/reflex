@@ -26,7 +26,7 @@ class CustomBuilder(BuildHookInterface):
         if not (pathlib.Path(self.root) / "scripts").exists():
             return
 
-        for file in pathlib.Path(self.root).rglob("**/*.pyi"):
+        for file in (pathlib.Path(self.root) / "reflex").rglob("**/*.pyi"):
             file.unlink(missing_ok=True)
 
         subprocess.run(
