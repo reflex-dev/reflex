@@ -76,7 +76,7 @@ dependencies = ["plotly", "ruff"]
 require-runtime-dependencies = true
 
 [tool.pyright]
-ignore = ["*.pyi"]
+ignore = ["reflex/**/*.pyi"]
 reportIncompatibleMethodOverride = false
 
 [tool.ruff]
