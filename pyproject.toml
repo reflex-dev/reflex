@@ -69,6 +69,7 @@ build-backend = "hatchling.build"
 include = ["reflex"]
 
 [tool.hatch.build.hooks.custom]
+dependencies = ["plotly"]
 require-runtime-dependencies = true
 
 [tool.pyright]

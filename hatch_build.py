@@ -21,13 +21,26 @@ class CustomBuilder(BuildHookInterface):
         print(f"Artifact path: {artifact_path}")
         print(f"Root path: {self.root}")
 
+        if not (pathlib.Path(self.root) / "scripts").exists():
+            return
+
         for file in pathlib.Path(self.root).rglob("**/*.pyi"):
             print(file)
             file.unlink(missing_ok=True)
 
         import subprocess
 
-        subprocess.run(["python", "-m", "scripts.make_pyi"], check=True)
+        p = subprocess.run(
+            ["python", "-m", "scripts.make_pyi"],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            cwd=self.root,
+        )
+        print(p.returncode)
+        print(p.stderr)
+        print(p.stdout)
+        if p.returncode != 0:
+            raise RuntimeError("Failed to generate .pyi files")
 
         for file in pathlib.Path(self.root).rglob("**/*.pyi"):
             print(file)
