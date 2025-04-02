@@ -17,7 +17,7 @@ import psutil
 from reflex import constants
 from reflex.config import environment
 from reflex.utils import console
-from reflex.utils.decorator import once
+from reflex.utils.decorator import once_unless_none
 from reflex.utils.exceptions import ReflexError
 from reflex.utils.prerequisites import ensure_reflex_installation_id, get_project_hash
 
@@ -178,7 +178,7 @@ def _get_event_defaults() -> _DefaultEvent | None:
     }
 
 
-@once
+@once_unless_none
 def get_event_defaults() -> _DefaultEvent | None:
     """Get the default event data.
 
@@ -198,7 +198,7 @@ def _prepare_event(event: str, **kwargs) -> _Event | None:
     Returns:
         The event data.
     """
-    event_data = get_event_defaults() or _get_event_defaults()
+    event_data = get_event_defaults()
     if not event_data:
         return None
 
