@@ -203,3 +203,7 @@ def send_error(error: Exception, context: str):
     """
     if isinstance(error, ReflexError):
         return send("error", detail=type(error).__name__, context=context)
+    else:
+        console.print(
+            f"Error is not a ReflexError: {type(error).__name__}. Not sending telemetry."
+        )
