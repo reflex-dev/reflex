@@ -1171,12 +1171,18 @@ class PyiGenerator:
             if pyi_path:
                 self.written_files.append(pyi_path)
 
-    def scan_all(self, targets: list, changed_files: list[Path] | None = None):
+    def scan_all(
+        self,
+        targets: list,
+        changed_files: list[Path] | None = None,
+        use_json: bool = False,
+    ):
         """Scan all targets for class inheriting Component and generate the .pyi files.
 
         Args:
             targets: the list of file/folders to scan.
             changed_files (optional): the list of changed files since the last run.
+            use_json (optional): whether to use json to store the hashes.
         """
         file_targets = []
         for target in targets:
@@ -1232,53 +1238,60 @@ class PyiGenerator:
         init_files = [f for f in file_paths if "/__init__.pyi" in f]
         subprocess.run(["ruff", "format", *init_files])
 
-        if file_paths and changed_files is None:
-            file_paths = list(map(Path, file_paths))
-            top_dir = file_paths[0].parent
-            for file_path in file_paths:
-                file_parent = file_path.parent
-                while len(file_parent.parts) > len(top_dir.parts):
-                    file_parent = file_parent.parent
-                while not file_parent.samefile(top_dir):
-                    file_parent = file_parent.parent
-                    top_dir = top_dir.parent
+        if use_json:
+            if file_paths and changed_files is None:
+                file_paths = list(map(Path, file_paths))
+                top_dir = file_paths[0].parent
+                for file_path in file_paths:
+                    file_parent = file_path.parent
+                    while len(file_parent.parts) > len(top_dir.parts):
+                        file_parent = file_parent.parent
+                    while not file_parent.samefile(top_dir):
+                        file_parent = file_parent.parent
+                        top_dir = top_dir.parent
 
-            (top_dir.parent / "pyi_hashes.json").write_text(
-                json.dumps(
-                    dict(
-                        zip(
-                            [str(f.relative_to(top_dir.parent)) for f in file_paths],
-                            hashes,
-                            strict=True,
-                        )
-                    ),
-                    indent=2,
-                    sort_keys=True,
-                )
-                + "\n",
-            )
-        elif file_paths:
-            file_paths = list(map(Path, file_paths))
-            pyi_hashes_parent = file_paths[0].parent
-            while (
-                not any(
-                    subfile.name == "pyi_hashes.json"
-                    for subfile in pyi_hashes_parent.iterdir()
-                )
-                and pyi_hashes_parent.parent
-            ):
-                pyi_hashes_parent = pyi_hashes_parent.parent
-
-            pyi_hashes_file = pyi_hashes_parent / "pyi_hashes.json"
-            if pyi_hashes_file.exists():
-                pyi_hashes = json.loads(pyi_hashes_file.read_text())
-                for file_path, hashed_content in zip(file_paths, hashes, strict=False):
-                    pyi_hashes[str(file_path.relative_to(pyi_hashes_parent))] = (
-                        hashed_content
+                (top_dir.parent / "pyi_hashes.json").write_text(
+                    json.dumps(
+                        dict(
+                            zip(
+                                [
+                                    str(f.relative_to(top_dir.parent))
+                                    for f in file_paths
+                                ],
+                                hashes,
+                                strict=True,
+                            )
+                        ),
+                        indent=2,
+                        sort_keys=True,
                     )
-                pyi_hashes_file.write_text(
-                    json.dumps(pyi_hashes, indent=2, sort_keys=True) + "\n"
+                    + "\n",
                 )
+            elif file_paths:
+                file_paths = list(map(Path, file_paths))
+                pyi_hashes_parent = file_paths[0].parent
+                while (
+                    not any(
+                        subfile.name == "pyi_hashes.json"
+                        for subfile in pyi_hashes_parent.iterdir()
+                    )
+                    and pyi_hashes_parent.parent
+                ):
+                    pyi_hashes_parent = pyi_hashes_parent.parent
+
+                pyi_hashes_file = pyi_hashes_parent / "pyi_hashes.json"
+                if pyi_hashes_file.exists():
+                    pyi_hashes = json.loads(pyi_hashes_file.read_text())
+                    for file_path, hashed_content in zip(
+                        file_paths, hashes, strict=False
+                    ):
+                        pyi_hashes[str(file_path.relative_to(pyi_hashes_parent))] = (
+                            hashed_content
+                        )
+                    pyi_hashes_file.write_text(
+                        json.dumps(pyi_hashes, indent=2, sort_keys=True) + "\n"
+                    )
+
         # Post-process the generated pyi files to add hacky type: ignore comments
         for file_path in file_paths:
             with FileInput(file_path, inplace=True) as f:
@@ -1299,5 +1312,7 @@ if __name__ == "__main__":
 
     gen = PyiGenerator()
     gen.scan_all(
-        ["reflex/components", "reflex/experimental", "reflex/__init__.py"], None
+        ["reflex/components", "reflex/experimental", "reflex/__init__.py"],
+        None,
+        use_json=True,
     )
