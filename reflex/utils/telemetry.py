@@ -16,6 +16,7 @@ import psutil
 from reflex import constants
 from reflex.config import environment
 from reflex.utils import console
+from reflex.utils.exceptions import ReflexError
 from reflex.utils.prerequisites import ensure_reflex_installation_id, get_project_hash
 
 UTC = timezone.utc
@@ -200,4 +201,5 @@ def send_error(error: Exception, context: str):
     Returns:
         Whether the telemetry was sent successfully.
     """
-    return send("error", detail=type(error).__name__, context=context)
+    if isinstance(error, ReflexError):
+        return send("error", detail=type(error).__name__, context=context)
