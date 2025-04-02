@@ -1182,7 +1182,7 @@ class PyiGenerator:
         Args:
             targets: the list of file/folders to scan.
             changed_files (optional): the list of changed files since the last run.
-            use_json (optional): whether to use json to store the hashes.
+            use_json: whether to use json to store the hashes.
         """
         file_targets = []
         for target in targets:
