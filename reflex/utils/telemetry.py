@@ -152,7 +152,7 @@ def _send_event(event_data: dict) -> bool:
         return True
 
 
-def _send(event: str, telemetry_enabled: bool | None, **kwargs):
+def _send(event: str, telemetry_enabled: bool | None, **kwargs) -> bool:
     from reflex.config import get_config
 
     # Get the telemetry_enabled from the config if it is not specified.
@@ -168,6 +168,7 @@ def _send(event: str, telemetry_enabled: bool | None, **kwargs):
         if not event_data:
             return False
         return _send_event(event_data)
+    return False
 
 
 def send(event: str, telemetry_enabled: bool | None = None, **kwargs):
@@ -201,9 +202,5 @@ def send_error(error: Exception, context: str):
     Returns:
         Whether the telemetry was sent successfully.
     """
-    if isinstance(error, ReflexError):
-        # Don't send telemetry for ReflexError.
-        return send("error", detail=type(error).__name__, context=context)
-    else:
-        ...
-        # return send("error", detail=type(error).__name__, context=context)
+    send("error", detail=type(error).__name__, context=context)
+    return None
