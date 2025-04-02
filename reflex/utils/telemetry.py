@@ -201,4 +201,8 @@ def send_error(error: Exception, context: str):
     Returns:
         Whether the telemetry was sent successfully.
     """
-    return send("error", detail=type(error).__name__, context=context)
+    if isinstance(error, ReflexError):
+        # Don't send telemetry for ReflexError.
+        return send("error", detail=type(error).__name__, context=context)
+    else:
+        return send("error", detail=type(error).__name__, context=context)
