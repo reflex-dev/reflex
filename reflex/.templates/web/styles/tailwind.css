@@ -1,6 +1,6 @@
 @import "tailwindcss/base";
 
-@import "@radix-ui/themes/styles.css";
+@import "@radix-ui/themes/__reflex_global_styles.css";
 
 @tailwind components;
 @tailwind utilities;

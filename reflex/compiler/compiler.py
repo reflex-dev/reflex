@@ -17,6 +17,7 @@ from reflex.components.component import (
     StatefulComponent,
 )
 from reflex.config import environment, get_config
+from reflex.constants.compiler import PageNames
 from reflex.state import BaseState
 from reflex.style import SYSTEM_COLOR_MODE
 from reflex.utils import console, path_ops
@@ -203,10 +204,10 @@ def _validate_stylesheet(stylesheet_full_path: Path, assets_app_path: Path) -> N
             .parts
         )
         == 1
-        and stylesheet_full_path.stem == "styles"
+        and stylesheet_full_path.stem == PageNames.STYLESHEET_ROOT
     ):
         raise ValueError(
-            f"Stylesheet file name cannot be 'styles': {stylesheet_full_path}"
+            f"Stylesheet file name cannot be '{PageNames.STYLESHEET_ROOT}': {stylesheet_full_path}"
         )
 
 
@@ -249,9 +250,7 @@ def _compile_root_stylesheet(stylesheets: list[str]) -> str:
                 all_files = (
                     file
                     for ext in constants.Reflex.STYLESHEETS_SUPPORTED
-                    for file in stylesheet_full_path.rglob(
-                        "*." + ext, recurse_symlinks=True
-                    )
+                    for file in stylesheet_full_path.rglob("*." + ext)
                 )
                 for file in all_files:
                     if file.is_dir():

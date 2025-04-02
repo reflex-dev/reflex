@@ -6,6 +6,7 @@ import pytest
 
 from reflex import constants
 from reflex.compiler import compiler, utils
+from reflex.constants.compiler import PageNames
 from reflex.utils.imports import ImportVar, ParsedImportDict
 
 
@@ -147,7 +148,12 @@ def test_compile_stylesheets(tmp_path: Path, mocker):
     ]
 
     assert compiler.compile_root_stylesheet(stylesheets) == (
-        str(project / constants.Dirs.WEB / "styles" / "styles.css"),
+        str(
+            project
+            / constants.Dirs.WEB
+            / "styles"
+            / (PageNames.STYLESHEET_ROOT + ".css")
+        ),
         "@import url('./tailwind.css'); \n"
         "@import url('https://fonts.googleapis.com/css?family=Sofia&effect=neon|outline|emboss|shadow-multiple'); \n"
         "@import url('https://cdn.jsdelivr.net/npm/bootstrap@3.3.7/dist/css/bootstrap.min.css'); \n"
@@ -202,7 +208,12 @@ def test_compile_stylesheets_scss_sass(tmp_path: Path, mocker):
     ]
 
     assert compiler.compile_root_stylesheet(stylesheets) == (
-        str(project / constants.Dirs.WEB / "styles" / "styles.css"),
+        str(
+            project
+            / constants.Dirs.WEB
+            / "styles"
+            / (PageNames.STYLESHEET_ROOT + ".css")
+        ),
         "@import url('./tailwind.css'); \n"
         "@import url('./style.css'); \n"
         f"@import url('./{Path('preprocess') / Path('styles_a.css')!s}'); \n"
@@ -215,7 +226,12 @@ def test_compile_stylesheets_scss_sass(tmp_path: Path, mocker):
     ]
 
     assert compiler.compile_root_stylesheet(stylesheets) == (
-        str(project / constants.Dirs.WEB / "styles" / "styles.css"),
+        str(
+            project
+            / constants.Dirs.WEB
+            / "styles"
+            / (PageNames.STYLESHEET_ROOT + ".css")
+        ),
         "@import url('./tailwind.css'); \n"
         "@import url('./style.css'); \n"
         f"@import url('./{Path('preprocess') / Path('styles_a.css')!s}'); \n"
@@ -260,7 +276,7 @@ def test_compile_stylesheets_exclude_tailwind(tmp_path, mocker):
     ]
 
     assert compiler.compile_root_stylesheet(stylesheets) == (
-        str(Path(".web") / "styles" / "styles.css"),
+        str(Path(".web") / "styles" / (PageNames.STYLESHEET_ROOT + ".css")),
         "@import url('./style.css'); \n",
     )
 
@@ -280,7 +296,7 @@ def test_compile_nonexistent_stylesheet(tmp_path, mocker):
 
     mocker.patch("reflex.compiler.compiler.Path.cwd", return_value=project)
 
-    stylesheets = ["/styles.css"]
+    stylesheets = ["/style.css"]
 
     with pytest.raises(FileNotFoundError):
         compiler.compile_root_stylesheet(stylesheets)
