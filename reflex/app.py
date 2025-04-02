@@ -443,6 +443,8 @@ class App(MiddlewareMixin, LifespanMixin):
                 "rx.BaseState cannot be subclassed directly. Use rx.State instead"
             )
 
+        get_config(reload=True)
+
         if "breakpoints" in self.style:
             set_breakpoints(self.style.pop("breakpoints"))
 
