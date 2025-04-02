@@ -68,6 +68,16 @@ build-backend = "hatchling.build"
 [tool.hatch.build]
 include = ["reflex"]
 
+[tool.hatch.build.targets.sdist]
+artifacts = ["*.pyi"]
+
+[tool.hatch.build.targets.wheel]
+artifacts = ["*.pyi"]
+
+[tool.hatch.build.hooks.custom]
+dependencies = ["plotly", "ruff"]
+require-runtime-dependencies = true
+
 [tool.pyright]
 reportIncompatibleMethodOverride = false
 
@@ -132,6 +142,7 @@ dev = [
   "asynctest >=0.13.0,<1.0",
   "darglint >=1.8.1,<2.0",
   "dill >=0.3.8",
+  "hatchling >=1.27.0",
   "libsass >=0.23.0,<1.0",
   "numpy >=2.2.3,<3.0",
   "pandas >=2.1.1,<3.0",
