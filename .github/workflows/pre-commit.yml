@@ -24,4 +24,7 @@ jobs:
           python-version: 3.13.2
           run-uv-sync: true
       - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            pyi_hashes.json
       - run: uv run pre-commit run --all-files
