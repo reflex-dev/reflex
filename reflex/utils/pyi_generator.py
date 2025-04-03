@@ -1250,15 +1250,15 @@ class PyiGenerator:
                         file_parent = file_parent.parent
                         top_dir = top_dir.parent
 
-                possible_pyi_hashes_file = top_dir / "pyi_hashes.json"
-                if not possible_pyi_hashes_file.exists():
+                pyi_hashes_file = top_dir / "pyi_hashes.json"
+                if not pyi_hashes_file.exists():
                     while top_dir.parent and not (top_dir / "pyi_hashes.json").exists():
                         top_dir = top_dir.parent
                     another_pyi_hashes_file = top_dir / "pyi_hashes.json"
                     if another_pyi_hashes_file.exists():
-                        possible_pyi_hashes_file = another_pyi_hashes_file
+                        pyi_hashes_file = another_pyi_hashes_file
 
-                possible_pyi_hashes_file.write_text(
+                pyi_hashes_file.write_text(
                     json.dumps(
                         dict(
                             zip(
@@ -1275,6 +1275,7 @@ class PyiGenerator:
                     )
                     + "\n",
                 )
+                print(pyi_hashes_file)
             elif file_paths:
                 file_paths = list(map(Path, file_paths))
                 pyi_hashes_parent = file_paths[0].parent
@@ -1296,6 +1297,9 @@ class PyiGenerator:
                     pyi_hashes_file.write_text(
                         json.dumps(pyi_hashes, indent=2, sort_keys=True) + "\n"
                     )
+
+                print(pyi_hashes_file)
+        raise
 
         # Post-process the generated pyi files to add hacky type: ignore comments
         for file_path in file_paths:
