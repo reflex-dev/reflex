@@ -1250,12 +1250,20 @@ class PyiGenerator:
                         file_parent = file_parent.parent
                         top_dir = top_dir.parent
 
-                (top_dir.parent / "pyi_hashes.json").write_text(
+                pyi_hashes_file = top_dir / "pyi_hashes.json"
+                if not pyi_hashes_file.exists():
+                    while top_dir.parent and not (top_dir / "pyi_hashes.json").exists():
+                        top_dir = top_dir.parent
+                    another_pyi_hashes_file = top_dir / "pyi_hashes.json"
+                    if another_pyi_hashes_file.exists():
+                        pyi_hashes_file = another_pyi_hashes_file
+
+                pyi_hashes_file.write_text(
                     json.dumps(
                         dict(
                             zip(
                                 [
-                                    str(f.relative_to(top_dir.parent))
+                                    str(f.relative_to(pyi_hashes_file.parent))
                                     for f in file_paths
                                 ],
                                 hashes,
@@ -1271,11 +1279,8 @@ class PyiGenerator:
                 file_paths = list(map(Path, file_paths))
                 pyi_hashes_parent = file_paths[0].parent
                 while (
-                    not any(
-                        subfile.name == "pyi_hashes.json"
-                        for subfile in pyi_hashes_parent.iterdir()
-                    )
-                    and pyi_hashes_parent.parent
+                    pyi_hashes_parent.parent
+                    and not (pyi_hashes_parent / "pyi_hashes.json").exists()
                 ):
                     pyi_hashes_parent = pyi_hashes_parent.parent
 
@@ -1288,6 +1293,7 @@ class PyiGenerator:
                         pyi_hashes[str(file_path.relative_to(pyi_hashes_parent))] = (
                             hashed_content
                         )
+
                     pyi_hashes_file.write_text(
                         json.dumps(pyi_hashes, indent=2, sort_keys=True) + "\n"
                     )
