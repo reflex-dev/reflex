@@ -1286,7 +1286,6 @@ class PyiGenerator:
 
                 pyi_hashes_file = pyi_hashes_parent / "pyi_hashes.json"
                 if pyi_hashes_file.exists():
-                    print("Existing pyi_hashes.json found, updating...")  # noqa: T201
                     pyi_hashes = json.loads(pyi_hashes_file.read_text())
                     for file_path, hashed_content in zip(
                         file_paths, hashes, strict=False
@@ -1297,8 +1296,6 @@ class PyiGenerator:
                     pyi_hashes_file.write_text(
                         json.dumps(pyi_hashes, indent=2, sort_keys=True) + "\n"
                     )
-                else:
-                    raise
 
         # Post-process the generated pyi files to add hacky type: ignore comments
         for file_path in file_paths:
