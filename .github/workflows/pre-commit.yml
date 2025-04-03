@@ -26,4 +26,4 @@ jobs:
       - uses: actions/checkout@v4
         with:
           clean: false
-      - run: uv run pre-commit run --all-files --verbose
+      - run: uv run pre-commit run --all-files --show-diff-on-failure
