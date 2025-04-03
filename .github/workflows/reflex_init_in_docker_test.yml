@@ -1,4 +1,6 @@
 name: reflex-init-in-docker-test
+permissions:
+  contents: read
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.id }}
