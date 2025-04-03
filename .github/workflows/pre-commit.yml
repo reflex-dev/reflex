@@ -23,4 +23,7 @@ jobs:
         with:
           python-version: 3.13.2
           run-uv-sync: true
-      - run: uv run pre-commit run --all-files
+      - uses: actions/checkout@v4
+        with:
+          clean: false
+      - run: uv run pre-commit run --all-files --show-diff-on-failure

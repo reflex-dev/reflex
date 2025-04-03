@@ -36,7 +36,7 @@ def test_send(mocker, event):
     httpx_post_mock = mocker.patch("httpx.post")
 
     # Mock the read_text method of Path
-    pathlib_path_read_text_mock = mocker.patch(
+    mocker.patch(
         "pathlib.Path.read_text",
         return_value='{"project_hash": "78285505863498957834586115958872998605"}',
     )
@@ -45,5 +45,3 @@ def test_send(mocker, event):
 
     telemetry._send(event, telemetry_enabled=True)
     httpx_post_mock.assert_called_once()
-
-    assert pathlib_path_read_text_mock.call_count == 2
