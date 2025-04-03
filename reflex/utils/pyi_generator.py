@@ -1263,7 +1263,7 @@ class PyiGenerator:
                         dict(
                             zip(
                                 [
-                                    str(f.relative_to(top_dir.parent))
+                                    str(f.relative_to(pyi_hashes_file.parent))
                                     for f in file_paths
                                 ],
                                 hashes,
@@ -1294,12 +1294,9 @@ class PyiGenerator:
                             hashed_content
                         )
 
-                    new_content = (
+                    pyi_hashes_file.write_text(
                         json.dumps(pyi_hashes, indent=2, sort_keys=True) + "\n"
                     )
-
-                    if pyi_hashes_file.read_text() != new_content:
-                        pyi_hashes_file.write_text(new_content)
 
         # Post-process the generated pyi files to add hacky type: ignore comments
         for file_path in file_paths:
