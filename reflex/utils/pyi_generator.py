@@ -1299,6 +1299,7 @@ class PyiGenerator:
                     )
 
                 print(pyi_hashes_file)
+        print(self.written_files)
         raise
 
         # Post-process the generated pyi files to add hacky type: ignore comments
