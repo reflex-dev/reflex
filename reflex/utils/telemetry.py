@@ -97,24 +97,6 @@ def _raise_on_missing_project_hash() -> bool:
     return not environment.REFLEX_SKIP_COMPILE.get()
 
 
-def _get_installation_id():
-    """Get the installation ID.
-
-    Returns:
-        The installation ID.
-    """
-    return ensure_reflex_installation_id()
-
-
-def _get_project_hash():
-    """Get the project hash.
-
-    Returns:
-        The project hash.
-    """
-    return get_project_hash(raise_on_fail=_raise_on_missing_project_hash())
-
-
 class _Properties(TypedDict):
     """Properties type for telemetry."""
 
@@ -151,8 +133,8 @@ def _get_event_defaults() -> _DefaultEvent | None:
     """
     from reflex.utils.prerequisites import get_cpu_info
 
-    installation_id = _get_installation_id()
-    project_hash = _get_project_hash()
+    installation_id = ensure_reflex_installation_id()
+    project_hash = get_project_hash(raise_on_fail=_raise_on_missing_project_hash())
 
     if installation_id is None or project_hash is None:
         console.debug(
