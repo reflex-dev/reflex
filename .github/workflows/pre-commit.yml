@@ -23,4 +23,5 @@ jobs:
         with:
           python-version: 3.13.2
           run-uv-sync: true
+      - uses: actions/checkout@v4
       - run: uv run pre-commit run --all-files
