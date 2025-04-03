@@ -26,6 +26,4 @@ jobs:
       - uses: actions/checkout@v4
         with:
           clean: false
-          sparse-checkout: |
-            pyi_hashes.json
       - run: uv run pre-commit run --all-files
