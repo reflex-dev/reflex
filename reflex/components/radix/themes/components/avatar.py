@@ -18,7 +18,7 @@ class Avatar(RadixThemesComponent):
     # The variant of the avatar
     variant: Var[Literal["solid", "soft"]]
 
-    # The size of the avatar: "1" - "9". Default is "4"
+    # The size of the avatar: "1" - "9"
     size: Var[Responsive[LiteralSize]]
 
     # Color theme of the avatar
