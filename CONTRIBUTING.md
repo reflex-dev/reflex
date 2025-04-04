@@ -8,7 +8,6 @@ Here is a quick guide on how to run Reflex repo locally so you can start contrib
 
 **Prerequisites:**
 
-- Python >= 3.10
 - uv version >= 0.6.0 and add it to your path (see [UV Docs](https://docs.astral.sh/uv/getting-started/installation/) for more info).
 
 **1. Fork this repository:**
@@ -24,7 +23,7 @@ cd reflex
 **3. Install your local Reflex build:**
 
 ```bash
-uv sync
+uv sync --python 3.13
 ```
 
 **4. Now create an examples folder so you can test the local Python build in this repository.**
