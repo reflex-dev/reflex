@@ -1,4 +1,6 @@
 name: pre-commit
+permissions:
+  contents: read
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.id }}
