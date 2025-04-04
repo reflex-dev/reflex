@@ -293,6 +293,7 @@ class UnevaluatedPage:
     image: str
     on_load: EventType[()] | None
     meta: list[dict[str, str]]
+    context: dict[str, Any] | None
 
 
 @dataclasses.dataclass()
@@ -681,6 +682,7 @@ class App(MiddlewareMixin, LifespanMixin):
         image: str = constants.DefaultPage.IMAGE,
         on_load: EventType[()] | None = None,
         meta: list[dict[str, str]] = constants.DefaultPage.META_LIST,
+        context: dict[str, Any] | None = None,
     ):
         """Add a page to the app.
 
@@ -695,6 +697,7 @@ class App(MiddlewareMixin, LifespanMixin):
             image: The image to display on the page.
             on_load: The event handler(s) that will be called each time the page load.
             meta: The metadata of the page.
+            context: Values passed to page for custom page-specific logic.
 
         Raises:
             PageValueError: When the component is not set for a non-404 page.
@@ -762,6 +765,7 @@ class App(MiddlewareMixin, LifespanMixin):
             image=image,
             on_load=on_load,
             meta=meta,
+            context=context,
         )
 
     def _compile_page(self, route: str, save_page: bool = True):
