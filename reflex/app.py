@@ -26,7 +26,6 @@ from typing import (
     Coroutine,
     Dict,
     MutableMapping,
-    Optional,
     Type,
     get_args,
     get_type_hints,
@@ -294,7 +293,7 @@ class UnevaluatedPage:
     image: str
     on_load: EventType[()] | None
     meta: list[dict[str, str]]
-    config: dict[str, Any] | None
+    context: dict[str, Any] | None
 
 
 @dataclasses.dataclass()
@@ -683,7 +682,7 @@ class App(MiddlewareMixin, LifespanMixin):
         image: str = constants.DefaultPage.IMAGE,
         on_load: EventType[()] | None = None,
         meta: list[dict[str, str]] = constants.DefaultPage.META_LIST,
-        config: Optional[dict[str, Any]] | None = None,
+        context: dict[str, Any] | None = None,
     ):
         """Add a page to the app.
 
@@ -698,7 +697,7 @@ class App(MiddlewareMixin, LifespanMixin):
             image: The image to display on the page.
             on_load: The event handler(s) that will be called each time the page load.
             meta: The metadata of the page.
-            config: Extends functionality for custom page flows.
+            context: Extends functionality where user can store special page info.
 
         Raises:
             PageValueError: When the component is not set for a non-404 page.
@@ -766,7 +765,7 @@ class App(MiddlewareMixin, LifespanMixin):
             image=image,
             on_load=on_load,
             meta=meta,
-            config=config,
+            context=context,
         )
 
     def _compile_page(self, route: str, save_page: bool = True):
