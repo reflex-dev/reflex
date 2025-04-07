@@ -13,7 +13,9 @@ from reflex.constants import Dirs, EventTriggers
 from reflex.event import (
     EventChain,
     EventHandler,
+    float_input_event,
     input_event,
+    int_input_event,
     key_event,
     prevent_default,
 )
@@ -393,13 +395,13 @@ class Input(BaseHTML):
     value: Var[str | int | float]
 
     # Fired when the input value changes
-    on_change: EventHandler[input_event]
+    on_change: EventHandler[(input_event, int_input_event, float_input_event)]
 
     # Fired when the input gains focus
-    on_focus: EventHandler[input_event]
+    on_focus: EventHandler[(input_event, int_input_event, float_input_event)]
 
     # Fired when the input loses focus
-    on_blur: EventHandler[input_event]
+    on_blur: EventHandler[(input_event, int_input_event, float_input_event)]
 
     # Fired when a key is pressed down
     on_key_down: EventHandler[key_event]

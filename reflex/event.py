@@ -545,6 +545,30 @@ def input_event(e: ObjectVar[JavascriptInputEvent]) -> tuple[Var[str]]:
     return (e.target.value,)
 
 
+def int_input_event(e: ObjectVar[JavascriptInputEvent]) -> tuple[Var[int]]:
+    """Get the value from an input event as an int.
+
+    Args:
+        e: The input event.
+
+    Returns:
+        The value from the input event as an int.
+    """
+    return (Var("Number").to(FunctionVar).call(e.target.value).to(int),)
+
+
+def float_input_event(e: ObjectVar[JavascriptInputEvent]) -> tuple[Var[float]]:
+    """Get the value from an input event as a float.
+
+    Args:
+        e: The input event.
+
+    Returns:
+        The value from the input event as a float.
+    """
+    return (Var("Number").to(FunctionVar).call(e.target.value).to(float),)
+
+
 class KeyInputInfo(TypedDict):
     """Information about a key input event."""
 

@@ -731,6 +731,9 @@ class Var(Generic[VAR_TYPE]):
     def to(self, output: Type[bool]) -> BooleanVar: ...
 
     @overload
+    def to(self, output: type[int]) -> NumberVar[int]: ...
+
+    @overload
     def to(self, output: type[int] | type[float]) -> NumberVar: ...
 
     @overload
