@@ -629,6 +629,7 @@ def deploy(
         deploy_url,
         frontend,
         backend,
+        upload_db,
         zipping: export_utils.export(
             zip_dest_dir=zip_dest_dir,
             api_url=api_url,
@@ -637,6 +638,7 @@ def deploy(
             backend=backend,
             zipping=zipping,
             loglevel=loglevel.subprocess_level(),
+            upload_db_file=upload_db,
         ),
         regions=regions,
         envs=envs,
