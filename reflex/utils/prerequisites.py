@@ -1414,13 +1414,11 @@ def validate_bun():
             )
             raise typer.Exit(1)
         elif bun_version < version.parse(constants.Bun.MIN_VERSION):
-            console.error(
+            console.warn(
                 f"Reflex requires bun version {constants.Bun.MIN_VERSION} or higher to run, but the detected version is "
                 f"{bun_version}. If you have specified a custom bun path in your config, make sure to provide one "
-                f"that satisfies the minimum version requirement."
+                f"that satisfies the minimum version requirement. You can upgrade bun by running [bold]bun upgrade[/bold]."
             )
-
-            raise typer.Exit(1)
 
 
 def validate_frontend_dependencies(init: bool = True):
