@@ -44,6 +44,7 @@ from typing import (
     overload,
 )
 
+from rich.markup import escape
 from sqlalchemy.orm import DeclarativeBase
 from typing_extensions import deprecated, override
 
@@ -2371,7 +2372,7 @@ class ComputedVar(Var[RETURN_TYPE]):
         if not _isinstance(value, self._var_type, nested=1, treat_var_as_type=False):
             console.error(
                 f"Computed var '{type(instance).__name__}.{self._js_expr}' must return"
-                f" a value of type '{self._var_type}', got '{value!s}' of type {type(value)}."
+                f" a value of type '{escape(str(self._var_type))}', got '{value!s}' of type {type(value)}."
             )
 
     def _deps(
