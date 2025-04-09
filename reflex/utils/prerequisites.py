@@ -195,6 +195,9 @@ def get_node_version() -> version.Version | None:
 def get_bun_version(bun_path: Path | None = None) -> version.Version | None:
     """Get the version of bun.
 
+    Args:
+        bun_path: The path to the bun executable.
+
     Returns:
         The version of bun.
     """
@@ -1404,6 +1407,9 @@ def is_latest_template() -> bool:
 
 def validate_bun(bun_path: Path | None = None):
     """Validate bun if a custom bun path is specified to ensure the bun version meets requirements.
+
+    Args:
+        bun_path: The path to the bun executable. If None, the default bun path is used.
 
     Raises:
         Exit: If custom specified bun does not exist or does not meet requirements.
