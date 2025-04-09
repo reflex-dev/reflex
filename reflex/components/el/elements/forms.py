@@ -572,6 +572,12 @@ class Select(BaseHTML):
     # Fired when the select value changes
     on_change: EventHandler[input_event]
 
+    # The controlled value of the select, read only unless used with on_change
+    value: Var[str]
+
+    # The default value of the select when initially rendered
+    default_value: Var[str]
+
 
 AUTO_HEIGHT_JS = """
 const autoHeightOnInput = (e, is_enabled) => {

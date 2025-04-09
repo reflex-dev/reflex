@@ -6,11 +6,13 @@ import ast
 import contextlib
 import importlib
 import inspect
+import json
 import logging
 import re
 import subprocess
 import typing
 from fileinput import FileInput
+from hashlib import md5
 from inspect import getfullargspec
 from itertools import chain
 from multiprocessing import Pool, cpu_count
@@ -1058,9 +1060,9 @@ class PyiGenerator:
     modules: list = []
     root: str = ""
     current_module: Any = {}
-    written_files: list[str] = []
+    written_files: list[tuple[str, str]] = []
 
-    def _write_pyi_file(self, module_path: Path, source: str):
+    def _write_pyi_file(self, module_path: Path, source: str) -> str:
         relpath = str(_relative_to_pwd(module_path)).replace("\\", "/")
         pyi_content = (
             "\n".join(
@@ -1078,6 +1080,7 @@ class PyiGenerator:
         pyi_path = module_path.with_suffix(".pyi")
         pyi_path.write_text(pyi_content)
         logger.info(f"Wrote {relpath}")
+        return md5(pyi_content.encode()).hexdigest()
 
     def _get_init_lazy_imports(self, mod: tuple | ModuleType, new_tree: ast.AST):
         # retrieve the _SUBMODULES and _SUBMOD_ATTRS from an init file if present.
@@ -1118,7 +1121,7 @@ class PyiGenerator:
         text += ast.unparse(new_tree) + "\n"
         return text
 
-    def _scan_file(self, module_path: Path) -> str | None:
+    def _scan_file(self, module_path: Path) -> tuple[str, str] | None:
         module_import = (
             _relative_to_pwd(module_path)
             .with_suffix("")
@@ -1132,7 +1135,10 @@ class PyiGenerator:
             name: obj
             for name, obj in vars(module).items()
             if inspect.isclass(obj)
-            and (issubclass(obj, Component) or issubclass(obj, SimpleNamespace))
+            and (
+                rx_types.safe_issubclass(obj, Component)
+                or rx_types.safe_issubclass(obj, SimpleNamespace)
+            )
             and obj != Component
             and inspect.getmodule(obj) == module
         }
@@ -1147,13 +1153,13 @@ class PyiGenerator:
             init_imports = self._get_init_lazy_imports(module, new_tree)
             if not init_imports:
                 return
-            self._write_pyi_file(module_path, init_imports)
+            content_hash = self._write_pyi_file(module_path, init_imports)
         else:
             new_tree = StubGenerator(module, class_names).visit(
                 ast.parse(inspect.getsource(module))
             )
-            self._write_pyi_file(module_path, ast.unparse(new_tree))
-        return str(module_path.with_suffix(".pyi").resolve())
+            content_hash = self._write_pyi_file(module_path, ast.unparse(new_tree))
+        return str(module_path.with_suffix(".pyi").resolve()), content_hash
 
     def _scan_files_multiprocess(self, files: list[Path]):
         with Pool(processes=cpu_count()) as pool:
@@ -1165,12 +1171,18 @@ class PyiGenerator:
             if pyi_path:
                 self.written_files.append(pyi_path)
 
-    def scan_all(self, targets: list, changed_files: list[Path] | None = None):
+    def scan_all(
+        self,
+        targets: list,
+        changed_files: list[Path] | None = None,
+        use_json: bool = False,
+    ):
         """Scan all targets for class inheriting Component and generate the .pyi files.
 
         Args:
             targets: the list of file/folders to scan.
             changed_files (optional): the list of changed files since the last run.
+            use_json: whether to use json to store the hashes.
         """
         file_targets = []
         for target in targets:
@@ -1212,17 +1224,82 @@ class PyiGenerator:
         else:
             self._scan_files_multiprocess(file_targets)
 
+        file_paths, hashes = (
+            [f[0] for f in self.written_files],
+            [f[1] for f in self.written_files],
+        )
+
         # Fix generated pyi files with ruff.
-        if self.written_files:
-            subprocess.run(["ruff", "format", *self.written_files])
-            subprocess.run(["ruff", "check", "--fix", *self.written_files])
+        if file_paths:
+            subprocess.run(["ruff", "format", *file_paths])
+            subprocess.run(["ruff", "check", "--fix", *file_paths])
 
         # For some reason, we need to format the __init__.pyi files again after fixing...
-        init_files = [f for f in self.written_files if "/__init__.pyi" in f]
+        init_files = [f for f in file_paths if "/__init__.pyi" in f]
         subprocess.run(["ruff", "format", *init_files])
 
+        if use_json:
+            if file_paths and changed_files is None:
+                file_paths = list(map(Path, file_paths))
+                top_dir = file_paths[0].parent
+                for file_path in file_paths:
+                    file_parent = file_path.parent
+                    while len(file_parent.parts) > len(top_dir.parts):
+                        file_parent = file_parent.parent
+                    while not file_parent.samefile(top_dir):
+                        file_parent = file_parent.parent
+                        top_dir = top_dir.parent
+
+                pyi_hashes_file = top_dir / "pyi_hashes.json"
+                if not pyi_hashes_file.exists():
+                    while top_dir.parent and not (top_dir / "pyi_hashes.json").exists():
+                        top_dir = top_dir.parent
+                    another_pyi_hashes_file = top_dir / "pyi_hashes.json"
+                    if another_pyi_hashes_file.exists():
+                        pyi_hashes_file = another_pyi_hashes_file
+
+                pyi_hashes_file.write_text(
+                    json.dumps(
+                        dict(
+                            zip(
+                                [
+                                    str(f.relative_to(pyi_hashes_file.parent))
+                                    for f in file_paths
+                                ],
+                                hashes,
+                                strict=True,
+                            )
+                        ),
+                        indent=2,
+                        sort_keys=True,
+                    )
+                    + "\n",
+                )
+            elif file_paths:
+                file_paths = list(map(Path, file_paths))
+                pyi_hashes_parent = file_paths[0].parent
+                while (
+                    pyi_hashes_parent.parent
+                    and not (pyi_hashes_parent / "pyi_hashes.json").exists()
+                ):
+                    pyi_hashes_parent = pyi_hashes_parent.parent
+
+                pyi_hashes_file = pyi_hashes_parent / "pyi_hashes.json"
+                if pyi_hashes_file.exists():
+                    pyi_hashes = json.loads(pyi_hashes_file.read_text())
+                    for file_path, hashed_content in zip(
+                        file_paths, hashes, strict=False
+                    ):
+                        pyi_hashes[str(file_path.relative_to(pyi_hashes_parent))] = (
+                            hashed_content
+                        )
+
+                    pyi_hashes_file.write_text(
+                        json.dumps(pyi_hashes, indent=2, sort_keys=True) + "\n"
+                    )
+
         # Post-process the generated pyi files to add hacky type: ignore comments
-        for file_path in self.written_files:
+        for file_path in file_paths:
             with FileInput(file_path, inplace=True) as f:
                 for line in f:
                     # Hack due to ast not supporting comments in the tree.
@@ -1233,3 +1310,15 @@ class PyiGenerator:
                     ):
                         line = line.rstrip() + "  # type: ignore\n"
                     print(line, end="")  # noqa: T201
+
+
+if __name__ == "__main__":
+    logging.basicConfig(level=logging.INFO)
+    logging.getLogger("blib2to3.pgen2.driver").setLevel(logging.INFO)
+
+    gen = PyiGenerator()
+    gen.scan_all(
+        ["reflex/components", "reflex/experimental", "reflex/__init__.py"],
+        None,
+        use_json=True,
+    )

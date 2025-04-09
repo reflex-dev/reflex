@@ -151,7 +151,7 @@ def cond(condition: Any, c1: Any, c2: Any = types.Unset(), /) -> Component | Var
     c1_var = Var.create(c1)
     c2_var = Var.create(c2)
 
-    if condition is c1_var:
+    if c1_var is cond_var or c1_var.equals(cond_var):
         c1_var = c1_var.to(types.value_inside_optional(c1_var._var_type))
 
     # Create the conditional var.
