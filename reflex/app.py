@@ -937,11 +937,9 @@ class App(MiddlewareMixin, LifespanMixin):
             and i != ""
             and any(tag.install for tag in tags)
         }
-        page_imports = {
-            i
-            for i in page_imports
-            if not any(j.rpartition("@")[0] == i for j in page_imports)
-        }
+        pinned = {i.rpartition("@")[0] for i in page_imports if "@" in i}
+        page_imports = {i for i in page_imports if i not in pinned}
+
         frontend_packages = get_config().frontend_packages
         _frontend_packages = []
         for package in frontend_packages:
