@@ -192,13 +192,13 @@ def get_node_version() -> version.Version | None:
         return None
 
 
-def get_bun_version() -> version.Version | None:
+def get_bun_version(bun_path: Path | None = None) -> version.Version | None:
     """Get the version of bun.
 
     Returns:
         The version of bun.
     """
-    bun_path = path_ops.get_bun_path()
+    bun_path = bun_path or path_ops.get_bun_path()
     if bun_path is None:
         return None
     try:
@@ -1153,11 +1153,19 @@ def install_bun():
             "Creating project directories in OneDrive is not recommended for bun usage on windows. This will fallback to npm."
         )
 
+    bun_path = path_ops.get_bun_path()
+
     # Skip if bun is already installed.
-    if (current_version := get_bun_version()) and current_version >= version.parse(
-        constants.Bun.MIN_VERSION
+    if (
+        bun_path
+        and (current_version := get_bun_version(bun_path=bun_path))
+        and current_version >= version.parse(constants.Bun.MIN_VERSION)
     ):
         console.debug("Skipping bun installation as it is already installed.")
+        return
+
+    if bun_path and path_ops.use_system_bun():
+        validate_bun(bun_path=bun_path)
         return
 
     #  if unzip is installed
@@ -1394,13 +1402,13 @@ def is_latest_template() -> bool:
     return app_version == constants.Reflex.VERSION
 
 
-def validate_bun():
+def validate_bun(bun_path: Path | None = None):
     """Validate bun if a custom bun path is specified to ensure the bun version meets requirements.
 
     Raises:
         Exit: If custom specified bun does not exist or does not meet requirements.
     """
-    bun_path = path_ops.get_bun_path()
+    bun_path = bun_path or path_ops.get_bun_path()
 
     if bun_path is None:
         return
@@ -1436,15 +1444,12 @@ def validate_frontend_dependencies(init: bool = True):
         except FileNotFoundError as e:
             raise typer.Exit(1) from e
 
-    if prefer_npm_over_bun():
-        if not check_node_version():
-            node_version = get_node_version()
-            console.error(
-                f"Reflex requires node version {constants.Node.MIN_VERSION} or higher to run, but the detected version is {node_version}",
-            )
-            raise typer.Exit(1)
-    else:
-        validate_bun()
+    if prefer_npm_over_bun() and not check_node_version():
+        node_version = get_node_version()
+        console.error(
+            f"Reflex requires node version {constants.Node.MIN_VERSION} or higher to run, but the detected version is {node_version}",
+        )
+        raise typer.Exit(1)
 
 
 def ensure_reflex_installation_id() -> int | None:
