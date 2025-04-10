@@ -454,7 +454,7 @@ class Input(BaseInput):
 
         # React expects an empty string(instead of null) for controlled inputs.
         if value is not None:
-            props["value"] = value | ""
+            props["value"] = Var.create(value) | ""
 
         input_type = props.get("type")
 

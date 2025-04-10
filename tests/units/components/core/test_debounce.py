@@ -60,7 +60,7 @@ def test_render_child_props():
     assert "css" in tag.props and isinstance(tag.props["css"], rx.vars.Var)
     for prop in ["foo", "bar", "baz", "quuc"]:
         assert prop in str(tag.props["css"])
-    assert tag.props["value"].equals(LiteralVar.create("real"))
+    assert tag.props["value"].equals(LiteralVar.create("real") | "")
     assert len(tag.props["onChange"].events) == 1
     assert tag.props["onChange"].events[0].handler == S.on_change
     assert tag.contents == ""
