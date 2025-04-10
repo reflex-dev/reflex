@@ -94,6 +94,12 @@ from reflex.utils.types import (
     true_type_for_pydantic_field,
     value_inside_optional,
 )
+try:
+    # Pydantic v2 SerializationInfo
+    from pydantic import SerializationInfo
+except ImportError:
+    SerializationInfo = Any  # type: ignore
+
 from reflex.vars import VarData
 from reflex.vars.base import (
     ComputedVar,
@@ -4023,6 +4029,10 @@ class MutableProxy(wrapt.ObjectProxy):
             Tuple of (wrapped class, empty args, class __getstate__)
         """
         return self.__wrapped__.__reduce_ex__(protocol_version)
+
+    def __pydantic_serializer__(self, info: SerializationInfo):
+        # Return the underlying object for Pydantic v2 serialization
+        return self.__wrapped__
 
 
 @serializer
