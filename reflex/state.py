@@ -48,6 +48,7 @@ from pydantic.v1.fields import ModelField
 from redis.asyncio import Redis
 from redis.asyncio.client import PubSub
 from redis.exceptions import ResponseError
+from rich.markup import escape
 from sqlalchemy.orm import DeclarativeBase
 from typing_extensions import Self
 
@@ -698,7 +699,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
 
             if not _isinstance(result, of_type, nested=1, treat_var_as_type=False):
                 console.warn(
-                    f"Inline ComputedVar {f} expected type {of_type}, got {type(result)}. "
+                    f"Inline ComputedVar {f} expected type {escape(str(of_type))}, got {type(result)}. "
                     "You can specify expected type with `of_type` argument."
                 )
 
@@ -1364,7 +1365,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             field_type = _unwrap_field_type(true_type_for_pydantic_field(field))
             if not _isinstance(value, field_type, nested=1, treat_var_as_type=False):
                 console.error(
-                    f"Expected field '{type(self).__name__}.{name}' to receive type '{field_type}',"
+                    f"Expected field '{type(self).__name__}.{name}' to receive type '{escape(str(field_type))}',"
                     f" but got '{value}' of type '{type(value)}'."
                 )
 
