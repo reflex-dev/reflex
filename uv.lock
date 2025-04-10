@@ -1577,7 +1577,7 @@ requires-dist = [
     { name = "python-multipart", specifier = ">=0.0.20,<1.0" },
     { name = "python-socketio", specifier = ">=5.7.0,<6.0" },
     { name = "redis", specifier = ">=4.3.5,<6.0" },
-    { name = "reflex-hosting-cli", specifier = ">=0.1.37" },
+    { name = "reflex-hosting-cli", specifier = ">=0.1.38" },
     { name = "rich", specifier = ">=13.0.0,<14.0" },
     { name = "sqlmodel", specifier = ">=0.0.14,<0.1" },
     { name = "typer", specifier = ">=0.15.1,<1.0" },
