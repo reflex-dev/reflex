@@ -23,6 +23,7 @@ from reflex.event import (
 from reflex.utils.imports import ImportDict
 from reflex.vars import VarData
 from reflex.vars.base import LiteralVar, Var
+from reflex.vars.number import ternary_operation
 
 from .base import BaseHTML
 
@@ -454,7 +455,10 @@ class Input(BaseInput):
 
         # React expects an empty string(instead of null) for controlled inputs.
         if value is not None:
-            props["value"] = Var.create(value) | ""
+            value_var = Var.create(value)
+            props["value"] = ternary_operation(
+                value_var.is_not_none(), value_var, Var.create("")
+            )
 
         input_type = props.get("type")
 

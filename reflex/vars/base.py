@@ -1063,6 +1063,16 @@ class Var(Generic[VAR_TYPE]):
 
         return boolify(self)
 
+    def is_not_none(self) -> BooleanVar:
+        """Check if the var is not None.
+
+        Returns:
+            A BooleanVar object representing the result of the check.
+        """
+        from .number import is_not_none_operation
+
+        return is_not_none_operation(self)
+
     def __and__(
         self, other: Var[OTHER_VAR_TYPE] | Any
     ) -> Var[VAR_TYPE | OTHER_VAR_TYPE]:
