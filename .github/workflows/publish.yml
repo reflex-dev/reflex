@@ -1,0 +1,25 @@
+name: Build and Publish
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+
+permissions:
+  contents: read # Required for checkout
+  id-token: write # For trusted publishing if using OIDC
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+      - uses: ./.github/actions/setup_build_env
+        with:
+          python-version: "3.13"
+          run-uv-sync: true
+      - name: Build and publish
+        run: |
+          uv build
+          uv publish --token ${{ secrets.PYPI_API_TOKEN }}

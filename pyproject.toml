@@ -1,6 +1,6 @@
 [project]
 name = "reflex"
-version = "0.7.6dev1"
+dynamic = ["version"]
 description = "Web apps in pure Python."
 license = { text = "Apache-2.0" }
 authors = [
@@ -62,7 +62,7 @@ documentation = "https://reflex.dev/docs/getting-started/introduction"
 reflex = "reflex.reflex:cli"
 
 [build-system]
-requires = ["hatchling"]
+requires = ["hatchling", "uv-dynamic-versioning"]
 build-backend = "hatchling.build"
 
 [tool.hatch.build]
@@ -77,6 +77,15 @@ artifacts = ["*.pyi"]
 [tool.hatch.build.hooks.custom]
 dependencies = ["plotly", "ruff"]
 require-runtime-dependencies = true
+
+[tool.hatch.version]
+source = "uv-dynamic-versioning"
+
+[tool.uv-dynamic-versioning]
+vcs = "git"
+style = "pep440"
+bump = true
+metadata = false
 
 [tool.pyright]
 reportIncompatibleMethodOverride = false
