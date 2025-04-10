@@ -1,4 +1,6 @@
 name: check-outdated-dependencies
+permissions:
+  contents: read
 
 on:
   push: # This will trigger the action when a pull request is opened or updated.
