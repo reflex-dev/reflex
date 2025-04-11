@@ -111,7 +111,7 @@ class TestState(BaseState):
     key: str
     map_key: str = "a"
     array: list[float] = [1, 2, 3.14]
-    mapping: dict[str, list[int]] = {"a": [1, 2, 3], "b": [4, 5, 6]}
+    mapping: rx.Field[dict[str, list[int]]] = rx.field({"a": [1, 2, 3], "b": [4, 5, 6]})
     obj: Object = Object()
     complex: dict[int, Object] = {1: Object(), 2: Object()}
     fig: Figure = Figure()
@@ -3868,6 +3868,12 @@ async def test_get_var_value(state_manager: StateManager, substate_token: str):
     # Generic Var with no state
     with pytest.raises(UnretrievableVarValueError):
         await state.get_var_value(rx.Var("undefined"))
+
+    # ObjectVar
+    assert await state.get_var_value(TestState.mapping) == {
+        "a": [1, 2, 3],
+        "b": [4, 5, 6],
+    }
 
 
 @pytest.mark.asyncio
