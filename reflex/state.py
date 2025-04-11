@@ -37,6 +37,7 @@ from typing import (
     cast,
     get_args,
     get_type_hints,
+    TYPE_CHECKING,
 )
 
 import pydantic.v1 as pydantic
@@ -94,11 +95,9 @@ from reflex.utils.types import (
     true_type_for_pydantic_field,
     value_inside_optional,
 )
-try:
+if TYPE_CHECKING:
     # Pydantic v2 SerializationInfo
     from pydantic import SerializationInfo
-except ImportError:
-    SerializationInfo = Any  # type: ignore
 
 from reflex.vars import VarData
 from reflex.vars.base import (
