@@ -732,6 +732,9 @@ class Var(Generic[VAR_TYPE]):
     def to(self, output: Type[bool]) -> BooleanVar: ...
 
     @overload
+    def to(self, output: type[int]) -> NumberVar[int]: ...
+
+    @overload
     def to(self, output: type[int] | type[float]) -> NumberVar: ...
 
     @overload
@@ -1060,6 +1063,16 @@ class Var(Generic[VAR_TYPE]):
         from .number import boolify
 
         return boolify(self)
+
+    def is_not_none(self) -> BooleanVar:
+        """Check if the var is not None.
+
+        Returns:
+            A BooleanVar object representing the result of the check.
+        """
+        from .number import is_not_none_operation
+
+        return is_not_none_operation(self)
 
     def __and__(
         self, other: Var[OTHER_VAR_TYPE] | Any
