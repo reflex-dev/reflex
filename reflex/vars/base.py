@@ -1331,7 +1331,7 @@ class Var(Generic[VAR_TYPE]):
                 )
 
             raise VarAttributeError(
-                f"The State var has no attribute '{name}' or may have been annotated wrongly.",
+                f"The State var {escape(self._js_expr)} of type {escape(str(self._var_type))} has no attribute '{name}' or may have been annotated wrongly.",
             )
 
         def __bool__(self) -> bool:
