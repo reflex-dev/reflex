@@ -40,8 +40,6 @@ from rich.progress import MofNCompleteColumn, Progress, TimeElapsedColumn
 from socketio import ASGIApp, AsyncNamespace, AsyncServer
 from starlette.datastructures import Headers
 from starlette.datastructures import UploadFile as StarletteUploadFile
-from starlette_admin.contrib.sqla.admin import Admin
-from starlette_admin.contrib.sqla.view import ModelView
 
 from reflex import constants
 from reflex.admin import AdminDash
@@ -295,6 +293,7 @@ class UnevaluatedPage:
     image: str
     on_load: EventType[()] | None
     meta: list[dict[str, str]]
+    context: dict[str, Any] | None
 
 
 @dataclasses.dataclass()
@@ -444,6 +443,8 @@ class App(MiddlewareMixin, LifespanMixin):
             raise ValueError(
                 "rx.BaseState cannot be subclassed directly. Use rx.State instead"
             )
+
+        get_config(reload=True)
 
         if "breakpoints" in self.style:
             set_breakpoints(self.style.pop("breakpoints"))
@@ -681,6 +682,7 @@ class App(MiddlewareMixin, LifespanMixin):
         image: str = constants.DefaultPage.IMAGE,
         on_load: EventType[()] | None = None,
         meta: list[dict[str, str]] = constants.DefaultPage.META_LIST,
+        context: dict[str, Any] | None = None,
     ):
         """Add a page to the app.
 
@@ -695,6 +697,7 @@ class App(MiddlewareMixin, LifespanMixin):
             image: The image to display on the page.
             on_load: The event handler(s) that will be called each time the page load.
             meta: The metadata of the page.
+            context: Values passed to page for custom page-specific logic.
 
         Raises:
             PageValueError: When the component is not set for a non-404 page.
@@ -762,6 +765,7 @@ class App(MiddlewareMixin, LifespanMixin):
             image=image,
             on_load=on_load,
             meta=meta,
+            context=context,
         )
 
     def _compile_page(self, route: str, save_page: bool = True):
@@ -885,6 +889,12 @@ class App(MiddlewareMixin, LifespanMixin):
 
     def _setup_admin_dash(self):
         """Setup the admin dash."""
+        try:
+            from starlette_admin.contrib.sqla.admin import Admin
+            from starlette_admin.contrib.sqla.view import ModelView
+        except ImportError:
+            return
+
         # Get the admin dash.
         if not self.api:
             return
@@ -927,6 +937,9 @@ class App(MiddlewareMixin, LifespanMixin):
             and i != ""
             and any(tag.install for tag in tags)
         }
+        pinned = {i.rpartition("@")[0] for i in page_imports if "@" in i}
+        page_imports = {i for i in page_imports if i not in pinned}
+
         frontend_packages = get_config().frontend_packages
         _frontend_packages = []
         for package in frontend_packages:

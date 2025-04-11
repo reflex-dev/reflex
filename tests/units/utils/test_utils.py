@@ -103,6 +103,10 @@ def test_is_generic_alias(cls: type, expected: bool):
         (str, Literal["test", "value", 2, 3], True),
         (int, Literal["test", "value"], False),
         (int, Literal["test", "value", 2, 3], True),
+        (Literal["test", "value"], str, True),
+        (Literal["test", "value", 2, 3], str, False),
+        (Literal["test", "value"], int, False),
+        (Literal["test", "value", 2, 3], int, False),
         *[
             (NoReturn, super_class, True)
             for super_class in [int, float, str, bool, list, dict, object, Any]
@@ -222,8 +226,8 @@ def test_validate_bun_path_incompatible_version(mocker):
         return_value=version.parse("0.6.5"),
     )
 
-    with pytest.raises(typer.Exit):
-        prerequisites.validate_bun()
+    # This will just warn the user, not raise an error
+    prerequisites.validate_bun()
 
 
 def test_remove_existing_bun_installation(mocker):

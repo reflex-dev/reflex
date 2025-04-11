@@ -607,7 +607,7 @@ def _isinstance(
     if cls is None or cls is type(None):
         return obj is None
 
-    if cls and is_union(cls):
+    if cls is not None and is_union(cls):
         return any(
             _isinstance(obj, arg, nested=nested, treat_var_as_type=treat_var_as_type)
             for arg in get_args(cls)
@@ -642,6 +642,16 @@ def _isinstance(
                 origin = Sequence
         # cls is a simple generic class
         return isinstance(obj, origin)
+
+    if origin is Var and args:
+        # cls is a Var
+        return _isinstance(
+            obj,
+            args[0],
+            nested=nested,
+            treat_var_as_type=treat_var_as_type,
+            treat_mutable_obj_as_immutable=treat_mutable_obj_as_immutable,
+        )
 
     if nested > 0 and args:
         if origin is list:
@@ -982,6 +992,18 @@ def typehint_issubclass(
                 treat_mutable_superclasss_as_immutable=treat_mutable_superclasss_as_immutable,
                 treat_literals_as_union_of_types=treat_literals_as_union_of_types,
                 treat_any_as_subtype_of_everything=treat_any_as_subtype_of_everything,
+            )
+            for arg in args
+        )
+
+    if is_literal(possible_subclass):
+        args = get_args(possible_subclass)
+        return all(
+            _isinstance(
+                arg,
+                possible_superclass,
+                treat_mutable_obj_as_immutable=treat_mutable_superclasss_as_immutable,
+                nested=2,
             )
             for arg in args
         )

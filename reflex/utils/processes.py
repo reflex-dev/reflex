@@ -294,6 +294,7 @@ def stream_logs(
 
     Raises:
         Exit: If the process failed.
+        ValueError: If the process stdout pipe is closed, but the process remains running.
     """
     from reflex.utils import telemetry
 
@@ -308,9 +309,13 @@ def stream_logs(
                 console.debug(line, end="", progress=progress)
                 logs.append(line)
                 yield line
-        except ValueError as ve:
-            console.debug(f"Error streaming logs: {ve}")
-            return
+        except ValueError:
+            # The stream we were reading has been closed,
+            if process.poll() is None:
+                # But if the process is still running that is weird.
+                raise
+            # If the process exited, break out of the loop for post processing.
+            pass
 
     # Check if the process failed (not printing the logs for SIGINT).
 

@@ -604,12 +604,6 @@ class EnvironmentVariables:
     # Whether to use Granian for the backend. By default, the backend uses Uvicorn if available.
     REFLEX_USE_GRANIAN: EnvVar[bool] = env_var(False)
 
-    # The username to use for authentication on python package repository. Username and password must both be provided.
-    TWINE_USERNAME: EnvVar[str | None] = env_var(None)
-
-    # The password to use for authentication on python package repository. Username and password must both be provided.
-    TWINE_PASSWORD: EnvVar[str | None] = env_var(None)
-
     # Whether to use the system installed bun. If set to false, bun will be bundled with the app.
     REFLEX_USE_SYSTEM_BUN: EnvVar[bool] = env_var(False)
 

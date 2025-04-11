@@ -30,6 +30,7 @@ from typing import (
 )
 
 import pydantic.v1
+from rich.markup import escape
 
 import reflex.state
 from reflex.base import Base
@@ -217,7 +218,7 @@ def satisfies_type_hint(obj: Any, type_hint: Any) -> bool:
         console.deprecate(
             "implicit-none-for-component-fields",
             reason="Passing Vars with possible None values to component fields not explicitly marked as Optional is deprecated. "
-            + f"Passed {obj!s} of type {type(obj) if not isinstance(obj, Var) else obj._var_type} to {type_hint}.",
+            + f"Passed {obj!s} of type {escape(str(type(obj) if not isinstance(obj, Var) else obj._var_type))} to {escape(str(type_hint))}.",
             deprecation_version="0.7.2",
             removal_version="0.8.0",
         )

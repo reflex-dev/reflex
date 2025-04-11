@@ -41,10 +41,10 @@ def export(
 
     # Override the config url values if provided.
     if api_url is not None:
-        config.api_url = str(api_url)
+        config._set_persistent(api_url=str(api_url))
         console.debug(f"overriding API URL: {config.api_url}")
     if deploy_url is not None:
-        config.deploy_url = str(deploy_url)
+        config._set_persistent(deploy_url=str(deploy_url))
         console.debug(f"overriding deploy URL: {config.deploy_url}")
 
     # Show system info

@@ -44,6 +44,7 @@ from typing import (
     overload,
 )
 
+from rich.markup import escape
 from sqlalchemy.orm import DeclarativeBase
 from typing_extensions import deprecated, override
 
@@ -731,6 +732,9 @@ class Var(Generic[VAR_TYPE]):
     def to(self, output: Type[bool]) -> BooleanVar: ...
 
     @overload
+    def to(self, output: type[int]) -> NumberVar[int]: ...
+
+    @overload
     def to(self, output: type[int] | type[float]) -> NumberVar: ...
 
     @overload
@@ -1059,6 +1063,16 @@ class Var(Generic[VAR_TYPE]):
         from .number import boolify
 
         return boolify(self)
+
+    def is_not_none(self) -> BooleanVar:
+        """Check if the var is not None.
+
+        Returns:
+            A BooleanVar object representing the result of the check.
+        """
+        from .number import is_not_none_operation
+
+        return is_not_none_operation(self)
 
     def __and__(
         self, other: Var[OTHER_VAR_TYPE] | Any
@@ -2371,7 +2385,7 @@ class ComputedVar(Var[RETURN_TYPE]):
         if not _isinstance(value, self._var_type, nested=1, treat_var_as_type=False):
             console.error(
                 f"Computed var '{type(instance).__name__}.{self._js_expr}' must return"
-                f" a value of type '{self._var_type}', got '{value!s}' of type {type(value)}."
+                f" a value of type '{escape(str(self._var_type))}', got '{value!s}' of type {type(value)}."
             )
 
     def _deps(

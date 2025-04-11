@@ -87,7 +87,7 @@ class PageNames(SimpleNamespace):
     # The name of the app root page.
     APP_ROOT = "root.js"
     # The root stylesheet filename.
-    STYLESHEET_ROOT = "styles"
+    STYLESHEET_ROOT = "__reflex_global_styles"
     # The name of the document root page.
     DOCUMENT_ROOT = "_document.js"
     # The name of the theme page.
