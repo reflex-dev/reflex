@@ -1,32 +1,51 @@
 /** @type {import('tailwindcss').Config} */
-module.exports = {
-	content: {{content|json_dumps}},
-	theme: {{theme|json_dumps}},
-	plugins: [
-	{% for plugin in plugins %}
-		require({{plugin|json_dumps}}),
-	{% endfor %}
-	],
-	{% if presets is defined %}
-	presets: [
-	{% for preset in presets %}
-		require({{preset|json_dumps}})
-	{% endfor %}
-	],
-	{% endif %}
-	{% if darkMode is defined %}
-	darkMode: {{darkMode|json_dumps}},
-	{% endif %}
-	{% if corePlugins is defined %}
-	corePlugins: {{corePlugins|json_dumps}},
-	{% endif %}
-	{% if important is defined %}
-	important: {{important|json_dumps}},
-	{% endif %}
-	{% if prefix is defined %}
-	prefix: {{prefix|json_dumps}},
-	{% endif %}
-	{% if separator is defined %}
-	separator: {{separator|json_dumps}},
-	{% endif %}
+{% set imports = [] %}
+{% for plugin in plugins %}
+  {% if plugin.import is defined %}
+    {% set _ = imports.append(plugin.import) %}
+  {% endif %}
+{% endfor %}
+/** @type {import('tailwindcss').Config} */
+{% for imp in imports %}
+const {{ imp.name }} = require({{ imp.from | tojson }}){{ "[" ~ imp.method ~ "]" if imp.method is defined }};
+{% endfor %}
+
+const config = {
+  content: {{ content | tojson(indent=2) }},
+  theme: {{ theme | tojson(indent=2) }},
+  {% if darkMode is defined %}
+  darkMode: {{ darkMode | tojson }},
+  {% endif %}
+  {% if corePlugins is defined %}
+  corePlugins: {{ corePlugins | tojson(indent=2) }},
+  {% endif %}
+  {% if important is defined %}
+  important: {{ important | tojson }},
+  {% endif %}
+  {% if prefix is defined %}
+  prefix: {{ prefix | tojson }},
+  {% endif %}
+  {% if separator is defined %}
+  separator: {{ separator | tojson }},
+  {% endif %}
+
+  plugins: [
+    {% for plugin in plugins %}
+      {% if plugin.call is defined %}
+        {{ plugin.call }}({{ plugin.args | tojson(indent=2) if plugin.args is defined else "" }}),
+      {% elif plugin.name is defined %}
+        require({{ plugin.name | tojson }}){{ "()" if plugin.call_empty else "" }},
+      {% endif %}
+    {% endfor %}
+  ],
+
+  {% if presets is defined %}
+  presets: [
+    {% for preset in presets %}
+      require({{ preset | tojson }}),
+    {% endfor %}
+  ],
+  {% endif %}
 };
+
+module.exports = config;
