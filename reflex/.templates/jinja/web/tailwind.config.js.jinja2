@@ -1,23 +1,45 @@
-/** @type {import('tailwindcss').Config} */
-{% set imports = [] %}
-{% for plugin in plugins %}
-  {% if plugin.import is defined %}
-    {% set _ = imports.append(plugin.import) %}
-  {% endif %}
-{% endfor %}
-/** @type {import('tailwindcss').Config} */
-{% for imp in imports %}
-const {{ imp.name }} = require({{ imp.from | tojson }}){{ "[" ~ imp.method ~ "]" if imp.method is defined }};
-{% endfor %}
+{# Helper macro to render JS objects and arrays #}
+{% macro render_js(val, indent=2, level=0) -%}
+{%- set space = ' ' * (indent * level) -%}
+{%- set next_space = ' ' * (indent * (level + 1)) -%}
 
-const config = {
-  content: {{ content | tojson(indent=2) }},
-  theme: {{ theme | tojson(indent=2) }},
+{%- if val is mapping -%}
+{
+{%- for k, v in val.items() %}
+{{ next_space }}{{ k if k.isidentifier() else k|tojson }}: {{ render_js(v, indent, level + 1) }}{{ "," if not loop.last }}
+{%- endfor %}
+{{ space }}}
+{%- elif val is iterable and val is not string -%}
+[
+{%- for item in val %}
+{{ next_space }}{{ render_js(item, indent, level + 1) }}{{ "," if not loop.last }}
+{%- endfor %}
+{{ space }}]
+{%- else -%}
+{{ val | tojson }}
+{%- endif -%}
+{%- endmacro %}
+
+{# Render destructured imports #}
+{%- set imports = [] %}
+{%- for plugin in plugins if plugin.import is defined %}
+  {%- set _ = imports.append(plugin.import) %}
+{%- endfor %}
+
+{# START OF CONFIG FILE #}
+/** @type {import('tailwindcss').Config} */
+{%- for imp in imports %}
+const { {{ imp.name }} } = require({{ imp.from | tojson }});
+{%- endfor %}
+
+module.exports = {
+  content: {{ render_js(content) }},
+  theme: {{ render_js(theme) }},
   {% if darkMode is defined %}
   darkMode: {{ darkMode | tojson }},
   {% endif %}
   {% if corePlugins is defined %}
-  corePlugins: {{ corePlugins | tojson(indent=2) }},
+  corePlugins: {{ render_js(corePlugins) }},
   {% endif %}
   {% if important is defined %}
   important: {{ important | tojson }},
@@ -28,24 +50,25 @@ const config = {
   {% if separator is defined %}
   separator: {{ separator | tojson }},
   {% endif %}
-
-  plugins: [
-    {% for plugin in plugins %}
-      {% if plugin.call is defined %}
-        {{ plugin.call }}({{ plugin.args | tojson(indent=2) if plugin.args is defined else "" }}),
-      {% elif plugin.name is defined %}
-        require({{ plugin.name | tojson }}){{ "()" if plugin.call_empty else "" }},
-      {% endif %}
-    {% endfor %}
-  ],
-
   {% if presets is defined %}
   presets: [
     {% for preset in presets %}
-      require({{ preset | tojson }}),
+    require({{ preset | tojson }}){{ "," if not loop.last }}
     {% endfor %}
   ],
   {% endif %}
+  plugins: [
+    {% for plugin in plugins %}
+      {% if plugin.call is defined %}
+        {{ plugin.call }}(
+          {%- if plugin.args is defined -%}
+            {{ render_js(plugin.args) }}
+          {%- endif -%}
+        ){{ "," if not loop.last }}
+      {% else %}
+        require({{ plugin.name | tojson }}){{ "," if not loop.last }}
+      {% endif %}
+    {% endfor %}
+  ]
 };
 
-module.exports = config;
