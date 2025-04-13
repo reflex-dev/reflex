@@ -26,6 +26,15 @@ def BackgroundTask():
         def set_iterations(self, value: str):
             self.iterations = int(value)
 
+        @rx.var
+        async def counter_async_cv(self) -> int:
+            """This exists solely as an integration test for background tasks triggering async var updates.
+
+            Returns:
+                The current value of the counter.
+            """
+            return self.counter
+
         @rx.event(background=True)
         async def handle_event(self):
             async with self:
@@ -125,7 +134,10 @@ def BackgroundTask():
             rx.input(
                 id="token", value=State.router.session.client_token, is_read_only=True
             ),
-            rx.heading(State.counter, id="counter"),
+            rx.hstack(
+                rx.heading(State.counter, id="counter"),
+                rx.text(State.counter_async_cv, size="1", id="counter-async-cv"),
+            ),
             rx.input(
                 id="iterations",
                 placeholder="Iterations",
@@ -176,7 +188,7 @@ def BackgroundTask():
             rx.button("Reset", on_click=State.reset_counter, id="reset"),
         )
 
-    app = rx.App(_state=rx.State)
+    app = rx.App()
     app.add_page(index)
 
 
@@ -264,6 +276,7 @@ def test_background_task(
 
     # get a reference to the counter
     counter = driver.find_element(By.ID, "counter")
+    counter_async_cv = driver.find_element(By.ID, "counter-async-cv")
 
     # get a reference to the iterations input
     iterations_input = driver.find_element(By.ID, "iterations")
@@ -290,6 +303,7 @@ def test_background_task(
     yield_increment_button.click()
     blocking_pause_button.click()
     assert background_task._poll_for(lambda: counter.text == "620", timeout=40)
+    assert background_task._poll_for(lambda: counter_async_cv.text == "620", timeout=40)
     # all tasks should have exited and cleaned up
     assert background_task._poll_for(
         lambda: not background_task.app_instance._background_tasks  # pyright: ignore [reportOptionalMemberAccess]

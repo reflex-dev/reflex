@@ -1,35 +1,12 @@
-"""File for constants related to the installation process. (Bun/FNM/Node)."""
+"""File for constants related to the installation process. (Bun/Node)."""
 
 from __future__ import annotations
 
-import platform
-from pathlib import Path
+import os
 from types import SimpleNamespace
 
 from .base import IS_WINDOWS
 from .utils import classproperty
-
-
-def get_fnm_name() -> str | None:
-    """Get the appropriate fnm executable name based on the current platform.
-
-    Returns:
-            The fnm executable name for the current platform.
-    """
-    platform_os = platform.system()
-
-    if platform_os == "Windows":
-        return "fnm-windows"
-    elif platform_os == "Darwin":
-        return "fnm-macos"
-    elif platform_os == "Linux":
-        machine = platform.machine()
-        if machine == "arm" or machine.startswith("armv7"):
-            return "fnm-arm32"
-        elif machine.startswith("aarch") or machine.startswith("armv8"):
-            return "fnm-arm64"
-        return "fnm-linux"
-    return None
 
 
 # Bun config.
@@ -37,10 +14,10 @@ class Bun(SimpleNamespace):
     """Bun constants."""
 
     # The Bun version.
-    VERSION = "1.2.0"
+    VERSION = "1.2.8"
 
     # Min Bun Version
-    MIN_VERSION = "1.1.0"
+    MIN_VERSION = "1.2.8"
 
     # URL to bun install script.
     INSTALL_URL = "https://raw.githubusercontent.com/reflex-dev/reflex/main/scripts/bun_install.sh"
@@ -81,87 +58,32 @@ registry = "{registry}"
 """
 
 
-# FNM config.
-class Fnm(SimpleNamespace):
-    """FNM constants."""
-
-    # The FNM version.
-    VERSION = "1.35.1"
-
-    FILENAME = get_fnm_name()
-
-    # The URL to the fnm release binary
-    INSTALL_URL = (
-        f"https://github.com/Schniz/fnm/releases/download/v{VERSION}/{FILENAME}.zip"
-    )
-
-    @classproperty
-    @classmethod
-    def DIR(cls) -> Path:
-        """The directory to store fnm.
-
-        Returns:
-            The directory to store fnm.
-        """
-        from reflex.config import environment
-
-        return environment.REFLEX_DIR.get() / "fnm"
-
-    @classproperty
-    @classmethod
-    def EXE(cls):
-        """The fnm executable binary.
-
-        Returns:
-            The fnm executable binary.
-        """
-        return cls.DIR / ("fnm.exe" if IS_WINDOWS else "fnm")
-
-
 # Node / NPM config
 class Node(SimpleNamespace):
     """Node/ NPM constants."""
 
-    # The Node version.
-    VERSION = "22.11.0"
     # The minimum required node version.
     MIN_VERSION = "18.18.0"
 
-    @classproperty
-    @classmethod
-    def BIN_PATH(cls):
-        """The node bin path.
+    # Path of the node config file.
+    CONFIG_PATH = ".npmrc"
 
-        Returns:
-            The node bin path.
-        """
-        return (
-            Fnm.DIR
-            / "node-versions"
-            / f"v{cls.VERSION}"
-            / "installation"
-            / ("bin" if not IS_WINDOWS else "")
+    DEFAULT_CONFIG = """
+registry={registry}
+fetch-retries=0
+"""
+
+
+def _determine_nextjs_version() -> str:
+    default_version = "15.2.4"
+    if (version := os.getenv("NEXTJS_VERSION")) and version != default_version:
+        from reflex.utils import console
+
+        console.warn(
+            f"You have requested next@{version} but the supported version is {default_version}, abandon all hope ye who enter here."
         )
-
-    @classproperty
-    @classmethod
-    def PATH(cls):
-        """The default path where node is installed.
-
-        Returns:
-            The default path where node is installed.
-        """
-        return cls.BIN_PATH / ("node.exe" if IS_WINDOWS else "node")
-
-    @classproperty
-    @classmethod
-    def NPM_PATH(cls):
-        """The default path where npm is installed.
-
-        Returns:
-            The default path where npm is installed.
-        """
-        return cls.BIN_PATH / "npm"
+        return version
+    return default_version
 
 
 class PackageJson(SimpleNamespace):
@@ -179,11 +101,11 @@ class PackageJson(SimpleNamespace):
 
     DEPENDENCIES = {
         "@emotion/react": "11.14.0",
-        "axios": "1.7.9",
+        "axios": "1.8.3",
         "json5": "2.2.3",
-        "next": "15.1.7",
+        "next": _determine_nextjs_version(),
         "next-sitemap": "4.2.3",
-        "next-themes": "0.4.4",
+        "next-themes": "0.4.6",
         "react": "19.0.0",
         "react-dom": "19.0.0",
         "react-focus-lock": "2.13.6",
@@ -191,8 +113,8 @@ class PackageJson(SimpleNamespace):
         "universal-cookie": "7.2.2",
     }
     DEV_DEPENDENCIES = {
-        "autoprefixer": "10.4.20",
-        "postcss": "8.5.1",
+        "autoprefixer": "10.4.21",
+        "postcss": "8.5.3",
         "postcss-import": "16.1.0",
     }
     OVERRIDES = {

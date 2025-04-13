@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any, Sequence, Union
+from typing import Any, ClassVar, Sequence, Union
 
 from reflex.components.component import MemoizationLeaf
 from reflex.constants.colors import Color
@@ -49,13 +49,14 @@ class ResponsiveContainer(Recharts, MemoizationLeaf):
     on_resize: EventHandler[no_args_event_spec]
 
     # Valid children components
-    _valid_children: list[str] = [
+    _valid_children: ClassVar[list[str]] = [
         "AreaChart",
         "BarChart",
         "LineChart",
         "PieChart",
         "RadarChart",
         "RadialBarChart",
+        "ResponsiveContainer",
         "ScatterChart",
         "Treemap",
         "ComposedChart",
@@ -258,7 +259,7 @@ class Cell(Recharts):
 
 responsive_container = ResponsiveContainer.create
 legend = Legend.create
-graphing_tooltip = GraphingTooltip.create
+graphing_tooltip = tooltip = GraphingTooltip.create
 label = Label.create
 label_list = LabelList.create
 cell = Cell.create

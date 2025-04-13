@@ -8,13 +8,13 @@ import functools
 import importlib
 import importlib.metadata
 import importlib.util
+import io
 import json
 import os
 import platform
 import random
 import re
 import shutil
-import stat
 import sys
 import tempfile
 import time
@@ -23,7 +23,7 @@ import zipfile
 from datetime import datetime
 from pathlib import Path
 from types import ModuleType
-from typing import Callable, NamedTuple
+from typing import Callable, NamedTuple, Sequence
 from urllib.parse import urlparse
 
 import httpx
@@ -37,18 +37,16 @@ from redis.exceptions import RedisError
 from reflex import constants, model
 from reflex.compiler import templates
 from reflex.config import Config, environment, get_config
-from reflex.utils import console, net, path_ops, processes, redir
+from reflex.utils import console, net, path_ops, processes
 from reflex.utils.exceptions import (
     GeneratedCodeHasNoFunctionDefsError,
     SystemPackageMissingError,
 )
 from reflex.utils.format import format_library_name
-from reflex.utils.registry import _get_npm_registry
+from reflex.utils.registry import get_npm_registry
 
 if typing.TYPE_CHECKING:
     from reflex.app import App
-
-CURRENTLY_INSTALLING_NODE = False
 
 
 class AppInfo(NamedTuple):
@@ -117,11 +115,13 @@ def check_latest_package_version(package_name: str):
     if environment.REFLEX_CHECK_LATEST_VERSION.get() is False:
         return
     try:
+        console.debug(f"Checking for the latest version of {package_name}...")
         # Get the latest version from PyPI
         current_version = importlib.metadata.version(package_name)
         url = f"https://pypi.org/pypi/{package_name}/json"
         response = net.get(url)
         latest_version = response.json()["info"]["version"]
+        console.debug(f"Latest version of {package_name}: {latest_version}")
         if get_or_set_last_reflex_version_check_datetime():
             # Versions were already checked and saved in reflex.json, no need to warn again
             return
@@ -131,6 +131,7 @@ def check_latest_package_version(package_name: str):
                 f"Your version ({current_version}) of {package_name} is out of date. Upgrade to {latest_version} with 'pip install {package_name} --upgrade'"
             )
     except Exception:
+        console.debug(f"Failed to check for the latest version of {package_name}.")
         pass
 
 
@@ -186,42 +187,27 @@ def get_node_version() -> version.Version | None:
     try:
         result = processes.new_process([node_path, "-v"], run=True)
         # The output will be in the form "vX.Y.Z", but version.parse() can handle it
-        return version.parse(result.stdout)  # pyright: ignore [reportArgumentType]
+        return version.parse(result.stdout)
     except (FileNotFoundError, TypeError):
         return None
 
 
-def get_fnm_version() -> version.Version | None:
-    """Get the version of fnm.
-
-    Returns:
-        The version of FNM.
-    """
-    try:
-        result = processes.new_process([constants.Fnm.EXE, "--version"], run=True)
-        return version.parse(result.stdout.split(" ")[1])  # pyright: ignore [reportOptionalMemberAccess, reportAttributeAccessIssue]
-    except (FileNotFoundError, TypeError):
-        return None
-    except version.InvalidVersion as e:
-        console.warn(
-            f"The detected fnm version ({e.args[0]}) is not valid. Defaulting to None."
-        )
-        return None
-
-
-def get_bun_version() -> version.Version | None:
+def get_bun_version(bun_path: Path | None = None) -> version.Version | None:
     """Get the version of bun.
+
+    Args:
+        bun_path: The path to the bun executable.
 
     Returns:
         The version of bun.
     """
-    bun_path = path_ops.get_bun_path()
+    bun_path = bun_path or path_ops.get_bun_path()
     if bun_path is None:
         return None
     try:
         # Run the bun -v command and capture the output
         result = processes.new_process([str(bun_path), "-v"], run=True)
-        return version.parse(str(result.stdout))  # pyright: ignore [reportArgumentType]
+        return version.parse(str(result.stdout))
     except FileNotFoundError:
         return None
     except version.InvalidVersion as e:
@@ -231,44 +217,107 @@ def get_bun_version() -> version.Version | None:
         return None
 
 
-def get_install_package_manager(on_failure_return_none: bool = False) -> str | None:
-    """Get the package manager executable for installation.
-      Currently, bun is used for installation only.
-
-    Args:
-        on_failure_return_none: Whether to return None on failure.
+def prefer_npm_over_bun() -> bool:
+    """Check if npm should be preferred over bun.
 
     Returns:
-        The path to the package manager.
+        If npm should be preferred over bun.
     """
-    if constants.IS_WINDOWS and (
-        not is_windows_bun_supported()
-        or windows_check_onedrive_in_path()
-        or windows_npm_escape_hatch()
-    ):
-        return get_package_manager(on_failure_return_none)
-    return str(get_config().bun_path)
+    return npm_escape_hatch() or (
+        constants.IS_WINDOWS and windows_check_onedrive_in_path()
+    )
 
 
-def get_package_manager(on_failure_return_none: bool = False) -> str | None:
-    """Get the package manager executable for running app.
-      Currently on unix systems, npm is used for running the app only.
+def get_nodejs_compatible_package_managers(
+    raise_on_none: bool = True,
+) -> Sequence[str]:
+    """Get the package manager executable for installation. Typically, bun is used for installation.
 
     Args:
-        on_failure_return_none: Whether to return None on failure.
+        raise_on_none: Whether to raise an error if the package manager is not found.
 
     Returns:
         The path to the package manager.
 
     Raises:
-        FileNotFoundError: If the package manager is not found.
+        FileNotFoundError: If the package manager is not found and raise_on_none is True.
     """
-    npm_path = path_ops.get_npm_path()
-    if npm_path is not None:
-        return str(npm_path)
-    if on_failure_return_none:
-        return None
-    raise FileNotFoundError("NPM not found. You may need to run `reflex init`.")
+    bun_package_manager = (
+        str(bun_path) if (bun_path := path_ops.get_bun_path()) else None
+    )
+
+    npm_package_manager = (
+        str(npm_path) if (npm_path := path_ops.get_npm_path()) else None
+    )
+
+    if prefer_npm_over_bun():
+        package_managers = [npm_package_manager, bun_package_manager]
+    else:
+        package_managers = [bun_package_manager, npm_package_manager]
+
+    package_managers = list(filter(None, package_managers))
+
+    if not package_managers and raise_on_none:
+        raise FileNotFoundError(
+            "Bun or npm not found. You might need to rerun `reflex init` or install either."
+        )
+
+    return package_managers
+
+
+def is_outdated_nodejs_installed():
+    """Check if the installed Node.js version is outdated.
+
+    Returns:
+        If the installed Node.js version is outdated.
+    """
+    current_version = get_node_version()
+    if current_version is not None and current_version < version.parse(
+        constants.Node.MIN_VERSION
+    ):
+        console.warn(
+            f"Your version ({current_version}) of Node.js is out of date. Upgrade to {constants.Node.MIN_VERSION} or higher."
+        )
+        return True
+    return False
+
+
+def get_js_package_executor(raise_on_none: bool = False) -> Sequence[Sequence[str]]:
+    """Get the paths to package managers for running commands. Ordered by preference.
+    This is currently identical to get_install_package_managers, but may change in the future.
+
+    Args:
+        raise_on_none: Whether to raise an error if no package managers is not found.
+
+    Returns:
+        The paths to the package managers as a list of lists, where each list is the command to run and its arguments.
+
+    Raises:
+        FileNotFoundError: If no package managers are found and raise_on_none is True.
+    """
+    bun_package_manager = (
+        [str(bun_path)] + (["--bun"] if is_outdated_nodejs_installed() else [])
+        if (bun_path := path_ops.get_bun_path())
+        else None
+    )
+
+    npm_package_manager = (
+        [str(npm_path)] if (npm_path := path_ops.get_npm_path()) else None
+    )
+
+    if prefer_npm_over_bun():
+        package_managers = [npm_package_manager, bun_package_manager]
+    else:
+        package_managers = [bun_package_manager, npm_package_manager]
+
+    package_managers = list(filter(None, package_managers))
+
+    if not package_managers and raise_on_none:
+        raise FileNotFoundError(
+            "Bun or npm not found. You might need to rerun `reflex init` or install either."
+        )
+
+    return package_managers
 
 
 def windows_check_onedrive_in_path() -> bool:
@@ -280,8 +329,8 @@ def windows_check_onedrive_in_path() -> bool:
     return "onedrive" in str(Path.cwd()).lower()
 
 
-def windows_npm_escape_hatch() -> bool:
-    """For windows, if the user sets REFLEX_USE_NPM, use npm instead of bun.
+def npm_escape_hatch() -> bool:
+    """If the user sets REFLEX_USE_NPM, prefer npm over bun.
 
     Returns:
         If the user has set REFLEX_USE_NPM.
@@ -370,6 +419,15 @@ def get_and_validate_app(reload: bool = False) -> AppInfo:
     return AppInfo(app=app, module=app_module)
 
 
+def validate_app(reload: bool = False) -> None:
+    """Validate the app instance based on the default config.
+
+    Args:
+        reload: Re-import the app module from disk
+    """
+    get_and_validate_app(reload=reload)
+
+
 def get_compiled_app(reload: bool = False, export: bool = False) -> ModuleType:
     """Get the app module based on the default config after first compiling it.
 
@@ -386,6 +444,89 @@ def get_compiled_app(reload: bool = False, export: bool = False) -> ModuleType:
     app._apply_decorated_pages()
     app._compile(export=export)
     return app_module
+
+
+def compile_app(reload: bool = False, export: bool = False) -> None:
+    """Compile the app module based on the default config.
+
+    Args:
+        reload: Re-import the app module from disk
+        export: Compile the app for export
+    """
+    get_compiled_app(reload=reload, export=export)
+
+
+def _can_colorize() -> bool:
+    """Check if the output can be colorized.
+
+    Copied from _colorize.can_colorize.
+
+    https://raw.githubusercontent.com/python/cpython/refs/heads/main/Lib/_colorize.py
+
+    Returns:
+        If the output can be colorized
+    """
+    file = sys.stdout
+
+    if not sys.flags.ignore_environment:
+        if os.environ.get("PYTHON_COLORS") == "0":
+            return False
+        if os.environ.get("PYTHON_COLORS") == "1":
+            return True
+    if os.environ.get("NO_COLOR"):
+        return False
+    if os.environ.get("FORCE_COLOR"):
+        return True
+    if os.environ.get("TERM") == "dumb":
+        return False
+
+    if not hasattr(file, "fileno"):
+        return False
+
+    if sys.platform == "win32":
+        try:
+            import nt
+
+            if not nt._supports_virtual_terminal():
+                return False
+        except (ImportError, AttributeError):
+            return False
+
+    try:
+        return os.isatty(file.fileno())
+    except io.UnsupportedOperation:
+        return file.isatty()
+
+
+def compile_or_validate_app(compile: bool = False) -> bool:
+    """Compile or validate the app module based on the default config.
+
+    Args:
+        compile: Whether to compile the app.
+
+    Returns:
+        If the app is compiled successfully.
+    """
+    try:
+        if compile:
+            compile_app()
+        else:
+            validate_app()
+    except Exception as e:
+        if isinstance(e, typer.Exit):
+            return False
+
+        import traceback
+
+        sys_exception = sys.exception()
+
+        try:
+            colorize = _can_colorize()
+            traceback.print_exception(e, colorize=colorize)  # pyright: ignore[reportCallIssue]
+        except Exception:
+            traceback.print_exception(sys_exception)
+        return False
+    return True
 
 
 def get_redis() -> Redis | None:
@@ -693,44 +834,48 @@ def initialize_gitignore(
     gitignore_file.write_text("\n".join(files_to_ignore) + "\n")
 
 
-def initialize_requirements_txt():
+def initialize_requirements_txt() -> bool:
     """Initialize the requirements.txt file.
     If absent, generate one for the user.
     If the requirements.txt does not have reflex as dependency,
     generate a requirement pinning current version and append to
     the requirements.txt file.
-    """
-    fp = Path(constants.RequirementsTxt.FILE)
-    encoding = "utf-8"
-    if not fp.exists():
-        fp.touch()
-    else:
-        # Detect the encoding of the original file
-        import charset_normalizer
 
-        charset_matches = charset_normalizer.from_path(fp)
-        maybe_charset_match = charset_matches.best()
-        if maybe_charset_match is None:
-            console.debug(f"Unable to detect encoding for {fp}, exiting.")
-            return
-        encoding = maybe_charset_match.encoding
-        console.debug(f"Detected encoding for {fp} as {encoding}.")
-    try:
-        other_requirements_exist = False
-        with fp.open("r", encoding=encoding) as f:
-            for req in f:
-                # Check if we have a package name that is reflex
-                if re.match(r"^reflex[^a-zA-Z0-9]", req):
-                    console.debug(f"{fp} already has reflex as dependency.")
-                    return
-                other_requirements_exist = True
-        with fp.open("a", encoding=encoding) as f:
-            preceding_newline = "\n" if other_requirements_exist else ""
-            f.write(
-                f"{preceding_newline}{constants.RequirementsTxt.DEFAULTS_STUB}{constants.Reflex.VERSION}\n"
-            )
-    except Exception:
-        console.info(f"Unable to check {fp} for reflex dependency.")
+    Returns:
+        True if the requirements.txt file was created or updated, False otherwise.
+
+    Raises:
+        Exit: If the requirements.txt file cannot be read or written to.
+    """
+    requirements_file_path = Path(constants.RequirementsTxt.FILE)
+    requirements_file_path.touch(exist_ok=True)
+
+    for encoding in [None, "utf-8"]:
+        try:
+            content = requirements_file_path.read_text(encoding)
+            break
+        except UnicodeDecodeError:
+            continue
+        except Exception as e:
+            console.error(f"Failed to read {requirements_file_path}.")
+            raise typer.Exit(1) from e
+    else:
+        return False
+
+    for line in content.splitlines():
+        if re.match(r"^reflex[^a-zA-Z0-9]", line):
+            console.debug(f"{requirements_file_path} already has reflex as dependency.")
+            return True
+
+    console.debug(
+        f"Appending {constants.RequirementsTxt.DEFAULTS_STUB} to {requirements_file_path}"
+    )
+    with requirements_file_path.open("a", encoding=encoding) as f:
+        f.write(
+            "\n" + constants.RequirementsTxt.DEFAULTS_STUB + constants.Reflex.VERSION
+        )
+
+    return True
 
 
 def initialize_app_directory(
@@ -770,11 +915,12 @@ def initialize_app_directory(
 
     console.debug(f"Using {template_name=} {template_dir=} {template_code_dir_name=}.")
 
-    # Remove all pyc and __pycache__ dirs in template directory.
-    for pyc_file in template_dir.glob("**/*.pyc"):
-        pyc_file.unlink()
-    for pycache_dir in template_dir.glob("**/__pycache__"):
-        pycache_dir.rmdir()
+    # Remove __pycache__ dirs in template directory and current directory.
+    for pycache_dir in [
+        *template_dir.glob("**/__pycache__"),
+        *Path.cwd().glob("**/__pycache__"),
+    ]:
+        shutil.rmtree(pycache_dir, ignore_errors=True)
 
     for file in template_dir.iterdir():
         # Copy the file to current directory but keep the name the same.
@@ -818,16 +964,25 @@ def initialize_web_directory():
     # Reuse the hash if one is already created, so we don't over-write it when running reflex init
     project_hash = get_project_hash()
 
+    console.debug(f"Copying {constants.Templates.Dirs.WEB_TEMPLATE} to {get_web_dir()}")
     path_ops.cp(constants.Templates.Dirs.WEB_TEMPLATE, str(get_web_dir()))
 
+    console.debug("Initializing the web directory.")
     initialize_package_json()
 
+    console.debug("Initializing the bun config file.")
     initialize_bun_config()
 
+    console.debug("Initializing the .npmrc file.")
+    initialize_npmrc()
+
+    console.debug("Initializing the public directory.")
     path_ops.mkdir(get_web_dir() / constants.Dirs.PUBLIC)
 
+    console.debug("Initializing the next.config.js file.")
     update_next_config()
 
+    console.debug("Initializing the reflex.json file.")
     # Initialize the reflex json file.
     init_reflex_json(project_hash=project_hash)
 
@@ -864,10 +1019,24 @@ def initialize_bun_config():
         bunfig_content = custom_bunfig.read_text()
         console.info(f"Copying custom bunfig.toml inside {get_web_dir()} folder")
     else:
-        best_registry = _get_npm_registry()
+        best_registry = get_npm_registry()
         bunfig_content = constants.Bun.DEFAULT_CONFIG.format(registry=best_registry)
 
     bun_config_path.write_text(bunfig_content)
+
+
+def initialize_npmrc():
+    """Initialize the .npmrc file."""
+    npmrc_path = get_web_dir() / constants.Node.CONFIG_PATH
+
+    if (custom_npmrc := Path(constants.Node.CONFIG_PATH)).exists():
+        npmrc_content = custom_npmrc.read_text()
+        console.info(f"Copying custom .npmrc inside {get_web_dir()} folder")
+    else:
+        best_registry = get_npm_registry()
+        npmrc_content = constants.Node.DEFAULT_CONFIG.format(registry=best_registry)
+
+    npmrc_path.write_text(npmrc_content)
 
 
 def init_reflex_json(project_hash: int | None):
@@ -926,6 +1095,9 @@ def _update_next_config(
         "trailingSlash": True,
         "staticPageGenerationTimeout": config.static_page_generation_timeout,
     }
+    if not config.next_dev_indicators:
+        next_config["devIndicators"] = False
+
     if transpile_packages:
         next_config["transpilePackages"] = list(
             {format_library_name(p) for p in transpile_packages}
@@ -972,113 +1144,31 @@ def download_and_run(url: str, *args, show_status: bool = False, **env):
     show(f"Installing {url}", process)
 
 
-def download_and_extract_fnm_zip():
-    """Download and run a script.
-
-    Raises:
-        Exit: If an error occurs while downloading or extracting the FNM zip.
-    """
-    # Download the zip file
-    url = constants.Fnm.INSTALL_URL
-    console.debug(f"Downloading {url}")
-    fnm_zip_file: Path = constants.Fnm.DIR / f"{constants.Fnm.FILENAME}.zip"
-    # Function to download and extract the FNM zip release.
-    try:
-        # Download the FNM zip release.
-        # TODO: show progress to improve UX
-        response = net.get(url, follow_redirects=True)
-        response.raise_for_status()
-        with fnm_zip_file.open("wb") as output_file:
-            for chunk in response.iter_bytes():
-                output_file.write(chunk)
-
-        # Extract the downloaded zip file.
-        with zipfile.ZipFile(fnm_zip_file, "r") as zip_ref:
-            zip_ref.extractall(constants.Fnm.DIR)
-
-        console.debug("FNM package downloaded and extracted successfully.")
-    except Exception as e:
-        console.error(f"An error occurred while downloading fnm package: {e}")
-        raise typer.Exit(1) from e
-    finally:
-        # Clean up the downloaded zip file.
-        path_ops.rm(fnm_zip_file)
-
-
-def install_node():
-    """Install fnm and nodejs for use by Reflex.
-    Independent of any existing system installations.
-    """
-    if not constants.Fnm.FILENAME:
-        # fnm only support Linux, macOS and Windows distros.
-        console.debug("")
-        return
-
-    # Skip installation if check_node_version() checks out
-    if check_node_version():
-        console.debug("Skipping node installation as it is already installed.")
-        return
-
-    path_ops.mkdir(constants.Fnm.DIR)
-    if not constants.Fnm.EXE.exists():
-        download_and_extract_fnm_zip()
-
-    if constants.IS_WINDOWS:
-        # Install node
-        fnm_exe = Path(constants.Fnm.EXE).resolve()
-        fnm_dir = Path(constants.Fnm.DIR).resolve()
-        process = processes.new_process(
-            [
-                "powershell",
-                "-Command",
-                f'& "{fnm_exe}" install {constants.Node.VERSION} --fnm-dir "{fnm_dir}"',
-            ],
-        )
-    else:  # All other platforms (Linux, MacOS).
-        # Add execute permissions to fnm executable.
-        constants.Fnm.EXE.chmod(stat.S_IXUSR)
-        # Install node.
-        # Specify arm64 arch explicitly for M1s and M2s.
-        architecture_arg = (
-            ["--arch=arm64"]
-            if platform.system() == "Darwin" and platform.machine() == "arm64"
-            else []
-        )
-
-        process = processes.new_process(
-            [
-                constants.Fnm.EXE,
-                "install",
-                *architecture_arg,
-                constants.Node.VERSION,
-                "--fnm-dir",
-                constants.Fnm.DIR,
-            ],
-        )
-    processes.show_status("Installing node", process)
-
-
 def install_bun():
     """Install bun onto the user's system.
 
     Raises:
         SystemPackageMissingError: If "unzip" is missing.
     """
-    win_supported = is_windows_bun_supported()
     one_drive_in_path = windows_check_onedrive_in_path()
-    if constants.IS_WINDOWS and (not win_supported or one_drive_in_path):
-        if not win_supported:
-            console.warn(
-                "Bun for Windows is currently only available for x86 64-bit Windows. Installation will fall back on npm."
-            )
-        if one_drive_in_path:
-            console.warn(
-                "Creating project directories in OneDrive is not recommended for bun usage on windows. This will fallback to npm."
-            )
+    if constants.IS_WINDOWS and one_drive_in_path:
+        console.warn(
+            "Creating project directories in OneDrive is not recommended for bun usage on windows. This will fallback to npm."
+        )
+
+    bun_path = path_ops.get_bun_path()
 
     # Skip if bun is already installed.
-    if get_bun_version() == version.parse(constants.Bun.VERSION):
+    if (
+        bun_path
+        and (current_version := get_bun_version(bun_path=bun_path))
+        and current_version >= version.parse(constants.Bun.MIN_VERSION)
+    ):
         console.debug("Skipping bun installation as it is already installed.")
+        return
+
+    if bun_path and path_ops.use_system_bun():
+        validate_bun(bun_path=bun_path)
         return
 
     #  if unzip is installed
@@ -1128,26 +1218,39 @@ def _clear_cached_procedure_file(cache_file: str | Path):
         cache_file.unlink()
 
 
-def cached_procedure(cache_file: str, payload_fn: Callable[..., str]):
+def cached_procedure(
+    cache_file: str | None,
+    payload_fn: Callable[..., str],
+    cache_file_fn: Callable[[], str] | None = None,
+):
     """Decorator to cache the runs of a procedure on disk. Procedures should not have
        a return value.
 
     Args:
         cache_file: The file to store the cache payload in.
-        payload_fn: Function that computes cache payload from function args
+        payload_fn: Function that computes cache payload from function args.
+        cache_file_fn: Function that computes the cache file name at runtime.
 
     Returns:
         The decorated function.
+
+    Raises:
+        ValueError: If both cache_file and cache_file_fn are provided.
     """
+    if cache_file and cache_file_fn is not None:
+        raise ValueError("cache_file and cache_file_fn cannot both be provided.")
 
     def _inner_decorator(func: Callable):
         def _inner(*args, **kwargs):
-            payload = _read_cached_procedure_file(cache_file)
+            _cache_file = cache_file_fn() if cache_file_fn is not None else cache_file
+            if not _cache_file:
+                raise ValueError("Unknown cache file, cannot cache result.")
+            payload = _read_cached_procedure_file(_cache_file)
             new_payload = payload_fn(*args, **kwargs)
             if payload != new_payload:
-                _clear_cached_procedure_file(cache_file)
+                _clear_cached_procedure_file(_cache_file)
                 func(*args, **kwargs)
-                _write_cached_procedure_file(new_payload, cache_file)
+                _write_cached_procedure_file(new_payload, _cache_file)
 
         return _inner
 
@@ -1155,8 +1258,11 @@ def cached_procedure(cache_file: str, payload_fn: Callable[..., str]):
 
 
 @cached_procedure(
-    cache_file=str(get_web_dir() / "reflex.install_frontend_packages.cached"),
+    cache_file_fn=lambda: str(
+        get_web_dir() / "reflex.install_frontend_packages.cached"
+    ),
     payload_fn=lambda p, c: f"{sorted(p)!r},{c.json()}",
+    cache_file=None,
 )
 def install_frontend_packages(packages: set[str], config: Config):
     """Installs the base and custom frontend packages.
@@ -1165,75 +1271,62 @@ def install_frontend_packages(packages: set[str], config: Config):
         packages: A list of package names to be installed.
         config: The config object.
 
-    Raises:
-        FileNotFoundError: If the package manager is not found.
-
     Example:
         >>> install_frontend_packages(["react", "react-dom"], get_config())
     """
-    # unsupported archs(arm and 32bit machines) will use npm anyway. so we dont have to run npm twice
-    fallback_command = (
-        get_package_manager(on_failure_return_none=True)
-        if (
-            not constants.IS_WINDOWS
-            or (
-                constants.IS_WINDOWS
-                and (
-                    is_windows_bun_supported() and not windows_check_onedrive_in_path()
-                )
-            )
-        )
-        else None
+    install_package_managers = get_nodejs_compatible_package_managers(
+        raise_on_none=True
     )
 
-    install_package_manager = (
-        get_install_package_manager(on_failure_return_none=True) or fallback_command
+    env = (
+        {
+            "NODE_TLS_REJECT_UNAUTHORIZED": "0",
+        }
+        if environment.SSL_NO_VERIFY.get()
+        else {}
     )
 
-    if install_package_manager is None:
-        raise FileNotFoundError(
-            "Could not find a package manager to install frontend packages. You may need to run `reflex init`."
-        )
+    primary_package_manager = install_package_managers[0]
+    fallbacks = install_package_managers[1:]
 
-    fallback_command = (
-        fallback_command if fallback_command is not install_package_manager else None
-    )
-
-    processes.run_process_with_fallback(
-        [install_package_manager, "install", "--legacy-peer-deps"],
-        fallback=fallback_command,
+    processes.run_process_with_fallbacks(
+        [primary_package_manager, "install", "--legacy-peer-deps"],
+        fallbacks=fallbacks,
         analytics_enabled=True,
         show_status_message="Installing base frontend packages",
         cwd=get_web_dir(),
         shell=constants.IS_WINDOWS,
+        env=env,
     )
 
     if config.tailwind is not None:
-        processes.run_process_with_fallback(
+        processes.run_process_with_fallbacks(
             [
-                install_package_manager,
+                primary_package_manager,
                 "add",
                 "--legacy-peer-deps",
                 "-d",
                 constants.Tailwind.VERSION,
                 *((config.tailwind or {}).get("plugins", [])),
             ],
-            fallback=fallback_command,
+            fallbacks=fallbacks,
             analytics_enabled=True,
             show_status_message="Installing tailwind",
             cwd=get_web_dir(),
             shell=constants.IS_WINDOWS,
+            env=env,
         )
 
     # Install custom packages defined in frontend_packages
     if len(packages) > 0:
-        processes.run_process_with_fallback(
-            [install_package_manager, "add", "--legacy-peer-deps", *packages],
-            fallback=fallback_command,
+        processes.run_process_with_fallbacks(
+            [primary_package_manager, "add", "--legacy-peer-deps", *packages],
+            fallbacks=fallbacks,
             analytics_enabled=True,
             show_status_message="Installing frontend packages from config and components",
             cwd=get_web_dir(),
             shell=constants.IS_WINDOWS,
+            env=env,
         )
 
 
@@ -1312,13 +1405,16 @@ def is_latest_template() -> bool:
     return app_version == constants.Reflex.VERSION
 
 
-def validate_bun():
+def validate_bun(bun_path: Path | None = None):
     """Validate bun if a custom bun path is specified to ensure the bun version meets requirements.
+
+    Args:
+        bun_path: The path to the bun executable. If None, the default bun path is used.
 
     Raises:
         Exit: If custom specified bun does not exist or does not meet requirements.
     """
-    bun_path = path_ops.get_bun_path()
+    bun_path = bun_path or path_ops.get_bun_path()
 
     if bun_path is None:
         return
@@ -1332,13 +1428,11 @@ def validate_bun():
             )
             raise typer.Exit(1)
         elif bun_version < version.parse(constants.Bun.MIN_VERSION):
-            console.error(
-                f"Reflex requires bun version {constants.Bun.VERSION} or higher to run, but the detected version is "
+            console.warn(
+                f"Reflex requires bun version {constants.Bun.MIN_VERSION} or higher to run, but the detected version is "
                 f"{bun_version}. If you have specified a custom bun path in your config, make sure to provide one "
-                f"that satisfies the minimum version requirement."
+                f"that satisfies the minimum version requirement. You can upgrade bun by running [bold]bun upgrade[/bold]."
             )
-
-            raise typer.Exit(1)
 
 
 def validate_frontend_dependencies(init: bool = True):
@@ -1351,25 +1445,17 @@ def validate_frontend_dependencies(init: bool = True):
         Exit: If the package manager is invalid.
     """
     if not init:
-        # we only need to validate the package manager when running app.
-        # `reflex init` will install the deps anyway(if applied).
-        package_manager = get_package_manager()
-        if not package_manager:
-            console.error(
-                "Could not find NPM package manager. Make sure you have node installed."
-            )
-            raise typer.Exit(1)
+        try:
+            get_js_package_executor(raise_on_none=True)
+        except FileNotFoundError as e:
+            raise typer.Exit(1) from e
 
-        if not check_node_version():
-            node_version = get_node_version()
-            console.error(
-                f"Reflex requires node version {constants.Node.MIN_VERSION} or higher to run, but the detected version is {node_version}",
-            )
-            raise typer.Exit(1)
-
-    if init:
-        # we only need bun for package install on `reflex init`.
-        validate_bun()
+    if prefer_npm_over_bun() and not check_node_version():
+        node_version = get_node_version()
+        console.error(
+            f"Reflex requires node version {constants.Node.MIN_VERSION} or higher to run, but the detected version is {node_version}",
+        )
+        raise typer.Exit(1)
 
 
 def ensure_reflex_installation_id() -> int | None:
@@ -1379,6 +1465,7 @@ def ensure_reflex_installation_id() -> int | None:
         Distinct id.
     """
     try:
+        console.debug("Ensuring reflex installation id.")
         initialize_reflex_user_directory()
         installation_id_file = environment.REFLEX_DIR.get() / "installation_id"
 
@@ -1405,6 +1492,7 @@ def ensure_reflex_installation_id() -> int | None:
 
 def initialize_reflex_user_directory():
     """Initialize the reflex user directory."""
+    console.debug(f"Creating {environment.REFLEX_DIR.get()}")
     # Create the reflex directory.
     path_ops.mkdir(environment.REFLEX_DIR.get())
 
@@ -1412,13 +1500,11 @@ def initialize_reflex_user_directory():
 def initialize_frontend_dependencies():
     """Initialize all the frontend dependencies."""
     # validate dependencies before install
+    console.debug("Validating frontend dependencies.")
     validate_frontend_dependencies()
-    # Avoid warning about Node installation while we're trying to install it.
-    global CURRENTLY_INSTALLING_NODE
-    CURRENTLY_INSTALLING_NODE = True
     # Install the frontend dependencies.
-    processes.run_concurrently(install_node, install_bun)
-    CURRENTLY_INSTALLING_NODE = False
+    console.debug("Installing or validating bun.")
+    install_bun()
     # Set up the web directory.
     initialize_web_directory()
 
@@ -1487,6 +1573,9 @@ def prompt_for_template_options(templates: list[Template]) -> str:
 
     Returns:
         The template name the user selects.
+
+    Raises:
+        Exit: If the user does not select a template.
     """
     # Show the user the URLs of each template to preview.
     console.print("\nGet started with a template:")
@@ -1511,8 +1600,22 @@ def prompt_for_template_options(templates: list[Template]) -> str:
         default="0",
     )
 
+    if not template:
+        console.error("No template selected.")
+        raise typer.Exit(1)
+
+    try:
+        template_index = int(template)
+    except ValueError:
+        console.error("Invalid template selected.")
+        raise typer.Exit(1) from None
+
+    if template_index < 0 or template_index >= len(templates):
+        console.error("Invalid template selected.")
+        raise typer.Exit(1)
+
     # Return the template.
-    return templates[int(template)].name  # pyright: ignore [reportArgumentType]
+    return templates[template_index].name
 
 
 def fetch_app_templates(version: str) -> dict[str, Template]:
@@ -1623,7 +1726,7 @@ def create_config_init_app_from_remote_template(app_name: str, template_url: str
         console.error(f"Failed to unzip the template: {uze}")
         raise typer.Exit(1) from uze
 
-    if len(subdirs := os.listdir(unzip_dir)) != 1:
+    if len(subdirs := list(unzip_dir.iterdir())) != 1:
         console.error(f"Expected one directory in the zip, found {subdirs}")
         raise typer.Exit(1)
 
@@ -1708,31 +1811,6 @@ def validate_and_create_app_using_remote_template(
     )
 
 
-def generate_template_using_ai(template: str | None = None) -> str:
-    """Generate a template using AI(Flexgen).
-
-    Args:
-        template: The name of the template.
-
-    Returns:
-        The generation hash.
-
-    Raises:
-        Exit: If the template and ai flags are used.
-    """
-    if template is None:
-        # If AI is requested and no template specified, redirect the user to reflex.build.
-        return redir.reflex_build_redirect()
-    elif is_generation_hash(template):
-        # Otherwise treat the template as a generation hash.
-        return template
-    else:
-        console.error(
-            "Cannot use `--template` option with `--ai` option. Please remove `--template` option."
-        )
-        raise typer.Exit(2)
-
-
 def fetch_remote_templates(
     template: str,
 ) -> tuple[str, dict[str, Template]]:
@@ -1757,15 +1835,12 @@ def fetch_remote_templates(
     return template, available_templates
 
 
-def initialize_app(
-    app_name: str, template: str | None = None, ai: bool = False
-) -> str | None:
+def initialize_app(app_name: str, template: str | None = None) -> str | None:
     """Initialize the app either from a remote template or a blank app. If the config file exists, it is considered as reinit.
 
     Args:
         app_name: The name of the app.
         template: The name of the template to use.
-        ai: Whether to use AI to generate the template.
 
     Returns:
         The name of the template.
@@ -1781,11 +1856,6 @@ def initialize_app(
         telemetry.send("reinit")
         return
 
-    generation_hash = None
-    if ai:
-        generation_hash = generate_template_using_ai(template)
-        template = constants.Templates.DEFAULT
-
     templates: dict[str, Template] = {}
 
     # Don't fetch app templates if the user directly asked for DEFAULT.
@@ -1794,11 +1864,7 @@ def initialize_app(
 
     if template is None:
         template = prompt_for_template_options(get_init_cli_prompt_options())
-        if template == constants.Templates.AI:
-            generation_hash = generate_template_using_ai()
-            # change to the default to allow creation of default app
-            template = constants.Templates.DEFAULT
-        elif template == constants.Templates.CHOOSE_TEMPLATES:
+        if template == constants.Templates.CHOOSE_TEMPLATES:
             console.print(
                 f"Go to the templates page ({constants.Templates.REFLEX_TEMPLATES_URL}) and copy the command to init with a template."
             )
@@ -1813,11 +1879,6 @@ def initialize_app(
             app_name=app_name, template=template, templates=templates
         )
 
-    # If a reflex.build generation hash is available, download the code and apply it to the main module.
-    if generation_hash:
-        initialize_main_module_index_from_generation(
-            app_name, generation_hash=generation_hash
-        )
     telemetry.send("init", template=template)
 
     return template
@@ -1926,24 +1987,23 @@ def format_address_width(address_width: str | None) -> int | None:
         return None
 
 
-@functools.lru_cache(maxsize=None)
-def get_cpu_info() -> CpuInfo | None:
-    """Get the CPU info of the underlining host.
+def _retrieve_cpu_info() -> CpuInfo | None:
+    """Retrieve the CPU info of the host.
 
     Returns:
-         The CPU info.
+        The CPU info.
     """
     platform_os = platform.system()
     cpuinfo = {}
     try:
         if platform_os == "Windows":
-            cmd = "wmic cpu get addresswidth,caption,manufacturer /FORMAT:csv"
+            cmd = 'powershell -Command "Get-CimInstance Win32_Processor | Select-Object -First 1 | Select-Object AddressWidth,Manufacturer,Name | ConvertTo-Json"'
             output = processes.execute_command_and_return_output(cmd)
             if output:
-                val = output.splitlines()[-1].split(",")[1:]
-                cpuinfo["manufacturer_id"] = val[2]
-                cpuinfo["model_name"] = val[1].split("Family")[0].strip()
-                cpuinfo["address_width"] = format_address_width(val[0])
+                cpu_data = json.loads(output)
+                cpuinfo["address_width"] = cpu_data["AddressWidth"]
+                cpuinfo["manufacturer_id"] = cpu_data["Manufacturer"]
+                cpuinfo["model_name"] = cpu_data["Name"]
         elif platform_os == "Linux":
             output = processes.execute_command_and_return_output("lscpu")
             if output:
@@ -1983,21 +2043,20 @@ def get_cpu_info() -> CpuInfo | None:
 
 
 @functools.lru_cache(maxsize=None)
-def is_windows_bun_supported() -> bool:
-    """Check whether the underlining host running windows qualifies to run bun.
-    We typically do not run bun on ARM or 32 bit devices that use windows.
+def get_cpu_info() -> CpuInfo | None:
+    """Get the CPU info of the underlining host.
 
     Returns:
-        Whether the host is qualified to use bun.
+        The CPU info.
     """
-    cpu_info = get_cpu_info()
-    return (
-        constants.IS_WINDOWS
-        and cpu_info is not None
-        and cpu_info.address_width == 64
-        and cpu_info.model_name is not None
-        and "ARM" not in cpu_info.model_name
-    )
+    cpu_info_file = environment.REFLEX_DIR.get() / "cpu_info.json"
+    if cpu_info_file.exists() and (cpu_info := json.loads(cpu_info_file.read_text())):
+        return CpuInfo(**cpu_info)
+    cpu_info = _retrieve_cpu_info()
+    if cpu_info:
+        cpu_info_file.parent.mkdir(parents=True, exist_ok=True)
+        cpu_info_file.write_text(json.dumps(dataclasses.asdict(cpu_info)))
+    return cpu_info
 
 
 def is_generation_hash(template: str) -> bool:

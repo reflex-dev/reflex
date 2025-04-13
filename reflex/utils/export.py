@@ -6,8 +6,6 @@ from reflex import constants
 from reflex.config import environment, get_config
 from reflex.utils import build, console, exec, prerequisites, telemetry
 
-config = get_config()
-
 
 def export(
     zipping: bool = True,
@@ -33,6 +31,8 @@ def export(
         env: The environment to use. Defaults to constants.Env.PROD.
         loglevel: The log level to use. Defaults to console._LOG_LEVEL.
     """
+    config = get_config()
+
     # Set the log level.
     console.set_log_level(loglevel)
 
@@ -41,10 +41,10 @@ def export(
 
     # Override the config url values if provided.
     if api_url is not None:
-        config.api_url = str(api_url)
+        config._set_persistent(api_url=str(api_url))
         console.debug(f"overriding API URL: {config.api_url}")
     if deploy_url is not None:
-        config.deploy_url = str(deploy_url)
+        config._set_persistent(deploy_url=str(deploy_url))
         console.debug(f"overriding deploy URL: {config.deploy_url}")
 
     # Show system info

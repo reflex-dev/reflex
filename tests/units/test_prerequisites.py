@@ -3,12 +3,10 @@ import re
 import shutil
 import tempfile
 from pathlib import Path
-from unittest.mock import Mock, mock_open
 
 import pytest
 from typer.testing import CliRunner
 
-from reflex import constants
 from reflex.config import Config
 from reflex.reflex import cli
 from reflex.testing import chdir
@@ -17,7 +15,6 @@ from reflex.utils.prerequisites import (
     _update_next_config,
     cached_procedure,
     get_cpu_info,
-    initialize_requirements_txt,
     rename_imports_and_app_name,
 )
 
@@ -32,7 +29,7 @@ runner = CliRunner()
                 app_name="test",
             ),
             False,
-            'module.exports = {basePath: "", compress: true, trailingSlash: true, staticPageGenerationTimeout: 60};',
+            'module.exports = {basePath: "", compress: true, trailingSlash: true, staticPageGenerationTimeout: 60, devIndicators: false};',
         ),
         (
             Config(
@@ -40,7 +37,7 @@ runner = CliRunner()
                 static_page_generation_timeout=30,
             ),
             False,
-            'module.exports = {basePath: "", compress: true, trailingSlash: true, staticPageGenerationTimeout: 30};',
+            'module.exports = {basePath: "", compress: true, trailingSlash: true, staticPageGenerationTimeout: 30, devIndicators: false};',
         ),
         (
             Config(
@@ -48,7 +45,7 @@ runner = CliRunner()
                 next_compression=False,
             ),
             False,
-            'module.exports = {basePath: "", compress: false, trailingSlash: true, staticPageGenerationTimeout: 60};',
+            'module.exports = {basePath: "", compress: false, trailingSlash: true, staticPageGenerationTimeout: 60, devIndicators: false};',
         ),
         (
             Config(
@@ -56,7 +53,7 @@ runner = CliRunner()
                 frontend_path="/test",
             ),
             False,
-            'module.exports = {basePath: "/test", compress: true, trailingSlash: true, staticPageGenerationTimeout: 60};',
+            'module.exports = {basePath: "/test", compress: true, trailingSlash: true, staticPageGenerationTimeout: 60, devIndicators: false};',
         ),
         (
             Config(
@@ -65,11 +62,19 @@ runner = CliRunner()
                 next_compression=False,
             ),
             False,
-            'module.exports = {basePath: "/test", compress: false, trailingSlash: true, staticPageGenerationTimeout: 60};',
+            'module.exports = {basePath: "/test", compress: false, trailingSlash: true, staticPageGenerationTimeout: 60, devIndicators: false};',
         ),
         (
             Config(
                 app_name="test",
+            ),
+            True,
+            'module.exports = {basePath: "", compress: true, trailingSlash: true, staticPageGenerationTimeout: 60, devIndicators: false, output: "export", distDir: "_static"};',
+        ),
+        (
+            Config(
+                app_name="test",
+                next_dev_indicators=True,
             ),
             True,
             'module.exports = {basePath: "", compress: true, trailingSlash: true, staticPageGenerationTimeout: 60, output: "export", distDir: "_static"};',
@@ -105,91 +110,6 @@ def test_transpile_packages(transpile_packages, expected_transpile_packages):
     assert actual_transpile_packages == expected_transpile_packages
 
 
-def test_initialize_requirements_txt_no_op(mocker):
-    # File exists, reflex is included, do nothing
-    mocker.patch("pathlib.Path.exists", return_value=True)
-    mocker.patch(
-        "charset_normalizer.from_path",
-        return_value=Mock(best=lambda: Mock(encoding="utf-8")),
-    )
-    mock_fp_touch = mocker.patch("pathlib.Path.touch")
-    open_mock = mock_open(read_data="reflex==0.6.7")
-    mocker.patch("pathlib.Path.open", open_mock)
-    initialize_requirements_txt()
-    assert open_mock.call_count == 1
-    assert open_mock.call_args.kwargs["encoding"] == "utf-8"
-    assert open_mock().write.call_count == 0
-    mock_fp_touch.assert_not_called()
-
-
-def test_initialize_requirements_txt_missing_reflex(mocker):
-    # File exists, reflex is not included, add reflex
-    mocker.patch("pathlib.Path.exists", return_value=True)
-    mocker.patch(
-        "charset_normalizer.from_path",
-        return_value=Mock(best=lambda: Mock(encoding="utf-8")),
-    )
-    open_mock = mock_open(read_data="random-package=1.2.3")
-    mocker.patch("pathlib.Path.open", open_mock)
-    initialize_requirements_txt()
-    # Currently open for read, then open for append
-    assert open_mock.call_count == 2
-    for call_args in open_mock.call_args_list:
-        assert call_args.kwargs["encoding"] == "utf-8"
-    assert (
-        open_mock().write.call_args[0][0]
-        == f"\n{constants.RequirementsTxt.DEFAULTS_STUB}{constants.Reflex.VERSION}\n"
-    )
-
-
-def test_initialize_requirements_txt_not_exist(mocker):
-    # File does not exist, create file with reflex
-    mocker.patch("pathlib.Path.exists", return_value=False)
-    open_mock = mock_open()
-    mocker.patch("pathlib.Path.open", open_mock)
-    initialize_requirements_txt()
-    assert open_mock.call_count == 2
-    # By default, use utf-8 encoding
-    for call_args in open_mock.call_args_list:
-        assert call_args.kwargs["encoding"] == "utf-8"
-    assert open_mock().write.call_count == 1
-    assert (
-        open_mock().write.call_args[0][0]
-        == f"{constants.RequirementsTxt.DEFAULTS_STUB}{constants.Reflex.VERSION}\n"
-    )
-
-
-def test_requirements_txt_cannot_detect_encoding(mocker):
-    mocker.patch("pathlib.Path.exists", return_value=True)
-    mock_open = mocker.patch("builtins.open")
-    mocker.patch(
-        "charset_normalizer.from_path",
-        return_value=Mock(best=lambda: None),
-    )
-    initialize_requirements_txt()
-    mock_open.assert_not_called()
-
-
-def test_requirements_txt_other_encoding(mocker):
-    mocker.patch("pathlib.Path.exists", return_value=True)
-    mocker.patch(
-        "charset_normalizer.from_path",
-        return_value=Mock(best=lambda: Mock(encoding="utf-16")),
-    )
-    initialize_requirements_txt()
-    open_mock = mock_open(read_data="random-package=1.2.3")
-    mocker.patch("pathlib.Path.open", open_mock)
-    initialize_requirements_txt()
-    # Currently open for read, then open for append
-    assert open_mock.call_count == 2
-    for call_args in open_mock.call_args_list:
-        assert call_args.kwargs["encoding"] == "utf-16"
-    assert (
-        open_mock().write.call_args[0][0]
-        == f"\n{constants.RequirementsTxt.DEFAULTS_STUB}{constants.Reflex.VERSION}\n"
-    )
-
-
 def test_cached_procedure():
     call_count = 0
 
@@ -206,7 +126,7 @@ def test_cached_procedure():
     call_count = 0
 
     @cached_procedure(
-        tempfile.mktemp(),
+        cache_file=tempfile.mktemp(),
         payload_fn=lambda *args, **kwargs: f"{repr(args), repr(kwargs)}",
     )
     def _function_with_some_args(*args, **kwargs):
@@ -220,6 +140,20 @@ def test_cached_procedure():
     _function_with_some_args(100, y=300)
     assert call_count == 2
     _function_with_some_args(100, y=300)
+    assert call_count == 2
+
+    call_count = 0
+
+    @cached_procedure(
+        cache_file=None, cache_file_fn=tempfile.mktemp, payload_fn=lambda: "constant"
+    )
+    def _function_with_no_args_fn():
+        nonlocal call_count
+        call_count += 1
+
+    _function_with_no_args_fn()
+    assert call_count == 1
+    _function_with_no_args_fn()
     assert call_count == 2
 
 

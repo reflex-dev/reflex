@@ -2,14 +2,23 @@ import os
 import typing
 from functools import cached_property
 from pathlib import Path
-from typing import Any, ClassVar, List, Literal, Type, Union
+from typing import (
+    Any,
+    ClassVar,
+    List,
+    Literal,
+    Mapping,
+    NoReturn,
+    Sequence,
+    Type,
+    Union,
+)
 
 import pytest
 import typer
 from packaging import version
 
 from reflex import constants
-from reflex.base import Base
 from reflex.config import environment
 from reflex.event import EventHandler
 from reflex.state import BaseState
@@ -17,28 +26,6 @@ from reflex.utils import build, prerequisites, types
 from reflex.utils import exec as utils_exec
 from reflex.utils.exceptions import ReflexError, SystemPackageMissingError
 from reflex.vars.base import Var
-
-
-def mock_event(arg):
-    pass
-
-
-def get_above_max_version():
-    """Get the 1 version above the max required bun version.
-
-    Returns:
-        max bun version plus one.
-
-    """
-    semantic_version_list = constants.Bun.VERSION.split(".")
-    semantic_version_list[-1] = str(int(semantic_version_list[-1]) + 1)  # pyright: ignore [reportArgumentType, reportCallIssue]
-    return ".".join(semantic_version_list)
-
-
-V055 = version.parse("0.5.5")
-V059 = version.parse("0.5.9")
-V056 = version.parse("0.5.6")
-VMAXPLUS1 = version.parse(get_above_max_version())
 
 
 class ExampleTestState(BaseState):
@@ -109,10 +96,90 @@ def test_is_generic_alias(cls: type, expected: bool):
         (dict[str, str], dict[str, str], True),
         (dict[str, str], dict[str, Any], True),
         (dict[str, Any], dict[str, Any], True),
+        (Mapping[str, int], dict[str, int], False),
+        (Sequence[int], list[int], False),
+        (Sequence[int] | list[int], list[int], False),
+        (str, Literal["test", "value"], True),
+        (str, Literal["test", "value", 2, 3], True),
+        (int, Literal["test", "value"], False),
+        (int, Literal["test", "value", 2, 3], True),
+        (Literal["test", "value"], str, True),
+        (Literal["test", "value", 2, 3], str, False),
+        (Literal["test", "value"], int, False),
+        (Literal["test", "value", 2, 3], int, False),
+        *[
+            (NoReturn, super_class, True)
+            for super_class in [int, float, str, bool, list, dict, object, Any]
+        ],
+        *[
+            (list[NoReturn], list[super_class], True)
+            for super_class in [int, float, str, bool, list, dict, object, Any]
+        ],
     ],
 )
 def test_typehint_issubclass(subclass, superclass, expected):
     assert types.typehint_issubclass(subclass, superclass) == expected
+
+
+@pytest.mark.parametrize(
+    ("subclass", "superclass", "expected"),
+    [
+        *[
+            (base_type, base_type, True)
+            for base_type in [int, float, str, bool, list, dict]
+        ],
+        *[
+            (one_type, another_type, False)
+            for one_type in [int, float, str, list, dict]
+            for another_type in [int, float, str, list, dict]
+            if one_type != another_type
+        ],
+        (bool, int, True),
+        (int, bool, False),
+        (list, List, True),
+        (list, list[str], True),  # this is wrong, but it's a limitation of the function
+        (List, list, True),
+        (list[int], list, True),
+        (list[int], List, True),
+        (list[int], list[str], False),
+        (list[int], list[int], True),
+        (list[int], list[float], False),
+        (list[int], list[int | float], True),
+        (list[int], list[float | str], False),
+        (int | float, list[int | float], False),
+        (int | float, int | float | str, True),
+        (int | float, str | float, False),
+        (dict[str, int], dict[str, int], True),
+        (dict[str, bool], dict[str, int], True),
+        (dict[str, int], dict[str, bool], False),
+        (dict[str, Any], dict[str, str], False),
+        (dict[str, str], dict[str, str], True),
+        (dict[str, str], dict[str, Any], True),
+        (dict[str, Any], dict[str, Any], True),
+        (Mapping[str, int], dict[str, int], True),
+        (Sequence[int], list[int], True),
+        (Sequence[int] | list[int], list[int], True),
+        (str, Literal["test", "value"], True),
+        (str, Literal["test", "value", 2, 3], True),
+        (int, Literal["test", "value"], False),
+        (int, Literal["test", "value", 2, 3], True),
+        *[
+            (NoReturn, super_class, True)
+            for super_class in [int, float, str, bool, list, dict, object, Any]
+        ],
+        *[
+            (list[NoReturn], list[super_class], True)
+            for super_class in [int, float, str, bool, list, dict, object, Any]
+        ],
+    ],
+)
+def test_typehint_issubclass_mutable_as_immutable(subclass, superclass, expected):
+    assert (
+        types.typehint_issubclass(
+            subclass, superclass, treat_mutable_superclasss_as_immutable=True
+        )
+        == expected
+    )
 
 
 def test_validate_none_bun_path(mocker):
@@ -159,8 +226,8 @@ def test_validate_bun_path_incompatible_version(mocker):
         return_value=version.parse("0.6.5"),
     )
 
-    with pytest.raises(typer.Exit):
-        prerequisites.validate_bun()
+    # This will just warn the user, not raise an error
+    prerequisites.validate_bun()
 
 
 def test_remove_existing_bun_installation(mocker):
@@ -413,96 +480,6 @@ def test_validate_app_name(tmp_path, mocker):
         prerequisites.validate_app_name(app_name="1_test")
 
 
-def test_node_install_windows(tmp_path, mocker):
-    """Require user to install node manually for windows if node is not installed.
-
-    Args:
-        tmp_path: Test working dir.
-        mocker: Pytest mocker object.
-    """
-    fnm_root_path = tmp_path / "reflex" / "fnm"
-    fnm_exe = fnm_root_path / "fnm.exe"
-
-    mocker.patch("reflex.utils.prerequisites.constants.Fnm.DIR", fnm_root_path)
-    mocker.patch("reflex.utils.prerequisites.constants.Fnm.EXE", fnm_exe)
-    mocker.patch("reflex.utils.prerequisites.constants.IS_WINDOWS", True)
-    mocker.patch("reflex.utils.processes.new_process")
-    mocker.patch("reflex.utils.processes.stream_logs")
-
-    class Resp(Base):
-        status_code = 200
-        text = "test"
-
-    mocker.patch("httpx.stream", return_value=Resp())
-    download = mocker.patch("reflex.utils.prerequisites.download_and_extract_fnm_zip")
-    mocker.patch("reflex.utils.prerequisites.zipfile.ZipFile")
-    mocker.patch("reflex.utils.prerequisites.path_ops.rm")
-
-    prerequisites.install_node()
-
-    assert fnm_root_path.exists()
-    download.assert_called_once()
-
-
-@pytest.mark.parametrize(
-    "machine, system",
-    [
-        ("x64", "Darwin"),
-        ("arm64", "Darwin"),
-        ("x64", "Windows"),
-        ("arm64", "Windows"),
-        ("armv7", "Linux"),
-        ("armv8-a", "Linux"),
-        ("armv8.1-a", "Linux"),
-        ("armv8.2-a", "Linux"),
-        ("armv8.3-a", "Linux"),
-        ("armv8.4-a", "Linux"),
-        ("aarch64", "Linux"),
-        ("aarch32", "Linux"),
-    ],
-)
-def test_node_install_unix(tmp_path, mocker, machine, system):
-    fnm_root_path = tmp_path / "reflex" / "fnm"
-    fnm_exe = fnm_root_path / "fnm"
-
-    mocker.patch("reflex.utils.prerequisites.constants.Fnm.DIR", fnm_root_path)
-    mocker.patch("reflex.utils.prerequisites.constants.Fnm.EXE", fnm_exe)
-    mocker.patch("reflex.utils.prerequisites.constants.IS_WINDOWS", False)
-    mocker.patch("reflex.utils.prerequisites.platform.machine", return_value=machine)
-    mocker.patch("reflex.utils.prerequisites.platform.system", return_value=system)
-
-    class Resp(Base):
-        status_code = 200
-        text = "test"
-
-    mocker.patch("httpx.stream", return_value=Resp())
-    download = mocker.patch("reflex.utils.prerequisites.download_and_extract_fnm_zip")
-    process = mocker.patch("reflex.utils.processes.new_process")
-    chmod = mocker.patch("pathlib.Path.chmod")
-    mocker.patch("reflex.utils.processes.stream_logs")
-
-    prerequisites.install_node()
-
-    assert fnm_root_path.exists()
-    download.assert_called_once()
-    if system == "Darwin" and machine == "arm64":
-        process.assert_called_with(
-            [
-                fnm_exe,
-                "install",
-                "--arch=arm64",
-                constants.Node.VERSION,
-                "--fnm-dir",
-                fnm_root_path,
-            ]
-        )
-    else:
-        process.assert_called_with(
-            [fnm_exe, "install", constants.Node.VERSION, "--fnm-dir", fnm_root_path]
-        )
-    chmod.assert_called_once()
-
-
 def test_bun_install_without_unzip(mocker):
     """Test that an error is thrown when installing bun with unzip not installed.
 
@@ -601,7 +578,7 @@ def test_style_prop_with_event_handler_value(callable):
     }
 
     with pytest.raises(ReflexError):
-        rx.box(style=style)  # pyright: ignore [reportArgumentType]
+        rx.box(style=style)
 
 
 def test_is_prod_mode() -> None:

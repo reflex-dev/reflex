@@ -64,6 +64,7 @@ _SUBMOD_ATTRS: dict = {
         "ResponsiveContainer",
         "legend",
         "Legend",
+        "tooltip",
         "graphing_tooltip",
         "GraphingTooltip",
         "label",

@@ -1,10 +1,11 @@
 """Utilities to handle redirection to browser UI."""
 
 import time
-import uuid
 import webbrowser
 
 import httpx
+
+from reflex.utils import net
 
 from .. import constants
 from . import console
@@ -39,7 +40,7 @@ def open_browser_and_wait(
     console.info("[b]Complete the workflow in the browser to continue.[/b]")
     while True:
         try:
-            response = httpx.get(poll_url, follow_redirects=True)
+            response = net.get(poll_url, follow_redirects=True)
             if response.is_success:
                 break
         except httpx.RequestError as err:
@@ -48,14 +49,6 @@ def open_browser_and_wait(
     return response
 
 
-def reflex_build_redirect() -> str:
-    """Open the browser window to reflex.build and wait for the user to select a generation.
-
-    Returns:
-        The selected generation hash.
-    """
-    token = str(uuid.uuid4())
-    target_url = constants.Templates.REFLEX_BUILD_URL.format(reflex_init_token=token)
-    poll_url = constants.Templates.REFLEX_BUILD_POLL_URL.format(reflex_init_token=token)
-    response = open_browser_and_wait(target_url, poll_url)
-    return response.json()["generation_hash"]
+def reflex_build_redirect() -> None:
+    """Open the browser window to reflex.build."""
+    open_browser(constants.Templates.REFLEX_BUILD_FRONTEND)

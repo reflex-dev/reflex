@@ -53,9 +53,9 @@ def wait_for_client_redirect(component: Component) -> Component:
         The conditionally rendered component.
     """
     return cond(
-        condition=route_not_found,
-        c1=component,
-        c2=ClientSideRouting.create(),
+        route_not_found,
+        component,
+        ClientSideRouting.create(),
     )
 
 

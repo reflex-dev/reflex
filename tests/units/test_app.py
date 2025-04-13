@@ -30,6 +30,7 @@ from reflex.app import (
     upload,
 )
 from reflex.components import Component
+from reflex.components.base.bare import Bare
 from reflex.components.base.fragment import Fragment
 from reflex.components.core.cond import Cond
 from reflex.components.radix.themes.typography.text import Text
@@ -210,7 +211,7 @@ def test_default_app(app: App):
     Args:
         app: The app to test.
     """
-    assert app.middleware == [HydrateMiddleware()]
+    assert app._middlewares == [HydrateMiddleware()]
     assert app.style == Style()
     assert app.admin_dash is None
 
@@ -1480,7 +1481,7 @@ def test_generate_component():
     assert isinstance(comp, Component)
 
     with pytest.raises(exceptions.MatchTypeError):
-        App._generate_component(index_mismatch)  # pyright: ignore [reportArgumentType]
+        App._generate_component(index_mismatch)
 
 
 def test_add_page_component_returning_tuple():
@@ -1495,8 +1496,8 @@ def test_add_page_component_returning_tuple():
     def page2():
         return (rx.text("third"),)
 
-    app.add_page(index)  # pyright: ignore [reportArgumentType]
-    app.add_page(page2)  # pyright: ignore [reportArgumentType]
+    app.add_page(index)
+    app.add_page(page2)
 
     app._compile_page("index")
     app._compile_page("page2")
@@ -1505,17 +1506,20 @@ def test_add_page_component_returning_tuple():
     assert isinstance(fragment_wrapper, Fragment)
     first_text = fragment_wrapper.children[0]
     assert isinstance(first_text, Text)
-    assert str(first_text.children[0].contents) == '"first"'  # pyright: ignore [reportAttributeAccessIssue]
+    assert isinstance(first_text.children[0], Bare)
+    assert str(first_text.children[0].contents) == '"first"'
     second_text = fragment_wrapper.children[1]
     assert isinstance(second_text, Text)
-    assert str(second_text.children[0].contents) == '"second"'  # pyright: ignore [reportAttributeAccessIssue]
+    assert isinstance(second_text.children[0], Bare)
+    assert str(second_text.children[0].contents) == '"second"'
 
     # Test page with trailing comma.
     page2_fragment_wrapper = app._pages["page2"].children[0]
     assert isinstance(page2_fragment_wrapper, Fragment)
     third_text = page2_fragment_wrapper.children[0]
     assert isinstance(third_text, Text)
-    assert str(third_text.children[0].contents) == '"third"'  # pyright: ignore [reportAttributeAccessIssue]
+    assert isinstance(third_text.children[0], Bare)
+    assert str(third_text.children[0].contents) == '"third"'
 
 
 @pytest.mark.parametrize("export", (True, False))

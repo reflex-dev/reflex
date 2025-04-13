@@ -509,6 +509,7 @@ def test_var_indexing_lists(var):
             Var(_js_expr="tuple", _var_type=tuple[int, str]).guess_type(),
             [int, str],
         ),
+        (Var.create((1, 2)), [int, int]),
     ],
 )
 def test_var_indexing_types(var, type_):
@@ -1110,7 +1111,7 @@ def test_object_operations():
 
 def test_var_component():
     class ComponentVarState(rx.State):
-        field_var: rx.Component = rx.text("I am a field var")
+        field_var: rx.Field[rx.Component] = rx.field(rx.text("I am a field var"))
 
         @rx.var
         def computed_var(self) -> rx.Component:
@@ -1127,7 +1128,7 @@ def test_var_component():
             for _, imported_objects in var_data.imports
         )
 
-    has_eval_react_component(ComponentVarState.field_var)  # pyright: ignore [reportArgumentType]
+    has_eval_react_component(ComponentVarState.field_var)
     has_eval_react_component(ComponentVarState.computed_var)
 
 
@@ -1829,7 +1830,7 @@ def test_computed_var_deps(deps: list[str | Var], expected: set[str]):
         ["", "abc"],
     ],
 )
-def test_invalid_computed_var_deps(deps: List):
+def test_invalid_computed_var_deps(deps: list):
     with pytest.raises(TypeError):
 
         @computed_var(deps=deps)

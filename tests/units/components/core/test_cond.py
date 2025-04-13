@@ -49,7 +49,7 @@ def test_validate_cond(cond_state: BaseState):
     assert cond_dict["name"] == "Fragment"
 
     [condition] = cond_dict["children"]
-    assert condition["cond_state"] == f"isTrue({cond_state.get_full_name()}.value)"
+    assert condition["cond_state"] == str(cond_state.value.bool())
 
     # true value
     true_value = condition["true_value"]
@@ -100,9 +100,8 @@ def test_prop_cond(c1: Any, c2: Any):
 
 
 def test_cond_no_mix():
-    """Test if cond can't mix components and props."""
-    with pytest.raises(ValueError):
-        cond(True, LiteralVar.create("hello"), Text.create("world"))
+    """Test if cond can mix components and props."""
+    cond(True, LiteralVar.create("hello"), Text.create("world"))
 
 
 def test_cond_no_else():
@@ -113,8 +112,8 @@ def test_cond_no_else():
     comp = comp.children[0]
     assert isinstance(comp, Cond)
     assert comp.cond._decode() is True
-    assert comp.comp1.render() == Fragment.create(Text.create("hello")).render()  # pyright: ignore [reportOptionalMemberAccess]
-    assert comp.comp2 == Fragment.create()
+    assert comp.children[0].render() == Fragment.create(Text.create("hello")).render()  # pyright: ignore [reportOptionalMemberAccess]
+    assert comp.children[1] == Fragment.create()
 
     # Props do not support the use of cond without else
     with pytest.raises(ValueError):

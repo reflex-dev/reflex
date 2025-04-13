@@ -80,6 +80,7 @@ formatted_router = {
         "sec_websocket_extensions": "",
         "accept_encoding": "",
         "accept_language": "",
+        "raw_headers": {},
     },
     "page": {
         "host": "",
@@ -110,7 +111,7 @@ class TestState(BaseState):
     key: str
     map_key: str = "a"
     array: list[float] = [1, 2, 3.14]
-    mapping: dict[str, list[int]] = {"a": [1, 2, 3], "b": [4, 5, 6]}
+    mapping: rx.Field[dict[str, list[int]]] = rx.field({"a": [1, 2, 3], "b": [4, 5, 6]})
     obj: Object = Object()
     complex: dict[int, Object] = {1: Object(), 2: Object()}
     fig: Figure = Figure()
@@ -897,6 +898,10 @@ def test_get_headers(test_state, router_data, router_data_headers):
     print(test_state.router.headers)
     assert dataclasses.asdict(test_state.router.headers) == {
         format.to_snake_case(k): v for k, v in router_data_headers.items()
+    } | {
+        "raw_headers": {
+            "_data": tuple(sorted((k, v) for k, v in router_data_headers.items()))
+        }
     }
 
 
@@ -1607,7 +1612,7 @@ async def test_state_with_invalid_yield(capsys, mock_app):
                     "An error occurred.",
                     level="error",
                     fallback_to_alert=True,
-                    description="TypeError: Your handler test_state_with_invalid_yield.<locals>.StateWithInvalidYield.invalid_handler must only return/yield: None, Events or other EventHandlers referenced by their class (i.e. using `type(self)` or other class references)..<br/>See logs for details.",
+                    description="TypeError: Your handler test_state_with_invalid_yield.<locals>.StateWithInvalidYield.invalid_handler must only return/yield: None, Events or other EventHandlers referenced by their class (i.e. using `type(self)` or other class references). Returned events of types <class 'int'>..<br/>See logs for details.",
                     id="backend_error",
                     position="top-center",
                     style={"width": "500px"},
@@ -3419,6 +3424,42 @@ class ChildUsesMixinState(UsesMixinState):
     pass
 
 
+class ChildMixinState(ChildUsesMixinState, mixin=True):
+    """A mixin state that inherits from a concrete state that uses mixins."""
+
+    pass
+
+
+class GrandchildUsesMixinState(ChildMixinState):
+    """A grandchild state that uses the mixin state."""
+
+    pass
+
+
+class BareMixin:
+    """A bare mixin which does not inherit from rx.State."""
+
+    _bare_mixin: int = 0
+
+
+class BareStateMixin(BareMixin, rx.State, mixin=True):
+    """A state mixin that uses a bare mixin."""
+
+    pass
+
+
+class BareMixinState(BareStateMixin, State):
+    """A state that uses a bare mixin."""
+
+    pass
+
+
+class ChildBareMixinState(BareMixinState):
+    """A child state that uses a bare mixin."""
+
+    pass
+
+
 def test_mixin_state() -> None:
     """Test that a mixin state works correctly."""
     assert "num" in UsesMixinState.base_vars
@@ -3433,6 +3474,9 @@ def test_mixin_state() -> None:
         is not UsesMixinState.backend_vars["_backend_no_default"]
     )
 
+    assert UsesMixinState.get_parent_state() == State
+    assert UsesMixinState.get_root_state() == State
+
 
 def test_child_mixin_state() -> None:
     """Test that mixin vars are only applied to the highest state in the hierarchy."""
@@ -3441,6 +3485,39 @@ def test_child_mixin_state() -> None:
 
     assert "computed" in ChildUsesMixinState.inherited_vars
     assert "computed" not in ChildUsesMixinState.computed_vars
+
+    assert ChildUsesMixinState.get_parent_state() == UsesMixinState
+    assert ChildUsesMixinState.get_root_state() == State
+
+
+def test_grandchild_mixin_state() -> None:
+    """Test that a mixin can inherit from a concrete state class."""
+    assert "num" in GrandchildUsesMixinState.inherited_vars
+    assert "num" not in GrandchildUsesMixinState.base_vars
+
+    assert "computed" in GrandchildUsesMixinState.inherited_vars
+    assert "computed" not in GrandchildUsesMixinState.computed_vars
+
+    assert ChildMixinState.get_parent_state() == ChildUsesMixinState
+    assert ChildMixinState.get_root_state() == State
+
+    assert GrandchildUsesMixinState.get_parent_state() == ChildUsesMixinState
+    assert GrandchildUsesMixinState.get_root_state() == State
+
+
+def test_bare_mixin_state() -> None:
+    """Test that a mixin can inherit from a concrete state class."""
+    assert "_bare_mixin" not in BareMixinState.inherited_vars
+    assert "_bare_mixin" not in BareMixinState.base_vars
+
+    assert BareMixinState.get_parent_state() == State
+    assert BareMixinState.get_root_state() == State
+
+    assert "_bare_mixin" not in ChildBareMixinState.inherited_vars
+    assert "_bare_mixin" not in ChildBareMixinState.base_vars
+
+    assert ChildBareMixinState.get_parent_state() == BareMixinState
+    assert ChildBareMixinState.get_root_state() == State
 
 
 def test_assignment_to_undeclared_vars():
@@ -3792,6 +3869,12 @@ async def test_get_var_value(state_manager: StateManager, substate_token: str):
     with pytest.raises(UnretrievableVarValueError):
         await state.get_var_value(rx.Var("undefined"))
 
+    # ObjectVar
+    assert await state.get_var_value(TestState.mapping) == {
+        "a": [1, 2, 3],
+        "b": [4, 5, 6],
+    }
+
 
 @pytest.mark.asyncio
 async def test_async_computed_var_get_state(mock_app: rx.App, token: str):
@@ -3866,16 +3949,25 @@ async def test_async_computed_var_get_state(mock_app: rx.App, token: str):
 class Table(rx.ComponentState):
     """A table state."""
 
-    data: ClassVar[Var]
+    _data: ClassVar[Var]
 
     @rx.var(cache=True, auto_deps=False)
-    async def rows(self) -> list[dict[str, Any]]:
+    async def data(self) -> list[dict[str, Any]]:
         """Computed var over the given rows.
 
         Returns:
             The data rows.
         """
-        return await self.get_var_value(self.data)
+        return await self.get_var_value(self._data)
+
+    @rx.var
+    async def foo(self) -> list[dict[str, Any]]:
+        """Another computed var that depends on data in this state.
+
+        Returns:
+            The data rows.
+        """
+        return await self.data
 
     @classmethod
     def get_component(cls, data: Var) -> rx.Component:
@@ -3887,8 +3979,8 @@ class Table(rx.ComponentState):
         Returns:
             The component.
         """
-        cls.data = data
-        cls.computed_vars["rows"].add_dependency(cls, data)
+        cls._data = data
+        cls.computed_vars["data"].add_dependency(cls, data)
         return rx.foreach(data, lambda d: rx.text(d.to_string()))
 
 
@@ -3915,4 +4007,24 @@ async def test_async_computed_var_get_var_value(mock_app: rx.App, token: str):
     assert comp_state.dirty_vars == set()
 
     other_state.data.append({"foo": "baz"})
-    assert "rows" in comp_state.dirty_vars
+    assert "data" in comp_state.dirty_vars
+    assert "foo" in comp_state.dirty_vars
+
+
+def test_computed_var_mutability() -> None:
+    class CvMixin(rx.State, mixin=True):
+        @rx.var(cache=True, deps=["hi"])
+        def cv(self) -> int:
+            return 42
+
+    class FirstCvState(CvMixin, rx.State):
+        pass
+
+    class SecondCvState(CvMixin, rx.State):
+        pass
+
+    first_cv = FirstCvState.computed_vars["cv"]
+    second_cv = SecondCvState.computed_vars["cv"]
+
+    assert first_cv is not second_cv
+    assert first_cv._static_deps is not second_cv._static_deps

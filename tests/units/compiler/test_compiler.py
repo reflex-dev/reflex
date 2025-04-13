@@ -1,8 +1,12 @@
+import importlib.util
+import os
 from pathlib import Path
 
 import pytest
 
+from reflex import constants
 from reflex.compiler import compiler, utils
+from reflex.constants.compiler import PageNames
 from reflex.utils.imports import ImportVar, ParsedImportDict
 
 
@@ -102,10 +106,16 @@ def test_compile_imports(import_dict: ParsedImportDict, test_dicts: list[dict]):
     for import_dict, test_dict in zip(imports, test_dicts, strict=True):
         assert import_dict["lib"] == test_dict["lib"]
         assert import_dict["default"] == test_dict["default"]
-        assert sorted(import_dict["rest"]) == test_dict["rest"]  # pyright: ignore [reportArgumentType]
+        assert (
+            sorted(
+                import_dict["rest"],
+                key=lambda i: i if isinstance(i, str) else (i.tag or ""),
+            )
+            == test_dict["rest"]
+        )
 
 
-def test_compile_stylesheets(tmp_path, mocker):
+def test_compile_stylesheets(tmp_path: Path, mocker):
     """Test that stylesheets compile correctly.
 
     Args:
@@ -118,24 +128,127 @@ def test_compile_stylesheets(tmp_path, mocker):
     assets_dir = project / "assets"
     assets_dir.mkdir()
 
-    (assets_dir / "styles.css").touch()
+    (assets_dir / "style.css").write_text(
+        "button.rt-Button {\n\tborder-radius:unset !important;\n}"
+    )
     mocker.patch("reflex.compiler.compiler.Path.cwd", return_value=project)
+    mocker.patch(
+        "reflex.compiler.compiler.get_web_dir",
+        return_value=project / constants.Dirs.WEB,
+    )
+    mocker.patch(
+        "reflex.compiler.utils.get_web_dir", return_value=project / constants.Dirs.WEB
+    )
 
     stylesheets = [
         "https://fonts.googleapis.com/css?family=Sofia&effect=neon|outline|emboss|shadow-multiple",
         "https://cdn.jsdelivr.net/npm/bootstrap@3.3.7/dist/css/bootstrap.min.css",
-        "/styles.css",
+        "/style.css",
         "https://cdn.jsdelivr.net/npm/bootstrap@3.3.7/dist/css/bootstrap-theme.min.css",
     ]
 
     assert compiler.compile_root_stylesheet(stylesheets) == (
-        str(Path(".web") / "styles" / "styles.css"),
+        str(
+            project
+            / constants.Dirs.WEB
+            / "styles"
+            / (PageNames.STYLESHEET_ROOT + ".css")
+        ),
         "@import url('./tailwind.css'); \n"
         "@import url('https://fonts.googleapis.com/css?family=Sofia&effect=neon|outline|emboss|shadow-multiple'); \n"
         "@import url('https://cdn.jsdelivr.net/npm/bootstrap@3.3.7/dist/css/bootstrap.min.css'); \n"
-        "@import url('../public/styles.css'); \n"
-        "@import url('https://cdn.jsdelivr.net/npm/bootstrap@3.3.7/dist/css/bootstrap-theme.min.css'); \n",
+        "@import url('https://cdn.jsdelivr.net/npm/bootstrap@3.3.7/dist/css/bootstrap-theme.min.css'); \n"
+        "@import url('./style.css'); \n",
     )
+
+    assert (project / constants.Dirs.WEB / "styles" / "style.css").read_text() == (
+        assets_dir / "style.css"
+    ).read_text()
+
+
+def test_compile_stylesheets_scss_sass(tmp_path: Path, mocker):
+    if importlib.util.find_spec("sass") is None:
+        pytest.skip(
+            'The `libsass` package is required to compile sass/scss stylesheet files. Run `pip install "libsass>=0.23.0"`.'
+        )
+    if os.name == "nt":
+        pytest.skip("Skipping test on Windows")
+
+    project = tmp_path / "test_project"
+    project.mkdir()
+
+    assets_dir = project / "assets"
+    assets_dir.mkdir()
+
+    assets_preprocess_dir = assets_dir / "preprocess"
+    assets_preprocess_dir.mkdir()
+
+    (assets_dir / "style.css").write_text(
+        "button.rt-Button {\n\tborder-radius:unset !important;\n}"
+    )
+    (assets_preprocess_dir / "styles_a.sass").write_text(
+        "button.rt-Button\n\tborder-radius:unset !important"
+    )
+    (assets_preprocess_dir / "styles_b.scss").write_text(
+        "button.rt-Button {\n\tborder-radius:unset !important;\n}"
+    )
+    mocker.patch("reflex.compiler.compiler.Path.cwd", return_value=project)
+    mocker.patch(
+        "reflex.compiler.compiler.get_web_dir",
+        return_value=project / constants.Dirs.WEB,
+    )
+    mocker.patch(
+        "reflex.compiler.utils.get_web_dir", return_value=project / constants.Dirs.WEB
+    )
+
+    stylesheets = [
+        "/style.css",
+        "/preprocess/styles_a.sass",
+        "/preprocess/styles_b.scss",
+    ]
+
+    assert compiler.compile_root_stylesheet(stylesheets) == (
+        str(
+            project
+            / constants.Dirs.WEB
+            / "styles"
+            / (PageNames.STYLESHEET_ROOT + ".css")
+        ),
+        "@import url('./tailwind.css'); \n"
+        "@import url('./style.css'); \n"
+        f"@import url('./{Path('preprocess') / Path('styles_a.css')!s}'); \n"
+        f"@import url('./{Path('preprocess') / Path('styles_b.css')!s}'); \n",
+    )
+
+    stylesheets = [
+        "/style.css",
+        "/preprocess",  # this is a folder containing "styles_a.sass" and "styles_b.scss"
+    ]
+
+    assert compiler.compile_root_stylesheet(stylesheets) == (
+        str(
+            project
+            / constants.Dirs.WEB
+            / "styles"
+            / (PageNames.STYLESHEET_ROOT + ".css")
+        ),
+        "@import url('./tailwind.css'); \n"
+        "@import url('./style.css'); \n"
+        f"@import url('./{Path('preprocess') / Path('styles_a.css')!s}'); \n"
+        f"@import url('./{Path('preprocess') / Path('styles_b.css')!s}'); \n",
+    )
+
+    assert (project / constants.Dirs.WEB / "styles" / "style.css").read_text() == (
+        assets_dir / "style.css"
+    ).read_text()
+
+    expected_result = "button.rt-Button{border-radius:unset !important}\n"
+    assert (
+        project / constants.Dirs.WEB / "styles" / "preprocess" / "styles_a.css"
+    ).read_text() == expected_result
+    assert (
+        project / constants.Dirs.WEB / "styles" / "preprocess" / "styles_b.css"
+    ).read_text() == expected_result
 
 
 def test_compile_stylesheets_exclude_tailwind(tmp_path, mocker):
@@ -155,16 +268,16 @@ def test_compile_stylesheets_exclude_tailwind(tmp_path, mocker):
     mocker.patch.object(mock, "tailwind", None)
     mocker.patch("reflex.compiler.compiler.get_config", return_value=mock)
 
-    (assets_dir / "styles.css").touch()
+    (assets_dir / "style.css").touch()
     mocker.patch("reflex.compiler.compiler.Path.cwd", return_value=project)
 
     stylesheets = [
-        "/styles.css",
+        "/style.css",
     ]
 
     assert compiler.compile_root_stylesheet(stylesheets) == (
-        str(Path(".web") / "styles" / "styles.css"),
-        "@import url('../public/styles.css'); \n",
+        str(Path(".web") / "styles" / (PageNames.STYLESHEET_ROOT + ".css")),
+        "@import url('./style.css'); \n",
     )
 
 
@@ -183,7 +296,7 @@ def test_compile_nonexistent_stylesheet(tmp_path, mocker):
 
     mocker.patch("reflex.compiler.compiler.Path.cwd", return_value=project)
 
-    stylesheets = ["/styles.css"]
+    stylesheets = ["/style.css"]
 
     with pytest.raises(FileNotFoundError):
         compiler.compile_root_stylesheet(stylesheets)
@@ -207,7 +320,7 @@ def test_create_document_root():
         utils.NextScript.create(src="bar.js"),
     ]
     root = utils.create_document_root(
-        head_components=comps,  # pyright: ignore [reportArgumentType]
+        head_components=comps,
         html_lang="rx",
         html_custom_attrs={"project": "reflex"},
     )

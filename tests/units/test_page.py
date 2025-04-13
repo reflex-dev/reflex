@@ -7,6 +7,7 @@ def test_page_decorator():
     def foo_():
         return text("foo")
 
+    DECORATED_PAGES.clear()
     assert len(DECORATED_PAGES) == 0
     decorated_foo_ = page()(foo_)
     assert decorated_foo_ == foo_

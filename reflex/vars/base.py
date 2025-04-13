@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import contextlib
+import copy
 import dataclasses
 import datetime
 import functools
@@ -29,6 +30,7 @@ from typing import (
     Mapping,
     NoReturn,
     ParamSpec,
+    Protocol,
     Sequence,
     Set,
     Tuple,
@@ -42,6 +44,7 @@ from typing import (
     overload,
 )
 
+from rich.markup import escape
 from sqlalchemy.orm import DeclarativeBase
 from typing_extensions import deprecated, override
 
@@ -58,10 +61,11 @@ from reflex.utils.exceptions import (
 )
 from reflex.utils.format import format_state_name
 from reflex.utils.imports import (
+    ImmutableImportDict,
     ImmutableParsedImportDict,
     ImportDict,
     ImportVar,
-    ParsedImportDict,
+    ParsedImportTuple,
     parse_imports,
 )
 from reflex.utils.types import (
@@ -121,7 +125,7 @@ class VarData:
     field_name: str = dataclasses.field(default="")
 
     # Imports needed to render this var
-    imports: ImmutableParsedImportDict = dataclasses.field(default_factory=tuple)
+    imports: ParsedImportTuple = dataclasses.field(default_factory=tuple)
 
     # Hooks that need to be present in the component to render this var
     hooks: tuple[str, ...] = dataclasses.field(default_factory=tuple)
@@ -139,7 +143,7 @@ class VarData:
         self,
         state: str = "",
         field_name: str = "",
-        imports: ImportDict | ParsedImportDict | None = None,
+        imports: ImmutableImportDict | ImmutableParsedImportDict | None = None,
         hooks: Mapping[str, VarData | None] | Sequence[str] | str | None = None,
         deps: list[Var] | None = None,
         position: Hooks.HookPosition | None = None,
@@ -159,8 +163,8 @@ class VarData:
         if isinstance(hooks, str):
             hooks = [hooks]
         if not isinstance(hooks, dict):
-            hooks = {hook: None for hook in (hooks or [])}
-        immutable_imports: ImmutableParsedImportDict = tuple(
+            hooks = dict.fromkeys(hooks or [])
+        immutable_imports: ParsedImportTuple = tuple(
             (k, tuple(v)) for k, v in parse_imports(imports or {}).items()
         )
         object.__setattr__(self, "state", state)
@@ -359,7 +363,7 @@ def can_use_in_object_var(cls: GenericType) -> bool:
         return all(can_use_in_object_var(t) for t in types.get_args(cls))
     return (
         inspect.isclass(cls)
-        and not issubclass(cls, Var)
+        and not safe_issubclass(cls, Var)
         and serializers.can_serialize(cls, dict)
     )
 
@@ -728,6 +732,9 @@ class Var(Generic[VAR_TYPE]):
     def to(self, output: Type[bool]) -> BooleanVar: ...
 
     @overload
+    def to(self, output: type[int]) -> NumberVar[int]: ...
+
+    @overload
     def to(self, output: type[int] | type[float]) -> NumberVar: ...
 
     @overload
@@ -796,7 +803,7 @@ class Var(Generic[VAR_TYPE]):
 
         if inspect.isclass(output):
             for var_subclass in _var_subclasses[::-1]:
-                if issubclass(output, var_subclass.var_subclass):
+                if safe_issubclass(output, var_subclass.var_subclass):
                     current_var_type = self._var_type
                     if current_var_type is Any:
                         new_var_type = var_type
@@ -808,7 +815,7 @@ class Var(Generic[VAR_TYPE]):
                     return to_operation_return  # pyright: ignore [reportReturnType]
 
             # If we can't determine the first argument, we just replace the _var_type.
-            if not issubclass(output, Var) or var_type is None:
+            if not safe_issubclass(output, Var) or var_type is None:
                 return dataclasses.replace(
                     self,
                     _var_type=output,
@@ -850,14 +857,15 @@ class Var(Generic[VAR_TYPE]):
         Raises:
             TypeError: If the type is not supported for guessing.
         """
-        from .number import NumberVar
         from .object import ObjectVar
 
         var_type = self._var_type
         if var_type is None:
             return self.to(None)
-        if types.is_optional(var_type):
-            var_type = types.get_args(var_type)[0]
+        if var_type is NoReturn:
+            return self.to(Any)
+
+        var_type = types.value_inside_optional(var_type)
 
         if var_type is Any:
             return self
@@ -866,11 +874,20 @@ class Var(Generic[VAR_TYPE]):
 
         if fixed_type in types.UnionTypes:
             inner_types = get_args(var_type)
+            non_optional_inner_types = [
+                types.value_inside_optional(inner_type) for inner_type in inner_types
+            ]
+            fixed_inner_types = [
+                get_origin(inner_type) or inner_type
+                for inner_type in non_optional_inner_types
+            ]
 
-            if all(
-                inspect.isclass(t) and issubclass(t, (int, float)) for t in inner_types
-            ):
-                return self.to(NumberVar, self._var_type)
+            for var_subclass in _var_subclasses[::-1]:
+                if all(
+                    safe_issubclass(t, var_subclass.python_types)
+                    for t in fixed_inner_types
+                ):
+                    return self.to(var_subclass.var_subclass, self._var_type)
 
             if can_use_in_object_var(var_type):
                 return self.to(ObjectVar, self._var_type)
@@ -888,7 +905,7 @@ class Var(Generic[VAR_TYPE]):
             return self.to(None)
 
         for var_subclass in _var_subclasses[::-1]:
-            if issubclass(fixed_type, var_subclass.python_types):
+            if safe_issubclass(fixed_type, var_subclass.python_types):
                 return self.to(var_subclass.var_subclass, self._var_type)
 
         if can_use_in_object_var(fixed_type):
@@ -916,17 +933,17 @@ class Var(Generic[VAR_TYPE]):
         if type_ is Literal:
             args = get_args(self._var_type)
             return args[0] if args else None
-        if issubclass(type_, str):
+        if safe_issubclass(type_, str):
             return ""
-        if issubclass(type_, types.get_args(int | float)):
+        if safe_issubclass(type_, types.get_args(int | float)):
             return 0
-        if issubclass(type_, bool):
+        if safe_issubclass(type_, bool):
             return False
-        if issubclass(type_, list):
+        if safe_issubclass(type_, list):
             return []
-        if issubclass(type_, Mapping):
+        if safe_issubclass(type_, Mapping):
             return {}
-        if issubclass(type_, tuple):
+        if safe_issubclass(type_, tuple):
             return ()
         if types.is_dataframe(type_):
             try:
@@ -937,7 +954,7 @@ class Var(Generic[VAR_TYPE]):
                 raise ImportError(
                     "Please install pandas to use dataframes in your app."
                 ) from e
-        return set() if issubclass(type_, set) else None
+        return set() if safe_issubclass(type_, set) else None
 
     def _get_setter_name(self, include_state: bool = True) -> str:
         """Get the name of the var's generated setter function.
@@ -977,7 +994,7 @@ class Var(Generic[VAR_TYPE]):
                     setattr(state, actual_name, value)
                 except ValueError:
                     console.debug(
-                        f"{type(state).__name__}.{self._js_expr}: Failed conversion of {value} to '{self._var_type.__name__}'. Value not set.",
+                        f"{type(state).__name__}.{self._js_expr}: Failed conversion of {value!s} to '{self._var_type.__name__}'. Value not set.",
                     )
             else:
                 setattr(state, actual_name, value)
@@ -1047,7 +1064,19 @@ class Var(Generic[VAR_TYPE]):
 
         return boolify(self)
 
-    def __and__(self, other: Var | Any) -> Var:
+    def is_not_none(self) -> BooleanVar:
+        """Check if the var is not None.
+
+        Returns:
+            A BooleanVar object representing the result of the check.
+        """
+        from .number import is_not_none_operation
+
+        return is_not_none_operation(self)
+
+    def __and__(
+        self, other: Var[OTHER_VAR_TYPE] | Any
+    ) -> Var[VAR_TYPE | OTHER_VAR_TYPE]:
         """Perform a logical AND operation on the current instance and another variable.
 
         Args:
@@ -1058,7 +1087,9 @@ class Var(Generic[VAR_TYPE]):
         """
         return and_operation(self, other)
 
-    def __rand__(self, other: Var | Any) -> Var:
+    def __rand__(
+        self, other: Var[OTHER_VAR_TYPE] | Any
+    ) -> Var[VAR_TYPE | OTHER_VAR_TYPE]:
         """Perform a logical AND operation on the current instance and another variable.
 
         Args:
@@ -1069,7 +1100,9 @@ class Var(Generic[VAR_TYPE]):
         """
         return and_operation(other, self)
 
-    def __or__(self, other: Var | Any) -> Var:
+    def __or__(
+        self, other: Var[OTHER_VAR_TYPE] | Any
+    ) -> Var[VAR_TYPE | OTHER_VAR_TYPE]:
         """Perform a logical OR operation on the current instance and another variable.
 
         Args:
@@ -1080,7 +1113,9 @@ class Var(Generic[VAR_TYPE]):
         """
         return or_operation(self, other)
 
-    def __ror__(self, other: Var | Any) -> Var:
+    def __ror__(
+        self, other: Var[OTHER_VAR_TYPE] | Any
+    ) -> Var[VAR_TYPE | OTHER_VAR_TYPE]:
         """Perform a logical OR operation on the current instance and another variable.
 
         Args:
@@ -1245,6 +1280,27 @@ class Var(Generic[VAR_TYPE]):
 
     if not TYPE_CHECKING:
 
+        def __getitem__(self, key: Any) -> Var:
+            """Get the item from the var.
+
+            Args:
+                key: The key to get.
+
+            Raises:
+                UntypedVarError: If the var type is Any.
+                TypeError: If the var type is Any.
+
+            # noqa: DAR101 self
+            """
+            if self._var_type is Any:
+                raise exceptions.UntypedVarError(
+                    self,
+                    f"access the item '{key}'",
+                )
+            raise TypeError(
+                f"Var of type {self._var_type} does not support item access."
+            )
+
         def __getattr__(self, name: str):
             """Get an attribute of the var.
 
@@ -1270,11 +1326,12 @@ class Var(Generic[VAR_TYPE]):
 
             if self._var_type is Any:
                 raise exceptions.UntypedVarError(
-                    f"You must provide an annotation for the state var `{self!s}`. Annotation cannot be `{self._var_type}`."
+                    self,
+                    f"access the attribute '{name}'",
                 )
 
             raise VarAttributeError(
-                f"The State var has no attribute '{name}' or may have been annotated wrongly.",
+                f"The State var {escape(self._js_expr)} of type {escape(str(self._var_type))} has no attribute '{name}' or may have been annotated wrongly.",
             )
 
         def __bool__(self) -> bool:
@@ -1410,7 +1467,7 @@ class LiteralVar(Var):
         possible_bases = [
             base
             for base in bases_normalized
-            if issubclass(base, Var) and base != LiteralVar
+            if safe_issubclass(base, Var) and base != LiteralVar
         ]
 
         if not possible_bases:
@@ -1445,7 +1502,7 @@ class LiteralVar(Var):
         _var_literal_subclasses.append((cls, var_subclass))
 
     @classmethod
-    def create(  # pyright: ignore [reportArgumentType]
+    def _create_literal_var(
         cls,
         value: Any,
         _var_data: VarData | None = None,
@@ -1526,6 +1583,9 @@ class LiteralVar(Var):
             f"Unsupported type {type(value)} for LiteralVar. Tried to create a LiteralVar from {value}."
         )
 
+    if not TYPE_CHECKING:
+        create = _create_literal_var
+
     def __post_init__(self):
         """Post-initialize the var."""
 
@@ -1588,7 +1648,14 @@ def var_operation(  # pyright: ignore [reportOverlappingOverload]
 
 @overload
 def var_operation(
-    func: Callable[P, CustomVarOperationReturn[bool]],
+    func: Callable[P, CustomVarOperationReturn[None]],
+) -> Callable[P, NoneVar]: ...
+
+
+@overload
+def var_operation(  # pyright: ignore [reportOverlappingOverload]
+    func: Callable[P, CustomVarOperationReturn[bool]]
+    | Callable[P, CustomVarOperationReturn[bool | None]],
 ) -> Callable[P, BooleanVar]: ...
 
 
@@ -1597,13 +1664,15 @@ NUMBER_T = TypeVar("NUMBER_T", int, float, int | float)
 
 @overload
 def var_operation(
-    func: Callable[P, CustomVarOperationReturn[NUMBER_T]],
+    func: Callable[P, CustomVarOperationReturn[NUMBER_T]]
+    | Callable[P, CustomVarOperationReturn[NUMBER_T | None]],
 ) -> Callable[P, NumberVar[NUMBER_T]]: ...
 
 
 @overload
 def var_operation(
-    func: Callable[P, CustomVarOperationReturn[str]],
+    func: Callable[P, CustomVarOperationReturn[str]]
+    | Callable[P, CustomVarOperationReturn[str | None]],
 ) -> Callable[P, StringVar]: ...
 
 
@@ -1612,7 +1681,8 @@ LIST_T = TypeVar("LIST_T", bound=Sequence)
 
 @overload
 def var_operation(
-    func: Callable[P, CustomVarOperationReturn[LIST_T]],
+    func: Callable[P, CustomVarOperationReturn[LIST_T]]
+    | Callable[P, CustomVarOperationReturn[LIST_T | None]],
 ) -> Callable[P, ArrayVar[LIST_T]]: ...
 
 
@@ -1621,13 +1691,15 @@ OBJECT_TYPE = TypeVar("OBJECT_TYPE", bound=Mapping)
 
 @overload
 def var_operation(
-    func: Callable[P, CustomVarOperationReturn[OBJECT_TYPE]],
+    func: Callable[P, CustomVarOperationReturn[OBJECT_TYPE]]
+    | Callable[P, CustomVarOperationReturn[OBJECT_TYPE | None]],
 ) -> Callable[P, ObjectVar[OBJECT_TYPE]]: ...
 
 
 @overload
 def var_operation(
-    func: Callable[P, CustomVarOperationReturn[T]],
+    func: Callable[P, CustomVarOperationReturn[T]]
+    | Callable[P, CustomVarOperationReturn[T | None]],
 ) -> Callable[P, Var[T]]: ...
 
 
@@ -1686,12 +1758,16 @@ def figure_out_type(value: Any) -> types.GenericType:
     if has_args(type_):
         return type_
     if isinstance(value, list):
+        if not value:
+            return Sequence[NoReturn]
         return Sequence[unionize(*(figure_out_type(v) for v in value))]
     if isinstance(value, set):
         return set[unionize(*(figure_out_type(v) for v in value))]
     if isinstance(value, tuple):
         return tuple[unionize(*(figure_out_type(v) for v in value)), ...]
     if isinstance(value, Mapping):
+        if not value:
+            return Mapping[NoReturn, NoReturn]
         return Mapping[
             unionize(*(figure_out_type(k) for k in value)),
             unionize(*(figure_out_type(v) for v in value.values())),
@@ -1742,8 +1818,7 @@ class cached_property:  # noqa: N801
                     if original_del is not None:
                         original_del(this)
                     return
-                if unique_id in GLOBAL_CACHE:
-                    del GLOBAL_CACHE[unique_id]
+                GLOBAL_CACHE.pop(unique_id, None)
 
                 if original_del is not None:
                     original_del(this)
@@ -1787,6 +1862,21 @@ class cached_property:  # noqa: N801
 cached_property_no_lock = cached_property
 
 
+class VarProtocol(Protocol):
+    """A protocol for Var."""
+
+    __dataclass_fields__: ClassVar[dict[str, dataclasses.Field[Any]]]
+
+    @property
+    def _js_expr(self) -> str: ...
+
+    @property
+    def _var_type(self) -> types.GenericType: ...
+
+    @property
+    def _var_data(self) -> VarData: ...
+
+
 class CachedVarOperation:
     """Base class for cached var operations to lower boilerplate code."""
 
@@ -1821,7 +1911,7 @@ class CachedVarOperation:
         return self._cached_get_all_var_data
 
     @cached_property_no_lock
-    def _cached_get_all_var_data(self) -> VarData | None:
+    def _cached_get_all_var_data(self: VarProtocol) -> VarData | None:
         """Get the cached VarData.
 
         Returns:
@@ -1831,14 +1921,13 @@ class CachedVarOperation:
             *(
                 value._get_all_var_data() if isinstance(value, Var) else None
                 for value in (
-                    getattr(self, field.name)
-                    for field in dataclasses.fields(self)  # pyright: ignore [reportArgumentType]
+                    getattr(self, field.name) for field in dataclasses.fields(self)
                 )
             ),
             self._var_data,
         )
 
-    def __hash__(self) -> int:
+    def __hash__(self: DataclassInstance) -> int:
         """Calculate the hash of the object.
 
         Returns:
@@ -1849,14 +1938,16 @@ class CachedVarOperation:
                 type(self).__name__,
                 *[
                     getattr(self, field.name)
-                    for field in dataclasses.fields(self)  # pyright: ignore [reportArgumentType]
+                    for field in dataclasses.fields(self)
                     if field.name not in ["_js_expr", "_var_data", "_var_type"]
                 ],
             )
         )
 
 
-def and_operation(a: Var | Any, b: Var | Any) -> Var:
+def and_operation(
+    a: Var[VAR_TYPE] | Any, b: Var[OTHER_VAR_TYPE] | Any
+) -> Var[VAR_TYPE | OTHER_VAR_TYPE]:
     """Perform a logical AND operation on two variables.
 
     Args:
@@ -1886,7 +1977,9 @@ def _and_operation(a: Var, b: Var):
     )
 
 
-def or_operation(a: Var | Any, b: Var | Any) -> Var:
+def or_operation(
+    a: Var[VAR_TYPE] | Any, b: Var[OTHER_VAR_TYPE] | Any
+) -> Var[VAR_TYPE | OTHER_VAR_TYPE]:
     """Perform a logical OR operation on two variables.
 
     Args:
@@ -2120,7 +2213,7 @@ class ComputedVar(Var[RETURN_TYPE]):
             "fget": kwargs.pop("fget", self._fget),
             "initial_value": kwargs.pop("initial_value", self._initial_value),
             "cache": kwargs.pop("cache", self._cache),
-            "deps": kwargs.pop("deps", self._static_deps),
+            "deps": kwargs.pop("deps", copy.copy(self._static_deps)),
             "auto_deps": kwargs.pop("auto_deps", self._auto_deps),
             "interval": kwargs.pop("interval", self._update_interval),
             "backend": kwargs.pop("backend", self._backend),
@@ -2289,10 +2382,10 @@ class ComputedVar(Var[RETURN_TYPE]):
         return value
 
     def _check_deprecated_return_type(self, instance: BaseState, value: Any) -> None:
-        if not _isinstance(value, self._var_type):
+        if not _isinstance(value, self._var_type, nested=1, treat_var_as_type=False):
             console.error(
                 f"Computed var '{type(instance).__name__}.{self._js_expr}' must return"
-                f" type '{self._var_type}', got '{type(value)}'."
+                f" a value of type '{escape(str(self._var_type))}', got '{value!s}' of type {type(value)}."
             )
 
     def _deps(
@@ -2700,7 +2793,7 @@ class CustomVarOperationReturn(Var[RETURN]):
 
 def var_operation_return(
     js_expression: str,
-    var_type: Type[RETURN] | None = None,
+    var_type: Type[RETURN] | GenericType | None = None,
     var_data: VarData | None = None,
 ) -> CustomVarOperationReturn[RETURN]:
     """Shortcut for creating a CustomVarOperationReturn.
@@ -2928,7 +3021,7 @@ def get_uuid_string_var() -> Var:
     unique_uuid_var = get_unique_variable_name()
     unique_uuid_var_data = VarData(
         imports={
-            f"$/{constants.Dirs.STATE_PATH}": {ImportVar(tag="generateUUID")},  # pyright: ignore [reportArgumentType]
+            f"$/{constants.Dirs.STATE_PATH}": ImportVar(tag="generateUUID"),
             "react": "useMemo",
         },
         hooks={f"const {unique_uuid_var} = useMemo(generateUUID, [])": None},
@@ -2966,41 +3059,6 @@ _decode_var_pattern = re.compile(_decode_var_pattern_re, flags=re.DOTALL)
 
 # Defined global immutable vars.
 _global_vars: dict[int, Var] = {}
-
-
-def _extract_var_data(value: Iterable) -> list[VarData | None]:
-    """Extract the var imports and hooks from an iterable containing a Var.
-
-    Args:
-        value: The iterable to extract the VarData from
-
-    Returns:
-        The extracted VarDatas.
-    """
-    from reflex.style import Style
-    from reflex.vars import Var
-
-    var_datas = []
-    with contextlib.suppress(TypeError):
-        for sub in value:
-            if isinstance(sub, Var):
-                var_datas.append(sub._var_data)
-            elif not isinstance(sub, str):
-                # Recurse into dict values.
-                if hasattr(sub, "values") and callable(sub.values):
-                    var_datas.extend(_extract_var_data(sub.values()))  # pyright: ignore [reportArgumentType]
-                # Recurse into iterable values (or dict keys).
-                var_datas.extend(_extract_var_data(sub))
-
-    # Style objects should already have _var_data.
-    if isinstance(value, Style):
-        var_datas.append(value._var_data)
-    else:
-        # Recurse when value is a dict itself.
-        values = getattr(value, "values", None)
-        if callable(values):
-            var_datas.extend(_extract_var_data(values()))  # pyright: ignore [reportArgumentType]
-    return var_datas
 
 
 dispatchers: dict[GenericType, Callable[[Var], Var]] = {}
@@ -3264,53 +3322,76 @@ class Field(Generic[FIELD_TYPE]):
         """
 
     @overload
-    def __get__(self: Field[bool], instance: None, owner: Any) -> BooleanVar: ...
-
-    @overload
-    def __get__(
-        self: Field[int] | Field[float] | Field[int | float], instance: None, owner: Any
-    ) -> NumberVar: ...
-
-    @overload
-    def __get__(self: Field[str], instance: None, owner: Any) -> StringVar: ...
-
-    @overload
     def __get__(self: Field[None], instance: None, owner: Any) -> NoneVar: ...
 
     @overload
     def __get__(
-        self: Field[list[V]] | Field[set[V]],
+        self: Field[bool] | Field[bool | None], instance: None, owner: Any
+    ) -> BooleanVar: ...
+
+    @overload
+    def __get__(
+        self: Field[int] | Field[int | None],
+        instance: None,
+        owner: Any,
+    ) -> NumberVar[int]: ...
+
+    @overload
+    def __get__(
+        self: Field[float]
+        | Field[int | float]
+        | Field[float | None]
+        | Field[int | float | None],
+        instance: None,
+        owner: Any,
+    ) -> NumberVar: ...
+
+    @overload
+    def __get__(
+        self: Field[str] | Field[str | None], instance: None, owner: Any
+    ) -> StringVar: ...
+
+    @overload
+    def __get__(
+        self: Field[list[V]]
+        | Field[set[V]]
+        | Field[list[V] | None]
+        | Field[set[V] | None],
         instance: None,
         owner: Any,
     ) -> ArrayVar[Sequence[V]]: ...
 
     @overload
     def __get__(
-        self: Field[SEQUENCE_TYPE],
+        self: Field[SEQUENCE_TYPE] | Field[SEQUENCE_TYPE | None],
         instance: None,
         owner: Any,
     ) -> ArrayVar[SEQUENCE_TYPE]: ...
 
     @overload
     def __get__(
-        self: Field[MAPPING_TYPE], instance: None, owner: Any
+        self: Field[MAPPING_TYPE] | Field[MAPPING_TYPE | None],
+        instance: None,
+        owner: Any,
     ) -> ObjectVar[MAPPING_TYPE]: ...
 
     @overload
     def __get__(
-        self: Field[BASE_TYPE], instance: None, owner: Any
+        self: Field[BASE_TYPE] | Field[BASE_TYPE | None], instance: None, owner: Any
     ) -> ObjectVar[BASE_TYPE]: ...
 
     @overload
     def __get__(
-        self: Field[SQLA_TYPE], instance: None, owner: Any
+        self: Field[SQLA_TYPE] | Field[SQLA_TYPE | None], instance: None, owner: Any
     ) -> ObjectVar[SQLA_TYPE]: ...
 
     if TYPE_CHECKING:
 
         @overload
         def __get__(
-            self: Field[DATACLASS_TYPE], instance: None, owner: Any
+            self: Field[DATACLASS_TYPE] | Field[DATACLASS_TYPE | None],
+            instance: None,
+            owner: Any,
         ) -> ObjectVar[DATACLASS_TYPE]: ...
 
     @overload

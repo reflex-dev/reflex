@@ -10,7 +10,7 @@ import signal
 import subprocess
 from concurrent import futures
 from pathlib import Path
-from typing import Callable, Generator, Tuple
+from typing import Any, Callable, Generator, Literal, Sequence, Tuple, overload
 
 import psutil
 import typer
@@ -20,6 +20,7 @@ from rich.progress import Progress
 from reflex import constants
 from reflex.config import environment
 from reflex.utils import console, path_ops, prerequisites
+from reflex.utils.registry import get_npm_registry
 
 
 def kill(pid: int):
@@ -142,12 +143,30 @@ def handle_port(service_name: str, port: int, auto_increment: bool) -> int:
         raise typer.Exit()
 
 
+@overload
+def new_process(
+    args: str | list[str] | list[str | None] | list[str | Path | None],
+    run: Literal[False] = False,
+    show_logs: bool = False,
+    **kwargs,
+) -> subprocess.Popen[str]: ...
+
+
+@overload
+def new_process(
+    args: str | list[str] | list[str | None] | list[str | Path | None],
+    run: Literal[True],
+    show_logs: bool = False,
+    **kwargs,
+) -> subprocess.CompletedProcess[str]: ...
+
+
 def new_process(
     args: str | list[str] | list[str | None] | list[str | Path | None],
     run: bool = False,
     show_logs: bool = False,
     **kwargs,
-):
+) -> subprocess.CompletedProcess[str] | subprocess.Popen[str]:
     """Wrapper over subprocess.Popen to unify the launch of child processes.
 
     Args:
@@ -163,7 +182,8 @@ def new_process(
         Exit: When attempting to run a command with a None value.
     """
     # Check for invalid command first.
-    if isinstance(args, list) and None in args:
+    non_empty_args = list(filter(None, args)) if isinstance(args, list) else [args]
+    if isinstance(args, list) and len(non_empty_args) != len(args):
         console.error(f"Invalid command: {args}")
         raise typer.Exit(1)
 
@@ -171,14 +191,9 @@ def new_process(
 
     # Add node_bin_path to the PATH environment variable.
     if not environment.REFLEX_BACKEND_ONLY.get():
-        node_bin_path = str(path_ops.get_node_bin_path())
-        if not node_bin_path and not prerequisites.CURRENTLY_INSTALLING_NODE:
-            console.warn(
-                "The path to the Node binary could not be found. Please ensure that Node is properly "
-                "installed and added to your system's PATH environment variable or try running "
-                "`reflex init` again."
-            )
-        path_env = os.pathsep.join([node_bin_path, path_env])
+        node_bin_path = path_ops.get_node_bin_path()
+        if node_bin_path:
+            path_env = os.pathsep.join([str(node_bin_path), path_env])
 
     env: dict[str, str] = {
         **os.environ,
@@ -195,14 +210,20 @@ def new_process(
         "errors": "replace",  # Avoid UnicodeDecodeError in unknown command output
         **kwargs,
     }
-    console.debug(f"Running command: {args}")
-    fn = subprocess.run if run else subprocess.Popen
-    return fn(args, **kwargs)  # pyright: ignore [reportCallIssue, reportArgumentType]
+    console.debug(f"Running command: {non_empty_args}")
+
+    def subprocess_p_open(args: subprocess._CMD, **kwargs):
+        return subprocess.Popen(args, **kwargs)
+
+    fn: Callable[..., subprocess.CompletedProcess[str] | subprocess.Popen[str]] = (
+        subprocess.run if run else subprocess_p_open
+    )
+    return fn(non_empty_args, **kwargs)
 
 
 @contextlib.contextmanager
 def run_concurrently_context(
-    *fns: Callable | Tuple,
+    *fns: Callable[..., Any] | tuple[Callable[..., Any], ...],
 ) -> Generator[list[futures.Future], None, None]:
     """Run functions concurrently in a thread pool.
 
@@ -218,14 +239,14 @@ def run_concurrently_context(
         return
 
     # Convert the functions to tuples.
-    fns = [fn if isinstance(fn, tuple) else (fn,) for fn in fns]  # pyright: ignore [reportAssignmentType]
+    fns = tuple(fn if isinstance(fn, tuple) else (fn,) for fn in fns)
 
     # Run the functions concurrently.
     executor = None
     try:
         executor = futures.ThreadPoolExecutor(max_workers=len(fns))
         # Submit the tasks.
-        tasks = [executor.submit(*fn) for fn in fns]  # pyright: ignore [reportArgumentType]
+        tasks = [executor.submit(*fn) for fn in fns]
 
         # Yield control back to the main thread while tasks are running.
         yield tasks
@@ -256,6 +277,7 @@ def stream_logs(
     progress: Progress | None = None,
     suppress_errors: bool = False,
     analytics_enabled: bool = False,
+    prior_logs: Tuple[tuple[str, ...], ...] = (),
 ):
     """Stream the logs for a process.
 
@@ -265,12 +287,14 @@ def stream_logs(
         progress: The ongoing progress bar if one is being used.
         suppress_errors: If True, do not exit if errors are encountered (for fallback).
         analytics_enabled: Whether analytics are enabled for this command.
+        prior_logs: The logs of the prior processes that have been run.
 
     Yields:
         The lines of the process output.
 
     Raises:
         Exit: If the process failed.
+        ValueError: If the process stdout pipe is closed, but the process remains running.
     """
     from reflex.utils import telemetry
 
@@ -280,10 +304,18 @@ def stream_logs(
         console.debug(message, progress=progress)
         if process.stdout is None:
             return
-        for line in process.stdout:
-            console.debug(line, end="", progress=progress)
-            logs.append(line)
-            yield line
+        try:
+            for line in process.stdout:
+                console.debug(line, end="", progress=progress)
+                logs.append(line)
+                yield line
+        except ValueError:
+            # The stream we were reading has been closed,
+            if process.poll() is None:
+                # But if the process is still running that is weird.
+                raise
+            # If the process exited, break out of the loop for post processing.
+            pass
 
     # Check if the process failed (not printing the logs for SIGINT).
 
@@ -292,8 +324,31 @@ def stream_logs(
     accepted_return_codes = [0, -2, 15] if constants.IS_WINDOWS else [0, -2]
     if process.returncode not in accepted_return_codes and not suppress_errors:
         console.error(f"{message} failed with exit code {process.returncode}")
-        for line in logs:
-            console.error(line, end="")
+        if "".join(logs).count("CERT_HAS_EXPIRED") > 0:
+            bunfig = prerequisites.get_web_dir() / constants.Bun.CONFIG_PATH
+            npm_registry_line = next(
+                (
+                    line
+                    for line in bunfig.read_text().splitlines()
+                    if line.startswith("registry")
+                ),
+                None,
+            )
+            if not npm_registry_line or "=" not in npm_registry_line:
+                npm_registry = get_npm_registry()
+            else:
+                npm_registry = npm_registry_line.split("=")[1].strip()
+            console.error(
+                f"Failed to fetch securely from [bold]{npm_registry}[/bold]. Please check your network connection. "
+                "You can try running the command again or changing the registry by setting the "
+                "NPM_CONFIG_REGISTRY environment variable. If TLS is the issue, and you know what "
+                "you are doing, you can disable it by setting the SSL_NO_VERIFY environment variable."
+            )
+            raise typer.Exit(1)
+        for set_of_logs in (*prior_logs, tuple(logs)):
+            for line in set_of_logs:
+                console.error(line, end="")
+            console.error("\n\n")
         if analytics_enabled:
             telemetry.send("error", context=message)
         console.error("Run with [bold]--loglevel debug [/bold] for the full log.")
@@ -316,7 +371,8 @@ def show_status(
     process: subprocess.Popen,
     suppress_errors: bool = False,
     analytics_enabled: bool = False,
-):
+    prior_logs: Tuple[tuple[str, ...], ...] = (),
+) -> list[str]:
     """Show the status of a process.
 
     Args:
@@ -324,15 +380,24 @@ def show_status(
         process: The process.
         suppress_errors: If True, do not exit if errors are encountered (for fallback).
         analytics_enabled: Whether analytics are enabled for this command.
+        prior_logs: The logs of the prior processes that have been run.
+
+    Returns:
+        The lines of the process output.
     """
+    lines = []
+
     with console.status(message) as status:
         for line in stream_logs(
             message,
             process,
             suppress_errors=suppress_errors,
             analytics_enabled=analytics_enabled,
+            prior_logs=prior_logs,
         ):
             status.update(f"{message} {line}")
+            lines.append(line)
+        return lines
 
 
 def show_progress(message: str, process: subprocess.Popen, checkpoints: list[str]):
@@ -380,12 +445,13 @@ def get_command_with_loglevel(command: list[str]) -> list[str]:
     return command
 
 
-def run_process_with_fallback(
+def run_process_with_fallbacks(
     args: list[str],
     *,
     show_status_message: str,
-    fallback: str | list | None = None,
+    fallbacks: str | Sequence[str] | Sequence[Sequence[str]] | None = None,
     analytics_enabled: bool = False,
+    prior_logs: Tuple[tuple[str, ...], ...] = (),
     **kwargs,
 ):
     """Run subprocess and retry using fallback command if initial command fails.
@@ -393,32 +459,43 @@ def run_process_with_fallback(
     Args:
         args: A string, or a sequence of program arguments.
         show_status_message: The status message to be displayed in the console.
-        fallback: The fallback command to run.
+        fallbacks: The fallback command to run if the initial command fails.
         analytics_enabled: Whether analytics are enabled for this command.
-        kwargs: Kwargs to pass to new_process function.
+        prior_logs: The logs of the prior processes that have been run.
+        **kwargs: Kwargs to pass to new_process function.
     """
     process = new_process(get_command_with_loglevel(args), **kwargs)
-    if fallback is None:
+    if not fallbacks:
         # No fallback given, or this _is_ the fallback command.
         show_status(
             show_status_message,
             process,
             analytics_enabled=analytics_enabled,
+            prior_logs=prior_logs,
         )
     else:
         # Suppress errors for initial command, because we will try to fallback
-        show_status(show_status_message, process, suppress_errors=True)
+        logs = show_status(show_status_message, process, suppress_errors=True)
+
+        current_fallback = fallbacks[0] if not isinstance(fallbacks, str) else fallbacks
+        next_fallbacks = fallbacks[1:] if not isinstance(fallbacks, str) else None
+
         if process.returncode != 0:
             # retry with fallback command.
-            fallback_args = [fallback, *args[1:]]
-            console.warn(
-                f"There was an error running command: {args}. Falling back to: {fallback_args}."
+            fallback_with_args = (
+                [current_fallback, *args[1:]]
+                if isinstance(current_fallback, str)
+                else [*current_fallback, *args[1:]]
             )
-            run_process_with_fallback(
-                fallback_args,
+            console.warn(
+                f"There was an error running command: {args}. Falling back to: {fallback_with_args}."
+            )
+            run_process_with_fallbacks(
+                fallback_with_args,
                 show_status_message=show_status_message,
-                fallback=None,
+                fallbacks=next_fallbacks,
                 analytics_enabled=analytics_enabled,
+                prior_logs=(*prior_logs, tuple(logs)),
                 **kwargs,
             )
 

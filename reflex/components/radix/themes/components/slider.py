@@ -7,6 +7,7 @@ from typing import Literal, Sequence
 from reflex.components.component import Component
 from reflex.components.core.breakpoints import Responsive
 from reflex.event import EventHandler, passthrough_event_spec
+from reflex.utils.types import typehint_issubclass
 from reflex.vars.base import Var
 
 from ..base import LiteralAccentColor, RadixThemesComponent
@@ -96,7 +97,7 @@ class Slider(RadixThemesComponent):
         width = props.pop("width", "100%")
 
         if isinstance(default_value, Var):
-            if issubclass(default_value._var_type, (int, float)):
+            if typehint_issubclass(default_value._var_type, int | float):
                 default_value = [default_value]
 
         elif isinstance(default_value, (int, float)):

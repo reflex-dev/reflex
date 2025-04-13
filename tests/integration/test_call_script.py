@@ -46,7 +46,7 @@ def CallScript():
         inline_counter: rx.Field[int] = rx.field(0)
         external_counter: rx.Field[int] = rx.field(0)
         value: str = "Initial"
-        last_result: int = 0
+        last_result: rx.Field[int] = rx.field(0)
 
         @rx.event
         def call_script_callback(self, result):
@@ -187,19 +187,19 @@ def CallScript():
             yield rx.call_script("inline_counter = 0; external_counter = 0")
             self.reset()
 
-    app = rx.App(_state=rx.State)
+    app = rx.App()
     Path("assets/external.js").write_text(external_scripts)
 
     @app.add_page
     def index():
         return rx.vstack(
             rx.input(
-                value=CallScriptState.inline_counter.to(str),
+                value=CallScriptState.inline_counter.to_string(),
                 id="inline_counter",
                 read_only=True,
             ),
             rx.input(
-                value=CallScriptState.external_counter.to(str),
+                value=CallScriptState.external_counter.to_string(),
                 id="external_counter",
                 read_only=True,
             ),
@@ -280,7 +280,7 @@ def CallScript():
             ),
             rx.button("Reset", id="reset", on_click=CallScriptState.reset_),
             rx.input(
-                value=CallScriptState.last_result,
+                value=CallScriptState.last_result.to_string(),
                 id="last_result",
                 read_only=True,
                 on_click=CallScriptState.setvar("last_result", 0),
@@ -511,7 +511,7 @@ def test_call_script_w_var(
 
     inline_return_button.click()
     call_with_var_f_string_button.click()
-    assert call_script.poll_for_value(last_result, exp_not_equal="") == "1"
+    assert call_script.poll_for_value(last_result, exp_not_equal=("", "0")) == "1"
 
     inline_return_button.click()
     call_with_var_str_cast_button.click()

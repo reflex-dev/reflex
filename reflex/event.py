@@ -14,7 +14,6 @@ from typing import (
     Any,
     Callable,
     Generic,
-    List,
     Protocol,
     Sequence,
     Type,
@@ -32,12 +31,18 @@ from reflex import constants
 from reflex.constants.compiler import CompileVars, Hooks, Imports
 from reflex.constants.state import FRONTEND_EVENT_STATE
 from reflex.utils import console, format
+from reflex.utils.decorator import once
 from reflex.utils.exceptions import (
     EventFnArgMismatchError,
     EventHandlerArgTypeMismatchError,
     MissingAnnotationError,
 )
-from reflex.utils.types import ArgsSpec, GenericType, typehint_issubclass
+from reflex.utils.types import (
+    ArgsSpec,
+    GenericType,
+    safe_issubclass,
+    typehint_issubclass,
+)
 from reflex.vars import VarData
 from reflex.vars.base import LiteralVar, Var
 from reflex.vars.function import (
@@ -214,7 +219,7 @@ class EventHandler(EventActionsMixin):
         from reflex.utils.exceptions import EventHandlerTypeError
 
         # Get the function args.
-        fn_args = inspect.getfullargspec(self.fn).args[1:]
+        fn_args = list(inspect.signature(self.fn).parameters)[1:]
         fn_args = (Var(_js_expr=arg) for arg in fn_args)
 
         # Construct the payload.
@@ -312,7 +317,9 @@ class EventSpec(EventActionsMixin):
         from reflex.utils.exceptions import EventHandlerTypeError
 
         # Get the remaining unfilled function args.
-        fn_args = inspect.getfullargspec(self.handler.fn).args[1 + len(self.args) :]
+        fn_args = list(inspect.signature(self.handler.fn).parameters)[
+            1 + len(self.args) :
+        ]
         fn_args = (Var(_js_expr=arg) for arg in fn_args)
 
         # Construct the payload.
@@ -424,7 +431,7 @@ class EventChain(EventActionsMixin):
                 return value
             elif isinstance(value, EventVar):
                 value = [value]
-            elif issubclass(value._var_type, (EventChain, EventSpec)):
+            elif safe_issubclass(value._var_type, (EventChain, EventSpec)):
                 return cls.create(
                     value=value.guess_type(),
                     args_spec=args_spec,
@@ -444,7 +451,7 @@ class EventChain(EventActionsMixin):
             value = [value]
 
         # If the input is a list of event handlers, create an event chain.
-        if isinstance(value, List):
+        if isinstance(value, list):
             events: list[EventSpec | EventVar] = []
             for v in value:
                 if isinstance(v, (EventHandler, EventSpec)):
@@ -500,6 +507,7 @@ class JavascriptHTMLInputElement:
     """Interface for a Javascript HTMLInputElement https://developer.mozilla.org/en-US/docs/Web/API/HTMLInputElement."""
 
     value: str = ""
+    checked: bool = False
 
 
 @dataclasses.dataclass(
@@ -536,6 +544,42 @@ def input_event(e: ObjectVar[JavascriptInputEvent]) -> tuple[Var[str]]:
         The value from the input event.
     """
     return (e.target.value,)
+
+
+def int_input_event(e: ObjectVar[JavascriptInputEvent]) -> tuple[Var[int]]:
+    """Get the value from an input event as an int.
+
+    Args:
+        e: The input event.
+
+    Returns:
+        The value from the input event as an int.
+    """
+    return (Var("Number").to(FunctionVar).call(e.target.value).to(int),)
+
+
+def float_input_event(e: ObjectVar[JavascriptInputEvent]) -> tuple[Var[float]]:
+    """Get the value from an input event as a float.
+
+    Args:
+        e: The input event.
+
+    Returns:
+        The value from the input event as a float.
+    """
+    return (Var("Number").to(FunctionVar).call(e.target.value).to(float),)
+
+
+def checked_input_event(e: ObjectVar[JavascriptInputEvent]) -> tuple[Var[bool]]:
+    """Get the checked state from an input event.
+
+    Args:
+        e: The input event.
+
+    Returns:
+        The checked state from the input event.
+    """
+    return (e.target.checked,)
 
 
 class KeyInputInfo(TypedDict):
@@ -578,11 +622,6 @@ def no_args_event_spec() -> tuple[()]:
         An empty tuple.
     """
     return ()
-
-
-# These chains can be used for their side effects when no other events are desired.
-stop_propagation = EventChain(events=[], args_spec=no_args_event_spec).stop_propagation
-prevent_default = EventChain(events=[], args_spec=no_args_event_spec).prevent_default
 
 
 T = TypeVar("T")
@@ -814,6 +853,7 @@ def console_log(message: str | Var[str]) -> EventSpec:
     return run_script(Var("console").to(dict).log.to(FunctionVar).call(message))
 
 
+@once
 def noop() -> EventSpec:
     """Do nothing.
 
@@ -1263,7 +1303,9 @@ def call_event_handler(
         type_hints_of_provided_callback = {}
 
     if event_spec_return_types:
-        event_callback_spec = inspect.getfullargspec(event_callback.fn)
+        event_callback_spec_args = list(
+            inspect.signature(event_callback.fn).parameters.keys()
+        )
 
         for event_spec_index, event_spec_return_type in enumerate(
             event_spec_return_types
@@ -1276,7 +1318,7 @@ def call_event_handler(
 
             # check that args of event handler are matching the spec if type hints are provided
             for i, arg in enumerate(
-                event_callback_spec.args[1 : len(args_types_without_vars) + 1]
+                event_callback_spec_args[1 : len(args_types_without_vars) + 1]
             ):
                 if arg not in type_hints_of_provided_callback:
                     continue
@@ -1319,7 +1361,7 @@ def call_event_handler(
 
                     given_string = ", ".join(
                         repr(type_hints_of_provided_callback.get(arg, Any))
-                        for arg in event_callback_spec.args[1:]
+                        for arg in event_callback_spec_args[1:]
                     ).replace("[", "\\[")
 
                     console.warn(
@@ -1423,12 +1465,16 @@ def check_fn_match_arg_spec(
     Raises:
         EventFnArgMismatchError: Raised if the number of mandatory arguments do not match
     """
-    user_args = inspect.getfullargspec(user_func).args
+    user_args = list(inspect.signature(user_func).parameters)
     # Drop the first argument if it's a bound method
     if inspect.ismethod(user_func) and user_func.__self__ is not None:
         user_args = user_args[1:]
 
-    user_default_args = inspect.getfullargspec(user_func).defaults
+    user_default_args = [
+        p.default
+        for p in inspect.signature(user_func).parameters.values()
+        if p.default is not inspect.Parameter.empty
+    ]
     number_of_user_args = len(user_args) - number_of_bound_args
     number_of_user_default_args = len(user_default_args) if user_default_args else 0
 
@@ -1475,7 +1521,7 @@ def call_event_fn(
 
     parsed_args = parse_args_spec(arg_spec)
 
-    number_of_fn_args = len(inspect.getfullargspec(fn).args)
+    number_of_fn_args = len(inspect.signature(fn).parameters)
 
     # Call the function with the parsed args.
     out = fn(*[*parsed_args][:number_of_fn_args])
@@ -1519,7 +1565,7 @@ def get_handler_args(
     Returns:
         The handler args.
     """
-    args = inspect.getfullargspec(event_spec.handler.fn).args
+    args = inspect.signature(event_spec.handler.fn).parameters
 
     return event_spec.args if len(args) > 1 else ()
 
@@ -1547,7 +1593,7 @@ def fix_events(
         return []
 
     # If the handler returns a single event, wrap it in a list.
-    if not isinstance(events, List):
+    if not isinstance(events, list):
         events = [events]
 
     # Fix the events created by the handler.
@@ -1602,7 +1648,12 @@ def get_fn_signature(fn: Callable) -> inspect.Signature:
     return signature.replace(parameters=(new_param, *signature.parameters.values()))
 
 
-class EventVar(ObjectVar, python_types=EventSpec):
+# These chains can be used for their side effects when no other events are desired.
+stop_propagation = noop().stop_propagation
+prevent_default = noop().prevent_default
+
+
+class EventVar(ObjectVar, python_types=(EventSpec, EventHandler)):
     """Base class for event vars."""
 
 
@@ -1627,7 +1678,7 @@ class LiteralEventVar(VarOperationCall, LiteralVar, EventVar):
     @classmethod
     def create(
         cls,
-        value: EventSpec,
+        value: EventSpec | EventHandler,
         _var_data: VarData | None = None,
     ) -> LiteralEventVar:
         """Create a new LiteralEventVar instance.
@@ -1638,7 +1689,22 @@ class LiteralEventVar(VarOperationCall, LiteralVar, EventVar):
 
         Returns:
             The created LiteralEventVar instance.
+
+        Raises:
+            EventFnArgMismatchError: If the event handler takes arguments.
         """
+        if isinstance(value, EventHandler):
+
+            def no_args():
+                return ()
+
+            try:
+                value = call_event_handler(value, no_args)
+            except EventFnArgMismatchError:
+                raise EventFnArgMismatchError(
+                    f"Event handler {value.fn.__qualname__} used inside of a rx.cond() must not take any arguments."
+                ) from None
+
         return cls(
             _js_expr="",
             _var_type=EventSpec,

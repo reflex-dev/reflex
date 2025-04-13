@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any, Sequence, Union
+from typing import Any, ClassVar, Sequence, Union
 
 from reflex.constants import EventTriggers
 from reflex.constants.colors import Color
@@ -70,7 +70,7 @@ class Pie(Recharts):
     label_line: Var[bool]
 
     # Valid children components
-    _valid_children: list[str] = ["Cell", "LabelList", "Bare"]
+    _valid_children: ClassVar[list[str]] = ["Cell", "LabelList", "Bare"]
 
     # Stoke color. Default: rx.color("accent", 9)
     stroke: Var[str | Color] = LiteralVar.create(Color("accent", 9))
@@ -131,7 +131,7 @@ class Radar(Recharts):
     stroke: Var[str | Color] = LiteralVar.create(Color("accent", 9))
 
     # Fill color. Default: rx.color("accent", 3)
-    fill: Var[str] = LiteralVar.create(Color("accent", 3))
+    fill: Var[str | Color] = LiteralVar.create(Color("accent", 3))
 
     # The opacity to fill the chart. Default: 0.6
     fill_opacity: Var[float] = LiteralVar.create(0.6)
@@ -155,7 +155,7 @@ class Radar(Recharts):
     animation_easing: Var[LiteralAnimationEasing]
 
     # Valid children components
-    _valid_children: list[str] = ["LabelList"]
+    _valid_children: ClassVar[list[str]] = ["LabelList"]
 
     def get_event_triggers(self) -> dict[str, Var | Any]:
         """Get the event triggers that pass the component's value to the handler.
@@ -207,7 +207,7 @@ class RadialBar(Recharts):
     animation_easing: Var[LiteralAnimationEasing]
 
     # Valid children components
-    _valid_children: list[str] = ["Cell", "LabelList"]
+    _valid_children: ClassVar[list[str]] = ["Cell", "LabelList"]
 
     def get_event_triggers(self) -> dict[str, Var | Any]:
         """Get the event triggers that pass the component's value to the handler.
@@ -271,7 +271,7 @@ class PolarAngleAxis(Recharts):
     allow_duplicated_category: Var[bool]
 
     # Valid children components.
-    _valid_children: list[str] = ["Label"]
+    _valid_children: ClassVar[list[str]] = ["Label"]
 
     # The customized event handler of click on the ticks of this axis.
     on_click: EventHandler[no_args_event_spec]
@@ -330,7 +330,7 @@ class PolarGrid(Recharts):
     stroke: Var[str | Color] = LiteralVar.create(Color("gray", 10))
 
     # Valid children components
-    _valid_children: list[str] = ["RadarChart", "RadiarBarChart"]
+    _valid_children: ClassVar[list[str]] = ["RadarChart", "RadiarBarChart"]
 
 
 class PolarRadiusAxis(Recharts):
@@ -374,7 +374,7 @@ class PolarRadiusAxis(Recharts):
     scale: Var[LiteralScale]
 
     # Valid children components
-    _valid_children: list[str] = ["Label"]
+    _valid_children: ClassVar[list[str]] = ["Label"]
 
     # The domain of the polar radius axis, specifying the minimum and maximum values. Default: [0, "auto"]
     domain: Var[Sequence[int | str]]

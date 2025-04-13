@@ -9,7 +9,6 @@ import shutil
 import stat
 from pathlib import Path
 
-from reflex import constants
 from reflex.config import environment, get_config
 
 # Shorthand for join.
@@ -43,13 +42,19 @@ def rm(path: str | Path):
         path.unlink()
 
 
-def cp(src: str | Path, dest: str | Path, overwrite: bool = True) -> bool:
+def cp(
+    src: str | Path,
+    dest: str | Path,
+    overwrite: bool = True,
+    ignore: tuple[str, ...] | None = None,
+) -> bool:
     """Copy a file or directory.
 
     Args:
         src: The path to the file or directory.
         dest: The path to the destination.
         overwrite: Whether to overwrite the destination.
+        ignore: Ignoring files and directories that match one of the glob-style patterns provided
 
     Returns:
         Whether the copy was successful.
@@ -61,7 +66,11 @@ def cp(src: str | Path, dest: str | Path, overwrite: bool = True) -> bool:
         return False
     if src.is_dir():
         rm(dest)
-        shutil.copytree(src, dest)
+        shutil.copytree(
+            src,
+            dest,
+            ignore=shutil.ignore_patterns(*ignore) if ignore is not None else ignore,
+        )
     else:
         shutil.copyfile(src, dest)
     return True
@@ -146,15 +155,6 @@ def which(program: str | Path) -> Path | None:
     return Path(which_result) if which_result else None
 
 
-def use_system_node() -> bool:
-    """Check if the system node should be used.
-
-    Returns:
-        Whether the system node should be used.
-    """
-    return environment.REFLEX_USE_SYSTEM_NODE.get()
-
-
 def use_system_bun() -> bool:
     """Check if the system bun should be used.
 
@@ -170,11 +170,7 @@ def get_node_bin_path() -> Path | None:
     Returns:
         The path to the node bin folder.
     """
-    bin_path = Path(constants.Node.BIN_PATH)
-    if not bin_path.exists():
-        path = which("node")
-        return path.parent.absolute() if path else None
-    return bin_path.absolute()
+    return bin_path.parent.absolute() if (bin_path := get_node_path()) else None
 
 
 def get_node_path() -> Path | None:
@@ -183,10 +179,7 @@ def get_node_path() -> Path | None:
     Returns:
         The path to the node binary file.
     """
-    node_path = Path(constants.Node.PATH)
-    if use_system_node() or not node_path.exists():
-        node_path = which("node")
-    return node_path
+    return which("node")
 
 
 def get_npm_path() -> Path | None:
@@ -195,10 +188,7 @@ def get_npm_path() -> Path | None:
     Returns:
         The path to the npm binary file.
     """
-    npm_path = Path(constants.Node.NPM_PATH)
-    if use_system_node() or not npm_path.exists():
-        npm_path = which("npm")
-    return npm_path.absolute() if npm_path else None
+    return npm_path.absolute() if (npm_path := which("npm")) else None
 
 
 def get_bun_path() -> Path | None:

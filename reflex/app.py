@@ -40,8 +40,6 @@ from rich.progress import MofNCompleteColumn, Progress, TimeElapsedColumn
 from socketio import ASGIApp, AsyncNamespace, AsyncServer
 from starlette.datastructures import Headers
 from starlette.datastructures import UploadFile as StarletteUploadFile
-from starlette_admin.contrib.sqla.admin import Admin
-from starlette_admin.contrib.sqla.view import ModelView
 
 from reflex import constants
 from reflex.admin import AdminDash
@@ -114,9 +112,11 @@ from reflex.utils.imports import ImportVar
 if TYPE_CHECKING:
     from reflex.vars import Var
 
+    # Define custom types.
+    ComponentCallable = Callable[[], Component | tuple[Component, ...] | str | Var]
+else:
+    ComponentCallable = Callable[[], Component | tuple[Component, ...] | str]
 
-# Define custom types.
-ComponentCallable = Callable[[], Component]
 Reducer = Callable[[Event], Coroutine[Any, Any, StateUpdate]]
 
 
@@ -293,6 +293,7 @@ class UnevaluatedPage:
     image: str
     on_load: EventType[()] | None
     meta: list[dict[str, str]]
+    context: dict[str, Any] | None
 
 
 @dataclasses.dataclass()
@@ -443,6 +444,8 @@ class App(MiddlewareMixin, LifespanMixin):
                 "rx.BaseState cannot be subclassed directly. Use rx.State instead"
             )
 
+        get_config(reload=True)
+
         if "breakpoints" in self.style:
             set_breakpoints(self.style.pop("breakpoints"))
 
@@ -498,9 +501,9 @@ class App(MiddlewareMixin, LifespanMixin):
                     else config.cors_allowed_origins
                 ),
                 cors_credentials=True,
-                max_http_buffer_size=constants.POLLING_MAX_HTTP_BUFFER_SIZE,
-                ping_interval=constants.Ping.INTERVAL,
-                ping_timeout=constants.Ping.TIMEOUT,
+                max_http_buffer_size=environment.REFLEX_SOCKET_MAX_HTTP_BUFFER_SIZE.get(),
+                ping_interval=environment.REFLEX_SOCKET_INTERVAL.get(),
+                ping_timeout=environment.REFLEX_SOCKET_TIMEOUT.get(),
                 json=SimpleNamespace(
                     dumps=staticmethod(format.json_dumps),
                     loads=staticmethod(json.loads),
@@ -576,6 +579,22 @@ class App(MiddlewareMixin, LifespanMixin):
         """
         if not self.api:
             raise ValueError("The app has not been initialized.")
+
+        # For py3.9 compatibility when redis is used, we MUST add any decorator pages
+        # before compiling the app in a thread to avoid event loop error (REF-2172).
+        self._apply_decorated_pages()
+
+        compile_future = concurrent.futures.ThreadPoolExecutor(max_workers=1).submit(
+            self._compile
+        )
+        compile_future.add_done_callback(
+            # Force background compile errors to print eagerly
+            lambda f: f.result()
+        )
+        # Wait for the compile to finish in prod mode to ensure all optional endpoints are mounted.
+        if is_prod_mode():
+            compile_future.result()
+
         return self.api
 
     def _add_default_endpoints(self):
@@ -663,6 +682,7 @@ class App(MiddlewareMixin, LifespanMixin):
         image: str = constants.DefaultPage.IMAGE,
         on_load: EventType[()] | None = None,
         meta: list[dict[str, str]] = constants.DefaultPage.META_LIST,
+        context: dict[str, Any] | None = None,
     ):
         """Add a page to the app.
 
@@ -677,6 +697,7 @@ class App(MiddlewareMixin, LifespanMixin):
             image: The image to display on the page.
             on_load: The event handler(s) that will be called each time the page load.
             meta: The metadata of the page.
+            context: Values passed to page for custom page-specific logic.
 
         Raises:
             PageValueError: When the component is not set for a non-404 page.
@@ -744,6 +765,7 @@ class App(MiddlewareMixin, LifespanMixin):
             image=image,
             on_load=on_load,
             meta=meta,
+            context=context,
         )
 
     def _compile_page(self, route: str, save_page: bool = True):
@@ -867,6 +889,12 @@ class App(MiddlewareMixin, LifespanMixin):
 
     def _setup_admin_dash(self):
         """Setup the admin dash."""
+        try:
+            from starlette_admin.contrib.sqla.admin import Admin
+            from starlette_admin.contrib.sqla.view import ModelView
+        except ImportError:
+            return
+
         # Get the admin dash.
         if not self.api:
             return
@@ -909,6 +937,9 @@ class App(MiddlewareMixin, LifespanMixin):
             and i != ""
             and any(tag.install for tag in tags)
         }
+        pinned = {i.rpartition("@")[0] for i in page_imports if "@" in i}
+        page_imports = {i for i in page_imports if i not in pinned}
+
         frontend_packages = get_config().frontend_packages
         _frontend_packages = []
         for package in frontend_packages:
@@ -952,7 +983,7 @@ class App(MiddlewareMixin, LifespanMixin):
         # Check the nocompile file.
         if nocompile.exists():
             # Delete the nocompile file
-            nocompile.unlink()
+            nocompile.unlink(missing_ok=True)
             return False
 
         # By default, compile the app.
@@ -1063,7 +1094,7 @@ class App(MiddlewareMixin, LifespanMixin):
                 with stateful_pages_marker.open("r") as f:
                     stateful_pages = json.load(f)
                 for route in stateful_pages:
-                    console.info(f"BE Evaluating stateful page: {route}")
+                    console.debug(f"BE Evaluating stateful page: {route}")
                     self._compile_page(route, save_page=False)
                 self._enable_state()
             self._add_optional_endpoints()
@@ -1091,8 +1122,6 @@ class App(MiddlewareMixin, LifespanMixin):
 
         if config.react_strict_mode:
             app_wrappers[(200, "StrictMode")] = StrictMode.create()
-
-        should_compile = self._should_compile()
 
         if not should_compile:
             with console.timing("Evaluate Pages (Backend)"):
@@ -1210,13 +1239,15 @@ class App(MiddlewareMixin, LifespanMixin):
             custom_components |= component._get_all_custom_components()
 
         if self.error_boundary:
+            from reflex.compiler.compiler import into_component
+
             console.deprecate(
                 feature_name="App.error_boundary",
                 reason="Use app_wraps instead.",
                 deprecation_version="0.7.1",
                 removal_version="0.8.0",
             )
-            app_wrappers[(55, "ErrorBoundary")] = self.error_boundary()
+            app_wrappers[(55, "ErrorBoundary")] = into_component(self.error_boundary)
 
         # Perform auto-memoization of stateful components.
         with console.timing("Auto-memoize StatefulComponents"):
@@ -1242,7 +1273,9 @@ class App(MiddlewareMixin, LifespanMixin):
             compiler.compile_document_root(
                 self.head_components,
                 html_lang=self.html_lang,
-                html_custom_attrs=self.html_custom_attrs,  # pyright: ignore [reportArgumentType]
+                html_custom_attrs=(
+                    {**self.html_custom_attrs} if self.html_custom_attrs else {}
+                ),
             )
         )
 
@@ -1407,7 +1440,7 @@ class App(MiddlewareMixin, LifespanMixin):
         async with self.state_manager.modify_state(token) as state:
             # No other event handler can modify the state while in this context.
             yield state
-            delta = state.get_delta()
+            delta = await state._get_resolved_delta()
             if delta:
                 # When the state is modified reset dirty status and emit the delta to the frontend.
                 state._clean()

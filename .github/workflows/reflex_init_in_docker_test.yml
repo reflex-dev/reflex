@@ -1,4 +1,6 @@
 name: reflex-init-in-docker-test
+permissions:
+  contents: read
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.id }}
@@ -6,13 +8,13 @@ concurrency:
 
 on:
   push:
-    branches: ['main']
+    branches: ["main"]
     paths-ignore:
-      - '**/*.md'
+      - "**/*.md"
   pull_request:
-    branches: ['main']
+    branches: ["main"]
     paths-ignore:
-      - '**/*.md'
+      - "**/*.md"
 
 jobs:
   # TODO we can extend to various starting points (e.g. Ubuntu with node, without node, with unzip, without unzip, etc.)

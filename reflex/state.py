@@ -48,6 +48,7 @@ from pydantic.v1.fields import ModelField
 from redis.asyncio import Redis
 from redis.asyncio.client import PubSub
 from redis.exceptions import ResponseError
+from rich.markup import escape
 from sqlalchemy.orm import DeclarativeBase
 from typing_extensions import Self
 
@@ -89,9 +90,9 @@ from reflex.utils.serializers import serializer
 from reflex.utils.types import (
     _isinstance,
     get_origin,
-    is_optional,
     is_union,
     override,
+    true_type_for_pydantic_field,
     value_inside_optional,
 )
 from reflex.vars import VarData
@@ -272,7 +273,11 @@ class EventHandlerSetVar(EventHandler):
         return super().__call__(*args)
 
 
-def _unwrap_field_type(type_: Type) -> Type:
+if TYPE_CHECKING:
+    from pydantic.v1.fields import ModelField
+
+
+def _unwrap_field_type(type_: types.GenericType) -> Type:
     """Unwrap rx.Field type annotations.
 
     Args:
@@ -303,7 +308,7 @@ def get_var_for_field(cls: Type[BaseState], f: ModelField):
     return dispatch(
         field_name=field_name,
         var_data=VarData.from_state(cls, f.name),
-        result_var_type=_unwrap_field_type(f.outer_type_),
+        result_var_type=_unwrap_field_type(true_type_for_pydantic_field(f)),
     )
 
 
@@ -589,8 +594,8 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             if cls._item_is_event_handler(name, fn)
         }
 
-        for mixin in cls._mixins():  # pyright: ignore [reportAssignmentType]
-            for name, value in mixin.__dict__.items():
+        for mixin_cls in cls._mixins():
+            for name, value in mixin_cls.__dict__.items():
                 if name in cls.inherited_vars:
                     continue
                 if is_computed_var(value):
@@ -601,7 +606,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
                     cls.computed_vars[newcv._js_expr] = newcv
                     cls.vars[newcv._js_expr] = newcv
                     continue
-                if types.is_backend_base_variable(name, mixin):  # pyright: ignore [reportArgumentType]
+                if types.is_backend_base_variable(name, mixin_cls):
                     cls.backend_vars[name] = copy.deepcopy(value)
                     continue
                 if events.get(name) is not None:
@@ -692,9 +697,9 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         def computed_var_func(state: Self):
             result = f(state)
 
-            if not _isinstance(result, of_type):
+            if not _isinstance(result, of_type, nested=1, treat_var_as_type=False):
                 console.warn(
-                    f"Inline ComputedVar {f} expected type {of_type}, got {type(result)}. "
+                    f"Inline ComputedVar {f} expected type {escape(str(of_type))}, got {type(result)}. "
                     "You can specify expected type with `of_type` argument."
                 )
 
@@ -901,7 +906,14 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         ]
         if len(parent_states) >= 2:
             raise ValueError(f"Only one parent state is allowed {parent_states}.")
-        return parent_states[0] if len(parent_states) == 1 else None
+        # The first non-mixin state in the mro is our parent.
+        for base in cls.mro()[1:]:
+            if not issubclass(base, BaseState) or base._mixin:
+                continue
+            if base is BaseState:
+                break
+            return base
+        return None  # No known parent
 
     @classmethod
     @functools.lru_cache()
@@ -1009,9 +1021,9 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
 
         if not types.is_valid_var_type(prop._var_type):
             raise VarTypeError(
-                "State vars must be primitive Python types, "
-                "Plotly figures, Pandas dataframes, "
-                "or subclasses of rx.Base. "
+                "State vars must be of a serializable type. "
+                "Valid types include strings, numbers, booleans, lists, "
+                "dictionaries, dataclasses, datetime objects, and pydantic models. "
                 f'Found var "{prop._js_expr}" with type {prop._var_type}.'
             )
         cls._set_var(prop)
@@ -1351,12 +1363,10 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
 
         if name in fields:
             field = fields[name]
-            field_type = _unwrap_field_type(field.outer_type_)
-            if field.allow_none and not is_optional(field_type):
-                field_type = field_type | None
-            if not _isinstance(value, field_type):
+            field_type = _unwrap_field_type(true_type_for_pydantic_field(field))
+            if not _isinstance(value, field_type, nested=1, treat_var_as_type=False):
                 console.error(
-                    f"Expected field '{type(self).__name__}.{name}' to receive type '{field_type}',"
+                    f"Expected field '{type(self).__name__}.{name}' to receive type '{escape(str(field_type))}',"
                     f" but got '{value}' of type '{type(value)}'."
                 )
 
@@ -1555,7 +1565,9 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         unset = object()
 
         # Fast case: this is a literal var and the value is known.
-        if (var_value := getattr(var, "_var_value", unset)) is not unset:
+        if (
+            var_value := getattr(var, "_var_value", unset)
+        ) is not unset and not isinstance(var_value, Var):
             return var_value  # pyright: ignore [reportReturnType]
 
         var_data = var._get_all_var_data()
@@ -1663,6 +1675,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
 
         raise TypeError(
             f"Your handler {handler.fn.__qualname__} must only return/yield: None, Events or other EventHandlers referenced by their class (i.e. using `type(self)` or other class references)."
+            f" Returned events of types {', '.join(map(str, map(type, events)))!s}."
         )
 
     async def _as_state_update(
@@ -1693,7 +1706,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
 
         try:
             # Get the delta after processing the event.
-            delta = await _resolve_delta(state.get_delta())
+            delta = await state._get_resolved_delta()
             state._clean()
 
             return StateUpdate(
@@ -1864,11 +1877,13 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
                         tuple(state_name.split("."))
                     )
                 defining_state.dirty_vars.add(cvar)
-                dirty_vars.add(cvar)
                 actual_var = defining_state.computed_vars.get(cvar)
                 if actual_var is not None:
                     actual_var.mark_dirty(instance=defining_state)
-                if defining_state is not self:
+                if defining_state is self:
+                    dirty_vars.add(cvar)
+                else:
+                    # mark dirty where this var is defined
                     defining_state._mark_dirty()
 
     def _expired_computed_vars(self) -> set[str]:
@@ -1937,6 +1952,14 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
 
         # Return the delta.
         return delta
+
+    async def _get_resolved_delta(self) -> Delta:
+        """Get the delta for the state after resolving all coroutines.
+
+        Returns:
+            The resolved delta for the state.
+        """
+        return await _resolve_delta(self.get_delta())
 
     def _mark_dirty(self):
         """Mark the substate and all parent states as dirty."""
