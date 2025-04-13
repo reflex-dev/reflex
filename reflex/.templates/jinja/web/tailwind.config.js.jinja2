@@ -20,36 +20,25 @@
 {%- endif -%}
 {%- endmacro %}
 
-{# Render destructured imports #}
+{# Extract destructured imports from plugin dicts only #}
 {%- set imports = [] %}
-{%- for plugin in plugins if plugin.import is defined %}
+{%- for plugin in plugins if plugin is mapping and plugin.import is defined %}
   {%- set _ = imports.append(plugin.import) %}
 {%- endfor %}
 
-{# START OF CONFIG FILE #}
 /** @type {import('tailwindcss').Config} */
 {%- for imp in imports %}
-const { {{ imp.name }} } = require({{ imp.from | tojson }});
+const { {{ imp.name }} } = require({{ imp.from | tojson }});  
 {%- endfor %}
 
 module.exports = {
   content: {{ render_js(content) }},
   theme: {{ render_js(theme) }},
-  {% if darkMode is defined %}
-  darkMode: {{ darkMode | tojson }},
-  {% endif %}
-  {% if corePlugins is defined %}
-  corePlugins: {{ render_js(corePlugins) }},
-  {% endif %}
-  {% if important is defined %}
-  important: {{ important | tojson }},
-  {% endif %}
-  {% if prefix is defined %}
-  prefix: {{ prefix | tojson }},
-  {% endif %}
-  {% if separator is defined %}
-  separator: {{ separator | tojson }},
-  {% endif %}
+  {% if darkMode is defined %}darkMode: {{ darkMode | tojson }},{% endif %}
+  {% if corePlugins is defined %}corePlugins: {{ render_js(corePlugins) }},{% endif %}
+  {% if important is defined %}important: {{ important | tojson }},{% endif %}
+  {% if prefix is defined %}prefix: {{ prefix | tojson }},{% endif %}
+  {% if separator is defined %}separator: {{ separator | tojson }},{% endif %}
   {% if presets is defined %}
   presets: [
     {% for preset in presets %}
@@ -59,14 +48,18 @@ module.exports = {
   {% endif %}
   plugins: [
     {% for plugin in plugins %}
-      {% if plugin.call is defined %}
-        {{ plugin.call }}(
-          {%- if plugin.args is defined -%}
-            {{ render_js(plugin.args) }}
-          {%- endif -%}
-        ){{ "," if not loop.last }}
+      {% if plugin is mapping %}
+        {% if plugin.call is defined %}
+          {{ plugin.call }}(
+            {%- if plugin.args is defined -%}
+              {{ render_js(plugin.args) }}
+            {%- endif -%}
+          ){{ "," if not loop.last }}
+        {% else %}
+          require({{ plugin.name | tojson }}){{ "," if not loop.last }}
+        {% endif %}
       {% else %}
-        require({{ plugin.name | tojson }}){{ "," if not loop.last }}
+        require({{ plugin | tojson }}){{ "," if not loop.last }}
       {% endif %}
     {% endfor %}
   ]
