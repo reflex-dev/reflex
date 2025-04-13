@@ -1057,6 +1057,10 @@ _IS_TRUE_IMPORT: ImportDict = {
     f"$/{Dirs.STATE_PATH}": [ImportVar(tag="isTrue")],
 }
 
+_IS_NOT_NULL_OR_UNDEFINED_IMPORT: ImportDict = {
+    f"$/{Dirs.STATE_PATH}": [ImportVar(tag="isNotNullOrUndefined")],
+}
+
 
 @var_operation
 def boolify(value: Var):
@@ -1072,6 +1076,23 @@ def boolify(value: Var):
         js_expression=f"isTrue({value})",
         var_type=bool,
         var_data=VarData(imports=_IS_TRUE_IMPORT),
+    )
+
+
+@var_operation
+def is_not_none_operation(value: Var):
+    """Check if the value is not None.
+
+    Args:
+        value: The value.
+
+    Returns:
+        The boolean value.
+    """
+    return var_operation_return(
+        js_expression=f"isNotNullOrUndefined({value})",
+        var_type=bool,
+        var_data=VarData(imports=_IS_NOT_NULL_OR_UNDEFINED_IMPORT),
     )
 
 

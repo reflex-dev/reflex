@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import dataclasses
 import inspect
-import sys
 import types
 from functools import cached_property, lru_cache, wraps
 from types import GenericAlias
@@ -414,10 +413,7 @@ def get_attribute_access_type(cls: GenericType, name: str) -> GenericType | None
         )
     elif isinstance(cls, type):
         # Bare class
-        if sys.version_info >= (3, 10):
-            exceptions = NameError
-        else:
-            exceptions = (NameError, TypeError)
+        exceptions = NameError
         try:
             hints = get_type_hints(cls)
             if name in hints:
@@ -1008,14 +1004,12 @@ def typehint_issubclass(
             for arg in args
         )
 
-    # Remove this check when Python 3.10 is the minimum supported version
-    if hasattr(types, "UnionType"):
-        provided_type_origin = (
-            Union if provided_type_origin is types.UnionType else provided_type_origin
-        )
-        accepted_type_origin = (
-            Union if accepted_type_origin is types.UnionType else accepted_type_origin
-        )
+    provided_type_origin = (
+        Union if provided_type_origin is types.UnionType else provided_type_origin
+    )
+    accepted_type_origin = (
+        Union if accepted_type_origin is types.UnionType else accepted_type_origin
+    )
 
     # Get type arguments (e.g., [float, int] for dict[float, int])
     provided_args = get_args(possible_subclass)

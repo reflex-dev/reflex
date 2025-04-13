@@ -226,8 +226,8 @@ def test_validate_bun_path_incompatible_version(mocker):
         return_value=version.parse("0.6.5"),
     )
 
-    with pytest.raises(typer.Exit):
-        prerequisites.validate_bun()
+    # This will just warn the user, not raise an error
+    prerequisites.validate_bun()
 
 
 def test_remove_existing_bun_installation(mocker):

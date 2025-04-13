@@ -507,6 +507,7 @@ class JavascriptHTMLInputElement:
     """Interface for a Javascript HTMLInputElement https://developer.mozilla.org/en-US/docs/Web/API/HTMLInputElement."""
 
     value: str = ""
+    checked: bool = False
 
 
 @dataclasses.dataclass(
@@ -543,6 +544,42 @@ def input_event(e: ObjectVar[JavascriptInputEvent]) -> tuple[Var[str]]:
         The value from the input event.
     """
     return (e.target.value,)
+
+
+def int_input_event(e: ObjectVar[JavascriptInputEvent]) -> tuple[Var[int]]:
+    """Get the value from an input event as an int.
+
+    Args:
+        e: The input event.
+
+    Returns:
+        The value from the input event as an int.
+    """
+    return (Var("Number").to(FunctionVar).call(e.target.value).to(int),)
+
+
+def float_input_event(e: ObjectVar[JavascriptInputEvent]) -> tuple[Var[float]]:
+    """Get the value from an input event as a float.
+
+    Args:
+        e: The input event.
+
+    Returns:
+        The value from the input event as a float.
+    """
+    return (Var("Number").to(FunctionVar).call(e.target.value).to(float),)
+
+
+def checked_input_event(e: ObjectVar[JavascriptInputEvent]) -> tuple[Var[bool]]:
+    """Get the checked state from an input event.
+
+    Args:
+        e: The input event.
+
+    Returns:
+        The checked state from the input event.
+    """
+    return (e.target.checked,)
 
 
 class KeyInputInfo(TypedDict):
