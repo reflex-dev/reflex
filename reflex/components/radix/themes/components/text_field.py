@@ -112,6 +112,7 @@ class TextFieldRoot(elements.Input, RadixThemesComponent):
                 Var.create(""),
             )
 
+        props.setdefault("__reflex_keep_value_str_", True)
         component = super().create(*children, **props)
         if props.get("value") is not None and props.get("on_change") is not None:
             # create a debounced input if the user requests full control to avoid typing jank

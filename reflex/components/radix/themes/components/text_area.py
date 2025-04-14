@@ -93,6 +93,7 @@ class TextArea(RadixThemesComponent, elements.Textarea):
         """
         if props.get("value") is not None and props.get("on_change") is not None:
             # create a debounced input if the user requests full control to avoid typing jank
+            props.setdefault("__reflex_keep_value_str_", True)
             return DebounceInput.create(super().create(*children, **props))
         return super().create(*children, **props)
 
