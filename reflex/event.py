@@ -40,6 +40,7 @@ from reflex.utils.exceptions import (
 from reflex.utils.types import (
     ArgsSpec,
     GenericType,
+    Unset,
     safe_issubclass,
     typehint_issubclass,
 )
@@ -202,13 +203,14 @@ class EventHandler(EventActionsMixin):
         """
         return getattr(self.fn, BACKGROUND_TASK_MARKER, False)
 
-    def __call__(self, *args: Any) -> EventSpec:
+    def __call__(self, *args: Any, **kwargs: Any) -> EventSpec:
         """Pass arguments to the handler to get an event spec.
 
         This method configures event handlers that take in arguments.
 
         Args:
             *args: The arguments to pass to the handler.
+            **kwargs: The keyword arguments to pass to the handler.
 
         Returns:
             The event spec, containing both the function and args.
@@ -220,11 +222,34 @@ class EventHandler(EventActionsMixin):
 
         # Get the function args.
         fn_args = list(inspect.signature(self.fn).parameters)[1:]
+
+        if not isinstance(
+            repeated_arg := next(
+                (kwarg for kwarg in kwargs if kwarg in fn_args[: len(args)]), Unset()
+            ),
+            Unset,
+        ):
+            raise EventHandlerTypeError(
+                f"Event handler {self.fn.__name__} received repeated argument {repeated_arg}."
+            )
+
+        if not isinstance(
+            extra_arg := next(
+                (kwarg for kwarg in kwargs if kwarg not in fn_args), Unset()
+            ),
+            Unset,
+        ):
+            raise EventHandlerTypeError(
+                f"Event handler {self.fn.__name__} received extra argument {extra_arg}."
+            )
+
+        fn_args = fn_args[: len(args)] + list(kwargs)
+
         fn_args = (Var(_js_expr=arg) for arg in fn_args)
 
         # Construct the payload.
         values = []
-        for arg in args:
+        for arg in [*args, *kwargs.values()]:
             # Special case for file uploads.
             if isinstance(arg, FileUpload):
                 return arg.as_event_spec(handler=self)
