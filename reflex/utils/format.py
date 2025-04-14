@@ -436,12 +436,19 @@ def format_props(*single_props, **key_value_props) -> list[str]:
     from reflex.vars.base import LiteralVar, Var
 
     return [
-        (
-            f"{name}={{{format_prop(prop if isinstance(prop, Var) else LiteralVar.create(prop))}}}"
+        ":".join(
+            [
+                str(name if "-" not in name else LiteralVar.create(name)),
+                str(
+                    format_prop(
+                        prop if isinstance(prop, Var) else LiteralVar.create(prop)
+                    )
+                ),
+            ]
         )
         for name, prop in sorted(key_value_props.items())
         if prop is not None
-    ] + [(f"{LiteralVar.create(prop)!s}") for prop in single_props]
+    ] + [(f"...{LiteralVar.create(prop)!s}") for prop in single_props]
 
 
 def get_event_handler_parts(handler: EventHandler) -> tuple[str, str]:

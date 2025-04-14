@@ -685,14 +685,14 @@ def test_component_create_unallowed_types(children, test_component):
                 "children": [
                     {
                         "name": "RadixThemesText",
-                        "props": ['as={"p"}'],
+                        "props": ['as:"p"'],
                         "contents": "",
                         "special_props": [],
                         "children": [
                             {
                                 "name": "",
                                 "props": [],
-                                "contents": '{"first_text"}',
+                                "contents": '"first_text"',
                                 "special_props": [],
                                 "children": [],
                                 "autofocus": False,
@@ -715,7 +715,7 @@ def test_component_create_unallowed_types(children, test_component):
                             {
                                 "autofocus": False,
                                 "children": [],
-                                "contents": '{"first_text"}',
+                                "contents": '"first_text"',
                                 "name": "",
                                 "props": [],
                                 "special_props": [],
@@ -723,7 +723,7 @@ def test_component_create_unallowed_types(children, test_component):
                         ],
                         "contents": "",
                         "name": "RadixThemesText",
-                        "props": ['as={"p"}'],
+                        "props": ['as:"p"'],
                         "special_props": [],
                     },
                     {
@@ -732,7 +732,7 @@ def test_component_create_unallowed_types(children, test_component):
                             {
                                 "autofocus": False,
                                 "children": [],
-                                "contents": '{"second_text"}',
+                                "contents": '"second_text"',
                                 "name": "",
                                 "props": [],
                                 "special_props": [],
@@ -740,7 +740,7 @@ def test_component_create_unallowed_types(children, test_component):
                         ],
                         "contents": "",
                         "name": "RadixThemesText",
-                        "props": ['as={"p"}'],
+                        "props": ['as:"p"'],
                         "special_props": [],
                     },
                 ],
@@ -761,7 +761,7 @@ def test_component_create_unallowed_types(children, test_component):
                             {
                                 "autofocus": False,
                                 "children": [],
-                                "contents": '{"first_text"}',
+                                "contents": '"first_text"',
                                 "name": "",
                                 "props": [],
                                 "special_props": [],
@@ -769,7 +769,7 @@ def test_component_create_unallowed_types(children, test_component):
                         ],
                         "contents": "",
                         "name": "RadixThemesText",
-                        "props": ['as={"p"}'],
+                        "props": ['as:"p"'],
                         "special_props": [],
                     },
                     {
@@ -784,7 +784,7 @@ def test_component_create_unallowed_types(children, test_component):
                                             {
                                                 "autofocus": False,
                                                 "children": [],
-                                                "contents": '{"second_text"}',
+                                                "contents": '"second_text"',
                                                 "name": "",
                                                 "props": [],
                                                 "special_props": [],
@@ -792,7 +792,7 @@ def test_component_create_unallowed_types(children, test_component):
                                         ],
                                         "contents": "",
                                         "name": "RadixThemesText",
-                                        "props": ['as={"p"}'],
+                                        "props": ['as:"p"'],
                                         "special_props": [],
                                     }
                                 ],
@@ -1162,10 +1162,10 @@ def test_component_with_only_valid_children(fixture, request):
 @pytest.mark.parametrize(
     "component,rendered",
     [
-        (rx.text("hi"), '<RadixThemesText as={"p"}>\n\n{"hi"}\n</RadixThemesText>'),
+        (rx.text("hi"), 'jsx(\nRadixThemesText,\n{as:"p"},\n"hi"\n,)'),
         (
             rx.box(rx.heading("test", size="3")),
-            '<RadixThemesBox>\n\n<RadixThemesHeading size={"3"}>\n\n{"test"}\n</RadixThemesHeading>\n</RadixThemesBox>',
+            'jsx(\nRadixThemesBox,\n{},\njsx(\nRadixThemesHeading,\n{size:"3"},\n"test"\n,),)',
         ),
     ],
 )
@@ -1770,14 +1770,14 @@ def test_rename_props():
 
     c1 = C1.create(prop1="prop1_1", prop2="prop2_1")
     rendered_c1 = c1.render()
-    assert 'renamed_prop1={"prop1_1"}' in rendered_c1["props"]
-    assert 'renamed_prop2={"prop2_1"}' in rendered_c1["props"]
+    assert 'renamed_prop1:"prop1_1"' in rendered_c1["props"]
+    assert 'renamed_prop2:"prop2_1"' in rendered_c1["props"]
 
     c2 = C2.create(prop1="prop1_2", prop2="prop2_2", prop3="prop3_2")
     rendered_c2 = c2.render()
-    assert 'renamed_prop1={"prop1_2"}' in rendered_c2["props"]
-    assert 'subclass_prop2={"prop2_2"}' in rendered_c2["props"]
-    assert 'renamed_prop3={"prop3_2"}' in rendered_c2["props"]
+    assert 'renamed_prop1:"prop1_2"' in rendered_c2["props"]
+    assert 'subclass_prop2:"prop2_2"' in rendered_c2["props"]
+    assert 'renamed_prop3:"prop3_2"' in rendered_c2["props"]
 
 
 def test_custom_component_get_imports():
@@ -2161,7 +2161,7 @@ def test_add_style_embedded_vars(test_state: BaseState):
     assert "useParent" in page._get_all_hooks_internal()
     assert (
         str(page).count(
-            f'css={{({{ ["fakeParent"] : "parent", ["color"] : "var(--plum-10)", ["fake"] : "text", ["margin"] : ({test_state.get_name()}.num+"%") }})}}'
+            f'css:({{ ["fakeParent"] : "parent", ["color"] : "var(--plum-10)", ["fake"] : "text", ["margin"] : ({test_state.get_name()}.num+"%") }})'
         )
         == 1
     )
@@ -2182,10 +2182,10 @@ def test_add_style_foreach():
     assert len(page.children[0].children) == 1
 
     # Expect the style to be added to the child of the foreach
-    assert 'css={({ ["color"] : "red" })}' in str(page.children[0].children[0])
+    assert 'css:({ ["color"] : "red" })' in str(page.children[0].children[0])
 
     # Expect only one instance of this CSS dict in the rendered page
-    assert str(page).count('css={({ ["color"] : "red" })}') == 1
+    assert str(page).count('css:({ ["color"] : "red" })') == 1
 
 
 class TriggerState(rx.State):

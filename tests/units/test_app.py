@@ -1370,20 +1370,17 @@ def test_app_wrap_priority(
     lines = "".join(app_js_lines)
     assert (
         "function AppWrap({children}) {"
-        "return (" + ("<StrictMode>" if react_strict_mode else "") + "<RadixThemesBox>"
-        '<RadixThemesText as={"p"}>'
-        "<RadixThemesColorModeProvider>"
-        "<Fragment2>"
-        "<Fragment>"
-        "<MemoizedToastProvider/>"
-        "<Fragment>"
+        "return ("
+        + ("jsx(StrictMode,{}," if react_strict_mode else "")
+        + "jsx(RadixThemesBox,{},"
+        'jsx(RadixThemesText,{as:"p"},'
+        "jsx(RadixThemesColorModeProvider,{},"
+        "jsx(Fragment2,{},"
+        "jsx(Fragment,{},"
+        "jsx(MemoizedToastProvider,{},)"
+        "jsx(Fragment,{},"
         "{children}"
-        "</Fragment>"
-        "</Fragment>"
-        "</Fragment2>"
-        "</RadixThemesColorModeProvider>"
-        "</RadixThemesText>"
-        "</RadixThemesBox>" + ("</StrictMode>" if react_strict_mode else "")
+        ",),),),),)" + (")" if react_strict_mode else "")
     ) in lines
 
 

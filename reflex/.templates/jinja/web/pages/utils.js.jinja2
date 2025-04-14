@@ -26,10 +26,12 @@ jsx({{ component.name }},{{ render_props(component.props) }},{{ component.conten
 {# Args: #}
 {#     component: component dictionary #}
 {% macro render_tag(component) %}
-jsx({% if component.name|length %}{{ component.name }}{% else %}Fragment{% endif %},
+jsx(
+{% if component.name|length %}{{ component.name }}{% else %}Fragment{% endif %},
 {{ render_props(component.props) }},
 {% if component.contents|length %}{{ component.contents }},{% endif %}
-{% for child in component.children %}{% if child is mapping or child|length %}{{ render(child) }},{% endif %}{% endfor %})
+{% for child in component.children %}{% if child is mapping or child|length %}{{ render(child) }},{% endif %}{% endfor %}
+)
 {%- endmacro %}
 
 
@@ -52,7 +54,7 @@ jsx({% if component.name|length %}{{ component.name }}{% else %}Fragment{% endif
 {# Rendering props of a component. #}
 {# Args: #}
 {#     component: component dictionary #}
-{% macro render_props(props) %}{ {% if props|length %}{{ props|join(",") }}{% endif %} }{% endmacro %}
+{% macro render_props(props) %}{{ "{" }}{% if props|length %}{{ props|join(",") }}{% endif %}{{ "}" }}{% endmacro %}
 
 {# Rendering Match component. #}
 {# Args: #}
