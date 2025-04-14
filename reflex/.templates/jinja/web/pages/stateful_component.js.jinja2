@@ -6,6 +6,6 @@ export function {{tag_name}} () {
   {{ renderHooksWithMemo(all_hooks, memo_trigger_hooks) }}
   
   return (
-    {{utils.render(component.render(), indent_width=0)}}
+    {{utils.render(component.render())}}
   )
 }
