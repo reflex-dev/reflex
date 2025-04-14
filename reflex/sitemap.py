@@ -1,7 +1,7 @@
 """This module contains functions to generate and manage the sitemap.xml file."""
 
 from pathlib import Path
-from typing import Dict, List
+from typing import Dict, List, TypedDict
 from xml.dom import minidom
 from xml.etree.ElementTree import Element, SubElement, tostring
 
@@ -61,7 +61,14 @@ def generate_xml(links: List[Dict[str, str]]) -> str:
     return reparsed.toprettyxml(indent="  ")
 
 
-def generate_sitemaps(sitemap_config: Dict[str, Dict[str, str]]) -> None:
+class PageConfig(TypedDict):
+    """TypedDict for page configuration in sitemap."""
+
+    priority: float
+    changefreq: str
+
+
+def generate_sitemaps(sitemap_config: Dict[str, PageConfig]) -> None:
     """Generate the sitemap.xml file.
 
     This function generates the sitemap.xml file by crawling through the available pages in the app and generating a list
@@ -76,7 +83,7 @@ def generate_sitemaps(sitemap_config: Dict[str, Dict[str, str]]) -> None:
 
 
 def generate_links_for_sitemap(
-    sitemap_config: Dict[str, Dict[str, str]],
+    sitemap_config: Dict[str, PageConfig],
 ) -> List[dict[str, str]]:
     """Generate a list of links for which sitemaps are generated.
 

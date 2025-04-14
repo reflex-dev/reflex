@@ -25,6 +25,7 @@ from typing import (
     Callable,
     Coroutine,
     Dict,
+    Mapping,
     MutableMapping,
     Type,
     get_args,
@@ -87,7 +88,7 @@ from reflex.route import (
     replace_brackets_with_keywords,
     verify_route_validity,
 )
-from reflex.sitemap import generate_sitemaps, read_sitemap_file
+from reflex.sitemap import PageConfig, generate_sitemaps, read_sitemap_file
 from reflex.state import (
     BaseState,
     RouterData,
@@ -412,7 +413,7 @@ class App(MiddlewareMixin, LifespanMixin):
     # Put the toast provider in the app wrap.
     toaster: Component | None = dataclasses.field(default_factory=toast.provider)
 
-    _sitemap_properties: Dict[str, Dict] = dataclasses.field(default_factory=dict)
+    _sitemap_properties: Dict[str, PageConfig] = dataclasses.field(default_factory=dict)
 
     @property
     def api(self) -> FastAPI | None:
@@ -715,8 +716,7 @@ class App(MiddlewareMixin, LifespanMixin):
             image: The image to display on the page.
             on_load: The event handler(s) that will be called each time the page load.
             meta: The metadata of the page.
-            sitemap_priority: The priority of the page in the sitemap. If None, the priority is calculated based on the
-            depth of the route.
+            sitemap_priority: The priority of the page in the sitemap. If None, the priority is calculated based on the depth of the route.
             sitemap_changefreq: The change frequency of the page in the sitemap. Default to 'weekly'
             context: Values passed to page for custom page-specific logic.
 
@@ -819,9 +819,15 @@ class App(MiddlewareMixin, LifespanMixin):
         if save_page:
             self._pages[route] = component
 
-    def get_sitemap_properties(self) -> Dict[str, Dict]:
-        """Get the sitemap properties."""
-        return self._sitemap_properties
+    def get_sitemap_properties(self) -> Mapping[str, PageConfig]:
+        """Get the sitemap properties.
+
+        Returns:
+            The sitemap properties.
+        """
+        return {
+            route: value.copy() for route, value in self._sitemap_properties.items()
+        }
 
     def get_load_events(self, route: str) -> list[IndividualEventType[()]]:
         """Get the load events for a route.

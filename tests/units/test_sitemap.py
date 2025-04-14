@@ -4,7 +4,7 @@ from pathlib import Path
 import pytest
 
 import reflex as rx
-from reflex import Component, constants
+from reflex import constants
 from reflex.app import App
 from reflex.sitemap import (
     generate_links_for_sitemap,
@@ -23,42 +23,45 @@ sitemap_file_path: Path = sitemap_folder_path / "sitemap.xml"
 
 @pytest.fixture
 def app_instance():
-    """Fixture to create an instance of the app."""
+    """Fixture to create an instance of the app.
+
+    Returns:
+        An instance of the App class.
+    """
     app = App()
     return app
 
 
-class Page(Component):
-    """A simple Page component."""
+def page(text: str):
+    """A simple page component for testing.
 
-    def __init__(self, text, **kwargs):
-        """Initialize the Page component."""
-        super().__init__(**kwargs)
-        self.text = text
+    Args:
+        text: The text to display on the page.
 
-    def render(self):
-        """Render the Page component."""
-        return rx.box(self.text)
+    Returns:
+        A Reflex component with the given text.
+    """
+    return rx.box(text)
 
 
 @pytest.fixture
-def index_page() -> Page:
+def index_page():
     """Fixture that returns an IndexPage instance.
 
     Returns:
         An instance of IndexPage.
     """
-    return Page(text="Index")
+    return page(text="Index")
 
 
 @pytest.fixture
-def about_page() -> Page:
+def about_page():
     """Fixture that returns an AboutPage instance.
 
     Returns:
         An instance of AboutPage.
     """
-    return Page(text="About")
+    return page(text="About")
 
 
 mock_xml = """<?xml version="1.0" ?>
@@ -89,7 +92,13 @@ def test_generate_xml():
 
 
 def test_generate_static_sitemaps(app_instance, index_page, about_page):
-    """Test if the generated sitemap file is currently stored in static website or not."""
+    """Test if the generated sitemap file is currently stored in static website or not.
+
+    Args:
+        app_instance: The app instance.
+        index_page: The index page fixture.
+        about_page: The about page fixture.
+    """
     pages = {"index": index_page, "about": about_page}
     # remove the sitemap.xml file if it exists.
     sitemap_file_path.unlink(missing_ok=True)
@@ -107,12 +116,12 @@ def test_generate_links_for_sitemap():
     """Test if the links are generated correctly for the sitemap from the sitemap config file when no deploy url is
     given.
     """
-    sitemap_properties = {
-        "index": {"priority": 0.9, "changefreq": "weekly"},
-        "about": {"priority": 0.9, "changefreq": "weekly"},
-    }
-
-    links = generate_links_for_sitemap(sitemap_properties)
+    links = generate_links_for_sitemap(
+        {
+            "index": {"priority": 0.9, "changefreq": "weekly"},
+            "about": {"priority": 0.9, "changefreq": "weekly"},
+        }
+    )
 
     # Assert that the links are generated correctly
     assert links == [
@@ -129,15 +138,15 @@ def test_generate_links_for_sitemap_deploy_url():
     """Test if the links are generated correctly for the sitemap from the sitemap config file when a deploy url is
     given.
     """
-    sitemap_properties = {
-        "index": {"priority": 0.9, "changefreq": "weekly"},
-        "about": {"priority": 0.9, "changefreq": "weekly"},
-    }
-
     with unittest.mock.patch("reflex.sitemap.get_config") as mock_get_config:
         mock_get_config().deploy_url = "http://www.google.com"
 
-        links = generate_links_for_sitemap(sitemap_properties)
+        links = generate_links_for_sitemap(
+            {
+                "index": {"priority": 0.9, "changefreq": "weekly"},
+                "about": {"priority": 0.9, "changefreq": "weekly"},
+            }
+        )
 
         # Assert that the links are generated correctly
         assert links == [
