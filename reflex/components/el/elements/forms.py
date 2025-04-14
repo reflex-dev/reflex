@@ -460,15 +460,16 @@ class Input(BaseInput):
                 value_var.is_not_none(), value_var, Var.create("")
             )
 
-        input_type = props.get("type")
+        if cls is Input:
+            input_type = props.get("type")
 
-        if input_type == "checkbox":
-            # Checkbox inputs should use the CheckboxInput class
-            return CheckboxInput.create(*children, **props)
+            if input_type == "checkbox":
+                # Checkbox inputs should use the CheckboxInput class
+                return CheckboxInput.create(*children, **props)
 
-        if input_type == "number" or input_type == "range":
-            # Number inputs should use the ValueNumberInput class
-            return ValueNumberInput.create(*children, **props)
+            if input_type == "number" or input_type == "range":
+                # Number inputs should use the ValueNumberInput class
+                return ValueNumberInput.create(*children, **props)
 
         return super().create(*children, **props)
 
