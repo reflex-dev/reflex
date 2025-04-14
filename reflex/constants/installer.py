@@ -92,9 +92,9 @@ class PackageJson(SimpleNamespace):
     class Commands(SimpleNamespace):
         """The commands to define in package.json."""
 
-        DEV = "next dev"
-        EXPORT = "next build"
-        EXPORT_SITEMAP = "npm run export && next-sitemap"
+        DEV = "next dev {flags}"
+        EXPORT = "next build {flags}"
+        EXPORT_SITEMAP = "next build {flags} && next-sitemap"
         PROD = "next start"
 
     PATH = "package.json"
