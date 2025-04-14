@@ -342,6 +342,8 @@ def _compile_components(
         component_renders.append(component_render)
         imports = utils.merge_imports(imports, component_imports)
 
+    imports.setdefault("@emotion/react", []).append(ImportVar("jsx"))
+
     dynamic_imports = {
         comp_import: None
         for comp_render in component_renders
@@ -434,6 +436,7 @@ def _compile_stateful_components(
     all_imports.pop(
         f"$/{constants.Dirs.UTILS}/{constants.PageNames.STATEFUL_COMPONENTS}", None
     )
+    all_imports.setdefault("@emotion/react", []).append(ImportVar("jsx"))
 
     return templates.STATEFUL_COMPONENTS.render(
         imports=utils.compile_imports(all_imports),
