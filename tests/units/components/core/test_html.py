@@ -31,11 +31,13 @@ def test_html_fstring_create():
 
     html = Html.create(f"<p>Hello {TestState.myvar}!</p>")
 
+    html_dangerouslySetInnerHTML = html.dangerouslySetInnerHTML  # pyright: ignore [reportAttributeAccessIssue]
+
     assert (
-        str(html.dangerouslySetInnerHTML)  # pyright: ignore [reportAttributeAccessIssue]
+        str(html_dangerouslySetInnerHTML)
         == f'({{ ["__html"] : ("<p>Hello "+{TestState.myvar!s}+"!</p>") }})'
     )
     assert (
         str(html)
-        == f'jsx("div",{{className:"rx-Html",dangerouslySetInnerHTML:{html.dangerouslySetInnerHTML!s}}},)\n'
+        == f'jsx("div",{{className:"rx-Html",dangerouslySetInnerHTML:{html_dangerouslySetInnerHTML!s}}},)\n'
     )

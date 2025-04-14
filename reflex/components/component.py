@@ -281,7 +281,9 @@ class Component(BaseComponent, ABC):
     alias: str | None = pydantic.v1.Field(default_factory=lambda: None)
 
     # Whether the component is a global scope tag. True for tags like `html`, `head`, `body`.
-    _is_tag_in_global_scope: bool = pydantic.PrivateAttr(default_factory=lambda: False)
+    _is_tag_in_global_scope: bool = pydantic.v1.PrivateAttr(
+        default_factory=lambda: False
+    )
 
     # Whether the import is default or named.
     is_default: bool | None = pydantic.v1.Field(default_factory=lambda: False)

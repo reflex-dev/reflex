@@ -10,6 +10,4 @@ def test_raw_link():
 def test_script_tag():
     script_tag = ScriptTag.create("console.log('Hello, world!');").render()
     assert script_tag["name"] == '"script"'
-    assert (
-        script_tag["children"][0]["contents"] == "\"console.log('Hello, world!');\""
-    )
+    assert script_tag["children"][0]["contents"] == "\"console.log('Hello, world!');\""

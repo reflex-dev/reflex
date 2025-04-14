@@ -1301,24 +1301,23 @@ def test_app_wrap_compile_theme(
         line.strip() for line in app_js_contents.splitlines() if line.strip()
     ]
     lines = "".join(app_js_lines)
-    assert (
+    expected = (
         "function AppWrap({children}) {"
         "return ("
-        + ("<StrictMode>" if react_strict_mode else "")
-        + "<RadixThemesColorModeProvider>"
-        "<RadixThemesTheme accentColor={\"plum\"} css={{...theme.styles.global[':root'], ...theme.styles.global.body}}>"
-        "<Fragment>"
-        "<MemoizedToastProvider/>"
-        "<Fragment>"
-        "{children}"
-        "</Fragment>"
-        "</Fragment>"
-        "</RadixThemesTheme>"
-        "</RadixThemesColorModeProvider>"
-        + ("</StrictMode>" if react_strict_mode else "")
-        + ")"
+        + ("jsx(StrictMode,{}," if react_strict_mode else "")
+        + "jsx(RadixThemesColorModeProvider,{},"
+        "jsx(RadixThemesTheme,{accentColor:\"plum\",css:{...theme.styles.global[':root'], ...theme.styles.global.body}},"
+        "jsx(Fragment,{},"
+        "jsx(MemoizedToastProvider,{},),"
+        "jsx(Fragment,{},"
+        "children,"
+        "),"
+        "),"
+        "),"
+        ")" + (",)" if react_strict_mode else "") + ")"
         "}"
-    ) in lines
+    )
+    assert expected in lines
 
 
 @pytest.mark.parametrize(
@@ -1368,7 +1367,7 @@ def test_app_wrap_priority(
         line.strip() for line in app_js_contents.splitlines() if line.strip()
     ]
     lines = "".join(app_js_lines)
-    assert (
+    expected = (
         "function AppWrap({children}) {"
         "return ("
         + ("jsx(StrictMode,{}," if react_strict_mode else "")
@@ -1377,11 +1376,12 @@ def test_app_wrap_priority(
         "jsx(RadixThemesColorModeProvider,{},"
         "jsx(Fragment2,{},"
         "jsx(Fragment,{},"
-        "jsx(MemoizedToastProvider,{},)"
+        "jsx(MemoizedToastProvider,{},),"
         "jsx(Fragment,{},"
-        "{children}"
-        ",),),),),)" + (")" if react_strict_mode else "")
-    ) in lines
+        "children"
+        ",),),),),)" + (",)" if react_strict_mode else "")
+    )
+    assert expected in lines
 
 
 def test_app_state_determination():
