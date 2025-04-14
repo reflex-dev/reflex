@@ -460,7 +460,7 @@ class Input(BaseInput):
                 value_var.is_not_none(), value_var, Var.create("")
             )
 
-        if props.pop("__reflex_keep_value_str_", None) is None:
+        if cls is Input:
             input_type = props.get("type")
 
             if input_type == "checkbox":
