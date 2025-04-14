@@ -995,7 +995,7 @@ def _compile_package_json():
     return templates.PACKAGE_JSON.render(
         scripts={
             "dev": constants.PackageJson.Commands.DEV + _turbopack_flag(),
-            "export": constants.PackageJson.Commands.EXPORT,
+            "export": constants.PackageJson.Commands.EXPORT + _turbopack_flag(),
             "export_sitemap": constants.PackageJson.Commands.EXPORT_SITEMAP,
             "prod": constants.PackageJson.Commands.PROD,
         },
