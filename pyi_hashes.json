@@ -8,7 +8,7 @@
   "reflex/components/base/error_boundary.pyi": "c56b591d14a92b99a1e97e04afe167d7",
   "reflex/components/base/fragment.pyi": "603ee8e03af88d4a8ff6bc1fbce4e022",
   "reflex/components/base/head.pyi": "893047aa32da553711db8f1345adb6b0",
-  "reflex/components/base/link.pyi": "396488afa3b7a5b0d0e6c5e89159f857",
+  "reflex/components/base/link.pyi": "e96179dc7823f354fb73a6c03e31028c",
   "reflex/components/base/meta.pyi": "da52c3212fac6b50560863146a7afcc3",
   "reflex/components/base/script.pyi": "530cf8f47eb90082bf65942e8b5d745f",
   "reflex/components/base/strict_mode.pyi": "d972e0ff2a6f961e7df90fc27b8bb51b",
