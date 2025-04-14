@@ -11,8 +11,6 @@ from reflex.testing import AppHarness, WebDriver
 def ExtraOverlay():
     import reflex as rx
 
-    rx.config.get_config().extra_overlay_function = "reflex.components.moment.moment"
-
     def index():
         return rx.vstack(
             rx.el.input(
@@ -25,7 +23,8 @@ def ExtraOverlay():
             ),
         )
 
-    app = rx.App(_state=rx.State)
+    app = rx.App()
+    rx.config.get_config().extra_overlay_function = "reflex.components.moment.moment"
     app.add_page(index)
 
 

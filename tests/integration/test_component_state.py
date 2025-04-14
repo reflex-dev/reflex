@@ -72,7 +72,7 @@ def ComponentStateApp():
             State=_Counter,
         )
 
-    app = rx.App(_state=rx.State)  # noqa: F841
+    app = rx.App()  # noqa: F841
 
     @rx.page()
     def index():

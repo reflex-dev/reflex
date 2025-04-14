@@ -9,6 +9,7 @@ import platform
 import warnings
 from contextlib import suppress
 from datetime import datetime, timezone
+from typing import TypedDict
 
 import httpx
 import psutil
@@ -16,6 +17,8 @@ import psutil
 from reflex import constants
 from reflex.config import environment
 from reflex.utils import console
+from reflex.utils.decorator import once_unless_none
+from reflex.utils.exceptions import ReflexError
 from reflex.utils.prerequisites import ensure_reflex_installation_id, get_project_hash
 
 UTC = timezone.utc
@@ -94,15 +97,39 @@ def _raise_on_missing_project_hash() -> bool:
     return not environment.REFLEX_SKIP_COMPILE.get()
 
 
-def _prepare_event(event: str, **kwargs) -> dict:
-    """Prepare the event to be sent to the PostHog server.
+class _Properties(TypedDict):
+    """Properties type for telemetry."""
 
-    Args:
-        event: The event name.
-        kwargs: Additional data to send with the event.
+    distinct_id: int
+    distinct_app_id: int
+    user_os: str
+    user_os_detail: str
+    reflex_version: str
+    python_version: str
+    cpu_count: int
+    memory: int
+    cpu_info: dict
+
+
+class _DefaultEvent(TypedDict):
+    """Default event type for telemetry."""
+
+    api_key: str
+    properties: _Properties
+
+
+class _Event(_DefaultEvent):
+    """Event type for telemetry."""
+
+    event: str
+    timestamp: str
+
+
+def _get_event_defaults() -> _DefaultEvent | None:
+    """Get the default event data.
 
     Returns:
-        The event data.
+        The default event data.
     """
     from reflex.utils.prerequisites import get_cpu_info
 
@@ -113,19 +140,12 @@ def _prepare_event(event: str, **kwargs) -> dict:
         console.debug(
             f"Could not get installation_id or project_hash: {installation_id}, {project_hash}"
         )
-        return {}
-
-    stamp = datetime.now(UTC).isoformat()
+        return None
 
     cpuinfo = get_cpu_info()
 
-    additional_keys = ["template", "context", "detail", "user_uuid"]
-    additional_fields = {
-        key: value for key in additional_keys if (value := kwargs.get(key)) is not None
-    }
     return {
         "api_key": "phc_JoMo0fOyi0GQAooY3UyO9k0hebGkMyFJrrCw1Gt5SGb",
-        "event": event,
         "properties": {
             "distinct_id": installation_id,
             "distinct_app_id": project_hash,
@@ -136,13 +156,55 @@ def _prepare_event(event: str, **kwargs) -> dict:
             "cpu_count": get_cpu_count(),
             "memory": get_memory(),
             "cpu_info": dataclasses.asdict(cpuinfo) if cpuinfo else {},
-            **additional_fields,
         },
+    }
+
+
+@once_unless_none
+def get_event_defaults() -> _DefaultEvent | None:
+    """Get the default event data.
+
+    Returns:
+        The default event data.
+    """
+    return _get_event_defaults()
+
+
+def _prepare_event(event: str, **kwargs) -> _Event | None:
+    """Prepare the event to be sent to the PostHog server.
+
+    Args:
+        event: The event name.
+        kwargs: Additional data to send with the event.
+
+    Returns:
+        The event data.
+    """
+    event_data = get_event_defaults()
+    if not event_data:
+        return None
+
+    additional_keys = ["template", "context", "detail", "user_uuid"]
+
+    properties = event_data["properties"]
+
+    for key in additional_keys:
+        if key in properties or key not in kwargs:
+            continue
+
+        properties[key] = kwargs[key]
+
+    stamp = datetime.now(UTC).isoformat()
+
+    return {
+        "api_key": event_data["api_key"],
+        "event": event,
+        "properties": properties,
         "timestamp": stamp,
     }
 
 
-def _send_event(event_data: dict) -> bool:
+def _send_event(event_data: _Event) -> bool:
     try:
         httpx.post(POSTHOG_API_URL, json=event_data)
     except Exception:
@@ -151,7 +213,7 @@ def _send_event(event_data: dict) -> bool:
         return True
 
 
-def _send(event: str, telemetry_enabled: bool | None, **kwargs):
+def _send(event: str, telemetry_enabled: bool | None, **kwargs) -> bool:
     from reflex.config import get_config
 
     # Get the telemetry_enabled from the config if it is not specified.
@@ -167,6 +229,7 @@ def _send(event: str, telemetry_enabled: bool | None, **kwargs):
         if not event_data:
             return False
         return _send_event(event_data)
+    return False
 
 
 def send(event: str, telemetry_enabled: bool | None = None, **kwargs):
@@ -196,8 +259,6 @@ def send_error(error: Exception, context: str):
     Args:
         error: The error to send.
         context: The context of the error (e.g. "frontend" or "backend")
-
-    Returns:
-        Whether the telemetry was sent successfully.
     """
-    return send("error", detail=type(error).__name__, context=context)
+    if isinstance(error, ReflexError):
+        send("error", detail=type(error).__name__, context=context)

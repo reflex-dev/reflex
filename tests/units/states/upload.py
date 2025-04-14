@@ -7,6 +7,10 @@ import reflex as rx
 from reflex.state import BaseState, State
 
 
+class UploadBaseState(BaseState):
+    """The base state for uploading a file."""
+
+
 class UploadState(BaseState):
     """The base state for uploading a file."""
 
@@ -19,13 +23,7 @@ class UploadState(BaseState):
         pass
 
 
-class BaseState(BaseState):
-    """The test base state."""
-
-    pass
-
-
-class SubUploadState(BaseState):
+class SubUploadState(UploadBaseState):
     """The test substate."""
 
     img: str

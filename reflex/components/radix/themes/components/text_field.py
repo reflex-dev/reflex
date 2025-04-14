@@ -104,9 +104,10 @@ class TextFieldRoot(elements.Input, RadixThemesComponent):
         if value is not None and is_optional(
             (value_var := Var.create(value))._var_type
         ):
+            value_var_is_not_none = value_var != Var.create(None)
+            value_var_is_not_undefined = value_var != Var(_js_expr="undefined")
             props["value"] = ternary_operation(
-                (value_var != Var.create(None))  # pyright: ignore [reportArgumentType]
-                & (value_var != Var(_js_expr="undefined")),
+                value_var_is_not_none & value_var_is_not_undefined,
                 value,
                 Var.create(""),
             )

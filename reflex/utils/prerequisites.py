@@ -192,13 +192,16 @@ def get_node_version() -> version.Version | None:
         return None
 
 
-def get_bun_version() -> version.Version | None:
+def get_bun_version(bun_path: Path | None = None) -> version.Version | None:
     """Get the version of bun.
+
+    Args:
+        bun_path: The path to the bun executable.
 
     Returns:
         The version of bun.
     """
-    bun_path = path_ops.get_bun_path()
+    bun_path = bun_path or path_ops.get_bun_path()
     if bun_path is None:
         return None
     try:
@@ -254,7 +257,7 @@ def get_nodejs_compatible_package_managers(
 
     package_managers = list(filter(None, package_managers))
 
-    if not package_managers and not raise_on_none:
+    if not package_managers and raise_on_none:
         raise FileNotFoundError(
             "Bun or npm not found. You might need to rerun `reflex init` or install either."
         )
@@ -510,6 +513,9 @@ def compile_or_validate_app(compile: bool = False) -> bool:
         else:
             validate_app()
     except Exception as e:
+        if isinstance(e, typer.Exit):
+            return False
+
         import traceback
 
         sys_exception = sys.exception()
@@ -828,44 +834,48 @@ def initialize_gitignore(
     gitignore_file.write_text("\n".join(files_to_ignore) + "\n")
 
 
-def initialize_requirements_txt():
+def initialize_requirements_txt() -> bool:
     """Initialize the requirements.txt file.
     If absent, generate one for the user.
     If the requirements.txt does not have reflex as dependency,
     generate a requirement pinning current version and append to
     the requirements.txt file.
-    """
-    fp = Path(constants.RequirementsTxt.FILE)
-    encoding = "utf-8"
-    if not fp.exists():
-        fp.touch()
-    else:
-        # Detect the encoding of the original file
-        import charset_normalizer
 
-        charset_matches = charset_normalizer.from_path(fp)
-        maybe_charset_match = charset_matches.best()
-        if maybe_charset_match is None:
-            console.debug(f"Unable to detect encoding for {fp}, exiting.")
-            return
-        encoding = maybe_charset_match.encoding
-        console.debug(f"Detected encoding for {fp} as {encoding}.")
-    try:
-        other_requirements_exist = False
-        with fp.open("r", encoding=encoding) as f:
-            for req in f:
-                # Check if we have a package name that is reflex
-                if re.match(r"^reflex[^a-zA-Z0-9]", req):
-                    console.debug(f"{fp} already has reflex as dependency.")
-                    return
-                other_requirements_exist = True
-        with fp.open("a", encoding=encoding) as f:
-            preceding_newline = "\n" if other_requirements_exist else ""
-            f.write(
-                f"{preceding_newline}{constants.RequirementsTxt.DEFAULTS_STUB}{constants.Reflex.VERSION}\n"
-            )
-    except Exception:
-        console.info(f"Unable to check {fp} for reflex dependency.")
+    Returns:
+        True if the requirements.txt file was created or updated, False otherwise.
+
+    Raises:
+        Exit: If the requirements.txt file cannot be read or written to.
+    """
+    requirements_file_path = Path(constants.RequirementsTxt.FILE)
+    requirements_file_path.touch(exist_ok=True)
+
+    for encoding in [None, "utf-8"]:
+        try:
+            content = requirements_file_path.read_text(encoding)
+            break
+        except UnicodeDecodeError:
+            continue
+        except Exception as e:
+            console.error(f"Failed to read {requirements_file_path}.")
+            raise typer.Exit(1) from e
+    else:
+        return False
+
+    for line in content.splitlines():
+        if re.match(r"^reflex[^a-zA-Z0-9]", line):
+            console.debug(f"{requirements_file_path} already has reflex as dependency.")
+            return True
+
+    console.debug(
+        f"Appending {constants.RequirementsTxt.DEFAULTS_STUB} to {requirements_file_path}"
+    )
+    with requirements_file_path.open("a", encoding=encoding) as f:
+        f.write(
+            "\n" + constants.RequirementsTxt.DEFAULTS_STUB + constants.Reflex.VERSION
+        )
+
+    return True
 
 
 def initialize_app_directory(
@@ -963,6 +973,9 @@ def initialize_web_directory():
     console.debug("Initializing the bun config file.")
     initialize_bun_config()
 
+    console.debug("Initializing the .npmrc file.")
+    initialize_npmrc()
+
     console.debug("Initializing the public directory.")
     path_ops.mkdir(get_web_dir() / constants.Dirs.PUBLIC)
 
@@ -1010,6 +1023,20 @@ def initialize_bun_config():
         bunfig_content = constants.Bun.DEFAULT_CONFIG.format(registry=best_registry)
 
     bun_config_path.write_text(bunfig_content)
+
+
+def initialize_npmrc():
+    """Initialize the .npmrc file."""
+    npmrc_path = get_web_dir() / constants.Node.CONFIG_PATH
+
+    if (custom_npmrc := Path(constants.Node.CONFIG_PATH)).exists():
+        npmrc_content = custom_npmrc.read_text()
+        console.info(f"Copying custom .npmrc inside {get_web_dir()} folder")
+    else:
+        best_registry = get_npm_registry()
+        npmrc_content = constants.Node.DEFAULT_CONFIG.format(registry=best_registry)
+
+    npmrc_path.write_text(npmrc_content)
 
 
 def init_reflex_json(project_hash: int | None):
@@ -1068,6 +1095,9 @@ def _update_next_config(
         "trailingSlash": True,
         "staticPageGenerationTimeout": config.static_page_generation_timeout,
     }
+    if not config.next_dev_indicators:
+        next_config["devIndicators"] = False
+
     if transpile_packages:
         next_config["transpilePackages"] = list(
             {format_library_name(p) for p in transpile_packages}
@@ -1126,11 +1156,19 @@ def install_bun():
             "Creating project directories in OneDrive is not recommended for bun usage on windows. This will fallback to npm."
         )
 
+    bun_path = path_ops.get_bun_path()
+
     # Skip if bun is already installed.
-    if (current_version := get_bun_version()) and current_version >= version.parse(
-        constants.Bun.MIN_VERSION
+    if (
+        bun_path
+        and (current_version := get_bun_version(bun_path=bun_path))
+        and current_version >= version.parse(constants.Bun.MIN_VERSION)
     ):
         console.debug("Skipping bun installation as it is already installed.")
+        return
+
+    if bun_path and path_ops.use_system_bun():
+        validate_bun(bun_path=bun_path)
         return
 
     #  if unzip is installed
@@ -1180,26 +1218,39 @@ def _clear_cached_procedure_file(cache_file: str | Path):
         cache_file.unlink()
 
 
-def cached_procedure(cache_file: str, payload_fn: Callable[..., str]):
+def cached_procedure(
+    cache_file: str | None,
+    payload_fn: Callable[..., str],
+    cache_file_fn: Callable[[], str] | None = None,
+):
     """Decorator to cache the runs of a procedure on disk. Procedures should not have
        a return value.
 
     Args:
         cache_file: The file to store the cache payload in.
-        payload_fn: Function that computes cache payload from function args
+        payload_fn: Function that computes cache payload from function args.
+        cache_file_fn: Function that computes the cache file name at runtime.
 
     Returns:
         The decorated function.
+
+    Raises:
+        ValueError: If both cache_file and cache_file_fn are provided.
     """
+    if cache_file and cache_file_fn is not None:
+        raise ValueError("cache_file and cache_file_fn cannot both be provided.")
 
     def _inner_decorator(func: Callable):
         def _inner(*args, **kwargs):
-            payload = _read_cached_procedure_file(cache_file)
+            _cache_file = cache_file_fn() if cache_file_fn is not None else cache_file
+            if not _cache_file:
+                raise ValueError("Unknown cache file, cannot cache result.")
+            payload = _read_cached_procedure_file(_cache_file)
             new_payload = payload_fn(*args, **kwargs)
             if payload != new_payload:
-                _clear_cached_procedure_file(cache_file)
+                _clear_cached_procedure_file(_cache_file)
                 func(*args, **kwargs)
-                _write_cached_procedure_file(new_payload, cache_file)
+                _write_cached_procedure_file(new_payload, _cache_file)
 
         return _inner
 
@@ -1207,8 +1258,11 @@ def cached_procedure(cache_file: str, payload_fn: Callable[..., str]):
 
 
 @cached_procedure(
-    cache_file=str(get_web_dir() / "reflex.install_frontend_packages.cached"),
+    cache_file_fn=lambda: str(
+        get_web_dir() / "reflex.install_frontend_packages.cached"
+    ),
     payload_fn=lambda p, c: f"{sorted(p)!r},{c.json()}",
+    cache_file=None,
 )
 def install_frontend_packages(packages: set[str], config: Config):
     """Installs the base and custom frontend packages.
@@ -1224,6 +1278,14 @@ def install_frontend_packages(packages: set[str], config: Config):
         raise_on_none=True
     )
 
+    env = (
+        {
+            "NODE_TLS_REJECT_UNAUTHORIZED": "0",
+        }
+        if environment.SSL_NO_VERIFY.get()
+        else {}
+    )
+
     primary_package_manager = install_package_managers[0]
     fallbacks = install_package_managers[1:]
 
@@ -1234,6 +1296,7 @@ def install_frontend_packages(packages: set[str], config: Config):
         show_status_message="Installing base frontend packages",
         cwd=get_web_dir(),
         shell=constants.IS_WINDOWS,
+        env=env,
     )
 
     if config.tailwind is not None:
@@ -1251,6 +1314,7 @@ def install_frontend_packages(packages: set[str], config: Config):
             show_status_message="Installing tailwind",
             cwd=get_web_dir(),
             shell=constants.IS_WINDOWS,
+            env=env,
         )
 
     # Install custom packages defined in frontend_packages
@@ -1262,6 +1326,7 @@ def install_frontend_packages(packages: set[str], config: Config):
             show_status_message="Installing frontend packages from config and components",
             cwd=get_web_dir(),
             shell=constants.IS_WINDOWS,
+            env=env,
         )
 
 
@@ -1340,13 +1405,16 @@ def is_latest_template() -> bool:
     return app_version == constants.Reflex.VERSION
 
 
-def validate_bun():
+def validate_bun(bun_path: Path | None = None):
     """Validate bun if a custom bun path is specified to ensure the bun version meets requirements.
+
+    Args:
+        bun_path: The path to the bun executable. If None, the default bun path is used.
 
     Raises:
         Exit: If custom specified bun does not exist or does not meet requirements.
     """
-    bun_path = path_ops.get_bun_path()
+    bun_path = bun_path or path_ops.get_bun_path()
 
     if bun_path is None:
         return
@@ -1360,13 +1428,11 @@ def validate_bun():
             )
             raise typer.Exit(1)
         elif bun_version < version.parse(constants.Bun.MIN_VERSION):
-            console.error(
-                f"Reflex requires bun version {constants.Bun.VERSION} or higher to run, but the detected version is "
+            console.warn(
+                f"Reflex requires bun version {constants.Bun.MIN_VERSION} or higher to run, but the detected version is "
                 f"{bun_version}. If you have specified a custom bun path in your config, make sure to provide one "
-                f"that satisfies the minimum version requirement."
+                f"that satisfies the minimum version requirement. You can upgrade bun by running [bold]bun upgrade[/bold]."
             )
-
-            raise typer.Exit(1)
 
 
 def validate_frontend_dependencies(init: bool = True):
@@ -1384,15 +1450,12 @@ def validate_frontend_dependencies(init: bool = True):
         except FileNotFoundError as e:
             raise typer.Exit(1) from e
 
-    if prefer_npm_over_bun():
-        if not check_node_version():
-            node_version = get_node_version()
-            console.error(
-                f"Reflex requires node version {constants.Node.MIN_VERSION} or higher to run, but the detected version is {node_version}",
-            )
-            raise typer.Exit(1)
-    else:
-        validate_bun()
+    if prefer_npm_over_bun() and not check_node_version():
+        node_version = get_node_version()
+        console.error(
+            f"Reflex requires node version {constants.Node.MIN_VERSION} or higher to run, but the detected version is {node_version}",
+        )
+        raise typer.Exit(1)
 
 
 def ensure_reflex_installation_id() -> int | None:
@@ -1510,6 +1573,9 @@ def prompt_for_template_options(templates: list[Template]) -> str:
 
     Returns:
         The template name the user selects.
+
+    Raises:
+        Exit: If the user does not select a template.
     """
     # Show the user the URLs of each template to preview.
     console.print("\nGet started with a template:")
@@ -1534,8 +1600,22 @@ def prompt_for_template_options(templates: list[Template]) -> str:
         default="0",
     )
 
+    if not template:
+        console.error("No template selected.")
+        raise typer.Exit(1)
+
+    try:
+        template_index = int(template)
+    except ValueError:
+        console.error("Invalid template selected.")
+        raise typer.Exit(1) from None
+
+    if template_index < 0 or template_index >= len(templates):
+        console.error("Invalid template selected.")
+        raise typer.Exit(1)
+
     # Return the template.
-    return templates[int(template)].name  # pyright: ignore [reportArgumentType]
+    return templates[template_index].name
 
 
 def fetch_app_templates(version: str) -> dict[str, Template]:

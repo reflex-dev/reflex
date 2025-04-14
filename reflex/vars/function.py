@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import dataclasses
-import sys
 from typing import (
     Any,
     Callable,
@@ -470,25 +469,13 @@ class ArgsFunctionOperationBuilder(CachedVarOperation, BuilderFunctionVar):
         )
 
 
-if python_version := sys.version_info[:2] >= (3, 10):
-    JSON_STRINGIFY = FunctionStringVar.create(
-        "JSON.stringify", _var_type=ReflexCallable[[Any], str]
-    )
-    ARRAY_ISARRAY = FunctionStringVar.create(
-        "Array.isArray", _var_type=ReflexCallable[[Any], bool]
-    )
-    PROTOTYPE_TO_STRING = FunctionStringVar.create(
-        "((__to_string) => __to_string.toString())",
-        _var_type=ReflexCallable[[Any], str],
-    )
-else:
-    JSON_STRINGIFY = FunctionStringVar.create(
-        "JSON.stringify", _var_type=ReflexCallable[Any, str]
-    )
-    ARRAY_ISARRAY = FunctionStringVar.create(
-        "Array.isArray", _var_type=ReflexCallable[Any, bool]
-    )
-    PROTOTYPE_TO_STRING = FunctionStringVar.create(
-        "((__to_string) => __to_string.toString())",
-        _var_type=ReflexCallable[Any, str],
-    )
+JSON_STRINGIFY = FunctionStringVar.create(
+    "JSON.stringify", _var_type=ReflexCallable[[Any], str]
+)
+ARRAY_ISARRAY = FunctionStringVar.create(
+    "Array.isArray", _var_type=ReflexCallable[[Any], bool]
+)
+PROTOTYPE_TO_STRING = FunctionStringVar.create(
+    "((__to_string) => __to_string.toString())",
+    _var_type=ReflexCallable[[Any], str],
+)

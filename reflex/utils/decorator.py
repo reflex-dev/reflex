@@ -18,10 +18,31 @@ def once(f: Callable[[], T]) -> Callable[[], T]:
     unset = object()
     value: object | T = unset
 
+    @functools.wraps(f)
     def wrapper() -> T:
         nonlocal value
         value = f() if value is unset else value
         return value  # pyright: ignore[reportReturnType]
+
+    return wrapper
+
+
+def once_unless_none(f: Callable[[], T | None]) -> Callable[[], T | None]:
+    """A decorator that calls the function once and caches the result unless it is None.
+
+    Args:
+        f: The function to call.
+
+    Returns:
+        A function that calls the function once and caches the result unless it is None.
+    """
+    value: T | None = None
+
+    @functools.wraps(f)
+    def wrapper() -> T | None:
+        nonlocal value
+        value = f() if value is None else value
+        return value
 
     return wrapper
 

@@ -11,8 +11,17 @@ from reflex.components.component import Component
 from reflex.components.core.banner import has_connection_errors
 from reflex.components.core.cond import cond
 from reflex.constants import Endpoint
+from reflex.utils.decorator import once
 
-redirect_script = """
+
+@once
+def redirect_script() -> str:
+    """Get the redirect script for Github Codespaces.
+
+    Returns:
+        The redirect script as a string.
+    """
+    return """
 const thisUrl = new URL(window.location.href);
 const params = new URLSearchParams(thisUrl.search)
 
@@ -61,7 +70,7 @@ def codespaces_auto_redirect() -> list[Component]:
         A list containing the conditional redirect component, or empty list.
     """
     if is_running_in_codespaces():
-        return [cond(has_connection_errors, Script.create(redirect_script))]
+        return [cond(has_connection_errors, Script.create(redirect_script()))]
     return []
 
 
@@ -87,5 +96,5 @@ async def auth_codespace() -> HTMLResponse:
         </body>
     </html>
     """
-        % redirect_script
+        % redirect_script()
     )

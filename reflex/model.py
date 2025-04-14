@@ -320,9 +320,9 @@ class Model(Base, sqlmodel.SQLModel):  # pyright: ignore [reportGeneralTypeIssue
             tuple of (config, script_directory)
         """
         config = alembic.config.Config(environment.ALEMBIC_CONFIG.get())
-        return config, alembic.script.ScriptDirectory(
-            config.get_main_option("script_location", default="version"),
-        )
+        if not config.get_main_option("script_location"):
+            config.set_main_option("script_location", "version")
+        return config, alembic.script.ScriptDirectory.from_config(config)
 
     @staticmethod
     def _alembic_render_item(

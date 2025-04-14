@@ -28,28 +28,6 @@ from reflex.utils.exceptions import ReflexError, SystemPackageMissingError
 from reflex.vars.base import Var
 
 
-def mock_event(arg):
-    pass
-
-
-def get_above_max_version():
-    """Get the 1 version above the max required bun version.
-
-    Returns:
-        max bun version plus one.
-
-    """
-    semantic_version_list = constants.Bun.VERSION.split(".")
-    semantic_version_list[-1] = str(int(semantic_version_list[-1]) + 1)  # pyright: ignore [reportArgumentType, reportCallIssue]
-    return ".".join(semantic_version_list)
-
-
-V055 = version.parse("0.5.5")
-V059 = version.parse("0.5.9")
-V056 = version.parse("0.5.6")
-VMAXPLUS1 = version.parse(get_above_max_version())
-
-
 class ExampleTestState(BaseState):
     """Test state class."""
 
@@ -125,6 +103,10 @@ def test_is_generic_alias(cls: type, expected: bool):
         (str, Literal["test", "value", 2, 3], True),
         (int, Literal["test", "value"], False),
         (int, Literal["test", "value", 2, 3], True),
+        (Literal["test", "value"], str, True),
+        (Literal["test", "value", 2, 3], str, False),
+        (Literal["test", "value"], int, False),
+        (Literal["test", "value", 2, 3], int, False),
         *[
             (NoReturn, super_class, True)
             for super_class in [int, float, str, bool, list, dict, object, Any]
@@ -244,8 +226,8 @@ def test_validate_bun_path_incompatible_version(mocker):
         return_value=version.parse("0.6.5"),
     )
 
-    with pytest.raises(typer.Exit):
-        prerequisites.validate_bun()
+    # This will just warn the user, not raise an error
+    prerequisites.validate_bun()
 
 
 def test_remove_existing_bun_installation(mocker):
@@ -596,7 +578,7 @@ def test_style_prop_with_event_handler_value(callable):
     }
 
     with pytest.raises(ReflexError):
-        rx.box(style=style)  # pyright: ignore [reportArgumentType]
+        rx.box(style=style)
 
 
 def test_is_prod_mode() -> None:

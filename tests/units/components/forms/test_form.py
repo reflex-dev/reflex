@@ -17,4 +17,6 @@ def test_render_on_submit():
 def test_render_no_on_submit():
     """A form without on_submit should render a prevent_default handler."""
     f = Form.create()
-    assert f.event_triggers["on_submit"] == prevent_default
+    assert isinstance(f.event_triggers["on_submit"], EventChain)
+    assert len(f.event_triggers["on_submit"].events) == 1
+    assert f.event_triggers["on_submit"].events[0] == prevent_default

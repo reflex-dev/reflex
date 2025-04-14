@@ -1,4 +1,6 @@
 name: performance-tests
+permissions:
+  contents: read
 
 on:
   push:

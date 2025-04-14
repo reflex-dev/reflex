@@ -16,6 +16,8 @@ from typing import (
     overload,
 )
 
+from typing_extensions import TypeVar as TypeVarExt
+
 from reflex.constants.base import Dirs
 from reflex.utils.exceptions import (
     PrimitiveUnserializableToJSONError,
@@ -35,7 +37,9 @@ from .base import (
     var_operation_return,
 )
 
-NUMBER_T = TypeVar("NUMBER_T", int, float, bool)
+NUMBER_T = TypeVarExt(
+    "NUMBER_T", bound=(int | float), default=(int | float), covariant=True
+)
 
 if TYPE_CHECKING:
     from .sequence import ArrayVar
@@ -313,13 +317,19 @@ class NumberVar(Var[NUMBER_T], python_types=(int, float)):
         """
         return self
 
-    def __round__(self):
+    def __round__(self, ndigits: int | NumberVar = 0) -> NumberVar:
         """Round the number.
+
+        Args:
+            ndigits: The number of digits to round.
 
         Returns:
             The number round operation.
         """
-        return number_round_operation(self)
+        if not isinstance(ndigits, NUMBER_TYPES):
+            raise_unsupported_operand_types("round", (type(self), type(ndigits)))
+
+        return number_round_operation(self, +ndigits)
 
     def __ceil__(self):
         """Ceil the number.
@@ -653,16 +663,23 @@ def number_exponent_operation(lhs: NumberVar, rhs: NumberVar):
 
 
 @var_operation
-def number_round_operation(value: NumberVar):
+def number_round_operation(value: NumberVar, ndigits: NumberVar | int):
     """Round the number.
 
     Args:
         value: The number.
+        ndigits: The number of digits.
 
     Returns:
         The number round operation.
     """
-    return var_operation_return(js_expression=f"Math.round({value})", var_type=int)
+    if (isinstance(ndigits, LiteralNumberVar) and ndigits._var_value == 0) or (
+        isinstance(ndigits, int) and ndigits == 0
+    ):
+        return var_operation_return(js_expression=f"Math.round({value})", var_type=int)
+    return var_operation_return(
+        js_expression=f"(+{value}.toFixed({ndigits}))", var_type=float
+    )
 
 
 @var_operation
@@ -1040,6 +1057,10 @@ _IS_TRUE_IMPORT: ImportDict = {
     f"$/{Dirs.STATE_PATH}": [ImportVar(tag="isTrue")],
 }
 
+_IS_NOT_NULL_OR_UNDEFINED_IMPORT: ImportDict = {
+    f"$/{Dirs.STATE_PATH}": [ImportVar(tag="isNotNullOrUndefined")],
+}
+
 
 @var_operation
 def boolify(value: Var):
@@ -1058,13 +1079,30 @@ def boolify(value: Var):
     )
 
 
+@var_operation
+def is_not_none_operation(value: Var):
+    """Check if the value is not None.
+
+    Args:
+        value: The value.
+
+    Returns:
+        The boolean value.
+    """
+    return var_operation_return(
+        js_expression=f"isNotNullOrUndefined({value})",
+        var_type=bool,
+        var_data=VarData(imports=_IS_NOT_NULL_OR_UNDEFINED_IMPORT),
+    )
+
+
 T = TypeVar("T")
 U = TypeVar("U")
 
 
 @var_operation
 def ternary_operation(
-    condition: BooleanVar, if_true: Var[T], if_false: Var[U]
+    condition: Var[bool], if_true: Var[T], if_false: Var[U]
 ) -> CustomVarOperationReturn[T | U]:
     """Create a ternary operation.
 

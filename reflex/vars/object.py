@@ -17,6 +17,7 @@ from typing import (
     overload,
 )
 
+from rich.markup import escape
 from typing_extensions import is_typeddict
 
 from reflex.utils import types
@@ -326,7 +327,7 @@ class ObjectVar(Var[OBJECT_TYPE], python_types=Mapping):
             attribute_type = get_attribute_access_type(var_type, name)
             if attribute_type is None:
                 raise VarAttributeError(
-                    f"The State var `{self!s}` has no attribute '{name}' or may have been annotated "
+                    f"The State var `{self!s}` of type {escape(str(self._var_type))} has no attribute '{name}' or may have been annotated "
                     f"wrongly."
                 )
             return ObjectItemOperation.create(self, name, attribute_type).guess_type()

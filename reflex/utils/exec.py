@@ -330,6 +330,7 @@ def run_uvicorn_backend(host: str, port: int, loglevel: LogLevel):
         log_level=loglevel.value,
         reload=True,
         reload_dirs=list(map(str, get_reload_paths())),
+        reload_delay=0.1,
     )
 
 
@@ -356,6 +357,9 @@ def run_granian_backend(host: str, port: int, loglevel: LogLevel):
         log_level=LogLevels(loglevel.value),
         reload=True,
         reload_paths=get_reload_paths(),
+        reload_ignore_worker_failure=True,
+        reload_tick=100,
+        workers_kill_timeout=2,
     ).serve()
 
 
@@ -599,13 +603,13 @@ def output_system_info():
 
     dependencies = [
         f"[Reflex {constants.Reflex.VERSION} with Python {platform.python_version()} (PATH: {sys.executable})]",
-        f"[Node {prerequisites.get_node_version()} (Expected: {constants.Node.VERSION}) (PATH:{path_ops.get_node_path()})]",
+        f"[Node {prerequisites.get_node_version()} (Minimum: {constants.Node.MIN_VERSION}) (PATH:{path_ops.get_node_path()})]",
     ]
 
     system = platform.system()
 
     dependencies.append(
-        f"[Bun {prerequisites.get_bun_version()} (Expected: {constants.Bun.VERSION}) (PATH: {path_ops.get_bun_path()})]"
+        f"[Bun {prerequisites.get_bun_version()} (Minimum: {constants.Bun.MIN_VERSION}) (PATH: {path_ops.get_bun_path()})]"
     )
 
     if system == "Linux":

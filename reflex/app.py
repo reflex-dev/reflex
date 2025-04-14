@@ -40,8 +40,6 @@ from rich.progress import MofNCompleteColumn, Progress, TimeElapsedColumn
 from socketio import ASGIApp, AsyncNamespace, AsyncServer
 from starlette.datastructures import Headers
 from starlette.datastructures import UploadFile as StarletteUploadFile
-from starlette_admin.contrib.sqla.admin import Admin
-from starlette_admin.contrib.sqla.view import ModelView
 
 from reflex import constants
 from reflex.admin import AdminDash
@@ -115,9 +113,11 @@ from reflex.utils.imports import ImportVar
 if TYPE_CHECKING:
     from reflex.vars import Var
 
+    # Define custom types.
+    ComponentCallable = Callable[[], Component | tuple[Component, ...] | str | Var]
+else:
+    ComponentCallable = Callable[[], Component | tuple[Component, ...] | str]
 
-# Define custom types.
-ComponentCallable = Callable[[], Component]
 Reducer = Callable[[Event], Coroutine[Any, Any, StateUpdate]]
 
 
@@ -294,6 +294,7 @@ class UnevaluatedPage:
     image: str
     on_load: EventType[()] | None
     meta: list[dict[str, str]]
+    context: dict[str, Any] | None
 
 
 @dataclasses.dataclass()
@@ -446,6 +447,8 @@ class App(MiddlewareMixin, LifespanMixin):
                 "rx.BaseState cannot be subclassed directly. Use rx.State instead"
             )
 
+        get_config(reload=True)
+
         if "breakpoints" in self.style:
             set_breakpoints(self.style.pop("breakpoints"))
 
@@ -501,9 +504,9 @@ class App(MiddlewareMixin, LifespanMixin):
                     else config.cors_allowed_origins
                 ),
                 cors_credentials=True,
-                max_http_buffer_size=constants.POLLING_MAX_HTTP_BUFFER_SIZE,
-                ping_interval=constants.Ping.INTERVAL,
-                ping_timeout=constants.Ping.TIMEOUT,
+                max_http_buffer_size=environment.REFLEX_SOCKET_MAX_HTTP_BUFFER_SIZE.get(),
+                ping_interval=environment.REFLEX_SOCKET_INTERVAL.get(),
+                ping_timeout=environment.REFLEX_SOCKET_TIMEOUT.get(),
                 json=SimpleNamespace(
                     dumps=staticmethod(format.json_dumps),
                     loads=staticmethod(json.loads),
@@ -697,6 +700,7 @@ class App(MiddlewareMixin, LifespanMixin):
         meta: list[dict[str, str]] = constants.DefaultPage.META_LIST,
         sitemap_priority: float = constants.DefaultPage.SITEMAP_PRIORITY,
         sitemap_changefreq: str = constants.DefaultPage.SITEMAP_CHANGEFREQ,
+        context: dict[str, Any] | None = None,
     ):
         """Add a page to the app.
 
@@ -714,6 +718,7 @@ class App(MiddlewareMixin, LifespanMixin):
             sitemap_priority: The priority of the page in the sitemap. If None, the priority is calculated based on the
             depth of the route.
             sitemap_changefreq: The change frequency of the page in the sitemap. Default to 'weekly'
+            context: Values passed to page for custom page-specific logic.
 
         Raises:
             PageValueError: When the component is not set for a non-404 page.
@@ -786,6 +791,7 @@ class App(MiddlewareMixin, LifespanMixin):
             image=image,
             on_load=on_load,
             meta=meta,
+            context=context,
         )
 
     def _compile_page(self, route: str, save_page: bool = True):
@@ -913,6 +919,12 @@ class App(MiddlewareMixin, LifespanMixin):
 
     def _setup_admin_dash(self):
         """Setup the admin dash."""
+        try:
+            from starlette_admin.contrib.sqla.admin import Admin
+            from starlette_admin.contrib.sqla.view import ModelView
+        except ImportError:
+            return
+
         # Get the admin dash.
         if not self.api:
             return
@@ -955,6 +967,9 @@ class App(MiddlewareMixin, LifespanMixin):
             and i != ""
             and any(tag.install for tag in tags)
         }
+        pinned = {i.rpartition("@")[0] for i in page_imports if "@" in i}
+        page_imports = {i for i in page_imports if i not in pinned}
+
         frontend_packages = get_config().frontend_packages
         _frontend_packages = []
         for package in frontend_packages:
@@ -1257,13 +1272,15 @@ class App(MiddlewareMixin, LifespanMixin):
             custom_components |= component._get_all_custom_components()
 
         if self.error_boundary:
+            from reflex.compiler.compiler import into_component
+
             console.deprecate(
                 feature_name="App.error_boundary",
                 reason="Use app_wraps instead.",
                 deprecation_version="0.7.1",
                 removal_version="0.8.0",
             )
-            app_wrappers[(55, "ErrorBoundary")] = self.error_boundary()
+            app_wrappers[(55, "ErrorBoundary")] = into_component(self.error_boundary)
 
         # Perform auto-memoization of stateful components.
         with console.timing("Auto-memoize StatefulComponents"):
@@ -1456,7 +1473,7 @@ class App(MiddlewareMixin, LifespanMixin):
         async with self.state_manager.modify_state(token) as state:
             # No other event handler can modify the state while in this context.
             yield state
-            delta = state.get_delta()
+            delta = await state._get_resolved_delta()
             if delta:
                 # When the state is modified reset dirty status and emit the delta to the frontend.
                 state._clean()

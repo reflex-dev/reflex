@@ -259,7 +259,7 @@ class Cell(Recharts):
 
 responsive_container = ResponsiveContainer.create
 legend = Legend.create
-graphing_tooltip = GraphingTooltip.create
+graphing_tooltip = tooltip = GraphingTooltip.create
 label = Label.create
 label_list = LabelList.create
 cell = Cell.create

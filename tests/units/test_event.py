@@ -431,8 +431,12 @@ def test_event_var_data():
         def s(self, value: int):
             pass
 
+        @event
+        def s2(self):
+            pass
+
     # Handler doesn't have any _var_data because it's just a str
-    handler_var = Var.create(S.s)
+    handler_var = Var.create(S.s2)
     assert handler_var._get_all_var_data() is None
 
     # Ensure spec carries _var_data

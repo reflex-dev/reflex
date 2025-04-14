@@ -4,11 +4,11 @@ from __future__ import annotations
 
 import dataclasses
 from collections import defaultdict
-from typing import DefaultDict, Union
+from typing import DefaultDict, Mapping, Sequence, Union
 
 
 def merge_imports(
-    *imports: ImportDict | ParsedImportDict | ImmutableParsedImportDict,
+    *imports: ImportDict | ParsedImportDict | ParsedImportTuple,
 ) -> ParsedImportDict:
     """Merge multiple import dicts together.
 
@@ -43,7 +43,9 @@ def merge_imports(
     return all_imports
 
 
-def parse_imports(imports: ImportDict | ParsedImportDict) -> ParsedImportDict:
+def parse_imports(
+    imports: ImmutableImportDict | ImmutableParsedImportDict,
+) -> ParsedImportDict:
     """Parse the import dict into a standard format.
 
     Args:
@@ -53,10 +55,12 @@ def parse_imports(imports: ImportDict | ParsedImportDict) -> ParsedImportDict:
         The parsed import dict.
     """
 
-    def _make_list(value: ImportTypes) -> list[str | ImportVar] | list[ImportVar]:
+    def _make_list(
+        value: ImmutableImportTypes,
+    ) -> list[str | ImportVar] | list[ImportVar]:
         if isinstance(value, (str, ImportVar)):
             return [value]
-        return value
+        return list(value)
 
     return {
         package: [
@@ -68,7 +72,7 @@ def parse_imports(imports: ImportDict | ParsedImportDict) -> ParsedImportDict:
 
 
 def collapse_imports(
-    imports: ParsedImportDict | ImmutableParsedImportDict,
+    imports: ParsedImportDict | ParsedImportTuple,
 ) -> ParsedImportDict:
     """Remove all duplicate ImportVar within an ImportDict.
 
@@ -132,6 +136,9 @@ class ImportVar:
 
 
 ImportTypes = Union[str, ImportVar, list[str | ImportVar], list[ImportVar]]
+ImmutableImportTypes = Union[str, ImportVar, Sequence[str | ImportVar]]
 ImportDict = dict[str, ImportTypes]
+ImmutableImportDict = Mapping[str, ImmutableImportTypes]
 ParsedImportDict = dict[str, list[ImportVar]]
-ImmutableParsedImportDict = tuple[tuple[str, tuple[ImportVar, ...]], ...]
+ImmutableParsedImportDict = Mapping[str, Sequence[ImportVar]]
+ParsedImportTuple = tuple[tuple[str, tuple[ImportVar, ...]], ...]

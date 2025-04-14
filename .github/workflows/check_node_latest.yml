@@ -1,4 +1,6 @@
 name: integration-node-latest
+permissions:
+  contents: read
 
 on:
   push:

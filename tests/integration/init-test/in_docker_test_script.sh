@@ -29,7 +29,8 @@ source ~/venv/bin/activate
 pip install -U pip
 
 echo "Installing reflex from local repo code"
-pip install /reflex-repo
+cp -r /reflex-repo ~/reflex-repo
+pip install ~/reflex-repo
 
 redis-server &
 

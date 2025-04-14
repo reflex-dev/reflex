@@ -61,6 +61,18 @@ class Dirs(SimpleNamespace):
     UPLOAD_IS_USED = "upload_is_used"
 
 
+def _reflex_version() -> str:
+    """Get the Reflex version.
+
+    Returns:
+        The Reflex version.
+    """
+    try:
+        return metadata.version("reflex")
+    except metadata.PackageNotFoundError:
+        return "unknown"
+
+
 class Reflex(SimpleNamespace):
     """Base constants concerning Reflex."""
 
@@ -68,7 +80,7 @@ class Reflex(SimpleNamespace):
     # The name of the Reflex package.
     MODULE_NAME = "reflex"
     # The current version of Reflex.
-    VERSION = metadata.version(MODULE_NAME)
+    VERSION = _reflex_version()
 
     # The reflex json file.
     JSON = "reflex.json"

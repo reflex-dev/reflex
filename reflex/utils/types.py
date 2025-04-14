@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import dataclasses
 import inspect
-import sys
 import types
 from functools import cached_property, lru_cache, wraps
 from types import GenericAlias
@@ -140,7 +139,7 @@ def is_generic_alias(cls: GenericType) -> bool:
     Returns:
         Whether the class is a generic alias.
     """
-    return isinstance(cls, GenericAliasTypes)  # pyright: ignore [reportArgumentType]
+    return isinstance(cls, GenericAliasTypes)
 
 
 @lru_cache()
@@ -414,10 +413,7 @@ def get_attribute_access_type(cls: GenericType, name: str) -> GenericType | None
         )
     elif isinstance(cls, type):
         # Bare class
-        if sys.version_info >= (3, 10):
-            exceptions = NameError
-        else:
-            exceptions = (NameError, TypeError)
+        exceptions = NameError
         try:
             hints = get_type_hints(cls)
             if name in hints:
@@ -607,7 +603,7 @@ def _isinstance(
     if cls is None or cls is type(None):
         return obj is None
 
-    if cls and is_union(cls):
+    if cls is not None and is_union(cls):
         return any(
             _isinstance(obj, arg, nested=nested, treat_var_as_type=treat_var_as_type)
             for arg in get_args(cls)
@@ -642,6 +638,16 @@ def _isinstance(
                 origin = Sequence
         # cls is a simple generic class
         return isinstance(obj, origin)
+
+    if origin is Var and args:
+        # cls is a Var
+        return _isinstance(
+            obj,
+            args[0],
+            nested=nested,
+            treat_var_as_type=treat_var_as_type,
+            treat_mutable_obj_as_immutable=treat_mutable_obj_as_immutable,
+        )
 
     if nested > 0 and args:
         if origin is list:
@@ -923,7 +929,7 @@ StateBases = get_base_class(StateVar)
 StateIterBases = get_base_class(StateIterVar)
 
 
-def safe_issubclass(cls: Type, cls_check: Type | tuple[Type, ...]):
+def safe_issubclass(cls: Any, cls_check: Any | tuple[Any, ...]):
     """Check if a class is a subclass of another class. Returns False if internal error occurs.
 
     Args:
@@ -986,14 +992,24 @@ def typehint_issubclass(
             for arg in args
         )
 
-    # Remove this check when Python 3.10 is the minimum supported version
-    if hasattr(types, "UnionType"):
-        provided_type_origin = (
-            Union if provided_type_origin is types.UnionType else provided_type_origin
+    if is_literal(possible_subclass):
+        args = get_args(possible_subclass)
+        return all(
+            _isinstance(
+                arg,
+                possible_superclass,
+                treat_mutable_obj_as_immutable=treat_mutable_superclasss_as_immutable,
+                nested=2,
+            )
+            for arg in args
         )
-        accepted_type_origin = (
-            Union if accepted_type_origin is types.UnionType else accepted_type_origin
-        )
+
+    provided_type_origin = (
+        Union if provided_type_origin is types.UnionType else provided_type_origin
+    )
+    accepted_type_origin = (
+        Union if accepted_type_origin is types.UnionType else accepted_type_origin
+    )
 
     # Get type arguments (e.g., [float, int] for dict[float, int])
     provided_args = get_args(possible_subclass)
@@ -1047,8 +1063,8 @@ def typehint_issubclass(
 
     # Check if the origin of both types is the same (e.g., list for list[int])
     if not safe_issubclass(
-        provided_type_origin or possible_subclass,  # pyright: ignore [reportArgumentType]
-        accepted_type_origin or possible_superclass,  # pyright: ignore [reportArgumentType]
+        provided_type_origin or possible_subclass,
+        accepted_type_origin or possible_superclass,
     ):
         return False
 

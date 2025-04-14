@@ -948,6 +948,15 @@ export const isTrue = (val) => {
   return Boolean(val);
 };
 
+/***
+ * Check if a value is not null or undefined.
+ * @param val The value to check.
+ * @returns True if the value is not null or undefined, false otherwise.
+ */
+export const isNotNullOrUndefined = (val) => {
+  return val ?? undefined !== undefined;
+};
+
 /**
  * Get the value from a ref.
  * @param ref The ref to get the value from.

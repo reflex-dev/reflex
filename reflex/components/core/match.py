@@ -1,7 +1,7 @@
 """rx.match."""
 
 import textwrap
-from typing import Any, Dict, List
+from typing import Any, Dict
 
 from reflex.components.base import Fragment
 from reflex.components.component import BaseComponent, Component, MemoizationLeaf
@@ -123,7 +123,7 @@ class Match(MemoizationLeaf):
         return case_element
 
     @classmethod
-    def _process_match_cases(cls, cases: List) -> list[list[Var]]:
+    def _process_match_cases(cls, cases: list) -> list[list[Var]]:
         """Process the individual match cases.
 
         Args:
@@ -232,13 +232,13 @@ class Match(MemoizationLeaf):
             _js_expr=format.format_match(
                 cond=str(match_cond_var),
                 match_cases=match_cases,
-                default=default,  # pyright: ignore [reportArgumentType]
+                default=default,
             ),
-            _var_type=default._var_type,  # pyright: ignore [reportAttributeAccessIssue,reportOptionalMemberAccess]
+            _var_type=default._var_type,
             _var_data=VarData.merge(
                 match_cond_var._get_all_var_data(),
                 *[el._get_all_var_data() for case in match_cases for el in case],
-                default._get_all_var_data(),  # pyright: ignore [reportAttributeAccessIssue, reportOptionalMemberAccess]
+                default._get_all_var_data(),
             ),
         )
 
