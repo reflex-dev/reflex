@@ -89,7 +89,7 @@ class StyleEl(Element):
 
     media: Var[str]
 
-    special_props: list[Var] = [Var(_js_expr="suppressHydrationWarning")]
+    suppress_hydration_warning: Var[bool] = Var.create(True)
 
 
 base = Base.create

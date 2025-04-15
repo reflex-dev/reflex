@@ -37,8 +37,10 @@ def _compile_document_root(root: Component) -> str:
     Returns:
         The compiled document root.
     """
+    document_root_imports = root._get_all_imports()
+    document_root_imports.setdefault("@emotion/react", []).append(ImportVar("jsx"))
     return templates.DOCUMENT_ROOT.render(
-        imports=utils.compile_imports(root._get_all_imports()),
+        imports=utils.compile_imports(document_root_imports),
         document=root.render(),
     )
 
@@ -75,8 +77,11 @@ def _compile_app(app_root: Component) -> str:
         ("utils_state", f"$/{constants.Dirs.UTILS}/state"),
     ]
 
+    app_root_imports = app_root._get_all_imports()
+    app_root_imports.setdefault("@emotion/react", []).append(ImportVar("jsx"))
+
     return templates.APP_ROOT.render(
-        imports=utils.compile_imports(app_root._get_all_imports()),
+        imports=utils.compile_imports(app_root_imports),
         custom_codes=app_root._get_all_custom_code(),
         hooks=app_root._get_all_hooks(),
         window_libraries=window_libraries,
@@ -144,6 +149,7 @@ def _compile_page(
         The compiled component.
     """
     imports = component._get_all_imports()
+    imports.setdefault("@emotion/react", []).append(ImportVar("jsx"))
     imports = utils.compile_imports(imports)
 
     # Compile the code to render the component.
@@ -326,7 +332,7 @@ def _compile_components(
     """
     imports = {
         "react": [ImportVar(tag="memo")],
-        f"$/{constants.Dirs.STATE_PATH}": [ImportVar(tag="E"), ImportVar(tag="isTrue")],
+        f"$/{constants.Dirs.STATE_PATH}": [ImportVar(tag="isTrue")],
     }
     component_renders = []
 
@@ -467,7 +473,9 @@ def compile_document_root(
         The path and code of the compiled document root.
     """
     # Get the path for the output file.
-    output_path = utils.get_page_path(constants.PageNames.DOCUMENT_ROOT)
+    output_path = str(
+        get_web_dir() / constants.Dirs.PAGES / constants.PageNames.DOCUMENT_ROOT
+    )
 
     # Create the document root.
     document_root = utils.create_document_root(
@@ -489,7 +497,9 @@ def compile_app(app_root: Component) -> tuple[str, str]:
         The path and code of the compiled app wrapper.
     """
     # Get the path for the output file.
-    output_path = utils.get_page_path(constants.PageNames.APP_ROOT)
+    output_path = str(
+        get_web_dir() / constants.Dirs.PAGES / constants.PageNames.APP_ROOT
+    )
 
     # Compile the document root.
     code = _compile_app(app_root)
@@ -548,7 +558,7 @@ def compile_page(
         The path and code of the compiled page.
     """
     # Get the path for the output file.
-    output_path = utils.get_page_path(path)
+    output_path = utils.get_page_path(path if path != "index" else "_index")
 
     # Add the style to the component.
     code = _compile_page(component, state)
@@ -642,7 +652,7 @@ def purge_web_pages_dir():
         return
 
     # Empty out the web pages directory.
-    utils.empty_dir(get_web_dir() / constants.Dirs.PAGES, keep_files=["_app.js"])
+    utils.empty_dir(get_web_dir() / constants.Dirs.PAGES, keep_files=["routes.js"])
 
 
 if TYPE_CHECKING:
@@ -793,7 +803,7 @@ def compile_unevaluated_page(
     if page.description is not None:
         meta_args["description"] = page.description
 
-    # Add meta information to the component.
+    # # Add meta information to the component.
     utils.add_meta(
         component,
         **meta_args,

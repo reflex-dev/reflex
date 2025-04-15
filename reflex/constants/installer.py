@@ -92,32 +92,39 @@ class PackageJson(SimpleNamespace):
     class Commands(SimpleNamespace):
         """The commands to define in package.json."""
 
-        DEV = "next dev"
-        EXPORT = "next build"
-        EXPORT_SITEMAP = "next build && next-sitemap"
-        PROD = "next start"
+        DEV = "react-router dev"
+        EXPORT = "react-router build"
+        EXPORT_SITEMAP = EXPORT
+        PROD = "serve ./build/client"
 
     PATH = "package.json"
 
     DEPENDENCIES = {
-        "@emotion/react": "11.14.0",
         "axios": "1.8.3",
         "json5": "2.2.3",
-        "next": _determine_nextjs_version(),
-        "next-sitemap": "4.2.3",
-        "next-themes": "0.4.6",
-        "react": "19.0.0",
-        "react-dom": "19.0.0",
-        "react-focus-lock": "2.13.6",
+        "react-router": "7.5.0",
+        "react-router-dom": "7.5.0",
+        "react-helmet": "6.1.0",
+        "@react-router/node": "7.5.0",
+        "serve": "14.2.4",
+        "react": "19.1.0",
+        "react-dom": "19.1.0",
+        "isbot": "5.1.26",
         "socket.io-client": "4.8.1",
         "universal-cookie": "7.2.2",
     }
     DEV_DEPENDENCIES = {
+        "@emotion/react": "11.14.0",
         "autoprefixer": "10.4.21",
         "postcss": "8.5.3",
         "postcss-import": "16.1.0",
+        "@react-router/dev": "7.5.0",
+        "@react-router/fs-routes": "7.5.0",
+        "vite-plugin-node-polyfills": "0.23.0",
+        "vite": "6.2.6",
     }
     OVERRIDES = {
         # This should always match the `react` version in DEPENDENCIES for recharts compatibility.
-        "react-is": "19.0.0"
+        "react-is": "19.0.0",
+        "cookie": "1.0.2",
     }
