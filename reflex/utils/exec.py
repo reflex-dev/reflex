@@ -10,8 +10,8 @@ import platform
 import re
 import subprocess
 import sys
+from collections.abc import Sequence
 from pathlib import Path
-from typing import Sequence
 from urllib.parse import urljoin
 
 import psutil

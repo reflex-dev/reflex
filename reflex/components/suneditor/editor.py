@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import enum
-from typing import Any, Dict, Literal, Union
+from typing import Any, Literal
 
 from reflex.base import Base
 from reflex.components.component import Component, NoSSRComponent
@@ -118,29 +118,27 @@ class Editor(NoSSRComponent):
     # "ru" | "zh_cn" | "ro" | "pl" | "ckb" | "lv" | "se" | "ua" | "he" | "it"
     # default: "en".
     lang: Var[
-        Union[
-            Literal[
-                "en",
-                "da",
-                "de",
-                "es",
-                "fr",
-                "ja",
-                "ko",
-                "pt_br",
-                "ru",
-                "zh_cn",
-                "ro",
-                "pl",
-                "ckb",
-                "lv",
-                "se",
-                "ua",
-                "he",
-                "it",
-            ],
-            dict,
+        Literal[
+            "en",
+            "da",
+            "de",
+            "es",
+            "fr",
+            "ja",
+            "ko",
+            "pt_br",
+            "ru",
+            "zh_cn",
+            "ro",
+            "pl",
+            "ckb",
+            "lv",
+            "se",
+            "ua",
+            "he",
+            "it",
         ]
+        | dict
     ]
 
     # This is used to set the HTML form name of the editor.
@@ -169,7 +167,7 @@ class Editor(NoSSRComponent):
     auto_focus: Var[bool]
 
     # Pass an EditorOptions instance to modify the behaviour of Editor even more.
-    set_options: Var[Dict]
+    set_options: Var[dict]
 
     # Whether all SunEditor plugins should be loaded.
     # default: True.

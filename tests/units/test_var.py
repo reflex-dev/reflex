@@ -1,7 +1,8 @@
 import json
 import math
 import typing
-from typing import List, Mapping, Sequence, cast
+from collections.abc import Mapping, Sequence
+from typing import cast
 
 import pytest
 from pandas import DataFrame
@@ -52,7 +53,7 @@ class ATestState(BaseState):
     """Test state."""
 
     value: str
-    dict_val: dict[str, List] = {}
+    dict_val: dict[str, list] = {}
 
 
 @pytest.fixture

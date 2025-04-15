@@ -3,14 +3,14 @@
 from __future__ import annotations
 
 import os
-from typing import TYPE_CHECKING, Any, Type
+from typing import TYPE_CHECKING, Any
 
 import pydantic.v1.main as pydantic_main
 from pydantic.v1 import BaseModel
 from pydantic.v1.fields import ModelField
 
 
-def validate_field_name(bases: list[Type["BaseModel"]], field_name: str) -> None:
+def validate_field_name(bases: list[type[BaseModel]], field_name: str) -> None:
     """Ensure that the field's name does not shadow an existing attribute of the model.
 
     Args:

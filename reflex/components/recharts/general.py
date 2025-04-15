@@ -2,7 +2,8 @@
 
 from __future__ import annotations
 
-from typing import Any, ClassVar, Sequence, Union
+from collections.abc import Sequence
+from typing import Any, ClassVar
 
 from reflex.components.component import MemoizationLeaf
 from reflex.constants.colors import Color
@@ -146,7 +147,7 @@ class GraphingTooltip(Recharts):
     filter_null: Var[bool]
 
     # If set false, no cursor will be drawn when tooltip is active. Default: {"strokeWidth": 1, "fill": rx.color("gray", 3)}
-    cursor: Var[Union[dict[str, Any], bool]] = LiteralVar.create(
+    cursor: Var[dict[str, Any] | bool] = LiteralVar.create(
         {
             "strokeWidth": 1,
             "fill": Color("gray", 3),

@@ -20,10 +20,11 @@ import tempfile
 import time
 import typing
 import zipfile
+from collections.abc import Callable, Sequence
 from datetime import datetime
 from pathlib import Path
 from types import ModuleType
-from typing import Callable, NamedTuple, Sequence
+from typing import NamedTuple
 from urllib.parse import urlparse
 
 import httpx
@@ -2042,7 +2043,7 @@ def _retrieve_cpu_info() -> CpuInfo | None:
     )
 
 
-@functools.lru_cache(maxsize=None)
+@functools.cache
 def get_cpu_info() -> CpuInfo | None:
     """Get the CPU info of the underlining host.
 

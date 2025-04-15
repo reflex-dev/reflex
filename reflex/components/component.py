@@ -9,25 +9,11 @@ import functools
 import inspect
 import typing
 from abc import ABC, abstractmethod
-from functools import lru_cache, wraps
+from collections.abc import Callable, Iterator, Mapping, Sequence
+from functools import wraps
 from hashlib import md5
 from types import SimpleNamespace
-from typing import (
-    Any,
-    Callable,
-    ClassVar,
-    Iterator,
-    List,
-    Mapping,
-    Sequence,
-    Set,
-    Type,
-    TypeVar,
-    Union,
-    cast,
-    get_args,
-    get_origin,
-)
+from typing import Any, ClassVar, TypeVar, cast, get_args, get_origin
 
 import pydantic.v1
 from rich.markup import escape
@@ -180,7 +166,7 @@ def evaluate_style_namespaces(style: ComponentStyle) -> dict:
 
 
 # Map from component to styling.
-ComponentStyle = dict[str | Type[BaseComponent] | Callable | ComponentNamespace, Any]
+ComponentStyle = dict[str | type[BaseComponent] | Callable | ComponentNamespace, Any]
 ComponentChild = types.PrimitiveType | Var | BaseComponent
 ComponentChildTypes = (*types.PrimitiveTypes, Var, BaseComponent, type(None))
 
@@ -227,7 +213,7 @@ def satisfies_type_hint(obj: Any, type_hint: Any) -> bool:
 
 
 def _components_from(
-    component_or_var: Union[BaseComponent, Var],
+    component_or_var: BaseComponent | Var,
 ) -> tuple[BaseComponent, ...]:
     """Get the components from a component or Var.
 
@@ -317,7 +303,7 @@ class Component(BaseComponent, ABC):
     _memoization_mode: MemoizationMode = MemoizationMode()
 
     # State class associated with this component instance
-    State: Type[reflex.state.State] | None = pydantic.v1.Field(
+    State: type[reflex.state.State] | None = pydantic.v1.Field(
         default_factory=lambda: None
     )
 
@@ -611,7 +597,7 @@ class Component(BaseComponent, ABC):
 
         # Convert class_name to str if it's list
         class_name = kwargs.get("class_name", "")
-        if isinstance(class_name, (List, tuple)):
+        if isinstance(class_name, (list, tuple)):
             if any(isinstance(c, Var) for c in class_name):
                 kwargs["class_name"] = LiteralArrayVar.create(
                     class_name, _var_type=list[str]
@@ -717,7 +703,7 @@ class Component(BaseComponent, ABC):
         return tag.add_props(**props)
 
     @classmethod
-    @lru_cache(maxsize=None)
+    @functools.cache
     def get_props(cls) -> set[str]:
         """Get the unique fields for the component.
 
@@ -727,7 +713,7 @@ class Component(BaseComponent, ABC):
         return set(cls.get_fields()) - set(Component.get_fields())
 
     @classmethod
-    @lru_cache(maxsize=None)
+    @functools.cache
     def get_initial_props(cls) -> set[str]:
         """Get the initial props to set for the component.
 
@@ -746,8 +732,8 @@ class Component(BaseComponent, ABC):
         return True
 
     @classmethod
-    @lru_cache(maxsize=None)
-    def _get_component_prop_names(cls) -> Set[str]:
+    @functools.cache
+    def _get_component_prop_names(cls) -> set[str]:
         """Get the names of the component props. NOTE: This assumes all fields are known.
 
         Returns:
@@ -783,7 +769,7 @@ class Component(BaseComponent, ABC):
         ]
 
     @classmethod
-    def create(cls: Type[T], *children, **props) -> T:
+    def create(cls: type[T], *children, **props) -> T:
         """Create the component.
 
         Args:
@@ -831,7 +817,7 @@ class Component(BaseComponent, ABC):
         return cls._create(children_normalized, **props)
 
     @classmethod
-    def _create(cls: Type[T], children: Sequence[BaseComponent], **props: Any) -> T:
+    def _create(cls: type[T], children: Sequence[BaseComponent], **props: Any) -> T:
         """Create the component.
 
         Args:
@@ -847,7 +833,7 @@ class Component(BaseComponent, ABC):
 
     @classmethod
     def _unsafe_create(
-        cls: Type[T], children: Sequence[BaseComponent], **props: Any
+        cls: type[T], children: Sequence[BaseComponent], **props: Any
     ) -> T:
         """Create the component without running post_init.
 
@@ -1226,7 +1212,7 @@ class Component(BaseComponent, ABC):
             yield clz.__name__
 
     @classmethod
-    def _iter_parent_classes_with_method(cls, method: str) -> Iterator[Type[Component]]:
+    def _iter_parent_classes_with_method(cls, method: str) -> Iterator[type[Component]]:
         """Iterate through parent classes that define a given method.
 
         Used for handling the `add_*` API functions that internally simulate a super() call chain.
@@ -1779,11 +1765,9 @@ class CustomComponent(Component):
                 else (
                     annotation_args[1]
                     if get_origin(
-                        (
-                            annotation := inspect.getfullargspec(
-                                component_fn
-                            ).annotations[key]
-                        )
+                        annotation := inspect.getfullargspec(component_fn).annotations[
+                            key
+                        ]
                     )
                     is typing.Annotated
                     and (annotation_args := get_args(annotation))
@@ -1941,7 +1925,7 @@ class CustomComponent(Component):
 
         return fn
 
-    def get_prop_vars(self) -> List[Var | Callable]:
+    def get_prop_vars(self) -> list[Var | Callable]:
         """Get the prop vars.
 
         Returns:
@@ -1957,7 +1941,7 @@ class CustomComponent(Component):
             for name, prop in self.props.items()
         ]
 
-    @lru_cache(maxsize=None)  # noqa: B019
+    @functools.cache  # noqa: B019
     def get_component(self) -> Component:
         """Render the component.
 

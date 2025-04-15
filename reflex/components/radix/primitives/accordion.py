@@ -2,7 +2,8 @@
 
 from __future__ import annotations
 
-from typing import Any, ClassVar, Literal, Sequence
+from collections.abc import Sequence
+from typing import Any, ClassVar, Literal
 
 from reflex.components.component import Component, ComponentNamespace
 from reflex.components.core.colors import color

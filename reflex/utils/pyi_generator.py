@@ -11,6 +11,7 @@ import logging
 import re
 import subprocess
 import typing
+from collections.abc import Callable, Iterable, Sequence
 from fileinput import FileInput
 from hashlib import md5
 from inspect import getfullargspec
@@ -18,7 +19,7 @@ from itertools import chain
 from multiprocessing import Pool, cpu_count
 from pathlib import Path
 from types import ModuleType, SimpleNamespace, UnionType
-from typing import Any, Callable, Iterable, Sequence, Type, get_args, get_origin
+from typing import Any, get_args, get_origin
 
 from reflex.components.component import Component
 from reflex.utils import types as rx_types
@@ -167,7 +168,7 @@ def _get_type_hint(
 
     if args:
         inner_container_type_args = (
-            sorted((repr(arg) for arg in args))
+            sorted(repr(arg) for arg in args)
             if rx_types.is_literal(value)
             else [
                 _get_type_hint(arg, type_hint_globals, is_optional=False)
@@ -246,7 +247,7 @@ def _generate_imports(
     ]
 
 
-def _generate_docstrings(clzs: list[Type[Component]], props: list[str]) -> str:
+def _generate_docstrings(clzs: list[type[Component]], props: list[str]) -> str:
     """Generate the docstrings for the create method.
 
     Args:
@@ -335,7 +336,7 @@ def _extract_func_kwargs_as_ast_nodes(
 
 def _extract_class_props_as_ast_nodes(
     func: Callable,
-    clzs: list[Type],
+    clzs: list[type],
     type_hint_globals: dict[str, Any],
     extract_real_default: bool = False,
 ) -> list[tuple[ast.arg, ast.Constant | None]]:
@@ -769,7 +770,7 @@ class StubGenerator(ast.NodeTransformer):
     """A node transformer that will generate the stubs for a given module."""
 
     def __init__(
-        self, module: ModuleType, classes: dict[str, Type[Component | SimpleNamespace]]
+        self, module: ModuleType, classes: dict[str, type[Component | SimpleNamespace]]
     ):
         """Initialize the stub generator.
 
