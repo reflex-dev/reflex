@@ -6,7 +6,7 @@ import inspect
 import json
 import os
 import re
-from typing import TYPE_CHECKING, Any, Union
+from typing import TYPE_CHECKING, Any, Dict, Union
 
 from reflex import constants
 from reflex.constants.state import FRONTEND_EVENT_STATE
@@ -643,18 +643,69 @@ def format_ref(ref: str) -> str:
     return f"ref_{clean_ref}"
 
 
-def format_library_name(library_fullname: str):
-    """Format the name of a library.
+def format_library_name(
+    library_fullname: Union[str, Dict[str, Any]],
+) -> str:
+    """Format the name of a library, removing version information.
+
+    Handles npm package formats including scoped packages (@org/package).
 
     Args:
-        library_fullname: The fullname of the library.
+        library_fullname: The library identifier, either as:
+            - string: package name with optional version (e.g., "foo", "@bar/baz", "foo@1.2.3")
+            - dict: with a "name" key (e.g., {"name": "@bar/baz"})
 
     Returns:
-        The name without the @version if it was part of the name
+        The normalized package name without version information
+
+    Raises:
+        ValueError: If the provided dictionary does not have a 'name' key.
     """
+    # Extract name from dictionary if needed
+    if isinstance(library_fullname, dict):
+        if "name" not in library_fullname:
+            raise ValueError("Dictionary input must have a 'name' key")
+        library_fullname = library_fullname["name"]
+
+    # Fast path for non-string inputs
+    if not isinstance(library_fullname, str):
+        return str(library_fullname)
+
+    # Fast path for URLs
     if library_fullname.startswith("https://"):
         return library_fullname
-    lib, at, version = library_fullname.rpartition("@")
+
+    # Fast path for packages without @ symbol
+    if "@" not in library_fullname:
+        return library_fullname
+
+    # Handle edge case: @library@version (no slash but starts with @)
+    if library_fullname.startswith("@") and "/" not in library_fullname:
+        # Check for a second @ symbol
+        second_at_index = library_fullname.find("@", 1)
+        if second_at_index != -1:
+            lib = library_fullname[:second_at_index]
+            return lib
+        return library_fullname
+
+    # Handle normal scoped packages (@scope/package@version)
+    if library_fullname.startswith("@"):
+        # Find separator between scope and package
+        scope_end = library_fullname.find("/")
+        if scope_end == -1:  # Not a valid scoped package
+            return library_fullname
+
+        # Check if there's a version after the package name
+        version_start = library_fullname.find("@", scope_end)
+        if version_start == -1:  # No version specifier
+            return library_fullname
+
+        # Return scope + package without version
+        lib = library_fullname[:version_start]
+        return lib
+
+    # Handle regular packages (package@version)
+    lib, at, version = library_fullname.partition("@")
     if not lib:
         lib = at + version
 

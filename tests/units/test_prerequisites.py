@@ -97,6 +97,8 @@ def test_update_next_config(config, export, expected_output):
             ["foo", "@bar/baz", "foo", "@bar/baz@3.2.1"],
             ["@bar/baz", "foo"],
         ),
+        (["@bar/baz", {"name": "foo"}], ["@bar/baz", "foo"]),
+        (["@bar/baz", {"name": "@foo/baz"}], ["@bar/baz", "@foo/baz"]),
     ),
 )
 def test_transpile_packages(transpile_packages, expected_transpile_packages):
