@@ -954,7 +954,7 @@ export const isTrue = (val) => {
  * @returns True if the value is not null or undefined, false otherwise.
  */
 export const isNotNullOrUndefined = (val) => {
-  return val ?? undefined !== undefined;
+  return (val ?? undefined) !== undefined;
 };
 
 /**
