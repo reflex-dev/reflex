@@ -75,7 +75,7 @@ fetch-retries=0
 
 
 def _determine_nextjs_version() -> str:
-    default_version = "15.2.4"
+    default_version = "15.3.0"
     if (version := os.getenv("NEXTJS_VERSION")) and version != default_version:
         from reflex.utils import console
 
@@ -92,9 +92,9 @@ class PackageJson(SimpleNamespace):
     class Commands(SimpleNamespace):
         """The commands to define in package.json."""
 
-        DEV = "next dev"
-        EXPORT = "next build"
-        EXPORT_SITEMAP = "next build && next-sitemap"
+        DEV = "next dev {flags}"
+        EXPORT = "next build {flags}"
+        EXPORT_SITEMAP = "next build {flags} && next-sitemap"
         PROD = "next start"
 
     PATH = "package.json"
