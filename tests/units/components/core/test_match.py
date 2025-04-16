@@ -1,5 +1,5 @@
 import re
-from typing import Mapping, Sequence, Tuple
+from collections.abc import Mapping, Sequence
 
 import pytest
 
@@ -270,7 +270,7 @@ def test_match_case_tuple_elements(match_case):
         ),
     ],
 )
-def test_match_different_return_types(cases: Tuple, error_msg: str):
+def test_match_different_return_types(cases: tuple, error_msg: str):
     """Test that an error is thrown when the return values are of different types.
 
     Args:

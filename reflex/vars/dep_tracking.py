@@ -8,7 +8,7 @@ import dis
 import enum
 import inspect
 from types import CellType, CodeType, FunctionType
-from typing import TYPE_CHECKING, Any, ClassVar, Type, cast
+from typing import TYPE_CHECKING, Any, ClassVar, cast
 
 from reflex.utils.exceptions import VarValueError
 
@@ -50,16 +50,16 @@ class DependencyTracker:
     """State machine for identifying state attributes that are accessed by a function."""
 
     func: FunctionType | CodeType = dataclasses.field()
-    state_cls: Type[BaseState] = dataclasses.field()
+    state_cls: type[BaseState] = dataclasses.field()
 
     dependencies: dict[str, set[str]] = dataclasses.field(default_factory=dict)
 
     scan_status: ScanStatus = dataclasses.field(default=ScanStatus.SCANNING)
     top_of_stack: str | None = dataclasses.field(default=None)
 
-    tracked_locals: dict[str, Type[BaseState]] = dataclasses.field(default_factory=dict)
+    tracked_locals: dict[str, type[BaseState]] = dataclasses.field(default_factory=dict)
 
-    _getting_state_class: Type[BaseState] | None = dataclasses.field(default=None)
+    _getting_state_class: type[BaseState] | None = dataclasses.field(default=None)
     _getting_var_instructions: list[dis.Instruction] = dataclasses.field(
         default_factory=list
     )

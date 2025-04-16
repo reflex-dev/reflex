@@ -13,6 +13,7 @@ import platform
 import sys
 import threading
 import urllib.parse
+from collections.abc import Callable
 from functools import lru_cache
 from importlib.util import find_spec
 from pathlib import Path
@@ -21,7 +22,6 @@ from typing import (
     TYPE_CHECKING,
     Annotated,
     Any,
-    Callable,
     Generic,
     TypeVar,
     get_args,
@@ -47,6 +47,29 @@ try:
     from dotenv import load_dotenv
 except ImportError:
     load_dotenv = None
+
+
+def _load_dotenv_from_str(env_files: str) -> None:
+    if not env_files:
+        return
+
+    if load_dotenv is None:
+        console.error(
+            """The `python-dotenv` package is required to load environment variables from a file. Run `pip install "python-dotenv>=1.0.1"`."""
+        )
+        return
+
+    # load env files in reverse order if they exist
+    for env_file_path in [
+        Path(p) for s in reversed(env_files.split(os.pathsep)) if (p := s.strip())
+    ]:
+        if env_file_path.exists():
+            load_dotenv(env_file_path, override=True)
+
+
+# Load the env files at import time if they are set in the ENV_FILE environment variable.
+if load_dotenv is not None and (env_files := os.getenv("ENV_FILE")):
+    _load_dotenv_from_str(env_files)
 
 
 class DBConfig(Base):
@@ -410,7 +433,7 @@ class EnvVar(Generic[T]):
             os.environ[self.name] = str_value
 
 
-@lru_cache()
+@lru_cache
 def get_type_hints_environment(cls: type) -> dict[str, Any]:
     """Get the type hints for the environment variables.
 
@@ -936,21 +959,8 @@ class Config(Base):
         Returns:
             The updated config values.
         """
-        env_file = self.env_file or os.environ.get("ENV_FILE", None)
-        if env_file:
-            if load_dotenv is None:
-                console.error(
-                    """The `python-dotenv` package is required to load environment variables from a file. Run `pip install "python-dotenv>=1.0.1"`."""
-                )
-            else:
-                # load env files in reverse order if they exist
-                for env_file_path in [
-                    Path(p)
-                    for s in reversed(env_file.split(os.pathsep))
-                    if (p := s.strip())
-                ]:
-                    if env_file_path.exists():
-                        load_dotenv(env_file_path, override=True)
+        if self.env_file:
+            _load_dotenv_from_str(self.env_file)
 
         updated_values = {}
         # Iterate over the fields.

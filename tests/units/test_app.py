@@ -7,9 +7,9 @@ import os.path
 import re
 import unittest.mock
 import uuid
+from collections.abc import Generator
 from contextlib import nullcontext as does_not_raise
 from pathlib import Path
-from typing import Generator, Type
 from unittest.mock import AsyncMock
 
 import pytest
@@ -103,7 +103,7 @@ class ATestState(BaseState):
 
 
 @pytest.fixture()
-def test_state() -> Type[BaseState]:
+def test_state() -> type[BaseState]:
     """A default state.
 
     Returns:
@@ -113,7 +113,7 @@ def test_state() -> Type[BaseState]:
 
 
 @pytest.fixture()
-def redundant_test_state() -> Type[BaseState]:
+def redundant_test_state() -> type[BaseState]:
     """A default state.
 
     Returns:
@@ -127,7 +127,7 @@ def redundant_test_state() -> Type[BaseState]:
 
 
 @pytest.fixture(scope="session")
-def test_model() -> Type[Model]:
+def test_model() -> type[Model]:
     """A default model.
 
     Returns:
@@ -141,7 +141,7 @@ def test_model() -> Type[Model]:
 
 
 @pytest.fixture(scope="session")
-def test_model_auth() -> Type[Model]:
+def test_model_auth() -> type[Model]:
     """A default model.
 
     Returns:
@@ -173,7 +173,7 @@ def test_get_engine():
 
 
 @pytest.fixture()
-def test_custom_auth_admin() -> Type[AuthProvider]:
+def test_custom_auth_admin() -> type[AuthProvider]:
     """A default auth provider.
 
     Returns:
@@ -407,7 +407,7 @@ def test_initialize_admin_dashboard_with_view_overrides(test_model):
 
 
 @pytest.mark.asyncio
-async def test_initialize_with_state(test_state: Type[ATestState], token: str):
+async def test_initialize_with_state(test_state: type[ATestState], token: str):
     """Test setting the state of an app.
 
     Args:
@@ -462,7 +462,7 @@ async def test_set_and_get_state(test_state):
 
 
 @pytest.mark.asyncio
-async def test_dynamic_var_event(test_state: Type[ATestState], token: str):
+async def test_dynamic_var_event(test_state: type[ATestState], token: str):
     """Test that the default handler of a dynamic generated var
     works as expected.
 
@@ -1209,9 +1209,9 @@ async def test_process_events(mocker, token: str):
     ],
 )
 def test_overlay_component(
-    state: Type[State] | None,
+    state: type[State] | None,
     overlay_component: Component | ComponentCallable | None,
-    exp_page_child: Type[Component] | None,
+    exp_page_child: type[Component] | None,
 ):
     """Test that the overlay component is set correctly.
 

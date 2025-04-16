@@ -4,7 +4,8 @@ from __future__ import annotations
 
 import dataclasses
 import re
-from typing import Any, Callable
+from collections.abc import Callable
+from typing import Any
 
 from reflex import constants
 from reflex.event import EventChain, EventHandler, EventSpec, run_script
@@ -77,7 +78,7 @@ class ClientStateVar(Var):
         var_name: str | None = None,
         default: Any = NoValue,
         global_ref: bool = True,
-    ) -> "ClientStateVar":
+    ) -> ClientStateVar:
         """Create a local_state Var that can be accessed and updated on the client.
 
         The `ClientStateVar` should be included in the highest parent component

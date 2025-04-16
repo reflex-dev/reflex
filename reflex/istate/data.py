@@ -1,7 +1,7 @@
 """This module contains the dataclasses representing the router object."""
 
 import dataclasses
-from typing import Mapping
+from collections.abc import Mapping
 
 from reflex import constants
 from reflex.utils import format

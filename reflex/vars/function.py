@@ -3,18 +3,8 @@
 from __future__ import annotations
 
 import dataclasses
-from typing import (
-    Any,
-    Callable,
-    Concatenate,
-    Generic,
-    ParamSpec,
-    Protocol,
-    Sequence,
-    Type,
-    TypeVar,
-    overload,
-)
+from collections.abc import Callable, Sequence
+from typing import Any, Concatenate, Generic, ParamSpec, Protocol, TypeVar, overload
 
 from reflex.utils import format
 from reflex.utils.types import GenericType
@@ -211,7 +201,7 @@ class FunctionStringVar(FunctionVar[CALLABLE_TYPE]):
     def create(
         cls,
         func: str,
-        _var_type: Type[OTHER_CALLABLE_TYPE] = ReflexCallable[Any, Any],
+        _var_type: type[OTHER_CALLABLE_TYPE] = ReflexCallable[Any, Any],
         _var_data: VarData | None = None,
     ) -> FunctionStringVar[OTHER_CALLABLE_TYPE]:
         """Create a new function var from a string.

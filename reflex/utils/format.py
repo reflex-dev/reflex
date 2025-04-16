@@ -6,7 +6,7 @@ import inspect
 import json
 import os
 import re
-from typing import TYPE_CHECKING, Any, Union
+from typing import TYPE_CHECKING, Any
 
 from reflex import constants
 from reflex.constants.state import FRONTEND_EVENT_STATE
@@ -369,7 +369,7 @@ def format_match(
 
 
 def format_prop(
-    prop: Union[Var, EventChain, ComponentStyle, str],
+    prop: Var | EventChain | ComponentStyle | str,
 ) -> int | float | str:
     """Format a prop.
 

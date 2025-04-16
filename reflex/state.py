@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import builtins
 import contextlib
 import copy
 import dataclasses
@@ -16,23 +17,16 @@ import typing
 import uuid
 import warnings
 from abc import ABC, abstractmethod
+from collections.abc import AsyncIterator, Callable, Sequence
 from hashlib import md5
 from pathlib import Path
 from types import FunctionType, MethodType
 from typing import (
     TYPE_CHECKING,
     Any,
-    AsyncIterator,
     BinaryIO,
-    Callable,
     ClassVar,
-    Dict,
-    Optional,
-    Sequence,
-    Set,
     SupportsIndex,
-    Tuple,
-    Type,
     TypeVar,
     cast,
     get_args,
@@ -134,7 +128,7 @@ VAR_TYPE = TypeVar("VAR_TYPE")
 
 
 def _no_chain_background_task(
-    state_cls: Type["BaseState"], name: str, fn: Callable
+    state_cls: type[BaseState], name: str, fn: Callable
 ) -> Callable:
     """Protect against directly chaining a background task from another event handler.
 
@@ -173,7 +167,7 @@ def _no_chain_background_task(
 
 def _substate_key(
     token: str,
-    state_cls_or_name: BaseState | Type[BaseState] | str | Sequence[str],
+    state_cls_or_name: BaseState | type[BaseState] | str | Sequence[str],
 ) -> str:
     """Get the substate key.
 
@@ -210,9 +204,9 @@ def _split_substate_key(substate_key: str) -> tuple[str, str]:
 class EventHandlerSetVar(EventHandler):
     """A special event handler to wrap setvar functionality."""
 
-    state_cls: Type[BaseState] = dataclasses.field(init=False)
+    state_cls: type[BaseState] = dataclasses.field(init=False)
 
-    def __init__(self, state_cls: Type[BaseState]):
+    def __init__(self, state_cls: type[BaseState]):
         """Initialize the EventHandlerSetVar.
 
         Args:
@@ -277,7 +271,7 @@ if TYPE_CHECKING:
     from pydantic.v1.fields import ModelField
 
 
-def _unwrap_field_type(type_: types.GenericType) -> Type:
+def _unwrap_field_type(type_: types.GenericType) -> type:
     """Unwrap rx.Field type annotations.
 
     Args:
@@ -293,7 +287,7 @@ def _unwrap_field_type(type_: types.GenericType) -> Type:
     return type_
 
 
-def get_var_for_field(cls: Type[BaseState], f: ModelField):
+def get_var_for_field(cls: type[BaseState], f: ModelField):
     """Get a Var instance for a Pydantic field.
 
     Args:
@@ -338,31 +332,31 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
     """The state of the app."""
 
     # A map from the var name to the var.
-    vars: ClassVar[Dict[str, Var]] = {}
+    vars: ClassVar[builtins.dict[str, Var]] = {}
 
     # The base vars of the class.
-    base_vars: ClassVar[Dict[str, Var]] = {}
+    base_vars: ClassVar[builtins.dict[str, Var]] = {}
 
     # The computed vars of the class.
-    computed_vars: ClassVar[Dict[str, ComputedVar]] = {}
+    computed_vars: ClassVar[builtins.dict[str, ComputedVar]] = {}
 
     # Vars inherited by the parent state.
-    inherited_vars: ClassVar[Dict[str, Var]] = {}
+    inherited_vars: ClassVar[builtins.dict[str, Var]] = {}
 
     # Backend base vars that are never sent to the client.
-    backend_vars: ClassVar[Dict[str, Any]] = {}
+    backend_vars: ClassVar[builtins.dict[str, Any]] = {}
 
     # Backend base vars inherited
-    inherited_backend_vars: ClassVar[Dict[str, Any]] = {}
+    inherited_backend_vars: ClassVar[builtins.dict[str, Any]] = {}
 
     # The event handlers.
-    event_handlers: ClassVar[Dict[str, EventHandler]] = {}
+    event_handlers: ClassVar[builtins.dict[str, EventHandler]] = {}
 
     # A set of subclassses of this class.
-    class_subclasses: ClassVar[set[Type[BaseState]]] = set()
+    class_subclasses: ClassVar[set[type[BaseState]]] = set()
 
     # Mapping of var name to set of (state_full_name, var_name) that depend on it.
-    _var_dependencies: ClassVar[Dict[str, set[tuple[str, str]]]] = {}
+    _var_dependencies: ClassVar[builtins.dict[str, set[tuple[str, str]]]] = {}
 
     # Set of vars which always need to be recomputed
     _always_dirty_computed_vars: ClassVar[set[str]] = set()
@@ -377,7 +371,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
     parent_state: BaseState | None = None
 
     # The substates of the state.
-    substates: Dict[str, BaseState] = {}
+    substates: builtins.dict[str, BaseState] = {}
 
     # The set of dirty vars.
     dirty_vars: set[str] = set()
@@ -386,10 +380,10 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
     dirty_substates: set[str] = set()
 
     # The routing path that triggered the state
-    router_data: Dict[str, Any] = {}
+    router_data: builtins.dict[str, Any] = {}
 
     # Per-instance copy of backend base variable values
-    _backend_vars: Dict[str, Any] = {}
+    _backend_vars: builtins.dict[str, Any] = {}
 
     # The router data for the current page
     router: RouterData = RouterData()
@@ -714,7 +708,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         return getattr(cls, unique_var_name)
 
     @classmethod
-    def _mixins(cls) -> list[Type]:
+    def _mixins(cls) -> list[type]:
         """Get the mixin classes of the state.
 
         Returns:
@@ -889,8 +883,8 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         )
 
     @classmethod
-    @functools.lru_cache()
-    def get_parent_state(cls) -> Type[BaseState] | None:
+    @functools.lru_cache
+    def get_parent_state(cls) -> type[BaseState] | None:
         """Get the parent state.
 
         Raises:
@@ -916,8 +910,8 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         return None  # No known parent
 
     @classmethod
-    @functools.lru_cache()
-    def get_root_state(cls) -> Type[BaseState]:
+    @functools.lru_cache
+    def get_root_state(cls) -> type[BaseState]:
         """Get the root state.
 
         Returns:
@@ -927,7 +921,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         return cls if parent_state is None else parent_state.get_root_state()
 
     @classmethod
-    def get_substates(cls) -> set[Type[BaseState]]:
+    def get_substates(cls) -> set[type[BaseState]]:
         """Get the substates of the state.
 
         Returns:
@@ -936,7 +930,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         return cls.class_subclasses
 
     @classmethod
-    @functools.lru_cache()
+    @functools.lru_cache
     def get_name(cls) -> str:
         """Get the name of the state.
 
@@ -947,7 +941,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         return format.to_snake_case(f"{module}___{cls.__name__}")
 
     @classmethod
-    @functools.lru_cache()
+    @functools.lru_cache
     def get_full_name(cls) -> str:
         """Get the full name of the state.
 
@@ -961,8 +955,8 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         return name
 
     @classmethod
-    @functools.lru_cache()
-    def get_class_substate(cls, path: Sequence[str] | str) -> Type[BaseState]:
+    @functools.lru_cache
+    def get_class_substate(cls, path: Sequence[str] | str) -> type[BaseState]:
         """Get the class substate.
 
         Args:
@@ -1133,7 +1127,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             and not types.is_optional(prop._var_type)
         ):
             # Ensure frontend uses null coalescing when accessing.
-            object.__setattr__(prop, "_var_type", Optional[prop._var_type])
+            object.__setattr__(prop, "_var_type", prop._var_type | None)
 
     @classmethod
     def _get_var_default(cls, name: str, annotation_value: Any) -> Any:
@@ -1471,7 +1465,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             parent_state = parent_state.parent_state
         return parent_state
 
-    async def _get_state_from_redis(self, state_cls: Type[T_STATE]) -> T_STATE:
+    async def _get_state_from_redis(self, state_cls: type[T_STATE]) -> T_STATE:
         """Get a state instance from redis.
 
         Args:
@@ -1504,7 +1498,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
 
         return state_in_redis
 
-    def _get_state_from_cache(self, state_cls: Type[T_STATE]) -> T_STATE:
+    def _get_state_from_cache(self, state_cls: type[T_STATE]) -> T_STATE:
         """Get a state instance from the cache.
 
         Args:
@@ -1524,7 +1518,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             )
         return substate
 
-    async def get_state(self, state_cls: Type[T_STATE]) -> T_STATE:
+    async def get_state(self, state_cls: type[T_STATE]) -> T_STATE:
         """Get an instance of the state associated with this token.
 
         Allows for arbitrary access to sibling states from within an event handler.
@@ -1738,7 +1732,10 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             )
 
     async def _process_event(
-        self, handler: EventHandler, state: BaseState | StateProxy, payload: Dict
+        self,
+        handler: EventHandler,
+        state: BaseState | StateProxy,
+        payload: builtins.dict,
     ) -> AsyncIterator[StateUpdate]:
         """Process event.
 
@@ -1789,10 +1786,10 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
                     hinted_args, (Base, BaseModelV1, BaseModelV2)
                 ):
                     payload[arg] = hinted_args(**value)
-            elif isinstance(value, list) and (hinted_args is set or hinted_args is Set):
+            elif isinstance(value, list) and (hinted_args is set or hinted_args is set):
                 payload[arg] = set(value)
             elif isinstance(value, list) and (
-                hinted_args is tuple or hinted_args is Tuple
+                hinted_args is tuple or hinted_args is tuple
             ):
                 payload[arg] = tuple(value)
             elif isinstance(value, str) and (
@@ -2172,7 +2169,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             _WARNED_ABOUT_STATE_SIZE.add(state_full_name)
 
     @classmethod
-    @functools.lru_cache()
+    @functools.lru_cache
     def _to_schema(cls) -> str:
         """Convert a state to a schema.
 
@@ -2315,7 +2312,7 @@ def dynamic(func: Callable[[T], Component]):
             "You must provide a type hint for the state class in the function."
         )
 
-    state_class: Type[T] = values[0]
+    state_class: type[T] = values[0]
 
     def wrapper() -> Component:
         from reflex.components.base.fragment import fragment
@@ -2467,7 +2464,7 @@ class ComponentState(State, mixin=True):
         super().__init_subclass__(mixin=mixin, **kwargs)
 
     @classmethod
-    def get_component(cls, *children, **props) -> "Component":
+    def get_component(cls, *children, **props) -> Component:
         """Get the component instance.
 
         Args:
@@ -2482,7 +2479,7 @@ class ComponentState(State, mixin=True):
         )
 
     @classmethod
-    def create(cls, *children, **props) -> "Component":
+    def create(cls, *children, **props) -> Component:
         """Create a new instance of the Component.
 
         Args:
@@ -2539,7 +2536,7 @@ class StateProxy(wrapt.ObjectProxy):
     def __init__(
         self,
         state_instance: BaseState,
-        parent_state_proxy: Optional["StateProxy"] = None,
+        parent_state_proxy: StateProxy | None = None,
     ):
         """Create a proxy for a state instance.
 
@@ -2743,7 +2740,7 @@ class StateProxy(wrapt.ObjectProxy):
             )
         return self.__wrapped__.get_substate(path)
 
-    async def get_state(self, state_cls: Type[BaseState]) -> BaseState:
+    async def get_state(self, state_cls: type[BaseState]) -> BaseState:
         """Get an instance of the state associated with this token.
 
         Args:
@@ -2810,10 +2807,10 @@ class StateManager(Base, ABC):
     """A class to manage many client states."""
 
     # The state class to use.
-    state: Type[BaseState]
+    state: type[BaseState]
 
     @classmethod
-    def create(cls, state: Type[BaseState]):
+    def create(cls, state: type[BaseState]):
         """Create a new state manager.
 
         Args:
@@ -3021,7 +3018,7 @@ class StateManagerDisk(StateManager):
         }
         keep_untouched = (functools.cached_property,)
 
-    def __init__(self, state: Type[BaseState]):
+    def __init__(self, state: type[BaseState]):
         """Create a new state manager.
 
         Args:
@@ -3261,10 +3258,10 @@ class StateManagerRedis(StateManager):
 
     def _get_required_state_classes(
         self,
-        target_state_cls: Type[BaseState],
+        target_state_cls: type[BaseState],
         subclasses: bool = False,
-        required_state_classes: set[Type[BaseState]] | None = None,
-    ) -> set[Type[BaseState]]:
+        required_state_classes: set[type[BaseState]] | None = None,
+    ) -> set[type[BaseState]]:
         """Recursively determine which states are required to fetch the target state.
 
         This will always include potentially dirty substates that depend on vars
@@ -4121,7 +4118,7 @@ def code_uses_state_contexts(javascript_code: str) -> bool:
 
 def reload_state_module(
     module: str,
-    state: Type[BaseState] = State,
+    state: type[BaseState] = State,
 ) -> None:
     """Reset rx.State subclasses to avoid conflict when reloading.
 

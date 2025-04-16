@@ -3,12 +3,13 @@
 from __future__ import annotations
 
 from collections import defaultdict
-from typing import Any, Callable, List
+from collections.abc import Callable
+from typing import Any
 
 from reflex.config import get_config
 from reflex.event import EventType
 
-DECORATED_PAGES: dict[str, List] = defaultdict(list)
+DECORATED_PAGES: dict[str, list] = defaultdict(list)
 
 
 def page(

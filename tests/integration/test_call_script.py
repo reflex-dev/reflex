@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Generator
+from collections.abc import Generator
 
 import pytest
 from selenium.webdriver.common.by import By
@@ -433,12 +433,7 @@ def test_call_script(
     assert call_script.poll_for_value(counter, exp_not_equal="0") == "4"
     assert (
         call_script.poll_for_value(results, exp_not_equal="[]")
-        == '["%s1",null,{"%s3":42,"a":[1,2,3],"s":"js","o":{"a":1,"b":2}},"async %s4"]'
-        % (
-            script,
-            script,
-            script,
-        )
+        == f'["{script}1",null,{{"{script}3":42,"a":[1,2,3],"s":"js","o":{{"a":1,"b":2}}}},"async {script}4"]'
     )
     reset_button.click()
     assert call_script.poll_for_value(counter, exp_not_equal="4") == "0"
@@ -448,7 +443,7 @@ def test_call_script(
     assert call_script.poll_for_value(counter, exp_not_equal="0") == "1"
     assert (
         call_script.poll_for_value(results, exp_not_equal="[]")
-        == '[{"%s3":42,"a":[1,2,3],"s":"js","o":{"a":1,"b":2}}]' % script
+        == f'[{{"{script}3":42,"a":[1,2,3],"s":"js","o":{{"a":1,"b":2}}}}]'
     )
     reset_button.click()
     assert call_script.poll_for_value(counter, exp_not_equal="1") == "0"

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import time
-from typing import Callable, Coroutine, Generator
+from collections.abc import Callable, Coroutine, Generator
 
 import pytest
 from selenium.webdriver.common.by import By

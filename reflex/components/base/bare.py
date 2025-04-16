@@ -3,7 +3,8 @@
 from __future__ import annotations
 
 import json
-from typing import Any, Iterator, Sequence
+from collections.abc import Iterator, Sequence
+from typing import Any
 
 from reflex.components.component import BaseComponent, Component, ComponentStyle
 from reflex.components.tags import Tag

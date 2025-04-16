@@ -1,5 +1,3 @@
-from typing import Type
-
 import pytest
 
 from reflex.components.component import Component, memo
@@ -36,7 +34,7 @@ class CustomMarkdownComponent(Component, MarkdownComponentMap):
         return Var(_js_expr="{return custom_node + custom_children + custom_props}")
 
 
-def syntax_highlighter_memoized_component(codeblock: Type[Component]):
+def syntax_highlighter_memoized_component(codeblock: type[Component]):
     @memo
     def code_block(code: str, language: str):
         return Box.create(
