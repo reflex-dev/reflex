@@ -1960,7 +1960,9 @@ IndividualEventType = TypeAliasType(
 )
 
 EventType = TypeAliasType(
-    "EventType", ItemOrList[IndividualEventType[Unpack[ARGS]]], type_params=(ARGS,)
+    "EventType",
+    ItemOrList[LAMBDA_OR_STATE[Unpack[ARGS]] | BASIC_EVENT_TYPES],
+    type_params=(ARGS,),
 )
 
 
@@ -1972,7 +1974,7 @@ else:
     BASE_STATE = TypeVar("BASE_STATE")
 
 
-class EventNamespace(types.SimpleNamespace):
+class EventNamespace:
     """A namespace for event related classes."""
 
     Event = Event
@@ -1988,23 +1990,22 @@ class EventNamespace(types.SimpleNamespace):
     EventCallback = EventCallback
 
     @overload
-    @staticmethod
-    def __call__(
-        func: None = None, *, background: bool | None = None
+    def __new__(
+        cls, func: None = None, *, background: bool | None = None
     ) -> Callable[
         [Callable[[BASE_STATE, Unpack[P]], Any]], EventCallback[Unpack[P]]  # pyright: ignore [reportInvalidTypeVarUse]
     ]: ...
 
     @overload
-    @staticmethod
-    def __call__(
+    def __new__(
+        cls,
         func: Callable[[BASE_STATE, Unpack[P]], Any],
         *,
         background: bool | None = None,
     ) -> EventCallback[Unpack[P]]: ...
 
-    @staticmethod
-    def __call__(
+    def __new__(
+        cls,
         func: Callable[[BASE_STATE, Unpack[P]], Any] | None = None,
         *,
         background: bool | None = None,
@@ -2076,4 +2077,4 @@ class EventNamespace(types.SimpleNamespace):
     run_script = staticmethod(run_script)
 
 
-event = EventNamespace()
+event = EventNamespace
