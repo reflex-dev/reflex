@@ -1157,10 +1157,12 @@ def call_script(
     callback_kwargs = {}
     if callback is not None:
         callback_kwargs = {
-            "callback": format.format_queue_events(
-                callback,
-                args_spec=lambda result: [result],
-            )._js_expr,
+            "callback": str(
+                format.format_queue_events(
+                    callback,
+                    args_spec=lambda result: [result],
+                )
+            ),
         }
     if isinstance(javascript_code, str):
         # When there is VarData, include it and eval the JS code inline on the client.
@@ -1196,10 +1198,12 @@ def call_function(
     callback_kwargs = {"callback": None}
     if callback is not None:
         callback_kwargs = {
-            "callback": format.format_queue_events(
-                callback,
-                args_spec=lambda result: [result],
-            ),
+            "callback": str(
+                format.format_queue_events(
+                    callback,
+                    args_spec=lambda result: [result],
+                ),
+            )
         }
 
     javascript_code = (
