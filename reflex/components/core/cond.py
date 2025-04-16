@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any, Dict, overload
+from typing import Any, overload
 
 from reflex.components.base.fragment import Fragment
 from reflex.components.component import BaseComponent, Component, MemoizationLeaf
@@ -66,7 +66,7 @@ class Cond(MemoizationLeaf):
             false_value=self.children[1].render(),
         )
 
-    def render(self) -> Dict:
+    def render(self) -> dict:
         """Render the component.
 
         Returns:

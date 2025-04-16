@@ -2,7 +2,8 @@
 
 from __future__ import annotations
 
-from typing import Any, Dict, Sequence
+from collections.abc import Sequence
+from typing import Any
 
 from reflex.components.component import Component
 from reflex.components.tags import Tag
@@ -44,7 +45,7 @@ class DataTable(Gridjs):
     resizable: Var[bool]
 
     # Enable pagination.
-    pagination: Var[bool | Dict]
+    pagination: Var[bool | dict]
 
     @classmethod
     def create(cls, *children, **props):

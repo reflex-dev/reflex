@@ -2,8 +2,9 @@
 
 from __future__ import annotations
 
+from collections.abc import Iterator
 from hashlib import md5
-from typing import Any, Iterator, Literal
+from typing import Any, Literal
 
 from jinja2 import Environment
 

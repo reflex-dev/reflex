@@ -1,5 +1,5 @@
 from contextlib import nullcontext
-from typing import Any, ClassVar, Type, Union
+from typing import Any, ClassVar
 
 import pytest
 
@@ -71,7 +71,7 @@ def test_state():
 
 
 @pytest.fixture
-def component1() -> Type[Component]:
+def component1() -> type[Component]:
     """A test component.
 
     Returns:
@@ -98,7 +98,7 @@ def component1() -> Type[Component]:
 
 
 @pytest.fixture
-def component2() -> Type[Component]:
+def component2() -> type[Component]:
     """A test component.
 
     Returns:
@@ -139,7 +139,7 @@ def component2() -> Type[Component]:
 
 
 @pytest.fixture
-def component3() -> Type[Component]:
+def component3() -> type[Component]:
     """A test component with hook defined.
 
     Returns:
@@ -154,7 +154,7 @@ def component3() -> Type[Component]:
 
 
 @pytest.fixture
-def component4() -> Type[Component]:
+def component4() -> type[Component]:
     """A test component with hook defined.
 
     Returns:
@@ -169,7 +169,7 @@ def component4() -> Type[Component]:
 
 
 @pytest.fixture
-def component5() -> Type[Component]:
+def component5() -> type[Component]:
     """A test component.
 
     Returns:
@@ -189,7 +189,7 @@ def component5() -> Type[Component]:
 
 
 @pytest.fixture
-def component6() -> Type[Component]:
+def component6() -> type[Component]:
     """A test component.
 
     Returns:
@@ -205,7 +205,7 @@ def component6() -> Type[Component]:
 
 
 @pytest.fixture
-def component7() -> Type[Component]:
+def component7() -> type[Component]:
     """A test component.
 
     Returns:
@@ -426,10 +426,10 @@ def test_create_component(component1):
     ],
 )
 def test_create_component_prop_validation(
-    component1: Type[Component],
+    component1: type[Component],
     prop_name: str,
     var: Var | str | int,
-    expected: Type[Exception],
+    expected: type[Exception],
 ):
     """Test that component props are validated correctly.
 
@@ -625,7 +625,7 @@ def test_get_event_triggers(component1, component2):
 
 
 @pytest.fixture
-def test_component() -> Type[Component]:
+def test_component() -> type[Component]:
     """A test component.
 
     Returns:
@@ -1903,13 +1903,13 @@ def test_component_add_imports(tags):
     class TestBase(Component):
         def add_imports(  # pyright: ignore [reportIncompatibleMethodOverride]
             self,
-        ) -> dict[str, Union[str, ImportVar, list[str], list[ImportVar]]]:
+        ) -> dict[str, str | ImportVar | list[str] | list[ImportVar]]:
             return {"foo": "bar"}
 
     class Test(TestBase):
         def add_imports(
             self,
-        ) -> dict[str, Union[str, ImportVar, list[str], list[ImportVar]]]:
+        ) -> dict[str, str | ImportVar | list[str] | list[ImportVar]]:
             return {"react": (tags[0] if len(tags) == 1 else tags)}
 
     baseline = Reference.create()

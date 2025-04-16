@@ -2,7 +2,8 @@
 
 from __future__ import annotations
 
-from typing import Literal, Sequence
+from collections.abc import Sequence
+from typing import Literal
 
 from reflex.components.component import Component
 from reflex.components.core.breakpoints import Responsive

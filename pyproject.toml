@@ -103,6 +103,7 @@ lint.select = [
   "SIM",
   "T",
   "TRY",
+  "UP",
   "W",
 ]
 lint.ignore = [
@@ -115,6 +116,7 @@ lint.ignore = [
   "RUF008",
   "RUF012",
   "TRY0",
+  "UP038",
 ]
 lint.pydocstyle.convention = "google"
 

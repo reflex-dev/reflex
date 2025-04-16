@@ -3,7 +3,8 @@
 from __future__ import annotations
 
 import dataclasses
-from typing import Any, List, Mapping, Sequence
+from collections.abc import Mapping, Sequence
+from typing import Any
 
 from reflex.event import EventChain
 from reflex.utils import format
@@ -57,7 +58,7 @@ class Tag:
             {name: LiteralVar.create(value) for name, value in self.props.items()},
         )
 
-    def format_props(self) -> List:
+    def format_props(self) -> list:
         """Format the tag's props.
 
         Returns:

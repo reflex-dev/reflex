@@ -2,7 +2,7 @@ import datetime
 import json
 from enum import Enum
 from pathlib import Path
-from typing import Any, Type
+from typing import Any
 
 import pytest
 
@@ -17,7 +17,7 @@ from reflex.vars.base import LiteralVar
     "type_,expected",
     [(Enum, True)],
 )
-def test_has_serializer(type_: Type, expected: bool):
+def test_has_serializer(type_: type, expected: bool):
     """Test that has_serializer returns the correct value.
 
     Args:
@@ -37,7 +37,7 @@ def test_has_serializer(type_: Type, expected: bool):
         (Enum, serializers.serialize_enum),
     ],
 )
-def test_get_serializer(type_: Type, expected: serializers.Serializer):
+def test_get_serializer(type_: type, expected: serializers.Serializer):
     """Test that get_serializer returns the correct value.
 
     Args:

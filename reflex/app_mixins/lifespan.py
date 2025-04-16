@@ -7,7 +7,7 @@ import contextlib
 import dataclasses
 import functools
 import inspect
-from typing import Callable, Coroutine
+from collections.abc import Callable, Coroutine
 
 from fastapi import FastAPI
 

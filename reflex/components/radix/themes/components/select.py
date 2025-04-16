@@ -1,6 +1,7 @@
 """Interactive components provided by @radix-ui/themes."""
 
-from typing import ClassVar, Literal, Sequence
+from collections.abc import Sequence
+from typing import ClassVar, Literal
 
 import reflex as rx
 from reflex.components.component import Component, ComponentNamespace

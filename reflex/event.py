@@ -7,16 +7,14 @@ import inspect
 import types
 import urllib.parse
 from base64 import b64encode
+from collections.abc import Callable, Sequence
 from functools import partial
 from typing import (
     TYPE_CHECKING,
     Annotated,
     Any,
-    Callable,
     Generic,
     Protocol,
-    Sequence,
-    Type,
     TypedDict,
     TypeVar,
     get_args,
@@ -670,21 +668,21 @@ class IdentityEventReturn(Generic[T], Protocol):
 
 @overload
 def passthrough_event_spec(  # pyright: ignore [reportOverlappingOverload]
-    event_type: Type[T], /
+    event_type: type[T], /
 ) -> Callable[[Var[T]], tuple[Var[T]]]: ...
 
 
 @overload
 def passthrough_event_spec(
-    event_type_1: Type[T], event_type2: Type[U], /
+    event_type_1: type[T], event_type2: type[U], /
 ) -> Callable[[Var[T], Var[U]], tuple[Var[T], Var[U]]]: ...
 
 
 @overload
-def passthrough_event_spec(*event_types: Type[T]) -> IdentityEventReturn[T]: ...
+def passthrough_event_spec(*event_types: type[T]) -> IdentityEventReturn[T]: ...
 
 
-def passthrough_event_spec(*event_types: Type[T]) -> IdentityEventReturn[T]:  # pyright: ignore [reportInconsistentOverload]
+def passthrough_event_spec(*event_types: type[T]) -> IdentityEventReturn[T]:  # pyright: ignore [reportInconsistentOverload]
     """A helper function that returns the input event as output.
 
     Args:
@@ -1808,7 +1806,7 @@ class LiteralEventChainVar(ArgsFunctionOperationBuilder, LiteralVar, EventChainV
         )
         sig = inspect.signature(arg_spec)  # pyright: ignore [reportArgumentType]
         if sig.parameters:
-            arg_def = tuple((f"_{p}" for p in sig.parameters))
+            arg_def = tuple(f"_{p}" for p in sig.parameters)
             arg_def_expr = LiteralVar.create([Var(_js_expr=arg) for arg in arg_def])
         else:
             # add a default argument for addEvents if none were specified in value.args_spec

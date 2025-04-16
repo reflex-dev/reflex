@@ -1,6 +1,7 @@
 """Utility functions for constants."""
 
-from typing import Any, Callable, Generic, Type, TypeVar
+from collections.abc import Callable
+from typing import Any, Generic, TypeVar
 
 T = TypeVar("T")
 V = TypeVar("V")
@@ -9,7 +10,7 @@ V = TypeVar("V")
 class classproperty(Generic[T, V]):
     """A class property decorator."""
 
-    def __init__(self, getter: Callable[[Type[T]], V]) -> None:
+    def __init__(self, getter: Callable[[type[T]], V]) -> None:
         """Initialize the class property.
 
         Args:
@@ -17,7 +18,7 @@ class classproperty(Generic[T, V]):
         """
         self.getter = getattr(getter, "__func__", getter)
 
-    def __get__(self, instance: Any, owner: Type[T]) -> V:
+    def __get__(self, instance: Any, owner: type[T]) -> V:
         """Get the value of the class property.
 
         Args:

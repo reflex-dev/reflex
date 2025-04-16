@@ -13,6 +13,7 @@ import platform
 import sys
 import threading
 import urllib.parse
+from collections.abc import Callable
 from functools import lru_cache
 from importlib.util import find_spec
 from pathlib import Path
@@ -21,7 +22,6 @@ from typing import (
     TYPE_CHECKING,
     Annotated,
     Any,
-    Callable,
     Generic,
     TypeVar,
     get_args,
@@ -433,7 +433,7 @@ class EnvVar(Generic[T]):
             os.environ[self.name] = str_value
 
 
-@lru_cache()
+@lru_cache
 def get_type_hints_environment(cls: type) -> dict[str, Any]:
     """Get the type hints for the environment variables.
 

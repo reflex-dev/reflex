@@ -2,8 +2,9 @@
 
 from __future__ import annotations
 
+from collections.abc import Callable, Sequence
 from pathlib import Path
-from typing import Any, Callable, ClassVar, Sequence
+from typing import Any, ClassVar
 
 from reflex.components.base.fragment import Fragment
 from reflex.components.component import (

@@ -4,7 +4,8 @@ from __future__ import annotations
 
 import dataclasses
 import inspect
-from typing import TYPE_CHECKING, Callable, Iterable
+from collections.abc import Callable, Iterable
+from typing import TYPE_CHECKING
 
 from reflex.components.tags.tag import Tag
 from reflex.utils.types import GenericType

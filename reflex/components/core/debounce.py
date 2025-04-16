@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any, Type
+from typing import Any
 
 from reflex.components.component import Component
 from reflex.constants import EventTriggers
@@ -43,7 +43,7 @@ class DebounceInput(Component):
     input_ref: Var[str]
 
     # The element to wrap
-    element: Var[Type[Component]]
+    element: Var[type[Component]]
 
     # Fired when the input value changes
     on_change: EventHandler[no_args_event_spec]
@@ -115,7 +115,7 @@ class DebounceInput(Component):
             "element",
             Var(
                 _js_expr=str(child.alias or child.tag),
-                _var_type=Type[Component],
+                _var_type=type[Component],
                 _var_data=VarData(
                     imports=child._get_imports(),
                     hooks=child._get_all_hooks(),

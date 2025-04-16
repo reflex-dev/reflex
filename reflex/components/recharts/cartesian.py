@@ -2,7 +2,8 @@
 
 from __future__ import annotations
 
-from typing import Any, ClassVar, Sequence, Union
+from collections.abc import Sequence
+from typing import Any, ClassVar
 
 from reflex.constants import EventTriggers
 from reflex.constants.colors import Color
@@ -73,7 +74,7 @@ class Axis(Recharts):
     reversed: Var[bool]
 
     # The label of axis, which appears next to the axis.
-    label: Var[Union[str, int, dict[str, Any]]]
+    label: Var[str | int | dict[str, Any]]
 
     # If 'auto' set, the scale function is decided by the type of chart, and the props type. 'auto' | 'linear' | 'pow' | 'sqrt' | 'log' | 'identity' | 'time' | 'band' | 'point' | 'ordinal' | 'quantile' | 'quantize' | 'utc' | 'sequential' | 'threshold'. Default: "auto"
     scale: Var[LiteralScale]
@@ -343,10 +344,10 @@ class Area(Cartesian):
     type_: Var[LiteralAreaType] = LiteralVar.create("monotone")
 
     # If false set, dots will not be drawn. If true set, dots will be drawn which have the props calculated internally. Default: False
-    dot: Var[Union[bool, dict[str, Any]]]
+    dot: Var[bool | dict[str, Any]]
 
     # The dot is shown when user enter an area chart and this chart has tooltip. If false set, no active dot will not be drawn. If true set, active dot will be drawn which have the props calculated internally. Default: {stroke: rx.color("accent", 2), fill: rx.color("accent", 10)}
-    active_dot: Var[Union[bool, dict[str, Any]]] = LiteralVar.create(
+    active_dot: Var[bool | dict[str, Any]] = LiteralVar.create(
         {
             "stroke": Color("accent", 2),
             "fill": Color("accent", 10),
@@ -439,7 +440,7 @@ class Line(Cartesian):
     stroke_width: Var[int]
 
     # The dot is shown when mouse enter a line chart and this chart has tooltip. If false set, no active dot will not be drawn. If true set, active dot will be drawn which have the props calculated internally. Default: {"stroke": rx.color("accent", 10), "fill": rx.color("accent", 4)}
-    dot: Var[Union[bool, dict[str, Any]]] = LiteralVar.create(
+    dot: Var[bool | dict[str, Any]] = LiteralVar.create(
         {
             "stroke": Color("accent", 10),
             "fill": Color("accent", 4),
@@ -447,7 +448,7 @@ class Line(Cartesian):
     )
 
     # The dot is shown when user enter an area chart and this chart has tooltip. If false set, no active dot will not be drawn. If true set, active dot will be drawn which have the props calculated internally. Default: {"stroke": rx.color("accent", 2), "fill": rx.color("accent", 10)}
-    active_dot: Var[Union[bool, dict[str, Any]]] = LiteralVar.create(
+    active_dot: Var[bool | dict[str, Any]] = LiteralVar.create(
         {
             "stroke": Color("accent", 2),
             "fill": Color("accent", 10),

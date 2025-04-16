@@ -8,9 +8,10 @@ import importlib.metadata
 import os
 import signal
 import subprocess
+from collections.abc import Callable, Generator, Sequence
 from concurrent import futures
 from pathlib import Path
-from typing import Any, Callable, Generator, Literal, Sequence, Tuple, overload
+from typing import Any, Literal, overload
 
 import psutil
 import typer
@@ -261,7 +262,7 @@ def run_concurrently_context(
             executor.shutdown(wait=False)
 
 
-def run_concurrently(*fns: Callable | Tuple) -> None:
+def run_concurrently(*fns: Callable | tuple) -> None:
     """Run functions concurrently in a thread pool.
 
     Args:
@@ -277,7 +278,7 @@ def stream_logs(
     progress: Progress | None = None,
     suppress_errors: bool = False,
     analytics_enabled: bool = False,
-    prior_logs: Tuple[tuple[str, ...], ...] = (),
+    prior_logs: tuple[tuple[str, ...], ...] = (),
 ):
     """Stream the logs for a process.
 
@@ -371,7 +372,7 @@ def show_status(
     process: subprocess.Popen,
     suppress_errors: bool = False,
     analytics_enabled: bool = False,
-    prior_logs: Tuple[tuple[str, ...], ...] = (),
+    prior_logs: tuple[tuple[str, ...], ...] = (),
 ) -> list[str]:
     """Show the status of a process.
 
@@ -451,7 +452,7 @@ def run_process_with_fallbacks(
     show_status_message: str,
     fallbacks: str | Sequence[str] | Sequence[Sequence[str]] | None = None,
     analytics_enabled: bool = False,
-    prior_logs: Tuple[tuple[str, ...], ...] = (),
+    prior_logs: tuple[tuple[str, ...], ...] = (),
     **kwargs,
 ):
     """Run subprocess and retry using fallback command if initial command fails.

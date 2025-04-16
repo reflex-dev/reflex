@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any, Dict, TypedDict, TypeVar
+from typing import Any, TypedDict, TypeVar
 
 from reflex.components.component import Component, NoSSRComponent
 from reflex.components.core.cond import color_mode_cond
@@ -81,13 +81,13 @@ class Plotly(NoSSRComponent):
     data: Var[Figure]  # pyright: ignore [reportInvalidTypeForm]
 
     # The layout of the graph.
-    layout: Var[Dict]
+    layout: Var[dict]
 
     # The template for visual appearance of the graph.
     template: Var[Template]  # pyright: ignore [reportInvalidTypeForm]
 
     # The config of the graph.
-    config: Var[Dict]
+    config: Var[dict]
 
     # If true, the graph will resize when the window is resized.
     use_resize_handler: Var[bool] = LiteralVar.create(True)
