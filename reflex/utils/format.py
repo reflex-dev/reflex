@@ -6,7 +6,7 @@ import inspect
 import json
 import os
 import re
-from typing import TYPE_CHECKING, Any, Dict, Union
+from typing import TYPE_CHECKING, Any
 
 from reflex import constants
 from reflex.constants.state import FRONTEND_EVENT_STATE
@@ -644,7 +644,7 @@ def format_ref(ref: str) -> str:
 
 
 def format_library_name(
-    library_fullname: Union[str, Dict[str, Any]],
+    library_fullname: str | dict[str, Any],
 ) -> str:
     """Format the name of a library, removing version information.
 
