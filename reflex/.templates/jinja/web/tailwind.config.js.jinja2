@@ -6,7 +6,7 @@
 {%- if val is mapping -%}
 {
 {%- for k, v in val.items() %}
-{{ next_space }}{{ k if k.isidentifier() else k|tojson }}: {{ render_js(v, indent, level + 1) }}{{ "," if not loop.last }}
+{{ next_space }}{{ k if k is string and k.isidentifier() else k|tojson }}: {{ render_js(v, indent, level + 1) }}{{ "," if not loop.last }}
 {%- endfor %}
 {{ space }}}
 {%- elif val is iterable and val is not string -%}
@@ -64,4 +64,3 @@ module.exports = {
     {% endfor %}
   ]
 };
-
