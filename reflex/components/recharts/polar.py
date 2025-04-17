@@ -2,7 +2,8 @@
 
 from __future__ import annotations
 
-from typing import Any, ClassVar, Sequence, Union
+from collections.abc import Sequence
+from typing import Any, ClassVar
 
 from reflex.constants import EventTriggers
 from reflex.constants.colors import Color
@@ -189,10 +190,10 @@ class RadialBar(Recharts):
     legend_type: Var[LiteralLegendType]
 
     # If false set, labels will not be drawn. If true set, labels will be drawn which have the props calculated internally. Default: False
-    label: Var[Union[bool, dict[str, Any]]]
+    label: Var[bool | dict[str, Any]]
 
     # If false set, background sector will not be drawn. Default: False
-    background: Var[Union[bool, dict[str, Any]]]
+    background: Var[bool | dict[str, Any]]
 
     # If set false, animation of radial bars will be disabled. Default: True
     is_animation_active: Var[bool]
@@ -247,16 +248,16 @@ class PolarAngleAxis(Recharts):
     radius: Var[int | str]
 
     # If false set, axis line will not be drawn. If true set, axis line will be drawn which have the props calculated internally. If object set, axis line will be drawn which have the props mergered by the internal calculated props and the option. Default: True
-    axis_line: Var[Union[bool, dict[str, Any]]]
+    axis_line: Var[bool | dict[str, Any]]
 
     # The type of axis line. Default: "polygon"
     axis_line_type: Var[LiteralGridType]
 
     # If false set, tick lines will not be drawn. If true set, tick lines will be drawn which have the props calculated internally. If object set, tick lines will be drawn which have the props mergered by the internal calculated props and the option. Default: False
-    tick_line: Var[Union[bool, dict[str, Any]]] = LiteralVar.create(False)
+    tick_line: Var[bool | dict[str, Any]] = LiteralVar.create(False)
 
     # If false set, ticks will not be drawn. If true set, ticks will be drawn which have the props calculated internally. If object set, ticks will be drawn which have the props mergered by the internal calculated props and the option. Default: True
-    tick: Var[Union[bool, dict[str, Any]]]
+    tick: Var[bool | dict[str, Any]]
 
     # The array of every tick's value and angle.
     ticks: Var[Sequence[dict[str, Any]]]
@@ -362,10 +363,10 @@ class PolarRadiusAxis(Recharts):
     orientation: Var[LiteralOrientationLeftRightMiddle]
 
     # If false set, axis line will not be drawn. If true set, axis line will be drawn which have the props calculated internally. If object set, axis line will be drawn which have the props mergered by the internal calculated props and the option. Default: True
-    axis_line: Var[Union[bool, dict[str, Any]]]
+    axis_line: Var[bool | dict[str, Any]]
 
     # If false set, ticks will not be drawn. If true set, ticks will be drawn which have the props calculated internally. If object set, ticks will be drawn which have the props mergered by the internal calculated props and the option. Default: True
-    tick: Var[Union[bool, dict[str, Any]]]
+    tick: Var[bool | dict[str, Any]]
 
     # The count of axis ticks. Not used if 'type' is 'category'. Default: 5
     tick_count: Var[int]

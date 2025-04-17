@@ -2,8 +2,9 @@
 
 from __future__ import annotations
 
+from collections.abc import Mapping, Sequence
 from enum import Enum
-from typing import Any, Dict, Literal, Mapping, Sequence, TypedDict
+from typing import Any, Literal, TypedDict
 
 from reflex.base import Base
 from reflex.components.component import Component, NoSSRComponent
@@ -257,7 +258,7 @@ class DataEditor(NoSSRComponent):
     scroll_offset_y: Var[int]
 
     # global theme
-    theme: Var[DataEditorTheme | Dict]
+    theme: Var[DataEditorTheme | dict]
 
     # Fired when a cell is activated.
     on_cell_activated: EventHandler[passthrough_event_spec(tuple[int, int])]

@@ -7,9 +7,8 @@ from types import SimpleNamespace
 class RouteArgType(SimpleNamespace):
     """Type of dynamic route arg extracted from URI route."""
 
-    # Typecast to str is needed for Enum to work.
-    SINGLE = str("arg_single")
-    LIST = str("arg_list")
+    SINGLE = "arg_single"
+    LIST = "arg_list"
 
 
 # the name of the backend var containing path and client information

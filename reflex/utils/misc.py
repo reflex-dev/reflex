@@ -1,7 +1,8 @@
 """Miscellaneous functions for the experimental package."""
 
 import asyncio
-from typing import Any, Callable
+from collections.abc import Callable
+from typing import Any
 
 
 async def run_in_thread(func: Callable) -> Any:

@@ -2,7 +2,8 @@
 
 from __future__ import annotations
 
-from typing import Any, ClassVar, Sequence
+from collections.abc import Sequence
+from typing import Any, ClassVar
 
 from reflex.components.component import Component
 from reflex.components.recharts.general import ResponsiveContainer

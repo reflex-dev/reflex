@@ -1,7 +1,5 @@
 """Test states for mutable vars."""
 
-from typing import Dict, List, Union
-
 from sqlalchemy import ARRAY, JSON, String
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
@@ -169,7 +167,7 @@ class MutableSQLAModel(MutableSQLABase):
 @serializer
 def serialize_mutable_sqla_model(
     model: MutableSQLAModel,
-) -> dict[str, Union[list[str], dict[str, str]]]:
+) -> dict[str, list[str] | dict[str, str]]:
     """Serialize the MutableSQLAModel.
 
     Args:
@@ -184,12 +182,12 @@ def serialize_mutable_sqla_model(
 class MutableTestState(BaseState):
     """A test state."""
 
-    array: list[Union[str, int, List, dict[str, str]]] = [
+    array: list[str | int | list | dict[str, str]] = [
         "value",
         [1, 2, 3],
         {"key": "value"},
     ]
-    hashmap: dict[str, Union[List, str, dict[str, str | Dict]]] = {
+    hashmap: dict[str, list | str | dict[str, str | dict]] = {
         "key": ["list", "of", "values"],
         "another_key": "another_value",
         "third_key": {"key": "value"},

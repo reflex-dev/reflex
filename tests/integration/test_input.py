@@ -1,6 +1,6 @@
 """Integration tests for text input and related components."""
 
-from typing import Generator
+from collections.abc import Generator
 
 import pytest
 from selenium.webdriver.common.by import By

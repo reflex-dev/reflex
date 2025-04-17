@@ -1,7 +1,7 @@
 """Test case for displaying the connection banner when the websocket drops."""
 
 import functools
-from typing import Generator
+from collections.abc import Generator
 
 import pytest
 from selenium.common.exceptions import NoSuchElementException

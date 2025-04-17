@@ -5,9 +5,10 @@ from __future__ import annotations
 import asyncio
 import concurrent.futures
 import traceback
+from collections.abc import Sequence
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Sequence, Type
+from typing import Any
 from urllib.parse import urlparse
 
 from pydantic.v1.fields import ModelField
@@ -178,7 +179,7 @@ def save_error(error: Exception) -> str:
     return str(log_path)
 
 
-def compile_state(state: Type[BaseState]) -> dict:
+def compile_state(state: type[BaseState]) -> dict:
     """Compile the state of the app.
 
     Args:
@@ -211,7 +212,7 @@ def compile_state(state: Type[BaseState]) -> dict:
 def _compile_client_storage_field(
     field: ModelField,
 ) -> tuple[
-    Type[Cookie] | Type[LocalStorage] | Type[SessionStorage] | None,
+    type[Cookie] | type[LocalStorage] | type[SessionStorage] | None,
     dict[str, Any] | None,
 ]:
     """Compile the given cookie, local_storage or session_storage field.
@@ -234,7 +235,7 @@ def _compile_client_storage_field(
 
 
 def _compile_client_storage_recursive(
-    state: Type[BaseState],
+    state: type[BaseState],
 ) -> tuple[dict[str, dict], dict[str, dict], dict[str, dict]]:
     """Compile the client-side storage for the given state recursively.
 
@@ -279,7 +280,7 @@ def _compile_client_storage_recursive(
     return cookies, local_storage, session_storage
 
 
-def compile_client_storage(state: Type[BaseState]) -> dict[str, dict]:
+def compile_client_storage(state: type[BaseState]) -> dict[str, dict]:
     """Compile the client-side storage for the given state.
 
     Args:

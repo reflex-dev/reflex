@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import time
-from typing import Generator, Type
+from collections.abc import Generator
 
 import pytest
 from selenium.webdriver.common.by import By
@@ -71,7 +71,7 @@ def TestApp():
 
 @pytest.fixture(scope="module")
 def test_app(
-    app_harness_env: Type[AppHarness], tmp_path_factory
+    app_harness_env: type[AppHarness], tmp_path_factory
 ) -> Generator[AppHarness, None, None]:
     """Start TestApp app at tmp_path via AppHarness.
 

@@ -4,9 +4,10 @@ from __future__ import annotations
 
 import dataclasses
 import textwrap
+from collections.abc import Callable, Sequence
 from functools import lru_cache
 from hashlib import md5
-from typing import Any, Callable, Sequence
+from typing import Any
 
 from reflex.components.component import BaseComponent, Component, CustomComponent
 from reflex.components.tags.tag import Tag

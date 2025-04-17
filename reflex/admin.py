@@ -15,4 +15,4 @@ class AdminDash:
 
     models: list = field(default_factory=list)
     view_overrides: dict = field(default_factory=dict)
-    admin: "Admin | None" = None
+    admin: Admin | None = None

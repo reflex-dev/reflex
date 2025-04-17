@@ -7,16 +7,14 @@ import inspect
 import types
 import urllib.parse
 from base64 import b64encode
+from collections.abc import Callable, Sequence
 from functools import partial
 from typing import (
     TYPE_CHECKING,
     Annotated,
     Any,
-    Callable,
     Generic,
     Protocol,
-    Sequence,
-    Type,
     TypedDict,
     TypeVar,
     get_args,
@@ -40,6 +38,7 @@ from reflex.utils.exceptions import (
 from reflex.utils.types import (
     ArgsSpec,
     GenericType,
+    Unset,
     safe_issubclass,
     typehint_issubclass,
 )
@@ -202,13 +201,14 @@ class EventHandler(EventActionsMixin):
         """
         return getattr(self.fn, BACKGROUND_TASK_MARKER, False)
 
-    def __call__(self, *args: Any) -> EventSpec:
+    def __call__(self, *args: Any, **kwargs: Any) -> EventSpec:
         """Pass arguments to the handler to get an event spec.
 
         This method configures event handlers that take in arguments.
 
         Args:
             *args: The arguments to pass to the handler.
+            **kwargs: The keyword arguments to pass to the handler.
 
         Returns:
             The event spec, containing both the function and args.
@@ -220,11 +220,34 @@ class EventHandler(EventActionsMixin):
 
         # Get the function args.
         fn_args = list(inspect.signature(self.fn).parameters)[1:]
+
+        if not isinstance(
+            repeated_arg := next(
+                (kwarg for kwarg in kwargs if kwarg in fn_args[: len(args)]), Unset()
+            ),
+            Unset,
+        ):
+            raise EventHandlerTypeError(
+                f"Event handler {self.fn.__name__} received repeated argument {repeated_arg}."
+            )
+
+        if not isinstance(
+            extra_arg := next(
+                (kwarg for kwarg in kwargs if kwarg not in fn_args), Unset()
+            ),
+            Unset,
+        ):
+            raise EventHandlerTypeError(
+                f"Event handler {self.fn.__name__} received extra argument {extra_arg}."
+            )
+
+        fn_args = fn_args[: len(args)] + list(kwargs)
+
         fn_args = (Var(_js_expr=arg) for arg in fn_args)
 
         # Construct the payload.
         values = []
-        for arg in args:
+        for arg in [*args, *kwargs.values()]:
             # Special case for file uploads.
             if isinstance(arg, FileUpload):
                 return arg.as_event_spec(handler=self)
@@ -645,21 +668,21 @@ class IdentityEventReturn(Generic[T], Protocol):
 
 @overload
 def passthrough_event_spec(  # pyright: ignore [reportOverlappingOverload]
-    event_type: Type[T], /
+    event_type: type[T], /
 ) -> Callable[[Var[T]], tuple[Var[T]]]: ...
 
 
 @overload
 def passthrough_event_spec(
-    event_type_1: Type[T], event_type2: Type[U], /
+    event_type_1: type[T], event_type2: type[U], /
 ) -> Callable[[Var[T], Var[U]], tuple[Var[T], Var[U]]]: ...
 
 
 @overload
-def passthrough_event_spec(*event_types: Type[T]) -> IdentityEventReturn[T]: ...
+def passthrough_event_spec(*event_types: type[T]) -> IdentityEventReturn[T]: ...
 
 
-def passthrough_event_spec(*event_types: Type[T]) -> IdentityEventReturn[T]:  # pyright: ignore [reportInconsistentOverload]
+def passthrough_event_spec(*event_types: type[T]) -> IdentityEventReturn[T]:  # pyright: ignore [reportInconsistentOverload]
     """A helper function that returns the input event as output.
 
     Args:
@@ -1132,10 +1155,12 @@ def call_script(
     callback_kwargs = {}
     if callback is not None:
         callback_kwargs = {
-            "callback": format.format_queue_events(
-                callback,
-                args_spec=lambda result: [result],
-            )._js_expr,
+            "callback": str(
+                format.format_queue_events(
+                    callback,
+                    args_spec=lambda result: [result],
+                )
+            ),
         }
     if isinstance(javascript_code, str):
         # When there is VarData, include it and eval the JS code inline on the client.
@@ -1171,10 +1196,12 @@ def call_function(
     callback_kwargs = {"callback": None}
     if callback is not None:
         callback_kwargs = {
-            "callback": format.format_queue_events(
-                callback,
-                args_spec=lambda result: [result],
-            ),
+            "callback": str(
+                format.format_queue_events(
+                    callback,
+                    args_spec=lambda result: [result],
+                ),
+            )
         }
 
     javascript_code = (
@@ -1779,7 +1806,7 @@ class LiteralEventChainVar(ArgsFunctionOperationBuilder, LiteralVar, EventChainV
         )
         sig = inspect.signature(arg_spec)  # pyright: ignore [reportArgumentType]
         if sig.parameters:
-            arg_def = tuple((f"_{p}" for p in sig.parameters))
+            arg_def = tuple(f"_{p}" for p in sig.parameters)
             arg_def_expr = LiteralVar.create([Var(_js_expr=arg) for arg in arg_def])
         else:
             # add a default argument for addEvents if none were specified in value.args_spec
@@ -1960,7 +1987,9 @@ IndividualEventType = TypeAliasType(
 )
 
 EventType = TypeAliasType(
-    "EventType", ItemOrList[IndividualEventType[Unpack[ARGS]]], type_params=(ARGS,)
+    "EventType",
+    ItemOrList[LAMBDA_OR_STATE[Unpack[ARGS]] | BASIC_EVENT_TYPES],
+    type_params=(ARGS,),
 )
 
 
@@ -1972,7 +2001,7 @@ else:
     BASE_STATE = TypeVar("BASE_STATE")
 
 
-class EventNamespace(types.SimpleNamespace):
+class EventNamespace:
     """A namespace for event related classes."""
 
     Event = Event
@@ -1988,23 +2017,22 @@ class EventNamespace(types.SimpleNamespace):
     EventCallback = EventCallback
 
     @overload
-    @staticmethod
-    def __call__(
-        func: None = None, *, background: bool | None = None
+    def __new__(
+        cls, func: None = None, *, background: bool | None = None
     ) -> Callable[
         [Callable[[BASE_STATE, Unpack[P]], Any]], EventCallback[Unpack[P]]  # pyright: ignore [reportInvalidTypeVarUse]
     ]: ...
 
     @overload
-    @staticmethod
-    def __call__(
+    def __new__(
+        cls,
         func: Callable[[BASE_STATE, Unpack[P]], Any],
         *,
         background: bool | None = None,
     ) -> EventCallback[Unpack[P]]: ...
 
-    @staticmethod
-    def __call__(
+    def __new__(
+        cls,
         func: Callable[[BASE_STATE, Unpack[P]], Any] | None = None,
         *,
         background: bool | None = None,
@@ -2076,4 +2104,4 @@ class EventNamespace(types.SimpleNamespace):
     run_script = staticmethod(run_script)
 
 
-event = EventNamespace()
+event = EventNamespace

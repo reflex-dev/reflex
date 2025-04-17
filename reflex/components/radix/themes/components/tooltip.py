@@ -1,6 +1,6 @@
 """Interactive components provided by @radix-ui/themes."""
 
-from typing import Literal, Union
+from typing import Literal
 
 from reflex.components.component import Component
 from reflex.constants.compiler import MemoizationMode
@@ -63,7 +63,7 @@ class Tooltip(RadixThemesComponent):
     avoid_collisions: Var[bool]
 
     # The distance in pixels from the boundary edges where collision detection should occur. Accepts a number (same for all sides), or a partial padding object, for example: { "top": 20, "left": 20 }. Defaults to 0.
-    collision_padding: Var[Union[float, int, dict[str, float | int]]]
+    collision_padding: Var[float | int | dict[str, float | int]]
 
     # The padding between the arrow and the edges of the content. If your content has border-radius, this will prevent it from overflowing the corners. Defaults to 0.
     arrow_padding: Var[float | int]

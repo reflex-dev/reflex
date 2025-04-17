@@ -1,5 +1,3 @@
-from typing import Type, Union
-
 import pytest
 
 import reflex as rx
@@ -68,7 +66,7 @@ def create_color_var(color):
         ),
     ],
 )
-def test_color(color, expected, expected_type: Union[Type[str], Type[Color]]):
+def test_color(color, expected, expected_type: type[str] | type[Color]):
     assert color._var_type is expected_type
     assert str(color) == expected
 

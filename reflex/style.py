@@ -2,7 +2,8 @@
 
 from __future__ import annotations
 
-from typing import Any, Literal, Mapping, Type
+from collections.abc import Mapping
+from typing import Any, Literal
 
 from reflex import constants
 from reflex.components.core.breakpoints import Breakpoints, breakpoints_values
@@ -28,7 +29,7 @@ color_mode_imports = {
 }
 
 
-def _color_mode_var(_js_expr: str, _var_type: Type = str) -> Var:
+def _color_mode_var(_js_expr: str, _var_type: type = str) -> Var:
     """Create a Var that destructs the _js_expr from ColorModeContext.
 
     Args:

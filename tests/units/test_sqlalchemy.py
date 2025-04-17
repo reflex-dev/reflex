@@ -1,5 +1,4 @@
 from pathlib import Path
-from typing import Type
 from unittest import mock
 
 import pytest
@@ -24,7 +23,7 @@ from reflex.model import Model, ModelRegistry, sqla_session
 def test_automigration(
     tmp_working_dir: Path,
     monkeypatch: pytest.MonkeyPatch,
-    model_registry: Type[ModelRegistry],
+    model_registry: type[ModelRegistry],
 ):
     """Test alembic automigration with add and drop table and column.
 

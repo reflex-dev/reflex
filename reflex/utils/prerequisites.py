@@ -20,10 +20,11 @@ import tempfile
 import time
 import typing
 import zipfile
+from collections.abc import Callable, Sequence
 from datetime import datetime
 from pathlib import Path
 from types import ModuleType
-from typing import Callable, NamedTuple, Sequence
+from typing import NamedTuple
 from urllib.parse import urlparse
 
 import httpx
@@ -38,6 +39,7 @@ from reflex import constants, model
 from reflex.compiler import templates
 from reflex.config import Config, environment, get_config
 from reflex.utils import console, net, path_ops, processes
+from reflex.utils.decorator import once
 from reflex.utils.exceptions import (
     GeneratedCodeHasNoFunctionDefsError,
     SystemPackageMissingError,
@@ -987,6 +989,7 @@ def initialize_web_directory():
     init_reflex_json(project_hash=project_hash)
 
 
+@once
 def _turbopack_flag() -> str:
     return " --turbopack" if environment.REFLEX_USE_TURBOPACK.get() else ""
 
@@ -994,9 +997,13 @@ def _turbopack_flag() -> str:
 def _compile_package_json():
     return templates.PACKAGE_JSON.render(
         scripts={
-            "dev": constants.PackageJson.Commands.DEV + _turbopack_flag(),
-            "export": constants.PackageJson.Commands.EXPORT,
-            "export_sitemap": constants.PackageJson.Commands.EXPORT_SITEMAP,
+            "dev": constants.PackageJson.Commands.DEV.format(flags=_turbopack_flag()),
+            "export": constants.PackageJson.Commands.EXPORT.format(
+                flags=_turbopack_flag()
+            ),
+            "export_sitemap": constants.PackageJson.Commands.EXPORT_SITEMAP.format(
+                flags=_turbopack_flag()
+            ),
             "prod": constants.PackageJson.Commands.PROD,
         },
         dependencies=constants.PackageJson.DEPENDENCIES,
@@ -2045,7 +2052,7 @@ def _retrieve_cpu_info() -> CpuInfo | None:
     )
 
 
-@functools.lru_cache(maxsize=None)
+@functools.cache
 def get_cpu_info() -> CpuInfo | None:
     """Get the CPU info of the underlining host.
 

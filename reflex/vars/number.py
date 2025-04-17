@@ -5,16 +5,8 @@ from __future__ import annotations
 import dataclasses
 import json
 import math
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Callable,
-    NoReturn,
-    Type,
-    TypeVar,
-    Union,
-    overload,
-)
+from collections.abc import Callable
+from typing import TYPE_CHECKING, Any, NoReturn, TypeVar, overload
 
 from typing_extensions import TypeVar as TypeVarExt
 
@@ -491,10 +483,8 @@ class NumberVar(Var[NUMBER_T], python_types=(int, float)):
 
         if format_spec:
             raise VarValueError(
-                (
-                    "Unknown format code '{}' for object of type 'NumberVar'. It is only supported to use ',', '_', and '.f' for float numbers."
-                    "If possible, use computed variables instead: https://reflex.dev/docs/vars/computed-vars/"
-                ).format(format_spec)
+                f"Unknown format code '{format_spec}' for object of type 'NumberVar'. It is only supported to use ',', '_', and '.f' for float numbers."
+                "If possible, use computed variables instead: https://reflex.dev/docs/vars/computed-vars/"
             )
 
         return super().__format__(format_spec)
@@ -1114,9 +1104,7 @@ def ternary_operation(
     Returns:
         The ternary operation.
     """
-    type_value: Union[Type[T], Type[U]] = unionize(
-        if_true._var_type, if_false._var_type
-    )
+    type_value: type[T] | type[U] = unionize(if_true._var_type, if_false._var_type)
     value: CustomVarOperationReturn[T | U] = var_operation_return(
         js_expression=f"({condition} ? {if_true} : {if_false})",
         var_type=type_value,

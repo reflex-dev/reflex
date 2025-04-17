@@ -2,9 +2,10 @@
 
 from __future__ import annotations
 
+from collections.abc import Iterable, Sequence
 from datetime import datetime
 from pathlib import Path
-from typing import TYPE_CHECKING, Iterable, Sequence, Type
+from typing import TYPE_CHECKING
 
 from reflex import constants
 from reflex.compiler import templates, utils
@@ -97,7 +98,7 @@ def _compile_theme(theme: str) -> str:
     return templates.THEME.render(theme=theme)
 
 
-def _compile_contexts(state: Type[BaseState] | None, theme: Component | None) -> str:
+def _compile_contexts(state: type[BaseState] | None, theme: Component | None) -> str:
     """Compile the initial state and contexts.
 
     Args:
@@ -132,7 +133,7 @@ def _compile_contexts(state: Type[BaseState] | None, theme: Component | None) ->
 
 def _compile_page(
     component: BaseComponent,
-    state: Type[BaseState] | None,
+    state: type[BaseState] | None,
 ) -> str:
     """Compile the component given the app state.
 
@@ -516,7 +517,7 @@ def compile_theme(style: ComponentStyle) -> tuple[str, str]:
 
 
 def compile_contexts(
-    state: Type[BaseState] | None,
+    state: type[BaseState] | None,
     theme: Component | None,
 ) -> tuple[str, str]:
     """Compile the initial state / context.
@@ -535,7 +536,7 @@ def compile_contexts(
 
 
 def compile_page(
-    path: str, component: BaseComponent, state: Type[BaseState] | None
+    path: str, component: BaseComponent, state: type[BaseState] | None
 ) -> tuple[str, str]:
     """Compile a single page.
 
@@ -739,7 +740,7 @@ def into_component(component: Component | ComponentCallable) -> Component:
 def compile_unevaluated_page(
     route: str,
     page: UnevaluatedPage,
-    state: Type[BaseState] | None = None,
+    state: type[BaseState] | None = None,
     style: ComponentStyle | None = None,
     theme: Component | None = None,
 ) -> tuple[Component, bool]:
@@ -829,7 +830,7 @@ class ExecutorSafeFunctions:
 
     COMPONENTS: dict[str, BaseComponent] = {}
     UNCOMPILED_PAGES: dict[str, UnevaluatedPage] = {}
-    STATE: Type[BaseState] | None = None
+    STATE: type[BaseState] | None = None
 
     @classmethod
     def compile_page(cls, route: str) -> tuple[str, str]:

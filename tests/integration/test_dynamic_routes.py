@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import time
-from typing import Callable, Coroutine, Generator, Type
+from collections.abc import Callable, Coroutine, Generator
 from urllib.parse import urlsplit
 
 import pytest
@@ -147,7 +147,7 @@ def DynamicRoute():
 
 @pytest.fixture(scope="module")
 def dynamic_route(
-    app_harness_env: Type[AppHarness], tmp_path_factory
+    app_harness_env: type[AppHarness], tmp_path_factory
 ) -> Generator[AppHarness, None, None]:
     """Start DynamicRoute app at tmp_path via AppHarness.
 

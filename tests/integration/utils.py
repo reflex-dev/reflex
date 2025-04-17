@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
+from collections.abc import Generator, Iterator
 from contextlib import contextmanager
-from typing import Generator, Iterator
 
 from selenium.webdriver.remote.webdriver import WebDriver
 

@@ -13,23 +13,12 @@ import io
 import json
 import sys
 import traceback
+from collections.abc import AsyncIterator, Callable, Coroutine, MutableMapping
 from datetime import datetime
 from pathlib import Path
 from timeit import default_timer as timer
 from types import SimpleNamespace
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    AsyncIterator,
-    BinaryIO,
-    Callable,
-    Coroutine,
-    Dict,
-    MutableMapping,
-    Type,
-    get_args,
-    get_type_hints,
-)
+from typing import TYPE_CHECKING, Any, BinaryIO, get_args, get_type_hints
 
 from fastapi import FastAPI, HTTPException, Request
 from fastapi import UploadFile as FastAPIUploadFile
@@ -373,13 +362,13 @@ class App(MiddlewareMixin, LifespanMixin):
     _pages: dict[str, Component] = dataclasses.field(default_factory=dict)
 
     # A mapping of pages which created states as they were being evaluated.
-    _stateful_pages: Dict[str, None] = dataclasses.field(default_factory=dict)
+    _stateful_pages: dict[str, None] = dataclasses.field(default_factory=dict)
 
     # The backend API object.
     _api: FastAPI | None = None
 
     # The state class to use for the app.
-    _state: Type[BaseState] | None = None
+    _state: type[BaseState] | None = None
 
     # Class to manage many client states.
     _state_manager: StateManager | None = None
@@ -1036,7 +1025,7 @@ class App(MiddlewareMixin, LifespanMixin):
         for render, kwargs in DECORATED_PAGES[get_config().app_name]:
             self.add_page(render, **kwargs)
 
-    def _validate_var_dependencies(self, state: Type[BaseState] | None = None) -> None:
+    def _validate_var_dependencies(self, state: type[BaseState] | None = None) -> None:
         """Validate the dependencies of the vars in the app.
 
         Args:
@@ -1591,7 +1580,7 @@ class App(MiddlewareMixin, LifespanMixin):
 
 
 async def process(
-    app: App, event: Event, sid: str, headers: Dict, client_ip: str
+    app: App, event: Event, sid: str, headers: dict, client_ip: str
 ) -> AsyncIterator[StateUpdate]:
     """Process an event.
 

@@ -2,7 +2,8 @@
 
 from __future__ import annotations
 
-from typing import Any, Iterable, Literal
+from collections.abc import Iterable
+from typing import Any, Literal
 
 from reflex.components.component import Component, ComponentNamespace
 from reflex.components.core.foreach import Foreach
