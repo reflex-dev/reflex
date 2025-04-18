@@ -20,6 +20,7 @@ from timeit import default_timer as timer
 from types import SimpleNamespace
 from typing import TYPE_CHECKING, Any, BinaryIO, get_args, get_type_hints
 
+from fastapi import FastAPI
 from rich.progress import MofNCompleteColumn, Progress, TimeElapsedColumn
 from socketio import ASGIApp as EngineIOApp
 from socketio import AsyncNamespace, AsyncServer
@@ -31,6 +32,7 @@ from starlette.middleware import cors
 from starlette.requests import Request
 from starlette.responses import JSONResponse, Response, StreamingResponse
 from starlette.staticfiles import StaticFiles
+from typing_extensions import deprecated
 
 from reflex import constants
 from reflex.admin import AdminDash
@@ -406,14 +408,26 @@ class App(MiddlewareMixin, LifespanMixin):
     # Transform the ASGI app before running it.
     asgi_transformer: Callable[[ASGIApp], ASGIApp] | None = None
 
+    # FastAPI app for compatibility with FastAPI.
+    _cached_fastapi_app: FastAPI | None = None
+
     @property
-    def api(self) -> ASGIApp | None:
+    @deprecated("Use `asgi_transformer` instead.")
+    def api(self) -> FastAPI:
         """Get the backend api.
 
         Returns:
             The backend api.
         """
-        return self._api
+        if self._cached_fastapi_app is None:
+            self._cached_fastapi_app = FastAPI()
+        console.deprecate(
+            feature_name="App.api",
+            reason="Use `asgi_transformer` instead.",
+            deprecation_version="0.7.9",
+            removal_version="0.8.0",
+        )
+        return self._cached_fastapi_app
 
     @property
     def event_namespace(self) -> EventNamespace | None:
@@ -570,10 +584,18 @@ class App(MiddlewareMixin, LifespanMixin):
         Returns:
             The backend api.
         """
-        asgi_app = self._api
+        if self._cached_fastapi_app is not None:
+            asgi_app = self._cached_fastapi_app
 
-        if not asgi_app:
-            raise ValueError("The app has not been initialized.")
+            if not asgi_app or not self._api:
+                raise ValueError("The app has not been initialized.")
+
+            asgi_app.mount("", self._api)
+        else:
+            asgi_app = self._api
+
+            if not asgi_app:
+                raise ValueError("The app has not been initialized.")
 
         # For py3.9 compatibility when redis is used, we MUST add any decorator pages
         # before compiling the app in a thread to avoid event loop error (REF-2172).
