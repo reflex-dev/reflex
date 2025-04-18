@@ -4,7 +4,8 @@ from __future__ import annotations
 
 import os
 
-from fastapi.responses import HTMLResponse
+from starlette.requests import Request
+from starlette.responses import HTMLResponse
 
 from reflex.components.base.script import Script
 from reflex.components.component import Component
@@ -74,8 +75,11 @@ def codespaces_auto_redirect() -> list[Component]:
     return []
 
 
-async def auth_codespace() -> HTMLResponse:
+async def auth_codespace(_request: Request) -> HTMLResponse:
     """Page automatically redirecting back to the app after authenticating a codespace port forward.
+
+    Args:
+        _request: The request object.
 
     Returns:
         An HTML response with an embedded script to redirect back to the app.

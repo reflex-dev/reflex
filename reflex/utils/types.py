@@ -11,11 +11,13 @@ from types import GenericAlias
 from typing import (  # noqa: UP035
     TYPE_CHECKING,
     Any,
+    Awaitable,
     ClassVar,
     Dict,
     ForwardRef,
     List,
     Literal,
+    MutableMapping,
     NoReturn,
     Tuple,
     Union,
@@ -73,6 +75,13 @@ if TYPE_CHECKING:
 else:
     ArgsSpec = Callable[..., list[Any]]
 
+Scope = MutableMapping[str, Any]
+Message = MutableMapping[str, Any]
+
+Receive = Callable[[], Awaitable[Message]]
+Send = Callable[[Message], Awaitable[None]]
+
+ASGIApp = Callable[[Scope, Receive, Send], Awaitable[None]]
 
 PrimitiveToAnnotation = {
     list: List,  # noqa: UP006

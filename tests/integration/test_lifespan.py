@@ -1,4 +1,4 @@
-"""Test cases for the FastAPI lifespan integration."""
+"""Test cases for the Starlette lifespan integration."""
 
 from collections.abc import Generator
 
