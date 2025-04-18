@@ -13,7 +13,7 @@ import io
 import json
 import sys
 import traceback
-from collections.abc import AsyncIterator, Callable, Coroutine
+from collections.abc import AsyncIterator, Callable, Coroutine, Sequence
 from datetime import datetime
 from pathlib import Path
 from timeit import default_timer as timer
@@ -406,13 +406,18 @@ class App(MiddlewareMixin, LifespanMixin):
     toaster: Component | None = dataclasses.field(default_factory=toast.provider)
 
     # Transform the ASGI app before running it.
-    asgi_transformer: Callable[[ASGIApp], ASGIApp] | None = None
+    api_transformer: (
+        Sequence[Callable[[ASGIApp], ASGIApp] | Starlette]
+        | Callable[[ASGIApp], ASGIApp]
+        | Starlette
+        | None
+    ) = None
 
     # FastAPI app for compatibility with FastAPI.
     _cached_fastapi_app: FastAPI | None = None
 
     @property
-    @deprecated("Use `asgi_transformer` instead.")
+    @deprecated("Use `api_transformer=your_fastapi_app` instead.")
     def api(self) -> FastAPI:
         """Get the backend api.
 
@@ -423,7 +428,7 @@ class App(MiddlewareMixin, LifespanMixin):
             self._cached_fastapi_app = FastAPI()
         console.deprecate(
             feature_name="App.api",
-            reason="Use `asgi_transformer` instead.",
+            reason="Set `api_transformer=your_fastapi_app` instead.",
             deprecation_version="0.7.9",
             removal_version="0.8.0",
         )
@@ -612,8 +617,21 @@ class App(MiddlewareMixin, LifespanMixin):
         if is_prod_mode():
             compile_future.result()
 
-        if self.asgi_transformer:
-            asgi_app = self.asgi_transformer(asgi_app)
+        if self.api_transformer is not None:
+            api_transformers: Sequence[Starlette | Callable[[ASGIApp], ASGIApp]] = (
+                [self.api_transformer]
+                if not isinstance(self.api_transformer, Sequence)
+                else self.api_transformer
+            )
+
+            for api_transformer in api_transformers:
+                if isinstance(api_transformer, Starlette):
+                    # Mount the api to the fastapi app.
+                    api_transformer.mount("", asgi_app)
+                    asgi_app = api_transformer
+                else:
+                    # Transform the asgi app.
+                    asgi_app = api_transformer(asgi_app)
 
         return asgi_app
 
