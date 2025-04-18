@@ -13,7 +13,7 @@ import io
 import json
 import sys
 import traceback
-from collections.abc import AsyncIterator, Callable, Coroutine, MutableMapping
+from collections.abc import AsyncIterator, Callable, Coroutine
 from datetime import datetime
 from pathlib import Path
 from timeit import default_timer as timer
