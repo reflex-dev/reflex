@@ -316,11 +316,9 @@ class AppHarness:
                 pass
 
             # socketio shutdown handler
-            try:
-                if self.app_instance is not None and self.app_instance.sio is not None:
+            if self.app_instance is not None and self.app_instance.sio is not None:
+                with contextlib.suppress(TypeError):
                     await self.app_instance.sio.shutdown()
-            except TypeError:
-                pass
 
             # sqlalchemy async engine shutdown handler
             async_engine = reflex.model.get_async_engine(None)
