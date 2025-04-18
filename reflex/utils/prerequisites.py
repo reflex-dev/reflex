@@ -1132,6 +1132,9 @@ def download_and_run(url: str, *args, show_status: bool = False, **env):
         args: The arguments to pass to the script.
         show_status: Whether to show the status of the script.
         env: The environment variables to use.
+
+    Raises:
+        Exit: If the script fails to download.
     """
     # Download the script
     console.debug(f"Downloading {url}")
