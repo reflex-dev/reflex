@@ -643,17 +643,32 @@ def format_ref(ref: str) -> str:
     return f"ref_{clean_ref}"
 
 
-def format_library_name(library_fullname: str):
+def format_library_name(library_fullname: str | dict[str, Any]) -> str:
     """Format the name of a library.
 
     Args:
-        library_fullname: The fullname of the library.
+        library_fullname: The library reference, either as a string or a dictionary with a 'name' key.
 
     Returns:
         The name without the @version if it was part of the name
+
+    Raises:
+        KeyError: If library_fullname is a dictionary without a 'name' key.
+        TypeError: If library_fullname or its 'name' value is not a string.
     """
+    # If input is a dictionary, extract the 'name' key
+    if isinstance(library_fullname, dict):
+        if "name" not in library_fullname:
+            raise KeyError("Dictionary input must contain a 'name' key")
+        library_fullname = library_fullname["name"]
+
+    # Process the library name as a string
+    if not isinstance(library_fullname, str):
+        raise TypeError("Library name must be a string")
+
     if library_fullname.startswith("https://"):
         return library_fullname
+
     lib, at, version = library_fullname.rpartition("@")
     if not lib:
         lib = at + version

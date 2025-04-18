@@ -1314,7 +1314,10 @@ def install_frontend_packages(packages: set[str], config: Config):
                 "--legacy-peer-deps",
                 "-d",
                 constants.Tailwind.VERSION,
-                *((config.tailwind or {}).get("plugins", [])),
+                *[
+                    plugin if isinstance(plugin, str) else plugin.get("name")
+                    for plugin in (config.tailwind or {}).get("plugins", [])
+                ],
             ],
             fallbacks=fallbacks,
             analytics_enabled=True,
