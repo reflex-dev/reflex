@@ -307,13 +307,11 @@ class AppHarness:
 
         async def _shutdown(*args, **kwargs) -> None:
             # ensure redis is closed before event loop
-            try:
-                if self.app_instance is not None and isinstance(
-                    self.app_instance.state_manager, StateManagerRedis
-                ):
+            if self.app_instance is not None and isinstance(
+                self.app_instance.state_manager, StateManagerRedis
+            ):
+                with contextlib.suppress(ValueError):
                     await self.app_instance.state_manager.close()
-            except ValueError:
-                pass
 
             # socketio shutdown handler
             if self.app_instance is not None and self.app_instance.sio is not None:
