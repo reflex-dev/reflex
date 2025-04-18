@@ -305,18 +305,30 @@ class AppHarness:
 
         original_shutdown = self.backend.shutdown
 
-        async def _shutdown_redis(*args, **kwargs) -> None:
+        async def _shutdown(*args, **kwargs) -> None:
             # ensure redis is closed before event loop
-            try:
-                if self.app_instance is not None and isinstance(
-                    self.app_instance.state_manager, StateManagerRedis
-                ):
+            if self.app_instance is not None and isinstance(
+                self.app_instance.state_manager, StateManagerRedis
+            ):
+                with contextlib.suppress(ValueError):
                     await self.app_instance.state_manager.close()
+
+            # socketio shutdown handler
+            if self.app_instance is not None and self.app_instance.sio is not None:
+                with contextlib.suppress(TypeError):
+                    await self.app_instance.sio.shutdown()
+
+            # sqlalchemy async engine shutdown handler
+            try:
+                async_engine = reflex.model.get_async_engine(None)
             except ValueError:
                 pass
+            else:
+                await async_engine.dispose()
+
             await original_shutdown(*args, **kwargs)
 
-        return _shutdown_redis
+        return _shutdown
 
     def _start_backend(self, port: int = 0):
         if self.app_instance is None or self.app_instance.api is None:
