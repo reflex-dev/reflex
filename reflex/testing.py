@@ -319,8 +319,11 @@ class AppHarness:
                     await self.app_instance.sio.shutdown()
 
             # sqlalchemy async engine shutdown handler
-            async_engine = reflex.model.get_async_engine(None)
-            if async_engine:
+            try:
+                async_engine = reflex.model.get_async_engine(None)
+            except ValueError:
+                pass
+            else:
                 await async_engine.dispose()
 
             await original_shutdown(*args, **kwargs)
