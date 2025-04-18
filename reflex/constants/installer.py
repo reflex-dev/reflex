@@ -119,5 +119,6 @@ class PackageJson(SimpleNamespace):
     }
     OVERRIDES = {
         # This should always match the `react` version in DEPENDENCIES for recharts compatibility.
-        "react-is": "19.0.0"
+        "react-is": "19.0.0",
+        "radix-ui": "1.2.0",
     }
