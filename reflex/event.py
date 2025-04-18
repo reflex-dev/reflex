@@ -2064,6 +2064,8 @@ class EventNamespace:
                         "Background task must be async function or generator."
                     )
                 setattr(func, BACKGROUND_TASK_MARKER, True)
+            if getattr(func, "__name__", "").startswith("_"):
+                raise ValueError("Event handlers cannot be private.")
             return func  # pyright: ignore [reportReturnType]
 
         if func is not None:
