@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
+from collections.abc import Generator
 from contextlib import suppress
-from typing import Generator
 
 import pytest
 from selenium.common.exceptions import NoAlertPresentException

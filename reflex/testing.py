@@ -18,19 +18,10 @@ import textwrap
 import threading
 import time
 import types
+from collections.abc import AsyncIterator, Callable, Coroutine, Sequence
 from http.server import SimpleHTTPRequestHandler
 from pathlib import Path
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    AsyncIterator,
-    Callable,
-    Coroutine,
-    Optional,
-    Sequence,
-    Type,
-    TypeVar,
-)
+from typing import TYPE_CHECKING, Any, TypeVar
 
 import psutil
 import uvicorn
@@ -124,7 +115,7 @@ class AppHarness:
     backend_thread: threading.Thread | None = None
     backend: uvicorn.Server | None = None
     state_manager: StateManager | None = None
-    _frontends: list["WebDriver"] = dataclasses.field(default_factory=list)
+    _frontends: list[WebDriver] = dataclasses.field(default_factory=list)
     _decorated_pages: list = dataclasses.field(default_factory=list)
 
     @classmethod
@@ -135,7 +126,7 @@ class AppHarness:
             Callable[[], None] | types.ModuleType | str | functools.partial[Any] | None
         ) = None,
         app_name: str | None = None,
-    ) -> "AppHarness":
+    ) -> AppHarness:
         """Create an AppHarness instance at root.
 
         Args:
@@ -371,7 +362,7 @@ class AppHarness:
         # Set up the frontend.
         with chdir(self.app_path):
             config = reflex.config.get_config()
-            config.api_url = "http://{0}:{1}".format(
+            config.api_url = "http://{}:{}".format(
                 *self._poll_for_servers().getsockname(),
             )
             reflex.utils.build.setup_frontend(self.app_path)
@@ -423,7 +414,7 @@ class AppHarness:
         self.frontend_output_thread = threading.Thread(target=consume_frontend_output)
         self.frontend_output_thread.start()
 
-    def start(self) -> "AppHarness":
+    def start(self) -> AppHarness:
         """Start the backend in a new thread and dev frontend as a separate process.
 
         Returns:
@@ -452,7 +443,7 @@ class AppHarness:
             return f"{key} = {value!r}"
         return inspect.getsource(value)
 
-    def __enter__(self) -> "AppHarness":
+    def __enter__(self) -> AppHarness:
         """Contextmanager protocol for `start()`.
 
         Returns:
@@ -599,12 +590,12 @@ class AppHarness:
 
     def frontend(
         self,
-        driver_clz: Optional[Type["WebDriver"]] = None,
+        driver_clz: type[WebDriver] | None = None,
         driver_kwargs: dict[str, Any] | None = None,
         driver_options: ArgOptions | None = None,
         driver_option_args: list[str] | None = None,
         driver_option_capabilities: dict[str, Any] | None = None,
-    ) -> "WebDriver":
+    ) -> WebDriver:
         """Get a selenium webdriver instance pointed at the app.
 
         Args:
@@ -743,7 +734,7 @@ class AppHarness:
 
     def poll_for_content(
         self,
-        element: "WebElement",
+        element: WebElement,
         timeout: TimeoutType = None,
         exp_not_equal: str = "",
     ) -> str:
@@ -771,7 +762,7 @@ class AppHarness:
 
     def poll_for_value(
         self,
-        element: "WebElement",
+        element: WebElement,
         timeout: TimeoutType = None,
         exp_not_equal: str | Sequence[str] = "",
     ) -> str | None:
@@ -940,7 +931,7 @@ class AppHarnessProd(AppHarness):
         # Set up the frontend.
         with chdir(self.app_path):
             config = reflex.config.get_config()
-            config.api_url = "http://{0}:{1}".format(
+            config.api_url = "http://{}:{}".format(
                 *self._poll_for_servers().getsockname(),
             )
             reflex.reflex.export(

@@ -2,8 +2,9 @@
 
 from __future__ import annotations
 
+from collections.abc import Iterator
 from hashlib import md5
-from typing import Any, Iterator, Literal
+from typing import Any, Literal
 
 from jinja2 import Environment
 
@@ -13,14 +14,17 @@ from reflex.constants import Dirs, EventTriggers
 from reflex.event import (
     EventChain,
     EventHandler,
+    checked_input_event,
+    float_input_event,
     input_event,
+    int_input_event,
     key_event,
     prevent_default,
 )
 from reflex.utils.imports import ImportDict
-from reflex.utils.types import is_optional
 from reflex.vars import VarData
 from reflex.vars.base import LiteralVar, Var
+from reflex.vars.number import ternary_operation
 
 from .base import BaseHTML
 
@@ -294,8 +298,8 @@ HTMLInputTypeAttribute = Literal[
 ]
 
 
-class Input(BaseHTML):
-    """Display the input element."""
+class BaseInput(BaseHTML):
+    """A base class for input elements."""
 
     tag = "input"
 
@@ -392,6 +396,42 @@ class Input(BaseHTML):
     # Value of the input
     value: Var[str | int | float]
 
+    # Fired when a key is pressed down
+    on_key_down: EventHandler[key_event]
+
+    # Fired when a key is released
+    on_key_up: EventHandler[key_event]
+
+
+class CheckboxInput(BaseInput):
+    """Display the input element."""
+
+    # Fired when the input value changes
+    on_change: EventHandler[checked_input_event]
+
+    # Fired when the input gains focus
+    on_focus: EventHandler[checked_input_event]
+
+    # Fired when the input loses focus
+    on_blur: EventHandler[checked_input_event]
+
+
+class ValueNumberInput(BaseInput):
+    """Display the input element."""
+
+    # Fired when the input value changes
+    on_change: EventHandler[float_input_event, int_input_event, input_event]
+
+    # Fired when the input gains focus
+    on_focus: EventHandler[float_input_event, int_input_event, input_event]
+
+    # Fired when the input loses focus
+    on_blur: EventHandler[float_input_event, int_input_event, input_event]
+
+
+class Input(BaseInput):
+    """Display the input element."""
+
     # Fired when the input value changes
     on_change: EventHandler[input_event]
 
@@ -400,12 +440,6 @@ class Input(BaseHTML):
 
     # Fired when the input loses focus
     on_blur: EventHandler[input_event]
-
-    # Fired when a key is pressed down
-    on_key_down: EventHandler[key_event]
-
-    # Fired when a key is released
-    on_key_up: EventHandler[key_event]
 
     @classmethod
     def create(cls, *children, **props):
@@ -418,20 +452,26 @@ class Input(BaseHTML):
         Returns:
             The component.
         """
-        from reflex.vars.number import ternary_operation
-
         value = props.get("value")
 
         # React expects an empty string(instead of null) for controlled inputs.
-        if value is not None and is_optional(
-            (value_var := Var.create(value))._var_type
-        ):
+        if value is not None:
+            value_var = Var.create(value)
             props["value"] = ternary_operation(
-                (value_var != Var.create(None))
-                & (value_var != Var(_js_expr="undefined")),
-                value,
-                Var.create(""),
+                value_var.is_not_none(), value_var, Var.create("")
             )
+
+        if cls is Input:
+            input_type = props.get("type")
+
+            if input_type == "checkbox":
+                # Checkbox inputs should use the CheckboxInput class
+                return CheckboxInput.create(*children, **props)
+
+            if input_type == "number" or input_type == "range":
+                # Number inputs should use the ValueNumberInput class
+                return ValueNumberInput.create(*children, **props)
+
         return super().create(*children, **props)
 
 
@@ -571,6 +611,12 @@ class Select(BaseHTML):
 
     # Fired when the select value changes
     on_change: EventHandler[input_event]
+
+    # The controlled value of the select, read only unless used with on_change
+    value: Var[str]
+
+    # The default value of the select when initially rendered
+    default_value: Var[str]
 
 
 AUTO_HEIGHT_JS = """

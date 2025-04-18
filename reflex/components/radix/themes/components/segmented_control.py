@@ -2,8 +2,9 @@
 
 from __future__ import annotations
 
+from collections.abc import Sequence
 from types import SimpleNamespace
-from typing import ClassVar, Literal, Sequence
+from typing import ClassVar, Literal
 
 from reflex.components.core.breakpoints import Responsive
 from reflex.event import EventHandler

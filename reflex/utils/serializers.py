@@ -8,20 +8,11 @@ import functools
 import inspect
 import json
 import warnings
+from collections.abc import Callable, Sequence
 from datetime import date, datetime, time, timedelta
 from enum import Enum
 from pathlib import Path
-from typing import (
-    Any,
-    Callable,
-    Literal,
-    Sequence,
-    Type,
-    TypeVar,
-    Union,
-    get_type_hints,
-    overload,
-)
+from typing import Any, Literal, TypeVar, get_type_hints, overload
 from uuid import UUID
 
 from pydantic import BaseModel as BaseModelV2
@@ -33,14 +24,14 @@ from reflex.utils import console, types
 
 # Mapping from type to a serializer.
 # The serializer should convert the type to a JSON object.
-SerializedType = Union[str, bool, int, float, list, dict, None]
+SerializedType = str | bool | int | float | list | dict | None
 
 
 Serializer = Callable[[Any], SerializedType]
 
 
-SERIALIZERS: dict[Type, Serializer] = {}
-SERIALIZER_TYPES: dict[Type, Type] = {}
+SERIALIZERS: dict[type, Serializer] = {}
+SERIALIZER_TYPES: dict[type, type] = {}
 
 SERIALIZED_FUNCTION = TypeVar("SERIALIZED_FUNCTION", bound=Serializer)
 
@@ -48,7 +39,7 @@ SERIALIZED_FUNCTION = TypeVar("SERIALIZED_FUNCTION", bound=Serializer)
 @overload
 def serializer(
     fn: None = None,
-    to: Type[SerializedType] | None = None,
+    to: type[SerializedType] | None = None,
     overwrite: bool | None = None,
 ) -> Callable[[SERIALIZED_FUNCTION], SERIALIZED_FUNCTION]: ...
 
@@ -56,7 +47,7 @@ def serializer(
 @overload
 def serializer(
     fn: SERIALIZED_FUNCTION,
-    to: Type[SerializedType] | None = None,
+    to: type[SerializedType] | None = None,
     overwrite: bool | None = None,
 ) -> SERIALIZED_FUNCTION: ...
 
@@ -146,10 +137,7 @@ def serialize(value: Any) -> SerializedType | None: ...
 
 def serialize(
     value: Any, get_type: bool = False
-) -> Union[
-    SerializedType | None,
-    tuple[SerializedType | None, types.GenericType | None],
-]:
+) -> SerializedType | None | tuple[SerializedType | None, types.GenericType | None]:
     """Serialize the value to a JSON string.
 
     Args:
@@ -182,7 +170,7 @@ def serialize(
 
 
 @functools.lru_cache
-def get_serializer(type_: Type) -> Serializer | None:
+def get_serializer(type_: type) -> Serializer | None:
     """Get the serializer for the type.
 
     Args:
@@ -206,7 +194,7 @@ def get_serializer(type_: Type) -> Serializer | None:
 
 
 @functools.lru_cache
-def get_serializer_type(type_: Type) -> Type | None:
+def get_serializer_type(type_: type) -> type | None:
     """Get the converted type for the type after serializing.
 
     Args:
@@ -229,7 +217,7 @@ def get_serializer_type(type_: Type) -> Type | None:
     return None
 
 
-def has_serializer(type_: Type, into_type: Type | None = None) -> bool:
+def has_serializer(type_: type, into_type: type | None = None) -> bool:
     """Check if there is a serializer for the type.
 
     Args:
@@ -245,7 +233,7 @@ def has_serializer(type_: Type, into_type: Type | None = None) -> bool:
     )
 
 
-def can_serialize(type_: Type, into_type: Type | None = None) -> bool:
+def can_serialize(type_: type, into_type: type | None = None) -> bool:
     """Check if there is a serializer for the type.
 
     Args:
@@ -347,7 +335,7 @@ def serialize_sequence(value: Sequence) -> list:
 
 
 @serializer(to=str)
-def serialize_datetime(dt: Union[date, datetime, time, timedelta]) -> str:
+def serialize_datetime(dt: date | datetime | time | timedelta) -> str:
     """Serialize a datetime to a JSON string.
 
     Args:

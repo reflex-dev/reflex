@@ -1,6 +1,6 @@
 [project]
 name = "reflex"
-version = "0.7.6dev1"
+version = "0.7.8dev1"
 description = "Web apps in pure Python."
 license = { text = "Apache-2.0" }
 authors = [
@@ -20,26 +20,26 @@ readme = "README.md"
 keywords = ["web", "framework"]
 requires-python = ">=3.10,<4.0"
 dependencies = [
-  "alembic >=1.11.1,<2.0",
-  "distro >=1.8.0,<2.0; platform_system == 'Linux'",
-  "starlette >=0.46.0",
-  "granian[reload] >=2.2.0",
+  "alembic >=1.15.2,<2.0",
+  "distro >=1.9.0,<2.0; platform_system == 'Linux'",
+  "fastapi >=0.115.0",
+  "granian[reload] >=2.2.3",
   "gunicorn >=23.0.0,<24.0.0",
-  "httpx >=0.25.1,<1.0",
+  "httpx >=0.28.0,<1.0",
   "jinja2 >=3.1.2,<4.0",
-  "packaging >=23.1,<25.0",
-  "platformdirs >=3.10.0,<5.0",
-  "psutil >=5.9.4,<8.0",
+  "packaging >=24.2,<25.0",
+  "platformdirs >=4.3.7,<5.0",
+  "psutil >=7.0.0,<8.0",
   "pydantic >=1.10.21,<3.0",
-  "python-socketio >=5.7.0,<6.0",
+  "python-socketio >=5.12.0,<6.0",
   "python-multipart >=0.0.20,<1.0",
-  "redis >=4.3.5,<6.0",
-  "reflex-hosting-cli >=0.1.29",
+  "redis >=5.2.1,<6.0",
+  "reflex-hosting-cli >=0.1.38",
   "rich >=13.0.0,<14.0",
-  "sqlmodel >=0.0.14,<0.1",
-  "typer >=0.15.1,<1.0",
-  "typing_extensions >=4.6.0",
-  "uvicorn >=0.20.0",
+  "sqlmodel >=0.0.24,<0.1",
+  "typer >=0.15.2,<1.0",
+  "typing_extensions >=4.13.0",
+  "uvicorn >=0.34.0",
   "wrapt >=1.17.0,<2.0",
 ]
 classifiers = [
@@ -68,6 +68,16 @@ build-backend = "hatchling.build"
 [tool.hatch.build]
 include = ["reflex"]
 
+[tool.hatch.build.targets.sdist]
+artifacts = ["*.pyi"]
+
+[tool.hatch.build.targets.wheel]
+artifacts = ["*.pyi"]
+
+[tool.hatch.build.hooks.custom]
+dependencies = ["plotly", "ruff"]
+require-runtime-dependencies = true
+
 [tool.pyright]
 reportIncompatibleMethodOverride = false
 
@@ -93,6 +103,7 @@ lint.select = [
   "SIM",
   "T",
   "TRY",
+  "UP",
   "W",
 ]
 lint.ignore = [
@@ -105,6 +116,7 @@ lint.ignore = [
   "RUF008",
   "RUF012",
   "TRY0",
+  "UP038",
 ]
 lint.pydocstyle.convention = "google"
 
@@ -129,29 +141,30 @@ ignore-words-list = "te, TreeE"
 
 [dependency-groups]
 dev = [
-  "asynctest >=0.13.0,<1.0",
-  "darglint >=1.8.1,<2.0",
-  "dill >=0.3.8",
-  "libsass >=0.23.0,<1.0",
-  "numpy >=2.2.3,<3.0",
-  "pandas >=2.1.1,<3.0",
-  "pillow >=10.0.0,<12.0",
-  "playwright >=1.46.0",
-  "plotly >=5.13.0,<7.0",
-  "pre-commit >=4.1.0,<5.0",
-  "psycopg[binary] >=3.2.6,<4.0",
-  "pyright >=1.1.398,<1.2",
-  "pytest >=7.1.2,<9.0",
-  "pytest-asyncio >=0.24.0",
-  "pytest-benchmark >=4.0.0,<6.0",
-  "pytest-codspeed >=3.1.2,<4.0.0",
-  "pytest-cov >=4.0.0,<7.0",
-  "pytest-mock >=3.10.0,<4.0",
-  "pytest-playwright >=0.5.1",
-  "pytest-retry >=1.7.0,<2.0",
-  "pytest-split >=0.10.0,<1.0",
-  "python-dotenv >=1,<2",
-  "ruff >=0.11.2",
-  "selenium >=4.11.0,<5.0",
-  "starlette-admin >=0.11.0,<1.0",
+  "asynctest >=0.13",
+  "darglint >=1.8",
+  "dill >=0.3",
+  "hatchling >=1.27",
+  "libsass >=0.23",
+  "numpy >=2.2",
+  "pandas >=2.2",
+  "pillow >=11",
+  "playwright >=1.51",
+  "plotly >=6.0",
+  "pre-commit >=4.2",
+  "psycopg[binary] >=3.2",
+  "pyright >=1.1.399",
+  "pytest >=8.3",
+  "pytest-asyncio >=0.26",
+  "pytest-benchmark >=5.1",
+  "pytest-codspeed >=3.2",
+  "pytest-cov >=6.1",
+  "pytest-mock >=3.14",
+  "pytest-playwright >=0.7",
+  "pytest-retry >=1.7",
+  "pytest-split >=0.10",
+  "python-dotenv >=1",
+  "ruff >=0.11",
+  "selenium >=4.31",
+  "starlette-admin >=0.14",
 ]

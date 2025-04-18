@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any, Dict, overload
+from typing import Any, overload
 
 from reflex.components.base.fragment import Fragment
 from reflex.components.component import BaseComponent, Component, MemoizationLeaf
@@ -66,7 +66,7 @@ class Cond(MemoizationLeaf):
             false_value=self.children[1].render(),
         )
 
-    def render(self) -> Dict:
+    def render(self) -> dict:
         """Render the component.
 
         Returns:
@@ -151,7 +151,7 @@ def cond(condition: Any, c1: Any, c2: Any = types.Unset(), /) -> Component | Var
     c1_var = Var.create(c1)
     c2_var = Var.create(c2)
 
-    if condition is c1_var:
+    if c1_var is cond_var or c1_var.equals(cond_var):
         c1_var = c1_var.to(types.value_inside_optional(c1_var._var_type))
 
     # Create the conditional var.

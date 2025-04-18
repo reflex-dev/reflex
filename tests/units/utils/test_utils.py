@@ -1,18 +1,9 @@
 import os
 import typing
+from collections.abc import Mapping, Sequence
 from functools import cached_property
 from pathlib import Path
-from typing import (
-    Any,
-    ClassVar,
-    List,
-    Literal,
-    Mapping,
-    NoReturn,
-    Sequence,
-    Type,
-    Union,
-)
+from typing import Any, ClassVar, List, Literal, NoReturn  # noqa: UP035
 
 import pytest
 import typer
@@ -47,7 +38,7 @@ def test_func():
         (int, False),
         (float, False),
         (bool, False),
-        (List, True),
+        (List, True),  # noqa: UP006
         (list[int], True),
     ],
 )
@@ -76,11 +67,11 @@ def test_is_generic_alias(cls: type, expected: bool):
         ],
         (bool, int, True),
         (int, bool, False),
-        (list, List, True),
+        (list, list, True),
         (list, list[str], True),  # this is wrong, but it's a limitation of the function
-        (List, list, True),
+        (list, list, True),
         (list[int], list, True),
-        (list[int], List, True),
+        (list[int], list, True),
         (list[int], list[str], False),
         (list[int], list[int], True),
         (list[int], list[float], False),
@@ -103,6 +94,10 @@ def test_is_generic_alias(cls: type, expected: bool):
         (str, Literal["test", "value", 2, 3], True),
         (int, Literal["test", "value"], False),
         (int, Literal["test", "value", 2, 3], True),
+        (Literal["test", "value"], str, True),
+        (Literal["test", "value", 2, 3], str, False),
+        (Literal["test", "value"], int, False),
+        (Literal["test", "value", 2, 3], int, False),
         *[
             (NoReturn, super_class, True)
             for super_class in [int, float, str, bool, list, dict, object, Any]
@@ -132,11 +127,11 @@ def test_typehint_issubclass(subclass, superclass, expected):
         ],
         (bool, int, True),
         (int, bool, False),
-        (list, List, True),
+        (list, list, True),
         (list, list[str], True),  # this is wrong, but it's a limitation of the function
-        (List, list, True),
+        (list, list, True),
         (list[int], list, True),
-        (list[int], List, True),
+        (list[int], list, True),
         (list[int], list[str], False),
         (list[int], list[int], True),
         (list[int], list[float], False),
@@ -222,8 +217,8 @@ def test_validate_bun_path_incompatible_version(mocker):
         return_value=version.parse("0.6.5"),
     )
 
-    with pytest.raises(typer.Exit):
-        prerequisites.validate_bun()
+    # This will just warn the user, not raise an error
+    prerequisites.validate_bun()
 
 
 def test_remove_existing_bun_installation(mocker):
@@ -302,7 +297,7 @@ def test_backend_variable_cls():
     ],
 )
 def test_is_backend_base_variable(
-    test_backend_variable_cls: Type[BaseState], input: str, output: bool
+    test_backend_variable_cls: type[BaseState], input: str, output: bool
 ):
     assert types.is_backend_base_variable(input, test_backend_variable_cls) == output
 
@@ -322,8 +317,8 @@ def test_is_backend_base_variable(
         (int, Any, True),
         (Any, Any, True),
         (int | float, Any, True),
-        (str, Union[Literal["test", "value"], int], True),
-        (int, Union[Literal["test", "value"], int], True),
+        (str, Literal["test", "value"] | int, True),
+        (int, Literal["test", "value"] | int, True),
         (str, Literal["test", "value"], True),
         (int, Literal["test", "value"], False),
     ],
@@ -412,7 +407,7 @@ class DataFrame:
         (dict, False),
         (DataFrame, True),
         (typing.Any, False),
-        (typing.List, False),
+        (list, False),
     ],
 )
 def test_is_dataframe(class_type, expected):

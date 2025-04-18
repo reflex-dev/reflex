@@ -11,10 +11,12 @@ repos:
         exclude: "^integration/benchmarks/"
 
   - repo: https://github.com/codespell-project/codespell
-    rev: v2.3.0
+    rev: v2.4.1
     hooks:
       - id: codespell
         args: ["reflex"]
+        additional_dependencies:
+          - tomli
 
   # Run pyi check before pyright because pyright can fail if pyi files are wrong.
   - repo: local

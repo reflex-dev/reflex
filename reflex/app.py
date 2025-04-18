@@ -13,22 +13,12 @@ import io
 import json
 import sys
 import traceback
+from collections.abc import AsyncIterator, Callable, Coroutine, MutableMapping
 from datetime import datetime
 from pathlib import Path
 from timeit import default_timer as timer
 from types import SimpleNamespace
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    AsyncIterator,
-    BinaryIO,
-    Callable,
-    Coroutine,
-    Dict,
-    Type,
-    get_args,
-    get_type_hints,
-)
+from typing import TYPE_CHECKING, Any, BinaryIO, get_args, get_type_hints
 
 from rich.progress import MofNCompleteColumn, Progress, TimeElapsedColumn
 from socketio import ASGIApp as EngineIOApp
@@ -295,6 +285,7 @@ class UnevaluatedPage:
     image: str
     on_load: EventType[()] | None
     meta: list[dict[str, str]]
+    context: dict[str, Any] | None
 
 
 @dataclasses.dataclass()
@@ -374,13 +365,13 @@ class App(MiddlewareMixin, LifespanMixin):
     _pages: dict[str, Component] = dataclasses.field(default_factory=dict)
 
     # A mapping of pages which created states as they were being evaluated.
-    _stateful_pages: Dict[str, None] = dataclasses.field(default_factory=dict)
+    _stateful_pages: dict[str, None] = dataclasses.field(default_factory=dict)
 
     # The backend API object.
     _api: Starlette | None = None
 
     # The state class to use for the app.
-    _state: Type[BaseState] | None = None
+    _state: type[BaseState] | None = None
 
     # Class to manage many client states.
     _state_manager: StateManager | None = None
@@ -447,6 +438,8 @@ class App(MiddlewareMixin, LifespanMixin):
             raise ValueError(
                 "rx.BaseState cannot be subclassed directly. Use rx.State instead"
             )
+
+        get_config(reload=True)
 
         if "breakpoints" in self.style:
             set_breakpoints(self.style.pop("breakpoints"))
@@ -701,6 +694,7 @@ class App(MiddlewareMixin, LifespanMixin):
         image: str = constants.DefaultPage.IMAGE,
         on_load: EventType[()] | None = None,
         meta: list[dict[str, str]] = constants.DefaultPage.META_LIST,
+        context: dict[str, Any] | None = None,
     ):
         """Add a page to the app.
 
@@ -715,6 +709,7 @@ class App(MiddlewareMixin, LifespanMixin):
             image: The image to display on the page.
             on_load: The event handler(s) that will be called each time the page load.
             meta: The metadata of the page.
+            context: Values passed to page for custom page-specific logic.
 
         Raises:
             PageValueError: When the component is not set for a non-404 page.
@@ -782,6 +777,7 @@ class App(MiddlewareMixin, LifespanMixin):
             image=image,
             on_load=on_load,
             meta=meta,
+            context=context,
         )
 
     def _compile_page(self, route: str, save_page: bool = True):
@@ -953,6 +949,9 @@ class App(MiddlewareMixin, LifespanMixin):
             and i != ""
             and any(tag.install for tag in tags)
         }
+        pinned = {i.rpartition("@")[0] for i in page_imports if "@" in i}
+        page_imports = {i for i in page_imports if i not in pinned}
+
         frontend_packages = get_config().frontend_packages
         _frontend_packages = []
         for package in frontend_packages:
@@ -1049,7 +1048,7 @@ class App(MiddlewareMixin, LifespanMixin):
         for render, kwargs in DECORATED_PAGES[get_config().app_name]:
             self.add_page(render, **kwargs)
 
-    def _validate_var_dependencies(self, state: Type[BaseState] | None = None) -> None:
+    def _validate_var_dependencies(self, state: type[BaseState] | None = None) -> None:
         """Validate the dependencies of the vars in the app.
 
         Args:
@@ -1607,7 +1606,7 @@ class App(MiddlewareMixin, LifespanMixin):
 
 
 async def process(
-    app: App, event: Event, sid: str, headers: Dict, client_ip: str
+    app: App, event: Event, sid: str, headers: dict, client_ip: str
 ) -> AsyncIterator[StateUpdate]:
     """Process an event.
 

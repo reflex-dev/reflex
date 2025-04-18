@@ -1,6 +1,6 @@
 """Test case for adding an overlay component defined in the rxconfig."""
 
-from typing import Generator
+from collections.abc import Generator
 
 import pytest
 from selenium.webdriver.common.by import By
@@ -10,8 +10,6 @@ from reflex.testing import AppHarness, WebDriver
 
 def ExtraOverlay():
     import reflex as rx
-
-    rx.config.get_config().extra_overlay_function = "reflex.components.moment.moment"
 
     def index():
         return rx.vstack(
@@ -26,6 +24,7 @@ def ExtraOverlay():
         )
 
     app = rx.App()
+    rx.config.get_config().extra_overlay_function = "reflex.components.moment.moment"
     app.add_page(index)
 
 

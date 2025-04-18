@@ -14,36 +14,31 @@ import re
 import string
 import uuid
 import warnings
+from collections.abc import Callable, Coroutine, Iterable, Mapping, Sequence
 from types import CodeType, FunctionType
-from typing import (
+from typing import (  # noqa: UP035
     TYPE_CHECKING,
     Any,
-    Callable,
     ClassVar,
-    Coroutine,
     Dict,
     FrozenSet,
     Generic,
-    Iterable,
     List,
     Literal,
-    Mapping,
     NoReturn,
     ParamSpec,
     Protocol,
-    Sequence,
     Set,
     Tuple,
-    Type,
     TypeGuard,
     TypeVar,
-    Union,
     cast,
     get_args,
     get_type_hints,
     overload,
 )
 
+from rich.markup import escape
 from sqlalchemy.orm import DeclarativeBase
 from typing_extensions import deprecated, override
 
@@ -101,13 +96,13 @@ warnings.filterwarnings("ignore", message="fields may not start with an undersco
 class VarSubclassEntry:
     """Entry for a Var subclass."""
 
-    var_subclass: Type[Var]
-    to_var_subclass: Type[ToOperation]
+    var_subclass: type[Var]
+    to_var_subclass: type[ToOperation]
     python_types: tuple[GenericType, ...]
 
 
 _var_subclasses: list[VarSubclassEntry] = []
-_var_literal_subclasses: list[tuple[Type[LiteralVar], VarSubclassEntry]] = []
+_var_literal_subclasses: list[tuple[type[LiteralVar], VarSubclassEntry]] = []
 
 
 @dataclasses.dataclass(
@@ -136,7 +131,7 @@ class VarData:
     position: Hooks.HookPosition | None = None
 
     # Components that are part of this var
-    components: Tuple[BaseComponent, ...] = dataclasses.field(default_factory=tuple)
+    components: tuple[BaseComponent, ...] = dataclasses.field(default_factory=tuple)
 
     def __init__(
         self,
@@ -283,7 +278,7 @@ class VarData:
         )
 
     @classmethod
-    def from_state(cls, state: Type[BaseState] | str, field_name: str = "") -> VarData:
+    def from_state(cls, state: type[BaseState] | str, field_name: str = "") -> VarData:
         """Set the state of the var.
 
         Args:
@@ -533,7 +528,7 @@ class Var(Generic[VAR_TYPE]):
     @overload
     def _replace(
         self,
-        _var_type: Type[OTHER_VAR_TYPE],
+        _var_type: type[OTHER_VAR_TYPE],
         merge_var_data: VarData | None = None,
         **kwargs: Any,
     ) -> Var[OTHER_VAR_TYPE]: ...
@@ -725,10 +720,13 @@ class Var(Generic[VAR_TYPE]):
         return f"{constants.REFLEX_VAR_OPENING_TAG}{hashed_var}{constants.REFLEX_VAR_CLOSING_TAG}{self._js_expr}"
 
     @overload
-    def to(self, output: Type[str]) -> StringVar: ...
+    def to(self, output: type[str]) -> StringVar: ...
 
     @overload
-    def to(self, output: Type[bool]) -> BooleanVar: ...
+    def to(self, output: type[bool]) -> BooleanVar: ...
+
+    @overload
+    def to(self, output: type[int]) -> NumberVar[int]: ...
 
     @overload
     def to(self, output: type[int] | type[float]) -> NumberVar: ...
@@ -747,12 +745,12 @@ class Var(Generic[VAR_TYPE]):
 
     @overload
     def to(
-        self, output: Type[ObjectVar], var_type: Type[VAR_INSIDE]
+        self, output: type[ObjectVar], var_type: type[VAR_INSIDE]
     ) -> ObjectVar[VAR_INSIDE]: ...
 
     @overload
     def to(
-        self, output: Type[ObjectVar], var_type: None = None
+        self, output: type[ObjectVar], var_type: None = None
     ) -> ObjectVar[VAR_TYPE]: ...
 
     @overload
@@ -761,13 +759,13 @@ class Var(Generic[VAR_TYPE]):
     @overload
     def to(
         self,
-        output: Type[OUTPUT] | types.GenericType,
+        output: type[OUTPUT] | types.GenericType,
         var_type: types.GenericType | None = None,
     ) -> OUTPUT: ...
 
     def to(
         self,
-        output: Type[OUTPUT] | types.GenericType,
+        output: type[OUTPUT] | types.GenericType,
         var_type: types.GenericType | None = None,
     ) -> Var:
         """Convert the var to a different type.
@@ -1060,6 +1058,26 @@ class Var(Generic[VAR_TYPE]):
 
         return boolify(self)
 
+    def is_none(self) -> BooleanVar:
+        """Check if the var is None.
+
+        Returns:
+            A BooleanVar object representing the result of the check.
+        """
+        from .number import is_not_none_operation
+
+        return ~is_not_none_operation(self)
+
+    def is_not_none(self) -> BooleanVar:
+        """Check if the var is not None.
+
+        Returns:
+            A BooleanVar object representing the result of the check.
+        """
+        from .number import is_not_none_operation
+
+        return is_not_none_operation(self)
+
     def __and__(
         self, other: Var[OTHER_VAR_TYPE] | Any
     ) -> Var[VAR_TYPE | OTHER_VAR_TYPE]:
@@ -1317,7 +1335,7 @@ class Var(Generic[VAR_TYPE]):
                 )
 
             raise VarAttributeError(
-                f"The State var has no attribute '{name}' or may have been annotated wrongly.",
+                f"The State var {escape(self._js_expr)} of type {escape(str(self._var_type))} has no attribute '{name}' or may have been annotated wrongly.",
             )
 
         def __bool__(self) -> bool:
@@ -1817,7 +1835,7 @@ class cached_property:  # noqa: N801
                 f"({self._attrname!r} and {name!r})."
             )
 
-    def __get__(self, instance: Any, owner: Type | None = None):
+    def __get__(self, instance: Any, owner: type | None = None):
         """Get the cached property.
 
         Args:
@@ -2120,7 +2138,7 @@ class ComputedVar(Var[RETURN_TYPE]):
 
     def _calculate_static_deps(
         self,
-        deps: Union[list[str | Var], dict[str | None, set[str]]] | None = None,
+        deps: list[str | Var] | dict[str | None, set[str]] | None = None,
     ) -> dict[str | None, set[str]]:
         """Calculate the static dependencies of the computed var from user input or existing dependencies.
 
@@ -2255,56 +2273,56 @@ class ComputedVar(Var[RETURN_TYPE]):
     def __get__(
         self: ComputedVar[bool],
         instance: None,
-        owner: Type,
+        owner: type,
     ) -> BooleanVar: ...
 
     @overload
     def __get__(
         self: ComputedVar[int] | ComputedVar[float],
         instance: None,
-        owner: Type,
+        owner: type,
     ) -> NumberVar: ...
 
     @overload
     def __get__(
         self: ComputedVar[str],
         instance: None,
-        owner: Type,
+        owner: type,
     ) -> StringVar: ...
 
     @overload
     def __get__(
         self: ComputedVar[MAPPING_TYPE],
         instance: None,
-        owner: Type,
+        owner: type,
     ) -> ObjectVar[MAPPING_TYPE]: ...
 
     @overload
     def __get__(
         self: ComputedVar[list[LIST_INSIDE]],
         instance: None,
-        owner: Type,
+        owner: type,
     ) -> ArrayVar[list[LIST_INSIDE]]: ...
 
     @overload
     def __get__(
         self: ComputedVar[tuple[LIST_INSIDE, ...]],
         instance: None,
-        owner: Type,
+        owner: type,
     ) -> ArrayVar[tuple[LIST_INSIDE, ...]]: ...
 
     @overload
     def __get__(
         self: ComputedVar[BASE_TYPE],
         instance: None,
-        owner: Type,
+        owner: type,
     ) -> ObjectVar[BASE_TYPE]: ...
 
     @overload
     def __get__(
         self: ComputedVar[SQLA_TYPE],
         instance: None,
-        owner: Type,
+        owner: type,
     ) -> ObjectVar[SQLA_TYPE]: ...
 
     if TYPE_CHECKING:
@@ -2315,12 +2333,12 @@ class ComputedVar(Var[RETURN_TYPE]):
         ) -> ObjectVar[DATACLASS_TYPE]: ...
 
     @overload
-    def __get__(self, instance: None, owner: Type) -> ComputedVar[RETURN_TYPE]: ...
+    def __get__(self, instance: None, owner: type) -> ComputedVar[RETURN_TYPE]: ...
 
     @overload
-    def __get__(self, instance: BaseState, owner: Type) -> RETURN_TYPE: ...
+    def __get__(self, instance: BaseState, owner: type) -> RETURN_TYPE: ...
 
-    def __get__(self, instance: BaseState | None, owner: Type):
+    def __get__(self, instance: BaseState | None, owner: type):
         """Get the ComputedVar value.
 
         If the value is already cached on the instance, return the cached value.
@@ -2371,12 +2389,12 @@ class ComputedVar(Var[RETURN_TYPE]):
         if not _isinstance(value, self._var_type, nested=1, treat_var_as_type=False):
             console.error(
                 f"Computed var '{type(instance).__name__}.{self._js_expr}' must return"
-                f" a value of type '{self._var_type}', got '{value!s}' of type {type(value)}."
+                f" a value of type '{escape(str(self._var_type))}', got '{value!s}' of type {type(value)}."
             )
 
     def _deps(
         self,
-        objclass: Type[BaseState],
+        objclass: type[BaseState],
         obj: FunctionType | CodeType | None = None,
     ) -> dict[str, set[str]]:
         """Determine var dependencies of this ComputedVar.
@@ -2434,7 +2452,7 @@ class ComputedVar(Var[RETURN_TYPE]):
         with contextlib.suppress(AttributeError):
             delattr(instance, self._cache_attr)
 
-    def add_dependency(self, objclass: Type[BaseState], dep: Var):
+    def add_dependency(self, objclass: type[BaseState], dep: Var):
         """Explicitly add a dependency to the ComputedVar.
 
         After adding the dependency, when the `dep` changes, this computed var
@@ -2465,7 +2483,7 @@ class ComputedVar(Var[RETURN_TYPE]):
             f"field name, got {dep!r}."
         )
 
-    def _determine_var_type(self) -> Type:
+    def _determine_var_type(self) -> type:
         """Get the type of the var.
 
         Returns:
@@ -2477,7 +2495,7 @@ class ComputedVar(Var[RETURN_TYPE]):
         return Any  # pyright: ignore [reportReturnType]
 
     @property
-    def __class__(self) -> Type:
+    def __class__(self) -> type:
         """Get the class of the var.
 
         Returns:
@@ -2522,56 +2540,56 @@ class AsyncComputedVar(ComputedVar[RETURN_TYPE]):
     def __get__(
         self: AsyncComputedVar[bool],
         instance: None,
-        owner: Type,
+        owner: type,
     ) -> BooleanVar: ...
 
     @overload
     def __get__(
         self: AsyncComputedVar[int] | ComputedVar[float],
         instance: None,
-        owner: Type,
+        owner: type,
     ) -> NumberVar: ...
 
     @overload
     def __get__(
         self: AsyncComputedVar[str],
         instance: None,
-        owner: Type,
+        owner: type,
     ) -> StringVar: ...
 
     @overload
     def __get__(
         self: AsyncComputedVar[MAPPING_TYPE],
         instance: None,
-        owner: Type,
+        owner: type,
     ) -> ObjectVar[MAPPING_TYPE]: ...
 
     @overload
     def __get__(
         self: AsyncComputedVar[list[LIST_INSIDE]],
         instance: None,
-        owner: Type,
+        owner: type,
     ) -> ArrayVar[list[LIST_INSIDE]]: ...
 
     @overload
     def __get__(
         self: AsyncComputedVar[tuple[LIST_INSIDE, ...]],
         instance: None,
-        owner: Type,
+        owner: type,
     ) -> ArrayVar[tuple[LIST_INSIDE, ...]]: ...
 
     @overload
     def __get__(
         self: AsyncComputedVar[BASE_TYPE],
         instance: None,
-        owner: Type,
+        owner: type,
     ) -> ObjectVar[BASE_TYPE]: ...
 
     @overload
     def __get__(
         self: AsyncComputedVar[SQLA_TYPE],
         instance: None,
-        owner: Type,
+        owner: type,
     ) -> ObjectVar[SQLA_TYPE]: ...
 
     if TYPE_CHECKING:
@@ -2582,11 +2600,11 @@ class AsyncComputedVar(ComputedVar[RETURN_TYPE]):
         ) -> ObjectVar[DATACLASS_TYPE]: ...
 
     @overload
-    def __get__(self, instance: None, owner: Type) -> AsyncComputedVar[RETURN_TYPE]: ...
+    def __get__(self, instance: None, owner: type) -> AsyncComputedVar[RETURN_TYPE]: ...
 
     @overload
     def __get__(
-        self, instance: BaseState, owner: Type
+        self, instance: BaseState, owner: type
     ) -> Coroutine[None, None, RETURN_TYPE]: ...
 
     def __get__(
@@ -2757,7 +2775,7 @@ class CustomVarOperationReturn(Var[RETURN]):
     def create(
         cls,
         js_expression: str,
-        _var_type: Type[RETURN] | None = None,
+        _var_type: type[RETURN] | None = None,
         _var_data: VarData | None = None,
     ) -> CustomVarOperationReturn[RETURN]:
         """Create a CustomVarOperation.
@@ -2779,7 +2797,7 @@ class CustomVarOperationReturn(Var[RETURN]):
 
 def var_operation_return(
     js_expression: str,
-    var_type: Type[RETURN] | GenericType | None = None,
+    var_type: type[RETURN] | GenericType | None = None,
     var_data: VarData | None = None,
 ) -> CustomVarOperationReturn[RETURN]:
     """Shortcut for creating a CustomVarOperationReturn.
@@ -2910,7 +2928,7 @@ class LiteralNoneVar(LiteralVar, NoneVar):
         )
 
 
-def get_to_operation(var_subclass: Type[Var]) -> Type[ToOperation]:
+def get_to_operation(var_subclass: type[Var]) -> type[ToOperation]:
     """Get the ToOperation class for a given Var subclass.
 
     Args:
@@ -3155,11 +3173,11 @@ def resolve_generic_type_with_mapping(
         return generic_type
 
     mapping_for_older_python = {
-        list: List,
-        set: Set,
-        dict: Dict,
-        tuple: Tuple,
-        frozenset: FrozenSet,
+        list: List,  # noqa: UP006
+        set: Set,  # noqa: UP006
+        dict: Dict,  # noqa: UP006
+        tuple: Tuple,  # noqa: UP006
+        frozenset: FrozenSet,  # noqa: UP006
     }
 
     return mapping_for_older_python.get(generic_origin, generic_origin)[

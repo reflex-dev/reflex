@@ -5,18 +5,11 @@ from __future__ import annotations
 import collections.abc
 import dataclasses
 import typing
+from collections.abc import Mapping
 from inspect import isclass
-from typing import (
-    Any,
-    Mapping,
-    NoReturn,
-    Type,
-    TypeVar,
-    get_args,
-    get_type_hints,
-    overload,
-)
+from typing import Any, NoReturn, TypeVar, get_args, get_type_hints, overload
 
+from rich.markup import escape
 from typing_extensions import is_typeddict
 
 from reflex.utils import types
@@ -78,7 +71,7 @@ def _determine_value_type(var_type: GenericType):
 class ObjectVar(Var[OBJECT_TYPE], python_types=Mapping):
     """Base class for immutable object vars."""
 
-    def _key_type(self) -> Type:
+    def _key_type(self) -> type:
         """Get the type of the keys of the object.
 
         Returns:
@@ -89,7 +82,7 @@ class ObjectVar(Var[OBJECT_TYPE], python_types=Mapping):
     @overload
     def _value_type(
         self: ObjectVar[Mapping[Any, VALUE_TYPE]],
-    ) -> Type[VALUE_TYPE]: ...
+    ) -> type[VALUE_TYPE]: ...
 
     @overload
     def _value_type(self) -> GenericType: ...
@@ -326,7 +319,7 @@ class ObjectVar(Var[OBJECT_TYPE], python_types=Mapping):
             attribute_type = get_attribute_access_type(var_type, name)
             if attribute_type is None:
                 raise VarAttributeError(
-                    f"The State var `{self!s}` has no attribute '{name}' or may have been annotated "
+                    f"The State var `{self!s}` of type {escape(str(self._var_type))} has no attribute '{name}' or may have been annotated "
                     f"wrongly."
                 )
             return ObjectItemOperation.create(self, name, attribute_type).guess_type()
@@ -355,7 +348,7 @@ class LiteralObjectVar(CachedVarOperation, ObjectVar[OBJECT_TYPE], LiteralVar):
 
     _var_value: Mapping[Var | Any, Var | Any] = dataclasses.field(default_factory=dict)
 
-    def _key_type(self) -> Type:
+    def _key_type(self) -> type:
         """Get the type of the keys of the object.
 
         Returns:
@@ -364,7 +357,7 @@ class LiteralObjectVar(CachedVarOperation, ObjectVar[OBJECT_TYPE], LiteralVar):
         args_list = typing.get_args(self._var_type)
         return args_list[0] if args_list else Any  # pyright: ignore [reportReturnType]
 
-    def _value_type(self) -> Type:
+    def _value_type(self) -> type:
         """Get the type of the values of the object.
 
         Returns:
@@ -439,7 +432,7 @@ class LiteralObjectVar(CachedVarOperation, ObjectVar[OBJECT_TYPE], LiteralVar):
     def create(
         cls,
         _var_value: Mapping,
-        _var_type: Type[OBJECT_TYPE] | None = None,
+        _var_type: type[OBJECT_TYPE] | None = None,
         _var_data: VarData | None = None,
     ) -> LiteralObjectVar[OBJECT_TYPE]:
         """Create the literal object var.

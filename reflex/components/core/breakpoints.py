@@ -74,7 +74,7 @@ class Breakpoints(dict[K, V]):
         thresholds = [initial, xs, sm, md, lg, xl]
 
         if custom is not None:
-            if any((threshold is not None for threshold in thresholds)):
+            if any(threshold is not None for threshold in thresholds):
                 raise ValueError("Named props cannot be used with custom thresholds")
 
             return Breakpoints(custom)

@@ -9,8 +9,9 @@ import json
 import os
 import sys
 import threading
+from collections.abc import AsyncGenerator, Callable
 from textwrap import dedent
-from typing import Any, AsyncGenerator, Callable, ClassVar, Set, Tuple
+from typing import Any, ClassVar
 from unittest.mock import AsyncMock, Mock
 
 import pytest
@@ -111,7 +112,7 @@ class TestState(BaseState):
     key: str
     map_key: str = "a"
     array: list[float] = [1, 2, 3.14]
-    mapping: dict[str, list[int]] = {"a": [1, 2, 3], "b": [4, 5, 6]}
+    mapping: rx.Field[dict[str, list[int]]] = rx.field({"a": [1, 2, 3], "b": [4, 5, 6]})
     obj: Object = Object()
     complex: dict[int, Object] = {1: Object(), 2: Object()}
     fig: Figure = Figure()
@@ -2397,9 +2398,8 @@ def test_mutable_dict(mutable_state: MutableTestState):
     assert_hashmap_dirty()
     del mutable_state.hashmap["new_key"]
     assert_hashmap_dirty()
-    if sys.version_info >= (3, 9):
-        mutable_state.hashmap |= {"new_key": "44"}
-        assert_hashmap_dirty()
+    mutable_state.hashmap |= {"new_key": "44"}
+    assert_hashmap_dirty()
 
     # Test nested dict operations
     mutable_state.hashmap["array"] = []
@@ -3778,15 +3778,15 @@ class UpcastState(rx.State):
         assert isinstance(s, set)
         self.passed = True
 
-    def py_Set(self, s: Set):  # noqa: D102
-        assert isinstance(s, Set)
+    def py_Set(self, s: set):  # noqa: D102
+        assert isinstance(s, set)
         self.passed = True
 
     def py_tuple(self, t: tuple):  # noqa: D102
         assert isinstance(t, tuple)
         self.passed = True
 
-    def py_Tuple(self, t: Tuple):  # noqa: D102
+    def py_Tuple(self, t: tuple):  # noqa: D102
         assert isinstance(t, tuple)
         self.passed = True
 
@@ -3802,7 +3802,7 @@ class UpcastState(rx.State):
         assert isinstance(a, list)
         self.passed = True
 
-    def py_unresolvable(self, u: "Unresolvable"):  # noqa: D102, F821 # pyright: ignore [reportUndefinedVariable]
+    def py_unresolvable(self, u: Unresolvable):  # noqa: D102, F821 # pyright: ignore [reportUndefinedVariable]
         assert isinstance(u, list)
         self.passed = True
 
@@ -3868,6 +3868,12 @@ async def test_get_var_value(state_manager: StateManager, substate_token: str):
     # Generic Var with no state
     with pytest.raises(UnretrievableVarValueError):
         await state.get_var_value(rx.Var("undefined"))
+
+    # ObjectVar
+    assert await state.get_var_value(TestState.mapping) == {
+        "a": [1, 2, 3],
+        "b": [4, 5, 6],
+    }
 
 
 @pytest.mark.asyncio

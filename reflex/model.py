@@ -5,7 +5,7 @@ from __future__ import annotations
 import re
 from collections import defaultdict
 from contextlib import suppress
-from typing import Any, ClassVar, Type
+from typing import Any, ClassVar
 
 import alembic.autogenerate
 import alembic.command
@@ -161,7 +161,7 @@ async def get_db_status() -> dict[str, bool]:
     return {"db": status}
 
 
-SQLModelOrSqlAlchemy = Type[sqlmodel.SQLModel] | Type[sqlalchemy.orm.DeclarativeBase]
+SQLModelOrSqlAlchemy = type[sqlmodel.SQLModel] | type[sqlalchemy.orm.DeclarativeBase]
 
 
 class ModelRegistry:
@@ -328,7 +328,7 @@ class Model(Base, sqlmodel.SQLModel):  # pyright: ignore [reportGeneralTypeIssue
     def _alembic_render_item(
         type_: str,
         obj: Any,
-        autogen_context: "alembic.autogenerate.api.AutogenContext",
+        autogen_context: alembic.autogenerate.api.AutogenContext,
     ):
         """Alembic render_item hook call.
 

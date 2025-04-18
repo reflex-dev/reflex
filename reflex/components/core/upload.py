@@ -2,8 +2,9 @@
 
 from __future__ import annotations
 
+from collections.abc import Callable, Sequence
 from pathlib import Path
-from typing import Any, Callable, ClassVar, Sequence
+from typing import Any, ClassVar
 
 from reflex.components.base.fragment import Fragment
 from reflex.components.component import (
@@ -23,6 +24,7 @@ from reflex.event import (
     EventHandler,
     EventSpec,
     call_event_fn,
+    call_event_handler,
     parse_args_spec,
     run_script,
 )
@@ -265,17 +267,12 @@ class Upload(MemoizationLeaf):
             upload_props["on_drop"] = upload_file(upload_props["id"])
         else:
             on_drop = upload_props["on_drop"]
-            if isinstance(on_drop, Callable):
+            if isinstance(on_drop, (EventHandler, EventSpec)):
+                # Call the lambda to get the event chain.
+                on_drop = call_event_handler(on_drop, _on_drop_spec)
+            elif isinstance(on_drop, Callable):
                 # Call the lambda to get the event chain.
                 on_drop = call_event_fn(on_drop, _on_drop_spec)
-            if isinstance(on_drop, EventSpec):
-                # Update the provided args for direct use with on_drop.
-                on_drop = on_drop.with_args(
-                    args=tuple(
-                        cls._update_arg_tuple_for_on_drop(arg_value)
-                        for arg_value in on_drop.args
-                    ),
-                )
             upload_props["on_drop"] = on_drop
 
         input_props_unique_name = get_unique_variable_name()

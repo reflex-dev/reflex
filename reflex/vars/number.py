@@ -5,16 +5,8 @@ from __future__ import annotations
 import dataclasses
 import json
 import math
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Callable,
-    NoReturn,
-    Type,
-    TypeVar,
-    Union,
-    overload,
-)
+from collections.abc import Callable
+from typing import TYPE_CHECKING, Any, NoReturn, TypeVar, overload
 
 from typing_extensions import TypeVar as TypeVarExt
 
@@ -491,10 +483,8 @@ class NumberVar(Var[NUMBER_T], python_types=(int, float)):
 
         if format_spec:
             raise VarValueError(
-                (
-                    "Unknown format code '{}' for object of type 'NumberVar'. It is only supported to use ',', '_', and '.f' for float numbers."
-                    "If possible, use computed variables instead: https://reflex.dev/docs/vars/computed-vars/"
-                ).format(format_spec)
+                f"Unknown format code '{format_spec}' for object of type 'NumberVar'. It is only supported to use ',', '_', and '.f' for float numbers."
+                "If possible, use computed variables instead: https://reflex.dev/docs/vars/computed-vars/"
             )
 
         return super().__format__(format_spec)
@@ -1057,6 +1047,10 @@ _IS_TRUE_IMPORT: ImportDict = {
     f"$/{Dirs.STATE_PATH}": [ImportVar(tag="isTrue")],
 }
 
+_IS_NOT_NULL_OR_UNDEFINED_IMPORT: ImportDict = {
+    f"$/{Dirs.STATE_PATH}": [ImportVar(tag="isNotNullOrUndefined")],
+}
+
 
 @var_operation
 def boolify(value: Var):
@@ -1072,6 +1066,23 @@ def boolify(value: Var):
         js_expression=f"isTrue({value})",
         var_type=bool,
         var_data=VarData(imports=_IS_TRUE_IMPORT),
+    )
+
+
+@var_operation
+def is_not_none_operation(value: Var):
+    """Check if the value is not None.
+
+    Args:
+        value: The value.
+
+    Returns:
+        The boolean value.
+    """
+    return var_operation_return(
+        js_expression=f"isNotNullOrUndefined({value})",
+        var_type=bool,
+        var_data=VarData(imports=_IS_NOT_NULL_OR_UNDEFINED_IMPORT),
     )
 
 
@@ -1093,9 +1104,7 @@ def ternary_operation(
     Returns:
         The ternary operation.
     """
-    type_value: Union[Type[T], Type[U]] = unionize(
-        if_true._var_type, if_false._var_type
-    )
+    type_value: type[T] | type[U] = unionize(if_true._var_type, if_false._var_type)
     value: CustomVarOperationReturn[T | U] = var_operation_return(
         js_expression=f"({condition} ? {if_true} : {if_false})",
         var_type=type_value,

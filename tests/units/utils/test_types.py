@@ -3,6 +3,7 @@ from typing import Any, Literal
 import pytest
 
 from reflex.utils import types
+from reflex.vars.base import Var
 
 
 @pytest.mark.parametrize(
@@ -90,3 +91,33 @@ class ChildGenericDict(GenericDict):
 )
 def test_has_args(cls, expected: bool) -> None:
     assert types.has_args(cls) == expected
+
+
+@pytest.mark.parametrize(
+    ("value", "cls", "expected"),
+    [
+        (1, int, True),
+        (1, str, False),
+        (1, float, True),
+        ("1", str, True),
+        ("1", int, False),
+        (1.0, float, True),
+        (1.0, int, False),
+        ([], list[int], True),
+        ([1], list[int], True),
+        ([1.0], list[int], False),
+        ([1], list[str], False),
+        ({}, dict[str, str], True),
+        ({"a": "b"}, dict[str, str], True),
+        ({"a": 1}, dict[str, str], False),
+        (False, bool, True),
+        (False, Var[bool], True),
+        (False, Var[bool] | None, True),
+        (Var.create(False), bool, True),
+        (Var.create(False), Var[bool], True),
+        (Var.create(False), Var[bool] | None, True),
+        (Var.create(False), Var[bool] | str, True),
+    ],
+)
+def test_isinstance(value, cls, expected: bool) -> None:
+    assert types._isinstance(value, cls, nested=1, treat_var_as_type=True) == expected
