@@ -303,11 +303,13 @@ def _run(
 )
 @click.option(
     "--frontend-only",
+    is_flag=True,
     help="Execute only frontend.",
     envvar=environment.REFLEX_FRONTEND_ONLY.name,
 )
 @click.option(
     "--backend-only",
+    is_flag=True,
     help="Execute only backend.",
     envvar=environment.REFLEX_BACKEND_ONLY.name,
 )
