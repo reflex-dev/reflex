@@ -238,6 +238,23 @@ class LogLevel(str, Enum):
     ERROR = "error"
     CRITICAL = "critical"
 
+    @classmethod
+    def from_string(cls, level: str | None) -> LogLevel | None:
+        """Convert a string to a log level.
+
+        Args:
+            level: The log level as a string.
+
+        Returns:
+            The log level.
+        """
+        if not level:
+            return None
+        try:
+            return LogLevel[level.upper()]
+        except KeyError:
+            return None
+
     def __le__(self, other: LogLevel) -> bool:
         """Compare log levels.
 

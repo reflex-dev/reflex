@@ -3,11 +3,11 @@
 from __future__ import annotations
 
 import atexit
+from importlib.util import find_spec
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, Literal
 
-import typer
-import typer.core
+import click
 from reflex_cli.v2.deployments import hosting_cli
 
 from reflex import constants
@@ -17,38 +17,33 @@ from reflex.state import reset_disk_state_manager
 from reflex.utils import console, redir, telemetry
 from reflex.utils.exec import should_use_granian
 
-# Disable typer+rich integration for help panels
-typer.core.rich = None  # pyright: ignore [reportPrivateImportUsage]
 
-# Create the app.
-cli = typer.Typer(add_completion=False, pretty_exceptions_enable=False)
-
-
-def version(value: bool):
+def version(ctx: Any, self: Any, value: bool):
     """Get the Reflex version.
 
     Args:
+        ctx: The click context.
+        self: The click command.
         value: Whether the version flag was passed.
 
     Raises:
-        typer.Exit: If the version flag was passed.
+        click.exceptions.Exit: If the version flag was passed.
     """
     if value:
         console.print(constants.Reflex.VERSION)
-        raise typer.Exit()
+        raise click.exceptions.Exit()
 
 
-@cli.callback()
-def main(
-    version: bool = typer.Option(
-        None,
-        "-v",
-        "--version",
-        callback=version,
-        help="Get the Reflex version.",
-        is_eager=True,
-    ),
-):
+@click.group
+@click.option(
+    "-v",
+    "--version",
+    is_eager=True,
+    is_flag=True,
+    callback=version,
+    help="Get the Reflex version.",
+)
+def cli(version: bool):
     """Reflex CLI to create, run, and deploy apps."""
     pass
 
@@ -56,20 +51,20 @@ def main(
 def _init(
     name: str,
     template: str | None = None,
-    loglevel: constants.LogLevel | None = None,
+    loglevel: str | constants.LogLevel | None = None,
     ai: bool = False,
 ):
     """Initialize a new Reflex app in the given directory."""
     from reflex.utils import exec, prerequisites
 
     if loglevel is not None:
-        console.set_log_level(loglevel)
+        console.set_log_level(constants.LogLevel.from_string(loglevel))
 
     config = get_config()
 
     # Set the log level.
     loglevel = loglevel or config.loglevel
-    console.set_log_level(loglevel)
+    console.set_log_level(constants.LogLevel.from_string(loglevel))
 
     # Show system info
     exec.output_system_info()
@@ -112,21 +107,30 @@ def _init(
 
 
 @cli.command()
+@click.option(
+    "--name",
+    metavar="APP_NAME",
+    help="The name of the app to initialize.",
+)
+@click.option(
+    "--template",
+    help="The template to initialize the app with.",
+)
+@click.option(
+    "--loglevel",
+    type=click.Choice([loglevel.name for loglevel in constants.LogLevel]),
+    help="The log level to use.",
+)
+@click.option(
+    "--ai",
+    is_flag=True,
+    help="Use AI to create the initial template. Cannot be used with existing app or `--template` option.",
+)
 def init(
-    name: str = typer.Option(
-        None, metavar="APP_NAME", help="The name of the app to initialize."
-    ),
-    template: str = typer.Option(
-        None,
-        help="The template to initialize the app with.",
-    ),
-    loglevel: constants.LogLevel | None = typer.Option(
-        None, help="The log level to use."
-    ),
-    ai: bool = typer.Option(
-        False,
-        help="Use AI to create the initial template. Cannot be used with existing app or `--template` option.",
-    ),
+    name: str,
+    template: str | None,
+    loglevel: str | None,
+    ai: bool,
 ):
     """Initialize a new Reflex app in the current directory."""
     _init(name, template, loglevel, ai)
@@ -228,7 +232,7 @@ def _run(
     else:
         validation_result = app_task(*args)
     if not validation_result:
-        raise typer.Exit(1)
+        raise click.exceptions.Exit(1)
 
     # Warn if schema is not up to date.
     prerequisites.check_schema_up_to_date()
@@ -291,94 +295,128 @@ def _run(
 
 
 @cli.command()
+@click.option(
+    "--env",
+    type=click.Choice([e.name for e in constants.Env]),
+    default=constants.Env.DEV.name,
+    help="The environment to run the app in.",
+)
+@click.option(
+    "--frontend-only",
+    help="Execute only frontend.",
+    envvar=environment.REFLEX_FRONTEND_ONLY.name,
+)
+@click.option(
+    "--backend-only",
+    help="Execute only backend.",
+    envvar=environment.REFLEX_BACKEND_ONLY.name,
+)
+@click.option(
+    "--frontend-port",
+    help="Specify a different frontend port.",
+    envvar=environment.REFLEX_FRONTEND_PORT.name,
+)
+@click.option(
+    "--backend-port",
+    help="Specify a different backend port.",
+    envvar=environment.REFLEX_BACKEND_PORT.name,
+)
+@click.option(
+    "--backend-host",
+    help="Specify the backend host.",
+)
+@click.option(
+    "--loglevel",
+    type=click.Choice([loglevel.name for loglevel in constants.LogLevel]),
+    help="The log level to use.",
+)
 def run(
-    env: constants.Env = typer.Option(
-        constants.Env.DEV, help="The environment to run the app in."
-    ),
-    frontend: bool = typer.Option(
-        False,
-        "--frontend-only",
-        help="Execute only frontend.",
-        envvar=environment.REFLEX_FRONTEND_ONLY.name,
-    ),
-    backend: bool = typer.Option(
-        False,
-        "--backend-only",
-        help="Execute only backend.",
-        envvar=environment.REFLEX_BACKEND_ONLY.name,
-    ),
-    frontend_port: int | None = typer.Option(
-        None,
-        help="Specify a different frontend port.",
-        envvar=environment.REFLEX_FRONTEND_PORT.name,
-    ),
-    backend_port: int | None = typer.Option(
-        None,
-        help="Specify a different backend port.",
-        envvar=environment.REFLEX_BACKEND_PORT.name,
-    ),
-    backend_host: str | None = typer.Option(None, help="Specify the backend host."),
-    loglevel: constants.LogLevel | None = typer.Option(
-        None, help="The log level to use."
-    ),
+    env: Literal[constants.Env.DEV, constants.Env.PROD],
+    frontend_only: bool,
+    backend_only: bool,
+    frontend_port: int | None,
+    backend_port: int | None,
+    backend_host: str | None,
+    loglevel: str | None,
 ):
     """Run the app in the current directory."""
-    if frontend and backend:
+    if frontend_only and backend_only:
         console.error("Cannot use both --frontend-only and --backend-only options.")
-        raise typer.Exit(1)
+        raise click.exceptions.Exit(1)
 
     if loglevel is not None:
-        console.set_log_level(loglevel)
+        console.set_log_level(constants.LogLevel.from_string(loglevel))
 
     config = get_config()
 
     frontend_port = frontend_port or config.frontend_port
     backend_port = backend_port or config.backend_port
     backend_host = backend_host or config.backend_host
-    loglevel = loglevel or config.loglevel
+    loglevel = constants.LogLevel.from_string(loglevel) or config.loglevel
 
     environment.REFLEX_COMPILE_CONTEXT.set(constants.CompileContext.RUN)
-    environment.REFLEX_BACKEND_ONLY.set(backend)
-    environment.REFLEX_FRONTEND_ONLY.set(frontend)
+    environment.REFLEX_BACKEND_ONLY.set(backend_only)
+    environment.REFLEX_FRONTEND_ONLY.set(frontend_only)
 
-    _run(env, frontend, backend, frontend_port, backend_port, backend_host, loglevel)
+    _run(
+        env,
+        frontend_only,
+        backend_only,
+        frontend_port,
+        backend_port,
+        backend_host,
+        loglevel,
+    )
 
 
 @cli.command()
+@click.option(
+    "--zip/--no-zip",
+    default=True,
+    help="Whether to zip the backend and frontend exports.",
+)
+@click.option(
+    "--frontend-only",
+    show_default=False,
+    envvar=environment.REFLEX_FRONTEND_ONLY.name,
+    help="Export only frontend.",
+)
+@click.option(
+    "--backend-only",
+    show_default=False,
+    envvar=environment.REFLEX_BACKEND_ONLY.name,
+    help="Export only backend.",
+)
+@click.option(
+    "--zip-dest-dir",
+    default=str(Path.cwd()),
+    help="The directory to export the zip files to.",
+    show_default=False,
+)
+@click.option(
+    "--upload-db-file",
+    help="Whether to exclude sqlite db files when exporting backend.",
+    hidden=True,
+)
+@click.option(
+    "--env",
+    type=click.Choice([e.name for e in constants.Env]),
+    default=constants.Env.PROD.name,
+    help="The environment to export the app in.",
+)
+@click.option(
+    "--loglevel",
+    type=click.Choice([loglevel.name for loglevel in constants.LogLevel]),
+    help="The log level to use.",
+)
 def export(
-    zipping: bool = typer.Option(
-        True, "--no-zip", help="Disable zip for backend and frontend exports."
-    ),
-    frontend: bool = typer.Option(
-        False,
-        "--frontend-only",
-        help="Export only frontend.",
-        show_default=False,
-        envvar=environment.REFLEX_FRONTEND_ONLY.name,
-    ),
-    backend: bool = typer.Option(
-        False,
-        "--backend-only",
-        help="Export only backend.",
-        show_default=False,
-        envvar=environment.REFLEX_BACKEND_ONLY.name,
-    ),
-    zip_dest_dir: str = typer.Option(
-        str(Path.cwd()),
-        help="The directory to export the zip files to.",
-        show_default=False,
-    ),
-    upload_db_file: bool = typer.Option(
-        False,
-        help="Whether to exclude sqlite db files when exporting backend.",
-        hidden=True,
-    ),
-    env: constants.Env = typer.Option(
-        constants.Env.PROD, help="The environment to export the app in."
-    ),
-    loglevel: constants.LogLevel | None = typer.Option(
-        None, help="The log level to use."
-    ),
+    zipping: bool,
+    frontend: bool,
+    backend: bool,
+    zip_dest_dir: str,
+    upload_db_file: bool,
+    env: Literal[constants.Env.DEV, constants.Env.PROD],
+    loglevel: str | None,
 ):
     """Export the app to a zip file."""
     from reflex.utils import export as export_utils
@@ -388,7 +426,7 @@ def export(
 
     frontend, backend = prerequisites.check_running_mode(frontend, backend)
 
-    loglevel = loglevel or get_config().loglevel
+    loglevel = constants.LogLevel.from_string(loglevel) or get_config().loglevel
     console.set_log_level(loglevel)
 
     if prerequisites.needs_reinit(frontend=frontend or not backend):
@@ -406,12 +444,17 @@ def export(
 
 
 @cli.command()
-def login(loglevel: constants.LogLevel | None = typer.Option(None)):
+@click.option(
+    "--loglevel",
+    type=click.Choice([loglevel.name for loglevel in constants.LogLevel]),
+    help="The log level to use.",
+)
+def login(loglevel: str | None):
     """Authenticate with experimental Reflex hosting service."""
     from reflex_cli.v2 import cli as hosting_cli
     from reflex_cli.v2.deployments import check_version
 
-    loglevel = loglevel or get_config().loglevel
+    loglevel = constants.LogLevel.from_string(loglevel) or get_config().loglevel
 
     console.set_log_level(loglevel)
 
@@ -424,24 +467,33 @@ def login(loglevel: constants.LogLevel | None = typer.Option(None)):
 
 
 @cli.command()
-def logout(
-    loglevel: constants.LogLevel | None = typer.Option(
-        None, help="The log level to use."
-    ),
-):
+@click.option(
+    "--loglevel",
+    type=click.Choice([loglevel.name for loglevel in constants.LogLevel]),
+    help="The log level to use.",
+)
+def logout(loglevel: str | None):
     """Log out of access to Reflex hosting service."""
     from reflex_cli.v2.cli import logout
     from reflex_cli.v2.deployments import check_version
 
     check_version()
 
-    loglevel = loglevel or get_config().loglevel
+    loglevel = constants.LogLevel.from_string(loglevel) or get_config().loglevel
 
     logout(_convert_reflex_loglevel_to_reflex_cli_loglevel(loglevel))
 
 
-db_cli = typer.Typer()
-script_cli = typer.Typer()
+@click.group
+def db_cli():
+    """Subcommands for managing the database schema."""
+    pass
+
+
+@click.group
+def script_cli():
+    """Subcommands for running helper scripts."""
+    pass
 
 
 def _skip_compile():
@@ -495,11 +547,11 @@ def migrate():
 
 
 @db_cli.command()
-def makemigrations(
-    message: str = typer.Option(
-        None, help="Human readable identifier for the generated revision."
-    ),
-):
+@click.option(
+    "--message",
+    help="Human readable identifier for the generated revision.",
+)
+def makemigrations(message: str | None):
     """Create autogenerated alembic migration scripts."""
     from alembic.util.exc import CommandError
 
@@ -523,70 +575,78 @@ def makemigrations(
 
 
 @cli.command()
+@click.option(
+    "--app-name",
+    help="The name of the app to deploy.",
+)
+@click.option(
+    "--app-id",
+    help="The ID of the app to deploy.",
+)
+@click.option(
+    "-r",
+    "--region",
+    multiple=True,
+    help="The regions to deploy to. `reflex cloud regions` For multiple envs, repeat this option, e.g. --region sjc --region iad",
+)
+@click.option(
+    "--env",
+    multiple=True,
+    help="The environment variables to set: <key>=<value>. For multiple envs, repeat this option, e.g. --env k1=v2 --env k2=v2.",
+)
+@click.option(
+    "--vmtype",
+    help="Vm type id. Run `reflex cloud vmtypes` to get options.",
+)
+@click.option(
+    "--hostname",
+    help="The hostname of the frontend.",
+)
+@click.option(
+    "--interactive",
+    is_flag=True,
+    default=True,
+    help="Whether to list configuration options and ask for confirmation.",
+)
+@click.option(
+    "--envfile",
+    help="The path to an env file to use. Will override any envs set manually.",
+)
+@click.option(
+    "--loglevel",
+    type=click.Choice([loglevel.name for loglevel in constants.LogLevel]),
+    help="The log level to use.",
+)
+@click.option(
+    "--project",
+    help="project id to deploy to",
+)
+@click.option(
+    "--project-name",
+    help="The name of the project to deploy to.",
+)
+@click.option(
+    "--token",
+    help="token to use for auth",
+)
+@click.option(
+    "--config",
+    help="path to the config file",
+)
 def deploy(
-    app_name: str | None = typer.Option(
-        None,
-        "--app-name",
-        help="The name of the App to deploy under.",
-    ),
-    app_id: str = typer.Option(
-        None,
-        "--app-id",
-        help="The ID of the App to deploy over.",
-    ),
-    regions: list[str] = typer.Option(
-        [],
-        "-r",
-        "--region",
-        help="The regions to deploy to. `reflex cloud regions` For multiple envs, repeat this option, e.g. --region sjc --region iad",
-    ),
-    envs: list[str] = typer.Option(
-        [],
-        "--env",
-        help="The environment variables to set: <key>=<value>. For multiple envs, repeat this option, e.g. --env k1=v2 --env k2=v2.",
-    ),
-    vmtype: str | None = typer.Option(
-        None,
-        "--vmtype",
-        help="Vm type id. Run `reflex cloud vmtypes` to get options.",
-    ),
-    hostname: str | None = typer.Option(
-        None,
-        "--hostname",
-        help="The hostname of the frontend.",
-    ),
-    interactive: bool = typer.Option(
-        True,
-        help="Whether to list configuration options and ask for confirmation.",
-    ),
-    envfile: str | None = typer.Option(
-        None,
-        "--envfile",
-        help="The path to an env file to use. Will override any envs set manually.",
-    ),
-    loglevel: constants.LogLevel | None = typer.Option(
-        None, help="The log level to use."
-    ),
-    project: str | None = typer.Option(
-        None,
-        "--project",
-        help="project id to deploy to",
-    ),
-    project_name: str | None = typer.Option(
-        None,
-        "--project-name",
-        help="The name of the project to deploy to.",
-    ),
-    token: str | None = typer.Option(
-        None,
-        "--token",
-        help="token to use for auth",
-    ),
-    config_path: str | None = typer.Option(
-        None,
-        "--config",
-        help="path to the config file",
-    ),
+    app_name: str | None,
+    app_id: str | None,
+    regions: tuple[str, ...],
+    envs: tuple[str],
+    vmtype: str | None,
+    hostname: str | None,
+    interactive: bool,
+    envfile: str | None,
+    loglevel: str | None,
+    project: str | None,
+    project_name: str | None,
+    token: str | None,
+    config_path: str | None,
 ):
     """Deploy the app to the Reflex hosting service."""
     from reflex_cli.utils import dependency
@@ -597,11 +657,11 @@ def deploy(
     from reflex.utils import prerequisites
 
     if loglevel is not None:
-        console.set_log_level(loglevel)
+        console.set_log_level(constants.LogLevel.from_string(loglevel))
 
     config = get_config()
 
-    loglevel = loglevel or config.loglevel
+    loglevel = constants.LogLevel.from_string(loglevel) or config.loglevel
     app_name = app_name or config.app_name
 
     check_version()
@@ -642,8 +702,8 @@ def deploy(
                 upload_db_file=upload_db,
             )
         ),
-        regions=regions,
-        envs=envs,
+        regions=list(regions),
+        envs=list(envs),
         vmtype=vmtype,
         envfile=envfile,
         hostname=hostname,
@@ -657,16 +717,17 @@ def deploy(
 
 
 @cli.command()
-def rename(
-    new_name: str = typer.Argument(..., help="The new name for the app."),
-    loglevel: constants.LogLevel | None = typer.Option(
-        None, help="The log level to use."
-    ),
-):
+@click.argument("new_name")
+@click.option(
+    "--loglevel",
+    type=click.Choice([loglevel.name for loglevel in constants.LogLevel]),
+    help="The log level to use.",
+)
+def rename(new_name: str, loglevel: str | None):
     """Rename the app in the current directory."""
     from reflex.utils import prerequisites
 
-    loglevel = loglevel or get_config().loglevel
+    loglevel = constants.LogLevel.from_string(loglevel) or get_config().loglevel
 
     prerequisites.validate_app_name(new_name)
     prerequisites.rename_app(new_name, loglevel)
@@ -702,18 +763,20 @@ def _convert_reflex_loglevel_to_reflex_cli_loglevel(
     return HostingLogLevel.INFO
 
 
-cli.add_typer(db_cli, name="db", help="Subcommands for managing the database schema.")
-cli.add_typer(script_cli, name="script", help="Subcommands running helper scripts.")
-cli.add_typer(
-    hosting_cli,
-    name="cloud",
-    help="Subcommands for managing the reflex cloud.",
-)
-cli.add_typer(
-    custom_components_cli,
-    name="component",
-    help="Subcommands for creating and publishing Custom Components.",
-)
+if find_spec("typer"):
+    import typer
+
+    if isinstance(hosting_cli, typer.Typer):
+        hosting_cli_command = typer.main.get_command(hosting_cli)
+    else:
+        hosting_cli_command = hosting_cli
+else:
+    hosting_cli_command = hosting_cli
+
+cli.add_command(hosting_cli_command, name="cloud")
+cli.add_command(db_cli, name="db")
+cli.add_command(script_cli, name="script")
+cli.add_command(custom_components_cli, name="component")
 
 if __name__ == "__main__":
     cli()
