@@ -419,7 +419,7 @@ def run(
     help="The log level to use.",
 )
 def export(
-    zipping: bool,
+    zip: bool,
     frontend_only: bool,
     backend_only: bool,
     zip_dest_dir: str,
@@ -444,7 +444,7 @@ def export(
         _init(name=get_config().app_name, loglevel=loglevel)
 
     export_utils.export(
-        zipping=zipping,
+        zipping=zip,
         frontend=frontend_only,
         backend=backend_only,
         zip_dest_dir=zip_dest_dir,
