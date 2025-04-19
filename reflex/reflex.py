@@ -5,13 +5,14 @@ from __future__ import annotations
 import atexit
 from importlib.util import find_spec
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Literal
+from typing import TYPE_CHECKING, Any
 
 import click
 from reflex_cli.v2.deployments import hosting_cli
 
 from reflex import constants
 from reflex.config import environment, get_config
+from reflex.constants.base import LITERAL_ENV
 from reflex.custom_components.custom_components import custom_components_cli
 from reflex.state import reset_disk_state_manager
 from reflex.utils import console, redir, telemetry
@@ -109,7 +110,7 @@ def _init(
 loglevel_option = click.option(
     "--loglevel",
     type=click.Choice(
-        [loglevel.name for loglevel in constants.LogLevel],
+        [loglevel.value for loglevel in constants.LogLevel],
         case_sensitive=False,
     ),
     help="The log level to use.",
@@ -258,7 +259,7 @@ def _run(
             exec.run_backend_prod,
         )
     if not setup_frontend or not frontend_cmd or not backend_cmd:
-        raise ValueError("Invalid env")
+        raise ValueError(f"Invalid env: {env}. Must be DEV or PROD.")
 
     # Post a telemetry event.
     telemetry.send(f"run-{env.value}")
@@ -303,8 +304,8 @@ def _run(
 @cli.command()
 @click.option(
     "--env",
-    type=click.Choice([e.name for e in constants.Env], case_sensitive=False),
-    default=constants.Env.DEV.name,
+    type=click.Choice([e.value for e in constants.Env], case_sensitive=False),
+    default=constants.Env.DEV.value,
     help="The environment to run the app in.",
 )
 @click.option(
@@ -339,7 +340,7 @@ def _run(
 )
 @loglevel_option
 def run(
-    env: Literal[constants.Env.DEV, constants.Env.PROD],
+    env: LITERAL_ENV,
     frontend_only: bool,
     backend_only: bool,
     frontend_port: int | None,
@@ -367,7 +368,7 @@ def run(
     environment.REFLEX_FRONTEND_ONLY.set(frontend_only)
 
     _run(
-        env,
+        constants.Env.DEV if env == constants.Env.DEV else constants.Env.PROD,
         frontend_only,
         backend_only,
         frontend_port,
@@ -411,8 +412,8 @@ def run(
 )
 @click.option(
     "--env",
-    type=click.Choice([e.name for e in constants.Env], case_sensitive=False),
-    default=constants.Env.PROD.name,
+    type=click.Choice([e.value for e in constants.Env], case_sensitive=False),
+    default=constants.Env.PROD.value,
     help="The environment to export the app in.",
 )
 @loglevel_option
@@ -422,7 +423,7 @@ def export(
     backend_only: bool,
     zip_dest_dir: str,
     upload_db_file: bool,
-    env: Literal[constants.Env.DEV, constants.Env.PROD],
+    env: LITERAL_ENV,
     loglevel: str | None,
 ):
     """Export the app to a zip file."""
@@ -447,7 +448,7 @@ def export(
         backend=backend_only,
         zip_dest_dir=zip_dest_dir,
         upload_db_file=upload_db_file,
-        env=env,
+        env=constants.Env.DEV if env == constants.Env.DEV else constants.Env.PROD,
         loglevel=loglevel.subprocess_level(),
     )
 

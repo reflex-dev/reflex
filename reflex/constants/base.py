@@ -7,6 +7,7 @@ from enum import Enum
 from importlib import metadata
 from pathlib import Path
 from types import SimpleNamespace
+from typing import Literal
 
 from platformdirs import PlatformDirs
 
@@ -217,6 +218,9 @@ class ColorMode(SimpleNamespace):
     USE = "useColorMode"
     TOGGLE = "toggleColorMode"
     SET = "setColorMode"
+
+
+LITERAL_ENV = Literal["dev", "prod"]
 
 
 # Env modes
