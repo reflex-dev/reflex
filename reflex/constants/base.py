@@ -7,6 +7,7 @@ from enum import Enum
 from importlib import metadata
 from pathlib import Path
 from types import SimpleNamespace
+from typing import Literal
 
 from platformdirs import PlatformDirs
 
@@ -219,6 +220,9 @@ class ColorMode(SimpleNamespace):
     SET = "setColorMode"
 
 
+LITERAL_ENV = Literal["dev", "prod"]
+
+
 # Env modes
 class Env(str, Enum):
     """The environment modes."""
@@ -237,6 +241,23 @@ class LogLevel(str, Enum):
     WARNING = "warning"
     ERROR = "error"
     CRITICAL = "critical"
+
+    @classmethod
+    def from_string(cls, level: str | None) -> LogLevel | None:
+        """Convert a string to a log level.
+
+        Args:
+            level: The log level as a string.
+
+        Returns:
+            The log level.
+        """
+        if not level:
+            return None
+        try:
+            return LogLevel[level.upper()]
+        except KeyError:
+            return None
 
     def __le__(self, other: LogLevel) -> bool:
         """Compare log levels.

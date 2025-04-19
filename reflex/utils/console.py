@@ -47,7 +47,7 @@ _EMITTED_LOGS = set()
 _EMITTED_PRINTS = set()
 
 
-def set_log_level(log_level: LogLevel):
+def set_log_level(log_level: LogLevel | None):
     """Set the log level.
 
     Args:
@@ -56,6 +56,8 @@ def set_log_level(log_level: LogLevel):
     Raises:
         TypeError: If the log level is a string.
     """
+    if log_level is None:
+        return
     if not isinstance(log_level, LogLevel):
         raise TypeError(
             f"log_level must be a LogLevel enum value, got {log_level} of type {type(log_level)} instead."
@@ -193,13 +195,12 @@ def warn(msg: str, dedupe: bool = False, **kwargs):
 
 def _get_first_non_framework_frame() -> FrameType | None:
     import click
-    import typer
     import typing_extensions
 
     import reflex as rx
 
     # Exclude utility modules that should never be the source of deprecated reflex usage.
-    exclude_modules = [click, rx, typer, typing_extensions]
+    exclude_modules = [click, rx, typing_extensions]
     exclude_roots = [
         p.parent.resolve() if (p := Path(file)).name == "__init__.py" else p.resolve()
         for m in exclude_modules

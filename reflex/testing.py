@@ -34,7 +34,7 @@ import reflex.utils.format
 import reflex.utils.prerequisites
 import reflex.utils.processes
 from reflex.components.component import CustomComponent
-from reflex.config import environment
+from reflex.config import environment, get_config
 from reflex.state import (
     BaseState,
     StateManager,
@@ -44,6 +44,7 @@ from reflex.state import (
     reload_state_module,
 )
 from reflex.utils import console
+from reflex.utils.export import export
 
 try:
     from selenium import webdriver
@@ -946,8 +947,14 @@ class AppHarnessProd(AppHarness):
             config.api_url = "http://{}:{}".format(
                 *self._poll_for_servers().getsockname(),
             )
-            reflex.reflex.export(
-                zipping=False,
+
+            if reflex.utils.prerequisites.needs_reinit(frontend=True):
+                reflex.reflex._init(
+                    name=get_config().app_name, loglevel=reflex.constants.LogLevel.INFO
+                )
+
+            export(
+                zipping=True,
                 frontend=True,
                 backend=False,
                 loglevel=reflex.constants.LogLevel.INFO,

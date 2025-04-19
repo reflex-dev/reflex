@@ -27,8 +27,8 @@ from types import ModuleType
 from typing import NamedTuple
 from urllib.parse import urlparse
 
+import click
 import httpx
-import typer
 from alembic.util.exc import CommandError
 from packaging import version
 from redis import Redis as RedisSync
@@ -515,7 +515,7 @@ def compile_or_validate_app(compile: bool = False) -> bool:
         else:
             validate_app()
     except Exception as e:
-        if isinstance(e, typer.Exit):
+        if isinstance(e, click.exceptions.Exit):
             return False
 
         import traceback
@@ -619,14 +619,14 @@ def validate_app_name(app_name: str | None = None) -> str:
         console.error(
             f"The app directory cannot be named [bold]{constants.Reflex.MODULE_NAME}[/bold]."
         )
-        raise typer.Exit(1)
+        raise click.exceptions.Exit(1)
 
     # Make sure the app name is standard for a python package name.
     if not re.match(r"^[a-zA-Z][a-zA-Z0-9_]*$", app_name):
         console.error(
             "The app directory name must start with a letter and can contain letters, numbers, and underscores."
         )
-        raise typer.Exit(1)
+        raise click.exceptions.Exit(1)
 
     return app_name
 
@@ -685,7 +685,7 @@ def rename_app(new_app_name: str, loglevel: constants.LogLevel):
         console.error(
             "No rxconfig.py found. Make sure you are in the root directory of your app."
         )
-        raise typer.Exit(1)
+        raise click.exceptions.Exit(1)
 
     sys.path.insert(0, str(Path.cwd()))
 
@@ -693,11 +693,11 @@ def rename_app(new_app_name: str, loglevel: constants.LogLevel):
     module_path = importlib.util.find_spec(config.module)
     if module_path is None:
         console.error(f"Could not find module {config.module}.")
-        raise typer.Exit(1)
+        raise click.exceptions.Exit(1)
 
     if not module_path.origin:
         console.error(f"Could not find origin for module {config.module}.")
-        raise typer.Exit(1)
+        raise click.exceptions.Exit(1)
     console.info(f"Renaming app directory to {new_app_name}.")
     process_directory(
         Path.cwd(),
@@ -860,7 +860,7 @@ def initialize_requirements_txt() -> bool:
             continue
         except Exception as e:
             console.error(f"Failed to read {requirements_file_path}.")
-            raise typer.Exit(1) from e
+            raise click.exceptions.Exit(1) from e
     else:
         return False
 
@@ -905,7 +905,7 @@ def initialize_app_directory(
             console.error(
                 f"Only {template_name=} should be provided, got {template_code_dir_name=}, {template_dir=}."
             )
-            raise typer.Exit(1)
+            raise click.exceptions.Exit(1)
         template_code_dir_name = constants.Templates.Dirs.CODE
         template_dir = Path(constants.Templates.Dirs.BASE, "apps", template_name)
     else:
@@ -913,7 +913,7 @@ def initialize_app_directory(
             console.error(
                 f"For `{template_name}` template, `template_code_dir_name` and `template_dir` should both be provided."
             )
-            raise typer.Exit(1)
+            raise click.exceptions.Exit(1)
 
     console.debug(f"Using {template_name=} {template_dir=} {template_code_dir_name=}.")
 
@@ -1371,7 +1371,7 @@ def needs_reinit(frontend: bool = True) -> bool:
         console.error(
             f"[cyan]{constants.Config.FILE}[/cyan] not found. Move to the root folder of your project, or run [bold]{constants.Reflex.MODULE_NAME} init[/bold] to start a new project."
         )
-        raise typer.Exit(1)
+        raise click.exceptions.Exit(1)
 
     # Don't need to reinit if not running in frontend mode.
     if not frontend:
@@ -1436,7 +1436,7 @@ def validate_bun(bun_path: Path | None = None):
             console.error(
                 "Failed to obtain bun version. Make sure the specified bun path in your config is correct."
             )
-            raise typer.Exit(1)
+            raise click.exceptions.Exit(1)
         elif bun_version < version.parse(constants.Bun.MIN_VERSION):
             console.warn(
                 f"Reflex requires bun version {constants.Bun.MIN_VERSION} or higher to run, but the detected version is "
@@ -1458,14 +1458,14 @@ def validate_frontend_dependencies(init: bool = True):
         try:
             get_js_package_executor(raise_on_none=True)
         except FileNotFoundError as e:
-            raise typer.Exit(1) from e
+            raise click.exceptions.Exit(1) from e
 
     if prefer_npm_over_bun() and not check_node_version():
         node_version = get_node_version()
         console.error(
             f"Reflex requires node version {constants.Node.MIN_VERSION} or higher to run, but the detected version is {node_version}",
         )
-        raise typer.Exit(1)
+        raise click.exceptions.Exit(1)
 
 
 def ensure_reflex_installation_id() -> int | None:
@@ -1612,17 +1612,17 @@ def prompt_for_template_options(templates: list[Template]) -> str:
 
     if not template:
         console.error("No template selected.")
-        raise typer.Exit(1)
+        raise click.exceptions.Exit(1)
 
     try:
         template_index = int(template)
     except ValueError:
         console.error("Invalid template selected.")
-        raise typer.Exit(1) from None
+        raise click.exceptions.Exit(1) from None
 
     if template_index < 0 or template_index >= len(templates):
         console.error("Invalid template selected.")
-        raise typer.Exit(1)
+        raise click.exceptions.Exit(1)
 
     # Return the template.
     return templates[template_index].name
@@ -1702,7 +1702,7 @@ def create_config_init_app_from_remote_template(app_name: str, template_url: str
         temp_dir = tempfile.mkdtemp()
     except OSError as ose:
         console.error(f"Failed to create temp directory for download: {ose}")
-        raise typer.Exit(1) from ose
+        raise click.exceptions.Exit(1) from ose
 
     # Use httpx GET with redirects to download the zip file.
     zip_file_path: Path = Path(temp_dir) / "template.zip"
@@ -1713,20 +1713,20 @@ def create_config_init_app_from_remote_template(app_name: str, template_url: str
         response.raise_for_status()
     except httpx.HTTPError as he:
         console.error(f"Failed to download the template: {he}")
-        raise typer.Exit(1) from he
+        raise click.exceptions.Exit(1) from he
     try:
         zip_file_path.write_bytes(response.content)
         console.debug(f"Downloaded the zip to {zip_file_path}")
     except OSError as ose:
         console.error(f"Unable to write the downloaded zip to disk {ose}")
-        raise typer.Exit(1) from ose
+        raise click.exceptions.Exit(1) from ose
 
     # Create a temp directory for the zip extraction.
     try:
         unzip_dir = Path(tempfile.mkdtemp())
     except OSError as ose:
         console.error(f"Failed to create temp directory for extracting zip: {ose}")
-        raise typer.Exit(1) from ose
+        raise click.exceptions.Exit(1) from ose
 
     try:
         zipfile.ZipFile(zip_file_path).extractall(path=unzip_dir)
@@ -1734,11 +1734,11 @@ def create_config_init_app_from_remote_template(app_name: str, template_url: str
         # repo-name-branch/**/*, so we need to remove the top level directory.
     except Exception as uze:
         console.error(f"Failed to unzip the template: {uze}")
-        raise typer.Exit(1) from uze
+        raise click.exceptions.Exit(1) from uze
 
     if len(subdirs := list(unzip_dir.iterdir())) != 1:
         console.error(f"Expected one directory in the zip, found {subdirs}")
-        raise typer.Exit(1)
+        raise click.exceptions.Exit(1)
 
     template_dir = unzip_dir / subdirs[0]
     console.debug(f"Template folder is located at {template_dir}")
@@ -1800,7 +1800,7 @@ def validate_and_create_app_using_remote_template(
             console.print(
                 f"Please use `reflex login` to access the '{template}' template."
             )
-            raise typer.Exit(3)
+            raise click.exceptions.Exit(3)
 
         template_url = templates[template].code_url
     else:
@@ -1811,7 +1811,7 @@ def validate_and_create_app_using_remote_template(
             template_url = f"https://github.com/{path}/archive/main.zip"
         else:
             console.error(f"Template `{template}` not found or invalid.")
-            raise typer.Exit(1)
+            raise click.exceptions.Exit(1)
 
     if template_url is None:
         return
@@ -1878,7 +1878,7 @@ def initialize_app(app_name: str, template: str | None = None) -> str | None:
             console.print(
                 f"Go to the templates page ({constants.Templates.REFLEX_TEMPLATES_URL}) and copy the command to init with a template."
             )
-            raise typer.Exit(0)
+            raise click.exceptions.Exit(0)
 
     # If the blank template is selected, create a blank app.
     if template in (constants.Templates.DEFAULT,):

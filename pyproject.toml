@@ -34,10 +34,10 @@ dependencies = [
   "python-socketio >=5.12.0,<6.0",
   "python-multipart >=0.0.20,<1.0",
   "redis >=5.2.1,<6.0",
-  "reflex-hosting-cli >=0.1.38",
+  "reflex-hosting-cli ==0.1.43.dev7",
   "rich >=13.0.0,<14.0",
   "sqlmodel >=0.0.24,<0.1",
-  "typer >=0.15.2,<1.0",
+  "click >=8",
   "typing_extensions >=4.13.0",
   "uvicorn >=0.34.0",
   "wrapt >=1.17.0,<2.0",
@@ -168,3 +168,14 @@ dev = [
   "selenium >=4.31",
   "starlette-admin >=0.14",
 ]
+
+[tool.uv.sources]
+reflex_hosting_cli = { index = "testpypi" }
+
+[[tool.uv.index]]
+name = "pypi"
+url = "https://pypi.org/simple/"
+
+[[tool.uv.index]]
+name = "testpypi"
+url = "https://test.pypi.org/simple/"
