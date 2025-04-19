@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 from collections.abc import Iterator, Sequence
 from typing import Any
 
@@ -171,9 +172,9 @@ class Bare(Component):
     def _render(self) -> Tag:
         if isinstance(self.contents, Var):
             if isinstance(self.contents, (BooleanVar, ObjectVar)):
-                return Tagless(contents=f"{{{self.contents.to_string()!s}}}")
-            return Tagless(contents=f"{{{self.contents!s}}}")
-        return Tagless(contents=str(self.contents))
+                return Tagless(contents=f"{self.contents.to_string()!s}")
+            return Tagless(contents=f"{self.contents!s}")
+        return Tagless(contents=f'"{json.dumps(self.contents)}"')
 
     def _add_style_recursive(
         self, style: ComponentStyle, theme: Component | None = None

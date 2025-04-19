@@ -22,7 +22,7 @@ function AppWrap({children}) {
   {{ renderHooks(hooks) }}
 
   return (
-    {{utils.render(render, indent_width=0)}}
+    {{utils.render(render)}}
   )
 }
 
@@ -37,15 +37,15 @@ export default function MyApp({ Component, pageProps }) {
     window["__reflex"] = windowImports;
   }, []);
   return (
-    <ThemeProvider defaultTheme={ defaultColorMode } attribute="class">
-      <StateProvider>
-        <EventLoopProvider>
-            <AppWrap>
-              <Component {...pageProps} />
-            </AppWrap>
-        </EventLoopProvider>
-      </StateProvider>
-    </ThemeProvider>
+    jsx(ThemeProvider, {defaultTheme:defaultColorMode,attribute:"class"},
+      jsx(StateProvider, {},
+        jsx(EventLoopProvider, {}, 
+          jsx(AppWrap, {},
+            jsx(Component, pageProps)
+          )
+        )
+      )
+    )
   );
 }
 

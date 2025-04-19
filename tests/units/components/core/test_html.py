@@ -19,7 +19,7 @@ def test_html_create():
     assert str(html.dangerouslySetInnerHTML) == '({ ["__html"] : "<p>Hello !</p>" })'  # pyright: ignore [reportAttributeAccessIssue]
     assert (
         str(html)
-        == '<div className={"rx-Html"} dangerouslySetInnerHTML={({ ["__html"] : "<p>Hello !</p>" })}/>'
+        == 'jsx("div",{className:"rx-Html",dangerouslySetInnerHTML:({ ["__html"] : "<p>Hello !</p>" })},)\n'
     )
 
 
@@ -31,11 +31,13 @@ def test_html_fstring_create():
 
     html = Html.create(f"<p>Hello {TestState.myvar}!</p>")
 
+    html_dangerouslySetInnerHTML = html.dangerouslySetInnerHTML  # pyright: ignore [reportAttributeAccessIssue]
+
     assert (
-        str(html.dangerouslySetInnerHTML)  # pyright: ignore [reportAttributeAccessIssue]
+        str(html_dangerouslySetInnerHTML)
         == f'({{ ["__html"] : ("<p>Hello "+{TestState.myvar!s}+"!</p>") }})'
     )
     assert (
         str(html)
-        == f'<div className={{"rx-Html"}} dangerouslySetInnerHTML={{{html.dangerouslySetInnerHTML!s}}}/>'  # pyright: ignore [reportAttributeAccessIssue]
+        == f'jsx("div",{{className:"rx-Html",dangerouslySetInnerHTML:{html_dangerouslySetInnerHTML!s}}},)\n'
     )

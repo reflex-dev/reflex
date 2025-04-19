@@ -1,10 +1,10 @@
 """Display the title of the current page."""
 
-from reflex.components.component import Component
+from reflex.components.el.elements.base import BaseHTML
 from reflex.vars.base import Var
 
 
-class RawLink(Component):
+class RawLink(BaseHTML):
     """A component that displays the title of the current page."""
 
     tag = "link"
@@ -16,7 +16,7 @@ class RawLink(Component):
     rel: Var[str]
 
 
-class ScriptTag(Component):
+class ScriptTag(BaseHTML):
     """A script tag with the specified type and source."""
 
     tag = "script"

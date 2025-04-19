@@ -8,10 +8,10 @@ from reflex.vars.base import LiteralVar, Var
     "props,test_props",
     [
         ({}, []),
-        ({"key-hypen": 1}, ["key-hypen={1}"]),
-        ({"key": 1}, ["key={1}"]),
-        ({"key": "value"}, ['key={"value"}']),
-        ({"key": True, "key2": "value2"}, ["key={true}", 'key2={"value2"}']),
+        ({"key-hypen": 1}, ['"key-hypen":1']),
+        ({"key": 1}, ["key:1"]),
+        ({"key": "value"}, ['key:"value"']),
+        ({"key": True, "key2": "value2"}, ["key:true", 'key2:"value2"']),
     ],
 )
 def test_format_props(props: dict[str, Var], test_props: list):

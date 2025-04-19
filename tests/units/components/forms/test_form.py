@@ -11,7 +11,7 @@ def test_render_on_submit():
     )
     f = Form.create(on_submit=submit_it)
     exp_submit_name = f"handleSubmit_{f.handle_submit_unique_name}"  # pyright: ignore [reportAttributeAccessIssue]
-    assert f"onSubmit={{{exp_submit_name}}}" in f.render()["props"]
+    assert f"onSubmit:{exp_submit_name}" in f.render()["props"]
 
 
 def test_render_no_on_submit():

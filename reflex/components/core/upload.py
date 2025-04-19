@@ -321,7 +321,7 @@ class Upload(MemoizationLeaf):
         upload = Input.create(type="file")
         upload.special_props = [
             Var(
-                _js_expr=f"{{...{input_props_unique_name}()}}",
+                _js_expr=f"{input_props_unique_name}()",
                 _var_type=None,
                 _var_data=var_data,
             )
@@ -335,7 +335,7 @@ class Upload(MemoizationLeaf):
         )
         zone.special_props = [
             Var(
-                _js_expr=f"{{...{root_props_unique_name}()}}",
+                _js_expr=f"{root_props_unique_name}()",
                 _var_type=None,
                 _var_data=var_data,
             )

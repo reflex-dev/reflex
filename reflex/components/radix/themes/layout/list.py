@@ -5,8 +5,9 @@ from __future__ import annotations
 from collections.abc import Iterable
 from typing import Any, Literal
 
-from reflex.components.component import Component, ComponentNamespace
+from reflex.components.component import ComponentNamespace
 from reflex.components.core.foreach import Foreach
+from reflex.components.el.elements.base import BaseHTML
 from reflex.components.el.elements.typography import Li, Ol, Ul
 from reflex.components.lucide.icon import Icon
 from reflex.components.markdown.markdown import MarkdownComponentMap
@@ -38,7 +39,7 @@ LiteralListStyleTypeOrdered = Literal[
 ]
 
 
-class BaseList(Component, MarkdownComponentMap):
+class BaseList(BaseHTML, MarkdownComponentMap):
     """Base class for ordered and unordered lists."""
 
     tag = "ul"
