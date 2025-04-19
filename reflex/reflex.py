@@ -759,7 +759,7 @@ def _convert_reflex_loglevel_to_reflex_cli_loglevel(
 
 
 if find_spec("typer"):
-    import typer
+    import typer  # pyright: ignore[reportMissingImports]
 
     if isinstance(hosting_cli, typer.Typer):
         hosting_cli_command = typer.main.get_command(hosting_cli)
