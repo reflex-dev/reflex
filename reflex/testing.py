@@ -947,11 +947,11 @@ class AppHarnessProd(AppHarness):
                 *self._poll_for_servers().getsockname(),
             )
             reflex.reflex.export(
-                zipping=False,
-                frontend=True,
-                backend=False,
-                loglevel=reflex.constants.LogLevel.INFO,
-                env=reflex.constants.Env.PROD,
+                zip=True,
+                frontend_only=True,
+                backend_only=False,
+                loglevel=reflex.constants.LogLevel.INFO.value,
+                env=reflex.constants.Env.PROD.value,
             )
 
         self.frontend_thread = threading.Thread(target=self._run_frontend)
