@@ -303,7 +303,7 @@ def _run(
 @cli.command()
 @click.option(
     "--env",
-    type=click.Choice([e.name for e in constants.Env]),
+    type=click.Choice([e.name for e in constants.Env], case_sensitive=False),
     default=constants.Env.DEV.name,
     help="The environment to run the app in.",
 )
@@ -411,7 +411,7 @@ def run(
 )
 @click.option(
     "--env",
-    type=click.Choice([e.name for e in constants.Env]),
+    type=click.Choice([e.name for e in constants.Env], case_sensitive=False),
     default=constants.Env.PROD.name,
     help="The environment to export the app in.",
 )
