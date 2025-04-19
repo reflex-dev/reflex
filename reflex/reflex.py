@@ -420,8 +420,8 @@ def run(
 )
 def export(
     zipping: bool,
-    frontend: bool,
-    backend: bool,
+    frontend_only: bool,
+    backend_only: bool,
     zip_dest_dir: str,
     upload_db_file: bool,
     env: Literal[constants.Env.DEV, constants.Env.PROD],
@@ -433,18 +433,20 @@ def export(
 
     environment.REFLEX_COMPILE_CONTEXT.set(constants.CompileContext.EXPORT)
 
-    frontend, backend = prerequisites.check_running_mode(frontend, backend)
+    frontend_only, backend_only = prerequisites.check_running_mode(
+        frontend_only, backend_only
+    )
 
     loglevel = constants.LogLevel.from_string(loglevel) or get_config().loglevel
     console.set_log_level(loglevel)
 
-    if prerequisites.needs_reinit(frontend=frontend or not backend):
+    if prerequisites.needs_reinit(frontend=frontend_only or not backend_only):
         _init(name=get_config().app_name, loglevel=loglevel)
 
     export_utils.export(
         zipping=zipping,
-        frontend=frontend,
-        backend=backend,
+        frontend=frontend_only,
+        backend=backend_only,
         zip_dest_dir=zip_dest_dir,
         upload_db_file=upload_db_file,
         env=env,
@@ -639,14 +641,15 @@ def makemigrations(message: str | None):
     help="token to use for auth",
 )
 @click.option(
+    "--config-path",
     "--config",
     help="path to the config file",
 )
 def deploy(
     app_name: str | None,
     app_id: str | None,
-    regions: tuple[str, ...],
-    envs: tuple[str],
+    region: tuple[str, ...],
+    env: tuple[str],
     vmtype: str | None,
     hostname: str | None,
     interactive: bool,
@@ -711,8 +714,8 @@ def deploy(
                 upload_db_file=upload_db,
             )
         ),
-        regions=list(regions),
-        envs=list(envs),
+        regions=list(region),
+        envs=list(env),
         vmtype=vmtype,
         envfile=envfile,
         hostname=hostname,
