@@ -89,6 +89,10 @@ from reflex.utils.types import (
     true_type_for_pydantic_field,
     value_inside_optional,
 )
+if TYPE_CHECKING:
+    # Pydantic v2 SerializationInfo
+    from pydantic import SerializationInfo
+
 from reflex.vars import VarData
 from reflex.vars.base import (
     ComputedVar,
@@ -328,7 +332,7 @@ async def _resolve_delta(delta: Delta) -> Delta:
 all_base_state_classes: dict[str, None] = {}
 
 
-class BaseState(Base, ABC, extra=pydantic.Extra.allow):
+class BaseState(Base, ABC):
     """The state of the app."""
 
     # A map from the var name to the var.
@@ -2857,8 +2861,13 @@ class StateManager(Base, ABC):
         pass
 
     @abstractmethod
-    async def set_state(self, token: str, state: BaseState):
-        """Set the state for a token.
+    async def get_state(
+        self,
+        token: str,
+        top_level: bool = True,
+        for_state_instance: BaseState | None = None,
+    ) -> BaseState:
+        """Get the state for a token.
 
         Args:
             token: The token to set the state for.
@@ -4023,6 +4032,10 @@ class MutableProxy(wrapt.ObjectProxy):
             Tuple of (wrapped class, empty args, class __getstate__)
         """
         return self.__wrapped__.__reduce_ex__(protocol_version)
+
+    def __pydantic_serializer__(self, info: SerializationInfo):
+        # Return the underlying object for Pydantic v2 serialization
+        return self.__wrapped__
 
 
 @serializer
