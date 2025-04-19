@@ -304,22 +304,26 @@ def _run(
 @click.option(
     "--frontend-only",
     is_flag=True,
+    show_default=False,
     help="Execute only frontend.",
     envvar=environment.REFLEX_FRONTEND_ONLY.name,
 )
 @click.option(
     "--backend-only",
     is_flag=True,
+    show_default=False,
     help="Execute only backend.",
     envvar=environment.REFLEX_BACKEND_ONLY.name,
 )
 @click.option(
     "--frontend-port",
+    type=int,
     help="Specify a different frontend port.",
     envvar=environment.REFLEX_FRONTEND_PORT.name,
 )
 @click.option(
     "--backend-port",
+    type=int,
     help="Specify a different backend port.",
     envvar=environment.REFLEX_BACKEND_PORT.name,
 )
@@ -379,12 +383,14 @@ def run(
 )
 @click.option(
     "--frontend-only",
+    is_flag=True,
     show_default=False,
     envvar=environment.REFLEX_FRONTEND_ONLY.name,
     help="Export only frontend.",
 )
 @click.option(
     "--backend-only",
+    is_flag=True,
     show_default=False,
     envvar=environment.REFLEX_BACKEND_ONLY.name,
     help="Export only backend.",
@@ -397,6 +403,7 @@ def run(
 )
 @click.option(
     "--upload-db-file",
+    is_flag=True,
     help="Whether to exclude sqlite db files when exporting backend.",
     hidden=True,
 )
