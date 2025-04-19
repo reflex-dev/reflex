@@ -106,6 +106,16 @@ def _init(
     )
 
 
+loglevel_option = click.option(
+    "--loglevel",
+    type=click.Choice(
+        [loglevel.name for loglevel in constants.LogLevel],
+        case_sensitive=False,
+    ),
+    help="The log level to use.",
+)
+
+
 @cli.command()
 @click.option(
     "--name",
@@ -116,11 +126,7 @@ def _init(
     "--template",
     help="The template to initialize the app with.",
 )
-@click.option(
-    "--loglevel",
-    type=click.Choice([loglevel.name for loglevel in constants.LogLevel]),
-    help="The log level to use.",
-)
+@loglevel_option
 @click.option(
     "--ai",
     is_flag=True,
@@ -331,11 +337,7 @@ def _run(
     "--backend-host",
     help="Specify the backend host.",
 )
-@click.option(
-    "--loglevel",
-    type=click.Choice([loglevel.name for loglevel in constants.LogLevel]),
-    help="The log level to use.",
-)
+@loglevel_option
 def run(
     env: Literal[constants.Env.DEV, constants.Env.PROD],
     frontend_only: bool,
@@ -413,11 +415,7 @@ def run(
     default=constants.Env.PROD.name,
     help="The environment to export the app in.",
 )
-@click.option(
-    "--loglevel",
-    type=click.Choice([loglevel.name for loglevel in constants.LogLevel]),
-    help="The log level to use.",
-)
+@loglevel_option
 def export(
     zip: bool,
     frontend_only: bool,
@@ -455,11 +453,7 @@ def export(
 
 
 @cli.command()
-@click.option(
-    "--loglevel",
-    type=click.Choice([loglevel.name for loglevel in constants.LogLevel]),
-    help="The log level to use.",
-)
+@loglevel_option
 def login(loglevel: str | None):
     """Authenticate with experimental Reflex hosting service."""
     from reflex_cli.v2 import cli as hosting_cli
@@ -478,11 +472,7 @@ def login(loglevel: str | None):
 
 
 @cli.command()
-@click.option(
-    "--loglevel",
-    type=click.Choice([loglevel.name for loglevel in constants.LogLevel]),
-    help="The log level to use.",
-)
+@loglevel_option
 def logout(loglevel: str | None):
     """Log out of access to Reflex hosting service."""
     from reflex_cli.v2.cli import logout
@@ -623,11 +613,7 @@ def makemigrations(message: str | None):
     "--envfile",
     help="The path to an env file to use. Will override any envs set manually.",
 )
-@click.option(
-    "--loglevel",
-    type=click.Choice([loglevel.name for loglevel in constants.LogLevel]),
-    help="The log level to use.",
-)
+@loglevel_option
 @click.option(
     "--project",
     help="project id to deploy to",
@@ -730,11 +716,7 @@ def deploy(
 
 @cli.command()
 @click.argument("new_name")
-@click.option(
-    "--loglevel",
-    type=click.Choice([loglevel.name for loglevel in constants.LogLevel]),
-    help="The log level to use.",
-)
+@loglevel_option
 def rename(new_name: str, loglevel: str | None):
     """Rename the app in the current directory."""
     from reflex.utils import prerequisites
