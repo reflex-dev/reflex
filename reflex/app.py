@@ -35,7 +35,11 @@ from reflex.admin import AdminDash
 from reflex.app_mixins import AppMixin, LifespanMixin, MiddlewareMixin
 from reflex.compiler import compiler
 from reflex.compiler import utils as compiler_utils
-from reflex.compiler.compiler import ExecutorSafeFunctions, compile_theme
+from reflex.compiler.compiler import (
+    ExecutorSafeFunctions,
+    compile_theme,
+    readable_name_from_component,
+)
 from reflex.components.base.app_wrap import AppWrap
 from reflex.components.base.error_boundary import ErrorBoundary
 from reflex.components.base.fragment import Fragment
@@ -763,9 +767,11 @@ class App(MiddlewareMixin, LifespanMixin):
                     if route == constants.PageNames.INDEX_ROUTE
                     else f"`{route}`"
                 )
+                existing_component = self._unevaluated_pages[route].component
                 raise exceptions.RouteValueError(
-                    f"Duplicate page route {route_name} already exists. Make sure you do not have two"
-                    f" pages with the same route"
+                    f"Tried to add page {readable_name_from_component(component)} with route {route_name} but "
+                    f"page {readable_name_from_component(existing_component)} with the same route already exists. "
+                    "Make sure you do not have two pages with the same route."
                 )
 
         # Setup dynamic args for the route.
