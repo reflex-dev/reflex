@@ -174,8 +174,8 @@ reflex_hosting_cli = { index = "testpypi" }
 
 [[tool.uv.index]]
 name = "pypi"
-url = "https://pypi.org/simple/"
+url = "https://pypi.org/simple"
 
 [[tool.uv.index]]
 name = "testpypi"
-url = "https://test.pypi.org/simple/"
+url = "https://test.pypi.org/simple"
