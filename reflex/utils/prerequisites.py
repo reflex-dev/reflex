@@ -383,10 +383,13 @@ def get_app(reload: bool = False) -> ModuleType:
             else config.app_module
         )
         if reload:
+            from reflex.page import DECORATED_PAGES
             from reflex.state import reload_state_module
 
             # Reset rx.State subclasses to avoid conflict when reloading.
             reload_state_module(module=module)
+
+            DECORATED_PAGES.clear()
 
             # Reload the app module.
             importlib.reload(app)
