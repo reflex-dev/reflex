@@ -21,7 +21,6 @@ keywords = ["web", "framework"]
 requires-python = ">=3.10,<4.0"
 dependencies = [
   "alembic >=1.15.2,<2.0",
-  "distro >=1.9.0,<2.0; platform_system == 'Linux'",
   "fastapi >=0.115.0",
   "granian[reload] >=2.2.5",
   "gunicorn >=23.0.0,<24.0.0",

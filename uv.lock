@@ -331,15 +331,6 @@ wheels = [
 ]
 
 [[package]]
-name = "distro"
-version = "1.9.0"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/fc/f8/98eea607f65de6527f8a2e8885fc8015d3e6f5775df186e443e0964a11c3/distro-1.9.0.tar.gz", hash = "sha256:2fa77c6fd8940f116ee1d6b94a2f90b13b5ea8d019b98bc8bafdcabcdd9bdbed", size = 60722 }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/12/b3/231ffd4ab1fc9d679809f356cebee130ac7daa00d6d6f3206dd4fd137e9e/distro-1.9.0-py3-none-any.whl", hash = "sha256:7bffd925d65168f85027d8da9af6bddab658135b840670a223589bc0c8ef02b2", size = 20277 },
-]
-
-[[package]]
 name = "exceptiongroup"
 version = "1.2.2"
 source = { registry = "https://pypi.org/simple" }
@@ -1535,7 +1526,6 @@ version = "0.7.9.dev1"
 source = { editable = "." }
 dependencies = [
     { name = "alembic" },
-    { name = "distro", marker = "sys_platform == 'linux'" },
     { name = "fastapi" },
     { name = "granian", extra = ["reload"] },
     { name = "gunicorn" },
@@ -1590,7 +1580,6 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "alembic", specifier = ">=1.15.2,<2.0" },
-    { name = "distro", marker = "sys_platform == 'linux'", specifier = ">=1.9.0,<2.0" },
     { name = "fastapi", specifier = ">=0.115.0" },
     { name = "granian", extras = ["reload"], specifier = ">=2.2.5" },
     { name = "gunicorn", specifier = ">=23.0.0,<24.0.0" },

@@ -613,9 +613,7 @@ def output_system_info():
     )
 
     if system == "Linux":
-        import distro  # pyright: ignore[reportMissingImports]
-
-        os_version = distro.name(pretty=True)
+        os_version = platform.freedesktop_os_release().get("PRETTY_NAME", "Unknown")
     else:
         os_version = platform.version()
 
