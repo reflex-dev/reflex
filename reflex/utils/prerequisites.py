@@ -371,7 +371,6 @@ def get_app(reload: bool = False) -> ModuleType:
     from reflex.utils import telemetry
 
     try:
-        environment.RELOAD_CONFIG.set(reload)
         config = get_config()
 
         _check_app_name(config)
