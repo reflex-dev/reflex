@@ -59,14 +59,14 @@ class FileUploadState(State):
         """
         for file in files:
             upload_data = await file.read()
-            assert file.filename is not None
-            outfile = self._tmp_path / file.filename
+            assert file.name is not None
+            outfile = self._tmp_path / file.name
 
             # Save the file.
             outfile.write_bytes(upload_data)
 
             # Update the img var.
-            self.img_list.append(file.filename)
+            self.img_list.append(file.name)
 
     @rx.event(background=True)
     async def bg_upload(self, files: list[rx.UploadFile]):
@@ -106,14 +106,14 @@ class ChildFileUploadState(FileStateBase1):
         """
         for file in files:
             upload_data = await file.read()
-            assert file.filename is not None
-            outfile = self._tmp_path / file.filename
+            assert file.name is not None
+            outfile = self._tmp_path / file.name
 
             # Save the file.
             outfile.write_bytes(upload_data)
 
             # Update the img var.
-            self.img_list.append(file.filename)
+            self.img_list.append(file.name)
 
     @rx.event(background=True)
     async def bg_upload(self, files: list[rx.UploadFile]):
@@ -153,14 +153,14 @@ class GrandChildFileUploadState(FileStateBase2):
         """
         for file in files:
             upload_data = await file.read()
-            assert file.filename is not None
-            outfile = self._tmp_path / file.filename
+            assert file.name is not None
+            outfile = self._tmp_path / file.name
 
             # Save the file.
             outfile.write_bytes(upload_data)
 
             # Update the img var.
-            self.img_list.append(file.filename)
+            self.img_list.append(file.name)
 
     @rx.event(background=True)
     async def bg_upload(self, files: list[rx.UploadFile]):
