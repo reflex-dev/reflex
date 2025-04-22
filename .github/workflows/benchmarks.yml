@@ -25,22 +25,13 @@ jobs:
     #    if: github.event.pull_request.merged == true
     strategy:
       fail-fast: false
-      matrix:
-        # Show OS combos first in GUI
-        os: [ubuntu-latest]
-        python-version: ["3.12.8"]
-        node-version: ["18.x"]
 
-    runs-on: ${{ matrix.os }}
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Use Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ matrix.node-version }}
       - uses: ./.github/actions/setup_build_env
         with:
-          python-version: ${{ matrix.python-version }}
+          python-version: 3.13
           run-uv-sync: true
 
       - name: Clone Reflex Website Repo
@@ -80,7 +71,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/setup_build_env
         with:
-          python-version: 3.12.8
+          python-version: 3.13
           run-uv-sync: true
 
       - name: Build reflex
@@ -90,7 +81,7 @@ jobs:
         # Only run if the database creds are available in this context.
         run:
           uv run python benchmarks/benchmark_package_size.py --os ubuntu-latest
-          --python-version 3.12.8 --commit-sha "${{ github.sha }}" --pr-id "${{ github.event.pull_request.id }}"
+          --python-version 3.13 --commit-sha "${{ github.sha }}" --pr-id "${{ github.event.pull_request.id }}"
           --branch-name "${{ github.head_ref || github.ref_name }}"
           --path ./dist
 
@@ -103,7 +94,6 @@ jobs:
       matrix:
         # Show OS combos first in GUI
         os: [ubuntu-latest, windows-latest, macos-latest]
-        python-version: ["3.12.8"]
 
     runs-on: ${{ matrix.os }}
     steps:
@@ -112,7 +102,7 @@ jobs:
         id: setup-python
         uses: actions/setup-python@v5
         with:
-          python-version: ${{ matrix.python-version }}
+          python-version: 3.13
       - name: Install UV
         uses: astral-sh/setup-uv@v5
         with:
@@ -126,7 +116,7 @@ jobs:
       - name: calculate and upload size
         run:
           uv run python benchmarks/benchmark_package_size.py --os "${{ matrix.os }}"
-          --python-version "${{ matrix.python-version }}" --commit-sha "${{ github.sha }}"
+          --python-version "3.13" --commit-sha "${{ github.sha }}"
           --pr-id "${{ github.event.pull_request.id }}"
           --branch-name "${{ github.head_ref || github.ref_name }}"
           --path ./.venv
