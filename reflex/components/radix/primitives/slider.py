@@ -17,7 +17,7 @@ LiteralSliderDir = Literal["ltr", "rtl"]
 class SliderComponent(RadixPrimitiveComponentWithClassName):
     """Base class for all @radix-ui/react-slider components."""
 
-    library = "@radix-ui/react-slider@^1.2.3"
+    library = "@radix-ui/react-slider@^1.3.2"
 
 
 def on_value_event_spec(
