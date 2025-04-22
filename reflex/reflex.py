@@ -773,5 +773,10 @@ cli.add_command(db_cli, name="db")
 cli.add_command(script_cli, name="script")
 cli.add_command(custom_components_cli, name="component")
 
+if find_spec("typer"):
+    from reflex_cli.v2.deployments import _patch_typer
+
+    cli = _patch_typer(cli)  # pyright: ignore[reportAssignmentType]
+
 if __name__ == "__main__":
     cli()

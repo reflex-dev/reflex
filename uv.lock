@@ -1604,7 +1604,7 @@ requires-dist = [
     { name = "python-multipart", specifier = ">=0.0.20,<1.0" },
     { name = "python-socketio", specifier = ">=5.12.0,<6.0" },
     { name = "redis", specifier = ">=5.2.1,<6.0" },
-    { name = "reflex-hosting-cli", specifier = "==0.1.43.dev7", index = "https://test.pypi.org/simple" },
+    { name = "reflex-hosting-cli", specifier = "==0.1.43.dev9", index = "https://test.pypi.org/simple" },
     { name = "rich", specifier = ">=13,<15" },
     { name = "sqlmodel", specifier = ">=0.0.24,<0.1" },
     { name = "typing-extensions", specifier = ">=4.13.0" },
@@ -1644,7 +1644,7 @@ dev = [
 
 [[package]]
 name = "reflex-hosting-cli"
-version = "0.1.43.dev7"
+version = "0.1.43.dev9"
 source = { registry = "https://test.pypi.org/simple" }
 dependencies = [
     { name = "click" },
@@ -1654,9 +1654,9 @@ dependencies = [
     { name = "rich" },
     { name = "tabulate" },
 ]
-sdist = { url = "https://test-files.pythonhosted.org/packages/f3/aa/fae0443bd7c22b7cdba9494db81a4704d87af7dda4fcdac2460986fb4d6f/reflex_hosting_cli-0.1.43.dev7.tar.gz", hash = "sha256:b8047ff4fa38b7f84b37e98b4c3a99fad97b8c5d0720b26e6a765509d42d3a94", size = 30985 }
+sdist = { url = "https://test-files.pythonhosted.org/packages/80/c6/d6fe6e5047f39e23ed5b751935e74bed9c3b5f7fffb08aa07e0697eefb34/reflex_hosting_cli-0.1.43.dev9.tar.gz", hash = "sha256:13db11907d4d0b7f4f93b033ac7ca2a9e1f4db114a71e16145d71d6223a38347", size = 31035 }
 wheels = [
-    { url = "https://test-files.pythonhosted.org/packages/e7/63/424b646c091079c0bd2c9b057696f5fed153efbcdc5980c9efdfdd1faf5d/reflex_hosting_cli-0.1.43.dev7-py3-none-any.whl", hash = "sha256:acd192eca5293fabc8d6caaca06c7643d7f5c60a83c8ac228cfd2196f9257701", size = 39850 },
+    { url = "https://test-files.pythonhosted.org/packages/78/f4/7bfbdb443aea46c98fc08eac0bf56a4128a0eaf469ac8fc9a3bc5e4c9e2d/reflex_hosting_cli-0.1.43.dev9-py3-none-any.whl", hash = "sha256:4d57e0b74457a1ded2738de2d8888b551097c2a79c78fee398f20d95e35360a6", size = 39924 },
 ]
 
 [[package]]

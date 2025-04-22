@@ -31,6 +31,16 @@ def _set_loglevel_from_cli(loglevel: str | None):
     )
 
 
+loglevel_option = click.option(
+    "--loglevel",
+    type=click.Choice(
+        [loglevel.value for loglevel in constants.LogLevel],
+        case_sensitive=False,
+    ),
+    help="The log level to use.",
+)
+
+
 POST_CUSTOM_COMPONENTS_GALLERY_TIMEOUT = 15
 
 
@@ -297,12 +307,7 @@ def _populate_custom_component_project(name_variants: NameVariants):
     default=True,
     help="Whether to install package from this local custom component in editable mode.",
 )
-@click.option(
-    "--loglevel",
-    default=None,
-    type=click.Choice([level.name for level in constants.LogLevel]),
-    help="The log level to use.",
-)
+@loglevel_option
 def init(
     library_name: str | None,
     install: bool,
@@ -446,12 +451,7 @@ def _run_build():
 
 
 @custom_components_cli.command(name="build")
-@click.option(
-    "--loglevel",
-    default=None,
-    type=click.Choice([level.name for level in constants.LogLevel]),
-    help="The log level to use.",
-)
+@loglevel_option
 def build(
     loglevel: str | None = None,
 ):
@@ -608,12 +608,7 @@ def _get_file_from_prompt_in_loop() -> tuple[bytes, str] | None:
 
 
 @custom_components_cli.command(name="share")
-@click.option(
-    "--loglevel",
-    default=None,
-    type=click.Choice([level.name for level in constants.LogLevel]),
-    help="The log level to use.",
-)
+@loglevel_option
 def share_more_detail(
     loglevel: str | None,
 ):
@@ -628,12 +623,7 @@ def share_more_detail(
 
 
 @custom_components_cli.command(name="install")
-@click.option(
-    "--loglevel",
-    default=None,
-    type=click.Choice([level.name for level in constants.LogLevel]),
-    help="The log level to use.",
-)
+@loglevel_option
 def install(
     loglevel: str | None = None,
 ):
