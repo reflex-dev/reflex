@@ -1771,7 +1771,7 @@ def figure_out_type(value: Any) -> types.GenericType:
         if not value:
             return tuple[NoReturn, ...]
         if len(value) <= 5:
-            return tuple[*(figure_out_type(v) for v in value)]
+            return tuple[tuple(figure_out_type(v) for v in value)]
         return tuple[unionize(*(figure_out_type(v) for v in value)), ...]
     if isinstance(value, Mapping):
         if not value:
