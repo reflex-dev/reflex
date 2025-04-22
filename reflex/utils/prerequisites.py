@@ -1134,12 +1134,20 @@ def download_and_run(url: str, *args, show_status: bool = False, **env):
         args: The arguments to pass to the script.
         show_status: Whether to show the status of the script.
         env: The environment variables to use.
+
+    Raises:
+        Exit: If the script fails to download.
     """
     # Download the script
     console.debug(f"Downloading {url}")
-    response = net.get(url)
-    if response.status_code != httpx.codes.OK:
+    try:
+        response = net.get(url)
         response.raise_for_status()
+    except httpx.HTTPError as e:
+        console.error(
+            f"Failed to download bun install script. You can install or update bun manually from https://bun.sh \n{e}"
+        )
+        raise typer.Exit(1) from None
 
     # Save the script to a temporary file.
     script = Path(tempfile.NamedTemporaryFile().name)
