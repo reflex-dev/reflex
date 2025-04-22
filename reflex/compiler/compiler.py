@@ -695,9 +695,13 @@ def readable_name_from_component(
     if isinstance(component, Sequence):
         return ", ".join(str(c) for c in component)
     if callable(component):
-        module = getmodule(component)
-        if module is not None:
-            return f"{module.__name__}.{component.__name__}"
+        module_name = getattr(component, "__module__", None)
+        if module_name is not None:
+            module = getmodule(component)
+            if module is not None:
+                module_name = module.__name__
+        if module_name is not None:
+            return f"{module_name}.{component.__name__}"
         return component.__name__
     return None
 
