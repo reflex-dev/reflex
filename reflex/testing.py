@@ -116,7 +116,6 @@ class AppHarness:
     backend: uvicorn.Server | None = None
     state_manager: StateManager | None = None
     _frontends: list[WebDriver] = dataclasses.field(default_factory=list)
-    _decorated_pages: list = dataclasses.field(default_factory=list)
 
     @classmethod
     def create(
@@ -267,8 +266,6 @@ class AppHarness:
         with chdir(self.app_path):
             # ensure config and app are reloaded when testing different app
             reflex.config.get_config(reload=True)
-            # Save decorated pages before importing the test app module
-            before_decorated_pages = reflex.app.DECORATED_PAGES[self.app_name].copy()
             # Ensure the AppHarness test does not skip State assignment due to running via pytest
             os.environ.pop(reflex.constants.PYTEST_CURRENT_TEST, None)
             os.environ[reflex.constants.APP_HARNESS_FLAG] = "true"
@@ -276,12 +273,6 @@ class AppHarness:
                 # Do not reload the module for pre-existing apps (only apps generated from source)
                 reload=self.app_source is not None
             )
-            # Save the pages that were added during testing
-            self._decorated_pages = [
-                p
-                for p in reflex.app.DECORATED_PAGES[self.app_name]
-                if p not in before_decorated_pages
-            ]
         self.app_instance = self.app_module.app
         if self.app_instance and isinstance(
             self.app_instance._state_manager, StateManagerRedis
@@ -499,10 +490,6 @@ class AppHarness:
             self.backend_thread.join()
         if self.frontend_output_thread is not None:
             self.frontend_output_thread.join()
-
-        # Cleanup decorated pages added during testing
-        for page in self._decorated_pages:
-            reflex.app.DECORATED_PAGES[self.app_name].remove(page)
 
     def __exit__(self, *excinfo) -> None:
         """Contextmanager protocol for `stop()`.

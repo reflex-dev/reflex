@@ -695,9 +695,6 @@ class EnvironmentVariables:
     # The port to run the backend on.
     REFLEX_BACKEND_PORT: EnvVar[int | None] = env_var(None)
 
-    # Reflex internal env to reload the config.
-    RELOAD_CONFIG: EnvVar[bool] = env_var(False, internal=True)
-
     # If this env var is set to "yes", App.compile will be a no-op
     REFLEX_SKIP_COMPILE: EnvVar[bool] = env_var(False, internal=True)
 

@@ -35,7 +35,11 @@ from reflex.admin import AdminDash
 from reflex.app_mixins import AppMixin, LifespanMixin, MiddlewareMixin
 from reflex.compiler import compiler
 from reflex.compiler import utils as compiler_utils
-from reflex.compiler.compiler import ExecutorSafeFunctions, compile_theme
+from reflex.compiler.compiler import (
+    ExecutorSafeFunctions,
+    compile_theme,
+    readable_name_from_component,
+)
 from reflex.components.base.app_wrap import AppWrap
 from reflex.components.base.error_boundary import ErrorBoundary
 from reflex.components.base.fragment import Fragment
@@ -283,6 +287,25 @@ class UnevaluatedPage:
     on_load: EventType[()] | None
     meta: list[dict[str, str]]
     context: dict[str, Any] | None
+
+    def merged_with(self, other: UnevaluatedPage) -> UnevaluatedPage:
+        """Merge the other page into this one.
+
+        Args:
+            other: The other page to merge with.
+
+        Returns:
+            The merged page.
+        """
+        return dataclasses.replace(
+            self,
+            title=self.title if self.title is not None else other.title,
+            description=self.description
+            if self.description is not None
+            else other.description,
+            on_load=self.on_load if self.on_load is not None else other.on_load,
+            context=self.context if self.context is not None else other.context,
+        )
 
 
 @dataclasses.dataclass()
@@ -719,22 +742,37 @@ class App(MiddlewareMixin, LifespanMixin):
         # Check if the route given is valid
         verify_route_validity(route)
 
-        if route in self._unevaluated_pages and environment.RELOAD_CONFIG.is_set():
-            # when the app is reloaded(typically for app harness tests), we should maintain
-            # the latest render function of a route.This applies typically to decorated pages
-            # since they are only added when app._compile is called.
-            self._unevaluated_pages.pop(route)
+        unevaluated_page = UnevaluatedPage(
+            component=component,
+            route=route,
+            title=title,
+            description=description,
+            image=image,
+            on_load=on_load,
+            meta=meta,
+            context=context,
+        )
 
         if route in self._unevaluated_pages:
-            route_name = (
-                f"`{route}` or `/`"
-                if route == constants.PageNames.INDEX_ROUTE
-                else f"`{route}`"
-            )
-            raise exceptions.RouteValueError(
-                f"Duplicate page route {route_name} already exists. Make sure you do not have two"
-                f" pages with the same route"
-            )
+            if self._unevaluated_pages[route].component is component:
+                unevaluated_page = unevaluated_page.merged_with(
+                    self._unevaluated_pages[route]
+                )
+                console.warn(
+                    f"Page {route} is being redefined with the same component."
+                )
+            else:
+                route_name = (
+                    f"`{route}` or `/`"
+                    if route == constants.PageNames.INDEX_ROUTE
+                    else f"`{route}`"
+                )
+                existing_component = self._unevaluated_pages[route].component
+                raise exceptions.RouteValueError(
+                    f"Tried to add page {readable_name_from_component(component)} with route {route_name} but "
+                    f"page {readable_name_from_component(existing_component)} with the same route already exists. "
+                    "Make sure you do not have two pages with the same route."
+                )
 
         # Setup dynamic args for the route.
         # this state assignment is only required for tests using the deprecated state kwarg for App
@@ -746,16 +784,7 @@ class App(MiddlewareMixin, LifespanMixin):
                 on_load if isinstance(on_load, list) else [on_load]
             )
 
-        self._unevaluated_pages[route] = UnevaluatedPage(
-            component=component,
-            route=route,
-            title=title,
-            description=description,
-            image=image,
-            on_load=on_load,
-            meta=meta,
-            context=context,
-        )
+        self._unevaluated_pages[route] = unevaluated_page
 
     def _compile_page(self, route: str, save_page: bool = True):
         """Compile a page.
@@ -1021,9 +1050,11 @@ class App(MiddlewareMixin, LifespanMixin):
 
         This can move back into `compile_` when py39 support is dropped.
         """
+        app_name = get_config().app_name
         # Add the @rx.page decorated pages to collect on_load events.
-        for render, kwargs in DECORATED_PAGES[get_config().app_name]:
+        for render, kwargs in DECORATED_PAGES[app_name]:
             self.add_page(render, **kwargs)
+        DECORATED_PAGES[app_name].clear()
 
     def _validate_var_dependencies(self, state: type[BaseState] | None = None) -> None:
         """Validate the dependencies of the vars in the app.
