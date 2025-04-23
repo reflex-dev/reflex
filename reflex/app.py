@@ -1315,6 +1315,7 @@ class App(MiddlewareMixin, LifespanMixin):
                 resulting_path = (
                     Path.cwd() / prerequisites.get_web_dir() / static_file_path
                 )
+                resulting_path.parent.mkdir(parents=True, exist_ok=True)
                 if isinstance(content, str):
                     resulting_path.write_text(content)
                 else:
