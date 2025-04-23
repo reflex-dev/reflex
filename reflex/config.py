@@ -34,6 +34,8 @@ import pydantic.v1 as pydantic
 from reflex import constants
 from reflex.base import Base
 from reflex.constants.base import LogLevel
+from reflex.plugins.base import Plugin
+from reflex.plugins.tailwind_v3 import TailwindV3Plugin
 from reflex.utils import console
 from reflex.utils.exceptions import ConfigError, EnvironmentVarValueError
 from reflex.utils.types import (
@@ -888,6 +890,8 @@ class Config(Base):
     # Extra overlay function to run after the app is built. Formatted such that `from path_0.path_1... import path[-1]`, and calling it with no arguments would work. For example, "reflex.components.moment.moment".
     extra_overlay_function: str | None = None
 
+    plugins: list[Plugin] = []
+
     def __init__(self, *args, **kwargs):
         """Initialize the config values.
 
@@ -916,6 +920,9 @@ class Config(Base):
         kwargs.update(env_kwargs)
         self._non_default_attributes.update(kwargs)
         self._replace_defaults(**kwargs)
+
+        if self.tailwind is not None:
+            self.plugins.append(TailwindV3Plugin())
 
         if (
             self.state_manager_mode == constants.StateManagerMode.REDIS
