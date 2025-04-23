@@ -217,9 +217,47 @@ def get_app_module():
     Returns:
         The app module for the backend.
     """
-    config = get_config()
+    return get_config().module
 
-    return f"{config.module}:{constants.CompileVars.APP}"
+
+def get_app_instance():
+    """Get the app module for the backend.
+
+    Returns:
+        The app module for the backend.
+    """
+    return f"{get_app_module()}:{constants.CompileVars.APP}"
+
+
+def get_app_file() -> Path:
+    """Get the app file for the backend.
+
+    Returns:
+        The app file for the backend.
+
+    Raises:
+        ImportError: If the app module is not found.
+    """
+    module_spec = importlib.util.find_spec(get_app_module())
+    if module_spec is None:
+        raise ImportError(
+            f"Module {get_app_module()} not found. Make sure the module is installed."
+        )
+    file_name = module_spec.origin
+    if file_name is None:
+        raise ImportError(
+            f"Module {get_app_module()} not found. Make sure the module is installed."
+        )
+    return Path(file_name).resolve()
+
+
+def get_app_instance_from_file() -> str:
+    """Get the app module for the backend.
+
+    Returns:
+        The app module for the backend.
+    """
+    return f"{get_app_file()}:{constants.CompileVars.APP}"
 
 
 def run_backend(
@@ -321,7 +359,7 @@ def run_uvicorn_backend(host: str, port: int, loglevel: LogLevel):
     import uvicorn
 
     uvicorn.run(
-        app=f"{get_app_module()}",
+        app=f"{get_app_instance()}",
         factory=True,
         host=host,
         port=port,
@@ -347,7 +385,7 @@ def run_granian_backend(host: str, port: int, loglevel: LogLevel):
     from granian.server import MPServer as Granian
 
     Granian(
-        target=get_app_module(),
+        target=get_app_instance_from_file(),
         factory=True,
         address=host,
         port=port,
@@ -464,7 +502,7 @@ def run_uvicorn_backend_prod(host: str, port: int, loglevel: LogLevel):
 
     config = get_config()
 
-    app_module = get_app_module()
+    app_module = get_app_instance()
 
     command = (
         [
@@ -564,7 +602,7 @@ def run_granian_backend_prod(host: str, port: int, loglevel: LogLevel):
             *("--host", host),
             *("--port", str(port)),
             *("--interface", str(Interfaces.ASGI)),
-            *("--factory", get_app_module()),
+            *("--factory", get_app_instance_from_file()),
         ]
         processes.new_process(
             command,
