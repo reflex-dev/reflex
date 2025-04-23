@@ -238,6 +238,10 @@ def get_app_file() -> Path:
     Raises:
         ImportError: If the app module is not found.
     """
+    current_working_dir = str(Path.cwd())
+    if current_working_dir not in sys.path:
+        # Add the current working directory to sys.path
+        sys.path.insert(0, current_working_dir)
     module_spec = importlib.util.find_spec(get_app_module())
     if module_spec is None:
         raise ImportError(
