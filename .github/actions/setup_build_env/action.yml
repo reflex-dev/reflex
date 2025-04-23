@@ -33,33 +33,3 @@ runs:
         enable-cache: true
         prune-cache: false
         cache-dependency-glob: "uv.lock"
-
-    - name: Restore cached project python deps
-      id: restore-pydeps-cache
-      uses: actions/cache/restore@v4
-      with:
-        path: ${{ inputs.create-venv-at-path }}
-        key: ${{ runner.os }}-python-${{ inputs.python-version }}-pydeps-${{ hashFiles('**/uv.lock') }}
-
-    - if: ${{ inputs.run-uv-sync == 'true' && steps.restore-pydeps-cache.outputs.cache-hit != 'true' }}
-      name: Run uv sync (will get cached)
-      # We skip over installing the root package (the current project code under CI)
-      # Root package should not be cached - its content is not reflected in uv.lock / cache key
-      shell: bash
-      run: |
-        uv sync --all-extras --dev --no-install-project
-
-    - if: steps.restore-pydeps-cache.outputs.cache-hit != 'true'
-      name: Save Python deps to cache
-      uses: actions/cache/save@v4
-      with:
-        path: ${{ inputs.create-venv-at-path }}
-        key: ${{ steps.restore-pydeps-cache.outputs.cache-primary-key }}
-
-    - if: ${{ inputs.run-uv-sync == 'true' }}
-      name: Run uv sync (root package)
-      # Here we really install the root package (the current project code under CI).env:
-      # This should not be cached.
-      shell: bash
-      run: |
-        uv sync --all-extras --dev
