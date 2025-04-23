@@ -189,11 +189,9 @@ def run_frontend_prod(root: Path, port: str, backend_present: bool = True):
 
 @once
 def _warn_user_about_uvicorn():
-    # When we eventually switch to Granian by default, we should enable this warning.
-    if False:
-        console.warn(
-            "Using Uvicorn for backend as it is installed. This behavior will change in 0.8.0 to use Granian by default."
-        )
+    console.warn(
+        "Using Uvicorn for backend as it is installed. This behavior will change in 0.8.0 to use Granian by default."
+    )
 
 
 def should_use_granian():
@@ -202,8 +200,8 @@ def should_use_granian():
     Returns:
         True if Granian should be used.
     """
-    if environment.REFLEX_USE_GRANIAN.get():
-        return True
+    if environment.REFLEX_USE_GRANIAN.is_set():
+        return environment.REFLEX_USE_GRANIAN.get()
     if (
         importlib.util.find_spec("uvicorn") is None
         or importlib.util.find_spec("gunicorn") is None
@@ -367,14 +365,12 @@ def _deprecate_asgi_config(
     config_name: str,
     reason: str = "",
 ):
-    # When we eventually switch to Granian by default, we should enable this deprecation.
-    if False:
-        console.deprecate(
-            f"config.{config_name}",
-            reason=reason,
-            deprecation_version="0.7.5",
-            removal_version="0.8.0",
-        )
+    console.deprecate(
+        f"config.{config_name}",
+        reason=reason,
+        deprecation_version="0.7.9",
+        removal_version="0.8.0",
+    )
 
 
 @once
