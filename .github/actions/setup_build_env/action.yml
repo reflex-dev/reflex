@@ -6,7 +6,6 @@
 #
 # Exit conditions:
 # - Python of version `python-version` is ready to be invoked as `python`.
-# - Uv of version `uv-version` is ready to be invoked as `uv`.
 # - If `run-uv-sync` is true, deps as defined in `pyproject.toml` will have been installed into the venv at `create-venv-at-path`.
 
 name: "Setup Reflex build environment"
@@ -15,10 +14,6 @@ inputs:
   python-version:
     description: "Python version setup"
     required: true
-  uv-version:
-    description: "Uv version to install"
-    required: false
-    default: "0.6.9"
   run-uv-sync:
     description: "Whether to run uv sync on current dir"
     required: false
@@ -34,7 +29,6 @@ runs:
     - name: Install UV
       uses: astral-sh/setup-uv@v5
       with:
-        version: ${{ inputs.uv-version }}
         python-version: ${{ inputs.python-version }}
         enable-cache: true
         prune-cache: false
