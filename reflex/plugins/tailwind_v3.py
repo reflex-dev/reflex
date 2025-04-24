@@ -194,7 +194,7 @@ def add_tailwind_to_postcss_config():
 class TailwindV3Plugin(Plugin):
     """Plugin for Tailwind CSS."""
 
-    def get_frontend_development_dependancies(self, **context) -> list[str]:
+    def get_frontend_development_dependencies(self, **context) -> list[str]:
         """Get the packages required by the plugin.
 
         Args:

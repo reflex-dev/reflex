@@ -55,7 +55,7 @@ class Plugin:
         """
         return []
 
-    def get_frontend_dependancies(
+    def get_frontend_dependencies(
         self, **context: Unpack[CommonContext]
     ) -> list[str] | set[str] | tuple[str, ...]:
         """Get the NPM packages required by the plugin.

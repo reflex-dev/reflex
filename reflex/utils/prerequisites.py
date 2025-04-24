@@ -1318,8 +1318,8 @@ def install_frontend_packages(packages: set[str], config: Config):
 
     development_deps: set[str] = set()
     for plugin in config.plugins:
-        development_deps.update(plugin.get_frontend_development_dependancies())
-        packages.update(plugin.get_frontend_dependancies())
+        development_deps.update(plugin.get_frontend_development_dependencies())
+        packages.update(plugin.get_frontend_dependencies())
 
     if development_deps:
         run_package_manager(
