@@ -42,7 +42,7 @@ class PreCompileContext(CommonContext):
 class Plugin:
     """Base class for all plugins."""
 
-    def get_frontend_development_dependancies(
+    def get_frontend_development_dependencies(
         self, **context: Unpack[CommonContext]
     ) -> list[str] | set[str] | tuple[str, ...]:
         """Get the NPM packages required by the plugin for development.
