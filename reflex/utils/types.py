@@ -149,16 +149,12 @@ def get_type_hints(obj: Any) -> dict[str, Any]:
     return get_type_hints_og(obj)
 
 
-def _unionize(args: list[GenericType]) -> type:
+def _unionize(args: list[GenericType]) -> GenericType:
     if not args:
         return Any  # pyright: ignore [reportReturnType]
     if len(args) == 1:
         return args[0]
-    # We are bisecting the args list here to avoid hitting the recursion limit
-    # In Python versions >= 3.11, we can simply do `return Union[*args]`
-    midpoint = len(args) // 2
-    first_half, second_half = args[:midpoint], args[midpoint:]
-    return Union[unionize(*first_half), unionize(*second_half)]  # pyright: ignore [reportReturnType]  # noqa: UP007
+    return Union[tuple(args)]  # noqa: UP007
 
 
 def unionize(*args: GenericType) -> type:
