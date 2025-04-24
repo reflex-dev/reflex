@@ -1147,7 +1147,7 @@ def download_and_run(url: str, *args, show_status: bool = False, **env):
         console.error(
             f"Failed to download bun install script. You can install or update bun manually from https://bun.sh \n{e}"
         )
-        raise typer.Exit(1) from None
+        raise click.exceptions.Exit(1) from None
 
     # Save the script to a temporary file.
     script = Path(tempfile.NamedTemporaryFile().name)
