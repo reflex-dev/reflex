@@ -273,6 +273,14 @@ class Upload(MemoizationLeaf):
             elif isinstance(on_drop, Callable):
                 # Call the lambda to get the event chain.
                 on_drop = call_event_fn(on_drop, _on_drop_spec)
+            if isinstance(on_drop, EventSpec):
+                # Update the provided args for direct use with on_drop.
+                on_drop = on_drop.with_args(
+                    args=tuple(
+                        cls._update_arg_tuple_for_on_drop(arg_value)
+                        for arg_value in on_drop.args
+                    ),
+                )
             upload_props["on_drop"] = on_drop
 
         input_props_unique_name = get_unique_variable_name()

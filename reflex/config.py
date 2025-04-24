@@ -392,7 +392,7 @@ class EnvVar(Generic[T]):
             The environment variable value.
         """
         env_value = os.getenv(self.name, None)
-        if env_value is not None:
+        if env_value and env_value.strip():
             return self.interpret(env_value)
         return None
 
@@ -402,7 +402,7 @@ class EnvVar(Generic[T]):
         Returns:
             True if the environment variable is set.
         """
-        return self.name in os.environ
+        return bool(os.getenv(self.name, "").strip())
 
     def get(self) -> T:
         """Get the interpreted environment variable value or the default value if not set.
@@ -695,9 +695,6 @@ class EnvironmentVariables:
     # The port to run the backend on.
     REFLEX_BACKEND_PORT: EnvVar[int | None] = env_var(None)
 
-    # Reflex internal env to reload the config.
-    RELOAD_CONFIG: EnvVar[bool] = env_var(False, internal=True)
-
     # If this env var is set to "yes", App.compile will be a no-op
     REFLEX_SKIP_COMPILE: EnvVar[bool] = env_var(False, internal=True)
 
@@ -969,7 +966,7 @@ class Config(Base):
             env_var = os.environ.get(key.upper())
 
             # If the env var is set, override the config value.
-            if env_var is not None:
+            if env_var and env_var.strip():
                 # Interpret the value.
                 value = interpret_env_var_value(
                     env_var, true_type_for_pydantic_field(field), field.name

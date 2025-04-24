@@ -15,6 +15,7 @@ from unittest.mock import AsyncMock
 import pytest
 import sqlmodel
 from fastapi import FastAPI, UploadFile
+from pytest_mock import MockerFixture
 from starlette_admin.auth import AuthProvider
 from starlette_admin.contrib.sqla.admin import Admin
 from starlette_admin.contrib.sqla.view import ModelView
@@ -49,7 +50,7 @@ from reflex.state import (
     _substate_key,
 )
 from reflex.style import Style
-from reflex.utils import exceptions, format
+from reflex.utils import console, exceptions, format
 from reflex.vars.base import computed_var
 
 from .conftest import chdir
@@ -332,7 +333,28 @@ def index():
 
 
 @pytest.mark.parametrize(
-    "first_page,second_page, route",
+    ("first_page", "second_page", "route"),
+    [
+        (index, index, None),
+        (page1, page1, None),
+    ],
+)
+def test_add_the_same_page(
+    mocker: MockerFixture, app: App, first_page, second_page, route
+):
+    app.add_page(first_page, route=route)
+    mock_object = mocker.Mock()
+    mocker.patch.object(
+        console,
+        "warn",
+        mock_object,
+    )
+    app.add_page(second_page, route="/" + route.strip("/") if route else None)
+    assert mock_object.call_count == 1
+
+
+@pytest.mark.parametrize(
+    ("first_page", "second_page", "route"),
     [
         (lambda: rx.fragment(), lambda: rx.fragment(rx.text("second")), "/"),
         (rx.fragment(rx.text("first")), rx.fragment(rx.text("second")), "/page1"),
@@ -342,11 +364,9 @@ def index():
             "page3",
         ),
         (page1, page2, "page1"),
-        (index, index, None),
-        (page1, page1, None),
     ],
 )
-def test_add_duplicate_page_route_error(app, first_page, second_page, route):
+def test_add_duplicate_page_route_error(app: App, first_page, second_page, route):
     app.add_page(first_page, route=route)
     with pytest.raises(ValueError):
         app.add_page(second_page, route="/" + route.strip("/") if route else None)

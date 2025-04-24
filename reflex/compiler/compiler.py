@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from collections.abc import Iterable, Sequence
 from datetime import datetime
+from inspect import getmodule
 from pathlib import Path
 from typing import TYPE_CHECKING
 
@@ -673,6 +674,35 @@ def _into_component_once(
         return Fragment.create(component)
     if isinstance(component, Sequence):
         return Fragment.create(*component)
+    return None
+
+
+def readable_name_from_component(
+    component: Component | ComponentCallable,
+) -> str | None:
+    """Get the readable name of a component.
+
+    Args:
+        component: The component to get the name of.
+
+    Returns:
+        The readable name of the component.
+    """
+    if isinstance(component, Component):
+        return type(component).__name__
+    if isinstance(component, (Var, int, float, str)):
+        return str(component)
+    if isinstance(component, Sequence):
+        return ", ".join(str(c) for c in component)
+    if callable(component):
+        module_name = getattr(component, "__module__", None)
+        if module_name is not None:
+            module = getmodule(component)
+            if module is not None:
+                module_name = module.__name__
+        if module_name is not None:
+            return f"{module_name}.{component.__name__}"
+        return component.__name__
     return None
 
 

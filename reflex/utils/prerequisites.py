@@ -371,7 +371,6 @@ def get_app(reload: bool = False) -> ModuleType:
     from reflex.utils import telemetry
 
     try:
-        environment.RELOAD_CONFIG.set(reload)
         config = get_config()
 
         _check_app_name(config)
@@ -384,10 +383,13 @@ def get_app(reload: bool = False) -> ModuleType:
             else config.app_module
         )
         if reload:
+            from reflex.page import DECORATED_PAGES
             from reflex.state import reload_state_module
 
             # Reset rx.State subclasses to avoid conflict when reloading.
             reload_state_module(module=module)
+
+            DECORATED_PAGES.clear()
 
             # Reload the app module.
             importlib.reload(app)
@@ -1132,12 +1134,20 @@ def download_and_run(url: str, *args, show_status: bool = False, **env):
         args: The arguments to pass to the script.
         show_status: Whether to show the status of the script.
         env: The environment variables to use.
+
+    Raises:
+        Exit: If the script fails to download.
     """
     # Download the script
     console.debug(f"Downloading {url}")
-    response = net.get(url)
-    if response.status_code != httpx.codes.OK:
+    try:
+        response = net.get(url)
         response.raise_for_status()
+    except httpx.HTTPError as e:
+        console.error(
+            f"Failed to download bun install script. You can install or update bun manually from https://bun.sh \n{e}"
+        )
+        raise typer.Exit(1) from None
 
     # Save the script to a temporary file.
     script = Path(tempfile.NamedTemporaryFile().name)

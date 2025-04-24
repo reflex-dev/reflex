@@ -331,15 +331,6 @@ wheels = [
 ]
 
 [[package]]
-name = "distro"
-version = "1.9.0"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/fc/f8/98eea607f65de6527f8a2e8885fc8015d3e6f5775df186e443e0964a11c3/distro-1.9.0.tar.gz", hash = "sha256:2fa77c6fd8940f116ee1d6b94a2f90b13b5ea8d019b98bc8bafdcabcdd9bdbed", size = 60722, upload_time = "2023-12-24T09:54:32.31Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/12/b3/231ffd4ab1fc9d679809f356cebee130ac7daa00d6d6f3206dd4fd137e9e/distro-1.9.0-py3-none-any.whl", hash = "sha256:7bffd925d65168f85027d8da9af6bddab658135b840670a223589bc0c8ef02b2", size = 20277, upload_time = "2023-12-24T09:54:30.421Z" },
-]
-
-[[package]]
 name = "exceptiongroup"
 version = "1.2.2"
 source = { registry = "https://pypi.org/simple" }
@@ -499,18 +490,6 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/bb/09/cca3392927c5c990b7a8ede64ccd0712808438d6490d63ce6b8704d6df5f/greenlet-3.2.0-cp313-cp313t-musllinux_1_1_aarch64.whl", hash = "sha256:17fd241c0d50bacb7ce8ff77a30f94a2d0ca69434ba2e0187cf95a5414aeb7e1", size = 1105762, upload_time = "2025-04-15T16:52:55.245Z" },
     { url = "https://files.pythonhosted.org/packages/4d/b9/3d201f819afc3b7a8cd7ebe645f1a17799603e2d62c968154518f79f4881/greenlet-3.2.0-cp313-cp313t-musllinux_1_1_x86_64.whl", hash = "sha256:7b17a26abc6a1890bf77d5d6b71c0999705386b00060d15c10b8182679ff2790", size = 1125173, upload_time = "2025-04-15T16:23:03.009Z" },
     { url = "https://files.pythonhosted.org/packages/80/7b/773a30602234597fc2882091f8e1d1a38ea0b4419d99ca7ed82c827e2c3a/greenlet-3.2.0-cp314-cp314-macosx_11_0_universal2.whl", hash = "sha256:397b6bbda06f8fe895893d96218cd6f6d855a6701dc45012ebe12262423cec8b", size = 269908, upload_time = "2025-04-15T16:20:33.58Z" },
-]
-
-[[package]]
-name = "gunicorn"
-version = "23.0.0"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "packaging" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/34/72/9614c465dc206155d93eff0ca20d42e1e35afc533971379482de953521a4/gunicorn-23.0.0.tar.gz", hash = "sha256:f014447a0101dc57e294f6c18ca6b40227a4c90e9bdb586042628030cba004ec", size = 375031, upload_time = "2024-08-10T20:25:27.378Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/cb/7d/6dac2a6e1eba33ee43f318edbed4ff29151a49b5d37f080aad1e6469bca4/gunicorn-23.0.0-py3-none-any.whl", hash = "sha256:ec400d38950de4dfd418cff8328b2c8faed0edb0d517d3394e457c317908ca4d", size = 85029, upload_time = "2024-08-10T20:25:24.996Z" },
 ]
 
 [[package]]
@@ -1535,11 +1514,8 @@ version = "0.7.9.dev1"
 source = { editable = "." }
 dependencies = [
     { name = "alembic" },
-    { name = "click" },
-    { name = "distro", marker = "sys_platform == 'linux'" },
     { name = "fastapi" },
     { name = "granian", extra = ["reload"] },
-    { name = "gunicorn" },
     { name = "httpx" },
     { name = "jinja2" },
     { name = "packaging" },
@@ -1553,7 +1529,6 @@ dependencies = [
     { name = "rich" },
     { name = "sqlmodel" },
     { name = "typing-extensions" },
-    { name = "uvicorn" },
     { name = "wrapt" },
 ]
 
@@ -1585,16 +1560,14 @@ dev = [
     { name = "ruff" },
     { name = "selenium" },
     { name = "starlette-admin" },
+    { name = "uvicorn" },
 ]
 
 [package.metadata]
 requires-dist = [
     { name = "alembic", specifier = ">=1.15.2,<2.0" },
-    { name = "click", specifier = ">=8" },
-    { name = "distro", marker = "sys_platform == 'linux'", specifier = ">=1.9.0,<2.0" },
     { name = "fastapi", specifier = ">=0.115.0" },
     { name = "granian", extras = ["reload"], specifier = ">=2.2.5" },
-    { name = "gunicorn", specifier = ">=23.0.0,<24.0.0" },
     { name = "httpx", specifier = ">=0.28.0,<1.0" },
     { name = "jinja2", specifier = ">=3.1.2,<4.0" },
     { name = "packaging", specifier = ">=24.2,<26" },
@@ -1608,7 +1581,6 @@ requires-dist = [
     { name = "rich", specifier = ">=13,<15" },
     { name = "sqlmodel", specifier = ">=0.0.24,<0.1" },
     { name = "typing-extensions", specifier = ">=4.13.0" },
-    { name = "uvicorn", specifier = ">=0.34.0" },
     { name = "wrapt", specifier = ">=1.17.0,<2.0" },
 ]
 
@@ -1640,6 +1612,7 @@ dev = [
     { name = "ruff", specifier = ">=0.11" },
     { name = "selenium", specifier = ">=4.31" },
     { name = "starlette-admin", specifier = ">=0.14" },
+    { name = "uvicorn", specifier = ">=0.34.0" },
 ]
 
 [[package]]

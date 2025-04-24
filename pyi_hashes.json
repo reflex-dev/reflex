@@ -57,7 +57,7 @@
   "reflex/components/radix/primitives/slider.pyi": "10196fb967c9cde3860a930a526b6c51",
   "reflex/components/radix/themes/__init__.pyi": "a15f9464ad99f248249ffa8e6deea4cf",
   "reflex/components/radix/themes/base.pyi": "a3c3c3b72fd3d8f1e38990e5c461b682",
-  "reflex/components/radix/themes/color_mode.pyi": "435a51382eab6111aae1b26e79e9a473",
+  "reflex/components/radix/themes/color_mode.pyi": "e18fe42952d10f5733f3baf4789c4bb5",
   "reflex/components/radix/themes/components/__init__.pyi": "87bb9ffff641928562da1622d2ca5993",
   "reflex/components/radix/themes/components/alert_dialog.pyi": "8e1dde62450296310a116ed066bd51e3",
   "reflex/components/radix/themes/components/aspect_ratio.pyi": "1845813a034adfc1f5db8e0f6ffc1118",

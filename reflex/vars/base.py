@@ -483,7 +483,21 @@ class Var(Generic[VAR_TYPE]):
             _var_subclasses.append(VarSubclassEntry(cls, ToVarOperation, python_types))
 
     def __post_init__(self):
-        """Post-initialize the var."""
+        """Post-initialize the var.
+
+        Raises:
+            TypeError: If _js_expr is not a string.
+        """
+        if not isinstance(self._js_expr, str):
+            raise TypeError(
+                f"Expected _js_expr to be a string, got value {self._js_expr!r} of type {type(self._js_expr).__name__}"
+            )
+
+        if self._var_data is not None and not isinstance(self._var_data, VarData):
+            raise TypeError(
+                f"Expected _var_data to be a VarData, got value {self._var_data!r} of type {type(self._var_data).__name__}"
+            )
+
         # Decode any inline Var markup and apply it to the instance
         _var_data, _js_expr = _decode_var_immutable(self._js_expr)
 
@@ -1768,6 +1782,10 @@ def figure_out_type(value: Any) -> types.GenericType:
     if isinstance(value, set):
         return set[unionize(*(figure_out_type(v) for v in value))]
     if isinstance(value, tuple):
+        if not value:
+            return tuple[NoReturn, ...]
+        if len(value) <= 5:
+            return tuple[tuple(figure_out_type(v) for v in value)]
         return tuple[unionize(*(figure_out_type(v) for v in value)), ...]
     if isinstance(value, Mapping):
         if not value:
