@@ -14,7 +14,7 @@ class Bun(SimpleNamespace):
     """Bun constants."""
 
     # The Bun version.
-    VERSION = "1.2.8"
+    VERSION = "1.2.10"
 
     # Min Bun Version
     MIN_VERSION = "1.2.8"
@@ -75,7 +75,7 @@ fetch-retries=0
 
 
 def _determine_nextjs_version() -> str:
-    default_version = "15.3.0"
+    default_version = "15.3.1"
     if (version := os.getenv("NEXTJS_VERSION")) and version != default_version:
         from reflex.utils import console
 
@@ -101,13 +101,13 @@ class PackageJson(SimpleNamespace):
 
     DEPENDENCIES = {
         "@emotion/react": "11.14.0",
-        "axios": "1.8.3",
+        "axios": "1.8.4",
         "json5": "2.2.3",
         "next": _determine_nextjs_version(),
         "next-sitemap": "4.2.3",
         "next-themes": "0.4.6",
-        "react": "19.0.0",
-        "react-dom": "19.0.0",
+        "react": "19.1.0",
+        "react-dom": "19.1.0",
         "react-focus-lock": "2.13.6",
         "socket.io-client": "4.8.1",
         "universal-cookie": "7.2.2",
@@ -119,5 +119,5 @@ class PackageJson(SimpleNamespace):
     }
     OVERRIDES = {
         # This should always match the `react` version in DEPENDENCIES for recharts compatibility.
-        "react-is": "19.0.0"
+        "react-is": "19.1.0"
     }
