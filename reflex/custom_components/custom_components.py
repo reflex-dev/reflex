@@ -9,14 +9,27 @@ import sys
 from collections import namedtuple
 from contextlib import contextmanager
 from pathlib import Path
+from typing import Any
 
 import click
 import httpx
 
 from reflex import constants
-from reflex.config import get_config
 from reflex.constants import CustomComponents
 from reflex.utils import console
+
+
+def set_loglevel(ctx: Any, self: Any, value: str | None):
+    """Set the log level.
+
+    Args:
+        ctx: The click context.
+        self: The click command.
+        value: The log level to set.
+    """
+    if value is not None:
+        loglevel = constants.LogLevel.from_string(value)
+        console.set_log_level(loglevel)
 
 
 @click.group
@@ -25,21 +38,17 @@ def custom_components_cli():
     pass
 
 
-def _set_loglevel_from_cli(loglevel: str | None):
-    console.set_log_level(
-        constants.LogLevel.from_string(loglevel) or get_config().loglevel
-    )
-
-
 loglevel_option = click.option(
     "--loglevel",
     type=click.Choice(
         [loglevel.value for loglevel in constants.LogLevel],
         case_sensitive=False,
     ),
+    callback=set_loglevel,
+    is_eager=True,
+    expose_value=False,
     help="The log level to use.",
 )
-
 
 POST_CUSTOM_COMPONENTS_GALLERY_TIMEOUT = 15
 
@@ -311,21 +320,17 @@ def _populate_custom_component_project(name_variants: NameVariants):
 def init(
     library_name: str | None,
     install: bool,
-    loglevel: str | None,
 ):
     """Initialize a custom component.
 
     Args:
         library_name: The name of the library.
         install: Whether to install package from this local custom component in editable mode.
-        loglevel: The log level to use.
 
     Raises:
         Exit: If the pyproject.toml already exists.
     """
     from reflex.utils import exec, prerequisites
-
-    _set_loglevel_from_cli(loglevel)
 
     if CustomComponents.PYPROJECT_TOML.exists():
         console.error(f"A {CustomComponents.PYPROJECT_TOML} already exists. Aborting.")
@@ -452,15 +457,8 @@ def _run_build():
 
 @custom_components_cli.command(name="build")
 @loglevel_option
-def build(
-    loglevel: str | None = None,
-):
-    """Build a custom component. Must be run from the project root directory where the pyproject.toml is.
-
-    Args:
-        loglevel: The log level to use.
-    """
-    _set_loglevel_from_cli(loglevel)
+def build():
+    """Build a custom component. Must be run from the project root directory where the pyproject.toml is."""
     _run_build()
 
 
@@ -609,34 +607,19 @@ def _get_file_from_prompt_in_loop() -> tuple[bytes, str] | None:
 
 @custom_components_cli.command(name="share")
 @loglevel_option
-def share_more_detail(
-    loglevel: str | None,
-):
-    """Collect more details on the published package for gallery.
-
-    Args:
-        loglevel: The log level to use.
-    """
-    _set_loglevel_from_cli(loglevel)
-
+def share_more_detail():
+    """Collect more details on the published package for gallery."""
     _collect_details_for_gallery()
 
 
 @custom_components_cli.command(name="install")
 @loglevel_option
-def install(
-    loglevel: str | None = None,
-):
+def install():
     """Install package from this local custom component in editable mode.
-
-    Args:
-        loglevel: The log level to use.
 
     Raises:
         Exit: If unable to install the current directory in editable mode.
     """
-    _set_loglevel_from_cli(loglevel)
-
     if _pip_install_on_demand(package_name=".", install_args=["-e"]):
         console.info("Package installed successfully!")
     else:

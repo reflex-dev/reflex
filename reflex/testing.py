@@ -253,11 +253,11 @@ class AppHarness:
                     self._get_source_from_app_source(self.app_source),
                 ]
             )
+            get_config().loglevel = reflex.constants.LogLevel.INFO
             with chdir(self.app_path):
                 reflex.reflex._init(
                     name=self.app_name,
                     template=reflex.constants.Templates.DEFAULT,
-                    loglevel=reflex.constants.LogLevel.INFO,
                 )
                 self.app_module_path.write_text(source_code)
         else:
@@ -935,10 +935,10 @@ class AppHarnessProd(AppHarness):
                 *self._poll_for_servers().getsockname(),
             )
 
+            get_config().loglevel = reflex.constants.LogLevel.INFO
+
             if reflex.utils.prerequisites.needs_reinit(frontend=True):
-                reflex.reflex._init(
-                    name=get_config().app_name, loglevel=reflex.constants.LogLevel.INFO
-                )
+                reflex.reflex._init(name=get_config().app_name)
 
             export(
                 zipping=False,
