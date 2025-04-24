@@ -1909,8 +1909,9 @@ def _register_custom_component(
         TypeError: If the tag name cannot be determined.
     """
     dummy_props = {
-        prop: Var("", _var_type=param.annotation)
-        for prop, param in inspect.signature(component_fn).parameters.items()
+        prop: Var("", _var_type=annotation)
+        for prop, annotation in typing.get_type_hints(component_fn).items()
+        if prop != "return"
     }
     dummy_component = CustomComponent._create(
         children=[],
