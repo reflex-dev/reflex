@@ -1647,32 +1647,6 @@ class Component(BaseComponent, ABC):
 
         return refs
 
-    def _get_all_custom_components(
-        self, seen: set[str] | None = None
-    ) -> set[CustomComponent]:
-        """Get all the custom components used by the component.
-
-        Args:
-            seen: The tags of the components that have already been seen.
-
-        Returns:
-            The set of custom components.
-        """
-        custom_components = set()
-
-        # Store the seen components in a set to avoid infinite recursion.
-        if seen is None:
-            seen = set()
-        for child in self.children:
-            # Skip BaseComponent and StatefulComponent children.
-            if not isinstance(child, Component):
-                continue
-            custom_components |= child._get_all_custom_components(seen=seen)
-        for component in self._get_components_in_props():
-            if isinstance(component, Component) and component.tag is not None:
-                custom_components |= component._get_all_custom_components(seen=seen)
-        return custom_components
-
     @property
     def import_var(self):
         """The tag to import.
@@ -1857,37 +1831,6 @@ class CustomComponent(Component):
         """
         return set()
 
-    def _get_all_custom_components(
-        self, seen: set[str] | None = None
-    ) -> set[CustomComponent]:
-        """Get all the custom components used by the component.
-
-        Args:
-            seen: The tags of the components that have already been seen.
-
-        Raises:
-            ValueError: If the tag is not set.
-
-        Returns:
-            The set of custom components.
-        """
-        if self.tag is None:
-            raise ValueError("The tag must be set.")
-
-        # Store the seen components in a set to avoid infinite recursion.
-        if seen is None:
-            seen = set()
-        custom_components = {self} | super()._get_all_custom_components(seen=seen)
-
-        # Avoid adding the same component twice.
-        if self.tag not in seen:
-            seen.add(self.tag)
-            custom_components |= self.get_component(self)._get_all_custom_components(
-                seen=seen
-            )
-
-        return custom_components
-
     @staticmethod
     def _get_event_spec_from_args_spec(name: str, event: EventChain) -> Callable:
         """Get the event spec from the args spec.
@@ -1951,6 +1894,42 @@ class CustomComponent(Component):
         return self.component_fn(*self.get_prop_vars())
 
 
+CUSTOM_COMPONENTS: dict[str, CustomComponent] = {}
+
+
+def _register_custom_component(
+    component_fn: Callable[..., Component],
+):
+    """Register a custom component to be compiled.
+
+    Args:
+        component_fn: The function that creates the component.
+
+    Raises:
+        TypeError: If the tag name cannot be determined.
+    """
+    dummy_props = {
+        prop: (
+            Var(
+                "",
+                _var_type=annotation,
+            )
+            if not types.safe_issubclass(annotation, EventHandler)
+            else EventSpec(handler=EventHandler(fn=lambda: []))
+        )
+        for prop, annotation in typing.get_type_hints(component_fn).items()
+        if prop != "return"
+    }
+    dummy_component = CustomComponent._create(
+        children=[],
+        component_fn=component_fn,
+        **dummy_props,
+    )
+    if dummy_component.tag is None:
+        raise TypeError(f"Could not determine the tag name for {component_fn!r}")
+    CUSTOM_COMPONENTS[dummy_component.tag] = dummy_component
+
+
 def custom_component(
     component_fn: Callable[..., Component],
 ) -> Callable[..., CustomComponent]:
@@ -1970,6 +1949,9 @@ def custom_component(
         return CustomComponent._create(
             children=list(children), component_fn=component_fn, **props
         )
+
+    # Register this component so it can be compiled.
+    _register_custom_component(component_fn)
 
     return wrapper
 

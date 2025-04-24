@@ -45,6 +45,7 @@ from reflex.components.base.error_boundary import ErrorBoundary
 from reflex.components.base.fragment import Fragment
 from reflex.components.base.strict_mode import StrictMode
 from reflex.components.component import (
+    CUSTOM_COMPONENTS,
     Component,
     ComponentStyle,
     evaluate_style_namespaces,
@@ -1222,9 +1223,8 @@ class App(MiddlewareMixin, LifespanMixin):
 
         progress.advance(task)
 
-        # Track imports and custom components found.
+        # Track imports found.
         all_imports = {}
-        custom_components = set()
 
         # This has to happen before compiling stateful components as that
         # prevents recursive functions from reaching all components.
@@ -1234,9 +1234,6 @@ class App(MiddlewareMixin, LifespanMixin):
 
             # Add the app wrappers from this component.
             app_wrappers.update(component._get_all_app_wrap_components())
-
-            # Add the custom components from the page to the set.
-            custom_components |= component._get_all_custom_components()
 
         if (toaster := self.toaster) is not None:
             from reflex.components.component import memo
@@ -1254,9 +1251,6 @@ class App(MiddlewareMixin, LifespanMixin):
             component = app_wrap(self._state is not None)
             if component is not None:
                 app_wrappers[key] = component
-
-        for component in app_wrappers.values():
-            custom_components |= component._get_all_custom_components()
 
         if self.error_boundary:
             from reflex.compiler.compiler import into_component
@@ -1382,7 +1376,7 @@ class App(MiddlewareMixin, LifespanMixin):
             custom_components_output,
             custom_components_result,
             custom_components_imports,
-        ) = compiler.compile_components(custom_components)
+        ) = compiler.compile_components(set(CUSTOM_COMPONENTS.values()))
         compile_results.append((custom_components_output, custom_components_result))
         all_imports.update(custom_components_imports)
 
