@@ -705,7 +705,7 @@ def _convert_reflex_loglevel_to_reflex_cli_loglevel(
 cli.add_typer(db_cli, name="db", help="Subcommands for managing the database schema.")
 cli.add_typer(script_cli, name="script", help="Subcommands running helper scripts.")
 cli.add_typer(
-    hosting_cli,
+    hosting_cli,  # pyright: ignore [reportArgumentType]
     name="cloud",
     help="Subcommands for managing the reflex cloud.",
 )
