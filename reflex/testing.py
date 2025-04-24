@@ -941,7 +941,7 @@ class AppHarnessProd(AppHarness):
                 )
 
             export(
-                zipping=True,
+                zipping=False,
                 frontend=True,
                 backend=False,
                 loglevel=reflex.constants.LogLevel.INFO,
