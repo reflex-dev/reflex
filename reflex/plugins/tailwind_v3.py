@@ -146,6 +146,13 @@ def compile_tailwind(
     return output_path, code
 
 
+def _index_of_element_that_startswith(lines: list[str], prefix: str) -> int | None:
+    return next(
+        (i for i, line in enumerate(lines) if line.strip().startswith(prefix)),
+        None,
+    )
+
+
 def add_tailwind_to_postcss_config():
     """Add tailwind to the postcss config."""
     from reflex.constants import Dirs
@@ -161,16 +168,11 @@ def add_tailwind_to_postcss_config():
 
     postcss_file_lines = postcss_file.read_text().splitlines()
 
-    if any(line.strip().startswith("tailwindcss") for line in postcss_file_lines):
+    if _index_of_element_that_startswith(postcss_file_lines, "tailwindcss") is not None:
         return
 
-    line_with_postcss_plugins = next(
-        (
-            i
-            for i, line in enumerate(postcss_file_lines)
-            if line.strip().startswith("plugins")
-        ),
-        None,
+    line_with_postcss_plugins = _index_of_element_that_startswith(
+        postcss_file_lines, "plugins"
     )
     if not line_with_postcss_plugins:
         print(  # noqa: T201
@@ -179,15 +181,9 @@ def add_tailwind_to_postcss_config():
         )
         return
 
-    postcss_import_line = next(
-        (
-            i
-            for i, line in enumerate(postcss_file_lines)
-            if line.strip().startswith('"postcss-import"')
-        ),
-        None,
+    postcss_import_line = _index_of_element_that_startswith(
+        postcss_file_lines, '"postcss-import"'
     )
-
     postcss_file_lines.insert(
         (postcss_import_line or line_with_postcss_plugins) + 1, "tailwindcss: {},"
     )
