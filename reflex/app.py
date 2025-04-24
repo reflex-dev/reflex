@@ -20,7 +20,7 @@ from timeit import default_timer as timer
 from types import SimpleNamespace
 from typing import TYPE_CHECKING, Any, BinaryIO, get_args, get_type_hints
 
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import FastAPI, HTTPException, Request, Response
 from fastapi import UploadFile as FastAPIUploadFile
 from fastapi.middleware import cors
 from fastapi.responses import JSONResponse, StreamingResponse
@@ -81,6 +81,7 @@ from reflex.route import (
     replace_brackets_with_keywords,
     verify_route_validity,
 )
+from reflex.sitemap import generate_sitemaps, read_sitemap_file
 from reflex.state import (
     BaseState,
     RouterData,
@@ -424,6 +425,8 @@ class App(MiddlewareMixin, LifespanMixin):
     # Put the toast provider in the app wrap.
     toaster: Component | None = dataclasses.field(default_factory=toast.provider)
 
+    _sitemap_properties: dict[str, dict] = dataclasses.field(default_factory=dict)
+
     @property
     def api(self) -> FastAPI | None:
         """Get the backend api.
@@ -618,6 +621,19 @@ class App(MiddlewareMixin, LifespanMixin):
 
         self.api.get(str(constants.Endpoint.PING))(ping)
         self.api.get(str(constants.Endpoint.HEALTH))(health)
+        self.api.get(str(constants.Endpoint.SITEMAP))(self.serve_sitemap)
+
+    async def serve_sitemap(self) -> Response:
+        """Asynchronously serve the sitemap as an XML response.
+
+        This function checks if a sitemap.xml file exists in the root directory of the app. If so, this file is served
+        as a Response. Otherwise, a new sitemap is generated and saved to sitemap.xml before being served.
+
+        Returns:
+            Response: An HTTP response with the XML sitemap content and the media type set to "application/xml".
+        """
+        sitemaps = read_sitemap_file()
+        return Response(content=sitemaps, media_type="application/xml")
 
     def _add_optional_endpoints(self):
         """Add optional api endpoints (_upload)."""
@@ -696,6 +712,8 @@ class App(MiddlewareMixin, LifespanMixin):
         on_load: EventType[()] | None = None,
         meta: list[dict[str, str]] = constants.DefaultPage.META_LIST,
         context: dict[str, Any] | None = None,
+        sitemap_priority: float = constants.DefaultPage.SITEMAP_PRIORITY,
+        sitemap_changefreq: str = constants.DefaultPage.SITEMAP_CHANGEFREQ,
     ):
         """Add a page to the app.
 
@@ -711,6 +729,9 @@ class App(MiddlewareMixin, LifespanMixin):
             on_load: The event handler(s) that will be called each time the page load.
             meta: The metadata of the page.
             context: Values passed to page for custom page-specific logic.
+            sitemap_priority: The priority of the page in the sitemap. If None, the priority is calculated based on the
+            depth of the route.
+            sitemap_changefreq: The change frequency of the page in the sitemap. Default to 'weekly'
 
         Raises:
             PageValueError: When the component is not set for a non-404 page.
@@ -776,7 +797,7 @@ class App(MiddlewareMixin, LifespanMixin):
                 )
 
         # Setup dynamic args for the route.
-        # this state assignment is only required for tests using the deprecated state kwarg for App
+        # This state assignment is only required for tests using the deprecated state kwarg for App
         state = self._state if self._state else State
         state.setup_dynamic_args(get_route_args(route))
 
@@ -784,6 +805,11 @@ class App(MiddlewareMixin, LifespanMixin):
             self._load_events[route] = (
                 on_load if isinstance(on_load, list) else [on_load]
             )
+
+        self._sitemap_properties[route] = {
+            "priority": sitemap_priority,
+            "changefreq": sitemap_changefreq,
+        }
 
         self._unevaluated_pages[route] = unevaluated_page
 
@@ -811,6 +837,10 @@ class App(MiddlewareMixin, LifespanMixin):
         self._check_routes_conflict(route)
         if save_page:
             self._pages[route] = component
+
+    def get_sitemap_properties(self) -> dict[str, dict]:
+        """Get the sitemap properties."""
+        return self._sitemap_properties
 
     def get_load_events(self, route: str) -> list[IndividualEventType[()]]:
         """Get the load events for a route.
@@ -1103,6 +1133,9 @@ class App(MiddlewareMixin, LifespanMixin):
         from reflex.utils.exceptions import ReflexRuntimeError
 
         self._pages = {}
+
+        # generate sitemaps from sitemap properties
+        generate_sitemaps(self._sitemap_properties)
 
         def get_compilation_time() -> str:
             return str(datetime.now().time()).split(".")[0]
