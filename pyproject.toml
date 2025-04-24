@@ -23,7 +23,6 @@ dependencies = [
   "alembic >=1.15.2,<2.0",
   "fastapi >=0.115.0",
   "granian[reload] >=2.2.5",
-  "gunicorn >=23.0.0,<24.0.0",
   "httpx >=0.28.0,<1.0",
   "jinja2 >=3.1.2,<4.0",
   "packaging >=24.2,<26",
@@ -38,7 +37,6 @@ dependencies = [
   "sqlmodel >=0.0.24,<0.1",
   "typer >=0.15.2,<1.0",
   "typing_extensions >=4.13.0",
-  "uvicorn >=0.34.0",
   "wrapt >=1.17.0,<2.0",
 ]
 classifiers = [
@@ -166,4 +164,6 @@ dev = [
   "ruff >=0.11",
   "selenium >=4.31",
   "starlette-admin >=0.14",
+  "uvicorn >=0.34.0",
+
 ]
