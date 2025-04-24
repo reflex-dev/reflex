@@ -161,6 +161,9 @@ def add_tailwind_to_postcss_config():
 
     postcss_file_lines = postcss_file.read_text().splitlines()
 
+    if any(line.strip().startswith("tailwindcss") for line in postcss_file_lines):
+        return
+
     line_with_postcss_plugins = next(
         (
             i
@@ -176,7 +179,18 @@ def add_tailwind_to_postcss_config():
         )
         return
 
-    postcss_file_lines.insert(line_with_postcss_plugins + 1, "tailwindcss: {},")
+    postcss_import_line = next(
+        (
+            i
+            for i, line in enumerate(postcss_file_lines)
+            if line.strip().startswith('"postcss-import"')
+        ),
+        None,
+    )
+
+    postcss_file_lines.insert(
+        (postcss_import_line or line_with_postcss_plugins) + 1, "tailwindcss: {},"
+    )
 
     return str(postcss_file), "\n".join(postcss_file_lines)
 
