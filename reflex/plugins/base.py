@@ -2,7 +2,7 @@
 
 from collections.abc import Callable, Sequence
 from pathlib import Path
-from typing import ParamSpec, Protocol, TypedDict, TypeVarTuple
+from typing import ParamSpec, Protocol, TypedDict
 
 from typing_extensions import Unpack
 
@@ -37,9 +37,6 @@ class PreCompileContext(CommonContext):
     """Context for pre-compile hooks."""
 
     add_task: AddTaskProtcol
-
-
-Types = TypeVarTuple("Types")
 
 
 class Plugin:
