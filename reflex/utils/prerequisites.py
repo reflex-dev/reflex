@@ -1334,7 +1334,7 @@ def install_frontend_packages(packages: set[str], config: Config):
         )
 
     # Install custom packages defined in frontend_packages
-    if len(packages) > 0:
+    if packages:
         run_package_manager(
             [primary_package_manager, "add", "--legacy-peer-deps", *packages],
             show_status_message="Installing frontend packages from config and components",

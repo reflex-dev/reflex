@@ -1290,6 +1290,17 @@ def compilable_app(tmp_path) -> Generator[tuple[App, Path], None, None]:
     web_dir = app_path / ".web"
     web_dir.mkdir(parents=True)
     (web_dir / constants.PackageJson.PATH).touch()
+    (web_dir / constants.Dirs.POSTCSS_JS).touch()
+    (web_dir / constants.Dirs.POSTCSS_JS).write_text(
+        """
+module.exports = {
+  plugins: {
+    "postcss-import": {},
+    autoprefixer: {},
+  },
+};
+""",
+    )
     app = App(theme=None)
     app._get_frontend_packages = unittest.mock.Mock()
     with chdir(app_path):
@@ -1312,8 +1323,8 @@ def test_app_wrap_compile_theme(
     """
     conf = rx.Config(app_name="testing", react_strict_mode=react_strict_mode)
     mocker.patch("reflex.config._get_config", return_value=conf)
-
     app, web_dir = compilable_app
+    mocker.patch("reflex.utils.prerequisites.get_web_dir", return_value=web_dir)
     app.theme = rx.theme(accent_color="plum")
     app._compile()
     app_js_contents = (web_dir / "pages" / "_app.js").read_text()
@@ -1461,6 +1472,7 @@ def test_raise_on_state():
 def test_call_app():
     """Test that the app can be called."""
     app = App()
+    app._get_frontend_packages = unittest.mock.Mock()
     api = app()
     assert isinstance(api, FastAPI)
 

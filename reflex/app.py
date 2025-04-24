@@ -602,10 +602,12 @@ class App(MiddlewareMixin, LifespanMixin):
         compile_future = concurrent.futures.ThreadPoolExecutor(max_workers=1).submit(
             self._compile
         )
-        compile_future.add_done_callback(
+
+        def callback(f: concurrent.futures.Future):
             # Force background compile errors to print eagerly
-            lambda f: f.result()
-        )
+            return f.result()
+
+        compile_future.add_done_callback(callback)
         # Wait for the compile to finish in prod mode to ensure all optional endpoints are mounted.
         if is_prod_mode():
             compile_future.result()
@@ -1329,10 +1331,12 @@ class App(MiddlewareMixin, LifespanMixin):
         ExecutorSafeFunctions.STATE = self._state
 
         with console.timing("Compile to Javascript"), executor as executor:
-            result_futures: list[concurrent.futures.Future[tuple[str, str]]] = []
+            result_futures: list[concurrent.futures.Future[tuple[str, str] | None]] = []
 
             def _submit_work(
-                fn: Callable[P, tuple[str, str]], *args: P.args, **kwargs: P.kwargs
+                fn: Callable[P, tuple[str, str] | None],
+                *args: P.args,
+                **kwargs: P.kwargs,
             ):
                 f = executor.submit(fn, *args, **kwargs)
                 f.add_done_callback(lambda _: progress.advance(task))
@@ -1356,8 +1360,9 @@ class App(MiddlewareMixin, LifespanMixin):
 
             # Wait for all compilation tasks to complete.
             compile_results.extend(
-                future.result()
+                result
                 for future in concurrent.futures.as_completed(result_futures)
+                if (result := future.result()) is not None
             )
 
         app_root = self._app_root(app_wrappers=app_wrappers)

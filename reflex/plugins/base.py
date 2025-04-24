@@ -18,7 +18,11 @@ class AddTaskProtcol(Protocol):
     """Protocol for adding a task to the pre-compile context."""
 
     def __call__(
-        self, task: Callable[P, tuple[str, str]], /, *args: P.args, **kwargs: P.kwargs
+        self,
+        task: Callable[P, tuple[str, str] | None],
+        /,
+        *args: P.args,
+        **kwargs: P.kwargs,
     ) -> None:
         """Add a task to the pre-compile context.
 

@@ -153,10 +153,11 @@ def add_tailwind_to_postcss_config():
 
     postcss_file = get_web_dir() / Dirs.POSTCSS_JS
     if not postcss_file.exists():
-        raise ValueError(
+        print(  # noqa: T201
             f"Could not find {Dirs.POSTCSS_JS}. "
             "Please make sure the file exists and is valid."
         )
+        return
 
     postcss_file_lines = postcss_file.read_text().splitlines()
 
@@ -169,10 +170,11 @@ def add_tailwind_to_postcss_config():
         None,
     )
     if not line_with_postcss_plugins:
-        raise ValueError(
+        print(  # noqa: T201
             f"Could not find line with 'plugins' in {Dirs.POSTCSS_JS}. "
             "Please make sure the file exists and is valid."
         )
+        return
 
     postcss_file_lines.insert(line_with_postcss_plugins + 1, "tailwindcss: {},")
 
@@ -184,6 +186,9 @@ class TailwindV3Plugin(Plugin):
 
     def get_frontend_development_dependancies(self, **context) -> list[str]:
         """Get the packages required by the plugin.
+
+        Args:
+            **context: The context for the plugin.
 
         Returns:
             A list of packages required by the plugin.
