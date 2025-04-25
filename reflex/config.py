@@ -34,8 +34,7 @@ import pydantic.v1 as pydantic
 from reflex import constants
 from reflex.base import Base
 from reflex.constants.base import LogLevel
-from reflex.plugins.base import Plugin
-from reflex.plugins.tailwind_v3 import TailwindV3Plugin
+from reflex.plugins import Plugin, TailwindV3Plugin
 from reflex.utils import console
 from reflex.utils.exceptions import ConfigError, EnvironmentVarValueError
 from reflex.utils.types import (
@@ -923,6 +922,13 @@ class Config(Base):
         self._replace_defaults(**kwargs)
 
         if self.tailwind is not None:
+            console.deprecate(
+                "Inferring tailwind usage",
+                reason="Either set `tailwind` to `None` if you are not using tailwind, or add `rx.plugins.TailwindV3Plugin()` to the `plugins=[]` in rxconfig.py to be able to use it.",
+                deprecation_version="0.7.10",
+                removal_version="0.8.0",
+                dedupe=True,
+            )
             self.plugins.append(TailwindV3Plugin())
 
         if (

@@ -3,7 +3,7 @@
 from pathlib import Path
 from types import SimpleNamespace
 
-from reflex.plugins.base import Plugin
+from reflex.plugins.base import Plugin as PluginBase
 from reflex.utils.decorator import once
 
 
@@ -191,7 +191,7 @@ def add_tailwind_to_postcss_config():
     return str(postcss_file), "\n".join(postcss_file_lines)
 
 
-class TailwindV3Plugin(Plugin):
+class Plugin(PluginBase):
     """Plugin for Tailwind CSS."""
 
     def get_frontend_development_dependencies(self, **context) -> list[str]:
