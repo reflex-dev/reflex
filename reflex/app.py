@@ -489,7 +489,7 @@ class App(MiddlewareMixin, LifespanMixin):
 
         # Set up the API.
         self._api = Starlette(lifespan=self._run_lifespan_tasks)
-        self._add_cors()
+        App._add_cors(self._api)
         self._add_default_endpoints()
 
         for clz in App.__mro__:
@@ -650,6 +650,7 @@ class App(MiddlewareMixin, LifespanMixin):
             for api_transformer in api_transformers:
                 if isinstance(api_transformer, Starlette):
                     # Mount the api to the fastapi app.
+                    App._add_cors(api_transformer)
                     api_transformer.mount("", asgi_app)
                     asgi_app = api_transformer
                 else:
@@ -708,11 +709,10 @@ class App(MiddlewareMixin, LifespanMixin):
         if environment.REFLEX_ADD_ALL_ROUTES_ENDPOINT.get():
             self.add_all_routes_endpoint()
 
-    def _add_cors(self):
+    @staticmethod
+    def _add_cors(api: Starlette):
         """Add CORS middleware to the app."""
-        if not self._api:
-            return
-        self._api.add_middleware(
+        api.add_middleware(
             cors.CORSMiddleware,
             allow_credentials=True,
             allow_methods=["*"],
