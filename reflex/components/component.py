@@ -19,6 +19,7 @@ import pydantic.v1
 from rich.markup import escape
 
 import reflex.state
+from reflex import constants
 from reflex.base import Base
 from reflex.compiler.templates import STATEFUL_COMPONENT
 from reflex.components.core.breakpoints import Breakpoints
@@ -1928,6 +1929,7 @@ def _register_custom_component(
     if dummy_component.tag is None:
         raise TypeError(f"Could not determine the tag name for {component_fn!r}")
     CUSTOM_COMPONENTS[dummy_component.tag] = dummy_component
+    return dummy_component
 
 
 def custom_component(
@@ -1951,7 +1953,25 @@ def custom_component(
         )
 
     # Register this component so it can be compiled.
-    _register_custom_component(component_fn)
+    dummy_component = _register_custom_component(component_fn)
+    object.__setattr__(
+        wrapper,
+        "_as_var",
+        lambda: Var(
+            f"jsx({dummy_component.tag})",
+            _var_type=Component,
+            _var_data=VarData(
+                imports={
+                    f"$/{constants.Dirs.UTILS}/components": [
+                        ImportVar(tag=dummy_component.tag)
+                    ],
+                    "@emotion/react": [
+                        ImportVar(tag="jsx"),
+                    ],
+                }
+            ),
+        ),
+    )
 
     return wrapper
 
