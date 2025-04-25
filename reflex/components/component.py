@@ -1906,6 +1906,9 @@ def _register_custom_component(
     Args:
         component_fn: The function that creates the component.
 
+    Returns:
+        The custom component.
+
     Raises:
         TypeError: If the tag name cannot be determined.
     """
