@@ -903,7 +903,7 @@ class Config(Base):
         # Set the log level for this process
         env_loglevel = os.environ.get("LOGLEVEL")
         if env_loglevel is not None:
-            env_loglevel = LogLevel(env_loglevel)
+            env_loglevel = LogLevel(env_loglevel.lower())
         if env_loglevel or self.loglevel != LogLevel.DEFAULT:
             console.set_log_level(env_loglevel or self.loglevel)
 

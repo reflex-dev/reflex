@@ -32,10 +32,10 @@ dependencies = [
   "python-socketio >=5.12.0,<6.0",
   "python-multipart >=0.0.20,<1.0",
   "redis >=5.2.1,<6.0",
-  "reflex-hosting-cli >=0.1.38",
+  "reflex-hosting-cli >=0.1.43",
   "rich >=13,<15",
   "sqlmodel >=0.0.24,<0.1",
-  "typer >=0.15.2,<1.0",
+  "click >=8",
   "typing_extensions >=4.13.0",
   "wrapt >=1.17.0,<2.0",
 ]
