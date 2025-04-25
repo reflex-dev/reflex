@@ -316,6 +316,8 @@ class Text(BaseHTML):
     length_adjust: Var[str]
     # A width that the text should be scaled to fit.
     text_length: Var[str | int]
+    # Used to align the text with respect to the x and y attributes.
+    text_anchor: Var[str]
 
 
 class Line(BaseHTML):
@@ -362,6 +364,12 @@ class Ellipse(BaseHTML):
     ry: Var[str | int]
     # The total length for the ellipse's circumference, in user units.
     path_length: Var[int]
+
+
+class G(BaseHTML):
+    """The SVG g component."""
+
+    tag = "g"
 
 
 class Rect(BaseHTML):
@@ -492,6 +500,7 @@ class SVG(ComponentNamespace):
     circle = staticmethod(Circle.create)
     ellipse = staticmethod(Ellipse.create)
     rect = staticmethod(Rect.create)
+    g = staticmethod(G.create)
     polygon = staticmethod(Polygon.create)
     path = staticmethod(Path.create)
     stop = staticmethod(Stop.create)
@@ -506,6 +515,7 @@ line = Line.create
 circle = Circle.create
 ellipse = Ellipse.create
 rect = Rect.create
+g = G.create
 polygon = Polygon.create
 path = Path.create
 stop = Stop.create

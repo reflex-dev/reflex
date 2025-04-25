@@ -58,6 +58,8 @@ _SUBMOD_ATTRS: dict = {
         "FunnelChart",
         "treemap",
         "Treemap",
+        "sankey_chart",
+        "SankeyChart",
     ],
     "general": [
         "responsive_container",

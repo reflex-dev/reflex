@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Sequence
-from typing import Any, ClassVar
+from typing import Any, ClassVar, TypedDict
 
 from reflex.components.component import Component
 from reflex.components.recharts.general import ResponsiveContainer
@@ -36,9 +36,6 @@ class ChartBase(RechartsCharts):
 
     # The customized event handler of mouseenter on the component in this chart
     on_mouse_enter: EventHandler[no_args_event_spec]
-
-    # The customized event handler of mousemove on the component in this chart
-    on_mouse_move: EventHandler[no_args_event_spec]
 
     # The customized event handler of mouseleave on the component in this chart
     on_mouse_leave: EventHandler[no_args_event_spec]
@@ -121,6 +118,9 @@ class CategoricalChartBase(ChartBase):
 
     # The type of offset function used to generate the lower and upper values in the series array. The four types are built-in offsets in d3-shape. 'expand' | 'none' | 'wiggle' | 'silhouette'
     stack_offset: Var[LiteralStackOffset]
+
+    # The customized event handler of mousemove on the component in this chart
+    on_mouse_move: EventHandler[no_args_event_spec]
 
 
 class AreaChart(CategoricalChartBase):
@@ -447,6 +447,9 @@ class FunnelChart(ChartBase):
     # The stroke color of each bar. String | Object
     stroke: Var[str | Color]
 
+    # The customized event handler of mousemove on the component in this chart
+    on_mouse_move: EventHandler[no_args_event_spec]
+
     # Valid children components
     _valid_children: ClassVar[list[str]] = ["Legend", "GraphingTooltip", "Funnel"]
 
@@ -512,6 +515,92 @@ class Treemap(RechartsCharts):
         )
 
 
+class SankeyChartNode(TypedDict):
+    """A node in a Sankey chart."""
+
+    name: str
+
+
+class SankeyChartLink(TypedDict):
+    """A link in a Sankey chart."""
+
+    source: int
+    target: int
+    value: int | float
+
+
+class SankeyChartData(TypedDict):
+    """The data for a Sankey chart."""
+
+    nodes: Sequence[SankeyChartNode]
+    links: Sequence[SankeyChartLink]
+
+
+class SankeyChart(ChartBase):
+    """A Sankey chart component in Recharts."""
+
+    tag = "Sankey"
+
+    alias = "RechartsSankeyChart"
+
+    # The key of each sector's name.
+    name_key: Var[str]
+
+    # The key of a group of data which should be unique in a SankeyChart.
+    data_key: Var[int | str]
+
+    # The source data, including the array of nodes, and the relationships, represented by links.
+    data: Var[SankeyChartData]
+
+    # Whether to sort the nodes on th y axis, or to display them as user-defined.
+    sort: Var[bool]
+
+    # The padding between the nodes.
+    node_padding: Var[int]
+
+    # The width of the nodes.
+    node_width: Var[int]
+
+    # The width of link.
+    link_width: Var[int]
+
+    # The curvature of width.
+    link_curvature: Var[float]
+
+    # The number of the iterations between the links
+    iterations: Var[int]
+
+    # The sizes of whitespace around the chart, i.e. {"top": 50, "right": 30, "left": 20, "bottom": 5}.
+    margin: Var[dict[str, Any]]
+
+    # Valid children components
+    _valid_children: ClassVar[list[str]] = ["GraphingTooltip", "Defs"]
+
+    # The source number of X-axis
+    source_x: Var[int]
+
+    # The source number of Y-axis
+    source_y: Var[int]
+
+    # The source control of X-axis
+    source_control_x: Var[int]
+
+    # The target control of X-axis
+    target_control_x: Var[int]
+
+    # The target of X-axis
+    target_x: Var[int]
+
+    # The target of Y-axis
+    target_y: Var[int]
+
+    # If set a object, the option is the configuration of nodes. If set a React element, the option is the custom react element of drawing the nodes.
+    node: Var[Any]
+
+    # If set a object, the option is the configuration of links. If set a React element, the option is the custom react element of drawing the links.
+    link: Var[Any]
+
+
 area_chart = AreaChart.create
 bar_chart = BarChart.create
 line_chart = LineChart.create
@@ -522,3 +611,4 @@ radial_bar_chart = RadialBarChart.create
 scatter_chart = ScatterChart.create
 funnel_chart = FunnelChart.create
 treemap = Treemap.create
+sankey_chart = SankeyChart.create
