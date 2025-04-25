@@ -14,8 +14,9 @@ from unittest.mock import AsyncMock
 
 import pytest
 import sqlmodel
-from fastapi import FastAPI, UploadFile
 from pytest_mock import MockerFixture
+from starlette.applications import Starlette
+from starlette.datastructures import UploadFile
 from starlette_admin.auth import AuthProvider
 from starlette_admin.contrib.sqla.admin import Admin
 from starlette_admin.contrib.sqla.view import ModelView
@@ -813,8 +814,22 @@ async def test_upload_file(tmp_path, state, delta, token: str, mocker):
         filename="image2.jpg",
         file=bio,
     )
+
+    async def form():
+        files_mock = unittest.mock.Mock()
+
+        def getlist(key: str):
+            assert key == "files"
+            return [file1, file2]
+
+        files_mock.getlist = getlist
+
+        return files_mock
+
+    request_mock.form = form
+
     upload_fn = upload(app)
-    streaming_response = await upload_fn(request_mock, [file1, file2])  # pyright: ignore [reportFunctionMemberAccess]
+    streaming_response = await upload_fn(request_mock)
     async for state_update in streaming_response.body_iterator:
         assert (
             state_update
@@ -853,10 +868,23 @@ async def test_upload_file_without_annotation(state, tmp_path, token):
         "reflex-client-token": token,
         "reflex-event-handler": f"{state.get_full_name()}.handle_upload2",
     }
-    file_mock = unittest.mock.Mock(filename="image1.jpg")
+
+    async def form():
+        files_mock = unittest.mock.Mock()
+
+        def getlist(key: str):
+            assert key == "files"
+            return [unittest.mock.Mock(filename="image1.jpg")]
+
+        files_mock.getlist = getlist
+
+        return files_mock
+
+    request_mock.form = form
+
     fn = upload(app)
     with pytest.raises(ValueError) as err:
-        await fn(request_mock, [file_mock])
+        await fn(request_mock)
     assert (
         err.value.args[0]
         == f"`{state.get_full_name()}.handle_upload2` handler should have a parameter annotated as list[rx.UploadFile]"
@@ -887,10 +915,23 @@ async def test_upload_file_background(state, tmp_path, token):
         "reflex-client-token": token,
         "reflex-event-handler": f"{state.get_full_name()}.bg_upload",
     }
-    file_mock = unittest.mock.Mock(filename="image1.jpg")
+
+    async def form():
+        files_mock = unittest.mock.Mock()
+
+        def getlist(key: str):
+            assert key == "files"
+            return [unittest.mock.Mock(filename="image1.jpg")]
+
+        files_mock.getlist = getlist
+
+        return files_mock
+
+    request_mock.form = form
+
     fn = upload(app)
     with pytest.raises(TypeError) as err:
-        await fn(request_mock, [file_mock])
+        await fn(request_mock)
     assert (
         err.value.args[0]
         == f"@rx.event(background=True) is not supported for upload handler `{state.get_full_name()}.bg_upload`."
@@ -1462,7 +1503,7 @@ def test_call_app():
     """Test that the app can be called."""
     app = App()
     api = app()
-    assert isinstance(api, FastAPI)
+    assert isinstance(api, Starlette)
 
 
 def test_app_with_optional_endpoints():

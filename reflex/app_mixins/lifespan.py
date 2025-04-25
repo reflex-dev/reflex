@@ -9,7 +9,7 @@ import functools
 import inspect
 from collections.abc import Callable, Coroutine
 
-from fastapi import FastAPI
+from starlette.applications import Starlette
 
 from reflex.utils import console
 from reflex.utils.exceptions import InvalidLifespanTaskTypeError
@@ -27,7 +27,7 @@ class LifespanMixin(AppMixin):
     )
 
     @contextlib.asynccontextmanager
-    async def _run_lifespan_tasks(self, app: FastAPI):
+    async def _run_lifespan_tasks(self, app: Starlette):
         running_tasks = []
         try:
             async with contextlib.AsyncExitStack() as stack:
