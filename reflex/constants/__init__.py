@@ -41,6 +41,7 @@ from .config import (
     DefaultPorts,
     Expiration,
     GitIgnore,
+    PyprojectToml,
     RequirementsTxt,
 )
 from .custom_components import CustomComponents
@@ -106,6 +107,7 @@ __all__ = [
     "Page404",
     "PageNames",
     "Ping",
+    "PyprojectToml",
     "Reflex",
     "RequirementsTxt",
     "RouteArgType",
