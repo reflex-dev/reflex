@@ -713,7 +713,11 @@ class App(MiddlewareMixin, LifespanMixin):
 
     @staticmethod
     def _add_cors(api: Starlette):
-        """Add CORS middleware to the app."""
+        """Add CORS middleware to the app.
+
+        Args:
+            api: The Starlette app to add CORS middleware to.
+        """
         api.add_middleware(
             cors.CORSMiddleware,
             allow_credentials=True,
