@@ -627,20 +627,14 @@ class App(MiddlewareMixin, LifespanMixin):
         # Wait for the compile to finish to ensure all optional endpoints are mounted.
         compile_future.result()
 
+        if not self._api:
+            raise ValueError("The app has not been initialized.")
         if self._cached_fastapi_app is not None:
             asgi_app = self._cached_fastapi_app
-
-            if not asgi_app or not self._api:
-                raise ValueError("The app has not been initialized.")
-
             asgi_app.mount("", self._api)
-
             App._add_cors(asgi_app)
         else:
             asgi_app = self._api
-
-            if not asgi_app:
-                raise ValueError("The app has not been initialized.")
 
         if self.api_transformer is not None:
             api_transformers: Sequence[Starlette | Callable[[ASGIApp], ASGIApp]] = (
