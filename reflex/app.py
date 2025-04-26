@@ -634,6 +634,8 @@ class App(MiddlewareMixin, LifespanMixin):
                 raise ValueError("The app has not been initialized.")
 
             asgi_app.mount("", self._api)
+
+            App._add_cors(asgi_app)
         else:
             asgi_app = self._api
 
