@@ -46,6 +46,7 @@ from rich.markup import escape
 from sqlalchemy.orm import DeclarativeBase
 from typing_extensions import Self
 
+import reflex as rx
 import reflex.istate.dynamic
 from reflex import constants, event
 from reflex.base import Base
@@ -4144,3 +4145,19 @@ def reload_state_module(
             state._var_dependencies = {}
             state._init_var_dependency_dicts()
     state.get_class_substate.cache_clear()
+
+
+class ErrorState(rx.State):
+    """Handles error state globally."""
+
+    error_message: str = ""
+
+    def handle_error(self, event: Event) -> None:
+        """Handle an error at the backend dynamically by storing the message."""
+        args = getattr(event, "args", [])
+        if args:
+            message = "\n".join(args[0]) if isinstance(args[0], list) else str(args[0])
+        else:
+            message = "Unknown error"
+
+        self.error_message = message

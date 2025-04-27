@@ -127,19 +127,23 @@ def default_frontend_exception_handler(exception: Exception) -> None:
 
     """
     console.error(f"[Reflex Frontend Exception]\n {exception}\n")
+    # Ensure that plain function  returns nothing
+    return
 
 
 def default_backend_exception_handler(exception: Exception) -> EventSpec:
     """Default backend exception handler function.
+        Logs the backend exception and returns an EventSpec that triggers
+        error handling through State event processing, preserving session context.
 
     Args:
         exception: The exception.
 
     Returns:
-        EventSpec: The window alert event.
-
+        EventSpec: The window alert event that updates the ErrorState with a user-visible error message.
     """
-    from reflex.components.sonner.toast import toast
+    from reflex.state import ErrorState
+    from reflex.vars import Var
 
     error = traceback.format_exc()
 
@@ -151,14 +155,18 @@ def default_backend_exception_handler(exception: Exception) -> EventSpec:
         else [f"{type(exception).__name__}: {exception}.", "See logs for details."]
     )
 
-    return toast(
-        "An error occurred.",
-        level="error",
-        fallback_to_alert=True,
-        description="<br/>".join(error_message),
-        position="top-center",
-        id="backend_error",
-        style={"width": "500px"},
+    error_message_var = Var.create_safe(error_message)
+
+    error_state_instance = ErrorState()
+
+    handler = EventHandler(
+        fn=error_state_instance.handle_error,
+        state_full_name=error_state_instance.get_full_name(),  # assuming ErrorState inherits this
+    )
+
+    return EventSpec(
+        handler=handler,
+        args=((error_message_var, error_message_var),),
     )
 
 
