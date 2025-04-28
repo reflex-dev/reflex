@@ -1117,7 +1117,6 @@ class App(MiddlewareMixin, LifespanMixin):
         # Add the @rx.page decorated pages to collect on_load events.
         for render, kwargs in DECORATED_PAGES[app_name]:
             self.add_page(render, **kwargs)
-        DECORATED_PAGES[app_name].clear()
 
     def _validate_var_dependencies(self, state: type[BaseState] | None = None) -> None:
         """Validate the dependencies of the vars in the app.
