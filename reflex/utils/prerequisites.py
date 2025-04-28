@@ -840,18 +840,24 @@ def initialize_gitignore(
 
 def initialize_requirements_txt() -> bool:
     """Initialize the requirements.txt file.
-    If absent, generate one for the user.
+    If absent and no pyproject.toml file exists, generate one for the user.
     If the requirements.txt does not have reflex as dependency,
     generate a requirement pinning current version and append to
     the requirements.txt file.
 
     Returns:
-        True if the requirements.txt file was created or updated, False otherwise.
+        True if the user has to update the requirements.txt file.
 
     Raises:
         Exit: If the requirements.txt file cannot be read or written to.
     """
     requirements_file_path = Path(constants.RequirementsTxt.FILE)
+    if (
+        not requirements_file_path.exists()
+        and Path(constants.PyprojectToml.FILE).exists()
+    ):
+        return True
+
     requirements_file_path.touch(exist_ok=True)
 
     for encoding in [None, "utf-8"]:
@@ -864,12 +870,12 @@ def initialize_requirements_txt() -> bool:
             console.error(f"Failed to read {requirements_file_path}.")
             raise click.exceptions.Exit(1) from e
     else:
-        return False
+        return True
 
     for line in content.splitlines():
         if re.match(r"^reflex[^a-zA-Z0-9]", line):
             console.debug(f"{requirements_file_path} already has reflex as dependency.")
-            return True
+            return False
 
     console.debug(
         f"Appending {constants.RequirementsTxt.DEFAULTS_STUB} to {requirements_file_path}"
@@ -879,7 +885,7 @@ def initialize_requirements_txt() -> bool:
             "\n" + constants.RequirementsTxt.DEFAULTS_STUB + constants.Reflex.VERSION
         )
 
-    return True
+    return False
 
 
 def initialize_app_directory(
