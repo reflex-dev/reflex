@@ -354,6 +354,7 @@ def run(
 @click.option(
     "--zip/--no-zip",
     default=True,
+    is_flag=True,
     help="Whether to zip the backend and frontend exports.",
 )
 @click.option(
@@ -569,7 +570,7 @@ def makemigrations(message: str | None):
     help="The hostname of the frontend.",
 )
 @click.option(
-    "--interactive",
+    "--interactive/--no-interactive",
     is_flag=True,
     default=True,
     help="Whether to list configuration options and ask for confirmation.",

@@ -1502,6 +1502,7 @@ def test_raise_on_state():
 def test_call_app():
     """Test that the app can be called."""
     app = App()
+    app._compile = unittest.mock.Mock()
     api = app()
     assert isinstance(api, Starlette)
 
