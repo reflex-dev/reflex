@@ -38,7 +38,7 @@ from redis.exceptions import RedisError
 from reflex import constants, model
 from reflex.compiler import templates
 from reflex.config import Config, environment, get_config
-from reflex.utils import console, net, path_ops, processes
+from reflex.utils import console, net, path_ops, processes, redir
 from reflex.utils.decorator import once
 from reflex.utils.exceptions import (
     GeneratedCodeHasNoFunctionDefsError,
@@ -65,7 +65,6 @@ class Template:
     name: str
     description: str
     code_url: str
-    demo_url: str | None = None
 
 
 @dataclasses.dataclass(frozen=True)
@@ -1606,22 +1605,13 @@ def prompt_for_template_options(templates: list[Template]) -> str:
     # Show the user the URLs of each template to preview.
     console.print("\nGet started with a template:")
 
-    def format_demo_url_str(url: str | None) -> str:
-        return f" ({url})" if url else ""
-
     # Prompt the user to select a template.
-    id_to_name = {
-        str(
-            idx
-        ): f"{template.name.replace('_', ' ').replace('-', ' ')}{format_demo_url_str(template.demo_url)} - {template.description}"
-        for idx, template in enumerate(templates)
-    }
-    for id in range(len(id_to_name)):
-        console.print(f"({id}) {id_to_name[str(id)]}")
+    for index, template in enumerate(templates):
+        console.print(f"({index}) {template.description}")
 
     template = console.ask(
         "Which template would you like to use?",
-        choices=[str(i) for i in range(len(id_to_name))],
+        choices=[str(i) for i in range(len(templates))],
         show_choices=False,
         default="0",
     )
@@ -1890,14 +1880,17 @@ def initialize_app(app_name: str, template: str | None = None) -> str | None:
 
     if template is None:
         template = prompt_for_template_options(get_init_cli_prompt_options())
+
         if template == constants.Templates.CHOOSE_TEMPLATES:
-            console.print(
-                f"Go to the templates page ({constants.Templates.REFLEX_TEMPLATES_URL}) and copy the command to init with a template."
-            )
+            redir.reflex_templates()
             raise click.exceptions.Exit(0)
 
+    if template == constants.Templates.AI:
+        redir.reflex_build_redirect()
+        raise click.exceptions.Exit(0)
+
     # If the blank template is selected, create a blank app.
-    if template in (constants.Templates.DEFAULT,):
+    if template == constants.Templates.DEFAULT:
         # Default app creation behavior: a blank app.
         initialize_default_app(app_name)
     else:
@@ -1920,19 +1913,16 @@ def get_init_cli_prompt_options() -> list[Template]:
         Template(
             name=constants.Templates.DEFAULT,
             description="A blank Reflex app.",
-            demo_url=constants.Templates.DEFAULT_TEMPLATE_URL,
             code_url="",
         ),
         Template(
             name=constants.Templates.AI,
-            description="Generate a template using AI [Experimental]",
-            demo_url="",
+            description="[bold]Try our free AI builder.",
             code_url="",
         ),
         Template(
             name=constants.Templates.CHOOSE_TEMPLATES,
-            description="Choose an existing template.",
-            demo_url="",
+            description="Premade templates built by the Reflex team.",
             code_url="",
         ),
     ]
