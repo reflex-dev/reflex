@@ -712,7 +712,7 @@ def _convert_reflex_loglevel_to_reflex_cli_loglevel(
     return HostingLogLevel.INFO
 
 
-if find_spec("typer"):
+if find_spec("typer.main"):
     import typer  # pyright: ignore[reportMissingImports]
 
     if isinstance(hosting_cli, typer.Typer):
