@@ -14,7 +14,7 @@ class Bun(SimpleNamespace):
     """Bun constants."""
 
     # The Bun version.
-    VERSION = "1.2.10"
+    VERSION = "1.2.11"
 
     # Min Bun Version
     MIN_VERSION = "1.2.8"
@@ -101,7 +101,7 @@ class PackageJson(SimpleNamespace):
 
     DEPENDENCIES = {
         "@emotion/react": "11.14.0",
-        "axios": "1.8.4",
+        "axios": "1.9.0",
         "json5": "2.2.3",
         "next": _determine_nextjs_version(),
         "next-sitemap": "4.2.3",

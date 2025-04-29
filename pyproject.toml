@@ -32,7 +32,7 @@ dependencies = [
   "python-socketio >=5.12.0,<6.0",
   "python-multipart >=0.0.20,<1.0",
   "redis >=5.2.1,<6.0",
-  "reflex-hosting-cli >=0.1.43",
+  "reflex-hosting-cli >=0.1.47",
   "rich >=13,<15",
   "sqlmodel >=0.0.24,<0.1",
   "click >=8",
@@ -150,7 +150,7 @@ dev = [
   "plotly >=6.0",
   "pre-commit >=4.2",
   "psycopg[binary] >=3.2",
-  "pyright >=1.1.399",
+  "pyright >=1.1.400",
   "pytest >=8.3",
   "pytest-asyncio >=0.26",
   "pytest-benchmark >=5.1",
@@ -165,5 +165,4 @@ dev = [
   "selenium >=4.31",
   "starlette-admin >=0.14",
   "uvicorn >=0.34.0",
-
 ]

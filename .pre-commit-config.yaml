@@ -1,8 +1,8 @@
 fail_fast: true
 
 repos:
-  - repo: https://github.com/charliermarsh/ruff-pre-commit
-    rev: v0.11.2
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.11.7
     hooks:
       - id: ruff-format
         args: [reflex, tests]
@@ -30,7 +30,7 @@ repos:
         entry: python3 scripts/make_pyi.py
 
   - repo: https://github.com/RobertCraigie/pyright-python
-    rev: v1.1.398
+    rev: v1.1.400
     hooks:
       - id: pyright
         args: [reflex, tests]
