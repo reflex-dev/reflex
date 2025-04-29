@@ -599,7 +599,7 @@ class Component(BaseComponent, ABC):
         # Convert class_name to str if it's list
         class_name = kwargs.get("class_name", "")
         if isinstance(class_name, (list, tuple)):
-            has_var = bool
+            has_var = False
             for c in class_name:
                 if isinstance(c, str):
                     continue
