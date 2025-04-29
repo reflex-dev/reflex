@@ -39,7 +39,6 @@ from typing import (  # noqa: UP035
 )
 
 from rich.markup import escape
-from sqlalchemy.orm import DeclarativeBase
 from typing_extensions import deprecated, override
 
 from reflex import constants
@@ -3318,18 +3317,17 @@ def dispatch(
     ).guess_type()
 
 
-V = TypeVar("V")
-
-BASE_TYPE = TypeVar("BASE_TYPE", bound=Base | None)
-SQLA_TYPE = TypeVar("SQLA_TYPE", bound=DeclarativeBase | None)
-
 if TYPE_CHECKING:
     from _typeshed import DataclassInstance
+    from sqlalchemy.orm import DeclarativeBase
 
+    SQLA_TYPE = TypeVar("SQLA_TYPE", bound=DeclarativeBase | None)
+    BASE_TYPE = TypeVar("BASE_TYPE", bound=Base | None)
     DATACLASS_TYPE = TypeVar("DATACLASS_TYPE", bound=DataclassInstance | None)
+    MAPPING_TYPE = TypeVar("MAPPING_TYPE", bound=Mapping | None)
+    V = TypeVar("V")
 
 FIELD_TYPE = TypeVar("FIELD_TYPE")
-MAPPING_TYPE = TypeVar("MAPPING_TYPE", bound=Mapping | None)
 
 
 class Field(Generic[FIELD_TYPE]):

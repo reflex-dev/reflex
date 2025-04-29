@@ -1152,11 +1152,12 @@ class App(MiddlewareMixin, LifespanMixin):
         for substate in state.class_subclasses:
             self._validate_var_dependencies(substate)
 
-    def _compile(self, export: bool = False):
+    def _compile(self, export: bool = False, dry_run: bool = False):
         """Compile the app and output it to the pages folder.
 
         Args:
             export: Whether to compile the app for export.
+            dry_run: Whether to compile the app without saving it.
 
         Raises:
             ReflexRuntimeError: When any page uses state, but no rx.State subclass is defined.
@@ -1170,7 +1171,7 @@ class App(MiddlewareMixin, LifespanMixin):
 
         should_compile = self._should_compile()
         backend_dir = prerequisites.get_backend_dir()
-        if not should_compile and backend_dir.exists():
+        if not dry_run and not should_compile and backend_dir.exists():
             stateful_pages_marker = backend_dir / constants.Dirs.STATEFUL_PAGES
             if stateful_pages_marker.exists():
                 with stateful_pages_marker.open("r") as f:
@@ -1205,7 +1206,7 @@ class App(MiddlewareMixin, LifespanMixin):
         if config.react_strict_mode:
             app_wrappers[(200, "StrictMode")] = StrictMode.create()
 
-        if not should_compile:
+        if not should_compile and not dry_run:
             with console.timing("Evaluate Pages (Backend)"):
                 for route in self._unevaluated_pages:
                     console.debug(f"Evaluating page: {route}")
@@ -1358,7 +1359,7 @@ class App(MiddlewareMixin, LifespanMixin):
 
         # Copy the assets.
         assets_src = Path.cwd() / constants.Dirs.APP_ASSETS
-        if assets_src.is_dir():
+        if assets_src.is_dir() and not dry_run:
             with console.timing("Copy assets"):
                 path_ops.update_directory_tree(
                     src=assets_src,
@@ -1443,6 +1444,9 @@ class App(MiddlewareMixin, LifespanMixin):
 
         progress.advance(task)
         progress.stop()
+
+        if dry_run:
+            return
 
         # Install frontend packages.
         with console.timing("Install Frontend Packages"):

@@ -432,12 +432,15 @@ def validate_app(reload: bool = False) -> None:
     get_and_validate_app(reload=reload)
 
 
-def get_compiled_app(reload: bool = False, export: bool = False) -> ModuleType:
+def get_compiled_app(
+    reload: bool = False, export: bool = False, dry_run: bool = False
+) -> ModuleType:
     """Get the app module based on the default config after first compiling it.
 
     Args:
         reload: Re-import the app module from disk
         export: Compile the app for export
+        dry_run: If True, do not write the compiled app to disk.
 
     Returns:
         The compiled app based on the default config.
@@ -446,18 +449,21 @@ def get_compiled_app(reload: bool = False, export: bool = False) -> ModuleType:
     # For py3.9 compatibility when redis is used, we MUST add any decorator pages
     # before compiling the app in a thread to avoid event loop error (REF-2172).
     app._apply_decorated_pages()
-    app._compile(export=export)
+    app._compile(export=export, dry_run=dry_run)
     return app_module
 
 
-def compile_app(reload: bool = False, export: bool = False) -> None:
+def compile_app(
+    reload: bool = False, export: bool = False, dry_run: bool = False
+) -> None:
     """Compile the app module based on the default config.
 
     Args:
         reload: Re-import the app module from disk
         export: Compile the app for export
+        dry_run: If True, do not write the compiled app to disk.
     """
-    get_compiled_app(reload=reload, export=export)
+    get_compiled_app(reload=reload, export=export, dry_run=dry_run)
 
 
 def _can_colorize() -> bool:
