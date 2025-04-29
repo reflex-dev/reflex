@@ -71,7 +71,7 @@ Let's go over an example: creating an image generation UI around [DALL·E](https
 &nbsp;
 
 <div align="center">
-<img src="/docs/images/dalle.gif" alt="A frontend wrapper for DALL·E, shown in the process of generating an image." width="550" />
+<img src="https://raw.githubusercontent.com/reflex-dev/reflex/main/docs/images/dalle.gif" alt="A frontend wrapper for DALL·E, shown in the process of generating an image." width="550" />
 </div>
 
 &nbsp;
@@ -140,7 +140,7 @@ app.add_page(index, title="Reflex:DALL-E")
 ## Let's break this down.
 
 <div align="center">
-<img src="/docs/images/dalle_colored_code_example.png" alt="Explaining the differences between backend and frontend parts of the DALL-E app." width="900" />
+<img src="https://raw.githubusercontent.com/reflex-dev/reflex/main/docs/images/dalle_colored_code_example.png" alt="Explaining the differences between backend and frontend parts of the DALL-E app." width="900" />
 </div>
 
 ### **Reflex UI**
@@ -250,4 +250,4 @@ We are actively looking for contributors, no matter your skill level or experien
 
 ## License
 
-Reflex is open-source and licensed under the [Apache License 2.0](/LICENSE).
+Reflex is open-source and licensed under the [Apache License 2.0](https://raw.githubusercontent.com/reflex-dev/reflex/main/LICENSE).
