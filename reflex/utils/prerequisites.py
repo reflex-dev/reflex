@@ -1922,7 +1922,7 @@ def get_init_cli_prompt_options() -> list[Template]:
         ),
         Template(
             name=constants.Templates.CHOOSE_TEMPLATES,
-            description="Prebuilt templates built by the Reflex team.",
+            description="Premade templates built by the Reflex team.",
             code_url="",
         ),
     ]
