@@ -192,27 +192,6 @@ class Markdown(Component):
             **props,
         )
 
-    def _get_all_custom_components(
-        self, seen: set[str] | None = None
-    ) -> set[CustomComponent]:
-        """Get all the custom components used by the component.
-
-        Args:
-            seen: The tags of the components that have already been seen.
-
-        Returns:
-            The set of custom components.
-        """
-        custom_components = super()._get_all_custom_components(seen=seen)
-
-        # Get the custom components for each tag.
-        for component in self.component_map.values():
-            custom_components |= component(_MOCK_ARG)._get_all_custom_components(
-                seen=seen
-            )
-
-        return custom_components
-
     def add_imports(self) -> ImportDict | list[ImportDict]:
         """Add imports for the markdown component.
 

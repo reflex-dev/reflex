@@ -3920,6 +3920,7 @@ class MutableProxy(wrapt.ObjectProxy):
         if self._is_mutable_type(value) and __name not in (
             "__wrapped__",
             "_self_state",
+            "__dict__",
         ):
             # Recursively wrap mutable attribute values retrieved through this proxy.
             return self._wrap_recursive(value)

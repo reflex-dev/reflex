@@ -5,10 +5,11 @@ import pytest
 
 import reflex as rx
 from reflex.base import Base
-from reflex.compiler.compiler import compile_components
+from reflex.compiler.utils import compile_custom_component
 from reflex.components.base.bare import Bare
 from reflex.components.base.fragment import Fragment
 from reflex.components.component import (
+    CUSTOM_COMPONENTS,
     Component,
     CustomComponent,
     StatefulComponent,
@@ -877,7 +878,7 @@ def test_create_custom_component(my_component):
     component = rx.memo(my_component)(prop1="test", prop2=1)
     assert component.tag == "MyComponent"
     assert component.get_props() == {"prop1", "prop2"}
-    assert component._get_all_custom_components() == {component}
+    assert component.tag in CUSTOM_COMPONENTS
 
 
 def test_custom_component_hash(my_component):
@@ -1801,10 +1802,13 @@ def test_custom_component_get_imports():
 
     # Inner is not imported directly, but it is imported by the custom component.
     assert "inner" not in custom_comp._get_all_imports()
+    assert "outer" not in custom_comp._get_all_imports()
 
     # The imports are only resolved during compilation.
-    _, _, imports_inner = compile_components(custom_comp._get_all_custom_components())
+    custom_comp.get_component(custom_comp)
+    _, imports_inner = compile_custom_component(custom_comp)
     assert "inner" in imports_inner
+    assert "outer" not in imports_inner
 
     outer_comp = outer(c=wrapper())
 
@@ -1813,8 +1817,8 @@ def test_custom_component_get_imports():
     assert "other" not in outer_comp._get_all_imports()
 
     # The imports are only resolved during compilation.
-    _, _, imports_outer = compile_components(outer_comp._get_all_custom_components())
-    assert "inner" in imports_outer
+    _, imports_outer = compile_custom_component(outer_comp)
+    assert "inner" not in imports_outer
     assert "other" in imports_outer
 
 

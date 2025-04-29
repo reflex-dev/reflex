@@ -34,7 +34,7 @@ import reflex.utils.format
 import reflex.utils.prerequisites
 import reflex.utils.processes
 from reflex.components.component import CustomComponent
-from reflex.config import environment
+from reflex.config import environment, get_config
 from reflex.state import (
     BaseState,
     StateManager,
@@ -44,6 +44,7 @@ from reflex.state import (
     reload_state_module,
 )
 from reflex.utils import console
+from reflex.utils.export import export
 
 try:
     from selenium import webdriver
@@ -252,11 +253,11 @@ class AppHarness:
                     self._get_source_from_app_source(self.app_source),
                 ]
             )
+            get_config().loglevel = reflex.constants.LogLevel.INFO
             with chdir(self.app_path):
                 reflex.reflex._init(
                     name=self.app_name,
                     template=reflex.constants.Templates.DEFAULT,
-                    loglevel=reflex.constants.LogLevel.INFO,
                 )
                 self.app_module_path.write_text(source_code)
         else:
@@ -322,11 +323,11 @@ class AppHarness:
         return _shutdown
 
     def _start_backend(self, port: int = 0):
-        if self.app_instance is None or self.app_instance.api is None:
+        if self.app_instance is None or self.app_instance._api is None:
             raise RuntimeError("App was not initialized.")
         self.backend = uvicorn.Server(
             uvicorn.Config(
-                app=self.app_instance.api,
+                app=self.app_instance._api,
                 host="127.0.0.1",
                 port=port,
             )
@@ -933,7 +934,13 @@ class AppHarnessProd(AppHarness):
             config.api_url = "http://{}:{}".format(
                 *self._poll_for_servers().getsockname(),
             )
-            reflex.reflex.export(
+
+            get_config().loglevel = reflex.constants.LogLevel.INFO
+
+            if reflex.utils.prerequisites.needs_reinit(frontend=True):
+                reflex.reflex._init(name=get_config().app_name)
+
+            export(
                 zipping=False,
                 frontend=True,
                 backend=False,

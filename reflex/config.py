@@ -393,7 +393,7 @@ class EnvVar(Generic[T]):
             The environment variable value.
         """
         env_value = os.getenv(self.name, None)
-        if env_value is not None:
+        if env_value and env_value.strip():
             return self.interpret(env_value)
         return None
 
@@ -403,7 +403,7 @@ class EnvVar(Generic[T]):
         Returns:
             True if the environment variable is set.
         """
-        return self.name in os.environ
+        return bool(os.getenv(self.name, "").strip())
 
     def get(self) -> T:
         """Get the interpreted environment variable value or the default value if not set.
@@ -907,7 +907,7 @@ class Config(Base):
         # Set the log level for this process
         env_loglevel = os.environ.get("LOGLEVEL")
         if env_loglevel is not None:
-            env_loglevel = LogLevel(env_loglevel)
+            env_loglevel = LogLevel(env_loglevel.lower())
         if env_loglevel or self.loglevel != LogLevel.DEFAULT:
             console.set_log_level(env_loglevel or self.loglevel)
 
@@ -980,7 +980,7 @@ class Config(Base):
             env_var = os.environ.get(key.upper())
 
             # If the env var is set, override the config value.
-            if env_var is not None:
+            if env_var and env_var.strip():
                 # Interpret the value.
                 value = interpret_env_var_value(
                     env_var, true_type_for_pydantic_field(field), field.name
