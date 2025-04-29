@@ -71,7 +71,7 @@ Lass uns ein Beispiel durchgehen: die Erstellung einer Benutzeroberfläche für 
 &nbsp;
 
 <div align="center">
-<img src="https://raw.githubusercontent.com/reflex-dev/reflex/main/docs/images/dalle.gif" alt="Eine Benutzeroberfläche für DALL·E, die im Prozess der Bildgenerierung gezeigt wird." width="550" />
+<img src="/docs/images/dalle.gif" alt="Eine Benutzeroberfläche für DALL·E, die im Prozess der Bildgenerierung gezeigt wird." width="550" />
 </div>
 
 &nbsp;

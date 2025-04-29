@@ -71,7 +71,7 @@ Veamos un ejemplo: crearemos una UI de generación de imágenes en torno a [DALL
 &nbsp;
 
 <div align="center">
-<img src="https://raw.githubusercontent.com/reflex-dev/reflex/main/docs/images/dalle.gif" alt="Un envoltorio frontend para DALL·E, mostrado en el proceso de generar una imagen." width="550" />
+<img src="/docs/images/dalle.gif" alt="Un envoltorio frontend para DALL·E, mostrado en el proceso de generar una imagen." width="550" />
 </div>
 
 &nbsp;
