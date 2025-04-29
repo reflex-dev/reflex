@@ -604,7 +604,9 @@ class Component(BaseComponent, ABC):
                 if isinstance(c, str):
                     continue
                 if isinstance(c, Var):
-                    if not isinstance(c, StringVar):
+                    if not isinstance(c, StringVar) and not issubclass(
+                        c._var_type, str
+                    ):
                         raise TypeError(
                             f"Invalid class_name passed for prop {type(self).__name__}.class_name, expected type str, got value {c._js_expr} of type {c._var_type}."
                         )
@@ -619,7 +621,11 @@ class Component(BaseComponent, ABC):
                 ).join(" ")
             else:
                 kwargs["class_name"] = " ".join(class_name)
-        elif isinstance(class_name, Var) and not isinstance(class_name, StringVar):
+        elif (
+            isinstance(class_name, Var)
+            and not isinstance(class_name, StringVar)
+            and not issubclass(class_name._var_type, str)
+        ):
             raise TypeError(
                 f"Invalid class_name passed for prop {type(self).__name__}.class_name, expected type str, got value {class_name._js_expr} of type {class_name._var_type}."
             )
