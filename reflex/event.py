@@ -2213,8 +2213,12 @@ class EventNamespace:
                     setattr(handler, BACKGROUND_TASK_MARKER, True)
                 # Mark the function as a decentralized event handler
                 setattr(func, DECENTRALIZED_EVENT_MARKER, True)
-                # Return the original function so it can be called normally
-                return func  # pyright: ignore [reportReturnType]
+
+                # Create a wrapped version that can handle parameters
+                wrapped = wrap_decentralized_handler(func)
+
+                # Return the wrapped function instead of the original
+                return wrapped  # pyright: ignore [reportReturnType]
 
         if func is not None:
             return wrapper(func)
