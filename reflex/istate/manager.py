@@ -11,7 +11,6 @@ from collections.abc import AsyncIterator
 from hashlib import md5
 from pathlib import Path
 
-from pydantic.v1 import validator
 from redis import ResponseError
 from redis.asyncio import Redis
 from redis.asyncio.client import PubSub
@@ -443,6 +442,17 @@ class StateManagerRedis(StateManager):
     # The logical database number used by the redis client.
     _redis_db: int = dataclasses.field(default=0)
 
+    def __post_init__(self):
+        """Validate the lock warning threshold.
+
+        Raises:
+            InvalidLockWarningThresholdError: If the lock warning threshold is invalid.
+        """
+        if self.lock_warning_threshold >= (lock_expiration := self.lock_expiration):
+            raise InvalidLockWarningThresholdError(
+                f"The lock warning threshold({self.lock_warning_threshold}) must be less than the lock expiration time({lock_expiration})."
+            )
+
     def _get_required_state_classes(
         self,
         target_state_cls: type[BaseState],
@@ -691,29 +701,6 @@ class StateManagerRedis(StateManager):
             state = await self.get_state(token)
             yield state
             await self.set_state(token, state, lock_id)
-
-    @validator("lock_warning_threshold")
-    @classmethod
-    def validate_lock_warning_threshold(
-        cls, lock_warning_threshold: int, values: dict[str, int]
-    ):
-        """Validate the lock warning threshold.
-
-        Args:
-            lock_warning_threshold: The lock warning threshold.
-            values: The validated attributes.
-
-        Returns:
-            The lock warning threshold.
-
-        Raises:
-            InvalidLockWarningThresholdError: If the lock warning threshold is invalid.
-        """
-        if lock_warning_threshold >= (lock_expiration := values["lock_expiration"]):
-            raise InvalidLockWarningThresholdError(
-                f"The lock warning threshold({lock_warning_threshold}) must be less than the lock expiration time({lock_expiration})."
-            )
-        return lock_warning_threshold
 
     @staticmethod
     def _lock_key(token: str) -> bytes:
