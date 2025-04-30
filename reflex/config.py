@@ -748,6 +748,9 @@ class EnvironmentVariables:
     # The timeout to wait for a pong from the websocket server in seconds.
     REFLEX_SOCKET_TIMEOUT: EnvVar[int] = env_var(constants.Ping.TIMEOUT)
 
+    # The maximum time to wait before dropping updates or cancelling a background task associated with a disconnected client.
+    REFLEX_CLIENT_DISCONNECT_TIMEOUT: EnvVar[int] = env_var(5)
+
 
 environment = EnvironmentVariables()
 

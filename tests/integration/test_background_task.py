@@ -405,3 +405,46 @@ def test_yield_in_async_with_self(
 
     yield_in_async_with_self_button.click()
     assert background_task._poll_for(lambda: counter.text == "2", timeout=5)
+
+
+
+def test_background_task_refresh(
+    background_task: AppHarness,
+    driver: WebDriver,
+    token: str,
+):
+    """Test that background tasks keep working when the page is refreshed.
+
+    Args:
+        background_task: harness for BackgroundTask app.
+        driver: WebDriver instance.
+        token: The token for the connected client.
+    """
+    assert background_task.app_instance is not None
+
+    racy_increment_button = driver.find_element(By.ID, "racy-increment")
+    driver.find_element(By.ID, "reset")
+
+    # get a reference to the iterations input
+    iterations_input = driver.find_element(By.ID, "iterations")
+
+    # kick off background tasks
+    iterations_input.clear()
+    iterations_input.send_keys("50")
+    racy_increment_button.click()
+
+    # Refresh a few times while the task is running.
+    driver.refresh()
+    driver.refresh()
+
+    # Get new references after page reloads.
+    counter = driver.find_element(By.ID, "counter")
+    counter_async_cv = driver.find_element(By.ID, "counter-async-cv")
+
+    # Make sure the final total is what we expect.
+    assert background_task._poll_for(lambda: counter.text == "200", timeout=40)
+    assert background_task._poll_for(lambda: counter_async_cv.text == "200", timeout=40)
+    # all tasks should have exited and cleaned up
+    assert background_task._poll_for(
+        lambda: not background_task.app_instance._background_tasks  # pyright: ignore [reportOptionalMemberAccess]
+    )
