@@ -1779,7 +1779,7 @@ def substate_token_redis(state_manager_redis, token):
 
 @pytest.mark.asyncio
 async def test_state_manager_lock_expire(
-    state_manager_redis: StateManager, token: str, substate_token_redis: str
+    state_manager_redis: StateManagerRedis, token: str, substate_token_redis: str
 ):
     """Test that the state manager lock expires and raises exception exiting context.
 
@@ -1801,7 +1801,7 @@ async def test_state_manager_lock_expire(
 
 @pytest.mark.asyncio
 async def test_state_manager_lock_expire_contend(
-    state_manager_redis: StateManager, token: str, substate_token_redis: str
+    state_manager_redis: StateManagerRedis, token: str, substate_token_redis: str
 ):
     """Test that the state manager lock expires and queued waiters proceed.
 
@@ -1846,7 +1846,10 @@ async def test_state_manager_lock_expire_contend(
 
 @pytest.mark.asyncio
 async def test_state_manager_lock_warning_threshold_contend(
-    state_manager_redis: StateManager, token: str, substate_token_redis: str, mocker
+    state_manager_redis: StateManagerRedis,
+    token: str,
+    substate_token_redis: str,
+    mocker,
 ):
     """Test that the state manager triggers a warning when lock contention exceeds the warning threshold.
 

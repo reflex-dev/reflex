@@ -2,6 +2,7 @@
 
 import asyncio
 import contextlib
+import dataclasses
 import functools
 import time
 import uuid
@@ -11,14 +12,12 @@ from hashlib import md5
 from pathlib import Path
 from typing import override
 
-import pydantic
 from pydantic.v1 import validator
 from redis import ResponseError
 from redis.asyncio import Redis
 from redis.asyncio.client import PubSub
 
 from reflex import constants
-from reflex.base import Base
 from reflex.config import environment, get_config
 from reflex.state import BaseState, _split_substate_key, _substate_key
 from reflex.utils import console, path_ops, prerequisites
@@ -30,7 +29,8 @@ from reflex.utils.exceptions import (
 )
 
 
-class StateManager(Base, ABC):
+@dataclasses.dataclass
+class StateManager(ABC):
     """A class to manage many client states."""
 
     # The state class to use.
@@ -107,24 +107,20 @@ class StateManager(Base, ABC):
         yield self.state()
 
 
+@dataclasses.dataclass
 class StateManagerMemory(StateManager):
     """A state manager that stores states in memory."""
 
     # The mapping of client ids to states.
-    states: dict[str, BaseState] = {}
+    states: dict[str, BaseState] = dataclasses.field(default_factory=dict)
 
     # The mutex ensures the dict of mutexes is updated exclusively
-    _state_manager_lock = asyncio.Lock()
+    _state_manager_lock: asyncio.Lock = dataclasses.field(default=asyncio.Lock())
 
     # The dict of mutexes for each client
-    _states_locks: dict[str, asyncio.Lock] = pydantic.PrivateAttr({})
-
-    class Config:  # pyright: ignore [reportIncompatibleVariableOverride]
-        """The Pydantic config."""
-
-        fields = {
-            "_states_locks": {"exclude": True},
-        }
+    _states_locks: dict[str, asyncio.Lock] = dataclasses.field(
+        default_factory=dict, init=False
+    )
 
     @override
     async def get_state(self, token: str) -> BaseState:
@@ -193,37 +189,27 @@ def reset_disk_state_manager():
             path.unlink()
 
 
+@dataclasses.dataclass
 class StateManagerDisk(StateManager):
     """A state manager that stores states in memory."""
 
     # The mapping of client ids to states.
-    states: dict[str, BaseState] = {}
+    states: dict[str, BaseState] = dataclasses.field(default_factory=dict)
 
     # The mutex ensures the dict of mutexes is updated exclusively
-    _state_manager_lock = asyncio.Lock()
+    _state_manager_lock: asyncio.Lock = dataclasses.field(default=asyncio.Lock())
 
     # The dict of mutexes for each client
-    _states_locks: dict[str, asyncio.Lock] = pydantic.PrivateAttr({})
+    _states_locks: dict[str, asyncio.Lock] = dataclasses.field(
+        default_factory=dict,
+        init=False,
+    )
 
     # The token expiration time (s).
-    token_expiration: int = pydantic.Field(default_factory=_default_token_expiration)
+    token_expiration: int = dataclasses.field(default_factory=_default_token_expiration)
 
-    class Config:  # pyright: ignore [reportIncompatibleVariableOverride]
-        """The Pydantic config."""
-
-        fields = {
-            "_states_locks": {"exclude": True},
-        }
-        keep_untouched = (functools.cached_property,)
-
-    def __init__(self, state: type[BaseState]):
-        """Create a new state manager.
-
-        Args:
-            state: The state class to use.
-        """
-        super().__init__(state=state)
-
+    def __post_init_(self):
+        """Create a new state manager."""
         path_ops.mkdir(self.states_directory)
 
         self._purge_expired_states()
@@ -415,6 +401,7 @@ def _default_lock_warning_threshold() -> int:
     return get_config().redis_lock_warning_threshold
 
 
+@dataclasses.dataclass
 class StateManagerRedis(StateManager):
     """A state manager that stores states in redis."""
 
@@ -422,37 +409,39 @@ class StateManagerRedis(StateManager):
     redis: Redis
 
     # The token expiration time (s).
-    token_expiration: int = pydantic.Field(default_factory=_default_token_expiration)
+    token_expiration: int = dataclasses.field(default_factory=_default_token_expiration)
 
     # The maximum time to hold a lock (ms).
-    lock_expiration: int = pydantic.Field(default_factory=_default_lock_expiration)
+    lock_expiration: int = dataclasses.field(default_factory=_default_lock_expiration)
 
     # The maximum time to hold a lock (ms) before warning.
-    lock_warning_threshold: int = pydantic.Field(
+    lock_warning_threshold: int = dataclasses.field(
         default_factory=_default_lock_warning_threshold
     )
 
     # The keyspace subscription string when redis is waiting for lock to be released.
-    _redis_notify_keyspace_events: str = (
-        "K"  # Enable keyspace notifications (target a particular key)
+    _redis_notify_keyspace_events: str = dataclasses.field(
+        default="K"  # Enable keyspace notifications (target a particular key)
         "g"  # For generic commands (DEL, EXPIRE, etc)
         "x"  # For expired events
         "e"  # For evicted events (i.e. maxmemory exceeded)
     )
 
     # These events indicate that a lock is no longer held.
-    _redis_keyspace_lock_release_events: set[bytes] = {
-        b"del",
-        b"expire",
-        b"expired",
-        b"evicted",
-    }
+    _redis_keyspace_lock_release_events: set[bytes] = dataclasses.field(
+        default_factory=lambda: {
+            b"del",
+            b"expire",
+            b"expired",
+            b"evicted",
+        }
+    )
 
     # Whether keyspace notifications have been enabled.
-    _redis_notify_keyspace_events_enabled: bool = False
+    _redis_notify_keyspace_events_enabled: bool = dataclasses.field(default=False)
 
     # The logical database number used by the redis client.
-    _redis_db: int = 0
+    _redis_db: int = dataclasses.field(default=0)
 
     def _get_required_state_classes(
         self,
