@@ -483,3 +483,32 @@ def test_event_bound_method() -> None:
 
     w = Wrapper()
     _ = rx.input(on_change=w.get_handler)
+
+
+def test_event_var_bool_conversion():
+    """Test that EventVar and EventChainVar cannot be converted to booleans."""
+
+    class S(BaseState):
+        @event
+        def s(self):
+            pass
+
+    handler_var = Var.create(S.s)
+    with pytest.raises(TypeError) as err:
+        handler_var.bool()
+    assert "Cannot convert" in str(err.value)
+    assert "to bool" in str(err.value)
+
+    def _args_spec() -> tuple:
+        return ()
+
+    chain_var = Var.create(
+        EventChain(
+            events=[S.s()],
+            args_spec=_args_spec,
+        )
+    )
+    with pytest.raises(TypeError) as err:
+        chain_var.bool()
+    assert "Cannot convert" in str(err.value)
+    assert "to bool" in str(err.value)
