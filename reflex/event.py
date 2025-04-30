@@ -1583,7 +1583,19 @@ def wrap_decentralized_handler(fn: Callable) -> Callable:
 
     Returns:
         A wrapped function that can be used with component events.
+
+    Raises:
+        ValueError: If the event handler doesn't have at least one parameter (state).
     """
+    # Get the signature of the function to determine parameter names
+    sig = inspect.signature(fn)
+    param_names = list(sig.parameters.keys())
+
+    # The first parameter should be the state parameter
+    if not param_names:
+        raise ValueError(
+            f"Event handler {fn.__name__} must have at least one parameter (state)"
+        )
 
     # Create a wrapper function that doesn't require the state parameter
     def wrapper(*args, **kwargs):
@@ -1599,12 +1611,22 @@ def wrap_decentralized_handler(fn: Callable) -> Callable:
         # Create an event spec with the provided arguments
         arg_specs = []
 
+        # Skip the first parameter (state) when creating arg specs
+        param_offset = 1  # Skip the state parameter
+
         for i, arg in enumerate(args):
             # Create a var for the arg
             var_arg = Var.create(arg)
 
+            # Get the parameter name if available, otherwise use a generic name
+            param_name = (
+                param_names[i + param_offset]
+                if i + param_offset < len(param_names)
+                else f"arg{i}"
+            )
+
             # Add the arg to the arg specs
-            arg_specs.append((Var.create_safe(f"arg{i}"), var_arg))
+            arg_specs.append((Var.create_safe(param_name), var_arg))
 
         for name, arg in kwargs.items():
             # Create a var for the arg
