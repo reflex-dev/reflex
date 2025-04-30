@@ -630,8 +630,8 @@ class App(MiddlewareMixin, LifespanMixin):
         if not self._api:
             raise ValueError("The app has not been initialized.")
         if self._cached_fastapi_app is not None:
-            asgi_app = self._cached_fastapi_app
-            asgi_app.mount("", self._api)
+            asgi_app = self._api
+            asgi_app.mount("", self._cached_fastapi_app)
             App._add_cors(asgi_app)
         else:
             asgi_app = self._api
