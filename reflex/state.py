@@ -3937,6 +3937,8 @@ class MutableProxy(wrapt.ObjectProxy):
             The item value.
         """
         value = super().__getitem__(key)
+        if isinstance(key, slice) and isinstance(value, list):
+            return [self._wrap_recursive(item) for item in value]
         # Recursively wrap mutable items retrieved through this proxy.
         return self._wrap_recursive(value)
 
