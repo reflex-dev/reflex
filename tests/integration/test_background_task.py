@@ -4,8 +4,9 @@ from collections.abc import Generator
 
 import pytest
 from selenium.webdriver.common.by import By
+from selenium.webdriver.remote.webdriver import WebDriver
 
-from reflex.testing import DEFAULT_TIMEOUT, AppHarness, WebDriver
+from reflex.testing import DEFAULT_TIMEOUT, AppHarness
 
 
 def BackgroundTask():
@@ -274,10 +275,6 @@ def test_background_task(
     racy_increment_button = driver.find_element(By.ID, "racy-increment")
     driver.find_element(By.ID, "reset")
 
-    # get a reference to the counter
-    counter = driver.find_element(By.ID, "counter")
-    counter_async_cv = driver.find_element(By.ID, "counter-async-cv")
-
     # get a reference to the iterations input
     iterations_input = driver.find_element(By.ID, "iterations")
 
@@ -298,10 +295,25 @@ def test_background_task(
     yield_increment_button.click()
     blocking_pause_button.click()
     yield_increment_button.click()
+
+    # Refresh a few times while the task is running.
+    driver.refresh()
+    driver.refresh()
+
+    # Get new references after page reloads.
+    increment_button = driver.find_element(By.ID, "increment")
+    yield_increment_button = driver.find_element(By.ID, "yield-increment")
+    blocking_pause_button = driver.find_element(By.ID, "blocking-pause")
+    counter = driver.find_element(By.ID, "counter")
+    counter_async_cv = driver.find_element(By.ID, "counter-async-cv")
+
+    # Click more buttons.
     for _ in range(10):
         increment_button.click()
     yield_increment_button.click()
     blocking_pause_button.click()
+
+    # Make sure the final total is what we expect.
     assert background_task._poll_for(lambda: counter.text == "620", timeout=40)
     assert background_task._poll_for(lambda: counter_async_cv.text == "620", timeout=40)
     # all tasks should have exited and cleaned up
