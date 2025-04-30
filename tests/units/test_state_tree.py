@@ -6,8 +6,7 @@ import pytest
 import pytest_asyncio
 
 import reflex as rx
-from reflex.istate.manager import StateManager, StateManagerRedis
-from reflex.state import BaseState, _substate_key
+from reflex.state import BaseState, StateManager, StateManagerRedis, _substate_key
 
 
 class Root(BaseState):
