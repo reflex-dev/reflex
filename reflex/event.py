@@ -1673,8 +1673,11 @@ def call_event_fn(
     # Check if this is a decentralized event handler
     if is_decentralized_event_handler(fn):
         wrapped_fn = wrap_decentralized_handler(fn)
-        # Call the wrapped function directly without passing arg_spec
-        return [wrapped_fn()]
+
+        parsed_args = parse_args_spec(arg_spec)
+
+        # Call the wrapped function with the parsed arguments
+        return [wrapped_fn(*parsed_args)]
 
     # Check that fn signature matches arg_spec
     check_fn_match_arg_spec(fn, arg_spec, key=key)
