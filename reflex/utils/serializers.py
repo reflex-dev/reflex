@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import contextlib
 import dataclasses
+import decimal
 import functools
 import inspect
 import json
@@ -384,6 +385,19 @@ def serialize_uuid(uuid: UUID) -> str:
         The serialized UUID.
     """
     return str(uuid)
+
+
+@serializer(to=float)
+def serialize_decimal(value: decimal.Decimal) -> float:
+    """Serialize a Decimal to a float.
+
+    Args:
+        value: The Decimal to serialize.
+
+    Returns:
+        The serialized Decimal as a float.
+    """
+    return float(value)
 
 
 @serializer(to=str)
