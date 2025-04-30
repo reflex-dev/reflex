@@ -656,6 +656,7 @@ class App(MiddlewareMixin, LifespanMixin):
 
         top_asgi_app = Starlette(lifespan=self._run_lifespan_tasks)
         top_asgi_app.mount("", asgi_app)
+        App._add_cors(top_asgi_app)
 
         return top_asgi_app
 
