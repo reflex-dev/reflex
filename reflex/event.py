@@ -1650,8 +1650,7 @@ def wrap_decentralized_handler(fn: Callable) -> Callable:
     wrapper.__module__ = fn.__module__
 
     # Preserve the decentralized event marker
-    if hasattr(fn, DECENTRALIZED_EVENT_MARKER):
-        setattr(wrapper, DECENTRALIZED_EVENT_MARKER, True)
+    setattr(wrapper, DECENTRALIZED_EVENT_MARKER, True)
 
     return wrapper
 
