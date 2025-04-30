@@ -3409,6 +3409,429 @@ def get_state_manager() -> StateManager:
     return prerequisites.get_and_validate_app().app.state_manager
 
 
+class MutableProxy(wrapt.ObjectProxy):
+    """A proxy for a mutable object that tracks changes."""
+
+    # Hint for finding the base class of the proxy.
+    __base_proxy__ = "MutableProxy"
+
+    # Methods on wrapped objects which should mark the state as dirty.
+    __mark_dirty_attrs__ = {
+        "add",
+        "append",
+        "clear",
+        "difference_update",
+        "discard",
+        "extend",
+        "insert",
+        "intersection_update",
+        "pop",
+        "popitem",
+        "remove",
+        "reverse",
+        "setdefault",
+        "sort",
+        "symmetric_difference_update",
+        "update",
+    }
+
+    # Methods on wrapped objects might return mutable objects that should be tracked.
+    __wrap_mutable_attrs__ = {
+        "get",
+        "setdefault",
+    }
+
+    # These internal attributes on rx.Base should NOT be wrapped in a MutableProxy.
+    __never_wrap_base_attrs__ = set(Base.__dict__) - {"set"} | set(
+        pydantic.BaseModel.__dict__
+    )
+
+    # These types will be wrapped in MutableProxy
+    __mutable_types__ = (
+        list,
+        dict,
+        set,
+        Base,
+        DeclarativeBase,
+        BaseModelV2,
+        BaseModelV1,
+    )
+
+    # Dynamically generated classes for tracking dataclass mutations.
+    __dataclass_proxies__: dict[type, type] = {}
+
+    def __new__(cls, wrapped: Any, *args, **kwargs) -> MutableProxy:
+        """Create a proxy instance for a mutable object that tracks changes.
+
+        Args:
+            wrapped: The object to proxy.
+            *args: Other args passed to MutableProxy (ignored).
+            **kwargs: Other kwargs passed to MutableProxy (ignored).
+
+        Returns:
+            The proxy instance.
+        """
+        if dataclasses.is_dataclass(wrapped):
+            wrapped_cls = type(wrapped)
+            wrapper_cls_name = wrapped_cls.__name__ + cls.__name__
+            # Find the associated class
+            if wrapper_cls_name not in cls.__dataclass_proxies__:
+                # Create a new class that has the __dataclass_fields__ defined
+                cls.__dataclass_proxies__[wrapper_cls_name] = type(
+                    wrapper_cls_name,
+                    (cls,),
+                    {
+                        dataclasses._FIELDS: getattr(  # pyright: ignore [reportAttributeAccessIssue]
+                            wrapped_cls,
+                            dataclasses._FIELDS,  # pyright: ignore [reportAttributeAccessIssue]
+                        ),
+                    },
+                )
+            cls = cls.__dataclass_proxies__[wrapper_cls_name]
+        return super().__new__(cls)
+
+    def __init__(self, wrapped: Any, state: BaseState, field_name: str):
+        """Create a proxy for a mutable object that tracks changes.
+
+        Args:
+            wrapped: The object to proxy.
+            state: The state to mark dirty when the object is changed.
+            field_name: The name of the field on the state associated with the
+                wrapped object.
+        """
+        super().__init__(wrapped)
+        self._self_state = state
+        self._self_field_name = field_name
+
+    def __repr__(self) -> str:
+        """Get the representation of the wrapped object.
+
+        Returns:
+            The representation of the wrapped object.
+        """
+        return f"{type(self).__name__}({self.__wrapped__})"
+
+    def _mark_dirty(
+        self,
+        wrapped: Callable | None = None,
+        instance: BaseState | None = None,
+        args: tuple = (),
+        kwargs: dict | None = None,
+    ) -> Any:
+        """Mark the state as dirty, then call a wrapped function.
+
+        Intended for use with `FunctionWrapper` from the `wrapt` library.
+
+        Args:
+            wrapped: The wrapped function.
+            instance: The instance of the wrapped function.
+            args: The args for the wrapped function.
+            kwargs: The kwargs for the wrapped function.
+
+        Returns:
+            The result of the wrapped function.
+        """
+        self._self_state.dirty_vars.add(self._self_field_name)
+        self._self_state._mark_dirty()
+        if wrapped is not None:
+            return wrapped(*args, **(kwargs or {}))
+
+    @classmethod
+    def _is_mutable_type(cls, value: Any) -> bool:
+        """Check if a value is of a mutable type and should be wrapped.
+
+        Args:
+            value: The value to check.
+
+        Returns:
+            Whether the value is of a mutable type.
+        """
+        return isinstance(value, cls.__mutable_types__) or (
+            dataclasses.is_dataclass(value) and not isinstance(value, Var)
+        )
+
+    @staticmethod
+    def _is_called_from_dataclasses_internal() -> bool:
+        """Check if the current function is called from dataclasses helper.
+
+        Returns:
+            Whether the current function is called from dataclasses internal code.
+        """
+        # Walk up the stack a bit to see if we are called from dataclasses
+        # internal code, for example `asdict` or `astuple`.
+        frame = inspect.currentframe()
+        for _ in range(5):
+            # Why not `inspect.stack()` -- this is much faster!
+            if not (frame := frame and frame.f_back):
+                break
+            if inspect.getfile(frame) == dataclasses.__file__:
+                return True
+        return False
+
+    def _wrap_recursive(self, value: Any) -> Any:
+        """Wrap a value recursively if it is mutable.
+
+        Args:
+            value: The value to wrap.
+
+        Returns:
+            The wrapped value.
+        """
+        # When called from dataclasses internal code, return the unwrapped value
+        if self._is_called_from_dataclasses_internal():
+            return value
+        # Recursively wrap mutable types, but do not re-wrap MutableProxy instances.
+        if self._is_mutable_type(value) and not isinstance(value, MutableProxy):
+            base_cls = globals()[self.__base_proxy__]
+            return base_cls(
+                wrapped=value,
+                state=self._self_state,
+                field_name=self._self_field_name,
+            )
+        return value
+
+    def _wrap_recursive_decorator(
+        self, wrapped: Callable, instance: BaseState, args: list, kwargs: dict
+    ) -> Any:
+        """Wrap a function that returns a possibly mutable value.
+
+        Intended for use with `FunctionWrapper` from the `wrapt` library.
+
+        Args:
+            wrapped: The wrapped function.
+            instance: The instance of the wrapped function.
+            args: The args for the wrapped function.
+            kwargs: The kwargs for the wrapped function.
+
+        Returns:
+            The result of the wrapped function (possibly wrapped in a MutableProxy).
+        """
+        return self._wrap_recursive(wrapped(*args, **kwargs))
+
+    def __getattr__(self, __name: str) -> Any:
+        """Get the attribute on the proxied object and return a proxy if mutable.
+
+        Args:
+            __name: The name of the attribute.
+
+        Returns:
+            The attribute value.
+        """
+        value = super().__getattr__(__name)
+
+        if callable(value):
+            if __name in self.__mark_dirty_attrs__:
+                # Wrap special callables, like "append", which should mark state dirty.
+                value = wrapt.FunctionWrapper(value, self._mark_dirty)
+
+            if __name in self.__wrap_mutable_attrs__:
+                # Wrap methods that may return mutable objects tied to the state.
+                value = wrapt.FunctionWrapper(
+                    value,
+                    self._wrap_recursive_decorator,
+                )
+
+            if (
+                isinstance(self.__wrapped__, Base)
+                and __name not in self.__never_wrap_base_attrs__
+                and hasattr(value, "__func__")
+            ):
+                # Wrap methods called on Base subclasses, which might do _anything_
+                return wrapt.FunctionWrapper(
+                    functools.partial(value.__func__, self),  # pyright: ignore [reportFunctionMemberAccess]
+                    self._wrap_recursive_decorator,
+                )
+
+        if self._is_mutable_type(value) and __name not in (
+            "__wrapped__",
+            "_self_state",
+            "__dict__",
+        ):
+            # Recursively wrap mutable attribute values retrieved through this proxy.
+            return self._wrap_recursive(value)
+
+        return value
+
+    def __getitem__(self, key: Any) -> Any:
+        """Get the item on the proxied object and return a proxy if mutable.
+
+        Args:
+            key: The key of the item.
+
+        Returns:
+            The item value.
+        """
+        value = super().__getitem__(key)
+        if isinstance(key, slice) and isinstance(value, list):
+            return [self._wrap_recursive(item) for item in value]
+        # Recursively wrap mutable items retrieved through this proxy.
+        return self._wrap_recursive(value)
+
+    def __iter__(self) -> Any:
+        """Iterate over the proxied object and return a proxy if mutable.
+
+        Yields:
+            Each item value (possibly wrapped in MutableProxy).
+        """
+        for value in super().__iter__():
+            # Recursively wrap mutable items retrieved through this proxy.
+            yield self._wrap_recursive(value)
+
+    def __delattr__(self, name: str):
+        """Delete the attribute on the proxied object and mark state dirty.
+
+        Args:
+            name: The name of the attribute.
+        """
+        self._mark_dirty(super().__delattr__, args=(name,))
+
+    def __delitem__(self, key: str):
+        """Delete the item on the proxied object and mark state dirty.
+
+        Args:
+            key: The key of the item.
+        """
+        self._mark_dirty(super().__delitem__, args=(key,))
+
+    def __setitem__(self, key: str, value: Any):
+        """Set the item on the proxied object and mark state dirty.
+
+        Args:
+            key: The key of the item.
+            value: The value of the item.
+        """
+        self._mark_dirty(super().__setitem__, args=(key, value))
+
+    def __setattr__(self, name: str, value: Any):
+        """Set the attribute on the proxied object and mark state dirty.
+
+        If the attribute starts with "_self_", then the state is NOT marked
+        dirty as these are internal proxy attributes.
+
+        Args:
+            name: The name of the attribute.
+            value: The value of the attribute.
+        """
+        if name.startswith("_self_"):
+            # Special case attributes of the proxy itself, not applied to the wrapped object.
+            super().__setattr__(name, value)
+            return
+        self._mark_dirty(super().__setattr__, args=(name, value))
+
+    def __copy__(self) -> Any:
+        """Return a copy of the proxy.
+
+        Returns:
+            A copy of the wrapped object, unconnected to the proxy.
+        """
+        return copy.copy(self.__wrapped__)
+
+    def __deepcopy__(self, memo: dict[int, Any] | None = None) -> Any:
+        """Return a deepcopy of the proxy.
+
+        Args:
+            memo: The memo dict to use for the deepcopy.
+
+        Returns:
+            A deepcopy of the wrapped object, unconnected to the proxy.
+        """
+        return copy.deepcopy(self.__wrapped__, memo=memo)
+
+    def __reduce_ex__(self, protocol_version: SupportsIndex):
+        """Get the state for redis serialization.
+
+        This method is called by cloudpickle to serialize the object.
+
+        It explicitly serializes the wrapped object, stripping off the mutable proxy.
+
+        Args:
+            protocol_version: The protocol version.
+
+        Returns:
+            Tuple of (wrapped class, empty args, class __getstate__)
+        """
+        return self.__wrapped__.__reduce_ex__(protocol_version)
+
+
+@serializer
+def serialize_mutable_proxy(mp: MutableProxy):
+    """Return the wrapped value of a MutableProxy.
+
+    Args:
+        mp: The MutableProxy to serialize.
+
+    Returns:
+        The wrapped object.
+    """
+    return mp.__wrapped__
+
+
+_orig_json_encoder_default = json.JSONEncoder.default
+
+
+def _json_encoder_default_wrapper(self: json.JSONEncoder, o: Any) -> Any:
+    """Wrap JSONEncoder.default to handle MutableProxy objects.
+
+    Args:
+        self: the JSONEncoder instance.
+        o: the object to serialize.
+
+    Returns:
+        A JSON-able object.
+    """
+    try:
+        return o.__wrapped__
+    except AttributeError:
+        pass
+    return _orig_json_encoder_default(self, o)
+
+
+json.JSONEncoder.default = _json_encoder_default_wrapper
+
+
+class ImmutableMutableProxy(MutableProxy):
+    """A proxy for a mutable object that tracks changes.
+
+    This wrapper comes from StateProxy, and will raise an exception if an attempt is made
+    to modify the wrapped object when the StateProxy is immutable.
+    """
+
+    # Ensure that recursively wrapped proxies use ImmutableMutableProxy as base.
+    __base_proxy__ = "ImmutableMutableProxy"
+
+    def _mark_dirty(
+        self,
+        wrapped: Callable | None = None,
+        instance: BaseState | None = None,
+        args: tuple = (),
+        kwargs: dict | None = None,
+    ) -> Any:
+        """Raise an exception when an attempt is made to modify the object.
+
+        Intended for use with `FunctionWrapper` from the `wrapt` library.
+
+        Args:
+            wrapped: The wrapped function.
+            instance: The instance of the wrapped function.
+            args: The args for the wrapped function.
+            kwargs: The kwargs for the wrapped function.
+
+        Returns:
+            The result of the wrapped function.
+
+        Raises:
+            ImmutableStateError: if the StateProxy is not mutable.
+        """
+        if not self._self_state._is_mutable():
+            raise ImmutableStateError(
+                "Background task StateProxy is immutable outside of a context "
+                "manager. Use `async with self` to modify state."
+            )
+        return super()._mark_dirty(
+            wrapped=wrapped, instance=instance, args=args, kwargs=kwargs
+        )
+
+
 def code_uses_state_contexts(javascript_code: str) -> bool:
     """Check if the rendered Javascript uses state contexts.
 

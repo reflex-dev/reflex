@@ -1505,6 +1505,10 @@ def test_setattr_of_mutable_types(mutable_state: MutableTestState):
     assert isinstance(array[1], list)
     assert isinstance(array[2], MutableProxy)
     assert isinstance(array[2], dict)
+    assert isinstance(array[:], list)
+    assert not isinstance(array[:], MutableProxy)
+    assert isinstance(array[:][1], MutableProxy)
+    assert isinstance(array[:][1], list)
 
     assert isinstance(hashmap, MutableProxy)
     assert isinstance(hashmap, dict)
