@@ -32,7 +32,6 @@ from starlette.middleware import cors
 from starlette.requests import ClientDisconnect, Request
 from starlette.responses import JSONResponse, Response, StreamingResponse
 from starlette.staticfiles import StaticFiles
-from typing_extensions import deprecated
 
 from reflex import constants
 from reflex.admin import AdminDash
@@ -394,7 +393,7 @@ class App(MiddlewareMixin, LifespanMixin):
     _stateful_pages: dict[str, None] = dataclasses.field(default_factory=dict)
 
     # The backend API object.
-    _api: Starlette | None = None
+    _api: FastAPI | None = None
 
     # The state class to use for the app.
     _state: type[BaseState] | None = None
@@ -437,26 +436,19 @@ class App(MiddlewareMixin, LifespanMixin):
         | None
     ) = None
 
-    # FastAPI app for compatibility with FastAPI.
-    _cached_fastapi_app: FastAPI | None = None
-
     @property
-    @deprecated("Use `api_transformer=your_fastapi_app` instead.")
     def api(self) -> FastAPI:
         """Get the backend api.
 
         Returns:
             The backend api.
+
+        Raises:
+            ValueError: If the app has not been initialized.
         """
-        if self._cached_fastapi_app is None:
-            self._cached_fastapi_app = FastAPI()
-        console.deprecate(
-            feature_name="App.api",
-            reason="Set `api_transformer=your_fastapi_app` instead.",
-            deprecation_version="0.7.9",
-            removal_version="0.8.0",
-        )
-        return self._cached_fastapi_app
+        if self._api is None:
+            raise ValueError("The app has not been initialized.")
+        return self._api
 
     @property
     def event_namespace(self) -> EventNamespace | None:
@@ -488,7 +480,7 @@ class App(MiddlewareMixin, LifespanMixin):
             set_breakpoints(self.style.pop("breakpoints"))
 
         # Set up the API.
-        self._api = Starlette(lifespan=self._run_lifespan_tasks)
+        self._api = FastAPI(lifespan=self._run_lifespan_tasks)
         App._add_cors(self._api)
         self._add_default_endpoints()
 
@@ -629,12 +621,8 @@ class App(MiddlewareMixin, LifespanMixin):
 
         if not self._api:
             raise ValueError("The app has not been initialized.")
-        if self._cached_fastapi_app is not None:
-            asgi_app = self._cached_fastapi_app
-            asgi_app.mount("", self._api)
-            App._add_cors(asgi_app)
-        else:
-            asgi_app = self._api
+
+        asgi_app = self._api
 
         if self.api_transformer is not None:
             api_transformers: Sequence[Starlette | Callable[[ASGIApp], ASGIApp]] = (
