@@ -323,11 +323,12 @@ class AppHarness:
         return _shutdown
 
     def _start_backend(self, port: int = 0):
-        if self.app_instance is None or self.app_instance._api is None:
+        if self.app_instance is None:
             raise RuntimeError("App was not initialized.")
+        environment.REFLEX_SKIP_COMPILE.set(True)
         self.backend = uvicorn.Server(
             uvicorn.Config(
-                app=self.app_instance._api,
+                app=self.app_instance(),
                 host="127.0.0.1",
                 port=port,
             )
@@ -363,6 +364,7 @@ class AppHarness:
                 raise RuntimeError("Failed to reset state manager.")
 
     def _start_frontend(self):
+        environment.REFLEX_SKIP_COMPILE.set(False)
         # Set up the frontend.
         with chdir(self.app_path):
             config = reflex.config.get_config()
@@ -962,7 +964,7 @@ class AppHarnessProd(AppHarness):
         environment.REFLEX_SKIP_COMPILE.set(True)
         self.backend = uvicorn.Server(
             uvicorn.Config(
-                app=self.app_instance,
+                app=self.app_instance(),
                 host="127.0.0.1",
                 port=0,
                 workers=reflex.utils.processes.get_num_workers(),
