@@ -483,6 +483,11 @@ def format_event_handler(handler: EventHandler) -> str:
     Returns:
         The formatted function.
     """
+    if handler.state_full_name is None:
+        from reflex.utils import format
+
+        return format.to_snake_case(handler.fn.__qualname__)
+
     state, name = get_event_handler_parts(handler)
     if state == "":
         return name

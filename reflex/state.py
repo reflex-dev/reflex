@@ -1586,15 +1586,30 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         Args:
             event: The event to get the handler for.
 
-
         Returns:
             The event handler.
 
         Raises:
             ValueError: If the event handler or substate is not found.
+            EventHandlerValueError: If the event handler is not found.
         """
         # Get the event handler.
         path = event.name.split(".")
+
+        if "." not in event.name:
+            from reflex.event import get_event_handler
+            from reflex.utils.exceptions import EventHandlerValueError
+
+            handler = get_event_handler(event.name)
+            if handler is None:
+                raise EventHandlerValueError(f"Event handler {event.name} not found.")
+
+            # For background tasks, proxy the state
+            if handler.is_background:
+                return StateProxy(self), handler
+
+            return self, handler
+
         path, name = path[:-1], path[-1]
         substate = self.get_substate(path)
         if not substate:
@@ -1753,7 +1768,10 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         from reflex.utils import telemetry
 
         # Get the function to process the event.
-        fn = functools.partial(handler.fn, state)
+        if handler.state_full_name is None:
+            fn = handler.fn
+        else:
+            fn = functools.partial(handler.fn, state)
 
         try:
             type_hints = typing.get_type_hints(handler.fn)

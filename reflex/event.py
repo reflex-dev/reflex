@@ -55,6 +55,30 @@ from reflex.vars.function import (
 )
 from reflex.vars.object import ObjectVar
 
+_global_event_handlers: dict[str, EventHandler] = {}
+
+
+def register_event_handler(name: str, handler: EventHandler) -> None:
+    """Register a decentralized event handler.
+
+    Args:
+        name: The name of the event handler.
+        handler: The event handler.
+    """
+    _global_event_handlers[name] = handler
+
+
+def get_event_handler(name: str) -> EventHandler | None:
+    """Get a decentralized event handler by name.
+
+    Args:
+        name: The name of the event handler.
+
+    Returns:
+        The event handler, or None if not found.
+    """
+    return _global_event_handlers.get(name)
+
 
 @dataclasses.dataclass(
     init=True,
@@ -178,7 +202,7 @@ class EventHandler(EventActionsMixin):
 
     # The full name of the state class this event handler is attached to.
     # Empty string means this event handler is a server side event.
-    state_full_name: str = dataclasses.field(default="")
+    state_full_name: str | None = dataclasses.field(default="")
 
     @classmethod
     def __class_getitem__(cls, args_spec: str) -> Annotated:
@@ -260,6 +284,13 @@ class EventHandler(EventActionsMixin):
                     f"Arguments to event handlers must be Vars or JSON-serializable. Got {arg} of type {type(arg)}."
                 ) from e
         payload = tuple(zip(fn_args, values, strict=False))
+
+        # Check if this is a decentralized event handler
+        if self.state_full_name is None:
+            from reflex.utils import format
+
+            name = format.to_snake_case(self.fn.__qualname__)
+            register_event_handler(name, self)
 
         # Return the event spec.
         return EventSpec(
@@ -1492,6 +1523,9 @@ def check_fn_match_arg_spec(
     Raises:
         EventFnArgMismatchError: Raised if the number of mandatory arguments do not match
     """
+    if is_decentralized_event_handler(user_func):
+        return
+
     user_args = list(inspect.signature(user_func).parameters)
     # Drop the first argument if it's a bound method
     if inspect.ismethod(user_func) and user_func.__self__ is not None:
@@ -1518,6 +1552,61 @@ def check_fn_match_arg_spec(
         )
 
 
+DECENTRALIZED_EVENT_MARKER = "_rx_decentralized_event"
+
+
+def is_decentralized_event_handler(fn: Callable) -> bool:
+    """Check if a function is a decentralized event handler.
+
+    Args:
+        fn: The function to check.
+
+    Returns:
+        Whether the function is a decentralized event handler.
+    """
+    # Check if the function has been decorated with @rx.event
+    if not hasattr(fn, "__qualname__"):
+        return False
+
+    # Check if the function has the decentralized event marker
+    return hasattr(fn, DECENTRALIZED_EVENT_MARKER)
+
+
+def wrap_decentralized_handler(fn: Callable) -> Callable:
+    """Wrap a decentralized event handler to be used with component events.
+
+    This creates a wrapper that doesn't require the state parameter when called
+    from a component event, but will pass the state when the event is processed.
+
+    Args:
+        fn: The decentralized event handler to wrap.
+
+    Returns:
+        A wrapped function that can be used with component events.
+    """
+
+    # Create a wrapper function that doesn't require the state parameter
+    def wrapper(*args, **kwargs):
+        # Get or create the event handler
+        from reflex.utils import format
+
+        name = format.to_snake_case(fn.__qualname__)
+        handler = _global_event_handlers.get(name)
+        if handler is None:
+            handler = EventHandler(fn=fn, state_full_name=None)
+            register_event_handler(name, handler)
+
+        # Create an event spec with no arguments - the state will be provided
+        return EventSpec(handler=handler, args=())
+
+    wrapper.__name__ = fn.__name__
+    wrapper.__qualname__ = fn.__qualname__
+    wrapper.__doc__ = fn.__doc__
+    wrapper.__module__ = fn.__module__
+
+    return wrapper
+
+
 def call_event_fn(
     fn: Callable,
     arg_spec: ArgsSpec | Sequence[ArgsSpec],
@@ -1542,6 +1631,11 @@ def call_event_fn(
     # Import here to avoid circular imports.
     from reflex.event import EventHandler, EventSpec
     from reflex.utils.exceptions import EventHandlerValueError
+
+    # Check if this is a decentralized event handler
+    if is_decentralized_event_handler(fn):
+        wrapped_fn = wrap_decentralized_handler(fn)
+        return call_event_fn(wrapped_fn, arg_spec, key=key)
 
     # Check that fn signature matches arg_spec
     check_fn_match_arg_spec(fn, arg_spec, key=key)
@@ -2066,7 +2160,19 @@ class EventNamespace:
                 setattr(func, BACKGROUND_TASK_MARKER, True)
             if getattr(func, "__name__", "").startswith("_"):
                 raise ValueError("Event handlers cannot be private.")
-            return func  # pyright: ignore [reportReturnType]
+
+            # Check if this is a method (defined in a class) or a standalone function
+            if hasattr(func, "__qualname__") and "." in func.__qualname__:
+                return func  # pyright: ignore [reportReturnType]
+            else:
+                # This is a decentralized event handler
+                handler = EventHandler(fn=func, state_full_name=None)
+                if background:
+                    setattr(handler, BACKGROUND_TASK_MARKER, True)
+                # Mark the function as a decentralized event handler
+                setattr(func, DECENTRALIZED_EVENT_MARKER, True)
+                # Return the original function so it can be called normally
+                return func  # pyright: ignore [reportReturnType]
 
         if func is not None:
             return wrapper(func)
