@@ -1597,6 +1597,16 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         path = event.name.split(".")
 
         if "." not in event.name:
+            cls = type(self)
+            if event.name in cls.event_handlers:
+                handler = cls.event_handlers[event.name]
+
+                # For background tasks, proxy the state
+                if handler.is_background:
+                    return StateProxy(self), handler
+
+                return self, handler
+
             from reflex.event import get_event_handler
             from reflex.utils.exceptions import EventHandlerValueError
 

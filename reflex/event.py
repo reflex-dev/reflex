@@ -1596,8 +1596,24 @@ def wrap_decentralized_handler(fn: Callable) -> Callable:
             handler = EventHandler(fn=fn, state_full_name=None)
             register_event_handler(name, handler)
 
-        # Create an event spec with no arguments - the state will be provided
-        return EventSpec(handler=handler, args=())
+        # Create an event spec with the provided arguments
+        arg_specs = []
+
+        for i, arg in enumerate(args):
+            # Create a var for the arg
+            var_arg = Var.create(arg)
+
+            # Add the arg to the arg specs
+            arg_specs.append((Var.create_safe(f"arg{i}"), var_arg))
+
+        for name, arg in kwargs.items():
+            # Create a var for the arg
+            var_arg = Var.create(arg)
+
+            # Add the arg to the arg specs
+            arg_specs.append((Var.create_safe(name), var_arg))
+
+        return EventSpec(handler=handler, args=tuple(arg_specs))
 
     wrapper.__name__ = fn.__name__
     wrapper.__qualname__ = fn.__qualname__
@@ -1635,7 +1651,8 @@ def call_event_fn(
     # Check if this is a decentralized event handler
     if is_decentralized_event_handler(fn):
         wrapped_fn = wrap_decentralized_handler(fn)
-        return call_event_fn(wrapped_fn, arg_spec, key=key)
+        # Call the wrapped function directly without passing arg_spec
+        return [wrapped_fn()]
 
     # Check that fn signature matches arg_spec
     check_fn_match_arg_spec(fn, arg_spec, key=key)
