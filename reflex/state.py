@@ -1591,12 +1591,12 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
 
         Raises:
             ValueError: If the event handler or substate is not found.
-            EventHandlerValueError: If the event handler is not found.
         """
         # Get the event handler.
         path = event.name.split(".")
 
         if "." not in event.name:
+            # Check if the event handler exists in the class's event_handlers
             cls = type(self)
             if event.name in cls.event_handlers:
                 handler = cls.event_handlers[event.name]
@@ -1608,17 +1608,14 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
                 return self, handler
 
             from reflex.event import get_event_handler
-            from reflex.utils.exceptions import EventHandlerValueError
 
             handler = get_event_handler(event.name)
-            if handler is None:
-                raise EventHandlerValueError(f"Event handler {event.name} not found.")
+            if handler is not None:
+                # For background tasks, proxy the state
+                if handler.is_background:
+                    return StateProxy(self), handler
 
-            # For background tasks, proxy the state
-            if handler.is_background:
-                return StateProxy(self), handler
-
-            return self, handler
+                return self, handler
 
         path, name = path[:-1], path[-1]
         substate = self.get_substate(path)
