@@ -488,7 +488,7 @@ class App(MiddlewareMixin, LifespanMixin):
             set_breakpoints(self.style.pop("breakpoints"))
 
         # Set up the API.
-        self._api = Starlette(lifespan=self._run_lifespan_tasks)
+        self._api = Starlette()
         App._add_cors(self._api)
         self._add_default_endpoints()
 
@@ -629,9 +629,10 @@ class App(MiddlewareMixin, LifespanMixin):
 
         if not self._api:
             raise ValueError("The app has not been initialized.")
+
         if self._cached_fastapi_app is not None:
-            asgi_app = self._api
-            asgi_app.mount("", self._cached_fastapi_app)
+            asgi_app = self._cached_fastapi_app
+            asgi_app.mount("", self._api)
             App._add_cors(asgi_app)
         else:
             asgi_app = self._api
@@ -653,7 +654,10 @@ class App(MiddlewareMixin, LifespanMixin):
                     # Transform the asgi app.
                     asgi_app = api_transformer(asgi_app)
 
-        return asgi_app
+        top_asgi_app = Starlette(lifespan=self._run_lifespan_tasks)
+        top_asgi_app.mount("", asgi_app)
+
+        return top_asgi_app
 
     def _add_default_endpoints(self):
         """Add default api endpoints (ping)."""
