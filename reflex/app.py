@@ -78,6 +78,7 @@ from reflex.event import (
     IndividualEventType,
     get_hydrate_event,
 )
+from reflex.istate.manager import StateManager
 from reflex.model import Model, get_db_status
 from reflex.page import DECORATED_PAGES
 from reflex.route import (
@@ -89,7 +90,6 @@ from reflex.state import (
     BaseState,
     RouterData,
     State,
-    StateManager,
     StateUpdate,
     _substate_key,
     all_base_state_classes,

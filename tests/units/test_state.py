@@ -27,18 +27,20 @@ from reflex.app import App
 from reflex.base import Base
 from reflex.constants import CompileVars, RouteVar, SocketEvent
 from reflex.event import Event, EventHandler
-from reflex.state import (
-    BaseState,
-    ImmutableStateError,
+from reflex.istate.manager import (
     LockExpiredError,
-    MutableProxy,
-    OnLoadInternalState,
-    RouterData,
-    State,
     StateManager,
     StateManagerDisk,
     StateManagerMemory,
     StateManagerRedis,
+)
+from reflex.state import (
+    BaseState,
+    ImmutableStateError,
+    MutableProxy,
+    OnLoadInternalState,
+    RouterData,
+    State,
     StateProxy,
     StateUpdate,
     _substate_key,
@@ -3354,7 +3356,8 @@ config = rx.Config(
     with chdir(proj_root):
         # reload config for each parameter to avoid stale values
         reflex.config.get_config(reload=True)
-        from reflex.state import State, StateManager
+        from reflex.istate.manager import StateManager
+        from reflex.state import State
 
         state_manager = StateManager.create(state=State)
         assert state_manager.lock_expiration == expected_values[0]  # pyright: ignore [reportAttributeAccessIssue]
@@ -3392,7 +3395,8 @@ config = rx.Config(
     with chdir(proj_root):
         # reload config for each parameter to avoid stale values
         reflex.config.get_config(reload=True)
-        from reflex.state import State, StateManager
+        from reflex.istate.manager import StateManager
+        from reflex.state import State
 
         with pytest.raises(InvalidLockWarningThresholdError):
             StateManager.create(state=State)

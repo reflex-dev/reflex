@@ -2,8 +2,9 @@
 
 from typing import Any
 
+from reflex.istate.manager import get_state_manager
 from reflex.istate.proxy import ReadOnlyStateProxy
-from reflex.state import _split_substate_key, _substate_key, get_state_manager
+from reflex.state import _split_substate_key, _substate_key
 
 
 async def get_state(token: str, state_cls: Any | None = None) -> ReadOnlyStateProxy:

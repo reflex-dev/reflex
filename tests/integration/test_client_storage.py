@@ -10,13 +10,12 @@ from selenium.webdriver import Firefox
 from selenium.webdriver.common.by import By
 from selenium.webdriver.remote.webdriver import WebDriver
 
-from reflex.state import (
-    State,
+from reflex.istate.manager import (
     StateManagerDisk,
     StateManagerMemory,
     StateManagerRedis,
-    _substate_key,
 )
+from reflex.state import State, _substate_key
 from reflex.testing import AppHarness
 
 from . import utils
