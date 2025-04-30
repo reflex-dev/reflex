@@ -35,13 +35,14 @@ import reflex.utils.prerequisites
 import reflex.utils.processes
 from reflex.components.component import CustomComponent
 from reflex.config import environment, get_config
-from reflex.istate.manager import (
+from reflex.state import (
+    BaseState,
     StateManager,
     StateManagerDisk,
     StateManagerMemory,
     StateManagerRedis,
+    reload_state_module,
 )
-from reflex.state import BaseState, reload_state_module
 from reflex.utils import console
 from reflex.utils.export import export
 
