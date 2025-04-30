@@ -23,10 +23,14 @@ from pydantic.v1 import BaseModel as BaseModelV1
 import reflex as rx
 import reflex.config
 from reflex import constants
-from reflex.app import App
+from reflex.app import (
+    App,
+    default_backend_exception_handler,
+    default_frontend_exception_handler,
+)
 from reflex.base import Base
 from reflex.constants import CompileVars, RouteVar, SocketEvent
-from reflex.event import Event, EventHandler
+from reflex.event import Event, EventHandler, EventSpec
 from reflex.state import (
     BaseState,
     ImmutableStateError,
@@ -4028,3 +4032,59 @@ def test_computed_var_mutability() -> None:
 
     assert first_cv is not second_cv
     assert first_cv._static_deps is not second_cv._static_deps
+
+
+def test_default_frontend_exception_handler(capfd):
+    """Test that frontend handler logs the exception and returns None."""
+    ex = ValueError("frontend oops")
+    result = default_frontend_exception_handler(ex)
+    assert result is None
+    out, _ = capfd.readouterr()
+    assert "[Reflex Frontend Exception]" in out
+    assert "frontend oops" in out
+
+
+def test_default_backend_exception_handler_returns_eventspec():
+    """Test that backend handler returns a correct EventSpec."""
+    ex = RuntimeError("backend error")
+    event_spec = default_backend_exception_handler(ex)
+
+    assert isinstance(event_spec, EventSpec)
+    assert event_spec.handler is not None
+
+    from reflex.event import EventHandler
+
+    assert isinstance(event_spec.handler, EventHandler)
+
+    handler_fn = event_spec.handler.fn
+    if isinstance(handler_fn, functools.partial):
+        handler_fn = handler_fn.func
+    assert handler_fn.__name__ == "handle_error"
+
+    assert "error" in event_spec.handler.state_full_name.lower()
+
+    # Args checks
+    var_pairs = event_spec.args
+    assert var_pairs, "Args should not be empty"
+    right_hand_value = var_pairs[0][1]
+
+    # Normalize for safe access
+    if hasattr(right_hand_value, "_js_expr"):
+        js_expr = right_hand_value._js_expr
+        assert (
+            "Contact the website administrator." in js_expr
+            or "See logs for details." in js_expr
+        )
+    else:
+        assert "Contact the website administrator." in str(
+            right_hand_value
+        ) or "See logs for details." in str(right_hand_value)
+
+    # repr check
+    repr_output = repr(event_spec)
+    assert "handle_error" in repr_output
+    assert "error" in repr_output.lower()
+    assert (
+        "Contact the website administrator." in repr_output
+        or "See logs for details." in repr_output
+    )
