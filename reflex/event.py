@@ -527,13 +527,19 @@ class EventChain(EventActionsMixin):
 
         # If the input is a callable, create an event chain.
         elif isinstance(value, Callable):
-            result = call_event_fn(value, args_spec, key=key)
-            if isinstance(result, Var):
-                # Recursively call this function if the lambda returned an EventChain Var.
-                return cls.create(
-                    value=result, args_spec=args_spec, key=key, **event_chain_kwargs
-                )
-            events = [*result]
+            # Check if this is a decentralized event handler
+            if is_decentralized_event_handler(value):
+                wrapped_fn = wrap_decentralized_handler(value)
+                # Create an event spec directly
+                events = [wrapped_fn()]
+            else:
+                result = call_event_fn(value, args_spec, key=key)
+                if isinstance(result, Var):
+                    # Recursively call this function if the lambda returned an EventChain Var.
+                    return cls.create(
+                        value=result, args_spec=args_spec, key=key, **event_chain_kwargs
+                    )
+                events = [*result]
 
         # Otherwise, raise an error.
         else:
@@ -1330,13 +1336,14 @@ def call_event_handler(
         # Handle partial application of EventSpec args
         return event_callback.add_args(*event_spec_args)
 
-    check_fn_match_arg_spec(
-        event_callback.fn,
-        event_spec,
-        key,
-        bool(event_callback.state_full_name),
-        event_callback.fn.__qualname__,
-    )
+    if not is_decentralized_event_handler(event_callback.fn):
+        check_fn_match_arg_spec(
+            event_callback.fn,
+            event_spec,
+            key,
+            bool(event_callback.state_full_name),
+            event_callback.fn.__qualname__,
+        )
 
     all_acceptable_specs = (
         [event_spec] if not isinstance(event_spec, Sequence) else event_spec
@@ -1642,6 +1649,10 @@ def wrap_decentralized_handler(fn: Callable) -> Callable:
     wrapper.__doc__ = fn.__doc__
     wrapper.__module__ = fn.__module__
 
+    # Preserve the decentralized event marker
+    if hasattr(fn, DECENTRALIZED_EVENT_MARKER):
+        setattr(wrapper, DECENTRALIZED_EVENT_MARKER, True)
+
     return wrapper
 
 
@@ -1679,8 +1690,9 @@ def call_event_fn(
         # Call the wrapped function with the parsed arguments
         return [wrapped_fn(*parsed_args)]
 
-    # Check that fn signature matches arg_spec
-    check_fn_match_arg_spec(fn, arg_spec, key=key)
+    # Check that fn signature matches arg_spec (skip for decentralized event handlers)
+    if not is_decentralized_event_handler(fn):
+        check_fn_match_arg_spec(fn, arg_spec, key=key)
 
     parsed_args = parse_args_spec(arg_spec)
 
