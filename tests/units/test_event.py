@@ -485,8 +485,9 @@ def test_event_bound_method() -> None:
     _ = rx.input(on_change=w.get_handler)
 
 
-def test_event_var_bool_conversion():
-    """Test that EventVar and EventChainVar cannot be converted to booleans."""
+def test_event_var_in_rx_cond():
+    """Test that EventVar and EventChainVar cannot be used in rx.cond()."""
+    from reflex.components.core.cond import cond as rx_cond
 
     class S(BaseState):
         @event
@@ -495,7 +496,7 @@ def test_event_var_bool_conversion():
 
     handler_var = Var.create(S.s)
     with pytest.raises(TypeError) as err:
-        handler_var.bool()
+        rx_cond(handler_var, rx.text("True"), rx.text("False"))
     assert "Cannot convert" in str(err.value)
     assert "to bool" in str(err.value)
 
@@ -509,6 +510,6 @@ def test_event_var_bool_conversion():
         )
     )
     with pytest.raises(TypeError) as err:
-        chain_var.bool()
+        rx_cond(chain_var, rx.text("True"), rx.text("False"))
     assert "Cannot convert" in str(err.value)
     assert "to bool" in str(err.value)
