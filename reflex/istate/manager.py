@@ -10,12 +10,12 @@ from abc import ABC, abstractmethod
 from collections.abc import AsyncIterator
 from hashlib import md5
 from pathlib import Path
-from typing import override
 
 from pydantic.v1 import validator
 from redis import ResponseError
 from redis.asyncio import Redis
 from redis.asyncio.client import PubSub
+from typing_extensions import override
 
 from reflex import constants
 from reflex.config import environment, get_config
