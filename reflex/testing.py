@@ -966,6 +966,7 @@ class AppHarnessProd(AppHarness):
     def _start_backend(self):
         if self.app_asgi is None:
             raise RuntimeError("App was not initialized.")
+        environment.REFLEX_SKIP_COMPILE.set(True)
         self.backend = uvicorn.Server(
             uvicorn.Config(
                 app=self.app_asgi,
@@ -975,8 +976,7 @@ class AppHarnessProd(AppHarness):
             ),
         )
         self.backend.shutdown = self._get_backend_shutdown_handler()
-        with chdir(self.app_path):
-            self.backend_thread = threading.Thread(target=self.backend.run)
+        self.backend_thread = threading.Thread(target=self.backend.run)
         self.backend_thread.start()
 
     def _poll_for_servers(self, timeout: TimeoutType = None) -> socket.socket:
