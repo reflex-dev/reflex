@@ -627,6 +627,22 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
 
         all_base_state_classes[cls.get_full_name()] = None
 
+    @classmethod
+    def _add_event_handler(
+        cls,
+        name: str,
+        fn: Callable,
+    ):
+        """Add an event handler dynamically to the state.
+
+        Args:
+            name: The name of the event handler.
+            fn: The function to call when the event is triggered.
+        """
+        handler = cls._create_event_handler(fn)
+        cls.event_handlers[name] = handler
+        setattr(cls, name, handler)
+
     @staticmethod
     def _copy_fn(fn: Callable) -> Callable:
         """Copy a function. Used to copy ComputedVars and EventHandlers from mixins.
