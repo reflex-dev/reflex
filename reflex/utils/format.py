@@ -181,10 +181,13 @@ def to_camel_case(text: str, treat_hyphens_as_underscores: bool = True) -> str:
     Returns:
         The camel case string.
     """
-    char = "_" if not treat_hyphens_as_underscores else "-_"
-    words = re.split(f"[{char}]", text)
+    if treat_hyphens_as_underscores:
+        text = text.replace("-", "_")
+    words = text.split("_")
     # Capitalize the first letter of each word except the first one
-    converted_word = words[0] + "".join(x.capitalize() for x in words[1:])
+    if len(words) == 1:
+        return words[0]
+    converted_word = words[0] + "".join([w.capitalize() for w in words[1:]])
     return converted_word
 
 
