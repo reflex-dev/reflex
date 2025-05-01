@@ -410,7 +410,7 @@ def serialize_decimal_to_str(value: decimal.Decimal) -> str:
     Returns:
         The serialized Decimal as a string.
     """
-    return str(value)
+    return json.dumps(str(value))
 
 
 @serializer(to=str)
