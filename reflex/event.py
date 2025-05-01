@@ -2066,6 +2066,7 @@ class EventNamespace:
                 setattr(func, BACKGROUND_TASK_MARKER, True)
             if getattr(func, "__name__", "").startswith("_"):
                 raise ValueError("Event handlers cannot be private.")
+
             qualname: str | None = getattr(func, "__qualname__", None)
 
             if qualname and (
@@ -2078,7 +2079,14 @@ class EventNamespace:
                 state_arg_name = next(iter(inspect.signature(func).parameters), None)
                 state_cls = state_arg_name and types.get(state_arg_name)
                 if state_cls and issubclass(state_cls, BaseState):
-                    name = func_path[-1]
+                    name = (
+                        (func.__module__ + "." + qualname)
+                        .replace(".", "_")
+                        .replace("<locals>", "_")
+                        .removeprefix("_")
+                    )
+                    object.__setattr__(func, "__name__", name)
+                    object.__setattr__(func, "__qualname__", name)
                     state_cls._add_event_handler(name, func)
                     return getattr(state_cls, name)
 
