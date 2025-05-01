@@ -992,8 +992,12 @@ def test_string_operations():
 
 def test_all_number_operations():
     starting_number = LiteralNumberVar.create(-5.4)
+    two = LiteralNumberVar.create(2)
+    three = LiteralNumberVar.create(3)
 
-    complicated_number = (((-(starting_number + 1)) * 2 / 3) // 2 % 3) ** 2
+    complicated_number = (
+        ((-(starting_number + 1)) * two / three) // two % three
+    ) ** two
 
     assert (
         str(complicated_number)
@@ -1001,7 +1005,7 @@ def test_all_number_operations():
     )
 
     even_more_complicated_number = ~(
-        abs(math.floor(complicated_number)) | 2 & 3 & round(complicated_number)
+        abs(math.floor(complicated_number)) | two & three & round(complicated_number)
     )
 
     assert (
