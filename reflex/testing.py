@@ -330,15 +330,15 @@ class AppHarness:
     def _start_backend(self, port: int = 0):
         if self.app_asgi is None:
             raise RuntimeError("App was not initialized.")
-        with chdir(self.app_path):
-            self.backend = uvicorn.Server(
-                uvicorn.Config(
-                    app=self.app_asgi,
-                    host="127.0.0.1",
-                    port=port,
-                )
+        self.backend = uvicorn.Server(
+            uvicorn.Config(
+                app=self.app_asgi,
+                host="127.0.0.1",
+                port=port,
             )
-            self.backend.shutdown = self._get_backend_shutdown_handler()
+        )
+        self.backend.shutdown = self._get_backend_shutdown_handler()
+        with chdir(self.app_path):
             self.backend_thread = threading.Thread(target=self.backend.run)
         self.backend_thread.start()
 
@@ -964,18 +964,18 @@ class AppHarnessProd(AppHarness):
     def _start_backend(self):
         if self.app_asgi is None:
             raise RuntimeError("App was not initialized.")
+        self.backend = uvicorn.Server(
+            uvicorn.Config(
+                app=self.app_asgi,
+                host="127.0.0.1",
+                port=0,
+                workers=reflex.utils.processes.get_num_workers(),
+            ),
+        )
+        self.backend.shutdown = self._get_backend_shutdown_handler()
         with chdir(self.app_path):
-            self.backend = uvicorn.Server(
-                uvicorn.Config(
-                    app=self.app_asgi,
-                    host="127.0.0.1",
-                    port=0,
-                    workers=reflex.utils.processes.get_num_workers(),
-                ),
-            )
-            self.backend.shutdown = self._get_backend_shutdown_handler()
             self.backend_thread = threading.Thread(target=self.backend.run)
-            self.backend_thread.start()
+        self.backend_thread.start()
 
     def _poll_for_servers(self, timeout: TimeoutType = None) -> socket.socket:
         try:
