@@ -270,6 +270,8 @@ class AppHarness:
             # Ensure the AppHarness test does not skip State assignment due to running via pytest
             os.environ.pop(reflex.constants.PYTEST_CURRENT_TEST, None)
             os.environ[reflex.constants.APP_HARNESS_FLAG] = "true"
+            # Ensure we actually compile the app during first initialization.
+            environment.REFLEX_SKIP_COMPILE.set(False)
             self.app_module = reflex.utils.prerequisites.get_compiled_app(
                 # Do not reload the module for pre-existing apps (only apps generated from source)
                 reload=self.app_source is not None
@@ -326,15 +328,15 @@ class AppHarness:
         if self.app_instance is None:
             raise RuntimeError("App was not initialized.")
         environment.REFLEX_SKIP_COMPILE.set(True)
-        self.backend = uvicorn.Server(
-            uvicorn.Config(
-                app=self.app_instance(),
-                host="127.0.0.1",
-                port=port,
-            )
-        )
-        self.backend.shutdown = self._get_backend_shutdown_handler()
         with chdir(self.app_path):
+            self.backend = uvicorn.Server(
+                uvicorn.Config(
+                    app=self.app_instance(),
+                    host="127.0.0.1",
+                    port=port,
+                )
+            )
+            self.backend.shutdown = self._get_backend_shutdown_handler()
             self.backend_thread = threading.Thread(target=self.backend.run)
         self.backend_thread.start()
 
@@ -364,7 +366,6 @@ class AppHarness:
                 raise RuntimeError("Failed to reset state manager.")
 
     def _start_frontend(self):
-        environment.REFLEX_SKIP_COMPILE.set(False)
         # Set up the frontend.
         with chdir(self.app_path):
             config = reflex.config.get_config()
@@ -962,17 +963,18 @@ class AppHarnessProd(AppHarness):
         if self.app_instance is None:
             raise RuntimeError("App was not initialized.")
         environment.REFLEX_SKIP_COMPILE.set(True)
-        self.backend = uvicorn.Server(
-            uvicorn.Config(
-                app=self.app_instance(),
-                host="127.0.0.1",
-                port=0,
-                workers=reflex.utils.processes.get_num_workers(),
-            ),
-        )
-        self.backend.shutdown = self._get_backend_shutdown_handler()
-        self.backend_thread = threading.Thread(target=self.backend.run)
-        self.backend_thread.start()
+        with chdir(self.app_path):
+            self.backend = uvicorn.Server(
+                uvicorn.Config(
+                    app=self.app_instance(),
+                    host="127.0.0.1",
+                    port=0,
+                    workers=reflex.utils.processes.get_num_workers(),
+                ),
+            )
+            self.backend.shutdown = self._get_backend_shutdown_handler()
+            self.backend_thread = threading.Thread(target=self.backend.run)
+            self.backend_thread.start()
 
     def _poll_for_servers(self, timeout: TimeoutType = None) -> socket.socket:
         try:
