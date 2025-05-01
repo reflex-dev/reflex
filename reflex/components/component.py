@@ -632,7 +632,7 @@ class Component(BaseComponent, ABC):
             )
         # Construct the component.
         for key, value in kwargs.items():
-            setattr(self, key, value)
+            object.__setattr__(self, key, value)
 
     def get_event_triggers(
         self,
@@ -871,7 +871,7 @@ class Component(BaseComponent, ABC):
         """
         comp = cls.construct(id=props.get("id"), children=list(children))
         for prop, value in props.items():
-            setattr(comp, prop, value)
+            object.__setattr__(comp, prop, value)
         return comp
 
     def add_style(self) -> dict[str, Any] | None:
@@ -1817,7 +1817,7 @@ class CustomComponent(Component):
 
             value = LiteralVar.create(value)
             self.props[camel_cased_key] = value
-            setattr(self, camel_cased_key, value)
+            object.__setattr__(self, camel_cased_key, value)
 
     @classmethod
     def _are_fields_known(cls) -> bool:
