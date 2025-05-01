@@ -17,7 +17,6 @@ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
 
 from __future__ import annotations
 
-import copy
 import importlib
 import os
 import sys
@@ -43,24 +42,35 @@ def attach(
     Returns:
         __getattr__, __dir__, __all__
     """
-    submod_attrs = copy.deepcopy(submod_attrs)
-    if submod_attrs:
-        for k, v in submod_attrs.items():
-            # when flattening the list, only keep the alias in the tuple(mod[1])
-            submod_attrs[k] = [
-                mod if not isinstance(mod, tuple) else mod[1] for mod in v
-            ]
-
-    if submod_attrs is None:
+    # Fast path: if submod_attrs is None, avoid unnecessary allocations
+    if submod_attrs is not None:
+        needs_flatten = any(
+            any(isinstance(mod, tuple) for mod in v) for v in submod_attrs.values()
+        )
+        if needs_flatten:
+            # Only copy/flatten if any tuples in values (common case: not needed)
+            submod_attrs = {
+                k: [mod if not isinstance(mod, tuple) else mod[1] for mod in v]
+                for k, v in submod_attrs.items()
+            }
+        else:
+            # Only do a shallow copy to avoid mutating input dict, if needed
+            submod_attrs = dict(submod_attrs)
+    else:
         submod_attrs = {}
 
     submodules = set(submodules) if submodules is not None else set()
 
-    attr_to_modules = {
-        attr: mod for mod, attrs in submod_attrs.items() for attr in attrs
-    }
+    # Build attr_to_modules mapping directly
+    attr_to_modules = {}
+    for mod, attrs in submod_attrs.items():
+        for attr in attrs:
+            attr_to_modules[attr] = mod
 
-    __all__ = sorted(submodules | attr_to_modules.keys())
+    # __all__ will contain everything from submodules and attribute keys
+    __all__ = list(submodules)
+    __all__.extend(attr_to_modules.keys())
+    __all__ = sorted(__all__)
 
     def __getattr__(name: str):  # noqa: N807
         if name in submodules:
@@ -85,7 +95,10 @@ def attach(
         return __all__
 
     if os.environ.get("EAGER_IMPORT", ""):
-        for attr in set(attr_to_modules.keys()) | submodules:
+        # Avoid set unions, use a single pass through both keys and set
+        eager_import_names = set(attr_to_modules)
+        eager_import_names.update(submodules)
+        for attr in eager_import_names:
             __getattr__(attr)
 
-    return __getattr__, __dir__, list(__all__)
+    return __getattr__, __dir__, __all__
