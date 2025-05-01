@@ -181,7 +181,6 @@ def to_camel_case(text: str, treat_hyphens_as_underscores: bool = True) -> str:
     Returns:
         The camel case string.
     """
-    # optimized split using str.replace instead of re.split for speed
     if treat_hyphens_as_underscores:
         text = text.replace("-", "_")
     words = text.split("_")
