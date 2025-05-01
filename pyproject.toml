@@ -169,7 +169,7 @@ dev = [
 
 
 [tool.coverage.run]
-source = "reflex"
+source = ["reflex"]
 branch = true
 omit = [
   "*/pyi_generator.py",
