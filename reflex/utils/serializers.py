@@ -387,7 +387,7 @@ def serialize_uuid(uuid: UUID) -> str:
     return str(uuid)
 
 
-@serializer
+@serializer(to=float)
 def serialize_decimal(value: decimal.Decimal) -> float:
     """Serialize a Decimal to a float.
 
@@ -410,7 +410,7 @@ def serialize_decimal_to_str(value: decimal.Decimal) -> str:
     Returns:
         The serialized Decimal as a string.
     """
-    return json.dumps(str(value))
+    return str(value)
 
 
 @serializer(to=str)
