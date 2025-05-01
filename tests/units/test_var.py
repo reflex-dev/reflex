@@ -1,4 +1,5 @@
 import json
+import math
 import typing
 from collections.abc import Mapping, Sequence
 from typing import cast
@@ -991,15 +992,26 @@ def test_string_operations():
 
 def test_all_number_operations():
     starting_number = LiteralNumberVar.create(-5.4)
-
     two = LiteralNumberVar.create(2)
     three = LiteralNumberVar.create(3)
 
-    result = starting_number + two - three * two / three
+    complicated_number = (
+        ((-(starting_number + 1)) * two / three) // two % three
+    ) ** two
 
-    assert isinstance(result, NumberVar)
+    assert (
+        str(complicated_number)
+        == "((Math.floor(((-((-5.4 + 1)) * 2) / 3) / 2) % 3) ** 2)"
+    )
 
-    assert "(-5.4 + 2 - ((3 * 2) / 3))" in str(result)
+    even_more_complicated_number = ~(
+        abs(math.floor(complicated_number)) | two & three & round(complicated_number)
+    )
+
+    assert (
+        str(even_more_complicated_number)
+        == "!(isTrue((Math.abs(Math.floor(((Math.floor(((-((-5.4 + 1)) * 2) / 3) / 2) % 3) ** 2))) || (2 && Math.round(((Math.floor(((-((-5.4 + 1)) * 2) / 3) / 2) % 3) ** 2))))))"
+    )
 
     assert str(LiteralNumberVar.create(5) > False) == "(5 > 0)"
     assert str(LiteralBooleanVar.create(False) < 5) == "(Number(false) < 5)"
