@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import dataclasses
-import decimal
 import inspect
 import types
 import urllib.parse
@@ -582,16 +581,14 @@ def int_input_event(e: ObjectVar[JavascriptInputEvent]) -> tuple[Var[int]]:
     return (Var("Number").to(FunctionVar).call(e.target.value).to(int),)
 
 
-def float_input_event(
-    e: ObjectVar[JavascriptInputEvent],
-) -> tuple[Var[float | decimal.Decimal]]:
-    """Get the value from an input event as a float or decimal.
+def float_input_event(e: ObjectVar[JavascriptInputEvent]) -> tuple[Var[float]]:
+    """Get the value from an input event as a float.
 
     Args:
         e: The input event.
 
     Returns:
-        The value from the input event as a float or decimal.
+        The value from the input event as a float.
     """
     return (Var("Number").to(FunctionVar).call(e.target.value).to(float),)
 
