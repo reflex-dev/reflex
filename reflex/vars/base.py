@@ -15,6 +15,7 @@ import string
 import uuid
 import warnings
 from collections.abc import Callable, Coroutine, Iterable, Mapping, Sequence
+from decimal import Decimal
 from types import CodeType, FunctionType
 from typing import (  # noqa: UP035
     TYPE_CHECKING,
@@ -629,6 +630,14 @@ class Var(Generic[VAR_TYPE]):
         value: float,
         _var_data: VarData | None = None,
     ) -> LiteralNumberVar[float]: ...
+
+    @overload
+    @classmethod
+    def create(
+        cls,
+        value: Decimal,
+        _var_data: VarData | None = None,
+    ) -> LiteralNumberVar[Decimal]: ...
 
     @overload
     @classmethod
