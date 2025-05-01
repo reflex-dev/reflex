@@ -14,6 +14,7 @@ from unittest.mock import AsyncMock
 
 import pytest
 import sqlmodel
+from fastapi.responses import StreamingResponse
 from pytest_mock import MockerFixture
 from starlette.applications import Starlette
 from starlette.datastructures import UploadFile
@@ -830,6 +831,7 @@ async def test_upload_file(tmp_path, state, delta, token: str, mocker):
 
     upload_fn = upload(app)
     streaming_response = await upload_fn(request_mock)
+    assert isinstance(streaming_response, StreamingResponse)
     async for state_update in streaming_response.body_iterator:
         assert (
             state_update
