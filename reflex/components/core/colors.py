@@ -1,9 +1,12 @@
 """The colors used in Reflex are a wrapper around https://www.radix-ui.com/colors."""
 
+from functools import cache
+
 from reflex.constants.colors import Color, ColorType, ShadeType
 from reflex.utils.types import validate_parameter_literals
 
 
+@cache
 @validate_parameter_literals
 def color(color: ColorType, shade: ShadeType = 7, alpha: bool = False) -> Color:
     """Create a color object.
