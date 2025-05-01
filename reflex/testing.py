@@ -45,6 +45,7 @@ from reflex.state import (
 )
 from reflex.utils import console
 from reflex.utils.export import export
+from reflex.utils.types import ASGIApp
 
 try:
     from selenium import webdriver
@@ -110,6 +111,7 @@ class AppHarness:
     app_module_path: Path
     app_module: types.ModuleType | None = None
     app_instance: reflex.App | None = None
+    app_asgi: ASGIApp | None = None
     frontend_process: subprocess.Popen | None = None
     frontend_url: str | None = None
     frontend_output_thread: threading.Thread | None = None
@@ -271,12 +273,13 @@ class AppHarness:
             os.environ.pop(reflex.constants.PYTEST_CURRENT_TEST, None)
             os.environ[reflex.constants.APP_HARNESS_FLAG] = "true"
             # Ensure we actually compile the app during first initialization.
-            environment.REFLEX_SKIP_COMPILE.set(False)
-            self.app_module = reflex.utils.prerequisites.get_compiled_app(
-                # Do not reload the module for pre-existing apps (only apps generated from source)
-                reload=self.app_source is not None
+            self.app_instance, self.app_module = (
+                reflex.utils.prerequisites.get_and_validate_app(
+                    # Do not reload the module for pre-existing apps (only apps generated from source)
+                    reload=self.app_source is not None
+                )
             )
-        self.app_instance = self.app_module.app
+            self.app_asgi = self.app_instance()
         if self.app_instance and isinstance(
             self.app_instance._state_manager, StateManagerRedis
         ):
@@ -325,13 +328,12 @@ class AppHarness:
         return _shutdown
 
     def _start_backend(self, port: int = 0):
-        if self.app_instance is None:
+        if self.app_asgi is None:
             raise RuntimeError("App was not initialized.")
-        environment.REFLEX_SKIP_COMPILE.set(True)
         with chdir(self.app_path):
             self.backend = uvicorn.Server(
                 uvicorn.Config(
-                    app=self.app_instance(),
+                    app=self.app_asgi,
                     host="127.0.0.1",
                     port=port,
                 )
@@ -960,13 +962,12 @@ class AppHarnessProd(AppHarness):
             raise RuntimeError("Frontend did not start")
 
     def _start_backend(self):
-        if self.app_instance is None:
+        if self.app_asgi is None:
             raise RuntimeError("App was not initialized.")
-        environment.REFLEX_SKIP_COMPILE.set(True)
         with chdir(self.app_path):
             self.backend = uvicorn.Server(
                 uvicorn.Config(
-                    app=self.app_instance(),
+                    app=self.app_asgi,
                     host="127.0.0.1",
                     port=0,
                     workers=reflex.utils.processes.get_num_workers(),
