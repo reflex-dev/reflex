@@ -72,6 +72,7 @@ artifacts = ["*.pyi"]
 artifacts = ["*.pyi"]
 
 [tool.hatch.build.hooks.custom]
+path = "scripts/hatch_build.py"
 dependencies = ["plotly", "ruff"]
 require-runtime-dependencies = true
 
