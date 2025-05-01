@@ -148,7 +148,7 @@ dev = [
   "pillow >=11",
   "playwright >=1.51",
   "plotly >=6.0",
-  "pre-commit >=4.2",
+  "pre-commit-pyproject-toml >=4.2.0.post2",
   "psycopg[binary] >=3.2",
   "pyright >=1.1.400",
   "pytest >=8.3",
@@ -166,3 +166,53 @@ dev = [
   "starlette-admin >=0.14",
   "uvicorn >=0.34.0",
 ]
+
+[tool.pre-commit]
+fail_fast = true
+
+[[tool.pre-commit.repos]]
+repo = "https://github.com/astral-sh/ruff-pre-commit"
+rev = "v0.11.7"
+hooks = [
+  { id = "ruff-format", args = [
+    "reflex",
+    "tests",
+  ] },
+  { id = "ruff", args = [
+    "--fix",
+    "--exit-non-zero-on-fix",
+  ], exclude = "^integration/benchmarks/" },
+]
+
+[[tool.pre-commit.repos]]
+repo = "https://github.com/codespell-project/codespell"
+rev = "v2.4.1"
+hooks = [
+  { id = "codespell", args = [
+    "reflex",
+  ], additional_dependencies = [
+    "tomli",
+  ] },
+]
+
+# Run pyi check before pyright because pyright can fail if pyi files are wrong.
+[[tool.pre-commit.repos]]
+repo = "local"
+hooks = [
+  { id = "update-pyi-files", name = "update-pyi-files", always_run = true, language = "system", require_serial = true, description = "Update pyi files as needed", entry = "python3 scripts/make_pyi.py" },
+]
+
+[[tool.pre-commit.repos]]
+repo = "https://github.com/RobertCraigie/pyright-python"
+rev = "v1.1.400"
+hooks = [{ id = "pyright", args = ["reflex", "tests"], language = "system" }]
+
+[[tool.pre-commit.repos]]
+repo = "https://github.com/terrencepreilly/darglint"
+rev = "v1.8.1"
+hooks = [{ id = "darglint", exclude = "^reflex/reflex.py" }]
+
+[[tool.pre-commit.repos]]
+repo = "https://github.com/pre-commit/mirrors-prettier"
+rev = "f62a70a3a7114896b062de517d72829ea1c884b6"
+hooks = [{ id = "prettier", require_serial = true }]

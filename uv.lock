@@ -973,19 +973,21 @@ wheels = [
 ]
 
 [[package]]
-name = "pre-commit"
-version = "4.2.0"
+name = "pre-commit-pyproject-toml"
+version = "4.2.0.post2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "cfgv" },
     { name = "identify" },
     { name = "nodeenv" },
+    { name = "packaging" },
     { name = "pyyaml" },
+    { name = "toml" },
     { name = "virtualenv" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/08/39/679ca9b26c7bb2999ff122d50faa301e49af82ca9c066ec061cfbc0c6784/pre_commit-4.2.0.tar.gz", hash = "sha256:601283b9757afd87d40c4c4a9b2b5de9637a8ea02eaff7adc2d0fb4e04841146", size = 193424, upload_time = "2025-03-18T21:35:20.987Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/3a/c3/2d7ce6ed845bc9d1ebaf0b2f9489957f96c8f29e48eb7f11c31509c0284f/pre_commit_pyproject_toml-4.2.0.post2.tar.gz", hash = "sha256:6e92f99711eddb2a8785ad0b06569eb73f280b4dca53e0442b5d09816769f62a", size = 193259, upload_time = "2025-05-01T02:44:06.476Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/88/74/a88bf1b1efeae488a0c0b7bdf71429c313722d1fc0f377537fbe554e6180/pre_commit-4.2.0-py2.py3-none-any.whl", hash = "sha256:a009ca7205f1eb497d10b845e52c838a98b6cdd2102a6c8e4540e94ee75c58bd", size = 220707, upload_time = "2025-03-18T21:35:19.343Z" },
+    { url = "https://files.pythonhosted.org/packages/c5/db/ae51c197266eb639529a57d76373fc6ea970413b9bf873f5e83264cb4eb4/pre_commit_pyproject_toml-4.2.0.post2-py2.py3-none-any.whl", hash = "sha256:27cbf7a0a5ef30987b32f0668f12a7c010c3fb6875f0a4ffa4ac5fb89eb47e9d", size = 220992, upload_time = "2025-05-01T02:44:04.622Z" },
 ]
 
 [[package]]
@@ -1545,7 +1547,7 @@ dev = [
     { name = "pillow" },
     { name = "playwright" },
     { name = "plotly" },
-    { name = "pre-commit" },
+    { name = "pre-commit-pyproject-toml" },
     { name = "psycopg", extra = ["binary"] },
     { name = "pyright" },
     { name = "pytest" },
@@ -1598,7 +1600,7 @@ dev = [
     { name = "pillow", specifier = ">=11" },
     { name = "playwright", specifier = ">=1.51" },
     { name = "plotly", specifier = ">=6.0" },
-    { name = "pre-commit", specifier = ">=4.2" },
+    { name = "pre-commit-pyproject-toml", specifier = ">=4.2.0.post2" },
     { name = "psycopg", extras = ["binary"], specifier = ">=3.2" },
     { name = "pyright", specifier = ">=1.1.400" },
     { name = "pytest", specifier = ">=8.3" },
@@ -1845,6 +1847,15 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/ab/e2/e9a00f0ccb71718418230718b3d900e71a5d16e701a3dae079a21e9cd8f8/text-unidecode-1.3.tar.gz", hash = "sha256:bad6603bb14d279193107714b288be206cac565dfa49aa5b105294dd5c4aab93", size = 76885, upload_time = "2019-08-30T21:36:45.405Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/a6/a5/c0b6468d3824fe3fde30dbb5e1f687b291608f9473681bbf7dabbf5a87d7/text_unidecode-1.3-py2.py3-none-any.whl", hash = "sha256:1311f10e8b895935241623731c2ba64f4c455287888b18189350b67134a822e8", size = 78154, upload_time = "2019-08-30T21:37:03.543Z" },
+]
+
+[[package]]
+name = "toml"
+version = "0.10.2"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/be/ba/1f744cdc819428fc6b5084ec34d9b30660f6f9daaf70eead706e3203ec3c/toml-0.10.2.tar.gz", hash = "sha256:b3bda1d108d5dd99f4a20d24d9c348e91c4db7ab1b749200bded2f839ccbe68f", size = 22253, upload_time = "2020-11-01T01:40:22.204Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/44/6f/7120676b6d73228c96e17f1f794d8ab046fc910d781c8d151120c3f1569e/toml-0.10.2-py2.py3-none-any.whl", hash = "sha256:806143ae5bfb6a3c6e736a764057db0e6a0e05e338b5630894a5f779cabb4f9b", size = 16588, upload_time = "2020-11-01T01:40:20.672Z" },
 ]
 
 [[package]]
