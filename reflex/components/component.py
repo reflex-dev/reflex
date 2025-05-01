@@ -43,6 +43,7 @@ from reflex.event import (
     no_args_event_spec,
     parse_args_spec,
     run_script,
+    unwrap_var_annotation,
 )
 from reflex.style import Style, format_as_emotion
 from reflex.utils import console, format, imports, types
@@ -1936,8 +1937,8 @@ def _register_custom_component(
         prop: (
             Var(
                 "",
-                _var_type=annotation,
-            )
+                _var_type=unwrap_var_annotation(annotation),
+            ).guess_type()
             if not types.safe_issubclass(annotation, EventHandler)
             else EventSpec(handler=EventHandler(fn=lambda: []))
         )

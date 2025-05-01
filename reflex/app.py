@@ -29,7 +29,7 @@ from starlette.datastructures import Headers
 from starlette.datastructures import UploadFile as StarletteUploadFile
 from starlette.exceptions import HTTPException
 from starlette.middleware import cors
-from starlette.requests import Request
+from starlette.requests import ClientDisconnect, Request
 from starlette.responses import JSONResponse, Response, StreamingResponse
 from starlette.staticfiles import StaticFiles
 from typing_extensions import deprecated
@@ -1833,7 +1833,10 @@ def upload(app: App):
         from reflex.utils.exceptions import UploadTypeError, UploadValueError
 
         # Get the files from the request.
-        files = await request.form()
+        try:
+            files = await request.form()
+        except ClientDisconnect:
+            return Response()  # user cancelled
         files = files.getlist("files")
         if not files:
             raise UploadValueError("No files were uploaded.")
