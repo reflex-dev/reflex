@@ -1789,7 +1789,7 @@ def cv_fget(state: BaseState) -> int:
     [
         (["a"], {None: {"a"}}),
         (["b"], {None: {"b"}}),
-        ([ComputedVar(fget=cv_fget)], {None: {"cv_fget_rx_state_"}}),
+        ([ComputedVar(fget=cv_fget)], {None: {"cv_fget"}}),
     ],
 )
 def test_computed_var_deps(deps: list[str | Var], expected: set[str]):
