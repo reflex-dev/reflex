@@ -84,6 +84,7 @@ from reflex.vars.base import (
     dispatch,
     get_unique_variable_name,
     is_computed_var,
+    is_illegal_javascript_identifier,
 )
 
 if TYPE_CHECKING:
@@ -1048,7 +1049,13 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
 
         # create the variable based on name and type
         var = Var(
-            _js_expr=format.format_state_name(cls.get_full_name()) + "." + name,
+            _js_expr=format.format_state_name(cls.get_full_name())
+            + "."
+            + (
+                name
+                if not is_illegal_javascript_identifier(name)
+                else name + "_" + md5(name.encode()).hexdigest()
+            ),
             _var_type=type_,
             _var_data=VarData.from_state(cls, name),
         ).guess_type()

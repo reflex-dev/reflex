@@ -89,6 +89,93 @@ SEQUENCE_TYPE = TypeVar("SEQUENCE_TYPE", bound=Sequence)
 
 warnings.filterwarnings("ignore", message="fields may not start with an underscore")
 
+ILLEGAL_JAVASCRIPT_NAMES = frozenset(
+    [
+        "abstract",
+        "arguments",
+        "as",
+        "async",
+        "await",
+        "boolean",
+        "break",
+        "byte",
+        "case",
+        "catch",
+        "char",
+        "class",
+        "const",
+        "continue",
+        "debugger",
+        "default",
+        "delete",
+        "do",
+        "double",
+        "else",
+        "enum",
+        "eval",
+        "export",
+        "extends",
+        "false",
+        "final",
+        "finally",
+        "float",
+        "for",
+        "from",
+        "function",
+        "get",
+        "goto",
+        "if",
+        "implements",
+        "import",
+        "in",
+        "instanceof",
+        "int",
+        "interface",
+        "let",
+        "long",
+        "native",
+        "new",
+        "null",
+        "of",
+        "package",
+        "private",
+        "protected",
+        "public",
+        "return",
+        "set",
+        "short",
+        "static",
+        "super",
+        "switch",
+        "synchronized",
+        "this",
+        "throw",
+        "throws",
+        "transient",
+        "true",
+        "try",
+        "typeof",
+        "var",
+        "void",
+        "volatile",
+        "while",
+        "with",
+        "yield",
+    ]
+)
+
+
+def is_illegal_javascript_identifier(name: str) -> bool:
+    """Check if the name is an illegal JavaScript identifier.
+
+    Args:
+        name: The name to check.
+
+    Returns:
+        True if the name is an illegal JavaScript identifier, False otherwise.
+    """
+    return name in ILLEGAL_JAVASCRIPT_NAMES
+
 
 @dataclasses.dataclass(
     eq=False,

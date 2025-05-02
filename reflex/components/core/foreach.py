@@ -15,7 +15,7 @@ from reflex.constants import MemoizationMode
 from reflex.state import ComponentState
 from reflex.utils import types
 from reflex.utils.exceptions import UntypedVarError
-from reflex.vars.base import LiteralVar, Var
+from reflex.vars.base import LiteralVar, Var, is_illegal_javascript_identifier
 
 
 class ForeachVarError(TypeError):
@@ -130,7 +130,10 @@ class Foreach(Component):
 
         if len(params) >= 1:
             # Determine the arg var name based on the params accepted by render_fn.
-            props["arg_var_name"] = params[0].name
+            name = params[0].name
+            if is_illegal_javascript_identifier(name):
+                name = f"arg_{name}"
+            props["arg_var_name"] = name
 
         if len(params) == 2:
             # Determine the index var name based on the params accepted by render_fn.
