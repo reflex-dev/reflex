@@ -900,12 +900,19 @@ def validate_parameter_literals(func: Callable):
     Returns:
         The wrapper function.
     """
+    console.deprecate(
+        "validate_parameter_literals",
+        reason="Use manual validation instead.",
+        deprecation_version="0.7.11",
+        removal_version="0.8.0",
+        dedupe=True,
+    )
+
+    func_params = list(inspect.signature(func).parameters.items())
+    annotations = {param[0]: param[1].annotation for param in func_params}
 
     @wraps(func)
     def wrapper(*args, **kwargs):
-        func_params = list(inspect.signature(func).parameters.items())
-        annotations = {param[0]: param[1].annotation for param in func_params}
-
         # validate args
         for param, arg in zip(annotations, args, strict=False):
             if annotations[param] is inspect.Parameter.empty:
