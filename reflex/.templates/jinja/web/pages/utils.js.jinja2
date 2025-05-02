@@ -60,11 +60,11 @@
 {# Args: #}
 {#     component: component dictionary #}
 {% macro render_iterable_tag(component) %}
-<>{ {{ component.iterable_state }}.map(({{ component.arg_name }}, {{ component.arg_index }}) => (
+{ {{ component.iterable_state }}.map(({{ component.arg_name }}, {{ component.arg_index }}) => (
   {% for child in component.children %}
   {{ render(child) }}
   {% endfor %}
-))}</>
+))}
 {%- endmacro %}
 
 
