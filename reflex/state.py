@@ -440,14 +440,14 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         return f"{type(self).__name__}({self.dict()})"
 
     @classmethod
-    def _get_computed_vars(cls) -> list[ComputedVar]:
+    def _get_computed_vars(cls) -> list[tuple[str, ComputedVar]]:
         """Helper function to get all computed vars of a instance.
 
         Returns:
             A list of computed vars.
         """
         return [
-            v
+            (name, v)
             for mixin in [*cls._mixins(), cls]
             for name, v in mixin.__dict__.items()
             if is_computed_var(v) and name not in cls.inherited_vars
@@ -554,8 +554,8 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             if f.name not in cls.get_skip_vars()
         }
         cls.computed_vars = {
-            v._js_expr: v._replace(merge_var_data=VarData.from_state(cls))
-            for v in computed_vars
+            name: v._replace(merge_var_data=VarData.from_state(cls))
+            for name, v in computed_vars
         }
         cls.vars = {
             **cls.inherited_vars,
@@ -844,8 +844,8 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         Raises:
             ComputedVarShadowsBaseVarsError: When a computed var shadows a base var.
         """
-        for computed_var_ in cls._get_computed_vars():
-            if computed_var_._js_expr in cls.__annotations__:
+        for name, computed_var_ in cls._get_computed_vars():
+            if name in cls.__annotations__:
                 raise ComputedVarShadowsBaseVarsError(
                     f"The computed var name `{computed_var_._js_expr}` shadows a base var in {cls.__module__}.{cls.__name__}; use a different name instead"
                 )
@@ -1943,7 +1943,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         )
 
         subdelta: dict[str, Any] = {
-            prop: self.get_value(prop)
+            prop + "_rx_state_": self.get_value(prop)
             for prop in delta_vars
             if not types.is_backend_base_variable(prop, type(self))
         }

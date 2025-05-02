@@ -818,28 +818,28 @@ def test_computed_var_with_annotation_error(request, fixture):
     [
         (
             "StateWithInitialComputedVar",
-            "var_with_initial_value",
+            "var_with_initial_value_rx_state_",
             "Initial value",
             "Runtime value",
             False,
         ),
         (
             "ChildWithInitialComputedVar",
-            "var_with_initial_value_child",
+            "var_with_initial_value_child_rx_state_",
             "Initial value",
             "Runtime value",
             False,
         ),
         (
             "StateWithRuntimeOnlyVar",
-            "var_raises_at_runtime",
+            "var_raises_at_runtime_rx_state_",
             None,
             None,
             True,
         ),
         (
             "ChildWithRuntimeOnlyVar",
-            "var_raises_at_runtime_child",
+            "var_raises_at_runtime_child_rx_state_",
             "Initial value",
             None,
             True,
@@ -1789,7 +1789,7 @@ def cv_fget(state: BaseState) -> int:
     [
         (["a"], {None: {"a"}}),
         (["b"], {None: {"b"}}),
-        ([ComputedVar(fget=cv_fget)], {None: {"cv_fget"}}),
+        ([ComputedVar(fget=cv_fget)], {None: {"cv_fget_rx_state_"}}),
     ],
 )
 def test_computed_var_deps(deps: list[str | Var], expected: set[str]):

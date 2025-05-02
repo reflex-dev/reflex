@@ -2087,6 +2087,8 @@ class ComputedVar(Var[RETURN_TYPE]):
         default_factory=lambda: lambda _: None
     )  # pyright: ignore [reportAssignmentType]
 
+    _name: str = dataclasses.field(default="")
+
     def __init__(
         self,
         fget: Callable[[BASE_STATE], RETURN_TYPE],
@@ -2127,7 +2129,7 @@ class ComputedVar(Var[RETURN_TYPE]):
             self,
             _js_expr=kwargs.pop("_js_expr"),
             _var_type=kwargs.pop("_var_type"),
-            _var_data=kwargs.pop("_var_data", None),
+            _var_data=kwargs.pop("_var_data", VarData(field_name=fget.__name__)),
         )
 
         if kwargs:
@@ -2139,6 +2141,7 @@ class ComputedVar(Var[RETURN_TYPE]):
         object.__setattr__(self, "_backend", backend)
         object.__setattr__(self, "_initial_value", initial_value)
         object.__setattr__(self, "_cache", cache)
+        object.__setattr__(self, "_name", fget.__name__)
 
         if isinstance(interval, int):
             interval = datetime.timedelta(seconds=interval)
@@ -2381,7 +2384,7 @@ class ComputedVar(Var[RETURN_TYPE]):
 
             return dispatch(
                 field_name,
-                var_data=VarData.from_state(state_where_defined, self._js_expr),
+                var_data=VarData.from_state(state_where_defined, self._name),
                 result_var_type=self._var_type,
                 existing_var=self,
             )
@@ -2493,7 +2496,7 @@ class ComputedVar(Var[RETURN_TYPE]):
                     objclass.get_root_state().get_class_substate(
                         state_name
                     )._var_dependencies.setdefault(var_name, set()).add(
-                        (objclass.get_full_name(), self._js_expr)
+                        (objclass.get_full_name(), self._name)
                     )
                     return
         raise VarDependencyError(
