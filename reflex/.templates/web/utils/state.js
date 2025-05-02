@@ -178,6 +178,9 @@ export const queueEventIfSocketExists = async (events, socket) => {
 export const applyEvent = async (event, socket) => {
   // Handle special events
   if (event.name == "_redirect") {
+    if ((event.payload.path ?? undefined) === undefined) {
+      return false;
+    }
     if (event.payload.external) {
       window.open(event.payload.path, "_blank", "noopener");
     } else if (event.payload.replace) {
@@ -240,7 +243,14 @@ export const applyEvent = async (event, socket) => {
   if (event.name == "_set_focus") {
     const ref =
       event.payload.ref in refs ? refs[event.payload.ref] : event.payload.ref;
-    ref.current.focus();
+    const current = ref?.current;
+    if (current === undefined || current?.focus === undefined) {
+      console.error(
+        `No element found for ref ${event.payload.ref} in _set_focus`,
+      );
+    } else {
+      current.focus();
+    }
     return false;
   }
 

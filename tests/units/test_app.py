@@ -14,7 +14,10 @@ from unittest.mock import AsyncMock
 
 import pytest
 import sqlmodel
-from fastapi import FastAPI, UploadFile
+from fastapi.responses import StreamingResponse
+from pytest_mock import MockerFixture
+from starlette.applications import Starlette
+from starlette.datastructures import UploadFile
 from starlette_admin.auth import AuthProvider
 from starlette_admin.contrib.sqla.admin import Admin
 from starlette_admin.contrib.sqla.view import ModelView
@@ -49,7 +52,7 @@ from reflex.state import (
     _substate_key,
 )
 from reflex.style import Style
-from reflex.utils import exceptions, format
+from reflex.utils import console, exceptions, format
 from reflex.vars.base import computed_var
 
 from .conftest import chdir
@@ -332,7 +335,28 @@ def index():
 
 
 @pytest.mark.parametrize(
-    "first_page,second_page, route",
+    ("first_page", "second_page", "route"),
+    [
+        (index, index, None),
+        (page1, page1, None),
+    ],
+)
+def test_add_the_same_page(
+    mocker: MockerFixture, app: App, first_page, second_page, route
+):
+    app.add_page(first_page, route=route)
+    mock_object = mocker.Mock()
+    mocker.patch.object(
+        console,
+        "warn",
+        mock_object,
+    )
+    app.add_page(second_page, route="/" + route.strip("/") if route else None)
+    assert mock_object.call_count == 1
+
+
+@pytest.mark.parametrize(
+    ("first_page", "second_page", "route"),
     [
         (lambda: rx.fragment(), lambda: rx.fragment(rx.text("second")), "/"),
         (rx.fragment(rx.text("first")), rx.fragment(rx.text("second")), "/page1"),
@@ -342,11 +366,9 @@ def index():
             "page3",
         ),
         (page1, page2, "page1"),
-        (index, index, None),
-        (page1, page1, None),
     ],
 )
-def test_add_duplicate_page_route_error(app, first_page, second_page, route):
+def test_add_duplicate_page_route_error(app: App, first_page, second_page, route):
     app.add_page(first_page, route=route)
     with pytest.raises(ValueError):
         app.add_page(second_page, route="/" + route.strip("/") if route else None)
@@ -793,8 +815,23 @@ async def test_upload_file(tmp_path, state, delta, token: str, mocker):
         filename="image2.jpg",
         file=bio,
     )
+
+    async def form():
+        files_mock = unittest.mock.Mock()
+
+        def getlist(key: str):
+            assert key == "files"
+            return [file1, file2]
+
+        files_mock.getlist = getlist
+
+        return files_mock
+
+    request_mock.form = form
+
     upload_fn = upload(app)
-    streaming_response = await upload_fn(request_mock, [file1, file2])  # pyright: ignore [reportFunctionMemberAccess]
+    streaming_response = await upload_fn(request_mock)
+    assert isinstance(streaming_response, StreamingResponse)
     async for state_update in streaming_response.body_iterator:
         assert (
             state_update
@@ -833,10 +870,23 @@ async def test_upload_file_without_annotation(state, tmp_path, token):
         "reflex-client-token": token,
         "reflex-event-handler": f"{state.get_full_name()}.handle_upload2",
     }
-    file_mock = unittest.mock.Mock(filename="image1.jpg")
+
+    async def form():
+        files_mock = unittest.mock.Mock()
+
+        def getlist(key: str):
+            assert key == "files"
+            return [unittest.mock.Mock(filename="image1.jpg")]
+
+        files_mock.getlist = getlist
+
+        return files_mock
+
+    request_mock.form = form
+
     fn = upload(app)
     with pytest.raises(ValueError) as err:
-        await fn(request_mock, [file_mock])
+        await fn(request_mock)
     assert (
         err.value.args[0]
         == f"`{state.get_full_name()}.handle_upload2` handler should have a parameter annotated as list[rx.UploadFile]"
@@ -867,10 +917,23 @@ async def test_upload_file_background(state, tmp_path, token):
         "reflex-client-token": token,
         "reflex-event-handler": f"{state.get_full_name()}.bg_upload",
     }
-    file_mock = unittest.mock.Mock(filename="image1.jpg")
+
+    async def form():
+        files_mock = unittest.mock.Mock()
+
+        def getlist(key: str):
+            assert key == "files"
+            return [unittest.mock.Mock(filename="image1.jpg")]
+
+        files_mock.getlist = getlist
+
+        return files_mock
+
+    request_mock.form = form
+
     fn = upload(app)
     with pytest.raises(TypeError) as err:
-        await fn(request_mock, [file_mock])
+        await fn(request_mock)
     assert (
         err.value.args[0]
         == f"@rx.event(background=True) is not supported for upload handler `{state.get_full_name()}.bg_upload`."
@@ -1438,8 +1501,9 @@ def test_raise_on_state():
 def test_call_app():
     """Test that the app can be called."""
     app = App()
+    app._compile = unittest.mock.Mock()
     api = app()
-    assert isinstance(api, FastAPI)
+    assert isinstance(api, Starlette)
 
 
 def test_app_with_optional_endpoints():

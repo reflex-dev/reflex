@@ -13,34 +13,43 @@ import io
 import json
 import sys
 import traceback
-from collections.abc import AsyncIterator, Callable, Coroutine, MutableMapping
+from collections.abc import AsyncIterator, Callable, Coroutine, Sequence
 from datetime import datetime
 from pathlib import Path
 from timeit import default_timer as timer
 from types import SimpleNamespace
 from typing import TYPE_CHECKING, Any, BinaryIO, get_args, get_type_hints
 
-from fastapi import FastAPI, HTTPException, Request
-from fastapi import UploadFile as FastAPIUploadFile
-from fastapi.middleware import cors
-from fastapi.responses import JSONResponse, StreamingResponse
-from fastapi.staticfiles import StaticFiles
+from fastapi import FastAPI
 from rich.progress import MofNCompleteColumn, Progress, TimeElapsedColumn
-from socketio import ASGIApp, AsyncNamespace, AsyncServer
+from socketio import ASGIApp as EngineIOApp
+from socketio import AsyncNamespace, AsyncServer
+from starlette.applications import Starlette
 from starlette.datastructures import Headers
 from starlette.datastructures import UploadFile as StarletteUploadFile
+from starlette.exceptions import HTTPException
+from starlette.middleware import cors
+from starlette.requests import ClientDisconnect, Request
+from starlette.responses import JSONResponse, Response, StreamingResponse
+from starlette.staticfiles import StaticFiles
+from typing_extensions import deprecated
 
 from reflex import constants
 from reflex.admin import AdminDash
 from reflex.app_mixins import AppMixin, LifespanMixin, MiddlewareMixin
 from reflex.compiler import compiler
 from reflex.compiler import utils as compiler_utils
-from reflex.compiler.compiler import ExecutorSafeFunctions, compile_theme
+from reflex.compiler.compiler import (
+    ExecutorSafeFunctions,
+    compile_theme,
+    readable_name_from_component,
+)
 from reflex.components.base.app_wrap import AppWrap
 from reflex.components.base.error_boundary import ErrorBoundary
 from reflex.components.base.fragment import Fragment
 from reflex.components.base.strict_mode import StrictMode
 from reflex.components.component import (
+    CUSTOM_COMPONENTS,
     Component,
     ComponentStyle,
     evaluate_style_namespaces,
@@ -97,6 +106,7 @@ from reflex.utils import (
 )
 from reflex.utils.exec import get_compile_context, is_prod_mode, is_testing_env
 from reflex.utils.imports import ImportVar
+from reflex.utils.types import ASGIApp, Message, Receive, Scope, Send
 
 if TYPE_CHECKING:
     from reflex.vars import Var
@@ -284,6 +294,25 @@ class UnevaluatedPage:
     meta: list[dict[str, str]]
     context: dict[str, Any] | None
 
+    def merged_with(self, other: UnevaluatedPage) -> UnevaluatedPage:
+        """Merge the other page into this one.
+
+        Args:
+            other: The other page to merge with.
+
+        Returns:
+            The merged page.
+        """
+        return dataclasses.replace(
+            self,
+            title=self.title if self.title is not None else other.title,
+            description=self.description
+            if self.description is not None
+            else other.description,
+            on_load=self.on_load if self.on_load is not None else other.on_load,
+            context=self.context if self.context is not None else other.context,
+        )
+
 
 @dataclasses.dataclass()
 class App(MiddlewareMixin, LifespanMixin):
@@ -365,7 +394,7 @@ class App(MiddlewareMixin, LifespanMixin):
     _stateful_pages: dict[str, None] = dataclasses.field(default_factory=dict)
 
     # The backend API object.
-    _api: FastAPI | None = None
+    _api: Starlette | None = None
 
     # The state class to use for the app.
     _state: type[BaseState] | None = None
@@ -400,14 +429,34 @@ class App(MiddlewareMixin, LifespanMixin):
     # Put the toast provider in the app wrap.
     toaster: Component | None = dataclasses.field(default_factory=toast.provider)
 
+    # Transform the ASGI app before running it.
+    api_transformer: (
+        Sequence[Callable[[ASGIApp], ASGIApp] | Starlette]
+        | Callable[[ASGIApp], ASGIApp]
+        | Starlette
+        | None
+    ) = None
+
+    # FastAPI app for compatibility with FastAPI.
+    _cached_fastapi_app: FastAPI | None = None
+
     @property
-    def api(self) -> FastAPI | None:
+    @deprecated("Use `api_transformer=your_fastapi_app` instead.")
+    def api(self) -> FastAPI:
         """Get the backend api.
 
         Returns:
             The backend api.
         """
-        return self._api
+        if self._cached_fastapi_app is None:
+            self._cached_fastapi_app = FastAPI()
+        console.deprecate(
+            feature_name="App.api",
+            reason="Set `api_transformer=your_fastapi_app` instead.",
+            deprecation_version="0.7.9",
+            removal_version="0.8.0",
+        )
+        return self._cached_fastapi_app
 
     @property
     def event_namespace(self) -> EventNamespace | None:
@@ -439,8 +488,8 @@ class App(MiddlewareMixin, LifespanMixin):
             set_breakpoints(self.style.pop("breakpoints"))
 
         # Set up the API.
-        self._api = FastAPI(lifespan=self._run_lifespan_tasks)
-        self._add_cors()
+        self._api = Starlette()
+        App._add_cors(self._api)
         self._add_default_endpoints()
 
         for clz in App.__mro__:
@@ -505,7 +554,7 @@ class App(MiddlewareMixin, LifespanMixin):
             )
 
         # Create the socket app. Note event endpoint constant replaces the default 'socket.io' path.
-        socket_app = ASGIApp(self.sio, socketio_path="")
+        socket_app = EngineIOApp(self.sio, socketio_path="")
         namespace = config.get_event_namespace()
 
         # Create the event namespace and attach the main app. Not related to any paths.
@@ -514,18 +563,16 @@ class App(MiddlewareMixin, LifespanMixin):
         # Register the event namespace with the socket.
         self.sio.register_namespace(self.event_namespace)
         # Mount the socket app with the API.
-        if self.api:
+        if self._api:
 
             class HeaderMiddleware:
                 def __init__(self, app: ASGIApp):
                     self.app = app
 
-                async def __call__(
-                    self, scope: MutableMapping[str, Any], receive: Any, send: Callable
-                ):
+                async def __call__(self, scope: Scope, receive: Receive, send: Send):
                     original_send = send
 
-                    async def modified_send(message: dict):
+                    async def modified_send(message: Message):
                         if message["type"] == "websocket.accept":
                             if scope.get("subprotocols"):
                                 # The following *does* say "subprotocol" instead of "subprotocols", intentionally.
@@ -544,7 +591,7 @@ class App(MiddlewareMixin, LifespanMixin):
                     return await self.app(scope, receive, modified_send)
 
             socket_app_with_headers = HeaderMiddleware(socket_app)
-            self.api.mount(str(constants.Endpoint.EVENT), socket_app_with_headers)
+            self._api.mount(str(constants.Endpoint.EVENT), socket_app_with_headers)
 
         # Check the exception handlers
         self._validate_exception_handlers()
@@ -557,7 +604,7 @@ class App(MiddlewareMixin, LifespanMixin):
         """
         return f"<App state={self._state.__name__ if self._state else None}>"
 
-    def __call__(self) -> FastAPI:
+    def __call__(self) -> ASGIApp:
         """Run the backend api instance.
 
         Raises:
@@ -566,9 +613,6 @@ class App(MiddlewareMixin, LifespanMixin):
         Returns:
             The backend api.
         """
-        if not self.api:
-            raise ValueError("The app has not been initialized.")
-
         # For py3.9 compatibility when redis is used, we MUST add any decorator pages
         # before compiling the app in a thread to avoid event loop error (REF-2172).
         self._apply_decorated_pages()
@@ -580,34 +624,76 @@ class App(MiddlewareMixin, LifespanMixin):
             # Force background compile errors to print eagerly
             lambda f: f.result()
         )
-        # Wait for the compile to finish in prod mode to ensure all optional endpoints are mounted.
-        if is_prod_mode():
-            compile_future.result()
+        # Wait for the compile to finish to ensure all optional endpoints are mounted.
+        compile_future.result()
 
-        return self.api
+        if not self._api:
+            raise ValueError("The app has not been initialized.")
+
+        if self._cached_fastapi_app is not None:
+            asgi_app = self._cached_fastapi_app
+            asgi_app.mount("", self._api)
+            App._add_cors(asgi_app)
+        else:
+            asgi_app = self._api
+
+        if self.api_transformer is not None:
+            api_transformers: Sequence[Starlette | Callable[[ASGIApp], ASGIApp]] = (
+                [self.api_transformer]
+                if not isinstance(self.api_transformer, Sequence)
+                else self.api_transformer
+            )
+
+            for api_transformer in api_transformers:
+                if isinstance(api_transformer, Starlette):
+                    # Mount the api to the fastapi app.
+                    App._add_cors(api_transformer)
+                    api_transformer.mount("", asgi_app)
+                    asgi_app = api_transformer
+                else:
+                    # Transform the asgi app.
+                    asgi_app = api_transformer(asgi_app)
+
+        top_asgi_app = Starlette(lifespan=self._run_lifespan_tasks)
+        top_asgi_app.mount("", asgi_app)
+        App._add_cors(top_asgi_app)
+
+        return top_asgi_app
 
     def _add_default_endpoints(self):
         """Add default api endpoints (ping)."""
         # To test the server.
-        if not self.api:
+        if not self._api:
             return
 
-        self.api.get(str(constants.Endpoint.PING))(ping)
-        self.api.get(str(constants.Endpoint.HEALTH))(health)
+        self._api.add_route(
+            str(constants.Endpoint.PING),
+            ping,
+            methods=["GET"],
+        )
+        self._api.add_route(
+            str(constants.Endpoint.HEALTH),
+            health,
+            methods=["GET"],
+        )
 
     def _add_optional_endpoints(self):
         """Add optional api endpoints (_upload)."""
-        if not self.api:
+        if not self._api:
             return
         upload_is_used_marker = (
             prerequisites.get_backend_dir() / constants.Dirs.UPLOAD_IS_USED
         )
         if Upload.is_used or upload_is_used_marker.exists():
             # To upload files.
-            self.api.post(str(constants.Endpoint.UPLOAD))(upload(self))
+            self._api.add_route(
+                str(constants.Endpoint.UPLOAD),
+                upload(self),
+                methods=["POST"],
+            )
 
             # To access uploaded files.
-            self.api.mount(
+            self._api.mount(
                 str(constants.Endpoint.UPLOAD),
                 StaticFiles(directory=get_upload_dir()),
                 name="uploaded_files",
@@ -616,17 +702,22 @@ class App(MiddlewareMixin, LifespanMixin):
             upload_is_used_marker.parent.mkdir(parents=True, exist_ok=True)
             upload_is_used_marker.touch()
         if codespaces.is_running_in_codespaces():
-            self.api.get(str(constants.Endpoint.AUTH_CODESPACE))(
-                codespaces.auth_codespace
+            self._api.add_route(
+                str(constants.Endpoint.AUTH_CODESPACE),
+                codespaces.auth_codespace,
+                methods=["GET"],
             )
         if environment.REFLEX_ADD_ALL_ROUTES_ENDPOINT.get():
             self.add_all_routes_endpoint()
 
-    def _add_cors(self):
-        """Add CORS middleware to the app."""
-        if not self.api:
-            return
-        self.api.add_middleware(
+    @staticmethod
+    def _add_cors(api: Starlette):
+        """Add CORS middleware to the app.
+
+        Args:
+            api: The Starlette app to add CORS middleware to.
+        """
+        api.add_middleware(
             cors.CORSMiddleware,
             allow_credentials=True,
             allow_methods=["*"],
@@ -719,22 +810,37 @@ class App(MiddlewareMixin, LifespanMixin):
         # Check if the route given is valid
         verify_route_validity(route)
 
-        if route in self._unevaluated_pages and environment.RELOAD_CONFIG.is_set():
-            # when the app is reloaded(typically for app harness tests), we should maintain
-            # the latest render function of a route.This applies typically to decorated pages
-            # since they are only added when app._compile is called.
-            self._unevaluated_pages.pop(route)
+        unevaluated_page = UnevaluatedPage(
+            component=component,
+            route=route,
+            title=title,
+            description=description,
+            image=image,
+            on_load=on_load,
+            meta=meta,
+            context=context,
+        )
 
         if route in self._unevaluated_pages:
-            route_name = (
-                f"`{route}` or `/`"
-                if route == constants.PageNames.INDEX_ROUTE
-                else f"`{route}`"
-            )
-            raise exceptions.RouteValueError(
-                f"Duplicate page route {route_name} already exists. Make sure you do not have two"
-                f" pages with the same route"
-            )
+            if self._unevaluated_pages[route].component is component:
+                unevaluated_page = unevaluated_page.merged_with(
+                    self._unevaluated_pages[route]
+                )
+                console.warn(
+                    f"Page {route} is being redefined with the same component."
+                )
+            else:
+                route_name = (
+                    f"`{route}` or `/`"
+                    if route == constants.PageNames.INDEX_ROUTE
+                    else f"`{route}`"
+                )
+                existing_component = self._unevaluated_pages[route].component
+                raise exceptions.RouteValueError(
+                    f"Tried to add page {readable_name_from_component(component)} with route {route_name} but "
+                    f"page {readable_name_from_component(existing_component)} with the same route already exists. "
+                    "Make sure you do not have two pages with the same route."
+                )
 
         # Setup dynamic args for the route.
         # this state assignment is only required for tests using the deprecated state kwarg for App
@@ -746,16 +852,7 @@ class App(MiddlewareMixin, LifespanMixin):
                 on_load if isinstance(on_load, list) else [on_load]
             )
 
-        self._unevaluated_pages[route] = UnevaluatedPage(
-            component=component,
-            route=route,
-            title=title,
-            description=description,
-            image=image,
-            on_load=on_load,
-            meta=meta,
-            context=context,
-        )
+        self._unevaluated_pages[route] = unevaluated_page
 
     def _compile_page(self, route: str, save_page: bool = True):
         """Compile a page.
@@ -885,7 +982,7 @@ class App(MiddlewareMixin, LifespanMixin):
             return
 
         # Get the admin dash.
-        if not self.api:
+        if not self._api:
             return
 
         admin_dash = self.admin_dash
@@ -906,7 +1003,7 @@ class App(MiddlewareMixin, LifespanMixin):
                 view = admin_dash.view_overrides.get(model, ModelView)
                 admin.add_view(view(model))
 
-            admin.mount_to(self.api)
+            admin.mount_to(self._api)
 
     def _get_frontend_packages(self, imports: dict[str, set[ImportVar]]):
         """Gets the frontend packages to be installed and filters out the unnecessary ones.
@@ -1021,8 +1118,9 @@ class App(MiddlewareMixin, LifespanMixin):
 
         This can move back into `compile_` when py39 support is dropped.
         """
+        app_name = get_config().app_name
         # Add the @rx.page decorated pages to collect on_load events.
-        for render, kwargs in DECORATED_PAGES[get_config().app_name]:
+        for render, kwargs in DECORATED_PAGES[app_name]:
             self.add_page(render, **kwargs)
 
     def _validate_var_dependencies(self, state: type[BaseState] | None = None) -> None:
@@ -1191,9 +1289,8 @@ class App(MiddlewareMixin, LifespanMixin):
 
         progress.advance(task)
 
-        # Track imports and custom components found.
+        # Track imports found.
         all_imports = {}
-        custom_components = set()
 
         # This has to happen before compiling stateful components as that
         # prevents recursive functions from reaching all components.
@@ -1203,9 +1300,6 @@ class App(MiddlewareMixin, LifespanMixin):
 
             # Add the app wrappers from this component.
             app_wrappers.update(component._get_all_app_wrap_components())
-
-            # Add the custom components from the page to the set.
-            custom_components |= component._get_all_custom_components()
 
         if (toaster := self.toaster) is not None:
             from reflex.components.component import memo
@@ -1223,9 +1317,6 @@ class App(MiddlewareMixin, LifespanMixin):
             component = app_wrap(self._state is not None)
             if component is not None:
                 app_wrappers[key] = component
-
-        for component in app_wrappers.values():
-            custom_components |= component._get_all_custom_components()
 
         if self.error_boundary:
             from reflex.compiler.compiler import into_component
@@ -1351,7 +1442,7 @@ class App(MiddlewareMixin, LifespanMixin):
             custom_components_output,
             custom_components_result,
             custom_components_imports,
-        ) = compiler.compile_components(custom_components)
+        ) = compiler.compile_components(set(CUSTOM_COMPONENTS.values()))
         compile_results.append((custom_components_output, custom_components_result))
         all_imports.update(custom_components_imports)
 
@@ -1402,12 +1493,15 @@ class App(MiddlewareMixin, LifespanMixin):
 
     def add_all_routes_endpoint(self):
         """Add an endpoint to the app that returns all the routes."""
-        if not self.api:
+        if not self._api:
             return
 
-        @self.api.get(str(constants.Endpoint.ALL_ROUTES))
-        async def all_routes():
-            return list(self._unevaluated_pages.keys())
+        async def all_routes(_request: Request) -> Response:
+            return JSONResponse(list(self._unevaluated_pages.keys()))
+
+        self._api.add_route(
+            str(constants.Endpoint.ALL_ROUTES), all_routes, methods=["GET"]
+        )
 
     @contextlib.asynccontextmanager
     async def modify_state(self, token: str) -> AsyncIterator[BaseState]:
@@ -1662,17 +1756,23 @@ async def process(
         raise
 
 
-async def ping() -> str:
+async def ping(_request: Request) -> Response:
     """Test API endpoint.
+
+    Args:
+        _request: The Starlette request object.
 
     Returns:
         The response.
     """
-    return "pong"
+    return JSONResponse("pong")
 
 
-async def health() -> JSONResponse:
+async def health(_request: Request) -> JSONResponse:
     """Health check endpoint to assess the status of the database and Redis services.
+
+    Args:
+        _request: The Starlette request object.
 
     Returns:
         JSONResponse: A JSON object with the health status:
@@ -1715,12 +1815,11 @@ def upload(app: App):
         The upload function.
     """
 
-    async def upload_file(request: Request, files: list[FastAPIUploadFile]):
+    async def upload_file(request: Request):
         """Upload a file.
 
         Args:
-            request: The FastAPI request object.
-            files: The file(s) to upload.
+            request: The Starlette request object.
 
         Returns:
             StreamingResponse yielding newline-delimited JSON of StateUpdate
@@ -1732,6 +1831,15 @@ def upload(app: App):
             HTTPException: when the request does not include token / handler headers.
         """
         from reflex.utils.exceptions import UploadTypeError, UploadValueError
+
+        # Get the files from the request.
+        try:
+            files = await request.form()
+        except ClientDisconnect:
+            return Response()  # user cancelled
+        files = files.getlist("files")
+        if not files:
+            raise UploadValueError("No files were uploaded.")
 
         token = request.headers.get("reflex-client-token")
         handler = request.headers.get("reflex-event-handler")
@@ -1785,6 +1893,10 @@ def upload(app: App):
         # event is handled.
         file_copies = []
         for file in files:
+            if not isinstance(file, StarletteUploadFile):
+                raise UploadValueError(
+                    "Uploaded file is not an UploadFile." + str(file)
+                )
             content_copy = io.BytesIO()
             content_copy.write(await file.read())
             content_copy.seek(0)

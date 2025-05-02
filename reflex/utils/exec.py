@@ -189,11 +189,9 @@ def run_frontend_prod(root: Path, port: str, backend_present: bool = True):
 
 @once
 def _warn_user_about_uvicorn():
-    # When we eventually switch to Granian by default, we should enable this warning.
-    if False:
-        console.warn(
-            "Using Uvicorn for backend as it is installed. This behavior will change in 0.8.0 to use Granian by default."
-        )
+    console.warn(
+        "Using Uvicorn for backend as it is installed. This behavior will change in 0.8.0 to use Granian by default."
+    )
 
 
 def should_use_granian():
@@ -202,8 +200,8 @@ def should_use_granian():
     Returns:
         True if Granian should be used.
     """
-    if environment.REFLEX_USE_GRANIAN.get():
-        return True
+    if environment.REFLEX_USE_GRANIAN.is_set():
+        return environment.REFLEX_USE_GRANIAN.get()
     if (
         importlib.util.find_spec("uvicorn") is None
         or importlib.util.find_spec("gunicorn") is None
@@ -219,9 +217,51 @@ def get_app_module():
     Returns:
         The app module for the backend.
     """
-    config = get_config()
+    return get_config().module
 
-    return f"{config.module}:{constants.CompileVars.APP}"
+
+def get_app_instance():
+    """Get the app module for the backend.
+
+    Returns:
+        The app module for the backend.
+    """
+    return f"{get_app_module()}:{constants.CompileVars.APP}"
+
+
+def get_app_file() -> Path:
+    """Get the app file for the backend.
+
+    Returns:
+        The app file for the backend.
+
+    Raises:
+        ImportError: If the app module is not found.
+    """
+    current_working_dir = str(Path.cwd())
+    if current_working_dir not in sys.path:
+        # Add the current working directory to sys.path
+        sys.path.insert(0, current_working_dir)
+    module_spec = importlib.util.find_spec(get_app_module())
+    if module_spec is None:
+        raise ImportError(
+            f"Module {get_app_module()} not found. Make sure the module is installed."
+        )
+    file_name = module_spec.origin
+    if file_name is None:
+        raise ImportError(
+            f"Module {get_app_module()} not found. Make sure the module is installed."
+        )
+    return Path(file_name).resolve()
+
+
+def get_app_instance_from_file() -> str:
+    """Get the app module for the backend.
+
+    Returns:
+        The app module for the backend.
+    """
+    return f"{get_app_file()}:{constants.CompileVars.APP}"
 
 
 def run_backend(
@@ -323,7 +363,7 @@ def run_uvicorn_backend(host: str, port: int, loglevel: LogLevel):
     import uvicorn
 
     uvicorn.run(
-        app=f"{get_app_module()}",
+        app=f"{get_app_instance()}",
         factory=True,
         host=host,
         port=port,
@@ -349,7 +389,7 @@ def run_granian_backend(host: str, port: int, loglevel: LogLevel):
     from granian.server import MPServer as Granian
 
     Granian(
-        target=get_app_module(),
+        target=get_app_instance_from_file(),
         factory=True,
         address=host,
         port=port,
@@ -367,14 +407,12 @@ def _deprecate_asgi_config(
     config_name: str,
     reason: str = "",
 ):
-    # When we eventually switch to Granian by default, we should enable this deprecation.
-    if False:
-        console.deprecate(
-            f"config.{config_name}",
-            reason=reason,
-            deprecation_version="0.7.5",
-            removal_version="0.8.0",
-        )
+    console.deprecate(
+        f"config.{config_name}",
+        reason=reason,
+        deprecation_version="0.7.9",
+        removal_version="0.8.0",
+    )
 
 
 @once
@@ -468,7 +506,7 @@ def run_uvicorn_backend_prod(host: str, port: int, loglevel: LogLevel):
 
     config = get_config()
 
-    app_module = get_app_module()
+    app_module = get_app_instance()
 
     command = (
         [
@@ -568,7 +606,7 @@ def run_granian_backend_prod(host: str, port: int, loglevel: LogLevel):
             *("--host", host),
             *("--port", str(port)),
             *("--interface", str(Interfaces.ASGI)),
-            *("--factory", get_app_module()),
+            *("--factory", get_app_instance_from_file()),
         ]
         processes.new_process(
             command,
@@ -613,9 +651,7 @@ def output_system_info():
     )
 
     if system == "Linux":
-        import distro  # pyright: ignore[reportMissingImports]
-
-        os_version = distro.name(pretty=True)
+        os_version = platform.freedesktop_os_release().get("PRETTY_NAME", "Unknown")
     else:
         os_version = platform.version()
 

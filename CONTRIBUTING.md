@@ -23,7 +23,7 @@ cd reflex
 **3. Install your local Reflex build:**
 
 ```bash
-uv sync --python 3.13
+uv sync
 ```
 
 **4. Now create an examples folder so you can test the local Python build in this repository.**
@@ -86,10 +86,9 @@ uv run ruff format .
 ```
 
 Consider installing git pre-commit hooks so Ruff, Pyright, Darglint and `make_pyi` will run automatically before each commit.
-Note that pre-commit will only be installed when you use a Python version >= 3.10.
 
 ```bash
-pre-commit install
+uv run pre-commit install
 ```
 
 That's it you can now submit your PR. Thanks for contributing to Reflex!

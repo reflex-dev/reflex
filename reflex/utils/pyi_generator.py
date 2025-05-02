@@ -1265,7 +1265,7 @@ class PyiGenerator:
                         dict(
                             zip(
                                 [
-                                    str(f.relative_to(pyi_hashes_file.parent))
+                                    f.relative_to(pyi_hashes_file.parent).as_posix()
                                     for f in file_paths
                                 ],
                                 hashes,
@@ -1292,9 +1292,10 @@ class PyiGenerator:
                     for file_path, hashed_content in zip(
                         file_paths, hashes, strict=False
                     ):
-                        pyi_hashes[str(file_path.relative_to(pyi_hashes_parent))] = (
-                            hashed_content
-                        )
+                        formatted_path = file_path.relative_to(
+                            pyi_hashes_parent
+                        ).as_posix()
+                        pyi_hashes[formatted_path] = hashed_content
 
                     pyi_hashes_file.write_text(
                         json.dumps(pyi_hashes, indent=2, sort_keys=True) + "\n"

@@ -13,6 +13,7 @@ from reflex.components.component import (
     MemoizationLeaf,
     StatefulComponent,
 )
+from reflex.components.core.cond import cond
 from reflex.components.el.elements.forms import Input
 from reflex.components.radix.themes.layout.box import Box
 from reflex.config import environment
@@ -28,6 +29,7 @@ from reflex.event import (
     parse_args_spec,
     run_script,
 )
+from reflex.style import Style
 from reflex.utils import format
 from reflex.utils.imports import ImportVar
 from reflex.vars import VarData
@@ -231,6 +233,9 @@ class Upload(MemoizationLeaf):
     # Fired when files are dropped.
     on_drop: EventHandler[_on_drop_spec]
 
+    # Style rules to apply when actively dragging.
+    drag_active_style: Style | None = None
+
     @classmethod
     def create(cls, *children, **props) -> Component:
         """Create an upload component.
@@ -266,17 +271,46 @@ class Upload(MemoizationLeaf):
             # If on_drop is not provided, save files to be uploaded later.
             upload_props["on_drop"] = upload_file(upload_props["id"])
         else:
-            on_drop = upload_props["on_drop"]
-            if isinstance(on_drop, (EventHandler, EventSpec)):
-                # Call the lambda to get the event chain.
-                on_drop = call_event_handler(on_drop, _on_drop_spec)
-            elif isinstance(on_drop, Callable):
-                # Call the lambda to get the event chain.
-                on_drop = call_event_fn(on_drop, _on_drop_spec)
+            on_drop = (
+                [on_drop_prop]
+                if not isinstance(on_drop_prop := upload_props["on_drop"], Sequence)
+                else list(on_drop_prop)
+            )
+            for ix, event in enumerate(on_drop):
+                if isinstance(event, (EventHandler, EventSpec)):
+                    # Call the lambda to get the event chain.
+                    event = call_event_handler(event, _on_drop_spec)
+                elif isinstance(event, Callable):
+                    # Call the lambda to get the event chain.
+                    event = call_event_fn(event, _on_drop_spec)
+                if isinstance(event, EventSpec):
+                    # Update the provided args for direct use with on_drop.
+                    event = event.with_args(
+                        args=tuple(
+                            cls._update_arg_tuple_for_on_drop(arg_value)
+                            for arg_value in event.args
+                        ),
+                    )
+                on_drop[ix] = event
             upload_props["on_drop"] = on_drop
 
         input_props_unique_name = get_unique_variable_name()
         root_props_unique_name = get_unique_variable_name()
+        is_drag_active_unique_name = get_unique_variable_name()
+        drag_active_css_class_unique_name = get_unique_variable_name() + "-drag-active"
+
+        # Handle special style when dragging over the drop zone.
+        if "drag_active_style" in props:
+            props.setdefault("style", Style())[
+                f"&:where(.{drag_active_css_class_unique_name})"
+            ] = props.pop("drag_active_style")
+            props["class_name"].append(
+                cond(
+                    Var(is_drag_active_unique_name),
+                    drag_active_css_class_unique_name,
+                    "",
+                ),
+            )
 
         event_var, callback_str = StatefulComponent._get_memoized_event_triggers(
             GhostUpload.create(on_drop=upload_props["on_drop"])
@@ -295,7 +329,13 @@ class Upload(MemoizationLeaf):
             }
         )
 
-        left_side = f"const {{getRootProps: {root_props_unique_name}, getInputProps: {input_props_unique_name}}} "
+        left_side = (
+            "const { "
+            f"getRootProps: {root_props_unique_name}, "
+            f"getInputProps: {input_props_unique_name}, "
+            f"isDragActive: {is_drag_active_unique_name}"
+            "}"
+        )
         right_side = f"useDropzone({use_dropzone_arguments!s})"
 
         var_data = VarData.merge(

@@ -2064,6 +2064,32 @@ class EventNamespace:
                         "Background task must be async function or generator."
                     )
                 setattr(func, BACKGROUND_TASK_MARKER, True)
+            if getattr(func, "__name__", "").startswith("_"):
+                raise ValueError("Event handlers cannot be private.")
+
+            qualname: str | None = getattr(func, "__qualname__", None)
+
+            if qualname and (
+                len(func_path := qualname.split(".")) == 1
+                or func_path[-2] == "<locals>"
+            ):
+                from reflex.state import BaseState
+
+                types = get_type_hints(func)
+                state_arg_name = next(iter(inspect.signature(func).parameters), None)
+                state_cls = state_arg_name and types.get(state_arg_name)
+                if state_cls and issubclass(state_cls, BaseState):
+                    name = (
+                        (func.__module__ + "." + qualname)
+                        .replace(".", "_")
+                        .replace("<locals>", "_")
+                        .removeprefix("_")
+                    )
+                    object.__setattr__(func, "__name__", name)
+                    object.__setattr__(func, "__qualname__", name)
+                    state_cls._add_event_handler(name, func)
+                    return getattr(state_cls, name)
+
             return func  # pyright: ignore [reportReturnType]
 
         if func is not None:
