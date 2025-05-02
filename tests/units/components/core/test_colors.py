@@ -22,6 +22,12 @@ def create_color_var(color):
     return LiteralVar.create(color)
 
 
+color_with_fstring = rx.color(
+    f"{ColorState.color}",  # pyright: ignore [reportArgumentType]
+    ColorState.shade,
+)
+
+
 @pytest.mark.parametrize(
     "color, expected, expected_type",
     [
@@ -41,12 +47,7 @@ def create_color_var(color):
             Color,
         ),
         (
-            create_color_var(
-                rx.color(
-                    f"{ColorState.color}",  # pyright: ignore [reportArgumentType]
-                    ColorState.shade,
-                )
-            ),
+            create_color_var(color_with_fstring),
             f'("var(--"+{color_state_name!s}.color+"-"+(((__to_string) => __to_string.toString())({color_state_name!s}.shade))+")")',
             Color,
         ),
@@ -66,14 +67,7 @@ def create_color_var(color):
             str,
         ),
         (
-            create_color_var(
-                f"{
-                    rx.color(
-                        f'{ColorState.color}',  # pyright: ignore [reportArgumentType]
-                        ColorState.shade,
-                    )
-                }"
-            ),
+            create_color_var(f"{color_with_fstring}"),
             f'("var(--"+{color_state_name!s}.color+"-"+{color_state_name!s}.shade+")")',
             str,
         ),
