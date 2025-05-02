@@ -552,7 +552,9 @@ def test_set_class_var():
     """Test setting the var of a class."""
     with pytest.raises(AttributeError):
         TestState.num3  # pyright: ignore [reportAttributeAccessIssue]
-    TestState._set_var(Var(_js_expr="num3", _var_type=int)._var_set_state(TestState))
+    TestState._set_var(
+        "num3", Var(_js_expr="num3", _var_type=int)._var_set_state(TestState)
+    )
     var = TestState.num3  # pyright: ignore [reportAttributeAccessIssue]
     assert var._js_expr == TestState.get_full_name() + ".num3"
     assert var._var_type is int

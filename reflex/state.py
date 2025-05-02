@@ -283,9 +283,8 @@ def get_var_for_field(cls: type[BaseState], f: ModelField) -> Var:
     Returns:
         The Var instance.
     """
-    field_name = (
-        format.format_state_name(cls.get_full_name()) + "." + f.name + "_rx_state_"
-    )
+    name = f.name + "_rx_state_"
+    field_name = format.format_state_name(cls.get_full_name()) + "." + name
 
     return dispatch(
         field_name=field_name,
@@ -566,8 +565,8 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         cls.event_handlers = {}
 
         # Setup the base vars at the class level.
-        for prop in cls.base_vars.values():
-            cls._init_var(prop)
+        for name, prop in cls.base_vars.items():
+            cls._init_var(name, prop)
 
         # Set up the event handlers.
         events = {
@@ -1006,10 +1005,11 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         return getattr(substate, name)
 
     @classmethod
-    def _init_var(cls, prop: Var):
+    def _init_var(cls, name: str, prop: Var):
         """Initialize a variable.
 
         Args:
+            name: The name of the variable
             prop: The variable to initialize
 
         Raises:
@@ -1024,9 +1024,9 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
                 "dictionaries, dataclasses, datetime objects, and pydantic models. "
                 f'Found var "{prop._js_expr}" with type {prop._var_type}.'
             )
-        cls._set_var(prop)
-        cls._create_setter(prop)
-        cls._set_default_value(prop)
+        cls._set_var(name, prop)
+        cls._create_setter(name, prop)
+        cls._set_default_value(name, prop)
 
     @classmethod
     def add_var(cls, name: str, type_: Any, default_value: Any = None):
@@ -1059,9 +1059,9 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         ).guess_type()
 
         # add the pydantic field dynamically (must be done before _init_var)
-        cls.add_field(var, default_value)
+        cls.add_field(name, var, default_value)
 
-        cls._init_var(var)
+        cls._init_var(name, var)
 
         # update the internal dicts so the new variable is correctly handled
         cls.base_vars.update({name: var})
@@ -1075,13 +1075,14 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         cls._init_var_dependency_dicts()
 
     @classmethod
-    def _set_var(cls, prop: Var):
+    def _set_var(cls, name: str, prop: Var):
         """Set the var as a class member.
 
         Args:
+            name: The name of the var.
             prop: The var instance to set.
         """
-        setattr(cls, prop._var_field_name, prop)
+        setattr(cls, name, prop)
 
     @classmethod
     def _create_event_handler(cls, fn: Any):
@@ -1101,27 +1102,29 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         cls.setvar = cls.event_handlers["setvar"] = EventHandlerSetVar(state_cls=cls)
 
     @classmethod
-    def _create_setter(cls, prop: Var):
+    def _create_setter(cls, name: str, prop: Var):
         """Create a setter for the var.
 
         Args:
+            name: The name of the var.
             prop: The var to create a setter for.
         """
-        setter_name = prop._get_setter_name(include_state=False)
+        setter_name = Var._get_setter_name_for_name(name)
         if setter_name not in cls.__dict__:
-            event_handler = cls._create_event_handler(prop._get_setter())
+            event_handler = cls._create_event_handler(prop._get_setter(name))
             cls.event_handlers[setter_name] = event_handler
             setattr(cls, setter_name, event_handler)
 
     @classmethod
-    def _set_default_value(cls, prop: Var):
+    def _set_default_value(cls, name: str, prop: Var):
         """Set the default value for the var.
 
         Args:
+            name: The name of the var.
             prop: The var to set the default value for.
         """
         # Get the pydantic field for the var.
-        field = cls.get_fields()[prop._var_field_name]
+        field = cls.get_fields()[name]
         if field.required:
             default_value = prop._get_default_value()
             if default_value is not None:
@@ -2075,7 +2078,9 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             computed_vars = {}
         variables = {**base_vars, **computed_vars}
         d = {
-            self.get_full_name(): {k: variables[k] for k in sorted(variables)},
+            self.get_full_name(): {
+                k + "_rx_state_": variables[k] for k in sorted(variables)
+            },
         }
         for substate_d in [
             v.dict(include_computed=include_computed, initial=initial, **kwargs)

@@ -245,30 +245,6 @@ def test_default_value(prop: Var, expected):
 
 
 @pytest.mark.parametrize(
-    "prop,expected",
-    zip(
-        test_vars,
-        [
-            "set_prop1",
-            "set_key",
-            "state.set_value",
-            "state.set_local",
-            "set_local2",
-        ],
-        strict=True,
-    ),
-)
-def test_get_setter(prop: Var, expected):
-    """Test that the name of the setter function of a var is correct.
-
-    Args:
-        prop: The var to test.
-        expected: The expected name of the setter function.
-    """
-    assert prop._get_setter_name() == expected
-
-
-@pytest.mark.parametrize(
     "value,expected",
     [
         (None, Var(_js_expr="null", _var_type=None)),
