@@ -326,8 +326,8 @@ def test_format_route(route: str, format_case: bool, expected: bool):
             ],
             LiteralVar.create("yellow"),
             '(() => { switch (JSON.stringify(state__state.value)) {case JSON.stringify(1):  return ("red");  break;case JSON.stringify(2): case JSON.stringify(3):  '
-            f'return ("blue");  break;case JSON.stringify({TestState.get_full_name()}.mapping):  return '
-            f'({TestState.get_full_name()}.num1);  break;case JSON.stringify(({TestState.get_full_name()}.map_key+"-key")):  return ("return-key");'
+            f'return ("blue");  break;case JSON.stringify({TestState.get_full_name()}.mapping_rx_state_):  return '
+            f'({TestState.get_full_name()}.num1_rx_state_);  break;case JSON.stringify(({TestState.get_full_name()}.map_key_rx_state_+"-key")):  return ("return-key");'
             '  break;default:  return ("yellow");  break;};})()',
         )
     ],

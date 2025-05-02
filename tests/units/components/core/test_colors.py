@@ -30,38 +30,38 @@ def create_color_var(color):
         (create_color_var(rx.color("mint", 3, True)), '"var(--mint-a3)"', Color),
         (
             create_color_var(rx.color(ColorState.color, ColorState.shade)),
-            f'("var(--"+{color_state_name!s}.color+"-"+(((__to_string) => __to_string.toString())({color_state_name!s}.shade))+")")',
+            f'("var(--"+{color_state_name!s}.color_rx_state_+"-"+(((__to_string) => __to_string.toString())({color_state_name!s}.shade_rx_state_))+")")',
             Color,
         ),
         (
             create_color_var(
                 rx.color(ColorState.color, ColorState.shade, ColorState.alpha)
             ),
-            f'("var(--"+{color_state_name!s}.color+"-"+({color_state_name!s}.alpha ? "a" : "")+(((__to_string) => __to_string.toString())({color_state_name!s}.shade))+")")',
+            f'("var(--"+{color_state_name!s}.color_rx_state_+"-"+({color_state_name!s}.alpha_rx_state_ ? "a" : "")+(((__to_string) => __to_string.toString())({color_state_name!s}.shade_rx_state_))+")")',
             Color,
         ),
         (
             create_color_var(rx.color(f"{ColorState.color}", f"{ColorState.shade}")),
-            f'("var(--"+{color_state_name!s}.color+"-"+{color_state_name!s}.shade+")")',
+            f'("var(--"+{color_state_name!s}.color_rx_state_+"-"+{color_state_name!s}.shade_rx_state_+")")',
             Color,
         ),
         (
             create_color_var(
                 rx.color(f"{ColorState.color_part}ato", f"{ColorState.shade}")
             ),
-            f'("var(--"+({color_state_name!s}.color_part+"ato")+"-"+{color_state_name!s}.shade+")")',
+            f'("var(--"+({color_state_name!s}.color_part_rx_state_+"ato")+"-"+{color_state_name!s}.shade_rx_state_+")")',
             Color,
         ),
         (
             create_color_var(f"{rx.color(ColorState.color, f'{ColorState.shade}')}"),
-            f'("var(--"+{color_state_name!s}.color+"-"+{color_state_name!s}.shade+")")',
+            f'("var(--"+{color_state_name!s}.color_rx_state_+"-"+{color_state_name!s}.shade_rx_state_+")")',
             str,
         ),
         (
             create_color_var(
                 f"{rx.color(f'{ColorState.color}', f'{ColorState.shade}')}"
             ),
-            f'("var(--"+{color_state_name!s}.color+"-"+{color_state_name!s}.shade+")")',
+            f'("var(--"+{color_state_name!s}.color_rx_state_+"-"+{color_state_name!s}.shade_rx_state_+")")',
             str,
         ),
     ],
@@ -80,7 +80,7 @@ def test_color(color, expected, expected_type: type[str] | type[Color]):
         ),
         (
             rx.cond(True, rx.color(ColorState.color), rx.color(ColorState.color, 5)),
-            f'(true ? ("var(--"+{color_state_name!s}.color+"-7)") : ("var(--"+{color_state_name!s}.color+"-5)"))',
+            f'(true ? ("var(--"+{color_state_name!s}.color_rx_state_+"-7)") : ("var(--"+{color_state_name!s}.color_rx_state_+"-5)"))',
         ),
         (
             rx.match(
@@ -91,7 +91,7 @@ def test_color(color, expected, expected_type: type[str] | type[Color]):
             ),
             '(() => { switch (JSON.stringify("condition")) {case JSON.stringify("first"):  return ("var(--mint-7)");'
             '  break;case JSON.stringify("second"):  return ("var(--tomato-5)");  break;default:  '
-            f'return (("var(--"+{color_state_name!s}.color+"-2)"));  break;}};}})()',
+            f'return (("var(--"+{color_state_name!s}.color_rx_state_+"-2)"));  break;}};}})()',
         ),
         (
             rx.match(
@@ -101,9 +101,9 @@ def test_color(color, expected, expected_type: type[str] | type[Color]):
                 rx.color(ColorState.color, 2),
             ),
             '(() => { switch (JSON.stringify("condition")) {case JSON.stringify("first"):  '
-            f'return (("var(--"+{color_state_name!s}.color+"-7)"));  break;case JSON.stringify("second"):  '
-            f'return (("var(--"+{color_state_name!s}.color+"-5)"));  break;default:  '
-            f'return (("var(--"+{color_state_name!s}.color+"-2)"));  break;}};}})()',
+            f'return (("var(--"+{color_state_name!s}.color_rx_state_+"-7)"));  break;case JSON.stringify("second"):  '
+            f'return (("var(--"+{color_state_name!s}.color_rx_state_+"-5)"));  break;default:  '
+            f'return (("var(--"+{color_state_name!s}.color_rx_state_+"-2)"));  break;}};}})()',
         ),
     ],
 )

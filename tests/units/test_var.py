@@ -1788,15 +1788,15 @@ def test_invalid_var_operations(operand1_var: Var, operand2_var, operators: list
         (LiteralVar.create({"foo": "bar"}), '({ ["foo"] : "bar" })'),
         (
             LiteralVar.create(ATestState.value),
-            f"{ATestState.get_full_name()}.value",
+            f"{ATestState.get_full_name()}.value_rx_state_",
         ),
         (
             LiteralVar.create(f"{ATestState.value} string"),
-            f'({ATestState.get_full_name()}.value+" string")',
+            f'({ATestState.get_full_name()}.value_rx_state_+" string")',
         ),
         (
             LiteralVar.create(ATestState.dict_val),
-            f"{ATestState.get_full_name()}.dict_val",
+            f"{ATestState.get_full_name()}.dict_val_rx_state_",
         ),
     ],
 )
@@ -1848,7 +1848,8 @@ def test_to_string_operation():
         email: Email = Email("test@reflex.dev")
 
     assert (
-        str(TestState.optional_email) == f"{TestState.get_full_name()}.optional_email"
+        str(TestState.optional_email)
+        == f"{TestState.get_full_name()}.optional_email_rx_state_"
     )
     my_state = TestState()
     assert my_state.optional_email is None

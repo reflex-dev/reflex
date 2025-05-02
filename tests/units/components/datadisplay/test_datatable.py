@@ -44,11 +44,20 @@ def test_validate_data_table(data_table_state: rx.State, expected):
 
     # prefix expected with state name
     state_name = data_table_state.get_name()
-    expected = f"{state_name}.{expected}" if expected else state_name
+    expected_columns = (
+        f"{state_name}.{expected}_rx_state_.columns"
+        if expected
+        else state_name + ".columns_rx_state_"
+    )
+    expected_data = (
+        f"{state_name}.{expected}_rx_state_.data"
+        if expected
+        else state_name + ".data_rx_state_"
+    )
 
     assert data_table_dict["props"] == [
-        f"columns={{{expected}.columns}}",
-        f"data={{{expected}.data}}",
+        "columns=" + f"{{{expected_columns}}}",
+        "data=" + f"{{{expected_data}}}",
     ]
 
 

@@ -84,7 +84,6 @@ from reflex.vars.base import (
     dispatch,
     get_unique_variable_name,
     is_computed_var,
-    is_illegal_javascript_identifier,
 )
 
 if TYPE_CHECKING:
@@ -274,7 +273,7 @@ def _unwrap_field_type(type_: types.GenericType) -> type:
     return type_
 
 
-def get_var_for_field(cls: type[BaseState], f: ModelField):
+def get_var_for_field(cls: type[BaseState], f: ModelField) -> Var:
     """Get a Var instance for a Pydantic field.
 
     Args:
@@ -284,7 +283,9 @@ def get_var_for_field(cls: type[BaseState], f: ModelField):
     Returns:
         The Var instance.
     """
-    field_name = format.format_state_name(cls.get_full_name()) + "." + f.name
+    field_name = (
+        format.format_state_name(cls.get_full_name()) + "." + f.name + "_rx_state_"
+    )
 
     return dispatch(
         field_name=field_name,
@@ -1051,11 +1052,8 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         var = Var(
             _js_expr=format.format_state_name(cls.get_full_name())
             + "."
-            + (
-                name
-                if not is_illegal_javascript_identifier(name)
-                else name + "_" + md5(name.encode()).hexdigest()
-            ),
+            + name
+            + "_rx_state_",
             _var_type=type_,
             _var_data=VarData.from_state(cls, name),
         ).guess_type()

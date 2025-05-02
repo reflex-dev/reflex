@@ -38,7 +38,7 @@ def test_match_components():
     [match_child] = match_dict["children"]
 
     assert match_child["name"] == "match"
-    assert str(match_child["cond"]) == f"{MatchState.get_name()}.value"
+    assert str(match_child["cond"]) == f"{MatchState.get_name()}.value_rx_state_"
 
     match_cases = match_child["match_cases"]
     assert len(match_cases) == 6
@@ -75,7 +75,7 @@ def test_match_components():
     assert fifth_return_value_render["name"] == "RadixThemesText"
     assert fifth_return_value_render["children"][0]["contents"] == '{"fifth value"}'
 
-    assert match_cases[5][0]._js_expr == f"({MatchState.get_name()}.num + 1)"
+    assert match_cases[5][0]._js_expr == f"({MatchState.get_name()}.num_rx_state_ + 1)"
     assert match_cases[5][0]._var_type is int
     fifth_return_value_render = match_cases[5][1]
     assert fifth_return_value_render["name"] == "RadixThemesText"
@@ -102,11 +102,11 @@ def test_match_components():
                 (MatchState.string, f"{MatchState.value} - string"),
                 "default value",
             ),
-            f'(() => {{ switch (JSON.stringify({MatchState.get_name()}.value)) {{case JSON.stringify(1):  return ("first");  break;case JSON.stringify(2): case JSON.stringify(3):  return '
+            f'(() => {{ switch (JSON.stringify({MatchState.get_name()}.value_rx_state_)) {{case JSON.stringify(1):  return ("first");  break;case JSON.stringify(2): case JSON.stringify(3):  return '
             '("second value");  break;case JSON.stringify([1, 2]):  return ("third-value");  break;case JSON.stringify("random"):  '
             'return ("fourth_value");  break;case JSON.stringify(({ ["foo"] : "bar" })):  return ("fifth value");  '
-            f'break;case JSON.stringify(({MatchState.get_name()}.num + 1)):  return ("sixth value");  break;case JSON.stringify(({MatchState.get_name()}.value+" - string")):  '
-            f'return ({MatchState.get_name()}.string);  break;case JSON.stringify({MatchState.get_name()}.string):  return (({MatchState.get_name()}.value+" - string"));  break;default:  '
+            f'break;case JSON.stringify(({MatchState.get_name()}.num_rx_state_ + 1)):  return ("sixth value");  break;case JSON.stringify(({MatchState.get_name()}.value_rx_state_+" - string")):  '
+            f'return ({MatchState.get_name()}.string_rx_state_);  break;case JSON.stringify({MatchState.get_name()}.string_rx_state_):  return (({MatchState.get_name()}.value_rx_state_+" - string"));  break;default:  '
             'return ("default value");  break;};})()',
         ),
         (
@@ -121,12 +121,12 @@ def test_match_components():
                 (MatchState.string, f"{MatchState.value} - string"),
                 MatchState.string,
             ),
-            f'(() => {{ switch (JSON.stringify({MatchState.get_name()}.value)) {{case JSON.stringify(1):  return ("first");  break;case JSON.stringify(2): case JSON.stringify(3):  return '
+            f'(() => {{ switch (JSON.stringify({MatchState.get_name()}.value_rx_state_)) {{case JSON.stringify(1):  return ("first");  break;case JSON.stringify(2): case JSON.stringify(3):  return '
             '("second value");  break;case JSON.stringify([1, 2]):  return ("third-value");  break;case JSON.stringify("random"):  '
             'return ("fourth_value");  break;case JSON.stringify(({ ["foo"] : "bar" })):  return ("fifth value");  '
-            f'break;case JSON.stringify(({MatchState.get_name()}.num + 1)):  return ("sixth value");  break;case JSON.stringify(({MatchState.get_name()}.value+" - string")):  '
-            f'return ({MatchState.get_name()}.string);  break;case JSON.stringify({MatchState.get_name()}.string):  return (({MatchState.get_name()}.value+" - string"));  break;default:  '
-            f"return ({MatchState.get_name()}.string);  break;}};}})()",
+            f'break;case JSON.stringify(({MatchState.get_name()}.num_rx_state_ + 1)):  return ("sixth value");  break;case JSON.stringify(({MatchState.get_name()}.value_rx_state_+" - string")):  '
+            f'return ({MatchState.get_name()}.string_rx_state_);  break;case JSON.stringify({MatchState.get_name()}.string_rx_state_):  return (({MatchState.get_name()}.value_rx_state_+" - string"));  break;default:  '
+            f"return ({MatchState.get_name()}.string_rx_state_);  break;}};}})()",
         ),
     ],
 )

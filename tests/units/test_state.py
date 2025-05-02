@@ -296,7 +296,7 @@ def test_base_class_vars(test_state):
             continue
         prop = getattr(cls, field)
         assert isinstance(prop, Var)
-        assert prop._js_expr.split(".")[-1] == field
+        assert prop._js_expr.split(".")[-1] == field + "_rx_state_"
 
     assert cls.num1._var_type is int
     assert cls.num2._var_type is float
@@ -425,27 +425,31 @@ def test_default_setters(test_state):
 def test_class_indexing_with_vars():
     """Test that we can index into a state var with another var."""
     prop = TestState.array[TestState.num1]  # pyright: ignore [reportCallIssue, reportArgumentType]
-    assert str(prop) == f"{TestState.get_name()}.array.at({TestState.get_name()}.num1)"
+    assert (
+        str(prop)
+        == f"{TestState.get_name()}.array_rx_state_.at({TestState.get_name()}.num1_rx_state_)"
+    )
 
     prop = TestState.mapping["a"][TestState.num1]  # pyright: ignore [reportCallIssue, reportArgumentType]
     assert (
         str(prop)
-        == f'{TestState.get_name()}.mapping["a"].at({TestState.get_name()}.num1)'
+        == f'{TestState.get_name()}.mapping_rx_state_["a"].at({TestState.get_name()}.num1_rx_state_)'
     )
 
     prop = TestState.mapping[TestState.map_key]
     assert (
-        str(prop) == f"{TestState.get_name()}.mapping[{TestState.get_name()}.map_key]"
+        str(prop)
+        == f"{TestState.get_name()}.mapping_rx_state_[{TestState.get_name()}.map_key_rx_state_]"
     )
 
 
 def test_class_attributes():
     """Test that we can get class attributes."""
     prop = TestState.obj.prop1
-    assert str(prop) == f'{TestState.get_name()}.obj["prop1"]'
+    assert str(prop) == f'{TestState.get_name()}.obj_rx_state_["prop1"]'
 
     prop = TestState.complex[1].prop1
-    assert str(prop) == f'{TestState.get_name()}.complex[1]["prop1"]'
+    assert str(prop) == f'{TestState.get_name()}.complex_rx_state_[1]["prop1"]'
 
 
 def test_get_parent_state():
