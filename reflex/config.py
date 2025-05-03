@@ -888,6 +888,9 @@ class Config(Base):
     # Extra overlay function to run after the app is built. Formatted such that `from path_0.path_1... import path[-1]`, and calling it with no arguments would work. For example, "reflex.components.moment.moment".
     extra_overlay_function: str | None = None
 
+    # Whether to only make rx.Field annotated state attributes base vars
+    state_explicit_vars: bool = False
+
     def __init__(self, *args, **kwargs):
         """Initialize the config values.
 
