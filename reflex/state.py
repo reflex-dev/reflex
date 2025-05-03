@@ -82,7 +82,6 @@ from reflex.vars.base import (
     Var,
     computed_var,
     dispatch,
-    get_unique_variable_name,
     is_computed_var,
 )
 
@@ -688,9 +687,16 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
 
         of_type = of_type or Component
 
-        unique_var_name = get_unique_variable_name()
+        unique_var_name = (
+            ("dynamic_" + f.__module__ + "_" + f.__qualname__)
+            .replace("<", "")
+            .replace(">", "")
+            .replace(".", "_")
+        )
 
-        @computed_var(_js_expr=unique_var_name, return_type=of_type)
+        while unique_var_name in cls.vars:
+            unique_var_name += "_"
+
         def computed_var_func(state: Self):
             result = f(state)
 
@@ -702,10 +708,16 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
 
             return result
 
-        setattr(cls, unique_var_name, computed_var_func)
-        cls.computed_vars[unique_var_name] = computed_var_func
-        cls.vars[unique_var_name] = computed_var_func
-        cls._update_substate_inherited_vars({unique_var_name: computed_var_func})
+        computed_var_func.__name__ = unique_var_name
+
+        computed_var_func_arg = computed_var(return_type=of_type, cache=False)(
+            computed_var_func
+        )
+
+        setattr(cls, unique_var_name, computed_var_func_arg)
+        cls.computed_vars[unique_var_name] = computed_var_func_arg
+        cls.vars[unique_var_name] = computed_var_func_arg
+        cls._update_substate_inherited_vars({unique_var_name: computed_var_func_arg})
         cls._always_dirty_computed_vars.add(unique_var_name)
 
         return getattr(cls, unique_var_name)

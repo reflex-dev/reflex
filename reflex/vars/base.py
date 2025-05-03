@@ -2122,14 +2122,18 @@ class ComputedVar(Var[RETURN_TYPE]):
 
         if hint is Any:
             raise UntypedComputedVarError(var_name=fget.__name__)
-        kwargs.setdefault("_js_expr", fget.__name__ + "_rx_state_")
+        is_using_fget_name = "_js_expr" not in kwargs
+        js_expr = kwargs.pop("_js_expr", fget.__name__ + "_rx_state_")
         kwargs.setdefault("_var_type", hint)
 
         Var.__init__(
             self,
-            _js_expr=kwargs.pop("_js_expr"),
+            _js_expr=js_expr,
             _var_type=kwargs.pop("_var_type"),
-            _var_data=kwargs.pop("_var_data", VarData(field_name=fget.__name__)),
+            _var_data=kwargs.pop(
+                "_var_data",
+                VarData(field_name=fget.__name__) if is_using_fget_name else None,
+            ),
         )
 
         if kwargs:
