@@ -1287,8 +1287,6 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         if not super().__getattribute__("__dict__"):
             return super().__getattribute__(name)
 
-        name = name.removesuffix("_rx_state_")
-
         # Fast path for dunder
         if name.startswith("__"):
             return super().__getattribute__(name)
@@ -1351,8 +1349,6 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         if isinstance(value, MutableProxy):
             # unwrap proxy objects when assigning back to the state
             value = value.__wrapped__
-
-        name = name.removesuffix("_rx_state_")
 
         # Set the var on the parent state.
         if name in self.inherited_vars or name in self.inherited_backend_vars:
