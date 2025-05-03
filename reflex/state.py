@@ -1350,6 +1350,8 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             # unwrap proxy objects when assigning back to the state
             value = value.__wrapped__
 
+        name = name.removesuffix("_rx_state_")
+
         # Set the var on the parent state.
         if name in self.inherited_vars or name in self.inherited_backend_vars:
             setattr(self.parent_state, name, value)
