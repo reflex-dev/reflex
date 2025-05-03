@@ -2412,6 +2412,7 @@ class UpdateVarsInternalState(State):
         """
         for var, value in vars.items():
             state_name, _, var_name = var.rpartition(".")
+            var_name = var_name.removesuffix("_rx_state_")
             var_state_cls = State.get_class_substate(state_name)
             var_state = await self.get_state(var_state_cls)
             setattr(var_state, var_name, value)
