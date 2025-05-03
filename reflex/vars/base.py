@@ -2377,7 +2377,7 @@ class ComputedVar(Var[RETURN_TYPE]):
         """
         if instance is None:
             state_where_defined = owner
-            while self._js_expr in state_where_defined.inherited_vars:
+            while self._name in state_where_defined.inherited_vars:
                 state_where_defined = state_where_defined.get_parent_state()
 
             field_name = (

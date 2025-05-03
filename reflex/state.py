@@ -583,8 +583,8 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
                     newcv = value._replace(fget=fget, _var_data=VarData.from_state(cls))
                     # cleanup refs to mixin cls in var_data
                     setattr(cls, name, newcv)
-                    cls.computed_vars[newcv._js_expr] = newcv
-                    cls.vars[newcv._js_expr] = newcv
+                    cls.computed_vars[name] = newcv
+                    cls.vars[name] = newcv
                     continue
                 if types.is_backend_base_variable(name, mixin_cls):
                     cls.backend_vars[name] = copy.deepcopy(value)
