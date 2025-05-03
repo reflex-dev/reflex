@@ -1221,11 +1221,15 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             def inner_func(self: BaseState) -> str:
                 return self.router.page.params.get(param, "")
 
+            inner_func.__name__ = param
+
             return inner_func
 
         def arglist_factory(param: str):
             def inner_func(self: BaseState) -> list[str]:
                 return self.router.page.params.get(param, [])
+
+            inner_func.__name__ = param
 
             return inner_func
 
@@ -1241,8 +1245,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
                 fget=func,
                 auto_deps=False,
                 deps=["router"],
-                _js_expr=param,
-                _var_data=VarData.from_state(cls),
+                _var_data=VarData.from_state(cls, param),
             )
             setattr(cls, param, dynamic_vars[param])
 
