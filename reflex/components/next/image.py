@@ -1,13 +1,13 @@
-"""Image component from next/image."""
+"""""Image component from next/image."""
 
 from __future__ import annotations
 
-from typing import Any, Literal
-
-from reflex.event import EventHandler, no_args_event_spec
+import reflex as rx
+from reflex.components.component import Component
+from reflex.components.core.cond import cond
+from reflex.event import EventHandler, call_script, no_args_event_spec
 from reflex.utils import console, types
-from reflex.vars.base import Var
-
+from reflex.vars.base import Var, ComponentVar
 from .base import NextComponent
 
 DEFAULT_W_H = "100%"
@@ -21,7 +21,7 @@ class Image(NextComponent):
     is_default = True
 
     # This can be either an absolute external URL, or an internal path
-    src: Var[Any]
+    src: Var[str]
 
     # Represents the rendered width in pixels, so it will affect how large the image appears.
     width: Var[Any]
@@ -31,6 +31,9 @@ class Image(NextComponent):
 
     # Used to describe the image for screen readers and search engines.
     alt: Var[str]
+
+    # A component to render if the image fails to load.
+    fallback: ComponentVar | None = None
 
     # A custom function used to resolve image URLs.
     loader: Var[Any]
@@ -115,3 +118,80 @@ class Image(NextComponent):
         props["sizes"] = "100vw"
 
         return super().create(*children, **props)
+
+    def _get_all_imports(self) -> dict[str, set[str]]:
+        """Get all the imports for the component.
+
+        Returns:
+            The imports for the component.
+        """
+        imports = super()._get_all_imports()
+        if self.fallback:
+            imports.setdefault("react", set()).add("useState")
+            fallback_imports = self.fallback.get_imports()
+            for lib, fields in fallback_imports.items():
+                imports.setdefault(lib, set()).update(fields) # type: ignore
+        return imports
+
+    def _get_all_hooks(self) -> str | None:
+        """Get all the hooks for the component.
+
+        Returns:
+            The hooks for the component.
+        """
+        hooks = super()._get_all_hooks() or ""
+        if self.fallback:
+            hooks += "\nconst [image_error, setImageError] = useState(false);" # UseState needs to be added to imports
+            fallback_hooks = self.fallback._get_all_hooks()
+            if fallback_hooks:
+                hooks += f"\n{fallback_hooks}"
+        return hooks if hooks else None
+
+    def _get_all_custom_code(self) -> str | None:
+        """Get all the custom code for the component.
+
+        Returns:
+            The custom code for the component.
+        """
+        custom_code = super()._get_all_custom_code() or ""
+        if self.fallback:
+          fallback_custom_code = self.fallback._get_all_custom_code()
+          if fallback_custom_code:
+            custom_code += f"\n{fallback_custom_code}"
+        return custom_code if custom_code else None
+
+
+    def _get_all_refs(self) -> str | None:
+        """Get all the refs for the component.
+
+        Returns:
+            The refs for the component.
+        """
+        refs = super()._get_all_refs() or ""
+        if self.fallback:
+          fallback_refs = self.fallback._get_all_refs()
+          if fallback_refs:
+            refs += f"\n{fallback_refs}"
+        return refs if refs else None
+
+    def _render(self):
+        if self.fallback:
+            # Define the onError event handler
+            on_error_handler = call_script("setImageError(true)")
+
+            # Prepare the props for the original image tag
+            tag = super()._render()
+
+            # Add our onError handler, overwriting any user-provided one for fallback logic
+            tag.props["onError"] = on_error_handler
+
+            # Render the fallback component
+            rendered_fallback = self.fallback.render()
+
+            # Return the conditional rendering structure
+            return cond(Var.create("image_error", _var_is_string=False), rendered_fallback, tag)
+        else:
+            # Original behavior if no fallback is provided
+            return super()._render()
+
+
