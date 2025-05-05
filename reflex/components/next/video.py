@@ -10,7 +10,7 @@ class Video(NextComponent):
     """A video component from NextJS."""
 
     tag = "Video"
-    library = "next-video"
+    library = "next-video@2.2.0"
     is_default = True
     # the URL
     src: Var[str]
