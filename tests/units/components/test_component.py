@@ -1692,6 +1692,24 @@ def test_validate_invalid_children():
         )
 
     with pytest.raises(ValueError):
+        rx.el.p(rx.el.p("what"))
+
+    with pytest.raises(ValueError):
+        rx.el.p(rx.el.div("what"))
+
+    with pytest.raises(ValueError):
+        rx.el.button(rx.el.button("what"))
+
+    with pytest.raises(ValueError):
+        rx.el.p(rx.el.ol(rx.el.li("what")))
+
+    with pytest.raises(ValueError):
+        rx.el.p(rx.el.ul(rx.el.li("what")))
+
+    with pytest.raises(ValueError):
+        rx.el.a(rx.el.a("what"))
+
+    with pytest.raises(ValueError):
         valid_component2(
             rx.fragment(
                 valid_component4(

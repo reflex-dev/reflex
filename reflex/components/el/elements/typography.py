@@ -1,6 +1,6 @@
 """Typography classes."""
 
-from typing import Literal
+from typing import ClassVar, Literal
 
 from reflex.vars.base import Var
 
@@ -86,6 +86,8 @@ class P(BaseHTML):
     """Display the p element."""
 
     tag = "p"
+
+    _invalid_children: ClassVar[list] = ["P", "Ol", "Ul", "Div"]
 
 
 class Pre(BaseHTML):
