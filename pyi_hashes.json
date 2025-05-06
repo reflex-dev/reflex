@@ -45,7 +45,7 @@
   "reflex/components/next/base.pyi": "14aafd5b018a4bc9748a3c9980fcfe3e",
   "reflex/components/next/image.pyi": "3a0d1970e69144e9c6806e68ab99f181",
   "reflex/components/next/link.pyi": "cd913e10205314afe67101d9640e05cb",
-  "reflex/components/next/video.pyi": "09698418db651917630a7fefeb573fc2",
+  "reflex/components/next/video.pyi": "aa8f814dec99f8712dc2351b15f922ac",
   "reflex/components/plotly/plotly.pyi": "b1f0bbcaf4706d0a373c99395ba50118",
   "reflex/components/radix/__init__.pyi": "8d586cbff1d7130d09476ac72ee73400",
   "reflex/components/radix/primitives/__init__.pyi": "fe8715decf3e9ae471b56bba14e42cb3",
