@@ -119,8 +119,10 @@ async def test_health(
         return_value={"redis": redis_status},
     )
 
+    request = Mock()
+
     # Call the async health function
-    response = await health()
+    response = await health(request)
 
     # Verify the response content and status code
     assert response.status_code == expected_code

@@ -1,6 +1,6 @@
 """Integration tests for a stateless app."""
 
-from typing import Generator
+from collections.abc import Generator
 
 import httpx
 import pytest

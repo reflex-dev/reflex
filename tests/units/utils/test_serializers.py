@@ -1,8 +1,9 @@
 import datetime
+import decimal
 import json
 from enum import Enum
 from pathlib import Path
-from typing import Any, Type
+from typing import Any
 
 import pytest
 
@@ -17,7 +18,7 @@ from reflex.vars.base import LiteralVar
     "type_,expected",
     [(Enum, True)],
 )
-def test_has_serializer(type_: Type, expected: bool):
+def test_has_serializer(type_: type, expected: bool):
     """Test that has_serializer returns the correct value.
 
     Args:
@@ -37,7 +38,7 @@ def test_has_serializer(type_: Type, expected: bool):
         (Enum, serializers.serialize_enum),
     ],
 )
-def test_get_serializer(type_: Type, expected: serializers.Serializer):
+def test_get_serializer(type_: type, expected: serializers.Serializer):
     """Test that get_serializer returns the correct value.
 
     Args:
@@ -188,6 +189,9 @@ class BaseSubclass(Base):
         (Color(color="slate", shade=1), "var(--slate-1)"),
         (Color(color="orange", shade=1, alpha=True), "var(--orange-a1)"),
         (Color(color="accent", shade=1, alpha=True), "var(--accent-a1)"),
+        (decimal.Decimal("123.456"), 123.456),
+        (decimal.Decimal("-0.5"), -0.5),
+        (decimal.Decimal("0"), 0.0),
     ],
 )
 def test_serialize(value: Any, expected: str):
@@ -226,6 +230,8 @@ def test_serialize(value: Any, expected: str):
         (Color(color="slate", shade=1), '"var(--slate-1)"', True),
         (BaseSubclass, '"BaseSubclass"', True),
         (Path(), '"."', True),
+        (decimal.Decimal("123.456"), "123.456", True),
+        (decimal.Decimal("-0.5"), "-0.5", True),
     ],
 )
 def test_serialize_var_to_str(value: Any, expected: str, exp_var_is_string: bool):

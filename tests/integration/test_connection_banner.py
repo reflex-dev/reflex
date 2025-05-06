@@ -1,7 +1,6 @@
 """Test case for displaying the connection banner when the websocket drops."""
 
-import functools
-from typing import Generator
+from collections.abc import Generator
 
 import pytest
 from selenium.common.exceptions import NoSuchElementException
@@ -77,7 +76,7 @@ def connection_banner(
 
     with AppHarness.create(
         root=tmp_path,
-        app_source=functools.partial(ConnectionBanner),
+        app_source=ConnectionBanner,
         app_name=(
             "connection_banner_reflex_cloud"
             if simulate_compile_context == constants.CompileContext.DEPLOY

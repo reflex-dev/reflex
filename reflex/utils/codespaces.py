@@ -4,7 +4,8 @@ from __future__ import annotations
 
 import os
 
-from fastapi.responses import HTMLResponse
+from starlette.requests import Request
+from starlette.responses import HTMLResponse
 
 from reflex.components.base.script import Script
 from reflex.components.component import Component
@@ -21,28 +22,28 @@ def redirect_script() -> str:
     Returns:
         The redirect script as a string.
     """
-    return """
+    return f"""
 const thisUrl = new URL(window.location.href);
 const params = new URLSearchParams(thisUrl.search)
 
-function doRedirect(url) {
-    if (!window.sessionStorage.getItem("authenticated_github_codespaces")) {
+function doRedirect(url) {{
+    if (!window.sessionStorage.getItem("authenticated_github_codespaces")) {{
         const a = document.createElement("a");
-        if (params.has("redirect_to")) {
+        if (params.has("redirect_to")) {{
             a.href = params.get("redirect_to")
-        } else if (!window.location.href.startsWith(url)) {
-            a.href = url + `?redirect_to=${window.location.href}`
-        } else {
+        }} else if (!window.location.href.startsWith(url)) {{
+            a.href = url + `?redirect_to=${{window.location.href}}`
+        }} else {{
             return
-        }
+        }}
         a.hidden = true;
         a.click();
         a.remove();
         window.sessionStorage.setItem("authenticated_github_codespaces", "true")
-    }
-}
-doRedirect("%s")
-""" % Endpoint.AUTH_CODESPACE.get_url()
+    }}
+}}
+doRedirect("{Endpoint.AUTH_CODESPACE.get_url()}")
+"""
 
 
 def codespaces_port_forwarding_domain() -> str | None:
@@ -74,14 +75,17 @@ def codespaces_auto_redirect() -> list[Component]:
     return []
 
 
-async def auth_codespace() -> HTMLResponse:
+async def auth_codespace(_request: Request) -> HTMLResponse:
     """Page automatically redirecting back to the app after authenticating a codespace port forward.
+
+    Args:
+        _request: The request object.
 
     Returns:
         An HTML response with an embedded script to redirect back to the app.
     """
     return HTMLResponse(
-        """
+        f"""
     <html>
         <head>
             <title>Reflex Github Codespace Forward Successfully Authenticated</title>
@@ -91,10 +95,9 @@ async def auth_codespace() -> HTMLResponse:
                 <h2>Successfully Authenticated</h2>
             </center>
             <script language="javascript">
-                %s
+                {redirect_script()}
             </script>
         </body>
     </html>
     """
-        % redirect_script()
     )

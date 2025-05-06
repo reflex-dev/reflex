@@ -2,8 +2,9 @@
 
 from __future__ import annotations
 
+from collections.abc import Iterator
 from hashlib import md5
-from typing import Any, Iterator, Literal
+from typing import Any, ClassVar, Literal
 
 from jinja2 import Environment
 
@@ -84,6 +85,8 @@ class Button(BaseHTML):
 
     # Value of the button, used when sending form data
     value: Var[str | int | float]
+
+    _invalid_children: ClassVar[list[str]] = ["Button"]
 
 
 class Datalist(BaseHTML):
@@ -460,15 +463,16 @@ class Input(BaseInput):
                 value_var.is_not_none(), value_var, Var.create("")
             )
 
-        input_type = props.get("type")
+        if cls is Input:
+            input_type = props.get("type")
 
-        if input_type == "checkbox":
-            # Checkbox inputs should use the CheckboxInput class
-            return CheckboxInput.create(*children, **props)
+            if input_type == "checkbox":
+                # Checkbox inputs should use the CheckboxInput class
+                return CheckboxInput.create(*children, **props)
 
-        if input_type == "number" or input_type == "range":
-            # Number inputs should use the ValueNumberInput class
-            return ValueNumberInput.create(*children, **props)
+            if input_type == "number" or input_type == "range":
+                # Number inputs should use the ValueNumberInput class
+                return ValueNumberInput.create(*children, **props)
 
         return super().create(*children, **props)
 

@@ -1,7 +1,8 @@
 """Components for the CheckboxGroup component of Radix Themes."""
 
+from collections.abc import Sequence
 from types import SimpleNamespace
-from typing import Literal, Sequence
+from typing import Literal
 
 from reflex.components.core.breakpoints import Responsive
 from reflex.vars.base import Var

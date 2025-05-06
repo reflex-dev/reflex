@@ -1,6 +1,6 @@
 """Integration tests for table and related components."""
 
-from typing import Generator
+from collections.abc import Generator
 
 import pytest
 from playwright.sync_api import Page, expect

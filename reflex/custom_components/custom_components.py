@@ -9,17 +9,46 @@ import sys
 from collections import namedtuple
 from contextlib import contextmanager
 from pathlib import Path
+from typing import Any
 
+import click
 import httpx
-import typer
 
 from reflex import constants
-from reflex.config import get_config
 from reflex.constants import CustomComponents
 from reflex.utils import console
 
-custom_components_cli = typer.Typer()
 
+def set_loglevel(ctx: Any, self: Any, value: str | None):
+    """Set the log level.
+
+    Args:
+        ctx: The click context.
+        self: The click command.
+        value: The log level to set.
+    """
+    if value is not None:
+        loglevel = constants.LogLevel.from_string(value)
+        console.set_log_level(loglevel)
+
+
+@click.group
+def custom_components_cli():
+    """CLI for creating custom components."""
+    pass
+
+
+loglevel_option = click.option(
+    "--loglevel",
+    type=click.Choice(
+        [loglevel.value for loglevel in constants.LogLevel],
+        case_sensitive=False,
+    ),
+    callback=set_loglevel,
+    is_eager=True,
+    expose_value=False,
+    help="The log level to use.",
+)
 
 POST_CUSTOM_COMPONENTS_GALLERY_TIMEOUT = 15
 
@@ -163,13 +192,13 @@ def _get_default_library_name_parts() -> list[str]:
             console.error(
                 f"Based on current directory name {current_dir_name}, the library name is {constants.Reflex.MODULE_NAME}. This package already exists. Please use --library-name to specify a different name."
             )
-            raise typer.Exit(code=1)
+            raise click.exceptions.Exit(code=1)
     if not parts:
         # The folder likely has a name not suitable for python paths.
         console.error(
             f"Could not find a valid library name based on the current directory: got {current_dir_name}."
         )
-        raise typer.Exit(code=1)
+        raise click.exceptions.Exit(code=1)
     return parts
 
 
@@ -205,7 +234,7 @@ def _validate_library_name(library_name: str | None) -> NameVariants:
         console.error(
             f"Please use only alphanumeric characters or dashes: got {library_name}"
         )
-        raise typer.Exit(code=1)
+        raise click.exceptions.Exit(code=1)
 
     # If not specified, use the current directory name to form the module name.
     name_parts = (
@@ -277,36 +306,35 @@ def _populate_custom_component_project(name_variants: NameVariants):
 
 
 @custom_components_cli.command(name="init")
+@click.option(
+    "--library-name",
+    default=None,
+    help="The name of your library. On PyPI, package will be published as `reflex-{library-name}`.",
+)
+@click.option(
+    "--install/--no-install",
+    default=True,
+    help="Whether to install package from this local custom component in editable mode.",
+)
+@loglevel_option
 def init(
-    library_name: str | None = typer.Option(
-        None,
-        help="The name of your library. On PyPI, package will be published as `reflex-{library-name}`.",
-    ),
-    install: bool = typer.Option(
-        True,
-        help="Whether to install package from this local custom component in editable mode.",
-    ),
-    loglevel: constants.LogLevel | None = typer.Option(
-        None, help="The log level to use."
-    ),
+    library_name: str | None,
+    install: bool,
 ):
     """Initialize a custom component.
 
     Args:
         library_name: The name of the library.
         install: Whether to install package from this local custom component in editable mode.
-        loglevel: The log level to use.
 
     Raises:
         Exit: If the pyproject.toml already exists.
     """
     from reflex.utils import exec, prerequisites
 
-    console.set_log_level(loglevel or get_config().loglevel)
-
     if CustomComponents.PYPROJECT_TOML.exists():
         console.error(f"A {CustomComponents.PYPROJECT_TOML} already exists. Aborting.")
-        typer.Exit(code=1)
+        click.exceptions.Exit(code=1)
 
     # Show system info.
     exec.output_system_info()
@@ -331,7 +359,7 @@ def init(
         if _pip_install_on_demand(package_name=".", install_args=["-e"]):
             console.info(f"Package {package_name} installed!")
         else:
-            raise typer.Exit(code=1)
+            raise click.exceptions.Exit(code=1)
 
     console.print("[bold]Custom component initialized successfully!")
     console.rule("[bold]Project Summary")
@@ -424,21 +452,13 @@ def _run_build():
     if _run_commands_in_subprocess(cmds):
         console.info("Custom component built successfully!")
     else:
-        raise typer.Exit(code=1)
+        raise click.exceptions.Exit(code=1)
 
 
 @custom_components_cli.command(name="build")
-def build(
-    loglevel: constants.LogLevel | None = typer.Option(
-        None, help="The log level to use."
-    ),
-):
-    """Build a custom component. Must be run from the project root directory where the pyproject.toml is.
-
-    Args:
-        loglevel: The log level to use.
-    """
-    console.set_log_level(loglevel or get_config().loglevel)
+@loglevel_option
+def build():
+    """Build a custom component. Must be run from the project root directory where the pyproject.toml is."""
     _run_build()
 
 
@@ -453,7 +473,7 @@ def publish():
         "The publish command is deprecated. You can use `reflex component build` followed by `twine upload` or a similar publishing command to publish your custom component."
         "\nIf you want to share your custom component with the Reflex community, please use `reflex component share`."
     )
-    raise typer.Exit(code=1)
+    raise click.exceptions.Exit(code=1)
 
 
 def _collect_details_for_gallery():
@@ -472,7 +492,7 @@ def _collect_details_for_gallery():
         console.error(
             "Unable to authenticate with Reflex backend services. Make sure you are logged in."
         )
-        raise typer.Exit(code=1)
+        raise click.exceptions.Exit(code=1)
 
     console.rule("[bold]Custom Component Information")
     params = {}
@@ -502,11 +522,11 @@ def _collect_details_for_gallery():
             console.error(
                 f"{package_name} is owned by another user. Unable to update the information for it."
             )
-            raise typer.Exit(code=1)
+            raise click.exceptions.Exit(code=1)
         response.raise_for_status()
     except httpx.HTTPError as he:
         console.error(f"Unable to complete request due to {he}.")
-        raise typer.Exit(code=1) from he
+        raise click.exceptions.Exit(code=1) from he
 
     files = []
     if (image_file_and_extension := _get_file_from_prompt_in_loop()) is not None:
@@ -541,7 +561,7 @@ def _collect_details_for_gallery():
 
     except httpx.HTTPError as he:
         console.error(f"Unable to complete request due to {he}.")
-        raise typer.Exit(code=1) from he
+        raise click.exceptions.Exit(code=1) from he
 
     console.info("Custom component information successfully shared!")
 
@@ -577,7 +597,7 @@ def _get_file_from_prompt_in_loop() -> tuple[bytes, str] | None:
             image_file = image_file_path.read_bytes()
         except OSError as ose:
             console.error(f"Unable to read the {file_extension} file due to {ose}")
-            raise typer.Exit(code=1) from ose
+            raise click.exceptions.Exit(code=1) from ose
         else:
             return image_file, file_extension
 
@@ -586,38 +606,21 @@ def _get_file_from_prompt_in_loop() -> tuple[bytes, str] | None:
 
 
 @custom_components_cli.command(name="share")
-def share_more_detail(
-    loglevel: constants.LogLevel | None = typer.Option(
-        None, help="The log level to use."
-    ),
-):
-    """Collect more details on the published package for gallery.
-
-    Args:
-        loglevel: The log level to use.
-    """
-    console.set_log_level(loglevel or get_config().loglevel)
-
+@loglevel_option
+def share_more_detail():
+    """Collect more details on the published package for gallery."""
     _collect_details_for_gallery()
 
 
-@custom_components_cli.command()
-def install(
-    loglevel: constants.LogLevel | None = typer.Option(
-        None, help="The log level to use."
-    ),
-):
+@custom_components_cli.command(name="install")
+@loglevel_option
+def install():
     """Install package from this local custom component in editable mode.
-
-    Args:
-        loglevel: The log level to use.
 
     Raises:
         Exit: If unable to install the current directory in editable mode.
     """
-    console.set_log_level(loglevel or get_config().loglevel)
-
     if _pip_install_on_demand(package_name=".", install_args=["-e"]):
         console.info("Package installed successfully!")
     else:
-        raise typer.Exit(code=1)
+        raise click.exceptions.Exit(code=1)

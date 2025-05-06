@@ -5,7 +5,7 @@ import tempfile
 from pathlib import Path
 
 import pytest
-from typer.testing import CliRunner
+from click.testing import CliRunner
 
 from reflex.config import Config
 from reflex.reflex import cli
@@ -97,6 +97,8 @@ def test_update_next_config(config, export, expected_output):
             ["foo", "@bar/baz", "foo", "@bar/baz@3.2.1"],
             ["@bar/baz", "foo"],
         ),
+        (["@bar/baz", {"name": "foo"}], ["@bar/baz", "foo"]),
+        (["@bar/baz", {"name": "@foo/baz"}], ["@bar/baz", "@foo/baz"]),
     ),
 )
 def test_transpile_packages(transpile_packages, expected_transpile_packages):
@@ -277,7 +279,7 @@ app.add_page(index)
     with chdir(temp_directory / "foo"):
         result = runner.invoke(cli, ["rename", "bar"])
 
-    assert result.exit_code == 0
+    assert result.exit_code == 0, result.output
     assert (foo_dir / "rxconfig.py").read_text() == (
         """
 import reflex as rx

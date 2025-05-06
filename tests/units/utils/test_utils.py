@@ -1,21 +1,12 @@
 import os
 import typing
+from collections.abc import Mapping, Sequence
 from functools import cached_property
 from pathlib import Path
-from typing import (
-    Any,
-    ClassVar,
-    List,
-    Literal,
-    Mapping,
-    NoReturn,
-    Sequence,
-    Type,
-    Union,
-)
+from typing import Any, ClassVar, List, Literal, NoReturn  # noqa: UP035
 
+import click
 import pytest
-import typer
 from packaging import version
 
 from reflex import constants
@@ -47,7 +38,7 @@ def test_func():
         (int, False),
         (float, False),
         (bool, False),
-        (List, True),
+        (List, True),  # noqa: UP006
         (list[int], True),
     ],
 )
@@ -76,11 +67,11 @@ def test_is_generic_alias(cls: type, expected: bool):
         ],
         (bool, int, True),
         (int, bool, False),
-        (list, List, True),
+        (list, list, True),
         (list, list[str], True),  # this is wrong, but it's a limitation of the function
-        (List, list, True),
+        (list, list, True),
         (list[int], list, True),
-        (list[int], List, True),
+        (list[int], list, True),
         (list[int], list[str], False),
         (list[int], list[int], True),
         (list[int], list[float], False),
@@ -136,11 +127,11 @@ def test_typehint_issubclass(subclass, superclass, expected):
         ],
         (bool, int, True),
         (int, bool, False),
-        (list, List, True),
+        (list, list, True),
         (list, list[str], True),  # this is wrong, but it's a limitation of the function
-        (List, list, True),
+        (list, list, True),
         (list[int], list, True),
-        (list[int], List, True),
+        (list[int], list, True),
         (list[int], list[str], False),
         (list[int], list[int], True),
         (list[int], list[float], False),
@@ -189,7 +180,7 @@ def test_validate_none_bun_path(mocker):
         mocker: Pytest mocker object.
     """
     mocker.patch("reflex.utils.path_ops.get_bun_path", return_value=None)
-    # with pytest.raises(typer.Exit):
+    # with pytest.raises(click.exceptions.Exit):
     prerequisites.validate_bun()
 
 
@@ -207,7 +198,7 @@ def test_validate_invalid_bun_path(
     mocker.patch("reflex.utils.path_ops.samefile", return_value=False)
     mocker.patch("reflex.utils.prerequisites.get_bun_version", return_value=None)
 
-    with pytest.raises(typer.Exit):
+    with pytest.raises(click.exceptions.Exit):
         prerequisites.validate_bun()
 
 
@@ -306,7 +297,7 @@ def test_backend_variable_cls():
     ],
 )
 def test_is_backend_base_variable(
-    test_backend_variable_cls: Type[BaseState], input: str, output: bool
+    test_backend_variable_cls: type[BaseState], input: str, output: bool
 ):
     assert types.is_backend_base_variable(input, test_backend_variable_cls) == output
 
@@ -326,8 +317,8 @@ def test_is_backend_base_variable(
         (int, Any, True),
         (Any, Any, True),
         (int | float, Any, True),
-        (str, Union[Literal["test", "value"], int], True),
-        (int, Union[Literal["test", "value"], int], True),
+        (str, Literal["test", "value"] | int, True),
+        (int, Literal["test", "value"] | int, True),
         (str, Literal["test", "value"], True),
         (int, Literal["test", "value"], False),
     ],
@@ -416,7 +407,7 @@ class DataFrame:
         (dict, False),
         (DataFrame, True),
         (typing.Any, False),
-        (typing.List, False),
+        (list, False),
     ],
 )
 def test_is_dataframe(class_type, expected):
@@ -473,10 +464,10 @@ def test_validate_app_name(tmp_path, mocker):
 
     mocker.patch("reflex.utils.prerequisites.os.getcwd", return_value=str(reflex))
 
-    with pytest.raises(typer.Exit):
+    with pytest.raises(click.exceptions.Exit):
         prerequisites.validate_app_name()
 
-    with pytest.raises(typer.Exit):
+    with pytest.raises(click.exceptions.Exit):
         prerequisites.validate_app_name(app_name="1_test")
 
 

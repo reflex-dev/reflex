@@ -1,7 +1,6 @@
 from __future__ import annotations
 
-import typing
-from typing import Type
+from typing import List  # noqa: UP035
 
 import attrs
 import pydantic.v1
@@ -28,7 +27,7 @@ class SQLAType(TypeDecorator):
     impl = JSON
 
     @property
-    def python_type(self) -> Type[dict[str, str]]:
+    def python_type(self) -> type[dict[str, str]]:
         """Python type.
 
         Returns:
@@ -353,8 +352,8 @@ class AttrClass:
     [
         pytest.param("count", int, id="int"),
         pytest.param("name", str, id="str"),
-        pytest.param("int_list", (list[int], typing.List[int]), id="list[int]"),
-        pytest.param("str_list", (list[str], typing.List[str]), id="list[str]"),
+        pytest.param("int_list", (list[int], List[int]), id="list[int]"),  # noqa: UP006
+        pytest.param("str_list", (list[str], List[str]), id="list[str]"),  # noqa: UP006
         pytest.param("optional_int", int | None, id="int | None"),
         pytest.param("sqla_tag", SQLATag | None, id="SQLATag | None"),
         pytest.param("labels", list[SQLALabel], id="list[SQLALabel]"),
@@ -381,7 +380,7 @@ def test_get_attribute_access_type(cls: type, attr: str, expected: GenericType) 
 @pytest.mark.parametrize(
     ("cls", "expected"),
     [
-        (SQLAClassDataclass, typing.List[int]),
+        (SQLAClassDataclass, List[int]),  # noqa: UP006
         (BaseClass, list[int]),
         (ModelClass, list[int]),
         (AttrClass, list[int]),

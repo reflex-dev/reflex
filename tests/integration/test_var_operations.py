@@ -1,6 +1,6 @@
 """Integration tests for var operations."""
 
-from typing import Generator
+from collections.abc import Generator
 
 import pytest
 from selenium.webdriver.common.by import By

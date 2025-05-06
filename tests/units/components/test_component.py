@@ -1,14 +1,15 @@
 from contextlib import nullcontext
-from typing import Any, ClassVar, Type, Union
+from typing import Any, ClassVar
 
 import pytest
 
 import reflex as rx
 from reflex.base import Base
-from reflex.compiler.compiler import compile_components
+from reflex.compiler.utils import compile_custom_component
 from reflex.components.base.bare import Bare
 from reflex.components.base.fragment import Fragment
 from reflex.components.component import (
+    CUSTOM_COMPONENTS,
     Component,
     CustomComponent,
     StatefulComponent,
@@ -71,7 +72,7 @@ def test_state():
 
 
 @pytest.fixture
-def component1() -> Type[Component]:
+def component1() -> type[Component]:
     """A test component.
 
     Returns:
@@ -98,7 +99,7 @@ def component1() -> Type[Component]:
 
 
 @pytest.fixture
-def component2() -> Type[Component]:
+def component2() -> type[Component]:
     """A test component.
 
     Returns:
@@ -139,7 +140,7 @@ def component2() -> Type[Component]:
 
 
 @pytest.fixture
-def component3() -> Type[Component]:
+def component3() -> type[Component]:
     """A test component with hook defined.
 
     Returns:
@@ -154,7 +155,7 @@ def component3() -> Type[Component]:
 
 
 @pytest.fixture
-def component4() -> Type[Component]:
+def component4() -> type[Component]:
     """A test component with hook defined.
 
     Returns:
@@ -169,7 +170,7 @@ def component4() -> Type[Component]:
 
 
 @pytest.fixture
-def component5() -> Type[Component]:
+def component5() -> type[Component]:
     """A test component.
 
     Returns:
@@ -189,7 +190,7 @@ def component5() -> Type[Component]:
 
 
 @pytest.fixture
-def component6() -> Type[Component]:
+def component6() -> type[Component]:
     """A test component.
 
     Returns:
@@ -205,7 +206,7 @@ def component6() -> Type[Component]:
 
 
 @pytest.fixture
-def component7() -> Type[Component]:
+def component7() -> type[Component]:
     """A test component.
 
     Returns:
@@ -426,10 +427,10 @@ def test_create_component(component1):
     ],
 )
 def test_create_component_prop_validation(
-    component1: Type[Component],
+    component1: type[Component],
     prop_name: str,
     var: Var | str | int,
-    expected: Type[Exception],
+    expected: type[Exception],
 ):
     """Test that component props are validated correctly.
 
@@ -625,7 +626,7 @@ def test_get_event_triggers(component1, component2):
 
 
 @pytest.fixture
-def test_component() -> Type[Component]:
+def test_component() -> type[Component]:
     """A test component.
 
     Returns:
@@ -877,7 +878,7 @@ def test_create_custom_component(my_component):
     component = rx.memo(my_component)(prop1="test", prop2=1)
     assert component.tag == "MyComponent"
     assert component.get_props() == {"prop1", "prop2"}
-    assert component._get_all_custom_components() == {component}
+    assert component.tag in CUSTOM_COMPONENTS
 
 
 def test_custom_component_hash(my_component):
@@ -1691,6 +1692,24 @@ def test_validate_invalid_children():
         )
 
     with pytest.raises(ValueError):
+        rx.el.p(rx.el.p("what"))
+
+    with pytest.raises(ValueError):
+        rx.el.p(rx.el.div("what"))
+
+    with pytest.raises(ValueError):
+        rx.el.button(rx.el.button("what"))
+
+    with pytest.raises(ValueError):
+        rx.el.p(rx.el.ol(rx.el.li("what")))
+
+    with pytest.raises(ValueError):
+        rx.el.p(rx.el.ul(rx.el.li("what")))
+
+    with pytest.raises(ValueError):
+        rx.el.a(rx.el.a("what"))
+
+    with pytest.raises(ValueError):
         valid_component2(
             rx.fragment(
                 valid_component4(
@@ -1801,10 +1820,13 @@ def test_custom_component_get_imports():
 
     # Inner is not imported directly, but it is imported by the custom component.
     assert "inner" not in custom_comp._get_all_imports()
+    assert "outer" not in custom_comp._get_all_imports()
 
     # The imports are only resolved during compilation.
-    _, _, imports_inner = compile_components(custom_comp._get_all_custom_components())
+    custom_comp.get_component(custom_comp)
+    _, imports_inner = compile_custom_component(custom_comp)
     assert "inner" in imports_inner
+    assert "outer" not in imports_inner
 
     outer_comp = outer(c=wrapper())
 
@@ -1813,8 +1835,8 @@ def test_custom_component_get_imports():
     assert "other" not in outer_comp._get_all_imports()
 
     # The imports are only resolved during compilation.
-    _, _, imports_outer = compile_components(outer_comp._get_all_custom_components())
-    assert "inner" in imports_outer
+    _, imports_outer = compile_custom_component(outer_comp)
+    assert "inner" not in imports_outer
     assert "other" in imports_outer
 
 
@@ -1903,13 +1925,13 @@ def test_component_add_imports(tags):
     class TestBase(Component):
         def add_imports(  # pyright: ignore [reportIncompatibleMethodOverride]
             self,
-        ) -> dict[str, Union[str, ImportVar, list[str], list[ImportVar]]]:
+        ) -> dict[str, str | ImportVar | list[str] | list[ImportVar]]:
             return {"foo": "bar"}
 
     class Test(TestBase):
         def add_imports(
             self,
-        ) -> dict[str, Union[str, ImportVar, list[str], list[ImportVar]]]:
+        ) -> dict[str, str | ImportVar | list[str] | list[ImportVar]]:
             return {"react": (tags[0] if len(tags) == 1 else tags)}
 
     baseline = Reference.create()

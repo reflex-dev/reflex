@@ -1,7 +1,8 @@
 """Decorator utilities."""
 
 import functools
-from typing import Callable, ParamSpec, TypeVar
+from collections.abc import Callable
+from typing import ParamSpec, TypeVar
 
 T = TypeVar("T")
 
