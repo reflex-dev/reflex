@@ -2654,13 +2654,6 @@ class LiteralComponentVar(CachedVarOperation, LiteralVar, ComponentVar):
             VarData(
                 imports=self._var_value._get_all_imports(),
             ),
-            VarData(
-                imports={
-                    "react": [
-                        ImportVar(tag="Fragment"),
-                    ],
-                }
-            ),
         )
 
     def __hash__(self) -> int:
