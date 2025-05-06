@@ -34,9 +34,9 @@ def _apply_common_imports(
     imports: dict[str, list[ImportVar]],
 ):
     if "@emotion/react" in imports:
-        imports["@emotion/react"].append(ImportVar("css"))
+        imports["@emotion/react"].append(ImportVar("jsx"))
     else:
-        imports["@emotion/react"] = [ImportVar("css")]
+        imports["@emotion/react"] = [ImportVar("jsx")]
     if "react" in imports:
         imports["react"].append(ImportVar("Fragment"))
     else:
