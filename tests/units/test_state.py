@@ -3430,7 +3430,7 @@ config = rx.Config(
 
             num: int = 0
 
-        assert TestState.event_handlers == {}
+        assert list(TestState.event_handlers) == ["setvar"]
 
 
 class MixinState(State, mixin=True):

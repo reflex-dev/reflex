@@ -1095,12 +1095,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
     @classmethod
     def _create_setvar(cls):
         """Create the setvar method for the state."""
-        from reflex.config import get_config
-
-        if get_config().state_auto_setters:
-            cls.setvar = cls.event_handlers["setvar"] = EventHandlerSetVar(
-                state_cls=cls
-            )
+        cls.setvar = cls.event_handlers["setvar"] = EventHandlerSetVar(state_cls=cls)
 
     @classmethod
     def _create_setter(cls, prop: Var):
