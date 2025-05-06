@@ -33,8 +33,14 @@ from reflex.vars.base import LiteralVar, Var
 def _apply_common_imports(
     imports: dict[str, list[ImportVar]],
 ):
-    imports.setdefault("@emotion/react", []).append(ImportVar("jsx"))
-    imports.setdefault("react", []).append(ImportVar("Fragment"))
+    if "@emotion/react" in imports:
+        imports["@emotion/react"].append(ImportVar("css"))
+    else:
+        imports["@emotion/react"] = [ImportVar("css")]
+    if "react" in imports:
+        imports["react"].append(ImportVar("Fragment"))
+    else:
+        imports["react"] = [ImportVar("Fragment")]
 
 
 def _compile_document_root(root: Component) -> str:
