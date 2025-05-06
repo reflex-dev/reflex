@@ -81,7 +81,6 @@ class Icon(LucideIconComponent):
 
         props["tag"] = LUCIDE_ICON_MAPPING_OVERRIDE.get(tag, format.to_title_case(tag))
         props["alias"] = f"Lucide{props['tag']}"
-        props.setdefault("color", "var(--current-color)")
         return super().create(**props)
 
 
