@@ -97,11 +97,11 @@ def load_dynamic_serializer():
 
         libs_in_window = bundled_libraries
 
-        imports = component._get_all_imports()
-        compiler._apply_common_imports(imports)
+        component_imports = component._get_all_imports()
+        compiler._apply_common_imports(component_imports)
 
         imports = {}
-        for lib, names in imports.items():
+        for lib, names in component_imports.items():
             formatted_lib_name = format_library_name(lib)
             if (
                 not lib.startswith((".", "/", "$/"))
