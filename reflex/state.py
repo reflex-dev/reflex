@@ -1013,6 +1013,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         Raises:
             VarTypeError: if the variable has an incorrect type
         """
+        from reflex.config import get_config
         from reflex.utils.exceptions import VarTypeError
 
         if not types.is_valid_var_type(prop._var_type):
