@@ -371,9 +371,11 @@ class AppHarness:
         # Set up the frontend.
         with chdir(self.app_path):
             config = reflex.config.get_config()
+            print("Polling for servers...")  # for pytest diagnosis #noqa: T201
             config.api_url = "http://{}:{}".format(
                 *self._poll_for_servers(timeout=30).getsockname(),
             )
+            print("Building frontend...")  # for pytest diagnosis #noqa: T201
             reflex.utils.build.setup_frontend(self.app_path)
 
         print("Frontend starting...")  # for pytest diagnosis #noqa: T201
@@ -968,9 +970,11 @@ class AppHarnessProd(AppHarness):
         # Set up the frontend.
         with chdir(self.app_path):
             config = reflex.config.get_config()
+            print("Polling for servers...")  # for pytest diagnosis #noqa: T201
             config.api_url = "http://{}:{}".format(
                 *self._poll_for_servers(timeout=30).getsockname(),
             )
+            print("Building frontend...")  # for pytest diagnosis #noqa: T201
 
             get_config().loglevel = reflex.constants.LogLevel.INFO
 
