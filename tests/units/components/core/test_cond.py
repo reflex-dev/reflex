@@ -57,7 +57,7 @@ def test_validate_cond(cond_state: BaseState):
 
     [true_value_text] = true_value["children"]
     assert true_value_text["name"] == "RadixThemesText"
-    assert true_value_text["children"][0]["contents"] == '{"cond is True"}'
+    assert true_value_text["children"][0]["contents"] == '"cond is True"'
 
     # false value
     false_value = condition["false_value"]
@@ -65,7 +65,7 @@ def test_validate_cond(cond_state: BaseState):
 
     [false_value_text] = false_value["children"]
     assert false_value_text["name"] == "RadixThemesText"
-    assert false_value_text["children"][0]["contents"] == '{"cond is False"}'
+    assert false_value_text["children"][0]["contents"] == '"cond is False"'
 
 
 @pytest.mark.parametrize(
