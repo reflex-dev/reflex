@@ -62,7 +62,9 @@ except ImportError:
 # The timeout (minutes) to check for the port.
 DEFAULT_TIMEOUT = 15
 POLL_INTERVAL = 0.25
-FRONTEND_POPEN_ARGS = {}
+FRONTEND_POPEN_ARGS: dict[str, Any] = {
+    "NO_COLOR": "1",
+}
 T = TypeVar("T")
 TimeoutType = int | float | None
 if platform.system() == "Windows":
@@ -401,9 +403,8 @@ class AppHarness:
     def _wait_frontend(self):
         if self.frontend_process is None or self.frontend_process.stdout is None:
             raise RuntimeError("Frontend process has no stdout.")
-        ansi_escape = re.compile(r"\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])")
         while self.frontend_url is None:
-            line = ansi_escape.sub("", self.frontend_process.stdout.readline())
+            line = self.frontend_process.stdout.readline()
             if not line:
                 break
             print(line)  # for pytest diagnosis #noqa: T201
