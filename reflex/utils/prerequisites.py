@@ -1085,7 +1085,7 @@ def update_next_config(
     """
     next_config_file = get_web_dir() / constants.Next.CONFIG_FILE
 
-    next_config = _update_next_config(
+    next_config = _update_react_router_config(
         get_config(), export=export, transpile_packages=transpile_packages
     )
 
@@ -1096,28 +1096,28 @@ def update_next_config(
         next_config_file.write_text(next_config)
 
 
-def _update_next_config(
+def _update_react_router_config(
     config: Config, export: bool = False, transpile_packages: list[str] | None = None
 ):
-    next_config = {
+    react_router_config = {
         "basePath": config.frontend_path or "",
         "compress": config.next_compression,
         "trailingSlash": True,
         "staticPageGenerationTimeout": config.static_page_generation_timeout,
+        "ssr": False,
     }
     if not config.next_dev_indicators:
-        next_config["devIndicators"] = False
+        react_router_config["devIndicators"] = False
 
     if transpile_packages:
-        next_config["transpilePackages"] = list(
+        react_router_config["transpilePackages"] = list(
             {format_library_name(p) for p in transpile_packages}
         )
     if export:
-        next_config["output"] = "export"
-        next_config["distDir"] = constants.Dirs.STATIC
+        react_router_config["output"] = "export"
+        react_router_config["build"] = constants.Dirs.BUILD_DIR
 
-    next_config_json = re.sub(r'"([^"]+)"(?=:)', r"\1", json.dumps(next_config))
-    return f"module.exports = {next_config_json};"
+    return f"export default {json.dumps(react_router_config)};"
 
 
 def remove_existing_bun_installation():

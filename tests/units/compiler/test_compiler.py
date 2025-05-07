@@ -6,8 +6,11 @@ import pytest
 
 from reflex import constants
 from reflex.compiler import compiler, utils
+from reflex.components.base import document
 from reflex.constants.compiler import PageNames
 from reflex.utils.imports import ImportVar, ParsedImportDict
+from reflex.vars.base import Var
+from reflex.vars.sequence import LiteralStringVar
 
 
 @pytest.mark.parametrize(
@@ -310,9 +313,21 @@ def test_create_document_root():
     assert isinstance(root, utils.Html)
     assert isinstance(root.children[0], utils.Head)
     # Default language.
-    assert root.lang == "en"  # pyright: ignore [reportAttributeAccessIssue]
+    lang = root.lang  # pyright: ignore [reportAttributeAccessIssue]
+    assert isinstance(lang, LiteralStringVar)
+    assert lang.equals(Var.create("en"))
     # No children in head.
-    assert len(root.children[0].children) == 0
+    assert len(root.children[0].children) == 4
+    assert isinstance(root.children[0].children[0], utils.Meta)
+    char_set = root.children[0].children[0].char_set  # pyright: ignore [reportAttributeAccessIssue]
+    assert isinstance(char_set, LiteralStringVar)
+    assert char_set.equals(Var.create("utf-8"))
+    assert isinstance(root.children[0].children[1], utils.Meta)
+    name = root.children[0].children[1].name  # pyright: ignore [reportAttributeAccessIssue]
+    assert isinstance(name, LiteralStringVar)
+    assert name.equals(Var.create("viewport"))
+    assert isinstance(root.children[0].children[2], document.Meta)
+    assert isinstance(root.children[0].children[3], document.Links)
 
     # Test with components.
     comps = [
@@ -327,6 +342,8 @@ def test_create_document_root():
     # Two children in head.
     assert isinstance(root, utils.Html)
     assert len(root.children[0].children) == 2
-    assert root.lang == "rx"  # pyright: ignore [reportAttributeAccessIssue]
+    lang = root.lang  # pyright: ignore [reportAttributeAccessIssue]
+    assert isinstance(lang, LiteralStringVar)
+    assert lang.equals(Var.create("rx"))
     assert isinstance(root.custom_attrs, dict)
     assert root.custom_attrs == {"project": "reflex"}

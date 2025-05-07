@@ -38,8 +38,10 @@ class Dirs(SimpleNamespace):
     COMPONENTS_PATH = "/".join([UTILS, "components"])
     # The name of the contexts file.
     CONTEXTS_PATH = "/".join([UTILS, "context"])
-    # The name of the output static directory.
-    STATIC = "build/client"
+    # The name of the output directory.
+    BUILD_DIR = "build"
+    # The name of the static files directory.
+    STATIC = BUILD_DIR + "/client"
     # The name of the public html directory served at "/"
     PUBLIC = "public"
     # The directory where styles are located.

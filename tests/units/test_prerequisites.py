@@ -12,7 +12,7 @@ from reflex.reflex import cli
 from reflex.testing import chdir
 from reflex.utils.prerequisites import (
     CpuInfo,
-    _update_next_config,
+    _update_react_router_config,
     cached_procedure,
     get_cpu_info,
     rename_imports_and_app_name,
@@ -82,7 +82,7 @@ runner = CliRunner()
     ],
 )
 def test_update_next_config(config, export, expected_output):
-    output = _update_next_config(config, export=export)
+    output = _update_react_router_config(config, export=export)
     assert output == expected_output
 
 
@@ -102,7 +102,7 @@ def test_update_next_config(config, export, expected_output):
     ),
 )
 def test_transpile_packages(transpile_packages, expected_transpile_packages):
-    output = _update_next_config(
+    output = _update_react_router_config(
         Config(app_name="test"),
         transpile_packages=transpile_packages,
     )
