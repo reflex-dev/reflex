@@ -14,7 +14,7 @@ class Bun(SimpleNamespace):
     """Bun constants."""
 
     # The Bun version.
-    VERSION = "1.2.11"
+    VERSION = "1.2.12"
 
     # Min Bun Version
     MIN_VERSION = "1.2.8"
@@ -75,7 +75,7 @@ fetch-retries=0
 
 
 def _determine_nextjs_version() -> str:
-    default_version = "15.3.1"
+    default_version = "15.3.2"
     if (version := os.getenv("NEXTJS_VERSION")) and version != default_version:
         from reflex.utils import console
 

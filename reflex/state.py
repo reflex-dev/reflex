@@ -1027,6 +1027,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         Raises:
             VarTypeError: if the variable has an incorrect type
         """
+        from reflex.config import get_config
         from reflex.utils.exceptions import VarTypeError
 
         if not types.is_valid_var_type(prop._var_type):
@@ -1037,7 +1038,8 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
                 f'Found var "{prop._js_expr}" with type {prop._var_type}.'
             )
         cls._set_var(name, prop)
-        cls._create_setter(name, prop)
+        if get_config().state_auto_setters:
+            cls._create_setter(name, prop)
         cls._set_default_value(name, prop)
 
     @classmethod

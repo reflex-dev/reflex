@@ -3443,6 +3443,33 @@ config = rx.Config(
         del sys.modules[constants.Config.MODULE]
 
 
+def test_auto_setters_off(tmp_path):
+    proj_root = tmp_path / "project1"
+    proj_root.mkdir()
+
+    config_string = """
+import reflex as rx
+config = rx.Config(
+    app_name="project1",
+    state_auto_setters=False,
+)
+    """
+
+    (proj_root / "rxconfig.py").write_text(dedent(config_string))
+
+    with chdir(proj_root):
+        # reload config for each parameter to avoid stale values
+        reflex.config.get_config(reload=True)
+        from reflex.state import State
+
+        class TestState(State):
+            """A test state."""
+
+            num: int = 0
+
+        assert list(TestState.event_handlers) == ["setvar"]
+
+
 class MixinState(State, mixin=True):
     """A mixin state for testing."""
 

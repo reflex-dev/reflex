@@ -457,7 +457,7 @@ def test_format_match(
                     _js_expr=f"(({{node, ...props}}) => <Heading {{...props}} {''.join(Tag(name='', props=Style({'as_': 'h1'})).format_props())} />)"
                 ),
             },
-            '({ ["h1"] : (({node, ...props}) => <Heading {...props} as={"h1"} />) })',
+            '({ ["h1"] : (({node, ...props}) => <Heading {...props} as:"h1" />) })',
         ),
     ],
 )
@@ -475,9 +475,9 @@ def test_format_prop(prop: Var, formatted: str):
     "single_props,key_value_props,output",
     [
         (
-            [Var(_js_expr="{...props}")],
+            [Var(_js_expr="props")],
             {"key": 42},
-            ["key={42}", "{...props}"],
+            ["key:42", "...props"],
         ),
     ],
 )
