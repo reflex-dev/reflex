@@ -62,9 +62,7 @@ except ImportError:
 # The timeout (minutes) to check for the port.
 DEFAULT_TIMEOUT = 15
 POLL_INTERVAL = 0.25
-FRONTEND_POPEN_ARGS: dict[str, Any] = {
-    "NO_COLOR": "1",
-}
+FRONTEND_POPEN_ARGS = {}
 T = TypeVar("T")
 TimeoutType = int | float | None
 if platform.system() == "Windows":
@@ -396,7 +394,7 @@ class AppHarness:
                 "dev",
             ],
             cwd=self.app_path / reflex.utils.prerequisites.get_web_dir(),
-            env={"PORT": "0"},
+            env={"PORT": "0", "NO_COLOR": "1"},
             **FRONTEND_POPEN_ARGS,
         )
 
