@@ -1765,6 +1765,7 @@ async def ping(_request: Request) -> Response:
     Returns:
         The response.
     """
+    print("Received ping")  # noqa: T201
     return JSONResponse("pong")
 
 
