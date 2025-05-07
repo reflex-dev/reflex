@@ -158,14 +158,15 @@ export const evalReactComponent = async (component) => {
  * Only Queue and process events when websocket connection exists.
  * @param event The event to queue.
  * @param socket The socket object to send the event on.
+ * @param navigate The navigate function from React Router
  *
  * @returns Adds event to queue and processes it if websocket exits, does nothing otherwise.
  */
-export const queueEventIfSocketExists = async (events, socket) => {
+export const queueEventIfSocketExists = async (events, socket, navigate) => {
   if (!socket) {
     return;
   }
-  await queueEvents(events, socket);
+  await queueEvents(events, socket, navigate);
 };
 
 /**
@@ -194,31 +195,31 @@ export const applyEvent = async (event, socket, navigate) => {
 
   if (event.name == "_remove_cookie") {
     cookies.remove(event.payload.key, { ...event.payload.options });
-    queueEventIfSocketExists(initialEvents(), socket);
+    queueEventIfSocketExists(initialEvents(), socket, navigate);
     return false;
   }
 
   if (event.name == "_clear_local_storage") {
     localStorage.clear();
-    queueEventIfSocketExists(initialEvents(), socket);
+    queueEventIfSocketExists(initialEvents(), socket, navigate);
     return false;
   }
 
   if (event.name == "_remove_local_storage") {
     localStorage.removeItem(event.payload.key);
-    queueEventIfSocketExists(initialEvents(), socket);
+    queueEventIfSocketExists(initialEvents(), socket, navigate);
     return false;
   }
 
   if (event.name == "_clear_session_storage") {
     sessionStorage.clear();
-    queueEvents(initialEvents(), socket);
+    queueEvents(initialEvents(), socket, navigate);
     return false;
   }
 
   if (event.name == "_remove_session_storage") {
     sessionStorage.removeItem(event.payload.key);
-    queueEvents(initialEvents(), socket);
+    queueEvents(initialEvents(), socket, navigate);
     return false;
   }
 
@@ -344,15 +345,16 @@ export const applyEvent = async (event, socket, navigate) => {
  * Send an event to the server via REST.
  * @param event The current event.
  * @param socket The socket object to send the response event(s) on.
+ * @param navigate The navigate function from React Router
  *
  * @returns Whether the event was sent.
  */
-export const applyRestEvent = async (event, socket) => {
+export const applyRestEvent = async (event, socket, navigate) => {
   let eventSent = false;
   if (event.handler === "uploadFiles") {
     if (event.payload.files === undefined || event.payload.files.length === 0) {
       // Submit the event over the websocket to trigger the event handler.
-      return await applyEvent(Event(event.name), socket);
+      return await applyEvent(Event(event.name), socket, navigate);
     }
 
     // Start upload, but do not wait for it, which would block other events.
@@ -373,8 +375,9 @@ export const applyRestEvent = async (event, socket) => {
  * @param events Array of events to queue.
  * @param socket The socket object to send the event on.
  * @param prepend Whether to place the events at the beginning of the queue.
+ * @param navigate The navigate function from React Router
  */
-export const queueEvents = async (events, socket, prepend) => {
+export const queueEvents = async (events, socket, prepend, navigate) => {
   if (prepend) {
     // Drain the existing queue and place it after the given events.
     events = [
@@ -385,7 +388,7 @@ export const queueEvents = async (events, socket, prepend) => {
     ];
   }
   event_queue.push(...events.filter((e) => e !== undefined && e !== null));
-  await processEvent(socket.current);
+  await processEvent(socket.current, navigate);
 };
 
 /**
@@ -413,7 +416,7 @@ export const processEvent = async (socket, navigate) => {
   let eventSent = false;
   // Process events with handlers via REST and all others via websockets.
   if (event.handler) {
-    eventSent = await applyRestEvent(event, socket);
+    eventSent = await applyRestEvent(event, socket, navigate);
   } else {
     eventSent = await applyEvent(event, socket, navigate);
   }
@@ -433,6 +436,7 @@ export const processEvent = async (socket, navigate) => {
  * @param transports The transports to use.
  * @param setConnectErrors The function to update connection error value.
  * @param client_storage The client storage object from context.js
+ * @param navigate The navigate function from React Router
  */
 export const connect = async (
   socket,
@@ -440,6 +444,7 @@ export const connect = async (
   transports,
   setConnectErrors,
   client_storage = {},
+  navigate,
 ) => {
   // Get backend URL object from the endpoint.
   const endpoint = getBackendURL(EVENTURL);
@@ -514,12 +519,12 @@ export const connect = async (
     applyClientStorageDelta(client_storage, update.delta);
     event_processing = !update.final;
     if (update.events) {
-      queueEvents(update.events, socket);
+      queueEvents(update.events, socket, false, navigate);
     }
   });
   socket.current.on("reload", async (event) => {
     event_processing = false;
-    queueEvents([...initialEvents(), event], socket, true);
+    queueEvents([...initialEvents(), event], socket, true, navigate);
   });
 
   document.addEventListener("visibilitychange", checkVisibility);
@@ -809,11 +814,11 @@ export const useEventLoop = (
       // If debounce is used, queue the events after some delay
       debounce(
         combined_name,
-        () => queueEvents(_events, socket),
+        () => queueEvents(_events, socket, false, navigate),
         event_actions.debounce,
       );
     } else {
-      queueEvents(_events, socket);
+      queueEvents(_events, socket, false, navigate);
     }
   };
 
@@ -831,6 +836,7 @@ export const useEventLoop = (
         })),
         socket,
         true,
+        navigate,
       );
       sentHydrate.current = true;
     }
@@ -877,6 +883,7 @@ export const useEventLoop = (
           ["websocket"],
           setConnectErrors,
           client_storage,
+          navigate,
         );
       }
     }

@@ -567,8 +567,8 @@ def test_yield_state_update(event_chain: AppHarness, driver: WebDriver, button_i
         driver: selenium WebDriver open to the app
         button_id: the ID of the button to click
     """
-    interim_value_input = driver.find_element(By.ID, "interim_value")
     assert_token(event_chain, driver)
+    interim_value_input = driver.find_element(By.ID, "interim_value")
 
     btn = driver.find_element(By.ID, button_id)
     btn.click()
