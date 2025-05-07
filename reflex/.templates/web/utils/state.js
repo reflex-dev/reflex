@@ -170,6 +170,21 @@ export const queueEventIfSocketExists = async (events, socket, navigate) => {
 };
 
 /**
+ * Check if a string is a valid HTTP URL.
+ * @param string The string to check.
+ *
+ * @returns The URL object if valid, undefined otherwise.
+ * */
+function urlFrom(string) {
+  try {
+    return new URL(string);
+  } catch {
+    return undefined;
+  }
+  return undefined;
+}
+
+/**
  * Handle frontend event or send the event to the backend via Websocket.
  * @param event The event to send.
  * @param socket The socket object to send the event on.
@@ -185,10 +200,23 @@ export const applyEvent = async (event, socket, navigate) => {
     }
     if (event.payload.external) {
       window.open(event.payload.path, "_blank", "noopener");
-    } else if (event.payload.replace) {
-      navigate(event.payload.path, { replace: true });
+      return false;
+    }
+    const url = urlFrom(event.payload.path);
+    let pathname = event.payload.path;
+    if (url) {
+      if (url.host !== window.location.host) {
+        // External URL
+        window.location.assign(event.payload.path);
+        return false;
+      } else {
+        pathname = url.pathname + url.search + url.hash;
+      }
+    }
+    if (event.payload.replace) {
+      navigate(pathname, { replace: true });
     } else {
-      navigate(event.payload.path);
+      navigate(pathname);
     }
     return false;
   }
