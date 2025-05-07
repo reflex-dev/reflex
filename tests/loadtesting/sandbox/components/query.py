@@ -1,20 +1,20 @@
-import reflex as rx
+from collections.abc import Callable
 
+import reflex as rx
 from sandbox.states.base import BaseState
-from sandbox.states.queries import QueryState, QueryAPI
+from sandbox.states.queries import QueryAPI, QueryState
 from sandbox.styles import text
 
 
 def item_title(title: str):
     return rx.hstack(
         rx.text(title, font_size="var(--chakra-fontSizes-sm)", **text),
-        rx.chakra.accordion_icon(),
         width="100%",
         justify_content="space-between",
     )
 
 
-def item_add_event(event_trigger: callable):
+def item_add_event(on_click: Callable):
     return rx.button(
         rx.hstack(
             rx.text("+"),
@@ -23,7 +23,7 @@ def item_add_event(event_trigger: callable):
             justify_content="space-between",
         ),
         size="1",
-        on_click=event_trigger,
+        on_click=on_click,
         padding="0.35em 0.75em",
         cursor="pointer",
         color_scheme="gray",
@@ -31,13 +31,12 @@ def item_add_event(event_trigger: callable):
 
 
 def form_item_entry(data: dict[str, str]):
-
-    def create_entry(title: str, function: callable):
+    def create_entry(title: str, on_change: Callable):
         return (
             rx.input(
                 placeholder=title,
                 width="100%",
-                on_change=function,
+                on_change=on_change,
                 variant="surface",
             ),
         )
@@ -60,95 +59,81 @@ def form_item_entry(data: dict[str, str]):
 def form_item(
     title: str, state: list[dict[str, str]], func: callable, event_trigger: callable
 ):
-    return rx.chakra.accordion(
-        rx.chakra.accordion_item(
-            rx.chakra.accordion_button(item_title(title)),
-            rx.chakra.accordion_panel(
+    return rx.accordion.root(
+        rx.accordion.item(
+            header=item_title(title),
+            content=rx.vstack(
                 item_add_event(event_trigger),
-                width="100%",
-                display="flex",
-                justify_content="end",
-            ),
-            rx.chakra.accordion_panel(
-                rx.vstack(rx.foreach(state, func), width="100%", spacing="1")
+                rx.foreach(state, func),
             ),
         ),
-        allow_toggle=True,
+        collapsible=True,
         width="100%",
-        border="transparent",
     )
 
 
 def form_body_param_item(
     state: list[dict[str, str]], func: callable, event_trigger: callable
 ):
-    return rx.chakra.accordion(
-        rx.chakra.accordion_item(
-            rx.chakra.accordion_button(item_title("Body")),
-            rx.chakra.accordion_panel(
-                rx.match(
-                    QueryState.current_req,
-                    (
-                        "GET",
-                        rx.select(
-                            QueryState.get_params_body,
-                            default_value="None",
-                            width="100%",
-                        ),
+    return rx.accordion.root(
+        rx.accordion.item(
+            header=item_title("Body"),
+            content=rx.match(
+                QueryState.current_req,
+                (
+                    "GET",
+                    rx.select(
+                        QueryState.get_params_body,
+                        default_value="None",
+                        width="100%",
                     ),
-                    (
-                        "POST",
-                        rx.vstack(
-                            rx.hstack(
-                                item_add_event(event_trigger),
-                                width="100%",
-                                justify_content="end",
-                            ),
-                            rx.select(
-                                QueryState.post_params_body,
-                                default_value="JSON",
-                                width="100%",
-                            ),
-                            rx.vstack(
-                                rx.foreach(state, func), width="100%", spacing="1"
-                            ),
+                ),
+                (
+                    "POST",
+                    rx.vstack(
+                        rx.hstack(
+                            item_add_event(event_trigger),
+                            width="100%",
+                            justify_content="end",
+                        ),
+                        rx.select(
+                            QueryState.post_params_body,
+                            default_value="JSON",
                             width="100%",
                         ),
+                        rx.vstack(rx.foreach(state, func), width="100%", spacing="1"),
+                        width="100%",
                     ),
                 ),
             ),
         ),
-        allow_toggle=True,
+        collapsible=True,
         width="100%",
-        border="transparent",
     )
 
 
 def form_request_item():
-    return rx.chakra.accordion(
-        rx.chakra.accordion_item(
-            rx.chakra.accordion_button(item_title("Requests")),
-            rx.chakra.accordion_panel(
-                rx.hstack(
-                    rx.select(
-                        QueryState.req_methods,
-                        width="120px",
-                        default_value="GET",
-                        on_change=QueryState.get_request,
-                    ),
-                    rx.input(
-                        value=QueryState.req_url,
-                        width="100%",
-                        on_change=QueryState.set_req_url,
-                        placeholder="https://example_site.com/api/v2/endpoint.json",
-                    ),
+    return rx.accordion.root(
+        rx.accordion.item(
+            header=item_title("Requests"),
+            content=rx.hstack(
+                rx.select(
+                    QueryState.req_methods,
+                    width="120px",
+                    default_value="GET",
+                    on_change=QueryState.get_request,
+                ),
+                rx.input(
+                    value=QueryState.req_url,
                     width="100%",
-                )
+                    on_change=QueryState.set_req_url,
+                    placeholder="https://example_site.com/api/v2/endpoint.json",
+                ),
+                width="100%",
             ),
         ),
-        allow_toggle=True,
+        collapsible=True,
         width="100%",
-        border="transparent",
     )
 
 
@@ -206,7 +191,7 @@ def render_query_component():
         display=BaseState.query_component_toggle,
         padding_bottom="0.75em",
         border_radius="10px",
-        bg=rx.color_mode_cond(
+        background_color=rx.color_mode_cond(
             "#faf9fb",
             "#1a181a",
         ),

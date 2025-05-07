@@ -1,7 +1,6 @@
 import reflex as rx
-
-from sandbox.states.queries import QueryAPI
 from sandbox.components.drawer import render_drawer
+from sandbox.states.queries import QueryAPI
 
 
 def create_table_header(title: str):
@@ -37,12 +36,11 @@ def create_pagination():
                 width="100px",
                 weight="bold",
             ),
-            rx.chakra.button_group(
+            rx.hstack(
                 rx.icon(
                     tag="chevron-left", on_click=QueryAPI.previous, cursor="pointer"
                 ),
                 rx.icon(tag="chevron-right", on_click=QueryAPI.next, cursor="pointer"),
-                is_attached=True,
             ),
             align_items="center",
             spacing="1",
@@ -84,7 +82,7 @@ def render_output():
             rx.spacer(),
         ),
         flex="60%",
-        bg=rx.color_mode_cond(
+        background_color=rx.color_mode_cond(
             "#faf9fb",
             "#1a181a",
         ),

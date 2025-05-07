@@ -4,36 +4,20 @@
 
 Steps to build locally -
 
-
-Create virtual env
+Install locust and locust plugin
 ```
-python3 -m venv env
-```
-
-Activate the virtual env
-```
-source env/bin/activate
+uv pip install locust
+uv pip install 'locust-plugins[websocket]'
 ```
 
-Install dependencies
+Start the reflex app
 ```
-pip install -r requirements.txt
-```
-
-Also, install locust and locust plugin
-```
-pip install locust
-pip install locust-plugins[websocket]
-```
-
-Start the reflex app using poetry
-```
-poetry run reflex run
+uv run reflex run
 ```
 
 Start locust in a new terminal window
 ```
-locust
+uv run locust
 ```
 
 This will start a web app on `http://localhost:8089`

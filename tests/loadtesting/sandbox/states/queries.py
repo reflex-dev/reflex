@@ -1,14 +1,15 @@
 import uuid
-import httpx
-from sandbox.states.base import BaseState
 
+import httpx
+
+import reflex as rx
+from sandbox.states.base import BaseState
 
 # test URL: str = https://jsonplaceholder.typicode.com/posts
 # test URL: str = https://jsonplaceholder.typicode.com/todos
 
 
 class QueryState(BaseState):
-
     # vars for handling request calls ...
     req_methods: list[str] = ["GET", "POST"]
     req_url: str = "https://jsonplaceholder.typicode.com/posts"
@@ -43,27 +44,33 @@ class QueryState(BaseState):
     total_pages: int = 1
     formatted_headers: dict
 
+    @rx.event
     def get_request(self, method: str):
         self.current_req = method
 
+    @rx.event
     def add_header(self):
         self.headers.append(
             {"id": str(uuid.uuid4()), "identifier": "headers", "key": "", "value": ""}
         )
 
+    @rx.event
     def add_body(self):
         self.body.append(
             {"id": str(uuid.uuid4()), "identifier": "body", "key": "", "value": ""}
         )
 
+    @rx.event
     def add_cookies(self):
         self.cookies.append(
             {"id": str(uuid.uuid4()), "identifier": "cookies", "key": "", "value": ""}
         )
 
+    @rx.event
     def pure(self):
         return
 
+    @rx.event
     def remove_entry(self, data: dict[str, str]):
         if data["identifier"] == "headers":
             self.headers = [item for item in self.headers if item["id"] != data["id"]]
@@ -74,6 +81,7 @@ class QueryState(BaseState):
         if data["identifier"] == "cookies":
             self.cookies = [item for item in self.cookies if item["id"] != data["id"]]
 
+    @rx.event
     async def update_attribute(self, data: dict[str, str], attribute: str, value: str):
         data[attribute] = value
 
@@ -92,25 +100,28 @@ class QueryState(BaseState):
                 data if item["id"] == data["id"] else item for item in self.cookies
             ]
 
+    @rx.event
     async def update_keyy(self, key: str, data: dict[str, str]):
         await self.update_attribute(data, "key", key)
 
+    @rx.event
     async def update_value(self, value: str, data: dict[str, str]):
         await self.update_attribute(data, "value", value)
 
 
 class QueryAPI(QueryState):
-
     # vars to update row entries ...
     is_open: bool = False
     selected_entry: dict[str, str]
     original_entry: dict[str, str]
 
+    @rx.event
     async def process_headers(self):
         for item in self.headers:
             if item["key"]:
                 self.formatted_headers[item["key"]] = item["value"]
 
+    @rx.event
     async def run_get_request(self):
         await self.process_headers()
         async with httpx.AsyncClient() as client:
@@ -128,12 +139,14 @@ class QueryAPI(QueryState):
             # Initialize the data to the first page
             self.paginate()
 
+    @rx.event
     def paginate(self):
         start = self.offset
         end = start + self.current_limit
         self.paginated_data = self.get_data[start:end]
         self.current_page = (self.offset // self.current_limit) + 1
 
+    @rx.event
     def delta_limit(self, limit: str):
         self.current_limit = int(limit)
         self.offset = 0
@@ -142,9 +155,11 @@ class QueryAPI(QueryState):
         ) // self.current_limit
         self.paginate()
 
+    @rx.event
     def pure(self):
         return
 
+    @rx.event
     def previous(self):
         if self.offset >= self.current_limit:
             self.offset -= self.current_limit
@@ -153,23 +168,28 @@ class QueryAPI(QueryState):
 
         self.paginate()
 
+    @rx.event
     def next(self):
         if self.offset + self.current_limit < self.number_of_rows:
             self.offset += self.current_limit
 
         self.paginate()
 
+    @rx.event
     def delta_drawer(self):
         self.is_open = not self.is_open
 
+    @rx.event
     def display_selected_row(self, data: dict[str, str]):
         self.delta_drawer()
         self.selected_entry = data.copy()
         self.original_entry = data
 
+    @rx.event
     def update_data(self, value: str, data: tuple[str, str]):
         self.selected_entry[data[0]] = value
 
+    @rx.event
     def commit_changes(self):
         self.get_data = [
             self.selected_entry if item == self.original_entry else item

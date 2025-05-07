@@ -1,5 +1,5 @@
 import reflex as rx
-
+from reflex.components.radix.themes.base import LiteralAccentColor
 from sandbox.states.queries import QueryAPI
 
 
@@ -16,11 +16,14 @@ def render_data(data: tuple[str, str]):
     )
 
 
-def render_drawer_buttons(name: str, color: str, function: callable):
+@rx.memo
+def render_drawer_buttons(
+    name: str, color: LiteralAccentColor, on_click: rx.EventHandler
+):
     return rx.badge(
         rx.text(name, width="100%", text_align="center"),
         color_scheme=color,
-        on_click=function,
+        on_click=on_click,
         variant="surface",
         padding="0.75em 1.25em",
         width="100%",
@@ -37,13 +40,17 @@ def render_drawer():
                     rx.foreach(QueryAPI.selected_entry, render_data),
                     rx.vstack(
                         render_drawer_buttons(
-                            "Commit", "grass", QueryAPI.commit_changes
+                            name="Commit",
+                            color="grass",
+                            on_click=QueryAPI.commit_changes,
                         ),
-                        render_drawer_buttons("Close", "ruby", QueryAPI.delta_drawer),
+                        render_drawer_buttons(
+                            name="Close", color="ruby", on_click=QueryAPI.delta_drawer
+                        ),
                         padding="1em 0.5em",
                         width="inherit",
                     ),
-                    bg=rx.color_mode_cond("#faf9fb", "#1a181a"),
+                    background_color=rx.color_mode_cond("#faf9fb", "#1a181a"),
                     height="100%",
                     width="100%",
                     padding="1.25em",
@@ -57,4 +64,5 @@ def render_drawer():
         ),
         direction="right",
         open=QueryAPI.is_open,
+        on_open_change=QueryAPI.set_is_open,
     )

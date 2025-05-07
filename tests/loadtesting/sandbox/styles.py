@@ -1,6 +1,10 @@
 """Styles for the app."""
 
-text: dict[str, str] = {
-    "font_family": "var(--chakra-fonts-branding)",
-    "font_weight": "var(--chakra-fontWeights-black)",
-}
+import reflex as rx
+
+text: rx.Style = rx.Style(
+    {
+        "font_family": "var(--chakra-fonts-branding)",
+        "font_weight": "var(--chakra-fontWeights-black)",
+    }
+)
