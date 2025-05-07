@@ -2,18 +2,16 @@
 
 from __future__ import annotations
 
-from typing import Any, Dict, List, Literal
+from typing import Any, ClassVar, Literal
 
 from reflex.components.component import Component, ComponentNamespace
 from reflex.components.core.breakpoints import Responsive
 from reflex.components.core.colors import color
-from reflex.event import EventHandler
-from reflex.vars import Var
+from reflex.constants.compiler import MemoizationMode
+from reflex.event import EventHandler, passthrough_event_spec
+from reflex.vars.base import Var
 
-from ..base import (
-    LiteralAccentColor,
-    RadixThemesComponent,
-)
+from ..base import LiteralAccentColor, RadixThemesComponent
 
 vertical_orientation_css = "&[data-orientation='vertical']"
 
@@ -42,9 +40,9 @@ class TabsRoot(RadixThemesComponent):
     _rename_props = {"onChange": "onValueChange"}
 
     # Fired when the value of the tabs changes.
-    on_change: EventHandler[lambda e0: [e0]]
+    on_change: EventHandler[passthrough_event_spec(str)]
 
-    def add_style(self) -> Dict[str, Any] | None:
+    def add_style(self) -> dict[str, Any] | None:
         """Add style for the component.
 
         Returns:
@@ -96,7 +94,9 @@ class TabsTrigger(RadixThemesComponent):
     # The color of the line under the tab when active.
     color_scheme: Var[LiteralAccentColor]
 
-    _valid_parents: List[str] = ["TabsList"]
+    _valid_parents: ClassVar[list[str]] = ["TabsList"]
+
+    _memoization_mode = MemoizationMode(recursive=False)
 
     @classmethod
     def create(cls, *children, **props) -> Component:
@@ -117,7 +117,7 @@ class TabsTrigger(RadixThemesComponent):
     def _exclude_props(self) -> list[str]:
         return ["color_scheme"]
 
-    def add_style(self) -> Dict[str, Any] | None:
+    def add_style(self) -> dict[str, Any] | None:
         """Add style for the component.
 
         Returns:

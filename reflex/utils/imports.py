@@ -2,14 +2,13 @@
 
 from __future__ import annotations
 
+import dataclasses
 from collections import defaultdict
-from typing import Dict, List, Optional, Tuple, Union
-
-from reflex.base import Base
+from collections.abc import Mapping, Sequence
 
 
 def merge_imports(
-    *imports: ImportDict | ParsedImportDict | ImmutableParsedImportDict,
+    *imports: ImportDict | ParsedImportDict | ParsedImportTuple,
 ) -> ParsedImportDict:
     """Merge multiple import dicts together.
 
@@ -19,16 +18,32 @@ def merge_imports(
     Returns:
         The merged import dicts.
     """
-    all_imports = defaultdict(list)
+    all_imports: defaultdict[str, list[ImportVar]] = defaultdict(list)
     for import_dict in imports:
         for lib, fields in (
             import_dict if isinstance(import_dict, tuple) else import_dict.items()
         ):
-            all_imports[lib].extend(fields)
+            # If the lib is an absolute path, we need to prefix it with a $
+            lib = (
+                "$" + lib
+                if lib.startswith(("/utils/", "/components/", "/styles/", "/public/"))
+                else lib
+            )
+            if isinstance(fields, (list, tuple, set)):
+                all_imports[lib].extend(
+                    ImportVar(field) if isinstance(field, str) else field
+                    for field in fields
+                )
+            else:
+                all_imports[lib].append(
+                    ImportVar(fields) if isinstance(fields, str) else fields
+                )
     return all_imports
 
 
-def parse_imports(imports: ImportDict | ParsedImportDict) -> ParsedImportDict:
+def parse_imports(
+    imports: ImmutableImportDict | ImmutableParsedImportDict,
+) -> ParsedImportDict:
     """Parse the import dict into a standard format.
 
     Args:
@@ -38,10 +53,12 @@ def parse_imports(imports: ImportDict | ParsedImportDict) -> ParsedImportDict:
         The parsed import dict.
     """
 
-    def _make_list(value: ImportTypes) -> list[str | ImportVar] | list[ImportVar]:
+    def _make_list(
+        value: ImmutableImportTypes,
+    ) -> list[str | ImportVar] | list[ImportVar]:
         if isinstance(value, (str, ImportVar)):
             return [value]
-        return value
+        return list(value)
 
     return {
         package: [
@@ -53,7 +70,7 @@ def parse_imports(imports: ImportDict | ParsedImportDict) -> ParsedImportDict:
 
 
 def collapse_imports(
-    imports: ParsedImportDict | ImmutableParsedImportDict,
+    imports: ParsedImportDict | ParsedImportTuple,
 ) -> ParsedImportDict:
     """Remove all duplicate ImportVar within an ImportDict.
 
@@ -75,27 +92,31 @@ def collapse_imports(
     }
 
 
-class ImportVar(Base):
+@dataclasses.dataclass(frozen=True)
+class ImportVar:
     """An import var."""
 
     # The name of the import tag.
-    tag: Optional[str]
+    tag: str | None
 
     # whether the import is default or named.
-    is_default: Optional[bool] = False
+    is_default: bool | None = False
 
     # The tag alias.
-    alias: Optional[str] = None
+    alias: str | None = None
 
     # Whether this import need to install the associated lib
-    install: Optional[bool] = True
+    install: bool | None = True
 
     # whether this import should be rendered or not
-    render: Optional[bool] = True
+    render: bool | None = True
+
+    # The path of the package to import from.
+    package_path: str = "/"
 
     # whether this import package should be added to transpilePackages in next.config.js
     # https://nextjs.org/docs/app/api-reference/next-config-js/transpilePackages
-    transpile: Optional[bool] = False
+    transpile: bool | None = False
 
     @property
     def name(self) -> str:
@@ -106,80 +127,16 @@ class ImportVar(Base):
         """
         if self.alias:
             return (
-                self.alias if self.is_default else " as ".join([self.tag, self.alias])  # type: ignore
+                self.alias if self.is_default else " as ".join([self.tag, self.alias])  # pyright: ignore [reportCallIssue,reportArgumentType]
             )
         else:
             return self.tag or ""
 
-    def __lt__(self, other: ImportVar) -> bool:
-        """Compare two ImportVar objects.
 
-        Args:
-            other: The other ImportVar object to compare.
-
-        Returns:
-            Whether this ImportVar object is less than the other.
-        """
-        return (
-            self.tag,
-            self.is_default,
-            self.alias,
-            self.install,
-            self.render,
-            self.transpile,
-        ) < (
-            other.tag,
-            other.is_default,
-            other.alias,
-            other.install,
-            other.render,
-            other.transpile,
-        )
-
-    def __eq__(self, other: ImportVar) -> bool:
-        """Check if two ImportVar objects are equal.
-
-        Args:
-            other: The other ImportVar object to compare.
-
-        Returns:
-            Whether the two ImportVar objects are equal.
-        """
-        return (
-            self.tag,
-            self.is_default,
-            self.alias,
-            self.install,
-            self.render,
-            self.transpile,
-        ) == (
-            other.tag,
-            other.is_default,
-            other.alias,
-            other.install,
-            other.render,
-            other.transpile,
-        )
-
-    def __hash__(self) -> int:
-        """Hash the ImportVar object.
-
-        Returns:
-            The hash of the ImportVar object.
-        """
-        return hash(
-            (
-                self.tag,
-                self.is_default,
-                self.alias,
-                self.install,
-                self.render,
-                self.transpile,
-            )
-        )
-
-
-ImportTypes = Union[str, ImportVar, List[Union[str, ImportVar]], List[ImportVar]]
-ImportDict = Dict[str, ImportTypes]
-ParsedImportDict = Dict[str, List[ImportVar]]
-ImmutableParsedImportDict = Tuple[Tuple[str, Tuple[ImportVar, ...]], ...]
+ImportTypes = str | ImportVar | list[str | ImportVar] | list[ImportVar]
+ImmutableImportTypes = str | ImportVar | Sequence[str | ImportVar]
+ImportDict = dict[str, ImportTypes]
+ImmutableImportDict = Mapping[str, ImmutableImportTypes]
+ParsedImportDict = dict[str, list[ImportVar]]
+ImmutableParsedImportDict = Mapping[str, Sequence[ImportVar]]
+ParsedImportTuple = tuple[tuple[str, tuple[ImportVar, ...]], ...]

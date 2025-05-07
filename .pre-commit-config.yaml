@@ -1,15 +1,22 @@
 fail_fast: true
 
 repos:
-
-  - repo: https://github.com/charliermarsh/ruff-pre-commit
-    rev: v0.4.10
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.11.8
     hooks:
       - id: ruff-format
-        args: [integration, reflex, tests]
+        args: [reflex, tests]
       - id: ruff
         args: ["--fix", "--exit-non-zero-on-fix"]
-        exclude: '^integration/benchmarks/'
+        exclude: "^integration/benchmarks/"
+
+  - repo: https://github.com/codespell-project/codespell
+    rev: v2.4.1
+    hooks:
+      - id: codespell
+        args: ["reflex"]
+        additional_dependencies:
+          - tomli
 
   # Run pyi check before pyright because pyright can fail if pyi files are wrong.
   - repo: local
@@ -18,19 +25,24 @@ repos:
         name: update-pyi-files
         always_run: true
         language: system
-        description: 'Update pyi files as needed'
+        require_serial: true
+        description: "Update pyi files as needed"
         entry: python3 scripts/make_pyi.py
 
   - repo: https://github.com/RobertCraigie/pyright-python
-    rev: v1.1.313
+    rev: v1.1.400
     hooks:
       - id: pyright
-        args: [integration, reflex, tests]
+        args: [reflex, tests]
         language: system
 
   - repo: https://github.com/terrencepreilly/darglint
     rev: v1.8.1
     hooks:
       - id: darglint
-        exclude: '^reflex/reflex.py'
-
+        exclude: "^reflex/reflex.py"
+  - repo: https://github.com/pre-commit/mirrors-prettier
+    rev: f62a70a3a7114896b062de517d72829ea1c884b6
+    hooks:
+      - id: prettier
+        require_serial: true

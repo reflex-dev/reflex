@@ -11,6 +11,8 @@ class Endpoint(Enum):
     EVENT = "_event"
     UPLOAD = "_upload"
     AUTH_CODESPACE = "auth-codespace"
+    HEALTH = "_health"
+    ALL_ROUTES = "_all_routes"
 
     def __str__(self) -> str:
         """Get the string representation of the endpoint.

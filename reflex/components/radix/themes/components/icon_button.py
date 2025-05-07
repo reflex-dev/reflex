@@ -10,7 +10,7 @@ from reflex.components.core.match import Match
 from reflex.components.el import elements
 from reflex.components.lucide import Icon
 from reflex.style import Style
-from reflex.vars import Var
+from reflex.vars.base import Var
 
 from ..base import (
     LiteralAccentColor,
@@ -21,6 +21,8 @@ from ..base import (
 )
 
 LiteralButtonSize = Literal["1", "2", "3", "4"]
+
+RADIX_TO_LUCIDE_SIZE = {"1": 12, "2": 24, "3": 36, "4": 48}
 
 
 class IconButton(elements.Button, RadixLoadingProp, RadixThemesComponent):
@@ -72,14 +74,12 @@ class IconButton(elements.Button, RadixLoadingProp, RadixThemesComponent):
                 "IconButton requires a child icon. Pass a string as the first child or a rx.icon."
             )
         if "size" in props:
-            RADIX_TO_LUCIDE_SIZE = {"1": 12, "2": 24, "3": 36, "4": 48}
-
             if isinstance(props["size"], str):
                 children[0].size = RADIX_TO_LUCIDE_SIZE[props["size"]]
             else:
                 size_map_var = Match.create(
                     props["size"],
-                    *[(size, px) for size, px in RADIX_TO_LUCIDE_SIZE.items()],
+                    *list(RADIX_TO_LUCIDE_SIZE.items()),
                     12,
                 )
                 if not isinstance(size_map_var, Var):

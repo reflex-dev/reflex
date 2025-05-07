@@ -2,14 +2,14 @@
 
 from __future__ import annotations
 
-from typing import Any, Dict, List
+from typing import Any, TypedDict, TypeVar
 
-from reflex.base import Base
 from reflex.components.component import Component, NoSSRComponent
 from reflex.components.core.cond import color_mode_cond
-from reflex.event import EventHandler
+from reflex.event import EventHandler, no_args_event_spec
 from reflex.utils import console
-from reflex.vars import Var
+from reflex.utils.imports import ImportDict, ImportVar
+from reflex.vars.base import LiteralVar, Var
 
 try:
     from plotly.graph_objects import Figure, layout
@@ -17,23 +17,11 @@ try:
     Template = layout.Template
 except ImportError:
     console.warn("Plotly is not installed. Please run `pip install plotly`.")
-    Figure = Any  # type: ignore
-    Template = Any  # type: ignore
+    Figure = Any
+    Template = Any
 
 
-def _event_data_signature(e0: Var) -> List[Any]:
-    """For plotly events with event data and no points.
-
-    Args:
-        e0: The event data.
-
-    Returns:
-        The event key extracted from the event data (if defined).
-    """
-    return [Var.create_safe(f"{e0}?.event", _var_is_string=False)]
-
-
-def _event_points_data_signature(e0: Var) -> List[Any]:
+def _event_points_data_signature(e0: Var) -> tuple[Var[list[Point]]]:
     """For plotly events with event data containing a point array.
 
     Args:
@@ -42,54 +30,40 @@ def _event_points_data_signature(e0: Var) -> List[Any]:
     Returns:
         The event data and the extracted points.
     """
-    return [
-        Var.create_safe(f"{e0}?.event", _var_is_string=False),
-        Var.create_safe(
-            f"extractPoints({e0}?.points)",
-            _var_is_string=False,
-        ),
-    ]
+    return (Var(_js_expr=f"extractPoints({e0}?.points)"),)
 
 
-class _ButtonClickData(Base):
-    """Event data structure for plotly UI buttons."""
+T = TypeVar("T")
 
-    menu: Any
-    button: Any
-    active: Any
+ItemOrList = T | list[T]
 
 
-def _button_click_signature(e0: _ButtonClickData) -> List[Any]:
-    """For plotly button click events.
+class BBox(TypedDict):
+    """Bounding box for a point in a plotly graph."""
 
-    Args:
-        e0: The button click data.
-
-    Returns:
-        The menu, button, and active state.
-    """
-    return [e0.menu, e0.button, e0.active]
-
-
-def _passthrough_signature(e0: Var) -> List[Any]:
-    """For plotly events with arbitrary serializable data, passed through directly.
-
-    Args:
-        e0: The event data.
-
-    Returns:
-        The event data.
-    """
-    return [e0]
+    x0: float | int | None
+    x1: float | int | None
+    y0: float | int | None
+    y1: float | int | None
+    z0: float | int | None
+    z1: float | int | None
 
 
-def _null_signature() -> List[Any]:
-    """For plotly events with no data or non-serializable data. Nothing passed through.
+class Point(TypedDict):
+    """A point in a plotly graph."""
 
-    Returns:
-        An empty list (nothing passed through).
-    """
-    return []
+    x: float | int | None
+    y: float | int | None
+    z: float | int | None
+    lat: float | int | None
+    lon: float | int | None
+    curveNumber: int | None
+    pointNumber: int | None
+    pointNumbers: list[int] | None
+    pointIndex: int | None
+    markerColor: ItemOrList[ItemOrList[float | int | str | None]] | None
+    markerSize: ItemOrList[ItemOrList[float | int | None,]] | None
+    bbox: BBox | None
 
 
 class Plotly(NoSSRComponent):
@@ -97,71 +71,71 @@ class Plotly(NoSSRComponent):
 
     library = "react-plotly.js@2.6.0"
 
-    lib_dependencies: List[str] = ["plotly.js@2.22.0"]
+    lib_dependencies: list[str] = ["plotly.js@3.0.1"]
 
     tag = "Plot"
 
     is_default = True
 
     # The figure to display. This can be a plotly figure or a plotly data json.
-    data: Var[Figure]
+    data: Var[Figure]  # pyright: ignore [reportInvalidTypeForm]
 
     # The layout of the graph.
-    layout: Var[Dict]
+    layout: Var[dict]
 
     # The template for visual appearance of the graph.
-    template: Var[Template]
+    template: Var[Template]  # pyright: ignore [reportInvalidTypeForm]
 
     # The config of the graph.
-    config: Var[Dict]
+    config: Var[dict]
 
     # If true, the graph will resize when the window is resized.
-    use_resize_handler: Var[bool] = Var.create_safe(True)
+    use_resize_handler: Var[bool] = LiteralVar.create(True)
 
     # Fired after the plot is redrawn.
-    on_after_plot: EventHandler[_passthrough_signature]
+    on_after_plot: EventHandler[no_args_event_spec]
 
     # Fired after the plot was animated.
-    on_animated: EventHandler[_null_signature]
+    on_animated: EventHandler[no_args_event_spec]
 
     # Fired while animating a single frame (does not currently pass data through).
-    on_animating_frame: EventHandler[_null_signature]
+    on_animating_frame: EventHandler[no_args_event_spec]
 
     # Fired when an animation is interrupted (to start a new animation for example).
-    on_animation_interrupted: EventHandler[_null_signature]
+    on_animation_interrupted: EventHandler[no_args_event_spec]
 
     # Fired when the plot is responsively sized.
-    on_autosize: EventHandler[_event_data_signature]
+    on_autosize: EventHandler[no_args_event_spec]
 
     # Fired whenever mouse moves over a plot.
-    on_before_hover: EventHandler[_event_data_signature]
+    on_before_hover: EventHandler[no_args_event_spec]
 
     # Fired when a plotly UI button is clicked.
-    on_button_clicked: EventHandler[_button_click_signature]
+    on_button_clicked: EventHandler[no_args_event_spec]
 
     # Fired when the plot is clicked.
     on_click: EventHandler[_event_points_data_signature]
 
     # Fired when a selection is cleared (via double click).
-    on_deselect: EventHandler[_null_signature]
+    on_deselect: EventHandler[no_args_event_spec]
 
     # Fired when the plot is double clicked.
-    on_double_click: EventHandler[_passthrough_signature]
+    on_double_click: EventHandler[no_args_event_spec]
 
     # Fired when a plot element is hovered over.
     on_hover: EventHandler[_event_points_data_signature]
 
-    # Fired after the plot is layed out (zoom, pan, etc).
-    on_relayout: EventHandler[_passthrough_signature]
+    # Fired after the plot is laid out (zoom, pan, etc).
+    on_relayout: EventHandler[no_args_event_spec]
 
-    # Fired while the plot is being layed out.
-    on_relayouting: EventHandler[_passthrough_signature]
+    # Fired while the plot is being laid out.
+    on_relayouting: EventHandler[no_args_event_spec]
 
     # Fired after the plot style is changed.
-    on_restyle: EventHandler[_passthrough_signature]
+    on_restyle: EventHandler[no_args_event_spec]
 
     # Fired after the plot is redrawn.
-    on_redraw: EventHandler[_event_data_signature]
+    on_redraw: EventHandler[no_args_event_spec]
 
     # Fired after selecting plot elements.
     on_selected: EventHandler[_event_points_data_signature]
@@ -169,11 +143,11 @@ class Plotly(NoSSRComponent):
     # Fired while dragging a selection.
     on_selecting: EventHandler[_event_points_data_signature]
 
-    # Fired while an animation is occuring.
-    on_transitioning: EventHandler[_event_data_signature]
+    # Fired while an animation is occurring.
+    on_transitioning: EventHandler[no_args_event_spec]
 
     # Fired when a transition is stopped early.
-    on_transition_interrupted: EventHandler[_event_data_signature]
+    on_transition_interrupted: EventHandler[no_args_event_spec]
 
     # Fired when a hovered element is no longer hovered.
     on_unhover: EventHandler[_event_points_data_signature]
@@ -219,8 +193,8 @@ const extractPoints = (points) => {
             pointNumber: point.pointNumber,
             pointNumbers: point.pointNumbers,
             pointIndex: point.pointIndex,
-            'marker.color': point['marker.color'],
-            'marker.size': point['marker.size'],
+            markerColor: point['marker.color'],
+            markerSize: point['marker.size'],
             bbox: bbox,
         })
     })
@@ -242,8 +216,8 @@ const extractPoints = (points) => {
         from plotly.io import templates
 
         responsive_template = color_mode_cond(
-            light=Var.create_safe(templates["plotly"]).to(dict),
-            dark=Var.create_safe(templates["plotly_dark"]).to(dict),
+            light=LiteralVar.create(templates["plotly"]),
+            dark=LiteralVar.create(templates["plotly_dark"]),
         )
         if isinstance(responsive_template, Var):
             # Mark the conditional Var as a Template to avoid type mismatch
@@ -257,36 +231,260 @@ const extractPoints = (points) => {
 
     def _render(self):
         tag = super()._render()
-        figure = self.data.to(dict)
+        figure = self.data.to(dict) if self.data is not None else Var.create({})
         merge_dicts = []  # Data will be merged and spread from these dict Vars
         if self.layout is not None:
             # Why is this not a literal dict? Great question... it didn't work
             # reliably because of how _var_name_unwrapped strips the outer curly
             # brackets if any of the contained Vars depend on state.
-            layout_dict = Var.create_safe(
-                f"{{'layout': {self.layout.to(dict)._var_name_unwrapped}}}"
-            ).to(dict)
+            layout_dict = LiteralVar.create({"layout": self.layout})
             merge_dicts.append(layout_dict)
         if self.template is not None:
-            template_dict = Var.create_safe(
-                {"layout": {"template": self.template.to(dict)}}
-            )
-            template_dict._var_data = None  # To avoid stripping outer curly brackets
-            merge_dicts.append(template_dict)
+            template_dict = LiteralVar.create({"layout": {"template": self.template}})
+            merge_dicts.append(template_dict._without_data())
         if merge_dicts:
-            tag.special_props.add(
+            tag.special_props.append(
                 # Merge all dictionaries and spread the result over props.
-                Var.create_safe(
-                    f"{{...mergician({figure._var_name_unwrapped},"
-                    f"{','.join(md._var_name_unwrapped for md in merge_dicts)})}}",
-                    _var_is_string=False,
+                Var(
+                    _js_expr=f"{{...mergician({figure!s},"
+                    f"{','.join(str(md) for md in merge_dicts)})}}",
                 ),
             )
         else:
             # Spread the figure dict over props, nothing to merge.
-            tag.special_props.add(
-                Var.create_safe(
-                    f"{{...{figure._var_name_unwrapped}}}", _var_is_string=False
-                )
-            )
+            tag.special_props.append(Var(_js_expr=f"{figure!s}"))
         return tag
+
+
+CREATE_PLOTLY_COMPONENT: ImportDict = {
+    "react-plotly.js": [
+        ImportVar(
+            tag="createPlotlyComponent",
+            is_default=True,
+            package_path="/factory",
+        ),
+    ]
+}
+
+
+def dynamic_plotly_import(name: str, package: str) -> str:
+    """Create a dynamic import for a plotly component.
+
+    Args:
+        name: The name of the component.
+        package: The package path of the component.
+
+    Returns:
+        The dynamic import for the plotly component.
+    """
+    return f"""
+const {name} = dynamic(() => import('{package}').then(mod => createPlotlyComponent(mod)), {{ssr: false}})
+"""
+
+
+class PlotlyBasic(Plotly):
+    """Display a basic plotly graph."""
+
+    tag: str = "BasicPlotlyPlot"
+
+    library = "react-plotly.js@2.6.0"
+
+    lib_dependencies: list[str] = ["plotly.js-basic-dist-min@3.0.1"]
+
+    def add_imports(self) -> ImportDict | list[ImportDict]:
+        """Add imports for the plotly basic component.
+
+        Returns:
+            The imports for the plotly basic component.
+        """
+        return CREATE_PLOTLY_COMPONENT
+
+    def _get_dynamic_imports(self) -> str:
+        """Get the dynamic imports for the plotly basic component.
+
+        Returns:
+            The dynamic imports for the plotly basic component.
+        """
+        return dynamic_plotly_import(self.tag, "plotly.js-basic-dist-min")
+
+
+class PlotlyCartesian(Plotly):
+    """Display a plotly cartesian graph."""
+
+    tag: str = "CartesianPlotlyPlot"
+
+    library = "react-plotly.js@2.6.0"
+
+    lib_dependencies: list[str] = ["plotly.js-cartesian-dist-min@3.0.1"]
+
+    def add_imports(self) -> ImportDict | list[ImportDict]:
+        """Add imports for the plotly cartesian component.
+
+        Returns:
+            The imports for the plotly cartesian component.
+        """
+        return CREATE_PLOTLY_COMPONENT
+
+    def _get_dynamic_imports(self) -> str:
+        """Get the dynamic imports for the plotly cartesian component.
+
+        Returns:
+            The dynamic imports for the plotly cartesian component.
+        """
+        return dynamic_plotly_import(self.tag, "plotly.js-cartesian-dist-min")
+
+
+class PlotlyGeo(Plotly):
+    """Display a plotly geo graph."""
+
+    tag: str = "GeoPlotlyPlot"
+
+    library = "react-plotly.js@2.6.0"
+
+    lib_dependencies: list[str] = ["plotly.js-geo-dist-min@3.0.1"]
+
+    def add_imports(self) -> ImportDict | list[ImportDict]:
+        """Add imports for the plotly geo component.
+
+        Returns:
+            The imports for the plotly geo component.
+        """
+        return CREATE_PLOTLY_COMPONENT
+
+    def _get_dynamic_imports(self) -> str:
+        """Get the dynamic imports for the plotly geo component.
+
+        Returns:
+            The dynamic imports for the plotly geo component.
+        """
+        return dynamic_plotly_import(self.tag, "plotly.js-geo-dist-min")
+
+
+class PlotlyGl3d(Plotly):
+    """Display a plotly 3d graph."""
+
+    tag: str = "Gl3dPlotlyPlot"
+
+    library = "react-plotly.js@2.6.0"
+
+    lib_dependencies: list[str] = ["plotly.js-gl3d-dist-min@3.0.1"]
+
+    def add_imports(self) -> ImportDict | list[ImportDict]:
+        """Add imports for the plotly 3d component.
+
+        Returns:
+            The imports for the plotly 3d component.
+        """
+        return CREATE_PLOTLY_COMPONENT
+
+    def _get_dynamic_imports(self) -> str:
+        """Get the dynamic imports for the plotly 3d component.
+
+        Returns:
+            The dynamic imports for the plotly 3d component.
+        """
+        return dynamic_plotly_import(self.tag, "plotly.js-gl3d-dist-min")
+
+
+class PlotlyGl2d(Plotly):
+    """Display a plotly 2d graph."""
+
+    tag: str = "Gl2dPlotlyPlot"
+
+    library = "react-plotly.js@2.6.0"
+
+    lib_dependencies: list[str] = ["plotly.js-gl2d-dist-min@3.0.1"]
+
+    def add_imports(self) -> ImportDict | list[ImportDict]:
+        """Add imports for the plotly 2d component.
+
+        Returns:
+            The imports for the plotly 2d component.
+        """
+        return CREATE_PLOTLY_COMPONENT
+
+    def _get_dynamic_imports(self) -> str:
+        """Get the dynamic imports for the plotly 2d component.
+
+        Returns:
+            The dynamic imports for the plotly 2d component.
+        """
+        return dynamic_plotly_import(self.tag, "plotly.js-gl2d-dist-min")
+
+
+class PlotlyMapbox(Plotly):
+    """Display a plotly mapbox graph."""
+
+    tag: str = "MapboxPlotlyPlot"
+
+    library = "react-plotly.js@2.6.0"
+
+    lib_dependencies: list[str] = ["plotly.js-mapbox-dist-min@3.0.1"]
+
+    def add_imports(self) -> ImportDict | list[ImportDict]:
+        """Add imports for the plotly mapbox component.
+
+        Returns:
+            The imports for the plotly mapbox component.
+        """
+        return CREATE_PLOTLY_COMPONENT
+
+    def _get_dynamic_imports(self) -> str:
+        """Get the dynamic imports for the plotly mapbox component.
+
+        Returns:
+            The dynamic imports for the plotly mapbox component.
+        """
+        return dynamic_plotly_import(self.tag, "plotly.js-mapbox-dist-min")
+
+
+class PlotlyFinance(Plotly):
+    """Display a plotly finance graph."""
+
+    tag: str = "FinancePlotlyPlot"
+
+    library = "react-plotly.js@2.6.0"
+
+    lib_dependencies: list[str] = ["plotly.js-finance-dist-min@3.0.1"]
+
+    def add_imports(self) -> ImportDict | list[ImportDict]:
+        """Add imports for the plotly finance component.
+
+        Returns:
+            The imports for the plotly finance component.
+        """
+        return CREATE_PLOTLY_COMPONENT
+
+    def _get_dynamic_imports(self) -> str:
+        """Get the dynamic imports for the plotly finance component.
+
+        Returns:
+            The dynamic imports for the plotly finance component.
+        """
+        return dynamic_plotly_import(self.tag, "plotly.js-finance-dist-min")
+
+
+class PlotlyStrict(Plotly):
+    """Display a plotly strict graph."""
+
+    tag: str = "StrictPlotlyPlot"
+
+    library = "react-plotly.js@2.6.0"
+
+    lib_dependencies: list[str] = ["plotly.js-strict-dist-min@3.0.1"]
+
+    def add_imports(self) -> ImportDict | list[ImportDict]:
+        """Add imports for the plotly strict component.
+
+        Returns:
+            The imports for the plotly strict component.
+        """
+        return CREATE_PLOTLY_COMPONENT
+
+    def _get_dynamic_imports(self) -> str:
+        """Get the dynamic imports for the plotly strict component.
+
+        Returns:
+            The dynamic imports for the plotly strict component.
+        """
+        return dynamic_plotly_import(self.tag, "plotly.js-strict-dist-min")

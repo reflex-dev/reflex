@@ -3,11 +3,14 @@
 from __future__ import annotations
 
 from collections import defaultdict
-from typing import Any, Dict, List
+from collections.abc import Callable
+from typing import Any
 
 from reflex.config import get_config
+from reflex.event import EventType
+from reflex.utils import console
 
-DECORATED_PAGES: Dict[str, List] = defaultdict(list)
+DECORATED_PAGES: dict[str, list] = defaultdict(list)
 
 
 def page(
@@ -17,7 +20,7 @@ def page(
     description: str | None = None,
     meta: list[Any] | None = None,
     script_tags: list[Any] | None = None,
-    on_load: Any | list[Any] | None = None,
+    on_load: EventType[()] | None = None,
 ):
     """Decorate a function as a page.
 
@@ -41,7 +44,7 @@ def page(
         The decorated function.
     """
 
-    def decorator(render_fn):
+    def decorator(render_fn: Callable):
         kwargs = {}
         if route:
             kwargs["route"] = route
@@ -65,13 +68,27 @@ def page(
     return decorator
 
 
-def get_decorated_pages() -> list[dict]:
+def get_decorated_pages(omit_implicit_routes: bool = True) -> list[dict[str, Any]]:
     """Get the decorated pages.
+
+    Args:
+        omit_implicit_routes: Whether to omit pages where the route will be implicitly guessed later.
 
     Returns:
         The decorated pages.
     """
+    console.deprecate(
+        "get_decorated_pages",
+        reason="This function is deprecated and will be removed in a future version.",
+        deprecation_version="0.7.9",
+        removal_version="0.8.0",
+        dedupe=True,
+    )
     return sorted(
-        [page_data for _, page_data in DECORATED_PAGES[get_config().app_name]],
-        key=lambda x: x["route"],
+        [
+            page_data
+            for _, page_data in DECORATED_PAGES[get_config().app_name]
+            if not omit_implicit_routes or "route" in page_data
+        ],
+        key=lambda x: x.get("route", ""),
     )

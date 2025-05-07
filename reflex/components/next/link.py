@@ -1,7 +1,7 @@
 """A link component."""
 
 from reflex.components.component import Component
-from reflex.vars import Var
+from reflex.vars.base import Var
 
 
 class NextLink(Component):
@@ -17,4 +17,4 @@ class NextLink(Component):
     href: Var[str]
 
     # Whether to pass the href prop to the child.
-    pass_href: Var[bool] = True  # type: ignore
+    pass_href: Var[bool] = Var.create(True)

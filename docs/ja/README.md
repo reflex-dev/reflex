@@ -1,7 +1,3 @@
-```diff
-+ PyneconeはReflexに名前を変えました。Pyneconeを探している方は、今、ご覧のページがPyneconeのリポジトリになります。 +
-```
-
 <div align="center">
 <img src="https://raw.githubusercontent.com/reflex-dev/reflex/main/docs/images/reflex_dark.svg#gh-light-mode-only" alt="Reflex Logo" width="300px">
 <img src="https://raw.githubusercontent.com/reflex-dev/reflex/main/docs/images/reflex_light.svg#gh-dark-mode-only" alt="Reflex Logo" width="300px">
@@ -11,7 +7,6 @@
 ### **✨ 即時デプロイが可能な、Pure Python で作ったパフォーマンスと汎用性が高い Web アプリケーション ✨**
 
 [![PyPI version](https://badge.fury.io/py/reflex.svg)](https://badge.fury.io/py/reflex)
-![tests](https://github.com/pynecone-io/pynecone/actions/workflows/integration.yml/badge.svg)
 ![versions](https://img.shields.io/pypi/pyversions/reflex.svg)
 [![Documentation](https://img.shields.io/badge/Documentation%20-Introduction%20-%20%23007ec6)](https://reflex.dev/docs/getting-started/introduction)
 [![Discord](https://img.shields.io/discord/1029853095527727165?color=%237289da&label=Discord)](https://discord.gg/T5WSbC2YtQ)
@@ -38,7 +33,7 @@ Reflex がどのように動作しているかを知るには、[アーキテク
 
 ## ⚙️ インストール
 
-ターミナルを開いて以下のコマンドを実行してください。（Python 3.8 以上が必要です。）:
+ターミナルを開いて以下のコマンドを実行してください。（Python 3.10 以上が必要です。）:
 
 ```bash
 pip install reflex
@@ -223,7 +218,7 @@ app.add_page(index, title="DALL-E")
 
 <div align="center">
 
-📑 [Docs](https://reflex.dev/docs/getting-started/introduction) &nbsp; | &nbsp; 🗞️ [Blog](https://reflex.dev/blog) &nbsp; | &nbsp; 📱 [Component Library](https://reflex.dev/docs/library) &nbsp; | &nbsp; 🖼️ [Gallery](https://reflex.dev/docs/gallery) &nbsp; | &nbsp; 🛸 [Deployment](https://reflex.dev/docs/hosting/deploy-quick-start) &nbsp;
+📑 [Docs](https://reflex.dev/docs/getting-started/introduction) &nbsp; | &nbsp; 🗞️ [Blog](https://reflex.dev/blog) &nbsp; | &nbsp; 📱 [Component Library](https://reflex.dev/docs/library) &nbsp; | &nbsp; 🖼️ [Templates](https://reflex.dev/templates/) &nbsp; | &nbsp; 🛸 [Deployment](https://reflex.dev/docs/hosting/deploy-quick-start) &nbsp;
 
 </div>
 
@@ -243,7 +238,7 @@ Reflex は毎週、新しいリリースや機能追加を行っています！�
 - **GitHub Discussions**: GitHub Discussions では、追加したい機能や、複雑で解明が必要な事柄についての議論に適している場所です。
 - **GitHub Issues**: [Issues](https://github.com/reflex-dev/reflex/issues)はバグの報告に適している場所です。また、課題を解決した PR のサブミットにチャレンジしていただくことも、可能です。
 
-スキルや経験に関わらず、私たちはコントリビュータを積極的に探しています。コントリビュートするために、[CONTIBUTING.md](https://github.com/reflex-dev/reflex/blob/main/CONTRIBUTING.md)をご覧ください。
+CONTスキルや経験に関わらず、私たちはコントリビュータを積極的に探しています。コントリビュートするために、[CONTRIBUTING.md](https://github.com/reflex-dev/reflex/blob/main/CONTRIBUTING.md)をご覧ください。
 
 ## 私たちのコントリビュータに感謝！:
 

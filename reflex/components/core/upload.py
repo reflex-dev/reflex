@@ -2,32 +2,46 @@
 
 from __future__ import annotations
 
-import os
+from collections.abc import Callable, Sequence
 from pathlib import Path
-from typing import Callable, ClassVar, Dict, List, Optional
+from typing import Any, ClassVar
 
-from reflex.components.component import Component, ComponentNamespace, MemoizationLeaf
+from reflex.components.base.fragment import Fragment
+from reflex.components.component import (
+    Component,
+    ComponentNamespace,
+    MemoizationLeaf,
+    StatefulComponent,
+)
+from reflex.components.core.cond import cond
 from reflex.components.el.elements.forms import Input
 from reflex.components.radix.themes.layout.box import Box
+from reflex.config import environment
 from reflex.constants import Dirs
+from reflex.constants.compiler import Hooks, Imports
 from reflex.event import (
     CallableEventSpec,
     EventChain,
     EventHandler,
     EventSpec,
     call_event_fn,
-    call_script,
+    call_event_handler,
     parse_args_spec,
+    run_script,
 )
+from reflex.style import Style
+from reflex.utils import format
 from reflex.utils.imports import ImportVar
-from reflex.vars import BaseVar, CallableVar, Var, VarData
+from reflex.vars import VarData
+from reflex.vars.base import Var, get_unique_variable_name
+from reflex.vars.sequence import LiteralStringVar
 
 DEFAULT_UPLOAD_ID: str = "default"
 
 upload_files_context_var_data: VarData = VarData(
     imports={
         "react": "useContext",
-        f"/{Dirs.CONTEXTS_PATH}": "UploadFilesContext",
+        f"$/{Dirs.CONTEXTS_PATH}": "UploadFilesContext",
     },
     hooks={
         "const [filesById, setFilesById] = useContext(UploadFilesContext);": None,
@@ -35,8 +49,7 @@ upload_files_context_var_data: VarData = VarData(
 )
 
 
-@CallableVar
-def upload_file(id_: str = DEFAULT_UPLOAD_ID) -> BaseVar:
+def upload_file(id_: str = DEFAULT_UPLOAD_ID) -> Var:
     """Get the file upload drop trigger.
 
     This var is passed to the dropzone component to update the file list when a
@@ -48,23 +61,24 @@ def upload_file(id_: str = DEFAULT_UPLOAD_ID) -> BaseVar:
     Returns:
         A var referencing the file upload drop trigger.
     """
-    id_var = Var.create_safe(id_, _var_is_string=True)
+    id_var = LiteralStringVar.create(id_)
     var_name = f"""e => setFilesById(filesById => {{
     const updatedFilesById = Object.assign({{}}, filesById);
-    updatedFilesById[{id_var._var_name_unwrapped}] = e;
+    updatedFilesById[{id_var!s}] = e;
     return updatedFilesById;
   }})
     """
 
-    return BaseVar(
-        _var_name=var_name,
+    return Var(
+        _js_expr=var_name,
         _var_type=EventChain,
-        _var_data=VarData.merge(upload_files_context_var_data, id_var._var_data),
+        _var_data=VarData.merge(
+            upload_files_context_var_data, id_var._get_all_var_data()
+        ),
     )
 
 
-@CallableVar
-def selected_files(id_: str = DEFAULT_UPLOAD_ID) -> BaseVar:
+def selected_files(id_: str = DEFAULT_UPLOAD_ID) -> Var:
     """Get the list of selected files.
 
     Args:
@@ -73,12 +87,14 @@ def selected_files(id_: str = DEFAULT_UPLOAD_ID) -> BaseVar:
     Returns:
         A var referencing the list of selected file paths.
     """
-    id_var = Var.create_safe(id_, _var_is_string=True)
-    return BaseVar(
-        _var_name=f"(filesById[{id_var._var_name_unwrapped}] ? filesById[{id_var._var_name_unwrapped}].map((f) => (f.path || f.name)) : [])",
-        _var_type=List[str],
-        _var_data=VarData.merge(upload_files_context_var_data, id_var._var_data),
-    )
+    id_var = LiteralStringVar.create(id_)
+    return Var(
+        _js_expr=f"(filesById[{id_var!s}] ? filesById[{id_var!s}].map((f) => (f.path || f.name)) : [])",
+        _var_type=list[str],
+        _var_data=VarData.merge(
+            upload_files_context_var_data, id_var._get_all_var_data()
+        ),
+    ).guess_type()
 
 
 @CallableEventSpec
@@ -93,8 +109,9 @@ def clear_selected_files(id_: str = DEFAULT_UPLOAD_ID) -> EventSpec:
     """
     # UploadFilesProvider assigns a special function to clear selected files
     # into the shared global refs object to make it accessible outside a React
-    # component via `call_script` (otherwise backend could never clear files).
-    return call_script(f"refs['__clear_selected_files']({id_!r})")
+    # component via `run_script` (otherwise backend could never clear files).
+    func = Var("__clear_selected_files")._as_ref()
+    return run_script(f"{func}({id_!r})")
 
 
 def cancel_upload(upload_id: str) -> EventSpec:
@@ -106,9 +123,8 @@ def cancel_upload(upload_id: str) -> EventSpec:
     Returns:
         An event spec that cancels the upload when triggered.
     """
-    return call_script(
-        f"upload_controllers[{Var.create_safe(upload_id, _var_is_string=True)._var_name_unwrapped}]?.abort()"
-    )
+    controller = Var(f"__upload_controllers_{upload_id}")._as_ref()
+    return run_script(f"{controller}?.abort()")
 
 
 def get_upload_dir() -> Path:
@@ -119,26 +135,23 @@ def get_upload_dir() -> Path:
     """
     Upload.is_used = True
 
-    uploaded_files_dir = Path(
-        os.environ.get("REFLEX_UPLOADED_FILES_DIR", "./uploaded_files")
-    )
+    uploaded_files_dir = environment.REFLEX_UPLOADED_FILES_DIR.get()
     uploaded_files_dir.mkdir(parents=True, exist_ok=True)
     return uploaded_files_dir
 
 
-uploaded_files_url_prefix: Var = Var.create_safe(
-    "${getBackendURL(env.UPLOAD)}",
-    _var_is_string=False,
+uploaded_files_url_prefix = Var(
+    _js_expr="getBackendURL(env.UPLOAD)",
     _var_data=VarData(
         imports={
-            f"/{Dirs.STATE_PATH}": "getBackendURL",
-            "/env.json": ImportVar(tag="env", is_default=True),
+            f"$/{Dirs.STATE_PATH}": "getBackendURL",
+            "$/env.json": ImportVar(tag="env", is_default=True),
         }
     ),
-)
+).to(str)
 
 
-def get_upload_url(file_path: str) -> Var[str]:
+def get_upload_url(file_path: str | Var[str]) -> Var[str]:
     """Get the URL of an uploaded file.
 
     Args:
@@ -149,12 +162,10 @@ def get_upload_url(file_path: str) -> Var[str]:
     """
     Upload.is_used = True
 
-    return Var.create_safe(
-        f"{uploaded_files_url_prefix}/{file_path}", _var_is_string=True
-    )
+    return Var.create(f"{uploaded_files_url_prefix}/{file_path}")
 
 
-def _on_drop_spec(files: Var):
+def _on_drop_spec(files: Var) -> tuple[Var[Any]]:
     """Args spec for the on_drop event trigger.
 
     Args:
@@ -163,29 +174,34 @@ def _on_drop_spec(files: Var):
     Returns:
         Signature for on_drop handler including the files to upload.
     """
-    return [files]
+    return (files,)
 
 
 class UploadFilesProvider(Component):
     """AppWrap component that provides a dict of selected files by ID via useContext."""
 
-    library = f"/{Dirs.CONTEXTS_PATH}"
+    library = f"$/{Dirs.CONTEXTS_PATH}"
     tag = "UploadFilesProvider"
+
+
+class GhostUpload(Fragment):
+    """A ghost upload component."""
+
+    # Fired when files are dropped.
+    on_drop: EventHandler[_on_drop_spec]
 
 
 class Upload(MemoizationLeaf):
     """A file upload component."""
 
-    library = "react-dropzone@14.2.3"
+    library = "react-dropzone@14.3.8"
 
-    tag = "ReactDropzone"
-
-    is_default = True
+    tag = ""
 
     # The list of accepted file types. This should be a dictionary of MIME types as keys and array of file formats as
     # values.
     # supported MIME types: https://developer.mozilla.org/en-US/docs/Web/HTTP/Basics_of_HTTP/MIME_types/Common_types
-    accept: Var[Optional[Dict[str, List]]]
+    accept: Var[dict[str, Sequence] | None]
 
     # Whether the dropzone is disabled.
     disabled: Var[bool]
@@ -200,7 +216,7 @@ class Upload(MemoizationLeaf):
     min_size: Var[int]
 
     # Whether to allow multiple files to be uploaded.
-    multiple: Var[bool] = True  # type: ignore
+    multiple: Var[bool]
 
     # Whether to disable click to upload.
     no_click: Var[bool]
@@ -217,6 +233,9 @@ class Upload(MemoizationLeaf):
     # Fired when files are dropped.
     on_drop: EventHandler[_on_drop_spec]
 
+    # Style rules to apply when actively dragging.
+    drag_active_style: Style | None = None
+
     @classmethod
     def create(cls, *children, **props) -> Component:
         """Create an upload component.
@@ -231,6 +250,8 @@ class Upload(MemoizationLeaf):
         # Mark the Upload component as used in the app.
         cls.is_used = True
 
+        props.setdefault("multiple", True)
+
         # Apply the default classname
         given_class_name = props.pop("class_name", [])
         if isinstance(given_class_name, str):
@@ -242,19 +263,6 @@ class Upload(MemoizationLeaf):
         upload_props = {
             key: value for key, value in props.items() if key in supported_props
         }
-        # The file input to use.
-        upload = Input.create(type="file")
-        upload.special_props = {
-            BaseVar(_var_name="{...getInputProps()}", _var_type=None)
-        }
-
-        # The dropzone to use.
-        zone = Box.create(
-            upload,
-            *children,
-            **{k: v for k, v in props.items() if k not in supported_props},
-        )
-        zone.special_props = {BaseVar(_var_name="{...getRootProps()}", _var_type=None)}
 
         # Create the component.
         upload_props["id"] = props.get("id", DEFAULT_UPLOAD_ID)
@@ -263,22 +271,118 @@ class Upload(MemoizationLeaf):
             # If on_drop is not provided, save files to be uploaded later.
             upload_props["on_drop"] = upload_file(upload_props["id"])
         else:
-            on_drop = upload_props["on_drop"]
-            if isinstance(on_drop, Callable):
-                # Call the lambda to get the event chain.
-                on_drop = call_event_fn(on_drop, _on_drop_spec)  # type: ignore
-            if isinstance(on_drop, EventSpec):
-                # Update the provided args for direct use with on_drop.
-                on_drop = on_drop.with_args(
-                    args=tuple(
-                        cls._update_arg_tuple_for_on_drop(arg_value)
-                        for arg_value in on_drop.args
-                    ),
-                )
+            on_drop = (
+                [on_drop_prop]
+                if not isinstance(on_drop_prop := upload_props["on_drop"], Sequence)
+                else list(on_drop_prop)
+            )
+            for ix, event in enumerate(on_drop):
+                if isinstance(event, (EventHandler, EventSpec)):
+                    # Call the lambda to get the event chain.
+                    event = call_event_handler(event, _on_drop_spec)
+                elif isinstance(event, Callable):
+                    # Call the lambda to get the event chain.
+                    event = call_event_fn(event, _on_drop_spec)
+                if isinstance(event, EventSpec):
+                    # Update the provided args for direct use with on_drop.
+                    event = event.with_args(
+                        args=tuple(
+                            cls._update_arg_tuple_for_on_drop(arg_value)
+                            for arg_value in event.args
+                        ),
+                    )
+                on_drop[ix] = event
             upload_props["on_drop"] = on_drop
+
+        input_props_unique_name = get_unique_variable_name()
+        root_props_unique_name = get_unique_variable_name()
+        is_drag_active_unique_name = get_unique_variable_name()
+        drag_active_css_class_unique_name = get_unique_variable_name() + "-drag-active"
+
+        # Handle special style when dragging over the drop zone.
+        if "drag_active_style" in props:
+            props.setdefault("style", Style())[
+                f"&:where(.{drag_active_css_class_unique_name})"
+            ] = props.pop("drag_active_style")
+            props["class_name"].append(
+                cond(
+                    Var(is_drag_active_unique_name),
+                    drag_active_css_class_unique_name,
+                    "",
+                ),
+            )
+
+        event_var, callback_str = StatefulComponent._get_memoized_event_triggers(
+            GhostUpload.create(on_drop=upload_props["on_drop"])
+        )["on_drop"]
+
+        upload_props["on_drop"] = event_var
+
+        upload_props = {
+            format.to_camel_case(key): value for key, value in upload_props.items()
+        }
+
+        use_dropzone_arguments = Var.create(
+            {
+                "onDrop": event_var,
+                **upload_props,
+            }
+        )
+
+        left_side = (
+            "const { "
+            f"getRootProps: {root_props_unique_name}, "
+            f"getInputProps: {input_props_unique_name}, "
+            f"isDragActive: {is_drag_active_unique_name}"
+            "}"
+        )
+        right_side = f"useDropzone({use_dropzone_arguments!s})"
+
+        var_data = VarData.merge(
+            VarData(
+                imports=Imports.EVENTS,
+                hooks={Hooks.EVENTS: None},
+            ),
+            event_var._get_all_var_data(),
+            use_dropzone_arguments._get_all_var_data(),
+            VarData(
+                hooks={
+                    callback_str: None,
+                    f"{left_side} = {right_side};": None,
+                },
+                imports={
+                    "react-dropzone": "useDropzone",
+                    **Imports.EVENTS,
+                },
+            ),
+        )
+
+        # The file input to use.
+        upload = Input.create(type="file")
+        upload.special_props = [
+            Var(
+                _js_expr=f"{input_props_unique_name}()",
+                _var_type=None,
+                _var_data=var_data,
+            )
+        ]
+
+        # The dropzone to use.
+        zone = Box.create(
+            upload,
+            *children,
+            **{k: v for k, v in props.items() if k not in supported_props},
+        )
+        zone.special_props = [
+            Var(
+                _js_expr=f"{root_props_unique_name}()",
+                _var_type=None,
+                _var_data=var_data,
+            )
+        ]
+
         return super().create(
             zone,
-            **upload_props,
         )
 
     @classmethod
@@ -291,15 +395,10 @@ class Upload(MemoizationLeaf):
         Returns:
             The updated arg_value tuple when arg is "files", otherwise the original arg_value.
         """
-        if arg_value[0]._var_name == "files":
+        if arg_value[0]._js_expr == "files":
             placeholder = parse_args_spec(_on_drop_spec)[0]
             return (arg_value[0], placeholder)
         return arg_value
-
-    def _render(self):
-        out = super()._render()
-        out.args = ("getRootProps", "getInputProps")
-        return out
 
     @staticmethod
     def _get_app_wrap_components() -> dict[tuple[int, str], Component]:

@@ -13,18 +13,18 @@ from __future__ import annotations
 from reflex import constants
 from reflex.components.component import Component
 from reflex.components.core.cond import cond
-from reflex.vars import Var
+from reflex.vars.base import Var
 
-route_not_found: Var = Var.create_safe(constants.ROUTE_NOT_FOUND, _var_is_string=False)
+route_not_found: Var = Var(_js_expr=constants.ROUTE_NOT_FOUND)
 
 
 class ClientSideRouting(Component):
     """The client-side routing component."""
 
-    library = "/utils/client_side_routing"
+    library = "$/utils/client_side_routing"
     tag = "useClientSideRouting"
 
-    def add_hooks(self) -> list[str]:
+    def add_hooks(self) -> list[str | Var]:
         """Get the hooks to render.
 
         Returns:
@@ -41,7 +41,7 @@ class ClientSideRouting(Component):
         return ""
 
 
-def wait_for_client_redirect(component) -> Component:
+def wait_for_client_redirect(component: Component) -> Component:
     """Wait for a redirect to occur before rendering a component.
 
     This prevents the 404 page from flashing while the redirect is happening.
@@ -53,9 +53,9 @@ def wait_for_client_redirect(component) -> Component:
         The conditionally rendered component.
     """
     return cond(
-        condition=route_not_found,
-        c1=component,
-        c2=ClientSideRouting.create(),
+        route_not_found,
+        component,
+        ClientSideRouting.create(),
     )
 
 
@@ -66,4 +66,4 @@ class Default404Page(Component):
     tag = "Error"
     is_default = True
 
-    status_code: Var[int] = 404  # type: ignore
+    status_code: Var[int] = Var.create(404)

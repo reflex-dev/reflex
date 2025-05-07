@@ -12,26 +12,20 @@ from reflex.components.core.breakpoints import Responsive
 from reflex.components.core.colors import color
 from reflex.components.core.cond import cond
 from reflex.components.el.elements.inline import A
+from reflex.components.markdown.markdown import MarkdownComponentMap
 from reflex.components.next.link import NextLink
 from reflex.utils.imports import ImportDict
-from reflex.vars import Var
+from reflex.vars.base import Var
 
-from ..base import (
-    LiteralAccentColor,
-    RadixThemesComponent,
-)
-from .base import (
-    LiteralTextSize,
-    LiteralTextTrim,
-    LiteralTextWeight,
-)
+from ..base import LiteralAccentColor, RadixThemesComponent
+from .base import LiteralTextSize, LiteralTextTrim, LiteralTextWeight
 
 LiteralLinkUnderline = Literal["auto", "hover", "always", "none"]
 
 next_link = NextLink.create()
 
 
-class Link(RadixThemesComponent, A, MemoizationLeaf):
+class Link(RadixThemesComponent, A, MemoizationLeaf, MarkdownComponentMap):
     """A semantic element for navigation between pages."""
 
     tag = "Link"
@@ -66,7 +60,7 @@ class Link(RadixThemesComponent, A, MemoizationLeaf):
         Returns:
             The import dict.
         """
-        return next_link._get_imports()  # type: ignore
+        return next_link._get_imports()  # pyright: ignore [reportReturnType]
 
     @classmethod
     def create(cls, *children, **props) -> Component:
@@ -82,14 +76,15 @@ class Link(RadixThemesComponent, A, MemoizationLeaf):
         Returns:
             Component: The link component
         """
-        props.setdefault(":hover", {"color": color("accent", 8)})
+        props.setdefault("_hover", {"color": color("accent", 8)})
+        href = props.get("href")
 
         is_external = props.pop("is_external", None)
 
         if is_external is not None:
             props["target"] = cond(is_external, "_blank", "")
 
-        if props.get("href") is not None:
+        if href is not None:
             if not len(children):
                 raise ValueError("Link without a child will not display")
 
@@ -107,6 +102,9 @@ class Link(RadixThemesComponent, A, MemoizationLeaf):
                     as_child=True,
                     **props,
                 )
+        else:
+            props["href"] = "#"
+
         return super().create(*children, **props)
 
 

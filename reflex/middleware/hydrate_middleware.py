@@ -2,24 +2,25 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Optional
+import dataclasses
+from typing import TYPE_CHECKING
 
 from reflex import constants
 from reflex.event import Event, get_hydrate_event
 from reflex.middleware.middleware import Middleware
-from reflex.state import BaseState, StateUpdate
-from reflex.utils import format
+from reflex.state import BaseState, StateUpdate, _resolve_delta
 
 if TYPE_CHECKING:
     from reflex.app import App
 
 
+@dataclasses.dataclass(init=True)
 class HydrateMiddleware(Middleware):
     """Middleware to handle initial app hydration."""
 
     async def preprocess(
         self, app: App, state: BaseState, event: Event
-    ) -> Optional[StateUpdate]:
+    ) -> StateUpdate | None:
         """Preprocess the event.
 
         Args:
@@ -41,7 +42,7 @@ class HydrateMiddleware(Middleware):
         setattr(state, constants.CompileVars.IS_HYDRATED, False)
 
         # Get the initial state.
-        delta = format.format_state(state.dict())
+        delta = await _resolve_delta(state.dict())
         # since a full dict was captured, clean any dirtiness
         state._clean()
 

@@ -3,47 +3,42 @@
 from __future__ import annotations
 
 import asyncio
+import builtins
 import contextlib
 import copy
+import dataclasses
 import functools
 import inspect
-import os
-import uuid
-from abc import ABC, abstractmethod
-from collections import defaultdict
-from types import FunctionType, MethodType
+import pickle
+import sys
+import typing
+import warnings
+from abc import ABC
+from collections.abc import AsyncIterator, Callable, Sequence
+from hashlib import md5
+from types import FunctionType
 from typing import (
     TYPE_CHECKING,
     Any,
-    AsyncIterator,
-    Callable,
+    BinaryIO,
     ClassVar,
-    Dict,
-    List,
-    Optional,
-    Sequence,
-    Set,
-    Type,
-    Union,
+    TypeVar,
     cast,
+    get_args,
+    get_type_hints,
 )
 
-import dill
-from sqlalchemy.orm import DeclarativeBase
+import pydantic.v1 as pydantic
+from pydantic import BaseModel as BaseModelV2
+from pydantic.v1 import BaseModel as BaseModelV1
+from pydantic.v1.fields import ModelField
+from rich.markup import escape
+from typing_extensions import Self
 
-from reflex.config import get_config
-
-try:
-    import pydantic.v1 as pydantic
-except ModuleNotFoundError:
-    import pydantic
-
-import wrapt
-from redis.asyncio import Redis
-from redis.exceptions import ResponseError
-
-from reflex import constants
+import reflex.istate.dynamic
+from reflex import constants, event
 from reflex.base import Base
+from reflex.config import PerformanceMode, environment
 from reflex.event import (
     BACKGROUND_TASK_MARKER,
     Event,
@@ -51,119 +46,75 @@ from reflex.event import (
     EventSpec,
     fix_events,
 )
+from reflex.istate.data import RouterData
+from reflex.istate.proxy import ImmutableMutableProxy as ImmutableMutableProxy
+from reflex.istate.proxy import MutableProxy, StateProxy
+from reflex.istate.storage import ClientStorageBase
+from reflex.model import Model
 from reflex.utils import console, format, prerequisites, types
-from reflex.utils.exceptions import ImmutableStateError, LockExpiredError
+from reflex.utils.exceptions import (
+    ComputedVarShadowsBaseVarsError,
+    ComputedVarShadowsStateVarError,
+    DynamicComponentInvalidSignatureError,
+    DynamicRouteArgShadowsStateVarError,
+    EventHandlerShadowsBuiltInStateMethodError,
+    ReflexRuntimeError,
+    SetUndefinedStateVarError,
+    StateMismatchError,
+    StateSchemaMismatchError,
+    StateSerializationError,
+    StateTooLargeError,
+    UnretrievableVarValueError,
+)
+from reflex.utils.exceptions import ImmutableStateError as ImmutableStateError
 from reflex.utils.exec import is_testing_env
-from reflex.utils.serializers import SerializedType, serialize, serializer
-from reflex.vars import BaseVar, ComputedVar, Var, computed_var
+from reflex.utils.types import (
+    _isinstance,
+    get_origin,
+    is_union,
+    true_type_for_pydantic_field,
+    value_inside_optional,
+)
+from reflex.vars import VarData
+from reflex.vars.base import (
+    ComputedVar,
+    DynamicRouteVar,
+    Var,
+    computed_var,
+    dispatch,
+    get_unique_variable_name,
+    is_computed_var,
+)
 
 if TYPE_CHECKING:
     from reflex.components.component import Component
 
 
-Delta = Dict[str, Any]
+Delta = dict[str, Any]
 var = computed_var
 
 
-# If the state is this large, it's considered a performance issue.
-TOO_LARGE_SERIALIZED_STATE = 100 * 1024  # 100kb
+if environment.REFLEX_PERF_MODE.get() != PerformanceMode.OFF:
+    # If the state is this large, it's considered a performance issue.
+    TOO_LARGE_SERIALIZED_STATE = environment.REFLEX_STATE_SIZE_LIMIT.get() * 1024
+    # Only warn about each state class size once.
+    _WARNED_ABOUT_STATE_SIZE: set[str] = set()
 
+# Errors caught during pickling of state
+HANDLED_PICKLE_ERRORS = (
+    pickle.PicklingError,
+    AttributeError,
+    IndexError,
+    TypeError,
+    ValueError,
+)
 
-class HeaderData(Base):
-    """An object containing headers data."""
-
-    host: str = ""
-    origin: str = ""
-    upgrade: str = ""
-    connection: str = ""
-    pragma: str = ""
-    cache_control: str = ""
-    user_agent: str = ""
-    sec_websocket_version: str = ""
-    sec_websocket_key: str = ""
-    sec_websocket_extensions: str = ""
-    accept_encoding: str = ""
-    accept_language: str = ""
-
-    def __init__(self, router_data: Optional[dict] = None):
-        """Initalize the HeaderData object based on router_data.
-
-        Args:
-            router_data: the router_data dict.
-        """
-        super().__init__()
-        if router_data:
-            for k, v in router_data.get(constants.RouteVar.HEADERS, {}).items():
-                setattr(self, format.to_snake_case(k), v)
-
-
-class PageData(Base):
-    """An object containing page data."""
-
-    host: str = ""  # repeated with self.headers.origin (remove or keep the duplicate?)
-    path: str = ""
-    raw_path: str = ""
-    full_path: str = ""
-    full_raw_path: str = ""
-    params: dict = {}
-
-    def __init__(self, router_data: Optional[dict] = None):
-        """Initalize the PageData object based on router_data.
-
-        Args:
-            router_data: the router_data dict.
-        """
-        super().__init__()
-        if router_data:
-            self.host = router_data.get(constants.RouteVar.HEADERS, {}).get("origin")
-            self.path = router_data.get(constants.RouteVar.PATH, "")
-            self.raw_path = router_data.get(constants.RouteVar.ORIGIN, "")
-            self.full_path = f"{self.host}{self.path}"
-            self.full_raw_path = f"{self.host}{self.raw_path}"
-            self.params = router_data.get(constants.RouteVar.QUERY, {})
-
-
-class SessionData(Base):
-    """An object containing session data."""
-
-    client_token: str = ""
-    client_ip: str = ""
-    session_id: str = ""
-
-    def __init__(self, router_data: Optional[dict] = None):
-        """Initalize the SessionData object based on router_data.
-
-        Args:
-            router_data: the router_data dict.
-        """
-        super().__init__()
-        if router_data:
-            self.client_token = router_data.get(constants.RouteVar.CLIENT_TOKEN, "")
-            self.client_ip = router_data.get(constants.RouteVar.CLIENT_IP, "")
-            self.session_id = router_data.get(constants.RouteVar.SESSION_ID, "")
-
-
-class RouterData(Base):
-    """An object containing RouterData."""
-
-    session: SessionData = SessionData()
-    headers: HeaderData = HeaderData()
-    page: PageData = PageData()
-
-    def __init__(self, router_data: Optional[dict] = None):
-        """Initialize the RouterData object.
-
-        Args:
-            router_data: the router_data dict.
-        """
-        super().__init__()
-        self.session = SessionData(router_data)
-        self.headers = HeaderData(router_data)
-        self.page = PageData(router_data)
+# For BaseState.get_var_value
+VAR_TYPE = TypeVar("VAR_TYPE")
 
 
 def _no_chain_background_task(
-    state_cls: Type["BaseState"], name: str, fn: Callable
+    state_cls: type[BaseState], name: str, fn: Callable
 ) -> Callable:
     """Protect against directly chaining a background task from another event handler.
 
@@ -202,7 +153,7 @@ def _no_chain_background_task(
 
 def _substate_key(
     token: str,
-    state_cls_or_name: BaseState | Type[BaseState] | str | Sequence[str],
+    state_cls_or_name: BaseState | type[BaseState] | str | Sequence[str],
 ) -> str:
     """Get the substate key.
 
@@ -235,12 +186,13 @@ def _split_substate_key(substate_key: str) -> tuple[str, str]:
     return token, state_name
 
 
+@dataclasses.dataclass(frozen=True, init=False)
 class EventHandlerSetVar(EventHandler):
     """A special event handler to wrap setvar functionality."""
 
-    state_cls: Type[BaseState]
+    state_cls: type[BaseState] = dataclasses.field(init=False)
 
-    def __init__(self, state_cls: Type[BaseState]):
+    def __init__(self, state_cls: type[BaseState]):
         """Initialize the EventHandlerSetVar.
 
         Args:
@@ -249,8 +201,8 @@ class EventHandlerSetVar(EventHandler):
         super().__init__(
             fn=type(self).setvar,
             state_full_name=state_cls.get_full_name(),
-            state_cls=state_cls,  # type: ignore
         )
+        object.__setattr__(self, "state_cls", state_cls)
 
     def setvar(self, var_name: str, value: Any):
         """Set the state variable to the value of the event.
@@ -275,6 +227,7 @@ class EventHandlerSetVar(EventHandler):
         Raises:
             AttributeError: If the given Var name does not exist on the state.
             EventHandlerValueError: If the given Var name is not a str
+            NotImplementedError: If the setter for the given Var is async
         """
         from reflex.utils.exceptions import EventHandlerValueError
 
@@ -283,70 +236,140 @@ class EventHandlerSetVar(EventHandler):
                 raise EventHandlerValueError(
                     f"Var name must be passed as a string, got {args[0]!r}"
                 )
+
+            handler = getattr(self.state_cls, constants.SETTER_PREFIX + args[0], None)
+
             # Check that the requested Var setter exists on the State at compile time.
-            if getattr(self.state_cls, constants.SETTER_PREFIX + args[0], None) is None:
+            if handler is None:
                 raise AttributeError(
                     f"Variable `{args[0]}` cannot be set on `{self.state_cls.get_full_name()}`"
                 )
+
+            if asyncio.iscoroutinefunction(handler.fn):
+                raise NotImplementedError(
+                    f"Setter for {args[0]} is async, which is not supported."
+                )
+
         return super().__call__(*args)
+
+
+if TYPE_CHECKING:
+    from pydantic.v1.fields import ModelField
+
+
+def _unwrap_field_type(type_: types.GenericType) -> type:
+    """Unwrap rx.Field type annotations.
+
+    Args:
+        type_: The type to unwrap.
+
+    Returns:
+        The unwrapped type.
+    """
+    from reflex.vars import Field
+
+    if get_origin(type_) is Field:
+        return get_args(type_)[0]
+    return type_
+
+
+def get_var_for_field(cls: type[BaseState], f: ModelField):
+    """Get a Var instance for a Pydantic field.
+
+    Args:
+        cls: The state class.
+        f: The Pydantic field.
+
+    Returns:
+        The Var instance.
+    """
+    field_name = format.format_state_name(cls.get_full_name()) + "." + f.name
+
+    return dispatch(
+        field_name=field_name,
+        var_data=VarData.from_state(cls, f.name),
+        result_var_type=_unwrap_field_type(true_type_for_pydantic_field(f)),
+    )
+
+
+async def _resolve_delta(delta: Delta) -> Delta:
+    """Await all coroutines in the delta.
+
+    Args:
+        delta: The delta to process.
+
+    Returns:
+        The same delta dict with all coroutines resolved to their return value.
+    """
+    tasks = {}
+    for state_name, state_delta in delta.items():
+        for var_name, value in state_delta.items():
+            if asyncio.iscoroutine(value):
+                tasks[state_name, var_name] = asyncio.create_task(value)
+    for (state_name, var_name), task in tasks.items():
+        delta[state_name][var_name] = await task
+    return delta
+
+
+all_base_state_classes: dict[str, None] = {}
 
 
 class BaseState(Base, ABC, extra=pydantic.Extra.allow):
     """The state of the app."""
 
     # A map from the var name to the var.
-    vars: ClassVar[Dict[str, Var]] = {}
+    vars: ClassVar[builtins.dict[str, Var]] = {}
 
     # The base vars of the class.
-    base_vars: ClassVar[Dict[str, BaseVar]] = {}
+    base_vars: ClassVar[builtins.dict[str, Var]] = {}
 
     # The computed vars of the class.
-    computed_vars: ClassVar[Dict[str, ComputedVar]] = {}
+    computed_vars: ClassVar[builtins.dict[str, ComputedVar]] = {}
 
     # Vars inherited by the parent state.
-    inherited_vars: ClassVar[Dict[str, Var]] = {}
+    inherited_vars: ClassVar[builtins.dict[str, Var]] = {}
 
     # Backend base vars that are never sent to the client.
-    backend_vars: ClassVar[Dict[str, Any]] = {}
+    backend_vars: ClassVar[builtins.dict[str, Any]] = {}
 
     # Backend base vars inherited
-    inherited_backend_vars: ClassVar[Dict[str, Any]] = {}
+    inherited_backend_vars: ClassVar[builtins.dict[str, Any]] = {}
 
     # The event handlers.
-    event_handlers: ClassVar[Dict[str, EventHandler]] = {}
+    event_handlers: ClassVar[builtins.dict[str, EventHandler]] = {}
 
     # A set of subclassses of this class.
-    class_subclasses: ClassVar[Set[Type[BaseState]]] = set()
+    class_subclasses: ClassVar[set[type[BaseState]]] = set()
 
-    # Mapping of var name to set of computed variables that depend on it
-    _computed_var_dependencies: ClassVar[Dict[str, Set[str]]] = {}
-
-    # Mapping of var name to set of substates that depend on it
-    _substate_var_dependencies: ClassVar[Dict[str, Set[str]]] = {}
+    # Mapping of var name to set of (state_full_name, var_name) that depend on it.
+    _var_dependencies: ClassVar[builtins.dict[str, set[tuple[str, str]]]] = {}
 
     # Set of vars which always need to be recomputed
-    _always_dirty_computed_vars: ClassVar[Set[str]] = set()
+    _always_dirty_computed_vars: ClassVar[set[str]] = set()
 
     # Set of substates which always need to be recomputed
-    _always_dirty_substates: ClassVar[Set[str]] = set()
+    _always_dirty_substates: ClassVar[set[str]] = set()
+
+    # Set of states which might need to be recomputed if vars in this state change.
+    _potentially_dirty_states: ClassVar[set[str]] = set()
 
     # The parent state.
-    parent_state: Optional[BaseState] = None
+    parent_state: BaseState | None = None
 
     # The substates of the state.
-    substates: Dict[str, BaseState] = {}
+    substates: builtins.dict[str, BaseState] = {}
 
     # The set of dirty vars.
-    dirty_vars: Set[str] = set()
+    dirty_vars: set[str] = set()
 
     # The set of dirty substates.
-    dirty_substates: Set[str] = set()
+    dirty_substates: set[str] = set()
 
     # The routing path that triggered the state
-    router_data: Dict[str, Any] = {}
+    router_data: builtins.dict[str, Any] = {}
 
     # Per-instance copy of backend base variable values
-    _backend_vars: Dict[str, Any] = {}
+    _backend_vars: builtins.dict[str, Any] = {}
 
     # The router data for the current page
     router: RouterData = RouterData()
@@ -362,7 +385,6 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
 
     def __init__(
         self,
-        *args,
         parent_state: BaseState | None = None,
         init_substates: bool = True,
         _reflex_internal_init: bool = False,
@@ -373,11 +395,10 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         DO NOT INSTANTIATE STATE CLASSES DIRECTLY! Use StateManager.get_state() instead.
 
         Args:
-            *args: The args to pass to the Pydantic init method.
             parent_state: The parent state.
             init_substates: Whether to initialize the substates in this instance.
             _reflex_internal_init: A flag to indicate that the state is being initialized by the framework.
-            **kwargs: The kwargs to pass to the Pydantic init method.
+            **kwargs: The kwargs to set as attributes on the state.
 
         Raises:
             ReflexRuntimeError: If the state is instantiated directly by end user.
@@ -389,8 +410,14 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
                 "State classes should not be instantiated directly in a Reflex app. "
                 "See https://reflex.dev/docs/state/ for further information."
             )
+        if type(self)._mixin:
+            raise ReflexRuntimeError(
+                f"{type(self).__name__} is a state mixin and cannot be instantiated directly."
+            )
         kwargs["parent_state"] = parent_state
-        super().__init__(*args, **kwargs)
+        super().__init__()
+        for name, value in kwargs.items():
+            setattr(self, name, value)
 
         # Setup the substates (for memory state manager only).
         if init_substates:
@@ -401,9 +428,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
                 )
 
         # Create a fresh copy of the backend variables for this instance
-        self._backend_vars = copy.deepcopy(
-            {name: item for name, item in self.backend_vars.items()}
-        )
+        self._backend_vars = copy.deepcopy(self.backend_vars)
 
     def __repr__(self) -> str:
         """Get the string representation of the state.
@@ -411,7 +436,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         Returns:
             The string representation of the state.
         """
-        return f"{self.__class__.__name__}({self.dict()})"
+        return f"{type(self).__name__}({self.dict()})"
 
     @classmethod
     def _get_computed_vars(cls) -> list[ComputedVar]:
@@ -422,9 +447,9 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         """
         return [
             v
-            for mixin in cls._mixins() + [cls]
-            for v in mixin.__dict__.values()
-            if isinstance(v, ComputedVar)
+            for mixin in [*cls._mixins(), cls]
+            for name, v in mixin.__dict__.items()
+            if is_computed_var(v) and name not in cls.inherited_vars
         ]
 
     @classmethod
@@ -461,6 +486,10 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         if mixin:
             return
 
+        # Handle locally-defined states for pickling.
+        if "<locals>" in cls.__qualname__:
+            cls._handle_local_def()
+
         # Validate the module name.
         cls._validate_module_name()
 
@@ -468,13 +497,14 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         cls._check_overridden_methods()
 
         # Computed vars should not shadow builtin state props.
-        cls._check_overriden_basevars()
+        cls._check_overridden_basevars()
 
         # Reset subclass tracking for this class.
         cls.class_subclasses = set()
 
         # Reset dirty substate tracking for this class.
         cls._always_dirty_substates = set()
+        cls._potentially_dirty_states = set()
 
         # Get the parent vars.
         parent_state = cls.get_parent_state()
@@ -483,35 +513,33 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             cls.inherited_backend_vars = parent_state.backend_vars
 
             # Check if another substate class with the same name has already been defined.
-            if cls.get_name() in set(
-                c.get_name() for c in parent_state.class_subclasses
-            ):
-                if is_testing_env():
-                    # Clear existing subclass with same name when app is reloaded via
-                    # utils.prerequisites.get_app(reload=True)
-                    parent_state.class_subclasses = set(
-                        c
-                        for c in parent_state.class_subclasses
-                        if c.get_name() != cls.get_name()
-                    )
-                else:
-                    # During normal operation, subclasses cannot have the same name, even if they are
-                    # defined in different modules.
-                    raise StateValueError(
-                        f"The substate class '{cls.get_name()}' has been defined multiple times. "
-                        "Shadowing substate classes is not allowed."
-                    )
+            if cls.get_name() in {c.get_name() for c in parent_state.class_subclasses}:
+                # This should not happen, since we have added module prefix to state names in #3214
+                raise StateValueError(
+                    f"The substate class '{cls.get_name()}' has been defined multiple times. "
+                    "Shadowing substate classes is not allowed."
+                )
             # Track this new subclass in the parent state's subclasses set.
             parent_state.class_subclasses.add(cls)
 
         # Get computed vars.
         computed_vars = cls._get_computed_vars()
+        cls._check_overridden_computed_vars()
 
         new_backend_vars = {
             name: value
             for name, value in cls.__dict__.items()
             if types.is_backend_base_variable(name, cls)
         }
+        # Add annotated backend vars that may not have a default value.
+        new_backend_vars.update(
+            {
+                name: cls._get_var_default(name, annotation_value)
+                for name, annotation_value in cls._get_type_hints().items()
+                if name not in new_backend_vars
+                and types.is_backend_base_variable(name, cls)
+            }
+        )
 
         cls.backend_vars = {
             **cls.inherited_backend_vars,
@@ -520,13 +548,14 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
 
         # Set the base and computed vars.
         cls.base_vars = {
-            f.name: BaseVar(_var_name=f.name, _var_type=f.outer_type_)._var_set_state(
-                cls
-            )
+            f.name: get_var_for_field(cls, f)
             for f in cls.get_fields().values()
             if f.name not in cls.get_skip_vars()
         }
-        cls.computed_vars = {v._var_name: v._var_set_state(cls) for v in computed_vars}
+        cls.computed_vars = {
+            v._js_expr: v._replace(merge_var_data=VarData.from_state(cls))
+            for v in computed_vars
+        }
         cls.vars = {
             **cls.inherited_vars,
             **cls.base_vars,
@@ -545,19 +574,19 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             if cls._item_is_event_handler(name, fn)
         }
 
-        for mixin in cls._mixins():
-            for name, value in mixin.__dict__.items():
-                if isinstance(value, ComputedVar):
-                    fget = cls._copy_fn(value.fget)
-                    newcv = value._replace(fget=fget)
-                    # cleanup refs to mixin cls in var_data
-                    newcv._var_data = None
-                    newcv._var_set_state(cls)
-                    setattr(cls, name, newcv)
-                    cls.computed_vars[newcv._var_name] = newcv
-                    cls.vars[newcv._var_name] = newcv
+        for mixin_cls in cls._mixins():
+            for name, value in mixin_cls.__dict__.items():
+                if name in cls.inherited_vars:
                     continue
-                if types.is_backend_base_variable(name, mixin):
+                if is_computed_var(value):
+                    fget = cls._copy_fn(value.fget)
+                    newcv = value._replace(fget=fget, _var_data=VarData.from_state(cls))
+                    # cleanup refs to mixin cls in var_data
+                    setattr(cls, name, newcv)
+                    cls.computed_vars[newcv._js_expr] = newcv
+                    cls.vars[newcv._js_expr] = newcv
+                    continue
+                if types.is_backend_base_variable(name, mixin_cls):
                     cls.backend_vars[name] = copy.deepcopy(value)
                     continue
                 if events.get(name) is not None:
@@ -578,7 +607,27 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             cls.event_handlers[name] = handler
             setattr(cls, name, handler)
 
+        # Initialize per-class var dependency tracking.
+        cls._var_dependencies = {}
         cls._init_var_dependency_dicts()
+
+        all_base_state_classes[cls.get_full_name()] = None
+
+    @classmethod
+    def _add_event_handler(
+        cls,
+        name: str,
+        fn: Callable,
+    ):
+        """Add an event handler dynamically to the state.
+
+        Args:
+            name: The name of the event handler.
+            fn: The function to call when the event is triggered.
+        """
+        handler = cls._create_event_handler(fn)
+        cls.event_handlers[name] = handler
+        setattr(cls, name, handler)
 
     @staticmethod
     def _copy_fn(fn: Callable) -> Callable:
@@ -621,7 +670,47 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         )
 
     @classmethod
-    def _mixins(cls) -> List[Type]:
+    def _evaluate(cls, f: Callable[[Self], Any], of_type: type | None = None) -> Var:
+        """Evaluate a function to a ComputedVar. Experimental.
+
+        Args:
+            f: The function to evaluate.
+            of_type: The type of the ComputedVar. Defaults to Component.
+
+        Returns:
+            The ComputedVar.
+        """
+        console.warn(
+            "The _evaluate method is experimental and may be removed in future versions."
+        )
+        from reflex.components.component import Component
+
+        of_type = of_type or Component
+
+        unique_var_name = get_unique_variable_name()
+
+        @computed_var(_js_expr=unique_var_name, return_type=of_type)
+        def computed_var_func(state: Self):
+            result = f(state)
+
+            if not _isinstance(result, of_type, nested=1, treat_var_as_type=False):
+                console.warn(
+                    f"Inline ComputedVar {f} expected type {escape(str(of_type))}, got {type(result)}. "
+                    "You can specify expected type with `of_type` argument."
+                )
+
+            return result
+
+        setattr(cls, unique_var_name, computed_var_func)
+        cls.computed_vars[unique_var_name] = computed_var_func
+        cls.vars[unique_var_name] = computed_var_func
+        cls._update_substate_inherited_vars({unique_var_name: computed_var_func})
+        cls._always_dirty_computed_vars.add(unique_var_name)
+
+        return getattr(cls, unique_var_name)
+
+    @classmethod
+    def _mixins(cls) -> list[type]:
         """Get the mixin classes of the state.
 
         Returns:
@@ -638,6 +727,39 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         ]
 
     @classmethod
+    def _handle_local_def(cls):
+        """Handle locally-defined states for pickling."""
+        known_names = dir(reflex.istate.dynamic)
+        proposed_name = cls.__name__
+        for ix in range(len(known_names)):
+            if proposed_name not in known_names:
+                break
+            proposed_name = f"{cls.__name__}_{ix}"
+        setattr(reflex.istate.dynamic, proposed_name, cls)
+        cls.__original_name__ = cls.__name__
+        cls.__original_module__ = cls.__module__
+        cls.__name__ = cls.__qualname__ = proposed_name
+        cls.__module__ = reflex.istate.dynamic.__name__
+
+    @classmethod
+    def _get_type_hints(cls) -> dict[str, Any]:
+        """Get the type hints for this class.
+
+        If the class is dynamic, evaluate the type hints with the original
+        module in the local namespace.
+
+        Returns:
+            The type hints dict.
+        """
+        original_module = getattr(cls, "__original_module__", None)
+        if original_module is not None:
+            localns = sys.modules[original_module].__dict__
+        else:
+            localns = None
+
+        return get_type_hints(cls, localns=localns)
+
+    @classmethod
     def _init_var_dependency_dicts(cls):
         """Initialize the var dependency tracking dicts.
 
@@ -647,37 +769,34 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         Additional updates tracking dicts for vars and substates that always
         need to be recomputed.
         """
-        # Initialize per-class var dependency tracking.
-        cls._computed_var_dependencies = defaultdict(set)
-        cls._substate_var_dependencies = defaultdict(set)
-
-        inherited_vars = set(cls.inherited_vars).union(
-            set(cls.inherited_backend_vars),
-        )
         for cvar_name, cvar in cls.computed_vars.items():
-            # Add the dependencies.
-            for var in cvar._deps(objclass=cls):
-                cls._computed_var_dependencies[var].add(cvar_name)
-                if var in inherited_vars:
-                    # track that this substate depends on its parent for this var
-                    state_name = cls.get_name()
-                    parent_state = cls.get_parent_state()
-                    while parent_state is not None and var in {
-                        **parent_state.vars,
-                        **parent_state.backend_vars,
+            if not cvar._cache:
+                # Do not perform dep calculation when cache=False (these are always dirty).
+                continue
+            for state_name, dvar_set in cvar._deps(objclass=cls).items():
+                state_cls = cls.get_root_state().get_class_substate(state_name)
+                for dvar in dvar_set:
+                    defining_state_cls = state_cls
+                    while dvar in {
+                        *defining_state_cls.inherited_vars,
+                        *defining_state_cls.inherited_backend_vars,
                     }:
-                        parent_state._substate_var_dependencies[var].add(state_name)
-                        state_name, parent_state = (
-                            parent_state.get_name(),
-                            parent_state.get_parent_state(),
-                        )
+                        parent_state = defining_state_cls.get_parent_state()
+                        if parent_state is not None:
+                            defining_state_cls = parent_state
+                    defining_state_cls._var_dependencies.setdefault(dvar, set()).add(
+                        (cls.get_full_name(), cvar_name)
+                    )
+                    defining_state_cls._potentially_dirty_states.add(
+                        cls.get_full_name()
+                    )
 
         # ComputedVar with cache=False always need to be recomputed
-        cls._always_dirty_computed_vars = set(
+        cls._always_dirty_computed_vars = {
             cvar_name
             for cvar_name, cvar in cls.computed_vars.items()
             if not cvar._cache
-        )
+        }
 
         # Any substate containing a ComputedVar with cache=False always needs to be recomputed
         if cls._always_dirty_computed_vars:
@@ -691,12 +810,15 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
                     parent_state.get_parent_state(),
                 )
 
+        # Reset cached schema value
+        cls._to_schema.cache_clear()
+
     @classmethod
     def _check_overridden_methods(cls):
         """Check for shadow methods and raise error if any.
 
         Raises:
-            NameError: When an event handler shadows an inbuilt state method.
+            EventHandlerShadowsBuiltInStateMethodError: When an event handler shadows an inbuilt state method.
         """
         overridden_methods = set()
         state_base_functions = cls._get_base_functions()
@@ -710,21 +832,37 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
                 overridden_methods.add(method.__name__)
 
         for method_name in overridden_methods:
-            raise NameError(
+            raise EventHandlerShadowsBuiltInStateMethodError(
                 f"The event handler name `{method_name}` shadows a builtin State method; use a different name instead"
             )
 
     @classmethod
-    def _check_overriden_basevars(cls):
+    def _check_overridden_basevars(cls):
         """Check for shadow base vars and raise error if any.
 
         Raises:
-            NameError: When a computed var shadows a base var.
+            ComputedVarShadowsBaseVarsError: When a computed var shadows a base var.
         """
         for computed_var_ in cls._get_computed_vars():
-            if computed_var_._var_name in cls.__annotations__:
-                raise NameError(
-                    f"The computed var name `{computed_var_._var_name}` shadows a base var in {cls.__module__}.{cls.__name__}; use a different name instead"
+            if computed_var_._js_expr in cls.__annotations__:
+                raise ComputedVarShadowsBaseVarsError(
+                    f"The computed var name `{computed_var_._js_expr}` shadows a base var in {cls.__module__}.{cls.__name__}; use a different name instead"
+                )
+
+    @classmethod
+    def _check_overridden_computed_vars(cls) -> None:
+        """Check for shadow computed vars and raise error if any.
+
+        Raises:
+            ComputedVarShadowsStateVarError: When a computed var shadows another.
+        """
+        for name, cv in cls.__dict__.items():
+            if not is_computed_var(cv):
+                continue
+            name = cv._js_expr
+            if name in cls.inherited_vars or name in cls.inherited_backend_vars:
+                raise ComputedVarShadowsStateVarError(
+                    f"The computed var name `{cv._js_expr}` shadows a var in {cls.__module__}.{cls.__name__}; use a different name instead"
                 )
 
     @classmethod
@@ -747,9 +885,12 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         )
 
     @classmethod
-    @functools.lru_cache()
-    def get_parent_state(cls) -> Type[BaseState] | None:
+    @functools.lru_cache
+    def get_parent_state(cls) -> type[BaseState] | None:
         """Get the parent state.
+
+        Raises:
+            ValueError: If more than one parent state is found.
 
         Returns:
             The parent state.
@@ -759,13 +900,30 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             for base in cls.__bases__
             if issubclass(base, BaseState) and base is not BaseState and not base._mixin
         ]
-        assert (
-            len(parent_states) < 2
-        ), f"Only one parent state is allowed {parent_states}."
-        return parent_states[0] if len(parent_states) == 1 else None  # type: ignore
+        if len(parent_states) >= 2:
+            raise ValueError(f"Only one parent state is allowed {parent_states}.")
+        # The first non-mixin state in the mro is our parent.
+        for base in cls.mro()[1:]:
+            if not issubclass(base, BaseState) or base._mixin:
+                continue
+            if base is BaseState:
+                break
+            return base
+        return None  # No known parent
 
     @classmethod
-    def get_substates(cls) -> set[Type[BaseState]]:
+    @functools.lru_cache
+    def get_root_state(cls) -> type[BaseState]:
+        """Get the root state.
+
+        Returns:
+            The root state.
+        """
+        parent_state = cls.get_parent_state()
+        return cls if parent_state is None else parent_state.get_root_state()
+
+    @classmethod
+    def get_substates(cls) -> set[type[BaseState]]:
         """Get the substates of the state.
 
         Returns:
@@ -774,7 +932,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         return cls.class_subclasses
 
     @classmethod
-    @functools.lru_cache()
+    @functools.lru_cache
     def get_name(cls) -> str:
         """Get the name of the state.
 
@@ -785,7 +943,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         return format.to_snake_case(f"{module}___{cls.__name__}")
 
     @classmethod
-    @functools.lru_cache()
+    @functools.lru_cache
     def get_full_name(cls) -> str:
         """Get the full name of the state.
 
@@ -799,8 +957,8 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         return name
 
     @classmethod
-    @functools.lru_cache()
-    def get_class_substate(cls, path: Sequence[str] | str) -> Type[BaseState]:
+    @functools.lru_cache
+    def get_class_substate(cls, path: Sequence[str] | str) -> type[BaseState]:
         """Get the class substate.
 
         Args:
@@ -846,7 +1004,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         return getattr(substate, name)
 
     @classmethod
-    def _init_var(cls, prop: BaseVar):
+    def _init_var(cls, prop: Var):
         """Initialize a variable.
 
         Args:
@@ -855,17 +1013,19 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         Raises:
             VarTypeError: if the variable has an incorrect type
         """
+        from reflex.config import get_config
         from reflex.utils.exceptions import VarTypeError
 
         if not types.is_valid_var_type(prop._var_type):
             raise VarTypeError(
-                "State vars must be primitive Python types, "
-                "Plotly figures, Pandas dataframes, "
-                "or subclasses of rx.Base. "
-                f'Found var "{prop._var_name}" with type {prop._var_type}.'
+                "State vars must be of a serializable type. "
+                "Valid types include strings, numbers, booleans, lists, "
+                "dictionaries, dataclasses, datetime objects, and pydantic models. "
+                f'Found var "{prop._js_expr}" with type {prop._var_type}.'
             )
         cls._set_var(prop)
-        cls._create_setter(prop)
+        if get_config().state_auto_setters:
+            cls._create_setter(prop)
         cls._set_default_value(prop)
 
     @classmethod
@@ -889,8 +1049,11 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             )
 
         # create the variable based on name and type
-        var = BaseVar(_var_name=name, _var_type=type_)
-        var._var_set_state(cls)
+        var = Var(
+            _js_expr=format.format_state_name(cls.get_full_name()) + "." + name,
+            _var_type=type_,
+            _var_data=VarData.from_state(cls, name),
+        ).guess_type()
 
         # add the pydantic field dynamically (must be done before _init_var)
         cls.add_field(var, default_value)
@@ -909,16 +1072,16 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         cls._init_var_dependency_dicts()
 
     @classmethod
-    def _set_var(cls, prop: BaseVar):
+    def _set_var(cls, prop: Var):
         """Set the var as a class member.
 
         Args:
             prop: The var instance to set.
         """
-        setattr(cls, prop._var_name, prop)
+        setattr(cls, prop._var_field_name, prop)
 
     @classmethod
-    def _create_event_handler(cls, fn):
+    def _create_event_handler(cls, fn: Any):
         """Create an event handler for the given function.
 
         Args:
@@ -935,39 +1098,60 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         cls.setvar = cls.event_handlers["setvar"] = EventHandlerSetVar(state_cls=cls)
 
     @classmethod
-    def _create_setter(cls, prop: BaseVar):
+    def _create_setter(cls, prop: Var):
         """Create a setter for the var.
 
         Args:
             prop: The var to create a setter for.
         """
-        setter_name = prop.get_setter_name(include_state=False)
+        setter_name = prop._get_setter_name(include_state=False)
         if setter_name not in cls.__dict__:
-            event_handler = cls._create_event_handler(prop.get_setter())
+            event_handler = cls._create_event_handler(prop._get_setter())
             cls.event_handlers[setter_name] = event_handler
             setattr(cls, setter_name, event_handler)
 
     @classmethod
-    def _set_default_value(cls, prop: BaseVar):
+    def _set_default_value(cls, prop: Var):
         """Set the default value for the var.
 
         Args:
             prop: The var to set the default value for.
         """
         # Get the pydantic field for the var.
-        field = cls.get_fields()[prop._var_name]
+        field = cls.get_fields()[prop._var_field_name]
         if field.required:
-            default_value = prop.get_default_value()
+            default_value = prop._get_default_value()
             if default_value is not None:
                 field.required = False
                 field.default = default_value
         if (
             not field.required
             and field.default is None
+            and field.default_factory is None
             and not types.is_optional(prop._var_type)
         ):
             # Ensure frontend uses null coalescing when accessing.
-            prop._var_type = Optional[prop._var_type]
+            object.__setattr__(prop, "_var_type", prop._var_type | None)
+
+    @classmethod
+    def _get_var_default(cls, name: str, annotation_value: Any) -> Any:
+        """Get the default value of a (backend) var.
+
+        Args:
+            name: The name of the var.
+            annotation_value: The annotation value of the var.
+
+        Returns:
+            The default value of the var or None.
+        """
+        try:
+            return getattr(cls, name)
+        except AttributeError:
+            try:
+                return Var("", _var_type=annotation_value)._get_default_value()
+            except TypeError:
+                pass
+        return None
 
     @staticmethod
     def _get_base_functions() -> dict[str, FunctionType]:
@@ -983,27 +1167,51 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         }
 
     @classmethod
+    def _update_substate_inherited_vars(cls, vars_to_add: dict[str, Var]):
+        """Update the inherited vars of substates recursively when new vars are added.
+
+        Also updates the var dependency tracking dicts after adding vars.
+
+        Args:
+            vars_to_add: names to Var instances to add to substates
+        """
+        for substate_class in cls.class_subclasses:
+            for name, var in vars_to_add.items():
+                if types.is_backend_base_variable(name, cls):
+                    substate_class.backend_vars.setdefault(name, var)
+                    substate_class.inherited_backend_vars.setdefault(name, var)
+                else:
+                    substate_class.vars.setdefault(name, var)
+                    substate_class.inherited_vars.setdefault(name, var)
+                substate_class._update_substate_inherited_vars(vars_to_add)
+        # Reinitialize dependency tracking dicts.
+        cls._init_var_dependency_dicts()
+
+    @classmethod
     def setup_dynamic_args(cls, args: dict[str, str]):
         """Set up args for easy access in renderer.
 
         Args:
             args: a dict of args
         """
+        if not args:
+            return
 
-        def argsingle_factory(param):
-            @ComputedVar
-            def inner_func(self) -> str:
+        cls._check_overwritten_dynamic_args(list(args.keys()))
+
+        def argsingle_factory(param: str):
+            def inner_func(self: BaseState) -> str:
                 return self.router.page.params.get(param, "")
 
             return inner_func
 
-        def arglist_factory(param):
-            @ComputedVar
-            def inner_func(self) -> List:
+        def arglist_factory(param: str):
+            def inner_func(self: BaseState) -> list[str]:
                 return self.router.page.params.get(param, [])
 
             return inner_func
 
+        dynamic_vars = {}
         for param, value in args.items():
             if value == constants.RouteArgType.SINGLE:
                 func = argsingle_factory(param)
@@ -1011,13 +1219,40 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
                 func = arglist_factory(param)
             else:
                 continue
-            # to allow passing as a prop
-            func._var_name = param
-            cls.vars[param] = cls.computed_vars[param] = func._var_set_state(cls)  # type: ignore
-            setattr(cls, param, func)
+            dynamic_vars[param] = DynamicRouteVar(
+                fget=func,
+                auto_deps=False,
+                deps=["router"],
+                _js_expr=param,
+                _var_data=VarData.from_state(cls),
+            )
+            setattr(cls, param, dynamic_vars[param])
 
-            # Reinitialize dependency tracking dicts.
-            cls._init_var_dependency_dicts()
+        # Update tracking dicts.
+        cls.computed_vars.update(dynamic_vars)
+        cls.vars.update(dynamic_vars)
+        cls._update_substate_inherited_vars(dynamic_vars)
+
+    @classmethod
+    def _check_overwritten_dynamic_args(cls, args: list[str]):
+        """Check if dynamic args are shadowing existing vars. Recursively checks all child states.
+
+        Args:
+            args: a dict of args
+
+        Raises:
+            DynamicRouteArgShadowsStateVarError: If a dynamic arg is shadowing an existing var.
+        """
+        for arg in args:
+            if (
+                arg in cls.computed_vars
+                and not isinstance(cls.computed_vars[arg], DynamicRouteVar)
+            ) or arg in cls.base_vars:
+                raise DynamicRouteArgShadowsStateVarError(
+                    f"Dynamic route arg '{arg}' is shadowing an existing var in {cls.__module__}.{cls.__name__}"
+                )
+        for substate in cls.get_substates():
+            substate._check_overwritten_dynamic_args(args)
 
     def __getattribute__(self, name: str) -> Any:
         """Get the state var.
@@ -1034,13 +1269,16 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         if not super().__getattribute__("__dict__"):
             return super().__getattribute__(name)
 
-        inherited_vars = {
-            **super().__getattribute__("inherited_vars"),
-            **super().__getattribute__("inherited_backend_vars"),
-        }
+        # Fast path for dunder
+        if name.startswith("__"):
+            return super().__getattribute__(name)
 
         # For now, handle router_data updates as a special case.
-        if name in inherited_vars or name == constants.ROUTER_DATA:
+        if (
+            name == constants.ROUTER_DATA
+            or name in super().__getattribute__("inherited_vars")
+            or name in super().__getattribute__("inherited_backend_vars")
+        ):
             parent_state = super().__getattribute__("parent_state")
             if parent_state is not None:
                 return getattr(parent_state, name)
@@ -1053,8 +1291,8 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
                 fn = _no_chain_background_task(type(self), name, handler.fn)
             else:
                 fn = functools.partial(handler.fn, self)
-            fn.__module__ = handler.fn.__module__  # type: ignore
-            fn.__qualname__ = handler.fn.__qualname__  # type: ignore
+            fn.__module__ = handler.fn.__module__
+            fn.__qualname__ = handler.fn.__qualname__
             return fn
 
         backend_vars = super().__getattribute__("_backend_vars")
@@ -1070,7 +1308,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             if parent_state is not None:
                 return getattr(parent_state, name)
 
-        if isinstance(value, MutableProxy.__mutable_types__) and (
+        if MutableProxy._is_mutable_type(value) and (
             name in super().__getattribute__("base_vars") or name in backend_vars
         ):
             # track changes in mutable containers (list, dict, set, etc)
@@ -1086,14 +1324,16 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         Args:
             name: The name of the attribute.
             value: The value of the attribute.
+
+        Raises:
+            SetUndefinedStateVarError: If a value of a var is set without first defining it.
         """
         if isinstance(value, MutableProxy):
             # unwrap proxy objects when assigning back to the state
             value = value.__wrapped__
 
         # Set the var on the parent state.
-        inherited_vars = {**self.inherited_vars, **self.inherited_backend_vars}
-        if name in inherited_vars:
+        if name in self.inherited_vars or name in self.inherited_backend_vars:
             setattr(self.parent_state, name, value)
             return
 
@@ -1103,11 +1343,35 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             self._mark_dirty()
             return
 
+        if (
+            name not in self.vars
+            and name not in self.get_skip_vars()
+            and not name.startswith("__")
+            and not name.startswith(
+                f"_{getattr(type(self), '__original_name__', type(self).__name__)}__"
+            )
+        ):
+            raise SetUndefinedStateVarError(
+                f"The state variable '{name}' has not been defined in '{type(self).__name__}'. "
+                f"All state variables must be declared before they can be set."
+            )
+
+        fields = self.get_fields()
+
+        if name in fields:
+            field = fields[name]
+            field_type = _unwrap_field_type(true_type_for_pydantic_field(field))
+            if not _isinstance(value, field_type, nested=1, treat_var_as_type=False):
+                console.error(
+                    f"Expected field '{type(self).__name__}.{name}' to receive type '{escape(str(field_type))}',"
+                    f" but got '{value}' of type '{type(value)}'."
+                )
+
         # Set the attribute.
         super().__setattr__(name, value)
 
         # Add the var to the dirty list.
-        if name in self.vars or name in self._computed_var_dependencies:
+        if name in self.base_vars:
             self.dirty_vars.add(name)
             self._mark_dirty()
 
@@ -1129,6 +1393,10 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             else:
                 default = copy.deepcopy(field.default)
             setattr(self, prop_name, default)
+
+        # Reset the backend vars.
+        for prop_name, value in self.backend_vars.items():
+            setattr(self, prop_name, copy.deepcopy(value))
 
         # Recursively reset the substates.
         for substate in self.substates.values():
@@ -1174,130 +1442,34 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         return self.substates[path[0]].get_substate(path[1:])
 
     @classmethod
-    def _get_common_ancestor(cls, other: Type[BaseState]) -> str:
-        """Find the name of the nearest common ancestor shared by this and the other state.
-
-        Args:
-            other: The other state.
+    def _get_potentially_dirty_states(cls) -> set[type[BaseState]]:
+        """Get substates which may have dirty vars due to dependencies.
 
         Returns:
-            Full name of the nearest common ancestor.
+            The set of potentially dirty substate classes.
         """
-        common_ancestor_parts = []
-        for part1, part2 in zip(
-            cls.get_full_name().split("."),
-            other.get_full_name().split("."),
-        ):
-            if part1 != part2:
-                break
-            common_ancestor_parts.append(part1)
-        return ".".join(common_ancestor_parts)
+        return {
+            cls.get_class_substate(substate_name)
+            for substate_name in cls._always_dirty_substates
+        }.union(
+            {
+                cls.get_root_state().get_class_substate(substate_name)
+                for substate_name in cls._potentially_dirty_states
+            }
+        )
 
-    @classmethod
-    def _determine_missing_parent_states(
-        cls, target_state_cls: Type[BaseState]
-    ) -> tuple[str, list[str]]:
-        """Determine the missing parent states between the target_state_cls and common ancestor of this state.
-
-        Args:
-            target_state_cls: The class of the state to find missing parent states for.
+    def _get_root_state(self) -> BaseState:
+        """Get the root state of the state tree.
 
         Returns:
-            The name of the common ancestor and the list of missing parent states.
+            The root state of the state tree.
         """
-        common_ancestor_name = cls._get_common_ancestor(target_state_cls)
-        common_ancestor_parts = common_ancestor_name.split(".")
-        target_state_parts = tuple(target_state_cls.get_full_name().split("."))
-        relative_target_state_parts = target_state_parts[len(common_ancestor_parts) :]
-
-        # Determine which parent states to fetch from the common ancestor down to the target_state_cls.
-        fetch_parent_states = [common_ancestor_name]
-        for relative_parent_state_name in relative_target_state_parts:
-            fetch_parent_states.append(
-                ".".join((fetch_parent_states[-1], relative_parent_state_name))
-            )
-
-        return common_ancestor_name, fetch_parent_states[1:-1]
-
-    def _get_parent_states(self) -> list[tuple[str, BaseState]]:
-        """Get all parent state instances up to the root of the state tree.
-
-        Returns:
-            A list of tuples containing the name and the instance of each parent state.
-        """
-        parent_states_with_name = []
         parent_state = self
         while parent_state.parent_state is not None:
             parent_state = parent_state.parent_state
-            parent_states_with_name.append((parent_state.get_full_name(), parent_state))
-        return parent_states_with_name
-
-    async def _populate_parent_states(self, target_state_cls: Type[BaseState]):
-        """Populate substates in the tree between the target_state_cls and common ancestor of this state.
-
-        Args:
-            target_state_cls: The class of the state to populate parent states for.
-
-        Returns:
-            The parent state instance of target_state_cls.
-
-        Raises:
-            RuntimeError: If redis is not used in this backend process.
-        """
-        state_manager = get_state_manager()
-        if not isinstance(state_manager, StateManagerRedis):
-            raise RuntimeError(
-                f"Cannot populate parent states of {target_state_cls.get_full_name()} without redis. "
-                "(All states should already be available -- this is likely a bug).",
-            )
-
-        # Find the missing parent states up to the common ancestor.
-        (
-            common_ancestor_name,
-            missing_parent_states,
-        ) = self._determine_missing_parent_states(target_state_cls)
-
-        # Fetch all missing parent states and link them up to the common ancestor.
-        parent_states_tuple = self._get_parent_states()
-        root_state = parent_states_tuple[-1][1]
-        parent_states_by_name = dict(parent_states_tuple)
-        parent_state = parent_states_by_name[common_ancestor_name]
-        for parent_state_name in missing_parent_states:
-            try:
-                parent_state = root_state.get_substate(parent_state_name.split("."))
-                # The requested state is already cached, do NOT fetch it again.
-                continue
-            except ValueError:
-                # The requested state is missing, fetch from redis.
-                pass
-            parent_state = await state_manager.get_state(
-                token=_substate_key(
-                    self.router.session.client_token, parent_state_name
-                ),
-                top_level=False,
-                get_substates=False,
-                parent_state=parent_state,
-            )
-
-        # Return the direct parent of target_state_cls for subsequent linking.
         return parent_state
 
-    def _get_state_from_cache(self, state_cls: Type[BaseState]) -> BaseState:
-        """Get a state instance from the cache.
-
-        Args:
-            state_cls: The class of the state.
-
-        Returns:
-            The instance of state_cls associated with this state's client_token.
-        """
-        if self.parent_state is None:
-            root_state = self
-        else:
-            root_state = self._get_parent_states()[-1][1]
-        return root_state.get_substate(state_cls.get_full_name().split("."))
-
-    async def _get_state_from_redis(self, state_cls: Type[BaseState]) -> BaseState:
+    async def _get_state_from_redis(self, state_cls: type[T_STATE]) -> T_STATE:
         """Get a state instance from redis.
 
         Args:
@@ -1308,10 +1480,8 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
 
         Raises:
             RuntimeError: If redis is not used in this backend process.
+            StateMismatchError: If the state instance is not of the expected type.
         """
-        # Fetch all missing parent states from redis.
-        parent_state_of_state_cls = await self._populate_parent_states(state_cls)
-
         # Then get the target state and all its substates.
         state_manager = get_state_manager()
         if not isinstance(state_manager, StateManagerRedis):
@@ -1319,14 +1489,40 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
                 f"Requested state {state_cls.get_full_name()} is not cached and cannot be accessed without redis. "
                 "(All states should already be available -- this is likely a bug).",
             )
-        return await state_manager.get_state(
+        state_in_redis = await state_manager.get_state(
             token=_substate_key(self.router.session.client_token, state_cls),
             top_level=False,
-            get_substates=True,
-            parent_state=parent_state_of_state_cls,
+            for_state_instance=self,
         )
 
-    async def get_state(self, state_cls: Type[BaseState]) -> BaseState:
+        if not isinstance(state_in_redis, state_cls):
+            raise StateMismatchError(
+                f"Searched for state {state_cls.get_full_name()} but found {state_in_redis}."
+            )
+
+        return state_in_redis
+
+    def _get_state_from_cache(self, state_cls: type[T_STATE]) -> T_STATE:
+        """Get a state instance from the cache.
+
+        Args:
+            state_cls: The class of the state.
+
+        Returns:
+            The instance of state_cls associated with this state's client_token.
+
+        Raises:
+            StateMismatchError: If the state instance is not of the expected type.
+        """
+        root_state = self._get_root_state()
+        substate = root_state.get_substate(state_cls.get_full_name().split("."))
+        if not isinstance(substate, state_cls):
+            raise StateMismatchError(
+                f"Searched for state {state_cls.get_full_name()} but found {substate}."
+            )
+        return substate
+
+    async def get_state(self, state_cls: type[T_STATE]) -> T_STATE:
         """Get an instance of the state associated with this token.
 
         Allows for arbitrary access to sibling states from within an event handler.
@@ -1345,6 +1541,46 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
 
         # Slow case - fetch missing parent states from redis.
         return await self._get_state_from_redis(state_cls)
+
+    async def get_var_value(self, var: Var[VAR_TYPE]) -> VAR_TYPE:
+        """Get the value of an rx.Var from another state.
+
+        Args:
+            var: The var to get the value for.
+
+        Returns:
+            The value of the var.
+
+        Raises:
+            UnretrievableVarValueError: If the var does not have a literal value
+                or associated state.
+        """
+        # Oopsie case: you didn't give me a Var... so get what you give.
+        if not isinstance(var, Var):
+            return var
+
+        unset = object()
+
+        # Fast case: this is a literal var and the value is known.
+        if (
+            var_value := getattr(var, "_var_value", unset)
+        ) is not unset and not isinstance(var_value, Var):
+            return var_value  # pyright: ignore [reportReturnType]
+
+        var_data = var._get_all_var_data()
+        if var_data is None or not var_data.state:
+            raise UnretrievableVarValueError(
+                f"Unable to retrieve value for {var._js_expr}: not associated with any state."
+            )
+        # Fastish case: this var belongs to this state
+        if var_data.state == self.get_full_name():
+            return getattr(self, var_data.field_name)
+
+        # Slow case: this var belongs to another state
+        other_state = await self.get_state(
+            self._get_root_state().get_class_substate(var_data.state)
+        )
+        return getattr(other_state, var_data.field_name)
 
     def _get_event_handler(
         self, event: Event
@@ -1416,17 +1652,30 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
 
         if events is None or _is_valid_type(events):
             return events
+
+        if not isinstance(events, Sequence):
+            events = [events]
+
         try:
             if all(_is_valid_type(e) for e in events):
                 return events
         except TypeError:
             pass
 
+        coroutines = [e for e in events if asyncio.iscoroutine(e)]
+
+        for coroutine in coroutines:
+            coroutine_name = coroutine.__qualname__
+            warnings.filterwarnings(
+                "ignore", message=f"coroutine '{coroutine_name}' was never awaited"
+            )
+
         raise TypeError(
-            f"Your handler {handler.fn.__qualname__} must only return/yield: None, Events or other EventHandlers referenced by their class (not using `self`)"
+            f"Your handler {handler.fn.__qualname__} must only return/yield: None, Events or other EventHandlers referenced by their class (i.e. using `type(self)` or other class references)."
+            f" Returned events of types {', '.join(map(str, map(type, events)))!s}."
         )
 
-    def _as_state_update(
+    async def _as_state_update(
         self,
         handler: EventHandler,
         events: EventSpec | list[EventSpec] | None,
@@ -1445,9 +1694,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             The valid StateUpdate containing the events and final flag.
         """
         # get the delta from the root of the state tree
-        state = self
-        while state.parent_state is not None:
-            state = state.parent_state
+        state = self._get_root_state()
 
         token = self.router.session.client_token
 
@@ -1456,7 +1703,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
 
         try:
             # Get the delta after processing the event.
-            delta = state.get_delta()
+            delta = await state._get_resolved_delta()
             state._clean()
 
             return StateUpdate(
@@ -1467,15 +1714,15 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         except Exception as ex:
             state._clean()
 
-            app_instance = getattr(prerequisites.get_app(), constants.CompileVars.APP)
-
-            event_specs = app_instance.backend_exception_handler(ex)
+            event_specs = (
+                prerequisites.get_and_validate_app().app.backend_exception_handler(ex)
+            )
 
             if event_specs is None:
                 return StateUpdate()
 
             event_specs_correct_type = cast(
-                Union[List[Union[EventSpec, EventHandler]], None],
+                list[EventSpec | EventHandler] | None,
                 [event_specs] if isinstance(event_specs, EventSpec) else event_specs,
             )
             fixed_events = fix_events(
@@ -1489,7 +1736,10 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             )
 
     async def _process_event(
-        self, handler: EventHandler, state: BaseState | StateProxy, payload: Dict
+        self,
+        handler: EventHandler,
+        state: BaseState | StateProxy,
+        payload: builtins.dict,
     ) -> AsyncIterator[StateUpdate]:
         """Process event.
 
@@ -1500,11 +1750,65 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
 
         Yields:
             StateUpdate object
+
+        Raises:
+            ValueError: If a string value is received for an int or float type and cannot be converted.
         """
         from reflex.utils import telemetry
 
         # Get the function to process the event.
         fn = functools.partial(handler.fn, state)
+
+        try:
+            type_hints = typing.get_type_hints(handler.fn)
+        except Exception:
+            type_hints = {}
+
+        for arg, value in list(payload.items()):
+            hinted_args = type_hints.get(arg, Any)
+            if hinted_args is Any:
+                continue
+            if is_union(hinted_args):
+                if value is None:
+                    continue
+                hinted_args = value_inside_optional(hinted_args)
+            if (
+                isinstance(value, dict)
+                and inspect.isclass(hinted_args)
+                and not types.is_generic_alias(hinted_args)  # py3.10
+            ):
+                if issubclass(hinted_args, Model):
+                    # Remove non-fields from the payload
+                    payload[arg] = hinted_args(
+                        **{
+                            key: value
+                            for key, value in value.items()
+                            if key in hinted_args.__fields__
+                        }
+                    )
+                elif dataclasses.is_dataclass(hinted_args) or issubclass(
+                    hinted_args, (Base, BaseModelV1, BaseModelV2)
+                ):
+                    payload[arg] = hinted_args(**value)
+            elif isinstance(value, list) and (hinted_args is set or hinted_args is set):
+                payload[arg] = set(value)
+            elif isinstance(value, list) and (
+                hinted_args is tuple or hinted_args is tuple
+            ):
+                payload[arg] = tuple(value)
+            elif isinstance(value, str) and (
+                hinted_args is int or hinted_args is float
+            ):
+                try:
+                    payload[arg] = hinted_args(value)
+                except ValueError:
+                    raise ValueError(
+                        f"Received a string value ({value}) for {arg} but expected a {hinted_args}"
+                    ) from None
+                else:
+                    console.warn(
+                        f"Received a string value ({value}) for {arg} but expected a {hinted_args}. A simple conversion was successful."
+                    )
 
         # Wrap the function in a try/except block.
         try:
@@ -1518,34 +1822,38 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             # Handle async generators.
             if inspect.isasyncgen(events):
                 async for event in events:
-                    yield state._as_state_update(handler, event, final=False)
-                yield state._as_state_update(handler, events=None, final=True)
+                    yield await state._as_state_update(handler, event, final=False)
+                yield await state._as_state_update(handler, events=None, final=True)
 
             # Handle regular generators.
             elif inspect.isgenerator(events):
                 try:
                     while True:
-                        yield state._as_state_update(handler, next(events), final=False)
+                        yield await state._as_state_update(
+                            handler, next(events), final=False
+                        )
                 except StopIteration as si:
                     # the "return" value of the generator is not available
                     # in the loop, we must catch StopIteration to access it
                     if si.value is not None:
-                        yield state._as_state_update(handler, si.value, final=False)
-                yield state._as_state_update(handler, events=None, final=True)
+                        yield await state._as_state_update(
+                            handler, si.value, final=False
+                        )
+                yield await state._as_state_update(handler, events=None, final=True)
 
             # Handle regular event chains.
             else:
-                yield state._as_state_update(handler, events, final=True)
+                yield await state._as_state_update(handler, events, final=True)
 
         # If an error occurs, throw a window alert.
         except Exception as ex:
             telemetry.send_error(ex, context="backend")
 
-            app_instance = getattr(prerequisites.get_app(), constants.CompileVars.APP)
+            event_specs = (
+                prerequisites.get_and_validate_app().app.backend_exception_handler(ex)
+            )
 
-            event_specs = app_instance.backend_exception_handler(ex)
-
-            yield state._as_state_update(
+            yield await state._as_state_update(
                 handler,
                 event_specs,
                 final=True,
@@ -1553,15 +1861,30 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
 
     def _mark_dirty_computed_vars(self) -> None:
         """Mark ComputedVars that need to be recalculated based on dirty_vars."""
+        # Append expired computed vars to dirty_vars to trigger recalculation
+        self.dirty_vars.update(self._expired_computed_vars())
+        # Append always dirty computed vars to dirty_vars to trigger recalculation
+        self.dirty_vars.update(self._always_dirty_computed_vars)
+
         dirty_vars = self.dirty_vars
         while dirty_vars:
             calc_vars, dirty_vars = dirty_vars, set()
-            for cvar in self._dirty_computed_vars(from_vars=calc_vars):
-                self.dirty_vars.add(cvar)
-                dirty_vars.add(cvar)
-                actual_var = self.computed_vars.get(cvar)
+            for state_name, cvar in self._dirty_computed_vars(from_vars=calc_vars):
+                if state_name == self.get_full_name():
+                    defining_state = self
+                else:
+                    defining_state = self._get_root_state().get_substate(
+                        tuple(state_name.split("."))
+                    )
+                defining_state.dirty_vars.add(cvar)
+                actual_var = defining_state.computed_vars.get(cvar)
                 if actual_var is not None:
-                    actual_var.mark_dirty(instance=self)
+                    actual_var.mark_dirty(instance=defining_state)
+                if defining_state is self:
+                    dirty_vars.add(cvar)
+                else:
+                    # mark dirty where this var is defined
+                    defining_state._mark_dirty()
 
     def _expired_computed_vars(self) -> set[str]:
         """Determine ComputedVars that need to be recalculated based on the expiration time.
@@ -1569,15 +1892,15 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         Returns:
             Set of computed vars to include in the delta.
         """
-        return set(
+        return {
             cvar
             for cvar in self.computed_vars
             if self.computed_vars[cvar].needs_update(instance=self)
-        )
+        }
 
     def _dirty_computed_vars(
         self, from_vars: set[str] | None = None, include_backend: bool = True
-    ) -> set[str]:
+    ) -> set[tuple[str, str]]:
         """Determine ComputedVars that need to be recalculated based on the given vars.
 
         Args:
@@ -1587,33 +1910,12 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         Returns:
             Set of computed vars to include in the delta.
         """
-        return set(
-            cvar
+        return {
+            (state_name, cvar)
             for dirty_var in from_vars or self.dirty_vars
-            for cvar in self._computed_var_dependencies[dirty_var]
+            for state_name, cvar in self._var_dependencies.get(dirty_var, set())
             if include_backend or not self.computed_vars[cvar]._backend
-        )
-
-    @classmethod
-    def _potentially_dirty_substates(cls) -> set[Type[BaseState]]:
-        """Determine substates which could be affected by dirty vars in this state.
-
-        Returns:
-            Set of State classes that may need to be fetched to recalc computed vars.
-        """
-        # _always_dirty_substates need to be fetched to recalc computed vars.
-        fetch_substates = set(
-            cls.get_class_substate((cls.get_name(), *substate_name.split(".")))
-            for substate_name in cls._always_dirty_substates
-        )
-        for dependent_substates in cls._substate_var_dependencies.values():
-            fetch_substates.update(
-                set(
-                    cls.get_class_substate((cls.get_name(), *substate_name.split(".")))
-                    for substate_name in dependent_substates
-                )
-            )
-        return fetch_substates
+        }
 
     def get_delta(self) -> Delta:
         """Get the delta for the state.
@@ -1623,28 +1925,23 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         """
         delta = {}
 
-        # Apply dirty variables down into substates
-        self.dirty_vars.update(self._always_dirty_computed_vars)
-        self._mark_dirty()
-
+        self._mark_dirty_computed_vars()
         frontend_computed_vars: set[str] = {
             name for name, cv in self.computed_vars.items() if not cv._backend
         }
 
         # Return the dirty vars for this instance, any cached/dependent computed vars,
         # and always dirty computed vars (cache=False)
-        delta_vars = (
-            self.dirty_vars.intersection(self.base_vars)
-            .union(self.dirty_vars.intersection(frontend_computed_vars))
-            .union(self._dirty_computed_vars(include_backend=False))
-            .union(self._always_dirty_computed_vars)
+        delta_vars = self.dirty_vars.intersection(self.base_vars).union(
+            self.dirty_vars.intersection(frontend_computed_vars)
         )
 
-        subdelta = {
-            prop: getattr(self, prop)
+        subdelta: dict[str, Any] = {
+            prop: self.get_value(prop)
             for prop in delta_vars
             if not types.is_backend_base_variable(prop, type(self))
         }
+
         if len(subdelta) > 0:
             delta[self.get_full_name()] = subdelta
 
@@ -1653,11 +1950,16 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         for substate in self.dirty_substates.union(self._always_dirty_substates):
             delta.update(substates[substate].get_delta())
 
-        # Format the delta.
-        delta = format.format_state(delta)
-
         # Return the delta.
         return delta
+
+    async def _get_resolved_delta(self) -> Delta:
+        """Get the delta for the state after resolving all coroutines.
+
+        Returns:
+            The resolved delta for the state.
+        """
+        return await _resolve_delta(self.get_delta())
 
     def _mark_dirty(self):
         """Mark the substate and all parent states as dirty."""
@@ -1669,29 +1971,18 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             self.parent_state.dirty_substates.add(self.get_name())
             self.parent_state._mark_dirty()
 
-        # Append expired computed vars to dirty_vars to trigger recalculation
-        self.dirty_vars.update(self._expired_computed_vars())
-
         # have to mark computed vars dirty to allow access to newly computed
         # values within the same ComputedVar function
         self._mark_dirty_computed_vars()
-        self._mark_dirty_substates()
-
-    def _mark_dirty_substates(self):
-        """Propagate dirty var / computed var status into substates."""
-        substates = self.substates
-        for var in self.dirty_vars:
-            for substate_name in self._substate_var_dependencies[var]:
-                self.dirty_substates.add(substate_name)
-                substate = substates[substate_name]
-                substate.dirty_vars.add(var)
-                substate._mark_dirty()
 
     def _update_was_touched(self):
         """Update the _was_touched flag based on dirty_vars."""
         if self.dirty_vars and not self._was_touched:
             for var in self.dirty_vars:
                 if var in self.base_vars or var in self._backend_vars:
+                    self._was_touched = True
+                    break
+                if var == constants.ROUTER_DATA and self.parent_state is None:
                     self._was_touched = True
                     break
 
@@ -1735,9 +2026,10 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         Returns:
             The value of the field.
         """
-        if isinstance(key, MutableProxy):
-            return super().get_value(key.__wrapped__)
-        return super().get_value(key)
+        value = super().get_value(key)
+        if isinstance(value, MutableProxy):
+            return value.__wrapped__
+        return value
 
     def dict(
         self, include_computed: bool = True, initial: bool = False, **kwargs
@@ -1753,23 +2045,18 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             The object as a dictionary.
         """
         if include_computed:
-            # Apply dirty variables down into substates to allow never-cached ComputedVar to
-            # trigger recalculation of dependent vars
-            self.dirty_vars.update(self._always_dirty_computed_vars)
-            self._mark_dirty()
-
+            self._mark_dirty_computed_vars()
         base_vars = {
-            prop_name: self.get_value(getattr(self, prop_name))
-            for prop_name in self.base_vars
+            prop_name: self.get_value(prop_name) for prop_name in self.base_vars
         }
-        if initial:
+        if initial and include_computed:
             computed_vars = {
                 # Include initial computed vars.
                 prop_name: (
                     cv._initial_value
-                    if isinstance(cv, ComputedVar)
+                    if is_computed_var(cv)
                     and not isinstance(cv._initial_value, types.Unset)
-                    else self.get_value(getattr(self, prop_name))
+                    else self.get_value(prop_name)
                 )
                 for prop_name, cv in self.computed_vars.items()
                 if not cv._backend
@@ -1777,7 +2064,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         elif include_computed:
             computed_vars = {
                 # Include the computed vars.
-                prop_name: self.get_value(getattr(self, prop_name))
+                prop_name: self.get_value(prop_name)
                 for prop_name, cv in self.computed_vars.items()
                 if not cv._backend
             }
@@ -1822,7 +2109,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
     def __getstate__(self):
         """Get the state for redis serialization.
 
-        This method is called by cloudpickle to serialize the object.
+        This method is called by pickle to serialize the object.
 
         It explicitly removes parent_state and substates because those are serialized separately
         by the StateManagerRedis to allow for better horizontal scaling as state size increases.
@@ -1831,15 +2118,190 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             The state dict for serialization.
         """
         state = super().__getstate__()
-        # Never serialize parent_state or substates
         state["__dict__"] = state["__dict__"].copy()
+        if state["__dict__"].get("parent_state") is not None:
+            # Do not serialize router data in substates (only the root state).
+            state["__dict__"].pop("router", None)
+            state["__dict__"].pop("router_data", None)
+        # Never serialize parent_state or substates.
+        state["__dict__"].pop("parent_state", None)
+        state["__dict__"].pop("substates", None)
+        state["__dict__"].pop("_was_touched", None)
+        # Remove all inherited vars.
+        for inherited_var_name in self.inherited_vars:
+            state["__dict__"].pop(inherited_var_name, None)
+        return state
+
+    def __setstate__(self, state: dict[str, Any]):
+        """Set the state from redis deserialization.
+
+        This method is called by pickle to deserialize the object.
+
+        Args:
+            state: The state dict for deserialization.
+        """
         state["__dict__"]["parent_state"] = None
         state["__dict__"]["substates"] = {}
-        state["__dict__"].pop("_was_touched", None)
+        super().__setstate__(state)
+
+    def _check_state_size(
+        self,
+        pickle_state_size: int,
+    ):
+        """Print a warning when the state is too large.
+
+        Args:
+            pickle_state_size: The size of the pickled state.
+
+        Raises:
+            StateTooLargeError: If the state is too large.
+        """
+        state_full_name = self.get_full_name()
+        if (
+            state_full_name not in _WARNED_ABOUT_STATE_SIZE
+            and pickle_state_size > TOO_LARGE_SERIALIZED_STATE
+            and self.substates
+        ):
+            msg = (
+                f"State {state_full_name} serializes to {pickle_state_size} bytes "
+                + "which may present performance issues. Consider reducing the size of this state."
+            )
+            if environment.REFLEX_PERF_MODE.get() == PerformanceMode.WARN:
+                console.warn(msg)
+            elif environment.REFLEX_PERF_MODE.get() == PerformanceMode.RAISE:
+                raise StateTooLargeError(msg)
+            _WARNED_ABOUT_STATE_SIZE.add(state_full_name)
+
+    @classmethod
+    @functools.lru_cache
+    def _to_schema(cls) -> str:
+        """Convert a state to a schema.
+
+        Returns:
+            The hash of the schema.
+        """
+
+        def _field_tuple(
+            field_name: str,
+        ) -> tuple[str, str, Any, bool | None, Any]:
+            model_field = cls.__fields__[field_name]
+            return (
+                field_name,
+                model_field.name,
+                _serialize_type(model_field.type_),
+                (
+                    model_field.required
+                    if isinstance(model_field.required, bool)
+                    else None
+                ),
+                (model_field.default if is_serializable(model_field.default) else None),
+            )
+
+        return md5(
+            pickle.dumps(
+                sorted(_field_tuple(field_name) for field_name in cls.base_vars)
+            )
+        ).hexdigest()
+
+    def _serialize(self) -> bytes:
+        """Serialize the state for redis.
+
+        Returns:
+            The serialized state.
+
+        Raises:
+            StateSerializationError: If the state cannot be serialized.
+        """
+        payload = b""
+        error = ""
+        try:
+            payload = pickle.dumps((self._to_schema(), self))
+        except HANDLED_PICKLE_ERRORS as og_pickle_error:
+            error = (
+                f"Failed to serialize state {self.get_full_name()} due to unpicklable object. "
+                "This state will not be persisted. "
+            )
+            try:
+                import dill
+
+                payload = dill.dumps((self._to_schema(), self))
+            except ImportError:
+                error += (
+                    f"Pickle error: {og_pickle_error}. "
+                    "Consider `pip install 'dill>=0.3.8'` for more exotic serialization support."
+                )
+            except HANDLED_PICKLE_ERRORS as ex:
+                error += f"Dill was also unable to pickle the state: {ex}"
+            console.warn(error)
+
+        if environment.REFLEX_PERF_MODE.get() != PerformanceMode.OFF:
+            self._check_state_size(len(payload))
+
+        if not payload:
+            raise StateSerializationError(error)
+
+        return payload
+
+    @classmethod
+    def _deserialize(
+        cls, data: bytes | None = None, fp: BinaryIO | None = None
+    ) -> BaseState:
+        """Deserialize the state from redis/disk.
+
+        data and fp are mutually exclusive, but one must be provided.
+
+        Args:
+            data: The serialized state data.
+            fp: The file pointer to the serialized state data.
+
+        Returns:
+            The deserialized state.
+
+        Raises:
+            ValueError: If both data and fp are provided, or neither are provided.
+            StateSchemaMismatchError: If the state schema does not match the expected schema.
+        """
+        if data is not None and fp is None:
+            (substate_schema, state) = pickle.loads(data)
+        elif fp is not None and data is None:
+            (substate_schema, state) = pickle.load(fp)
+        else:
+            raise ValueError("Only one of `data` or `fp` must be provided")
+        if substate_schema != state._to_schema():
+            raise StateSchemaMismatchError()
         return state
 
 
-EventHandlerSetVar.update_forward_refs()
+def _serialize_type(type_: Any) -> str:
+    """Serialize a type.
+
+    Args:
+        type_: The type to serialize.
+
+    Returns:
+        The serialized type.
+    """
+    if not inspect.isclass(type_):
+        return f"{type_}"
+    return f"{type_.__module__}.{type_.__qualname__}"
+
+
+def is_serializable(value: Any) -> bool:
+    """Check if a value is serializable.
+
+    Args:
+        value: The value to check.
+
+    Returns:
+        Whether the value is serializable.
+    """
+    try:
+        return bool(pickle.dumps(value))
+    except Exception:
+        return False
+
+
+T_STATE = TypeVar("T_STATE", bound=BaseState)
 
 
 class State(BaseState):
@@ -1849,10 +2311,55 @@ class State(BaseState):
     is_hydrated: bool = False
 
 
+T = TypeVar("T", bound=BaseState)
+
+
+def dynamic(func: Callable[[T], Component]):
+    """Create a dynamically generated components from a state class.
+
+    Args:
+        func: The function to generate the component.
+
+    Returns:
+        The dynamically generated component.
+
+    Raises:
+        DynamicComponentInvalidSignatureError: If the function does not have exactly one parameter or a type hint for the state class.
+    """
+    number_of_parameters = len(inspect.signature(func).parameters)
+
+    func_signature = get_type_hints(func)
+
+    if "return" in func_signature:
+        func_signature.pop("return")
+
+    values = list(func_signature.values())
+
+    if number_of_parameters != 1:
+        raise DynamicComponentInvalidSignatureError(
+            "The function must have exactly one parameter, which is the state class."
+        )
+
+    if len(values) != 1:
+        raise DynamicComponentInvalidSignatureError(
+            "You must provide a type hint for the state class in the function."
+        )
+
+    state_class: type[T] = values[0]
+
+    def wrapper() -> Component:
+        from reflex.components.base.fragment import fragment
+
+        return fragment(state_class._evaluate(lambda state: func(state)))
+
+    return wrapper
+
+
 class FrontendEventExceptionState(State):
     """Substate for handling frontend exceptions."""
 
-    def handle_frontend_exception(self, stack: str) -> None:
+    @event
+    def handle_frontend_exception(self, stack: str, component_stack: str) -> None:
         """Handle frontend exceptions.
 
         If a frontend exception handler is provided, it will be called.
@@ -1860,10 +2367,12 @@ class FrontendEventExceptionState(State):
 
         Args:
             stack: The stack trace of the exception.
+            component_stack: The stack trace of the component where the exception occurred.
 
         """
-        app_instance = getattr(prerequisites.get_app(), constants.CompileVars.APP)
-        app_instance.frontend_exception_handler(Exception(stack))
+        prerequisites.get_and_validate_app().app.frontend_exception_handler(
+            Exception(stack)
+        )
 
 
 class UpdateVarsInternalState(State):
@@ -1901,19 +2410,20 @@ class OnLoadInternalState(State):
             The list of events to queue for on load handling.
         """
         # Do not app._compile()!  It should be already compiled by now.
-        app = getattr(prerequisites.get_app(), constants.CompileVars.APP)
-        load_events = app.get_load_events(self.router.page.path)
+        load_events = prerequisites.get_and_validate_app().app.get_load_events(
+            self.router.page.path
+        )
         if not load_events:
             self.is_hydrated = True
             return  # Fast path for navigation with no on_load events defined.
         self.is_hydrated = False
         return [
             *fix_events(
-                load_events,
+                cast(list[EventSpec | EventHandler], load_events),
                 self.router.session.client_token,
                 router_data=self.router_data,
             ),
-            State.set_is_hydrated(True),  # type: ignore
+            State.set_is_hydrated(True),  # pyright: ignore [reportAttributeAccessIssue]
         ]
 
 
@@ -1959,6 +2469,23 @@ class ComponentState(State, mixin=True):
     # The number of components created from this class.
     _per_component_state_instance_count: ClassVar[int] = 0
 
+    def __init__(self, *args, **kwargs):
+        """Do not allow direct initialization of the ComponentState.
+
+        Args:
+            *args: The args to pass to the State init method.
+            **kwargs: The kwargs to pass to the State init method.
+
+        Raises:
+            ReflexRuntimeError: If the ComponentState is initialized directly.
+        """
+        if type(self)._mixin:
+            raise ReflexRuntimeError(
+                f"{ComponentState.__name__} {type(self).__name__} is not meant to be initialized directly. "
+                + "Use the `create` method to create a new instance and access the state via the `State` attribute."
+            )
+        super().__init__(*args, **kwargs)
+
     @classmethod
     def __init_subclass__(cls, mixin: bool = True, **kwargs):
         """Overwrite mixin default to True.
@@ -1970,7 +2497,7 @@ class ComponentState(State, mixin=True):
         super().__init_subclass__(mixin=mixin, **kwargs)
 
     @classmethod
-    def get_component(cls, *children, **props) -> "Component":
+    def get_component(cls, *children, **props) -> Component:
         """Get the component instance.
 
         Args:
@@ -1985,7 +2512,7 @@ class ComponentState(State, mixin=True):
         )
 
     @classmethod
-    def create(cls, *children, **props) -> "Component":
+    def create(cls, *children, **props) -> Component:
         """Create a new instance of the Component.
 
         Args:
@@ -1995,1321 +2522,46 @@ class ComponentState(State, mixin=True):
         Returns:
             A new instance of the Component with an independent copy of the State.
         """
+        from reflex.compiler.compiler import into_component
+
         cls._per_component_state_instance_count += 1
         state_cls_name = f"{cls.__name__}_n{cls._per_component_state_instance_count}"
-        component_state = type(state_cls_name, (cls, State), {}, mixin=False)
+        component_state = type(
+            state_cls_name,
+            (cls, State),
+            {"__module__": reflex.istate.dynamic.__name__},
+            mixin=False,
+        )
+        # Save a reference to the dynamic state for pickle/unpickle.
+        setattr(reflex.istate.dynamic, state_cls_name, component_state)
         component = component_state.get_component(*children, **props)
+        component = into_component(component)
         component.State = component_state
         return component
 
 
-class StateProxy(wrapt.ObjectProxy):
-    """Proxy of a state instance to control mutability of vars for a background task.
-
-    Since a background task runs against a state instance without holding the
-    state_manager lock for the token, the reference may become stale if the same
-    state is modified by another event handler.
-
-    The proxy object ensures that writes to the state are blocked unless
-    explicitly entering a context which refreshes the state from state_manager
-    and holds the lock for the token until exiting the context. After exiting
-    the context, a StateUpdate may be emitted to the frontend to notify the
-    client of the state change.
-
-    A background task will be passed the `StateProxy` as `self`, so mutability
-    can be safely performed inside an `async with self` block.
-
-        class State(rx.State):
-            counter: int = 0
-
-            @rx.background
-            async def bg_increment(self):
-                await asyncio.sleep(1)
-                async with self:
-                    self.counter += 1
-    """
-
-    def __init__(
-        self, state_instance, parent_state_proxy: Optional["StateProxy"] = None
-    ):
-        """Create a proxy for a state instance.
-
-        If `get_state` is used on a StateProxy, the resulting state will be
-        linked to the given state via parent_state_proxy. The first state in the
-        chain is the state that initiated the background task.
-
-        Args:
-            state_instance: The state instance to proxy.
-            parent_state_proxy: The parent state proxy, for linked mutability and context tracking.
-        """
-        super().__init__(state_instance)
-        # compile is not relevant to backend logic
-        self._self_app = getattr(prerequisites.get_app(), constants.CompileVars.APP)
-        self._self_substate_path = tuple(state_instance.get_full_name().split("."))
-        self._self_actx = None
-        self._self_mutable = False
-        self._self_actx_lock = asyncio.Lock()
-        self._self_actx_lock_holder = None
-        self._self_parent_state_proxy = parent_state_proxy
-
-    def _is_mutable(self) -> bool:
-        """Check if the state is mutable.
-
-        Returns:
-            Whether the state is mutable.
-        """
-        if self._self_parent_state_proxy is not None:
-            return self._self_parent_state_proxy._is_mutable() or self._self_mutable
-        return self._self_mutable
-
-    async def __aenter__(self) -> StateProxy:
-        """Enter the async context manager protocol.
-
-        Sets mutability to True and enters the `App.modify_state` async context,
-        which refreshes the state from state_manager and holds the lock for the
-        given state token until exiting the context.
-
-        Background tasks should avoid blocking calls while inside the context.
-
-        Returns:
-            This StateProxy instance in mutable mode.
-
-        Raises:
-            ImmutableStateError: If the state is already mutable.
-        """
-        if self._self_parent_state_proxy is not None:
-            parent_state = (
-                await self._self_parent_state_proxy.__aenter__()
-            ).__wrapped__
-            super().__setattr__(
-                "__wrapped__",
-                await parent_state.get_state(
-                    State.get_class_substate(self._self_substate_path)
-                ),
-            )
-            return self
-        current_task = asyncio.current_task()
-        if (
-            self._self_actx_lock.locked()
-            and current_task == self._self_actx_lock_holder
-        ):
-            raise ImmutableStateError(
-                "The state is already mutable. Do not nest `async with self` blocks."
-            )
-        await self._self_actx_lock.acquire()
-        self._self_actx_lock_holder = current_task
-        self._self_actx = self._self_app.modify_state(
-            token=_substate_key(
-                self.__wrapped__.router.session.client_token,
-                self._self_substate_path,
-            )
-        )
-        mutable_state = await self._self_actx.__aenter__()
-        super().__setattr__(
-            "__wrapped__", mutable_state.get_substate(self._self_substate_path)
-        )
-        self._self_mutable = True
-        return self
-
-    async def __aexit__(self, *exc_info: Any) -> None:
-        """Exit the async context manager protocol.
-
-        Sets proxy mutability to False and persists any state changes.
-
-        Args:
-            exc_info: The exception info tuple.
-        """
-        if self._self_parent_state_proxy is not None:
-            await self._self_parent_state_proxy.__aexit__(*exc_info)
-            return
-        if self._self_actx is None:
-            return
-        self._self_mutable = False
-        try:
-            await self._self_actx.__aexit__(*exc_info)
-        finally:
-            self._self_actx_lock_holder = None
-            self._self_actx_lock.release()
-        self._self_actx = None
-
-    def __enter__(self):
-        """Enter the regular context manager protocol.
-
-        This is not supported for background tasks, and exists only to raise a more useful exception
-        when the StateProxy is used incorrectly.
-
-        Raises:
-            TypeError: always, because only async contextmanager protocol is supported.
-        """
-        raise TypeError("Background task must use `async with self` to modify state.")
-
-    def __exit__(self, *exc_info: Any) -> None:
-        """Exit the regular context manager protocol.
-
-        Args:
-            exc_info: The exception info tuple.
-        """
-        pass
-
-    def __getattr__(self, name: str) -> Any:
-        """Get the attribute from the underlying state instance.
-
-        Args:
-            name: The name of the attribute.
-
-        Returns:
-            The value of the attribute.
-
-        Raises:
-            ImmutableStateError: If the state is not in mutable mode.
-        """
-        if name in ["substates", "parent_state"] and not self._is_mutable():
-            raise ImmutableStateError(
-                "Background task StateProxy is immutable outside of a context "
-                "manager. Use `async with self` to modify state."
-            )
-        value = super().__getattr__(name)
-        if not name.startswith("_self_") and isinstance(value, MutableProxy):
-            # ensure mutations to these containers are blocked unless proxy is _mutable
-            return ImmutableMutableProxy(
-                wrapped=value.__wrapped__,
-                state=self,  # type: ignore
-                field_name=value._self_field_name,
-            )
-        if isinstance(value, functools.partial) and value.args[0] is self.__wrapped__:
-            # Rebind event handler to the proxy instance
-            value = functools.partial(
-                value.func,
-                self,
-                *value.args[1:],
-                **value.keywords,
-            )
-        if isinstance(value, MethodType) and value.__self__ is self.__wrapped__:
-            # Rebind methods to the proxy instance
-            value = type(value)(value.__func__, self)  # type: ignore
-        return value
-
-    def __setattr__(self, name: str, value: Any) -> None:
-        """Set the attribute on the underlying state instance.
-
-        If the attribute is internal, set it on the proxy instance instead.
-
-        Args:
-            name: The name of the attribute.
-            value: The value of the attribute.
-
-        Raises:
-            ImmutableStateError: If the state is not in mutable mode.
-        """
-        if (
-            name.startswith("_self_")  # wrapper attribute
-            or self._is_mutable()  # lock held
-            # non-persisted state attribute
-            or name in self.__wrapped__.get_skip_vars()
-        ):
-            super().__setattr__(name, value)
-            return
-
-        raise ImmutableStateError(
-            "Background task StateProxy is immutable outside of a context "
-            "manager. Use `async with self` to modify state."
-        )
-
-    def get_substate(self, path: Sequence[str]) -> BaseState:
-        """Only allow substate access with lock held.
-
-        Args:
-            path: The path to the substate.
-
-        Returns:
-            The substate.
-
-        Raises:
-            ImmutableStateError: If the state is not in mutable mode.
-        """
-        if not self._is_mutable():
-            raise ImmutableStateError(
-                "Background task StateProxy is immutable outside of a context "
-                "manager. Use `async with self` to modify state."
-            )
-        return self.__wrapped__.get_substate(path)
-
-    async def get_state(self, state_cls: Type[BaseState]) -> BaseState:
-        """Get an instance of the state associated with this token.
-
-        Args:
-            state_cls: The class of the state.
-
-        Returns:
-            The state.
-
-        Raises:
-            ImmutableStateError: If the state is not in mutable mode.
-        """
-        if not self._is_mutable():
-            raise ImmutableStateError(
-                "Background task StateProxy is immutable outside of a context "
-                "manager. Use `async with self` to modify state."
-            )
-        return type(self)(
-            await self.__wrapped__.get_state(state_cls), parent_state_proxy=self
-        )
-
-    def _as_state_update(self, *args, **kwargs) -> StateUpdate:
-        """Temporarily allow mutability to access parent_state.
-
-        Args:
-            *args: The args to pass to the underlying state instance.
-            **kwargs: The kwargs to pass to the underlying state instance.
-
-        Returns:
-            The state update.
-        """
-        self._self_mutable = True
-        try:
-            return self.__wrapped__._as_state_update(*args, **kwargs)
-        finally:
-            self._self_mutable = False
-
-
-class StateUpdate(Base):
+@dataclasses.dataclass(
+    frozen=True,
+)
+class StateUpdate:
     """A state update sent to the frontend."""
 
     # The state delta.
-    delta: Delta = {}
+    delta: Delta = dataclasses.field(default_factory=dict)
 
     # Events to be added to the event queue.
-    events: List[Event] = []
+    events: list[Event] = dataclasses.field(default_factory=list)
 
     # Whether this is the final state update for the event.
     final: bool = True
 
-
-class StateManager(Base, ABC):
-    """A class to manage many client states."""
-
-    # The state class to use.
-    state: Type[BaseState]
-
-    @classmethod
-    def create(cls, state: Type[BaseState]):
-        """Create a new state manager.
-
-        Args:
-            state: The state class to use.
+    def json(self) -> str:
+        """Convert the state update to a JSON string.
 
         Returns:
-            The state manager (either memory or redis).
+            The state update as a JSON string.
         """
-        redis = prerequisites.get_redis()
-        if redis is not None:
-            # make sure expiration values are obtained only from the config object on creation
-            config = get_config()
-            return StateManagerRedis(
-                state=state,
-                redis=redis,
-                token_expiration=config.redis_token_expiration,
-                lock_expiration=config.redis_lock_expiration,
-            )
-        return StateManagerMemory(state=state)
-
-    @abstractmethod
-    async def get_state(self, token: str) -> BaseState:
-        """Get the state for a token.
-
-        Args:
-            token: The token to get the state for.
-
-        Returns:
-            The state for the token.
-        """
-        pass
-
-    @abstractmethod
-    async def set_state(self, token: str, state: BaseState):
-        """Set the state for a token.
-
-        Args:
-            token: The token to set the state for.
-            state: The state to set.
-        """
-        pass
-
-    @abstractmethod
-    @contextlib.asynccontextmanager
-    async def modify_state(self, token: str) -> AsyncIterator[BaseState]:
-        """Modify the state for a token while holding exclusive lock.
-
-        Args:
-            token: The token to modify the state for.
-
-        Yields:
-            The state for the token.
-        """
-        yield self.state()
-
-
-class StateManagerMemory(StateManager):
-    """A state manager that stores states in memory."""
-
-    # The mapping of client ids to states.
-    states: Dict[str, BaseState] = {}
-
-    # The mutex ensures the dict of mutexes is updated exclusively
-    _state_manager_lock = asyncio.Lock()
-
-    # The dict of mutexes for each client
-    _states_locks: Dict[str, asyncio.Lock] = pydantic.PrivateAttr({})
-
-    class Config:
-        """The Pydantic config."""
-
-        fields = {
-            "_states_locks": {"exclude": True},
-        }
-
-    async def get_state(self, token: str) -> BaseState:
-        """Get the state for a token.
-
-        Args:
-            token: The token to get the state for.
-
-        Returns:
-            The state for the token.
-        """
-        # Memory state manager ignores the substate suffix and always returns the top-level state.
-        token = _split_substate_key(token)[0]
-        if token not in self.states:
-            self.states[token] = self.state(_reflex_internal_init=True)
-        return self.states[token]
-
-    async def set_state(self, token: str, state: BaseState):
-        """Set the state for a token.
-
-        Args:
-            token: The token to set the state for.
-            state: The state to set.
-        """
-        pass
-
-    @contextlib.asynccontextmanager
-    async def modify_state(self, token: str) -> AsyncIterator[BaseState]:
-        """Modify the state for a token while holding exclusive lock.
-
-        Args:
-            token: The token to modify the state for.
-
-        Yields:
-            The state for the token.
-        """
-        # Memory state manager ignores the substate suffix and always returns the top-level state.
-        token = _split_substate_key(token)[0]
-        if token not in self._states_locks:
-            async with self._state_manager_lock:
-                if token not in self._states_locks:
-                    self._states_locks[token] = asyncio.Lock()
-
-        async with self._states_locks[token]:
-            state = await self.get_state(token)
-            yield state
-            await self.set_state(token, state)
-
-
-# Workaround https://github.com/cloudpipe/cloudpickle/issues/408 for dynamic pydantic classes
-if not isinstance(State.validate.__func__, FunctionType):
-    cython_function_or_method = type(State.validate.__func__)
-
-    @dill.register(cython_function_or_method)
-    def _dill_reduce_cython_function_or_method(pickler, obj):
-        # Ignore cython function when pickling.
-        pass
-
-
-@dill.register(type(State))
-def _dill_reduce_state(pickler, obj):
-    if obj is not State and issubclass(obj, State):
-        # Avoid serializing subclasses of State, instead get them by reference from the State class.
-        pickler.save_reduce(State.get_class_substate, (obj.get_full_name(),), obj=obj)
-    else:
-        dill.Pickler.dispatch[type](pickler, obj)
-
-
-def _default_lock_expiration() -> int:
-    """Get the default lock expiration time.
-
-    Returns:
-        The default lock expiration time.
-    """
-    return get_config().redis_lock_expiration
-
-
-def _default_token_expiration() -> int:
-    """Get the default token expiration time.
-
-    Returns:
-        The default token expiration time.
-    """
-    return get_config().redis_token_expiration
-
-
-class StateManagerRedis(StateManager):
-    """A state manager that stores states in redis."""
-
-    # The redis client to use.
-    redis: Redis
-
-    # The token expiration time (s).
-    token_expiration: int = pydantic.Field(default_factory=_default_token_expiration)
-
-    # The maximum time to hold a lock (ms).
-    lock_expiration: int = pydantic.Field(default_factory=_default_lock_expiration)
-
-    # The keyspace subscription string when redis is waiting for lock to be released
-    _redis_notify_keyspace_events: str = (
-        "K"  # Enable keyspace notifications (target a particular key)
-        "g"  # For generic commands (DEL, EXPIRE, etc)
-        "x"  # For expired events
-        "e"  # For evicted events (i.e. maxmemory exceeded)
-    )
-
-    # These events indicate that a lock is no longer held
-    _redis_keyspace_lock_release_events: Set[bytes] = {
-        b"del",
-        b"expire",
-        b"expired",
-        b"evicted",
-    }
-
-    # Only warn about each state class size once.
-    _warned_about_state_size: ClassVar[Set[str]] = set()
-
-    def _get_root_state(self, state: BaseState) -> BaseState:
-        """Chase parent_state pointers to find an instance of the top-level state.
-
-        Args:
-            state: The state to start from.
-
-        Returns:
-            An instance of the top-level state (self.state).
-        """
-        while type(state) != self.state and state.parent_state is not None:
-            state = state.parent_state
-        return state
-
-    async def _get_parent_state(self, token: str) -> BaseState | None:
-        """Get the parent state for the state requested in the token.
-
-        Args:
-            token: The token to get the state for (_substate_key).
-
-        Returns:
-            The parent state for the state requested by the token or None if there is no such parent.
-        """
-        parent_state = None
-        client_token, state_path = _split_substate_key(token)
-        parent_state_name = state_path.rpartition(".")[0]
-        if parent_state_name:
-            # Retrieve the parent state to populate event handlers onto this substate.
-            parent_state = await self.get_state(
-                token=_substate_key(client_token, parent_state_name),
-                top_level=False,
-                get_substates=False,
-            )
-        return parent_state
-
-    async def _populate_substates(
-        self,
-        token: str,
-        state: BaseState,
-        all_substates: bool = False,
-    ):
-        """Fetch and link substates for the given state instance.
-
-        There is no return value; the side-effect is that `state` will have `substates` populated,
-        and each substate will have its `parent_state` set to `state`.
-
-        Args:
-            token: The token to get the state for.
-            state: The state instance to populate substates for.
-            all_substates: Whether to fetch all substates or just required substates.
-        """
-        client_token, _ = _split_substate_key(token)
-
-        if all_substates:
-            # All substates are requested.
-            fetch_substates = state.get_substates()
-        else:
-            # Only _potentially_dirty_substates need to be fetched to recalc computed vars.
-            fetch_substates = state._potentially_dirty_substates()
-
-        tasks = {}
-        # Retrieve the necessary substates from redis.
-        for substate_cls in fetch_substates:
-            substate_name = substate_cls.get_name()
-            tasks[substate_name] = asyncio.create_task(
-                self.get_state(
-                    token=_substate_key(client_token, substate_cls),
-                    top_level=False,
-                    get_substates=all_substates,
-                    parent_state=state,
-                )
-            )
-
-        for substate_name, substate_task in tasks.items():
-            state.substates[substate_name] = await substate_task
-
-    async def get_state(
-        self,
-        token: str,
-        top_level: bool = True,
-        get_substates: bool = True,
-        parent_state: BaseState | None = None,
-    ) -> BaseState:
-        """Get the state for a token.
-
-        Args:
-            token: The token to get the state for.
-            top_level: If true, return an instance of the top-level state (self.state).
-            get_substates: If true, also retrieve substates.
-            parent_state: If provided, use this parent_state instead of getting it from redis.
-
-        Returns:
-            The state for the token.
-
-        Raises:
-            RuntimeError: when the state_cls is not specified in the token
-        """
-        # Split the actual token from the fully qualified substate name.
-        _, state_path = _split_substate_key(token)
-        if state_path:
-            # Get the State class associated with the given path.
-            state_cls = self.state.get_class_substate(state_path)
-        else:
-            raise RuntimeError(
-                "StateManagerRedis requires token to be specified in the form of {token}_{state_full_name}"
-            )
-
-        # Fetch the serialized substate from redis.
-        redis_state = await self.redis.get(token)
-
-        if redis_state is not None:
-            # Deserialize the substate.
-            state = dill.loads(redis_state)
-
-            # Populate parent state if missing and requested.
-            if parent_state is None:
-                parent_state = await self._get_parent_state(token)
-            # Set up Bidirectional linkage between this state and its parent.
-            if parent_state is not None:
-                parent_state.substates[state.get_name()] = state
-                state.parent_state = parent_state
-            # Populate substates if requested.
-            await self._populate_substates(token, state, all_substates=get_substates)
-
-            # To retain compatibility with previous implementation, by default, we return
-            # the top-level state by chasing `parent_state` pointers up the tree.
-            if top_level:
-                return self._get_root_state(state)
-            return state
-
-        # TODO: dedupe the following logic with the above block
-        # Key didn't exist so we have to create a new instance for this token.
-        if parent_state is None:
-            parent_state = await self._get_parent_state(token)
-        # Instantiate the new state class (but don't persist it yet).
-        state = state_cls(
-            parent_state=parent_state,
-            init_substates=False,
-            _reflex_internal_init=True,
-        )
-        # Set up Bidirectional linkage between this state and its parent.
-        if parent_state is not None:
-            parent_state.substates[state.get_name()] = state
-            state.parent_state = parent_state
-        # Populate substates for the newly created state.
-        await self._populate_substates(token, state, all_substates=get_substates)
-        # To retain compatibility with previous implementation, by default, we return
-        # the top-level state by chasing `parent_state` pointers up the tree.
-        if top_level:
-            return self._get_root_state(state)
-        return state
-
-    def _warn_if_too_large(
-        self,
-        state: BaseState,
-        pickle_state_size: int,
-    ):
-        """Print a warning when the state is too large.
-
-        Args:
-            state: The state to check.
-            pickle_state_size: The size of the pickled state.
-        """
-        state_full_name = state.get_full_name()
-        if (
-            state_full_name not in self._warned_about_state_size
-            and pickle_state_size > TOO_LARGE_SERIALIZED_STATE
-            and state.substates
-        ):
-            console.warn(
-                f"State {state_full_name} serializes to {pickle_state_size} bytes "
-                "which may present performance issues. Consider reducing the size of this state."
-            )
-            self._warned_about_state_size.add(state_full_name)
-
-    async def set_state(
-        self,
-        token: str,
-        state: BaseState,
-        lock_id: bytes | None = None,
-    ):
-        """Set the state for a token.
-
-        Args:
-            token: The token to set the state for.
-            state: The state to set.
-            lock_id: If provided, the lock_key must be set to this value to set the state.
-
-        Raises:
-            LockExpiredError: If lock_id is provided and the lock for the token is not held by that ID.
-            RuntimeError: If the state instance doesn't match the state name in the token.
-        """
-        # Check that we're holding the lock.
-        if (
-            lock_id is not None
-            and await self.redis.get(self._lock_key(token)) != lock_id
-        ):
-            raise LockExpiredError(
-                f"Lock expired for token {token} while processing. Consider increasing "
-                f"`app.state_manager.lock_expiration` (currently {self.lock_expiration}) "
-                "or use `@rx.background` decorator for long-running tasks."
-            )
-        client_token, substate_name = _split_substate_key(token)
-        # If the substate name on the token doesn't match the instance name, it cannot have a parent.
-        if state.parent_state is not None and state.get_full_name() != substate_name:
-            raise RuntimeError(
-                f"Cannot `set_state` with mismatching token {token} and substate {state.get_full_name()}."
-            )
-
-        # Recursively set_state on all known substates.
-        tasks = []
-        for substate in state.substates.values():
-            tasks.append(
-                asyncio.create_task(
-                    self.set_state(
-                        token=_substate_key(client_token, substate),
-                        state=substate,
-                        lock_id=lock_id,
-                    )
-                )
-            )
-        # Persist only the given state (parents or substates are excluded by BaseState.__getstate__).
-        if state._get_was_touched():
-            pickle_state = dill.dumps(state, byref=True)
-            self._warn_if_too_large(state, len(pickle_state))
-            await self.redis.set(
-                _substate_key(client_token, state),
-                pickle_state,
-                ex=self.token_expiration,
-            )
-
-        # Wait for substates to be persisted.
-        for t in tasks:
-            await t
-
-    @contextlib.asynccontextmanager
-    async def modify_state(self, token: str) -> AsyncIterator[BaseState]:
-        """Modify the state for a token while holding exclusive lock.
-
-        Args:
-            token: The token to modify the state for.
-
-        Yields:
-            The state for the token.
-        """
-        async with self._lock(token) as lock_id:
-            state = await self.get_state(token)
-            yield state
-            await self.set_state(token, state, lock_id)
-
-    @staticmethod
-    def _lock_key(token: str) -> bytes:
-        """Get the redis key for a token's lock.
-
-        Args:
-            token: The token to get the lock key for.
-
-        Returns:
-            The redis lock key for the token.
-        """
-        # All substates share the same lock domain, so ignore any substate path suffix.
-        client_token = _split_substate_key(token)[0]
-        return f"{client_token}_lock".encode()
-
-    async def _try_get_lock(self, lock_key: bytes, lock_id: bytes) -> bool | None:
-        """Try to get a redis lock for a token.
-
-        Args:
-            lock_key: The redis key for the lock.
-            lock_id: The ID of the lock.
-
-        Returns:
-            True if the lock was obtained.
-        """
-        return await self.redis.set(
-            lock_key,
-            lock_id,
-            px=self.lock_expiration,
-            nx=True,  # only set if it doesn't exist
-        )
-
-    async def _wait_lock(self, lock_key: bytes, lock_id: bytes) -> None:
-        """Wait for a redis lock to be released via pubsub.
-
-        Coroutine will not return until the lock is obtained.
-
-        Args:
-            lock_key: The redis key for the lock.
-            lock_id: The ID of the lock.
-
-        Raises:
-            ResponseError: when the keyspace config cannot be set.
-        """
-        state_is_locked = False
-        lock_key_channel = f"__keyspace@0__:{lock_key.decode()}"
-        # Enable keyspace notifications for the lock key, so we know when it is available.
-        try:
-            await self.redis.config_set(
-                "notify-keyspace-events",
-                self._redis_notify_keyspace_events,
-            )
-        except ResponseError:
-            # Some redis servers only allow out-of-band configuration, so ignore errors here.
-            ignore_config_error = os.environ.get(
-                "REFLEX_IGNORE_REDIS_CONFIG_ERROR",
-                None,
-            )
-            if not ignore_config_error:
-                raise
-        async with self.redis.pubsub() as pubsub:
-            await pubsub.psubscribe(lock_key_channel)
-            while not state_is_locked:
-                # wait for the lock to be released
-                while True:
-                    if not await self.redis.exists(lock_key):
-                        break  # key was removed, try to get the lock again
-                    message = await pubsub.get_message(
-                        ignore_subscribe_messages=True,
-                        timeout=self.lock_expiration / 1000.0,
-                    )
-                    if message is None:
-                        continue
-                    if message["data"] in self._redis_keyspace_lock_release_events:
-                        break
-                state_is_locked = await self._try_get_lock(lock_key, lock_id)
-
-    @contextlib.asynccontextmanager
-    async def _lock(self, token: str):
-        """Obtain a redis lock for a token.
-
-        Args:
-            token: The token to obtain a lock for.
-
-        Yields:
-            The ID of the lock (to be passed to set_state).
-
-        Raises:
-            LockExpiredError: If the lock has expired while processing the event.
-        """
-        lock_key = self._lock_key(token)
-        lock_id = uuid.uuid4().hex.encode()
-
-        if not await self._try_get_lock(lock_key, lock_id):
-            # Missed the fast-path to get lock, subscribe for lock delete/expire events
-            await self._wait_lock(lock_key, lock_id)
-        state_is_locked = True
-
-        try:
-            yield lock_id
-        except LockExpiredError:
-            state_is_locked = False
-            raise
-        finally:
-            if state_is_locked:
-                # only delete our lock
-                await self.redis.delete(lock_key)
-
-    async def close(self):
-        """Explicitly close the redis connection and connection_pool.
-
-        It is necessary in testing scenarios to close between asyncio test cases
-        to avoid having lingering redis connections associated with event loops
-        that will be closed (each test case uses its own event loop).
-
-        Note: Connections will be automatically reopened when needed.
-        """
-        await self.redis.aclose(close_connection_pool=True)
-
-
-def get_state_manager() -> StateManager:
-    """Get the state manager for the app that is currently running.
-
-    Returns:
-        The state manager.
-    """
-    app = getattr(prerequisites.get_app(), constants.CompileVars.APP)
-    return app.state_manager
-
-
-class ClientStorageBase:
-    """Base class for client-side storage."""
-
-    def options(self) -> dict[str, Any]:
-        """Get the options for the storage.
-
-        Returns:
-            All set options for the storage (not None).
-        """
-        return {
-            format.to_camel_case(k): v for k, v in vars(self).items() if v is not None
-        }
-
-
-class Cookie(ClientStorageBase, str):
-    """Represents a state Var that is stored as a cookie in the browser."""
-
-    name: str | None
-    path: str
-    max_age: int | None
-    domain: str | None
-    secure: bool | None
-    same_site: str
-
-    def __new__(
-        cls,
-        object: Any = "",
-        encoding: str | None = None,
-        errors: str | None = None,
-        /,
-        name: str | None = None,
-        path: str = "/",
-        max_age: int | None = None,
-        domain: str | None = None,
-        secure: bool | None = None,
-        same_site: str = "lax",
-    ):
-        """Create a client-side Cookie (str).
-
-        Args:
-            object: The initial object.
-            encoding: The encoding to use.
-            errors: The error handling scheme to use.
-            name: The name of the cookie on the client side.
-            path: Cookie path. Use / as the path if the cookie should be accessible on all pages.
-            max_age: Relative max age of the cookie in seconds from when the client receives it.
-            domain: Domain for the cookie (sub.domain.com or .allsubdomains.com).
-            secure: Is the cookie only accessible through HTTPS?
-            same_site: Whether the cookie is sent with third party requests.
-                One of (true|false|none|lax|strict)
-
-        Returns:
-            The client-side Cookie object.
-
-        Note: expires (absolute Date) is not supported at this time.
-        """
-        if encoding or errors:
-            inst = super().__new__(cls, object, encoding or "utf-8", errors or "strict")
-        else:
-            inst = super().__new__(cls, object)
-        inst.name = name
-        inst.path = path
-        inst.max_age = max_age
-        inst.domain = domain
-        inst.secure = secure
-        inst.same_site = same_site
-        return inst
-
-
-class LocalStorage(ClientStorageBase, str):
-    """Represents a state Var that is stored in localStorage in the browser."""
-
-    name: str | None
-    sync: bool = False
-
-    def __new__(
-        cls,
-        object: Any = "",
-        encoding: str | None = None,
-        errors: str | None = None,
-        /,
-        name: str | None = None,
-        sync: bool = False,
-    ) -> "LocalStorage":
-        """Create a client-side localStorage (str).
-
-        Args:
-            object: The initial object.
-            encoding: The encoding to use.
-            errors: The error handling scheme to use.
-            name: The name of the storage key on the client side.
-            sync: Whether changes should be propagated to other tabs.
-
-        Returns:
-            The client-side localStorage object.
-        """
-        if encoding or errors:
-            inst = super().__new__(cls, object, encoding or "utf-8", errors or "strict")
-        else:
-            inst = super().__new__(cls, object)
-        inst.name = name
-        inst.sync = sync
-        return inst
-
-
-class SessionStorage(ClientStorageBase, str):
-    """Represents a state Var that is stored in sessionStorage in the browser."""
-
-    name: str | None
-
-    def __new__(
-        cls,
-        object: Any = "",
-        encoding: str | None = None,
-        errors: str | None = None,
-        /,
-        name: str | None = None,
-    ) -> "SessionStorage":
-        """Create a client-side sessionStorage (str).
-
-        Args:
-            object: The initial object.
-            encoding: The encoding to use.
-            errors: The error handling scheme to use
-            name: The name of the storage on the client side
-
-        Returns:
-            The client-side sessionStorage object.
-        """
-        if encoding or errors:
-            inst = super().__new__(cls, object, encoding or "utf-8", errors or "strict")
-        else:
-            inst = super().__new__(cls, object)
-        inst.name = name
-        return inst
-
-
-class MutableProxy(wrapt.ObjectProxy):
-    """A proxy for a mutable object that tracks changes."""
-
-    # Methods on wrapped objects which should mark the state as dirty.
-    __mark_dirty_attrs__ = set(
-        [
-            "add",
-            "append",
-            "clear",
-            "difference_update",
-            "discard",
-            "extend",
-            "insert",
-            "intersection_update",
-            "pop",
-            "popitem",
-            "remove",
-            "reverse",
-            "setdefault",
-            "sort",
-            "symmetric_difference_update",
-            "update",
-        ]
-    )
-    # Methods on wrapped objects might return mutable objects that should be tracked.
-    __wrap_mutable_attrs__ = set(
-        [
-            "get",
-            "setdefault",
-        ]
-    )
-
-    # These internal attributes on rx.Base should NOT be wrapped in a MutableProxy.
-    __never_wrap_base_attrs__ = set(Base.__dict__) - {"set"} | set(
-        pydantic.BaseModel.__dict__
-    )
-
-    __mutable_types__ = (list, dict, set, Base, DeclarativeBase)
-
-    def __init__(self, wrapped: Any, state: BaseState, field_name: str):
-        """Create a proxy for a mutable object that tracks changes.
-
-        Args:
-            wrapped: The object to proxy.
-            state: The state to mark dirty when the object is changed.
-            field_name: The name of the field on the state associated with the
-                wrapped object.
-        """
-        super().__init__(wrapped)
-        self._self_state = state
-        self._self_field_name = field_name
-
-    def _mark_dirty(
-        self,
-        wrapped=None,
-        instance=None,
-        args=tuple(),
-        kwargs=None,
-    ) -> Any:
-        """Mark the state as dirty, then call a wrapped function.
-
-        Intended for use with `FunctionWrapper` from the `wrapt` library.
-
-        Args:
-            wrapped: The wrapped function.
-            instance: The instance of the wrapped function.
-            args: The args for the wrapped function.
-            kwargs: The kwargs for the wrapped function.
-
-        Returns:
-            The result of the wrapped function.
-        """
-        self._self_state.dirty_vars.add(self._self_field_name)
-        self._self_state._mark_dirty()
-        if wrapped is not None:
-            return wrapped(*args, **(kwargs or {}))
-
-    def _wrap_recursive(self, value: Any) -> Any:
-        """Wrap a value recursively if it is mutable.
-
-        Args:
-            value: The value to wrap.
-
-        Returns:
-            The wrapped value.
-        """
-        # Recursively wrap mutable types, but do not re-wrap MutableProxy instances.
-        if isinstance(value, self.__mutable_types__) and not isinstance(
-            value, MutableProxy
-        ):
-            return type(self)(
-                wrapped=value,
-                state=self._self_state,
-                field_name=self._self_field_name,
-            )
-        return value
-
-    def _wrap_recursive_decorator(self, wrapped, instance, args, kwargs) -> Any:
-        """Wrap a function that returns a possibly mutable value.
-
-        Intended for use with `FunctionWrapper` from the `wrapt` library.
-
-        Args:
-            wrapped: The wrapped function.
-            instance: The instance of the wrapped function.
-            args: The args for the wrapped function.
-            kwargs: The kwargs for the wrapped function.
-
-        Returns:
-            The result of the wrapped function (possibly wrapped in a MutableProxy).
-        """
-        return self._wrap_recursive(wrapped(*args, **kwargs))
-
-    def __getattr__(self, __name: str) -> Any:
-        """Get the attribute on the proxied object and return a proxy if mutable.
-
-        Args:
-            __name: The name of the attribute.
-
-        Returns:
-            The attribute value.
-        """
-        value = super().__getattr__(__name)
-
-        if callable(value):
-            if __name in self.__mark_dirty_attrs__:
-                # Wrap special callables, like "append", which should mark state dirty.
-                value = wrapt.FunctionWrapper(value, self._mark_dirty)
-
-            if __name in self.__wrap_mutable_attrs__:
-                # Wrap methods that may return mutable objects tied to the state.
-                value = wrapt.FunctionWrapper(
-                    value,
-                    self._wrap_recursive_decorator,
-                )
-
-            if (
-                isinstance(self.__wrapped__, Base)
-                and __name not in self.__never_wrap_base_attrs__
-                and hasattr(value, "__func__")
-            ):
-                # Wrap methods called on Base subclasses, which might do _anything_
-                return wrapt.FunctionWrapper(
-                    functools.partial(value.__func__, self),
-                    self._wrap_recursive_decorator,
-                )
-
-        if isinstance(value, self.__mutable_types__) and __name not in (
-            "__wrapped__",
-            "_self_state",
-        ):
-            # Recursively wrap mutable attribute values retrieved through this proxy.
-            return self._wrap_recursive(value)
-
-        return value
-
-    def __getitem__(self, key) -> Any:
-        """Get the item on the proxied object and return a proxy if mutable.
-
-        Args:
-            key: The key of the item.
-
-        Returns:
-            The item value.
-        """
-        value = super().__getitem__(key)
-        # Recursively wrap mutable items retrieved through this proxy.
-        return self._wrap_recursive(value)
-
-    def __iter__(self) -> Any:
-        """Iterate over the proxied object and return a proxy if mutable.
-
-        Yields:
-            Each item value (possibly wrapped in MutableProxy).
-        """
-        for value in super().__iter__():
-            # Recursively wrap mutable items retrieved through this proxy.
-            yield self._wrap_recursive(value)
-
-    def __delattr__(self, name):
-        """Delete the attribute on the proxied object and mark state dirty.
-
-        Args:
-            name: The name of the attribute.
-        """
-        self._mark_dirty(super().__delattr__, args=(name,))
-
-    def __delitem__(self, key):
-        """Delete the item on the proxied object and mark state dirty.
-
-        Args:
-            key: The key of the item.
-        """
-        self._mark_dirty(super().__delitem__, args=(key,))
-
-    def __setitem__(self, key, value):
-        """Set the item on the proxied object and mark state dirty.
-
-        Args:
-            key: The key of the item.
-            value: The value of the item.
-        """
-        self._mark_dirty(super().__setitem__, args=(key, value))
-
-    def __setattr__(self, name, value):
-        """Set the attribute on the proxied object and mark state dirty.
-
-        If the attribute starts with "_self_", then the state is NOT marked
-        dirty as these are internal proxy attributes.
-
-        Args:
-            name: The name of the attribute.
-            value: The value of the attribute.
-        """
-        if name.startswith("_self_"):
-            # Special case attributes of the proxy itself, not applied to the wrapped object.
-            super().__setattr__(name, value)
-            return
-        self._mark_dirty(super().__setattr__, args=(name, value))
-
-    def __copy__(self) -> Any:
-        """Return a copy of the proxy.
-
-        Returns:
-            A copy of the wrapped object, unconnected to the proxy.
-        """
-        return copy.copy(self.__wrapped__)
-
-    def __deepcopy__(self, memo=None) -> Any:
-        """Return a deepcopy of the proxy.
-
-        Args:
-            memo: The memo dict to use for the deepcopy.
-
-        Returns:
-            A deepcopy of the wrapped object, unconnected to the proxy.
-        """
-        return copy.deepcopy(self.__wrapped__, memo=memo)
-
-    def __reduce_ex__(self, protocol_version):
-        """Get the state for redis serialization.
-
-        This method is called by cloudpickle to serialize the object.
-
-        It explicitly serializes the wrapped object, stripping off the mutable proxy.
-
-        Args:
-            protocol_version: The protocol version.
-
-        Returns:
-            Tuple of (wrapped class, empty args, class __getstate__)
-        """
-        return self.__wrapped__.__reduce_ex__(protocol_version)
-
-
-@serializer
-def serialize_mutable_proxy(mp: MutableProxy) -> SerializedType:
-    """Serialize the wrapped value of a MutableProxy.
-
-    Args:
-        mp: The MutableProxy to serialize.
-
-    Returns:
-        The serialized wrapped object.
-
-    Raises:
-        ValueError: when the wrapped object is not serializable.
-    """
-    value = serialize(mp.__wrapped__)
-    if value is None:
-        raise ValueError(f"Cannot serialize {type(mp.__wrapped__)}")
-    return value
-
-
-class ImmutableMutableProxy(MutableProxy):
-    """A proxy for a mutable object that tracks changes.
-
-    This wrapper comes from StateProxy, and will raise an exception if an attempt is made
-    to modify the wrapped object when the StateProxy is immutable.
-    """
-
-    def _mark_dirty(
-        self,
-        wrapped=None,
-        instance=None,
-        args=tuple(),
-        kwargs=None,
-    ) -> Any:
-        """Raise an exception when an attempt is made to modify the object.
-
-        Intended for use with `FunctionWrapper` from the `wrapt` library.
-
-        Args:
-            wrapped: The wrapped function.
-            instance: The instance of the wrapped function.
-            args: The args for the wrapped function.
-            kwargs: The kwargs for the wrapped function.
-
-        Returns:
-            The result of the wrapped function.
-
-        Raises:
-            ImmutableStateError: if the StateProxy is not mutable.
-        """
-        if not self._self_state._is_mutable():
-            raise ImmutableStateError(
-                "Background task StateProxy is immutable outside of a context "
-                "manager. Use `async with self` to modify state."
-            )
-        return super()._mark_dirty(
-            wrapped=wrapped, instance=instance, args=args, kwargs=kwargs
-        )
+        return format.json_dumps(self)
 
 
 def code_uses_state_contexts(javascript_code: str) -> bool:
@@ -3326,7 +2578,7 @@ def code_uses_state_contexts(javascript_code: str) -> bool:
 
 def reload_state_module(
     module: str,
-    state: Type[BaseState] = State,
+    state: type[BaseState] = State,
 ) -> None:
     """Reset rx.State subclasses to avoid conflict when reloading.
 
@@ -3335,10 +2587,31 @@ def reload_state_module(
         state: Recursive argument for the state class to reload.
 
     """
+    # Clean out all potentially dirty states of reloaded modules.
+    for pd_state in tuple(state._potentially_dirty_states):
+        with contextlib.suppress(ValueError):
+            if (
+                state.get_root_state().get_class_substate(pd_state).__module__ == module
+                and module is not None
+            ):
+                state._potentially_dirty_states.remove(pd_state)
     for subclass in tuple(state.class_subclasses):
         reload_state_module(module=module, state=subclass)
         if subclass.__module__ == module and module is not None:
+            all_base_state_classes.pop(subclass.get_full_name(), None)
             state.class_subclasses.remove(subclass)
             state._always_dirty_substates.discard(subclass.get_name())
-    state._init_var_dependency_dicts()
+            state._var_dependencies = {}
+            state._init_var_dependency_dicts()
     state.get_class_substate.cache_clear()
+
+
+from reflex.istate.manager import LockExpiredError as LockExpiredError  # noqa: E402
+from reflex.istate.manager import StateManager as StateManager  # noqa: E402
+from reflex.istate.manager import StateManagerDisk as StateManagerDisk  # noqa: E402
+from reflex.istate.manager import StateManagerMemory as StateManagerMemory  # noqa: E402
+from reflex.istate.manager import StateManagerRedis as StateManagerRedis  # noqa: E402
+from reflex.istate.manager import get_state_manager as get_state_manager  # noqa: E402
+from reflex.istate.manager import (  # noqa: E402
+    reset_disk_state_manager as reset_disk_state_manager,
+)

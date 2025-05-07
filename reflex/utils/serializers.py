@@ -2,115 +2,143 @@
 
 from __future__ import annotations
 
+import contextlib
+import dataclasses
+import decimal
 import functools
+import inspect
 import json
-import types as builtin_types
 import warnings
+from collections.abc import Callable, Sequence
 from datetime import date, datetime, time, timedelta
 from enum import Enum
 from pathlib import Path
-from typing import (
-    Any,
-    Callable,
-    Dict,
-    List,
-    Literal,
-    Optional,
-    Set,
-    Tuple,
-    Type,
-    Union,
-    get_type_hints,
-    overload,
-)
+from typing import Any, Literal, TypeVar, get_type_hints, overload
+from uuid import UUID
+
+from pydantic import BaseModel as BaseModelV2
+from pydantic.v1 import BaseModel as BaseModelV1
 
 from reflex.base import Base
 from reflex.constants.colors import Color, format_color
-from reflex.utils import exceptions, types
+from reflex.utils import console, types
 
 # Mapping from type to a serializer.
 # The serializer should convert the type to a JSON object.
-SerializedType = Union[str, bool, int, float, list, dict]
+SerializedType = str | bool | int | float | list | dict | None
 
 
-Serializer = Callable[[Type], SerializedType]
+Serializer = Callable[[Any], SerializedType]
 
 
-SERIALIZERS: dict[Type, Serializer] = {}
-SERIALIZER_TYPES: dict[Type, Type] = {}
+SERIALIZERS: dict[type, Serializer] = {}
+SERIALIZER_TYPES: dict[type, type] = {}
+
+SERIALIZED_FUNCTION = TypeVar("SERIALIZED_FUNCTION", bound=Serializer)
+
+
+@overload
+def serializer(
+    fn: None = None,
+    to: type[SerializedType] | None = None,
+    overwrite: bool | None = None,
+) -> Callable[[SERIALIZED_FUNCTION], SERIALIZED_FUNCTION]: ...
+
+
+@overload
+def serializer(
+    fn: SERIALIZED_FUNCTION,
+    to: type[SerializedType] | None = None,
+    overwrite: bool | None = None,
+) -> SERIALIZED_FUNCTION: ...
 
 
 def serializer(
-    fn: Serializer | None = None,
-    to: Type | None = None,
-) -> Serializer:
+    fn: SERIALIZED_FUNCTION | None = None,
+    to: Any = None,
+    overwrite: bool | None = None,
+) -> SERIALIZED_FUNCTION | Callable[[SERIALIZED_FUNCTION], SERIALIZED_FUNCTION]:
     """Decorator to add a serializer for a given type.
 
     Args:
         fn: The function to decorate.
         to: The type returned by the serializer. If this is `str`, then any Var created from this type will be treated as a string.
+        overwrite: Whether to overwrite the existing serializer.
 
     Returns:
         The decorated function.
-
-    Raises:
-        ValueError: If the function does not take a single argument.
     """
-    if fn is None:
-        # If the function is not provided, return a partial that acts as a decorator.
-        return functools.partial(serializer, to=to)  # type: ignore
 
-    # Check the type hints to get the type of the argument.
-    type_hints = get_type_hints(fn)
-    args = [arg for arg in type_hints if arg != "return"]
+    def wrapper(fn: SERIALIZED_FUNCTION) -> SERIALIZED_FUNCTION:
+        # Check the type hints to get the type of the argument.
+        type_hints = get_type_hints(fn)
+        args = [arg for arg in type_hints if arg != "return"]
 
-    # Make sure the function takes a single argument.
-    if len(args) != 1:
-        raise ValueError("Serializer must take a single argument.")
+        # Make sure the function takes a single argument.
+        if len(args) != 1:
+            raise ValueError("Serializer must take a single argument.")
 
-    # Get the type of the argument.
-    type_ = type_hints[args[0]]
+        # Get the type of the argument.
+        type_ = type_hints[args[0]]
 
-    # Make sure the type is not already registered.
-    registered_fn = SERIALIZERS.get(type_)
-    if registered_fn is not None and registered_fn != fn:
-        raise ValueError(
-            f"Serializer for type {type_} is already registered as {registered_fn.__qualname__}."
-        )
+        # Make sure the type is not already registered.
+        registered_fn = SERIALIZERS.get(type_)
+        if registered_fn is not None and registered_fn != fn and overwrite is not True:
+            message = f"Overwriting serializer for type {type_} from {registered_fn.__module__}:{registered_fn.__qualname__} to {fn.__module__}:{fn.__qualname__}."
+            if overwrite is False:
+                raise ValueError(message)
+            caller_frame = next(
+                filter(
+                    lambda frame: frame.filename != __file__,
+                    inspect.getouterframes(inspect.currentframe()),
+                ),
+                None,
+            )
+            file_info = (
+                f"(at {caller_frame.filename}:{caller_frame.lineno})"
+                if caller_frame
+                else ""
+            )
+            console.warn(
+                f"{message} Call rx.serializer with `overwrite=True` if this is intentional. {file_info}"
+            )
 
-    # Apply type transformation if requested
-    if to is not None:
-        SERIALIZER_TYPES[type_] = to
-        get_serializer_type.cache_clear()
+        to_type = to or type_hints.get("return")
 
-    # Register the serializer.
-    SERIALIZERS[type_] = fn
-    get_serializer.cache_clear()
+        # Apply type transformation if requested
+        if to_type:
+            SERIALIZER_TYPES[type_] = to_type
+            get_serializer_type.cache_clear()
 
-    # Return the function.
-    return fn
+        # Register the serializer.
+        SERIALIZERS[type_] = fn
+        get_serializer.cache_clear()
+
+        # Return the function.
+        return fn
+
+    if fn is not None:
+        return wrapper(fn)
+    return wrapper
 
 
 @overload
 def serialize(
     value: Any, get_type: Literal[True]
-) -> Tuple[Optional[SerializedType], Optional[types.GenericType]]: ...
+) -> tuple[SerializedType | None, types.GenericType | None]: ...
 
 
 @overload
-def serialize(value: Any, get_type: Literal[False]) -> Optional[SerializedType]: ...
+def serialize(value: Any, get_type: Literal[False]) -> SerializedType | None: ...
 
 
 @overload
-def serialize(value: Any) -> Optional[SerializedType]: ...
+def serialize(value: Any) -> SerializedType | None: ...
 
 
 def serialize(
     value: Any, get_type: bool = False
-) -> Union[
-    Optional[SerializedType],
-    Tuple[Optional[SerializedType], Optional[types.GenericType]],
-]:
+) -> SerializedType | None | tuple[SerializedType | None, types.GenericType | None]:
     """Serialize the value to a JSON string.
 
     Args:
@@ -125,6 +153,9 @@ def serialize(
 
     # If there is no serializer, return None.
     if serializer is None:
+        if dataclasses.is_dataclass(value) and not isinstance(value, type):
+            return {k.name: getattr(value, k.name) for k in dataclasses.fields(value)}
+
         if get_type:
             return None, None
         return None
@@ -140,7 +171,7 @@ def serialize(
 
 
 @functools.lru_cache
-def get_serializer(type_: Type) -> Optional[Serializer]:
+def get_serializer(type_: type) -> Serializer | None:
     """Get the serializer for the type.
 
     Args:
@@ -164,7 +195,7 @@ def get_serializer(type_: Type) -> Optional[Serializer]:
 
 
 @functools.lru_cache
-def get_serializer_type(type_: Type) -> Optional[Type]:
+def get_serializer_type(type_: type) -> type | None:
     """Get the converted type for the type after serializing.
 
     Args:
@@ -187,16 +218,37 @@ def get_serializer_type(type_: Type) -> Optional[Type]:
     return None
 
 
-def has_serializer(type_: Type) -> bool:
+def has_serializer(type_: type, into_type: type | None = None) -> bool:
     """Check if there is a serializer for the type.
 
     Args:
         type_: The type to check.
+        into_type: The type to serialize into.
 
     Returns:
         Whether there is a serializer for the type.
     """
-    return get_serializer(type_) is not None
+    serializer_for_type = get_serializer(type_)
+    return serializer_for_type is not None and (
+        into_type is None or get_serializer_type(type_) == into_type
+    )
+
+
+def can_serialize(type_: type, into_type: type | None = None) -> bool:
+    """Check if there is a serializer for the type.
+
+    Args:
+        type_: The type to check.
+        into_type: The type to serialize into.
+
+    Returns:
+        Whether there is a serializer for the type.
+    """
+    return has_serializer(type_, into_type) or (
+        isinstance(type_, type)
+        and dataclasses.is_dataclass(type_)
+        and (into_type is None or into_type is dict)
+    )
 
 
 @serializer(to=str)
@@ -212,36 +264,8 @@ def serialize_type(value: type) -> str:
     return value.__name__
 
 
-@serializer
-def serialize_str(value: str) -> str:
-    """Serialize a string.
-
-    Args:
-        value: The string to serialize.
-
-    Returns:
-        The serialized string.
-    """
-    return value
-
-
-@serializer
-def serialize_primitive(value: Union[bool, int, float, None]) -> str:
-    """Serialize a primitive type.
-
-    Args:
-        value: The number/bool/None to serialize.
-
-    Returns:
-        The serialized number/bool/None.
-    """
-    from reflex.utils import format
-
-    return format.json_dumps(value)
-
-
-@serializer
-def serialize_base(value: Base) -> str:
+@serializer(to=dict)
+def serialize_base(value: Base) -> dict:
     """Serialize a Base instance.
 
     Args:
@@ -250,65 +274,69 @@ def serialize_base(value: Base) -> str:
     Returns:
         The serialized Base.
     """
-    return value.json()
+    from reflex.vars.base import Var
+
+    return {
+        k: v for k, v in value.dict().items() if isinstance(v, Var) or not callable(v)
+    }
+
+
+@serializer(to=dict)
+def serialize_base_model_v1(model: BaseModelV1) -> dict:
+    """Serialize a pydantic v1 BaseModel instance.
+
+    Args:
+        model: The BaseModel to serialize.
+
+    Returns:
+        The serialized BaseModel.
+    """
+    return model.dict()
+
+
+if BaseModelV1 is not BaseModelV2:
+
+    @serializer(to=dict)
+    def serialize_base_model_v2(model: BaseModelV2) -> dict:
+        """Serialize a pydantic v2 BaseModel instance.
+
+        Args:
+            model: The BaseModel to serialize.
+
+        Returns:
+            The serialized BaseModel.
+        """
+        return model.model_dump()
 
 
 @serializer
-def serialize_list(value: Union[List, Tuple, Set]) -> str:
-    """Serialize a list to a JSON string.
+def serialize_set(value: set) -> list:
+    """Serialize a set to a JSON serializable list.
 
     Args:
-        value: The list to serialize.
+        value: The set to serialize.
 
     Returns:
         The serialized list.
     """
-    from reflex.utils import format
-
-    # Dump the list to a string.
-    fprop = format.json_dumps(list(value))
-
-    # Unwrap var values.
-    return format.unwrap_vars(fprop)
+    return list(value)
 
 
 @serializer
-def serialize_dict(prop: Dict[str, Any]) -> str:
-    """Serialize a dictionary to a JSON string.
+def serialize_sequence(value: Sequence) -> list:
+    """Serialize a sequence to a JSON serializable list.
 
     Args:
-        prop: The dictionary to serialize.
+        value: The sequence to serialize.
 
     Returns:
-        The serialized dictionary.
-
-    Raises:
-        InvalidStylePropError: If the style prop is invalid.
+        The serialized list.
     """
-    # Import here to avoid circular imports.
-    from reflex.event import EventHandler
-    from reflex.utils import format
-
-    prop_dict = {}
-
-    for key, value in prop.items():
-        if types._issubclass(type(value), Callable):
-            raise exceptions.InvalidStylePropError(
-                f"The style prop `{format.to_snake_case(key)}` cannot have "  # type: ignore
-                f"`{value.fn.__qualname__ if isinstance(value, EventHandler) else value.__qualname__ if isinstance(value, builtin_types.FunctionType) else value}`, "
-                f"an event handler or callable as its value"
-            )
-        prop_dict[key] = value
-
-    # Dump the dict to a string.
-    fprop = format.json_dumps(prop_dict)
-
-    # Unwrap var values.
-    return format.unwrap_vars(fprop)
+    return list(value)
 
 
 @serializer(to=str)
-def serialize_datetime(dt: Union[date, datetime, time, timedelta]) -> str:
+def serialize_datetime(dt: date | datetime | time | timedelta) -> str:
     """Serialize a datetime to a JSON string.
 
     Args:
@@ -347,6 +375,32 @@ def serialize_enum(en: Enum) -> str:
 
 
 @serializer(to=str)
+def serialize_uuid(uuid: UUID) -> str:
+    """Serialize a UUID to a JSON string.
+
+    Args:
+        uuid: The UUID to serialize.
+
+    Returns:
+        The serialized UUID.
+    """
+    return str(uuid)
+
+
+@serializer(to=float)
+def serialize_decimal(value: decimal.Decimal) -> float:
+    """Serialize a Decimal to a float.
+
+    Args:
+        value: The Decimal to serialize.
+
+    Returns:
+        The serialized Decimal as a float.
+    """
+    return float(value)
+
+
+@serializer(to=str)
 def serialize_color(color: Color) -> str:
     """Serialize a color.
 
@@ -359,10 +413,10 @@ def serialize_color(color: Color) -> str:
     return format_color(color.color, color.shade, color.alpha)
 
 
-try:
+with contextlib.suppress(ImportError):
     from pandas import DataFrame
 
-    def format_dataframe_values(df: DataFrame) -> List[List[Any]]:
+    def format_dataframe_values(df: DataFrame) -> list[list[Any]]:
         """Format dataframe values to a list of lists.
 
         Args:
@@ -391,10 +445,8 @@ try:
             "data": format_dataframe_values(df),
         }
 
-except ImportError:
-    pass
 
-try:
+with contextlib.suppress(ImportError):
     from plotly.graph_objects import Figure, layout
     from plotly.io import to_json
 
@@ -425,11 +477,8 @@ try:
             "layout": json.loads(str(to_json(template.layout))),
         }
 
-except ImportError:
-    pass
 
-
-try:
+with contextlib.suppress(ImportError):
     import base64
     import io
 
@@ -453,7 +502,7 @@ try:
         base64_image = base64.b64encode(image_bytes).decode("utf-8")
         try:
             # Newer method to get the mime type, but does not always work.
-            mime_type = image.get_format_mimetype()  # type: ignore
+            mime_type = image.get_format_mimetype()  # pyright: ignore [reportAttributeAccessIssue]
         except AttributeError:
             try:
                 # Fallback method
@@ -466,6 +515,3 @@ try:
                 mime_type = "image/png"
 
         return f"data:{mime_type};base64,{base64_image}"
-
-except ImportError:
-    pass

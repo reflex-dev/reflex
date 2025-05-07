@@ -2,7 +2,8 @@
 
 from __future__ import annotations
 
-from typing import Any, List, Literal, Optional, Union
+from collections.abc import Sequence
+from typing import Any, ClassVar, Literal
 
 from reflex.components.component import Component, ComponentNamespace
 from reflex.components.core.colors import color
@@ -10,9 +11,11 @@ from reflex.components.core.cond import cond
 from reflex.components.lucide.icon import Icon
 from reflex.components.radix.primitives.base import RadixPrimitiveComponent
 from reflex.components.radix.themes.base import LiteralAccentColor, LiteralRadius
+from reflex.constants.compiler import MemoizationMode
 from reflex.event import EventHandler
 from reflex.style import Style
-from reflex.vars import Var, get_uuid_string_var
+from reflex.vars import get_uuid_string_var
+from reflex.vars.base import LiteralVar, Var
 
 LiteralAccordionType = Literal["single", "multiple"]
 LiteralAccordionDir = Literal["ltr", "rtl"]
@@ -51,7 +54,7 @@ def _inherited_variant_selector(
 class AccordionComponent(RadixPrimitiveComponent):
     """Base class for all @radix-ui/accordion components."""
 
-    library = "@radix-ui/react-accordion@^1.1.2"
+    library = "@radix-ui/react-accordion@^1.2.8"
 
     # The color scheme of the component.
     color_scheme: Var[LiteralAccentColor]
@@ -70,6 +73,18 @@ class AccordionComponent(RadixPrimitiveComponent):
         return ["color_scheme", "variant"]
 
 
+def on_value_change(value: Var[str | list[str]]) -> tuple[Var[str | list[str]]]:
+    """Handle the on_value_change event.
+
+    Args:
+        value: The value of the event.
+
+    Returns:
+        The value of the event.
+    """
+    return (value,)
+
+
 class AccordionRoot(AccordionComponent):
     """An accordion component."""
 
@@ -81,10 +96,10 @@ class AccordionRoot(AccordionComponent):
     type: Var[LiteralAccordionType]
 
     # The value of the item to expand.
-    value: Var[Union[str, List[str]]]
+    value: Var[str | Sequence[str]]
 
     # The default value of the item to expand.
-    default_value: Var[Union[str, List[str]]]
+    default_value: Var[str | Sequence[str]]
 
     # Whether or not the accordion is collapsible.
     collapsible: Var[bool]
@@ -102,21 +117,22 @@ class AccordionRoot(AccordionComponent):
     radius: Var[LiteralRadius]
 
     # The time in milliseconds to animate open and close
-    duration: Var[int] = Var.create_safe(DEFAULT_ANIMATION_DURATION)
+    duration: Var[int] = LiteralVar.create(DEFAULT_ANIMATION_DURATION)
 
     # The easing function to use for the animation.
-    easing: Var[str] = Var.create_safe(DEFAULT_ANIMATION_EASING, _var_is_string=True)
+    easing: Var[str] = LiteralVar.create(DEFAULT_ANIMATION_EASING)
 
     # Whether to show divider lines between items.
     show_dividers: Var[bool]
 
-    _valid_children: List[str] = ["AccordionItem"]
+    _valid_children: ClassVar[list[str]] = ["AccordionItem"]
 
     # Fired when the opened the accordions changes.
-    on_value_change: EventHandler[lambda e0: [e0]]
+    on_value_change: EventHandler[on_value_change]
 
     def _exclude_props(self) -> list[str]:
-        return super()._exclude_props() + [
+        return [
+            *super()._exclude_props(),
             "radius",
             "duration",
             "easing",
@@ -180,33 +196,38 @@ class AccordionItem(AccordionComponent):
     # When true, prevents the user from interacting with the item.
     disabled: Var[bool]
 
-    _valid_children: List[str] = [
+    # The header of the accordion item.
+    header: Var[Component | str]
+
+    # The content of the accordion item.
+    content: Var[Component | str | None] = Var.create(None)
+
+    _valid_children: ClassVar[list[str]] = [
         "AccordionHeader",
         "AccordionTrigger",
         "AccordionContent",
     ]
 
-    _valid_parents: List[str] = ["AccordionRoot"]
+    _valid_parents: ClassVar[list[str]] = ["AccordionRoot"]
 
     @classmethod
     def create(
         cls,
         *children,
-        header: Optional[Component | Var] = None,
-        content: Optional[Component | Var] = None,
         **props,
     ) -> Component:
         """Create an accordion item.
 
         Args:
             *children: The list of children to use if header and content are not provided.
-            header: The header of the accordion item.
-            content: The content of the accordion item.
             **props: Additional properties to apply to the accordion item.
 
         Returns:
             The accordion item.
         """
+        header = props.pop("header", None)
+        content = props.pop("content", None)
+
         # The item requires a value to toggle (use a random unique name if not provided).
         value = props.pop("value", get_uuid_string_var())
 
@@ -278,6 +299,9 @@ class AccordionItem(AccordionComponent):
             },
         }
 
+    def _exclude_props(self) -> list[str]:
+        return ["header", "content"]
+
 
 class AccordionHeader(AccordionComponent):
     """An accordion component."""
@@ -319,6 +343,8 @@ class AccordionTrigger(AccordionComponent):
     tag = "Trigger"
 
     alias = "RadixAccordionTrigger"
+
+    _memoization_mode = MemoizationMode(recursive=False)
 
     @classmethod
     def create(cls, *children, **props) -> Component:
@@ -362,7 +388,7 @@ class AccordionTrigger(AccordionComponent):
                 "background_color": color("accent", 4),
             },
             "& > .AccordionChevron": {
-                "transition": f"transform var(--animation-duration) var(--animation-easing)",
+                "transition": "transform var(--animation-duration) var(--animation-easing)",
             },
             _inherited_variant_selector("classic"): {
                 "color": "var(--accent-contrast)",
@@ -464,14 +490,12 @@ to {
         Returns:
             The style of the component.
         """
-        slideDown = Var.create(
-            f"${{slideDown}} var(--animation-duration) var(--animation-easing)",
-            _var_is_string=True,
+        slide_down = Var("slideDown").to(str) + Var.create(
+            " var(--animation-duration) var(--animation-easing)",
         )
 
-        slideUp = Var.create(
-            f"${{slideUp}} var(--animation-duration) var(--animation-easing)",
-            _var_is_string=True,
+        slide_up = Var("slideUp").to(str) + Var.create(
+            " var(--animation-duration) var(--animation-easing)",
         )
 
         return {
@@ -484,8 +508,8 @@ to {
                 "display": "block",
                 "height": "var(--space-3)",
             },
-            "&[data-state='open']": {"animation": slideDown},
-            "&[data-state='closed']": {"animation": slideUp},
+            "&[data-state='open']": {"animation": slide_down},
+            "&[data-state='closed']": {"animation": slide_up},
             _inherited_variant_selector("classic"): {
                 "color": "var(--accent-contrast)",
             },

@@ -2,10 +2,9 @@
 
 from __future__ import annotations
 
-from abc import ABC
-from typing import TYPE_CHECKING, Optional
+from abc import ABC, abstractmethod
+from typing import TYPE_CHECKING
 
-from reflex.base import Base
 from reflex.event import Event
 from reflex.state import BaseState, StateUpdate
 
@@ -13,12 +12,13 @@ if TYPE_CHECKING:
     from reflex.app import App
 
 
-class Middleware(Base, ABC):
+class Middleware(ABC):
     """Middleware to preprocess and postprocess requests."""
 
+    @abstractmethod
     async def preprocess(
         self, app: App, state: BaseState, event: Event
-    ) -> Optional[StateUpdate]:
+    ) -> StateUpdate | None:
         """Preprocess the event.
 
         Args:

@@ -2,13 +2,13 @@
 
 from __future__ import annotations
 
-from typing import Dict, Tuple, TypeVar, Union
+from typing import TypeVar
 
 breakpoints_values = ["30em", "48em", "62em", "80em", "96em"]
 breakpoint_names = ["xs", "sm", "md", "lg", "xl"]
 
 
-def set_breakpoints(values: Tuple[str, str, str, str, str]):
+def set_breakpoints(values: tuple[str, str, str, str, str]):
     """Overwrite default breakpoint values.
 
     Args:
@@ -18,11 +18,11 @@ def set_breakpoints(values: Tuple[str, str, str, str, str]):
     breakpoints_values.extend(values)
 
 
-K = TypeVar("K")
+K = TypeVar("K", bound=str)
 V = TypeVar("V")
 
 
-class Breakpoints(Dict[K, V]):
+class Breakpoints(dict[K, V]):
     """A responsive styling helper."""
 
     def factorize(self):
@@ -46,7 +46,7 @@ class Breakpoints(Dict[K, V]):
     @classmethod
     def create(
         cls,
-        custom: Dict[K, V] | None = None,
+        custom: dict[K, V] | None = None,
         initial: V | None = None,
         xs: V | None = None,
         sm: V | None = None,
@@ -58,7 +58,7 @@ class Breakpoints(Dict[K, V]):
 
         Args:
             custom: Custom mapping using CSS values or variables.
-            initial: Styling when in the inital width
+            initial: Styling when in the initial width
             xs: Styling when in the extra-small width
             sm: Styling when in the small width
             md: Styling when in the medium width
@@ -74,7 +74,7 @@ class Breakpoints(Dict[K, V]):
         thresholds = [initial, xs, sm, md, lg, xl]
 
         if custom is not None:
-            if any((threshold is not None for threshold in thresholds)):
+            if any(threshold is not None for threshold in thresholds):
                 raise ValueError("Named props cannot be used with custom thresholds")
 
             return Breakpoints(custom)
@@ -82,7 +82,9 @@ class Breakpoints(Dict[K, V]):
             return Breakpoints(
                 {
                     k: v
-                    for k, v in zip(["initial", *breakpoint_names], thresholds)
+                    for k, v in zip(
+                        ["initial", *breakpoint_names], thresholds, strict=True
+                    )
                     if v is not None
                 }
             )
@@ -92,4 +94,4 @@ breakpoints = Breakpoints.create
 
 T = TypeVar("T")
 
-Responsive = Union[T, Breakpoints[str, T]]
+Responsive = T | Breakpoints[str, T]

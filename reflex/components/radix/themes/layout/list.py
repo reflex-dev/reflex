@@ -2,14 +2,17 @@
 
 from __future__ import annotations
 
-from typing import Any, Iterable, Literal, Optional, Union
+from collections.abc import Iterable
+from typing import Any, Literal
 
-from reflex.components.component import Component, ComponentNamespace
+from reflex.components.component import ComponentNamespace
 from reflex.components.core.foreach import Foreach
+from reflex.components.el.elements.base import BaseHTML
 from reflex.components.el.elements.typography import Li, Ol, Ul
 from reflex.components.lucide.icon import Icon
+from reflex.components.markdown.markdown import MarkdownComponentMap
 from reflex.components.radix.themes.typography.text import Text
-from reflex.vars import Var
+from reflex.vars.base import Var
 
 LiteralListStyleTypeUnordered = Literal[
     "none",
@@ -36,40 +39,42 @@ LiteralListStyleTypeOrdered = Literal[
 ]
 
 
-class BaseList(Component):
+class BaseList(BaseHTML, MarkdownComponentMap):
     """Base class for ordered and unordered lists."""
 
     tag = "ul"
 
     # The style of the list. Default to "none".
     list_style_type: Var[
-        Union[LiteralListStyleTypeUnordered, LiteralListStyleTypeOrdered]
-    ]
+        LiteralListStyleTypeUnordered | LiteralListStyleTypeOrdered
+    ] = Var.create("none")
+
+    # A list of items to add to the list.
+    items: Var[Iterable] = Var.create([])
 
     @classmethod
     def create(
         cls,
         *children,
-        items: Optional[Var[Iterable]] = None,
         **props,
     ):
         """Create a list component.
 
         Args:
             *children: The children of the component.
-            items: A list of items to add to the list.
             **props: The properties of the component.
 
         Returns:
             The list component.
-
         """
+        items = props.pop("items", None)
         list_style_type = props.pop("list_style_type", "none")
+
         if not children and items is not None:
             if isinstance(items, Var):
                 children = [Foreach.create(items, ListItem.create)]
             else:
-                children = [ListItem.create(item) for item in items]  # type: ignore
+                children = [ListItem.create(item) for item in items]
         props["direction"] = "column"
         style = props.setdefault("style", {})
         style["list_style_type"] = list_style_type
@@ -87,6 +92,9 @@ class BaseList(Component):
             "direction": "column",
         }
 
+    def _exclude_props(self) -> list[str]:
+        return ["items", "list_style_type"]
+
 
 class UnorderedList(BaseList, Ul):
     """Display an unordered list."""
@@ -97,22 +105,20 @@ class UnorderedList(BaseList, Ul):
     def create(
         cls,
         *children,
-        items: Optional[Var[Iterable]] = None,
-        list_style_type: LiteralListStyleTypeUnordered = "disc",
         **props,
     ):
-        """Create a unordered list component.
+        """Create an unordered list component.
 
         Args:
             *children: The children of the component.
-            items: A list of items to add to the list.
-            list_style_type: The style of the list.
             **props: The properties of the component.
 
         Returns:
             The list component.
-
         """
+        items = props.pop("items", None)
+        list_style_type = props.pop("list_style_type", "disc")
+
         props["margin_left"] = props.get("margin_left", "1.5rem")
         return super().create(
             *children, items=items, list_style_type=list_style_type, **props
@@ -128,29 +134,27 @@ class OrderedList(BaseList, Ol):
     def create(
         cls,
         *children,
-        items: Optional[Var[Iterable]] = None,
-        list_style_type: LiteralListStyleTypeOrdered = "decimal",
         **props,
     ):
         """Create an ordered list component.
 
         Args:
             *children: The children of the component.
-            items: A list of items to add to the list.
-            list_style_type: The style of the list.
             **props: The properties of the component.
 
         Returns:
             The list component.
-
         """
+        items = props.pop("items", None)
+        list_style_type = props.pop("list_style_type", "decimal")
+
         props["margin_left"] = props.get("margin_left", "1.5rem")
         return super().create(
             *children, items=items, list_style_type=list_style_type, **props
         )
 
 
-class ListItem(Li):
+class ListItem(Li, MarkdownComponentMap):
     """Display an item of an ordered or unordered list."""
 
     @classmethod
@@ -163,7 +167,6 @@ class ListItem(Li):
 
         Returns:
             The list item component.
-
         """
         for child in children:
             if isinstance(child, Text):
@@ -188,7 +191,7 @@ ordered_list = list_ns.ordered
 unordered_list = list_ns.unordered
 
 
-def __getattr__(name):
+def __getattr__(name: Any):
     # special case for when accessing list to avoid shadowing
     # python's built in list object.
     if name == "list":

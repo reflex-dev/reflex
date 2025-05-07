@@ -7,6 +7,7 @@ from reflex.utils import lazy_loader
 _MAPPING = {
     "forms": [
         "button",
+        "datalist",
         "fieldset",
         "form",
         "input",
@@ -65,11 +66,17 @@ _MAPPING = {
         "portal",
         "source",
         "svg",
-        "defs",
-        "lineargradient",
-        "LinearGradient",
-        "stop",
+        "text",
+        "line",
+        "circle",
+        "ellipse",
+        "rect",
+        "polygon",
         "path",
+        "stop",
+        "linear_gradient",
+        "radial_gradient",
+        "defs",
     ],
     "metadata": [
         "base",
@@ -130,13 +137,22 @@ _MAPPING = {
 }
 
 
-EXCLUDE = ["del_", "Del", "image", "lineargradient", "LinearGradient"]
-for _, v in _MAPPING.items():
-    v.extend([mod.capitalize() for mod in v if mod not in EXCLUDE])
+EXCLUDE = ["del_", "Del", "image", "style"]
+for v in _MAPPING.values():
+    from reflex.utils.format import to_camel_case
+
+    v.extend(
+        [
+            to_camel_case(mod)[0].upper() + to_camel_case(mod)[1:]
+            for mod in v
+            if mod not in EXCLUDE
+        ]
+    )
+
+_MAPPING["metadata"].extend(["StyleEl"])
 
 _SUBMOD_ATTRS: dict[str, list[str]] = _MAPPING
 
-_PYRIGHT_IGNORE_IMPORTS = ["stop", "lineargradient", "path", "defs"]
 __getattr__, __dir__, __all__ = lazy_loader.attach(
     __name__,
     submod_attrs=_SUBMOD_ATTRS,

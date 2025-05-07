@@ -1,17 +1,16 @@
 """Interactive components provided by @radix-ui/themes."""
 
-from typing import List, Literal, Union
+from collections.abc import Sequence
+from typing import ClassVar, Literal
 
 import reflex as rx
 from reflex.components.component import Component, ComponentNamespace
 from reflex.components.core.breakpoints import Responsive
-from reflex.vars import Var
+from reflex.constants.compiler import MemoizationMode
+from reflex.event import no_args_event_spec, passthrough_event_spec
+from reflex.vars.base import Var
 
-from ..base import (
-    LiteralAccentColor,
-    LiteralRadius,
-    RadixThemesComponent,
-)
+from ..base import LiteralAccentColor, LiteralRadius, RadixThemesComponent
 
 
 class SelectRoot(RadixThemesComponent):
@@ -47,10 +46,10 @@ class SelectRoot(RadixThemesComponent):
     _rename_props = {"onChange": "onValueChange"}
 
     # Fired when the value of the select changes.
-    on_change: rx.EventHandler[lambda e0: [e0]]
+    on_change: rx.EventHandler[passthrough_event_spec(str)]
 
     # Fired when the select is opened or closed.
-    on_open_change: rx.EventHandler[lambda e0: [e0]]
+    on_open_change: rx.EventHandler[passthrough_event_spec(bool)]
 
 
 class SelectTrigger(RadixThemesComponent):
@@ -70,7 +69,9 @@ class SelectTrigger(RadixThemesComponent):
     # The placeholder of the select trigger
     placeholder: Var[str]
 
-    _valid_parents: List[str] = ["SelectRoot"]
+    _valid_parents: ClassVar[list[str]] = ["SelectRoot"]
+
+    _memoization_mode = MemoizationMode(recursive=False)
 
 
 class SelectContent(RadixThemesComponent):
@@ -103,13 +104,13 @@ class SelectContent(RadixThemesComponent):
     align_offset: Var[int]
 
     # Fired when the select content is closed.
-    on_close_auto_focus: rx.EventHandler[lambda e0: [e0]]
+    on_close_auto_focus: rx.EventHandler[no_args_event_spec]
 
     # Fired when the escape key is pressed.
-    on_escape_key_down: rx.EventHandler[lambda e0: [e0]]
+    on_escape_key_down: rx.EventHandler[no_args_event_spec]
 
     # Fired when a pointer down event happens outside the select content.
-    on_pointer_down_outside: rx.EventHandler[lambda e0: [e0]]
+    on_pointer_down_outside: rx.EventHandler[no_args_event_spec]
 
 
 class SelectGroup(RadixThemesComponent):
@@ -117,7 +118,7 @@ class SelectGroup(RadixThemesComponent):
 
     tag = "Select.Group"
 
-    _valid_parents: List[str] = ["SelectContent"]
+    _valid_parents: ClassVar[list[str]] = ["SelectContent"]
 
 
 class SelectItem(RadixThemesComponent):
@@ -131,7 +132,7 @@ class SelectItem(RadixThemesComponent):
     # Whether the select item is disabled
     disabled: Var[bool]
 
-    _valid_parents: List[str] = ["SelectGroup", "SelectContent"]
+    _valid_parents: ClassVar[list[str]] = ["SelectGroup", "SelectContent"]
 
 
 class SelectLabel(RadixThemesComponent):
@@ -139,7 +140,7 @@ class SelectLabel(RadixThemesComponent):
 
     tag = "Select.Label"
 
-    _valid_parents: List[str] = ["SelectGroup"]
+    _valid_parents: ClassVar[list[str]] = ["SelectGroup"]
 
 
 class SelectSeparator(RadixThemesComponent):
@@ -152,7 +153,7 @@ class HighLevelSelect(SelectRoot):
     """High level wrapper for the Select component."""
 
     # The items of the select.
-    items: Var[List[str]]
+    items: Var[Sequence[str]]
 
     # The placeholder of the select.
     placeholder: Var[str]
@@ -179,7 +180,7 @@ class HighLevelSelect(SelectRoot):
     position: Var[Literal["item-aligned", "popper"]]
 
     @classmethod
-    def create(cls, items: Union[List[str], Var[List[str]]], **props) -> Component:
+    def create(cls, items: list[str] | Var[list[str]], **props) -> Component:
         """Create a select component.
 
         Args:
@@ -190,6 +191,7 @@ class HighLevelSelect(SelectRoot):
             The select component.
         """
         trigger_prop_list = [
+            "id",
             "placeholder",
             "variant",
             "radius",

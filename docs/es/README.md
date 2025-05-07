@@ -1,7 +1,3 @@
-```diff
-+ ¿Buscando Pynecone? Estás en el repositorio correcto. Pynecone ha sido renombrado a Reflex. +
-```
-
 <div align="center">
 <img src="https://raw.githubusercontent.com/reflex-dev/reflex/main/docs/images/reflex_dark.svg#gh-light-mode-only" alt="Reflex Logo" width="300px">
 <img src="https://raw.githubusercontent.com/reflex-dev/reflex/main/docs/images/reflex_light.svg#gh-dark-mode-only" alt="Reflex Logo" width="300px">
@@ -9,11 +5,13 @@
 <hr>
 
 ### **✨ Aplicaciones web personalizables y eficaces en Python puro. Despliega tu aplicación en segundos. ✨**
+
 [![PyPI version](https://badge.fury.io/py/reflex.svg)](https://badge.fury.io/py/reflex)
 ![Pruebas](https://github.com/pynecone-io/pynecone/actions/workflows/integration.yml/badge.svg)
 ![Versiones](https://img.shields.io/pypi/pyversions/reflex.svg)
 [![Documentación](https://img.shields.io/badge/Documentation%20-Introduction%20-%20%23007ec6)](https://reflex.dev/docs/getting-started/introduction)
 [![Discord](https://img.shields.io/discord/1029853095527727165?color=%237289da&label=Discord)](https://discord.gg/T5WSbC2YtQ)
+
 </div>
 
 ---
@@ -27,15 +25,16 @@
 Reflex es una biblioteca para construir aplicaciones web full-stack en Python puro.
 
 Características clave:
-* **Python puro** - Escribe el frontend y backend de tu aplicación en Python, sin necesidad de aprender JavaScript.
-* **Flexibilidad total** - Reflex es fácil para empezar, pero también puede escalar a aplicaciones complejas.
-* **Despliegue instantáneo** - Después de construir, despliega tu aplicación con un [solo comando](https://reflex.dev/docs/hosting/deploy-quick-start/) u hospédala en tu propio servidor.
+
+- **Python puro** - Escribe el frontend y backend de tu aplicación en Python, sin necesidad de aprender JavaScript.
+- **Flexibilidad total** - Reflex es fácil para empezar, pero también puede escalar a aplicaciones complejas.
+- **Despliegue instantáneo** - Después de construir, despliega tu aplicación con un [solo comando](https://reflex.dev/docs/hosting/deploy-quick-start/) u hospédala en tu propio servidor.
 
 Consulta nuestra [página de arquitectura](https://reflex.dev/blog/2024-03-21-reflex-architecture/#the-reflex-architecture) para aprender cómo funciona Reflex en detalle.
 
 ## ⚙️ Instalación
 
-Abra un terminal y ejecute (Requiere Python 3.8+):
+Abra un terminal y ejecute (Requiere Python 3.10+):
 
 ```bash
 pip install reflex
@@ -64,7 +63,6 @@ reflex run
 Debería ver su aplicación ejecutándose en http://localhost:3000.
 
 Ahora puede modificar el código fuente en `my_app_name/my_app_name.py`. Reflex se actualiza rápidamente para que pueda ver los cambios al instante cuando guarde el código.
-
 
 ## 🫧 Ejemplo de una Aplicación
 
@@ -105,7 +103,7 @@ class State(rx.State):
         )
         self.image_url = response.data[0].url
         self.processing, self.complete = False, True
-        
+
 
 def index():
     return rx.center(
@@ -117,7 +115,7 @@ def index():
                 width="25em",
             ),
             rx.button(
-                "Generate Image", 
+                "Generate Image",
                 on_click=State.get_image,
                 width="25em",
                 loading=State.processing
@@ -218,10 +216,9 @@ Puedes crear una aplicación multipágina añadiendo más páginas.
 
 <div align="center">
 
-📑 [Docs](https://reflex.dev/docs/getting-started/introduction) &nbsp; |  &nbsp; 🗞️ [Blog](https://reflex.dev/blog) &nbsp; |  &nbsp; 📱 [Librería de componentes](https://reflex.dev/docs/library) &nbsp; |  &nbsp; 🖼️ [Galería](https://reflex.dev/docs/gallery) &nbsp; |  &nbsp; 🛸 [Despliegue](https://reflex.dev/docs/hosting/deploy-quick-start)  &nbsp;   
+📑 [Docs](https://reflex.dev/docs/getting-started/introduction) &nbsp; | &nbsp; 🗞️ [Blog](https://reflex.dev/blog) &nbsp; | &nbsp; 📱 [Librería de componentes](https://reflex.dev/docs/library) &nbsp; | &nbsp; 🖼️ [Galería](https://reflex.dev/docs/gallery) &nbsp; | &nbsp; 🛸 [Despliegue](https://reflex.dev/docs/hosting/deploy-quick-start) &nbsp;
 
 </div>
-
 
 ## ✅ Estado
 
@@ -235,11 +232,11 @@ Reflex se lanzó en diciembre de 2022 con el nombre de Pynecone.
 
 ¡Aceptamos contribuciones de cualquier tamaño! A continuación encontrará algunas buenas formas de iniciarse en la comunidad Reflex.
 
--   **Únete a nuestro  Discord**: Nuestro [Discord](https://discord.gg/T5WSbC2YtQ) es el mejor lugar para obtener ayuda en su proyecto Reflex y discutir cómo puedes contribuir.
--   **Discusiones de GitHub**: Una excelente manera de hablar sobre las características que deseas agregar o las cosas que te resultan confusas o necesitan aclaración.
--   **GitHub Issues**: Las incidencias son una forma excelente de informar de errores. Además, puedes intentar resolver un problema existente y enviar un PR.
+- **Únete a nuestro Discord**: Nuestro [Discord](https://discord.gg/T5WSbC2YtQ) es el mejor lugar para obtener ayuda en su proyecto Reflex y discutir cómo puedes contribuir.
+- **Discusiones de GitHub**: Una excelente manera de hablar sobre las características que deseas agregar o las cosas que te resultan confusas o necesitan aclaración.
+- **GitHub Issues**: Las incidencias son una forma excelente de informar de errores. Además, puedes intentar resolver un problema existente y enviar un PR.
 
-Buscamos colaboradores, sin importar su nivel o experiencia. Para contribuir consulta [CONTIBUTING.md](https://github.com/reflex-dev/reflex/blob/main/CONTRIBUTING.md)
+Buscamos colaboradores, sin importar su nivel o experiencia. Para contribuir consulta [CONTRIBUTING.md](https://github.com/reflex-dev/reflex/blob/main/CONTRIBUTING.md)
 
 ## Licencia
 

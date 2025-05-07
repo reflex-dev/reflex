@@ -1,107 +1,207 @@
-[tool.poetry]
+[project]
 name = "reflex"
-version = "0.5.9"
+version = "0.7.11dev1"
 description = "Web apps in pure Python."
-license = "Apache-2.0"
+license = { text = "Apache-2.0" }
 authors = [
-    "Nikhil Rao <nikhil@reflex.dev>",
-    "Alek Petuskey <alek@reflex.dev>",
-    "Masen Furer <masen@reflex.dev>",
-    "Elijah Ahianyo <elijah@reflex.dev>",
-    "Thomas Brandého <thomas@reflex.dev>",
+  { name = "Nikhil Rao", email = "nikhil@reflex.dev" },
+  { name = "Alek Petuskey", email = "alek@reflex.dev" },
+  { name = "Masen Furer", email = "masen@reflex.dev" },
+  { name = "Elijah Ahianyo", email = "elijahahianyo@gmail.com" },
+  { name = "Thomas Brandeho", email = "thomas@reflex.dev" },
+  { name = "Khaleel Al-Adhami", email = "khaleel@reflex.dev" },
+]
+maintainers = [
+  { name = "Masen Furer", email = "masen@reflex.dev" },
+  { name = "Thomas Brandeho", email = "thomas@reflex.dev" },
+  { name = "Khaleel Al-Adhami", email = "khaleel@reflex.dev" },
 ]
 readme = "README.md"
+keywords = ["web", "framework"]
+requires-python = ">=3.10,<4.0"
+dependencies = [
+  "alembic >=1.15.2,<2.0",
+  "fastapi >=0.115.0",
+  "granian[reload] >=2.2.5",
+  "httpx >=0.28.0,<1.0",
+  "jinja2 >=3.1.2,<4.0",
+  "packaging >=24.2,<26",
+  "platformdirs >=4.3.7,<5.0",
+  "psutil >=7.0.0,<8.0",
+  "pydantic >=1.10.21,<3.0",
+  "python-socketio >=5.12.0,<6.0",
+  "python-multipart >=0.0.20,<1.0",
+  "redis >=5.2.1,<6.0",
+  "reflex-hosting-cli >=0.1.47",
+  "rich >=13,<15",
+  "sqlmodel >=0.0.24,<0.1",
+  "click >=8",
+  "typing_extensions >=4.13.0",
+  "wrapt >=1.17.0,<2.0",
+]
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "License :: OSI Approved :: Apache Software License",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+]
+
+
+[project.urls]
 homepage = "https://reflex.dev"
 repository = "https://github.com/reflex-dev/reflex"
 documentation = "https://reflex.dev/docs/getting-started/introduction"
-keywords = [
-    "web",
-    "framework",
-]
-classifiers = [
-    "Development Status :: 4 - Beta",
-]
-packages = [
-    {include = "reflex"}
-]
 
-[tool.poetry.dependencies]
-python = "^3.8"
-dill = ">=0.3.8,<0.4"
-fastapi = ">=0.96.0,<0.111.0"
-gunicorn = ">=20.1.0,<23.0"
-jinja2 = ">=3.1.2,<4.0"
-psutil = ">=5.9.4,<7.0"
-pydantic = ">=1.10.2,<3.0"
-python-multipart = ">=0.0.5,<0.1"
-python-socketio = ">=5.7.0,<6.0"
-redis = ">=4.3.5,<6.0"
-rich = ">=13.0.0,<14.0"
-sqlmodel = ">=0.0.14,<0.1"
-typer = ">=0.4.2,<1.0"
-uvicorn = ">=0.20.0"
-watchdog = ">=2.3.1,<5.0"
-watchfiles = ">=0.19.0,<1.0"
-starlette-admin = ">=0.11.0,<1.0"
-alembic = ">=1.11.1,<2.0"
-platformdirs = ">=3.10.0,<5.0"
-distro = {version = ">=1.8.0,<2.0", platform = "linux"}
-python-engineio = "!=4.6.0"
-wrapt = [
-    {version = ">=1.14.0,<2.0", python = ">=3.11"},
-    {version = ">=1.11.0,<2.0", python = "<3.11"},
-]
-packaging = ">=23.1,<25.0"
-reflex-hosting-cli = ">=0.1.2,<2.0"
-charset-normalizer = ">=3.3.2,<4.0"
-wheel = ">=0.42.0,<1.0"
-build = ">=1.0.3,<2.0"
-setuptools = ">=69.1.1,<70.2"
-httpx = ">=0.25.1,<1.0"
-twine = ">=4.0.0,<6.0"
-tomlkit = ">=0.12.4,<1.0"
-lazy_loader = ">=0.4"
-
-[tool.poetry.group.dev.dependencies]
-pytest = ">=7.1.2,<8.0"
-pytest-mock = ">=3.10.0,<4.0"
-pyright = ">=1.1.229,<1.1.335"
-darglint = ">=1.8.1,<2.0"
-toml = ">=0.10.2,<1.0"
-pytest-asyncio = ">=0.20.1,<0.22.0" # https://github.com/pytest-dev/pytest-asyncio/issues/706
-pytest-cov = ">=4.0.0,<5.0"
-ruff = "^0.4.9"
-pandas = [
-    {version = ">=2.1.1,<3.0", python = ">=3.9,<3.13"},
-    {version = ">=1.5.3,<2.0", python = ">=3.8,<3.9"},
-]
-pillow = [
-    {version = ">=10.0.0,<11.0", python = ">=3.8,<4.0"}
-]
-plotly = ">=5.13.0,<6.0"
-asynctest = ">=0.13.0,<1.0"
-pre-commit = {version = ">=3.2.1", python = ">=3.8,<4.0"}
-selenium = ">=4.11.0,<5.0"
-pytest-benchmark = ">=4.0.0,<5.0"
-
-[tool.poetry.scripts]
+[project.scripts]
 reflex = "reflex.reflex:cli"
 
 [build-system]
-requires = ["poetry-core>=1.5.1"]
-build-backend = "poetry.core.masonry.api"
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build]
+include = ["reflex"]
+
+[tool.hatch.build.targets.sdist]
+artifacts = ["*.pyi"]
+
+[tool.hatch.build.targets.wheel]
+artifacts = ["*.pyi"]
+
+[tool.hatch.build.hooks.custom]
+dependencies = ["plotly", "ruff"]
+require-runtime-dependencies = true
 
 [tool.pyright]
+reportIncompatibleMethodOverride = false
 
 [tool.ruff]
-target-version = "py38"
-lint.select = ["B", "D", "E", "F", "I", "SIM", "W"]
-lint.ignore = ["B008", "D203", "D205", "D213", "D401", "D406", "D407", "E501", "F403", "F405", "F541"]
+target-version = "py310"
+output-format = "concise"
+lint.isort.split-on-trailing-comma = false
+lint.select = [
+  "ANN001",
+  "B",
+  "C4",
+  "D",
+  "E",
+  "ERA",
+  "F",
+  "FURB",
+  "I",
+  "N",
+  "PERF",
+  "PGH",
+  "PTH",
+  "RUF",
+  "SIM",
+  "T",
+  "TRY",
+  "UP",
+  "W",
+]
+lint.ignore = [
+  "B008",
+  "D205",
+  "E501",
+  "F403",
+  "SIM115",
+  "RUF006",
+  "RUF008",
+  "RUF012",
+  "TRY0",
+  "UP038",
+]
 lint.pydocstyle.convention = "google"
 
 [tool.ruff.lint.per-file-ignores]
 "__init__.py" = ["F401"]
-"tests/*.py" = ["D100", "D103", "D104", "B018"]
+"tests/*.py" = ["ANN001", "D100", "D103", "D104", "B018", "PERF", "T", "N"]
+"benchmarks/*.py" = ["ANN001", "D100", "D103", "D104", "B018", "PERF", "T", "N"]
 "reflex/.templates/*.py" = ["D100", "D103", "D104"]
-"*.pyi" = ["D301", "D415", "D417", "D418", "E742"]
+"*.pyi" = ["D301", "D415", "D417", "D418", "E742", "N", "PGH"]
+"pyi_generator.py" = ["N802"]
+"reflex/constants/*.py" = ["N"]
 "*/blank.py" = ["I001"]
+
+[tool.pytest.ini_options]
+filterwarnings = "ignore:fields may not start with an underscore:RuntimeWarning"
+asyncio_default_fixture_loop_scope = "function"
+asyncio_mode = "auto"
+
+[tool.codespell]
+skip = "docs/*,*.html,examples/*, *.pyi, poetry.lock, uv.lock"
+ignore-words-list = "te, TreeE"
+
+[dependency-groups]
+dev = [
+  "asynctest >=0.13",
+  "darglint >=1.8",
+  "dill >=0.3",
+  "hatchling >=1.27",
+  "libsass >=0.23",
+  "numpy >=2.2",
+  "pandas >=2.2",
+  "pillow >=11",
+  "playwright >=1.51",
+  "plotly >=6.0",
+  "pre-commit >=4.2",
+  "psycopg[binary] >=3.2",
+  "pyright >=1.1.400",
+  "pytest >=8.3",
+  "pytest-asyncio >=0.26",
+  "pytest-benchmark >=5.1",
+  "pytest-codspeed >=3.2",
+  "pytest-cov >=6.1",
+  "pytest-mock >=3.14",
+  "pytest-playwright >=0.7",
+  "pytest-retry >=1.7",
+  "pytest-split >=0.10",
+  "python-dotenv >=1",
+  "ruff >=0.11",
+  "selenium >=4.31",
+  "starlette-admin >=0.14",
+  "uvicorn >=0.34.0",
+]
+
+
+[tool.coverage.run]
+source = ["reflex"]
+branch = true
+omit = [
+  "*/pyi_generator.py",
+  "reflex/__main__.py",
+  "reflex/app_module_for_backend.py",
+  "reflex/components/chakra/*",
+  "reflex/experimental/*",
+]
+
+[tool.coverage.report]
+show_missing = true
+# TODO bump back to 79
+fail_under = 70
+precision = 2
+ignore_errors = true
+
+exclude_also = [
+  "def __repr__",
+  # Don't complain about missing debug-only code:
+  "if self.debug",
+  # Don't complain if tests don't hit defensive assertion code:
+  "raise AssertionError",
+  "raise NotImplementedError",
+  # Regexes for lines to exclude from consideration
+  "if 0:",
+  # Don't complain if non-runnable code isn't run:
+  "if __name__ == .__main__.:",
+  # Don't complain about abstract methods, they aren't run:
+  "@(abc.)?abstractmethod",
+  # Don't complain about overloaded methods:
+  "@overload",
+]
+
+[tool.coverage.html]
+directory = "coverage_html_report"

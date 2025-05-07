@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any, List
+from typing import Any
 
 from reflex import color, cond
 from reflex.components.base.fragment import Fragment
@@ -12,11 +12,12 @@ from reflex.components.radix.themes.components.icon_button import IconButton
 from reflex.components.radix.themes.layout.box import Box
 from reflex.components.radix.themes.layout.container import Container
 from reflex.components.radix.themes.layout.stack import HStack
-from reflex.event import call_script
+from reflex.constants.compiler import MemoizationMode
+from reflex.event import run_script
 from reflex.experimental import hooks
 from reflex.state import ComponentState
 from reflex.style import Style
-from reflex.vars import Var
+from reflex.vars.base import Var
 
 
 class Sidebar(Box, MemoizationLeaf):
@@ -33,12 +34,6 @@ class Sidebar(Box, MemoizationLeaf):
         Returns:
             The sidebar component.
         """
-        # props.setdefault("border_right", f"1px solid {color('accent', 12)}")
-        # props.setdefault("background_color", color("accent", 1))
-        # props.setdefault("width", "20vw")
-        # props.setdefault("height", "100vh")
-        # props.setdefault("position", "fixed")
-
         return super().create(
             Box.create(*children, **props),  # sidebar for content
             Box.create(width=props.get("width")),  # spacer for layout
@@ -50,12 +45,12 @@ class Sidebar(Box, MemoizationLeaf):
         Returns:
             The style of the component.
         """
-        sidebar: Component = self.children[-2]  # type: ignore
-        spacer: Component = self.children[-1]  # type: ignore
+        sidebar: Component = self.children[-2]  # pyright: ignore [reportAssignmentType]
+        spacer: Component = self.children[-1]  # pyright: ignore [reportAssignmentType]
         open = (
-            self.State.open  # type: ignore
+            self.State.open  # pyright: ignore [reportAttributeAccessIssue]
             if self.State
-            else Var.create_safe("open", _var_is_string=False)
+            else Var(_js_expr="open")
         )
         sidebar.style["display"] = spacer.style["display"] = cond(open, "block", "none")
 
@@ -69,7 +64,7 @@ class Sidebar(Box, MemoizationLeaf):
             }
         )
 
-    def add_hooks(self) -> List[Var]:
+    def add_hooks(self) -> list[Var]:
         """Get the hooks to render.
 
         Returns:
@@ -152,6 +147,8 @@ sidebar_trigger_style = {
 class SidebarTrigger(Fragment):
     """A component that renders the sidebar trigger."""
 
+    _memoization_mode = MemoizationMode(recursive=False)
+
     @classmethod
     def create(cls, sidebar: Component, **props):
         """Create the sidebar trigger component.
@@ -165,15 +162,15 @@ class SidebarTrigger(Fragment):
         """
         trigger_props = {**props, **sidebar_trigger_style}
 
-        inner_sidebar: Component = sidebar.children[0]  # type: ignore
+        inner_sidebar: Component = sidebar.children[0]  # pyright: ignore [reportAssignmentType]
         sidebar_width = inner_sidebar.style.get("width")
 
         if sidebar.State:
-            open, toggle = sidebar.State.open, sidebar.State.toggle  # type: ignore
+            open, toggle = sidebar.State.open, sidebar.State.toggle  # pyright: ignore [reportAttributeAccessIssue]
         else:
             open, toggle = (
-                Var.create_safe("open", _var_is_string=False),
-                call_script(Var.create_safe("setOpen(!open)", _var_is_string=False)),
+                Var(_js_expr="open"),
+                run_script("setOpen(!open)"),
             )
 
         trigger_props["left"] = cond(open, f"calc({sidebar_width} - 32px)", "0")

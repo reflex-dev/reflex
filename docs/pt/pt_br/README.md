@@ -1,7 +1,3 @@
-```diff
-+ Está procurando pelo Pynecone? Este é o repositório certo. Pynecone foi renomeado para Reflex. +
-```
-
 <div align="center">
 <img src="https://raw.githubusercontent.com/reflex-dev/reflex/main/docs/images/reflex_dark.svg#gh-light-mode-only" alt="Reflex Logo" width="300px">
 <img src="https://raw.githubusercontent.com/reflex-dev/reflex/main/docs/images/reflex_light.svg#gh-dark-mode-only" alt="Reflex Logo" width="300px">
@@ -9,19 +5,22 @@
 <hr>
 
 ### **✨ Web apps customizáveis, performáticos, em Python puro. Faça deploy em segundos. ✨**
+
 [![Versão PyPI](https://badge.fury.io/py/reflex.svg)](https://badge.fury.io/py/reflex)
 ![testes](https://github.com/pynecone-io/pynecone/actions/workflows/integration.yml/badge.svg)
 ![versões](https://img.shields.io/pypi/pyversions/reflex.svg)
 [![Documentação](https://img.shields.io/badge/Documentation%20-Introduction%20-%20%23007ec6)](https://reflex.dev/docs/getting-started/introduction)
 [![Discord](https://img.shields.io/discord/1029853095527727165?color=%237289da&label=Discord)](https://discord.gg/T5WSbC2YtQ)
+
 </div>
 
 ---
-[English](https://github.com/reflex-dev/reflex/blob/main/README.md) | [简体中文](https://github.com/reflex-dev/reflex/blob/main/docs/zh/zh_cn/README.md) | [繁體中文](https://github.com/reflex-dev/reflex/blob/main/docs/zh/zh_tw/README.md) | [Türkçe](https://github.com/reflex-dev/reflex/blob/main/docs/tr/README.md) | [हिंदी](https://github.com/reflex-dev/reflex/blob/main/docs/in/README.md) | [Português (Brasil)](https://github.com/reflex-dev/reflex/blob/main/docs/pt/pt_br/README.md) | [한국어](https://github.com/reflex-dev/reflex/blob/main/docs/kr/README.md) | [日本語](https://github.com/reflex-dev/reflex/blob/main/docs/ja/README.md) | [Deutsch](https://github.com/reflex-dev/reflex/blob/main/docs/de/README.md) | [Persian (پارسی)](https://github.com/reflex-dev/reflex/blob/main/docs/pe/README.md)
----
+
+## [English](https://github.com/reflex-dev/reflex/blob/main/README.md) | [简体中文](https://github.com/reflex-dev/reflex/blob/main/docs/zh/zh_cn/README.md) | [繁體中文](https://github.com/reflex-dev/reflex/blob/main/docs/zh/zh_tw/README.md) | [Türkçe](https://github.com/reflex-dev/reflex/blob/main/docs/tr/README.md) | [हिंदी](https://github.com/reflex-dev/reflex/blob/main/docs/in/README.md) | [Português (Brasil)](https://github.com/reflex-dev/reflex/blob/main/docs/pt/pt_br/README.md) | [한국어](https://github.com/reflex-dev/reflex/blob/main/docs/kr/README.md) | [日本語](https://github.com/reflex-dev/reflex/blob/main/docs/ja/README.md) | [Deutsch](https://github.com/reflex-dev/reflex/blob/main/docs/de/README.md) | [Persian (پارسی)](https://github.com/reflex-dev/reflex/blob/main/docs/pe/README.md)
+
 ## ⚙️ Instalação
 
-Abra um terminal e execute (Requer Python 3.8+):
+Abra um terminal e execute (Requer Python 3.10+):
 
 ```bash
 pip install reflex
@@ -50,7 +49,6 @@ reflex run
 Você deve conseguir verificar seu app sendo executado em http://localhost:3000.
 
 Agora, você pode modificar o código fonte em `nome_do_meu_app/nome_do_meu_app.py`. O Reflex apresenta recarregamento rápido para que você possa ver suas mudanças instantâneamente quando você salva o seu código.
-
 
 ## 🫧 Exemplo de App
 
@@ -89,7 +87,7 @@ class State(rx.State):
         response = openai.Image.create(prompt=self.prompt, n=1, size="1024x1024")
         self.image_url = response["data"][0]["url"]
         self.processing, self.complete = False, True
-        
+
 
 def index():
     return rx.center(
@@ -141,7 +139,7 @@ Esta função `index` define o frontend do app.
 Usamos diferentes componentes, como `center`, `vstack`, `input` e `button`, para construir o frontend. Componentes podem ser aninhados um no do outro
 para criar layouts mais complexos. E você pode usar argumentos de chave-valor para estilizá-los com todo o poder do CSS.
 
-O Reflex vem com [60+ componentes nativos](https://reflex.dev/docs/library) para te ajudar. Estamos adicionando ativamente mais componentes, mas também é fácil [criar seus próprios componentes](https://reflex.dev/docs/wrapping-react/overview/). 
+O Reflex vem com [60+ componentes nativos](https://reflex.dev/docs/library) para te ajudar. Estamos adicionando ativamente mais componentes, mas também é fácil [criar seus próprios componentes](https://reflex.dev/docs/wrapping-react/overview/).
 
 ### **Estado**
 
@@ -199,13 +197,9 @@ Você pode criar mais páginas e adicioná-las ao seu app.
 
 <div align="center">
 
-📑 [Docs](https://reflex.dev/docs/getting-started/introduction) &nbsp; |  &nbsp; 🗞️ [Blog](https://reflex.dev/blog) &nbsp; |  &nbsp; 📱 [Biblioteca de Componentes](https://reflex.dev/docs/library) &nbsp; |  &nbsp; 🖼️ [Galeria](https://reflex.dev/docs/gallery) &nbsp; |  &nbsp; 🛸 [Deployment](https://reflex.dev/docs/hosting/deploy)  &nbsp;   
+📑 [Docs](https://reflex.dev/docs/getting-started/introduction) &nbsp; | &nbsp; 🗞️ [Blog](https://reflex.dev/blog) &nbsp; | &nbsp; 📱 [Biblioteca de Componentes](https://reflex.dev/docs/library) &nbsp; | &nbsp; 🖼️ [Galeria](https://reflex.dev/docs/gallery) &nbsp; | &nbsp; 🛸 [Deployment](https://reflex.dev/docs/hosting/deploy) &nbsp;
 
 </div>
-
-
-
-
 
 ## ✅ Status
 
@@ -213,10 +207,10 @@ O Reflex foi lançado em Dezembro de 2022 com o nome Pynecone.
 
 Em Julho de 2023, estamos no estágio de **Beta Público**.
 
--   :white_check_mark: **Alpha Público**: Qualquer um pode instalar e usar o Reflex. Podem existir alguns problemas, mas estamos trabalhando ativamente para resolvê-los.
--   :large_orange_diamond: **Beta Público**: Estável o suficiente para utilizar em projetos pessoais, com menor criticidade.
--   **Hospedagem Pública Beta**: _Opcionalmente_, implante e hospede os seus apps no Reflex!
--   **Público**: O Reflex está pronto para produção.
+- :white_check_mark: **Alpha Público**: Qualquer um pode instalar e usar o Reflex. Podem existir alguns problemas, mas estamos trabalhando ativamente para resolvê-los.
+- :large_orange_diamond: **Beta Público**: Estável o suficiente para utilizar em projetos pessoais, com menor criticidade.
+- **Hospedagem Pública Beta**: _Opcionalmente_, implante e hospede os seus apps no Reflex!
+- **Público**: O Reflex está pronto para produção.
 
 O Reflex agora possui novas versões e funcionalidades sendo lançadas toda semana! Lembre-se de marcar o repositório com uma :star: estrela e :eyes: acompanhe para ficar atualizado sobre o projeto.
 
@@ -224,9 +218,9 @@ O Reflex agora possui novas versões e funcionalidades sendo lançadas toda sema
 
 Nós somos abertos a contribuições de qualquer tamanho! Abaixo, seguem algumas boas formas de começar a contribuir para a comunidade do Reflex.
 
--   **Entre no nosso Discord**: Nosso [Discord](https://discord.gg/T5WSbC2YtQ) é o melhor lugar para conseguir ajuda no seu projeto Reflex e para discutir como você pode contribuir.
--   **Discussões no GitHub**: Uma boa forma de conversar sobre funcionalidades que você gostaria de ver ou coisas que ainda estão confusas/exigem ajuda.
--   **Issues no GitHub**: Excelente forma de reportar bugs. Além disso, você pode tentar resolver alguma issue existente e enviar um Pull Request.
+- **Entre no nosso Discord**: Nosso [Discord](https://discord.gg/T5WSbC2YtQ) é o melhor lugar para conseguir ajuda no seu projeto Reflex e para discutir como você pode contribuir.
+- **Discussões no GitHub**: Uma boa forma de conversar sobre funcionalidades que você gostaria de ver ou coisas que ainda estão confusas/exigem ajuda.
+- **Issues no GitHub**: Excelente forma de reportar bugs. Além disso, você pode tentar resolver alguma issue existente e enviar um Pull Request.
 
 Estamos ativamente buscando novos contribuidores, não importa o seu nível de habilidade ou experiência.
 

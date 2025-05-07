@@ -1,10 +1,10 @@
 """Compiler variables."""
 
+import dataclasses
 import enum
 from enum import Enum
 from types import SimpleNamespace
 
-from reflex.base import Base
 from reflex.constants import Dirs
 from reflex.utils.imports import ImportVar
 
@@ -28,6 +28,8 @@ class Ext(SimpleNamespace):
     ZIP = ".zip"
     # The extension for executable files on Windows.
     EXE = ".exe"
+    # The extension for markdown files.
+    MD = ".md"
 
 
 class CompileVars(SimpleNamespace):
@@ -83,7 +85,7 @@ class PageNames(SimpleNamespace):
     # The name of the app root page.
     APP_ROOT = "_app"
     # The root stylesheet filename.
-    STYLESHEET_ROOT = "styles"
+    STYLESHEET_ROOT = "__reflex_global_styles"
     # The name of the document root page.
     DOCUMENT_ROOT = "_document"
     # The name of the theme page.
@@ -109,13 +111,22 @@ class ComponentName(Enum):
         return self.value.lower() + Ext.ZIP
 
 
+class CompileContext(str, Enum):
+    """The context in which the compiler is running."""
+
+    RUN = "run"
+    EXPORT = "export"
+    DEPLOY = "deploy"
+    UNDEFINED = "undefined"
+
+
 class Imports(SimpleNamespace):
     """Common sets of import vars."""
 
     EVENTS = {
         "react": [ImportVar(tag="useContext")],
-        f"/{Dirs.CONTEXTS_PATH}": [ImportVar(tag="EventLoopContext")],
-        f"/{Dirs.STATE_PATH}": [ImportVar(tag=CompileVars.TO_EVENT)],
+        f"$/{Dirs.CONTEXTS_PATH}": [ImportVar(tag="EventLoopContext")],
+        f"$/{Dirs.STATE_PATH}": [ImportVar(tag=CompileVars.TO_EVENT)],
     }
 
 
@@ -132,15 +143,12 @@ class Hooks(SimpleNamespace):
                   }
                 })"""
 
-    FRONTEND_ERRORS = f"""
-    const logFrontendError = (error, info) => {{
-        if (process.env.NODE_ENV === "production") {{
-            addEvents([Event("{CompileVars.FRONTEND_EXCEPTION_STATE_FULL}.handle_frontend_exception", {{
-                stack: error.stack,
-            }})])
-        }}
-    }}
-    """
+    class HookPosition(enum.Enum):
+        """The position of the hook in the component."""
+
+        INTERNAL = "internal"
+        PRE_TRIGGER = "pre_trigger"
+        POST_TRIGGER = "post_trigger"
 
 
 class MemoizationDisposition(enum.Enum):
@@ -152,7 +160,8 @@ class MemoizationDisposition(enum.Enum):
     NEVER = "never"
 
 
-class MemoizationMode(Base):
+@dataclasses.dataclass(frozen=True)
+class MemoizationMode:
     """The mode for memoizing a Component."""
 
     # The conditions under which the component should be memoized.
@@ -160,3 +169,28 @@ class MemoizationMode(Base):
 
     # Whether children of this component should be memoized first.
     recursive: bool = True
+
+
+class SpecialAttributes(enum.Enum):
+    """Special attributes for components.
+
+    These are placed in custom_attrs and rendered as-is rather than converting
+    to a style prop.
+    """
+
+    DATA_UNDERSCORE = "data_"
+    DATA_DASH = "data-"
+    ARIA_UNDERSCORE = "aria_"
+    ARIA_DASH = "aria-"
+
+    @classmethod
+    def is_special(cls, attr: str) -> bool:
+        """Check if the attribute is special.
+
+        Args:
+            attr: the attribute to check
+
+        Returns:
+            True if the attribute is special.
+        """
+        return any(attr.startswith(value.value) for value in cls)

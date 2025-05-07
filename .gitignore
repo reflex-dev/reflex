@@ -3,6 +3,8 @@
 assets/external/*
 dist/*
 examples/
+.web
+.states
 .idea
 .vscode
 .coverage
@@ -13,3 +15,9 @@ requirements.txt
 .pyi_generator_last_run
 .pyi_generator_diff
 reflex.db
+.codspeed
+.env
+.env.*
+node_modules
+package-lock.json
+*.pyi

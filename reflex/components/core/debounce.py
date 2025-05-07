@@ -2,12 +2,13 @@
 
 from __future__ import annotations
 
-from typing import Any, Type, Union
+from typing import Any
 
 from reflex.components.component import Component
 from reflex.constants import EventTriggers
-from reflex.event import EventHandler
-from reflex.vars import Var, VarData
+from reflex.event import EventHandler, no_args_event_spec
+from reflex.vars import VarData
+from reflex.vars.base import Var
 
 DEFAULT_DEBOUNCE_TIMEOUT = 300
 
@@ -27,7 +28,7 @@ class DebounceInput(Component):
     min_length: Var[int]
 
     # Time to wait between end of input and triggering on_change
-    debounce_timeout: Var[int] = DEFAULT_DEBOUNCE_TIMEOUT  # type: ignore
+    debounce_timeout: Var[int] = Var.create(DEFAULT_DEBOUNCE_TIMEOUT)
 
     # If true, notify when Enter key is pressed
     force_notify_by_enter: Var[bool]
@@ -36,16 +37,16 @@ class DebounceInput(Component):
     force_notify_on_blur: Var[bool]
 
     # If provided, create a fully-controlled input
-    value: Var[Union[str, int, float]]
+    value: Var[str | int | float]
 
     # The ref to attach to the created input
     input_ref: Var[str]
 
     # The element to wrap
-    element: Var[Type[Component]]
+    element: Var[type[Component]]
 
     # Fired when the input value changes
-    on_change: EventHandler[lambda e0: [e0.value]]
+    on_change: EventHandler[no_args_event_spec]
 
     @classmethod
     def create(cls, *children: Component, **props: Any) -> Component:
@@ -106,30 +107,31 @@ class DebounceInput(Component):
                 props[field] = getattr(child, field)
         child_ref = child.get_ref()
         if props.get("input_ref") is None and child_ref:
-            props["input_ref"] = Var.create_safe(
-                child_ref, _var_is_local=False, _var_is_string=False
-            )
+            props["input_ref"] = Var(_js_expr=child_ref, _var_type=str)
             props["id"] = child.id
 
         # Set the child element to wrap, including any imports/hooks from the child.
         props.setdefault(
             "element",
-            Var.create_safe(
-                "{%s}" % (child.alias or child.tag),
-                _var_is_local=False,
-                _var_is_string=False,
+            Var(
+                _js_expr=str(child.alias or child.tag),
+                _var_type=type[Component],
                 _var_data=VarData(
                     imports=child._get_imports(),
-                    hooks=child._get_hooks_internal(),
+                    hooks=child._get_all_hooks(),
                 ),
-            ).to(Type[Component]),
+            ),
         )
 
         component = super().create(**props)
         component._get_style = child._get_style
         component.event_triggers.update(child.event_triggers)
         component.children = child.children
-        component._rename_props = child._rename_props
+        component._rename_props = child._rename_props  # pyright: ignore[reportAttributeAccessIssue]
+        outer_get_all_custom_code = component._get_all_custom_code
+        component._get_all_custom_code = lambda: outer_get_all_custom_code().union(
+            child._get_all_custom_code()
+        )
         return component
 
     def _render(self):

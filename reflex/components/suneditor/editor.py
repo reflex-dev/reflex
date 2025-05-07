@@ -3,14 +3,14 @@
 from __future__ import annotations
 
 import enum
-from typing import Dict, List, Literal, Optional, Union
+from typing import Any, Literal
 
 from reflex.base import Base
 from reflex.components.component import Component, NoSSRComponent
-from reflex.event import EventHandler
+from reflex.event import EventHandler, no_args_event_spec, passthrough_event_spec
 from reflex.utils.format import to_camel_case
 from reflex.utils.imports import ImportDict, ImportVar
-from reflex.vars import Var
+from reflex.vars.base import Var
 
 
 class EditorButtonList(list, enum.Enum):
@@ -54,18 +54,47 @@ class EditorOptions(Base):
 
     # Specifies default tag name of the editor.
     # default: 'p' {String}
-    default_tag: Optional[str] = None
+    default_tag: str | None = None
 
     # The mode of the editor ('classic', 'inline', 'balloon', 'balloon-always').
     # default: 'classic' {String}
-    mode: Optional[str] = None
+    mode: str | None = None
 
     # If true, the editor is set to RTL(Right To Left) mode.
     # default: false {Boolean}
-    rtl: Optional[bool] = None
+    rtl: bool | None = None
 
     # List of buttons to use in the toolbar.
-    button_list: Optional[List[Union[List[str], str]]]
+    button_list: list[list[str] | str] | None
+
+
+def on_blur_spec(e: Var, content: Var[str]) -> tuple[Var[str]]:
+    """A helper function to specify the on_blur event handler.
+
+    Args:
+        e: The event.
+        content: The content of the editor.
+
+    Returns:
+        A tuple containing the content of the editor.
+    """
+    return (content,)
+
+
+def on_paste_spec(
+    e: Var, clean_data: Var[str], max_char_count: Var[bool]
+) -> tuple[Var[str], Var[bool]]:
+    """A helper function to specify the on_paste event handler.
+
+    Args:
+        e: The event.
+        clean_data: The clean data.
+        max_char_count: The maximum character count.
+
+    Returns:
+        A tuple containing the clean data and the maximum character count.
+    """
+    return (clean_data, max_char_count)
 
 
 class Editor(NoSSRComponent):
@@ -74,44 +103,42 @@ class Editor(NoSSRComponent):
     refer to the library docs for a complete list.
     """
 
-    library = "suneditor-react"
+    library = "suneditor-react@3.6.1"
 
     tag = "SunEditor"
 
     is_default = True
 
-    lib_dependencies: List[str] = ["suneditor"]
+    lib_dependencies: list[str] = ["suneditor"]
 
     # Language of the editor.
     # Alternatively to a string, a dict of your language can be passed to this prop.
     # Please refer to the library docs for this.
     # options: "en" | "da" | "de" | "es" | "fr" | "ja" | "ko" | "pt_br" |
-    #  "ru" | "zh_cn" | "ro" | "pl" | "ckb" | "lv" | "se" | "ua" | "he" | "it"
-    # default : "en"
+    # "ru" | "zh_cn" | "ro" | "pl" | "ckb" | "lv" | "se" | "ua" | "he" | "it"
+    # default: "en".
     lang: Var[
-        Union[
-            Literal[
-                "en",
-                "da",
-                "de",
-                "es",
-                "fr",
-                "ja",
-                "ko",
-                "pt_br",
-                "ru",
-                "zh_cn",
-                "ro",
-                "pl",
-                "ckb",
-                "lv",
-                "se",
-                "ua",
-                "he",
-                "it",
-            ],
-            dict,
+        Literal[
+            "en",
+            "da",
+            "de",
+            "es",
+            "fr",
+            "ja",
+            "ko",
+            "pt_br",
+            "ru",
+            "zh_cn",
+            "ro",
+            "pl",
+            "ckb",
+            "lv",
+            "se",
+            "ua",
+            "he",
+            "it",
         ]
+        | dict
     ]
 
     # This is used to set the HTML form name of the editor.
@@ -140,10 +167,10 @@ class Editor(NoSSRComponent):
     auto_focus: Var[bool]
 
     # Pass an EditorOptions instance to modify the behaviour of Editor even more.
-    set_options: Var[Dict]
+    set_options: Var[dict]
 
     # Whether all SunEditor plugins should be loaded.
-    # default: True
+    # default: True.
     set_all_plugins: Var[bool]
 
     # Set the content of the editor.
@@ -162,52 +189,47 @@ class Editor(NoSSRComponent):
     set_default_style: Var[str]
 
     # Disable the editor
-    # default: False
+    # default: False.
     disable: Var[bool]
 
     # Hide the editor
-    # default: False
+    # default: False.
     hide: Var[bool]
 
     # Hide the editor toolbar
-    # default: False
+    # default: False.
     hide_toolbar: Var[bool]
 
     # Disable the editor toolbar
-    # default: False
+    # default: False.
     disable_toolbar: Var[bool]
 
     # Fired when the editor content changes.
-    on_change: EventHandler[lambda content: [content]]
+    on_change: EventHandler[passthrough_event_spec(str)]
 
     # Fired when the something is inputted in the editor.
-    on_input: EventHandler[lambda e: [e]]
+    on_input: EventHandler[no_args_event_spec]
 
     # Fired when the editor loses focus.
-    on_blur: EventHandler[lambda e, content: [content]]
+    on_blur: EventHandler[on_blur_spec]
 
     # Fired when the editor is loaded.
-    on_load: EventHandler[lambda reload: [reload]]
-
-    # Fired when the editor is resized.
-    on_resize_editor: EventHandler[lambda height, prev_height: [height, prev_height]]
+    on_load: EventHandler[passthrough_event_spec(bool)]
 
     # Fired when the editor content is copied.
-    on_copy: EventHandler[lambda e, clipboard_data: [clipboard_data]]
+    on_copy: EventHandler[no_args_event_spec]
 
     # Fired when the editor content is cut.
-    on_cut: EventHandler[lambda e, clipboard_data: [clipboard_data]]
+    on_cut: EventHandler[no_args_event_spec]
 
     # Fired when the editor content is pasted.
-    on_paste: EventHandler[
-        lambda e, clean_data, max_char_count: [clean_data, max_char_count]
-    ]
+    on_paste: EventHandler[on_paste_spec]
 
     # Fired when the code view is toggled.
-    toggle_code_view: EventHandler[lambda is_code_view: [is_code_view]]
+    toggle_code_view: EventHandler[passthrough_event_spec(bool)]
 
     # Fired when the full screen mode is toggled.
-    toggle_full_screen: EventHandler[lambda is_full_screen: [is_full_screen]]
+    toggle_full_screen: EventHandler[passthrough_event_spec(bool)]
 
     def add_imports(self) -> ImportDict:
         """Add imports for the Editor component.
@@ -220,11 +242,13 @@ class Editor(NoSSRComponent):
         }
 
     @classmethod
-    def create(cls, set_options: Optional[EditorOptions] = None, **props) -> Component:
+    def create(
+        cls, set_options: EditorOptions | None = None, **props: Any
+    ) -> Component:
         """Create an instance of Editor. No children allowed.
 
         Args:
-            set_options(Optional[EditorOptions]): Configuration object to further configure the instance.
+            set_options: Configuration object to further configure the instance.
             **props: Any properties to be passed to the Editor
 
         Returns:

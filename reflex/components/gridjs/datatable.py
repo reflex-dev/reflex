@@ -2,22 +2,23 @@
 
 from __future__ import annotations
 
-from typing import Any, Dict, List, Union
+from collections.abc import Sequence
+from typing import Any
 
 from reflex.components.component import Component
 from reflex.components.tags import Tag
 from reflex.utils import types
 from reflex.utils.imports import ImportDict
 from reflex.utils.serializers import serialize
-from reflex.vars import BaseVar, ComputedVar, Var
+from reflex.vars.base import LiteralVar, Var, is_computed_var
 
 
 class Gridjs(Component):
     """A component that wraps a nivo bar component."""
 
-    library = "gridjs-react@6.0.1"
+    library = "gridjs-react@6.1.1"
 
-    lib_dependencies: List[str] = ["gridjs@6.0.6"]
+    lib_dependencies: list[str] = ["gridjs@6.2.0"]
 
 
 class DataTable(Gridjs):
@@ -32,7 +33,7 @@ class DataTable(Gridjs):
 
     # The list of columns to display. Required if data is a list and should not be provided
     # if the data field is a dataframe
-    columns: Var[List]
+    columns: Var[Sequence]
 
     # Enable a search bar.
     search: Var[bool]
@@ -44,7 +45,7 @@ class DataTable(Gridjs):
     resizable: Var[bool]
 
     # Enable pagination.
-    pagination: Var[Union[bool, Dict]]
+    pagination: Var[bool | dict]
 
     @classmethod
     def create(cls, *children, **props):
@@ -65,14 +66,14 @@ class DataTable(Gridjs):
 
         # The annotation should be provided if data is a computed var. We need this to know how to
         # render pandas dataframes.
-        if isinstance(data, ComputedVar) and data._var_type == Any:
+        if is_computed_var(data) and data._var_type == Any:
             raise ValueError(
                 "Annotation of the computed var assigned to the data field should be provided."
             )
 
         if (
             columns is not None
-            and isinstance(columns, ComputedVar)
+            and is_computed_var(columns)
             and columns._var_type == Any
         ):
             raise ValueError(
@@ -90,8 +91,8 @@ class DataTable(Gridjs):
 
         # If data is a list and columns are not provided, throw an error
         if (
-            (isinstance(data, Var) and types._issubclass(data._var_type, List))
-            or issubclass(type(data), List)
+            (isinstance(data, Var) and types.typehint_issubclass(data._var_type, list))
+            or isinstance(data, list)
         ) and columns is None:
             raise ValueError(
                 "column field should be specified when the data field is a list type"
@@ -113,24 +114,21 @@ class DataTable(Gridjs):
 
     def _render(self) -> Tag:
         if isinstance(self.data, Var) and types.is_dataframe(self.data._var_type):
-            self.columns = BaseVar(
-                _var_name=f"{self.data._var_name}.columns",
-                _var_type=List[Any],
-                _var_full_name_needs_state_prefix=True,
-                _var_data=self.data._var_data,
+            self.columns = self.data._replace(
+                _js_expr=f"{self.data._js_expr}.columns",
+                _var_type=list[Any],
             )
-            self.data = BaseVar(
-                _var_name=f"{self.data._var_name}.data",
-                _var_type=List[List[Any]],
-                _var_full_name_needs_state_prefix=True,
-                _var_data=self.data._var_data,
+            self.data = self.data._replace(
+                _js_expr=f"{self.data._js_expr}.data",
+                _var_type=list[list[Any]],
             )
         if types.is_dataframe(type(self.data)):
             # If given a pandas df break up the data and columns
             data = serialize(self.data)
-            assert isinstance(data, dict), "Serialized dataframe should be a dict."
-            self.columns = Var.create_safe(data["columns"])
-            self.data = Var.create_safe(data["data"])
+            if not isinstance(data, dict):
+                raise ValueError("Serialized dataframe should be a dict.")
+            self.columns = LiteralVar.create(data["columns"])
+            self.data = LiteralVar.create(data["data"])
 
         # Render the table.
         return super()._render()

@@ -6,15 +6,15 @@ import inspect
 import json
 import os
 import re
-from typing import TYPE_CHECKING, Any, Callable, List, Optional, Union
+from typing import TYPE_CHECKING, Any
 
 from reflex import constants
-from reflex.utils import exceptions, types
-from reflex.vars import BaseVar, Var
+from reflex.constants.state import FRONTEND_EVENT_STATE
+from reflex.utils import exceptions
 
 if TYPE_CHECKING:
     from reflex.components.component import ComponentStyle
-    from reflex.event import ArgsSpec, EventChain, EventHandler, EventSpec
+    from reflex.event import ArgsSpec, EventChain, EventHandler, EventSpec, EventType
 
 WRAP_MAP = {
     "{": "}",
@@ -25,6 +25,36 @@ WRAP_MAP = {
     "'": "'",
     "`": "`",
 }
+
+
+def length_of_largest_common_substring(str1: str, str2: str) -> int:
+    """Find the length of the largest common substring between two strings.
+
+    Args:
+        str1: The first string.
+        str2: The second string.
+
+    Returns:
+        The length of the largest common substring.
+    """
+    if not str1 or not str2:
+        return 0
+
+    # Create a matrix of size (len(str1) + 1) x (len(str2) + 1)
+    dp = [[0] * (len(str2) + 1) for _ in range(len(str1) + 1)]
+
+    # Variables to keep track of maximum length and ending position
+    max_length = 0
+
+    # Fill the dp matrix
+    for i in range(1, len(str1) + 1):
+        for j in range(1, len(str2) + 1):
+            if str1[i - 1] == str2[j - 1]:
+                dp[i][j] = dp[i - 1][j - 1] + 1
+                if dp[i][j] > max_length:
+                    max_length = dp[i][j]
+
+    return max_length
 
 
 def get_close_char(open: str, close: str | None = None) -> str:
@@ -138,7 +168,7 @@ def to_snake_case(text: str) -> str:
     return re.sub("([a-z0-9])([A-Z])", r"\1_\2", s1).lower().replace("-", "_")
 
 
-def to_camel_case(text: str, allow_hyphens: bool = False) -> str:
+def to_camel_case(text: str, treat_hyphens_as_underscores: bool = True) -> str:
     """Convert a string to camel case.
 
     The first word in the text is converted to lowercase and
@@ -146,17 +176,19 @@ def to_camel_case(text: str, allow_hyphens: bool = False) -> str:
 
     Args:
         text: The string to convert.
-        allow_hyphens: Whether to allow hyphens in the string.
+        treat_hyphens_as_underscores: Whether to allow hyphens in the string.
 
     Returns:
         The camel case string.
     """
-    char = "_" if allow_hyphens else "-_"
-    words = re.split(f"[{char}]", text.lstrip(char))
-    leading_underscores_or_hyphens = "".join(re.findall(rf"^[{char}]+", text))
+    if treat_hyphens_as_underscores:
+        text = text.replace("-", "_")
+    words = text.split("_")
     # Capitalize the first letter of each word except the first one
-    converted_word = words[0] + "".join(x.capitalize() for x in words[1:])
-    return leading_underscores_or_hyphens + converted_word
+    if len(words) == 1:
+        return words[0]
+    converted_word = words[0] + "".join([w.capitalize() for w in words[1:]])
+    return converted_word
 
 
 def to_title_case(text: str, sep: str = "") -> str:
@@ -197,8 +229,16 @@ def make_default_page_title(app_name: str, route: str) -> str:
     Returns:
         The default page title.
     """
-    title = constants.DefaultPage.TITLE.format(app_name, route)
-    return to_title_case(title, " ")
+    route_parts = [
+        part
+        for part in route.split("/")
+        if part and not (part.startswith("[") and part.endswith("]"))
+    ]
+
+    title = constants.DefaultPage.TITLE.format(
+        app_name, route_parts[-1] if route_parts else constants.PageNames.INDEX_ROUTE
+    )
+    return to_title_case(title)
 
 
 def _escape_js_string(string: str) -> str:
@@ -212,7 +252,7 @@ def _escape_js_string(string: str) -> str:
     """
 
     # TODO: we may need to re-vist this logic after new Var API is implemented.
-    def escape_outside_segments(segment):
+    def escape_outside_segments(segment: str):
         """Escape backticks in segments outside of `${}`.
 
         Args:
@@ -263,32 +303,6 @@ def format_string(string: str) -> str:
     return _wrap_js_string(_escape_js_string(string))
 
 
-def format_f_string_prop(prop: BaseVar) -> str:
-    """Format the string in a given prop as an f-string.
-
-    Args:
-        prop: The prop to format.
-
-    Returns:
-        The formatted string.
-    """
-    s = prop._var_full_name
-    var_data = prop._var_data
-    interps = var_data.interpolations if var_data else []
-    parts: List[str] = []
-
-    if interps:
-        for i, (start, end) in enumerate(interps):
-            prev_end = interps[i - 1][1] if i > 0 else 0
-            parts.append(_escape_js_string(s[prev_end:start]))
-            parts.append(s[start:end])
-        parts.append(_escape_js_string(s[interps[-1][1] :]))
-    else:
-        parts.append(_escape_js_string(s))
-
-    return _wrap_js_string("".join(parts))
-
-
 def format_var(var: Var) -> str:
     """Format the given Var as a javascript value.
 
@@ -298,16 +312,10 @@ def format_var(var: Var) -> str:
     Returns:
         The formatted Var.
     """
-    if not var._var_is_local or var._var_is_string:
-        return str(var)
-    if types._issubclass(var._var_type, str):
-        return format_string(var._var_full_name)
-    if is_wrapped(var._var_full_name, "{"):
-        return var._var_full_name
-    return json_dumps(var._var_full_name)
+    return str(var)
 
 
-def format_route(route: str, format_case=True) -> str:
+def format_route(route: str, format_case: bool = True) -> str:
     """Format the given route.
 
     Args:
@@ -329,46 +337,11 @@ def format_route(route: str, format_case=True) -> str:
     return route
 
 
-def format_cond(
+def format_match(
     cond: str | Var,
-    true_value: str | Var,
-    false_value: str | Var = '""',
-    is_prop=False,
+    match_cases: list[list[Var]],
+    default: Var,
 ) -> str:
-    """Format a conditional expression.
-
-    Args:
-        cond: The cond.
-        true_value: The value to return if the cond is true.
-        false_value: The value to return if the cond is false.
-        is_prop: Whether the cond is a prop
-
-    Returns:
-        The formatted conditional expression.
-    """
-    # Use Python truthiness.
-    cond = f"isTrue({cond})"
-
-    def create_var(cond_part):
-        return Var.create_safe(cond_part, _var_is_string=isinstance(cond_part, str))
-
-    # Format prop conds.
-    if is_prop:
-        true_value = create_var(true_value)
-        prop1 = true_value._replace(
-            _var_is_local=True,
-        )
-
-        false_value = create_var(false_value)
-        prop2 = false_value._replace(_var_is_local=True)
-        # unwrap '{}' to avoid f-string semantics for Var
-        return f"{cond} ? {prop1._var_name_unwrapped} : {prop2._var_name_unwrapped}"
-
-    # Format component conds.
-    return wrap(f"{cond} ? {true_value} : {false_value}", "{")
-
-
-def format_match(cond: str | Var, match_cases: List[BaseVar], default: Var) -> str:
     """Format a match expression whose return type is a Var.
 
     Args:
@@ -387,25 +360,20 @@ def format_match(cond: str | Var, match_cases: List[BaseVar], default: Var) -> s
         return_value = case[-1]
 
         case_conditions = " ".join(
-            [
-                f"case JSON.stringify({condition._var_name_unwrapped}):"
-                for condition in conditions
-            ]
+            [f"case JSON.stringify({condition!s}):" for condition in conditions]
         )
-        case_code = (
-            f"{case_conditions}  return ({return_value._var_name_unwrapped});  break;"
-        )
+        case_code = f"{case_conditions}  return ({return_value!s});  break;"
         switch_code += case_code
 
-    switch_code += f"default:  return ({default._var_name_unwrapped});  break;"
+    switch_code += f"default:  return ({default!s});  break;"
     switch_code += "};})()"
 
     return switch_code
 
 
 def format_prop(
-    prop: Union[Var, EventChain, ComponentStyle, str],
-) -> Union[int, float, str]:
+    prop: Var | EventChain | ComponentStyle | str,
+) -> int | float | str:
     """Format a prop.
 
     Args:
@@ -417,37 +385,21 @@ def format_prop(
     Raises:
         exceptions.InvalidStylePropError: If the style prop value is not a valid type.
         TypeError: If the prop is not valid.
+        ValueError: If the prop is not a string.
     """
     # import here to avoid circular import.
     from reflex.event import EventChain
     from reflex.utils import serializers
+    from reflex.vars import Var
 
     try:
         # Handle var props.
         if isinstance(prop, Var):
-            if not prop._var_is_local or prop._var_is_string:
-                return str(prop)
-            if isinstance(prop, BaseVar) and types._issubclass(prop._var_type, str):
-                if prop._var_data and prop._var_data.interpolations:
-                    return format_f_string_prop(prop)
-                return format_string(prop._var_full_name)
-            prop = prop._var_full_name
+            return str(prop)
 
         # Handle event props.
-        elif isinstance(prop, EventChain):
-            sig = inspect.signature(prop.args_spec)  # type: ignore
-            if sig.parameters:
-                arg_def = ",".join(f"_{p}" for p in sig.parameters)
-                arg_def_expr = f"[{arg_def}]"
-            else:
-                # add a default argument for addEvents if none were specified in prop.args_spec
-                # used to trigger the preventDefault() on the event.
-                arg_def = "...args"
-                arg_def_expr = "args"
-
-            chain = ",".join([format_event(event) for event in prop.events])
-            event = f"addEvents([{chain}], {arg_def_expr}, {json_dumps(prop.event_actions)})"
-            prop = f"({arg_def}) => {event}"
+        if isinstance(prop, EventChain):
+            return str(Var.create(prop))
 
         # Handle other types.
         elif isinstance(prop, str):
@@ -457,7 +409,7 @@ def format_prop(
 
         # For dictionaries, convert any properties to strings.
         elif isinstance(prop, dict):
-            prop = serializers.serialize_dict(prop)  # type: ignore
+            prop = serializers.serialize_dict(prop)  # pyright: ignore [reportAttributeAccessIssue]
 
         else:
             # Dump the prop as JSON.
@@ -468,7 +420,8 @@ def format_prop(
         raise TypeError(f"Could not format prop: {prop} of type {type(prop)}") from e
 
     # Wrap the variable in braces.
-    assert isinstance(prop, str), "The prop must be a string."
+    if not isinstance(prop, str):
+        raise ValueError(f"Invalid prop: {prop}. Expected a string.")
     return wrap(prop, "{", check_first=False)
 
 
@@ -483,11 +436,22 @@ def format_props(*single_props, **key_value_props) -> list[str]:
         The formatted props list.
     """
     # Format all the props.
+    from reflex.vars.base import LiteralVar, Var
+
     return [
-        f"{name}={format_prop(prop)}"
+        ":".join(
+            [
+                str(name if "-" not in name else LiteralVar.create(name)),
+                str(
+                    format_prop(
+                        prop if isinstance(prop, Var) else LiteralVar.create(prop)
+                    )
+                ),
+            ]
+        )
         for name, prop in sorted(key_value_props.items())
         if prop is not None
-    ] + [str(prop) for prop in single_props]
+    ] + [(f"...{LiteralVar.create(prop)!s}") for prop in single_props]
 
 
 def get_event_handler_parts(handler: EventHandler) -> tuple[str, str]:
@@ -502,19 +466,19 @@ def get_event_handler_parts(handler: EventHandler) -> tuple[str, str]:
     # Get the class that defines the event handler.
     parts = handler.fn.__qualname__.split(".")
 
-    # If there's no enclosing class, just return the function name.
-    if len(parts) == 1:
-        return ("", parts[-1])
-
     # Get the state full name
     state_full_name = handler.state_full_name
+
+    # If there's no enclosing class, just return the function name.
+    if not state_full_name:
+        return ("", parts[-1])
 
     # Get the function name
     name = parts[-1]
 
     from reflex.state import State
 
-    if state_full_name == "state" and name not in State.__dict__:
+    if state_full_name == FRONTEND_EVENT_STATE and name not in State.__dict__:
         return ("", to_snake_case(handler.fn.__qualname__))
 
     return (state_full_name, name)
@@ -548,14 +512,14 @@ def format_event(event_spec: EventSpec) -> str:
         [
             ":".join(
                 (
-                    name._var_name,
+                    name._js_expr,
                     (
                         wrap(
-                            json.dumps(val._var_name).strip('"').replace("`", "\\`"),
+                            json.dumps(val._js_expr).strip('"').replace("`", "\\`"),
                             "`",
                         )
                         if val._var_is_string
-                        else val._var_full_name
+                        else str(val)
                     ),
                 )
             )
@@ -572,53 +536,13 @@ def format_event(event_spec: EventSpec) -> str:
     return f"Event({', '.join(event_args)})"
 
 
-def format_event_chain(
-    event_chain: EventChain | Var[EventChain],
-    event_arg: Var | None = None,
-) -> str:
-    """Format an event chain as a javascript invocation.
-
-    Args:
-        event_chain: The event chain to queue on the frontend.
-        event_arg: The browser-native event (only used to preventDefault).
-
-    Returns:
-        Compiled javascript code to queue the given event chain on the frontend.
-
-    Raises:
-        ValueError: When the given event chain is not a valid event chain.
-    """
-    if isinstance(event_chain, Var):
-        from reflex.event import EventChain
-
-        if event_chain._var_type is not EventChain:
-            raise ValueError(f"Invalid event chain: {event_chain}")
-        return "".join(
-            [
-                "(() => {",
-                format_var(event_chain),
-                f"; preventDefault({format_var(event_arg)})" if event_arg else "",
-                "})()",
-            ]
-        )
-
-    chain = ",".join([format_event(event) for event in event_chain.events])
-    return "".join(
-        [
-            f"addEvents([{chain}]",
-            f", {format_var(event_arg)}" if event_arg else "",
-            ")",
-        ]
-    )
+if TYPE_CHECKING:
+    from reflex.vars import Var
 
 
 def format_queue_events(
-    events: EventSpec
-    | EventHandler
-    | Callable
-    | List[EventSpec | EventHandler | Callable]
-    | None = None,
-    args_spec: Optional[ArgsSpec] = None,
+    events: EventType[Any] | None = None,
+    args_spec: ArgsSpec | None = None,
 ) -> Var[EventChain]:
     """Format a list of event handler / event spec as a javascript callback.
 
@@ -645,18 +569,17 @@ def format_queue_events(
         call_event_fn,
         call_event_handler,
     )
+    from reflex.vars import FunctionVar, Var
 
     if not events:
-        return Var.create_safe(
-            "() => null", _var_is_string=False, _var_is_local=False
-        ).to(EventChain)
+        return Var("(() => null)").to(FunctionVar, EventChain)
 
     # If no spec is provided, the function will take no arguments.
     def _default_args_spec():
         return []
 
     # Construct the arguments that the function accepts.
-    sig = inspect.signature(args_spec or _default_args_spec)  # type: ignore
+    sig = inspect.signature(args_spec or _default_args_spec)
     if sig.parameters:
         arg_def = ",".join(f"_{p}" for p in sig.parameters)
         arg_def = f"({arg_def})"
@@ -673,7 +596,7 @@ def format_queue_events(
         if isinstance(spec, (EventHandler, EventSpec)):
             specs = [call_event_handler(spec, args_spec or _default_args_spec)]
         elif isinstance(spec, type(lambda: None)):
-            specs = call_event_fn(spec, args_spec or _default_args_spec)  # type: ignore
+            specs = call_event_fn(spec, args_spec or _default_args_spec)  # pyright: ignore [reportAssignmentType, reportArgumentType]
             if isinstance(specs, Var):
                 raise ValueError(
                     f"Invalid event spec: {specs}. Expected a list of EventSpecs."
@@ -682,12 +605,10 @@ def format_queue_events(
 
     # Return the final code snippet, expecting queueEvents, processEvent, and socket to be in scope.
     # Typically this snippet will _only_ run from within an rx.call_script eval context.
-    return Var.create_safe(
+    return Var(
         f"{arg_def} => {{queueEvents([{','.join(payloads)}], {constants.CompileVars.SOCKET}); "
         f"processEvent({constants.CompileVars.SOCKET})}}",
-        _var_is_string=False,
-        _var_is_local=False,
-    ).to(EventChain)
+    ).to(FunctionVar, EventChain)
 
 
 def format_query_params(router_data: dict[str, Any]) -> dict[str, str]:
@@ -701,48 +622,6 @@ def format_query_params(router_data: dict[str, Any]) -> dict[str, str]:
     """
     params = router_data[constants.RouteVar.QUERY]
     return {k.replace("-", "_"): v for k, v in params.items()}
-
-
-def format_state(value: Any, key: Optional[str] = None) -> Any:
-    """Recursively format values in the given state.
-
-    Args:
-        value: The state to format.
-        key: The key associated with the value (optional).
-
-    Returns:
-        The formatted state.
-
-    Raises:
-        TypeError: If the given value is not a valid state.
-    """
-    from reflex.utils import serializers
-
-    # Handle dicts.
-    if isinstance(value, dict):
-        return {k: format_state(v, k) for k, v in value.items()}
-
-    # Handle lists, sets, typles.
-    if isinstance(value, types.StateIterBases):
-        return [format_state(v) for v in value]
-
-    # Return state vars as is.
-    if isinstance(value, types.StateBases):
-        return value
-
-    # Serialize the value.
-    serialized = serializers.serialize(value)
-    if serialized is not None:
-        return serialized
-
-    if key is None:
-        raise TypeError(
-            f"No JSON serializer found for var {value} of type {type(value)}."
-        )
-    else:
-        raise TypeError(
-            f"No JSON serializer found for State Var '{key}' of value {value} of type {type(value)}."
-        )
 
 
 def format_state_name(state_name: str) -> str:
@@ -774,50 +653,32 @@ def format_ref(ref: str) -> str:
     return f"ref_{clean_ref}"
 
 
-def format_array_ref(refs: str, idx: Var | None) -> str:
-    """Format a ref accessed by array.
-
-    Args:
-        refs : The ref array to access.
-        idx : The index of the ref in the array.
-
-    Returns:
-        The formatted ref.
-    """
-    clean_ref = re.sub(r"[^\w]+", "_", refs)
-    if idx is not None:
-        idx._var_is_local = True
-        return f"refs_{clean_ref}[{idx}]"
-    return f"refs_{clean_ref}"
-
-
-def format_breadcrumbs(route: str) -> list[tuple[str, str]]:
-    """Take a route and return a list of tuple for use in breadcrumb.
-
-    Args:
-        route: The route to transform.
-
-    Returns:
-        list[tuple[str, str]]: the list of tuples for the breadcrumb.
-    """
-    route_parts = route.lstrip("/").split("/")
-
-    # create and return breadcrumbs
-    return [
-        (part, "/".join(["", *route_parts[: i + 1]]))
-        for i, part in enumerate(route_parts)
-    ]
-
-
-def format_library_name(library_fullname: str):
+def format_library_name(library_fullname: str | dict[str, Any]) -> str:
     """Format the name of a library.
 
     Args:
-        library_fullname: The fullname of the library.
+        library_fullname: The library reference, either as a string or a dictionary with a 'name' key.
 
     Returns:
         The name without the @version if it was part of the name
+
+    Raises:
+        KeyError: If library_fullname is a dictionary without a 'name' key.
+        TypeError: If library_fullname or its 'name' value is not a string.
     """
+    # If input is a dictionary, extract the 'name' key
+    if isinstance(library_fullname, dict):
+        if "name" not in library_fullname:
+            raise KeyError("Dictionary input must contain a 'name' key")
+        library_fullname = library_fullname["name"]
+
+    # Process the library name as a string
+    if not isinstance(library_fullname, str):
+        raise TypeError("Library name must be a string")
+
+    if library_fullname.startswith("https://"):
+        return library_fullname
+
     lib, at, version = library_fullname.rpartition("@")
     if not lib:
         lib = at + version
@@ -825,54 +686,22 @@ def format_library_name(library_fullname: str):
     return lib
 
 
-def json_dumps(obj: Any) -> str:
+def json_dumps(obj: Any, **kwargs) -> str:
     """Takes an object and returns a jsonified string.
 
     Args:
         obj: The object to be serialized.
+        kwargs: Additional keyword arguments to pass to json.dumps.
 
     Returns:
         A string
     """
     from reflex.utils import serializers
 
-    return json.dumps(obj, ensure_ascii=False, default=serializers.serialize)
+    kwargs.setdefault("ensure_ascii", False)
+    kwargs.setdefault("default", serializers.serialize)
 
-
-def unwrap_vars(value: str) -> str:
-    """Unwrap var values from a JSON string.
-
-    For example, "{var}" will be unwrapped to "var".
-
-    Args:
-        value: The JSON string to unwrap.
-
-    Returns:
-        The unwrapped JSON string.
-    """
-
-    def unescape_double_quotes_in_var(m: re.Match) -> str:
-        prefix = m.group(1) or ""
-        # Since the outer quotes are removed, the inner escaped quotes must be unescaped.
-        return prefix + re.sub('\\\\"', '"', m.group(2))
-
-    # This substitution is necessary to unwrap var values.
-    return (
-        re.sub(
-            pattern=r"""
-            (?<!\\)      # must NOT start with a backslash
-            "            # match opening double quote of JSON value
-            (<reflex.Var>.*?</reflex.Var>)?  # Optional encoded VarData (non-greedy)
-            {(.*?)}      # extract the value between curly braces (non-greedy)
-            "            # match must end with an unescaped double quote
-        """,
-            repl=unescape_double_quotes_in_var,
-            string=value,
-            flags=re.VERBOSE,
-        )
-        .replace('"`', "`")
-        .replace('`"', "`")
-    )
+    return json.dumps(obj, **kwargs)
 
 
 def collect_form_dict_names(form_dict: dict[str, Any]) -> dict[str, Any]:
@@ -897,6 +726,22 @@ def collect_form_dict_names(form_dict: dict[str, Any]) -> dict[str, Any]:
     return collapsed
 
 
+def format_array_ref(refs: str, idx: Var | None) -> str:
+    """Format a ref accessed by array.
+
+    Args:
+        refs : The ref array to access.
+        idx : The index of the ref in the array.
+
+    Returns:
+        The formatted ref.
+    """
+    clean_ref = re.sub(r"[^\w]+", "_", refs)
+    if idx is not None:
+        return f"refs_{clean_ref}[{idx!s}]"
+    return f"refs_{clean_ref}"
+
+
 def format_data_editor_column(col: str | dict):
     """Format a given column into the proper format.
 
@@ -909,6 +754,8 @@ def format_data_editor_column(col: str | dict):
     Returns:
         The formatted column.
     """
+    from reflex.vars import Var
+
     if isinstance(col, str):
         return {"title": col, "id": col.lower(), "type": "str"}
 
@@ -921,7 +768,7 @@ def format_data_editor_column(col: str | dict):
             col["overlayIcon"] = None
         return col
 
-    if isinstance(col, BaseVar):
+    if isinstance(col, Var):
         return col
 
     raise ValueError(
@@ -938,7 +785,9 @@ def format_data_editor_cell(cell: Any):
     Returns:
         The formatted cell.
     """
+    from reflex.vars.base import Var
+
     return {
-        "kind": Var.create(value="GridCellKind.Text", _var_is_string=False),
+        "kind": Var(_js_expr="GridCellKind.Text"),
         "data": cell,
     }

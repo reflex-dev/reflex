@@ -1,34 +1,12 @@
-"""File for constants related to the installation process. (Bun/FNM/Node)."""
+"""File for constants related to the installation process. (Bun/Node)."""
 
 from __future__ import annotations
 
 import os
-import platform
 from types import SimpleNamespace
 
-from .base import IS_WINDOWS, Reflex
-
-
-def get_fnm_name() -> str | None:
-    """Get the appropriate fnm executable name based on the current platform.
-
-    Returns:
-            The fnm executable name for the current platform.
-    """
-    platform_os = platform.system()
-
-    if platform_os == "Windows":
-        return "fnm-windows"
-    elif platform_os == "Darwin":
-        return "fnm-macos"
-    elif platform_os == "Linux":
-        machine = platform.machine()
-        if machine == "arm" or machine.startswith("armv7"):
-            return "fnm-arm32"
-        elif machine.startswith("aarch") or machine.startswith("armv8"):
-            return "fnm-arm64"
-        return "fnm-linux"
-    return None
+from .base import IS_WINDOWS
+from .utils import classproperty
 
 
 # Bun config.
@@ -36,65 +14,88 @@ class Bun(SimpleNamespace):
     """Bun constants."""
 
     # The Bun version.
-    VERSION = "1.1.10"
+    VERSION = "1.2.12"
+
     # Min Bun Version
-    MIN_VERSION = "0.7.0"
-    # The directory to store the bun.
-    ROOT_PATH = os.path.join(Reflex.DIR, "bun")
-    # Default bun path.
-    DEFAULT_PATH = os.path.join(
-        ROOT_PATH, "bin", "bun" if not IS_WINDOWS else "bun.exe"
-    )
+    MIN_VERSION = "1.2.8"
+
     # URL to bun install script.
-    INSTALL_URL = "https://bun.sh/install"
+    INSTALL_URL = "https://raw.githubusercontent.com/reflex-dev/reflex/main/scripts/bun_install.sh"
+
     # URL to windows install script.
     WINDOWS_INSTALL_URL = (
         "https://raw.githubusercontent.com/reflex-dev/reflex/main/scripts/install.ps1"
     )
+
     # Path of the bunfig file
     CONFIG_PATH = "bunfig.toml"
 
+    @classproperty
+    @classmethod
+    def ROOT_PATH(cls):
+        """The directory to store the bun.
 
-# FNM config.
-class Fnm(SimpleNamespace):
-    """FNM constants."""
+        Returns:
+            The directory to store the bun.
+        """
+        from reflex.config import environment
 
-    # The FNM version.
-    VERSION = "1.35.1"
-    # The directory to store fnm.
-    DIR = os.path.join(Reflex.DIR, "fnm")
-    FILENAME = get_fnm_name()
-    # The fnm executable binary.
-    EXE = os.path.join(DIR, "fnm.exe" if IS_WINDOWS else "fnm")
+        return environment.REFLEX_DIR.get() / "bun"
 
-    # The URL to the fnm release binary
-    INSTALL_URL = (
-        f"https://github.com/Schniz/fnm/releases/download/v{VERSION}/{FILENAME}.zip"
-    )
+    @classproperty
+    @classmethod
+    def DEFAULT_PATH(cls):
+        """Default bun path.
+
+        Returns:
+            The default bun path.
+        """
+        return cls.ROOT_PATH / "bin" / ("bun" if not IS_WINDOWS else "bun.exe")
+
+    DEFAULT_CONFIG = """
+[install]
+registry = "{registry}"
+"""
 
 
 # Node / NPM config
 class Node(SimpleNamespace):
     """Node/ NPM constants."""
 
-    # The Node version.
-    VERSION = "18.17.0"
     # The minimum required node version.
-    MIN_VERSION = "18.17.0"
+    MIN_VERSION = "18.18.0"
 
-    # The node bin path.
-    BIN_PATH = os.path.join(
-        Fnm.DIR,
-        "node-versions",
-        f"v{VERSION}",
-        "installation",
-        "bin" if not IS_WINDOWS else "",
-    )
-    # The default path where node is installed.
-    PATH = os.path.join(BIN_PATH, "node.exe" if IS_WINDOWS else "node")
+    # Path of the node config file.
+    CONFIG_PATH = ".npmrc"
 
-    # The default path where npm is installed.
-    NPM_PATH = os.path.join(BIN_PATH, "npm")
+    DEFAULT_CONFIG = """
+registry={registry}
+fetch-retries=0
+"""
+
+
+def _determine_nextjs_version() -> str:
+    default_version = "15.3.2"
+    if (version := os.getenv("NEXTJS_VERSION")) and version != default_version:
+        from reflex.utils import console
+
+        console.warn(
+            f"You have requested next@{version} but the supported version is {default_version}, abandon all hope ye who enter here."
+        )
+        return version
+    return default_version
+
+
+def _determine_react_version() -> str:
+    default_version = "19.1.0"
+    if (version := os.getenv("REACT_VERSION")) and version != default_version:
+        from reflex.utils import console
+
+        console.warn(
+            f"You have requested react@{version} but the supported version is {default_version}, abandon all hope ye who enter here."
+        )
+        return version
+    return default_version
 
 
 class PackageJson(SimpleNamespace):
@@ -103,28 +104,34 @@ class PackageJson(SimpleNamespace):
     class Commands(SimpleNamespace):
         """The commands to define in package.json."""
 
-        DEV = "next dev"
-        EXPORT = "next build"
-        EXPORT_SITEMAP = "next build && next-sitemap"
+        DEV = "next dev {flags}"
+        EXPORT = "next build {flags}"
+        EXPORT_SITEMAP = "next build {flags} && next-sitemap"
         PROD = "next start"
 
     PATH = "package.json"
 
+    _react_version = _determine_react_version()
+
     DEPENDENCIES = {
-        "@emotion/react": "11.11.1",
-        "axios": "1.6.0",
+        "@emotion/react": "11.14.0",
+        "axios": "1.9.0",
         "json5": "2.2.3",
-        "next": "14.0.1",
-        "next-sitemap": "4.1.8",
-        "next-themes": "0.2.1",
-        "react": "18.2.0",
-        "react-dom": "18.2.0",
-        "react-focus-lock": "2.11.3",
-        "socket.io-client": "4.6.1",
-        "universal-cookie": "4.0.4",
+        "next": _determine_nextjs_version(),
+        "next-sitemap": "4.2.3",
+        "next-themes": "0.4.6",
+        "react": _react_version,
+        "react-dom": _react_version,
+        "react-focus-lock": "2.13.6",
+        "socket.io-client": "4.8.1",
+        "universal-cookie": "7.2.2",
     }
     DEV_DEPENDENCIES = {
-        "autoprefixer": "10.4.14",
-        "postcss": "8.4.31",
+        "autoprefixer": "10.4.21",
+        "postcss": "8.5.3",
         "postcss-import": "16.1.0",
+    }
+    OVERRIDES = {
+        # This should always match the `react` version in DEPENDENCIES for recharts compatibility.
+        "react-is": _react_version
     }

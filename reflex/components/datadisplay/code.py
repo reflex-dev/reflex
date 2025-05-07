@@ -2,69 +2,22 @@
 
 from __future__ import annotations
 
-import re
-from typing import Dict, Literal, Optional, Union
+import dataclasses
+import typing
+from typing import ClassVar, Literal
 
-from reflex.components.component import Component
+from reflex.components.component import Component, ComponentNamespace
 from reflex.components.core.cond import color_mode_cond
 from reflex.components.lucide.icon import Icon
+from reflex.components.markdown.markdown import _LANGUAGE, MarkdownComponentMap
 from reflex.components.radix.themes.components.button import Button
 from reflex.components.radix.themes.layout.box import Box
 from reflex.constants.colors import Color
 from reflex.event import set_clipboard
 from reflex.style import Style
 from reflex.utils import format
-from reflex.utils.imports import ImportDict, ImportVar
-from reflex.vars import Var
-
-LiteralCodeBlockTheme = Literal[
-    "a11y-dark",
-    "atom-dark",
-    "cb",
-    "coldark-cold",
-    "coldark-dark",
-    "coy",
-    "coy-without-shadows",
-    "darcula",
-    "dark",
-    "dracula",
-    "duotone-dark",
-    "duotone-earth",
-    "duotone-forest",
-    "duotone-light",
-    "duotone-sea",
-    "duotone-space",
-    "funky",
-    "ghcolors",
-    "gruvbox-dark",
-    "gruvbox-light",
-    "holi-theme",
-    "hopscotch",
-    "light",  # not present in react-syntax-highlighter styles
-    "lucario",
-    "material-dark",
-    "material-light",
-    "material-oceanic",
-    "night-owl",
-    "nord",
-    "okaidia",
-    "one-dark",
-    "one-light",
-    "pojoaque",
-    "prism",
-    "shades-of-purple",
-    "solarized-dark-atom",
-    "solarizedlight",
-    "synthwave84",
-    "tomorrow",
-    "twilight",
-    "vs",
-    "vs-dark",
-    "vsc-dark-plus",
-    "xonokai",
-    "z-touch",
-]
-
+from reflex.utils.imports import ImportVar
+from reflex.vars.base import LiteralVar, Var, VarData
 
 LiteralCodeLanguage = Literal[
     "abap",
@@ -349,20 +302,98 @@ LiteralCodeLanguage = Literal[
 ]
 
 
-class CodeBlock(Component):
+def construct_theme_var(theme: str) -> Var[Theme]:
+    """Construct a theme var.
+
+    Args:
+        theme: The theme to construct.
+
+    Returns:
+        The constructed theme var.
+    """
+    return Var(
+        theme,
+        _var_data=VarData(
+            imports={
+                f"react-syntax-highlighter/dist/cjs/styles/prism/{format.to_kebab_case(theme)}": [
+                    ImportVar(tag=theme, is_default=True, install=False)
+                ]
+            }
+        ),
+    )
+
+
+@dataclasses.dataclass(init=False)
+class Theme:
+    """Themes for the CodeBlock component."""
+
+    a11y_dark: ClassVar[Var[Theme]] = construct_theme_var("a11yDark")
+    atom_dark: ClassVar[Var[Theme]] = construct_theme_var("atomDark")
+    cb: ClassVar[Var[Theme]] = construct_theme_var("cb")
+    coldark_cold: ClassVar[Var[Theme]] = construct_theme_var("coldarkCold")
+    coldark_dark: ClassVar[Var[Theme]] = construct_theme_var("coldarkDark")
+    coy: ClassVar[Var[Theme]] = construct_theme_var("coy")
+    coy_without_shadows: ClassVar[Var[Theme]] = construct_theme_var("coyWithoutShadows")
+    darcula: ClassVar[Var[Theme]] = construct_theme_var("darcula")
+    dark: ClassVar[Var[Theme]] = construct_theme_var("oneDark")
+    dracula: ClassVar[Var[Theme]] = construct_theme_var("dracula")
+    duotone_dark: ClassVar[Var[Theme]] = construct_theme_var("duotoneDark")
+    duotone_earth: ClassVar[Var[Theme]] = construct_theme_var("duotoneEarth")
+    duotone_forest: ClassVar[Var[Theme]] = construct_theme_var("duotoneForest")
+    duotone_light: ClassVar[Var[Theme]] = construct_theme_var("duotoneLight")
+    duotone_sea: ClassVar[Var[Theme]] = construct_theme_var("duotoneSea")
+    duotone_space: ClassVar[Var[Theme]] = construct_theme_var("duotoneSpace")
+    funky: ClassVar[Var[Theme]] = construct_theme_var("funky")
+    ghcolors: ClassVar[Var[Theme]] = construct_theme_var("ghcolors")
+    gruvbox_dark: ClassVar[Var[Theme]] = construct_theme_var("gruvboxDark")
+    gruvbox_light: ClassVar[Var[Theme]] = construct_theme_var("gruvboxLight")
+    holi_theme: ClassVar[Var[Theme]] = construct_theme_var("holiTheme")
+    hopscotch: ClassVar[Var[Theme]] = construct_theme_var("hopscotch")
+    light: ClassVar[Var[Theme]] = construct_theme_var("oneLight")
+    lucario: ClassVar[Var[Theme]] = construct_theme_var("lucario")
+    material_dark: ClassVar[Var[Theme]] = construct_theme_var("materialDark")
+    material_light: ClassVar[Var[Theme]] = construct_theme_var("materialLight")
+    material_oceanic: ClassVar[Var[Theme]] = construct_theme_var("materialOceanic")
+    night_owl: ClassVar[Var[Theme]] = construct_theme_var("nightOwl")
+    nord: ClassVar[Var[Theme]] = construct_theme_var("nord")
+    okaidia: ClassVar[Var[Theme]] = construct_theme_var("okaidia")
+    one_dark: ClassVar[Var[Theme]] = construct_theme_var("oneDark")
+    one_light: ClassVar[Var[Theme]] = construct_theme_var("oneLight")
+    pojoaque: ClassVar[Var[Theme]] = construct_theme_var("pojoaque")
+    prism: ClassVar[Var[Theme]] = construct_theme_var("prism")
+    shades_of_purple: ClassVar[Var[Theme]] = construct_theme_var("shadesOfPurple")
+    solarized_dark_atom: ClassVar[Var[Theme]] = construct_theme_var("solarizedDarkAtom")
+    solarizedlight: ClassVar[Var[Theme]] = construct_theme_var("solarizedlight")
+    synthwave84: ClassVar[Var[Theme]] = construct_theme_var("synthwave84")
+    tomorrow: ClassVar[Var[Theme]] = construct_theme_var("tomorrow")
+    twilight: ClassVar[Var[Theme]] = construct_theme_var("twilight")
+    vs: ClassVar[Var[Theme]] = construct_theme_var("vs")
+    vs_dark: ClassVar[Var[Theme]] = construct_theme_var("vsDark")
+    vsc_dark_plus: ClassVar[Var[Theme]] = construct_theme_var("vscDarkPlus")
+    xonokai: ClassVar[Var[Theme]] = construct_theme_var("xonokai")
+    z_touch: ClassVar[Var[Theme]] = construct_theme_var("zTouch")
+
+
+for theme_name in dir(Theme):
+    if theme_name.startswith("_"):
+        continue
+    setattr(Theme, theme_name, getattr(Theme, theme_name)._replace(_var_type=Theme))
+
+
+class CodeBlock(Component, MarkdownComponentMap):
     """A code block."""
 
-    library = "react-syntax-highlighter@15.5.0"
+    library = "react-syntax-highlighter@15.6.1"
 
     tag = "PrismAsyncLight"
 
     alias = "SyntaxHighlighter"
 
     # The theme to use ("light" or "dark").
-    theme: Var[LiteralCodeBlockTheme] = "one-light"  # type: ignore
+    theme: Var[Theme | str] = Theme.one_light
 
     # The language to use.
-    language: Var[LiteralCodeLanguage] = "python"  # type: ignore
+    language: Var[LiteralCodeLanguage] = Var.create("python")
 
     # The code to display.
     code: Var[str]
@@ -377,72 +408,27 @@ class CodeBlock(Component):
     wrap_long_lines: Var[bool]
 
     # A custom style for the code block.
-    custom_style: Dict[str, Union[str, Var, Color]] = {}
+    custom_style: dict[str, str | Var | Color] = {}
 
     # Props passed down to the code tag.
-    code_tag_props: Var[Dict[str, str]]
+    code_tag_props: Var[dict[str, str]]
 
-    def add_imports(self) -> ImportDict:
-        """Add imports for the CodeBlock component.
+    # Whether a copy button should appear.
+    can_copy: bool | None = False
 
-        Returns:
-            The import dict.
-        """
-        imports_: ImportDict = {}
-        themes = re.findall(r"`(.*?)`", self.theme._var_name)
-        if not themes:
-            themes = [self.theme._var_name]
-
-        imports_.update(
-            {
-                f"react-syntax-highlighter/dist/cjs/styles/prism/{self.convert_theme_name(theme)}": [
-                    ImportVar(
-                        tag=format.to_camel_case(self.convert_theme_name(theme)),
-                        is_default=True,
-                        install=False,
-                    )
-                ]
-                for theme in themes
-            }
-        )
-
-        if (
-            self.language is not None
-            and self.language._var_name in LiteralCodeLanguage.__args__  # type: ignore
-        ):
-            imports_[
-                f"react-syntax-highlighter/dist/cjs/languages/prism/{self.language._var_name}"
-            ] = [
-                ImportVar(
-                    tag=format.to_camel_case(self.language._var_name),
-                    is_default=True,
-                    install=False,
-                )
-            ]
-
-        return imports_
-
-    def _get_custom_code(self) -> Optional[str]:
-        if (
-            self.language is not None
-            and self.language._var_name in LiteralCodeLanguage.__args__  # type: ignore
-        ):
-            return f"{self.alias}.registerLanguage('{self.language._var_name}', {format.to_camel_case(self.language._var_name)})"
+    # A custom copy button to override the default one.
+    copy_button: bool | Component | None = None
 
     @classmethod
     def create(
         cls,
         *children,
-        can_copy: Optional[bool] = False,
-        copy_button: Optional[Union[bool, Component]] = None,
         **props,
     ):
         """Create a text component.
 
         Args:
             *children: The children of the component.
-            can_copy: Whether a copy button should appears.
-            copy_button: A custom copy button to override the default one.
             **props: The props to pass to the component.
 
         Returns:
@@ -450,19 +436,21 @@ class CodeBlock(Component):
         """
         # This component handles style in a special prop.
         custom_style = props.pop("custom_style", {})
+        can_copy = props.pop("can_copy", False)
+        copy_button = props.pop("copy_button", None)
 
+        # react-syntax-highlighter doesn't have an explicit "light" or "dark" theme so we use one-light and one-dark
+        # themes respectively to ensure code compatibility.
         if "theme" not in props:
             # Default color scheme responds to global color mode.
-            props["theme"] = color_mode_cond(light="one-light", dark="one-dark")
-
-        # react-syntax-highlighter doesnt have an explicit "light" or "dark" theme so we use one-light and one-dark
-        # themes respectively to ensure code compatibility.
-        if "theme" in props and not isinstance(props["theme"], Var):
-            props["theme"] = cls.convert_theme_name(props["theme"])
+            props["theme"] = color_mode_cond(
+                light=Theme.one_light,
+                dark=Theme.one_dark,
+            )
 
         if can_copy:
             code = children[0]
-            copy_button = (  # type: ignore
+            copy_button = (
                 copy_button
                 if copy_button is not None
                 else Button.create(
@@ -484,7 +472,7 @@ class CodeBlock(Component):
         if children:
             props["code"] = children[0]
             if not isinstance(props["code"], Var):
-                props["code"] = Var.create(props["code"], _var_is_string=True)
+                props["code"] = LiteralVar.create(props["code"])
 
         # Create the component.
         code_block = super().create(
@@ -503,33 +491,94 @@ class CodeBlock(Component):
 
     def _render(self):
         out = super()._render()
-        predicate, qmark, value = self.theme._var_name.partition("?")
-        out.add_props(
-            style=Var.create(
-                format.to_camel_case(f"{predicate}{qmark}{value.replace('`', '')}"),
-                _var_is_local=False,
-                _var_is_string=False,
-            )
-        ).remove_props("theme", "code")
-        if self.code is not None:
-            out.special_props.add(
-                Var.create_safe(f"children={str(self.code)}", _var_is_string=False)
-            )
+
+        theme = self.theme
+
+        out.add_props(style=theme).remove_props("theme", "code").add_props(
+            children=self.code,
+        )
+
         return out
 
-    @staticmethod
-    def convert_theme_name(theme) -> str:
-        """Convert theme names to appropriate names.
+    def _exclude_props(self) -> list[str]:
+        return ["can_copy", "copy_button"]
+
+    @classmethod
+    def _get_language_registration_hook(cls, language_var: Var = _LANGUAGE) -> Var:
+        """Get the hook to register the language.
 
         Args:
-            theme: The theme name.
+            language_var: The const/literal Var of the language module to import.
+                For markdown, uses the default placeholder _LANGUAGE. For direct use,
+                a LiteralStringVar should be passed via the language prop.
 
         Returns:
-            The right theme name.
+            The hook to register the language.
         """
-        if theme in ["light", "dark"]:
-            return f"one-{theme}"
-        return theme
+        language_in_there = Var.create(typing.get_args(LiteralCodeLanguage)).contains(
+            language_var
+        )
+        async_load = f"""
+(async () => {{
+    try {{
+        const module = await import(`react-syntax-highlighter/dist/cjs/languages/prism/${{{language_var!s}}}`);
+        SyntaxHighlighter.registerLanguage({language_var!s}, module.default);
+    }} catch (error) {{
+        console.error(`Language ${{{language_var!s}}} is not supported for code blocks inside of markdown: `, error);
+    }}
+}})();
+"""
+        return Var(
+            f"""
+ if ({language_var!s}) {{
+    if (!{language_in_there!s}) {{
+        console.warn(`Language \\`${{{language_var!s}}}\\` is not supported for code blocks inside of markdown.`);
+        {language_var!s} = '';
+    }} else {{
+        {async_load!s}
+    }}
+  }}
+"""
+            if not isinstance(language_var, LiteralVar)
+            else f"""
+if ({language_var!s}) {{
+    {async_load!s}
+}}""",
+            _var_data=VarData(
+                imports={
+                    cls.__fields__["library"].default: [
+                        ImportVar(tag="PrismAsyncLight", alias="SyntaxHighlighter")
+                    ]
+                },
+            ),
+        )
+
+    @classmethod
+    def get_component_map_custom_code(cls) -> Var:
+        """Get the custom code for the component.
+
+        Returns:
+            The custom code for the component.
+        """
+        return cls._get_language_registration_hook()
+
+    def add_hooks(self) -> list[str | Var]:
+        """Add hooks for the component.
+
+        Returns:
+            The hooks for the component.
+        """
+        return [
+            self._get_language_registration_hook(language_var=self.language),
+        ]
 
 
-code_block = CodeBlock.create
+class CodeblockNamespace(ComponentNamespace):
+    """Namespace for the CodeBlock component."""
+
+    themes = Theme
+
+    __call__ = CodeBlock.create
+
+
+code_block = CodeblockNamespace()

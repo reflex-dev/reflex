@@ -2,27 +2,29 @@
 
 from __future__ import annotations
 
-from typing import Dict, List, Union
+from collections.abc import Sequence
 
 from reflex.components.base.fragment import Fragment
 from reflex.components.tags.tag import Tag
-from reflex.event import EventChain, EventHandler
+from reflex.constants.compiler import Hooks
+from reflex.event import EventChain, EventHandler, passthrough_event_spec
 from reflex.utils.format import format_prop, wrap
 from reflex.utils.imports import ImportVar
-from reflex.vars import Var, get_unique_variable_name
+from reflex.vars import get_unique_variable_name
+from reflex.vars.base import Var, VarData
 
 
 class Clipboard(Fragment):
     """Clipboard component."""
 
     # The element ids to attach the event listener to. Defaults to all child components or the document.
-    targets: Var[List[str]]
+    targets: Var[Sequence[str]]
 
     # Called when the user pastes data into the document. Data is a list of tuples of (mime_type, data). Binary types will be base64 encoded as a data uri.
-    on_paste: EventHandler[lambda data: [data]]
+    on_paste: EventHandler[passthrough_event_spec(list[tuple[str, str]])]
 
     # Save the original event actions for the on_paste event.
-    on_paste_event_actions: Var[Dict[str, Union[bool, int]]]
+    on_paste_event_actions: Var[dict[str, bool | int]]
 
     @classmethod
     def create(cls, *children, **props):
@@ -50,7 +52,7 @@ class Clipboard(Fragment):
         return super().create(*children, **props)
 
     def _exclude_props(self) -> list[str]:
-        return super()._exclude_props() + ["on_paste", "on_paste_event_actions"]
+        return [*super()._exclude_props(), "on_paste", "on_paste_event_actions"]
 
     def _render(self) -> Tag:
         tag = super()._render()
@@ -66,12 +68,12 @@ class Clipboard(Fragment):
             The import dict for the component.
         """
         return {
-            "/utils/helpers/paste.js": ImportVar(
+            "$/utils/helpers/paste.js": ImportVar(
                 tag="usePasteHandler", is_default=True
             ),
         }
 
-    def add_hooks(self) -> list[str]:
+    def add_hooks(self) -> list[str | Var[str]]:
         """Add hook to register paste event listener.
 
         Returns:
@@ -82,13 +84,14 @@ class Clipboard(Fragment):
             return []
         if isinstance(on_paste, EventChain):
             on_paste = wrap(str(format_prop(on_paste)).strip("{}"), "(")
+        hook_expr = f"usePasteHandler({self.targets!s}, {self.on_paste_event_actions!s}, {on_paste!s})"
+
         return [
-            "usePasteHandler(%s, %s, %s)"
-            % (
-                self.targets._var_name_unwrapped,
-                self.on_paste_event_actions._var_name_unwrapped,
-                on_paste,
-            )
+            Var(
+                hook_expr,
+                _var_type="str",
+                _var_data=VarData(position=Hooks.HookPosition.POST_TRIGGER),
+            ),
         ]
 
 

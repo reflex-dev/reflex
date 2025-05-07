@@ -2,60 +2,56 @@
 
 from __future__ import annotations
 
-from typing import Optional
-
 from reflex.components.base.bare import Bare
-from reflex.components.component import Component
+from reflex.components.el import elements
 
 
-class Title(Component):
+class Title(elements.Title):
     """A component that displays the title of the current page."""
-
-    tag = "title"
 
     def render(self) -> dict:
         """Render the title component.
+
+        Raises:
+            ValueError: If the title is not a single string.
 
         Returns:
             The rendered title component.
         """
         # Make sure the title is a single string.
-        assert len(self.children) == 1 and isinstance(
-            self.children[0], Bare
-        ), "Title must be a single string."
+        if len(self.children) != 1 or not isinstance(self.children[0], Bare):
+            raise ValueError("Title must be a single string.")
         return super().render()
 
 
-class Meta(Component):
+class Meta(elements.Meta):
     """A component that displays metadata for the current page."""
 
-    tag = "meta"
-
     # The description of character encoding.
-    char_set: Optional[str] = None
+    char_set: str | None = None
 
     # The value of meta.
-    content: Optional[str] = None
+    content: str | None = None
 
     # The name of metadata.
-    name: Optional[str] = None
+    name: str | None = None
 
     # The type of metadata value.
-    property: Optional[str] = None
+    property: str | None = None
 
     # The type of metadata value.
-    http_equiv: Optional[str] = None
+    http_equiv: str | None = None
 
 
-class Description(Meta):
+class Description(elements.Meta):
     """A component that displays the title of the current page."""
 
     # The type of the description.
-    name: str = "description"
+    name: str | None = "description"
 
 
-class Image(Meta):
+class Image(elements.Meta):
     """A component that displays the title of the current page."""
 
     # The type of the image.
-    property: str = "og:image"
+    property: str | None = "og:image"

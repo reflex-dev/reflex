@@ -2,7 +2,8 @@
 import axios from "axios";
 import io from "socket.io-client";
 import JSON5 from "json5";
-import env from "/env.json";
+import env from "$/env.json";
+import reflexEnvironment from "$/reflex.json";
 import Cookies from "universal-cookie";
 import { useEffect, useRef, useState } from "react";
 import Router, { useRouter } from "next/router";
@@ -12,9 +13,9 @@ import {
   onLoadInternalEvent,
   state_name,
   exception_state_name,
-} from "utils/context.js";
-import debounce from "/utils/helpers/debounce";
-import throttle from "/utils/helpers/throttle";
+} from "$/utils/context.js";
+import debounce from "$/utils/helpers/debounce";
+import throttle from "$/utils/helpers/throttle";
 
 // Endpoint URLs.
 const EVENTURL = env.EVENT;
@@ -39,9 +40,6 @@ export const refs = {};
 let event_processing = false;
 // Array holding pending events to be processed.
 const event_queue = [];
-
-// Pending upload promises, by id
-const upload_controllers = {};
 
 /**
  * Generate a UUID (Used for session tokens).
@@ -109,6 +107,18 @@ export const getBackendURL = (url_str) => {
 };
 
 /**
+ * Check if the backend is disabled.
+ *
+ * @returns True if the backend is disabled, false otherwise.
+ */
+export const isBackendDisabled = () => {
+  const cookie = document.cookie
+    .split("; ")
+    .find((row) => row.startsWith("backend-enabled="));
+  return cookie !== undefined && cookie.split("=")[1] == "false";
+};
+
+/**
  * Determine if any event in the event queue is stateful.
  *
  * @returns True if there's any event that requires state and False if none of them do.
@@ -117,8 +127,8 @@ export const isStateful = () => {
   if (event_queue.length === 0) {
     return false;
   }
-  return event_queue.some(event => event.name.startsWith("reflex___state"));
-}
+  return event_queue.some((event) => event.name.startsWith("reflex___state"));
+};
 
 /**
  * Apply a delta to the state.
@@ -127,6 +137,21 @@ export const isStateful = () => {
  */
 export const applyDelta = (state, delta) => {
   return { ...state, ...delta };
+};
+
+/**
+ * Evaluate a dynamic component.
+ * @param component The component to evaluate.
+ * @returns The evaluated component.
+ */
+export const evalReactComponent = async (component) => {
+  if (!window.React && window.__reflex) {
+    window.React = window.__reflex.react;
+  }
+  const encodedJs = encodeURIComponent(component);
+  const dataUri = "data:text/javascript;charset=utf-8," + encodedJs;
+  const module = await eval(`import(dataUri)`);
+  return module.default;
 };
 
 /**
@@ -141,7 +166,7 @@ export const queueEventIfSocketExists = async (events, socket) => {
     return;
   }
   await queueEvents(events, socket);
-}
+};
 
 /**
  * Handle frontend event or send the event to the backend via Websocket.
@@ -153,18 +178,16 @@ export const queueEventIfSocketExists = async (events, socket) => {
 export const applyEvent = async (event, socket) => {
   // Handle special events
   if (event.name == "_redirect") {
+    if ((event.payload.path ?? undefined) === undefined) {
+      return false;
+    }
     if (event.payload.external) {
-      window.open(event.payload.path, "_blank");
+      window.open(event.payload.path, "_blank", "noopener");
     } else if (event.payload.replace) {
       Router.replace(event.payload.path);
     } else {
       Router.push(event.payload.path);
     }
-    return false;
-  }
-
-  if (event.name == "_console") {
-    console.log(event.payload.message);
     return false;
   }
 
@@ -198,32 +221,36 @@ export const applyEvent = async (event, socket) => {
     return false;
   }
 
-  if (event.name == "_set_clipboard") {
-    const content = event.payload.content;
-    navigator.clipboard.writeText(content);
-    return false;
-  }
-
   if (event.name == "_download") {
     const a = document.createElement("a");
     a.hidden = true;
+    a.href = event.payload.url;
     // Special case when linking to uploaded files
-    a.href = event.payload.url.replace("${getBackendURL(env.UPLOAD)}", getBackendURL(env.UPLOAD))
+    if (a.href.includes("getBackendURL(env.UPLOAD)")) {
+      a.href = eval?.(
+        event.payload.url.replace(
+          "getBackendURL(env.UPLOAD)",
+          `"${getBackendURL(env.UPLOAD)}"`,
+        ),
+      );
+    }
     a.download = event.payload.filename;
     a.click();
     a.remove();
     return false;
   }
 
-  if (event.name == "_alert") {
-    alert(event.payload.message);
-    return false;
-  }
-
   if (event.name == "_set_focus") {
     const ref =
       event.payload.ref in refs ? refs[event.payload.ref] : event.payload.ref;
-    ref.current.focus();
+    const current = ref?.current;
+    if (current === undefined || current?.focus === undefined) {
+      console.error(
+        `No element found for ref ${event.payload.ref} in _set_focus`,
+      );
+    } else {
+      current.focus();
+    }
     return false;
   }
 
@@ -236,20 +263,54 @@ export const applyEvent = async (event, socket) => {
     return false;
   }
 
-  if (event.name == "_call_script") {
+  if (
+    event.name == "_call_function" &&
+    typeof event.payload.function !== "string"
+  ) {
     try {
-      const eval_result = eval(event.payload.javascript_code);
+      const eval_result = event.payload.function();
       if (event.payload.callback) {
-        if (!!eval_result && typeof eval_result.then === "function") {
-          eval(event.payload.callback)(await eval_result);
-        } else {
-          eval(event.payload.callback)(eval_result);
-        }
+        const final_result =
+          !!eval_result && typeof eval_result.then === "function"
+            ? await eval_result
+            : eval_result;
+        const callback =
+          typeof event.payload.callback === "string"
+            ? eval(event.payload.callback)
+            : event.payload.callback;
+        callback(final_result);
+      }
+    } catch (e) {
+      console.log("_call_function", e);
+      if (window && window?.onerror) {
+        window.onerror(e.message, null, null, null, e);
+      }
+    }
+    return false;
+  }
+
+  if (event.name == "_call_script" || event.name == "_call_function") {
+    try {
+      const eval_result =
+        event.name == "_call_script"
+          ? eval(event.payload.javascript_code)
+          : eval(event.payload.function)();
+
+      if (event.payload.callback) {
+        const final_result =
+          !!eval_result && typeof eval_result.then === "function"
+            ? await eval_result
+            : eval_result;
+        const callback =
+          typeof event.payload.callback === "string"
+            ? eval(event.payload.callback)
+            : event.payload.callback;
+        callback(final_result);
       }
     } catch (e) {
       console.log("_call_script", e);
       if (window && window?.onerror) {
-        window.onerror(e.message, null, null, null, e)
+        window.onerror(e.message, null, null, null, e);
       }
     }
     return false;
@@ -270,10 +331,7 @@ export const applyEvent = async (event, socket) => {
 
   // Send the event to the server.
   if (socket) {
-    socket.emit(
-      "event",
-      JSON.stringify(event, (k, v) => (v === undefined ? null : v))
-    );
+    socket.emit("event", event);
     return true;
   }
 
@@ -290,10 +348,9 @@ export const applyEvent = async (event, socket) => {
 export const applyRestEvent = async (event, socket) => {
   let eventSent = false;
   if (event.handler === "uploadFiles") {
-
     if (event.payload.files === undefined || event.payload.files.length === 0) {
       // Submit the event over the websocket to trigger the event handler.
-      return await applyEvent(Event(event.name), socket)
+      return await applyEvent(Event(event.name), socket);
     }
 
     // Start upload, but do not wait for it, which would block other events.
@@ -302,7 +359,7 @@ export const applyRestEvent = async (event, socket) => {
       event.payload.files,
       event.payload.upload_id,
       event.payload.on_upload_progress,
-      socket
+      socket,
     );
     return false;
   }
@@ -313,9 +370,19 @@ export const applyRestEvent = async (event, socket) => {
  * Queue events to be processed and trigger processing of queue.
  * @param events Array of events to queue.
  * @param socket The socket object to send the event on.
+ * @param prepend Whether to place the events at the beginning of the queue.
  */
-export const queueEvents = async (events, socket) => {
-  event_queue.push(...events);
+export const queueEvents = async (events, socket, prepend) => {
+  if (prepend) {
+    // Drain the existing queue and place it after the given events.
+    events = [
+      ...events,
+      ...Array.from({ length: event_queue.length }).map(() =>
+        event_queue.shift(),
+      ),
+    ];
+  }
+  event_queue.push(...events.filter((e) => e !== undefined && e !== null));
   await processEvent(socket.current);
 };
 
@@ -369,7 +436,7 @@ export const connect = async (
   dispatch,
   transports,
   setConnectErrors,
-  client_storage = {}
+  client_storage = {},
 ) => {
   // Get backend URL object from the endpoint.
   const endpoint = getBackendURL(EVENTURL);
@@ -378,8 +445,18 @@ export const connect = async (
   socket.current = io(endpoint.href, {
     path: endpoint["pathname"],
     transports: transports,
+    protocols: [reflexEnvironment.version],
     autoUnref: false,
   });
+  // Ensure undefined fields in events are sent as null instead of removed
+  socket.current.io.encoder.replacer = (k, v) => (v === undefined ? null : v);
+  socket.current.io.decoder.tryParse = (str) => {
+    try {
+      return JSON5.parse(str);
+    } catch (e) {
+      return false;
+    }
+  };
 
   function checkVisibility() {
     if (document.visibilityState === "visible") {
@@ -392,17 +469,26 @@ export const connect = async (
     }
   }
 
+  const disconnectTrigger = (event) => {
+    if (socket.current?.connected) {
+      console.log("Disconnect websocket on unload");
+      socket.current.disconnect();
+    }
+  };
+
   const pagehideHandler = (event) => {
     if (event.persisted && socket.current?.connected) {
       console.log("Disconnect backend before bfcache on navigation");
       socket.current.disconnect();
     }
-  }
+  };
 
   // Once the socket is open, hydrate the page.
   socket.current.on("connect", () => {
     setConnectErrors([]);
     window.addEventListener("pagehide", pagehideHandler);
+    window.addEventListener("beforeunload", disconnectTrigger);
+    window.addEventListener("unload", disconnectTrigger);
   });
 
   socket.current.on("connect_error", (error) => {
@@ -412,12 +498,13 @@ export const connect = async (
   // When the socket disconnects reset the event_processing flag
   socket.current.on("disconnect", () => {
     event_processing = false;
+    window.removeEventListener("unload", disconnectTrigger);
+    window.removeEventListener("beforeunload", disconnectTrigger);
     window.removeEventListener("pagehide", pagehideHandler);
   });
 
   // On each received message, queue the updates and events.
-  socket.current.on("event", (message) => {
-    const update = JSON5.parse(message);
+  socket.current.on("event", async (update) => {
     for (const substate in update.delta) {
       dispatch[substate](update.delta[substate]);
     }
@@ -426,6 +513,10 @@ export const connect = async (
     if (update.events) {
       queueEvents(update.events, socket);
     }
+  });
+  socket.current.on("reload", async (event) => {
+    event_processing = false;
+    queueEvents([...initialEvents(), event], socket, true);
   });
 
   document.addEventListener("visibilitychange", checkVisibility);
@@ -447,32 +538,49 @@ export const uploadFiles = async (
   files,
   upload_id,
   on_upload_progress,
-  socket
+  socket,
 ) => {
   // return if there's no file to upload
   if (files === undefined || files.length === 0) {
     return false;
   }
 
-  if (upload_controllers[upload_id]) {
+  const upload_ref_name = `__upload_controllers_${upload_id}`;
+
+  if (refs[upload_ref_name]) {
     console.log("Upload already in progress for ", upload_id);
     return false;
   }
 
+  // Track how many partial updates have been processed for this upload.
   let resp_idx = 0;
   const eventHandler = (progressEvent) => {
-    // handle any delta / event streamed from the upload event handler
+    const event_callbacks = socket._callbacks.$event;
+    // Whenever called, responseText will contain the entire response so far.
     const chunks = progressEvent.event.target.responseText.trim().split("\n");
-    chunks.slice(resp_idx).map((chunk) => {
+    // So only process _new_ chunks beyond resp_idx.
+    chunks.slice(resp_idx).map((chunk_json) => {
       try {
-        socket._callbacks.$event.map((f) => {
-          f(chunk);
+        const chunk = JSON5.parse(chunk_json);
+        event_callbacks.map((f, ix) => {
+          f(chunk)
+            .then(() => {
+              if (ix === event_callbacks.length - 1) {
+                // Mark this chunk as processed.
+                resp_idx += 1;
+              }
+            })
+            .catch((e) => {
+              if (progressEvent.progress === 1) {
+                // Chunk may be incomplete, so only report errors when full response is available.
+                console.log("Error processing chunk", chunk, e);
+              }
+              return;
+            });
         });
-        resp_idx += 1;
       } catch (e) {
         if (progressEvent.progress === 1) {
-          // Chunk may be incomplete, so only report errors when full response is available.
-          console.log("Error parsing chunk", chunk, e);
+          console.log("Error parsing chunk", chunk_json, e);
         }
         return;
       }
@@ -499,7 +607,7 @@ export const uploadFiles = async (
   });
 
   // Send the file to the server.
-  upload_controllers[upload_id] = controller;
+  refs[upload_ref_name] = controller;
 
   try {
     return await axios.post(getBackendURL(UPLOADURL), formdata, config);
@@ -519,19 +627,25 @@ export const uploadFiles = async (
     }
     return false;
   } finally {
-    delete upload_controllers[upload_id];
+    delete refs[upload_ref_name];
   }
 };
 
 /**
  * Create an event object.
- * @param name The name of the event.
- * @param payload The payload of the event.
- * @param handler The client handler to process event.
+ * @param {string} name The name of the event.
+ * @param {Object.<string, Any>} payload The payload of the event.
+ * @param {Object.<string, (number|boolean)>} event_actions The actions to take on the event.
+ * @param {string} handler The client handler to process event.
  * @returns The event object.
  */
-export const Event = (name, payload = {}, handler = null) => {
-  return { name, payload, handler };
+export const Event = (
+  name,
+  payload = {},
+  event_actions = {},
+  handler = null,
+) => {
+  return { name, payload, handler, event_actions };
 };
 
 /**
@@ -556,7 +670,7 @@ export const hydrateClientStorage = (client_storage) => {
     for (const state_key in client_storage.local_storage) {
       const options = client_storage.local_storage[state_key];
       const local_storage_value = localStorage.getItem(
-        options.name || state_key
+        options.name || state_key,
       );
       if (local_storage_value !== null) {
         client_storage_values[state_key] = local_storage_value;
@@ -567,14 +681,18 @@ export const hydrateClientStorage = (client_storage) => {
     for (const state_key in client_storage.session_storage) {
       const session_options = client_storage.session_storage[state_key];
       const session_storage_value = sessionStorage.getItem(
-        session_options.name || state_key
+        session_options.name || state_key,
       );
       if (session_storage_value != null) {
         client_storage_values[state_key] = session_storage_value;
       }
     }
   }
-  if (client_storage.cookies || client_storage.local_storage || client_storage.session_storage) {
+  if (
+    client_storage.cookies ||
+    client_storage.local_storage ||
+    client_storage.session_storage
+  ) {
     return client_storage_values;
   }
   return {};
@@ -588,7 +706,7 @@ export const hydrateClientStorage = (client_storage) => {
 const applyClientStorageDelta = (client_storage, delta) => {
   // find the main state and check for is_hydrated
   const unqualified_states = Object.keys(delta).filter(
-    (key) => key.split(".").length === 1
+    (key) => key.split(".").length === 1,
   );
   if (unqualified_states.length === 1) {
     const main_state = delta[unqualified_states[0]];
@@ -614,15 +732,17 @@ const applyClientStorageDelta = (client_storage, delta) => {
       ) {
         const options = client_storage.local_storage[state_key];
         localStorage.setItem(options.name || state_key, delta[substate][key]);
-      } else if(
+      } else if (
         client_storage.session_storage &&
         state_key in client_storage.session_storage &&
         typeof window !== "undefined"
       ) {
         const session_options = client_storage.session_storage[state_key];
-        sessionStorage.setItem(session_options.name || state_key, delta[substate][key]);
+        sessionStorage.setItem(
+          session_options.name || state_key,
+          delta[substate][key],
+        );
       }
-
     }
   }
 };
@@ -640,7 +760,7 @@ const applyClientStorageDelta = (client_storage, delta) => {
 export const useEventLoop = (
   dispatch,
   initial_events = () => [],
-  client_storage = {}
+  client_storage = {},
 ) => {
   const socket = useRef(null);
   const router = useRouter();
@@ -648,10 +768,18 @@ export const useEventLoop = (
 
   // Function to add new events to the event queue.
   const addEvents = (events, args, event_actions) => {
+    const _events = events.filter((e) => e !== undefined && e !== null);
+
     if (!(args instanceof Array)) {
       args = [args];
     }
-    const _e = args.filter((o) => o?.preventDefault !== undefined)[0]
+
+    event_actions = _events.reduce(
+      (acc, e) => ({ ...acc, ...e.event_actions }),
+      event_actions ?? {},
+    );
+
+    const _e = args.filter((o) => o?.preventDefault !== undefined)[0];
 
     if (event_actions?.preventDefault && _e?.preventDefault) {
       _e.preventDefault();
@@ -659,7 +787,12 @@ export const useEventLoop = (
     if (event_actions?.stopPropagation && _e?.stopPropagation) {
       _e.stopPropagation();
     }
-    const combined_name = events.map((e) => e.name).join("+++");
+    const combined_name = _events.map((e) => e.name).join("+++");
+    if (event_actions?.temporal) {
+      if (!socket.current || !socket.current.connected) {
+        return; // don't queue when the backend is not connected
+      }
+    }
     if (event_actions?.throttle) {
       // If throttle returns false, the events are not added to the queue.
       if (!throttle(combined_name, event_actions.throttle)) {
@@ -670,82 +803,98 @@ export const useEventLoop = (
       // If debounce is used, queue the events after some delay
       debounce(
         combined_name,
-        () => queueEvents(events, socket),
+        () => queueEvents(_events, socket),
         event_actions.debounce,
       );
     } else {
-      queueEvents(events, socket);
+      queueEvents(_events, socket);
     }
   };
 
   const sentHydrate = useRef(false); // Avoid double-hydrate due to React strict-mode
   useEffect(() => {
     if (router.isReady && !sentHydrate.current) {
-      const events = initial_events();
-      addEvents(
-        events.map((e) => ({
+      queueEvents(
+        initial_events().map((e) => ({
           ...e,
           router_data: (({ pathname, query, asPath }) => ({
             pathname,
             query,
             asPath,
           }))(router),
-        }))
+        })),
+        socket,
+        true,
       );
       sentHydrate.current = true;
     }
   }, [router.isReady]);
 
-    // Handle frontend errors and send them to the backend via websocket.
-    useEffect(() => {
-      
-      if (typeof window === 'undefined') {
-        return;
-      }
-  
-      window.onerror = function (msg, url, lineNo, columnNo, error) {
-        addEvents([Event(`${exception_state_name}.handle_frontend_exception`, {
-          stack: error.stack,
-        })])
-        return false;
-      }
-
-      //NOTE: Only works in Chrome v49+
-      //https://github.com/mknichel/javascript-errors?tab=readme-ov-file#promise-rejection-events
-      window.onunhandledrejection = function (event) {
-          addEvents([Event(`${exception_state_name}.handle_frontend_exception`, {
-            stack: event.reason.stack,
-          })])
-          return false;
-      }
-  
-    },[])
-
-  // Main event loop.
+  // Handle frontend errors and send them to the backend via websocket.
   useEffect(() => {
-    // Skip if the router is not ready.
-    if (!router.isReady) {
+    if (typeof window === "undefined") {
       return;
     }
-    // only use websockets if state is present
-    if (Object.keys(initialState).length > 1) {
+
+    window.onerror = function (msg, url, lineNo, columnNo, error) {
+      addEvents([
+        Event(`${exception_state_name}.handle_frontend_exception`, {
+          stack: error.stack,
+          component_stack: "",
+        }),
+      ]);
+      return false;
+    };
+
+    //NOTE: Only works in Chrome v49+
+    //https://github.com/mknichel/javascript-errors?tab=readme-ov-file#promise-rejection-events
+    window.onunhandledrejection = function (event) {
+      addEvents([
+        Event(`${exception_state_name}.handle_frontend_exception`, {
+          stack: event.reason?.stack,
+          component_stack: "",
+        }),
+      ]);
+      return false;
+    };
+  }, []);
+
+  // Handle socket connect/disconnect.
+  useEffect(() => {
+    // only use websockets if state is present and backend is not disabled (reflex cloud).
+    if (Object.keys(initialState).length > 1 && !isBackendDisabled()) {
       // Initialize the websocket connection.
       if (!socket.current) {
         connect(
           socket,
           dispatch,
-          ["websocket", "polling"],
+          ["websocket"],
           setConnectErrors,
-          client_storage
+          client_storage,
         );
       }
-      (async () => {
-        // Process all outstanding events.
-        while (event_queue.length > 0 && !event_processing) {
-          await processEvent(socket.current);
-        }
-      })();
     }
+
+    // Cleanup function.
+    return () => {
+      if (socket.current) {
+        socket.current.disconnect();
+      }
+    };
+  }, []);
+
+  // Main event loop.
+  useEffect(() => {
+    // Skip if the router is not ready.
+    if (!router.isReady || isBackendDisabled()) {
+      return;
+    }
+    (async () => {
+      // Process all outstanding events.
+      while (event_queue.length > 0 && !event_processing) {
+        await processEvent(socket.current);
+      }
+    })();
   });
 
   // localStorage event handling
@@ -769,7 +918,7 @@ export const useEventLoop = (
         vars[storage_to_state_map[e.key]] = e.newValue;
         const event = Event(
           `${state_name}.reflex___state____update_vars_internal_state.update_vars_internal`,
-          { vars: vars }
+          { vars: vars },
         );
         addEvents([event], e);
       }
@@ -782,17 +931,26 @@ export const useEventLoop = (
   // Route after the initial page hydration.
   useEffect(() => {
     const change_start = () => {
-      const main_state_dispatch = dispatch["reflex___state____state"]
+      const main_state_dispatch = dispatch["reflex___state____state"];
       if (main_state_dispatch !== undefined) {
-        main_state_dispatch({ is_hydrated: false })
+        main_state_dispatch({ is_hydrated: false });
       }
-    }
+    };
     const change_complete = () => addEvents(onLoadInternalEvent());
+    const change_error = () => {
+      // Remove cached error state from router for this page, otherwise the
+      // page will never send on_load events again.
+      if (router.components[router.pathname].error) {
+        delete router.components[router.pathname].error;
+      }
+    };
     router.events.on("routeChangeStart", change_start);
     router.events.on("routeChangeComplete", change_complete);
+    router.events.on("routeChangeError", change_error);
     return () => {
       router.events.off("routeChangeStart", change_start);
       router.events.off("routeChangeComplete", change_complete);
+      router.events.off("routeChangeError", change_error);
     };
   }, [router]);
 
@@ -805,7 +963,18 @@ export const useEventLoop = (
  * @returns True if the value is truthy, false otherwise.
  */
 export const isTrue = (val) => {
-  return Array.isArray(val) ? val.length > 0 : !!val;
+  if (Array.isArray(val)) return val.length > 0;
+  if (val === Object(val)) return Object.keys(val).length > 0;
+  return Boolean(val);
+};
+
+/***
+ * Check if a value is not null or undefined.
+ * @param val The value to check.
+ * @returns True if the value is not null or undefined, false otherwise.
+ */
+export const isNotNullOrUndefined = (val) => {
+  return (val ?? undefined) !== undefined;
 };
 
 /**
@@ -851,7 +1020,7 @@ export const getRefValues = (refs) => {
   return refs.map((ref) =>
     ref.current
       ? ref.current.value || ref.current.getAttribute("aria-valuenow")
-      : null
+      : null,
   );
 };
 

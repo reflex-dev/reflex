@@ -2,12 +2,13 @@
 
 from __future__ import annotations
 
-from typing import Any, List, Literal
+from collections.abc import Sequence
+from typing import Any, Literal
 
 from reflex.components.component import Component, ComponentNamespace
 from reflex.components.radix.primitives.base import RadixPrimitiveComponentWithClassName
 from reflex.event import EventHandler
-from reflex.vars import Var
+from reflex.vars.base import Var
 
 LiteralSliderOrientation = Literal["horizontal", "vertical"]
 LiteralSliderDir = Literal["ltr", "rtl"]
@@ -16,18 +17,32 @@ LiteralSliderDir = Literal["ltr", "rtl"]
 class SliderComponent(RadixPrimitiveComponentWithClassName):
     """Base class for all @radix-ui/react-slider components."""
 
-    library = "@radix-ui/react-slider@^1.1.2"
+    library = "@radix-ui/react-slider@^1.3.2"
+
+
+def on_value_event_spec(
+    value: Var[list[int]],
+) -> tuple[Var[list[int]]]:
+    """Event handler spec for the value event.
+
+    Args:
+        value: The value of the event.
+
+    Returns:
+        The event handler spec.
+    """
+    return (value,)
 
 
 class SliderRoot(SliderComponent):
-    """The Slider component comtaining all slider parts."""
+    """The Slider component containing all slider parts."""
 
     tag = "Root"
     alias = "RadixSliderRoot"
 
-    default_value: Var[List[int]]
+    default_value: Var[Sequence[int]]
 
-    value: Var[List[int]]
+    value: Var[Sequence[int]]
 
     name: Var[str]
 
@@ -48,10 +63,10 @@ class SliderRoot(SliderComponent):
     min_steps_between_thumbs: Var[int]
 
     # Fired when the value of a thumb changes.
-    on_value_change: EventHandler[lambda e0: [e0]]
+    on_value_change: EventHandler[on_value_event_spec]
 
     # Fired when a thumb is released.
-    on_value_commit: EventHandler[lambda e0: [e0]]
+    on_value_commit: EventHandler[on_value_event_spec]
 
     def add_style(self) -> dict[str, Any] | None:
         """Add style to the component.
@@ -174,7 +189,7 @@ class Slider(ComponentNamespace):
         else:
             children = [
                 track,
-                #     Foreach.create(props.get("value"), lambda e: SliderThumb.create()),  # foreach doesn't render Thumbs properly
+                #     Foreach.create(props.get("value"), lambda e: SliderThumb.create()),  # foreach doesn't render Thumbs properly # noqa: ERA001
             ]
 
         return SliderRoot.create(*children, **props)

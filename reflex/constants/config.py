@@ -1,6 +1,6 @@
 """Config constants."""
 
-import os
+from pathlib import Path
 from types import SimpleNamespace
 
 from reflex.constants.base import Dirs, Reflex
@@ -8,7 +8,7 @@ from reflex.constants.base import Dirs, Reflex
 from .compiler import Ext
 
 # Alembic migrations
-ALEMBIC_CONFIG = os.environ.get("ALEMBIC_CONFIG", "alembic.ini")
+ALEMBIC_CONFIG = "alembic.ini"
 
 
 class Config(SimpleNamespace):
@@ -17,9 +17,7 @@ class Config(SimpleNamespace):
     # The name of the reflex config module.
     MODULE = "rxconfig"
     # The python config file.
-    FILE = f"{MODULE}{Ext.PY}"
-    # The previous config file.
-    PREVIOUS_FILE = f"pcconfig{Ext.PY}"
+    FILE = Path(f"{MODULE}{Ext.PY}")
 
 
 class Expiration(SimpleNamespace):
@@ -31,15 +29,31 @@ class Expiration(SimpleNamespace):
     LOCK = 10000
     # The PING timeout
     PING = 120
+    # The maximum time in milliseconds to hold a lock before throwing a warning.
+    LOCK_WARNING_THRESHOLD = 1000
 
 
 class GitIgnore(SimpleNamespace):
     """Gitignore constants."""
 
     # The gitignore file.
-    FILE = ".gitignore"
+    FILE = Path(".gitignore")
     # Files to gitignore.
-    DEFAULTS = {Dirs.WEB, "*.db", "__pycache__/", "*.py[cod]", "assets/external/"}
+    DEFAULTS = {
+        Dirs.WEB,
+        Dirs.STATES,
+        "*.db",
+        "__pycache__/",
+        "*.py[cod]",
+        "assets/external/",
+    }
+
+
+class PyprojectToml(SimpleNamespace):
+    """Pyproject.toml constants."""
+
+    # The pyproject.toml file.
+    FILE = "pyproject.toml"
 
 
 class RequirementsTxt(SimpleNamespace):
