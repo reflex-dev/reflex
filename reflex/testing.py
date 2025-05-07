@@ -372,9 +372,11 @@ class AppHarness:
         with chdir(self.app_path):
             config = reflex.config.get_config()
             config.api_url = "http://{}:{}".format(
-                *self._poll_for_servers().getsockname(),
+                *self._poll_for_servers(timeout=30).getsockname(),
             )
             reflex.utils.build.setup_frontend(self.app_path)
+
+        print("Frontend starting...")  # for pytest diagnosis #noqa: T201
 
         # Start the frontend.
         self.frontend_process = reflex.utils.processes.new_process(
@@ -967,7 +969,7 @@ class AppHarnessProd(AppHarness):
         with chdir(self.app_path):
             config = reflex.config.get_config()
             config.api_url = "http://{}:{}".format(
-                *self._poll_for_servers().getsockname(),
+                *self._poll_for_servers(timeout=30).getsockname(),
             )
 
             get_config().loglevel = reflex.constants.LogLevel.INFO
@@ -984,6 +986,8 @@ class AppHarnessProd(AppHarness):
                 loglevel=reflex.constants.LogLevel.INFO,
                 env=reflex.constants.Env.PROD,
             )
+
+        print("Frontend starting...")  # for pytest diagnosis #noqa: T201
 
         self.frontend_thread = threading.Thread(target=self._run_frontend)
         self.frontend_thread.start()
