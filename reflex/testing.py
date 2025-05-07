@@ -339,8 +339,12 @@ class AppHarness:
         )
         self.backend.shutdown = self._get_backend_shutdown_handler()
         with chdir(self.app_path):
+            print(  # noqa: T201
+                "Creating backend in a new thread..."
+            )  # for pytest diagnosis
             self.backend_thread = threading.Thread(target=self.backend.run)
         self.backend_thread.start()
+        print("Backend started.")  # for pytest diagnosis #noqa: T201
 
     async def _reset_backend_state_manager(self):
         """Reset the StateManagerRedis event loop affinity.
@@ -1014,8 +1018,12 @@ class AppHarnessProd(AppHarness):
             ),
         )
         self.backend.shutdown = self._get_backend_shutdown_handler()
+        print(  # noqa: T201
+            "Creating backend in a new thread..."
+        )
         self.backend_thread = threading.Thread(target=self.backend.run)
         self.backend_thread.start()
+        print("Backend started.")  # for pytest diagnosis #noqa: T201
 
     def _poll_for_servers(self, timeout: TimeoutType = None) -> socket.socket:
         try:
