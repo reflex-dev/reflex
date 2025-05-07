@@ -12,6 +12,7 @@ import subprocess
 import sys
 from collections.abc import Sequence
 from pathlib import Path
+from typing import Any
 from urllib.parse import urljoin
 
 import psutil
@@ -92,7 +93,12 @@ def run_process_and_launch_url(
 
     while True:
         if process is None:
-            kwargs = {}
+            kwargs: dict[str, Any] = {
+                "env": {
+                    **os.environ,
+                    "NO_COLOR": "1",
+                }
+            }
             if constants.IS_WINDOWS and backend_present:
                 kwargs["creationflags"] = subprocess.CREATE_NEW_PROCESS_GROUP  # pyright: ignore [reportAttributeAccessIssue]
             process = processes.new_process(
@@ -105,7 +111,7 @@ def run_process_and_launch_url(
             frontend_process = process
         if process.stdout:
             for line in processes.stream_logs("Starting frontend", process):
-                match = re.search(constants.Next.FRONTEND_LISTENING_REGEX, line)
+                match = re.search(constants.ReactRouter.FRONTEND_LISTENING_REGEX, line)
                 if match:
                     if first_run:
                         url = match.group(1)

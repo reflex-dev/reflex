@@ -44,7 +44,6 @@ from reflex.utils.exceptions import (
     GeneratedCodeHasNoFunctionDefsError,
     SystemPackageMissingError,
 )
-from reflex.utils.format import format_library_name
 from reflex.utils.registry import get_npm_registry
 
 if typing.TYPE_CHECKING:
@@ -988,8 +987,8 @@ def initialize_web_directory():
     console.debug("Initializing the public directory.")
     path_ops.mkdir(get_web_dir() / constants.Dirs.PUBLIC)
 
-    console.debug("Initializing the next.config.js file.")
-    update_next_config()
+    console.debug("Initializing the react-router.config.js file.")
+    update_react_router_config()
 
     console.debug("Initializing the reflex.json file.")
     # Initialize the reflex json file.
@@ -1074,47 +1073,37 @@ def init_reflex_json(project_hash: int | None):
     path_ops.update_json_file(get_web_dir() / constants.Reflex.JSON, reflex_json)
 
 
-def update_next_config(
-    export: bool = False, transpile_packages: list[str] | None = None
-):
-    """Update Next.js config from Reflex config.
+def update_react_router_config(export: bool = False):
+    """Update react-router.config.js config from Reflex config.
 
     Args:
         export: if the method run during reflex export.
-        transpile_packages: list of packages to transpile via next.config.js.
     """
-    next_config_file = get_web_dir() / constants.Next.CONFIG_FILE
+    react_router_config_file_path = get_web_dir() / constants.ReactRouter.CONFIG_FILE
 
-    next_config = _update_react_router_config(
-        get_config(), export=export, transpile_packages=transpile_packages
-    )
+    react_router_config = _update_react_router_config(get_config(), export=export)
 
-    # Overwriting the next.config.js triggers a full server reload, so make sure
+    # Overwriting the config file triggers a full server reload, so make sure
     # there is actually a diff.
-    orig_next_config = next_config_file.read_text() if next_config_file.exists() else ""
-    if orig_next_config != next_config:
-        next_config_file.write_text(next_config)
+    orig_next_config = (
+        react_router_config_file_path.read_text()
+        if react_router_config_file_path.exists()
+        else ""
+    )
+    if orig_next_config != react_router_config:
+        react_router_config_file_path.write_text(react_router_config)
 
 
-def _update_react_router_config(
-    config: Config, export: bool = False, transpile_packages: list[str] | None = None
-):
+def _update_react_router_config(config: Config, export: bool = False):
     react_router_config = {
-        "basePath": config.frontend_path or "",
-        "compress": config.next_compression,
-        "trailingSlash": True,
-        "staticPageGenerationTimeout": config.static_page_generation_timeout,
+        "basename": "/" + (config.frontend_path or "").removeprefix("/"),
+        "future": {
+            "unstable_optimizeDeps": True,
+        },
         "ssr": False,
     }
-    if not config.next_dev_indicators:
-        react_router_config["devIndicators"] = False
 
-    if transpile_packages:
-        react_router_config["transpilePackages"] = list(
-            {format_library_name(p) for p in transpile_packages}
-        )
     if export:
-        react_router_config["output"] = "export"
         react_router_config["build"] = constants.Dirs.BUILD_DIR
 
     return f"export default {json.dumps(react_router_config)};"

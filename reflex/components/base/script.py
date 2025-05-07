@@ -24,6 +24,9 @@ class Script(elements.Script):
 
         Returns:
             The script element.
+
+        Raises:
+            ValueError: If neither children nor src is specified.
         """
         async_ = props.pop("async_", None)
         char_set = props.pop("char_set", None)
@@ -44,6 +47,11 @@ class Script(elements.Script):
         if props:
             console.warn(
                 f"rx.script does not support the following properties: {list(props.keys())}"
+            )
+
+        if not children and not src:
+            raise ValueError(
+                "You must specify either children or src for the script element."
             )
 
         return helmet(

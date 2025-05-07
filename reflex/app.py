@@ -1453,15 +1453,9 @@ class App(MiddlewareMixin, LifespanMixin):
         with console.timing("Install Frontend Packages"):
             self._get_frontend_packages(all_imports)
 
-        # Setup the next.config.js
-        transpile_packages = [
-            package
-            for package, import_vars in all_imports.items()
-            if any(import_var.transpile for import_var in import_vars)
-        ]
-        prerequisites.update_next_config(
+        # Setup the react-router.config.js
+        prerequisites.update_react_router_config(
             export=export,
-            transpile_packages=transpile_packages,
         )
 
         if is_prod_mode():

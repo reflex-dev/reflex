@@ -198,17 +198,35 @@ class Templates(SimpleNamespace):
         CODE = "code"
 
 
-class Next(SimpleNamespace):
+class Javascript(SimpleNamespace):
+    """Constants related to Javascript."""
+
+    # The node modules directory.
+    NODE_MODULES = "node_modules"
+
+    # The package lock file.
+    PACKAGE_LOCK = "package-lock.json"
+
+
+class Next(Javascript):
     """Constants related to NextJS."""
 
     # The NextJS config file
     CONFIG_FILE = "next.config.js"
+
     # The sitemap config file.
     SITEMAP_CONFIG_FILE = "next-sitemap.config.js"
-    # The node modules directory.
-    NODE_MODULES = "node_modules"
-    # The package lock file.
-    PACKAGE_LOCK = "package-lock.json"
+
+    # Regex to check for message displayed when frontend comes up
+    FRONTEND_LISTENING_REGEX = "Local:[\\s]+(.*)"
+
+
+class ReactRouter(Javascript):
+    """Constants related to React Router."""
+
+    # The react router config file
+    CONFIG_FILE = "react-router-config.js"
+
     # Regex to check for message displayed when frontend comes up
     FRONTEND_LISTENING_REGEX = "Local:[\\s]+(.*)"
 

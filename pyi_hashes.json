@@ -10,7 +10,7 @@
   "reflex/components/base/head.pyi": "893047aa32da553711db8f1345adb6b0",
   "reflex/components/base/link.pyi": "e96179dc7823f354fb73a6c03e31028c",
   "reflex/components/base/meta.pyi": "da52c3212fac6b50560863146a7afcc3",
-  "reflex/components/base/script.pyi": "d3743541fd968e9b6aaa123da6a11c3c",
+  "reflex/components/base/script.pyi": "352ec2e82b06f2fa5b3015f7b8dd295e",
   "reflex/components/base/strict_mode.pyi": "d972e0ff2a6f961e7df90fc27b8bb51b",
   "reflex/components/core/__init__.pyi": "d99fbfd4207d8a3f7013221f428e0ed8",
   "reflex/components/core/auto_scroll.pyi": "d3012d2a4ccaab8dfebf9aa484020f59",

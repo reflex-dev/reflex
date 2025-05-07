@@ -187,7 +187,7 @@ def build(
     wdir = prerequisites.get_web_dir()
 
     # Clean the static directory if it exists.
-    path_ops.rm(str(wdir / constants.Dirs.STATIC))
+    path_ops.rm(str(wdir / constants.Dirs.BUILD_DIR))
 
     # The export command to run.
     command = "export"

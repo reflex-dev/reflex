@@ -1,5 +1,3 @@
-import json
-import re
 import shutil
 import tempfile
 from pathlib import Path
@@ -29,7 +27,7 @@ runner = CliRunner()
                 app_name="test",
             ),
             False,
-            'module.exports = {basePath: "", compress: true, trailingSlash: true, staticPageGenerationTimeout: 60, devIndicators: false};',
+            'export default {"basename": "/", "future": {"unstable_optimizeDeps": true}, "ssr": false};',
         ),
         (
             Config(
@@ -37,7 +35,7 @@ runner = CliRunner()
                 static_page_generation_timeout=30,
             ),
             False,
-            'module.exports = {basePath: "", compress: true, trailingSlash: true, staticPageGenerationTimeout: 30, devIndicators: false};',
+            'export default {"basename": "/", "future": {"unstable_optimizeDeps": true}, "ssr": false};',
         ),
         (
             Config(
@@ -45,7 +43,7 @@ runner = CliRunner()
                 next_compression=False,
             ),
             False,
-            'module.exports = {basePath: "", compress: false, trailingSlash: true, staticPageGenerationTimeout: 60, devIndicators: false};',
+            'export default {"basename": "/", "future": {"unstable_optimizeDeps": true}, "ssr": false};',
         ),
         (
             Config(
@@ -53,7 +51,7 @@ runner = CliRunner()
                 frontend_path="/test",
             ),
             False,
-            'module.exports = {basePath: "/test", compress: true, trailingSlash: true, staticPageGenerationTimeout: 60, devIndicators: false};',
+            'export default {"basename": "/test", "future": {"unstable_optimizeDeps": true}, "ssr": false};',
         ),
         (
             Config(
@@ -62,14 +60,14 @@ runner = CliRunner()
                 next_compression=False,
             ),
             False,
-            'module.exports = {basePath: "/test", compress: false, trailingSlash: true, staticPageGenerationTimeout: 60, devIndicators: false};',
+            'export default {"basename": "/test", "future": {"unstable_optimizeDeps": true}, "ssr": false};',
         ),
         (
             Config(
                 app_name="test",
             ),
             True,
-            'module.exports = {basePath: "", compress: true, trailingSlash: true, staticPageGenerationTimeout: 60, devIndicators: false, output: "export", distDir: "_static"};',
+            'export default {"basename": "/", "future": {"unstable_optimizeDeps": true}, "ssr": false, "build": "build"};',
         ),
         (
             Config(
@@ -77,39 +75,13 @@ runner = CliRunner()
                 next_dev_indicators=True,
             ),
             True,
-            'module.exports = {basePath: "", compress: true, trailingSlash: true, staticPageGenerationTimeout: 60, output: "export", distDir: "_static"};',
+            'export default {"basename": "/", "future": {"unstable_optimizeDeps": true}, "ssr": false, "build": "build"};',
         ),
     ],
 )
 def test_update_next_config(config, export, expected_output):
     output = _update_react_router_config(config, export=export)
     assert output == expected_output
-
-
-@pytest.mark.parametrize(
-    ("transpile_packages", "expected_transpile_packages"),
-    (
-        (
-            ["foo", "@bar/baz"],
-            ["@bar/baz", "foo"],
-        ),
-        (
-            ["foo", "@bar/baz", "foo", "@bar/baz@3.2.1"],
-            ["@bar/baz", "foo"],
-        ),
-        (["@bar/baz", {"name": "foo"}], ["@bar/baz", "foo"]),
-        (["@bar/baz", {"name": "@foo/baz"}], ["@bar/baz", "@foo/baz"]),
-    ),
-)
-def test_transpile_packages(transpile_packages, expected_transpile_packages):
-    output = _update_react_router_config(
-        Config(app_name="test"),
-        transpile_packages=transpile_packages,
-    )
-    transpile_packages_match = re.search(r"transpilePackages: (\[.*?\])", output)
-    transpile_packages_json = transpile_packages_match.group(1)  # pyright: ignore [reportOptionalMemberAccess]
-    actual_transpile_packages = sorted(json.loads(transpile_packages_json))
-    assert actual_transpile_packages == expected_transpile_packages
 
 
 def test_cached_procedure():

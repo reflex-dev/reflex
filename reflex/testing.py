@@ -406,7 +406,7 @@ class AppHarness:
             if not line:
                 break
             print(line)  # for pytest diagnosis #noqa: T201
-            m = re.search(reflex.constants.Next.FRONTEND_LISTENING_REGEX, line)
+            m = re.search(reflex.constants.ReactRouter.FRONTEND_LISTENING_REGEX, line)
             if m is not None:
                 self.frontend_url = m.group(1)
                 config = reflex.config.get_config()

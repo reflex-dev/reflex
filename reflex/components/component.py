@@ -1339,20 +1339,6 @@ class Component(BaseComponent, ABC):
         # Return the dynamic imports
         return dynamic_imports
 
-    def _should_transpile(self, dep: str | None) -> bool:
-        """Check if a dependency should be transpiled.
-
-        Args:
-            dep: The dependency to check.
-
-        Returns:
-            True if the dependency should be transpiled.
-        """
-        return bool(self.transpile_packages) and (
-            dep in self.transpile_packages
-            or format.format_library_name(dep or "") in self.transpile_packages
-        )
-
     def _get_dependencies_imports(self) -> ParsedImportDict:
         """Get the imports from lib_dependencies for installing.
 
@@ -1360,14 +1346,7 @@ class Component(BaseComponent, ABC):
             The dependencies imports of the component.
         """
         return {
-            dep: [
-                ImportVar(
-                    tag=None,
-                    render=False,
-                    transpile=self._should_transpile(dep),
-                )
-            ]
-            for dep in self.lib_dependencies
+            dep: [ImportVar(tag=None, render=False)] for dep in self.lib_dependencies
         }
 
     def _get_hooks_imports(self) -> ParsedImportDict:
@@ -1690,12 +1669,7 @@ class Component(BaseComponent, ABC):
         # If the tag is dot-qualified, only import the left-most name.
         tag = self.tag.partition(".")[0] if self.tag else None
         alias = self.alias.partition(".")[0] if self.alias else None
-        return ImportVar(
-            tag=tag,
-            is_default=self.is_default,
-            alias=alias,
-            transpile=self._should_transpile(self.library),
-        )
+        return ImportVar(tag=tag, is_default=self.is_default, alias=alias)
 
     @staticmethod
     def _get_app_wrap_components() -> dict[tuple[int, str], Component]:
@@ -2018,13 +1992,7 @@ class NoSSRComponent(Component):
         if import_name is not None:
             with contextlib.suppress(ValueError):
                 _imports[import_name].remove(self.import_var)
-            _imports[import_name].append(
-                ImportVar(
-                    tag=None,
-                    render=False,
-                    transpile=self._should_transpile(self.library),
-                )
-            )
+            _imports[import_name].append(ImportVar(tag=None, render=False))
 
         return imports.merge_imports(
             dynamic_import,
