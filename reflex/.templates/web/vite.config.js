@@ -13,20 +13,6 @@ export default defineConfig((config) => ({
   server: {
     port: process.env.PORT,
   },
-  optimizeDeps: {
-    include: [
-      "@emotion/react",
-      "sonner",
-      "axios",
-      "socket.io-client",
-      "json5",
-      "universal-cookie",
-      "@radix-ui/themes",
-      "react-error-boundary",
-      "react-helmet",
-    ],
-    force: true,
-  },
   resolve: {
     alias: [
       {
