@@ -56,8 +56,8 @@ def test_validate_data_table(data_table_state: rx.State, expected):
     )
 
     assert data_table_dict["props"] == [
-        "columns=" + f"{{{expected_columns}}}",
-        "data=" + f"{{{expected_data}}}",
+        "columns:" + expected_columns,
+        "data:" + expected_data,
     ]
 
 
