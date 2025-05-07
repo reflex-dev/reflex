@@ -408,10 +408,13 @@ class AppHarness:
             print(line)  # for pytest diagnosis #noqa: T201
             m = re.search(reflex.constants.Next.FRONTEND_LISTENING_REGEX, line)
             if m is not None:
+                print(m.group(1))  # for pytest diagnosis #noqa: T201
                 self.frontend_url = m.group(1)
                 config = reflex.config.get_config()
                 config.deploy_url = self.frontend_url
                 break
+            else:
+                print("No match found.")  # for pytest diagnosis #noqa: T201
         if self.frontend_url is None:
             raise RuntimeError("Frontend did not start")
 
