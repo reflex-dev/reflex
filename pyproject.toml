@@ -1,6 +1,6 @@
 [project]
 name = "reflex"
-version = "0.7.10dev1"
+version = "0.7.11dev1"
 description = "Web apps in pure Python."
 license = { text = "Apache-2.0" }
 authors = [
@@ -167,3 +167,42 @@ dev = [
   "starlette-admin >=0.14",
   "uvicorn >=0.34.0",
 ]
+
+
+[tool.coverage.run]
+source = ["reflex"]
+branch = true
+omit = [
+  "*/pyi_generator.py",
+  "reflex/__main__.py",
+  "reflex/app_module_for_backend.py",
+  "reflex/components/chakra/*",
+  "reflex/experimental/*",
+]
+
+[tool.coverage.report]
+show_missing = true
+# TODO bump back to 79
+fail_under = 70
+precision = 2
+ignore_errors = true
+
+exclude_also = [
+  "def __repr__",
+  # Don't complain about missing debug-only code:
+  "if self.debug",
+  # Don't complain if tests don't hit defensive assertion code:
+  "raise AssertionError",
+  "raise NotImplementedError",
+  # Regexes for lines to exclude from consideration
+  "if 0:",
+  # Don't complain if non-runnable code isn't run:
+  "if __name__ == .__main__.:",
+  # Don't complain about abstract methods, they aren't run:
+  "@(abc.)?abstractmethod",
+  # Don't complain about overloaded methods:
+  "@overload",
+]
+
+[tool.coverage.html]
+directory = "coverage_html_report"

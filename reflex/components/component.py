@@ -268,6 +268,9 @@ class Component(BaseComponent, ABC):
     # The alias for the tag.
     alias: str | None = pydantic.v1.Field(default_factory=lambda: None)
 
+    # Whether the component is a global scope tag. True for tags like `html`, `head`, `body`.
+    _is_tag_in_global_scope: ClassVar[bool] = False
+
     # Whether the import is default or named.
     is_default: bool | None = pydantic.v1.Field(default_factory=lambda: False)
 
@@ -690,8 +693,13 @@ class Component(BaseComponent, ABC):
             The tag to render.
         """
         # Create the base tag.
+        name = (self.tag if not self.alias else self.alias) or ""
+        if self._is_tag_in_global_scope and self.library is None:
+            name = '"' + name + '"'
+
+        # Create the base tag.
         tag = Tag(
-            name=(self.tag if not self.alias else self.alias) or "",
+            name=name,
             special_props=self.special_props,
         )
 
@@ -2570,12 +2578,12 @@ def render_dict_to_var(tag: dict | Component | str, imported_names: set[str]) ->
     special_props = []
 
     for prop_str in tag["props"]:
-        if "=" not in prop_str:
+        if ":" not in prop_str:
             special_props.append(Var(prop_str).to(ObjectVar))
             continue
-        prop = prop_str.index("=")
+        prop = prop_str.index(":")
         key = prop_str[:prop]
-        value = prop_str[prop + 2 : -1]
+        value = prop_str[prop + 1 :]
         props[key] = value
 
     props = LiteralObjectVar.create(
@@ -2585,18 +2593,10 @@ def render_dict_to_var(tag: dict | Component | str, imported_names: set[str]) ->
     for prop in special_props:
         props = props.merge(prop)
 
-    contents = tag["contents"][1:-1] if tag["contents"] else None
+    contents = tag["contents"] if tag["contents"] else None
 
     raw_tag_name = tag.get("name")
     tag_name = Var(raw_tag_name or "Fragment")
-
-    tag_name = (
-        LiteralStringVar.create(raw_tag_name)
-        if raw_tag_name
-        and raw_tag_name.split(".")[0] not in imported_names
-        and raw_tag_name.lower() == raw_tag_name
-        else tag_name
-    )
 
     return FunctionStringVar.create(
         "jsx",
@@ -2643,21 +2643,7 @@ class LiteralComponentVar(CachedVarOperation, LiteralVar, ComponentVar):
         return VarData.merge(
             self._var_data,
             VarData(
-                imports={
-                    "@emotion/react": [
-                        ImportVar(tag="jsx"),
-                    ],
-                }
-            ),
-            VarData(
                 imports=self._var_value._get_all_imports(),
-            ),
-            VarData(
-                imports={
-                    "react": [
-                        ImportVar(tag="Fragment"),
-                    ],
-                }
             ),
         )
 

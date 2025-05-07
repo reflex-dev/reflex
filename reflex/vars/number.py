@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import dataclasses
+import decimal
 import json
 import math
 from collections.abc import Callable
@@ -30,7 +31,10 @@ from .base import (
 )
 
 NUMBER_T = TypeVarExt(
-    "NUMBER_T", bound=(int | float), default=(int | float), covariant=True
+    "NUMBER_T",
+    bound=(int | float | decimal.Decimal),
+    default=(int | float | decimal.Decimal),
+    covariant=True,
 )
 
 if TYPE_CHECKING:
@@ -54,7 +58,7 @@ def raise_unsupported_operand_types(
     )
 
 
-class NumberVar(Var[NUMBER_T], python_types=(int, float)):
+class NumberVar(Var[NUMBER_T], python_types=(int, float, decimal.Decimal)):
     """Base class for immutable number vars."""
 
     def __add__(self, other: number_types) -> NumberVar:
@@ -285,13 +289,13 @@ class NumberVar(Var[NUMBER_T], python_types=(int, float)):
 
         return number_exponent_operation(+other, self)
 
-    def __neg__(self):
+    def __neg__(self) -> NumberVar:
         """Negate the number.
 
         Returns:
             The number negation operation.
         """
-        return number_negate_operation(self)
+        return number_negate_operation(self)  # pyright: ignore [reportReturnType]
 
     def __invert__(self):
         """Boolean NOT the number.
@@ -943,7 +947,7 @@ def boolean_not_operation(value: BooleanVar):
 class LiteralNumberVar(LiteralVar, NumberVar[NUMBER_T]):
     """Base class for immutable literal number vars."""
 
-    _var_value: float | int = dataclasses.field(default=0)
+    _var_value: float | int | decimal.Decimal = dataclasses.field(default=0)
 
     def json(self) -> str:
         """Get the JSON representation of the var.
@@ -954,6 +958,8 @@ class LiteralNumberVar(LiteralVar, NumberVar[NUMBER_T]):
         Raises:
             PrimitiveUnserializableToJSONError: If the var is unserializable to JSON.
         """
+        if isinstance(self._var_value, decimal.Decimal):
+            return json.dumps(float(self._var_value))
         if math.isinf(self._var_value) or math.isnan(self._var_value):
             raise PrimitiveUnserializableToJSONError(
                 f"No valid JSON representation for {self}"
@@ -969,7 +975,9 @@ class LiteralNumberVar(LiteralVar, NumberVar[NUMBER_T]):
         return hash((type(self).__name__, self._var_value))
 
     @classmethod
-    def create(cls, value: float | int, _var_data: VarData | None = None):
+    def create(
+        cls, value: float | int | decimal.Decimal, _var_data: VarData | None = None
+    ):
         """Create the number var.
 
         Args:
@@ -1039,7 +1047,7 @@ class LiteralBooleanVar(LiteralVar, BooleanVar):
         )
 
 
-number_types = NumberVar | int | float
+number_types = NumberVar | int | float | decimal.Decimal
 boolean_types = BooleanVar | bool
 
 
@@ -1112,4 +1120,4 @@ def ternary_operation(
     return value
 
 
-NUMBER_TYPES = (int, float, NumberVar)
+NUMBER_TYPES = (int, float, decimal.Decimal, NumberVar)

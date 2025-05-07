@@ -50,6 +50,7 @@ EXCLUDED_PROPS = [
     "tag",
     "is_default",
     "special_props",
+    "_is_tag_in_global_scope",
     "_invalid_children",
     "_memoization_mode",
     "_rename_props",
