@@ -33,3 +33,7 @@ runs:
         enable-cache: true
         prune-cache: false
         cache-dependency-glob: "uv.lock"
+    - name: Setup Node
+      uses: actions/setup-node@v4
+      with:
+        node-version: 22
