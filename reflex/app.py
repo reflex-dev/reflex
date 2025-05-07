@@ -658,6 +658,28 @@ class App(MiddlewareMixin, LifespanMixin):
         top_asgi_app.mount("", asgi_app)
         App._add_cors(top_asgi_app)
 
+        class LogRequestsMiddleware:
+            def __init__(self, app: ASGIApp):
+                self.app = app
+
+            async def __call__(self, scope: Scope, receive: Receive, send: Send):
+                async def log_receive():
+                    message = await receive()
+                    print(  # noqa: T201
+                        f"Receiving Message: {message} with scope {scope}"
+                    )
+                    return message
+
+                async def log_send(message: Message):
+                    print(  # noqa: T201
+                        f"Sending Message: {message} with scope {scope}"
+                    )
+                    await send(message)
+
+                await self.app(scope, log_receive, log_send)
+
+        top_asgi_app.add_middleware(LogRequestsMiddleware)
+
         return top_asgi_app
 
     def _add_default_endpoints(self):
