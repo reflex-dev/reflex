@@ -72,7 +72,7 @@ def load_dynamic_serializer():
             The generated code
         """
         # Causes a circular import, so we import here.
-        from reflex.compiler import templates, utils
+        from reflex.compiler import compiler, templates, utils
         from reflex.components.base.bare import Bare
 
         component = Bare.create(Var.create(component))
@@ -97,8 +97,11 @@ def load_dynamic_serializer():
 
         libs_in_window = bundled_libraries
 
+        component_imports = component._get_all_imports()
+        compiler._apply_common_imports(component_imports)
+
         imports = {}
-        for lib, names in component._get_all_imports().items():
+        for lib, names in component_imports.items():
             formatted_lib_name = format_library_name(lib)
             if (
                 not lib.startswith((".", "/", "$/"))
