@@ -252,7 +252,7 @@ const extractPoints = (points) => {
             )
         else:
             # Spread the figure dict over props, nothing to merge.
-            tag.special_props.append(Var(_js_expr=f"{{...{figure!s}}}"))
+            tag.special_props.append(Var(_js_expr=f"{figure!s}"))
         return tag
 
 
