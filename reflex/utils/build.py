@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import json
 import os
 import subprocess
 import zipfile
@@ -25,30 +24,6 @@ def set_env_json():
             "TEST_MODE": is_in_app_harness(),
         },
     )
-
-
-def generate_sitemap_config(deploy_url: str, export: bool = False):
-    """Generate the sitemap config file.
-
-    Args:
-        deploy_url: The URL of the deployed app.
-        export: If the sitemap are generated for an export.
-    """
-    # Import here to avoid circular imports.
-    from reflex.compiler import templates
-
-    config = {
-        "siteUrl": deploy_url,
-        "generateRobotsTxt": True,
-    }
-
-    if export:
-        config["outDir"] = constants.Dirs.STATIC
-
-    config = json.dumps(config)
-
-    sitemap = prerequisites.get_web_dir() / constants.Next.SITEMAP_CONFIG_FILE
-    sitemap.write_text(templates.SITEMAP_CONFIG(config=config))
 
 
 def _zip(
@@ -193,27 +168,20 @@ def build(
     command = "export"
 
     checkpoints = [
-        "Linting and checking ",
-        "Creating an optimized production build",
-        "Route (pages)",
-        "prerendered as static HTML",
-        "Collecting page data",
-        "Finalizing page optimization",
-        "Collecting build traces",
+        "building for production",
+        "building SSR bundle for production",
+        "SPA Mode: Generated",
     ]
-
-    # Generate a sitemap if a deploy URL is provided.
-    if deploy_url is not None:
-        generate_sitemap_config(deploy_url, export=for_export)
-        command = "export-sitemap"
-
-        checkpoints.extend(["Loading next-sitemap", "Generation completed"])
 
     # Start the subprocess with the progress bar.
     process = processes.new_process(
         [*prerequisites.get_js_package_executor(raise_on_none=True)[0], "run", command],
         cwd=wdir,
         shell=constants.IS_WINDOWS,
+        env={
+            **os.environ,
+            "NO_COLOR": "1",
+        },
     )
     processes.show_progress("Creating Production Build", process, checkpoints)
 
