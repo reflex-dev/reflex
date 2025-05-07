@@ -3,19 +3,8 @@
 from __future__ import annotations
 
 import dataclasses
-import sys
-from typing import (
-    Any,
-    Callable,
-    Concatenate,
-    Generic,
-    ParamSpec,
-    Protocol,
-    Sequence,
-    Type,
-    TypeVar,
-    overload,
-)
+from collections.abc import Callable, Sequence
+from typing import Any, Concatenate, Generic, ParamSpec, Protocol, TypeVar, overload
 
 from reflex.utils import format
 from reflex.utils.types import GenericType
@@ -212,7 +201,7 @@ class FunctionStringVar(FunctionVar[CALLABLE_TYPE]):
     def create(
         cls,
         func: str,
-        _var_type: Type[OTHER_CALLABLE_TYPE] = ReflexCallable[Any, Any],
+        _var_type: type[OTHER_CALLABLE_TYPE] = ReflexCallable[Any, Any],
         _var_data: VarData | None = None,
     ) -> FunctionStringVar[OTHER_CALLABLE_TYPE]:
         """Create a new function var from a string.
@@ -470,25 +459,13 @@ class ArgsFunctionOperationBuilder(CachedVarOperation, BuilderFunctionVar):
         )
 
 
-if python_version := sys.version_info[:2] >= (3, 10):
-    JSON_STRINGIFY = FunctionStringVar.create(
-        "JSON.stringify", _var_type=ReflexCallable[[Any], str]
-    )
-    ARRAY_ISARRAY = FunctionStringVar.create(
-        "Array.isArray", _var_type=ReflexCallable[[Any], bool]
-    )
-    PROTOTYPE_TO_STRING = FunctionStringVar.create(
-        "((__to_string) => __to_string.toString())",
-        _var_type=ReflexCallable[[Any], str],
-    )
-else:
-    JSON_STRINGIFY = FunctionStringVar.create(
-        "JSON.stringify", _var_type=ReflexCallable[Any, str]
-    )
-    ARRAY_ISARRAY = FunctionStringVar.create(
-        "Array.isArray", _var_type=ReflexCallable[Any, bool]
-    )
-    PROTOTYPE_TO_STRING = FunctionStringVar.create(
-        "((__to_string) => __to_string.toString())",
-        _var_type=ReflexCallable[Any, str],
-    )
+JSON_STRINGIFY = FunctionStringVar.create(
+    "JSON.stringify", _var_type=ReflexCallable[[Any], str]
+)
+ARRAY_ISARRAY = FunctionStringVar.create(
+    "Array.isArray", _var_type=ReflexCallable[[Any], bool]
+)
+PROTOTYPE_TO_STRING = FunctionStringVar.create(
+    "((__to_string) => __to_string.toString())",
+    _var_type=ReflexCallable[[Any], str],
+)

@@ -1,7 +1,8 @@
 """Integration tests for var operations."""
 
 import time
-from typing import Callable, Generator, TypeVar
+from collections.abc import Callable, Generator
+from typing import TypeVar
 
 import pytest
 from selenium.webdriver.common.by import By

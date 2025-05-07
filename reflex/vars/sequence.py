@@ -4,23 +4,12 @@ from __future__ import annotations
 
 import collections.abc
 import dataclasses
+import decimal
 import inspect
 import json
 import re
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Iterable,
-    List,
-    Literal,
-    Mapping,
-    Sequence,
-    Type,
-    TypeVar,
-    Union,
-    get_args,
-    overload,
-)
+from collections.abc import Iterable, Mapping, Sequence
+from typing import TYPE_CHECKING, Any, Literal, TypeVar, get_args, overload
 
 from typing_extensions import TypeVar as TypingExtensionsTypeVar
 
@@ -251,7 +240,7 @@ class ArrayVar(Var[ARRAY_VAR_TYPE], python_types=(Sequence, set)):
 
     @overload
     @classmethod
-    def range(cls, stop: int | NumberVar, /) -> ArrayVar[List[int]]: ...
+    def range(cls, stop: int | NumberVar, /) -> ArrayVar[list[int]]: ...
 
     @overload
     @classmethod
@@ -261,7 +250,7 @@ class ArrayVar(Var[ARRAY_VAR_TYPE], python_types=(Sequence, set)):
         end: int | NumberVar,
         step: int | NumberVar = 1,
         /,
-    ) -> ArrayVar[List[int]]: ...
+    ) -> ArrayVar[list[int]]: ...
 
     @overload
     @classmethod
@@ -270,7 +259,7 @@ class ArrayVar(Var[ARRAY_VAR_TYPE], python_types=(Sequence, set)):
         first_endpoint: int | NumberVar,
         second_endpoint: int | NumberVar | None = None,
         step: int | NumberVar | None = None,
-    ) -> ArrayVar[List[int]]: ...
+    ) -> ArrayVar[list[int]]: ...
 
     @classmethod
     def range(
@@ -278,7 +267,7 @@ class ArrayVar(Var[ARRAY_VAR_TYPE], python_types=(Sequence, set)):
         first_endpoint: int | NumberVar,
         second_endpoint: int | NumberVar | None = None,
         step: int | NumberVar | None = None,
-    ) -> ArrayVar[List[int]]:
+    ) -> ArrayVar[list[int]]:
         """Create a range of numbers.
 
         Args:
@@ -493,7 +482,7 @@ class ArrayVar(Var[ARRAY_VAR_TYPE], python_types=(Sequence, set)):
 class LiteralArrayVar(CachedVarOperation, LiteralVar, ArrayVar[ARRAY_VAR_TYPE]):
     """Base class for immutable literal array vars."""
 
-    _var_value: Sequence[Union[Var, Any]] = dataclasses.field(default=())
+    _var_value: Sequence[Var | Any] = dataclasses.field(default=())
 
     @cached_property_no_lock
     def _cached_var_name(self) -> str:
@@ -557,7 +546,7 @@ class LiteralArrayVar(CachedVarOperation, LiteralVar, ArrayVar[ARRAY_VAR_TYPE]):
     def create(
         cls,
         value: OTHER_ARRAY_VAR_TYPE,
-        _var_type: Type[OTHER_ARRAY_VAR_TYPE] | None = None,
+        _var_type: type[OTHER_ARRAY_VAR_TYPE] | None = None,
         _var_data: VarData | None = None,
     ) -> LiteralArrayVar[OTHER_ARRAY_VAR_TYPE]:
         """Create a var from a string value.
@@ -1570,7 +1559,7 @@ def is_tuple_type(t: GenericType) -> bool:
 
 
 def _determine_value_of_array_index(
-    var_type: GenericType, index: int | float | None = None
+    var_type: GenericType, index: int | float | decimal.Decimal | None = None
 ):
     """Determine the value of an array index.
 
@@ -1752,7 +1741,7 @@ def array_concat_operation(
     """
     return var_operation_return(
         js_expression=f"[...{lhs}, ...{rhs}]",
-        var_type=Union[lhs._var_type, rhs._var_type],  # pyright: ignore [reportArgumentType]
+        var_type=lhs._var_type | rhs._var_type,
     )
 
 
@@ -1774,7 +1763,7 @@ class LiteralColorVar(CachedVarOperation, LiteralVar, ColorVar):
     def create(
         cls,
         value: Color,
-        _var_type: Type[Color] | None = None,
+        _var_type: type[Color] | None = None,
         _var_data: VarData | None = None,
     ) -> ColorVar:
         """Create a var from a string value.
@@ -1905,7 +1894,7 @@ class LiteralRangeVar(CachedVarOperation, LiteralVar, RangeVar):
     def create(
         cls,
         value: range,
-        _var_type: Type[range] | None = None,
+        _var_type: type[range] | None = None,
         _var_data: VarData | None = None,
     ) -> RangeVar:
         """Create a var from a string value.

@@ -1,5 +1,4 @@
 from pathlib import Path
-from typing import Type
 from unittest import mock
 
 import pytest
@@ -64,7 +63,7 @@ def test_custom_primary_key(model_custom_primary: Model):
 def test_automigration(
     tmp_working_dir: Path,
     monkeypatch: pytest.MonkeyPatch,
-    model_registry: Type[ModelRegistry],
+    model_registry: type[ModelRegistry],
 ):
     """Test alembic automigration with add and drop table and column.
 

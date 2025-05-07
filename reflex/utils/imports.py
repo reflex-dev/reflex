@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import dataclasses
 from collections import defaultdict
-from typing import DefaultDict, Mapping, Sequence, Union
+from collections.abc import Mapping, Sequence
 
 
 def merge_imports(
@@ -18,7 +18,7 @@ def merge_imports(
     Returns:
         The merged import dicts.
     """
-    all_imports: DefaultDict[str, list[ImportVar]] = defaultdict(list)
+    all_imports: defaultdict[str, list[ImportVar]] = defaultdict(list)
     for import_dict in imports:
         for lib, fields in (
             import_dict if isinstance(import_dict, tuple) else import_dict.items()
@@ -31,10 +31,8 @@ def merge_imports(
             )
             if isinstance(fields, (list, tuple, set)):
                 all_imports[lib].extend(
-                    (
-                        ImportVar(field) if isinstance(field, str) else field
-                        for field in fields
-                    )
+                    ImportVar(field) if isinstance(field, str) else field
+                    for field in fields
                 )
             else:
                 all_imports[lib].append(
@@ -135,8 +133,8 @@ class ImportVar:
             return self.tag or ""
 
 
-ImportTypes = Union[str, ImportVar, list[str | ImportVar], list[ImportVar]]
-ImmutableImportTypes = Union[str, ImportVar, Sequence[str | ImportVar]]
+ImportTypes = str | ImportVar | list[str | ImportVar] | list[ImportVar]
+ImmutableImportTypes = str | ImportVar | Sequence[str | ImportVar]
 ImportDict = dict[str, ImportTypes]
 ImmutableImportDict = Mapping[str, ImmutableImportTypes]
 ParsedImportDict = dict[str, list[ImportVar]]

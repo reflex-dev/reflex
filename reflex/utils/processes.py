@@ -8,12 +8,13 @@ import importlib.metadata
 import os
 import signal
 import subprocess
+from collections.abc import Callable, Generator, Sequence
 from concurrent import futures
 from pathlib import Path
-from typing import Any, Callable, Generator, Literal, Sequence, Tuple, overload
+from typing import Any, Literal, overload
 
+import click
 import psutil
-import typer
 from redis.exceptions import RedisError
 from rich.progress import Progress
 
@@ -47,7 +48,7 @@ def get_num_workers() -> int:
         redis_client.ping()
     except RedisError as re:
         console.error(f"Unable to connect to Redis: {re}")
-        raise typer.Exit(1) from re
+        raise click.exceptions.Exit(1) from re
     return (os.cpu_count() or 1) * 2 + 1
 
 
@@ -140,7 +141,7 @@ def handle_port(service_name: str, port: int, auto_increment: bool) -> int:
         console.error(
             f"{service_name.capitalize()} port: {port} is already in use by PID: {process.pid}."
         )
-        raise typer.Exit()
+        raise click.exceptions.Exit()
 
 
 @overload
@@ -185,7 +186,7 @@ def new_process(
     non_empty_args = list(filter(None, args)) if isinstance(args, list) else [args]
     if isinstance(args, list) and len(non_empty_args) != len(args):
         console.error(f"Invalid command: {args}")
-        raise typer.Exit(1)
+        raise click.exceptions.Exit(1)
 
     path_env: str = os.environ.get("PATH", "")
 
@@ -261,7 +262,7 @@ def run_concurrently_context(
             executor.shutdown(wait=False)
 
 
-def run_concurrently(*fns: Callable | Tuple) -> None:
+def run_concurrently(*fns: Callable | tuple) -> None:
     """Run functions concurrently in a thread pool.
 
     Args:
@@ -277,7 +278,7 @@ def stream_logs(
     progress: Progress | None = None,
     suppress_errors: bool = False,
     analytics_enabled: bool = False,
-    prior_logs: Tuple[tuple[str, ...], ...] = (),
+    prior_logs: tuple[tuple[str, ...], ...] = (),
 ):
     """Stream the logs for a process.
 
@@ -344,7 +345,7 @@ def stream_logs(
                 "NPM_CONFIG_REGISTRY environment variable. If TLS is the issue, and you know what "
                 "you are doing, you can disable it by setting the SSL_NO_VERIFY environment variable."
             )
-            raise typer.Exit(1)
+            raise click.exceptions.Exit(1)
         for set_of_logs in (*prior_logs, tuple(logs)):
             for line in set_of_logs:
                 console.error(line, end="")
@@ -352,7 +353,7 @@ def stream_logs(
         if analytics_enabled:
             telemetry.send("error", context=message)
         console.error("Run with [bold]--loglevel debug [/bold] for the full log.")
-        raise typer.Exit(1)
+        raise click.exceptions.Exit(1)
 
 
 def show_logs(message: str, process: subprocess.Popen):
@@ -371,7 +372,7 @@ def show_status(
     process: subprocess.Popen,
     suppress_errors: bool = False,
     analytics_enabled: bool = False,
-    prior_logs: Tuple[tuple[str, ...], ...] = (),
+    prior_logs: tuple[tuple[str, ...], ...] = (),
 ) -> list[str]:
     """Show the status of a process.
 
@@ -451,7 +452,7 @@ def run_process_with_fallbacks(
     show_status_message: str,
     fallbacks: str | Sequence[str] | Sequence[Sequence[str]] | None = None,
     analytics_enabled: bool = False,
-    prior_logs: Tuple[tuple[str, ...], ...] = (),
+    prior_logs: tuple[tuple[str, ...], ...] = (),
     **kwargs,
 ):
     """Run subprocess and retry using fallback command if initial command fails.

@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-import json
-from typing import Any, Iterator, Sequence
+from collections.abc import Iterator, Sequence
+from typing import Any
 
 from reflex.components.component import BaseComponent, Component, ComponentStyle
 from reflex.components.tags import Tag
@@ -169,11 +169,14 @@ class Bare(Component):
         return refs
 
     def _render(self) -> Tag:
-        if isinstance(self.contents, Var):
-            if isinstance(self.contents, (BooleanVar, ObjectVar)):
-                return Tagless(contents=f"{self.contents.to_string()!s}")
-            return Tagless(contents=f"{self.contents!s}")
-        return Tagless(contents=f'"{json.dumps(self.contents)}"')
+        contents = (
+            Var.create(self.contents)
+            if not isinstance(self.contents, Var)
+            else self.contents
+        )
+        if isinstance(contents, (BooleanVar, ObjectVar)):
+            return Tagless(contents=f"{contents.to_string()!s}")
+        return Tagless(contents=f"{contents!s}")
 
     def _add_style_recursive(
         self, style: ComponentStyle, theme: Component | None = None

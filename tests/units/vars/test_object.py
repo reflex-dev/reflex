@@ -1,5 +1,5 @@
 import dataclasses
-from typing import Sequence
+from collections.abc import Sequence
 
 import pytest
 from sqlalchemy.orm import DeclarativeBase, Mapped, MappedAsDataclass, mapped_column

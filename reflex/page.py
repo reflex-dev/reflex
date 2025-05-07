@@ -3,12 +3,14 @@
 from __future__ import annotations
 
 from collections import defaultdict
-from typing import Any, Callable, List
+from collections.abc import Callable
+from typing import Any
 
 from reflex.config import get_config
 from reflex.event import EventType
+from reflex.utils import console
 
-DECORATED_PAGES: dict[str, List] = defaultdict(list)
+DECORATED_PAGES: dict[str, list] = defaultdict(list)
 
 
 def page(
@@ -75,6 +77,13 @@ def get_decorated_pages(omit_implicit_routes: bool = True) -> list[dict[str, Any
     Returns:
         The decorated pages.
     """
+    console.deprecate(
+        "get_decorated_pages",
+        reason="This function is deprecated and will be removed in a future version.",
+        deprecation_version="0.7.9",
+        removal_version="0.8.0",
+        dedupe=True,
+    )
     return sorted(
         [
             page_data

@@ -21,6 +21,8 @@ def open_browser(target_url: str) -> None:
         console.warn(
             f"Unable to automatically open the browser. Please navigate to {target_url} in your browser."
         )
+    else:
+        console.info(f"Opening browser to {target_url}.")
 
 
 def open_browser_and_wait(
@@ -52,3 +54,8 @@ def open_browser_and_wait(
 def reflex_build_redirect() -> None:
     """Open the browser window to reflex.build."""
     open_browser(constants.Templates.REFLEX_BUILD_FRONTEND)
+
+
+def reflex_templates():
+    """Open the browser window to reflex.build/templates."""
+    open_browser(constants.Templates.REFLEX_TEMPLATES_URL)

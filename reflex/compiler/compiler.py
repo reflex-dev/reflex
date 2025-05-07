@@ -2,9 +2,11 @@
 
 from __future__ import annotations
 
+from collections.abc import Iterable, Sequence
 from datetime import datetime
+from inspect import getmodule
 from pathlib import Path
-from typing import TYPE_CHECKING, Iterable, Sequence, Type
+from typing import TYPE_CHECKING
 
 from reflex import constants
 from reflex.compiler import templates, utils
@@ -28,6 +30,13 @@ from reflex.utils.prerequisites import get_web_dir
 from reflex.vars.base import LiteralVar, Var
 
 
+def _apply_common_imports(
+    imports: dict[str, list[ImportVar]],
+):
+    imports.setdefault("@emotion/react", []).append(ImportVar("jsx"))
+    imports.setdefault("react", []).append(ImportVar("Fragment"))
+
+
 def _compile_document_root(root: Component) -> str:
     """Compile the document root.
 
@@ -38,7 +47,7 @@ def _compile_document_root(root: Component) -> str:
         The compiled document root.
     """
     document_root_imports = root._get_all_imports()
-    document_root_imports.setdefault("@emotion/react", []).append(ImportVar("jsx"))
+    _apply_common_imports(document_root_imports)
     return templates.DOCUMENT_ROOT.render(
         imports=utils.compile_imports(document_root_imports),
         document=root.render(),
@@ -56,7 +65,7 @@ def _normalize_library_name(lib: str) -> str:
     """
     if lib == "react":
         return "React"
-    return lib.replace("@", "").replace("/", "_").replace("-", "_")
+    return lib.replace("$/", "").replace("@", "").replace("/", "_").replace("-", "_")
 
 
 def _compile_app(app_root: Component) -> str:
@@ -72,13 +81,10 @@ def _compile_app(app_root: Component) -> str:
 
     window_libraries = [
         (_normalize_library_name(name), name) for name in bundled_libraries
-    ] + [
-        ("utils_context", f"$/{constants.Dirs.UTILS}/context"),
-        ("utils_state", f"$/{constants.Dirs.UTILS}/state"),
     ]
 
     app_root_imports = app_root._get_all_imports()
-    app_root_imports.setdefault("@emotion/react", []).append(ImportVar("jsx"))
+    _apply_common_imports(app_root_imports)
 
     return templates.APP_ROOT.render(
         imports=utils.compile_imports(app_root_imports),
@@ -102,7 +108,7 @@ def _compile_theme(theme: str) -> str:
     return templates.THEME.render(theme=theme)
 
 
-def _compile_contexts(state: Type[BaseState] | None, theme: Component | None) -> str:
+def _compile_contexts(state: type[BaseState] | None, theme: Component | None) -> str:
     """Compile the initial state and contexts.
 
     Args:
@@ -137,7 +143,7 @@ def _compile_contexts(state: Type[BaseState] | None, theme: Component | None) ->
 
 def _compile_page(
     component: BaseComponent,
-    state: Type[BaseState] | None,
+    state: type[BaseState] | None,
 ) -> str:
     """Compile the component given the app state.
 
@@ -149,7 +155,7 @@ def _compile_page(
         The compiled component.
     """
     imports = component._get_all_imports()
-    imports.setdefault("@emotion/react", []).append(ImportVar("jsx"))
+    _apply_common_imports(imports)
     imports = utils.compile_imports(imports)
 
     # Compile the code to render the component.
@@ -342,6 +348,8 @@ def _compile_components(
         component_renders.append(component_render)
         imports = utils.merge_imports(imports, component_imports)
 
+    _apply_common_imports(imports)
+
     dynamic_imports = {
         comp_import: None
         for comp_render in component_renders
@@ -434,6 +442,8 @@ def _compile_stateful_components(
     all_imports.pop(
         f"$/{constants.Dirs.UTILS}/{constants.PageNames.STATEFUL_COMPONENTS}", None
     )
+    if rendered_components:
+        _apply_common_imports(all_imports)
 
     return templates.STATEFUL_COMPONENTS.render(
         imports=utils.compile_imports(all_imports),
@@ -526,7 +536,7 @@ def compile_theme(style: ComponentStyle) -> tuple[str, str]:
 
 
 def compile_contexts(
-    state: Type[BaseState] | None,
+    state: type[BaseState] | None,
     theme: Component | None,
 ) -> tuple[str, str]:
     """Compile the initial state / context.
@@ -545,7 +555,7 @@ def compile_contexts(
 
 
 def compile_page(
-    path: str, component: BaseComponent, state: Type[BaseState] | None
+    path: str, component: BaseComponent, state: type[BaseState] | None
 ) -> tuple[str, str]:
     """Compile a single page.
 
@@ -685,6 +695,35 @@ def _into_component_once(
     return None
 
 
+def readable_name_from_component(
+    component: Component | ComponentCallable,
+) -> str | None:
+    """Get the readable name of a component.
+
+    Args:
+        component: The component to get the name of.
+
+    Returns:
+        The readable name of the component.
+    """
+    if isinstance(component, Component):
+        return type(component).__name__
+    if isinstance(component, (Var, int, float, str)):
+        return str(component)
+    if isinstance(component, Sequence):
+        return ", ".join(str(c) for c in component)
+    if callable(component):
+        module_name = getattr(component, "__module__", None)
+        if module_name is not None:
+            module = getmodule(component)
+            if module is not None:
+                module_name = module.__name__
+        if module_name is not None:
+            return f"{module_name}.{component.__name__}"
+        return component.__name__
+    return None
+
+
 def into_component(component: Component | ComponentCallable) -> Component:
     """Convert a component to a Component.
 
@@ -749,7 +788,7 @@ def into_component(component: Component | ComponentCallable) -> Component:
 def compile_unevaluated_page(
     route: str,
     page: UnevaluatedPage,
-    state: Type[BaseState] | None = None,
+    state: type[BaseState] | None = None,
     style: ComponentStyle | None = None,
     theme: Component | None = None,
 ) -> tuple[Component, bool]:
@@ -839,7 +878,7 @@ class ExecutorSafeFunctions:
 
     COMPONENTS: dict[str, BaseComponent] = {}
     UNCOMPILED_PAGES: dict[str, UnevaluatedPage] = {}
-    STATE: Type[BaseState] | None = None
+    STATE: type[BaseState] | None = None
 
     @classmethod
     def compile_page(cls, route: str) -> tuple[str, str]:

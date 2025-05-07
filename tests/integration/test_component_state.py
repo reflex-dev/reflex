@@ -1,6 +1,6 @@
 """Test that per-component state scaffold works and operates independently."""
 
-from typing import Generator
+from collections.abc import Generator
 
 import pytest
 from selenium.webdriver.common.by import By

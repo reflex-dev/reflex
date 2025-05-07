@@ -9,25 +9,11 @@ import functools
 import inspect
 import typing
 from abc import ABC, abstractmethod
-from functools import lru_cache, wraps
+from collections.abc import Callable, Iterator, Mapping, Sequence
+from functools import wraps
 from hashlib import md5
 from types import SimpleNamespace
-from typing import (
-    Any,
-    Callable,
-    ClassVar,
-    Iterator,
-    List,
-    Mapping,
-    Sequence,
-    Set,
-    Type,
-    TypeVar,
-    Union,
-    cast,
-    get_args,
-    get_origin,
-)
+from typing import Any, ClassVar, TypeVar, cast, get_args, get_origin
 
 import pydantic.v1
 from rich.markup import escape
@@ -57,6 +43,7 @@ from reflex.event import (
     no_args_event_spec,
     parse_args_spec,
     run_script,
+    unwrap_var_annotation,
 )
 from reflex.style import Style, format_as_emotion
 from reflex.utils import console, format, imports, types
@@ -64,14 +51,15 @@ from reflex.utils.imports import ImportDict, ImportVar, ParsedImportDict, parse_
 from reflex.vars import VarData
 from reflex.vars.base import (
     CachedVarOperation,
+    LiteralNoneVar,
     LiteralVar,
     Var,
     cached_property_no_lock,
 )
 from reflex.vars.function import ArgsFunctionOperation, FunctionStringVar, FunctionVar
 from reflex.vars.number import ternary_operation
-from reflex.vars.object import ObjectVar
-from reflex.vars.sequence import LiteralArrayVar
+from reflex.vars.object import LiteralObjectVar, ObjectVar
+from reflex.vars.sequence import LiteralArrayVar, LiteralStringVar, StringVar
 
 
 class BaseComponent(Base, ABC):
@@ -180,7 +168,7 @@ def evaluate_style_namespaces(style: ComponentStyle) -> dict:
 
 
 # Map from component to styling.
-ComponentStyle = dict[str | Type[BaseComponent] | Callable | ComponentNamespace, Any]
+ComponentStyle = dict[str | type[BaseComponent] | Callable | ComponentNamespace, Any]
 ComponentChild = types.PrimitiveType | Var | BaseComponent
 ComponentChildTypes = (*types.PrimitiveTypes, Var, BaseComponent, type(None))
 
@@ -227,7 +215,7 @@ def satisfies_type_hint(obj: Any, type_hint: Any) -> bool:
 
 
 def _components_from(
-    component_or_var: Union[BaseComponent, Var],
+    component_or_var: BaseComponent | Var,
 ) -> tuple[BaseComponent, ...]:
     """Get the components from a component or Var.
 
@@ -281,7 +269,7 @@ class Component(BaseComponent, ABC):
     alias: str | None = pydantic.v1.Field(default_factory=lambda: None)
 
     # Whether the component is a global scope tag. True for tags like `html`, `head`, `body`.
-    _is_tag_in_global_scope: bool = pydantic.PrivateAttr(default_factory=lambda: False)
+    _is_tag_in_global_scope: ClassVar[bool] = False
 
     # Whether the import is default or named.
     is_default: bool | None = pydantic.v1.Field(default_factory=lambda: False)
@@ -320,7 +308,7 @@ class Component(BaseComponent, ABC):
     _memoization_mode: MemoizationMode = MemoizationMode()
 
     # State class associated with this component instance
-    State: Type[reflex.state.State] | None = pydantic.v1.Field(
+    State: type[reflex.state.State] | None = pydantic.v1.Field(
         default_factory=lambda: None
     )
 
@@ -614,14 +602,37 @@ class Component(BaseComponent, ABC):
 
         # Convert class_name to str if it's list
         class_name = kwargs.get("class_name", "")
-        if isinstance(class_name, (List, tuple)):
-            if any(isinstance(c, Var) for c in class_name):
+        if isinstance(class_name, (list, tuple)):
+            has_var = False
+            for c in class_name:
+                if isinstance(c, str):
+                    continue
+                if isinstance(c, Var):
+                    if not isinstance(c, StringVar) and not issubclass(
+                        c._var_type, str
+                    ):
+                        raise TypeError(
+                            f"Invalid class_name passed for prop {type(self).__name__}.class_name, expected type str, got value {c._js_expr} of type {c._var_type}."
+                        )
+                    has_var = True
+                else:
+                    raise TypeError(
+                        f"Invalid class_name passed for prop {type(self).__name__}.class_name, expected type str, got value {c} of type {type(c)}."
+                    )
+            if has_var:
                 kwargs["class_name"] = LiteralArrayVar.create(
                     class_name, _var_type=list[str]
                 ).join(" ")
             else:
                 kwargs["class_name"] = " ".join(class_name)
-
+        elif (
+            isinstance(class_name, Var)
+            and not isinstance(class_name, StringVar)
+            and not issubclass(class_name._var_type, str)
+        ):
+            raise TypeError(
+                f"Invalid class_name passed for prop {type(self).__name__}.class_name, expected type str, got value {class_name._js_expr} of type {class_name._var_type}."
+            )
         # Construct the component.
         for key, value in kwargs.items():
             setattr(self, key, value)
@@ -681,6 +692,7 @@ class Component(BaseComponent, ABC):
         Returns:
             The tag to render.
         """
+        # Create the base tag.
         name = (self.tag if not self.alias else self.alias) or ""
         if self._is_tag_in_global_scope and self.library is None:
             name = '"' + name + '"'
@@ -724,7 +736,7 @@ class Component(BaseComponent, ABC):
         return tag.add_props(**props)
 
     @classmethod
-    @lru_cache(maxsize=None)
+    @functools.cache
     def get_props(cls) -> set[str]:
         """Get the unique fields for the component.
 
@@ -734,7 +746,7 @@ class Component(BaseComponent, ABC):
         return set(cls.get_fields()) - set(Component.get_fields())
 
     @classmethod
-    @lru_cache(maxsize=None)
+    @functools.cache
     def get_initial_props(cls) -> set[str]:
         """Get the initial props to set for the component.
 
@@ -753,8 +765,8 @@ class Component(BaseComponent, ABC):
         return True
 
     @classmethod
-    @lru_cache(maxsize=None)
-    def _get_component_prop_names(cls) -> Set[str]:
+    @functools.cache
+    def _get_component_prop_names(cls) -> set[str]:
         """Get the names of the component props. NOTE: This assumes all fields are known.
 
         Returns:
@@ -790,7 +802,7 @@ class Component(BaseComponent, ABC):
         ]
 
     @classmethod
-    def create(cls: Type[T], *children, **props) -> T:
+    def create(cls: type[T], *children, **props) -> T:
         """Create the component.
 
         Args:
@@ -838,7 +850,7 @@ class Component(BaseComponent, ABC):
         return cls._create(children_normalized, **props)
 
     @classmethod
-    def _create(cls: Type[T], children: Sequence[BaseComponent], **props: Any) -> T:
+    def _create(cls: type[T], children: Sequence[BaseComponent], **props: Any) -> T:
         """Create the component.
 
         Args:
@@ -854,7 +866,7 @@ class Component(BaseComponent, ABC):
 
     @classmethod
     def _unsafe_create(
-        cls: Type[T], children: Sequence[BaseComponent], **props: Any
+        cls: type[T], children: Sequence[BaseComponent], **props: Any
     ) -> T:
         """Create the component without running post_init.
 
@@ -1167,7 +1179,7 @@ class Component(BaseComponent, ABC):
                 vars.append(comp_prop)
             elif isinstance(comp_prop, str):
                 # Collapse VarData encoded in f-strings.
-                var = LiteralVar.create(comp_prop)
+                var = LiteralStringVar.create(comp_prop)
                 if var._get_all_var_data() is not None:
                     vars.append(var)
 
@@ -1233,7 +1245,7 @@ class Component(BaseComponent, ABC):
             yield clz.__name__
 
     @classmethod
-    def _iter_parent_classes_with_method(cls, method: str) -> Iterator[Type[Component]]:
+    def _iter_parent_classes_with_method(cls, method: str) -> Iterator[type[Component]]:
         """Iterate through parent classes that define a given method.
 
         Used for handling the `add_*` API functions that internally simulate a super() call chain.
@@ -1668,32 +1680,6 @@ class Component(BaseComponent, ABC):
 
         return refs
 
-    def _get_all_custom_components(
-        self, seen: set[str] | None = None
-    ) -> set[CustomComponent]:
-        """Get all the custom components used by the component.
-
-        Args:
-            seen: The tags of the components that have already been seen.
-
-        Returns:
-            The set of custom components.
-        """
-        custom_components = set()
-
-        # Store the seen components in a set to avoid infinite recursion.
-        if seen is None:
-            seen = set()
-        for child in self.children:
-            # Skip BaseComponent and StatefulComponent children.
-            if not isinstance(child, Component):
-                continue
-            custom_components |= child._get_all_custom_components(seen=seen)
-        for component in self._get_components_in_props():
-            if isinstance(component, Component) and component.tag is not None:
-                custom_components |= component._get_all_custom_components(seen=seen)
-        return custom_components
-
     @property
     def import_var(self):
         """The tag to import.
@@ -1786,11 +1772,9 @@ class CustomComponent(Component):
                 else (
                     annotation_args[1]
                     if get_origin(
-                        (
-                            annotation := inspect.getfullargspec(
-                                component_fn
-                            ).annotations[key]
-                        )
+                        annotation := inspect.getfullargspec(component_fn).annotations[
+                            key
+                        ]
                     )
                     is typing.Annotated
                     and (annotation_args := get_args(annotation))
@@ -1880,37 +1864,6 @@ class CustomComponent(Component):
         """
         return set()
 
-    def _get_all_custom_components(
-        self, seen: set[str] | None = None
-    ) -> set[CustomComponent]:
-        """Get all the custom components used by the component.
-
-        Args:
-            seen: The tags of the components that have already been seen.
-
-        Raises:
-            ValueError: If the tag is not set.
-
-        Returns:
-            The set of custom components.
-        """
-        if self.tag is None:
-            raise ValueError("The tag must be set.")
-
-        # Store the seen components in a set to avoid infinite recursion.
-        if seen is None:
-            seen = set()
-        custom_components = {self} | super()._get_all_custom_components(seen=seen)
-
-        # Avoid adding the same component twice.
-        if self.tag not in seen:
-            seen.add(self.tag)
-            custom_components |= self.get_component(self)._get_all_custom_components(
-                seen=seen
-            )
-
-        return custom_components
-
     @staticmethod
     def _get_event_spec_from_args_spec(name: str, event: EventChain) -> Callable:
         """Get the event spec from the args spec.
@@ -1948,7 +1901,7 @@ class CustomComponent(Component):
 
         return fn
 
-    def get_prop_vars(self) -> List[Var | Callable]:
+    def get_prop_vars(self) -> list[Var | Callable]:
         """Get the prop vars.
 
         Returns:
@@ -1964,7 +1917,7 @@ class CustomComponent(Component):
             for name, prop in self.props.items()
         ]
 
-    @lru_cache(maxsize=None)  # noqa: B019
+    @functools.cache  # noqa: B019
     def get_component(self) -> Component:
         """Render the component.
 
@@ -1972,6 +1925,42 @@ class CustomComponent(Component):
             The code to render the component.
         """
         return self.component_fn(*self.get_prop_vars())
+
+
+CUSTOM_COMPONENTS: dict[str, CustomComponent] = {}
+
+
+def _register_custom_component(
+    component_fn: Callable[..., Component],
+):
+    """Register a custom component to be compiled.
+
+    Args:
+        component_fn: The function that creates the component.
+
+    Raises:
+        TypeError: If the tag name cannot be determined.
+    """
+    dummy_props = {
+        prop: (
+            Var(
+                "",
+                _var_type=unwrap_var_annotation(annotation),
+            ).guess_type()
+            if not types.safe_issubclass(annotation, EventHandler)
+            else EventSpec(handler=EventHandler(fn=lambda: []))
+        )
+        for prop, annotation in typing.get_type_hints(component_fn).items()
+        if prop != "return"
+    }
+    dummy_component = CustomComponent._create(
+        children=[],
+        component_fn=component_fn,
+        **dummy_props,
+    )
+    if dummy_component.tag is None:
+        raise TypeError(f"Could not determine the tag name for {component_fn!r}")
+    CUSTOM_COMPONENTS[dummy_component.tag] = dummy_component
 
 
 def custom_component(
@@ -1993,6 +1982,9 @@ def custom_component(
         return CustomComponent._create(
             children=list(children), component_fn=component_fn, **props
         )
+
+    # Register this component so it can be compiled.
+    _register_custom_component(component_fn)
 
     return wrapper
 
@@ -2540,7 +2532,7 @@ def render_dict_to_var(tag: dict | Component | str, imported_names: set[str]) ->
         return Var.create(tag)
 
     if "iterable" in tag:
-        function_return = Var.create(
+        function_return = LiteralArrayVar.create(
             [
                 render_dict_to_var(child.render(), imported_names)
                 for child in tag["children"]
@@ -2583,7 +2575,7 @@ def render_dict_to_var(tag: dict | Component | str, imported_names: set[str]) ->
             render_dict_to_var(tag["true_value"], imported_names),
             render_dict_to_var(tag["false_value"], imported_names)
             if tag["false_value"] is not None
-            else Var.create(None),
+            else LiteralNoneVar.create(),
         )
 
     props = {}
@@ -2599,7 +2591,9 @@ def render_dict_to_var(tag: dict | Component | str, imported_names: set[str]) ->
         value = prop_str[prop + 1 :]
         props[key] = value
 
-    props = Var.create({Var.create(k): Var(v) for k, v in props.items()})
+    props = LiteralObjectVar.create(
+        {LiteralStringVar.create(k): Var(v) for k, v in props.items()}
+    )
 
     for prop in special_props:
         props = props.merge(prop)
@@ -2654,21 +2648,7 @@ class LiteralComponentVar(CachedVarOperation, LiteralVar, ComponentVar):
         return VarData.merge(
             self._var_data,
             VarData(
-                imports={
-                    "@emotion/react": [
-                        ImportVar(tag="jsx"),
-                    ],
-                }
-            ),
-            VarData(
                 imports=self._var_value._get_all_imports(),
-            ),
-            VarData(
-                imports={
-                    "react": [
-                        ImportVar(tag="Fragment"),
-                    ],
-                }
             ),
         )
 

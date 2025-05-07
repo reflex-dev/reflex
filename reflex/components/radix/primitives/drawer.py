@@ -4,7 +4,8 @@
 # Style based on https://ui.shadcn.com/docs/components/drawer
 from __future__ import annotations
 
-from typing import Any, Literal, Sequence
+from collections.abc import Sequence
+from typing import Any, Literal
 
 from reflex.components.component import Component, ComponentNamespace
 from reflex.components.radix.primitives.base import RadixPrimitiveComponent
@@ -18,7 +19,7 @@ from reflex.vars.base import Var
 class DrawerComponent(RadixPrimitiveComponent):
     """A Drawer component."""
 
-    library = "vaul"
+    library = "vaul@1.1.2"
 
     lib_dependencies: list[str] = ["@radix-ui/react-dialog@^1.1.6"]
 

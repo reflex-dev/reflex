@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Sequence
+from collections.abc import Sequence
 
 from reflex.components.base.fragment import Fragment
 from reflex.components.tags.tag import Tag

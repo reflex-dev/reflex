@@ -1,6 +1,5 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, createElement } from "react";
 import { codeToHtml } from "shiki";
-import { jsx } from "@emotion/react";
 
 /**
  * Code component that uses Shiki to convert code to HTML and render it.
@@ -34,7 +33,7 @@ export function Code({
     }
     fetchCode();
   }, [code, language, theme, transformers, decorations]);
-  return jsx("div", {
+  return createElement("div", {
     dangerouslySetInnerHTML: { __html: codeResult },
     ...divProps,
   });
