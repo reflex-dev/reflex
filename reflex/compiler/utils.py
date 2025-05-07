@@ -392,6 +392,23 @@ def create_theme(style: ComponentStyle) -> dict:
     return {"styles": {"global": root_style}}
 
 
+def _format_route_part(part: str) -> str:
+    if part.startswith("[") and part.endswith("]"):
+        return f"${part}_"
+    return "[" + part + "]_"
+
+
+def _path_to_file_stem(path: str) -> str:
+    if path == "index":
+        return "_index"
+    if path.removeprefix("/") == "404":
+        return "404"
+    path = path if path != "index" else "/"
+    return (
+        ".".join([_format_route_part(part) for part in path.split("/")]) + "._index"
+    ).lstrip(".")
+
+
 def get_page_path(path: str) -> str:
     """Get the path of the compiled JS file for the given page.
 
@@ -405,7 +422,7 @@ def get_page_path(path: str) -> str:
         get_web_dir()
         / constants.Dirs.PAGES
         / constants.Dirs.ROUTES
-        / (path + constants.Ext.JS)
+        / (_path_to_file_stem(path) + constants.Ext.JS)
     )
 
 

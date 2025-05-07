@@ -568,7 +568,7 @@ def compile_page(
         The path and code of the compiled page.
     """
     # Get the path for the output file.
-    output_path = utils.get_page_path(path if path != "index" else "_index")
+    output_path = utils.get_page_path(path)
 
     # Add the style to the component.
     code = _compile_page(component, state)

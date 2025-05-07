@@ -271,7 +271,7 @@ async def test_on_load_navigate(
         # wait for navigation, then assert on url
         with poll_for_navigation(driver):
             link.click()
-        assert urlsplit(driver.current_url).path == f"/page/{ix}/"
+        assert urlsplit(driver.current_url).path == f"/page/{ix}"
 
         link = driver.find_element(By.ID, "link_page_next")
         page_id_input = driver.find_element(By.ID, "page_id")
@@ -363,7 +363,7 @@ async def test_on_load_navigate_non_dynamic(
 
     with poll_for_navigation(driver):
         link.click()
-    assert urlsplit(driver.current_url).path == "/static/x/"
+    assert urlsplit(driver.current_url).path == "/static/x"
     await poll_for_order(["/static/x-no page id"])
 
     # go back to the index and navigate back to the static route
