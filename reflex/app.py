@@ -663,6 +663,13 @@ class App(MiddlewareMixin, LifespanMixin):
                 self.app = app
 
             async def __call__(self, scope: Scope, receive: Receive, send: Send):
+                if scope["type"] != "http":
+                    return await self.app(scope, receive, send)
+
+                print(  # noqa: T201
+                    f"Called scope: {scope}"
+                )
+
                 async def log_receive():
                     message = await receive()
                     print(  # noqa: T201
