@@ -399,13 +399,14 @@ class AppHarness:
         )
 
     def _wait_frontend(self):
+        if self.frontend_process is None or self.frontend_process.stdout is None:
+            raise RuntimeError("Frontend process has no stdout.")
+        ansi_escape = re.compile(r"\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])")
         while self.frontend_url is None:
-            line = (
-                self.frontend_process.stdout.readline()  # pyright: ignore [reportOptionalMemberAccess]
-            )
+            line = ansi_escape.sub("", self.frontend_process.stdout.readline())
             if not line:
                 break
-            print(repr(line))  # for pytest diagnosis #noqa: T201
+            print(line)  # for pytest diagnosis #noqa: T201
             m = re.search(reflex.constants.Next.FRONTEND_LISTENING_REGEX, line)
             if m is not None:
                 self.frontend_url = m.group(1)
