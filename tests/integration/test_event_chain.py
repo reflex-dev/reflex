@@ -310,7 +310,9 @@ def assert_token(event_chain: AppHarness, driver: WebDriver) -> str:
         The token visible in the driver browser.
     """
     assert event_chain.app_instance is not None
-    token_input = driver.find_element(By.ID, "token")
+    token_input = event_chain.poll_for_result(
+        lambda: driver.find_element(By.ID, "token")
+    )
     assert token_input
 
     # wait for the backend connection to send the token

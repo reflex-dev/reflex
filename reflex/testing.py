@@ -822,6 +822,36 @@ class AppHarness:
             raise TimeoutError("No states were observed while polling.")
         return state_manager.states
 
+    @staticmethod
+    def poll_for_result(
+        f: Callable[[], T],
+        exception: type[Exception] = Exception,
+        max_attempts: int = 5,
+        seconds_between_attempts: int = 1,
+    ) -> T:
+        """Poll for a result from a function.
+
+        Args:
+            f: function to call
+            exception: exception to catch
+            max_attempts: maximum number of attempts
+            seconds_between_attempts: seconds to wait between
+
+        Returns:
+            Result of the function
+
+        Raises:
+            AssertionError: if the function does not return a value
+        """
+        attempts = 0
+        while attempts < max_attempts:
+            try:
+                return f()
+            except exception:  # noqa: PERF203
+                attempts += 1
+                time.sleep(seconds_between_attempts)
+        raise AssertionError("Function did not return a value")
+
 
 class SimpleHTTPRequestHandlerCustomErrors(SimpleHTTPRequestHandler):
     """SimpleHTTPRequestHandler with custom error page handling."""

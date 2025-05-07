@@ -1,7 +1,6 @@
 """Integration tests for var operations."""
 
-import time
-from collections.abc import Callable, Generator
+from collections.abc import Generator
 from typing import TypeVar
 
 import pytest
@@ -96,33 +95,6 @@ def dynamic_components(tmp_path_factory) -> Generator[AppHarness, None, None]:
 T = TypeVar("T")
 
 
-def poll_for_result(
-    f: Callable[[], T], exception=Exception, max_attempts=5, seconds_between_attempts=1
-) -> T:
-    """Poll for a result from a function.
-
-    Args:
-        f: function to call
-        exception: exception to catch
-        max_attempts: maximum number of attempts
-        seconds_between_attempts: seconds to wait between
-
-    Returns:
-        Result of the function
-
-    Raises:
-        AssertionError: if the function does not return a value
-    """
-    attempts = 0
-    while attempts < max_attempts:
-        try:
-            return f()
-        except exception:
-            attempts += 1
-            time.sleep(seconds_between_attempts)
-    raise AssertionError("Function did not return a value")
-
-
 @pytest.fixture
 def driver(dynamic_components: AppHarness):
     """Get an instance of the browser open to the dynamic components app.
@@ -135,7 +107,9 @@ def driver(dynamic_components: AppHarness):
     """
     driver = dynamic_components.frontend()
     try:
-        token_input = poll_for_result(lambda: driver.find_element(By.ID, "token"))
+        token_input = dynamic_components.poll_for_result(
+            lambda: driver.find_element(By.ID, "token")
+        )
         assert token_input
         # wait for the backend connection to send the token
         token = dynamic_components.poll_for_value(token_input)
@@ -153,7 +127,9 @@ def test_dynamic_components(driver, dynamic_components: AppHarness):
         driver: selenium WebDriver open to the app
         dynamic_components: AppHarness for the dynamic components
     """
-    button = poll_for_result(lambda: driver.find_element(By.ID, "button"))
+    button = dynamic_components.poll_for_result(
+        lambda: driver.find_element(By.ID, "button")
+    )
     assert button
     assert button.text == "Click me"
 
@@ -166,6 +142,8 @@ def test_dynamic_components(driver, dynamic_components: AppHarness):
         == "Clicked"
     )
 
-    factorial = poll_for_result(lambda: driver.find_element(By.ID, "factorial"))
+    factorial = dynamic_components.poll_for_result(
+        lambda: driver.find_element(By.ID, "factorial")
+    )
     assert factorial
     assert factorial.text == "3628800"

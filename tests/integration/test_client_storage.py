@@ -243,7 +243,9 @@ async def test_client_side_state(
     assert client_side.frontend_url is not None
 
     def poll_for_token():
-        token_input = driver.find_element(By.ID, "token")
+        token_input = client_side.poll_for_result(
+            lambda: driver.find_element(By.ID, "token")
+        )
         assert token_input
 
         # wait for the backend connection to send the token
@@ -518,7 +520,9 @@ async def test_client_side_state(
     driver.refresh()
 
     # wait for the backend connection to send the token (again)
-    token_input = driver.find_element(By.ID, "token")
+    token_input = client_side.poll_for_result(
+        lambda: driver.find_element(By.ID, "token")
+    )
     assert token_input
     token = client_side.poll_for_value(token_input)
     assert token is not None
@@ -724,7 +728,9 @@ async def test_client_side_state(
     driver.refresh()
 
     # wait for the backend connection to send the token (again)
-    token_input = driver.find_element(By.ID, "token")
+    token_input = client_side.poll_for_result(
+        lambda: driver.find_element(By.ID, "token")
+    )
     assert token_input
     token = client_side.poll_for_value(token_input)
     assert token is not None

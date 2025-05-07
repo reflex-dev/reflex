@@ -198,7 +198,9 @@ def token(dynamic_route: AppHarness, driver: WebDriver) -> str:
         The token visible in the driver browser.
     """
     assert dynamic_route.app_instance is not None
-    token_input = driver.find_element(By.ID, "token")
+    token_input = dynamic_route.poll_for_result(
+        lambda: driver.find_element(By.ID, "token")
+    )
     assert token_input
 
     # wait for the backend connection to send the token
