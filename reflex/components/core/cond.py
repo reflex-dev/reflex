@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import Any, overload
 
 from reflex.components.base.fragment import Fragment
-from reflex.components.component import BaseComponent, Component, MemoizationLeaf
+from reflex.components.component import BaseComponent, Component
 from reflex.components.tags import CondTag, Tag
 from reflex.constants import Dirs
 from reflex.style import LIGHT_COLOR_MODE, resolved_color_mode
@@ -20,7 +20,7 @@ _IS_TRUE_IMPORT: ImportDict = {
 }
 
 
-class Cond(MemoizationLeaf):
+class Cond(Component):
     """Render one of two components based on a condition."""
 
     # The cond to determine which component to render.

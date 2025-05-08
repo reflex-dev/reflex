@@ -181,10 +181,13 @@ def to_camel_case(text: str, treat_hyphens_as_underscores: bool = True) -> str:
     Returns:
         The camel case string.
     """
-    char = "_" if not treat_hyphens_as_underscores else "-_"
-    words = re.split(f"[{char}]", text)
+    if treat_hyphens_as_underscores:
+        text = text.replace("-", "_")
+    words = text.split("_")
     # Capitalize the first letter of each word except the first one
-    converted_word = words[0] + "".join(x.capitalize() for x in words[1:])
+    if len(words) == 1:
+        return words[0]
+    converted_word = words[0] + "".join([w.capitalize() for w in words[1:]])
     return converted_word
 
 
@@ -436,12 +439,19 @@ def format_props(*single_props, **key_value_props) -> list[str]:
     from reflex.vars.base import LiteralVar, Var
 
     return [
-        (
-            f"{name}={{{format_prop(prop if isinstance(prop, Var) else LiteralVar.create(prop))}}}"
+        ":".join(
+            [
+                str(name if "-" not in name else LiteralVar.create(name)),
+                str(
+                    format_prop(
+                        prop if isinstance(prop, Var) else LiteralVar.create(prop)
+                    )
+                ),
+            ]
         )
         for name, prop in sorted(key_value_props.items())
         if prop is not None
-    ] + [(f"{LiteralVar.create(prop)!s}") for prop in single_props]
+    ] + [(f"...{LiteralVar.create(prop)!s}") for prop in single_props]
 
 
 def get_event_handler_parts(handler: EventHandler) -> tuple[str, str]:
