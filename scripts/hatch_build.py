@@ -126,12 +126,12 @@ def yaml_dump(o: Any, **kwargs: Any) -> str:
             for file, old, new in patches:
                 file_path = pathlib.Path(file)
                 file_content = file_path.read_text()
-                if file_content != new and file_content != old:
+                if new not in file_content and old not in file_content:
                     raise RuntimeError(
                         f"Unexpected content in {file_path}. Did you update pre-commit without updating the patches?"
                     )
-                if file_content == old:
-                    file_path.write_text(new)
+                if old in file_content:
+                    file_path.write_text(file_content.replace(old, new))
 
         if not (pathlib.Path(self.root) / "scripts").exists():
             return
