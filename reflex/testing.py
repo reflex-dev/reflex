@@ -14,6 +14,7 @@ import signal
 import socket
 import socketserver
 import subprocess
+import sys
 import textwrap
 import threading
 import time
@@ -475,7 +476,7 @@ class AppHarness:
             frontend_children = psutil.Process(self.frontend_process.pid).children(
                 recursive=True,
             )
-            if platform.system() == "Windows":
+            if sys.platform == "win32":
                 self.frontend_process.terminate()
             else:
                 pgrp = os.getpgid(self.frontend_process.pid)
