@@ -102,7 +102,9 @@ def test_tailwind_app(tailwind_app: AppHarness, tailwind_disabled: bool):
     errctx.match("The state manager has not been initialized.")
 
     # Assert content is visible (and not some error)
-    content = driver.find_element(By.ID, "p-content")
+    content = tailwind_app.poll_for_result(
+        lambda: driver.find_element(By.ID, "p-content")
+    )
     paragraphs = content.find_elements(By.TAG_NAME, "p")
     assert len(paragraphs) == 3
     for p in paragraphs:
