@@ -24,6 +24,7 @@ from typing import (  # noqa: UP035
     _GenericAlias,  # pyright: ignore [reportAttributeAccessIssue]
     _SpecialGenericAlias,  # pyright: ignore [reportAttributeAccessIssue]
     get_args,
+    is_typeddict,
 )
 from typing import get_origin as get_origin_og
 from typing import get_type_hints as get_type_hints_og
@@ -34,7 +35,6 @@ from sqlalchemy.ext.associationproxy import AssociationProxyInstance
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import DeclarativeBase, Mapped, QueryableAttribute, Relationship
 from typing_extensions import Self as Self
-from typing_extensions import is_typeddict
 from typing_extensions import override as override
 
 import reflex
