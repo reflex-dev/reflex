@@ -1101,10 +1101,10 @@ def _update_react_router_config(config: Config, export: bool = False):
             "unstable_optimizeDeps": True,
         },
         "ssr": False,
-        "prerender": True,
     }
 
     if export:
+        react_router_config["prerender"] = True
         react_router_config["build"] = constants.Dirs.BUILD_DIR
 
     return f"export default {json.dumps(react_router_config)};"
