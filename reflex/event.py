@@ -14,6 +14,7 @@ from typing import (
     Annotated,
     Any,
     Generic,
+    NoReturn,
     Protocol,
     TypedDict,
     TypeVar,
@@ -1683,6 +1684,16 @@ prevent_default = noop().prevent_default
 class EventVar(ObjectVar, python_types=(EventSpec, EventHandler)):
     """Base class for event vars."""
 
+    def bool(self) -> NoReturn:
+        """Get the boolean value of the var.
+
+        Raises:
+            TypeError: EventVar cannot be converted to a boolean.
+        """
+        raise TypeError(
+            f"Cannot convert {self._js_expr} of type {type(self).__name__} to bool."
+        )
+
 
 @dataclasses.dataclass(
     eq=False,
@@ -1758,6 +1769,16 @@ class LiteralEventVar(VarOperationCall, LiteralVar, EventVar):
 
 class EventChainVar(BuilderFunctionVar, python_types=EventChain):
     """Base class for event chain vars."""
+
+    def bool(self) -> NoReturn:
+        """Get the boolean value of the var.
+
+        Raises:
+            TypeError: EventChainVar cannot be converted to a boolean.
+        """
+        raise TypeError(
+            f"Cannot convert {self._js_expr} of type {type(self).__name__} to bool."
+        )
 
 
 @dataclasses.dataclass(
