@@ -313,15 +313,6 @@ wheels = [
 ]
 
 [[package]]
-name = "diff-match-patch"
-version = "20241021"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/0e/ad/32e1777dd57d8e85fa31e3a243af66c538245b8d64b7265bec9a61f2ca33/diff_match_patch-20241021.tar.gz", hash = "sha256:beae57a99fa48084532935ee2968b8661db861862ec82c6f21f4acdd6d835073", size = 39962, upload-time = "2024-10-21T19:41:21.094Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/f7/bb/2aa9b46a01197398b901e458974c20ed107935c26e44e37ad5b0e5511e44/diff_match_patch-20241021-py3-none-any.whl", hash = "sha256:93cea333fb8b2bc0d181b0de5e16df50dd344ce64828226bda07728818936782", size = 43252, upload-time = "2024-10-21T19:41:19.914Z" },
-]
-
-[[package]]
 name = "dill"
 version = "0.4.0"
 source = { registry = "https://pypi.org/simple" }
@@ -1557,7 +1548,6 @@ dependencies = [
 dev = [
     { name = "asynctest" },
     { name = "darglint" },
-    { name = "diff-match-patch" },
     { name = "dill" },
     { name = "hatchling" },
     { name = "libsass" },
@@ -1612,7 +1602,6 @@ requires-dist = [
 dev = [
     { name = "asynctest", specifier = ">=0.13" },
     { name = "darglint", specifier = ">=1.8" },
-    { name = "diff-match-patch", specifier = ">=20241021" },
     { name = "dill", specifier = ">=0.3" },
     { name = "hatchling", specifier = ">=1.27" },
     { name = "libsass", specifier = ">=0.23" },
@@ -1621,7 +1610,7 @@ dev = [
     { name = "pillow", specifier = ">=11" },
     { name = "playwright", specifier = ">=1.51" },
     { name = "plotly", specifier = ">=6.0" },
-    { name = "pre-commit", specifier = ">=4.2" },
+    { name = "pre-commit", specifier = "==4.2.0" },
     { name = "psycopg", extras = ["binary"], specifier = ">=3.2" },
     { name = "pyright", specifier = ">=1.1.400" },
     { name = "pytest", specifier = ">=8.3" },

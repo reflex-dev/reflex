@@ -34,39 +34,104 @@ class CustomBuilder(BuildHookInterface):
             version: The version of the package.
             build_data: The build data.
             artifact_path: The path to the artifact.
+
+        Raises:
+            RuntimeError: If the pre-commit patches are not applied correctly.
         """
         if self.marker().exists():
             return
 
         if importlib.util.find_spec("pre_commit"):
+            import pre_commit.constants
             import pre_commit.yaml
-            from diff_match_patch import diff_match_patch
 
-            patch = """@@ -82,16 +82,28 @@
- ort yaml
-+%0Aimport toml
- %0A%0ALoader
-@@ -209,24 +209,28 @@
- der=Loader)%0A
-+def 
- yaml_load = 
-@@ -226,37 +226,145 @@
- aml_load
-- = functools.partial(
-+(stream):%0A    try:%0A        return toml.loads(stream).get(%22tool%22, %7B%7D).get(%22pre-commit%22, %7B%7D)%0A    except ValueError:%0A        return 
- yaml.loa
-@@ -364,16 +364,23 @@
- aml.load
-+(stream
- , Loader
-"""  # noqa: W291
+            patches = [
+                (
+                    pre_commit.constants.__file__,
+                    """from __future__ import annotations
 
-            dmp = diff_match_patch()
-            patches = dmp.patch_fromText(patch)
-            new_text, _ = dmp.patch_apply(
-                patches, pathlib.Path(pre_commit.yaml.__file__).read_text()
-            )
-            pathlib.Path(pre_commit.yaml.__file__).write_text(new_text)
+import importlib.metadata
+
+CONFIG_FILE = '.pre-commit-config.yaml'
+MANIFEST_FILE = '.pre-commit-hooks.yaml'
+
+# Bump when modifying `empty_template`
+LOCAL_REPO_VERSION = '1'
+
+VERSION = importlib.metadata.version('pre_commit')
+
+DEFAULT = 'default'""",
+                    """from __future__ import annotations
+
+import importlib.metadata
+
+CONFIG_FILE = 'pyproject.toml'
+MANIFEST_FILE = '.pre-commit-hooks.yaml'
+
+# Bump when modifying `empty_template`
+LOCAL_REPO_VERSION = '1'
+
+VERSION = importlib.metadata.version('pre_commit')
+
+DEFAULT = 'default'""",
+                ),
+                (
+                    pre_commit.yaml.__file__,
+                    """from __future__ import annotations
+
+import functools
+from typing import Any
+
+import yaml
+
+Loader = getattr(yaml, 'CSafeLoader', yaml.SafeLoader)
+yaml_compose = functools.partial(yaml.compose, Loader=Loader)
+yaml_load = functools.partial(yaml.load, Loader=Loader)
+Dumper = getattr(yaml, 'CSafeDumper', yaml.SafeDumper)
+
+
+def yaml_dump(o: Any, **kwargs: Any) -> str:
+    # when python/mypy#1484 is solved, this can be `functools.partial`
+    return yaml.dump(
+        o, Dumper=Dumper, default_flow_style=False, indent=4, sort_keys=False,
+        **kwargs,
+    )""",
+                    """from __future__ import annotations
+
+import functools
+from typing import Any
+
+import yaml
+import toml
+
+Loader = getattr(yaml, 'CSafeLoader', yaml.SafeLoader)
+yaml_compose = functools.partial(yaml.compose, Loader=Loader)
+def yaml_load(stream):
+    try:
+        return toml.loads(stream).get("tool", {}).get("pre-commit", {})
+    except ValueError:
+        return yaml.load(stream, Loader=Loader)
+Dumper = getattr(yaml, 'CSafeDumper', yaml.SafeDumper)
+
+
+def yaml_dump(o: Any, **kwargs: Any) -> str:
+    # when python/mypy#1484 is solved, this can be `functools.partial`
+    return yaml.dump(
+        o, Dumper=Dumper, default_flow_style=False, indent=4, sort_keys=False,
+        **kwargs,
+    )""",
+                ),
+            ]
+
+            for file, old, new in patches:
+                file_path = pathlib.Path(file)
+                file_content = file_path.read_text()
+                if file_content != new and file_content != old:
+                    raise RuntimeError(
+                        f"Unexpected content in {file_path}. Did you update pre-commit without updating the patches?"
+                    )
+                if file_content == old:
+                    file_path.write_text(new)
 
         if not (pathlib.Path(self.root) / "scripts").exists():
             return
