@@ -29,11 +29,7 @@ from typing import (  # noqa: UP035
 from typing import get_origin as get_origin_og
 from typing import get_type_hints as get_type_hints_og
 
-import sqlalchemy
 from pydantic.v1.fields import ModelField
-from sqlalchemy.ext.associationproxy import AssociationProxyInstance
-from sqlalchemy.ext.hybrid import hybrid_property
-from sqlalchemy.orm import DeclarativeBase, Mapped, QueryableAttribute, Relationship
 from typing_extensions import Self as Self
 from typing_extensions import override as override
 
@@ -331,6 +327,8 @@ def get_property_hint(attr: Any | None) -> GenericType | None:
     Returns:
         The type hint of the property, if it is a property, else None.
     """
+    from sqlalchemy.ext.hybrid import hybrid_property
+
     if not isinstance(attr, (property, hybrid_property)):
         return None
     hints = get_type_hints(attr.fget)
@@ -349,6 +347,10 @@ def get_attribute_access_type(cls: GenericType, name: str) -> GenericType | None
     Returns:
         The type of the attribute, if accessible, or None
     """
+    import sqlalchemy
+    from sqlalchemy.ext.associationproxy import AssociationProxyInstance
+    from sqlalchemy.orm import DeclarativeBase, Mapped, QueryableAttribute, Relationship
+
     from reflex.model import Model
 
     try:
