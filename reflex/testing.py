@@ -957,7 +957,7 @@ class AppHarnessProd(AppHarness):
             / reflex.constants.Dirs.STATIC
         )
         error_page_map = {
-            404: web_root / "404.html",
+            404: web_root / "404" / "index.html",
         }
         with Subdir404TCPServer(
             ("", 0),

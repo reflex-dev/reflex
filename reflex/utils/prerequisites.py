@@ -1101,6 +1101,7 @@ def _update_react_router_config(config: Config, export: bool = False):
             "unstable_optimizeDeps": True,
         },
         "ssr": False,
+        "prerender": True,
     }
 
     if export:
