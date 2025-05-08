@@ -1,6 +1,6 @@
 [project]
 name = "reflex"
-version = "0.7.10dev1"
+version = "0.7.11dev1"
 description = "Web apps in pure Python."
 license = { text = "Apache-2.0" }
 authors = [
@@ -32,7 +32,7 @@ dependencies = [
   "python-socketio >=5.12.0,<6.0",
   "python-multipart >=0.0.20,<1.0",
   "redis >=5.2.1,<6.0",
-  "reflex-hosting-cli >=0.1.43",
+  "reflex-hosting-cli >=0.1.47",
   "rich >=13,<15",
   "sqlmodel >=0.0.24,<0.1",
   "click >=8",
@@ -150,7 +150,7 @@ dev = [
   "plotly >=6.0",
   "pre-commit >=4.2",
   "psycopg[binary] >=3.2",
-  "pyright >=1.1.399",
+  "pyright >=1.1.400",
   "pytest >=8.3",
   "pytest-asyncio >=0.26",
   "pytest-benchmark >=5.1",
@@ -165,5 +165,43 @@ dev = [
   "selenium >=4.31",
   "starlette-admin >=0.14",
   "uvicorn >=0.34.0",
-
 ]
+
+
+[tool.coverage.run]
+source = ["reflex"]
+branch = true
+omit = [
+  "*/pyi_generator.py",
+  "reflex/__main__.py",
+  "reflex/app_module_for_backend.py",
+  "reflex/components/chakra/*",
+  "reflex/experimental/*",
+]
+
+[tool.coverage.report]
+show_missing = true
+# TODO bump back to 79
+fail_under = 70
+precision = 2
+ignore_errors = true
+
+exclude_also = [
+  "def __repr__",
+  # Don't complain about missing debug-only code:
+  "if self.debug",
+  # Don't complain if tests don't hit defensive assertion code:
+  "raise AssertionError",
+  "raise NotImplementedError",
+  # Regexes for lines to exclude from consideration
+  "if 0:",
+  # Don't complain if non-runnable code isn't run:
+  "if __name__ == .__main__.:",
+  # Don't complain about abstract methods, they aren't run:
+  "@(abc.)?abstractmethod",
+  # Don't complain about overloaded methods:
+  "@overload",
+]
+
+[tool.coverage.html]
+directory = "coverage_html_report"

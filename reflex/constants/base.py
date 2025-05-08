@@ -134,7 +134,7 @@ class Templates(SimpleNamespace):
     DEFAULT_TEMPLATE_URL = "https://blank-template.reflex.run"
 
     # The reflex.build frontend host
-    REFLEX_BUILD_FRONTEND = "https://flexgen.reflex.run"
+    REFLEX_BUILD_FRONTEND = "https://reflex.build"
 
     # The reflex.build backend host
     REFLEX_BUILD_BACKEND = "https://flexgen-prod-flexgen.fly.dev"

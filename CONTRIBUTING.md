@@ -23,7 +23,7 @@ cd reflex
 **3. Install your local Reflex build:**
 
 ```bash
-uv sync --python 3.13
+uv sync
 ```
 
 **4. Now create an examples folder so you can test the local Python build in this repository.**

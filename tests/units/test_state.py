@@ -27,18 +27,20 @@ from reflex.app import App
 from reflex.base import Base
 from reflex.constants import CompileVars, RouteVar, SocketEvent
 from reflex.event import Event, EventHandler
-from reflex.state import (
-    BaseState,
-    ImmutableStateError,
+from reflex.istate.manager import (
     LockExpiredError,
-    MutableProxy,
-    OnLoadInternalState,
-    RouterData,
-    State,
     StateManager,
     StateManagerDisk,
     StateManagerMemory,
     StateManagerRedis,
+)
+from reflex.state import (
+    BaseState,
+    ImmutableStateError,
+    MutableProxy,
+    OnLoadInternalState,
+    RouterData,
+    State,
     StateProxy,
     StateUpdate,
     _substate_key,
@@ -1505,6 +1507,10 @@ def test_setattr_of_mutable_types(mutable_state: MutableTestState):
     assert isinstance(array[1], list)
     assert isinstance(array[2], MutableProxy)
     assert isinstance(array[2], dict)
+    assert isinstance(array[:], list)
+    assert not isinstance(array[:], MutableProxy)
+    assert isinstance(array[:][1], MutableProxy)
+    assert isinstance(array[:][1], list)
 
     assert isinstance(hashmap, MutableProxy)
     assert isinstance(hashmap, dict)
@@ -1773,7 +1779,7 @@ def substate_token_redis(state_manager_redis, token):
 
 @pytest.mark.asyncio
 async def test_state_manager_lock_expire(
-    state_manager_redis: StateManager, token: str, substate_token_redis: str
+    state_manager_redis: StateManagerRedis, token: str, substate_token_redis: str
 ):
     """Test that the state manager lock expires and raises exception exiting context.
 
@@ -1795,7 +1801,7 @@ async def test_state_manager_lock_expire(
 
 @pytest.mark.asyncio
 async def test_state_manager_lock_expire_contend(
-    state_manager_redis: StateManager, token: str, substate_token_redis: str
+    state_manager_redis: StateManagerRedis, token: str, substate_token_redis: str
 ):
     """Test that the state manager lock expires and queued waiters proceed.
 
@@ -1840,7 +1846,10 @@ async def test_state_manager_lock_expire_contend(
 
 @pytest.mark.asyncio
 async def test_state_manager_lock_warning_threshold_contend(
-    state_manager_redis: StateManager, token: str, substate_token_redis: str, mocker
+    state_manager_redis: StateManagerRedis,
+    token: str,
+    substate_token_redis: str,
+    mocker,
 ):
     """Test that the state manager triggers a warning when lock contention exceeds the warning threshold.
 
@@ -3350,7 +3359,8 @@ config = rx.Config(
     with chdir(proj_root):
         # reload config for each parameter to avoid stale values
         reflex.config.get_config(reload=True)
-        from reflex.state import State, StateManager
+        from reflex.istate.manager import StateManager
+        from reflex.state import State
 
         state_manager = StateManager.create(state=State)
         assert state_manager.lock_expiration == expected_values[0]  # pyright: ignore [reportAttributeAccessIssue]
@@ -3388,11 +3398,39 @@ config = rx.Config(
     with chdir(proj_root):
         # reload config for each parameter to avoid stale values
         reflex.config.get_config(reload=True)
-        from reflex.state import State, StateManager
+        from reflex.istate.manager import StateManager
+        from reflex.state import State
 
         with pytest.raises(InvalidLockWarningThresholdError):
             StateManager.create(state=State)
         del sys.modules[constants.Config.MODULE]
+
+
+def test_auto_setters_off(tmp_path):
+    proj_root = tmp_path / "project1"
+    proj_root.mkdir()
+
+    config_string = """
+import reflex as rx
+config = rx.Config(
+    app_name="project1",
+    state_auto_setters=False,
+)
+    """
+
+    (proj_root / "rxconfig.py").write_text(dedent(config_string))
+
+    with chdir(proj_root):
+        # reload config for each parameter to avoid stale values
+        reflex.config.get_config(reload=True)
+        from reflex.state import State
+
+        class TestState(State):
+            """A test state."""
+
+            num: int = 0
+
+        assert list(TestState.event_handlers) == ["setvar"]
 
 
 class MixinState(State, mixin=True):

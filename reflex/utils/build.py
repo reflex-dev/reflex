@@ -83,7 +83,7 @@ def _zip(
     files_to_zip: list[str] = []
     # Traverse the root directory in a top-down manner. In this traversal order,
     # we can modify the dirs list in-place to remove directories we don't want to include.
-    for root, dirs, files in os.walk(root_dir, topdown=True):
+    for root, dirs, files in os.walk(root_dir, topdown=True, followlinks=True):
         root = Path(root)
         # Modify the dirs in-place so excluded and hidden directories are skipped in next traversal.
         dirs[:] = [
@@ -112,7 +112,6 @@ def _zip(
                 for file in root_dir.glob(glob)
                 if file.name not in files_to_exclude
             ]
-
     # Create a progress bar for zipping the component.
     progress = Progress(
         *Progress.get_default_columns()[:-1],

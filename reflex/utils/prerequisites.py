@@ -38,7 +38,7 @@ from redis.exceptions import RedisError
 from reflex import constants, model
 from reflex.compiler import templates
 from reflex.config import Config, environment, get_config
-from reflex.utils import console, net, path_ops, processes
+from reflex.utils import console, net, path_ops, processes, redir
 from reflex.utils.decorator import once
 from reflex.utils.exceptions import (
     GeneratedCodeHasNoFunctionDefsError,
@@ -65,7 +65,6 @@ class Template:
     name: str
     description: str
     code_url: str
-    demo_url: str | None = None
 
 
 @dataclasses.dataclass(frozen=True)
@@ -840,18 +839,24 @@ def initialize_gitignore(
 
 def initialize_requirements_txt() -> bool:
     """Initialize the requirements.txt file.
-    If absent, generate one for the user.
+    If absent and no pyproject.toml file exists, generate one for the user.
     If the requirements.txt does not have reflex as dependency,
     generate a requirement pinning current version and append to
     the requirements.txt file.
 
     Returns:
-        True if the requirements.txt file was created or updated, False otherwise.
+        True if the user has to update the requirements.txt file.
 
     Raises:
         Exit: If the requirements.txt file cannot be read or written to.
     """
     requirements_file_path = Path(constants.RequirementsTxt.FILE)
+    if (
+        not requirements_file_path.exists()
+        and Path(constants.PyprojectToml.FILE).exists()
+    ):
+        return True
+
     requirements_file_path.touch(exist_ok=True)
 
     for encoding in [None, "utf-8"]:
@@ -864,12 +869,12 @@ def initialize_requirements_txt() -> bool:
             console.error(f"Failed to read {requirements_file_path}.")
             raise click.exceptions.Exit(1) from e
     else:
-        return False
+        return True
 
     for line in content.splitlines():
         if re.match(r"^reflex[^a-zA-Z0-9]", line):
             console.debug(f"{requirements_file_path} already has reflex as dependency.")
-            return True
+            return False
 
     console.debug(
         f"Appending {constants.RequirementsTxt.DEFAULTS_STUB} to {requirements_file_path}"
@@ -879,7 +884,7 @@ def initialize_requirements_txt() -> bool:
             "\n" + constants.RequirementsTxt.DEFAULTS_STUB + constants.Reflex.VERSION
         )
 
-    return True
+    return False
 
 
 def initialize_app_directory(
@@ -1365,17 +1370,11 @@ def check_running_mode(frontend: bool, backend: bool) -> tuple[bool, bool]:
     return frontend, backend
 
 
-def needs_reinit(frontend: bool = True) -> bool:
-    """Check if an app needs to be reinitialized.
-
-    Args:
-        frontend: Whether to check if the frontend is initialized.
-
-    Returns:
-        Whether the app needs to be reinitialized.
+def assert_in_reflex_dir():
+    """Assert that the current working directory is the reflex directory.
 
     Raises:
-        Exit: If the app is not initialized.
+        Exit: If the current working directory is not the reflex directory.
     """
     if not constants.Config.FILE.exists():
         console.error(
@@ -1383,10 +1382,13 @@ def needs_reinit(frontend: bool = True) -> bool:
         )
         raise click.exceptions.Exit(1)
 
-    # Don't need to reinit if not running in frontend mode.
-    if not frontend:
-        return False
 
+def needs_reinit() -> bool:
+    """Check if an app needs to be reinitialized.
+
+    Returns:
+        Whether the app needs to be reinitialized.
+    """
     # Make sure the .reflex directory exists.
     if not environment.REFLEX_DIR.get().exists():
         return True
@@ -1600,22 +1602,13 @@ def prompt_for_template_options(templates: list[Template]) -> str:
     # Show the user the URLs of each template to preview.
     console.print("\nGet started with a template:")
 
-    def format_demo_url_str(url: str | None) -> str:
-        return f" ({url})" if url else ""
-
     # Prompt the user to select a template.
-    id_to_name = {
-        str(
-            idx
-        ): f"{template.name.replace('_', ' ').replace('-', ' ')}{format_demo_url_str(template.demo_url)} - {template.description}"
-        for idx, template in enumerate(templates)
-    }
-    for id in range(len(id_to_name)):
-        console.print(f"({id}) {id_to_name[str(id)]}")
+    for index, template in enumerate(templates):
+        console.print(f"({index}) {template.description}")
 
     template = console.ask(
         "Which template would you like to use?",
-        choices=[str(i) for i in range(len(id_to_name))],
+        choices=[str(i) for i in range(len(templates))],
         show_choices=False,
         default="0",
     )
@@ -1884,14 +1877,17 @@ def initialize_app(app_name: str, template: str | None = None) -> str | None:
 
     if template is None:
         template = prompt_for_template_options(get_init_cli_prompt_options())
+
         if template == constants.Templates.CHOOSE_TEMPLATES:
-            console.print(
-                f"Go to the templates page ({constants.Templates.REFLEX_TEMPLATES_URL}) and copy the command to init with a template."
-            )
+            redir.reflex_templates()
             raise click.exceptions.Exit(0)
 
+    if template == constants.Templates.AI:
+        redir.reflex_build_redirect()
+        raise click.exceptions.Exit(0)
+
     # If the blank template is selected, create a blank app.
-    if template in (constants.Templates.DEFAULT,):
+    if template == constants.Templates.DEFAULT:
         # Default app creation behavior: a blank app.
         initialize_default_app(app_name)
     else:
@@ -1914,19 +1910,16 @@ def get_init_cli_prompt_options() -> list[Template]:
         Template(
             name=constants.Templates.DEFAULT,
             description="A blank Reflex app.",
-            demo_url=constants.Templates.DEFAULT_TEMPLATE_URL,
             code_url="",
         ),
         Template(
             name=constants.Templates.AI,
-            description="Generate a template using AI [Experimental]",
-            demo_url="",
+            description="[bold]Try our free AI builder.",
             code_url="",
         ),
         Template(
             name=constants.Templates.CHOOSE_TEMPLATES,
-            description="Choose an existing template.",
-            demo_url="",
+            description="Premade templates built by the Reflex team.",
             code_url="",
         ),
     ]

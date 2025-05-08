@@ -14,6 +14,7 @@ from unittest.mock import AsyncMock
 
 import pytest
 import sqlmodel
+from fastapi.responses import StreamingResponse
 from pytest_mock import MockerFixture
 from starlette.applications import Starlette
 from starlette.datastructures import UploadFile
@@ -830,6 +831,7 @@ async def test_upload_file(tmp_path, state, delta, token: str, mocker):
 
     upload_fn = upload(app)
     streaming_response = await upload_fn(request_mock)
+    assert isinstance(streaming_response, StreamingResponse)
     async for state_update in streaming_response.body_iterator:
         assert (
             state_update
@@ -1362,24 +1364,23 @@ def test_app_wrap_compile_theme(
         line.strip() for line in app_js_contents.splitlines() if line.strip()
     ]
     lines = "".join(app_js_lines)
-    assert (
+    expected = (
         "function AppWrap({children}) {"
         "return ("
-        + ("<StrictMode>" if react_strict_mode else "")
-        + "<RadixThemesColorModeProvider>"
-        "<RadixThemesTheme accentColor={\"plum\"} css={{...theme.styles.global[':root'], ...theme.styles.global.body}}>"
-        "<Fragment>"
-        "<MemoizedToastProvider/>"
-        "<Fragment>"
-        "{children}"
-        "</Fragment>"
-        "</Fragment>"
-        "</RadixThemesTheme>"
-        "</RadixThemesColorModeProvider>"
-        + ("</StrictMode>" if react_strict_mode else "")
-        + ")"
+        + ("jsx(StrictMode,{}," if react_strict_mode else "")
+        + "jsx(RadixThemesColorModeProvider,{},"
+        "jsx(RadixThemesTheme,{accentColor:\"plum\",css:{...theme.styles.global[':root'], ...theme.styles.global.body}},"
+        "jsx(Fragment,{},"
+        "jsx(MemoizedToastProvider,{},),"
+        "jsx(Fragment,{},"
+        "children,"
+        "),"
+        "),"
+        "),"
+        ")" + (",)" if react_strict_mode else "") + ")"
         "}"
-    ) in lines
+    )
+    assert expected in lines
 
 
 @pytest.mark.parametrize(
@@ -1429,23 +1430,21 @@ def test_app_wrap_priority(
         line.strip() for line in app_js_contents.splitlines() if line.strip()
     ]
     lines = "".join(app_js_lines)
-    assert (
+    expected = (
         "function AppWrap({children}) {"
-        "return (" + ("<StrictMode>" if react_strict_mode else "") + "<RadixThemesBox>"
-        '<RadixThemesText as={"p"}>'
-        "<RadixThemesColorModeProvider>"
-        "<Fragment2>"
-        "<Fragment>"
-        "<MemoizedToastProvider/>"
-        "<Fragment>"
-        "{children}"
-        "</Fragment>"
-        "</Fragment>"
-        "</Fragment2>"
-        "</RadixThemesColorModeProvider>"
-        "</RadixThemesText>"
-        "</RadixThemesBox>" + ("</StrictMode>" if react_strict_mode else "")
-    ) in lines
+        "return ("
+        + ("jsx(StrictMode,{}," if react_strict_mode else "")
+        + "jsx(RadixThemesBox,{},"
+        'jsx(RadixThemesText,{as:"p"},'
+        "jsx(RadixThemesColorModeProvider,{},"
+        "jsx(Fragment2,{},"
+        "jsx(Fragment,{},"
+        "jsx(MemoizedToastProvider,{},),"
+        "jsx(Fragment,{},"
+        "children"
+        ",),),),),)" + (",)" if react_strict_mode else "")
+    )
+    assert expected in lines
 
 
 def test_app_state_determination():

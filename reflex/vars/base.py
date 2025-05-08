@@ -15,6 +15,7 @@ import string
 import uuid
 import warnings
 from collections.abc import Callable, Coroutine, Iterable, Mapping, Sequence
+from decimal import Decimal
 from types import CodeType, FunctionType
 from typing import (  # noqa: UP035
     TYPE_CHECKING,
@@ -632,6 +633,14 @@ class Var(Generic[VAR_TYPE]):
 
     @overload
     @classmethod
+    def create(
+        cls,
+        value: Decimal,
+        _var_data: VarData | None = None,
+    ) -> LiteralNumberVar[Decimal]: ...
+
+    @overload
+    @classmethod
     def create(  # pyright: ignore [reportOverlappingOverload]
         cls,
         value: str,
@@ -743,7 +752,10 @@ class Var(Generic[VAR_TYPE]):
     def to(self, output: type[int]) -> NumberVar[int]: ...
 
     @overload
-    def to(self, output: type[int] | type[float]) -> NumberVar: ...
+    def to(self, output: type[float]) -> NumberVar[float]: ...
+
+    @overload
+    def to(self, output: type[Decimal]) -> NumberVar[Decimal]: ...
 
     @overload
     def to(
