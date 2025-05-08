@@ -27,9 +27,10 @@ runs:
   using: "composite"
   steps:
     - name: Install UV
-      uses: astral-sh/setup-uv@v5
+      uses: astral-sh/setup-uv@v6
       with:
         python-version: ${{ inputs.python-version }}
         enable-cache: true
         prune-cache: false
+        activate-environment: true
         cache-dependency-glob: "uv.lock"
