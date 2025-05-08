@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from collections.abc import Iterator
 from hashlib import md5
-from typing import Any, Literal
+from typing import Any, ClassVar, Literal
 
 from jinja2 import Environment
 
@@ -85,6 +85,8 @@ class Button(BaseHTML):
 
     # Value of the button, used when sending form data
     value: Var[str | int | float]
+
+    _invalid_children: ClassVar[list[str]] = ["Button"]
 
 
 class Datalist(BaseHTML):

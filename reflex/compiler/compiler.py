@@ -30,6 +30,13 @@ from reflex.utils.prerequisites import get_web_dir
 from reflex.vars.base import LiteralVar, Var
 
 
+def _apply_common_imports(
+    imports: dict[str, list[ImportVar]],
+):
+    imports.setdefault("@emotion/react", []).append(ImportVar("jsx"))
+    imports.setdefault("react", []).append(ImportVar("Fragment"))
+
+
 def _compile_document_root(root: Component) -> str:
     """Compile the document root.
 
@@ -39,8 +46,10 @@ def _compile_document_root(root: Component) -> str:
     Returns:
         The compiled document root.
     """
+    document_root_imports = root._get_all_imports()
+    _apply_common_imports(document_root_imports)
     return templates.DOCUMENT_ROOT.render(
-        imports=utils.compile_imports(root._get_all_imports()),
+        imports=utils.compile_imports(document_root_imports),
         document=root.render(),
     )
 
@@ -74,8 +83,11 @@ def _compile_app(app_root: Component) -> str:
         (_normalize_library_name(name), name) for name in bundled_libraries
     ]
 
+    app_root_imports = app_root._get_all_imports()
+    _apply_common_imports(app_root_imports)
+
     return templates.APP_ROOT.render(
-        imports=utils.compile_imports(app_root._get_all_imports()),
+        imports=utils.compile_imports(app_root_imports),
         custom_codes=app_root._get_all_custom_code(),
         hooks=app_root._get_all_hooks(),
         window_libraries=window_libraries,
@@ -143,6 +155,7 @@ def _compile_page(
         The compiled component.
     """
     imports = component._get_all_imports()
+    _apply_common_imports(imports)
     imports = utils.compile_imports(imports)
 
     # Compile the code to render the component.
@@ -325,7 +338,7 @@ def _compile_components(
     """
     imports = {
         "react": [ImportVar(tag="memo")],
-        f"$/{constants.Dirs.STATE_PATH}": [ImportVar(tag="E"), ImportVar(tag="isTrue")],
+        f"$/{constants.Dirs.STATE_PATH}": [ImportVar(tag="isTrue")],
     }
     component_renders = []
 
@@ -334,6 +347,8 @@ def _compile_components(
         component_render, component_imports = utils.compile_custom_component(component)
         component_renders.append(component_render)
         imports = utils.merge_imports(imports, component_imports)
+
+    _apply_common_imports(imports)
 
     dynamic_imports = {
         comp_import: None
@@ -427,6 +442,8 @@ def _compile_stateful_components(
     all_imports.pop(
         f"$/{constants.Dirs.UTILS}/{constants.PageNames.STATEFUL_COMPONENTS}", None
     )
+    if rendered_components:
+        _apply_common_imports(all_imports)
 
     return templates.STATEFUL_COMPONENTS.render(
         imports=utils.compile_imports(all_imports),

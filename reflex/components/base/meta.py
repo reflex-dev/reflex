@@ -3,13 +3,11 @@
 from __future__ import annotations
 
 from reflex.components.base.bare import Bare
-from reflex.components.component import Component
+from reflex.components.el import elements
 
 
-class Title(Component):
+class Title(elements.Title):
     """A component that displays the title of the current page."""
-
-    tag = "title"
 
     def render(self) -> dict:
         """Render the title component.
@@ -26,10 +24,8 @@ class Title(Component):
         return super().render()
 
 
-class Meta(Component):
+class Meta(elements.Meta):
     """A component that displays metadata for the current page."""
-
-    tag = "meta"
 
     # The description of character encoding.
     char_set: str | None = None
@@ -47,14 +43,14 @@ class Meta(Component):
     http_equiv: str | None = None
 
 
-class Description(Meta):
+class Description(elements.Meta):
     """A component that displays the title of the current page."""
 
     # The type of the description.
     name: str | None = "description"
 
 
-class Image(Meta):
+class Image(elements.Meta):
     """A component that displays the title of the current page."""
 
     # The type of the image.

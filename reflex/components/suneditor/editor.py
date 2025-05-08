@@ -103,7 +103,7 @@ class Editor(NoSSRComponent):
     refer to the library docs for a complete list.
     """
 
-    library = "suneditor-react"
+    library = "suneditor-react@3.6.1"
 
     tag = "SunEditor"
 

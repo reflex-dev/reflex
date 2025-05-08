@@ -56,7 +56,7 @@ def _load_dotenv_from_str(env_files: str) -> None:
 
     if load_dotenv is None:
         console.error(
-            """The `python-dotenv` package is required to load environment variables from a file. Run `pip install "python-dotenv>=1.0.1"`."""
+            """The `python-dotenv` package is required to load environment variables from a file. Run `pip install "python-dotenv>=1.1.0"`."""
         )
         return
 
@@ -69,7 +69,7 @@ def _load_dotenv_from_str(env_files: str) -> None:
 
 
 # Load the env files at import time if they are set in the ENV_FILE environment variable.
-if load_dotenv is not None and (env_files := os.getenv("ENV_FILE")):
+if env_files := os.getenv("ENV_FILE"):
     _load_dotenv_from_str(env_files)
 
 
@@ -879,6 +879,9 @@ class Config(Base):
 
     # Path to file containing key-values pairs to override in the environment; Dotenv format.
     env_file: str | None = None
+
+    # Whether to automatically create setters for state base vars
+    state_auto_setters: bool = True
 
     # Whether to display the sticky "Built with Reflex" badge on all pages.
     show_built_with_reflex: bool | None = None
