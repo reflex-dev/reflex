@@ -534,12 +534,14 @@ async def test_event_chain_on_mount(
         exp_event_order: the expected events recorded in the State
     """
     assert event_chain.frontend_url is not None
-    driver.get(event_chain.frontend_url + uri)
+    driver.get(event_chain.frontend_url.removesuffix("/") + uri)
+
+    unmount_button = event_chain.poll_for_result(
+        lambda: driver.find_element(By.ID, "unmount")
+    )
+    assert unmount_button
     token = assert_token(event_chain, driver)
     state_name = event_chain.get_state_name("_state")
-
-    unmount_button = driver.find_element(By.ID, "unmount")
-    assert unmount_button
     unmount_button.click()
 
     async def _has_all_events():
@@ -549,7 +551,7 @@ async def test_event_chain_on_mount(
 
     await AppHarness._poll_for_async(_has_all_events)
     event_order = (await event_chain.get_state(token)).substates[state_name].event_order
-    assert event_order == exp_event_order
+    assert list(event_order) == exp_event_order
 
 
 @pytest.mark.parametrize(
