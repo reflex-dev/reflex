@@ -67,7 +67,7 @@ runner = CliRunner()
                 app_name="test",
             ),
             True,
-            'export default {"basename": "/", "future": {"unstable_optimizeDeps": true}, "ssr": false, "build": "build"};',
+            'export default {"basename": "/", "future": {"unstable_optimizeDeps": true}, "ssr": false, "prerender": true, "build": "build"};',
         ),
         (
             Config(
@@ -75,7 +75,7 @@ runner = CliRunner()
                 next_dev_indicators=True,
             ),
             True,
-            'export default {"basename": "/", "future": {"unstable_optimizeDeps": true}, "ssr": false, "build": "build"};',
+            'export default {"basename": "/", "future": {"unstable_optimizeDeps": true}, "ssr": false, "prerender": true, "build": "build"};',
         ),
     ],
 )
