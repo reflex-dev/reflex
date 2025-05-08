@@ -24,7 +24,9 @@ def ExtraOverlay():
         )
 
     app = rx.App()
-    rx.config.get_config().extra_overlay_function = "reflex.components.moment.moment"
+    rx.config.get_config().extra_overlay_function = (
+        "reflex.components.radix.themes.components.button"
+    )
     app.add_page(index)
 
 
@@ -83,6 +85,6 @@ def test_extra_overlay(driver: WebDriver, extra_overlay: AppHarness):
     assert text
     assert text.text == "Hello World"
 
-    time = driver.find_element(By.TAG_NAME, "time")
-    assert time
-    assert time.text
+    button = driver.find_element(By.TAG_NAME, "button")
+    assert button
+    assert not button.text
