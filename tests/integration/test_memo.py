@@ -86,7 +86,9 @@ async def test_memo_app(memo_app: AppHarness):
     driver = memo_app.frontend()
 
     # check that the output matches
-    memo_custom_code_stack = driver.find_element(By.ID, "memo-custom-code")
+    memo_custom_code_stack = memo_app.poll_for_result(
+        lambda: driver.find_element(By.ID, "memo-custom-code")
+    )
     assert (
         memo_app.poll_for_content(memo_custom_code_stack, exp_not_equal="")
         == "foobarbarbar"

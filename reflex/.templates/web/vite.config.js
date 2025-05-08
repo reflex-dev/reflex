@@ -14,7 +14,7 @@ export default defineConfig((config) => ({
     port: process.env.PORT,
   },
   resolve: {
-    mainFields: ['browser', 'module', 'jsnext'],
+    mainFields: ["browser", "module", "jsnext"],
     alias: [
       {
         find: "$",
