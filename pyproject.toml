@@ -73,7 +73,7 @@ artifacts = ["*.pyi"]
 
 [tool.hatch.build.hooks.custom]
 path = "scripts/hatch_build.py"
-dependencies = ["plotly", "ruff"]
+dependencies = ["plotly", "ruff", "pre_commit", "diff_match_patch"]
 require-runtime-dependencies = true
 
 [tool.pyright]
@@ -142,6 +142,7 @@ dev = [
   "asynctest >=0.13",
   "darglint >=1.8",
   "dill >=0.3",
+  "diff-match-patch >=20241021",
   "hatchling >=1.27",
   "libsass >=0.23",
   "numpy >=2.2",
@@ -165,6 +166,7 @@ dev = [
   "ruff >=0.11",
   "selenium >=4.31",
   "starlette-admin >=0.14",
+  "toml >=0.10.2",
   "uvicorn >=0.34.0",
 ]
 
