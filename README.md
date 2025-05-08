@@ -140,7 +140,7 @@ app.add_page(index, title="Reflex:DALL-E")
 ## Let's break this down.
 
 <div align="center">
-<img src="docs/images/dalle_colored_code_example.png" alt="Explaining the differences between backend and frontend parts of the DALL-E app." width="900" />
+<img src="https://raw.githubusercontent.com/reflex-dev/reflex/main/docs/images/dalle_colored_code_example.png" alt="Explaining the differences between backend and frontend parts of the DALL-E app." width="900" />
 </div>
 
 ### **Reflex UI**
@@ -230,7 +230,7 @@ Reflex launched in December 2022 with the name Pynecone.
 
 Beginning in 2025, [Reflex Cloud](https://cloud.reflex.dev) has launched to provide the best hosting experience for Reflex apps. We will continue to develop it and implement more features.
 
-Reflex has new releases and features coming every other week! Make sure to :star: star and :eyes: watch this repository to stay up to date.
+Reflex has new releases and features coming every week! Make sure to :star: star and :eyes: watch this repository to stay up to date.
 
 ## Contributing
 
@@ -250,4 +250,4 @@ We are actively looking for contributors, no matter your skill level or experien
 
 ## License
 
-Reflex is open-source and licensed under the [Apache License 2.0](LICENSE).
+Reflex is open-source and licensed under the [Apache License 2.0](https://raw.githubusercontent.com/reflex-dev/reflex/main/LICENSE).
