@@ -19,6 +19,7 @@ import pydantic.v1
 from rich.markup import escape
 
 import reflex.state
+from reflex import constants
 from reflex.base import Base
 from reflex.compiler.templates import STATEFUL_COMPONENT
 from reflex.components.core.breakpoints import Breakpoints
@@ -1982,7 +1983,10 @@ class NoSSRComponent(Component):
             The imports for dynamically importing the component at module load time.
         """
         # Next.js dynamic import mechanism.
-        dynamic_import = {"react": [ImportVar(tag="lazy")]}
+        dynamic_import = {
+            "react": [ImportVar(tag="lazy")],
+            f"$/{constants.Dirs.UTILS}/context": [ImportVar(tag="ClientSide")],
+        }
 
         # The normal imports for this component.
         _imports = super()._get_imports()
@@ -2015,10 +2019,10 @@ class NoSSRComponent(Component):
             else ""
         )
         return (
-            f"const {self.alias if self.alias else self.tag} = lazy(() => "
+            f"const {self.alias if self.alias else self.tag} = ClientSide(lazy(() => "
             + library_import
             + mod_import
-            + ")"
+            + "))"
         )
 
 

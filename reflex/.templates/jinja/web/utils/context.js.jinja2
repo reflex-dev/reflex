@@ -1,5 +1,6 @@
-import { createContext, useContext, useMemo, useReducer, useState, createElement } from "react"
+import { createContext, useContext, useMemo, useReducer, useState, createElement, useEffect } from "react"
 import { applyDelta, Event, hydrateClientStorage, useEventLoop, refs } from "$/utils/state"
+import { jsx } from "@emotion/react";
 
 {% if initial_state %}
 export const initialState = {{ initial_state|json_dumps }}
@@ -82,6 +83,16 @@ export function UploadFilesProvider({ children }) {
     { value: [filesById, setFilesById] },
     children
   );
+}
+
+export function ClientSide(component) {
+  return ({ children, ...props }) => {
+    const [Component, setComponent] = useState(null);
+    useEffect(() => {
+      setComponent(component);
+    }, []);
+    return Component ? jsx(Component, props, children) : null;
+  };
 }
 
 export function EventLoopProvider({ children }) {
