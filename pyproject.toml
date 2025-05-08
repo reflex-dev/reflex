@@ -73,7 +73,7 @@ artifacts = ["*.pyi"]
 
 [tool.hatch.build.hooks.custom]
 path = "scripts/hatch_build.py"
-dependencies = ["plotly", "ruff", "pre_commit", "diff_match_patch", "toml"]
+dependencies = ["plotly", "ruff", "pre_commit", "toml"]
 require-runtime-dependencies = true
 
 [tool.pyright]
