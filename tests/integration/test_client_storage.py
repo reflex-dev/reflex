@@ -475,10 +475,10 @@ async def test_client_side_state(
 
     # navigate to the /foo route
     with utils.poll_for_navigation(driver):
-        driver.get(client_side.frontend_url + "/foo")
+        driver.get(client_side.frontend_url.removesuffix("/") + "/foo/")
 
     # get new references to all cookie and local storage elements
-    c1 = driver.find_element(By.ID, "c1")
+    c1 = client_side.poll_for_result(lambda: driver.find_element(By.ID, "c1"))
     c2 = driver.find_element(By.ID, "c2")
     c3 = driver.find_element(By.ID, "c3")
     c4 = driver.find_element(By.ID, "c4")

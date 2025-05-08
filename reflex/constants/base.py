@@ -225,7 +225,7 @@ class ReactRouter(Javascript):
     """Constants related to React Router."""
 
     # The react router config file
-    CONFIG_FILE = "react-router-config.js"
+    CONFIG_FILE = "react-router.config.js"
 
     # Regex to check for message displayed when frontend comes up
     FRONTEND_LISTENING_REGEX = "Local:[\\s]+(.*)"

@@ -6,7 +6,12 @@ import env from "$/env.json";
 import reflexEnvironment from "$/reflex.json";
 import Cookies from "universal-cookie";
 import { useEffect, useRef, useState } from "react";
-import { useLocation, useNavigate, useSearchParams } from "react-router";
+import {
+  useLocation,
+  useNavigate,
+  useSearchParams,
+  useParams,
+} from "react-router";
 import {
   initialEvents,
   initialState,
@@ -159,14 +164,20 @@ export const evalReactComponent = async (component) => {
  * @param event The event to queue.
  * @param socket The socket object to send the event on.
  * @param navigate The navigate function from React Router
+ * @param params The params object from React Router
  *
  * @returns Adds event to queue and processes it if websocket exits, does nothing otherwise.
  */
-export const queueEventIfSocketExists = async (events, socket, navigate) => {
+export const queueEventIfSocketExists = async (
+  events,
+  socket,
+  navigate,
+  params,
+) => {
   if (!socket) {
     return;
   }
-  await queueEvents(events, socket, navigate);
+  await queueEvents(events, socket, navigate, params);
 };
 
 /**
@@ -189,10 +200,11 @@ function urlFrom(string) {
  * @param event The event to send.
  * @param socket The socket object to send the event on.
  * @param navigate The navigate function from useNavigate
+ * @param params The params object from useParams
  *
  * @returns True if the event was sent, false if it was handled locally.
  */
-export const applyEvent = async (event, socket, navigate) => {
+export const applyEvent = async (event, socket, navigate, params) => {
   // Handle special events
   if (event.name == "_redirect") {
     if ((event.payload.path ?? undefined) === undefined) {
@@ -223,31 +235,31 @@ export const applyEvent = async (event, socket, navigate) => {
 
   if (event.name == "_remove_cookie") {
     cookies.remove(event.payload.key, { ...event.payload.options });
-    queueEventIfSocketExists(initialEvents(), socket, navigate);
+    queueEventIfSocketExists(initialEvents(), socket, navigate, params);
     return false;
   }
 
   if (event.name == "_clear_local_storage") {
     localStorage.clear();
-    queueEventIfSocketExists(initialEvents(), socket, navigate);
+    queueEventIfSocketExists(initialEvents(), socket, navigate, params);
     return false;
   }
 
   if (event.name == "_remove_local_storage") {
     localStorage.removeItem(event.payload.key);
-    queueEventIfSocketExists(initialEvents(), socket, navigate);
+    queueEventIfSocketExists(initialEvents(), socket, navigate, params);
     return false;
   }
 
   if (event.name == "_clear_session_storage") {
     sessionStorage.clear();
-    queueEvents(initialEvents(), socket, navigate);
+    queueEvents(initialEvents(), socket, navigate, params);
     return false;
   }
 
   if (event.name == "_remove_session_storage") {
     sessionStorage.removeItem(event.payload.key);
-    queueEvents(initialEvents(), socket, navigate);
+    queueEvents(initialEvents(), socket, navigate, params);
     return false;
   }
 
@@ -355,7 +367,10 @@ export const applyEvent = async (event, socket, navigate) => {
     // Since we don't have router directly, we need to get info from our hooks
     event.router_data = {
       pathname: window.location.pathname,
-      query: Object.fromEntries(new URLSearchParams(window.location.search)),
+      query: {
+        ...Object.fromEntries(new URLSearchParams(window.location.search)),
+        ...params,
+      },
       asPath: window.location.pathname + window.location.search,
     };
   }
@@ -374,15 +389,16 @@ export const applyEvent = async (event, socket, navigate) => {
  * @param event The current event.
  * @param socket The socket object to send the response event(s) on.
  * @param navigate The navigate function from React Router
+ * @param params The params object from React Router
  *
  * @returns Whether the event was sent.
  */
-export const applyRestEvent = async (event, socket, navigate) => {
+export const applyRestEvent = async (event, socket, navigate, params) => {
   let eventSent = false;
   if (event.handler === "uploadFiles") {
     if (event.payload.files === undefined || event.payload.files.length === 0) {
       // Submit the event over the websocket to trigger the event handler.
-      return await applyEvent(Event(event.name), socket, navigate);
+      return await applyEvent(Event(event.name), socket, navigate, params);
     }
 
     // Start upload, but do not wait for it, which would block other events.
@@ -404,8 +420,15 @@ export const applyRestEvent = async (event, socket, navigate) => {
  * @param socket The socket object to send the event on.
  * @param prepend Whether to place the events at the beginning of the queue.
  * @param navigate The navigate function from React Router
+ * @param params The params object from React Router
  */
-export const queueEvents = async (events, socket, prepend, navigate) => {
+export const queueEvents = async (
+  events,
+  socket,
+  prepend,
+  navigate,
+  params,
+) => {
   if (prepend) {
     // Drain the existing queue and place it after the given events.
     events = [
@@ -416,15 +439,16 @@ export const queueEvents = async (events, socket, prepend, navigate) => {
     ];
   }
   event_queue.push(...events.filter((e) => e !== undefined && e !== null));
-  await processEvent(socket.current, navigate);
+  await processEvent(socket.current, navigate, params);
 };
 
 /**
  * Process an event off the event queue.
  * @param socket The socket object to send the event on.
  * @param navigate The navigate function from React Router
+ * @param params The params object from React Router
  */
-export const processEvent = async (socket, navigate) => {
+export const processEvent = async (socket, navigate, params) => {
   // Only proceed if the socket is up and no event in the queue uses state, otherwise we throw the event into the void
   if (!socket && isStateful()) {
     return;
@@ -444,16 +468,16 @@ export const processEvent = async (socket, navigate) => {
   let eventSent = false;
   // Process events with handlers via REST and all others via websockets.
   if (event.handler) {
-    eventSent = await applyRestEvent(event, socket, navigate);
+    eventSent = await applyRestEvent(event, socket, navigate, params);
   } else {
-    eventSent = await applyEvent(event, socket, navigate);
+    eventSent = await applyEvent(event, socket, navigate, params);
   }
   // If no event was sent, set processing to false.
   if (!eventSent) {
     event_processing = false;
     // recursively call processEvent to drain the queue, since there is
     // no state update to trigger the useEffect event loop.
-    await processEvent(socket, navigate);
+    await processEvent(socket, navigate, params);
   }
 };
 
@@ -465,6 +489,7 @@ export const processEvent = async (socket, navigate) => {
  * @param setConnectErrors The function to update connection error value.
  * @param client_storage The client storage object from context.js
  * @param navigate The navigate function from React Router
+ * @param params The params object from React Router
  */
 export const connect = async (
   socket,
@@ -473,6 +498,7 @@ export const connect = async (
   setConnectErrors,
   client_storage = {},
   navigate,
+  params = {},
 ) => {
   // Get backend URL object from the endpoint.
   const endpoint = getBackendURL(EVENTURL);
@@ -547,12 +573,12 @@ export const connect = async (
     applyClientStorageDelta(client_storage, update.delta);
     event_processing = !update.final;
     if (update.events) {
-      queueEvents(update.events, socket, false, navigate);
+      queueEvents(update.events, socket, false, navigate, params);
     }
   });
   socket.current.on("reload", async (event) => {
     event_processing = false;
-    queueEvents([...initialEvents(), event], socket, true, navigate);
+    queueEvents([...initialEvents(), event], socket, true, navigate, params);
   });
 
   document.addEventListener("visibilitychange", checkVisibility);
@@ -801,6 +827,7 @@ export const useEventLoop = (
   const socket = useRef(null);
   const location = useLocation();
   const navigate = useNavigate();
+  const params = useParams();
   const prevLocationRef = useRef(location);
   const [searchParams] = useSearchParams();
   const [connectErrors, setConnectErrors] = useState([]);
@@ -842,11 +869,11 @@ export const useEventLoop = (
       // If debounce is used, queue the events after some delay
       debounce(
         combined_name,
-        () => queueEvents(_events, socket, false, navigate),
+        () => queueEvents(_events, socket, false, navigate, params),
         event_actions.debounce,
       );
     } else {
-      queueEvents(_events, socket, false, navigate);
+      queueEvents(_events, socket, false, navigate, params);
     }
   };
 
@@ -858,13 +885,14 @@ export const useEventLoop = (
           ...e,
           router_data: {
             pathname: location.pathname,
-            query: Object.fromEntries(searchParams.entries()),
+            query: { ...Object.fromEntries(searchParams.entries()), ...params },
             asPath: location.pathname + location.search,
           },
         })),
         socket,
         true,
         navigate,
+        params,
       );
       sentHydrate.current = true;
     }
@@ -912,6 +940,7 @@ export const useEventLoop = (
           setConnectErrors,
           client_storage,
           navigate,
+          params,
         );
       }
     }
@@ -933,7 +962,7 @@ export const useEventLoop = (
     (async () => {
       // Process all outstanding events.
       while (event_queue.length > 0 && !event_processing) {
-        await processEvent(socket.current, navigate);
+        await processEvent(socket.current, navigate, params);
       }
     })();
   });

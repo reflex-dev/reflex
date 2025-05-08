@@ -86,6 +86,18 @@ def _determine_nextjs_version() -> str:
     return default_version
 
 
+def _determine_react_router_version() -> str:
+    default_version = "7.5.3"
+    if (version := os.getenv("REACT_ROUTER_VERSION")) and version != default_version:
+        from reflex.utils import console
+
+        console.warn(
+            f"You have requested react-router@{version} but the supported version is {default_version}, abandon all hope ye who enter here."
+        )
+        return version
+    return default_version
+
+
 def _determine_react_version() -> str:
     default_version = "19.1.0"
     if (version := os.getenv("REACT_VERSION")) and version != default_version:
@@ -113,13 +125,15 @@ class PackageJson(SimpleNamespace):
 
     _react_version = _determine_react_version()
 
+    _react_router_version = _determine_react_router_version()
+
     DEPENDENCIES = {
         "axios": "1.9.0",
         "json5": "2.2.3",
-        "react-router": "7.5.0",
-        "react-router-dom": "7.5.0",
+        "react-router": _react_router_version,
+        "react-router-dom": _react_router_version,
         "react-helmet": "6.1.0",
-        "@react-router/node": "7.5.0",
+        "@react-router/node": _react_router_version,
         "serve": "14.2.4",
         "react": _react_version,
         "react-dom": _react_version,
@@ -132,8 +146,8 @@ class PackageJson(SimpleNamespace):
         "autoprefixer": "10.4.21",
         "postcss": "8.5.3",
         "postcss-import": "16.1.0",
-        "@react-router/dev": "7.5.0",
-        "@react-router/fs-routes": "7.5.0",
+        "@react-router/dev": _react_router_version,
+        "@react-router/fs-routes": _react_router_version,
         "vite-plugin-node-polyfills": "0.23.0",
         "vite": "6.2.6",
     }

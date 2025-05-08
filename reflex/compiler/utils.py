@@ -401,8 +401,6 @@ def _format_route_part(part: str) -> str:
 def _path_to_file_stem(path: str) -> str:
     if path == "index":
         return "_index"
-    if path.removeprefix("/") == "404":
-        return "404"
     path = path if path != "index" else "/"
     return (
         ".".join([_format_route_part(part) for part in path.split("/")]) + "._index"
