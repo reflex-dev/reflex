@@ -41,7 +41,14 @@ class CustomBuilder(BuildHookInterface):
         if self.marker().exists():
             return
 
-        if importlib.util.find_spec("pre_commit"):
+        # Reflex is the parent directory of the scripts directory
+        # which is where this file is located
+        reflex_dir = pathlib.Path(__file__).parent.parent.absolute()
+        current_working_directory = pathlib.Path.cwd().absolute()
+
+        if importlib.util.find_spec(
+            "pre_commit"
+        ) and current_working_directory.is_relative_to(reflex_dir):
             import pre_commit.constants
             import pre_commit.yaml
 
