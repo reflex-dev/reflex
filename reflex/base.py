@@ -97,24 +97,24 @@ class Base(BaseModel):
         return cls.__fields__
 
     @classmethod
-    def add_field(cls, var: Var, default_value: Any):
+    def add_field(cls, name: str, var: Var, default_value: Any):
         """Add a pydantic field after class definition.
 
         Used by State.add_var() to correctly handle the new variable.
 
         Args:
+            name: The name of the field.
             var: The variable to add a pydantic field for.
             default_value: The default value of the field
         """
-        var_name = var._var_field_name
         new_field = ModelField.infer(
-            name=var_name,
+            name=name,
             value=default_value,
             annotation=var._var_type,
             class_validators=None,
             config=cls.__config__,
         )
-        cls.__fields__.update({var_name: new_field})
+        cls.__fields__.update({name: new_field})
 
     def get_value(self, key: str) -> Any:
         """Get the value of a field.

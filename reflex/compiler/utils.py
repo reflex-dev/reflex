@@ -258,7 +258,7 @@ def _compile_client_storage_recursive(
         if name in state.inherited_vars:
             # only include vars defined in this state
             continue
-        state_key = f"{state_name}.{name}"
+        state_key = f"{state_name}.{name}_rx_state_"
         field_type, options = _compile_client_storage_field(field)
         if field_type is Cookie:
             cookies[state_key] = options

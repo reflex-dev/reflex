@@ -245,30 +245,6 @@ def test_default_value(prop: Var, expected):
 
 
 @pytest.mark.parametrize(
-    "prop,expected",
-    zip(
-        test_vars,
-        [
-            "set_prop1",
-            "set_key",
-            "state.set_value",
-            "state.set_local",
-            "set_local2",
-        ],
-        strict=True,
-    ),
-)
-def test_get_setter(prop: Var, expected):
-    """Test that the name of the setter function of a var is correct.
-
-    Args:
-        prop: The var to test.
-        expected: The expected name of the setter function.
-    """
-    assert prop._get_setter_name() == expected
-
-
-@pytest.mark.parametrize(
     "value,expected",
     [
         (None, Var(_js_expr="null", _var_type=None)),
@@ -842,28 +818,28 @@ def test_computed_var_with_annotation_error(request, fixture):
     [
         (
             "StateWithInitialComputedVar",
-            "var_with_initial_value",
+            "var_with_initial_value_rx_state_",
             "Initial value",
             "Runtime value",
             False,
         ),
         (
             "ChildWithInitialComputedVar",
-            "var_with_initial_value_child",
+            "var_with_initial_value_child_rx_state_",
             "Initial value",
             "Runtime value",
             False,
         ),
         (
             "StateWithRuntimeOnlyVar",
-            "var_raises_at_runtime",
+            "var_raises_at_runtime_rx_state_",
             None,
             None,
             True,
         ),
         (
             "ChildWithRuntimeOnlyVar",
-            "var_raises_at_runtime_child",
+            "var_raises_at_runtime_child_rx_state_",
             "Initial value",
             None,
             True,
@@ -1788,15 +1764,15 @@ def test_invalid_var_operations(operand1_var: Var, operand2_var, operators: list
         (LiteralVar.create({"foo": "bar"}), '({ ["foo"] : "bar" })'),
         (
             LiteralVar.create(ATestState.value),
-            f"{ATestState.get_full_name()}.value",
+            f"{ATestState.get_full_name()}.value_rx_state_",
         ),
         (
             LiteralVar.create(f"{ATestState.value} string"),
-            f'({ATestState.get_full_name()}.value+" string")',
+            f'({ATestState.get_full_name()}.value_rx_state_+" string")',
         ),
         (
             LiteralVar.create(ATestState.dict_val),
-            f"{ATestState.get_full_name()}.dict_val",
+            f"{ATestState.get_full_name()}.dict_val_rx_state_",
         ),
     ],
 )
@@ -1848,7 +1824,8 @@ def test_to_string_operation():
         email: Email = Email("test@reflex.dev")
 
     assert (
-        str(TestState.optional_email) == f"{TestState.get_full_name()}.optional_email"
+        str(TestState.optional_email)
+        == f"{TestState.get_full_name()}.optional_email_rx_state_"
     )
     my_state = TestState()
     assert my_state.optional_email is None
