@@ -98,6 +98,18 @@ def get_template(name: str) -> Template:
     return ReflexJinjaEnvironment().get_template(name=name)
 
 
+def from_string(source: str) -> Template:
+    """Get render function that work with a template.
+
+    Args:
+        source: The template source.
+
+    Returns:
+        A render function.
+    """
+    return ReflexJinjaEnvironment().from_string(source=source)
+
+
 # Template for the Reflex config file.
 RXCONFIG = get_template("app/rxconfig.py.jinja2")
 
@@ -112,9 +124,6 @@ THEME = get_template("web/utils/theme.js.jinja2")
 
 # Template for the context file.
 CONTEXT = get_template("web/utils/context.js.jinja2")
-
-# Template for Tailwind config.
-TAILWIND_CONFIG = get_template("web/tailwind.config.js.jinja2")
 
 # Template to render a component tag.
 COMPONENT = get_template("web/pages/component.js.jinja2")
