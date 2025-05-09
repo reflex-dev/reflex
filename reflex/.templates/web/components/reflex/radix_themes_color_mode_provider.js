@@ -18,7 +18,7 @@ export default function RadixThemesColorModeProvider({ children }) {
     const allowedModes = ["light", "dark", "system"];
     if (!allowedModes.includes(mode)) {
       console.error(
-        `Invalid color mode "${mode}". Defaulting to "${defaultColorMode}".`
+        `Invalid color mode "${mode}". Defaulting to "${defaultColorMode}".`,
       );
       mode = defaultColorMode;
     }
@@ -35,6 +35,6 @@ export default function RadixThemesColorModeProvider({ children }) {
         setColorMode,
       },
     },
-    children
+    children,
   );
 }

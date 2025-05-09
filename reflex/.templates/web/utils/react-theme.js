@@ -15,7 +15,7 @@ const ThemeContext = createContext();
 export function ThemeProvider({ children, defaultTheme = "system" }) {
   const [theme, setTheme] = useState(defaultTheme);
   const [systemTheme, setSystemTheme] = useState(
-    defaultTheme !== "system" ? defaultTheme : "light"
+    defaultTheme !== "system" ? defaultTheme : "light",
   );
 
   const firstRender = useRef(true);
@@ -44,7 +44,7 @@ export function ThemeProvider({ children, defaultTheme = "system" }) {
 
   const resolvedTheme = useMemo(
     () => (theme === "system" ? systemTheme : theme),
-    [theme, systemTheme]
+    [theme, systemTheme],
   );
 
   useEffect(() => {
@@ -79,7 +79,7 @@ export function ThemeProvider({ children, defaultTheme = "system" }) {
   return createElement(
     ThemeContext.Provider,
     { value: { theme, resolvedTheme, setTheme } },
-    children
+    children,
   );
 }
 
