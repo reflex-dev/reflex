@@ -942,7 +942,7 @@ class Subdir404TCPServer(socketserver.TCPServer):
 class AppHarnessProd(AppHarness):
     """AppHarnessProd executes a reflex app in-process for testing.
 
-    In prod mode, instead of running `next dev` the app is exported as static
+    In prod mode, instead of running `react-router dev` the app is exported as static
     files and served via the builtin python http.server with custom 404 redirect
     handling. Additionally, the backend runs in multi-worker mode.
     """

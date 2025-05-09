@@ -123,17 +123,9 @@ export function StateProvider({ children }) {
 
   return (
     {% for state_name in initial_state %}
-    createElement(
-      StateContexts.{{state_name|var_name}},
-      { value: {{state_name|var_name}} },
+    createElement(StateContexts.{{state_name|var_name}},{value: {{state_name|var_name}}},
     {% endfor %}
-    createElement(
-      DispatchContext,
-      { value: dispatchers },
-      children
-    )
-    {% for state_name in initial_state|reverse %}
-    )
-    {% endfor %}
+    createElement(DispatchContext, {value: dispatchers}, children)
+    {% for state_name in initial_state %}){% endfor %}
   )
 }

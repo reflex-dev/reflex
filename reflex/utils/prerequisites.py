@@ -39,7 +39,6 @@ from reflex import constants, model
 from reflex.compiler import templates
 from reflex.config import Config, environment, get_config
 from reflex.utils import console, net, path_ops, processes, redir
-from reflex.utils.decorator import once
 from reflex.utils.exceptions import (
     GeneratedCodeHasNoFunctionDefsError,
     SystemPackageMissingError,
@@ -76,7 +75,7 @@ class CpuInfo:
 
 
 def get_web_dir() -> Path:
-    """Get the working directory for the next.js commands.
+    """Get the working directory for the frontend.
 
     Can be overridden with REFLEX_WEB_WORKDIR.
 
@@ -993,11 +992,6 @@ def initialize_web_directory():
     console.debug("Initializing the reflex.json file.")
     # Initialize the reflex json file.
     init_reflex_json(project_hash=project_hash)
-
-
-@once
-def _turbopack_flag() -> str:
-    return " --turbopack" if environment.REFLEX_USE_TURBOPACK.get() else ""
 
 
 def _compile_package_json():

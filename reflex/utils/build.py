@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import os
-import subprocess
 import zipfile
 from pathlib import Path
 
@@ -188,13 +187,11 @@ def build(
 
 def setup_frontend(
     root: Path,
-    disable_telemetry: bool = True,
 ):
     """Set up the frontend to run the app.
 
     Args:
         root: The root path of the project.
-        disable_telemetry: Whether to disable the Next telemetry.
     """
     # Create the assets dir if it doesn't exist.
     path_ops.mkdir(constants.Dirs.APP_ASSETS)
@@ -210,33 +207,16 @@ def setup_frontend(
     # update the last reflex run time.
     prerequisites.set_last_reflex_run_time()
 
-    # Disable the Next telemetry.
-    if disable_telemetry:
-        processes.new_process(
-            [
-                *prerequisites.get_js_package_executor(raise_on_none=True)[0],
-                "run",
-                "next",
-                "telemetry",
-                "disable",
-            ],
-            cwd=prerequisites.get_web_dir(),
-            stdout=subprocess.DEVNULL,
-            shell=constants.IS_WINDOWS,
-        )
-
 
 def setup_frontend_prod(
     root: Path,
-    disable_telemetry: bool = True,
 ):
     """Set up the frontend for prod mode.
 
     Args:
         root: The root path of the project.
-        disable_telemetry: Whether to disable the Next telemetry.
     """
-    setup_frontend(root, disable_telemetry)
+    setup_frontend(root)
     build(deploy_url=get_config().deploy_url)
 
 

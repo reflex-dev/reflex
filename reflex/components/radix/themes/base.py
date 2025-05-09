@@ -283,7 +283,7 @@ class ThemePanel(RadixThemesComponent):
 
 
 class RadixThemesColorModeProvider(Component):
-    """Next-themes integration for radix themes components."""
+    """React-themes integration for radix themes components."""
 
     library = "$/components/reflex/radix_themes_color_mode_provider"
     tag = "RadixThemesColorModeProvider"

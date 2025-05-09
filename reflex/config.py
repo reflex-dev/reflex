@@ -630,7 +630,7 @@ class EnvironmentVariables:
     # Whether to use the system installed bun. If set to false, bun will be bundled with the app.
     REFLEX_USE_SYSTEM_BUN: EnvVar[bool] = env_var(False)
 
-    # The working directory for the next.js commands.
+    # The working directory for the frontend directory.
     REFLEX_WEB_WORKDIR: EnvVar[Path] = env_var(Path(constants.Dirs.WEB))
 
     # The working directory for the states directory.
@@ -715,9 +715,6 @@ class EnvironmentVariables:
 
     # The maximum size of the reflex state in kilobytes.
     REFLEX_STATE_SIZE_LIMIT: EnvVar[int] = env_var(1000)
-
-    # Whether to use the turbopack bundler.
-    REFLEX_USE_TURBOPACK: EnvVar[bool] = env_var(False)
 
     # Additional paths to include in the hot reload. Separated by a colon.
     REFLEX_HOT_RELOAD_INCLUDE_PATHS: EnvVar[list[Path]] = env_var([])
@@ -837,13 +834,7 @@ class Config(Base):
     # DEPRECATED. Timeout when launching the gunicorn server.
     timeout: int | None = None
 
-    # Whether to enable or disable nextJS gzip compression.
-    next_compression: bool = True
-
-    # Whether to enable or disable NextJS dev indicator.
-    next_dev_indicators: bool = False
-
-    # Whether to use React strict mode in nextJS
+    # Whether to use React strict mode.
     react_strict_mode: bool = True
 
     # Additional frontend packages to install.

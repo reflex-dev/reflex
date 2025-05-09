@@ -78,9 +78,6 @@ class BaseComponent(Base, ABC):
     # List here the non-react dependency needed by `library`
     lib_dependencies: list[str] = pydantic.v1.Field(default_factory=list)
 
-    # List here the dependencies that need to be transpiled by Next.js
-    transpile_packages: list[str] = pydantic.v1.Field(default_factory=list)
-
     # The tag to use when rendering the component.
     tag: str | None = pydantic.v1.Field(default_factory=lambda: None)
 
@@ -1982,7 +1979,7 @@ class NoSSRComponent(Component):
         Returns:
             The imports for dynamically importing the component at module load time.
         """
-        # Next.js dynamic import mechanism.
+        # React lazy import mechanism.
         dynamic_import = {
             "react": [ImportVar(tag="lazy")],
             f"$/{constants.Dirs.UTILS}/context": [ImportVar(tag="ClientSide")],

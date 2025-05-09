@@ -1,4 +1,4 @@
-"""Test that Script from next/script renders correctly."""
+"""Test that element script renders correctly."""
 
 import pytest
 

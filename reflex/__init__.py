@@ -284,7 +284,7 @@ _MAPPING: dict = {
         "EditorButtonList",
         "EditorOptions",
     ],
-    "components": ["el", "radix", "lucide", "recharts", "next"],
+    "components": ["el", "radix", "lucide", "recharts"],
     "components.markdown": ["markdown"],
     **RADIX_MAPPING,
     "components.plotly": ["plotly"],

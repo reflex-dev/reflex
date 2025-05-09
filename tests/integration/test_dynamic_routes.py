@@ -427,11 +427,17 @@ async def test_render_dynamic_arg(
     assert next_page_link
     with poll_for_navigation(driver):
         next_page_link.click()
-    assert driver.current_url.removesuffix("/") == f"{frontend_url.removesuffix('/')}/arg/1"
+    assert (
+        driver.current_url.removesuffix("/")
+        == f"{frontend_url.removesuffix('/')}/arg/1"
+    )
     assert_content("1", "0")
     next_page_link = driver.find_element(By.ID, "next-page")
     assert next_page_link
     with poll_for_navigation(driver):
         next_page_link.click()
-    assert driver.current_url.removesuffix("/") == f"{frontend_url.removesuffix('/')}/arg/2"
+    assert (
+        driver.current_url.removesuffix("/")
+        == f"{frontend_url.removesuffix('/')}/arg/2"
+    )
     assert_content("2", "1")

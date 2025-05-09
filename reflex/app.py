@@ -1019,7 +1019,7 @@ class App(MiddlewareMixin, LifespanMixin):
             for i, tags in imports.items()
             if i not in constants.PackageJson.DEPENDENCIES
             and i not in constants.PackageJson.DEV_DEPENDENCIES
-            and not any(i.startswith(prefix) for prefix in ["/", "$/", ".", "next/"])
+            and not any(i.startswith(prefix) for prefix in ["/", "$/", "."])
             and i != ""
             and any(tag.install for tag in tags)
         }
