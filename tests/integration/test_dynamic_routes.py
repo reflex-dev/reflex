@@ -235,7 +235,7 @@ def poll_for_order(
                 dynamic_state_name
             ].order == exp_order
 
-        await AppHarness._poll_for_async(_check, timeout=60)
+        await AppHarness._poll_for_async(_check, timeout=10)
         assert (
             list((await _backend_state()).substates[dynamic_state_name].order)
             == exp_order
@@ -395,8 +395,11 @@ async def test_render_dynamic_arg(
         token: The token visible in the driver browser.
     """
     assert dynamic_route.app_instance is not None
+    frontend_url = dynamic_route.frontend_url
+    assert frontend_url
+
     with poll_for_navigation(driver):
-        driver.get(f"{dynamic_route.frontend_url}/arg/0")
+        driver.get(f"{frontend_url.removesuffix('/')}/arg/0")
 
     # TODO: drop after flakiness is resolved
     time.sleep(3)
@@ -424,11 +427,11 @@ async def test_render_dynamic_arg(
     assert next_page_link
     with poll_for_navigation(driver):
         next_page_link.click()
-    assert driver.current_url.removesuffix("/") == f"{dynamic_route.frontend_url}/arg/1"
+    assert driver.current_url.removesuffix("/") == f"{frontend_url.removesuffix('/')}/arg/1"
     assert_content("1", "0")
     next_page_link = driver.find_element(By.ID, "next-page")
     assert next_page_link
     with poll_for_navigation(driver):
         next_page_link.click()
-    assert driver.current_url.removesuffix("/") == f"{dynamic_route.frontend_url}/arg/2"
+    assert driver.current_url.removesuffix("/") == f"{frontend_url.removesuffix('/')}/arg/2"
     assert_content("2", "1")
