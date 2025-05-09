@@ -1,7 +1,7 @@
 {
   "reflex/__init__.pyi": "aea60b818ef7b189131b6403b02fc6ba",
   "reflex/components/__init__.pyi": "21cd150be121d97c1e1a6ad0062f086d",
-  "reflex/components/base/__init__.pyi": "d0139bd2c41c28d837b91fa8949e2494",
+  "reflex/components/base/__init__.pyi": "74d7764e03837231ea40a06dff08f44a",
   "reflex/components/base/app_wrap.pyi": "387fc7a0c2da8760d9449e2893e44eec",
   "reflex/components/base/body.pyi": "2d16002f24c8ee0007b46ff2bf1f2c78",
   "reflex/components/base/document.pyi": "851cb54842f3df1e5f44ba1fb72e12af",

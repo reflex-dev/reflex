@@ -17,10 +17,6 @@ _SUBMOD_ATTRS: dict[str, list[str]] = {
         "ErrorBoundary",
         "error_boundary",
     ],
-    "head": [
-        "head",
-        "Head",
-    ],
     "link": ["RawLink", "ScriptTag"],
     "meta": ["Description", "Image", "Meta", "Title"],
     "script": ["Script", "script"],
