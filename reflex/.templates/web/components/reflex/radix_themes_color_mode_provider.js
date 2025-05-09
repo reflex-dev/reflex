@@ -1,5 +1,5 @@
 import { useTheme } from "$/utils/react-theme";
-import { useEffect, useState, createElement, useRef } from "react";
+import { createElement } from "react";
 import {
   ColorModeContext,
   defaultColorMode,
@@ -9,35 +9,11 @@ import {
 
 export default function RadixThemesColorModeProvider({ children }) {
   const { theme, resolvedTheme, setTheme } = useTheme();
-  const [rawColorMode, setRawColorMode] = useState(defaultColorMode);
-  const [resolvedColorMode, setResolvedColorMode] = useState(
-    defaultColorMode === "dark" ? "dark" : "light",
-  );
-
-  useEffect(() => {
-    setTheme(rawColorMode);
-  }, [rawColorMode]);
-
-  useEffect(() => {
-    if (isDevMode) {
-      const lastCompiledTimeInLocalStorage =
-        localStorage.getItem("last_compiled_time");
-      if (lastCompiledTimeInLocalStorage !== lastCompiledTimeStamp) {
-        // on app startup, make sure the application color mode is persisted correctly.
-        setTheme(defaultColorMode);
-        localStorage.setItem("last_compiled_time", lastCompiledTimeStamp);
-        return;
-      }
-    }
-  });
-
-  useEffect(() => {
-    setResolvedColorMode(resolvedTheme);
-  }, [resolvedTheme]);
 
   const toggleColorMode = () => {
-    setRawColorMode(resolvedTheme === "light" ? "dark" : "light");
+    setTheme(resolvedTheme === "light" ? "dark" : "light");
   };
+
   const setColorMode = (mode) => {
     const allowedModes = ["light", "dark", "system"];
     if (!allowedModes.includes(mode)) {
@@ -46,18 +22,19 @@ export default function RadixThemesColorModeProvider({ children }) {
       );
       mode = defaultColorMode;
     }
-    setRawColorMode(mode);
+    setTheme(mode);
   };
+
   return createElement(
     ColorModeContext.Provider,
     {
       value: {
         rawColorMode: theme,
-        resolvedColorMode,
+        resolvedColorMode: resolvedTheme,
         toggleColorMode,
         setColorMode,
       },
     },
-    children,
+    children
   );
 }
