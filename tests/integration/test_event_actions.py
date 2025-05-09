@@ -49,10 +49,10 @@ def TestEventAction():
         def _get_custom_code(self) -> str | None:
             return """
                 function EventFiringComponent(props) {
-                    return (
-                        <div id={props.id} onClick={(e) => props.onClick("foo")}>
-                            Event Firing Component
-                        </div>
+                    return jsx(
+                        "div",
+                        {"id":props.id,"onClick":(e) => props.onClick("foo")},
+                        "Event Firing Component",
                     )
                 }"""
 
