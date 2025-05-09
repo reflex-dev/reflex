@@ -13,14 +13,10 @@ export default function RadixThemesColorModeProvider({ children }) {
   const [resolvedColorMode, setResolvedColorMode] = useState(
     defaultColorMode === "dark" ? "dark" : "light",
   );
-  const firstUpdate = useRef(true);
+
   useEffect(() => {
-    if (firstUpdate.current) {
-      firstUpdate.current = false;
-      setRawColorMode(theme);
-      setResolvedColorMode(resolvedTheme);
-    }
-  });
+    setTheme(rawColorMode);
+  }, [rawColorMode]);
 
   useEffect(() => {
     if (isDevMode) {
@@ -33,28 +29,30 @@ export default function RadixThemesColorModeProvider({ children }) {
         return;
       }
     }
-    setRawColorMode(theme);
+  });
+
+  useEffect(() => {
     setResolvedColorMode(resolvedTheme);
-  }, [theme, resolvedTheme]);
+  }, [resolvedTheme]);
 
   const toggleColorMode = () => {
-    setTheme(resolvedTheme === "light" ? "dark" : "light");
+    setRawColorMode(resolvedTheme === "light" ? "dark" : "light");
   };
   const setColorMode = (mode) => {
     const allowedModes = ["light", "dark", "system"];
     if (!allowedModes.includes(mode)) {
       console.error(
-        `Invalid color mode "${mode}". Defaulting to "${defaultColorMode}".`,
+        `Invalid color mode "${mode}". Defaulting to "${defaultColorMode}".`
       );
       mode = defaultColorMode;
     }
-    setTheme(mode);
+    setRawColorMode(mode);
   };
   return createElement(
     ColorModeContext.Provider,
     {
       value: {
-        rawColorMode,
+        rawColorMode: theme,
         resolvedColorMode,
         toggleColorMode,
         setColorMode,
