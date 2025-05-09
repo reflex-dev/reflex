@@ -114,10 +114,6 @@ class ImportVar:
     # The path of the package to import from.
     package_path: str = "/"
 
-    # whether this import package should be added to transpilePackages in next.config.js
-    # https://nextjs.org/docs/app/api-reference/next-config-js/transpilePackages
-    transpile: bool | None = False
-
     @property
     def name(self) -> str:
         """The name of the import.
