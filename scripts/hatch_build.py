@@ -34,9 +34,6 @@ class CustomBuilder(BuildHookInterface):
             version: The version of the package.
             build_data: The build data.
             artifact_path: The path to the artifact.
-
-        Raises:
-            RuntimeError: If the pre-commit patches are not applied correctly.
         """
         if self.marker().exists():
             return
