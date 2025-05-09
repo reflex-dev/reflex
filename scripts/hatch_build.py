@@ -41,104 +41,21 @@ class CustomBuilder(BuildHookInterface):
         if self.marker().exists():
             return
 
-        # Reflex is the parent directory of the scripts directory
-        # which is where this file is located
-        reflex_dir = pathlib.Path(__file__).parent.parent.absolute()
-        current_working_directory = pathlib.Path.cwd().absolute()
+        if importlib.util.find_spec("pre_commit") and importlib.util.find_spec("toml"):
+            import json
 
-        if importlib.util.find_spec(
-            "pre_commit"
-        ) and current_working_directory.is_relative_to(reflex_dir):
-            import pre_commit.constants
-            import pre_commit.yaml
+            import toml
+            import yaml
 
-            patches = [
-                (
-                    pre_commit.constants.__file__,
-                    """from __future__ import annotations
-
-import importlib.metadata
-
-CONFIG_FILE = '.pre-commit-config.yaml'
-MANIFEST_FILE = '.pre-commit-hooks.yaml'
-
-# Bump when modifying `empty_template`
-LOCAL_REPO_VERSION = '1'
-
-VERSION = importlib.metadata.version('pre_commit')
-
-DEFAULT = 'default'""",
-                    """from __future__ import annotations
-
-import importlib.metadata
-
-CONFIG_FILE = 'pyproject.toml'
-MANIFEST_FILE = '.pre-commit-hooks.yaml'
-
-# Bump when modifying `empty_template`
-LOCAL_REPO_VERSION = '1'
-
-VERSION = importlib.metadata.version('pre_commit')
-
-DEFAULT = 'default'""",
-                ),
-                (
-                    pre_commit.yaml.__file__,
-                    """from __future__ import annotations
-
-import functools
-from typing import Any
-
-import yaml
-
-Loader = getattr(yaml, 'CSafeLoader', yaml.SafeLoader)
-yaml_compose = functools.partial(yaml.compose, Loader=Loader)
-yaml_load = functools.partial(yaml.load, Loader=Loader)
-Dumper = getattr(yaml, 'CSafeDumper', yaml.SafeDumper)
-
-
-def yaml_dump(o: Any, **kwargs: Any) -> str:
-    # when python/mypy#1484 is solved, this can be `functools.partial`
-    return yaml.dump(
-        o, Dumper=Dumper, default_flow_style=False, indent=4, sort_keys=False,
-        **kwargs,
-    )""",
-                    """from __future__ import annotations
-
-import functools
-from typing import Any
-
-import yaml
-import toml
-
-Loader = getattr(yaml, 'CSafeLoader', yaml.SafeLoader)
-yaml_compose = functools.partial(yaml.compose, Loader=Loader)
-def yaml_load(stream):
-    try:
-        return toml.loads(stream).get("tool", {}).get("pre-commit", {})
-    except ValueError:
-        return yaml.load(stream, Loader=Loader)
-Dumper = getattr(yaml, 'CSafeDumper', yaml.SafeDumper)
-
-
-def yaml_dump(o: Any, **kwargs: Any) -> str:
-    # when python/mypy#1484 is solved, this can be `functools.partial`
-    return yaml.dump(
-        o, Dumper=Dumper, default_flow_style=False, indent=4, sort_keys=False,
-        **kwargs,
-    )""",
-                ),
-            ]
-
-            for file, old, new in patches:
-                file_path = pathlib.Path(file)
-                file_content = file_path.read_text()
-                if new not in file_content and old not in file_content:
-                    raise RuntimeError(
-                        f"Unexpected content in {file_path}. Did you update pre-commit without updating the patches?"
-                    )
-                if old in file_content:
-                    file_path.write_text(file_content.replace(old, new))
+            reflex_dir = pathlib.Path(__file__).parent.parent
+            pre_commit_config = json.loads(
+                json.dumps(
+                    toml.load(reflex_dir / "pyproject.toml")["tool"]["pre-commit"]
+                )
+            )
+            (reflex_dir / ".pre-commit-config.yaml").write_text(
+                yaml.dump(pre_commit_config), encoding="utf-8"
+            )
 
         if not (pathlib.Path(self.root) / "scripts").exists():
             return
