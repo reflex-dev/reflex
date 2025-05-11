@@ -2335,3 +2335,15 @@ def test_special_props(component_kwargs, exp_custom_attrs, exp_style):
     for prop in SpecialComponent.get_props():
         if prop in component_kwargs:
             assert getattr(component, prop)._var_value == component_kwargs[prop]
+
+
+def test_ref():
+    """Test that the ref prop is correctly added to the component."""
+    custom_ref = Var("custom_ref")
+    ref_component = rx.box(ref=custom_ref)
+    assert ref_component._render().props["ref"].equals(custom_ref)
+
+    id_component = rx.box(id="custom_id")
+    assert id_component._render().props["ref"].equals(Var("ref_custom_id"))
+
+    assert "ref" not in rx.box()._render().props

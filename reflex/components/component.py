@@ -280,6 +280,9 @@ class Component(BaseComponent, ABC):
     # The id for the component.
     id: Any = pydantic.v1.Field(default_factory=lambda: None)
 
+    # The Var to pass as the ref to the component.
+    ref: Var | None = pydantic.v1.Field(default_factory=lambda: None)
+
     # The class name for the component.
     class_name: Any = pydantic.v1.Field(default_factory=lambda: None)
 
@@ -709,9 +712,10 @@ class Component(BaseComponent, ABC):
                 attr.removesuffix("_"): getattr(self, attr) for attr in self.get_props()
             }
 
-            # Add ref to element if `id` is not None.
-            ref = self.get_ref()
-            if ref is not None:
+            # Add ref to element if `ref` is None and `id` is not None.
+            if self.ref is not None:
+                props["ref"] = self.ref
+            elif (ref := self.get_ref()) is not None:
                 props["ref"] = Var(_js_expr=ref)
         else:
             props = props.copy()
