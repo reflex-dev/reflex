@@ -1896,7 +1896,7 @@ def test_var_data_hooks():
 
 def test_var_data_with_hooks_value():
     var_data = VarData(hooks={"what": VarData(hooks={"whot": VarData(hooks="whott")})})
-    assert var_data == VarData(hooks=["what", "whot", "whott"])
+    assert var_data == VarData(hooks=["whott", "whot", "what"])
 
 
 def test_str_var_in_components(mocker):
