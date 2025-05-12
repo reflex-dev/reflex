@@ -2359,7 +2359,7 @@ class FrontendEventExceptionState(State):
     """Substate for handling frontend exceptions."""
 
     @event
-    def handle_frontend_exception(self, stack: str, component_stack: str) -> None:
+    def handle_frontend_exception(self, stack: str, component_stack: str):
         """Handle frontend exceptions.
 
         If a frontend exception handler is provided, it will be called.
@@ -2369,10 +2369,25 @@ class FrontendEventExceptionState(State):
             stack: The stack trace of the exception.
             component_stack: The stack trace of the component where the exception occurred.
 
+        Returns:
+            Chained event specs to be executed.
         """
-        prerequisites.get_and_validate_app().app.frontend_exception_handler(
+        frontend_exception_handler = (
+            prerequisites.get_and_validate_app().app.frontend_exception_handler
+        )
+
+        if isinstance(frontend_exception_handler, EventSpec) and callable(
+            frontend_exception_handler
+        ):
+            return frontend_exception_handler(stack)
+        value = prerequisites.get_and_validate_app().app.frontend_exception_handler(
             Exception(stack)
         )
+        if value is not None:
+            console.warn(
+                f"Frontend exception handler returned a value: {value}. This is not supported with plain functions."
+                " Consider using an Event in a state class instead."
+            )
 
 
 class UpdateVarsInternalState(State):
