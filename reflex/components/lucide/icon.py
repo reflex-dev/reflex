@@ -10,7 +10,7 @@ from reflex.vars.sequence import LiteralStringVar, StringVar
 class LucideIconComponent(Component):
     """Lucide Icon Component."""
 
-    library = "lucide-react@0.508.0"
+    library = "lucide-react@0.510.0"
 
 
 class Icon(LucideIconComponent):
@@ -422,6 +422,7 @@ LUCIDE_ICON_LIST = [
     "chart_spline",
     "check",
     "check_check",
+    "check_line",
     "chef_hat",
     "cherry",
     "chevron_down",
@@ -836,6 +837,7 @@ LUCIDE_ICON_LIST = [
     "globe",
     "globe_lock",
     "goal",
+    "gpu",
     "grab",
     "graduation_cap",
     "grape",

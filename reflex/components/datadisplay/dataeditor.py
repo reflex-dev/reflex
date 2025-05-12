@@ -164,10 +164,10 @@ class DataEditor(NoSSRComponent):
 
     tag = "DataEditor"
     is_default = True
-    library: str | None = "@glideapps/glide-data-grid@^6.0.3"
+    library: str | None = "@glideapps/glide-data-grid@6.0.3"
     lib_dependencies: list[str] = [
-        "lodash@^4.17.21",
-        "react-responsive-carousel@^3.2.7",
+        "lodash@4.17.21",
+        "react-responsive-carousel@3.2.23",
     ]
 
     # Number of rows.

@@ -12,8 +12,6 @@ class RadixPrimitiveComponent(Component):
     # Change the default rendered element for the one passed as a child.
     as_child: Var[bool]
 
-    lib_dependencies: list[str] = ["@emotion/react@^11.11.1"]
-
 
 class RadixPrimitiveComponentWithClassName(RadixPrimitiveComponent):
     """Basic component for radix Primitives with a class name prop."""
