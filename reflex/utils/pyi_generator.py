@@ -1035,7 +1035,7 @@ class StubGenerator(ast.NodeTransformer):
             return node
         if isinstance(node.target, ast.Name) and node.target.id.startswith("_"):
             return None
-        if self.current_class in self.classes:
+        if self._current_class_is_component():
             # Remove annotated assignments in Component classes (props)
             return None
         # Blank out assignments in type stubs.
