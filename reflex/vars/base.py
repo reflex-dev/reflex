@@ -170,7 +170,8 @@ class VarData:
         object.__setattr__(self, "components", tuple(components or []))
 
         if hooks and any(hooks.values()):
-            merged_var_data = VarData.merge(self, *hooks.values())
+            # Merge our dependencies first, so they can be referenced.
+            merged_var_data = VarData.merge(*hooks.values(), self)
             if merged_var_data is not None:
                 object.__setattr__(self, "state", merged_var_data.state)
                 object.__setattr__(self, "field_name", merged_var_data.field_name)
