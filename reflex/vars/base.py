@@ -1310,6 +1310,21 @@ class Var(Generic[VAR_TYPE]):
 
     if not TYPE_CHECKING:
 
+        def __getattribute__(self, name: str):
+            """Get an attribute of the var.
+
+            Args:
+                name: The name of the attribute.
+
+            Returns:
+                The attribute of the var.
+
+            # noqa: DAR101 self
+            """
+            if name == "__pydantic_validate_values__":
+                return lambda *args, **kwargs: None
+            return super().__getattribute__(name)
+
         def __getitem__(self, key: Any) -> Var:
             """Get the item from the var.
 
