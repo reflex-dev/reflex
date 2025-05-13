@@ -500,32 +500,16 @@ class Component(BaseComponent, ABC):
             else:
                 continue
 
-            def determine_key(value: Any):
-                # Try to create a var from the value
-                key = value if isinstance(value, Var) else LiteralVar.create(value)
-
-                # Check that the var type is not None.
-                if key is None:
-                    raise TypeError
-
-                return key
-
             # Check whether the key is a component prop.
             if is_var:
                 try:
-                    kwargs[key] = determine_key(value)
-
-                    expected_type = types.get_args(
-                        types.get_field_type(type(self), key)
-                    )[0]
+                    kwargs[key] = LiteralVar.create(value)
 
                     # Get the passed type and the var type.
                     passed_type = kwargs[key]._var_type
-                    expected_type = (
-                        type(expected_type.__args__[0])
-                        if types.is_literal(expected_type)
-                        else expected_type
-                    )
+                    expected_type = types.get_args(
+                        types.get_field_type(type(self), key)
+                    )[0]
                 except TypeError:
                     # If it is not a valid var, check the base types.
                     passed_type = type(value)
@@ -806,6 +790,18 @@ class Component(BaseComponent, ABC):
         ]
 
     @classmethod
+    def _validate_children(cls, children: tuple | list):
+        from reflex.utils.exceptions import ChildrenTypeError
+
+        for child in children:
+            if isinstance(child, (tuple, list)):
+                cls._validate_children(child)
+
+            # Make sure the child is a valid type.
+            if isinstance(child, dict) or not isinstance(child, ComponentChildTypes):
+                raise ChildrenTypeError(component=cls.__name__, child=child)
+
+    @classmethod
     def create(cls: type[T], *children, **props) -> T:
         """Create the component.
 
@@ -819,24 +815,12 @@ class Component(BaseComponent, ABC):
         # Import here to avoid circular imports.
         from reflex.components.base.bare import Bare
         from reflex.components.base.fragment import Fragment
-        from reflex.utils.exceptions import ChildrenTypeError
 
         # Filter out None props
         props = {key: value for key, value in props.items() if value is not None}
 
-        def validate_children(children: tuple | list):
-            for child in children:
-                if isinstance(child, (tuple, list)):
-                    validate_children(child)
-
-                # Make sure the child is a valid type.
-                if isinstance(child, dict) or not isinstance(
-                    child, ComponentChildTypes
-                ):
-                    raise ChildrenTypeError(component=cls.__name__, child=child)
-
         # Validate all the children.
-        validate_children(children)
+        cls._validate_children(children)
 
         children_normalized = [
             (
