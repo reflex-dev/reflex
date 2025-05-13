@@ -88,6 +88,12 @@ SEQUENCE_TYPE = TypeVar("SEQUENCE_TYPE", bound=Sequence)
 
 warnings.filterwarnings("ignore", message="fields may not start with an underscore")
 
+_PYDANTIC_VALIDATE_VALUES = "__pydantic_validate_values__"
+
+
+def _PYDANTIC_VALIDATOR(*args, **kwargs):
+    return None
+
 
 @dataclasses.dataclass(
     eq=False,
@@ -1321,8 +1327,8 @@ class Var(Generic[VAR_TYPE]):
 
             # noqa: DAR101 self
             """
-            if name == "__pydantic_validate_values__":
-                return lambda *args, **kwargs: None
+            if name == _PYDANTIC_VALIDATE_VALUES:
+                return _PYDANTIC_VALIDATOR
             return super().__getattribute__(name)
 
         def __getitem__(self, key: Any) -> Var:
