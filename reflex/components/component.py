@@ -1138,7 +1138,7 @@ class Component(BaseComponent, ABC):
         """
         comp = cls.__new__(cls)
         super(Component, comp).__init__(id=props.get("id"), children=list(children))
-        comp._post_init(children=children, **props)
+        comp._post_init(children=list(children), **props)
         return comp
 
     @classmethod
