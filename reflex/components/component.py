@@ -719,6 +719,12 @@ class Component(BaseComponent, ABC):
         super().__init__(
             children=kwargs.get("children", []),
         )
+        console.deprecate(
+            "component-direct-instantiation",
+            reason="Use the `create` method instead.",
+            deprecation_version="0.7.2",
+            removal_version="0.8.0",
+        )
         self._post_init(**kwargs)
 
     def _post_init(self, *args, **kwargs):
@@ -1130,7 +1136,10 @@ class Component(BaseComponent, ABC):
         Returns:
             The component.
         """
-        return cls(id=props.get("id"), children=list(children), **props)
+        comp = cls.__new__(cls)
+        super(Component, comp).__init__(id=props.get("id"), children=list(children))
+        comp._post_init(children=children, **props)
+        return comp
 
     @classmethod
     def _unsafe_create(
@@ -1145,7 +1154,8 @@ class Component(BaseComponent, ABC):
         Returns:
             The component.
         """
-        comp = cls(id=props.get("id"), children=list(children))
+        comp = cls.__new__(cls)
+        super(Component, comp).__init__(id=props.get("id"), children=list(children))
         for prop, value in props.items():
             setattr(comp, prop, value)
         return comp
