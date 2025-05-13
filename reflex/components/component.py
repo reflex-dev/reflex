@@ -519,10 +519,6 @@ class Component(BaseComponent, ABC):
                         types.get_field_type(type(self), key)
                     )[0]
 
-                    # validate literal fields.
-                    types.validate_literal(
-                        key, value, expected_type, type(self).__name__
-                    )
                     # Get the passed type and the var type.
                     passed_type = kwargs[key]._var_type
                     expected_type = (
@@ -561,15 +557,19 @@ class Component(BaseComponent, ABC):
             kwargs.pop(key, None)
 
         # Place data_ and aria_ attributes into custom_attrs
-        special_attributes = tuple(
+        special_attributes = [
             key
             for key in kwargs
             if key not in fields and SpecialAttributes.is_special(key)
-        )
+        ]
         if special_attributes:
             custom_attrs = kwargs.setdefault("custom_attrs", {})
-            for key in special_attributes:
-                custom_attrs[format.to_kebab_case(key)] = kwargs.pop(key)
+            custom_attrs.update(
+                {
+                    format.to_kebab_case(key): kwargs.pop(key)
+                    for key in special_attributes
+                }
+            )
 
         # Add style props to the component.
         style = kwargs.get("style", {})
