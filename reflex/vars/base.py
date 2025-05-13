@@ -91,7 +91,7 @@ warnings.filterwarnings("ignore", message="fields may not start with an undersco
 _PYDANTIC_VALIDATE_VALUES = "__pydantic_validate_values__"
 
 
-def _PYDANTIC_VALIDATOR(*args, **kwargs):
+def _pydantic_validator(*args, **kwargs):
     return None
 
 
@@ -369,11 +369,26 @@ def can_use_in_object_var(cls: GenericType) -> bool:
     )
 
 
+class MetaclassVar(type):
+    """Metaclass for the Var class."""
+
+    def __setattr__(cls, name: str, value: Any):
+        """Set an attribute on the class.
+
+        Args:
+            name: The name of the attribute.
+            value: The value of the attribute.
+        """
+        if name == _PYDANTIC_VALIDATE_VALUES:
+            value = _pydantic_validator
+        super().__setattr__(name, value)
+
+
 @dataclasses.dataclass(
     eq=False,
     frozen=True,
 )
-class Var(Generic[VAR_TYPE]):
+class Var(Generic[VAR_TYPE], metaclass=MetaclassVar):
     """Base class for immutable vars."""
 
     # The name of the var.
@@ -1315,21 +1330,6 @@ class Var(Generic[VAR_TYPE]):
         return ArrayVar.range(first_endpoint, second_endpoint, step)
 
     if not TYPE_CHECKING:
-
-        def __getattribute__(self, name: str):
-            """Get an attribute of the var.
-
-            Args:
-                name: The name of the attribute.
-
-            Returns:
-                The attribute of the var.
-
-            # noqa: DAR101 self
-            """
-            if name == _PYDANTIC_VALIDATE_VALUES:
-                return _PYDANTIC_VALIDATOR
-            return super().__getattribute__(name)
 
         def __getitem__(self, key: Any) -> Var:
             """Get the item from the var.
