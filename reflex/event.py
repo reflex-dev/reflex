@@ -2017,6 +2017,8 @@ class EventCallback(Generic[Unpack[P]], EventActionsMixin):
 class LambdaEventCallback(Protocol[Unpack[P]]):
     """A protocol for a lambda event callback."""
 
+    __code__: types.CodeType
+
     @overload
     def __call__(self: LambdaEventCallback[()]) -> Any: ...
 
