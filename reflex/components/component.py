@@ -138,11 +138,11 @@ class ComponentField(Generic[FIELD_TYPE]):
         self.default = default
         self.default_factory = default_factory
         self.is_javascript = is_javascript
-        self.annotated_type = annotated_type
+        self.outer_type_ = self.annotated_type = annotated_type
         type_origin = get_origin(annotated_type) or annotated_type
         if type_origin is Annotated:
             type_origin = annotated_type.__origin__  # pyright: ignore [reportAttributeAccessIssue]
-        self.type_origin = type_origin
+        self.type_ = self.type_origin = type_origin
 
     def default_value(self) -> FIELD_TYPE:
         """Get the default value for the field.
