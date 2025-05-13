@@ -1130,9 +1130,7 @@ class Component(BaseComponent, ABC):
         Returns:
             The component.
         """
-        comp = cls(id=props.get("id"), children=list(children))
-        comp._post_init(children=list(children), **props)
-        return comp
+        return cls(id=props.get("id"), children=list(children), **props)
 
     @classmethod
     def _unsafe_create(
