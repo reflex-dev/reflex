@@ -13,7 +13,7 @@ from reflex.components.core.colors import color
 from reflex.components.core.cond import cond
 from reflex.components.el.elements.inline import A
 from reflex.components.markdown.markdown import MarkdownComponentMap
-from reflex.utils.imports import ImportDict
+from reflex.utils.imports import ImportDict, ImportVar
 from reflex.vars.base import Var
 
 from ..base import LiteralAccentColor, RadixThemesComponent
@@ -52,9 +52,6 @@ class ReactRouterLink(A):
     view_transition: Var[bool]
 
 
-react_router_link = ReactRouterLink.create()
-
-
 class Link(RadixThemesComponent, A, MemoizationLeaf, MarkdownComponentMap):
     """A semantic element for navigation between pages."""
 
@@ -90,7 +87,9 @@ class Link(RadixThemesComponent, A, MemoizationLeaf, MarkdownComponentMap):
         Returns:
             The import dict.
         """
-        return react_router_link._get_imports()  # pyright: ignore [reportReturnType]
+        return {
+            "react-router": [ImportVar(tag="Link", alias="ReactRouterLink")],
+        }
 
     @classmethod
     def create(cls, *children, **props) -> Component:
