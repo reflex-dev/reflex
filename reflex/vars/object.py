@@ -7,10 +7,17 @@ import dataclasses
 import typing
 from collections.abc import Mapping
 from inspect import isclass
-from typing import Any, NoReturn, TypeVar, get_args, get_type_hints, overload
+from typing import (
+    Any,
+    NoReturn,
+    TypeVar,
+    get_args,
+    get_type_hints,
+    is_typeddict,
+    overload,
+)
 
 from rich.markup import escape
-from typing_extensions import is_typeddict
 
 from reflex.utils import types
 from reflex.utils.exceptions import VarAttributeError

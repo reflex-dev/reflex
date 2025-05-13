@@ -485,6 +485,36 @@ def test_event_bound_method() -> None:
     _ = rx.input(on_change=w.get_handler)
 
 
+def test_event_var_in_rx_cond():
+    """Test that EventVar and EventChainVar cannot be used in rx.cond()."""
+    from reflex.components.core.cond import cond as rx_cond
+
+    class S(BaseState):
+        @event
+        def s(self):
+            pass
+
+    handler_var = Var.create(S.s)
+    with pytest.raises(TypeError) as err:
+        rx_cond(handler_var, rx.text("True"), rx.text("False"))
+    assert "Cannot convert" in str(err.value)
+    assert "to bool" in str(err.value)
+
+    def _args_spec() -> tuple:
+        return ()
+
+    chain_var = Var.create(
+        EventChain(
+            events=[S.s()],
+            args_spec=_args_spec,
+        )
+    )
+    with pytest.raises(TypeError) as err:
+        rx_cond(chain_var, rx.text("True"), rx.text("False"))
+    assert "Cannot convert" in str(err.value)
+    assert "to bool" in str(err.value)
+
+
 def test_decentralized_event_with_args():
     """Test the decentralized event."""
 

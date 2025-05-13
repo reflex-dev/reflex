@@ -1,6 +1,6 @@
 [project]
 name = "reflex"
-version = "0.7.11dev1"
+version = "0.7.12dev1"
 description = "Web apps in pure Python."
 license = { text = "Apache-2.0" }
 authors = [
@@ -63,7 +63,7 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [tool.hatch.build]
-include = ["reflex"]
+include = ["reflex", "scripts/hatch_build.py"]
 
 [tool.hatch.build.targets.sdist]
 artifacts = ["*.pyi"]
@@ -72,6 +72,7 @@ artifacts = ["*.pyi"]
 artifacts = ["*.pyi"]
 
 [tool.hatch.build.hooks.custom]
+path = "scripts/hatch_build.py"
 dependencies = ["plotly", "ruff"]
 require-runtime-dependencies = true
 

@@ -40,7 +40,6 @@ from typing import (  # noqa: UP035
 )
 
 from rich.markup import escape
-from sqlalchemy.orm import DeclarativeBase
 from typing_extensions import deprecated, override
 
 from reflex import constants
@@ -171,7 +170,8 @@ class VarData:
         object.__setattr__(self, "components", tuple(components or []))
 
         if hooks and any(hooks.values()):
-            merged_var_data = VarData.merge(self, *hooks.values())
+            # Merge our dependencies first, so they can be referenced.
+            merged_var_data = VarData.merge(*hooks.values(), self)
             if merged_var_data is not None:
                 object.__setattr__(self, "state", merged_var_data.state)
                 object.__setattr__(self, "field_name", merged_var_data.field_name)
@@ -3330,18 +3330,17 @@ def dispatch(
     ).guess_type()
 
 
-V = TypeVar("V")
-
-BASE_TYPE = TypeVar("BASE_TYPE", bound=Base | None)
-SQLA_TYPE = TypeVar("SQLA_TYPE", bound=DeclarativeBase | None)
-
 if TYPE_CHECKING:
     from _typeshed import DataclassInstance
+    from sqlalchemy.orm import DeclarativeBase
 
+    SQLA_TYPE = TypeVar("SQLA_TYPE", bound=DeclarativeBase | None)
+    BASE_TYPE = TypeVar("BASE_TYPE", bound=Base | None)
     DATACLASS_TYPE = TypeVar("DATACLASS_TYPE", bound=DataclassInstance | None)
+    MAPPING_TYPE = TypeVar("MAPPING_TYPE", bound=Mapping | None)
+    V = TypeVar("V")
 
 FIELD_TYPE = TypeVar("FIELD_TYPE")
-MAPPING_TYPE = TypeVar("MAPPING_TYPE", bound=Mapping | None)
 
 
 class Field(Generic[FIELD_TYPE]):
