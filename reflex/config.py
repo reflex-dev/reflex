@@ -924,10 +924,16 @@ class Config(Base):
         self._non_default_attributes.update(kwargs)
         self._replace_defaults(**kwargs)
 
-        if self.tailwind is not None:
+        if self.tailwind is not None and not any(
+            isinstance(plugin, TailwindV3Plugin) for plugin in self.plugins
+        ):
             console.deprecate(
                 "Inferring tailwind usage",
-                reason="Either set `tailwind` to `None` if you are not using tailwind, or add `rx.plugins.TailwindV3Plugin()` to the `plugins=[]` in rxconfig.py to be able to use it.",
+                reason="""
+
+If you are using tailwind, add `rx.plugins.TailwindV3Plugin()` to the `plugins=[]` in rxconfig.py.
+
+If you are not using tailwind, set `tailwind` to `None` in rxconfig.py.""",
                 deprecation_version="0.7.10",
                 removal_version="0.8.0",
                 dedupe=True,
