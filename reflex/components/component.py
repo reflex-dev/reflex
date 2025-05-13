@@ -341,6 +341,19 @@ class BaseComponent(metaclass=BaseComponentMeta):
             setattr(self, key, value)
         return self
 
+    def __eq__(self, value: Any) -> bool:
+        """Check if the component is equal to another value.
+
+        Args:
+            value: The value to compare to.
+
+        Returns:
+            Whether the component is equal to the value.
+        """
+        return type(self) is type(value) and bool(
+            getattr(self, key) == getattr(value, key) for key in self.get_fields()
+        )
+
     @classmethod
     def get_fields(cls) -> Mapping[str, ComponentField]:
         """Get the fields of the component.

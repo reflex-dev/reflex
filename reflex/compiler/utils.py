@@ -309,7 +309,7 @@ def compile_custom_component(
         A tuple of the compiled component and the imports required by the component.
     """
     # Render the component.
-    render = component.get_component(component)
+    render = component.get_component()
 
     # Get the imports.
     imports: ParsedImportDict = {
