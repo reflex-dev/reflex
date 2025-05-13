@@ -379,9 +379,9 @@ class MetaclassVar(type):
             name: The name of the attribute.
             value: The value of the attribute.
         """
-        if name == _PYDANTIC_VALIDATE_VALUES:
-            value = _pydantic_validator
-        super().__setattr__(name, value)
+        super().__setattr__(
+            name, value if name != _PYDANTIC_VALIDATE_VALUES else _pydantic_validator
+        )
 
 
 @dataclasses.dataclass(
