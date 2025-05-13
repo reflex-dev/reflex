@@ -703,12 +703,6 @@ class Component(BaseComponent, ABC):
         Args:
             **kwargs: The kwargs to pass to the component.
         """
-        console.deprecate(
-            "component-direct-instantiation",
-            reason="Use the `create` method instead.",
-            deprecation_version="0.7.2",
-            removal_version="0.8.0",
-        )
         super().__init__(
             children=kwargs.get("children", []),
         )
