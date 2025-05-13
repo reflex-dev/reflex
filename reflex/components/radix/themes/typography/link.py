@@ -13,12 +13,46 @@ from reflex.components.core.colors import color
 from reflex.components.core.cond import cond
 from reflex.components.el.elements.inline import A
 from reflex.components.markdown.markdown import MarkdownComponentMap
+from reflex.utils.imports import ImportDict
 from reflex.vars.base import Var
 
 from ..base import LiteralAccentColor, RadixThemesComponent
 from .base import LiteralTextSize, LiteralTextTrim, LiteralTextWeight
 
 LiteralLinkUnderline = Literal["auto", "hover", "always", "none"]
+
+LiteralLinkDiscover = Literal["none", "render"]
+
+
+class ReactRouterLink(A):
+    """Links are accessible elements used primarily for navigation. This component is styled to resemble a hyperlink and semantically renders an <a>."""
+
+    library = "react-router"
+
+    tag = "Link"
+
+    alias = "ReactRouterLink"
+
+    # The page to link to.
+    to: Var[str]
+
+    # Replaces the current entry in the history stack instead of pushing a new one onto it.
+    replace: Var[bool]
+
+    # Will use document navigation instead of client side routing when the link is clicked: the browser will handle the transition normally (as if it were an <a href>).
+    reload_document: Var[bool]
+
+    # Prevents the scroll position from being reset to the top of the window when the link is clicked and the app is using ScrollRestoration. This only prevents new locations resetting scroll to the top, scroll position will be restored for back/forward button navigation.
+    prevent_scroll_reset: Var[bool]
+
+    # Defines the link discovery behavior
+    discover: Var[LiteralLinkDiscover]
+
+    # Enables a View Transition for this navigation.
+    view_transition: Var[bool]
+
+
+react_router_link = ReactRouterLink.create()
 
 
 class Link(RadixThemesComponent, A, MemoizationLeaf, MarkdownComponentMap):
@@ -50,6 +84,14 @@ class Link(RadixThemesComponent, A, MemoizationLeaf, MarkdownComponentMap):
     # If True, the link will open in a new tab
     is_external: Var[bool]
 
+    def add_imports(self) -> ImportDict:
+        """Add imports for the Link component.
+
+        Returns:
+            The import dict.
+        """
+        return react_router_link._get_imports()  # pyright: ignore [reportReturnType]
+
     @classmethod
     def create(cls, *children, **props) -> Component:
         """Create a Link component.
@@ -75,6 +117,23 @@ class Link(RadixThemesComponent, A, MemoizationLeaf, MarkdownComponentMap):
         if href is not None:
             if not len(children):
                 raise ValueError("Link without a child will not display")
+
+            if "as_child" not in props:
+                # Extract props for the ReactRouterLink, the rest go to the Link/A element.
+                known_react_router_link_props = ReactRouterLink.get_props()
+                next_link_props = {}
+                for prop in props.copy():
+                    if prop in known_react_router_link_props:
+                        next_link_props[prop] = props.pop(prop)
+
+                next_link_props["to"] = next_link_props.pop("href", href)
+
+                # If user does not use `as_child`, by default we render using react_router_link to avoid page refresh during internal navigation
+                return super().create(
+                    ReactRouterLink.create(*children, **next_link_props),
+                    as_child=True,
+                    **props,
+                )
         else:
             props["href"] = "#"
 
