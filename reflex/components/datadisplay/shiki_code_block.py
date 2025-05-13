@@ -2,11 +2,12 @@
 
 from __future__ import annotations
 
+import dataclasses
 import re
 from collections import defaultdict
+from dataclasses import dataclass
 from typing import Any, Literal
 
-from reflex.base import Base
 from reflex.components.component import Component, ComponentNamespace
 from reflex.components.core.colors import color
 from reflex.components.core.cond import color_mode_cond
@@ -410,99 +411,109 @@ class ShikiDecorations(NoExtrasAllowedProps):
     always_wrap: bool = False
 
 
-class ShikiBaseTransformers(Base):
+@dataclass(kw_only=True)
+class ShikiBaseTransformers:
     """Base for creating transformers."""
 
-    library: str
-    fns: list[FunctionStringVar]
-    style: Style | None
+    library: str = ""
+    fns: list[FunctionStringVar] = dataclasses.field(default_factory=list)
+    style: Style | None = dataclasses.field(default=None)
 
 
+@dataclass(kw_only=True)
 class ShikiJsTransformer(ShikiBaseTransformers):
     """A Wrapped shikijs transformer."""
 
     library: str = "@shikijs/transformers@3.3.0"
-    fns: list[FunctionStringVar] = [
-        FunctionStringVar.create(fn) for fn in SHIKIJS_TRANSFORMER_FNS
-    ]
-    style: Style | None = Style(
-        {
-            "code": {"line-height": "1.7", "font-size": "0.875em", "display": "grid"},
-            # Diffs
-            ".diff": {
-                "margin": "0 -24px",
-                "padding": "0 24px",
-                "width": "calc(100% + 48px)",
-                "display": "inline-block",
-            },
-            ".diff.add": {
-                "background-color": "rgba(16, 185, 129, .14)",
-                "position": "relative",
-            },
-            ".diff.remove": {
-                "background-color": "rgba(244, 63, 94, .14)",
-                "opacity": "0.7",
-                "position": "relative",
-            },
-            ".diff.remove:after": {
-                "position": "absolute",
-                "left": "10px",
-                "content": "'-'",
-                "color": "#b34e52",
-            },
-            ".diff.add:after": {
-                "position": "absolute",
-                "left": "10px",
-                "content": "'+'",
-                "color": "#18794e",
-            },
-            # Highlight
-            ".highlighted": {
-                "background-color": "rgba(142, 150, 170, .14)",
-                "margin": "0 -24px",
-                "padding": "0 24px",
-                "width": "calc(100% + 48px)",
-                "display": "inline-block",
-            },
-            ".highlighted.error": {
-                "background-color": "rgba(244, 63, 94, .14)",
-            },
-            ".highlighted.warning": {
-                "background-color": "rgba(234, 179, 8, .14)",
-            },
-            # Highlighted Word
-            ".highlighted-word": {
-                "background-color": color("gray", 2),
-                "border": f"1px solid {color('gray', 5)}",
-                "padding": "1px 3px",
-                "margin": "-1px -3px",
-                "border-radius": "4px",
-            },
-            # Focused Lines
-            ".has-focused .line:not(.focused)": {
-                "opacity": "0.7",
-                "filter": "blur(0.095rem)",
-                "transition": "filter .35s, opacity .35s",
-            },
-            ".has-focused:hover .line:not(.focused)": {
-                "opacity": "1",
-                "filter": "none",
-            },
-            # White Space
-            # ".tab, .space": {
-            #     "position": "relative", # noqa: ERA001
-            # },
-            # ".tab::before": {
-            #     "content": "'⇥'", # noqa: ERA001
-            #     "position": "absolute", # noqa: ERA001
-            #     "opacity": "0.3",# noqa: ERA001
-            # },
-            # ".space::before": {
-            #     "content": "'·'", # noqa: ERA001
-            #     "position": "absolute", # noqa: ERA001
-            #     "opacity": "0.3", # noqa: ERA001
-            # },
-        }
+    fns: list[FunctionStringVar] = dataclasses.field(
+        default_factory=lambda: [
+            FunctionStringVar.create(fn) for fn in SHIKIJS_TRANSFORMER_FNS
+        ]
+    )
+    style: Style | None = dataclasses.field(
+        default_factory=lambda: Style(
+            {
+                "code": {
+                    "line-height": "1.7",
+                    "font-size": "0.875em",
+                    "display": "grid",
+                },
+                # Diffs
+                ".diff": {
+                    "margin": "0 -24px",
+                    "padding": "0 24px",
+                    "width": "calc(100% + 48px)",
+                    "display": "inline-block",
+                },
+                ".diff.add": {
+                    "background-color": "rgba(16, 185, 129, .14)",
+                    "position": "relative",
+                },
+                ".diff.remove": {
+                    "background-color": "rgba(244, 63, 94, .14)",
+                    "opacity": "0.7",
+                    "position": "relative",
+                },
+                ".diff.remove:after": {
+                    "position": "absolute",
+                    "left": "10px",
+                    "content": "'-'",
+                    "color": "#b34e52",
+                },
+                ".diff.add:after": {
+                    "position": "absolute",
+                    "left": "10px",
+                    "content": "'+'",
+                    "color": "#18794e",
+                },
+                # Highlight
+                ".highlighted": {
+                    "background-color": "rgba(142, 150, 170, .14)",
+                    "margin": "0 -24px",
+                    "padding": "0 24px",
+                    "width": "calc(100% + 48px)",
+                    "display": "inline-block",
+                },
+                ".highlighted.error": {
+                    "background-color": "rgba(244, 63, 94, .14)",
+                },
+                ".highlighted.warning": {
+                    "background-color": "rgba(234, 179, 8, .14)",
+                },
+                # Highlighted Word
+                ".highlighted-word": {
+                    "background-color": color("gray", 2),
+                    "border": f"1px solid {color('gray', 5)}",
+                    "padding": "1px 3px",
+                    "margin": "-1px -3px",
+                    "border-radius": "4px",
+                },
+                # Focused Lines
+                ".has-focused .line:not(.focused)": {
+                    "opacity": "0.7",
+                    "filter": "blur(0.095rem)",
+                    "transition": "filter .35s, opacity .35s",
+                },
+                ".has-focused:hover .line:not(.focused)": {
+                    "opacity": "1",
+                    "filter": "none",
+                },
+                # White Space
+                # ".tab, .space": {
+                #     "position": "relative", # noqa: ERA001
+                # },
+                # ".tab::before": {
+                #     "content": "'⇥'", # noqa: ERA001
+                #     "position": "absolute", # noqa: ERA001
+                #     "opacity": "0.3",# noqa: ERA001
+                # },
+                # ".space::before": {
+                #     "content": "'·'", # noqa: ERA001
+                #     "position": "absolute", # noqa: ERA001
+                #     "opacity": "0.3", # noqa: ERA001
+                # },
+            }
+        )
     )
 
     def __init__(self, **kwargs):

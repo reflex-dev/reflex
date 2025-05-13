@@ -2014,10 +2014,10 @@ class CustomComponent(Component):
     library = f"$/{Dirs.COMPONENTS_PATH}"
 
     # The function that creates the component.
-    component_fn: Callable[..., Component] = Component.create
+    component_fn: Callable[..., Component] = field(default=Component.create)
 
     # The props of the component.
-    props: dict[str, Any] = {}
+    props: dict[str, Any] = field(default_factory=dict)
 
     def _post_init(self, **kwargs):
         """Initialize the custom component.
