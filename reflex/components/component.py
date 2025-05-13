@@ -228,7 +228,7 @@ class BaseComponentMeta(ABCMeta):
             namespace.get("__annotations__", {}), namespace["__module__"]
         )
 
-        for base in bases:
+        for base in bases[::-1]:
             if hasattr(base, "_fields"):
                 fields.update(base._fields)
                 js_fields.update(base._js_fields)
