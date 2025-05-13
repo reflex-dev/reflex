@@ -207,6 +207,8 @@ class BaseComponentMeta(ABCMeta):
     """Meta class for BaseComponent."""
 
     if TYPE_CHECKING:
+        _inherited_fields: Mapping[str, ComponentField]
+        _own_fields: Mapping[str, ComponentField]
         _fields: Mapping[str, ComponentField]
         _js_fields: Mapping[str, ComponentField]
 
@@ -222,22 +224,24 @@ class BaseComponentMeta(ABCMeta):
             The new class.
         """
         # Add the field to the class
-        fields: dict[str, ComponentField] = {}
-        js_fields: dict[str, ComponentField] = {}
+        inherited_fields: dict[str, ComponentField] = {}
+        own_fields: dict[str, ComponentField] = {}
         resolved_annotations = resolve_annotations(
             namespace.get("__annotations__", {}), namespace["__module__"]
         )
 
         for base in bases[::-1]:
-            if hasattr(base, "_fields"):
-                fields.update(base._fields)
-                js_fields.update(base._js_fields)
+            if hasattr(base, "_inherited_fields"):
+                inherited_fields.update(base._inherited_fields)
+        for base in bases[::-1]:
+            if hasattr(base, "_own_fields"):
+                inherited_fields.update(base._own_fields)
 
         for key, value, inherited_field in [
             (key, value, inherited_field)
             for key, value in namespace.items()
             if key not in resolved_annotations
-            and ((inherited_field := fields.get(key)) is not None)
+            and ((inherited_field := inherited_fields.get(key)) is not None)
         ]:
             new_value = ComponentField(
                 default=value,
@@ -245,10 +249,7 @@ class BaseComponentMeta(ABCMeta):
                 annotated_type=inherited_field.annotated_type,
             )
 
-            if new_value.is_javascript:
-                js_fields[key] = new_value
-
-            fields[key] = new_value
+            own_fields[key] = new_value
 
         for key, annotation in resolved_annotations.items():
             value = namespace.get(key, MISSING)
@@ -266,7 +267,7 @@ class BaseComponentMeta(ABCMeta):
                     default=value,
                     is_javascript=(
                         True
-                        if (existing_field := fields.get(key)) is None
+                        if (existing_field := inherited_fields.get(key)) is None
                         else existing_field.is_javascript
                     ),
                     annotated_type=annotation,
@@ -279,13 +280,16 @@ class BaseComponentMeta(ABCMeta):
                     annotated_type=annotation,
                 )
 
-            if value.is_javascript:
-                js_fields[key] = value
+            own_fields[key] = value
 
-            fields[key] = value
-
-        namespace["_fields"] = fields
-        namespace["_js_fields"] = js_fields
+        namespace["_own_fields"] = own_fields
+        namespace["_inherited_fields"] = inherited_fields
+        namespace["_fields"] = inherited_fields | own_fields
+        namespace["_js_fields"] = {
+            key: value
+            for key, value in own_fields.items()
+            if value.is_javascript is True
+        }
         return super().__new__(cls, name, bases, namespace)
 
 
