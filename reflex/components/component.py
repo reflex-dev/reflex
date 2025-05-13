@@ -7,19 +7,32 @@ import copy
 import dataclasses
 import functools
 import inspect
+import sys
 import typing
-from abc import ABC, abstractmethod
+from abc import ABC, ABCMeta, abstractmethod
 from collections.abc import Callable, Iterator, Mapping, Sequence
+from dataclasses import _MISSING_TYPE, MISSING
 from functools import wraps
 from hashlib import md5
 from types import SimpleNamespace
-from typing import Any, ClassVar, TypeVar, cast, get_args, get_origin
+from typing import (
+    TYPE_CHECKING,
+    Annotated,
+    Any,
+    ClassVar,
+    ForwardRef,
+    Generic,
+    TypeVar,
+    _eval_type,  # pyright: ignore [reportAttributeAccessIssue]
+    cast,
+    get_args,
+    get_origin,
+)
 
-import pydantic.v1
 from rich.markup import escape
+from typing_extensions import dataclass_transform
 
 import reflex.state
-from reflex.base import Base
 from reflex.compiler.templates import STATEFUL_COMPONENT
 from reflex.components.core.breakpoints import Breakpoints
 from reflex.components.dynamic import load_dynamic_serializer
@@ -62,26 +75,289 @@ from reflex.vars.object import LiteralObjectVar, ObjectVar
 from reflex.vars.sequence import LiteralArrayVar, LiteralStringVar, StringVar
 
 
-class BaseComponent(Base, ABC):
+def resolve_annotations(
+    raw_annotations: Mapping[str, type[Any]], module_name: str | None
+) -> dict[str, type[Any]]:
+    """Partially taken from typing.get_type_hints.
+
+    Resolve string or ForwardRef annotations into type objects if possible.
+
+    Args:
+        raw_annotations: The raw annotations to resolve.
+        module_name: The name of the module.
+
+    Returns:
+        The resolved annotations.
+    """
+    module = sys.modules.get(module_name, None) if module_name is not None else None
+
+    base_globals: dict[str, Any] | None = (
+        module.__dict__ if module is not None else None
+    )
+
+    annotations = {}
+    for name, value in raw_annotations.items():
+        if isinstance(value, str):
+            if sys.version_info == (3, 10, 0):
+                value = ForwardRef(value, is_argument=False)
+            else:
+                value = ForwardRef(value, is_argument=False, is_class=True)
+        try:
+            if sys.version_info >= (3, 13):
+                value = _eval_type(value, base_globals, None, type_params=())
+            else:
+                value = _eval_type(value, base_globals, None)
+        except NameError:
+            # this is ok, it can be fixed with update_forward_refs
+            pass
+        annotations[name] = value
+    return annotations
+
+
+FIELD_TYPE = TypeVar("FIELD_TYPE")
+
+
+class ComponentField(Generic[FIELD_TYPE]):
+    """A field for a component."""
+
+    def __init__(
+        self,
+        default: FIELD_TYPE | _MISSING_TYPE = MISSING,
+        default_factory: Callable[[], FIELD_TYPE] | None = None,
+        is_javascript: bool | None = None,
+        annotated_type: type[Any] | _MISSING_TYPE = MISSING,
+    ) -> None:
+        """Initialize the field.
+
+        Args:
+            default: The default value for the field.
+            default_factory: The default factory for the field.
+            is_javascript: Whether the field is a javascript property.
+            annotated_type: The annotated type for the field.
+        """
+        self.default = default
+        self.default_factory = default_factory
+        self.is_javascript = is_javascript
+        self.annotated_type = annotated_type
+        type_origin = get_origin(annotated_type) or annotated_type
+        if type_origin is Annotated:
+            type_origin = annotated_type.__origin__  # pyright: ignore [reportAttributeAccessIssue]
+        self.type_origin = type_origin
+
+    def default_value(self) -> FIELD_TYPE:
+        """Get the default value for the field.
+
+        Returns:
+            The default value for the field.
+
+        Raises:
+            ValueError: If no default value or factory is provided.
+        """
+        if self.default is not MISSING:
+            return self.default
+        if self.default_factory is not None:
+            return self.default_factory()
+        raise ValueError("No default value or factory provided.")
+
+    def __repr__(self) -> str:
+        """Represent the field in a readable format.
+
+        Returns:
+            The string representation of the field.
+        """
+        annotated_type_str = (
+            f", annotated_type={self.annotated_type!r}"
+            if self.annotated_type is not MISSING
+            else ""
+        )
+        if self.default is not MISSING:
+            return f"ComponentField(default={self.default!r}, is_javascript={self.is_javascript!r}{annotated_type_str})"
+        return f"ComponentField(default_factory={self.default_factory!r}, is_javascript={self.is_javascript!r}{annotated_type_str})"
+
+
+def field(
+    default: FIELD_TYPE | _MISSING_TYPE = MISSING,
+    default_factory: Callable[[], FIELD_TYPE] | None = None,
+    is_javascript_property: bool | None = None,
+) -> FIELD_TYPE:
+    """Create a field for a component.
+
+    Args:
+        default: The default value for the field.
+        default_factory: The default factory for the field.
+        is_javascript_property: Whether the field is a javascript property.
+
+    Returns:
+        The field for the component.
+
+    Raises:
+        ValueError: If both default and default_factory are specified.
+    """
+    if default is not MISSING and default_factory is not None:
+        raise ValueError("cannot specify both default and default_factory")
+    return ComponentField(  # pyright: ignore [reportReturnType]
+        default=default,
+        default_factory=default_factory,
+        is_javascript=is_javascript_property,
+    )
+
+
+@dataclass_transform(kw_only_default=True)
+class BaseComponentMeta(ABCMeta):
+    """Meta class for BaseComponent."""
+
+    if TYPE_CHECKING:
+        _fields: Mapping[str, ComponentField]
+        _js_fields: Mapping[str, ComponentField]
+
+    def __new__(cls, name: str, bases: tuple[type], namespace: dict[str, Any]) -> type:
+        """Create a new class.
+
+        Args:
+            name: The name of the class.
+            bases: The bases of the class.
+            namespace: The namespace of the class.
+
+        Returns:
+            The new class.
+        """
+        # Add the field to the class
+        fields: dict[str, ComponentField] = {}
+        js_fields: dict[str, ComponentField] = {}
+        resolved_annotations = resolve_annotations(
+            namespace.get("__annotations__", {}), namespace["__module__"]
+        )
+
+        for base in bases:
+            if hasattr(base, "_fields"):
+                fields.update(base._fields)
+                js_fields.update(base._js_fields)
+
+        for key, value, inherited_field in [
+            (key, value, inherited_field)
+            for key, value in namespace.items()
+            if key not in resolved_annotations
+            and ((inherited_field := fields.get(key)) is not None)
+        ]:
+            new_value = ComponentField(
+                default=value,
+                is_javascript=inherited_field.is_javascript,
+                annotated_type=inherited_field.annotated_type,
+            )
+
+            if new_value.is_javascript:
+                js_fields[key] = new_value
+
+            fields[key] = new_value
+
+        for key, annotation in resolved_annotations.items():
+            value = namespace.get(key, MISSING)
+
+            if types.is_classvar(annotation):
+                # If the annotation is a classvar, skip it.
+                continue
+
+            if value is MISSING:
+                value = ComponentField(
+                    default=None, is_javascript=True, annotated_type=annotation
+                )
+            elif not isinstance(value, ComponentField):
+                value = ComponentField(
+                    default=value,
+                    is_javascript=(
+                        True
+                        if (existing_field := fields.get(key)) is None
+                        else existing_field.is_javascript
+                    ),
+                    annotated_type=annotation,
+                )
+            else:
+                value = ComponentField(
+                    default=value.default,
+                    default_factory=value.default_factory,
+                    is_javascript=value.is_javascript,
+                    annotated_type=annotation,
+                )
+
+            if value.is_javascript:
+                js_fields[key] = value
+
+            fields[key] = value
+
+        namespace["_fields"] = fields
+        namespace["_js_fields"] = js_fields
+        return super().__new__(cls, name, bases, namespace)
+
+
+class BaseComponent(metaclass=BaseComponentMeta):
     """The base class for all Reflex components.
 
     This is something that can be rendered as a Component via the Reflex compiler.
     """
 
     # The children nested within the component.
-    children: list[BaseComponent] = pydantic.v1.Field(default_factory=list)
+    children: list[BaseComponent] = field(
+        default_factory=list, is_javascript_property=False
+    )
 
     # The library that the component is based on.
-    library: str | None = pydantic.v1.Field(default_factory=lambda: None)
+    library: str | None = field(default=None, is_javascript_property=False)
 
     # List here the non-react dependency needed by `library`
-    lib_dependencies: list[str] = pydantic.v1.Field(default_factory=list)
+    lib_dependencies: list[str] = field(
+        default_factory=list, is_javascript_property=False
+    )
 
     # List here the dependencies that need to be transpiled by Next.js
-    transpile_packages: list[str] = pydantic.v1.Field(default_factory=list)
+    transpile_packages: list[str] = field(
+        default_factory=list, is_javascript_property=False
+    )
 
     # The tag to use when rendering the component.
-    tag: str | None = pydantic.v1.Field(default_factory=lambda: None)
+    tag: str | None = field(default=None, is_javascript_property=False)
+
+    def __init__(
+        self,
+        **kwargs,
+    ):
+        """Initialize the component.
+
+        Args:
+            **kwargs: The kwargs to pass to the component.
+        """
+        for key, value in kwargs.items():
+            setattr(self, key, value)
+        for name, value in self.get_fields().items():
+            if name not in kwargs:
+                setattr(self, name, value.default_value())
+
+    def set(self, **kwargs):
+        """Set the component props.
+
+        Args:
+            **kwargs: The kwargs to set.
+        """
+        for key, value in kwargs.items():
+            setattr(self, key, value)
+        return self
+
+    @classmethod
+    def get_fields(cls) -> Mapping[str, ComponentField]:
+        """Get the fields of the component.
+
+        Returns:
+            The fields of the component.
+        """
+        return cls._fields
+
+    @classmethod
+    def get_js_fields(cls) -> Mapping[str, ComponentField]:
+        """Get the javascript fields of the component.
+
+        Returns:
+            The javascript fields of the component.
+        """
+        return cls._js_fields
 
     @abstractmethod
     def render(self) -> dict:
@@ -258,39 +534,39 @@ class Component(BaseComponent, ABC):
     """A component with style, event trigger and other props."""
 
     # The style of the component.
-    style: Style = pydantic.v1.Field(default_factory=Style)
+    style: Style = field(default_factory=Style, is_javascript_property=False)
 
     # A mapping from event triggers to event chains.
-    event_triggers: dict[str, EventChain | Var] = pydantic.v1.Field(
-        default_factory=dict
+    event_triggers: dict[str, EventChain | Var] = field(
+        default_factory=dict, is_javascript_property=False
     )
 
     # The alias for the tag.
-    alias: str | None = pydantic.v1.Field(default_factory=lambda: None)
+    alias: str | None = field(default=None, is_javascript_property=False)
 
     # Whether the component is a global scope tag. True for tags like `html`, `head`, `body`.
     _is_tag_in_global_scope: ClassVar[bool] = False
 
     # Whether the import is default or named.
-    is_default: bool | None = pydantic.v1.Field(default_factory=lambda: False)
+    is_default: bool | None = field(default=False, is_javascript_property=False)
 
     # A unique key for the component.
-    key: Any = pydantic.v1.Field(default_factory=lambda: None)
+    key: Any = field(default=None, is_javascript_property=False)
 
     # The id for the component.
-    id: Any = pydantic.v1.Field(default_factory=lambda: None)
+    id: Any = field(default=None, is_javascript_property=False)
 
     # The Var to pass as the ref to the component.
-    ref: Var | None = pydantic.v1.Field(default_factory=lambda: None)
+    ref: Var | None = field(default=None, is_javascript_property=False)
 
     # The class name for the component.
-    class_name: Any = pydantic.v1.Field(default_factory=lambda: None)
+    class_name: Any = field(default=None, is_javascript_property=False)
 
     # Special component props.
-    special_props: list[Var] = pydantic.v1.Field(default_factory=list)
+    special_props: list[Var] = field(default_factory=list, is_javascript_property=False)
 
     # Whether the component should take the focus once the page is loaded
-    autofocus: bool = pydantic.v1.Field(default_factory=lambda: False)
+    autofocus: bool = field(default=False, is_javascript_property=False)
 
     # components that cannot be children
     _invalid_children: ClassVar[list[str]] = []
@@ -305,14 +581,18 @@ class Component(BaseComponent, ABC):
     _rename_props: ClassVar[dict[str, str]] = {}
 
     # custom attribute
-    custom_attrs: dict[str, Var | Any] = pydantic.v1.Field(default_factory=dict)
+    custom_attrs: dict[str, Var | Any] = field(
+        default_factory=dict, is_javascript_property=False
+    )
 
     # When to memoize this component and its children.
-    _memoization_mode: MemoizationMode = MemoizationMode()
+    _memoization_mode: MemoizationMode = field(
+        default_factory=MemoizationMode, is_javascript_property=False
+    )
 
     # State class associated with this component instance
-    State: type[reflex.state.State] | None = pydantic.v1.Field(
-        default_factory=lambda: None
+    State: type[reflex.state.State] | None = field(
+        default=None, is_javascript_property=False
     )
 
     def add_imports(self) -> ImportDict | list[ImportDict]:
@@ -409,25 +689,6 @@ class Component(BaseComponent, ABC):
         """
         super().__init_subclass__(**kwargs)
 
-        # Get all the props for the component.
-        props = cls.get_props()
-
-        # Convert fields to props, setting default values.
-        for field in cls.get_fields().values():
-            # If the field is not a component prop, skip it.
-            if field.name not in props:
-                continue
-
-            # Set default values for any props.
-            if field.type_ is Var:
-                field.required = False
-                if field.default is not None:
-                    field.default_factory = functools.partial(
-                        LiteralVar.create, field.default
-                    )
-            elif field.type_ is EventHandler:
-                field.required = False
-
         # Ensure renamed props from parent classes are applied to the subclass.
         if cls._rename_props:
             inherited_rename_props = {}
@@ -496,7 +757,9 @@ class Component(BaseComponent, ABC):
                 is_var = False
             elif key in props:
                 # Set the field type.
-                is_var = field.type_ is Var if (field := fields.get(key)) else False
+                is_var = (
+                    field.type_origin is Var if (field := fields.get(key)) else False
+                )
             else:
                 continue
 
@@ -593,11 +856,7 @@ class Component(BaseComponent, ABC):
 
         kwargs["style"] = Style(
             {
-                **(
-                    fields_style.default_factory()
-                    if fields_style.default_factory
-                    else fields_style.default
-                ),
+                **fields_style.default_value(),
                 **style,
                 **{attr: value for attr, value in kwargs.items() if attr not in fields},
             }
@@ -651,13 +910,13 @@ class Component(BaseComponent, ABC):
         triggers = DEFAULT_TRIGGERS.copy()
         # Look for component specific triggers,
         # e.g. variable declared as EventHandler types.
-        for field in self.get_fields().values():
-            if field.type_ is EventHandler:
+        for name, field in self.get_fields().items():
+            if field.type_origin is EventHandler:
                 args_spec = None
-                annotation = field.annotation
+                annotation = field.annotated_type
                 if (metadata := getattr(annotation, "__metadata__", None)) is not None:
                     args_spec = metadata[0]
-                triggers[field.name] = args_spec or (no_args_event_spec)
+                triggers[name] = args_spec or (no_args_event_spec)
         return triggers
 
     def __repr__(self) -> str:
@@ -864,7 +1123,7 @@ class Component(BaseComponent, ABC):
         Returns:
             The component.
         """
-        comp = cls.construct(id=props.get("id"), children=list(children))
+        comp = cls(id=props.get("id"), children=list(children))
         comp._post_init(children=list(children), **props)
         return comp
 
@@ -881,7 +1140,7 @@ class Component(BaseComponent, ABC):
         Returns:
             The component.
         """
-        comp = cls.construct(id=props.get("id"), children=list(children))
+        comp = cls(id=props.get("id"), children=list(children))
         for prop, value in props.items():
             setattr(comp, prop, value)
         return comp

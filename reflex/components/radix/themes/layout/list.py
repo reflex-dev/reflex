@@ -170,7 +170,7 @@ class ListItem(Li, MarkdownComponentMap):
         """
         for child in children:
             if isinstance(child, Text):
-                child.as_ = "span"
+                child.as_ = "span"  # pyright: ignore[reportAttributeAccessIssue]
             elif isinstance(child, Icon) and "display" not in child.style:
                 child.style["display"] = "inline"
         return super().create(*children, **props)
