@@ -336,6 +336,9 @@ class BaseComponent(metaclass=BaseComponentMeta):
 
         Args:
             **kwargs: The kwargs to set.
+
+        Returns:
+            The component with the updated props.
         """
         for key, value in kwargs.items():
             setattr(self, key, value)
@@ -920,17 +923,20 @@ class Component(BaseComponent, ABC):
         Returns:
             The event triggers.
         """
-        triggers = DEFAULT_TRIGGERS.copy()
         # Look for component specific triggers,
         # e.g. variable declared as EventHandler types.
-        for name, field in self.get_fields().items():
-            if field.type_origin is EventHandler:
-                args_spec = None
-                annotation = field.annotated_type
-                if (metadata := getattr(annotation, "__metadata__", None)) is not None:
-                    args_spec = metadata[0]
-                triggers[name] = args_spec or (no_args_event_spec)
-        return triggers
+        return DEFAULT_TRIGGERS | {
+            name: (
+                metadata[0]
+                if (
+                    (metadata := getattr(field.annotated_type, "__metadata__", None))
+                    is not None
+                )
+                else no_args_event_spec
+            )
+            for name, field in self.get_fields().items()
+            if field.type_origin is EventHandler
+        }
 
     def __repr__(self) -> str:
         """Represent the component in React.
