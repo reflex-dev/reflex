@@ -58,7 +58,7 @@ from reflex.vars.base import (
 )
 from reflex.vars.function import ArgsFunctionOperation, FunctionStringVar, FunctionVar
 from reflex.vars.number import ternary_operation
-from reflex.vars.object import LiteralObjectVar, ObjectVar
+from reflex.vars.object import ObjectVar
 from reflex.vars.sequence import LiteralArrayVar, LiteralStringVar, StringVar
 
 
@@ -2577,25 +2577,7 @@ def render_dict_to_var(tag: dict | Component | str, imported_names: set[str]) ->
             else LiteralNoneVar.create(),
         )
 
-    props = {}
-
-    special_props = []
-
-    for prop_str in tag["props"]:
-        if ":" not in prop_str:
-            special_props.append(Var(prop_str).to(ObjectVar))
-            continue
-        prop = prop_str.index(":")
-        key = prop_str[:prop]
-        value = prop_str[prop + 1 :]
-        props[key] = value
-
-    props = LiteralObjectVar.create(
-        {LiteralStringVar.create(k): Var(v) for k, v in props.items()}
-    )
-
-    for prop in special_props:
-        props = props.merge(prop)
+    props = Var("({" + ",".join(tag["props"]) + "})")
 
     contents = tag["contents"] if tag["contents"] else None
 
