@@ -354,6 +354,30 @@ def run(
 @cli.command()
 @loglevel_option
 @click.option(
+    "--dry",
+    is_flag=True,
+    default=False,
+    help="Run the command without making any changes.",
+)
+def compile(dry: bool):
+    """Compile the app in the current directory."""
+    import time
+
+    from reflex.utils import prerequisites
+
+    # Check the app.
+    if prerequisites.needs_reinit():
+        _init(name=get_config().app_name)
+    get_config(reload=True)
+    starting_time = time.monotonic()
+    prerequisites.compile_app(dry_run=dry)
+    elapsed_time = time.monotonic() - starting_time
+    console.success(f"App compiled successfully in {elapsed_time:.3f} seconds.")
+
+
+@cli.command()
+@loglevel_option
+@click.option(
     "--zip/--no-zip",
     default=True,
     is_flag=True,

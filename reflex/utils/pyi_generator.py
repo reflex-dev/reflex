@@ -221,6 +221,12 @@ def _get_type_hint(
             if ev.__name__ == "Var"
             else value
         )
+    elif isinstance(value, list):
+        res = [
+            _get_type_hint(arg, type_hint_globals, rx_types.is_optional(arg))
+            for arg in value
+        ]
+        return f"[{', '.join(res)}]"
     else:
         res = value.__name__
     if is_optional and not res.startswith("Optional") and not res.endswith("| None"):
@@ -1029,7 +1035,7 @@ class StubGenerator(ast.NodeTransformer):
             return node
         if isinstance(node.target, ast.Name) and node.target.id.startswith("_"):
             return None
-        if self.current_class in self.classes:
+        if self._current_class_is_component():
             # Remove annotated assignments in Component classes (props)
             return None
         # Blank out assignments in type stubs.
