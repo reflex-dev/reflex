@@ -890,9 +890,9 @@ class App(MiddlewareMixin, LifespanMixin):
         """
         route = route.lstrip("/").rstrip("/")
         if route == "":
-            route = constants.PageNames.INDEX_ROUTE
+            return self._load_events.get(constants.PageNames.INDEX_ROUTE, [])
         parts = route.split("/")
-        for page_route in self._pages:
+        for page_route in list(self._pages) + list(self._unevaluated_pages):
             page_path = page_route.lstrip("/").rstrip("/")
             if page_path == route:
                 return self._load_events.get(page_route, [])
