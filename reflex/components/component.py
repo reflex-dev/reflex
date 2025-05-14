@@ -2647,6 +2647,12 @@ class LiteralComponentVar(CachedVarOperation, LiteralVar, ComponentVar):
         return VarData.merge(
             self._var_data,
             VarData(
+                imports={
+                    "@emotion/react": ["jsx"],
+                    "react": ["Fragment"],
+                },
+            ),
+            VarData(
                 imports=self._var_value._get_all_imports(),
             ),
         )
