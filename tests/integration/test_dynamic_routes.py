@@ -9,7 +9,7 @@ from urllib.parse import urlsplit
 import pytest
 from selenium.webdriver.common.by import By
 
-from reflex.testing import AppHarness, AppHarnessProd, WebDriver
+from reflex.testing import AppHarness, WebDriver
 
 from .utils import poll_for_navigation
 
@@ -261,11 +261,10 @@ async def test_on_load_navigate(
     """
     dynamic_state_full_name = dynamic_route.get_full_state_name(["_dynamic_state"])
     assert dynamic_route.app_instance is not None
-    is_prod = isinstance(dynamic_route, AppHarnessProd)
     link = driver.find_element(By.ID, "link_page_next")
     assert link
 
-    exp_order = [f"/page/[page_id]-{ix}" for ix in range(10)]
+    exp_order = [f"/page/{ix}-{ix}" for ix in range(10)]
     # click the link a few times
     for ix in range(10):
         # wait for navigation, then assert on url
@@ -288,25 +287,25 @@ async def test_on_load_navigate(
         assert dynamic_route.poll_for_value(raw_path_input) == f"/page/{ix}"
     await poll_for_order(exp_order)
 
+    frontend_url = dynamic_route.frontend_url
+    assert frontend_url
+    frontend_url = frontend_url.removesuffix("/")
+
     # manually load the next page to trigger client side routing in prod mode
-    if is_prod:
-        exp_order += ["/404-no page id"]
-    exp_order += ["/page/[page_id]-10"]
+    exp_order += ["/page/10-10"]
     with poll_for_navigation(driver):
-        driver.get(f"{dynamic_route.frontend_url}/page/10/")
+        driver.get(f"{frontend_url}/page/10")
     await poll_for_order(exp_order)
 
     # make sure internal nav still hydrates after redirect
-    exp_order += ["/page/[page_id]-11"]
+    exp_order += ["/page/11-11"]
     link = driver.find_element(By.ID, "link_page_next")
     with poll_for_navigation(driver):
         link.click()
     await poll_for_order(exp_order)
 
     # load same page with a query param and make sure it passes through
-    if is_prod:
-        exp_order += ["/404-no page id"]
-    exp_order += ["/page/[page_id]-11"]
+    exp_order += ["/page/11-11"]
     with poll_for_navigation(driver):
         driver.get(f"{driver.current_url}?foo=bar")
     await poll_for_order(exp_order)
@@ -315,32 +314,28 @@ async def test_on_load_navigate(
     ).router.page.params["foo"] == "bar"
 
     # hit a 404 and ensure we still hydrate
-    exp_order += ["/404-no page id"]
+    exp_order += ["/missing-no page id"]
     with poll_for_navigation(driver):
-        driver.get(f"{dynamic_route.frontend_url}/missing")
+        driver.get(f"{frontend_url}/missing")
     await poll_for_order(exp_order)
 
     # browser nav should still trigger hydration
-    if is_prod:
-        exp_order += ["/404-no page id"]
-    exp_order += ["/page/[page_id]-11"]
+    exp_order += ["/page/11-11"]
     with poll_for_navigation(driver):
         driver.back()
     await poll_for_order(exp_order)
 
     # next/link to a 404 and ensure we still hydrate
-    exp_order += ["/404-no page id"]
+    exp_order += ["/missing-no page id"]
     link = driver.find_element(By.ID, "link_missing")
     with poll_for_navigation(driver):
         link.click()
     await poll_for_order(exp_order)
 
     # hit a page that redirects back to dynamic page
-    if is_prod:
-        exp_order += ["/404-no page id"]
-    exp_order += ["on_load_redir-{'foo': 'bar', 'page_id': '0'}", "/page/[page_id]-0"]
+    exp_order += ["on_load_redir-{'foo': 'bar', 'page_id': '0'}", "/page/0-0"]
     with poll_for_navigation(driver):
-        driver.get(f"{dynamic_route.frontend_url}/redirect-page/0/?foo=bar")
+        driver.get(f"{frontend_url}/redirect-page/0/?foo=bar")
     await poll_for_order(exp_order)
     # should have redirected back to page 0
     assert urlsplit(driver.current_url).path.removesuffix("/") == "/page/0"

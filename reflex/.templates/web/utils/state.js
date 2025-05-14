@@ -369,7 +369,7 @@ export const applyEvent = async (event, socket, navigate, params) => {
       pathname: window.location.pathname,
       query: {
         ...Object.fromEntries(new URLSearchParams(window.location.search)),
-        ...params,
+        ...params(),
       },
       asPath: window.location.pathname + window.location.search,
     };
@@ -498,7 +498,7 @@ export const connect = async (
   setConnectErrors,
   client_storage = {},
   navigate,
-  params = {},
+  params,
 ) => {
   // Get backend URL object from the endpoint.
   const endpoint = getBackendURL(EVENTURL);
@@ -827,10 +827,15 @@ export const useEventLoop = (
   const socket = useRef(null);
   const location = useLocation();
   const navigate = useNavigate();
-  const params = useParams();
+  const paramsR = useParams();
   const prevLocationRef = useRef(location);
   const [searchParams] = useSearchParams();
   const [connectErrors, setConnectErrors] = useState([]);
+  const params = useRef(paramsR);
+
+  useEffect(() => {
+    params.current = paramsR;
+  }, [paramsR]);
 
   // Function to add new events to the event queue.
   const addEvents = (events, args, event_actions) => {
@@ -869,11 +874,12 @@ export const useEventLoop = (
       // If debounce is used, queue the events after some delay
       debounce(
         combined_name,
-        () => queueEvents(_events, socket, false, navigate, params),
+        () =>
+          queueEvents(_events, socket, false, navigate, () => params.current),
         event_actions.debounce,
       );
     } else {
-      queueEvents(_events, socket, false, navigate, params);
+      queueEvents(_events, socket, false, navigate, () => params.current);
     }
   };
 
@@ -885,14 +891,17 @@ export const useEventLoop = (
           ...e,
           router_data: {
             pathname: location.pathname,
-            query: { ...Object.fromEntries(searchParams.entries()), ...params },
+            query: {
+              ...Object.fromEntries(searchParams.entries()),
+              ...params.current,
+            },
             asPath: location.pathname + location.search,
           },
         })),
         socket,
         true,
         navigate,
-        params,
+        () => params.current,
       );
       sentHydrate.current = true;
     }
@@ -940,7 +949,7 @@ export const useEventLoop = (
           setConnectErrors,
           client_storage,
           navigate,
-          params,
+          () => params.current,
         );
       }
     }
@@ -962,7 +971,7 @@ export const useEventLoop = (
     (async () => {
       // Process all outstanding events.
       while (event_queue.length > 0 && !event_processing) {
-        await processEvent(socket.current, navigate, params);
+        await processEvent(socket.current, navigate, () => params.current);
       }
     })();
   });
@@ -1001,7 +1010,12 @@ export const useEventLoop = (
   // Route after the initial page hydration
   useEffect(() => {
     // This will run when the location changes
-    if (location !== prevLocationRef.current) {
+    if (
+      location.pathname + location.search + location.hash !==
+      prevLocationRef.current.pathname +
+        prevLocationRef.current.search +
+        prevLocationRef.current.hash
+    ) {
       // Equivalent to routeChangeStart - runs when navigation begins
       const change_start = () => {
         const main_state_dispatch = dispatch["reflex___state____state"];

@@ -888,10 +888,26 @@ class App(MiddlewareMixin, LifespanMixin):
         Returns:
             The load events for the route.
         """
-        route = route.lstrip("/")
+        route = route.lstrip("/").rstrip("/")
         if route == "":
             route = constants.PageNames.INDEX_ROUTE
-        return self._load_events.get(route, [])
+        parts = route.split("/")
+        for page_route in self._pages:
+            page_path = page_route.lstrip("/").rstrip("/")
+            if page_path == route:
+                return self._load_events.get(page_route, [])
+            page_parts = page_path.split("/")
+            if len(page_parts) != len(parts):
+                continue
+            if all(
+                part == page_part
+                or (page_part.startswith("[") and page_part.endswith("]"))
+                for part, page_part in zip(parts, page_parts, strict=False)
+            ):
+                return self._load_events.get(page_route, [])
+
+        # Default to 404 page load events if no match found.
+        return self._load_events.get("404", [])
 
     def _check_routes_conflict(self, new_route: str):
         """Verify if there is any conflict between the new route and any existing route.
