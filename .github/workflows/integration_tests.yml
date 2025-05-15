@@ -125,19 +125,15 @@ jobs:
 
       - name: Install Requirements for reflex-web
         working-directory: ./reflex-web
-        run: uv sync
-      - name: Install Reflex for reflex-web
-        working-directory: ./reflex-web
-        run: uv pip install -e ../
+        run: uv pip install . -e ..
       - name: Init Website for reflex-web
         working-directory: ./reflex-web
         run: uv run reflex init
       - name: Run Website and Check for errors
-        working-directory: ./reflex-web
         run: |
           # Check that npm is home
           npm -v
-          uv run bash ../scripts/integration.sh . prod
+          uv run bash scripts/integration.sh ./reflex-web prod
 
   rx-shout-from-template:
     strategy:
