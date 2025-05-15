@@ -42,6 +42,7 @@ from reflex.config import PerformanceMode, environment
 from reflex.event import (
     BACKGROUND_TASK_MARKER,
     Event,
+    EventActionsMixin,
     EventHandler,
     EventSpec,
     fix_events,
@@ -2371,18 +2372,23 @@ class FrontendEventExceptionState(State):
 
         Returns:
             Chained event specs to be executed.
+
+        Raises:
+            TypeError: If the frontend exception handler is not callable.
         """
         frontend_exception_handler = (
             prerequisites.get_and_validate_app().app.frontend_exception_handler
         )
 
-        if isinstance(frontend_exception_handler, EventSpec) and callable(
+        if isinstance(frontend_exception_handler, EventActionsMixin) and callable(
             frontend_exception_handler
         ):
             return frontend_exception_handler(stack)
-        value = prerequisites.get_and_validate_app().app.frontend_exception_handler(
-            Exception(stack)
-        )
+        if not callable(frontend_exception_handler):
+            raise TypeError(
+                f"Frontend exception handler must be callable. Got {type(frontend_exception_handler)}."
+            )
+        value = frontend_exception_handler(Exception(stack))
         if value is not None:
             console.warn(
                 f"Frontend exception handler returned a value: {value}. This is not supported with plain functions."
