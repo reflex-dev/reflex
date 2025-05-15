@@ -63,6 +63,26 @@ def _wrap_https_func(
     return wrapper
 
 
+def _wrap_https_lazy_func(
+    func: Callable[[], Callable[_P, _T]],
+) -> Callable[_P, _T]:
+    """Wrap an HTTPS function with logging.
+
+    Args:
+        func: The function to wrap.
+
+    Returns:
+        The wrapped function.
+    """
+
+    def wrapper(*args: _P.args, **kwargs: _P.kwargs) -> _T:
+        f = _wrap_https_func(func())
+        functools.update_wrapper(wrapper, f)
+        return f(*args, **kwargs)
+
+    return wrapper
+
+
 def _is_ipv4_supported() -> bool:
     """Determine if the system supports IPv4.
 
@@ -120,12 +140,20 @@ def _httpx_client() -> httpx.Client:
     Returns:
         An HTTPX client.
     """
+    from httpx._utils import get_environment_proxies
+
     return httpx.Client(
         transport=httpx.HTTPTransport(
             local_address=_httpx_local_address_kwarg(),
             verify=_httpx_verify_kwarg(),
-        )
+        ),
+        mounts={
+            key: (
+                None if url is None else httpx.HTTPTransport(proxy=httpx.Proxy(url=url))
+            )
+            for key, url in get_environment_proxies().items()
+        },
     )
 
 
-get = _wrap_https_func(_httpx_client().get)
+get = _wrap_https_lazy_func(lambda: _httpx_client().get)
