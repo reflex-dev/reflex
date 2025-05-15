@@ -56,7 +56,7 @@ jobs:
           path: reflex-web
       - name: Install Requirements for reflex-web
         working-directory: ./reflex-web
-        run: uv pip install . -e ../reflex --active
+        run: uv pip install . -e ../reflex
       - name: Init Website for reflex-web
         working-directory: ./reflex-web
         run: uv run reflex init
