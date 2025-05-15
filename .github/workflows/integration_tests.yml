@@ -125,7 +125,7 @@ jobs:
 
       - name: Compile pyproject.toml into requirements.txt
         working-directory: ./reflex-web
-        run: uv pip compile pyproject.toml --no-annotate --no-header --no-deps --output requirements.txt
+        run: uv pip compile pyproject.toml --no-annotate --no-header --no-deps --output-file requirements.txt
       - name: Install Requirements for reflex-web
         working-directory: ./reflex-web
         run: uv pip install $(grep -ivE "reflex " requirements.txt)
