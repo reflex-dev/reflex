@@ -8,6 +8,7 @@ from typing import ParamSpec, TypeVar
 import httpx
 
 from reflex.utils.decorator import once
+from reflex.utils.types import Unset
 
 from . import console
 
@@ -74,10 +75,14 @@ def _wrap_https_lazy_func(
     Returns:
         The wrapped function.
     """
+    unset = Unset()
+    f: Callable[_P, _T] | Unset = unset
 
     def wrapper(*args: _P.args, **kwargs: _P.kwargs) -> _T:
-        f = _wrap_https_func(func())
-        functools.update_wrapper(wrapper, f)
+        nonlocal f
+        if isinstance(f, Unset):
+            f = _wrap_https_func(func())
+            functools.update_wrapper(wrapper, f)
         return f(*args, **kwargs)
 
     return wrapper
