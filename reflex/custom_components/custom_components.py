@@ -350,7 +350,7 @@ def init(
 
     # Initialize the .gitignore.
     prerequisites.initialize_gitignore(
-        gitignore_file=CustomComponents.FILE, files_to_ignore=CustomComponents.DEFAULTS
+        gitignore_file=CustomComponents.GITIGNORE_PATH, files_to_ignore=CustomComponents.GITIGNORE_DEFAULTS
     )
 
     if install:
