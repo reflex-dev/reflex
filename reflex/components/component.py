@@ -260,13 +260,15 @@ class BaseComponentMeta(ABCMeta):
 
             if value is MISSING:
                 value = ComponentField(
-                    default=None, is_javascript=True, annotated_type=annotation
+                    default=None,
+                    is_javascript=(key[0] != "_"),
+                    annotated_type=annotation,
                 )
             elif not isinstance(value, ComponentField):
                 value = ComponentField(
                     default=value,
                     is_javascript=(
-                        True
+                        (key[0] != "_")
                         if (existing_field := inherited_fields.get(key)) is None
                         else existing_field.is_javascript
                     ),
