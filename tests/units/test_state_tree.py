@@ -194,8 +194,8 @@ class SubE_A_A_A_D(SubE_A_A_A):
 
 
 ALWAYS_COMPUTED_VARS = {
-    TreeD.get_full_name(): {"d_var": 1},
-    SubE_A_A_A_A.get_full_name(): {"sub_e_a_a_a_a_var": 1},
+    TreeD.get_full_name(): {"d_var_rx_state_": 1},
+    SubE_A_A_A_A.get_full_name(): {"sub_e_a_a_a_a_var_rx_state_": 1},
 }
 
 ALWAYS_COMPUTED_DICT_KEYS = [

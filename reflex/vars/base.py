@@ -407,17 +407,6 @@ class Var(Generic[VAR_TYPE]):
         return self._js_expr
 
     @property
-    def _var_field_name(self) -> str:
-        """The name of the field.
-
-        Returns:
-            The name of the field.
-        """
-        var_data = self._get_all_var_data()
-        field_name = var_data.field_name if var_data else None
-        return field_name or self._js_expr
-
-    @property
     @deprecated("Use `_js_expr` instead.")
     def _var_name_unwrapped(self) -> str:
         """The name of the var without extra curly braces.
@@ -976,30 +965,29 @@ class Var(Generic[VAR_TYPE]):
                 ) from e
         return set() if safe_issubclass(type_, set) else None
 
-    def _get_setter_name(self, include_state: bool = True) -> str:
+    @staticmethod
+    def _get_setter_name_for_name(
+        name: str,
+    ) -> str:
         """Get the name of the var's generated setter function.
 
         Args:
-            include_state: Whether to include the state name in the setter name.
+            name: The name of the var.
 
         Returns:
             The name of the setter function.
         """
-        setter = constants.SETTER_PREFIX + self._var_field_name
-        var_data = self._get_all_var_data()
-        if var_data is None:
-            return setter
-        if not include_state or var_data.state == "":
-            return setter
-        return ".".join((var_data.state, setter))
+        return constants.SETTER_PREFIX + name
 
-    def _get_setter(self) -> Callable[[BaseState, Any], None]:
+    def _get_setter(self, name: str) -> Callable[[BaseState, Any], None]:
         """Get the var's setter function.
+
+        Args:
+            name: The name of the var.
 
         Returns:
             A function that that creates a setter for the var.
         """
-        actual_name = self._var_field_name
 
         def setter(state: Any, value: Any):
             """Get the setter for the var.
@@ -1011,17 +999,17 @@ class Var(Generic[VAR_TYPE]):
             if self._var_type in [int, float]:
                 try:
                     value = self._var_type(value)
-                    setattr(state, actual_name, value)
+                    setattr(state, name, value)
                 except ValueError:
                     console.debug(
                         f"{type(state).__name__}.{self._js_expr}: Failed conversion of {value!s} to '{self._var_type.__name__}'. Value not set.",
                     )
             else:
-                setattr(state, actual_name, value)
+                setattr(state, name, value)
 
         setter.__annotations__["value"] = self._var_type
 
-        setter.__qualname__ = self._get_setter_name()
+        setter.__qualname__ = Var._get_setter_name_for_name(name)
 
         return setter
 
@@ -2099,6 +2087,8 @@ class ComputedVar(Var[RETURN_TYPE]):
         default_factory=lambda: lambda _: None
     )  # pyright: ignore [reportAssignmentType]
 
+    _name: str = dataclasses.field(default="")
+
     def __init__(
         self,
         fget: Callable[[BASE_STATE], RETURN_TYPE],
@@ -2132,14 +2122,18 @@ class ComputedVar(Var[RETURN_TYPE]):
 
         if hint is Any:
             raise UntypedComputedVarError(var_name=fget.__name__)
-        kwargs.setdefault("_js_expr", fget.__name__)
+        is_using_fget_name = "_js_expr" not in kwargs
+        js_expr = kwargs.pop("_js_expr", fget.__name__ + "_rx_state_")
         kwargs.setdefault("_var_type", hint)
 
         Var.__init__(
             self,
-            _js_expr=kwargs.pop("_js_expr"),
+            _js_expr=js_expr,
             _var_type=kwargs.pop("_var_type"),
-            _var_data=kwargs.pop("_var_data", None),
+            _var_data=kwargs.pop(
+                "_var_data",
+                VarData(field_name=fget.__name__) if is_using_fget_name else None,
+            ),
         )
 
         if kwargs:
@@ -2151,6 +2145,7 @@ class ComputedVar(Var[RETURN_TYPE]):
         object.__setattr__(self, "_backend", backend)
         object.__setattr__(self, "_initial_value", initial_value)
         object.__setattr__(self, "_cache", cache)
+        object.__setattr__(self, "_name", fget.__name__)
 
         if isinstance(interval, int):
             interval = datetime.timedelta(seconds=interval)
@@ -2382,7 +2377,7 @@ class ComputedVar(Var[RETURN_TYPE]):
         """
         if instance is None:
             state_where_defined = owner
-            while self._js_expr in state_where_defined.inherited_vars:
+            while self._name in state_where_defined.inherited_vars:
                 state_where_defined = state_where_defined.get_parent_state()
 
             field_name = (
@@ -2393,7 +2388,7 @@ class ComputedVar(Var[RETURN_TYPE]):
 
             return dispatch(
                 field_name,
-                var_data=VarData.from_state(state_where_defined, self._js_expr),
+                var_data=VarData.from_state(state_where_defined, self._name),
                 result_var_type=self._var_type,
                 existing_var=self,
             )
@@ -2505,7 +2500,7 @@ class ComputedVar(Var[RETURN_TYPE]):
                     objclass.get_root_state().get_class_substate(
                         state_name
                     )._var_dependencies.setdefault(var_name, set()).add(
-                        (objclass.get_full_name(), self._js_expr)
+                        (objclass.get_full_name(), self._name)
                     )
                     return
         raise VarDependencyError(

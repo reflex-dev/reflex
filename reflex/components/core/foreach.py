@@ -130,11 +130,11 @@ class Foreach(Component):
 
         if len(params) >= 1:
             # Determine the arg var name based on the params accepted by render_fn.
-            props["arg_var_name"] = params[0].name
+            props["arg_var_name"] = params[0].name + "_rx_foreach_"
 
         if len(params) == 2:
             # Determine the index var name based on the params accepted by render_fn.
-            props["index_var_name"] = params[1].name
+            props["index_var_name"] = params[1].name + "_rx_foreach_"
         else:
             render_fn = self.render_fn
             # Otherwise, use a deterministic index, based on the render function bytecode.

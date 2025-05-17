@@ -141,7 +141,7 @@ def test_login_flow(
 
     state_name = login_sample.get_full_state_name(["_state"])
     assert login_sample._poll_for(
-        lambda: local_storage[f"{state_name}.auth_token"] == ""
+        lambda: local_storage[f"{state_name}.auth_token_rx_state_"] == ""
     )
     with pytest.raises(NoSuchElementException):
         driver.find_element(By.ID, "auth-token")
