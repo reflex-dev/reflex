@@ -127,6 +127,9 @@ class TextFieldSlot(RadixThemesComponent):
     # Override theme color for text field slot
     color_scheme: Var[LiteralAccentColor]
 
+    # Which side of the input the slot should be placed on
+    side: Var[Literal["left", "right"]]
+
 
 class TextField(ComponentNamespace):
     """TextField components namespace."""
