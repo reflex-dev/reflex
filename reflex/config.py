@@ -934,7 +934,7 @@ class Config(Base):
 If you are using tailwind, add `rx.plugins.TailwindV3Plugin()` to the `plugins=[]` in rxconfig.py.
 
 If you are not using tailwind, set `tailwind` to `None` in rxconfig.py.""",
-                deprecation_version="0.7.10",
+                deprecation_version="0.7.13",
                 removal_version="0.8.0",
                 dedupe=True,
             )
