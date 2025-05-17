@@ -79,7 +79,9 @@ async def test_fully_controlled_input(fully_controlled_input: AppHarness):
     driver = fully_controlled_input.frontend()
 
     # get a reference to the connected client
-    token_input = driver.find_element(By.ID, "token")
+    token_input = fully_controlled_input.poll_for_result(
+        lambda: driver.find_element(By.ID, "token")
+    )
     assert token_input
 
     # wait for the backend connection to send the token

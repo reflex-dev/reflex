@@ -61,7 +61,7 @@ from reflex.components.core.banner import (
 )
 from reflex.components.core.breakpoints import set_breakpoints
 from reflex.components.core.client_side_routing import (
-    Default404Page,
+    default_404_page,
     wait_for_client_redirect,
 )
 from reflex.components.core.sticky import sticky
@@ -796,7 +796,7 @@ class App(MiddlewareMixin, LifespanMixin):
 
         if route == constants.Page404.SLUG:
             if component is None:
-                component = Default404Page.create()
+                component = default_404_page
             component = wait_for_client_redirect(self._generate_component(component))
             title = title or constants.Page404.TITLE
             description = description or constants.Page404.DESCRIPTION
@@ -888,10 +888,26 @@ class App(MiddlewareMixin, LifespanMixin):
         Returns:
             The load events for the route.
         """
-        route = route.lstrip("/")
+        route = route.lstrip("/").rstrip("/")
         if route == "":
-            route = constants.PageNames.INDEX_ROUTE
-        return self._load_events.get(route, [])
+            return self._load_events.get(constants.PageNames.INDEX_ROUTE, [])
+        parts = route.split("/")
+        for page_route in list(self._pages) + list(self._unevaluated_pages):
+            page_path = page_route.lstrip("/").rstrip("/")
+            if page_path == route:
+                return self._load_events.get(page_route, [])
+            page_parts = page_path.split("/")
+            if len(page_parts) != len(parts):
+                continue
+            if all(
+                part == page_part
+                or (page_part.startswith("[") and page_part.endswith("]"))
+                for part, page_part in zip(parts, page_parts, strict=False)
+            ):
+                return self._load_events.get(page_route, [])
+
+        # Default to 404 page load events if no match found.
+        return self._load_events.get("404", [])
 
     def _check_routes_conflict(self, new_route: str):
         """Verify if there is any conflict between the new route and any existing route.
@@ -1019,7 +1035,7 @@ class App(MiddlewareMixin, LifespanMixin):
             for i, tags in imports.items()
             if i not in constants.PackageJson.DEPENDENCIES
             and i not in constants.PackageJson.DEV_DEPENDENCIES
-            and not any(i.startswith(prefix) for prefix in ["/", "$/", ".", "next/"])
+            and not any(i.startswith(prefix) for prefix in ["/", "$/", "."])
             and i != ""
             and any(tag.install for tag in tags)
         }
@@ -1457,15 +1473,9 @@ class App(MiddlewareMixin, LifespanMixin):
         with console.timing("Install Frontend Packages"):
             self._get_frontend_packages(all_imports)
 
-        # Setup the next.config.js
-        transpile_packages = [
-            package
-            for package, import_vars in all_imports.items()
-            if any(import_var.transpile for import_var in import_vars)
-        ]
-        prerequisites.update_next_config(
+        # Setup the react-router.config.js
+        prerequisites.update_react_router_config(
             export=export,
-            transpile_packages=transpile_packages,
         )
 
         if is_prod_mode():
@@ -1474,9 +1484,11 @@ class App(MiddlewareMixin, LifespanMixin):
         else:
             # In dev mode, delete removed pages and update existing pages.
             keep_files = [Path(output_path) for output_path, _ in compile_results]
-            for p in Path(prerequisites.get_web_dir() / constants.Dirs.PAGES).rglob(
-                "*"
-            ):
+            for p in Path(
+                prerequisites.get_web_dir()
+                / constants.Dirs.PAGES
+                / constants.Dirs.ROUTES
+            ).rglob("*"):
                 if p.is_file() and p not in keep_files:
                     # Remove pages that are no longer in the app.
                     p.unlink()
