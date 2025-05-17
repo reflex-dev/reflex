@@ -7,7 +7,6 @@ from typing import Any, ClassVar, Literal
 from reflex.components import Component
 from reflex.components.core.breakpoints import Responsive
 from reflex.components.tags import Tag
-from reflex.config import get_config
 from reflex.utils.imports import ImportDict, ImportVar
 from reflex.vars.base import Var
 
@@ -239,17 +238,9 @@ class Theme(RadixThemesComponent):
         Returns:
             The import dict.
         """
-        _imports: ImportDict = {
+        return {
             "$/utils/theme.js": [ImportVar(tag="theme", is_default=True)],
         }
-        if get_config().tailwind is None:
-            # When tailwind is disabled, import the radix-ui styles directly because they will
-            # not be included in the tailwind.css file.
-            _imports[""] = ImportVar(
-                tag="@radix-ui/themes/styles.css",
-                install=False,
-            )
-        return _imports
 
     def _render(self, props: dict[str, Any] | None = None) -> Tag:
         tag = super()._render(props)

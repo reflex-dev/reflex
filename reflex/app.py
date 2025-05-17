@@ -18,7 +18,7 @@ from datetime import datetime
 from pathlib import Path
 from timeit import default_timer as timer
 from types import SimpleNamespace
-from typing import TYPE_CHECKING, Any, BinaryIO, get_args, get_type_hints
+from typing import TYPE_CHECKING, Any, BinaryIO, ParamSpec, get_args, get_type_hints
 
 from fastapi import FastAPI
 from rich.progress import MofNCompleteColumn, Progress, TimeElapsedColumn
@@ -312,6 +312,9 @@ class UnevaluatedPage:
             on_load=self.on_load if self.on_load is not None else other.on_load,
             context=self.context if self.context is not None else other.context,
         )
+
+
+P = ParamSpec("P")
 
 
 @dataclasses.dataclass()
@@ -620,10 +623,12 @@ class App(MiddlewareMixin, LifespanMixin):
         compile_future = concurrent.futures.ThreadPoolExecutor(max_workers=1).submit(
             self._compile
         )
-        compile_future.add_done_callback(
+
+        def callback(f: concurrent.futures.Future):
             # Force background compile errors to print eagerly
-            lambda f: f.result()
-        )
+            return f.result()
+
+        compile_future.add_done_callback(callback)
         # Wait for the compile to finish to ensure all optional endpoints are mounted.
         compile_future.result()
 
@@ -1029,11 +1034,6 @@ class App(MiddlewareMixin, LifespanMixin):
         frontend_packages = get_config().frontend_packages
         _frontend_packages = []
         for package in frontend_packages:
-            if package in (get_config().tailwind or {}).get("plugins", []):
-                console.warn(
-                    f"Tailwind packages are inferred from 'plugins', remove `{package}` from `frontend_packages`"
-                )
-                continue
             if package in page_imports:
                 console.warn(
                     f"React packages and their dependencies are inferred from Component.library and Component.lib_dependencies, remove `{package}` from `frontend_packages`"
@@ -1373,6 +1373,17 @@ class App(MiddlewareMixin, LifespanMixin):
                     ),
                 )
 
+        for plugin in config.plugins:
+            for static_file_path, content in plugin.get_static_assets():
+                resulting_path = (
+                    Path.cwd() / prerequisites.get_web_dir() / static_file_path
+                )
+                resulting_path.parent.mkdir(parents=True, exist_ok=True)
+                if isinstance(content, str):
+                    resulting_path.write_text(content)
+                else:
+                    resulting_path.write_bytes(content)
+
         executor = ExecutorType.get_executor_from_environment()
 
         for route, component in zip(self._pages, page_components, strict=True):
@@ -1381,9 +1392,13 @@ class App(MiddlewareMixin, LifespanMixin):
         ExecutorSafeFunctions.STATE = self._state
 
         with console.timing("Compile to Javascript"), executor as executor:
-            result_futures: list[concurrent.futures.Future[tuple[str, str]]] = []
+            result_futures: list[concurrent.futures.Future[tuple[str, str] | None]] = []
 
-            def _submit_work(fn: Callable[..., tuple[str, str]], *args, **kwargs):
+            def _submit_work(
+                fn: Callable[P, tuple[str, str] | None],
+                *args: P.args,
+                **kwargs: P.kwargs,
+            ):
                 f = executor.submit(fn, *args, **kwargs)
                 f.add_done_callback(lambda _: progress.advance(task))
                 result_futures.append(f)
@@ -1401,19 +1416,14 @@ class App(MiddlewareMixin, LifespanMixin):
             # Compile the theme.
             _submit_work(compile_theme, self.style)
 
-            # Compile the Tailwind config.
-            if config.tailwind is not None:
-                config.tailwind["content"] = config.tailwind.get(
-                    "content", constants.Tailwind.CONTENT
-                )
-                _submit_work(compiler.compile_tailwind, config.tailwind)
-            else:
-                _submit_work(compiler.remove_tailwind_from_postcss)
+            for plugin in config.plugins:
+                plugin.pre_compile(add_task=_submit_work)
 
             # Wait for all compilation tasks to complete.
             compile_results.extend(
-                future.result()
+                result
                 for future in concurrent.futures.as_completed(result_futures)
+                if (result := future.result()) is not None
             )
 
         app_root = self._app_root(app_wrappers=app_wrappers)
