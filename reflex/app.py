@@ -1166,6 +1166,7 @@ class App(MiddlewareMixin, LifespanMixin):
 
         Raises:
             ReflexRuntimeError: When any page uses state, but no rx.State subclass is defined.
+            FileNotFoundError: When a plugin requires a file that does not exist.
         """
         from reflex.utils.exceptions import ReflexRuntimeError
 
@@ -1373,17 +1374,6 @@ class App(MiddlewareMixin, LifespanMixin):
                     ),
                 )
 
-        for plugin in config.plugins:
-            for static_file_path, content in plugin.get_static_assets():
-                resulting_path = (
-                    Path.cwd() / prerequisites.get_web_dir() / static_file_path
-                )
-                resulting_path.parent.mkdir(parents=True, exist_ok=True)
-                if isinstance(content, str):
-                    resulting_path.write_text(content)
-                else:
-                    resulting_path.write_bytes(content)
-
         executor = ExecutorType.get_executor_from_environment()
 
         for route, component in zip(self._pages, page_components, strict=True):
@@ -1391,11 +1381,17 @@ class App(MiddlewareMixin, LifespanMixin):
 
         ExecutorSafeFunctions.STATE = self._state
 
+        modify_files_tasks: list[tuple[str, str, Callable[[str], str]]] = []
+
         with console.timing("Compile to Javascript"), executor as executor:
-            result_futures: list[concurrent.futures.Future[tuple[str, str] | None]] = []
+            result_futures: list[
+                concurrent.futures.Future[
+                    list[tuple[str, str]] | tuple[str, str] | None
+                ]
+            ] = []
 
             def _submit_work(
-                fn: Callable[P, tuple[str, str] | None],
+                fn: Callable[P, list[tuple[str, str]] | tuple[str, str] | None],
                 *args: P.args,
                 **kwargs: P.kwargs,
             ):
@@ -1417,14 +1413,22 @@ class App(MiddlewareMixin, LifespanMixin):
             _submit_work(compile_theme, self.style)
 
             for plugin in config.plugins:
-                plugin.pre_compile(add_task=_submit_work)
+                plugin.pre_compile(
+                    add_save_task=_submit_work,
+                    add_modify_task=(
+                        lambda *args, plugin=plugin: modify_files_tasks.append(
+                            (plugin.__class__.__name__, *args)
+                        )
+                    ),
+                )
 
             # Wait for all compilation tasks to complete.
-            compile_results.extend(
-                result
-                for future in concurrent.futures.as_completed(result_futures)
-                if (result := future.result()) is not None
-            )
+            for future in concurrent.futures.as_completed(result_futures):
+                if (result := future.result()) is not None:
+                    if isinstance(result, list):
+                        compile_results.extend(result)
+                    else:
+                        compile_results.append(result)
 
         app_root = self._app_root(app_wrappers=app_wrappers)
 
@@ -1491,9 +1495,45 @@ class App(MiddlewareMixin, LifespanMixin):
                     # Remove pages that are no longer in the app.
                     p.unlink()
 
+        output_mapping: dict[Path, str] = {}
+        for output_path, code in compile_results:
+            path = Path(output_path).absolute()
+            if path in output_mapping:
+                console.warn(
+                    f"Path {path} has two different outputs. The first one will be used."
+                )
+            else:
+                output_mapping[path] = code
+
+        for plugin in config.plugins:
+            for static_file_path, content in plugin.get_static_assets():
+                path = compiler_utils.resolve_path_of_web_dir(static_file_path)
+                if path in output_mapping:
+                    console.warn(
+                        f"Plugin {plugin.__class__.__name__} is trying to write to {path} but it already exists. The plugin file will be ignored."
+                    )
+                else:
+                    output_mapping[path] = (
+                        content.decode("utf-8")
+                        if isinstance(content, bytes)
+                        else content
+                    )
+
+        for plugin_name, file_path, modify_fn in modify_files_tasks:
+            path = compiler_utils.resolve_path_of_web_dir(file_path)
+            file_content = output_mapping.get(path)
+            if file_content is None:
+                if path.exists():
+                    file_content = path.read_text()
+                else:
+                    raise FileNotFoundError(
+                        f"Plugin {plugin_name} is trying to modify {path} but it does not exist."
+                    )
+            output_mapping[path] = modify_fn(file_content)
+
         with console.timing("Write to Disk"):
-            for output_path, code in compile_results:
-                compiler_utils.write_page(output_path, code)
+            for output_path, code in output_mapping.items():
+                compiler_utils.write_file(output_path, code)
 
     def _write_stateful_pages_marker(self):
         """Write list of routes that create dynamic states for the backend to use later."""

@@ -3,6 +3,7 @@
 from pathlib import Path
 from types import SimpleNamespace
 
+from reflex.constants.base import Dirs
 from reflex.plugins.base import Plugin as PluginBase
 from reflex.utils.decorator import once
 
@@ -37,7 +38,7 @@ def tailwind_config_js_template():
     """
     from reflex.compiler.templates import from_string
 
-    source = """
+    source = r"""
 {# Helper macro to render JS objects and arrays #}
 {% macro render_js(val, indent=2, level=0) -%}
 {%- set space = ' ' * (indent * level) -%}
@@ -153,23 +154,21 @@ def _index_of_element_that_startswith(lines: list[str], prefix: str) -> int | No
     )
 
 
-def add_tailwind_to_postcss_config():
-    """Add tailwind to the postcss config."""
+def add_tailwind_to_postcss_config(postcss_file_content: str) -> str:
+    """Add tailwind to the postcss config.
+
+    Args:
+        postcss_file_content: The content of the postcss config file.
+
+    Returns:
+        The modified postcss config file content.
+    """
     from reflex.constants import Dirs
-    from reflex.utils.prerequisites import get_web_dir
 
-    postcss_file = get_web_dir() / Dirs.POSTCSS_JS
-    if not postcss_file.exists():
-        print(  # noqa: T201
-            f"Could not find {Dirs.POSTCSS_JS}. "
-            "Please make sure the file exists and is valid."
-        )
-        return
-
-    postcss_file_lines = postcss_file.read_text().splitlines()
+    postcss_file_lines = postcss_file_content.splitlines()
 
     if _index_of_element_that_startswith(postcss_file_lines, "tailwindcss") is not None:
-        return
+        return postcss_file_content
 
     line_with_postcss_plugins = _index_of_element_that_startswith(
         postcss_file_lines, "plugins"
@@ -179,7 +178,7 @@ def add_tailwind_to_postcss_config():
             f"Could not find line with 'plugins' in {Dirs.POSTCSS_JS}. "
             "Please make sure the file exists and is valid."
         )
-        return
+        return postcss_file_content
 
     postcss_import_line = _index_of_element_that_startswith(
         postcss_file_lines, '"postcss-import"'
@@ -188,7 +187,7 @@ def add_tailwind_to_postcss_config():
         (postcss_import_line or line_with_postcss_plugins) + 1, "tailwindcss: {},"
     )
 
-    return str(postcss_file), "\n".join(postcss_file_lines)
+    return "\n".join(postcss_file_lines)
 
 
 class Plugin(PluginBase):
@@ -244,5 +243,5 @@ class Plugin(PluginBase):
         config = get_config().tailwind or {}
 
         config["content"] = config.get("content", Constants.CONTENT)
-        context["add_task"](compile_tailwind, config)
-        context["add_task"](add_tailwind_to_postcss_config)
+        context["add_save_task"](compile_tailwind, config)
+        context["add_modify_task"](Dirs.POSTCSS_JS, add_tailwind_to_postcss_config)

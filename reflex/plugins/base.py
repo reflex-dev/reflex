@@ -19,7 +19,7 @@ class AddTaskProtcol(Protocol):
 
     def __call__(
         self,
-        task: Callable[P, tuple[str, str] | None],
+        task: Callable[P, list[tuple[str, str]] | tuple[str, str] | None],
         /,
         *args: P.args,
         **kwargs: P.kwargs,
@@ -36,7 +36,8 @@ class AddTaskProtcol(Protocol):
 class PreCompileContext(CommonContext):
     """Context for pre-compile hooks."""
 
-    add_task: AddTaskProtcol
+    add_save_task: AddTaskProtcol
+    add_modify_task: Callable[[str, Callable[[str], str]], None]
 
 
 class Plugin:
