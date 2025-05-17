@@ -1576,6 +1576,14 @@ def check_schema_up_to_date():
     """Check if the sqlmodel metadata matches the current database schema."""
     if get_config().db_url is None or not environment.ALEMBIC_CONFIG.get().exists():
         return
+
+    # Get the current reflex version
+    current_version = version.parse(constants.Reflex.VERSION)
+    
+    # Skip schema check for compatible versions (0.7.5 to 0.7.11)
+    if current_version >= version.parse("0.7.5") and current_version <= version.parse("0.7.11"):
+        return
+
     with model.Model.get_db_engine().connect() as connection:
         try:
             if model.Model.alembic_autogenerate(

@@ -321,3 +321,37 @@ app = rx.App()
 app.add_page(index)
 """
     )
+
+
+def test_schema_up_to_date_version_compatibility(monkeypatch):
+    """Test that schema check is skipped for compatible versions.
+    
+    Args:
+        monkeypatch: pytest fixture to overwrite attributes
+    """
+    from packaging import version
+
+    from reflex import constants
+    from reflex.utils import prerequisites
+
+    # Mock the necessary dependencies
+    monkeypatch.setattr(prerequisites, "get_config", lambda: type("Config", (), {"db_url": "sqlite:///test.db"}))
+    monkeypatch.setattr(prerequisites.environment.ALEMBIC_CONFIG, "get", lambda: Path("alembic.ini"))
+    # Patch Path.exists at the class level
+    monkeypatch.setattr("pathlib.Path.exists", lambda self: True)
+    # Mock alembic_autogenerate to raise an exception
+    import reflex.model
+    monkeypatch.setattr(reflex.model.Model, "alembic_autogenerate", lambda *args, **kwargs: (_ for _ in ()).throw(Exception("Schema check performed")))
+    
+    # Test with version 0.7.5
+    monkeypatch.setattr(constants.Reflex, "VERSION", "0.7.5")
+    prerequisites.check_schema_up_to_date()  # Should return without checking schema
+    
+    # Test with version 0.7.11
+    monkeypatch.setattr(constants.Reflex, "VERSION", "0.7.11")
+    prerequisites.check_schema_up_to_date()  # Should return without checking schema
+    
+    # Test with version 0.7.12 (should check schema)
+    monkeypatch.setattr(constants.Reflex, "VERSION", "0.7.12")
+    with pytest.raises(Exception):  # This will raise because we mocked the dependencies
+        prerequisites.check_schema_up_to_date()
