@@ -260,7 +260,7 @@ def _validate_library_name(library_name: str | None) -> NameVariants:
     console.debug(f"Custom component source directory: {custom_component_module_dir}")
 
     # Use the same name for the directory and the app.
-    demo_app_dir = demo_app_name = f"{module_name}_demo"
+    demo_app_dir = demo_app_name = "examples"
     console.debug(f"Demo app directory: {demo_app_dir}")
 
     return NameVariants(
@@ -350,7 +350,8 @@ def init(
 
     # Initialize the .gitignore.
     prerequisites.initialize_gitignore(
-        gitignore_file=CustomComponents.GITIGNORE_PATH, files_to_ignore=CustomComponents.GITIGNORE_DEFAULTS
+        gitignore_file=CustomComponents.GITIGNORE_PATH,
+        files_to_ignore=CustomComponents.GITIGNORE_DEFAULTS,
     )
 
     if install:
