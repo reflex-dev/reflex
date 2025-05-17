@@ -21,3 +21,4 @@ reflex.db
 node_modules
 package-lock.json
 *.pyi
+.pre-commit-config.yaml
