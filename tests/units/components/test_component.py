@@ -911,7 +911,7 @@ def test_custom_component_wrapper():
     assert len(ccomponent.children) == 1
     assert isinstance(ccomponent.children[0], Text)
 
-    component = ccomponent.get_component(ccomponent)
+    component = ccomponent.get_component()
     assert isinstance(component, Box)
 
 
@@ -1823,7 +1823,7 @@ def test_custom_component_get_imports():
     assert "outer" not in custom_comp._get_all_imports()
 
     # The imports are only resolved during compilation.
-    custom_comp.get_component(custom_comp)
+    custom_comp.get_component()
     _, imports_inner = compile_custom_component(custom_comp)
     assert "inner" in imports_inner
     assert "outer" not in imports_inner

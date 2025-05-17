@@ -75,7 +75,7 @@ class IconButton(elements.Button, RadixLoadingProp, RadixThemesComponent):
             )
         if "size" in props:
             if isinstance(props["size"], str):
-                children[0].size = RADIX_TO_LUCIDE_SIZE[props["size"]]
+                children[0].size = RADIX_TO_LUCIDE_SIZE[props["size"]]  # pyright: ignore[reportAttributeAccessIssue]
             else:
                 size_map_var = Match.create(
                     props["size"],
@@ -84,7 +84,7 @@ class IconButton(elements.Button, RadixLoadingProp, RadixThemesComponent):
                 )
                 if not isinstance(size_map_var, Var):
                     raise ValueError(f"Match did not return a Var: {size_map_var}")
-                children[0].size = size_map_var
+                children[0].size = size_map_var  # pyright: ignore[reportAttributeAccessIssue]
         return super().create(*children, **props)
 
     def add_style(self):

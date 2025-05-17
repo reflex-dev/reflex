@@ -189,7 +189,7 @@ class Form(BaseHTML):
         # Render the form hooks and use the hash of the resulting code to create a unique name.
         props["handle_submit_unique_name"] = ""
         form = super().create(*children, **props)
-        form.handle_submit_unique_name = md5(
+        form.handle_submit_unique_name = md5(  # pyright: ignore[reportAttributeAccessIssue]
             str(form._get_all_hooks()).encode("utf-8")
         ).hexdigest()
         return form
