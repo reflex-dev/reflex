@@ -1961,3 +1961,30 @@ def test_decimal_var_type_compatibility():
 
     result = (dec_num + int_num) / float_num
     assert str(result) == "((123.456 + 42) / 3.14)"
+
+
+def test_computed_var_type_compatibility():
+    """Test that different ComputedVar are compatible with Var annotations of their returned type."""
+
+    class ComputedVarTypeState(BaseState):
+        @computed_var
+        def sync_plain(self) -> str:
+            return "Hello"
+
+        @computed_var(initial_value="Test")
+        def sync_wrapper(self) -> str:
+            return "World"
+
+        @computed_var
+        async def async_plain(self) -> str:
+            return "Hello"
+
+        @computed_var(initial_value="Test")
+        async def async_wrapper(self) -> str:
+            return "World"
+
+    # All of these vars should be assignable to a str field statically.
+    rx.input(placeholder=ComputedVarTypeState.sync_plain)
+    rx.input(placeholder=ComputedVarTypeState.sync_wrapper)
+    rx.input(placeholder=ComputedVarTypeState.async_plain)
+    rx.input(placeholder=ComputedVarTypeState.async_wrapper)
