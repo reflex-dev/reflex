@@ -2694,6 +2694,27 @@ if TYPE_CHECKING:
     BASE_STATE = TypeVar("BASE_STATE", bound=BaseState)
 
 
+class _ComputedVarDecorator(Protocol):
+    """A protocol for the ComputedVar decorator."""
+
+    @overload
+    def __call__(
+        self,
+        fget: Callable[[BASE_STATE], Coroutine[Any, Any, RETURN_TYPE]],
+    ) -> AsyncComputedVar[RETURN_TYPE]: ...
+
+    @overload
+    def __call__(
+        self,
+        fget: Callable[[BASE_STATE], RETURN_TYPE],
+    ) -> ComputedVar[RETURN_TYPE]: ...
+
+    def __call__(
+        self,
+        fget: Callable[[BASE_STATE], Any],
+    ) -> ComputedVar[Any]: ...
+
+
 @overload
 def computed_var(
     fget: None = None,
@@ -2704,7 +2725,20 @@ def computed_var(
     interval: datetime.timedelta | int | None = None,
     backend: bool | None = None,
     **kwargs,
-) -> Callable[[Callable[[BASE_STATE], RETURN_TYPE]], ComputedVar[RETURN_TYPE]]: ...  # pyright: ignore [reportInvalidTypeVarUse]
+) -> _ComputedVarDecorator: ...
+
+
+@overload
+def computed_var(
+    fget: Callable[[BASE_STATE], Coroutine[Any, Any, RETURN_TYPE]],
+    initial_value: RETURN_TYPE | types.Unset = types.Unset(),
+    cache: bool = True,
+    deps: list[str | Var] | None = None,
+    auto_deps: bool = True,
+    interval: datetime.timedelta | int | None = None,
+    backend: bool | None = None,
+    **kwargs,
+) -> AsyncComputedVar[RETURN_TYPE]: ...
 
 
 @overload
