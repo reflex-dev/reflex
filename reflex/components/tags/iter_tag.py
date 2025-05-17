@@ -105,8 +105,8 @@ class IterTag(Tag):
             The rendered component.
         """
         # Import here to avoid circular imports.
+        from reflex.compiler.compiler import _into_component_once
         from reflex.components.base.fragment import Fragment
-        from reflex.components.component import Component
         from reflex.components.core.cond import Cond
         from reflex.components.core.foreach import Foreach
 
@@ -128,11 +128,9 @@ class IterTag(Tag):
         if isinstance(component, (Foreach, Cond)):
             component = Fragment.create(component)
 
-        # If the component is a tuple, unpack and wrap it in a fragment.
-        if isinstance(component, tuple):
-            component = Fragment.create(*component)
+        component = _into_component_once(component)
 
-        if not isinstance(component, Component):
+        if component is None:
             raise ValueError("The render function must return a component.")
 
         # Set the component key.
