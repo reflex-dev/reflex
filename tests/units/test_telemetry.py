@@ -1,5 +1,6 @@
 import pytest
 from packaging.version import parse as parse_python_version
+from pytest_mock import MockerFixture
 
 from reflex.utils import telemetry
 
@@ -32,7 +33,7 @@ def test_disable():
 
 
 @pytest.mark.parametrize("event", ["init", "reinit", "run-dev", "run-prod", "export"])
-def test_send(mocker, event):
+def test_send(mocker: MockerFixture, event):
     httpx_post_mock = mocker.patch("httpx.post")
 
     # Mock the read_text method of Path

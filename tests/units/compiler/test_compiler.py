@@ -3,6 +3,7 @@ import os
 from pathlib import Path
 
 import pytest
+from pytest_mock import MockerFixture
 
 from reflex import constants
 from reflex.compiler import compiler, utils
@@ -115,7 +116,7 @@ def test_compile_imports(import_dict: ParsedImportDict, test_dicts: list[dict]):
         )
 
 
-def test_compile_stylesheets(tmp_path: Path, mocker):
+def test_compile_stylesheets(tmp_path: Path, mocker: MockerFixture):
     """Test that stylesheets compile correctly.
 
     Args:
@@ -166,7 +167,7 @@ def test_compile_stylesheets(tmp_path: Path, mocker):
     ).read_text()
 
 
-def test_compile_stylesheets_scss_sass(tmp_path: Path, mocker):
+def test_compile_stylesheets_scss_sass(tmp_path: Path, mocker: MockerFixture):
     if importlib.util.find_spec("sass") is None:
         pytest.skip(
             'The `libsass` package is required to compile sass/scss stylesheet files. Run `pip install "libsass>=0.23.0"`.'
@@ -251,7 +252,7 @@ def test_compile_stylesheets_scss_sass(tmp_path: Path, mocker):
     ).read_text() == expected_result
 
 
-def test_compile_stylesheets_exclude_tailwind(tmp_path, mocker):
+def test_compile_stylesheets_exclude_tailwind(tmp_path, mocker: MockerFixture):
     """Test that Tailwind is excluded if tailwind config is explicitly set to None.
 
     Args:
@@ -281,7 +282,7 @@ def test_compile_stylesheets_exclude_tailwind(tmp_path, mocker):
     )
 
 
-def test_compile_nonexistent_stylesheet(tmp_path, mocker):
+def test_compile_nonexistent_stylesheet(tmp_path, mocker: MockerFixture):
     """Test that an error is thrown for non-existent stylesheets.
 
     Args:
