@@ -1,8 +1,8 @@
 [project]
 name = "reflex"
-version = "0.7.12dev1"
+version = "0.7.13dev1"
 description = "Web apps in pure Python."
-license = { text = "Apache-2.0" }
+license.text = "Apache-2.0"
 authors = [
   { name = "Nikhil Rao", email = "nikhil@reflex.dev" },
   { name = "Alek Petuskey", email = "alek@reflex.dev" },
@@ -31,7 +31,7 @@ dependencies = [
   "pydantic >=1.10.21,<3.0",
   "python-socketio >=5.12.0,<6.0",
   "python-multipart >=0.0.20,<1.0",
-  "redis >=5.2.1,<6.0",
+  "redis >=5.2.1,<7.0",
   "reflex-hosting-cli >=0.1.47",
   "rich >=13,<15",
   "sqlmodel >=0.0.24,<0.1",
