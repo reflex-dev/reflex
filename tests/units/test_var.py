@@ -7,6 +7,7 @@ from typing import cast
 
 import pytest
 from pandas import DataFrame
+from pytest_mock import MockerFixture
 
 import reflex as rx
 from reflex.base import Base
@@ -1899,7 +1900,7 @@ def test_var_data_with_hooks_value():
     assert var_data == VarData(hooks=["whott", "whot", "what"])
 
 
-def test_str_var_in_components(mocker):
+def test_str_var_in_components(mocker: MockerFixture):
     class StateWithVar(rx.State):
         field: int = 1
 

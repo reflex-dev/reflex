@@ -19,6 +19,7 @@ import pytest_asyncio
 from plotly.graph_objects import Figure
 from pydantic import BaseModel as BaseModelV2
 from pydantic.v1 import BaseModel as BaseModelV1
+from pytest_mock import MockerFixture
 
 import reflex as rx
 import reflex.config
@@ -1849,7 +1850,7 @@ async def test_state_manager_lock_warning_threshold_contend(
     state_manager_redis: StateManagerRedis,
     token: str,
     substate_token_redis: str,
-    mocker,
+    mocker: MockerFixture,
 ):
     """Test that the state manager triggers a warning when lock contention exceeds the warning threshold.
 
@@ -2613,7 +2614,7 @@ def test_mutable_copy_vars(mutable_state: MutableTestState, copy_func: Callable)
         assert not isinstance(var_copy, MutableProxy)
 
 
-def test_duplicate_substate_class(mocker):
+def test_duplicate_substate_class(mocker: MockerFixture):
     # Neuter pytest escape hatch, because we want to test duplicate detection.
     mocker.patch("reflex.state.is_testing_env", lambda: False)
     # Neuter <locals> state handling since these _are_ defined inside a function.
@@ -2870,7 +2871,9 @@ class OnLoadState3(State):
         (OnLoadState3, {"on_load_state3": {"num": 1}}),
     ],
 )
-async def test_preprocess(app_module_mock, token, test_state, expected, mocker):
+async def test_preprocess(
+    app_module_mock, token, test_state, expected, mocker: MockerFixture
+):
     """Test that a state hydrate event is processed correctly.
 
     Args:
@@ -2919,7 +2922,9 @@ async def test_preprocess(app_module_mock, token, test_state, expected, mocker):
 
 
 @pytest.mark.asyncio
-async def test_preprocess_multiple_load_events(app_module_mock, token, mocker):
+async def test_preprocess_multiple_load_events(
+    app_module_mock, token, mocker: MockerFixture
+):
     """Test that a state hydrate event for multiple on-load events is processed correctly.
 
     Args:
