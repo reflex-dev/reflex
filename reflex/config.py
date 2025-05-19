@@ -979,7 +979,7 @@ class Config(Base):
                 # Default to non-prefixed env var is other are not found.
                 if env_var := os.environ.get(key.upper()):
                     console.warn(
-                        f"Usage of deprecated {key.upper()} env var detected. Prefer {self._prefixes[0]} prefix when setting env vars."
+                        f"Usage of deprecated {key.upper()} env var detected. Prefer `{self._prefixes[0]}` prefix when setting env vars."
                     )
 
             # If the env var is set, override the config value.
