@@ -22,6 +22,7 @@ from typing import (
     TYPE_CHECKING,
     Annotated,
     Any,
+    ClassVar,
     Generic,
     TypeVar,
     get_args,
@@ -894,7 +895,7 @@ class Config(Base):
     # Extra overlay function to run after the app is built. Formatted such that `from path_0.path_1... import path[-1]`, and calling it with no arguments would work. For example, "reflex.components.moment.moment".
     extra_overlay_function: str | None = None
 
-    _prefixes = ["REFLEX_"]
+    _prefixes: ClassVar[list[str]] = ["REFLEX_"]
 
     def __init__(self, *args, **kwargs):
         """Initialize the config values.
@@ -978,7 +979,7 @@ class Config(Base):
                 # Default to non-prefixed env var is other are not found.
                 if env_var := os.environ.get(key.upper()):
                     console.warn(
-                        f"Usage of deprecated {key.upper()} env var detected. Prefer `REFLEX_` prefix when setting env vars."
+                        f"Usage of deprecated {key.upper()} env var detected. Prefer {self._prefixes[0]} prefix when setting env vars."
                     )
 
             # If the env var is set, override the config value.
