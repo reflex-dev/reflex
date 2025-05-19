@@ -894,6 +894,8 @@ class Config(Base):
     # Extra overlay function to run after the app is built. Formatted such that `from path_0.path_1... import path[-1]`, and calling it with no arguments would work. For example, "reflex.components.moment.moment".
     extra_overlay_function: str | None = None
 
+    _prefixes = ["REFLEX_"]
+
     def __init__(self, *args, **kwargs):
         """Initialize the config values.
 
@@ -969,7 +971,15 @@ class Config(Base):
         # Iterate over the fields.
         for key, field in self.__fields__.items():
             # The env var name is the key in uppercase.
-            env_var = os.environ.get(key.upper())
+            for prefix in self._prefixes:
+                if env_var := os.environ.get(f"{prefix}{key.upper()}"):
+                    break
+            else:
+                # Default to non-prefixed env var is other are not found.
+                if env_var := os.environ.get(key.upper()):
+                    console.warn(
+                        f"Usage of deprecated {key.upper()} env var detected. Prefer `REFLEX_` prefix when setting env vars."
+                    )
 
             # If the env var is set, override the config value.
             if env_var and env_var.strip():
