@@ -234,11 +234,9 @@ class VarData:
 
         positions = list(
             dict.fromkeys(
-                {
-                    var_data.position
-                    for var_data in all_var_datas
-                    if var_data.position is not None
-                }
+                var_data.position
+                for var_data in all_var_datas
+                if var_data.position is not None
             )
         )
         if positions:
