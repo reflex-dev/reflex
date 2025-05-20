@@ -30,6 +30,14 @@ def ClientSide():
         state_var: str = ""
         input_value: str = ""
 
+        @rx.event
+        def set_state_var(self, value: str):
+            self.state_var = value
+
+        @rx.event
+        def set_input_value(self, value: str):
+            self.input_value = value
+
     class ClientSideSubState(ClientSideState):
         # cookies with default settings
         c1: str = rx.Cookie()
