@@ -980,7 +980,7 @@ def initialize_web_directory():
     project_hash = get_project_hash()
 
     console.debug(f"Copying {constants.Templates.Dirs.WEB_TEMPLATE} to {get_web_dir()}")
-    path_ops.cp(constants.Templates.Dirs.WEB_TEMPLATE, str(get_web_dir()))
+    path_ops.copy_tree(constants.Templates.Dirs.WEB_TEMPLATE, str(get_web_dir()))
 
     console.debug("Initializing the web directory.")
     initialize_package_json()
