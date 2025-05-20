@@ -18,7 +18,6 @@ def FullyControlledInput():
 
         @rx.event
         def set_text(self, text: str):
-            """Set the text value in the state."""
             self.text = text
 
     app = rx.App()
