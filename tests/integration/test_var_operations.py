@@ -599,6 +599,13 @@ def VarOperations():
                 ),
                 id="foreach_list_nested",
             ),
+            rx.box(
+                rx.foreach(
+                    ArrayVar.range(0, 2),
+                    lambda x: VarOperationState.list1[x],
+                ),
+                id="foreach_list_arg2",
+            ),
             memo_comp(
                 list1=VarOperationState.list1,
                 int_var1=VarOperationState.int_var1,
@@ -950,6 +957,7 @@ def test_var_operations(driver, var_operations: AppHarness):
         ("foreach_list_arg", "1\n2"),
         ("foreach_list_ix", "1\n2"),
         ("foreach_list_nested", "1\n1\n2"),
+        ("foreach_list_arg2", "12"),
         # rx.memo component with state
         ("memo_comp", "1210"),
         ("memo_comp_nested", "345"),
@@ -992,8 +1000,10 @@ def test_var_operations(driver, var_operations: AppHarness):
     ]
 
     for tag, expected in tests:
-        print(tag)
-        assert driver.find_element(By.ID, tag).text == expected
+        existing = driver.find_element(By.ID, tag).text
+        assert existing == expected, (
+            f"Failed on {tag}, expected {expected} but got {existing}"
+        )
 
     # Highlight component with var query (does not plumb ID)
     assert driver.find_element(By.TAG_NAME, "mark").text == "second"
