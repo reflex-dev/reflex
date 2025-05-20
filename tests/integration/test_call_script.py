@@ -183,6 +183,22 @@ def CallScript():
             )
 
         @rx.event
+        def set_inline_counter(self, value: str):
+            self.inline_counter = int(value)
+
+        @rx.event
+        def set_external_counter(self, value: str):
+            self.external_counter = int(value)
+
+        @rx.event
+        def set_last_result(self, value: str):
+            self.last_result = int(value)
+
+        @rx.event
+        def set_value(self, value: str):
+            self.value = value
+
+        @rx.event
         def reset_(self):
             yield rx.call_script("inline_counter = 0; external_counter = 0")
             self.reset()
