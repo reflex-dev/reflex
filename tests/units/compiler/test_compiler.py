@@ -154,7 +154,6 @@ def test_compile_stylesheets(tmp_path: Path, mocker):
             / "styles"
             / (PageNames.STYLESHEET_ROOT + ".css")
         ),
-        "@import url('./tailwind.css'); \n"
         "@import url('@radix-ui/themes/styles.css'); \n"
         "@import url('https://fonts.googleapis.com/css?family=Sofia&effect=neon|outline|emboss|shadow-multiple'); \n"
         "@import url('https://cdn.jsdelivr.net/npm/bootstrap@3.3.7/dist/css/bootstrap.min.css'); \n"
@@ -215,7 +214,6 @@ def test_compile_stylesheets_scss_sass(tmp_path: Path, mocker):
             / "styles"
             / (PageNames.STYLESHEET_ROOT + ".css")
         ),
-        "@import url('./tailwind.css'); \n"
         "@import url('@radix-ui/themes/styles.css'); \n"
         "@import url('./style.css'); \n"
         f"@import url('./{Path('preprocess') / Path('styles_a.css')!s}'); \n"
@@ -234,7 +232,6 @@ def test_compile_stylesheets_scss_sass(tmp_path: Path, mocker):
             / "styles"
             / (PageNames.STYLESHEET_ROOT + ".css")
         ),
-        "@import url('./tailwind.css'); \n"
         "@import url('@radix-ui/themes/styles.css'); \n"
         "@import url('./style.css'); \n"
         f"@import url('./{Path('preprocess') / Path('styles_a.css')!s}'); \n"

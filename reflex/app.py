@@ -1417,7 +1417,10 @@ class App(MiddlewareMixin, LifespanMixin):
                     add_save_task=_submit_work,
                     add_modify_task=(
                         lambda *args, plugin=plugin: modify_files_tasks.append(
-                            (plugin.__class__.__module__ + plugin.__class__.__name__, *args)
+                            (
+                                plugin.__class__.__module__ + plugin.__class__.__name__,
+                                *args,
+                            )
                         )
                     ),
                 )
