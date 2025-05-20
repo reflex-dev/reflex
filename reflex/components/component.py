@@ -202,7 +202,7 @@ def field(
     )
 
 
-@dataclass_transform(kw_only_default=True)
+@dataclass_transform(kw_only_default=True, field_specifiers=(field,))
 class BaseComponentMeta(ABCMeta):
     """Meta class for BaseComponent."""
 
