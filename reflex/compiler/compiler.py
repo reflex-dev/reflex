@@ -223,6 +223,9 @@ def _validate_stylesheet(stylesheet_full_path: Path, assets_app_path: Path) -> N
         )
 
 
+RADIX_THEMES_STYLESHEET = "@radix-ui/themes/styles.css"
+
+
 def _compile_root_stylesheet(stylesheets: list[str]) -> str:
     """Compile the root stylesheet.
 
@@ -236,11 +239,11 @@ def _compile_root_stylesheet(stylesheets: list[str]) -> str:
         FileNotFoundError: If a specified stylesheet in assets directory does not exist.
     """
     # Add stylesheets from plugins.
-    sheets = [
+    sheets = [RADIX_THEMES_STYLESHEET] + [
         sheet
         for plugin in get_config().plugins
         for sheet in plugin.get_stylesheet_paths()
-    ] + ["@radix-ui/themes/styles.css"]
+    ]
 
     failed_to_import_sass = False
     assets_app_path = Path.cwd() / constants.Dirs.APP_ASSETS

@@ -34,7 +34,7 @@ import pydantic.v1 as pydantic
 from reflex import constants
 from reflex.base import Base
 from reflex.constants.base import LogLevel
-from reflex.plugins import Plugin, TailwindV3Plugin
+from reflex.plugins import Plugin, TailwindV3Plugin, TailwindV4Plugin
 from reflex.utils import console
 from reflex.utils.exceptions import ConfigError, EnvironmentVarValueError
 from reflex.utils.types import (
@@ -925,7 +925,8 @@ class Config(Base):
         self._replace_defaults(**kwargs)
 
         if self.tailwind is not None and not any(
-            isinstance(plugin, TailwindV3Plugin) for plugin in self.plugins
+            isinstance(plugin, (TailwindV3Plugin, TailwindV4Plugin))
+            for plugin in self.plugins
         ):
             console.deprecate(
                 "Inferring tailwind usage",
