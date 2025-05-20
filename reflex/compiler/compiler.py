@@ -326,7 +326,7 @@ def _compile_component(component: Component | StatefulComponent) -> str:
 
 
 def _compile_components(
-    components: set[CustomComponent],
+    components: Iterable[CustomComponent],
 ) -> tuple[str, dict[str, list[ImportVar]]]:
     """Compile the components.
 
@@ -572,7 +572,7 @@ def compile_page(
 
 
 def compile_components(
-    components: set[CustomComponent],
+    components: Iterable[CustomComponent],
 ) -> tuple[str, str, dict[str, list[ImportVar]]]:
     """Compile the custom components.
 

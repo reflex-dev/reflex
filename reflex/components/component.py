@@ -2261,7 +2261,9 @@ class StatefulComponent(BaseComponent):
         return [var_name]
 
     @staticmethod
-    def _get_deps_from_event_trigger(event: EventChain | EventSpec | Var) -> set[str]:
+    def _get_deps_from_event_trigger(
+        event: EventChain | EventSpec | Var,
+    ) -> dict[str, None]:
         """Get the dependencies accessed by event triggers.
 
         Args:
@@ -2271,7 +2273,7 @@ class StatefulComponent(BaseComponent):
             The dependencies accessed by the event triggers.
         """
         events: list = [event]
-        deps = set()
+        deps = {}
 
         if isinstance(event, EventChain):
             events.extend(event.events)
@@ -2282,7 +2284,7 @@ class StatefulComponent(BaseComponent):
                     for a in arg:
                         var_datas = VarData.merge(a._get_all_var_data())
                         if var_datas and var_datas.deps is not None:
-                            deps |= {str(dep) for dep in var_datas.deps}
+                            deps |= {str(dep): None for dep in var_datas.deps}
         return deps
 
     @classmethod
@@ -2499,27 +2501,23 @@ def empty_component() -> Component:
     return Bare.create("")
 
 
-def render_dict_to_var(tag: dict | Component | str, imported_names: set[str]) -> Var:
+def render_dict_to_var(tag: dict | Component | str) -> Var:
     """Convert a render dict to a Var.
 
     Args:
         tag: The render dict.
-        imported_names: The names of the imported components.
 
     Returns:
         The Var.
     """
     if not isinstance(tag, dict):
         if isinstance(tag, Component):
-            return render_dict_to_var(tag.render(), imported_names)
+            return render_dict_to_var(tag.render())
         return Var.create(tag)
 
     if "iterable" in tag:
         function_return = LiteralArrayVar.create(
-            [
-                render_dict_to_var(child.render(), imported_names)
-                for child in tag["children"]
-            ]
+            [render_dict_to_var(child.render()) for child in tag["children"]]
         )
 
         func = ArgsFunctionOperation.create(
@@ -2537,7 +2535,7 @@ def render_dict_to_var(tag: dict | Component | str, imported_names: set[str]) ->
     if tag["name"] == "match":
         element = tag["cond"]
 
-        conditionals = render_dict_to_var(tag["default"], imported_names)
+        conditionals = render_dict_to_var(tag["default"])
 
         for case in tag["match_cases"][::-1]:
             condition = case[0].to_string() == element.to_string()
@@ -2546,7 +2544,7 @@ def render_dict_to_var(tag: dict | Component | str, imported_names: set[str]) ->
 
             conditionals = ternary_operation(
                 condition,
-                render_dict_to_var(case[-1], imported_names),
+                render_dict_to_var(case[-1]),
                 conditionals,
             )
 
@@ -2555,8 +2553,8 @@ def render_dict_to_var(tag: dict | Component | str, imported_names: set[str]) ->
     if "cond" in tag:
         return ternary_operation(
             tag["cond"],
-            render_dict_to_var(tag["true_value"], imported_names),
-            render_dict_to_var(tag["false_value"], imported_names)
+            render_dict_to_var(tag["true_value"]),
+            render_dict_to_var(tag["false_value"])
             if tag["false_value"] is not None
             else LiteralNoneVar.create(),
         )
@@ -2574,7 +2572,7 @@ def render_dict_to_var(tag: dict | Component | str, imported_names: set[str]) ->
         tag_name,
         props,
         *([Var(contents)] if contents is not None else []),
-        *[render_dict_to_var(child, imported_names) for child in tag["children"]],
+        *[render_dict_to_var(child) for child in tag["children"]],
     )
 
 
@@ -2595,13 +2593,7 @@ class LiteralComponentVar(CachedVarOperation, LiteralVar, ComponentVar):
         Returns:
             The name of the var.
         """
-        var_data = self._get_all_var_data()
-        if var_data is not None:
-            # flatten imports
-            imported_names = {j.alias or j.name for i in var_data.imports for j in i[1]}
-        else:
-            imported_names = set()
-        return str(render_dict_to_var(self._var_value.render(), imported_names))
+        return str(render_dict_to_var(self._var_value.render()))
 
     @cached_property_no_lock
     def _cached_get_all_var_data(self) -> VarData | None:
