@@ -883,7 +883,7 @@ class Config(Base):
     env_file: str | None = None
 
     # Whether to automatically create setters for state base vars
-    state_auto_setters: bool = True
+    state_auto_setters: bool = False
 
     # Whether to display the sticky "Built with Reflex" badge on all pages.
     show_built_with_reflex: bool | None = None
