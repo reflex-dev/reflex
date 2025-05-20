@@ -88,6 +88,12 @@ SEQUENCE_TYPE = TypeVar("SEQUENCE_TYPE", bound=Sequence)
 
 warnings.filterwarnings("ignore", message="fields may not start with an underscore")
 
+_PYDANTIC_VALIDATE_VALUES = "__pydantic_validate_values__"
+
+
+def _pydantic_validator(*args, **kwargs):
+    return None
+
 
 @dataclasses.dataclass(
     eq=False,
@@ -363,11 +369,26 @@ def can_use_in_object_var(cls: GenericType) -> bool:
     )
 
 
+class MetaclassVar(type):
+    """Metaclass for the Var class."""
+
+    def __setattr__(cls, name: str, value: Any):
+        """Set an attribute on the class.
+
+        Args:
+            name: The name of the attribute.
+            value: The value of the attribute.
+        """
+        super().__setattr__(
+            name, value if name != _PYDANTIC_VALIDATE_VALUES else _pydantic_validator
+        )
+
+
 @dataclasses.dataclass(
     eq=False,
     frozen=True,
 )
-class Var(Generic[VAR_TYPE]):
+class Var(Generic[VAR_TYPE], metaclass=MetaclassVar):
     """Base class for immutable vars."""
 
     # The name of the var.
