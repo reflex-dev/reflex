@@ -1010,7 +1010,10 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         Returns:
             True if the state is user-defined, False otherwise.
         """
-        return not cls.__module__.startswith("reflex.")
+        return (
+            not cls.__module__.startswith("reflex.")
+            or cls.__module__ == "reflex.istate.dynamic"
+        )
 
     @classmethod
     def _init_var(cls, prop: Var):
