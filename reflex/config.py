@@ -748,6 +748,9 @@ class EnvironmentVariables:
     # The timeout to wait for a pong from the websocket server in seconds.
     REFLEX_SOCKET_TIMEOUT: EnvVar[int] = env_var(constants.Ping.TIMEOUT)
 
+    # Whether to run Granian in a spawn process. This enables Reflex to pick up on environment variable changes between hot reloads.
+    REFLEX_STRICT_HOT_RELOAD: EnvVar[bool] = env_var(False)
+
 
 environment = EnvironmentVariables()
 

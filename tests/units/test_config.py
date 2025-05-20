@@ -4,6 +4,7 @@ from pathlib import Path
 from typing import Any
 
 import pytest
+from pytest_mock import MockerFixture
 
 import reflex as rx
 import reflex.config
@@ -107,7 +108,7 @@ def test_update_from_env_path(
         ),
     ],
 )
-def test_event_namespace(mocker, kwargs, expected):
+def test_event_namespace(mocker: MockerFixture, kwargs, expected):
     """Test the event namespace.
 
     Args:

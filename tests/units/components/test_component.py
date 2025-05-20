@@ -1221,10 +1221,10 @@ def test_stateful_banner():
     assert isinstance(stateful_component, StatefulComponent)
 
 
-TEST_VAR = LiteralVar.create("test")._replace(
+TEST_VAR = LiteralVar.create("p")._replace(
     merge_var_data=VarData(
         hooks={"useTest": None},
-        imports={"test": [ImportVar(tag="test")]},
+        imports={"test": [ImportVar(tag="p")]},
         state="Test",
     )
 )
@@ -1233,31 +1233,31 @@ STYLE_VAR = TEST_VAR._replace(_js_expr="style")
 EVENT_CHAIN_VAR = TEST_VAR.to(EventChain)
 ARG_VAR = Var(_js_expr="arg")
 
-TEST_VAR_DICT_OF_DICT = LiteralVar.create({"a": {"b": "test"}})._replace(
+TEST_VAR_DICT_OF_DICT = LiteralVar.create({"a": {"b": "p"}})._replace(
     merge_var_data=TEST_VAR._var_data
 )
-FORMATTED_TEST_VAR_DICT_OF_DICT = LiteralVar.create(
-    {"a": {"b": "footestbar"}}
-)._replace(merge_var_data=TEST_VAR._var_data)
-
-TEST_VAR_LIST_OF_LIST = LiteralVar.create([["test"]])._replace(
-    merge_var_data=TEST_VAR._var_data
-)
-FORMATTED_TEST_VAR_LIST_OF_LIST = LiteralVar.create([["footestbar"]])._replace(
+FORMATTED_TEST_VAR_DICT_OF_DICT = LiteralVar.create({"a": {"b": "foopbar"}})._replace(
     merge_var_data=TEST_VAR._var_data
 )
 
-TEST_VAR_LIST_OF_LIST_OF_LIST = LiteralVar.create([[["test"]]])._replace(
+TEST_VAR_LIST_OF_LIST = LiteralVar.create([["p"]])._replace(
     merge_var_data=TEST_VAR._var_data
 )
-FORMATTED_TEST_VAR_LIST_OF_LIST_OF_LIST = LiteralVar.create(
-    [[["footestbar"]]]
-)._replace(merge_var_data=TEST_VAR._var_data)
+FORMATTED_TEST_VAR_LIST_OF_LIST = LiteralVar.create([["foopbar"]])._replace(
+    merge_var_data=TEST_VAR._var_data
+)
 
-TEST_VAR_LIST_OF_DICT = LiteralVar.create([{"a": "test"}])._replace(
+TEST_VAR_LIST_OF_LIST_OF_LIST = LiteralVar.create([[["p"]]])._replace(
     merge_var_data=TEST_VAR._var_data
 )
-FORMATTED_TEST_VAR_LIST_OF_DICT = LiteralVar.create([{"a": "footestbar"}])._replace(
+FORMATTED_TEST_VAR_LIST_OF_LIST_OF_LIST = LiteralVar.create([[["foopbar"]]])._replace(
+    merge_var_data=TEST_VAR._var_data
+)
+
+TEST_VAR_LIST_OF_DICT = LiteralVar.create([{"a": "p"}])._replace(
+    merge_var_data=TEST_VAR._var_data
+)
+FORMATTED_TEST_VAR_LIST_OF_DICT = LiteralVar.create([{"a": "foopbar"}])._replace(
     merge_var_data=TEST_VAR._var_data
 )
 

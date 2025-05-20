@@ -1,4 +1,5 @@
 import pytest
+from pytest_mock import MockerFixture
 
 from reflex import constants
 from reflex.app import App
@@ -88,7 +89,7 @@ def app():
         ("/posts/[slug]/info/[[...slug1]]", "/posts/[slug]/info/[[...slug2]]"),
     ],
 )
-def test_check_routes_conflict_invalid(mocker, app, route1, route2):
+def test_check_routes_conflict_invalid(mocker: MockerFixture, app, route1, route2):
     mocker.patch.object(app, "_pages", {route1: []})
     with pytest.raises(ValueError):
         app._check_routes_conflict(route2)
@@ -116,7 +117,7 @@ def test_check_routes_conflict_invalid(mocker, app, route1, route2):
         ("/posts/[slug]/info/[...slug1]", "/posts/[slug]/info1/[...slug2]"),
     ],
 )
-def test_check_routes_conflict_valid(mocker, app, route1, route2):
+def test_check_routes_conflict_valid(mocker: MockerFixture, app, route1, route2):
     mocker.patch.object(app, "_pages", {route1: []})
     # test that running this does not throw an error.
     app._check_routes_conflict(route2)
