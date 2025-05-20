@@ -909,19 +909,32 @@ class Config(Base):
         """
         super().__init__(*args, **kwargs)
 
-        # Set the log level for this process
-        env_loglevel = os.environ.get("LOGLEVEL")
+        # Clean up this code when we remove plain envvar in 0.8.0
+        show_deprecation = False
+        env_loglevel = os.environ.get("REFLEX_LOGLEVEL")
+        if not env_loglevel:
+            env_loglevel = os.environ.get("LOGLEVEL")
+            if env_loglevel:
+                show_deprecation = True
         if env_loglevel is not None:
             env_loglevel = LogLevel(env_loglevel.lower())
         if env_loglevel or self.loglevel != LogLevel.DEFAULT:
             console.set_log_level(env_loglevel or self.loglevel)
+
+        if show_deprecation:
+            console.deprecate(
+                "Usage of deprecated LOGLEVEL env var detected.",
+                reason="Prefer `REFLEX_` prefix when setting env vars.",
+                deprecation_version="0.7.13",
+                removal_version="0.8.0",
+            )
 
         # Update the config from environment variables.
         env_kwargs = self.update_from_env()
         for key, env_value in env_kwargs.items():
             setattr(self, key, env_value)
 
-        # Update default URLs if ports were set
+        #   Update default URLs if ports were set
         kwargs.update(env_kwargs)
         self._non_default_attributes.update(kwargs)
         self._replace_defaults(**kwargs)
@@ -931,7 +944,7 @@ class Config(Base):
             and not self.redis_url
         ):
             raise ConfigError(
-                "REDIS_URL is required when using the redis state manager."
+                f"{self._prefixes[0]}REDIS_URL is required when using the redis state manager."
             )
 
     @property
@@ -976,10 +989,13 @@ class Config(Base):
                 if env_var := os.environ.get(f"{prefix}{key.upper()}"):
                     break
             else:
-                # Default to non-prefixed env var is other are not found.
+                # Default to non-prefixed env var if other are not found.
                 if env_var := os.environ.get(key.upper()):
-                    console.warn(
-                        f"Usage of deprecated {key.upper()} env var detected. Prefer `{self._prefixes[0]}` prefix when setting env vars."
+                    console.deprecate(
+                        f"Usage of deprecated {key.upper()} env var detected.",
+                        reason=f"Prefer `{self._prefixes[0]}` prefix when setting env vars.",
+                        deprecation_version="0.7.13",
+                        removal_version="0.8.0",
                     )
 
             # If the env var is set, override the config value.
@@ -1000,7 +1016,6 @@ class Config(Base):
                         f"Overriding config value {key} with env var {key.upper()}={env_var}",
                         dedupe=True,
                     )
-
         return updated_values
 
     def get_event_namespace(self) -> str:
@@ -1052,7 +1067,7 @@ class Config(Base):
         """
         for key, value in kwargs.items():
             if value is not None:
-                os.environ[key.upper()] = str(value)
+                os.environ[self._prefixes[0] + key.upper()] = str(value)
             setattr(self, key, value)
         self._non_default_attributes.update(kwargs)
         self._replace_defaults(**kwargs)
