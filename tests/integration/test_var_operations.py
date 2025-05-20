@@ -608,6 +608,15 @@ def VarOperations():
                 int_var2=VarOperationState.int_var2,
                 id="memo_comp_nested",
             ),
+            # length
+            rx.box(
+                rx.text(VarOperationState.list3.length()),
+                id="list_length",
+            ),
+            rx.box(
+                rx.text(VarOperationState.obj.length()),
+                id="obj_length",
+            ),
             # foreach in a match
             rx.box(
                 rx.match(
@@ -944,6 +953,9 @@ def test_var_operations(driver, var_operations: AppHarness):
         # rx.memo component with state
         ("memo_comp", "1210"),
         ("memo_comp_nested", "345"),
+        # length
+        ("list_length", "3"),
+        ("obj_length", "3"),
         # foreach in a match
         ("foreach_in_match", "first\nsecond\nthird"),
         # literal range in a foreach

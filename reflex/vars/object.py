@@ -144,6 +144,14 @@ class ObjectVar(Var[OBJECT_TYPE], python_types=Mapping):
 
     items = entries
 
+    def length(self) -> NumberVar[int]:
+        """Get the length of the object.
+
+        Returns:
+            The length of the object.
+        """
+        return self.keys().length()
+
     def merge(self, other: ObjectVar):
         """Merge two objects.
 
