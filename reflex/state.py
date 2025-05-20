@@ -1004,6 +1004,18 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         return getattr(substate, name)
 
     @classmethod
+    def is_user_defined(cls) -> bool:
+        """Check if the state is user-defined.
+
+        Returns:
+            True if the state is user-defined, False otherwise.
+        """
+        return (
+            not cls.__module__.startswith("reflex.")
+            or cls.__module__ == "reflex.istate.dynamic"
+        )
+
+    @classmethod
     def _init_var(cls, prop: Var):
         """Initialize a variable.
 
@@ -1024,7 +1036,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
                 f'Found var "{prop._js_expr}" with type {prop._var_type}.'
             )
         cls._set_var(prop)
-        if get_config().state_auto_setters:
+        if cls.is_user_defined() and get_config().state_auto_setters:
             cls._create_setter(prop)
         cls._set_default_value(prop)
 
@@ -2330,6 +2342,15 @@ class State(BaseState):
     # The hydrated bool.
     is_hydrated: bool = False
 
+    @event
+    def set_is_hydrated(self, value: bool) -> None:
+        """Set the hydrated state.
+
+        Args:
+            value: The hydrated state.
+        """
+        self.is_hydrated = value
+
 
 T = TypeVar("T", bound=BaseState)
 
@@ -2424,7 +2445,7 @@ class OnLoadInternalState(State):
     This is a separate substate to avoid deserializing the entire state tree for every page navigation.
     """
 
-    def on_load_internal(self) -> list[Event | EventSpec] | None:
+    def on_load_internal(self) -> list[Event | EventSpec | event.EventCallback] | None:
         """Queue on_load handlers for the current page.
 
         Returns:
@@ -2444,7 +2465,7 @@ class OnLoadInternalState(State):
                 self.router.session.client_token,
                 router_data=self.router_data,
             ),
-            State.set_is_hydrated(True),  # pyright: ignore [reportAttributeAccessIssue]
+            State.set_is_hydrated(True),
         ]
 
 
