@@ -1010,7 +1010,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         Returns:
             True if the state is user-defined, False otherwise.
         """
-        return not cls.__module__.startswith("reflex")
+        return not cls.__module__.startswith("reflex.")
 
     @classmethod
     def _init_var(cls, prop: Var):
@@ -2340,13 +2340,13 @@ class State(BaseState):
     is_hydrated: bool = False
 
     @event
-    def set_is_hydrated(self, is_hydrated: bool) -> None:
+    def set_is_hydrated(self, value: bool) -> None:
         """Set the hydrated state.
 
         Args:
-            is_hydrated: The hydrated state.
+            value: The hydrated state.
         """
-        self.is_hydrated = is_hydrated
+        self.is_hydrated = value
 
 
 T = TypeVar("T", bound=BaseState)
