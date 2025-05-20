@@ -239,11 +239,11 @@ class VarData:
         deps = [dep for var_data in all_var_datas for dep in var_data.deps]
 
         positions = list(
-            {
+            dict.fromkeys(
                 var_data.position
                 for var_data in all_var_datas
                 if var_data.position is not None
-            }
+            )
         )
         if positions:
             if len(positions) > 1:

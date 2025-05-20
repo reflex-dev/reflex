@@ -1443,7 +1443,7 @@ class App(MiddlewareMixin, LifespanMixin):
             custom_components_output,
             custom_components_result,
             custom_components_imports,
-        ) = compiler.compile_components(set(CUSTOM_COMPONENTS.values()))
+        ) = compiler.compile_components(dict.fromkeys(CUSTOM_COMPONENTS.values()))
         compile_results.append((custom_components_output, custom_components_result))
         all_imports.update(custom_components_imports)
 

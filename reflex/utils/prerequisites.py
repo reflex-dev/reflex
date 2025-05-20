@@ -1120,7 +1120,7 @@ def _update_next_config(
 
     if transpile_packages:
         next_config["transpilePackages"] = list(
-            {format_library_name(p) for p in transpile_packages}
+            dict.fromkeys([format_library_name(p) for p in transpile_packages])
         )
     if export:
         next_config["output"] = "export"
