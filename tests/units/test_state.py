@@ -1971,6 +1971,14 @@ async def test_state_proxy(
         mock_app.state_manager.states[parent_state.router.session.client_token] = (
             parent_state
         )
+    elif isinstance(mock_app.state_manager, StateManagerRedis):
+        pickle_state = parent_state._serialize()
+        if pickle_state:
+            await mock_app.state_manager.redis.set(
+                _substate_key(parent_state.router.session.client_token, parent_state),
+                pickle_state,
+                ex=mock_app.state_manager.token_expiration,
+            )
 
     sp = StateProxy(grandchild_state)
     assert sp.__wrapped__ == grandchild_state
