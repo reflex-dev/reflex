@@ -1996,6 +1996,10 @@ class EventNamespace(AsyncNamespace):
             update: The state update to send.
             sid: The Socket.IO session id.
         """
+        if not sid:
+            # If the sid is None, we are not connected to a client. Prevent sending
+            # updates to all clients.
+            return
         # Creating a task prevents the update from being blocked behind other coroutines.
         await asyncio.create_task(
             self.emit(str(constants.SocketEvent.EVENT), update, to=sid)
