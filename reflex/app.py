@@ -2000,6 +2000,9 @@ class EventNamespace(AsyncNamespace):
             # If the sid is None, we are not connected to a client. Prevent sending
             # updates to all clients.
             return
+        if sid not in self.sid_to_token:
+            console.warn(f"Attempting to send delta to disconnected websocket {sid}")
+            return
         # Creating a task prevents the update from being blocked behind other coroutines.
         await asyncio.create_task(
             self.emit(str(constants.SocketEvent.EVENT), update, to=sid)
