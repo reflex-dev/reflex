@@ -1235,14 +1235,16 @@ class App(MiddlewareMixin, LifespanMixin):
 
         # try to be somewhat accurate - but still not 100%
         adhoc_steps_without_executor = 7
-        fixed_pages_within_executor = 5
+        fixed_pages_within_executor = 4
+        plugin_count = len(config.plugins)
         progress.start()
         task = progress.add_task(
             f"[{get_compilation_time()}] Compiling:",
             total=len(self._pages)
             + (len(self._unevaluated_pages) * 2)
             + fixed_pages_within_executor
-            + adhoc_steps_without_executor,
+            + adhoc_steps_without_executor
+            + plugin_count,
         )
 
         with console.timing("Evaluate Pages (Frontend)"):
@@ -1412,9 +1414,17 @@ class App(MiddlewareMixin, LifespanMixin):
             # Compile the theme.
             _submit_work(compile_theme, self.style)
 
+            def _submit_work_without_advancing(
+                fn: Callable[P, list[tuple[str, str]] | tuple[str, str] | None],
+                *args: P.args,
+                **kwargs: P.kwargs,
+            ):
+                f = executor.submit(fn, *args, **kwargs)
+                result_futures.append(f)
+
             for plugin in config.plugins:
                 plugin.pre_compile(
-                    add_save_task=_submit_work,
+                    add_save_task=_submit_work_without_advancing,
                     add_modify_task=(
                         lambda *args, plugin=plugin: modify_files_tasks.append(
                             (
@@ -1432,6 +1442,8 @@ class App(MiddlewareMixin, LifespanMixin):
                         compile_results.extend(result)
                     else:
                         compile_results.append(result)
+
+        progress.advance(task, advance=len(config.plugins))
 
         app_root = self._app_root(app_wrappers=app_wrappers)
 
