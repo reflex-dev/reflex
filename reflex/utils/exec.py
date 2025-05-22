@@ -374,6 +374,23 @@ def run_uvicorn_backend(host: str, port: int, loglevel: LogLevel):
     )
 
 
+HOTRELOAD_IGNORE_EXTENSIONS = (
+    "txt",
+    "toml",
+    "sqlite",
+    "yaml",
+    "yml",
+    "json",
+    "sh",
+    "bash",
+)
+
+HOTRELOAD_IGNORE_PATTERNS = (
+    *[rf"^.*\.{ext}$" for ext in HOTRELOAD_IGNORE_EXTENSIONS],
+    r"^[^\.]*$",  # Ignore files without an extension
+)
+
+
 def run_granian_backend(host: str, port: int, loglevel: LogLevel):
     """Run the backend in development mode using Granian.
 
@@ -403,6 +420,7 @@ def run_granian_backend(host: str, port: int, loglevel: LogLevel):
         reload=True,
         reload_paths=get_reload_paths(),
         reload_ignore_worker_failure=True,
+        reload_ignore_patterns=HOTRELOAD_IGNORE_PATTERNS,
         reload_tick=100,
         workers_kill_timeout=2,
     ).serve()
