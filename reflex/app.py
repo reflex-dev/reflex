@@ -1500,7 +1500,7 @@ class App(MiddlewareMixin, LifespanMixin):
 
         output_mapping: dict[Path, str] = {}
         for output_path, code in compile_results:
-            path = Path(output_path).absolute()
+            path = compiler_utils.resolve_path_of_web_dir(output_path)
             if path in output_mapping:
                 console.warn(
                     f"Path {path} has two different outputs. The first one will be used."
