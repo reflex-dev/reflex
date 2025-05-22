@@ -73,7 +73,7 @@ class DependencyTracker:
             self.func = cast(FunctionType, self.func.func)  # pyright: ignore[reportAttributeAccessIssue]
         with contextlib.suppress(AttributeError):
             # unbox EventHandler
-            self.func = cast(FunctionType, self.func.fn)  # pyright: ignore[reportAttributeAccessIssue]
+            self.func = cast(FunctionType, self.func.fn)  # pyright: ignore[reportAttributeAccessIssue,reportFunctionMemberAccess]
 
         if isinstance(self.func, FunctionType):
             with contextlib.suppress(AttributeError, IndexError):
