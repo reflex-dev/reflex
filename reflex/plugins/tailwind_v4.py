@@ -237,17 +237,6 @@ class Plugin(PluginBase):
             for plugin in (config.tailwind or {}).get("plugins", [])
         ] + [Constants.VERSION, "@tailwindcss/postcss@4.1.7"]
 
-    def get_stylesheet_paths(self, **context):
-        """Get the paths for the stylesheets.
-
-        Args:
-            **context: The context for the plugin.
-
-        Returns:
-            A list of paths for the stylesheets.
-        """
-        return [Constants.ROOT_STYLE_PATH]
-
     def pre_compile(self, **context):
         """Pre-compile the plugin.
 
