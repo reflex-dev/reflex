@@ -35,6 +35,7 @@ import pydantic.v1 as pydantic
 from reflex import constants
 from reflex.base import Base
 from reflex.constants.base import LogLevel
+from reflex.plugins import Plugin, TailwindV3Plugin, TailwindV4Plugin
 from reflex.utils import console
 from reflex.utils.exceptions import ConfigError, EnvironmentVarValueError
 from reflex.utils.types import (
@@ -895,6 +896,9 @@ class Config(Base):
     # Extra overlay function to run after the app is built. Formatted such that `from path_0.path_1... import path[-1]`, and calling it with no arguments would work. For example, "reflex.components.moment.moment".
     extra_overlay_function: str | None = None
 
+    # List of plugins to use in the app.
+    plugins: list[Plugin] = []
+
     _prefixes: ClassVar[list[str]] = ["REFLEX_"]
 
     def __init__(self, *args, **kwargs):
@@ -938,6 +942,23 @@ class Config(Base):
         kwargs.update(env_kwargs)
         self._non_default_attributes.update(kwargs)
         self._replace_defaults(**kwargs)
+
+        if self.tailwind is not None and not any(
+            isinstance(plugin, (TailwindV3Plugin, TailwindV4Plugin))
+            for plugin in self.plugins
+        ):
+            console.deprecate(
+                "Inferring tailwind usage",
+                reason="""
+
+If you are using tailwind, add `rx.plugins.TailwindV3Plugin()` to the `plugins=[]` in rxconfig.py.
+
+If you are not using tailwind, set `tailwind` to `None` in rxconfig.py.""",
+                deprecation_version="0.7.13",
+                removal_version="0.8.0",
+                dedupe=True,
+            )
+            self.plugins.append(TailwindV3Plugin())
 
         if (
             self.state_manager_mode == constants.StateManagerMode.REDIS
