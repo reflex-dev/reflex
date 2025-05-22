@@ -10,6 +10,7 @@ import json
 import logging
 import re
 import subprocess
+import sys
 import typing
 from collections.abc import Callable, Iterable, Sequence
 from fileinput import FileInput
@@ -387,13 +388,22 @@ def _extract_class_props_as_ast_nodes(
                     if isinstance(default, Var):
                         default = default._decode()
 
+            modules = {cls.__module__ for cls in target_class.__mro__}
+            available_vars = {}
+            for module in modules:
+                available_vars.update(sys.modules[module].__dict__)
+
             kwargs.append(
                 (
                     ast.arg(
                         arg=name,
                         annotation=ast.Name(
                             id=OVERWRITE_TYPES.get(
-                                name, _get_type_hint(value, type_hint_globals)
+                                name,
+                                _get_type_hint(
+                                    value,
+                                    type_hint_globals | available_vars,
+                                ),
                             )
                         ),
                     ),
@@ -1227,7 +1237,7 @@ class PyiGenerator:
                     continue
                 subprocess.run(["git", "checkout", changed_file])
 
-        if cpu_count() == 1 or len(file_targets) < 5:
+        if True:
             self._scan_files(file_targets)
         else:
             self._scan_files_multiprocess(file_targets)

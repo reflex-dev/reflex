@@ -88,6 +88,12 @@ SEQUENCE_TYPE = TypeVar("SEQUENCE_TYPE", bound=Sequence)
 
 warnings.filterwarnings("ignore", message="fields may not start with an underscore")
 
+_PYDANTIC_VALIDATE_VALUES = "__pydantic_validate_values__"
+
+
+def _pydantic_validator(*args, **kwargs):
+    return None
+
 
 @dataclasses.dataclass(
     eq=False,
@@ -233,11 +239,11 @@ class VarData:
         deps = [dep for var_data in all_var_datas for dep in var_data.deps]
 
         positions = list(
-            {
+            dict.fromkeys(
                 var_data.position
                 for var_data in all_var_datas
                 if var_data.position is not None
-            }
+            )
         )
         if positions:
             if len(positions) > 1:
@@ -363,11 +369,26 @@ def can_use_in_object_var(cls: GenericType) -> bool:
     )
 
 
+class MetaclassVar(type):
+    """Metaclass for the Var class."""
+
+    def __setattr__(cls, name: str, value: Any):
+        """Set an attribute on the class.
+
+        Args:
+            name: The name of the attribute.
+            value: The value of the attribute.
+        """
+        super().__setattr__(
+            name, value if name != _PYDANTIC_VALIDATE_VALUES else _pydantic_validator
+        )
+
+
 @dataclasses.dataclass(
     eq=False,
     frozen=True,
 )
-class Var(Generic[VAR_TYPE]):
+class Var(Generic[VAR_TYPE], metaclass=MetaclassVar):
     """Base class for immutable vars."""
 
     # The name of the var.
@@ -2694,6 +2715,27 @@ if TYPE_CHECKING:
     BASE_STATE = TypeVar("BASE_STATE", bound=BaseState)
 
 
+class _ComputedVarDecorator(Protocol):
+    """A protocol for the ComputedVar decorator."""
+
+    @overload
+    def __call__(
+        self,
+        fget: Callable[[BASE_STATE], Coroutine[Any, Any, RETURN_TYPE]],
+    ) -> AsyncComputedVar[RETURN_TYPE]: ...
+
+    @overload
+    def __call__(
+        self,
+        fget: Callable[[BASE_STATE], RETURN_TYPE],
+    ) -> ComputedVar[RETURN_TYPE]: ...
+
+    def __call__(
+        self,
+        fget: Callable[[BASE_STATE], Any],
+    ) -> ComputedVar[Any]: ...
+
+
 @overload
 def computed_var(
     fget: None = None,
@@ -2704,7 +2746,20 @@ def computed_var(
     interval: datetime.timedelta | int | None = None,
     backend: bool | None = None,
     **kwargs,
-) -> Callable[[Callable[[BASE_STATE], RETURN_TYPE]], ComputedVar[RETURN_TYPE]]: ...  # pyright: ignore [reportInvalidTypeVarUse]
+) -> _ComputedVarDecorator: ...
+
+
+@overload
+def computed_var(
+    fget: Callable[[BASE_STATE], Coroutine[Any, Any, RETURN_TYPE]],
+    initial_value: RETURN_TYPE | types.Unset = types.Unset(),
+    cache: bool = True,
+    deps: list[str | Var] | None = None,
+    auto_deps: bool = True,
+    interval: datetime.timedelta | int | None = None,
+    backend: bool | None = None,
+    **kwargs,
+) -> AsyncComputedVar[RETURN_TYPE]: ...
 
 
 @overload

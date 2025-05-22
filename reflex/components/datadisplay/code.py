@@ -546,7 +546,7 @@ if ({language_var!s}) {{
 }}""",
             _var_data=VarData(
                 imports={
-                    cls.__fields__["library"].default: [
+                    cls.get_fields()["library"].default_value(): [
                         ImportVar(tag="PrismAsyncLight", alias="SyntaxHighlighter")
                     ]
                 },

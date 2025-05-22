@@ -1446,7 +1446,7 @@ class App(MiddlewareMixin, LifespanMixin):
         )
         if self.theme is not None:
             # Fix #2992 by removing the top-level appearance prop
-            self.theme.appearance = None
+            self.theme.appearance = None  # pyright: ignore[reportAttributeAccessIssue]
         progress.advance(task)
 
         # Compile the app root.
@@ -1460,7 +1460,7 @@ class App(MiddlewareMixin, LifespanMixin):
             custom_components_output,
             custom_components_result,
             custom_components_imports,
-        ) = compiler.compile_components(set(CUSTOM_COMPONENTS.values()))
+        ) = compiler.compile_components(dict.fromkeys(CUSTOM_COMPONENTS.values()))
         compile_results.append((custom_components_output, custom_components_result))
         all_imports.update(custom_components_imports)
 
@@ -2049,6 +2049,13 @@ class EventNamespace(AsyncNamespace):
             update: The state update to send.
             sid: The Socket.IO session id.
         """
+        if not sid:
+            # If the sid is None, we are not connected to a client. Prevent sending
+            # updates to all clients.
+            return
+        if sid not in self.sid_to_token:
+            console.warn(f"Attempting to send delta to disconnected websocket {sid}")
+            return
         # Creating a task prevents the update from being blocked behind other coroutines.
         await asyncio.create_task(
             self.emit(str(constants.SocketEvent.EVENT), update, to=sid)

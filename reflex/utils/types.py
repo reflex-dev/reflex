@@ -254,6 +254,20 @@ def is_optional(cls: GenericType) -> bool:
     return is_union(cls) and type(None) in get_args(cls)
 
 
+def is_classvar(a_type: Any) -> bool:
+    """Check if a type is a ClassVar.
+
+    Args:
+        a_type: The type to check.
+
+    Returns:
+        Whether the type is a ClassVar.
+    """
+    return a_type is ClassVar or (
+        type(a_type) is _GenericAlias and a_type.__origin__ is ClassVar
+    )
+
+
 def true_type_for_pydantic_field(f: ModelField):
     """Get the type for a pydantic field.
 
@@ -982,7 +996,7 @@ def typehint_issubclass(
     Returns:
         Whether the type hint is a subclass of the other type hint.
     """
-    if possible_superclass is Any:
+    if possible_subclass is possible_superclass or possible_superclass is Any:
         return True
     if possible_subclass is Any:
         return treat_any_as_subtype_of_everything

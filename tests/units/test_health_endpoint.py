@@ -2,7 +2,8 @@ import json
 from unittest.mock import MagicMock, Mock
 
 import pytest
-import sqlalchemy
+import sqlalchemy.exc
+from pytest_mock import MockerFixture
 from redis.exceptions import RedisError
 
 from reflex.app import health
@@ -22,7 +23,9 @@ from reflex.utils.prerequisites import get_redis_status
         (None, {"redis": None}),
     ],
 )
-async def test_get_redis_status(mock_redis_client, expected_status, mocker):
+async def test_get_redis_status(
+    mock_redis_client, expected_status, mocker: MockerFixture
+):
     # Mock the `get_redis_sync` function to return the mock Redis client
     mock_get_redis_sync = mocker.patch(
         "reflex.utils.prerequisites.get_redis_sync", return_value=mock_redis_client
@@ -45,12 +48,14 @@ async def test_get_redis_status(mock_redis_client, expected_status, mocker):
         # Case 2: Database connection error (OperationalError)
         (
             MagicMock(),
-            sqlalchemy.exc.OperationalError("error", "error", "error"),
+            sqlalchemy.exc.OperationalError("error", "error", "error"),  # pyright: ignore[reportArgumentType]
             {"db": False},
         ),
     ],
 )
-async def test_get_db_status(mock_engine, execute_side_effect, expected_status, mocker):
+async def test_get_db_status(
+    mock_engine, execute_side_effect, expected_status, mocker: MockerFixture
+):
     # Mock get_engine to return the mock_engine
     mock_get_engine = mocker.patch("reflex.model.get_engine", return_value=mock_engine)
 
@@ -99,7 +104,7 @@ async def test_health(
     redis_status,
     expected_status,
     expected_code,
-    mocker,
+    mocker: MockerFixture,
 ):
     # Mock get_db_status and get_redis_status
     mocker.patch(

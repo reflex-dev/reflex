@@ -436,19 +436,12 @@ def format_props(*single_props, **key_value_props) -> list[str]:
         The formatted props list.
     """
     # Format all the props.
-    from reflex.vars.base import LiteralVar, Var
+    from reflex.vars import LiteralStringVar, LiteralVar, Var
 
     return [
-        ":".join(
-            [
-                str(name if "-" not in name else LiteralVar.create(name)),
-                str(
-                    format_prop(
-                        prop if isinstance(prop, Var) else LiteralVar.create(prop)
-                    )
-                ),
-            ]
-        )
+        (str(LiteralStringVar.create(name)) if "-" in name else name)
+        + ":"
+        + str(format_prop(prop if isinstance(prop, Var) else LiteralVar.create(prop)))
         for name, prop in sorted(key_value_props.items())
         if prop is not None
     ] + [(f"...{LiteralVar.create(prop)!s}") for prop in single_props]

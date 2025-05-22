@@ -384,6 +384,11 @@ def run_granian_backend(host: str, port: int, loglevel: LogLevel):
     """
     console.debug("Using Granian for backend")
 
+    if environment.REFLEX_STRICT_HOT_RELOAD.get():
+        import multiprocessing
+
+        multiprocessing.set_start_method("spawn", force=True)
+
     from granian.constants import Interfaces
     from granian.log import LogLevels
     from granian.server import MPServer as Granian

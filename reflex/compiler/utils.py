@@ -66,7 +66,7 @@ def compile_import_statement(fields: list[ImportVar]) -> tuple[str, list[str]]:
     default = next(iter({field.name for field in defaults}), "")
     rest = {field.name for field in fields_set - defaults}
 
-    return default, list(rest)
+    return default, sorted(rest)
 
 
 def validate_imports(import_dict: ParsedImportDict):
@@ -309,7 +309,7 @@ def compile_custom_component(
         A tuple of the compiled component and the imports required by the component.
     """
     # Render the component.
-    render = component.get_component(component)
+    render = component.get_component()
 
     # Get the imports.
     imports: ParsedImportDict = {

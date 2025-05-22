@@ -19,6 +19,7 @@ import pytest_asyncio
 from plotly.graph_objects import Figure
 from pydantic import BaseModel as BaseModelV2
 from pydantic.v1 import BaseModel as BaseModelV1
+from pytest_mock import MockerFixture
 
 import reflex as rx
 import reflex.config
@@ -1849,7 +1850,7 @@ async def test_state_manager_lock_warning_threshold_contend(
     state_manager_redis: StateManagerRedis,
     token: str,
     substate_token_redis: str,
-    mocker,
+    mocker: MockerFixture,
 ):
     """Test that the state manager triggers a warning when lock contention exceeds the warning threshold.
 
@@ -1947,21 +1948,37 @@ class ModelDC:
 
 
 @pytest.mark.asyncio
-async def test_state_proxy(grandchild_state: GrandchildState, mock_app: rx.App):
+async def test_state_proxy(
+    grandchild_state: GrandchildState, mock_app: rx.App, token: str
+):
     """Test that the state proxy works.
 
     Args:
         grandchild_state: A grandchild state.
         mock_app: An app that will be returned by `get_app()`
+        token: A token.
     """
     child_state = grandchild_state.parent_state
     assert child_state is not None
     parent_state = child_state.parent_state
     assert parent_state is not None
+    router_data = RouterData({"query": {}, "token": token, "sid": "test_sid"})
+    grandchild_state.router = router_data
+    namespace = mock_app.event_namespace
+    assert namespace is not None
+    namespace.sid_to_token[router_data.session.session_id] = token
     if isinstance(mock_app.state_manager, (StateManagerMemory, StateManagerDisk)):
         mock_app.state_manager.states[parent_state.router.session.client_token] = (
             parent_state
         )
+    elif isinstance(mock_app.state_manager, StateManagerRedis):
+        pickle_state = parent_state._serialize()
+        if pickle_state:
+            await mock_app.state_manager.redis.set(
+                _substate_key(parent_state.router.session.client_token, parent_state),
+                pickle_state,
+                ex=mock_app.state_manager.token_expiration,
+            )
 
     sp = StateProxy(grandchild_state)
     assert sp.__wrapped__ == grandchild_state
@@ -2028,6 +2045,7 @@ async def test_state_proxy(grandchild_state: GrandchildState, mock_app: rx.App):
     assert mcall.args[0] == str(SocketEvent.EVENT)
     assert mcall.args[1] == StateUpdate(
         delta={
+            TestState.get_full_name(): {"router": router_data},
             grandchild_state.get_full_name(): {
                 "value2": "42",
             },
@@ -2153,7 +2171,11 @@ async def test_background_task_no_block(mock_app: rx.App, token: str):
         mock_app: An app that will be returned by `get_app()`
         token: A token.
     """
-    router_data = {"query": {}}
+    router_data = {"query": {}, "token": token}
+    sid = "test_sid"
+    namespace = mock_app.event_namespace
+    assert namespace is not None
+    namespace.sid_to_token[sid] = token
     mock_app.state_manager.state = mock_app._state = BackgroundTaskState
     async for update in rx.app.process(
         mock_app,
@@ -2163,7 +2185,7 @@ async def test_background_task_no_block(mock_app: rx.App, token: str):
             router_data=router_data,
             payload={},
         ),
-        sid="",
+        sid=sid,
         headers={},
         client_ip="",
     ):
@@ -2183,7 +2205,7 @@ async def test_background_task_no_block(mock_app: rx.App, token: str):
             router_data=router_data,
             payload={},
         ),
-        sid="",
+        sid=sid,
         headers={},
         client_ip="",
     ):
@@ -2613,7 +2635,7 @@ def test_mutable_copy_vars(mutable_state: MutableTestState, copy_func: Callable)
         assert not isinstance(var_copy, MutableProxy)
 
 
-def test_duplicate_substate_class(mocker):
+def test_duplicate_substate_class(mocker: MockerFixture):
     # Neuter pytest escape hatch, because we want to test duplicate detection.
     mocker.patch("reflex.state.is_testing_env", lambda: False)
     # Neuter <locals> state handling since these _are_ defined inside a function.
@@ -2870,7 +2892,9 @@ class OnLoadState3(State):
         (OnLoadState3, {"on_load_state3": {"num": 1}}),
     ],
 )
-async def test_preprocess(app_module_mock, token, test_state, expected, mocker):
+async def test_preprocess(
+    app_module_mock, token, test_state, expected, mocker: MockerFixture
+):
     """Test that a state hydrate event is processed correctly.
 
     Args:
@@ -2919,7 +2943,9 @@ async def test_preprocess(app_module_mock, token, test_state, expected, mocker):
 
 
 @pytest.mark.asyncio
-async def test_preprocess_multiple_load_events(app_module_mock, token, mocker):
+async def test_preprocess_multiple_load_events(
+    app_module_mock, token, mocker: MockerFixture
+):
     """Test that a state hydrate event for multiple on-load events is processed correctly.
 
     Args:
