@@ -11,7 +11,7 @@
 [![Documentation](https://img.shields.io/badge/Documentation%20-Introduction%20-%20%23007ec6)](https://reflex.dev/docs/getting-started/introduction)
 [![PyPI Downloads](https://static.pepy.tech/badge/reflex)](https://pepy.tech/projects/reflex)
 [![Discord](https://img.shields.io/discord/1029853095527727165?color=%237289da&label=Discord)](https://discord.gg/T5WSbC2YtQ)
-
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/reflex-dev/reflex)
 </div>
 
 ---
