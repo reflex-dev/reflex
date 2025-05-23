@@ -1307,11 +1307,11 @@ def test_overlay_component(
     page = app._pages["test"]
 
     if exp_page_child is not None:
-        assert len(page.children) == 3
+        assert len(page.children) == 4
         children_types = (type(child) for child in page.children)
         assert exp_page_child in children_types  # pyright: ignore [reportOperatorIssue]
     else:
-        assert len(page.children) == 2
+        assert len(page.children) == 3
 
 
 @pytest.fixture
