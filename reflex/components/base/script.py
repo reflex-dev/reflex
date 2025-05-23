@@ -1,9 +1,8 @@
-"""Wrapper for the script element. Uses the Helmet component to manage the head."""
+"""Wrapper for the script element."""
 
 from __future__ import annotations
 
 from reflex.components import el as elements
-from reflex.components.core.helmet import helmet
 from reflex.utils import console
 
 
@@ -54,25 +53,23 @@ class Script(elements.Script):
                 "You must specify either children or src for the script element."
             )
 
-        return helmet(
-            elements.Script.create(
-                *children,
-                async_=async_,
-                char_set=char_set,
-                cross_origin=cross_origin,
-                defer=defer,
-                integrity=integrity,
-                referrer_policy=referrer_policy,
-                src=src,
-                type=type,
-                key=key,
-                id=id,
-                class_name=class_name,
-                autofocus=autofocus,
-                custom_attrs=custom_attrs,
-                on_mount=on_mount,
-                on_unmount=on_unmount,
-            )
+        return elements.Script.create(
+            *children,
+            async_=async_,
+            char_set=char_set,
+            cross_origin=cross_origin,
+            defer=defer,
+            integrity=integrity,
+            referrer_policy=referrer_policy,
+            src=src,
+            type=type,
+            key=key,
+            id=id,
+            class_name=class_name,
+            autofocus=autofocus,
+            custom_attrs=custom_attrs,
+            on_mount=on_mount,
+            on_unmount=on_unmount,
         )
 
 
