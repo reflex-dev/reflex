@@ -5,14 +5,16 @@ from __future__ import annotations
 from collections.abc import Sequence
 from typing import Any, ClassVar
 
+from reflex.components.component import Component
 from reflex.constants import EventTriggers
 from reflex.constants.colors import Color
 from reflex.event import EventHandler, no_args_event_spec
 from reflex.vars.base import LiteralVar, Var
 
 from .recharts import (
+    ACTIVE_DOT_TYPE,
     LiteralAnimationEasing,
-    LiteralAreaType,
+    LiteralCurveType,
     LiteralDirection,
     LiteralIfOverflow,
     LiteralInterval,
@@ -74,7 +76,7 @@ class Axis(Recharts):
     reversed: Var[bool]
 
     # The label of axis, which appears next to the axis.
-    label: Var[str | int | dict[str, Any]]
+    label: Var[str | int | Component | dict[str, Any]]
 
     # If 'auto' set, the scale function is decided by the type of chart, and the props type. 'auto' | 'linear' | 'pow' | 'sqrt' | 'log' | 'identity' | 'time' | 'band' | 'point' | 'ordinal' | 'quantile' | 'quantize' | 'utc' | 'sequential' | 'threshold'. Default: "auto"
     scale: Var[LiteralScale]
@@ -89,7 +91,7 @@ class Axis(Recharts):
     ticks: Var[Sequence[str | int]]
 
     # If set false, no ticks will be drawn.
-    tick: Var[bool]
+    tick: Var[bool | dict | Component]
 
     # The count of axis ticks. Not used if 'type' is 'category'. Default: 5
     tick_count: Var[int]
@@ -275,6 +277,9 @@ class Cartesian(Recharts):
     # The type of icon in legend. If set to 'none', no legend item will be rendered. 'line' | 'plainline' | 'square' | 'rect'| 'circle' | 'cross' | 'diamond' | 'star' | 'triangle' | 'wye' | 'none' optional
     legend_type: Var[LiteralLegendType]
 
+    # If false set, labels will not be drawn. If true set, labels will be drawn which have the props calculated internally. Default: False
+    label: Var[bool | dict[str, Any] | Component]
+
     # If set false, animation of bar will be disabled. Default: True
     is_animation_active: Var[bool]
 
@@ -341,24 +346,21 @@ class Area(Cartesian):
     fill: Var[str | Color] = LiteralVar.create(Color("accent", 5))
 
     # The interpolation type of area. And customized interpolation function can be set to type. 'basis' | 'basisClosed' | 'basisOpen' | 'bumpX' | 'bumpY' | 'bump' | 'linear' | 'linearClosed' | 'natural' | 'monotoneX' | 'monotoneY' | 'monotone' | 'step' | 'stepBefore' | 'stepAfter'. Default: "monotone"
-    type_: Var[LiteralAreaType] = LiteralVar.create("monotone")
+    type_: Var[LiteralCurveType] = LiteralVar.create("monotone")
 
     # If false set, dots will not be drawn. If true set, dots will be drawn which have the props calculated internally. Default: False
-    dot: Var[bool | dict[str, Any]]
+    dot: Var[ACTIVE_DOT_TYPE]
 
     # The dot is shown when user enter an area chart and this chart has tooltip. If false set, no active dot will not be drawn. If true set, active dot will be drawn which have the props calculated internally. Default: {stroke: rx.color("accent", 2), fill: rx.color("accent", 10)}
-    active_dot: Var[bool | dict[str, Any]] = LiteralVar.create(
+    active_dot: Var[ACTIVE_DOT_TYPE] = LiteralVar.create(
         {
             "stroke": Color("accent", 2),
             "fill": Color("accent", 10),
         }
     )
 
-    # If set false, labels will not be drawn. If set true, labels will be drawn which have the props calculated internally. Default: False
-    label: Var[bool]
-
     # The value which can describle the line, usually calculated internally.
-    base_line: Var[str | Sequence[dict[str, Any]]]
+    base_line: Var[int | Sequence[dict[str, Any]]]
 
     # The coordinates of all the points in the area, usually calculated internally.
     points: Var[Sequence[dict[str, Any]]]
@@ -391,9 +393,6 @@ class Bar(Cartesian):
 
     # If false set, background of bars will not be drawn. If true set, background of bars will be drawn which have the props calculated internally. Default: False
     background: Var[bool]
-
-    # If false set, labels will not be drawn. If true set, labels will be drawn which have the props calculated internally. Default: False
-    label: Var[bool]
 
     # The stack id of bar, when two bars have the same value axis and same stack_id, then the two bars are stacked in order.
     stack_id: Var[str]
@@ -431,7 +430,7 @@ class Line(Cartesian):
     alias = "RechartsLine"
 
     # The interpolation type of line. And customized interpolation function can be set to type. It's the same as type in Area.
-    type_: Var[LiteralAreaType]
+    type_: Var[LiteralCurveType]
 
     # The color of the line stroke. Default: rx.color("accent", 9)
     stroke: Var[str | Color] = LiteralVar.create(Color("accent", 9))
@@ -440,7 +439,7 @@ class Line(Cartesian):
     stroke_width: Var[int]
 
     # The dot is shown when mouse enter a line chart and this chart has tooltip. If false set, no active dot will not be drawn. If true set, active dot will be drawn which have the props calculated internally. Default: {"stroke": rx.color("accent", 10), "fill": rx.color("accent", 4)}
-    dot: Var[bool | dict[str, Any]] = LiteralVar.create(
+    dot: Var[ACTIVE_DOT_TYPE] = LiteralVar.create(
         {
             "stroke": Color("accent", 10),
             "fill": Color("accent", 4),
@@ -448,15 +447,12 @@ class Line(Cartesian):
     )
 
     # The dot is shown when user enter an area chart and this chart has tooltip. If false set, no active dot will not be drawn. If true set, active dot will be drawn which have the props calculated internally. Default: {"stroke": rx.color("accent", 2), "fill": rx.color("accent", 10)}
-    active_dot: Var[bool | dict[str, Any]] = LiteralVar.create(
+    active_dot: Var[ACTIVE_DOT_TYPE] = LiteralVar.create(
         {
             "stroke": Color("accent", 2),
             "fill": Color("accent", 10),
         }
     )
-
-    # If false set, labels will not be drawn. If true set, labels will be drawn which have the props calculated internally. Default: False
-    label: Var[bool]
 
     # Hides the line when true, useful when toggling visibility state via legend. Default: False
     hide: Var[bool]
@@ -661,7 +657,7 @@ class Reference(Recharts):
     if_overflow: Var[LiteralIfOverflow]
 
     # If set a string or a number, default label will be drawn, and the option is content.
-    label: Var[str | int]
+    label: Var[str | int | Component]
 
     # If set true, the line will be rendered in front of bars in BarChart, etc. Default: False
     is_front: Var[bool]
@@ -849,10 +845,10 @@ class CartesianAxis(Grid):
     view_box: Var[dict[str, Any]]
 
     # If set false, no axis line will be drawn. If set a object, the option is the configuration of axis line. Default: True
-    axis_line: Var[bool]
+    axis_line: Var[bool | dict]
 
     # If set false, no ticks will be drawn.
-    tick: Var[bool]
+    tick: Var[bool | dict | Component]
 
     # If set false, no axis tick lines will be drawn. If set a object, the option is the configuration of tick lines. Default: True
     tick_line: Var[bool]
@@ -864,7 +860,7 @@ class CartesianAxis(Grid):
     interval: Var[LiteralInterval]
 
     # If set a string or a number, default label will be drawn, and the option is content.
-    label: Var[str | int]
+    label: Var[str | int | Component]
 
     # If set true, flips ticks around the axis line, displaying the labels inside the chart instead of outside. Default: False
     mirror: Var[bool]

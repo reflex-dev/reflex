@@ -90,10 +90,10 @@ _SUBMOD_ATTRS: dict = {
     ],
     "recharts": [
         "LiteralAnimationEasing",
-        "LiteralAreaType",
         "LiteralAxisType",
         "LiteralBarChartStackOffset",
         "LiteralComposedChartBaseValue",
+        "LiteralCurveType",
         "LiteralDirection",
         "LiteralGridType",
         "LiteralIconType",
