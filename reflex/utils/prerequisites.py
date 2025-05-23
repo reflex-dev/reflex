@@ -17,7 +17,6 @@ import re
 import shutil
 import sys
 import tempfile
-import time
 import typing
 import zipfile
 from collections.abc import Callable, Sequence
@@ -39,10 +38,7 @@ from reflex import constants, model
 from reflex.compiler import templates
 from reflex.config import Config, environment, get_config
 from reflex.utils import console, net, path_ops, processes, redir
-from reflex.utils.exceptions import (
-    GeneratedCodeHasNoFunctionDefsError,
-    SystemPackageMissingError,
-)
+from reflex.utils.exceptions import SystemPackageMissingError
 from reflex.utils.registry import get_npm_registry
 
 if typing.TYPE_CHECKING:
@@ -978,7 +974,7 @@ def initialize_web_directory():
     project_hash = get_project_hash()
 
     console.debug(f"Copying {constants.Templates.Dirs.WEB_TEMPLATE} to {get_web_dir()}")
-    path_ops.cp(constants.Templates.Dirs.WEB_TEMPLATE, str(get_web_dir()))
+    path_ops.copy_tree(constants.Templates.Dirs.WEB_TEMPLATE, str(get_web_dir()))
 
     console.debug("Initializing the web directory.")
     initialize_package_json()
@@ -1297,47 +1293,42 @@ def install_frontend_packages(packages: set[str], config: Config):
     primary_package_manager = install_package_managers[0]
     fallbacks = install_package_managers[1:]
 
-    processes.run_process_with_fallbacks(
-        [primary_package_manager, "install", "--legacy-peer-deps"],
+    run_package_manager = functools.partial(
+        processes.run_process_with_fallbacks,
         fallbacks=fallbacks,
         analytics_enabled=True,
-        show_status_message="Installing base frontend packages",
         cwd=get_web_dir(),
         shell=constants.IS_WINDOWS,
         env=env,
     )
 
-    if config.tailwind is not None:
-        processes.run_process_with_fallbacks(
+    run_package_manager(
+        [primary_package_manager, "install", "--legacy-peer-deps"],
+        show_status_message="Installing base frontend packages",
+    )
+
+    development_deps: set[str] = set()
+    for plugin in config.plugins:
+        development_deps.update(plugin.get_frontend_development_dependencies())
+        packages.update(plugin.get_frontend_dependencies())
+
+    if development_deps:
+        run_package_manager(
             [
                 primary_package_manager,
                 "add",
                 "--legacy-peer-deps",
                 "-d",
-                constants.Tailwind.VERSION,
-                *[
-                    plugin if isinstance(plugin, str) else plugin.get("name")
-                    for plugin in (config.tailwind or {}).get("plugins", [])
-                ],
+                *development_deps,
             ],
-            fallbacks=fallbacks,
-            analytics_enabled=True,
-            show_status_message="Installing tailwind",
-            cwd=get_web_dir(),
-            shell=constants.IS_WINDOWS,
-            env=env,
+            show_status_message="Installing frontend development dependencies",
         )
 
     # Install custom packages defined in frontend_packages
-    if len(packages) > 0:
-        processes.run_process_with_fallbacks(
+    if packages:
+        run_package_manager(
             [primary_package_manager, "add", "--legacy-peer-deps", *packages],
-            fallbacks=fallbacks,
-            analytics_enabled=True,
             show_status_message="Installing frontend packages from config and components",
-            cwd=get_web_dir(),
-            shell=constants.IS_WINDOWS,
-            env=env,
         )
 
 
@@ -1909,66 +1900,6 @@ def get_init_cli_prompt_options() -> list[Template]:
             code_url="",
         ),
     ]
-
-
-def initialize_main_module_index_from_generation(app_name: str, generation_hash: str):
-    """Overwrite the `index` function in the main module with reflex.build generated code.
-
-    Args:
-        app_name: The name of the app.
-        generation_hash: The generation hash from reflex.build.
-
-    Raises:
-        GeneratedCodeHasNoFunctionDefsError: If the fetched code has no function definitions
-            (the refactored reflex code is expected to have at least one root function defined).
-    """
-    # Download the reflex code for the generation.
-    url = constants.Templates.REFLEX_BUILD_CODE_URL.format(
-        generation_hash=generation_hash
-    )
-    resp = net.get(url)
-    while resp.status_code == httpx.codes.SERVICE_UNAVAILABLE:
-        console.debug("Waiting for the code to be generated...")
-        time.sleep(1)
-        resp = net.get(url)
-    resp.raise_for_status()
-
-    # Determine the name of the last function, which renders the generated code.
-    defined_funcs = re.findall(r"def ([a-zA-Z_]+)\(", resp.text)
-    if not defined_funcs:
-        raise GeneratedCodeHasNoFunctionDefsError(
-            f"No function definitions found in generated code from {url!r}."
-        )
-    render_func_name = defined_funcs[-1]
-
-    def replace_content(_match: re.Match) -> str:
-        return "\n".join(
-            [
-                resp.text,
-                "",
-                "def index() -> rx.Component:",
-                f"    return {render_func_name}()",
-                "",
-                "",
-            ],
-        )
-
-    main_module_path = Path(app_name, app_name + constants.Ext.PY)
-    main_module_code = main_module_path.read_text()
-
-    main_module_code = re.sub(
-        r"def index\(\).*:\n([^\n]\s+.*\n+)+",
-        replace_content,
-        main_module_code,
-    )
-    # Make the app use light mode until flexgen enforces the conversion of
-    # tailwind colors to radix colors.
-    main_module_code = re.sub(
-        r"app\s*=\s*rx\.App\(\s*\)",
-        'app = rx.App(theme=rx.theme(color_mode="light"))',
-        main_module_code,
-    )
-    main_module_path.write_text(main_module_code)
 
 
 def format_address_width(address_width: str | None) -> int | None:

@@ -8,6 +8,7 @@ from typing import Any, ClassVar, List, Literal, NoReturn  # noqa: UP035
 import click
 import pytest
 from packaging import version
+from pytest_mock import MockerFixture
 
 from reflex import constants
 from reflex.config import environment
@@ -173,7 +174,7 @@ def test_typehint_issubclass_mutable_as_immutable(subclass, superclass, expected
     )
 
 
-def test_validate_none_bun_path(mocker):
+def test_validate_none_bun_path(mocker: MockerFixture):
     """Test that an error is thrown when a bun path is not specified.
 
     Args:
@@ -184,9 +185,7 @@ def test_validate_none_bun_path(mocker):
     prerequisites.validate_bun()
 
 
-def test_validate_invalid_bun_path(
-    mocker,
-):
+def test_validate_invalid_bun_path(mocker: MockerFixture):
     """Test that an error is thrown when a custom specified bun path is not valid
     or does not exist.
 
@@ -202,7 +201,7 @@ def test_validate_invalid_bun_path(
         prerequisites.validate_bun()
 
 
-def test_validate_bun_path_incompatible_version(mocker):
+def test_validate_bun_path_incompatible_version(mocker: MockerFixture):
     """Test that an error is thrown when the bun version does not meet minimum requirements.
 
     Args:
@@ -221,7 +220,7 @@ def test_validate_bun_path_incompatible_version(mocker):
     prerequisites.validate_bun()
 
 
-def test_remove_existing_bun_installation(mocker):
+def test_remove_existing_bun_installation(mocker: MockerFixture):
     """Test that existing bun installation is removed.
 
     Args:
@@ -234,7 +233,7 @@ def test_remove_existing_bun_installation(mocker):
     rm.assert_called_once()
 
 
-def test_setup_frontend(tmp_path, mocker):
+def test_setup_frontend(tmp_path, mocker: MockerFixture):
     """Test checking if assets content have been
     copied into the .web/public folder.
 
@@ -342,7 +341,7 @@ def test_unsupported_literals(cls: type):
         ("appname2.io", "AppnameioConfig"),
     ],
 )
-def test_create_config(app_name: str, expected_config_name: str, mocker):
+def test_create_config(app_name: str, expected_config_name: str, mocker: MockerFixture):
     """Test templates.RXCONFIG is formatted with correct app name and config class name.
 
     Args:
@@ -421,7 +420,9 @@ def test_is_dataframe(class_type, expected):
 
 
 @pytest.mark.parametrize("gitignore_exists", [True, False])
-def test_initialize_non_existent_gitignore(tmp_path, mocker, gitignore_exists):
+def test_initialize_non_existent_gitignore(
+    tmp_path, mocker: MockerFixture, gitignore_exists
+):
     """Test that the generated .gitignore_file file on reflex init contains the correct file
     names with correct formatting.
 
@@ -452,7 +453,7 @@ def test_initialize_non_existent_gitignore(tmp_path, mocker, gitignore_exists):
     assert set(file_content) - expected == set()
 
 
-def test_validate_app_name(tmp_path, mocker):
+def test_validate_app_name(tmp_path, mocker: MockerFixture):
     """Test that an error is raised if the app name is reflex or if the name is not according to python package naming conventions.
 
     Args:
@@ -471,7 +472,7 @@ def test_validate_app_name(tmp_path, mocker):
         prerequisites.validate_app_name(app_name="1_test")
 
 
-def test_bun_install_without_unzip(mocker):
+def test_bun_install_without_unzip(mocker: MockerFixture):
     """Test that an error is thrown when installing bun with unzip not installed.
 
     Args:
@@ -486,7 +487,7 @@ def test_bun_install_without_unzip(mocker):
 
 
 @pytest.mark.parametrize("bun_version", [constants.Bun.VERSION, "1.0.0"])
-def test_bun_install_version(mocker, bun_version):
+def test_bun_install_version(mocker: MockerFixture, bun_version):
     """Test that bun is downloaded when the host version(installed by reflex)
     different from the current version set in reflex.
 
@@ -512,7 +513,7 @@ def test_bun_install_version(mocker, bun_version):
 
 
 @pytest.mark.parametrize("is_windows", [True, False])
-def test_create_reflex_dir(mocker, is_windows):
+def test_create_reflex_dir(mocker: MockerFixture, is_windows):
     """Test that a reflex directory is created on initializing frontend
     dependencies.
 
@@ -534,7 +535,7 @@ def test_create_reflex_dir(mocker, is_windows):
     assert create_cmd.called
 
 
-def test_output_system_info(mocker):
+def test_output_system_info(mocker: MockerFixture):
     """Make sure reflex does not crash dumping system info.
 
     Args:

@@ -223,6 +223,9 @@ def _validate_stylesheet(stylesheet_full_path: Path, assets_app_path: Path) -> N
         )
 
 
+RADIX_THEMES_STYLESHEET = "@radix-ui/themes/styles.css"
+
+
 def _compile_root_stylesheet(stylesheets: list[str]) -> str:
     """Compile the root stylesheet.
 
@@ -235,12 +238,12 @@ def _compile_root_stylesheet(stylesheets: list[str]) -> str:
     Raises:
         FileNotFoundError: If a specified stylesheet in assets directory does not exist.
     """
-    # Add tailwind css if enabled.
-    sheets = (
-        [constants.Tailwind.ROOT_STYLE_PATH]
-        if get_config().tailwind is not None
-        else []
-    )
+    # Add stylesheets from plugins.
+    sheets = [RADIX_THEMES_STYLESHEET] + [
+        sheet
+        for plugin in get_config().plugins
+        for sheet in plugin.get_stylesheet_paths()
+    ]
 
     failed_to_import_sass = False
     assets_app_path = Path.cwd() / constants.Dirs.APP_ASSETS
@@ -326,7 +329,7 @@ def _compile_component(component: Component | StatefulComponent) -> str:
 
 
 def _compile_components(
-    components: set[CustomComponent],
+    components: Iterable[CustomComponent],
 ) -> tuple[str, dict[str, list[ImportVar]]]:
     """Compile the components.
 
@@ -451,22 +454,6 @@ def _compile_stateful_components(
     )
 
 
-def _compile_tailwind(
-    config: dict,
-) -> str:
-    """Compile the Tailwind config.
-
-    Args:
-        config: The Tailwind config.
-
-    Returns:
-        The compiled Tailwind config.
-    """
-    return templates.TAILWIND_CONFIG.render(
-        **config,
-    )
-
-
 def compile_document_root(
     head_components: list[Component],
     html_lang: str | None = None,
@@ -576,7 +563,7 @@ def compile_page(
 
 
 def compile_components(
-    components: set[CustomComponent],
+    components: Iterable[CustomComponent],
 ) -> tuple[str, str, dict[str, list[ImportVar]]]:
     """Compile the custom components.
 
@@ -615,44 +602,6 @@ def compile_stateful_components(
     page_components = [StatefulComponent.compile_from(page) or page for page in pages]
     code = _compile_stateful_components(page_components)
     return output_path, code, page_components
-
-
-def compile_tailwind(
-    config: dict,
-):
-    """Compile the Tailwind config.
-
-    Args:
-        config: The Tailwind config.
-
-    Returns:
-        The compiled Tailwind config.
-    """
-    # Get the path for the output file.
-    output_path = str((get_web_dir() / constants.Tailwind.CONFIG).absolute())
-
-    # Compile the config.
-    code = _compile_tailwind(config)
-    return output_path, code
-
-
-def remove_tailwind_from_postcss() -> tuple[str, str]:
-    """If tailwind is not to be used, remove it from postcss.config.js.
-
-    Returns:
-        The path and code of the compiled postcss.config.js.
-    """
-    # Get the path for the output file.
-    output_path = str(get_web_dir() / constants.Dirs.POSTCSS_JS)
-
-    code = [
-        line
-        for line in Path(output_path).read_text().splitlines(keepends=True)
-        if "tailwindcss: " not in line
-    ]
-
-    # Compile the config.
-    return output_path, "".join(code)
 
 
 def purge_web_pages_dir():

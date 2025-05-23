@@ -60,7 +60,6 @@ from .route import (
     RouteVar,
 )
 from .state import StateManagerMode
-from .style import Tailwind
 
 __all__ = [
     "ALEMBIC_CONFIG",
@@ -116,6 +115,5 @@ __all__ = [
     "RouteVar",
     "SocketEvent",
     "StateManagerMode",
-    "Tailwind",
     "Templates",
 ]

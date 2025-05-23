@@ -361,6 +361,7 @@ _SUBMODULES: set[str] = {
     "vars",
     "config",
     "compiler",
+    "plugins",
 }
 _SUBMOD_ATTRS: dict = _MAPPING
 getattr, __dir__, __all__ = lazy_loader.attach(

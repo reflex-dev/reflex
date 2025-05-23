@@ -18,7 +18,7 @@ from datetime import datetime
 from pathlib import Path
 from timeit import default_timer as timer
 from types import SimpleNamespace
-from typing import TYPE_CHECKING, Any, BinaryIO, get_args, get_type_hints
+from typing import TYPE_CHECKING, Any, BinaryIO, ParamSpec, get_args, get_type_hints
 
 from fastapi import FastAPI
 from rich.progress import MofNCompleteColumn, Progress, TimeElapsedColumn
@@ -312,6 +312,9 @@ class UnevaluatedPage:
             on_load=self.on_load if self.on_load is not None else other.on_load,
             context=self.context if self.context is not None else other.context,
         )
+
+
+P = ParamSpec("P")
 
 
 @dataclasses.dataclass()
@@ -620,10 +623,12 @@ class App(MiddlewareMixin, LifespanMixin):
         compile_future = concurrent.futures.ThreadPoolExecutor(max_workers=1).submit(
             self._compile
         )
-        compile_future.add_done_callback(
+
+        def callback(f: concurrent.futures.Future):
             # Force background compile errors to print eagerly
-            lambda f: f.result()
-        )
+            return f.result()
+
+        compile_future.add_done_callback(callback)
         # Wait for the compile to finish to ensure all optional endpoints are mounted.
         compile_future.result()
 
@@ -1045,11 +1050,6 @@ class App(MiddlewareMixin, LifespanMixin):
         frontend_packages = get_config().frontend_packages
         _frontend_packages = []
         for package in frontend_packages:
-            if package in (get_config().tailwind or {}).get("plugins", []):
-                console.warn(
-                    f"Tailwind packages are inferred from 'plugins', remove `{package}` from `frontend_packages`"
-                )
-                continue
             if package in page_imports:
                 console.warn(
                     f"React packages and their dependencies are inferred from Component.library and Component.lib_dependencies, remove `{package}` from `frontend_packages`"
@@ -1182,6 +1182,7 @@ class App(MiddlewareMixin, LifespanMixin):
 
         Raises:
             ReflexRuntimeError: When any page uses state, but no rx.State subclass is defined.
+            FileNotFoundError: When a plugin requires a file that does not exist.
         """
         from reflex.utils.exceptions import ReflexRuntimeError
 
@@ -1250,14 +1251,16 @@ class App(MiddlewareMixin, LifespanMixin):
 
         # try to be somewhat accurate - but still not 100%
         adhoc_steps_without_executor = 7
-        fixed_pages_within_executor = 5
+        fixed_pages_within_executor = 4
+        plugin_count = len(config.plugins)
         progress.start()
         task = progress.add_task(
             f"[{get_compilation_time()}] Compiling:",
             total=len(self._pages)
             + (len(self._unevaluated_pages) * 2)
             + fixed_pages_within_executor
-            + adhoc_steps_without_executor,
+            + adhoc_steps_without_executor
+            + plugin_count,
         )
 
         with console.timing("Evaluate Pages (Frontend)"):
@@ -1396,10 +1399,20 @@ class App(MiddlewareMixin, LifespanMixin):
 
         ExecutorSafeFunctions.STATE = self._state
 
-        with console.timing("Compile to Javascript"), executor as executor:
-            result_futures: list[concurrent.futures.Future[tuple[str, str]]] = []
+        modify_files_tasks: list[tuple[str, str, Callable[[str], str]]] = []
 
-            def _submit_work(fn: Callable[..., tuple[str, str]], *args, **kwargs):
+        with console.timing("Compile to Javascript"), executor as executor:
+            result_futures: list[
+                concurrent.futures.Future[
+                    list[tuple[str, str]] | tuple[str, str] | None
+                ]
+            ] = []
+
+            def _submit_work(
+                fn: Callable[P, list[tuple[str, str]] | tuple[str, str] | None],
+                *args: P.args,
+                **kwargs: P.kwargs,
+            ):
                 f = executor.submit(fn, *args, **kwargs)
                 f.add_done_callback(lambda _: progress.advance(task))
                 result_futures.append(f)
@@ -1417,20 +1430,36 @@ class App(MiddlewareMixin, LifespanMixin):
             # Compile the theme.
             _submit_work(compile_theme, self.style)
 
-            # Compile the Tailwind config.
-            if config.tailwind is not None:
-                config.tailwind["content"] = config.tailwind.get(
-                    "content", constants.Tailwind.CONTENT
+            def _submit_work_without_advancing(
+                fn: Callable[P, list[tuple[str, str]] | tuple[str, str] | None],
+                *args: P.args,
+                **kwargs: P.kwargs,
+            ):
+                f = executor.submit(fn, *args, **kwargs)
+                result_futures.append(f)
+
+            for plugin in config.plugins:
+                plugin.pre_compile(
+                    add_save_task=_submit_work_without_advancing,
+                    add_modify_task=(
+                        lambda *args, plugin=plugin: modify_files_tasks.append(
+                            (
+                                plugin.__class__.__module__ + plugin.__class__.__name__,
+                                *args,
+                            )
+                        )
+                    ),
                 )
-                _submit_work(compiler.compile_tailwind, config.tailwind)
-            else:
-                _submit_work(compiler.remove_tailwind_from_postcss)
 
             # Wait for all compilation tasks to complete.
-            compile_results.extend(
-                future.result()
-                for future in concurrent.futures.as_completed(result_futures)
-            )
+            for future in concurrent.futures.as_completed(result_futures):
+                if (result := future.result()) is not None:
+                    if isinstance(result, list):
+                        compile_results.extend(result)
+                    else:
+                        compile_results.append(result)
+
+        progress.advance(task, advance=len(config.plugins))
 
         app_root = self._app_root(app_wrappers=app_wrappers)
 
@@ -1445,7 +1474,7 @@ class App(MiddlewareMixin, LifespanMixin):
         )
         if self.theme is not None:
             # Fix #2992 by removing the top-level appearance prop
-            self.theme.appearance = None
+            self.theme.appearance = None  # pyright: ignore[reportAttributeAccessIssue]
         progress.advance(task)
 
         # Compile the app root.
@@ -1459,7 +1488,7 @@ class App(MiddlewareMixin, LifespanMixin):
             custom_components_output,
             custom_components_result,
             custom_components_imports,
-        ) = compiler.compile_components(set(CUSTOM_COMPONENTS.values()))
+        ) = compiler.compile_components(dict.fromkeys(CUSTOM_COMPONENTS.values()))
         compile_results.append((custom_components_output, custom_components_result))
         all_imports.update(custom_components_imports)
 
@@ -1493,9 +1522,45 @@ class App(MiddlewareMixin, LifespanMixin):
                     # Remove pages that are no longer in the app.
                     p.unlink()
 
+        output_mapping: dict[Path, str] = {}
+        for output_path, code in compile_results:
+            path = compiler_utils.resolve_path_of_web_dir(output_path)
+            if path in output_mapping:
+                console.warn(
+                    f"Path {path} has two different outputs. The first one will be used."
+                )
+            else:
+                output_mapping[path] = code
+
+        for plugin in config.plugins:
+            for static_file_path, content in plugin.get_static_assets():
+                path = compiler_utils.resolve_path_of_web_dir(static_file_path)
+                if path in output_mapping:
+                    console.warn(
+                        f"Plugin {plugin.__class__.__name__} is trying to write to {path} but it already exists. The plugin file will be ignored."
+                    )
+                else:
+                    output_mapping[path] = (
+                        content.decode("utf-8")
+                        if isinstance(content, bytes)
+                        else content
+                    )
+
+        for plugin_name, file_path, modify_fn in modify_files_tasks:
+            path = compiler_utils.resolve_path_of_web_dir(file_path)
+            file_content = output_mapping.get(path)
+            if file_content is None:
+                if path.exists():
+                    file_content = path.read_text()
+                else:
+                    raise FileNotFoundError(
+                        f"Plugin {plugin_name} is trying to modify {path} but it does not exist."
+                    )
+            output_mapping[path] = modify_fn(file_content)
+
         with console.timing("Write to Disk"):
-            for output_path, code in compile_results:
-                compiler_utils.write_page(output_path, code)
+            for output_path, code in output_mapping.items():
+                compiler_utils.write_file(output_path, code)
 
     def _write_stateful_pages_marker(self):
         """Write list of routes that create dynamic states for the backend to use later."""
@@ -2008,6 +2073,13 @@ class EventNamespace(AsyncNamespace):
             update: The state update to send.
             sid: The Socket.IO session id.
         """
+        if not sid:
+            # If the sid is None, we are not connected to a client. Prevent sending
+            # updates to all clients.
+            return
+        if sid not in self.sid_to_token:
+            console.warn(f"Attempting to send delta to disconnected websocket {sid}")
+            return
         # Creating a task prevents the update from being blocked behind other coroutines.
         await asyncio.create_task(
             self.emit(str(constants.SocketEvent.EVENT), update, to=sid)

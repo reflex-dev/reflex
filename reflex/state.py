@@ -1004,6 +1004,18 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         return getattr(substate, name)
 
     @classmethod
+    def is_user_defined(cls) -> bool:
+        """Check if the state is user-defined.
+
+        Returns:
+            True if the state is user-defined, False otherwise.
+        """
+        return (
+            not cls.__module__.startswith("reflex.")
+            or cls.__module__ == "reflex.istate.dynamic"
+        )
+
+    @classmethod
     def _init_var(cls, prop: Var):
         """Initialize a variable.
 
@@ -1024,7 +1036,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
                 f'Found var "{prop._js_expr}" with type {prop._var_type}.'
             )
         cls._set_var(prop)
-        if get_config().state_auto_setters:
+        if cls.is_user_defined() and get_config().state_auto_setters:
             cls._create_setter(prop)
         cls._set_default_value(prop)
 
@@ -1402,6 +1414,29 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         for substate in self.substates.values():
             substate.reset()
 
+    @classmethod
+    @functools.lru_cache
+    def _is_client_storage(cls, prop_name_or_field: str | ModelField) -> bool:
+        """Check if the var is a client storage var.
+
+        Args:
+            prop_name_or_field: The name of the var or the field itself.
+
+        Returns:
+            Whether the var is a client storage var.
+        """
+        if isinstance(prop_name_or_field, str):
+            field = cls.get_fields().get(prop_name_or_field)
+        else:
+            field = prop_name_or_field
+        return field is not None and (
+            isinstance(field.default, ClientStorageBase)
+            or (
+                isinstance(field.type_, type)
+                and issubclass(field.type_, ClientStorageBase)
+            )
+        )
+
     def _reset_client_storage(self):
         """Reset client storage base vars to their default values."""
         # Client-side storage is reset during hydrate so that clearing cookies
@@ -1409,10 +1444,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         fields = self.get_fields()
         for prop_name in self.base_vars:
             field = fields[prop_name]
-            if isinstance(field.default, ClientStorageBase) or (
-                isinstance(field.type_, type)
-                and issubclass(field.type_, ClientStorageBase)
-            ):
+            if self._is_client_storage(field):
                 setattr(self, prop_name, copy.deepcopy(field.default))
 
         # Recursively reset the substate client storage.
@@ -2310,6 +2342,15 @@ class State(BaseState):
     # The hydrated bool.
     is_hydrated: bool = False
 
+    @event
+    def set_is_hydrated(self, value: bool) -> None:
+        """Set the hydrated state.
+
+        Args:
+            value: The hydrated state.
+        """
+        self.is_hydrated = value
+
 
 T = TypeVar("T", bound=BaseState)
 
@@ -2393,8 +2434,9 @@ class UpdateVarsInternalState(State):
         for var, value in vars.items():
             state_name, _, var_name = var.rpartition(".")
             var_state_cls = State.get_class_substate(state_name)
-            var_state = await self.get_state(var_state_cls)
-            setattr(var_state, var_name, value)
+            if var_state_cls._is_client_storage(var_name):
+                var_state = await self.get_state(var_state_cls)
+                setattr(var_state, var_name, value)
 
 
 class OnLoadInternalState(State):
@@ -2403,7 +2445,7 @@ class OnLoadInternalState(State):
     This is a separate substate to avoid deserializing the entire state tree for every page navigation.
     """
 
-    def on_load_internal(self) -> list[Event | EventSpec] | None:
+    def on_load_internal(self) -> list[Event | EventSpec | event.EventCallback] | None:
         """Queue on_load handlers for the current page.
 
         Returns:
@@ -2423,7 +2465,7 @@ class OnLoadInternalState(State):
                 self.router.session.client_token,
                 router_data=self.router_data,
             ),
-            State.set_is_hydrated(True),  # pyright: ignore [reportAttributeAccessIssue]
+            State.set_is_hydrated(True),
         ]
 
 

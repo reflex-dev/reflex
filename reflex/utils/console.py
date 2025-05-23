@@ -65,7 +65,7 @@ def set_log_level(log_level: LogLevel | None):
     global _LOG_LEVEL
     if log_level != _LOG_LEVEL:
         # Set the loglevel persistenly for subprocesses.
-        os.environ["LOGLEVEL"] = log_level.value
+        os.environ["REFLEX_LOGLEVEL"] = log_level.value
     _LOG_LEVEL = log_level
 
 

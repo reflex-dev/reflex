@@ -773,7 +773,7 @@ async def test_dict_mutation_detection__plain_list(
         ),
     ],
 )
-async def test_upload_file(tmp_path, state, delta, token: str, mocker):
+async def test_upload_file(tmp_path, state, delta, token: str, mocker: MockerFixture):
     """Test that file upload works correctly.
 
     Args:
@@ -986,7 +986,7 @@ def test_dynamic_arg_shadow(
     windows_platform: bool,
     token: str,
     app_module_mock: unittest.mock.Mock,
-    mocker,
+    mocker: MockerFixture,
 ):
     """Create app with dynamic route var and try to add a page with a dynamic arg that shadows a state var.
 
@@ -1010,7 +1010,7 @@ def test_multiple_dynamic_args(
     windows_platform: bool,
     token: str,
     app_module_mock: unittest.mock.Mock,
-    mocker,
+    mocker: MockerFixture,
 ):
     """Create app with multiple dynamic route vars with the same name.
 
@@ -1035,7 +1035,7 @@ async def test_dynamic_route_var_route_change_completed_on_load(
     windows_platform: bool,
     token: str,
     app_module_mock: unittest.mock.Mock,
-    mocker,
+    mocker: MockerFixture,
 ):
     """Create app with dynamic route var, and simulate navigation.
 
@@ -1218,7 +1218,7 @@ async def test_dynamic_route_var_route_change_completed_on_load(
 
 
 @pytest.mark.asyncio
-async def test_process_events(mocker, token: str):
+async def test_process_events(mocker: MockerFixture, token: str):
     """Test that an event is processed properly and that it is postprocessed
     n+1 times. Also check that the processing flag of the last stateupdate is set to
     False.
@@ -1331,6 +1331,17 @@ def compilable_app(tmp_path) -> Generator[tuple[App, Path], None, None]:
     web_dir = app_path / ".web"
     web_dir.mkdir(parents=True)
     (web_dir / constants.PackageJson.PATH).touch()
+    (web_dir / constants.Dirs.POSTCSS_JS).touch()
+    (web_dir / constants.Dirs.POSTCSS_JS).write_text(
+        """
+module.exports = {
+  plugins: {
+    "postcss-import": {},
+    autoprefixer: {},
+  },
+};
+""",
+    )
     app = App(theme=None)
     app._get_frontend_packages = unittest.mock.Mock()
     with chdir(app_path):
@@ -1353,8 +1364,8 @@ def test_app_wrap_compile_theme(
     """
     conf = rx.Config(app_name="testing", react_strict_mode=react_strict_mode)
     mocker.patch("reflex.config._get_config", return_value=conf)
-
     app, web_dir = compilable_app
+    mocker.patch("reflex.utils.prerequisites.get_web_dir", return_value=web_dir)
     app.theme = rx.theme(accent_color="plum")
     app._compile()
     app_js_contents = (
