@@ -23,6 +23,7 @@ class Constants(SimpleNamespace):
 
     # Content of the style content.
     ROOT_STYLE_CONTENT = """@layer theme, base, components, utilities;
+@config "../tailwind.config.js";
 @import "tailwindcss/theme.css" layer(theme);
 @import "tailwindcss/preflight.css" layer(base);
 @import "{radix_url}" layer(components);
