@@ -73,43 +73,45 @@ def tailwind_config_js_template():
   {%- set _ = imports.append(plugin.import) %}
 {%- endfor %}
 
-/** @type {import('tailwindcss').Config} */
 {%- for imp in imports %}
-const { {{ imp.name }} } = require({{ imp.from | tojson }});
+import { {{ imp.name }} } from {{ imp.from | tojson }};
+{%- endfor %}
+{%- for plugin in plugins %}
+{% if plugin is mapping and plugin.call is not defined %}
+import plugin{{ loop.index }} from {{ plugin.name | tojson }};
+{%- elif plugin is not mapping %}
+import plugin{{ loop.index }} from {{ plugin | tojson }};
+{%- endif %}
 {%- endfor %}
 
-module.exports = {
-  content: {{ render_js(content) }},
-  theme: {{ render_js(theme) }},
-  {% if darkMode is defined %}darkMode: {{ darkMode | tojson }},{% endif %}
-  {% if corePlugins is defined %}corePlugins: {{ render_js(corePlugins) }},{% endif %}
-  {% if important is defined %}important: {{ important | tojson }},{% endif %}
-  {% if prefix is defined %}prefix: {{ prefix | tojson }},{% endif %}
-  {% if separator is defined %}separator: {{ separator | tojson }},{% endif %}
-  {% if presets is defined %}
-  presets: [
-    {% for preset in presets %}
-    require({{ preset | tojson }}){{ "," if not loop.last }}
-    {% endfor %}
-  ],
-  {% endif %}
-  plugins: [
-    {% for plugin in plugins %}
-      {% if plugin is mapping %}
-        {% if plugin.call is defined %}
-          {{ plugin.call }}(
-            {%- if plugin.args is defined -%}
-              {{ render_js(plugin.args) }}
-            {%- endif -%}
-          ){{ "," if not loop.last }}
-        {% else %}
-          require({{ plugin.name | tojson }}){{ "," if not loop.last }}
-        {% endif %}
-      {% else %}
-        require({{ plugin | tojson }}){{ "," if not loop.last }}
-      {% endif %}
-    {% endfor %}
-  ]
+export default {
+    content: {{ render_js(content) }},
+    theme: {{ render_js(theme) }},
+    {% if darkMode is defined %}darkMode: {{ darkMode | tojson }},{% endif %}
+    {% if corePlugins is defined %}corePlugins: {{ render_js(corePlugins) }},{% endif %}
+    {% if important is defined %}important: {{ important | tojson }},{% endif %}
+    {% if prefix is defined %}prefix: {{ prefix | tojson }},{% endif %}
+    {% if separator is defined %}separator: {{ separator | tojson }},{% endif %}
+    {% if presets is defined %}
+    presets: [
+        {% for preset in presets %}
+            require({{ preset | tojson }}),
+        {% endfor %}
+    ],
+    {% endif %}
+    plugins: [
+        {% for plugin in plugins %}
+            {% if plugin is mapping and plugin.call is defined %}
+                {{ plugin.call }}(
+                    {%- if plugin.args is defined -%}
+                        {{ render_js(plugin.args) }}
+                    {%- endif -%}
+                ),
+            {% else %}
+                plugin{{ loop.index }},
+            {% endif %}
+        {% endfor %}
+    ]
 };
 """
 
