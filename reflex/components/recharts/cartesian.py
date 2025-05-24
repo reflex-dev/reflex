@@ -5,7 +5,6 @@ from __future__ import annotations
 from collections.abc import Sequence
 from typing import Any, ClassVar
 
-from reflex.components.component import Component
 from reflex.constants import EventTriggers
 from reflex.constants.colors import Color
 from reflex.event import EventHandler, no_args_event_spec
@@ -76,7 +75,7 @@ class Axis(Recharts):
     reversed: Var[bool]
 
     # The label of axis, which appears next to the axis.
-    label: Var[str | int | Component | dict[str, Any]]
+    label: Var[str | int | dict[str, Any]]
 
     # If 'auto' set, the scale function is decided by the type of chart, and the props type. 'auto' | 'linear' | 'pow' | 'sqrt' | 'log' | 'identity' | 'time' | 'band' | 'point' | 'ordinal' | 'quantile' | 'quantize' | 'utc' | 'sequential' | 'threshold'. Default: "auto"
     scale: Var[LiteralScale]
@@ -91,7 +90,7 @@ class Axis(Recharts):
     ticks: Var[Sequence[str | int]]
 
     # If set false, no ticks will be drawn.
-    tick: Var[bool | dict | Component]
+    tick: Var[bool | dict]
 
     # The count of axis ticks. Not used if 'type' is 'category'. Default: 5
     tick_count: Var[int]
@@ -278,7 +277,7 @@ class Cartesian(Recharts):
     legend_type: Var[LiteralLegendType]
 
     # If false set, labels will not be drawn. If true set, labels will be drawn which have the props calculated internally. Default: False
-    label: Var[bool | dict[str, Any] | Component]
+    label: Var[bool | dict[str, Any]]
 
     # If set false, animation of bar will be disabled. Default: True
     is_animation_active: Var[bool]
@@ -657,7 +656,7 @@ class Reference(Recharts):
     if_overflow: Var[LiteralIfOverflow]
 
     # If set a string or a number, default label will be drawn, and the option is content.
-    label: Var[str | int | Component]
+    label: Var[str | int]
 
     # If set true, the line will be rendered in front of bars in BarChart, etc. Default: False
     is_front: Var[bool]
@@ -848,7 +847,7 @@ class CartesianAxis(Grid):
     axis_line: Var[bool | dict]
 
     # If set false, no ticks will be drawn.
-    tick: Var[bool | dict | Component]
+    tick: Var[bool | dict]
 
     # If set false, no axis tick lines will be drawn. If set a object, the option is the configuration of tick lines. Default: True
     tick_line: Var[bool]
@@ -860,7 +859,7 @@ class CartesianAxis(Grid):
     interval: Var[LiteralInterval]
 
     # If set a string or a number, default label will be drawn, and the option is content.
-    label: Var[str | int | Component]
+    label: Var[str | int]
 
     # If set true, flips ticks around the axis line, displaying the labels inside the chart instead of outside. Default: False
     mirror: Var[bool]

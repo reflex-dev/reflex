@@ -127,4 +127,4 @@ LiteralIntervalAxis = Literal[
 ]
 LiteralSyncMethod = Literal["index", "value"]
 
-ACTIVE_DOT_TYPE = bool | dict[str, Any] | Component
+ACTIVE_DOT_TYPE = bool | dict[str, Any]

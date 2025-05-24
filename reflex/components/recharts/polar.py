@@ -5,7 +5,6 @@ from __future__ import annotations
 from collections.abc import Sequence
 from typing import Any, ClassVar
 
-from reflex.components.component import Component
 from reflex.constants import EventTriggers
 from reflex.constants.colors import Color
 from reflex.event import EventHandler, no_args_event_spec
@@ -67,10 +66,10 @@ class Pie(Recharts):
     legend_type: Var[LiteralLegendType]
 
     # If false set, labels will not be drawn. If true set, labels will be drawn which have the props calculated internally. Default: False
-    label: Var[bool | dict[str, Any] | Component] = Var.create(False)
+    label: Var[bool | dict[str, Any]] = Var.create(False)
 
     # If false set, label lines will not be drawn. If true set, label lines will be drawn which have the props calculated internally. Default: False
-    label_line: Var[bool | dict[str, Any] | Component]
+    label_line: Var[bool | dict[str, Any]]
 
     # Valid children components
     _valid_children: ClassVar[list[str]] = ["Cell", "LabelList", "Bare"]
@@ -143,7 +142,7 @@ class Radar(Recharts):
     legend_type: Var[LiteralLegendType]
 
     # If false set, labels will not be drawn. Default: True
-    label: Var[bool | dict[str, Any] | Component]
+    label: Var[bool | dict[str, Any]]
 
     # If set false, animation of polygon will be disabled. Default: True in CSR, and False in SSR
     is_animation_active: Var[bool]
@@ -192,10 +191,10 @@ class RadialBar(Recharts):
     legend_type: Var[LiteralLegendType]
 
     # If false set, labels will not be drawn. If true set, labels will be drawn which have the props calculated internally. Default: False
-    label: Var[bool | dict[str, Any] | Component]
+    label: Var[bool | dict[str, Any]]
 
     # If false set, background sector will not be drawn. Default: False
-    background: Var[bool | dict[str, Any] | Component]
+    background: Var[bool | dict[str, Any]]
 
     # If set false, animation of radial bars will be disabled. Default: True
     is_animation_active: Var[bool]
