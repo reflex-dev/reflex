@@ -8,7 +8,7 @@ from reflex.components.base.script import Script
 def test_script_inline():
     """Test inline scripts are rendered as children."""
     component = Script.create("let x = 42")
-    render_dict = component.render()
+    render_dict = component.render()["children"][0]
     assert render_dict["name"] == '"script"'
     assert not render_dict["contents"]
     assert len(render_dict["children"]) == 1
@@ -18,7 +18,7 @@ def test_script_inline():
 def test_script_src():
     """Test src prop is rendered without children."""
     component = Script.create(src="foo.js")
-    render_dict = component.render()
+    render_dict = component.render()["children"][0]
     assert render_dict["name"] == '"script"'
     assert not render_dict["contents"]
     assert not render_dict["children"]

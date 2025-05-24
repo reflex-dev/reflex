@@ -132,7 +132,6 @@ class PackageJson(SimpleNamespace):
         "json5": "2.2.3",
         "react-router": _react_router_version,
         "react-router-dom": _react_router_version,
-        "react-helmet": "6.1.0",
         "@react-router/node": _react_router_version,
         "serve": "14.2.4",
         "react": _react_version,

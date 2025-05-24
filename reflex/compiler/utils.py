@@ -18,7 +18,6 @@ from reflex.components.base import Description, Image, Scripts
 from reflex.components.base.document import Links, ScrollRestoration
 from reflex.components.base.document import Meta as ReactMeta
 from reflex.components.component import Component, ComponentStyle, CustomComponent
-from reflex.components.core.helmet import Helmet
 from reflex.components.el.elements.metadata import Head, Meta, Title
 from reflex.components.el.elements.other import Html
 from reflex.components.el.elements.sectioning import Body
@@ -513,12 +512,8 @@ def add_meta(
         children.append(Description.create(content=description))
     children.append(Image.create(content=image))
 
-    page.children.append(
-        Helmet.create(
-            *children,
-            *meta_tags,
-        )
-    )
+    page.children.extend(children)
+    page.children.extend(meta_tags)
 
     return page
 
