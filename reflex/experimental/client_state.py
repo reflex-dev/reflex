@@ -158,7 +158,9 @@ class ClientStateVar(Var):
             hooks[f"{_client_state_ref(var_name)} ??= {var_name!s}"] = None
             hooks[f"{_client_state_ref_dict(var_name)} ??= {{}}"] = None
             hooks[f"{_client_state_ref_dict(setter_name)} ??= {{}}"] = None
-            hooks[f"{_client_state_ref_dict(var_name)}[{id_name}] = {var_name}"] = None
+            hooks[
+                f"{_client_state_ref_dict(var_name)}[{id_name}] = {_client_state_ref(var_name)}"
+            ] = None
             hooks[
                 f"{_client_state_ref_dict(setter_name)}[{id_name}] = {setter_name}"
             ] = None
