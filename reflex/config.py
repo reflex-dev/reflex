@@ -988,8 +988,8 @@ If you are not using tailwind, set `tailwind` to `None` in rxconfig.py.""",
         Returns:
             The module name.
         """
-        if self.app_module is not None:
-            return self.app_module.__name__
+        if self.app_module_import is not None:
+            return self.app_module_import
         return ".".join([self.app_name, self.app_name])
 
     def update_from_env(self) -> dict[str, Any]:
