@@ -202,6 +202,9 @@ def _run(
     # Get the app module.
     app_task = prerequisites.compile_or_validate_app
     args = (frontend,)
+    kwargs = {
+        "check_if_schema_up_to_date": True,
+    }
 
     # Granian fails if the app is already imported.
     if should_use_granian():
@@ -210,15 +213,14 @@ def _run(
         compile_future = concurrent.futures.ProcessPoolExecutor(max_workers=1).submit(
             app_task,
             *args,
+            **kwargs,
         )
         validation_result = compile_future.result()
     else:
-        validation_result = app_task(*args)
+        validation_result = app_task(*args, **kwargs)
+
     if not validation_result:
         raise click.exceptions.Exit(1)
-
-    # Warn if schema is not up to date.
-    prerequisites.check_schema_up_to_date()
 
     # Get the frontend and backend commands, based on the environment.
     setup_frontend = frontend_cmd = backend_cmd = None
@@ -531,9 +533,7 @@ def migrate():
     from reflex import model
     from reflex.utils import prerequisites
 
-    # TODO see if we can use `get_app()` instead (no compile).  Would _skip_compile still be needed then?
-    _skip_compile()
-    prerequisites.get_compiled_app()
+    prerequisites.get_app()
     if not prerequisites.check_db_initialized():
         return
     model.Model.migrate()

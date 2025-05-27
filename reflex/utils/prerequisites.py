@@ -395,11 +395,14 @@ def get_app(reload: bool = False) -> ModuleType:
         return app
 
 
-def get_and_validate_app(reload: bool = False) -> AppInfo:
+def get_and_validate_app(
+    reload: bool = False, check_if_schema_up_to_date: bool = False
+) -> AppInfo:
     """Get the app instance based on the default config and validate it.
 
     Args:
         reload: Re-import the app module from disk
+        check_if_schema_up_to_date: If True, check if the schema is up to date.
 
     Returns:
         The app instance and the app module.
@@ -415,20 +418,32 @@ def get_and_validate_app(reload: bool = False) -> AppInfo:
         raise RuntimeError(
             "The app instance in the specified app_module_import in rxconfig must be an instance of rx.App."
         )
+
+    if check_if_schema_up_to_date:
+        check_schema_up_to_date()
+
     return AppInfo(app=app, module=app_module)
 
 
-def validate_app(reload: bool = False) -> None:
+def validate_app(
+    reload: bool = False, check_if_schema_up_to_date: bool = False
+) -> None:
     """Validate the app instance based on the default config.
 
     Args:
         reload: Re-import the app module from disk
+        check_if_schema_up_to_date: If True, check if the schema is up to date.
     """
-    get_and_validate_app(reload=reload)
+    get_and_validate_app(
+        reload=reload, check_if_schema_up_to_date=check_if_schema_up_to_date
+    )
 
 
 def get_compiled_app(
-    reload: bool = False, export: bool = False, dry_run: bool = False
+    reload: bool = False,
+    export: bool = False,
+    dry_run: bool = False,
+    check_if_schema_up_to_date: bool = False,
 ) -> ModuleType:
     """Get the app module based on the default config after first compiling it.
 
@@ -436,11 +451,14 @@ def get_compiled_app(
         reload: Re-import the app module from disk
         export: Compile the app for export
         dry_run: If True, do not write the compiled app to disk.
+        check_if_schema_up_to_date: If True, check if the schema is up to date.
 
     Returns:
         The compiled app based on the default config.
     """
-    app, app_module = get_and_validate_app(reload=reload)
+    app, app_module = get_and_validate_app(
+        reload=reload, check_if_schema_up_to_date=check_if_schema_up_to_date
+    )
     # For py3.9 compatibility when redis is used, we MUST add any decorator pages
     # before compiling the app in a thread to avoid event loop error (REF-2172).
     app._apply_decorated_pages()
@@ -449,7 +467,10 @@ def get_compiled_app(
 
 
 def compile_app(
-    reload: bool = False, export: bool = False, dry_run: bool = False
+    reload: bool = False,
+    export: bool = False,
+    dry_run: bool = False,
+    check_if_schema_up_to_date: bool = False,
 ) -> None:
     """Compile the app module based on the default config.
 
@@ -457,8 +478,14 @@ def compile_app(
         reload: Re-import the app module from disk
         export: Compile the app for export
         dry_run: If True, do not write the compiled app to disk.
+        check_if_schema_up_to_date: If True, check if the schema is up to date.
     """
-    get_compiled_app(reload=reload, export=export, dry_run=dry_run)
+    get_compiled_app(
+        reload=reload,
+        export=export,
+        dry_run=dry_run,
+        check_if_schema_up_to_date=check_if_schema_up_to_date,
+    )
 
 
 def _can_colorize() -> bool:
@@ -503,20 +530,23 @@ def _can_colorize() -> bool:
         return file.isatty()
 
 
-def compile_or_validate_app(compile: bool = False) -> bool:
+def compile_or_validate_app(
+    compile: bool = False, check_if_schema_up_to_date: bool = False
+) -> bool:
     """Compile or validate the app module based on the default config.
 
     Args:
         compile: Whether to compile the app.
+        check_if_schema_up_to_date: If True, check if the schema is up to date.
 
     Returns:
         If the app is compiled successfully.
     """
     try:
         if compile:
-            compile_app()
+            compile_app(check_if_schema_up_to_date=check_if_schema_up_to_date)
         else:
-            validate_app()
+            validate_app(check_if_schema_up_to_date=check_if_schema_up_to_date)
     except Exception as e:
         if isinstance(e, click.exceptions.Exit):
             return False
