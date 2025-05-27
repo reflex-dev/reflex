@@ -218,6 +218,7 @@ def _run(
         raise click.exceptions.Exit(1)
 
     # Warn if schema is not up to date.
+    prerequisites.get_app()
     prerequisites.check_schema_up_to_date()
 
     # Get the frontend and backend commands, based on the environment.
