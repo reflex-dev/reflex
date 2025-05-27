@@ -116,7 +116,11 @@ class PackageJson(SimpleNamespace):
     @classproperty
     @classmethod
     def DEPENDENCIES(cls) -> dict[str, str]:
-        """The dependencies to include in package.json."""
+        """The dependencies to include in package.json.
+
+        Returns:
+            A dictionary of dependencies with their versions.
+        """
         return {
             "@emotion/react": "11.14.0",
             "axios": "1.9.0",
