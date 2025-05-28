@@ -335,7 +335,7 @@ class Area(Cartesian):
     stroke: Var[str | Color] = LiteralVar.create(Color("accent", 9))
 
     # The width of the line stroke. Default: 1
-    stroke_width: Var[int]
+    stroke_width: Var[str | int | float]
 
     # The color of the area fill. Default: rx.color("accent", 5)
     fill: Var[str | Color] = LiteralVar.create(Color("accent", 5))
@@ -384,7 +384,7 @@ class Bar(Cartesian):
     stroke: Var[str | Color]
 
     # The width of the line stroke.
-    stroke_width: Var[int]
+    stroke_width: Var[str | int | float]
 
     # The width of the line stroke. Default: Color("accent", 9)
     fill: Var[str | Color] = LiteralVar.create(Color("accent", 9))
@@ -437,7 +437,7 @@ class Line(Cartesian):
     stroke: Var[str | Color] = LiteralVar.create(Color("accent", 9))
 
     # The width of the line stroke. Default: 1
-    stroke_width: Var[int]
+    stroke_width: Var[str | int | float]
 
     # The dot is shown when mouse enter a line chart and this chart has tooltip. If false set, no active dot will not be drawn. If true set, active dot will be drawn which have the props calculated internally. Default: {"stroke": rx.color("accent", 10), "fill": rx.color("accent", 4)}
     dot: Var[bool | dict[str, Any]] = LiteralVar.create(
@@ -645,7 +645,7 @@ class ErrorBar(Recharts):
     stroke: Var[str | Color] = LiteralVar.create(Color("gray", 8))
 
     # The stroke width of error bar. Default: 1.5
-    stroke_width: Var[int | float]
+    stroke_width: Var[str | int | float]
 
 
 class Reference(Recharts):
@@ -684,7 +684,7 @@ class ReferenceLine(Reference):
     stroke: Var[str | Color]
 
     # The width of the stroke. Default: 1
-    stroke_width: Var[str | int]
+    stroke_width: Var[str | int | float]
 
     # Valid children components
     _valid_children: ClassVar[list[str]] = ["Label"]
