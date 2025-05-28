@@ -113,19 +113,28 @@ class PackageJson(SimpleNamespace):
 
     _react_version = _determine_react_version()
 
-    DEPENDENCIES = {
-        "@emotion/react": "11.14.0",
-        "axios": "1.9.0",
-        "json5": "2.2.3",
-        "next": _determine_nextjs_version(),
-        "next-sitemap": "4.2.3",
-        "next-themes": "0.4.6",
-        "react": _react_version,
-        "react-dom": _react_version,
-        "react-focus-lock": "2.13.6",
-        "socket.io-client": "4.8.1",
-        "universal-cookie": "7.2.2",
-    }
+    @classproperty
+    @classmethod
+    def DEPENDENCIES(cls) -> dict[str, str]:
+        """The dependencies to include in package.json.
+
+        Returns:
+            A dictionary of dependencies with their versions.
+        """
+        return {
+            "@emotion/react": "11.14.0",
+            "axios": "1.9.0",
+            "json5": "2.2.3",
+            "next": _determine_nextjs_version(),
+            "next-sitemap": "4.2.3",
+            "next-themes": "0.4.6",
+            "react": cls._react_version,
+            "react-dom": cls._react_version,
+            "react-focus-lock": "2.13.6",
+            "socket.io-client": "4.8.1",
+            "universal-cookie": "7.2.2",
+        }
+
     DEV_DEPENDENCIES = {
         "autoprefixer": "10.4.21",
         "postcss": "8.5.3",
