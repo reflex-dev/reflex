@@ -117,7 +117,6 @@ lint.ignore = [
   "PYI",
   "RUF012",
   "S",
-  "SIM115",
   "SLF",
   "SLOT",
   "TC",

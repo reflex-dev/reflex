@@ -1157,15 +1157,16 @@ def download_and_run(url: str, *args, show_status: bool = False, **env):
         raise click.exceptions.Exit(1) from None
 
     # Save the script to a temporary file.
-    script = Path(tempfile.NamedTemporaryFile().name)
+    with tempfile.NamedTemporaryFile() as tempfile_file:
+        script = Path(tempfile_file.name)
 
-    script.write_text(response.text)
+        script.write_text(response.text)
 
-    # Run the script.
-    env = {**os.environ, **env}
-    process = processes.new_process(["bash", str(script), *args], env=env)
-    show = processes.show_status if show_status else processes.show_logs
-    show(f"Installing {url}", process)
+        # Run the script.
+        env = {**os.environ, **env}
+        process = processes.new_process(["bash", str(script), *args], env=env)
+        show = processes.show_status if show_status else processes.show_logs
+        show(f"Installing {url}", process)
 
 
 def install_bun():
