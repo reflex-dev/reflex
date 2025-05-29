@@ -2300,7 +2300,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         else:
             raise ValueError("Only one of `data` or `fp` must be provided")
         if substate_schema != state._to_schema():
-            raise StateSchemaMismatchError()
+            raise StateSchemaMismatchError
         return state
 
 

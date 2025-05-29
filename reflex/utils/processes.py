@@ -140,7 +140,7 @@ def handle_port(service_name: str, port: int, auto_increment: bool) -> int:
     console.error(
         f"{service_name.capitalize()} port: {port} is already in use by PID: {process.pid}."
     )
-    raise click.exceptions.Exit()
+    raise click.exceptions.Exit
 
 
 @overload
