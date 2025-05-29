@@ -305,8 +305,7 @@ def get_reload_paths() -> Sequence[Path]:
         module_path = Path(spec.origin).resolve().parent
 
         while module_path.parent.name and any(
-            sibling_file.name == "__init__.py"
-            for sibling_file in module_path.parent.iterdir()
+            sibling_file.name == "__init__.py" for sibling_file in module_path.iterdir()
         ):
             # go up a level to find dir without `__init__.py`
             module_path = module_path.parent
