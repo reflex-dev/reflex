@@ -31,6 +31,7 @@ class PropsBase(Base):
         """Convert the object to a dictionary.
 
         Keys will be converted to camelCase.
+        By default, None values are excluded (exclude_none=True).
 
         Args:
             *args: Arguments to pass to the parent class.
@@ -39,6 +40,7 @@ class PropsBase(Base):
         Returns:
             The object as a dictionary.
         """
+        kwargs.setdefault("exclude_none", True)
         return {
             format.to_camel_case(key): value
             for key, value in super().dict(*args, **kwargs).items()
