@@ -265,8 +265,7 @@ def _escape_js_string(string: str) -> str:
             # Return the `${}` segment unchanged
             return segment
         # Escape backticks in the segment
-        segment = segment.replace(r"\`", "`")
-        return segment.replace("`", r"\`")
+        return segment.replace(r"\`", "`").replace("`", r"\`")
 
     # Split the string into parts, keeping the `${}` segments
     parts = re.split(r"(\$\{.*?\})", string)
