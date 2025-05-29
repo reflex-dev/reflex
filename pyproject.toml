@@ -1,6 +1,6 @@
 [project]
 name = "reflex"
-version = "0.7.13dev1"
+version = "0.7.14dev1"
 description = "Web apps in pure Python."
 license.text = "Apache-2.0"
 authors = [
@@ -73,7 +73,7 @@ artifacts = ["*.pyi"]
 
 [tool.hatch.build.hooks.custom]
 path = "scripts/hatch_build.py"
-dependencies = ["plotly", "ruff"]
+dependencies = ["plotly", "ruff", "pre_commit", "toml"]
 require-runtime-dependencies = true
 
 [tool.pyright]
@@ -149,7 +149,7 @@ dev = [
   "pillow >=11",
   "playwright >=1.51",
   "plotly >=6.0",
-  "pre-commit >=4.2",
+  "pre-commit ==4.2.0",
   "psycopg[binary] >=3.2",
   "pyright >=1.1.400",
   "pytest >=8.3",
@@ -165,6 +165,7 @@ dev = [
   "ruff >=0.11",
   "selenium >=4.31",
   "starlette-admin >=0.14",
+  "toml >=0.10.2",
   "uvicorn >=0.34.0",
 ]
 
@@ -206,3 +207,53 @@ exclude_also = [
 
 [tool.coverage.html]
 directory = "coverage_html_report"
+
+[tool.pre-commit]
+fail_fast = true
+
+[[tool.pre-commit.repos]]
+repo = "https://github.com/astral-sh/ruff-pre-commit"
+rev = "v0.11.11"
+hooks = [
+  { id = "ruff-format", args = [
+    "reflex",
+    "tests",
+  ] },
+  { id = "ruff", args = [
+    "--fix",
+    "--exit-non-zero-on-fix",
+  ], exclude = "^integration/benchmarks/" },
+]
+
+[[tool.pre-commit.repos]]
+repo = "https://github.com/codespell-project/codespell"
+rev = "v2.4.1"
+hooks = [
+  { id = "codespell", args = [
+    "reflex",
+  ], additional_dependencies = [
+    "tomli",
+  ] },
+]
+
+# Run pyi check before pyright because pyright can fail if pyi files are wrong.
+[[tool.pre-commit.repos]]
+repo = "local"
+hooks = [
+  { id = "update-pyi-files", name = "update-pyi-files", always_run = true, language = "system", require_serial = true, description = "Update pyi files as needed", entry = "python3 scripts/make_pyi.py" },
+]
+
+[[tool.pre-commit.repos]]
+repo = "https://github.com/RobertCraigie/pyright-python"
+rev = "v1.1.401"
+hooks = [{ id = "pyright", args = ["reflex", "tests"], language = "system" }]
+
+[[tool.pre-commit.repos]]
+repo = "https://github.com/terrencepreilly/darglint"
+rev = "v1.8.1"
+hooks = [{ id = "darglint", exclude = "^reflex/reflex.py" }]
+
+[[tool.pre-commit.repos]]
+repo = "https://github.com/pre-commit/mirrors-prettier"
+rev = "f62a70a3a7114896b062de517d72829ea1c884b6"
+hooks = [{ id = "prettier", require_serial = true }]

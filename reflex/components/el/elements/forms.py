@@ -609,7 +609,7 @@ class Select(BaseHTML):
     required: Var[bool]
 
     # Number of visible options in a drop-down list
-    size: Var[int]
+    size: Var[str | int]
 
     # Fired when the select value changes
     on_change: EventHandler[input_event]

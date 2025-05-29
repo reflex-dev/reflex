@@ -35,6 +35,7 @@ import pydantic.v1 as pydantic
 from reflex import constants
 from reflex.base import Base
 from reflex.constants.base import LogLevel
+from reflex.plugins import Plugin, TailwindV3Plugin, TailwindV4Plugin
 from reflex.utils import console
 from reflex.utils.exceptions import ConfigError, EnvironmentVarValueError
 from reflex.utils.types import (
@@ -68,9 +69,27 @@ def _load_dotenv_from_str(env_files: str) -> None:
             load_dotenv(env_file_path, override=True)
 
 
+def _load_dotenv_from_env():
+    """Load environment variables from paths specified in REFLEX_ENV_FILE."""
+    show_deprecation = False
+    env_env_file = os.environ.get("REFLEX_ENV_FILE")
+    if not env_env_file:
+        env_env_file = os.environ.get("ENV_FILE")
+        if env_env_file:
+            show_deprecation = True
+    if show_deprecation:
+        console.deprecate(
+            "Usage of deprecated ENV_FILE env var detected.",
+            reason="Prefer `REFLEX_` prefix when setting env vars.",
+            deprecation_version="0.7.13",
+            removal_version="0.8.0",
+        )
+    if env_env_file:
+        _load_dotenv_from_str(env_env_file)
+
+
 # Load the env files at import time if they are set in the ENV_FILE environment variable.
-if env_files := os.getenv("ENV_FILE"):
-    _load_dotenv_from_str(env_files)
+_load_dotenv_from_env()
 
 
 class DBConfig(Base):
@@ -895,6 +914,9 @@ class Config(Base):
     # Extra overlay function to run after the app is built. Formatted such that `from path_0.path_1... import path[-1]`, and calling it with no arguments would work. For example, "reflex.components.moment.moment".
     extra_overlay_function: str | None = None
 
+    # List of plugins to use in the app.
+    plugins: list[Plugin] = []
+
     _prefixes: ClassVar[list[str]] = ["REFLEX_"]
 
     def __init__(self, *args, **kwargs):
@@ -939,6 +961,23 @@ class Config(Base):
         self._non_default_attributes.update(kwargs)
         self._replace_defaults(**kwargs)
 
+        if self.tailwind is not None and not any(
+            isinstance(plugin, (TailwindV3Plugin, TailwindV4Plugin))
+            for plugin in self.plugins
+        ):
+            console.deprecate(
+                "Inferring tailwind usage",
+                reason="""
+
+If you are using tailwind, add `rx.plugins.TailwindV3Plugin()` to the `plugins=[]` in rxconfig.py.
+
+If you are not using tailwind, set `tailwind` to `None` in rxconfig.py.""",
+                deprecation_version="0.7.13",
+                removal_version="0.8.0",
+                dedupe=True,
+            )
+            self.plugins.append(TailwindV3Plugin())
+
         if (
             self.state_manager_mode == constants.StateManagerMode.REDIS
             and not self.redis_url
@@ -967,8 +1006,8 @@ class Config(Base):
         Returns:
             The module name.
         """
-        if self.app_module is not None:
-            return self.app_module.__name__
+        if self.app_module_import is not None:
+            return self.app_module_import
         return ".".join([self.app_name, self.app_name])
 
     def update_from_env(self) -> dict[str, Any]:
