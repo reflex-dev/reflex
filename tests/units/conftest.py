@@ -59,13 +59,13 @@ def app_module_mock(monkeypatch) -> mock.Mock:
 
 
 @pytest.fixture(scope="session")
-def windows_platform() -> Generator:
+def windows_platform() -> bool:
     """Check if system is windows.
 
-    Yields:
+    Returns:
         whether system is windows.
     """
-    yield platform.system() == "Windows"
+    return platform.system() == "Windows"
 
 
 @pytest.fixture
@@ -217,7 +217,7 @@ def mutable_state() -> MutableTestState:
     return MutableTestState()
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture
 def token() -> str:
     """Create a token.
 

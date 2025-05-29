@@ -302,7 +302,7 @@ def test_create_component(component1):
 
 
 @pytest.mark.parametrize(
-    "prop_name,var,expected",
+    ("prop_name", "var", "expected"),
     [
         pytest.param(
             "text",
@@ -539,7 +539,7 @@ def test_get_props(component1, component2):
 
 
 @pytest.mark.parametrize(
-    "text,number",
+    ("text", "number"),
     [
         ("", 0),
         ("test", 1),
@@ -560,7 +560,7 @@ def test_valid_props(component1, text: str, number: int):
 
 
 @pytest.mark.parametrize(
-    "text,number", [("", "bad_string"), (13, 1), ("test", [1, 2, 3])]
+    ("text", "number"), [("", "bad_string"), (13, 1), ("test", [1, 2, 3])]
 )
 def test_invalid_prop_type(component1, text: str, number: int):
     """Test that an invalid prop type raises an error.
@@ -674,7 +674,7 @@ def test_component_create_unallowed_types(children, test_component):
 
 
 @pytest.mark.parametrize(
-    "element, expected",
+    ("element", "expected"),
     [
         (
             (rx.text("first_text"),),
@@ -1177,7 +1177,7 @@ def test_component_with_only_valid_children(fixture, request):
 
 
 @pytest.mark.parametrize(
-    "component,rendered",
+    ("component", "rendered"),
     [
         (rx.text("hi"), 'jsx(\nRadixThemesText,\n{as:"p"},\n"hi"\n,)'),
         (
@@ -1306,7 +1306,7 @@ class EventState(rx.State):
 
 @pytest.mark.parametrize(
     ("component", "exp_vars"),
-    (
+    [
         pytest.param(
             Bare.create(TEST_VAR),
             [TEST_VAR],
@@ -1473,7 +1473,7 @@ class EventState(rx.State):
             [FORMATTED_TEST_VAR_LIST_OF_DICT],
             id="fstring-list_of_dict",
         ),
-    ),
+    ],
 )
 def test_get_vars(component, exp_vars):
     comp_vars = sorted(component._get_vars(), key=lambda v: v._js_expr)
@@ -1917,13 +1917,13 @@ def test_invalid_event_trigger():
 
 @pytest.mark.parametrize(
     "tags",
-    (
+    [
         ["Component"],
         ["Component", "useState"],
         [ImportVar(tag="Component")],
         [ImportVar(tag="Component"), ImportVar(tag="useState")],
         ["Component", ImportVar(tag="useState")],
-    ),
+    ],
 )
 def test_component_add_imports(tags):
     class BaseComponent(Component):
@@ -2236,7 +2236,7 @@ class TriggerState(rx.State):
 
 
 @pytest.mark.parametrize(
-    "component, output",
+    ("component", "output"),
     [
         (rx.box(rx.text("random text")), False),
         (

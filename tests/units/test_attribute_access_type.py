@@ -348,7 +348,7 @@ class AttrClass:
     ],
 )
 @pytest.mark.parametrize(
-    "attr, expected",
+    ("attr", "expected"),
     [
         pytest.param("count", int, id="int"),
         pytest.param("name", str, id="str"),

@@ -33,7 +33,7 @@ def test_func():
 
 
 @pytest.mark.parametrize(
-    "cls,expected",
+    ("cls", "expected"),
     [
         (str, False),
         (int, False),
@@ -70,8 +70,6 @@ def test_is_generic_alias(cls: type, expected: bool):
         (int, bool, False),
         (list, list, True),
         (list, list[str], True),  # this is wrong, but it's a limitation of the function
-        (list, list, True),
-        (list[int], list, True),
         (list[int], list, True),
         (list[int], list[str], False),
         (list[int], list[int], True),
@@ -130,8 +128,6 @@ def test_typehint_issubclass(subclass, superclass, expected):
         (int, bool, False),
         (list, list, True),
         (list, list[str], True),  # this is wrong, but it's a limitation of the function
-        (list, list, True),
-        (list[int], list, True),
         (list[int], list, True),
         (list[int], list[str], False),
         (list[int], list[int], True),
@@ -283,7 +279,7 @@ def test_backend_variable_cls():
 
 
 @pytest.mark.parametrize(
-    "input, output",
+    ("input", "output"),
     [
         ("_classvar", False),
         ("_class_method", False),
@@ -302,7 +298,7 @@ def test_is_backend_base_variable(
 
 
 @pytest.mark.parametrize(
-    "cls, cls_check, expected",
+    ("cls", "cls_check", "expected"),
     [
         (int, int, True),
         (int, float, False),
@@ -333,7 +329,7 @@ def test_unsupported_literals(cls: type):
 
 
 @pytest.mark.parametrize(
-    "app_name,expected_config_name",
+    ("app_name", "expected_config_name"),
     [
         ("appname", "AppnameConfig"),
         ("app_name", "AppnameConfig"),
@@ -399,14 +395,13 @@ class DataFrame:
 
 
 @pytest.mark.parametrize(
-    "class_type,expected",
+    ("class_type", "expected"),
     [
         (list, False),
         (int, False),
         (dict, False),
         (DataFrame, True),
         (typing.Any, False),
-        (list, False),
     ],
 )
 def test_is_dataframe(class_type, expected):

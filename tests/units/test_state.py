@@ -1662,7 +1662,7 @@ async def state_manager(request) -> AsyncGenerator[StateManager, None]:
         await state_manager.close()
 
 
-@pytest.fixture()
+@pytest.fixture
 def substate_token(state_manager, token) -> str:
     """A token + substate name for looking up in state manager.
 
@@ -1764,7 +1764,7 @@ async def state_manager_redis() -> AsyncGenerator[StateManager, None]:
     await state_manager.close()
 
 
-@pytest.fixture()
+@pytest.fixture
 def substate_token_redis(state_manager_redis, token):
     """A token + substate name for looking up in state manager.
 
@@ -1899,7 +1899,7 @@ class CopyingAsyncMock(AsyncMock):
         return super().__call__(*args, **kwargs)
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture
 def mock_app_simple(monkeypatch) -> rx.App:
     """Simple Mock app fixture.
 
@@ -1924,7 +1924,7 @@ def mock_app_simple(monkeypatch) -> rx.App:
     return app
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture
 def mock_app(mock_app_simple: rx.App, state_manager: StateManager) -> rx.App:
     """Mock app fixture.
 
@@ -2586,10 +2586,10 @@ def test_mutable_backend(mutable_state: MutableTestState):
 
 
 @pytest.mark.parametrize(
-    ("copy_func",),
+    "copy_func",
     [
-        (copy.copy,),
-        (copy.deepcopy,),
+        copy.copy,
+        copy.deepcopy,
     ],
 )
 def test_mutable_copy(mutable_state: MutableTestState, copy_func: Callable):
@@ -2613,10 +2613,10 @@ def test_mutable_copy(mutable_state: MutableTestState, copy_func: Callable):
 
 
 @pytest.mark.parametrize(
-    ("copy_func",),
+    "copy_func",
     [
-        (copy.copy,),
-        (copy.deepcopy,),
+        copy.copy,
+        copy.deepcopy,
     ],
 )
 def test_mutable_copy_vars(mutable_state: MutableTestState, copy_func: Callable):
@@ -2637,9 +2637,9 @@ def test_mutable_copy_vars(mutable_state: MutableTestState, copy_func: Callable)
 
 def test_duplicate_substate_class(mocker: MockerFixture):
     # Neuter pytest escape hatch, because we want to test duplicate detection.
-    mocker.patch("reflex.state.is_testing_env", lambda: False)
+    mocker.patch("reflex.state.is_testing_env", return_value=False)
     # Neuter <locals> state handling since these _are_ defined inside a function.
-    mocker.patch("reflex.state.BaseState._handle_local_def", lambda: None)
+    mocker.patch("reflex.state.BaseState._handle_local_def", return_value=False)
     with pytest.raises(ValueError):
 
         class TestState(BaseState):
@@ -2885,7 +2885,7 @@ class OnLoadState3(State):
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize(
-    "test_state, expected",
+    ("test_state", "expected"),
     [
         (OnLoadState, {"on_load_state": {"num": 1}}),
         (OnLoadState2, {"on_load_state2": {"num": 1}}),
@@ -3326,7 +3326,7 @@ async def test_setvar_async_setter():
     reason="Test requires redis",
 )
 @pytest.mark.parametrize(
-    "expiration_kwargs, expected_values",
+    ("expiration_kwargs", "expected_values"),
     [
         (
             {"redis_lock_expiration": 20000},
@@ -3402,7 +3402,7 @@ config = rx.Config(
     reason="Test requires redis",
 )
 @pytest.mark.parametrize(
-    "redis_lock_expiration, redis_lock_warning_threshold",
+    ("redis_lock_expiration", "redis_lock_warning_threshold"),
     [
         (10000, 10000),
         (20000, 30000),

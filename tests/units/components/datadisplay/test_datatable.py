@@ -9,7 +9,7 @@ from reflex.utils.serializers import serialize, serialize_dataframe
 
 
 @pytest.mark.parametrize(
-    "data_table_state,expected",
+    ("data_table_state", "expected"),
     [
         pytest.param(
             {
@@ -73,7 +73,7 @@ def test_invalid_props(props):
 
 
 @pytest.mark.parametrize(
-    "fixture, err_msg, is_data_frame",
+    ("fixture", "err_msg", "is_data_frame"),
     [
         (
             "data_table_state2",

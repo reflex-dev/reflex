@@ -32,7 +32,7 @@ def TestNodeVersionApp():
         return rx.heading("Node Version check v", TestNodeVersionState.node_version)
 
 
-@pytest.fixture()
+@pytest.fixture
 def node_version_app(tmp_path) -> Generator[AppHarness, Any, None]:
     """Fixture to start TestNodeVersionApp app at tmp_path via AppHarness.
 

@@ -57,7 +57,8 @@ def test_render_child_props():
             on_change=S.on_change,
         )
     )._render()
-    assert "css" in tag.props and isinstance(tag.props["css"], rx.vars.Var)
+    assert "css" in tag.props
+    assert isinstance(tag.props["css"], rx.vars.Var)
     for prop in ["foo", "bar", "baz", "quuc"]:
         assert prop in str(tag.props["css"])
     assert tag.props["value"].equals(
@@ -151,7 +152,8 @@ def test_render_child_props_recursive():
         ),
         force_notify_by_enter=False,
     )._render()
-    assert "css" in tag.props and isinstance(tag.props["css"], rx.vars.Var)
+    assert "css" in tag.props
+    assert isinstance(tag.props["css"], rx.vars.Var)
     for prop in ["foo", "bar", "baz", "quuc"]:
         assert prop in str(tag.props["css"])
     assert tag.props["value"].equals(LiteralVar.create("outer"))

@@ -31,7 +31,7 @@ def mock_event(arg):
 
 
 @pytest.mark.parametrize(
-    "input,output",
+    ("input", "output"),
     [
         ("{", "}"),
         ("(", ")"),
@@ -52,7 +52,7 @@ def test_get_close_char(input: str, output: str):
 
 
 @pytest.mark.parametrize(
-    "text,open,expected",
+    ("text", "open", "expected"),
     [
         ("", "{", False),
         ("{wrap}", "{", True),
@@ -73,7 +73,7 @@ def test_is_wrapped(text: str, open: str, expected: bool):
 
 
 @pytest.mark.parametrize(
-    "text,open,check_first,num,expected",
+    ("text", "open", "check_first", "num", "expected"),
     [
         ("", "{", True, 1, "{}"),
         ("wrap", "{", True, 1, "{wrap}"),
@@ -99,13 +99,9 @@ def test_wrap(text: str, open: str, expected: str, check_first: bool, num: int):
 
 
 @pytest.mark.parametrize(
-    "string,expected_output",
+    ("string", "expected_output"),
     [
         ("This is a random string", "This is a random string"),
-        (
-            "This is a random string with `backticks`",
-            "This is a random string with \\`backticks\\`",
-        ),
         (
             "This is a random string with `backticks`",
             "This is a random string with \\`backticks\\`",
@@ -129,7 +125,7 @@ def test_escape_js_string(string, expected_output):
 
 
 @pytest.mark.parametrize(
-    "text,indent_level,expected",
+    ("text", "indent_level", "expected"),
     [
         ("", 2, ""),
         ("hello", 2, "hello"),
@@ -153,7 +149,7 @@ def test_indent(text: str, indent_level: int, expected: str, windows_platform: b
 
 
 @pytest.mark.parametrize(
-    "input,output",
+    ("input", "output"),
     [
         ("", ""),
         ("hello", "hello"),
@@ -179,7 +175,7 @@ def test_to_snake_case(input: str, output: str):
 
 
 @pytest.mark.parametrize(
-    "input,output",
+    ("input", "output"),
     [
         ("", ""),
         ("hello", "hello"),
@@ -209,7 +205,7 @@ def test_to_camel_case(input: str, output: str):
 
 
 @pytest.mark.parametrize(
-    "input,output",
+    ("input", "output"),
     [
         ("", ""),
         ("hello", "Hello"),
@@ -229,7 +225,7 @@ def test_to_title_case(input: str, output: str):
 
 
 @pytest.mark.parametrize(
-    "input,output",
+    ("input", "output"),
     [
         ("", ""),
         ("hello", "hello"),
@@ -253,7 +249,7 @@ def test_to_kebab_case(input: str, output: str):
 
 
 @pytest.mark.parametrize(
-    "input,output",
+    ("input", "output"),
     [
         ("", "{``}"),
         ("hello", "{`hello`}"),
@@ -272,7 +268,7 @@ def test_format_string(input: str, output: str):
 
 
 @pytest.mark.parametrize(
-    "input,output",
+    ("input", "output"),
     [
         (LiteralVar.create(value="test"), '"test"'),
         (Var(_js_expr="test"), "test"),
@@ -283,7 +279,7 @@ def test_format_var(input: Var, output: str):
 
 
 @pytest.mark.parametrize(
-    "route,format_case,expected",
+    ("route", "format_case", "expected"),
     [
         ("", True, "index"),
         ("/", True, "index"),
@@ -311,7 +307,7 @@ def test_format_route(route: str, format_case: bool, expected: bool):
 
 
 @pytest.mark.parametrize(
-    "condition, match_cases, default,expected",
+    ("condition", "match_cases", "default", "expected"),
     [
         (
             "state__state.value",
@@ -350,7 +346,7 @@ def test_format_match(
 
 
 @pytest.mark.parametrize(
-    "prop,formatted",
+    ("prop", "formatted"),
     [
         ("string", '"string"'),
         ("{wrapped_string}", '"{wrapped_string}"'),
@@ -472,7 +468,7 @@ def test_format_prop(prop: Var, formatted: str):
 
 
 @pytest.mark.parametrize(
-    "single_props,key_value_props,output",
+    ("single_props", "key_value_props", "output"),
     [
         (
             [Var(_js_expr="props")],
@@ -493,7 +489,7 @@ def test_format_props(single_props, key_value_props, output):
 
 
 @pytest.mark.parametrize(
-    "input,output",
+    ("input", "output"),
     [
         (EventHandler(fn=mock_event), ("", "mock_event")),
     ],
@@ -503,7 +499,7 @@ def test_get_handler_parts(input, output):
 
 
 @pytest.mark.parametrize(
-    "input,output",
+    ("input", "output"),
     [
         (TestState.do_something, f"{TestState.get_full_name()}.do_something"),
         (
@@ -527,7 +523,7 @@ def test_format_event_handler(input, output):
 
 
 @pytest.mark.parametrize(
-    "input,output",
+    ("input", "output"),
     [
         (
             EventSpec(handler=EventHandler(fn=mock_event)),
@@ -540,7 +536,7 @@ def test_format_event(input, output):
 
 
 @pytest.mark.parametrize(
-    "input,output",
+    ("input", "output"),
     [
         ({"query": {"k1": 1, "k2": 2}}, {"k1": 1, "k2": 2}),
         ({"query": {"k1": 1, "k-2": 2}}, {"k1": 1, "k_2": 2}),
@@ -580,7 +576,7 @@ formatted_router = {
 
 
 @pytest.mark.parametrize(
-    "input, output",
+    ("input", "output"),
     [
         (
             TestState(_reflex_internal_init=True).dict(),  # pyright: ignore [reportCallIssue]
@@ -640,7 +636,7 @@ def test_format_state(input, output):
 
 
 @pytest.mark.parametrize(
-    "input,output",
+    ("input", "output"),
     [
         ("input1", "ref_input1"),
         ("input 1", "ref_input_1"),
@@ -660,7 +656,7 @@ def test_format_ref(input, output):
 
 
 @pytest.mark.parametrize(
-    "input,output",
+    ("input", "output"),
     [
         (("my_array", None), "refs_my_array"),
         (("my_array", LiteralVar.create(0)), "refs_my_array[0]"),
@@ -672,7 +668,7 @@ def test_format_array_ref(input, output):
 
 
 @pytest.mark.parametrize(
-    "input, output",
+    ("input", "output"),
     [
         ("library@^0.1.2", "library"),
         ("library", "library"),
@@ -691,7 +687,7 @@ def test_format_library_name(input: str, output: str):
 
 
 @pytest.mark.parametrize(
-    "input,output",
+    ("input", "output"),
     [
         (None, "null"),
         (True, "true"),

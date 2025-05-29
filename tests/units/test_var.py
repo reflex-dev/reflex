@@ -181,7 +181,7 @@ def ChildWithRuntimeOnlyVar(StateWithRuntimeOnlyVar):
 
 
 @pytest.mark.parametrize(
-    "prop,expected",
+    ("prop", "expected"),
     zip(
         test_vars,
         [
@@ -205,7 +205,7 @@ def test_full_name(prop, expected):
 
 
 @pytest.mark.parametrize(
-    "prop,expected",
+    ("prop", "expected"),
     zip(
         test_vars,
         ["prop1", "key", "state.value", "state.local", "local2"],
@@ -246,7 +246,7 @@ def test_default_value(prop: Var, expected):
 
 
 @pytest.mark.parametrize(
-    "prop,expected",
+    ("prop", "expected"),
     zip(
         test_vars,
         [
@@ -270,7 +270,7 @@ def test_get_setter(prop: Var, expected):
 
 
 @pytest.mark.parametrize(
-    "value,expected",
+    ("value", "expected"),
     [
         (None, Var(_js_expr="null", _var_type=None)),
         (1, Var(_js_expr="1", _var_type=int)),
@@ -378,7 +378,7 @@ def test_basic_operations(TestObj):
 
 
 @pytest.mark.parametrize(
-    "var, expected",
+    ("var", "expected"),
     [
         (v([1, 2, 3]), "[1, 2, 3]"),
         (v({1, 2, 3}), "[1, 2, 3]"),
@@ -428,7 +428,6 @@ class Bar(rx.Base):
     [
         (Var(_js_expr="").to(Foo | Bar), Foo | Bar),
         (Var(_js_expr="").to(Foo | Bar).bar, int | str),
-        (Var(_js_expr="").to(Foo | Bar), Foo | Bar),
         (Var(_js_expr="").to(Foo | Bar).baz, str),
         (
             Var(_js_expr="").to(Foo | Bar).foo,
@@ -441,7 +440,7 @@ def test_var_types(var, var_type):
 
 
 @pytest.mark.parametrize(
-    "var, expected",
+    ("var", "expected"),
     [
         (v("123"), json.dumps("123")),
         (Var(_js_expr="foo")._var_set_state("state").to(str), "state.foo"),
@@ -462,7 +461,7 @@ def test_str_contains(var, expected):
 
 
 @pytest.mark.parametrize(
-    "var, expected",
+    ("var", "expected"),
     [
         (v({"a": 1, "b": 2}), '({ ["a"] : 1, ["b"] : 2 })'),
         (Var(_js_expr="foo")._var_set_state("state").to(dict), "state.foo"),
@@ -505,7 +504,7 @@ def test_var_indexing_lists(var):
 
 
 @pytest.mark.parametrize(
-    "var, type_",
+    ("var", "type_"),
     [
         (Var(_js_expr="list", _var_type=list[int]).guess_type(), [int, int]),
         (
@@ -567,7 +566,7 @@ def test_computed_var_replace_with_invalid_kwargs():
 
 
 @pytest.mark.parametrize(
-    "var, index",
+    ("var", "index"),
     [
         (Var(_js_expr="lst", _var_type=list[int]).guess_type(), [1, 2]),
         (
@@ -691,7 +690,7 @@ def test_dict_indexing():
 
 
 @pytest.mark.parametrize(
-    "var, index",
+    ("var", "index"),
     [
         (
             Var(_js_expr="dict", _var_type=dict[str, str]).guess_type(),
@@ -839,7 +838,13 @@ def test_computed_var_with_annotation_error(request, fixture):
 
 
 @pytest.mark.parametrize(
-    "fixture,var_name,expected_initial,expected_runtime,raises_at_runtime",
+    (
+        "fixture",
+        "var_name",
+        "expected_initial",
+        "expected_runtime",
+        "raises_at_runtime",
+    ),
     [
         (
             "StateWithInitialComputedVar",
@@ -1051,7 +1056,7 @@ def test_index_operation():
 
 
 @pytest.mark.parametrize(
-    "var, expected_js",
+    ("var", "expected_js"),
     [
         (Var.create(float("inf")), "Infinity"),
         (Var.create(-float("inf")), "-Infinity"),
@@ -1202,7 +1207,8 @@ def test_retrival():
 
     result_var_data = LiteralVar.create(f_string)._get_all_var_data()
     result_immutable_var_data = Var(_js_expr=f_string)._var_data
-    assert result_var_data is not None and result_immutable_var_data is not None
+    assert result_var_data is not None
+    assert result_immutable_var_data is not None
     assert (
         result_var_data.state
         == result_immutable_var_data.state
@@ -1262,7 +1268,7 @@ x = Var(_js_expr="x", _var_type=str)
 
 
 @pytest.mark.parametrize(
-    "out, expected",
+    ("out", "expected"),
     [
         (f"{var}", f"<reflex.Var>{hash(var)}</reflex.Var>var"),
         (
@@ -1394,7 +1400,7 @@ def test_unsupported_default_contains():
 
 
 @pytest.mark.parametrize(
-    "operand1_var,operand2_var,operators",
+    ("operand1_var", "operand2_var", "operators"),
     [
         (
             LiteralVar.create(10),
@@ -1502,7 +1508,7 @@ def test_valid_var_operations(operand1_var: Var, operand2_var, operators: list[s
 
 
 @pytest.mark.parametrize(
-    "operand1_var,operand2_var,operators",
+    ("operand1_var", "operand2_var", "operators"),
     [
         (
             LiteralVar.create(10),
@@ -1781,7 +1787,7 @@ def test_invalid_var_operations(operand1_var: Var, operand2_var, operators: list
 
 
 @pytest.mark.parametrize(
-    "var, expected",
+    ("var", "expected"),
     [
         (LiteralVar.create("string_value"), '"string_value"'),
         (LiteralVar.create(1), "1"),
@@ -1810,7 +1816,7 @@ def cv_fget(state: BaseState) -> int:
 
 
 @pytest.mark.parametrize(
-    "deps,expected",
+    ("deps", "expected"),
     [
         (["a"], {None: {"a"}}),
         (["b"], {None: {"b"}}),

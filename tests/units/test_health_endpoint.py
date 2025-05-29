@@ -13,7 +13,7 @@ from reflex.utils.prerequisites import get_redis_status
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize(
-    "mock_redis_client, expected_status",
+    ("mock_redis_client", "expected_status"),
     [
         # Case 1: Redis client is available and responds to ping
         (Mock(ping=lambda: None), {"redis": True}),
@@ -41,7 +41,7 @@ async def test_get_redis_status(
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize(
-    "mock_engine, execute_side_effect, expected_status",
+    ("mock_engine", "execute_side_effect", "expected_status"),
     [
         # Case 1: Database is accessible
         (MagicMock(), None, {"db": True}),
@@ -79,7 +79,14 @@ async def test_get_db_status(
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize(
-    "db_enabled, redis_enabled, db_status, redis_status, expected_status, expected_code",
+    (
+        "db_enabled",
+        "redis_enabled",
+        "db_status",
+        "redis_status",
+        "expected_status",
+        "expected_code",
+    ),
     [
         # Case 1: Both services are connected
         (True, True, True, True, {"status": True, "db": True, "redis": True}, 200),

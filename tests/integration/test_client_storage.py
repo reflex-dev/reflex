@@ -175,7 +175,7 @@ def driver(client_side: AppHarness) -> Generator[WebDriver, None, None]:
         driver.quit()
 
 
-@pytest.fixture()
+@pytest.fixture
 def local_storage(driver: WebDriver) -> Generator[utils.LocalStorage, None, None]:
     """Get an instance of the local storage helper.
 
@@ -190,7 +190,7 @@ def local_storage(driver: WebDriver) -> Generator[utils.LocalStorage, None, None
     ls.clear()
 
 
-@pytest.fixture()
+@pytest.fixture
 def session_storage(driver: WebDriver) -> Generator[utils.SessionStorage, None, None]:
     """Get an instance of the session storage helper.
 

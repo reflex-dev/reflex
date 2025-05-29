@@ -218,7 +218,7 @@ def driver(event_action: AppHarness) -> Generator[WebDriver, None, None]:
         driver.quit()
 
 
-@pytest.fixture()
+@pytest.fixture
 def token(event_action: AppHarness, driver: WebDriver) -> str:
     """Get the token associated with backend state.
 
@@ -240,7 +240,7 @@ def token(event_action: AppHarness, driver: WebDriver) -> str:
     return token
 
 
-@pytest.fixture()
+@pytest.fixture
 def poll_for_order(
     event_action: AppHarness, token: str
 ) -> Callable[[list[str]], Coroutine[None, None, None]]:

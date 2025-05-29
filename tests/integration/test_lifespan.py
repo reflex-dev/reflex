@@ -120,7 +120,7 @@ def mount_cached_fastapi(request: pytest.FixtureRequest) -> bool:
     return request.param
 
 
-@pytest.fixture()
+@pytest.fixture
 def lifespan_app(
     tmp_path, mount_api_transformer: bool, mount_cached_fastapi: bool
 ) -> Generator[AppHarness, None, None]:

@@ -36,7 +36,7 @@ def test_set_app_name(base_config_values):
 
 
 @pytest.mark.parametrize(
-    "env_var, value",
+    ("env_var", "value"),
     [
         ("APP_NAME", "my_test_app"),
         ("FRONTEND_PORT", 3001),
@@ -96,7 +96,7 @@ def test_update_from_env_path(
 
 
 @pytest.mark.parametrize(
-    "kwargs, expected",
+    ("kwargs", "expected"),
     [
         (
             {"app_name": "test_app", "api_url": "http://example.com"},
@@ -243,7 +243,7 @@ def test_interpret_int_env() -> None:
     assert interpret_int_env("3001", "FRONTEND_PORT") == 3001
 
 
-@pytest.mark.parametrize("value, expected", [("true", True), ("false", False)])
+@pytest.mark.parametrize(("value", "expected"), [("true", True), ("false", False)])
 def test_interpret_bool_env(value: str, expected: bool) -> None:
     assert interpret_boolean_env(value, "TELEMETRY_ENABLED") == expected
 

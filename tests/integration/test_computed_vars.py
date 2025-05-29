@@ -160,7 +160,7 @@ def driver(computed_vars: AppHarness) -> Generator[WebDriver, None, None]:
         driver.quit()
 
 
-@pytest.fixture()
+@pytest.fixture
 def token(computed_vars: AppHarness, driver: WebDriver) -> str:
     """Get a function that returns the active token.
 
