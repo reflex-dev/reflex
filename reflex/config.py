@@ -69,9 +69,27 @@ def _load_dotenv_from_str(env_files: str) -> None:
             load_dotenv(env_file_path, override=True)
 
 
+def _load_dotenv_from_env():
+    """Load environment variables from paths specified in REFLEX_ENV_FILE."""
+    show_deprecation = False
+    env_env_file = os.environ.get("REFLEX_ENV_FILE")
+    if not env_env_file:
+        env_env_file = os.environ.get("ENV_FILE")
+        if env_env_file:
+            show_deprecation = True
+    if show_deprecation:
+        console.deprecate(
+            "Usage of deprecated ENV_FILE env var detected.",
+            reason="Prefer `REFLEX_` prefix when setting env vars.",
+            deprecation_version="0.7.13",
+            removal_version="0.8.0",
+        )
+    if env_env_file:
+        _load_dotenv_from_str(env_env_file)
+
+
 # Load the env files at import time if they are set in the ENV_FILE environment variable.
-if env_files := os.getenv("ENV_FILE"):
-    _load_dotenv_from_str(env_files)
+_load_dotenv_from_env()
 
 
 class DBConfig(Base):
@@ -979,8 +997,8 @@ If you are not using tailwind, set `tailwind` to `None` in rxconfig.py.""",
         Returns:
             The module name.
         """
-        if self.app_module is not None:
-            return self.app_module.__name__
+        if self.app_module_import is not None:
+            return self.app_module_import
         return ".".join([self.app_name, self.app_name])
 
     def update_from_env(self) -> dict[str, Any]:

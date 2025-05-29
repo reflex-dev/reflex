@@ -287,10 +287,11 @@ class BaseComponentMeta(ABCMeta):
 
         namespace["_own_fields"] = own_fields
         namespace["_inherited_fields"] = inherited_fields
-        namespace["_fields"] = inherited_fields | own_fields
+        all_fields = inherited_fields | own_fields
+        namespace["_fields"] = all_fields
         namespace["_js_fields"] = {
             key: value
-            for key, value in own_fields.items()
+            for key, value in all_fields.items()
             if value.is_javascript is True
         }
         return super().__new__(cls, name, bases, namespace)
@@ -1011,7 +1012,7 @@ class Component(BaseComponent, ABC):
         Returns:
             The unique fields.
         """
-        return set(cls.get_fields()) - set(Component.get_fields())
+        return set(cls.get_js_fields())
 
     @classmethod
     @functools.cache

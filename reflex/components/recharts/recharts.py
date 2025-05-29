@@ -1,6 +1,6 @@
 """A component that wraps a recharts lib."""
 
-from typing import Literal
+from typing import Any, Literal
 
 from reflex.components.component import Component, MemoizationLeaf, NoSSRComponent
 
@@ -73,25 +73,25 @@ LiteralPosition = Literal[
     "center",
 ]
 LiteralIconType = Literal[
-    "line",
-    "plainline",
-    "square",
-    "rect",
     "circle",
     "cross",
     "diamond",
+    "line",
+    "plainline",
+    "rect",
+    "square",
     "star",
     "triangle",
     "wye",
 ]
 LiteralLegendType = Literal[
-    "line",
-    "plainline",
-    "square",
-    "rect",
     "circle",
     "cross",
     "diamond",
+    "line",
+    "plainline",
+    "rect",
+    "square",
     "star",
     "triangle",
     "wye",
@@ -103,7 +103,7 @@ LiteralStackOffset = Literal["expand", "none", "wiggle", "silhouette"]
 LiteralBarChartStackOffset = Literal["expand", "none", "wiggle", "silhouette", "sign"]
 LiteralComposedChartBaseValue = Literal["dataMin", "dataMax", "auto"]
 LiteralAxisType = Literal["number", "category"]
-LiteralAreaType = Literal[
+LiteralCurveType = Literal[
     "basis",
     "basisClosed",
     "basisOpen",
@@ -126,3 +126,5 @@ LiteralIntervalAxis = Literal[
     "preserveStart", "preserveEnd", "preserveStartEnd", "equidistantPreserveStart"
 ]
 LiteralSyncMethod = Literal["index", "value"]
+
+ACTIVE_DOT_TYPE = bool | dict[str, Any]

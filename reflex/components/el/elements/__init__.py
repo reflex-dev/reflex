@@ -69,6 +69,7 @@ _MAPPING = {
         "text",
         "line",
         "circle",
+        "g",
         "ellipse",
         "rect",
         "polygon",

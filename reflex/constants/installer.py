@@ -127,19 +127,28 @@ class PackageJson(SimpleNamespace):
 
     _react_router_version = _determine_react_router_version()
 
-    DEPENDENCIES = {
-        "axios": "1.9.0",
-        "json5": "2.2.3",
-        "react-router": _react_router_version,
-        "react-router-dom": _react_router_version,
-        "@react-router/node": _react_router_version,
-        "serve": "14.2.4",
-        "react": _react_version,
-        "react-dom": _react_version,
-        "isbot": "5.1.26",
-        "socket.io-client": "4.8.1",
-        "universal-cookie": "7.2.2",
-    }
+    @classproperty
+    @classmethod
+    def DEPENDENCIES(cls) -> dict[str, str]:
+        """The dependencies to include in package.json.
+
+        Returns:
+            A dictionary of dependencies with their versions.
+        """
+        return {
+            "axios": "1.9.0",
+            "json5": "2.2.3",
+            "react-router": _react_router_version,
+            "react-router-dom": _react_router_version,
+            "@react-router/node": _react_router_version,
+            "serve": "14.2.4",
+            "react": cls._react_version,
+            "react-dom": cls._react_version,
+            "isbot": "5.1.26",
+            "socket.io-client": "4.8.1",
+            "universal-cookie": "7.2.2",
+        }
+
     DEV_DEPENDENCIES = {
         "@emotion/react": "11.14.0",
         "autoprefixer": "10.4.21",

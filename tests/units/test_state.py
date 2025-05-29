@@ -3321,7 +3321,10 @@ async def test_setvar_async_setter():
         TestState.setvar("asynctest", 42)
 
 
-@pytest.mark.skipif("REDIS_URL" not in os.environ, reason="Test requires redis")
+@pytest.mark.skipif(
+    "REDIS_URL" not in os.environ and "REFLEX_REDIS_URL" not in os.environ,
+    reason="Test requires redis",
+)
 @pytest.mark.parametrize(
     "expiration_kwargs, expected_values",
     [
@@ -3394,7 +3397,10 @@ config = rx.Config(
         assert state_manager.lock_warning_threshold == expected_values[2]  # pyright: ignore [reportAttributeAccessIssue]
 
 
-@pytest.mark.skipif("REDIS_URL" not in os.environ, reason="Test requires redis")
+@pytest.mark.skipif(
+    "REDIS_URL" not in os.environ and "REFLEX_REDIS_URL" not in os.environ,
+    reason="Test requires redis",
+)
 @pytest.mark.parametrize(
     "redis_lock_expiration, redis_lock_warning_threshold",
     [

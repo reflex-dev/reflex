@@ -1035,11 +1035,13 @@ class App(MiddlewareMixin, LifespanMixin):
         Example:
             >>> _get_frontend_packages({"react": "16.14.0", "react-dom": "16.14.0"})
         """
+        dependencies = constants.PackageJson.DEPENDENCIES
+        dev_dependencies = constants.PackageJson.DEV_DEPENDENCIES
         page_imports = {
             i
             for i, tags in imports.items()
-            if i not in constants.PackageJson.DEPENDENCIES
-            and i not in constants.PackageJson.DEV_DEPENDENCIES
+            if i not in dependencies
+            and i not in dev_dependencies
             and not any(i.startswith(prefix) for prefix in ["/", "$/", "."])
             and i != ""
             and any(tag.install for tag in tags)

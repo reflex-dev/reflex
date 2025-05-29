@@ -2,6 +2,7 @@ from reflex.components.el.elements.media import (
     Circle,
     Defs,
     Ellipse,
+    G,
     Line,
     LinearGradient,
     Path,
@@ -72,3 +73,8 @@ def test_text():
 def test_stop():
     stop = Stop.create().render()
     assert stop["name"] == '"stop"'
+
+
+def test_g():
+    g = G.create().render()
+    assert g["name"] == '"g"'
