@@ -78,16 +78,13 @@ class Breakpoints(dict[K, V]):
                 raise ValueError("Named props cannot be used with custom thresholds")
 
             return Breakpoints(custom)
-        else:
-            return Breakpoints(
-                {
-                    k: v
-                    for k, v in zip(
-                        ["initial", *breakpoint_names], thresholds, strict=True
-                    )
-                    if v is not None
-                }
-            )
+        return Breakpoints(
+            {
+                k: v
+                for k, v in zip(["initial", *breakpoint_names], thresholds, strict=True)
+                if v is not None
+            }
+        )
 
 
 breakpoints = Breakpoints.create

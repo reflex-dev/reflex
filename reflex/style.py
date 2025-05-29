@@ -381,6 +381,7 @@ def format_as_emotion(style_dict: dict[str, Any]) -> Style | None:
         if _var_data is not None:
             emotion_style._var_data = VarData.merge(emotion_style._var_data, _var_data)
         return emotion_style
+    return None
 
 
 def convert_dict_to_style_and_format_emotion(

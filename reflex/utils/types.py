@@ -382,7 +382,7 @@ def get_attribute_access_type(cls: GenericType, name: str) -> GenericType | None
     if hasattr(cls, "__fields__") and name in cls.__fields__:
         # pydantic models
         return get_field_type(cls, name)
-    elif isinstance(cls, type) and issubclass(cls, DeclarativeBase):
+    if isinstance(cls, type) and issubclass(cls, DeclarativeBase):
         insp = sqlalchemy.inspect(cls)
         if name in insp.columns:
             # check for list types
@@ -414,8 +414,7 @@ def get_attribute_access_type(cls: GenericType, name: str) -> GenericType | None
                 if isinstance(prop, Relationship):
                     type_ = prop.mapper.class_
                     # TODO: check for nullable?
-                    type_ = list[type_] if prop.uselist else type_ | None
-                    return type_
+                    return list[type_] if prop.uselist else type_ | None
             if isinstance(attr, AssociationProxyInstance):
                 return list[
                     get_attribute_access_type(
@@ -497,13 +496,13 @@ def _breakpoints_satisfies_typing(cls_check: GenericType, instance: Any) -> bool
                 if not isinstance(value, str) or value not in get_args(expected_type):
                     return False
         return True
-    elif isinstance(cls_check_base, tuple):
+    if isinstance(cls_check_base, tuple):
         # union type, so check all types
         return any(
             _breakpoints_satisfies_typing(type_to_check, instance)
             for type_to_check in get_args(cls_check)
         )
-    elif cls_check_base == reflex.vars.Var and "__args__" in cls_check.__dict__:
+    if cls_check_base == reflex.vars.Var and "__args__" in cls_check.__dict__:
         return _breakpoints_satisfies_typing(get_args(cls_check)[0], instance)
 
     return False

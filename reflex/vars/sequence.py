@@ -1203,8 +1203,7 @@ class LiteralStringVar(LiteralVar, StringVar[str]):
                 only_string = filtered_strings_and_vals[0]
                 if isinstance(only_string, str):
                     return LiteralVar.create(only_string).to(StringVar, _var_type)
-                else:
-                    return only_string.to(StringVar, only_string._var_type)
+                return only_string.to(StringVar, only_string._var_type)
 
             if len(
                 literal_strings := [

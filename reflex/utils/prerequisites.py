@@ -1446,7 +1446,7 @@ def validate_bun(bun_path: Path | None = None):
                 "Failed to obtain bun version. Make sure the specified bun path in your config is correct."
             )
             raise click.exceptions.Exit(1)
-        elif bun_version < version.parse(constants.Bun.MIN_VERSION):
+        if bun_version < version.parse(constants.Bun.MIN_VERSION):
             console.warn(
                 f"Reflex requires bun version {constants.Bun.MIN_VERSION} or higher to run, but the detected version is "
                 f"{bun_version}. If you have specified a custom bun path in your config, make sure to provide one "
@@ -1657,8 +1657,7 @@ def fetch_app_templates(version: str) -> dict[str, Template]:
     if asset is None:
         console.warn(f"Templates metadata not found for version {version}")
         return {}
-    else:
-        templates_url = asset["browser_download_url"]
+    templates_url = asset["browser_download_url"]
 
     templates_data = net.get(templates_url, follow_redirects=True).json()["templates"]
 
@@ -1864,7 +1863,7 @@ def initialize_app(app_name: str, template: str | None = None) -> str | None:
     # Check if the app is already initialized.
     if constants.Config.FILE.exists():
         telemetry.send("reinit")
-        return
+        return None
 
     templates: dict[str, Template] = {}
 

@@ -31,8 +31,7 @@ class Html(Div):
         # If children are not provided, throw an error.
         if len(children) != 1:
             raise ValueError("Must provide children to the html component.")
-        else:
-            props["dangerouslySetInnerHTML"] = {"__html": children[0]}
+        props["dangerouslySetInnerHTML"] = {"__html": children[0]}
 
         # Apply the default classname
         given_class_name = props.pop("class_name", [])

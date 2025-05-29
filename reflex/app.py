@@ -262,6 +262,7 @@ class UploadFile(StarletteUploadFile):
         """
         if self.path:
             return self.path.name
+        return None
 
     @property
     def filename(self) -> str | None:
@@ -933,7 +934,7 @@ class App(MiddlewareMixin, LifespanMixin):
                     raise RouteValueError(
                         f"You cannot use different slug names for the same dynamic path in  {route} and {new_route} ('{r}' != '{nr}')"
                     )
-                elif rw not in segments and r != nr:
+                if rw not in segments and r != nr:
                     # if the section being compared in both routes is not a dynamic segment(i.e not wrapped in brackets)
                     # then we are guaranteed that the route is valid and there's no need checking the rest.
                     # eg. /posts/[id]/info/[slug1] and /posts/[id]/info1/[slug1] is always going to be valid since
@@ -1088,9 +1089,7 @@ class App(MiddlewareMixin, LifespanMixin):
             return component
 
         # recreate OverlayFragment with overlay_component as first child
-        component = OverlayFragment.create(overlay_component, *children)
-
-        return component
+        return OverlayFragment.create(overlay_component, *children)
 
     def _setup_overlay_component(self):
         """If a State is not used and no overlay_component is specified, do not render the connection modal."""
@@ -1706,9 +1705,7 @@ class App(MiddlewareMixin, LifespanMixin):
                     raise ValueError(
                         f"Provided custom {handler_domain} exception handler `{_fn_name}` does not take the required argument `{required_arg}`"
                     )
-                elif (
-                    not list(arg_annotations.keys())[required_arg_index] == required_arg
-                ):
+                if not list(arg_annotations.keys())[required_arg_index] == required_arg:
                     raise ValueError(
                         f"Provided custom {handler_domain} exception handler `{_fn_name}` has the wrong argument order."
                         f"Expected `{required_arg}` as the {required_arg_index + 1} argument but got `{list(arg_annotations.keys())[required_arg_index]}`"

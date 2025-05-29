@@ -166,8 +166,7 @@ def serialize(
     # Return the serialized value and the type.
     if get_type:
         return serialized, get_serializer_type(type(value))
-    else:
-        return serialized
+    return serialized
 
 
 @functools.lru_cache

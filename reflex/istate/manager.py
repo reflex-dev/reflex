@@ -269,6 +269,7 @@ class StateManagerDisk(StateManager):
                     return BaseState._deserialize(fp=file)
             except Exception:
                 pass
+        return None
 
     async def populate_substates(
         self, client_token: str, state: BaseState, root_state: BaseState
@@ -643,7 +644,7 @@ class StateManagerRedis(StateManager):
                 f"`app.state_manager.lock_expiration` (currently {self.lock_expiration}) "
                 "or use `@rx.event(background=True)` decorator for long-running tasks."
             )
-        elif lock_id is not None:
+        if lock_id is not None:
             time_taken = self.lock_expiration / 1000 - (
                 await self.redis.ttl(self._lock_key(token))
             )

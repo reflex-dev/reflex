@@ -396,10 +396,9 @@ class DataEditor(NoSSRComponent):
                 raise ValueError(
                     "Cannot pass in both a pandas dataframe and columns to the data_editor component."
                 )
-            else:
-                props["columns"] = [
-                    format.format_data_editor_column(col) for col in columns
-                ]
+            props["columns"] = [
+                format.format_data_editor_column(col) for col in columns
+            ]
 
         if "theme" in props:
             theme = props.get("theme")

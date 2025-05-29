@@ -2457,7 +2457,7 @@ class OnLoadInternalState(State):
         )
         if not load_events:
             self.is_hydrated = True
-            return  # Fast path for navigation with no on_load events defined.
+            return None  # Fast path for navigation with no on_load events defined.
         self.is_hydrated = False
         return [
             *fix_events(

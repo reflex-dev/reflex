@@ -72,10 +72,9 @@ class Bare(Component):
             if isinstance(contents, LiteralStringVar):
                 validate_str(contents._var_value)
             return cls._unsafe_create(children=[], contents=contents)
-        else:
-            if isinstance(contents, str):
-                validate_str(contents)
-            contents = Var.create(contents if contents is not None else "")
+        if isinstance(contents, str):
+            validate_str(contents)
+        contents = Var.create(contents if contents is not None else "")
 
         return cls._unsafe_create(children=[], contents=contents)
 

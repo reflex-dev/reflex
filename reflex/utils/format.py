@@ -187,8 +187,7 @@ def to_camel_case(text: str, treat_hyphens_as_underscores: bool = True) -> str:
     # Capitalize the first letter of each word except the first one
     if len(words) == 1:
         return words[0]
-    converted_word = words[0] + "".join([w.capitalize() for w in words[1:]])
-    return converted_word
+    return words[0] + "".join([w.capitalize() for w in words[1:]])
 
 
 def to_title_case(text: str, sep: str = "") -> str:
@@ -264,17 +263,14 @@ def _escape_js_string(string: str) -> str:
         if segment.startswith("${") and segment.endswith("}"):
             # Return the `${}` segment unchanged
             return segment
-        else:
-            # Escape backticks in the segment
-            segment = segment.replace(r"\`", "`")
-            segment = segment.replace("`", r"\`")
-            return segment
+        # Escape backticks in the segment
+        segment = segment.replace(r"\`", "`")
+        return segment.replace("`", r"\`")
 
     # Split the string into parts, keeping the `${}` segments
     parts = re.split(r"(\$\{.*?\})", string)
     escaped_parts = [escape_outside_segments(part) for part in parts]
-    escaped_string = "".join(escaped_parts)
-    return escaped_string
+    return "".join(escaped_parts)
 
 
 def _wrap_js_string(string: str) -> str:
@@ -287,8 +283,7 @@ def _wrap_js_string(string: str) -> str:
         The wrapped string.
     """
     string = wrap(string, "`")
-    string = wrap(string, "{")
-    return string
+    return wrap(string, "{")
 
 
 def format_string(string: str) -> str:
@@ -402,13 +397,13 @@ def format_prop(
             return str(Var.create(prop))
 
         # Handle other types.
-        elif isinstance(prop, str):
+        if isinstance(prop, str):
             if is_wrapped(prop, "{"):
                 return prop
             return json_dumps(prop)
 
         # For dictionaries, convert any properties to strings.
-        elif isinstance(prop, dict):
+        if isinstance(prop, dict):
             prop = serializers.serialize_dict(prop)  # pyright: ignore [reportAttributeAccessIssue]
 
         else:

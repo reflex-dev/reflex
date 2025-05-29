@@ -119,8 +119,7 @@ class Match(MemoizationLeaf):
             The case element Var.
         """
         _var_data = case_element._var_data if isinstance(case_element, Style) else None
-        case_element = LiteralVar.create(case_element, _var_data=_var_data)
-        return case_element
+        return LiteralVar.create(case_element, _var_data=_var_data)
 
     @classmethod
     def _process_match_cases(cls, cases: list) -> list[list[Var]]:

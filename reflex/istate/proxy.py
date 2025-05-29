@@ -460,6 +460,7 @@ class MutableProxy(wrapt.ObjectProxy):
         self._self_state._mark_dirty()
         if wrapped is not None:
             return wrapped(*args, **(kwargs or {}))
+        return None
 
     @classmethod
     def _is_mutable_type(cls, value: Any) -> bool:

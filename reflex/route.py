@@ -136,7 +136,4 @@ def replace_brackets_with_keywords(input_string: str) -> str:
         r"\[\[.+?\]\]", constants.RouteRegex.DOUBLE_SEGMENT, output_string
     )
     # Replace [<slug>] with __SINGLE_SEGMENT__
-    output_string = re.sub(
-        r"\[.+?\]", constants.RouteRegex.SINGLE_SEGMENT, output_string
-    )
-    return output_string
+    return re.sub(r"\[.+?\]", constants.RouteRegex.SINGLE_SEGMENT, output_string)

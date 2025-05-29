@@ -453,7 +453,7 @@ class EventChain(EventActionsMixin):
         if isinstance(value, Var):
             if isinstance(value, EventChainVar):
                 return value
-            elif isinstance(value, EventVar):
+            if isinstance(value, EventVar):
                 value = [value]
             elif safe_issubclass(value._var_type, (EventChain, EventSpec)):
                 return cls.create(
@@ -1330,16 +1330,15 @@ def _check_event_args_subclass_of_callback(
             if compare_result:
                 type_match_found[arg] = True
                 continue
-            else:
-                type_match_found[arg] = False
-                as_annotated_in = (
-                    f" as annotated in {callback_name}" if callback_name else ""
+            type_match_found[arg] = False
+            as_annotated_in = (
+                f" as annotated in {callback_name}" if callback_name else ""
+            )
+            delayed_exceptions.append(
+                EventHandlerArgTypeMismatchError(
+                    f"Event handler {key} expects {args_types_without_vars[i]} for argument {arg} but got {callback_param_name_to_type[arg]}{as_annotated_in} instead."
                 )
-                delayed_exceptions.append(
-                    EventHandlerArgTypeMismatchError(
-                        f"Event handler {key} expects {args_types_without_vars[i]} for argument {arg} but got {callback_param_name_to_type[arg]}{as_annotated_in} instead."
-                    )
-                )
+            )
 
         if all(type_match_found.values()):
             delayed_exceptions.clear()
@@ -1495,8 +1494,7 @@ def resolve_annotation(annotations: dict[str, Any], arg_name: str, spec: ArgsSpe
     if annotation is None:
         if not isinstance(spec, types.LambdaType):
             raise MissingAnnotationError(var_name=arg_name)
-        else:
-            return dict[str, dict]
+        return dict[str, dict]
     return annotation
 
 

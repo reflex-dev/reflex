@@ -338,8 +338,7 @@ class ObjectVar(Var[OBJECT_TYPE], python_types=Mapping):
                     f"wrongly."
                 )
             return ObjectItemOperation.create(self, name, attribute_type).guess_type()
-        else:
-            return ObjectItemOperation.create(self, name).guess_type()
+        return ObjectItemOperation.create(self, name).guess_type()
 
     def contains(self, key: Var | Any) -> BooleanVar:
         """Check if the object contains a key.

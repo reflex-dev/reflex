@@ -692,10 +692,7 @@ async def test_client_side_state(
             _substate_key(token or "", sub_state_name)
         )
         state = root_state.substates[client_side.get_state_name("_client_side_state")]
-        sub_state = state.substates[
-            client_side.get_state_name("_client_side_sub_state")
-        ]
-        return sub_state
+        return state.substates[client_side.get_state_name("_client_side_sub_state")]
 
     async def poll_for_c1_set():
         sub_state = await get_sub_state()

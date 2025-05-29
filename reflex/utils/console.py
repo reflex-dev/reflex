@@ -89,8 +89,7 @@ def print(msg: str, dedupe: bool = False, **kwargs):
     if dedupe:
         if msg in _EMITTED_PRINTS:
             return
-        else:
-            _EMITTED_PRINTS.add(msg)
+        _EMITTED_PRINTS.add(msg)
     _console.print(msg, **kwargs)
 
 
@@ -107,8 +106,7 @@ def debug(msg: str, dedupe: bool = False, **kwargs):
         if dedupe:
             if msg_ in _EMITTED_DEBUG:
                 return
-            else:
-                _EMITTED_DEBUG.add(msg_)
+            _EMITTED_DEBUG.add(msg_)
         if progress := kwargs.pop("progress", None):
             progress.console.print(msg_, **kwargs)
         else:
@@ -127,8 +125,7 @@ def info(msg: str, dedupe: bool = False, **kwargs):
         if dedupe:
             if msg in _EMITTED_INFO:
                 return
-            else:
-                _EMITTED_INFO.add(msg)
+            _EMITTED_INFO.add(msg)
         print(f"[cyan]Info: {msg}[/cyan]", **kwargs)
 
 
@@ -144,8 +141,7 @@ def success(msg: str, dedupe: bool = False, **kwargs):
         if dedupe:
             if msg in _EMITTED_SUCCESS:
                 return
-            else:
-                _EMITTED_SUCCESS.add(msg)
+            _EMITTED_SUCCESS.add(msg)
         print(f"[green]Success: {msg}[/green]", **kwargs)
 
 
@@ -161,8 +157,7 @@ def log(msg: str, dedupe: bool = False, **kwargs):
         if dedupe:
             if msg in _EMITTED_LOGS:
                 return
-            else:
-                _EMITTED_LOGS.add(msg)
+            _EMITTED_LOGS.add(msg)
         _console.log(msg, **kwargs)
 
 
@@ -188,8 +183,7 @@ def warn(msg: str, dedupe: bool = False, **kwargs):
         if dedupe:
             if msg in _EMIITED_WARNINGS:
                 return
-            else:
-                _EMIITED_WARNINGS.add(msg)
+            _EMIITED_WARNINGS.add(msg)
         print(f"[orange1]Warning: {msg}[/orange1]", **kwargs)
 
 
@@ -271,8 +265,7 @@ def error(msg: str, dedupe: bool = False, **kwargs):
         if dedupe:
             if msg in _EMITTED_ERRORS:
                 return
-            else:
-                _EMITTED_ERRORS.add(msg)
+            _EMITTED_ERRORS.add(msg)
         print(f"[red]{msg}[/red]", **kwargs)
 
 

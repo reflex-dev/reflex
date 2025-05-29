@@ -850,10 +850,9 @@ class Var(Generic[VAR_TYPE], metaclass=MetaclassVar):
                         new_var_type = var_type
                     else:
                         new_var_type = var_type or current_var_type
-                    to_operation_return = var_subclass.to_var_subclass.create(
+                    return var_subclass.to_var_subclass.create(  # pyright: ignore [reportReturnType]
                         value=self, _var_type=new_var_type
                     )
-                    return to_operation_return  # pyright: ignore [reportReturnType]
 
             # If we can't determine the first argument, we just replace the _var_type.
             if not safe_issubclass(output, Var) or var_type is None:
@@ -2683,23 +2682,21 @@ class AsyncComputedVar(ComputedVar[RETURN_TYPE]):
                 return value
 
             return _awaitable_result()
-        else:
-            # handle caching
-            async def _awaitable_result(instance: BaseState = instance) -> RETURN_TYPE:
-                if not hasattr(instance, self._cache_attr) or self.needs_update(
-                    instance
-                ):
-                    # Set cache attr on state instance.
-                    setattr(instance, self._cache_attr, await self.fget(instance))
-                    # Ensure the computed var gets serialized to redis.
-                    instance._was_touched = True
-                    # Set the last updated timestamp on the state instance.
-                    setattr(instance, self._last_updated_attr, datetime.datetime.now())
-                value = getattr(instance, self._cache_attr)
-                self._check_deprecated_return_type(instance, value)
-                return value
 
-            return _awaitable_result()
+        # handle caching
+        async def _awaitable_result(instance: BaseState = instance) -> RETURN_TYPE:
+            if not hasattr(instance, self._cache_attr) or self.needs_update(instance):
+                # Set cache attr on state instance.
+                setattr(instance, self._cache_attr, await self.fget(instance))
+                # Ensure the computed var gets serialized to redis.
+                instance._was_touched = True
+                # Set the last updated timestamp on the state instance.
+                setattr(instance, self._last_updated_attr, datetime.datetime.now())
+            value = getattr(instance, self._cache_attr)
+            self._check_deprecated_return_type(instance, value)
+            return value
+
+        return _awaitable_result()
 
     @property
     def fget(self) -> Callable[[BaseState], Coroutine[None, None, RETURN_TYPE]]:

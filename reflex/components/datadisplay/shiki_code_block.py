@@ -811,8 +811,7 @@ class ShikiHighLevelCodeBlock(ShikiCodeBlock):
             return ShikiCodeBlock.create(
                 children[0], copy_button, position="relative", **props
             )
-        else:
-            return ShikiCodeBlock.create(children[0], **props)
+        return ShikiCodeBlock.create(children[0], **props)
 
     @staticmethod
     def _map_themes(theme: str) -> str:
@@ -840,6 +839,7 @@ class ShikiHighLevelCodeBlock(ShikiCodeBlock):
             )
         if isinstance(code, str):
             return re.sub(regex_pattern, "", code)
+        return None
 
 
 class TransformerNamespace(ComponentNamespace):

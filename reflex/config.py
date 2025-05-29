@@ -214,12 +214,11 @@ def get_default_value_for_field(field: dataclasses.Field) -> Any:
     """
     if field.default != dataclasses.MISSING:
         return field.default
-    elif field.default_factory != dataclasses.MISSING:
+    if field.default_factory != dataclasses.MISSING:
         return field.default_factory()
-    else:
-        raise ValueError(
-            f"Missing value for environment variable {field.name} and no default value found"
-        )
+    raise ValueError(
+        f"Missing value for environment variable {field.name} and no default value found"
+    )
 
 
 # TODO: Change all interpret_.* signatures to value: str, field: dataclasses.Field once we migrate rx.Config to dataclasses
@@ -241,7 +240,7 @@ def interpret_boolean_env(value: str, field_name: str) -> bool:
 
     if value.lower() in true_values:
         return True
-    elif value.lower() in false_values:
+    if value.lower() in false_values:
         return False
     raise EnvironmentVarValueError(f"Invalid boolean value: {value} for {field_name}")
 
@@ -346,15 +345,15 @@ def interpret_env_var_value(
 
     if field_type is bool:
         return interpret_boolean_env(value, field_name)
-    elif field_type is str:
+    if field_type is str:
         return value
-    elif field_type is int:
+    if field_type is int:
         return interpret_int_env(value, field_name)
-    elif field_type is Path:
+    if field_type is Path:
         return interpret_path_env(value, field_name)
-    elif field_type is ExistingPath:
+    if field_type is ExistingPath:
         return interpret_existing_path_env(value, field_name)
-    elif get_origin(field_type) is list:
+    if get_origin(field_type) is list:
         return [
             interpret_env_var_value(
                 v,
@@ -363,13 +362,12 @@ def interpret_env_var_value(
             )
             for i, v in enumerate(value.split(":"))
         ]
-    elif inspect.isclass(field_type) and issubclass(field_type, enum.Enum):
+    if inspect.isclass(field_type) and issubclass(field_type, enum.Enum):
         return interpret_enum_env(value, field_type, field_name)
 
-    else:
-        raise ValueError(
-            f"Invalid type for environment variable {field_name}: {field_type}. This is probably an issue in Reflex."
-        )
+    raise ValueError(
+        f"Invalid type for environment variable {field_name}: {field_type}. This is probably an issue in Reflex."
+    )
 
 
 T = TypeVar("T")

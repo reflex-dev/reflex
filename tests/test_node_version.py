@@ -63,8 +63,7 @@ def test_node_version(node_version_app: AppHarness, page: Page):
 
         # Assuming the first entry in the API response is the most recent version
         if versions:
-            latest_version = versions[0]["version"]
-            return latest_version
+            return versions[0]["version"]
         return None
 
     assert node_version_app.frontend_url is not None

@@ -342,10 +342,9 @@ let {_LANGUAGE!s} = match ? match[1] : '';
         if children_prop is not None:
             children = []
         # Get the component.
-        component = self.component_map[tag](*children, **props).set(
+        return self.component_map[tag](*children, **props).set(
             special_props=special_props
         )
-        return component
 
     def format_component(self, tag: str, **props) -> str:
         """Format a component for rendering in the component map.
@@ -437,7 +436,7 @@ let {_LANGUAGE!s} = match ? match[1] : '';
         """
 
     def _render(self) -> Tag:
-        tag = (
+        return (
             super()
             ._render()
             .add_props(
@@ -447,4 +446,3 @@ let {_LANGUAGE!s} = match ? match[1] : '';
             )
             .remove_props("componentMap", "componentMapHash")
         )
-        return tag

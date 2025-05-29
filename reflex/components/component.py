@@ -1503,13 +1503,9 @@ class Component(BaseComponent, ABC):
         """
         if self.event_triggers and self._event_trigger_values_use_state():
             return True
-        else:
-            for child in self.children:
-                if (
-                    isinstance(child, Component)
-                    and child._has_stateful_event_triggers()
-                ):
-                    return True
+        for child in self.children:
+            if isinstance(child, Component) and child._has_stateful_event_triggers():
+                return True
         return False
 
     @classmethod
@@ -1768,6 +1764,7 @@ class Component(BaseComponent, ABC):
                         {on_unmount or ""}
                     }}
                 }}, []);"""
+        return None
 
     def _get_ref_hook(self) -> Var | None:
         """Generate the ref hook for the component.
@@ -1781,6 +1778,7 @@ class Component(BaseComponent, ABC):
                 f"const {ref} = useRef(null); {Var(_js_expr=ref)._as_ref()!s} = {ref};",
                 _var_data=VarData(position=Hooks.HookPosition.INTERNAL),
             )
+        return None
 
     def _get_vars_hooks(self) -> dict[str, VarData | None]:
         """Get the hooks required by vars referenced in this component.

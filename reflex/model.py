@@ -271,7 +271,7 @@ class Model(Base, sqlmodel.SQLModel):  # pyright: ignore [reportGeneralTypeIssue
         """
         if hasattr(value, "dict"):
             return value.dict()
-        elif isinstance(value, list):
+        if isinstance(value, list):
             return [cls._dict_recursive(item) for item in value]
         return value
 
@@ -481,7 +481,7 @@ class Model(Base, sqlmodel.SQLModel):  # pyright: ignore [reportGeneralTypeIssue
             None - indicating the process was skipped.
         """
         if not environment.ALEMBIC_CONFIG.get().exists():
-            return
+            return None
 
         with cls.get_db_engine().connect() as connection:
             cls._alembic_upgrade(connection=connection)
