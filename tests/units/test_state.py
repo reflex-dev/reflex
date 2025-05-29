@@ -1820,6 +1820,7 @@ async def test_state_manager_lock_expire_contend(
 
     async def _coro_blocker():
         async with state_manager_redis.modify_state(substate_token_redis) as state:
+            order.append("blocker")
             waiter_event.set()
             await asyncio.sleep(LOCK_EXPIRE_SLEEP)
             state.num1 = unexp_num1
