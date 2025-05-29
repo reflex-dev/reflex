@@ -99,3 +99,11 @@ class Plugin:
         Args:
             context: The context for the plugin.
         """
+
+    def __repr__(self):
+        """Return a string representation of the plugin.
+
+        Returns:
+            A string representation of the plugin.
+        """
+        return f"{self.__class__.__name__}()"
