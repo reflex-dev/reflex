@@ -57,7 +57,7 @@ def TestEventAction():
                 }"""
 
         def get_event_triggers(self):
-            return {"on_click": lambda: []}
+            return {"on_click": rx.event.no_args_event_spec}
 
     def index():
         return rx.vstack(

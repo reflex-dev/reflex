@@ -229,8 +229,6 @@ def default_error_boundary(*children: Component) -> Component:
 class OverlayFragment(Fragment):
     """Alias for Fragment, used to wrap the overlay_component."""
 
-    pass
-
 
 @dataclasses.dataclass(frozen=True)
 class UploadFile(StarletteUploadFile):

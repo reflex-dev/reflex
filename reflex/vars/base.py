@@ -2562,8 +2562,6 @@ class ComputedVar(Var[RETURN_TYPE]):
 class DynamicRouteVar(ComputedVar[str | list[str]]):
     """A ComputedVar that represents a dynamic route."""
 
-    pass
-
 
 async def _default_async_computed_var(_self: BaseState) -> Any:
     return None

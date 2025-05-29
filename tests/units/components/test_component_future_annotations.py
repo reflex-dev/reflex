@@ -20,7 +20,7 @@ def test_custom_component_declare_event_handlers_in_fields():
                 "on_a": lambda e: [e],
                 "on_b": lambda e: [e.target.value],
                 "on_c": lambda e: [],
-                "on_d": lambda: [],
+                "on_d": no_args_event_spec,
             }
 
     class TestComponent(Component):

@@ -315,7 +315,6 @@ def stream_logs(
                 # But if the process is still running that is weird.
                 raise
             # If the process exited, break out of the loop for post processing.
-            pass
 
     # Check if the process failed (not printing the logs for SIGINT).
 

@@ -129,7 +129,6 @@ def check_latest_package_version(package_name: str):
             )
     except Exception:
         console.debug(f"Failed to check for the latest version of {package_name}.")
-        pass
 
 
 def get_or_set_last_reflex_version_check_datetime():

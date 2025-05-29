@@ -842,7 +842,6 @@ class C1State(BaseState):
 
     def mock_handler(self, _e: JavascriptInputEvent, _bravo: dict, _charlie: _Obj):
         """Mock handler."""
-        pass
 
 
 def test_component_event_trigger_arbitrary_args():
@@ -1536,8 +1535,6 @@ def test_instantiate_all_components():
 class InvalidParentComponent(Component):
     """Invalid Parent Component."""
 
-    ...
-
 
 class ValidComponent1(Component):
     """Test valid component."""
@@ -1547,8 +1544,6 @@ class ValidComponent1(Component):
 
 class ValidComponent2(Component):
     """Test valid component."""
-
-    ...
 
 
 class ValidComponent3(Component):
@@ -1565,8 +1560,6 @@ class ValidComponent4(Component):
 
 class InvalidComponent(Component):
     """Test invalid component."""
-
-    ...
 
 
 valid_component1 = ValidComponent1.create
@@ -1867,8 +1860,8 @@ def test_custom_component_declare_event_handlers_in_fields():
             return {
                 **super().get_event_triggers(),
                 "on_b": input_event,
-                "on_d": lambda: [],
-                "on_e": lambda: [],
+                "on_d": no_args_event_spec,
+                "on_e": no_args_event_spec,
             }
 
     class TestComponent(Component):
@@ -1902,7 +1895,7 @@ def test_invalid_event_trigger():
             """
             return {
                 **super().get_event_triggers(),
-                "on_a": lambda: [],
+                "on_a": no_args_event_spec,
             }
 
     trigger_comp = TriggerComponent.create
@@ -2232,7 +2225,6 @@ class TriggerState(rx.State):
     @rx.event
     def do_something(self):
         """Sample event handler."""
-        pass
 
 
 @pytest.mark.parametrize(

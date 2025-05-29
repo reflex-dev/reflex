@@ -68,8 +68,6 @@ from .states import (
 class EmptyState(BaseState):
     """An empty state."""
 
-    pass
-
 
 @pytest.fixture
 def index_page() -> ComponentCallable:
@@ -154,8 +152,6 @@ def test_model_auth() -> type[Model]:
     class TestModelAuth(Model, table=True):
         """A test model with auth."""
 
-        pass
-
     return TestModelAuth
 
 
@@ -191,19 +187,15 @@ def test_custom_auth_admin() -> type[AuthProvider]:
 
         def login(self):  # pyright: ignore [reportIncompatibleMethodOverride]
             """Login."""
-            pass
 
         def is_authenticated(self):  # pyright: ignore [reportIncompatibleMethodOverride]
             """Is authenticated."""
-            pass
 
         def get_admin_user(self):  # pyright: ignore [reportIncompatibleMethodOverride]
             """Get admin user."""
-            pass
 
         def logout(self):  # pyright: ignore [reportIncompatibleMethodOverride]
             """Logout."""
-            pass
 
     return TestAuthProvider
 

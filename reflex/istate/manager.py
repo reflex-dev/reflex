@@ -79,7 +79,6 @@ class StateManager(ABC):
         Returns:
             The state for the token.
         """
-        pass
 
     @abstractmethod
     async def set_state(self, token: str, state: BaseState):
@@ -89,7 +88,6 @@ class StateManager(ABC):
             token: The token to set the state for.
             state: The state to set.
         """
-        pass
 
     @abstractmethod
     @contextlib.asynccontextmanager
@@ -144,7 +142,6 @@ class StateManagerMemory(StateManager):
             token: The token to set the state for.
             state: The state to set.
         """
-        pass
 
     @override
     @contextlib.asynccontextmanager

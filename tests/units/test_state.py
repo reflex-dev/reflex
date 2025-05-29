@@ -143,7 +143,6 @@ class TestState(BaseState):
 
     def do_something(self):
         """Do something."""
-        pass
 
     async def set_asynctest(self, value: int):
         """Set the asynctest value. Intentionally overwrite the default setter with an async one.
@@ -190,7 +189,6 @@ class GrandchildState(ChildState):
 
     def do_nothing(self):
         """Do something."""
-        pass
 
 
 class GrandchildState2(ChildState2):
@@ -3136,12 +3134,8 @@ async def test_get_state_from_sibling_not_cached(mock_app: rx.App, token: str):
     class Child(Parent):
         """A state simulating UpdateVarsInternalState."""
 
-        pass
-
     class Child2(Parent):
         """An unconnected child state."""
-
-        pass
 
     class Child3(Parent):
         """A child state with a computed var causing it to be pre-fetched.
@@ -3162,15 +3156,11 @@ async def test_get_state_from_sibling_not_cached(mock_app: rx.App, token: str):
         invalid parent state names were being constructed.
         """
 
-        pass
-
     class GreatGrandchild3(Grandchild3):
         """Fetching this state wants to also fetch Child3 as a missing parent.
         However, Child3 should already be cached in the state tree because it
         has a computed var.
         """
-
-        pass
 
     mock_app.state_manager.state = mock_app._state = Parent
 
@@ -3239,8 +3229,6 @@ async def test_router_var_dep(state_manager: StateManager, token: str) -> None:
 
     class RouterVarParentState(State):
         """A parent state for testing router var dependency."""
-
-        pass
 
     class RouterVarDepState(RouterVarParentState):
         """A state with a router var dependency."""
@@ -3485,25 +3473,17 @@ class MixinState(State, mixin=True):
 class UsesMixinState(MixinState, State):
     """A state that uses the mixin state."""
 
-    pass
-
 
 class ChildUsesMixinState(UsesMixinState):
     """A child state that uses the mixin state."""
-
-    pass
 
 
 class ChildMixinState(ChildUsesMixinState, mixin=True):
     """A mixin state that inherits from a concrete state that uses mixins."""
 
-    pass
-
 
 class GrandchildUsesMixinState(ChildMixinState):
     """A grandchild state that uses the mixin state."""
-
-    pass
 
 
 class BareMixin:
@@ -3515,19 +3495,13 @@ class BareMixin:
 class BareStateMixin(BareMixin, rx.State, mixin=True):
     """A state mixin that uses a bare mixin."""
 
-    pass
-
 
 class BareMixinState(BareStateMixin, State):
     """A state that uses a bare mixin."""
 
-    pass
-
 
 class ChildBareMixinState(BareMixinState):
     """A child state that uses a bare mixin."""
-
-    pass
 
 
 def test_mixin_state() -> None:
@@ -3962,8 +3936,6 @@ async def test_async_computed_var_get_state(mock_app: rx.App, token: str):
 
     class Child2(Parent):
         """An unconnected child state."""
-
-        pass
 
     class Child3(Parent):
         """A child state with a computed var causing it to be pre-fetched.

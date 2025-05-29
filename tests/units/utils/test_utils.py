@@ -25,7 +25,6 @@ class ExampleTestState(BaseState):
 
     def test_event_handler(self):
         """Test event handler."""
-        pass
 
 
 def test_func():
@@ -390,8 +389,6 @@ def test_create_config_e2e(tmp_working_dir):
 
 class DataFrame:
     """A Fake pandas DataFrame class."""
-
-    pass
 
 
 @pytest.mark.parametrize(

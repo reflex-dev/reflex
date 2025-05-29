@@ -447,7 +447,6 @@ def get_attribute_access_type(cls: GenericType, name: str) -> GenericType | None
                 return hints[name]
         except exceptions as e:
             console.warn(f"Failed to resolve ForwardRefs for {cls}.{name} due to {e}")
-            pass
     return None  # Attribute is not accessible.
 
 

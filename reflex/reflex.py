@@ -36,7 +36,6 @@ def set_loglevel(ctx: click.Context, self: click.Parameter, value: str | None):
 @click.version_option(constants.Reflex.VERSION, message="%(version)s")
 def cli():
     """Reflex CLI to create, run, and deploy apps."""
-    pass
 
 
 loglevel_option = click.option(
@@ -482,13 +481,11 @@ def logout():
 @click.group
 def db_cli():
     """Subcommands for managing the database schema."""
-    pass
 
 
 @click.group
 def script_cli():
     """Subcommands for running helper scripts."""
-    pass
 
 
 def _skip_compile():

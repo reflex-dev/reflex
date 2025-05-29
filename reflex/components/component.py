@@ -2218,7 +2218,7 @@ def _register_custom_component(
                 _var_type=unwrap_var_annotation(annotation),
             ).guess_type()
             if not types.safe_issubclass(annotation, EventHandler)
-            else EventSpec(handler=EventHandler(fn=lambda: []))
+            else EventSpec(handler=EventHandler(fn=no_args_event_spec))
         )
         for prop, annotation in typing.get_type_hints(component_fn).items()
         if prop != "return"
@@ -2538,7 +2538,7 @@ class StatefulComponent(BaseComponent):
         var_name = var_name.strip()
 
         # Break up array and object destructuring if used.
-        if var_name.startswith("[") or var_name.startswith("{"):
+        if var_name.startswith(("[", "{")):
             return [
                 v.strip().replace("...", "") for v in var_name.strip("[]{}").split(",")
             ]

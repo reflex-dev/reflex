@@ -2137,7 +2137,6 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         Args:
             exc_info: The exception info tuple.
         """
-        pass
 
     def __getstate__(self):
         """Get the state for redis serialization.

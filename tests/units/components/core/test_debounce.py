@@ -44,7 +44,6 @@ class S(BaseState):
         Args:
             v: The changed value.
         """
-        pass
 
 
 def test_render_child_props():

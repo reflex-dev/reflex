@@ -8,7 +8,13 @@ import plotly.graph_objects as go
 import pytest
 
 from reflex.components.tags.tag import Tag
-from reflex.event import EventChain, EventHandler, EventSpec, JavascriptInputEvent
+from reflex.event import (
+    EventChain,
+    EventHandler,
+    EventSpec,
+    JavascriptInputEvent,
+    no_args_event_spec,
+)
 from reflex.style import Style
 from reflex.utils import format
 from reflex.utils.serializers import serialize_figure
@@ -368,7 +374,7 @@ def test_format_match(
         (
             EventChain(
                 events=[EventSpec(handler=EventHandler(fn=mock_event))],
-                args_spec=lambda: [],
+                args_spec=no_args_event_spec,
             ),
             '((...args) => (addEvents([(Event("mock_event", ({  }), ({  })))], args, ({  }))))',
         ),
@@ -396,7 +402,7 @@ def test_format_match(
         (
             EventChain(
                 events=[EventSpec(handler=EventHandler(fn=mock_event))],
-                args_spec=lambda: [],
+                args_spec=no_args_event_spec,
                 event_actions={"stopPropagation": True},
             ),
             '((...args) => (addEvents([(Event("mock_event", ({  }), ({  })))], args, ({ ["stopPropagation"] : true }))))',
@@ -409,14 +415,14 @@ def test_format_match(
                         event_actions={"stopPropagation": True},
                     )
                 ],
-                args_spec=lambda: [],
+                args_spec=no_args_event_spec,
             ),
             '((...args) => (addEvents([(Event("mock_event", ({  }), ({ ["stopPropagation"] : true })))], args, ({  }))))',
         ),
         (
             EventChain(
                 events=[EventSpec(handler=EventHandler(fn=mock_event))],
-                args_spec=lambda: [],
+                args_spec=no_args_event_spec,
                 event_actions={"preventDefault": True},
             ),
             '((...args) => (addEvents([(Event("mock_event", ({  }), ({  })))], args, ({ ["preventDefault"] : true }))))',

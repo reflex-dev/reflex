@@ -181,7 +181,6 @@ class StateProxy(wrapt.ObjectProxy):
         Args:
             exc_info: The exception info tuple.
         """
-        pass
 
     def __getattr__(self, name: str) -> Any:
         """Get the attribute from the underlying state instance.

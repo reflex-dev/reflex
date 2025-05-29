@@ -166,8 +166,6 @@ class FormSubmit(FormComponent):
 class Form(FormRoot):
     """The Form component."""
 
-    pass
-
 
 class FormNamespace(ComponentNamespace):
     """Form components."""

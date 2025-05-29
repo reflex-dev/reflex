@@ -12,4 +12,3 @@ class AppMixin:
 
         Any App mixin can override this method to perform any initialization.
         """
-        ...
