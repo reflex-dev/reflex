@@ -233,7 +233,7 @@ hooks = [
     "reflex",
     "tests",
   ] },
-  { id = "ruff", args = [
+  { id = "ruff-check", args = [
     "--fix",
     "--exit-non-zero-on-fix",
   ], exclude = "^integration/benchmarks/" },
