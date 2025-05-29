@@ -383,6 +383,7 @@ HOTRELOAD_IGNORE_EXTENSIONS = (
     "json",
     "sh",
     "bash",
+    "log",
 )
 
 HOTRELOAD_IGNORE_PATTERNS = (
