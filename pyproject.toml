@@ -100,7 +100,6 @@ lint.ignore = [
   "F403",
   "FBT",
   "FIX",
-  "FLY",
   "G004",
   "INP",
   "ISC003",

@@ -951,7 +951,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         name = cls.get_name()
         parent_state = cls.get_parent_state()
         if parent_state is not None:
-            name = ".".join((parent_state.get_full_name(), name))
+            name = parent_state.get_full_name() + "." + name
         return name
 
     @classmethod

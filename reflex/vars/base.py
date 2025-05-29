@@ -1009,7 +1009,7 @@ class Var(Generic[VAR_TYPE], metaclass=MetaclassVar):
             return setter
         if not include_state or var_data.state == "":
             return setter
-        return ".".join((var_data.state, setter))
+        return var_data.state + "." + setter
 
     def _get_setter(self) -> Callable[[BaseState, Any], None]:
         """Get the var's setter function.
