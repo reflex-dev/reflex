@@ -684,9 +684,8 @@ def into_component(component: Component | ComponentCallable) -> Component:
     if (converted := _into_component_once(component)) is not None:
         return converted
     if not callable(component):
-        raise TypeError(
-            f"Expected a Component or callable, got {component!r} of type {type(component)}"
-        )
+        msg = f"Expected a Component or callable, got {component!r} of type {type(component)}"
+        raise TypeError(msg)
 
     try:
         component_called = component()
@@ -730,9 +729,8 @@ def into_component(component: Component | ComponentCallable) -> Component:
     if (converted := _into_component_once(component_called)) is not None:
         return converted
 
-    raise TypeError(
-        f"Expected a Component, got {component_called!r} of type {type(component_called)}"
-    )
+    msg = f"Expected a Component, got {component_called!r} of type {type(component_called)}"
+    raise TypeError(msg)
 
 
 def compile_unevaluated_page(
