@@ -192,7 +192,9 @@ async def test_submit(driver, form_submit: AppHarness):
     by = By.ID if form_submit.app_source is FormSubmit else By.NAME
 
     # get a reference to the connected client
-    token_input = driver.find_element(By.ID, "token")
+    token_input = form_submit.poll_for_result(
+        lambda: driver.find_element(By.ID, "token")
+    )
     assert token_input
 
     # wait for the backend connection to send the token

@@ -15,6 +15,7 @@ on:
       - "**/*.md"
 env:
   APP_HARNESS_HEADLESS: 1
+  PYTHONUNBUFFERED: 1
 
 permissions:
   contents: read
