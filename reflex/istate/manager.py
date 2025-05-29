@@ -601,9 +601,7 @@ class StateManagerRedis(StateManager):
                         "in the state tree, but should have already been fetched. "
                         "This is a bug"
                     )
-                    raise RuntimeError(
-                        msg,
-                    )
+                    raise RuntimeError(msg)
                 parent_state.substates[state_name] = state
                 state.parent_state = parent_state
 

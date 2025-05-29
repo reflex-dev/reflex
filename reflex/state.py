@@ -1522,9 +1522,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
                 f"Requested state {state_cls.get_full_name()} is not cached and cannot be accessed without redis. "
                 "(All states should already be available -- this is likely a bug)."
             )
-            raise RuntimeError(
-                msg,
-            )
+            raise RuntimeError(msg)
         state_in_redis = await state_manager.get_state(
             token=_substate_key(self.router.session.client_token, state_cls),
             top_level=False,

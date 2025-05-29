@@ -776,9 +776,7 @@ class AppHarness:
             timeout=timeout,
         ):
             msg = f"{element} content remains {exp_not_equal!r} while polling."
-            raise TimeoutError(
-                msg,
-            )
+            raise TimeoutError(msg)
         return element.text
 
     def poll_for_value(
@@ -808,9 +806,7 @@ class AppHarness:
             timeout=timeout,
         ):
             msg = f"{element} content remains {exp_not_equal!r} while polling."
-            raise TimeoutError(
-                msg,
-            )
+            raise TimeoutError(msg)
         return element.get_attribute("value")
 
     def poll_for_clients(self, timeout: TimeoutType = None) -> dict[str, BaseState]:

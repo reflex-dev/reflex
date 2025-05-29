@@ -74,9 +74,7 @@ class DebounceInput(Component):
                 "Provide a single child for DebounceInput, such as rx.input() or "
                 "rx.text_area()"
             )
-            raise RuntimeError(
-                msg,
-            )
+            raise RuntimeError(msg)
 
         child = children[0]
         if "on_change" not in child.event_triggers:
