@@ -427,7 +427,7 @@ with contextlib.suppress(ImportError):
         """
         return [
             [str(d) if isinstance(d, (list, tuple)) else d for d in data]
-            for data in list(df.values.tolist())
+            for data in list(df.to_numpy().tolist())
         ]
 
     @serializer

@@ -102,7 +102,6 @@ lint.ignore = [
   "FIX",
   "G004",
   "ISC003",
-  "PD",
   "PIE",
   "PLC",
   "PLR",
