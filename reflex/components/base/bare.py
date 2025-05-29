@@ -43,9 +43,8 @@ def validate_str(value: str):
                 f"Output includes {value!s} which will be displayed as a string. If you are calling `str` on a Var, consider using .to_string() instead."
             )
         elif perf_mode == PerformanceMode.RAISE:
-            raise ValueError(
-                f"Output includes {value!s} which will be displayed as a string. If you are calling `str` on a Var, consider using .to_string() instead."
-            )
+            msg = f"Output includes {value!s} which will be displayed as a string. If you are calling `str` on a Var, consider using .to_string() instead."
+            raise ValueError(msg)
 
 
 def _components_from_var(var: Var) -> Sequence[BaseComponent]:

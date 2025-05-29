@@ -60,7 +60,8 @@ def compile_import_statement(fields: list[ImportVar]) -> tuple[str, list[str]]:
     # Check for default imports.
     defaults = {field for field in fields_set if field.is_default}
     if len(defaults) >= 2:
-        raise ValueError("Only one default import is allowed.")
+        msg = "Only one default import is allowed."
+        raise ValueError(msg)
 
     # Get the default import, and the specific imports.
     default = next(iter({field.name for field in defaults}), "")
@@ -91,9 +92,8 @@ def validate_imports(import_dict: ParsedImportDict):
                 ):
                     used_tags[import_name] = lib if lib[0] == "$" else already_imported
                     continue
-                raise ValueError(
-                    f"Can not compile, the tag {import_name} is used multiple time from {lib} and {used_tags[import_name]}"
-                )
+                msg = f"Can not compile, the tag {import_name} is used multiple time from {lib} and {used_tags[import_name]}"
+                raise ValueError(msg)
             if import_name is not None:
                 used_tags[import_name] = lib
 
@@ -130,9 +130,11 @@ def compile_imports(import_dict: ParsedImportDict) -> list[dict]:
         for path, (default, rest) in compiled.items():
             if not lib:
                 if default:
-                    raise ValueError("No default field allowed for empty library.")
+                    msg = "No default field allowed for empty library."
+                    raise ValueError(msg)
                 if rest is None or len(rest) == 0:
-                    raise ValueError("No fields to import.")
+                    msg = "No fields to import."
+                    raise ValueError(msg)
                 import_dicts.extend(get_import_dict(module) for module in sorted(rest))
                 continue
 

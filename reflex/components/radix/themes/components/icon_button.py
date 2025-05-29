@@ -70,9 +70,8 @@ class IconButton(elements.Button, RadixLoadingProp, RadixThemesComponent):
                     )
                 ]
         else:
-            raise ValueError(
-                "IconButton requires a child icon. Pass a string as the first child or a rx.icon."
-            )
+            msg = "IconButton requires a child icon. Pass a string as the first child or a rx.icon."
+            raise ValueError(msg)
         if "size" in props:
             if isinstance(props["size"], str):
                 children[0].size = RADIX_TO_LUCIDE_SIZE[props["size"]]  # pyright: ignore[reportAttributeAccessIssue]
@@ -83,7 +82,8 @@ class IconButton(elements.Button, RadixLoadingProp, RadixThemesComponent):
                     12,
                 )
                 if not isinstance(size_map_var, Var):
-                    raise ValueError(f"Match did not return a Var: {size_map_var}")
+                    msg = f"Match did not return a Var: {size_map_var}"
+                    raise ValueError(msg)
                 children[0].size = size_map_var  # pyright: ignore[reportAttributeAccessIssue]
         return super().create(*children, **props)
 

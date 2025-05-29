@@ -235,7 +235,8 @@ def _run(
             exec.run_backend_prod,
         )
     if not setup_frontend or not frontend_cmd or not backend_cmd:
-        raise ValueError(f"Invalid env: {env}. Must be DEV or PROD.")
+        msg = f"Invalid env: {env}. Must be DEV or PROD."
+        raise ValueError(msg)
 
     # Post a telemetry event.
     telemetry.send(f"run-{env.value}")

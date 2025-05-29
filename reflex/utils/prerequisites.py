@@ -255,9 +255,8 @@ def get_nodejs_compatible_package_managers(
     package_managers = list(filter(None, package_managers))
 
     if not package_managers and raise_on_none:
-        raise FileNotFoundError(
-            "Bun or npm not found. You might need to rerun `reflex init` or install either."
-        )
+        msg = "Bun or npm not found. You might need to rerun `reflex init` or install either."
+        raise FileNotFoundError(msg)
 
     return package_managers
 
@@ -310,9 +309,8 @@ def get_js_package_executor(raise_on_none: bool = False) -> Sequence[Sequence[st
     package_managers = list(filter(None, package_managers))
 
     if not package_managers and raise_on_none:
-        raise FileNotFoundError(
-            "Bun or npm not found. You might need to rerun `reflex init` or install either."
-        )
+        msg = "Bun or npm not found. You might need to rerun `reflex init` or install either."
+        raise FileNotFoundError(msg)
 
     return package_managers
 
@@ -345,10 +343,11 @@ def _check_app_name(config: Config):
         RuntimeError: If the app name is not set in the config.
     """
     if not config.app_name:
-        raise RuntimeError(
+        msg = (
             "Cannot get the app module because `app_name` is not set in rxconfig! "
             "If this error occurs in a reflex test case, ensure that `get_app` is mocked."
         )
+        raise RuntimeError(msg)
 
 
 def get_app(reload: bool = False) -> ModuleType:
@@ -412,9 +411,8 @@ def get_and_validate_app(reload: bool = False) -> AppInfo:
     app_module = get_app(reload=reload)
     app = getattr(app_module, constants.CompileVars.APP)
     if not isinstance(app, App):
-        raise RuntimeError(
-            "The app instance in the specified app_module_import in rxconfig must be an instance of rx.App."
-        )
+        msg = "The app instance in the specified app_module_import in rxconfig must be an instance of rx.App."
+        raise RuntimeError(msg)
     return AppInfo(app=app, module=app_module)
 
 
@@ -575,9 +573,8 @@ def parse_redis_url() -> str | None:
     if not config.redis_url:
         return None
     if not config.redis_url.startswith(("redis://", "rediss://", "unix://")):
-        raise ValueError(
-            "REDIS_URL must start with 'redis://', 'rediss://', or 'unix://'."
-        )
+        msg = "REDIS_URL must start with 'redis://', 'rediss://', or 'unix://'."
+        raise ValueError(msg)
     return config.redis_url
 
 
@@ -1214,7 +1211,8 @@ def install_bun():
         )
     else:
         if path_ops.which("unzip") is None:
-            raise SystemPackageMissingError("unzip")
+            msg = "unzip"
+            raise SystemPackageMissingError(msg)
 
         # Run the bun install script.
         download_and_run(
@@ -1263,13 +1261,15 @@ def cached_procedure(
         ValueError: If both cache_file and cache_file_fn are provided.
     """
     if cache_file and cache_file_fn is not None:
-        raise ValueError("cache_file and cache_file_fn cannot both be provided.")
+        msg = "cache_file and cache_file_fn cannot both be provided."
+        raise ValueError(msg)
 
     def _inner_decorator(func: Callable):
         def _inner(*args, **kwargs):
             _cache_file = cache_file_fn() if cache_file_fn is not None else cache_file
             if not _cache_file:
-                raise ValueError("Unknown cache file, cannot cache result.")
+                msg = "Unknown cache file, cannot cache result."
+                raise ValueError(msg)
             payload = _read_cached_procedure_file(_cache_file)
             new_payload = payload_fn(*args, **kwargs)
             if payload != new_payload:

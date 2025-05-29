@@ -76,7 +76,8 @@ def serializer(
 
         # Make sure the function takes a single argument.
         if len(args) != 1:
-            raise ValueError("Serializer must take a single argument.")
+            msg = "Serializer must take a single argument."
+            raise ValueError(msg)
 
         # Get the type of the argument.
         type_ = type_hints[args[0]]

@@ -244,14 +244,12 @@ def get_app_file() -> Path:
         sys.path.insert(0, current_working_dir)
     module_spec = importlib.util.find_spec(get_app_module())
     if module_spec is None:
-        raise ImportError(
-            f"Module {get_app_module()} not found. Make sure the module is installed."
-        )
+        msg = f"Module {get_app_module()} not found. Make sure the module is installed."
+        raise ImportError(msg)
     file_name = module_spec.origin
     if file_name is None:
-        raise ImportError(
-            f"Module {get_app_module()} not found. Make sure the module is installed."
-        )
+        msg = f"Module {get_app_module()} not found. Make sure the module is installed."
+        raise ImportError(msg)
     return Path(file_name).resolve()
 
 

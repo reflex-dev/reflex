@@ -165,7 +165,8 @@ def StateWithRuntimeOnlyVar():
     class StateWithRuntimeOnlyVar(BaseState):
         @computed_var(initial_value=None)
         def var_raises_at_runtime(self) -> str:
-            raise ValueError("So nicht, mein Freund")
+            msg = "So nicht, mein Freund"
+            raise ValueError(msg)
 
     return StateWithRuntimeOnlyVar
 
@@ -175,7 +176,8 @@ def ChildWithRuntimeOnlyVar(StateWithRuntimeOnlyVar):
     class ChildWithRuntimeOnlyVar(StateWithRuntimeOnlyVar):
         @computed_var(initial_value="Initial value")
         def var_raises_at_runtime_child(self) -> str:
-            raise ValueError("So nicht, mein Freund")
+            msg = "So nicht, mein Freund"
+            raise ValueError(msg)
 
     return ChildWithRuntimeOnlyVar
 

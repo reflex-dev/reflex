@@ -170,9 +170,8 @@ class Markdown(Component):
             The markdown component.
         """
         if len(children) != 1 or not isinstance(children[0], (str, Var)):
-            raise ValueError(
-                "Markdown component must have exactly one child containing the markdown source."
-            )
+            msg = "Markdown component must have exactly one child containing the markdown source."
+            raise ValueError(msg)
 
         # Update the base component map with the custom component map.
         component_map = {**get_base_component_map(), **props.pop("component_map", {})}
@@ -319,7 +318,8 @@ let {_LANGUAGE!s} = match ? match[1] : '';
         """
         # Check the tag is valid.
         if tag not in self.component_map:
-            raise ValueError(f"No markdown component found for tag: {tag}.")
+            msg = f"No markdown component found for tag: {tag}."
+            raise ValueError(msg)
 
         special_props = [_PROPS]
         children = [

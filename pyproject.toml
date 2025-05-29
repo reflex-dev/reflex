@@ -97,7 +97,6 @@ lint.ignore = [
   "D205",
   "DTZ",
   "E501",
-  "EM",
   "F403",
   "FBT",
   "FIX",

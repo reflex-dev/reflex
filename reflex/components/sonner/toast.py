@@ -265,7 +265,8 @@ class Toaster(Component):
             props.setdefault("title", message)
             message = ""
         elif message == "" and "title" not in props and "description" not in props:
-            raise ValueError("Toast message or title or description must be provided.")
+            msg = "Toast message or title or description must be provided."
+            raise ValueError(msg)
 
         if props:
             args = LiteralVar.create(ToastProps(component_name="rx.toast", **props))  # pyright: ignore [reportCallIssue]

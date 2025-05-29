@@ -182,10 +182,11 @@ def _get_type_hint(
             value.__module__ not in ["builtins", "__builtins__"]
             and value.__name__ not in type_hint_globals
         ):
-            raise TypeError(
+            msg = (
                 f"{value.__module__ + '.' + value.__name__} is not a default import, "
                 "add it to DEFAULT_IMPORTS in pyi_generator.py"
             )
+            raise TypeError(msg)
 
         res = f"{value.__name__}[{', '.join(inner_container_type_args)}]"
 
@@ -509,7 +510,8 @@ def _generate_component_create_functiondef(
         TypeError: If clz is not a subclass of Component.
     """
     if not issubclass(clz, Component):
-        raise TypeError(f"clz must be a subclass of Component, not {clz!r}")
+        msg = f"clz must be a subclass of Component, not {clz!r}"
+        raise TypeError(msg)
 
     # add the imports needed by get_type_hint later
     type_hint_globals.update(

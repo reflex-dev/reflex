@@ -86,7 +86,8 @@ class Link(RadixThemesComponent, A, MemoizationLeaf, MarkdownComponentMap):
 
         if href is not None:
             if not len(children):
-                raise ValueError("Link without a child will not display")
+                msg = "Link without a child will not display"
+                raise ValueError(msg)
 
             if "as_child" not in props:
                 # Extract props for the NextLink, the rest go to the Link/A element.

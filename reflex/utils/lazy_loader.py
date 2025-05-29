@@ -78,7 +78,8 @@ def attach(
                 pkg.__dict__[name] = attr
 
             return attr
-        raise AttributeError(f"No {package_name} attribute {name}")
+        msg = f"No {package_name} attribute {name}"
+        raise AttributeError(msg)
 
     def __dir__():  # noqa: N807
         return __all__

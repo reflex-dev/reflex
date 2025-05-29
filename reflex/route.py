@@ -18,11 +18,13 @@ def verify_route_validity(route: str) -> None:
     """
     pattern = catchall_in_route(route)
     if pattern and not route.endswith(pattern):
-        raise ValueError(f"Catch-all must be the last part of the URL: {route}")
+        msg = f"Catch-all must be the last part of the URL: {route}"
+        raise ValueError(msg)
     if route == "api" or route.startswith("api/"):
-        raise ValueError(
+        msg = (
             f"Cannot have a route prefixed with 'api/': {route} (conflicts with NextJS)"
         )
+        raise ValueError(msg)
 
 
 def get_route_args(route: str) -> dict[str, str]:
@@ -48,9 +50,8 @@ def get_route_args(route: str) -> dict[str, str]:
         """
         arg_name = match.groups()[0]
         if arg_name in args:
-            raise ValueError(
-                f"Arg name [{arg_name}] is used more than once in this URL"
-            )
+            msg = f"Arg name [{arg_name}] is used more than once in this URL"
+            raise ValueError(msg)
         args[arg_name] = type_
 
     # Regex to check for route args.

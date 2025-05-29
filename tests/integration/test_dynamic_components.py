@@ -120,7 +120,8 @@ def poll_for_result(
         except exception:
             attempts += 1
             time.sleep(seconds_between_attempts)
-    raise AssertionError("Function did not return a value")
+    msg = "Function did not return a value"
+    raise AssertionError(msg)
 
 
 @pytest.fixture

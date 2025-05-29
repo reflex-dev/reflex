@@ -746,8 +746,9 @@ class Textarea(BaseHTML):
         if enter_key_submit is not None:
             enter_key_submit = Var.create(enter_key_submit)
             if "on_key_down" in props:
+                msg = "Cannot combine `enter_key_submit` with `on_key_down`."
                 raise ValueError(
-                    "Cannot combine `enter_key_submit` with `on_key_down`.",
+                    msg,
                 )
             custom_attrs["on_key_down"] = Var(
                 _js_expr=f"(e) => enterKeySubmitOnKeyDown(e, {enter_key_submit!s})",

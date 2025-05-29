@@ -121,10 +121,11 @@ def convert_item(
         ReflexError: If an EventHandler is used as a style value
     """
     if isinstance(style_item, EventHandler):
-        raise ReflexError(
+        msg = (
             "EventHandlers cannot be used as style values. "
             "Please use a Var or a literal value."
         )
+        raise ReflexError(msg)
 
     if isinstance(style_item, Var):
         return style_item, style_item._get_all_var_data()

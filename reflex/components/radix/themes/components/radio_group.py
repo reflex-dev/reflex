@@ -145,9 +145,8 @@ class HighLevelRadioGroup(RadixThemesComponent):
             isinstance(items, Var) and not types._issubclass(items._var_type, list)
         ):
             items_type = type(items) if not isinstance(items, Var) else items._var_type
-            raise TypeError(
-                f"The radio group component takes in a list, got {items_type} instead"
-            )
+            msg = f"The radio group component takes in a list, got {items_type} instead"
+            raise TypeError(msg)
 
         default_value = LiteralVar.create(default_value)
 

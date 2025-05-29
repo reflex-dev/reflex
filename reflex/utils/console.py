@@ -59,9 +59,8 @@ def set_log_level(log_level: LogLevel | None):
     if log_level is None:
         return
     if not isinstance(log_level, LogLevel):
-        raise TypeError(
-            f"log_level must be a LogLevel enum value, got {log_level} of type {type(log_level)} instead."
-        )
+        msg = f"log_level must be a LogLevel enum value, got {log_level} of type {type(log_level)} instead."
+        raise TypeError(msg)
     global _LOG_LEVEL
     if log_level != _LOG_LEVEL:
         # Set the loglevel persistenly for subprocesses.

@@ -83,7 +83,8 @@ def get_engine(url: str | None = None) -> sqlalchemy.engine.Engine:
     conf = get_config()
     url = url or conf.db_url
     if url is None:
-        raise ValueError("No database url configured")
+        msg = "No database url configured"
+        raise ValueError(msg)
 
     global _ENGINE
     if url in _ENGINE:
@@ -125,7 +126,8 @@ def get_async_engine(url: str | None) -> sqlalchemy.ext.asyncio.AsyncEngine:
                     f"db_url `{_safe_db_url_for_logging(conf.db_url)}`."
                 )
     if url is None:
-        raise ValueError("No async database url configured")
+        msg = "No async database url configured"
+        raise ValueError(msg)
 
     global _ASYNC_ENGINE
     if url in _ASYNC_ENGINE:
