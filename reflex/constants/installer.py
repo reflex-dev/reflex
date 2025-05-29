@@ -138,9 +138,9 @@ class PackageJson(SimpleNamespace):
         return {
             "axios": "1.9.0",
             "json5": "2.2.3",
-            "react-router": _react_router_version,
-            "react-router-dom": _react_router_version,
-            "@react-router/node": _react_router_version,
+            "react-router": cls._react_router_version,
+            "react-router-dom": cls._react_router_version,
+            "@react-router/node": cls._react_router_version,
             "serve": "14.2.4",
             "react": cls._react_version,
             "react-dom": cls._react_version,
