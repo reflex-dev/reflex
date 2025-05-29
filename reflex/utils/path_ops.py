@@ -300,7 +300,8 @@ def update_directory_tree(src: Path, dest: Path):
         ValueError: If the source is not a directory
     """
     if not src.is_dir():
-        raise ValueError(f"Source {src} is not a directory")
+        msg = f"Source {src} is not a directory"
+        raise ValueError(msg)
 
     # Ensure the destination directory exists
     dest.mkdir(parents=True, exist_ok=True)

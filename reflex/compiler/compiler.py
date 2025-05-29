@@ -201,15 +201,14 @@ def _validate_stylesheet(stylesheet_full_path: Path, assets_app_path: Path) -> N
     """
     suffix = stylesheet_full_path.suffix[1:] if stylesheet_full_path.suffix else ""
     if suffix not in constants.Reflex.STYLESHEETS_SUPPORTED:
-        raise ValueError(f"Stylesheet file {stylesheet_full_path} is not supported.")
+        msg = f"Stylesheet file {stylesheet_full_path} is not supported."
+        raise ValueError(msg)
     if not stylesheet_full_path.absolute().is_relative_to(assets_app_path.absolute()):
-        raise FileNotFoundError(
-            f"Cannot include stylesheets from outside the assets directory: {stylesheet_full_path}"
-        )
+        msg = f"Cannot include stylesheets from outside the assets directory: {stylesheet_full_path}"
+        raise FileNotFoundError(msg)
     if not stylesheet_full_path.name:
-        raise ValueError(
-            f"Stylesheet file name cannot be empty: {stylesheet_full_path}"
-        )
+        msg = f"Stylesheet file name cannot be empty: {stylesheet_full_path}"
+        raise ValueError(msg)
     if (
         len(
             stylesheet_full_path.absolute()
@@ -219,9 +218,8 @@ def _validate_stylesheet(stylesheet_full_path: Path, assets_app_path: Path) -> N
         == 1
         and stylesheet_full_path.stem == PageNames.STYLESHEET_ROOT
     ):
-        raise ValueError(
-            f"Stylesheet file name cannot be '{PageNames.STYLESHEET_ROOT}': {stylesheet_full_path}"
-        )
+        msg = f"Stylesheet file name cannot be '{PageNames.STYLESHEET_ROOT}': {stylesheet_full_path}"
+        raise ValueError(msg)
 
 
 RADIX_THEMES_STYLESHEET = "@radix-ui/themes/styles.css"
@@ -258,9 +256,8 @@ def _compile_root_stylesheet(stylesheets: list[str]) -> str:
             stylesheet_full_path = assets_app_path / stylesheet.strip("/")
 
             if not stylesheet_full_path.exists():
-                raise FileNotFoundError(
-                    f"The stylesheet file {stylesheet_full_path} does not exist."
-                )
+                msg = f"The stylesheet file {stylesheet_full_path} does not exist."
+                raise FileNotFoundError(msg)
 
             if stylesheet_full_path.is_dir():
                 all_files = (
@@ -687,9 +684,8 @@ def into_component(component: Component | ComponentCallable) -> Component:
     if (converted := _into_component_once(component)) is not None:
         return converted
     if not callable(component):
-        raise TypeError(
-            f"Expected a Component or callable, got {component!r} of type {type(component)}"
-        )
+        msg = f"Expected a Component or callable, got {component!r} of type {type(component)}"
+        raise TypeError(msg)
 
     try:
         component_called = component()
@@ -716,9 +712,10 @@ def into_component(component: Component | ComponentCallable) -> Component:
                     "Cannot pass a Var to a built-in function. Consider using .length() for accessing the length of an iterable Var."
                 ).with_traceback(e.__traceback__) from None
             if message.endswith(
-                "indices must be integers or slices, not NumberCastedVar"
-            ) or message.endswith(
-                "indices must be integers or slices, not BooleanCastedVar"
+                (
+                    "indices must be integers or slices, not NumberCastedVar",
+                    "indices must be integers or slices, not BooleanCastedVar",
+                )
             ):
                 raise TypeError(
                     "Cannot index into a primitive sequence with a Var. Consider calling rx.Var.create() on the sequence."
@@ -732,9 +729,8 @@ def into_component(component: Component | ComponentCallable) -> Component:
     if (converted := _into_component_once(component_called)) is not None:
         return converted
 
-    raise TypeError(
-        f"Expected a Component, got {component_called!r} of type {type(component_called)}"
-    )
+    msg = f"Expected a Component, got {component_called!r} of type {type(component_called)}"
+    raise TypeError(msg)
 
 
 def compile_unevaluated_page(
@@ -889,5 +885,6 @@ class ExecutorSafeFunctions:
             ValueError: If the style is not set.
         """
         if style is None:
-            raise ValueError("STYLE should be set")
+            msg = "STYLE should be set"
+            raise ValueError(msg)
         return compile_theme(style)

@@ -35,7 +35,6 @@ def set_loglevel(ctx: Any, self: Any, value: str | None):
 @click.group
 def custom_components_cli():
     """CLI for creating custom components."""
-    pass
 
 
 loglevel_option = click.option(
@@ -575,7 +574,7 @@ def _validate_url_with_protocol_prefix(url: str | None) -> bool:
     Returns:
         Whether the entered URL is acceptable.
     """
-    return not url or (url.startswith("http://") or url.startswith("https://"))
+    return not url or (url.startswith(("http://", "https://")))
 
 
 def _get_file_from_prompt_in_loop() -> tuple[bytes, str] | None:

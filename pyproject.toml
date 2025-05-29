@@ -91,50 +91,51 @@ lint.ignore = [
   "ANN2",
   "ANN4",
   "ARG",
-  "ASYNC",
-  "B008",
   "BLE",
   "C901",
   "COM",
   "D205",
   "DTZ",
   "E501",
-  "EM",
   "F403",
   "FBT",
   "FIX",
-  "FLY",
   "G004",
-  "INP",
   "ISC003",
-  "NPY",
-  "PD",
-  "PIE",
   "PLC",
   "PLR",
   "PLW",
-  "PT",
+  "PT011",
+  "PT012",
   "PYI",
-  "RET",
-  "RSE",
-  "RUF006",
-  "RUF008",
   "RUF012",
   "S",
-  "SIM115",
   "SLF",
   "SLOT",
   "TC",
   "TD",
-  "TID",
   "TRY0",
   "UP038",
 ]
 lint.pydocstyle.convention = "google"
+lint.flake8-bugbear.extend-immutable-calls = [
+  "reflex.utils.types.Unset",
+  "reflex.vars.base.Var.create",
+]
 
 [tool.ruff.lint.per-file-ignores]
 "__init__.py" = ["F401"]
-"tests/*.py" = ["ANN001", "D100", "D103", "D104", "B018", "PERF", "T", "N"]
+"tests/*.py" = [
+  "ANN001",
+  "D100",
+  "D103",
+  "D104",
+  "INP",
+  "B018",
+  "PERF",
+  "T",
+  "N",
+]
 "benchmarks/*.py" = ["ANN001", "D100", "D103", "D104", "B018", "PERF", "T", "N"]
 "reflex/.templates/*.py" = ["D100", "D103", "D104"]
 "*.pyi" = ["D301", "D415", "D417", "D418", "E742", "N", "PGH"]

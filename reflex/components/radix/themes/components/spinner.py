@@ -3,9 +3,8 @@
 from typing import Literal
 
 from reflex.components.core.breakpoints import Responsive
+from reflex.components.radix.themes.base import RadixLoadingProp, RadixThemesComponent
 from reflex.vars.base import Var
-
-from ..base import RadixLoadingProp, RadixThemesComponent
 
 LiteralSpinnerSize = Literal["1", "2", "3"]
 

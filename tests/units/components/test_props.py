@@ -20,7 +20,7 @@ class PropB(NoExtrasAllowedProps):
 
 
 @pytest.mark.parametrize(
-    "props_class, kwargs, should_raise",
+    ("props_class", "kwargs", "should_raise"),
     [
         (PropA, {"foo": "value", "bar": "another_value"}, False),
         (PropA, {"fooz": "value", "bar": "another_value"}, True),
@@ -96,7 +96,7 @@ class OptionalFieldProps(PropsBase):
 
 
 @pytest.mark.parametrize(
-    "props_class, props_kwargs, expected_dict",
+    ("props_class", "props_kwargs", "expected_dict"),
     [
         # Test single word + snake_case conversion
         (

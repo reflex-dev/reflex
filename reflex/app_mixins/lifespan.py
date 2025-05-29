@@ -67,9 +67,8 @@ class LifespanMixin(AppMixin):
             InvalidLifespanTaskTypeError: If the task is a generator function.
         """
         if inspect.isgeneratorfunction(task) or inspect.isasyncgenfunction(task):
-            raise InvalidLifespanTaskTypeError(
-                f"Task {task.__name__} of type generator must be decorated with contextlib.asynccontextmanager."
-            )
+            msg = f"Task {task.__name__} of type generator must be decorated with contextlib.asynccontextmanager."
+            raise InvalidLifespanTaskTypeError(msg)
 
         if task_kwargs:
             original_task = task
