@@ -6,11 +6,14 @@ from typing import ClassVar, Literal
 import reflex as rx
 from reflex.components.component import Component, ComponentNamespace
 from reflex.components.core.breakpoints import Responsive
+from reflex.components.radix.themes.base import (
+    LiteralAccentColor,
+    LiteralRadius,
+    RadixThemesComponent,
+)
 from reflex.constants.compiler import MemoizationMode
 from reflex.event import no_args_event_spec, passthrough_event_spec
 from reflex.vars.base import Var
-
-from ..base import LiteralAccentColor, LiteralRadius, RadixThemesComponent
 
 
 class SelectRoot(RadixThemesComponent):

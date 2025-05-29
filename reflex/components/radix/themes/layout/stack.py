@@ -4,9 +4,9 @@ from __future__ import annotations
 
 from reflex.components.component import Component
 from reflex.components.core.breakpoints import Responsive
+from reflex.components.radix.themes.base import LiteralAlign, LiteralSpacing
 from reflex.vars.base import Var
 
-from ..base import LiteralAlign, LiteralSpacing
 from .flex import Flex, LiteralFlexDirection
 
 

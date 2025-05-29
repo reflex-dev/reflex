@@ -4,10 +4,9 @@ from typing import Literal
 
 from reflex.components.component import Component
 from reflex.components.core.breakpoints import Responsive
+from reflex.components.radix.themes.base import LiteralAccentColor, RadixThemesComponent
 from reflex.style import Style
 from reflex.vars.base import Var
-
-from ..base import LiteralAccentColor, RadixThemesComponent
 
 
 class Progress(RadixThemesComponent):
