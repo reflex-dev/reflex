@@ -30,6 +30,8 @@ logger = logging.getLogger("pyi_generator")
 
 PWD = Path.cwd()
 
+PYI_HASHES = "pyi_hashes.json"
+
 EXCLUDED_FILES = [
     "app.py",
     "component.py",
@@ -1264,45 +1266,48 @@ class PyiGenerator:
                     file_parent = file_path.parent
                     while len(file_parent.parts) > len(top_dir.parts):
                         file_parent = file_parent.parent
+                    while len(top_dir.parts) > len(file_parent.parts):
+                        top_dir = top_dir.parent
                     while not file_parent.samefile(top_dir):
                         file_parent = file_parent.parent
                         top_dir = top_dir.parent
 
-                pyi_hashes_file = top_dir / "pyi_hashes.json"
-                if not pyi_hashes_file.exists():
-                    while top_dir.parent and not (top_dir / "pyi_hashes.json").exists():
-                        top_dir = top_dir.parent
-                    another_pyi_hashes_file = top_dir / "pyi_hashes.json"
-                    if another_pyi_hashes_file.exists():
-                        pyi_hashes_file = another_pyi_hashes_file
+                while (
+                    not top_dir.samefile(top_dir.parent)
+                    and not (top_dir / PYI_HASHES).exists()
+                ):
+                    top_dir = top_dir.parent
 
-                pyi_hashes_file.write_text(
-                    json.dumps(
-                        dict(
-                            zip(
-                                [
-                                    f.relative_to(pyi_hashes_file.parent).as_posix()
-                                    for f in file_paths
-                                ],
-                                hashes,
-                                strict=True,
-                            )
-                        ),
-                        indent=2,
-                        sort_keys=True,
+                pyi_hashes_file = top_dir / PYI_HASHES
+
+                if pyi_hashes_file.exists():
+                    pyi_hashes_file.write_text(
+                        json.dumps(
+                            dict(
+                                zip(
+                                    [
+                                        f.relative_to(pyi_hashes_file.parent).as_posix()
+                                        for f in file_paths
+                                    ],
+                                    hashes,
+                                    strict=True,
+                                )
+                            ),
+                            indent=2,
+                            sort_keys=True,
+                        )
+                        + "\n",
                     )
-                    + "\n",
-                )
             elif file_paths:
                 file_paths = list(map(Path, file_paths))
                 pyi_hashes_parent = file_paths[0].parent
                 while (
-                    pyi_hashes_parent.parent
-                    and not (pyi_hashes_parent / "pyi_hashes.json").exists()
+                    not pyi_hashes_parent.samefile(pyi_hashes_parent.parent)
+                    and not (pyi_hashes_parent / PYI_HASHES).exists()
                 ):
                     pyi_hashes_parent = pyi_hashes_parent.parent
 
-                pyi_hashes_file = pyi_hashes_parent / "pyi_hashes.json"
+                pyi_hashes_file = pyi_hashes_parent / PYI_HASHES
                 if pyi_hashes_file.exists():
                     pyi_hashes = json.loads(pyi_hashes_file.read_text())
                     for file_path, hashed_content in zip(
