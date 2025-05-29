@@ -11,6 +11,7 @@ from reflex.event import EventHandler, no_args_event_spec
 from reflex.vars.base import LiteralVar, Var
 
 from .recharts import (
+    ACTIVE_DOT_TYPE,
     LiteralAnimationEasing,
     LiteralGridType,
     LiteralLegendType,
@@ -65,10 +66,10 @@ class Pie(Recharts):
     legend_type: Var[LiteralLegendType]
 
     # If false set, labels will not be drawn. If true set, labels will be drawn which have the props calculated internally. Default: False
-    label: Var[bool] = Var.create(False)
+    label: Var[bool | dict[str, Any]] = Var.create(False)
 
     # If false set, label lines will not be drawn. If true set, label lines will be drawn which have the props calculated internally. Default: False
-    label_line: Var[bool]
+    label_line: Var[bool | dict[str, Any]]
 
     # Valid children components
     _valid_children: ClassVar[list[str]] = ["Cell", "LabelList", "Bare"]
@@ -126,7 +127,7 @@ class Radar(Recharts):
     points: Var[Sequence[dict[str, Any]]]
 
     # If false set, dots will not be drawn. Default: True
-    dot: Var[bool]
+    dot: Var[ACTIVE_DOT_TYPE]
 
     # Stoke color. Default: rx.color("accent", 9)
     stroke: Var[str | Color] = LiteralVar.create(Color("accent", 9))
@@ -141,7 +142,7 @@ class Radar(Recharts):
     legend_type: Var[LiteralLegendType]
 
     # If false set, labels will not be drawn. Default: True
-    label: Var[bool]
+    label: Var[bool | dict[str, Any]]
 
     # If set false, animation of polygon will be disabled. Default: True in CSR, and False in SSR
     is_animation_active: Var[bool]
