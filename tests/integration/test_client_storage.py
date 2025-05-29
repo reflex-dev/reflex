@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-import time
+import asyncio
 from collections.abc import Generator
 
 import pytest
@@ -438,7 +438,7 @@ async def test_client_side_state(
         "secure": False,
         "value": "c3%20value",
     }
-    time.sleep(2)  # wait for c3 to expire
+    await asyncio.sleep(2)  # wait for c3 to expire
     if not isinstance(driver, Firefox):
         # Note: Firefox does not remove expired cookies Bug 576347
         assert f"{sub_state_name}.c3" not in cookie_info_map(driver)

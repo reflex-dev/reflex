@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-import time
+import asyncio
 from collections.abc import Callable, Coroutine, Generator
 from urllib.parse import urlsplit
 
@@ -395,7 +395,7 @@ async def test_render_dynamic_arg(
         driver.get(f"{dynamic_route.frontend_url}/arg/0")
 
     # TODO: drop after flakiness is resolved
-    time.sleep(3)
+    await asyncio.sleep(3)
 
     def assert_content(expected: str, expect_not: str):
         ids = [

@@ -91,7 +91,6 @@ lint.ignore = [
   "ANN2",
   "ANN4",
   "ARG",
-  "ASYNC",
   "B008",
   "BLE",
   "C901",

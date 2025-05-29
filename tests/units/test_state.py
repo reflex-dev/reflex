@@ -1818,16 +1818,16 @@ async def test_state_manager_lock_expire_contend(
     state_manager_redis.lock_warning_threshold = LOCK_WARNING_THRESHOLD
 
     order = []
+    waiter_event = asyncio.Event()
 
     async def _coro_blocker():
         async with state_manager_redis.modify_state(substate_token_redis) as state:
-            order.append("blocker")
+            waiter_event.set()
             await asyncio.sleep(LOCK_EXPIRE_SLEEP)
             state.num1 = unexp_num1
 
     async def _coro_waiter():
-        while "blocker" not in order:
-            await asyncio.sleep(0.005)
+        await waiter_event.wait()
         async with state_manager_redis.modify_state(substate_token_redis) as state:
             order.append("waiter")
             assert state.num1 != unexp_num1
