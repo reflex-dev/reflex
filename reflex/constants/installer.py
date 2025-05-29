@@ -14,7 +14,7 @@ class Bun(SimpleNamespace):
     """Bun constants."""
 
     # The Bun version.
-    VERSION = "1.2.14"
+    VERSION = "1.2.15"
 
     # Min Bun Version
     MIN_VERSION = "1.2.8"
@@ -137,7 +137,7 @@ class PackageJson(SimpleNamespace):
 
     DEV_DEPENDENCIES = {
         "autoprefixer": "10.4.21",
-        "postcss": "8.5.3",
+        "postcss": "8.5.4",
         "postcss-import": "16.1.0",
     }
     OVERRIDES = {
