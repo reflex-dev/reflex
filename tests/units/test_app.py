@@ -68,8 +68,6 @@ from .states import (
 class EmptyState(BaseState):
     """An empty state."""
 
-    pass
-
 
 @pytest.fixture
 def index_page() -> ComponentCallable:
@@ -105,7 +103,7 @@ class ATestState(BaseState):
     var: int
 
 
-@pytest.fixture()
+@pytest.fixture
 def test_state() -> type[BaseState]:
     """A default state.
 
@@ -115,7 +113,7 @@ def test_state() -> type[BaseState]:
     return ATestState
 
 
-@pytest.fixture()
+@pytest.fixture
 def redundant_test_state() -> type[BaseState]:
     """A default state.
 
@@ -154,12 +152,10 @@ def test_model_auth() -> type[Model]:
     class TestModelAuth(Model, table=True):
         """A test model with auth."""
 
-        pass
-
     return TestModelAuth
 
 
-@pytest.fixture()
+@pytest.fixture
 def test_get_engine():
     """A default database engine.
 
@@ -175,7 +171,7 @@ def test_get_engine():
     )
 
 
-@pytest.fixture()
+@pytest.fixture
 def test_custom_auth_admin() -> type[AuthProvider]:
     """A default auth provider.
 
@@ -191,19 +187,15 @@ def test_custom_auth_admin() -> type[AuthProvider]:
 
         def login(self):  # pyright: ignore [reportIncompatibleMethodOverride]
             """Login."""
-            pass
 
         def is_authenticated(self):  # pyright: ignore [reportIncompatibleMethodOverride]
             """Is authenticated."""
-            pass
 
         def get_admin_user(self):  # pyright: ignore [reportIncompatibleMethodOverride]
             """Get admin user."""
-            pass
 
         def logout(self):  # pyright: ignore [reportIncompatibleMethodOverride]
             """Logout."""
-            pass
 
     return TestAuthProvider
 
@@ -1594,7 +1586,7 @@ def test_add_page_component_returning_tuple():
     assert str(third_text.children[0].contents) == '"third"'
 
 
-@pytest.mark.parametrize("export", (True, False))
+@pytest.mark.parametrize("export", [True, False])
 def test_app_with_transpile_packages(compilable_app: tuple[App, Path], export: bool):
     class C1(rx.Component):
         library = "foo@1.2.3"
@@ -1736,7 +1728,7 @@ custom_exception_handlers = {
 
 
 @pytest.mark.parametrize(
-    "handler_fn, expected",
+    ("handler_fn", "expected"),
     [
         pytest.param(
             custom_exception_handlers["partial"],
@@ -1799,7 +1791,7 @@ def backend_exception_handler_with_wrong_return_type(exception: Exception) -> in
 
 
 @pytest.mark.parametrize(
-    "handler_fn, expected",
+    ("handler_fn", "expected"),
     [
         pytest.param(
             backend_exception_handler_with_wrong_return_type,

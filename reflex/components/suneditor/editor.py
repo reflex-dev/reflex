@@ -259,7 +259,8 @@ class Editor(NoSSRComponent):
         """
         if set_options is not None:
             if isinstance(set_options, Var):
-                raise ValueError("EditorOptions cannot be a state Var")
+                msg = "EditorOptions cannot be a state Var"
+                raise ValueError(msg)
             props["set_options"] = {
                 to_camel_case(k): v
                 for k, v in set_options.dict().items()

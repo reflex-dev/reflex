@@ -15,7 +15,7 @@ from reflex.vars.base import LiteralVar
 
 
 @pytest.mark.parametrize(
-    "type_,expected",
+    ("type_", "expected"),
     [(Enum, True)],
 )
 def test_has_serializer(type_: type, expected: bool):
@@ -29,7 +29,7 @@ def test_has_serializer(type_: type, expected: bool):
 
 
 @pytest.mark.parametrize(
-    "type_,expected",
+    ("type_", "expected"),
     [
         (datetime.datetime, serializers.serialize_datetime),
         (datetime.date, serializers.serialize_datetime),
@@ -121,7 +121,7 @@ class BaseSubclass(Base):
 
 
 @pytest.mark.parametrize(
-    "value,expected",
+    ("value", "expected"),
     [
         ("test", "test"),
         (1, 1),
@@ -205,7 +205,7 @@ def test_serialize(value: Any, expected: str):
 
 
 @pytest.mark.parametrize(
-    "value,expected,exp_var_is_string",
+    ("value", "expected", "exp_var_is_string"),
     [
         ("test", '"test"', False),
         (1, "1", False),

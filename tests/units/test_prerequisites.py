@@ -22,7 +22,7 @@ runner = CliRunner()
 
 
 @pytest.mark.parametrize(
-    "config, export, expected_output",
+    ("config", "export", "expected_output"),
     [
         (
             Config(
@@ -88,7 +88,7 @@ def test_update_next_config(config, export, expected_output):
 
 @pytest.mark.parametrize(
     ("transpile_packages", "expected_transpile_packages"),
-    (
+    [
         (
             ["foo", "@bar/baz"],
             ["@bar/baz", "foo"],
@@ -99,7 +99,7 @@ def test_update_next_config(config, export, expected_output):
         ),
         (["@bar/baz", {"name": "foo"}], ["@bar/baz", "foo"]),
         (["@bar/baz", {"name": "@foo/baz"}], ["@bar/baz", "@foo/baz"]),
-    ),
+    ],
 )
 def test_transpile_packages(transpile_packages, expected_transpile_packages):
     output = _update_next_config(
@@ -178,7 +178,7 @@ def temp_directory():
 
 
 @pytest.mark.parametrize(
-    "config_code,expected",
+    ("config_code", "expected"),
     [
         ("rx.Config(app_name='old_name')", 'rx.Config(app_name="new_name")'),
         ('rx.Config(app_name="old_name")', 'rx.Config(app_name="new_name")'),

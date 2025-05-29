@@ -42,27 +42,28 @@ class Icon(LucideIconComponent):
             if len(children) == 1:
                 child = Var.create(children[0]).guess_type()
                 if not isinstance(child, StringVar):
-                    raise AttributeError(
-                        f"Icon name must be a string, got {children[0]._var_type if isinstance(children[0], Var) else children[0]}"
-                    )
+                    msg = f"Icon name must be a string, got {children[0]._var_type if isinstance(children[0], Var) else children[0]}"
+                    raise AttributeError(msg)
                 props["tag"] = children[0]
             else:
-                raise AttributeError(
-                    f"Passing multiple children to Icon component is not allowed: remove positional arguments {children[1:]} to fix"
-                )
+                msg = f"Passing multiple children to Icon component is not allowed: remove positional arguments {children[1:]} to fix"
+                raise AttributeError(msg)
         if "tag" not in props:
-            raise AttributeError("Missing 'tag' keyword-argument for Icon")
+            msg = "Missing 'tag' keyword-argument for Icon"
+            raise AttributeError(msg)
 
         tag_var: Var | LiteralVar = Var.create(props.pop("tag"))
         if isinstance(tag_var, LiteralVar):
             if isinstance(tag_var, LiteralStringVar):
                 tag = format.to_snake_case(tag_var._var_value.lower())
             else:
-                raise TypeError(f"Icon name must be a string, got {type(tag_var)}")
+                msg = f"Icon name must be a string, got {type(tag_var)}"
+                raise TypeError(msg)
         elif isinstance(tag_var, Var):
             tag_stringified = tag_var.guess_type()
             if not isinstance(tag_stringified, StringVar):
-                raise TypeError(f"Icon name must be a string, got {tag_var._var_type}")
+                msg = f"Icon name must be a string, got {tag_var._var_type}"
+                raise TypeError(msg)
             return DynamicIcon.create(name=tag_stringified.replace("_", "-"), **props)
 
         if tag not in LUCIDE_ICON_LIST:

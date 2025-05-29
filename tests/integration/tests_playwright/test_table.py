@@ -55,7 +55,7 @@ def Table():
         )
 
 
-@pytest.fixture()
+@pytest.fixture
 def table_app(tmp_path_factory) -> Generator[AppHarness, None, None]:
     """Start Table app at tmp_path via AppHarness.
 

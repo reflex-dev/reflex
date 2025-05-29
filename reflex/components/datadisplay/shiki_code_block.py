@@ -636,9 +636,8 @@ class ShikiCodeBlock(Component, MarkdownComponentMap):
         """
         imports = defaultdict(list)
         if not isinstance(self.transformers, LiteralVar):
-            raise ValueError(
-                f"transformers should be a LiteralVar type. Got {type(self.transformers)} instead."
-            )
+            msg = f"transformers should be a LiteralVar type. Got {type(self.transformers)} instead."
+            raise ValueError(msg)
         for transformer in self.transformers._var_value:
             if isinstance(transformer, ShikiBaseTransformers):
                 imports[transformer.library].extend(
@@ -663,9 +662,8 @@ class ShikiCodeBlock(Component, MarkdownComponentMap):
             ValueError: If a supplied function name is not valid str.
         """
         if any(not isinstance(fn_name, str) for fn_name in fns):
-            raise ValueError(
-                f"the function names should be str names of functions in the specified transformer: {library!r}"
-            )
+            msg = f"the function names should be str names of functions in the specified transformer: {library!r}"
+            raise ValueError(msg)
         return ShikiBaseTransformers(
             library=library,
             fns=[FunctionStringVar.create(fn) for fn in fns],  # pyright: ignore [reportCallIssue]
@@ -811,8 +809,7 @@ class ShikiHighLevelCodeBlock(ShikiCodeBlock):
             return ShikiCodeBlock.create(
                 children[0], copy_button, position="relative", **props
             )
-        else:
-            return ShikiCodeBlock.create(children[0], **props)
+        return ShikiCodeBlock.create(children[0], **props)
 
     @staticmethod
     def _map_themes(theme: str) -> str:
@@ -829,9 +826,8 @@ class ShikiHighLevelCodeBlock(ShikiCodeBlock):
     @staticmethod
     def _strip_transformer_triggers(code: str | StringVar) -> StringVar | str:
         if not isinstance(code, (StringVar, str)):
-            raise VarTypeError(
-                f"code should be string literal or a StringVar type. Got {type(code)} instead."
-            )
+            msg = f"code should be string literal or a StringVar type. Got {type(code)} instead."
+            raise VarTypeError(msg)
         regex_pattern = r"[\/#]+ *\[!code.*?\]"
 
         if isinstance(code, Var):
@@ -840,6 +836,7 @@ class ShikiHighLevelCodeBlock(ShikiCodeBlock):
             )
         if isinstance(code, str):
             return re.sub(regex_pattern, "", code)
+        return None
 
 
 class TransformerNamespace(ComponentNamespace):

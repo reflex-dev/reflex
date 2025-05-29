@@ -103,7 +103,7 @@ def ComponentStateApp():
         )
 
 
-@pytest.fixture()
+@pytest.fixture
 def component_state_app(tmp_path) -> Generator[AppHarness, None, None]:
     """Start ComponentStateApp app at tmp_path via AppHarness.
 

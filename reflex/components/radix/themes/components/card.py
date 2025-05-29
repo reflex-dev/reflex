@@ -4,9 +4,8 @@ from typing import Literal
 
 from reflex.components.core.breakpoints import Responsive
 from reflex.components.el import elements
+from reflex.components.radix.themes.base import RadixThemesComponent
 from reflex.vars.base import Var
-
-from ..base import RadixThemesComponent
 
 
 class Card(elements.Div, RadixThemesComponent):

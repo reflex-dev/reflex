@@ -383,9 +383,8 @@ class DataEditor(NoSSRComponent):
         # If rows is not provided, determine from data.
         if rows is None:
             if isinstance(data, Var) and not isinstance(data, ArrayVar):
-                raise ValueError(
-                    "DataEditor data must be an ArrayVar if rows is not provided."
-                )
+                msg = "DataEditor data must be an ArrayVar if rows is not provided."
+                raise ValueError(msg)
 
             props["rows"] = data.length() if isinstance(data, ArrayVar) else len(data)
 
@@ -393,13 +392,11 @@ class DataEditor(NoSSRComponent):
             if types.is_dataframe(type(data)) or (
                 isinstance(data, Var) and types.is_dataframe(data._var_type)
             ):
-                raise ValueError(
-                    "Cannot pass in both a pandas dataframe and columns to the data_editor component."
-                )
-            else:
-                props["columns"] = [
-                    format.format_data_editor_column(col) for col in columns
-                ]
+                msg = "Cannot pass in both a pandas dataframe and columns to the data_editor component."
+                raise ValueError(msg)
+            props["columns"] = [
+                format.format_data_editor_column(col) for col in columns
+            ]
 
         if "theme" in props:
             theme = props.get("theme")

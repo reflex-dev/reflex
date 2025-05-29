@@ -147,7 +147,6 @@ class ToastProps(PropsBase, NoExtrasAllowedProps):
         Returns:
             The object as a dictionary with ToastAction fields intact.
         """
-        kwargs.setdefault("exclude_none", True)
         d = super().dict(*args, **kwargs)
         # Keep these fields as ToastAction so they can be serialized specially
         if "action" in d:
@@ -266,7 +265,8 @@ class Toaster(Component):
             props.setdefault("title", message)
             message = ""
         elif message == "" and "title" not in props and "description" not in props:
-            raise ValueError("Toast message or title or description must be provided.")
+            msg = "Toast message or title or description must be provided."
+            raise ValueError(msg)
 
         if props:
             args = LiteralVar.create(ToastProps(component_name="rx.toast", **props))  # pyright: ignore [reportCallIssue]

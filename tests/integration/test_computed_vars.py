@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-import time
+import asyncio
 from collections.abc import Generator
 
 import pytest
@@ -160,7 +160,7 @@ def driver(computed_vars: AppHarness) -> Generator[WebDriver, None, None]:
         driver.quit()
 
 
-@pytest.fixture()
+@pytest.fixture
 def token(computed_vars: AppHarness, driver: WebDriver) -> str:
     """Get a function that returns the active token.
 
@@ -267,7 +267,7 @@ async def test_computed_vars(
     with pytest.raises(TimeoutError):
         _ = computed_vars.poll_for_content(count3, timeout=5, exp_not_equal="0")
 
-    time.sleep(10)
+    await asyncio.sleep(10)
     assert count3.text == "0"
     assert depends_on_count3.text == "0"
     mark_dirty.click()

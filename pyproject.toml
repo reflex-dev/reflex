@@ -83,44 +83,59 @@ reportIncompatibleMethodOverride = false
 target-version = "py310"
 output-format = "concise"
 lint.isort.split-on-trailing-comma = false
-lint.select = [
-  "ANN001",
-  "B",
-  "C4",
-  "D",
-  "E",
-  "ERA",
-  "F",
-  "FURB",
-  "I",
-  "N",
-  "PERF",
-  "PGH",
-  "PTH",
-  "RUF",
-  "SIM",
-  "T",
-  "TRY",
-  "UP",
-  "W",
-]
+lint.select = ["ALL"]
 lint.ignore = [
-  "B008",
+  "A",
+  "ANN002",
+  "ANN003",
+  "ANN2",
+  "ANN4",
+  "ARG",
+  "BLE",
+  "C901",
+  "COM",
   "D205",
+  "DTZ",
   "E501",
   "F403",
-  "SIM115",
-  "RUF006",
-  "RUF008",
+  "FBT",
+  "FIX",
+  "G004",
+  "ISC003",
+  "PLC",
+  "PLR",
+  "PLW",
+  "PT011",
+  "PT012",
+  "PYI",
   "RUF012",
+  "S",
+  "SLF",
+  "SLOT",
+  "TC",
+  "TD",
   "TRY0",
   "UP038",
 ]
 lint.pydocstyle.convention = "google"
+lint.flake8-bugbear.extend-immutable-calls = [
+  "reflex.utils.types.Unset",
+  "reflex.vars.base.Var.create",
+]
 
 [tool.ruff.lint.per-file-ignores]
 "__init__.py" = ["F401"]
-"tests/*.py" = ["ANN001", "D100", "D103", "D104", "B018", "PERF", "T", "N"]
+"tests/*.py" = [
+  "ANN001",
+  "D100",
+  "D103",
+  "D104",
+  "INP",
+  "B018",
+  "PERF",
+  "T",
+  "N",
+]
 "benchmarks/*.py" = ["ANN001", "D100", "D103", "D104", "B018", "PERF", "T", "N"]
 "reflex/.templates/*.py" = ["D100", "D103", "D104"]
 "*.pyi" = ["D301", "D415", "D417", "D418", "E742", "N", "PGH"]
@@ -213,13 +228,13 @@ fail_fast = true
 
 [[tool.pre-commit.repos]]
 repo = "https://github.com/astral-sh/ruff-pre-commit"
-rev = "v0.11.11"
+rev = "v0.11.12"
 hooks = [
   { id = "ruff-format", args = [
     "reflex",
     "tests",
   ] },
-  { id = "ruff", args = [
+  { id = "ruff-check", args = [
     "--fix",
     "--exit-non-zero-on-fix",
   ], exclude = "^integration/benchmarks/" },

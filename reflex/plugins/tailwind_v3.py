@@ -253,3 +253,11 @@ class Plugin(PluginBase):
             str(Path(Dirs.STYLES) / (PageNames.STYLESHEET_ROOT + Ext.CSS)),
             add_tailwind_to_css_file,
         )
+
+    def __repr__(self):
+        """Return a string representation of the plugin.
+
+        Returns:
+            A string representation of the plugin.
+        """
+        return "TailwindV3Plugin()"

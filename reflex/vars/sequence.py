@@ -445,9 +445,8 @@ class ArrayVar(Var[ARRAY_VAR_TYPE], python_types=(Sequence, set)):
         # get the number of arguments of the function
         num_args = len(inspect.signature(fn).parameters)
         if num_args > 1:
-            raise VarTypeError(
-                "The function passed to foreach should take at most one argument."
-            )
+            msg = "The function passed to foreach should take at most one argument."
+            raise VarTypeError(msg)
 
         if num_args == 0:
             return_value = fn()
@@ -535,9 +534,8 @@ class LiteralArrayVar(CachedVarOperation, LiteralVar, ArrayVar[ARRAY_VAR_TYPE]):
         for element in self._var_value:
             element_var = LiteralVar.create(element)
             if not isinstance(element_var, LiteralVar):
-                raise TypeError(
-                    f"Array elements must be of type LiteralVar, not {type(element_var)}"
-                )
+                msg = f"Array elements must be of type LiteralVar, not {type(element_var)}"
+                raise TypeError(msg)
             elements.append(element_var.json())
 
         return "[" + ", ".join(elements) + "]"
@@ -1203,8 +1201,7 @@ class LiteralStringVar(LiteralVar, StringVar[str]):
                 only_string = filtered_strings_and_vals[0]
                 if isinstance(only_string, str):
                     return LiteralVar.create(only_string).to(StringVar, _var_type)
-                else:
-                    return only_string.to(StringVar, only_string._var_type)
+                return only_string.to(StringVar, only_string._var_type)
 
             if len(
                 literal_strings := [
@@ -1400,7 +1397,8 @@ class ArraySliceOperation(CachedVarOperation, ArrayVar):
                 actual_end = start + 1 if start is not None else self._array.length()
                 return str(self._array[actual_start:actual_end].reverse()[::-step])
             if step == 0:
-                raise ValueError("slice step cannot be zero")
+                msg = "slice step cannot be zero"
+                raise ValueError(msg)
             return f"{self._array!s}.slice({normalized_start!s}, {normalized_end!s}).filter((_, i) => i % {step!s} === 0)"
 
         actual_start_reverse = end + 1 if end is not None else 0
@@ -1866,13 +1864,15 @@ class LiteralColorVar(CachedVarOperation, LiteralVar, ColorVar):
             (self._var_value.color, self._var_value.alpha, self._var_value.shade),
         )
         if color is None or alpha is None or shade is None:
-            raise TypeError("Cannot serialize color that contains non-literal vars.")
+            msg = "Cannot serialize color that contains non-literal vars."
+            raise TypeError(msg)
         if (
             not isinstance(color, str)
             or not isinstance(alpha, bool)
             or not isinstance(shade, int)
         ):
-            raise TypeError("Color is not a valid color.")
+            msg = "Color is not a valid color."
+            raise TypeError(msg)
         return f"var(--{color}-{'a' if alpha else ''}{shade})"
 
 

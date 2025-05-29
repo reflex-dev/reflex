@@ -12,7 +12,7 @@ from reflex.utils.imports import ImportVar, ParsedImportDict
 
 
 @pytest.mark.parametrize(
-    "fields,test_default,test_rest",
+    ("fields", "test_default", "test_rest"),
     [
         (
             [ImportVar(tag="axios", is_default=True)],
@@ -51,7 +51,7 @@ def test_compile_import_statement(
 
 
 @pytest.mark.parametrize(
-    "import_dict,test_dicts",
+    ("import_dict", "test_dicts"),
     [
         ({}, []),
         (

@@ -244,14 +244,12 @@ def get_app_file() -> Path:
         sys.path.insert(0, current_working_dir)
     module_spec = importlib.util.find_spec(get_app_module())
     if module_spec is None:
-        raise ImportError(
-            f"Module {get_app_module()} not found. Make sure the module is installed."
-        )
+        msg = f"Module {get_app_module()} not found. Make sure the module is installed."
+        raise ImportError(msg)
     file_name = module_spec.origin
     if file_name is None:
-        raise ImportError(
-            f"Module {get_app_module()} not found. Make sure the module is installed."
-        )
+        msg = f"Module {get_app_module()} not found. Make sure the module is installed."
+        raise ImportError(msg)
     return Path(file_name).resolve()
 
 
@@ -300,13 +298,12 @@ def get_reload_paths() -> Sequence[Path]:
         The reload paths for the backend.
     """
     config = get_config()
-    reload_paths = [Path(config.app_name).parent]
-    if config.app_module is not None and config.app_module.__file__:
-        module_path = Path(config.app_module.__file__).resolve().parent
+    reload_paths = [Path.cwd()]
+    if (spec := importlib.util.find_spec(config.module)) is not None and spec.origin:
+        module_path = Path(spec.origin).resolve().parent
 
         while module_path.parent.name and any(
-            sibling_file.name == "__init__.py"
-            for sibling_file in module_path.parent.iterdir()
+            sibling_file.name == "__init__.py" for sibling_file in module_path.iterdir()
         ):
             # go up a level to find dir without `__init__.py`
             module_path = module_path.parent
@@ -383,6 +380,7 @@ HOTRELOAD_IGNORE_EXTENSIONS = (
     "json",
     "sh",
     "bash",
+    "log",
 )
 
 HOTRELOAD_IGNORE_PATTERNS = (

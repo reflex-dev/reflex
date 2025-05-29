@@ -199,4 +199,5 @@ def __getattr__(name: Any):
     try:
         return globals()[name]
     except KeyError:
-        raise AttributeError(f"module '{__name__} has no attribute '{name}'") from None
+        msg = f"module '{__name__} has no attribute '{name}'"
+        raise AttributeError(msg) from None

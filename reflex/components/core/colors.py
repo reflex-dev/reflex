@@ -32,19 +32,22 @@ def color(
     """
     if isinstance(color, str):
         if color not in COLORS and REFLEX_VAR_OPENING_TAG not in color:
-            raise ValueError(f"Color must be one of {COLORS}, received {color}")
+            msg = f"Color must be one of {COLORS}, received {color}"
+            raise ValueError(msg)
     elif not isinstance(color, Var):
-        raise ValueError("Color must be a string or a Var")
+        msg = "Color must be a string or a Var"
+        raise ValueError(msg)
 
     if isinstance(shade, int):
         if shade < MIN_SHADE_VALUE or shade > MAX_SHADE_VALUE:
-            raise ValueError(
-                f"Shade must be between {MIN_SHADE_VALUE} and {MAX_SHADE_VALUE}"
-            )
+            msg = f"Shade must be between {MIN_SHADE_VALUE} and {MAX_SHADE_VALUE}"
+            raise ValueError(msg)
     elif not isinstance(shade, Var):
-        raise ValueError("Shade must be an integer or a Var")
+        msg = "Shade must be an integer or a Var"
+        raise ValueError(msg)
 
     if not isinstance(alpha, (bool, Var)):
-        raise ValueError("Alpha must be a boolean or a Var")
+        msg = "Alpha must be a boolean or a Var"
+        raise ValueError(msg)
 
     return Color(color, shade, alpha)

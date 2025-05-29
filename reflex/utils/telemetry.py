@@ -62,6 +62,22 @@ def get_reflex_version() -> str:
     return constants.Reflex.VERSION
 
 
+def _get_app_class_name() -> str | None:
+    """Get the app class name if available.
+
+    Returns:
+        The app class name (e.g. "App", "AppEnterprise") or None if not available.
+    """
+    try:
+        from reflex.utils.prerequisites import get_and_validate_app
+
+        app_info = get_and_validate_app()
+    except Exception:
+        return None
+    else:
+        return app_info.app.__class__.__name__
+
+
 def get_cpu_count() -> int:
     """Get the number of CPUs.
 
@@ -184,12 +200,16 @@ def _prepare_event(event: str, **kwargs) -> _Event | None:
     if not event_data:
         return None
 
-    additional_keys = ["template", "context", "detail", "user_uuid"]
+    additional_keys = ["template", "context", "detail", "user_uuid", "app_class"]
 
     properties = event_data["properties"]
 
+    # Auto-detect app class if not provided
+    if "app_class" not in kwargs:
+        kwargs["app_class"] = _get_app_class_name()
+
     for key in additional_keys:
-        if key in properties or key not in kwargs:
+        if key in properties or key not in kwargs or kwargs[key] is None:
             continue
 
         properties[key] = kwargs[key]
@@ -232,6 +252,9 @@ def _send(event: str, telemetry_enabled: bool | None, **kwargs) -> bool:
     return False
 
 
+background_tasks = set()
+
+
 def send(event: str, telemetry_enabled: bool | None = None, **kwargs):
     """Send anonymous telemetry for Reflex.
 
@@ -246,7 +269,9 @@ def send(event: str, telemetry_enabled: bool | None = None, **kwargs):
 
     try:
         # Within an event loop context, send the event asynchronously.
-        asyncio.create_task(async_send(event, telemetry_enabled, **kwargs))
+        task = asyncio.create_task(async_send(event, telemetry_enabled, **kwargs))
+        background_tasks.add(task)
+        task.add_done_callback(background_tasks.discard)
     except RuntimeError:
         # If there is no event loop, send the event synchronously.
         warnings.filterwarnings("ignore", category=RuntimeWarning)

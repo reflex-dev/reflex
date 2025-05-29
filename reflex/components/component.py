@@ -157,7 +157,8 @@ class ComponentField(Generic[FIELD_TYPE]):
             return self.default
         if self.default_factory is not None:
             return self.default_factory()
-        raise ValueError("No default value or factory provided.")
+        msg = "No default value or factory provided."
+        raise ValueError(msg)
 
     def __repr__(self) -> str:
         """Represent the field in a readable format.
@@ -194,7 +195,8 @@ def field(
         ValueError: If both default and default_factory are specified.
     """
     if default is not MISSING and default_factory is not None:
-        raise ValueError("cannot specify both default and default_factory")
+        msg = "cannot specify both default and default_factory"
+        raise ValueError(msg)
     return ComponentField(  # pyright: ignore [reportReturnType]
         default=default,
         default_factory=default_factory,
@@ -286,10 +288,11 @@ class BaseComponentMeta(ABCMeta):
 
         namespace["_own_fields"] = own_fields
         namespace["_inherited_fields"] = inherited_fields
-        namespace["_fields"] = inherited_fields | own_fields
+        all_fields = inherited_fields | own_fields
+        namespace["_fields"] = all_fields
         namespace["_js_fields"] = {
             key: value
-            for key, value in own_fields.items()
+            for key, value in all_fields.items()
             if value.is_javascript is True
         }
         return super().__new__(cls, name, bases, namespace)
@@ -769,11 +772,12 @@ class Component(BaseComponent, ABC):
                 and key not in component_specific_triggers
                 and key not in props
             ):
-                raise ValueError(
+                msg = (
                     f"The {(comp_name := type(self).__name__)} does not take in an `{key}` event trigger. If {comp_name}"
                     f" is a third party component make sure to add `{key}` to the component's event triggers. "
                     f"visit https://reflex.dev/docs/wrapping-react/guide/#event-triggers for more info."
                 )
+                raise ValueError(msg)
             if key in component_specific_triggers:
                 # Event triggers are bound to event chains.
                 is_var = False
@@ -844,7 +848,8 @@ class Component(BaseComponent, ABC):
         style = kwargs.get("style", {})
         if isinstance(style, Sequence):
             if any(not isinstance(s, Mapping) for s in style):
-                raise TypeError("Style must be a dictionary or a list of dictionaries.")
+                msg = "Style must be a dictionary or a list of dictionaries."
+                raise TypeError(msg)
             # Merge styles, the later ones overriding keys in the earlier ones.
             style = {
                 k: v
@@ -879,14 +884,12 @@ class Component(BaseComponent, ABC):
                     if not isinstance(c, StringVar) and not issubclass(
                         c._var_type, str
                     ):
-                        raise TypeError(
-                            f"Invalid class_name passed for prop {type(self).__name__}.class_name, expected type str, got value {c._js_expr} of type {c._var_type}."
-                        )
+                        msg = f"Invalid class_name passed for prop {type(self).__name__}.class_name, expected type str, got value {c._js_expr} of type {c._var_type}."
+                        raise TypeError(msg)
                     has_var = True
                 else:
-                    raise TypeError(
-                        f"Invalid class_name passed for prop {type(self).__name__}.class_name, expected type str, got value {c} of type {type(c)}."
-                    )
+                    msg = f"Invalid class_name passed for prop {type(self).__name__}.class_name, expected type str, got value {c} of type {type(c)}."
+                    raise TypeError(msg)
             if has_var:
                 kwargs["class_name"] = LiteralArrayVar.create(
                     class_name, _var_type=list[str]
@@ -898,9 +901,8 @@ class Component(BaseComponent, ABC):
             and not isinstance(class_name, StringVar)
             and not issubclass(class_name._var_type, str)
         ):
-            raise TypeError(
-                f"Invalid class_name passed for prop {type(self).__name__}.class_name, expected type str, got value {class_name._js_expr} of type {class_name._var_type}."
-            )
+            msg = f"Invalid class_name passed for prop {type(self).__name__}.class_name, expected type str, got value {class_name._js_expr} of type {class_name._var_type}."
+            raise TypeError(msg)
         # Construct the component.
         for key, value in kwargs.items():
             setattr(self, key, value)
@@ -1015,7 +1017,7 @@ class Component(BaseComponent, ABC):
         Returns:
             The unique fields.
         """
-        return set(cls.get_fields()) - set(Component.get_fields())
+        return set(cls.get_js_fields())
 
     @classmethod
     @functools.cache
@@ -1227,9 +1229,8 @@ class Component(BaseComponent, ABC):
         """
         # 1. Default style from `_add_style`/`add_style`.
         if type(self)._add_style != Component._add_style:
-            raise UserWarning(
-                "Do not override _add_style directly. Use add_style instead."
-            )
+            msg = "Do not override _add_style directly. Use add_style instead."
+            raise UserWarning(msg)
         new_style = self._add_style()
         style_vars = [new_style._var_data]
 
@@ -1347,9 +1348,8 @@ class Component(BaseComponent, ABC):
                 validate_child(child.default)
 
             if self._invalid_children and child_name in self._invalid_children:
-                raise ValueError(
-                    f"The component `{comp_name}` cannot have `{child_name}` as a child component"
-                )
+                msg = f"The component `{comp_name}` cannot have `{child_name}` as a child component"
+                raise ValueError(msg)
 
             if self._valid_children and child_name not in [
                 *self._valid_children,
@@ -1358,9 +1358,8 @@ class Component(BaseComponent, ABC):
                 valid_child_list = ", ".join(
                     [f"`{v_child}`" for v_child in self._valid_children]
                 )
-                raise ValueError(
-                    f"The component `{comp_name}` only allows the components: {valid_child_list} as children. Got `{child_name}` instead."
-                )
+                msg = f"The component `{comp_name}` only allows the components: {valid_child_list} as children. Got `{child_name}` instead."
+                raise ValueError(msg)
 
             if child._valid_parents and all(
                 clz_name not in [*child._valid_parents, *allowed_components]
@@ -1369,9 +1368,8 @@ class Component(BaseComponent, ABC):
                 valid_parent_list = ", ".join(
                     [f"`{v_parent}`" for v_parent in child._valid_parents]
                 )
-                raise ValueError(
-                    f"The component `{child_name}` can only be a child of the components: {valid_parent_list}. Got `{comp_name}` instead."
-                )
+                msg = f"The component `{child_name}` can only be a child of the components: {valid_parent_list}. Got `{comp_name}` instead."
+                raise ValueError(msg)
 
         for child in children:
             validate_child(child)
@@ -1502,13 +1500,9 @@ class Component(BaseComponent, ABC):
         """
         if self.event_triggers and self._event_trigger_values_use_state():
             return True
-        else:
-            for child in self.children:
-                if (
-                    isinstance(child, Component)
-                    and child._has_stateful_event_triggers()
-                ):
-                    return True
+        for child in self.children:
+            if isinstance(child, Component) and child._has_stateful_event_triggers():
+                return True
         return False
 
     @classmethod
@@ -1767,6 +1761,7 @@ class Component(BaseComponent, ABC):
                         {on_unmount or ""}
                     }}
                 }}, []);"""
+        return None
 
     def _get_ref_hook(self) -> Var | None:
         """Generate the ref hook for the component.
@@ -1780,6 +1775,7 @@ class Component(BaseComponent, ABC):
                 f"const {ref} = useRef(null); {Var(_js_expr=ref)._as_ref()!s} = {ref};",
                 _var_data=VarData(position=Hooks.HookPosition.INTERNAL),
             )
+        return None
 
     def _get_vars_hooks(self) -> dict[str, VarData | None]:
         """Get the hooks required by vars referenced in this component.
@@ -2222,7 +2218,7 @@ def _register_custom_component(
                 _var_type=unwrap_var_annotation(annotation),
             ).guess_type()
             if not types.safe_issubclass(annotation, EventHandler)
-            else EventSpec(handler=EventHandler(fn=lambda: []))
+            else EventSpec(handler=EventHandler(fn=no_args_event_spec))
         )
         for prop, annotation in typing.get_type_hints(component_fn).items()
         if prop != "return"
@@ -2233,7 +2229,8 @@ def _register_custom_component(
         **dummy_props,
     )
     if dummy_component.tag is None:
-        raise TypeError(f"Could not determine the tag name for {component_fn!r}")
+        msg = f"Could not determine the tag name for {component_fn!r}"
+        raise TypeError(msg)
     CUSTOM_COMPONENTS[dummy_component.tag] = dummy_component
 
 
@@ -2312,7 +2309,8 @@ class NoSSRComponent(Component):
         # extract the correct import name from library name
         base_import_name = self._get_import_name()
         if base_import_name is None:
-            raise ValueError("Undefined library for NoSSRComponent")
+            msg = "Undefined library for NoSSRComponent"
+            raise ValueError(msg)
         import_name = format.format_library_name(base_import_name)
 
         library_import = f"const {self.alias if self.alias else self.tag} = dynamic(() => import('{import_name}')"
@@ -2320,7 +2318,7 @@ class NoSSRComponent(Component):
             # https://nextjs.org/docs/pages/building-your-application/optimizing/lazy-loading#with-named-exports
             f".then((mod) => mod.{self.tag})" if not self.is_default else ""
         )
-        return "".join((library_import, mod_import, opts_fragment))
+        return library_import + mod_import + opts_fragment
 
 
 class StatefulComponent(BaseComponent):
@@ -2540,7 +2538,7 @@ class StatefulComponent(BaseComponent):
         var_name = var_name.strip()
 
         # Break up array and object destructuring if used.
-        if var_name.startswith("[") or var_name.startswith("{"):
+        if var_name.startswith(("[", "{")):
             return [
                 v.strip().replace("...", "") for v in var_name.strip("[]{}").split(",")
             ]

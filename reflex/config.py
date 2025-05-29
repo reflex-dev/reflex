@@ -69,9 +69,27 @@ def _load_dotenv_from_str(env_files: str) -> None:
             load_dotenv(env_file_path, override=True)
 
 
+def _load_dotenv_from_env():
+    """Load environment variables from paths specified in REFLEX_ENV_FILE."""
+    show_deprecation = False
+    env_env_file = os.environ.get("REFLEX_ENV_FILE")
+    if not env_env_file:
+        env_env_file = os.environ.get("ENV_FILE")
+        if env_env_file:
+            show_deprecation = True
+    if show_deprecation:
+        console.deprecate(
+            "Usage of deprecated ENV_FILE env var detected.",
+            reason="Prefer `REFLEX_` prefix when setting env vars.",
+            deprecation_version="0.7.13",
+            removal_version="0.8.0",
+        )
+    if env_env_file:
+        _load_dotenv_from_str(env_env_file)
+
+
 # Load the env files at import time if they are set in the ENV_FILE environment variable.
-if env_files := os.getenv("ENV_FILE"):
-    _load_dotenv_from_str(env_files)
+_load_dotenv_from_env()
 
 
 class DBConfig(Base):
@@ -196,12 +214,10 @@ def get_default_value_for_field(field: dataclasses.Field) -> Any:
     """
     if field.default != dataclasses.MISSING:
         return field.default
-    elif field.default_factory != dataclasses.MISSING:
+    if field.default_factory != dataclasses.MISSING:
         return field.default_factory()
-    else:
-        raise ValueError(
-            f"Missing value for environment variable {field.name} and no default value found"
-        )
+    msg = f"Missing value for environment variable {field.name} and no default value found"
+    raise ValueError(msg)
 
 
 # TODO: Change all interpret_.* signatures to value: str, field: dataclasses.Field once we migrate rx.Config to dataclasses
@@ -223,9 +239,10 @@ def interpret_boolean_env(value: str, field_name: str) -> bool:
 
     if value.lower() in true_values:
         return True
-    elif value.lower() in false_values:
+    if value.lower() in false_values:
         return False
-    raise EnvironmentVarValueError(f"Invalid boolean value: {value} for {field_name}")
+    msg = f"Invalid boolean value: {value} for {field_name}"
+    raise EnvironmentVarValueError(msg)
 
 
 def interpret_int_env(value: str, field_name: str) -> int:
@@ -244,9 +261,8 @@ def interpret_int_env(value: str, field_name: str) -> int:
     try:
         return int(value)
     except ValueError as ve:
-        raise EnvironmentVarValueError(
-            f"Invalid integer value: {value} for {field_name}"
-        ) from ve
+        msg = f"Invalid integer value: {value} for {field_name}"
+        raise EnvironmentVarValueError(msg) from ve
 
 
 def interpret_existing_path_env(value: str, field_name: str) -> ExistingPath:
@@ -264,7 +280,8 @@ def interpret_existing_path_env(value: str, field_name: str) -> ExistingPath:
     """
     path = Path(value)
     if not path.exists():
-        raise EnvironmentVarValueError(f"Path does not exist: {path} for {field_name}")
+        msg = f"Path does not exist: {path} for {field_name}"
+        raise EnvironmentVarValueError(msg)
     return path
 
 
@@ -298,9 +315,8 @@ def interpret_enum_env(value: str, field_type: GenericType, field_name: str) -> 
     try:
         return field_type(value)
     except ValueError as ve:
-        raise EnvironmentVarValueError(
-            f"Invalid enum value: {value} for {field_name}"
-        ) from ve
+        msg = f"Invalid enum value: {value} for {field_name}"
+        raise EnvironmentVarValueError(msg) from ve
 
 
 def interpret_env_var_value(
@@ -322,21 +338,20 @@ def interpret_env_var_value(
     field_type = value_inside_optional(field_type)
 
     if is_union(field_type):
-        raise ValueError(
-            f"Union types are not supported for environment variables: {field_name}."
-        )
+        msg = f"Union types are not supported for environment variables: {field_name}."
+        raise ValueError(msg)
 
     if field_type is bool:
         return interpret_boolean_env(value, field_name)
-    elif field_type is str:
+    if field_type is str:
         return value
-    elif field_type is int:
+    if field_type is int:
         return interpret_int_env(value, field_name)
-    elif field_type is Path:
+    if field_type is Path:
         return interpret_path_env(value, field_name)
-    elif field_type is ExistingPath:
+    if field_type is ExistingPath:
         return interpret_existing_path_env(value, field_name)
-    elif get_origin(field_type) is list:
+    if get_origin(field_type) is list:
         return [
             interpret_env_var_value(
                 v,
@@ -345,13 +360,11 @@ def interpret_env_var_value(
             )
             for i, v in enumerate(value.split(":"))
         ]
-    elif inspect.isclass(field_type) and issubclass(field_type, enum.Enum):
+    if inspect.isclass(field_type) and issubclass(field_type, enum.Enum):
         return interpret_enum_env(value, field_type, field_name)
 
-    else:
-        raise ValueError(
-            f"Invalid type for environment variable {field_name}: {field_type}. This is probably an issue in Reflex."
-        )
+    msg = f"Invalid type for environment variable {field_name}: {field_type}. This is probably an issue in Reflex."
+    raise ValueError(msg)
 
 
 T = TypeVar("T")
@@ -964,9 +977,8 @@ If you are not using tailwind, set `tailwind` to `None` in rxconfig.py.""",
             self.state_manager_mode == constants.StateManagerMode.REDIS
             and not self.redis_url
         ):
-            raise ConfigError(
-                f"{self._prefixes[0]}REDIS_URL is required when using the redis state manager."
-            )
+            msg = f"{self._prefixes[0]}REDIS_URL is required when using the redis state manager."
+            raise ConfigError(msg)
 
     @property
     def app_module(self) -> ModuleType | None:
@@ -988,9 +1000,9 @@ If you are not using tailwind, set `tailwind` to `None` in rxconfig.py.""",
         Returns:
             The module name.
         """
-        if self.app_module is not None:
-            return self.app_module.__name__
-        return ".".join([self.app_name, self.app_name])
+        if self.app_module_import is not None:
+            return self.app_module_import
+        return self.app_name + "." + self.app_name
 
     def update_from_env(self) -> dict[str, Any]:
         """Update the config values based on set environment variables.
