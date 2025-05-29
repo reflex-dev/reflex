@@ -1015,7 +1015,7 @@ class Component(BaseComponent, ABC):
         Returns:
             The unique fields.
         """
-        return set(cls.get_fields()) - set(Component.get_fields())
+        return set(cls.get_js_fields())
 
     @classmethod
     @functools.cache
