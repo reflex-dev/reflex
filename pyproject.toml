@@ -228,7 +228,7 @@ fail_fast = true
 
 [[tool.pre-commit.repos]]
 repo = "https://github.com/astral-sh/ruff-pre-commit"
-rev = "v0.11.11"
+rev = "v0.11.12"
 hooks = [
   { id = "ruff-format", args = [
     "reflex",

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import sys
 from collections.abc import Iterable, Sequence
 from datetime import datetime
 from inspect import getmodule
@@ -682,12 +683,13 @@ def into_component(component: Component | ComponentCallable) -> Component:
     """
     if (converted := _into_component_once(component)) is not None:
         return converted
+    if not callable(component):
+        raise TypeError(
+            f"Expected a Component or callable, got {component!r} of type {type(component)}"
+        )
+
     try:
-        if (
-            callable(component)
-            and (converted := _into_component_once(component())) is not None
-        ):
-            return converted
+        component_called = component()
     except KeyError as e:
         if isinstance(e, ReflexError):
             raise
@@ -725,8 +727,12 @@ def into_component(component: Component | ComponentCallable) -> Component:
             ).with_traceback(e.__traceback__) from None
         raise
 
-    msg = f"Expected a Component, got {type(component)}"
-    raise TypeError(msg)
+    if (converted := _into_component_once(component_called)) is not None:
+        return converted
+
+    raise TypeError(
+        f"Expected a Component, got {component_called!r} of type {type(component_called)}"
+    )
 
 
 def compile_unevaluated_page(
@@ -747,52 +753,61 @@ def compile_unevaluated_page(
 
     Returns:
         The compiled component and whether state should be enabled.
+
+    Raises:
+        Exception: If an error occurs while evaluating the page.
     """
-    # Generate the component if it is a callable.
-    component = into_component(page.component)
+    try:
+        # Generate the component if it is a callable.
+        component = into_component(page.component)
 
-    component._add_style_recursive(style or {}, theme)
+        component._add_style_recursive(style or {}, theme)
 
-    enable_state = False
-    # Ensure state is enabled if this page uses state.
-    if state is None:
-        if page.on_load or component._has_stateful_event_triggers():
-            enable_state = True
-        else:
-            for var in component._get_vars(include_children=True):
-                var_data = var._get_all_var_data()
-                if not var_data:
-                    continue
-                if not var_data.state:
-                    continue
+        enable_state = False
+        # Ensure state is enabled if this page uses state.
+        if state is None:
+            if page.on_load or component._has_stateful_event_triggers():
                 enable_state = True
-                break
+            else:
+                for var in component._get_vars(include_children=True):
+                    var_data = var._get_all_var_data()
+                    if not var_data:
+                        continue
+                    if not var_data.state:
+                        continue
+                    enable_state = True
+                    break
 
-    from reflex.app import OverlayFragment
-    from reflex.utils.format import make_default_page_title
+        from reflex.app import OverlayFragment
+        from reflex.utils.format import make_default_page_title
 
-    component = OverlayFragment.create(component)
+        component = OverlayFragment.create(component)
 
-    meta_args = {
-        "title": (
-            page.title
-            if page.title is not None
-            else make_default_page_title(get_config().app_name, route)
-        ),
-        "image": page.image,
-        "meta": page.meta,
-    }
+        meta_args = {
+            "title": (
+                page.title
+                if page.title is not None
+                else make_default_page_title(get_config().app_name, route)
+            ),
+            "image": page.image,
+            "meta": page.meta,
+        }
 
-    if page.description is not None:
-        meta_args["description"] = page.description
+        if page.description is not None:
+            meta_args["description"] = page.description
 
-    # Add meta information to the component.
-    utils.add_meta(
-        component,
-        **meta_args,
-    )
+        # Add meta information to the component.
+        utils.add_meta(
+            component,
+            **meta_args,
+        )
 
-    return component, enable_state
+    except Exception as e:
+        if sys.version_info >= (3, 11):
+            e.add_note(f"Happened while evaluating page {route!r}")
+        raise
+    else:
+        return component, enable_state
 
 
 class ExecutorSafeFunctions:
