@@ -263,8 +263,13 @@ def is_classvar(a_type: Any) -> bool:
     Returns:
         Whether the type is a ClassVar.
     """
-    return a_type is ClassVar or (
-        type(a_type) is _GenericAlias and a_type.__origin__ is ClassVar
+    return (
+        a_type is ClassVar
+        or (type(a_type) is _GenericAlias and a_type.__origin__ is ClassVar)
+        or (
+            a_type.__class__ == ForwardRef
+            and a_type.__forward_arg__.startswith("ClassVar")
+        )
     )
 
 
