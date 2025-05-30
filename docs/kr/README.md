@@ -1,7 +1,5 @@
 <div align="center">
-<img src="/docs/images/reflex_dark.svg#gh-light-mode-only" alt="Reflex Logo" width="300px">
-<img src="/docs/images/reflex_light.svg#gh-dark-mode-only" alt="Reflex Logo" width="300px">
-
+<img src="/docs/images/reflex.svg" alt="Reflex Logo" width="300px">
 <hr>
 
 ### **✨ 순수 Python으로 고성능 사용자 정의 웹앱을 만들어 보세요. 몇 초만에 배포 가능합니다. ✨**
