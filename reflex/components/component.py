@@ -2194,7 +2194,17 @@ class CustomComponent(Component):
         Returns:
             The code to render the component.
         """
-        return self.component_fn(*self.get_prop_vars())
+        component = self.component_fn(*self.get_prop_vars())
+
+        try:
+            from reflex.utils.prerequisites import get_and_validate_app
+
+            style = get_and_validate_app().app.style
+        except Exception:
+            style = {}
+
+        component._add_style_recursive(style)
+        return component
 
 
 CUSTOM_COMPONENTS: dict[str, CustomComponent] = {}
