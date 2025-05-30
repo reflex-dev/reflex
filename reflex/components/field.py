@@ -112,15 +112,6 @@ class FieldBasedMeta(type):
     def _resolve_annotations(
         cls, namespace: dict[str, Any], name: str
     ) -> dict[str, Any]:
-        """Base implementation returns raw annotations. Subclasses can override.
-
-        Args:
-            namespace: Class namespace.
-            name: Class name.
-
-        Returns:
-            Resolved annotations.
-        """
         return namespace.get("__annotations__", {})
 
     @classmethod
@@ -148,15 +139,6 @@ class FieldBasedMeta(type):
     def _process_annotated_fields(
         cls, namespace: dict[str, Any], annotations: dict[str, Any]
     ) -> dict[str, Any]:
-        """Abstract - subclasses must implement field creation logic.
-
-        Args:
-            namespace: Class namespace.
-            annotations: Resolved annotations.
-
-        Raises:
-            NotImplementedError: Must be implemented by subclasses.
-        """
         raise NotImplementedError
 
     @classmethod
