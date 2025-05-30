@@ -32,6 +32,24 @@ Key features:
 
 See our [architecture page](https://reflex.dev/blog/2024-03-21-reflex-architecture/#the-reflex-architecture) to learn how Reflex works under the hood.
 
+# Reflex Build
+
+[Reflex Build](https://build.reflex.dev/) is our AI-powered app builder that accelerates your Reflex development by generating complete full-stack Python applications.
+
+It helps you quickly create, customize, and refine your apps — from frontend UI components to backend logic — so you can focus on your ideas instead of boilerplate code. Whether you’re prototyping a new concept or scaling a production app, Reflex Build intelligently scaffolds and optimizes your entire app stack for faster development and iteration.
+
+Key features:
+
+- **AI-Driven Scaffolding** – Automatically generates frontend and backend code based on your app requirements.
+- **Full-Stack Python** – Build both UI and backend logic purely in Python, with no need for JavaScript.
+- **Database & Environment Management** – Connect databases, configure environment variables, and integrate with GitHub effortlessly.
+- **Customizable Components** – Easily tweak and extend generated components to fit your exact needs.
+- **Rapid Prototyping** – Quickly turn ideas into working apps with minimal setup.
+- **Optimized Code** – Generates clean, efficient, and scalable code for production readiness.
+- **Seamless Integration** – Works natively with Reflex apps and complements Reflex Cloud hosting.
+
+See the [AI builder docs](https://reflex.dev/docs/ai-builder/overview/what-is-reflex-build/) to learn more about how Reflex Build can help you rapidly create, customize, and scale your full-stack Python apps with AI-powered automation.
+
 ## ⚙️ Installation
 
 Open a terminal and run (Requires Python 3.10+):
