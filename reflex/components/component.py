@@ -17,11 +17,9 @@ from hashlib import md5
 from types import SimpleNamespace
 from typing import (
     TYPE_CHECKING,
-    Annotated,
     Any,
     ClassVar,
     ForwardRef,
-    Generic,
     TypeVar,
     _eval_type,  # pyright: ignore [reportAttributeAccessIssue]
     cast,
@@ -36,6 +34,9 @@ import reflex.state
 from reflex.compiler.templates import STATEFUL_COMPONENT
 from reflex.components.core.breakpoints import Breakpoints
 from reflex.components.dynamic import load_dynamic_serializer
+
+# Import BaseField from shared field module
+from reflex.components.field import BaseField
 from reflex.components.tags import Tag
 from reflex.constants import (
     Dirs,
@@ -117,7 +118,7 @@ def resolve_annotations(
 FIELD_TYPE = TypeVar("FIELD_TYPE")
 
 
-class ComponentField(Generic[FIELD_TYPE]):
+class ComponentField(BaseField[FIELD_TYPE]):
     """A field for a component."""
 
     def __init__(
@@ -135,30 +136,8 @@ class ComponentField(Generic[FIELD_TYPE]):
             is_javascript: Whether the field is a javascript property.
             annotated_type: The annotated type for the field.
         """
-        self.default = default
-        self.default_factory = default_factory
+        super().__init__(default, default_factory, annotated_type)
         self.is_javascript = is_javascript
-        self.outer_type_ = self.annotated_type = annotated_type
-        type_origin = get_origin(annotated_type) or annotated_type
-        if type_origin is Annotated:
-            type_origin = annotated_type.__origin__  # pyright: ignore [reportAttributeAccessIssue]
-        self.type_ = self.type_origin = type_origin
-
-    def default_value(self) -> FIELD_TYPE:
-        """Get the default value for the field.
-
-        Returns:
-            The default value for the field.
-
-        Raises:
-            ValueError: If no default value or factory is provided.
-        """
-        if self.default is not MISSING:
-            return self.default
-        if self.default_factory is not None:
-            return self.default_factory()
-        msg = "No default value or factory provided."
-        raise ValueError(msg)
 
     def __repr__(self) -> str:
         """Represent the field in a readable format.

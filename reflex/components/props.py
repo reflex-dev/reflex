@@ -4,15 +4,33 @@ from __future__ import annotations
 
 from collections.abc import Callable
 from dataclasses import _MISSING_TYPE, MISSING
-from typing import Annotated, Any, Generic, TypeVar, get_args, get_origin
+from typing import Any, TypeVar, get_args, get_origin
 
 from typing_extensions import dataclass_transform
 
+from reflex.components.field import BaseField
 from reflex.utils import format
 from reflex.utils.exceptions import InvalidPropValueError
+from reflex.utils.serializers import serializer
+from reflex.utils.types import is_union
 from reflex.vars.object import LiteralObjectVar
 
 PROPS_FIELD_TYPE = TypeVar("PROPS_FIELD_TYPE")
+
+
+def _iterate_union_args(field_type: Any):
+    """Iterate over union arguments, skipping None types.
+
+    Args:
+        field_type: The type annotation to check.
+
+    Yields:
+        Non-None arguments from the union type.
+    """
+    if is_union(field_type):
+        for arg in get_args(field_type):
+            if arg is not type(None):  # Skip None from Optional
+                yield arg
 
 
 def _get_list_element_type(field_type: Any) -> type | None:
@@ -31,22 +49,10 @@ def _get_list_element_type(field_type: Any) -> type | None:
             return _is_props_subclass(args[0])
 
     # Handle Union types - check if any union member is a list
-    if origin is not None and hasattr(field_type, "__args__"):
-        for arg in get_args(field_type):
-            if arg is not type(None):  # Skip None from Optional
-                list_element = _get_list_element_type(arg)
-                if list_element is not None:
-                    return list_element
-
-    # Handle Python 3.10+ Union syntax (X | Y) - types.UnionType
-    import types
-
-    if hasattr(types, "UnionType") and isinstance(field_type, types.UnionType):
-        for arg in get_args(field_type):
-            if arg is not type(None):  # Skip None from Optional
-                list_element = _get_list_element_type(arg)
-                if list_element is not None:
-                    return list_element
+    for arg in _iterate_union_args(field_type):
+        list_element = _get_list_element_type(arg)
+        if list_element is not None:
+            return list_element
 
     return None
 
@@ -74,31 +80,16 @@ def _is_props_subclass(field_type: Any) -> type | None:
         except (TypeError, AttributeError):
             pass
 
-    # Handle Union types (including Optional which is Union[T, None])
-    origin = get_origin(field_type)
-    if origin is not None and hasattr(field_type, "__args__"):
-        # For Union types, check each argument
-        for arg in get_args(field_type):
-            if arg is not type(None):  # Skip None from Optional
-                result = _is_props_subclass(arg)
-                if result is not None:
-                    return result
-
-    # Handle Python 3.10+ Union syntax (X | Y) - types.UnionType
-    import types
-
-    if hasattr(types, "UnionType") and isinstance(field_type, types.UnionType):
-        # For new union syntax, check each argument
-        for arg in get_args(field_type):
-            if arg is not type(None):  # Skip None from Optional
-                result = _is_props_subclass(arg)
-                if result is not None:
-                    return result
+    # Handle Union types - check each union member
+    for arg in _iterate_union_args(field_type):
+        result = _is_props_subclass(arg)
+        if result is not None:
+            return result
 
     return None
 
 
-class PropsField(Generic[PROPS_FIELD_TYPE]):
+class PropsField(BaseField[PROPS_FIELD_TYPE]):
     """A field for a props class."""
 
     def __init__(
@@ -114,37 +105,8 @@ class PropsField(Generic[PROPS_FIELD_TYPE]):
             default_factory: The default factory for the field.
             annotated_type: The annotated type for the field.
         """
-        self.default = default
-        self.default_factory = default_factory
-        self.outer_type_ = self.annotated_type = annotated_type
+        super().__init__(default, default_factory, annotated_type)
         self._name: str = ""  # Will be set by metaclass
-
-        # Process type annotation similar to ComponentField
-        type_origin = get_origin(annotated_type) or annotated_type
-        if type_origin is Annotated:
-            type_origin = annotated_type.__origin__  # pyright: ignore [reportAttributeAccessIssue]
-            # For Annotated types, use the actual type inside the annotation
-            self.type_ = annotated_type
-        else:
-            # For other types (including Union), preserve the original type
-            self.type_ = annotated_type
-        self.type_origin = type_origin
-
-    def default_value(self) -> PROPS_FIELD_TYPE:
-        """Get the default value for the field.
-
-        Returns:
-            The default value for the field.
-
-        Raises:
-            ValueError: If no default value or factory is provided.
-        """
-        if self.default is not MISSING:
-            return self.default
-        if self.default_factory is not None:
-            return self.default_factory()
-        msg = "No default value or factory provided."
-        raise ValueError(msg)
 
     @property
     def required(self) -> bool:
@@ -459,134 +421,27 @@ class PropsBase(metaclass=PropsBaseMeta):
         return value
 
 
-# Register PropsBase serializer to preserve callables (lambdas)
-def _register_props_serializer():
-    """Register PropsBase serializer that preserves callables."""
-    from reflex.utils import serializers
+@serializer(to=dict)
+def serialize_props_base(value: PropsBase) -> dict:
+    """Serialize a PropsBase instance.
 
-    def serialize_props_base(value: PropsBase) -> dict:
-        """Serialize a PropsBase instance.
+    Unlike serialize_base, this preserves callables (lambdas) since they're
+    needed for AG Grid and other components that process them on the frontend.
 
-        Unlike serialize_base, this preserves callables (lambdas) since they're
-        needed for AG Grid and other components that process them on the frontend.
+    Args:
+        value: The PropsBase instance to serialize.
 
-        Args:
-            value: The PropsBase instance to serialize.
-
-        Returns:
-            Dictionary representation of the PropsBase instance.
-        """
-        return value.dict()
-
-    # Register the serializer
-    serializers.SERIALIZERS[PropsBase] = serialize_props_base
-    serializers.SERIALIZER_TYPES[PropsBase] = dict
-    # Clear caches
-    serializers.get_serializer.cache_clear()
-    serializers.get_serializer_type.cache_clear()
+    Returns:
+        Dictionary representation of the PropsBase instance.
+    """
+    return value.dict()
 
 
-# Register the serializer
-_register_props_serializer()
-
-
-class NoExtrasAllowedProps(metaclass=PropsBaseMeta):
+class NoExtrasAllowedProps(PropsBase):
     """A class that holds props to be passed or applied to a component with no extra props allowed."""
 
-    def dict(
-        self,
-        exclude_none: bool = True,
-        include: set[str] | None = None,
-        exclude: set[str] | None = None,
-        **kwargs,
-    ):
-        """Convert the object to a dictionary.
-
-        Args:
-            exclude_none: Whether to exclude None values.
-            include: Fields to include in the output.
-            exclude: Fields to exclude from the output.
-            **kwargs: Additional keyword arguments (for compatibility).
-
-        Returns:
-            The object as a dictionary.
-        """
-        result = {}
-
-        for field_name in getattr(self.__class__, "_fields", {}):
-            if hasattr(self, field_name):
-                value = getattr(self, field_name)
-
-                if include is not None and field_name not in include:
-                    continue
-                if exclude is not None and field_name in exclude:
-                    continue
-
-                if exclude_none and value is None:
-                    continue
-
-                # Use the same recursive conversion as PropsBase
-                value = self._convert_to_camel_case(
-                    value, exclude_none, include, exclude
-                )
-
-                camel_key = format.to_camel_case(field_name)
-                result[camel_key] = value
-
-        return result
-
-    def _convert_to_camel_case(
-        self,
-        value: Any,
-        exclude_none: bool = True,
-        include: set[str] | None = None,
-        exclude: set[str] | None = None,
-    ) -> Any:
-        """Recursively convert nested dictionaries and lists to camelCase.
-
-        Args:
-            value: The value to convert.
-            exclude_none: Whether to exclude None values.
-            include: Fields to include in the output.
-            exclude: Fields to exclude from the output.
-
-        Returns:
-            The converted value with camelCase keys.
-        """
-        if hasattr(value, "dict") and callable(value.dict):
-            # Convert nested PropsBase/NoExtrasAllowedProps objects
-            return value.dict(
-                exclude_none=exclude_none, include=include, exclude=exclude
-            )
-        if isinstance(value, dict):
-            # Convert dictionary keys to camelCase
-            return {
-                format.to_camel_case(k): self._convert_to_camel_case(
-                    v, exclude_none, include, exclude
-                )
-                for k, v in value.items()
-                if not (exclude_none and v is None)
-            }
-        if isinstance(value, (list, tuple)):
-            # Convert list/tuple items recursively
-            return [
-                self._convert_to_camel_case(item, exclude_none, include, exclude)
-                for item in value
-            ]
-        # Return primitive values as-is
-        return value
-
-    @classmethod
-    def get_fields(cls) -> dict[str, Any]:
-        """Get the fields of the object.
-
-        Returns:
-            Dictionary mapping field names to PropsField instances.
-        """
-        return getattr(cls, "_fields", {})
-
     def __init__(self, component_name: str | None = None, **kwargs):
-        """Initialize the props.
+        """Initialize the props with validation.
 
         Args:
             component_name: The custom name of the component.
@@ -608,33 +463,5 @@ class NoExtrasAllowedProps(metaclass=PropsBaseMeta):
             msg = f"Invalid prop(s) {invalid_fields_str} for {component_name!r}. Supported props are {supported_props_str}"
             raise InvalidPropValueError(msg)
 
-        # Basic field initialization with nested validation
-        for key, value in kwargs.items():
-            field_info = getattr(self.__class__, "_fields", {}).get(key)
-            if field_info:
-                field_type = field_info.annotated_type
-
-                # Check if this field expects a specific Props type and we got a dict
-                if isinstance(value, dict):
-                    props_class = _is_props_subclass(field_type)
-                    if props_class is not None:
-                        value = props_class(**value)
-
-                # Check if this field expects a list of Props and we got a list of dicts
-                elif isinstance(value, list):
-                    element_type = _get_list_element_type(field_type)
-                    if element_type is not None:
-                        # Convert each dict in the list to the appropriate Props class
-                        value = [
-                            element_type(**item) if isinstance(item, dict) else item
-                            for item in value
-                        ]
-
-            setattr(self, key, value)
-
-        for field_name, field in getattr(self.__class__, "_fields", {}).items():
-            if not hasattr(self, field_name):
-                if field.default is not MISSING:
-                    setattr(self, field_name, field.default)
-                elif field.default_factory is not None:
-                    setattr(self, field_name, field.default_factory())
+        # Use parent class initialization after validation
+        super().__init__(**kwargs)

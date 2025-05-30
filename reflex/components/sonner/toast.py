@@ -7,7 +7,7 @@ from typing import Any, Literal
 from reflex.base import Base
 from reflex.components.component import Component, ComponentNamespace
 from reflex.components.lucide.icon import Icon
-from reflex.components.props import NoExtrasAllowedProps, PropsBase
+from reflex.components.props import NoExtrasAllowedProps
 from reflex.constants.base import Dirs
 from reflex.event import EventSpec, run_script
 from reflex.style import Style, resolved_color_mode
@@ -74,7 +74,7 @@ def _toast_callback_signature(toast: Var) -> list[Var]:
     ]
 
 
-class ToastProps(PropsBase, NoExtrasAllowedProps):
+class ToastProps(NoExtrasAllowedProps):
     """Props for the toast component."""
 
     # Toast's title, renders above the description.
