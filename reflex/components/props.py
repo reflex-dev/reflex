@@ -15,6 +15,42 @@ from reflex.vars.object import LiteralObjectVar
 PROPS_FIELD_TYPE = TypeVar("PROPS_FIELD_TYPE")
 
 
+def _get_list_element_type(field_type: Any) -> type | None:
+    """Extract the element type from a list type annotation.
+
+    Args:
+        field_type: The type annotation to check (e.g., list[SomeClass] or list[SomeClass] | None).
+
+    Returns:
+        The element type if it's a list of Props, None otherwise.
+    """
+    origin = get_origin(field_type)
+    if origin is list:
+        args = get_args(field_type)
+        if args:
+            return _is_props_subclass(args[0])
+
+    # Handle Union types - check if any union member is a list
+    if origin is not None and hasattr(field_type, "__args__"):
+        for arg in get_args(field_type):
+            if arg is not type(None):  # Skip None from Optional
+                list_element = _get_list_element_type(arg)
+                if list_element is not None:
+                    return list_element
+
+    # Handle Python 3.10+ Union syntax (X | Y) - types.UnionType
+    import types
+
+    if hasattr(types, "UnionType") and isinstance(field_type, types.UnionType):
+        for arg in get_args(field_type):
+            if arg is not type(None):  # Skip None from Optional
+                list_element = _get_list_element_type(arg)
+                if list_element is not None:
+                    return list_element
+
+    return None
+
+
 def _is_props_subclass(field_type: Any) -> type | None:
     """Check if a field type is a subclass of NoExtrasAllowedProps or PropsBase.
 
@@ -42,6 +78,17 @@ def _is_props_subclass(field_type: Any) -> type | None:
     origin = get_origin(field_type)
     if origin is not None and hasattr(field_type, "__args__"):
         # For Union types, check each argument
+        for arg in get_args(field_type):
+            if arg is not type(None):  # Skip None from Optional
+                result = _is_props_subclass(arg)
+                if result is not None:
+                    return result
+
+    # Handle Python 3.10+ Union syntax (X | Y) - types.UnionType
+    import types
+
+    if hasattr(types, "UnionType") and isinstance(field_type, types.UnionType):
+        # For new union syntax, check each argument
         for arg in get_args(field_type):
             if arg is not type(None):  # Skip None from Optional
                 result = _is_props_subclass(arg)
@@ -113,6 +160,9 @@ class PropsField(Generic[PROPS_FIELD_TYPE]):
         """Field name (for Pydantic compatibility).
 
         Note: This is set by the metaclass when processing fields.
+
+        Returns:
+            The field name if set, None otherwise.
         """
         return getattr(self, "_name", None)
 
@@ -262,8 +312,28 @@ class PropsBase(metaclass=PropsBaseMeta):
         Args:
             **kwargs: The field values to set.
         """
-        # Set field values from kwargs
+        # Set field values from kwargs with nested object instantiation
         for key, value in kwargs.items():
+            field_info = getattr(self.__class__, "_fields", {}).get(key)
+            if field_info:
+                field_type = field_info.annotated_type
+
+                # Check if this field expects a specific Props type and we got a dict
+                if isinstance(value, dict):
+                    props_class = _is_props_subclass(field_type)
+                    if props_class is not None:
+                        value = props_class(**value)
+
+                # Check if this field expects a list of Props and we got a list of dicts
+                elif isinstance(value, list):
+                    element_type = _get_list_element_type(field_type)
+                    if element_type is not None:
+                        # Convert each dict in the list to the appropriate Props class
+                        value = [
+                            element_type(**item) if isinstance(item, dict) else item
+                            for item in value
+                        ]
+
             setattr(self, key, value)
 
         # Set default values for fields not provided
@@ -399,6 +469,12 @@ def _register_props_serializer():
 
         Unlike serialize_base, this preserves callables (lambdas) since they're
         needed for AG Grid and other components that process them on the frontend.
+
+        Args:
+            value: The PropsBase instance to serialize.
+
+        Returns:
+            Dictionary representation of the PropsBase instance.
         """
         return value.dict()
 
@@ -424,7 +500,17 @@ class NoExtrasAllowedProps(metaclass=PropsBaseMeta):
         exclude: set[str] | None = None,
         **kwargs,
     ):
-        """Convert the object to a dictionary."""
+        """Convert the object to a dictionary.
+
+        Args:
+            exclude_none: Whether to exclude None values.
+            include: Fields to include in the output.
+            exclude: Fields to exclude from the output.
+            **kwargs: Additional keyword arguments (for compatibility).
+
+        Returns:
+            The object as a dictionary.
+        """
         result = {}
 
         for field_name in getattr(self.__class__, "_fields", {}):
@@ -492,7 +578,11 @@ class NoExtrasAllowedProps(metaclass=PropsBaseMeta):
 
     @classmethod
     def get_fields(cls) -> dict[str, Any]:
-        """Get the fields of the object."""
+        """Get the fields of the object.
+
+        Returns:
+            Dictionary mapping field names to PropsField instances.
+        """
         return getattr(cls, "_fields", {})
 
     def __init__(self, component_name: str | None = None, **kwargs):
@@ -520,14 +610,26 @@ class NoExtrasAllowedProps(metaclass=PropsBaseMeta):
 
         # Basic field initialization with nested validation
         for key, value in kwargs.items():
-            # Check if this field expects a specific Props type and we got a dict
             field_info = getattr(self.__class__, "_fields", {}).get(key)
-            if field_info and isinstance(value, dict):
+            if field_info:
                 field_type = field_info.annotated_type
-                # Check if field type is a Props subclass (handles Union types safely)
-                props_class = _is_props_subclass(field_type)
-                if props_class is not None:
-                    value = props_class(**value)
+
+                # Check if this field expects a specific Props type and we got a dict
+                if isinstance(value, dict):
+                    props_class = _is_props_subclass(field_type)
+                    if props_class is not None:
+                        value = props_class(**value)
+
+                # Check if this field expects a list of Props and we got a list of dicts
+                elif isinstance(value, list):
+                    element_type = _get_list_element_type(field_type)
+                    if element_type is not None:
+                        # Convert each dict in the list to the appropriate Props class
+                        value = [
+                            element_type(**item) if isinstance(item, dict) else item
+                            for item in value
+                        ]
+
             setattr(self, key, value)
 
         for field_name, field in getattr(self.__class__, "_fields", {}).items():
