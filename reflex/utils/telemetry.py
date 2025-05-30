@@ -67,22 +67,6 @@ def get_reflex_version() -> str:
     return constants.Reflex.VERSION
 
 
-def _get_app_class_name() -> str | None:
-    """Get the app class name if available.
-
-    Returns:
-        The app class name (e.g. "App", "AppEnterprise") or None if not available.
-    """
-    try:
-        from reflex.utils.prerequisites import get_and_validate_app
-
-        app_info = get_and_validate_app()
-    except Exception:
-        return None
-    else:
-        return app_info.app.__class__.__name__
-
-
 def get_cpu_count() -> int:
     """Get the number of CPUs.
 
@@ -213,16 +197,12 @@ def _prepare_event(event: str, **kwargs) -> _Event | None:
     if not event_data:
         return None
 
-    additional_keys = ["template", "context", "detail", "user_uuid", "app_class"]
+    additional_keys = ["template", "context", "detail", "user_uuid"]
 
     properties = event_data["properties"]
 
-    # Auto-detect app class if not provided
-    if "app_class" not in kwargs:
-        kwargs["app_class"] = _get_app_class_name()
-
     for key in additional_keys:
-        if key in properties or key not in kwargs or kwargs[key] is None:
+        if key in properties or key not in kwargs:
             continue
 
         properties[key] = kwargs[key]
