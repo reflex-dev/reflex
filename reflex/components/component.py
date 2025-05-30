@@ -2212,7 +2212,6 @@ class CustomComponent(Component):
         Returns:
             The app wrap components.
         """
-        # Custom components do not have app wrap components.
         return self.get_component()._get_all_app_wrap_components()
 
 
