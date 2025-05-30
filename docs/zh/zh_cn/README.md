@@ -1,7 +1,5 @@
 <div align="center">
-<img src="/docs/images/reflex_dark.svg#gh-light-mode-only" alt="Reflex Logo" width="300px">
-<img src="/docs/images/reflex_light.svg#gh-dark-mode-only" alt="Reflex Logo" width="300px">
-
+<img src="/docs/images/reflex.svg" alt="Reflex Logo" width="300px">
 <hr>
 
 ### **✨ 使用 Python 创建高效且可自定义的网页应用程序,几秒钟内即可部署.✨**
