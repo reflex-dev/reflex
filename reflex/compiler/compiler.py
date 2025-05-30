@@ -26,6 +26,7 @@ from reflex.style import SYSTEM_COLOR_MODE
 from reflex.utils import console, path_ops
 from reflex.utils.exceptions import ReflexError
 from reflex.utils.exec import is_prod_mode
+from reflex.utils.format import to_title_case
 from reflex.utils.imports import ImportVar
 from reflex.utils.prerequisites import get_web_dir
 from reflex.vars.base import LiteralVar, Var
@@ -667,6 +668,30 @@ def readable_name_from_component(
     return None
 
 
+def _modify_exception(e: Exception) -> None:
+    """Modify the exception to make it more readable.
+
+    Args:
+        e: The exception to modify.
+    """
+    if len(e.args) == 1 and isinstance((msg := e.args[0]), str):
+        while (state_index := msg.find("reflex___")) != -1:
+            dot_index = msg.find(".", state_index)
+            if dot_index == -1:
+                break
+            state_name = msg[state_index:dot_index]
+            module_dot_state_name = state_name.replace("___", ".").rsplit("__", 1)[-1]
+            module_path, _, state_snake_case = module_dot_state_name.rpartition(".")
+            if not state_snake_case:
+                break
+            actual_state_name = to_title_case(state_snake_case)
+            msg = (
+                f"{msg[:state_index]}{module_path}.{actual_state_name}{msg[dot_index:]}"
+            )
+
+        e.args = (msg,)
+
+
 def into_component(component: Component | ComponentCallable) -> Component:
     """Convert a component to a Component.
 
@@ -691,6 +716,7 @@ def into_component(component: Component | ComponentCallable) -> Component:
         component_called = component()
     except KeyError as e:
         if isinstance(e, ReflexError):
+            _modify_exception(e)
             raise
         key = e.args[0] if e.args else None
         if key is not None and isinstance(key, Var):
@@ -700,6 +726,7 @@ def into_component(component: Component | ComponentCallable) -> Component:
         raise
     except TypeError as e:
         if isinstance(e, ReflexError):
+            _modify_exception(e)
             raise
         message = e.args[0] if e.args else None
         if message and isinstance(message, str):
@@ -724,6 +751,9 @@ def into_component(component: Component | ComponentCallable) -> Component:
             raise TypeError(
                 "Cannot pass a Var to a built-in function. Consider moving the operation to the backend, using existing Var operations, or defining a custom Var operation."
             ).with_traceback(e.__traceback__) from None
+        raise
+    except ReflexError as e:
+        _modify_exception(e)
         raise
 
     if (converted := _into_component_once(component_called)) is not None:
