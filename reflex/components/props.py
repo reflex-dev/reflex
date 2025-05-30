@@ -8,7 +8,7 @@ from typing import Any, TypeVar, get_args, get_origin
 
 from typing_extensions import dataclass_transform
 
-from reflex.components.field import BaseField
+from reflex.components.field import BaseField, FieldBasedMeta
 from reflex.utils import format
 from reflex.utils.exceptions import InvalidPropValueError
 from reflex.utils.serializers import serializer
@@ -18,49 +18,8 @@ from reflex.vars.object import LiteralObjectVar
 PROPS_FIELD_TYPE = TypeVar("PROPS_FIELD_TYPE")
 
 
-def _iterate_union_args(field_type: Any):
-    """Iterate over union arguments, skipping None types.
-
-    Args:
-        field_type: The type annotation to check.
-
-    Yields:
-        Non-None arguments from the union type.
-    """
-    if is_union(field_type):
-        for arg in get_args(field_type):
-            if arg is not type(None):  # Skip None from Optional
-                yield arg
-
-
-def _get_list_element_type(field_type: Any) -> type | None:
-    """Extract the element type from a list type annotation.
-
-    Args:
-        field_type: The type annotation to check (e.g., list[SomeClass] or list[SomeClass] | None).
-
-    Returns:
-        The element type if it's a list of Props, None otherwise.
-    """
-    origin = get_origin(field_type)
-    if origin is list:
-        args = get_args(field_type)
-        if args:
-            return _is_props_subclass(args[0])
-
-    # Handle Union types - check if any union member is a list
-    for arg in _iterate_union_args(field_type):
-        list_element = _get_list_element_type(arg)
-        if list_element is not None:
-            return list_element
-
-    return None
-
-
-def _is_props_subclass(field_type: Any) -> type | None:
-    """Check if a field type is a subclass of NoExtrasAllowedProps or PropsBase.
-
-    Handles Union types by checking if any of the union members are Props subclasses.
+def _get_props_subclass(field_type: Any) -> type | None:
+    """Extract the Props subclass from a field type annotation.
 
     Args:
         field_type: The type annotation to check.
@@ -68,23 +27,44 @@ def _is_props_subclass(field_type: Any) -> type | None:
     Returns:
         The Props subclass if found, None otherwise.
     """
-    # Handle direct class types
-    if isinstance(field_type, type):
-        try:
-            # Import here to avoid circular imports
-            if hasattr(field_type, "__mro__"):
-                # Check if it's a subclass of NoExtrasAllowedProps or PropsBase
-                for base in field_type.__mro__:
-                    if base.__name__ in ("NoExtrasAllowedProps", "PropsBase"):
-                        return field_type
-        except (TypeError, AttributeError):
-            pass
+    from reflex.utils.types import typehint_issubclass
 
-    # Handle Union types - check each union member
-    for arg in _iterate_union_args(field_type):
-        result = _is_props_subclass(arg)
-        if result is not None:
-            return result
+    # For direct class types, we can return them directly if they're Props subclasses
+    if isinstance(field_type, type):
+        return field_type if typehint_issubclass(field_type, PropsBase) else None
+
+    # For Union types, check each union member
+    if is_union(field_type):
+        for arg in get_args(field_type):
+            result = _get_props_subclass(arg)
+            if result is not None:
+                return result
+
+    return None
+
+
+def _find_props_in_list_annotation(field_type: Any) -> type | None:
+    """Find Props subclass within a list type annotation.
+
+    Args:
+        field_type: The type annotation to check (e.g., list[SomeProps] or list[SomeProps] | None).
+
+    Returns:
+        The Props subclass if found in a list annotation, None otherwise.
+    """
+    origin = get_origin(field_type)
+    if origin is list:
+        args = get_args(field_type)
+        if args:
+            return _get_props_subclass(args[0])
+
+    # Handle Union types - check if any union member is a list
+    if is_union(field_type):
+        for arg in get_args(field_type):
+            if arg is not type(None):  # Skip None from Optional
+                list_element = _find_props_in_list_annotation(arg)
+                if list_element is not None:
+                    return list_element
 
     return None
 
@@ -178,91 +158,68 @@ def props_field(
         msg = "cannot specify both default and default_factory"
         raise ValueError(msg)
     return PropsField(  # pyright: ignore [reportReturnType]
-        default=default, default_factory=default_factory, annotated_type=MISSING
+        default=default,
+        default_factory=default_factory,
+        annotated_type=MISSING,
     )
 
 
 @dataclass_transform(field_specifiers=(props_field,))
-class PropsBaseMeta(type):
+class PropsBaseMeta(FieldBasedMeta):
     """Meta class for PropsBase."""
 
-    def __new__(cls, name: str, bases: tuple[type], namespace: dict[str, Any]) -> type:
-        """Create a new class.
-
-        Args:
-            name: The name of the class.
-            bases: The bases of the class.
-            namespace: The namespace of the class.
-
-        Returns:
-            The new class.
-        """
-        # Process field annotations similar to BaseComponentMeta
-        inherited_fields: dict[str, PropsField] = {}
+    @classmethod
+    def _process_annotated_fields(
+        cls, namespace: dict[str, Any], annotations: dict[str, Any]
+    ) -> dict[str, PropsField]:
         own_fields: dict[str, PropsField] = {}
 
-        # Get annotations from the namespace
-        resolved_annotations = namespace.get("__annotations__", {})
-
-        # Collect inherited fields from base classes
-        for base in bases[::-1]:
-            if hasattr(base, "_inherited_fields"):
-                inherited_fields.update(base._inherited_fields)
-        for base in bases[::-1]:
-            if hasattr(base, "_own_fields"):
-                inherited_fields.update(base._own_fields)
-
-        # Process fields with values but no annotations (inherited field overrides)
-        for key, value in namespace.items():
-            if key not in resolved_annotations and key in inherited_fields:
-                inherited_field = inherited_fields[key]
-                new_value = PropsField(
-                    annotated_type=inherited_field.annotated_type,
-                    default=value,
-                    default_factory=None,
-                )
-                own_fields[key] = new_value
-
-        # Process annotated fields
-        for key, annotation in resolved_annotations.items():
+        for key, annotation in annotations.items():
             value = namespace.get(key, MISSING)
 
             if value is MISSING:
                 # Field with only annotation, no default value
-                value = PropsField(
-                    annotated_type=annotation,
-                    default=MISSING,
-                )
+                field = PropsField(annotated_type=annotation, default=None)
             elif not isinstance(value, PropsField):
                 # Field with default value
-                value = PropsField(
-                    annotated_type=annotation,
-                    default=value,
-                )
+                field = PropsField(annotated_type=annotation, default=value)
             else:
                 # Field is already a PropsField, update annotation
-                value = PropsField(
+                field = PropsField(
                     annotated_type=annotation,
                     default=value.default,
                     default_factory=value.default_factory,
                 )
 
-            own_fields[key] = value
+            own_fields[key] = field
 
-        # Set field names for compatibility
-        all_fields = inherited_fields | own_fields
-        for field_name, field in all_fields.items():
-            field._name = field_name
+        return own_fields
 
-        # Store field mappings on the class
-        namespace["_own_fields"] = own_fields
-        namespace["_inherited_fields"] = inherited_fields
-        namespace["_fields"] = all_fields
+    @classmethod
+    def _create_field(
+        cls,
+        annotated_type: Any,
+        default: Any = MISSING,
+        default_factory: Callable[[], Any] | None = None,
+    ) -> PropsField:
+        return PropsField(
+            annotated_type=annotated_type,
+            default=default,
+            default_factory=default_factory,
+        )
 
-        # Backward compatibility: add __fields__ attribute for Pydantic compatibility
-        namespace["__fields__"] = all_fields
+    @classmethod
+    def _finalize_fields(
+        cls,
+        namespace: dict[str, Any],
+        inherited_fields: dict[str, PropsField],
+        own_fields: dict[str, PropsField],
+    ) -> None:
+        # Call parent implementation
+        super()._finalize_fields(namespace, inherited_fields, own_fields)
 
-        return super().__new__(cls, name, bases, namespace)
+        # Add Pydantic compatibility
+        namespace["__fields__"] = namespace["_fields"]
 
 
 class PropsBase(metaclass=PropsBaseMeta):
@@ -276,19 +233,19 @@ class PropsBase(metaclass=PropsBaseMeta):
         """
         # Set field values from kwargs with nested object instantiation
         for key, value in kwargs.items():
-            field_info = getattr(self.__class__, "_fields", {}).get(key)
+            field_info = self.get_fields().get(key)
             if field_info:
                 field_type = field_info.annotated_type
 
                 # Check if this field expects a specific Props type and we got a dict
                 if isinstance(value, dict):
-                    props_class = _is_props_subclass(field_type)
+                    props_class = _get_props_subclass(field_type)
                     if props_class is not None:
                         value = props_class(**value)
 
                 # Check if this field expects a list of Props and we got a list of dicts
                 elif isinstance(value, list):
-                    element_type = _get_list_element_type(field_type)
+                    element_type = _find_props_in_list_annotation(field_type)
                     if element_type is not None:
                         # Convert each dict in the list to the appropriate Props class
                         value = [
@@ -299,8 +256,8 @@ class PropsBase(metaclass=PropsBaseMeta):
             setattr(self, key, value)
 
         # Set default values for fields not provided
-        for field_name, field in getattr(self.__class__, "_fields", {}).items():
-            if not hasattr(self, field_name):
+        for field_name, field in self.get_fields().items():
+            if field_name not in kwargs:
                 if field.default is not MISSING:
                     setattr(self, field_name, field.default)
                 elif field.default_factory is not None:
@@ -353,8 +310,7 @@ class PropsBase(metaclass=PropsBaseMeta):
         """
         result = {}
 
-        # Get all field values
-        for field_name in getattr(self.__class__, "_fields", {}):
+        for field_name in self.get_fields():
             if hasattr(self, field_name):
                 value = getattr(self, field_name)
 
@@ -453,7 +409,7 @@ class NoExtrasAllowedProps(PropsBase):
         component_name = component_name or type(self).__name__
 
         # Validate fields BEFORE setting them
-        known_fields = set(getattr(self.__class__, "_fields", {}).keys())
+        known_fields = set(self.__class__.get_fields().keys())
         provided_fields = set(kwargs.keys())
         invalid_fields = provided_fields - known_fields
 
