@@ -8,7 +8,7 @@ import types
 import urllib.parse
 from base64 import b64encode
 from collections.abc import Callable, Sequence
-from functools import partial
+from functools import lru_cache, partial
 from typing import (
     TYPE_CHECKING,
     Annotated,
@@ -685,6 +685,9 @@ def pointer_event_spec(
     e: ObjectVar[JavascriptPointerEvent],
 ) -> tuple[Var[PointerEventInfo]]:
     """Get the pointer event information.
+
+    Args:
+        e: The pointer event.
 
     Returns:
         The pointer event information.
@@ -1566,6 +1569,7 @@ def resolve_annotation(annotations: dict[str, Any], arg_name: str, spec: ArgsSpe
     return annotation
 
 
+@lru_cache
 def parse_args_spec(arg_spec: ArgsSpec | Sequence[ArgsSpec]):
     """Parse the args provided in the ArgsSpec of an event trigger.
 
