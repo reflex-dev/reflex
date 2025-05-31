@@ -923,16 +923,16 @@ def test_invalid_event_handler_args(component2, test_state):
     """
     # EventHandler args must match
     with pytest.raises(EventFnArgMismatchError):
-        component2.create(on_click=test_state.do_something_arg)
+        component2.create(on_blur=test_state.do_something_arg)
 
     # EventHandler args must have at least as many default args as the spec.
     with pytest.raises(EventFnArgMismatchError):
-        component2.create(on_click=test_state.do_something_required_optional)
+        component2.create(on_blur=test_state.do_something_required_optional)
 
     # Multiple EventHandler args: all must match
     with pytest.raises(EventFnArgMismatchError):
         component2.create(
-            on_click=[test_state.do_something_arg, test_state.do_something]
+            on_blur=[test_state.do_something_arg, test_state.do_something]
         )
 
     # # Event Handler types must match
@@ -968,26 +968,26 @@ def test_invalid_event_handler_args(component2, test_state):
 
     # lambda cannot return weird values.
     with pytest.raises(ValueError):
-        component2.create(on_click=lambda: 1)
+        component2.create(on_blur=lambda: 1)
     with pytest.raises(ValueError):
-        component2.create(on_click=lambda: [1])
+        component2.create(on_blur=lambda: [1])
     with pytest.raises(ValueError):
         component2.create(
-            on_click=lambda: (test_state.do_something_arg(1), test_state.do_something)
+            on_blur=lambda: (test_state.do_something_arg(1), test_state.do_something)
         )
 
     # lambda signature must match event trigger.
     with pytest.raises(EventFnArgMismatchError):
-        component2.create(on_click=lambda _: test_state.do_something_arg(1))
+        component2.create(on_blur=lambda _: test_state.do_something_arg(1))
 
     # lambda returning EventHandler must match spec
     with pytest.raises(EventFnArgMismatchError):
-        component2.create(on_click=lambda: test_state.do_something_arg)
+        component2.create(on_blur=lambda: test_state.do_something_arg)
 
     # Mixed EventSpec and EventHandler must match spec.
     with pytest.raises(EventFnArgMismatchError):
         component2.create(
-            on_click=lambda: [
+            on_blur=lambda: [
                 test_state.do_something_arg(1),
                 test_state.do_something_arg,
             ]
@@ -1002,8 +1002,8 @@ def test_valid_event_handler_args(component2, test_state):
         test_state: A test state.
     """
     # Uncontrolled event handlers should not take args.
-    component2.create(on_click=test_state.do_something)
-    component2.create(on_click=test_state.do_something_arg(1))
+    component2.create(on_blur=test_state.do_something)
+    component2.create(on_blur=test_state.do_something_arg(1))
 
     # Does not raise because event handlers are allowed to have less args than the spec.
     component2.create(on_open=test_state.do_something)
@@ -1030,7 +1030,7 @@ def test_valid_event_handler_args(component2, test_state):
     )
 
     # lambda returning EventHandler is okay if the spec matches.
-    component2.create(on_click=lambda: test_state.do_something)
+    component2.create(on_blur=lambda: test_state.do_something)
     component2.create(on_open=lambda _: test_state.do_something_arg)
     component2.create(on_prop_event=lambda _: test_state.do_something_arg)
     component2.create(on_open=lambda: test_state.do_something)
@@ -1039,16 +1039,16 @@ def test_valid_event_handler_args(component2, test_state):
     component2.create(on_prop_event=lambda _: test_state.do_something)
 
     # lambda can always return an EventSpec.
-    component2.create(on_click=lambda: test_state.do_something_arg(1))
+    component2.create(on_blur=lambda: test_state.do_something_arg(1))
     component2.create(on_open=lambda _: test_state.do_something_arg(1))
     component2.create(on_prop_event=lambda _: test_state.do_something_arg(1))
 
     # Return EventSpec and EventHandler (no arg).
     component2.create(
-        on_click=lambda: [test_state.do_something_arg(1), test_state.do_something]
+        on_blur=lambda: [test_state.do_something_arg(1), test_state.do_something]
     )
     component2.create(
-        on_click=lambda: [test_state.do_something_arg(1), test_state.do_something()]
+        on_blur=lambda: [test_state.do_something_arg(1), test_state.do_something()]
     )
 
     # Return 2 EventSpec.
@@ -1219,7 +1219,7 @@ def test_stateful_component_memoize_event_trigger(test_state):
     Args:
         test_state: A test state.
     """
-    button_component = rx.button("Click me", on_click=test_state.do_something)
+    button_component = rx.button("Click me", on_blur=test_state.do_something)
     stateful_component = StatefulComponent.compile_from(button_component)
     assert isinstance(stateful_component, StatefulComponent)
 
@@ -1408,27 +1408,27 @@ class EventState(rx.State):
             id="fstring-style-background_color",
         ),
         pytest.param(
-            rx.fragment(on_click=EVENT_CHAIN_VAR),
+            rx.fragment(on_blur=EVENT_CHAIN_VAR),
             [EVENT_CHAIN_VAR],
             id="direct-event-chain",
         ),
         pytest.param(
-            rx.fragment(on_click=EventState.handler),
+            rx.fragment(on_blur=EventState.handler),
             [],
             id="direct-event-handler",
         ),
         pytest.param(
-            rx.fragment(on_click=EventState.handler2(TEST_VAR)),  # pyright: ignore [reportCallIssue]
+            rx.fragment(on_blur=EventState.handler2(TEST_VAR)),  # pyright: ignore [reportCallIssue]
             [ARG_VAR, TEST_VAR],
             id="direct-event-handler-arg",
         ),
         pytest.param(
-            rx.fragment(on_click=EventState.handler2(EventState.v)),  # pyright: ignore [reportCallIssue]
+            rx.fragment(on_blur=EventState.handler2(EventState.v)),  # pyright: ignore [reportCallIssue]
             [ARG_VAR, EventState.v],
             id="direct-event-handler-arg2",
         ),
         pytest.param(
-            rx.fragment(on_click=lambda: EventState.handler2(TEST_VAR)),  # pyright: ignore [reportCallIssue]
+            rx.fragment(on_blur=lambda: EventState.handler2(TEST_VAR)),  # pyright: ignore [reportCallIssue]
             [ARG_VAR, TEST_VAR],
             id="direct-event-handler-lambda",
         ),
@@ -2232,38 +2232,38 @@ class TriggerState(rx.State):
     [
         (rx.box(rx.text("random text")), False),
         (
-            rx.box(rx.text("random text", on_click=rx.console_log("log"))),
+            rx.box(rx.text("random text", on_blur=rx.console_log("log"))),
             False,
         ),
         (
             rx.box(
-                rx.text("random text", on_click=TriggerState.do_something),
+                rx.text("random text", on_blur=TriggerState.do_something),
                 rx.text(
                     "random text",
-                    on_click=Var(_js_expr="toggleColorMode").to(EventChain),
+                    on_blur=Var(_js_expr="toggleColorMode").to(EventChain),
                 ),
             ),
             True,
         ),
         (
             rx.box(
-                rx.text("random text", on_click=rx.console_log("log")),
+                rx.text("random text", on_blur=rx.console_log("log")),
                 rx.text(
                     "random text",
-                    on_click=Var(_js_expr="toggleColorMode").to(EventChain),
+                    on_blur=Var(_js_expr="toggleColorMode").to(EventChain),
                 ),
             ),
             False,
         ),
         (
-            rx.box(rx.text("random text", on_click=TriggerState.do_something)),
+            rx.box(rx.text("random text", on_blur=TriggerState.do_something)),
             True,
         ),
         (
             rx.box(
                 rx.text(
                     "random text",
-                    on_click=[rx.console_log("log"), rx.window_alert("alert")],
+                    on_blur=[rx.console_log("log"), rx.window_alert("alert")],
                 ),
             ),
             False,
@@ -2272,7 +2272,7 @@ class TriggerState(rx.State):
             rx.box(
                 rx.text(
                     "random text",
-                    on_click=[rx.console_log("log"), TriggerState.do_something],
+                    on_blur=[rx.console_log("log"), TriggerState.do_something],
                 ),
             ),
             True,
