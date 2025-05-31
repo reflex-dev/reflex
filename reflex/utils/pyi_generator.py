@@ -445,7 +445,11 @@ def type_to_ast(typ: Any, cls: type) -> ast.expr:
 
                 if all(a == b for a, b in zipped) and len(typ_parts) == len(cls_parts):
                     return ast.Name(id=typ.__name__)
-
+                if (
+                    typ.__module__ in DEFAULT_IMPORTS
+                    and typ.__name__ in DEFAULT_IMPORTS[typ.__module__]
+                ):
+                    return ast.Name(id=typ.__name__)
                 return ast.Name(id=typ.__module__ + "." + typ.__name__)
             return ast.Name(id=typ.__name__)
         if hasattr(typ, "_name"):
