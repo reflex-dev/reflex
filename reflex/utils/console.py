@@ -48,9 +48,6 @@ _EMITTED_LOGS = set()
 # Prints which have been printed.
 _EMITTED_PRINTS = set()
 
-# Logs which have been printed to a file.
-_EMITTED_FILE_LOGS = set()
-
 
 def set_log_level(log_level: LogLevel | None):
     """Set the log level.
