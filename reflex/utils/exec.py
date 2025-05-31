@@ -188,8 +188,8 @@ def run_process_and_launch_url(
                         get_different_packages(last_content, new_content)
                     )
                     last_content, last_hash = new_content, new_hash
-                    console.print(
-                        "[bold yellow]Detected changes in package.json.[/bold yellow]\n"
+                    console.info(
+                        "Detected changes in package.json.\n"
                         + format_change("Dependencies", dependencies_change)
                         + format_change("Dev Dependencies", dev_dependencies_change)
                     )
