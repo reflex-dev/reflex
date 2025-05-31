@@ -929,7 +929,7 @@ class Component(BaseComponent, ABC):
             )
             for name, field in self.get_fields().items()
             if field.type_origin is EventHandler
-        }
+        }  # pyright: ignore [reportOperatorIssue]
 
     def __repr__(self) -> str:
         """Represent the component in React.

@@ -90,6 +90,7 @@ DEFAULT_IMPORTS = {
         "EventSpec",
         "EventType",
         "KeyInputInfo",
+        "PointerEventInfo",
     ],
     "reflex.style": ["Style"],
     "reflex.vars.base": ["Var"],
