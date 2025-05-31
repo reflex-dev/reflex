@@ -139,10 +139,6 @@ def print_to_log_file(msg: str, dedupe: bool = False, **kwargs):
         dedupe: If True, suppress multiple console logs of print message.
         kwargs: Keyword arguments to pass to the print function.
     """
-    if dedupe:
-        if msg in _EMITTED_FILE_LOGS:
-            return
-        _EMITTED_FILE_LOGS.add(msg)
     log_file_console().print(msg, **kwargs)
 
 
@@ -164,8 +160,8 @@ def debug(msg: str, dedupe: bool = False, **kwargs):
             progress.console.print(msg_, **kwargs)
         else:
             print(msg_, **kwargs)
-    elif should_use_log_file_console():
-        print_to_log_file(f"[purple]Debug: {msg}[/purple]", dedupe=dedupe, **kwargs)
+    if should_use_log_file_console():
+        print_to_log_file(f"[purple]Debug: {msg}[/purple]", **kwargs)
 
 
 def info(msg: str, dedupe: bool = False, **kwargs):
@@ -182,8 +178,8 @@ def info(msg: str, dedupe: bool = False, **kwargs):
                 return
             _EMITTED_INFO.add(msg)
         print(f"[cyan]Info: {msg}[/cyan]", **kwargs)
-    elif should_use_log_file_console():
-        print_to_log_file(f"[cyan]Info: {msg}[/cyan]", dedupe=dedupe, **kwargs)
+    if should_use_log_file_console():
+        print_to_log_file(f"[cyan]Info: {msg}[/cyan]", **kwargs)
 
 
 def success(msg: str, dedupe: bool = False, **kwargs):
@@ -200,8 +196,8 @@ def success(msg: str, dedupe: bool = False, **kwargs):
                 return
             _EMITTED_SUCCESS.add(msg)
         print(f"[green]Success: {msg}[/green]", **kwargs)
-    elif should_use_log_file_console():
-        print_to_log_file(f"[green]Success: {msg}[/green]", dedupe=dedupe, **kwargs)
+    if should_use_log_file_console():
+        print_to_log_file(f"[green]Success: {msg}[/green]", **kwargs)
 
 
 def log(msg: str, dedupe: bool = False, **kwargs):
@@ -218,8 +214,8 @@ def log(msg: str, dedupe: bool = False, **kwargs):
                 return
             _EMITTED_LOGS.add(msg)
         _console.log(msg, **kwargs)
-    elif should_use_log_file_console():
-        print_to_log_file(msg, dedupe=dedupe, **kwargs)
+    if should_use_log_file_console():
+        print_to_log_file(msg, **kwargs)
 
 
 def rule(title: str, **kwargs):
@@ -246,8 +242,8 @@ def warn(msg: str, dedupe: bool = False, **kwargs):
                 return
             _EMIITED_WARNINGS.add(msg)
         print(f"[orange1]Warning: {msg}[/orange1]", **kwargs)
-    elif should_use_log_file_console():
-        print_to_log_file(f"[orange1]Warning: {msg}[/orange1]", dedupe=dedupe, **kwargs)
+    if should_use_log_file_console():
+        print_to_log_file(f"[orange1]Warning: {msg}[/orange1]", **kwargs)
 
 
 def _get_first_non_framework_frame() -> FrameType | None:
@@ -312,7 +308,7 @@ def deprecate(
         )
         if _LOG_LEVEL <= LogLevel.WARNING:
             print(f"[yellow]DeprecationWarning: {msg}[/yellow]", **kwargs)
-        elif should_use_log_file_console():
+        if should_use_log_file_console():
             print_to_log_file(f"[yellow]DeprecationWarning: {msg}[/yellow]", **kwargs)
         if dedupe:
             _EMITTED_DEPRECATION_WARNINGS.add(dedupe_key)
@@ -332,8 +328,8 @@ def error(msg: str, dedupe: bool = False, **kwargs):
                 return
             _EMITTED_ERRORS.add(msg)
         print(f"[red]{msg}[/red]", **kwargs)
-    elif should_use_log_file_console():
-        print_to_log_file(f"[red]{msg}[/red]", dedupe=dedupe, **kwargs)
+    if should_use_log_file_console():
+        print_to_log_file(f"[red]{msg}[/red]", **kwargs)
 
 
 def ask(
