@@ -208,8 +208,11 @@ def _run(
     # Granian fails if the app is already imported.
     if should_use_granian():
         import concurrent.futures
+        import multiprocessing
 
-        compile_future = concurrent.futures.ProcessPoolExecutor(max_workers=1).submit(
+        compile_future = concurrent.futures.ProcessPoolExecutor(
+            max_workers=1, mp_context=multiprocessing.get_context("spawn")
+        ).submit(
             app_task,
             *args,
             **kwargs,
