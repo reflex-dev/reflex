@@ -2206,6 +2206,14 @@ class CustomComponent(Component):
         component._add_style_recursive(style)
         return component
 
+    def _get_all_app_wrap_components(self) -> dict[tuple[int, str], Component]:
+        """Get the app wrap components for the custom component.
+
+        Returns:
+            The app wrap components.
+        """
+        return self.get_component()._get_all_app_wrap_components()
+
 
 CUSTOM_COMPONENTS: dict[str, CustomComponent] = {}
 
