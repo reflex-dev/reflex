@@ -96,7 +96,7 @@
   "reflex/components/radix/themes/components/tooltip.pyi": "5e17b67e50410f1124d2150237eab7cf",
   "reflex/components/radix/themes/layout/__init__.pyi": "9a52c5b283c864be70b51a8fd6120392",
   "reflex/components/radix/themes/layout/base.pyi": "6a255a392bf0d54c924c26e673248971",
-  "reflex/components/radix/themes/layout/box.pyi": "731cc26fc41d2b174ed4e901f5292479",
+  "reflex/components/radix/themes/layout/box.pyi": "1d7cdbb7eceb6ae1e8cdbae7f373a01f",
   "reflex/components/radix/themes/layout/center.pyi": "e0592f33bdec5586a7377ca986f1a966",
   "reflex/components/radix/themes/layout/container.pyi": "3c5ddf03873da9bf0f5308d5d6429097",
   "reflex/components/radix/themes/layout/flex.pyi": "8d8cfd4f00e21aac8d165ded0f7c600f",
@@ -122,5 +122,5 @@
   "reflex/components/recharts/recharts.pyi": "bbaec232c2da035b31b5d0e3888f4801",
   "reflex/components/sonner/toast.pyi": "6dc6d5d05d9a8d7d364c0326fb2e6503",
   "reflex/components/suneditor/editor.pyi": "0a6dcab61cc2d750488601e3808080d9",
-  "reflex/experimental/layout.pyi": "fb4c52b954431d9a927fbdd612b562eb"
+  "reflex/experimental/layout.pyi": "d3e2e52f582681c62586ba0c13bb5987"
 }

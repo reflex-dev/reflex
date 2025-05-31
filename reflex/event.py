@@ -640,6 +640,71 @@ def key_event(
     )
 
 
+@dataclasses.dataclass(
+    init=True,
+    frozen=True,
+)
+class JavascriptMouseEvent:
+    """Interface for a Javascript MouseEvent https://developer.mozilla.org/en-US/docs/Web/API/MouseEvent."""
+
+    button: int = 0
+    buttons: int = 0
+    clientX: int = 0  # noqa: N815
+    clientY: int = 0  # noqa: N815
+    altKey: bool = False  # noqa: N815
+    ctrlKey: bool = False  # noqa: N815
+    metaKey: bool = False  # noqa: N815
+    shiftKey: bool = False  # noqa: N815
+
+
+class JavascriptPointerEvent(JavascriptMouseEvent):
+    """Interface for a Javascript PointerEvent https://developer.mozilla.org/en-US/docs/Web/API/PointerEvent.
+
+    Inherits from JavascriptMouseEvent.
+    """
+
+
+class MouseEventInfo(TypedDict):
+    """Information about a mouse event."""
+
+    button: int
+    buttons: int
+    client_x: int
+    client_y: int
+    alt_key: bool
+    ctrl_key: bool
+    meta_key: bool
+    shift_key: bool
+
+
+class PointerEventInfo(MouseEventInfo):
+    """Information about a pointer event."""
+
+
+def pointer_event_spec(
+    e: ObjectVar[JavascriptPointerEvent],
+) -> tuple[Var[PointerEventInfo]]:
+    """Get the pointer event information.
+
+    Returns:
+        The pointer event information.
+    """
+    return (
+        Var.create(
+            {
+                "button": e.button.to(int),
+                "buttons": e.buttons.to(int),
+                "client_x": e.clientX.to(int),
+                "client_y": e.clientY.to(int),
+                "alt_key": e.altKey.to(bool),
+                "ctrl_key": e.ctrlKey.to(bool),
+                "meta_key": e.metaKey.to(bool),
+                "shift_key": e.shiftKey.to(bool),
+            },
+        ).to(PointerEventInfo),
+    )
+
+
 def no_args_event_spec() -> tuple[()]:
     """Empty event handler.
 
