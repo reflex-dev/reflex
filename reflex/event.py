@@ -648,7 +648,7 @@ class JavascriptMouseEvent:
     """Interface for a Javascript MouseEvent https://developer.mozilla.org/en-US/docs/Web/API/MouseEvent."""
 
     button: int = 0
-    buttons: int = 0
+    buttons: list[int] = dataclasses.field(default_factory=list)
     clientX: int = 0  # noqa: N815
     clientY: int = 0  # noqa: N815
     altKey: bool = False  # noqa: N815
@@ -695,14 +695,14 @@ def pointer_event_spec(
     return (
         Var.create(
             {
-                "button": e.button.to(int),
-                "buttons": e.buttons.to(int),
-                "client_x": e.clientX.to(int),
-                "client_y": e.clientY.to(int),
-                "alt_key": e.altKey.to(bool),
-                "ctrl_key": e.ctrlKey.to(bool),
-                "meta_key": e.metaKey.to(bool),
-                "shift_key": e.shiftKey.to(bool),
+                "button": e.button,
+                "buttons": e.buttons,
+                "client_x": e.clientX,
+                "client_y": e.clientY,
+                "alt_key": e.altKey,
+                "ctrl_key": e.ctrlKey,
+                "meta_key": e.metaKey,
+                "shift_key": e.shiftKey,
             },
         ).to(PointerEventInfo),
     )
