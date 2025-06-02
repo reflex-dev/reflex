@@ -68,7 +68,8 @@ from reflex.components.core.sticky import sticky
 from reflex.components.core.upload import Upload, get_upload_dir
 from reflex.components.radix import themes
 from reflex.components.sonner.toast import toast
-from reflex.config import ExecutorType, environment, get_config
+from reflex.config import get_config
+from reflex.environment import ExecutorType, environment
 from reflex.event import (
     _EVENT_FIELDS,
     Event,

@@ -28,6 +28,7 @@ import psutil
 import uvicorn
 
 import reflex
+import reflex.environment
 import reflex.reflex
 import reflex.utils.build
 import reflex.utils.exec
@@ -35,7 +36,8 @@ import reflex.utils.format
 import reflex.utils.prerequisites
 import reflex.utils.processes
 from reflex.components.component import CustomComponent
-from reflex.config import environment, get_config
+from reflex.config import get_config
+from reflex.environment import environment
 from reflex.state import (
     BaseState,
     StateManager,
