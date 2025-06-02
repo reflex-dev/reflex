@@ -1976,24 +1976,38 @@ class Component(BaseComponent, ABC):
         """
         return {}
 
-    def _get_all_app_wrap_components(self) -> dict[tuple[int, str], Component]:
+    def _get_all_app_wrap_components(
+        self, *, ignore_ids: set[int] | None = None
+    ) -> dict[tuple[int, str], Component]:
         """Get the app wrap components for the component and its children.
+
+        Args:
+            ignore_ids: A set of component IDs to ignore. Used to avoid duplicates.
 
         Returns:
             The app wrap components.
         """
+        ignore_ids = ignore_ids or set()
         # Store the components in a set to avoid duplicates.
         components = self._get_app_wrap_components()
 
         for component in tuple(components.values()):
-            components.update(component._get_all_app_wrap_components())
+            component_id = id(component)
+            if component_id in ignore_ids:
+                continue
+            ignore_ids.add(component_id)
+            components.update(
+                component._get_all_app_wrap_components(ignore_ids=ignore_ids)
+            )
 
         # Add the app wrap components for the children.
         for child in self.children:
+            child_id = id(child)
             # Skip BaseComponent and StatefulComponent children.
-            if not isinstance(child, Component):
+            if not isinstance(child, Component) or child_id in ignore_ids:
                 continue
-            components.update(child._get_all_app_wrap_components())
+            ignore_ids.add(child_id)
+            components.update(child._get_all_app_wrap_components(ignore_ids=ignore_ids))
 
         # Return the components.
         return components
@@ -2206,13 +2220,23 @@ class CustomComponent(Component):
         component._add_style_recursive(style)
         return component
 
-    def _get_all_app_wrap_components(self) -> dict[tuple[int, str], Component]:
+    def _get_all_app_wrap_components(
+        self, *, ignore_ids: set[int] | None = None
+    ) -> dict[tuple[int, str], Component]:
         """Get the app wrap components for the custom component.
+
+        Args:
+            ignore_ids: A set of IDs to ignore to avoid infinite recursion.
 
         Returns:
             The app wrap components.
         """
-        return self.get_component()._get_all_app_wrap_components()
+        ignore_ids = ignore_ids or set()
+        component = self.get_component()
+        if id(component) in ignore_ids:
+            return {}
+        ignore_ids.add(id(component))
+        return self.get_component()._get_all_app_wrap_components(ignore_ids=ignore_ids)
 
 
 CUSTOM_COMPONENTS: dict[str, CustomComponent] = {}
