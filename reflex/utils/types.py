@@ -19,7 +19,9 @@ from typing import (  # noqa: UP035
     Literal,
     MutableMapping,
     NoReturn,
+    Protocol,
     Tuple,
+    TypeVar,
     Union,
     _GenericAlias,  # pyright: ignore [reportAttributeAccessIssue]
     _SpecialGenericAlias,  # pyright: ignore [reportAttributeAccessIssue]
@@ -58,18 +60,91 @@ StateIterVar = list | set | tuple
 if TYPE_CHECKING:
     from reflex.vars.base import Var
 
-    ArgsSpec = (
-        Callable[[], Sequence[Var]]
-        | Callable[[Var], Sequence[Var]]
-        | Callable[[Var, Var], Sequence[Var]]
-        | Callable[[Var, Var, Var], Sequence[Var]]
-        | Callable[[Var, Var, Var, Var], Sequence[Var]]
-        | Callable[[Var, Var, Var, Var, Var], Sequence[Var]]
-        | Callable[[Var, Var, Var, Var, Var, Var], Sequence[Var]]
-        | Callable[[Var, Var, Var, Var, Var, Var, Var], Sequence[Var]]
-    )
-else:
-    ArgsSpec = Callable[..., list[Any]]
+VAR1 = TypeVar("VAR1", bound="Var")
+VAR2 = TypeVar("VAR2", bound="Var")
+VAR3 = TypeVar("VAR3", bound="Var")
+VAR4 = TypeVar("VAR4", bound="Var")
+VAR5 = TypeVar("VAR5", bound="Var")
+VAR6 = TypeVar("VAR6", bound="Var")
+VAR7 = TypeVar("VAR7", bound="Var")
+
+
+class _ArgsSpec0(Protocol):
+    def __call__(self) -> Sequence[Var]: ...
+
+
+class _ArgsSpec1(Protocol):
+    def __call__(self, var1: VAR1, /) -> Sequence[Var]: ...  # pyright: ignore [reportInvalidTypeVarUse]
+
+
+class _ArgsSpec2(Protocol):
+    def __call__(self, var1: VAR1, var2: VAR2, /) -> Sequence[Var]: ...  # pyright: ignore [reportInvalidTypeVarUse]
+
+
+class _ArgsSpec3(Protocol):
+    def __call__(self, var1: VAR1, var2: VAR2, var3: VAR3, /) -> Sequence[Var]: ...  # pyright: ignore [reportInvalidTypeVarUse]
+
+
+class _ArgsSpec4(Protocol):
+    def __call__(
+        self,
+        var1: VAR1,  # pyright: ignore [reportInvalidTypeVarUse]
+        var2: VAR2,  # pyright: ignore [reportInvalidTypeVarUse]
+        var3: VAR3,  # pyright: ignore [reportInvalidTypeVarUse]
+        var4: VAR4,  # pyright: ignore [reportInvalidTypeVarUse]
+        /,
+    ) -> Sequence[Var]: ...
+
+
+class _ArgsSpec5(Protocol):
+    def __call__(
+        self,
+        var1: VAR1,  # pyright: ignore [reportInvalidTypeVarUse]
+        var2: VAR2,  # pyright: ignore [reportInvalidTypeVarUse]
+        var3: VAR3,  # pyright: ignore [reportInvalidTypeVarUse]
+        var4: VAR4,  # pyright: ignore [reportInvalidTypeVarUse]
+        var5: VAR5,  # pyright: ignore [reportInvalidTypeVarUse]
+        /,
+    ) -> Sequence[Var]: ...
+
+
+class _ArgsSpec6(Protocol):
+    def __call__(
+        self,
+        var1: VAR1,  # pyright: ignore [reportInvalidTypeVarUse]
+        var2: VAR2,  # pyright: ignore [reportInvalidTypeVarUse]
+        var3: VAR3,  # pyright: ignore [reportInvalidTypeVarUse]
+        var4: VAR4,  # pyright: ignore [reportInvalidTypeVarUse]
+        var5: VAR5,  # pyright: ignore [reportInvalidTypeVarUse]
+        var6: VAR6,  # pyright: ignore [reportInvalidTypeVarUse]
+        /,
+    ) -> Sequence[Var]: ...
+
+
+class _ArgsSpec7(Protocol):
+    def __call__(
+        self,
+        var1: VAR1,  # pyright: ignore [reportInvalidTypeVarUse]
+        var2: VAR2,  # pyright: ignore [reportInvalidTypeVarUse]
+        var3: VAR3,  # pyright: ignore [reportInvalidTypeVarUse]
+        var4: VAR4,  # pyright: ignore [reportInvalidTypeVarUse]
+        var5: VAR5,  # pyright: ignore [reportInvalidTypeVarUse]
+        var6: VAR6,  # pyright: ignore [reportInvalidTypeVarUse]
+        var7: VAR7,  # pyright: ignore [reportInvalidTypeVarUse]
+        /,
+    ) -> Sequence[Var]: ...
+
+
+ArgsSpec = (
+    _ArgsSpec0
+    | _ArgsSpec1
+    | _ArgsSpec2
+    | _ArgsSpec3
+    | _ArgsSpec4
+    | _ArgsSpec5
+    | _ArgsSpec6
+    | _ArgsSpec7
+)
 
 Scope = MutableMapping[str, Any]
 Message = MutableMapping[str, Any]
