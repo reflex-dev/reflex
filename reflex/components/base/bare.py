@@ -141,17 +141,29 @@ class Bare(Component):
                 custom_code |= component._get_all_custom_code()
         return custom_code
 
-    def _get_all_app_wrap_components(self) -> dict[tuple[int, str], Component]:
+    def _get_all_app_wrap_components(
+        self, *, ignore_ids: set[int] | None = None
+    ) -> dict[tuple[int, str], Component]:
         """Get the components that should be wrapped in the app.
+
+        Args:
+            ignore_ids: The ids to ignore when collecting components.
 
         Returns:
             The components that should be wrapped in the app.
         """
-        app_wrap_components = super()._get_all_app_wrap_components()
+        ignore_ids = ignore_ids or set()
+        app_wrap_components = super()._get_all_app_wrap_components(
+            ignore_ids=ignore_ids
+        )
         if isinstance(self.contents, Var):
             for component in _components_from_var(self.contents):
-                if isinstance(component, Component):
-                    app_wrap_components |= component._get_all_app_wrap_components()
+                component_id = id(component)
+                if isinstance(component, Component) and component_id not in ignore_ids:
+                    ignore_ids.add(component_id)
+                    app_wrap_components |= component._get_all_app_wrap_components(
+                        ignore_ids=ignore_ids
+                    )
         return app_wrap_components
 
     def _get_all_refs(self) -> set[str]:
