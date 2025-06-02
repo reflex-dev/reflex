@@ -12,6 +12,7 @@ import subprocess
 import sys
 from collections.abc import Sequence
 from pathlib import Path
+from typing import NamedTuple, TypedDict
 from urllib.parse import urljoin
 
 import psutil
@@ -27,26 +28,102 @@ from reflex.utils.prerequisites import get_web_dir
 frontend_process = None
 
 
-def detect_package_change(json_file_path: Path) -> str:
-    """Calculates the SHA-256 hash of a JSON file and returns it as a hexadecimal string.
+def get_package_json_and_hash(package_json_path: Path) -> tuple[PackageJson, str]:
+    """Get the content of package.json and its hash.
 
     Args:
-        json_file_path: The path to the JSON file to be hashed.
+        package_json_path: The path to the package.json file.
 
     Returns:
-        str: The SHA-256 hash of the JSON file as a hexadecimal string.
-
-    Example:
-        >>> detect_package_change("package.json")
-        'a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6q7r8s9t0u1v2w3x4y5z6a7b8c9d0e1f2'
+        A tuple containing the content of package.json as a dictionary and its SHA-256 hash.
     """
-    with json_file_path.open("r") as file:
+    with package_json_path.open("r") as file:
         json_data = json.load(file)
 
     # Calculate the hash
     json_string = json.dumps(json_data, sort_keys=True)
     hash_object = hashlib.sha256(json_string.encode())
-    return hash_object.hexdigest()
+    return (json_data, hash_object.hexdigest())
+
+
+class PackageJson(TypedDict):
+    """package.json content."""
+
+    dependencies: dict[str, str]
+    devDependencies: dict[str, str]
+
+
+class Change(NamedTuple):
+    """A named tuple to represent a change in package dependencies."""
+
+    added: set[str]
+    removed: set[str]
+
+
+def format_change(name: str, change: Change) -> str:
+    """Format the change for display.
+
+    Args:
+        name: The name of the change (e.g., "dependencies" or "devDependencies").
+        change: The Change named tuple containing added and removed packages.
+
+    Returns:
+        A formatted string representing the changes.
+    """
+    if not change.added and not change.removed:
+        return ""
+    added_str = ", ".join(sorted(change.added))
+    removed_str = ", ".join(sorted(change.removed))
+    change_str = f"{name}:\n"
+    if change.added:
+        change_str += f"  Added: {added_str}\n"
+    if change.removed:
+        change_str += f"  Removed: {removed_str}\n"
+    return change_str.strip()
+
+
+def get_different_packages(
+    old_package_json_content: PackageJson,
+    new_package_json_content: PackageJson,
+) -> tuple[Change, Change]:
+    """Get the packages that are different between two package JSON contents.
+
+    Args:
+        old_package_json_content: The content of the old package JSON.
+        new_package_json_content: The content of the new package JSON.
+
+    Returns:
+        A tuple containing two `Change` named tuples:
+        - The first `Change` contains the changes in the `dependencies` section.
+        - The second `Change` contains the changes in the `devDependencies` section.
+    """
+
+    def get_changes(old: dict[str, str], new: dict[str, str]) -> Change:
+        """Get the changes between two dictionaries.
+
+        Args:
+            old: The old dictionary of packages.
+            new: The new dictionary of packages.
+
+        Returns:
+            A `Change` named tuple containing the added and removed packages.
+        """
+        old_keys = set(old.keys())
+        new_keys = set(new.keys())
+        added = new_keys - old_keys
+        removed = old_keys - new_keys
+        return Change(added=added, removed=removed)
+
+    dependencies_change = get_changes(
+        old_package_json_content.get("dependencies", {}),
+        new_package_json_content.get("dependencies", {}),
+    )
+    dev_dependencies_change = get_changes(
+        old_package_json_content.get("devDependencies", {}),
+        new_package_json_content.get("devDependencies", {}),
+    )
+
+    return dependencies_change, dev_dependencies_change
 
 
 def kill(proc_pid: int):
@@ -86,7 +163,7 @@ def run_process_and_launch_url(
     from reflex.utils import processes
 
     json_file_path = get_web_dir() / constants.PackageJson.PATH
-    last_hash = detect_package_change(json_file_path)
+    last_content, last_hash = get_package_json_and_hash(json_file_path)
     process = None
     first_run = True
 
@@ -105,6 +182,18 @@ def run_process_and_launch_url(
             frontend_process = process
         if process.stdout:
             for line in processes.stream_logs("Starting frontend", process):
+                new_content, new_hash = get_package_json_and_hash(json_file_path)
+                if new_hash != last_hash:
+                    dependencies_change, dev_dependencies_change = (
+                        get_different_packages(last_content, new_content)
+                    )
+                    last_content, last_hash = new_content, new_hash
+                    console.info(
+                        "Detected changes in package.json.\n"
+                        + format_change("Dependencies", dependencies_change)
+                        + format_change("Dev Dependencies", dev_dependencies_change)
+                    )
+
                 match = re.search(constants.Next.FRONTEND_LISTENING_REGEX, line)
                 if match:
                     if first_run:
@@ -119,22 +208,8 @@ def run_process_and_launch_url(
                             notify_backend()
                         first_run = False
                     else:
-                        console.print("New packages detected: Updating app...")
-                else:
-                    if any(
-                        x in line for x in ("bin executable does not exist on disk",)
-                    ):
-                        console.error(
-                            "Try setting `REFLEX_USE_NPM=1` and re-running `reflex init` and `reflex run` to use npm instead of bun:\n"
-                            "`REFLEX_USE_NPM=1 reflex init`\n"
-                            "`REFLEX_USE_NPM=1 reflex run`"
-                        )
-                    new_hash = detect_package_change(json_file_path)
-                    if new_hash != last_hash:
-                        last_hash = new_hash
-                        kill(process.pid)
-                        process = None
-                        break  # for line in process.stdout
+                        console.print("Frontend is restarting...")
+
         if process is not None:
             break  # while True
 
