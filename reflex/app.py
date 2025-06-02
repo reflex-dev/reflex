@@ -1293,6 +1293,23 @@ class App(MiddlewareMixin, LifespanMixin):
         # Track imports found.
         all_imports = {}
 
+        if (toaster := self.toaster) is not None:
+            from reflex.components.component import memo
+
+            @memo
+            def memoized_toast_provider():
+                return toaster
+
+            toast_provider = Fragment.create(memoized_toast_provider())
+
+            app_wrappers[(1, "ToasterProvider")] = toast_provider
+
+        # Add the app wraps to the app.
+        for key, app_wrap in self.app_wraps.items():
+            component = app_wrap(self._state is not None)
+            if component is not None:
+                app_wrappers[key] = component
+
         # Compile custom components.
         (
             custom_components_output,
@@ -1311,23 +1328,6 @@ class App(MiddlewareMixin, LifespanMixin):
 
             # Add the app wrappers from this component.
             app_wrappers.update(component._get_all_app_wrap_components())
-
-        if (toaster := self.toaster) is not None:
-            from reflex.components.component import memo
-
-            @memo
-            def memoized_toast_provider():
-                return toaster
-
-            toast_provider = Fragment.create(memoized_toast_provider())
-
-            app_wrappers[(1, "ToasterProvider")] = toast_provider
-
-        # Add the app wraps to the app.
-        for key, app_wrap in self.app_wraps.items():
-            component = app_wrap(self._state is not None)
-            if component is not None:
-                app_wrappers[key] = component
 
         if self.error_boundary:
             from reflex.compiler.compiler import into_component
