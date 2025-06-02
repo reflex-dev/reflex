@@ -157,7 +157,7 @@ def debug(msg: str, dedupe: bool = False, **kwargs):
             progress.console.print(msg_, **kwargs)
         else:
             print(msg_, **kwargs)
-    if should_use_log_file_console():
+    if should_use_log_file_console() and kwargs.pop("progress", None) is None:
         print_to_log_file(f"[purple]Debug: {msg}[/purple]", **kwargs)
 
 
