@@ -766,6 +766,12 @@ class EnvironmentVariables:
     # Whether to run Granian in a spawn process. This enables Reflex to pick up on environment variable changes between hot reloads.
     REFLEX_STRICT_HOT_RELOAD: EnvVar[bool] = env_var(False)
 
+    # The path to the reflex log file. If not set, the log file will be stored in the reflex user directory.
+    REFLEX_LOG_FILE: EnvVar[Path | None] = env_var(None)
+
+    # Enable full logging of debug messages to reflex user directory.
+    REFLEX_ENABLE_FULL_LOGGING: EnvVar[bool] = env_var(False)
+
 
 environment = EnvironmentVariables()
 
