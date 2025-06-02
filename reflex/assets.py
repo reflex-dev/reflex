@@ -4,7 +4,7 @@ import inspect
 from pathlib import Path
 
 from reflex import constants
-from reflex.config import EnvironmentVariables
+from reflex.environment import EnvironmentVariables
 
 
 def asset(

@@ -19,7 +19,7 @@ from redis.exceptions import RedisError
 from rich.progress import Progress
 
 from reflex import constants
-from reflex.config import environment
+from reflex.environment import environment
 from reflex.utils import console, path_ops, prerequisites
 from reflex.utils.registry import get_npm_registry
 
