@@ -1293,15 +1293,6 @@ class App(MiddlewareMixin, LifespanMixin):
         # Track imports found.
         all_imports = {}
 
-        # This has to happen before compiling stateful components as that
-        # prevents recursive functions from reaching all components.
-        for component in self._pages.values():
-            # Add component._get_all_imports() to all_imports.
-            all_imports.update(component._get_all_imports())
-
-            # Add the app wrappers from this component.
-            app_wrappers.update(component._get_all_app_wrap_components())
-
         if (toaster := self.toaster) is not None:
             from reflex.components.component import memo
 
@@ -1318,6 +1309,25 @@ class App(MiddlewareMixin, LifespanMixin):
             component = app_wrap(self._state is not None)
             if component is not None:
                 app_wrappers[key] = component
+
+        # Compile custom components.
+        (
+            custom_components_output,
+            custom_components_result,
+            custom_components_imports,
+        ) = compiler.compile_components(dict.fromkeys(CUSTOM_COMPONENTS.values()))
+        compile_results.append((custom_components_output, custom_components_result))
+        all_imports.update(custom_components_imports)
+        progress.advance(task)
+
+        # This has to happen before compiling stateful components as that
+        # prevents recursive functions from reaching all components.
+        for component in self._pages.values():
+            # Add component._get_all_imports() to all_imports.
+            all_imports.update(component._get_all_imports())
+
+            # Add the app wrappers from this component.
+            app_wrappers.update(component._get_all_app_wrap_components())
 
         if self.error_boundary:
             from reflex.compiler.compiler import into_component
@@ -1465,16 +1475,6 @@ class App(MiddlewareMixin, LifespanMixin):
         )
         progress.advance(task)
 
-        # Compile custom components.
-        (
-            custom_components_output,
-            custom_components_result,
-            custom_components_imports,
-        ) = compiler.compile_components(dict.fromkeys(CUSTOM_COMPONENTS.values()))
-        compile_results.append((custom_components_output, custom_components_result))
-        all_imports.update(custom_components_imports)
-
-        progress.advance(task)
         progress.stop()
 
         if dry_run:
