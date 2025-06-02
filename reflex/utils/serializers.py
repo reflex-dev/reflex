@@ -337,6 +337,14 @@ def serialize_sequence(value: Sequence) -> list:
 
 @serializer(to=dict)
 def serialize_mapping(value: Mapping) -> dict:
+    """Serialize a mapping type to a dictionary.
+
+    Args:
+        value: The mapping instance to serialize.
+
+    Returns:
+        A new dictionary containing the same key-value pairs as the input mapping.
+    """
     return {**value}
 
 
