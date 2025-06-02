@@ -203,10 +203,12 @@ class BaseComponentMeta(FieldBasedMeta, ABCMeta):
 
     @classmethod
     def _process_annotated_fields(
-        cls, namespace: dict[str, Any], annotations: dict[str, Any]
+        cls,
+        namespace: dict[str, Any],
+        annotations: dict[str, Any],
+        inherited_fields: dict[str, ComponentField],
     ) -> dict[str, ComponentField]:
         own_fields: dict[str, ComponentField] = {}
-        inherited_fields = namespace.get("_inherited_fields", {})
 
         for key, annotation in annotations.items():
             value = namespace.get(key, MISSING)

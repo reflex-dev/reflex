@@ -170,7 +170,10 @@ class PropsBaseMeta(FieldBasedMeta):
 
     @classmethod
     def _process_annotated_fields(
-        cls, namespace: dict[str, Any], annotations: dict[str, Any]
+        cls,
+        namespace: dict[str, Any],
+        annotations: dict[str, Any],
+        inherited_fields: dict[str, PropsField],
     ) -> dict[str, PropsField]:
         own_fields: dict[str, PropsField] = {}
 

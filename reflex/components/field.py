@@ -87,7 +87,9 @@ class FieldBasedMeta(type):
         )
 
         # Process annotated fields
-        own_fields.update(cls._process_annotated_fields(namespace, annotations))
+        own_fields.update(
+            cls._process_annotated_fields(namespace, annotations, inherited_fields)
+        )
 
         # Finalize fields and store on class
         cls._finalize_fields(namespace, inherited_fields, own_fields)
@@ -137,7 +139,10 @@ class FieldBasedMeta(type):
 
     @classmethod
     def _process_annotated_fields(
-        cls, namespace: dict[str, Any], annotations: dict[str, Any]
+        cls,
+        namespace: dict[str, Any],
+        annotations: dict[str, Any],
+        inherited_fields: dict[str, Any],
     ) -> dict[str, Any]:
         raise NotImplementedError
 
