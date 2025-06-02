@@ -1,0 +1,154 @@
+# Reflex MCP Server - User Guide
+
+> **⚠️ BETA VERSION**: This MCP server is currently in beta and under active development. Features may change, and you might encounter occasional issues. We appreciate your feedback and patience as we continue to improve the service.
+
+The Reflex MCP Server provides comprehensive access to Reflex framework documentation and component information through the Model Context Protocol (MCP). This server is deployed and ready to use with your MCP-compatible AI tools.
+
+## 🚀 Quick Start
+
+The server is live at: **https://reflex-mcp-server.fly.dev**
+
+> **Note**: As this is a beta service, there may be occasional downtime for updates and improvements.
+
+### Available Endpoints
+- **SSE (Server-Sent Events)**: `https://reflex-mcp-server.fly.dev/sse`
+- **HTTP API**: `https://reflex-mcp-server.fly.dev/mcp`
+
+## 🛠️ Available Tools
+
+### Component Documentation
+
+#### `get_component_doc`
+Get comprehensive documentation for any Reflex component including:
+- Markdown documentation
+- Python source code
+- Type definitions
+- Related component sources (automatically discovered)
+
+**Example**: `get_component_doc("button")` returns complete documentation and source code for the Button component.
+
+#### `list_components`
+Browse all available Reflex components organized by category.
+- **Optional filter**: Specify a category to filter results
+- **Categories include**: Layout, Forms, Data Display, Navigation, Feedback, etc.
+
+### Documentation Access
+
+#### `list_doc_sections`
+Explore the complete Reflex documentation structure.
+- Returns hierarchical organization of all documentation sections
+- Perfect for discovering what documentation is available
+
+#### `get_doc`
+Read any specific documentation file.
+- **Input**: File path (e.g., `"getting_started/introduction.md"`)
+- **Output**: Full markdown content of the documentation
+
+#### `search_doc_sections`
+Search through documentation content.
+- Find relevant documentation sections and files
+- Search by keywords, topics, or concepts
+
+## 🔧 MCP Client Configuration
+
+### Claude Desktop
+Add this to your Claude Desktop configuration file:
+
+```bash
+claude mcp add --transport sse reflex https://reflex-mcp-server.fly.dev/sse
+```
+
+### Windsurf/Cascade
+Create `.vscode/mcp.json` in your project:
+
+```json
+{
+  "mcpServers": {
+    "reflex": {
+      "serverType": "sse",
+      "url": "https://reflex-mcp-server.fly.dev/sse"
+    }
+  }
+}
+```
+
+### Other MCP Clients
+For other MCP-compatible tools, use:
+- **SSE URL**: `https://reflex-mcp-server.fly.dev/sse`
+- **HTTP URL**: `https://reflex-mcp-server.fly.dev/mcp`
+
+## 📚 Usage Examples
+
+### Getting Component Information
+```
+Ask your AI: "Show me the documentation for the DataTable component"
+→ Uses get_component_doc("datatable") to provide complete component info
+```
+
+### Exploring Available Components
+```
+Ask your AI: "What form components are available in Reflex?"
+→ Uses list_components(category="forms") to show all form-related components
+```
+
+### Finding Documentation
+```
+Ask your AI: "How do I get started with Reflex?"
+→ Uses list_doc_sections() and get_doc() to find and retrieve getting started guides
+```
+
+### Searching Documentation
+```
+Ask your AI: "Find documentation about state management"
+→ Uses search_doc_sections("state management") to locate relevant docs
+```
+
+## 🎯 What You Can Do
+
+With this MCP server, you can:
+
+- **Learn Reflex**: Get instant access to comprehensive documentation
+- **Explore Components**: Discover what components are available and how to use them
+- **View Source Code**: See actual implementation details for any component
+- **Build Applications**: Get contextual help while developing Reflex apps
+- **Debug Issues**: Access detailed component documentation and examples
+
+## 🔍 Server Status
+
+Check if the server is running:
+- Visit: https://reflex-mcp-server.fly.dev
+- Should return server information and available tool count
+
+## 💡 Tips
+
+1. **Be Specific**: When asking for component docs, use the exact component name (e.g., "button", "datatable")
+2. **Explore Categories**: Use `list_components()` to discover components you might not know about
+3. **Search First**: Use `search_doc_sections()` to find relevant documentation before diving deep
+4. **Check Examples**: Component documentation often includes usage examples and code snippets
+
+## 🆘 Support
+
+If you encounter issues:
+1. Verify your MCP client configuration
+2. Check that the server is accessible at the provided URLs
+3. Ensure your MCP client supports SSE or HTTP protocols
+
+## 🧪 Beta Feedback
+
+Since this is a beta service, your feedback is invaluable! If you experience:
+- **Issues or Bugs**: Please report any problems you encounter
+- **Feature Requests**: Suggest improvements or new functionality
+- **Performance Problems**: Let us know about slow responses or timeouts
+- **Documentation Gaps**: Point out missing or unclear information
+
+Your input helps us make this service better for everyone in the Reflex community.
+
+## 💰 Pricing & Future Plans
+
+**Current Beta**: This MCP server is **completely free** to use during the beta period. No registration, API keys, or payment required.
+
+**Future Pricing**: Once out of beta, this service will be integrated into Reflex Pro+ subscription plans. However, we're committed to keeping Reflex accessible:
+
+- **Free Tier**: Will continue to be available with reasonable usage limits
+- **Pro+ Plans**: Will offer enhanced features, higher rate limits, and priority support
+- **Enterprise**: Custom solutions for organizations with specific needs
