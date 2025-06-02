@@ -16,7 +16,7 @@ import httpx
 import psutil
 
 from reflex import constants
-from reflex.config import environment
+from reflex.environment import environment
 from reflex.utils import console
 from reflex.utils.decorator import once_unless_none
 from reflex.utils.exceptions import ReflexError

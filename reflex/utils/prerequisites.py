@@ -36,7 +36,8 @@ from redis.exceptions import RedisError
 
 from reflex import constants, model
 from reflex.compiler import templates
-from reflex.config import Config, environment, get_config
+from reflex.config import Config, get_config
+from reflex.environment import environment
 from reflex.utils import console, net, path_ops, processes, redir
 from reflex.utils.decorator import once
 from reflex.utils.exceptions import SystemPackageMissingError

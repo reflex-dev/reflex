@@ -8,7 +8,7 @@ from typing import Any
 from reflex.components.component import BaseComponent, Component, ComponentStyle
 from reflex.components.tags import Tag
 from reflex.components.tags.tagless import Tagless
-from reflex.config import PerformanceMode, environment
+from reflex.environment import PerformanceMode, environment
 from reflex.utils import console
 from reflex.utils.decorator import once
 from reflex.utils.imports import ParsedImportDict
