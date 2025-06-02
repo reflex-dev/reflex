@@ -34,8 +34,6 @@ import reflex.state
 from reflex.compiler.templates import STATEFUL_COMPONENT
 from reflex.components.core.breakpoints import Breakpoints
 from reflex.components.dynamic import load_dynamic_serializer
-
-# Import BaseField from shared field module
 from reflex.components.field import BaseField, FieldBasedMeta
 from reflex.components.tags import Tag
 from reflex.constants import (
