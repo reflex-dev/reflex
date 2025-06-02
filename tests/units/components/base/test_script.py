@@ -39,17 +39,14 @@ class EvState(BaseState):
     @rx.event
     def on_ready(self):
         """Empty event handler."""
-        pass
 
     @rx.event
     def on_load(self):
         """Empty event handler."""
-        pass
 
     @rx.event
     def on_error(self):
         """Empty event handler."""
-        pass
 
 
 def test_script_event_handler():

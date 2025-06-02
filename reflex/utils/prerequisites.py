@@ -129,7 +129,6 @@ def check_latest_package_version(package_name: str):
             )
     except Exception:
         console.debug(f"Failed to check for the latest version of {package_name}.")
-        pass
 
 
 def get_or_set_last_reflex_version_check_datetime():
@@ -255,9 +254,8 @@ def get_nodejs_compatible_package_managers(
     package_managers = list(filter(None, package_managers))
 
     if not package_managers and raise_on_none:
-        raise FileNotFoundError(
-            "Bun or npm not found. You might need to rerun `reflex init` or install either."
-        )
+        msg = "Bun or npm not found. You might need to rerun `reflex init` or install either."
+        raise FileNotFoundError(msg)
 
     return package_managers
 
@@ -310,9 +308,8 @@ def get_js_package_executor(raise_on_none: bool = False) -> Sequence[Sequence[st
     package_managers = list(filter(None, package_managers))
 
     if not package_managers and raise_on_none:
-        raise FileNotFoundError(
-            "Bun or npm not found. You might need to rerun `reflex init` or install either."
-        )
+        msg = "Bun or npm not found. You might need to rerun `reflex init` or install either."
+        raise FileNotFoundError(msg)
 
     return package_managers
 
@@ -345,10 +342,11 @@ def _check_app_name(config: Config):
         RuntimeError: If the app name is not set in the config.
     """
     if not config.app_name:
-        raise RuntimeError(
+        msg = (
             "Cannot get the app module because `app_name` is not set in rxconfig! "
             "If this error occurs in a reflex test case, ensure that `get_app` is mocked."
         )
+        raise RuntimeError(msg)
 
 
 def get_app(reload: bool = False) -> ModuleType:
@@ -395,11 +393,14 @@ def get_app(reload: bool = False) -> ModuleType:
         return app
 
 
-def get_and_validate_app(reload: bool = False) -> AppInfo:
+def get_and_validate_app(
+    reload: bool = False, check_if_schema_up_to_date: bool = False
+) -> AppInfo:
     """Get the app instance based on the default config and validate it.
 
     Args:
         reload: Re-import the app module from disk
+        check_if_schema_up_to_date: If True, check if the schema is up to date.
 
     Returns:
         The app instance and the app module.
@@ -412,23 +413,34 @@ def get_and_validate_app(reload: bool = False) -> AppInfo:
     app_module = get_app(reload=reload)
     app = getattr(app_module, constants.CompileVars.APP)
     if not isinstance(app, App):
-        raise RuntimeError(
-            "The app instance in the specified app_module_import in rxconfig must be an instance of rx.App."
-        )
+        msg = "The app instance in the specified app_module_import in rxconfig must be an instance of rx.App."
+        raise RuntimeError(msg)
+
+    if check_if_schema_up_to_date:
+        check_schema_up_to_date()
+
     return AppInfo(app=app, module=app_module)
 
 
-def validate_app(reload: bool = False) -> None:
+def validate_app(
+    reload: bool = False, check_if_schema_up_to_date: bool = False
+) -> None:
     """Validate the app instance based on the default config.
 
     Args:
         reload: Re-import the app module from disk
+        check_if_schema_up_to_date: If True, check if the schema is up to date.
     """
-    get_and_validate_app(reload=reload)
+    get_and_validate_app(
+        reload=reload, check_if_schema_up_to_date=check_if_schema_up_to_date
+    )
 
 
 def get_compiled_app(
-    reload: bool = False, export: bool = False, dry_run: bool = False
+    reload: bool = False,
+    export: bool = False,
+    dry_run: bool = False,
+    check_if_schema_up_to_date: bool = False,
 ) -> ModuleType:
     """Get the app module based on the default config after first compiling it.
 
@@ -436,11 +448,14 @@ def get_compiled_app(
         reload: Re-import the app module from disk
         export: Compile the app for export
         dry_run: If True, do not write the compiled app to disk.
+        check_if_schema_up_to_date: If True, check if the schema is up to date.
 
     Returns:
         The compiled app based on the default config.
     """
-    app, app_module = get_and_validate_app(reload=reload)
+    app, app_module = get_and_validate_app(
+        reload=reload, check_if_schema_up_to_date=check_if_schema_up_to_date
+    )
     # For py3.9 compatibility when redis is used, we MUST add any decorator pages
     # before compiling the app in a thread to avoid event loop error (REF-2172).
     app._apply_decorated_pages()
@@ -449,7 +464,10 @@ def get_compiled_app(
 
 
 def compile_app(
-    reload: bool = False, export: bool = False, dry_run: bool = False
+    reload: bool = False,
+    export: bool = False,
+    dry_run: bool = False,
+    check_if_schema_up_to_date: bool = False,
 ) -> None:
     """Compile the app module based on the default config.
 
@@ -457,8 +475,14 @@ def compile_app(
         reload: Re-import the app module from disk
         export: Compile the app for export
         dry_run: If True, do not write the compiled app to disk.
+        check_if_schema_up_to_date: If True, check if the schema is up to date.
     """
-    get_compiled_app(reload=reload, export=export, dry_run=dry_run)
+    get_compiled_app(
+        reload=reload,
+        export=export,
+        dry_run=dry_run,
+        check_if_schema_up_to_date=check_if_schema_up_to_date,
+    )
 
 
 def _can_colorize() -> bool:
@@ -503,20 +527,23 @@ def _can_colorize() -> bool:
         return file.isatty()
 
 
-def compile_or_validate_app(compile: bool = False) -> bool:
+def compile_or_validate_app(
+    compile: bool = False, check_if_schema_up_to_date: bool = False
+) -> bool:
     """Compile or validate the app module based on the default config.
 
     Args:
         compile: Whether to compile the app.
+        check_if_schema_up_to_date: If True, check if the schema is up to date.
 
     Returns:
         If the app is compiled successfully.
     """
     try:
         if compile:
-            compile_app()
+            compile_app(check_if_schema_up_to_date=check_if_schema_up_to_date)
         else:
-            validate_app()
+            validate_app(check_if_schema_up_to_date=check_if_schema_up_to_date)
     except Exception as e:
         if isinstance(e, click.exceptions.Exit):
             return False
@@ -575,9 +602,8 @@ def parse_redis_url() -> str | None:
     if not config.redis_url:
         return None
     if not config.redis_url.startswith(("redis://", "rediss://", "unix://")):
-        raise ValueError(
-            "REDIS_URL must start with 'redis://', 'rediss://', or 'unix://'."
-        )
+        msg = "REDIS_URL must start with 'redis://', 'rediss://', or 'unix://'."
+        raise ValueError(msg)
     return config.redis_url
 
 
@@ -1157,15 +1183,16 @@ def download_and_run(url: str, *args, show_status: bool = False, **env):
         raise click.exceptions.Exit(1) from None
 
     # Save the script to a temporary file.
-    script = Path(tempfile.NamedTemporaryFile().name)
+    with tempfile.NamedTemporaryFile() as tempfile_file:
+        script = Path(tempfile_file.name)
 
-    script.write_text(response.text)
+        script.write_text(response.text)
 
-    # Run the script.
-    env = {**os.environ, **env}
-    process = processes.new_process(["bash", str(script), *args], env=env)
-    show = processes.show_status if show_status else processes.show_logs
-    show(f"Installing {url}", process)
+        # Run the script.
+        env = {**os.environ, **env}
+        process = processes.new_process(["bash", str(script), *args], env=env)
+        show = processes.show_status if show_status else processes.show_logs
+        show(f"Installing {url}", process)
 
 
 def install_bun():
@@ -1213,7 +1240,8 @@ def install_bun():
         )
     else:
         if path_ops.which("unzip") is None:
-            raise SystemPackageMissingError("unzip")
+            msg = "unzip"
+            raise SystemPackageMissingError(msg)
 
         # Run the bun install script.
         download_and_run(
@@ -1262,13 +1290,15 @@ def cached_procedure(
         ValueError: If both cache_file and cache_file_fn are provided.
     """
     if cache_file and cache_file_fn is not None:
-        raise ValueError("cache_file and cache_file_fn cannot both be provided.")
+        msg = "cache_file and cache_file_fn cannot both be provided."
+        raise ValueError(msg)
 
     def _inner_decorator(func: Callable):
         def _inner(*args, **kwargs):
             _cache_file = cache_file_fn() if cache_file_fn is not None else cache_file
             if not _cache_file:
-                raise ValueError("Unknown cache file, cannot cache result.")
+                msg = "Unknown cache file, cannot cache result."
+                raise ValueError(msg)
             payload = _read_cached_procedure_file(_cache_file)
             new_payload = payload_fn(*args, **kwargs)
             if payload != new_payload:
@@ -1446,7 +1476,7 @@ def validate_bun(bun_path: Path | None = None):
                 "Failed to obtain bun version. Make sure the specified bun path in your config is correct."
             )
             raise click.exceptions.Exit(1)
-        elif bun_version < version.parse(constants.Bun.MIN_VERSION):
+        if bun_version < version.parse(constants.Bun.MIN_VERSION):
             console.warn(
                 f"Reflex requires bun version {constants.Bun.MIN_VERSION} or higher to run, but the detected version is "
                 f"{bun_version}. If you have specified a custom bun path in your config, make sure to provide one "
@@ -1657,8 +1687,7 @@ def fetch_app_templates(version: str) -> dict[str, Template]:
     if asset is None:
         console.warn(f"Templates metadata not found for version {version}")
         return {}
-    else:
-        templates_url = asset["browser_download_url"]
+    templates_url = asset["browser_download_url"]
 
     templates_data = net.get(templates_url, follow_redirects=True).json()["templates"]
 
@@ -1864,7 +1893,7 @@ def initialize_app(app_name: str, template: str | None = None) -> str | None:
     # Check if the app is already initialized.
     if constants.Config.FILE.exists():
         telemetry.send("reinit")
-        return
+        return None
 
     templates: dict[str, Template] = {}
 

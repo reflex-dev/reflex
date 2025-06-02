@@ -228,9 +228,8 @@ class EventHandler(EventActionsMixin):
             ),
             Unset,
         ):
-            raise EventHandlerTypeError(
-                f"Event handler {self.fn.__name__} received repeated argument {repeated_arg}."
-            )
+            msg = f"Event handler {self.fn.__name__} received repeated argument {repeated_arg}."
+            raise EventHandlerTypeError(msg)
 
         if not isinstance(
             extra_arg := next(
@@ -238,9 +237,10 @@ class EventHandler(EventActionsMixin):
             ),
             Unset,
         ):
-            raise EventHandlerTypeError(
+            msg = (
                 f"Event handler {self.fn.__name__} received extra argument {extra_arg}."
             )
+            raise EventHandlerTypeError(msg)
 
         fn_args = fn_args[: len(args)] + list(kwargs)
 
@@ -257,9 +257,8 @@ class EventHandler(EventActionsMixin):
             try:
                 values.append(LiteralVar.create(arg))
             except TypeError as e:
-                raise EventHandlerTypeError(
-                    f"Arguments to event handlers must be Vars or JSON-serializable. Got {arg} of type {type(arg)}."
-                ) from e
+                msg = f"Arguments to event handlers must be Vars or JSON-serializable. Got {arg} of type {type(arg)}."
+                raise EventHandlerTypeError(msg) from e
         payload = tuple(zip(fn_args, values, strict=False))
 
         # Return the event spec.
@@ -353,9 +352,8 @@ class EventSpec(EventActionsMixin):
             for arg in args:
                 values.append(LiteralVar.create(value=arg))  # noqa: PERF401, RUF100
         except TypeError as e:
-            raise EventHandlerTypeError(
-                f"Arguments to event handlers must be Vars or JSON-serializable. Got {arg} of type {type(arg)}."
-            ) from e
+            msg = f"Arguments to event handlers must be Vars or JSON-serializable. Got {arg} of type {type(arg)}."
+            raise EventHandlerTypeError(msg) from e
         new_payload = tuple(zip(fn_args, values, strict=False))
         return self.with_args(self.args + new_payload)
 
@@ -408,7 +406,8 @@ class CallableEventSpec(EventSpec):
         from reflex.utils.exceptions import EventHandlerTypeError
 
         if self.fn is None:
-            raise EventHandlerTypeError("CallableEventSpec has no associated function.")
+            msg = "CallableEventSpec has no associated function."
+            raise EventHandlerTypeError(msg)
         return self.fn(*args, **kwargs)
 
 
@@ -453,7 +452,7 @@ class EventChain(EventActionsMixin):
         if isinstance(value, Var):
             if isinstance(value, EventChainVar):
                 return value
-            elif isinstance(value, EventVar):
+            if isinstance(value, EventVar):
                 value = [value]
             elif safe_issubclass(value._var_type, (EventChain, EventSpec)):
                 return cls.create(
@@ -463,9 +462,8 @@ class EventChain(EventActionsMixin):
                     **event_chain_kwargs,
                 )
             else:
-                raise ValueError(
-                    f"Invalid event chain: {value!s} of type {value._var_type}"
-                )
+                msg = f"Invalid event chain: {value!s} of type {value._var_type}"
+                raise ValueError(msg)
         elif isinstance(value, EventChain):
             # Trust that the caller knows what they're doing passing an EventChain directly
             return value
@@ -485,15 +483,17 @@ class EventChain(EventActionsMixin):
                     # Call the lambda to get the event chain.
                     result = call_event_fn(v, args_spec, key=key)
                     if isinstance(result, Var):
-                        raise ValueError(
+                        msg = (
                             f"Invalid event chain: {v}. Cannot use a Var-returning "
                             "lambda inside an EventChain list."
                         )
+                        raise ValueError(msg)
                     events.extend(result)
                 elif isinstance(v, EventVar):
                     events.append(v)
                 else:
-                    raise ValueError(f"Invalid event: {v}")
+                    msg = f"Invalid event: {v}"
+                    raise ValueError(msg)
 
         # If the input is a callable, create an event chain.
         elif isinstance(value, Callable):
@@ -507,7 +507,8 @@ class EventChain(EventActionsMixin):
 
         # Otherwise, raise an error.
         else:
-            raise ValueError(f"Invalid event chain: {value}")
+            msg = f"Invalid event chain: {value}"
+            raise ValueError(msg)
 
         # Add args to the event specs if necessary.
         events = [
@@ -783,9 +784,11 @@ class FileUpload:
                     on_upload_progress, self.on_upload_progress_args_spec
                 )
             else:
-                raise ValueError(f"{on_upload_progress} is not a valid event handler.")
+                msg = f"{on_upload_progress} is not a valid event handler."
+                raise ValueError(msg)
             if isinstance(events, Var):
-                raise ValueError(f"{on_upload_progress} cannot return a var {events}.")
+                msg = f"{on_upload_progress} cannot return a var {events}."
+                raise ValueError(msg)
             on_upload_progress_chain = EventChain(
                 events=[*events],
                 args_spec=self.on_upload_progress_args_spec,
@@ -1081,7 +1084,8 @@ def download(
 
     if isinstance(url, str):
         if not url.startswith("/"):
-            raise ValueError("The URL argument should start with a /")
+            msg = "The URL argument should start with a /"
+            raise ValueError(msg)
 
         # if filename is not provided, infer it from url
         if filename is None:
@@ -1092,7 +1096,8 @@ def download(
 
     if data is not None:
         if url is not None:
-            raise ValueError("Cannot provide both URL and data to download.")
+            msg = "Cannot provide both URL and data to download."
+            raise ValueError(msg)
 
         if isinstance(data, str):
             # Caller provided a plain text string to download.
@@ -1115,9 +1120,8 @@ def download(
             b64_data = b64encode(data).decode("utf-8")
             url = "data:application/octet-stream;base64," + b64_data
         else:
-            raise ValueError(
-                f"Invalid data type {type(data)} for download. Use `str` or `bytes`."
-            )
+            msg = f"Invalid data type {type(data)} for download. Use `str` or `bytes`."
+            raise ValueError(msg)
 
     return server_side(
         "_download",
@@ -1323,23 +1327,21 @@ def _check_event_args_subclass_of_callback(
             except TypeError as te:
                 callback_name_context = f" of {callback_name}" if callback_name else ""
                 key_context = f" for {key}" if key else ""
-                raise TypeError(
-                    f"Could not compare types {args_types_without_vars[i]} and {callback_param_name_to_type[arg]} for argument {arg}{callback_name_context}{key_context}."
-                ) from te
+                msg = f"Could not compare types {args_types_without_vars[i]} and {callback_param_name_to_type[arg]} for argument {arg}{callback_name_context}{key_context}."
+                raise TypeError(msg) from te
 
             if compare_result:
                 type_match_found[arg] = True
                 continue
-            else:
-                type_match_found[arg] = False
-                as_annotated_in = (
-                    f" as annotated in {callback_name}" if callback_name else ""
+            type_match_found[arg] = False
+            as_annotated_in = (
+                f" as annotated in {callback_name}" if callback_name else ""
+            )
+            delayed_exceptions.append(
+                EventHandlerArgTypeMismatchError(
+                    f"Event handler {key} expects {args_types_without_vars[i]} for argument {arg} but got {callback_param_name_to_type[arg]}{as_annotated_in} instead."
                 )
-                delayed_exceptions.append(
-                    EventHandlerArgTypeMismatchError(
-                        f"Event handler {key} expects {args_types_without_vars[i]} for argument {arg} but got {callback_param_name_to_type[arg]}{as_annotated_in} instead."
-                    )
-                )
+            )
 
         if all(type_match_found.values()):
             delayed_exceptions.clear()
@@ -1495,8 +1497,7 @@ def resolve_annotation(annotations: dict[str, Any], arg_name: str, spec: ArgsSpe
     if annotation is None:
         if not isinstance(spec, types.LambdaType):
             raise MissingAnnotationError(var_name=arg_name)
-        else:
-            return dict[str, dict]
+        return dict[str, dict]
     return annotation
 
 
@@ -1570,12 +1571,13 @@ def check_fn_match_arg_spec(
     number_of_event_args = len(parsed_event_args)
 
     if number_of_user_args - number_of_user_default_args > number_of_event_args:
-        raise EventFnArgMismatchError(
+        msg = (
             f"Event {key} only provides {number_of_event_args} arguments, but "
             f"{func_name or user_func} requires at least {number_of_user_args - number_of_user_default_args} "
             "arguments to be passed to the event handler.\n"
             "See https://reflex.dev/docs/events/event-arguments/"
         )
+        raise EventFnArgMismatchError(msg)
 
 
 def call_event_fn(
@@ -1630,9 +1632,8 @@ def call_event_fn(
 
         # Make sure the event spec is valid.
         if not isinstance(e, EventSpec):
-            raise EventHandlerValueError(
-                f"Lambda {fn} returned an invalid event spec: {e}."
-            )
+            msg = f"Lambda {fn} returned an invalid event spec: {e}."
+            raise EventHandlerValueError(msg)
 
         # Add the event spec to the chain.
         events.append(e)
@@ -1696,7 +1697,8 @@ def fix_events(
         if isinstance(e, EventHandler):
             e = e()
         if not isinstance(e, EventSpec):
-            raise ValueError(f"Unexpected event type, {type(e)}.")
+            msg = f"Unexpected event type, {type(e)}."
+            raise ValueError(msg)
         name = format.format_event_handler(e.handler)
         payload = {k._js_expr: v._decode() for k, v in e.args}
 
@@ -1749,9 +1751,8 @@ class EventVar(ObjectVar, python_types=(EventSpec, EventHandler)):
         Raises:
             TypeError: EventVar cannot be converted to a boolean.
         """
-        raise TypeError(
-            f"Cannot convert {self._js_expr} of type {type(self).__name__} to bool."
-        )
+        msg = f"Cannot convert {self._js_expr} of type {type(self).__name__} to bool."
+        raise TypeError(msg)
 
 
 @dataclasses.dataclass(
@@ -1798,9 +1799,8 @@ class LiteralEventVar(VarOperationCall, LiteralVar, EventVar):
             try:
                 value = call_event_handler(value, no_args)
             except EventFnArgMismatchError:
-                raise EventFnArgMismatchError(
-                    f"Event handler {value.fn.__qualname__} used inside of a rx.cond() must not take any arguments."
-                ) from None
+                msg = f"Event handler {value.fn.__qualname__} used inside of a rx.cond() must not take any arguments."
+                raise EventFnArgMismatchError(msg) from None
 
         return cls(
             _js_expr="",
@@ -1835,9 +1835,8 @@ class EventChainVar(BuilderFunctionVar, python_types=EventChain):
         Raises:
             TypeError: EventChainVar cannot be converted to a boolean.
         """
-        raise TypeError(
-            f"Cannot convert {self._js_expr} of type {type(self).__name__} to bool."
-        )
+        msg = f"Cannot convert {self._js_expr} of type {type(self).__name__} to bool."
+        raise TypeError(msg)
 
 
 @dataclasses.dataclass(
@@ -1906,9 +1905,8 @@ class LiteralEventChainVar(ArgsFunctionOperationBuilder, LiteralVar, EventChainV
             invocation = value.invocation
 
         if invocation is not None and not isinstance(invocation, FunctionVar):
-            raise ValueError(
-                f"EventChain invocation must be a FunctionVar, got {invocation!s} of type {invocation._var_type!s}."
-            )
+            msg = f"EventChain invocation must be a FunctionVar, got {invocation!s} of type {invocation._var_type!s}."
+            raise ValueError(msg)
 
         return cls(
             _js_expr="",
@@ -2142,12 +2140,12 @@ class EventNamespace:
                 if not inspect.iscoroutinefunction(
                     func
                 ) and not inspect.isasyncgenfunction(func):
-                    raise TypeError(
-                        "Background task must be async function or generator."
-                    )
+                    msg = "Background task must be async function or generator."
+                    raise TypeError(msg)
                 setattr(func, BACKGROUND_TASK_MARKER, True)
             if getattr(func, "__name__", "").startswith("_"):
-                raise ValueError("Event handlers cannot be private.")
+                msg = "Event handlers cannot be private."
+                raise ValueError(msg)
 
             qualname: str | None = getattr(func, "__qualname__", None)
 

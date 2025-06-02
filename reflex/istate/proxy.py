@@ -122,9 +122,8 @@ class StateProxy(wrapt.ObjectProxy):
             self._self_actx_lock.locked()
             and current_task == self._self_actx_lock_holder
         ):
-            raise ImmutableStateError(
-                "The state is already mutable. Do not nest `async with self` blocks."
-            )
+            msg = "The state is already mutable. Do not nest `async with self` blocks."
+            raise ImmutableStateError(msg)
 
         from reflex.state import _substate_key
 
@@ -173,7 +172,8 @@ class StateProxy(wrapt.ObjectProxy):
         Raises:
             TypeError: always, because only async contextmanager protocol is supported.
         """
-        raise TypeError("Background task must use `async with self` to modify state.")
+        msg = "Background task must use `async with self` to modify state."
+        raise TypeError(msg)
 
     def __exit__(self, *exc_info: Any) -> None:
         """Exit the regular context manager protocol.
@@ -181,7 +181,6 @@ class StateProxy(wrapt.ObjectProxy):
         Args:
             exc_info: The exception info tuple.
         """
-        pass
 
     def __getattr__(self, name: str) -> Any:
         """Get the attribute from the underlying state instance.
@@ -196,10 +195,11 @@ class StateProxy(wrapt.ObjectProxy):
             ImmutableStateError: If the state is not in mutable mode.
         """
         if name in ["substates", "parent_state"] and not self._is_mutable():
-            raise ImmutableStateError(
+            msg = (
                 "Background task StateProxy is immutable outside of a context "
                 "manager. Use `async with self` to modify state."
             )
+            raise ImmutableStateError(msg)
 
         value = super().__getattr__(name)
         if not name.startswith("_self_") and isinstance(value, MutableProxy):
@@ -243,10 +243,11 @@ class StateProxy(wrapt.ObjectProxy):
             super().__setattr__(name, value)
             return
 
-        raise ImmutableStateError(
+        msg = (
             "Background task StateProxy is immutable outside of a context "
             "manager. Use `async with self` to modify state."
         )
+        raise ImmutableStateError(msg)
 
     def get_substate(self, path: Sequence[str]) -> BaseState:
         """Only allow substate access with lock held.
@@ -261,10 +262,11 @@ class StateProxy(wrapt.ObjectProxy):
             ImmutableStateError: If the state is not in mutable mode.
         """
         if not self._is_mutable():
-            raise ImmutableStateError(
+            msg = (
                 "Background task StateProxy is immutable outside of a context "
                 "manager. Use `async with self` to modify state."
             )
+            raise ImmutableStateError(msg)
         return self.__wrapped__.get_substate(path)
 
     async def get_state(self, state_cls: type[BaseState]) -> BaseState:
@@ -280,10 +282,11 @@ class StateProxy(wrapt.ObjectProxy):
             ImmutableStateError: If the state is not in mutable mode.
         """
         if not self._is_mutable():
-            raise ImmutableStateError(
+            msg = (
                 "Background task StateProxy is immutable outside of a context "
                 "manager. Use `async with self` to modify state."
             )
+            raise ImmutableStateError(msg)
         return type(self)(
             await self.__wrapped__.get_state(state_cls), parent_state_proxy=self
         )
@@ -323,7 +326,8 @@ class ReadOnlyStateProxy(StateProxy):
             # Special case attributes of the proxy itself, not applied to the wrapped object.
             super().__setattr__(name, value)
             return
-        raise NotImplementedError("This is a read-only state proxy.")
+        msg = "This is a read-only state proxy."
+        raise NotImplementedError(msg)
 
     def mark_dirty(self):
         """Mark the state as dirty.
@@ -331,7 +335,8 @@ class ReadOnlyStateProxy(StateProxy):
         Raises:
             NotImplementedError: Always raised when trying to mark the proxied state as dirty.
         """
-        raise NotImplementedError("This is a read-only state proxy.")
+        msg = "This is a read-only state proxy."
+        raise NotImplementedError(msg)
 
 
 class MutableProxy(wrapt.ObjectProxy):
@@ -460,6 +465,7 @@ class MutableProxy(wrapt.ObjectProxy):
         self._self_state._mark_dirty()
         if wrapped is not None:
             return wrapped(*args, **(kwargs or {}))
+        return None
 
     @classmethod
     def _is_mutable_type(cls, value: Any) -> bool:
@@ -748,10 +754,11 @@ class ImmutableMutableProxy(MutableProxy):
             ImmutableStateError: if the StateProxy is not mutable.
         """
         if not self._self_state._is_mutable():
-            raise ImmutableStateError(
+            msg = (
                 "Background task StateProxy is immutable outside of a context "
                 "manager. Use `async with self` to modify state."
             )
+            raise ImmutableStateError(msg)
         return super()._mark_dirty(
             wrapped=wrapped, instance=instance, args=args, kwargs=kwargs
         )

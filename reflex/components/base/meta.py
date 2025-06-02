@@ -20,7 +20,8 @@ class Title(elements.Title):
         """
         # Make sure the title is a single string.
         if len(self.children) != 1 or not isinstance(self.children[0], Bare):
-            raise ValueError("Title must be a single string.")
+            msg = "Title must be a single string."
+            raise ValueError(msg)
         return super().render()
 
 

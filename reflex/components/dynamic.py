@@ -50,9 +50,8 @@ def bundle_library(component: Union["Component", str]):
         bundled_libraries.add(component)
         return
     if component.library is None:
-        raise DynamicComponentMissingLibraryError(
-            "Component must have a library to bundle."
-        )
+        msg = "Component must have a library to bundle."
+        raise DynamicComponentMissingLibraryError(msg)
     bundled_libraries.add(format_library_name(component.library))
 
 

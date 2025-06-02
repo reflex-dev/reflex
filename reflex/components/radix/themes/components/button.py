@@ -4,15 +4,14 @@ from typing import Literal
 
 from reflex.components.core.breakpoints import Responsive
 from reflex.components.el import elements
-from reflex.vars.base import Var
-
-from ..base import (
+from reflex.components.radix.themes.base import (
     LiteralAccentColor,
     LiteralRadius,
     LiteralVariant,
     RadixLoadingProp,
     RadixThemesComponent,
 )
+from reflex.vars.base import Var
 
 LiteralButtonSize = Literal["1", "2", "3", "4"]
 

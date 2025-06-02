@@ -65,7 +65,7 @@ def attach(
     def __getattr__(name: str):  # noqa: N807
         if name in submodules:
             return importlib.import_module(f"{package_name}.{name}")
-        elif name in attr_to_modules:
+        if name in attr_to_modules:
             submod_path = f"{package_name}.{attr_to_modules[name]}"
             submod = importlib.import_module(submod_path)
             attr = getattr(submod, name)
@@ -78,8 +78,8 @@ def attach(
                 pkg.__dict__[name] = attr
 
             return attr
-        else:
-            raise AttributeError(f"No {package_name} attribute {name}")
+        msg = f"No {package_name} attribute {name}"
+        raise AttributeError(msg)
 
     def __dir__():  # noqa: N807
         return __all__

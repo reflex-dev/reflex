@@ -64,10 +64,11 @@ class ChartBase(RechartsCharts):
             return
         if isinstance(value, Var) and issubclass(value._var_type, int):
             return
-        raise ValueError(
+        msg = (
             f"Chart {name} must be specified as int pixels or percentage, not {value!r}. "
             "CSS unit dimensions are allowed on parent container."
         )
+        raise ValueError(msg)
 
     @classmethod
     def create(cls, *children: Any, **props: Any) -> Component:

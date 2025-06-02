@@ -30,6 +30,8 @@ logger = logging.getLogger("pyi_generator")
 
 PWD = Path.cwd()
 
+PYI_HASHES = "pyi_hashes.json"
+
 EXCLUDED_FILES = [
     "app.py",
     "component.py",
@@ -157,9 +159,8 @@ def _get_type_hint(
             res_args.sort()
             if len(res_args) == 1:
                 return f"{res_args[0]} | None"
-            else:
-                res = f"{' | '.join(res_args)}"
-                return f"{res} | None"
+            res = f"{' | '.join(res_args)}"
+            return f"{res} | None"
 
         res_args = [
             _get_type_hint(arg, type_hint_globals, rx_types.is_optional(arg))
@@ -183,10 +184,11 @@ def _get_type_hint(
             value.__module__ not in ["builtins", "__builtins__"]
             and value.__name__ not in type_hint_globals
         ):
-            raise TypeError(
+            msg = (
                 f"{value.__module__ + '.' + value.__name__} is not a default import, "
                 "add it to DEFAULT_IMPORTS in pyi_generator.py"
             )
+            raise TypeError(msg)
 
         res = f"{value.__name__}[{', '.join(inner_container_type_args)}]"
 
@@ -445,7 +447,7 @@ def type_to_ast(typ: Any, cls: type) -> ast.expr:
 
                 return ast.Name(id=typ.__module__ + "." + typ.__name__)
             return ast.Name(id=typ.__name__)
-        elif hasattr(typ, "_name"):
+        if hasattr(typ, "_name"):
             return ast.Name(id=typ._name)
         return ast.Name(id=str(typ))
 
@@ -510,7 +512,8 @@ def _generate_component_create_functiondef(
         TypeError: If clz is not a subclass of Component.
     """
     if not issubclass(clz, Component):
-        raise TypeError(f"clz must be a subclass of Component, not {clz!r}")
+        msg = f"clz must be a subclass of Component, not {clz!r}"
+        raise TypeError(msg)
 
     # add the imports needed by get_type_hint later
     type_hint_globals.update(
@@ -654,7 +657,7 @@ def _generate_component_create_functiondef(
         defaults=[],
     )
 
-    definition = ast.FunctionDef(  # pyright: ignore [reportCallIssue]
+    return ast.FunctionDef(  # pyright: ignore [reportCallIssue]
         name="create",
         args=create_args,
         body=[
@@ -676,7 +679,6 @@ def _generate_component_create_functiondef(
         lineno=lineno,
         returns=ast.Constant(value=clz.__name__),
     )
-    return definition
 
 
 def _generate_staticmethod_call_functiondef(
@@ -710,7 +712,7 @@ def _generate_staticmethod_call_functiondef(
             else []
         ),
     )
-    definition = ast.FunctionDef(  # pyright: ignore [reportCallIssue]
+    return ast.FunctionDef(  # pyright: ignore [reportCallIssue]
         name="__call__",
         args=call_args,
         body=[
@@ -729,7 +731,6 @@ def _generate_staticmethod_call_functiondef(
             )
         ),
     )
-    return definition
 
 
 def _generate_namespace_call_functiondef(
@@ -841,6 +842,7 @@ class StubGenerator(ast.NodeTransformer):
             and issubclass((clz := self.classes[self.current_class]), Component)
         ):
             return clz
+        return None
 
     def visit_Module(self, node: ast.Module) -> ast.Module:
         """Visit a Module node and remove docstring from body.
@@ -1021,7 +1023,7 @@ class StubGenerator(ast.NodeTransformer):
             if isinstance(target, ast.Tuple):
                 for name in target.elts:
                     if isinstance(name, ast.Name) and name.id.startswith("_"):
-                        return
+                        return None
 
         return node
 
@@ -1107,7 +1109,7 @@ class PyiGenerator:
         pyright_ignore_imports = getattr(mod, "_PYRIGHT_IGNORE_IMPORTS", [])
 
         if not sub_mods and not sub_mod_attrs:
-            return
+            return None
         sub_mods_imports = []
         sub_mod_attrs_imports = []
 
@@ -1162,7 +1164,7 @@ class PyiGenerator:
         }
         is_init_file = _relative_to_pwd(module_path).name == "__init__.py"
         if not class_names and not is_init_file:
-            return
+            return None
 
         if is_init_file:
             new_tree = InitStubGenerator(module, class_names).visit(
@@ -1170,7 +1172,7 @@ class PyiGenerator:
             )
             init_imports = self._get_init_lazy_imports(module, new_tree)
             if not init_imports:
-                return
+                return None
             content_hash = self._write_pyi_file(module_path, init_imports)
         else:
             new_tree = StubGenerator(module, class_names).visit(
@@ -1264,45 +1266,48 @@ class PyiGenerator:
                     file_parent = file_path.parent
                     while len(file_parent.parts) > len(top_dir.parts):
                         file_parent = file_parent.parent
+                    while len(top_dir.parts) > len(file_parent.parts):
+                        top_dir = top_dir.parent
                     while not file_parent.samefile(top_dir):
                         file_parent = file_parent.parent
                         top_dir = top_dir.parent
 
-                pyi_hashes_file = top_dir / "pyi_hashes.json"
-                if not pyi_hashes_file.exists():
-                    while top_dir.parent and not (top_dir / "pyi_hashes.json").exists():
-                        top_dir = top_dir.parent
-                    another_pyi_hashes_file = top_dir / "pyi_hashes.json"
-                    if another_pyi_hashes_file.exists():
-                        pyi_hashes_file = another_pyi_hashes_file
+                while (
+                    not top_dir.samefile(top_dir.parent)
+                    and not (top_dir / PYI_HASHES).exists()
+                ):
+                    top_dir = top_dir.parent
 
-                pyi_hashes_file.write_text(
-                    json.dumps(
-                        dict(
-                            zip(
-                                [
-                                    f.relative_to(pyi_hashes_file.parent).as_posix()
-                                    for f in file_paths
-                                ],
-                                hashes,
-                                strict=True,
-                            )
-                        ),
-                        indent=2,
-                        sort_keys=True,
+                pyi_hashes_file = top_dir / PYI_HASHES
+
+                if pyi_hashes_file.exists():
+                    pyi_hashes_file.write_text(
+                        json.dumps(
+                            dict(
+                                zip(
+                                    [
+                                        f.relative_to(pyi_hashes_file.parent).as_posix()
+                                        for f in file_paths
+                                    ],
+                                    hashes,
+                                    strict=True,
+                                )
+                            ),
+                            indent=2,
+                            sort_keys=True,
+                        )
+                        + "\n",
                     )
-                    + "\n",
-                )
             elif file_paths:
                 file_paths = list(map(Path, file_paths))
                 pyi_hashes_parent = file_paths[0].parent
                 while (
-                    pyi_hashes_parent.parent
-                    and not (pyi_hashes_parent / "pyi_hashes.json").exists()
+                    not pyi_hashes_parent.samefile(pyi_hashes_parent.parent)
+                    and not (pyi_hashes_parent / PYI_HASHES).exists()
                 ):
                     pyi_hashes_parent = pyi_hashes_parent.parent
 
-                pyi_hashes_file = pyi_hashes_parent / "pyi_hashes.json"
+                pyi_hashes_file = pyi_hashes_parent / PYI_HASHES
                 if pyi_hashes_file.exists():
                     pyi_hashes = json.loads(pyi_hashes_file.read_text())
                     for file_path, hashed_content in zip(

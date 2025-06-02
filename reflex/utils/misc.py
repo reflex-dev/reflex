@@ -20,5 +20,6 @@ async def run_in_thread(func: Callable) -> Any:
         Any: The return value of the function.
     """
     if asyncio.coroutines.iscoroutinefunction(func):
-        raise ValueError("func must be a non-async function")
+        msg = "func must be a non-async function"
+        raise ValueError(msg)
     return await asyncio.get_event_loop().run_in_executor(None, func)

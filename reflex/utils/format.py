@@ -73,7 +73,8 @@ def get_close_char(open: str, close: str | None = None) -> str:
     if close is not None:
         return close
     if open not in WRAP_MAP:
-        raise ValueError(f"Invalid wrap open: {open}, must be one of {WRAP_MAP.keys()}")
+        msg = f"Invalid wrap open: {open}, must be one of {WRAP_MAP.keys()}"
+        raise ValueError(msg)
     return WRAP_MAP[open]
 
 
@@ -187,8 +188,7 @@ def to_camel_case(text: str, treat_hyphens_as_underscores: bool = True) -> str:
     # Capitalize the first letter of each word except the first one
     if len(words) == 1:
         return words[0]
-    converted_word = words[0] + "".join([w.capitalize() for w in words[1:]])
-    return converted_word
+    return words[0] + "".join([w.capitalize() for w in words[1:]])
 
 
 def to_title_case(text: str, sep: str = "") -> str:
@@ -264,17 +264,13 @@ def _escape_js_string(string: str) -> str:
         if segment.startswith("${") and segment.endswith("}"):
             # Return the `${}` segment unchanged
             return segment
-        else:
-            # Escape backticks in the segment
-            segment = segment.replace(r"\`", "`")
-            segment = segment.replace("`", r"\`")
-            return segment
+        # Escape backticks in the segment
+        return segment.replace(r"\`", "`").replace("`", r"\`")
 
     # Split the string into parts, keeping the `${}` segments
     parts = re.split(r"(\$\{.*?\})", string)
     escaped_parts = [escape_outside_segments(part) for part in parts]
-    escaped_string = "".join(escaped_parts)
-    return escaped_string
+    return "".join(escaped_parts)
 
 
 def _wrap_js_string(string: str) -> str:
@@ -287,8 +283,7 @@ def _wrap_js_string(string: str) -> str:
         The wrapped string.
     """
     string = wrap(string, "`")
-    string = wrap(string, "{")
-    return string
+    return wrap(string, "{")
 
 
 def format_string(string: str) -> str:
@@ -402,13 +397,13 @@ def format_prop(
             return str(Var.create(prop))
 
         # Handle other types.
-        elif isinstance(prop, str):
+        if isinstance(prop, str):
             if is_wrapped(prop, "{"):
                 return prop
             return json_dumps(prop)
 
         # For dictionaries, convert any properties to strings.
-        elif isinstance(prop, dict):
+        if isinstance(prop, dict):
             prop = serializers.serialize_dict(prop)  # pyright: ignore [reportAttributeAccessIssue]
 
         else:
@@ -417,11 +412,13 @@ def format_prop(
     except exceptions.InvalidStylePropError:
         raise
     except TypeError as e:
-        raise TypeError(f"Could not format prop: {prop} of type {type(prop)}") from e
+        msg = f"Could not format prop: {prop} of type {type(prop)}"
+        raise TypeError(msg) from e
 
     # Wrap the variable in braces.
     if not isinstance(prop, str):
-        raise ValueError(f"Invalid prop: {prop}. Expected a string.")
+        msg = f"Invalid prop: {prop}. Expected a string."
+        raise ValueError(msg)
     return wrap(prop, "{", check_first=False)
 
 
@@ -591,9 +588,8 @@ def format_queue_events(
         elif isinstance(spec, type(lambda: None)):
             specs = call_event_fn(spec, args_spec or _default_args_spec)  # pyright: ignore [reportAssignmentType, reportArgumentType]
             if isinstance(specs, Var):
-                raise ValueError(
-                    f"Invalid event spec: {specs}. Expected a list of EventSpecs."
-                )
+                msg = f"Invalid event spec: {specs}. Expected a list of EventSpecs."
+                raise ValueError(msg)
         payloads.extend(format_event(s) for s in specs)
 
     # Return the final code snippet, expecting queueEvents, processEvent, and socket to be in scope.
@@ -662,12 +658,14 @@ def format_library_name(library_fullname: str | dict[str, Any]) -> str:
     # If input is a dictionary, extract the 'name' key
     if isinstance(library_fullname, dict):
         if "name" not in library_fullname:
-            raise KeyError("Dictionary input must contain a 'name' key")
+            msg = "Dictionary input must contain a 'name' key"
+            raise KeyError(msg)
         library_fullname = library_fullname["name"]
 
     # Process the library name as a string
     if not isinstance(library_fullname, str):
-        raise TypeError("Library name must be a string")
+        msg = "Library name must be a string"
+        raise TypeError(msg)
 
     if library_fullname.startswith("https://"):
         return library_fullname
@@ -764,9 +762,8 @@ def format_data_editor_column(col: str | dict):
     if isinstance(col, Var):
         return col
 
-    raise ValueError(
-        f"unexpected type ({(type(col).__name__)}: {col}) for column header in data_editor"
-    )
+    msg = f"unexpected type ({(type(col).__name__)}: {col}) for column header in data_editor"
+    raise ValueError(msg)
 
 
 def format_data_editor_cell(cell: Any):

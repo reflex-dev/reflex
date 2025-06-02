@@ -58,7 +58,7 @@ def simulate_compile_context(request) -> constants.CompileContext:
     return request.param
 
 
-@pytest.fixture()
+@pytest.fixture
 def connection_banner(
     tmp_path,
     simulate_compile_context: constants.CompileContext,

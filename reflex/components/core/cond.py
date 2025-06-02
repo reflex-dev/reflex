@@ -132,7 +132,8 @@ def cond(condition: Any, c1: Any, c2: Any = types.Unset(), /) -> Component | Var
     # Convert the condition to a Var.
     cond_var = LiteralVar.create(condition)
     if cond_var is None:
-        raise ValueError("The condition must be set.")
+        msg = "The condition must be set."
+        raise ValueError(msg)
 
     # If the first component is a component, create a Cond component.
     if isinstance(c1, BaseComponent):
@@ -145,7 +146,8 @@ def cond(condition: Any, c1: Any, c2: Any = types.Unset(), /) -> Component | Var
     if isinstance(c2, BaseComponent):
         return Cond.create(cond_var.bool(), Fragment.create(c1), c2)
     if isinstance(c2, types.Unset):
-        raise ValueError("For conditional vars, the second argument must be set.")
+        msg = "For conditional vars, the second argument must be set."
+        raise ValueError(msg)
 
     # convert the truth and false cond parts into vars so the _var_data can be obtained.
     c1_var = Var.create(c1)

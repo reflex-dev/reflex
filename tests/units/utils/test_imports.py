@@ -10,7 +10,7 @@ from reflex.utils.imports import (
 
 
 @pytest.mark.parametrize(
-    "import_var, expected_name",
+    ("import_var", "expected_name"),
     [
         (
             ImportVar(tag="BaseTag"),
@@ -49,7 +49,7 @@ def test_import_var(import_var, expected_name):
 
 
 @pytest.mark.parametrize(
-    "input_1, input_2, output",
+    ("input_1", "input_2", "output"),
     [
         (
             {"react": {"Component"}},
@@ -89,7 +89,7 @@ def test_merge_imports(input_1, input_2, output):
 
 
 @pytest.mark.parametrize(
-    "input, output",
+    ("input", "output"),
     [
         ({}, {}),
         (

@@ -4,12 +4,15 @@ from typing import Literal
 
 from reflex.components.component import Component, ComponentNamespace
 from reflex.components.core.breakpoints import Responsive
+from reflex.components.radix.themes.base import (
+    LiteralAccentColor,
+    LiteralSpacing,
+    RadixThemesComponent,
+)
 from reflex.components.radix.themes.layout.flex import Flex
 from reflex.components.radix.themes.typography.text import Text
 from reflex.event import EventHandler, passthrough_event_spec
-from reflex.vars.base import LiteralVar, Var
-
-from ..base import LiteralAccentColor, LiteralSpacing, RadixThemesComponent
+from reflex.vars.base import Var
 
 LiteralCheckboxSize = Literal["1", "2", "3"]
 LiteralCheckboxVariant = Literal["classic", "surface", "soft"]
@@ -111,7 +114,7 @@ class HighLevelCheckbox(RadixThemesComponent):
     on_change: EventHandler[passthrough_event_spec(bool)]
 
     @classmethod
-    def create(cls, text: Var[str] = LiteralVar.create(""), **props) -> Component:
+    def create(cls, text: Var[str] = Var.create(""), **props) -> Component:
         """Create a checkbox with a label.
 
         Args:

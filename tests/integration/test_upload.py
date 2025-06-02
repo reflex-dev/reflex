@@ -341,7 +341,7 @@ async def test_upload_file_multiple(tmp_path, upload_file: AppHarness, driver):
         target_file.write_text(exp_contents)
         upload_box.send_keys(str(target_file))
 
-    time.sleep(0.2)
+    await asyncio.sleep(0.2)
 
     # check that the selected files are displayed
     selected_files = driver.find_element(By.ID, "selected_files")

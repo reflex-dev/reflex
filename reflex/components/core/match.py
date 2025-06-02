@@ -47,9 +47,8 @@ class Match(MemoizationLeaf):
         cls._validate_return_types(match_cases)
 
         if default is None and isinstance(match_cases[0][-1], Var):
-            raise ValueError(
-                "For cases with return types as Vars, a default case must be provided"
-            )
+            msg = "For cases with return types as Vars, a default case must be provided"
+            raise ValueError(msg)
 
         return cls._create_match_cond_var_or_component(
             match_cond_var, match_cases, default
@@ -71,7 +70,8 @@ class Match(MemoizationLeaf):
         match_cond_var = LiteralVar.create(cond)
 
         if match_cond_var is None:
-            raise ValueError("The condition must be set")
+            msg = "The condition must be set"
+            raise ValueError(msg)
         return match_cond_var
 
     @classmethod
@@ -90,10 +90,12 @@ class Match(MemoizationLeaf):
         default = None
 
         if len([case for case in cases if not isinstance(case, tuple)]) > 1:
-            raise ValueError("rx.match can only have one default case.")
+            msg = "rx.match can only have one default case."
+            raise ValueError(msg)
 
         if not cases:
-            raise ValueError("rx.match should have at least one case.")
+            msg = "rx.match should have at least one case."
+            raise ValueError(msg)
 
         # Get the default case which should be the last non-tuple arg
         if not isinstance(cases[-1], tuple):
@@ -119,8 +121,7 @@ class Match(MemoizationLeaf):
             The case element Var.
         """
         _var_data = case_element._var_data if isinstance(case_element, Style) else None
-        case_element = LiteralVar.create(case_element, _var_data=_var_data)
-        return case_element
+        return LiteralVar.create(case_element, _var_data=_var_data)
 
     @classmethod
     def _process_match_cases(cls, cases: list) -> list[list[Var]]:
@@ -138,14 +139,12 @@ class Match(MemoizationLeaf):
         match_cases = []
         for case in cases:
             if not isinstance(case, tuple):
-                raise ValueError(
-                    "rx.match should have tuples of cases and a default case as the last argument."
-                )
+                msg = "rx.match should have tuples of cases and a default case as the last argument."
+                raise ValueError(msg)
             # There should be at least two elements in a case tuple(a condition and return value)
             if len(case) < 2:
-                raise ValueError(
-                    "A case tuple should have at least a match case element and a return value."
-                )
+                msg = "A case tuple should have at least a match case element and a return value."
+                raise ValueError(msg)
 
             case_list = []
             for element in case:
@@ -156,7 +155,8 @@ class Match(MemoizationLeaf):
                     else element
                 )
                 if not isinstance(el, (Var, BaseComponent)):
-                    raise ValueError("Case element must be a var or component")
+                    msg = "Case element must be a var or component"
+                    raise ValueError(msg)
                 case_list.append(el)
 
             match_cases.append(case_list)
@@ -183,11 +183,12 @@ class Match(MemoizationLeaf):
 
         for index, case in enumerate(match_cases):
             if not isinstance(case[-1], return_type):
-                raise MatchTypeError(
+                msg = (
                     f"Match cases should have the same return types. Case {index} with return "
                     f"value `{case[-1]._js_expr if isinstance(case[-1], Var) else textwrap.shorten(str(case[-1]), width=250)}`"
                     f" of type {type(case[-1])!r} is not {return_type}"
                 )
+                raise MatchTypeError(msg)
 
     @classmethod
     def _create_match_cond_var_or_component(
@@ -226,7 +227,8 @@ class Match(MemoizationLeaf):
         if any(
             case for case in match_cases if not isinstance(case[-1], Var)
         ) or not isinstance(default, Var):
-            raise ValueError("Return types of match cases should be Vars.")
+            msg = "Return types of match cases should be Vars."
+            raise ValueError(msg)
 
         return Var(
             _js_expr=format.format_match(

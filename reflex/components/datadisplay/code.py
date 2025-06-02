@@ -482,8 +482,7 @@ class CodeBlock(Component, MarkdownComponentMap):
 
         if copy_button:
             return Box.create(code_block, copy_button, position="relative")
-        else:
-            return code_block
+        return code_block
 
     def add_style(self):
         """Add style to the component."""

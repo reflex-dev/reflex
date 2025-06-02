@@ -303,7 +303,7 @@ def test_create_component(component1):
 
 
 @pytest.mark.parametrize(
-    "prop_name,var,expected",
+    ("prop_name", "var", "expected"),
     [
         pytest.param(
             "text",
@@ -540,7 +540,7 @@ def test_get_props(component1, component2):
 
 
 @pytest.mark.parametrize(
-    "text,number",
+    ("text", "number"),
     [
         ("", 0),
         ("test", 1),
@@ -561,7 +561,7 @@ def test_valid_props(component1, text: str, number: int):
 
 
 @pytest.mark.parametrize(
-    "text,number", [("", "bad_string"), (13, 1), ("test", [1, 2, 3])]
+    ("text", "number"), [("", "bad_string"), (13, 1), ("test", [1, 2, 3])]
 )
 def test_invalid_prop_type(component1, text: str, number: int):
     """Test that an invalid prop type raises an error.
@@ -675,7 +675,7 @@ def test_component_create_unallowed_types(children, test_component):
 
 
 @pytest.mark.parametrize(
-    "element, expected",
+    ("element", "expected"),
     [
         (
             (rx.text("first_text"),),
@@ -843,7 +843,6 @@ class C1State(BaseState):
 
     def mock_handler(self, _e: JavascriptInputEvent, _bravo: dict, _charlie: _Obj):
         """Mock handler."""
-        pass
 
 
 def test_component_event_trigger_arbitrary_args():
@@ -1179,7 +1178,7 @@ def test_component_with_only_valid_children(fixture, request):
 
 
 @pytest.mark.parametrize(
-    "component,rendered",
+    ("component", "rendered"),
     [
         (rx.text("hi"), 'jsx(\nRadixThemesText,\n{as:"p"},\n"hi"\n,)'),
         (
@@ -1308,7 +1307,7 @@ class EventState(rx.State):
 
 @pytest.mark.parametrize(
     ("component", "exp_vars"),
-    (
+    [
         pytest.param(
             Bare.create(TEST_VAR),
             [TEST_VAR],
@@ -1475,7 +1474,7 @@ class EventState(rx.State):
             [FORMATTED_TEST_VAR_LIST_OF_DICT],
             id="fstring-list_of_dict",
         ),
-    ),
+    ],
 )
 def test_get_vars(component, exp_vars):
     comp_vars = sorted(component._get_vars(), key=lambda v: v._js_expr)
@@ -1538,8 +1537,6 @@ def test_instantiate_all_components():
 class InvalidParentComponent(Component):
     """Invalid Parent Component."""
 
-    ...
-
 
 class ValidComponent1(Component):
     """Test valid component."""
@@ -1549,8 +1546,6 @@ class ValidComponent1(Component):
 
 class ValidComponent2(Component):
     """Test valid component."""
-
-    ...
 
 
 class ValidComponent3(Component):
@@ -1567,8 +1562,6 @@ class ValidComponent4(Component):
 
 class InvalidComponent(Component):
     """Test invalid component."""
-
-    ...
 
 
 valid_component1 = ValidComponent1.create
@@ -1870,8 +1863,8 @@ def test_custom_component_declare_event_handlers_in_fields():
             return {
                 **super().get_event_triggers(),
                 "on_b": input_event,
-                "on_d": lambda: [],
-                "on_e": lambda: [],
+                "on_d": no_args_event_spec,
+                "on_e": no_args_event_spec,
             }
 
     class TestComponent(Component):
@@ -1906,7 +1899,7 @@ def test_invalid_event_trigger():
             """
             return {
                 **super().get_event_triggers(),
-                "on_a": lambda: [],
+                "on_a": no_args_event_spec,
             }
 
     trigger_comp = TriggerComponent.create
@@ -1921,13 +1914,13 @@ def test_invalid_event_trigger():
 
 @pytest.mark.parametrize(
     "tags",
-    (
+    [
         ["Component"],
         ["Component", "useState"],
         [ImportVar(tag="Component")],
         [ImportVar(tag="Component"), ImportVar(tag="useState")],
         ["Component", ImportVar(tag="useState")],
-    ),
+    ],
 )
 def test_component_add_imports(tags):
     class BaseComponent(Component):
@@ -2236,11 +2229,10 @@ class TriggerState(rx.State):
     @rx.event
     def do_something(self):
         """Sample event handler."""
-        pass
 
 
 @pytest.mark.parametrize(
-    "component, output",
+    ("component", "output"),
     [
         (rx.box(rx.text("random text")), False),
         (

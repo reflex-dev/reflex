@@ -1,8 +1,7 @@
 """Interactive components provided by @radix-ui/themes."""
 
+from reflex.components.radix.themes.base import RadixThemesComponent
 from reflex.vars.base import Var
-
-from ..base import RadixThemesComponent
 
 
 class AspectRatio(RadixThemesComponent):

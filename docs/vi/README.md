@@ -1,7 +1,5 @@
 <div align="center">
-<img src="/docs/images/reflex_dark.svg#gh-light-mode-only" alt="Reflex Logo" width="300px">
-<img src="/docs/images/reflex_light.svg#gh-dark-mode-only" alt="Reflex Logo" width="300px">
-
+<img src="/docs/images/reflex.svg" alt="Reflex Logo" width="300px">
 <hr>
 
 ### **✨ Ứng dụng web hiệu suất cao, tùy chỉnh bằng Python thuần. Deploy trong vài giây. ✨**

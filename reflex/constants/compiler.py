@@ -176,6 +176,13 @@ DATA_DASH = "data-"
 ARIA_UNDERSCORE = "aria_"
 ARIA_DASH = "aria-"
 
+SPECIAL_ATTRS = (
+    DATA_UNDERSCORE,
+    DATA_DASH,
+    ARIA_UNDERSCORE,
+    ARIA_DASH,
+)
+
 
 class SpecialAttributes(enum.Enum):
     """Special attributes for components.
@@ -194,9 +201,4 @@ class SpecialAttributes(enum.Enum):
         Returns:
             True if the attribute is special.
         """
-        return (
-            attr.startswith(DATA_UNDERSCORE)
-            or attr.startswith(DATA_DASH)
-            or attr.startswith(ARIA_UNDERSCORE)
-            or attr.startswith(ARIA_DASH)
-        )
+        return attr.startswith(SPECIAL_ATTRS)

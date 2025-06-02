@@ -55,7 +55,7 @@ def FullyControlledInput():
         )
 
 
-@pytest.fixture()
+@pytest.fixture
 def fully_controlled_input(tmp_path) -> Generator[AppHarness, None, None]:
     """Start FullyControlledInput app at tmp_path via AppHarness.
 

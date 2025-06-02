@@ -5,9 +5,9 @@ import webbrowser
 
 import httpx
 
+from reflex import constants
 from reflex.utils import net
 
-from .. import constants
 from . import console
 
 

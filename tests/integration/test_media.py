@@ -75,7 +75,7 @@ def MediaApp():
         )
 
 
-@pytest.fixture()
+@pytest.fixture
 def media_app(tmp_path) -> Generator[AppHarness, None, None]:
     """Start MediaApp app at tmp_path via AppHarness.
 
