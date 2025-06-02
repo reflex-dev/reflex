@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import dataclasses
+import importlib.metadata
 import multiprocessing
 import platform
 import warnings
@@ -76,6 +77,18 @@ def get_cpu_count() -> int:
     return multiprocessing.cpu_count()
 
 
+def get_reflex_enterprise_version() -> str | None:
+    """Get the version of reflex-enterprise if installed.
+
+    Returns:
+        The version string if installed, None if not installed.
+    """
+    try:
+        return importlib.metadata.version("reflex-enterprise")
+    except importlib.metadata.PackageNotFoundError:
+        return None
+
+
 def get_memory() -> int:
     """Get the total memory in MB.
 
@@ -113,6 +126,7 @@ class _Properties(TypedDict):
     python_version: str
     node_version: str | None
     bun_version: str | None
+    reflex_enterprise_version: str | None
     cpu_count: int
     memory: int
     cpu_info: dict
@@ -166,6 +180,7 @@ def _get_event_defaults() -> _DefaultEvent | None:
             "bun_version": (
                 str(bun_version) if (bun_version := get_bun_version()) else None
             ),
+            "reflex_enterprise_version": get_reflex_enterprise_version(),
             "cpu_count": get_cpu_count(),
             "memory": get_memory(),
             "cpu_info": dataclasses.asdict(cpuinfo) if cpuinfo else {},
