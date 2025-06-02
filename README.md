@@ -23,7 +23,7 @@
 > [!NOTE]
 > 🚀 **Try [Reflex Build](https://build.reflex.dev/)** – our AI-powered app builder that generates full-stack Reflex applications in seconds.
 
---- 
+---
 
 # Introduction
 
@@ -36,7 +36,6 @@ Key features:
 - **Deploy Instantly** - After building, deploy your app with a [single command](https://reflex.dev/docs/hosting/deploy-quick-start/) or host it on your own server.
 
 See our [architecture page](https://reflex.dev/blog/2024-03-21-reflex-architecture/#the-reflex-architecture) to learn how Reflex works under the hood.
-
 
 ## ⚙️ Installation
 
