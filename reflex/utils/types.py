@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import dataclasses
 import inspect
+import sys
 import types
 from collections.abc import Callable, Iterable, Mapping, Sequence
 from functools import cached_property, lru_cache, wraps
@@ -21,6 +22,7 @@ from typing import (  # noqa: UP035
     NoReturn,
     Tuple,
     Union,
+    _eval_type,  # pyright: ignore [reportAttributeAccessIssue]
     _GenericAlias,  # pyright: ignore [reportAttributeAccessIssue]
     _SpecialGenericAlias,  # pyright: ignore [reportAttributeAccessIssue]
     get_args,
@@ -85,11 +87,7 @@ PrimitiveToAnnotation = {
     dict: Dict,  # noqa: UP006
 }
 
-RESERVED_BACKEND_VAR_NAMES = {
-    "_abc_impl",
-    "_backend_vars",
-    "_was_touched",
-}
+RESERVED_BACKEND_VAR_NAMES = {"_abc_impl", "_backend_vars", "_was_touched", "_mixin"}
 
 
 class Unset:
@@ -251,7 +249,11 @@ def is_optional(cls: GenericType) -> bool:
     Returns:
         Whether the class is an Optional.
     """
-    return is_union(cls) and type(None) in get_args(cls)
+    return (
+        cls is None
+        or cls is type(None)
+        or (is_union(cls) and type(None) in get_args(cls))
+    )
 
 
 def is_classvar(a_type: Any) -> bool:
@@ -1118,3 +1120,107 @@ def typehint_issubclass(
         )
         if accepted_arg is not Any
     )
+
+
+def resolve_annotations(
+    raw_annotations: Mapping[str, type[Any]], module_name: str | None
+) -> dict[str, type[Any]]:
+    """Partially taken from typing.get_type_hints.
+
+    Resolve string or ForwardRef annotations into type objects if possible.
+
+    Args:
+        raw_annotations: The raw annotations to resolve.
+        module_name: The name of the module.
+
+    Returns:
+        The resolved annotations.
+    """
+    module = sys.modules.get(module_name, None) if module_name is not None else None
+
+    base_globals: dict[str, Any] | None = (
+        module.__dict__ if module is not None else None
+    )
+
+    annotations = {}
+    for name, value in raw_annotations.items():
+        if isinstance(value, str):
+            if sys.version_info == (3, 10, 0):
+                value = ForwardRef(value, is_argument=False)
+            else:
+                value = ForwardRef(value, is_argument=False, is_class=True)
+        try:
+            if sys.version_info >= (3, 13):
+                value = _eval_type(value, base_globals, None, type_params=())
+            else:
+                value = _eval_type(value, base_globals, None)
+        except NameError:
+            # this is ok, it can be fixed with update_forward_refs
+            pass
+        annotations[name] = value
+    return annotations
+
+
+def get_default_value_for_type(t: GenericType) -> Any:
+    """Get the default value of the var.
+
+    Returns:
+        The default value of the var.
+
+    Raises:
+        ImportError: If the var is a dataframe and pandas is not installed.
+    """
+    if is_optional(t):
+        return None
+
+    origin = get_origin(t) if is_generic_alias(t) else t
+    if origin is Literal:
+        args = get_args(t)
+        return args[0] if args else None
+    if safe_issubclass(origin, str):
+        return ""
+    if safe_issubclass(origin, (int, float)):
+        return 0
+    if safe_issubclass(origin, bool):
+        return False
+    if safe_issubclass(origin, list):
+        return []
+    if safe_issubclass(origin, Mapping):
+        return {}
+    if safe_issubclass(origin, tuple):
+        return ()
+    if is_dataframe(origin):
+        try:
+            import pandas as pd
+
+            return pd.DataFrame()
+        except ImportError as e:
+            msg = "Please install pandas to use dataframes in your app."
+            raise ImportError(msg) from e
+    if safe_issubclass(origin, set):
+        return set()
+    return None
+
+
+IMMUTABLE_TYPES = (
+    int,
+    float,
+    bool,
+    str,
+    bytes,
+    frozenset,
+    tuple,
+    type(None),
+)
+
+
+def is_immutable(i: Any) -> bool:
+    """Check if a value is immutable.
+
+    Args:
+        i: The value to check.
+
+    Returns:
+        Whether the value is immutable.
+    """
+    return isinstance(i, IMMUTABLE_TYPES)
