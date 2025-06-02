@@ -1293,6 +1293,16 @@ class App(MiddlewareMixin, LifespanMixin):
         # Track imports found.
         all_imports = {}
 
+        # Compile custom components.
+        (
+            custom_components_output,
+            custom_components_result,
+            custom_components_imports,
+        ) = compiler.compile_components(dict.fromkeys(CUSTOM_COMPONENTS.values()))
+        compile_results.append((custom_components_output, custom_components_result))
+        all_imports.update(custom_components_imports)
+        progress.advance(task)
+
         # This has to happen before compiling stateful components as that
         # prevents recursive functions from reaching all components.
         for component in self._pages.values():
@@ -1465,16 +1475,6 @@ class App(MiddlewareMixin, LifespanMixin):
         )
         progress.advance(task)
 
-        # Compile custom components.
-        (
-            custom_components_output,
-            custom_components_result,
-            custom_components_imports,
-        ) = compiler.compile_components(dict.fromkeys(CUSTOM_COMPONENTS.values()))
-        compile_results.append((custom_components_output, custom_components_result))
-        all_imports.update(custom_components_imports)
-
-        progress.advance(task)
         progress.stop()
 
         if dry_run:
