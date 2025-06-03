@@ -342,8 +342,6 @@ def _check_app_name(config: Config):
     Raises:
         RuntimeError: If the app name is not set, folder doesn't exist, or doesn't match config.
     """
-    from reflex.utils.exec import is_testing_env
-
     # Check if app_name is set
     if not config.app_name:
         msg = (
@@ -352,8 +350,13 @@ def _check_app_name(config: Config):
         )
         raise RuntimeError(msg)
 
-    # Skip folder structure validation if using custom app_module_import or in testing environment
-    if config.app_module_import is not None or is_testing_env():
+    # Skip folder structure validation if using custom app_module_import
+    if config.app_module_import is not None:
+        return
+
+    # Skip folder structure validation if running under pytest
+    # (integration tests create apps dynamically and don't need this validation)
+    if "pytest" in sys.modules:
         return
 
     # Check folder structure matches app_name
