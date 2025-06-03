@@ -351,9 +351,6 @@ def _check_app_name(config: Config):
         )
         raise RuntimeError(msg)
 
-    if config.app_module_import is not None:
-        return
-
     from reflex.utils.misc import with_cwd_in_syspath
 
     with with_cwd_in_syspath():
@@ -362,7 +359,11 @@ def _check_app_name(config: Config):
         except ModuleNotFoundError:
             mod_spec = None
         if mod_spec is None:
-            msg = f"Module '{config.module}' not found. Ensure app_name='{config.app_name}' in rxconfig.py matches your folder structure."
+            msg = f"Module {config.module} not found. "
+            if config.app_module_import is not None:
+                msg += f"Ensure app_module_import='{config.app_module_import}' in rxconfig.py matches your folder structure."
+            else:
+                msg += f"Ensure app_name='{config.app_name}' in rxconfig.py matches your folder structure."
             raise ModuleNotFoundError(msg)
 
 
