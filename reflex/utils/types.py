@@ -895,6 +895,12 @@ def is_backend_base_variable(name: str, cls: type) -> bool:
         if hint == ClassVar:
             return False
 
+        from reflex.config import get_config
+        from reflex.vars.base import Field
+
+        if get_config().state_explicit_vars and get_origin(hint) is not Field:
+            return False
+
     if name in cls.inherited_backend_vars:
         return False
 

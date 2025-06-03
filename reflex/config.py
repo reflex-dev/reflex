@@ -326,6 +326,9 @@ class Config(Base):
 
     _prefixes: ClassVar[list[str]] = ["REFLEX_"]
 
+    # Whether to only make rx.Field annotated state attributes base vars
+    state_explicit_vars: bool = False
+
     def __init__(self, *args, **kwargs):
         """Initialize the config values.
 
