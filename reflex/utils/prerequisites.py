@@ -341,6 +341,7 @@ def _check_app_name(config: Config):
 
     Raises:
         RuntimeError: If the app name is not set, folder doesn't exist, or doesn't match config.
+        ModuleNotFoundError: If the app_name is not importable (i.e., not a valid Python package, folder structure being wrong).
     """
     # Check if app_name is set
     if not config.app_name:
@@ -350,25 +351,19 @@ def _check_app_name(config: Config):
         )
         raise RuntimeError(msg)
 
-    # Skip folder structure validation if using custom app_module_import
     if config.app_module_import is not None:
         return
 
-    # Skip folder structure validation if running under pytest
-    # (integration tests create apps dynamically and don't need this validation)
-    if "pytest" in sys.modules:
-        return
+    from reflex.utils.misc import with_cwd_in_syspath
 
-    # Check folder structure matches app_name
-    app_folder = Path.cwd() / config.app_name
-    if not app_folder.exists():
-        msg = f"App folder '{config.app_name}' not found. Check app_name in rxconfig.py matches your folder name."
-        raise RuntimeError(msg)
-
-    app_main_file = app_folder / f"{config.app_name}.py"
-    if not app_main_file.exists():
-        msg = f"App file '{config.app_name}/{config.app_name}.py' not found. Check app_name in rxconfig.py matches your file name."
-        raise RuntimeError(msg)
+    with with_cwd_in_syspath():
+        try:
+            mod_spec = importlib.util.find_spec(config.module)
+        except ModuleNotFoundError:
+            mod_spec = None
+        if mod_spec is None:
+            msg = f"Module '{config.module}' not found. Ensure app_name='{config.app_name}' in rxconfig.py matches your folder structure."
+            raise ModuleNotFoundError(msg)
 
 
 def get_app(reload: bool = False) -> ModuleType:
