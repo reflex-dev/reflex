@@ -350,6 +350,31 @@ def _check_app_name(config: Config):
         raise RuntimeError(msg)
 
 
+def _check_app_folder_structure(config: Config):
+    """Check if the app folder structure matches the app_name in config.
+
+    Args:
+        config: The config object.
+
+    Raises:
+        RuntimeError: If the app folder doesn't exist or doesn't match config.
+    """
+    # Skip validation if using custom app_module_import
+    if config.app_module_import is not None:
+        return
+
+    app_folder = Path.cwd() / config.app_name
+    app_main_file = app_folder / f"{config.app_name}.py"
+
+    if not app_folder.exists():
+        msg = f"App folder '{config.app_name}' not found. Check that app_name in rxconfig.py matches your folder name."
+        raise RuntimeError(msg)
+
+    if not app_main_file.exists():
+        msg = f"App file '{config.app_name}/{config.app_name}.py' not found. Check that app_name in rxconfig.py matches your file name."
+        raise RuntimeError(msg)
+
+
 def get_app(reload: bool = False) -> ModuleType:
     """Get the app module based on the default config.
 
@@ -368,6 +393,7 @@ def get_app(reload: bool = False) -> ModuleType:
         config = get_config()
 
         _check_app_name(config)
+        _check_app_folder_structure(config)
 
         module = config.module
         sys.path.insert(0, str(Path.cwd()))
