@@ -343,7 +343,6 @@ def _check_app_name(config: Config):
         RuntimeError: If the app name is not set, folder doesn't exist, or doesn't match config.
         ModuleNotFoundError: If the app_name is not importable (i.e., not a valid Python package, folder structure being wrong).
     """
-    # Check if app_name is set
     if not config.app_name:
         msg = (
             "Cannot get the app module because `app_name` is not set in rxconfig! "
