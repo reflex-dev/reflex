@@ -49,7 +49,7 @@ Add this to your Claude Desktop configuration file:
 claude mcp add --transport sse reflex https://reflex-mcp-server.fly.dev/sse
 ```
 
-### Windsurf/Cascade
+### Cursor/Windsurf
 Create `.vscode/mcp.json` in your project:
 
 ```json
