@@ -15,6 +15,8 @@ from rich.progress import MofNCompleteColumn, Progress, TimeElapsedColumn
 from rich.prompt import Prompt
 
 from reflex.constants import LogLevel
+from reflex.constants.base import Reflex
+from reflex.utils.decorator import once
 
 # Console for pretty printing.
 _console = Console()
@@ -92,6 +94,51 @@ def print(msg: str, dedupe: bool = False, **kwargs):
     _console.print(msg, **kwargs)
 
 
+@once
+def log_file_console():
+    """Create a console that logs to a file.
+
+    Returns:
+        A Console object that logs to a file.
+    """
+    from reflex.environment import environment
+
+    if not (env_log_file := environment.REFLEX_LOG_FILE.get()):
+        subseconds = int((time.time() % 1) * 1000)
+        timestamp = time.strftime("%Y-%m-%d_%H-%M-%S") + f"_{subseconds:03d}"
+        log_file = Reflex.DIR / "logs" / (timestamp + ".log")
+        log_file.parent.mkdir(parents=True, exist_ok=True)
+    else:
+        log_file = env_log_file
+    if log_file.exists():
+        log_file.unlink()
+    log_file.touch()
+    return Console(file=log_file.open("a", encoding="utf-8"))
+
+
+@once
+def should_use_log_file_console() -> bool:
+    """Check if the log file console should be used.
+
+    Returns:
+        True if the log file console should be used, False otherwise.
+    """
+    from reflex.environment import environment
+
+    return environment.REFLEX_ENABLE_FULL_LOGGING.get()
+
+
+def print_to_log_file(msg: str, dedupe: bool = False, **kwargs):
+    """Print a message to the log file.
+
+    Args:
+        msg: The message to print.
+        dedupe: If True, suppress multiple console logs of print message.
+        kwargs: Keyword arguments to pass to the print function.
+    """
+    log_file_console().print(msg, **kwargs)
+
+
 def debug(msg: str, dedupe: bool = False, **kwargs):
     """Print a debug message.
 
@@ -110,6 +157,8 @@ def debug(msg: str, dedupe: bool = False, **kwargs):
             progress.console.print(msg_, **kwargs)
         else:
             print(msg_, **kwargs)
+    if should_use_log_file_console() and kwargs.pop("progress", None) is None:
+        print_to_log_file(f"[purple]Debug: {msg}[/purple]", **kwargs)
 
 
 def info(msg: str, dedupe: bool = False, **kwargs):
@@ -126,6 +175,8 @@ def info(msg: str, dedupe: bool = False, **kwargs):
                 return
             _EMITTED_INFO.add(msg)
         print(f"[cyan]Info: {msg}[/cyan]", **kwargs)
+    if should_use_log_file_console():
+        print_to_log_file(f"[cyan]Info: {msg}[/cyan]", **kwargs)
 
 
 def success(msg: str, dedupe: bool = False, **kwargs):
@@ -142,6 +193,8 @@ def success(msg: str, dedupe: bool = False, **kwargs):
                 return
             _EMITTED_SUCCESS.add(msg)
         print(f"[green]Success: {msg}[/green]", **kwargs)
+    if should_use_log_file_console():
+        print_to_log_file(f"[green]Success: {msg}[/green]", **kwargs)
 
 
 def log(msg: str, dedupe: bool = False, **kwargs):
@@ -158,6 +211,8 @@ def log(msg: str, dedupe: bool = False, **kwargs):
                 return
             _EMITTED_LOGS.add(msg)
         _console.log(msg, **kwargs)
+    if should_use_log_file_console():
+        print_to_log_file(msg, **kwargs)
 
 
 def rule(title: str, **kwargs):
@@ -184,6 +239,8 @@ def warn(msg: str, dedupe: bool = False, **kwargs):
                 return
             _EMIITED_WARNINGS.add(msg)
         print(f"[orange1]Warning: {msg}[/orange1]", **kwargs)
+    if should_use_log_file_console():
+        print_to_log_file(f"[orange1]Warning: {msg}[/orange1]", **kwargs)
 
 
 def _get_first_non_framework_frame() -> FrameType | None:
@@ -248,6 +305,8 @@ def deprecate(
         )
         if _LOG_LEVEL <= LogLevel.WARNING:
             print(f"[yellow]DeprecationWarning: {msg}[/yellow]", **kwargs)
+        if should_use_log_file_console():
+            print_to_log_file(f"[yellow]DeprecationWarning: {msg}[/yellow]", **kwargs)
         if dedupe:
             _EMITTED_DEPRECATION_WARNINGS.add(dedupe_key)
 
@@ -266,6 +325,8 @@ def error(msg: str, dedupe: bool = False, **kwargs):
                 return
             _EMITTED_ERRORS.add(msg)
         print(f"[red]{msg}[/red]", **kwargs)
+    if should_use_log_file_console():
+        print_to_log_file(f"[red]{msg}[/red]", **kwargs)
 
 
 def ask(

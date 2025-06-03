@@ -11,7 +11,7 @@ from packaging import version
 from pytest_mock import MockerFixture
 
 from reflex import constants
-from reflex.config import environment
+from reflex.environment import environment
 from reflex.event import EventHandler
 from reflex.state import BaseState
 from reflex.utils import build, prerequisites, types

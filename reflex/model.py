@@ -21,7 +21,8 @@ import sqlalchemy.orm
 from alembic.runtime.migration import MigrationContext
 
 from reflex.base import Base
-from reflex.config import environment, get_config
+from reflex.config import get_config
+from reflex.environment import environment
 from reflex.utils import console
 from reflex.utils.compat import sqlmodel, sqlmodel_field_has_primary_key
 

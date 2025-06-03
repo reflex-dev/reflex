@@ -17,7 +17,8 @@ from redis.asyncio.client import PubSub
 from typing_extensions import override
 
 from reflex import constants
-from reflex.config import environment, get_config
+from reflex.config import get_config
+from reflex.environment import environment
 from reflex.state import BaseState, _split_substate_key, _substate_key
 from reflex.utils import console, path_ops, prerequisites
 from reflex.utils.exceptions import (
