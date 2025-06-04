@@ -2,7 +2,7 @@
 
 import httpx
 
-from reflex.config import environment
+from reflex.environment import environment
 from reflex.utils import console, net
 from reflex.utils.decorator import once
 

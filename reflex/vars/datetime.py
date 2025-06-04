@@ -29,7 +29,8 @@ def raise_var_type_error():
     Raises:
         VarTypeError: Cannot compare a datetime object with a non-datetime object.
     """
-    raise VarTypeError("Cannot compare a datetime object with a non-datetime object.")
+    msg = "Cannot compare a datetime object with a non-datetime object."
+    raise VarTypeError(msg)
 
 
 class DateTimeVar(Var[DATETIME_T], python_types=(datetime, date)):

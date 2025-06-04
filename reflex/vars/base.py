@@ -15,6 +15,7 @@ import string
 import uuid
 import warnings
 from collections.abc import Callable, Coroutine, Iterable, Mapping, Sequence
+from decimal import Decimal
 from types import CodeType, FunctionType
 from typing import (  # noqa: UP035
     TYPE_CHECKING,
@@ -39,7 +40,6 @@ from typing import (  # noqa: UP035
 )
 
 from rich.markup import escape
-from sqlalchemy.orm import DeclarativeBase
 from typing_extensions import deprecated, override
 
 from reflex import constants
@@ -87,6 +87,12 @@ STRING_T = TypeVar("STRING_T", bound=str)
 SEQUENCE_TYPE = TypeVar("SEQUENCE_TYPE", bound=Sequence)
 
 warnings.filterwarnings("ignore", message="fields may not start with an underscore")
+
+_PYDANTIC_VALIDATE_VALUES = "__pydantic_validate_values__"
+
+
+def _pydantic_validator(*args, **kwargs):
+    return None
 
 
 @dataclasses.dataclass(
@@ -170,7 +176,8 @@ class VarData:
         object.__setattr__(self, "components", tuple(components or []))
 
         if hooks and any(hooks.values()):
-            merged_var_data = VarData.merge(self, *hooks.values())
+            # Merge our dependencies first, so they can be referenced.
+            merged_var_data = VarData.merge(*hooks.values(), self)
             if merged_var_data is not None:
                 object.__setattr__(self, "state", merged_var_data.state)
                 object.__setattr__(self, "field_name", merged_var_data.field_name)
@@ -232,17 +239,16 @@ class VarData:
         deps = [dep for var_data in all_var_datas for dep in var_data.deps]
 
         positions = list(
-            {
+            dict.fromkeys(
                 var_data.position
                 for var_data in all_var_datas
                 if var_data.position is not None
-            }
+            )
         )
         if positions:
             if len(positions) > 1:
-                raise exceptions.ReflexError(
-                    f"Cannot merge var data with different positions: {positions}"
-                )
+                msg = f"Cannot merge var data with different positions: {positions}"
+                raise exceptions.ReflexError(msg)
             position = positions[0]
         else:
             position = None
@@ -362,11 +368,26 @@ def can_use_in_object_var(cls: GenericType) -> bool:
     )
 
 
+class MetaclassVar(type):
+    """Metaclass for the Var class."""
+
+    def __setattr__(cls, name: str, value: Any):
+        """Set an attribute on the class.
+
+        Args:
+            name: The name of the attribute.
+            value: The value of the attribute.
+        """
+        super().__setattr__(
+            name, value if name != _PYDANTIC_VALIDATE_VALUES else _pydantic_validator
+        )
+
+
 @dataclasses.dataclass(
     eq=False,
     frozen=True,
 )
-class Var(Generic[VAR_TYPE]):
+class Var(Generic[VAR_TYPE], metaclass=MetaclassVar):
     """Base class for immutable vars."""
 
     # The name of the var.
@@ -489,14 +510,12 @@ class Var(Generic[VAR_TYPE]):
             TypeError: If _js_expr is not a string.
         """
         if not isinstance(self._js_expr, str):
-            raise TypeError(
-                f"Expected _js_expr to be a string, got value {self._js_expr!r} of type {type(self._js_expr).__name__}"
-            )
+            msg = f"Expected _js_expr to be a string, got value {self._js_expr!r} of type {type(self._js_expr).__name__}"
+            raise TypeError(msg)
 
         if self._var_data is not None and not isinstance(self._var_data, VarData):
-            raise TypeError(
-                f"Expected _var_data to be a VarData, got value {self._var_data!r} of type {type(self._var_data).__name__}"
-            )
+            msg = f"Expected _var_data to be a VarData, got value {self._var_data!r} of type {type(self._var_data).__name__}"
+            raise TypeError(msg)
 
         # Decode any inline Var markup and apply it to the instance
         _var_data, _js_expr = _decode_var_immutable(self._js_expr)
@@ -575,15 +594,16 @@ class Var(Generic[VAR_TYPE]):
             TypeError: If _var_is_local, _var_is_string, or _var_full_name_needs_state_prefix is not None.
         """
         if kwargs.get("_var_is_local", False) is not False:
-            raise TypeError("The _var_is_local argument is not supported for Var.")
+            msg = "The _var_is_local argument is not supported for Var."
+            raise TypeError(msg)
 
         if kwargs.get("_var_is_string", False) is not False:
-            raise TypeError("The _var_is_string argument is not supported for Var.")
+            msg = "The _var_is_string argument is not supported for Var."
+            raise TypeError(msg)
 
         if kwargs.get("_var_full_name_needs_state_prefix", False) is not False:
-            raise TypeError(
-                "The _var_full_name_needs_state_prefix argument is not supported for Var."
-            )
+            msg = "The _var_full_name_needs_state_prefix argument is not supported for Var."
+            raise TypeError(msg)
         value_with_replaced = dataclasses.replace(
             self,
             _var_type=_var_type or self._var_type,
@@ -629,6 +649,14 @@ class Var(Generic[VAR_TYPE]):
         value: float,
         _var_data: VarData | None = None,
     ) -> LiteralNumberVar[float]: ...
+
+    @overload
+    @classmethod
+    def create(
+        cls,
+        value: Decimal,
+        _var_data: VarData | None = None,
+    ) -> LiteralNumberVar[Decimal]: ...
 
     @overload
     @classmethod
@@ -743,7 +771,10 @@ class Var(Generic[VAR_TYPE]):
     def to(self, output: type[int]) -> NumberVar[int]: ...
 
     @overload
-    def to(self, output: type[int] | type[float]) -> NumberVar: ...
+    def to(self, output: type[float]) -> NumberVar[float]: ...
+
+    @overload
+    def to(self, output: type[Decimal]) -> NumberVar[Decimal]: ...
 
     @overload
     def to(
@@ -817,10 +848,9 @@ class Var(Generic[VAR_TYPE]):
                         new_var_type = var_type
                     else:
                         new_var_type = var_type or current_var_type
-                    to_operation_return = var_subclass.to_var_subclass.create(
+                    return var_subclass.to_var_subclass.create(  # pyright: ignore [reportReturnType]
                         value=self, _var_type=new_var_type
                     )
-                    return to_operation_return  # pyright: ignore [reportReturnType]
 
             # If we can't determine the first argument, we just replace the _var_type.
             if not safe_issubclass(output, Var) or var_type is None:
@@ -907,7 +937,8 @@ class Var(Generic[VAR_TYPE]):
             fixed_type = unionize(*(type(arg) for arg in args))
 
         if not inspect.isclass(fixed_type):
-            raise TypeError(f"Unsupported type {var_type} for guess_type.")
+            msg = f"Unsupported type {var_type} for guess_type."
+            raise TypeError(msg)
 
         if fixed_type is None:
             return self.to(None)
@@ -959,9 +990,8 @@ class Var(Generic[VAR_TYPE]):
 
                 return pd.DataFrame()
             except ImportError as e:
-                raise ImportError(
-                    "Please install pandas to use dataframes in your app."
-                ) from e
+                msg = "Please install pandas to use dataframes in your app."
+                raise ImportError(msg) from e
         return set() if safe_issubclass(type_, set) else None
 
     def _get_setter_name(self, include_state: bool = True) -> str:
@@ -979,7 +1009,7 @@ class Var(Generic[VAR_TYPE]):
             return setter
         if not include_state or var_data.state == "":
             return setter
-        return ".".join((var_data.state, setter))
+        return var_data.state + "." + setter
 
     def _get_setter(self) -> Callable[[BaseState, Any], None]:
         """Get the var's setter function.
@@ -1315,9 +1345,8 @@ class Var(Generic[VAR_TYPE]):
                     self,
                     f"access the item '{key}'",
                 )
-            raise TypeError(
-                f"Var of type {self._var_type} does not support item access."
-            )
+            msg = f"Var of type {self._var_type} does not support item access."
+            raise TypeError(msg)
 
         def __getattr__(self, name: str):
             """Get an attribute of the var.
@@ -1333,14 +1362,15 @@ class Var(Generic[VAR_TYPE]):
             # noqa: DAR101 self
             """
             if name.startswith("_"):
-                raise VarAttributeError(f"Attribute {name} not found.")
+                msg = f"Attribute {name} not found."
+                raise VarAttributeError(msg)
 
             if name == "contains":
-                raise TypeError(
-                    f"Var of type {self._var_type} does not support contains check."
-                )
+                msg = f"Var of type {self._var_type} does not support contains check."
+                raise TypeError(msg)
             if name == "reverse":
-                raise TypeError("Cannot reverse non-list var.")
+                msg = "Cannot reverse non-list var."
+                raise TypeError(msg)
 
             if self._var_type is Any:
                 raise exceptions.UntypedVarError(
@@ -1348,9 +1378,8 @@ class Var(Generic[VAR_TYPE]):
                     f"access the attribute '{name}'",
                 )
 
-            raise VarAttributeError(
-                f"The State var {escape(self._js_expr)} of type {escape(str(self._var_type))} has no attribute '{name}' or may have been annotated wrongly.",
-            )
+            msg = f"The State var {escape(self._js_expr)} of type {escape(str(self._var_type))} has no attribute '{name}' or may have been annotated wrongly."
+            raise VarAttributeError(msg)
 
         def __bool__(self) -> bool:
             """Raise exception if using Var in a boolean context.
@@ -1360,10 +1389,11 @@ class Var(Generic[VAR_TYPE]):
 
             # noqa: DAR101 self
             """
-            raise VarTypeError(
+            msg = (
                 f"Cannot convert Var {str(self)!r} to bool for use with `if`, `and`, `or`, and `not`. "
                 "Instead use `rx.cond` and bitwise operators `&` (and), `|` (or), `~` (invert)."
             )
+            raise VarTypeError(msg)
 
         def __iter__(self) -> Any:
             """Raise exception if using Var in an iterable context.
@@ -1373,9 +1403,8 @@ class Var(Generic[VAR_TYPE]):
 
             # noqa: DAR101 self
             """
-            raise VarTypeError(
-                f"Cannot iterate over Var {str(self)!r}. Instead use `rx.foreach`."
-            )
+            msg = f"Cannot iterate over Var {str(self)!r}. Instead use `rx.foreach`."
+            raise VarTypeError(msg)
 
         def __contains__(self, _: Any) -> Var:
             """Override the 'in' operator to alert the user that it is not supported.
@@ -1385,9 +1414,10 @@ class Var(Generic[VAR_TYPE]):
 
             # noqa: DAR101 self
             """
-            raise VarTypeError(
+            msg = (
                 "'in' operator not supported for Var types, use Var.contains() instead."
             )
+            raise VarTypeError(msg)
 
 
 OUTPUT = TypeVar("OUTPUT", bound=Var)
@@ -1489,9 +1519,8 @@ class LiteralVar(Var):
         ]
 
         if not possible_bases:
-            raise TypeError(
-                f"LiteralVar subclass {cls} must have a base class that is a subclass of Var and not LiteralVar."
-            )
+            msg = f"LiteralVar subclass {cls} must have a base class that is a subclass of Var and not LiteralVar."
+            raise TypeError(msg)
 
         var_subclasses = [
             var_subclass
@@ -1500,14 +1529,12 @@ class LiteralVar(Var):
         ]
 
         if not var_subclasses:
-            raise TypeError(
-                f"LiteralVar {cls} must have a base class annotated with `python_types`."
-            )
+            msg = f"LiteralVar {cls} must have a base class annotated with `python_types`."
+            raise TypeError(msg)
 
         if len(var_subclasses) != 1:
-            raise TypeError(
-                f"LiteralVar {cls} must have exactly one base class annotated with `python_types`."
-            )
+            msg = f"LiteralVar {cls} must have exactly one base class annotated with `python_types`."
+            raise TypeError(msg)
 
         var_subclass = var_subclasses[0]
 
@@ -1597,9 +1624,8 @@ class LiteralVar(Var):
         if isinstance(value, range):
             return ArrayVar.range(value.start, value.stop, value.step)
 
-        raise TypeError(
-            f"Unsupported type {type(value)} for LiteralVar. Tried to create a LiteralVar from {value}."
-        )
+        msg = f"Unsupported type {type(value)} for LiteralVar. Tried to create a LiteralVar from {value}."
+        raise TypeError(msg)
 
     if not TYPE_CHECKING:
         create = _create_literal_var
@@ -1609,9 +1635,8 @@ class LiteralVar(Var):
 
     @property
     def _var_value(self) -> Any:
-        raise NotImplementedError(
-            "LiteralVar subclasses must implement the _var_value property."
-        )
+        msg = "LiteralVar subclasses must implement the _var_value property."
+        raise NotImplementedError(msg)
 
     def json(self) -> str:
         """Serialize the var to a JSON string.
@@ -1619,9 +1644,8 @@ class LiteralVar(Var):
         Raises:
             NotImplementedError: If the method is not implemented.
         """
-        raise NotImplementedError(
-            "LiteralVar subclasses must implement the json method."
-        )
+        msg = "LiteralVar subclasses must implement the json method."
+        raise NotImplementedError(msg)
 
 
 @serializers.serializer
@@ -1848,10 +1872,11 @@ class cached_property:  # noqa: N801
             owner.__del__ = delete_property
 
         elif name != self._attrname:
-            raise TypeError(
+            msg = (
                 "Cannot assign the same cached_property to two different names "
                 f"({self._attrname!r} and {name!r})."
             )
+            raise TypeError(msg)
 
     def __get__(self, instance: Any, owner: type | None = None):
         """Get the cached property.
@@ -1867,9 +1892,8 @@ class cached_property:  # noqa: N801
             TypeError: If the class does not have __set_name__.
         """
         if self._attrname is None:
-            raise TypeError(
-                "Cannot use cached_property on a class without __set_name__."
-            )
+            msg = "Cannot use cached_property on a class without __set_name__."
+            raise TypeError(msg)
         cached_field_name = "_reflex_cache_" + self._attrname
         try:
             unique_id = object.__getattribute__(instance, cached_field_name)
@@ -2131,7 +2155,8 @@ class ComputedVar(Var[RETURN_TYPE]):
         )
 
         if kwargs:
-            raise TypeError(f"Unexpected keyword arguments: {tuple(kwargs)}")
+            msg = f"Unexpected keyword arguments: {tuple(kwargs)}"
+            raise TypeError(msg)
 
         if backend is None:
             backend = fget.__name__.startswith("_")
@@ -2206,9 +2231,8 @@ class ComputedVar(Var[RETURN_TYPE]):
         elif isinstance(dep, str) and dep != "":
             deps.setdefault(None, set()).add(dep)
         else:
-            raise TypeError(
-                "ComputedVar dependencies must be Var instances or var names (non-empty strings)."
-            )
+            msg = "ComputedVar dependencies must be Var instances or var names (non-empty strings)."
+            raise TypeError(msg)
         return deps
 
     @override
@@ -2249,7 +2273,8 @@ class ComputedVar(Var[RETURN_TYPE]):
 
         if kwargs:
             unexpected_kwargs = ", ".join(kwargs.keys())
-            raise TypeError(f"Unexpected keyword arguments: {unexpected_kwargs}")
+            msg = f"Unexpected keyword arguments: {unexpected_kwargs}"
+            raise TypeError(msg)
 
         return type(self)(**field_values)
 
@@ -2496,10 +2521,11 @@ class ComputedVar(Var[RETURN_TYPE]):
                         (objclass.get_full_name(), self._js_expr)
                     )
                     return
-        raise VarDependencyError(
+        msg = (
             "ComputedVar dependencies must be Var instances with a state and "
             f"field name, got {dep!r}."
         )
+        raise VarDependencyError(msg)
 
     def _determine_var_type(self) -> type:
         """Get the type of the var.
@@ -2533,8 +2559,6 @@ class ComputedVar(Var[RETURN_TYPE]):
 
 class DynamicRouteVar(ComputedVar[str | list[str]]):
     """A ComputedVar that represents a dynamic route."""
-
-    pass
 
 
 async def _default_async_computed_var(_self: BaseState) -> Any:
@@ -2650,23 +2674,21 @@ class AsyncComputedVar(ComputedVar[RETURN_TYPE]):
                 return value
 
             return _awaitable_result()
-        else:
-            # handle caching
-            async def _awaitable_result(instance: BaseState = instance) -> RETURN_TYPE:
-                if not hasattr(instance, self._cache_attr) or self.needs_update(
-                    instance
-                ):
-                    # Set cache attr on state instance.
-                    setattr(instance, self._cache_attr, await self.fget(instance))
-                    # Ensure the computed var gets serialized to redis.
-                    instance._was_touched = True
-                    # Set the last updated timestamp on the state instance.
-                    setattr(instance, self._last_updated_attr, datetime.datetime.now())
-                value = getattr(instance, self._cache_attr)
-                self._check_deprecated_return_type(instance, value)
-                return value
 
-            return _awaitable_result()
+        # handle caching
+        async def _awaitable_result(instance: BaseState = instance) -> RETURN_TYPE:
+            if not hasattr(instance, self._cache_attr) or self.needs_update(instance):
+                # Set cache attr on state instance.
+                setattr(instance, self._cache_attr, await self.fget(instance))
+                # Ensure the computed var gets serialized to redis.
+                instance._was_touched = True
+                # Set the last updated timestamp on the state instance.
+                setattr(instance, self._last_updated_attr, datetime.datetime.now())
+            value = getattr(instance, self._cache_attr)
+            self._check_deprecated_return_type(instance, value)
+            return value
+
+        return _awaitable_result()
 
     @property
     def fget(self) -> Callable[[BaseState], Coroutine[None, None, RETURN_TYPE]]:
@@ -2682,6 +2704,27 @@ if TYPE_CHECKING:
     BASE_STATE = TypeVar("BASE_STATE", bound=BaseState)
 
 
+class _ComputedVarDecorator(Protocol):
+    """A protocol for the ComputedVar decorator."""
+
+    @overload
+    def __call__(
+        self,
+        fget: Callable[[BASE_STATE], Coroutine[Any, Any, RETURN_TYPE]],
+    ) -> AsyncComputedVar[RETURN_TYPE]: ...
+
+    @overload
+    def __call__(
+        self,
+        fget: Callable[[BASE_STATE], RETURN_TYPE],
+    ) -> ComputedVar[RETURN_TYPE]: ...
+
+    def __call__(
+        self,
+        fget: Callable[[BASE_STATE], Any],
+    ) -> ComputedVar[Any]: ...
+
+
 @overload
 def computed_var(
     fget: None = None,
@@ -2692,7 +2735,20 @@ def computed_var(
     interval: datetime.timedelta | int | None = None,
     backend: bool | None = None,
     **kwargs,
-) -> Callable[[Callable[[BASE_STATE], RETURN_TYPE]], ComputedVar[RETURN_TYPE]]: ...  # pyright: ignore [reportInvalidTypeVarUse]
+) -> _ComputedVarDecorator: ...
+
+
+@overload
+def computed_var(
+    fget: Callable[[BASE_STATE], Coroutine[Any, Any, RETURN_TYPE]],
+    initial_value: RETURN_TYPE | types.Unset = types.Unset(),
+    cache: bool = True,
+    deps: list[str | Var] | None = None,
+    auto_deps: bool = True,
+    interval: datetime.timedelta | int | None = None,
+    backend: bool | None = None,
+    **kwargs,
+) -> AsyncComputedVar[RETURN_TYPE]: ...
 
 
 @overload
@@ -2739,10 +2795,12 @@ def computed_var(
         ComputedVarSignatureError: If the getter function has more than one argument.
     """
     if cache is False and interval is not None:
-        raise ValueError("Cannot set update interval without caching.")
+        msg = "Cannot set update interval without caching."
+        raise ValueError(msg)
 
     if cache is False and (deps is not None or auto_deps is False):
-        raise VarDependencyError("Cannot track dependencies without caching.")
+        msg = "Cannot track dependencies without caching."
+        raise VarDependencyError(msg)
 
     if fget is not None:
         sign = inspect.signature(fget)
@@ -2964,7 +3022,8 @@ def get_to_operation(var_subclass: type[Var]) -> type[ToOperation]:
         if saved_var_subclass.var_subclass is var_subclass
     ]
     if not possible_classes:
-        raise ValueError(f"Could not find ToOperation for {var_subclass}.")
+        msg = f"Could not find ToOperation for {var_subclass}."
+        raise ValueError(msg)
     return possible_classes[0]
 
 
@@ -3105,21 +3164,20 @@ def transform(fn: Callable[[Var], Var]) -> Callable[[Var], Var]:
     origin = get_origin(return_type)
 
     if origin is not Var:
-        raise TypeError(
-            f"Expected return type of {fn.__name__} to be a Var, got {origin}."
-        )
+        msg = f"Expected return type of {fn.__name__} to be a Var, got {origin}."
+        raise TypeError(msg)
 
     generic_args = get_args(return_type)
 
     if not generic_args:
-        raise TypeError(
-            f"Expected Var return type of {fn.__name__} to have a generic type."
-        )
+        msg = f"Expected Var return type of {fn.__name__} to have a generic type."
+        raise TypeError(msg)
 
     generic_type = get_origin(generic_args[0]) or generic_args[0]
 
     if generic_type in dispatchers:
-        raise ValueError(f"Function for {generic_type} already registered.")
+        msg = f"Function for {generic_type} already registered."
+        raise ValueError(msg)
 
     dispatchers[generic_type] = fn
 
@@ -3148,17 +3206,15 @@ def generic_type_to_actual_type_map(
     if generic_origin is not actual_origin:
         if isinstance(generic_origin, TypeVar):
             return {generic_origin: actual_origin}
-        raise TypeError(
-            f"Type mismatch: expected {generic_origin}, got {actual_origin}."
-        )
+        msg = f"Type mismatch: expected {generic_origin}, got {actual_origin}."
+        raise TypeError(msg)
 
     generic_args = get_args(generic_type)
     actual_args = get_args(actual_type)
 
     if len(generic_args) != len(actual_args):
-        raise TypeError(
-            f"Number of generic arguments mismatch: expected {len(generic_args)}, got {len(actual_args)}."
-        )
+        msg = f"Number of generic arguments mismatch: expected {len(generic_args)}, got {len(actual_args)}."
+        raise TypeError(msg)
 
     # call recursively for nested generic types and merge the results
     return {
@@ -3259,28 +3315,26 @@ def dispatch(
         fn_return_origin = get_origin(fn_return) or fn_return
 
         if fn_return_origin is not Var:
-            raise TypeError(
-                f"Expected return type of {fn.__name__} to be a Var, got {fn_return}."
-            )
+            msg = f"Expected return type of {fn.__name__} to be a Var, got {fn_return}."
+            raise TypeError(msg)
 
         fn_return_generic_args = get_args(fn_return)
 
         if not fn_return_generic_args:
-            raise TypeError(f"Expected generic type of {fn_return} to be a type.")
+            msg = f"Expected generic type of {fn_return} to be a type."
+            raise TypeError(msg)
 
         arg_origin = get_origin(fn_first_arg_type) or fn_first_arg_type
 
         if arg_origin is not Var:
-            raise TypeError(
-                f"Expected first argument of {fn.__name__} to be a Var, got {fn_first_arg_type}."
-            )
+            msg = f"Expected first argument of {fn.__name__} to be a Var, got {fn_first_arg_type}."
+            raise TypeError(msg)
 
         arg_generic_args = get_args(fn_first_arg_type)
 
         if not arg_generic_args:
-            raise TypeError(
-                f"Expected generic type of {fn_first_arg_type} to be a type."
-            )
+            msg = f"Expected generic type of {fn_first_arg_type} to be a type."
+            raise TypeError(msg)
 
         arg_type = arg_generic_args[0]
         fn_return_type = fn_return_generic_args[0]
@@ -3318,18 +3372,17 @@ def dispatch(
     ).guess_type()
 
 
-V = TypeVar("V")
-
-BASE_TYPE = TypeVar("BASE_TYPE", bound=Base | None)
-SQLA_TYPE = TypeVar("SQLA_TYPE", bound=DeclarativeBase | None)
-
 if TYPE_CHECKING:
     from _typeshed import DataclassInstance
+    from sqlalchemy.orm import DeclarativeBase
 
+    SQLA_TYPE = TypeVar("SQLA_TYPE", bound=DeclarativeBase | None)
+    BASE_TYPE = TypeVar("BASE_TYPE", bound=Base | None)
     DATACLASS_TYPE = TypeVar("DATACLASS_TYPE", bound=DataclassInstance | None)
+    MAPPING_TYPE = TypeVar("MAPPING_TYPE", bound=Mapping | None)
+    V = TypeVar("V")
 
 FIELD_TYPE = TypeVar("FIELD_TYPE")
-MAPPING_TYPE = TypeVar("MAPPING_TYPE", bound=Mapping | None)
 
 
 class Field(Generic[FIELD_TYPE]):

@@ -1,7 +1,5 @@
 <div align="center">
-<img src="https://raw.githubusercontent.com/reflex-dev/reflex/main/docs/images/reflex_dark.svg#gh-light-mode-only" alt="Reflex Logo" width="300px">
-<img src="https://raw.githubusercontent.com/reflex-dev/reflex/main/docs/images/reflex_light.svg#gh-dark-mode-only" alt="Reflex Logo" width="300px">
-
+<img src="/docs/images/reflex.svg" alt="Reflex Logo" width="300px">
 <hr>
 
 ### **✨ Ứng dụng web hiệu suất cao, tùy chỉnh bằng Python thuần. Deploy trong vài giây. ✨**
@@ -9,6 +7,7 @@
 [![PyPI version](https://badge.fury.io/py/reflex.svg)](https://badge.fury.io/py/reflex)
 ![versions](https://img.shields.io/pypi/pyversions/reflex.svg)
 [![Documentation](https://img.shields.io/badge/Documentation%20-Introduction%20-%20%23007ec6)](https://reflex.dev/docs/getting-started/introduction)
+[![PyPI Downloads](https://static.pepy.tech/badge/reflex)](https://pepy.tech/projects/reflex)
 [![Discord](https://img.shields.io/discord/1029853095527727165?color=%237289da&label=Discord)](https://discord.gg/T5WSbC2YtQ)
 
 </div>
@@ -70,7 +69,7 @@ Bắt đầu với ví dụ: tạo một ứng dụng tạo ảnh bằng [DALL·
 &nbsp;
 
 <div align="center">
-<img src="https://raw.githubusercontent.com/reflex-dev/reflex/main/docs/images/dalle.gif" alt="A frontend wrapper for DALL·E, shown in the process of generating an image." width="550" />
+<img src="/docs/images/dalle.gif" alt="A frontend wrapper for DALL·E, shown in the process of generating an image." width="550" />
 </div>
 
 &nbsp;
@@ -139,7 +138,7 @@ app.add_page(index, title="Reflex:DALL-E")
 ## Hãy phân tích chi tiết.
 
 <div align="center">
-<img src="../images/dalle_colored_code_example.png" alt="Explaining the differences between backend and frontend parts of the DALL-E app." width="900" />
+<img src="/docs/images/dalle_colored_code_example.png" alt="Explaining the differences between backend and frontend parts of the DALL-E app." width="900" />
 </div>
 
 ### **Reflex UI**
@@ -230,7 +229,7 @@ Bạn có thể tạo một ứng dụng nhiều trang bằng cách thêm trang.
 
 Reflex phát hành vào tháng 12/2022 với tên là Pynecone.
 
-Đến tháng 02/2024, chúng tôi tạo ra dịch vụ dưới phiên bản alpha! Trong thời gian này mọi người có thể triển khai ứng dụng hoàn toàn miễn phí. Xem [roadmap](https://github.com/reflex-dev/reflex/issues/2727) để biết thêm chi tiết.
+Từ năm 2025, [Reflex Cloud](https://cloud.reflex.dev) đã ra mắt để cung cấp trải nghiệm lưu trữ tốt nhất cho các ứng dụng Reflex. Chúng tôi sẽ tiếp tục phát triển và triển khai thêm nhiều tính năng mới.
 
 Reflex ra phiên bản mới với các tính năng mới hàng tuần! Hãy :star: star và :eyes: watch repo này để thấy các cập nhật mới nhất.
 
@@ -253,4 +252,4 @@ Chúng tôi luôn sẵn sàng tìm kiếm các contributor, bất kể kinh nghi
 
 ## License
 
-Reflex là mã nguồn mở và sử dụng giấy phép [Apache License 2.0](LICENSE).
+Reflex là mã nguồn mở và sử dụng giấy phép [Apache License 2.0](/LICENSE).

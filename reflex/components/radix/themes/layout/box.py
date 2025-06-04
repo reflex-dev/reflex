@@ -3,8 +3,7 @@
 from __future__ import annotations
 
 from reflex.components.el import elements
-
-from ..base import RadixThemesComponent
+from reflex.components.radix.themes.base import RadixThemesComponent
 
 
 class Box(elements.Div, RadixThemesComponent):

@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-import time
+import asyncio
 from collections.abc import Generator
 
 import pytest
@@ -29,6 +29,14 @@ def ClientSide():
     class ClientSideState(rx.State):
         state_var: str = ""
         input_value: str = ""
+
+        @rx.event
+        def set_state_var(self, value: str):
+            self.state_var = value
+
+        @rx.event
+        def set_input_value(self, value: str):
+            self.input_value = value
 
     class ClientSideSubState(ClientSideState):
         # cookies with default settings
@@ -167,7 +175,7 @@ def driver(client_side: AppHarness) -> Generator[WebDriver, None, None]:
         driver.quit()
 
 
-@pytest.fixture()
+@pytest.fixture
 def local_storage(driver: WebDriver) -> Generator[utils.LocalStorage, None, None]:
     """Get an instance of the local storage helper.
 
@@ -182,7 +190,7 @@ def local_storage(driver: WebDriver) -> Generator[utils.LocalStorage, None, None
     ls.clear()
 
 
-@pytest.fixture()
+@pytest.fixture
 def session_storage(driver: WebDriver) -> Generator[utils.SessionStorage, None, None]:
     """Get an instance of the session storage helper.
 
@@ -430,7 +438,7 @@ async def test_client_side_state(
         "secure": False,
         "value": "c3%20value",
     }
-    time.sleep(2)  # wait for c3 to expire
+    await asyncio.sleep(2)  # wait for c3 to expire
     if not isinstance(driver, Firefox):
         # Note: Firefox does not remove expired cookies Bug 576347
         assert f"{sub_state_name}.c3" not in cookie_info_map(driver)
@@ -684,10 +692,7 @@ async def test_client_side_state(
             _substate_key(token or "", sub_state_name)
         )
         state = root_state.substates[client_side.get_state_name("_client_side_state")]
-        sub_state = state.substates[
-            client_side.get_state_name("_client_side_sub_state")
-        ]
-        return sub_state
+        return state.substates[client_side.get_state_name("_client_side_sub_state")]
 
     async def poll_for_c1_set():
         sub_state = await get_sub_state()

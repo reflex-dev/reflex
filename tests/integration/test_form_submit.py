@@ -1,7 +1,7 @@
 """Integration tests for forms."""
 
+import asyncio
 import functools
-import time
 from collections.abc import Generator
 
 import pytest
@@ -217,7 +217,7 @@ async def test_submit(driver, form_submit: AppHarness):
     debounce_input = driver.find_element(by, "debounce_input")
     debounce_input.send_keys("bar baz")
 
-    time.sleep(1)
+    await asyncio.sleep(1)
 
     prev_url = driver.current_url
 

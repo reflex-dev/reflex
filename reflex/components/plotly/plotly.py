@@ -12,9 +12,9 @@ from reflex.utils.imports import ImportDict, ImportVar
 from reflex.vars.base import LiteralVar, Var
 
 try:
-    from plotly.graph_objects import Figure, layout
+    from plotly.graph_objs import Figure
+    from plotly.graph_objs.layout import Template
 
-    Template = layout.Template
 except ImportError:
     console.warn("Plotly is not installed. Please run `pip install plotly`.")
     Figure = Any
@@ -252,7 +252,7 @@ const extractPoints = (points) => {
             )
         else:
             # Spread the figure dict over props, nothing to merge.
-            tag.special_props.append(Var(_js_expr=f"{{...{figure!s}}}"))
+            tag.special_props.append(Var(_js_expr=f"{figure!s}"))
         return tag
 
 

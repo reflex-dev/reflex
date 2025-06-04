@@ -19,9 +19,9 @@ from reflex.vars.base import Var
 class DrawerComponent(RadixPrimitiveComponent):
     """A Drawer component."""
 
-    library = "vaul"
+    library = "vaul@1.1.2"
 
-    lib_dependencies: list[str] = ["@radix-ui/react-dialog@^1.1.6"]
+    lib_dependencies: list[str] = ["@radix-ui/react-dialog@1.1.14"]
 
 
 LiteralDirectionType = Literal["top", "bottom", "left", "right"]

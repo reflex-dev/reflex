@@ -1,7 +1,5 @@
 <div align="center">
-<img src="https://raw.githubusercontent.com/reflex-dev/reflex/main/docs/images/reflex_dark.svg#gh-light-mode-only" alt="Reflex Logo" width="300px">
-<img src="https://raw.githubusercontent.com/reflex-dev/reflex/main/docs/images/reflex_light.svg#gh-dark-mode-only" alt="Reflex Logo" width="300px">
-
+<img src="/docs/images/reflex.svg" alt="Reflex Logo" width="300px">
 <hr>
 
 ### **✨ Performante, anpassbare Web-Apps in purem Python. Bereitstellung in Sekunden. ✨**
@@ -9,13 +7,14 @@
 [![PyPI version](https://badge.fury.io/py/reflex.svg)](https://badge.fury.io/py/reflex)
 ![versions](https://img.shields.io/pypi/pyversions/reflex.svg)
 [![Documentation](https://img.shields.io/badge/Documentation%20-Introduction%20-%20%23007ec6)](https://reflex.dev/docs/getting-started/introduction)
+[![PyPI Downloads](https://static.pepy.tech/badge/reflex)](https://pepy.tech/projects/reflex)
 [![Discord](https://img.shields.io/discord/1029853095527727165?color=%237289da&label=Discord)](https://discord.gg/T5WSbC2YtQ)
 
 </div>
 
 ---
 
-[English](https://github.com/reflex-dev/reflex/blob/main/README.md) | [简体中文](https://github.com/reflex-dev/reflex/blob/main/docs/zh/zh_cn/README.md) | [繁體中文](https://github.com/reflex-dev/reflex/blob/main/docs/zh/zh_tw/README.md) | [Türkçe](https://github.com/reflex-dev/reflex/blob/main/docs/tr/README.md) | [हिंदी](https://github.com/reflex-dev/reflex/blob/main/docs/in/README.md) | [Português (Brasil)](https://github.com/reflex-dev/reflex/blob/main/docs/pt/pt_br/README.md) | [Italiano](https://github.com/reflex-dev/reflex/blob/main/docs/it/README.md) | [Español](https://github.com/reflex-dev/reflex/blob/main/docs/es/README.md) | [한국어](https://github.com/reflex-dev/reflex/blob/main/docs/kr/README.md) | [日本語](https://github.com/reflex-dev/reflex/blob/main/docs/ja/README.md) | [Deutsch](https://github.com/reflex-dev/reflex/blob/main/docs/de/README.md) | [Persian (پارسی)](https://github.com/reflex-dev/reflex/blob/main/docs/pe/README.md)
+[English](https://github.com/reflex-dev/reflex/blob/main/README.md) | [简体中文](https://github.com/reflex-dev/reflex/blob/main/docs/zh/zh_cn/README.md) | [繁體中文](https://github.com/reflex-dev/reflex/blob/main/docs/zh/zh_tw/README.md) | [Türkçe](https://github.com/reflex-dev/reflex/blob/main/docs/tr/README.md) | [हिंदी](https://github.com/reflex-dev/reflex/blob/main/docs/in/README.md) | [Português (Brasil)](https://github.com/reflex-dev/reflex/blob/main/docs/pt/pt_br/README.md) | [Italiano](https://github.com/reflex-dev/reflex/blob/main/docs/it/README.md) | [Español](https://github.com/reflex-dev/reflex/blob/main/docs/es/README.md) | [한국어](https://github.com/reflex-dev/reflex/blob/main/docs/kr/README.md) | [日本語](https://github.com/reflex-dev/reflex/blob/main/docs/ja/README.md) | [Deutsch](https://github.com/reflex-dev/reflex/blob/main/docs/de/README.md) | [Persian (پارسی)](https://github.com/reflex-dev/reflex/blob/main/docs/pe/README.md) | [Tiếng Việt](https://github.com/reflex-dev/reflex/blob/main/docs/vi/README.md)
 
 ---
 
@@ -70,7 +69,7 @@ Lass uns ein Beispiel durchgehen: die Erstellung einer Benutzeroberfläche für 
 &nbsp;
 
 <div align="center">
-<img src="https://raw.githubusercontent.com/reflex-dev/reflex/main/docs/images/dalle.gif" alt="Eine Benutzeroberfläche für DALL·E, die im Prozess der Bildgenerierung gezeigt wird." width="550" />
+<img src="/docs/images/dalle.gif" alt="Eine Benutzeroberfläche für DALL·E, die im Prozess der Bildgenerierung gezeigt wird." width="550" />
 </div>
 
 &nbsp;
@@ -139,7 +138,7 @@ app.add_page(index, title="Reflex:DALL-E")
 ## Schauen wir uns das mal genauer an.
 
 <div align="center">
-<img src="docs/images/dalle_colored_code_example.png" alt="Erläuterung der Unterschiede zwischen Backend- und Frontend-Teilen der DALL-E-App." width="900" />
+<img src="/docs/images/dalle_colored_code_example.png" alt="Erläuterung der Unterschiede zwischen Backend- und Frontend-Teilen der DALL-E-App." width="900" />
 </div>
 
 ### **Reflex-UI**
@@ -218,7 +217,7 @@ Du kannst eine mehrseitige App erstellen, indem du weitere Seiten hinzufügst.
 
 <div align="center">
 
-📑 [Docs](https://reflex.dev/docs/getting-started/introduction) &nbsp; | &nbsp; 🗞️ [Blog](https://reflex.dev/blog) &nbsp; | &nbsp; 📱 [Komponentenbibliothek](https://reflex.dev/docs/library) &nbsp; | &nbsp; 🖼️ [Galerie](https://reflex.dev/docs/gallery) &nbsp; | &nbsp; 🛸 [Bereitstellung](https://reflex.dev/docs/hosting/deploy-quick-start) &nbsp;
+📑 [Docs](https://reflex.dev/docs/getting-started/introduction) &nbsp; | &nbsp; 🗞️ [Blog](https://reflex.dev/blog) &nbsp; | &nbsp; 📱 [Komponentenbibliothek](https://reflex.dev/docs/library) &nbsp; | &nbsp; 🖼️ [Templates](https://reflex.dev/templates/) &nbsp; | &nbsp; 🛸 [Bereitstellung](https://reflex.dev/docs/hosting/deploy-quick-start) &nbsp;
 
 </div>
 
@@ -226,7 +225,7 @@ Du kannst eine mehrseitige App erstellen, indem du weitere Seiten hinzufügst.
 
 Reflex wurde im Dezember 2022 unter dem Namen Pynecone gestartet.
 
-Ab Februar 2024 befindet sich unser Hosting-Service in der Alpha-Phase! In dieser Zeit kann jeder seine Apps kostenlos bereitstellen. Siehe unsere [Roadmap](https://github.com/reflex-dev/reflex/issues/2727), um zu sehen, was geplant ist.
+Ab 2025 wurde [Reflex Cloud](https://cloud.reflex.dev) gestartet, um die beste Hosting-Erfahrung für Reflex-Apps zu bieten. Wir werden es weiterhin entwickeln und mehr Funktionen implementieren.
 
 Reflex hat wöchentliche Veröffentlichungen und neue Features! Stelle sicher, dass du dieses Repository mit einem :star: Stern markierst und :eyes: beobachtest, um auf dem Laufenden zu bleiben.
 
@@ -248,4 +247,4 @@ Wir suchen aktiv nach Mitwirkenden, unabhängig von deinem Erfahrungslevel oder 
 
 ## Lizenz
 
-Reflex ist Open-Source und lizenziert unter der [Apache License 2.0](LICENSE).
+Reflex ist Open-Source und lizenziert unter der [Apache License 2.0](/LICENSE).

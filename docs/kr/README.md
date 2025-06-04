@@ -1,21 +1,34 @@
 <div align="center">
-<img src="https://raw.githubusercontent.com/reflex-dev/reflex/main/docs/images/reflex_dark.svg#gh-light-mode-only" alt="Reflex Logo" width="300px">
-<img src="https://raw.githubusercontent.com/reflex-dev/reflex/main/docs/images/reflex_light.svg#gh-dark-mode-only" alt="Reflex Logo" width="300px">
-
+<img src="/docs/images/reflex.svg" alt="Reflex Logo" width="300px">
 <hr>
 
 ### **✨ 순수 Python으로 고성능 사용자 정의 웹앱을 만들어 보세요. 몇 초만에 배포 가능합니다. ✨**
 
 [![PyPI version](https://badge.fury.io/py/reflex.svg)](https://badge.fury.io/py/reflex)
 ![versions](https://img.shields.io/pypi/pyversions/reflex.svg)
-[![Documentaiton](https://img.shields.io/badge/Documentation%20-Introduction%20-%20%23007ec6)](https://reflex.dev/docs/getting-started/introduction)
+[![Documentation](https://img.shields.io/badge/Documentation%20-Introduction%20-%20%23007ec6)](https://reflex.dev/docs/getting-started/introduction)
+[![PyPI Downloads](https://static.pepy.tech/badge/reflex)](https://pepy.tech/projects/reflex)
 [![Discord](https://img.shields.io/discord/1029853095527727165?color=%237289da&label=Discord)](https://discord.gg/T5WSbC2YtQ)
 
 </div>
 
 ---
 
-## [English](https://github.com/reflex-dev/reflex/blob/main/README.md) | [简体中文](https://github.com/reflex-dev/reflex/blob/main/docs/zh/zh_cn/README.md) | [繁體中文](https://github.com/reflex-dev/reflex/blob/main/docs/zh/zh_tw/README.md) | [Türkçe](https://github.com/reflex-dev/reflex/blob/main/docs/tr/README.md) | [हिंदी](https://github.com/reflex-dev/reflex/blob/main/docs/in/README.md) | [Português (Brasil)](https://github.com/reflex-dev/reflex/blob/main/docs/pt/pt_br/README.md) | [Italiano](https://github.com/reflex-dev/reflex/blob/main/docs/it/README.md) | [한국어](https://github.com/reflex-dev/reflex/blob/main/docs/kr/README.md) | [日本語](https://github.com/reflex-dev/reflex/blob/main/docs/ja/README.md) | [Deutsch](https://github.com/reflex-dev/reflex/blob/main/docs/de/README.md) | [Persian (پارسی)](https://github.com/reflex-dev/reflex/blob/main/docs/pe/README.md)
+[English](https://github.com/reflex-dev/reflex/blob/main/README.md) | [简体中文](https://github.com/reflex-dev/reflex/blob/main/docs/zh/zh_cn/README.md) | [繁體中文](https://github.com/reflex-dev/reflex/blob/main/docs/zh/zh_tw/README.md) | [Türkçe](https://github.com/reflex-dev/reflex/blob/main/docs/tr/README.md) | [हिंदी](https://github.com/reflex-dev/reflex/blob/main/docs/in/README.md) | [Português (Brasil)](https://github.com/reflex-dev/reflex/blob/main/docs/pt/pt_br/README.md) | [Italiano](https://github.com/reflex-dev/reflex/blob/main/docs/it/README.md) | [Español](https://github.com/reflex-dev/reflex/blob/main/docs/es/README.md) | [한국어](https://github.com/reflex-dev/reflex/blob/main/docs/kr/README.md) | [日本語](https://github.com/reflex-dev/reflex/blob/main/docs/ja/README.md) | [Deutsch](https://github.com/reflex-dev/reflex/blob/main/docs/de/README.md) | [Persian (پارسی)](https://github.com/reflex-dev/reflex/blob/main/docs/pe/README.md) | [Tiếng Việt](https://github.com/reflex-dev/reflex/blob/main/docs/vi/README.md)
+
+---
+
+# Reflex
+
+Reflex는 순수 Python으로 풀스택 웹 앱을 구축하기 위한 라이브러리입니다.
+
+주요 기능:
+
+- **순수 Python** - 앱의 프론트엔드와 백엔드를 모두 Python으로 작성하며, Javascript를 배울 필요가 없습니다.
+- **완전한 유연성** - Reflex는 시작하기 쉽지만, 복잡한 앱으로도 확장할 수 있습니다.
+- **즉시 배포** - 앱을 빌드한 후 [단일 명령어](https://reflex.dev/docs/hosting/deploy-quick-start/)로 배포하거나 자체 서버에서 호스팅할 수 있습니다.
+
+Reflex가 내부적으로 어떻게 작동하는지 알아보려면 [아키텍처 페이지](https://reflex.dev/blog/2024-03-21-reflex-architecture/#the-reflex-architecture)를 참조하세요.
 
 ## ⚙️ 설치
 
@@ -51,12 +64,12 @@ http://localhost:3000 에서 앱이 실행 됩니다.
 
 ## 🫧 예시 앱
 
-예시를 살펴보겠습니다: DALL·E를 중심으로 이미지 생성 UI를 만들어 보겠습니다. 간단하게 하기 위해 OpenAI API를 호출했지만, 이를 로컬에서 실행되는 ML 모델로 대체할 수 있습니다.
+예시를 살펴보겠습니다: [DALL·E](https://platform.openai.com/docs/guides/images/image-generation?context=node)를 중심으로 이미지 생성 UI를 만들어 보겠습니다. 간단하게 하기 위해 [OpenAI API](https://platform.openai.com/docs/api-reference/authentication)를 호출했지만, 이를 로컬에서 실행되는 ML 모델로 대체할 수 있습니다.
 
 &nbsp;
 
 <div align="center">
-<img src="https://raw.githubusercontent.com/reflex-dev/reflex/main/docs/images/dalle.gif" alt="A frontend wrapper for DALL·E, shown in the process of generating an image." width="550" />
+<img src="/docs/images/dalle.gif" alt="A frontend wrapper for DALL·E, shown in the process of generating an image." width="550" />
 </div>
 
 &nbsp;
@@ -123,6 +136,10 @@ app.add_page(index, title="Reflex:DALL-E")
 ```
 
 ## 하나씩 살펴보겠습니다.
+
+<div align="center">
+<img src="/docs/images/dalle_colored_code_example.png" alt="Explaining the differences between backend and frontend parts of the DALL-E app." width="900" />
+</div>
 
 ### **Reflex UI**
 
@@ -201,7 +218,7 @@ app.add_page(index, title="DALL-E")
 
 <div align="center">
 
-📑 [문서](https://reflex.dev/docs/getting-started/introduction) &nbsp; | &nbsp; 🗞️ [블로그](https://reflex.dev/blog) &nbsp; | &nbsp; 📱 [컴포넌트 라이브러리](https://reflex.dev/docs/library) &nbsp; | &nbsp; 🖼️ [갤러리](https://reflex.dev/docs/gallery) &nbsp; | &nbsp; 🛸 [배포](https://reflex.dev/docs/hosting/deploy) &nbsp;
+📑 [문서](https://reflex.dev/docs/getting-started/introduction) &nbsp; | &nbsp; 🗞️ [블로그](https://reflex.dev/blog) &nbsp; | &nbsp; 📱 [컴포넌트 라이브러리](https://reflex.dev/docs/library) &nbsp; | &nbsp; 🖼️ [템플릿](https://reflex.dev/templates/) &nbsp; | &nbsp; 🛸 [배포](https://reflex.dev/docs/hosting/deploy-quick-start) &nbsp;
 
 </div>
 
@@ -209,12 +226,7 @@ app.add_page(index, title="DALL-E")
 
 Reflex는 2022년 12월 Pynecone이라는 이름으로 출시되었습니다.
 
-2023년 7월 현재, 우리는 **Public Beta** 상태에 있습니다.
-
-- :white_check_mark: **Public Alpha**: 누구나 Reflex를 설치하고 사용할 수 있습니다. 문제가 발생할 수도 있지만 적극적으로 수정합니다.
-- :large_orange_diamond: **Public Beta**: 비상업적 용도로 충분히 안정적입니다.
-- **Public Hosting Beta**: _선택적으로_, Reflex에서 앱을 배포하고 호스팅할 수 있습니다!
-- **Public** : Reflex는 프로덕션 준비를 마쳤습니다.
+2025년부터 [Reflex Cloud](https://cloud.reflex.dev)가 출시되어 Reflex 앱을 위한 최상의 호스팅 경험을 제공합니다. 우리는 계속해서 개발하고 더 많은 기능을 구현할 예정입니다.
 
 Reflex는 매주 새로운 릴리즈와 기능을 제공합니다! 최신 정보를 확인하려면 :star: Star와 :eyes: Watch를 눌러 이 저장소를 확인하세요.
 
@@ -224,10 +236,16 @@ Reflex는 매주 새로운 릴리즈와 기능을 제공합니다! 최신 정보
 
 - **Discord 참여**: 우리의 [Discord](https://discord.gg/T5WSbC2YtQ)는 Reflex 프로젝트에 대한 도움을 받고 기여하는 방법을 논의하는 최고의 장소입니다.
 - **GitHub Discussions**: 추가하고 싶은 기능이나 혼란스럽거나 해결이 필요한 것들에 대해 이야기하는 좋은 방법입니다.
-- **GitHub Issues**: 이것은 버그를 보고하는 훌륭한 방법입니다. 또한, 기존의 이슈를 해결하고 PR을 제출할 수 있습니다.
+- **GitHub Issues**: [Issues](https://github.com/reflex-dev/reflex/issues)는 버그를 보고하는 훌륭한 방법입니다. 또한, 기존의 이슈를 해결하고 PR을 제출할 수 있습니다.
 
-우리는 능력이나 경험에 상관없이 적극적으로 기여자를 찾고 있습니다.
+우리는 능력이나 경험에 상관없이 적극적으로 기여자를 찾고 있습니다. 기여하려면 [CONTRIBUTING.md](https://github.com/reflex-dev/reflex/blob/main/CONTRIBUTING.md)를 확인하세요.
+
+## 모든 기여자들에게 감사드립니다:
+
+<a href="https://github.com/reflex-dev/reflex/graphs/contributors">
+  <img src="https://contrib.rocks/image?repo=reflex-dev/reflex" />
+</a>
 
 ## License
 
-Reflex는 오픈소스이며 [Apache License 2.0](LICENSE)로 라이선스가 부여됩니다.
+Reflex는 오픈소스이며 [Apache License 2.0](/LICENSE)로 라이선스가 부여됩니다.

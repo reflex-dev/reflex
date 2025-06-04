@@ -8,12 +8,15 @@ from reflex.components.component import Component, ComponentNamespace
 from reflex.components.core.breakpoints import Responsive
 from reflex.components.core.debounce import DebounceInput
 from reflex.components.el import elements
+from reflex.components.radix.themes.base import (
+    LiteralAccentColor,
+    LiteralRadius,
+    RadixThemesComponent,
+)
 from reflex.event import EventHandler, input_event, key_event
 from reflex.utils.types import is_optional
 from reflex.vars.base import Var
 from reflex.vars.number import ternary_operation
-
-from ..base import LiteralAccentColor, LiteralRadius, RadixThemesComponent
 
 LiteralTextFieldSize = Literal["1", "2", "3"]
 LiteralTextFieldVariant = Literal["classic", "surface", "soft"]
@@ -126,6 +129,9 @@ class TextFieldSlot(RadixThemesComponent):
 
     # Override theme color for text field slot
     color_scheme: Var[LiteralAccentColor]
+
+    # Which side of the input the slot should be placed on
+    side: Var[Literal["left", "right"]]
 
 
 class TextField(ComponentNamespace):

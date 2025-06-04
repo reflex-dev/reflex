@@ -243,13 +243,13 @@ export const applyEvent = async (event, socket) => {
   if (event.name == "_set_focus") {
     const ref =
       event.payload.ref in refs ? refs[event.payload.ref] : event.payload.ref;
-    const focus = ref?.current?.focus;
-    if (focus === undefined) {
+    const current = ref?.current;
+    if (current === undefined || current?.focus === undefined) {
       console.error(
         `No element found for ref ${event.payload.ref} in _set_focus`,
       );
     } else {
-      focus();
+      current.focus();
     }
     return false;
   }
@@ -350,7 +350,7 @@ export const applyRestEvent = async (event, socket) => {
   if (event.handler === "uploadFiles") {
     if (event.payload.files === undefined || event.payload.files.length === 0) {
       // Submit the event over the websocket to trigger the event handler.
-      return await applyEvent(Event(event.name), socket);
+      return await applyEvent(Event(event.name, { files: [] }), socket);
     }
 
     // Start upload, but do not wait for it, which would block other events.

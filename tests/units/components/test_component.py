@@ -302,7 +302,7 @@ def test_create_component(component1):
 
 
 @pytest.mark.parametrize(
-    "prop_name,var,expected",
+    ("prop_name", "var", "expected"),
     [
         pytest.param(
             "text",
@@ -539,7 +539,7 @@ def test_get_props(component1, component2):
 
 
 @pytest.mark.parametrize(
-    "text,number",
+    ("text", "number"),
     [
         ("", 0),
         ("test", 1),
@@ -560,7 +560,7 @@ def test_valid_props(component1, text: str, number: int):
 
 
 @pytest.mark.parametrize(
-    "text,number", [("", "bad_string"), (13, 1), ("test", [1, 2, 3])]
+    ("text", "number"), [("", "bad_string"), (13, 1), ("test", [1, 2, 3])]
 )
 def test_invalid_prop_type(component1, text: str, number: int):
     """Test that an invalid prop type raises an error.
@@ -674,7 +674,7 @@ def test_component_create_unallowed_types(children, test_component):
 
 
 @pytest.mark.parametrize(
-    "element, expected",
+    ("element", "expected"),
     [
         (
             (rx.text("first_text"),),
@@ -686,14 +686,14 @@ def test_component_create_unallowed_types(children, test_component):
                 "children": [
                     {
                         "name": "RadixThemesText",
-                        "props": ['as={"p"}'],
+                        "props": ['as:"p"'],
                         "contents": "",
                         "special_props": [],
                         "children": [
                             {
                                 "name": "",
                                 "props": [],
-                                "contents": '{"first_text"}',
+                                "contents": '"first_text"',
                                 "special_props": [],
                                 "children": [],
                                 "autofocus": False,
@@ -716,7 +716,7 @@ def test_component_create_unallowed_types(children, test_component):
                             {
                                 "autofocus": False,
                                 "children": [],
-                                "contents": '{"first_text"}',
+                                "contents": '"first_text"',
                                 "name": "",
                                 "props": [],
                                 "special_props": [],
@@ -724,7 +724,7 @@ def test_component_create_unallowed_types(children, test_component):
                         ],
                         "contents": "",
                         "name": "RadixThemesText",
-                        "props": ['as={"p"}'],
+                        "props": ['as:"p"'],
                         "special_props": [],
                     },
                     {
@@ -733,7 +733,7 @@ def test_component_create_unallowed_types(children, test_component):
                             {
                                 "autofocus": False,
                                 "children": [],
-                                "contents": '{"second_text"}',
+                                "contents": '"second_text"',
                                 "name": "",
                                 "props": [],
                                 "special_props": [],
@@ -741,7 +741,7 @@ def test_component_create_unallowed_types(children, test_component):
                         ],
                         "contents": "",
                         "name": "RadixThemesText",
-                        "props": ['as={"p"}'],
+                        "props": ['as:"p"'],
                         "special_props": [],
                     },
                 ],
@@ -762,7 +762,7 @@ def test_component_create_unallowed_types(children, test_component):
                             {
                                 "autofocus": False,
                                 "children": [],
-                                "contents": '{"first_text"}',
+                                "contents": '"first_text"',
                                 "name": "",
                                 "props": [],
                                 "special_props": [],
@@ -770,7 +770,7 @@ def test_component_create_unallowed_types(children, test_component):
                         ],
                         "contents": "",
                         "name": "RadixThemesText",
-                        "props": ['as={"p"}'],
+                        "props": ['as:"p"'],
                         "special_props": [],
                     },
                     {
@@ -785,7 +785,7 @@ def test_component_create_unallowed_types(children, test_component):
                                             {
                                                 "autofocus": False,
                                                 "children": [],
-                                                "contents": '{"second_text"}',
+                                                "contents": '"second_text"',
                                                 "name": "",
                                                 "props": [],
                                                 "special_props": [],
@@ -793,7 +793,7 @@ def test_component_create_unallowed_types(children, test_component):
                                         ],
                                         "contents": "",
                                         "name": "RadixThemesText",
-                                        "props": ['as={"p"}'],
+                                        "props": ['as:"p"'],
                                         "special_props": [],
                                     }
                                 ],
@@ -842,7 +842,6 @@ class C1State(BaseState):
 
     def mock_handler(self, _e: JavascriptInputEvent, _bravo: dict, _charlie: _Obj):
         """Mock handler."""
-        pass
 
 
 def test_component_event_trigger_arbitrary_args():
@@ -911,7 +910,7 @@ def test_custom_component_wrapper():
     assert len(ccomponent.children) == 1
     assert isinstance(ccomponent.children[0], Text)
 
-    component = ccomponent.get_component(ccomponent)
+    component = ccomponent.get_component()
     assert isinstance(component, Box)
 
 
@@ -945,6 +944,22 @@ def test_invalid_event_handler_args(component2, test_state):
         component2.create(on_user_list_changed=test_state.do_something_with_int)
     with pytest.raises(EventHandlerArgTypeMismatchError):
         component2.create(on_user_list_changed=test_state.do_something_with_list_int)
+    with pytest.raises(EventHandlerArgTypeMismatchError):
+        component2.create(
+            on_user_visited_count_changed=test_state.do_something_with_bool()
+        )
+    with pytest.raises(EventHandlerArgTypeMismatchError):
+        component2.create(on_user_list_changed=test_state.do_something_with_int())
+    with pytest.raises(EventHandlerArgTypeMismatchError):
+        component2.create(on_user_list_changed=test_state.do_something_with_list_int())
+
+    component2.create(
+        on_user_visited_count_changed=test_state.do_something_with_bool(False)
+    )
+    component2.create(on_user_list_changed=test_state.do_something_with_int(23))
+    component2.create(
+        on_user_list_changed=test_state.do_something_with_list_int([2321, 321])
+    )
 
     component2.create(on_open=test_state.do_something_with_int)
     component2.create(on_open=test_state.do_something_with_bool)
@@ -1161,12 +1176,12 @@ def test_component_with_only_valid_children(fixture, request):
 
 
 @pytest.mark.parametrize(
-    "component,rendered",
+    ("component", "rendered"),
     [
-        (rx.text("hi"), '<RadixThemesText as={"p"}>\n\n{"hi"}\n</RadixThemesText>'),
+        (rx.text("hi"), 'jsx(\nRadixThemesText,\n{as:"p"},\n"hi"\n,)'),
         (
             rx.box(rx.heading("test", size="3")),
-            '<RadixThemesBox>\n\n<RadixThemesHeading size={"3"}>\n\n{"test"}\n</RadixThemesHeading>\n</RadixThemesBox>',
+            'jsx(\nRadixThemesBox,\n{},\njsx(\nRadixThemesHeading,\n{size:"3"},\n"test"\n,),)',
         ),
     ],
 )
@@ -1221,10 +1236,10 @@ def test_stateful_banner():
     assert isinstance(stateful_component, StatefulComponent)
 
 
-TEST_VAR = LiteralVar.create("test")._replace(
+TEST_VAR = LiteralVar.create("p")._replace(
     merge_var_data=VarData(
         hooks={"useTest": None},
-        imports={"test": [ImportVar(tag="test")]},
+        imports={"test": [ImportVar(tag="p")]},
         state="Test",
     )
 )
@@ -1233,31 +1248,31 @@ STYLE_VAR = TEST_VAR._replace(_js_expr="style")
 EVENT_CHAIN_VAR = TEST_VAR.to(EventChain)
 ARG_VAR = Var(_js_expr="arg")
 
-TEST_VAR_DICT_OF_DICT = LiteralVar.create({"a": {"b": "test"}})._replace(
+TEST_VAR_DICT_OF_DICT = LiteralVar.create({"a": {"b": "p"}})._replace(
     merge_var_data=TEST_VAR._var_data
 )
-FORMATTED_TEST_VAR_DICT_OF_DICT = LiteralVar.create(
-    {"a": {"b": "footestbar"}}
-)._replace(merge_var_data=TEST_VAR._var_data)
-
-TEST_VAR_LIST_OF_LIST = LiteralVar.create([["test"]])._replace(
-    merge_var_data=TEST_VAR._var_data
-)
-FORMATTED_TEST_VAR_LIST_OF_LIST = LiteralVar.create([["footestbar"]])._replace(
+FORMATTED_TEST_VAR_DICT_OF_DICT = LiteralVar.create({"a": {"b": "foopbar"}})._replace(
     merge_var_data=TEST_VAR._var_data
 )
 
-TEST_VAR_LIST_OF_LIST_OF_LIST = LiteralVar.create([[["test"]]])._replace(
+TEST_VAR_LIST_OF_LIST = LiteralVar.create([["p"]])._replace(
     merge_var_data=TEST_VAR._var_data
 )
-FORMATTED_TEST_VAR_LIST_OF_LIST_OF_LIST = LiteralVar.create(
-    [[["footestbar"]]]
-)._replace(merge_var_data=TEST_VAR._var_data)
+FORMATTED_TEST_VAR_LIST_OF_LIST = LiteralVar.create([["foopbar"]])._replace(
+    merge_var_data=TEST_VAR._var_data
+)
 
-TEST_VAR_LIST_OF_DICT = LiteralVar.create([{"a": "test"}])._replace(
+TEST_VAR_LIST_OF_LIST_OF_LIST = LiteralVar.create([[["p"]]])._replace(
     merge_var_data=TEST_VAR._var_data
 )
-FORMATTED_TEST_VAR_LIST_OF_DICT = LiteralVar.create([{"a": "footestbar"}])._replace(
+FORMATTED_TEST_VAR_LIST_OF_LIST_OF_LIST = LiteralVar.create([[["foopbar"]]])._replace(
+    merge_var_data=TEST_VAR._var_data
+)
+
+TEST_VAR_LIST_OF_DICT = LiteralVar.create([{"a": "p"}])._replace(
+    merge_var_data=TEST_VAR._var_data
+)
+FORMATTED_TEST_VAR_LIST_OF_DICT = LiteralVar.create([{"a": "foopbar"}])._replace(
     merge_var_data=TEST_VAR._var_data
 )
 
@@ -1290,7 +1305,7 @@ class EventState(rx.State):
 
 @pytest.mark.parametrize(
     ("component", "exp_vars"),
-    (
+    [
         pytest.param(
             Bare.create(TEST_VAR),
             [TEST_VAR],
@@ -1457,7 +1472,7 @@ class EventState(rx.State):
             [FORMATTED_TEST_VAR_LIST_OF_DICT],
             id="fstring-list_of_dict",
         ),
-    ),
+    ],
 )
 def test_get_vars(component, exp_vars):
     comp_vars = sorted(component._get_vars(), key=lambda v: v._js_expr)
@@ -1520,8 +1535,6 @@ def test_instantiate_all_components():
 class InvalidParentComponent(Component):
     """Invalid Parent Component."""
 
-    ...
-
 
 class ValidComponent1(Component):
     """Test valid component."""
@@ -1531,8 +1544,6 @@ class ValidComponent1(Component):
 
 class ValidComponent2(Component):
     """Test valid component."""
-
-    ...
 
 
 class ValidComponent3(Component):
@@ -1549,8 +1560,6 @@ class ValidComponent4(Component):
 
 class InvalidComponent(Component):
     """Test invalid component."""
-
-    ...
 
 
 valid_component1 = ValidComponent1.create
@@ -1692,6 +1701,24 @@ def test_validate_invalid_children():
         )
 
     with pytest.raises(ValueError):
+        rx.el.p(rx.el.p("what"))
+
+    with pytest.raises(ValueError):
+        rx.el.p(rx.el.div("what"))
+
+    with pytest.raises(ValueError):
+        rx.el.button(rx.el.button("what"))
+
+    with pytest.raises(ValueError):
+        rx.el.p(rx.el.ol(rx.el.li("what")))
+
+    with pytest.raises(ValueError):
+        rx.el.p(rx.el.ul(rx.el.li("what")))
+
+    with pytest.raises(ValueError):
+        rx.el.a(rx.el.a("what"))
+
+    with pytest.raises(ValueError):
         valid_component2(
             rx.fragment(
                 valid_component4(
@@ -1771,14 +1798,14 @@ def test_rename_props():
 
     c1 = C1.create(prop1="prop1_1", prop2="prop2_1")
     rendered_c1 = c1.render()
-    assert 'renamed_prop1={"prop1_1"}' in rendered_c1["props"]
-    assert 'renamed_prop2={"prop2_1"}' in rendered_c1["props"]
+    assert 'renamed_prop1:"prop1_1"' in rendered_c1["props"]
+    assert 'renamed_prop2:"prop2_1"' in rendered_c1["props"]
 
     c2 = C2.create(prop1="prop1_2", prop2="prop2_2", prop3="prop3_2")
     rendered_c2 = c2.render()
-    assert 'renamed_prop1={"prop1_2"}' in rendered_c2["props"]
-    assert 'subclass_prop2={"prop2_2"}' in rendered_c2["props"]
-    assert 'renamed_prop3={"prop3_2"}' in rendered_c2["props"]
+    assert 'renamed_prop1:"prop1_2"' in rendered_c2["props"]
+    assert 'subclass_prop2:"prop2_2"' in rendered_c2["props"]
+    assert 'renamed_prop3:"prop3_2"' in rendered_c2["props"]
 
 
 def test_custom_component_get_imports():
@@ -1805,7 +1832,7 @@ def test_custom_component_get_imports():
     assert "outer" not in custom_comp._get_all_imports()
 
     # The imports are only resolved during compilation.
-    custom_comp.get_component(custom_comp)
+    custom_comp.get_component()
     _, imports_inner = compile_custom_component(custom_comp)
     assert "inner" in imports_inner
     assert "outer" not in imports_inner
@@ -1833,8 +1860,8 @@ def test_custom_component_declare_event_handlers_in_fields():
             return {
                 **super().get_event_triggers(),
                 "on_b": input_event,
-                "on_d": lambda: [],
-                "on_e": lambda: [],
+                "on_d": no_args_event_spec,
+                "on_e": no_args_event_spec,
             }
 
     class TestComponent(Component):
@@ -1868,7 +1895,7 @@ def test_invalid_event_trigger():
             """
             return {
                 **super().get_event_triggers(),
-                "on_a": lambda: [],
+                "on_a": no_args_event_spec,
             }
 
     trigger_comp = TriggerComponent.create
@@ -1883,13 +1910,13 @@ def test_invalid_event_trigger():
 
 @pytest.mark.parametrize(
     "tags",
-    (
+    [
         ["Component"],
         ["Component", "useState"],
         [ImportVar(tag="Component")],
         [ImportVar(tag="Component"), ImportVar(tag="useState")],
         ["Component", ImportVar(tag="useState")],
-    ),
+    ],
 )
 def test_component_add_imports(tags):
     class BaseComponent(Component):
@@ -2165,7 +2192,7 @@ def test_add_style_embedded_vars(test_state: BaseState):
     assert "useParent" in page._get_all_hooks_internal()
     assert (
         str(page).count(
-            f'css={{({{ ["fakeParent"] : "parent", ["color"] : "var(--plum-10)", ["fake"] : "text", ["margin"] : ({test_state.get_name()}.num+"%") }})}}'
+            f'css:({{ ["fakeParent"] : "parent", ["color"] : "var(--plum-10)", ["fake"] : "text", ["margin"] : ({test_state.get_name()}.num+"%") }})'
         )
         == 1
     )
@@ -2186,10 +2213,10 @@ def test_add_style_foreach():
     assert len(page.children[0].children) == 1
 
     # Expect the style to be added to the child of the foreach
-    assert 'css={({ ["color"] : "red" })}' in str(page.children[0].children[0])
+    assert 'css:({ ["color"] : "red" })' in str(page.children[0].children[0])
 
     # Expect only one instance of this CSS dict in the rendered page
-    assert str(page).count('css={({ ["color"] : "red" })}') == 1
+    assert str(page).count('css:({ ["color"] : "red" })') == 1
 
 
 class TriggerState(rx.State):
@@ -2198,11 +2225,10 @@ class TriggerState(rx.State):
     @rx.event
     def do_something(self):
         """Sample event handler."""
-        pass
 
 
 @pytest.mark.parametrize(
-    "component, output",
+    ("component", "output"),
     [
         (rx.box(rx.text("random text")), False),
         (
@@ -2317,3 +2343,15 @@ def test_special_props(component_kwargs, exp_custom_attrs, exp_style):
     for prop in SpecialComponent.get_props():
         if prop in component_kwargs:
             assert getattr(component, prop)._var_value == component_kwargs[prop]
+
+
+def test_ref():
+    """Test that the ref prop is correctly added to the component."""
+    custom_ref = Var("custom_ref")
+    ref_component = rx.box(ref=custom_ref)
+    assert ref_component._render().props["ref"].equals(custom_ref)
+
+    id_component = rx.box(id="custom_id")
+    assert id_component._render().props["ref"].equals(Var("ref_custom_id"))
+
+    assert "ref" not in rx.box()._render().props

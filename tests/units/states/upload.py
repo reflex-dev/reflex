@@ -20,7 +20,6 @@ class UploadState(BaseState):
         Args:
             files: The uploaded files.
         """
-        pass
 
 
 class SubUploadState(UploadBaseState):
@@ -34,7 +33,6 @@ class SubUploadState(UploadBaseState):
         Args:
             files: The uploaded files.
         """
-        pass
 
 
 class FileUploadState(State):
@@ -49,7 +47,6 @@ class FileUploadState(State):
         Args:
             files: The uploaded files.
         """
-        pass
 
     async def multi_handle_upload(self, files: list[rx.UploadFile]):
         """Handle the upload of a file.
@@ -75,13 +72,10 @@ class FileUploadState(State):
         Args:
             files: The uploaded files.
         """
-        pass
 
 
 class FileStateBase1(State):
     """The base state for a child FileUploadState."""
-
-    pass
 
 
 class ChildFileUploadState(FileStateBase1):
@@ -96,7 +90,6 @@ class ChildFileUploadState(FileStateBase1):
         Args:
             files: The uploaded files.
         """
-        pass
 
     async def multi_handle_upload(self, files: list[rx.UploadFile]):
         """Handle the upload of a file.
@@ -122,13 +115,10 @@ class ChildFileUploadState(FileStateBase1):
         Args:
             files: The uploaded files.
         """
-        pass
 
 
 class FileStateBase2(FileStateBase1):
     """The parent state for a grandchild FileUploadState."""
-
-    pass
 
 
 class GrandChildFileUploadState(FileStateBase2):
@@ -143,7 +133,6 @@ class GrandChildFileUploadState(FileStateBase2):
         Args:
             files: The uploaded files.
         """
-        pass
 
     async def multi_handle_upload(self, files: list[rx.UploadFile]):
         """Handle the upload of a file.
@@ -169,4 +158,3 @@ class GrandChildFileUploadState(FileStateBase2):
         Args:
             files: The uploaded files.
         """
-        pass

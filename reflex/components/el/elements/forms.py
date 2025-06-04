@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from collections.abc import Iterator
 from hashlib import md5
-from typing import Any, Literal
+from typing import Any, ClassVar, Literal
 
 from jinja2 import Environment
 
@@ -85,6 +85,8 @@ class Button(BaseHTML):
 
     # Value of the button, used when sending form data
     value: Var[str | int | float]
+
+    _invalid_children: ClassVar[list[str]] = ["Button"]
 
 
 class Datalist(BaseHTML):
@@ -187,7 +189,7 @@ class Form(BaseHTML):
         # Render the form hooks and use the hash of the resulting code to create a unique name.
         props["handle_submit_unique_name"] = ""
         form = super().create(*children, **props)
-        form.handle_submit_unique_name = md5(
+        form.handle_submit_unique_name = md5(  # pyright: ignore[reportAttributeAccessIssue]
             str(form._get_all_hooks()).encode("utf-8")
         ).hexdigest()
         return form
@@ -382,7 +384,7 @@ class BaseInput(BaseHTML):
     required: Var[bool]
 
     # Specifies the visible width of a text control
-    size: Var[int | float]
+    size: Var[str | int | float]
 
     # URL for image inputs
     src: Var[str]
@@ -502,22 +504,22 @@ class Meter(BaseHTML):
     form: Var[str]
 
     # High limit of range (above this is considered high value)
-    high: Var[int | float]
+    high: Var[str | int | float]
 
     # Low limit of range (below this is considered low value)
-    low: Var[int | float]
+    low: Var[str | int | float]
 
     # Maximum value of the range
-    max: Var[int | float]
+    max: Var[str | int | float]
 
     # Minimum value of the range
-    min: Var[int | float]
+    min: Var[str | int | float]
 
     # Optimum value in the range
-    optimum: Var[int | float]
+    optimum: Var[str | int | float]
 
     # Current value of the meter
-    value: Var[int | float]
+    value: Var[str | int | float]
 
 
 class Optgroup(BaseHTML):
@@ -607,7 +609,7 @@ class Select(BaseHTML):
     required: Var[bool]
 
     # Number of visible options in a drop-down list
-    size: Var[int]
+    size: Var[str | int]
 
     # Fired when the select value changes
     on_change: EventHandler[input_event]
@@ -664,7 +666,7 @@ class Textarea(BaseHTML):
     auto_height: Var[bool]
 
     # Visible width of the text control, in average character widths
-    cols: Var[int]
+    cols: Var[str | int]
 
     # The default value of the textarea when initially rendered
     default_value: Var[str]
@@ -682,10 +684,10 @@ class Textarea(BaseHTML):
     form: Var[str]
 
     # Maximum number of characters allowed in the textarea
-    max_length: Var[int]
+    max_length: Var[str | int]
 
     # Minimum number of characters required in the textarea
-    min_length: Var[int]
+    min_length: Var[str | int]
 
     # Name of the textarea, used when submitting the form
     name: Var[str]
@@ -700,7 +702,7 @@ class Textarea(BaseHTML):
     required: Var[bool]
 
     # Visible number of lines in the text control
-    rows: Var[int]
+    rows: Var[str | int]
 
     # The controlled value of the textarea, read only unless used with on_change
     value: Var[str]
@@ -744,9 +746,8 @@ class Textarea(BaseHTML):
         if enter_key_submit is not None:
             enter_key_submit = Var.create(enter_key_submit)
             if "on_key_down" in props:
-                raise ValueError(
-                    "Cannot combine `enter_key_submit` with `on_key_down`.",
-                )
+                msg = "Cannot combine `enter_key_submit` with `on_key_down`."
+                raise ValueError(msg)
             custom_attrs["on_key_down"] = Var(
                 _js_expr=f"(e) => enterKeySubmitOnKeyDown(e, {enter_key_submit!s})",
                 _var_data=VarData.merge(enter_key_submit._get_all_var_data()),

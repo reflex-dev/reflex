@@ -3,6 +3,7 @@ import os
 from pathlib import Path
 
 import pytest
+from pytest_mock import MockerFixture
 
 from reflex import constants
 from reflex.compiler import compiler, utils
@@ -11,7 +12,7 @@ from reflex.utils.imports import ImportVar, ParsedImportDict
 
 
 @pytest.mark.parametrize(
-    "fields,test_default,test_rest",
+    ("fields", "test_default", "test_rest"),
     [
         (
             [ImportVar(tag="axios", is_default=True)],
@@ -50,7 +51,7 @@ def test_compile_import_statement(
 
 
 @pytest.mark.parametrize(
-    "import_dict,test_dicts",
+    ("import_dict", "test_dicts"),
     [
         ({}, []),
         (
@@ -115,7 +116,7 @@ def test_compile_imports(import_dict: ParsedImportDict, test_dicts: list[dict]):
         )
 
 
-def test_compile_stylesheets(tmp_path: Path, mocker):
+def test_compile_stylesheets(tmp_path: Path, mocker: MockerFixture):
     """Test that stylesheets compile correctly.
 
     Args:
@@ -154,7 +155,7 @@ def test_compile_stylesheets(tmp_path: Path, mocker):
             / "styles"
             / (PageNames.STYLESHEET_ROOT + ".css")
         ),
-        "@import url('./tailwind.css'); \n"
+        "@import url('@radix-ui/themes/styles.css'); \n"
         "@import url('https://fonts.googleapis.com/css?family=Sofia&effect=neon|outline|emboss|shadow-multiple'); \n"
         "@import url('https://cdn.jsdelivr.net/npm/bootstrap@3.3.7/dist/css/bootstrap.min.css'); \n"
         "@import url('https://cdn.jsdelivr.net/npm/bootstrap@3.3.7/dist/css/bootstrap-theme.min.css'); \n"
@@ -166,7 +167,7 @@ def test_compile_stylesheets(tmp_path: Path, mocker):
     ).read_text()
 
 
-def test_compile_stylesheets_scss_sass(tmp_path: Path, mocker):
+def test_compile_stylesheets_scss_sass(tmp_path: Path, mocker: MockerFixture):
     if importlib.util.find_spec("sass") is None:
         pytest.skip(
             'The `libsass` package is required to compile sass/scss stylesheet files. Run `pip install "libsass>=0.23.0"`.'
@@ -214,7 +215,7 @@ def test_compile_stylesheets_scss_sass(tmp_path: Path, mocker):
             / "styles"
             / (PageNames.STYLESHEET_ROOT + ".css")
         ),
-        "@import url('./tailwind.css'); \n"
+        "@import url('@radix-ui/themes/styles.css'); \n"
         "@import url('./style.css'); \n"
         f"@import url('./{Path('preprocess') / Path('styles_a.css')!s}'); \n"
         f"@import url('./{Path('preprocess') / Path('styles_b.css')!s}'); \n",
@@ -232,7 +233,7 @@ def test_compile_stylesheets_scss_sass(tmp_path: Path, mocker):
             / "styles"
             / (PageNames.STYLESHEET_ROOT + ".css")
         ),
-        "@import url('./tailwind.css'); \n"
+        "@import url('@radix-ui/themes/styles.css'); \n"
         "@import url('./style.css'); \n"
         f"@import url('./{Path('preprocess') / Path('styles_a.css')!s}'); \n"
         f"@import url('./{Path('preprocess') / Path('styles_b.css')!s}'); \n",
@@ -251,7 +252,7 @@ def test_compile_stylesheets_scss_sass(tmp_path: Path, mocker):
     ).read_text() == expected_result
 
 
-def test_compile_stylesheets_exclude_tailwind(tmp_path, mocker):
+def test_compile_stylesheets_exclude_tailwind(tmp_path, mocker: MockerFixture):
     """Test that Tailwind is excluded if tailwind config is explicitly set to None.
 
     Args:
@@ -266,6 +267,7 @@ def test_compile_stylesheets_exclude_tailwind(tmp_path, mocker):
     mock = mocker.Mock()
 
     mocker.patch.object(mock, "tailwind", None)
+    mocker.patch.object(mock, "plugins", [])
     mocker.patch("reflex.compiler.compiler.get_config", return_value=mock)
 
     (assets_dir / "style.css").touch()
@@ -277,11 +279,11 @@ def test_compile_stylesheets_exclude_tailwind(tmp_path, mocker):
 
     assert compiler.compile_root_stylesheet(stylesheets) == (
         str(Path(".web") / "styles" / (PageNames.STYLESHEET_ROOT + ".css")),
-        "@import url('./style.css'); \n",
+        "@import url('@radix-ui/themes/styles.css'); \n@import url('./style.css'); \n",
     )
 
 
-def test_compile_nonexistent_stylesheet(tmp_path, mocker):
+def test_compile_nonexistent_stylesheet(tmp_path, mocker: MockerFixture):
     """Test that an error is thrown for non-existent stylesheets.
 
     Args:

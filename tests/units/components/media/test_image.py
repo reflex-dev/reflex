@@ -16,7 +16,8 @@ def pil_image() -> Img:
     Returns:
         A random PIL image.
     """
-    imarray = np.random.rand(100, 100, 3) * 255
+    rng = np.random.default_rng()
+    imarray = rng.random((100, 100, 3)) * 255
     return PIL.Image.fromarray(imarray.astype("uint8")).convert("RGBA")  # pyright: ignore [reportAttributeAccessIssue]
 
 

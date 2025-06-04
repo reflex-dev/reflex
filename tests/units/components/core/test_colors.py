@@ -9,10 +9,10 @@ from reflex.vars.base import LiteralVar
 class ColorState(rx.State):
     """Test color state."""
 
-    color: str = "mint"
-    color_part: str = "tom"
-    shade: int = 4
-    alpha: bool = False
+    color: rx.Field[str] = rx.field("mint")
+    color_part: rx.Field[str] = rx.field("tom")
+    shade: rx.Field[int] = rx.field(4)
+    alpha: rx.Field[bool] = rx.field(False)
 
 
 color_state_name = ColorState.get_full_name().replace(".", "__")
@@ -22,8 +22,14 @@ def create_color_var(color):
     return LiteralVar.create(color)
 
 
+color_with_fstring = rx.color(
+    f"{ColorState.color}",  # pyright: ignore [reportArgumentType]
+    ColorState.shade,
+)
+
+
 @pytest.mark.parametrize(
-    "color, expected, expected_type",
+    ("color", "expected", "expected_type"),
     [
         (create_color_var(rx.color("mint")), '"var(--mint-7)"', Color),
         (create_color_var(rx.color("mint", 3)), '"var(--mint-3)"', Color),
@@ -41,26 +47,27 @@ def create_color_var(color):
             Color,
         ),
         (
-            create_color_var(rx.color(f"{ColorState.color}", f"{ColorState.shade}")),
-            f'("var(--"+{color_state_name!s}.color+"-"+{color_state_name!s}.shade+")")',
+            create_color_var(color_with_fstring),
+            f'("var(--"+{color_state_name!s}.color+"-"+(((__to_string) => __to_string.toString())({color_state_name!s}.shade))+")")',
             Color,
         ),
         (
             create_color_var(
-                rx.color(f"{ColorState.color_part}ato", f"{ColorState.shade}")
+                rx.color(
+                    f"{ColorState.color_part}ato",  # pyright: ignore [reportArgumentType]
+                    ColorState.shade,
+                )
             ),
-            f'("var(--"+({color_state_name!s}.color_part+"ato")+"-"+{color_state_name!s}.shade+")")',
+            f'("var(--"+({color_state_name!s}.color_part+"ato")+"-"+(((__to_string) => __to_string.toString())({color_state_name!s}.shade))+")")',
             Color,
         ),
         (
-            create_color_var(f"{rx.color(ColorState.color, f'{ColorState.shade}')}"),
+            create_color_var(f"{rx.color(ColorState.color, ColorState.shade)}"),
             f'("var(--"+{color_state_name!s}.color+"-"+{color_state_name!s}.shade+")")',
             str,
         ),
         (
-            create_color_var(
-                f"{rx.color(f'{ColorState.color}', f'{ColorState.shade}')}"
-            ),
+            create_color_var(f"{color_with_fstring}"),
             f'("var(--"+{color_state_name!s}.color+"-"+{color_state_name!s}.shade+")")',
             str,
         ),
@@ -72,7 +79,7 @@ def test_color(color, expected, expected_type: type[str] | type[Color]):
 
 
 @pytest.mark.parametrize(
-    "cond_var, expected",
+    ("cond_var", "expected"),
     [
         (
             rx.cond(True, rx.color("mint"), rx.color("tomato", 5)),
@@ -112,7 +119,7 @@ def test_color_with_conditionals(cond_var, expected):
 
 
 @pytest.mark.parametrize(
-    "color, expected",
+    ("color", "expected"),
     [
         (create_color_var(rx.color("red")), '"var(--red-7)"'),
         (create_color_var(rx.color("green", shade=1)), '"var(--green-1)"'),

@@ -4,7 +4,7 @@ from reflex.components.datadisplay.code import CodeBlock, Theme
 
 
 @pytest.mark.parametrize(
-    "theme, expected",
+    ("theme", "expected"),
     [(Theme.one_light, "oneLight"), (Theme.one_dark, "oneDark")],
 )
 def test_code_light_dark_theme(theme, expected):

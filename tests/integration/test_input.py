@@ -16,6 +16,10 @@ def FullyControlledInput():
     class State(rx.State):
         text: str = "initial"
 
+        @rx.event
+        def set_text(self, text: str):
+            self.text = text
+
     app = rx.App()
 
     @app.add_page
@@ -26,11 +30,11 @@ def FullyControlledInput():
             ),
             rx.input(
                 id="debounce_input_input",
-                on_change=State.set_text,  # pyright: ignore [reportAttributeAccessIssue]
+                on_change=State.set_text,
                 value=State.text,
             ),
             rx.input(value=State.text, id="value_input", is_read_only=True),
-            rx.input(on_change=State.set_text, id="on_change_input"),  # pyright: ignore [reportAttributeAccessIssue]
+            rx.input(on_change=State.set_text, id="on_change_input"),
             rx.el.input(
                 value=State.text,
                 id="plain_value_input",
@@ -51,7 +55,7 @@ def FullyControlledInput():
         )
 
 
-@pytest.fixture()
+@pytest.fixture
 def fully_controlled_input(tmp_path) -> Generator[AppHarness, None, None]:
     """Start FullyControlledInput app at tmp_path via AppHarness.
 

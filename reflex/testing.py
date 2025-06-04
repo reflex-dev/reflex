@@ -14,6 +14,7 @@ import signal
 import socket
 import socketserver
 import subprocess
+import sys
 import textwrap
 import threading
 import time
@@ -27,6 +28,7 @@ import psutil
 import uvicorn
 
 import reflex
+import reflex.environment
 import reflex.reflex
 import reflex.utils.build
 import reflex.utils.exec
@@ -34,7 +36,8 @@ import reflex.utils.format
 import reflex.utils.prerequisites
 import reflex.utils.processes
 from reflex.components.component import CustomComponent
-from reflex.config import environment, get_config
+from reflex.config import get_config
+from reflex.environment import environment
 from reflex.state import (
     BaseState,
     StateManager,
@@ -45,6 +48,7 @@ from reflex.state import (
 )
 from reflex.utils import console
 from reflex.utils.export import export
+from reflex.utils.types import ASGIApp
 
 try:
     from selenium import webdriver
@@ -110,6 +114,7 @@ class AppHarness:
     app_module_path: Path
     app_module: types.ModuleType | None = None
     app_instance: reflex.App | None = None
+    app_asgi: ASGIApp | None = None
     frontend_process: subprocess.Popen | None = None
     frontend_url: str | None = None
     frontend_output_thread: threading.Thread | None = None
@@ -152,9 +157,8 @@ class AppHarness:
                 app_name = f"{func_name}_{slug_suffix}"
                 app_name = re.sub(r"[^a-zA-Z0-9_]", "_", app_name)
             elif isinstance(app_source, str):
-                raise ValueError(
-                    "app_name must be provided when app_source is a string."
-                )
+                msg = "app_name must be provided when app_source is a string."
+                raise ValueError(msg)
             else:
                 app_name = app_source.__name__
 
@@ -270,16 +274,20 @@ class AppHarness:
             # Ensure the AppHarness test does not skip State assignment due to running via pytest
             os.environ.pop(reflex.constants.PYTEST_CURRENT_TEST, None)
             os.environ[reflex.constants.APP_HARNESS_FLAG] = "true"
-            self.app_module = reflex.utils.prerequisites.get_compiled_app(
-                # Do not reload the module for pre-existing apps (only apps generated from source)
-                reload=self.app_source is not None
+            # Ensure we actually compile the app during first initialization.
+            self.app_instance, self.app_module = (
+                reflex.utils.prerequisites.get_and_validate_app(
+                    # Do not reload the module for pre-existing apps (only apps generated from source)
+                    reload=self.app_source is not None
+                )
             )
-        self.app_instance = self.app_module.app
+            self.app_asgi = self.app_instance()
         if self.app_instance and isinstance(
             self.app_instance._state_manager, StateManagerRedis
         ):
             if self.app_instance._state is None:
-                raise RuntimeError("State is not set.")
+                msg = "State is not set."
+                raise RuntimeError(msg)
             # Create our own redis connection for testing.
             self.state_manager = StateManagerRedis.create(self.app_instance._state)
         else:
@@ -293,17 +301,18 @@ class AppHarness:
 
     def _get_backend_shutdown_handler(self):
         if self.backend is None:
-            raise RuntimeError("Backend was not initialized.")
+            msg = "Backend was not initialized."
+            raise RuntimeError(msg)
 
         original_shutdown = self.backend.shutdown
 
         async def _shutdown(*args, **kwargs) -> None:
             # ensure redis is closed before event loop
             if self.app_instance is not None and isinstance(
-                self.app_instance.state_manager, StateManagerRedis
+                self.app_instance._state_manager, StateManagerRedis
             ):
                 with contextlib.suppress(ValueError):
-                    await self.app_instance.state_manager.close()
+                    await self.app_instance._state_manager.close()
 
             # socketio shutdown handler
             if self.app_instance is not None and self.app_instance.sio is not None:
@@ -323,11 +332,12 @@ class AppHarness:
         return _shutdown
 
     def _start_backend(self, port: int = 0):
-        if self.app_instance is None or self.app_instance._api is None:
-            raise RuntimeError("App was not initialized.")
+        if self.app_asgi is None:
+            msg = "App was not initialized."
+            raise RuntimeError(msg)
         self.backend = uvicorn.Server(
             uvicorn.Config(
-                app=self.app_instance._api,
+                app=self.app_asgi,
                 host="127.0.0.1",
                 port=port,
             )
@@ -349,18 +359,19 @@ class AppHarness:
         if (
             self.app_instance is not None
             and isinstance(
-                self.app_instance.state_manager,
+                self.app_instance._state_manager,
                 StateManagerRedis,
             )
             and self.app_instance._state is not None
         ):
             with contextlib.suppress(RuntimeError):
-                await self.app_instance.state_manager.close()
+                await self.app_instance._state_manager.close()
             self.app_instance._state_manager = StateManagerRedis.create(
                 state=self.app_instance._state,
             )
             if not isinstance(self.app_instance.state_manager, StateManagerRedis):
-                raise RuntimeError("Failed to reset state manager.")
+                msg = "Failed to reset state manager."
+                raise RuntimeError(msg)
 
     def _start_frontend(self):
         # Set up the frontend.
@@ -400,7 +411,8 @@ class AppHarness:
                 config.deploy_url = self.frontend_url
                 break
         if self.frontend_url is None:
-            raise RuntimeError("Frontend did not start")
+            msg = "Frontend did not start"
+            raise RuntimeError(msg)
 
         def consume_frontend_output():
             while True:
@@ -470,7 +482,7 @@ class AppHarness:
             frontend_children = psutil.Process(self.frontend_process.pid).children(
                 recursive=True,
             )
-            if platform.system() == "Windows":
+            if sys.platform == "win32":
                 self.frontend_process.terminate()
             else:
                 pgrp = os.getpgid(self.frontend_process.pid)
@@ -572,20 +584,23 @@ class AppHarness:
             TimeoutError: when server or sockets are not ready
         """
         if self.backend is None:
-            raise RuntimeError("Backend is not running.")
+            msg = "Backend is not running."
+            raise RuntimeError(msg)
         backend = self.backend
         # check for servers to be initialized
         if not self._poll_for(
             target=lambda: getattr(backend, "servers", False),
             timeout=timeout,
         ):
-            raise TimeoutError("Backend servers are not initialized.")
+            msg = "Backend servers are not initialized."
+            raise TimeoutError(msg)
         # check for sockets to be listening
         if not self._poll_for(
             target=lambda: getattr(backend.servers[0], "sockets", False),
             timeout=timeout,
         ):
-            raise TimeoutError("Backend is not listening.")
+            msg = "Backend is not listening."
+            raise TimeoutError(msg)
         return backend.servers[0].sockets[0]
 
     def frontend(
@@ -613,12 +628,14 @@ class AppHarness:
             RuntimeError: when selenium is not importable or frontend is not running
         """
         if not has_selenium:
-            raise RuntimeError(
+            msg = (
                 "Frontend functionality requires `selenium` to be installed, "
                 "and it could not be imported."
             )
+            raise RuntimeError(msg)
         if self.frontend_url is None:
-            raise RuntimeError("Frontend is not running.")
+            msg = "Frontend is not running."
+            raise RuntimeError(msg)
         want_headless = False
         if environment.APP_HARNESS_HEADLESS.get():
             want_headless = True
@@ -644,7 +661,8 @@ class AppHarness:
             if want_headless:
                 driver_options.add_argument("headless")
         if driver_options is None:
-            raise RuntimeError(f"Could not determine options for {driver_clz}")
+            msg = f"Could not determine options for {driver_clz}"
+            raise RuntimeError(msg)
         if args := environment.APP_HARNESS_DRIVER_ARGS.get():
             for arg in args.split(","):
                 driver_options.add_argument(arg)
@@ -674,7 +692,8 @@ class AppHarness:
             RuntimeError: when the app hasn't started running
         """
         if self.state_manager is None:
-            raise RuntimeError("state_manager is not set.")
+            msg = "state_manager is not set."
+            raise RuntimeError(msg)
         try:
             return await self.state_manager.get_state(token)
         finally:
@@ -692,7 +711,8 @@ class AppHarness:
             RuntimeError: when the app hasn't started running
         """
         if self.state_manager is None:
-            raise RuntimeError("state_manager is not set.")
+            msg = "state_manager is not set."
+            raise RuntimeError(msg)
         state = await self.get_state(token)
         for key, value in kwargs.items():
             setattr(state, key, value)
@@ -716,9 +736,11 @@ class AppHarness:
             RuntimeError: when the app hasn't started running
         """
         if self.state_manager is None:
-            raise RuntimeError("state_manager is not set.")
+            msg = "state_manager is not set."
+            raise RuntimeError(msg)
         if self.app_instance is None:
-            raise RuntimeError("App is not running.")
+            msg = "App is not running."
+            raise RuntimeError(msg)
         app_state_manager = self.app_instance.state_manager
         if isinstance(self.state_manager, StateManagerRedis):
             # Temporarily replace the app's state manager with our own, since
@@ -755,9 +777,8 @@ class AppHarness:
             target=lambda: element.text != exp_not_equal,
             timeout=timeout,
         ):
-            raise TimeoutError(
-                f"{element} content remains {exp_not_equal!r} while polling.",
-            )
+            msg = f"{element} content remains {exp_not_equal!r} while polling."
+            raise TimeoutError(msg)
         return element.text
 
     def poll_for_value(
@@ -786,9 +807,8 @@ class AppHarness:
             target=lambda: element.get_attribute("value") not in exp_not_equal,
             timeout=timeout,
         ):
-            raise TimeoutError(
-                f"{element} content remains {exp_not_equal!r} while polling.",
-            )
+            msg = f"{element} content remains {exp_not_equal!r} while polling."
+            raise TimeoutError(msg)
         return element.get_attribute("value")
 
     def poll_for_clients(self, timeout: TimeoutType = None) -> dict[str, BaseState]:
@@ -806,15 +826,18 @@ class AppHarness:
             ValueError: when the state_manager is not a memory state manager
         """
         if self.app_instance is None:
-            raise RuntimeError("App is not running.")
+            msg = "App is not running."
+            raise RuntimeError(msg)
         state_manager = self.app_instance.state_manager
         if not isinstance(state_manager, (StateManagerMemory, StateManagerDisk)):
-            raise ValueError("Only works with memory or disk state manager")
+            msg = "Only works with memory or disk state manager"
+            raise ValueError(msg)
         if not self._poll_for(
             target=lambda: state_manager.states,
             timeout=timeout,
         ):
-            raise TimeoutError("No states were observed while polling.")
+            msg = "No states were observed while polling."
+            raise TimeoutError(msg)
         return state_manager.states
 
 
@@ -937,7 +960,9 @@ class AppHarnessProd(AppHarness):
 
             get_config().loglevel = reflex.constants.LogLevel.INFO
 
-            if reflex.utils.prerequisites.needs_reinit(frontend=True):
+            reflex.utils.prerequisites.assert_in_reflex_dir()
+
+            if reflex.utils.prerequisites.needs_reinit():
                 reflex.reflex._init(name=get_config().app_name)
 
             export(
@@ -954,15 +979,17 @@ class AppHarnessProd(AppHarness):
     def _wait_frontend(self):
         self._poll_for(lambda: self.frontend_server is not None)
         if self.frontend_server is None or not self.frontend_server.socket.fileno():
-            raise RuntimeError("Frontend did not start")
+            msg = "Frontend did not start"
+            raise RuntimeError(msg)
 
     def _start_backend(self):
-        if self.app_instance is None:
-            raise RuntimeError("App was not initialized.")
+        if self.app_asgi is None:
+            msg = "App was not initialized."
+            raise RuntimeError(msg)
         environment.REFLEX_SKIP_COMPILE.set(True)
         self.backend = uvicorn.Server(
             uvicorn.Config(
-                app=self.app_instance,
+                app=self.app_asgi,
                 host="127.0.0.1",
                 port=0,
                 workers=reflex.utils.processes.get_num_workers(),

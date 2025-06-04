@@ -18,8 +18,8 @@ from reflex.vars.number import ternary_operation
 
 # Special vars used in the component map.
 _CHILDREN = Var(_js_expr="children", _var_type=str)
-_PROPS = Var(_js_expr="...props")
-_PROPS_IN_TAG = Var(_js_expr="{...props}")
+_PROPS = Var(_js_expr="props")
+_PROPS_SPREAD = Var(_js_expr="...props")
 _MOCK_ARG = Var(_js_expr="", _var_type=str)
 _LANGUAGE = Var(_js_expr="_language", _var_type=str)
 
@@ -128,7 +128,7 @@ class MarkdownComponentMap:
         Returns:
             The function arguments as a list of strings.
         """
-        return ["node", _CHILDREN._js_expr, _PROPS._js_expr]
+        return ["node", _CHILDREN._js_expr, _PROPS_SPREAD._js_expr]
 
     @classmethod
     def get_fn_body(cls) -> Var:
@@ -170,9 +170,8 @@ class Markdown(Component):
             The markdown component.
         """
         if len(children) != 1 or not isinstance(children[0], (str, Var)):
-            raise ValueError(
-                "Markdown component must have exactly one child containing the markdown source."
-            )
+            msg = "Markdown component must have exactly one child containing the markdown source."
+            raise ValueError(msg)
 
         # Update the base component map with the custom component map.
         component_map = {**get_base_component_map(), **props.pop("component_map", {})}
@@ -297,7 +296,7 @@ let {_LANGUAGE!s} = match ? match[1] : '';
                 "inline",
                 "className",
                 _CHILDREN._js_expr,
-                _PROPS._js_expr,
+                _PROPS_SPREAD._js_expr,
             ),
             fn_body=Var(_js_expr=formatted_code),
             explicit_return=True,
@@ -319,9 +318,10 @@ let {_LANGUAGE!s} = match ? match[1] : '';
         """
         # Check the tag is valid.
         if tag not in self.component_map:
-            raise ValueError(f"No markdown component found for tag: {tag}.")
+            msg = f"No markdown component found for tag: {tag}."
+            raise ValueError(msg)
 
-        special_props = [_PROPS_IN_TAG]
+        special_props = [_PROPS]
         children = [
             _CHILDREN
             if tag != "codeblock"
@@ -338,15 +338,13 @@ let {_LANGUAGE!s} = match ? match[1] : '';
             special_props = []
 
         # If the children are set as a prop, don't pass them as children.
-        children_prop = props.pop("children", None)
+        children_prop = props.get("children")
         if children_prop is not None:
-            special_props.append(Var(_js_expr=f"children={{{children_prop!s}}}"))
             children = []
         # Get the component.
-        component = self.component_map[tag](*children, **props).set(
+        return self.component_map[tag](*children, **props).set(
             special_props=special_props
         )
-        return component
 
     def format_component(self, tag: str, **props) -> str:
         """Format a component for rendering in the component map.
@@ -438,7 +436,7 @@ let {_LANGUAGE!s} = match ? match[1] : '';
         """
 
     def _render(self) -> Tag:
-        tag = (
+        return (
             super()
             ._render()
             .add_props(
@@ -448,4 +446,3 @@ let {_LANGUAGE!s} = match ? match[1] : '';
             )
             .remove_props("componentMap", "componentMapHash")
         )
-        return tag

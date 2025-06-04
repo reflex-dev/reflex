@@ -60,13 +60,14 @@ def compile_import_statement(fields: list[ImportVar]) -> tuple[str, list[str]]:
     # Check for default imports.
     defaults = {field for field in fields_set if field.is_default}
     if len(defaults) >= 2:
-        raise ValueError("Only one default import is allowed.")
+        msg = "Only one default import is allowed."
+        raise ValueError(msg)
 
     # Get the default import, and the specific imports.
     default = next(iter({field.name for field in defaults}), "")
     rest = {field.name for field in fields_set - defaults}
 
-    return default, list(rest)
+    return default, sorted(rest)
 
 
 def validate_imports(import_dict: ParsedImportDict):
@@ -91,9 +92,8 @@ def validate_imports(import_dict: ParsedImportDict):
                 ):
                     used_tags[import_name] = lib if lib[0] == "$" else already_imported
                     continue
-                raise ValueError(
-                    f"Can not compile, the tag {import_name} is used multiple time from {lib} and {used_tags[import_name]}"
-                )
+                msg = f"Can not compile, the tag {import_name} is used multiple time from {lib} and {used_tags[import_name]}"
+                raise ValueError(msg)
             if import_name is not None:
                 used_tags[import_name] = lib
 
@@ -130,9 +130,11 @@ def compile_imports(import_dict: ParsedImportDict) -> list[dict]:
         for path, (default, rest) in compiled.items():
             if not lib:
                 if default:
-                    raise ValueError("No default field allowed for empty library.")
+                    msg = "No default field allowed for empty library."
+                    raise ValueError(msg)
                 if rest is None or len(rest) == 0:
-                    raise ValueError("No fields to import.")
+                    msg = "No fields to import."
+                    raise ValueError(msg)
                 import_dicts.extend(get_import_dict(module) for module in sorted(rest))
                 continue
 
@@ -309,7 +311,7 @@ def compile_custom_component(
         A tuple of the compiled component and the imports required by the component.
     """
     # Render the component.
-    render = component.get_component(component)
+    render = component.get_component()
 
     # Get the imports.
     imports: ParsedImportDict = {
@@ -500,7 +502,23 @@ def add_meta(
     return page
 
 
-def write_page(path: str | Path, code: str):
+def resolve_path_of_web_dir(path: str | Path) -> Path:
+    """Get the path under the web directory.
+
+    Args:
+        path: The path to get. It can be a relative or absolute path.
+
+    Returns:
+        The path under the web directory.
+    """
+    path = Path(path)
+    web_dir = get_web_dir()
+    if path.is_relative_to(web_dir):
+        return path.absolute()
+    return (web_dir / path).absolute()
+
+
+def write_file(path: str | Path, code: str):
     """Write the given code to the given path.
 
     Args:
@@ -508,7 +526,7 @@ def write_page(path: str | Path, code: str):
         code: The code to write.
     """
     path = Path(path)
-    path_ops.mkdir(path.parent)
+    path.parent.mkdir(parents=True, exist_ok=True)
     if path.exists() and path.read_text(encoding="utf-8") == code:
         return
     path.write_text(code, encoding="utf-8")

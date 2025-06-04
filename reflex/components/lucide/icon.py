@@ -10,7 +10,7 @@ from reflex.vars.sequence import LiteralStringVar, StringVar
 class LucideIconComponent(Component):
     """Lucide Icon Component."""
 
-    library = "lucide-react@0.471.1"
+    library = "lucide-react@0.511.0"
 
 
 class Icon(LucideIconComponent):
@@ -42,27 +42,28 @@ class Icon(LucideIconComponent):
             if len(children) == 1:
                 child = Var.create(children[0]).guess_type()
                 if not isinstance(child, StringVar):
-                    raise AttributeError(
-                        f"Icon name must be a string, got {children[0]._var_type if isinstance(children[0], Var) else children[0]}"
-                    )
+                    msg = f"Icon name must be a string, got {children[0]._var_type if isinstance(children[0], Var) else children[0]}"
+                    raise AttributeError(msg)
                 props["tag"] = children[0]
             else:
-                raise AttributeError(
-                    f"Passing multiple children to Icon component is not allowed: remove positional arguments {children[1:]} to fix"
-                )
+                msg = f"Passing multiple children to Icon component is not allowed: remove positional arguments {children[1:]} to fix"
+                raise AttributeError(msg)
         if "tag" not in props:
-            raise AttributeError("Missing 'tag' keyword-argument for Icon")
+            msg = "Missing 'tag' keyword-argument for Icon"
+            raise AttributeError(msg)
 
         tag_var: Var | LiteralVar = Var.create(props.pop("tag"))
         if isinstance(tag_var, LiteralVar):
             if isinstance(tag_var, LiteralStringVar):
                 tag = format.to_snake_case(tag_var._var_value.lower())
             else:
-                raise TypeError(f"Icon name must be a string, got {type(tag_var)}")
+                msg = f"Icon name must be a string, got {type(tag_var)}"
+                raise TypeError(msg)
         elif isinstance(tag_var, Var):
             tag_stringified = tag_var.guess_type()
             if not isinstance(tag_stringified, StringVar):
-                raise TypeError(f"Icon name must be a string, got {tag_var._var_type}")
+                msg = f"Icon name must be a string, got {tag_var._var_type}"
+                raise TypeError(msg)
             return DynamicIcon.create(name=tag_stringified.replace("_", "-"), **props)
 
         if tag not in LUCIDE_ICON_LIST:
@@ -75,13 +76,12 @@ class Icon(LucideIconComponent):
             )
             console.warn(
                 f"Invalid icon tag: {tag}. Please use one of the following: {', '.join(icons_sorted[0:10])}, ..."
-                "\nSee full list at https://reflex.dev/docs/library/data-display/icon/#icons-list. Using 'circle-help' icon instead."
+                "\nSee full list at https://reflex.dev/docs/library/data-display/icon/#icons-list. Using 'circle_help' icon instead."
             )
             tag = "circle_help"
 
         props["tag"] = LUCIDE_ICON_MAPPING_OVERRIDE.get(tag, format.to_title_case(tag))
         props["alias"] = f"Lucide{props['tag']}"
-        props.setdefault("color", "var(--current-color)")
         return super().create(**props)
 
 
@@ -234,6 +234,8 @@ LUCIDE_ICON_LIST = [
     "banana",
     "bandage",
     "banknote",
+    "banknote_arrow_down",
+    "banknote_x",
     "bar_chart",
     "bar_chart_2",
     "bar_chart_3",
@@ -249,6 +251,7 @@ LUCIDE_ICON_LIST = [
     "battery_full",
     "battery_low",
     "battery_medium",
+    "battery_plus",
     "battery_warning",
     "beaker",
     "bean",
@@ -321,6 +324,7 @@ LUCIDE_ICON_LIST = [
     "bot",
     "bot_message_square",
     "bot_off",
+    "bow_arrow",
     "box",
     "box_select",
     "boxes",
@@ -330,12 +334,15 @@ LUCIDE_ICON_LIST = [
     "brain_circuit",
     "brain_cog",
     "brick_wall",
+    "brick_wall_fire",
     "briefcase",
     "briefcase_business",
     "briefcase_conveyor_belt",
     "briefcase_medical",
     "bring_to_front",
     "brush",
+    "brush_cleaning",
+    "bubbles",
     "bug",
     "bug_off",
     "bug_play",
@@ -416,6 +423,7 @@ LUCIDE_ICON_LIST = [
     "chart_spline",
     "check",
     "check_check",
+    "check_line",
     "chef_hat",
     "cherry",
     "chevron_down",
@@ -475,6 +483,7 @@ LUCIDE_ICON_LIST = [
     "circle_power",
     "circle_slash",
     "circle_slash_2",
+    "circle_small",
     "circle_stop",
     "circle_user",
     "circle_user_round",
@@ -509,6 +518,8 @@ LUCIDE_ICON_LIST = [
     "clock_alert",
     "clock_arrow_down",
     "clock_arrow_up",
+    "clock_fading",
+    "clock_plus",
     "cloud",
     "cloud_alert",
     "cloud_cog",
@@ -538,6 +549,7 @@ LUCIDE_ICON_LIST = [
     "coins",
     "columns_2",
     "columns_3",
+    "columns_3_cog",
     "columns_4",
     "combine",
     "command",
@@ -585,6 +597,8 @@ LUCIDE_ICON_LIST = [
     "database",
     "database_backup",
     "database_zap",
+    "decimals_arrow_left",
+    "decimals_arrow_right",
     "delete",
     "dessert",
     "diameter",
@@ -612,6 +626,7 @@ LUCIDE_ICON_LIST = [
     "dollar_sign",
     "donut",
     "door_closed",
+    "door_closed_locked",
     "door_open",
     "dot",
     "download",
@@ -785,6 +800,9 @@ LUCIDE_ICON_LIST = [
     "frown",
     "fuel",
     "fullscreen",
+    "funnel",
+    "funnel_plus",
+    "funnel_x",
     "gallery_horizontal",
     "gallery_horizontal_end",
     "gallery_thumbnails",
@@ -820,6 +838,7 @@ LUCIDE_ICON_LIST = [
     "globe",
     "globe_lock",
     "goal",
+    "gpu",
     "grab",
     "graduation_cap",
     "grape",
@@ -836,6 +855,7 @@ LUCIDE_ICON_LIST = [
     "group",
     "guitar",
     "ham",
+    "hamburger",
     "hammer",
     "hand",
     "hand_coins",
@@ -864,7 +884,9 @@ LUCIDE_ICON_LIST = [
     "heart",
     "heart_crack",
     "heart_handshake",
+    "heart_minus",
     "heart_off",
+    "heart_plus",
     "heart_pulse",
     "heater",
     "hexagon",
@@ -975,6 +997,7 @@ LUCIDE_ICON_LIST = [
     "locate",
     "locate_fixed",
     "locate_off",
+    "location_edit",
     "lock",
     "lock_keyhole",
     "lock_keyhole_open",
@@ -1009,6 +1032,8 @@ LUCIDE_ICON_LIST = [
     "map_pin_x",
     "map_pin_x_inside",
     "map_pinned",
+    "map_plus",
+    "mars_stroke",
     "martini",
     "maximize",
     "maximize_2",
@@ -1107,6 +1132,7 @@ LUCIDE_ICON_LIST = [
     "network",
     "newspaper",
     "nfc",
+    "non_binary",
     "notebook",
     "notebook_pen",
     "notebook_tabs",
@@ -1138,6 +1164,7 @@ LUCIDE_ICON_LIST = [
     "paintbrush_2",
     "paintbrush_vertical",
     "palette",
+    "panda",
     "panel_bottom",
     "panel_bottom_close",
     "panel_bottom_dashed",
@@ -1249,6 +1276,7 @@ LUCIDE_ICON_LIST = [
     "receipt_swiss_franc",
     "receipt_text",
     "rectangle_ellipsis",
+    "rectangle_goggles",
     "rectangle_horizontal",
     "rectangle_vertical",
     "recycle",
@@ -1276,6 +1304,7 @@ LUCIDE_ICON_LIST = [
     "roller_coaster",
     "rotate_3d",
     "rotate_ccw",
+    "rotate_ccw_key",
     "rotate_ccw_square",
     "rotate_cw",
     "rotate_cw_square",
@@ -1287,12 +1316,14 @@ LUCIDE_ICON_LIST = [
     "rows_4",
     "rss",
     "ruler",
+    "ruler_dimension_line",
     "russian_ruble",
     "sailboat",
     "salad",
     "sandwich",
     "satellite",
     "satellite_dish",
+    "saudi_riyal",
     "save",
     "save_all",
     "save_off",
@@ -1348,6 +1379,7 @@ LUCIDE_ICON_LIST = [
     "shield_off",
     "shield_plus",
     "shield_question",
+    "shield_user",
     "shield_x",
     "ship",
     "ship_wheel",
@@ -1357,6 +1389,8 @@ LUCIDE_ICON_LIST = [
     "shopping_cart",
     "shovel",
     "shower_head",
+    "shredder",
+    "shrimp",
     "shrink",
     "shrub",
     "shuffle",
@@ -1385,6 +1419,7 @@ LUCIDE_ICON_LIST = [
     "smile_plus",
     "snail",
     "snowflake",
+    "soap_dispenser_droplet",
     "sofa",
     "soup",
     "space",
@@ -1396,6 +1431,7 @@ LUCIDE_ICON_LIST = [
     "spell_check",
     "spell_check_2",
     "spline",
+    "spline_pointer",
     "split",
     "spray_can",
     "sprout",
@@ -1428,6 +1464,7 @@ LUCIDE_ICON_LIST = [
     "square_dashed_bottom_code",
     "square_dashed_kanban",
     "square_dashed_mouse_pointer",
+    "square_dashed_top_solid",
     "square_divide",
     "square_dot",
     "square_equal",
@@ -1449,6 +1486,7 @@ LUCIDE_ICON_LIST = [
     "square_plus",
     "square_power",
     "square_radical",
+    "square_round_corner",
     "square_scissors",
     "square_sigma",
     "square_slash",
@@ -1460,6 +1498,10 @@ LUCIDE_ICON_LIST = [
     "square_user",
     "square_user_round",
     "square_x",
+    "squares_exclude",
+    "squares_intersect",
+    "squares_subtract",
+    "squares_unite",
     "squircle",
     "squirrel",
     "stamp",
@@ -1556,6 +1598,7 @@ LUCIDE_ICON_LIST = [
     "train_front_tunnel",
     "train_track",
     "tram_front",
+    "transgender",
     "trash",
     "trash_2",
     "tree_deciduous",
@@ -1572,6 +1615,7 @@ LUCIDE_ICON_LIST = [
     "triangle_right",
     "trophy",
     "truck",
+    "truck_electric",
     "turtle",
     "tv",
     "tv_2",
@@ -1599,6 +1643,7 @@ LUCIDE_ICON_LIST = [
     "user",
     "user_check",
     "user_cog",
+    "user_lock",
     "user_minus",
     "user_pen",
     "user_plus",
@@ -1621,6 +1666,8 @@ LUCIDE_ICON_LIST = [
     "vault",
     "vegan",
     "venetian_mask",
+    "venus",
+    "venus_and_mars",
     "vibrate",
     "vibrate_off",
     "video",
@@ -1658,6 +1705,7 @@ LUCIDE_ICON_LIST = [
     "wifi_high",
     "wifi_low",
     "wifi_off",
+    "wifi_pen",
     "wifi_zero",
     "wind",
     "wind_arrow_down",

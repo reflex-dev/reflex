@@ -14,7 +14,7 @@ class Bun(SimpleNamespace):
     """Bun constants."""
 
     # The Bun version.
-    VERSION = "1.2.10"
+    VERSION = "1.2.15"
 
     # Min Bun Version
     MIN_VERSION = "1.2.8"
@@ -38,7 +38,7 @@ class Bun(SimpleNamespace):
         Returns:
             The directory to store the bun.
         """
-        from reflex.config import environment
+        from reflex.environment import environment
 
         return environment.REFLEX_DIR.get() / "bun"
 
@@ -75,12 +75,24 @@ fetch-retries=0
 
 
 def _determine_nextjs_version() -> str:
-    default_version = "15.3.1"
+    default_version = "15.3.3"
     if (version := os.getenv("NEXTJS_VERSION")) and version != default_version:
         from reflex.utils import console
 
         console.warn(
             f"You have requested next@{version} but the supported version is {default_version}, abandon all hope ye who enter here."
+        )
+        return version
+    return default_version
+
+
+def _determine_react_version() -> str:
+    default_version = "19.1.0"
+    if (version := os.getenv("REACT_VERSION")) and version != default_version:
+        from reflex.utils import console
+
+        console.warn(
+            f"You have requested react@{version} but the supported version is {default_version}, abandon all hope ye who enter here."
         )
         return version
     return default_version
@@ -99,25 +111,36 @@ class PackageJson(SimpleNamespace):
 
     PATH = "package.json"
 
-    DEPENDENCIES = {
-        "@emotion/react": "11.14.0",
-        "axios": "1.8.4",
-        "json5": "2.2.3",
-        "next": _determine_nextjs_version(),
-        "next-sitemap": "4.2.3",
-        "next-themes": "0.4.6",
-        "react": "19.1.0",
-        "react-dom": "19.1.0",
-        "react-focus-lock": "2.13.6",
-        "socket.io-client": "4.8.1",
-        "universal-cookie": "7.2.2",
-    }
+    _react_version = _determine_react_version()
+
+    @classproperty
+    @classmethod
+    def DEPENDENCIES(cls) -> dict[str, str]:
+        """The dependencies to include in package.json.
+
+        Returns:
+            A dictionary of dependencies with their versions.
+        """
+        return {
+            "@emotion/react": "11.14.0",
+            "axios": "1.9.0",
+            "json5": "2.2.3",
+            "next": _determine_nextjs_version(),
+            "next-sitemap": "4.2.3",
+            "next-themes": "0.4.6",
+            "react": cls._react_version,
+            "react-dom": cls._react_version,
+            "react-focus-lock": "2.13.6",
+            "socket.io-client": "4.8.1",
+            "universal-cookie": "7.2.2",
+        }
+
     DEV_DEPENDENCIES = {
         "autoprefixer": "10.4.21",
-        "postcss": "8.5.3",
+        "postcss": "8.5.4",
         "postcss-import": "16.1.0",
     }
     OVERRIDES = {
         # This should always match the `react` version in DEPENDENCIES for recharts compatibility.
-        "react-is": "19.1.0"
+        "react-is": _react_version
     }

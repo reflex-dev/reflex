@@ -17,7 +17,6 @@ import re
 import shutil
 import sys
 import tempfile
-import time
 import typing
 import zipfile
 from collections.abc import Callable, Sequence
@@ -37,13 +36,11 @@ from redis.exceptions import RedisError
 
 from reflex import constants, model
 from reflex.compiler import templates
-from reflex.config import Config, environment, get_config
-from reflex.utils import console, net, path_ops, processes
+from reflex.config import Config, get_config
+from reflex.environment import environment
+from reflex.utils import console, net, path_ops, processes, redir
 from reflex.utils.decorator import once
-from reflex.utils.exceptions import (
-    GeneratedCodeHasNoFunctionDefsError,
-    SystemPackageMissingError,
-)
+from reflex.utils.exceptions import SystemPackageMissingError
 from reflex.utils.format import format_library_name
 from reflex.utils.registry import get_npm_registry
 
@@ -65,7 +62,6 @@ class Template:
     name: str
     description: str
     code_url: str
-    demo_url: str | None = None
 
 
 @dataclasses.dataclass(frozen=True)
@@ -134,7 +130,6 @@ def check_latest_package_version(package_name: str):
             )
     except Exception:
         console.debug(f"Failed to check for the latest version of {package_name}.")
-        pass
 
 
 def get_or_set_last_reflex_version_check_datetime():
@@ -260,9 +255,8 @@ def get_nodejs_compatible_package_managers(
     package_managers = list(filter(None, package_managers))
 
     if not package_managers and raise_on_none:
-        raise FileNotFoundError(
-            "Bun or npm not found. You might need to rerun `reflex init` or install either."
-        )
+        msg = "Bun or npm not found. You might need to rerun `reflex init` or install either."
+        raise FileNotFoundError(msg)
 
     return package_managers
 
@@ -315,9 +309,8 @@ def get_js_package_executor(raise_on_none: bool = False) -> Sequence[Sequence[st
     package_managers = list(filter(None, package_managers))
 
     if not package_managers and raise_on_none:
-        raise FileNotFoundError(
-            "Bun or npm not found. You might need to rerun `reflex init` or install either."
-        )
+        msg = "Bun or npm not found. You might need to rerun `reflex init` or install either."
+        raise FileNotFoundError(msg)
 
     return package_managers
 
@@ -350,10 +343,11 @@ def _check_app_name(config: Config):
         RuntimeError: If the app name is not set in the config.
     """
     if not config.app_name:
-        raise RuntimeError(
+        msg = (
             "Cannot get the app module because `app_name` is not set in rxconfig! "
             "If this error occurs in a reflex test case, ensure that `get_app` is mocked."
         )
+        raise RuntimeError(msg)
 
 
 def get_app(reload: bool = False) -> ModuleType:
@@ -400,11 +394,14 @@ def get_app(reload: bool = False) -> ModuleType:
         return app
 
 
-def get_and_validate_app(reload: bool = False) -> AppInfo:
+def get_and_validate_app(
+    reload: bool = False, check_if_schema_up_to_date: bool = False
+) -> AppInfo:
     """Get the app instance based on the default config and validate it.
 
     Args:
         reload: Re-import the app module from disk
+        check_if_schema_up_to_date: If True, check if the schema is up to date.
 
     Returns:
         The app instance and the app module.
@@ -417,47 +414,76 @@ def get_and_validate_app(reload: bool = False) -> AppInfo:
     app_module = get_app(reload=reload)
     app = getattr(app_module, constants.CompileVars.APP)
     if not isinstance(app, App):
-        raise RuntimeError(
-            "The app instance in the specified app_module_import in rxconfig must be an instance of rx.App."
-        )
+        msg = "The app instance in the specified app_module_import in rxconfig must be an instance of rx.App."
+        raise RuntimeError(msg)
+
+    if check_if_schema_up_to_date:
+        check_schema_up_to_date()
+
     return AppInfo(app=app, module=app_module)
 
 
-def validate_app(reload: bool = False) -> None:
+def validate_app(
+    reload: bool = False, check_if_schema_up_to_date: bool = False
+) -> None:
     """Validate the app instance based on the default config.
 
     Args:
         reload: Re-import the app module from disk
+        check_if_schema_up_to_date: If True, check if the schema is up to date.
     """
-    get_and_validate_app(reload=reload)
+    get_and_validate_app(
+        reload=reload, check_if_schema_up_to_date=check_if_schema_up_to_date
+    )
 
 
-def get_compiled_app(reload: bool = False, export: bool = False) -> ModuleType:
+def get_compiled_app(
+    reload: bool = False,
+    export: bool = False,
+    dry_run: bool = False,
+    check_if_schema_up_to_date: bool = False,
+) -> ModuleType:
     """Get the app module based on the default config after first compiling it.
 
     Args:
         reload: Re-import the app module from disk
         export: Compile the app for export
+        dry_run: If True, do not write the compiled app to disk.
+        check_if_schema_up_to_date: If True, check if the schema is up to date.
 
     Returns:
         The compiled app based on the default config.
     """
-    app, app_module = get_and_validate_app(reload=reload)
+    app, app_module = get_and_validate_app(
+        reload=reload, check_if_schema_up_to_date=check_if_schema_up_to_date
+    )
     # For py3.9 compatibility when redis is used, we MUST add any decorator pages
     # before compiling the app in a thread to avoid event loop error (REF-2172).
     app._apply_decorated_pages()
-    app._compile(export=export)
+    app._compile(export=export, dry_run=dry_run)
     return app_module
 
 
-def compile_app(reload: bool = False, export: bool = False) -> None:
+def compile_app(
+    reload: bool = False,
+    export: bool = False,
+    dry_run: bool = False,
+    check_if_schema_up_to_date: bool = False,
+) -> None:
     """Compile the app module based on the default config.
 
     Args:
         reload: Re-import the app module from disk
         export: Compile the app for export
+        dry_run: If True, do not write the compiled app to disk.
+        check_if_schema_up_to_date: If True, check if the schema is up to date.
     """
-    get_compiled_app(reload=reload, export=export)
+    get_compiled_app(
+        reload=reload,
+        export=export,
+        dry_run=dry_run,
+        check_if_schema_up_to_date=check_if_schema_up_to_date,
+    )
 
 
 def _can_colorize() -> bool:
@@ -502,20 +528,23 @@ def _can_colorize() -> bool:
         return file.isatty()
 
 
-def compile_or_validate_app(compile: bool = False) -> bool:
+def compile_or_validate_app(
+    compile: bool = False, check_if_schema_up_to_date: bool = False
+) -> bool:
     """Compile or validate the app module based on the default config.
 
     Args:
         compile: Whether to compile the app.
+        check_if_schema_up_to_date: If True, check if the schema is up to date.
 
     Returns:
         If the app is compiled successfully.
     """
     try:
         if compile:
-            compile_app()
+            compile_app(check_if_schema_up_to_date=check_if_schema_up_to_date)
         else:
-            validate_app()
+            validate_app(check_if_schema_up_to_date=check_if_schema_up_to_date)
     except Exception as e:
         if isinstance(e, click.exceptions.Exit):
             return False
@@ -574,9 +603,8 @@ def parse_redis_url() -> str | None:
     if not config.redis_url:
         return None
     if not config.redis_url.startswith(("redis://", "rediss://", "unix://")):
-        raise ValueError(
-            "REDIS_URL must start with 'redis://', 'rediss://', or 'unix://'."
-        )
+        msg = "REDIS_URL must start with 'redis://', 'rediss://', or 'unix://'."
+        raise ValueError(msg)
     return config.redis_url
 
 
@@ -840,18 +868,24 @@ def initialize_gitignore(
 
 def initialize_requirements_txt() -> bool:
     """Initialize the requirements.txt file.
-    If absent, generate one for the user.
+    If absent and no pyproject.toml file exists, generate one for the user.
     If the requirements.txt does not have reflex as dependency,
     generate a requirement pinning current version and append to
     the requirements.txt file.
 
     Returns:
-        True if the requirements.txt file was created or updated, False otherwise.
+        True if the user has to update the requirements.txt file.
 
     Raises:
         Exit: If the requirements.txt file cannot be read or written to.
     """
     requirements_file_path = Path(constants.RequirementsTxt.FILE)
+    if (
+        not requirements_file_path.exists()
+        and Path(constants.PyprojectToml.FILE).exists()
+    ):
+        return True
+
     requirements_file_path.touch(exist_ok=True)
 
     for encoding in [None, "utf-8"]:
@@ -864,12 +898,12 @@ def initialize_requirements_txt() -> bool:
             console.error(f"Failed to read {requirements_file_path}.")
             raise click.exceptions.Exit(1) from e
     else:
-        return False
+        return True
 
     for line in content.splitlines():
         if re.match(r"^reflex[^a-zA-Z0-9]", line):
             console.debug(f"{requirements_file_path} already has reflex as dependency.")
-            return True
+            return False
 
     console.debug(
         f"Appending {constants.RequirementsTxt.DEFAULTS_STUB} to {requirements_file_path}"
@@ -879,7 +913,7 @@ def initialize_requirements_txt() -> bool:
             "\n" + constants.RequirementsTxt.DEFAULTS_STUB + constants.Reflex.VERSION
         )
 
-    return True
+    return False
 
 
 def initialize_app_directory(
@@ -969,7 +1003,7 @@ def initialize_web_directory():
     project_hash = get_project_hash()
 
     console.debug(f"Copying {constants.Templates.Dirs.WEB_TEMPLATE} to {get_web_dir()}")
-    path_ops.cp(constants.Templates.Dirs.WEB_TEMPLATE, str(get_web_dir()))
+    path_ops.copy_tree(constants.Templates.Dirs.WEB_TEMPLATE, str(get_web_dir()))
 
     console.debug("Initializing the web directory.")
     initialize_package_json()
@@ -1109,7 +1143,7 @@ def _update_next_config(
 
     if transpile_packages:
         next_config["transpilePackages"] = list(
-            {format_library_name(p) for p in transpile_packages}
+            dict.fromkeys([format_library_name(p) for p in transpile_packages])
         )
     if export:
         next_config["output"] = "export"
@@ -1150,15 +1184,16 @@ def download_and_run(url: str, *args, show_status: bool = False, **env):
         raise click.exceptions.Exit(1) from None
 
     # Save the script to a temporary file.
-    script = Path(tempfile.NamedTemporaryFile().name)
+    with tempfile.NamedTemporaryFile() as tempfile_file:
+        script = Path(tempfile_file.name)
 
-    script.write_text(response.text)
+        script.write_text(response.text)
 
-    # Run the script.
-    env = {**os.environ, **env}
-    process = processes.new_process(["bash", str(script), *args], env=env)
-    show = processes.show_status if show_status else processes.show_logs
-    show(f"Installing {url}", process)
+        # Run the script.
+        env = {**os.environ, **env}
+        process = processes.new_process(["bash", str(script), *args], env=env)
+        show = processes.show_status if show_status else processes.show_logs
+        show(f"Installing {url}", process)
 
 
 def install_bun():
@@ -1206,7 +1241,8 @@ def install_bun():
         )
     else:
         if path_ops.which("unzip") is None:
-            raise SystemPackageMissingError("unzip")
+            msg = "unzip"
+            raise SystemPackageMissingError(msg)
 
         # Run the bun install script.
         download_and_run(
@@ -1255,13 +1291,15 @@ def cached_procedure(
         ValueError: If both cache_file and cache_file_fn are provided.
     """
     if cache_file and cache_file_fn is not None:
-        raise ValueError("cache_file and cache_file_fn cannot both be provided.")
+        msg = "cache_file and cache_file_fn cannot both be provided."
+        raise ValueError(msg)
 
     def _inner_decorator(func: Callable):
         def _inner(*args, **kwargs):
             _cache_file = cache_file_fn() if cache_file_fn is not None else cache_file
             if not _cache_file:
-                raise ValueError("Unknown cache file, cannot cache result.")
+                msg = "Unknown cache file, cannot cache result."
+                raise ValueError(msg)
             payload = _read_cached_procedure_file(_cache_file)
             new_payload = payload_fn(*args, **kwargs)
             if payload != new_payload:
@@ -1306,47 +1344,42 @@ def install_frontend_packages(packages: set[str], config: Config):
     primary_package_manager = install_package_managers[0]
     fallbacks = install_package_managers[1:]
 
-    processes.run_process_with_fallbacks(
-        [primary_package_manager, "install", "--legacy-peer-deps"],
+    run_package_manager = functools.partial(
+        processes.run_process_with_fallbacks,
         fallbacks=fallbacks,
         analytics_enabled=True,
-        show_status_message="Installing base frontend packages",
         cwd=get_web_dir(),
         shell=constants.IS_WINDOWS,
         env=env,
     )
 
-    if config.tailwind is not None:
-        processes.run_process_with_fallbacks(
+    run_package_manager(
+        [primary_package_manager, "install", "--legacy-peer-deps"],
+        show_status_message="Installing base frontend packages",
+    )
+
+    development_deps: set[str] = set()
+    for plugin in config.plugins:
+        development_deps.update(plugin.get_frontend_development_dependencies())
+        packages.update(plugin.get_frontend_dependencies())
+
+    if development_deps:
+        run_package_manager(
             [
                 primary_package_manager,
                 "add",
                 "--legacy-peer-deps",
                 "-d",
-                constants.Tailwind.VERSION,
-                *[
-                    plugin if isinstance(plugin, str) else plugin.get("name")
-                    for plugin in (config.tailwind or {}).get("plugins", [])
-                ],
+                *development_deps,
             ],
-            fallbacks=fallbacks,
-            analytics_enabled=True,
-            show_status_message="Installing tailwind",
-            cwd=get_web_dir(),
-            shell=constants.IS_WINDOWS,
-            env=env,
+            show_status_message="Installing frontend development dependencies",
         )
 
     # Install custom packages defined in frontend_packages
-    if len(packages) > 0:
-        processes.run_process_with_fallbacks(
+    if packages:
+        run_package_manager(
             [primary_package_manager, "add", "--legacy-peer-deps", *packages],
-            fallbacks=fallbacks,
-            analytics_enabled=True,
             show_status_message="Installing frontend packages from config and components",
-            cwd=get_web_dir(),
-            shell=constants.IS_WINDOWS,
-            env=env,
         )
 
 
@@ -1365,17 +1398,11 @@ def check_running_mode(frontend: bool, backend: bool) -> tuple[bool, bool]:
     return frontend, backend
 
 
-def needs_reinit(frontend: bool = True) -> bool:
-    """Check if an app needs to be reinitialized.
-
-    Args:
-        frontend: Whether to check if the frontend is initialized.
-
-    Returns:
-        Whether the app needs to be reinitialized.
+def assert_in_reflex_dir():
+    """Assert that the current working directory is the reflex directory.
 
     Raises:
-        Exit: If the app is not initialized.
+        Exit: If the current working directory is not the reflex directory.
     """
     if not constants.Config.FILE.exists():
         console.error(
@@ -1383,10 +1410,13 @@ def needs_reinit(frontend: bool = True) -> bool:
         )
         raise click.exceptions.Exit(1)
 
-    # Don't need to reinit if not running in frontend mode.
-    if not frontend:
-        return False
 
+def needs_reinit() -> bool:
+    """Check if an app needs to be reinitialized.
+
+    Returns:
+        Whether the app needs to be reinitialized.
+    """
     # Make sure the .reflex directory exists.
     if not environment.REFLEX_DIR.get().exists():
         return True
@@ -1447,7 +1477,7 @@ def validate_bun(bun_path: Path | None = None):
                 "Failed to obtain bun version. Make sure the specified bun path in your config is correct."
             )
             raise click.exceptions.Exit(1)
-        elif bun_version < version.parse(constants.Bun.MIN_VERSION):
+        if bun_version < version.parse(constants.Bun.MIN_VERSION):
             console.warn(
                 f"Reflex requires bun version {constants.Bun.MIN_VERSION} or higher to run, but the detected version is "
                 f"{bun_version}. If you have specified a custom bun path in your config, make sure to provide one "
@@ -1600,22 +1630,13 @@ def prompt_for_template_options(templates: list[Template]) -> str:
     # Show the user the URLs of each template to preview.
     console.print("\nGet started with a template:")
 
-    def format_demo_url_str(url: str | None) -> str:
-        return f" ({url})" if url else ""
-
     # Prompt the user to select a template.
-    id_to_name = {
-        str(
-            idx
-        ): f"{template.name.replace('_', ' ').replace('-', ' ')}{format_demo_url_str(template.demo_url)} - {template.description}"
-        for idx, template in enumerate(templates)
-    }
-    for id in range(len(id_to_name)):
-        console.print(f"({id}) {id_to_name[str(id)]}")
+    for index, template in enumerate(templates):
+        console.print(f"({index}) {template.description}")
 
     template = console.ask(
         "Which template would you like to use?",
-        choices=[str(i) for i in range(len(id_to_name))],
+        choices=[str(i) for i in range(len(templates))],
         show_choices=False,
         default="0",
     )
@@ -1667,8 +1688,7 @@ def fetch_app_templates(version: str) -> dict[str, Template]:
     if asset is None:
         console.warn(f"Templates metadata not found for version {version}")
         return {}
-    else:
-        templates_url = asset["browser_download_url"]
+    templates_url = asset["browser_download_url"]
 
     templates_data = net.get(templates_url, follow_redirects=True).json()["templates"]
 
@@ -1874,7 +1894,7 @@ def initialize_app(app_name: str, template: str | None = None) -> str | None:
     # Check if the app is already initialized.
     if constants.Config.FILE.exists():
         telemetry.send("reinit")
-        return
+        return None
 
     templates: dict[str, Template] = {}
 
@@ -1884,14 +1904,17 @@ def initialize_app(app_name: str, template: str | None = None) -> str | None:
 
     if template is None:
         template = prompt_for_template_options(get_init_cli_prompt_options())
+
         if template == constants.Templates.CHOOSE_TEMPLATES:
-            console.print(
-                f"Go to the templates page ({constants.Templates.REFLEX_TEMPLATES_URL}) and copy the command to init with a template."
-            )
+            redir.reflex_templates()
             raise click.exceptions.Exit(0)
 
+    if template == constants.Templates.AI:
+        redir.reflex_build_redirect()
+        raise click.exceptions.Exit(0)
+
     # If the blank template is selected, create a blank app.
-    if template in (constants.Templates.DEFAULT,):
+    if template == constants.Templates.DEFAULT:
         # Default app creation behavior: a blank app.
         initialize_default_app(app_name)
     else:
@@ -1914,82 +1937,19 @@ def get_init_cli_prompt_options() -> list[Template]:
         Template(
             name=constants.Templates.DEFAULT,
             description="A blank Reflex app.",
-            demo_url=constants.Templates.DEFAULT_TEMPLATE_URL,
             code_url="",
         ),
         Template(
             name=constants.Templates.AI,
-            description="Generate a template using AI [Experimental]",
-            demo_url="",
+            description="[bold]Try our free AI builder.",
             code_url="",
         ),
         Template(
             name=constants.Templates.CHOOSE_TEMPLATES,
-            description="Choose an existing template.",
-            demo_url="",
+            description="Premade templates built by the Reflex team.",
             code_url="",
         ),
     ]
-
-
-def initialize_main_module_index_from_generation(app_name: str, generation_hash: str):
-    """Overwrite the `index` function in the main module with reflex.build generated code.
-
-    Args:
-        app_name: The name of the app.
-        generation_hash: The generation hash from reflex.build.
-
-    Raises:
-        GeneratedCodeHasNoFunctionDefsError: If the fetched code has no function definitions
-            (the refactored reflex code is expected to have at least one root function defined).
-    """
-    # Download the reflex code for the generation.
-    url = constants.Templates.REFLEX_BUILD_CODE_URL.format(
-        generation_hash=generation_hash
-    )
-    resp = net.get(url)
-    while resp.status_code == httpx.codes.SERVICE_UNAVAILABLE:
-        console.debug("Waiting for the code to be generated...")
-        time.sleep(1)
-        resp = net.get(url)
-    resp.raise_for_status()
-
-    # Determine the name of the last function, which renders the generated code.
-    defined_funcs = re.findall(r"def ([a-zA-Z_]+)\(", resp.text)
-    if not defined_funcs:
-        raise GeneratedCodeHasNoFunctionDefsError(
-            f"No function definitions found in generated code from {url!r}."
-        )
-    render_func_name = defined_funcs[-1]
-
-    def replace_content(_match: re.Match) -> str:
-        return "\n".join(
-            [
-                resp.text,
-                "",
-                "def index() -> rx.Component:",
-                f"    return {render_func_name}()",
-                "",
-                "",
-            ],
-        )
-
-    main_module_path = Path(app_name, app_name + constants.Ext.PY)
-    main_module_code = main_module_path.read_text()
-
-    main_module_code = re.sub(
-        r"def index\(\).*:\n([^\n]\s+.*\n+)+",
-        replace_content,
-        main_module_code,
-    )
-    # Make the app use light mode until flexgen enforces the conversion of
-    # tailwind colors to radix colors.
-    main_module_code = re.sub(
-        r"app\s*=\s*rx\.App\(\s*\)",
-        'app = rx.App(theme=rx.theme(color_mode="light"))',
-        main_module_code,
-    )
-    main_module_path.write_text(main_module_code)
 
 
 def format_address_width(address_width: str | None) -> int | None:

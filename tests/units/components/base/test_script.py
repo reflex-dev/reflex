@@ -14,7 +14,7 @@ def test_script_inline():
     assert render_dict["name"] == "Script"
     assert not render_dict["contents"]
     assert len(render_dict["children"]) == 1
-    assert render_dict["children"][0]["contents"] == '{"let x = 42"}'
+    assert render_dict["children"][0]["contents"] == '"let x = 42"'
 
 
 def test_script_src():
@@ -24,7 +24,7 @@ def test_script_src():
     assert render_dict["name"] == "Script"
     assert not render_dict["contents"]
     assert not render_dict["children"]
-    assert 'src={"foo.js"}' in render_dict["props"]
+    assert 'src:"foo.js"' in render_dict["props"]
 
 
 def test_script_neither():
@@ -39,17 +39,14 @@ class EvState(BaseState):
     @rx.event
     def on_ready(self):
         """Empty event handler."""
-        pass
 
     @rx.event
     def on_load(self):
         """Empty event handler."""
-        pass
 
     @rx.event
     def on_error(self):
         """Empty event handler."""
-        pass
 
 
 def test_script_event_handler():
@@ -62,14 +59,14 @@ def test_script_event_handler():
     )
     render_dict = component.render()
     assert (
-        f'onReady={{((...args) => (addEvents([(Event("{EvState.get_full_name()}.on_ready", ({{  }}), ({{  }})))], args, ({{  }}))))}}'
+        f'onReady:((...args) => (addEvents([(Event("{EvState.get_full_name()}.on_ready", ({{  }}), ({{  }})))], args, ({{  }}))))'
         in render_dict["props"]
     )
     assert (
-        f'onLoad={{((...args) => (addEvents([(Event("{EvState.get_full_name()}.on_load", ({{  }}), ({{  }})))], args, ({{  }}))))}}'
+        f'onLoad:((...args) => (addEvents([(Event("{EvState.get_full_name()}.on_load", ({{  }}), ({{  }})))], args, ({{  }}))))'
         in render_dict["props"]
     )
     assert (
-        f'onError={{((...args) => (addEvents([(Event("{EvState.get_full_name()}.on_error", ({{  }}), ({{  }})))], args, ({{  }}))))}}'
+        f'onError:((...args) => (addEvents([(Event("{EvState.get_full_name()}.on_error", ({{  }}), ({{  }})))], args, ({{  }}))))'
         in render_dict["props"]
     )

@@ -46,10 +46,10 @@ def test_call_event_handler():
 
     test_fn.__qualname__ = "test_fn"
 
-    def test_fn_with_args(_, arg1, arg2):
+    def fn_with_args(_, arg1, arg2):
         pass
 
-    test_fn_with_args.__qualname__ = "test_fn_with_args"
+    fn_with_args.__qualname__ = "fn_with_args"
 
     handler = EventHandler(fn=test_fn)
     event_spec = handler()
@@ -58,7 +58,7 @@ def test_call_event_handler():
     assert event_spec.args == ()
     assert format.format_event(event_spec) == 'Event("test_fn", {})'
 
-    handler = EventHandler(fn=test_fn_with_args)
+    handler = EventHandler(fn=fn_with_args)
     event_spec = handler(make_var("first"), make_var("second"))
 
     # Test passing vars as args.
@@ -69,22 +69,22 @@ def test_call_event_handler():
     assert event_spec.args[1][1].equals(Var(_js_expr="second"))
     assert (
         format.format_event(event_spec)
-        == 'Event("test_fn_with_args", {arg1:first,arg2:second})'
+        == 'Event("fn_with_args", {arg1:first,arg2:second})'
     )
 
     # Passing args as strings should format differently.
     event_spec = handler("first", "second")
     assert (
         format.format_event(event_spec)
-        == 'Event("test_fn_with_args", {arg1:"first",arg2:"second"})'
+        == 'Event("fn_with_args", {arg1:"first",arg2:"second"})'
     )
 
     first, second = 123, "456"
-    handler = EventHandler(fn=test_fn_with_args)
+    handler = EventHandler(fn=fn_with_args)
     event_spec = handler(first, second)
     assert (
         format.format_event(event_spec)
-        == 'Event("test_fn_with_args", {arg1:123,arg2:"456"})'
+        == 'Event("fn_with_args", {arg1:123,arg2:"456"})'
     )
 
     assert event_spec.handler == handler
@@ -93,7 +93,7 @@ def test_call_event_handler():
     assert event_spec.args[1][0].equals(Var(_js_expr="arg2"))
     assert event_spec.args[1][1].equals(LiteralVar.create(second))
 
-    handler = EventHandler(fn=test_fn_with_args)
+    handler = EventHandler(fn=fn_with_args)
     with pytest.raises(TypeError):
         handler(test_fn)
 
@@ -101,15 +101,15 @@ def test_call_event_handler():
 def test_call_event_handler_partial():
     """Calling an EventHandler with incomplete args returns an EventSpec that can be extended."""
 
-    def test_fn_with_args(_, arg1, arg2):
+    def fn_with_args(_, arg1, arg2):
         pass
 
-    test_fn_with_args.__qualname__ = "test_fn_with_args"
+    fn_with_args.__qualname__ = "fn_with_args"
 
     def spec(a2: Var[str]) -> list[Var[str]]:
         return [a2]
 
-    handler = EventHandler(fn=test_fn_with_args, state_full_name="BigState")
+    handler = EventHandler(fn=fn_with_args, state_full_name="BigState")
     event_spec = handler(make_var("first"))
     event_spec2 = call_event_handler(event_spec, spec)
 
@@ -119,7 +119,7 @@ def test_call_event_handler_partial():
     assert event_spec.args[0][1].equals(Var(_js_expr="first"))
     assert (
         format.format_event(event_spec)
-        == 'Event("BigState.test_fn_with_args", {arg1:first})'
+        == 'Event("BigState.fn_with_args", {arg1:first})'
     )
 
     assert event_spec2 is not event_spec
@@ -131,17 +131,17 @@ def test_call_event_handler_partial():
     assert event_spec2.args[1][1].equals(Var(_js_expr="_a2", _var_type=str))
     assert (
         format.format_event(event_spec2)
-        == 'Event("BigState.test_fn_with_args", {arg1:first,arg2:_a2})'
+        == 'Event("BigState.fn_with_args", {arg1:first,arg2:_a2})'
     )
 
 
 @pytest.mark.parametrize(
     ("arg1", "arg2"),
-    (
+    [
         (1, 2),
         (1, "2"),
         ({"a": 1}, {"b": 2}),
-    ),
+    ],
 )
 def test_fix_events(arg1, arg2):
     """Test that chaining an event handler with args formats the payload correctly.
@@ -151,21 +151,21 @@ def test_fix_events(arg1, arg2):
         arg2: The second arg passed to the handler.
     """
 
-    def test_fn_with_args(_, arg1, arg2):
+    def fn_with_args(_, arg1, arg2):
         pass
 
-    test_fn_with_args.__qualname__ = "test_fn_with_args"
+    fn_with_args.__qualname__ = "fn_with_args"
 
-    handler = EventHandler(fn=test_fn_with_args)
+    handler = EventHandler(fn=fn_with_args)
     event_spec = handler(arg1, arg2)
     event = fix_events([event_spec], token="foo")[0]
-    assert event.name == test_fn_with_args.__qualname__
+    assert event.name == fn_with_args.__qualname__
     assert event.token == "foo"
     assert event.payload == {"arg1": arg1, "arg2": arg2}
 
 
 @pytest.mark.parametrize(
-    "input,output",
+    ("input", "output"),
     [
         (
             ("/path", None, None),
@@ -483,3 +483,77 @@ def test_event_bound_method() -> None:
 
     w = Wrapper()
     _ = rx.input(on_change=w.get_handler)
+
+
+def test_event_var_in_rx_cond():
+    """Test that EventVar and EventChainVar cannot be used in rx.cond()."""
+    from reflex.components.core.cond import cond as rx_cond
+
+    class S(BaseState):
+        @event
+        def s(self):
+            pass
+
+    handler_var = Var.create(S.s)
+    with pytest.raises(TypeError) as err:
+        rx_cond(handler_var, rx.text("True"), rx.text("False"))
+    assert "Cannot convert" in str(err.value)
+    assert "to bool" in str(err.value)
+
+    def _args_spec() -> tuple:
+        return ()
+
+    chain_var = Var.create(
+        EventChain(
+            events=[S.s()],
+            args_spec=_args_spec,
+        )
+    )
+    with pytest.raises(TypeError) as err:
+        rx_cond(chain_var, rx.text("True"), rx.text("False"))
+    assert "Cannot convert" in str(err.value)
+    assert "to bool" in str(err.value)
+
+
+def test_decentralized_event_with_args():
+    """Test the decentralized event."""
+
+    class S(BaseState):
+        field: Field[str] = field("")
+
+    @event
+    def e(s: S, arg: str):
+        s.field = arg
+
+    _ = rx.input(on_change=e("foo"))
+
+
+def test_decentralized_event_no_args():
+    """Test the decentralized event with no args."""
+
+    class S(BaseState):
+        field: Field[str] = field("")
+
+    @event
+    def e(s: S):
+        s.field = "foo"
+
+    _ = rx.input(on_change=e())
+    _ = rx.input(on_change=e)
+
+
+class GlobalState(BaseState):
+    """Global state for testing decentralized events."""
+
+    field: Field[str] = field("")
+
+
+@event
+def f(s: GlobalState, arg: str):
+    s.field = arg
+
+
+def test_decentralized_event_global_state():
+    """Test the decentralized event with a global state."""
+    _ = rx.input(on_change=f("foo"))
+    _ = rx.input(on_change=f)

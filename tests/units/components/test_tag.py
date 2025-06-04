@@ -5,13 +5,13 @@ from reflex.vars.base import LiteralVar, Var
 
 
 @pytest.mark.parametrize(
-    "props,test_props",
+    ("props", "test_props"),
     [
         ({}, []),
-        ({"key-hypen": 1}, ["key-hypen={1}"]),
-        ({"key": 1}, ["key={1}"]),
-        ({"key": "value"}, ['key={"value"}']),
-        ({"key": True, "key2": "value2"}, ["key={true}", 'key2={"value2"}']),
+        ({"key-hypen": 1}, ['"key-hypen":1']),
+        ({"key": 1}, ["key:1"]),
+        ({"key": "value"}, ['key:"value"']),
+        ({"key": True, "key2": "value2"}, ["key:true", 'key2:"value2"']),
     ],
 )
 def test_format_props(props: dict[str, Var], test_props: list):
@@ -27,7 +27,7 @@ def test_format_props(props: dict[str, Var], test_props: list):
 
 
 @pytest.mark.parametrize(
-    "prop,valid",
+    ("prop", "valid"),
     [
         (1, True),
         (3.14, True),
@@ -58,7 +58,7 @@ def test_add_props():
 
 
 @pytest.mark.parametrize(
-    "tag,expected",
+    ("tag", "expected"),
     [
         (Tag(), {"name": "", "contents": "", "props": {}}),
         (Tag(name="br"), {"name": "br", "contents": "", "props": {}}),
