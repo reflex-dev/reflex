@@ -72,7 +72,6 @@ _MAPPING = {
         "g",
         "ellipse",
         "rect",
-        "g",
         "polygon",
         "path",
         "stop",
