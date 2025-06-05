@@ -316,6 +316,8 @@ class Text(BaseHTML):
     length_adjust: Var[str]
     # A width that the text should be scaled to fit.
     text_length: Var[str | int]
+    # Used to align the text with respect to the x and y attributes.
+    text_anchor: Var[str]
 
 
 class Line(BaseHTML):
