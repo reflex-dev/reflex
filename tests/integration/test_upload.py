@@ -432,6 +432,16 @@ async def test_cancel_upload(tmp_path, upload_file: AppHarness, driver: WebDrive
         driver: WebDriver instance.
     """
     assert upload_file.app_instance is not None
+    driver.execute_cdp_cmd("Network.enable", {})
+    driver.execute_cdp_cmd(
+        "Network.emulateNetworkConditions",
+        {
+            "offline": False,
+            "downloadThroughput": 1024 * 1024 / 8,  # 1 Mbps
+            "uploadThroughput": 1024 * 1024 / 8,  #  1 Mbps
+            "latency": 200,  # 200ms
+        },
+    )
     token = poll_for_token(driver, upload_file)
     state_name = upload_file.get_state_name("_upload_state")
     state_full_name = upload_file.get_full_state_name(["_upload_state"])
@@ -444,16 +454,16 @@ async def test_cancel_upload(tmp_path, upload_file: AppHarness, driver: WebDrive
     exp_name = "large.txt"
     target_file = tmp_path / exp_name
     with target_file.open("wb") as f:
-        f.seek(1024 * 1024 * 1024)  # 1 GB
+        f.seek(1024 * 1024)  # 1 MB file, should upload in ~8 seconds
         f.write(b"0")
 
     upload_box.send_keys(str(target_file))
     upload_button.click()
-    await asyncio.sleep(0.1)
+    await asyncio.sleep(1)
     cancel_button.click()
 
     # Wait a bit for the upload to get cancelled.
-    await asyncio.sleep(3)
+    await asyncio.sleep(12)
 
     # Get interim progress dicts saved in the on_upload_progress handler.
     async def _progress_dicts():
