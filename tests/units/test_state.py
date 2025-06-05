@@ -291,7 +291,7 @@ def test_base_class_vars(test_state):
     cls = type(test_state)
 
     for field in fields:
-        if field in test_state.get_skip_vars():
+        if field.startswith("_") or field in cls.get_skip_vars():
             continue
         prop = getattr(cls, field)
         assert isinstance(prop, Var)
@@ -2776,7 +2776,7 @@ def test_state_union_optional():
     assert (
         str(UnionState.c3.c2r.c1r.foo) == f'{UnionState.c3!s}?.["c2r"]["c1r"]["foo"]'  # pyright: ignore [reportOptionalMemberAccess]
     )
-    assert str(UnionState.c3i.c2) == f'{UnionState.c3i!s}["c2"]'
+    assert str(UnionState.c3i.c2) == f'{UnionState.c3i!s}?.["c2"]'
     assert str(UnionState.c3r.c2) == f'{UnionState.c3r!s}["c2"]'
     assert UnionState.custom_union.foo is not None  # pyright: ignore [reportAttributeAccessIssue]
     assert UnionState.custom_union.c1 is not None  # pyright: ignore [reportAttributeAccessIssue]

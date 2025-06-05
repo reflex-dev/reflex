@@ -19,6 +19,7 @@ from reflex.utils.exceptions import (
     UntypedComputedVarError,
 )
 from reflex.utils.imports import ImportVar
+from reflex.utils.types import get_default_value_for_type
 from reflex.vars import VarData
 from reflex.vars.base import (
     ComputedVar,
@@ -244,7 +245,7 @@ def test_default_value(prop: Var, expected):
         prop: The var to test.
         expected: The expected default value.
     """
-    assert prop._get_default_value() == expected
+    assert get_default_value_for_type(prop._var_type) == expected
 
 
 @pytest.mark.parametrize(
