@@ -5,7 +5,7 @@ import inspect
 import types
 import urllib.parse
 from base64 import b64encode
-from collections.abc import Callable, Sequence
+from collections.abc import Callable, Mapping, Sequence
 from functools import lru_cache, partial
 from typing import (
     TYPE_CHECKING,
@@ -1464,17 +1464,18 @@ def call_event_handler(
     event_spec_return_types = _values_returned_from_event(event_annotations)
 
     if isinstance(event_callback, EventSpec):
+        parameters = inspect.signature(event_callback.handler.fn).parameters
+
         check_fn_match_arg_spec(
             event_callback.handler.fn,
+            parameters,
             event_spec_args,
             key,
             bool(event_callback.handler.state_full_name) + len(event_callback.args),
             event_callback.handler.fn.__qualname__,
         )
 
-        event_callback_spec_args = list(
-            inspect.signature(event_callback.handler.fn).parameters.keys()
-        )
+        event_callback_spec_args = list(parameters)
 
         try:
             type_hints_of_provided_callback = get_type_hints(event_callback.handler.fn)
@@ -1500,8 +1501,11 @@ def call_event_handler(
         # Handle partial application of EventSpec args
         return event_callback.add_args(*event_spec_args)
 
+    parameters = inspect.signature(event_callback.fn).parameters
+
     check_fn_match_arg_spec(
         event_callback.fn,
+        parameters,
         event_spec_args,
         key,
         bool(event_callback.state_full_name),
@@ -1509,9 +1513,7 @@ def call_event_handler(
     )
 
     if event_spec_return_types:
-        event_callback_spec_args = list(
-            inspect.signature(event_callback.fn).parameters.keys()
-        )
+        event_callback_spec_args = list(parameters)
 
         try:
             type_hints_of_provided_callback = get_type_hints(event_callback.fn)
@@ -1600,6 +1602,7 @@ def parse_args_spec(arg_spec: ArgsSpec | Sequence[ArgsSpec]):
 
 def check_fn_match_arg_spec(
     user_func: Callable,
+    user_func_parameters: Mapping[str, inspect.Parameter],
     event_spec_args: Sequence[Var],
     key: str | None = None,
     number_of_bound_args: int = 0,
@@ -1610,6 +1613,7 @@ def check_fn_match_arg_spec(
 
     Args:
         user_func: The function to be validated.
+        user_func_parameters: The parameters of the function to be validated.
         event_spec_args: The argument specification for the event trigger.
         key: The key of the event trigger.
         number_of_bound_args: The number of bound arguments to the function.
@@ -1618,14 +1622,14 @@ def check_fn_match_arg_spec(
     Raises:
         EventFnArgMismatchError: Raised if the number of mandatory arguments do not match
     """
-    user_args = list(inspect.signature(user_func).parameters)
+    user_args = list(user_func_parameters)
     # Drop the first argument if it's a bound method
     if inspect.ismethod(user_func) and user_func.__self__ is not None:
         user_args = user_args[1:]
 
     user_default_args = [
         p.default
-        for p in inspect.signature(user_func).parameters.values()
+        for p in user_func_parameters.values()
         if p.default is not inspect.Parameter.empty
     ]
     number_of_user_args = len(user_args) - number_of_bound_args
@@ -1670,10 +1674,12 @@ def call_event_fn(
 
     parsed_args, event_annotations = parse_args_spec(arg_spec)
 
-    # Check that fn signature matches arg_spec
-    check_fn_match_arg_spec(fn, parsed_args, key=key)
+    parameters = inspect.signature(fn).parameters
 
-    number_of_fn_args = len(inspect.signature(fn).parameters)
+    # Check that fn signature matches arg_spec
+    check_fn_match_arg_spec(fn, parameters, parsed_args, key=key)
+
+    number_of_fn_args = len(parameters)
 
     # Call the function with the parsed args.
     out = fn(*[*parsed_args][:number_of_fn_args])
