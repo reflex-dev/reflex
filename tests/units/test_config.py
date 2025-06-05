@@ -8,7 +8,8 @@ from pytest_mock import MockerFixture
 
 import reflex as rx
 import reflex.config
-from reflex.config import (
+from reflex.constants import Endpoint, Env
+from reflex.environment import (
     EnvVar,
     env_var,
     environment,
@@ -16,7 +17,6 @@ from reflex.config import (
     interpret_enum_env,
     interpret_int_env,
 )
-from reflex.constants import Endpoint, Env
 
 
 def test_requires_app_name():

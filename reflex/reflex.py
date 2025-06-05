@@ -11,9 +11,10 @@ import click
 from reflex_cli.v2.deployments import hosting_cli
 
 from reflex import constants
-from reflex.config import environment, get_config
+from reflex.config import get_config
 from reflex.constants.base import LITERAL_ENV
 from reflex.custom_components.custom_components import custom_components_cli
+from reflex.environment import environment
 from reflex.state import reset_disk_state_manager
 from reflex.utils import console, redir, telemetry
 from reflex.utils.exec import should_use_granian

@@ -9,7 +9,7 @@ import functools
 import inspect
 import json
 import warnings
-from collections.abc import Callable, Sequence
+from collections.abc import Callable, Mapping, Sequence
 from datetime import date, datetime, time, timedelta
 from enum import Enum
 from pathlib import Path
@@ -333,6 +333,19 @@ def serialize_sequence(value: Sequence) -> list:
         The serialized list.
     """
     return list(value)
+
+
+@serializer(to=dict)
+def serialize_mapping(value: Mapping) -> dict:
+    """Serialize a mapping type to a dictionary.
+
+    Args:
+        value: The mapping instance to serialize.
+
+    Returns:
+        A new dictionary containing the same key-value pairs as the input mapping.
+    """
+    return {**value}
 
 
 @serializer(to=str)

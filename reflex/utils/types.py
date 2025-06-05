@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import dataclasses
 import inspect
+import sys
 import types
 from collections.abc import Callable, Iterable, Mapping, Sequence
 from functools import cached_property, lru_cache, wraps
@@ -19,8 +20,11 @@ from typing import (  # noqa: UP035
     Literal,
     MutableMapping,
     NoReturn,
+    Protocol,
     Tuple,
+    TypeVar,
     Union,
+    _eval_type,  # pyright: ignore [reportAttributeAccessIssue]
     _GenericAlias,  # pyright: ignore [reportAttributeAccessIssue]
     _SpecialGenericAlias,  # pyright: ignore [reportAttributeAccessIssue]
     get_args,
@@ -58,18 +62,91 @@ StateIterVar = list | set | tuple
 if TYPE_CHECKING:
     from reflex.vars.base import Var
 
-    ArgsSpec = (
-        Callable[[], Sequence[Var]]
-        | Callable[[Var], Sequence[Var]]
-        | Callable[[Var, Var], Sequence[Var]]
-        | Callable[[Var, Var, Var], Sequence[Var]]
-        | Callable[[Var, Var, Var, Var], Sequence[Var]]
-        | Callable[[Var, Var, Var, Var, Var], Sequence[Var]]
-        | Callable[[Var, Var, Var, Var, Var, Var], Sequence[Var]]
-        | Callable[[Var, Var, Var, Var, Var, Var, Var], Sequence[Var]]
-    )
-else:
-    ArgsSpec = Callable[..., list[Any]]
+VAR1 = TypeVar("VAR1", bound="Var")
+VAR2 = TypeVar("VAR2", bound="Var")
+VAR3 = TypeVar("VAR3", bound="Var")
+VAR4 = TypeVar("VAR4", bound="Var")
+VAR5 = TypeVar("VAR5", bound="Var")
+VAR6 = TypeVar("VAR6", bound="Var")
+VAR7 = TypeVar("VAR7", bound="Var")
+
+
+class _ArgsSpec0(Protocol):
+    def __call__(self) -> Sequence[Var]: ...
+
+
+class _ArgsSpec1(Protocol):
+    def __call__(self, var1: VAR1, /) -> Sequence[Var]: ...  # pyright: ignore [reportInvalidTypeVarUse]
+
+
+class _ArgsSpec2(Protocol):
+    def __call__(self, var1: VAR1, var2: VAR2, /) -> Sequence[Var]: ...  # pyright: ignore [reportInvalidTypeVarUse]
+
+
+class _ArgsSpec3(Protocol):
+    def __call__(self, var1: VAR1, var2: VAR2, var3: VAR3, /) -> Sequence[Var]: ...  # pyright: ignore [reportInvalidTypeVarUse]
+
+
+class _ArgsSpec4(Protocol):
+    def __call__(
+        self,
+        var1: VAR1,  # pyright: ignore [reportInvalidTypeVarUse]
+        var2: VAR2,  # pyright: ignore [reportInvalidTypeVarUse]
+        var3: VAR3,  # pyright: ignore [reportInvalidTypeVarUse]
+        var4: VAR4,  # pyright: ignore [reportInvalidTypeVarUse]
+        /,
+    ) -> Sequence[Var]: ...
+
+
+class _ArgsSpec5(Protocol):
+    def __call__(
+        self,
+        var1: VAR1,  # pyright: ignore [reportInvalidTypeVarUse]
+        var2: VAR2,  # pyright: ignore [reportInvalidTypeVarUse]
+        var3: VAR3,  # pyright: ignore [reportInvalidTypeVarUse]
+        var4: VAR4,  # pyright: ignore [reportInvalidTypeVarUse]
+        var5: VAR5,  # pyright: ignore [reportInvalidTypeVarUse]
+        /,
+    ) -> Sequence[Var]: ...
+
+
+class _ArgsSpec6(Protocol):
+    def __call__(
+        self,
+        var1: VAR1,  # pyright: ignore [reportInvalidTypeVarUse]
+        var2: VAR2,  # pyright: ignore [reportInvalidTypeVarUse]
+        var3: VAR3,  # pyright: ignore [reportInvalidTypeVarUse]
+        var4: VAR4,  # pyright: ignore [reportInvalidTypeVarUse]
+        var5: VAR5,  # pyright: ignore [reportInvalidTypeVarUse]
+        var6: VAR6,  # pyright: ignore [reportInvalidTypeVarUse]
+        /,
+    ) -> Sequence[Var]: ...
+
+
+class _ArgsSpec7(Protocol):
+    def __call__(
+        self,
+        var1: VAR1,  # pyright: ignore [reportInvalidTypeVarUse]
+        var2: VAR2,  # pyright: ignore [reportInvalidTypeVarUse]
+        var3: VAR3,  # pyright: ignore [reportInvalidTypeVarUse]
+        var4: VAR4,  # pyright: ignore [reportInvalidTypeVarUse]
+        var5: VAR5,  # pyright: ignore [reportInvalidTypeVarUse]
+        var6: VAR6,  # pyright: ignore [reportInvalidTypeVarUse]
+        var7: VAR7,  # pyright: ignore [reportInvalidTypeVarUse]
+        /,
+    ) -> Sequence[Var]: ...
+
+
+ArgsSpec = (
+    _ArgsSpec0
+    | _ArgsSpec1
+    | _ArgsSpec2
+    | _ArgsSpec3
+    | _ArgsSpec4
+    | _ArgsSpec5
+    | _ArgsSpec6
+    | _ArgsSpec7
+)
 
 Scope = MutableMapping[str, Any]
 Message = MutableMapping[str, Any]
@@ -85,11 +162,7 @@ PrimitiveToAnnotation = {
     dict: Dict,  # noqa: UP006
 }
 
-RESERVED_BACKEND_VAR_NAMES = {
-    "_abc_impl",
-    "_backend_vars",
-    "_was_touched",
-}
+RESERVED_BACKEND_VAR_NAMES = {"_abc_impl", "_backend_vars", "_was_touched", "_mixin"}
 
 
 class Unset:
@@ -251,7 +324,11 @@ def is_optional(cls: GenericType) -> bool:
     Returns:
         Whether the class is an Optional.
     """
-    return is_union(cls) and type(None) in get_args(cls)
+    return (
+        cls is None
+        or cls is type(None)
+        or (is_union(cls) and type(None) in get_args(cls))
+    )
 
 
 def is_classvar(a_type: Any) -> bool:
@@ -1118,3 +1195,103 @@ def typehint_issubclass(
         )
         if accepted_arg is not Any
     )
+
+
+def resolve_annotations(
+    raw_annotations: Mapping[str, type[Any]], module_name: str | None
+) -> dict[str, type[Any]]:
+    """Partially taken from typing.get_type_hints.
+
+    Resolve string or ForwardRef annotations into type objects if possible.
+
+    Args:
+        raw_annotations: The raw annotations to resolve.
+        module_name: The name of the module.
+
+    Returns:
+        The resolved annotations.
+    """
+    module = sys.modules.get(module_name, None) if module_name is not None else None
+
+    base_globals: dict[str, Any] | None = (
+        module.__dict__ if module is not None else None
+    )
+
+    annotations = {}
+    for name, value in raw_annotations.items():
+        if isinstance(value, str):
+            if sys.version_info == (3, 10, 0):
+                value = ForwardRef(value, is_argument=False)
+            else:
+                value = ForwardRef(value, is_argument=False, is_class=True)
+        try:
+            if sys.version_info >= (3, 13):
+                value = _eval_type(value, base_globals, None, type_params=())
+            else:
+                value = _eval_type(value, base_globals, None)
+        except NameError:
+            # this is ok, it can be fixed with update_forward_refs
+            pass
+        annotations[name] = value
+    return annotations
+
+
+TYPES_THAT_HAS_DEFAULT_VALUE = (int, float, tuple, list, set, dict, str)
+
+
+def get_default_value_for_type(t: GenericType) -> Any:
+    """Get the default value of the var.
+
+    Args:
+        t: The type of the var.
+
+    Returns:
+        The default value of the var, if it has one, else None.
+
+    Raises:
+        ImportError: If the var is a dataframe and pandas is not installed.
+    """
+    if is_optional(t):
+        return None
+
+    origin = get_origin(t) if is_generic_alias(t) else t
+    if origin is Literal:
+        args = get_args(t)
+        return args[0] if args else None
+    if safe_issubclass(origin, TYPES_THAT_HAS_DEFAULT_VALUE):
+        return origin()
+    if safe_issubclass(origin, Mapping):
+        return {}
+    if is_dataframe(origin):
+        try:
+            import pandas as pd
+
+            return pd.DataFrame()
+        except ImportError as e:
+            msg = "Please install pandas to use dataframes in your app."
+            raise ImportError(msg) from e
+    return None
+
+
+IMMUTABLE_TYPES = (
+    int,
+    float,
+    bool,
+    str,
+    bytes,
+    frozenset,
+    tuple,
+    type(None),
+)
+
+
+def is_immutable(i: Any) -> bool:
+    """Check if a value is immutable.
+
+    Args:
+        i: The value to check.
+
+    Returns:
+        Whether the value is immutable.
+    """
+    return isinstance(i, IMMUTABLE_TYPES)

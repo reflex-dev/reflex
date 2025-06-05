@@ -11,14 +11,15 @@ from pytest_mock import MockerFixture
 
 import reflex as rx
 from reflex.base import Base
-from reflex.config import PerformanceMode
 from reflex.constants.base import REFLEX_VAR_CLOSING_TAG, REFLEX_VAR_OPENING_TAG
+from reflex.environment import PerformanceMode
 from reflex.state import BaseState
 from reflex.utils.exceptions import (
     PrimitiveUnserializableToJSONError,
     UntypedComputedVarError,
 )
 from reflex.utils.imports import ImportVar
+from reflex.utils.types import get_default_value_for_type
 from reflex.vars import VarData
 from reflex.vars.base import (
     ComputedVar,
@@ -244,7 +245,7 @@ def test_default_value(prop: Var, expected):
         prop: The var to test.
         expected: The expected default value.
     """
-    assert prop._get_default_value() == expected
+    assert get_default_value_for_type(prop._var_type) == expected
 
 
 @pytest.mark.parametrize(

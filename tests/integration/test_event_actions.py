@@ -56,7 +56,8 @@ def TestEventAction():
                     )
                 }"""
 
-        def get_event_triggers(self):
+        @classmethod
+        def get_event_triggers(cls):
             return {"on_click": rx.event.no_args_event_spec}
 
     def index():

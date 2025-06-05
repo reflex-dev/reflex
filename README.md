@@ -19,7 +19,12 @@
 
 ---
 
-# Reflex
+> [!NOTE]
+> 🚀 **Try [Reflex Build](https://build.reflex.dev/)** – our AI-powered app builder that generates full-stack Reflex applications in seconds.
+
+---
+
+# Introduction
 
 Reflex is a library to build full-stack web apps in pure Python.
 
@@ -227,7 +232,10 @@ You can create a multi-page app by adding more pages.
 
 Reflex launched in December 2022 with the name Pynecone.
 
-Beginning in 2025, [Reflex Cloud](https://cloud.reflex.dev) has launched to provide the best hosting experience for Reflex apps. We will continue to develop it and implement more features.
+🚀 Introducing [Reflex Build](https://build.reflex.dev/) — Our AI-Powered Builder
+Reflex Build uses AI to generate complete full-stack Python applications. It helps you quickly create, customize, and refine your Reflex apps — from frontend components to backend logic — so you can focus on your ideas instead of boilerplate code. Whether you’re prototyping or scaling, Reflex Build accelerates development by intelligently scaffolding and optimizing your app’s entire stack.
+
+Alongside this, [Reflex Cloud](https://cloud.reflex.dev) launched in 2025 to offer the best hosting experience for your Reflex apps. We’re continuously improving the platform with new features and capabilities.
 
 Reflex has new releases and features coming every week! Make sure to :star: star and :eyes: watch this repository to stay up to date.
 
