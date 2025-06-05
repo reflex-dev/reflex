@@ -181,6 +181,26 @@ class EventHandler(EventActionsMixin):
     # Empty string means this event handler is a server side event.
     state_full_name: str = dataclasses.field(default="")
 
+    def __hash__(self):
+        """Get the hash of the event handler.
+
+        Returns:
+            The hash of the event handler.
+        """
+        return hash((tuple(self.event_actions.items()), self.fn, self.state_full_name))
+
+    @property
+    @lru_cache  # noqa: B019
+    def _parameters(self) -> Mapping[str, inspect.Parameter]:
+        """Get the parameters of the function.
+
+        Returns:
+            The parameters of the function.
+        """
+        if self.fn is None:
+            return {}
+        return inspect.signature(self.fn).parameters
+
     @classmethod
     def __class_getitem__(cls, args_spec: str) -> Annotated:
         """Get a typed EventHandler.
@@ -220,7 +240,7 @@ class EventHandler(EventActionsMixin):
         from reflex.utils.exceptions import EventHandlerTypeError
 
         # Get the function args.
-        fn_args = list(inspect.signature(self.fn).parameters)[1:]
+        fn_args = list(self._parameters)[1:]
 
         if not isinstance(
             repeated_arg := next(
@@ -341,9 +361,7 @@ class EventSpec(EventActionsMixin):
         from reflex.utils.exceptions import EventHandlerTypeError
 
         # Get the remaining unfilled function args.
-        fn_args = list(inspect.signature(self.handler.fn).parameters)[
-            1 + len(self.args) :
-        ]
+        fn_args = list(self.handler._parameters)[1 + len(self.args) :]
         fn_args = (Var(_js_expr=arg) for arg in fn_args)
 
         # Construct the payload.
@@ -1464,7 +1482,7 @@ def call_event_handler(
     event_spec_return_types = _values_returned_from_event(event_annotations)
 
     if isinstance(event_callback, EventSpec):
-        parameters = inspect.signature(event_callback.handler.fn).parameters
+        parameters = event_callback.handler._parameters
 
         check_fn_match_arg_spec(
             event_callback.handler.fn,
@@ -1501,7 +1519,7 @@ def call_event_handler(
         # Handle partial application of EventSpec args
         return event_callback.add_args(*event_spec_args)
 
-    parameters = inspect.signature(event_callback.fn).parameters
+    parameters = event_callback._parameters
 
     check_fn_match_arg_spec(
         event_callback.fn,
@@ -1722,7 +1740,7 @@ def get_handler_args(
     Returns:
         The handler args.
     """
-    args = inspect.signature(event_spec.handler.fn).parameters
+    args = event_spec.handler._parameters
 
     return event_spec.args if len(args) > 1 else ()
 
