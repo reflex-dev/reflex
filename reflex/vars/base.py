@@ -3566,7 +3566,16 @@ def field(
     if default is not MISSING and default_factory is not None:
         msg = "cannot specify both default and default_factory"
         raise ValueError(msg)
-    return Field(  # pyright: ignore [reportReturnType]
+    if default is not MISSING and not types.is_immutable(default):
+        console.warn(
+            "Mutable default values are not recommended. "
+            "Use default_factory instead to avoid unexpected behavior."
+        )
+        return Field(
+            default_factory=functools.partial(copy.deepcopy, default),
+            is_var=is_var,
+        )
+    return Field(
         default=default,
         default_factory=default_factory,
         is_var=is_var,
