@@ -28,7 +28,7 @@ from typing_extensions import Self
 import reflex.istate.dynamic
 from reflex import constants, event
 from reflex.base import Base
-from reflex.config import PerformanceMode, environment
+from reflex.environment import PerformanceMode, environment
 from reflex.event import (
     BACKGROUND_TASK_MARKER,
     Event,

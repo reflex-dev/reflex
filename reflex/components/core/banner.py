@@ -16,9 +16,9 @@ from reflex.components.radix.themes.components.dialog import (
 from reflex.components.radix.themes.layout.flex import Flex
 from reflex.components.radix.themes.typography.text import Text
 from reflex.components.sonner.toast import ToastProps, toast_ref
-from reflex.config import environment
 from reflex.constants import Dirs, Hooks, Imports
 from reflex.constants.compiler import CompileVars
+from reflex.environment import environment
 from reflex.utils.imports import ImportVar
 from reflex.vars import VarData
 from reflex.vars.base import LiteralVar, Var

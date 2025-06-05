@@ -3,7 +3,8 @@
 from pathlib import Path
 
 from reflex import constants
-from reflex.config import environment, get_config
+from reflex.config import get_config
+from reflex.environment import environment
 from reflex.utils import build, console, exec, prerequisites, telemetry
 
 

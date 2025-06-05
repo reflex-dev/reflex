@@ -16,9 +16,9 @@ from reflex.components.component import (
 from reflex.components.core.cond import cond
 from reflex.components.el.elements.forms import Input
 from reflex.components.radix.themes.layout.box import Box
-from reflex.config import environment
 from reflex.constants import Dirs
 from reflex.constants.compiler import Hooks, Imports
+from reflex.environment import environment
 from reflex.event import (
     CallableEventSpec,
     EventChain,

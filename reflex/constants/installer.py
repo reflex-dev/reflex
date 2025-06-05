@@ -38,7 +38,7 @@ class Bun(SimpleNamespace):
         Returns:
             The directory to store the bun.
         """
-        from reflex.config import environment
+        from reflex.environment import environment
 
         return environment.REFLEX_DIR.get() / "bun"
 
@@ -75,7 +75,7 @@ fetch-retries=0
 
 
 def _determine_nextjs_version() -> str:
-    default_version = "15.3.2"
+    default_version = "15.3.3"
     if (version := os.getenv("NEXTJS_VERSION")) and version != default_version:
         from reflex.utils import console
 

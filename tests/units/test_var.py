@@ -11,8 +11,8 @@ from pytest_mock import MockerFixture
 
 import reflex as rx
 from reflex.base import Base
-from reflex.config import PerformanceMode
 from reflex.constants.base import REFLEX_VAR_CLOSING_TAG, REFLEX_VAR_OPENING_TAG
+from reflex.environment import PerformanceMode
 from reflex.state import BaseState
 from reflex.utils.exceptions import (
     PrimitiveUnserializableToJSONError,

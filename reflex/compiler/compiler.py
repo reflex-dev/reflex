@@ -19,8 +19,9 @@ from reflex.components.component import (
     CustomComponent,
     StatefulComponent,
 )
-from reflex.config import environment, get_config
+from reflex.config import get_config
 from reflex.constants.compiler import PageNames
+from reflex.environment import environment
 from reflex.state import BaseState
 from reflex.style import SYSTEM_COLOR_MODE
 from reflex.utils import console, path_ops
