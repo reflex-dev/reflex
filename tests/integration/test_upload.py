@@ -444,7 +444,7 @@ async def test_cancel_upload(tmp_path, upload_file: AppHarness, driver: WebDrive
     exp_name = "large.txt"
     target_file = tmp_path / exp_name
     with target_file.open("wb") as f:
-        f.seek(1024 * 1024 * 256)
+        f.seek(1024 * 1024 * 1024)  # 1 GB
         f.write(b"0")
 
     upload_box.send_keys(str(target_file))
