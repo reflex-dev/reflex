@@ -2103,7 +2103,7 @@ class BaseState(EvenMoreBasicBaseState):
         Returns:
             The state dict for serialization.
         """
-        state = super().__getstate__()
+        state = cast(dict, super().__getstate__())
         state = state.copy()
         if state.get("parent_state") is not None:
             # Do not serialize router data in substates (only the root state).

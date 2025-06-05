@@ -1236,11 +1236,17 @@ def resolve_annotations(
     return annotations
 
 
+TYPES_THAT_HAS_DEFAULT_VALUE = (int, float, tuple, list, set, dict, str)
+
+
 def get_default_value_for_type(t: GenericType) -> Any:
     """Get the default value of the var.
 
+    Args:
+        t: The type of the var.
+
     Returns:
-        The default value of the var.
+        The default value of the var, if it has one, else None.
 
     Raises:
         ImportError: If the var is a dataframe and pandas is not installed.
@@ -1252,18 +1258,10 @@ def get_default_value_for_type(t: GenericType) -> Any:
     if origin is Literal:
         args = get_args(t)
         return args[0] if args else None
-    if safe_issubclass(origin, str):
-        return ""
-    if safe_issubclass(origin, (int, float)):
-        return 0
-    if safe_issubclass(origin, bool):
-        return False
-    if safe_issubclass(origin, list):
-        return []
+    if safe_issubclass(origin, TYPES_THAT_HAS_DEFAULT_VALUE):
+        return origin()
     if safe_issubclass(origin, Mapping):
         return {}
-    if safe_issubclass(origin, tuple):
-        return ()
     if is_dataframe(origin):
         try:
             import pandas as pd
@@ -1272,8 +1270,6 @@ def get_default_value_for_type(t: GenericType) -> Any:
         except ImportError as e:
             msg = "Please install pandas to use dataframes in your app."
             raise ImportError(msg) from e
-    if safe_issubclass(origin, set):
-        return set()
     return None
 
 

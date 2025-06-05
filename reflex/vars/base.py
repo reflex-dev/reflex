@@ -3350,12 +3350,18 @@ FIELD_TYPE = TypeVar("FIELD_TYPE")
 class Field(Generic[FIELD_TYPE]):
     """A field for a state."""
 
+    if TYPE_CHECKING:
+        type_: GenericType
+        default: FIELD_TYPE | _MISSING_TYPE
+        default_factory: Callable[[], FIELD_TYPE] | None
+
     def __init__(
         self,
         default: FIELD_TYPE | _MISSING_TYPE = MISSING,
         default_factory: Callable[[], FIELD_TYPE] | None = None,
         is_var: bool = True,
-        annotated_type: GenericType | _MISSING_TYPE = MISSING,
+        annotated_type: GenericType  # pyright: ignore [reportRedeclaration]
+        | _MISSING_TYPE = MISSING,
     ) -> None:
         """Initialize the field.
 
@@ -3373,7 +3379,7 @@ class Field(Generic[FIELD_TYPE]):
             if type_origin is Field and (
                 args := getattr(annotated_type, "__args__", None)
             ):
-                annotated_type = args[0]
+                annotated_type: GenericType = args[0]
                 type_origin = get_origin(annotated_type) or annotated_type
 
             if self.default is MISSING and self.default_factory is None:
@@ -3428,6 +3434,8 @@ class Field(Generic[FIELD_TYPE]):
             Args:
                 instance: The instance of the class setting the Var.
                 value: The value to set the Var to.
+
+            # noqa: DAR101 self
             """
 
     @overload
