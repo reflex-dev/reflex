@@ -1471,7 +1471,7 @@ def call_event_handler(
     if isinstance(event_callback, EventSpec):
         check_fn_match_arg_spec(
             event_callback.handler.fn,
-            event_spec,
+            event_spec_args,
             key,
             bool(event_callback.handler.state_full_name) + len(event_callback.args),
             event_callback.handler.fn.__qualname__,
@@ -1507,7 +1507,7 @@ def call_event_handler(
 
     check_fn_match_arg_spec(
         event_callback.fn,
-        event_spec,
+        event_spec_args,
         key,
         bool(event_callback.state_full_name),
         event_callback.fn.__qualname__,
@@ -1605,7 +1605,7 @@ def parse_args_spec(arg_spec: ArgsSpec | Sequence[ArgsSpec]):
 
 def check_fn_match_arg_spec(
     user_func: Callable,
-    arg_spec: ArgsSpec | Sequence[ArgsSpec],
+    event_spec_args: Sequence[Var],
     key: str | None = None,
     number_of_bound_args: int = 0,
     func_name: str | None = None,
@@ -1615,7 +1615,7 @@ def check_fn_match_arg_spec(
 
     Args:
         user_func: The function to be validated.
-        arg_spec: The argument specification for the event trigger.
+        event_spec_args: The argument specification for the event trigger.
         key: The key of the event trigger.
         number_of_bound_args: The number of bound arguments to the function.
         func_name: The name of the function to be validated.
@@ -1636,9 +1636,7 @@ def check_fn_match_arg_spec(
     number_of_user_args = len(user_args) - number_of_bound_args
     number_of_user_default_args = len(user_default_args) if user_default_args else 0
 
-    parsed_event_args = parse_args_spec(arg_spec)
-
-    number_of_event_args = len(parsed_event_args)
+    number_of_event_args = len(event_spec_args)
 
     if number_of_user_args - number_of_user_default_args > number_of_event_args:
         msg = (
@@ -1675,10 +1673,10 @@ def call_event_fn(
     from reflex.event import EventHandler, EventSpec
     from reflex.utils.exceptions import EventHandlerValueError
 
-    # Check that fn signature matches arg_spec
-    check_fn_match_arg_spec(fn, arg_spec, key=key)
-
     parsed_args = parse_args_spec(arg_spec)
+
+    # Check that fn signature matches arg_spec
+    check_fn_match_arg_spec(fn, parsed_args, key=key)
 
     number_of_fn_args = len(inspect.signature(fn).parameters)
 
