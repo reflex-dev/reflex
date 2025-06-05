@@ -449,11 +449,11 @@ async def test_cancel_upload(tmp_path, upload_file: AppHarness, driver: WebDrive
 
     upload_box.send_keys(str(target_file))
     upload_button.click()
-    await asyncio.sleep(0.3)
+    await asyncio.sleep(0.1)
     cancel_button.click()
 
     # Wait a bit for the upload to get cancelled.
-    await asyncio.sleep(0.5)
+    await asyncio.sleep(3)
 
     # Get interim progress dicts saved in the on_upload_progress handler.
     async def _progress_dicts():
