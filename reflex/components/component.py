@@ -864,9 +864,8 @@ class Component(BaseComponent, ABC):
         for key, value in kwargs.items():
             setattr(self, key, value)
 
-    def get_event_triggers(
-        self,
-    ) -> dict[str, types.ArgsSpec | Sequence[types.ArgsSpec]]:
+    @classmethod
+    def get_event_triggers(cls) -> dict[str, types.ArgsSpec | Sequence[types.ArgsSpec]]:
         """Get the event triggers for the component.
 
         Returns:
@@ -883,7 +882,7 @@ class Component(BaseComponent, ABC):
                 )
                 else no_args_event_spec
             )
-            for name, field in self.get_fields().items()
+            for name, field in cls.get_fields().items()
             if field.type_origin is EventHandler
         }
 

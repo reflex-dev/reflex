@@ -247,7 +247,8 @@ class Brush(Recharts):
     # The stroke color of brush
     stroke: Var[str | Color]
 
-    def get_event_triggers(self) -> dict[str, Var | Any]:
+    @classmethod
+    def get_event_triggers(cls) -> dict[str, Var | Any]:
         """Get the event triggers that pass the component's value to the handler.
 
         Returns:
