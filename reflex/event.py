@@ -1335,16 +1335,11 @@ def get_hydrate_event(state: "BaseState") -> str:
     return get_event(state, constants.CompileVars.HYDRATE)
 
 
-def _values_returned_from_event(
-    event_spec: ArgsSpec | Sequence[ArgsSpec],
-) -> list[Any]:
+def _values_returned_from_event(event_spec_annotations: list[Any]) -> list[Any]:
     return [
         event_spec_return_type
-        for arg_spec in (
-            [event_spec] if not isinstance(event_spec, Sequence) else list(event_spec)
-        )
-        if (event_spec_return_type := get_type_hints(arg_spec).get("return", None))
-        is not None
+        for event_spec_annotation in event_spec_annotations
+        if (event_spec_return_type := event_spec_annotation.get("return")) is not None
         and get_origin(event_spec_return_type) is tuple
     ]
 
@@ -1464,9 +1459,9 @@ def call_event_handler(
     Returns:
         The event spec from calling the event handler.
     """
-    event_spec_args = parse_args_spec(event_spec)
+    event_spec_args, event_annotations = parse_args_spec(event_spec)
 
-    event_spec_return_types = _values_returned_from_event(event_spec)
+    event_spec_return_types = _values_returned_from_event(event_annotations)
 
     if isinstance(event_callback, EventSpec):
         check_fn_match_arg_spec(
@@ -1581,26 +1576,26 @@ def parse_args_spec(arg_spec: ArgsSpec | Sequence[ArgsSpec]):
         The parsed args.
     """
     # if there's multiple, the first is the default
-    arg_spec = arg_spec[0] if isinstance(arg_spec, Sequence) else arg_spec
+    if isinstance(arg_spec, Sequence):
+        annotations = [get_type_hints(one_arg_spec) for one_arg_spec in arg_spec]
+        arg_spec = arg_spec[0]
+    else:
+        annotations = [get_type_hints(arg_spec)]
+
     spec = inspect.getfullargspec(arg_spec)
-    annotations = get_type_hints(arg_spec)
 
     return list(
         arg_spec(
             *[
                 Var(f"_{l_arg}").to(
                     unwrap_var_annotation(
-                        resolve_annotation(
-                            annotations,
-                            l_arg,
-                            spec=arg_spec,
-                        )
+                        resolve_annotation(annotations[0], l_arg, spec=arg_spec)
                     )
                 )
                 for l_arg in spec.args
             ]
         )
-    )
+    ), annotations
 
 
 def check_fn_match_arg_spec(
@@ -1673,7 +1668,7 @@ def call_event_fn(
     from reflex.event import EventHandler, EventSpec
     from reflex.utils.exceptions import EventHandlerValueError
 
-    parsed_args = parse_args_spec(arg_spec)
+    parsed_args, event_annotations = parse_args_spec(arg_spec)
 
     # Check that fn signature matches arg_spec
     check_fn_match_arg_spec(fn, parsed_args, key=key)

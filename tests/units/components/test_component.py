@@ -1879,8 +1879,8 @@ def test_custom_component_declare_event_handlers_in_fields():
     assert custom_triggers.keys() == test_triggers.keys()
     for trigger_name in custom_component.get_event_triggers():
         for v1, v2 in zip(
-            parse_args_spec(test_triggers[trigger_name]),
-            parse_args_spec(custom_triggers[trigger_name]),
+            parse_args_spec(test_triggers[trigger_name])[0],
+            parse_args_spec(custom_triggers[trigger_name])[0],
             strict=True,
         ):
             assert v1.equals(v2)

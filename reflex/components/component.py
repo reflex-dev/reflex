@@ -2135,7 +2135,7 @@ class CustomComponent(Component):
                         annotation=arg._var_type,
                     )
                     for name, arg in zip(
-                        names, parse_args_spec(event.args_spec), strict=True
+                        names, parse_args_spec(event.args_spec)[0], strict=True
                     )
                 ]
             )
