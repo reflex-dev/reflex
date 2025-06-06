@@ -27,7 +27,7 @@ from typing_extensions import Self, TypeAliasType, TypeVarTuple, Unpack
 from reflex import constants
 from reflex.constants.compiler import CompileVars, Hooks, Imports
 from reflex.constants.state import FRONTEND_EVENT_STATE
-from reflex.utils import console, format
+from reflex.utils import format
 from reflex.utils.decorator import once
 from reflex.utils.exceptions import (
     EventFnArgMismatchError,
@@ -1395,6 +1395,8 @@ def _check_event_args_subclass_of_callback(
     # noqa: DAR401 delayed_exceptions[]
     # noqa: DAR402 EventHandlerArgTypeMismatchError
     """
+    from reflex.utils import console
+
     type_match_found: dict[str, bool] = {}
     delayed_exceptions: list[EventHandlerArgTypeMismatchError] = []
 
@@ -2021,7 +2023,6 @@ class LiteralEventChainVar(ArgsFunctionOperationBuilder, LiteralVar, EventChainV
 
 P = TypeVarTuple("P")
 Q = TypeVarTuple("Q")
-T = TypeVar("T")
 V = TypeVar("V")
 V2 = TypeVar("V2")
 V3 = TypeVar("V3")
