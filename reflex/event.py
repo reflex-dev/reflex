@@ -14,7 +14,6 @@ from typing import (
     Generic,
     NoReturn,
     Protocol,
-    TypedDict,
     TypeVar,
     get_args,
     get_origin,
@@ -22,7 +21,7 @@ from typing import (
     overload,
 )
 
-from typing_extensions import Self, TypeAliasType, TypeVarTuple, Unpack
+from typing_extensions import Self, TypeAliasType, TypedDict, TypeVarTuple, Unpack
 
 from reflex import constants
 from reflex.constants.compiler import CompileVars, Hooks, Imports
