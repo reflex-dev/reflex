@@ -38,3 +38,7 @@ runs:
       uses: actions/setup-node@v4
       with:
         node-version: 22
+    - name: Install Dependencies
+      if: inputs.run-uv-sync == 'true'
+      run: uv sync
+      shell: bash

@@ -7,7 +7,7 @@ from reflex.route import catchall_in_route, get_route_args, verify_route_validit
 
 
 @pytest.mark.parametrize(
-    "route_name, expected",
+    ("route_name", "expected"),
     [
         ("/users/[id]", {"id": constants.RouteArgType.SINGLE}),
         (
@@ -36,7 +36,7 @@ def test_invalid_route_args(route_name):
 
 
 @pytest.mark.parametrize(
-    "route_name,expected",
+    ("route_name", "expected"),
     [
         ("/events/[year]/[month]/[...slug]", "[...slug]"),
         ("pages/shop/[[...slug]]", "[[...slug]]"),
@@ -73,13 +73,13 @@ def test_verify_invalid_routes(route_name):
         verify_route_validity(route_name)
 
 
-@pytest.fixture()
+@pytest.fixture
 def app():
     return App()
 
 
 @pytest.mark.parametrize(
-    "route1,route2",
+    ("route1", "route2"),
     [
         ("/posts/[slug]", "/posts/[slug1]"),
         ("/posts/[slug]/info", "/posts/[slug1]/info1"),
@@ -96,7 +96,7 @@ def test_check_routes_conflict_invalid(mocker: MockerFixture, app, route1, route
 
 
 @pytest.mark.parametrize(
-    "route1,route2",
+    ("route1", "route2"),
     [
         ("/posts/[slug]", "/post/[slug1]"),
         ("/posts/[slug]", "/post/[slug]"),

@@ -13,10 +13,10 @@ from reflex.components.core.colors import color
 from reflex.components.core.cond import cond
 from reflex.components.el.elements.inline import A
 from reflex.components.markdown.markdown import MarkdownComponentMap
+from reflex.components.radix.themes.base import LiteralAccentColor, RadixThemesComponent
 from reflex.utils.imports import ImportDict, ImportVar
 from reflex.vars.base import Var
 
-from ..base import LiteralAccentColor, RadixThemesComponent
 from .base import LiteralTextSize, LiteralTextTrim, LiteralTextWeight
 
 LiteralLinkUnderline = Literal["auto", "hover", "always", "none"]
@@ -115,7 +115,8 @@ class Link(RadixThemesComponent, A, MemoizationLeaf, MarkdownComponentMap):
 
         if href is not None:
             if not len(children):
-                raise ValueError("Link without a child will not display")
+                msg = "Link without a child will not display"
+                raise ValueError(msg)
 
             if "as_child" not in props:
                 # Extract props for the ReactRouterLink, the rest go to the Link/A element.

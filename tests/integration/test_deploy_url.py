@@ -21,6 +21,7 @@ def DeployUrlSample() -> None:
         def goto_self(self):
             if (deploy_url := rx.config.get_config().deploy_url) is not None:
                 return rx.redirect(deploy_url)
+            return None
 
     def index():
         return rx.fragment(
@@ -50,7 +51,7 @@ def deploy_url_sample(
         yield harness
 
 
-@pytest.fixture()
+@pytest.fixture
 def driver(deploy_url_sample: AppHarness) -> Generator[WebDriver, None, None]:
     """WebDriver fixture for testing deploy_url.
 

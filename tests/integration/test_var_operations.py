@@ -591,7 +591,7 @@ def VarOperations():
             ),
             rx.box(
                 rx.foreach(
-                    LiteralVar.create(list(range(0, 3))).to(ArrayVar, list[int]),
+                    LiteralVar.create(list(range(3))).to(ArrayVar, list[int]),
                     lambda x: rx.foreach(
                         ArrayVar.range(x),
                         lambda y: rx.text(VarOperationState.list1[y], as_="p"),

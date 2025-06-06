@@ -144,7 +144,7 @@ seen_index_vars = set()
 
 
 @pytest.mark.parametrize(
-    "state_var, render_fn, render_dict",
+    ("state_var", "render_fn", "render_dict"),
     [
         (
             ForEachState.colors_list,

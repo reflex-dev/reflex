@@ -20,7 +20,7 @@ runner = CliRunner()
 
 
 @pytest.mark.parametrize(
-    "config, export, expected_output",
+    ("config", "export", "expected_output"),
     [
         (
             Config(
@@ -150,7 +150,7 @@ def temp_directory():
 
 
 @pytest.mark.parametrize(
-    "config_code,expected",
+    ("config_code", "expected"),
     [
         ("rx.Config(app_name='old_name')", 'rx.Config(app_name="new_name")'),
         ('rx.Config(app_name="old_name")', 'rx.Config(app_name="new_name")'),

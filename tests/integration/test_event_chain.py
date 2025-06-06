@@ -555,10 +555,10 @@ async def test_event_chain_on_mount(
 
 
 @pytest.mark.parametrize(
-    ("button_id",),
+    "button_id",
     [
-        ("click_yield_interim_value_async",),
-        ("click_yield_interim_value",),
+        "click_yield_interim_value_async",
+        "click_yield_interim_value",
     ],
 )
 def test_yield_state_update(event_chain: AppHarness, driver: WebDriver, button_id: str):

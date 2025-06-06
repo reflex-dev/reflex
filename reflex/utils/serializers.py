@@ -9,7 +9,7 @@ import functools
 import inspect
 import json
 import warnings
-from collections.abc import Callable, Sequence
+from collections.abc import Callable, Mapping, Sequence
 from datetime import date, datetime, time, timedelta
 from enum import Enum
 from pathlib import Path
@@ -76,7 +76,8 @@ def serializer(
 
         # Make sure the function takes a single argument.
         if len(args) != 1:
-            raise ValueError("Serializer must take a single argument.")
+            msg = "Serializer must take a single argument."
+            raise ValueError(msg)
 
         # Get the type of the argument.
         type_ = type_hints[args[0]]
@@ -166,8 +167,7 @@ def serialize(
     # Return the serialized value and the type.
     if get_type:
         return serialized, get_serializer_type(type(value))
-    else:
-        return serialized
+    return serialized
 
 
 @functools.lru_cache
@@ -335,6 +335,19 @@ def serialize_sequence(value: Sequence) -> list:
     return list(value)
 
 
+@serializer(to=dict)
+def serialize_mapping(value: Mapping) -> dict:
+    """Serialize a mapping type to a dictionary.
+
+    Args:
+        value: The mapping instance to serialize.
+
+    Returns:
+        A new dictionary containing the same key-value pairs as the input mapping.
+    """
+    return {**value}
+
+
 @serializer(to=str)
 def serialize_datetime(dt: date | datetime | time | timedelta) -> str:
     """Serialize a datetime to a JSON string.
@@ -427,7 +440,7 @@ with contextlib.suppress(ImportError):
         """
         return [
             [str(d) if isinstance(d, (list, tuple)) else d for d in data]
-            for data in list(df.values.tolist())
+            for data in list(df.to_numpy().tolist())
         ]
 
     @serializer

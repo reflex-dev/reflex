@@ -19,7 +19,7 @@ def _httpx_verify_kwarg() -> bool:
     Returns:
         True if SSL verification is enabled, False otherwise
     """
-    from ..config import environment
+    from reflex.environment import environment
 
     return not environment.SSL_NO_VERIFY.get()
 
@@ -131,7 +131,7 @@ def _httpx_local_address_kwarg() -> str:
     Returns:
         The local address to bind to
     """
-    from ..config import environment
+    from reflex.environment import environment
 
     return environment.REFLEX_HTTP_CLIENT_BIND_ADDRESS.get() or (
         "::" if _should_use_ipv6() else "0.0.0.0"

@@ -17,7 +17,8 @@ from redis.asyncio.client import PubSub
 from typing_extensions import override
 
 from reflex import constants
-from reflex.config import environment, get_config
+from reflex.config import get_config
+from reflex.environment import environment
 from reflex.state import BaseState, _split_substate_key, _substate_key
 from reflex.utils import console, path_ops, prerequisites
 from reflex.utils.exceptions import (
@@ -66,9 +67,8 @@ class StateManager(ABC):
                     lock_expiration=config.redis_lock_expiration,
                     lock_warning_threshold=config.redis_lock_warning_threshold,
                 )
-        raise InvalidStateManagerModeError(
-            f"Expected one of: DISK, MEMORY, REDIS, got {config.state_manager_mode}"
-        )
+        msg = f"Expected one of: DISK, MEMORY, REDIS, got {config.state_manager_mode}"
+        raise InvalidStateManagerModeError(msg)
 
     @abstractmethod
     async def get_state(self, token: str) -> BaseState:
@@ -80,7 +80,6 @@ class StateManager(ABC):
         Returns:
             The state for the token.
         """
-        pass
 
     @abstractmethod
     async def set_state(self, token: str, state: BaseState):
@@ -90,7 +89,6 @@ class StateManager(ABC):
             token: The token to set the state for.
             state: The state to set.
         """
-        pass
 
     @abstractmethod
     @contextlib.asynccontextmanager
@@ -145,7 +143,6 @@ class StateManagerMemory(StateManager):
             token: The token to set the state for.
             state: The state to set.
         """
-        pass
 
     @override
     @contextlib.asynccontextmanager
@@ -269,6 +266,7 @@ class StateManagerDisk(StateManager):
                     return BaseState._deserialize(fp=file)
             except Exception:
                 pass
+        return None
 
     async def populate_substates(
         self, client_token: str, state: BaseState, root_state: BaseState
@@ -449,9 +447,8 @@ class StateManagerRedis(StateManager):
             InvalidLockWarningThresholdError: If the lock warning threshold is invalid.
         """
         if self.lock_warning_threshold >= (lock_expiration := self.lock_expiration):
-            raise InvalidLockWarningThresholdError(
-                f"The lock warning threshold({self.lock_warning_threshold}) must be less than the lock expiration time({lock_expiration})."
-            )
+            msg = f"The lock warning threshold({self.lock_warning_threshold}) must be less than the lock expiration time({lock_expiration})."
+            raise InvalidLockWarningThresholdError(msg)
 
     def _get_required_state_classes(
         self,
@@ -557,9 +554,8 @@ class StateManagerRedis(StateManager):
             # Get the State class associated with the given path.
             state_cls = self.state.get_class_substate(state_path)
         else:
-            raise RuntimeError(
-                f"StateManagerRedis requires token to be specified in the form of {{token}}_{{state_full_name}}, but got {token}"
-            )
+            msg = f"StateManagerRedis requires token to be specified in the form of {{token}}_{{state_full_name}}, but got {token}"
+            raise RuntimeError(msg)
 
         # Determine which states we already have.
         flat_state_tree: dict[str, BaseState] = (
@@ -601,11 +597,12 @@ class StateManagerRedis(StateManager):
                 )
                 parent_state = flat_state_tree.get(parent_state_name)
                 if parent_state is None:
-                    raise RuntimeError(
+                    msg = (
                         f"Parent state for {state.get_full_name()} was not found "
                         "in the state tree, but should have already been fetched. "
-                        "This is a bug",
+                        "This is a bug"
                     )
+                    raise RuntimeError(msg)
                 parent_state.substates[state_name] = state
                 state.parent_state = parent_state
 
@@ -638,12 +635,13 @@ class StateManagerRedis(StateManager):
             lock_id is not None
             and await self.redis.get(self._lock_key(token)) != lock_id
         ):
-            raise LockExpiredError(
+            msg = (
                 f"Lock expired for token {token} while processing. Consider increasing "
                 f"`app.state_manager.lock_expiration` (currently {self.lock_expiration}) "
                 "or use `@rx.event(background=True)` decorator for long-running tasks."
             )
-        elif lock_id is not None:
+            raise LockExpiredError(msg)
+        if lock_id is not None:
             time_taken = self.lock_expiration / 1000 - (
                 await self.redis.ttl(self._lock_key(token))
             )
@@ -657,9 +655,8 @@ class StateManagerRedis(StateManager):
         client_token, substate_name = _split_substate_key(token)
         # If the substate name on the token doesn't match the instance name, it cannot have a parent.
         if state.parent_state is not None and state.get_full_name() != substate_name:
-            raise RuntimeError(
-                f"Cannot `set_state` with mismatching token {token} and substate {state.get_full_name()}."
-            )
+            msg = f"Cannot `set_state` with mismatching token {token} and substate {state.get_full_name()}."
+            raise RuntimeError(msg)
 
         # Recursively set_state on all known substates.
         tasks = [

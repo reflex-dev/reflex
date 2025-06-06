@@ -75,7 +75,7 @@ def tailwind_version(request) -> int:
     return request.param
 
 
-@pytest.fixture()
+@pytest.fixture
 def tailwind_app(tmp_path, tailwind_version) -> Generator[AppHarness, None, None]:
     """Start TailwindApp app at tmp_path via AppHarness with tailwind disabled via config.
 

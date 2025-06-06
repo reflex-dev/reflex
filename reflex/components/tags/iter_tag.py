@@ -121,7 +121,8 @@ class IterTag(Tag):
         else:
             # If the render function takes the index as an argument.
             if len(args) != 2:
-                raise ValueError("The render function must take 2 arguments.")
+                msg = "The render function must take 2 arguments."
+                raise ValueError(msg)
             component = self.render_fn(arg, index)
 
         # Nested foreach components or cond must be wrapped in fragments.
@@ -131,7 +132,8 @@ class IterTag(Tag):
         component = _into_component_once(component)
 
         if component is None:
-            raise ValueError("The render function must return a component.")
+            msg = "The render function must return a component."
+            raise ValueError(msg)
 
         # Set the component key.
         if component.key is None:

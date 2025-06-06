@@ -33,11 +33,11 @@ class Dirs(SimpleNamespace):
     # The name of the utils file.
     UTILS = "utils"
     # The name of the state file.
-    STATE_PATH = "/".join([UTILS, "state"])
+    STATE_PATH = UTILS + "/state"
     # The name of the components file.
-    COMPONENTS_PATH = "/".join([UTILS, "components"])
+    COMPONENTS_PATH = UTILS + "/components"
     # The name of the contexts file.
-    CONTEXTS_PATH = "/".join([UTILS, "context"])
+    CONTEXTS_PATH = UTILS + "/context"
     # The name of the output directory.
     BUILD_DIR = "build"
     # The name of the static files directory.
@@ -151,7 +151,7 @@ class Templates(SimpleNamespace):
         Returns:
             The URL to redirect to reflex.build.
         """
-        from reflex.config import environment
+        from reflex.environment import environment
 
         return (
             environment.REFLEX_BUILD_FRONTEND.get()
@@ -166,7 +166,7 @@ class Templates(SimpleNamespace):
         Returns:
             The URL to poll waiting for the user to select a generation.
         """
-        from reflex.config import environment
+        from reflex.environment import environment
 
         return environment.REFLEX_BUILD_BACKEND.get() + "/api/init/{reflex_init_token}"
 
@@ -178,7 +178,7 @@ class Templates(SimpleNamespace):
         Returns:
             The URL to fetch the generation's reflex code.
         """
-        from reflex.config import environment
+        from reflex.environment import environment
 
         return (
             environment.REFLEX_BUILD_BACKEND.get()

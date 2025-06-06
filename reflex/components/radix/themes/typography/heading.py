@@ -8,9 +8,9 @@ from __future__ import annotations
 from reflex.components.core.breakpoints import Responsive
 from reflex.components.el import elements
 from reflex.components.markdown.markdown import MarkdownComponentMap
+from reflex.components.radix.themes.base import LiteralAccentColor, RadixThemesComponent
 from reflex.vars.base import Var
 
-from ..base import LiteralAccentColor, RadixThemesComponent
 from .base import LiteralTextAlign, LiteralTextSize, LiteralTextTrim, LiteralTextWeight
 
 

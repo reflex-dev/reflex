@@ -50,9 +50,8 @@ class Script(elements.Script):
             )
 
         if not children and not src:
-            raise ValueError(
-                "You must specify either children or src for the script element."
-            )
+            msg = "You must specify either children or src for the script element."
+            raise ValueError(msg)
 
         return helmet(
             elements.Script.create(

@@ -8,6 +8,7 @@ from typing import Any, Literal
 from reflex.base import Base
 from reflex.components.component import Component, NoSSRComponent
 from reflex.event import EventHandler, no_args_event_spec, passthrough_event_spec
+from reflex.utils import console
 from reflex.utils.format import to_camel_case
 from reflex.utils.imports import ImportDict, ImportVar
 from reflex.vars.base import Var
@@ -257,9 +258,17 @@ class Editor(NoSSRComponent):
         Raises:
             ValueError: If set_options is a state Var.
         """
+        console.deprecate(
+            "editor",
+            "The `editor` component is deprecated.",
+            deprecation_version="0.7.15",
+            removal_version="0.8.0",
+            dedupe=True,
+        )
         if set_options is not None:
             if isinstance(set_options, Var):
-                raise ValueError("EditorOptions cannot be a state Var")
+                msg = "EditorOptions cannot be a state Var"
+                raise ValueError(msg)
             props["set_options"] = {
                 to_camel_case(k): v
                 for k, v in set_options.dict().items()

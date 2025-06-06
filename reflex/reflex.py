@@ -11,9 +11,10 @@ import click
 from reflex_cli.v2.deployments import hosting_cli
 
 from reflex import constants
-from reflex.config import environment, get_config
+from reflex.config import get_config
 from reflex.constants.base import LITERAL_ENV
 from reflex.custom_components.custom_components import custom_components_cli
+from reflex.environment import environment
 from reflex.state import reset_disk_state_manager
 from reflex.utils import console, redir, telemetry
 from reflex.utils.exec import should_use_granian
@@ -36,7 +37,6 @@ def set_loglevel(ctx: click.Context, self: click.Parameter, value: str | None):
 @click.version_option(constants.Reflex.VERSION, message="%(version)s")
 def cli():
     """Reflex CLI to create, run, and deploy apps."""
-    pass
 
 
 loglevel_option = click.option(
@@ -202,6 +202,9 @@ def _run(
     # Get the app module.
     app_task = prerequisites.compile_or_validate_app
     args = (frontend,)
+    kwargs = {
+        "check_if_schema_up_to_date": True,
+    }
 
     # Granian fails if the app is already imported.
     if should_use_granian():
@@ -210,15 +213,14 @@ def _run(
         compile_future = concurrent.futures.ProcessPoolExecutor(max_workers=1).submit(
             app_task,
             *args,
+            **kwargs,
         )
         validation_result = compile_future.result()
     else:
-        validation_result = app_task(*args)
+        validation_result = app_task(*args, **kwargs)
+
     if not validation_result:
         raise click.exceptions.Exit(1)
-
-    # Warn if schema is not up to date.
-    prerequisites.check_schema_up_to_date()
 
     # Get the frontend and backend commands, based on the environment.
     setup_frontend = frontend_cmd = backend_cmd = None
@@ -235,7 +237,8 @@ def _run(
             exec.run_backend_prod,
         )
     if not setup_frontend or not frontend_cmd or not backend_cmd:
-        raise ValueError(f"Invalid env: {env}. Must be DEV or PROD.")
+        msg = f"Invalid env: {env}. Must be DEV or PROD."
+        raise ValueError(msg)
 
     # Post a telemetry event.
     telemetry.send(f"run-{env.value}")
@@ -481,13 +484,11 @@ def logout():
 @click.group
 def db_cli():
     """Subcommands for managing the database schema."""
-    pass
 
 
 @click.group
 def script_cli():
     """Subcommands for running helper scripts."""
-    pass
 
 
 def _skip_compile():
@@ -531,9 +532,7 @@ def migrate():
     from reflex import model
     from reflex.utils import prerequisites
 
-    # TODO see if we can use `get_app()` instead (no compile).  Would _skip_compile still be needed then?
-    _skip_compile()
-    prerequisites.get_compiled_app()
+    prerequisites.get_app()
     if not prerequisites.check_db_initialized():
         return
     model.Model.migrate()

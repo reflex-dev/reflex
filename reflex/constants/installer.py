@@ -14,7 +14,7 @@ class Bun(SimpleNamespace):
     """Bun constants."""
 
     # The Bun version.
-    VERSION = "1.2.14"
+    VERSION = "1.2.15"
 
     # Min Bun Version
     MIN_VERSION = "1.2.8"
@@ -38,7 +38,7 @@ class Bun(SimpleNamespace):
         Returns:
             The directory to store the bun.
         """
-        from reflex.config import environment
+        from reflex.environment import environment
 
         return environment.REFLEX_DIR.get() / "bun"
 
@@ -75,7 +75,7 @@ fetch-retries=0
 
 
 def _determine_nextjs_version() -> str:
-    default_version = "15.3.2"
+    default_version = "15.3.3"
     if (version := os.getenv("NEXTJS_VERSION")) and version != default_version:
         from reflex.utils import console
 
@@ -152,7 +152,7 @@ class PackageJson(SimpleNamespace):
     DEV_DEPENDENCIES = {
         "@emotion/react": "11.14.0",
         "autoprefixer": "10.4.21",
-        "postcss": "8.5.3",
+        "postcss": "8.5.4",
         "postcss-import": "16.1.0",
         "@react-router/dev": _react_router_version,
         "@react-router/fs-routes": _react_router_version,

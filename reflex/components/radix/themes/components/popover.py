@@ -5,11 +5,13 @@ from typing import Literal
 from reflex.components.component import ComponentNamespace
 from reflex.components.core.breakpoints import Responsive
 from reflex.components.el import elements
+from reflex.components.radix.themes.base import (
+    RadixThemesComponent,
+    RadixThemesTriggerComponent,
+)
 from reflex.constants.compiler import MemoizationMode
 from reflex.event import EventHandler, no_args_event_spec, passthrough_event_spec
 from reflex.vars.base import Var
-
-from ..base import RadixThemesComponent, RadixThemesTriggerComponent
 
 
 class PopoverRoot(RadixThemesComponent):

@@ -13,20 +13,10 @@ import pickle
 import sys
 import typing
 import warnings
-from abc import ABC
 from collections.abc import AsyncIterator, Callable, Sequence
 from hashlib import md5
 from types import FunctionType
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    BinaryIO,
-    ClassVar,
-    TypeVar,
-    cast,
-    get_args,
-    get_type_hints,
-)
+from typing import TYPE_CHECKING, Any, BinaryIO, ClassVar, TypeVar, cast, get_type_hints
 
 import pydantic.v1 as pydantic
 from pydantic import BaseModel as BaseModelV2
@@ -38,7 +28,7 @@ from typing_extensions import Self
 import reflex.istate.dynamic
 from reflex import constants, event
 from reflex.base import Base
-from reflex.config import PerformanceMode, environment
+from reflex.environment import PerformanceMode, environment
 from reflex.event import (
     BACKGROUND_TASK_MARKER,
     Event,
@@ -68,17 +58,12 @@ from reflex.utils.exceptions import (
 )
 from reflex.utils.exceptions import ImmutableStateError as ImmutableStateError
 from reflex.utils.exec import is_testing_env
-from reflex.utils.types import (
-    _isinstance,
-    get_origin,
-    is_union,
-    true_type_for_pydantic_field,
-    value_inside_optional,
-)
-from reflex.vars import VarData
+from reflex.utils.types import _isinstance, is_union, value_inside_optional
+from reflex.vars import Field, VarData, field
 from reflex.vars.base import (
     ComputedVar,
     DynamicRouteVar,
+    EvenMoreBasicBaseState,
     Var,
     computed_var,
     dispatch,
@@ -148,7 +133,8 @@ def _no_chain_background_task(
 
         return _no_chain_background_task_gen
 
-    raise TypeError(f"{fn} is marked as a background task, but is not async.")
+    msg = f"{fn} is marked as a background task, but is not async."
+    raise TypeError(msg)
 
 
 def _substate_key(
@@ -233,22 +219,19 @@ class EventHandlerSetVar(EventHandler):
 
         if args:
             if not isinstance(args[0], str):
-                raise EventHandlerValueError(
-                    f"Var name must be passed as a string, got {args[0]!r}"
-                )
+                msg = f"Var name must be passed as a string, got {args[0]!r}"
+                raise EventHandlerValueError(msg)
 
             handler = getattr(self.state_cls, constants.SETTER_PREFIX + args[0], None)
 
             # Check that the requested Var setter exists on the State at compile time.
             if handler is None:
-                raise AttributeError(
-                    f"Variable `{args[0]}` cannot be set on `{self.state_cls.get_full_name()}`"
-                )
+                msg = f"Variable `{args[0]}` cannot be set on `{self.state_cls.get_full_name()}`"
+                raise AttributeError(msg)
 
             if asyncio.iscoroutinefunction(handler.fn):
-                raise NotImplementedError(
-                    f"Setter for {args[0]} is async, which is not supported."
-                )
+                msg = f"Setter for {args[0]} is async, which is not supported."
+                raise NotImplementedError(msg)
 
         return super().__call__(*args)
 
@@ -257,38 +240,23 @@ if TYPE_CHECKING:
     from pydantic.v1.fields import ModelField
 
 
-def _unwrap_field_type(type_: types.GenericType) -> type:
-    """Unwrap rx.Field type annotations.
-
-    Args:
-        type_: The type to unwrap.
-
-    Returns:
-        The unwrapped type.
-    """
-    from reflex.vars import Field
-
-    if get_origin(type_) is Field:
-        return get_args(type_)[0]
-    return type_
-
-
-def get_var_for_field(cls: type[BaseState], f: ModelField):
-    """Get a Var instance for a Pydantic field.
+def get_var_for_field(cls: type[BaseState], name: str, f: Field):
+    """Get a Var instance for a state field.
 
     Args:
         cls: The state class.
-        f: The Pydantic field.
+        name: The name of the field.
+        f: The Field instance.
 
     Returns:
         The Var instance.
     """
-    field_name = format.format_state_name(cls.get_full_name()) + "." + f.name
+    field_name = format.format_state_name(cls.get_full_name()) + "." + name
 
     return dispatch(
         field_name=field_name,
-        var_data=VarData.from_state(cls, f.name),
-        result_var_type=_unwrap_field_type(true_type_for_pydantic_field(f)),
+        var_data=VarData.from_state(cls, name),
+        result_var_type=f.outer_type_,
     )
 
 
@@ -314,7 +282,7 @@ async def _resolve_delta(delta: Delta) -> Delta:
 all_base_state_classes: dict[str, None] = {}
 
 
-class BaseState(Base, ABC, extra=pydantic.Extra.allow):
+class BaseState(EvenMoreBasicBaseState):
     """The state of the app."""
 
     # A map from the var name to the var.
@@ -354,31 +322,34 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
     _potentially_dirty_states: ClassVar[set[str]] = set()
 
     # The parent state.
-    parent_state: BaseState | None = None
+    parent_state: BaseState | None = field(default=None, is_var=False)
 
     # The substates of the state.
-    substates: builtins.dict[str, BaseState] = {}
+    substates: builtins.dict[str, BaseState] = field(
+        default_factory=builtins.dict, is_var=False
+    )
 
     # The set of dirty vars.
-    dirty_vars: set[str] = set()
+    dirty_vars: set[str] = field(default_factory=set, is_var=False)
 
     # The set of dirty substates.
-    dirty_substates: set[str] = set()
+    dirty_substates: set[str] = field(default_factory=set, is_var=False)
 
     # The routing path that triggered the state
-    router_data: builtins.dict[str, Any] = {}
+    router_data: builtins.dict[str, Any] = field(
+        default_factory=builtins.dict, is_var=False
+    )
 
     # Per-instance copy of backend base variable values
-    _backend_vars: builtins.dict[str, Any] = {}
+    _backend_vars: builtins.dict[str, Any] = field(
+        default_factory=builtins.dict, is_var=False
+    )
 
     # The router data for the current page
-    router: RouterData = RouterData()
+    router: Field[RouterData] = field(default_factory=RouterData)
 
     # Whether the state has ever been touched since instantiation.
-    _was_touched: bool = False
-
-    # Whether this state class is a mixin and should not be instantiated.
-    _mixin: ClassVar[bool] = False
+    _was_touched: bool = field(default=False, is_var=False)
 
     # A special event handler for setting base vars.
     setvar: ClassVar[EventHandler]
@@ -406,18 +377,16 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         from reflex.utils.exceptions import ReflexRuntimeError
 
         if not _reflex_internal_init and not is_testing_env():
-            raise ReflexRuntimeError(
+            msg = (
                 "State classes should not be instantiated directly in a Reflex app. "
                 "See https://reflex.dev/docs/state/ for further information."
             )
-        if type(self)._mixin:
-            raise ReflexRuntimeError(
-                f"{type(self).__name__} is a state mixin and cannot be instantiated directly."
-            )
+            raise ReflexRuntimeError(msg)
+        if self._mixin:
+            msg = f"{type(self).__name__} is a state mixin and cannot be instantiated directly."
+            raise ReflexRuntimeError(msg)
         kwargs["parent_state"] = parent_state
-        super().__init__()
-        for name, value in kwargs.items():
-            setattr(self, name, value)
+        super().__init__(**kwargs)
 
         # Setup the substates (for memory state manager only).
         if init_substates:
@@ -462,10 +431,11 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             NameError: If the module name is invalid.
         """
         if "___" in cls.__module__:
-            raise NameError(
+            msg = (
                 "The module name of a State class cannot contain '___'. "
                 "Please rename the module."
             )
+            raise NameError(msg)
 
     @classmethod
     def __init_subclass__(cls, mixin: bool = False, **kwargs):
@@ -482,8 +452,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
 
         super().__init_subclass__(**kwargs)
 
-        cls._mixin = mixin
-        if mixin:
+        if cls._mixin:
             return
 
         # Handle locally-defined states for pickling.
@@ -515,10 +484,11 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             # Check if another substate class with the same name has already been defined.
             if cls.get_name() in {c.get_name() for c in parent_state.class_subclasses}:
                 # This should not happen, since we have added module prefix to state names in #3214
-                raise StateValueError(
+                msg = (
                     f"The substate class '{cls.get_name()}' has been defined multiple times. "
                     "Shadowing substate classes is not allowed."
                 )
+                raise StateValueError(msg)
             # Track this new subclass in the parent state's subclasses set.
             parent_state.class_subclasses.add(cls)
 
@@ -548,9 +518,9 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
 
         # Set the base and computed vars.
         cls.base_vars = {
-            f.name: get_var_for_field(cls, f)
-            for f in cls.get_fields().values()
-            if f.name not in cls.get_skip_vars()
+            name: get_var_for_field(cls, name, f)
+            for name, f in cls.get_fields().items()
+            if name not in cls.get_skip_vars() and f.is_var and not name.startswith("_")
         }
         cls.computed_vars = {
             v._js_expr: v._replace(merge_var_data=VarData.from_state(cls))
@@ -832,9 +802,8 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
                 overridden_methods.add(method.__name__)
 
         for method_name in overridden_methods:
-            raise EventHandlerShadowsBuiltInStateMethodError(
-                f"The event handler name `{method_name}` shadows a builtin State method; use a different name instead"
-            )
+            msg = f"The event handler name `{method_name}` shadows a builtin State method; use a different name instead"
+            raise EventHandlerShadowsBuiltInStateMethodError(msg)
 
     @classmethod
     def _check_overridden_basevars(cls):
@@ -845,9 +814,8 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         """
         for computed_var_ in cls._get_computed_vars():
             if computed_var_._js_expr in cls.__annotations__:
-                raise ComputedVarShadowsBaseVarsError(
-                    f"The computed var name `{computed_var_._js_expr}` shadows a base var in {cls.__module__}.{cls.__name__}; use a different name instead"
-                )
+                msg = f"The computed var name `{computed_var_._js_expr}` shadows a base var in {cls.__module__}.{cls.__name__}; use a different name instead"
+                raise ComputedVarShadowsBaseVarsError(msg)
 
     @classmethod
     def _check_overridden_computed_vars(cls) -> None:
@@ -861,9 +829,8 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
                 continue
             name = cv._js_expr
             if name in cls.inherited_vars or name in cls.inherited_backend_vars:
-                raise ComputedVarShadowsStateVarError(
-                    f"The computed var name `{cv._js_expr}` shadows a var in {cls.__module__}.{cls.__name__}; use a different name instead"
-                )
+                msg = f"The computed var name `{cv._js_expr}` shadows a var in {cls.__module__}.{cls.__name__}; use a different name instead"
+                raise ComputedVarShadowsStateVarError(msg)
 
     @classmethod
     def get_skip_vars(cls) -> set[str]:
@@ -901,7 +868,8 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             if issubclass(base, BaseState) and base is not BaseState and not base._mixin
         ]
         if len(parent_states) >= 2:
-            raise ValueError(f"Only one parent state is allowed {parent_states}.")
+            msg = f"Only one parent state of is allowed. Found {parent_states} parents of {cls}."
+            raise ValueError(msg)
         # The first non-mixin state in the mro is our parent.
         for base in cls.mro()[1:]:
             if not issubclass(base, BaseState) or base._mixin:
@@ -953,7 +921,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         name = cls.get_name()
         parent_state = cls.get_parent_state()
         if parent_state is not None:
-            name = ".".join((parent_state.get_full_name(), name))
+            name = parent_state.get_full_name() + "." + name
         return name
 
     @classmethod
@@ -982,7 +950,8 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         for substate in cls.get_substates():
             if path[0] == substate.get_name():
                 return substate.get_class_substate(path[1:])
-        raise ValueError(f"Invalid path: {path}")
+        msg = f"Invalid path: {path}"
+        raise ValueError(msg)
 
     @classmethod
     def get_class_var(cls, path: Sequence[str]) -> Any:
@@ -1000,7 +969,8 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         path, name = path[:-1], path[-1]
         substate = cls.get_class_substate(tuple(path))
         if not hasattr(substate, name):
-            raise ValueError(f"Invalid path: {path}")
+            msg = f"Invalid path: {path}"
+            raise ValueError(msg)
         return getattr(substate, name)
 
     @classmethod
@@ -1029,12 +999,13 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         from reflex.utils.exceptions import VarTypeError
 
         if not types.is_valid_var_type(prop._var_type):
-            raise VarTypeError(
+            msg = (
                 "State vars must be of a serializable type. "
                 "Valid types include strings, numbers, booleans, lists, "
                 "dictionaries, dataclasses, datetime objects, and pydantic models. "
                 f'Found var "{prop._js_expr}" with type {prop._var_type}.'
             )
+            raise VarTypeError(msg)
         cls._set_var(prop)
         if cls.is_user_defined() and get_config().state_auto_setters:
             cls._create_setter(prop)
@@ -1056,9 +1027,8 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             NameError: if a variable of this name already exists
         """
         if name in cls.__fields__:
-            raise NameError(
-                f"The variable '{name}' already exist. Use a different name"
-            )
+            msg = f"The variable '{name}' already exist. Use a different name"
+            raise NameError(msg)
 
         # create the variable based on name and type
         var = Var(
@@ -1131,17 +1101,8 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         """
         # Get the pydantic field for the var.
         field = cls.get_fields()[prop._var_field_name]
-        if field.required:
-            default_value = prop._get_default_value()
-            if default_value is not None:
-                field.required = False
-                field.default = default_value
-        if (
-            not field.required
-            and field.default is None
-            and field.default_factory is None
-            and not types.is_optional(prop._var_type)
-        ):
+
+        if field.default is None and not types.is_optional(prop._var_type):
             # Ensure frontend uses null coalescing when accessing.
             object.__setattr__(prop, "_var_type", prop._var_type | None)
 
@@ -1160,7 +1121,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             return getattr(cls, name)
         except AttributeError:
             try:
-                return Var("", _var_type=annotation_value)._get_default_value()
+                return types.get_default_value_for_type(annotation_value)
             except TypeError:
                 pass
         return None
@@ -1260,9 +1221,8 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
                 arg in cls.computed_vars
                 and not isinstance(cls.computed_vars[arg], DynamicRouteVar)
             ) or arg in cls.base_vars:
-                raise DynamicRouteArgShadowsStateVarError(
-                    f"Dynamic route arg '{arg}' is shadowing an existing var in {cls.__module__}.{cls.__name__}"
-                )
+                msg = f"Dynamic route arg '{arg}' is shadowing an existing var in {cls.__module__}.{cls.__name__}"
+                raise DynamicRouteArgShadowsStateVarError(msg)
         for substate in cls.get_substates():
             substate._check_overwritten_dynamic_args(args)
 
@@ -1277,10 +1237,6 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         Returns:
             The value of the var.
         """
-        # If the state hasn't been initialized yet, return the default value.
-        if not super().__getattribute__("__dict__"):
-            return super().__getattribute__(name)
-
         # Fast path for dunder
         if name.startswith("__"):
             return super().__getattribute__(name)
@@ -1307,7 +1263,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             fn.__qualname__ = handler.fn.__qualname__
             return fn
 
-        backend_vars = super().__getattribute__("_backend_vars")
+        backend_vars = super().__getattribute__("_backend_vars") or {}
         if name in backend_vars:
             value = backend_vars[name]
         else:
@@ -1363,16 +1319,16 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
                 f"_{getattr(type(self), '__original_name__', type(self).__name__)}__"
             )
         ):
-            raise SetUndefinedStateVarError(
+            msg = (
                 f"The state variable '{name}' has not been defined in '{type(self).__name__}'. "
                 f"All state variables must be declared before they can be set."
             )
+            raise SetUndefinedStateVarError(msg)
 
         fields = self.get_fields()
 
-        if name in fields:
-            field = fields[name]
-            field_type = _unwrap_field_type(true_type_for_pydantic_field(field))
+        if (field := fields.get(name)) is not None and field.is_var:
+            field_type = field.outer_type_
             if not _isinstance(value, field_type, nested=1, treat_var_as_type=False):
                 console.error(
                     f"Expected field '{type(self).__name__}.{name}' to receive type '{escape(str(field_type))}',"
@@ -1380,7 +1336,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
                 )
 
         # Set the attribute.
-        super().__setattr__(name, value)
+        object.__setattr__(self, name, value)
 
         # Add the var to the dirty list.
         if name in self.base_vars:
@@ -1470,7 +1426,8 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
                 return self
             path = path[1:]
         if path[0] not in self.substates:
-            raise ValueError(f"Invalid path: {path}")
+            msg = f"Invalid path: {path}"
+            raise ValueError(msg)
         return self.substates[path[0]].get_substate(path[1:])
 
     @classmethod
@@ -1517,10 +1474,11 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         # Then get the target state and all its substates.
         state_manager = get_state_manager()
         if not isinstance(state_manager, StateManagerRedis):
-            raise RuntimeError(
+            msg = (
                 f"Requested state {state_cls.get_full_name()} is not cached and cannot be accessed without redis. "
-                "(All states should already be available -- this is likely a bug).",
+                "(All states should already be available -- this is likely a bug)."
             )
+            raise RuntimeError(msg)
         state_in_redis = await state_manager.get_state(
             token=_substate_key(self.router.session.client_token, state_cls),
             top_level=False,
@@ -1528,9 +1486,8 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         )
 
         if not isinstance(state_in_redis, state_cls):
-            raise StateMismatchError(
-                f"Searched for state {state_cls.get_full_name()} but found {state_in_redis}."
-            )
+            msg = f"Searched for state {state_cls.get_full_name()} but found {state_in_redis}."
+            raise StateMismatchError(msg)
 
         return state_in_redis
 
@@ -1549,9 +1506,10 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         root_state = self._get_root_state()
         substate = root_state.get_substate(state_cls.get_full_name().split("."))
         if not isinstance(substate, state_cls):
-            raise StateMismatchError(
+            msg = (
                 f"Searched for state {state_cls.get_full_name()} but found {substate}."
             )
+            raise StateMismatchError(msg)
         return substate
 
     async def get_state(self, state_cls: type[T_STATE]) -> T_STATE:
@@ -1601,9 +1559,8 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
 
         var_data = var._get_all_var_data()
         if var_data is None or not var_data.state:
-            raise UnretrievableVarValueError(
-                f"Unable to retrieve value for {var._js_expr}: not associated with any state."
-            )
+            msg = f"Unable to retrieve value for {var._js_expr}: not associated with any state."
+            raise UnretrievableVarValueError(msg)
         # Fastish case: this var belongs to this state
         if var_data.state == self.get_full_name():
             return getattr(self, var_data.field_name)
@@ -1634,9 +1591,8 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         path, name = path[:-1], path[-1]
         substate = self.get_substate(path)
         if not substate:
-            raise ValueError(
-                "The value of state cannot be None when processing an event."
-            )
+            msg = "The value of state cannot be None when processing an event."
+            raise ValueError(msg)
         handler = substate.event_handlers[name]
 
         # For background tasks, proxy the state
@@ -1702,10 +1658,11 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
                 "ignore", message=f"coroutine '{coroutine_name}' was never awaited"
             )
 
-        raise TypeError(
+        msg = (
             f"Your handler {handler.fn.__qualname__} must only return/yield: None, Events or other EventHandlers referenced by their class (i.e. using `type(self)` or other class references)."
             f" Returned events of types {', '.join(map(str, map(type, events)))!s}."
         )
+        raise TypeError(msg)
 
     async def _as_state_update(
         self,
@@ -1834,9 +1791,8 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
                 try:
                     payload[arg] = hinted_args(value)
                 except ValueError:
-                    raise ValueError(
-                        f"Received a string value ({value}) for {arg} but expected a {hinted_args}"
-                    ) from None
+                    msg = f"Received a string value ({value}) for {arg} but expected a {hinted_args}"
+                    raise ValueError(msg) from None
                 else:
                     console.warn(
                         f"Received a string value ({value}) for {arg} but expected a {hinted_args}. A simple conversion was successful."
@@ -2058,7 +2014,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         Returns:
             The value of the field.
         """
-        value = super().get_value(key)
+        value = getattr(self, key)
         if isinstance(value, MutableProxy):
             return value.__wrapped__
         return value
@@ -2123,9 +2079,8 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         Raises:
             TypeError: always, because async contextmanager protocol is only supported for background task.
         """
-        raise TypeError(
-            "Only background task should use `async with self` to modify state."
-        )
+        msg = "Only background task should use `async with self` to modify state."
+        raise TypeError(msg)
 
     async def __aexit__(self, *exc_info: Any) -> None:
         """Exit the async context manager protocol.
@@ -2136,7 +2091,6 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         Args:
             exc_info: The exception info tuple.
         """
-        pass
 
     def __getstate__(self):
         """Get the state for redis serialization.
@@ -2149,19 +2103,19 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         Returns:
             The state dict for serialization.
         """
-        state = super().__getstate__()
-        state["__dict__"] = state["__dict__"].copy()
-        if state["__dict__"].get("parent_state") is not None:
+        state = self.__dict__
+        state = state.copy()
+        if state.get("parent_state") is not None:
             # Do not serialize router data in substates (only the root state).
-            state["__dict__"].pop("router", None)
-            state["__dict__"].pop("router_data", None)
+            state.pop("router", None)
+            state.pop("router_data", None)
         # Never serialize parent_state or substates.
-        state["__dict__"].pop("parent_state", None)
-        state["__dict__"].pop("substates", None)
-        state["__dict__"].pop("_was_touched", None)
+        state.pop("parent_state", None)
+        state.pop("substates", None)
+        state.pop("_was_touched", None)
         # Remove all inherited vars.
         for inherited_var_name in self.inherited_vars:
-            state["__dict__"].pop(inherited_var_name, None)
+            state.pop(inherited_var_name, None)
         return state
 
     def __setstate__(self, state: dict[str, Any]):
@@ -2172,9 +2126,10 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         Args:
             state: The state dict for deserialization.
         """
-        state["__dict__"]["parent_state"] = None
-        state["__dict__"]["substates"] = {}
-        super().__setstate__(state)
+        state["parent_state"] = None
+        state["substates"] = {}
+        for key, value in state.items():
+            object.__setattr__(self, key, value)
 
     def _check_state_size(
         self,
@@ -2215,17 +2170,11 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
 
         def _field_tuple(
             field_name: str,
-        ) -> tuple[str, str, Any, bool | None, Any]:
+        ) -> tuple[str, Any, Any]:
             model_field = cls.__fields__[field_name]
             return (
                 field_name,
-                model_field.name,
                 _serialize_type(model_field.type_),
-                (
-                    model_field.required
-                    if isinstance(model_field.required, bool)
-                    else None
-                ),
                 (model_field.default if is_serializable(model_field.default) else None),
             )
 
@@ -2298,9 +2247,10 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         elif fp is not None and data is None:
             (substate_schema, state) = pickle.load(fp)
         else:
-            raise ValueError("Only one of `data` or `fp` must be provided")
+            msg = "Only one of `data` or `fp` must be provided"
+            raise ValueError(msg)
         if substate_schema != state._to_schema():
-            raise StateSchemaMismatchError()
+            raise StateSchemaMismatchError
         return state
 
 
@@ -2377,14 +2327,12 @@ def dynamic(func: Callable[[T], Component]):
     values = list(func_signature.values())
 
     if number_of_parameters != 1:
-        raise DynamicComponentInvalidSignatureError(
-            "The function must have exactly one parameter, which is the state class."
-        )
+        msg = "The function must have exactly one parameter, which is the state class."
+        raise DynamicComponentInvalidSignatureError(msg)
 
     if len(values) != 1:
-        raise DynamicComponentInvalidSignatureError(
-            "You must provide a type hint for the state class in the function."
-        )
+        msg = "You must provide a type hint for the state class in the function."
+        raise DynamicComponentInvalidSignatureError(msg)
 
     state_class: type[T] = values[0]
 
@@ -2457,7 +2405,7 @@ class OnLoadInternalState(State):
         )
         if not load_events:
             self.is_hydrated = True
-            return  # Fast path for navigation with no on_load events defined.
+            return None  # Fast path for navigation with no on_load events defined.
         self.is_hydrated = False
         return [
             *fix_events(
@@ -2521,7 +2469,7 @@ class ComponentState(State, mixin=True):
         Raises:
             ReflexRuntimeError: If the ComponentState is initialized directly.
         """
-        if type(self)._mixin:
+        if self._mixin:
             raise ReflexRuntimeError(
                 f"{ComponentState.__name__} {type(self).__name__} is not meant to be initialized directly. "
                 + "Use the `create` method to create a new instance and access the state via the `State` attribute."
@@ -2549,9 +2497,8 @@ class ComponentState(State, mixin=True):
         Raises:
             NotImplementedError: if the subclass does not override this method.
         """
-        raise NotImplementedError(
-            f"{cls.__name__} must implement get_component to return the component instance."
-        )
+        msg = f"{cls.__name__} must implement get_component to return the component instance."
+        raise NotImplementedError(msg)
 
     @classmethod
     def create(cls, *children, **props) -> Component:

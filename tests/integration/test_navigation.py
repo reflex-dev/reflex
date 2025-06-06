@@ -40,7 +40,7 @@ def NavigationApp():
         return rx.text("Internal")
 
 
-@pytest.fixture()
+@pytest.fixture
 def navigation_app(tmp_path) -> Generator[AppHarness, None, None]:
     """Start NavigationApp app at tmp_path via AppHarness.
 

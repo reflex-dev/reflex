@@ -95,7 +95,8 @@ class Pie(Recharts):
     # The tabindex of wrapper surrounding the cells. Default: 0
     root_tab_index: Var[int]
 
-    def get_event_triggers(self) -> dict[str, Var | Any]:
+    @classmethod
+    def get_event_triggers(cls) -> dict[str, Var | Any]:
         """Get the event triggers that pass the component's value to the handler.
 
         Returns:
@@ -159,7 +160,8 @@ class Radar(Recharts):
     # Valid children components
     _valid_children: ClassVar[list[str]] = ["LabelList"]
 
-    def get_event_triggers(self) -> dict[str, Var | Any]:
+    @classmethod
+    def get_event_triggers(cls) -> dict[str, Var | Any]:
         """Get the event triggers that pass the component's value to the handler.
 
         Returns:
@@ -211,7 +213,8 @@ class RadialBar(Recharts):
     # Valid children components
     _valid_children: ClassVar[list[str]] = ["Cell", "LabelList"]
 
-    def get_event_triggers(self) -> dict[str, Var | Any]:
+    @classmethod
+    def get_event_triggers(cls) -> dict[str, Var | Any]:
         """Get the event triggers that pass the component's value to the handler.
 
         Returns:
@@ -384,7 +387,8 @@ class PolarRadiusAxis(Recharts):
     # The stroke color of axis. Default: rx.color("gray", 10)
     stroke: Var[str | Color] = LiteralVar.create(Color("gray", 10))
 
-    def get_event_triggers(self) -> dict[str, Var | Any]:
+    @classmethod
+    def get_event_triggers(cls) -> dict[str, Var | Any]:
         """Get the event triggers that pass the component's value to the handler.
 
         Returns:

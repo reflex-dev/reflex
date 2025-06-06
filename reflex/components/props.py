@@ -66,9 +66,8 @@ class NoExtrasAllowedProps(Base):
         except ValidationError as e:
             invalid_fields = ", ".join([error["loc"][0] for error in e.errors()])  # pyright: ignore [reportCallIssue, reportArgumentType]
             supported_props_str = ", ".join(f'"{field}"' for field in self.get_fields())
-            raise InvalidPropValueError(
-                f"Invalid prop(s) {invalid_fields} for {component_name!r}. Supported props are {supported_props_str}"
-            ) from None
+            msg = f"Invalid prop(s) {invalid_fields} for {component_name!r}. Supported props are {supported_props_str}"
+            raise InvalidPropValueError(msg) from None
 
     class Config:  # pyright: ignore [reportIncompatibleVariableOverride]
         """Pydantic config."""

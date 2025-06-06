@@ -111,7 +111,8 @@ class ClientStateVar(Var):
             var_name = get_unique_variable_name()
         id_name = "id_" + get_unique_variable_name()
         if not isinstance(var_name, str):
-            raise ValueError("var_name must be a string.")
+            msg = "var_name must be a string."
+            raise ValueError(msg)
         if default is NoValue:
             default_var = Var(_js_expr="")
         elif not isinstance(default, Var):
@@ -271,7 +272,8 @@ class ClientStateVar(Var):
             ValueError: If the ClientStateVar is not global.
         """
         if not self._global_ref:
-            raise ValueError("ClientStateVar must be global to retrieve the value.")
+            msg = "ClientStateVar must be global to retrieve the value."
+            raise ValueError(msg)
         return run_script(_client_state_ref(self._getter_name), callback=callback)
 
     def push(self, value: Any) -> EventSpec:
@@ -289,6 +291,7 @@ class ClientStateVar(Var):
             ValueError: If the ClientStateVar is not global.
         """
         if not self._global_ref:
-            raise ValueError("ClientStateVar must be global to push the value.")
+            msg = "ClientStateVar must be global to push the value."
+            raise ValueError(msg)
         value = Var.create(value)
         return run_script(f"{_client_state_ref(self._setter_name)}({value})")

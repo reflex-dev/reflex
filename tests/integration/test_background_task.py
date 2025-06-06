@@ -229,7 +229,7 @@ def driver(background_task: AppHarness) -> Generator[WebDriver, None, None]:
         driver.quit()
 
 
-@pytest.fixture()
+@pytest.fixture
 def token(background_task: AppHarness, driver: WebDriver) -> str:
     """Get a function that returns the active token.
 

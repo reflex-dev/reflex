@@ -9,7 +9,8 @@ from reflex.event import EventHandler, input_event, no_args_event_spec
 # This is a repeat of its namesake in test_component.py.
 def test_custom_component_declare_event_handlers_in_fields():
     class ReferenceComponent(Component):
-        def get_event_triggers(self) -> dict[str, Any]:
+        @classmethod
+        def get_event_triggers(cls) -> dict[str, Any]:
             """Test controlled triggers.
 
             Returns:
@@ -20,7 +21,7 @@ def test_custom_component_declare_event_handlers_in_fields():
                 "on_a": lambda e: [e],
                 "on_b": lambda e: [e.target.value],
                 "on_c": lambda e: [],
-                "on_d": lambda: [],
+                "on_d": no_args_event_spec,
             }
 
     class TestComponent(Component):

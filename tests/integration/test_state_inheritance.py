@@ -242,7 +242,7 @@ def driver(state_inheritance: AppHarness) -> Generator[WebDriver, None, None]:
         driver.quit()
 
 
-@pytest.fixture()
+@pytest.fixture
 def token(state_inheritance: AppHarness, driver: WebDriver) -> str:
     """Get a function that returns the active token.
 

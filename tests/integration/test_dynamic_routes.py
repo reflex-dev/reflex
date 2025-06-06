@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-import time
+import asyncio
 from collections.abc import Callable, Coroutine, Generator
 from urllib.parse import urlsplit
 
@@ -186,7 +186,7 @@ def driver(dynamic_route: AppHarness) -> Generator[WebDriver, None, None]:
         driver.quit()
 
 
-@pytest.fixture()
+@pytest.fixture
 def token(dynamic_route: AppHarness, driver: WebDriver) -> str:
     """Get the token associated with backend state.
 
@@ -210,7 +210,7 @@ def token(dynamic_route: AppHarness, driver: WebDriver) -> str:
     return token
 
 
-@pytest.fixture()
+@pytest.fixture
 def poll_for_order(
     dynamic_route: AppHarness, token: str
 ) -> Callable[[list[str]], Coroutine[None, None, None]]:
@@ -397,7 +397,7 @@ async def test_render_dynamic_arg(
         driver.get(f"{frontend_url.removesuffix('/')}/arg/0")
 
     # TODO: drop after flakiness is resolved
-    time.sleep(3)
+    await asyncio.sleep(3)
 
     def assert_content(expected: str, expect_not: str):
         ids = [

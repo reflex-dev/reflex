@@ -29,7 +29,7 @@ color_with_fstring = rx.color(
 
 
 @pytest.mark.parametrize(
-    "color, expected, expected_type",
+    ("color", "expected", "expected_type"),
     [
         (create_color_var(rx.color("mint")), '"var(--mint-7)"', Color),
         (create_color_var(rx.color("mint", 3)), '"var(--mint-3)"', Color),
@@ -79,7 +79,7 @@ def test_color(color, expected, expected_type: type[str] | type[Color]):
 
 
 @pytest.mark.parametrize(
-    "cond_var, expected",
+    ("cond_var", "expected"),
     [
         (
             rx.cond(True, rx.color("mint"), rx.color("tomato", 5)),
@@ -119,7 +119,7 @@ def test_color_with_conditionals(cond_var, expected):
 
 
 @pytest.mark.parametrize(
-    "color, expected",
+    ("color", "expected"),
     [
         (create_color_var(rx.color("red")), '"var(--red-7)"'),
         (create_color_var(rx.color("green", shade=1)), '"var(--green-1)"'),

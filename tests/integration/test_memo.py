@@ -58,7 +58,7 @@ def MemoApp():
     app.add_page(index)
 
 
-@pytest.fixture()
+@pytest.fixture
 def memo_app(tmp_path) -> Generator[AppHarness, None, None]:
     """Start MemoApp app at tmp_path via AppHarness.
 

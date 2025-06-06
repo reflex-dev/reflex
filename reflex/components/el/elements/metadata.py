@@ -13,7 +13,6 @@ class Base(BaseHTML):
 
     tag = "base"
 
-    tag = "base"
     href: Var[str]
     target: Var[str]
 
