@@ -189,9 +189,7 @@ class EventHandler(EventActionsMixin):
         """
         return hash((tuple(self.event_actions.items()), self.fn, self.state_full_name))
 
-    @property
-    @lru_cache  # noqa: B019
-    def _parameters(self) -> Mapping[str, inspect.Parameter]:
+    def get_parameters(self) -> Mapping[str, inspect.Parameter]:
         """Get the parameters of the function.
 
         Returns:
@@ -200,6 +198,18 @@ class EventHandler(EventActionsMixin):
         if self.fn is None:
             return {}
         return inspect.signature(self.fn).parameters
+
+    @property
+    def _parameters(self) -> Mapping[str, inspect.Parameter]:
+        """Get the parameters of the function.
+
+        Returns:
+            The parameters of the function.
+        """
+        if (parameters := getattr(self, "__parameters", None)) is None:
+            parameters = {**self.get_parameters()}
+            object.__setattr__(self, "__parameters", parameters)
+        return parameters
 
     @classmethod
     def __class_getitem__(cls, args_spec: str) -> Annotated:
