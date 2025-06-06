@@ -334,13 +334,14 @@ def npm_escape_hatch() -> bool:
 
 
 def _check_app_name(config: Config):
-    """Check if the app name is set in the config.
+    """Check if the app name is valid and matches the folder structure.
 
     Args:
         config: The config object.
 
     Raises:
-        RuntimeError: If the app name is not set in the config.
+        RuntimeError: If the app name is not set, folder doesn't exist, or doesn't match config.
+        ModuleNotFoundError: If the app_name is not importable (i.e., not a valid Python package, folder structure being wrong).
     """
     if not config.app_name:
         msg = (
@@ -348,6 +349,21 @@ def _check_app_name(config: Config):
             "If this error occurs in a reflex test case, ensure that `get_app` is mocked."
         )
         raise RuntimeError(msg)
+
+    from reflex.utils.misc import with_cwd_in_syspath
+
+    with with_cwd_in_syspath():
+        try:
+            mod_spec = importlib.util.find_spec(config.module)
+        except ModuleNotFoundError:
+            mod_spec = None
+        if mod_spec is None:
+            msg = f"Module {config.module} not found. "
+            if config.app_module_import is not None:
+                msg += f"Ensure app_module_import='{config.app_module_import}' in rxconfig.py matches your folder structure."
+            else:
+                msg += f"Ensure app_name='{config.app_name}' in rxconfig.py matches your folder structure."
+            raise ModuleNotFoundError(msg)
 
 
 def get_app(reload: bool = False) -> ModuleType:

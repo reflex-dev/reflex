@@ -13,7 +13,7 @@ class Constants(SimpleNamespace):
     """Tailwind constants."""
 
     # The Tailwindcss version
-    VERSION = "tailwindcss@4.1.7"
+    VERSION = "tailwindcss@4.1.8"
     # The Tailwind config.
     CONFIG = "tailwind.config.js"
     # Default Tailwind content paths

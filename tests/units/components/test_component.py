@@ -115,7 +115,8 @@ def component2() -> type[Component]:
 
         on_prop_event: EventHandler[on_prop_event_spec]
 
-        def get_event_triggers(self) -> dict[str, Any]:
+        @classmethod
+        def get_event_triggers(cls) -> dict[str, Any]:
             """Test controlled triggers.
 
             Returns:
@@ -860,7 +861,8 @@ def test_component_event_trigger_arbitrary_args():
         library = "/local"
         tag = "C1"
 
-        def get_event_triggers(self) -> dict[str, Any]:
+        @classmethod
+        def get_event_triggers(cls) -> dict[str, Any]:
             return {
                 **super().get_event_triggers(),
                 "on_foo": on_foo_spec,
@@ -1852,7 +1854,8 @@ def test_custom_component_get_imports():
 
 def test_custom_component_declare_event_handlers_in_fields():
     class ReferenceComponent(Component):
-        def get_event_triggers(self) -> dict[str, Any]:
+        @classmethod
+        def get_event_triggers(cls) -> dict[str, Any]:
             """Test controlled triggers.
 
             Returns:
@@ -1888,7 +1891,8 @@ def test_invalid_event_trigger():
     class TriggerComponent(Component):
         on_push: Var[bool]
 
-        def get_event_triggers(self) -> dict[str, Any]:
+        @classmethod
+        def get_event_triggers(cls) -> dict[str, Any]:
             """Test controlled triggers.
 
             Returns:

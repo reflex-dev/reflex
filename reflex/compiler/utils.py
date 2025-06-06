@@ -11,8 +11,6 @@ from pathlib import Path
 from typing import Any
 from urllib.parse import urlparse
 
-from pydantic.v1.fields import ModelField
-
 from reflex import constants
 from reflex.components.base import (
     Body,
@@ -34,7 +32,7 @@ from reflex.utils import console, format, imports, path_ops
 from reflex.utils.exec import is_in_app_harness
 from reflex.utils.imports import ImportVar, ParsedImportDict
 from reflex.utils.prerequisites import get_web_dir
-from reflex.vars.base import Var
+from reflex.vars.base import Field, Var
 
 # To re-export this function.
 merge_imports = imports.merge_imports
@@ -212,7 +210,7 @@ def compile_state(state: type[BaseState]) -> dict:
 
 
 def _compile_client_storage_field(
-    field: ModelField,
+    field: Field,
 ) -> tuple[
     type[Cookie] | type[LocalStorage] | type[SessionStorage] | None,
     dict[str, Any] | None,

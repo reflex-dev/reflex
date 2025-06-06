@@ -95,6 +95,7 @@ BACKGROUND_TASK_MARKER = "_reflex_background_task"
 @dataclasses.dataclass(
     init=True,
     frozen=True,
+    kw_only=True,
 )
 class EventActionsMixin:
     """Mixin for DOM event actions."""
@@ -170,6 +171,7 @@ class EventActionsMixin:
 @dataclasses.dataclass(
     init=True,
     frozen=True,
+    kw_only=True,
 )
 class EventHandler(EventActionsMixin):
     """An event handler responds to an event to update the state."""
@@ -270,6 +272,7 @@ class EventHandler(EventActionsMixin):
 @dataclasses.dataclass(
     init=True,
     frozen=True,
+    kw_only=True,
 )
 class EventSpec(EventActionsMixin):
     """An event specification.
