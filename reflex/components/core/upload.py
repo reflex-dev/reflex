@@ -396,7 +396,8 @@ class Upload(MemoizationLeaf):
             The updated arg_value tuple when arg is "files", otherwise the original arg_value.
         """
         if arg_value[0]._js_expr == "files":
-            placeholder = parse_args_spec(_on_drop_spec)[0]
+            placeholders, _ = parse_args_spec(_on_drop_spec)
+            placeholder = placeholders[0]
             return (arg_value[0], placeholder)
         return arg_value
 
