@@ -3383,9 +3383,15 @@ class Field(Generic[FIELD_TYPE]):
                 type_origin = get_origin(annotated_type) or annotated_type
 
             if self.default is MISSING and self.default_factory is None:
-                self.default = types.get_default_value_for_type(annotated_type)
-                if self.default is None and not types.is_optional(annotated_type):
+                default_value = types.get_default_value_for_type(annotated_type)
+                if default_value is None and not types.is_optional(annotated_type):
                     annotated_type = annotated_type | None
+                if types.is_immutable(default_value):
+                    self.default = default_value
+                else:
+                    self.default_factory = functools.partial(
+                        copy.deepcopy, default_value
+                    )
             self.outer_type_ = self.annotated_type = annotated_type
 
             if type_origin is Annotated:
