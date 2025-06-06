@@ -91,6 +91,7 @@ class EventTriggers(SimpleNamespace):
     ON_POINTER_DOWN_OUTSIDE = "on_pointer_down_outside"
     ON_INTERACT_OUTSIDE = "on_interact_outside"
     ON_SCROLL = "on_scroll"
+    ON_SCROLL_END = "on_scroll_end"
     ON_SUBMIT = "on_submit"
     ON_MOUNT = "on_mount"
     ON_UNMOUNT = "on_unmount"
