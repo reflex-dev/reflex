@@ -120,6 +120,6 @@
   "reflex/components/recharts/general.pyi": "06d0e97776cc82b946fed465ab36fba4",
   "reflex/components/recharts/polar.pyi": "77ca6e0d992f5d5c0479de73db4f71ba",
   "reflex/components/recharts/recharts.pyi": "bbaec232c2da035b31b5d0e3888f4801",
-  "reflex/components/sonner/toast.pyi": "6dc6d5d05d9a8d7d364c0326fb2e6503",
+  "reflex/components/sonner/toast.pyi": "a9f5529905f171fddd93e78b6e7ad53e",
   "reflex/components/suneditor/editor.pyi": "0a6dcab61cc2d750488601e3808080d9"
 }
