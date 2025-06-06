@@ -7,7 +7,6 @@ import copy
 import dataclasses
 import functools
 import inspect
-import sys
 import typing
 from abc import ABC, ABCMeta, abstractmethod
 from collections.abc import Callable, Iterator, Mapping, Sequence
@@ -15,17 +14,7 @@ from dataclasses import _MISSING_TYPE, MISSING
 from functools import wraps
 from hashlib import md5
 from types import SimpleNamespace
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    ClassVar,
-    ForwardRef,
-    TypeVar,
-    _eval_type,  # pyright: ignore [reportAttributeAccessIssue]
-    cast,
-    get_args,
-    get_origin,
-)
+from typing import TYPE_CHECKING, Any, ClassVar, TypeVar, cast, get_args, get_origin
 
 from rich.markup import escape
 from typing_extensions import dataclass_transform
@@ -72,46 +61,6 @@ from reflex.vars.function import ArgsFunctionOperation, FunctionStringVar, Funct
 from reflex.vars.number import ternary_operation
 from reflex.vars.object import ObjectVar
 from reflex.vars.sequence import LiteralArrayVar, LiteralStringVar, StringVar
-
-
-def resolve_annotations(
-    raw_annotations: Mapping[str, type[Any]], module_name: str | None
-) -> dict[str, type[Any]]:
-    """Partially taken from typing.get_type_hints.
-
-    Resolve string or ForwardRef annotations into type objects if possible.
-
-    Args:
-        raw_annotations: The raw annotations to resolve.
-        module_name: The name of the module.
-
-    Returns:
-        The resolved annotations.
-    """
-    module = sys.modules.get(module_name, None) if module_name is not None else None
-
-    base_globals: dict[str, Any] | None = (
-        module.__dict__ if module is not None else None
-    )
-
-    annotations = {}
-    for name, value in raw_annotations.items():
-        if isinstance(value, str):
-            if sys.version_info == (3, 10, 0):
-                value = ForwardRef(value, is_argument=False)
-            else:
-                value = ForwardRef(value, is_argument=False, is_class=True)
-        try:
-            if sys.version_info >= (3, 13):
-                value = _eval_type(value, base_globals, None, type_params=())
-            else:
-                value = _eval_type(value, base_globals, None)
-        except NameError:
-            # this is ok, it can be fixed with update_forward_refs
-            pass
-        annotations[name] = value
-    return annotations
-
 
 FIELD_TYPE = TypeVar("FIELD_TYPE")
 
@@ -195,7 +144,7 @@ class BaseComponentMeta(FieldBasedMeta, ABCMeta):
     def _resolve_annotations(
         cls, namespace: dict[str, Any], name: str
     ) -> dict[str, Any]:
-        return resolve_annotations(
+        return types.resolve_annotations(
             namespace.get("__annotations__", {}), namespace["__module__"]
         )
 
@@ -909,9 +858,8 @@ class Component(BaseComponent, ABC):
         for key, value in kwargs.items():
             setattr(self, key, value)
 
-    def get_event_triggers(
-        self,
-    ) -> dict[str, types.ArgsSpec | Sequence[types.ArgsSpec]]:
+    @classmethod
+    def get_event_triggers(cls) -> dict[str, types.ArgsSpec | Sequence[types.ArgsSpec]]:
         """Get the event triggers for the component.
 
         Returns:
@@ -928,7 +876,7 @@ class Component(BaseComponent, ABC):
                 )
                 else no_args_event_spec
             )
-            for name, field in self.get_fields().items()
+            for name, field in cls.get_fields().items()
             if field.type_origin is EventHandler
         }
 
@@ -1978,24 +1926,38 @@ class Component(BaseComponent, ABC):
         """
         return {}
 
-    def _get_all_app_wrap_components(self) -> dict[tuple[int, str], Component]:
+    def _get_all_app_wrap_components(
+        self, *, ignore_ids: set[int] | None = None
+    ) -> dict[tuple[int, str], Component]:
         """Get the app wrap components for the component and its children.
+
+        Args:
+            ignore_ids: A set of component IDs to ignore. Used to avoid duplicates.
 
         Returns:
             The app wrap components.
         """
+        ignore_ids = ignore_ids or set()
         # Store the components in a set to avoid duplicates.
         components = self._get_app_wrap_components()
 
         for component in tuple(components.values()):
-            components.update(component._get_all_app_wrap_components())
+            component_id = id(component)
+            if component_id in ignore_ids:
+                continue
+            ignore_ids.add(component_id)
+            components.update(
+                component._get_all_app_wrap_components(ignore_ids=ignore_ids)
+            )
 
         # Add the app wrap components for the children.
         for child in self.children:
+            child_id = id(child)
             # Skip BaseComponent and StatefulComponent children.
-            if not isinstance(child, Component):
+            if not isinstance(child, Component) or child_id in ignore_ids:
                 continue
-            components.update(child._get_all_app_wrap_components())
+            ignore_ids.add(child_id)
+            components.update(child._get_all_app_wrap_components(ignore_ids=ignore_ids))
 
         # Return the components.
         return components
@@ -2207,6 +2169,24 @@ class CustomComponent(Component):
 
         component._add_style_recursive(style)
         return component
+
+    def _get_all_app_wrap_components(
+        self, *, ignore_ids: set[int] | None = None
+    ) -> dict[tuple[int, str], Component]:
+        """Get the app wrap components for the custom component.
+
+        Args:
+            ignore_ids: A set of IDs to ignore to avoid infinite recursion.
+
+        Returns:
+            The app wrap components.
+        """
+        ignore_ids = ignore_ids or set()
+        component = self.get_component()
+        if id(component) in ignore_ids:
+            return {}
+        ignore_ids.add(id(component))
+        return self.get_component()._get_all_app_wrap_components(ignore_ids=ignore_ids)
 
 
 CUSTOM_COMPONENTS: dict[str, CustomComponent] = {}
