@@ -7,7 +7,6 @@ from selenium.webdriver.common.by import By
 
 from reflex.components.lucide.icon import LUCIDE_ICON_LIST
 from reflex.testing import AppHarness
-from tests.integration.test_dynamic_components import poll_for_result
 
 
 def Icons():
@@ -69,7 +68,7 @@ def driver(icons: AppHarness):
     """
     driver = icons.frontend()
     try:
-        token_input = poll_for_result(
+        token_input = icons.poll_for_result(
             lambda: driver.find_element(By.ID, "token"), max_attempts=30
         )
         assert token_input
@@ -90,7 +89,7 @@ def test_icons(driver, icons: AppHarness):
         icons: AppHarness for the dynamic components
     """
     for icon_name in LUCIDE_ICON_LIST:
-        icon = poll_for_result(
+        icon = icons.poll_for_result(
             lambda icon_name=icon_name: driver.find_element(By.ID, icon_name)
         )
         assert icon

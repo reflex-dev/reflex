@@ -241,7 +241,7 @@ class Theme(RadixThemesComponent):
             The import dict.
         """
         return {
-            "$/utils/theme.js": [ImportVar(tag="theme", is_default=True)],
+            "$/utils/theme": [ImportVar(tag="theme", is_default=True)],
         }
 
     def _render(self, props: dict[str, Any] | None = None) -> Tag:
@@ -276,9 +276,9 @@ class ThemePanel(RadixThemesComponent):
 
 
 class RadixThemesColorModeProvider(Component):
-    """Next-themes integration for radix themes components."""
+    """React-themes integration for radix themes components."""
 
-    library = "$/components/reflex/radix_themes_color_mode_provider.js"
+    library = "$/components/reflex/radix_themes_color_mode_provider"
     tag = "RadixThemesColorModeProvider"
     is_default = True
 

@@ -49,10 +49,10 @@ def TestEventAction():
         def _get_custom_code(self) -> str | None:
             return """
                 function EventFiringComponent(props) {
-                    return (
-                        <div id={props.id} onClick={(e) => props.onClick("foo")}>
-                            Event Firing Component
-                        </div>
+                    return jsx(
+                        "div",
+                        {"id":props.id,"onClick":(e) => props.onClick("foo")},
+                        "Event Firing Component",
                     )
                 }"""
 
@@ -231,7 +231,9 @@ def token(event_action: AppHarness, driver: WebDriver) -> str:
         The token visible in the driver browser.
     """
     assert event_action.app_instance is not None
-    token_input = driver.find_element(By.ID, "token")
+    token_input = event_action.poll_for_result(
+        lambda: driver.find_element(By.ID, "token")
+    )
     assert token_input
 
     # wait for the backend connection to send the token

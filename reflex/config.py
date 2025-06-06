@@ -267,13 +267,7 @@ class Config(Base):
     # DEPRECATED. Timeout when launching the gunicorn server.
     timeout: int | None = None
 
-    # Whether to enable or disable nextJS gzip compression.
-    next_compression: bool = True
-
-    # Whether to enable or disable NextJS dev indicator.
-    next_dev_indicators: bool = False
-
-    # Whether to use React strict mode in nextJS
+    # Whether to use React strict mode.
     react_strict_mode: bool = True
 
     # Additional frontend packages to install.
