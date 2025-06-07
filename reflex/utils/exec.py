@@ -698,13 +698,15 @@ def run_granian_backend_prod(host: str, port: int, loglevel: LogLevel):
 
         command = [
             "granian",
-            *("--workers", str(_get_backend_workers())),
             *("--log-level", "critical"),
             *("--host", host),
             *("--port", str(port)),
             *("--interface", str(Interfaces.ASGI)),
             *("--factory", get_app_instance_from_file()),
         ]
+        if os.environ.get("GRANIAN_WORKERS") is None:
+            command += [*("--workers", str(_get_backend_workers()))]
+
         processes.new_process(
             command,
             run=True,
