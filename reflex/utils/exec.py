@@ -516,17 +516,8 @@ def _deprecate_asgi_config(
 def _get_backend_workers():
     from reflex.utils import processes
 
-    config = get_config()
-
-    gunicorn_workers = config.gunicorn_workers or 0
-
-    if config.gunicorn_workers is not None:
-        _deprecate_asgi_config(
-            "gunicorn_workers",
-            "If you're using Granian, use GRANIAN_WORKERS instead.",
-        )
-
-    return gunicorn_workers if gunicorn_workers else processes.get_num_workers()
+    # Gunicorn config removed in 0.8.0, use default worker calculation
+    return processes.get_num_workers()
 
 
 @once

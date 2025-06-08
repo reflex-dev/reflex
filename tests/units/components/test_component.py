@@ -314,19 +314,19 @@ def test_create_component(component1):
         pytest.param(
             "text",
             Var(_js_expr="hello", _var_type=str | None),
-            None,
+            TypeError,
             id="text-optional",
         ),
         pytest.param(
             "text",
             Var(_js_expr="hello", _var_type=str | None),
-            None,
+            TypeError,
             id="text-union-str-none",
         ),
         pytest.param(
             "text",
             Var(_js_expr="hello", _var_type=None | str),
-            None,
+            TypeError,
             id="text-union-none-str",
         ),
         pytest.param(
@@ -344,19 +344,19 @@ def test_create_component(component1):
         pytest.param(
             "number",
             Var(_js_expr="1", _var_type=int | None),
-            None,
+            TypeError,
             id="number-optional",
         ),
         pytest.param(
             "number",
             Var(_js_expr="1", _var_type=int | None),
-            None,
+            TypeError,
             id="number-union-int-none",
         ),
         pytest.param(
             "number",
             Var(_js_expr="1", _var_type=None | int),
-            None,
+            TypeError,
             id="number-union-none-int",
         ),
         pytest.param(
@@ -380,37 +380,37 @@ def test_create_component(component1):
         pytest.param(
             "text_or_number",
             Var(_js_expr="hello", _var_type=str | None),
-            None,
+            TypeError,
             id="text_or_number-optional-str",
         ),
         pytest.param(
             "text_or_number",
             Var(_js_expr="hello", _var_type=str | None),
-            None,
+            TypeError,
             id="text_or_number-union-str-none",
         ),
         pytest.param(
             "text_or_number",
             Var(_js_expr="hello", _var_type=None | str),
-            None,
+            TypeError,
             id="text_or_number-union-none-str",
         ),
         pytest.param(
             "text_or_number",
             Var(_js_expr="1", _var_type=int | None),
-            None,
+            TypeError,
             id="text_or_number-optional-int",
         ),
         pytest.param(
             "text_or_number",
             Var(_js_expr="1", _var_type=int | None),
-            None,
+            TypeError,
             id="text_or_number-union-int-none",
         ),
         pytest.param(
             "text_or_number",
             Var(_js_expr="1", _var_type=None | int),
-            None,
+            TypeError,
             id="text_or_number-union-none-int",
         ),
         pytest.param(
@@ -422,7 +422,7 @@ def test_create_component(component1):
         pytest.param(
             "text_or_number",
             Var(_js_expr="hello", _var_type=str | int | None),
-            None,
+            TypeError,
             id="text_or_number-optional-union-str-int",
         ),
     ],

@@ -246,8 +246,6 @@ class UploadFile(StarletteUploadFile):
 
     path: Path | None = dataclasses.field(default=None)
 
-    _deprecated_filename: str | None = dataclasses.field(default=None)
-
     size: int | None = dataclasses.field(default=None)
 
     headers: Headers = dataclasses.field(default_factory=Headers)
@@ -262,21 +260,6 @@ class UploadFile(StarletteUploadFile):
         if self.path:
             return self.path.name
         return None
-
-    @property
-    def filename(self) -> str | None:
-        """Get the filename of the uploaded file.
-
-        Returns:
-            The filename of the uploaded file.
-        """
-        console.deprecate(
-            feature_name="UploadFile.filename",
-            reason="Use UploadFile.name instead.",
-            deprecation_version="0.7.1",
-            removal_version="0.8.0",
-        )
-        return self._deprecated_filename
 
 
 @dataclasses.dataclass(
@@ -937,44 +920,6 @@ class App(MiddlewareMixin, LifespanMixin):
                     # eg. /posts/[id]/info/[slug1] and /posts/[id]/info1/[slug1] is always going to be valid since
                     # info1 will break away into its own tree.
                     break
-
-    def add_custom_404_page(
-        self,
-        component: Component | ComponentCallable | None = None,
-        title: str = constants.Page404.TITLE,
-        image: str = constants.Page404.IMAGE,
-        description: str = constants.Page404.DESCRIPTION,
-        on_load: EventType[()] | None = None,
-        meta: list[dict[str, str]] = constants.DefaultPage.META_LIST,
-    ):
-        """Define a custom 404 page for any url having no match.
-
-        If there is no page defined on 'index' route, add the 404 page to it.
-        If there is no global catchall defined, add the 404 page with a catchall.
-
-        Args:
-            component: The component to display at the page.
-            title: The title of the page.
-            image: The image to display on the page.
-            description: The description of the page.
-            on_load: The event handler(s) that will be called each time the page load.
-            meta: The metadata of the page.
-        """
-        console.deprecate(
-            feature_name="App.add_custom_404_page",
-            reason=f"Use app.add_page(component, route='/{constants.Page404.SLUG}') instead.",
-            deprecation_version="0.6.7",
-            removal_version="0.8.0",
-        )
-        self.add_page(
-            component=component,
-            route=constants.Page404.SLUG,
-            title=title or constants.Page404.TITLE,
-            image=image or constants.Page404.IMAGE,
-            description=description or constants.Page404.DESCRIPTION,
-            on_load=on_load,
-            meta=meta,
-        )
 
     def _setup_admin_dash(self):
         """Setup the admin dash."""
@@ -1970,7 +1915,6 @@ def upload(app: App):
                 UploadFile(
                     file=content_copy,
                     path=Path(file.filename.lstrip("/")) if file.filename else None,
-                    _deprecated_filename=file.filename,
                     size=file.size,
                     headers=file.headers,
                 )

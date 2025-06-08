@@ -26,7 +26,6 @@ from typing import (
     get_origin,
 )
 
-from rich.markup import escape
 from typing_extensions import dataclass_transform
 
 import reflex.state
@@ -432,18 +431,6 @@ ComponentChild = types.PrimitiveType | Var | BaseComponent
 ComponentChildTypes = (*types.PrimitiveTypes, Var, BaseComponent, type(None))
 
 
-def _satisfies_type_hint(obj: Any, type_hint: Any) -> bool:
-    return types._isinstance(
-        obj,
-        type_hint,
-        nested=1,
-        treat_var_as_type=True,
-        treat_mutable_obj_as_immutable=(
-            isinstance(obj, Var) and not isinstance(obj, LiteralVar)
-        ),
-    )
-
-
 def satisfies_type_hint(obj: Any, type_hint: Any) -> bool:
     """Check if an object satisfies a type hint.
 
@@ -454,23 +441,15 @@ def satisfies_type_hint(obj: Any, type_hint: Any) -> bool:
     Returns:
         Whether the object satisfies the type hint.
     """
-    if _satisfies_type_hint(obj, type_hint):
-        return True
-    if _satisfies_type_hint(obj, type_hint | None):
-        obj = (
-            obj
-            if not isinstance(obj, Var)
-            else (obj._var_value if isinstance(obj, LiteralVar) else obj)
-        )
-        console.deprecate(
-            "implicit-none-for-component-fields",
-            reason="Passing Vars with possible None values to component fields not explicitly marked as Optional is deprecated. "
-            + f"Passed {obj!s} of type {escape(str(type(obj) if not isinstance(obj, Var) else obj._var_type))} to {escape(str(type_hint))}.",
-            deprecation_version="0.7.2",
-            removal_version="0.8.0",
-        )
-        return True
-    return False
+    return types._isinstance(
+        obj,
+        type_hint,
+        nested=1,
+        treat_var_as_type=True,
+        treat_mutable_obj_as_immutable=(
+            isinstance(obj, Var) and not isinstance(obj, LiteralVar)
+        ),
+    )
 
 
 def _components_from(
