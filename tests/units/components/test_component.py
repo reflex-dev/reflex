@@ -608,6 +608,7 @@ def test_get_event_triggers(component1, component2):
         EventTriggers.ON_MOUSE_OVER,
         EventTriggers.ON_MOUSE_UP,
         EventTriggers.ON_SCROLL,
+        EventTriggers.ON_SCROLL_END,
         EventTriggers.ON_MOUNT,
         EventTriggers.ON_UNMOUNT,
     }

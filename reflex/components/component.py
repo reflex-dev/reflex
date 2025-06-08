@@ -485,6 +485,7 @@ DEFAULT_TRIGGERS: Mapping[str, types.ArgsSpec | Sequence[types.ArgsSpec]] = {
     EventTriggers.ON_MOUSE_OVER: no_args_event_spec,
     EventTriggers.ON_MOUSE_UP: no_args_event_spec,
     EventTriggers.ON_SCROLL: no_args_event_spec,
+    EventTriggers.ON_SCROLL_END: no_args_event_spec,
     EventTriggers.ON_MOUNT: no_args_event_spec,
     EventTriggers.ON_UNMOUNT: no_args_event_spec,
 }
