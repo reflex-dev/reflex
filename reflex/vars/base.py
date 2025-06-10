@@ -3755,16 +3755,16 @@ class EvenMoreBasicBaseState(metaclass=BaseStateMeta):
         return cls.__fields__
 
     @classmethod
-    def add_field(cls, var: Var, default_value: Any):
+    def add_field(cls, name: str, var: Var, default_value: Any):
         """Add a field to the class after class definition.
 
         Used by State.add_var() to correctly handle the new variable.
 
         Args:
+            name: The name of the field to add.
             var: The variable to add a field for.
             default_value: The default value of the field.
         """
-        var_name = var._var_field_name
         if types.is_immutable(default_value):
             new_field = Field(
                 default=default_value,
@@ -3775,4 +3775,4 @@ class EvenMoreBasicBaseState(metaclass=BaseStateMeta):
                 default_factory=functools.partial(copy.deepcopy, default_value),
                 annotated_type=var._var_type,
             )
-        cls.__fields__[var_name] = new_field
+        cls.__fields__[name] = new_field

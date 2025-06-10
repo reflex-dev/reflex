@@ -265,7 +265,7 @@ def get_var_for_field(cls: type[BaseState], name: str, f: Field) -> Var:
     Returns:
         The Var instance.
     """
-    name = f.name + "_rx_state_"
+    name = name + "_rx_state_"
     field_name = format.format_state_name(cls.get_full_name()) + "." + name
 
     return dispatch(
@@ -1000,18 +1000,6 @@ class BaseState(EvenMoreBasicBaseState):
             msg = f"Invalid path: {path}"
             raise ValueError(msg)
         return getattr(substate, name)
-
-    @classmethod
-    def is_user_defined(cls) -> bool:
-        """Check if the state is user-defined.
-
-        Returns:
-            True if the state is user-defined, False otherwise.
-        """
-        return (
-            not cls.__module__.startswith("reflex.")
-            or cls.__module__ == "reflex.istate.dynamic"
-        )
 
     @classmethod
     def is_user_defined(cls) -> bool:
