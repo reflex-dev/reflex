@@ -12,6 +12,7 @@ from pytest_mock import MockerFixture
 import reflex as rx
 from reflex.base import Base
 from reflex.constants.base import REFLEX_VAR_CLOSING_TAG, REFLEX_VAR_OPENING_TAG
+from reflex.constants.state import FIELD_MARKER
 from reflex.environment import PerformanceMode
 from reflex.state import BaseState
 from reflex.utils.exceptions import (
@@ -827,28 +828,28 @@ def test_computed_var_with_annotation_error(request, fixture):
     [
         (
             "StateWithInitialComputedVar",
-            "var_with_initial_value_rx_state_",
+            "var_with_initial_value" + FIELD_MARKER,
             "Initial value",
             "Runtime value",
             False,
         ),
         (
             "ChildWithInitialComputedVar",
-            "var_with_initial_value_child_rx_state_",
+            "var_with_initial_value_child" + FIELD_MARKER,
             "Initial value",
             "Runtime value",
             False,
         ),
         (
             "StateWithRuntimeOnlyVar",
-            "var_raises_at_runtime_rx_state_",
+            "var_raises_at_runtime" + FIELD_MARKER,
             None,
             None,
             True,
         ),
         (
             "ChildWithRuntimeOnlyVar",
-            "var_raises_at_runtime_child_rx_state_",
+            "var_raises_at_runtime_child" + FIELD_MARKER,
             "Initial value",
             None,
             True,
@@ -1774,15 +1775,15 @@ def test_invalid_var_operations(operand1_var: Var, operand2_var, operators: list
         (LiteralVar.create({"foo": "bar"}), '({ ["foo"] : "bar" })'),
         (
             LiteralVar.create(ATestState.value),
-            f"{ATestState.get_full_name()}.value_rx_state_",
+            f"{ATestState.get_full_name()}.value" + FIELD_MARKER,
         ),
         (
             LiteralVar.create(f"{ATestState.value} string"),
-            f'({ATestState.get_full_name()}.value_rx_state_+" string")',
+            f'({ATestState.get_full_name()}.value{FIELD_MARKER}+" string")',
         ),
         (
             LiteralVar.create(ATestState.dict_val),
-            f"{ATestState.get_full_name()}.dict_val_rx_state_",
+            f"{ATestState.get_full_name()}.dict_val" + FIELD_MARKER,
         ),
     ],
 )
@@ -1835,7 +1836,7 @@ def test_to_string_operation():
 
     assert (
         str(TestState.optional_email)
-        == f"{TestState.get_full_name()}.optional_email_rx_state_"
+        == f"{TestState.get_full_name()}.optional_email" + FIELD_MARKER
     )
     my_state = TestState()
     assert my_state.optional_email is None

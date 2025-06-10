@@ -27,6 +27,7 @@ from reflex import constants
 from reflex.app import App
 from reflex.base import Base
 from reflex.constants import CompileVars, RouteVar, SocketEvent
+from reflex.constants.state import FIELD_MARKER
 from reflex.event import Event, EventHandler
 from reflex.istate.manager import (
     LockExpiredError,
@@ -295,7 +296,7 @@ def test_base_class_vars(test_state):
             continue
         prop = getattr(cls, field)
         assert isinstance(prop, Var)
-        assert prop._js_expr.split(".")[-1] == field + "_rx_state_"
+        assert prop._js_expr.split(".")[-1] == field + FIELD_MARKER
 
     assert cls.num1._var_type is int
     assert cls.num2._var_type is float
@@ -310,8 +311,8 @@ def test_computed_class_var(test_state):
     """
     cls = type(test_state)
     vars = [(prop._js_expr, prop._var_type) for prop in cls.computed_vars.values()]
-    assert ("sum_rx_state_", float) in vars
-    assert ("upper_rx_state_", str) in vars
+    assert ("sum" + FIELD_MARKER, float) in vars
+    assert ("upper" + FIELD_MARKER, str) in vars
 
 
 def test_class_vars(test_state):
@@ -405,10 +406,10 @@ def test_dict(test_state: TestState):
     test_state_dict = test_state.dict()
     assert set(test_state_dict) == substates
     assert set(test_state_dict[test_state.get_name()]) == {
-        var + "_rx_state_" for var in test_state.vars
+        var + FIELD_MARKER for var in test_state.vars
     }
     assert set(test_state.dict(include_computed=False)[test_state.get_name()]) == {
-        var + "_rx_state_" for var in test_state.base_vars
+        var + FIELD_MARKER for var in test_state.base_vars
     }
 
 
@@ -428,29 +429,29 @@ def test_class_indexing_with_vars():
     prop = TestState.array[TestState.num1]  # pyright: ignore [reportCallIssue, reportArgumentType]
     assert (
         str(prop)
-        == f"{TestState.get_name()}.array_rx_state_.at({TestState.get_name()}.num1_rx_state_)"
+        == f"{TestState.get_name()}.array{FIELD_MARKER}.at({TestState.get_name()}.num1{FIELD_MARKER})"
     )
 
     prop = TestState.mapping["a"][TestState.num1]  # pyright: ignore [reportCallIssue, reportArgumentType]
     assert (
         str(prop)
-        == f'{TestState.get_name()}.mapping_rx_state_["a"].at({TestState.get_name()}.num1_rx_state_)'
+        == f'{TestState.get_name()}.mapping{FIELD_MARKER}["a"].at({TestState.get_name()}.num1{FIELD_MARKER})'
     )
 
     prop = TestState.mapping[TestState.map_key]
     assert (
         str(prop)
-        == f"{TestState.get_name()}.mapping_rx_state_[{TestState.get_name()}.map_key_rx_state_]"
+        == f"{TestState.get_name()}.mapping{FIELD_MARKER}[{TestState.get_name()}.map_key{FIELD_MARKER}]"
     )
 
 
 def test_class_attributes():
     """Test that we can get class attributes."""
     prop = TestState.obj.prop1
-    assert str(prop) == f'{TestState.get_name()}.obj_rx_state_["prop1"]'
+    assert str(prop) == f'{TestState.get_name()}.obj{FIELD_MARKER}["prop1"]'
 
     prop = TestState.complex[1].prop1
-    assert str(prop) == f'{TestState.get_name()}.complex_rx_state_[1]["prop1"]'
+    assert str(prop) == f'{TestState.get_name()}.complex{FIELD_MARKER}[1]["prop1"]'
 
 
 def test_get_parent_state():
@@ -795,8 +796,11 @@ async def test_process_event_simple(test_state):
 
         # The delta should contain the changes, including computed vars.
         assert update.delta == {
-            TestState.get_full_name(): {"num1_rx_state_": 69, "sum_rx_state_": 72.14},
-            GrandchildState3.get_full_name(): {"computed_rx_state_": ""},
+            TestState.get_full_name(): {
+                "num1" + FIELD_MARKER: 69,
+                "sum" + FIELD_MARKER: 72.14,
+            },
+            GrandchildState3.get_full_name(): {"computed" + FIELD_MARKER: ""},
         }
         assert update.events == []
 
@@ -824,10 +828,10 @@ async def test_process_event_substate(test_state, child_state, grandchild_state)
         assert update.delta == {
             # TestState.get_full_name(): {"sum": 3.14, "upper": ""},
             ChildState.get_full_name(): {
-                "value_rx_state_": "HI",
-                "count_rx_state_": 24,
+                "value" + FIELD_MARKER: "HI",
+                "count" + FIELD_MARKER: 24,
             },
-            GrandchildState3.get_full_name(): {"computed_rx_state_": ""},
+            GrandchildState3.get_full_name(): {"computed" + FIELD_MARKER: ""},
         }
         test_state._clean()
 
@@ -842,8 +846,8 @@ async def test_process_event_substate(test_state, child_state, grandchild_state)
         assert grandchild_state.value2 == "new"
         assert update.delta == {
             # TestState.get_full_name(): {"sum": 3.14, "upper": ""},
-            GrandchildState.get_full_name(): {"value2_rx_state_": "new"},
-            GrandchildState3.get_full_name(): {"computed_rx_state_": ""},
+            GrandchildState.get_full_name(): {"value2" + FIELD_MARKER: "new"},
+            GrandchildState3.get_full_name(): {"computed" + FIELD_MARKER: ""},
         }
 
 
@@ -867,7 +871,7 @@ async def test_process_event_generator():
         else:
             assert gen_state.value == count
             assert update.delta == {
-                GenState.get_full_name(): {"value_rx_state_": count},
+                GenState.get_full_name(): {"value" + FIELD_MARKER: count},
             }
             assert not update.final
 
@@ -1066,14 +1070,14 @@ def test_interdependent_state_initial_dict() -> None:
     s = InterdependentState()
     state_name = s.get_name()
     d = s.dict(initial=True)[state_name]
-    d.pop("router_rx_state_")
+    d.pop("router" + FIELD_MARKER)
     assert d == {
-        "x_rx_state_": 0,
-        "v1_rx_state_": 0,
-        "v1x2_rx_state_": 0,
-        "v2x2_rx_state_": 2,
-        "v1x2x2_rx_state_": 0,
-        "v3x2_rx_state_": 2,
+        "x" + FIELD_MARKER: 0,
+        "v1" + FIELD_MARKER: 0,
+        "v1x2" + FIELD_MARKER: 0,
+        "v2x2" + FIELD_MARKER: 2,
+        "v1x2x2" + FIELD_MARKER: 0,
+        "v3x2" + FIELD_MARKER: 2,
     }
 
 
@@ -1087,7 +1091,7 @@ def test_not_dirty_computed_var_from_var(
     """
     interdependent_state.x = 5
     assert interdependent_state.get_delta() == {
-        interdependent_state.get_full_name(): {"x_rx_state_": 5},
+        interdependent_state.get_full_name(): {"x" + FIELD_MARKER: 5},
     }
 
 
@@ -1103,9 +1107,9 @@ def test_dirty_computed_var_from_var(interdependent_state: InterdependentState) 
     interdependent_state.v1 = 1
     assert interdependent_state.get_delta() == {
         interdependent_state.get_full_name(): {
-            "v1_rx_state_": 1,
-            "v1x2_rx_state_": 2,
-            "v1x2x2_rx_state_": 4,
+            "v1" + FIELD_MARKER: 1,
+            "v1x2" + FIELD_MARKER: 2,
+            "v1x2x2" + FIELD_MARKER: 4,
         },
     }
 
@@ -1123,8 +1127,8 @@ def test_dirty_computed_var_from_backend_var(
     interdependent_state._v2 = 2
     assert interdependent_state.get_delta() == {
         interdependent_state.get_full_name(): {
-            "v2x2_rx_state_": 4,
-            "v3x2_rx_state_": 4,
+            "v2x2" + FIELD_MARKER: 4,
+            "v3x2" + FIELD_MARKER: 4,
         },
     }
 
@@ -1263,9 +1267,9 @@ def test_computed_var_cached():
             return self.v
 
     cs = ComputedState()
-    assert cs.dict()[cs.get_full_name()]["v_rx_state_"] == 0
+    assert cs.dict()[cs.get_full_name()]["v" + FIELD_MARKER] == 0
     assert comp_v_calls == 1
-    assert cs.dict()[cs.get_full_name()]["comp_v_rx_state_"] == 0
+    assert cs.dict()[cs.get_full_name()]["comp_v" + FIELD_MARKER] == 0
     assert comp_v_calls == 1
     assert cs.comp_v == 0
     assert comp_v_calls == 1
@@ -1296,12 +1300,12 @@ def test_computed_var_cached_depends_on_non_cached():
     cs = ComputedState()
     assert cs.dirty_vars == set()
     assert cs.get_delta() == {
-        cs.get_name(): {"no_cache_v_rx_state_": 0, "dep_v_rx_state_": 0}
+        cs.get_name(): {"no_cache_v" + FIELD_MARKER: 0, "dep_v" + FIELD_MARKER: 0}
     }
     cs._clean()
     assert cs.dirty_vars == set()
     assert cs.get_delta() == {
-        cs.get_name(): {"no_cache_v_rx_state_": 0, "dep_v_rx_state_": 0}
+        cs.get_name(): {"no_cache_v" + FIELD_MARKER: 0, "dep_v" + FIELD_MARKER: 0}
     }
     cs._clean()
     assert cs.dirty_vars == set()
@@ -1309,21 +1313,21 @@ def test_computed_var_cached_depends_on_non_cached():
     assert cs.dirty_vars == {"v", "comp_v", "dep_v", "no_cache_v"}
     assert cs.get_delta() == {
         cs.get_name(): {
-            "v_rx_state_": 1,
-            "no_cache_v_rx_state_": 1,
-            "dep_v_rx_state_": 1,
-            "comp_v_rx_state_": 1,
+            "v" + FIELD_MARKER: 1,
+            "no_cache_v" + FIELD_MARKER: 1,
+            "dep_v" + FIELD_MARKER: 1,
+            "comp_v" + FIELD_MARKER: 1,
         }
     }
     cs._clean()
     assert cs.dirty_vars == set()
     assert cs.get_delta() == {
-        cs.get_name(): {"no_cache_v_rx_state_": 1, "dep_v_rx_state_": 1}
+        cs.get_name(): {"no_cache_v" + FIELD_MARKER: 1, "dep_v" + FIELD_MARKER: 1}
     }
     cs._clean()
     assert cs.dirty_vars == set()
     assert cs.get_delta() == {
-        cs.get_name(): {"no_cache_v_rx_state_": 1, "dep_v_rx_state_": 1}
+        cs.get_name(): {"no_cache_v" + FIELD_MARKER: 1, "dep_v" + FIELD_MARKER: 1}
     }
     cs._clean()
     assert cs.dirty_vars == set()
@@ -1353,22 +1357,22 @@ def test_computed_var_depends_on_parent_non_cached():
 
     dict1 = json.loads(json_dumps(ps.dict()))
     assert dict1[ps.get_full_name()] == {
-        "no_cache_v_rx_state_": 1,
-        "router_rx_state_": formatted_router,
+        "no_cache_v" + FIELD_MARKER: 1,
+        "router" + FIELD_MARKER: formatted_router,
     }
-    assert dict1[cs.get_full_name()] == {"dep_v_rx_state_": 2}
+    assert dict1[cs.get_full_name()] == {"dep_v" + FIELD_MARKER: 2}
     dict2 = json.loads(json_dumps(ps.dict()))
     assert dict2[ps.get_full_name()] == {
-        "no_cache_v_rx_state_": 3,
-        "router_rx_state_": formatted_router,
+        "no_cache_v" + FIELD_MARKER: 3,
+        "router" + FIELD_MARKER: formatted_router,
     }
-    assert dict2[cs.get_full_name()] == {"dep_v_rx_state_": 4}
+    assert dict2[cs.get_full_name()] == {"dep_v" + FIELD_MARKER: 4}
     dict3 = json.loads(json_dumps(ps.dict()))
     assert dict3[ps.get_full_name()] == {
-        "no_cache_v_rx_state_": 5,
-        "router_rx_state_": formatted_router,
+        "no_cache_v" + FIELD_MARKER: 5,
+        "router" + FIELD_MARKER: formatted_router,
     }
-    assert dict3[cs.get_full_name()] == {"dep_v_rx_state_": 6}
+    assert dict3[cs.get_full_name()] == {"dep_v" + FIELD_MARKER: 6}
     assert counter == 6
 
 
@@ -2075,12 +2079,12 @@ async def test_state_proxy(
     assert mcall.args[0] == str(SocketEvent.EVENT)
     assert mcall.args[1] == StateUpdate(
         delta={
-            TestState.get_full_name(): {"router_rx_state_": router_data},
+            TestState.get_full_name(): {"router" + FIELD_MARKER: router_data},
             grandchild_state.get_full_name(): {
-                "value2_rx_state_": "42",
+                "value2" + FIELD_MARKER: "42",
             },
             GrandchildState3.get_full_name(): {
-                "computed_rx_state_": "",
+                "computed" + FIELD_MARKER: "",
             },
         }
     )
@@ -2243,11 +2247,11 @@ async def test_background_task_no_block(mock_app: rx.App, token: str):
         assert update == StateUpdate(
             delta={
                 BackgroundTaskState.get_full_name(): {
-                    "order_rx_state_": [
+                    "order" + FIELD_MARKER: [
                         "background_task:start",
                         "other",
                     ],
-                    "computed_order_rx_state_": [
+                    "computed_order" + FIELD_MARKER: [
                         "background_task:start",
                         "other",
                     ],
@@ -2280,15 +2284,15 @@ async def test_background_task_no_block(mock_app: rx.App, token: str):
     first_ws_message = emit_mock.mock_calls[0].args[1]  # pyright: ignore [reportFunctionMemberAccess]
     assert (
         first_ws_message.delta[BackgroundTaskState.get_full_name()].pop(
-            "router_rx_state_"
+            "router" + FIELD_MARKER
         )
         is not None
     )
     assert first_ws_message == StateUpdate(
         delta={
             BackgroundTaskState.get_full_name(): {
-                "order_rx_state_": ["background_task:start"],
-                "computed_order_rx_state_": ["background_task:start"],
+                "order" + FIELD_MARKER: ["background_task:start"],
+                "computed_order" + FIELD_MARKER: ["background_task:start"],
             }
         },
         events=[],
@@ -2298,7 +2302,7 @@ async def test_background_task_no_block(mock_app: rx.App, token: str):
         assert call.args[1] == StateUpdate(
             delta={
                 BackgroundTaskState.get_full_name(): {
-                    "computed_order_rx_state_": ["background_task:start"],
+                    "computed_order" + FIELD_MARKER: ["background_task:start"],
                 }
             },
             events=[],
@@ -2307,9 +2311,9 @@ async def test_background_task_no_block(mock_app: rx.App, token: str):
     assert emit_mock.mock_calls[-2].args[1] == StateUpdate(  # pyright: ignore [reportFunctionMemberAccess]
         delta={
             BackgroundTaskState.get_full_name(): {
-                "order_rx_state_": exp_order,
-                "computed_order_rx_state_": exp_order,
-                "dict_list_rx_state_": {},
+                "order" + FIELD_MARKER: exp_order,
+                "computed_order" + FIELD_MARKER: exp_order,
+                "dict_list" + FIELD_MARKER: {},
             }
         },
         events=[],
@@ -2318,7 +2322,7 @@ async def test_background_task_no_block(mock_app: rx.App, token: str):
     assert emit_mock.mock_calls[-1].args[1] == StateUpdate(  # pyright: ignore [reportFunctionMemberAccess]
         delta={
             BackgroundTaskState.get_full_name(): {
-                "computed_order_rx_state_": exp_order,
+                "computed_order" + FIELD_MARKER: exp_order,
             },
         },
         events=[],
@@ -2700,14 +2704,14 @@ def test_json_dumps_with_mutables():
 
     dict_val = MutableContainsBase().dict()
     assert isinstance(
-        dict_val[MutableContainsBase.get_full_name()]["items_rx_state_"][0], Foo
+        dict_val[MutableContainsBase.get_full_name()]["items" + FIELD_MARKER][0], Foo
     )
     val = json_dumps(dict_val)
     f_items = '[{"tags": ["123", "456"]}]'
     f_formatted_router = str(formatted_router).replace("'", '"')
     assert (
         val
-        == f'{{"{MutableContainsBase.get_full_name()}": {{"items_rx_state_": {f_items}, "router_rx_state_": {f_formatted_router}}}}}'
+        == f'{{"{MutableContainsBase.get_full_name()}": {{"items{FIELD_MARKER}": {f_items}, "router{FIELD_MARKER}": {f_formatted_router}}}}}'
     )
 
 
@@ -2874,7 +2878,7 @@ def exp_is_hydrated(state: BaseState, is_hydrated: bool = True) -> dict[str, Any
         dict similar to that returned by `State.get_delta` with IS_HYDRATED: is_hydrated
     """
     return {
-        state.get_full_name(): {CompileVars.IS_HYDRATED + "_rx_state_": is_hydrated}
+        state.get_full_name(): {CompileVars.IS_HYDRATED + FIELD_MARKER: is_hydrated}
     }
 
 
@@ -2964,13 +2968,13 @@ async def test_preprocess(
         assert isinstance(update, StateUpdate)
         updates.append(update)
     assert len(updates) == 1
-    assert updates[0].delta[State.get_name()].pop("router_rx_state_") is not None
+    assert updates[0].delta[State.get_name()].pop("router" + FIELD_MARKER) is not None
     assert updates[0].delta == exp_is_hydrated(state, False)
 
     events = updates[0].events
     assert len(events) == 2
     async for update in state._process(events[0]):
-        assert update.delta == {test_state.get_full_name(): {"num_rx_state_": 1}}
+        assert update.delta == {test_state.get_full_name(): {"num" + FIELD_MARKER: 1}}
     async for update in state._process(events[1]):
         assert update.delta == exp_is_hydrated(state)
 
@@ -3014,15 +3018,15 @@ async def test_preprocess_multiple_load_events(
         assert isinstance(update, StateUpdate)
         updates.append(update)
     assert len(updates) == 1
-    assert updates[0].delta[State.get_name()].pop("router_rx_state_") is not None
+    assert updates[0].delta[State.get_name()].pop("router" + FIELD_MARKER) is not None
     assert updates[0].delta == exp_is_hydrated(state, False)
 
     events = updates[0].events
     assert len(events) == 3
     async for update in state._process(events[0]):
-        assert update.delta == {OnLoadState.get_full_name(): {"num_rx_state_": 1}}
+        assert update.delta == {OnLoadState.get_full_name(): {"num" + FIELD_MARKER: 1}}
     async for update in state._process(events[1]):
-        assert update.delta == {OnLoadState.get_full_name(): {"num_rx_state_": 2}}
+        assert update.delta == {OnLoadState.get_full_name(): {"num" + FIELD_MARKER: 2}}
     async for update in state._process(events[2]):
         assert update.delta == exp_is_hydrated(state)
 
@@ -3098,10 +3102,10 @@ async def test_get_state(mock_app: rx.App, token: str):
 
     assert test_state.get_delta() == {
         GrandchildState.get_full_name(): {
-            "value2_rx_state_": "set_value",
+            "value2" + FIELD_MARKER: "set_value",
         },
         GrandchildState3.get_full_name(): {
-            "computed_rx_state_": "",
+            "computed" + FIELD_MARKER: "",
         },
     }
 
@@ -3135,13 +3139,13 @@ async def test_get_state(mock_app: rx.App, token: str):
 
     assert new_test_state.get_delta() == {
         ChildState2.get_full_name(): {
-            "value_rx_state_": "set_c2_value",
+            "value" + FIELD_MARKER: "set_c2_value",
         },
         GrandchildState2.get_full_name(): {
-            "cached_rx_state_": "set_c2_value",
+            "cached" + FIELD_MARKER: "set_c2_value",
         },
         GrandchildState3.get_full_name(): {
-            "computed_rx_state_": "",
+            "computed" + FIELD_MARKER: "",
         },
     }
 
@@ -3783,8 +3787,8 @@ def test_get_value():
 
     assert state.dict() == {
         state.get_full_name(): {
-            "foo_rx_state_": "FOO",
-            "bar_rx_state_": "BAR",
+            "foo" + FIELD_MARKER: "FOO",
+            "bar" + FIELD_MARKER: "BAR",
         }
     }
     assert state.get_delta() == {}
@@ -3793,13 +3797,13 @@ def test_get_value():
 
     assert state.dict() == {
         state.get_full_name(): {
-            "foo_rx_state_": "FOO",
-            "bar_rx_state_": "foo",
+            "foo" + FIELD_MARKER: "FOO",
+            "bar" + FIELD_MARKER: "foo",
         }
     }
     assert state.get_delta() == {
         state.get_full_name(): {
-            "bar_rx_state_": "foo",
+            "bar" + FIELD_MARKER: "foo",
         }
     }
 
@@ -3920,7 +3924,9 @@ async def test_upcast_event_handler_arg(handler, payload):
     """
     state = UpcastState()
     async for update in state._process_event(handler, state, payload):
-        assert update.delta == {UpcastState.get_full_name(): {"passed_rx_state_": True}}
+        assert update.delta == {
+            UpcastState.get_full_name(): {"passed" + FIELD_MARKER: True}
+        }
 
 
 @pytest.mark.asyncio

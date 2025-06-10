@@ -9,6 +9,7 @@ from selenium.common.exceptions import NoSuchElementException
 from selenium.webdriver.common.by import By
 from selenium.webdriver.remote.webdriver import WebDriver
 
+from reflex.constants.state import FIELD_MARKER
 from reflex.testing import AppHarness
 
 from . import utils
@@ -141,7 +142,7 @@ def test_login_flow(
 
     state_name = login_sample.get_full_state_name(["_state"])
     assert login_sample._poll_for(
-        lambda: local_storage[f"{state_name}.auth_token_rx_state_"] == ""
+        lambda: local_storage[f"{state_name}.auth_token" + FIELD_MARKER] == ""
     )
     with pytest.raises(NoSuchElementException):
         driver.find_element(By.ID, "auth-token")

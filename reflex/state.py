@@ -28,6 +28,7 @@ from typing_extensions import Self
 import reflex.istate.dynamic
 from reflex import constants, event
 from reflex.base import Base
+from reflex.constants.state import FIELD_MARKER
 from reflex.environment import PerformanceMode, environment
 from reflex.event import (
     BACKGROUND_TASK_MARKER,
@@ -266,7 +267,7 @@ def get_var_for_field(cls: type[BaseState], name: str, f: Field) -> Var:
         The Var instance.
     """
     field_name = (
-        format.format_state_name(cls.get_full_name()) + "." + name + "_rx_state_"
+        format.format_state_name(cls.get_full_name()) + "." + name + FIELD_MARKER
     )
 
     return dispatch(
@@ -1065,7 +1066,7 @@ class BaseState(EvenMoreBasicBaseState):
             _js_expr=format.format_state_name(cls.get_full_name())
             + "."
             + name
-            + "_rx_state_",
+            + FIELD_MARKER,
             _var_type=type_,
             _var_data=VarData.from_state(cls, name),
         ).guess_type()
@@ -1964,7 +1965,7 @@ class BaseState(EvenMoreBasicBaseState):
         )
 
         subdelta: dict[str, Any] = {
-            prop + "_rx_state_": self.get_value(prop)
+            prop + FIELD_MARKER: self.get_value(prop)
             for prop in delta_vars
             if not types.is_backend_base_variable(prop, type(self))
         }
@@ -2100,7 +2101,7 @@ class BaseState(EvenMoreBasicBaseState):
         variables = {**base_vars, **computed_vars}
         d = {
             self.get_full_name(): {
-                k + "_rx_state_": variables[k] for k in sorted(variables)
+                k + FIELD_MARKER: variables[k] for k in sorted(variables)
             },
         }
         for substate_d in [
@@ -2422,7 +2423,7 @@ class UpdateVarsInternalState(State):
         """
         for var, value in vars.items():
             state_name, _, var_name = var.rpartition(".")
-            var_name = var_name.removesuffix("_rx_state_")
+            var_name = var_name.removesuffix(FIELD_MARKER)
             var_state_cls = State.get_class_substate(state_name)
             if var_state_cls._is_client_storage(var_name):
                 var_state = await self.get_state(var_state_cls)

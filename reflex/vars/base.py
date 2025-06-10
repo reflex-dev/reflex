@@ -48,6 +48,7 @@ from typing_extensions import dataclass_transform, deprecated, override
 from reflex import constants
 from reflex.base import Base
 from reflex.constants.compiler import Hooks
+from reflex.constants.state import FIELD_MARKER
 from reflex.utils import console, exceptions, imports, serializers, types
 from reflex.utils.exceptions import (
     ComputedVarSignatureError,
@@ -2096,7 +2097,7 @@ class ComputedVar(Var[RETURN_TYPE]):
         if hint is Any:
             raise UntypedComputedVarError(var_name=fget.__name__)
         is_using_fget_name = "_js_expr" not in kwargs
-        js_expr = kwargs.pop("_js_expr", fget.__name__ + "_rx_state_")
+        js_expr = kwargs.pop("_js_expr", fget.__name__ + FIELD_MARKER)
         kwargs.setdefault("_var_type", hint)
 
         Var.__init__(

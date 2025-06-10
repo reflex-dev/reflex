@@ -10,6 +10,7 @@ from selenium.webdriver import Firefox
 from selenium.webdriver.common.by import By
 from selenium.webdriver.remote.webdriver import WebDriver
 
+from reflex.constants.state import FIELD_MARKER
 from reflex.state import (
     State,
     StateManagerDisk,
@@ -360,28 +361,28 @@ async def test_client_side_state(
     )
 
     exp_cookies = {
-        f"{sub_state_name}.c1" + "_rx_state_": {
+        f"{sub_state_name}.c1" + FIELD_MARKER: {
             "domain": "localhost",
             "httpOnly": False,
-            "name": f"{sub_state_name}.c1" + "_rx_state_",
+            "name": f"{sub_state_name}.c1" + FIELD_MARKER,
             "path": "/",
             "sameSite": "Lax",
             "secure": False,
             "value": "c1%20value",
         },
-        f"{sub_state_name}.c2" + "_rx_state_": {
+        f"{sub_state_name}.c2" + FIELD_MARKER: {
             "domain": "localhost",
             "httpOnly": False,
-            "name": f"{sub_state_name}.c2" + "_rx_state_",
+            "name": f"{sub_state_name}.c2" + FIELD_MARKER,
             "path": "/",
             "sameSite": "Lax",
             "secure": False,
             "value": "c2%20value",
         },
-        f"{sub_state_name}.c4" + "_rx_state_": {
+        f"{sub_state_name}.c4" + FIELD_MARKER: {
             "domain": "localhost",
             "httpOnly": False,
-            "name": f"{sub_state_name}.c4" + "_rx_state_",
+            "name": f"{sub_state_name}.c4" + FIELD_MARKER,
             "path": "/",
             "sameSite": "Strict",
             "secure": False,
@@ -396,19 +397,19 @@ async def test_client_side_state(
             "secure": False,
             "value": "c6%20value",
         },
-        f"{sub_state_name}.c7" + "_rx_state_": {
+        f"{sub_state_name}.c7" + FIELD_MARKER: {
             "domain": "localhost",
             "httpOnly": False,
-            "name": f"{sub_state_name}.c7" + "_rx_state_",
+            "name": f"{sub_state_name}.c7" + FIELD_MARKER,
             "path": "/",
             "sameSite": "Lax",
             "secure": False,
             "value": "c7%20value",
         },
-        f"{sub_sub_state_name}.c1s" + "_rx_state_": {
+        f"{sub_sub_state_name}.c1s" + FIELD_MARKER: {
             "domain": "localhost",
             "httpOnly": False,
-            "name": f"{sub_sub_state_name}.c1s" + "_rx_state_",
+            "name": f"{sub_sub_state_name}.c1s" + FIELD_MARKER,
             "path": "/",
             "sameSite": "Lax",
             "secure": False,
@@ -427,14 +428,14 @@ async def test_client_side_state(
     # Test cookie with expiry by itself to avoid timing flakiness
     set_sub("c3", "c3 value")
     AppHarness._poll_for(
-        lambda: f"{sub_state_name}.c3" + "_rx_state_" in cookie_info_map(driver)
+        lambda: f"{sub_state_name}.c3" + FIELD_MARKER in cookie_info_map(driver)
     )
-    c3_cookie = cookie_info_map(driver)[f"{sub_state_name}.c3" + "_rx_state_"]
+    c3_cookie = cookie_info_map(driver)[f"{sub_state_name}.c3" + FIELD_MARKER]
     assert c3_cookie.pop("expiry") is not None
     assert c3_cookie == {
         "domain": "localhost",
         "httpOnly": False,
-        "name": f"{sub_state_name}.c3" + "_rx_state_",
+        "name": f"{sub_state_name}.c3" + FIELD_MARKER,
         "path": "/",
         "sameSite": "Lax",
         "secure": False,
@@ -443,25 +444,33 @@ async def test_client_side_state(
     await asyncio.sleep(2)  # wait for c3 to expire
     if not isinstance(driver, Firefox):
         # Note: Firefox does not remove expired cookies Bug 576347
-        assert f"{sub_state_name}.c3_rx_state_" not in cookie_info_map(driver)
+        assert f"{sub_state_name}.c3" + FIELD_MARKER not in cookie_info_map(driver)
 
     local_storage_items = local_storage.items()
     local_storage_items.pop("last_compiled_time", None)
     local_storage_items.pop("theme", None)
-    assert local_storage_items.pop(f"{sub_state_name}.l1_rx_state_") == "l1 value"
-    assert local_storage_items.pop(f"{sub_state_name}.l2_rx_state_") == "l2 value"
+    assert local_storage_items.pop(f"{sub_state_name}.l1" + FIELD_MARKER) == "l1 value"
+    assert local_storage_items.pop(f"{sub_state_name}.l2" + FIELD_MARKER) == "l2 value"
     assert local_storage_items.pop("l3") == "l3 value"
-    assert local_storage_items.pop(f"{sub_state_name}.l4_rx_state_") == "l4 value"
-    assert local_storage_items.pop(f"{sub_sub_state_name}.l1s_rx_state_") == "l1s value"
+    assert local_storage_items.pop(f"{sub_state_name}.l4" + FIELD_MARKER) == "l4 value"
+    assert (
+        local_storage_items.pop(f"{sub_sub_state_name}.l1s" + FIELD_MARKER)
+        == "l1s value"
+    )
     assert not local_storage_items
 
     session_storage_items = session_storage.items()
     session_storage_items.pop("token", None)
-    assert session_storage_items.pop(f"{sub_state_name}.s1_rx_state_") == "s1 value"
-    assert session_storage_items.pop(f"{sub_state_name}.s2_rx_state_") == "s2 value"
+    assert (
+        session_storage_items.pop(f"{sub_state_name}.s1" + FIELD_MARKER) == "s1 value"
+    )
+    assert (
+        session_storage_items.pop(f"{sub_state_name}.s2" + FIELD_MARKER) == "s2 value"
+    )
     assert session_storage_items.pop("s3") == "s3 value"
     assert (
-        session_storage_items.pop(f"{sub_sub_state_name}.s1s_rx_state_") == "s1s value"
+        session_storage_items.pop(f"{sub_sub_state_name}.s1s" + FIELD_MARKER)
+        == "s1s value"
     )
     assert not session_storage_items
 
@@ -574,12 +583,12 @@ async def test_client_side_state(
 
     # make sure c5 cookie shows up on the `/foo` route
     AppHarness._poll_for(
-        lambda: f"{sub_state_name}.c5_rx_state_" in cookie_info_map(driver)
+        lambda: f"{sub_state_name}.c5" + FIELD_MARKER in cookie_info_map(driver)
     )
-    assert cookie_info_map(driver)[f"{sub_state_name}.c5_rx_state_"] == {
+    assert cookie_info_map(driver)[f"{sub_state_name}.c5" + FIELD_MARKER] == {
         "domain": "localhost",
         "httpOnly": False,
-        "name": f"{sub_state_name}.c5" + "_rx_state_",
+        "name": f"{sub_state_name}.c5" + FIELD_MARKER,
         "path": "/foo/",
         "sameSite": "Lax",
         "secure": False,

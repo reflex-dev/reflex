@@ -3,6 +3,7 @@ import pytest
 import reflex as rx
 from reflex.components.datadisplay.code import CodeBlock
 from reflex.constants.colors import Color
+from reflex.constants.state import FIELD_MARKER
 from reflex.vars.base import LiteralVar
 
 
@@ -36,19 +37,19 @@ color_with_fstring = rx.color(
         (create_color_var(rx.color("mint", 3, True)), '"var(--mint-a3)"', Color),
         (
             create_color_var(rx.color(ColorState.color, ColorState.shade)),
-            f'("var(--"+{color_state_name!s}.color_rx_state_+"-"+(((__to_string) => __to_string.toString())({color_state_name!s}.shade_rx_state_))+")")',
+            f'("var(--"+{color_state_name!s}.color{FIELD_MARKER}+"-"+(((__to_string) => __to_string.toString())({color_state_name!s}.shade{FIELD_MARKER}))+")")',
             Color,
         ),
         (
             create_color_var(
                 rx.color(ColorState.color, ColorState.shade, ColorState.alpha)
             ),
-            f'("var(--"+{color_state_name!s}.color_rx_state_+"-"+({color_state_name!s}.alpha_rx_state_ ? "a" : "")+(((__to_string) => __to_string.toString())({color_state_name!s}.shade_rx_state_))+")")',
+            f'("var(--"+{color_state_name!s}.color{FIELD_MARKER}+"-"+({color_state_name!s}.alpha{FIELD_MARKER} ? "a" : "")+(((__to_string) => __to_string.toString())({color_state_name!s}.shade{FIELD_MARKER}))+")")',
             Color,
         ),
         (
             create_color_var(color_with_fstring),
-            f'("var(--"+{color_state_name!s}.color_rx_state_+"-"+(((__to_string) => __to_string.toString())({color_state_name!s}.shade_rx_state_))+")")',
+            f'("var(--"+{color_state_name!s}.color{FIELD_MARKER}+"-"+(((__to_string) => __to_string.toString())({color_state_name!s}.shade{FIELD_MARKER}))+")")',
             Color,
         ),
         (
@@ -58,17 +59,17 @@ color_with_fstring = rx.color(
                     ColorState.shade,
                 )
             ),
-            f'("var(--"+({color_state_name!s}.color_part_rx_state_+"ato")+"-"+(((__to_string) => __to_string.toString())({color_state_name!s}.shade_rx_state_))+")")',
+            f'("var(--"+({color_state_name!s}.color_part{FIELD_MARKER}+"ato")+"-"+(((__to_string) => __to_string.toString())({color_state_name!s}.shade{FIELD_MARKER}))+")")',
             Color,
         ),
         (
             create_color_var(f"{rx.color(ColorState.color, ColorState.shade)}"),
-            f'("var(--"+{color_state_name!s}.color_rx_state_+"-"+{color_state_name!s}.shade_rx_state_+")")',
+            f'("var(--"+{color_state_name!s}.color{FIELD_MARKER}+"-"+{color_state_name!s}.shade{FIELD_MARKER}+")")',
             str,
         ),
         (
             create_color_var(f"{color_with_fstring}"),
-            f'("var(--"+{color_state_name!s}.color_rx_state_+"-"+{color_state_name!s}.shade_rx_state_+")")',
+            f'("var(--"+{color_state_name!s}.color{FIELD_MARKER}+"-"+{color_state_name!s}.shade{FIELD_MARKER}+")")',
             str,
         ),
     ],
@@ -87,7 +88,7 @@ def test_color(color, expected, expected_type: type[str] | type[Color]):
         ),
         (
             rx.cond(True, rx.color(ColorState.color), rx.color(ColorState.color, 5)),
-            f'(true ? ("var(--"+{color_state_name!s}.color_rx_state_+"-7)") : ("var(--"+{color_state_name!s}.color_rx_state_+"-5)"))',
+            f'(true ? ("var(--"+{color_state_name!s}.color{FIELD_MARKER}+"-7)") : ("var(--"+{color_state_name!s}.color{FIELD_MARKER}+"-5)"))',
         ),
         (
             rx.match(
@@ -98,7 +99,7 @@ def test_color(color, expected, expected_type: type[str] | type[Color]):
             ),
             '(() => { switch (JSON.stringify("condition")) {case JSON.stringify("first"):  return ("var(--mint-7)");'
             '  break;case JSON.stringify("second"):  return ("var(--tomato-5)");  break;default:  '
-            f'return (("var(--"+{color_state_name!s}.color_rx_state_+"-2)"));  break;}};}})()',
+            f'return (("var(--"+{color_state_name!s}.color{FIELD_MARKER}+"-2)"));  break;}};}})()',
         ),
         (
             rx.match(
@@ -108,9 +109,9 @@ def test_color(color, expected, expected_type: type[str] | type[Color]):
                 rx.color(ColorState.color, 2),
             ),
             '(() => { switch (JSON.stringify("condition")) {case JSON.stringify("first"):  '
-            f'return (("var(--"+{color_state_name!s}.color_rx_state_+"-7)"));  break;case JSON.stringify("second"):  '
-            f'return (("var(--"+{color_state_name!s}.color_rx_state_+"-5)"));  break;default:  '
-            f'return (("var(--"+{color_state_name!s}.color_rx_state_+"-2)"));  break;}};}})()',
+            f'return (("var(--"+{color_state_name!s}.color{FIELD_MARKER}+"-7)"));  break;case JSON.stringify("second"):  '
+            f'return (("var(--"+{color_state_name!s}.color{FIELD_MARKER}+"-5)"));  break;default:  '
+            f'return (("var(--"+{color_state_name!s}.color{FIELD_MARKER}+"-2)"));  break;}};}})()',
         ),
     ],
 )

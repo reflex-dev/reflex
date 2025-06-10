@@ -8,6 +8,7 @@ import plotly.graph_objects as go
 import pytest
 
 from reflex.components.tags.tag import Tag
+from reflex.constants.state import FIELD_MARKER
 from reflex.event import (
     EventChain,
     EventHandler,
@@ -328,8 +329,8 @@ def test_format_route(route: str, format_case: bool, expected: bool):
             ],
             LiteralVar.create("yellow"),
             '(() => { switch (JSON.stringify(state__state.value)) {case JSON.stringify(1):  return ("red");  break;case JSON.stringify(2): case JSON.stringify(3):  '
-            f'return ("blue");  break;case JSON.stringify({TestState.get_full_name()}.mapping_rx_state_):  return '
-            f'({TestState.get_full_name()}.num1_rx_state_);  break;case JSON.stringify(({TestState.get_full_name()}.map_key_rx_state_+"-key")):  return ("return-key");'
+            f'return ("blue");  break;case JSON.stringify({TestState.get_full_name()}.mapping{FIELD_MARKER}):  return '
+            f'({TestState.get_full_name()}.num1{FIELD_MARKER});  break;case JSON.stringify(({TestState.get_full_name()}.map_key{FIELD_MARKER}+"-key")):  return ("return-key");'
             '  break;default:  return ("yellow");  break;};})()',
         )
     ],
@@ -588,44 +589,44 @@ formatted_router = {
             TestState(_reflex_internal_init=True).dict(),  # pyright: ignore [reportCallIssue]
             {
                 TestState.get_full_name(): {
-                    "array_rx_state_": [1, 2, 3.14],
-                    "complex_rx_state_": {
+                    "array" + FIELD_MARKER: [1, 2, 3.14],
+                    "complex" + FIELD_MARKER: {
                         1: {"prop1": 42, "prop2": "hello"},
                         2: {"prop1": 42, "prop2": "hello"},
                     },
-                    "dt_rx_state_": "1989-11-09 18:53:00+01:00",
-                    "fig_rx_state_": serialize_figure(go.Figure()),
-                    "key_rx_state_": "",
-                    "map_key_rx_state_": "a",
-                    "mapping_rx_state_": {"a": [1, 2, 3], "b": [4, 5, 6]},
-                    "num1_rx_state_": 0,
-                    "num2_rx_state_": 3.14,
-                    "obj_rx_state_": {"prop1": 42, "prop2": "hello"},
-                    "sum_rx_state_": 3.14,
-                    "upper_rx_state_": "",
-                    "router_rx_state_": formatted_router,
-                    "asynctest_rx_state_": 0,
+                    "dt" + FIELD_MARKER: "1989-11-09 18:53:00+01:00",
+                    "fig" + FIELD_MARKER: serialize_figure(go.Figure()),
+                    "key" + FIELD_MARKER: "",
+                    "map_key" + FIELD_MARKER: "a",
+                    "mapping" + FIELD_MARKER: {"a": [1, 2, 3], "b": [4, 5, 6]},
+                    "num1" + FIELD_MARKER: 0,
+                    "num2" + FIELD_MARKER: 3.14,
+                    "obj" + FIELD_MARKER: {"prop1": 42, "prop2": "hello"},
+                    "sum" + FIELD_MARKER: 3.14,
+                    "upper" + FIELD_MARKER: "",
+                    "router" + FIELD_MARKER: formatted_router,
+                    "asynctest" + FIELD_MARKER: 0,
                 },
                 ChildState.get_full_name(): {
-                    "count_rx_state_": 23,
-                    "value_rx_state_": "",
+                    "count" + FIELD_MARKER: 23,
+                    "value" + FIELD_MARKER: "",
                 },
-                ChildState2.get_full_name(): {"value_rx_state_": ""},
-                ChildState3.get_full_name(): {"value_rx_state_": ""},
-                GrandchildState.get_full_name(): {"value2_rx_state_": ""},
-                GrandchildState2.get_full_name(): {"cached_rx_state_": ""},
-                GrandchildState3.get_full_name(): {"computed_rx_state_": ""},
+                ChildState2.get_full_name(): {"value" + FIELD_MARKER: ""},
+                ChildState3.get_full_name(): {"value" + FIELD_MARKER: ""},
+                GrandchildState.get_full_name(): {"value2" + FIELD_MARKER: ""},
+                GrandchildState2.get_full_name(): {"cached" + FIELD_MARKER: ""},
+                GrandchildState3.get_full_name(): {"computed" + FIELD_MARKER: ""},
             },
         ),
         (
             DateTimeState(_reflex_internal_init=True).dict(),  # pyright: ignore [reportCallIssue]
             {
                 DateTimeState.get_full_name(): {
-                    "d_rx_state_": "1989-11-09",
-                    "dt_rx_state_": "1989-11-09 18:53:00+01:00",
-                    "t_rx_state_": "18:53:00+01:00",
-                    "td_rx_state_": "11 days, 0:11:00",
-                    "router_rx_state_": formatted_router,
+                    "d" + FIELD_MARKER: "1989-11-09",
+                    "dt" + FIELD_MARKER: "1989-11-09 18:53:00+01:00",
+                    "t" + FIELD_MARKER: "18:53:00+01:00",
+                    "td" + FIELD_MARKER: "11 days, 0:11:00",
+                    "router" + FIELD_MARKER: formatted_router,
                 },
             },
         ),
