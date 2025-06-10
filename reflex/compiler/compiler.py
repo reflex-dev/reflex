@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import sys
 from collections.abc import Iterable, Sequence
 from datetime import datetime
 from inspect import getmodule
@@ -18,8 +19,9 @@ from reflex.components.component import (
     CustomComponent,
     StatefulComponent,
 )
-from reflex.config import environment, get_config
+from reflex.config import get_config
 from reflex.constants.compiler import PageNames
+from reflex.environment import environment
 from reflex.state import BaseState
 from reflex.style import SYSTEM_COLOR_MODE
 from reflex.utils import console, path_ops
@@ -200,15 +202,14 @@ def _validate_stylesheet(stylesheet_full_path: Path, assets_app_path: Path) -> N
     """
     suffix = stylesheet_full_path.suffix[1:] if stylesheet_full_path.suffix else ""
     if suffix not in constants.Reflex.STYLESHEETS_SUPPORTED:
-        raise ValueError(f"Stylesheet file {stylesheet_full_path} is not supported.")
+        msg = f"Stylesheet file {stylesheet_full_path} is not supported."
+        raise ValueError(msg)
     if not stylesheet_full_path.absolute().is_relative_to(assets_app_path.absolute()):
-        raise FileNotFoundError(
-            f"Cannot include stylesheets from outside the assets directory: {stylesheet_full_path}"
-        )
+        msg = f"Cannot include stylesheets from outside the assets directory: {stylesheet_full_path}"
+        raise FileNotFoundError(msg)
     if not stylesheet_full_path.name:
-        raise ValueError(
-            f"Stylesheet file name cannot be empty: {stylesheet_full_path}"
-        )
+        msg = f"Stylesheet file name cannot be empty: {stylesheet_full_path}"
+        raise ValueError(msg)
     if (
         len(
             stylesheet_full_path.absolute()
@@ -218,9 +219,11 @@ def _validate_stylesheet(stylesheet_full_path: Path, assets_app_path: Path) -> N
         == 1
         and stylesheet_full_path.stem == PageNames.STYLESHEET_ROOT
     ):
-        raise ValueError(
-            f"Stylesheet file name cannot be '{PageNames.STYLESHEET_ROOT}': {stylesheet_full_path}"
-        )
+        msg = f"Stylesheet file name cannot be '{PageNames.STYLESHEET_ROOT}': {stylesheet_full_path}"
+        raise ValueError(msg)
+
+
+RADIX_THEMES_STYLESHEET = "@radix-ui/themes/styles.css"
 
 
 def _compile_root_stylesheet(stylesheets: list[str]) -> str:
@@ -235,12 +238,12 @@ def _compile_root_stylesheet(stylesheets: list[str]) -> str:
     Raises:
         FileNotFoundError: If a specified stylesheet in assets directory does not exist.
     """
-    # Add tailwind css if enabled.
-    sheets = (
-        [constants.Tailwind.ROOT_STYLE_PATH]
-        if get_config().tailwind is not None
-        else []
-    )
+    # Add stylesheets from plugins.
+    sheets = [RADIX_THEMES_STYLESHEET] + [
+        sheet
+        for plugin in get_config().plugins
+        for sheet in plugin.get_stylesheet_paths()
+    ]
 
     failed_to_import_sass = False
     assets_app_path = Path.cwd() / constants.Dirs.APP_ASSETS
@@ -254,9 +257,8 @@ def _compile_root_stylesheet(stylesheets: list[str]) -> str:
             stylesheet_full_path = assets_app_path / stylesheet.strip("/")
 
             if not stylesheet_full_path.exists():
-                raise FileNotFoundError(
-                    f"The stylesheet file {stylesheet_full_path} does not exist."
-                )
+                msg = f"The stylesheet file {stylesheet_full_path} does not exist."
+                raise FileNotFoundError(msg)
 
             if stylesheet_full_path.is_dir():
                 all_files = (
@@ -326,7 +328,7 @@ def _compile_component(component: Component | StatefulComponent) -> str:
 
 
 def _compile_components(
-    components: set[CustomComponent],
+    components: Iterable[CustomComponent],
 ) -> tuple[str, dict[str, list[ImportVar]]]:
     """Compile the components.
 
@@ -451,22 +453,6 @@ def _compile_stateful_components(
     )
 
 
-def _compile_tailwind(
-    config: dict,
-) -> str:
-    """Compile the Tailwind config.
-
-    Args:
-        config: The Tailwind config.
-
-    Returns:
-        The compiled Tailwind config.
-    """
-    return templates.TAILWIND_CONFIG.render(
-        **config,
-    )
-
-
 def compile_document_root(
     head_components: list[Component],
     html_lang: str | None = None,
@@ -572,7 +558,7 @@ def compile_page(
 
 
 def compile_components(
-    components: set[CustomComponent],
+    components: Iterable[CustomComponent],
 ) -> tuple[str, str, dict[str, list[ImportVar]]]:
     """Compile the custom components.
 
@@ -611,44 +597,6 @@ def compile_stateful_components(
     page_components = [StatefulComponent.compile_from(page) or page for page in pages]
     code = _compile_stateful_components(page_components)
     return output_path, code, page_components
-
-
-def compile_tailwind(
-    config: dict,
-):
-    """Compile the Tailwind config.
-
-    Args:
-        config: The Tailwind config.
-
-    Returns:
-        The compiled Tailwind config.
-    """
-    # Get the path for the output file.
-    output_path = str((get_web_dir() / constants.Tailwind.CONFIG).absolute())
-
-    # Compile the config.
-    code = _compile_tailwind(config)
-    return output_path, code
-
-
-def remove_tailwind_from_postcss() -> tuple[str, str]:
-    """If tailwind is not to be used, remove it from postcss.config.js.
-
-    Returns:
-        The path and code of the compiled postcss.config.js.
-    """
-    # Get the path for the output file.
-    output_path = str(get_web_dir() / constants.Dirs.POSTCSS_JS)
-
-    code = [
-        line
-        for line in Path(output_path).read_text().splitlines(keepends=True)
-        if "tailwindcss: " not in line
-    ]
-
-    # Compile the config.
-    return output_path, "".join(code)
 
 
 def purge_web_pages_dir():
@@ -736,12 +684,12 @@ def into_component(component: Component | ComponentCallable) -> Component:
     """
     if (converted := _into_component_once(component)) is not None:
         return converted
+    if not callable(component):
+        msg = f"Expected a Component or callable, got {component!r} of type {type(component)}"
+        raise TypeError(msg)
+
     try:
-        if (
-            callable(component)
-            and (converted := _into_component_once(component())) is not None
-        ):
-            return converted
+        component_called = component()
     except KeyError as e:
         if isinstance(e, ReflexError):
             raise
@@ -765,9 +713,10 @@ def into_component(component: Component | ComponentCallable) -> Component:
                     "Cannot pass a Var to a built-in function. Consider using .length() for accessing the length of an iterable Var."
                 ).with_traceback(e.__traceback__) from None
             if message.endswith(
-                "indices must be integers or slices, not NumberCastedVar"
-            ) or message.endswith(
-                "indices must be integers or slices, not BooleanCastedVar"
+                (
+                    "indices must be integers or slices, not NumberCastedVar",
+                    "indices must be integers or slices, not BooleanCastedVar",
+                )
             ):
                 raise TypeError(
                     "Cannot index into a primitive sequence with a Var. Consider calling rx.Var.create() on the sequence."
@@ -778,7 +727,11 @@ def into_component(component: Component | ComponentCallable) -> Component:
             ).with_traceback(e.__traceback__) from None
         raise
 
-    raise TypeError(f"Expected a Component, got {type(component)}")
+    if (converted := _into_component_once(component_called)) is not None:
+        return converted
+
+    msg = f"Expected a Component, got {component_called!r} of type {type(component_called)}"
+    raise TypeError(msg)
 
 
 def compile_unevaluated_page(
@@ -799,52 +752,61 @@ def compile_unevaluated_page(
 
     Returns:
         The compiled component and whether state should be enabled.
+
+    Raises:
+        Exception: If an error occurs while evaluating the page.
     """
-    # Generate the component if it is a callable.
-    component = into_component(page.component)
+    try:
+        # Generate the component if it is a callable.
+        component = into_component(page.component)
 
-    component._add_style_recursive(style or {}, theme)
+        component._add_style_recursive(style or {}, theme)
 
-    enable_state = False
-    # Ensure state is enabled if this page uses state.
-    if state is None:
-        if page.on_load or component._has_stateful_event_triggers():
-            enable_state = True
-        else:
-            for var in component._get_vars(include_children=True):
-                var_data = var._get_all_var_data()
-                if not var_data:
-                    continue
-                if not var_data.state:
-                    continue
+        enable_state = False
+        # Ensure state is enabled if this page uses state.
+        if state is None:
+            if page.on_load or component._has_stateful_event_triggers():
                 enable_state = True
-                break
+            else:
+                for var in component._get_vars(include_children=True):
+                    var_data = var._get_all_var_data()
+                    if not var_data:
+                        continue
+                    if not var_data.state:
+                        continue
+                    enable_state = True
+                    break
 
-    from reflex.app import OverlayFragment
-    from reflex.utils.format import make_default_page_title
+        from reflex.app import OverlayFragment
+        from reflex.utils.format import make_default_page_title
 
-    component = OverlayFragment.create(component)
+        component = OverlayFragment.create(component)
 
-    meta_args = {
-        "title": (
-            page.title
-            if page.title is not None
-            else make_default_page_title(get_config().app_name, route)
-        ),
-        "image": page.image,
-        "meta": page.meta,
-    }
+        meta_args = {
+            "title": (
+                page.title
+                if page.title is not None
+                else make_default_page_title(get_config().app_name, route)
+            ),
+            "image": page.image,
+            "meta": page.meta,
+        }
 
-    if page.description is not None:
-        meta_args["description"] = page.description
+        if page.description is not None:
+            meta_args["description"] = page.description
 
-    # Add meta information to the component.
-    utils.add_meta(
-        component,
-        **meta_args,
-    )
+        # Add meta information to the component.
+        utils.add_meta(
+            component,
+            **meta_args,
+        )
 
-    return component, enable_state
+    except Exception as e:
+        if sys.version_info >= (3, 11):
+            e.add_note(f"Happened while evaluating page {route!r}")
+        raise
+    else:
+        return component, enable_state
 
 
 class ExecutorSafeFunctions:
@@ -924,5 +886,6 @@ class ExecutorSafeFunctions:
             ValueError: If the style is not set.
         """
         if style is None:
-            raise ValueError("STYLE should be set")
+            msg = "STYLE should be set"
+            raise ValueError(msg)
         return compile_theme(style)

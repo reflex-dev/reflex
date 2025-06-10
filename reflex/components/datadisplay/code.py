@@ -482,8 +482,7 @@ class CodeBlock(Component, MarkdownComponentMap):
 
         if copy_button:
             return Box.create(code_block, copy_button, position="relative")
-        else:
-            return code_block
+        return code_block
 
     def add_style(self):
         """Add style to the component."""
@@ -546,7 +545,7 @@ if ({language_var!s}) {{
 }}""",
             _var_data=VarData(
                 imports={
-                    cls.__fields__["library"].default: [
+                    cls.get_fields()["library"].default_value(): [
                         ImportVar(tag="PrismAsyncLight", alias="SyntaxHighlighter")
                     ]
                 },

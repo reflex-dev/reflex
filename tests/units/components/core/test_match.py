@@ -89,7 +89,7 @@ def test_match_components():
 
 
 @pytest.mark.parametrize(
-    "cases, expected",
+    ("cases", "expected"),
     [
         (
             (
@@ -158,7 +158,8 @@ def test_match_on_component_without_default():
     assert isinstance(match_comp, Component)
     default = match_comp.render()["children"][0]["default"]
 
-    assert isinstance(default, dict) and default["name"] == Fragment.__name__
+    assert isinstance(default, dict)
+    assert default["name"] == Fragment.__name__
 
 
 def test_match_on_var_no_default():
@@ -240,7 +241,7 @@ def test_match_case_tuple_elements(match_case):
 
 
 @pytest.mark.parametrize(
-    "cases, error_msg",
+    ("cases", "error_msg"),
     [
         (
             (

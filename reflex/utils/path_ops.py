@@ -9,7 +9,8 @@ import shutil
 import stat
 from pathlib import Path
 
-from reflex.config import environment, get_config
+from reflex.config import get_config
+from reflex.environment import environment
 
 # Shorthand for join.
 join = os.linesep.join
@@ -42,6 +43,31 @@ def rm(path: str | Path):
         path.unlink()
 
 
+def copy_tree(
+    src: str | Path,
+    dest: str | Path,
+    ignore: tuple[str, ...] | None = None,
+):
+    """Copy a directory tree.
+
+    Args:
+        src: The path to the source directory.
+        dest: The path to the destination directory.
+        ignore: Ignoring files and directories that match one of the glob-style patterns provided
+    """
+    src = Path(src)
+    dest = Path(dest)
+    if dest.exists():
+        for item in dest.iterdir():
+            rm(item)
+    shutil.copytree(
+        src,
+        dest,
+        ignore=shutil.ignore_patterns(*ignore) if ignore is not None else ignore,
+        dirs_exist_ok=True,
+    )
+
+
 def cp(
     src: str | Path,
     dest: str | Path,
@@ -65,12 +91,7 @@ def cp(
     if not overwrite and dest.exists():
         return False
     if src.is_dir():
-        rm(dest)
-        shutil.copytree(
-            src,
-            dest,
-            ignore=shutil.ignore_patterns(*ignore) if ignore is not None else ignore,
-        )
+        copy_tree(src, dest, ignore)
     else:
         shutil.copyfile(src, dest)
     return True
@@ -280,7 +301,8 @@ def update_directory_tree(src: Path, dest: Path):
         ValueError: If the source is not a directory
     """
     if not src.is_dir():
-        raise ValueError(f"Source {src} is not a directory")
+        msg = f"Source {src} is not a directory"
+        raise ValueError(msg)
 
     # Ensure the destination directory exists
     dest.mkdir(parents=True, exist_ok=True)

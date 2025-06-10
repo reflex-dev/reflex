@@ -132,7 +132,7 @@ def _zip(
 def zip_app(
     frontend: bool = True,
     backend: bool = True,
-    zip_dest_dir: str | Path = Path.cwd(),
+    zip_dest_dir: str | Path | None = None,
     upload_db_file: bool = False,
 ):
     """Zip up the app.
@@ -143,6 +143,7 @@ def zip_app(
         zip_dest_dir: The directory to export the zip file to.
         upload_db_file: Whether to upload the database file.
     """
+    zip_dest_dir = zip_dest_dir or Path.cwd()
     zip_dest_dir = Path(zip_dest_dir)
     files_to_exclude = {
         constants.ComponentName.FRONTEND.zip(),
@@ -230,7 +231,7 @@ def setup_frontend(
     """
     # Create the assets dir if it doesn't exist.
     path_ops.mkdir(constants.Dirs.APP_ASSETS)
-    path_ops.cp(
+    path_ops.copy_tree(
         src=str(root / constants.Dirs.APP_ASSETS),
         dest=str(root / prerequisites.get_web_dir() / constants.Dirs.PUBLIC),
         ignore=tuple(f"*.{ext}" for ext in constants.Reflex.STYLESHEETS_SUPPORTED),

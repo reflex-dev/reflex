@@ -8,6 +8,7 @@ from typing import ParamSpec, TypeVar
 import httpx
 
 from reflex.utils.decorator import once
+from reflex.utils.types import Unset
 
 from . import console
 
@@ -18,7 +19,7 @@ def _httpx_verify_kwarg() -> bool:
     Returns:
         True if SSL verification is enabled, False otherwise
     """
-    from ..config import environment
+    from reflex.environment import environment
 
     return not environment.SSL_NO_VERIFY.get()
 
@@ -59,6 +60,30 @@ def _wrap_https_func(
                 f"Received response from {url} in {time.time() - initial_time:.3f} seconds"
             )
             return response
+
+    return wrapper
+
+
+def _wrap_https_lazy_func(
+    func: Callable[[], Callable[_P, _T]],
+) -> Callable[_P, _T]:
+    """Wrap an HTTPS function with logging.
+
+    Args:
+        func: The function to wrap.
+
+    Returns:
+        The wrapped function.
+    """
+    unset = Unset()
+    f: Callable[_P, _T] | Unset = unset
+
+    def wrapper(*args: _P.args, **kwargs: _P.kwargs) -> _T:
+        nonlocal f
+        if isinstance(f, Unset):
+            f = _wrap_https_func(func())
+            functools.update_wrapper(wrapper, f)
+        return f(*args, **kwargs)
 
     return wrapper
 
@@ -106,7 +131,7 @@ def _httpx_local_address_kwarg() -> str:
     Returns:
         The local address to bind to
     """
-    from ..config import environment
+    from reflex.environment import environment
 
     return environment.REFLEX_HTTP_CLIENT_BIND_ADDRESS.get() or (
         "::" if _should_use_ipv6() else "0.0.0.0"
@@ -120,12 +145,20 @@ def _httpx_client() -> httpx.Client:
     Returns:
         An HTTPX client.
     """
+    from httpx._utils import get_environment_proxies
+
     return httpx.Client(
         transport=httpx.HTTPTransport(
             local_address=_httpx_local_address_kwarg(),
             verify=_httpx_verify_kwarg(),
-        )
+        ),
+        mounts={
+            key: (
+                None if url is None else httpx.HTTPTransport(proxy=httpx.Proxy(url=url))
+            )
+            for key, url in get_environment_proxies().items()
+        },
     )
 
 
-get = _wrap_https_func(_httpx_client().get)
+get = _wrap_https_lazy_func(lambda: _httpx_client().get)

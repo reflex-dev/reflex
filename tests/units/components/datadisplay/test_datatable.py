@@ -9,7 +9,7 @@ from reflex.utils.serializers import serialize, serialize_dataframe
 
 
 @pytest.mark.parametrize(
-    "data_table_state,expected",
+    ("data_table_state", "expected"),
     [
         pytest.param(
             {
@@ -82,7 +82,7 @@ def test_invalid_props(props):
 
 
 @pytest.mark.parametrize(
-    "fixture, err_msg, is_data_frame",
+    ("fixture", "err_msg", "is_data_frame"),
     [
         (
             "data_table_state2",
@@ -123,11 +123,11 @@ def test_computed_var_without_annotation(fixture, request, err_msg, is_data_fram
 
 def test_serialize_dataframe():
     """Test if dataframe is serialized correctly."""
-    df = pd.DataFrame(
+    simple_dataframe = pd.DataFrame(
         [["foo", "bar"], ["foo1", "bar1"]],
         columns=["column1", "column2"],  # pyright: ignore [reportArgumentType]
     )
-    value = serialize(df)
-    assert value == serialize_dataframe(df)
+    value = serialize(simple_dataframe)
+    assert value == serialize_dataframe(simple_dataframe)
     assert isinstance(value, dict)
     assert tuple(value) == ("columns", "data")

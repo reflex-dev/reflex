@@ -69,19 +69,19 @@ class Foreach(Component):
         )
 
         if iterable._var_type == Any:
-            raise ForeachVarError(
+            msg = (
                 f"Could not foreach over var `{iterable!s}` of type Any. "
                 "(If you are trying to foreach over a state var, add a type annotation to the var). "
                 "See https://reflex.dev/docs/library/dynamic-rendering/foreach/"
             )
+            raise ForeachVarError(msg)
 
         if (
             hasattr(render_fn, "__qualname__")
             and render_fn.__qualname__ == ComponentState.create.__qualname__
         ):
-            raise TypeError(
-                "Using a ComponentState as `render_fn` inside `rx.foreach` is not supported yet."
-            )
+            msg = "Using a ComponentState as `render_fn` inside `rx.foreach` is not supported yet."
+            raise TypeError(msg)
 
         if isinstance(iterable, ObjectVar):
             iterable = iterable.entries()
@@ -90,10 +90,11 @@ class Foreach(Component):
             iterable = iterable.split()
 
         if not isinstance(iterable, ArrayVar):
-            raise ForeachVarError(
+            msg = (
                 f"Could not foreach over var `{iterable!s}` of type {iterable._var_type}. "
                 "See https://reflex.dev/docs/library/dynamic-rendering/foreach/"
             )
+            raise ForeachVarError(msg)
 
         if types.is_optional(iterable._var_type):
             iterable = cond(iterable, iterable, [])
@@ -122,11 +123,12 @@ class Foreach(Component):
 
         # Validate the render function signature.
         if len(params) == 0 or len(params) > 2:
-            raise ForeachRenderError(
+            msg = (
                 "Expected 1 or 2 parameters in foreach render function, got "
                 f"{[p.name for p in params]}. See "
                 "https://reflex.dev/docs/library/dynamic-rendering/foreach/"
             )
+            raise ForeachRenderError(msg)
 
         if len(params) >= 1:
             # Determine the arg var name based on the params accepted by render_fn.

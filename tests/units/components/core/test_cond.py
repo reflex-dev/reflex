@@ -69,7 +69,7 @@ def test_validate_cond(cond_state: BaseState):
 
 
 @pytest.mark.parametrize(
-    "c1, c2",
+    ("c1", "c2"),
     [
         (True, False),
         (32, 0),

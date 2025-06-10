@@ -67,7 +67,7 @@ def login_sample(tmp_path_factory) -> Generator[AppHarness, None, None]:
         yield harness
 
 
-@pytest.fixture()
+@pytest.fixture
 def driver(login_sample: AppHarness) -> Generator[WebDriver, None, None]:
     """Get an instance of the browser open to the login_sample app.
 
@@ -85,7 +85,7 @@ def driver(login_sample: AppHarness) -> Generator[WebDriver, None, None]:
         driver.quit()
 
 
-@pytest.fixture()
+@pytest.fixture
 def local_storage(driver: WebDriver) -> Generator[utils.LocalStorage, None, None]:
     """Get an instance of the local storage helper.
 

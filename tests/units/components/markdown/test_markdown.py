@@ -56,7 +56,7 @@ def syntax_highlighter_memoized_component(codeblock: type[Component]):
 
 
 @pytest.mark.parametrize(
-    "fn_body, fn_args, explicit_return, expected",
+    ("fn_body", "fn_args", "explicit_return", "expected"),
     [
         (
             None,
@@ -141,7 +141,7 @@ def test_create_map_fn_var_subclass(cls, fn_body, fn_args, explicit_return, expe
 
 
 @pytest.mark.parametrize(
-    "key,component_map, expected",
+    ("key", "component_map", "expected"),
     [
         (
             "code",

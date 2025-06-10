@@ -7,7 +7,7 @@ from selenium.common.exceptions import NoSuchElementException
 from selenium.webdriver.common.by import By
 
 from reflex import constants
-from reflex.config import environment
+from reflex.environment import environment
 from reflex.testing import AppHarness, WebDriver
 
 from .utils import SessionStorage
@@ -58,7 +58,7 @@ def simulate_compile_context(request) -> constants.CompileContext:
     return request.param
 
 
-@pytest.fixture()
+@pytest.fixture
 def connection_banner(
     tmp_path,
     simulate_compile_context: constants.CompileContext,

@@ -19,6 +19,7 @@ import pytest_asyncio
 from plotly.graph_objects import Figure
 from pydantic import BaseModel as BaseModelV2
 from pydantic.v1 import BaseModel as BaseModelV1
+from pytest_mock import MockerFixture
 
 import reflex as rx
 import reflex.config
@@ -142,7 +143,6 @@ class TestState(BaseState):
 
     def do_something(self):
         """Do something."""
-        pass
 
     async def set_asynctest(self, value: int):
         """Set the asynctest value. Intentionally overwrite the default setter with an async one.
@@ -189,7 +189,6 @@ class GrandchildState(ChildState):
 
     def do_nothing(self):
         """Do something."""
-        pass
 
 
 class GrandchildState2(ChildState2):
@@ -292,7 +291,7 @@ def test_base_class_vars(test_state):
     cls = type(test_state)
 
     for field in fields:
-        if field in test_state.get_skip_vars():
+        if field.startswith("_") or field in cls.get_skip_vars():
             continue
         prop = getattr(cls, field)
         assert isinstance(prop, Var)
@@ -1692,7 +1691,7 @@ async def state_manager(request) -> AsyncGenerator[StateManager, None]:
         await state_manager.close()
 
 
-@pytest.fixture()
+@pytest.fixture
 def substate_token(state_manager, token) -> str:
     """A token + substate name for looking up in state manager.
 
@@ -1794,7 +1793,7 @@ async def state_manager_redis() -> AsyncGenerator[StateManager, None]:
     await state_manager.close()
 
 
-@pytest.fixture()
+@pytest.fixture
 def substate_token_redis(state_manager_redis, token):
     """A token + substate name for looking up in state manager.
 
@@ -1848,16 +1847,17 @@ async def test_state_manager_lock_expire_contend(
     state_manager_redis.lock_warning_threshold = LOCK_WARNING_THRESHOLD
 
     order = []
+    waiter_event = asyncio.Event()
 
     async def _coro_blocker():
         async with state_manager_redis.modify_state(substate_token_redis) as state:
             order.append("blocker")
+            waiter_event.set()
             await asyncio.sleep(LOCK_EXPIRE_SLEEP)
             state.num1 = unexp_num1
 
     async def _coro_waiter():
-        while "blocker" not in order:
-            await asyncio.sleep(0.005)
+        await waiter_event.wait()
         async with state_manager_redis.modify_state(substate_token_redis) as state:
             order.append("waiter")
             assert state.num1 != unexp_num1
@@ -1880,7 +1880,7 @@ async def test_state_manager_lock_warning_threshold_contend(
     state_manager_redis: StateManagerRedis,
     token: str,
     substate_token_redis: str,
-    mocker,
+    mocker: MockerFixture,
 ):
     """Test that the state manager triggers a warning when lock contention exceeds the warning threshold.
 
@@ -1929,7 +1929,7 @@ class CopyingAsyncMock(AsyncMock):
         return super().__call__(*args, **kwargs)
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture
 def mock_app_simple(monkeypatch) -> rx.App:
     """Simple Mock app fixture.
 
@@ -1954,7 +1954,7 @@ def mock_app_simple(monkeypatch) -> rx.App:
     return app
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture
 def mock_app(mock_app_simple: rx.App, state_manager: StateManager) -> rx.App:
     """Mock app fixture.
 
@@ -1978,21 +1978,37 @@ class ModelDC:
 
 
 @pytest.mark.asyncio
-async def test_state_proxy(grandchild_state: GrandchildState, mock_app: rx.App):
+async def test_state_proxy(
+    grandchild_state: GrandchildState, mock_app: rx.App, token: str
+):
     """Test that the state proxy works.
 
     Args:
         grandchild_state: A grandchild state.
         mock_app: An app that will be returned by `get_app()`
+        token: A token.
     """
     child_state = grandchild_state.parent_state
     assert child_state is not None
     parent_state = child_state.parent_state
     assert parent_state is not None
+    router_data = RouterData({"query": {}, "token": token, "sid": "test_sid"})
+    grandchild_state.router = router_data
+    namespace = mock_app.event_namespace
+    assert namespace is not None
+    namespace.sid_to_token[router_data.session.session_id] = token
     if isinstance(mock_app.state_manager, (StateManagerMemory, StateManagerDisk)):
         mock_app.state_manager.states[parent_state.router.session.client_token] = (
             parent_state
         )
+    elif isinstance(mock_app.state_manager, StateManagerRedis):
+        pickle_state = parent_state._serialize()
+        if pickle_state:
+            await mock_app.state_manager.redis.set(
+                _substate_key(parent_state.router.session.client_token, parent_state),
+                pickle_state,
+                ex=mock_app.state_manager.token_expiration,
+            )
 
     sp = StateProxy(grandchild_state)
     assert sp.__wrapped__ == grandchild_state
@@ -2059,6 +2075,7 @@ async def test_state_proxy(grandchild_state: GrandchildState, mock_app: rx.App):
     assert mcall.args[0] == str(SocketEvent.EVENT)
     assert mcall.args[1] == StateUpdate(
         delta={
+            TestState.get_full_name(): {"router": router_data},
             grandchild_state.get_full_name(): {
                 "value2_rx_state_": "42",
             },
@@ -2184,7 +2201,11 @@ async def test_background_task_no_block(mock_app: rx.App, token: str):
         mock_app: An app that will be returned by `get_app()`
         token: A token.
     """
-    router_data = {"query": {}}
+    router_data = {"query": {}, "token": token}
+    sid = "test_sid"
+    namespace = mock_app.event_namespace
+    assert namespace is not None
+    namespace.sid_to_token[sid] = token
     mock_app.state_manager.state = mock_app._state = BackgroundTaskState
     async for update in rx.app.process(
         mock_app,
@@ -2194,7 +2215,7 @@ async def test_background_task_no_block(mock_app: rx.App, token: str):
             router_data=router_data,
             payload={},
         ),
-        sid="",
+        sid=sid,
         headers={},
         client_ip="",
     ):
@@ -2214,7 +2235,7 @@ async def test_background_task_no_block(mock_app: rx.App, token: str):
             router_data=router_data,
             payload={},
         ),
-        sid="",
+        sid=sid,
         headers={},
         client_ip="",
     ):
@@ -2597,10 +2618,10 @@ def test_mutable_backend(mutable_state: MutableTestState):
 
 
 @pytest.mark.parametrize(
-    ("copy_func",),
+    "copy_func",
     [
-        (copy.copy,),
-        (copy.deepcopy,),
+        copy.copy,
+        copy.deepcopy,
     ],
 )
 def test_mutable_copy(mutable_state: MutableTestState, copy_func: Callable):
@@ -2624,10 +2645,10 @@ def test_mutable_copy(mutable_state: MutableTestState, copy_func: Callable):
 
 
 @pytest.mark.parametrize(
-    ("copy_func",),
+    "copy_func",
     [
-        (copy.copy,),
-        (copy.deepcopy,),
+        copy.copy,
+        copy.deepcopy,
     ],
 )
 def test_mutable_copy_vars(mutable_state: MutableTestState, copy_func: Callable):
@@ -2646,11 +2667,11 @@ def test_mutable_copy_vars(mutable_state: MutableTestState, copy_func: Callable)
         assert not isinstance(var_copy, MutableProxy)
 
 
-def test_duplicate_substate_class(mocker):
+def test_duplicate_substate_class(mocker: MockerFixture):
     # Neuter pytest escape hatch, because we want to test duplicate detection.
-    mocker.patch("reflex.state.is_testing_env", lambda: False)
+    mocker.patch("reflex.state.is_testing_env", return_value=False)
     # Neuter <locals> state handling since these _are_ defined inside a function.
-    mocker.patch("reflex.state.BaseState._handle_local_def", lambda: None)
+    mocker.patch("reflex.state.BaseState._handle_local_def", return_value=False)
     with pytest.raises(ValueError):
 
         class TestState(BaseState):
@@ -2790,7 +2811,7 @@ def test_state_union_optional():
     assert (
         str(UnionState.c3.c2r.c1r.foo) == f'{UnionState.c3!s}?.["c2r"]["c1r"]["foo"]'  # pyright: ignore [reportOptionalMemberAccess]
     )
-    assert str(UnionState.c3i.c2) == f'{UnionState.c3i!s}["c2"]'
+    assert str(UnionState.c3i.c2) == f'{UnionState.c3i!s}?.["c2"]'
     assert str(UnionState.c3r.c2) == f'{UnionState.c3r!s}["c2"]'
     assert UnionState.custom_union.foo is not None  # pyright: ignore [reportAttributeAccessIssue]
     assert UnionState.custom_union.c1 is not None  # pyright: ignore [reportAttributeAccessIssue]
@@ -2900,14 +2921,16 @@ class OnLoadState3(State):
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize(
-    "test_state, expected",
+    ("test_state", "expected"),
     [
         (OnLoadState, {"on_load_state": {"num": 1}}),
         (OnLoadState2, {"on_load_state2": {"num": 1}}),
         (OnLoadState3, {"on_load_state3": {"num": 1}}),
     ],
 )
-async def test_preprocess(app_module_mock, token, test_state, expected, mocker):
+async def test_preprocess(
+    app_module_mock, token, test_state, expected, mocker: MockerFixture
+):
     """Test that a state hydrate event is processed correctly.
 
     Args:
@@ -2956,7 +2979,9 @@ async def test_preprocess(app_module_mock, token, test_state, expected, mocker):
 
 
 @pytest.mark.asyncio
-async def test_preprocess_multiple_load_events(app_module_mock, token, mocker):
+async def test_preprocess_multiple_load_events(
+    app_module_mock, token, mocker: MockerFixture
+):
     """Test that a state hydrate event for multiple on-load events is processed correctly.
 
     Args:
@@ -3147,12 +3172,8 @@ async def test_get_state_from_sibling_not_cached(mock_app: rx.App, token: str):
     class Child(Parent):
         """A state simulating UpdateVarsInternalState."""
 
-        pass
-
     class Child2(Parent):
         """An unconnected child state."""
-
-        pass
 
     class Child3(Parent):
         """A child state with a computed var causing it to be pre-fetched.
@@ -3173,15 +3194,11 @@ async def test_get_state_from_sibling_not_cached(mock_app: rx.App, token: str):
         invalid parent state names were being constructed.
         """
 
-        pass
-
     class GreatGrandchild3(Grandchild3):
         """Fetching this state wants to also fetch Child3 as a missing parent.
         However, Child3 should already be cached in the state tree because it
         has a computed var.
         """
-
-        pass
 
     mock_app.state_manager.state = mock_app._state = Parent
 
@@ -3250,8 +3267,6 @@ async def test_router_var_dep(state_manager: StateManager, token: str) -> None:
 
     class RouterVarParentState(State):
         """A parent state for testing router var dependency."""
-
-        pass
 
     class RouterVarDepState(RouterVarParentState):
         """A state with a router var dependency."""
@@ -3332,9 +3347,12 @@ async def test_setvar_async_setter():
         TestState.setvar("asynctest", 42)
 
 
-@pytest.mark.skipif("REDIS_URL" not in os.environ, reason="Test requires redis")
+@pytest.mark.skipif(
+    "REDIS_URL" not in os.environ and "REFLEX_REDIS_URL" not in os.environ,
+    reason="Test requires redis",
+)
 @pytest.mark.parametrize(
-    "expiration_kwargs, expected_values",
+    ("expiration_kwargs", "expected_values"),
     [
         (
             {"redis_lock_expiration": 20000},
@@ -3405,9 +3423,12 @@ config = rx.Config(
         assert state_manager.lock_warning_threshold == expected_values[2]  # pyright: ignore [reportAttributeAccessIssue]
 
 
-@pytest.mark.skipif("REDIS_URL" not in os.environ, reason="Test requires redis")
+@pytest.mark.skipif(
+    "REDIS_URL" not in os.environ and "REFLEX_REDIS_URL" not in os.environ,
+    reason="Test requires redis",
+)
 @pytest.mark.parametrize(
-    "redis_lock_expiration, redis_lock_warning_threshold",
+    ("redis_lock_expiration", "redis_lock_warning_threshold"),
     [
         (10000, 10000),
         (20000, 30000),
@@ -3490,25 +3511,17 @@ class MixinState(State, mixin=True):
 class UsesMixinState(MixinState, State):
     """A state that uses the mixin state."""
 
-    pass
-
 
 class ChildUsesMixinState(UsesMixinState):
     """A child state that uses the mixin state."""
-
-    pass
 
 
 class ChildMixinState(ChildUsesMixinState, mixin=True):
     """A mixin state that inherits from a concrete state that uses mixins."""
 
-    pass
-
 
 class GrandchildUsesMixinState(ChildMixinState):
     """A grandchild state that uses the mixin state."""
-
-    pass
 
 
 class BareMixin:
@@ -3520,19 +3533,13 @@ class BareMixin:
 class BareStateMixin(BareMixin, rx.State, mixin=True):
     """A state mixin that uses a bare mixin."""
 
-    pass
-
 
 class BareMixinState(BareStateMixin, State):
     """A state that uses a bare mixin."""
 
-    pass
-
 
 class ChildBareMixinState(BareMixinState):
     """A child state that uses a bare mixin."""
-
-    pass
 
 
 def test_mixin_state() -> None:
@@ -3967,8 +3974,6 @@ async def test_async_computed_var_get_state(mock_app: rx.App, token: str):
 
     class Child2(Parent):
         """An unconnected child state."""
-
-        pass
 
     class Child3(Parent):
         """A child state with a computed var causing it to be pre-fetched.

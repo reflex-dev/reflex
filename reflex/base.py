@@ -30,10 +30,11 @@ def validate_field_name(bases: list[type[BaseModel]], field_name: str) -> None:
             if not reload and getattr(base, field_name, None):
                 pass
     except TypeError as te:
-        raise VarNameError(
+        msg = (
             f'State var "{field_name}" in {base} has been shadowed by a substate var; '
             f'use a different field name instead".'
-        ) from te
+        )
+        raise VarNameError(msg) from te
 
 
 # monkeypatch pydantic validate_field_name method to skip validating

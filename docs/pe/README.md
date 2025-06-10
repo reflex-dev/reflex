@@ -1,7 +1,5 @@
 <div align="center">
-<img src="https://raw.githubusercontent.com/reflex-dev/reflex/main/docs/images/reflex_dark.svg#gh-light-mode-only" alt="Reflex Logo" width="300px">
-<img src="https://raw.githubusercontent.com/reflex-dev/reflex/main/docs/images/reflex_light.svg#gh-dark-mode-only" alt="Reflex Logo" width="300px">
-
+<img src="/docs/images/reflex.svg" alt="Reflex Logo" width="300px">
 <hr>
 
 ### **✨ برنامه های تحت وب قابل تنظیم، کارآمد تماما پایتونی که در چند ثانیه مستقر(دپلوی) می‎شود. ✨**
@@ -9,13 +7,14 @@
 [![PyPI version](https://badge.fury.io/py/reflex.svg)](https://badge.fury.io/py/reflex)
 ![versions](https://img.shields.io/pypi/pyversions/reflex.svg)
 [![Documentation](https://img.shields.io/badge/Documentation%20-Introduction%20-%20%23007ec6)](https://reflex.dev/docs/getting-started/introduction)
+[![PyPI Downloads](https://static.pepy.tech/badge/reflex)](https://pepy.tech/projects/reflex)
 [![Discord](https://img.shields.io/discord/1029853095527727165?color=%237289da&label=Discord)](https://discord.gg/T5WSbC2YtQ)
 
 </div>
 
 ---
 
-[English](https://github.com/reflex-dev/reflex/blob/main/README.md) | [简体中文](https://github.com/reflex-dev/reflex/blob/main/docs/zh/zh_cn/README.md) | [繁體中文](https://github.com/reflex-dev/reflex/blob/main/docs/zh/zh_tw/README.md) | [Türkçe](https://github.com/reflex-dev/reflex/blob/main/docs/tr/README.md) | [हिंदी](https://github.com/reflex-dev/reflex/blob/main/docs/in/README.md) | [Português (Brasil)](https://github.com/reflex-dev/reflex/blob/main/docs/pt/pt_br/README.md) | [Italiano](https://github.com/reflex-dev/reflex/blob/main/docs/it/README.md) | [Español](https://github.com/reflex-dev/reflex/blob/main/docs/es/README.md) | [한국어](https://github.com/reflex-dev/reflex/blob/main/docs/kr/README.md) | [日本語](https://github.com/reflex-dev/reflex/blob/main/docs/ja/README.md) | [Deutsch](https://github.com/reflex-dev/reflex/blob/main/docs/de/README.md) | [Persian (پارسی)](https://github.com/reflex-dev/reflex/blob/main/docs/pe/README.md)
+[English](https://github.com/reflex-dev/reflex/blob/main/README.md) | [简体中文](https://github.com/reflex-dev/reflex/blob/main/docs/zh/zh_cn/README.md) | [繁體中文](https://github.com/reflex-dev/reflex/blob/main/docs/zh/zh_tw/README.md) | [Türkçe](https://github.com/reflex-dev/reflex/blob/main/docs/tr/README.md) | [हिंदी](https://github.com/reflex-dev/reflex/blob/main/docs/in/README.md) | [Português (Brasil)](https://github.com/reflex-dev/reflex/blob/main/docs/pt/pt_br/README.md) | [Italiano](https://github.com/reflex-dev/reflex/blob/main/docs/it/README.md) | [Español](https://github.com/reflex-dev/reflex/blob/main/docs/es/README.md) | [한국어](https://github.com/reflex-dev/reflex/blob/main/docs/kr/README.md) | [日本語](https://github.com/reflex-dev/reflex/blob/main/docs/ja/README.md) | [Deutsch](https://github.com/reflex-dev/reflex/blob/main/docs/de/README.md) | [Persian (پارسی)](https://github.com/reflex-dev/reflex/blob/main/docs/pe/README.md) | [Tiếng Việt](https://github.com/reflex-dev/reflex/blob/main/docs/vi/README.md)
 
 ---
 
@@ -70,7 +69,7 @@ reflex run
 &nbsp;
 
 <div align="center">
-<img src="https://raw.githubusercontent.com/reflex-dev/reflex/main/docs/images/dalle.gif" alt="A frontend wrapper for DALL·E, shown in the process of generating an image." width="550" />
+<img src="/docs/images/dalle.gif" alt="A frontend wrapper for DALL·E, shown in the process of generating an image." width="550" />
 </div>
 
 &nbsp;
@@ -219,7 +218,7 @@ app.add_page(index, title="DALL-E")
 
 <div align="center">
 
-📑 [اسناد](https://reflex.dev/docs/getting-started/introduction) &nbsp; | &nbsp; 🗞️ [وبلاگ](https://reflex.dev/blog) &nbsp; | &nbsp; 📱 [کتابخانه جزء](https://reflex.dev/docs/library) &nbsp; | &nbsp; 🖼️ [گالری](https://reflex.dev/docs/gallery) &nbsp; | &nbsp; 🛸 [استقرار](https://reflex.dev/docs/hosting/deploy-quick-start) &nbsp;
+📑 [اسناد](https://reflex.dev/docs/getting-started/introduction) &nbsp; | &nbsp; 🗞️ [وبلاگ](https://reflex.dev/blog) &nbsp; | &nbsp; 📱 [کتابخانه جزء](https://reflex.dev/docs/library) &nbsp; | &nbsp; 🖼️ [قالب ها](https://reflex.dev/templates/) &nbsp; | &nbsp; 🛸 [استقرار](https://reflex.dev/docs/hosting/deploy-quick-start) &nbsp;
 
 </div>
 
@@ -227,7 +226,7 @@ app.add_page(index, title="DALL-E")
 
 رفلکس(reflex) در دسامبر 2022 با نام Pynecone راه اندازی شد.
 
-از فوریه 2024، سرویس میزبانی ما در آلفا است! در این مدت هر کسی می‌تواند برنامه‌های خود را به صورت رایگان اجرا کند. [نقشه راه](https://github.com/reflex-dev/reflex/issues/2727) را ببینید تا متوجه شوید چه برنامه‌ریزی شده است.
+از سال 2025، [Reflex Cloud](https://cloud.reflex.dev) برای فراهم کردن بهترین تجربه میزبانی برای برنامه های Reflex راه‌اندازی شده است. ما به توسعه آن ادامه خواهیم داد و ویژگی‌های بیشتری را پیاده‌سازی خواهیم کرد.
 
 رفلکس(reflex) هر هفته نسخه ها و ویژگی های جدیدی دارد! مطمئن شوید که :star: ستاره و :eyes: این مخزن را تماشا کنید تا به روز بمانید.
 
@@ -249,4 +248,4 @@ app.add_page(index, title="DALL-E")
 
 ## License - مجوز
 
-رفلکس متن باز و تحت مجوز [Apache License 2.0](LICENSE) است.
+رفلکس متن باز و تحت مجوز [Apache License 2.0](/LICENSE) است.

@@ -73,7 +73,7 @@ class DependencyTracker:
             self.func = cast(FunctionType, self.func.func)  # pyright: ignore[reportAttributeAccessIssue]
         with contextlib.suppress(AttributeError):
             # unbox EventHandler
-            self.func = cast(FunctionType, self.func.fn)  # pyright: ignore[reportAttributeAccessIssue]
+            self.func = cast(FunctionType, self.func.fn)  # pyright: ignore[reportAttributeAccessIssue,reportFunctionMemberAccess]
 
         if isinstance(self.func, FunctionType):
             with contextlib.suppress(AttributeError, IndexError):
@@ -106,9 +106,8 @@ class DependencyTracker:
         from .base import ComputedVar
 
         if instruction.argval in self.INVALID_NAMES:
-            raise VarValueError(
-                f"Cached var {self!s} cannot access arbitrary state via `{instruction.argval}`."
-            )
+            msg = f"Cached var {self!s} cannot access arbitrary state via `{instruction.argval}`."
+            raise VarValueError(msg)
         if instruction.argval == "get_state":
             # Special case: arbitrary state access requested.
             self.scan_status = ScanStatus.GETTING_STATE
@@ -193,37 +192,32 @@ class DependencyTracker:
         from reflex.state import BaseState
 
         if instruction.opname == "LOAD_FAST":
-            raise VarValueError(
-                f"Dependency detection cannot identify get_state class from local var {instruction.argval}."
-            )
+            msg = f"Dependency detection cannot identify get_state class from local var {instruction.argval}."
+            raise VarValueError(msg)
         if isinstance(self.func, CodeType):
-            raise VarValueError(
-                "Dependency detection cannot identify get_state class from a code object."
-            )
+            msg = "Dependency detection cannot identify get_state class from a code object."
+            raise VarValueError(msg)
         if instruction.opname == "LOAD_GLOBAL":
             # Special case: referencing state class from global scope.
             try:
                 self._getting_state_class = self._get_globals()[instruction.argval]
             except (ValueError, KeyError) as ve:
-                raise VarValueError(
-                    f"Cached var {self!s} cannot access arbitrary state `{instruction.argval}`, not found in globals."
-                ) from ve
+                msg = f"Cached var {self!s} cannot access arbitrary state `{instruction.argval}`, not found in globals."
+                raise VarValueError(msg) from ve
         elif instruction.opname == "LOAD_DEREF":
             # Special case: referencing state class from closure.
             try:
                 self._getting_state_class = self._get_closure()[instruction.argval]
             except (ValueError, KeyError) as ve:
-                raise VarValueError(
-                    f"Cached var {self!s} cannot access arbitrary state `{instruction.argval}`, is it defined yet?"
-                ) from ve
+                msg = f"Cached var {self!s} cannot access arbitrary state `{instruction.argval}`, is it defined yet?"
+                raise VarValueError(msg) from ve
         elif instruction.opname == "STORE_FAST":
             # Storing the result of get_state in a local variable.
             if not isinstance(self._getting_state_class, type) or not issubclass(
                 self._getting_state_class, BaseState
             ):
-                raise VarValueError(
-                    f"Cached var {self!s} cannot determine dependencies in fetched state `{instruction.argval}`."
-                )
+                msg = f"Cached var {self!s} cannot determine dependencies in fetched state `{instruction.argval}`."
+                raise VarValueError(msg)
             self.tracked_locals[instruction.argval] = self._getting_state_class
             self.scan_status = ScanStatus.SCANNING
             self._getting_state_class = None
@@ -242,9 +236,8 @@ class DependencyTracker:
         positions0 = self._getting_var_instructions[0].positions
         positions1 = self._getting_var_instructions[-1].positions
         if module is None or positions0 is None or positions1 is None:
-            raise VarValueError(
-                f"Cannot determine the source code for the var in {self.func!r}."
-            )
+            msg = f"Cannot determine the source code for the var in {self.func!r}."
+            raise VarValueError(msg)
         start_line = positions0.lineno
         start_column = positions0.col_offset
         end_line = positions1.end_lineno
@@ -255,9 +248,8 @@ class DependencyTracker:
             or end_line is None
             or end_column is None
         ):
-            raise VarValueError(
-                f"Cannot determine the source code for the var in {self.func!r}."
-            )
+            msg = f"Cannot determine the source code for the var in {self.func!r}."
+            raise VarValueError(msg)
         source = inspect.getsource(module).splitlines(True)[start_line - 1 : end_line]
         # Create a python source string snippet.
         if len(source) > 1:
@@ -292,9 +284,8 @@ class DependencyTracker:
                 the_var = self._eval_var()
                 the_var_data = the_var._get_all_var_data()
                 if the_var_data is None:
-                    raise VarValueError(
-                        f"Cannot determine the source code for the var in {self.func!r}."
-                    )
+                    msg = f"Cannot determine the source code for the var in {self.func!r}."
+                    raise VarValueError(msg)
                 self.dependencies.setdefault(the_var_data.state, set()).add(
                     the_var_data.field_name
                 )

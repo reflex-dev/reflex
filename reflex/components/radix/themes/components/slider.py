@@ -7,11 +7,10 @@ from typing import Literal
 
 from reflex.components.component import Component
 from reflex.components.core.breakpoints import Responsive
+from reflex.components.radix.themes.base import LiteralAccentColor, RadixThemesComponent
 from reflex.event import EventHandler, passthrough_event_spec
 from reflex.utils.types import typehint_issubclass
 from reflex.vars.base import Var
-
-from ..base import LiteralAccentColor, RadixThemesComponent
 
 on_value_event_spec = (
     passthrough_event_spec(list[int | float]),

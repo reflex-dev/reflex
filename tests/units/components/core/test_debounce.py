@@ -44,7 +44,6 @@ class S(BaseState):
         Args:
             v: The changed value.
         """
-        pass
 
 
 def test_render_child_props():
@@ -57,7 +56,8 @@ def test_render_child_props():
             on_change=S.on_change,
         )
     )._render()
-    assert "css" in tag.props and isinstance(tag.props["css"], rx.vars.Var)
+    assert "css" in tag.props
+    assert isinstance(tag.props["css"], rx.vars.Var)
     for prop in ["foo", "bar", "baz", "quuc"]:
         assert prop in str(tag.props["css"])
     assert tag.props["value"].equals(
@@ -120,7 +120,7 @@ def test_event_triggers():
         )
     )
     assert tuple(debounced_input.get_event_triggers()) == (
-        *rx.Component.create().get_event_triggers(),  # default event triggers
+        *rx.Component.get_event_triggers(),  # default event triggers
         "on_change",
     )
 
@@ -151,7 +151,8 @@ def test_render_child_props_recursive():
         ),
         force_notify_by_enter=False,
     )._render()
-    assert "css" in tag.props and isinstance(tag.props["css"], rx.vars.Var)
+    assert "css" in tag.props
+    assert isinstance(tag.props["css"], rx.vars.Var)
     for prop in ["foo", "bar", "baz", "quuc"]:
         assert prop in str(tag.props["css"])
     assert tag.props["value"].equals(LiteralVar.create("outer"))
