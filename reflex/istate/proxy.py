@@ -10,7 +10,7 @@ import inspect
 import json
 from collections.abc import Callable, Sequence
 from types import MethodType
-from typing import TYPE_CHECKING, Any, SupportsIndex
+from typing import TYPE_CHECKING, Any, SupportsIndex, TypeVar
 
 import pydantic
 import wrapt
@@ -26,6 +26,8 @@ from reflex.vars.base import Var
 
 if TYPE_CHECKING:
     from reflex.state import BaseState, StateUpdate
+
+T_STATE = TypeVar("T_STATE", bound="BaseState")
 
 
 class StateProxy(wrapt.ObjectProxy):
@@ -269,7 +271,7 @@ class StateProxy(wrapt.ObjectProxy):
             raise ImmutableStateError(msg)
         return self.__wrapped__.get_substate(path)
 
-    async def get_state(self, state_cls: type[BaseState]) -> BaseState:
+    async def get_state(self, state_cls: type[T_STATE]) -> T_STATE:
         """Get an instance of the state associated with this token.
 
         Args:
@@ -289,7 +291,7 @@ class StateProxy(wrapt.ObjectProxy):
             raise ImmutableStateError(msg)
         return type(self)(
             await self.__wrapped__.get_state(state_cls), parent_state_proxy=self
-        )
+        )  # pyright: ignore [reportReturnType]
 
     async def _as_state_update(self, *args, **kwargs) -> StateUpdate:
         """Temporarily allow mutability to access parent_state.

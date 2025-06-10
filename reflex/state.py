@@ -190,6 +190,21 @@ class EventHandlerSetVar(EventHandler):
         )
         object.__setattr__(self, "state_cls", state_cls)
 
+    def __hash__(self):
+        """Get the hash of the event handler.
+
+        Returns:
+            The hash of the event handler.
+        """
+        return hash(
+            (
+                tuple(self.event_actions.items()),
+                self.fn,
+                self.state_full_name,
+                self.state_cls,
+            )
+        )
+
     def setvar(self, var_name: str, value: Any):
         """Set the state variable to the value of the event.
 

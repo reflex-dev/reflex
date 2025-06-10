@@ -14,17 +14,7 @@ from dataclasses import _MISSING_TYPE, MISSING
 from functools import wraps
 from hashlib import md5
 from types import SimpleNamespace
-from typing import (
-    TYPE_CHECKING,
-    Annotated,
-    Any,
-    ClassVar,
-    Generic,
-    TypeVar,
-    cast,
-    get_args,
-    get_origin,
-)
+from typing import TYPE_CHECKING, Any, ClassVar, TypeVar, cast, get_args, get_origin
 
 from rich.markup import escape
 from typing_extensions import dataclass_transform
@@ -34,6 +24,7 @@ from reflex import constants
 from reflex.compiler.templates import STATEFUL_COMPONENT
 from reflex.components.core.breakpoints import Breakpoints
 from reflex.components.dynamic import load_dynamic_serializer
+from reflex.components.field import BaseField, FieldBasedMeta
 from reflex.components.tags import Tag
 from reflex.constants import (
     Dirs,
@@ -53,6 +44,7 @@ from reflex.event import (
     EventSpec,
     no_args_event_spec,
     parse_args_spec,
+    pointer_event_spec,
     run_script,
     unwrap_var_annotation,
 )
@@ -75,7 +67,7 @@ from reflex.vars.sequence import LiteralArrayVar, LiteralStringVar, StringVar
 FIELD_TYPE = TypeVar("FIELD_TYPE")
 
 
-class ComponentField(Generic[FIELD_TYPE]):
+class ComponentField(BaseField[FIELD_TYPE]):
     """A field for a component."""
 
     def __init__(
@@ -93,30 +85,8 @@ class ComponentField(Generic[FIELD_TYPE]):
             is_javascript: Whether the field is a javascript property.
             annotated_type: The annotated type for the field.
         """
-        self.default = default
-        self.default_factory = default_factory
+        super().__init__(default, default_factory, annotated_type)
         self.is_javascript = is_javascript
-        self.outer_type_ = self.annotated_type = annotated_type
-        type_origin = get_origin(annotated_type) or annotated_type
-        if type_origin is Annotated:
-            type_origin = annotated_type.__origin__  # pyright: ignore [reportAttributeAccessIssue]
-        self.type_ = self.type_origin = type_origin
-
-    def default_value(self) -> FIELD_TYPE:
-        """Get the default value for the field.
-
-        Returns:
-            The default value for the field.
-
-        Raises:
-            ValueError: If no default value or factory is provided.
-        """
-        if self.default is not MISSING:
-            return self.default
-        if self.default_factory is not None:
-            return self.default_factory()
-        msg = "No default value or factory provided."
-        raise ValueError(msg)
 
     def __repr__(self) -> str:
         """Represent the field in a readable format.
@@ -163,7 +133,7 @@ def field(
 
 
 @dataclass_transform(kw_only_default=True, field_specifiers=(field,))
-class BaseComponentMeta(ABCMeta):
+class BaseComponentMeta(FieldBasedMeta, ABCMeta):
     """Meta class for BaseComponent."""
 
     if TYPE_CHECKING:
@@ -172,46 +142,24 @@ class BaseComponentMeta(ABCMeta):
         _fields: Mapping[str, ComponentField]
         _js_fields: Mapping[str, ComponentField]
 
-    def __new__(cls, name: str, bases: tuple[type], namespace: dict[str, Any]) -> type:
-        """Create a new class.
-
-        Args:
-            name: The name of the class.
-            bases: The bases of the class.
-            namespace: The namespace of the class.
-
-        Returns:
-            The new class.
-        """
-        # Add the field to the class
-        inherited_fields: dict[str, ComponentField] = {}
-        own_fields: dict[str, ComponentField] = {}
-        resolved_annotations = types.resolve_annotations(
+    @classmethod
+    def _resolve_annotations(
+        cls, namespace: dict[str, Any], name: str
+    ) -> dict[str, Any]:
+        return types.resolve_annotations(
             namespace.get("__annotations__", {}), namespace["__module__"]
         )
 
-        for base in bases[::-1]:
-            if hasattr(base, "_inherited_fields"):
-                inherited_fields.update(base._inherited_fields)
-        for base in bases[::-1]:
-            if hasattr(base, "_own_fields"):
-                inherited_fields.update(base._own_fields)
+    @classmethod
+    def _process_annotated_fields(
+        cls,
+        namespace: dict[str, Any],
+        annotations: dict[str, Any],
+        inherited_fields: dict[str, ComponentField],
+    ) -> dict[str, ComponentField]:
+        own_fields: dict[str, ComponentField] = {}
 
-        for key, value, inherited_field in [
-            (key, value, inherited_field)
-            for key, value in namespace.items()
-            if key not in resolved_annotations
-            and ((inherited_field := inherited_fields.get(key)) is not None)
-        ]:
-            new_value = ComponentField(
-                default=value,
-                is_javascript=inherited_field.is_javascript,
-                annotated_type=inherited_field.annotated_type,
-            )
-
-            own_fields[key] = new_value
-
-        for key, annotation in resolved_annotations.items():
+        for key, annotation in annotations.items():
             value = namespace.get(key, MISSING)
 
             if types.is_classvar(annotation):
@@ -244,16 +192,63 @@ class BaseComponentMeta(ABCMeta):
 
             own_fields[key] = value
 
-        namespace["_own_fields"] = own_fields
-        namespace["_inherited_fields"] = inherited_fields
-        all_fields = inherited_fields | own_fields
-        namespace["_fields"] = all_fields
+        return own_fields
+
+    @classmethod
+    def _create_field(
+        cls,
+        annotated_type: Any,
+        default: Any = MISSING,
+        default_factory: Callable[[], Any] | None = None,
+    ) -> ComponentField:
+        return ComponentField(
+            annotated_type=annotated_type,
+            default=default,
+            default_factory=default_factory,
+            is_javascript=True,  # Default for components
+        )
+
+    @classmethod
+    def _process_field_overrides(
+        cls,
+        namespace: dict[str, Any],
+        annotations: dict[str, Any],
+        inherited_fields: dict[str, Any],
+    ) -> dict[str, ComponentField]:
+        own_fields: dict[str, ComponentField] = {}
+
+        for key, value, inherited_field in [
+            (key, value, inherited_field)
+            for key, value in namespace.items()
+            if key not in annotations
+            and ((inherited_field := inherited_fields.get(key)) is not None)
+        ]:
+            new_field = ComponentField(
+                default=value,
+                is_javascript=inherited_field.is_javascript,
+                annotated_type=inherited_field.annotated_type,
+            )
+            own_fields[key] = new_field
+
+        return own_fields
+
+    @classmethod
+    def _finalize_fields(
+        cls,
+        namespace: dict[str, Any],
+        inherited_fields: dict[str, ComponentField],
+        own_fields: dict[str, ComponentField],
+    ) -> None:
+        # Call parent implementation
+        super()._finalize_fields(namespace, inherited_fields, own_fields)
+
+        # Add JavaScript fields mapping
+        all_fields = namespace["_fields"]
         namespace["_js_fields"] = {
             key: value
             for key, value in all_fields.items()
             if value.is_javascript is True
         }
-        return super().__new__(cls, name, bases, namespace)
 
 
 class BaseComponent(metaclass=BaseComponentMeta):
@@ -487,12 +482,12 @@ def _components_from(
     return ()
 
 
-DEFAULT_TRIGGERS: dict[str, types.ArgsSpec | Sequence[types.ArgsSpec]] = {
+DEFAULT_TRIGGERS: Mapping[str, types.ArgsSpec | Sequence[types.ArgsSpec]] = {
     EventTriggers.ON_FOCUS: no_args_event_spec,
     EventTriggers.ON_BLUR: no_args_event_spec,
-    EventTriggers.ON_CLICK: no_args_event_spec,
-    EventTriggers.ON_CONTEXT_MENU: no_args_event_spec,
-    EventTriggers.ON_DOUBLE_CLICK: no_args_event_spec,
+    EventTriggers.ON_CLICK: pointer_event_spec,  # pyright: ignore [reportAssignmentType]
+    EventTriggers.ON_CONTEXT_MENU: pointer_event_spec,  # pyright: ignore [reportAssignmentType]
+    EventTriggers.ON_DOUBLE_CLICK: pointer_event_spec,  # pyright: ignore [reportAssignmentType]
     EventTriggers.ON_MOUSE_DOWN: no_args_event_spec,
     EventTriggers.ON_MOUSE_ENTER: no_args_event_spec,
     EventTriggers.ON_MOUSE_LEAVE: no_args_event_spec,
@@ -501,6 +496,7 @@ DEFAULT_TRIGGERS: dict[str, types.ArgsSpec | Sequence[types.ArgsSpec]] = {
     EventTriggers.ON_MOUSE_OVER: no_args_event_spec,
     EventTriggers.ON_MOUSE_UP: no_args_event_spec,
     EventTriggers.ON_SCROLL: no_args_event_spec,
+    EventTriggers.ON_SCROLL_END: no_args_event_spec,
     EventTriggers.ON_MOUNT: no_args_event_spec,
     EventTriggers.ON_UNMOUNT: no_args_event_spec,
 }
@@ -880,7 +876,7 @@ class Component(BaseComponent, ABC):
             )
             for name, field in cls.get_fields().items()
             if field.type_origin is EventHandler
-        }
+        }  # pyright: ignore [reportOperatorIssue]
 
     def __repr__(self) -> str:
         """Represent the component in React.
@@ -2104,7 +2100,7 @@ class CustomComponent(Component):
                         annotation=arg._var_type,
                     )
                     for name, arg in zip(
-                        names, parse_args_spec(event.args_spec), strict=True
+                        names, parse_args_spec(event.args_spec)[0], strict=True
                     )
                 ]
             )
