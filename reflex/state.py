@@ -265,8 +265,9 @@ def get_var_for_field(cls: type[BaseState], name: str, f: Field) -> Var:
     Returns:
         The Var instance.
     """
-    name = name + "_rx_state_"
-    field_name = format.format_state_name(cls.get_full_name()) + "." + name
+    field_name = (
+        format.format_state_name(cls.get_full_name()) + "." + name + "_rx_state_"
+    )
 
     return dispatch(
         field_name=field_name,

@@ -2075,7 +2075,7 @@ async def test_state_proxy(
     assert mcall.args[0] == str(SocketEvent.EVENT)
     assert mcall.args[1] == StateUpdate(
         delta={
-            TestState.get_full_name(): {"router": router_data},
+            TestState.get_full_name(): {"router_rx_state_": router_data},
             grandchild_state.get_full_name(): {
                 "value2_rx_state_": "42",
             },
