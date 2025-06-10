@@ -85,7 +85,7 @@ def LifespanApp(
     app = rx.App(api_transformer=FastAPI() if mount_api_transformer else None)
 
     if mount_cached_fastapi:
-        assert app.api is not None
+        assert app._api is not None
 
     app.register_lifespan_task(lifespan_task)
     app.register_lifespan_task(lifespan_context, inc=2)

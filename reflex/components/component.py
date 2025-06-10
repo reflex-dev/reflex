@@ -666,16 +666,10 @@ class Component(BaseComponent, ABC):
         Args:
             **kwargs: The kwargs to pass to the component.
         """
-        super().__init__(
-            children=kwargs.get("children", []),
+        console.error(
+            "Instantiating components directly is not supported."
+            f" Use `{self.__class__.__name__}.create` method instead."
         )
-        console.deprecate(
-            "component-direct-instantiation",
-            reason="Use the `create` method instead.",
-            deprecation_version="0.7.2",
-            removal_version="0.8.0",
-        )
-        self._post_init(**kwargs)
 
     def _post_init(self, *args, **kwargs):
         """Initialize the component.

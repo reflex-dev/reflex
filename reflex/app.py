@@ -32,7 +32,6 @@ from starlette.middleware import cors
 from starlette.requests import ClientDisconnect, Request
 from starlette.responses import JSONResponse, Response, StreamingResponse
 from starlette.staticfiles import StaticFiles
-from typing_extensions import deprecated
 
 from reflex import constants
 from reflex.admin import AdminDash
@@ -338,9 +337,6 @@ class App(MiddlewareMixin, LifespanMixin):
         default=None
     )
 
-    # Error boundary component to wrap the app with.
-    error_boundary: ComponentCallable | None = dataclasses.field(default=None)
-
     # App wraps to be applied to the whole app. Expected to be a dictionary of (order, name) to a function that takes whether the state is enabled and optionally returns a component.
     app_wraps: dict[tuple[int, str], Callable[[bool], Component | None]] = (
         dataclasses.field(
@@ -425,24 +421,6 @@ class App(MiddlewareMixin, LifespanMixin):
 
     # FastAPI app for compatibility with FastAPI.
     _cached_fastapi_app: FastAPI | None = None
-
-    @property
-    @deprecated("Use `api_transformer=your_fastapi_app` instead.")
-    def api(self) -> FastAPI:
-        """Get the backend api.
-
-        Returns:
-            The backend api.
-        """
-        if self._cached_fastapi_app is None:
-            self._cached_fastapi_app = FastAPI()
-        console.deprecate(
-            feature_name="App.api",
-            reason="Set `api_transformer=your_fastapi_app` instead.",
-            deprecation_version="0.7.9",
-            removal_version="0.8.0",
-        )
-        return self._cached_fastapi_app
 
     @property
     def event_namespace(self) -> EventNamespace | None:
@@ -1273,17 +1251,6 @@ class App(MiddlewareMixin, LifespanMixin):
 
             # Add the app wrappers from this component.
             app_wrappers.update(component._get_all_app_wrap_components())
-
-        if self.error_boundary:
-            from reflex.compiler.compiler import into_component
-
-            console.deprecate(
-                feature_name="App.error_boundary",
-                reason="Use app_wraps instead.",
-                deprecation_version="0.7.1",
-                removal_version="0.8.0",
-            )
-            app_wrappers[(55, "ErrorBoundary")] = into_component(self.error_boundary)
 
         # Perform auto-memoization of stateful components.
         with console.timing("Auto-memoize StatefulComponents"):
