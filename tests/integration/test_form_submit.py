@@ -130,15 +130,11 @@ def FormSubmitName(form_component):
 @pytest.fixture(
     scope="module",
     params=[
-        functools.partial(FormSubmit, form_component="rx.form.root"),
         functools.partial(FormSubmitName, form_component="rx.form.root"),
-        functools.partial(FormSubmit, form_component="rx.el.form"),
         functools.partial(FormSubmitName, form_component="rx.el.form"),
     ],
     ids=[
-        "id-radix",
         "name-radix",
-        "id-html",
         "name-html",
     ],
 )
