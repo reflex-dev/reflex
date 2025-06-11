@@ -131,12 +131,12 @@ jobs:
         run: uv pip install $(grep -ivE "reflex " requirements.txt)
       - name: Init Website for reflex-web
         working-directory: ./reflex-web
-        run: uv run --no-sync reflex init
+        run: uv run --active --no-sync reflex init
       - name: Run Website and Check for errors
         run: |
           # Check that npm is home
           npm -v
-          uv run --no-sync bash scripts/integration.sh ./reflex-web prod
+          uv run --active --no-sync bash scripts/integration.sh ./reflex-web prod
 
   rx-shout-from-template:
     strategy:
@@ -195,9 +195,9 @@ jobs:
         run: uv pip install $(grep -ivE "reflex " requirements.txt)
       - name: Init Website for reflex-web
         working-directory: ./reflex-web
-        run: uv run --no-sync reflex init
+        run: uv run --active --no-sync reflex init
       - name: Run Website and Check for errors
         run: |
           # Check that npm is home
           npm -v
-          uv run --no-sync bash scripts/integration.sh ./reflex-web prod
+          uv run --active --no-sync bash scripts/integration.sh ./reflex-web prod
