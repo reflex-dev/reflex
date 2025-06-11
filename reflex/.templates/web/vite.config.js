@@ -13,7 +13,7 @@ export default defineConfig((config) => ({
     port: process.env.PORT,
   },
   experimental: {
-    enableNativePlugin: true,
+    enableNativePlugin: config.command === "build",
   },
   resolve: {
     mainFields: ["browser", "module", "jsnext"],
