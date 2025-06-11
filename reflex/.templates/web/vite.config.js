@@ -12,9 +12,6 @@ export default defineConfig((config) => ({
   server: {
     port: process.env.PORT,
   },
-  experimental: {
-    enableNativePlugin: config.command === "build",
-  },
   resolve: {
     mainFields: ["browser", "module", "jsnext"],
     alias: [
