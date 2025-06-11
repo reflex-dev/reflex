@@ -385,6 +385,9 @@ def get_reload_paths() -> Sequence[Path]:
 
     Returns:
         The reload paths for the backend.
+
+    Raises:
+        RuntimeError: If the `__init__.py` file is found in the app root directory.
     """
     config = get_config()
     reload_paths = [Path.cwd()]
