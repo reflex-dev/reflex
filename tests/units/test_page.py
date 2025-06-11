@@ -1,6 +1,6 @@
 from reflex import text
 from reflex.config import get_config
-from reflex.page import DECORATED_PAGES, get_decorated_pages, page
+from reflex.page import DECORATED_PAGES, page
 
 
 def test_page_decorator():
@@ -49,32 +49,3 @@ def test_page_decorator_with_kwargs():
     }
 
     DECORATED_PAGES.clear()
-
-
-def test_get_decorated_pages():
-    assert get_decorated_pages() == []
-
-    def foo_():
-        return text("foo")
-
-    page()(foo_)
-
-    assert get_decorated_pages() == []
-    assert get_decorated_pages(omit_implicit_routes=False) == [{}]
-
-    page(route="foo2")(foo_)
-
-    assert get_decorated_pages() == [{"route": "foo2"}]
-    assert get_decorated_pages(omit_implicit_routes=False) == [{}, {"route": "foo2"}]
-
-    page(route="foo3", title="Foo3")(foo_)
-
-    assert get_decorated_pages() == [
-        {"route": "foo2"},
-        {"route": "foo3", "title": "Foo3"},
-    ]
-    assert get_decorated_pages(omit_implicit_routes=False) == [
-        {},
-        {"route": "foo2"},
-        {"route": "foo3", "title": "Foo3"},
-    ]

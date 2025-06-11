@@ -500,74 +500,6 @@ def run_granian_backend(host: str, port: int, loglevel: LogLevel):
     ).serve()
 
 
-def _deprecate_asgi_config(
-    config_name: str,
-    reason: str = "",
-):
-    console.deprecate(
-        f"config.{config_name}",
-        reason=reason,
-        deprecation_version="0.7.9",
-        removal_version="0.8.0",
-    )
-
-
-@once
-def _get_backend_workers():
-    from reflex.utils import processes
-
-    config = get_config()
-
-    gunicorn_workers = config.gunicorn_workers or 0
-
-    if config.gunicorn_workers is not None:
-        _deprecate_asgi_config(
-            "gunicorn_workers",
-            "If you're using Granian, use GRANIAN_WORKERS instead.",
-        )
-
-    return gunicorn_workers if gunicorn_workers else processes.get_num_workers()
-
-
-@once
-def _get_backend_timeout():
-    config = get_config()
-
-    timeout = config.timeout or 120
-
-    if config.timeout is not None:
-        _deprecate_asgi_config(
-            "timeout",
-            "If you're using Granian, use GRANIAN_WORKERS_LIFETIME instead.",
-        )
-
-    return timeout
-
-
-@once
-def _get_backend_max_requests():
-    config = get_config()
-
-    gunicorn_max_requests = config.gunicorn_max_requests or 120
-
-    if config.gunicorn_max_requests is not None:
-        _deprecate_asgi_config("gunicorn_max_requests")
-
-    return gunicorn_max_requests
-
-
-@once
-def _get_backend_max_requests_jitter():
-    config = get_config()
-
-    gunicorn_max_requests_jitter = config.gunicorn_max_requests_jitter or 25
-
-    if config.gunicorn_max_requests_jitter is not None:
-        _deprecate_asgi_config("gunicorn_max_requests_jitter")
-
-    return gunicorn_max_requests_jitter
-
-
 def run_backend_prod(
     host: str,
     port: int,
@@ -601,72 +533,12 @@ def run_uvicorn_backend_prod(host: str, port: int, loglevel: LogLevel):
     """
     from reflex.utils import processes
 
-    config = get_config()
-
     app_module = get_app_instance()
 
     command = (
-        [
-            "uvicorn",
-            *(
-                (
-                    "--limit-max-requests",
-                    str(max_requessts),
-                )
-                if (
-                    (max_requessts := _get_backend_max_requests()) is not None
-                    and max_requessts > 0
-                )
-                else ()
-            ),
-            *(
-                ("--timeout-keep-alive", str(timeout))
-                if (timeout := _get_backend_timeout()) is not None
-                else ()
-            ),
-            *("--host", host),
-            *("--port", str(port)),
-            *("--workers", str(_get_backend_workers())),
-            "--factory",
-            app_module,
-        ]
+        ["uvicorn", *("--host", host), *("--port", str(port)), "--factory", app_module]
         if constants.IS_WINDOWS
-        else [
-            "gunicorn",
-            *("--worker-class", config.gunicorn_worker_class),
-            *(
-                (
-                    "--max-requests",
-                    str(max_requessts),
-                )
-                if (
-                    (max_requessts := _get_backend_max_requests()) is not None
-                    and max_requessts > 0
-                )
-                else ()
-            ),
-            *(
-                (
-                    "--max-requests-jitter",
-                    str(max_requessts_jitter),
-                )
-                if (
-                    (max_requessts_jitter := _get_backend_max_requests_jitter())
-                    is not None
-                    and max_requessts_jitter > 0
-                )
-                else ()
-            ),
-            "--preload",
-            *(
-                ("--timeout", str(timeout))
-                if (timeout := _get_backend_timeout()) is not None
-                else ()
-            ),
-            *("--bind", f"{host}:{port}"),
-            *("--threads", str(_get_backend_workers())),
-            f"{app_module}()",
-        ]
+        else ["gunicorn", "--preload", *("--bind", f"{host}:{port}"), f"{app_module}()"]
     )
 
     command += [
@@ -698,7 +570,6 @@ def run_granian_backend_prod(host: str, port: int, loglevel: LogLevel):
 
         command = [
             "granian",
-            *("--workers", str(_get_backend_workers())),
             *("--log-level", "critical"),
             *("--host", host),
             *("--port", str(port)),
