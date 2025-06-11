@@ -856,11 +856,24 @@ class App(MiddlewareMixin, LifespanMixin):
         route = route.lstrip("/").rstrip("/")
         if route == "":
             return self._load_events.get(constants.PageNames.INDEX_ROUTE, [])
-        parts = route.split("/")
+
+        # Separate the pages by route type.
+        static_page_paths_to_page_route = {}
+        dynamic_page_paths_to_page_route = {}
         for page_route in list(self._pages) + list(self._unevaluated_pages):
             page_path = page_route.lstrip("/").rstrip("/")
-            if page_path == route:
-                return self._load_events.get(page_route, [])
+            if "[" in page_path and "]" in page_path:
+                dynamic_page_paths_to_page_route[page_path] = page_route
+            else:
+                static_page_paths_to_page_route[page_path] = page_route
+
+        # Check for static routes.
+        if (page_route := static_page_paths_to_page_route.get(route)) is not None:
+            return self._load_events.get(page_route, [])
+
+        # Check for dynamic routes.
+        parts = route.split("/")
+        for page_path, page_route in dynamic_page_paths_to_page_route.items():
             page_parts = page_path.split("/")
             if len(page_parts) != len(parts):
                 continue

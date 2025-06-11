@@ -35,6 +35,11 @@ def DynamicRoute():
             self.order.append(page_data)
             return rx.redirect(f"/page/{query_params['page_id']}")
 
+        @rx.event
+        def on_load_static(self):
+            print("on_load_static")
+            self.order.append("on-load-static")
+
         @rx.var
         def next_page(self) -> str:
             try:
@@ -140,6 +145,7 @@ def DynamicRoute():
 
     app = rx.App()
     app.add_page(index, route="/page/[page_id]", on_load=DynamicState.on_load)
+    app.add_page(index, route="/page/static", on_load=DynamicState.on_load_static)
     app.add_page(index, route="/static/x", on_load=DynamicState.on_load)
     app.add_page(index)
     app.add_page(route="/404", on_load=DynamicState.on_load)
@@ -339,6 +345,12 @@ async def test_on_load_navigate(
     await poll_for_order(exp_order)
     # should have redirected back to page 0
     assert urlsplit(driver.current_url).path.removesuffix("/") == "/page/0"
+
+    # hit a static route that would also match the dynamic route
+    exp_order += ["on-load-static"]
+    with poll_for_navigation(driver):
+        driver.get(f"{frontend_url}/page/static")
+    await poll_for_order(exp_order)
 
 
 @pytest.mark.asyncio
