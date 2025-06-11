@@ -23,6 +23,10 @@ export default defineConfig((config) => ({
         find: "@",
         replacement: fileURLToPath(new URL("./public", import.meta.url)),
       },
-    ],
+    ].concat(
+      config.command === "build"
+        ? [{ find: "react-dom/server", replacement: "react-dom/server.node" }]
+        : []
+    ),
   },
 }));
