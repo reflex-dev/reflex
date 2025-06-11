@@ -13,7 +13,7 @@ import io
 import json
 import sys
 import traceback
-from collections.abc import AsyncIterator, Callable, Coroutine, Sequence
+from collections.abc import AsyncIterator, Callable, Coroutine, Mapping, Sequence
 from datetime import datetime
 from pathlib import Path
 from timeit import default_timer as timer
@@ -291,8 +291,8 @@ class UnevaluatedPage:
     description: Var | str | None
     image: str
     on_load: EventType[()] | None
-    meta: list[dict[str, str]]
-    context: dict[str, Any] | None
+    meta: Sequence[Mapping[str, str]]
+    context: Mapping[str, Any]
 
     def merged_with(self, other: UnevaluatedPage) -> UnevaluatedPage:
         """Merge the other page into this one.
@@ -821,7 +821,7 @@ class App(MiddlewareMixin, LifespanMixin):
             image=image,
             on_load=on_load,
             meta=meta,
-            context=context,
+            context=context or {},
         )
 
         if route in self._unevaluated_pages:
@@ -1457,6 +1457,7 @@ class App(MiddlewareMixin, LifespanMixin):
                             )
                         )
                     ),
+                    unevaluated_pages=list(self._unevaluated_pages.values()),
                 )
 
             # Wait for all compilation tasks to complete.

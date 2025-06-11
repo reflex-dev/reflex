@@ -289,13 +289,14 @@ def samefile(file1: Path, file2: Path) -> bool:
     return False
 
 
-def update_directory_tree(src: Path, dest: Path):
+def update_directory_tree(src: Path, dest: Path, ignore: tuple[str, ...] | None = None):
     """Recursively copies a directory tree from src to dest.
     Only copies files if the destination file is missing or modified earlier than the source file.
 
     Args:
         src: Source directory
         dest: Destination directory
+        ignore: Ignoring files and directories that match one of the glob-style patterns provided
 
     Raises:
         ValueError: If the source is not a directory

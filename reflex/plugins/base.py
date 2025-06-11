@@ -2,9 +2,12 @@
 
 from collections.abc import Callable, Sequence
 from pathlib import Path
-from typing import ParamSpec, Protocol, TypedDict
+from typing import TYPE_CHECKING, ParamSpec, Protocol, TypedDict
 
 from typing_extensions import Unpack
+
+if TYPE_CHECKING:
+    from reflex.app import UnevaluatedPage
 
 
 class CommonContext(TypedDict):
@@ -38,6 +41,7 @@ class PreCompileContext(CommonContext):
 
     add_save_task: AddTaskProtcol
     add_modify_task: Callable[[str, Callable[[str], str]], None]
+    unevaluated_pages: Sequence["UnevaluatedPage"]
 
 
 class Plugin:

@@ -194,14 +194,6 @@ def setup_frontend(
     Args:
         root: The root path of the project.
     """
-    # Create the assets dir if it doesn't exist.
-    path_ops.mkdir(constants.Dirs.APP_ASSETS)
-    path_ops.copy_tree(
-        src=str(root / constants.Dirs.APP_ASSETS),
-        dest=str(root / prerequisites.get_web_dir() / constants.Dirs.PUBLIC),
-        ignore=tuple(f"*.{ext}" for ext in constants.Reflex.STYLESHEETS_SUPPORTED),
-    )
-
     # Set the environment variables in client (env.json).
     set_env_json()
 
