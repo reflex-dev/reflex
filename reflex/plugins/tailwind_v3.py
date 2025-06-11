@@ -1,12 +1,16 @@
 """Base class for all plugins."""
 
+import dataclasses
 from pathlib import Path
 from types import SimpleNamespace
 
 from reflex.constants.base import Dirs
 from reflex.constants.compiler import Ext, PageNames
-from reflex.plugins.base import Plugin as PluginBase
-from reflex.utils.decorator import once
+from reflex.plugins.shared_tailwind import (
+    TailwindConfig,
+    TailwindPlugin,
+    tailwind_config_js_template,
+)
 
 
 class Constants(SimpleNamespace):
@@ -35,90 +39,7 @@ class Constants(SimpleNamespace):
     TAILWIND_CSS = "@import url('./tailwind.css');"
 
 
-@once
-def tailwind_config_js_template():
-    """Get the Tailwind config template.
-
-    Returns:
-        The Tailwind config template.
-    """
-    from reflex.compiler.templates import from_string
-
-    source = r"""
-{# Helper macro to render JS objects and arrays #}
-{% macro render_js(val, indent=2, level=0) -%}
-{%- set space = ' ' * (indent * level) -%}
-{%- set next_space = ' ' * (indent * (level + 1)) -%}
-
-{%- if val is mapping -%}
-{
-{%- for k, v in val.items() %}
-{{ next_space }}{{ k if k is string and k.isidentifier() else k|tojson }}: {{ render_js(v, indent, level + 1) }}{{ "," if not loop.last }}
-{%- endfor %}
-{{ space }}}
-{%- elif val is iterable and val is not string -%}
-[
-{%- for item in val %}
-{{ next_space }}{{ render_js(item, indent, level + 1) }}{{ "," if not loop.last }}
-{%- endfor %}
-{{ space }}]
-{%- else -%}
-{{ val | tojson }}
-{%- endif -%}
-{%- endmacro %}
-
-{# Extract destructured imports from plugin dicts only #}
-{%- set imports = [] %}
-{%- for plugin in plugins if plugin is mapping and plugin.import is defined %}
-  {%- set _ = imports.append(plugin.import) %}
-{%- endfor %}
-
-/** @type {import('tailwindcss').Config} */
-{%- for imp in imports %}
-const { {{ imp.name }} } = require({{ imp.from | tojson }});
-{%- endfor %}
-
-module.exports = {
-  content: {{ render_js(content) }},
-  theme: {{ render_js(theme) }},
-  {% if darkMode is defined %}darkMode: {{ darkMode | tojson }},{% endif %}
-  {% if corePlugins is defined %}corePlugins: {{ render_js(corePlugins) }},{% endif %}
-  {% if important is defined %}important: {{ important | tojson }},{% endif %}
-  {% if prefix is defined %}prefix: {{ prefix | tojson }},{% endif %}
-  {% if separator is defined %}separator: {{ separator | tojson }},{% endif %}
-  {% if presets is defined %}
-  presets: [
-    {% for preset in presets %}
-    require({{ preset | tojson }}){{ "," if not loop.last }}
-    {% endfor %}
-  ],
-  {% endif %}
-  plugins: [
-    {% for plugin in plugins %}
-      {% if plugin is mapping %}
-        {% if plugin.call is defined %}
-          {{ plugin.call }}(
-            {%- if plugin.args is defined -%}
-              {{ render_js(plugin.args) }}
-            {%- endif -%}
-          ){{ "," if not loop.last }}
-        {% else %}
-          require({{ plugin.name | tojson }}){{ "," if not loop.last }}
-        {% endif %}
-      {% else %}
-        require({{ plugin | tojson }}){{ "," if not loop.last }}
-      {% endif %}
-    {% endfor %}
-  ]
-};
-"""
-
-    return from_string(source)
-
-
-def compile_config(
-    config: dict,
-):
+def compile_config(config: TailwindConfig):
     """Compile the Tailwind config.
 
     Args:
@@ -129,6 +50,7 @@ def compile_config(
     """
     return Constants.CONFIG, tailwind_config_js_template().render(
         **config,
+        DEFAULT_CONTENT=Constants.CONTENT,
     )
 
 
@@ -215,7 +137,8 @@ def add_tailwind_to_css_file(css_file_content: str) -> str:
     )
 
 
-class Plugin(PluginBase):
+@dataclasses.dataclass
+class TailwindV3Plugin(TailwindPlugin):
     """Plugin for Tailwind CSS."""
 
     def get_frontend_development_dependencies(self, **context) -> list[str]:
@@ -227,12 +150,9 @@ class Plugin(PluginBase):
         Returns:
             A list of packages required by the plugin.
         """
-        from reflex.config import get_config
-
-        config = get_config()
         return [
             plugin if isinstance(plugin, str) else plugin.get("name")
-            for plugin in (config.tailwind or {}).get("plugins", [])
+            for plugin in self.get_config().get("plugins", [])
         ] + [Constants.VERSION]
 
     def pre_compile(self, **context):
@@ -241,23 +161,10 @@ class Plugin(PluginBase):
         Args:
             context: The context for the plugin.
         """
-        from reflex.config import get_config
-
-        config = get_config().tailwind or {}
-
-        config["content"] = config.get("content", Constants.CONTENT)
-        context["add_save_task"](compile_config, config)
+        context["add_save_task"](compile_config, self.get_config())
         context["add_save_task"](compile_root_style)
         context["add_modify_task"](Dirs.POSTCSS_JS, add_tailwind_to_postcss_config)
         context["add_modify_task"](
             str(Path(Dirs.STYLES) / (PageNames.STYLESHEET_ROOT + Ext.CSS)),
             add_tailwind_to_css_file,
         )
-
-    def __repr__(self):
-        """Return a string representation of the plugin.
-
-        Returns:
-            A string representation of the plugin.
-        """
-        return "TailwindV3Plugin()"
