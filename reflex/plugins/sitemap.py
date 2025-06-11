@@ -52,7 +52,18 @@ class Constants(SimpleNamespace):
 def configuration_with_loc(
     *, config: SitemapLinkConfiguration, deploy_url: str | None, loc: Location
 ) -> SitemapLink:
-    """Set the 'loc' field of the configuration."""
+    """Set the 'loc' field of the configuration.
+
+    Args:
+        config: The configuration dictionary.
+        deploy_url: The deployment URL, if any.
+        loc: The location to set.
+
+    Returns:
+        A SitemapLink dictionary with the 'loc' field set.
+    """
+    if deploy_url and not loc.startswith("http://") and not loc.startswith("https://"):
+        loc = f"{deploy_url.rstrip('/')}/{loc.lstrip('/')}"
     link: SitemapLink = {"loc": loc}
     if (lastmod := config.get("lastmod")) is not None:
         link["lastmod"] = lastmod
