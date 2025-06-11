@@ -249,9 +249,6 @@ class Config(Base):
     # List of origins that are allowed to connect to the backend API.
     cors_allowed_origins: list[str] = ["*"]
 
-    # Tailwind config.
-    tailwind: dict[str, Any] | None = {"plugins": ["@tailwindcss/typography"]}
-
     # Whether to use React strict mode.
     react_strict_mode: bool = True
 
