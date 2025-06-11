@@ -187,14 +187,17 @@ jobs:
           repository: reflex-dev/reflex-web
           ref: main
           path: reflex-web
+      - name: Compile pyproject.toml into requirements.txt
+        working-directory: ./reflex-web
+        run: uv pip compile pyproject.toml --no-annotate --no-header --no-deps --output-file requirements.txt
       - name: Install Requirements for reflex-web
         working-directory: ./reflex-web
-        run: uv pip install -r requirements.txt
+        run: uv pip install $(grep -ivE "reflex " requirements.txt)
       - name: Init Website for reflex-web
         working-directory: ./reflex-web
-        run: uv run reflex init
+        run: uv run --no-sync reflex init
       - name: Run Website and Check for errors
         run: |
           # Check that npm is home
           npm -v
-          uv run bash scripts/integration.sh ./reflex-web prod
+          uv run --no-sync bash scripts/integration.sh ./reflex-web prod
