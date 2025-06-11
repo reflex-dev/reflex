@@ -1,6 +1,8 @@
 """Tailwind CSS configuration types for Reflex plugins."""
 
-from typing import Any, Literal, NotRequired, TypedDict
+from typing import Any, Literal, TypedDict
+
+from typing_extensions import NotRequired
 
 from reflex.utils.decorator import once
 
