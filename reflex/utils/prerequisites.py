@@ -1044,7 +1044,6 @@ def _compile_package_json():
         scripts={
             "dev": constants.PackageJson.Commands.DEV,
             "export": constants.PackageJson.Commands.EXPORT,
-            "export_sitemap": constants.PackageJson.Commands.EXPORT_SITEMAP,
             "prod": constants.PackageJson.Commands.PROD,
         },
         dependencies=constants.PackageJson.DEPENDENCIES,

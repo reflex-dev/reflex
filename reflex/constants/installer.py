@@ -118,7 +118,6 @@ class PackageJson(SimpleNamespace):
 
         DEV = "vite dev"
         EXPORT = "vite build && vite build --ssr"
-        EXPORT_SITEMAP = EXPORT
         PROD = "serve ./build/client"
 
     PATH = "package.json"
