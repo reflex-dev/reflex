@@ -391,11 +391,20 @@ def get_reload_paths() -> Sequence[Path]:
     if (spec := importlib.util.find_spec(config.module)) is not None and spec.origin:
         module_path = Path(spec.origin).resolve().parent
 
-        while (
-            module_path.parent.name
-            and _has_child_file(module_path, "__init__.py")
-            and not _has_child_file(module_path, "rxconfig.py")
-        ):
+        while module_path.parent.name and _has_child_file(module_path, "__init__.py"):
+            if _has_child_file(module_path, "rxconfig.py"):
+                init_file = module_path / "__init__.py"
+                init_file_content = init_file.read_text()
+                if init_file_content.strip():
+                    msg = "There should not be an `__init__.py` file in your app root directory"
+                    raise RuntimeError(msg)
+                console.warn(
+                    "Removing `__init__.py` file in the app root directory. "
+                    "This file can cause issues with module imports. "
+                )
+                init_file.unlink()
+                break
+
             # go up a level to find dir without `__init__.py` or with `rxconfig.py`
             module_path = module_path.parent
 
