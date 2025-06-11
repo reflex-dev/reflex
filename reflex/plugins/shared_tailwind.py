@@ -1,10 +1,13 @@
 """Tailwind CSS configuration types for Reflex plugins."""
 
+import dataclasses
 from typing import Any, Literal, TypedDict
 
 from typing_extensions import NotRequired
 
 from reflex.utils.decorator import once
+
+from .base import Plugin as PluginBase
 
 TailwindPluginImport = TypedDict(
     "TailwindPluginImport",
@@ -111,3 +114,37 @@ module.exports = {
 """
 
     return from_string(source)
+
+
+@dataclasses.dataclass
+class TailwindPlugin(PluginBase):
+    """Plugin for Tailwind CSS."""
+
+    config: TailwindConfig = dataclasses.field(
+        default_factory=lambda: TailwindConfig(
+            plugins=[
+                "@tailwindcss/typography",
+            ],
+        )
+    )
+
+    def get_config(self) -> TailwindConfig:
+        """Get the Tailwind CSS configuration.
+
+        Returns:
+            The Tailwind CSS configuration.
+        """
+        from reflex.config import get_config
+
+        rxconfig_config = getattr(get_config(), "tailwind", None)
+
+        if rxconfig_config is not None and rxconfig_config != self.config:
+            from reflex.utils import console
+
+            console.warn(
+                "It seems you have provided a tailwind configuration in your call to `rx.Config`."
+                f" You should provide the configuration as an argument to `rx.plugins.{self.__class__.__name__}()` instead."
+            )
+            return rxconfig_config
+
+        return self.config

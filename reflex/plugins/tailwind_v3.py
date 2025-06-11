@@ -6,8 +6,11 @@ from types import SimpleNamespace
 
 from reflex.constants.base import Dirs
 from reflex.constants.compiler import Ext, PageNames
-from reflex.plugins.base import Plugin as PluginBase
-from reflex.plugins.shared_tailwind import TailwindConfig, tailwind_config_js_template
+from reflex.plugins.shared_tailwind import (
+    TailwindConfig,
+    TailwindPlugin,
+    tailwind_config_js_template,
+)
 
 
 class Constants(SimpleNamespace):
@@ -135,31 +138,8 @@ def add_tailwind_to_css_file(css_file_content: str) -> str:
 
 
 @dataclasses.dataclass
-class Plugin(PluginBase):
+class TailwindV3Plugin(TailwindPlugin):
     """Plugin for Tailwind CSS."""
-
-    config: TailwindConfig = dataclasses.field(
-        default_factory=lambda: TailwindConfig(
-            plugins=[
-                "@tailwindcss/typography",
-            ],
-        )
-    )
-
-    def get_config(self) -> TailwindConfig:
-        """Get the Tailwind CSS configuration.
-
-        Returns:
-            The Tailwind CSS configuration.
-        """
-        from reflex.config import get_config
-
-        rxconfig_config = getattr(get_config(), "tailwind", None)
-
-        if rxconfig_config is not None and rxconfig_config != self.config:
-            return rxconfig_config
-
-        return self.config
 
     def get_frontend_development_dependencies(self, **context) -> list[str]:
         """Get the packages required by the plugin.
@@ -188,11 +168,3 @@ class Plugin(PluginBase):
             str(Path(Dirs.STYLES) / (PageNames.STYLESHEET_ROOT + Ext.CSS)),
             add_tailwind_to_css_file,
         )
-
-    def __repr__(self):
-        """Return a string representation of the plugin.
-
-        Returns:
-            A string representation of the plugin.
-        """
-        return "TailwindV3Plugin()"
