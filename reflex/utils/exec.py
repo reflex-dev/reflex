@@ -367,6 +367,19 @@ def run_backend(
         run_uvicorn_backend(host, port, loglevel)
 
 
+def _has_child_file(directory: Path, file_name: str) -> bool:
+    """Check if a directory has a child file with the given name.
+
+    Args:
+        directory: The directory to check.
+        file_name: The name of the file to look for.
+
+    Returns:
+        True if the directory has a child file with the given name, False otherwise.
+    """
+    return any(child_file.name == file_name for child_file in directory.iterdir())
+
+
 def get_reload_paths() -> Sequence[Path]:
     """Get the reload paths for the backend.
 
@@ -378,10 +391,12 @@ def get_reload_paths() -> Sequence[Path]:
     if (spec := importlib.util.find_spec(config.module)) is not None and spec.origin:
         module_path = Path(spec.origin).resolve().parent
 
-        while module_path.parent.name and any(
-            sibling_file.name == "__init__.py" for sibling_file in module_path.iterdir()
+        while (
+            module_path.parent.name
+            and _has_child_file(module_path, "__init__.py")
+            and not _has_child_file(module_path, "rxconfig.py")
         ):
-            # go up a level to find dir without `__init__.py`
+            # go up a level to find dir without `__init__.py` or with `rxconfig.py`
             module_path = module_path.parent
 
         reload_paths = [module_path]
