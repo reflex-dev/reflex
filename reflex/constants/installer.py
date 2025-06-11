@@ -156,8 +156,7 @@ class PackageJson(SimpleNamespace):
         "postcss-import": "16.1.0",
         "@react-router/dev": _react_router_version,
         "@react-router/fs-routes": _react_router_version,
-        "vite-plugin-node-polyfills": "0.23.0",
-        "vite": "6.2.6",
+        "vite": "npm:rolldown-vite@latest",
     }
     OVERRIDES = {
         # This should always match the `react` version in DEPENDENCIES for recharts compatibility.
