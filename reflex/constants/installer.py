@@ -116,8 +116,8 @@ class PackageJson(SimpleNamespace):
     class Commands(SimpleNamespace):
         """The commands to define in package.json."""
 
-        DEV = "react-router dev"
-        EXPORT = "react-router build"
+        DEV = "vite dev"
+        EXPORT = "vite build"
         EXPORT_SITEMAP = EXPORT
         PROD = "serve ./build/client"
 
