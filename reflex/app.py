@@ -32,7 +32,6 @@ from starlette.middleware import cors
 from starlette.requests import ClientDisconnect, Request
 from starlette.responses import JSONResponse, Response, StreamingResponse
 from starlette.staticfiles import StaticFiles
-from typing_extensions import deprecated
 
 from reflex import constants
 from reflex.admin import AdminDash
@@ -246,8 +245,6 @@ class UploadFile(StarletteUploadFile):
 
     path: Path | None = dataclasses.field(default=None)
 
-    _deprecated_filename: str | None = dataclasses.field(default=None)
-
     size: int | None = dataclasses.field(default=None)
 
     headers: Headers = dataclasses.field(default_factory=Headers)
@@ -262,21 +259,6 @@ class UploadFile(StarletteUploadFile):
         if self.path:
             return self.path.name
         return None
-
-    @property
-    def filename(self) -> str | None:
-        """Get the filename of the uploaded file.
-
-        Returns:
-            The filename of the uploaded file.
-        """
-        console.deprecate(
-            feature_name="UploadFile.filename",
-            reason="Use UploadFile.name instead.",
-            deprecation_version="0.7.1",
-            removal_version="0.8.0",
-        )
-        return self._deprecated_filename
 
 
 @dataclasses.dataclass(
@@ -354,9 +336,6 @@ class App(MiddlewareMixin, LifespanMixin):
     overlay_component: Component | ComponentCallable | None = dataclasses.field(
         default=None
     )
-
-    # Error boundary component to wrap the app with.
-    error_boundary: ComponentCallable | None = dataclasses.field(default=None)
 
     # App wraps to be applied to the whole app. Expected to be a dictionary of (order, name) to a function that takes whether the state is enabled and optionally returns a component.
     app_wraps: dict[tuple[int, str], Callable[[bool], Component | None]] = (
@@ -442,24 +421,6 @@ class App(MiddlewareMixin, LifespanMixin):
 
     # FastAPI app for compatibility with FastAPI.
     _cached_fastapi_app: FastAPI | None = None
-
-    @property
-    @deprecated("Use `api_transformer=your_fastapi_app` instead.")
-    def api(self) -> FastAPI:
-        """Get the backend api.
-
-        Returns:
-            The backend api.
-        """
-        if self._cached_fastapi_app is None:
-            self._cached_fastapi_app = FastAPI()
-        console.deprecate(
-            feature_name="App.api",
-            reason="Set `api_transformer=your_fastapi_app` instead.",
-            deprecation_version="0.7.9",
-            removal_version="0.8.0",
-        )
-        return self._cached_fastapi_app
 
     @property
     def event_namespace(self) -> EventNamespace | None:
@@ -954,44 +915,6 @@ class App(MiddlewareMixin, LifespanMixin):
                     # info1 will break away into its own tree.
                     break
 
-    def add_custom_404_page(
-        self,
-        component: Component | ComponentCallable | None = None,
-        title: str = constants.Page404.TITLE,
-        image: str = constants.Page404.IMAGE,
-        description: str = constants.Page404.DESCRIPTION,
-        on_load: EventType[()] | None = None,
-        meta: list[dict[str, str]] = constants.DefaultPage.META_LIST,
-    ):
-        """Define a custom 404 page for any url having no match.
-
-        If there is no page defined on 'index' route, add the 404 page to it.
-        If there is no global catchall defined, add the 404 page with a catchall.
-
-        Args:
-            component: The component to display at the page.
-            title: The title of the page.
-            image: The image to display on the page.
-            description: The description of the page.
-            on_load: The event handler(s) that will be called each time the page load.
-            meta: The metadata of the page.
-        """
-        console.deprecate(
-            feature_name="App.add_custom_404_page",
-            reason=f"Use app.add_page(component, route='/{constants.Page404.SLUG}') instead.",
-            deprecation_version="0.6.7",
-            removal_version="0.8.0",
-        )
-        self.add_page(
-            component=component,
-            route=constants.Page404.SLUG,
-            title=title or constants.Page404.TITLE,
-            image=image or constants.Page404.IMAGE,
-            description=description or constants.Page404.DESCRIPTION,
-            on_load=on_load,
-            meta=meta,
-        )
-
     def _setup_admin_dash(self):
         """Setup the admin dash."""
         try:
@@ -1344,17 +1267,6 @@ class App(MiddlewareMixin, LifespanMixin):
 
             # Add the app wrappers from this component.
             app_wrappers.update(component._get_all_app_wrap_components())
-
-        if self.error_boundary:
-            from reflex.compiler.compiler import into_component
-
-            console.deprecate(
-                feature_name="App.error_boundary",
-                reason="Use app_wraps instead.",
-                deprecation_version="0.7.1",
-                removal_version="0.8.0",
-            )
-            app_wrappers[(55, "ErrorBoundary")] = into_component(self.error_boundary)
 
         # Perform auto-memoization of stateful components.
         with console.timing("Auto-memoize StatefulComponents"):
@@ -1983,7 +1895,6 @@ def upload(app: App):
                 UploadFile(
                     file=content_copy,
                     path=Path(file.filename.lstrip("/")) if file.filename else None,
-                    _deprecated_filename=file.filename,
                     size=file.size,
                     headers=file.headers,
                 )

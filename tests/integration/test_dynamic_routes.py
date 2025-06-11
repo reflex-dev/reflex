@@ -142,7 +142,7 @@ def DynamicRoute():
     app.add_page(index, route="/page/[page_id]", on_load=DynamicState.on_load)
     app.add_page(index, route="/static/x", on_load=DynamicState.on_load)
     app.add_page(index)
-    app.add_custom_404_page(on_load=DynamicState.on_load)
+    app.add_page(route="/404", on_load=DynamicState.on_load)
 
 
 @pytest.fixture(scope="module")

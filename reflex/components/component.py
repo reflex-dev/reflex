@@ -452,12 +452,9 @@ def satisfies_type_hint(obj: Any, type_hint: Any) -> bool:
             if not isinstance(obj, Var)
             else (obj._var_value if isinstance(obj, LiteralVar) else obj)
         )
-        console.deprecate(
-            "implicit-none-for-component-fields",
-            reason="Passing Vars with possible None values to component fields not explicitly marked as Optional is deprecated. "
-            + f"Passed {obj!s} of type {escape(str(type(obj) if not isinstance(obj, Var) else obj._var_type))} to {escape(str(type_hint))}.",
-            deprecation_version="0.7.2",
-            removal_version="0.8.0",
+        console.warn(
+            "Passing None to a Var that is not explicitly marked as Optional (| None) is deprecated. "
+            f"Passed {obj!s} of type {escape(str(type(obj) if not isinstance(obj, Var) else obj._var_type))} to {escape(str(type_hint))}."
         )
         return True
     return False
@@ -677,16 +674,10 @@ class Component(BaseComponent, ABC):
         Args:
             **kwargs: The kwargs to pass to the component.
         """
-        super().__init__(
-            children=kwargs.get("children", []),
+        console.error(
+            "Instantiating components directly is not supported."
+            f" Use `{self.__class__.__name__}.create` method instead."
         )
-        console.deprecate(
-            "component-direct-instantiation",
-            reason="Use the `create` method instead.",
-            deprecation_version="0.7.2",
-            removal_version="0.8.0",
-        )
-        self._post_init(**kwargs)
 
     def _post_init(self, *args, **kwargs):
         """Initialize the component.
