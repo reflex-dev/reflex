@@ -26,7 +26,7 @@ export default defineConfig((config) => ({
     ].concat(
       config.command === "build"
         ? [{ find: "react-dom/server", replacement: "react-dom/server.node" }]
-        : []
+        : [],
     ),
   },
 }));
