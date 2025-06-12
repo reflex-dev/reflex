@@ -28,7 +28,6 @@ from urllib.parse import urlparse
 
 import click
 import httpx
-from alembic.util.exc import CommandError
 from packaging import version
 from redis import Redis as RedisSync
 from redis.asyncio import Redis
@@ -1612,6 +1611,8 @@ def check_db_initialized() -> bool:
 
 def check_schema_up_to_date():
     """Check if the sqlmodel metadata matches the current database schema."""
+    from alembic.util.exc import CommandError
+
     if get_config().db_url is None or not environment.ALEMBIC_CONFIG.get().exists():
         return
     with model.Model.get_db_engine().connect() as connection:

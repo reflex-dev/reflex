@@ -6,6 +6,7 @@ import collections.abc
 import dataclasses
 import typing
 from collections.abc import Mapping
+from importlib.util import find_spec
 from inspect import isclass
 from typing import (
     Any,
@@ -75,7 +76,15 @@ def _determine_value_type(var_type: GenericType):
     return Any
 
 
-class ObjectVar(Var[OBJECT_TYPE], python_types=Mapping):
+PYTHON_TYPES = (Mapping,)
+if find_spec("pydantic"):
+    import pydantic
+    import pydantic.v1
+
+    PYTHON_TYPES += (pydantic.BaseModel, pydantic.v1.BaseModel)
+
+
+class ObjectVar(Var[OBJECT_TYPE], python_types=PYTHON_TYPES):
     """Base class for immutable object vars."""
 
     def _key_type(self) -> type:

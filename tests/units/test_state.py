@@ -2808,7 +2808,7 @@ def test_set_base_field_via_setter():
     assert "c1" not in bfss.dirty_vars
 
     # Mutating function from Base, dirty
-    bfss.c1.set(foo="bar")
+    bfss.c1.foo = "bar"
     assert "c1" in bfss.dirty_vars
     bfss.dirty_vars.clear()
     assert "c1" not in bfss.dirty_vars
@@ -2818,7 +2818,7 @@ def test_set_base_field_via_setter():
     assert isinstance(mp, MutableProxy)
     mp2 = mp.set()
     assert mp is mp2
-    mp3 = bfss.c1.set()
+    mp3 = bfss.c1
     assert mp is not mp3
     # Since none of these set calls had values, the state should not be dirty
     assert not bfss.dirty_vars

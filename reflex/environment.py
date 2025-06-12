@@ -24,6 +24,7 @@ from typing import (
 )
 
 from reflex import constants
+from reflex.constants.base import LogLevel
 from reflex.utils.exceptions import EnvironmentVarValueError
 from reflex.utils.types import GenericType, is_union, value_inside_optional
 
@@ -162,6 +163,7 @@ def interpret_env_var_value(
 
     Raises:
         ValueError: If the value is invalid.
+        EnvironmentVarValueError: If the value is invalid for the specific type.
     """
     field_type = value_inside_optional(field_type)
 
@@ -173,6 +175,12 @@ def interpret_env_var_value(
         return interpret_boolean_env(value, field_name)
     if field_type is str:
         return value
+    if field_type is LogLevel:
+        loglevel = LogLevel.from_string(value)
+        if loglevel is None:
+            msg = f"Invalid log level value: {value} for {field_name}"
+            raise EnvironmentVarValueError(msg)
+        return loglevel
     if field_type is int:
         return interpret_int_env(value, field_name)
     if field_type is Path:

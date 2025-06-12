@@ -2,6 +2,7 @@ from dataclasses import dataclass
 from typing import cast
 
 import pytest
+from pydantic import BaseModel
 
 import reflex as rx
 
@@ -213,7 +214,7 @@ def side_bar():
     )
 
 
-class NestedElement(rx.Base):
+class NestedElement(BaseModel):
     """A nested element."""
 
     identifier: str

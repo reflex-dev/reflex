@@ -2,11 +2,11 @@
 
 from __future__ import annotations
 
+import dataclasses
 from collections.abc import Mapping, Sequence
 from enum import Enum
 from typing import Any, Literal, TypedDict
 
-from reflex.base import Base
 from reflex.components.component import Component, NoSSRComponent
 from reflex.components.literals import LiteralRowMarker
 from reflex.event import EventHandler, no_args_event_spec, passthrough_event_spec
@@ -50,7 +50,8 @@ class GridColumnIcons(Enum):
     VideoUri = "video_uri"
 
 
-class DataEditorTheme(Base):
+@dataclasses.dataclass
+class DataEditorTheme:
     """The theme for the DataEditor component."""
 
     accent_color: str | None = None

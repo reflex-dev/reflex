@@ -23,7 +23,7 @@
   "reflex/components/core/upload.pyi": "90039579d573a7aa887d40889ced6154",
   "reflex/components/datadisplay/__init__.pyi": "cf087efa8b3960decc6b231cc986cfa9",
   "reflex/components/datadisplay/code.pyi": "735a3bc0693e5c9bcb52af072aa10bd7",
-  "reflex/components/datadisplay/dataeditor.pyi": "82ff9fcac9209b8edabe9798f3d3bd9f",
+  "reflex/components/datadisplay/dataeditor.pyi": "cfdb99a776d9b3ed2ccb20d80d1b584a",
   "reflex/components/datadisplay/shiki_code_block.pyi": "ecbb5e9d66023204ae2c23cc3f6a640c",
   "reflex/components/el/__init__.pyi": "f07f5957ca4dc3d95ffdc2ddb75fe2f8",
   "reflex/components/el/element.pyi": "3519fdc9a74aab7b02f475568def5f95",
@@ -119,5 +119,5 @@
   "reflex/components/recharts/general.pyi": "e992c57e3df1dc47b6a544c535d87319",
   "reflex/components/recharts/polar.pyi": "cb74280e343562f52f087973eff27389",
   "reflex/components/recharts/recharts.pyi": "2ab851e1b2cb63ae690e89144319a02c",
-  "reflex/components/sonner/toast.pyi": "1681a04ee927febbe7b015dc224ba00b"
+  "reflex/components/sonner/toast.pyi": "ad14cd7173596a689b3c9f7bf55f5ff7"
 }

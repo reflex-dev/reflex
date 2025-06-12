@@ -78,7 +78,6 @@ from reflex.event import (
     IndividualEventType,
     get_hydrate_event,
 )
-from reflex.model import Model, get_db_status
 from reflex.page import DECORATED_PAGES
 from reflex.route import (
     get_route_args,
@@ -904,6 +903,8 @@ class App(MiddlewareMixin, LifespanMixin):
         try:
             from starlette_admin.contrib.sqla.admin import Admin
             from starlette_admin.contrib.sqla.view import ModelView
+
+            from reflex.model import Model
         except ImportError:
             return
 
@@ -1763,6 +1764,8 @@ async def health(_request: Request) -> JSONResponse:
     tasks = []
 
     if prerequisites.check_db_used():
+        from reflex.model import get_db_status
+
         tasks.append(get_db_status())
     if prerequisites.check_redis_used():
         tasks.append(prerequisites.get_redis_status())

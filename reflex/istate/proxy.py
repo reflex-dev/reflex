@@ -9,13 +9,11 @@ import functools
 import inspect
 import json
 from collections.abc import Callable, Sequence
+from importlib.util import find_spec
 from types import MethodType
 from typing import TYPE_CHECKING, Any, SupportsIndex, TypeVar
 
-import pydantic
 import wrapt
-from pydantic import BaseModel as BaseModelV2
-from pydantic.v1 import BaseModel as BaseModelV1
 from sqlalchemy.orm import DeclarativeBase
 
 from reflex.base import Base
@@ -341,6 +339,30 @@ class ReadOnlyStateProxy(StateProxy):
         raise NotImplementedError(msg)
 
 
+if find_spec("pydantic"):
+    import pydantic
+
+    NEVRER_WRAP_BASE_ATTRS = set(Base.__dict__) - {"set"} | set(
+        pydantic.BaseModel.__dict__
+    )
+else:
+    NEVRER_WRAP_BASE_ATTRS = {}
+
+MUTABLE_TYPES = (
+    list,
+    dict,
+    set,
+    Base,
+    DeclarativeBase,
+)
+
+if find_spec("pydantic"):
+    from pydantic import BaseModel as BaseModelV2
+    from pydantic.v1 import BaseModel as BaseModelV1
+
+    MUTABLE_TYPES += (BaseModelV1, BaseModelV2)
+
+
 class MutableProxy(wrapt.ObjectProxy):
     """A proxy for a mutable object that tracks changes."""
 
@@ -372,22 +394,6 @@ class MutableProxy(wrapt.ObjectProxy):
         "get",
         "setdefault",
     }
-
-    # These internal attributes on rx.Base should NOT be wrapped in a MutableProxy.
-    __never_wrap_base_attrs__ = set(Base.__dict__) - {"set"} | set(
-        pydantic.BaseModel.__dict__
-    )
-
-    # These types will be wrapped in MutableProxy
-    __mutable_types__ = (
-        list,
-        dict,
-        set,
-        Base,
-        DeclarativeBase,
-        BaseModelV2,
-        BaseModelV1,
-    )
 
     # Dynamically generated classes for tracking dataclass mutations.
     __dataclass_proxies__: dict[type, type] = {}
@@ -479,7 +485,7 @@ class MutableProxy(wrapt.ObjectProxy):
         Returns:
             Whether the value is of a mutable type.
         """
-        return isinstance(value, cls.__mutable_types__) or (
+        return isinstance(value, MUTABLE_TYPES) or (
             dataclasses.is_dataclass(value) and not isinstance(value, Var)
         )
 
@@ -566,7 +572,7 @@ class MutableProxy(wrapt.ObjectProxy):
 
             if (
                 isinstance(self.__wrapped__, Base)
-                and __name not in self.__never_wrap_base_attrs__
+                and __name not in NEVRER_WRAP_BASE_ATTRS
                 and hasattr(value, "__func__")
             ):
                 # Wrap methods called on Base subclasses, which might do _anything_

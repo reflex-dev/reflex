@@ -2,6 +2,7 @@
 
 import contextlib
 import sys
+from importlib.util import find_spec
 from typing import Any
 
 
@@ -71,8 +72,9 @@ def pydantic_v1_patch():
                     del sys.modules[k]
 
 
-with pydantic_v1_patch():
-    import sqlmodel as sqlmodel
+if find_spec("pydantic"):
+    with pydantic_v1_patch():
+        import sqlmodel as sqlmodel
 
 
 def sqlmodel_field_has_primary_key(field: Any) -> bool:
