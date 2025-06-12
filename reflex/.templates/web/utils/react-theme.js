@@ -74,6 +74,7 @@ export function ThemeProvider({ children, defaultTheme = "system" }) {
     const root = window.document.documentElement;
     root.classList.remove("light", "dark");
     root.classList.add(resolvedTheme);
+    root.style.colorScheme = resolvedTheme;
   }, [resolvedTheme]);
 
   return createElement(
