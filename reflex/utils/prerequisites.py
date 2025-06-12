@@ -566,13 +566,11 @@ def compile_or_validate_app(
 
         import traceback
 
-        sys_exception = sys.exception()
-
         try:
             colorize = _can_colorize()
             traceback.print_exception(e, colorize=colorize)  # pyright: ignore[reportCallIssue]
         except Exception:
-            traceback.print_exception(sys_exception)
+            traceback.print_exception(e)
         return False
     return True
 
@@ -1611,11 +1609,11 @@ def check_db_initialized() -> bool:
 
 def check_schema_up_to_date():
     """Check if the sqlmodel metadata matches the current database schema."""
-    from alembic.util.exc import CommandError
-
     if get_config().db_url is None or not environment.ALEMBIC_CONFIG.get().exists():
         return
     with model.Model.get_db_engine().connect() as connection:
+        from alembic.util.exc import CommandError
+
         try:
             if model.Model.alembic_autogenerate(
                 connection=connection,

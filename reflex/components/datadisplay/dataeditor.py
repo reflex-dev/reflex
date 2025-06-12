@@ -51,7 +51,7 @@ class GridColumnIcons(Enum):
 
 
 @dataclasses.dataclass
-class DataEditorTheme:
+class DataEditorThemeBase:
     """The theme for the DataEditor component."""
 
     accent_color: str | None = None
@@ -86,6 +86,16 @@ class DataEditorTheme:
     text_header_selected: str | None = None
     text_light: str | None = None
     text_medium: str | None = None
+
+
+@dataclasses.dataclass(init=False)
+class DataEditorTheme(DataEditorThemeBase):
+    """The theme for the DataEditor component."""
+
+    def __init__(self, **kwargs: Any):
+        """Initialize the DataEditorTheme."""
+        kwargs = {format.to_snake_case(k): v for k, v in kwargs.items()}
+        super().__init__(**kwargs)
 
 
 class Bounds(TypedDict):
