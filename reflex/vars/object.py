@@ -472,32 +472,19 @@ class LiteralObjectVar(CachedVarOperation, ObjectVar[OBJECT_TYPE], LiteralVar):
             TypeError: If the value is not a mapping type or a dataclass.
         """
         if not isinstance(_var_value, collections.abc.Mapping):
-            if dataclasses.is_dataclass(_var_value):
-                dict_value = dataclasses.asdict(_var_value)
-                return LiteralObjectVar(
-                    _js_expr="",
-                    _var_type=(type(_var_value) if _var_type is None else _var_type),
-                    _var_data=_var_data,
-                    _var_value=dict_value,
-                )
+            from reflex.utils.serializers import serialize
 
-            if find_spec("pydantic"):
-                import pydantic
-                import pydantic.v1
+            serialized = serialize(_var_value, get_type=False)
+            if not isinstance(serialized, collections.abc.Mapping):
+                msg = f"Expected a mapping type or a dataclass, got {_var_value!r} of type {type(_var_value).__name__}."
+                raise TypeError(msg)
 
-                if isinstance(_var_value, (pydantic.BaseModel, pydantic.v1.BaseModel)):
-                    dict_value = _var_value.dict()
-                    return LiteralObjectVar(
-                        _js_expr="",
-                        _var_type=(
-                            type(_var_value) if _var_type is None else _var_type
-                        ),
-                        _var_data=_var_data,
-                        _var_value=dict_value,
-                    )
-
-            msg = f"Expected a mapping type for LiteralObjectVar, got {_var_value!r}."
-            raise TypeError(msg)
+            return LiteralObjectVar(
+                _js_expr="",
+                _var_type=(type(_var_value) if _var_type is None else _var_type),
+                _var_data=_var_data,
+                _var_value=serialized,
+            )
 
         return LiteralObjectVar(
             _js_expr="",
