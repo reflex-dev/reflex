@@ -93,7 +93,11 @@ class DataEditorTheme(DataEditorThemeBase):
     """The theme for the DataEditor component."""
 
     def __init__(self, **kwargs: Any):
-        """Initialize the DataEditorTheme."""
+        """Initialize the DataEditorTheme.
+
+        Args:
+            **kwargs: The keyword arguments to initialize the theme.
+        """
         kwargs = {format.to_snake_case(k): v for k, v in kwargs.items()}
         super().__init__(**kwargs)
 
