@@ -14,7 +14,6 @@ from types import MethodType
 from typing import TYPE_CHECKING, Any, SupportsIndex, TypeVar
 
 import wrapt
-from sqlalchemy.orm import DeclarativeBase
 
 from reflex.base import Base
 from reflex.utils import prerequisites
@@ -353,8 +352,12 @@ MUTABLE_TYPES = (
     dict,
     set,
     Base,
-    DeclarativeBase,
 )
+
+if find_spec("sqlalchemy"):
+    from sqlalchemy.orm import DeclarativeBase
+
+    MUTABLE_TYPES += (DeclarativeBase,)
 
 if find_spec("pydantic"):
     from pydantic import BaseModel as BaseModelV2
