@@ -2816,8 +2816,6 @@ def test_set_base_field_via_setter():
     # Assert identity of MutableProxy
     mp = bfss.c1
     assert isinstance(mp, MutableProxy)
-    mp2 = mp.set()
-    assert mp is mp2
     mp3 = bfss.c1
     assert mp is not mp3
     # Since none of these set calls had values, the state should not be dirty

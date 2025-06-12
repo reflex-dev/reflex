@@ -1549,6 +1549,7 @@ db = [
 
 [package.dev-dependencies]
 dev = [
+    { name = "alembic" },
     { name = "asynctest" },
     { name = "darglint" },
     { name = "dill" },
@@ -1561,6 +1562,7 @@ dev = [
     { name = "plotly" },
     { name = "pre-commit" },
     { name = "psycopg", extra = ["binary"] },
+    { name = "pydantic" },
     { name = "pyright" },
     { name = "pytest" },
     { name = "pytest-asyncio" },
@@ -1574,6 +1576,7 @@ dev = [
     { name = "python-dotenv" },
     { name = "ruff" },
     { name = "selenium" },
+    { name = "sqlmodel" },
     { name = "starlette-admin" },
     { name = "toml" },
     { name = "uvicorn" },
@@ -1604,6 +1607,7 @@ provides-extras = ["db"]
 
 [package.metadata.requires-dev]
 dev = [
+    { name = "alembic", specifier = ">=1.15.2,<2.0" },
     { name = "asynctest", specifier = ">=0.13" },
     { name = "darglint", specifier = ">=1.8" },
     { name = "dill", specifier = ">=0.3" },
@@ -1616,6 +1620,7 @@ dev = [
     { name = "plotly", specifier = ">=6.0" },
     { name = "pre-commit", specifier = "==4.2.0" },
     { name = "psycopg", extras = ["binary"], specifier = ">=3.2" },
+    { name = "pydantic", specifier = ">=1.10.21,<3.0" },
     { name = "pyright", specifier = ">=1.1.400" },
     { name = "pytest", specifier = ">=8.3" },
     { name = "pytest-asyncio", specifier = ">=0.26" },
@@ -1629,6 +1634,7 @@ dev = [
     { name = "python-dotenv", specifier = ">=1" },
     { name = "ruff", specifier = ">=0.11" },
     { name = "selenium", specifier = ">=4.31" },
+    { name = "sqlmodel", specifier = ">=0.0.24,<0.1" },
     { name = "starlette-admin", specifier = ">=0.14" },
     { name = "toml", specifier = ">=0.10.2" },
     { name = "uvicorn", specifier = ">=0.34.0" },

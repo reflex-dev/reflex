@@ -467,7 +467,38 @@ class LiteralObjectVar(CachedVarOperation, ObjectVar[OBJECT_TYPE], LiteralVar):
 
         Returns:
             The literal object var.
+
+        Raises:
+            TypeError: If the value is not a mapping type or a dataclass.
         """
+        if not isinstance(_var_value, collections.abc.Mapping):
+            if dataclasses.is_dataclass(_var_value):
+                dict_value = dataclasses.asdict(_var_value)
+                return LiteralObjectVar(
+                    _js_expr="",
+                    _var_type=(type(_var_value) if _var_type is None else _var_type),
+                    _var_data=_var_data,
+                    _var_value=dict_value,
+                )
+
+            if find_spec("pydantic"):
+                import pydantic
+                import pydantic.v1
+
+                if isinstance(_var_value, (pydantic.BaseModel, pydantic.v1.BaseModel)):
+                    dict_value = _var_value.dict()
+                    return LiteralObjectVar(
+                        _js_expr="",
+                        _var_type=(
+                            type(_var_value) if _var_type is None else _var_type
+                        ),
+                        _var_data=_var_data,
+                        _var_value=dict_value,
+                    )
+
+            msg = f"Expected a mapping type for LiteralObjectVar, got {_var_value!r}."
+            raise TypeError(msg)
+
         return LiteralObjectVar(
             _js_expr="",
             _var_type=(figure_out_type(_var_value) if _var_type is None else _var_type),

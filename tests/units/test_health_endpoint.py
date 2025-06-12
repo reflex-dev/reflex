@@ -123,7 +123,7 @@ async def test_health(
         return_value=redis_enabled,
     )
     mocker.patch(
-        "reflex.app.get_db_status",
+        "reflex.model.get_db_status",
         return_value={"db": db_status},
     )
     mocker.patch(
