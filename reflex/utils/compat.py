@@ -72,7 +72,7 @@ def pydantic_v1_patch():
                     del sys.modules[k]
 
 
-if find_spec("pydantic"):
+if find_spec("pydantic") and find_spec("sqlmodel"):
     with pydantic_v1_patch():
         import sqlmodel as sqlmodel
 
