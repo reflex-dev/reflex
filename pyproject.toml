@@ -158,6 +158,7 @@ ignore-words-list = "te, TreeE"
 
 [dependency-groups]
 dev = [
+  "alembic >=1.15.2,<2.0",
   "asynctest >=0.13",
   "darglint >=1.8",
   "dill >=0.3",
@@ -170,6 +171,7 @@ dev = [
   "plotly >=6.0",
   "pre-commit ==4.2.0",
   "psycopg[binary] >=3.2",
+  "pydantic >=1.10.21,<3.0",
   "pyright >=1.1.400",
   "pytest >=8.3",
   "pytest-asyncio >=0.26",
@@ -184,6 +186,7 @@ dev = [
   "ruff >=0.11",
   "selenium >=4.31",
   "starlette-admin >=0.14",
+  "sqlmodel >=0.0.24,<0.1",
   "toml >=0.10.2",
   "uvicorn >=0.34.0",
 ]
