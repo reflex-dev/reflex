@@ -66,7 +66,10 @@ else:
             Raises:
                 ImportError: As Pydantic is not installed.
             """
-            msg = "Pydantic is not installed. Please install it to use rx.Base."
+            msg = (
+                "Pydantic is not installed. Please install it to use rx.Base."
+                "You can install it with `pip install pydantic`."
+            )
             raise ImportError(msg)
 
     Base = PydanticNotFoundFallback  # pyright: ignore[reportAssignmentType]

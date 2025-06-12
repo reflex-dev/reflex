@@ -342,11 +342,11 @@ class ReadOnlyStateProxy(StateProxy):
 if find_spec("pydantic"):
     import pydantic
 
-    NEVRER_WRAP_BASE_ATTRS = set(Base.__dict__) - {"set"} | set(
+    NEVER_WRAP_BASE_ATTRS = set(Base.__dict__) - {"set"} | set(
         pydantic.BaseModel.__dict__
     )
 else:
-    NEVRER_WRAP_BASE_ATTRS = {}
+    NEVER_WRAP_BASE_ATTRS = {}
 
 MUTABLE_TYPES = (
     list,
@@ -572,7 +572,7 @@ class MutableProxy(wrapt.ObjectProxy):
 
             if (
                 isinstance(self.__wrapped__, Base)
-                and __name not in NEVRER_WRAP_BASE_ATTRS
+                and __name not in NEVER_WRAP_BASE_ATTRS
                 and hasattr(value, "__func__")
             ):
                 # Wrap methods called on Base subclasses, which might do _anything_

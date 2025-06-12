@@ -78,7 +78,7 @@ if find_spec("pydantic"):
 
 
 def sqlmodel_field_has_primary_key(field: Any) -> bool:
-    """Determines if a field is a priamary.
+    """Determines if a field is a primary.
 
     Args:
         field: a rx.model field
