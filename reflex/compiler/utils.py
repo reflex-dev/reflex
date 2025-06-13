@@ -346,9 +346,18 @@ def create_document_root(
     Returns:
         The document root.
     """
-    head_components = head_components or [
-        Meta.create(char_set="utf-8"),
-        Meta.create(name="viewport", content="width=device-width, initial-scale=1"),
+    head_components = [
+        *(
+            head_components
+            or [
+                # Default meta tags if user does not provide.
+                Meta.create(char_set="utf-8"),
+                Meta.create(
+                    name="viewport", content="width=device-width, initial-scale=1"
+                ),
+            ]
+        ),
+        # Always include the framework meta and link tags.
         ReactMeta.create(),
         Links.create(),
     ]
