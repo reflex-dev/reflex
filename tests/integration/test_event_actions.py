@@ -95,13 +95,13 @@ def TestEventAction():
             ),
             rx.link(
                 "Link",
-                href="#",
+                href="?link",
                 on_click=EventActionState.on_click("link_no_event_actions"),  # pyright: ignore [reportCallIssue]
                 id="link",
             ),
             rx.link(
                 "Link Stop Propagation",
-                href="#",
+                href="?link-stop-propagation",
                 on_click=EventActionState.on_click(  # pyright: ignore [reportCallIssue]
                     "link_stop_propagation"
                 ).stop_propagation,
