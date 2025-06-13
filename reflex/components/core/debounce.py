@@ -23,6 +23,7 @@ class DebounceInput(Component):
 
     library = "react-debounce-input@3.3.0"
     tag = "DebounceInput"
+    is_default = True
 
     # Minimum input characters before triggering the on_change event
     min_length: Var[int]

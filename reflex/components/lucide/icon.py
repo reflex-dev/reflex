@@ -96,7 +96,9 @@ class DynamicIcon(LucideIconComponent):
         _imports = super()._get_imports()
         if self.library:
             _imports.pop(self.library)
-        _imports["lucide-react"] = [ImportVar("DynamicIcon", package_path="/dynamic")]
+        _imports["lucide-react"] = [
+            ImportVar("DynamicIcon", package_path="/dynamic.mjs")
+        ]
         return _imports
 
 

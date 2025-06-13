@@ -30,7 +30,6 @@ bundled_libraries = [
     "react",
     "@radix-ui/themes",
     "@emotion/react",
-    "next/link",
     f"$/{constants.Dirs.UTILS}/context",
     f"$/{constants.Dirs.UTILS}/state",
     f"$/{constants.Dirs.UTILS}/components",
