@@ -475,7 +475,7 @@ class EnvironmentVariables:
     # Whether to use the system installed bun. If set to false, bun will be bundled with the app.
     REFLEX_USE_SYSTEM_BUN: EnvVar[bool] = env_var(False)
 
-    # The working directory for the next.js commands.
+    # The working directory for the frontend directory.
     REFLEX_WEB_WORKDIR: EnvVar[Path] = env_var(Path(constants.Dirs.WEB))
 
     # The working directory for the states directory.

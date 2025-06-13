@@ -1,5 +1,6 @@
-import { createContext, useContext, useMemo, useReducer, useState, createElement } from "react"
-import { applyDelta, Event, hydrateClientStorage, useEventLoop, refs } from "$/utils/state.js"
+import { createContext, useContext, useMemo, useReducer, useState, createElement, useEffect } from "react"
+import { applyDelta, Event, hydrateClientStorage, useEventLoop, refs } from "$/utils/state"
+import { jsx } from "@emotion/react";
 
 {% if initial_state %}
 export const initialState = {{ initial_state|json_dumps }}
@@ -77,7 +78,21 @@ export function UploadFilesProvider({ children }) {
     delete newFilesById[id]
     return newFilesById
   })
-  return createElement(UploadFilesContext, {value:[filesById, setFilesById]}, children);
+  return createElement(
+    UploadFilesContext.Provider,
+    { value: [filesById, setFilesById] },
+    children
+  );
+}
+
+export function ClientSide(component) {
+  return ({ children, ...props }) => {
+    const [Component, setComponent] = useState(null);
+    useEffect(() => {
+      setComponent(component);
+    }, []);
+    return Component ? jsx(Component, props, children) : null;
+  };
 }
 
 export function EventLoopProvider({ children }) {
@@ -87,7 +102,11 @@ export function EventLoopProvider({ children }) {
     initialEvents,
     clientStorage,
   )
-  return createElement(EventLoopContext, {value:[addEvents, connectErrors]}, children);
+  return createElement(
+    EventLoopContext.Provider,
+    { value: [addEvents, connectErrors] },
+    children
+  );
 }
 
 export function StateProvider({ children }) {
@@ -106,7 +125,7 @@ export function StateProvider({ children }) {
     {% for state_name in initial_state %}
     createElement(StateContexts.{{state_name|var_name}},{value: {{state_name|var_name}}},
     {% endfor %}
-    createElement(DispatchContext.Provider, {value: dispatchers}, children),
-    {% for state_name in initial_state|reverse %}){% endfor %}
+    createElement(DispatchContext, {value: dispatchers}, children)
+    {% for state_name in initial_state %}){% endfor %}
   )
 }

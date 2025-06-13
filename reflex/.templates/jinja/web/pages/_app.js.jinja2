@@ -6,8 +6,10 @@ import '$/styles/__reflex_global_styles.css'
 {% endblock %}
 
 {% block declaration %}
-import { EventLoopProvider, StateProvider, defaultColorMode } from "$/utils/context.js";
-import { ThemeProvider } from 'next-themes'
+import { EventLoopProvider, StateProvider, defaultColorMode } from "$/utils/context";
+import { ThemeProvider } from '$/utils/react-theme';
+import { Layout as AppLayout } from './_document';
+import { Outlet } from 'react-router';
 {% for library_alias, library_path in  window_libraries %}
 import * as {{library_alias}} from "{{library_path}}";
 {% endfor %}
@@ -26,8 +28,9 @@ function AppWrap({children}) {
   )
 }
 
-export default function MyApp({ Component, pageProps }) {
-  React.useEffect(() => {
+
+export function Layout({children}) {
+    React.useEffect(() => {
     // Make contexts and state objects available globally for dynamic eval'd components
     let windowImports = {
 {% for library_alias, library_path in  window_libraries %}
@@ -36,17 +39,20 @@ export default function MyApp({ Component, pageProps }) {
     };
     window["__reflex"] = windowImports;
   }, []);
-  return (
-    jsx(ThemeProvider, {defaultTheme:defaultColorMode,attribute:"class"},
+
+  return jsx(AppLayout, {},
+    jsx(ThemeProvider, {defaultTheme: defaultColorMode, attribute: "class"},
       jsx(StateProvider, {},
-        jsx(EventLoopProvider, {}, 
-          jsx(AppWrap, {},
-            jsx(Component, pageProps)
-          )
+        jsx(EventLoopProvider, {},
+          jsx(AppWrap, {}, children)
         )
       )
     )
   );
+}
+
+export default function App() {
+  return jsx(Outlet, {});
 }
 
 {% endblock %}

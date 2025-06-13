@@ -12,19 +12,13 @@ from typing import Any
 from urllib.parse import urlparse
 
 from reflex import constants
-from reflex.components.base import (
-    Body,
-    Description,
-    DocumentHead,
-    Head,
-    Html,
-    Image,
-    Main,
-    Meta,
-    NextScript,
-    Title,
-)
+from reflex.components.base import Description, Image, Scripts
+from reflex.components.base.document import Links, ScrollRestoration
+from reflex.components.base.document import Meta as ReactMeta
 from reflex.components.component import Component, ComponentStyle, CustomComponent
+from reflex.components.el.elements.metadata import Head, Meta, Title
+from reflex.components.el.elements.other import Html
+from reflex.components.el.elements.sectioning import Body
 from reflex.istate.storage import Cookie, LocalStorage, SessionStorage
 from reflex.state import BaseState, _resolve_delta
 from reflex.style import Style
@@ -318,6 +312,8 @@ def compile_custom_component(
         if lib != component.library
     }
 
+    imports.setdefault("@emotion/react", []).append(ImportVar("jsx"))
+
     # Concatenate the props.
     props = list(component.props)
 
@@ -350,12 +346,27 @@ def create_document_root(
     Returns:
         The document root.
     """
-    head_components = head_components or []
+    head_components = [
+        *(
+            head_components
+            or [
+                # Default meta tags if user does not provide.
+                Meta.create(char_set="utf-8"),
+                Meta.create(
+                    name="viewport", content="width=device-width, initial-scale=1"
+                ),
+            ]
+        ),
+        # Always include the framework meta and link tags.
+        ReactMeta.create(),
+        Links.create(),
+    ]
     return Html.create(
-        DocumentHead.create(*head_components),
+        Head.create(*head_components),
         Body.create(
-            Main.create(),
-            NextScript.create(),
+            Var("children"),
+            ScrollRestoration.create(),
+            Scripts.create(),
         ),
         lang=html_lang or "en",
         custom_attrs=html_custom_attrs or {},
@@ -389,6 +400,21 @@ def create_theme(style: ComponentStyle) -> dict:
     return {"styles": {"global": root_style}}
 
 
+def _format_route_part(part: str) -> str:
+    if part.startswith("[") and part.endswith("]"):
+        return f"${part}_"
+    return "[" + part + "]_"
+
+
+def _path_to_file_stem(path: str) -> str:
+    if path == "index":
+        return "_index"
+    path = path if path != "index" else "/"
+    return (
+        ".".join([_format_route_part(part) for part in path.split("/")]) + "._index"
+    ).lstrip(".")
+
+
 def get_page_path(path: str) -> str:
     """Get the path of the compiled JS file for the given page.
 
@@ -398,7 +424,12 @@ def get_page_path(path: str) -> str:
     Returns:
         The path of the compiled JS file.
     """
-    return str(get_web_dir() / constants.Dirs.PAGES / (path + constants.Ext.JS))
+    return str(
+        get_web_dir()
+        / constants.Dirs.PAGES
+        / constants.Dirs.ROUTES
+        / (_path_to_file_stem(path) + constants.Ext.JS)
+    )
 
 
 def get_theme_path() -> str:
@@ -490,12 +521,8 @@ def add_meta(
         children.append(Description.create(content=description))
     children.append(Image.create(content=image))
 
-    page.children.append(
-        Head.create(
-            *children,
-            *meta_tags,
-        )
-    )
+    page.children.extend(children)
+    page.children.extend(meta_tags)
 
     return page
 

@@ -65,7 +65,9 @@ def test_large_state(var_count: int, tmp_path_factory, benchmark):
         driver = get_driver(large_state)
         try:
             assert large_state.app_instance is not None
-            button = driver.find_element(By.ID, "button")
+            button = large_state.poll_for_result(
+                lambda: driver.find_element(By.ID, "button")
+            )
 
             t = time.time()
             while button.text != "0":
