@@ -22,7 +22,7 @@ from reflex.environment import EnvVar as EnvVar
 from reflex.environment import ExistingPath, interpret_env_var_value
 from reflex.environment import env_var as env_var
 from reflex.environment import environment as environment
-from reflex.plugins import Plugin, TailwindV3Plugin, TailwindV4Plugin
+from reflex.plugins import Plugin
 from reflex.utils import console
 from reflex.utils.exceptions import ConfigError
 from reflex.utils.types import true_type_for_pydantic_field
@@ -53,19 +53,7 @@ def _load_dotenv_from_str(env_files: str) -> None:
 
 def _load_dotenv_from_env():
     """Load environment variables from paths specified in REFLEX_ENV_FILE."""
-    show_deprecation = False
     env_env_file = os.environ.get("REFLEX_ENV_FILE")
-    if not env_env_file:
-        env_env_file = os.environ.get("ENV_FILE")
-        if env_env_file:
-            show_deprecation = True
-    if show_deprecation:
-        console.deprecate(
-            "Usage of deprecated ENV_FILE env var detected.",
-            reason="Prefer `REFLEX_` prefix when setting env vars.",
-            deprecation_version="0.7.13",
-            removal_version="0.8.0",
-        )
     if env_env_file:
         _load_dotenv_from_str(env_env_file)
 
@@ -261,35 +249,11 @@ class Config(Base):
     # List of origins that are allowed to connect to the backend API.
     cors_allowed_origins: list[str] = ["*"]
 
-    # Tailwind config.
-    tailwind: dict[str, Any] | None = {"plugins": ["@tailwindcss/typography"]}
-
-    # DEPRECATED. Timeout when launching the gunicorn server.
-    timeout: int | None = None
-
-    # Whether to enable or disable nextJS gzip compression.
-    next_compression: bool = True
-
-    # Whether to enable or disable NextJS dev indicator.
-    next_dev_indicators: bool = False
-
-    # Whether to use React strict mode in nextJS
+    # Whether to use React strict mode.
     react_strict_mode: bool = True
 
     # Additional frontend packages to install.
     frontend_packages: list[str] = []
-
-    # DEPRECATED. The worker class used in production mode
-    gunicorn_worker_class: str = "uvicorn.workers.UvicornH11Worker"
-
-    # DEPRECATED. Number of gunicorn workers from user
-    gunicorn_workers: int | None = None
-
-    # DEPRECATED. Number of requests before a worker is restarted; set to 0 to disable
-    gunicorn_max_requests: int | None = None
-
-    # DEPRECATED. Variance limit for max requests; gunicorn only
-    gunicorn_max_requests_jitter: int | None = None
 
     # Indicate which type of state manager to use
     state_manager_mode: constants.StateManagerMode = constants.StateManagerMode.DISK
@@ -339,24 +303,11 @@ class Config(Base):
         super().__init__(*args, **kwargs)
 
         # Clean up this code when we remove plain envvar in 0.8.0
-        show_deprecation = False
         env_loglevel = os.environ.get("REFLEX_LOGLEVEL")
-        if not env_loglevel:
-            env_loglevel = os.environ.get("LOGLEVEL")
-            if env_loglevel:
-                show_deprecation = True
         if env_loglevel is not None:
             env_loglevel = LogLevel(env_loglevel.lower())
         if env_loglevel or self.loglevel != LogLevel.DEFAULT:
             console.set_log_level(env_loglevel or self.loglevel)
-
-        if show_deprecation:
-            console.deprecate(
-                "Usage of deprecated LOGLEVEL env var detected.",
-                reason="Prefer `REFLEX_` prefix when setting env vars.",
-                deprecation_version="0.7.13",
-                removal_version="0.8.0",
-            )
 
         # Update the config from environment variables.
         env_kwargs = self.update_from_env()
@@ -367,23 +318,6 @@ class Config(Base):
         kwargs.update(env_kwargs)
         self._non_default_attributes.update(kwargs)
         self._replace_defaults(**kwargs)
-
-        if self.tailwind is not None and not any(
-            isinstance(plugin, (TailwindV3Plugin, TailwindV4Plugin))
-            for plugin in self.plugins
-        ):
-            console.deprecate(
-                "Inferring tailwind usage",
-                reason="""
-
-If you are using tailwind, add `rx.plugins.TailwindV3Plugin()` to the `plugins=[]` in rxconfig.py.
-
-If you are not using tailwind, set `tailwind` to `None` in rxconfig.py.""",
-                deprecation_version="0.7.13",
-                removal_version="0.8.0",
-                dedupe=True,
-            )
-            self.plugins.append(TailwindV3Plugin())
 
         if (
             self.state_manager_mode == constants.StateManagerMode.REDIS
@@ -430,18 +364,10 @@ If you are not using tailwind, set `tailwind` to `None` in rxconfig.py.""",
         # Iterate over the fields.
         for key, field in self.__fields__.items():
             # The env var name is the key in uppercase.
+            environment_variable = None
             for prefix in self._prefixes:
                 if environment_variable := os.environ.get(f"{prefix}{key.upper()}"):
                     break
-            else:
-                # Default to non-prefixed env var if other are not found.
-                if environment_variable := os.environ.get(key.upper()):
-                    console.deprecate(
-                        f"Usage of deprecated {key.upper()} env var detected.",
-                        reason=f"Prefer `{self._prefixes[0]}` prefix when setting env vars.",
-                        deprecation_version="0.7.13",
-                        removal_version="0.8.0",
-                    )
 
             # If the env var is set, override the config value.
             if environment_variable and environment_variable.strip():

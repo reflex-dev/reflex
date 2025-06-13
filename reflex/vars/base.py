@@ -43,7 +43,7 @@ from typing import (  # noqa: UP035
 )
 
 from rich.markup import escape
-from typing_extensions import dataclass_transform, deprecated, override
+from typing_extensions import dataclass_transform, override
 
 from reflex import constants
 from reflex.base import Base
@@ -421,26 +421,6 @@ class Var(Generic[VAR_TYPE], metaclass=MetaclassVar):
         return False
 
     @property
-    @deprecated("Use `_js_expr` instead.")
-    def _var_name(self) -> str:
-        """The name of the var.
-
-        Returns:
-            The name of the var.
-        """
-        return self._js_expr
-
-    @property
-    @deprecated("Use `_js_expr` instead.")
-    def _var_name_unwrapped(self) -> str:
-        """The name of the var without extra curly braces.
-
-        Returns:
-            The name of the var.
-        """
-        return self._js_expr
-
-    @property
     def _var_is_string(self) -> bool:
         """Whether the var is a string literal.
 
@@ -719,24 +699,6 @@ class Var(Generic[VAR_TYPE], metaclass=MetaclassVar):
             return value
 
         return LiteralVar.create(value, _var_data=_var_data)
-
-    @classmethod
-    @deprecated("Use `.create()` instead.")
-    def create_safe(
-        cls,
-        *args: Any,
-        **kwargs: Any,
-    ) -> Var:
-        """Create a var from a value.
-
-        Args:
-            *args: The arguments to create the var from.
-            **kwargs: The keyword arguments to create the var from.
-
-        Returns:
-            The var.
-        """
-        return cls.create(*args, **kwargs)
 
     def __format__(self, format_spec: str) -> str:
         """Format the var into a Javascript equivalent to an f-string.
@@ -1167,18 +1129,6 @@ class Var(Generic[VAR_TYPE], metaclass=MetaclassVar):
             ),
         ).to(ObjectVar, Mapping[str, str])
         return refs[LiteralVar.create(str(self))]
-
-    @deprecated("Use `.js_type()` instead.")
-    def _type(self) -> StringVar:
-        """Returns the type of the object.
-
-        This method uses the `typeof` function from the `FunctionStringVar` class
-        to determine the type of the object.
-
-        Returns:
-            StringVar: A string variable representing the type of the object.
-        """
-        return self.js_type()
 
     def js_type(self) -> StringVar:
         """Returns the javascript type of the object.

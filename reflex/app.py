@@ -13,7 +13,7 @@ import io
 import json
 import sys
 import traceback
-from collections.abc import AsyncIterator, Callable, Coroutine, Sequence
+from collections.abc import AsyncIterator, Callable, Coroutine, Mapping, Sequence
 from datetime import datetime
 from pathlib import Path
 from timeit import default_timer as timer
@@ -32,7 +32,6 @@ from starlette.middleware import cors
 from starlette.requests import ClientDisconnect, Request
 from starlette.responses import JSONResponse, Response, StreamingResponse
 from starlette.staticfiles import StaticFiles
-from typing_extensions import deprecated
 
 from reflex import constants
 from reflex.admin import AdminDash
@@ -61,7 +60,7 @@ from reflex.components.core.banner import (
 )
 from reflex.components.core.breakpoints import set_breakpoints
 from reflex.components.core.client_side_routing import (
-    Default404Page,
+    default_404_page,
     wait_for_client_redirect,
 )
 from reflex.components.core.sticky import sticky
@@ -246,8 +245,6 @@ class UploadFile(StarletteUploadFile):
 
     path: Path | None = dataclasses.field(default=None)
 
-    _deprecated_filename: str | None = dataclasses.field(default=None)
-
     size: int | None = dataclasses.field(default=None)
 
     headers: Headers = dataclasses.field(default_factory=Headers)
@@ -263,21 +260,6 @@ class UploadFile(StarletteUploadFile):
             return self.path.name
         return None
 
-    @property
-    def filename(self) -> str | None:
-        """Get the filename of the uploaded file.
-
-        Returns:
-            The filename of the uploaded file.
-        """
-        console.deprecate(
-            feature_name="UploadFile.filename",
-            reason="Use UploadFile.name instead.",
-            deprecation_version="0.7.1",
-            removal_version="0.8.0",
-        )
-        return self._deprecated_filename
-
 
 @dataclasses.dataclass(
     frozen=True,
@@ -291,8 +273,8 @@ class UnevaluatedPage:
     description: Var | str | None
     image: str
     on_load: EventType[()] | None
-    meta: list[dict[str, str]]
-    context: dict[str, Any] | None
+    meta: Sequence[Mapping[str, str]]
+    context: Mapping[str, Any]
 
     def merged_with(self, other: UnevaluatedPage) -> UnevaluatedPage:
         """Merge the other page into this one.
@@ -354,9 +336,6 @@ class App(MiddlewareMixin, LifespanMixin):
     overlay_component: Component | ComponentCallable | None = dataclasses.field(
         default=None
     )
-
-    # Error boundary component to wrap the app with.
-    error_boundary: ComponentCallable | None = dataclasses.field(default=None)
 
     # App wraps to be applied to the whole app. Expected to be a dictionary of (order, name) to a function that takes whether the state is enabled and optionally returns a component.
     app_wraps: dict[tuple[int, str], Callable[[bool], Component | None]] = (
@@ -442,24 +421,6 @@ class App(MiddlewareMixin, LifespanMixin):
 
     # FastAPI app for compatibility with FastAPI.
     _cached_fastapi_app: FastAPI | None = None
-
-    @property
-    @deprecated("Use `api_transformer=your_fastapi_app` instead.")
-    def api(self) -> FastAPI:
-        """Get the backend api.
-
-        Returns:
-            The backend api.
-        """
-        if self._cached_fastapi_app is None:
-            self._cached_fastapi_app = FastAPI()
-        console.deprecate(
-            feature_name="App.api",
-            reason="Set `api_transformer=your_fastapi_app` instead.",
-            deprecation_version="0.7.9",
-            removal_version="0.8.0",
-        )
-        return self._cached_fastapi_app
 
     @property
     def event_namespace(self) -> EventNamespace | None:
@@ -619,7 +580,7 @@ class App(MiddlewareMixin, LifespanMixin):
         self._apply_decorated_pages()
 
         compile_future = concurrent.futures.ThreadPoolExecutor(max_workers=1).submit(
-            self._compile
+            self._compile, prerender_routes=is_prod_mode()
         )
 
         def callback(f: concurrent.futures.Future):
@@ -800,7 +761,7 @@ class App(MiddlewareMixin, LifespanMixin):
 
         if route == constants.Page404.SLUG:
             if component is None:
-                component = Default404Page.create()
+                component = default_404_page
             component = wait_for_client_redirect(self._generate_component(component))
             title = title or constants.Page404.TITLE
             description = description or constants.Page404.DESCRIPTION
@@ -821,7 +782,7 @@ class App(MiddlewareMixin, LifespanMixin):
             image=image,
             on_load=on_load,
             meta=meta,
-            context=context,
+            context=context or {},
         )
 
         if route in self._unevaluated_pages:
@@ -892,10 +853,39 @@ class App(MiddlewareMixin, LifespanMixin):
         Returns:
             The load events for the route.
         """
-        route = route.lstrip("/")
+        route = route.lstrip("/").rstrip("/")
         if route == "":
-            route = constants.PageNames.INDEX_ROUTE
-        return self._load_events.get(route, [])
+            return self._load_events.get(constants.PageNames.INDEX_ROUTE, [])
+
+        # Separate the pages by route type.
+        static_page_paths_to_page_route = {}
+        dynamic_page_paths_to_page_route = {}
+        for page_route in list(self._pages) + list(self._unevaluated_pages):
+            page_path = page_route.lstrip("/").rstrip("/")
+            if "[" in page_path and "]" in page_path:
+                dynamic_page_paths_to_page_route[page_path] = page_route
+            else:
+                static_page_paths_to_page_route[page_path] = page_route
+
+        # Check for static routes.
+        if (page_route := static_page_paths_to_page_route.get(route)) is not None:
+            return self._load_events.get(page_route, [])
+
+        # Check for dynamic routes.
+        parts = route.split("/")
+        for page_path, page_route in dynamic_page_paths_to_page_route.items():
+            page_parts = page_path.split("/")
+            if len(page_parts) != len(parts):
+                continue
+            if all(
+                part == page_part
+                or (page_part.startswith("[") and page_part.endswith("]"))
+                for part, page_part in zip(parts, page_parts, strict=False)
+            ):
+                return self._load_events.get(page_route, [])
+
+        # Default to 404 page load events if no match found.
+        return self._load_events.get("404", [])
 
     def _check_routes_conflict(self, new_route: str):
         """Verify if there is any conflict between the new route and any existing route.
@@ -937,44 +927,6 @@ class App(MiddlewareMixin, LifespanMixin):
                     # eg. /posts/[id]/info/[slug1] and /posts/[id]/info1/[slug1] is always going to be valid since
                     # info1 will break away into its own tree.
                     break
-
-    def add_custom_404_page(
-        self,
-        component: Component | ComponentCallable | None = None,
-        title: str = constants.Page404.TITLE,
-        image: str = constants.Page404.IMAGE,
-        description: str = constants.Page404.DESCRIPTION,
-        on_load: EventType[()] | None = None,
-        meta: list[dict[str, str]] = constants.DefaultPage.META_LIST,
-    ):
-        """Define a custom 404 page for any url having no match.
-
-        If there is no page defined on 'index' route, add the 404 page to it.
-        If there is no global catchall defined, add the 404 page with a catchall.
-
-        Args:
-            component: The component to display at the page.
-            title: The title of the page.
-            image: The image to display on the page.
-            description: The description of the page.
-            on_load: The event handler(s) that will be called each time the page load.
-            meta: The metadata of the page.
-        """
-        console.deprecate(
-            feature_name="App.add_custom_404_page",
-            reason=f"Use app.add_page(component, route='/{constants.Page404.SLUG}') instead.",
-            deprecation_version="0.6.7",
-            removal_version="0.8.0",
-        )
-        self.add_page(
-            component=component,
-            route=constants.Page404.SLUG,
-            title=title or constants.Page404.TITLE,
-            image=image or constants.Page404.IMAGE,
-            description=description or constants.Page404.DESCRIPTION,
-            on_load=on_load,
-            meta=meta,
-        )
 
     def _setup_admin_dash(self):
         """Setup the admin dash."""
@@ -1024,7 +976,7 @@ class App(MiddlewareMixin, LifespanMixin):
             for i, tags in imports.items()
             if i not in dependencies
             and i not in dev_dependencies
-            and not any(i.startswith(prefix) for prefix in ["/", "$/", ".", "next/"])
+            and not any(i.startswith(prefix) for prefix in ["/", "$/", "."])
             and i != ""
             and any(tag.install for tag in tags)
         }
@@ -1154,11 +1106,11 @@ class App(MiddlewareMixin, LifespanMixin):
         for substate in state.class_subclasses:
             self._validate_var_dependencies(substate)
 
-    def _compile(self, export: bool = False, dry_run: bool = False):
+    def _compile(self, prerender_routes: bool = False, dry_run: bool = False):
         """Compile the app and output it to the pages folder.
 
         Args:
-            export: Whether to compile the app for export.
+            prerender_routes: Whether to prerender the routes.
             dry_run: Whether to compile the app without saving it.
 
         Raises:
@@ -1329,17 +1281,6 @@ class App(MiddlewareMixin, LifespanMixin):
             # Add the app wrappers from this component.
             app_wrappers.update(component._get_all_app_wrap_components())
 
-        if self.error_boundary:
-            from reflex.compiler.compiler import into_component
-
-            console.deprecate(
-                feature_name="App.error_boundary",
-                reason="Use app_wraps instead.",
-                deprecation_version="0.7.1",
-                removal_version="0.8.0",
-            )
-            app_wrappers[(55, "ErrorBoundary")] = into_component(self.error_boundary)
-
         # Perform auto-memoization of stateful components.
         with console.timing("Auto-memoize StatefulComponents"):
             (
@@ -1441,6 +1382,7 @@ class App(MiddlewareMixin, LifespanMixin):
                             )
                         )
                     ),
+                    unevaluated_pages=list(self._unevaluated_pages.values()),
                 )
 
             # Wait for all compilation tasks to complete.
@@ -1484,15 +1426,9 @@ class App(MiddlewareMixin, LifespanMixin):
         with console.timing("Install Frontend Packages"):
             self._get_frontend_packages(all_imports)
 
-        # Setup the next.config.js
-        transpile_packages = [
-            package
-            for package, import_vars in all_imports.items()
-            if any(import_var.transpile for import_var in import_vars)
-        ]
-        prerequisites.update_next_config(
-            export=export,
-            transpile_packages=transpile_packages,
+        # Setup the react-router.config.js
+        prerequisites.update_react_router_config(
+            prerender_routes=prerender_routes,
         )
 
         if is_prod_mode():
@@ -1501,9 +1437,11 @@ class App(MiddlewareMixin, LifespanMixin):
         else:
             # In dev mode, delete removed pages and update existing pages.
             keep_files = [Path(output_path) for output_path, _ in compile_results]
-            for p in Path(prerequisites.get_web_dir() / constants.Dirs.PAGES).rglob(
-                "*"
-            ):
+            for p in Path(
+                prerequisites.get_web_dir()
+                / constants.Dirs.PAGES
+                / constants.Dirs.ROUTES
+            ).rglob("*"):
                 if p.is_file() and p not in keep_files:
                     # Remove pages that are no longer in the app.
                     p.unlink()
@@ -1970,7 +1908,6 @@ def upload(app: App):
                 UploadFile(
                     file=content_copy,
                     path=Path(file.filename.lstrip("/")) if file.filename else None,
-                    _deprecated_filename=file.filename,
                     size=file.size,
                     headers=file.headers,
                 )

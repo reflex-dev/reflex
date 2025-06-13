@@ -14,8 +14,8 @@ from reflex import constants
 from reflex.environment import environment
 from reflex.event import EventHandler
 from reflex.state import BaseState
-from reflex.utils import build, prerequisites, types
 from reflex.utils import exec as utils_exec
+from reflex.utils import prerequisites, types
 from reflex.utils.exceptions import ReflexError, SystemPackageMissingError
 from reflex.vars.base import Var
 
@@ -226,27 +226,6 @@ def test_remove_existing_bun_installation(mocker: MockerFixture):
 
     prerequisites.remove_existing_bun_installation()
     rm.assert_called_once()
-
-
-def test_setup_frontend(tmp_path, mocker: MockerFixture):
-    """Test checking if assets content have been
-    copied into the .web/public folder.
-
-    Args:
-        tmp_path: root path of test case data directory
-        mocker: mocker object to allow mocking
-    """
-    web_public_folder = tmp_path / ".web" / "public"
-    assets = tmp_path / "assets"
-    assets.mkdir()
-    (assets / "favicon.ico").touch()
-
-    mocker.patch("reflex.utils.prerequisites.install_frontend_packages")
-    mocker.patch("reflex.utils.build.set_env_json")
-
-    build.setup_frontend(tmp_path, disable_telemetry=False)
-    assert web_public_folder.exists()
-    assert (web_public_folder / "favicon.ico").exists()
 
 
 @pytest.fixture

@@ -114,19 +114,21 @@ def test_login_flow(
     assert login_sample.frontend_url is not None
     local_storage.clear()
 
+    login_button = login_sample.poll_for_result(
+        lambda: driver.find_element(By.ID, "login")
+    )
     with pytest.raises(NoSuchElementException):
         driver.find_element(By.ID, "auth-token")
 
-    login_button = driver.find_element(By.ID, "login")
     login_sample.poll_for_content(login_button)
     with utils.poll_for_navigation(driver):
         login_button.click()
-    assert driver.current_url.endswith("/login/")
+    assert driver.current_url.endswith("/login")
 
     do_it_button = driver.find_element(By.ID, "doit")
     with utils.poll_for_navigation(driver):
         do_it_button.click()
-    assert driver.current_url == login_sample.frontend_url + "/"
+    assert driver.current_url == login_sample.frontend_url
 
     def check_auth_token_header():
         try:

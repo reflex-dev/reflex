@@ -240,7 +240,9 @@ def poll_for_token(driver: WebDriver, upload_file: AppHarness) -> str:
     Returns:
         token value
     """
-    token_input = driver.find_element(By.ID, "token")
+    token_input = upload_file.poll_for_result(
+        lambda: driver.find_element(By.ID, "token")
+    )
     assert token_input
     # wait for the backend connection to send the token
     token = upload_file.poll_for_value(token_input)

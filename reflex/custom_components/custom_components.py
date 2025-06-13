@@ -461,20 +461,6 @@ def build():
     _run_build()
 
 
-@custom_components_cli.command(name="publish", deprecated=True)
-def publish():
-    """Publish a custom component. This command is deprecated and will be removed in future releases.
-
-    Raises:
-        Exit: If the publish command fails.
-    """
-    console.error(
-        "The publish command is deprecated. You can use `reflex component build` followed by `twine upload` or a similar publishing command to publish your custom component."
-        "\nIf you want to share your custom component with the Reflex community, please use `reflex component share`."
-    )
-    raise click.exceptions.Exit(code=1)
-
-
 def _collect_details_for_gallery():
     """Helper to collect details on the custom component to be included in the gallery.
 

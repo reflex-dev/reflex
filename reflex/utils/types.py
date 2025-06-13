@@ -3,11 +3,10 @@
 from __future__ import annotations
 
 import dataclasses
-import inspect
 import sys
 import types
 from collections.abc import Callable, Iterable, Mapping, Sequence
-from functools import cached_property, lru_cache, wraps
+from functools import cached_property, lru_cache
 from types import GenericAlias
 from typing import (  # noqa: UP035
     TYPE_CHECKING,
@@ -992,47 +991,6 @@ def validate_literal(key: str, value: Any, expected_type: type, comp_name: str):
             value_str = f"'{value}'" if isinstance(value, str) else value
             msg = f"prop value for {key!s} of the `{comp_name}` component should be one of the following: {allowed_value_str}. Got {value_str} instead"
             raise ValueError(msg)
-
-
-def validate_parameter_literals(func: Callable):
-    """Decorator to check that the arguments passed to a function
-    correspond to the correct function parameter if it (the parameter)
-    is a literal type.
-
-    Args:
-        func: The function to validate.
-
-    Returns:
-        The wrapper function.
-    """
-    console.deprecate(
-        "validate_parameter_literals",
-        reason="Use manual validation instead.",
-        deprecation_version="0.7.11",
-        removal_version="0.8.0",
-        dedupe=True,
-    )
-
-    func_params = list(inspect.signature(func).parameters.items())
-    annotations = {param[0]: param[1].annotation for param in func_params}
-
-    @wraps(func)
-    def wrapper(*args, **kwargs):
-        # validate args
-        for param, arg in zip(annotations, args, strict=False):
-            if annotations[param] is inspect.Parameter.empty:
-                continue
-            validate_literal(param, arg, annotations[param], func.__name__)
-
-        # validate kwargs.
-        for key, value in kwargs.items():
-            annotation = annotations.get(key)
-            if not annotation or annotation is inspect.Parameter.empty:
-                continue
-            validate_literal(key, value, annotation, func.__name__)
-        return func(*args, **kwargs)
-
-    return wrapper
 
 
 # Store this here for performance.
