@@ -453,7 +453,7 @@ def validate_app(
 
 def get_compiled_app(
     reload: bool = False,
-    export: bool = False,
+    prerender_routes: bool = False,
     dry_run: bool = False,
     check_if_schema_up_to_date: bool = False,
 ) -> ModuleType:
@@ -461,7 +461,7 @@ def get_compiled_app(
 
     Args:
         reload: Re-import the app module from disk
-        export: Compile the app for export
+        prerender_routes: Whether to prerender routes.
         dry_run: If True, do not write the compiled app to disk.
         check_if_schema_up_to_date: If True, check if the schema is up to date.
 
@@ -474,13 +474,13 @@ def get_compiled_app(
     # For py3.9 compatibility when redis is used, we MUST add any decorator pages
     # before compiling the app in a thread to avoid event loop error (REF-2172).
     app._apply_decorated_pages()
-    app._compile(export=export, dry_run=dry_run)
+    app._compile(prerender_routes=prerender_routes, dry_run=dry_run)
     return app_module
 
 
 def compile_app(
     reload: bool = False,
-    export: bool = False,
+    prerender_routes: bool = False,
     dry_run: bool = False,
     check_if_schema_up_to_date: bool = False,
 ) -> None:
@@ -488,13 +488,13 @@ def compile_app(
 
     Args:
         reload: Re-import the app module from disk
-        export: Compile the app for export
+        prerender_routes: Whether to prerender routes.
         dry_run: If True, do not write the compiled app to disk.
         check_if_schema_up_to_date: If True, check if the schema is up to date.
     """
     get_compiled_app(
         reload=reload,
-        export=export,
+        prerender_routes=prerender_routes,
         dry_run=dry_run,
         check_if_schema_up_to_date=check_if_schema_up_to_date,
     )
@@ -543,20 +543,26 @@ def _can_colorize() -> bool:
 
 
 def compile_or_validate_app(
-    compile: bool = False, check_if_schema_up_to_date: bool = False
+    compile: bool = False,
+    check_if_schema_up_to_date: bool = False,
+    prerender_routes: bool = False,
 ) -> bool:
     """Compile or validate the app module based on the default config.
 
     Args:
         compile: Whether to compile the app.
         check_if_schema_up_to_date: If True, check if the schema is up to date.
+        prerender_routes: Whether to prerender routes.
 
     Returns:
         If the app is compiled successfully.
     """
     try:
         if compile:
-            compile_app(check_if_schema_up_to_date=check_if_schema_up_to_date)
+            compile_app(
+                check_if_schema_up_to_date=check_if_schema_up_to_date,
+                prerender_routes=prerender_routes,
+            )
         else:
             validate_app(check_if_schema_up_to_date=check_if_schema_up_to_date)
     except Exception as e:
@@ -1111,15 +1117,17 @@ def init_reflex_json(project_hash: int | None):
     path_ops.update_json_file(get_web_dir() / constants.Reflex.JSON, reflex_json)
 
 
-def update_react_router_config(export: bool = False):
+def update_react_router_config(prerender_routes: bool = False):
     """Update react-router.config.js config from Reflex config.
 
     Args:
-        export: if the method run during reflex export.
+        prerender_routes: Whether to enable prerendering of routes.
     """
     react_router_config_file_path = get_web_dir() / constants.ReactRouter.CONFIG_FILE
 
-    react_router_config = _update_react_router_config(get_config(), export=export)
+    react_router_config = _update_react_router_config(
+        get_config(), prerender_routes=prerender_routes
+    )
 
     # Overwriting the config file triggers a full server reload, so make sure
     # there is actually a diff.
@@ -1132,7 +1140,7 @@ def update_react_router_config(export: bool = False):
         react_router_config_file_path.write_text(react_router_config)
 
 
-def _update_react_router_config(config: Config, export: bool = False):
+def _update_react_router_config(config: Config, prerender_routes: bool = False):
     react_router_config = {
         "basename": "/" + (config.frontend_path or "").removeprefix("/"),
         "future": {
@@ -1141,7 +1149,7 @@ def _update_react_router_config(config: Config, export: bool = False):
         "ssr": False,
     }
 
-    if export:
+    if prerender_routes:
         react_router_config["prerender"] = True
         react_router_config["build"] = constants.Dirs.BUILD_DIR
 

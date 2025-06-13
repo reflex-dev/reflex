@@ -118,7 +118,8 @@ class PackageJson(SimpleNamespace):
 
         DEV = "vite dev"
         EXPORT = "react-router build"
-        PROD = "serve ./build/client"
+        # --single rewrites /404.html to /404/index.html
+        PROD = "serve --single ./build/client"
 
     PATH = "package.json"
 
