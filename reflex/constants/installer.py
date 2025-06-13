@@ -117,7 +117,7 @@ class PackageJson(SimpleNamespace):
         """The commands to define in package.json."""
 
         DEV = "vite dev"
-        EXPORT = "vite build && vite build --ssr"
+        EXPORT = "react-router build"
         PROD = "serve ./build/client"
 
     PATH = "package.json"

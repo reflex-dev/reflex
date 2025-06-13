@@ -170,7 +170,7 @@ def build(
     checkpoints = [
         "building for production",
         "building SSR bundle for production",
-        "SPA Mode: Generated",
+        "built in",
     ]
 
     # Start the subprocess with the progress bar.

@@ -412,12 +412,12 @@ def show_progress(message: str, process: subprocess.Popen, checkpoints: list[str
         task = progress.add_task(f"{message}: ", total=len(checkpoints))
         for line in stream_logs(message, process, progress=progress):
             # Check for special strings and update the progress bar.
-            for special_string in checkpoints:
-                if special_string in line:
-                    progress.update(task, advance=1)
-                    if special_string == checkpoints[-1]:
-                        progress.update(task, completed=len(checkpoints))
-                    break
+            special_string = checkpoints[0]
+            if special_string in line:
+                progress.update(task, advance=1)
+                checkpoints.pop(0)
+            if not checkpoints:
+                break
 
 
 def atexit_handler():
