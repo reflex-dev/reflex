@@ -1342,12 +1342,26 @@ class PyiGenerator:
 
 
 if __name__ == "__main__":
+    import argparse
+
+    parser = argparse.ArgumentParser(description="Generate .pyi stub files")
+    parser.add_argument(
+        "targets",
+        nargs="*",
+        default=["reflex/components", "reflex/experimental", "reflex/__init__.py"],
+        help="Target directories/files to process",
+    )
+    parser.add_argument(
+        "--use-json",
+        action="store_true",
+        default=True,
+        help="Generate pyi_hashes.json file",
+    )
+
+    args = parser.parse_args()
+
     logging.basicConfig(level=logging.INFO)
     logging.getLogger("blib2to3.pgen2.driver").setLevel(logging.INFO)
 
     gen = PyiGenerator()
-    gen.scan_all(
-        ["reflex/components", "reflex/experimental", "reflex/__init__.py"],
-        None,
-        use_json=True,
-    )
+    gen.scan_all(args.targets, None, use_json=args.use_json)
