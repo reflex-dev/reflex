@@ -87,7 +87,7 @@ def _determine_nextjs_version() -> str:
 
 
 def _determine_react_router_version() -> str:
-    default_version = "7.6.0"
+    default_version = "7.6.2"
     if (version := os.getenv("REACT_ROUTER_VERSION")) and version != default_version:
         from reflex.utils import console
 
