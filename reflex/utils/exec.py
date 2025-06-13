@@ -372,21 +372,48 @@ def run_backend(
         run_uvicorn_backend(host, port, loglevel)
 
 
+def _has_child_file(directory: Path, file_name: str) -> bool:
+    """Check if a directory has a child file with the given name.
+
+    Args:
+        directory: The directory to check.
+        file_name: The name of the file to look for.
+
+    Returns:
+        True if the directory has a child file with the given name, False otherwise.
+    """
+    return any(child_file.name == file_name for child_file in directory.iterdir())
+
+
 def get_reload_paths() -> Sequence[Path]:
     """Get the reload paths for the backend.
 
     Returns:
         The reload paths for the backend.
+
+    Raises:
+        RuntimeError: If the `__init__.py` file is found in the app root directory.
     """
     config = get_config()
     reload_paths = [Path.cwd()]
     if (spec := importlib.util.find_spec(config.module)) is not None and spec.origin:
         module_path = Path(spec.origin).resolve().parent
 
-        while module_path.parent.name and any(
-            sibling_file.name == "__init__.py" for sibling_file in module_path.iterdir()
-        ):
-            # go up a level to find dir without `__init__.py`
+        while module_path.parent.name and _has_child_file(module_path, "__init__.py"):
+            if _has_child_file(module_path, "rxconfig.py"):
+                init_file = module_path / "__init__.py"
+                init_file_content = init_file.read_text()
+                if init_file_content.strip():
+                    msg = "There should not be an `__init__.py` file in your app root directory"
+                    raise RuntimeError(msg)
+                console.warn(
+                    "Removing `__init__.py` file in the app root directory. "
+                    "This file can cause issues with module imports. "
+                )
+                init_file.unlink()
+                break
+
+            # go up a level to find dir without `__init__.py` or with `rxconfig.py`
             module_path = module_path.parent
 
         reload_paths = [module_path]
