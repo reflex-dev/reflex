@@ -38,7 +38,7 @@
   "reflex/components/el/elements/sectioning.pyi": "029b957c3da82d747a297811e9d71a43",
   "reflex/components/el/elements/tables.pyi": "60ce25fd601003dfadd78d3081b86795",
   "reflex/components/el/elements/typography.pyi": "3c4d82d4c61c84af85023d180631b081",
-  "reflex/components/gridjs/datatable.pyi": "963021af448b5f22960d521107194a87",
+  "reflex/components/gridjs/datatable.pyi": "1b8232fd3e839c6ae772db3d211cd632",
   "reflex/components/lucide/icon.pyi": "b544769b37f1155ce97a170a21d1bcad",
   "reflex/components/markdown/markdown.pyi": "3c818ed8f3a99edcba66ff00ec313f13",
   "reflex/components/moment/moment.pyi": "77e40c9afd511fb046134e2581d8a3bd",
