@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 from collections.abc import Generator
 
 import pytest
@@ -274,6 +275,7 @@ def event_chain(tmp_path_factory) -> Generator[AppHarness, None, None]:
     Yields:
         running AppHarness instance
     """
+    os.environ["REFLEX_REACT_STRICT_MODE"] = "0"
     with AppHarness.create(
         root=tmp_path_factory.mktemp("event_chain"),
         app_source=EventChain,
@@ -293,6 +295,42 @@ def driver(event_chain: AppHarness) -> Generator[WebDriver, None, None]:
     """
     assert event_chain.app_instance is not None, "app is not running"
     driver = event_chain.frontend()
+    try:
+        yield driver
+    finally:
+        driver.quit()
+
+
+@pytest.fixture(scope="module")
+def event_chain_strict(tmp_path_factory) -> Generator[AppHarness, None, None]:
+    """Start EventChain app at tmp_path via AppHarness.
+
+    Args:
+        tmp_path_factory: pytest tmp_path_factory fixture
+
+    Yields:
+        running AppHarness instance
+    """
+    os.environ["REFLEX_REACT_STRICT_MODE"] = "1"
+    with AppHarness.create(
+        root=tmp_path_factory.mktemp("event_chain_strict"),
+        app_source=EventChain,
+    ) as harness:
+        yield harness
+
+
+@pytest.fixture
+def driver_strict(event_chain_strict: AppHarness) -> Generator[WebDriver, None, None]:
+    """Get an instance of the browser open to the event_chain_strict app.
+
+    Args:
+        event_chain_strict: harness for EventChain app
+
+    Yields:
+        WebDriver instance.
+    """
+    assert event_chain_strict.app_instance is not None, "app is not running"
+    driver = event_chain_strict.frontend()
     try:
         yield driver
     finally:
@@ -472,7 +510,7 @@ async def test_event_chain_on_load(
         exp_event_order: the expected events recorded in the State
     """
     assert event_chain.frontend_url is not None
-    driver.get(event_chain.frontend_url + uri)
+    driver.get(event_chain.frontend_url.removesuffix("/") + uri)
     token = assert_token(event_chain, driver)
     state_name = event_chain.get_state_name("_state")
 
@@ -552,6 +590,66 @@ async def test_event_chain_on_mount(
     await AppHarness._poll_for_async(_has_all_events)
     event_order = (await event_chain.get_state(token)).substates[state_name].event_order
     assert list(event_order) == exp_event_order
+
+
+@pytest.mark.parametrize(
+    ("uri", "exp_event_order"),
+    [
+        (
+            "/on-mount-return-chain",
+            [
+                "on_load_return_chain",
+                "event_arg:unmount",
+                "on_load_return_chain",
+                "event_arg:1",
+                "event_arg:2",
+                "event_arg:3",
+                "event_arg:1",
+                "event_arg:2",
+                "event_arg:3",
+                "event_arg:unmount",
+            ],
+        ),
+        (
+            "/on-mount-yield-chain",
+            [
+                "on_load_yield_chain",
+                "event_arg:mount",
+                "event_no_args",
+                "on_load_yield_chain",
+                "event_arg:mount",
+                "event_arg:4",
+                "event_arg:5",
+                "event_arg:6",
+                "event_arg:4",
+                "event_arg:5",
+                "event_arg:6",
+                "event_no_args",
+            ],
+        ),
+    ],
+)
+@pytest.mark.asyncio
+async def test_event_chain_on_mount_strict(
+    event_chain_strict: AppHarness,
+    driver_strict: WebDriver,
+    uri: str,
+    exp_event_order: list[str],
+):
+    """Run the test_event_chain_on_mount test with strict mode enabled.
+
+    Args:
+        event_chain_strict: AppHarness for the event_chain app with strict mode enabled
+        driver_strict: selenium WebDriver open to the app with strict mode enabled
+        uri: the page to load
+        exp_event_order: the expected events recorded in the State
+    """
+    await test_event_chain_on_mount(
+        event_chain=event_chain_strict,
+        driver=driver_strict,
+        uri=uri,
+        exp_event_order=exp_event_order,
+    )
 
 
 @pytest.mark.parametrize(
