@@ -77,12 +77,17 @@ def tailwind_config_js_template():
 {%- for imp in imports %}
 import { {{ imp.name }} } from {{ imp.from | tojson }};
 {%- endfor %}
+
 {%- for plugin in plugins %}
 {% if plugin is mapping and plugin.call is not defined %}
 import plugin{{ loop.index }} from {{ plugin.name | tojson }};
 {%- elif plugin is not mapping %}
 import plugin{{ loop.index }} from {{ plugin | tojson }};
 {%- endif %}
+{%- endfor %}
+
+{%- for preset in presets %}
+import preset{{ loop.index }} from {{ preset | tojson }};
 {%- endfor %}
 
 export default {
@@ -96,7 +101,7 @@ export default {
     {% if presets is defined %}
     presets: [
         {% for preset in presets %}
-            require({{ preset | tojson }}),
+            preset{{ loop.index }},
         {% endfor %}
     ],
     {% endif %}
