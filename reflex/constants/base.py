@@ -228,7 +228,15 @@ class ReactRouter(Javascript):
     CONFIG_FILE = "react-router.config.js"
 
     # Regex to check for message displayed when frontend comes up
-    FRONTEND_LISTENING_REGEX = "Local:[\\s]+(.*)"
+    DEV_FRONTEND_LISTENING_REGEX = r"Local:[\s]+"
+
+    # Regex to pattern the route path in the config file
+    # INFO  Accepting connections at http://localhost:3000
+    PROD_FRONTEND_LISTENING_REGEX = r"Accepting connections at[\s]+"
+
+    FRONTEND_LISTENING_REGEX = (
+        rf"(?:{DEV_FRONTEND_LISTENING_REGEX}|{PROD_FRONTEND_LISTENING_REGEX})(.*)"
+    )
 
 
 # Color mode variables
