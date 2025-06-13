@@ -5,7 +5,7 @@ from __future__ import annotations
 from collections.abc import Sequence
 from typing import Any
 
-from reflex.components.component import Component
+from reflex.components.component import NoSSRComponent
 from reflex.components.tags import Tag
 from reflex.utils import types
 from reflex.utils.imports import ImportDict
@@ -13,7 +13,7 @@ from reflex.utils.serializers import serialize
 from reflex.vars.base import LiteralVar, Var, is_computed_var
 
 
-class Gridjs(Component):
+class Gridjs(NoSSRComponent):
     """A component that wraps a nivo bar component."""
 
     library = "gridjs-react@6.1.1"
