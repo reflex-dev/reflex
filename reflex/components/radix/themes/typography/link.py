@@ -52,6 +52,9 @@ class ReactRouterLink(A):
     view_transition: Var[bool]
 
 
+_KNOWN_REACT_ROUTER_LINK_PROPS = frozenset(ReactRouterLink.get_props())
+
+
 class Link(RadixThemesComponent, A, MemoizationLeaf, MarkdownComponentMap):
     """A semantic element for navigation between pages."""
 
@@ -120,10 +123,9 @@ class Link(RadixThemesComponent, A, MemoizationLeaf, MarkdownComponentMap):
 
             if "as_child" not in props:
                 # Extract props for the ReactRouterLink, the rest go to the Link/A element.
-                known_react_router_link_props = ReactRouterLink.get_props()
                 next_link_props = {}
                 for prop in props.copy():
-                    if prop in known_react_router_link_props:
+                    if prop in _KNOWN_REACT_ROUTER_LINK_PROPS:
                         next_link_props[prop] = props.pop(prop)
 
                 next_link_props["to"] = next_link_props.pop("href", href)
