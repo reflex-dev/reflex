@@ -580,7 +580,7 @@ class App(MiddlewareMixin, LifespanMixin):
         self._apply_decorated_pages()
 
         compile_future = concurrent.futures.ThreadPoolExecutor(max_workers=1).submit(
-            self._compile
+            self._compile, prerender_routes=is_prod_mode()
         )
 
         def callback(f: concurrent.futures.Future):
@@ -1106,11 +1106,11 @@ class App(MiddlewareMixin, LifespanMixin):
         for substate in state.class_subclasses:
             self._validate_var_dependencies(substate)
 
-    def _compile(self, export: bool = False, dry_run: bool = False):
+    def _compile(self, prerender_routes: bool = False, dry_run: bool = False):
         """Compile the app and output it to the pages folder.
 
         Args:
-            export: Whether to compile the app for export.
+            prerender_routes: Whether to prerender the routes.
             dry_run: Whether to compile the app without saving it.
 
         Raises:
@@ -1428,7 +1428,7 @@ class App(MiddlewareMixin, LifespanMixin):
 
         # Setup the react-router.config.js
         prerequisites.update_react_router_config(
-            export=export,
+            prerender_routes=prerender_routes,
         )
 
         if is_prod_mode():

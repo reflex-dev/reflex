@@ -204,6 +204,7 @@ def _run(
     args = (frontend,)
     kwargs = {
         "check_if_schema_up_to_date": True,
+        "prerender_routes": env == constants.Env.PROD,
     }
 
     # Granian fails if the app is already imported.
