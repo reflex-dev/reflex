@@ -694,7 +694,8 @@ def _modify_exception(e: Exception) -> None:
             msg = (
                 f"{msg[:state_index]}{module_path}.{actual_state_name}{msg[dot_index:]}"
             )
-        msg.replace(FIELD_MARKER, "")
+
+        msg = msg.replace(FIELD_MARKER, "")
 
         e.args = (msg,)
 
