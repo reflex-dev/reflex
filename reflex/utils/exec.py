@@ -595,31 +595,26 @@ def run_granian_backend_prod(host: str, port: int, loglevel: LogLevel):
         port: The app port
         loglevel: The log level.
     """
+    from granian.constants import Interfaces
+
     from reflex.utils import processes
 
-    try:
-        from granian.constants import Interfaces
-
-        command = [
-            "granian",
-            *("--log-level", "critical"),
-            *("--host", host),
-            *("--port", str(port)),
-            *("--interface", str(Interfaces.ASGI)),
-            *("--factory", get_app_instance_from_file()),
-        ]
-        processes.new_process(
-            command,
-            run=True,
-            show_logs=True,
-            env={
-                environment.REFLEX_SKIP_COMPILE.name: "true"
-            },  # skip compile for prod backend
-        )
-    except ImportError:
-        console.error(
-            'InstallError: REFLEX_USE_GRANIAN is set but `granian` is not installed. (run `pip install "granian[reload]>=1.6.0"`)'
-        )
+    command = [
+        "granian",
+        *("--log-level", "critical"),
+        *("--host", host),
+        *("--port", str(port)),
+        *("--interface", str(Interfaces.ASGI)),
+        *("--factory", get_app_instance_from_file()),
+    ]
+    processes.new_process(
+        command,
+        run=True,
+        show_logs=True,
+        env={
+            environment.REFLEX_SKIP_COMPILE.name: "true"
+        },  # skip compile for prod backend
+    )
 
 
 def output_system_info():
