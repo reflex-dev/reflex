@@ -1243,7 +1243,7 @@ async def test_process_events(mocker: MockerFixture, token: str):
         pass
 
     assert (await app.state_manager.get_state(event.substate_token)).value == 5
-    assert app._postprocess.call_count == 6  # pyright: ignore [reportFunctionMemberAccess]
+    assert app._postprocess.call_count == 6  # pyright: ignore [reportAttributeAccessIssue]
 
     if isinstance(app.state_manager, StateManagerRedis):
         await app.state_manager.close()

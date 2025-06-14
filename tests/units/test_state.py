@@ -2039,8 +2039,8 @@ async def test_state_proxy(
 
     # ensure state update was emitted
     assert mock_app.event_namespace is not None
-    mock_app.event_namespace.emit.assert_called_once()  # pyright: ignore [reportFunctionMemberAccess]
-    mcall = mock_app.event_namespace.emit.mock_calls[0]  # pyright: ignore [reportFunctionMemberAccess]
+    mock_app.event_namespace.emit.assert_called_once()  # pyright: ignore [reportAttributeAccessIssue]
+    mcall = mock_app.event_namespace.emit.mock_calls[0]  # pyright: ignore [reportAttributeAccessIssue]
     assert mcall.args[0] == str(SocketEvent.EVENT)
     assert mcall.args[1] == StateUpdate(
         delta={
@@ -2246,7 +2246,7 @@ async def test_background_task_no_block(mock_app: rx.App, token: str):
     assert mock_app.event_namespace is not None
     emit_mock = mock_app.event_namespace.emit
 
-    first_ws_message = emit_mock.mock_calls[0].args[1]  # pyright: ignore [reportFunctionMemberAccess]
+    first_ws_message = emit_mock.mock_calls[0].args[1]  # pyright: ignore [reportAttributeAccessIssue]
     assert (
         first_ws_message.delta[BackgroundTaskState.get_full_name()].pop("router")
         is not None
@@ -2261,7 +2261,7 @@ async def test_background_task_no_block(mock_app: rx.App, token: str):
         events=[],
         final=True,
     )
-    for call in emit_mock.mock_calls[1:5]:  # pyright: ignore [reportFunctionMemberAccess]
+    for call in emit_mock.mock_calls[1:5]:  # pyright: ignore [reportAttributeAccessIssue]
         assert call.args[1] == StateUpdate(
             delta={
                 BackgroundTaskState.get_full_name(): {
@@ -2271,7 +2271,7 @@ async def test_background_task_no_block(mock_app: rx.App, token: str):
             events=[],
             final=True,
         )
-    assert emit_mock.mock_calls[-2].args[1] == StateUpdate(  # pyright: ignore [reportFunctionMemberAccess]
+    assert emit_mock.mock_calls[-2].args[1] == StateUpdate(  # pyright: ignore [reportAttributeAccessIssue]
         delta={
             BackgroundTaskState.get_full_name(): {
                 "order": exp_order,
@@ -2282,7 +2282,7 @@ async def test_background_task_no_block(mock_app: rx.App, token: str):
         events=[],
         final=True,
     )
-    assert emit_mock.mock_calls[-1].args[1] == StateUpdate(  # pyright: ignore [reportFunctionMemberAccess]
+    assert emit_mock.mock_calls[-1].args[1] == StateUpdate(  # pyright: ignore [reportAttributeAccessIssue]
         delta={
             BackgroundTaskState.get_full_name(): {
                 "computed_order": exp_order,
