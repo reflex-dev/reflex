@@ -6,6 +6,7 @@ import pytest
 from reflex.components.base.fragment import Fragment
 from reflex.components.core.cond import Cond, cond
 from reflex.components.radix.themes.typography.text import Text
+from reflex.constants.state import FIELD_MARKER
 from reflex.state import BaseState
 from reflex.utils.format import format_state_name
 from reflex.vars.base import LiteralVar, Var, computed_var
@@ -139,7 +140,8 @@ def test_cond_computed_var():
 
     state_name = format_state_name(CondStateComputed.get_full_name())
     assert (
-        str(comp) == f"(true ? {state_name}.computed_int : {state_name}.computed_str)"
+        str(comp)
+        == f"(true ? {state_name}.computed_int{FIELD_MARKER} : {state_name}.computed_str{FIELD_MARKER})"
     )
 
     assert comp._var_type == int | str

@@ -1100,7 +1100,7 @@ class App(MiddlewareMixin, LifespanMixin):
                 )
                 for dep in dep_set:
                     if dep not in state_cls.vars and dep not in state_cls.backend_vars:
-                        msg = f"ComputedVar {var._js_expr} on state {state.__name__} has an invalid dependency {state_name}.{dep}"
+                        msg = f"ComputedVar {var._name} on state {state.__name__} has an invalid dependency {state_name}.{dep}"
                         raise exceptions.VarDependencyError(msg)
 
         for substate in state.class_subclasses:

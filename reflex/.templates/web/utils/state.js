@@ -777,7 +777,10 @@ const applyClientStorageDelta = (client_storage, delta) => {
   );
   if (unqualified_states.length === 1) {
     const main_state = delta[unqualified_states[0]];
-    if (main_state.is_hydrated !== undefined && !main_state.is_hydrated) {
+    if (
+      main_state.is_hydrated_rx_state_ !== undefined &&
+      !main_state.is_hydrated_rx_state_
+    ) {
       // skip if the state is not hydrated yet, since all client storage
       // values are sent in the hydrate event
       return;
@@ -1025,7 +1028,7 @@ export const useEventLoop = (
       const change_start = () => {
         const main_state_dispatch = dispatch["reflex___state____state"];
         if (main_state_dispatch !== undefined) {
-          main_state_dispatch({ is_hydrated: false });
+          main_state_dispatch({ is_hydrated_rx_state_: false });
         }
       };
       change_start();
