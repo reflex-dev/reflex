@@ -39,7 +39,7 @@
   "reflex/components/el/elements/tables.pyi": "60ce25fd601003dfadd78d3081b86795",
   "reflex/components/el/elements/typography.pyi": "3c4d82d4c61c84af85023d180631b081",
   "reflex/components/gridjs/datatable.pyi": "1b8232fd3e839c6ae772db3d211cd632",
-  "reflex/components/lucide/icon.pyi": "b544769b37f1155ce97a170a21d1bcad",
+  "reflex/components/lucide/icon.pyi": "ebc4cf89627f0ac001b695bffb11d43d",
   "reflex/components/markdown/markdown.pyi": "3c818ed8f3a99edcba66ff00ec313f13",
   "reflex/components/moment/moment.pyi": "77e40c9afd511fb046134e2581d8a3bd",
   "reflex/components/plotly/plotly.pyi": "8362d4dd3d5c57af79a8bc8d2dbe82c9",
