@@ -403,7 +403,7 @@ class CallableEventSpec(EventSpec):
 
         Args:
             fn: The function to decorate.
-            **kwargs: The kwargs to pass to pydantic initializer
+            **kwargs: The kwargs to pass to the EventSpec constructor.
         """
         if fn is not None:
             default_event_spec = fn()

@@ -28,7 +28,6 @@ from urllib.parse import urlparse
 
 import click
 import httpx
-from alembic.util.exc import CommandError
 from packaging import version
 from redis import Redis as RedisSync
 from redis.asyncio import Redis
@@ -571,13 +570,11 @@ def compile_or_validate_app(
 
         import traceback
 
-        sys_exception = sys.exception()
-
         try:
             colorize = _can_colorize()
             traceback.print_exception(e, colorize=colorize)  # pyright: ignore[reportCallIssue]
         except Exception:
-            traceback.print_exception(sys_exception)
+            traceback.print_exception(e)
         return False
     return True
 
@@ -1602,6 +1599,8 @@ def check_schema_up_to_date():
     if get_config().db_url is None or not environment.ALEMBIC_CONFIG.get().exists():
         return
     with model.Model.get_db_engine().connect() as connection:
+        from alembic.util.exc import CommandError
+
         try:
             if model.Model.alembic_autogenerate(
                 connection=connection,

@@ -15,19 +15,15 @@ import typing
 import warnings
 from collections.abc import AsyncIterator, Callable, Sequence
 from hashlib import md5
+from importlib.util import find_spec
 from types import FunctionType
 from typing import TYPE_CHECKING, Any, BinaryIO, ClassVar, TypeVar, cast, get_type_hints
 
-import pydantic.v1 as pydantic
-from pydantic import BaseModel as BaseModelV2
-from pydantic.v1 import BaseModel as BaseModelV1
-from pydantic.v1.fields import ModelField
 from rich.markup import escape
 from typing_extensions import Self
 
 import reflex.istate.dynamic
 from reflex import constants, event
-from reflex.base import Base
 from reflex.environment import PerformanceMode, environment
 from reflex.event import (
     BACKGROUND_TASK_MARKER,
@@ -251,10 +247,6 @@ class EventHandlerSetVar(EventHandler):
         return super().__call__(*args)
 
 
-if TYPE_CHECKING:
-    from pydantic.v1.fields import ModelField
-
-
 def get_var_for_field(cls: type[BaseState], name: str, f: Field):
     """Get a Var instance for a state field.
 
@@ -458,7 +450,7 @@ class BaseState(EvenMoreBasicBaseState):
 
         Args:
             mixin: Whether the subclass is a mixin and should not be initialized.
-            **kwargs: The kwargs to pass to the pydantic init_subclass method.
+            **kwargs: The kwargs to pass to the init_subclass method.
 
         Raises:
             StateValueError: If a substate class shadows another.
@@ -705,7 +697,7 @@ class BaseState(EvenMoreBasicBaseState):
             mixin
             for mixin in cls.__mro__
             if (
-                mixin not in [pydantic.BaseModel, Base, cls]
+                mixin is not cls
                 and issubclass(mixin, BaseState)
                 and mixin._mixin is True
             )
@@ -1052,7 +1044,7 @@ class BaseState(EvenMoreBasicBaseState):
             _var_data=VarData.from_state(cls, name),
         ).guess_type()
 
-        # add the pydantic field dynamically (must be done before _init_var)
+        # add the field dynamically (must be done before _init_var)
         cls.add_field(var, default_value)
 
         cls._init_var(var)
@@ -1114,7 +1106,7 @@ class BaseState(EvenMoreBasicBaseState):
         Args:
             prop: The var to set the default value for.
         """
-        # Get the pydantic field for the var.
+        # Get the field for the var.
         field = cls.get_fields()[prop._var_field_name]
 
         if field.default is None and not types.is_optional(prop._var_type):
@@ -1387,7 +1379,7 @@ class BaseState(EvenMoreBasicBaseState):
 
     @classmethod
     @functools.lru_cache
-    def _is_client_storage(cls, prop_name_or_field: str | ModelField) -> bool:
+    def _is_client_storage(cls, prop_name_or_field: str | Field) -> bool:
         """Check if the var is a client storage var.
 
         Args:
@@ -1790,10 +1782,16 @@ class BaseState(EvenMoreBasicBaseState):
                             if key in hinted_args.__fields__
                         }
                     )
-                elif dataclasses.is_dataclass(hinted_args) or issubclass(
-                    hinted_args, (Base, BaseModelV1, BaseModelV2)
-                ):
+                elif dataclasses.is_dataclass(hinted_args):
                     payload[arg] = hinted_args(**value)
+                elif find_spec("pydantic"):
+                    from pydantic import BaseModel as BaseModelV2
+                    from pydantic.v1 import BaseModel as BaseModelV1
+
+                    if issubclass(hinted_args, BaseModelV1):
+                        payload[arg] = hinted_args.parse_obj(value)
+                    elif issubclass(hinted_args, BaseModelV2):
+                        payload[arg] = hinted_args.model_validate(value)
             elif isinstance(value, list) and (hinted_args is set or hinted_args is set):
                 payload[arg] = set(value)
             elif isinstance(value, list) and (
@@ -2042,7 +2040,7 @@ class BaseState(EvenMoreBasicBaseState):
         Args:
             include_computed: Whether to include computed vars.
             initial: Whether to get the initial value of computed vars.
-            **kwargs: Kwargs to pass to the pydantic dict method.
+            **kwargs: Kwargs to pass to the dict method.
 
         Returns:
             The object as a dictionary.
@@ -2497,7 +2495,7 @@ class ComponentState(State, mixin=True):
 
         Args:
             mixin: Whether the subclass is a mixin and should not be initialized.
-            **kwargs: The kwargs to pass to the pydantic init_subclass method.
+            **kwargs: The kwargs to pass to the init_subclass method.
         """
         super().__init_subclass__(mixin=mixin, **kwargs)
 
