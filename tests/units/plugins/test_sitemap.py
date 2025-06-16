@@ -71,7 +71,12 @@ def test_generate_xml_multiple_links_all_fields():
 def test_generate_links_for_sitemap_static_routes(
     mock_warn: MagicMock, mock_get_config: MagicMock
 ):
-    """Test generate_links_for_sitemap with static routes."""
+    """Test generate_links_for_sitemap with static routes.
+
+    Args:
+        mock_warn: Mock for the console.warn function.
+        mock_get_config: Mock for the get_config function.
+    """
     mock_get_config.return_value.deploy_url = "https://example.com"
 
     def mock_component():
@@ -126,7 +131,12 @@ def test_generate_links_for_sitemap_static_routes(
 def test_generate_links_for_sitemap_dynamic_routes(
     mock_warn: MagicMock, mock_get_config: MagicMock
 ):
-    """Test generate_links_for_sitemap with dynamic routes."""
+    """Test generate_links_for_sitemap with dynamic routes.
+
+    Args:
+        mock_warn: Mock for the console.warn function.
+        mock_get_config: Mock for the get_config function.
+    """
     mock_get_config.return_value.deploy_url = "https://sub.example.org"
     now = datetime.datetime(2023, 6, 13, 12, 0, 0)
 
@@ -190,7 +200,12 @@ def test_generate_links_for_sitemap_dynamic_routes(
 def test_generate_links_for_sitemap_404_route(
     mock_warn: MagicMock, mock_get_config: MagicMock
 ):
-    """Test generate_links_for_sitemap with the 404 route."""
+    """Test generate_links_for_sitemap with the 404 route.
+
+    Args:
+        mock_warn: Mock for the console.warn function.
+        mock_get_config: Mock for the get_config function.
+    """
     mock_get_config.return_value.deploy_url = None  # No deploy URL
 
     def mock_component():
@@ -228,7 +243,11 @@ def test_generate_links_for_sitemap_404_route(
 
 @patch("reflex.config.get_config")
 def test_generate_links_for_sitemap_loc_override(mock_get_config: MagicMock):
-    """Test generate_links_for_sitemap with loc override in sitemap config."""
+    """Test generate_links_for_sitemap with loc override in sitemap config.
+
+    Args:
+        mock_get_config: Mock for the get_config function.
+    """
     mock_get_config.return_value.deploy_url = "http://localhost:3000"
 
     def mock_component():
@@ -264,7 +283,11 @@ def test_generate_links_for_sitemap_loc_override(mock_get_config: MagicMock):
 
 @patch("reflex.config.get_config")
 def test_generate_links_for_sitemap_priority_clamping(mock_get_config: MagicMock):
-    """Test that priority is clamped between 0.0 and 1.0."""
+    """Test that priority is clamped between 0.0 and 1.0.
+
+    Args:
+        mock_get_config: Mock for the get_config function.
+    """
     mock_get_config.return_value.deploy_url = "https://example.com"
 
     def mock_component():
@@ -314,7 +337,11 @@ def test_generate_links_for_sitemap_priority_clamping(mock_get_config: MagicMock
 
 @patch("reflex.config.get_config")
 def test_generate_links_for_sitemap_no_deploy_url(mock_get_config: MagicMock):
-    """Test generate_links_for_sitemap when deploy_url is not set."""
+    """Test generate_links_for_sitemap when deploy_url is not set.
+
+    Args:
+        mock_get_config: Mock for the get_config function.
+    """
     mock_get_config.return_value.deploy_url = None
 
     def mock_component():
@@ -363,7 +390,11 @@ def test_generate_links_for_sitemap_no_deploy_url(mock_get_config: MagicMock):
 def test_generate_links_for_sitemap_deploy_url_trailing_slash(
     mock_get_config: MagicMock,
 ):
-    """Test generate_links_for_sitemap with deploy_url having a trailing slash."""
+    """Test generate_links_for_sitemap with deploy_url having a trailing slash.
+
+    Args:
+        mock_get_config: Mock for the get_config function.
+    """
     mock_get_config.return_value.deploy_url = "https://example.com/"
 
     def mock_component():
@@ -388,7 +419,11 @@ def test_generate_links_for_sitemap_deploy_url_trailing_slash(
 
 @patch("reflex.config.get_config")
 def test_generate_links_for_sitemap_loc_leading_slash(mock_get_config: MagicMock):
-    """Test generate_links_for_sitemap with loc having a leading slash."""
+    """Test generate_links_for_sitemap with loc having a leading slash.
+
+    Args:
+        mock_get_config: Mock for the get_config function.
+    """
     mock_get_config.return_value.deploy_url = "https://example.com"
 
     def mock_component():
@@ -413,7 +448,11 @@ def test_generate_links_for_sitemap_loc_leading_slash(mock_get_config: MagicMock
 
 @patch("reflex.config.get_config")
 def test_generate_links_for_sitemap_loc_full_url(mock_get_config: MagicMock):
-    """Test generate_links_for_sitemap with loc being a full URL."""
+    """Test generate_links_for_sitemap with loc being a full URL.
+
+    Args:
+        mock_get_config: Mock for the get_config function.
+    """
     mock_get_config.return_value.deploy_url = "https://example.com"
 
     def mock_component():
