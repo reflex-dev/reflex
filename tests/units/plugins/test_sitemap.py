@@ -1,4 +1,5 @@
 """Unit tests for the sitemap plugin."""
+
 import datetime
 from unittest.mock import MagicMock, patch
 
@@ -85,7 +86,7 @@ def test_generate_links_for_sitemap_static_routes(
             image="favicon.ico",
             on_load=None,
             meta=[],
-            context={}
+            context={},
         ),
         UnevaluatedPage(
             component=mock_component,
@@ -95,7 +96,7 @@ def test_generate_links_for_sitemap_static_routes(
             image="favicon.ico",
             on_load=None,
             meta=[],
-            context={}
+            context={},
         ),
         UnevaluatedPage(
             component=mock_component,
@@ -105,7 +106,7 @@ def test_generate_links_for_sitemap_static_routes(
             image="favicon.ico",
             on_load=None,
             meta=[],
-            context={"sitemap": {"priority": 0.7, "changefreq": "monthly"}}
+            context={"sitemap": {"priority": 0.7, "changefreq": "monthly"}},
         ),
     ]
     links = generate_links_for_sitemap(pages)
@@ -147,7 +148,7 @@ def test_generate_links_for_sitemap_dynamic_routes(
                     "lastmod": now,
                     "priority": 0.9,
                 }
-            }
+            },
         ),
         UnevaluatedPage(
             component=mock_component,
@@ -157,7 +158,7 @@ def test_generate_links_for_sitemap_dynamic_routes(
             image="favicon.ico",
             on_load=None,
             meta=[],
-            context={}
+            context={},
         ),  # No sitemap config
         UnevaluatedPage(
             component=mock_component,
@@ -167,7 +168,7 @@ def test_generate_links_for_sitemap_dynamic_routes(
             image="favicon.ico",
             on_load=None,
             meta=[],
-            context={"sitemap": {"changefreq": "yearly"}}
+            context={"sitemap": {"changefreq": "yearly"}},
         ),  # Has sitemap config but no loc
     ]
     links = generate_links_for_sitemap(pages)
@@ -204,7 +205,7 @@ def test_generate_links_for_sitemap_404_route(
             image="favicon.ico",
             on_load=None,
             meta=[],
-            context={"sitemap": {"loc": "/custom-404", "priority": 0.1}}
+            context={"sitemap": {"loc": "/custom-404", "priority": 0.1}},
         ),
         UnevaluatedPage(
             component=mock_component,
@@ -214,7 +215,7 @@ def test_generate_links_for_sitemap_404_route(
             image="favicon.ico",
             on_load=None,
             meta=[],
-            context={"sitemap": {"priority": 0.2}}
+            context={"sitemap": {"priority": 0.2}},
         ),  # Has sitemap config but no loc
     ]
     links = generate_links_for_sitemap(pages)
@@ -242,7 +243,7 @@ def test_generate_links_for_sitemap_loc_override(mock_get_config: MagicMock):
             image="favicon.ico",
             on_load=None,
             meta=[],
-            context={"sitemap": {"loc": "https://override.com/features_page"}}
+            context={"sitemap": {"loc": "https://override.com/features_page"}},
         ),
         UnevaluatedPage(
             component=mock_component,
@@ -252,7 +253,7 @@ def test_generate_links_for_sitemap_loc_override(mock_get_config: MagicMock):
             image="favicon.ico",
             on_load=None,
             meta=[],
-            context={"sitemap": {"loc": "/custom_pricing"}}
+            context={"sitemap": {"loc": "/custom_pricing"}},
         ),
     ]
     links = generate_links_for_sitemap(pages)
@@ -278,7 +279,7 @@ def test_generate_links_for_sitemap_priority_clamping(mock_get_config: MagicMock
             image="favicon.ico",
             on_load=None,
             meta=[],
-            context={"sitemap": {"priority": 1.5}}
+            context={"sitemap": {"priority": 1.5}},
         ),
         UnevaluatedPage(
             component=mock_component,
@@ -288,7 +289,7 @@ def test_generate_links_for_sitemap_priority_clamping(mock_get_config: MagicMock
             image="favicon.ico",
             on_load=None,
             meta=[],
-            context={"sitemap": {"priority": -0.5}}
+            context={"sitemap": {"priority": -0.5}},
         ),
         UnevaluatedPage(
             component=mock_component,
@@ -298,14 +299,14 @@ def test_generate_links_for_sitemap_priority_clamping(mock_get_config: MagicMock
             image="favicon.ico",
             on_load=None,
             meta=[],
-            context={"sitemap": {"priority": 0.5}}
+            context={"sitemap": {"priority": 0.5}},
         ),
     ]
     links = generate_links_for_sitemap(pages)
     expected_links = [
         {"loc": "https://example.com/high_prio", "priority": 1.0},
         {"loc": "https://example.com/low_prio", "priority": 0.0},
-        {"loc": "https://example.com/valid_prio", "priority": 0.5}
+        {"loc": "https://example.com/valid_prio", "priority": 0.5},
     ]
     for expected_link in expected_links:
         assert expected_link in links
@@ -328,7 +329,7 @@ def test_generate_links_for_sitemap_no_deploy_url(mock_get_config: MagicMock):
             image="favicon.ico",
             on_load=None,
             meta=[],
-            context={"sitemap": {"loc": "/home"}}
+            context={"sitemap": {"loc": "/home"}},
         ),
         UnevaluatedPage(
             component=mock_component,
@@ -338,7 +339,7 @@ def test_generate_links_for_sitemap_no_deploy_url(mock_get_config: MagicMock):
             image="favicon.ico",
             on_load=None,
             meta=[],
-            context={}
+            context={},
         ),  # No loc, should use route
         UnevaluatedPage(
             component=mock_component,
@@ -348,22 +349,20 @@ def test_generate_links_for_sitemap_no_deploy_url(mock_get_config: MagicMock):
             image="favicon.ico",
             on_load=None,
             meta=[],
-            context={}
+            context={},
         ),  # Special case for index
     ]
     links = generate_links_for_sitemap(pages)
     assert len(links) == 3
-    expected_links = [
-        {"loc": "/home"},
-        {"loc": "/about"},
-        {"loc": "/"}
-    ]
+    expected_links = [{"loc": "/home"}, {"loc": "/about"}, {"loc": "/"}]
     for expected_link in expected_links:
         assert expected_link in links
 
 
 @patch("reflex.config.get_config")
-def test_generate_links_for_sitemap_deploy_url_trailing_slash(mock_get_config: MagicMock):
+def test_generate_links_for_sitemap_deploy_url_trailing_slash(
+    mock_get_config: MagicMock,
+):
     """Test generate_links_for_sitemap with deploy_url having a trailing slash."""
     mock_get_config.return_value.deploy_url = "https://example.com/"
 
@@ -379,7 +378,7 @@ def test_generate_links_for_sitemap_deploy_url_trailing_slash(mock_get_config: M
             image="favicon.ico",
             on_load=None,
             meta=[],
-            context={}
+            context={},
         ),
     ]
     links = generate_links_for_sitemap(pages)
@@ -404,7 +403,7 @@ def test_generate_links_for_sitemap_loc_leading_slash(mock_get_config: MagicMock
             image="favicon.ico",
             on_load=None,
             meta=[],
-            context={"sitemap": {"loc": "/another"}}
+            context={"sitemap": {"loc": "/another"}},
         ),
     ]
     links = generate_links_for_sitemap(pages)
@@ -429,7 +428,7 @@ def test_generate_links_for_sitemap_loc_full_url(mock_get_config: MagicMock):
             image="favicon.ico",
             on_load=None,
             meta=[],
-            context={"sitemap": {"loc": "http://othersite.com/page"}}
+            context={"sitemap": {"loc": "http://othersite.com/page"}},
         ),
     ]
     links = generate_links_for_sitemap(pages)
