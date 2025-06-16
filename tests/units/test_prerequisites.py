@@ -40,14 +40,6 @@ runner = CliRunner()
         (
             Config(
                 app_name="test",
-                next_compression=False,
-            ),
-            False,
-            'export default {"basename": "/", "future": {"unstable_optimizeDeps": true}, "ssr": false};',
-        ),
-        (
-            Config(
-                app_name="test",
                 frontend_path="/test",
             ),
             False,
@@ -56,23 +48,6 @@ runner = CliRunner()
         (
             Config(
                 app_name="test",
-                frontend_path="/test",
-                next_compression=False,
-            ),
-            False,
-            'export default {"basename": "/test", "future": {"unstable_optimizeDeps": true}, "ssr": false};',
-        ),
-        (
-            Config(
-                app_name="test",
-            ),
-            True,
-            'export default {"basename": "/", "future": {"unstable_optimizeDeps": true}, "ssr": false, "prerender": true, "build": "build"};',
-        ),
-        (
-            Config(
-                app_name="test",
-                next_dev_indicators=True,
             ),
             True,
             'export default {"basename": "/", "future": {"unstable_optimizeDeps": true}, "ssr": false, "prerender": true, "build": "build"};',
