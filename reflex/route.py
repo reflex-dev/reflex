@@ -17,13 +17,8 @@ def verify_route_validity(route: str) -> None:
         ValueError: If the route is invalid.
     """
     pattern = catchall_in_route(route)
-    if pattern and not route.endswith(pattern):
-        msg = f"Catch-all must be the last part of the URL: {route}"
-        raise ValueError(msg)
-    if route == "api" or route.startswith("api/"):
-        msg = (
-            f"Cannot have a route prefixed with 'api/': {route} (conflicts with NextJS)"
-        )
+    if pattern:
+        msg = f"Catchall patterns `{pattern}` are not supported in Reflex."
         raise ValueError(msg)
 
 

@@ -80,7 +80,7 @@ class CompileVars(SimpleNamespace):
 
 
 class PageNames(SimpleNamespace):
-    """The name of basic pages deployed in NextJS."""
+    """The name of basic pages deployed in the frontend."""
 
     # The name of the index page.
     INDEX_ROUTE = "index"
