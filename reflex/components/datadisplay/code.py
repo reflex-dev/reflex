@@ -300,6 +300,54 @@ LiteralCodeLanguage = Literal[
     "yang",
     "zig",
 ]
+_LITERAL_CODE_LANGUAGE_VAR = Var.create(typing.get_args(LiteralCodeLanguage))
+
+
+def _get_language_registration_hook(language: Var | str) -> Var:
+    """Get the hook to register the language.
+
+    Args:
+        language: The const/literal Var of the language module to import.
+            For markdown, use the default placeholder _LANGUAGE.
+            For direct use, a LiteralStringVar should be passed via the language
+            prop.
+
+    Returns:
+        JS snippet that will register the language with react-syntax-highlighter when evaluated.
+    """
+    language_var = Var.create(language)
+    language_in_there = _LITERAL_CODE_LANGUAGE_VAR.contains(language_var)
+    check_language = (
+        f"if ({language_var} && !{language_in_there}) {{ console.warn(`Language \\`${{{language_var}}}\\` is not supported for code blocks inside of markdown.`); {language_var} = ''; }}"
+        if not isinstance(language_var, LiteralVar)
+        else ""
+    )
+    import_statement = (
+        f"import('react-syntax-highlighter/dist/esm/languages/prism/{language_var._var_value}')"
+        if isinstance(language_var, LiteralVar)
+        else f"import(/* @vite-ignore */`react-syntax-highlighter/dist/esm/languages/prism/${{{language_var}}}`)"
+    )
+    async_load = f"""
+(async () => {{
+  if ({language_var} == '') {{ return; }}
+  try {{
+    const module = await {import_statement};
+    SyntaxHighlighter.registerLanguage({language_var}, module.default);
+  }} catch (error) {{
+    console.error(`Language ${{{language_var}}} is not supported for code blocks inside of markdown: `, error);
+  }}
+}})();
+"""
+    return Var(
+        f"\n{check_language}\n{async_load}",
+        _var_data=VarData(
+            imports={
+                CodeBlock.get_fields()["library"].default_value(): [
+                    ImportVar(tag="PrismAsyncLight", alias="SyntaxHighlighter")
+                ]
+            },
+        ),
+    )
 
 
 def construct_theme_var(theme: str) -> Var[Theme]:
@@ -315,7 +363,7 @@ def construct_theme_var(theme: str) -> Var[Theme]:
         theme,
         _var_data=VarData(
             imports={
-                f"react-syntax-highlighter/dist/cjs/styles/prism/{format.to_kebab_case(theme)}": [
+                f"react-syntax-highlighter/dist/esm/styles/prism/{format.to_kebab_case(theme)}": [
                     ImportVar(tag=theme, is_default=True, install=False)
                 ]
             }
@@ -503,63 +551,13 @@ class CodeBlock(Component, MarkdownComponentMap):
         return ["can_copy", "copy_button"]
 
     @classmethod
-    def _get_language_registration_hook(cls, language_var: Var = _LANGUAGE) -> Var:
-        """Get the hook to register the language.
-
-        Args:
-            language_var: The const/literal Var of the language module to import.
-                For markdown, uses the default placeholder _LANGUAGE. For direct use,
-                a LiteralStringVar should be passed via the language prop.
-
-        Returns:
-            The hook to register the language.
-        """
-        language_in_there = Var.create(typing.get_args(LiteralCodeLanguage)).contains(
-            language_var
-        )
-        async_load = f"""
-(async () => {{
-    try {{
-        const module = await import(`react-syntax-highlighter/dist/cjs/languages/prism/${{{language_var!s}}}`);
-        SyntaxHighlighter.registerLanguage({language_var!s}, module.default);
-    }} catch (error) {{
-        console.error(`Language ${{{language_var!s}}} is not supported for code blocks inside of markdown: `, error);
-    }}
-}})();
-"""
-        return Var(
-            f"""
- if ({language_var!s}) {{
-    if (!{language_in_there!s}) {{
-        console.warn(`Language \\`${{{language_var!s}}}\\` is not supported for code blocks inside of markdown.`);
-        {language_var!s} = '';
-    }} else {{
-        {async_load!s}
-    }}
-  }}
-"""
-            if not isinstance(language_var, LiteralVar)
-            else f"""
-if ({language_var!s}) {{
-    {async_load!s}
-}}""",
-            _var_data=VarData(
-                imports={
-                    cls.get_fields()["library"].default_value(): [
-                        ImportVar(tag="PrismAsyncLight", alias="SyntaxHighlighter")
-                    ]
-                },
-            ),
-        )
-
-    @classmethod
     def get_component_map_custom_code(cls) -> Var:
         """Get the custom code for the component.
 
         Returns:
             The custom code for the component.
         """
-        return cls._get_language_registration_hook()
+        return _get_language_registration_hook(_LANGUAGE)
 
     def add_hooks(self) -> list[str | Var]:
         """Add hooks for the component.
@@ -568,7 +566,15 @@ if ({language_var!s}) {{
             The hooks for the component.
         """
         return [
-            self._get_language_registration_hook(language_var=self.language),
+            Var(
+                f"useEffect(() => {{ {_get_language_registration_hook(self.language)} }},"
+                f"[{self.language if not isinstance(self.language, LiteralVar) else ''}]);",
+                _var_data=VarData(
+                    imports={
+                        "react": "useEffect",
+                    },
+                ),
+            ),
         ]
 
 
