@@ -410,7 +410,7 @@ def _extract_class_props_as_ast_nodes(
                             )
                         ),
                     ),
-                    ast.Constant(value=default),
+                    ast.Constant(value=default),  # pyright: ignore [reportArgumentType]
                 )
             )
     return kwargs

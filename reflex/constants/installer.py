@@ -14,7 +14,7 @@ class Bun(SimpleNamespace):
     """Bun constants."""
 
     # The Bun version.
-    VERSION = "1.2.15"
+    VERSION = "1.2.16"
 
     # Min Bun Version
     MIN_VERSION = "1.2.8"
@@ -72,18 +72,6 @@ class Node(SimpleNamespace):
 registry={registry}
 fetch-retries=0
 """
-
-
-def _determine_nextjs_version() -> str:
-    default_version = "15.3.3"
-    if (version := os.getenv("NEXTJS_VERSION")) and version != default_version:
-        from reflex.utils import console
-
-        console.warn(
-            f"You have requested next@{version} but the supported version is {default_version}, abandon all hope ye who enter here."
-        )
-        return version
-    return default_version
 
 
 def _determine_react_router_version() -> str:
@@ -156,7 +144,7 @@ class PackageJson(SimpleNamespace):
         "postcss-import": "16.1.0",
         "@react-router/dev": _react_router_version,
         "@react-router/fs-routes": _react_router_version,
-        "vite": "npm:rolldown-vite@latest",
+        "rolldown-vite": "6.3.19",
     }
     OVERRIDES = {
         # This should always match the `react` version in DEPENDENCIES for recharts compatibility.
