@@ -24,6 +24,7 @@ from typing_extensions import Self
 
 import reflex.istate.dynamic
 from reflex import constants, event
+from reflex.constants.state import FIELD_MARKER
 from reflex.environment import PerformanceMode, environment
 from reflex.event import (
     BACKGROUND_TASK_MARKER,
@@ -63,7 +64,6 @@ from reflex.vars.base import (
     Var,
     computed_var,
     dispatch,
-    get_unique_variable_name,
     is_computed_var,
 )
 
@@ -247,7 +247,7 @@ class EventHandlerSetVar(EventHandler):
         return super().__call__(*args)
 
 
-def get_var_for_field(cls: type[BaseState], name: str, f: Field):
+def get_var_for_field(cls: type[BaseState], name: str, f: Field) -> Var:
     """Get a Var instance for a state field.
 
     Args:
@@ -258,7 +258,9 @@ def get_var_for_field(cls: type[BaseState], name: str, f: Field):
     Returns:
         The Var instance.
     """
-    field_name = format.format_state_name(cls.get_full_name()) + "." + name
+    field_name = (
+        format.format_state_name(cls.get_full_name()) + "." + name + FIELD_MARKER
+    )
 
     return dispatch(
         field_name=field_name,
@@ -415,14 +417,14 @@ class BaseState(EvenMoreBasicBaseState):
         return f"{type(self).__name__}({self.dict()})"
 
     @classmethod
-    def _get_computed_vars(cls) -> list[ComputedVar]:
+    def _get_computed_vars(cls) -> list[tuple[str, ComputedVar]]:
         """Helper function to get all computed vars of a instance.
 
         Returns:
             A list of computed vars.
         """
         return [
-            v
+            (name, v)
             for mixin in [*cls._mixins(), cls]
             for name, v in mixin.__dict__.items()
             if is_computed_var(v) and name not in cls.inherited_vars
@@ -530,8 +532,8 @@ class BaseState(EvenMoreBasicBaseState):
             if name not in cls.get_skip_vars() and f.is_var and not name.startswith("_")
         }
         cls.computed_vars = {
-            v._js_expr: v._replace(merge_var_data=VarData.from_state(cls))
-            for v in computed_vars
+            name: v._replace(merge_var_data=VarData.from_state(cls))
+            for name, v in computed_vars
         }
         cls.vars = {
             **cls.inherited_vars,
@@ -541,8 +543,8 @@ class BaseState(EvenMoreBasicBaseState):
         cls.event_handlers = {}
 
         # Setup the base vars at the class level.
-        for prop in cls.base_vars.values():
-            cls._init_var(prop)
+        for name, prop in cls.base_vars.items():
+            cls._init_var(name, prop)
 
         # Set up the event handlers.
         events = {
@@ -560,8 +562,8 @@ class BaseState(EvenMoreBasicBaseState):
                     newcv = value._replace(fget=fget, _var_data=VarData.from_state(cls))
                     # cleanup refs to mixin cls in var_data
                     setattr(cls, name, newcv)
-                    cls.computed_vars[newcv._js_expr] = newcv
-                    cls.vars[newcv._js_expr] = newcv
+                    cls.computed_vars[name] = newcv
+                    cls.vars[name] = newcv
                     continue
                 if types.is_backend_base_variable(name, mixin_cls):
                     cls.backend_vars[name] = copy.deepcopy(value)
@@ -664,9 +666,16 @@ class BaseState(EvenMoreBasicBaseState):
 
         of_type = of_type or Component
 
-        unique_var_name = get_unique_variable_name()
+        unique_var_name = (
+            ("dynamic_" + f.__module__ + "_" + f.__qualname__)
+            .replace("<", "")
+            .replace(">", "")
+            .replace(".", "_")
+        )
 
-        @computed_var(_js_expr=unique_var_name, return_type=of_type)
+        while unique_var_name in cls.vars:
+            unique_var_name += "_"
+
         def computed_var_func(state: Self):
             result = f(state)
 
@@ -678,10 +687,16 @@ class BaseState(EvenMoreBasicBaseState):
 
             return result
 
-        setattr(cls, unique_var_name, computed_var_func)
-        cls.computed_vars[unique_var_name] = computed_var_func
-        cls.vars[unique_var_name] = computed_var_func
-        cls._update_substate_inherited_vars({unique_var_name: computed_var_func})
+        computed_var_func.__name__ = unique_var_name
+
+        computed_var_func_arg = computed_var(return_type=of_type, cache=False)(
+            computed_var_func
+        )
+
+        setattr(cls, unique_var_name, computed_var_func_arg)
+        cls.computed_vars[unique_var_name] = computed_var_func_arg
+        cls.vars[unique_var_name] = computed_var_func_arg
+        cls._update_substate_inherited_vars({unique_var_name: computed_var_func_arg})
         cls._always_dirty_computed_vars.add(unique_var_name)
 
         return getattr(cls, unique_var_name)
@@ -819,8 +834,8 @@ class BaseState(EvenMoreBasicBaseState):
         Raises:
             ComputedVarShadowsBaseVarsError: When a computed var shadows a base var.
         """
-        for computed_var_ in cls._get_computed_vars():
-            if computed_var_._js_expr in cls.__annotations__:
+        for name, computed_var_ in cls._get_computed_vars():
+            if name in cls.__annotations__:
                 msg = f"The computed var name `{computed_var_._js_expr}` shadows a base var in {cls.__module__}.{cls.__name__}; use a different name instead"
                 raise ComputedVarShadowsBaseVarsError(msg)
 
@@ -993,10 +1008,11 @@ class BaseState(EvenMoreBasicBaseState):
         )
 
     @classmethod
-    def _init_var(cls, prop: Var):
+    def _init_var(cls, name: str, prop: Var):
         """Initialize a variable.
 
         Args:
+            name: The name of the variable
             prop: The variable to initialize
 
         Raises:
@@ -1013,10 +1029,10 @@ class BaseState(EvenMoreBasicBaseState):
                 f'Found var "{prop._js_expr}" with type {prop._var_type}.'
             )
             raise VarTypeError(msg)
-        cls._set_var(prop)
+        cls._set_var(name, prop)
         if cls.is_user_defined() and get_config().state_auto_setters:
-            cls._create_setter(prop)
-        cls._set_default_value(prop)
+            cls._create_setter(name, prop)
+        cls._set_default_value(name, prop)
 
     @classmethod
     def add_var(cls, name: str, type_: Any, default_value: Any = None):
@@ -1039,15 +1055,18 @@ class BaseState(EvenMoreBasicBaseState):
 
         # create the variable based on name and type
         var = Var(
-            _js_expr=format.format_state_name(cls.get_full_name()) + "." + name,
+            _js_expr=format.format_state_name(cls.get_full_name())
+            + "."
+            + name
+            + FIELD_MARKER,
             _var_type=type_,
             _var_data=VarData.from_state(cls, name),
         ).guess_type()
 
         # add the field dynamically (must be done before _init_var)
-        cls.add_field(var, default_value)
+        cls.add_field(name, var, default_value)
 
-        cls._init_var(var)
+        cls._init_var(name, var)
 
         # update the internal dicts so the new variable is correctly handled
         cls.base_vars.update({name: var})
@@ -1061,13 +1080,14 @@ class BaseState(EvenMoreBasicBaseState):
         cls._init_var_dependency_dicts()
 
     @classmethod
-    def _set_var(cls, prop: Var):
+    def _set_var(cls, name: str, prop: Var):
         """Set the var as a class member.
 
         Args:
+            name: The name of the var.
             prop: The var instance to set.
         """
-        setattr(cls, prop._var_field_name, prop)
+        setattr(cls, name, prop)
 
     @classmethod
     def _create_event_handler(cls, fn: Any):
@@ -1087,27 +1107,29 @@ class BaseState(EvenMoreBasicBaseState):
         cls.setvar = cls.event_handlers["setvar"] = EventHandlerSetVar(state_cls=cls)
 
     @classmethod
-    def _create_setter(cls, prop: Var):
+    def _create_setter(cls, name: str, prop: Var):
         """Create a setter for the var.
 
         Args:
+            name: The name of the var.
             prop: The var to create a setter for.
         """
-        setter_name = prop._get_setter_name(include_state=False)
+        setter_name = Var._get_setter_name_for_name(name)
         if setter_name not in cls.__dict__:
-            event_handler = cls._create_event_handler(prop._get_setter())
+            event_handler = cls._create_event_handler(prop._get_setter(name))
             cls.event_handlers[setter_name] = event_handler
             setattr(cls, setter_name, event_handler)
 
     @classmethod
-    def _set_default_value(cls, prop: Var):
+    def _set_default_value(cls, name: str, prop: Var):
         """Set the default value for the var.
 
         Args:
+            name: The name of the var.
             prop: The var to set the default value for.
         """
         # Get the field for the var.
-        field = cls.get_fields()[prop._var_field_name]
+        field = cls.get_fields()[name]
 
         if field.default is None and not types.is_optional(prop._var_type):
             # Ensure frontend uses null coalescing when accessing.
@@ -1183,11 +1205,15 @@ class BaseState(EvenMoreBasicBaseState):
             def inner_func(self: BaseState) -> str:
                 return self.router.page.params.get(param, "")
 
+            inner_func.__name__ = param
+
             return inner_func
 
         def arglist_factory(param: str):
             def inner_func(self: BaseState) -> list[str]:
                 return self.router.page.params.get(param, [])
+
+            inner_func.__name__ = param
 
             return inner_func
 
@@ -1203,8 +1229,7 @@ class BaseState(EvenMoreBasicBaseState):
                 fget=func,
                 auto_deps=False,
                 deps=["router"],
-                _js_expr=param,
-                _var_data=VarData.from_state(cls),
+                _var_data=VarData.from_state(cls, param),
             )
             setattr(cls, param, dynamic_vars[param])
 
@@ -1938,7 +1963,7 @@ class BaseState(EvenMoreBasicBaseState):
         )
 
         subdelta: dict[str, Any] = {
-            prop: self.get_value(prop)
+            prop + FIELD_MARKER: self.get_value(prop)
             for prop in delta_vars
             if not types.is_backend_base_variable(prop, type(self))
         }
@@ -2073,7 +2098,9 @@ class BaseState(EvenMoreBasicBaseState):
             computed_vars = {}
         variables = {**base_vars, **computed_vars}
         d = {
-            self.get_full_name(): {k: variables[k] for k in sorted(variables)},
+            self.get_full_name(): {
+                k + FIELD_MARKER: variables[k] for k in sorted(variables)
+            },
         }
         for substate_d in [
             v.dict(include_computed=include_computed, initial=initial, **kwargs)
@@ -2394,6 +2421,7 @@ class UpdateVarsInternalState(State):
         """
         for var, value in vars.items():
             state_name, _, var_name = var.rpartition(".")
+            var_name = var_name.removesuffix(FIELD_MARKER)
             var_state_cls = State.get_class_substate(state_name)
             if var_state_cls._is_client_storage(var_name):
                 var_state = await self.get_state(var_state_cls)

@@ -13,7 +13,7 @@ import io
 import json
 import sys
 import traceback
-from collections.abc import AsyncIterator, Callable, Coroutine, Sequence
+from collections.abc import AsyncIterator, Callable, Coroutine, Mapping, Sequence
 from datetime import datetime
 from pathlib import Path
 from timeit import default_timer as timer
@@ -60,7 +60,7 @@ from reflex.components.core.banner import (
 )
 from reflex.components.core.breakpoints import set_breakpoints
 from reflex.components.core.client_side_routing import (
-    Default404Page,
+    default_404_page,
     wait_for_client_redirect,
 )
 from reflex.components.core.sticky import sticky
@@ -272,8 +272,8 @@ class UnevaluatedPage:
     description: Var | str | None
     image: str
     on_load: EventType[()] | None
-    meta: list[dict[str, str]]
-    context: dict[str, Any] | None
+    meta: Sequence[Mapping[str, str]]
+    context: Mapping[str, Any]
 
     def merged_with(self, other: UnevaluatedPage) -> UnevaluatedPage:
         """Merge the other page into this one.
@@ -579,7 +579,7 @@ class App(MiddlewareMixin, LifespanMixin):
         self._apply_decorated_pages()
 
         compile_future = concurrent.futures.ThreadPoolExecutor(max_workers=1).submit(
-            self._compile
+            self._compile, prerender_routes=is_prod_mode()
         )
 
         def callback(f: concurrent.futures.Future):
@@ -760,7 +760,7 @@ class App(MiddlewareMixin, LifespanMixin):
 
         if route == constants.Page404.SLUG:
             if component is None:
-                component = Default404Page.create()
+                component = default_404_page
             component = wait_for_client_redirect(self._generate_component(component))
             title = title or constants.Page404.TITLE
             description = description or constants.Page404.DESCRIPTION
@@ -781,7 +781,7 @@ class App(MiddlewareMixin, LifespanMixin):
             image=image,
             on_load=on_load,
             meta=meta,
-            context=context,
+            context=context or {},
         )
 
         if route in self._unevaluated_pages:
@@ -852,10 +852,39 @@ class App(MiddlewareMixin, LifespanMixin):
         Returns:
             The load events for the route.
         """
-        route = route.lstrip("/")
+        route = route.lstrip("/").rstrip("/")
         if route == "":
-            route = constants.PageNames.INDEX_ROUTE
-        return self._load_events.get(route, [])
+            return self._load_events.get(constants.PageNames.INDEX_ROUTE, [])
+
+        # Separate the pages by route type.
+        static_page_paths_to_page_route = {}
+        dynamic_page_paths_to_page_route = {}
+        for page_route in list(self._pages) + list(self._unevaluated_pages):
+            page_path = page_route.lstrip("/").rstrip("/")
+            if "[" in page_path and "]" in page_path:
+                dynamic_page_paths_to_page_route[page_path] = page_route
+            else:
+                static_page_paths_to_page_route[page_path] = page_route
+
+        # Check for static routes.
+        if (page_route := static_page_paths_to_page_route.get(route)) is not None:
+            return self._load_events.get(page_route, [])
+
+        # Check for dynamic routes.
+        parts = route.split("/")
+        for page_path, page_route in dynamic_page_paths_to_page_route.items():
+            page_parts = page_path.split("/")
+            if len(page_parts) != len(parts):
+                continue
+            if all(
+                part == page_part
+                or (page_part.startswith("[") and page_part.endswith("]"))
+                for part, page_part in zip(parts, page_parts, strict=False)
+            ):
+                return self._load_events.get(page_route, [])
+
+        # Default to 404 page load events if no match found.
+        return self._load_events.get("404", [])
 
     def _check_routes_conflict(self, new_route: str):
         """Verify if there is any conflict between the new route and any existing route.
@@ -948,7 +977,7 @@ class App(MiddlewareMixin, LifespanMixin):
             for i, tags in imports.items()
             if i not in dependencies
             and i not in dev_dependencies
-            and not any(i.startswith(prefix) for prefix in ["/", "$/", ".", "next/"])
+            and not any(i.startswith(prefix) for prefix in ["/", "$/", "."])
             and i != ""
             and any(tag.install for tag in tags)
         }
@@ -1072,17 +1101,17 @@ class App(MiddlewareMixin, LifespanMixin):
                 )
                 for dep in dep_set:
                     if dep not in state_cls.vars and dep not in state_cls.backend_vars:
-                        msg = f"ComputedVar {var._js_expr} on state {state.__name__} has an invalid dependency {state_name}.{dep}"
+                        msg = f"ComputedVar {var._name} on state {state.__name__} has an invalid dependency {state_name}.{dep}"
                         raise exceptions.VarDependencyError(msg)
 
         for substate in state.class_subclasses:
             self._validate_var_dependencies(substate)
 
-    def _compile(self, export: bool = False, dry_run: bool = False):
+    def _compile(self, prerender_routes: bool = False, dry_run: bool = False):
         """Compile the app and output it to the pages folder.
 
         Args:
-            export: Whether to compile the app for export.
+            prerender_routes: Whether to prerender the routes.
             dry_run: Whether to compile the app without saving it.
 
         Raises:
@@ -1354,6 +1383,7 @@ class App(MiddlewareMixin, LifespanMixin):
                             )
                         )
                     ),
+                    unevaluated_pages=list(self._unevaluated_pages.values()),
                 )
 
             # Wait for all compilation tasks to complete.
@@ -1397,15 +1427,9 @@ class App(MiddlewareMixin, LifespanMixin):
         with console.timing("Install Frontend Packages"):
             self._get_frontend_packages(all_imports)
 
-        # Setup the next.config.js
-        transpile_packages = [
-            package
-            for package, import_vars in all_imports.items()
-            if any(import_var.transpile for import_var in import_vars)
-        ]
-        prerequisites.update_next_config(
-            export=export,
-            transpile_packages=transpile_packages,
+        # Setup the react-router.config.js
+        prerequisites.update_react_router_config(
+            prerender_routes=prerender_routes,
         )
 
         if is_prod_mode():
@@ -1414,9 +1438,11 @@ class App(MiddlewareMixin, LifespanMixin):
         else:
             # In dev mode, delete removed pages and update existing pages.
             keep_files = [Path(output_path) for output_path, _ in compile_results]
-            for p in Path(prerequisites.get_web_dir() / constants.Dirs.PAGES).rglob(
-                "*"
-            ):
+            for p in Path(
+                prerequisites.get_web_dir()
+                / constants.Dirs.PAGES
+                / constants.Dirs.ROUTES
+            ).rglob("*"):
                 if p.is_file() and p not in keep_files:
                     # Remove pages that are no longer in the app.
                     p.unlink()

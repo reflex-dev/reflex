@@ -6,11 +6,13 @@ from reflex.utils.imports import ImportVar
 from reflex.vars.base import LiteralVar, Var
 from reflex.vars.sequence import LiteralStringVar, StringVar
 
+LUCIDE_LIBRARY = "lucide-react@0.511.0"
+
 
 class LucideIconComponent(Component):
     """Lucide Icon Component."""
 
-    library = "lucide-react@0.511.0"
+    library = LUCIDE_LIBRARY
 
 
 class Icon(LucideIconComponent):
@@ -96,7 +98,9 @@ class DynamicIcon(LucideIconComponent):
         _imports = super()._get_imports()
         if self.library:
             _imports.pop(self.library)
-        _imports["lucide-react"] = [ImportVar("DynamicIcon", package_path="/dynamic")]
+        _imports[LUCIDE_LIBRARY] = [
+            ImportVar("DynamicIcon", package_path="/dynamic.mjs")
+        ]
         return _imports
 
 

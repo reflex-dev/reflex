@@ -20,6 +20,7 @@ from rich.markup import escape
 from typing_extensions import dataclass_transform
 
 import reflex.state
+from reflex import constants
 from reflex.compiler.templates import STATEFUL_COMPONENT
 from reflex.components.core.breakpoints import Breakpoints
 from reflex.components.dynamic import load_dynamic_serializer
@@ -266,11 +267,6 @@ class BaseComponent(metaclass=BaseComponentMeta):
 
     # List here the non-react dependency needed by `library`
     lib_dependencies: list[str] = field(
-        default_factory=list, is_javascript_property=False
-    )
-
-    # List here the dependencies that need to be transpiled by Next.js
-    transpile_packages: list[str] = field(
         default_factory=list, is_javascript_property=False
     )
 
@@ -1550,20 +1546,6 @@ class Component(BaseComponent, ABC):
         # Return the dynamic imports
         return dynamic_imports
 
-    def _should_transpile(self, dep: str | None) -> bool:
-        """Check if a dependency should be transpiled.
-
-        Args:
-            dep: The dependency to check.
-
-        Returns:
-            True if the dependency should be transpiled.
-        """
-        return bool(self.transpile_packages) and (
-            dep in self.transpile_packages
-            or format.format_library_name(dep or "") in self.transpile_packages
-        )
-
     def _get_dependencies_imports(self) -> ParsedImportDict:
         """Get the imports from lib_dependencies for installing.
 
@@ -1571,14 +1553,7 @@ class Component(BaseComponent, ABC):
             The dependencies imports of the component.
         """
         return {
-            dep: [
-                ImportVar(
-                    tag=None,
-                    render=False,
-                    transpile=self._should_transpile(dep),
-                )
-            ]
-            for dep in self.lib_dependencies
+            dep: [ImportVar(tag=None, render=False)] for dep in self.lib_dependencies
         }
 
     def _get_hooks_imports(self) -> ParsedImportDict:
@@ -1636,7 +1611,7 @@ class Component(BaseComponent, ABC):
 
         # Import this component's tag from the main library.
         if self.library is not None and self.tag is not None:
-            _imports[self.library] = {self.import_var}
+            _imports[self.library] = self.import_var
 
         # Get static imports required for event processing.
         event_imports = Imports.EVENTS if self.event_triggers else {}
@@ -1662,7 +1637,7 @@ class Component(BaseComponent, ABC):
         return imports.merge_imports(
             self._get_dependencies_imports(),
             self._get_hooks_imports(),
-            _imports,
+            {**_imports},
             event_imports,
             *var_imports,
             *added_import_dicts,
@@ -1903,12 +1878,7 @@ class Component(BaseComponent, ABC):
         # If the tag is dot-qualified, only import the left-most name.
         tag = self.tag.partition(".")[0] if self.tag else None
         alias = self.alias.partition(".")[0] if self.alias else None
-        return ImportVar(
-            tag=tag,
-            is_default=self.is_default,
-            alias=alias,
-            transpile=self._should_transpile(self.library),
-        )
+        return ImportVar(tag=tag, is_default=self.is_default, alias=alias)
 
     @staticmethod
     def _get_app_wrap_components() -> dict[tuple[int, str], Component]:
@@ -2263,8 +2233,11 @@ class NoSSRComponent(Component):
         Returns:
             The imports for dynamically importing the component at module load time.
         """
-        # Next.js dynamic import mechanism.
-        dynamic_import = {"next/dynamic": [ImportVar(tag="dynamic", is_default=True)]}
+        # React lazy import mechanism.
+        dynamic_import = {
+            "react": [ImportVar(tag="lazy")],
+            f"$/{constants.Dirs.UTILS}/context": [ImportVar(tag="ClientSide")],
+        }
 
         # The normal imports for this component.
         _imports = super()._get_imports()
@@ -2274,13 +2247,7 @@ class NoSSRComponent(Component):
         if import_name is not None:
             with contextlib.suppress(ValueError):
                 _imports[import_name].remove(self.import_var)
-            _imports[import_name].append(
-                imports.ImportVar(
-                    tag=None,
-                    render=False,
-                    transpile=self._should_transpile(self.library),
-                )
-            )
+            _imports[import_name].append(ImportVar(tag=None, render=False))
 
         return imports.merge_imports(
             dynamic_import,
@@ -2289,8 +2256,6 @@ class NoSSRComponent(Component):
         )
 
     def _get_dynamic_imports(self) -> str:
-        opts_fragment = ", { ssr: false });"
-
         # extract the correct import name from library name
         base_import_name = self._get_import_name()
         if base_import_name is None:
@@ -2298,12 +2263,19 @@ class NoSSRComponent(Component):
             raise ValueError(msg)
         import_name = format.format_library_name(base_import_name)
 
-        library_import = f"const {self.alias if self.alias else self.tag} = dynamic(() => import('{import_name}')"
+        library_import = f"import('{import_name}')"
         mod_import = (
             # https://nextjs.org/docs/pages/building-your-application/optimizing/lazy-loading#with-named-exports
-            f".then((mod) => mod.{self.tag})" if not self.is_default else ""
+            f".then((mod) => ({{default: mod.{self.tag}}}))"
+            if not self.is_default
+            else ""
         )
-        return library_import + mod_import + opts_fragment
+        return (
+            f"const {self.alias if self.alias else self.tag} = ClientSide(lazy(() => "
+            + library_import
+            + mod_import
+            + "))"
+        )
 
 
 class StatefulComponent(BaseComponent):

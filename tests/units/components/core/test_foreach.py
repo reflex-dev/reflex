@@ -13,6 +13,7 @@ from reflex.components.core.foreach import (
 )
 from reflex.components.radix.themes.layout.box import box
 from reflex.components.radix.themes.typography.text import text
+from reflex.constants.state import FIELD_MARKER
 from reflex.state import BaseState, ComponentState
 from reflex.vars.base import Var
 from reflex.vars.number import NumberVar
@@ -150,77 +151,84 @@ seen_index_vars = set()
             ForEachState.colors_list,
             display_color,
             {
-                "iterable_state": f"{ForEachState.get_full_name()}.colors_list",
+                "iterable_state": f"{ForEachState.get_full_name()}.colors_list"
+                + FIELD_MARKER,
             },
         ),
         (
             ForEachState.colors_dict_list,
             display_color_name,
             {
-                "iterable_state": f"{ForEachState.get_full_name()}.colors_dict_list",
+                "iterable_state": f"{ForEachState.get_full_name()}.colors_dict_list"
+                + FIELD_MARKER,
             },
         ),
         (
             ForEachState.colors_nested_dict_list,
             display_shade,
             {
-                "iterable_state": f"{ForEachState.get_full_name()}.colors_nested_dict_list",
+                "iterable_state": f"{ForEachState.get_full_name()}.colors_nested_dict_list"
+                + FIELD_MARKER,
             },
         ),
         (
             ForEachState.primary_color,
             display_primary_colors,
             {
-                "iterable_state": f"Object.entries({ForEachState.get_full_name()}.primary_color)",
+                "iterable_state": f"Object.entries({ForEachState.get_full_name()}.primary_color{FIELD_MARKER})",
             },
         ),
         (
             ForEachState.color_with_shades,
             display_color_with_shades,
             {
-                "iterable_state": f"Object.entries({ForEachState.get_full_name()}.color_with_shades)",
+                "iterable_state": f"Object.entries({ForEachState.get_full_name()}.color_with_shades{FIELD_MARKER})",
             },
         ),
         (
             ForEachState.nested_colors_with_shades,
             display_nested_color_with_shades,
             {
-                "iterable_state": f"Object.entries({ForEachState.get_full_name()}.nested_colors_with_shades)",
+                "iterable_state": f"Object.entries({ForEachState.get_full_name()}.nested_colors_with_shades{FIELD_MARKER})",
             },
         ),
         (
             ForEachState.nested_colors_with_shades,
             display_nested_color_with_shades_v2,
             {
-                "iterable_state": f"Object.entries({ForEachState.get_full_name()}.nested_colors_with_shades)",
+                "iterable_state": f"Object.entries({ForEachState.get_full_name()}.nested_colors_with_shades{FIELD_MARKER})",
             },
         ),
         (
             ForEachState.color_tuple,
             display_color_tuple,
             {
-                "iterable_state": f"{ForEachState.get_full_name()}.color_tuple",
+                "iterable_state": f"{ForEachState.get_full_name()}.color_tuple"
+                + FIELD_MARKER,
             },
         ),
         (
             ForEachState.colors_set,
             display_colors_set,
             {
-                "iterable_state": f"{ForEachState.get_full_name()}.colors_set",
+                "iterable_state": f"{ForEachState.get_full_name()}.colors_set"
+                + FIELD_MARKER,
             },
         ),
         (
             ForEachState.nested_colors_list,
             lambda el, i: display_nested_list_element(el, i),
             {
-                "iterable_state": f"{ForEachState.get_full_name()}.nested_colors_list",
+                "iterable_state": f"{ForEachState.get_full_name()}.nested_colors_list"
+                + FIELD_MARKER,
             },
         ),
         (
             ForEachState.color_index_tuple,
             display_color_index_tuple,
             {
-                "iterable_state": f"{ForEachState.get_full_name()}.color_index_tuple",
+                "iterable_state": f"{ForEachState.get_full_name()}.color_index_tuple"
+                + FIELD_MARKER,
             },
         ),
     ],

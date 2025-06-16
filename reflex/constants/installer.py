@@ -14,7 +14,7 @@ class Bun(SimpleNamespace):
     """Bun constants."""
 
     # The Bun version.
-    VERSION = "1.2.15"
+    VERSION = "1.2.16"
 
     # Min Bun Version
     MIN_VERSION = "1.2.8"
@@ -63,7 +63,7 @@ class Node(SimpleNamespace):
     """Node/ NPM constants."""
 
     # The minimum required node version.
-    MIN_VERSION = "18.18.0"
+    MIN_VERSION = "20.0.0"
 
     # Path of the node config file.
     CONFIG_PATH = ".npmrc"
@@ -74,13 +74,13 @@ fetch-retries=0
 """
 
 
-def _determine_nextjs_version() -> str:
-    default_version = "15.3.3"
-    if (version := os.getenv("NEXTJS_VERSION")) and version != default_version:
+def _determine_react_router_version() -> str:
+    default_version = "7.6.2"
+    if (version := os.getenv("REACT_ROUTER_VERSION")) and version != default_version:
         from reflex.utils import console
 
         console.warn(
-            f"You have requested next@{version} but the supported version is {default_version}, abandon all hope ye who enter here."
+            f"You have requested react-router@{version} but the supported version is {default_version}, abandon all hope ye who enter here."
         )
         return version
     return default_version
@@ -104,14 +104,16 @@ class PackageJson(SimpleNamespace):
     class Commands(SimpleNamespace):
         """The commands to define in package.json."""
 
-        DEV = "next dev {flags}"
-        EXPORT = "next build {flags}"
-        EXPORT_SITEMAP = "next build {flags} && next-sitemap"
-        PROD = "next start"
+        DEV = "vite dev"
+        EXPORT = "react-router build"
+        # --single rewrites /404.html to /404/index.html
+        PROD = "serve --single ./build/client"
 
     PATH = "package.json"
 
     _react_version = _determine_react_version()
+
+    _react_router_version = _determine_react_router_version()
 
     @classproperty
     @classmethod
@@ -122,25 +124,30 @@ class PackageJson(SimpleNamespace):
             A dictionary of dependencies with their versions.
         """
         return {
-            "@emotion/react": "11.14.0",
             "axios": "1.9.0",
             "json5": "2.2.3",
-            "next": _determine_nextjs_version(),
-            "next-sitemap": "4.2.3",
-            "next-themes": "0.4.6",
+            "react-router": cls._react_router_version,
+            "react-router-dom": cls._react_router_version,
+            "@react-router/node": cls._react_router_version,
+            "serve": "14.2.4",
             "react": cls._react_version,
             "react-dom": cls._react_version,
-            "react-focus-lock": "2.13.6",
+            "isbot": "5.1.26",
             "socket.io-client": "4.8.1",
             "universal-cookie": "7.2.2",
         }
 
     DEV_DEPENDENCIES = {
+        "@emotion/react": "11.14.0",
         "autoprefixer": "10.4.21",
         "postcss": "8.5.4",
         "postcss-import": "16.1.0",
+        "@react-router/dev": _react_router_version,
+        "@react-router/fs-routes": _react_router_version,
+        "rolldown-vite": "6.3.19",
     }
     OVERRIDES = {
         # This should always match the `react` version in DEPENDENCIES for recharts compatibility.
-        "react-is": _react_version
+        "react-is": _react_version,
+        "cookie": "1.0.2",
     }

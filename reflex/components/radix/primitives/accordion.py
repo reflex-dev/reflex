@@ -334,7 +334,11 @@ class AccordionHeader(AccordionComponent):
         Returns:
             The style of the component.
         """
-        return {"display": "flex"}
+        return {
+            "display": "flex",
+            # Reset some values to ensure consistent styling without tailwind reset.
+            "margin": "0",
+        }
 
 
 class AccordionTrigger(AccordionComponent):
@@ -399,6 +403,9 @@ class AccordionTrigger(AccordionComponent):
                     "color": "var(--accent-contrast)",
                 },
             },
+            # Reset some values to ensure consistent styling without tailwind reset.
+            "background": "none",
+            "border": "none",
         }
 
 

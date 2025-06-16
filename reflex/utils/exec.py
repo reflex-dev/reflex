@@ -12,7 +12,7 @@ import subprocess
 import sys
 from collections.abc import Sequence
 from pathlib import Path
-from typing import NamedTuple, TypedDict
+from typing import Any, NamedTuple, TypedDict
 from urllib.parse import urljoin
 
 import psutil
@@ -170,7 +170,12 @@ def run_process_and_launch_url(
 
     while True:
         if process is None:
-            kwargs = {}
+            kwargs: dict[str, Any] = {
+                "env": {
+                    **os.environ,
+                    "NO_COLOR": "1",
+                }
+            }
             if constants.IS_WINDOWS and backend_present:
                 kwargs["creationflags"] = subprocess.CREATE_NEW_PROCESS_GROUP  # pyright: ignore [reportAttributeAccessIssue]
             process = processes.new_process(
@@ -195,7 +200,7 @@ def run_process_and_launch_url(
                         + format_change("Dev Dependencies", dev_dependencies_change)
                     )
 
-                match = re.search(constants.Next.FRONTEND_LISTENING_REGEX, line)
+                match = re.search(constants.ReactRouter.FRONTEND_LISTENING_REGEX, line)
                 if match:
                     if first_run:
                         url = match.group(1)
@@ -367,21 +372,48 @@ def run_backend(
         run_uvicorn_backend(host, port, loglevel)
 
 
+def _has_child_file(directory: Path, file_name: str) -> bool:
+    """Check if a directory has a child file with the given name.
+
+    Args:
+        directory: The directory to check.
+        file_name: The name of the file to look for.
+
+    Returns:
+        True if the directory has a child file with the given name, False otherwise.
+    """
+    return any(child_file.name == file_name for child_file in directory.iterdir())
+
+
 def get_reload_paths() -> Sequence[Path]:
     """Get the reload paths for the backend.
 
     Returns:
         The reload paths for the backend.
+
+    Raises:
+        RuntimeError: If the `__init__.py` file is found in the app root directory.
     """
     config = get_config()
     reload_paths = [Path.cwd()]
     if (spec := importlib.util.find_spec(config.module)) is not None and spec.origin:
         module_path = Path(spec.origin).resolve().parent
 
-        while module_path.parent.name and any(
-            sibling_file.name == "__init__.py" for sibling_file in module_path.iterdir()
-        ):
-            # go up a level to find dir without `__init__.py`
+        while module_path.parent.name and _has_child_file(module_path, "__init__.py"):
+            if _has_child_file(module_path, "rxconfig.py"):
+                init_file = module_path / "__init__.py"
+                init_file_content = init_file.read_text()
+                if init_file_content.strip():
+                    msg = "There should not be an `__init__.py` file in your app root directory"
+                    raise RuntimeError(msg)
+                console.warn(
+                    "Removing `__init__.py` file in the app root directory. "
+                    "This file can cause issues with module imports. "
+                )
+                init_file.unlink()
+                break
+
+            # go up a level to find dir without `__init__.py` or with `rxconfig.py`
             module_path = module_path.parent
 
         reload_paths = [module_path]
@@ -563,31 +595,26 @@ def run_granian_backend_prod(host: str, port: int, loglevel: LogLevel):
         port: The app port
         loglevel: The log level.
     """
+    from granian.constants import Interfaces
+
     from reflex.utils import processes
 
-    try:
-        from granian.constants import Interfaces
-
-        command = [
-            "granian",
-            *("--log-level", "critical"),
-            *("--host", host),
-            *("--port", str(port)),
-            *("--interface", str(Interfaces.ASGI)),
-            *("--factory", get_app_instance_from_file()),
-        ]
-        processes.new_process(
-            command,
-            run=True,
-            show_logs=True,
-            env={
-                environment.REFLEX_SKIP_COMPILE.name: "true"
-            },  # skip compile for prod backend
-        )
-    except ImportError:
-        console.error(
-            'InstallError: REFLEX_USE_GRANIAN is set but `granian` is not installed. (run `pip install "granian[reload]>=1.6.0"`)'
-        )
+    command = [
+        "granian",
+        *("--log-level", "critical"),
+        *("--host", host),
+        *("--port", str(port)),
+        *("--interface", str(Interfaces.ASGI)),
+        *("--factory", get_app_instance_from_file()),
+    ]
+    processes.new_process(
+        command,
+        run=True,
+        show_logs=True,
+        env={
+            environment.REFLEX_SKIP_COMPILE.name: "true"
+        },  # skip compile for prod backend
+    )
 
 
 def output_system_info():

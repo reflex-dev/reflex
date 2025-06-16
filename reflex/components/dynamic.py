@@ -26,15 +26,14 @@ def get_cdn_url(lib: str) -> str:
     return f"https://cdn.jsdelivr.net/npm/{lib}" + "/+esm"
 
 
-bundled_libraries = {
+bundled_libraries = [
     "react",
     "@radix-ui/themes",
     "@emotion/react",
-    "next/link",
     f"$/{constants.Dirs.UTILS}/context",
     f"$/{constants.Dirs.UTILS}/state",
     f"$/{constants.Dirs.UTILS}/components",
-}
+]
 
 
 def bundle_library(component: Union["Component", str]):
@@ -47,12 +46,12 @@ def bundle_library(component: Union["Component", str]):
         DynamicComponentMissingLibraryError: Raised when a dynamic component is missing a library.
     """
     if isinstance(component, str):
-        bundled_libraries.add(component)
+        bundled_libraries.append(component)
         return
     if component.library is None:
         msg = "Component must have a library to bundle."
         raise DynamicComponentMissingLibraryError(msg)
-    bundled_libraries.add(format_library_name(component.library))
+    bundled_libraries.append(format_library_name(component.library))
 
 
 def load_dynamic_serializer():

@@ -235,7 +235,7 @@ fail_fast = true
 
 [[tool.pre-commit.repos]]
 repo = "https://github.com/astral-sh/ruff-pre-commit"
-rev = "v0.11.12"
+rev = "v0.11.13"
 hooks = [
   { id = "ruff-format", args = [
     "reflex",
@@ -267,7 +267,7 @@ hooks = [
 
 [[tool.pre-commit.repos]]
 repo = "https://github.com/RobertCraigie/pyright-python"
-rev = "v1.1.401"
+rev = "v1.1.402"
 hooks = [{ id = "pyright", args = ["reflex", "tests"], language = "system" }]
 
 [[tool.pre-commit.repos]]

@@ -2,9 +2,7 @@ from __future__ import annotations
 
 import functools
 import io
-import json
 import os.path
-import re
 import unittest.mock
 import uuid
 from collections.abc import Generator
@@ -37,6 +35,7 @@ from reflex.components.base.bare import Bare
 from reflex.components.base.fragment import Fragment
 from reflex.components.core.cond import Cond
 from reflex.components.radix.themes.typography.text import Text
+from reflex.constants.state import FIELD_MARKER
 from reflex.event import Event
 from reflex.middleware import HydrateMiddleware
 from reflex.model import Model
@@ -494,7 +493,7 @@ async def test_dynamic_var_event(test_state: type[ATestState], token: str):
             payload={"value": 50},
         )
     ):
-        assert result.delta == {test_state.get_name(): {"int_val": 50}}
+        assert result.delta == {test_state.get_name(): {"int_val" + FIELD_MARKER: 50}}
 
 
 @pytest.mark.asyncio
@@ -505,11 +504,11 @@ async def test_dynamic_var_event(test_state: type[ATestState], token: str):
             [
                 (
                     "make_friend",
-                    {"plain_friends": ["Tommy", "another-fd"]},
+                    {"plain_friends" + FIELD_MARKER: ["Tommy", "another-fd"]},
                 ),
                 (
                     "change_first_friend",
-                    {"plain_friends": ["Jenny", "another-fd"]},
+                    {"plain_friends" + FIELD_MARKER: ["Jenny", "another-fd"]},
                 ),
             ],
             id="append then __setitem__",
@@ -518,11 +517,11 @@ async def test_dynamic_var_event(test_state: type[ATestState], token: str):
             [
                 (
                     "unfriend_first_friend",
-                    {"plain_friends": []},
+                    {"plain_friends" + FIELD_MARKER: []},
                 ),
                 (
                     "make_friend",
-                    {"plain_friends": ["another-fd"]},
+                    {"plain_friends" + FIELD_MARKER: ["another-fd"]},
                 ),
             ],
             id="delitem then append",
@@ -531,19 +530,19 @@ async def test_dynamic_var_event(test_state: type[ATestState], token: str):
             [
                 (
                     "make_friends_with_colleagues",
-                    {"plain_friends": ["Tommy", "Peter", "Jimmy"]},
+                    {"plain_friends" + FIELD_MARKER: ["Tommy", "Peter", "Jimmy"]},
                 ),
                 (
                     "remove_tommy",
-                    {"plain_friends": ["Peter", "Jimmy"]},
+                    {"plain_friends" + FIELD_MARKER: ["Peter", "Jimmy"]},
                 ),
                 (
                     "remove_last_friend",
-                    {"plain_friends": ["Peter"]},
+                    {"plain_friends" + FIELD_MARKER: ["Peter"]},
                 ),
                 (
                     "unfriend_all_friends",
-                    {"plain_friends": []},
+                    {"plain_friends" + FIELD_MARKER: []},
                 ),
             ],
             id="extend, remove, pop, clear",
@@ -552,15 +551,20 @@ async def test_dynamic_var_event(test_state: type[ATestState], token: str):
             [
                 (
                     "add_jimmy_to_second_group",
-                    {"friends_in_nested_list": [["Tommy"], ["Jenny", "Jimmy"]]},
+                    {
+                        "friends_in_nested_list" + FIELD_MARKER: [
+                            ["Tommy"],
+                            ["Jenny", "Jimmy"],
+                        ]
+                    },
                 ),
                 (
                     "remove_first_person_from_first_group",
-                    {"friends_in_nested_list": [[], ["Jenny", "Jimmy"]]},
+                    {"friends_in_nested_list" + FIELD_MARKER: [[], ["Jenny", "Jimmy"]]},
                 ),
                 (
                     "remove_first_group",
-                    {"friends_in_nested_list": [["Jenny", "Jimmy"]]},
+                    {"friends_in_nested_list" + FIELD_MARKER: [["Jenny", "Jimmy"]]},
                 ),
             ],
             id="nested list",
@@ -569,15 +573,15 @@ async def test_dynamic_var_event(test_state: type[ATestState], token: str):
             [
                 (
                     "add_jimmy_to_tommy_friends",
-                    {"friends_in_dict": {"Tommy": ["Jenny", "Jimmy"]}},
+                    {"friends_in_dict" + FIELD_MARKER: {"Tommy": ["Jenny", "Jimmy"]}},
                 ),
                 (
                     "remove_jenny_from_tommy",
-                    {"friends_in_dict": {"Tommy": ["Jimmy"]}},
+                    {"friends_in_dict" + FIELD_MARKER: {"Tommy": ["Jimmy"]}},
                 ),
                 (
                     "tommy_has_no_fds",
-                    {"friends_in_dict": {"Tommy": []}},
+                    {"friends_in_dict" + FIELD_MARKER: {"Tommy": []}},
                 ),
             ],
             id="list in dict",
@@ -619,15 +623,15 @@ async def test_list_mutation_detection__plain_list(
             [
                 (
                     "add_age",
-                    {"details": {"name": "Tommy", "age": 20}},
+                    {"details" + FIELD_MARKER: {"name": "Tommy", "age": 20}},
                 ),
                 (
                     "change_name",
-                    {"details": {"name": "Jenny", "age": 20}},
+                    {"details" + FIELD_MARKER: {"name": "Jenny", "age": 20}},
                 ),
                 (
                     "remove_last_detail",
-                    {"details": {"name": "Jenny"}},
+                    {"details" + FIELD_MARKER: {"name": "Jenny"}},
                 ),
             ],
             id="update then __setitem__",
@@ -636,11 +640,11 @@ async def test_list_mutation_detection__plain_list(
             [
                 (
                     "clear_details",
-                    {"details": {}},
+                    {"details" + FIELD_MARKER: {}},
                 ),
                 (
                     "add_age",
-                    {"details": {"age": 20}},
+                    {"details" + FIELD_MARKER: {"age": 20}},
                 ),
             ],
             id="delitem then update",
@@ -649,15 +653,15 @@ async def test_list_mutation_detection__plain_list(
             [
                 (
                     "add_age",
-                    {"details": {"name": "Tommy", "age": 20}},
+                    {"details" + FIELD_MARKER: {"name": "Tommy", "age": 20}},
                 ),
                 (
                     "remove_name",
-                    {"details": {"age": 20}},
+                    {"details" + FIELD_MARKER: {"age": 20}},
                 ),
                 (
                     "pop_out_age",
-                    {"details": {}},
+                    {"details" + FIELD_MARKER: {}},
                 ),
             ],
             id="add, remove, pop",
@@ -666,12 +670,12 @@ async def test_list_mutation_detection__plain_list(
             [
                 (
                     "remove_home_address",
-                    {"address": [{}, {"work": "work address"}]},
+                    {"address" + FIELD_MARKER: [{}, {"work": "work address"}]},
                 ),
                 (
                     "add_street_to_home_address",
                     {
-                        "address": [
+                        "address" + FIELD_MARKER: [
                             {"street": "street address"},
                             {"work": "work address"},
                         ]
@@ -685,7 +689,7 @@ async def test_list_mutation_detection__plain_list(
                 (
                     "change_friend_name",
                     {
-                        "friend_in_nested_dict": {
+                        "friend_in_nested_dict" + FIELD_MARKER: {
                             "name": "Nikhil",
                             "friend": {"name": "Tommy"},
                         }
@@ -694,7 +698,7 @@ async def test_list_mutation_detection__plain_list(
                 (
                     "add_friend_age",
                     {
-                        "friend_in_nested_dict": {
+                        "friend_in_nested_dict" + FIELD_MARKER: {
                             "name": "Nikhil",
                             "friend": {"name": "Tommy", "age": 30},
                         }
@@ -702,7 +706,7 @@ async def test_list_mutation_detection__plain_list(
                 ),
                 (
                     "remove_friend",
-                    {"friend_in_nested_dict": {"name": "Nikhil"}},
+                    {"friend_in_nested_dict" + FIELD_MARKER: {"name": "Nikhil"}},
                 ),
             ],
             id="nested dict",
@@ -745,7 +749,7 @@ async def test_dict_mutation_detection__plain_list(
             FileUploadState,
             {
                 FileUploadState.get_full_name(): {
-                    "img_list": ["image1.jpg", "image2.jpg"]
+                    "img_list" + FIELD_MARKER: ["image1.jpg", "image2.jpg"]
                 }
             },
         ),
@@ -753,7 +757,7 @@ async def test_dict_mutation_detection__plain_list(
             ChildFileUploadState,
             {
                 ChildFileUploadState.get_full_name(): {
-                    "img_list": ["image1.jpg", "image2.jpg"]
+                    "img_list" + FIELD_MARKER: ["image1.jpg", "image2.jpg"]
                 }
             },
         ),
@@ -761,7 +765,7 @@ async def test_dict_mutation_detection__plain_list(
             GrandChildFileUploadState,
             {
                 GrandChildFileUploadState.get_full_name(): {
-                    "img_list": ["image1.jpg", "image2.jpg"]
+                    "img_list" + FIELD_MARKER: ["image1.jpg", "image2.jpg"]
                 }
             },
         ),
@@ -832,7 +836,7 @@ async def test_upload_file(tmp_path, state, delta, token: str, mocker: MockerFix
 
     current_state = await app.state_manager.get_state(_substate_key(token, state))
     state_dict = current_state.dict()[state.get_full_name()]
-    assert state_dict["img_list"] == [
+    assert state_dict["img_list" + FIELD_MARKER] == [
         "image1.jpg",
         "image2.jpg",
     ]
@@ -1108,10 +1112,10 @@ async def test_dynamic_route_var_route_change_completed_on_load(
         assert update == StateUpdate(
             delta={
                 state.get_name(): {
-                    arg_name: exp_val,
-                    f"comp_{arg_name}": exp_val,
-                    constants.CompileVars.IS_HYDRATED: False,
-                    "router": exp_router,
+                    arg_name + FIELD_MARKER: exp_val,
+                    f"comp_{arg_name}" + FIELD_MARKER: exp_val,
+                    constants.CompileVars.IS_HYDRATED + FIELD_MARKER: False,
+                    "router" + FIELD_MARKER: exp_router,
                 }
             },
             events=[
@@ -1151,7 +1155,7 @@ async def test_dynamic_route_var_route_change_completed_on_load(
         assert on_load_update == StateUpdate(
             delta={
                 state.get_name(): {
-                    "loaded": exp_index + 1,
+                    "loaded" + FIELD_MARKER: exp_index + 1,
                 },
             },
             events=[],
@@ -1172,7 +1176,7 @@ async def test_dynamic_route_var_route_change_completed_on_load(
         assert on_set_is_hydrated_update == StateUpdate(
             delta={
                 state.get_name(): {
-                    "is_hydrated": True,
+                    "is_hydrated" + FIELD_MARKER: True,
                 },
             },
             events=[],
@@ -1193,7 +1197,7 @@ async def test_dynamic_route_var_route_change_completed_on_load(
         assert update == StateUpdate(
             delta={
                 state.get_name(): {
-                    "counter": exp_index + 1,
+                    "counter" + FIELD_MARKER: exp_index + 1,
                 }
             },
             events=[],
@@ -1245,7 +1249,7 @@ async def test_process_events(mocker: MockerFixture, token: str):
         pass
 
     assert (await app.state_manager.get_state(event.substate_token)).value == 5
-    assert app._postprocess.call_count == 6  # pyright: ignore [reportFunctionMemberAccess]
+    assert app._postprocess.call_count == 6  # pyright: ignore [reportAttributeAccessIssue]
 
     if isinstance(app.state_manager, StateManagerRedis):
         await app.state_manager.close()
@@ -1301,11 +1305,11 @@ def test_overlay_component(
     page = app._pages["test"]
 
     if exp_page_child is not None:
-        assert len(page.children) == 3
+        assert len(page.children) == 4
         children_types = (type(child) for child in page.children)
         assert exp_page_child in children_types  # pyright: ignore [reportOperatorIssue]
     else:
-        assert len(page.children) == 2
+        assert len(page.children) == 3
 
 
 @pytest.fixture
@@ -1362,7 +1366,9 @@ def test_app_wrap_compile_theme(
     mocker.patch("reflex.utils.prerequisites.get_web_dir", return_value=web_dir)
     app.theme = rx.theme(accent_color="plum")
     app._compile()
-    app_js_contents = (web_dir / "pages" / "_app.js").read_text()
+    app_js_contents = (
+        web_dir / constants.Dirs.PAGES / constants.PageNames.APP_ROOT
+    ).read_text()
     app_js_lines = [
         line.strip() for line in app_js_contents.splitlines() if line.strip()
     ]
@@ -1428,7 +1434,9 @@ def test_app_wrap_priority(
 
     app.add_page(page)
     app._compile()
-    app_js_contents = (web_dir / "pages" / "_app.js").read_text()
+    app_js_contents = (
+        web_dir / constants.Dirs.PAGES / constants.PageNames.APP_ROOT
+    ).read_text()
     app_js_lines = [
         line.strip() for line in app_js_contents.splitlines() if line.strip()
     ]
@@ -1584,58 +1592,6 @@ def test_add_page_component_returning_tuple():
     assert isinstance(third_text, Text)
     assert isinstance(third_text.children[0], Bare)
     assert str(third_text.children[0].contents) == '"third"'
-
-
-@pytest.mark.parametrize("export", [True, False])
-def test_app_with_transpile_packages(compilable_app: tuple[App, Path], export: bool):
-    class C1(rx.Component):
-        library = "foo@1.2.3"
-        tag = "Foo"
-        transpile_packages: list[str] = ["foo"]
-
-    class C2(rx.Component):
-        library = "bar@4.5.6"
-        tag = "Bar"
-        transpile_packages: list[str] = ["bar@4.5.6"]
-
-    class C3(rx.NoSSRComponent):
-        library = "baz@7.8.10"
-        tag = "Baz"
-        transpile_packages: list[str] = ["baz@7.8.9"]
-
-    class C4(rx.NoSSRComponent):
-        library = "quuc@2.3.4"
-        tag = "Quuc"
-        transpile_packages: list[str] = ["quuc"]
-
-    class C5(rx.Component):
-        library = "quuc"
-        tag = "Quuc"
-
-    app, web_dir = compilable_app
-    page = Fragment.create(
-        C1.create(), C2.create(), C3.create(), C4.create(), C5.create()
-    )
-    app.add_page(page, route="/")
-    app._compile(export=export)
-
-    next_config = (web_dir / "next.config.js").read_text()
-    transpile_packages_match = re.search(r"transpilePackages: (\[.*?\])", next_config)
-    transpile_packages_json = transpile_packages_match.group(1)  # pyright: ignore [reportOptionalMemberAccess]
-    transpile_packages = sorted(json.loads(transpile_packages_json))
-
-    assert transpile_packages == [
-        "bar",
-        "foo",
-        "quuc",
-    ]
-
-    if export:
-        assert 'output: "export"' in next_config
-        assert f'distDir: "{constants.Dirs.STATIC}"' in next_config
-    else:
-        assert 'output: "export"' not in next_config
-        assert f'distDir: "{constants.Dirs.STATIC}"' not in next_config
 
 
 def test_app_with_valid_var_dependencies(compilable_app: tuple[App, Path]):
