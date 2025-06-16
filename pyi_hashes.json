@@ -22,7 +22,7 @@
   "reflex/components/core/sticky.pyi": "66c4ce29e7f9419bbb2101278973c0e0",
   "reflex/components/core/upload.pyi": "90039579d573a7aa887d40889ced6154",
   "reflex/components/datadisplay/__init__.pyi": "cf087efa8b3960decc6b231cc986cfa9",
-  "reflex/components/datadisplay/code.pyi": "735a3bc0693e5c9bcb52af072aa10bd7",
+  "reflex/components/datadisplay/code.pyi": "05646d39c7c328b8ac5cf5983e5467d1",
   "reflex/components/datadisplay/dataeditor.pyi": "82ff9fcac9209b8edabe9798f3d3bd9f",
   "reflex/components/datadisplay/shiki_code_block.pyi": "ecbb5e9d66023204ae2c23cc3f6a640c",
   "reflex/components/el/__init__.pyi": "f07f5957ca4dc3d95ffdc2ddb75fe2f8",
