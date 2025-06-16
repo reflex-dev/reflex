@@ -13,3 +13,5 @@ class StateManagerMode(str, Enum):
 
 # Used for things like console_log, etc.
 FRONTEND_EVENT_STATE = "__reflex_internal_frontend_event_state"
+
+FIELD_MARKER = "_rx_state_"

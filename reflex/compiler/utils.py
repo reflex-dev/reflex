@@ -19,6 +19,7 @@ from reflex.components.component import Component, ComponentStyle, CustomCompone
 from reflex.components.el.elements.metadata import Head, Meta, Title
 from reflex.components.el.elements.other import Html
 from reflex.components.el.elements.sectioning import Body
+from reflex.constants.state import FIELD_MARKER
 from reflex.istate.storage import Cookie, LocalStorage, SessionStorage
 from reflex.state import BaseState, _resolve_delta
 from reflex.style import Style
@@ -252,7 +253,7 @@ def _compile_client_storage_recursive(
         if name in state.inherited_vars:
             # only include vars defined in this state
             continue
-        state_key = f"{state_name}.{name}"
+        state_key = f"{state_name}.{name}" + FIELD_MARKER
         field_type, options = _compile_client_storage_field(field)
         if field_type is Cookie:
             cookies[state_key] = options

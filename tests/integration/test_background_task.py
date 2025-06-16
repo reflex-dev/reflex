@@ -241,6 +241,7 @@ def token(background_task: AppHarness, driver: WebDriver) -> str:
         The token for the connected client
     """
     assert background_task.app_instance is not None
+
     token_input = background_task.poll_for_result(
         lambda: driver.find_element(By.ID, "token")
     )
