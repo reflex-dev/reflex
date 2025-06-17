@@ -10,7 +10,11 @@ import {
 
 import { isDevMode, defaultColorMode } from "$/utils/context";
 
-const ThemeContext = createContext();
+const ThemeContext = createContext({
+  theme: defaultColorMode,
+  resolvedTheme: defaultColorMode !== "system" ? defaultColorMode : "light",
+  setTheme: () => {},
+});
 
 export function ThemeProvider({ children, defaultTheme = "system" }) {
   const [theme, setTheme] = useState(defaultTheme);
