@@ -403,7 +403,10 @@ def create_theme(style: ComponentStyle) -> dict:
 
 def _format_route_part(part: str) -> str:
     if part.startswith("[") and part.endswith("]"):
-        return f"${part}_"
+        if part.startswith(("[...", "[[...")):
+            return "$"
+        # We don't add [] here since we are reusing them from the input
+        return "$" + part + "_"
     return "[" + part + "]_"
 
 
@@ -411,9 +414,8 @@ def _path_to_file_stem(path: str) -> str:
     if path == "index":
         return "_index"
     path = path if path != "index" else "/"
-    return (
-        ".".join([_format_route_part(part) for part in path.split("/")]) + "._index"
-    ).lstrip(".")
+    name = ".".join([_format_route_part(part) for part in path.split("/")]).lstrip(".")
+    return name + "._index" if not name.endswith("$") else name
 
 
 def get_page_path(path: str) -> str:

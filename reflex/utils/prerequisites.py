@@ -1125,19 +1125,19 @@ def update_react_router_config(prerender_routes: bool = False):
     """
     react_router_config_file_path = get_web_dir() / constants.ReactRouter.CONFIG_FILE
 
-    react_router_config = _update_react_router_config(
+    new_react_router_config = _update_react_router_config(
         get_config(), prerender_routes=prerender_routes
     )
 
     # Overwriting the config file triggers a full server reload, so make sure
     # there is actually a diff.
-    orig_next_config = (
+    old_react_router_config = (
         react_router_config_file_path.read_text()
         if react_router_config_file_path.exists()
         else ""
     )
-    if orig_next_config != react_router_config:
-        react_router_config_file_path.write_text(react_router_config)
+    if old_react_router_config != new_react_router_config:
+        react_router_config_file_path.write_text(new_react_router_config)
 
 
 def _update_react_router_config(config: Config, prerender_routes: bool = False):

@@ -22,7 +22,7 @@ class Dirs(SimpleNamespace):
     """Various directories/paths used by Reflex."""
 
     # The frontend directories in a project.
-    # The web folder where the NextJS app is compiled to.
+    # The web folder where the frontend app is compiled to.
     WEB = ".web"
     # The directory where uploaded files are stored.
     UPLOADED_FILES = "uploaded_files"
@@ -206,19 +206,6 @@ class Javascript(SimpleNamespace):
 
     # The package lock file.
     PACKAGE_LOCK = "package-lock.json"
-
-
-class Next(Javascript):
-    """Constants related to NextJS."""
-
-    # The NextJS config file
-    CONFIG_FILE = "next.config.js"
-
-    # The sitemap config file.
-    SITEMAP_CONFIG_FILE = "next-sitemap.config.js"
-
-    # Regex to check for message displayed when frontend comes up
-    FRONTEND_LISTENING_REGEX = "Local:[\\s]+(.*)"
 
 
 class ReactRouter(Javascript):

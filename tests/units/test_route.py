@@ -50,8 +50,6 @@ def test_catchall_in_route(route_name, expected):
     "route_name",
     [
         "/products",
-        "/products/[category]/[...]/details/[version]",
-        "[...]",
         "/products/details",
     ],
 )
@@ -62,6 +60,8 @@ def test_verify_valid_routes(route_name):
 @pytest.mark.parametrize(
     "route_name",
     [
+        "/products/[category]/[...]/details/[version]",
+        "[...]",
         "/products/[...]/details/[category]/latest",
         "/blog/[...]/post/[year]/latest",
         "/products/[...]/details/[...]/[category]/[...]/latest",

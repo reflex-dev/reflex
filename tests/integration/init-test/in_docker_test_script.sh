@@ -15,10 +15,10 @@ function do_export () {
     (
         cd "$SCRIPTPATH/../../.."
         scripts/integration.sh ~/"$template" dev
-        pkill -9 -f 'next-server|python3' || true
+        pkill -9 -f 'node|python3' || true
         sleep 10
         REFLEX_REDIS_URL=redis://localhost scripts/integration.sh ~/"$template" prod
-        pkill -9 -f 'next-server|python3' || true
+        pkill -9 -f 'node|python3' || true
         sleep 10
     )
 }
