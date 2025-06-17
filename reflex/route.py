@@ -18,8 +18,12 @@ def verify_route_validity(route: str) -> None:
     """
     pattern = catchall_in_route(route)
     if pattern:
-        msg = f"Catchall patterns `{pattern}` are not supported in Reflex."
-        raise ValueError(msg)
+        if pattern != "[[...splat]]":
+            msg = f"Catchall pattern `{pattern}` is not valid. Only `[[...splat]]` is allowed."
+            raise ValueError(msg)
+        if not route.endswith(pattern):
+            msg = f"Catchall pattern `{pattern}` must be at the end of the route."
+            raise ValueError(msg)
 
 
 def get_route_args(route: str) -> dict[str, str]:
@@ -73,8 +77,37 @@ def get_route_args(route: str) -> dict[str, str]:
     return args
 
 
+def catchall_name_in_route(route: str) -> str:
+    """Extract the catchall part from a route.
+
+    Example:
+        >>> catchall_name_in_route("/posts/[...slug]")
+        'slug'
+        >>> catchall_name_in_route("/posts/[[...slug]]")
+        'slug'
+        >>> catchall_name_in_route("/posts/[slug]")
+        ''
+
+    Args:
+        route: the route from which to extract
+
+    Returns:
+        str: the catchall part of the URI
+    """
+    match_ = constants.RouteRegex.CATCHALL.search(route)
+    return match_.group(2) if match_ else ""
+
+
 def catchall_in_route(route: str) -> str:
     """Extract the catchall part from a route.
+
+    Example:
+        >>> catchall_in_route("/posts/[...slug]")
+        '[...slug]'
+        >>> catchall_in_route("/posts/[[...slug]]")
+        '[[...slug]]'
+        >>> catchall_in_route("/posts/[slug]")
+        ''
 
     Args:
         route: the route from which to extract
@@ -84,19 +117,6 @@ def catchall_in_route(route: str) -> str:
     """
     match_ = constants.RouteRegex.CATCHALL.search(route)
     return match_.group() if match_ else ""
-
-
-def catchall_prefix(route: str) -> str:
-    """Extract the prefix part from a route that contains a catchall.
-
-    Args:
-        route: the route from which to extract
-
-    Returns:
-        str: the prefix part of the URI
-    """
-    pattern = catchall_in_route(route)
-    return route.replace(pattern, "") if pattern else ""
 
 
 def replace_brackets_with_keywords(input_string: str) -> str:

@@ -36,13 +36,24 @@ ROUTER_DATA_INCLUDE = {RouteVar.PATH, RouteVar.ORIGIN, RouteVar.QUERY}
 class RouteRegex(SimpleNamespace):
     """Regex used for extracting route args in route."""
 
-    ARG = re.compile(r"\[(?!\.)([^\[\]]+)\]")
-    # group return the catchall pattern (i.e. "[[..slug]]")
-    CATCHALL = re.compile(r"(\[?\[\.{3}(?![0-9]).*\]?\])")
-    # group return the arg name (i.e. "slug")
-    STRICT_CATCHALL = re.compile(r"\[\.{3}([a-zA-Z_][\w]*)\]")
-    # group return the arg name (i.e. "slug") (optional arg can be empty)
-    OPT_CATCHALL = re.compile(r"\[\[\.{3}([a-zA-Z_][\w]*)\]\]")
+    _DOT_DOT_DOT = r"\.\.\."
+    _OPENING_BRACKET = r"\["
+    _CLOSING_BRACKET = r"\]"
+
+    # match a single arg (i.e. "[slug]"), returns the name of the arg
+    ARG = re.compile(rf"{_OPENING_BRACKET}([\w]+){_CLOSING_BRACKET}")
+    # match a single catch-all arg (i.e. "[...slug]" or "[[...slug]]"), returns the name of the arg
+    CATCHALL = re.compile(
+        rf"({_OPENING_BRACKET}?{_OPENING_BRACKET}{_DOT_DOT_DOT}([\w]+){_CLOSING_BRACKET}?{_CLOSING_BRACKET})"
+    )
+    # match a single non-optional catch-all arg (i.e. "[...slug]"), returns the name of the arg
+    STRICT_CATCHALL = re.compile(
+        rf"{_OPENING_BRACKET}{_DOT_DOT_DOT}([\w]+){_CLOSING_BRACKET}"
+    )
+    # match a snigle optional catch-all arg (i.e. "[[...slug]]"), returns the name of the arg
+    OPT_CATCHALL = re.compile(
+        rf"{_OPENING_BRACKET * 2}{_DOT_DOT_DOT}([\w]+){_CLOSING_BRACKET * 2}"
+    )
     SINGLE_SEGMENT = "__SINGLE_SEGMENT__"
     DOUBLE_SEGMENT = "__DOUBLE_SEGMENT__"
     SINGLE_CATCHALL_SEGMENT = "__SINGLE_CATCHALL_SEGMENT__"
