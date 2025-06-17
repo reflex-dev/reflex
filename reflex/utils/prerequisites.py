@@ -611,19 +611,19 @@ def get_redis_sync() -> RedisSync | None:
 
 
 def parse_redis_url() -> str | None:
-    """Parse the REDIS_URL in config if applicable.
+    """Parse the REFLEX_REDIS_URL in config if applicable.
 
     Returns:
         If url is non-empty, return the URL as it is.
 
     Raises:
-        ValueError: If the REDIS_URL is not a supported scheme.
+        ValueError: If the REFLEX_REDIS_URL is not a supported scheme.
     """
     config = get_config()
     if not config.redis_url:
         return None
     if not config.redis_url.startswith(("redis://", "rediss://", "unix://")):
-        msg = "REDIS_URL must start with 'redis://', 'rediss://', or 'unix://'."
+        msg = "REFLEX_REDIS_URL must start with 'redis://', 'rediss://', or 'unix://'."
         raise ValueError(msg)
     return config.redis_url
 
