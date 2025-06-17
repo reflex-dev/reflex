@@ -11,8 +11,8 @@ import {
 import { isDevMode, defaultColorMode } from "$/utils/context";
 
 const ThemeContext = createContext({
-  theme: defaultTheme,
-  resolvedTheme: defaultTheme !== "system" ? defaultColorMode : "light",
+  theme: defaultColorMode,
+  resolvedTheme: defaultColorMode !== "system" ? defaultColorMode : "light",
   setTheme: () => {},
 });
 
