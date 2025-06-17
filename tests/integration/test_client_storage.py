@@ -331,7 +331,7 @@ async def test_client_side_state(
     # no cookies should be set yet!
     assert not driver.get_cookies()
     local_storage_items = local_storage.items()
-    local_storage_items.pop("last_compiled_time", None)
+    local_storage_items.pop("last_compiled_theme", None)
     local_storage_items.pop("theme", None)
     assert not local_storage_items
 
@@ -449,7 +449,7 @@ async def test_client_side_state(
         assert f"{sub_state_name}.c3" + FIELD_MARKER not in cookie_info_map(driver)
 
     local_storage_items = local_storage.items()
-    local_storage_items.pop("last_compiled_time", None)
+    local_storage_items.pop("last_compiled_theme", None)
     local_storage_items.pop("theme", None)
     assert local_storage_items.pop(f"{sub_state_name}.l1" + FIELD_MARKER) == "l1 value"
     assert local_storage_items.pop(f"{sub_state_name}.l2" + FIELD_MARKER) == "l2 value"
