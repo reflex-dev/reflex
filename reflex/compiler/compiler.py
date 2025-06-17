@@ -425,7 +425,7 @@ def _compile_stateful_components(
 
             # Include custom code in the shared component.
             rendered_components.update(
-                dict.fromkeys(component._get_all_custom_code()),
+                dict.fromkeys(component._get_all_custom_code(export=True)),
             )
 
             # Include all imports in the shared component.

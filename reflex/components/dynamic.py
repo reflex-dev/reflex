@@ -90,6 +90,7 @@ def load_dynamic_serializer():
                 tag_name="MySSRComponent",
                 memo_trigger_hooks=[],
                 component=component,
+                export=True,
             )
         ] = None
 
