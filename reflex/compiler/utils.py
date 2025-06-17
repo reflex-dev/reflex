@@ -429,7 +429,7 @@ def get_page_path(path: str) -> str:
         get_web_dir()
         / constants.Dirs.PAGES
         / constants.Dirs.ROUTES
-        / (_path_to_file_stem(path) + constants.Ext.JS)
+        / (_path_to_file_stem(path) + constants.Ext.JSX)
     )
 
 
@@ -477,7 +477,7 @@ def get_components_path() -> str:
     return str(
         get_web_dir()
         / constants.Dirs.UTILS
-        / (constants.PageNames.COMPONENTS + constants.Ext.JS),
+        / (constants.PageNames.COMPONENTS + constants.Ext.JSX),
     )
 
 
@@ -490,7 +490,7 @@ def get_stateful_components_path() -> str:
     return str(
         get_web_dir()
         / constants.Dirs.UTILS
-        / (constants.PageNames.STATEFUL_COMPONENTS + constants.Ext.JS)
+        / (constants.PageNames.STATEFUL_COMPONENTS + constants.Ext.JSX)
     )
 
 
