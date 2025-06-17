@@ -34,7 +34,7 @@ COPY . .
 
 ARG PORT API_URL
 # Download other npm dependencies and compile frontend
-RUN REFLEX_API_URL=${API_URL:-http://localhost:$PORT} reflex export --loglevel debug --frontend-only --no-zip && mv .web/_static/* /srv/ && rm -rf .web
+RUN REFLEX_API_URL=${API_URL:-http://localhost:$PORT} reflex export --loglevel debug --frontend-only --no-zip && mv .web/build/client/* /srv/ && rm -rf .web
 
 
 # Final image with only necessary files
