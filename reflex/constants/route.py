@@ -45,7 +45,7 @@ class RouteRegex(SimpleNamespace):
     ARG = re.compile(rf"{_OPENING_BRACKET}({_ARG_NAME}){_CLOSING_BRACKET}")
     # match a single catch-all arg (i.e. "[...slug]" or "[[...slug]]"), returns the name of the arg
     CATCHALL = re.compile(
-        rf"({_OPENING_BRACKET}?{_OPENING_BRACKET}{_DOT_DOT_DOT}({_ARG_NAME}){_CLOSING_BRACKET}?{_CLOSING_BRACKET})"
+        rf"({_OPENING_BRACKET}?{_OPENING_BRACKET}{_DOT_DOT_DOT}[^[{_CLOSING_BRACKET}]*{_CLOSING_BRACKET}?{_CLOSING_BRACKET})"
     )
     # match a single non-optional catch-all arg (i.e. "[...slug]"), returns the name of the arg
     STRICT_CATCHALL = re.compile(

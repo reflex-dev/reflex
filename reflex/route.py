@@ -77,27 +77,6 @@ def get_route_args(route: str) -> dict[str, str]:
     return args
 
 
-def catchall_name_in_route(route: str) -> str:
-    """Extract the catchall part from a route.
-
-    Example:
-        >>> catchall_name_in_route("/posts/[...slug]")
-        'slug'
-        >>> catchall_name_in_route("/posts/[[...slug]]")
-        'slug'
-        >>> catchall_name_in_route("/posts/[slug]")
-        ''
-
-    Args:
-        route: the route from which to extract
-
-    Returns:
-        str: the catchall part of the URI
-    """
-    match_ = constants.RouteRegex.CATCHALL.search(route)
-    return match_.group(2) if match_ else ""
-
-
 def catchall_in_route(route: str) -> str:
     """Extract the catchall part from a route.
 
