@@ -5,7 +5,7 @@ from __future__ import annotations
 import asyncio
 import concurrent.futures
 import traceback
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 from datetime import datetime
 from pathlib import Path
 from typing import Any
@@ -174,6 +174,18 @@ def save_error(error: Exception) -> str:
     return str(log_path)
 
 
+def _sorted_keys(d: Mapping[str, Any]) -> dict[str, Any]:
+    """Sort the keys of a dictionary.
+
+    Args:
+        d: The dictionary to sort.
+
+    Returns:
+        A new dictionary with sorted keys.
+    """
+    return dict(sorted(d.items(), key=lambda kv: kv[0]))
+
+
 def compile_state(state: type[BaseState]) -> dict:
     """Compile the state of the app.
 
@@ -198,10 +210,10 @@ def compile_state(state: type[BaseState]) -> dict:
                 console.warn(
                     f"Had to get initial state in a thread 🤮 {resolved_initial_state}",
                 )
-                return resolved_initial_state
+                return _sorted_keys(resolved_initial_state)
 
     # Normally the compile runs before any event loop starts, we asyncio.run is available for calling.
-    return asyncio.run(_resolve_delta(initial_state))
+    return _sorted_keys(asyncio.run(_resolve_delta(initial_state)))
 
 
 def _compile_client_storage_field(
