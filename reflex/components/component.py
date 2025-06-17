@@ -2293,13 +2293,19 @@ class StatefulComponent(BaseComponent):
     tag_to_stateful_component: ClassVar[dict[str, StatefulComponent]] = {}
 
     # Reference to the original component that was memoized into this component.
-    component: Component
+    component: Component = field(
+        default_factory=Component, is_javascript_property=False
+    )
 
     # How many times this component is referenced in the app.
-    references: int = 0
+    references: int = field(default=0, is_javascript_property=False)
 
     # Whether the component has already been rendered to a shared file.
-    rendered_as_shared: bool = False
+    rendered_as_shared: bool = field(default=False, is_javascript_property=False)
+
+    memo_trigger_hooks: list[str] = field(
+        default_factory=list, is_javascript_property=False
+    )
 
     @classmethod
     def create(cls, component: Component) -> StatefulComponent | None:
@@ -2359,6 +2365,7 @@ class StatefulComponent(BaseComponent):
             # Look up the tag in the cache
             stateful_component = cls.tag_to_stateful_component.get(tag_name)
             if stateful_component is None:
+                memo_trigger_hooks = cls._fix_event_triggers(component)
                 # Set the stateful component in the cache for the given tag.
                 stateful_component = cls.tag_to_stateful_component.setdefault(
                     tag_name,
@@ -2366,6 +2373,7 @@ class StatefulComponent(BaseComponent):
                         children=component.children,
                         component=component,
                         tag=tag_name,
+                        memo_trigger_hooks=memo_trigger_hooks,
                     ),
                 )
             # Bump the reference count -- multiple pages referencing the same component
@@ -2429,31 +2437,38 @@ class StatefulComponent(BaseComponent):
             f"{component.tag or 'Comp'}_{code_hash}"
         ).capitalize()
 
-    @classmethod
     def _render_stateful_code(
+        self,
+        export: bool = False,
+    ) -> str:
+        if not self.tag:
+            return ""
+        # Render the code for this component and hooks.
+        return STATEFUL_COMPONENT.render(
+            tag_name=self.tag,
+            memo_trigger_hooks=self.memo_trigger_hooks,
+            component=self.component,
+            export=export,
+        )
+
+    @classmethod
+    def _fix_event_triggers(
         cls,
         component: Component,
-        tag_name: str | None,
-        export: bool,
-    ) -> str:
+    ) -> list[str]:
         """Render the code for a stateful component.
 
         Args:
             component: The component to render.
-            tag_name: The tag name for the stateful component (see _get_tag_name).
-            export: Whether to export the component.
 
         Returns:
-            The rendered code.
+            The memoized event trigger hooks for the component.
         """
-        if not tag_name:
-            return ""
-
         # Memoize event triggers useCallback to avoid unnecessary re-renders.
         memo_event_triggers = tuple(cls._get_memoized_event_triggers(component).items())
 
         # Trigger hooks stored separately to write after the normal hooks (see stateful_component.js.jinja2)
-        memo_trigger_hooks = []
+        memo_trigger_hooks: list[str] = []
 
         if memo_event_triggers:
             # Copy the component to avoid mutating the original.
@@ -2467,13 +2482,7 @@ class StatefulComponent(BaseComponent):
                 memo_trigger_hooks.append(memo_trigger_hook)
                 component.event_triggers[event_trigger] = memo_trigger
 
-        # Render the code for this component and hooks.
-        return STATEFUL_COMPONENT.render(
-            tag_name=tag_name,
-            memo_trigger_hooks=memo_trigger_hooks,
-            component=component,
-            export=export,
-        )
+        return memo_trigger_hooks
 
     @staticmethod
     def _get_hook_deps(hook: str) -> list[str]:
@@ -2643,11 +2652,7 @@ class StatefulComponent(BaseComponent):
         if self.rendered_as_shared:
             return set()
         return self.component._get_all_custom_code().union(
-            {
-                self._render_stateful_code(
-                    self.component, tag_name=self.tag, export=export
-                )
-            }
+            {self._render_stateful_code(export=export)}
         )
 
     def _get_all_refs(self) -> set[str]:
