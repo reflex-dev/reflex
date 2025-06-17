@@ -26,13 +26,13 @@ RUN $uv pip install -r requirements.txt
 # Deploy templates and prepare app
 RUN reflex init
 
-# Export static copy of frontend to /app/.web/_static
+# Export static copy of frontend to /app/.web/build/client
 RUN reflex export --frontend-only --no-zip
 
 # Copy static files out of /app to save space in backend image
-RUN mv .web/_static /tmp/_static
-RUN rm -rf .web && mkdir .web
-RUN mv /tmp/_static .web/_static
+RUN mv .web/build/client /tmp/client
+RUN rm -rf .web && mkdir -p .web/build
+RUN mv /tmp/client .web/build/client
 
 # Stage 2: copy artifacts into slim image 
 FROM python:3.13-slim
