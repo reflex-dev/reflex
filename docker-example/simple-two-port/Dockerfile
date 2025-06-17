@@ -2,7 +2,7 @@
 FROM python:3.13
 
 RUN apt-get update && apt-get install -y redis-server && rm -rf /var/lib/apt/lists/*
-ENV REDIS_URL=redis://localhost PYTHONUNBUFFERED=1
+ENV REFLEX_REDIS_URL=redis://localhost PYTHONUNBUFFERED=1
 
 # Copy local context to `/app` inside container (see .dockerignore)
 WORKDIR /app

@@ -62,7 +62,7 @@ def export(
 
     # Build the static app.
     if frontend:
-        build.build(deploy_url=config.deploy_url, for_export=True)
+        build.build()
 
     # Zip up the app.
     if zipping:

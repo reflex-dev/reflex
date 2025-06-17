@@ -3,7 +3,7 @@
 set -euxo pipefail
 
 SCRIPTPATH="$( cd -- "$(dirname "$0")" >/dev/null 2>&1 ; pwd -P )"
-export TELEMETRY_ENABLED=false
+export REFLEX_TELEMETRY_ENABLED=false
 
 function do_export () {
     template=$1
@@ -17,7 +17,7 @@ function do_export () {
         scripts/integration.sh ~/"$template" dev
         pkill -9 -f 'node|python3' || true
         sleep 10
-        REDIS_URL=redis://localhost scripts/integration.sh ~/"$template" prod
+        REFLEX_REDIS_URL=redis://localhost scripts/integration.sh ~/"$template" prod
         pkill -9 -f 'node|python3' || true
         sleep 10
     )
