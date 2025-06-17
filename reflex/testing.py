@@ -544,9 +544,10 @@ class AppHarness:
             step = POLL_INTERVAL
         deadline = time.time() + timeout
         while time.time() < deadline:
-            success = target()
-            if success:
-                return success
+            with contextlib.suppress(Exception):
+                success = target()
+                if success:
+                    return success
             time.sleep(step)
         return False
 
