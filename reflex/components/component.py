@@ -2634,6 +2634,9 @@ class StatefulComponent(BaseComponent):
     def _get_all_custom_code(self, export: bool = False) -> set[str]:
         """Get custom code for the component.
 
+        Args:
+            export: Whether to export the component.
+
         Returns:
             The custom code.
         """
