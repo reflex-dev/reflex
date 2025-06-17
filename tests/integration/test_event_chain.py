@@ -348,10 +348,9 @@ def assert_token(event_chain: AppHarness, driver: WebDriver) -> str:
         The token visible in the driver browser.
     """
     assert event_chain.app_instance is not None
-    token_input = event_chain.poll_for_result(
+    token_input = AppHarness.poll_for_or_raise_timeout(
         lambda: driver.find_element(By.ID, "token")
     )
-    assert token_input
 
     # wait for the backend connection to send the token
     token = event_chain.poll_for_value(token_input)
@@ -574,10 +573,9 @@ async def test_event_chain_on_mount(
     assert event_chain.frontend_url is not None
     driver.get(event_chain.frontend_url.removesuffix("/") + uri)
 
-    unmount_button = event_chain.poll_for_result(
+    unmount_button = AppHarness.poll_for_or_raise_timeout(
         lambda: driver.find_element(By.ID, "unmount")
     )
-    assert unmount_button
     token = assert_token(event_chain, driver)
     state_name = event_chain.get_state_name("_state")
     unmount_button.click()

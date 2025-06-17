@@ -68,10 +68,9 @@ def driver(icons: AppHarness):
     """
     driver = icons.frontend()
     try:
-        token_input = icons.poll_for_result(
-            lambda: driver.find_element(By.ID, "token"), max_attempts=30
+        token_input = AppHarness.poll_for_or_raise_timeout(
+            lambda: driver.find_element(By.ID, "token")
         )
-        assert token_input
         # wait for the backend connection to send the token
         token = icons.poll_for_value(token_input)
         assert token is not None
@@ -89,7 +88,6 @@ def test_icons(driver, icons: AppHarness):
         icons: AppHarness for the dynamic components
     """
     for icon_name in LUCIDE_ICON_LIST:
-        icon = icons.poll_for_result(
+        AppHarness.expect(
             lambda icon_name=icon_name: driver.find_element(By.ID, icon_name)
         )
-        assert icon

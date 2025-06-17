@@ -78,18 +78,18 @@ async def test_navigation_app(navigation_app: AppHarness):
     with poll_for_navigation(driver):
         driver.back()
 
-    external_link = navigation_app.poll_for_result(
+    external_link = AppHarness.poll_for_or_raise_timeout(
         lambda: driver.find_element(By.ID, "external")
     )
     external2_link = driver.find_element(By.ID, "external2")
 
     external_link.click()
     # Expect a new tab to open
-    assert AppHarness._poll_for(lambda: len(driver.window_handles) == 2)
+    AppHarness.expect(lambda: len(driver.window_handles) == 2)
 
     # Switch back to the main tab
     driver.switch_to.window(driver.window_handles[0])
 
     external2_link.click()
     # Expect another new tab to open
-    assert AppHarness._poll_for(lambda: len(driver.window_handles) == 3)
+    AppHarness.expect(lambda: len(driver.window_handles) == 3)
