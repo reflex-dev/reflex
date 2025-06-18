@@ -65,7 +65,7 @@ def test_large_state(var_count: int, tmp_path_factory, benchmark):
         driver = get_driver(large_state)
         try:
             assert large_state.app_instance is not None
-            button = large_state.poll_for_result(
+            button = AppHarness.poll_for_or_raise_timeout(
                 lambda: driver.find_element(By.ID, "button")
             )
 

@@ -796,10 +796,9 @@ def driver(var_operations: AppHarness):
     """
     driver = var_operations.frontend()
     try:
-        token_input = var_operations.poll_for_result(
+        token_input = AppHarness.poll_for_or_raise_timeout(
             lambda: driver.find_element(By.ID, "token")
         )
-        assert token_input
         # wait for the backend connection to send the token
         token = var_operations.poll_for_value(token_input)
         assert token is not None

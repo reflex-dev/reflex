@@ -242,10 +242,9 @@ def token(background_task: AppHarness, driver: WebDriver) -> str:
     """
     assert background_task.app_instance is not None
 
-    token_input = background_task.poll_for_result(
+    token_input = AppHarness.poll_for_or_raise_timeout(
         lambda: driver.find_element(By.ID, "token")
     )
-    assert token_input
 
     # wait for the backend connection to send the token
     token = background_task.poll_for_value(token_input, timeout=DEFAULT_TIMEOUT * 2)
@@ -305,10 +304,10 @@ def test_background_task(
         increment_button.click()
     yield_increment_button.click()
     blocking_pause_button.click()
-    assert background_task._poll_for(lambda: counter.text == "620", timeout=40)
-    assert background_task._poll_for(lambda: counter_async_cv.text == "620", timeout=40)
+    AppHarness.expect(lambda: counter.text == "620", timeout=40)
+    AppHarness.expect(lambda: counter_async_cv.text == "620", timeout=40)
     # all tasks should have exited and cleaned up
-    assert background_task._poll_for(
+    AppHarness.expect(
         lambda: not background_task.app_instance._background_tasks  # pyright: ignore [reportOptionalMemberAccess]
     )
 
@@ -333,13 +332,13 @@ def test_nested_async_with_self(
 
     # get a reference to the counter
     counter = driver.find_element(By.ID, "counter")
-    assert background_task._poll_for(lambda: counter.text == "0", timeout=5)
+    AppHarness.expect(lambda: counter.text == "0", timeout=5)
 
     nested_async_with_self_button.click()
-    assert background_task._poll_for(lambda: counter.text == "1", timeout=5)
+    AppHarness.expect(lambda: counter.text == "1", timeout=5)
 
     increment_button.click()
-    assert background_task._poll_for(lambda: counter.text == "2", timeout=5)
+    AppHarness.expect(lambda: counter.text == "2", timeout=5)
 
 
 def test_get_state(
@@ -362,13 +361,13 @@ def test_get_state(
 
     # get a reference to the counter
     counter = driver.find_element(By.ID, "counter")
-    assert background_task._poll_for(lambda: counter.text == "0", timeout=5)
+    AppHarness.expect(lambda: counter.text == "0", timeout=5)
 
     other_state_button.click()
-    assert background_task._poll_for(lambda: counter.text == "12", timeout=5)
+    AppHarness.expect(lambda: counter.text == "12", timeout=5)
 
     increment_button.click()
-    assert background_task._poll_for(lambda: counter.text == "13", timeout=5)
+    AppHarness.expect(lambda: counter.text == "13", timeout=5)
 
 
 def test_yield_in_async_with_self(
@@ -392,7 +391,7 @@ def test_yield_in_async_with_self(
 
     # get a reference to the counter
     counter = driver.find_element(By.ID, "counter")
-    assert background_task._poll_for(lambda: counter.text == "0", timeout=5)
+    AppHarness.expect(lambda: counter.text == "0", timeout=5)
 
     yield_in_async_with_self_button.click()
-    assert background_task._poll_for(lambda: counter.text == "2", timeout=5)
+    AppHarness.expect(lambda: counter.text == "2", timeout=5)

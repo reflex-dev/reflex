@@ -35,7 +35,7 @@ def raises_alert(driver: WebDriver, element: str) -> None:
     """
     btn = driver.find_element(By.ID, element)
     btn.click()
-    alert = AppHarness._poll_for(lambda: get_alert_or_none(driver))
+    alert = AppHarness.poll_for_or_raise_timeout(lambda: get_alert_or_none(driver))
     assert isinstance(alert, Alert)
     assert alert.text == "clicked"
     alert.accept()
@@ -254,10 +254,9 @@ def token(state_inheritance: AppHarness, driver: WebDriver) -> str:
         The token for the connected client
     """
     assert state_inheritance.app_instance is not None
-    token_input = state_inheritance.poll_for_result(
+    token_input = AppHarness.poll_for_or_raise_timeout(
         lambda: driver.find_element(By.ID, "token")
     )
-    assert token_input
 
     # wait for the backend connection to send the token
     token = state_inheritance.poll_for_value(token_input, timeout=DEFAULT_TIMEOUT * 2)

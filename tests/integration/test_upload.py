@@ -240,10 +240,9 @@ def poll_for_token(driver: WebDriver, upload_file: AppHarness) -> str:
     Returns:
         token value
     """
-    token_input = upload_file.poll_for_result(
+    token_input = AppHarness.poll_for_or_raise_timeout(
         lambda: driver.find_element(By.ID, "token")
     )
-    assert token_input
     # wait for the backend connection to send the token
     token = upload_file.poll_for_value(token_input)
     assert token is not None
@@ -292,7 +291,7 @@ async def test_upload_file(
 
     if secondary:
         event_order_displayed = driver.find_element(By.ID, "event-order")
-        AppHarness._poll_for(lambda: "chain_event" in event_order_displayed.text)
+        AppHarness.expect(lambda: "chain_event" in event_order_displayed.text)
 
         state = await upload_file.get_state(substate_token)
         # only the secondary form tracks progress and chain events

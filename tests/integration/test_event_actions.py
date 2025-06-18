@@ -231,10 +231,9 @@ def token(event_action: AppHarness, driver: WebDriver) -> str:
         The token visible in the driver browser.
     """
     assert event_action.app_instance is not None
-    token_input = event_action.poll_for_result(
+    token_input = AppHarness.poll_for_or_raise_timeout(
         lambda: driver.find_element(By.ID, "token")
     )
-    assert token_input
 
     # wait for the backend connection to send the token
     token = event_action.poll_for_value(token_input)

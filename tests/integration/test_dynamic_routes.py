@@ -204,10 +204,9 @@ def token(dynamic_route: AppHarness, driver: WebDriver) -> str:
         The token visible in the driver browser.
     """
     assert dynamic_route.app_instance is not None
-    token_input = dynamic_route.poll_for_result(
+    token_input = AppHarness.poll_for_or_raise_timeout(
         lambda: driver.find_element(By.ID, "token")
     )
-    assert token_input
 
     # wait for the backend connection to send the token
     token = dynamic_route.poll_for_value(token_input)
@@ -278,7 +277,7 @@ async def test_on_load_navigate(
             link.click()
         assert urlsplit(driver.current_url).path == f"/page/{ix}"
 
-        link = dynamic_route.poll_for_result(
+        link = AppHarness.poll_for_or_raise_timeout(
             lambda: driver.find_element(By.ID, "link_page_next")
         )
         page_id_input = driver.find_element(By.ID, "page_id")
