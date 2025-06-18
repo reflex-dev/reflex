@@ -332,6 +332,9 @@ class App(MiddlewareMixin, LifespanMixin):
     # A list of URLs to [stylesheets](https://reflex.dev/docs/styling/custom-stylesheets/) to include in the app.
     stylesheets: list[str] = dataclasses.field(default_factory=list)
 
+    # Whether to include CSS reset for margin and padding (defaults to True).
+    reset_style: bool = dataclasses.field(default=True)
+
     # A component that is present on every page (defaults to the Connection Error banner).
     overlay_component: Component | ComponentCallable | None = dataclasses.field(
         default=None
@@ -1358,7 +1361,9 @@ class App(MiddlewareMixin, LifespanMixin):
                 )
 
             # Compile the root stylesheet with base styles.
-            _submit_work(compiler.compile_root_stylesheet, self.stylesheets)
+            _submit_work(
+                compiler.compile_root_stylesheet, self.stylesheets, self.reset_style
+            )
 
             # Compile the theme.
             _submit_work(compile_theme, self.style)

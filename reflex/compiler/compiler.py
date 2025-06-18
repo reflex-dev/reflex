@@ -19,7 +19,7 @@ from reflex.components.component import (
     StatefulComponent,
 )
 from reflex.config import get_config
-from reflex.constants.compiler import PageNames
+from reflex.constants.compiler import PageNames, ResetStylesheet
 from reflex.constants.state import FIELD_MARKER
 from reflex.environment import environment
 from reflex.state import BaseState
@@ -171,18 +171,21 @@ def _compile_page(
     )
 
 
-def compile_root_stylesheet(stylesheets: list[str]) -> tuple[str, str]:
+def compile_root_stylesheet(
+    stylesheets: list[str], reset_style: bool = True
+) -> tuple[str, str]:
     """Compile the root stylesheet.
 
     Args:
         stylesheets: The stylesheets to include in the root stylesheet.
+        reset_style: Whether to include CSS reset for margin and padding.
 
     Returns:
         The path and code of the compiled root stylesheet.
     """
     output_path = utils.get_root_stylesheet_path()
 
-    code = _compile_root_stylesheet(stylesheets)
+    code = _compile_root_stylesheet(stylesheets, reset_style)
 
     return output_path, code
 
@@ -224,11 +227,12 @@ def _validate_stylesheet(stylesheet_full_path: Path, assets_app_path: Path) -> N
 RADIX_THEMES_STYLESHEET = "@radix-ui/themes/styles.css"
 
 
-def _compile_root_stylesheet(stylesheets: list[str]) -> str:
+def _compile_root_stylesheet(stylesheets: list[str], reset_style: bool = True) -> str:
     """Compile the root stylesheet.
 
     Args:
         stylesheets: The stylesheets to include in the root stylesheet.
+        reset_style: Whether to include CSS reset for margin and padding.
 
     Returns:
         The compiled root stylesheet.
@@ -237,11 +241,21 @@ def _compile_root_stylesheet(stylesheets: list[str]) -> str:
         FileNotFoundError: If a specified stylesheet in assets directory does not exist.
     """
     # Add stylesheets from plugins.
-    sheets = [RADIX_THEMES_STYLESHEET] + [
-        sheet
-        for plugin in get_config().plugins
-        for sheet in plugin.get_stylesheet_paths()
-    ]
+    sheets = []
+
+    # Add CSS reset if enabled
+    if reset_style:
+        # Reference the vendored style reset file (automatically copied from .templates/web)
+        sheets.append(f"./styles/{ResetStylesheet.FILENAME}")
+
+    sheets.extend(
+        [RADIX_THEMES_STYLESHEET]
+        + [
+            sheet
+            for plugin in get_config().plugins
+            for sheet in plugin.get_stylesheet_paths()
+        ]
+    )
 
     failed_to_import_sass = False
     assets_app_path = Path.cwd() / constants.Dirs.APP_ASSETS
