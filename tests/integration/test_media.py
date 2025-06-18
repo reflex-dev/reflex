@@ -103,7 +103,9 @@ async def test_media_app(media_app: AppHarness):
     driver = media_app.frontend()
 
     # wait for the backend connection to send the token
-    token_input = media_app.poll_for_result(lambda: driver.find_element(By.ID, "token"))
+    token_input = AppHarness.poll_for_or_raise_timeout(
+        lambda: driver.find_element(By.ID, "token")
+    )
     token = media_app.poll_for_value(token_input)
     assert token
 

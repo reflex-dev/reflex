@@ -114,7 +114,7 @@ def test_login_flow(
     assert login_sample.frontend_url is not None
     local_storage.clear()
 
-    login_button = login_sample.poll_for_result(
+    login_button = AppHarness.poll_for_or_raise_timeout(
         lambda: driver.find_element(By.ID, "login")
     )
     with pytest.raises(NoSuchElementException):
@@ -137,13 +137,13 @@ def test_login_flow(
             return False
         return auth_token_header.text
 
-    assert login_sample._poll_for(check_auth_token_header) == "12345"
+    assert AppHarness.poll_for_or_raise_timeout(check_auth_token_header) == "12345"
 
     logout_button = driver.find_element(By.ID, "logout")
     logout_button.click()
 
     state_name = login_sample.get_full_state_name(["_state"])
-    assert login_sample._poll_for(
+    AppHarness.expect(
         lambda: local_storage[f"{state_name}.auth_token" + FIELD_MARKER] == ""
     )
     with pytest.raises(NoSuchElementException):
