@@ -1030,7 +1030,7 @@ export const useEventLoop = (
 
     // Equivalent to routeChangeComplete - runs after navigation completes
     addEvents(onLoadInternalEvent());
-  }, [location]);
+  }, [location, dispatch, onLoadInternalEvent, addEvents]);
 
   return [addEvents, connectErrors];
 };
