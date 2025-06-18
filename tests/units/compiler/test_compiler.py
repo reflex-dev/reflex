@@ -158,6 +158,7 @@ def test_compile_stylesheets(tmp_path: Path, mocker: MockerFixture):
             / "styles"
             / (PageNames.STYLESHEET_ROOT + ".css")
         ),
+        "@import url('./__reflex_style_reset.css'); \n"
         "@import url('@radix-ui/themes/styles.css'); \n"
         "@import url('https://fonts.googleapis.com/css?family=Sofia&effect=neon|outline|emboss|shadow-multiple'); \n"
         "@import url('https://cdn.jsdelivr.net/npm/bootstrap@3.3.7/dist/css/bootstrap.min.css'); \n"
@@ -218,6 +219,7 @@ def test_compile_stylesheets_scss_sass(tmp_path: Path, mocker: MockerFixture):
             / "styles"
             / (PageNames.STYLESHEET_ROOT + ".css")
         ),
+        "@import url('./__reflex_style_reset.css'); \n"
         "@import url('@radix-ui/themes/styles.css'); \n"
         "@import url('./style.css'); \n"
         f"@import url('./{Path('preprocess') / Path('styles_a.css')!s}'); \n"
@@ -236,6 +238,7 @@ def test_compile_stylesheets_scss_sass(tmp_path: Path, mocker: MockerFixture):
             / "styles"
             / (PageNames.STYLESHEET_ROOT + ".css")
         ),
+        "@import url('./__reflex_style_reset.css'); \n"
         "@import url('@radix-ui/themes/styles.css'); \n"
         "@import url('./style.css'); \n"
         f"@import url('./{Path('preprocess') / Path('styles_a.css')!s}'); \n"
@@ -282,6 +285,45 @@ def test_compile_stylesheets_exclude_tailwind(tmp_path, mocker: MockerFixture):
 
     assert compiler.compile_root_stylesheet(stylesheets) == (
         str(Path(".web") / "styles" / (PageNames.STYLESHEET_ROOT + ".css")),
+        "@import url('./__reflex_style_reset.css'); \n@import url('@radix-ui/themes/styles.css'); \n@import url('./style.css'); \n",
+    )
+
+
+def test_compile_stylesheets_no_reset(tmp_path: Path, mocker: MockerFixture):
+    """Test that stylesheets compile correctly without reset styles.
+
+    Args:
+        tmp_path: The test directory.
+        mocker: Pytest mocker object.
+    """
+    project = tmp_path / "test_project"
+    project.mkdir()
+
+    assets_dir = project / "assets"
+    assets_dir.mkdir()
+
+    (assets_dir / "style.css").write_text(
+        "button.rt-Button {\n\tborder-radius:unset !important;\n}"
+    )
+    mocker.patch("reflex.compiler.compiler.Path.cwd", return_value=project)
+    mocker.patch(
+        "reflex.compiler.compiler.get_web_dir",
+        return_value=project / constants.Dirs.WEB,
+    )
+    mocker.patch(
+        "reflex.compiler.utils.get_web_dir", return_value=project / constants.Dirs.WEB
+    )
+
+    stylesheets = ["/style.css"]
+
+    # Test with reset_style=False
+    assert compiler.compile_root_stylesheet(stylesheets, reset_style=False) == (
+        str(
+            project
+            / constants.Dirs.WEB
+            / "styles"
+            / (PageNames.STYLESHEET_ROOT + ".css")
+        ),
         "@import url('@radix-ui/themes/styles.css'); \n@import url('./style.css'); \n",
     )
 
