@@ -130,6 +130,7 @@ class PackageJson(SimpleNamespace):
             "@react-router/node": cls._react_router_version,
             "serve": "14.2.4",
             "react": cls._react_version,
+            "react-helmet": "6.1.0",
             "react-dom": cls._react_version,
             "isbot": "5.1.26",
             "socket.io-client": "4.8.1",
