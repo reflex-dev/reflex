@@ -104,10 +104,9 @@ class PackageJson(SimpleNamespace):
     class Commands(SimpleNamespace):
         """The commands to define in package.json."""
 
-        DEV = "vite dev"
+        DEV = "react-router dev"
         EXPORT = "react-router build"
-        # --single rewrites /404.html to /404/index.html
-        PROD = "serve --single ./build/client"
+        PROD = "serve ./build/client"
 
     PATH = "package.json"
 

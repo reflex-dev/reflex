@@ -241,7 +241,7 @@ class AppHarness:
     def _initialize_app(self):
         # disable telemetry reporting for tests
 
-        os.environ["TELEMETRY_ENABLED"] = "false"
+        os.environ["REFLEX_TELEMETRY_ENABLED"] = "false"
         CustomComponent.create().get_component.cache_clear()
         self.app_path.mkdir(parents=True, exist_ok=True)
         if self.app_source is not None:

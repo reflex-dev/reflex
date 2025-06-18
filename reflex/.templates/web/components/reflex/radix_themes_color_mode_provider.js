@@ -1,11 +1,6 @@
 import { useTheme } from "$/utils/react-theme";
 import { createElement } from "react";
-import {
-  ColorModeContext,
-  defaultColorMode,
-  isDevMode,
-  lastCompiledTimeStamp,
-} from "$/utils/context";
+import { ColorModeContext, defaultColorMode } from "$/utils/context";
 
 export default function RadixThemesColorModeProvider({ children }) {
   const { theme, resolvedTheme, setTheme } = useTheme();

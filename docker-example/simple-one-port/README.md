@@ -8,7 +8,7 @@ The deployment also runs a local Redis server to store state for each user.
 
 Using this method may be preferable for deploying in memory constrained
 environments, because it serves a static frontend export, rather than running
-the NextJS server via node.
+the Vite server via node.
 
 For platforms which only terminate TLS to a single port, this container can be
 deployed instead of the `simple-two-port` example.

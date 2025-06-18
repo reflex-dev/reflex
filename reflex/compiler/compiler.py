@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import sys
 from collections.abc import Iterable, Sequence
-from datetime import datetime
 from inspect import getmodule
 from pathlib import Path
 from typing import TYPE_CHECKING
@@ -126,21 +125,18 @@ def _compile_contexts(state: type[BaseState] | None, theme: Component | None) ->
     if appearance is None or str(LiteralVar.create(appearance)) == '"inherit"':
         appearance = LiteralVar.create(SYSTEM_COLOR_MODE)
 
-    last_compiled_time = str(datetime.now())
     return (
         templates.CONTEXT.render(
             initial_state=utils.compile_state(state),
             state_name=state.get_name(),
             client_storage=utils.compile_client_storage(state),
             is_dev_mode=not is_prod_mode(),
-            last_compiled_time=last_compiled_time,
             default_color_mode=appearance,
         )
         if state
         else templates.CONTEXT.render(
             is_dev_mode=not is_prod_mode(),
             default_color_mode=appearance,
-            last_compiled_time=last_compiled_time,
         )
     )
 
@@ -429,7 +425,7 @@ def _compile_stateful_components(
 
             # Include custom code in the shared component.
             rendered_components.update(
-                dict.fromkeys(component._get_all_custom_code()),
+                dict.fromkeys(component._get_all_custom_code(export=True)),
             )
 
             # Include all imports in the shared component.

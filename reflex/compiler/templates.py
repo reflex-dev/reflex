@@ -113,10 +113,10 @@ def from_string(source: str) -> Template:
 # Template for the Reflex config file.
 RXCONFIG = get_template("app/rxconfig.py.jinja2")
 
-# Code to render a NextJS Document root.
+# Code to render the Document root.
 DOCUMENT_ROOT = get_template("web/pages/_document.js.jinja2")
 
-# Code to render NextJS App root.
+# Code to render App root.
 APP_ROOT = get_template("web/pages/_app.js.jinja2")
 
 # Template for the theme file.
@@ -128,7 +128,7 @@ CONTEXT = get_template("web/utils/context.js.jinja2")
 # Template to render a component tag.
 COMPONENT = get_template("web/pages/component.js.jinja2")
 
-# Code to render a single NextJS page.
+# Code to render a single react page.
 PAGE = get_template("web/pages/index.js.jinja2")
 
 # Code to render the custom components page.

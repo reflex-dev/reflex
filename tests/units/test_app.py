@@ -298,16 +298,11 @@ def test_add_page_invalid_api_route(app: App, index_page):
         app: The app to test.
         index_page: The index page.
     """
-    with pytest.raises(ValueError):
-        app.add_page(index_page, route="api")
-    with pytest.raises(ValueError):
-        app.add_page(index_page, route="/api")
-    with pytest.raises(ValueError):
-        app.add_page(index_page, route="/api/")
-    with pytest.raises(ValueError):
-        app.add_page(index_page, route="api/foo")
-    with pytest.raises(ValueError):
-        app.add_page(index_page, route="/api/foo")
+    app.add_page(index_page, route="api")
+    app.add_page(index_page, route="/api")
+    app.add_page(index_page, route="/api/")
+    app.add_page(index_page, route="api/foo")
+    app.add_page(index_page, route="/api/foo")
     # These should be fine
     app.add_page(index_page, route="api2")
     app.add_page(index_page, route="/foo/api")

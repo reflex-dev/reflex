@@ -11,7 +11,7 @@ on:
       - main
 
 env:
-  TELEMETRY_ENABLED: false
+  REFLEX_TELEMETRY_ENABLED: false
 
 jobs:
   check_latest_node:

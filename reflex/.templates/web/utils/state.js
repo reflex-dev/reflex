@@ -842,7 +842,12 @@ export const useEventLoop = (
   const params = useRef(paramsR);
 
   useEffect(() => {
-    params.current = paramsR;
+    const { "*": splat, ...remainingParams } = paramsR;
+    if (splat) {
+      params.current = { ...remainingParams, splat: splat.split("/") };
+    } else {
+      params.current = remainingParams;
+    }
   }, [paramsR]);
 
   // Function to add new events to the event queue.

@@ -890,7 +890,7 @@ class App(MiddlewareMixin, LifespanMixin):
     def _check_routes_conflict(self, new_route: str):
         """Verify if there is any conflict between the new route and any existing route.
 
-        Based on conflicts that NextJS would throw if not intercepted.
+        Based on conflicts that React Router would throw if not intercepted.
 
         Raises:
             RouteValueError: exception showing which conflict exist with the route to be added
