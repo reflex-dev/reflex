@@ -368,6 +368,7 @@ def create_document_root(
             Var("children"),
             ScrollRestoration.create(),
             Scripts.create(),
+            margin=0,
         ),
         lang=html_lang or "en",
         custom_attrs=html_custom_attrs or {},
