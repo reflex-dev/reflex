@@ -419,8 +419,6 @@ def get_attribute_access_type(cls: GenericType, name: str) -> GenericType | None
     Returns:
         The type of the attribute, if accessible, or None
     """
-    from reflex.model import Model
-
     try:
         attr = getattr(cls, name, None)
     except NotImplementedError:
@@ -441,6 +439,8 @@ def get_attribute_access_type(cls: GenericType, name: str) -> GenericType | None
             QueryableAttribute,
             Relationship,
         )
+
+        from reflex.model import Model
 
         if isinstance(cls, type) and issubclass(cls, DeclarativeBase):
             insp = sqlalchemy.inspect(cls)
@@ -488,7 +488,7 @@ def get_attribute_access_type(cls: GenericType, name: str) -> GenericType | None
             and issubclass(cls, Model)
         ):
             # Check in the annotations directly (for sqlmodel.Relationship)
-            hints = get_type_hints(cls)
+            hints = get_type_hints(cls)  # pyright: ignore [reportArgumentType]
             if name in hints:
                 type_ = hints[name]
                 type_origin = get_origin(type_)
@@ -509,7 +509,7 @@ def get_attribute_access_type(cls: GenericType, name: str) -> GenericType | None
         # Bare class
         exceptions = NameError
         try:
-            hints = get_type_hints(cls)
+            hints = get_type_hints(cls)  # pyright: ignore [reportArgumentType]
             if name in hints:
                 return hints[name]
         except exceptions as e:

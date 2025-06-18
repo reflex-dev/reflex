@@ -6,10 +6,10 @@ from contextlib import suppress
 from importlib.util import find_spec
 from typing import TYPE_CHECKING, Any, ClassVar
 
-from reflex.base import Base
 from reflex.config import get_config
 from reflex.environment import environment
 from reflex.utils import console
+from reflex.utils.compat import sqlmodel_field_has_primary_key
 
 if TYPE_CHECKING:
     import sqlalchemy
@@ -18,6 +18,18 @@ if TYPE_CHECKING:
     SQLModelOrSqlAlchemy = (
         type[sqlmodel.SQLModel] | type[sqlalchemy.orm.DeclarativeBase]
     )
+
+
+def _safe_db_url_for_logging(url: str) -> str:
+    """Remove username and password from the database URL for logging.
+
+    Args:
+        url: The database URL.
+
+    Returns:
+        The database URL with the username and password removed.
+    """
+    return re.sub(r"://[^@]+@", "://<username>:<password>@", url)
 
 
 def _print_db_not_available(*args, **kwargs):
@@ -35,6 +47,108 @@ class _ClassThatErrorsOnInit:
 
 if find_spec("sqlalchemy"):
     import sqlalchemy
+    import sqlalchemy.exc
+    import sqlalchemy.ext.asyncio
+    import sqlalchemy.orm
+
+    _ENGINE: dict[str, sqlalchemy.engine.Engine] = {}
+    _ASYNC_ENGINE: dict[str, sqlalchemy.ext.asyncio.AsyncEngine] = {}
+
+    def get_engine_args(url: str | None = None) -> dict[str, Any]:
+        """Get the database engine arguments.
+
+        Args:
+            url: The database url.
+
+        Returns:
+            The database engine arguments as a dict.
+        """
+        kwargs: dict[str, Any] = {
+            # Print the SQL queries if the log level is INFO or lower.
+            "echo": environment.SQLALCHEMY_ECHO.get(),
+            # Check connections before returning them.
+            "pool_pre_ping": environment.SQLALCHEMY_POOL_PRE_PING.get(),
+        }
+        conf = get_config()
+        url = url or conf.db_url
+        if url is not None and url.startswith("sqlite"):
+            # Needed for the admin dash on sqlite.
+            kwargs["connect_args"] = {"check_same_thread": False}
+        return kwargs
+
+    def get_engine(url: str | None = None) -> sqlalchemy.engine.Engine:
+        """Get the database engine.
+
+        Args:
+            url: the DB url to use.
+
+        Returns:
+            The database engine.
+
+        Raises:
+            ValueError: If the database url is None.
+        """
+        conf = get_config()
+        url = url or conf.db_url
+        if url is None:
+            msg = "No database url configured"
+            raise ValueError(msg)
+
+        global _ENGINE
+        if url in _ENGINE:
+            return _ENGINE[url]
+
+        if not environment.ALEMBIC_CONFIG.get().exists():
+            console.warn(
+                "Database is not initialized, run [bold]reflex db init[/bold] first."
+            )
+        _ENGINE[url] = sqlalchemy.engine.create_engine(
+            url,
+            **get_engine_args(url),
+        )
+        return _ENGINE[url]
+
+    def get_async_engine(url: str | None) -> sqlalchemy.ext.asyncio.AsyncEngine:
+        """Get the async database engine.
+
+        Args:
+            url: The database url.
+
+        Returns:
+            The async database engine.
+
+        Raises:
+            ValueError: If the async database url is None.
+        """
+        if url is None:
+            conf = get_config()
+            url = conf.async_db_url
+            if url is not None and conf.db_url is not None:
+                async_db_url_tail = url.partition("://")[2]
+                db_url_tail = conf.db_url.partition("://")[2]
+                if async_db_url_tail != db_url_tail:
+                    console.warn(
+                        f"async_db_url `{_safe_db_url_for_logging(url)}` "
+                        "should reference the same database as "
+                        f"db_url `{_safe_db_url_for_logging(conf.db_url)}`."
+                    )
+        if url is None:
+            msg = "No async database url configured"
+            raise ValueError(msg)
+
+        global _ASYNC_ENGINE
+        if url in _ASYNC_ENGINE:
+            return _ASYNC_ENGINE[url]
+
+        if not environment.ALEMBIC_CONFIG.get().exists():
+            console.warn(
+                "Database is not initialized, run [bold]reflex db init[/bold] first."
+            )
+        _ASYNC_ENGINE[url] = sqlalchemy.ext.asyncio.create_async_engine(
+            url,
+            **get_engine_args(url),
+        )
+        return _ASYNC_ENGINE[url]
 
     def sqla_session(url: str | None = None) -> sqlalchemy.orm.Session:
         """Get a bare sqlalchemy session to interact with the database.
@@ -124,6 +238,9 @@ if find_spec("sqlalchemy"):
             return metadata
 
 else:
+    get_engine_args = _print_db_not_available
+    get_engine = _print_db_not_available
+    get_async_engine = _print_db_not_available
     sqla_session = _print_db_not_available
     ModelRegistry = _ClassThatErrorsOnInit  # pyright: ignore [reportAssignmentType]
 
@@ -134,37 +251,14 @@ if find_spec("sqlmodel") and find_spec("sqlalchemy") and find_spec("pydantic"):
     import alembic.operations.ops
     import alembic.runtime.environment
     import alembic.script
-    import alembic.util
-    import sqlalchemy
-    import sqlalchemy.exc
-    import sqlalchemy.ext.asyncio
-    import sqlalchemy.orm
+    import sqlmodel
     from alembic.runtime.migration import MigrationContext
     from alembic.script.base import Script
-
-    from reflex.utils.compat import sqlmodel
-
-    def _sqlmodel_field_has_primary_key(field: Any) -> bool:
-        """Determines if a field is a primary.
-
-        Args:
-            field: a rx.model field
-
-        Returns:
-            If field is a primary key (Bool)
-        """
-        if getattr(field.field_info, "primary_key", None) is True:
-            return True
-        if getattr(field.field_info, "sa_column", None) is None:
-            return False
-        return bool(getattr(field.field_info.sa_column, "primary_key", None))
-
-    _ENGINE: dict[str, sqlalchemy.engine.Engine] = {}
-    _ASYNC_ENGINE: dict[str, sqlalchemy.ext.asyncio.AsyncEngine] = {}
-    _AsyncSessionLocal: dict[str | None, sqlalchemy.ext.asyncio.async_sessionmaker] = {}
-
-    # Import AsyncSession _after_ reflex.utils.compat
+    from pydantic import ConfigDict
+    from sqlmodel._compat import IS_PYDANTIC_V2
     from sqlmodel.ext.asyncio.session import AsyncSession
+
+    _AsyncSessionLocal: dict[str | None, sqlalchemy.ext.asyncio.async_sessionmaker] = {}
 
     def format_revision(
         rev: Script,
@@ -200,113 +294,6 @@ if find_spec("sqlmodel") and find_spec("sqlalchemy") and find_spec("pydantic"):
         # Format output with message
         return f"  [{status_icon}] {current}{head_marker}, {message}"
 
-    def _safe_db_url_for_logging(url: str) -> str:
-        """Remove username and password from the database URL for logging.
-
-        Args:
-            url: The database URL.
-
-        Returns:
-            The database URL with the username and password removed.
-        """
-        return re.sub(r"://[^@]+@", "://<username>:<password>@", url)
-
-    def get_engine_args(url: str | None = None) -> dict[str, Any]:
-        """Get the database engine arguments.
-
-        Args:
-            url: The database url.
-
-        Returns:
-            The database engine arguments as a dict.
-        """
-        kwargs: dict[str, Any] = {
-            # Print the SQL queries if the log level is INFO or lower.
-            "echo": environment.SQLALCHEMY_ECHO.get(),
-            # Check connections before returning them.
-            "pool_pre_ping": environment.SQLALCHEMY_POOL_PRE_PING.get(),
-        }
-        conf = get_config()
-        url = url or conf.db_url
-        if url is not None and url.startswith("sqlite"):
-            # Needed for the admin dash on sqlite.
-            kwargs["connect_args"] = {"check_same_thread": False}
-        return kwargs
-
-    def get_engine(url: str | None = None) -> sqlalchemy.engine.Engine:
-        """Get the database engine.
-
-        Args:
-            url: the DB url to use.
-
-        Returns:
-            The database engine.
-
-        Raises:
-            ValueError: If the database url is None.
-        """
-        conf = get_config()
-        url = url or conf.db_url
-        if url is None:
-            msg = "No database url configured"
-            raise ValueError(msg)
-
-        global _ENGINE
-        if url in _ENGINE:
-            return _ENGINE[url]
-
-        if not environment.ALEMBIC_CONFIG.get().exists():
-            console.warn(
-                "Database is not initialized, run [bold]reflex db init[/bold] first."
-            )
-        _ENGINE[url] = sqlmodel.create_engine(
-            url,
-            **get_engine_args(url),
-        )
-        return _ENGINE[url]
-
-    def get_async_engine(url: str | None) -> sqlalchemy.ext.asyncio.AsyncEngine:
-        """Get the async database engine.
-
-        Args:
-            url: The database url.
-
-        Returns:
-            The async database engine.
-
-        Raises:
-            ValueError: If the async database url is None.
-        """
-        if url is None:
-            conf = get_config()
-            url = conf.async_db_url
-            if url is not None and conf.db_url is not None:
-                async_db_url_tail = url.partition("://")[2]
-                db_url_tail = conf.db_url.partition("://")[2]
-                if async_db_url_tail != db_url_tail:
-                    console.warn(
-                        f"async_db_url `{_safe_db_url_for_logging(url)}` "
-                        "should reference the same database as "
-                        f"db_url `{_safe_db_url_for_logging(conf.db_url)}`."
-                    )
-        if url is None:
-            msg = "No async database url configured"
-            raise ValueError(msg)
-
-        global _ASYNC_ENGINE
-        if url in _ASYNC_ENGINE:
-            return _ASYNC_ENGINE[url]
-
-        if not environment.ALEMBIC_CONFIG.get().exists():
-            console.warn(
-                "Database is not initialized, run [bold]reflex db init[/bold] first."
-            )
-        _ASYNC_ENGINE[url] = sqlalchemy.ext.asyncio.create_async_engine(
-            url,
-            **get_engine_args(url),
-        )
-        return _ASYNC_ENGINE[url]
-
     async def get_db_status() -> dict[str, bool]:
         """Checks the status of the database connection.
 
@@ -325,18 +312,35 @@ if find_spec("sqlmodel") and find_spec("sqlalchemy") and find_spec("pydantic"):
 
         return {"db": status}
 
-    class Model(Base, sqlmodel.SQLModel):  # pyright: ignore [reportGeneralTypeIssues,reportIncompatibleVariableOverride]
+    class Model(sqlmodel.SQLModel):
         """Base class to define a table in the database."""
 
         # The primary key for the table.
         id: int | None = sqlmodel.Field(default=None, primary_key=True)
+
+        if IS_PYDANTIC_V2:
+            model_config = ConfigDict(  # pyright: ignore [reportAssignmentType]
+                arbitrary_types_allowed=True,
+                extra="allow",
+                use_enum_values=True,
+                from_attributes=True,
+            )
+        else:
+
+            class Config:  # pyright: ignore [reportIncompatibleVariableOverride]
+                """Pydantic V1 config."""
+
+                arbitrary_types_allowed = True
+                use_enum_values = True
+                extra = "allow"
+                orm_mode = True
 
         def __init_subclass__(cls):
             """Drop the default primary key field if any primary key field is defined."""
             non_default_primary_key_fields = [
                 field_name
                 for field_name, field in cls.__fields__.items()
-                if field_name != "id" and _sqlmodel_field_has_primary_key(field)
+                if field_name != "id" and sqlmodel_field_has_primary_key(field)
             ]
             if non_default_primary_key_fields:
                 cls.__fields__.pop("id", None)
@@ -380,6 +384,19 @@ if find_spec("sqlmodel") and find_spec("sqlalchemy") and find_spec("pydantic"):
                 **base_fields,
                 **relationships,
             }
+
+        def json(self) -> str:
+            """Convert the object to a json string.
+
+            Returns:
+                The object as a json string.
+            """
+            from reflex.utils.serializers import serialize
+
+            return self.__config__.json_dumps(
+                self.dict(),
+                default=serialize,
+            )
 
         @staticmethod
         def create_all():
@@ -643,9 +660,6 @@ if find_spec("sqlmodel") and find_spec("sqlalchemy") and find_spec("pydantic"):
         return _AsyncSessionLocal[url]()
 
 else:
-    get_engine_args = _print_db_not_available
-    get_engine = _print_db_not_available
-    get_async_engine = _print_db_not_available
     get_db_status = _print_db_not_available
     session = _print_db_not_available
     asession = _print_db_not_available
