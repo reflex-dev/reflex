@@ -246,7 +246,7 @@ def _compile_root_stylesheet(stylesheets: list[str], reset_style: bool = True) -
     # Add CSS reset if enabled
     if reset_style:
         # Reference the vendored style reset file (automatically copied from .templates/web)
-        sheets.append(f"./styles/{ResetStylesheet.FILENAME}")
+        sheets.append(f"./{ResetStylesheet.FILENAME}")
 
     sheets.extend(
         [RADIX_THEMES_STYLESHEET]
