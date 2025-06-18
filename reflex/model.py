@@ -4,12 +4,128 @@ import re
 from collections import defaultdict
 from contextlib import suppress
 from importlib.util import find_spec
-from typing import Any, ClassVar
+from typing import TYPE_CHECKING, Any, ClassVar
 
 from reflex.base import Base
 from reflex.config import get_config
 from reflex.environment import environment
 from reflex.utils import console
+
+if TYPE_CHECKING:
+    import sqlalchemy
+    import sqlmodel
+
+    SQLModelOrSqlAlchemy = (
+        type[sqlmodel.SQLModel] | type[sqlalchemy.orm.DeclarativeBase]
+    )
+
+
+def _print_db_not_available(*args, **kwargs):
+    msg = (
+        "Database is not available. Please install the required packages: "
+        "`pip install reflex[db]`."
+    )
+    raise ImportError(msg)
+
+
+class _ClassThatErrorsOnInit:
+    def __init__(self, *args, **kwargs):
+        _print_db_not_available(*args, **kwargs)
+
+
+if find_spec("sqlalchemy"):
+    import sqlalchemy
+
+    def sqla_session(url: str | None = None) -> sqlalchemy.orm.Session:
+        """Get a bare sqlalchemy session to interact with the database.
+
+        Args:
+            url: The database url.
+
+        Returns:
+            A database session.
+        """
+        return sqlalchemy.orm.Session(get_engine(url))
+
+    class ModelRegistry:
+        """Registry for all models."""
+
+        models: ClassVar[set["SQLModelOrSqlAlchemy"]] = set()
+
+        # Cache the metadata to avoid re-creating it.
+        _metadata: ClassVar[sqlalchemy.MetaData | None] = None
+
+        @classmethod
+        def register(cls, model: "SQLModelOrSqlAlchemy"):
+            """Register a model. Can be used directly or as a decorator.
+
+            Args:
+                model: The model to register.
+
+            Returns:
+                The model passed in as an argument (Allows decorator usage)
+            """
+            cls.models.add(model)
+            return model
+
+        @classmethod
+        def get_models(cls, include_empty: bool = False) -> set["SQLModelOrSqlAlchemy"]:
+            """Get registered models.
+
+            Args:
+                include_empty: If True, include models with empty metadata.
+
+            Returns:
+                The registered models.
+            """
+            if include_empty:
+                return cls.models
+            return {
+                model for model in cls.models if not cls._model_metadata_is_empty(model)
+            }
+
+        @staticmethod
+        def _model_metadata_is_empty(model: "SQLModelOrSqlAlchemy") -> bool:
+            """Check if the model metadata is empty.
+
+            Args:
+                model: The model to check.
+
+            Returns:
+                True if the model metadata is empty, False otherwise.
+            """
+            return len(model.metadata.tables) == 0
+
+        @classmethod
+        def get_metadata(cls) -> sqlalchemy.MetaData:
+            """Get the database metadata.
+
+            Returns:
+                The database metadata.
+            """
+            if cls._metadata is not None:
+                return cls._metadata
+
+            models = cls.get_models(include_empty=False)
+
+            if len(models) == 1:
+                metadata = next(iter(models)).metadata
+            else:
+                # Merge the metadata from all the models.
+                # This allows mixing bare sqlalchemy models with sqlmodel models in one database.
+                metadata = sqlalchemy.MetaData()
+                for model in cls.get_models():
+                    for table in model.metadata.tables.values():
+                        table.to_metadata(metadata)
+
+            # Cache the metadata
+            cls._metadata = metadata
+
+            return metadata
+
+else:
+    sqla_session = _print_db_not_available
+    ModelRegistry = _ClassThatErrorsOnInit  # pyright: ignore [reportAssignmentType]
 
 if find_spec("sqlmodel") and find_spec("sqlalchemy") and find_spec("pydantic"):
     import alembic.autogenerate
@@ -158,86 +274,6 @@ if find_spec("sqlmodel") and find_spec("sqlalchemy") and find_spec("pydantic"):
             status = False
 
         return {"db": status}
-
-    SQLModelOrSqlAlchemy = (
-        type[sqlmodel.SQLModel] | type[sqlalchemy.orm.DeclarativeBase]
-    )
-
-    class ModelRegistry:
-        """Registry for all models."""
-
-        models: ClassVar[set[SQLModelOrSqlAlchemy]] = set()
-
-        # Cache the metadata to avoid re-creating it.
-        _metadata: ClassVar[sqlalchemy.MetaData | None] = None
-
-        @classmethod
-        def register(cls, model: SQLModelOrSqlAlchemy):
-            """Register a model. Can be used directly or as a decorator.
-
-            Args:
-                model: The model to register.
-
-            Returns:
-                The model passed in as an argument (Allows decorator usage)
-            """
-            cls.models.add(model)
-            return model
-
-        @classmethod
-        def get_models(cls, include_empty: bool = False) -> set[SQLModelOrSqlAlchemy]:
-            """Get registered models.
-
-            Args:
-                include_empty: If True, include models with empty metadata.
-
-            Returns:
-                The registered models.
-            """
-            if include_empty:
-                return cls.models
-            return {
-                model for model in cls.models if not cls._model_metadata_is_empty(model)
-            }
-
-        @staticmethod
-        def _model_metadata_is_empty(model: SQLModelOrSqlAlchemy) -> bool:
-            """Check if the model metadata is empty.
-
-            Args:
-                model: The model to check.
-
-            Returns:
-                True if the model metadata is empty, False otherwise.
-            """
-            return len(model.metadata.tables) == 0
-
-        @classmethod
-        def get_metadata(cls) -> sqlalchemy.MetaData:
-            """Get the database metadata.
-
-            Returns:
-                The database metadata.
-            """
-            if cls._metadata is not None:
-                return cls._metadata
-
-            models = cls.get_models(include_empty=False)
-
-            if len(models) == 1:
-                metadata = next(iter(models)).metadata
-            else:
-                # Merge the metadata from all the models.
-                # This allows mixing bare sqlalchemy models with sqlmodel models in one database.
-                metadata = sqlalchemy.MetaData()
-                for model in cls.get_models():
-                    for table in model.metadata.tables.values():
-                        table.to_metadata(metadata)
-
-            # Cache the metadata
-            cls._metadata = metadata
-
-            return metadata
 
     class Model(Base, sqlmodel.SQLModel):  # pyright: ignore [reportGeneralTypeIssues,reportIncompatibleVariableOverride]
         """Base class to define a table in the database."""
@@ -537,35 +573,11 @@ if find_spec("sqlmodel") and find_spec("sqlalchemy") and find_spec("pydantic"):
             )
         return _AsyncSessionLocal[url]()
 
-    def sqla_session(url: str | None = None) -> sqlalchemy.orm.Session:
-        """Get a bare sqlalchemy session to interact with the database.
-
-        Args:
-            url: The database url.
-
-        Returns:
-            A database session.
-        """
-        return sqlalchemy.orm.Session(get_engine(url))
 else:
-
-    def _print_db_not_available(*args, **kwargs):
-        msg = (
-            "Database is not available. Please install the required packages: "
-            "`pip install reflex[db]`."
-        )
-        raise ImportError(msg)
-
-    class _ClassThatErrorsOnInit:
-        def __init__(self, *args, **kwargs):
-            _print_db_not_available(*args, **kwargs)
-
     get_engine_args = _print_db_not_available
     get_engine = _print_db_not_available
     get_async_engine = _print_db_not_available
     get_db_status = _print_db_not_available
     session = _print_db_not_available
     asession = _print_db_not_available
-    sqla_session = _print_db_not_available
-    ModelRegistry = _ClassThatErrorsOnInit  # pyright: ignore [reportAssignmentType]
     Model = _ClassThatErrorsOnInit  # pyright: ignore [reportAssignmentType]
