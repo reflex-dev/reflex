@@ -1022,30 +1022,15 @@ export const useEventLoop = (
 
   // Route after the initial page hydration
   useEffect(() => {
-    // This will run when the location changes
-    if (
-      location.pathname + location.search + location.hash !==
-      prevLocationRef.current.pathname +
-        prevLocationRef.current.search +
-        prevLocationRef.current.hash
-    ) {
-      // Equivalent to routeChangeStart - runs when navigation begins
-      const change_start = () => {
-        const main_state_dispatch = dispatch["reflex___state____state"];
-        if (main_state_dispatch !== undefined) {
-          main_state_dispatch({ is_hydrated_rx_state_: false });
-        }
-      };
-      change_start();
-
-      // Equivalent to routeChangeComplete - runs after navigation completes
-      const change_complete = () => addEvents(onLoadInternalEvent());
-      change_complete();
-
-      // Update the ref
-      prevLocationRef.current = location;
+    // Equivalent to routeChangeStart - runs when navigation begins
+    const main_state_dispatch = dispatch["reflex___state____state"];
+    if (main_state_dispatch !== undefined) {
+      main_state_dispatch({ is_hydrated_rx_state_: false });
     }
-  }, [location, dispatch, onLoadInternalEvent, addEvents]);
+
+    // Equivalent to routeChangeComplete - runs after navigation completes
+    addEvents(onLoadInternalEvent());
+  }, [location]);
 
   return [addEvents, connectErrors];
 };
