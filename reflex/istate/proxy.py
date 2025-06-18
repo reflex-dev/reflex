@@ -18,7 +18,7 @@ import wrapt
 from reflex.base import Base
 from reflex.utils import prerequisites
 from reflex.utils.exceptions import ImmutableStateError
-from reflex.utils.serializers import serializer
+from reflex.utils.serializers import can_serialize, serialize, serializer
 from reflex.vars.base import Var
 
 if TYPE_CHECKING:
@@ -689,7 +689,10 @@ def serialize_mutable_proxy(mp: MutableProxy):
     Returns:
         The wrapped object.
     """
-    return mp.__wrapped__
+    obj = mp.__wrapped__
+    if can_serialize(type(obj)):
+        return serialize(obj)
+    return obj
 
 
 _orig_json_encoder_default = json.JSONEncoder.default

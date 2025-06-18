@@ -53,7 +53,7 @@ def test_default_primary_key(model_default_primary: Model):
     Args:
         model_default_primary: Fixture.
     """
-    assert "id" in type(model_default_primary).__fields__
+    assert "id" in type(model_default_primary).model_fields
 
 
 def test_custom_primary_key(model_custom_primary: Model):
@@ -62,7 +62,7 @@ def test_custom_primary_key(model_custom_primary: Model):
     Args:
         model_custom_primary: Fixture.
     """
-    assert "id" not in type(model_custom_primary).__fields__
+    assert "id" not in type(model_custom_primary).model_fields
 
 
 @pytest.mark.filterwarnings(

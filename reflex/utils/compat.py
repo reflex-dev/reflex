@@ -1,6 +1,9 @@
 """Compatibility hacks and helpers."""
 
-from typing import Any
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from pydantic.fields import FieldInfo
 
 
 async def windows_hot_reload_lifespan_hack():
@@ -27,17 +30,17 @@ async def windows_hot_reload_lifespan_hack():
         pass
 
 
-def sqlmodel_field_has_primary_key(field: Any) -> bool:
+def sqlmodel_field_has_primary_key(field_info: "FieldInfo") -> bool:
     """Determines if a field is a primary.
 
     Args:
-        field: a rx.model field
+        field_info: a rx.model field
 
     Returns:
-        If field is a primary key (Bool)
+        If field_info is a primary key (Bool)
     """
-    if getattr(field.field_info, "primary_key", None) is True:
+    if getattr(field_info, "primary_key", None) is True:
         return True
-    if getattr(field.field_info, "sa_column", None) is None:
+    if getattr(field_info, "sa_column", None) is None:
         return False
-    return bool(getattr(field.field_info.sa_column, "primary_key", None))
+    return bool(getattr(field_info.sa_column, "primary_key", None))  # pyright: ignore[reportAttributeAccessIssue]

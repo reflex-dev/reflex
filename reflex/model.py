@@ -10,6 +10,7 @@ from reflex.config import get_config
 from reflex.environment import environment
 from reflex.utils import console
 from reflex.utils.compat import sqlmodel_field_has_primary_key
+from reflex.utils.serializers import serializer
 
 if TYPE_CHECKING:
     import sqlalchemy
@@ -254,8 +255,6 @@ if find_spec("sqlmodel") and find_spec("sqlalchemy") and find_spec("pydantic"):
     import sqlmodel
     from alembic.runtime.migration import MigrationContext
     from alembic.script.base import Script
-    from pydantic import ConfigDict
-    from sqlmodel._compat import IS_PYDANTIC_V2
     from sqlmodel.ext.asyncio.session import AsyncSession
 
     _AsyncSessionLocal: dict[str | None, sqlalchemy.ext.asyncio.async_sessionmaker] = {}
@@ -312,91 +311,60 @@ if find_spec("sqlmodel") and find_spec("sqlalchemy") and find_spec("pydantic"):
 
         return {"db": status}
 
+    @serializer
+    def serialize_sqlmodel(m: sqlmodel.SQLModel) -> dict[str, Any]:
+        """Serialize a SQLModel object to a dictionary.
+
+        Args:
+            m: The SQLModel object to serialize.
+
+        Returns:
+            The serialized object as a dictionary.
+        """
+        base_fields = m.model_dump()
+        relationships = {}
+        # SQLModel relationships do not appear in __fields__, but should be included if present.
+        for name in m.__sqlmodel_relationships__:
+            with suppress(
+                sqlalchemy.orm.exc.DetachedInstanceError  # This happens when the relationship was never loaded and the session is closed.
+            ):
+                relationships[name] = getattr(m, name)
+        return {
+            **base_fields,
+            **relationships,
+        }
+
     class Model(sqlmodel.SQLModel):
         """Base class to define a table in the database."""
 
         # The primary key for the table.
         id: int | None = sqlmodel.Field(default=None, primary_key=True)
 
-        if IS_PYDANTIC_V2:
-            model_config = ConfigDict(  # pyright: ignore [reportAssignmentType]
-                arbitrary_types_allowed=True,
-                extra="allow",
-                use_enum_values=True,
-                from_attributes=True,
-            )
-        else:
+        model_config = {  # pyright: ignore [reportAssignmentType]
+            "arbitrary_types_allowed": True,
+            "use_enum_values": True,
+            "extra": "allow",
+        }
 
-            class Config:  # pyright: ignore [reportIncompatibleVariableOverride]
-                """Pydantic V1 config."""
-
-                arbitrary_types_allowed = True
-                use_enum_values = True
-                extra = "allow"
-                orm_mode = True
-
-        def __init_subclass__(cls):
+        @classmethod
+        def __pydantic_init_subclass__(cls):
             """Drop the default primary key field if any primary key field is defined."""
             non_default_primary_key_fields = [
                 field_name
-                for field_name, field in cls.__fields__.items()
-                if field_name != "id" and sqlmodel_field_has_primary_key(field)
+                for field_name, field_info in cls.model_fields.items()
+                if field_name != "id" and sqlmodel_field_has_primary_key(field_info)
             ]
             if non_default_primary_key_fields:
-                cls.__fields__.pop("id", None)
-
-            super().__init_subclass__()
-
-        @classmethod
-        def _dict_recursive(cls, value: Any):
-            """Recursively serialize the relationship object(s).
-
-            Args:
-                value: The value to serialize.
-
-            Returns:
-                The serialized value.
-            """
-            if hasattr(value, "dict"):
-                return value.dict()
-            if isinstance(value, list):
-                return [cls._dict_recursive(item) for item in value]
-            return value
-
-        def dict(self, **kwargs):
-            """Convert the object to a dictionary.
-
-            Args:
-                kwargs: Ignored but needed for compatibility.
-
-            Returns:
-                The object as a dictionary.
-            """
-            base_fields = {name: getattr(self, name) for name in self.__fields__}
-            relationships = {}
-            # SQLModel relationships do not appear in __fields__, but should be included if present.
-            for name in self.__sqlmodel_relationships__:
-                with suppress(
-                    sqlalchemy.orm.exc.DetachedInstanceError  # This happens when the relationship was never loaded and the session is closed.
-                ):
-                    relationships[name] = self._dict_recursive(getattr(self, name))
-            return {
-                **base_fields,
-                **relationships,
-            }
-
-        def json(self) -> str:
-            """Convert the object to a json string.
-
-            Returns:
-                The object as a json string.
-            """
-            from reflex.utils.serializers import serialize
-
-            return self.__config__.json_dumps(
-                self.dict(),
-                default=serialize,
-            )
+                cls.model_fields.pop("id", None)
+                console.deprecate(
+                    feature_name="Overriding default primary key",
+                    reason=(
+                        "Register sqlmodel.SQLModel classes with `@rx.ModelRegistry.register`"
+                    ),
+                    deprecation_version="0.8.0",
+                    removal_version="0.9.0",
+                )
+            super().__pydantic_init_subclass__()
 
         @staticmethod
         def create_all():
