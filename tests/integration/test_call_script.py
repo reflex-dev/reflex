@@ -406,6 +406,9 @@ def assert_token(driver: WebDriver) -> str:
     """
     ss = SessionStorage(driver)
     assert AppHarness._poll_for(lambda: ss.get("token") is not None), "token not found"
+    assert AppHarness._poll_for(
+        lambda: driver.execute_script("return typeof external4 !== 'undefined'")
+    ), "scripts not loaded"
     return ss.get("token")
 
 
