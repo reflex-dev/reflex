@@ -77,6 +77,7 @@ from reflex.event import (
     EventType,
     IndividualEventType,
     get_hydrate_event,
+    noop,
 )
 from reflex.model import Model, get_db_status
 from reflex.page import DECORATED_PAGES
@@ -213,17 +214,21 @@ def default_overlay_component() -> Component:
     return Fragment.create(memo(default_overlay_components)())
 
 
-def default_error_boundary(*children: Component) -> Component:
+def default_error_boundary(*children: Component, **props) -> Component:
     """Default error_boundary attribute for App.
 
     Args:
         *children: The children to render in the error boundary.
+        **props: The props to pass to the error boundary.
 
     Returns:
         The default error_boundary, which is an ErrorBoundary.
 
     """
-    return ErrorBoundary.create(*children)
+    return ErrorBoundary.create(
+        *children,
+        **props,
+    )
 
 
 class OverlayFragment(Fragment):
@@ -345,7 +350,9 @@ class App(MiddlewareMixin, LifespanMixin):
         dataclasses.field(
             default_factory=lambda: {
                 (55, "ErrorBoundary"): (
-                    lambda stateful: default_error_boundary() if stateful else None
+                    lambda stateful: default_error_boundary(
+                        **({"on_error": noop()} if not stateful else {})
+                    )
                 ),
                 (5, "Overlay"): (
                     lambda stateful: default_overlay_component() if stateful else None
