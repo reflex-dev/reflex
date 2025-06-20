@@ -297,7 +297,7 @@ def test_format_var(input: Var, output: str):
         ("/CUSTOM_route", "CUSTOM_route"),
     ],
 )
-def test_format_route(route: str, expected: bool):
+def test_format_route(route: str, expected: str):
     """Test formatting a route.
 
     Args:
