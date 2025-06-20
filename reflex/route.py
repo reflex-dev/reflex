@@ -47,7 +47,7 @@ def verify_route_validity(route: str) -> None:
         if not constants.RouteRegex.ARG.fullmatch(part):
             msg = (
                 f"Route part `{part}` with argument is not valid. "
-                "Reflex only argument names that start with an alphabetic character or underscore, "
+                "Reflex only supports argument names that start with an alphabetic character or underscore, "
                 "followed by alphanumeric characters or underscores."
             )
             raise ValueError(msg)
