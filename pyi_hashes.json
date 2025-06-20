@@ -29,7 +29,7 @@
   "reflex/components/el/element.pyi": "3519fdc9a74aab7b02f475568def5f95",
   "reflex/components/el/elements/__init__.pyi": "baeddd04d4d3a82799420b2a6df368f6",
   "reflex/components/el/elements/base.pyi": "2c962706dd6c28821497e9c8044cab4e",
-  "reflex/components/el/elements/forms.pyi": "0a75b05da0e53f581e356e464d3675d2",
+  "reflex/components/el/elements/forms.pyi": "7d96e23d763f4dcfc179a40fc205d895",
   "reflex/components/el/elements/inline.pyi": "523f3d432fb0daa21a4036bb37b4c8fa",
   "reflex/components/el/elements/media.pyi": "7d2f7996b2bbac9dff223e44e8c9b02d",
   "reflex/components/el/elements/metadata.pyi": "1591385cc150bf113b689bf4b58e67f2",
