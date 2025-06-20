@@ -386,6 +386,12 @@ async def test_on_load_navigate_non_dynamic(
     assert urlsplit(driver.current_url).path.removesuffix("/") == "/static/x"
     await poll_for_order(["/static/x-no page id", "/static/x-no page id"])
 
+    for _ in range(3):
+        link = driver.find_element(By.ID, "link_page_x")
+        link.click()
+        assert urlsplit(driver.current_url).path.removesuffix("/") == "/static/x"
+    await poll_for_order(["/static/x-no page id"] * 5)
+
 
 @pytest.mark.asyncio
 async def test_render_dynamic_arg(
