@@ -3,7 +3,7 @@ from pytest_mock import MockerFixture
 
 from reflex import constants
 from reflex.app import App
-from reflex.route import catchall_in_route, get_route_args, verify_route_validity
+from reflex.route import get_route_args, verify_route_validity
 
 
 @pytest.mark.parametrize(
@@ -33,17 +33,6 @@ def test_route_args(route_name, expected):
 def test_invalid_route_args(route_name):
     with pytest.raises(ValueError):
         get_route_args(route_name)
-
-
-@pytest.mark.parametrize(
-    ("route_name", "expected"),
-    [
-        ("/events/[year]/[month]/[...slug]", "[...slug]"),
-        ("pages/shop/[[...slug]]", "[[...slug]]"),
-    ],
-)
-def test_catchall_in_route(route_name, expected):
-    assert catchall_in_route(route_name) == expected
 
 
 @pytest.mark.parametrize(
