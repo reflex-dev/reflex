@@ -86,11 +86,7 @@ def _compile_app(app_root: Component) -> str:
         (_normalize_library_name(name), name) for name in bundled_libraries
     ]
 
-    window_libraries_deduped = [
-        window_library
-        for i, window_library in enumerate(window_libraries)
-        if window_libraries.index(window_library) == i
-    ]
+    window_libraries_deduped = list(dict.fromkeys(window_libraries))
 
     app_root_imports = app_root._get_all_imports()
     _apply_common_imports(app_root_imports)
