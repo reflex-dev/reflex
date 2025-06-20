@@ -86,6 +86,8 @@ def _compile_app(app_root: Component) -> str:
         (_normalize_library_name(name), name) for name in bundled_libraries
     ]
 
+    window_libraries_deduped = list(dict.fromkeys(window_libraries))
+
     app_root_imports = app_root._get_all_imports()
     _apply_common_imports(app_root_imports)
 
@@ -93,7 +95,7 @@ def _compile_app(app_root: Component) -> str:
         imports=utils.compile_imports(app_root_imports),
         custom_codes=app_root._get_all_custom_code(),
         hooks=app_root._get_all_hooks(),
-        window_libraries=window_libraries,
+        window_libraries=window_libraries_deduped,
         render=app_root.render(),
         dynamic_imports=app_root._get_all_dynamic_imports(),
     )
