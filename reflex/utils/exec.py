@@ -23,6 +23,7 @@ from reflex.constants.base import LogLevel
 from reflex.environment import environment
 from reflex.utils import console, path_ops
 from reflex.utils.decorator import once
+from reflex.utils.misc import get_module_path
 from reflex.utils.prerequisites import get_web_dir
 
 # For uvicorn windows bug fix (#2335)
@@ -323,15 +324,12 @@ def get_app_file() -> Path:
     if current_working_dir not in sys.path:
         # Add the current working directory to sys.path
         sys.path.insert(0, current_working_dir)
-    module_spec = importlib.util.find_spec(get_app_module())
-    if module_spec is None:
-        msg = f"Module {get_app_module()} not found. Make sure the module is installed."
+    app_module = get_app_module()
+    module_path = get_module_path(app_module)
+    if module_path is None:
+        msg = f"Module {app_module} not found. Make sure the module is installed."
         raise ImportError(msg)
-    file_name = module_spec.origin
-    if file_name is None:
-        msg = f"Module {get_app_module()} not found. Make sure the module is installed."
-        raise ImportError(msg)
-    return Path(file_name).resolve()
+    return module_path
 
 
 def get_app_instance_from_file() -> str:
@@ -396,8 +394,10 @@ def get_reload_paths() -> Sequence[Path]:
     """
     config = get_config()
     reload_paths = [Path.cwd()]
-    if (spec := importlib.util.find_spec(config.module)) is not None and spec.origin:
-        module_path = Path(spec.origin).resolve().parent
+    app_module = config.module
+    module_path = get_module_path(app_module)
+    if module_path is not None:
+        module_path = module_path.parent
 
         while module_path.parent.name and _has_child_file(module_path, "__init__.py"):
             if _has_child_file(module_path, "rxconfig.py"):
