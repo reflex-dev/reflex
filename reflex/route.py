@@ -23,7 +23,7 @@ def verify_route_validity(route: str) -> None:
             continue
         if not part.startswith("[") or not part.endswith("]"):
             msg = (
-                f"Route part `{part}` is not a valid. Reflex only supports "
+                f"Route part `{part}` is not valid. Reflex only supports "
                 "alphabetic characters, underscores, and hyphens in route parts. "
             )
             raise ValueError(msg)
