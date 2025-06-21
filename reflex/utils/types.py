@@ -7,6 +7,7 @@ import sys
 import types
 from collections.abc import Callable, Iterable, Mapping, Sequence
 from functools import cached_property, lru_cache
+from importlib.util import find_spec
 from types import GenericAlias
 from typing import (  # noqa: UP035
     TYPE_CHECKING,
@@ -32,7 +33,6 @@ from typing import (  # noqa: UP035
 from typing import get_origin as get_origin_og
 from typing import get_type_hints as get_type_hints_og
 
-from pydantic.v1.fields import ModelField
 from typing_extensions import Self as Self
 from typing_extensions import override as override
 
@@ -348,33 +348,6 @@ def is_classvar(a_type: Any) -> bool:
     )
 
 
-def true_type_for_pydantic_field(f: ModelField):
-    """Get the type for a pydantic field.
-
-    Args:
-        f: The field to get the type for.
-
-    Returns:
-        The type for the field.
-    """
-    if not isinstance(f.annotation, (str, ForwardRef)):
-        return f.annotation
-
-    type_ = f.outer_type_
-
-    if (
-        f.field_info.default is None
-        or (isinstance(f.annotation, str) and f.annotation.startswith("Optional"))
-        or (
-            isinstance(f.annotation, ForwardRef)
-            and f.annotation.__forward_arg__.startswith("Optional")
-        )
-    ) and not is_optional(type_):
-        return type_ | None
-
-    return type_
-
-
 def value_inside_optional(cls: GenericType) -> GenericType:
     """Get the value inside an Optional type or the original type.
 
@@ -506,8 +479,11 @@ def get_attribute_access_type(cls: GenericType, name: str) -> GenericType | None
             type_origin = get_origin(type_)
             if isinstance(type_origin, type) and issubclass(type_origin, Mapped):
                 return get_args(type_)[0]  # SQLAlchemy v2
-            if isinstance(type_, ModelField):
-                return type_.type_  # SQLAlchemy v1.4
+            if find_spec("pydantic"):
+                from pydantic.v1.fields import ModelField
+
+                if isinstance(type_, ModelField):
+                    return type_.type_  # SQLAlchemy v1.4
             return type_
     elif is_union(cls):
         # Check in each arg of the annotation.

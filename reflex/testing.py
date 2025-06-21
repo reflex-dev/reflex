@@ -21,6 +21,7 @@ import time
 import types
 from collections.abc import AsyncIterator, Callable, Coroutine, Sequence
 from http.server import SimpleHTTPRequestHandler
+from importlib.util import find_spec
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Literal, TypeVar
 
@@ -320,12 +321,13 @@ class AppHarness:
                     await self.app_instance.sio.shutdown()
 
             # sqlalchemy async engine shutdown handler
-            try:
-                async_engine = reflex.model.get_async_engine(None)
-            except ValueError:
-                pass
-            else:
-                await async_engine.dispose()
+            if find_spec("sqlmodel"):
+                try:
+                    async_engine = reflex.model.get_async_engine(None)
+                except ValueError:
+                    pass
+                else:
+                    await async_engine.dispose()
 
             await original_shutdown(*args, **kwargs)
 

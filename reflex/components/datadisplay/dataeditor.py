@@ -2,11 +2,11 @@
 
 from __future__ import annotations
 
+import dataclasses
 from collections.abc import Mapping, Sequence
 from enum import Enum
 from typing import Any, Literal, TypedDict
 
-from reflex.base import Base
 from reflex.components.component import Component, NoSSRComponent
 from reflex.components.literals import LiteralRowMarker
 from reflex.event import EventHandler, no_args_event_spec, passthrough_event_spec
@@ -50,7 +50,8 @@ class GridColumnIcons(Enum):
     VideoUri = "video_uri"
 
 
-class DataEditorTheme(Base):
+@dataclasses.dataclass
+class DataEditorThemeBase:
     """The theme for the DataEditor component."""
 
     accent_color: str | None = None
@@ -85,6 +86,20 @@ class DataEditorTheme(Base):
     text_header_selected: str | None = None
     text_light: str | None = None
     text_medium: str | None = None
+
+
+@dataclasses.dataclass(init=False)
+class DataEditorTheme(DataEditorThemeBase):
+    """The theme for the DataEditor component."""
+
+    def __init__(self, **kwargs: Any):
+        """Initialize the DataEditorTheme.
+
+        Args:
+            **kwargs: The keyword arguments to initialize the theme.
+        """
+        kwargs = {format.to_snake_case(k): v for k, v in kwargs.items()}
+        super().__init__(**kwargs)
 
 
 class Bounds(TypedDict):
