@@ -310,20 +310,16 @@ def format_var(var: Var) -> str:
     return str(var)
 
 
-def format_route(route: str, format_case: bool = True) -> str:
+def format_route(route: str) -> str:
     """Format the given route.
 
     Args:
         route: The route to format.
-        format_case: whether to format case to kebab case.
 
     Returns:
         The formatted route.
     """
     route = route.strip("/")
-    # Strip the route and format casing.
-    if format_case:
-        route = to_kebab_case(route)
 
     # If the route is empty, return the index route.
     if route == "":

@@ -269,7 +269,7 @@ async def test_on_load_navigate(
     link = driver.find_element(By.ID, "link_page_next")
     assert link
 
-    exp_order = [f"/page/{ix}-{ix}" for ix in range(10)]
+    exp_order = [f"/page/[page_id]-{ix}" for ix in range(10)]
     # click the link a few times
     for ix in range(10):
         # wait for navigation, then assert on url
@@ -297,20 +297,20 @@ async def test_on_load_navigate(
     frontend_url = frontend_url.removesuffix("/")
 
     # manually load the next page to trigger client side routing in prod mode
-    exp_order += ["/page/10-10"]
+    exp_order += ["/page/[page_id]-10"]
     with poll_for_navigation(driver):
         driver.get(f"{frontend_url}/page/10")
     await poll_for_order(exp_order)
 
     # make sure internal nav still hydrates after redirect
-    exp_order += ["/page/11-11"]
+    exp_order += ["/page/[page_id]-11"]
     link = driver.find_element(By.ID, "link_page_next")
     with poll_for_navigation(driver):
         link.click()
     await poll_for_order(exp_order)
 
     # load same page with a query param and make sure it passes through
-    exp_order += ["/page/11-11"]
+    exp_order += ["/page/[page_id]-11"]
     with poll_for_navigation(driver):
         driver.get(f"{driver.current_url}?foo=bar")
     await poll_for_order(exp_order)
@@ -319,26 +319,26 @@ async def test_on_load_navigate(
     ).router.page.params["foo"] == "bar"
 
     # hit a 404 and ensure we still hydrate
-    exp_order += ["/missing-no page id"]
+    exp_order += ["/404-no page id"]
     with poll_for_navigation(driver):
         driver.get(f"{frontend_url}/missing")
     await poll_for_order(exp_order)
 
     # browser nav should still trigger hydration
-    exp_order += ["/page/11-11"]
+    exp_order += ["/page/[page_id]-11"]
     with poll_for_navigation(driver):
         driver.back()
     await poll_for_order(exp_order)
 
     # next/link to a 404 and ensure we still hydrate
-    exp_order += ["/missing-no page id"]
+    exp_order += ["/404-no page id"]
     link = driver.find_element(By.ID, "link_missing")
     with poll_for_navigation(driver):
         link.click()
     await poll_for_order(exp_order)
 
     # hit a page that redirects back to dynamic page
-    exp_order += ["on_load_redir-{'foo': 'bar', 'page_id': '0'}", "/page/0-0"]
+    exp_order += ["on_load_redir-{'foo': 'bar', 'page_id': '0'}", "/page/[page_id]-0"]
     with poll_for_navigation(driver):
         driver.get(f"{frontend_url}/redirect-page/0/?foo=bar")
     await poll_for_order(exp_order)

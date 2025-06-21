@@ -2947,9 +2947,14 @@ async def test_preprocess(
     mocker.patch(
         "reflex.state.State.class_subclasses", {test_state, OnLoadInternalState}
     )
-    app = app_module_mock.app = App(
-        _state=State, _load_events={"index": [test_state.test_handler]}
-    )
+    app = app_module_mock.app = App(_state=State)
+
+    def index():
+        return "hello"
+
+    app.add_page(index, on_load=test_state.test_handler)
+    app._compile_page("index")
+
     async with app.state_manager.modify_state(_substate_key(token, State)) as state:
         state.router_data = {"simulate": "hydrate"}
 
@@ -2996,10 +3001,13 @@ async def test_preprocess_multiple_load_events(
     mocker.patch(
         "reflex.state.State.class_subclasses", {OnLoadState, OnLoadInternalState}
     )
-    app = app_module_mock.app = App(
-        _state=State,
-        _load_events={"index": [OnLoadState.test_handler, OnLoadState.test_handler]},
-    )
+    app = app_module_mock.app = App(_state=State)
+
+    def index():
+        return "hello"
+
+    app.add_page(index, on_load=[OnLoadState.test_handler, OnLoadState.test_handler])
+    app._compile_page("index")
     async with app.state_manager.modify_state(_substate_key(token, State)) as state:
         state.router_data = {"simulate": "hydrate"}
 
