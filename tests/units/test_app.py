@@ -1043,11 +1043,12 @@ async def test_dynamic_route_var_route_change_completed_on_load(
         mocker: pytest mocker object.
     """
     arg_name = "dynamic"
-    route = f"/test/[{arg_name}]"
+    route = f"test/[{arg_name}]"
     app = app_module_mock.app = App(_state=DynamicState)
     assert app._state is not None
     assert arg_name not in app._state.vars
     app.add_page(index_page, route=route, on_load=DynamicState.on_load)
+    app._compile_page(route)
     assert arg_name in app._state.vars
     assert arg_name in app._state.computed_vars
     assert app._state.computed_vars[arg_name]._deps(objclass=DynamicState) == {
@@ -1068,7 +1069,7 @@ async def test_dynamic_route_var_route_change_completed_on_load(
             token=kwargs.pop("token", token),
             name=name,
             router_data=kwargs.pop(
-                "router_data", {"pathname": route, "query": {arg_name: val}}
+                "router_data", {"pathname": "/" + route, "query": {arg_name: val}}
             ),
             payload=kwargs.pop("payload", {}),
             **kwargs,

@@ -17,7 +17,7 @@ def verify_route_validity(route: str) -> None:
     Raises:
         ValueError: If the route is invalid.
     """
-    route_parts = route.split("/")
+    route_parts = route.removeprefix("/").split("/")
     for i, part in enumerate(route_parts):
         if constants.RouteRegex.SLUG.fullmatch(part):
             continue

@@ -57,7 +57,7 @@ class RouteRegex(SimpleNamespace):
         rf"{_OPENING_BRACKET}{_DOT_DOT_DOT}({_ARG_NAME}){_CLOSING_BRACKET}"
     )
 
-    # match a snigle optional catch-all arg (i.e. "[[...slug]]"), returns the name of the arg
+    # match a single optional catch-all arg (i.e. "[[...slug]]"), returns the name of the arg
     OPTIONAL_CATCHALL = re.compile(
         rf"{_OPENING_BRACKET * 2}{_DOT_DOT_DOT}({_ARG_NAME}){_CLOSING_BRACKET * 2}"
     )

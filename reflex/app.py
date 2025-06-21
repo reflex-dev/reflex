@@ -1729,11 +1729,11 @@ async def process(
                 # assignment will recurse into substates and force recalculation of
                 # dependent ComputedVar (dynamic route variables)
                 state.router_data = router_data
-                router_data[constants.RouteVar.PATH] = (
+                router_data[constants.RouteVar.PATH] = "/" + (
                     app.router(path) or "404"
                     if (path := router_data.get(constants.RouteVar.PATH))
                     else "404"
-                )
+                ).removeprefix("/")
                 state.router = RouterData(router_data)
 
             # Preprocess the event.
