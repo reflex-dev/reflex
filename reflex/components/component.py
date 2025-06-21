@@ -723,9 +723,7 @@ class Component(BaseComponent, ABC):
                 is_var = False
             elif key in props:
                 # Set the field type.
-                is_var = (
-                    field.is_javascript if (field := fields.get(key)) else False
-                )
+                is_var = field.is_javascript if (field := fields.get(key)) else False
             else:
                 continue
 
