@@ -8,7 +8,7 @@ from collections.abc import Callable, Iterable
 from typing import Any
 
 from reflex.components.base.fragment import Fragment
-from reflex.components.component import Component
+from reflex.components.component import Component, field
 from reflex.components.core.cond import cond
 from reflex.components.tags import IterTag
 from reflex.constants import MemoizationMode
@@ -36,7 +36,7 @@ class Foreach(Component):
     iterable: Var[Iterable]
 
     # A function from the render args to the component.
-    render_fn: Callable = Fragment.create
+    render_fn: Callable = field(default=Fragment.create, is_javascript_property=False)
 
     @classmethod
     def create(

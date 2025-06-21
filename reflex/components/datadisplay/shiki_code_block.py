@@ -8,7 +8,7 @@ from collections import defaultdict
 from dataclasses import dataclass
 from typing import Any, Literal
 
-from reflex.components.component import Component, ComponentNamespace
+from reflex.components.component import Component, ComponentNamespace, field
 from reflex.components.core.colors import color
 from reflex.components.core.cond import color_mode_cond
 from reflex.components.el.elements.forms import Button
@@ -721,10 +721,12 @@ class ShikiHighLevelCodeBlock(ShikiCodeBlock):
     show_line_numbers: Var[bool]
 
     # Whether a copy button should appear.
-    can_copy: bool = False
+    can_copy: bool = field(default=False, is_javascript_property=False)
 
     # copy_button: A custom copy button to override the default one.
-    copy_button: Component | bool | None = None
+    copy_button: Component | bool | None = field(
+        default=None, is_javascript_property=False
+    )
 
     @classmethod
     def create(

@@ -5,7 +5,7 @@ from __future__ import annotations
 import dataclasses
 from typing import ClassVar, Literal
 
-from reflex.components.component import Component, ComponentNamespace
+from reflex.components.component import Component, ComponentNamespace, field
 from reflex.components.core.cond import color_mode_cond
 from reflex.components.lucide.icon import Icon
 from reflex.components.markdown.markdown import MarkdownComponentMap
@@ -407,16 +407,24 @@ class CodeBlock(Component, MarkdownComponentMap):
     wrap_long_lines: Var[bool]
 
     # A custom style for the code block.
-    custom_style: dict[str, str | Var | Color] = {}
+    custom_style: dict[str, str | Var | Color] = field(
+        default_factory=dict, is_javascript_property=False
+    )
 
     # Props passed down to the code tag.
     code_tag_props: Var[dict[str, str]]
 
     # Whether a copy button should appear.
-    can_copy: bool | None = False
+    can_copy: bool | None = field(
+        default=False,
+        is_javascript_property=False,
+    )
 
     # A custom copy button to override the default one.
-    copy_button: bool | Component | None = None
+    copy_button: bool | Component | None = field(
+        default=None,
+        is_javascript_property=False,
+    )
 
     @classmethod
     def create(
@@ -497,9 +505,6 @@ class CodeBlock(Component, MarkdownComponentMap):
         )
 
         return out
-
-    def _exclude_props(self) -> list[str]:
-        return ["can_copy", "copy_button"]
 
 
 class CodeblockNamespace(ComponentNamespace):
