@@ -150,7 +150,9 @@ class Markdown(Component):
     is_default = True
 
     # The component map from a tag to a lambda that creates a component.
-    component_map: dict[str, Any] = field(default_factory=dict, is_javascript_property=True)
+    component_map: dict[str, Any] = field(
+        default_factory=dict, is_javascript_property=False
+    )
 
     # The hash of the component map, generated at create() time.
     component_map_hash: str = field(default="", is_javascript_property=False)
