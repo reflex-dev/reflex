@@ -2054,10 +2054,24 @@ class BaseState(EvenMoreBasicBaseState):
         Returns:
             The value of the field.
         """
-        value = getattr(self, key)
-        if isinstance(value, MutableProxy):
-            return value.__wrapped__
-        return value
+        if isinstance(key, MutableProxy):
+            # Legacy behavior from v0.7.14: handle non-string keys with deprecation warning
+            from reflex.utils import console
+
+            console.deprecate(
+                feature_name="Non-string keys in get_value",
+                reason="Passing non-string keys to get_value is deprecated and will no longer be supported",
+                deprecation_version="0.8.0",
+                removal_version="0.9.0",
+            )
+
+            return key.__wrapped__
+
+        if isinstance(key, str):
+            return getattr(self, key)
+
+        msg = f"Invalid key type: {type(key)}. Expected str."
+        raise TypeError(msg)
 
     def dict(
         self, include_computed: bool = True, initial: bool = False, **kwargs
