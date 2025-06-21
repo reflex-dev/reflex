@@ -281,7 +281,7 @@ def test_add_page_set_route_nested(app: App, index_page):
         app: The app to test.
         index_page: The index page.
     """
-    route = "/test/nested"
+    route = "test/nested"
     assert app._unevaluated_pages == {}
     app.add_page(index_page, route=route)
     assert app._unevaluated_pages.keys() == {route}
