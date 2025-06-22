@@ -13,7 +13,6 @@ import subprocess
 import sys
 import typing
 from collections.abc import Callable, Iterable, Sequence
-from fileinput import FileInput
 from hashlib import md5
 from inspect import getfullargspec
 from itertools import chain
@@ -67,7 +66,6 @@ OVERWRITE_TYPES = {
 }
 
 DEFAULT_TYPING_IMPORTS = {
-    "overload",
     "Any",
     "Callable",
     "Dict",
@@ -677,10 +675,7 @@ def _generate_component_create_functiondef(
                 value=ast.Constant(value=Ellipsis),
             ),
         ],
-        decorator_list=[
-            ast.Name(id="overload"),
-            *decorator_list,
-        ],
+        decorator_list=list(decorator_list),
         lineno=lineno,
         returns=ast.Constant(value=clz.__name__),
     )
@@ -896,7 +891,7 @@ class StubGenerator(ast.NodeTransformer):
             The modified ImportFrom node.
         """
         if node.module == "__future__":
-            return None  # ignore __future__ imports
+            return None  # ignore __future__ imports: https://docs.astral.sh/ruff/rules/future-annotations-in-stub/
         return self.visit_Import(node)
 
     def visit_ClassDef(self, node: ast.ClassDef) -> ast.ClassDef:
@@ -1111,7 +1106,6 @@ class PyiGenerator:
         # retrieve the _SUBMODULES and _SUBMOD_ATTRS from an init file if present.
         sub_mods = getattr(mod, "_SUBMODULES", None)
         sub_mod_attrs = getattr(mod, "_SUBMOD_ATTRS", None)
-        pyright_ignore_imports = getattr(mod, "_PYRIGHT_IGNORE_IMPORTS", [])
 
         if not sub_mods and not sub_mod_attrs:
             return None
@@ -1131,19 +1125,13 @@ class PyiGenerator:
             # construct the import statement and handle special cases for aliases
             sub_mod_attrs_imports = [
                 f"from .{path} import {mod if not isinstance(mod, tuple) else mod[0]} as {mod if not isinstance(mod, tuple) else mod[1]}"
-                + (
-                    "  # type: ignore"
-                    if mod in pyright_ignore_imports
-                    else "  # noqa: F401"  # ignore ruff formatting here for cases like rx.list.
-                    if isinstance(mod, tuple)
-                    else ""
-                )
                 for mod, path in sub_mod_attrs.items()
             ]
             sub_mod_attrs_imports.append("")
 
         text = "\n" + "\n".join([*sub_mods_imports, *sub_mod_attrs_imports])
-        text += ast.unparse(new_tree) + "\n"
+        text += ast.unparse(new_tree) + "\n\n"
+        text += f"__all__ = {getattr(mod, '__all__', [])!r}\n"
         return text
 
     def _scan_file(self, module_path: Path) -> tuple[str, str] | None:
@@ -1326,19 +1314,6 @@ class PyiGenerator:
                     pyi_hashes_file.write_text(
                         json.dumps(pyi_hashes, indent=2, sort_keys=True) + "\n"
                     )
-
-        # Post-process the generated pyi files to add hacky type: ignore comments
-        for file_path in file_paths:
-            with FileInput(file_path, inplace=True) as f:
-                for line in f:
-                    # Hack due to ast not supporting comments in the tree.
-                    if (
-                        "def create(" in line
-                        or "Var[Figure]" in line
-                        or "Var[Template]" in line
-                    ):
-                        line = line.rstrip() + "  # type: ignore\n"
-                    print(line, end="")  # noqa: T201
 
 
 if __name__ == "__main__":
