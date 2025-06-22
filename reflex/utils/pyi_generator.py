@@ -1256,7 +1256,7 @@ class PyiGenerator:
         # Fix generated pyi files with ruff.
         if file_paths:
             subprocess.run(["ruff", "format", *file_paths])
-            subprocess.run(["ruff", "check", "--fix", "--unsafe-fixes", *file_paths])
+            subprocess.run(["ruff", "check", "--fix", *file_paths])
             subprocess.run(["ruff", "format", *file_paths])
 
         if use_json:
