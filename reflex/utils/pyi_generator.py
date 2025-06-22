@@ -1104,8 +1104,10 @@ class PyiGenerator:
 
     def _get_init_lazy_imports(self, mod: tuple | ModuleType, new_tree: ast.AST):
         # retrieve the _SUBMODULES and _SUBMOD_ATTRS from an init file if present.
-        sub_mods = getattr(mod, "_SUBMODULES", None)
-        sub_mod_attrs = getattr(mod, "_SUBMOD_ATTRS", None)
+        sub_mods: set[str] | None = getattr(mod, "_SUBMODULES", None)
+        sub_mod_attrs: dict[str, list[str | tuple[str, str]]] | None = getattr(
+            mod, "_SUBMOD_ATTRS", None
+        )
 
         if not sub_mods and not sub_mod_attrs:
             return None
@@ -1113,19 +1115,28 @@ class PyiGenerator:
         sub_mod_attrs_imports = []
 
         if sub_mods:
-            sub_mods_imports = [
-                f"from . import {mod} as {mod}" for mod in sorted(sub_mods)
-            ]
+            sub_mods_imports = [f"from . import {mod}" for mod in sorted(sub_mods)]
             sub_mods_imports.append("")
 
         if sub_mod_attrs:
-            sub_mod_attrs = {
-                attr: mod for mod, attrs in sub_mod_attrs.items() for attr in attrs
+            flattened_sub_mod_attrs = {
+                imported: module
+                for module, attrs in sub_mod_attrs.items()
+                for imported in attrs
             }
             # construct the import statement and handle special cases for aliases
             sub_mod_attrs_imports = [
-                f"from .{path} import {mod if not isinstance(mod, tuple) else mod[0]} as {mod if not isinstance(mod, tuple) else mod[1]}"
-                for mod, path in sub_mod_attrs.items()
+                f"from .{module} import "
+                + (
+                    (
+                        (imported[0] + " as " + imported[1])
+                        if imported[0] != imported[1]
+                        else imported[0]
+                    )
+                    if isinstance(imported, tuple)
+                    else imported
+                )
+                for imported, module in flattened_sub_mod_attrs.items()
             ]
             sub_mod_attrs_imports.append("")
 
