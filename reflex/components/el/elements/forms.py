@@ -34,7 +34,7 @@ HANDLE_SUBMIT_JS_JINJA2 = Environment().from_string(
     const handleSubmit_{{ handle_submit_unique_name }} = useCallback((ev) => {
         const $form = ev.target
         ev.preventDefault()
-        const {{ form_data }} = {...Object.fromEntries(new FormData($form).entries()), ...{{ field_ref_mapping }}};
+        const {{ form_data }} = {...Object.fromEntries(new FormData($form).entries())};
 
         ({{ on_submit_event_chain }}(ev));
 
@@ -217,7 +217,6 @@ class Form(BaseHTML):
             HANDLE_SUBMIT_JS_JINJA2.render(
                 handle_submit_unique_name=self.handle_submit_unique_name,
                 form_data=FORM_DATA,
-                field_ref_mapping=str(LiteralVar.create(self._get_form_refs())),
                 on_submit_event_chain=str(
                     LiteralVar.create(self.event_triggers[EventTriggers.ON_SUBMIT])
                 ),
