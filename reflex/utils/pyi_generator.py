@@ -1256,11 +1256,8 @@ class PyiGenerator:
         # Fix generated pyi files with ruff.
         if file_paths:
             subprocess.run(["ruff", "format", *file_paths])
-            subprocess.run(["ruff", "check", "--fix", *file_paths])
-
-        # For some reason, we need to format the __init__.pyi files again after fixing...
-        init_files = [f for f in file_paths if "/__init__.pyi" in f]
-        subprocess.run(["ruff", "format", *init_files])
+            subprocess.run(["ruff", "check", "--fix", "--unsafe-fixes", *file_paths])
+            subprocess.run(["ruff", "format", *file_paths])
 
         if use_json:
             if file_paths and changed_files is None:
