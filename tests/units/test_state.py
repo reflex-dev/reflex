@@ -3837,7 +3837,13 @@ def test_dict_and_get_delta():
     ],
 )
 def test_get_value(key_factory, expected_result, should_raise):
-    """Test the get_value method directly with various key types."""
+    """Test the get_value method directly with various key types.
+
+    Args:
+        key_factory: Factory function to create the key for testing.
+        expected_result: The expected return value from get_value.
+        should_raise: Whether the test should expect a TypeError.
+    """
 
     class GetValueState(rx.State):
         """Test state class for get_value testing."""

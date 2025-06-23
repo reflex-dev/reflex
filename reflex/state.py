@@ -2053,6 +2053,9 @@ class BaseState(EvenMoreBasicBaseState):
 
         Returns:
             The value of the field.
+
+        Raises:
+            TypeError: If the key is not a string or MutableProxy.
         """
         if isinstance(key, MutableProxy):
             # Legacy behavior from v0.7.14: handle non-string keys with deprecation warning
