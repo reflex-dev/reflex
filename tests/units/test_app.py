@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import functools
 import io
-import os.path
 import unittest.mock
 import uuid
 from collections.abc import Generator
@@ -241,27 +240,25 @@ def test_add_page_default_route(app: App, index_page, about_page):
     assert app._pages.keys() == {"index", "about"}
 
 
-def test_add_page_set_route(app: App, index_page, windows_platform: bool):
+def test_add_page_set_route(app: App, index_page):
     """Test adding a page to an app.
 
     Args:
         app: The app to test.
         index_page: The index page.
-        windows_platform: Whether the system is windows.
     """
-    route = "test" if windows_platform else "/test"
+    route = "/test"
     assert app._unevaluated_pages == {}
     app.add_page(index_page, route=route)
     app._compile_page("test")
     assert app._pages.keys() == {"test"}
 
 
-def test_add_page_set_route_dynamic(index_page, windows_platform: bool):
+def test_add_page_set_route_dynamic(index_page):
     """Test adding a page with dynamic route variable to an app.
 
     Args:
         index_page: The index page.
-        windows_platform: Whether the system is windows.
     """
     app = App(_state=EmptyState)
     assert app._state is not None
@@ -277,18 +274,17 @@ def test_add_page_set_route_dynamic(index_page, windows_platform: bool):
     assert constants.ROUTER in app._state()._var_dependencies
 
 
-def test_add_page_set_route_nested(app: App, index_page, windows_platform: bool):
+def test_add_page_set_route_nested(app: App, index_page):
     """Test adding a page to an app.
 
     Args:
         app: The app to test.
         index_page: The index page.
-        windows_platform: Whether the system is windows.
     """
-    route = "test\\nested" if windows_platform else "/test/nested"
+    route = "test/nested"
     assert app._unevaluated_pages == {}
     app.add_page(index_page, route=route)
-    assert app._unevaluated_pages.keys() == {route.strip(os.path.sep)}
+    assert app._unevaluated_pages.keys() == {route}
 
 
 def test_add_page_invalid_api_route(app: App, index_page):
@@ -976,7 +972,6 @@ class DynamicState(BaseState):
 
 def test_dynamic_arg_shadow(
     index_page: ComponentCallable,
-    windows_platform: bool,
     token: str,
     app_module_mock: unittest.mock.Mock,
     mocker: MockerFixture,
@@ -985,7 +980,6 @@ def test_dynamic_arg_shadow(
 
     Args:
         index_page: The index page.
-        windows_platform: Whether the system is windows.
         token: a Token.
         app_module_mock: Mocked app module.
         mocker: pytest mocker object.
@@ -1000,7 +994,6 @@ def test_dynamic_arg_shadow(
 
 def test_multiple_dynamic_args(
     index_page: ComponentCallable,
-    windows_platform: bool,
     token: str,
     app_module_mock: unittest.mock.Mock,
     mocker: MockerFixture,
@@ -1009,7 +1002,6 @@ def test_multiple_dynamic_args(
 
     Args:
         index_page: The index page.
-        windows_platform: Whether the system is windows.
         token: a Token.
         app_module_mock: Mocked app module.
         mocker: pytest mocker object.
@@ -1025,7 +1017,6 @@ def test_multiple_dynamic_args(
 @pytest.mark.asyncio
 async def test_dynamic_route_var_route_change_completed_on_load(
     index_page: ComponentCallable,
-    windows_platform: bool,
     token: str,
     app_module_mock: unittest.mock.Mock,
     mocker: MockerFixture,
@@ -1037,17 +1028,17 @@ async def test_dynamic_route_var_route_change_completed_on_load(
 
     Args:
         index_page: The index page.
-        windows_platform: Whether the system is windows.
         token: a Token.
         app_module_mock: Mocked app module.
         mocker: pytest mocker object.
     """
     arg_name = "dynamic"
-    route = f"/test/[{arg_name}]"
+    route = f"test/[{arg_name}]"
     app = app_module_mock.app = App(_state=DynamicState)
     assert app._state is not None
     assert arg_name not in app._state.vars
     app.add_page(index_page, route=route, on_load=DynamicState.on_load)
+    app._compile_page(route)
     assert arg_name in app._state.vars
     assert arg_name in app._state.computed_vars
     assert app._state.computed_vars[arg_name]._deps(objclass=DynamicState) == {
@@ -1068,7 +1059,7 @@ async def test_dynamic_route_var_route_change_completed_on_load(
             token=kwargs.pop("token", token),
             name=name,
             router_data=kwargs.pop(
-                "router_data", {"pathname": route, "query": {arg_name: val}}
+                "router_data", {"pathname": "/" + route, "query": {arg_name: val}}
             ),
             payload=kwargs.pop("payload", {}),
             **kwargs,

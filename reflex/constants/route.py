@@ -41,23 +41,30 @@ class RouteRegex(SimpleNamespace):
     _CLOSING_BRACKET = r"\]"
     _ARG_NAME = r"[a-zA-Z_]\w*"
 
+    # The regex for a valid arg name, e.g. "slug" in "[slug]"
+    _ARG_NAME_PATTERN = re.compile(_ARG_NAME)
+
+    SLUG = re.compile(r"[a-zA-Z0-9_-]+")
     # match a single arg (i.e. "[slug]"), returns the name of the arg
     ARG = re.compile(rf"{_OPENING_BRACKET}({_ARG_NAME}){_CLOSING_BRACKET}")
-    # match a single catch-all arg (i.e. "[...slug]" or "[[...slug]]"), returns the name of the arg
-    CATCHALL = re.compile(
-        rf"({_OPENING_BRACKET}?{_OPENING_BRACKET}{_DOT_DOT_DOT}[^[{_CLOSING_BRACKET}]*{_CLOSING_BRACKET}?{_CLOSING_BRACKET})"
+    # match a single optional arg (i.e. "[[slug]]"), returns the name of the arg
+    OPTIONAL_ARG = re.compile(
+        rf"{_OPENING_BRACKET * 2}({_ARG_NAME}){_CLOSING_BRACKET * 2}"
     )
+
     # match a single non-optional catch-all arg (i.e. "[...slug]"), returns the name of the arg
     STRICT_CATCHALL = re.compile(
         rf"{_OPENING_BRACKET}{_DOT_DOT_DOT}({_ARG_NAME}){_CLOSING_BRACKET}"
     )
-    # match a snigle optional catch-all arg (i.e. "[[...slug]]"), returns the name of the arg
-    OPT_CATCHALL = re.compile(
+
+    # match a single optional catch-all arg (i.e. "[[...slug]]"), returns the name of the arg
+    OPTIONAL_CATCHALL = re.compile(
         rf"{_OPENING_BRACKET * 2}{_DOT_DOT_DOT}({_ARG_NAME}){_CLOSING_BRACKET * 2}"
     )
+
+    SPLAT_CATCHALL = "[[...splat]]"
     SINGLE_SEGMENT = "__SINGLE_SEGMENT__"
     DOUBLE_SEGMENT = "__DOUBLE_SEGMENT__"
-    SINGLE_CATCHALL_SEGMENT = "__SINGLE_CATCHALL_SEGMENT__"
     DOUBLE_CATCHALL_SEGMENT = "__DOUBLE_CATCHALL_SEGMENT__"
 
 
