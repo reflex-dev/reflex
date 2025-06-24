@@ -3786,7 +3786,7 @@ def test_mutable_models():
     assert state.dirty_vars == set()
 
 
-def test_get_value():
+def test_dict_and_get_delta():
     class GetValueState(rx.State):
         foo: str = "FOO"
         bar: str = "BAR"
@@ -3814,6 +3814,65 @@ def test_get_value():
             "bar" + FIELD_MARKER: "foo",
         }
     }
+
+
+@pytest.mark.parametrize(
+    ("key_factory", "expected_result", "should_raise"),
+    [
+        # Valid string keys
+        (lambda state: "foo", "FOO", False),
+        (lambda state: "bar", "BAR", False),
+        # MutableProxy keys (deprecated but supported)
+        (
+            lambda state: MutableProxy(
+                wrapped="test_wrapped_value", state=state, field_name="test_field"
+            ),
+            "test_wrapped_value",
+            False,
+        ),
+        (
+            lambda state: MutableProxy(
+                wrapped=42, state=state, field_name="test_field"
+            ),
+            42,
+            False,
+        ),
+        # Invalid key types
+        (lambda state: 123, None, True),
+        (lambda state: [], None, True),
+        (lambda state: {}, None, True),
+        (lambda state: None, None, True),
+    ],
+)
+def test_get_value(key_factory, expected_result, should_raise):
+    """Test the get_value method directly with various key types.
+
+    Args:
+        key_factory: Factory function to create the key for testing.
+        expected_result: The expected return value from get_value.
+        should_raise: Whether the test should expect a TypeError.
+    """
+
+    class GetValueState(rx.State):
+        """Test state class for get_value testing."""
+
+        foo: str = "FOO"
+        bar: str = "BAR"
+
+    state = GetValueState()
+    key = key_factory(state)
+
+    if should_raise:
+        with pytest.raises(TypeError, match="Invalid key type"):
+            state.get_value(key)
+    else:
+        result = state.get_value(key)
+        assert result == expected_result
+
+        # Verify dirty state is not affected
+        initial_dirty_vars = copy.copy(state.dirty_vars)
+        state.get_value(key)
+        assert state.dirty_vars == initial_dirty_vars
 
 
 def test_init_mixin() -> None:
