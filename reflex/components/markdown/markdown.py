@@ -9,7 +9,7 @@ from functools import lru_cache
 from hashlib import md5
 from typing import Any
 
-from reflex.components.component import BaseComponent, Component, CustomComponent
+from reflex.components.component import BaseComponent, Component, CustomComponent, field
 from reflex.components.tags.tag import Tag
 from reflex.utils.imports import ImportDict, ImportVar
 from reflex.vars.base import LiteralVar, Var, VarData
@@ -150,10 +150,12 @@ class Markdown(Component):
     is_default = True
 
     # The component map from a tag to a lambda that creates a component.
-    component_map: dict[str, Any] = {}
+    component_map: dict[str, Any] = field(
+        default_factory=dict, is_javascript_property=False
+    )
 
     # The hash of the component map, generated at create() time.
-    component_map_hash: str = ""
+    component_map_hash: str = field(default="", is_javascript_property=False)
 
     @classmethod
     def create(cls, *children, **props) -> Component:
