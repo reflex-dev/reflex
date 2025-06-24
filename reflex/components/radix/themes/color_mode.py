@@ -19,7 +19,7 @@ from __future__ import annotations
 
 from typing import Any, Literal, get_args
 
-from reflex.components.component import BaseComponent
+from reflex.components.component import BaseComponent, field
 from reflex.components.core.cond import Cond, color_mode_cond, cond
 from reflex.components.lucide.icon import Icon
 from reflex.components.radix.themes.components.dropdown_menu import dropdown_menu
@@ -99,10 +99,12 @@ class ColorModeIconButton(IconButton):
     """Icon Button for toggling light / dark mode via toggle_color_mode."""
 
     # The position of the icon button. Follow document flow if None.
-    position: LiteralPosition | Var[LiteralPosition] | None = None
+    position: LiteralPosition | Var[LiteralPosition] | None = field(
+        default=None, is_javascript_property=False
+    )
 
     # Allow picking the "system" value for the color mode.
-    allow_system: bool = False
+    allow_system: bool = field(default=False, is_javascript_property=False)
 
     @classmethod
     def create(
@@ -167,9 +169,6 @@ class ColorModeIconButton(IconButton):
             on_click=toggle_color_mode,
             **props,
         )
-
-    def _exclude_props(self) -> list[str]:
-        return ["position", "allow_system"]
 
 
 class ColorModeSwitch(Switch):

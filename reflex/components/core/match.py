@@ -4,7 +4,7 @@ import textwrap
 from typing import Any
 
 from reflex.components.base import Fragment
-from reflex.components.component import BaseComponent, Component, MemoizationLeaf
+from reflex.components.component import BaseComponent, Component, MemoizationLeaf, field
 from reflex.components.tags import MatchTag, Tag
 from reflex.style import Style
 from reflex.utils import format
@@ -21,10 +21,10 @@ class Match(MemoizationLeaf):
     cond: Var[Any]
 
     # The list of match cases to be matched.
-    match_cases: list[Any] = []
+    match_cases: list[Any] = field(default_factory=list, is_javascript_property=False)
 
     # The catchall case to match.
-    default: Any
+    default: Any = field(default=None, is_javascript_property=False)
 
     @classmethod
     def create(cls, cond: Any, *cases) -> Component | Var:
