@@ -1,11 +1,7 @@
 """Test states for mutable vars."""
 
-from sqlalchemy import ARRAY, JSON, String
-from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
-
 import reflex as rx
 from reflex.state import BaseState
-from reflex.utils.serializers import serializer
 
 
 class DictMutationTestState(BaseState):
@@ -147,38 +143,8 @@ class CustomVar(rx.Base):
     custom: OtherBase = OtherBase()
 
 
-class MutableSQLABase(DeclarativeBase):
-    """SQLAlchemy base model for mutable vars."""
-
-
-class MutableSQLAModel(MutableSQLABase):
-    """SQLAlchemy model for mutable vars."""
-
-    __tablename__: str = "mutable_test_state"
-
-    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
-    strlist: Mapped[list[str]] = mapped_column(ARRAY(String))
-    hashmap: Mapped[dict[str, str]] = mapped_column(JSON)
-    test_set: Mapped[set[str]] = mapped_column(ARRAY(String))
-
-
-@serializer
-def serialize_mutable_sqla_model(
-    model: MutableSQLAModel,
-) -> dict[str, list[str] | dict[str, str]]:
-    """Serialize the MutableSQLAModel.
-
-    Args:
-        model: The MutableSQLAModel instance to serialize.
-
-    Returns:
-        The serialized model.
-    """
-    return {"strlist": model.strlist, "hashmap": model.hashmap}
-
-
 class MutableTestState(BaseState):
-    """A test state."""
+    """A test state without SQLAlchemy dependencies."""
 
     array: list[str | int | list | dict[str, str]] = [
         "value",
@@ -193,11 +159,6 @@ class MutableTestState(BaseState):
     test_set: set[str | int] = {1, 2, 3, 4, "five"}
     custom: CustomVar = CustomVar()
     _be_custom: CustomVar = CustomVar()
-    sqla_model: MutableSQLAModel = MutableSQLAModel(
-        strlist=["a", "b", "c"],
-        hashmap={"key": "value"},
-        test_set={"one", "two", "three"},
-    )
 
     def reassign_mutables(self):
         """Assign mutable fields to different values."""
@@ -208,8 +169,3 @@ class MutableTestState(BaseState):
             "mod_third_key": {"key": "value"},
         }
         self.test_set = {1, 2, 3, 4, "five"}
-        self.sqla_model = MutableSQLAModel(
-            strlist=["d", "e", "f"],
-            hashmap={"key": "value"},
-            test_set={"one", "two", "three"},
-        )

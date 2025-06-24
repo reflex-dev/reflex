@@ -3,8 +3,16 @@ from __future__ import annotations
 from typing import List  # noqa: UP035
 
 import attrs
-import pydantic.v1
 import pytest
+
+import reflex as rx
+from reflex.utils.types import GenericType, get_attribute_access_type
+
+pytest.importorskip("sqlalchemy")
+pytest.importorskip("sqlmodel")
+pytest.importorskip("pydantic")
+
+import pydantic.v1
 import sqlalchemy
 import sqlmodel
 from sqlalchemy import JSON, TypeDecorator
@@ -16,9 +24,6 @@ from sqlalchemy.orm import (
     mapped_column,
     relationship,
 )
-
-import reflex as rx
-from reflex.utils.types import GenericType, get_attribute_access_type
 
 
 class SQLAType(TypeDecorator):

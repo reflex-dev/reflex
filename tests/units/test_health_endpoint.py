@@ -1,14 +1,18 @@
 import json
+from importlib.util import find_spec
 from unittest.mock import MagicMock, Mock
 
 import pytest
-import sqlalchemy.exc
 from pytest_mock import MockerFixture
 from redis.exceptions import RedisError
 
 from reflex.app import health
 from reflex.model import get_db_status
 from reflex.utils.prerequisites import get_redis_status
+
+pytest.importorskip("sqlalchemy")
+
+import sqlalchemy.exc
 
 
 @pytest.mark.asyncio
@@ -39,6 +43,7 @@ async def test_get_redis_status(
     mock_get_redis_sync.assert_called_once()
 
 
+@pytest.mark.skipif(not find_spec("sqlmodel"), reason="sqlmodel not installed")
 @pytest.mark.asyncio
 @pytest.mark.parametrize(
     ("mock_engine", "execute_side_effect", "expected_status"),
@@ -77,6 +82,7 @@ async def test_get_db_status(
     mock_get_engine.assert_called_once()
 
 
+@pytest.mark.skipif(not find_spec("sqlmodel"), reason="sqlmodel not installed")
 @pytest.mark.asyncio
 @pytest.mark.parametrize(
     (

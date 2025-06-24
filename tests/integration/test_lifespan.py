@@ -10,6 +10,8 @@ from reflex.testing import AppHarness
 
 from .utils import SessionStorage
 
+pytest.importorskip("fastapi")
+
 
 def LifespanApp(
     mount_cached_fastapi: bool = False, mount_api_transformer: bool = False

@@ -6,18 +6,16 @@ import unittest.mock
 import uuid
 from collections.abc import Generator
 from contextlib import nullcontext as does_not_raise
+from importlib.util import find_spec
 from pathlib import Path
+from typing import TYPE_CHECKING
 from unittest.mock import AsyncMock
 
 import pytest
-import sqlmodel
 from pytest_mock import MockerFixture
 from starlette.applications import Starlette
 from starlette.datastructures import UploadFile
 from starlette.responses import StreamingResponse
-from starlette_admin.auth import AuthProvider
-from starlette_admin.contrib.sqla.admin import Admin
-from starlette_admin.contrib.sqla.view import ModelView
 
 import reflex as rx
 from reflex import AdminDash, constants
@@ -160,6 +158,8 @@ def test_get_engine():
     Returns:
         A default database engine.
     """
+    import sqlmodel
+
     enable_admin = True
     url = "sqlite:///test.db"
     return sqlmodel.create_engine(
@@ -169,6 +169,10 @@ def test_get_engine():
     )
 
 
+if TYPE_CHECKING:
+    from starlette_admin.auth import AuthProvider
+
+
 @pytest.fixture
 def test_custom_auth_admin() -> type[AuthProvider]:
     """A default auth provider.
@@ -176,6 +180,7 @@ def test_custom_auth_admin() -> type[AuthProvider]:
     Returns:
         A default default auth provider.
     """
+    from starlette_admin.auth import AuthProvider
 
     class TestAuthProvider(AuthProvider):
         """A test auth provider."""
@@ -356,6 +361,10 @@ def test_add_duplicate_page_route_error(app: App, first_page, second_page, route
         app.add_page(second_page, route="/" + route.strip("/") if route else None)
 
 
+@pytest.mark.skipif(
+    not find_spec("starlette_admin") or not find_spec("sqlmodel"),
+    reason="starlette_admin not installed or sqlmodel not installed",
+)
 def test_initialize_with_admin_dashboard(test_model):
     """Test setting the admin dashboard of an app.
 
@@ -368,6 +377,10 @@ def test_initialize_with_admin_dashboard(test_model):
     assert app.admin_dash.models[0] == test_model
 
 
+@pytest.mark.skipif(
+    not find_spec("starlette_admin") or not find_spec("sqlmodel"),
+    reason="starlette_admin not installed or sqlmodel not installed",
+)
 def test_initialize_with_custom_admin_dashboard(
     test_get_engine,
     test_custom_auth_admin,
@@ -380,6 +393,8 @@ def test_initialize_with_custom_admin_dashboard(
         test_model_auth: The default model for an auth admin dashboard.
         test_custom_auth_admin: The custom auth provider.
     """
+    from starlette_admin.contrib.sqla.admin import Admin
+
     custom_auth_provider = test_custom_auth_admin()
     custom_admin = Admin(engine=test_get_engine, auth_provider=custom_auth_provider)
     app = App(admin_dash=AdminDash(models=[test_model_auth], admin=custom_admin))
@@ -390,12 +405,17 @@ def test_initialize_with_custom_admin_dashboard(
     assert app.admin_dash.admin.auth_provider == custom_auth_provider
 
 
+@pytest.mark.skipif(
+    not find_spec("starlette_admin") or not find_spec("sqlmodel"),
+    reason="starlette_admin not installed or sqlmodel not installed",
+)
 def test_initialize_admin_dashboard_with_view_overrides(test_model):
     """Test setting the admin dashboard of an app with view class overridden.
 
     Args:
         test_model: The default model.
     """
+    from starlette_admin.contrib.sqla.view import ModelView
 
     class TestModelView(ModelView):
         pass

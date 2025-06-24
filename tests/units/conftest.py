@@ -17,7 +17,6 @@ from reflex.utils import prerequisites
 from .states import (
     DictMutationTestState,
     ListMutationTestState,
-    MutableTestState,
     SubUploadState,
     UploadState,
 )
@@ -205,16 +204,6 @@ def tmp_working_dir(tmp_path):
     working_dir.mkdir()
     with chdir(working_dir):
         yield working_dir
-
-
-@pytest.fixture
-def mutable_state() -> MutableTestState:
-    """Create a Test state containing mutable types.
-
-    Returns:
-        A state object.
-    """
-    return MutableTestState()
 
 
 @pytest.fixture
