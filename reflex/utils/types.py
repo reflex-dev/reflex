@@ -495,7 +495,7 @@ def get_attribute_access_type(cls: GenericType, name: str) -> GenericType | None
                 return list[
                     get_attribute_access_type(
                         attr.target_class,
-                        attr.remote_attr.key,  # type: ignore[attr-defined]
+                        attr.remote_attr.key,  # pyright: ignore [reportAttributeAccessIssue]
                     )
                 ]
     elif isinstance(cls, type) and not is_generic_alias(cls) and issubclass(cls, Model):
