@@ -417,9 +417,11 @@ def _format_route_part(part: str) -> str:
     if part.startswith("[") and part.endswith("]"):
         if part.startswith(("[...", "[[...")):
             return "$"
+        if part.startswith("[["):
+            return "($" + part.removeprefix("[[").removesuffix("]]") + ")"
         # We don't add [] here since we are reusing them from the input
-        return "$" + part + "_"
-    return "[" + part + "]_"
+        return "$" + part
+    return "[" + part + "]"
 
 
 def _path_to_file_stem(path: str) -> str:

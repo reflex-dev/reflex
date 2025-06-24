@@ -40,6 +40,7 @@ from reflex.config import Config, get_config
 from reflex.environment import environment
 from reflex.utils import console, net, path_ops, processes, redir
 from reflex.utils.exceptions import SystemPackageMissingError
+from reflex.utils.misc import get_module_path
 from reflex.utils.registry import get_npm_registry
 
 if typing.TYPE_CHECKING:
@@ -348,14 +349,11 @@ def _check_app_name(config: Config):
         )
         raise RuntimeError(msg)
 
-    from reflex.utils.misc import with_cwd_in_syspath
+    from reflex.utils.misc import get_module_path, with_cwd_in_syspath
 
     with with_cwd_in_syspath():
-        try:
-            mod_spec = importlib.util.find_spec(config.module)
-        except ModuleNotFoundError:
-            mod_spec = None
-        if mod_spec is None:
+        module_path = get_module_path(config.module)
+        if module_path is None:
             msg = f"Module {config.module} not found. "
             if config.app_module_import is not None:
                 msg += f"Ensure app_module_import='{config.app_module_import}' in rxconfig.py matches your folder structure."
@@ -740,14 +738,11 @@ def rename_app(new_app_name: str, loglevel: constants.LogLevel):
     sys.path.insert(0, str(Path.cwd()))
 
     config = get_config()
-    module_path = importlib.util.find_spec(config.module)
+    module_path = get_module_path(config.module)
     if module_path is None:
         console.error(f"Could not find module {config.module}.")
         raise click.exceptions.Exit(1)
 
-    if not module_path.origin:
-        console.error(f"Could not find origin for module {config.module}.")
-        raise click.exceptions.Exit(1)
     console.info(f"Renaming app directory to {new_app_name}.")
     process_directory(
         Path.cwd(),
@@ -756,7 +751,7 @@ def rename_app(new_app_name: str, loglevel: constants.LogLevel):
         exclude_dirs=[constants.Dirs.WEB, constants.Dirs.APP_ASSETS],
     )
 
-    rename_path_up_tree(Path(module_path.origin), config.app_name, new_app_name)
+    rename_path_up_tree(module_path, config.app_name, new_app_name)
 
     console.success(f"App directory renamed to [bold]{new_app_name}[/bold].")
 
