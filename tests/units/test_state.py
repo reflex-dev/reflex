@@ -2409,7 +2409,7 @@ def test_mutable_list(mutable_state: MutableTestState):
     assert_array_dirty()
     mutable_state.array.reverse()
     assert_array_dirty()
-    mutable_state.array.sort()  # type: ignore[reportCallIssue,reportUnknownMemberType]
+    mutable_state.array.sort()  # pyright: ignore[reportCallIssue]
     assert_array_dirty()
     mutable_state.array[0] = 666
     assert_array_dirty()
@@ -2501,7 +2501,7 @@ def test_mutable_dict(mutable_state: MutableTestState):
     mutable_value_third_ref = mutable_state.hashmap.pop("setdefault_mutable_key")
     assert not isinstance(mutable_value_third_ref, MutableProxy)
     assert_hashmap_dirty()
-    mutable_value_third_ref.append("baz")  # type: ignore[reportUnknownMemberType,reportAttributeAccessIssue,reportUnusedCallResult]
+    mutable_value_third_ref.append("baz")  # pyright: ignore[reportAttributeAccessIssue]
     assert not mutable_state.dirty_vars
     # Unfortunately previous refs still will mark the state dirty... nothing doing about that
     assert mutable_value.pop()
