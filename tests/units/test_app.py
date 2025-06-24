@@ -11,10 +11,10 @@ from unittest.mock import AsyncMock
 
 import pytest
 import sqlmodel
-from fastapi.responses import StreamingResponse
 from pytest_mock import MockerFixture
 from starlette.applications import Starlette
 from starlette.datastructures import UploadFile
+from starlette.responses import StreamingResponse
 from starlette_admin.auth import AuthProvider
 from starlette_admin.contrib.sqla.admin import Admin
 from starlette_admin.contrib.sqla.view import ModelView

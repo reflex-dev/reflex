@@ -611,7 +611,7 @@ class App(MiddlewareMixin, LifespanMixin):
 
             for api_transformer in api_transformers:
                 if isinstance(api_transformer, Starlette):
-                    # Mount the api to the fastapi app.
+                    # Mount the api to the starlette app.
                     App._add_cors(api_transformer)
                     api_transformer.mount("", asgi_app)
                     asgi_app = api_transformer
