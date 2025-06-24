@@ -162,6 +162,7 @@ dev = [
   "asynctest >=0.13",
   "darglint >=1.8",
   "dill >=0.3",
+  "fastapi >=0.115.0",
   "hatchling >=1.27",
   "libsass >=0.23",
   "numpy >=2.2",
@@ -185,8 +186,8 @@ dev = [
   "python-dotenv >=1",
   "ruff >=0.11",
   "selenium >=4.31",
-  "starlette-admin >=0.14",
   "sqlmodel >=0.0.24,<0.1",
+  "starlette-admin >=0.14",
   "toml >=0.10.2",
   "uvicorn >=0.34.0",
 ]
