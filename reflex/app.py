@@ -20,7 +20,6 @@ from timeit import default_timer as timer
 from types import SimpleNamespace
 from typing import TYPE_CHECKING, Any, BinaryIO, ParamSpec, get_args, get_type_hints
 
-from fastapi import FastAPI
 from rich.progress import MofNCompleteColumn, Progress, TimeElapsedColumn
 from socketio import ASGIApp as EngineIOApp
 from socketio import AsyncNamespace, AsyncServer
@@ -428,9 +427,6 @@ class App(MiddlewareMixin, LifespanMixin):
         | None
     ) = None
 
-    # FastAPI app for compatibility with FastAPI.
-    _cached_fastapi_app: FastAPI | None = None
-
     @property
     def event_namespace(self) -> EventNamespace | None:
         """Get the event namespace.
@@ -604,12 +600,7 @@ class App(MiddlewareMixin, LifespanMixin):
             msg = "The app has not been initialized."
             raise ValueError(msg)
 
-        if self._cached_fastapi_app is not None:
-            asgi_app = self._cached_fastapi_app
-            asgi_app.mount("", self._api)
-            App._add_cors(asgi_app)
-        else:
-            asgi_app = self._api
+        asgi_app = self._api
 
         if self.api_transformer is not None:
             api_transformers: Sequence[Starlette | Callable[[ASGIApp], ASGIApp]] = (
