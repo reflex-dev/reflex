@@ -1647,7 +1647,7 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "alembic", specifier = ">=1.15.2,<2.0" },
-    { name = "click", specifier = ">=8" },
+    { name = "click", specifier = ">=8.2" },
     { name = "fastapi", specifier = ">=0.115.0" },
     { name = "granian", extras = ["reload"], specifier = ">=2.2.5" },
     { name = "httpx", specifier = ">=0.28.0,<1.0" },
