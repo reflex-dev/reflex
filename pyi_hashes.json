@@ -42,7 +42,7 @@
   "reflex/components/lucide/icon.pyi": "e48c9fa2fe6308d366634b6a5157bf3a",
   "reflex/components/markdown/markdown.pyi": "68d8f112cf1e2ceff0fd0606a2abcf62",
   "reflex/components/moment/moment.pyi": "4ca29ae9cae720eb5c4955682e4cb7df",
-  "reflex/components/plotly/plotly.pyi": "1de86aa6881e59d4053206e62e3039c3",
+  "reflex/components/plotly/plotly.pyi": "d72edb08e7d9becd486a34a901d947ee",
   "reflex/components/radix/__init__.pyi": "7dcf3869b498d6cbf3ec9986c9bf3c86",
   "reflex/components/radix/primitives/__init__.pyi": "c7ee572acc52aef4441045d38449180f",
   "reflex/components/radix/primitives/accordion.pyi": "2df705ef76706119731b410165a0bdcd",
