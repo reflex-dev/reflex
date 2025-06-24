@@ -320,7 +320,8 @@ def stream_logs(
 
     # Windows uvicorn bug
     # https://github.com/reflex-dev/reflex/issues/2335
-    accepted_return_codes = [0, -2, 15] if constants.IS_WINDOWS else [0, -2]
+    # 130 is the exit code that react router returns when it is interrupted by a signal.
+    accepted_return_codes = [0, -2, 15, 130] if constants.IS_WINDOWS else [0, -2, 130]
     if process.returncode not in accepted_return_codes and not suppress_errors:
         console.error(f"{message} failed with exit code {process.returncode}")
         if "".join(logs).count("CERT_HAS_EXPIRED") > 0:

@@ -54,7 +54,7 @@ runner = CliRunner()
         ),
     ],
 )
-def test_update_next_config(config, export, expected_output):
+def test_update_react_router_config(config, export, expected_output):
     output = _update_react_router_config(config, prerender_routes=export)
     assert output == expected_output
 

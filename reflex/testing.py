@@ -23,7 +23,7 @@ from collections.abc import AsyncIterator, Callable, Coroutine, Sequence
 from http.server import SimpleHTTPRequestHandler
 from importlib.util import find_spec
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, TypeVar
+from typing import TYPE_CHECKING, Any, Literal, TypeVar
 
 import psutil
 import uvicorn
@@ -242,7 +242,7 @@ class AppHarness:
     def _initialize_app(self):
         # disable telemetry reporting for tests
 
-        os.environ["TELEMETRY_ENABLED"] = "false"
+        os.environ["REFLEX_TELEMETRY_ENABLED"] = "false"
         CustomComponent.create().get_component.cache_clear()
         self.app_path.mkdir(parents=True, exist_ok=True)
         if self.app_source is not None:
@@ -528,7 +528,7 @@ class AppHarness:
         target: Callable[[], T],
         timeout: TimeoutType = None,
         step: TimeoutType = None,
-    ) -> T | bool:
+    ) -> T | Literal[False]:
         """Generic polling logic.
 
         Args:
@@ -546,9 +546,10 @@ class AppHarness:
             step = POLL_INTERVAL
         deadline = time.time() + timeout
         while time.time() < deadline:
-            success = target()
-            if success:
-                return success
+            with contextlib.suppress(Exception):
+                success = target()
+                if success:
+                    return success
             time.sleep(step)
         return False
 
@@ -852,35 +853,55 @@ class AppHarness:
         return state_manager.states
 
     @staticmethod
-    def poll_for_result(
-        f: Callable[[], T],
-        exception: type[Exception] = Exception,
-        max_attempts: int = 5,
-        seconds_between_attempts: int = 1,
+    def poll_for_or_raise_timeout(
+        target: Callable[[], T],
+        timeout: TimeoutType = None,
+        step: TimeoutType = None,
     ) -> T:
-        """Poll for a result from a function.
+        """Poll target callable for a truthy return value.
+
+        Like `_poll_for`, but raises a `TimeoutError` if the target does not
+        return a truthy value within the timeout.
 
         Args:
-            f: function to call
-            exception: exception to catch
-            max_attempts: maximum number of attempts
-            seconds_between_attempts: seconds to wait between
+            target: callable that returns truthy if polling condition is met.
+            timeout: max polling time
+            step: interval between checking target()
 
         Returns:
-            Result of the function
+            return value of target() if truthy within timeout
 
         Raises:
-            AssertionError: if the function does not return a value
+            TimeoutError: when target does not return a truthy value within timeout
         """
-        attempts = 0
-        while attempts < max_attempts:
-            try:
-                return f()
-            except exception:  # noqa: PERF203
-                attempts += 1
-                time.sleep(seconds_between_attempts)
-        msg = "Function did not return a value"
-        raise AssertionError(msg)
+        result = AppHarness._poll_for(
+            target=target,
+            timeout=timeout,
+            step=step,
+        )
+        if result is False:
+            msg = "Target did not return a truthy value while polling."
+            raise TimeoutError(msg)
+        return result
+
+    @staticmethod
+    def expect(
+        target: Callable[[], T],
+        timeout: TimeoutType = None,
+        step: TimeoutType = None,
+    ):
+        """Expect a target callable to return a truthy value within the timeout.
+
+        Args:
+            target: callable that returns truthy if polling condition is met.
+            timeout: max polling time
+            step: interval between checking target()
+        """
+        AppHarness.poll_for_or_raise_timeout(
+            target=target,
+            timeout=timeout,
+            step=step,
+        )
 
 
 class SimpleHTTPRequestHandlerCustomErrors(SimpleHTTPRequestHandler):

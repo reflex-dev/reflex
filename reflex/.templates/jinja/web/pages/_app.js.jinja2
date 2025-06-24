@@ -2,7 +2,7 @@
 {% from "web/pages/macros.js.jinja2" import renderHooks %}
 
 {% block early_imports %}
-import '$/styles/__reflex_global_styles.css'
+import reflexGlobalStyles from '$/styles/__reflex_global_styles.css?url';
 {% endblock %}
 
 {% block declaration %}
@@ -20,6 +20,10 @@ import * as {{library_alias}} from "{{library_path}}";
 {% endblock %}
 
 {% block export %}
+export const links = () => [
+  { rel: 'stylesheet', href: reflexGlobalStyles, type: 'text/css' }
+];
+
 function AppWrap({children}) {
   {{ renderHooks(hooks) }}
 

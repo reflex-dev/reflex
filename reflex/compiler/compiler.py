@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import sys
 from collections.abc import Iterable, Sequence
-from datetime import datetime
 from inspect import getmodule
 from pathlib import Path
 from typing import TYPE_CHECKING
@@ -20,7 +19,7 @@ from reflex.components.component import (
     StatefulComponent,
 )
 from reflex.config import get_config
-from reflex.constants.compiler import PageNames
+from reflex.constants.compiler import PageNames, ResetStylesheet
 from reflex.constants.state import FIELD_MARKER
 from reflex.environment import environment
 from reflex.state import BaseState
@@ -87,6 +86,8 @@ def _compile_app(app_root: Component) -> str:
         (_normalize_library_name(name), name) for name in bundled_libraries
     ]
 
+    window_libraries_deduped = list(dict.fromkeys(window_libraries))
+
     app_root_imports = app_root._get_all_imports()
     _apply_common_imports(app_root_imports)
 
@@ -94,7 +95,7 @@ def _compile_app(app_root: Component) -> str:
         imports=utils.compile_imports(app_root_imports),
         custom_codes=app_root._get_all_custom_code(),
         hooks=app_root._get_all_hooks(),
-        window_libraries=window_libraries,
+        window_libraries=window_libraries_deduped,
         render=app_root.render(),
         dynamic_imports=app_root._get_all_dynamic_imports(),
     )
@@ -126,21 +127,18 @@ def _compile_contexts(state: type[BaseState] | None, theme: Component | None) ->
     if appearance is None or str(LiteralVar.create(appearance)) == '"inherit"':
         appearance = LiteralVar.create(SYSTEM_COLOR_MODE)
 
-    last_compiled_time = str(datetime.now())
     return (
         templates.CONTEXT.render(
             initial_state=utils.compile_state(state),
             state_name=state.get_name(),
             client_storage=utils.compile_client_storage(state),
             is_dev_mode=not is_prod_mode(),
-            last_compiled_time=last_compiled_time,
             default_color_mode=appearance,
         )
         if state
         else templates.CONTEXT.render(
             is_dev_mode=not is_prod_mode(),
             default_color_mode=appearance,
-            last_compiled_time=last_compiled_time,
         )
     )
 
@@ -175,18 +173,21 @@ def _compile_page(
     )
 
 
-def compile_root_stylesheet(stylesheets: list[str]) -> tuple[str, str]:
+def compile_root_stylesheet(
+    stylesheets: list[str], reset_style: bool = True
+) -> tuple[str, str]:
     """Compile the root stylesheet.
 
     Args:
         stylesheets: The stylesheets to include in the root stylesheet.
+        reset_style: Whether to include CSS reset for margin and padding.
 
     Returns:
         The path and code of the compiled root stylesheet.
     """
     output_path = utils.get_root_stylesheet_path()
 
-    code = _compile_root_stylesheet(stylesheets)
+    code = _compile_root_stylesheet(stylesheets, reset_style)
 
     return output_path, code
 
@@ -228,11 +229,12 @@ def _validate_stylesheet(stylesheet_full_path: Path, assets_app_path: Path) -> N
 RADIX_THEMES_STYLESHEET = "@radix-ui/themes/styles.css"
 
 
-def _compile_root_stylesheet(stylesheets: list[str]) -> str:
+def _compile_root_stylesheet(stylesheets: list[str], reset_style: bool = True) -> str:
     """Compile the root stylesheet.
 
     Args:
         stylesheets: The stylesheets to include in the root stylesheet.
+        reset_style: Whether to include CSS reset for margin and padding.
 
     Returns:
         The compiled root stylesheet.
@@ -241,11 +243,21 @@ def _compile_root_stylesheet(stylesheets: list[str]) -> str:
         FileNotFoundError: If a specified stylesheet in assets directory does not exist.
     """
     # Add stylesheets from plugins.
-    sheets = [RADIX_THEMES_STYLESHEET] + [
-        sheet
-        for plugin in get_config().plugins
-        for sheet in plugin.get_stylesheet_paths()
-    ]
+    sheets = []
+
+    # Add CSS reset if enabled
+    if reset_style:
+        # Reference the vendored style reset file (automatically copied from .templates/web)
+        sheets.append(f"./{ResetStylesheet.FILENAME}")
+
+    sheets.extend(
+        [RADIX_THEMES_STYLESHEET]
+        + [
+            sheet
+            for plugin in get_config().plugins
+            for sheet in plugin.get_stylesheet_paths()
+        ]
+    )
 
     failed_to_import_sass = False
     assets_app_path = Path.cwd() / constants.Dirs.APP_ASSETS
@@ -429,7 +441,7 @@ def _compile_stateful_components(
 
             # Include custom code in the shared component.
             rendered_components.update(
-                dict.fromkeys(component._get_all_custom_code()),
+                dict.fromkeys(component._get_all_custom_code(export=True)),
             )
 
             # Include all imports in the shared component.

@@ -77,6 +77,7 @@ from reflex.event import (
     EventType,
     IndividualEventType,
     get_hydrate_event,
+    noop,
 )
 from reflex.page import DECORATED_PAGES
 from reflex.route import (
@@ -212,17 +213,21 @@ def default_overlay_component() -> Component:
     return Fragment.create(memo(default_overlay_components)())
 
 
-def default_error_boundary(*children: Component) -> Component:
+def default_error_boundary(*children: Component, **props) -> Component:
     """Default error_boundary attribute for App.
 
     Args:
         *children: The children to render in the error boundary.
+        **props: The props to pass to the error boundary.
 
     Returns:
         The default error_boundary, which is an ErrorBoundary.
 
     """
-    return ErrorBoundary.create(*children)
+    return ErrorBoundary.create(
+        *children,
+        **props,
+    )
 
 
 class OverlayFragment(Fragment):
@@ -331,6 +336,9 @@ class App(MiddlewareMixin, LifespanMixin):
     # A list of URLs to [stylesheets](https://reflex.dev/docs/styling/custom-stylesheets/) to include in the app.
     stylesheets: list[str] = dataclasses.field(default_factory=list)
 
+    # Whether to include CSS reset for margin and padding (defaults to True).
+    reset_style: bool = dataclasses.field(default=True)
+
     # A component that is present on every page (defaults to the Connection Error banner).
     overlay_component: Component | ComponentCallable | None = dataclasses.field(
         default=None
@@ -341,7 +349,9 @@ class App(MiddlewareMixin, LifespanMixin):
         dataclasses.field(
             default_factory=lambda: {
                 (55, "ErrorBoundary"): (
-                    lambda stateful: default_error_boundary() if stateful else None
+                    lambda stateful: default_error_boundary(
+                        **({"on_error": noop()} if not stateful else {})
+                    )
                 ),
                 (5, "Overlay"): (
                     lambda stateful: default_overlay_component() if stateful else None
@@ -754,9 +764,9 @@ class App(MiddlewareMixin, LifespanMixin):
                 msg = "Route must be set if component is not a callable."
                 raise exceptions.RouteValueError(msg)
             # Format the route.
-            route = format.format_route(component.__name__)
+            route = format.format_route(format.to_kebab_case(component.__name__))
         else:
-            route = format.format_route(route, format_case=False)
+            route = format.format_route(route)
 
         if route == constants.Page404.SLUG:
             if component is None:
@@ -811,10 +821,11 @@ class App(MiddlewareMixin, LifespanMixin):
         state = self._state if self._state else State
         state.setup_dynamic_args(get_route_args(route))
 
-        if on_load:
-            self._load_events[route] = (
-                on_load if isinstance(on_load, list) else [on_load]
-            )
+        self._load_events[route] = (
+            (on_load if isinstance(on_load, list) else [on_load])
+            if on_load is not None
+            else []
+        )
 
         self._unevaluated_pages[route] = unevaluated_page
 
@@ -843,53 +854,40 @@ class App(MiddlewareMixin, LifespanMixin):
         if save_page:
             self._pages[route] = component
 
-    def get_load_events(self, route: str) -> list[IndividualEventType[()]]:
+    @functools.cached_property
+    def router(self) -> Callable[[str], str | None]:
+        """Get the route computer function.
+
+        Returns:
+            The route computer function.
+        """
+        from reflex.route import get_router
+
+        return get_router(list(self._pages))
+
+    def get_load_events(self, path: str) -> list[IndividualEventType[()]]:
         """Get the load events for a route.
 
         Args:
-            route: The route to get the load events for.
+            path: The route to get the load events for.
 
         Returns:
             The load events for the route.
         """
-        route = route.lstrip("/").rstrip("/")
-        if route == "":
-            return self._load_events.get(constants.PageNames.INDEX_ROUTE, [])
-
-        # Separate the pages by route type.
-        static_page_paths_to_page_route = {}
-        dynamic_page_paths_to_page_route = {}
-        for page_route in list(self._pages) + list(self._unevaluated_pages):
-            page_path = page_route.lstrip("/").rstrip("/")
-            if "[" in page_path and "]" in page_path:
-                dynamic_page_paths_to_page_route[page_path] = page_route
-            else:
-                static_page_paths_to_page_route[page_path] = page_route
-
-        # Check for static routes.
-        if (page_route := static_page_paths_to_page_route.get(route)) is not None:
-            return self._load_events.get(page_route, [])
-
-        # Check for dynamic routes.
-        parts = route.split("/")
-        for page_path, page_route in dynamic_page_paths_to_page_route.items():
-            page_parts = page_path.split("/")
-            if len(page_parts) != len(parts):
-                continue
-            if all(
-                part == page_part
-                or (page_part.startswith("[") and page_part.endswith("]"))
-                for part, page_part in zip(parts, page_parts, strict=False)
-            ):
-                return self._load_events.get(page_route, [])
-
-        # Default to 404 page load events if no match found.
-        return self._load_events.get("404", [])
+        four_oh_four_load_events = self._load_events.get("404", [])
+        route = self.router(path)
+        if not route:
+            # If the path is not a valid route, return the 404 page load events.
+            return four_oh_four_load_events
+        return self._load_events.get(
+            route,
+            four_oh_four_load_events,
+        )
 
     def _check_routes_conflict(self, new_route: str):
         """Verify if there is any conflict between the new route and any existing route.
 
-        Based on conflicts that NextJS would throw if not intercepted.
+        Based on conflicts that React Router would throw if not intercepted.
 
         Raises:
             RouteValueError: exception showing which conflict exist with the route to be added
@@ -905,7 +903,6 @@ class App(MiddlewareMixin, LifespanMixin):
         segments = (
             constants.RouteRegex.SINGLE_SEGMENT,
             constants.RouteRegex.DOUBLE_SEGMENT,
-            constants.RouteRegex.SINGLE_CATCHALL_SEGMENT,
             constants.RouteRegex.DOUBLE_CATCHALL_SEGMENT,
         )
         for route in self._pages:
@@ -1359,7 +1356,9 @@ class App(MiddlewareMixin, LifespanMixin):
                 )
 
             # Compile the root stylesheet with base styles.
-            _submit_work(compiler.compile_root_stylesheet, self.stylesheets)
+            _submit_work(
+                compiler.compile_root_stylesheet, self.stylesheets, self.reset_style
+            )
 
             # Compile the theme.
             _submit_work(compile_theme, self.style)
@@ -1731,6 +1730,11 @@ async def process(
                 # assignment will recurse into substates and force recalculation of
                 # dependent ComputedVar (dynamic route variables)
                 state.router_data = router_data
+                router_data[constants.RouteVar.PATH] = "/" + (
+                    app.router(path) or "404"
+                    if (path := router_data.get(constants.RouteVar.PATH))
+                    else "404"
+                ).removeprefix("/")
                 state.router = RouterData(router_data)
 
             # Preprocess the event.

@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import functools
 import io
-import os.path
 import unittest.mock
 import uuid
 from collections.abc import Generator
@@ -241,27 +240,25 @@ def test_add_page_default_route(app: App, index_page, about_page):
     assert app._pages.keys() == {"index", "about"}
 
 
-def test_add_page_set_route(app: App, index_page, windows_platform: bool):
+def test_add_page_set_route(app: App, index_page):
     """Test adding a page to an app.
 
     Args:
         app: The app to test.
         index_page: The index page.
-        windows_platform: Whether the system is windows.
     """
-    route = "test" if windows_platform else "/test"
+    route = "/test"
     assert app._unevaluated_pages == {}
     app.add_page(index_page, route=route)
     app._compile_page("test")
     assert app._pages.keys() == {"test"}
 
 
-def test_add_page_set_route_dynamic(index_page, windows_platform: bool):
+def test_add_page_set_route_dynamic(index_page):
     """Test adding a page with dynamic route variable to an app.
 
     Args:
         index_page: The index page.
-        windows_platform: Whether the system is windows.
     """
     app = App(_state=EmptyState)
     assert app._state is not None
@@ -277,18 +274,17 @@ def test_add_page_set_route_dynamic(index_page, windows_platform: bool):
     assert constants.ROUTER in app._state()._var_dependencies
 
 
-def test_add_page_set_route_nested(app: App, index_page, windows_platform: bool):
+def test_add_page_set_route_nested(app: App, index_page):
     """Test adding a page to an app.
 
     Args:
         app: The app to test.
         index_page: The index page.
-        windows_platform: Whether the system is windows.
     """
-    route = "test\\nested" if windows_platform else "/test/nested"
+    route = "test/nested"
     assert app._unevaluated_pages == {}
     app.add_page(index_page, route=route)
-    assert app._unevaluated_pages.keys() == {route.strip(os.path.sep)}
+    assert app._unevaluated_pages.keys() == {route}
 
 
 def test_add_page_invalid_api_route(app: App, index_page):
@@ -298,16 +294,11 @@ def test_add_page_invalid_api_route(app: App, index_page):
         app: The app to test.
         index_page: The index page.
     """
-    with pytest.raises(ValueError):
-        app.add_page(index_page, route="api")
-    with pytest.raises(ValueError):
-        app.add_page(index_page, route="/api")
-    with pytest.raises(ValueError):
-        app.add_page(index_page, route="/api/")
-    with pytest.raises(ValueError):
-        app.add_page(index_page, route="api/foo")
-    with pytest.raises(ValueError):
-        app.add_page(index_page, route="/api/foo")
+    app.add_page(index_page, route="api")
+    app.add_page(index_page, route="/api")
+    app.add_page(index_page, route="/api/")
+    app.add_page(index_page, route="api/foo")
+    app.add_page(index_page, route="/api/foo")
     # These should be fine
     app.add_page(index_page, route="api2")
     app.add_page(index_page, route="/foo/api")
@@ -981,7 +972,6 @@ class DynamicState(BaseState):
 
 def test_dynamic_arg_shadow(
     index_page: ComponentCallable,
-    windows_platform: bool,
     token: str,
     app_module_mock: unittest.mock.Mock,
     mocker: MockerFixture,
@@ -990,7 +980,6 @@ def test_dynamic_arg_shadow(
 
     Args:
         index_page: The index page.
-        windows_platform: Whether the system is windows.
         token: a Token.
         app_module_mock: Mocked app module.
         mocker: pytest mocker object.
@@ -1005,7 +994,6 @@ def test_dynamic_arg_shadow(
 
 def test_multiple_dynamic_args(
     index_page: ComponentCallable,
-    windows_platform: bool,
     token: str,
     app_module_mock: unittest.mock.Mock,
     mocker: MockerFixture,
@@ -1014,7 +1002,6 @@ def test_multiple_dynamic_args(
 
     Args:
         index_page: The index page.
-        windows_platform: Whether the system is windows.
         token: a Token.
         app_module_mock: Mocked app module.
         mocker: pytest mocker object.
@@ -1030,7 +1017,6 @@ def test_multiple_dynamic_args(
 @pytest.mark.asyncio
 async def test_dynamic_route_var_route_change_completed_on_load(
     index_page: ComponentCallable,
-    windows_platform: bool,
     token: str,
     app_module_mock: unittest.mock.Mock,
     mocker: MockerFixture,
@@ -1042,17 +1028,17 @@ async def test_dynamic_route_var_route_change_completed_on_load(
 
     Args:
         index_page: The index page.
-        windows_platform: Whether the system is windows.
         token: a Token.
         app_module_mock: Mocked app module.
         mocker: pytest mocker object.
     """
     arg_name = "dynamic"
-    route = f"/test/[{arg_name}]"
+    route = f"test/[{arg_name}]"
     app = app_module_mock.app = App(_state=DynamicState)
     assert app._state is not None
     assert arg_name not in app._state.vars
     app.add_page(index_page, route=route, on_load=DynamicState.on_load)
+    app._compile_page(route)
     assert arg_name in app._state.vars
     assert arg_name in app._state.computed_vars
     assert app._state.computed_vars[arg_name]._deps(objclass=DynamicState) == {
@@ -1073,7 +1059,7 @@ async def test_dynamic_route_var_route_change_completed_on_load(
             token=kwargs.pop("token", token),
             name=name,
             router_data=kwargs.pop(
-                "router_data", {"pathname": route, "query": {arg_name: val}}
+                "router_data", {"pathname": "/" + route, "query": {arg_name: val}}
             ),
             payload=kwargs.pop("payload", {}),
             **kwargs,
@@ -1375,14 +1361,17 @@ def test_app_wrap_compile_theme(
     lines = "".join(app_js_lines)
     expected = (
         "function AppWrap({children}) {"
+        "const [addEvents, connectErrors] = useContext(EventLoopContext);"
         "return ("
         + ("jsx(StrictMode,{}," if react_strict_mode else "")
-        + "jsx(RadixThemesColorModeProvider,{},"
+        + """jsx(ErrorBoundary,{fallbackRender:((event_args) => (jsx("div", ({css:({ ["height"] : "100%", ["width"] : "100%", ["position"] : "absolute", ["display"] : "flex", ["alignItems"] : "center", ["justifyContent"] : "center" })}), (jsx("div", ({css:({ ["display"] : "flex", ["flexDirection"] : "column", ["gap"] : "1rem" })}), (jsx("div", ({css:({ ["display"] : "flex", ["flexDirection"] : "column", ["gap"] : "1rem", ["maxWidth"] : "50ch", ["border"] : "1px solid #888888", ["borderRadius"] : "0.25rem", ["padding"] : "1rem" })}), (jsx("h2", ({css:({ ["fontSize"] : "1.25rem", ["fontWeight"] : "bold" })}), (jsx(Fragment, ({}), "An error occurred while rendering this page.")))), (jsx("p", ({css:({ ["opacity"] : "0.75" })}), (jsx(Fragment, ({}), "This is an error with the application itself.")))), (jsx("details", ({}), (jsx("summary", ({css:({ ["padding"] : "0.5rem" })}), (jsx(Fragment, ({}), "Error message")))), (jsx("div", ({css:({ ["width"] : "100%", ["maxHeight"] : "50vh", ["overflow"] : "auto", ["background"] : "#000", ["color"] : "#fff", ["borderRadius"] : "0.25rem" })}), (jsx("div", ({css:({ ["padding"] : "0.5rem", ["width"] : "fit-content" })}), (jsx("pre", ({}), (jsx(Fragment, ({}), event_args.error.stack)))))))), (jsx("button", ({css:({ ["padding"] : "0.35rem 0.75rem", ["margin"] : "0.5rem", ["background"] : "#fff", ["color"] : "#000", ["border"] : "1px solid #000", ["borderRadius"] : "0.25rem", ["fontWeight"] : "bold" }),onClick:((_e) => (addEvents([(Event("_call_function", ({ ["function"] : (() => (navigator["clipboard"]["writeText"](event_args.error.stack))), ["callback"] : null }), ({  })))], [_e], ({  }))))}), (jsx(Fragment, ({}), "Copy")))))))), (jsx("hr", ({css:({ ["borderColor"] : "currentColor", ["opacity"] : "0.25" })}))), (jsx("a", ({href:"https://reflex.dev"}), (jsx("div", ({css:({ ["display"] : "flex", ["alignItems"] : "baseline", ["justifyContent"] : "center", ["fontFamily"] : "monospace", ["--default-font-family"] : "monospace", ["gap"] : "0.5rem" })}), (jsx(Fragment, ({}), "Built with ")), (jsx("svg", ({"aria-label":"Reflex",css:({ ["fill"] : "currentColor" }),height:"12",role:"img",width:"56",xmlns:"http://www.w3.org/2000/svg"}), (jsx("path", ({d:"M0 11.5999V0.399902H8.96V4.8799H6.72V2.6399H2.24V4.8799H6.72V7.1199H2.24V11.5999H0ZM6.72 11.5999V7.1199H8.96V11.5999H6.72Z"}))), (jsx("path", ({d:"M11.2 11.5999V0.399902H17.92V2.6399H13.44V4.8799H17.92V7.1199H13.44V9.3599H17.92V11.5999H11.2Z"}))), (jsx("path", ({d:"M20.16 11.5999V0.399902H26.88V2.6399H22.4V4.8799H26.88V7.1199H22.4V11.5999H20.16Z"}))), (jsx("path", ({d:"M29.12 11.5999V0.399902H31.36V9.3599H35.84V11.5999H29.12Z"}))), (jsx("path", ({d:"M38.08 11.5999V0.399902H44.8V2.6399H40.32V4.8799H44.8V7.1199H40.32V9.3599H44.8V11.5999H38.08Z"}))), (jsx("path", ({d:"M47.04 4.8799V0.399902H49.28V4.8799H47.04ZM53.76 4.8799V0.399902H56V4.8799H53.76ZM49.28 7.1199V4.8799H53.76V7.1199H49.28ZM47.04 11.5999V7.1199H49.28V11.5999H47.04ZM53.76 11.5999V7.1199H56V11.5999H53.76Z"}))), (jsx("title", ({}), (jsx(Fragment, ({}), "Reflex"))))))))))))))),onError:((_error, _info) => (addEvents([(Event("_call_function", ({ ["function"] : (() => null), ["callback"] : null }), ({  })))], [_error, _info], ({  }))))},"""
+        "jsx(RadixThemesColorModeProvider,{},"
         "jsx(RadixThemesTheme,{accentColor:\"plum\",css:{...theme.styles.global[':root'], ...theme.styles.global.body}},"
         "jsx(Fragment,{},"
         "jsx(MemoizedToastProvider,{},),"
         "jsx(Fragment,{},"
         "children,"
+        "),"
         "),"
         "),"
         "),"
@@ -1443,9 +1432,11 @@ def test_app_wrap_priority(
     lines = "".join(app_js_lines)
     expected = (
         "function AppWrap({children}) {"
+        "const [addEvents, connectErrors] = useContext(EventLoopContext);"
         "return ("
         + ("jsx(StrictMode,{}," if react_strict_mode else "")
         + "jsx(RadixThemesBox,{},"
+        """jsx(ErrorBoundary,{fallbackRender:((event_args) => (jsx("div", ({css:({ ["height"] : "100%", ["width"] : "100%", ["position"] : "absolute", ["display"] : "flex", ["alignItems"] : "center", ["justifyContent"] : "center" })}), (jsx("div", ({css:({ ["display"] : "flex", ["flexDirection"] : "column", ["gap"] : "1rem" })}), (jsx("div", ({css:({ ["display"] : "flex", ["flexDirection"] : "column", ["gap"] : "1rem", ["maxWidth"] : "50ch", ["border"] : "1px solid #888888", ["borderRadius"] : "0.25rem", ["padding"] : "1rem" })}), (jsx("h2", ({css:({ ["fontSize"] : "1.25rem", ["fontWeight"] : "bold" })}), (jsx(Fragment, ({}), "An error occurred while rendering this page.")))), (jsx("p", ({css:({ ["opacity"] : "0.75" })}), (jsx(Fragment, ({}), "This is an error with the application itself.")))), (jsx("details", ({}), (jsx("summary", ({css:({ ["padding"] : "0.5rem" })}), (jsx(Fragment, ({}), "Error message")))), (jsx("div", ({css:({ ["width"] : "100%", ["maxHeight"] : "50vh", ["overflow"] : "auto", ["background"] : "#000", ["color"] : "#fff", ["borderRadius"] : "0.25rem" })}), (jsx("div", ({css:({ ["padding"] : "0.5rem", ["width"] : "fit-content" })}), (jsx("pre", ({}), (jsx(Fragment, ({}), event_args.error.stack)))))))), (jsx("button", ({css:({ ["padding"] : "0.35rem 0.75rem", ["margin"] : "0.5rem", ["background"] : "#fff", ["color"] : "#000", ["border"] : "1px solid #000", ["borderRadius"] : "0.25rem", ["fontWeight"] : "bold" }),onClick:((_e) => (addEvents([(Event("_call_function", ({ ["function"] : (() => (navigator["clipboard"]["writeText"](event_args.error.stack))), ["callback"] : null }), ({  })))], [_e], ({  }))))}), (jsx(Fragment, ({}), "Copy")))))))), (jsx("hr", ({css:({ ["borderColor"] : "currentColor", ["opacity"] : "0.25" })}))), (jsx("a", ({href:"https://reflex.dev"}), (jsx("div", ({css:({ ["display"] : "flex", ["alignItems"] : "baseline", ["justifyContent"] : "center", ["fontFamily"] : "monospace", ["--default-font-family"] : "monospace", ["gap"] : "0.5rem" })}), (jsx(Fragment, ({}), "Built with ")), (jsx("svg", ({"aria-label":"Reflex",css:({ ["fill"] : "currentColor" }),height:"12",role:"img",width:"56",xmlns:"http://www.w3.org/2000/svg"}), (jsx("path", ({d:"M0 11.5999V0.399902H8.96V4.8799H6.72V2.6399H2.24V4.8799H6.72V7.1199H2.24V11.5999H0ZM6.72 11.5999V7.1199H8.96V11.5999H6.72Z"}))), (jsx("path", ({d:"M11.2 11.5999V0.399902H17.92V2.6399H13.44V4.8799H17.92V7.1199H13.44V9.3599H17.92V11.5999H11.2Z"}))), (jsx("path", ({d:"M20.16 11.5999V0.399902H26.88V2.6399H22.4V4.8799H26.88V7.1199H22.4V11.5999H20.16Z"}))), (jsx("path", ({d:"M29.12 11.5999V0.399902H31.36V9.3599H35.84V11.5999H29.12Z"}))), (jsx("path", ({d:"M38.08 11.5999V0.399902H44.8V2.6399H40.32V4.8799H44.8V7.1199H40.32V9.3599H44.8V11.5999H38.08Z"}))), (jsx("path", ({d:"M47.04 4.8799V0.399902H49.28V4.8799H47.04ZM53.76 4.8799V0.399902H56V4.8799H53.76ZM49.28 7.1199V4.8799H53.76V7.1199H49.28ZM47.04 11.5999V7.1199H49.28V11.5999H47.04ZM53.76 11.5999V7.1199H56V11.5999H53.76Z"}))), (jsx("title", ({}), (jsx(Fragment, ({}), "Reflex"))))))))))))))),onError:((_error, _info) => (addEvents([(Event("_call_function", ({ ["function"] : (() => null), ["callback"] : null }), ({  })))], [_error, _info], ({  }))))},"""
         'jsx(RadixThemesText,{as:"p"},'
         "jsx(RadixThemesColorModeProvider,{},"
         "jsx(Fragment2,{},"
@@ -1453,7 +1444,7 @@ def test_app_wrap_priority(
         "jsx(MemoizedToastProvider,{},),"
         "jsx(Fragment,{},"
         "children"
-        ",),),),),)" + (",)" if react_strict_mode else "")
+        ",),),),),),)" + (",)" if react_strict_mode else "")
     )
     assert expected in lines
 

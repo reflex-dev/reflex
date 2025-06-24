@@ -123,16 +123,18 @@ class Link(RadixThemesComponent, A, MemoizationLeaf, MarkdownComponentMap):
 
             if "as_child" not in props:
                 # Extract props for the ReactRouterLink, the rest go to the Link/A element.
-                next_link_props = {}
+                react_router_link_props = {}
                 for prop in props.copy():
                     if prop in _KNOWN_REACT_ROUTER_LINK_PROPS:
-                        next_link_props[prop] = props.pop(prop)
+                        react_router_link_props[prop] = props.pop(prop)
 
-                next_link_props["to"] = next_link_props.pop("href", href)
+                react_router_link_props["to"] = react_router_link_props.pop(
+                    "href", href
+                )
 
                 # If user does not use `as_child`, by default we render using react_router_link to avoid page refresh during internal navigation
                 return super().create(
-                    ReactRouterLink.create(*children, **next_link_props),
+                    ReactRouterLink.create(*children, **react_router_link_props),
                     as_child=True,
                     **props,
                 )

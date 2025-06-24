@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Sequence
-from typing import Any, ClassVar
+from typing import Any, ClassVar, TypedDict
 
 from reflex.constants import EventTriggers
 from reflex.constants.colors import Color
@@ -663,6 +663,13 @@ class Reference(Recharts):
     is_front: Var[bool]
 
 
+class Segment(TypedDict):
+    """A segment in a ReferenceLine or ReferenceArea."""
+
+    x: str | int
+    y: str | int
+
+
 class ReferenceLine(Reference):
     """A ReferenceLine component in Recharts."""
 
@@ -686,7 +693,7 @@ class ReferenceLine(Reference):
     _valid_children: ClassVar[list[str]] = ["Label"]
 
     # Array of endpoints in { x, y } format. These endpoints would be used to draw the ReferenceLine.
-    segment: Sequence[Any] = []
+    segment: Var[Sequence[Segment]]
 
 
 class ReferenceDot(Reference):

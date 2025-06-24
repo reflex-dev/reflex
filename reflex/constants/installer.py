@@ -104,10 +104,9 @@ class PackageJson(SimpleNamespace):
     class Commands(SimpleNamespace):
         """The commands to define in package.json."""
 
-        DEV = "vite dev"
+        DEV = "react-router dev"
         EXPORT = "react-router build"
-        # --single rewrites /404.html to /404/index.html
-        PROD = "serve --single ./build/client"
+        PROD = "serve ./build/client"
 
     PATH = "package.json"
 
@@ -131,6 +130,7 @@ class PackageJson(SimpleNamespace):
             "@react-router/node": cls._react_router_version,
             "serve": "14.2.4",
             "react": cls._react_version,
+            "react-helmet": "6.1.0",
             "react-dom": cls._react_version,
             "isbot": "5.1.26",
             "socket.io-client": "4.8.1",

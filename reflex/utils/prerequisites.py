@@ -39,6 +39,7 @@ from reflex.config import Config, get_config
 from reflex.environment import environment
 from reflex.utils import console, net, path_ops, processes, redir
 from reflex.utils.exceptions import SystemPackageMissingError
+from reflex.utils.misc import get_module_path
 from reflex.utils.registry import get_npm_registry
 
 if typing.TYPE_CHECKING:
@@ -347,14 +348,11 @@ def _check_app_name(config: Config):
         )
         raise RuntimeError(msg)
 
-    from reflex.utils.misc import with_cwd_in_syspath
+    from reflex.utils.misc import get_module_path, with_cwd_in_syspath
 
     with with_cwd_in_syspath():
-        try:
-            mod_spec = importlib.util.find_spec(config.module)
-        except ModuleNotFoundError:
-            mod_spec = None
-        if mod_spec is None:
+        module_path = get_module_path(config.module)
+        if module_path is None:
             msg = f"Module {config.module} not found. "
             if config.app_module_import is not None:
                 msg += f"Ensure app_module_import='{config.app_module_import}' in rxconfig.py matches your folder structure."
@@ -608,19 +606,19 @@ def get_redis_sync() -> RedisSync | None:
 
 
 def parse_redis_url() -> str | None:
-    """Parse the REDIS_URL in config if applicable.
+    """Parse the REFLEX_REDIS_URL in config if applicable.
 
     Returns:
         If url is non-empty, return the URL as it is.
 
     Raises:
-        ValueError: If the REDIS_URL is not a supported scheme.
+        ValueError: If the REFLEX_REDIS_URL is not a supported scheme.
     """
     config = get_config()
     if not config.redis_url:
         return None
     if not config.redis_url.startswith(("redis://", "rediss://", "unix://")):
-        msg = "REDIS_URL must start with 'redis://', 'rediss://', or 'unix://'."
+        msg = "REFLEX_REDIS_URL must start with 'redis://', 'rediss://', or 'unix://'."
         raise ValueError(msg)
     return config.redis_url
 
@@ -737,14 +735,11 @@ def rename_app(new_app_name: str, loglevel: constants.LogLevel):
     sys.path.insert(0, str(Path.cwd()))
 
     config = get_config()
-    module_path = importlib.util.find_spec(config.module)
+    module_path = get_module_path(config.module)
     if module_path is None:
         console.error(f"Could not find module {config.module}.")
         raise click.exceptions.Exit(1)
 
-    if not module_path.origin:
-        console.error(f"Could not find origin for module {config.module}.")
-        raise click.exceptions.Exit(1)
     console.info(f"Renaming app directory to {new_app_name}.")
     process_directory(
         Path.cwd(),
@@ -753,7 +748,7 @@ def rename_app(new_app_name: str, loglevel: constants.LogLevel):
         exclude_dirs=[constants.Dirs.WEB, constants.Dirs.APP_ASSETS],
     )
 
-    rename_path_up_tree(Path(module_path.origin), config.app_name, new_app_name)
+    rename_path_up_tree(module_path, config.app_name, new_app_name)
 
     console.success(f"App directory renamed to [bold]{new_app_name}[/bold].")
 
@@ -1122,19 +1117,19 @@ def update_react_router_config(prerender_routes: bool = False):
     """
     react_router_config_file_path = get_web_dir() / constants.ReactRouter.CONFIG_FILE
 
-    react_router_config = _update_react_router_config(
+    new_react_router_config = _update_react_router_config(
         get_config(), prerender_routes=prerender_routes
     )
 
     # Overwriting the config file triggers a full server reload, so make sure
     # there is actually a diff.
-    orig_next_config = (
+    old_react_router_config = (
         react_router_config_file_path.read_text()
         if react_router_config_file_path.exists()
         else ""
     )
-    if orig_next_config != react_router_config:
-        react_router_config_file_path.write_text(react_router_config)
+    if old_react_router_config != new_react_router_config:
+        react_router_config_file_path.write_text(new_react_router_config)
 
 
 def _update_react_router_config(config: Config, prerender_routes: bool = False):

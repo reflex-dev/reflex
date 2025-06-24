@@ -286,31 +286,25 @@ def test_format_var(input: Var, output: str):
 
 
 @pytest.mark.parametrize(
-    ("route", "format_case", "expected"),
+    ("route", "expected"),
     [
-        ("", True, "index"),
-        ("/", True, "index"),
-        ("custom-route", True, "custom-route"),
-        ("custom-route", False, "custom-route"),
-        ("custom-route/", True, "custom-route"),
-        ("custom-route/", False, "custom-route"),
-        ("/custom-route", True, "custom-route"),
-        ("/custom-route", False, "custom-route"),
-        ("/custom_route", True, "custom-route"),
-        ("/custom_route", False, "custom_route"),
-        ("/CUSTOM_route", True, "custom-route"),
-        ("/CUSTOM_route", False, "CUSTOM_route"),
+        ("", "index"),
+        ("/", "index"),
+        ("custom-route", "custom-route"),
+        ("custom-route/", "custom-route"),
+        ("/custom-route", "custom-route"),
+        ("/custom_route", "custom_route"),
+        ("/CUSTOM_route", "CUSTOM_route"),
     ],
 )
-def test_format_route(route: str, format_case: bool, expected: bool):
+def test_format_route(route: str, expected: str):
     """Test formatting a route.
 
     Args:
         route: The route to format.
-        format_case: Whether to change casing to snake_case.
         expected: The expected formatted route.
     """
-    assert format.format_route(route, format_case=format_case) == expected
+    assert format.format_route(route) == expected
 
 
 @pytest.mark.parametrize(

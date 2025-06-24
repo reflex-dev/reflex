@@ -80,7 +80,7 @@ class CompileVars(SimpleNamespace):
 
 
 class PageNames(SimpleNamespace):
-    """The name of basic pages deployed in NextJS."""
+    """The name of basic pages deployed in the frontend."""
 
     # The name of the index page.
     INDEX_ROUTE = "index"
@@ -204,3 +204,10 @@ class SpecialAttributes(enum.Enum):
             True if the attribute is special.
         """
         return attr.startswith(SPECIAL_ATTRS)
+
+
+class ResetStylesheet(SimpleNamespace):
+    """Constants for CSS reset stylesheet."""
+
+    # The filename of the CSS reset file.
+    FILENAME = "__reflex_style_reset.css"

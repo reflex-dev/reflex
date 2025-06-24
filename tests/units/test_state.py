@@ -2409,7 +2409,7 @@ def test_mutable_list(mutable_state: MutableTestState):
     assert_array_dirty()
     mutable_state.array.reverse()
     assert_array_dirty()
-    mutable_state.array.sort()  # type: ignore[reportCallIssue,reportUnknownMemberType]
+    mutable_state.array.sort()  # pyright: ignore[reportCallIssue]
     assert_array_dirty()
     mutable_state.array[0] = 666
     assert_array_dirty()
@@ -2501,7 +2501,7 @@ def test_mutable_dict(mutable_state: MutableTestState):
     mutable_value_third_ref = mutable_state.hashmap.pop("setdefault_mutable_key")
     assert not isinstance(mutable_value_third_ref, MutableProxy)
     assert_hashmap_dirty()
-    mutable_value_third_ref.append("baz")  # type: ignore[reportUnknownMemberType,reportAttributeAccessIssue,reportUnusedCallResult]
+    mutable_value_third_ref.append("baz")  # pyright: ignore[reportAttributeAccessIssue]
     assert not mutable_state.dirty_vars
     # Unfortunately previous refs still will mark the state dirty... nothing doing about that
     assert mutable_value.pop()
@@ -2945,9 +2945,14 @@ async def test_preprocess(
     mocker.patch(
         "reflex.state.State.class_subclasses", {test_state, OnLoadInternalState}
     )
-    app = app_module_mock.app = App(
-        _state=State, _load_events={"index": [test_state.test_handler]}
-    )
+    app = app_module_mock.app = App(_state=State)
+
+    def index():
+        return "hello"
+
+    app.add_page(index, on_load=test_state.test_handler)
+    app._compile_page("index")
+
     async with app.state_manager.modify_state(_substate_key(token, State)) as state:
         state.router_data = {"simulate": "hydrate"}
 
@@ -2994,10 +2999,13 @@ async def test_preprocess_multiple_load_events(
     mocker.patch(
         "reflex.state.State.class_subclasses", {OnLoadState, OnLoadInternalState}
     )
-    app = app_module_mock.app = App(
-        _state=State,
-        _load_events={"index": [OnLoadState.test_handler, OnLoadState.test_handler]},
-    )
+    app = app_module_mock.app = App(_state=State)
+
+    def index():
+        return "hello"
+
+    app.add_page(index, on_load=[OnLoadState.test_handler, OnLoadState.test_handler])
+    app._compile_page("index")
     async with app.state_manager.modify_state(_substate_key(token, State)) as state:
         state.router_data = {"simulate": "hydrate"}
 
@@ -3776,7 +3784,7 @@ def test_mutable_models():
     assert state.dirty_vars == set()
 
 
-def test_get_value():
+def test_dict_and_get_delta():
     class GetValueState(rx.State):
         foo: str = "FOO"
         bar: str = "BAR"
@@ -3804,6 +3812,65 @@ def test_get_value():
             "bar" + FIELD_MARKER: "foo",
         }
     }
+
+
+@pytest.mark.parametrize(
+    ("key_factory", "expected_result", "should_raise"),
+    [
+        # Valid string keys
+        (lambda state: "foo", "FOO", False),
+        (lambda state: "bar", "BAR", False),
+        # MutableProxy keys (deprecated but supported)
+        (
+            lambda state: MutableProxy(
+                wrapped="test_wrapped_value", state=state, field_name="test_field"
+            ),
+            "test_wrapped_value",
+            False,
+        ),
+        (
+            lambda state: MutableProxy(
+                wrapped=42, state=state, field_name="test_field"
+            ),
+            42,
+            False,
+        ),
+        # Invalid key types
+        (lambda state: 123, None, True),
+        (lambda state: [], None, True),
+        (lambda state: {}, None, True),
+        (lambda state: None, None, True),
+    ],
+)
+def test_get_value(key_factory, expected_result, should_raise):
+    """Test the get_value method directly with various key types.
+
+    Args:
+        key_factory: Factory function to create the key for testing.
+        expected_result: The expected return value from get_value.
+        should_raise: Whether the test should expect a TypeError.
+    """
+
+    class GetValueState(rx.State):
+        """Test state class for get_value testing."""
+
+        foo: str = "FOO"
+        bar: str = "BAR"
+
+    state = GetValueState()
+    key = key_factory(state)
+
+    if should_raise:
+        with pytest.raises(TypeError, match="Invalid key type"):
+            state.get_value(key)
+    else:
+        result = state.get_value(key)
+        assert result == expected_result
+
+        # Verify dirty state is not affected
+        initial_dirty_vars = copy.copy(state.dirty_vars)
+        state.get_value(key)
+        assert state.dirty_vars == initial_dirty_vars
 
 
 def test_init_mixin() -> None:

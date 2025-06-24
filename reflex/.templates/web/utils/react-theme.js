@@ -8,9 +8,13 @@ import {
   useMemo,
 } from "react";
 
-import { isDevMode, lastCompiledTimeStamp } from "$/utils/context";
+import { isDevMode, defaultColorMode } from "$/utils/context";
 
-const ThemeContext = createContext();
+const ThemeContext = createContext({
+  theme: defaultColorMode,
+  resolvedTheme: defaultColorMode !== "system" ? defaultColorMode : "light",
+  setTheme: () => {},
+});
 
 export function ThemeProvider({ children, defaultTheme = "system" }) {
   const [theme, setTheme] = useState(defaultTheme);
@@ -28,11 +32,10 @@ export function ThemeProvider({ children, defaultTheme = "system" }) {
     firstRender.current = false;
 
     if (isDevMode) {
-      const lastCompiledTimeInLocalStorage =
-        localStorage.getItem("last_compiled_time");
-      if (lastCompiledTimeInLocalStorage !== lastCompiledTimeStamp) {
+      const lastCompiledTheme = localStorage.getItem("last_compiled_theme");
+      if (lastCompiledTheme !== defaultColorMode) {
         // on app startup, make sure the application color mode is persisted correctly.
-        localStorage.setItem("last_compiled_time", lastCompiledTimeStamp);
+        localStorage.setItem("last_compiled_theme", defaultColorMode);
         return;
       }
     }

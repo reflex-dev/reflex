@@ -5,7 +5,7 @@ from __future__ import annotations
 import asyncio
 import concurrent.futures
 import traceback
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 from datetime import datetime
 from pathlib import Path
 from typing import Any
@@ -174,6 +174,18 @@ def save_error(error: Exception) -> str:
     return str(log_path)
 
 
+def _sorted_keys(d: Mapping[str, Any]) -> dict[str, Any]:
+    """Sort the keys of a dictionary.
+
+    Args:
+        d: The dictionary to sort.
+
+    Returns:
+        A new dictionary with sorted keys.
+    """
+    return dict(sorted(d.items(), key=lambda kv: kv[0]))
+
+
 def compile_state(state: type[BaseState]) -> dict:
     """Compile the state of the app.
 
@@ -198,10 +210,10 @@ def compile_state(state: type[BaseState]) -> dict:
                 console.warn(
                     f"Had to get initial state in a thread 🤮 {resolved_initial_state}",
                 )
-                return resolved_initial_state
+                return _sorted_keys(resolved_initial_state)
 
     # Normally the compile runs before any event loop starts, we asyncio.run is available for calling.
-    return asyncio.run(_resolve_delta(initial_state))
+    return _sorted_keys(asyncio.run(_resolve_delta(initial_state)))
 
 
 def _compile_client_storage_field(
@@ -403,17 +415,21 @@ def create_theme(style: ComponentStyle) -> dict:
 
 def _format_route_part(part: str) -> str:
     if part.startswith("[") and part.endswith("]"):
-        return f"${part}_"
-    return "[" + part + "]_"
+        if part.startswith(("[...", "[[...")):
+            return "$"
+        if part.startswith("[["):
+            return "($" + part.removeprefix("[[").removesuffix("]]") + ")"
+        # We don't add [] here since we are reusing them from the input
+        return "$" + part
+    return "[" + part + "]"
 
 
 def _path_to_file_stem(path: str) -> str:
     if path == "index":
         return "_index"
     path = path if path != "index" else "/"
-    return (
-        ".".join([_format_route_part(part) for part in path.split("/")]) + "._index"
-    ).lstrip(".")
+    name = ".".join([_format_route_part(part) for part in path.split("/")]).lstrip(".")
+    return name + "._index" if not name.endswith("$") else name
 
 
 def get_page_path(path: str) -> str:
@@ -429,7 +445,7 @@ def get_page_path(path: str) -> str:
         get_web_dir()
         / constants.Dirs.PAGES
         / constants.Dirs.ROUTES
-        / (_path_to_file_stem(path) + constants.Ext.JS)
+        / (_path_to_file_stem(path) + constants.Ext.JSX)
     )
 
 
@@ -477,7 +493,7 @@ def get_components_path() -> str:
     return str(
         get_web_dir()
         / constants.Dirs.UTILS
-        / (constants.PageNames.COMPONENTS + constants.Ext.JS),
+        / (constants.PageNames.COMPONENTS + constants.Ext.JSX),
     )
 
 
@@ -490,7 +506,7 @@ def get_stateful_components_path() -> str:
     return str(
         get_web_dir()
         / constants.Dirs.UTILS
-        / (constants.PageNames.STATEFUL_COMPONENTS + constants.Ext.JS)
+        / (constants.PageNames.STATEFUL_COMPONENTS + constants.Ext.JSX)
     )
 
 

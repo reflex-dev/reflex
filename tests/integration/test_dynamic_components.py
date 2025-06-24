@@ -107,10 +107,9 @@ def driver(dynamic_components: AppHarness):
     """
     driver = dynamic_components.frontend()
     try:
-        token_input = dynamic_components.poll_for_result(
+        token_input = AppHarness.poll_for_or_raise_timeout(
             lambda: driver.find_element(By.ID, "token")
         )
-        assert token_input
         # wait for the backend connection to send the token
         token = dynamic_components.poll_for_value(token_input)
         assert token is not None
@@ -127,10 +126,9 @@ def test_dynamic_components(driver, dynamic_components: AppHarness):
         driver: selenium WebDriver open to the app
         dynamic_components: AppHarness for the dynamic components
     """
-    button = dynamic_components.poll_for_result(
+    button = AppHarness.poll_for_or_raise_timeout(
         lambda: driver.find_element(By.ID, "button")
     )
-    assert button
     assert button.text == "Click me"
 
     update_button = driver.find_element(By.ID, "update")
@@ -142,8 +140,7 @@ def test_dynamic_components(driver, dynamic_components: AppHarness):
         == "Clicked"
     )
 
-    factorial = dynamic_components.poll_for_result(
+    factorial = AppHarness.poll_for_or_raise_timeout(
         lambda: driver.find_element(By.ID, "factorial")
     )
-    assert factorial
     assert factorial.text == "3628800"

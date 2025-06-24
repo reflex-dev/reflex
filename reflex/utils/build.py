@@ -9,7 +9,6 @@ from pathlib import Path
 from rich.progress import MofNCompleteColumn, Progress, TimeElapsedColumn
 
 from reflex import constants
-from reflex.config import get_config
 from reflex.utils import console, path_ops, prerequisites, processes
 from reflex.utils.exec import is_in_app_harness
 
@@ -149,23 +148,35 @@ def zip_app(
         )
 
 
-def build(
-    deploy_url: str | None = None,
-    for_export: bool = False,
-):
-    """Build the app for deployment.
+def _duplicate_index_html_to_parent_dir(directory: Path):
+    """Duplicate index.html in the child directories to the given directory.
+
+    This makes accessing /route and /route/ work in production.
 
     Args:
-        deploy_url: The deployment URL.
-        for_export: Whether the build is for export.
+        directory: The directory to duplicate index.html to.
     """
+    for child in directory.iterdir():
+        if child.is_dir():
+            # If the child directory has an index.html, copy it to the parent directory.
+            index_html = child / "index.html"
+            if index_html.exists():
+                target = directory / (child.name + ".html")
+                if not target.exists():
+                    console.debug(f"Copying {index_html} to {target}")
+                    path_ops.cp(index_html, target)
+                else:
+                    console.debug(f"Skipping {index_html}, already exists at {target}")
+            # Recursively call this function for the child directory.
+            _duplicate_index_html_to_parent_dir(child)
+
+
+def build():
+    """Build the app for deployment."""
     wdir = prerequisites.get_web_dir()
 
     # Clean the static directory if it exists.
     path_ops.rm(str(wdir / constants.Dirs.BUILD_DIR))
-
-    # The export command to run.
-    command = "export"
 
     checkpoints = [
         "building for production",
@@ -175,7 +186,11 @@ def build(
 
     # Start the subprocess with the progress bar.
     process = processes.new_process(
-        [*prerequisites.get_js_package_executor(raise_on_none=True)[0], "run", command],
+        [
+            *prerequisites.get_js_package_executor(raise_on_none=True)[0],
+            "run",
+            "export",
+        ],
         cwd=wdir,
         shell=constants.IS_WINDOWS,
         env={
@@ -184,6 +199,7 @@ def build(
         },
     )
     processes.show_progress("Creating Production Build", process, checkpoints)
+    _duplicate_index_html_to_parent_dir(wdir / constants.Dirs.STATIC)
 
 
 def setup_frontend(
@@ -210,7 +226,7 @@ def setup_frontend_prod(
         root: The root path of the project.
     """
     setup_frontend(root)
-    build(deploy_url=get_config().deploy_url)
+    build()
 
 
 def _looks_like_venv_dir(dir_to_check: str | Path) -> bool:
