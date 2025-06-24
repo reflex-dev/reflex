@@ -52,11 +52,11 @@ from reflex.utils import console, exceptions, format
 from reflex.vars.base import computed_var
 
 from .conftest import chdir
-from .states import (
+from .states import GenState
+from .states.upload import (
     ChildFileUploadState,
     FileStateBase1,
     FileUploadState,
-    GenState,
     GrandChildFileUploadState,
 )
 
@@ -362,8 +362,10 @@ def test_add_duplicate_page_route_error(app: App, first_page, second_page, route
 
 
 @pytest.mark.skipif(
-    not find_spec("starlette_admin") or not find_spec("sqlmodel"),
-    reason="starlette_admin not installed or sqlmodel not installed",
+    not find_spec("starlette_admin")
+    or not find_spec("sqlmodel")
+    or not find_spec("pydantic"),
+    reason="starlette_admin not installed or sqlmodel not installed or pydantic not installed",
 )
 def test_initialize_with_admin_dashboard(test_model):
     """Test setting the admin dashboard of an app.
@@ -378,8 +380,10 @@ def test_initialize_with_admin_dashboard(test_model):
 
 
 @pytest.mark.skipif(
-    not find_spec("starlette_admin") or not find_spec("sqlmodel"),
-    reason="starlette_admin not installed or sqlmodel not installed",
+    not find_spec("starlette_admin")
+    or not find_spec("sqlmodel")
+    or not find_spec("pydantic"),
+    reason="starlette_admin not installed or sqlmodel not installed or pydantic not installed",
 )
 def test_initialize_with_custom_admin_dashboard(
     test_get_engine,
@@ -406,8 +410,10 @@ def test_initialize_with_custom_admin_dashboard(
 
 
 @pytest.mark.skipif(
-    not find_spec("starlette_admin") or not find_spec("sqlmodel"),
-    reason="starlette_admin not installed or sqlmodel not installed",
+    not find_spec("starlette_admin")
+    or not find_spec("sqlmodel")
+    or not find_spec("pydantic"),
+    reason="starlette_admin not installed or sqlmodel not installed or pydantic not installed",
 )
 def test_initialize_admin_dashboard_with_view_overrides(test_model):
     """Test setting the admin dashboard of an app with view class overridden.
@@ -505,6 +511,82 @@ async def test_dynamic_var_event(test_state: type[ATestState], token: str):
         )
     ):
         assert result.delta == {test_state.get_name(): {"int_val" + FIELD_MARKER: 50}}
+
+
+@pytest.fixture
+def list_mutation_state():
+    """Create a state with list mutation features.
+
+    Returns:
+        A state with list mutation features.
+    """
+
+    class ListMutationTestState(BaseState):
+        """A state for testing ReflexList mutation."""
+
+        # plain list
+        plain_friends = ["Tommy"]
+
+        def make_friend(self):
+            """Add a friend to the list."""
+            self.plain_friends.append("another-fd")
+
+        def change_first_friend(self):
+            """Change the first friend in the list."""
+            self.plain_friends[0] = "Jenny"
+
+        def unfriend_all_friends(self):
+            """Unfriend all friends in the list."""
+            self.plain_friends.clear()
+
+        def unfriend_first_friend(self):
+            """Unfriend the first friend in the list."""
+            del self.plain_friends[0]
+
+        def remove_last_friend(self):
+            """Remove the last friend in the list."""
+            self.plain_friends.pop()
+
+        def make_friends_with_colleagues(self):
+            """Add list of friends to the list."""
+            colleagues = ["Peter", "Jimmy"]
+            self.plain_friends.extend(colleagues)
+
+        def remove_tommy(self):
+            """Remove Tommy from the list."""
+            self.plain_friends.remove("Tommy")
+
+        # list in dict
+        friends_in_dict = {"Tommy": ["Jenny"]}
+
+        def remove_jenny_from_tommy(self):
+            """Remove Jenny from Tommy's friends list."""
+            self.friends_in_dict["Tommy"].remove("Jenny")
+
+        def add_jimmy_to_tommy_friends(self):
+            """Add Jimmy to Tommy's friends list."""
+            self.friends_in_dict["Tommy"].append("Jimmy")
+
+        def tommy_has_no_fds(self):
+            """Clear Tommy's friends list."""
+            self.friends_in_dict["Tommy"].clear()
+
+        # nested list
+        friends_in_nested_list = [["Tommy"], ["Jenny"]]
+
+        def remove_first_group(self):
+            """Remove the first group of friends from the nested list."""
+            self.friends_in_nested_list.pop(0)
+
+        def remove_first_person_from_first_group(self):
+            """Remove the first person from the first group of friends in the nested list."""
+            self.friends_in_nested_list[0].pop(0)
+
+        def add_jimmy_to_second_group(self):
+            """Add Jimmy to the second group of friends in the nested list."""
+            self.friends_in_nested_list[1].append("Jimmy")
+
+    return ListMutationTestState()
 
 
 @pytest.mark.asyncio
@@ -624,6 +706,73 @@ async def test_list_mutation_detection__plain_list(
             # prefix keys in expected_delta with the state name
             expected_delta = {list_mutation_state.get_name(): expected_delta}
             assert result.delta == expected_delta
+
+
+@pytest.fixture
+def dict_mutation_state():
+    """Create a state with dict mutation features.
+
+    Returns:
+        A state with dict mutation features.
+    """
+
+    class DictMutationTestState(BaseState):
+        """A state for testing ReflexDict mutation."""
+
+        # plain dict
+        details = {"name": "Tommy"}
+
+        def add_age(self):
+            """Add an age to the dict."""
+            self.details.update({"age": 20})  # pyright: ignore [reportCallIssue, reportArgumentType]
+
+        def change_name(self):
+            """Change the name in the dict."""
+            self.details["name"] = "Jenny"
+
+        def remove_last_detail(self):
+            """Remove the last item in the dict."""
+            self.details.popitem()
+
+        def clear_details(self):
+            """Clear the dict."""
+            self.details.clear()
+
+        def remove_name(self):
+            """Remove the name from the dict."""
+            del self.details["name"]
+
+        def pop_out_age(self):
+            """Pop out the age from the dict."""
+            self.details.pop("age")
+
+        # dict in list
+        address = [{"home": "home address"}, {"work": "work address"}]
+
+        def remove_home_address(self):
+            """Remove the home address from dict in the list."""
+            self.address[0].pop("home")
+
+        def add_street_to_home_address(self):
+            """Set street key in the dict in the list."""
+            self.address[0]["street"] = "street address"
+
+        # nested dict
+        friend_in_nested_dict = {"name": "Nikhil", "friend": {"name": "Alek"}}
+
+        def change_friend_name(self):
+            """Change the friend's name in the nested dict."""
+            self.friend_in_nested_dict["friend"]["name"] = "Tommy"
+
+        def remove_friend(self):
+            """Remove the friend from the nested dict."""
+            self.friend_in_nested_dict.pop("friend")
+
+        def add_friend_age(self):
+            """Add an age to the friend in the nested dict."""
+            self.friend_in_nested_dict["friend"]["age"] = 30
+
+    return DictMutationTestState()
 
 
 @pytest.mark.asyncio

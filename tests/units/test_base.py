@@ -2,6 +2,8 @@ import pytest
 
 from reflex.base import Base
 
+pytest.importorskip("pydantic")
+
 
 @pytest.fixture
 def child() -> Base:

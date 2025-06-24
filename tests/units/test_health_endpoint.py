@@ -43,7 +43,10 @@ async def test_get_redis_status(
     mock_get_redis_sync.assert_called_once()
 
 
-@pytest.mark.skipif(not find_spec("sqlmodel"), reason="sqlmodel not installed")
+@pytest.mark.skipif(
+    not find_spec("sqlmodel") or not find_spec("pydantici"),
+    reason="sqlmodel not installed or pydantic is not installed",
+)
 @pytest.mark.asyncio
 @pytest.mark.parametrize(
     ("mock_engine", "execute_side_effect", "expected_status"),
@@ -82,7 +85,10 @@ async def test_get_db_status(
     mock_get_engine.assert_called_once()
 
 
-@pytest.mark.skipif(not find_spec("sqlmodel"), reason="sqlmodel not installed")
+@pytest.mark.skipif(
+    not find_spec("sqlmodel") or not find_spec("pydantic"),
+    reason="sqlmodel not installed or pydantic is not installed",
+)
 @pytest.mark.asyncio
 @pytest.mark.parametrize(
     (

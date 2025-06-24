@@ -17,8 +17,6 @@ from unittest.mock import AsyncMock, Mock
 import pytest
 import pytest_asyncio
 from plotly.graph_objects import Figure
-from pydantic import BaseModel as BaseModelV2
-from pydantic.v1 import BaseModel as BaseModelV1
 from pytest_mock import MockerFixture
 
 import reflex as rx
@@ -58,9 +56,15 @@ from reflex.utils.exceptions import (
 )
 from reflex.utils.format import json_dumps
 from reflex.vars.base import Var, computed_var
-from tests.units.states.mutation import MutableTestState
 
 from .states import GenState
+
+pytest.importorskip("pydantic")
+
+from pydantic import BaseModel as BaseModelV2
+from pydantic.v1 import BaseModel as BaseModelV1
+
+from tests.units.states.mutation import MutableTestState
 
 CI = bool(os.environ.get("CI", False))
 LOCK_EXPIRATION = 2500 if CI else 300

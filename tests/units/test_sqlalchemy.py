@@ -8,15 +8,17 @@ import reflex.model
 from reflex.model import Model, ModelRegistry, sqla_session
 from reflex.state import MutableProxy
 from reflex.utils.serializers import serializer
-from tests.units.states.mutation import MutableTestState
 
 pytest.importorskip("sqlalchemy")
 pytest.importorskip("sqlmodel")
 pytest.importorskip("alembic")
+pytest.importorskip("pydantic")
 
 # Import SQLAlchemy classes for mutable tests
 from sqlalchemy import ARRAY, JSON, String
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
+
+from tests.units.states.mutation import MutableTestState
 
 
 class MutableSQLABase(DeclarativeBase):

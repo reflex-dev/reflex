@@ -11,6 +11,7 @@ from reflex.vars.object import LiteralObjectVar, ObjectVar
 from reflex.vars.sequence import ArrayVar
 
 pytest.importorskip("sqlalchemy")
+pytest.importorskip("pydantic")
 
 from sqlalchemy.orm import DeclarativeBase, Mapped, MappedAsDataclass, mapped_column
 
