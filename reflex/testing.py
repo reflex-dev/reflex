@@ -24,7 +24,6 @@ from http.server import SimpleHTTPRequestHandler
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Literal, TypeVar
 
-import psutil
 import uvicorn
 
 import reflex
@@ -478,6 +477,8 @@ class AppHarness:
 
     def stop(self) -> None:
         """Stop the frontend and backend servers."""
+        import psutil
+
         # Quit browsers first to avoid any lingering events being sent during shutdown.
         for driver in self._frontends:
             driver.quit()

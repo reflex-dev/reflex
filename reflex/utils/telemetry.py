@@ -13,7 +13,6 @@ from datetime import datetime, timezone
 from typing import TypedDict
 
 import httpx
-import psutil
 
 from reflex import constants
 from reflex.environment import environment
@@ -89,18 +88,6 @@ def get_reflex_enterprise_version() -> str | None:
         return None
 
 
-def get_memory() -> int:
-    """Get the total memory in MB.
-
-    Returns:
-        The total memory in MB.
-    """
-    try:
-        return psutil.virtual_memory().total >> 20
-    except ValueError:  # needed to pass ubuntu test
-        return 0
-
-
 def _raise_on_missing_project_hash() -> bool:
     """Check if an error should be raised when project hash is missing.
 
@@ -128,7 +115,6 @@ class _Properties(TypedDict):
     bun_version: str | None
     reflex_enterprise_version: str | None
     cpu_count: int
-    memory: int
     cpu_info: dict
 
 
@@ -182,7 +168,6 @@ def _get_event_defaults() -> _DefaultEvent | None:
             ),
             "reflex_enterprise_version": get_reflex_enterprise_version(),
             "cpu_count": get_cpu_count(),
-            "memory": get_memory(),
             "cpu_info": dataclasses.asdict(cpuinfo) if cpuinfo else {},
         },
     }
