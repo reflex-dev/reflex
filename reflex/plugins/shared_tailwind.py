@@ -205,9 +205,10 @@ class TailwindPlugin(PluginBase):
         from reflex.utils.format import format_library_name
 
         config = deepcopy(self.get_config())
-        config["presets"] = [
-            format_library_name(preset) for preset in config.get("presets", [])
-        ]
+        if presets := config.get("presets"):
+            # Somehow, having an empty list of presets breaks Tailwind.
+            # So we only set the presets if there are any.
+            config["presets"] = [format_library_name(preset) for preset in presets]
         config["plugins"] = [
             remove_version_from_plugin(plugin) for plugin in config.get("plugins", [])
         ]
