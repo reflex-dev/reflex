@@ -165,7 +165,7 @@ dev = [
   "playwright >=1.51",
   "plotly >=6.0",
   "pre-commit ==4.2.0",
-  "psutil >=7.0.0,<8.0",
+  "psutil >=7.0.0",
   "psycopg[binary] >=3.2",
   "pyright >=1.1.400",
   "pytest >=8.3",

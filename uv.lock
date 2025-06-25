@@ -1680,7 +1680,7 @@ dev = [
     { name = "playwright", specifier = ">=1.51" },
     { name = "plotly", specifier = ">=6.0" },
     { name = "pre-commit", specifier = "==4.2.0" },
-    { name = "psutil", specifier = ">=7.0.0,<8.0" },
+    { name = "psutil", specifier = ">=7.0.0" },
     { name = "psycopg", extras = ["binary"], specifier = ">=3.2" },
     { name = "pyright", specifier = ">=1.1.400" },
     { name = "pytest", specifier = ">=8.3" },
