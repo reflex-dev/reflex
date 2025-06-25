@@ -11,6 +11,12 @@ export default defineConfig((config) => ({
   },
   server: {
     port: process.env.PORT,
+    watch: {
+      ignored: [
+        "**/.web/backend/**",
+        "**/.web/reflex.install_frontend_packages.cached",
+      ],
+    },
   },
   resolve: {
     mainFields: ["browser", "module", "jsnext"],

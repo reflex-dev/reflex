@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from reflex.components.base.bare import Bare
 from reflex.components.el import elements
+from reflex.vars.base import Var
 
 
 class Title(elements.Title):
@@ -28,31 +29,19 @@ class Title(elements.Title):
 class Meta(elements.Meta):
     """A component that displays metadata for the current page."""
 
-    # The description of character encoding.
-    char_set: str | None = None
-
-    # The value of meta.
-    content: str | None = None
-
-    # The name of metadata.
-    name: str | None = None
-
     # The type of metadata value.
-    property: str | None = None
-
-    # The type of metadata value.
-    http_equiv: str | None = None
+    property: Var[str]
 
 
 class Description(elements.Meta):
     """A component that displays the title of the current page."""
 
     # The type of the description.
-    name: str | None = "description"
+    name: Var[str] = Var.create("description")
 
 
 class Image(elements.Meta):
     """A component that displays the title of the current page."""
 
     # The type of the image.
-    property: str | None = "og:image"
+    property: Var[str] = Var.create("og:image")

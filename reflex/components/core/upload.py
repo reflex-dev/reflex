@@ -12,6 +12,7 @@ from reflex.components.component import (
     ComponentNamespace,
     MemoizationLeaf,
     StatefulComponent,
+    field,
 )
 from reflex.components.core.cond import cond
 from reflex.components.el.elements.forms import Input
@@ -234,7 +235,7 @@ class Upload(MemoizationLeaf):
     on_drop: EventHandler[_on_drop_spec]
 
     # Style rules to apply when actively dragging.
-    drag_active_style: Style | None = None
+    drag_active_style: Style | None = field(default=None, is_javascript_property=False)
 
     @classmethod
     def create(cls, *children, **props) -> Component:

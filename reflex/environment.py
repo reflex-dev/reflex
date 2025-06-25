@@ -69,7 +69,7 @@ def interpret_boolean_env(value: str, field_name: str) -> bool:
         return True
     if value.lower() in false_values:
         return False
-    msg = f"Invalid boolean value: {value} for {field_name}"
+    msg = f"Invalid boolean value: {value!r} for {field_name}"
     raise EnvironmentVarValueError(msg)
 
 
@@ -89,7 +89,7 @@ def interpret_int_env(value: str, field_name: str) -> int:
     try:
         return int(value)
     except ValueError as ve:
-        msg = f"Invalid integer value: {value} for {field_name}"
+        msg = f"Invalid integer value: {value!r} for {field_name}"
         raise EnvironmentVarValueError(msg) from ve
 
 
@@ -108,7 +108,7 @@ def interpret_existing_path_env(value: str, field_name: str) -> ExistingPath:
     """
     path = Path(value)
     if not path.exists():
-        msg = f"Path does not exist: {path} for {field_name}"
+        msg = f"Path does not exist: {path!r} for {field_name}"
         raise EnvironmentVarValueError(msg)
     return path
 
@@ -143,7 +143,7 @@ def interpret_enum_env(value: str, field_type: GenericType, field_name: str) -> 
     try:
         return field_type(value)
     except ValueError as ve:
-        msg = f"Invalid enum value: {value} for {field_name}"
+        msg = f"Invalid enum value: {value!r} for {field_name}"
         raise EnvironmentVarValueError(msg) from ve
 
 
@@ -168,6 +168,8 @@ def interpret_env_var_value(
     if is_union(field_type):
         msg = f"Union types are not supported for environment variables: {field_name}."
         raise ValueError(msg)
+
+    value = value.strip()
 
     if field_type is bool:
         return interpret_boolean_env(value, field_name)

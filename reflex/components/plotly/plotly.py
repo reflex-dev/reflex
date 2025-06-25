@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any, TypedDict, TypeVar
+from typing import TYPE_CHECKING, Any, TypedDict, TypeVar
 
 from reflex.components.component import Component, NoSSRComponent
 from reflex.components.core.cond import color_mode_cond
@@ -17,8 +17,9 @@ try:
 
 except ImportError:
     console.warn("Plotly is not installed. Please run `pip install plotly`.")
-    Figure = Any
-    Template = Any
+    if not TYPE_CHECKING:
+        Figure = Any
+        Template = Any
 
 
 def _event_points_data_signature(e0: Var) -> tuple[Var[list[Point]]]:
@@ -78,13 +79,13 @@ class Plotly(NoSSRComponent):
     is_default = True
 
     # The figure to display. This can be a plotly figure or a plotly data json.
-    data: Var[Figure]  # pyright: ignore [reportInvalidTypeForm]
+    data: Var[Figure]
 
     # The layout of the graph.
     layout: Var[dict]
 
     # The template for visual appearance of the graph.
-    template: Var[Template]  # pyright: ignore [reportInvalidTypeForm]
+    template: Var[Template]
 
     # The config of the graph.
     config: Var[dict]
@@ -213,6 +214,7 @@ const extractPoints = (points) => {
         Returns:
             The Plotly component.
         """
+        from plotly.graph_objs.layout import Template
         from plotly.io import templates
 
         responsive_template = color_mode_cond(
@@ -277,8 +279,12 @@ def dynamic_plotly_import(name: str, package: str) -> str:
     Returns:
         The dynamic import for the plotly component.
     """
+    library_import = f"import('{package}')"
+    mod_import = ".then((mod) => ({ default: createPlotlyComponent(mod) }))"
     return f"""
-const {name} = dynamic(() => import('{package}').then(mod => createPlotlyComponent(mod)), {{ssr: false}})
+const {name} = ClientSide(lazy(() =>
+    {library_import}{mod_import}
+))
 """
 
 
