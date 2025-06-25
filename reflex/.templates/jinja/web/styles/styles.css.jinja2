@@ -1,3 +1,5 @@
+@layer __reflex_base;
+
 {%- block imports_styles %}
 {% for sheet_name in stylesheets %}
     {{- "@import url('" + sheet_name + "'); " }}
