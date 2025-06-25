@@ -25,7 +25,7 @@ export const useClientSideRouting = () => {
       const search = window.location.search;
 
       // Use navigate instead of replace
-      navigate(path + search, { replace: true })
+      navigate(path + search, { replace: true, state: { fromNotFound: true } })
         .then(() => {
           // Check if we're still on a NotFound route
           // Note: This depends on how your routes are set up

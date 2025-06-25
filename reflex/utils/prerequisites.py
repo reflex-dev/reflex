@@ -115,7 +115,7 @@ def check_latest_package_version(package_name: str):
         # Get the latest version from PyPI
         current_version = importlib.metadata.version(package_name)
         url = f"https://pypi.org/pypi/{package_name}/json"
-        response = net.get(url)
+        response = net.get(url, timeout=2)
         latest_version = response.json()["info"]["version"]
         console.debug(f"Latest version of {package_name}: {latest_version}")
         if get_or_set_last_reflex_version_check_datetime():

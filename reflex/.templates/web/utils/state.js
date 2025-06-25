@@ -5,7 +5,7 @@ import JSON5 from "json5";
 import env from "$/env.json";
 import reflexEnvironment from "$/reflex.json";
 import Cookies from "universal-cookie";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   useLocation,
   useNavigate,
@@ -851,7 +851,7 @@ export const useEventLoop = (
   }, [paramsR]);
 
   // Function to add new events to the event queue.
-  const addEvents = (events, args, event_actions) => {
+  const addEvents = useCallback((events, args, event_actions) => {
     const _events = events.filter((e) => e !== undefined && e !== null);
 
     if (!(args instanceof Array)) {
@@ -894,7 +894,7 @@ export const useEventLoop = (
     } else {
       queueEvents(_events, socket, false, navigate, () => params.current);
     }
-  };
+  }, []);
 
   const sentHydrate = useRef(false); // Avoid double-hydrate due to React strict-mode
   useEffect(() => {
@@ -1020,31 +1020,42 @@ export const useEventLoop = (
     return () => window.removeEventListener("storage", handleStorage);
   });
 
+  const handleNavigationEvents = useRef(false);
   // Route after the initial page hydration
   useEffect(() => {
+    // The first time this effect runs is initial load, so don't handle
+    // any navigation events.
+    if (!handleNavigationEvents.current) {
+      handleNavigationEvents.current = true;
+      return;
+    }
+    if (location.state?.fromNotFound) {
+      // If the redirect is from a 404 page, we skip onLoadInternalEvent,
+      // since it was already run when the 404 page was first rendered.
+      return;
+    }
     // This will run when the location changes
     if (
-      location.pathname + location.search + location.hash !==
-      prevLocationRef.current.pathname +
-        prevLocationRef.current.search +
-        prevLocationRef.current.hash
+      location.pathname + location.search ===
+      prevLocationRef.current.pathname + prevLocationRef.current.search
     ) {
-      // Equivalent to routeChangeStart - runs when navigation begins
-      const change_start = () => {
-        const main_state_dispatch = dispatch["reflex___state____state"];
-        if (main_state_dispatch !== undefined) {
-          main_state_dispatch({ is_hydrated_rx_state_: false });
-        }
-      };
-      change_start();
-
-      // Equivalent to routeChangeComplete - runs after navigation completes
-      const change_complete = () => addEvents(onLoadInternalEvent());
-      change_complete();
-
-      // Update the ref
-      prevLocationRef.current = location;
+      if (location.hash) {
+        // If the hash is the same, we don't need to do anything.
+        return;
+      }
     }
+
+    // Equivalent to routeChangeStart - runs when navigation begins
+    const main_state_dispatch = dispatch["reflex___state____state"];
+    if (main_state_dispatch !== undefined) {
+      main_state_dispatch({ is_hydrated_rx_state_: false });
+    }
+
+    // Equivalent to routeChangeComplete - runs after navigation completes
+    addEvents(onLoadInternalEvent());
+
+    // Update the ref
+    prevLocationRef.current = location;
   }, [location, dispatch, onLoadInternalEvent, addEvents]);
 
   return [addEvents, connectErrors];

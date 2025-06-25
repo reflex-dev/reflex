@@ -31,6 +31,7 @@ pip install -U pip
 echo "Installing reflex from local repo code"
 cp -r /reflex-repo ~/reflex-repo
 pip install ~/reflex-repo
+pip install psutil
 
 redis-server &
 
