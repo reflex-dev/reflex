@@ -52,19 +52,12 @@ def parse_imports(
     Returns:
         The parsed import dict.
     """
-
-    def _make_list(
-        value: ImmutableImportTypes,
-    ) -> list[str | ImportVar] | list[ImportVar]:
-        if isinstance(value, (str, ImportVar)):
-            return [value]
-        return list(value)
-
     return {
-        package: [
-            ImportVar(tag=tag) if isinstance(tag, str) else tag
-            for tag in _make_list(maybe_tags)
-        ]
+        package: [maybe_tags]
+        if isinstance(maybe_tags, ImportVar)
+        else [ImportVar(tag=maybe_tags)]
+        if isinstance(maybe_tags, str)
+        else [ImportVar(tag=tag) if isinstance(tag, str) else tag for tag in maybe_tags]
         for package, maybe_tags in imports.items()
     }
 
