@@ -5,7 +5,7 @@ import JSON5 from "json5";
 import env from "$/env.json";
 import reflexEnvironment from "$/reflex.json";
 import Cookies from "universal-cookie";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   useLocation,
   useNavigate,
@@ -851,7 +851,7 @@ export const useEventLoop = (
   }, [paramsR]);
 
   // Function to add new events to the event queue.
-  const addEvents = (events, args, event_actions) => {
+  const addEvents = useCallback((events, args, event_actions) => {
     const _events = events.filter((e) => e !== undefined && e !== null);
 
     if (!(args instanceof Array)) {
@@ -894,7 +894,7 @@ export const useEventLoop = (
     } else {
       queueEvents(_events, socket, false, navigate, () => params.current);
     }
-  };
+  }, []);
 
   const sentHydrate = useRef(false); // Avoid double-hydrate due to React strict-mode
   useEffect(() => {
@@ -1020,8 +1020,15 @@ export const useEventLoop = (
     return () => window.removeEventListener("storage", handleStorage);
   });
 
+  const handleNavigationEvents = useRef(false);
   // Route after the initial page hydration
   useEffect(() => {
+    // The first time this effect runs is initial load, so don't handle
+    // any navigation events.
+    if (!handleNavigationEvents.current) {
+      handleNavigationEvents.current = true;
+      return;
+    }
     // This will run when the location changes
     if (
       location.pathname + location.search ===
