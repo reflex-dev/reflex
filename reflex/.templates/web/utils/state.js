@@ -1029,6 +1029,11 @@ export const useEventLoop = (
       handleNavigationEvents.current = true;
       return;
     }
+    if (location.state?.fromNotFound) {
+      // If the redirect is from a 404 page, we skip onLoadInternalEvent,
+      // since it was already run when the 404 page was first rendered.
+      return;
+    }
     // This will run when the location changes
     if (
       location.pathname + location.search ===
