@@ -179,6 +179,7 @@ def _default_token_expiration() -> int:
 
 def reset_disk_state_manager():
     """Reset the disk state manager."""
+    console.debug("Resetting disk state manager.")
     states_directory = prerequisites.get_states_dir()
     if states_directory.exists():
         for path in states_directory.iterdir():
