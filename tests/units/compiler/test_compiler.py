@@ -158,6 +158,7 @@ def test_compile_stylesheets(tmp_path: Path, mocker: MockerFixture):
             / "styles"
             / (PageNames.STYLESHEET_ROOT + ".css")
         ),
+        "@layer __reflex_base;\n"
         "@import url('./__reflex_style_reset.css'); \n"
         "@import url('@radix-ui/themes/styles.css'); \n"
         "@import url('https://fonts.googleapis.com/css?family=Sofia&effect=neon|outline|emboss|shadow-multiple'); \n"
@@ -219,6 +220,7 @@ def test_compile_stylesheets_scss_sass(tmp_path: Path, mocker: MockerFixture):
             / "styles"
             / (PageNames.STYLESHEET_ROOT + ".css")
         ),
+        "@layer __reflex_base;\n"
         "@import url('./__reflex_style_reset.css'); \n"
         "@import url('@radix-ui/themes/styles.css'); \n"
         "@import url('./style.css'); \n"
@@ -238,6 +240,7 @@ def test_compile_stylesheets_scss_sass(tmp_path: Path, mocker: MockerFixture):
             / "styles"
             / (PageNames.STYLESHEET_ROOT + ".css")
         ),
+        "@layer __reflex_base;\n"
         "@import url('./__reflex_style_reset.css'); \n"
         "@import url('@radix-ui/themes/styles.css'); \n"
         "@import url('./style.css'); \n"
@@ -285,7 +288,7 @@ def test_compile_stylesheets_exclude_tailwind(tmp_path, mocker: MockerFixture):
 
     assert compiler.compile_root_stylesheet(stylesheets) == (
         str(Path(".web") / "styles" / (PageNames.STYLESHEET_ROOT + ".css")),
-        "@import url('./__reflex_style_reset.css'); \n@import url('@radix-ui/themes/styles.css'); \n@import url('./style.css'); \n",
+        "@layer __reflex_base;\n@import url('./__reflex_style_reset.css'); \n@import url('@radix-ui/themes/styles.css'); \n@import url('./style.css'); \n",
     )
 
 
@@ -324,7 +327,7 @@ def test_compile_stylesheets_no_reset(tmp_path: Path, mocker: MockerFixture):
             / "styles"
             / (PageNames.STYLESHEET_ROOT + ".css")
         ),
-        "@import url('@radix-ui/themes/styles.css'); \n@import url('./style.css'); \n",
+        "@layer __reflex_base;\n@import url('@radix-ui/themes/styles.css'); \n@import url('./style.css'); \n",
     )
 
 
