@@ -363,9 +363,12 @@ def create_document_root(
 
     for component in head_components or []:
         if isinstance(component, Meta):
-            if component.char_set:  # pyright: ignore[reportAttributeAccessIssue]
+            if component.char_set is not None:  # pyright: ignore[reportAttributeAccessIssue]
                 existing_meta_types.add("char_set")
-            if component.name == "viewport":  # pyright: ignore[reportAttributeAccessIssue]
+            if (
+                (name := component.name) is not None  # pyright: ignore[reportAttributeAccessIssue]
+                and name.equals(Var.create("viewport"))
+            ):
                 existing_meta_types.add("viewport")
 
     # Always include the framework meta and link tags.
