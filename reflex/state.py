@@ -37,6 +37,7 @@ from reflex.event import (
     EventSpec,
     fix_events,
 )
+from reflex.istate import HANDLED_PICKLE_ERRORS, debug_failed_pickles
 from reflex.istate.data import RouterData
 from reflex.istate.proxy import ImmutableMutableProxy as ImmutableMutableProxy
 from reflex.istate.proxy import MutableProxy, StateProxy
@@ -85,14 +86,6 @@ if environment.REFLEX_PERF_MODE.get() != PerformanceMode.OFF:
     # Only warn about each state class size once.
     _WARNED_ABOUT_STATE_SIZE: set[str] = set()
 
-# Errors caught during pickling of state
-HANDLED_PICKLE_ERRORS = (
-    pickle.PicklingError,
-    AttributeError,
-    IndexError,
-    TypeError,
-    ValueError,
-)
 
 # For BaseState.get_var_value
 VAR_TYPE = TypeVar("VAR_TYPE")
@@ -2251,11 +2244,16 @@ class BaseState(EvenMoreBasicBaseState):
 
         Raises:
             StateSerializationError: If the state cannot be serialized.
+
+        # noqa: DAR401: e
+        # noqa: DAR402: StateSerializationError
         """
         payload = b""
         error = ""
+        self_schema = self._to_schema()
+        pickle_function = pickle.dumps
         try:
-            payload = pickle.dumps((self._to_schema(), self))
+            payload = pickle.dumps((self_schema, self))
         except HANDLED_PICKLE_ERRORS as og_pickle_error:
             error = (
                 f"Failed to serialize state {self.get_full_name()} due to unpicklable object. "
@@ -2264,7 +2262,8 @@ class BaseState(EvenMoreBasicBaseState):
             try:
                 import dill
 
-                payload = dill.dumps((self._to_schema(), self))
+                pickle_function = dill.dumps
+                payload = dill.dumps((self_schema, self))
             except ImportError:
                 error += (
                     f"Pickle error: {og_pickle_error}. "
@@ -2272,13 +2271,19 @@ class BaseState(EvenMoreBasicBaseState):
                 )
             except HANDLED_PICKLE_ERRORS as ex:
                 error += f"Dill was also unable to pickle the state: {ex}"
-            console.warn(error)
 
         if environment.REFLEX_PERF_MODE.get() != PerformanceMode.OFF:
             self._check_state_size(len(payload))
 
         if not payload:
-            raise StateSerializationError(error)
+            e = StateSerializationError(error)
+            if sys.version_info >= (3, 11):
+                try:
+                    debug_failed_pickles(self, pickle_function)
+                except HANDLED_PICKLE_ERRORS as ex:
+                    for note in ex.__notes__:
+                        e.add_note(note)
+            raise e
 
         return payload
 
