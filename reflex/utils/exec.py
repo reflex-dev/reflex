@@ -367,6 +367,9 @@ def run_backend(
 
     # Run the backend in development mode.
     if should_use_granian():
+        # We import reflex app because this lets granian cache the module
+        import reflex.app  # noqa: F401
+
         run_granian_backend(host, port, loglevel)
     else:
         run_uvicorn_backend(host, port, loglevel)
