@@ -5,8 +5,6 @@ import time
 from collections.abc import Callable
 from typing import ParamSpec, TypeVar
 
-import httpx
-
 from reflex.utils.decorator import once
 from reflex.utils.types import Unset
 
@@ -42,6 +40,8 @@ def _wrap_https_func(
 
     @functools.wraps(func)
     def wrapper(*args: _P.args, **kwargs: _P.kwargs) -> _T:
+        import httpx
+
         url = args[0]
         console.debug(f"Sending HTTPS request to {args[0]}")
         initial_time = time.time()
@@ -94,6 +94,8 @@ def _is_ipv4_supported() -> bool:
     Returns:
         True if the system supports IPv4, False otherwise.
     """
+    import httpx
+
     try:
         httpx.head("http://1.1.1.1", timeout=3)
     except httpx.RequestError:
@@ -108,6 +110,8 @@ def _is_ipv6_supported() -> bool:
     Returns:
         True if the system supports IPv6, False otherwise.
     """
+    import httpx
+
     try:
         httpx.head("http://[2606:4700:4700::1111]", timeout=3)
     except httpx.RequestError:
@@ -139,12 +143,13 @@ def _httpx_local_address_kwarg() -> str:
 
 
 @once
-def _httpx_client() -> httpx.Client:
+def _httpx_client():
     """Get an HTTPX client.
 
     Returns:
         An HTTPX client.
     """
+    import httpx
     from httpx._utils import get_environment_proxies
 
     return httpx.Client(

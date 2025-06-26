@@ -27,7 +27,6 @@ from typing import NamedTuple
 from urllib.parse import urlparse
 
 import click
-import httpx
 from packaging import version
 from redis import Redis as RedisSync
 from redis.asyncio import Redis
@@ -1167,6 +1166,8 @@ def download_and_run(url: str, *args, show_status: bool = False, **env):
     Raises:
         Exit: If the script fails to download.
     """
+    import httpx
+
     # Download the script
     console.debug(f"Downloading {url}")
     try:
@@ -1724,6 +1725,8 @@ def create_config_init_app_from_remote_template(app_name: str, template_url: str
         Exit: If any download, file operations fail or unexpected zip file format.
 
     """
+    import httpx
+
     # Create a temp directory for the zip download.
     try:
         temp_dir = tempfile.mkdtemp()

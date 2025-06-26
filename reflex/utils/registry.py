@@ -1,7 +1,5 @@
 """Utilities for working with registries."""
 
-import httpx
-
 from reflex.environment import environment
 from reflex.utils import console, net
 from reflex.utils.decorator import once
@@ -16,6 +14,8 @@ def latency(registry: str) -> int:
     Returns:
         int: The latency of the registry in microseconds.
     """
+    import httpx
+
     try:
         time_to_respond = net.get(registry, timeout=2).elapsed.microseconds
     except httpx.HTTPError:

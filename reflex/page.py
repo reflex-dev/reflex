@@ -3,11 +3,13 @@
 from __future__ import annotations
 
 from collections import defaultdict
-from collections.abc import Callable
-from typing import Any
+from typing import TYPE_CHECKING
 
-from reflex.config import get_config
-from reflex.event import EventType
+if TYPE_CHECKING:
+    from collections.abc import Callable
+    from typing import Any
+
+    from reflex.event import EventType
 
 DECORATED_PAGES: dict[str, list] = defaultdict(list)
 
@@ -42,6 +44,7 @@ def page(
     Returns:
         The decorated function.
     """
+    from reflex.config import get_config
 
     def decorator(render_fn: Callable):
         kwargs = {}
