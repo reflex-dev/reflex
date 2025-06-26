@@ -34,7 +34,7 @@ function AppWrap({children}) {
 
 
 export function Layout({children}) {
-    React.useEffect(() => {
+    useEffect(() => {
     // Make contexts and state objects available globally for dynamic eval'd components
     let windowImports = {
 {% for library_alias, library_path in  window_libraries %}
