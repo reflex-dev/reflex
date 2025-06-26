@@ -2343,4 +2343,5 @@ class EventNamespace:
 
 
 event = EventNamespace
+event.event = event  # pyright: ignore[reportAttributeAccessIssue]
 sys.modules[__name__] = event  # pyright: ignore[reportArgumentType]
