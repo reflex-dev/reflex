@@ -2,6 +2,7 @@
 
 import dataclasses
 import inspect
+import sys
 import types
 import urllib.parse
 from base64 import b64encode
@@ -1227,19 +1228,6 @@ def download(
     )
 
 
-# This function seems unused. Check if we still need it. If not, remove in 0.7.0
-def _callback_arg_spec(eval_result: Any):
-    """ArgSpec for call_script callback function.
-
-    Args:
-        eval_result: The result of the javascript execution.
-
-    Returns:
-        Args for the callback function
-    """
-    return [eval_result]
-
-
 def call_script(
     javascript_code: str | Var[str],
     callback: "EventType[Any] | None" = None,
@@ -2181,7 +2169,9 @@ else:
 class EventNamespace:
     """A namespace for event related classes."""
 
+    # Core Event Classes
     Event = Event
+    EventActionsMixin = EventActionsMixin
     EventHandler = EventHandler
     EventSpec = EventSpec
     CallableEventSpec = CallableEventSpec
@@ -2190,8 +2180,43 @@ class EventNamespace:
     LiteralEventVar = LiteralEventVar
     EventChainVar = EventChainVar
     LiteralEventChainVar = LiteralEventChainVar
-    EventType = EventType
     EventCallback = EventCallback
+    LambdaEventCallback = LambdaEventCallback
+
+    # Javascript Event Classes
+    JavascriptHTMLInputElement = JavascriptHTMLInputElement
+    JavascriptInputEvent = JavascriptInputEvent
+    JavasciptKeyboardEvent = JavasciptKeyboardEvent
+    JavascriptMouseEvent = JavascriptMouseEvent
+    JavascriptPointerEvent = JavascriptPointerEvent
+
+    # Type Info Classes
+    KeyInputInfo = KeyInputInfo
+    MouseEventInfo = MouseEventInfo
+    PointerEventInfo = PointerEventInfo
+    IdentityEventReturn = IdentityEventReturn
+
+    # File Upload
+    FileUpload = FileUpload
+
+    # Type Aliases
+    EventType = EventType
+    LAMBDA_OR_STATE = LAMBDA_OR_STATE
+    BASIC_EVENT_TYPES = BASIC_EVENT_TYPES
+    IndividualEventType = IndividualEventType
+
+    # Constants
+    BACKGROUND_TASK_MARKER = BACKGROUND_TASK_MARKER
+    _EVENT_FIELDS = _EVENT_FIELDS
+    upload_files = upload_files
+    stop_propagation = stop_propagation
+    prevent_default = prevent_default
+
+    # Private/Internal Functions
+    _values_returned_from_event = staticmethod(_values_returned_from_event)
+    _check_event_args_subclass_of_callback = staticmethod(
+        _check_event_args_subclass_of_callback
+    )
 
     @overload
     def __new__(
@@ -2282,10 +2307,20 @@ class EventNamespace:
     check_fn_match_arg_spec = staticmethod(check_fn_match_arg_spec)
     resolve_annotation = staticmethod(resolve_annotation)
     parse_args_spec = staticmethod(parse_args_spec)
+    unwrap_var_annotation = staticmethod(unwrap_var_annotation)
+    get_fn_signature = staticmethod(get_fn_signature)
+
+    # Event Spec Functions
     passthrough_event_spec = staticmethod(passthrough_event_spec)
     input_event = staticmethod(input_event)
+    int_input_event = staticmethod(int_input_event)
+    float_input_event = staticmethod(float_input_event)
+    checked_input_event = staticmethod(checked_input_event)
     key_event = staticmethod(key_event)
+    pointer_event_spec = staticmethod(pointer_event_spec)
     no_args_event_spec = staticmethod(no_args_event_spec)
+
+    # Server Side Events
     server_side = staticmethod(server_side)
     redirect = staticmethod(redirect)
     console_log = staticmethod(console_log)
@@ -2308,3 +2343,4 @@ class EventNamespace:
 
 
 event = EventNamespace
+sys.modules[__name__] = event  # pyright: ignore[reportArgumentType]
