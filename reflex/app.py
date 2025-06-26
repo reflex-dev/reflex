@@ -864,7 +864,7 @@ class App(MiddlewareMixin, LifespanMixin):
         """
         from reflex.route import get_router
 
-        return get_router(list(self._pages))
+        return get_router(list(self._unevaluated_pages))
 
     def get_load_events(self, path: str) -> list[IndividualEventType[()]]:
         """Get the load events for a route.
