@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import sys
 from collections import defaultdict
 from typing import TYPE_CHECKING
 
@@ -68,3 +69,36 @@ def page(
         return render_fn
 
     return decorator
+
+
+class PageNamespace:
+    """A namespace for page names."""
+
+    DECORATED_PAGES = DECORATED_PAGES
+
+    def __new__(
+        cls,
+        route: str | None = None,
+        title: str | None = None,
+        image: str | None = None,
+        description: str | None = None,
+        meta: list[Any] | None = None,
+        script_tags: list[Any] | None = None,
+        on_load: EventType[()] | None = None,
+    ):
+        """Create a new PageNamespace instance."""
+        return page(
+            route=route,
+            title=title,
+            image=image,
+            description=description,
+            meta=meta,
+            script_tags=script_tags,
+            on_load=on_load,
+        )
+
+    page = staticmethod(page)
+
+
+page_namespace = PageNamespace
+sys.modules[__name__] = page_namespace  # pyright: ignore[reportArgumentType]
