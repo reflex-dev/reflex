@@ -359,20 +359,36 @@ def create_document_root(
     Returns:
         The document root.
     """
-    head_components = [
-        *(
-            head_components
-            or [
-                # Default meta tags if user does not provide.
-                Meta.create(char_set="utf-8"),
-                Meta.create(
-                    name="viewport", content="width=device-width, initial-scale=1"
-                ),
-            ]
-        ),
-        # Always include the framework meta and link tags.
+    existing_meta_types = set()
+
+    for component in head_components or []:
+        if isinstance(component, Meta):
+            if component.char_set is not None:  # pyright: ignore[reportAttributeAccessIssue]
+                existing_meta_types.add("char_set")
+            if (
+                (name := component.name) is not None  # pyright: ignore[reportAttributeAccessIssue]
+                and name.equals(Var.create("viewport"))
+            ):
+                existing_meta_types.add("viewport")
+
+    # Always include the framework meta and link tags.
+    always_head_components = [
         ReactMeta.create(),
         Links.create(),
+    ]
+    maybe_head_components = []
+    # Only include these if the user has not specified them.
+    if "char_set" not in existing_meta_types:
+        maybe_head_components.append(Meta.create(char_set="utf-8"))
+    if "viewport" not in existing_meta_types:
+        maybe_head_components.append(
+            Meta.create(name="viewport", content="width=device-width, initial-scale=1")
+        )
+
+    head_components = [
+        *(head_components or []),
+        *maybe_head_components,
+        *always_head_components,
     ]
     return Html.create(
         Head.create(*head_components),
