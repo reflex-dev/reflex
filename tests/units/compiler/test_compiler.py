@@ -387,9 +387,9 @@ def test_create_document_root():
         html_custom_attrs={"project": "reflex"},
     )
     assert isinstance(root, utils.Html)
-    assert len(root.children[0].children) == 4
+    assert len(root.children[0].children) == 6
     names = [c.tag for c in root.children[0].children]
-    assert names == ["Scripts", "Scripts", "Meta", "Links"]
+    assert names == ["Scripts", "Scripts", "meta", "meta", "Meta", "Links"]
     lang = root.lang  # pyright: ignore [reportAttributeAccessIssue]
     assert isinstance(lang, LiteralStringVar)
     assert lang.equals(Var.create("rx"))
