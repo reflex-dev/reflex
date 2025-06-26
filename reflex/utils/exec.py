@@ -15,8 +15,6 @@ from pathlib import Path
 from typing import Any, NamedTuple, TypedDict
 from urllib.parse import urljoin
 
-import psutil
-
 from reflex import constants
 from reflex.config import get_config
 from reflex.constants.base import LogLevel
@@ -131,12 +129,16 @@ def get_different_packages(
 def kill(proc_pid: int):
     """Kills a process and all its child processes.
 
+    Requires the `psutil` library to be installed.
+
     Args:
-        proc_pid (int): The process ID of the process to be killed.
+        proc_pid: The process ID of the process to be killed.
 
     Example:
         >>> kill(1234)
     """
+    import psutil
+
     process = psutil.Process(proc_pid)
     for proc in process.children(recursive=True):
         proc.kill()
@@ -365,6 +367,9 @@ def run_backend(
 
     # Run the backend in development mode.
     if should_use_granian():
+        # We import reflex app because this lets granian cache the module
+        import reflex.app  # noqa: F401
+
         run_granian_backend(host, port, loglevel)
     else:
         run_uvicorn_backend(host, port, loglevel)

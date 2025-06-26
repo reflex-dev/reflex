@@ -151,9 +151,9 @@ class TailwindV3Plugin(TailwindPlugin):
             A list of packages required by the plugin.
         """
         return [
-            plugin if isinstance(plugin, str) else plugin.get("name")
-            for plugin in self.get_config().get("plugins", [])
-        ] + [Constants.VERSION]
+            *super().get_frontend_development_dependencies(**context),
+            Constants.VERSION,
+        ]
 
     def pre_compile(self, **context):
         """Pre-compile the plugin.
@@ -161,7 +161,7 @@ class TailwindV3Plugin(TailwindPlugin):
         Args:
             context: The context for the plugin.
         """
-        context["add_save_task"](compile_config, self.get_config())
+        context["add_save_task"](compile_config, self.get_unversioned_config())
         context["add_save_task"](compile_root_style)
         context["add_modify_task"](Dirs.POSTCSS_JS, add_tailwind_to_postcss_config)
         context["add_modify_task"](
