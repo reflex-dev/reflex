@@ -1,6 +1,7 @@
 """Tailwind CSS configuration types for Reflex plugins."""
 
 import dataclasses
+from copy import deepcopy
 from typing import Any, Literal, TypedDict
 
 from typing_extensions import NotRequired
@@ -38,6 +39,28 @@ TailwindPluginWithoutCallConfig = TypedDict(
 TailwindPluginConfig = (
     TailwindPluginWithCallConfig | TailwindPluginWithoutCallConfig | str
 )
+
+
+def remove_version_from_plugin(plugin: TailwindPluginConfig) -> TailwindPluginConfig:
+    """Remove the version from a plugin name.
+
+    Args:
+        plugin: The plugin to remove the version from.
+
+    Returns:
+        The plugin without the version.
+    """
+    from reflex.utils.format import format_library_name
+
+    if isinstance(plugin, str):
+        return format_library_name(plugin)
+
+    if plugin_import := plugin.get("import"):
+        plugin_import["from"] = format_library_name(plugin_import["from"])
+
+    plugin["name"] = format_library_name(plugin["name"])
+
+    return plugin
 
 
 class TailwindConfig(TypedDict):
@@ -131,10 +154,26 @@ class TailwindPlugin(PluginBase):
     config: TailwindConfig = dataclasses.field(
         default_factory=lambda: TailwindConfig(
             plugins=[
-                "@tailwindcss/typography",
+                "@tailwindcss/typography@0.5.16",
             ],
         )
     )
+
+    def get_frontend_development_dependencies(self, **context) -> list[str]:
+        """Get the packages required by the plugin.
+
+        Args:
+            **context: The context for the plugin.
+
+        Returns:
+            A list of packages required by the plugin.
+        """
+        config = self.get_config()
+
+        return [
+            plugin if isinstance(plugin, str) else plugin.get("name")
+            for plugin in config.get("plugins", [])
+        ] + config.get("presets", [])
 
     def get_config(self) -> TailwindConfig:
         """Get the Tailwind CSS configuration.
@@ -156,3 +195,21 @@ class TailwindPlugin(PluginBase):
             return rxconfig_config
 
         return self.config
+
+    def get_unversioned_config(self) -> TailwindConfig:
+        """Get the Tailwind CSS configuration without version-specific adjustments.
+
+        Returns:
+            The Tailwind CSS configuration without version-specific adjustments.
+        """
+        from reflex.utils.format import format_library_name
+
+        config = deepcopy(self.get_config())
+        if presets := config.get("presets"):
+            # Somehow, having an empty list of presets breaks Tailwind.
+            # So we only set the presets if there are any.
+            config["presets"] = [format_library_name(preset) for preset in presets]
+        config["plugins"] = [
+            remove_version_from_plugin(plugin) for plugin in config.get("plugins", [])
+        ]
+        return config

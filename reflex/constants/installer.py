@@ -14,10 +14,10 @@ class Bun(SimpleNamespace):
     """Bun constants."""
 
     # The Bun version.
-    VERSION = "1.2.16"
+    VERSION = "1.2.17"
 
     # Min Bun Version
-    MIN_VERSION = "1.2.8"
+    MIN_VERSION = "1.2.17"
 
     # URL to bun install script.
     INSTALL_URL = "https://raw.githubusercontent.com/reflex-dev/reflex/main/scripts/bun_install.sh"
@@ -63,7 +63,7 @@ class Node(SimpleNamespace):
     """Node/ NPM constants."""
 
     # The minimum required node version.
-    MIN_VERSION = "20.0.0"
+    MIN_VERSION = "20.19.0"
 
     # Path of the node config file.
     CONFIG_PATH = ".npmrc"
@@ -123,7 +123,7 @@ class PackageJson(SimpleNamespace):
             A dictionary of dependencies with their versions.
         """
         return {
-            "axios": "1.9.0",
+            "axios": "1.10.0",
             "json5": "2.2.3",
             "react-router": cls._react_router_version,
             "react-router-dom": cls._react_router_version,
@@ -132,7 +132,7 @@ class PackageJson(SimpleNamespace):
             "react": cls._react_version,
             "react-helmet": "6.1.0",
             "react-dom": cls._react_version,
-            "isbot": "5.1.26",
+            "isbot": "5.1.28",
             "socket.io-client": "4.8.1",
             "universal-cookie": "7.2.2",
         }
@@ -140,11 +140,11 @@ class PackageJson(SimpleNamespace):
     DEV_DEPENDENCIES = {
         "@emotion/react": "11.14.0",
         "autoprefixer": "10.4.21",
-        "postcss": "8.5.4",
-        "postcss-import": "16.1.0",
+        "postcss": "8.5.6",
+        "postcss-import": "16.1.1",
         "@react-router/dev": _react_router_version,
         "@react-router/fs-routes": _react_router_version,
-        "rolldown-vite": "6.3.19",
+        "rolldown-vite": "7.0.1",
     }
     OVERRIDES = {
         # This should always match the `react` version in DEPENDENCIES for recharts compatibility.
