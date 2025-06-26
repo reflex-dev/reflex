@@ -2340,6 +2340,7 @@ class EventNamespace:
     call_script = staticmethod(call_script)
     call_function = staticmethod(call_function)
     run_script = staticmethod(run_script)
+    __file__ = __file__
 
 
 event = EventNamespace

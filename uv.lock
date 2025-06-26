@@ -1667,7 +1667,7 @@ requires-dist = [
     { name = "python-multipart", specifier = ">=0.0.20,<1.0" },
     { name = "python-socketio", specifier = ">=5.12.0,<6.0" },
     { name = "redis", specifier = ">=5.2.1,<7.0" },
-    { name = "reflex-hosting-cli", specifier = ">=0.1.47" },
+    { name = "reflex-hosting-cli", specifier = ">=0.1.51" },
     { name = "rich", specifier = ">=13,<15" },
     { name = "sqlmodel", marker = "extra == 'db'", specifier = ">=0.0.24,<0.1" },
     { name = "starlette", specifier = ">=0.46.0" },
@@ -1715,7 +1715,7 @@ dev = [
 
 [[package]]
 name = "reflex-hosting-cli"
-version = "0.1.50"
+version = "0.1.51"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "click" },
@@ -1726,9 +1726,9 @@ dependencies = [
     { name = "rich" },
     { name = "tabulate" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/b4/81/305748b296140110d5cdd6441eaddc6058dc8906d4a8b13f9fa97d02bac0/reflex_hosting_cli-0.1.50.tar.gz", hash = "sha256:d594d3734f4fff4ad33618aab0d0c1d9130b7148cab75ac85adb9f6a49055a48", size = 32280, upload-time = "2025-06-07T22:46:46.327Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/b5/f8/6a189fd75966d2929ff3c072b051d7aebcd7b8e2cb4f7c0b81f201abf143/reflex_hosting_cli-0.1.51.tar.gz", hash = "sha256:48d53a57ce340293072a573584cbfe92560d40bb703ebd1bfb414398170d2299", size = 32785, upload-time = "2025-06-26T22:16:17.504Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/17/b9/e1802ceffc9dc026cad2c8de180789b72f5f3aa7be7d4da33645cbc2a75e/reflex_hosting_cli-0.1.50-py3-none-any.whl", hash = "sha256:5285f9eaf80858e6c5dca6cd705c0f5924a243697f58814938a73f1083cab143", size = 41226, upload-time = "2025-06-07T22:46:44.951Z" },
+    { url = "https://files.pythonhosted.org/packages/2b/a8/ad2ddfb5e5f99c449f0962dfdb8a001df483338b9f4965604c0cab0fe671/reflex_hosting_cli-0.1.51-py3-none-any.whl", hash = "sha256:c1f3ad1ca56dcfb1a17976a4ab9f3f55d2c6737d55e46b4c58cf0cd28033f039", size = 41953, upload-time = "2025-06-26T22:16:16.629Z" },
 ]
 
 [[package]]
