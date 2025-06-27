@@ -61,8 +61,16 @@ def is_process_on_port(port: int) -> bool:
     Returns:
         Whether a process is running on the given port.
     """
+    # Test IPv4 localhost (127.0.0.1)
     with closing(socket.socket(socket.AF_INET, socket.SOCK_STREAM)) as sock:
-        return sock.connect_ex(("127.0.0.1", port)) == 0
+        ipv4_result = sock.connect_ex(("127.0.0.1", port)) == 0
+
+    # Test IPv6 localhost (::1)
+    with closing(socket.socket(socket.AF_INET6, socket.SOCK_STREAM)) as sock:
+        ipv6_result = sock.connect_ex(("::1", port)) == 0
+
+    # Port is in use if either IPv4 or IPv6 is listening
+    return ipv4_result or ipv6_result
 
 
 def change_port(port: int, _type: str) -> int:
