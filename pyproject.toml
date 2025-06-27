@@ -20,21 +20,18 @@ readme = "README.md"
 keywords = ["web", "framework"]
 requires-python = ">=3.10,<4.0"
 dependencies = [
-  "alembic >=1.15.2,<2.0",
-  "fastapi >=0.115.0",
+  "starlette >=0.46.0",
   "granian[reload] >=2.2.5",
   "httpx >=0.28.0,<1.0",
   "jinja2 >=3.1.2,<4.0",
   "packaging >=24.2,<26",
   "platformdirs >=4.3.7,<5.0",
   "psutil >=7.0.0,<8.0; sys_platform == 'win32'",
-  "pydantic >=1.10.21,<3.0",
   "python-socketio >=5.12.0,<6.0",
   "python-multipart >=0.0.20,<1.0",
   "redis >=5.2.1,<7.0",
-  "reflex-hosting-cli >=0.1.47",
+  "reflex-hosting-cli >=0.1.51",
   "rich >=13,<15",
-  "sqlmodel >=0.0.24,<0.1",
   "click >=8.2",
   "typing_extensions >=4.13.0",
   "wrapt >=1.17.0,<2.0",
@@ -47,6 +44,13 @@ classifiers = [
   "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: 3.12",
   "Programming Language :: Python :: 3.13",
+]
+
+[project.optional-dependencies]
+db = [
+  "alembic >=1.15.2,<2.0",
+  "pydantic >=1.10.21,<3.0",
+  "sqlmodel >=0.0.24,<0.1",
 ]
 
 
@@ -154,9 +158,11 @@ ignore-words-list = "te, TreeE"
 
 [dependency-groups]
 dev = [
+  "alembic >=1.15.2,<2.0",
   "asynctest >=0.13",
   "darglint >=1.8",
   "dill >=0.3",
+  "fastapi >=0.115.0",
   "hatchling >=1.27",
   "libsass >=0.23",
   "numpy >=2.2",
@@ -167,6 +173,7 @@ dev = [
   "pre-commit ==4.2.0",
   "psutil >=7.0.0",
   "psycopg[binary] >=3.2",
+  "pydantic >=1.10.21,<3.0",
   "pyright >=1.1.400",
   "pytest >=8.3",
   "pytest-asyncio >=0.26",
@@ -180,6 +187,7 @@ dev = [
   "python-dotenv >=1",
   "ruff >=0.11",
   "selenium >=4.31",
+  "sqlmodel >=0.0.24,<0.1",
   "starlette-admin >=0.14",
   "toml >=0.10.2",
   "uvicorn >=0.34.0",

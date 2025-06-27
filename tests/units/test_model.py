@@ -2,13 +2,19 @@ from pathlib import Path
 from unittest import mock
 
 import pytest
-import sqlalchemy
-import sqlalchemy.exc
-import sqlmodel
 
 import reflex.constants
 import reflex.model
+from reflex.constants.state import FIELD_MARKER
 from reflex.model import Model, ModelRegistry
+from reflex.state import BaseState
+from tests.units.test_state import (
+    mock_app_simple,  # noqa: F401 # for pytest.mark.usefixtures
+)
+
+pytest.importorskip("alembic")
+pytest.importorskip("sqlalchemy")
+pytest.importorskip("sqlmodel")
 
 
 @pytest.fixture
@@ -32,6 +38,7 @@ def model_custom_primary() -> Model:
     Returns:
         Model: Model object.
     """
+    import sqlmodel
 
     class ChildModel(Model):
         custom_id: int | None = sqlmodel.Field(default=None, primary_key=True)
@@ -73,6 +80,10 @@ def test_automigration(
         monkeypatch: pytest fixture to overwrite attributes
         model_registry: clean reflex ModelRegistry
     """
+    import sqlalchemy
+    import sqlalchemy.exc
+    import sqlmodel
+
     alembic_ini = tmp_working_dir / "alembic.ini"
     versions = tmp_working_dir / "alembic" / "versions"
     monkeypatch.setattr(reflex.constants, "ALEMBIC_CONFIG", str(alembic_ini))
@@ -191,3 +202,41 @@ def test_automigration(
     # drop remaining tables
     assert Model.migrate(autogenerate=True)
     assert len(list(versions.glob("*.py"))) == 6
+
+
+class ReflexModel(Model):
+    """A model for testing."""
+
+    foo: str
+
+
+class UpcastStateWithSqlAlchemy(BaseState):
+    """A state for testing upcasting."""
+
+    passed: bool = False
+
+    def rx_model(self, m: ReflexModel):  # noqa: D102
+        assert isinstance(m, ReflexModel)
+        self.passed = True
+
+
+@pytest.mark.asyncio
+@pytest.mark.usefixtures("mock_app_simple")
+@pytest.mark.parametrize(
+    ("handler", "payload"),
+    [
+        (UpcastStateWithSqlAlchemy.rx_model, {"m": {"foo": "bar"}}),
+    ],
+)
+async def test_upcast_event_handler_arg(handler, payload):
+    """Test that upcast event handler args work correctly.
+
+    Args:
+        handler: The handler to test.
+        payload: The payload to test.
+    """
+    state = UpcastStateWithSqlAlchemy()
+    async for update in state._process_event(handler, state, payload):
+        assert update.delta == {
+            UpcastStateWithSqlAlchemy.get_full_name(): {"passed" + FIELD_MARKER: True}
+        }

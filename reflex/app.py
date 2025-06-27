@@ -27,7 +27,6 @@ from timeit import default_timer as timer
 from types import SimpleNamespace
 from typing import TYPE_CHECKING, Any, BinaryIO, ParamSpec, get_args, get_type_hints
 
-from fastapi import FastAPI
 from rich.progress import MofNCompleteColumn, Progress, TimeElapsedColumn
 from socketio import ASGIApp as EngineIOApp
 from socketio import AsyncNamespace, AsyncServer
@@ -86,7 +85,6 @@ from reflex.event import (
     get_hydrate_event,
     noop,
 )
-from reflex.model import Model, get_db_status
 from reflex.page import DECORATED_PAGES
 from reflex.route import (
     get_route_args,
@@ -436,9 +434,6 @@ class App(MiddlewareMixin, LifespanMixin):
         | None
     ) = None
 
-    # FastAPI app for compatibility with FastAPI.
-    _cached_fastapi_app: FastAPI | None = None
-
     @property
     def event_namespace(self) -> EventNamespace | None:
         """Get the event namespace.
@@ -612,12 +607,7 @@ class App(MiddlewareMixin, LifespanMixin):
             msg = "The app has not been initialized."
             raise ValueError(msg)
 
-        if self._cached_fastapi_app is not None:
-            asgi_app = self._cached_fastapi_app
-            asgi_app.mount("", self._api)
-            App._add_cors(asgi_app)
-        else:
-            asgi_app = self._api
+        asgi_app = self._api
 
         if self.api_transformer is not None:
             api_transformers: Sequence[Starlette | Callable[[ASGIApp], ASGIApp]] = (
@@ -628,7 +618,7 @@ class App(MiddlewareMixin, LifespanMixin):
 
             for api_transformer in api_transformers:
                 if isinstance(api_transformer, Starlette):
-                    # Mount the api to the fastapi app.
+                    # Mount the api to the starlette app.
                     App._add_cors(api_transformer)
                     api_transformer.mount("", asgi_app)
                     asgi_app = api_transformer
@@ -937,6 +927,8 @@ class App(MiddlewareMixin, LifespanMixin):
         try:
             from starlette_admin.contrib.sqla.admin import Admin
             from starlette_admin.contrib.sqla.view import ModelView
+
+            from reflex.model import Model
         except ImportError:
             return
 
@@ -1800,6 +1792,8 @@ async def health(_request: Request) -> JSONResponse:
     tasks = []
 
     if prerequisites.check_db_used():
+        from reflex.model import get_db_status
+
         tasks.append(get_db_status())
     if prerequisites.check_redis_used():
         tasks.append(prerequisites.get_redis_status())
