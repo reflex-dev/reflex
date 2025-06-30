@@ -13,7 +13,14 @@ import io
 import json
 import sys
 import traceback
-from collections.abc import AsyncIterator, Callable, Coroutine, Mapping, Sequence
+from collections.abc import (
+    AsyncGenerator,
+    AsyncIterator,
+    Callable,
+    Coroutine,
+    Mapping,
+    Sequence,
+)
 from datetime import datetime
 from pathlib import Path
 from timeit import default_timer as timer
@@ -854,7 +861,7 @@ class App(MiddlewareMixin, LifespanMixin):
         """
         from reflex.route import get_router
 
-        return get_router(list(self._pages))
+        return get_router(list(self._unevaluated_pages))
 
     def get_load_events(self, path: str) -> list[IndividualEventType[()]]:
         """Get the load events for a route.
@@ -1669,7 +1676,7 @@ class App(MiddlewareMixin, LifespanMixin):
 
 async def process(
     app: App, event: Event, sid: str, headers: dict, client_ip: str
-) -> AsyncIterator[StateUpdate]:
+) -> AsyncGenerator[StateUpdate]:
     """Process an event.
 
     Args:
@@ -2066,10 +2073,13 @@ class EventNamespace(AsyncNamespace):
         except (KeyError, IndexError):
             client_ip = environ.get("REMOTE_ADDR", "0.0.0.0")
 
-        # Process the events.
-        async for update in process(self.app, event, sid, headers, client_ip):
-            # Emit the update from processing the event.
-            await self.emit_update(update=update, sid=sid)
+        async with contextlib.aclosing(
+            process(self.app, event, sid, headers, client_ip)
+        ) as updates_gen:
+            # Process the events.
+            async for update in updates_gen:
+                # Emit the update from processing the event.
+                await self.emit_update(update=update, sid=sid)
 
     async def on_ping(self, sid: str):
         """Event for testing the API endpoint.
