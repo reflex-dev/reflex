@@ -502,6 +502,13 @@ HOTRELOAD_IGNORE_PATTERNS = (
 )
 
 
+def _reload_hook():
+    """Hook to load environment variables from .env file."""
+    from reflex.environment import _load_dotenv_from_env
+
+    _load_dotenv_from_env()
+
+
 def run_granian_backend(host: str, port: int, loglevel: LogLevel):
     """Run the backend in development mode using Granian.
 
@@ -521,7 +528,7 @@ def run_granian_backend(host: str, port: int, loglevel: LogLevel):
     from granian.log import LogLevels
     from granian.server import MPServer as Granian
 
-    Granian(
+    granian_app = Granian(
         target=get_app_instance_from_file(),
         factory=True,
         address=host,
@@ -534,7 +541,11 @@ def run_granian_backend(host: str, port: int, loglevel: LogLevel):
         reload_ignore_patterns=HOTRELOAD_IGNORE_PATTERNS,
         reload_tick=100,
         workers_kill_timeout=2,
-    ).serve()
+    )
+
+    granian_app.on_reload(_reload_hook)
+
+    granian_app.serve()
 
 
 def run_backend_prod(
