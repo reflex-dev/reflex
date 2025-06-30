@@ -606,3 +606,39 @@ class EnvironmentVariables:
 
 
 environment = EnvironmentVariables()
+
+try:
+    from dotenv import load_dotenv
+except ImportError:
+    load_dotenv = None
+
+
+def _load_dotenv_from_str(env_files: str) -> None:
+    from reflex.utils import console
+
+    if not env_files:
+        return
+
+    if load_dotenv is None:
+        console.error(
+            """The `python-dotenv` package is required to load environment variables from a file. Run `pip install "python-dotenv>=1.1.0"`."""
+        )
+        return
+
+    # load env files in reverse order if they exist
+    for env_file_path in [
+        Path(p) for s in reversed(env_files.split(os.pathsep)) if (p := s.strip())
+    ]:
+        if env_file_path.exists():
+            load_dotenv(env_file_path, override=True)
+
+
+def _load_dotenv_from_env():
+    """Load environment variables from paths specified in REFLEX_ENV_FILE."""
+    env_env_file = os.environ.get("REFLEX_ENV_FILE")
+    if env_env_file:
+        _load_dotenv_from_str(env_env_file)
+
+
+# Load the env files at import time if they are set in the ENV_FILE environment variable.
+_load_dotenv_from_env()
