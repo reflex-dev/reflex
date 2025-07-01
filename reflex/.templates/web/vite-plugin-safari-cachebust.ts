@@ -83,29 +83,27 @@ function createSafariMiddleware(): NextHandleFunction {
 function rewriteModuleImports(html: string): string {
   const currentTimestamp = new Date().getTime();
   const parts = html.split(/(<link\s+rel="modulepreload"[^>]*>)/g);
-  const replacements: Record<string, string> = {};
-  const rewritten = parts.map((chunk) => {
-    const match = chunk.match(
-      /<link\s+rel="modulepreload"\s+href="([^"]+)"(.*?)\/?>/,
-    );
-    if (!match) return chunk;
+  const replacements: [string, string][] = parts
+    .map((chunk): [string, string] | undefined => {
+      const match = chunk.match(
+        /<link\s+rel="modulepreload"\s+href="([^"]+)"(.*?)\/?>/,
+      );
+      if (!match) return;
 
-    const [fullMatch, href, rest] = match;
-    if (/^(https?:)?\/\//.test(href)) return chunk;
+      const [fullMatch, href, rest] = match;
+      if (/^(https?:)?\/\//.test(href)) return;
 
-    try {
-      const newHref = href.includes("?")
-        ? `${href}&__reflex_ts=${currentTimestamp}`
-        : `${href}?__reflex_ts=${currentTimestamp}`;
-      replacements[href] = newHref;
-    } catch {
-      // no worries;
-    }
-    return chunk;
-  });
-  let transformed = rewritten.join("");
-  for (const [match, replacement] of Object.entries(replacements)) {
-    transformed = transformed.split(match).join(replacement);
-  }
-  return transformed;
+      try {
+        const newHref = href.includes("?")
+          ? `${href}&__reflex_ts=${currentTimestamp}`
+          : `${href}?__reflex_ts=${currentTimestamp}`;
+        return [href, newHref];
+      } catch {
+        // no worries;
+      }
+    })
+    .filter(Boolean);
+  return replacements.reduce((accumulator, [target, replacement]) => {
+    return accumulator.split(target).join(replacement);
+  }, html);
 }
