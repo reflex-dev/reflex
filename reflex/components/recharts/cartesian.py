@@ -667,13 +667,6 @@ class Segment(TypedDict):
     y: str | int
 
 
-class Segment(TypedDict):
-    """A segment in a ReferenceLine or ReferenceArea."""
-
-    x: str | int
-    y: str | int
-
-
 class ReferenceLine(Reference):
     """A ReferenceLine component in Recharts."""
 
