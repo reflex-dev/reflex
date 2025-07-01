@@ -1,4 +1,4 @@
-/* vite-plugin-safari-cachebust.ts
+/* vite-plugin-safari-cachebust.js
  *
  * Rewrite modulepreload <link> tags and ESM imports to include a cache-busting
  * query parameter for Safari browser.
@@ -13,29 +13,53 @@
  * output already contains the file hash in the name.
  */
 
-import { Plugin, ViteDevServer } from "vite";
-import { IncomingMessage, ServerResponse } from "http";
-import { NextHandleFunction } from "connect";
+/**
+ * @typedef {import('vite').Plugin} Plugin
+ * @typedef {import('vite').ViteDevServer} ViteDevServer
+ * @typedef {import('http').IncomingMessage} IncomingMessage
+ * @typedef {import('http').ServerResponse} ServerResponse
+ * @typedef {import('connect').NextHandleFunction} NextHandleFunction
+ */
 
-export default function safariCacheBustPlugin(): Plugin {
+/**
+ * Creates a Vite plugin that adds cache-busting for Safari browsers
+ * @returns {Plugin} The Vite plugin
+ */
+export default function safariCacheBustPlugin() {
   return {
     name: "vite-plugin-safari-cachebust",
-    configureServer(server: ViteDevServer) {
+    /**
+     * Configure the dev server with the Safari middleware
+     * @param {ViteDevServer} server - The Vite dev server instance
+     */
+    configureServer(server) {
       server.middlewares.use(createSafariMiddleware());
     },
   };
 }
 
-function isSafari(ua: string): boolean {
+/**
+ * Determines if the user agent is Safari
+ * @param {string} ua - The user agent string
+ * @returns {boolean} True if the browser is Safari
+ */
+function isSafari(ua) {
   return /Safari/.test(ua) && !/Chrome/.test(ua);
 }
 
-function createSafariMiddleware(): NextHandleFunction {
-  return function safariCacheBustMiddleware(
-    req: IncomingMessage,
-    res: ServerResponse,
-    next: (err?: any) => void,
-  ): void {
+/**
+ * Creates a middleware that adds cache-busting for Safari browsers
+ * @returns {NextHandleFunction} The middleware function
+ */
+function createSafariMiddleware() {
+  /**
+   * Middleware function to handle Safari cache busting
+   * @param {IncomingMessage} req - The incoming request
+   * @param {ServerResponse} res - The server response
+   * @param {(err?: any) => void} next - The next middleware function
+   * @returns {void}
+   */
+  return function safariCacheBustMiddleware(req, res, next) {
     const ua = req.headers["user-agent"] || "";
     // Remove our special cache bust query param to avoid affecting lower middleware layers.
     if (
@@ -62,14 +86,24 @@ function createSafariMiddleware(): NextHandleFunction {
     const _end = res.end.bind(res);
 
     res.setHeader("x-modified-by", "vite-plugin-safari-cachebust");
-    res.write = function (chunk: any, ...args: any[]): boolean {
+    /**
+     * Overridden write method to collect chunks
+     * @param {any} chunk - The chunk to write
+     * @param {...any} args - Additional arguments
+     * @returns {boolean} Result of the write operation
+     */
+    res.write = function (chunk, ...args) {
       buffer += chunk instanceof Buffer ? chunk.toString("utf-8") : chunk;
       return true;
     };
-    res.end = function (
-      chunk: any,
-      ...args: any[]
-    ): ServerResponse<IncomingMessage> {
+
+    /**
+     * Overridden end method to process and send the final response
+     * @param {any} chunk - The final chunk to write
+     * @param {...any} args - Additional arguments
+     * @returns {ServerResponse<IncomingMessage>} The server response
+     */
+    res.end = function (chunk, ...args) {
       if (chunk) {
         buffer += chunk instanceof Buffer ? chunk.toString("utf-8") : chunk;
       }
@@ -80,11 +114,17 @@ function createSafariMiddleware(): NextHandleFunction {
   };
 }
 
-function rewriteModuleImports(html: string): string {
+/**
+ * Rewrites module import links in HTML content with cache-busting parameters
+ * @param {string} html - The HTML content to process
+ * @returns {string} The processed HTML content
+ */
+function rewriteModuleImports(html) {
   const currentTimestamp = new Date().getTime();
   const parts = html.split(/(<link\s+rel="modulepreload"[^>]*>)/g);
-  const replacements: [string, string][] = parts
-    .map((chunk): [string, string] | undefined => {
+  /** @type {[string, string][]} */
+  const replacements = parts
+    .map((chunk) => {
       const match = chunk.match(
         /<link\s+rel="modulepreload"\s+href="([^"]+)"(.*?)\/?>/,
       );
