@@ -17,7 +17,8 @@ from reflex.environment import EnvironmentVariables as EnvironmentVariables
 from reflex.environment import EnvVar as EnvVar
 from reflex.environment import (
     ExistingPath,
-    _load_dotenv_from_str,
+    _load_dotenv_from_files,
+    _paths_from_env_files,
     interpret_env_var_value,
 )
 from reflex.environment import env_var as env_var
@@ -367,7 +368,7 @@ class Config(BaseConfig):
             The updated config values.
         """
         if self.env_file:
-            _load_dotenv_from_str(self.env_file)
+            _load_dotenv_from_files(_paths_from_env_files(self.env_file))
 
         updated_values = {}
         # Iterate over the fields.

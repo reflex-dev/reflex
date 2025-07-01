@@ -621,10 +621,36 @@ except ImportError:
     load_dotenv = None
 
 
-def _load_dotenv_from_str(env_files: str) -> None:
+def _paths_from_env_files(env_files: str) -> list[Path]:
+    """Convert a string of paths separated by os.pathsep into a list of Path objects.
+
+    Args:
+        env_files: The string of paths.
+
+    Returns:
+        A list of Path objects.
+    """
+    # load env files in reverse order
+    return list(
+        reversed(
+            [
+                Path(path)
+                for path_element in env_files.split(os.pathsep)
+                if (path := path_element.strip())
+            ]
+        )
+    )
+
+
+def _load_dotenv_from_files(files: list[Path]):
+    """Load environment variables from a list of files.
+
+    Args:
+        files: A list of Path objects representing the environment variable files.
+    """
     from reflex.utils import console
 
-    if not env_files:
+    if not files:
         return
 
     if load_dotenv is None:
@@ -633,19 +659,27 @@ def _load_dotenv_from_str(env_files: str) -> None:
         )
         return
 
-    # load env files in reverse order if they exist
-    for env_file_path in [
-        Path(p) for s in reversed(env_files.split(os.pathsep)) if (p := s.strip())
-    ]:
-        if env_file_path.exists():
-            load_dotenv(env_file_path, override=True)
+    for env_file in files:
+        if env_file.exists():
+            load_dotenv(env_file, override=True)
+
+
+def _paths_from_environment() -> list[Path]:
+    """Get the paths from the REFLEX_ENV_FILE environment variable.
+
+    Returns:
+        A list of Path objects.
+    """
+    env_files = os.environ.get("REFLEX_ENV_FILE")
+    if not env_files:
+        return []
+
+    return _paths_from_env_files(env_files)
 
 
 def _load_dotenv_from_env():
     """Load environment variables from paths specified in REFLEX_ENV_FILE."""
-    env_env_file = os.environ.get("REFLEX_ENV_FILE")
-    if env_env_file:
-        _load_dotenv_from_str(env_env_file)
+    _load_dotenv_from_files(_paths_from_environment())
 
 
 # Load the env files at import time if they are set in the ENV_FILE environment variable.

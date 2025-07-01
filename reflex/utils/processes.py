@@ -15,6 +15,7 @@ from pathlib import Path
 from typing import Any, Literal, overload
 
 import click
+import rich.markup
 from redis.exceptions import RedisError
 from rich.progress import Progress
 
@@ -281,7 +282,7 @@ def stream_logs(
             return
         try:
             for line in process.stdout:
-                console.debug(line, end="", progress=progress)
+                console.debug(rich.markup.escape(line), end="", progress=progress)
                 logs.append(line)
                 yield line
         except ValueError:

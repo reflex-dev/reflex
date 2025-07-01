@@ -1,9 +1,10 @@
 import { fileURLToPath, URL } from "url";
 import { reactRouter } from "@react-router/dev/vite";
 import { defineConfig } from "vite";
+import safariCacheBustPlugin from "./vite-plugin-safari-cachebust";
 
 export default defineConfig((config) => ({
-  plugins: [reactRouter()],
+  plugins: [reactRouter(), safariCacheBustPlugin()],
   build: {
     rollupOptions: {
       jsx: {},
