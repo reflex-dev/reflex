@@ -191,7 +191,7 @@ class BaseSubclass(Base):
         (Color(color="accent", shade=1, alpha=True), "var(--accent-a1)"),
         (decimal.Decimal("123.456"), 123.456),
         (decimal.Decimal("-0.5"), -0.5),
-        (decimal.Decimal("0"), 0.0),
+        (decimal.Decimal(0), 0.0),
     ],
 )
 def test_serialize(value: Any, expected: str):
