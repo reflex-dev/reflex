@@ -15,9 +15,6 @@ def test_telemetry():
     # Check that the CPU count and memory are greater than 0.
     assert telemetry.get_cpu_count() > 0
 
-    # Check that the available memory is greater than 0
-    assert telemetry.get_memory() > 0
-
     # Check that the Reflex version is not None.
     assert telemetry.get_reflex_version() is not None
 

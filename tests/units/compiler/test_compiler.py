@@ -376,6 +376,8 @@ def test_create_document_root():
     assert isinstance(root.children[0].children[2], document.Meta)
     assert isinstance(root.children[0].children[3], document.Links)
 
+
+def test_create_document_root_with_scripts():
     # Test with components.
     comps = [
         utils.Scripts.create(src="foo.js"),
@@ -387,11 +389,45 @@ def test_create_document_root():
         html_custom_attrs={"project": "reflex"},
     )
     assert isinstance(root, utils.Html)
-    assert len(root.children[0].children) == 4
+    assert len(root.children[0].children) == 6
     names = [c.tag for c in root.children[0].children]
-    assert names == ["Scripts", "Scripts", "Meta", "Links"]
+    assert names == ["Scripts", "Scripts", "meta", "meta", "Meta", "Links"]
     lang = root.lang  # pyright: ignore [reportAttributeAccessIssue]
     assert isinstance(lang, LiteralStringVar)
     assert lang.equals(Var.create("rx"))
     assert isinstance(root.custom_attrs, dict)
     assert root.custom_attrs == {"project": "reflex"}
+
+
+def test_create_document_root_with_meta_char_set():
+    # Test with components.
+    comps = [
+        utils.Meta.create(char_set="cp1252"),
+    ]
+    root = utils.create_document_root(
+        head_components=comps,
+    )
+    assert isinstance(root, utils.Html)
+    assert len(root.children[0].children) == 4
+    names = [c.tag for c in root.children[0].children]
+    assert names == ["meta", "meta", "Meta", "Links"]
+    assert str(root.children[0].children[0].char_set) == '"cp1252"'  # pyright: ignore [reportAttributeAccessIssue]
+
+
+def test_create_document_root_with_meta_viewport():
+    # Test with components.
+    comps = [
+        utils.Meta.create(http_equiv="refresh", content="5"),
+        utils.Meta.create(name="viewport", content="foo"),
+    ]
+    root = utils.create_document_root(
+        head_components=comps,
+    )
+    assert isinstance(root, utils.Html)
+    assert len(root.children[0].children) == 5
+    names = [c.tag for c in root.children[0].children]
+    assert names == ["meta", "meta", "meta", "Meta", "Links"]
+    assert str(root.children[0].children[0].http_equiv) == '"refresh"'  # pyright: ignore [reportAttributeAccessIssue]
+    assert str(root.children[0].children[1].name) == '"viewport"'  # pyright: ignore [reportAttributeAccessIssue]
+    assert str(root.children[0].children[1].content) == '"foo"'  # pyright: ignore [reportAttributeAccessIssue]
+    assert str(root.children[0].children[2].char_set) == '"utf-8"'  # pyright: ignore [reportAttributeAccessIssue]

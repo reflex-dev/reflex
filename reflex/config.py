@@ -19,47 +19,18 @@ from reflex.base import Base
 from reflex.constants.base import LogLevel
 from reflex.environment import EnvironmentVariables as EnvironmentVariables
 from reflex.environment import EnvVar as EnvVar
-from reflex.environment import ExistingPath, interpret_env_var_value
+from reflex.environment import (
+    ExistingPath,
+    _load_dotenv_from_files,
+    _paths_from_env_files,
+    interpret_env_var_value,
+)
 from reflex.environment import env_var as env_var
 from reflex.environment import environment as environment
 from reflex.plugins import Plugin
 from reflex.utils import console
 from reflex.utils.exceptions import ConfigError
 from reflex.utils.types import true_type_for_pydantic_field
-
-try:
-    from dotenv import load_dotenv
-except ImportError:
-    load_dotenv = None
-
-
-def _load_dotenv_from_str(env_files: str) -> None:
-    if not env_files:
-        return
-
-    if load_dotenv is None:
-        console.error(
-            """The `python-dotenv` package is required to load environment variables from a file. Run `pip install "python-dotenv>=1.1.0"`."""
-        )
-        return
-
-    # load env files in reverse order if they exist
-    for env_file_path in [
-        Path(p) for s in reversed(env_files.split(os.pathsep)) if (p := s.strip())
-    ]:
-        if env_file_path.exists():
-            load_dotenv(env_file_path, override=True)
-
-
-def _load_dotenv_from_env():
-    """Load environment variables from paths specified in REFLEX_ENV_FILE."""
-    env_env_file = os.environ.get("REFLEX_ENV_FILE")
-    if env_env_file:
-        _load_dotenv_from_str(env_env_file)
-
-
-# Load the env files at import time if they are set in the ENV_FILE environment variable.
-_load_dotenv_from_env()
 
 
 class DBConfig(Base):
@@ -358,7 +329,7 @@ class Config(Base):
             The updated config values.
         """
         if self.env_file:
-            _load_dotenv_from_str(self.env_file)
+            _load_dotenv_from_files(_paths_from_env_files(self.env_file))
 
         updated_values = {}
         # Iterate over the fields.

@@ -31,14 +31,13 @@ def get_module_path(module_name: str) -> Path | None:
         for i, part in enumerate(parts):
             potential_file = current_path / (part + ".py")
             potential_dir = current_path / part
-            potential_init = current_path / part / "__init__.py"
 
             if potential_file.is_file():
                 # We encountered a file, but we can't continue deeper
                 if i == len(parts) - 1:
                     return potential_file
                 return None  # Can't continue deeper
-            if potential_dir.is_dir() and potential_init.is_file():
+            if potential_dir.is_dir():
                 # It's a package, so we can continue deeper
                 current_path = potential_dir
             else:

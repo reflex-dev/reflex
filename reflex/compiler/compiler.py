@@ -37,7 +37,9 @@ def _apply_common_imports(
     imports: dict[str, list[ImportVar]],
 ):
     imports.setdefault("@emotion/react", []).append(ImportVar("jsx"))
-    imports.setdefault("react", []).append(ImportVar("Fragment"))
+    imports.setdefault("react", []).extend(
+        [ImportVar("Fragment"), ImportVar("useEffect")],
+    )
 
 
 def _compile_document_root(root: Component) -> str:

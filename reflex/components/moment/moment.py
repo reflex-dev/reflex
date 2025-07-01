@@ -30,7 +30,7 @@ class Moment(NoSSRComponent):
     tag: str | None = "Moment"
     is_default = True
     library: str | None = "react-moment@1.1.3"
-    lib_dependencies: list[str] = ["moment"]
+    lib_dependencies: list[str] = ["moment@2.30.1"]
 
     # How often the date update (how often time update / 0 to disable).
     interval: Var[int]

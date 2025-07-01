@@ -1,5 +1,4 @@
 // State management for Reflex web apps.
-import axios from "axios";
 import io from "socket.io-client";
 import JSON5 from "json5";
 import env from "$/env.json";
@@ -655,17 +654,6 @@ export const uploadFiles = async (
   };
 
   const controller = new AbortController();
-  const config = {
-    headers: {
-      "Reflex-Client-Token": getToken(),
-      "Reflex-Event-Handler": handler,
-    },
-    signal: controller.signal,
-    onDownloadProgress: eventHandler,
-  };
-  if (on_upload_progress) {
-    config["onUploadProgress"] = on_upload_progress;
-  }
   const formdata = new FormData();
 
   // Add the token and handler to the file name.
@@ -676,26 +664,85 @@ export const uploadFiles = async (
   // Send the file to the server.
   refs[upload_ref_name] = controller;
 
-  try {
-    return await axios.post(getBackendURL(UPLOADURL), formdata, config);
-  } catch (error) {
-    if (error.response) {
-      // The request was made and the server responded with a status code
-      // that falls out of the range of 2xx
-      console.log(error.response.data);
-    } else if (error.request) {
-      // The request was made but no response was received
-      // `error.request` is an instance of XMLHttpRequest in the browser and an instance of
-      // http.ClientRequest in node.js
-      console.log(error.request);
-    } else {
-      // Something happened in setting up the request that triggered an Error
-      console.log(error.message);
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+
+    // Set up event handlers
+    xhr.onload = function () {
+      if (xhr.status >= 200 && xhr.status < 300) {
+        resolve({
+          data: xhr.responseText,
+          status: xhr.status,
+          statusText: xhr.statusText,
+          headers: {
+            get: (name) => xhr.getResponseHeader(name),
+          },
+        });
+      } else {
+        reject(new Error(`HTTP error! status: ${xhr.status}`));
+      }
+    };
+
+    xhr.onerror = function () {
+      reject(new Error("Network error"));
+    };
+
+    xhr.onabort = function () {
+      reject(new Error("Upload aborted"));
+    };
+
+    // Handle upload progress
+    if (on_upload_progress) {
+      xhr.upload.onprogress = function (event) {
+        if (event.lengthComputable) {
+          const progressEvent = {
+            loaded: event.loaded,
+            total: event.total,
+            progress: event.loaded / event.total,
+          };
+          on_upload_progress(progressEvent);
+        }
+      };
     }
-    return false;
-  } finally {
-    delete refs[upload_ref_name];
-  }
+
+    // Handle download progress with streaming response parsing
+    xhr.onprogress = function (event) {
+      if (eventHandler) {
+        const progressEvent = {
+          event: {
+            target: {
+              responseText: xhr.responseText,
+            },
+          },
+          progress: event.lengthComputable ? event.loaded / event.total : 0,
+        };
+        eventHandler(progressEvent);
+      }
+    };
+
+    // Handle abort controller
+    controller.signal.addEventListener("abort", () => {
+      xhr.abort();
+    });
+
+    // Configure and send request
+    xhr.open("POST", getBackendURL(UPLOADURL));
+    xhr.setRequestHeader("Reflex-Client-Token", getToken());
+    xhr.setRequestHeader("Reflex-Event-Handler", handler);
+
+    try {
+      xhr.send(formdata);
+    } catch (error) {
+      reject(error);
+    }
+  })
+    .catch((error) => {
+      console.log("Upload error:", error.message);
+      return false;
+    })
+    .finally(() => {
+      delete refs[upload_ref_name];
+    });
 };
 
 /**
