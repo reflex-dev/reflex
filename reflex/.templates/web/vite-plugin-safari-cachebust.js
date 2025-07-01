@@ -21,13 +21,15 @@
  * @typedef {import('connect').NextHandleFunction} NextHandleFunction
  */
 
+const pluginName = "vite-plugin-safari-cachebust";
+
 /**
  * Creates a Vite plugin that adds cache-busting for Safari browsers
  * @returns {Plugin} The Vite plugin
  */
 export default function safariCacheBustPlugin() {
   return {
-    name: "vite-plugin-safari-cachebust",
+    name: pluginName,
     /**
      * Configure the dev server with the Safari middleware
      * @param {ViteDevServer} server - The Vite dev server instance
@@ -52,6 +54,49 @@ function isSafari(ua) {
  * @returns {NextHandleFunction} The middleware function
  */
 function createSafariMiddleware() {
+  // Set when a log message for rewriting n links has been emitted.
+  let _have_logged_n = -1;
+
+  /**
+   * Rewrites module import links in HTML content with cache-busting parameters
+   * @param {string} html - The HTML content to process
+   * @returns {string} The processed HTML content
+   */
+  function rewriteModuleImports(html) {
+    const currentTimestamp = new Date().getTime();
+    const parts = html.split(/(<link\s+rel="modulepreload"[^>]*>)/g);
+    /** @type {[string, string][]} */
+    const replacements = parts
+      .map((chunk) => {
+        const match = chunk.match(
+          /<link\s+rel="modulepreload"\s+href="([^"]+)"(.*?)\/?>/,
+        );
+        if (!match) return;
+
+        const [fullMatch, href, rest] = match;
+        if (/^(https?:)?\/\//.test(href)) return;
+
+        try {
+          const newHref = href.includes("?")
+            ? `${href}&__reflex_ts=${currentTimestamp}`
+            : `${href}?__reflex_ts=${currentTimestamp}`;
+          return [href, newHref];
+        } catch {
+          // no worries;
+        }
+      })
+      .filter(Boolean);
+    if (replacements.length && _have_logged_n !== replacements.length) {
+      _have_logged_n = replacements.length;
+      console.debug(
+        `[${pluginName}] Rewrote ${replacements.length} modulepreload links for Safari cache busting`,
+      );
+    }
+    return replacements.reduce((accumulator, [target, replacement]) => {
+      return accumulator.split(target).join(replacement);
+    }, html);
+  }
+
   /**
    * Middleware function to handle Safari cache busting
    * @param {IncomingMessage} req - The incoming request
@@ -112,38 +157,4 @@ function createSafariMiddleware() {
     };
     return next();
   };
-}
-
-/**
- * Rewrites module import links in HTML content with cache-busting parameters
- * @param {string} html - The HTML content to process
- * @returns {string} The processed HTML content
- */
-function rewriteModuleImports(html) {
-  const currentTimestamp = new Date().getTime();
-  const parts = html.split(/(<link\s+rel="modulepreload"[^>]*>)/g);
-  /** @type {[string, string][]} */
-  const replacements = parts
-    .map((chunk) => {
-      const match = chunk.match(
-        /<link\s+rel="modulepreload"\s+href="([^"]+)"(.*?)\/?>/,
-      );
-      if (!match) return;
-
-      const [fullMatch, href, rest] = match;
-      if (/^(https?:)?\/\//.test(href)) return;
-
-      try {
-        const newHref = href.includes("?")
-          ? `${href}&__reflex_ts=${currentTimestamp}`
-          : `${href}?__reflex_ts=${currentTimestamp}`;
-        return [href, newHref];
-      } catch {
-        // no worries;
-      }
-    })
-    .filter(Boolean);
-  return replacements.reduce((accumulator, [target, replacement]) => {
-    return accumulator.split(target).join(replacement);
-  }, html);
 }
