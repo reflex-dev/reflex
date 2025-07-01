@@ -89,7 +89,7 @@ function createSafariMiddleware() {
     if (replacements.length && _have_logged_n !== replacements.length) {
       _have_logged_n = replacements.length;
       console.debug(
-        `[${pluginName}] Rewrote ${replacements.length} modulepreload links for Safari cache busting`,
+        `[${pluginName}] Rewrote ${replacements.length} modulepreload links with __reflex_ts param.`,
       );
     }
     return replacements.reduce((accumulator, [target, replacement]) => {
