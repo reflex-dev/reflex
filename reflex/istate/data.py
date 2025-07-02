@@ -47,6 +47,11 @@ class _HeaderData:
     )
 
 
+_HEADER_DATA_FIELDS = frozenset(
+    [field.name for field in dataclasses.fields(_HeaderData)]
+)
+
+
 @dataclasses.dataclass(frozen=True)
 class HeaderData(_HeaderData):
     """An object containing headers data."""
@@ -61,12 +66,12 @@ class HeaderData(_HeaderData):
         Returns:
             A HeaderData object initialized with the provided router_data.
         """
-        fields_names = [f.name for f in dataclasses.fields(cls)]
         return cls(
             **{
-                camel_case_key: v
+                snake_case_key: v
                 for k, v in router_data.get(constants.RouteVar.HEADERS, {}).items()
-                if v and (camel_case_key := format.to_camel_case(k)) in fields_names
+                if v
+                and (snake_case_key := format.to_snake_case(k)) in _HEADER_DATA_FIELDS
             },
             raw_headers=_FrozenDictStrStr(
                 **{
