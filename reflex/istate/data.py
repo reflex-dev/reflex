@@ -2,6 +2,8 @@
 
 import dataclasses
 from collections.abc import Mapping
+from typing import TYPE_CHECKING
+from urllib.parse import _NetlocResultMixinStr, urlsplit
 
 from reflex import constants
 from reflex.utils import format
@@ -90,6 +92,35 @@ def serialize_frozen_dict_str_str(obj: _FrozenDictStrStr) -> dict:
     return dict(obj._data)
 
 
+class ReflexURL(str, _NetlocResultMixinStr):
+    """A class representing a URL split result."""
+
+    if TYPE_CHECKING:
+        scheme: str
+        netloc: str
+        path: str
+        query: str
+        fragment: str
+
+    def __new__(cls, url: str):
+        """Create a new ReflexURL instance.
+
+        Args:
+            url: the URL to split.
+
+        Returns:
+            A new ReflexURL instance.
+        """
+        (scheme, netloc, path, query, fragment) = urlsplit(url)
+        obj = super().__new__(cls, url)
+        object.__setattr__(obj, "scheme", scheme)
+        object.__setattr__(obj, "netloc", netloc)
+        object.__setattr__(obj, "path", path)
+        object.__setattr__(obj, "query", query)
+        object.__setattr__(obj, "fragment", fragment)
+        return obj
+
+
 @dataclasses.dataclass(frozen=True)
 class PageData:
     """An object containing page data."""
@@ -158,20 +189,33 @@ class SessionData:
         object.__setattr__(self, "session_id", session_id)
 
 
-@dataclasses.dataclass(frozen=True, init=False)
+@dataclasses.dataclass(frozen=True)
 class RouterData:
     """An object containing RouterData."""
 
     session: SessionData = dataclasses.field(default_factory=SessionData)
     headers: HeaderData = dataclasses.field(default_factory=HeaderData)
     page: PageData = dataclasses.field(default_factory=PageData)
+    url: ReflexURL = dataclasses.field(default=ReflexURL(""))
+    route_id: str = ""
 
-    def __init__(self, router_data: dict | None = None):
-        """Initialize the RouterData object.
+    @classmethod
+    def from_router_data(cls, router_data: dict) -> "RouterData":
+        """Create a RouterData object from the given router_data.
 
         Args:
             router_data: the router_data dict.
+
+        Returns:
+            A RouterData object initialized with the provided router_data.
         """
-        object.__setattr__(self, "session", SessionData(router_data))
-        object.__setattr__(self, "headers", HeaderData(router_data))
-        object.__setattr__(self, "page", PageData(router_data))
+        return cls(
+            session=SessionData(router_data),
+            headers=HeaderData(router_data),
+            page=PageData(router_data),
+            url=ReflexURL(
+                router_data.get(constants.RouteVar.HEADERS, {}).get("origin", "")
+                + router_data.get(constants.RouteVar.ORIGIN, "")
+            ),
+            route_id=router_data.get(constants.RouteVar.PATH, ""),
+        )
