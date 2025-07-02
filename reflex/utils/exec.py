@@ -580,7 +580,14 @@ def run_uvicorn_backend_prod(host: str, port: int, loglevel: LogLevel):
     command = (
         ["uvicorn", *("--host", host), *("--port", str(port)), "--factory", app_module]
         if constants.IS_WINDOWS
-        else ["gunicorn", "--preload", *("--bind", f"{host}:{port}"), f"{app_module}()"]
+        else [
+            "gunicorn",
+            "--preload",
+            "--worker-class",
+            "uvicorn.workers.UvicornWorker",
+            *("--bind", f"{host}:{port}"),
+            f"{app_module}()",
+        ]
     )
 
     command += [
