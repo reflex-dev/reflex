@@ -1025,6 +1025,22 @@ def set_focus(ref: str) -> EventSpec:
     )
 
 
+def blur_focus(ref: str) -> EventSpec:
+    """Blur focus of specified ref.
+
+    Args:
+        ref: The ref.
+
+    Returns:
+        An event to blur focus on the ref
+    """
+    return server_side(
+        "_blur_focus",
+        get_fn_signature(blur_focus),
+        ref=LiteralVar.create(format.format_ref(ref)),
+    )
+
+
 def scroll_to(elem_id: str, align_to_top: bool | Var[bool] = True) -> EventSpec:
     """Select the id of a html element for scrolling into view.
 
@@ -2293,6 +2309,7 @@ class EventNamespace:
     back = staticmethod(back)
     window_alert = staticmethod(window_alert)
     set_focus = staticmethod(set_focus)
+    blur_focus = staticmethod(blur_focus)
     scroll_to = staticmethod(scroll_to)
     set_value = staticmethod(set_value)
     remove_cookie = staticmethod(remove_cookie)
