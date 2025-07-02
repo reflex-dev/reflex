@@ -370,7 +370,10 @@ export const applyEvent = async (event, socket, navigate, params) => {
         ...Object.fromEntries(new URLSearchParams(window.location.search)),
         ...params(),
       },
-      asPath: window.location.pathname + window.location.search,
+      asPath:
+        window.location.pathname +
+        window.location.search +
+        window.location.hash,
     };
   }
 

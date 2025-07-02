@@ -1085,7 +1085,7 @@ async def test_dynamic_route_var_route_change_completed_on_load(
             "token": token,
             **on_load_internal.router_data,
         }
-        exp_router = RouterData(exp_router_data)
+        exp_router = RouterData.from_router_data(exp_router_data)
         process_coro = process(
             app,
             event=on_load_internal,
@@ -1475,7 +1475,7 @@ def test_app_state_determination():
     assert a3._state is None
 
     # Referencing router enables state.
-    a3.add_page(rx.box(rx.text(State.router.page.full_path)), route="/")
+    a3.add_page(rx.box(rx.text(State.router._page.full_path)), route="/")
     a3._compile_page("index")
     assert a3._state is not None
 

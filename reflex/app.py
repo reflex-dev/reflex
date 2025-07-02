@@ -1741,7 +1741,7 @@ async def process(
                     if (path := router_data.get(constants.RouteVar.PATH))
                     else "404"
                 ).removeprefix("/")
-                state.router = RouterData(router_data)
+                state.router = RouterData.from_router_data(router_data)
 
             # Preprocess the event.
             update = await app._preprocess(state, event)

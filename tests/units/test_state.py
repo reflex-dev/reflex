@@ -70,6 +70,8 @@ LOCK_EXPIRE_SLEEP = 2.5 if CI else 0.4
 
 
 formatted_router = {
+    "route_id": "",
+    "url": "",
     "session": {"client_token": "", "client_ip": "", "session_id": ""},
     "headers": {
         "host": "",
@@ -885,7 +887,7 @@ def test_get_client_token(test_state, router_data):
         test_state: The test state.
         router_data: The router data fixture.
     """
-    test_state.router = RouterData(router_data)
+    test_state.router = RouterData.from_router_data(router_data)
     assert (
         test_state.router.session.client_token == "b181904c-3953-4a79-dc18-ae9518c22f05"
     )
@@ -898,7 +900,7 @@ def test_get_sid(test_state, router_data):
         test_state: A state.
         router_data: The router data fixture.
     """
-    test_state.router = RouterData(router_data)
+    test_state.router = RouterData.from_router_data(router_data)
     assert test_state.router.session.session_id == "9fpxSzPb9aFMb4wFAAAH"
 
 
@@ -911,7 +913,7 @@ def test_get_headers(test_state, router_data, router_data_headers):
         router_data_headers: The expected headers.
     """
     print(router_data_headers)
-    test_state.router = RouterData(router_data)
+    test_state.router = RouterData.from_router_data(router_data)
     print(test_state.router.headers)
     assert dataclasses.asdict(test_state.router.headers) == {
         format.to_snake_case(k): v for k, v in router_data_headers.items()
@@ -929,24 +931,24 @@ def test_get_client_ip(test_state, router_data):
         test_state: A state.
         router_data: The router data fixture.
     """
-    test_state.router = RouterData(router_data)
+    test_state.router = RouterData.from_router_data(router_data)
     assert test_state.router.session.client_ip == "127.0.0.1"
 
 
 def test_get_current_page(test_state):
-    assert test_state.router.page.path == ""
+    assert test_state.router._page.path == ""
 
     route = "mypage/subpage"
-    test_state.router = RouterData({RouteVar.PATH: route})
-    assert test_state.router.page.path == route
+    test_state.router = RouterData.from_router_data({RouteVar.PATH: route})
+    assert test_state.router._page.path == route
 
 
 def test_get_query_params(test_state):
-    assert test_state.router.page.params == {}
+    assert test_state.router._page.params == {}
 
     params = {"p1": "a", "p2": "b"}
-    test_state.router = RouterData({RouteVar.QUERY: params})
-    assert dict(test_state.router.page.params) == params
+    test_state.router = RouterData.from_router_data({RouteVar.QUERY: params})
+    assert dict(test_state.router._page.params) == params
 
 
 def test_add_var():
@@ -1996,7 +1998,9 @@ async def test_state_proxy(
     assert child_state is not None
     parent_state = child_state.parent_state
     assert parent_state is not None
-    router_data = RouterData({"query": {}, "token": token, "sid": "test_sid"})
+    router_data = RouterData.from_router_data(
+        {"query": {}, "token": token, "sid": "test_sid"}
+    )
     grandchild_state.router = router_data
     namespace = mock_app.event_namespace
     assert namespace is not None
@@ -2707,12 +2711,12 @@ def test_json_dumps_with_mutables():
         dict_val[MutableContainsBase.get_full_name()]["items" + FIELD_MARKER][0], Foo
     )
     val = json_dumps(dict_val)
-    f_items = '[{"tags": ["123", "456"]}]'
-    f_formatted_router = str(formatted_router).replace("'", '"')
-    assert (
-        val
-        == f'{{"{MutableContainsBase.get_full_name()}": {{"items{FIELD_MARKER}": {f_items}, "router{FIELD_MARKER}": {f_formatted_router}}}}}'
-    )
+    assert json.loads(val) == {
+        MutableContainsBase.get_full_name(): {
+            f"items{FIELD_MARKER}": [{"tags": ["123", "456"]}],
+            f"router{FIELD_MARKER}": formatted_router,
+        }
+    }
 
 
 def test_reset_with_mutables():
@@ -3285,7 +3289,7 @@ async def test_router_var_dep(state_manager: StateManager, token: str) -> None:
 
         @rx.var
         def foo(self) -> str:
-            return self.router.page.params.get("foo", "")
+            return self.router._page.params.get("foo", "")
 
     foo = RouterVarDepState.computed_vars["foo"]
     State._init_var_dependency_dicts()

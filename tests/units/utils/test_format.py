@@ -548,6 +548,8 @@ def test_format_query_params(input, output):
 
 
 formatted_router = {
+    "route_id": "",
+    "url": "",
     "session": {"client_token": "", "client_ip": "", "session_id": ""},
     "headers": {
         "host": "",

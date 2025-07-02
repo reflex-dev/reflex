@@ -1204,7 +1204,7 @@ class BaseState(EvenMoreBasicBaseState):
 
         def argsingle_factory(param: str):
             def inner_func(self: BaseState) -> str:
-                return self.router.page.params.get(param, "")
+                return self.router._page.params.get(param, "")
 
             inner_func.__name__ = param
 
@@ -1212,7 +1212,7 @@ class BaseState(EvenMoreBasicBaseState):
 
         def arglist_factory(param: str):
             def inner_func(self: BaseState) -> list[str]:
-                return self.router.page.params.get(param, [])
+                return self.router._page.params.get(param, [])
 
             inner_func.__name__ = param
 
@@ -2466,7 +2466,7 @@ class OnLoadInternalState(State):
         """
         # Do not app._compile()!  It should be already compiled by now.
         load_events = prerequisites.get_and_validate_app().app.get_load_events(
-            self.router.page.path
+            self.router._page.path
         )
         if not load_events:
             self.is_hydrated = True
