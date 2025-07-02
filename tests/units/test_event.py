@@ -266,7 +266,12 @@ def test_event_window_alert():
     ("func", "qualname"), [("set_focus", "_set_focus"), ("blur_focus", "_blur_focus")]
 )
 def test_focus(func: str, qualname: str):
-    """Test the event set focus function."""
+    """Test the event set focus function.
+
+    Args:
+        func: The event function name.
+        qualname: The sig qual name passed to JS.
+    """
     spec = getattr(event, func)("input1")
     assert isinstance(spec, EventSpec)
     assert spec.handler.fn.__qualname__ == qualname
