@@ -262,16 +262,19 @@ def test_event_window_alert():
     )
 
 
-def test_set_focus():
+@pytest.mark.parametrize(
+    ("func", "qualname"), [("set_focus", "_set_focus"), ("blur_focus", "_blur_focus")]
+)
+def test_focus(func: str, qualname: str):
     """Test the event set focus function."""
-    spec = event.set_focus("input1")
+    spec = getattr(event, func)("input1")
     assert isinstance(spec, EventSpec)
-    assert spec.handler.fn.__qualname__ == "_set_focus"
+    assert spec.handler.fn.__qualname__ == qualname
     assert spec.args[0][0].equals(Var(_js_expr="ref"))
     assert spec.args[0][1].equals(LiteralVar.create("ref_input1"))
-    assert format.format_event(spec) == 'Event("_set_focus", {ref:"ref_input1"})'
-    spec = event.set_focus("input1")
-    assert format.format_event(spec) == 'Event("_set_focus", {ref:"ref_input1"})'
+    assert format.format_event(spec) == f'Event("{qualname}", {{ref:"ref_input1"}})'
+    spec = getattr(event, func)("input1")
+    assert format.format_event(spec) == f'Event("{qualname}", {{ref:"ref_input1"}})'
 
 
 def test_set_value():
