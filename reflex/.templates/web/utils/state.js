@@ -299,7 +299,7 @@ export const applyEvent = async (event, socket, navigate, params) => {
     const ref =
       event.payload.ref in refs ? refs[event.payload.ref] : event.payload.ref;
     const current = ref?.current;
-    if (current === undefined || current?.focus === undefined) {
+    if (current === undefined || current?.blur === undefined) {
       console.error(
         `No element found for ref ${event.payload.ref} in _blur_focus`,
       );
