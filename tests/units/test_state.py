@@ -936,19 +936,19 @@ def test_get_client_ip(test_state, router_data):
 
 
 def test_get_current_page(test_state):
-    assert test_state.router.page.path == ""
+    assert test_state.router._page.path == ""
 
     route = "mypage/subpage"
     test_state.router = RouterData.from_router_data({RouteVar.PATH: route})
-    assert test_state.router.page.path == route
+    assert test_state.router._page.path == route
 
 
 def test_get_query_params(test_state):
-    assert test_state.router.page.params == {}
+    assert test_state.router._page.params == {}
 
     params = {"p1": "a", "p2": "b"}
     test_state.router = RouterData.from_router_data({RouteVar.QUERY: params})
-    assert dict(test_state.router.page.params) == params
+    assert dict(test_state.router._page.params) == params
 
 
 def test_add_var():
@@ -3289,7 +3289,7 @@ async def test_router_var_dep(state_manager: StateManager, token: str) -> None:
 
         @rx.var
         def foo(self) -> str:
-            return self.router.page.params.get("foo", "")
+            return self.router._page.params.get("foo", "")
 
     foo = RouterVarDepState.computed_vars["foo"]
     State._init_var_dependency_dicts()

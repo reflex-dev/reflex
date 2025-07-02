@@ -1475,7 +1475,7 @@ def test_app_state_determination():
     assert a3._state is None
 
     # Referencing router enables state.
-    a3.add_page(rx.box(rx.text(State.router.page.full_path)), route="/")
+    a3.add_page(rx.box(rx.text(State.router._page.full_path)), route="/")
     a3._compile_page("index")
     assert a3._state is not None
 

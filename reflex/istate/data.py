@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING
 from urllib.parse import _NetlocResultMixinStr, urlsplit
 
 from reflex import constants
-from reflex.utils import format
+from reflex.utils import console, format
 from reflex.utils.serializers import serializer
 
 
@@ -195,9 +195,24 @@ class RouterData:
 
     session: SessionData = dataclasses.field(default_factory=SessionData)
     headers: HeaderData = dataclasses.field(default_factory=HeaderData)
-    page: PageData = dataclasses.field(default_factory=PageData)
+    _page: PageData = dataclasses.field(default_factory=PageData)
     url: ReflexURL = dataclasses.field(default=ReflexURL(""))
     route_id: str = ""
+
+    @property
+    def page(self) -> PageData:
+        """Get the page data.
+
+        Returns:
+            The PageData object.
+        """
+        console.deprecate(
+            "RouterData.page",
+            "Use RouterData.url instead",
+            deprecation_version="0.8.1",
+            removal_version="0.9.0",
+        )
+        return self._page
 
     @classmethod
     def from_router_data(cls, router_data: dict) -> "RouterData":
@@ -212,10 +227,29 @@ class RouterData:
         return cls(
             session=SessionData(router_data),
             headers=HeaderData(router_data),
-            page=PageData(router_data),
+            _page=PageData(router_data),
             url=ReflexURL(
                 router_data.get(constants.RouteVar.HEADERS, {}).get("origin", "")
                 + router_data.get(constants.RouteVar.ORIGIN, "")
             ),
             route_id=router_data.get(constants.RouteVar.PATH, ""),
         )
+
+
+@serializer(to=dict)
+def serialize_router_data(obj: RouterData) -> dict:
+    """Serialize a RouterData object to a dict.
+
+    Args:
+        obj: the RouterData object.
+
+    Returns:
+        A dict representation of the RouterData object.
+    """
+    return {
+        "session": obj.session,
+        "headers": obj.headers,
+        "page": obj._page,
+        "url": obj.url,
+        "route_id": obj.route_id,
+    }
