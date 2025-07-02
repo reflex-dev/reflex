@@ -573,22 +573,37 @@ def run_uvicorn_backend_prod(host: str, port: int, loglevel: LogLevel):
         port: The app port
         loglevel: The log level.
     """
+    import os
+    import shlex
+
     from reflex.utils import processes
 
     app_module = get_app_instance()
 
-    command = (
-        ["uvicorn", *("--host", host), *("--port", str(port)), "--factory", app_module]
-        if constants.IS_WINDOWS
-        else [
+    if constants.IS_WINDOWS:
+        command = [
+            "uvicorn",
+            *("--host", host),
+            *("--port", str(port)),
+            "--factory",
+            app_module,
+        ]
+    else:
+        # Parse GUNICORN_CMD_ARGS for user overrides
+        env_args = []
+        if gunicorn_cmd_args := os.environ.get("GUNICORN_CMD_ARGS", ""):
+            env_args = shlex.split(gunicorn_cmd_args)
+
+        # Our default args, then env args (env args win on conflicts)
+        command = [
             "gunicorn",
             "--preload",
             "--worker-class",
-            "uvicorn.workers.UvicornWorker",
+            "uvicorn.workers.UvicornH11Worker",
             *("--bind", f"{host}:{port}"),
+            *env_args,
             f"{app_module}()",
         ]
-    )
 
     command += [
         *("--log-level", loglevel.value),
