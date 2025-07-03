@@ -488,6 +488,9 @@ def _deterministic_hash(value: object) -> int:
 
     Returns:
         The hash of the dictionary.
+
+    Raises:
+        TypeError: If the value is not hashable.
     """
     if isinstance(value, BaseComponent):
         # If the value is a component, hash its rendered code.
