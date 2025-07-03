@@ -3,8 +3,33 @@ import { reactRouter } from "@react-router/dev/vite";
 import { defineConfig } from "vite";
 import safariCacheBustPlugin from "./vite-plugin-safari-cachebust";
 
+// Ensure that bun always uses the react-dom/server.node functions.
+function alwaysUseReactDomServerNode() {
+  return {
+    name: "vite-plugin-always-use-react-dom-server-node",
+    enforce: "pre",
+
+    resolveId(source, importer) {
+      if (
+        typeof importer === "string" &&
+        importer.endsWith("/entry.server.node.tsx") &&
+        source.includes("react-dom/server")
+      ) {
+        return this.resolve("react-dom/server.node", importer, {
+          skipSelf: true,
+        });
+      }
+      return null;
+    },
+  };
+}
+
 export default defineConfig((config) => ({
-  plugins: [reactRouter(), safariCacheBustPlugin()],
+  plugins: [
+    alwaysUseReactDomServerNode(),
+    reactRouter(),
+    safariCacheBustPlugin(),
+  ],
   build: {
     rollupOptions: {
       jsx: {},
@@ -30,10 +55,6 @@ export default defineConfig((config) => ({
         find: "@",
         replacement: fileURLToPath(new URL("./public", import.meta.url)),
       },
-    ].concat(
-      config.command === "build"
-        ? [{ find: "react-dom/server", replacement: "react-dom/server.node" }]
-        : [],
-    ),
+    ],
   },
 }));
