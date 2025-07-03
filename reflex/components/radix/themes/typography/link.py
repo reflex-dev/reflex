@@ -14,42 +14,13 @@ from reflex.components.core.cond import cond
 from reflex.components.el.elements.inline import A
 from reflex.components.markdown.markdown import MarkdownComponentMap
 from reflex.components.radix.themes.base import LiteralAccentColor, RadixThemesComponent
+from reflex.components.react_router.dom import ReactRouterLink
 from reflex.utils.imports import ImportDict, ImportVar
 from reflex.vars.base import Var
 
 from .base import LiteralTextSize, LiteralTextTrim, LiteralTextWeight
 
 LiteralLinkUnderline = Literal["auto", "hover", "always", "none"]
-
-LiteralLinkDiscover = Literal["none", "render"]
-
-
-class ReactRouterLink(A):
-    """Links are accessible elements used primarily for navigation. This component is styled to resemble a hyperlink and semantically renders an <a>."""
-
-    library = "react-router"
-
-    tag = "Link"
-
-    alias = "ReactRouterLink"
-
-    # The page to link to.
-    to: Var[str]
-
-    # Replaces the current entry in the history stack instead of pushing a new one onto it.
-    replace: Var[bool]
-
-    # Will use document navigation instead of client side routing when the link is clicked: the browser will handle the transition normally (as if it were an <a href>).
-    reload_document: Var[bool]
-
-    # Prevents the scroll position from being reset to the top of the window when the link is clicked and the app is using ScrollRestoration. This only prevents new locations resetting scroll to the top, scroll position will be restored for back/forward button navigation.
-    prevent_scroll_reset: Var[bool]
-
-    # Defines the link discovery behavior
-    discover: Var[LiteralLinkDiscover]
-
-    # Enables a View Transition for this navigation.
-    view_transition: Var[bool]
 
 
 _KNOWN_REACT_ROUTER_LINK_PROPS = frozenset(ReactRouterLink.get_props())
