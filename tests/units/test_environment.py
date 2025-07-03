@@ -80,7 +80,7 @@ class TestInterpretFunctions:
         """Test path interpretation."""
         result = interpret_path_env("/some/path", "TEST_FIELD")
         assert isinstance(result, Path)
-        assert str(result) == "/some/path"
+        assert str(result) == str(Path("/some/path"))
 
     def test_interpret_existing_path_env_valid(self):
         """Test existing path interpretation with valid path."""
@@ -214,7 +214,11 @@ class TestEnvVar:
         assert result == 42
 
     def test_getenv_set(self, monkeypatch):
-        """Test getenv when environment variable is set."""
+        """Test getenv when environment variable is set.
+
+        Args:
+            monkeypatch: pytest monkeypatch fixture.
+        """
         monkeypatch.setenv("TEST_VAR", "test_value")
         env_var_instance = EnvVar("TEST_VAR", "default", str)
         result = env_var_instance.getenv()
@@ -227,21 +231,33 @@ class TestEnvVar:
         assert result is None
 
     def test_getenv_empty_string(self, monkeypatch):
-        """Test getenv with empty string value."""
+        """Test getenv with empty string value.
+
+        Args:
+            monkeypatch: pytest monkeypatch fixture.
+        """
         monkeypatch.setenv("TEST_VAR", "")
         env_var_instance = EnvVar("TEST_VAR", "default", str)
         result = env_var_instance.getenv()
         assert result is None
 
     def test_getenv_whitespace_only(self, monkeypatch):
-        """Test getenv with whitespace-only value."""
+        """Test getenv with whitespace-only value.
+
+        Args:
+            monkeypatch: pytest monkeypatch fixture.
+        """
         monkeypatch.setenv("TEST_VAR", "   ")
         env_var_instance = EnvVar("TEST_VAR", "default", str)
         result = env_var_instance.getenv()
         assert result is None
 
     def test_is_set_true(self, monkeypatch):
-        """Test is_set when variable is set."""
+        """Test is_set when variable is set.
+
+        Args:
+            monkeypatch: pytest monkeypatch fixture.
+        """
         monkeypatch.setenv("TEST_VAR", "value")
         env_var_instance = EnvVar("TEST_VAR", "default", str)
         assert env_var_instance.is_set() is True
@@ -252,13 +268,21 @@ class TestEnvVar:
         assert env_var_instance.is_set() is False
 
     def test_is_set_empty_string(self, monkeypatch):
-        """Test is_set with empty string."""
+        """Test is_set with empty string.
+
+        Args:
+            monkeypatch: pytest monkeypatch fixture.
+        """
         monkeypatch.setenv("TEST_VAR", "")
         env_var_instance = EnvVar("TEST_VAR", "default", str)
         assert env_var_instance.is_set() is False
 
     def test_get_with_env_value(self, monkeypatch):
-        """Test get method when environment variable is set."""
+        """Test get method when environment variable is set.
+
+        Args:
+            monkeypatch: pytest monkeypatch fixture.
+        """
         monkeypatch.setenv("TEST_VAR", "env_value")
         env_var_instance = EnvVar("TEST_VAR", "default", str)
         result = env_var_instance.get()
@@ -279,7 +303,11 @@ class TestEnvVar:
         del os.environ["TEST_VAR"]
 
     def test_set_none_value(self, monkeypatch):
-        """Test setting None value removes the environment variable."""
+        """Test setting None value removes the environment variable.
+
+        Args:
+            monkeypatch: pytest monkeypatch fixture.
+        """
         monkeypatch.setenv("TEST_VAR", "value")
         env_var_instance = EnvVar("TEST_VAR", "default", str)
         env_var_instance.set(None)
@@ -387,7 +415,7 @@ class TestUtilityFunctions:
 
     def test_paths_from_env_files(self):
         """Test _paths_from_env_files function."""
-        env_files = "/path/one:/path/two:/path/three"
+        env_files = "/path/one" + os.pathsep + "/path/two" + os.pathsep + "/path/three"
         result = _paths_from_env_files(env_files)
 
         # Should be reversed order
@@ -396,7 +424,9 @@ class TestUtilityFunctions:
 
     def test_paths_from_env_files_with_spaces(self):
         """Test _paths_from_env_files with spaces."""
-        env_files = " /path/one : /path/two : /path/three "
+        env_files = (
+            " /path/one " + os.pathsep + " /path/two " + os.pathsep + " /path/three "
+        )
         result = _paths_from_env_files(env_files)
 
         expected = [Path("/path/three"), Path("/path/two"), Path("/path/one")]
@@ -408,8 +438,12 @@ class TestUtilityFunctions:
         assert result == []
 
     def test_paths_from_environment_set(self, monkeypatch):
-        """Test _paths_from_environment when REFLEX_ENV_FILE is set."""
-        monkeypatch.setenv("REFLEX_ENV_FILE", "/path/one:/path/two")
+        """Test _paths_from_environment when REFLEX_ENV_FILE is set.
+
+        Args:
+            monkeypatch: pytest monkeypatch fixture.
+        """
+        monkeypatch.setenv("REFLEX_ENV_FILE", "/path/one" + os.pathsep + "/path/two")
         result = _paths_from_environment()
         expected = [Path("/path/two"), Path("/path/one")]
         assert result == expected
@@ -425,7 +459,11 @@ class TestUtilityFunctions:
 
     @patch("reflex.environment.load_dotenv")
     def test_load_dotenv_from_files_with_dotenv(self, mock_load_dotenv):
-        """Test _load_dotenv_from_files when dotenv is available."""
+        """Test _load_dotenv_from_files when dotenv is available.
+
+        Args:
+            mock_load_dotenv: Mock for the load_dotenv function.
+        """
         with tempfile.TemporaryDirectory() as temp_dir:
             file1 = Path(temp_dir) / "file1.env"
             file2 = Path(temp_dir) / "file2.env"
@@ -441,7 +479,11 @@ class TestUtilityFunctions:
     @patch("reflex.environment.load_dotenv", None)
     @patch("reflex.utils.console")
     def test_load_dotenv_from_files_without_dotenv(self, mock_console):
-        """Test _load_dotenv_from_files when dotenv is not available."""
+        """Test _load_dotenv_from_files when dotenv is not available.
+
+        Args:
+            mock_console: Mock for the console object.
+        """
         with tempfile.TemporaryDirectory() as temp_dir:
             file1 = Path(temp_dir) / "file1.env"
             file1.touch()
@@ -456,7 +498,11 @@ class TestUtilityFunctions:
 
     @patch("reflex.environment.load_dotenv")
     def test_load_dotenv_from_files_nonexistent_file(self, mock_load_dotenv):
-        """Test _load_dotenv_from_files with non-existent file."""
+        """Test _load_dotenv_from_files with non-existent file.
+
+        Args:
+            mock_load_dotenv: Mock for the load_dotenv function.
+        """
         nonexistent_file = Path("/non/existent/file.env")
         _load_dotenv_from_files([nonexistent_file])
 
@@ -545,7 +591,11 @@ class TestGetDefaultValueForField:
 
 @pytest.fixture(autouse=True)
 def cleanup_env_vars():
-    """Clean up test environment variables after each test."""
+    """Clean up test environment variables after each test.
+
+    Yields:
+        None: Fixture yields control back to the test.
+    """
     test_vars = [
         "TEST_VAR",
         "NONEXISTENT_VAR",
