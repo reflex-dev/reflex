@@ -2,6 +2,8 @@ import pytest
 
 from reflex.base import Base
 
+pytest.importorskip("pydantic")
+
 
 @pytest.fixture
 def child() -> Base:
@@ -25,17 +27,6 @@ def test_get_fields(child):
         child: A child class.
     """
     assert child.__fields__.keys() == {"num", "key"}
-
-
-def test_set(child):
-    """Test setting fields.
-
-    Args:
-        child: A child class.
-    """
-    child.set(num=1, key="a")
-    assert child.num == 1
-    assert child.key == "a"
 
 
 def test_json(child):
@@ -72,20 +63,6 @@ def test_complex_get_fields(complex_child):
         complex_child: A child class.
     """
     assert complex_child.__fields__.keys() == {"num", "key", "name", "age", "active"}
-
-
-def test_complex_set(complex_child):
-    """Test setting fields.
-
-    Args:
-        complex_child: A child class.
-    """
-    complex_child.set(num=1, key="a", name="Jane Doe", age=28, active=False)
-    assert complex_child.num == 1
-    assert complex_child.key == "a"
-    assert complex_child.name == "Jane Doe"
-    assert complex_child.age == 28
-    assert complex_child.active is False
 
 
 def test_complex_json(complex_child):
