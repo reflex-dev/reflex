@@ -2403,7 +2403,6 @@ class StatefulComponent(BaseComponent):
         if should_memoize or component.event_triggers:
             # Render the component to determine tag+hash based on component code.
             tag_name = cls._get_tag_name(component)
-            print(tag_name)
             if tag_name is None:
                 return None
 
