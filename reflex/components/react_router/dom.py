@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Literal, TypedDict
+from typing import ClassVar, Literal, TypedDict
 
 from reflex.components.el.elements.inline import A
 from reflex.vars.base import Var
@@ -65,3 +65,5 @@ class ReactRouterLink(A):
         if "to" not in props and "href" in props:
             props["to"] = props.pop("href")
         return super().create(*children, **props)
+
+    _invalid_children: ClassVar[list[str]] = ["A", "ReactRouterLink"]
