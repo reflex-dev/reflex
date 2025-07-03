@@ -1108,11 +1108,13 @@ class PyiGenerator:
         sub_mod_attrs: dict[str, list[str | tuple[str, str]]] | None = getattr(
             mod, "_SUBMOD_ATTRS", None
         )
+        extra_mappings: dict[str, str] | None = getattr(mod, "_EXTRA_MAPPINGS", None)
 
-        if not sub_mods and not sub_mod_attrs:
+        if not sub_mods and not sub_mod_attrs and not extra_mappings:
             return None
         sub_mods_imports = []
         sub_mod_attrs_imports = []
+        extra_mappings_imports = []
 
         if sub_mods:
             sub_mods_imports = [f"from . import {mod}" for mod in sorted(sub_mods)]
@@ -1140,7 +1142,20 @@ class PyiGenerator:
             ]
             sub_mod_attrs_imports.append("")
 
-        text = "\n" + "\n".join([*sub_mods_imports, *sub_mod_attrs_imports])
+        if extra_mappings:
+            for alias, import_path in extra_mappings.items():
+                module_name, import_name = import_path.rsplit(".", 1)
+                extra_mappings_imports.append(
+                    f"from {module_name} import {import_name} as {alias}"
+                )
+
+        text = (
+            "\n"
+            + "\n".join(
+                [*sub_mods_imports, *sub_mod_attrs_imports, *extra_mappings_imports]
+            )
+            + "\n"
+        )
         text += ast.unparse(new_tree) + "\n\n"
         text += f"__all__ = {getattr(mod, '__all__', [])!r}\n"
         return text

@@ -12,13 +12,13 @@ _SUBMOD_ATTRS: dict[str, list[str]] = {
     f"elements.{k}": [_v for _v in v if _v != "a"]
     for k, v in elements._MAPPING.items()
 }
+_EXTRA_MAPPINGS: dict[str, str] = {
+    "a": "reflex.components.react_router.link",
+}
 
 __getattr__, __dir__, __all__ = lazy_loader.attach(
     __name__,
     submodules=_SUBMODULES,
     submod_attrs=_SUBMOD_ATTRS,
-    extra_all=["a"],
+    **_EXTRA_MAPPINGS,
 )
-
-# Replace the base `rx.el.a` with React Router's `Link` for client-side navigation.
-from reflex.components.react_router import link as a  # noqa: E402
