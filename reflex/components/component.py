@@ -519,7 +519,7 @@ def _deterministic_hash(value: object) -> int:
         )
     if isinstance(value, enum.Enum):
         # Hash enums by their name.
-        return _deterministic_hash(value.name)
+        return _deterministic_hash(str(value))
     if value is None:
         # Hash None as a special case.
         return _deterministic_hash("None")
