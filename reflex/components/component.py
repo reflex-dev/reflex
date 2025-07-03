@@ -511,13 +511,18 @@ def _deterministic_hash(value: object) -> int:
     if isinstance(value, float):
         return _deterministic_hash(str(value))
     if isinstance(value, str):
-        return int(md5(value.encode("utf-8")).hexdigest(), 16)
+        return int(md5(f'"{value}"'.encode()).hexdigest(), 16)
     if isinstance(value, (tuple, list)):
         # Hash tuples by hashing each element.
-        return _deterministic_hash("[" + ",".join(map(str, value)) + "]")
+        return _deterministic_hash(
+            "[" + ",".join(map(str, map(_deterministic_hash, value))) + "]"
+        )
     if isinstance(value, enum.Enum):
         # Hash enums by their name.
         return _deterministic_hash(value.name)
+    if value is None:
+        # Hash None as a special case.
+        return _deterministic_hash("None")
 
     msg = (
         f"Cannot hash value `{value}` of type `{type(value).__name__}`. "
