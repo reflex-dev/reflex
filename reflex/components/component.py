@@ -5,6 +5,7 @@ from __future__ import annotations
 import contextlib
 import copy
 import dataclasses
+import enum
 import functools
 import inspect
 import typing
@@ -477,6 +478,49 @@ def _components_from(
     if isinstance(component_or_var, BaseComponent):
         return (component_or_var,)
     return ()
+
+
+def _deterministic_hash(value: object) -> int:
+    """Hash a rendered dictionary.
+
+    Args:
+        value: The dictionary to hash.
+
+    Returns:
+        The hash of the dictionary.
+    """
+    if isinstance(value, BaseComponent):
+        # If the value is a component, hash its rendered code.
+        rendered_code = value.render()
+        return _deterministic_hash(rendered_code)
+    if isinstance(value, Var):
+        return _deterministic_hash((value._js_expr, value._get_all_var_data()))
+    if isinstance(value, VarData):
+        return _deterministic_hash(dataclasses.asdict(value))
+    if isinstance(value, dict):
+        # Sort the dictionary to ensure consistent hashing.
+        return _deterministic_hash(
+            tuple(sorted((k, _deterministic_hash(v)) for k, v in value.items()))
+        )
+    if isinstance(value, int):
+        # Hash numbers and booleans directly.
+        return int(value)
+    if isinstance(value, float):
+        return _deterministic_hash(str(value))
+    if isinstance(value, str):
+        return int(md5(value.encode("utf-8")).hexdigest(), 16)
+    if isinstance(value, (tuple, list)):
+        # Hash tuples by hashing each element.
+        return _deterministic_hash("[" + ",".join(map(str, value)) + "]")
+    if isinstance(value, enum.Enum):
+        # Hash enums by their name.
+        return _deterministic_hash(value.name)
+
+    msg = (
+        f"Cannot hash value `{value}` of type `{type(value).__name__}`. "
+        "Only BaseComponent, Var, VarData, dict, str, tuple, and enum.Enum are supported."
+    )
+    raise TypeError(msg)
 
 
 DEFAULT_TRIGGERS: Mapping[str, types.ArgsSpec | Sequence[types.ArgsSpec]] = {
@@ -2359,6 +2403,7 @@ class StatefulComponent(BaseComponent):
         if should_memoize or component.event_triggers:
             # Render the component to determine tag+hash based on component code.
             tag_name = cls._get_tag_name(component)
+            print(tag_name)
             if tag_name is None:
                 return None
 
@@ -2430,7 +2475,7 @@ class StatefulComponent(BaseComponent):
             return None
 
         # Compute the hash based on the rendered code.
-        code_hash = md5(str(rendered_code).encode("utf-8")).hexdigest()
+        code_hash = _deterministic_hash(rendered_code)
 
         # Format the tag name including the hash.
         return format.format_state_name(
