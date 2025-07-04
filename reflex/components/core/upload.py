@@ -50,7 +50,7 @@ upload_files_context_var_data: VarData = VarData(
 )
 
 
-def upload_file(id_: str = DEFAULT_UPLOAD_ID) -> Var:
+def upload_file(id_: str | Var[str] = DEFAULT_UPLOAD_ID) -> Var:
     """Get the file upload drop trigger.
 
     This var is passed to the dropzone component to update the file list when a
@@ -62,7 +62,7 @@ def upload_file(id_: str = DEFAULT_UPLOAD_ID) -> Var:
     Returns:
         A var referencing the file upload drop trigger.
     """
-    id_var = LiteralStringVar.create(id_)
+    id_var = LiteralStringVar.create(id_) if not isinstance(id_, Var) else id_
     var_name = f"""e => setFilesById(filesById => {{
     const updatedFilesById = Object.assign({{}}, filesById);
     updatedFilesById[{id_var!s}] = e;
@@ -79,7 +79,7 @@ def upload_file(id_: str = DEFAULT_UPLOAD_ID) -> Var:
     )
 
 
-def selected_files(id_: str = DEFAULT_UPLOAD_ID) -> Var:
+def selected_files(id_: str | Var[str] = DEFAULT_UPLOAD_ID) -> Var:
     """Get the list of selected files.
 
     Args:
@@ -88,9 +88,9 @@ def selected_files(id_: str = DEFAULT_UPLOAD_ID) -> Var:
     Returns:
         A var referencing the list of selected file paths.
     """
-    id_var = LiteralStringVar.create(id_)
+    id_var = LiteralStringVar.create(id_) if not isinstance(id_, Var) else id_
     return Var(
-        _js_expr=f"(filesById[{id_var!s}] ? filesById[{id_var!s}].map((f) => (f.path || f.name)) : [])",
+        _js_expr=f"(filesById[{id_var!s}] ? filesById[{id_var!s}].map((f) => f.name) : [])",
         _var_type=list[str],
         _var_data=VarData.merge(
             upload_files_context_var_data, id_var._get_all_var_data()
