@@ -14,6 +14,7 @@ _SUBMODULES: set[str] = {
     "plotly",
     "radix",
     "react_player",
+    "react_router",
     "sonner",
     "el",
     "base",
