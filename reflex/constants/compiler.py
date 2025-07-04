@@ -85,7 +85,7 @@ class PageNames(SimpleNamespace):
     # The name of the index page.
     INDEX_ROUTE = "index"
     # The name of the app root page.
-    APP_ROOT = "root.js"
+    APP_ROOT = "root.jsx"
     # The root stylesheet filename.
     STYLESHEET_ROOT = "__reflex_global_styles"
     # The name of the document root page.
