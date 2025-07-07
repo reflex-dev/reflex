@@ -1049,7 +1049,7 @@ class App(MiddlewareMixin, LifespanMixin):
             return
         console.deprecate(
             feature_name="overlay_component",
-            reason="Use `additional_app_wraps` to add the overlay component instead.",
+            reason="Use `extra_app_wraps` to add the overlay component instead.",
             deprecation_version="0.8.2",
             removal_version="0.9.0",
         )
