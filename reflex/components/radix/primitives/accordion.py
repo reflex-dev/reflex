@@ -431,6 +431,14 @@ class AccordionIcon(Icon):
         return super().create(tag="chevron_down", class_name=cls_name, **props)
 
 
+SLIDE_DOWN = Var(
+    r""""keyframes({ from: { height: 0 }, to: { height: "var(--radix-accordion-content-height)" } })"""
+)
+SLIDE_UP = Var(
+    r""""keyframes({ from: { height: "var(--radix-accordion-content-height)" }, to: { height: 0 } }})"""
+)
+
+
 class AccordionContent(AccordionComponent):
     """An accordion component."""
 
@@ -464,44 +472,17 @@ class AccordionContent(AccordionComponent):
 
         return super().create(*children, class_name=cls_name, **props)
 
-    def add_custom_code(self) -> list[str]:
-        """Add custom code to the component.
-
-        Returns:
-            The custom code of the component.
-        """
-        return [
-            """
-const slideDown = keyframes`
-from {
-  height: 0;
-}
-to {
-  height: var(--radix-accordion-content-height);
-}
-`
-const slideUp = keyframes`
-from {
-  height: var(--radix-accordion-content-height);
-}
-to {
-  height: 0;
-}
-`
-"""
-        ]
-
     def add_style(self) -> dict[str, Any] | None:
         """Add style to the component.
 
         Returns:
             The style of the component.
         """
-        slide_down = Var("slideDown").to(str) + Var.create(
+        slide_down = SLIDE_DOWN.to(str) + Var.create(
             " var(--animation-duration) var(--animation-easing)",
         )
 
-        slide_up = Var("slideUp").to(str) + Var.create(
+        slide_up = SLIDE_UP.to(str) + Var.create(
             " var(--animation-duration) var(--animation-easing)",
         )
 
