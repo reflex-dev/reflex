@@ -435,7 +435,7 @@ SLIDE_DOWN = Var(
     r""""keyframes({ from: { height: 0 }, to: { height: "var(--radix-accordion-content-height)" } })"""
 )
 SLIDE_UP = Var(
-    r""""keyframes({ from: { height: "var(--radix-accordion-content-height)" }, to: { height: 0 } }})"""
+    r""""keyframes({ from: { height: "var(--radix-accordion-content-height)" }, to: { height: 0 } })"""
 )
 
 
