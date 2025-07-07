@@ -828,10 +828,9 @@ def compile_unevaluated_page(
                     enable_state = True
                     break
 
-        from reflex.app import OverlayFragment
         from reflex.utils.format import make_default_page_title
 
-        component = OverlayFragment.create(component)
+        component = Fragment.create(component)
 
         meta_args = {
             "title": (
