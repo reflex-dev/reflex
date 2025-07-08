@@ -5,6 +5,7 @@ from __future__ import annotations
 import concurrent.futures
 import dataclasses
 import enum
+import importlib
 import inspect
 import multiprocessing
 import os
@@ -25,6 +26,7 @@ from typing import (
 
 from reflex import constants
 from reflex.constants.base import LogLevel
+from reflex.plugins import Plugin
 from reflex.utils.exceptions import EnvironmentVarValueError
 from reflex.utils.types import GenericType, is_union, value_inside_optional
 
@@ -127,6 +129,48 @@ def interpret_path_env(value: str, field_name: str) -> Path:
     return Path(value)
 
 
+def interpret_plugin_env(value: str, field_name: str) -> Plugin:
+    """Interpret a plugin environment variable value.
+
+    Args:
+        value: The environment variable value.
+        field_name: The field name.
+
+    Returns:
+        The interpreted value.
+
+    Raises:
+        EnvironmentVarValueError: If the value is invalid.
+    """
+    if "." not in value:
+        msg = f"Invalid plugin value: {value!r} for {field_name}. Plugin name must be in the format 'package.module.PluginName'."
+        raise EnvironmentVarValueError(msg)
+
+    import_path, plugin_name = value.rsplit(".", 1)
+
+    try:
+        module = importlib.import_module(import_path)
+    except ImportError as e:
+        msg = f"Failed to import module {import_path!r} for {field_name}: {e}"
+        raise EnvironmentVarValueError(msg) from e
+
+    try:
+        plugin_class = getattr(module, plugin_name, None)
+    except Exception as e:
+        msg = f"Failed to get plugin class {plugin_name!r} from module {import_path!r} for {field_name}: {e}"
+        raise EnvironmentVarValueError(msg) from e
+
+    if not inspect.isclass(plugin_class) or not issubclass(plugin_class, Plugin):
+        msg = f"Invalid plugin class: {plugin_name!r} for {field_name}. Must be a subclass of Plugin."
+        raise EnvironmentVarValueError(msg)
+
+    try:
+        return plugin_class()
+    except Exception as e:
+        msg = f"Failed to instantiate plugin {plugin_name!r} for {field_name}: {e}"
+        raise EnvironmentVarValueError(msg) from e
+
+
 def interpret_enum_env(value: str, field_type: GenericType, field_name: str) -> Any:
     """Interpret an enum environment variable value.
 
@@ -189,6 +233,8 @@ def interpret_env_var_value(
         return interpret_path_env(value, field_name)
     if field_type is ExistingPath:
         return interpret_existing_path_env(value, field_name)
+    if field_type is Plugin:
+        return interpret_plugin_env(value, field_name)
     if get_origin(field_type) is list:
         return [
             interpret_env_var_value(

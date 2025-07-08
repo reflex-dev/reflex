@@ -22,6 +22,7 @@ from collections.abc import (
     Sequence,
 )
 from datetime import datetime
+from itertools import chain
 from pathlib import Path
 from timeit import default_timer as timer
 from types import SimpleNamespace
@@ -236,10 +237,6 @@ def default_error_boundary(*children: Component, **props) -> Component:
     )
 
 
-class OverlayFragment(Fragment):
-    """Alias for Fragment, used to wrap the overlay_component."""
-
-
 @dataclasses.dataclass(frozen=True)
 class UploadFile(StarletteUploadFile):
     """A file uploaded to the server.
@@ -365,6 +362,11 @@ class App(MiddlewareMixin, LifespanMixin):
                 (4, "ExtraOverlay"): lambda stateful: extra_overlay_function(),
             }
         )
+    )
+
+    # Extra app wraps to be applied to the whole app.
+    extra_app_wraps: dict[tuple[int, str], Callable[[bool], Component | None]] = (
+        dataclasses.field(default_factory=dict)
     )
 
     # Components to add to the head of every page.
@@ -1023,25 +1025,31 @@ class App(MiddlewareMixin, LifespanMixin):
         # By default, compile the app.
         return True
 
-    def _add_overlay_to_component(self, component: Component) -> Component:
-        if self.overlay_component is None:
-            return component
-
+    def _add_overlay_to_component(
+        self, component: Component, overlay_component: Component
+    ) -> Component:
         children = component.children
-        overlay_component = self._generate_component(self.overlay_component)
 
         if children[0] == overlay_component:
             return component
 
-        # recreate OverlayFragment with overlay_component as first child
-        return OverlayFragment.create(overlay_component, *children)
+        return Fragment.create(overlay_component, *children)
 
     def _setup_overlay_component(self):
         """If a State is not used and no overlay_component is specified, do not render the connection modal."""
-        if self._state is None and self.overlay_component is default_overlay_component:
-            self.overlay_component = None
+        if self.overlay_component is None:
+            return
+        console.deprecate(
+            feature_name="overlay_component",
+            reason="Use `extra_app_wraps` to add the overlay component instead.",
+            deprecation_version="0.8.2",
+            removal_version="0.9.0",
+        )
+        overlay_component = self._generate_component(self.overlay_component)
         for k, component in self._pages.items():
-            self._pages[k] = self._add_overlay_to_component(component)
+            self._pages[k] = self._add_overlay_to_component(
+                component, overlay_component
+            )
 
     def _setup_sticky_badge(self):
         """Add the sticky badge to the app."""
@@ -1253,7 +1261,10 @@ class App(MiddlewareMixin, LifespanMixin):
             app_wrappers[(1, "ToasterProvider")] = toast_provider
 
         # Add the app wraps to the app.
-        for key, app_wrap in self.app_wraps.items():
+        for key, app_wrap in chain(
+            self.app_wraps.items(), self.extra_app_wraps.items()
+        ):
+            # If the app wrap is a callable, generate the component
             component = app_wrap(self._state is not None)
             if component is not None:
                 app_wrappers[key] = component
@@ -1733,7 +1744,7 @@ async def process(
                     if (path := router_data.get(constants.RouteVar.PATH))
                     else "404"
                 ).removeprefix("/")
-                state.router = RouterData(router_data)
+                state.router = RouterData.from_router_data(router_data)
 
             # Preprocess the event.
             update = await app._preprocess(state, event)

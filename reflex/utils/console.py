@@ -269,6 +269,7 @@ def _get_first_non_framework_frame() -> FrameType | None:
 
 
 def deprecate(
+    *,
     feature_name: str,
     reason: str,
     deprecation_version: str,

@@ -295,6 +295,20 @@ export const applyEvent = async (event, socket, navigate, params) => {
     return false;
   }
 
+  if (event.name == "_blur_focus") {
+    const ref =
+      event.payload.ref in refs ? refs[event.payload.ref] : event.payload.ref;
+    const current = ref?.current;
+    if (current === undefined || current?.blur === undefined) {
+      console.error(
+        `No element found for ref ${event.payload.ref} in _blur_focus`,
+      );
+    } else {
+      current.blur();
+    }
+    return false;
+  }
+
   if (event.name == "_set_value") {
     const ref =
       event.payload.ref in refs ? refs[event.payload.ref] : event.payload.ref;
@@ -370,7 +384,10 @@ export const applyEvent = async (event, socket, navigate, params) => {
         ...Object.fromEntries(new URLSearchParams(window.location.search)),
         ...params(),
       },
-      asPath: window.location.pathname + window.location.search,
+      asPath:
+        window.location.pathname +
+        window.location.search +
+        window.location.hash,
     };
   }
 
