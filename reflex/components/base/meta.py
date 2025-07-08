@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from reflex.components.base.bare import Bare
 from reflex.components.el import elements
+from reflex.components.el.elements.metadata import Meta as Meta  # for compatibility
 from reflex.vars.base import Var
 
 
@@ -24,13 +25,6 @@ class Title(elements.Title):
             msg = "Title must be a single string."
             raise ValueError(msg)
         return super().render()
-
-
-class Meta(elements.Meta):
-    """A component that displays metadata for the current page."""
-
-    # The type of metadata value.
-    property: Var[str]
 
 
 class Description(elements.Meta):
