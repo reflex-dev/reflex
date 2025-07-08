@@ -32,9 +32,9 @@ if find_spec("pydantic") and find_spec("pydantic.v1"):
             from reflex.utils import console
 
             console.deprecate(
-                "rx.Base",
-                "You can subclass from `pydantic.BaseModel` directly instead or use dataclasses if possible.",
-                deprecation_version="0.8.0",
+                feature_name="rx.Base",
+                reason="You can subclass from `pydantic.BaseModel` directly instead or use dataclasses if possible.",
+                deprecation_version="0.8.2",
                 removal_version="0.9.0",
             )
             super().__init__(*args, **kwargs)
