@@ -24,7 +24,6 @@ from reflex import AdminDash, constants
 from reflex.app import (
     App,
     ComponentCallable,
-    OverlayFragment,
     default_overlay_component,
     process,
     upload,
@@ -1244,7 +1243,7 @@ async def test_process_events(mocker: MockerFixture, token: str):
 @pytest.mark.parametrize(
     ("state", "overlay_component", "exp_page_child"),
     [
-        (None, default_overlay_component, None),
+        (None, default_overlay_component, Fragment),
         (None, None, None),
         (None, Text.create("foo"), Text),
         (State, default_overlay_component, Fragment),
@@ -1269,10 +1268,10 @@ def test_overlay_component(
     app._setup_overlay_component()
     if exp_page_child is None:
         assert app.overlay_component is None
-    elif isinstance(exp_page_child, OverlayFragment):
+    elif isinstance(exp_page_child, Fragment):
         assert app.overlay_component is not None
         generated_component = app._generate_component(app.overlay_component)
-        assert isinstance(generated_component, OverlayFragment)
+        assert isinstance(generated_component, Fragment)
         assert isinstance(
             generated_component.children[0],
             Cond,  # ConnectionModal is a Cond under the hood
