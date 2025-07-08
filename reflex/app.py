@@ -2087,8 +2087,19 @@ class EventNamespace(AsyncNamespace):
         # Get the client IP
         try:
             client_ip = environ["asgi.scope"]["client"][0]
+            headers["asgi-scope-client"] = client_ip
         except (KeyError, IndexError):
             client_ip = environ.get("REMOTE_ADDR", "0.0.0.0")
+
+        # Unroll reverse proxy forwarded headers.
+        client_ip = (
+            headers.get(
+                "x-forwarded-for",
+                client_ip,
+            )
+            .partition(",")[0]
+            .strip()
+        )
 
         async with contextlib.aclosing(
             process(self.app, event, sid, headers, client_ip)
