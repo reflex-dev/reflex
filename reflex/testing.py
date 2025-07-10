@@ -311,21 +311,15 @@ class AppHarness:
             "frontend", 3000, auto_increment=True
         )
 
-        self.reflex_process = reflex.utils.processes.new_process(
-            [
-                sys.executable,
-                "-m",
-                "reflex",
-                "run",
-                "--backend-port",
-                str(backend_port),
-                "--frontend-port",
-                str(frontend_port),
-                "--env",
-                "dev",
-            ],
+        command = f"{sys.executable} -u -m reflex run --backend-port {backend_port} --frontend-port {frontend_port} --env dev"
+        self.reflex_process = subprocess.Popen(
+            command,
+            shell=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            universal_newlines=True,
             cwd=self.app_path,
-            env={"NO_COLOR": "1"},
+            env={"NO_COLOR": "1", "PYTHONUNBUFFERED": "1"},
         )
 
         self.backend_port = backend_port
@@ -361,8 +355,6 @@ class AppHarness:
                 try:
                     line = self.reflex_process.stdout.readline()
                     if line:
-                        print(line.strip())  # for pytest diagnosis #noqa: T201
-
                         if not frontend_ready:
                             frontend_match = re.search(
                                 r"App running at: (http://[^/\s]+)", line
@@ -384,6 +376,23 @@ class AppHarness:
                         time.sleep(0.1)
                 except Exception:
                     time.sleep(0.1)
+
+                if (
+                    not backend_ready
+                    and frontend_ready
+                    and time.time() - start_time > 10
+                ):
+                    import socket
+
+                    try:
+                        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+                            s.settimeout(1)
+                            result = s.connect_ex(("localhost", self.backend_port))
+                            if result == 0:
+                                self.backend_url = f"http://0.0.0.0:{self.backend_port}"
+                                backend_ready = True
+                    except Exception:
+                        pass
         else:
             import select
 
@@ -392,18 +401,36 @@ class AppHarness:
                     msg = f"Timeout waiting for servers. Frontend ready: {frontend_ready}, Backend ready: {backend_ready}"
                     raise RuntimeError(msg)
 
-                ready, _, _ = select.select([self.reflex_process.stdout], [], [], 1.0)
+                ready, _, _ = select.select([self.reflex_process.stdout], [], [], 0.5)
 
                 if not ready:
                     if self.reflex_process.poll() is not None:
                         msg = f"Process exited unexpectedly with code {self.reflex_process.returncode}"
                         raise RuntimeError(msg)
-                    continue
+
+                    if (
+                        not backend_ready
+                        and frontend_ready
+                        and time.time() - start_time > 10
+                    ):
+                        import socket
+
+                        try:
+                            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+                                s.settimeout(1)
+                                result = s.connect_ex(("localhost", self.backend_port))
+                                if result == 0:
+                                    self.backend_url = (
+                                        f"http://0.0.0.0:{self.backend_port}"
+                                    )
+                                    backend_ready = True
+                        except Exception:
+                            pass
+                        continue
 
                 line = self.reflex_process.stdout.readline()
                 if not line:
                     break
-                print(line.strip())  # for pytest diagnosis #noqa: T201
 
                 if not frontend_ready:
                     frontend_match = re.search(
