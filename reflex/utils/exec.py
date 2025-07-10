@@ -502,15 +502,6 @@ HOTRELOAD_IGNORE_PATTERNS = (
 )
 
 
-def is_uv_loop_available() -> bool:
-    """Check if uvloop is available.
-
-    Returns:
-        True if uvloop is available, False otherwise.
-    """
-    return importlib.util.find_spec("uvloop") is not None
-
-
 def run_granian_backend(host: str, port: int, loglevel: LogLevel):
     """Run the backend in development mode using Granian.
 
@@ -526,7 +517,7 @@ def run_granian_backend(host: str, port: int, loglevel: LogLevel):
 
         multiprocessing.set_start_method("spawn", force=True)
 
-    from granian.constants import Interfaces, Loops
+    from granian.constants import Interfaces
     from granian.log import LogLevels
     from granian.server import Server as Granian
 
@@ -547,9 +538,6 @@ def run_granian_backend(host: str, port: int, loglevel: LogLevel):
         env_files=_paths_from_environment() or None,
         workers_kill_timeout=2,
     )
-
-    if is_uv_loop_available():
-        granian_app.loop = Loops.uvloop
 
     granian_app.serve()
 
@@ -649,7 +637,6 @@ def run_granian_backend_prod(host: str, port: int, loglevel: LogLevel):
         *("--host", host),
         *("--port", str(port)),
         *("--interface", str(Interfaces.ASGI)),
-        *(("--loop", "uvloop") if is_uv_loop_available() else ()),
         *("--factory", get_app_instance_from_file()),
     ]
     processes.new_process(
