@@ -541,6 +541,20 @@ def migrate():
 
 
 @db_cli.command()
+def status():
+    """Check the status of the database schema."""
+    from reflex.utils import prerequisites
+
+    prerequisites.get_app()
+    if not prerequisites.check_db_initialized():
+        console.info(
+            "Database is not initialized. Run [bold]reflex db init[/bold] to initialize."
+        )
+        return
+    prerequisites.check_schema_up_to_date()
+
+
+@db_cli.command()
 @click.option(
     "--message",
     help="Human readable identifier for the generated revision.",
