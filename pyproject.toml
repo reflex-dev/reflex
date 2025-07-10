@@ -183,6 +183,7 @@ dev = [
   "starlette-admin >=0.14",
   "toml >=0.10.2",
   "uvicorn >=0.34.0",
+  "uvloop"
 ]
 
 
