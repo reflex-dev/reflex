@@ -183,7 +183,7 @@ dev = [
   "starlette-admin >=0.14",
   "toml >=0.10.2",
   "uvicorn >=0.34.0",
-  "uvloop"
+  "uvloop; sys_platform != 'win32' and platform_python_implementation == 'CPython'",
 ]
 
 
