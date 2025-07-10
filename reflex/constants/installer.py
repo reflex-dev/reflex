@@ -104,7 +104,7 @@ class PackageJson(SimpleNamespace):
     class Commands(SimpleNamespace):
         """The commands to define in package.json."""
 
-        DEV = "react-router dev"
+        DEV = "react-router dev --host"
         EXPORT = "react-router build"
         PROD = "serve ./build/client"
 
