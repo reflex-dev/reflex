@@ -6,6 +6,7 @@ import os
 import sys
 import threading
 import urllib.parse
+from collections.abc import Sequence
 from importlib.util import find_spec
 from pathlib import Path
 from types import ModuleType
@@ -191,7 +192,7 @@ class BaseConfig:
     static_page_generation_timeout: int = 60
 
     # List of origins that are allowed to connect to the backend API.
-    cors_allowed_origins: list[str] = dataclasses.field(default_factory=lambda: ["*"])
+    cors_allowed_origins: Sequence[str] = dataclasses.field(default=("*",))
 
     # Whether to use React strict mode.
     react_strict_mode: bool = True

@@ -73,6 +73,9 @@ class Meta(BaseHTML):  # Inherits common attributes from BaseHTML
     # Specifies a name for the metadata
     name: Var[str]
 
+    # The type of metadata value.
+    property: Var[str]
+
 
 class Title(Element):
     """Display the title element."""
