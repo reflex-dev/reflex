@@ -144,7 +144,6 @@ def test_is_process_on_port_concurrent_access(should_listen):
     """
 
     def create_server_and_test(port_holder, listen):
-        """Create a server socket and test port detection."""
         server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         server.bind(("127.0.0.1", 0))
