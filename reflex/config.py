@@ -294,13 +294,13 @@ class Config(BaseConfig):
         if env_loglevel or self.loglevel != LogLevel.DEFAULT:
             console.set_log_level(env_loglevel or self.loglevel)
 
-        # Add builtin plugins if not disabled.
-        self._add_builtin_plugins()
-
         # Update the config from environment variables.
         env_kwargs = self.update_from_env()
         for key, env_value in env_kwargs.items():
             setattr(self, key, env_value)
+
+        # Add builtin plugins if not disabled.
+        self._add_builtin_plugins()
 
         #   Update default URLs if ports were set
         kwargs.update(env_kwargs)
