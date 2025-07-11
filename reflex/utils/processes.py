@@ -69,6 +69,8 @@ def _can_bind_at_port(
     try:
         with closing(socket.socket(address_family, socket.SOCK_STREAM)) as sock:
             sock.bind((address, port))
+    except OverflowError:
+        return False
     except PermissionError:
         return False
     except OSError:
@@ -102,8 +104,15 @@ def change_port(port: int, _type: str) -> int:
     Returns:
         The new port.
 
+    Raises:
+        Exit: If the port is invalid or if the new port is occupied.
     """
     new_port = port + 1
+    if new_port < 0 or new_port > 65535:
+        console.error(
+            f"The {_type} port: {port} is invalid. It must be between 0 and 65535."
+        )
+        raise click.exceptions.Exit(1)
     if is_process_on_port(new_port):
         return change_port(new_port, _type)
     console.info(
