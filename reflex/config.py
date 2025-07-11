@@ -236,7 +236,7 @@ class BaseConfig:
     # List of plugins to use in the app.
     plugins: list[Plugin] = dataclasses.field(default_factory=list)
 
-    # List of builtin plugins to disable in the app.
+    # List of fully qualified import paths of plugins to disable in the app (e.g. reflex.plugins.sitemap.SitemapPlugin).
     disable_plugins: list[str] = dataclasses.field(default_factory=list)
 
     _prefixes: ClassVar[list[str]] = ["REFLEX_"]
