@@ -263,7 +263,7 @@ class Config(BaseConfig):
     )
     ```
 
-    Every config value can be overridden by an environment variable with the same name in uppercase.
+    Every config value can be overridden by an environment variable with the same name in uppercase and a REFLEX_ prefix.
     For example, `db_url` can be overridden by setting the `REFLEX_DB_URL` environment variable.
 
     See the [configuration](https://reflex.dev/docs/getting-started/configuration/) docs for more info.
