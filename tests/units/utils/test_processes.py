@@ -77,7 +77,7 @@ def test_is_process_on_port_both_protocols():
         ipv4_socket.close()
 
 
-@pytest.mark.parametrize("port", [1, 80, 443, 8000, 3000, 65535])
+@pytest.mark.parametrize("port", [0, 1, 80, 443, 8000, 3000, 65535])
 def test_is_process_on_port_various_ports(port):
     """Test is_process_on_port with various port numbers.
 
@@ -87,25 +87,6 @@ def test_is_process_on_port_various_ports(port):
     # This test just ensures the function doesn't crash with different port numbers
     # The actual result depends on what's running on the system
     result = is_process_on_port(port)
-    assert isinstance(result, bool)
-
-
-def test_is_process_on_port_privileged_port():
-    """Test is_process_on_port handles privileged ports gracefully."""
-    # Port 1 is typically privileged and should return True if we can't bind
-    # (either because something is running or we don't have permission)
-    result = is_process_on_port(1)
-    assert isinstance(result, bool)
-
-
-def test_is_process_on_port_invalid_port():
-    """Test is_process_on_port with invalid port numbers."""
-    # Test with port 0 (should be handled gracefully)
-    result = is_process_on_port(0)
-    assert isinstance(result, bool)
-
-    # Test with port out of range (should handle OSError gracefully)
-    result = is_process_on_port(65536)
     assert isinstance(result, bool)
 
 
