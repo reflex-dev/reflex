@@ -295,6 +295,27 @@ class Config(BaseConfig):
             console.set_log_level(env_loglevel or self.loglevel)
 
         # Add builtin plugins if not disabled.
+        self._add_builtin_plugins()
+
+        # Update the config from environment variables.
+        env_kwargs = self.update_from_env()
+        for key, env_value in env_kwargs.items():
+            setattr(self, key, env_value)
+
+        #   Update default URLs if ports were set
+        kwargs.update(env_kwargs)
+        self._non_default_attributes = set(kwargs.keys())
+        self._replace_defaults(**kwargs)
+
+        if (
+            self.state_manager_mode == constants.StateManagerMode.REDIS
+            and not self.redis_url
+        ):
+            msg = f"{self._prefixes[0]}REDIS_URL is required when using the redis state manager."
+            raise ConfigError(msg)
+
+    def _add_builtin_plugins(self):
+        """Add the builtin plugins to the config."""
         for plugin in _PLUGINS_ENABLED_BY_DEFAULT:
             plugin_name = plugin.__module__ + "." + plugin.__qualname__
             if plugin_name not in self.disable_plugins:
@@ -325,23 +346,6 @@ class Config(BaseConfig):
                     f"`{disabled_plugin}` is disabled in the config, but it is not a built-in plugin. "
                     "Please remove it from the `disable_plugins` list in your config inside of `rxconfig.py`.",
                 )
-
-        # Update the config from environment variables.
-        env_kwargs = self.update_from_env()
-        for key, env_value in env_kwargs.items():
-            setattr(self, key, env_value)
-
-        #   Update default URLs if ports were set
-        kwargs.update(env_kwargs)
-        self._non_default_attributes = set(kwargs.keys())
-        self._replace_defaults(**kwargs)
-
-        if (
-            self.state_manager_mode == constants.StateManagerMode.REDIS
-            and not self.redis_url
-        ):
-            msg = f"{self._prefixes[0]}REDIS_URL is required when using the redis state manager."
-            raise ConfigError(msg)
 
     @classmethod
     def class_fields(cls) -> set[str]:
