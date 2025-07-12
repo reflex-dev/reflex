@@ -249,6 +249,7 @@ COMPONENTS_CORE_MAPPING: dict = {
         "upload",
     ],
     "components.core.auto_scroll": ["auto_scroll"],
+    "components.core.window_events": ["window_event_listener"],
 }
 
 COMPONENTS_BASE_MAPPING: dict = {
