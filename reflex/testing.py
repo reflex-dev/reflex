@@ -24,9 +24,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any, Literal, TypeVar
 
 import reflex
-import reflex.environment
 import reflex.reflex
-import reflex.utils.build
 import reflex.utils.exec
 import reflex.utils.format
 import reflex.utils.prerequisites
@@ -43,7 +41,6 @@ from reflex.state import (
     reload_state_module,
 )
 from reflex.utils.export import export
-from reflex.utils.types import ASGIApp
 
 try:
     from selenium import webdriver
@@ -109,7 +106,6 @@ class AppHarness:
     app_module_path: Path
     app_module: types.ModuleType | None = None
     app_instance: reflex.App | None = None
-    app_asgi: ASGIApp | None = None
     reflex_process: subprocess.Popen | None = None
     frontend_url: str | None = None
     backend_port: int | None = None
@@ -117,6 +113,7 @@ class AppHarness:
     output_thread: threading.Thread | None = None
     state_manager: StateManager | None = None
     _frontends: list[WebDriver] = dataclasses.field(default_factory=list)
+    _should_stop: threading.Event = dataclasses.field(default_factory=threading.Event)
 
     backend: Any = (
         None  # No longer used in AppHarness, uvicorn.Server in AppHarnessProd
@@ -277,58 +274,85 @@ class AppHarness:
             # Ensure the AppHarness test does not skip State assignment due to running via pytest
             os.environ.pop(reflex.constants.PYTEST_CURRENT_TEST, None)
             os.environ[reflex.constants.APP_HARNESS_FLAG] = "true"
-            # Ensure we actually compile the app during first initialization.
             self.app_instance, self.app_module = (
                 reflex.utils.prerequisites.get_and_validate_app(
                     # Do not reload the module for pre-existing apps (only apps generated from source)
                     reload=self.app_source is not None
                 )
             )
-            self.app_asgi = self.app_instance()
-        if self.app_instance and isinstance(
-            self.app_instance._state_manager, StateManagerRedis
-        ):
-            if self.app_instance._state is None:
-                msg = "State is not set."
-                raise RuntimeError(msg)
-            # Create our own redis connection for testing.
-            self.state_manager = StateManagerRedis.create(self.app_instance._state)
-        else:
-            self.state_manager = (
-                self.app_instance._state_manager if self.app_instance else None
+            # Have to compile to ensure all state is available.
+            _ = self.app_instance()
+        self.state_manager = (
+            self.app_instance._state_manager if self.app_instance else None
+        )
+        if isinstance(self.state_manager, StateManagerDisk):
+            object.__setattr__(
+                self.state_manager, "states_directory", self.app_path / ".states"
             )
 
     def _reload_state_module(self):
         """Reload the rx.State module to avoid conflict when reloading."""
         reload_state_module(module=f"{self.app_name}.{self.app_name}")
 
-    def _start_subprocess(self):
-        """Start the reflex app using subprocess instead of threads."""
-        backend_port = reflex.utils.processes.handle_port(
-            "backend", 8000, auto_increment=True
-        )
-        frontend_port = reflex.utils.processes.handle_port(
-            "frontend", 3000, auto_increment=True
-        )
+    def _start_subprocess(
+        self, backend: bool = True, frontend: bool = True, mode: str = "dev"
+    ):
+        """Start the reflex app using subprocess instead of threads.
 
-        command = f"{sys.executable} -u -m reflex run --backend-port {backend_port} --frontend-port {frontend_port} --env dev"
+        Args:
+            backend: Whether to start the backend server.
+            frontend: Whether to start the frontend server.
+            mode: The mode to run the app in (dev, prod, etc.).
+        """
+        command = [
+            sys.executable,
+            "-u",
+            "-m",
+            "reflex",
+            "run",
+            "--env",
+            mode,
+            "--loglevel",
+            "debug",
+        ]
+        if backend:
+            if self.backend_port is None:
+                self.backend_port = reflex.utils.processes.handle_port(
+                    "backend", 48000, auto_increment=True
+                )
+            command.extend(["--backend-port", str(self.backend_port)])
+            if not frontend:
+                command.append("--backend-only")
+        if frontend:
+            if self.frontend_port is None:
+                self.frontend_port = reflex.utils.processes.handle_port(
+                    "frontend", 43000, auto_increment=True
+                )
+            command.extend(["--frontend-port", str(self.frontend_port)])
+            if not backend:
+                command.append("--frontend-only")
         self.reflex_process = subprocess.Popen(
             command,
-            shell=True,
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
             universal_newlines=True,
             cwd=self.app_path,
-            env={"NO_COLOR": "1", "PYTHONUNBUFFERED": "1"},
+            env={
+                **os.environ,
+                "NO_COLOR": "1",
+                "PYTHONUNBUFFERED": "1",
+                "PYTEST_CURRENT_TEST": "",
+                "APP_HARNESS_FLAG": "true",
+            },
         )
+        self._wait_for_servers(backend=backend, frontend=frontend)
 
-        self.backend_port = backend_port
-        self.frontend_port = frontend_port
-
-        self._wait_for_servers()
-
-    def _wait_for_servers(self):
+    def _wait_for_servers(self, backend: bool, frontend: bool):
         """Wait for both frontend and backend servers to be ready by parsing console output.
+
+        Args:
+            backend: Whether to wait for the backend server to be ready.
+            frontend: Whether to wait for the frontend server to be ready.
 
         Raises:
             RuntimeError: If servers did not start properly.
@@ -343,7 +367,9 @@ class AppHarness:
         start_time = time.time()
 
         if sys.platform == "win32":
-            while not (frontend_ready and backend_ready):
+            while not (
+                (not frontend or frontend_ready) and (not backend or backend_ready)
+            ):
                 if time.time() - start_time > timeout:
                     msg = f"Timeout waiting for servers. Frontend ready: {frontend_ready}, Backend ready: {backend_ready}"
                     raise RuntimeError(msg)
@@ -355,12 +381,13 @@ class AppHarness:
                 try:
                     line = self.reflex_process.stdout.readline()
                     if line:
+                        print(line)  # noqa: T201
                         if not frontend_ready:
                             frontend_match = re.search(
                                 r"App running at: (http://[^/\s]+)", line
                             )
                             if frontend_match:
-                                self.frontend_url = frontend_match.group(1)
+                                self.frontend_url = frontend_match.group(1) + "/"
                                 config = reflex.config.get_config()
                                 config.deploy_url = self.frontend_url
                                 frontend_ready = True
@@ -379,6 +406,7 @@ class AppHarness:
 
                 if (
                     not backend_ready
+                    and backend
                     and frontend_ready
                     and time.time() - start_time > 10
                 ):
@@ -396,7 +424,9 @@ class AppHarness:
         else:
             import select
 
-            while not (frontend_ready and backend_ready):
+            while not (
+                (not frontend or frontend_ready) and (not backend or backend_ready)
+            ):
                 if time.time() - start_time > timeout:
                     msg = f"Timeout waiting for servers. Frontend ready: {frontend_ready}, Backend ready: {backend_ready}"
                     raise RuntimeError(msg)
@@ -410,6 +440,7 @@ class AppHarness:
 
                     if (
                         not backend_ready
+                        and backend
                         and frontend_ready
                         and time.time() - start_time > 10
                     ):
@@ -429,6 +460,7 @@ class AppHarness:
                         continue
 
                 line = self.reflex_process.stdout.readline()
+                print(line)  # noqa: T201
                 if not line:
                     break
 
@@ -437,7 +469,7 @@ class AppHarness:
                         r"App running at: (http://[^/\s]+)", line
                     )
                     if frontend_match:
-                        self.frontend_url = frontend_match.group(1)
+                        self.frontend_url = frontend_match.group(1) + "/"
                         config = reflex.config.get_config()
                         config.deploy_url = self.frontend_url
                         frontend_ready = True
@@ -450,15 +482,17 @@ class AppHarness:
                         self.backend_url = backend_match.group(1)
                         backend_ready = True
 
-        if not frontend_ready or not backend_ready:
+        if (frontend and not frontend_ready) or (backend and not backend_ready):
             msg = f"Servers did not start properly. Frontend ready: {frontend_ready}, Backend ready: {backend_ready}"
             raise RuntimeError(msg)
 
         def consume_output():
             """Consume output from the subprocess to prevent blocking."""
-            if self.reflex_process is None or self.reflex_process.stdout is None:
-                return
-            while True:
+            while (
+                not self._should_stop.is_set()
+                and self.reflex_process is not None
+                and self.reflex_process.stdout is not None
+            ):
                 try:
                     if sys.platform == "win32":
                         line = self.reflex_process.stdout.readline()
@@ -467,6 +501,7 @@ class AppHarness:
                                 break
                             time.sleep(0.1)
                             continue
+                        print(line)  # noqa: T201
                     else:
                         import select
 
@@ -480,10 +515,11 @@ class AppHarness:
                         line = self.reflex_process.stdout.readline()
                         if not line:
                             break
-                except (ValueError, OSError):
+                        print(line)  # noqa: T201
+                except (ValueError, OSError, AttributeError):
                     break
 
-        self.output_thread = threading.Thread(target=consume_output, daemon=True)
+        self.output_thread = threading.Thread(target=consume_output)
         self.output_thread.start()
 
     def _start_backend(self, port: int | None = None):
@@ -559,24 +595,21 @@ class AppHarness:
         for driver in self._frontends:
             driver.quit()
 
+        self._stop_reflex()
         self._reload_state_module()
 
-        if hasattr(self, "reflex_process") and self.reflex_process is not None:
+    def _stop_reflex(self):
+        if self.reflex_process is not None:
             try:
-                self.reflex_process.terminate()
-
-                try:
-                    self.reflex_process.wait(timeout=5)
-                except subprocess.TimeoutExpired:
-                    self.reflex_process.kill()
-                    self.reflex_process.wait()
-
+                # Kill server and children recursively.
+                reflex.utils.exec.kill(self.reflex_process.pid)
             except (ProcessLookupError, OSError):
                 pass
             finally:
                 self.reflex_process = None
 
         if hasattr(self, "output_thread") and self.output_thread is not None:
+            self._should_stop.set()
             self.output_thread = None
 
     def __exit__(self, *excinfo) -> None:
@@ -645,41 +678,6 @@ class AppHarness:
                 return success
             await asyncio.sleep(step)
         return False
-
-    def _poll_for_servers(self, timeout: TimeoutType = None) -> socket.socket:
-        """Poll backend server for listening sockets.
-
-        Args:
-            timeout: how long to wait for listening socket.
-
-        Returns:
-            first active listening socket on the backend
-
-        Raises:
-            RuntimeError: when the backend hasn't started running
-            TimeoutError: when server or sockets are not ready
-        """
-        if not hasattr(self, "backend_port") or self.backend_port is None:
-            msg = "Backend port is not set."
-            raise RuntimeError(msg)
-
-        def check_port():
-            try:
-                sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                result = sock.connect_ex(("127.0.0.1", self.backend_port))
-                sock.close()
-            except Exception:
-                return False
-            else:
-                return result == 0
-
-        if not self._poll_for(target=check_port, timeout=timeout):
-            msg = "Backend is not listening."
-            raise TimeoutError(msg)
-
-        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        sock.connect(("127.0.0.1", self.backend_port))
-        return sock
 
     def frontend(
         self,
@@ -767,14 +765,15 @@ class AppHarness:
             The state instance associated with the given token
 
         Raises:
-            RuntimeError: when the app hasn't started running
+            AssertionError: when the state manager is not initialized
         """
-        if self.state_manager is None:
-            msg = "state_manager is not set."
-            raise RuntimeError(msg)
+        assert self.state_manager is not None, "State manager is not initialized."
+        if isinstance(self.state_manager, StateManagerDisk):
+            self.state_manager.states.clear()  # always reload from disk
         try:
             return await self.state_manager.get_state(token)
         finally:
+            await self._reset_backend_state_manager()
             if isinstance(self.state_manager, StateManagerRedis):
                 await self.state_manager.close()
 
@@ -786,19 +785,10 @@ class AppHarness:
             kwargs: Attributes to set on the state.
 
         Raises:
-            RuntimeError: when the app hasn't started running
+            NotImplementedError: This method is not implemented.
         """
-        if self.state_manager is None:
-            msg = "state_manager is not set."
-            raise RuntimeError(msg)
-        state = await self.get_state(token)
-        for key, value in kwargs.items():
-            setattr(state, key, value)
-        try:
-            await self.state_manager.set_state(token, state)
-        finally:
-            if isinstance(self.state_manager, StateManagerRedis):
-                await self.state_manager.close()
+        msg = "set_state is not implemented. rewrite your test"
+        raise NotImplementedError(msg)
 
     @contextlib.asynccontextmanager
     async def modify_state(self, token: str) -> AsyncIterator[BaseState]:
@@ -811,26 +801,11 @@ class AppHarness:
             The state instance associated with the given token
 
         Raises:
-            RuntimeError: when the app hasn't started running
+            NotImplementedError: This method is not implemented.
         """
-        if self.state_manager is None:
-            msg = "state_manager is not set."
-            raise RuntimeError(msg)
-        if self.app_instance is None:
-            msg = "App is not running."
-            raise RuntimeError(msg)
-        app_state_manager = self.app_instance.state_manager
-        if isinstance(self.state_manager, StateManagerRedis):
-            # Temporarily replace the app's state manager with our own, since
-            # the redis connection is on the backend_thread event loop
-            self.app_instance._state_manager = self.state_manager
-        try:
-            async with self.app_instance.modify_state(token) as state:
-                yield state
-        finally:
-            if isinstance(self.state_manager, StateManagerRedis):
-                self.app_instance._state_manager = app_state_manager
-                await self.state_manager.close()
+        msg = "modify_state is not implemented. rewrite your test"
+        raise NotImplementedError(msg)
+        yield
 
     def poll_for_content(
         self,
@@ -1083,10 +1058,7 @@ class AppHarnessProd(AppHarness):
         # Set up the frontend.
         with chdir(self.app_path):
             config = reflex.config.get_config()
-            print("Polling for servers...")  # for pytest diagnosis #noqa: T201
-            config.api_url = "http://{}:{}".format(
-                *self._poll_for_servers(timeout=30).getsockname(),
-            )
+            config.api_url = f"http://localhost:{self.backend_port}"
             print("Building frontend...")  # for pytest diagnosis #noqa: T201
 
             get_config().loglevel = reflex.constants.LogLevel.INFO
@@ -1123,35 +1095,17 @@ class AppHarnessProd(AppHarness):
         """
         return lambda: None
 
-    def _start_backend(self):
-        if self.app_asgi is None:
-            msg = "App was not initialized."
-            raise RuntimeError(msg)
-        environment.REFLEX_SKIP_COMPILE.set(True)
-        # AppHarnessProd still uses uvicorn - need to import it locally
-        import uvicorn
+    def start(self) -> AppHarness:
+        """Start the app using reflex run subprocess.
 
-        self.backend = uvicorn.Server(
-            uvicorn.Config(
-                app=self.app_asgi,
-                host="127.0.0.1",
-                port=0,
-                workers=reflex.utils.processes.get_num_workers(),
-            ),
-        )
-        self.backend.shutdown = self._get_backend_shutdown_handler()
-        print(  # noqa: T201
-            "Creating backend in a new thread..."
-        )
-        self.backend_thread = threading.Thread(target=self.backend.run)
-        self.backend_thread.start()
-        print("Backend started.")  # for pytest diagnosis #noqa: T201
-
-    def _poll_for_servers(self, timeout: TimeoutType = None) -> socket.socket:
-        try:
-            return super()._poll_for_servers(timeout)
-        finally:
-            environment.REFLEX_SKIP_COMPILE.set(None)
+        Returns:
+            self
+        """
+        self._initialize_app()
+        self._start_subprocess(frontend=False, mode="prod")
+        self._start_frontend()
+        self._wait_frontend()
+        return self
 
     def stop(self):
         """Stop the frontend python webserver."""
