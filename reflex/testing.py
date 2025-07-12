@@ -455,6 +455,7 @@ class AppHarness:
             raise RuntimeError(msg)
 
         def consume_output():
+            """Consume output from the subprocess to prevent blocking."""
             if self.reflex_process is None or self.reflex_process.stdout is None:
                 return
             while True:
