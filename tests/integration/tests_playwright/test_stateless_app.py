@@ -46,8 +46,10 @@ def test_statelessness(stateless_app: AppHarness, page: Page):
         page: A Playwright page.
     """
     assert stateless_app.frontend_url is not None
-    assert stateless_app.backend is not None
-    assert stateless_app.backend.started
+    assert stateless_app.reflex_process is not None
+    assert (
+        stateless_app.reflex_process.poll() is None
+    )  # Ensure the process is still running
 
     res = httpx.get(rx.config.get_config().api_url + "/_event")
     assert res.status_code == 404
