@@ -5,6 +5,7 @@ from reflex.components.base.fragment import Fragment
 from reflex.constants.compiler import Hooks
 from reflex.event import key_event, no_args_event_spec
 from reflex.vars.base import Var, VarData
+from reflex.vars.object import ObjectVar
 
 
 def _on_resize_spec() -> tuple[Var[int], Var[int]]:
@@ -34,6 +35,18 @@ def _on_visibility_change_spec() -> tuple[Var[bool]]:
     return (Var("document.hidden"),)
 
 
+def _on_storage_spec(e: ObjectVar) -> tuple[Var[str], Var[str], Var[str], Var[str]]:
+    """Args spec for the on_storage event trigger.
+
+    Args:
+        e: The storage event.
+
+    Returns:
+        A tuple containing key, old value, new value, and URL variables.
+    """
+    return (e.key.to(str), e.oldValue.to(str), e.newValue.to(str), e.url.to(str))
+
+
 class WindowEventListener(Fragment):
     """A component that listens for window events."""
 
@@ -45,6 +58,8 @@ class WindowEventListener(Fragment):
     on_visibility_change: rx.EventHandler[_on_visibility_change_spec]
     on_before_unload: rx.EventHandler[no_args_event_spec]
     on_key_down: rx.EventHandler[key_event]
+    on_popstate: rx.EventHandler[no_args_event_spec]
+    on_storage: rx.EventHandler[_on_storage_spec]
 
     def _exclude_props(self) -> list[str]:
         """Exclude event handler props from being passed to Fragment.
