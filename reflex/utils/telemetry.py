@@ -1,7 +1,5 @@
 """Anonymous telemetry for Reflex."""
 
-from __future__ import annotations
-
 import asyncio
 import dataclasses
 import importlib.metadata
@@ -12,19 +10,10 @@ from contextlib import suppress
 from datetime import datetime, timezone
 from typing import TypedDict
 
-import httpx
-
 from reflex import constants
 from reflex.environment import environment
 from reflex.utils import console
 from reflex.utils.decorator import once_unless_none
-from reflex.utils.exceptions import ReflexError
-from reflex.utils.prerequisites import (
-    ensure_reflex_installation_id,
-    get_bun_version,
-    get_node_version,
-    get_project_hash,
-)
 
 UTC = timezone.utc
 POSTHOG_API_URL: str = "https://app.posthog.com/capture/"
@@ -138,7 +127,13 @@ def _get_event_defaults() -> _DefaultEvent | None:
     Returns:
         The default event data.
     """
-    from reflex.utils.prerequisites import get_cpu_info
+    from reflex.utils.prerequisites import (
+        ensure_reflex_installation_id,
+        get_bun_version,
+        get_cpu_info,
+        get_node_version,
+        get_project_hash,
+    )
 
     installation_id = ensure_reflex_installation_id()
     project_hash = get_project_hash(raise_on_fail=_raise_on_missing_project_hash())
@@ -218,6 +213,8 @@ def _prepare_event(event: str, **kwargs) -> _Event | None:
 
 
 def _send_event(event_data: _Event) -> bool:
+    import httpx
+
     try:
         httpx.post(POSTHOG_API_URL, json=event_data)
     except Exception:
@@ -278,5 +275,7 @@ def send_error(error: Exception, context: str):
         error: The error to send.
         context: The context of the error (e.g. "frontend" or "backend")
     """
+    from reflex.utils.exceptions import ReflexError
+
     if isinstance(error, ReflexError):
         send("error", detail=type(error).__name__, context=context)
