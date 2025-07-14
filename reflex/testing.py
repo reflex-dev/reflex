@@ -20,8 +20,11 @@ import time
 import types
 from collections.abc import AsyncIterator, Callable, Coroutine, Sequence
 from http.server import SimpleHTTPRequestHandler
+from io import TextIOWrapper
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Literal, TypeVar
+
+import psutil
 
 import reflex
 import reflex.reflex
@@ -94,6 +97,14 @@ class chdir(contextlib.AbstractContextManager):  # noqa: N801
         os.chdir(self._old_cwd.pop())
 
 
+class ReflexProcessLoggedErrorError(RuntimeError):
+    """Exception raised when the reflex process logs contain errors."""
+
+
+class ReflexProcessExitNonZeroError(RuntimeError):
+    """Exception raised when the reflex process exits with a non-zero status."""
+
+
 @dataclasses.dataclass
 class AppHarness:
     """AppHarness executes a reflex app in-process for testing."""
@@ -107,13 +118,14 @@ class AppHarness:
     app_module: types.ModuleType | None = None
     app_instance: reflex.App | None = None
     reflex_process: subprocess.Popen | None = None
+    reflex_process_log_path: Path | None = None
+    reflex_process_error_log_path: Path | None = None
     frontend_url: str | None = None
     backend_port: int | None = None
     frontend_port: int | None = None
-    output_thread: threading.Thread | None = None
     state_manager: StateManager | None = None
     _frontends: list[WebDriver] = dataclasses.field(default_factory=list)
-    _should_stop: threading.Event = dataclasses.field(default_factory=threading.Event)
+    _reflex_process_log_fn: TextIOWrapper | None = None
 
     backend: Any = (
         None  # No longer used in AppHarness, uvicorn.Server in AppHarnessProd
@@ -304,6 +316,9 @@ class AppHarness:
             frontend: Whether to start the frontend server.
             mode: The mode to run the app in (dev, prod, etc.).
         """
+        self.reflex_process_log_path = self.app_path / "reflex.log"
+        self.reflex_process_error_log_path = self.app_path / "reflex_error.log"
+        self._reflex_process_log_fn = self.reflex_process_log_path.open("w")
         command = [
             sys.executable,
             "-u",
@@ -333,14 +348,12 @@ class AppHarness:
                 command.append("--frontend-only")
         self.reflex_process = subprocess.Popen(
             command,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT,
-            universal_newlines=True,
+            stdout=self._reflex_process_log_fn,
+            stderr=self._reflex_process_log_fn,
             cwd=self.app_path,
             env={
                 **os.environ,
-                "NO_COLOR": "1",
-                "PYTHONUNBUFFERED": "1",
+                "REFLEX_ERROR_LOG_FILE": str(self.reflex_process_error_log_path),
                 "PYTEST_CURRENT_TEST": "",
                 "APP_HARNESS_FLAG": "true",
             },
@@ -357,8 +370,8 @@ class AppHarness:
         Raises:
             RuntimeError: If servers did not start properly.
         """
-        if self.reflex_process is None or self.reflex_process.stdout is None:
-            msg = "Reflex process has no stdout."
+        if self.reflex_process is None or self.reflex_process.pid is None:
+            msg = "Reflex process has no pid."
             raise RuntimeError(msg)
 
         frontend_ready = False
@@ -366,161 +379,24 @@ class AppHarness:
         timeout = 30
         start_time = time.time()
 
-        if sys.platform == "win32":
-            while not (
-                (not frontend or frontend_ready) and (not backend or backend_ready)
-            ):
-                if time.time() - start_time > timeout:
-                    msg = f"Timeout waiting for servers. Frontend ready: {frontend_ready}, Backend ready: {backend_ready}"
-                    raise RuntimeError(msg)
+        process = psutil.Process(self.reflex_process.pid)
+        while not ((not frontend or frontend_ready) and (not backend or backend_ready)):
+            if time.time() - start_time > timeout:
+                msg = f"Timeout waiting for servers. Frontend ready: {frontend_ready}, Backend ready: {backend_ready}"
+                raise RuntimeError(msg)
 
-                if self.reflex_process.poll() is not None:
-                    msg = f"Process exited unexpectedly with code {self.reflex_process.returncode}"
-                    raise RuntimeError(msg)
-
-                try:
-                    line = self.reflex_process.stdout.readline()
-                    if line:
-                        print(line)  # noqa: T201
-                        if not frontend_ready:
-                            frontend_match = re.search(
-                                r"App running at: (http://[^/\s]+)", line
-                            )
-                            if frontend_match:
-                                self.frontend_url = frontend_match.group(1) + "/"
-                                config = reflex.config.get_config()
-                                config.deploy_url = self.frontend_url
-                                frontend_ready = True
-
-                        if not backend_ready:
-                            backend_match = re.search(
-                                r"Backend running at: (http://[^/\s]+)", line
-                            )
-                            if backend_match:
-                                self.backend_url = backend_match.group(1)
-                                backend_ready = True
-                    else:
-                        time.sleep(0.1)
-                except Exception:
-                    time.sleep(0.1)
-
-                if (
-                    not backend_ready
-                    and backend
-                    and frontend_ready
-                    and time.time() - start_time > 10
-                ):
-                    import socket
-
-                    try:
-                        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-                            s.settimeout(1)
-                            result = s.connect_ex(("localhost", self.backend_port))
-                            if result == 0:
-                                self.backend_url = f"http://0.0.0.0:{self.backend_port}"
-                                backend_ready = True
-                    except Exception:
-                        pass
-        else:
-            import select
-
-            while not (
-                (not frontend or frontend_ready) and (not backend or backend_ready)
-            ):
-                if time.time() - start_time > timeout:
-                    msg = f"Timeout waiting for servers. Frontend ready: {frontend_ready}, Backend ready: {backend_ready}"
-                    raise RuntimeError(msg)
-
-                ready, _, _ = select.select([self.reflex_process.stdout], [], [], 0.5)
-
-                if not ready:
-                    if self.reflex_process.poll() is not None:
-                        msg = f"Process exited unexpectedly with code {self.reflex_process.returncode}"
-                        raise RuntimeError(msg)
-
-                    if (
-                        not backend_ready
-                        and backend
-                        and frontend_ready
-                        and time.time() - start_time > 10
-                    ):
-                        import socket
-
-                        try:
-                            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-                                s.settimeout(1)
-                                result = s.connect_ex(("localhost", self.backend_port))
-                                if result == 0:
-                                    self.backend_url = (
-                                        f"http://0.0.0.0:{self.backend_port}"
+            for proc in process.children(recursive=True):
+                with contextlib.suppress(psutil.NoSuchProcess):
+                    if ncs := proc.net_connections():
+                        for net_conn in ncs:
+                            if net_conn.status == psutil.CONN_LISTEN:
+                                if net_conn.laddr.port == self.frontend_port:
+                                    frontend_ready = True
+                                    self.frontend_url = (
+                                        f"http://localhost:{self.frontend_port}/"
                                     )
+                                elif net_conn.laddr.port == self.backend_port:
                                     backend_ready = True
-                        except Exception:
-                            pass
-                        continue
-
-                line = self.reflex_process.stdout.readline()
-                print(line)  # noqa: T201
-                if not line:
-                    break
-
-                if not frontend_ready:
-                    frontend_match = re.search(
-                        r"App running at: (http://[^/\s]+)", line
-                    )
-                    if frontend_match:
-                        self.frontend_url = frontend_match.group(1) + "/"
-                        config = reflex.config.get_config()
-                        config.deploy_url = self.frontend_url
-                        frontend_ready = True
-
-                if not backend_ready:
-                    backend_match = re.search(
-                        r"Backend running at: (http://[^/\s]+)", line
-                    )
-                    if backend_match:
-                        self.backend_url = backend_match.group(1)
-                        backend_ready = True
-
-        if (frontend and not frontend_ready) or (backend and not backend_ready):
-            msg = f"Servers did not start properly. Frontend ready: {frontend_ready}, Backend ready: {backend_ready}"
-            raise RuntimeError(msg)
-
-        def consume_output():
-            """Consume output from the subprocess to prevent blocking."""
-            while (
-                not self._should_stop.is_set()
-                and self.reflex_process is not None
-                and self.reflex_process.stdout is not None
-            ):
-                try:
-                    if sys.platform == "win32":
-                        line = self.reflex_process.stdout.readline()
-                        if not line:
-                            if self.reflex_process.poll() is not None:
-                                break
-                            time.sleep(0.1)
-                            continue
-                        print(line)  # noqa: T201
-                    else:
-                        import select
-
-                        ready, _, _ = select.select(
-                            [self.reflex_process.stdout], [], [], 0.1
-                        )
-                        if not ready:
-                            if self.reflex_process.poll() is not None:
-                                break
-                            continue
-                        line = self.reflex_process.stdout.readline()
-                        if not line:
-                            break
-                        print(line)  # noqa: T201
-                except (ValueError, OSError, AttributeError):
-                    break
-
-        self.output_thread = threading.Thread(target=consume_output)
-        self.output_thread.start()
 
     def _start_backend(self, port: int | None = None):
         """Compatibility method - no longer used but kept for tests.
@@ -599,7 +475,12 @@ class AppHarness:
         self._reload_state_module()
 
     def _stop_reflex(self):
-        if self.reflex_process is not None:
+        returncode = None
+        # Check if the process exited on its own or we have to kill it.
+        if (
+            self.reflex_process is not None
+            and (returncode := self.reflex_process.poll()) is None
+        ):
             try:
                 # Kill server and children recursively.
                 reflex.utils.exec.kill(self.reflex_process.pid)
@@ -607,10 +488,27 @@ class AppHarness:
                 pass
             finally:
                 self.reflex_process = None
-
-        if hasattr(self, "output_thread") and self.output_thread is not None:
-            self._should_stop.set()
-            self.output_thread = None
+        if self._reflex_process_log_fn is not None:
+            with contextlib.suppress(Exception):
+                self._reflex_process_log_fn.close()
+        if self.reflex_process_log_path is not None:
+            print(self.reflex_process_log_path.read_text())  # noqa: T201  for pytest debugging
+        # If there are errors in the logs, raise an exception.
+        if (
+            self.reflex_process_error_log_path is not None
+            and self.reflex_process_error_log_path.exists()
+        ):
+            error_log_content = self.reflex_process_error_log_path.read_text()
+            if error_log_content:
+                msg = f"Reflex process error log contains errors:\n{error_log_content}"
+                raise ReflexProcessLoggedErrorError(msg)
+        # When the process exits non-zero, but wasn't killed, it is a test failure.
+        if returncode is not None and returncode != 0:
+            msg = (
+                f"Reflex process exited with code {returncode}. "
+                "Check the logs for more details."
+            )
+            raise ReflexProcessExitNonZeroError(msg)
 
     def __exit__(self, *excinfo) -> None:
         """Contextmanager protocol for `stop()`.
@@ -1049,7 +947,7 @@ class AppHarnessProd(AppHarness):
             root=web_root,
             error_page_map=error_page_map,
         ) as self.frontend_server:
-            self.frontend_url = "http://localhost:{1}".format(
+            self.frontend_url = "http://localhost:{1}/".format(
                 *self.frontend_server.socket.getsockname()
             )
             self.frontend_server.serve_forever()
