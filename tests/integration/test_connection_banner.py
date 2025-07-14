@@ -14,7 +14,11 @@ from .utils import SessionStorage
 
 
 def ConnectionBanner(simulate_compile_context: str):
-    """App with a connection banner."""
+    """App with a connection banner.
+
+    Args:
+        simulate_compile_context: The context to run the app with.
+    """
     import asyncio
 
     import reflex as rx
