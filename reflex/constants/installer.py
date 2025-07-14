@@ -149,4 +149,5 @@ class PackageJson(SimpleNamespace):
         # This should always match the `react` version in DEPENDENCIES for recharts compatibility.
         "react-is": _react_version,
         "cookie": "1.0.2",
+        "rollup": "4.44.2",
     }
