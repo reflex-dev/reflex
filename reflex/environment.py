@@ -650,6 +650,9 @@ class EnvironmentVariables:
     # Enable full logging of debug messages to reflex user directory.
     REFLEX_ENABLE_FULL_LOGGING: EnvVar[bool] = env_var(False)
 
+    # The path to the reflex errors log file. If not set, no separate error log will be used.
+    REFLEX_ERROR_LOG_FILE: EnvVar[Path | None] = env_var(None)
+
 
 environment = EnvironmentVariables()
 
