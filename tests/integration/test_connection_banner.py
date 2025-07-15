@@ -1,5 +1,6 @@
 """Test case for displaying the connection banner when the websocket drops."""
 
+import asyncio
 import functools
 from collections.abc import Generator
 
@@ -180,6 +181,7 @@ async def test_connection_banner(connection_banner: AppHarness):
     assert connection_banner.poll_for_value(counter_element, exp_not_equal="0") == "1"
 
     # Bring the backend back up (backend only)
+    await asyncio.sleep(3)
     connection_banner._start_subprocess(frontend=False)
 
     # Create a new StateManager to avoid async loop affinity issues w/ redis
