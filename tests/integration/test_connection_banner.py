@@ -10,6 +10,7 @@ from selenium.webdriver.common.by import By
 
 from reflex import constants
 from reflex.testing import AppHarness, WebDriver
+from reflex.utils import processes
 
 from .utils import SessionStorage
 
@@ -20,8 +21,6 @@ def ConnectionBanner(simulate_compile_context: str):
     Args:
         simulate_compile_context: The context to run the app with.
     """
-    import asyncio
-
     import reflex as rx
     from reflex.constants import CompileContext
     from reflex.environment import environment
@@ -180,8 +179,13 @@ async def test_connection_banner(connection_banner: AppHarness):
     increment_button.click()
     assert connection_banner.poll_for_value(counter_element, exp_not_equal="0") == "1"
 
-    # Bring the backend back up (backend only)
-    await asyncio.sleep(3)
+    # Bring the backend back up once the port is free'd.
+    AppHarness._poll_for(
+        lambda: processes.handle_port(
+            "backend", connection_banner.backend_port or 0, auto_increment=False
+        ),
+        timeout=30,
+    )
     connection_banner._start_subprocess(frontend=False)
 
     # Create a new StateManager to avoid async loop affinity issues w/ redis
