@@ -517,8 +517,8 @@ class App(MiddlewareMixin, LifespanMixin):
                 async_mode="asgi",
                 cors_allowed_origins=(
                     "*"
-                    if config.cors_allowed_origins == ["*"]
-                    else config.cors_allowed_origins
+                    if config.cors_allowed_origins == ("*",)
+                    else list(config.cors_allowed_origins)
                 ),
                 cors_credentials=True,
                 max_http_buffer_size=environment.REFLEX_SOCKET_MAX_HTTP_BUFFER_SIZE.get(),
