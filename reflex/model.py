@@ -19,6 +19,7 @@ import sqlalchemy.exc
 import sqlalchemy.ext.asyncio
 import sqlalchemy.orm
 from alembic.runtime.migration import MigrationContext
+from alembic.script.base import Script
 
 from reflex.base import Base
 from reflex.config import get_config
@@ -32,6 +33,41 @@ _AsyncSessionLocal: dict[str | None, sqlalchemy.ext.asyncio.async_sessionmaker] 
 
 # Import AsyncSession _after_ reflex.utils.compat
 from sqlmodel.ext.asyncio.session import AsyncSession  # noqa: E402
+
+
+def format_revision(
+    rev: Script,
+    current_rev: str | None,
+    current_reached_ref: list[bool],
+) -> str:
+    """Format a single revision for display.
+
+    Args:
+        rev: The alembic script object
+        current_rev: The currently applied revision ID
+        current_reached_ref: Mutable reference to track if we've reached current revision
+
+    Returns:
+        Formatted string for display
+    """
+    current = rev.revision
+    message = rev.doc
+
+    # Determine if this migration is applied
+    if current_rev is None:
+        is_applied = False
+    elif current == current_rev:
+        is_applied = True
+        current_reached_ref[0] = True
+    else:
+        is_applied = not current_reached_ref[0]
+
+    # Show checkmark or X with colors
+    status_icon = "[green]✓[/green]" if is_applied else "[red]✗[/red]"
+    head_marker = " (head)" if rev.is_head else ""
+
+    # Format output with message
+    return f"  [{status_icon}] {current}{head_marker}, {message}"
 
 
 def _safe_db_url_for_logging(url: str) -> str:
@@ -360,6 +396,25 @@ class Model(Base, sqlmodel.SQLModel):  # pyright: ignore [reportGeneralTypeIssue
             config=alembic.config.Config(environment.ALEMBIC_CONFIG.get()),
             directory=str(environment.ALEMBIC_CONFIG.get().parent / "alembic"),
         )
+
+    @classmethod
+    def get_migration_history(cls):
+        """Get migration history with current database state.
+
+        Returns:
+            tuple: (current_revision, revisions_list) where revisions_list is in chronological order
+        """
+        # Get current revision from database
+        with cls.get_db_engine().connect() as connection:
+            context = MigrationContext.configure(connection)
+            current_rev = context.get_current_revision()
+
+        # Get all revisions from base to head
+        _, script_dir = cls._alembic_config()
+        revisions = list(script_dir.walk_revisions())
+        revisions.reverse()  # Reverse to get chronological order (base first)
+
+        return current_rev, revisions
 
     @classmethod
     def alembic_autogenerate(
