@@ -18,7 +18,7 @@ import textwrap
 import threading
 import time
 import types
-from collections.abc import AsyncIterator, Callable, Coroutine, Sequence
+from collections.abc import Callable, Coroutine, Sequence
 from http.server import SimpleHTTPRequestHandler
 from io import TextIOWrapper
 from pathlib import Path
@@ -126,14 +126,6 @@ class AppHarness:
     state_manager: StateManager | None = None
     _frontends: list[WebDriver] = dataclasses.field(default_factory=list)
     _reflex_process_log_fn: TextIOWrapper | None = None
-
-    backend: Any = (
-        None  # No longer used in AppHarness, uvicorn.Server in AppHarnessProd
-    )
-    backend_thread: threading.Thread | None = (
-        None  # No longer used in AppHarness, Thread in AppHarnessProd
-    )
-    frontend_process: Any = None  # No longer used, kept for compatibility
 
     @classmethod
     def create(
@@ -397,13 +389,6 @@ class AppHarness:
                                     )
                                 elif net_conn.laddr.port == self.backend_port:
                                     backend_ready = True
-
-    def _start_backend(self, port: int | None = None):
-        """Compatibility method - no longer used but kept for tests.
-
-        Args:
-            port: Port parameter for compatibility, ignored in subprocess implementation.
-        """
 
     async def _reset_backend_state_manager(self):
         """Reset the StateManagerRedis event loop affinity.
@@ -674,36 +659,6 @@ class AppHarness:
             await self._reset_backend_state_manager()
             if isinstance(self.state_manager, StateManagerRedis):
                 await self.state_manager.close()
-
-    async def set_state(self, token: str, **kwargs) -> None:
-        """Set the state associated with the given token.
-
-        Args:
-            token: The state token to set.
-            kwargs: Attributes to set on the state.
-
-        Raises:
-            NotImplementedError: This method is not implemented.
-        """
-        msg = "set_state is not implemented. rewrite your test"
-        raise NotImplementedError(msg)
-
-    @contextlib.asynccontextmanager
-    async def modify_state(self, token: str) -> AsyncIterator[BaseState]:
-        """Modify the state associated with the given token and send update to frontend.
-
-        Args:
-            token: The state token to modify
-
-        Yields:
-            The state instance associated with the given token
-
-        Raises:
-            NotImplementedError: This method is not implemented.
-        """
-        msg = "modify_state is not implemented. rewrite your test"
-        raise NotImplementedError(msg)
-        yield
 
     def poll_for_content(
         self,
@@ -984,14 +939,6 @@ class AppHarnessProd(AppHarness):
         if self.frontend_server is None or not self.frontend_server.socket.fileno():
             msg = "Frontend did not start"
             raise RuntimeError(msg)
-
-    def _get_backend_shutdown_handler(self):
-        """Get the backend shutdown handler.
-
-        Returns:
-            A lambda function that does nothing for compatibility.
-        """
-        return lambda: None
 
     def start(self) -> AppHarness:
         """Start the app using reflex run subprocess.
