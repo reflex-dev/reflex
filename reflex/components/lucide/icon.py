@@ -6,7 +6,7 @@ from reflex.utils.imports import ImportVar
 from reflex.vars.base import LiteralVar, Var
 from reflex.vars.sequence import LiteralStringVar, StringVar
 
-LUCIDE_LIBRARY = "lucide-react@0.511.0"
+LUCIDE_LIBRARY = "lucide-react@0.525.0"
 
 
 class LucideIconComponent(Component):
@@ -248,6 +248,7 @@ LUCIDE_ICON_LIST = [
     "bar_chart_horizontal",
     "bar_chart",
     "barcode",
+    "barrel",
     "baseline",
     "bath",
     "battery_charging",
@@ -296,6 +297,7 @@ LUCIDE_ICON_LIST = [
     "bomb",
     "bone",
     "book_a",
+    "book_alert",
     "book_audio",
     "book_check",
     "book_copy",
@@ -328,6 +330,7 @@ LUCIDE_ICON_LIST = [
     "bot_message_square",
     "bot_off",
     "bot",
+    "bottle_wine",
     "bow_arrow",
     "box_select",
     "box",
@@ -393,6 +396,7 @@ LUCIDE_ICON_LIST = [
     "car_taxi_front",
     "car",
     "caravan",
+    "card_sim",
     "carrot",
     "case_lower",
     "case_sensitive",
@@ -483,6 +487,7 @@ LUCIDE_ICON_LIST = [
     "circle_percent",
     "circle_play",
     "circle_plus",
+    "circle_pound_sterling",
     "circle_power",
     "circle_slash_2",
     "circle_slash",
@@ -525,6 +530,7 @@ LUCIDE_ICON_LIST = [
     "clock_plus",
     "clock",
     "cloud_alert",
+    "cloud_check",
     "cloud_cog",
     "cloud_download",
     "cloud_drizzle",
@@ -638,6 +644,7 @@ LUCIDE_ICON_LIST = [
     "drama",
     "dribbble",
     "drill",
+    "drone",
     "droplet_off",
     "droplet",
     "droplets",
@@ -818,6 +825,7 @@ LUCIDE_ICON_LIST = [
     "gauge",
     "gavel",
     "gem",
+    "georgian_lari",
     "ghost",
     "gift",
     "git_branch_plus",
@@ -852,6 +860,7 @@ LUCIDE_ICON_LIST = [
     "grid_2x_2",
     "grid_2x2",
     "grid_3x_3",
+    "grid_3x2",
     "grid_3x3",
     "grip_horizontal",
     "grip_vertical",
@@ -908,6 +917,7 @@ LUCIDE_ICON_LIST = [
     "house",
     "ice_cream_bowl",
     "ice_cream_cone",
+    "id_card_lanyard",
     "id_card",
     "image_down",
     "image_minus",
@@ -974,6 +984,7 @@ LUCIDE_ICON_LIST = [
     "lightbulb_off",
     "lightbulb",
     "line_chart",
+    "line_squiggle",
     "link_2_off",
     "link_2",
     "link",
@@ -1279,6 +1290,7 @@ LUCIDE_ICON_LIST = [
     "receipt_swiss_franc",
     "receipt_text",
     "receipt",
+    "rectangle_circle",
     "rectangle_ellipsis",
     "rectangle_goggles",
     "rectangle_horizontal",
@@ -1437,6 +1449,7 @@ LUCIDE_ICON_LIST = [
     "spline_pointer",
     "spline",
     "split",
+    "spool",
     "spray_can",
     "sprout",
     "square_activity",
@@ -1506,6 +1519,7 @@ LUCIDE_ICON_LIST = [
     "squares_intersect",
     "squares_subtract",
     "squares_unite",
+    "squircle_dashed",
     "squircle",
     "squirrel",
     "stamp",
@@ -1590,6 +1604,7 @@ LUCIDE_ICON_LIST = [
     "toggle_left",
     "toggle_right",
     "toilet",
+    "tool_case",
     "tornado",
     "torus",
     "touchpad_off",
@@ -1668,6 +1683,7 @@ LUCIDE_ICON_LIST = [
     "utility_pole",
     "variable",
     "vault",
+    "vector_square",
     "vegan",
     "venetian_mask",
     "venus_and_mars",
@@ -1705,6 +1721,7 @@ LUCIDE_ICON_LIST = [
     "wheat_off",
     "wheat",
     "whole_word",
+    "wifi_cog",
     "wifi_high",
     "wifi_low",
     "wifi_off",
@@ -1729,10 +1746,4 @@ LUCIDE_ICON_LIST = [
 
 # The default transformation of some icon names doesn't match how the
 # icons are exported from Lucide. Manual overrides can go here.
-LUCIDE_ICON_MAPPING_OVERRIDE = {
-    "box_select": "BoxSelectIcon",
-    "grid_2x_2_check": "Grid2x2CheckIcon",
-    "grid_2x_2_x": "Grid2x2XIcon",
-    "grid_2x_2_plus": "Grid2x2PlusIcon",
-    "layers_3": "Layers3Icon",
-}
+LUCIDE_ICON_MAPPING_OVERRIDE = {"grid_3x2": "Grid3x2Icon"}
