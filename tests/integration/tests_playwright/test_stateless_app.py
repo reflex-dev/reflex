@@ -12,7 +12,6 @@ from reflex.testing import AppHarness
 
 def StatelessApp():
     """A stateless app that renders a heading."""
-    import reflex as rx
 
     def index():
         return rx.heading("This is a stateless app")
@@ -51,10 +50,10 @@ def test_statelessness(stateless_app: AppHarness, page: Page):
         stateless_app.reflex_process.poll() is None
     )  # Ensure the process is still running
 
-    res = httpx.get(rx.config.get_config().api_url + "/_event")
+    res = httpx.get(f"http://localhost:{stateless_app.backend_port}/_event")
     assert res.status_code == 404
 
-    res2 = httpx.get(rx.config.get_config().api_url + "/ping")
+    res2 = httpx.get(f"http://localhost:{stateless_app.backend_port}/ping")
     assert res2.status_code == 200
 
     page.goto(stateless_app.frontend_url)
