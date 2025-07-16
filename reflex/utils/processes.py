@@ -69,15 +69,8 @@ def _can_bind_at_port(
     """
     try:
         with closing(socket.socket(address_family, socket.SOCK_STREAM)) as sock:
-            sock.setsockopt(
-                socket.SOL_SOCKET,
-                (
-                    socket.SO_EXCLUSIVEADDRUSE
-                    if sys.platform == "win32"
-                    else socket.SO_REUSEADDR
-                ),
-                1,
-            )
+            if sys.platform != "win32":
+                sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
             sock.bind((address, port))
     except (OverflowError, PermissionError, OSError) as e:
         console.warn(f"Unable to bind to {address}:{port} due to: {e}.")
