@@ -128,6 +128,21 @@ def should_use_log_file_console() -> bool:
     return environment.REFLEX_ENABLE_FULL_LOGGING.get()
 
 
+@once
+def error_log_file_console():
+    """Create a console that logs errors to a file.
+
+    Returns:
+        A Console object that logs errors to a file.
+    """
+    from reflex.environment import environment
+
+    if not (env_error_log_file := environment.REFLEX_ERROR_LOG_FILE.get()):
+        return None
+    env_error_log_file.parent.mkdir(parents=True, exist_ok=True)
+    return Console(file=env_error_log_file.open("a", encoding="utf-8"))
+
+
 def print_to_log_file(msg: str, *, dedupe: bool = False, **kwargs):
     """Print a message to the log file.
 
@@ -328,6 +343,8 @@ def error(msg: str, *, dedupe: bool = False, **kwargs):
         print(f"[red]{msg}[/red]", **kwargs)
     if should_use_log_file_console():
         print_to_log_file(f"[red]{msg}[/red]", **kwargs)
+    if error_log_file := error_log_file_console():
+        error_log_file.print(f"[red]{msg}[/red]", **kwargs)
 
 
 def ask(

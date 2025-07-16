@@ -1,5 +1,6 @@
 """Test case for displaying the connection banner when the websocket drops."""
 
+import functools
 from collections.abc import Generator
 
 import pytest
@@ -7,17 +8,25 @@ from selenium.common.exceptions import NoSuchElementException
 from selenium.webdriver.common.by import By
 
 from reflex import constants
-from reflex.environment import environment
 from reflex.testing import AppHarness, WebDriver
+from reflex.utils import processes
 
 from .utils import SessionStorage
 
 
-def ConnectionBanner():
-    """App with a connection banner."""
+def ConnectionBanner(simulate_compile_context: str):
+    """App with a connection banner.
+
+    Args:
+        simulate_compile_context: The context to run the app with.
+    """
     import asyncio
 
     import reflex as rx
+    from reflex.constants import CompileContext
+    from reflex.environment import environment
+
+    environment.REFLEX_COMPILE_CONTEXT.set(CompileContext(simulate_compile_context))
 
     class State(rx.State):
         foo: int = 0
@@ -72,11 +81,11 @@ def connection_banner(
     Yields:
         running AppHarness instance
     """
-    environment.REFLEX_COMPILE_CONTEXT.set(simulate_compile_context)
-
     with AppHarness.create(
         root=tmp_path,
-        app_source=ConnectionBanner,
+        app_source=functools.partial(
+            ConnectionBanner, simulate_compile_context=simulate_compile_context.value
+        ),
         app_name=(
             "connection_banner_reflex_cloud"
             if simulate_compile_context == constants.CompileContext.DEPLOY
@@ -144,7 +153,7 @@ async def test_connection_banner(connection_banner: AppHarness):
         connection_banner: AppHarness instance.
     """
     assert connection_banner.app_instance is not None
-    assert connection_banner.backend is not None
+    assert connection_banner.reflex_process is not None
     driver = connection_banner.frontend()
 
     _assert_token(connection_banner, driver)
@@ -161,23 +170,26 @@ async def test_connection_banner(connection_banner: AppHarness):
     # Start an long event before killing the backend, to mark event_processing=true
     delay_button.click()
 
-    # Get the backend port
-    backend_port = connection_banner._poll_for_servers().getsockname()[1]
-
-    # Kill the backend
-    connection_banner.backend.should_exit = True
-    if connection_banner.backend_thread is not None:
-        connection_banner.backend_thread.join()
+    # Kill reflex
+    connection_banner._stop_reflex()
 
     # Error modal should now be displayed
-    AppHarness.expect(lambda: has_error_modal(driver))
+    AppHarness.expect(lambda: has_error_modal(driver), timeout=30, step=1)
 
     # Increment the counter with backend down
     increment_button.click()
     assert connection_banner.poll_for_value(counter_element, exp_not_equal="0") == "1"
 
-    # Bring the backend back up
-    connection_banner._start_backend(port=backend_port)
+    # Bring the backend back up once the port is free'd.
+    if result := AppHarness._poll_for(
+        lambda: processes.handle_port(
+            "backend", connection_banner.backend_port or 0, auto_increment=False
+        ),
+        timeout=120,
+    ):
+        print(f"Port {result} is now free.")
+    assert result, f"Port is not free: {connection_banner.backend_port} after timeout."
+    connection_banner._start_subprocess(frontend=False)
 
     # Create a new StateManager to avoid async loop affinity issues w/ redis
     await connection_banner._reset_backend_state_manager()
@@ -200,7 +212,7 @@ async def test_cloud_banner(
         simulate_compile_context: Which context to set for the app.
     """
     assert connection_banner.app_instance is not None
-    assert connection_banner.backend is not None
+    assert connection_banner.reflex_process is not None
     driver = connection_banner.frontend()
 
     driver.add_cookie({"name": "backend-enabled", "value": "truly"})

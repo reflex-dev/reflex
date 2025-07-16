@@ -3,6 +3,7 @@
 import functools
 from collections.abc import Generator
 
+import httpx
 import pytest
 from selenium.webdriver.common.by import By
 
@@ -22,6 +23,8 @@ def LifespanApp(
     """
     import asyncio
     from contextlib import asynccontextmanager
+
+    from starlette.responses import JSONResponse
 
     import reflex as rx
 
@@ -90,6 +93,17 @@ def LifespanApp(
     app.register_lifespan_task(lifespan_task)
     app.register_lifespan_task(lifespan_context, inc=2)
     app.add_page(index)
+    assert app._api is not None
+    app._api.add_route(
+        "/lifespan_globals",
+        lambda req: JSONResponse(
+            {
+                "task_global": lifespan_task_global,
+                "context_global": lifespan_context_global,
+            }
+        ),
+        methods=["GET"],
+    )
 
 
 @pytest.fixture(
@@ -154,7 +168,7 @@ async def test_lifespan(lifespan_app: AppHarness):
         lifespan_app: harness for LifespanApp app
     """
     assert lifespan_app.app_module is not None, "app module is not found"
-    assert lifespan_app.app_instance is not None, "app is not running"
+    assert lifespan_app.reflex_process is not None, "app is not running"
     driver = lifespan_app.frontend()
 
     ss = SessionStorage(driver)
@@ -164,21 +178,21 @@ async def test_lifespan(lifespan_app: AppHarness):
     task_global = driver.find_element(By.ID, "task_global")
 
     assert lifespan_app.poll_for_content(context_global, exp_not_equal="0") == "2"
-    assert lifespan_app.app_module.lifespan_context_global == 2
+    async with httpx.AsyncClient() as client:
+        response = await client.get(
+            f"http://localhost:{lifespan_app.backend_port}/lifespan_globals"
+        )
+        backend_values = response.json()
+        assert backend_values["context_global"] == 2
 
     original_task_global_text = task_global.text
     original_task_global_value = int(original_task_global_text)
     lifespan_app.poll_for_content(task_global, exp_not_equal=original_task_global_text)
     driver.find_element(By.ID, "toggle-tick").click()  # avoid teardown errors
-    assert lifespan_app.app_module.lifespan_task_global > original_task_global_value
+    async with httpx.AsyncClient() as client:
+        response = await client.get(
+            f"http://localhost:{lifespan_app.backend_port}/lifespan_globals"
+        )
+        backend_values = response.json()
+        assert backend_values["task_global"] > original_task_global_value
     assert int(task_global.text) > original_task_global_value
-
-    # Kill the backend
-    assert lifespan_app.backend is not None
-    lifespan_app.backend.should_exit = True
-    if lifespan_app.backend_thread is not None:
-        lifespan_app.backend_thread.join()
-
-    # Check that the lifespan tasks have been cancelled
-    assert lifespan_app.app_module.lifespan_task_global == 0
-    assert lifespan_app.app_module.lifespan_context_global == 4

@@ -52,6 +52,11 @@ def FullyControlledInput():
             rx.button(
                 "CLEAR", on_click=rx.set_value("on_change_input", ""), id="clear"
             ),
+            rx.button(
+                "Clear Text Backend",
+                on_click=State.set_text(""),
+                id="clear-text-backend",
+            ),
         )
 
 
@@ -146,17 +151,15 @@ async def test_fully_controlled_input(fully_controlled_input: AppHarness):
     assert fully_controlled_input.poll_for_value(plain_value_input) == "ifoonitial"
 
     # clear the input on the backend
-    async with fully_controlled_input.modify_state(
-        f"{token}_{full_state_name}"
-    ) as state:
-        state.substates[state_name].text = ""
-    assert await get_state_text() == ""
+    clear_text_backend = driver.find_element(By.ID, "clear-text-backend")
+    clear_text_backend.click()
     assert (
         fully_controlled_input.poll_for_value(
             debounce_input, exp_not_equal="ifoonitial"
         )
         == ""
     )
+    assert await get_state_text() == ""
 
     # type more characters
     debounce_input.send_keys("getting testing done")
