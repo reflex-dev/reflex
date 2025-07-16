@@ -87,11 +87,17 @@ def is_process_on_port(port: int) -> bool:
     Returns:
         Whether a process is running on the given port.
     """
-    return not _can_bind_at_port(  # Test IPv4 localhost (127.0.0.1)
-        socket.AF_INET, "127.0.0.1", port
-    ) or not _can_bind_at_port(
-        socket.AF_INET6, "::1", port
-    )  # Test IPv6 localhost (::1)
+    return (
+        not _can_bind_at_port(
+            socket.AF_INET, "127.0.0.1", port
+        )  # Test IPv4 localhost (127.0.0.1)
+        or not _can_bind_at_port(
+            socket.AF_INET, "0.0.0.0", port
+        )  # Test IPv4 local network (0.0.0.0)
+        or not _can_bind_at_port(
+            socket.AF_INET6, "::1", port
+        )  # Test IPv6 localhost (::1)
+    )
 
 
 MAXIMUM_PORT = 2**16 - 1
