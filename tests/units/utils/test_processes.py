@@ -26,7 +26,6 @@ def test_is_process_on_port_occupied_port():
     """Test is_process_on_port returns True when port is occupied."""
     # Create a server socket to occupy a port
     server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     server_socket.bind(("127.0.0.1", 0))
     server_socket.listen(1)
 
@@ -44,7 +43,6 @@ def test_is_process_on_port_ipv6():
     # Test with IPv6 socket
     try:
         server_socket = socket.socket(socket.AF_INET6, socket.SOCK_STREAM)
-        server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         server_socket.bind(("::1", 0))
         server_socket.listen(1)
 
@@ -64,7 +62,6 @@ def test_is_process_on_port_both_protocols():
     """Test is_process_on_port detects occupation on either IPv4 or IPv6."""
     # Create IPv4 server
     ipv4_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    ipv4_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     ipv4_socket.bind(("127.0.0.1", 0))
     ipv4_socket.listen(1)
 
@@ -123,7 +120,6 @@ def test_is_process_on_port_concurrent_access():
     def create_server_and_test():
         nonlocal shared
         server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         server.bind(("127.0.0.1", 0))
 
         server.listen(1)
