@@ -993,7 +993,7 @@ export const useEventLoop = (
     window.onerror = function (msg, url, lineNo, columnNo, error) {
       addEvents([
         Event(`${exception_state_name}.handle_frontend_exception`, {
-          stack: error.stack,
+          stack: error.name + ': ' + error.message + '\n' + error.stack,
           component_stack: "",
         }),
       ]);
