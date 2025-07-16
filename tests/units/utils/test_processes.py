@@ -118,8 +118,10 @@ def test_is_process_on_port_permission_error():
 
 def test_is_process_on_port_concurrent_access():
     """Test is_process_on_port works correctly with concurrent access."""
+    shared = None
 
-    def create_server_and_test(port_holder):
+    def create_server_and_test():
+        nonlocal shared
         server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         server.bind(("127.0.0.1", 0))
@@ -127,27 +129,25 @@ def test_is_process_on_port_concurrent_access():
         server.listen(1)
 
         port = server.getsockname()[1]
-        port_holder[0] = port
+        shared = port
 
         # Small delay to ensure the test runs while server is active
         time.sleep(0.1)
         server.close()
 
-    port_holder = [None]
-    thread = threading.Thread(target=create_server_and_test, args=(port_holder))
+    thread = threading.Thread(target=create_server_and_test)
     thread.start()
 
     # Wait a bit for the server to start
     time.sleep(0.05)
 
-    if port_holder[0] is not None:
-        # Port should be occupied while server is running (both bound-only and listening)
-        assert is_process_on_port(port_holder[0])
+    assert shared is not None
+
+    # Port should be occupied while server is running (both bound-only and listening)
+    assert is_process_on_port(shared)
 
     thread.join()
 
-    # After thread ends and server closes, port should be free
-    if port_holder[0] is not None:
-        # Give it a moment for the socket to be fully released
-        time.sleep(0.1)
-        assert not is_process_on_port(port_holder[0])
+    # Give it a moment for the socket to be fully released
+    time.sleep(0.1)
+    assert not is_process_on_port(shared)
