@@ -17,6 +17,7 @@ def test_is_process_on_port_free_port():
     with closing(socket.socket(socket.AF_INET, socket.SOCK_STREAM)) as sock:
         sock.bind(("127.0.0.1", 0))
         free_port = sock.getsockname()[1]
+        sock.close()
 
     # Port should be free after socket is closed
     assert not is_process_on_port(free_port)
@@ -117,11 +118,7 @@ def test_is_process_on_port_permission_error():
 
 
 def test_is_process_on_port_concurrent_access():
-    """Test is_process_on_port works correctly with concurrent access.
-
-    Args:
-        should_listen: Whether the server socket should call listen() or just bind().
-    """
+    """Test is_process_on_port works correctly with concurrent access."""
 
     def create_server_and_test(port_holder):
         server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
