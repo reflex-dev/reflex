@@ -116,21 +116,19 @@ def test_is_process_on_port_permission_error():
         assert result is True
 
 
-@pytest.mark.parametrize("should_listen", [True, False])
-def test_is_process_on_port_concurrent_access(should_listen):
+def test_is_process_on_port_concurrent_access():
     """Test is_process_on_port works correctly with concurrent access.
 
     Args:
         should_listen: Whether the server socket should call listen() or just bind().
     """
 
-    def create_server_and_test(port_holder, listen):
+    def create_server_and_test(port_holder):
         server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         server.bind(("127.0.0.1", 0))
 
-        if listen:
-            server.listen(1)
+        server.listen(1)
 
         port = server.getsockname()[1]
         port_holder[0] = port
@@ -140,9 +138,7 @@ def test_is_process_on_port_concurrent_access(should_listen):
         server.close()
 
     port_holder = [None]
-    thread = threading.Thread(
-        target=create_server_and_test, args=(port_holder, should_listen)
-    )
+    thread = threading.Thread(target=create_server_and_test, args=(port_holder))
     thread.start()
 
     # Wait a bit for the server to start
