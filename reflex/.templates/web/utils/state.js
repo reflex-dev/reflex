@@ -993,7 +993,7 @@ export const useEventLoop = (
     window.onerror = function (msg, url, lineNo, columnNo, error) {
       addEvents([
         Event(`${exception_state_name}.handle_frontend_exception`, {
-          stack: error.name + ': ' + error.message + '\n' + error.stack,
+          info: error.name + ": " + error.message + "\n" + error.stack,
           component_stack: "",
         }),
       ]);
@@ -1005,7 +1005,12 @@ export const useEventLoop = (
     window.onunhandledrejection = function (event) {
       addEvents([
         Event(`${exception_state_name}.handle_frontend_exception`, {
-          stack: event.reason?.stack,
+          info:
+            event.reason?.name +
+            ": " +
+            event.reason?.message +
+            "\n" +
+            event.reason?.stack,
           component_stack: "",
         }),
       ]);
