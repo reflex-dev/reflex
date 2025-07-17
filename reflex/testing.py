@@ -402,6 +402,7 @@ class AppHarness:
                 and _is_port_responsive(self.frontend_port)
             ):
                 frontend_ready = True
+                self.frontend_url = f"http://localhost:{self.frontend_port}/"
 
     async def _reset_backend_state_manager(self):
         """Reset the StateManagerRedis event loop affinity.
