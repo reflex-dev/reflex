@@ -1100,7 +1100,12 @@ class BaseState(EvenMoreBasicBaseState):
         Returns:
             The event handler.
         """
-        return EventHandler(fn=fn, state_full_name=cls.get_full_name())
+        # Check if function has stored event_actions from decorator
+        event_actions = getattr(fn, "_rx_event_actions", {})
+
+        return EventHandler(
+            fn=fn, state_full_name=cls.get_full_name(), event_actions=event_actions
+        )
 
     @classmethod
     def _create_setvar(cls):
