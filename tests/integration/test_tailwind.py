@@ -46,7 +46,11 @@ def TailwindApp(
     assets.mkdir(exist_ok=True)
     stylesheet = assets / "test_styles.css"
     stylesheet.write_text(".external { color: rgba(0, 0, 255, 0.5) }")
-    app = rx.App(style={"font_family": "monospace"}, stylesheets=[stylesheet.name])
+    app = rx.App(
+        style={"font_family": "monospace"},
+        stylesheets=[stylesheet.name],
+        enable_state=False,
+    )
     app.add_page(index)
     if not tailwind_version:
         config = rx.config.get_config()
