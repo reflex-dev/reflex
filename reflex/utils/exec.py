@@ -565,6 +565,12 @@ def run_backend_prod(
         run_uvicorn_backend_prod(host, port, loglevel)
 
 
+def _get_backend_workers():
+    from reflex.utils import processes
+
+    return processes.get_num_workers()
+
+
 def run_uvicorn_backend_prod(host: str, port: int, loglevel: LogLevel):
     """Run the backend in production mode using Uvicorn.
 
@@ -585,6 +591,7 @@ def run_uvicorn_backend_prod(host: str, port: int, loglevel: LogLevel):
             "uvicorn",
             *("--host", host),
             *("--port", str(port)),
+            *("--workers", str(_get_backend_workers())),
             "--factory",
             app_module,
         ]
@@ -600,8 +607,8 @@ def run_uvicorn_backend_prod(host: str, port: int, loglevel: LogLevel):
             "-m",
             "gunicorn",
             "--preload",
-            "--worker-class",
-            "uvicorn.workers.UvicornH11Worker",
+            *("--worker-class", "uvicorn.workers.UvicornH11Worker"),
+            *("--threads", str(_get_backend_workers())),
             *("--bind", f"{host}:{port}"),
             *env_args,
             f"{app_module}()",
@@ -643,13 +650,19 @@ def run_granian_backend_prod(host: str, port: int, loglevel: LogLevel):
         *("--interface", str(Interfaces.ASGI)),
         *("--factory", get_app_instance_from_file()),
     ]
+
+    extra_env = {
+        environment.REFLEX_SKIP_COMPILE.name: "true",  # skip compile for prod backend
+    }
+
+    if "GRANIAN_WORKERS" not in os.environ:
+        extra_env["GRANIAN_WORKERS"] = str(_get_backend_workers())
+
     processes.new_process(
         command,
         run=True,
         show_logs=True,
-        env={
-            environment.REFLEX_SKIP_COMPILE.name: "true"
-        },  # skip compile for prod backend
+        env=extra_env,
     )
 
 
