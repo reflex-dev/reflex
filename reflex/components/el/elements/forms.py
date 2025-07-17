@@ -466,11 +466,13 @@ class Input(BaseInput):
         if cls is Input:
             input_type = props.get("type")
 
-            if input_type == "checkbox":
+            if isinstance(input_type, str) and input_type == "checkbox":
                 # Checkbox inputs should use the CheckboxInput class
                 return CheckboxInput.create(*children, **props)
 
-            if input_type == "number" or input_type == "range":
+            if isinstance(input_type, str) and (
+                input_type == "number" or input_type == "range"
+            ):
                 # Number inputs should use the ValueNumberInput class
                 return ValueNumberInput.create(*children, **props)
 
