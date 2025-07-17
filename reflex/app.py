@@ -1892,7 +1892,7 @@ def upload(app: App):
         # check if there exists any handler args with annotation, list[UploadFile]
         if isinstance(func, EventHandler):
             if func.is_background:
-                msg = f"@rx.event(background=True) is not supported for upload handler `{handler}`."
+                msg = f"@rx.event(background=True) is not supported for upload handler `{handler}`. Upload handlers require synchronous state management and cannot run as background tasks."
                 raise UploadTypeError(msg)
             func = func.fn
         if isinstance(func, functools.partial):
