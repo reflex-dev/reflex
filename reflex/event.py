@@ -2260,7 +2260,7 @@ class EventNamespace:
             prevent_default: Whether to prevent the default behavior of the event.
             throttle: Throttle the event handler to limit calls (in milliseconds).
             debounce: Debounce the event handler to delay calls (in milliseconds).
-            temporal: Whether the event should be temporal.
+            temporal: Whether the event should be dropped when the backend is down.
 
         Raises:
             TypeError: If background is True and the function is not a coroutine or async generator. # noqa: DAR402
