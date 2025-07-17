@@ -16,7 +16,7 @@ def StatelessApp():
     def index():
         return rx.heading("This is a stateless app")
 
-    app = rx.App()
+    app = rx.App(enable_state=False)
     app.add_page(index)
 
 

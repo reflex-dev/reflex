@@ -1,5 +1,5 @@
 {
-  "reflex/__init__.pyi": "c69e4120c505941af8087b9c18df6121",
+  "reflex/__init__.pyi": "8f9482b205f5a33a59f748006ded637b",
   "reflex/components/__init__.pyi": "ac05995852baa81062ba3d18fbc489fb",
   "reflex/components/base/__init__.pyi": "16e47bf19e0d62835a605baa3d039c5a",
   "reflex/components/base/app_wrap.pyi": "ae600e2cc9d70f2ce613bdd6c1da3b16",
@@ -11,7 +11,7 @@
   "reflex/components/base/meta.pyi": "0445c66fbc32671c795640ef1a4827e9",
   "reflex/components/base/script.pyi": "43a0e21f257b10d2c76ed359284a9d80",
   "reflex/components/base/strict_mode.pyi": "d169c575d676c73edc6a3f593badfd1f",
-  "reflex/components/core/__init__.pyi": "6419485660830fe0af9c9c5715a4ed03",
+  "reflex/components/core/__init__.pyi": "007170b97e58bdf28b2aee381d91c0c7",
   "reflex/components/core/auto_scroll.pyi": "c628ed503c7bfcee0dd05cf48d5b763d",
   "reflex/components/core/banner.pyi": "407352aa1833b80b21d30647ec7717d8",
   "reflex/components/core/client_side_routing.pyi": "c3d38a1de89cfcd76735a1559e99ed05",
@@ -21,6 +21,7 @@
   "reflex/components/core/html.pyi": "faf9bb353ef4784e7f17ac97c93ef697",
   "reflex/components/core/sticky.pyi": "cdf17e6cd287e7300acd25669701d117",
   "reflex/components/core/upload.pyi": "f9be9b74d97d841b53b963d8704d5809",
+  "reflex/components/core/window_events.pyi": "04be3d73886d12774498004b712c136e",
   "reflex/components/datadisplay/__init__.pyi": "52755871369acbfd3a96b46b9a11d32e",
   "reflex/components/datadisplay/code.pyi": "3787ca724cae7b29d57ea03f981b8c22",
   "reflex/components/datadisplay/dataeditor.pyi": "23f777b8a46eff2afd95035dd5fc51a7",

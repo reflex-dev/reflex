@@ -8,6 +8,7 @@ import os
 import signal
 import socket
 import subprocess
+import sys
 from collections.abc import Callable, Generator, Sequence
 from concurrent import futures
 from contextlib import closing
@@ -68,12 +69,11 @@ def _can_bind_at_port(
     """
     try:
         with closing(socket.socket(address_family, socket.SOCK_STREAM)) as sock:
+            if sys.platform != "win32":
+                sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
             sock.bind((address, port))
-    except OverflowError:
-        return False
-    except PermissionError:
-        return False
-    except OSError:
+    except (OverflowError, PermissionError, OSError) as e:
+        console.warn(f"Unable to bind to {address}:{port} due to: {e}.")
         return False
     return True
 
@@ -87,38 +87,13 @@ def is_process_on_port(port: int) -> bool:
     Returns:
         Whether a process is running on the given port.
     """
-    return not _can_bind_at_port(  # Test IPv4 localhost (127.0.0.1)
-        socket.AF_INET, "127.0.0.1", port
-    ) or not _can_bind_at_port(
-        socket.AF_INET6, "::1", port
-    )  # Test IPv6 localhost (::1)
-
-
-def change_port(port: int, _type: str) -> int:
-    """Change the port.
-
-    Args:
-        port: The port.
-        _type: The type of the port.
-
-    Returns:
-        The new port.
-
-    Raises:
-        Exit: If the port is invalid or if the new port is occupied.
-    """
-    new_port = port + 1
-    if new_port < 0 or new_port > 65535:
-        console.error(
-            f"The {_type} port: {port} is invalid. It must be between 0 and 65535."
-        )
-        raise click.exceptions.Exit(1)
-    if is_process_on_port(new_port):
-        return change_port(new_port, _type)
-    console.info(
-        f"The {_type} will run on port [bold underline]{new_port}[/bold underline]."
+    return (
+        not _can_bind_at_port(socket.AF_INET, "", port)  # Test IPv4 local network
+        or not _can_bind_at_port(socket.AF_INET6, "", port)  # Test IPv6 local network
     )
-    return new_port
+
+
+MAXIMUM_PORT = 2**16 - 1
 
 
 def handle_port(service_name: str, port: int, auto_increment: bool) -> int:
@@ -137,13 +112,28 @@ def handle_port(service_name: str, port: int, auto_increment: bool) -> int:
         Exit:when the port is in use.
     """
     console.debug(f"Checking if {service_name.capitalize()} port: {port} is in use.")
+
     if not is_process_on_port(port):
         console.debug(f"{service_name.capitalize()} port: {port} is not in use.")
         return port
+
     if auto_increment:
-        return change_port(port, service_name)
-    console.error(f"{service_name.capitalize()} port: {port} is already in use.")
-    raise click.exceptions.Exit
+        for new_port in range(port + 1, MAXIMUM_PORT + 1):
+            if not is_process_on_port(new_port):
+                console.info(
+                    f"The {service_name} will run on port [bold underline]{new_port}[/bold underline]."
+                )
+                return new_port
+            console.debug(
+                f"{service_name.capitalize()} port: {new_port} is already in use."
+            )
+
+        # If we reach here, it means we couldn't find an available port.
+        console.error(f"Unable to find an available port for {service_name}")
+    else:
+        console.error(f"{service_name.capitalize()} port: {port} is already in use.")
+
+    raise click.exceptions.Exit(1)
 
 
 @overload

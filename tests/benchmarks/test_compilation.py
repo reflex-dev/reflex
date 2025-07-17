@@ -12,7 +12,7 @@ def import_templates():
 def test_compile_page(evaluated_page: Component, benchmark: BenchmarkFixture):
     import_templates()
 
-    benchmark(lambda: _compile_page(evaluated_page, None))
+    benchmark(lambda: _compile_page(evaluated_page))
 
 
 def test_compile_stateful(evaluated_page: Component, benchmark: BenchmarkFixture):
