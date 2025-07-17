@@ -116,7 +116,7 @@ def _is_port_responsive(port: int) -> bool:
         with contextlib.closing(
             socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         ) as sock:
-            return sock.connect_ex(("", port)) == 0
+            return sock.connect_ex(("127.0.0.1", port)) == 0
     except (OverflowError, PermissionError, OSError):
         return False
 
@@ -403,6 +403,7 @@ class AppHarness:
             ):
                 frontend_ready = True
                 self.frontend_url = f"http://localhost:{self.frontend_port}/"
+            time.sleep(POLL_INTERVAL)
 
     async def _reset_backend_state_manager(self):
         """Reset the StateManagerRedis event loop affinity.
