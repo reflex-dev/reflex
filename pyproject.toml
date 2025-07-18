@@ -21,7 +21,7 @@ keywords = ["web", "framework"]
 requires-python = ">=3.10,<4.0"
 dependencies = [
   "alembic >=1.15.2,<2.0",
-  "fastapi >=0.115.0",
+  "starlette >=0.47.0",
   "granian[reload] >=2.4.0",
   "httpx >=0.28.0,<1.0",
   "jinja2 >=3.1.2,<4.0",
