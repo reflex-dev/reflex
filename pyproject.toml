@@ -273,3 +273,6 @@ hooks = [{ id = "darglint", exclude = "^reflex/reflex.py" }]
 repo = "https://github.com/pre-commit/mirrors-prettier"
 rev = "f62a70a3a7114896b062de517d72829ea1c884b6"
 hooks = [{ id = "prettier", require_serial = true }]
+
+[tool.uv]
+required-version = ">=0.7.0"

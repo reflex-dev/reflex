@@ -24,8 +24,6 @@ from io import TextIOWrapper
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Literal, TypeVar
 
-import psutil
-
 import reflex
 import reflex.reflex
 import reflex.utils.exec
@@ -103,6 +101,24 @@ class ReflexProcessLoggedErrorError(RuntimeError):
 
 class ReflexProcessExitNonZeroError(RuntimeError):
     """Exception raised when the reflex process exits with a non-zero status."""
+
+
+def _is_port_responsive(port: int) -> bool:
+    """Check if a port is responsive.
+
+    Args:
+        port: the port to check
+
+    Returns:
+        True if the port is responsive, False otherwise
+    """
+    try:
+        with contextlib.closing(
+            socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        ) as sock:
+            return sock.connect_ex(("127.0.0.1", port)) == 0
+    except (OverflowError, PermissionError, OSError):
+        return False
 
 
 @dataclasses.dataclass
@@ -366,29 +382,28 @@ class AppHarness:
             msg = "Reflex process has no pid."
             raise RuntimeError(msg)
 
+        if backend and self.backend_port is None:
+            msg = "Backend port is not set."
+            raise RuntimeError(msg)
+
+        if frontend and self.frontend_port is None:
+            msg = "Frontend port is not set."
+            raise RuntimeError(msg)
+
         frontend_ready = False
         backend_ready = False
-        timeout = 30
-        start_time = time.time()
 
-        process = psutil.Process(self.reflex_process.pid)
         while not ((not frontend or frontend_ready) and (not backend or backend_ready)):
-            if time.time() - start_time > timeout:
-                msg = f"Timeout waiting for servers. Frontend ready: {frontend_ready}, Backend ready: {backend_ready}"
-                raise RuntimeError(msg)
-
-            for proc in process.children(recursive=True):
-                with contextlib.suppress(psutil.NoSuchProcess, psutil.AccessDenied):
-                    if ncs := proc.net_connections():
-                        for net_conn in ncs:
-                            if net_conn.status == psutil.CONN_LISTEN:
-                                if net_conn.laddr.port == self.frontend_port:
-                                    frontend_ready = True
-                                    self.frontend_url = (
-                                        f"http://localhost:{self.frontend_port}/"
-                                    )
-                                elif net_conn.laddr.port == self.backend_port:
-                                    backend_ready = True
+            if backend and self.backend_port and _is_port_responsive(self.backend_port):
+                backend_ready = True
+            if (
+                frontend
+                and self.frontend_port
+                and _is_port_responsive(self.frontend_port)
+            ):
+                frontend_ready = True
+                self.frontend_url = f"http://localhost:{self.frontend_port}/"
+            time.sleep(POLL_INTERVAL)
 
     async def _reset_backend_state_manager(self):
         """Reset the StateManagerRedis event loop affinity.
