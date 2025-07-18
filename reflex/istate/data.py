@@ -3,7 +3,7 @@
 import dataclasses
 from collections.abc import Mapping
 from typing import TYPE_CHECKING
-from urllib.parse import _NetlocResultMixinStr, urlsplit
+from urllib.parse import _NetlocResultMixinStr, parse_qsl, urlsplit
 
 from reflex import constants
 from reflex.utils import console, format
@@ -102,8 +102,10 @@ class ReflexURL(str, _NetlocResultMixinStr):
     if TYPE_CHECKING:
         scheme: str
         netloc: str
+        origin: str
         path: str
         query: str
+        query_parameters: Mapping[str, str]
         fragment: str
 
     def __new__(cls, url: str):
@@ -121,6 +123,10 @@ class ReflexURL(str, _NetlocResultMixinStr):
         object.__setattr__(obj, "netloc", netloc)
         object.__setattr__(obj, "path", path)
         object.__setattr__(obj, "query", query)
+        object.__setattr__(obj, "origin", f"{scheme}://{netloc}")
+        object.__setattr__(
+            obj, "query_parameters", _FrozenDictStrStr(**dict(parse_qsl(query)))
+        )
         object.__setattr__(obj, "fragment", fragment)
         return obj
 
