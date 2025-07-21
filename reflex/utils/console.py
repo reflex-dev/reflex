@@ -31,7 +31,7 @@ _EMITTED_DEPRECATION_WARNINGS = set()
 _EMITTED_INFO = set()
 
 # Warnings which have been printed.
-_EMIITED_WARNINGS = set()
+_EMITTED_WARNINGS = set()
 
 # Errors which have been printed.
 _EMITTED_ERRORS = set()
@@ -250,9 +250,9 @@ def warn(msg: str, *, dedupe: bool = False, **kwargs):
     """
     if _LOG_LEVEL <= LogLevel.WARNING:
         if dedupe:
-            if msg in _EMIITED_WARNINGS:
+            if msg in _EMITTED_WARNINGS:
                 return
-            _EMIITED_WARNINGS.add(msg)
+            _EMITTED_WARNINGS.add(msg)
         print(f"[orange1]Warning: {msg}[/orange1]", **kwargs)
     if should_use_log_file_console():
         print_to_log_file(f"[orange1]Warning: {msg}[/orange1]", **kwargs)
