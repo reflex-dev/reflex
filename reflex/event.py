@@ -577,7 +577,7 @@ class JavascriptInputEvent:
     init=True,
     frozen=True,
 )
-class JavasciptKeyboardEvent:
+class JavascriptKeyboardEvent:
     """Interface for a Javascript KeyboardEvent https://developer.mozilla.org/en-US/docs/Web/API/KeyboardEvent."""
 
     key: str = ""
@@ -645,7 +645,7 @@ class KeyInputInfo(TypedDict):
 
 
 def key_event(
-    e: ObjectVar[JavasciptKeyboardEvent],
+    e: ObjectVar[JavascriptKeyboardEvent],
 ) -> tuple[Var[str], Var[KeyInputInfo]]:
     """Get the key from a keyboard event.
 
