@@ -32,7 +32,7 @@ def test_app_harness(tmp_path):
     ) as harness:
         assert harness.app_instance is not None
         assert harness.frontend_url is not None
-        assert harness.reflex_process is not None
-        assert harness.reflex_process.poll() is None
+        assert harness.reflex_thread is not None
+        assert harness.reflex_thread.is_alive()
 
-    assert harness.reflex_process.poll() is not None
+    assert harness.reflex_thread.is_alive()

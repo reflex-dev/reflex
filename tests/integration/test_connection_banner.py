@@ -153,7 +153,7 @@ async def test_connection_banner(connection_banner: AppHarness):
         connection_banner: AppHarness instance.
     """
     assert connection_banner.app_instance is not None
-    assert connection_banner.reflex_process is not None
+    assert connection_banner.reflex_thread is not None
     driver = connection_banner.frontend()
 
     _assert_token(connection_banner, driver)
@@ -212,7 +212,7 @@ async def test_cloud_banner(
         simulate_compile_context: Which context to set for the app.
     """
     assert connection_banner.app_instance is not None
-    assert connection_banner.reflex_process is not None
+    assert connection_banner.reflex_thread is not None
     driver = connection_banner.frontend()
 
     driver.add_cookie({"name": "backend-enabled", "value": "truly"})

@@ -13,7 +13,6 @@ import re
 import socket
 import socketserver
 import subprocess
-import sys
 import textwrap
 import threading
 import time
@@ -23,6 +22,7 @@ from http.server import SimpleHTTPRequestHandler
 from io import TextIOWrapper
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Literal, TypeVar
+from unittest import mock
 
 import reflex
 import reflex.reflex
@@ -32,6 +32,7 @@ import reflex.utils.prerequisites
 import reflex.utils.processes
 from reflex.components.component import CustomComponent
 from reflex.config import get_config
+from reflex.constants.base import Env, LogLevel
 from reflex.environment import environment
 from reflex.state import (
     BaseState,
@@ -41,6 +42,7 @@ from reflex.state import (
     StateManagerRedis,
     reload_state_module,
 )
+from reflex.utils import console
 from reflex.utils.export import export
 
 try:
@@ -133,7 +135,7 @@ class AppHarness:
     app_module_path: Path
     app_module: types.ModuleType | None = None
     app_instance: reflex.App | None = None
-    reflex_process: subprocess.Popen | None = None
+    reflex_thread: threading.Thread | None = None
     reflex_process_log_path: Path | None = None
     reflex_process_error_log_path: Path | None = None
     frontend_url: str | None = None
@@ -324,48 +326,57 @@ class AppHarness:
             frontend: Whether to start the frontend server.
             mode: The mode to run the app in (dev, prod, etc.).
         """
+        from reflex.reflex import _run as reflex_run
+
         self.reflex_process_log_path = self.app_path / "reflex.log"
         self.reflex_process_error_log_path = self.app_path / "reflex_error.log"
         self._reflex_process_log_fn = self.reflex_process_log_path.open("w")
-        command = [
-            sys.executable,
-            "-u",
-            "-m",
-            "reflex",
-            "run",
-            "--env",
-            mode,
-            "--loglevel",
-            "debug",
-        ]
+
+        backend_port: int | None = None
+        frontend_port: int | None = None
+
         if backend:
             if self.backend_port is None:
                 self.backend_port = reflex.utils.processes.handle_port(
                     "backend", 48000, auto_increment=True
                 )
-            command.extend(["--backend-port", str(self.backend_port)])
-            if not frontend:
-                command.append("--backend-only")
+            backend_port = self.backend_port
+
         if frontend:
             if self.frontend_port is None:
                 self.frontend_port = reflex.utils.processes.handle_port(
                     "frontend", 43000, auto_increment=True
                 )
-            command.extend(["--frontend-port", str(self.frontend_port)])
-            if not backend:
-                command.append("--frontend-only")
-        self.reflex_process = subprocess.Popen(
-            command,
-            stdout=self._reflex_process_log_fn,
-            stderr=self._reflex_process_log_fn,
-            cwd=self.app_path,
-            env={
-                **os.environ,
-                "REFLEX_ERROR_LOG_FILE": str(self.reflex_process_error_log_path),
-                "PYTEST_CURRENT_TEST": "",
-                "APP_HARNESS_FLAG": "true",
-            },
+            frontend_port = self.frontend_port
+
+        def run_reflex():
+            with (
+                chdir(self.app_path),
+                mock.patch(
+                    "signal.signal",
+                    return_value=None,
+                ),
+            ):
+                console.set_log_level(LogLevel.DEBUG)
+                os.environ["REFLEX_ERROR_LOG_FILE"] = str(
+                    self.reflex_process_error_log_path
+                )
+                os.environ["PYTEST_CURRENT_TEST"] = ""
+                os.environ["APP_HARNESS_FLAG"] = "true"
+                reflex_run(
+                    env=Env(mode),
+                    backend=backend,
+                    frontend=frontend,
+                    backend_port=backend_port,
+                    frontend_port=frontend_port,
+                )
+
+        self.reflex_thread = threading.Thread(
+            target=run_reflex,
+            name="ReflexProcess",
         )
+        self.reflex_thread.daemon = True
+        self.reflex_thread.start()
         self._wait_for_servers(backend=backend, frontend=frontend)
 
     def _wait_for_servers(self, backend: bool, frontend: bool):
@@ -378,8 +389,8 @@ class AppHarness:
         Raises:
             RuntimeError: If servers did not start properly.
         """
-        if self.reflex_process is None or self.reflex_process.pid is None:
-            msg = "Reflex process has no pid."
+        if self.reflex_thread is None or not self.reflex_thread.is_alive():
+            msg = "Reflex process is not running."
             raise RuntimeError(msg)
 
         if backend and self.backend_port is None:
@@ -475,19 +486,23 @@ class AppHarness:
         self._reload_state_module()
 
     def _stop_reflex(self):
-        returncode = None
-        # Check if the process exited on its own or we have to kill it.
-        if (
-            self.reflex_process is not None
-            and (returncode := self.reflex_process.poll()) is None
-        ):
-            try:
-                # Kill server and children recursively.
-                reflex.utils.exec.kill(self.reflex_process.pid)
-            except (ProcessLookupError, OSError):
-                pass
-            finally:
-                self.reflex_process = None
+        if self.reflex_thread is not None:
+            from reflex.utils.exec import _GRANIAN_MAIN_PROCESS, frontend_process
+            from reflex.utils.processes import _executor
+
+            if frontend_process is not None:
+                frontend_process.terminate()
+
+            if _GRANIAN_MAIN_PROCESS:
+                _GRANIAN_MAIN_PROCESS.signal_handler_interrupt()
+
+            if _executor is not None:
+                # Shutdown the executor if it exists.
+                _executor.shutdown(wait=False)
+
+            # Wait for the thread to finish.
+            self.reflex_thread.join(timeout=1)
+            self.reflex_thread = None
         if self._reflex_process_log_fn is not None:
             with contextlib.suppress(Exception):
                 self._reflex_process_log_fn.close()
@@ -502,13 +517,6 @@ class AppHarness:
             if error_log_content:
                 msg = f"Reflex process error log contains errors:\n{error_log_content}"
                 raise ReflexProcessLoggedErrorError(msg)
-        # When the process exits non-zero, but wasn't killed, it is a test failure.
-        if returncode is not None and returncode != 0:
-            msg = (
-                f"Reflex process exited with code {returncode}. "
-                "Check the logs for more details."
-            )
-            raise ReflexProcessExitNonZeroError(msg)
 
     def __exit__(self, *excinfo) -> None:
         """Contextmanager protocol for `stop()`.

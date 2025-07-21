@@ -168,7 +168,7 @@ async def test_lifespan(lifespan_app: AppHarness):
         lifespan_app: harness for LifespanApp app
     """
     assert lifespan_app.app_module is not None, "app module is not found"
-    assert lifespan_app.reflex_process is not None, "app is not running"
+    assert lifespan_app.reflex_thread is not None, "app is not running"
     driver = lifespan_app.frontend()
 
     ss = SessionStorage(driver)

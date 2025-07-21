@@ -214,6 +214,9 @@ def new_process(
     return fn(non_empty_args, **kwargs)
 
 
+_executor: futures.ThreadPoolExecutor | None = None
+
+
 @contextlib.contextmanager
 def run_concurrently_context(
     *fns: Callable[..., Any] | tuple[Callable[..., Any], ...],
@@ -226,6 +229,8 @@ def run_concurrently_context(
     Yields:
         The futures for the functions.
     """
+    global _executor
+
     # If no functions are provided, yield an empty list and return.
     if not fns:
         yield []
@@ -235,11 +240,11 @@ def run_concurrently_context(
     fns = tuple(fn if isinstance(fn, tuple) else (fn,) for fn in fns)
 
     # Run the functions concurrently.
-    executor = None
+    _executor = None
     try:
-        executor = futures.ThreadPoolExecutor(max_workers=len(fns))
+        _executor = futures.ThreadPoolExecutor(max_workers=len(fns))
         # Submit the tasks.
-        tasks = [executor.submit(*fn) for fn in fns]
+        tasks = [_executor.submit(*fn) for fn in fns]
 
         # Yield control back to the main thread while tasks are running.
         yield tasks
@@ -250,8 +255,8 @@ def run_concurrently_context(
             task.result()
     finally:
         # Shutdown the executor
-        if executor:
-            executor.shutdown(wait=False)
+        if _executor:
+            _executor.shutdown(wait=False)
 
 
 def run_concurrently(*fns: Callable | tuple) -> None:
@@ -314,7 +319,9 @@ def stream_logs(
     # Windows uvicorn bug
     # https://github.com/reflex-dev/reflex/issues/2335
     # 130 is the exit code that react router returns when it is interrupted by a signal.
-    accepted_return_codes = [0, -2, 15, 130] if constants.IS_WINDOWS else [0, -2, 130]
+    accepted_return_codes = (
+        [0, -2, 15, 130, 143] if constants.IS_WINDOWS else [0, -2, 130, 143]
+    )
     if process.returncode not in accepted_return_codes and not suppress_errors:
         console.error(f"{message} failed with exit code {process.returncode}")
         if "".join(logs).count("CERT_HAS_EXPIRED") > 0:

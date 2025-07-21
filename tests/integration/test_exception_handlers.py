@@ -118,7 +118,7 @@ def get_reflex_output(test_app: AppHarness) -> Callable[[], str]:
     Returns:
         The output of the reflex process.
     """
-    assert test_app.reflex_process is not None, "app is not running"
+    assert test_app.reflex_thread is not None, "app is not running"
     assert test_app.reflex_process_log_path is not None, (
         "reflex process log path is not set"
     )

@@ -12,7 +12,7 @@ import subprocess
 import sys
 from collections.abc import Sequence
 from pathlib import Path
-from typing import Any, NamedTuple, TypedDict
+from typing import TYPE_CHECKING, Any, NamedTuple, TypedDict
 from urllib.parse import urljoin
 
 from reflex import constants
@@ -25,7 +25,10 @@ from reflex.utils.misc import get_module_path
 from reflex.utils.prerequisites import get_web_dir
 
 # For uvicorn windows bug fix (#2335)
-frontend_process = None
+frontend_process: subprocess.Popen[str] | None = None
+
+if TYPE_CHECKING:
+    from granian.server.common import AbstractServer
 
 
 def get_package_json_and_hash(package_json_path: Path) -> tuple[PackageJson, str]:
@@ -343,6 +346,9 @@ def get_app_instance_from_file() -> str:
     return f"{get_app_file()}:{constants.CompileVars.APP}"
 
 
+_GRANIAN_MAIN_PROCESS: AbstractServer | None = None
+
+
 def run_backend(
     host: str,
     port: int,
@@ -510,6 +516,7 @@ def run_granian_backend(host: str, port: int, loglevel: LogLevel):
         port: The app port
         loglevel: The log level.
     """
+    global _GRANIAN_MAIN_PROCESS
     console.debug("Using Granian for backend")
 
     if environment.REFLEX_STRICT_HOT_RELOAD.get():
@@ -523,7 +530,7 @@ def run_granian_backend(host: str, port: int, loglevel: LogLevel):
 
     from reflex.environment import _paths_from_environment
 
-    granian_app = Granian(
+    _GRANIAN_MAIN_PROCESS = Granian(
         target=get_app_instance_from_file(),
         factory=True,
         address=host,
@@ -539,7 +546,7 @@ def run_granian_backend(host: str, port: int, loglevel: LogLevel):
         workers_kill_timeout=2,
     )
 
-    granian_app.serve()
+    _GRANIAN_MAIN_PROCESS.serve()
 
 
 def run_backend_prod(
