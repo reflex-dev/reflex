@@ -251,7 +251,7 @@ def _escape_js_string(string: str) -> str:
         The escaped string.
     """
 
-    # TODO: we may need to re-vist this logic after new Var API is implemented.
+    # TODO: we may need to re-visit this logic after new Var API is implemented.
     def escape_outside_segments(segment: str):
         """Escape backticks in segments outside of `${}`.
 

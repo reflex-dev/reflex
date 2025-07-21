@@ -106,7 +106,7 @@ def test_tailwind_app(tailwind_app: AppHarness, tailwind_version: bool):
         tailwind_version: Tailwind version to use. If 0, tailwind is disabled.
     """
     assert tailwind_app.app_instance is not None
-    assert tailwind_app.reflex_process is not None
+    assert tailwind_app.backend is not None
 
     driver = tailwind_app.frontend()
 

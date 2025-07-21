@@ -6,7 +6,7 @@ from reflex.components.core.breakpoints import Responsive
 from reflex.components.radix.themes.base import LiteralAccentColor, RadixThemesComponent
 from reflex.vars.base import LiteralVar, Var
 
-LiteralSeperatorSize = Literal["1", "2", "3", "4"]
+LiteralSeparatorSize = Literal["1", "2", "3", "4"]
 
 
 class Separator(RadixThemesComponent):
@@ -14,10 +14,10 @@ class Separator(RadixThemesComponent):
 
     tag = "Separator"
 
-    # The size of the select: "1" | "2" | "3" | "4"
-    size: Var[Responsive[LiteralSeperatorSize]] = LiteralVar.create("4")
+    # The size of the separator: "1" | "2" | "3" | "4"
+    size: Var[Responsive[LiteralSeparatorSize]] = LiteralVar.create("4")
 
-    # The color of the select
+    # The color of the separator
     color_scheme: Var[LiteralAccentColor]
 
     # The orientation of the separator.

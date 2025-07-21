@@ -6,6 +6,7 @@ import httpx
 import pytest
 from playwright.sync_api import Page, expect
 
+import reflex as rx
 from reflex.testing import AppHarness
 
 
@@ -45,15 +46,13 @@ def test_statelessness(stateless_app: AppHarness, page: Page):
         page: A Playwright page.
     """
     assert stateless_app.frontend_url is not None
-    assert stateless_app.reflex_process is not None
-    assert (
-        stateless_app.reflex_process.poll() is None
-    )  # Ensure the process is still running
+    assert stateless_app.backend is not None
+    assert stateless_app.backend.started
 
-    res = httpx.get(f"http://localhost:{stateless_app.backend_port}/_event")
+    res = httpx.get(rx.config.get_config().api_url + "/_event")
     assert res.status_code == 404
 
-    res2 = httpx.get(f"http://localhost:{stateless_app.backend_port}/ping")
+    res2 = httpx.get(rx.config.get_config().api_url + "/ping")
     assert res2.status_code == 200
 
     page.goto(stateless_app.frontend_url)
