@@ -2202,7 +2202,7 @@ class EventNamespace:
     # Javascript Event Classes
     JavascriptHTMLInputElement = JavascriptHTMLInputElement
     JavascriptInputEvent = JavascriptInputEvent
-    JavasciptKeyboardEvent = JavasciptKeyboardEvent
+    JavascriptKeyboardEvent = JavascriptKeyboardEvent
     JavascriptMouseEvent = JavascriptMouseEvent
     JavascriptPointerEvent = JavascriptPointerEvent
 
