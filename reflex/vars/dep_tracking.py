@@ -254,14 +254,10 @@ class DependencyTracker:
         # Create a python source string snippet.
         if len(source) > 1:
             snipped_source = "".join(
-                [
-                    *source[0][start_column:],
-                    *(source[1:-2] if len(source) > 2 else []),
-                    *source[-1][: end_column - 1],
-                ]
+                [*source[0][start_column:], *source[1:-1], *source[-1][:end_column]]
             )
         else:
-            snipped_source = source[0][start_column : end_column - 1]
+            snipped_source = source[0][start_column:end_column]
         # Evaluate the string in the context of the function's globals and closure.
         return eval(f"({snipped_source})", self._get_globals(), self._get_closure())
 
