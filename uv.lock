@@ -1673,7 +1673,6 @@ db = [
 
 [package.dev-dependencies]
 dev = [
-    { name = "alembic" },
     { name = "asynctest" },
     { name = "darglint" },
     { name = "dill" },
@@ -1689,7 +1688,6 @@ dev = [
     { name = "pre-commit" },
     { name = "psutil" },
     { name = "psycopg", extra = ["binary"] },
-    { name = "pydantic" },
     { name = "pyright" },
     { name = "pytest" },
     { name = "pytest-asyncio" },
@@ -1703,7 +1701,6 @@ dev = [
     { name = "python-dotenv" },
     { name = "ruff" },
     { name = "selenium" },
-    { name = "sqlmodel" },
     { name = "starlette-admin" },
     { name = "toml" },
     { name = "uvicorn" },
@@ -1728,7 +1725,8 @@ requires-dist = [
     { name = "reflex-hosting-cli", specifier = ">=0.1.51" },
     { name = "rich", specifier = ">=13,<15" },
     { name = "sqlmodel", specifier = ">=0.0.24,<0.1" },
-    { name = "starlette", specifier = ">=0.47.0" },
+    { name = "sqlmodel", marker = "extra == 'db'", specifier = ">=0.0.24,<0.1" },
+    { name = "starlette", specifier = ">=0.46.0" },
     { name = "typing-extensions", specifier = ">=4.13.0" },
     { name = "wrapt", specifier = ">=1.17.0,<2.0" },
 ]
