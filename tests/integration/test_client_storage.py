@@ -782,3 +782,68 @@ async def test_client_side_state(
     assert l4.text == "l4 default"
     assert c1s.text == ""
     assert l1s.text == ""
+
+
+@pytest.mark.asyncio
+async def test_json_cookie_values(
+    client_side: AppHarness,
+    driver: WebDriver,
+):
+    """Test that JSON-formatted cookie values are preserved as strings.
+
+    Args:
+        client_side: harness for ClientSide app.
+        driver: WebDriver instance.
+    """
+    app = client_side.app_instance
+    assert app is not None
+    assert client_side.frontend_url is not None
+
+    def poll_for_token():
+        token_input = AppHarness.poll_for_or_raise_timeout(
+            lambda: driver.find_element(By.ID, "token")
+        )
+        token = client_side.poll_for_value(token_input)
+        assert token is not None
+        return token
+
+    def set_sub(var: str, value: str):
+        state_var_input = driver.find_element(By.ID, "state_var")
+        input_value_input = driver.find_element(By.ID, "input_value")
+        set_sub_state_button = driver.find_element(By.ID, "set_sub_state")
+        AppHarness.expect(lambda: state_var_input.get_attribute("value") == "")
+        AppHarness.expect(lambda: input_value_input.get_attribute("value") == "")
+
+        state_var_input.send_keys(var)
+        input_value_input.send_keys(value)
+        set_sub_state_button.click()
+
+    token = poll_for_token()
+
+    # Get references to cookie elements
+    c1 = driver.find_element(By.ID, "c1")
+    c2 = driver.find_element(By.ID, "c2")
+
+    json_dict = '{"access_token": "redacted", "refresh_token": "redacted", "created_at": 1234567890, "expires_in": 3600}'
+    set_sub("c1", json_dict)
+    AppHarness.expect(lambda: c1.text == json_dict)
+
+    json_array = '["item1", "item2", "item3"]'
+    set_sub("c2", json_array)
+    AppHarness.expect(lambda: c2.text == json_array)
+
+    complex_json = '{"user": {"id": 123, "name": "test"}, "settings": {"theme": "dark", "notifications": true}, "data": [1, 2, 3]}'
+    set_sub("c1", complex_json)
+    AppHarness.expect(lambda: c1.text == complex_json)
+
+    json_with_escapes = '{"message": "Hello \\"world\\"", "path": "/api/v1", "count": 42}'
+    set_sub("c2", json_with_escapes)
+    AppHarness.expect(lambda: c2.text == json_with_escapes)
+
+    empty_json_obj = '{}'
+    set_sub("c1", empty_json_obj)
+    AppHarness.expect(lambda: c1.text == empty_json_obj)
+
+    empty_json_array = '[]'
+    set_sub("c2", empty_json_array)
+    AppHarness.expect(lambda: c2.text == empty_json_array)
