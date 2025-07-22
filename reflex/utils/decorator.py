@@ -89,10 +89,6 @@ def _read_cached_procedure_file(cache_file: Path) -> tuple[str | None, object]:
     return None, None
 
 
-def _clear_cached_procedure_file(cache_file: Path):
-    cache_file.unlink(missing_ok=True)
-
-
 P = ParamSpec("P")
 Picklable = TypeVar("Picklable")
 
@@ -119,7 +115,6 @@ def cached_procedure(
             new_payload = payload_fn(*args, **kwargs)
 
             if payload != new_payload:
-                _clear_cached_procedure_file(_cache_file)
                 new_value = func(*args, **kwargs)
                 _write_cached_procedure_file(new_payload, _cache_file, new_value)
                 return new_value
