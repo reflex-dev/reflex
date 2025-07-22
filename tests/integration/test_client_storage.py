@@ -836,14 +836,16 @@ async def test_json_cookie_values(
     set_sub("c1", complex_json)
     AppHarness.expect(lambda: c1.text == complex_json)
 
-    json_with_escapes = '{"message": "Hello \\"world\\"", "path": "/api/v1", "count": 42}'
+    json_with_escapes = (
+        '{"message": "Hello \\"world\\"", "path": "/api/v1", "count": 42}'
+    )
     set_sub("c2", json_with_escapes)
     AppHarness.expect(lambda: c2.text == json_with_escapes)
 
-    empty_json_obj = '{}'
+    empty_json_obj = "{}"
     set_sub("c1", empty_json_obj)
     AppHarness.expect(lambda: c1.text == empty_json_obj)
 
-    empty_json_array = '[]'
+    empty_json_array = "[]"
     set_sub("c2", empty_json_array)
     AppHarness.expect(lambda: c2.text == empty_json_array)
