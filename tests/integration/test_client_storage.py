@@ -818,8 +818,6 @@ async def test_json_cookie_values(
         input_value_input.send_keys(value)
         set_sub_state_button.click()
 
-    token = poll_for_token()
-
     # Get references to cookie elements
     c1 = driver.find_element(By.ID, "c1")
     c2 = driver.find_element(By.ID, "c2")
