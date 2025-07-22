@@ -34,11 +34,11 @@ def open_browser_and_wait(target_url: str, poll_url: str, interval: int = 2):
     Returns:
         The response from the poll_url.
     """
+    import httpx
+
     open_browser(target_url)
     console.info("[b]Complete the workflow in the browser to continue.[/b]")
     while True:
-        import httpx
-
         try:
             response = net.get(poll_url, follow_redirects=True)
             if response.is_success:
