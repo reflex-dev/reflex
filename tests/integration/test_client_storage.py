@@ -818,18 +818,12 @@ async def test_json_cookie_values(
         input_value_input.send_keys(value)
         set_sub_state_button.click()
 
-    def test_json_cookie_with_refresh(cookie_id: str, json_value: str):
+    def _assert_json_cookie_with_refresh(cookie_id: str, json_value: str):
         """Helper function to test JSON cookie values with browser refresh.
-        
-        This function:
-        1. Polls for token to ensure app is ready
-        2. Gets the cookie element
-        3. Sets the JSON value
-        4. Asserts the value is displayed correctly
-        5. Refreshes the browser to trigger cookie hydration
-        6. Polls for token again to ensure app is ready after refresh
-        7. Gets the element again (to avoid stale references)
-        8. Asserts the value is still preserved as a string
+
+        Args:
+            cookie_id: ID of the cookie element to manipulate.
+            json_value: JSON string to set as the cookie value.
         """
         poll_for_token()
         element = driver.find_element(By.ID, cookie_id)
@@ -842,21 +836,21 @@ async def test_json_cookie_values(
         AppHarness.expect(lambda: element.text == json_value)
 
     json_dict = '{"access_token": "redacted", "refresh_token": "redacted", "created_at": 1234567890, "expires_in": 3600}'
-    test_json_cookie_with_refresh("c1", json_dict)
+    _assert_json_cookie_with_refresh("c1", json_dict)
 
     json_array = '["item1", "item2", "item3"]'
-    test_json_cookie_with_refresh("c2", json_array)
+    _assert_json_cookie_with_refresh("c2", json_array)
 
     complex_json = '{"user": {"id": 123, "name": "test"}, "settings": {"theme": "dark", "notifications": true}, "data": [1, 2, 3]}'
-    test_json_cookie_with_refresh("c1", complex_json)
+    _assert_json_cookie_with_refresh("c1", complex_json)
 
     json_with_escapes = (
         '{"message": "Hello \\"world\\"", "path": "/api/v1", "count": 42}'
     )
-    test_json_cookie_with_refresh("c2", json_with_escapes)
+    _assert_json_cookie_with_refresh("c2", json_with_escapes)
 
     empty_json_obj = "{}"
-    test_json_cookie_with_refresh("c1", empty_json_obj)
+    _assert_json_cookie_with_refresh("c1", empty_json_obj)
 
     empty_json_array = "[]"
-    test_json_cookie_with_refresh("c2", empty_json_array)
+    _assert_json_cookie_with_refresh("c2", empty_json_array)
