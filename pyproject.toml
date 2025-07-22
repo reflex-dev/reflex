@@ -1,6 +1,6 @@
 [project]
 name = "reflex"
-version = "0.8.2dev1"
+version = "0.8.4dev1"
 description = "Web apps in pure Python."
 license.text = "Apache-2.0"
 authors = [
@@ -64,18 +64,49 @@ documentation = "https://reflex.dev/docs/getting-started/introduction"
 [project.scripts]
 reflex = "reflex.reflex:cli"
 
+[dependency-groups]
+dev = [
+  "asynctest",
+  "darglint",
+  "dill",
+  "fastapi",
+  "hatchling",
+  "libsass",
+  "numpy",
+  "pandas",
+  "pillow",
+  "playwright",
+  "plotly",
+  "pre-commit",
+  "psutil",
+  "psycopg[binary]",
+  "pyright",
+  "pytest-asyncio",
+  "pytest-benchmark",
+  "pytest-codspeed",
+  "pytest-cov",
+  "pytest-mock",
+  "pytest-playwright",
+  "pytest-retry",
+  "pytest-split",
+  "pytest",
+  "python-dotenv",
+  "ruff",
+  "selenium",
+  "starlette-admin",
+  "toml",
+  "uvicorn",
+]
+
+
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [tool.hatch.build]
 include = ["reflex", "scripts/hatch_build.py"]
-
-[tool.hatch.build.targets.sdist]
-artifacts = ["*.pyi"]
-
-[tool.hatch.build.targets.wheel]
-artifacts = ["*.pyi"]
+targets.sdist.artifacts = ["*.pyi"]
+targets.wheel.artifacts = ["*.pyi"]
 
 [tool.hatch.build.hooks.custom]
 path = "scripts/hatch_build.py"
@@ -158,43 +189,6 @@ asyncio_mode = "auto"
 skip = "docs/*,*.html,examples/*, *.pyi, poetry.lock, uv.lock"
 ignore-words-list = "te, TreeE"
 
-[dependency-groups]
-dev = [
-  "alembic >=1.15.2,<2.0",
-  "asynctest >=0.13",
-  "darglint >=1.8",
-  "dill >=0.3",
-  "fastapi >=0.115.0",
-  "hatchling >=1.27",
-  "libsass >=0.23",
-  "numpy >=2.2",
-  "pandas >=2.2",
-  "pillow >=11",
-  "playwright >=1.51",
-  "plotly >=6.0",
-  "pre-commit ==4.2.0",
-  "psutil >=7.0.0",
-  "psycopg[binary] >=3.2",
-  "pydantic >=1.10.21,<3.0",
-  "pyright >=1.1.400",
-  "pytest >=8.3",
-  "pytest-asyncio >=0.26",
-  "pytest-benchmark >=5.1",
-  "pytest-codspeed >=3.2",
-  "pytest-cov >=6.1",
-  "pytest-mock >=3.14",
-  "pytest-playwright >=0.7",
-  "pytest-retry >=1.7",
-  "pytest-split >=0.10",
-  "python-dotenv >=1",
-  "ruff >=0.11",
-  "selenium >=4.31",
-  "sqlmodel >=0.0.24,<0.1",
-  "starlette-admin >=0.14",
-  "toml >=0.10.2",
-  "uvicorn >=0.34.0",
-]
-
 
 [tool.coverage.run]
 source = ["reflex"]
@@ -239,7 +233,7 @@ fail_fast = true
 
 [[tool.pre-commit.repos]]
 repo = "https://github.com/astral-sh/ruff-pre-commit"
-rev = "v0.12.2"
+rev = "v0.12.3"
 hooks = [
   { id = "ruff-format", args = [
     "reflex",
@@ -271,7 +265,7 @@ hooks = [
 
 [[tool.pre-commit.repos]]
 repo = "https://github.com/RobertCraigie/pyright-python"
-rev = "v1.1.402"
+rev = "v1.1.403"
 hooks = [{ id = "pyright", args = ["reflex", "tests"], language = "system" }]
 
 [[tool.pre-commit.repos]]
@@ -283,3 +277,6 @@ hooks = [{ id = "darglint", exclude = "^reflex/reflex.py" }]
 repo = "https://github.com/pre-commit/mirrors-prettier"
 rev = "f62a70a3a7114896b062de517d72829ea1c884b6"
 hooks = [{ id = "prettier", require_serial = true }]
+
+[tool.uv]
+required-version = ">=0.7.0"

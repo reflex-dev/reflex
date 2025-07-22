@@ -550,6 +550,39 @@ def migrate():
 
 
 @db_cli.command()
+def status():
+    """Check the status of the database schema."""
+    from reflex.model import Model, format_revision
+    from reflex.utils import prerequisites
+
+    prerequisites.get_app()
+    if not prerequisites.check_db_initialized():
+        console.info(
+            "Database is not initialized. Run [bold]reflex db init[/bold] to initialize."
+        )
+        return
+
+    # Run alembic check command and display output
+    import reflex.config
+
+    config = reflex.config.get_config()
+    console.print(f"[bold]\\[{config.db_url}][/bold]")
+
+    # Get migration history using Model method
+    current_rev, revisions = Model.get_migration_history()
+    if current_rev is None and not revisions:
+        return
+
+    current_reached_ref = [current_rev is None]
+
+    # Show migration history in chronological order
+    console.print("<base>")
+    for rev in revisions:
+        # Format and print the revision
+        console.print(format_revision(rev, current_rev, current_reached_ref))
+
+
+@db_cli.command()
 @click.option(
     "--message",
     help="Human readable identifier for the generated revision.",

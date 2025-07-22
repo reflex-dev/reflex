@@ -25,9 +25,12 @@ def on_error_spec(
         The arguments for the event handler.
     """
     return (
-        error.stack,
+        error.name.to(str) + ": " + error.message.to(str) + "\n" + error.stack.to(str),
         info.componentStack,
     )
+
+
+_ERROR_DISPLAY: str = r"""event_args.error.name + ': ' + event_args.error.message + '\n' + event_args.error.stack"""
 
 
 class ErrorBoundary(Component):
@@ -76,9 +79,7 @@ class ErrorBoundary(Component):
                                     div(
                                         div(
                                             pre(
-                                                Var(
-                                                    _js_expr="event_args.error.stack",
-                                                ),
+                                                Var(_js_expr=_ERROR_DISPLAY),
                                             ),
                                             padding="0.5rem",
                                             width="fit-content",
@@ -93,7 +94,7 @@ class ErrorBoundary(Component):
                                     button(
                                         "Copy",
                                         on_click=set_clipboard(
-                                            Var(_js_expr="event_args.error.stack"),
+                                            Var(_js_expr=_ERROR_DISPLAY)
                                         ),
                                         padding="0.35rem 0.75rem",
                                         margin="0.5rem",

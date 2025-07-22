@@ -5,6 +5,7 @@ import pytest
 import reflex as rx
 from reflex.constants.compiler import Hooks, Imports
 from reflex.event import (
+    BACKGROUND_TASK_MARKER,
     Event,
     EventChain,
     EventHandler,
@@ -491,6 +492,157 @@ def test_event_bound_method() -> None:
 
     w = Wrapper()
     _ = rx.input(on_change=w.get_handler)
+
+
+def test_event_decorator_with_event_actions():
+    """Test that @rx.event decorator can accept event action parameters."""
+
+    class MyTestState(BaseState):
+        # Test individual event actions
+        @event(stop_propagation=True)
+        def handle_stop_prop(self):
+            pass
+
+        @event(prevent_default=True)
+        def handle_prevent_default(self):
+            pass
+
+        @event(throttle=500)
+        def handle_throttle(self):
+            pass
+
+        @event(debounce=300)
+        def handle_debounce(self):
+            pass
+
+        @event(temporal=True)
+        def handle_temporal(self):
+            pass
+
+        # Test multiple event actions combined
+        @event(stop_propagation=True, prevent_default=True, throttle=1000)
+        def handle_multiple(self):
+            pass
+
+        # Test with background parameter (existing functionality)
+        @event(background=True, temporal=True)
+        async def handle_background_temporal(self):
+            pass
+
+        # Test no event actions (existing behavior)
+        @event
+        def handle_no_actions(self):
+            pass
+
+    # Test individual event actions are applied
+    stop_prop_handler = MyTestState.handle_stop_prop
+    assert isinstance(stop_prop_handler, EventHandler)
+    assert stop_prop_handler.event_actions == {"stopPropagation": True}
+
+    prevent_default_handler = MyTestState.handle_prevent_default
+    assert prevent_default_handler.event_actions == {"preventDefault": True}
+
+    throttle_handler = MyTestState.handle_throttle
+    assert throttle_handler.event_actions == {"throttle": 500}
+
+    debounce_handler = MyTestState.handle_debounce
+    assert debounce_handler.event_actions == {"debounce": 300}
+
+    temporal_handler = MyTestState.handle_temporal
+    assert temporal_handler.event_actions == {"temporal": True}
+
+    # Test multiple event actions are combined correctly
+    multiple_handler = MyTestState.handle_multiple
+    assert multiple_handler.event_actions == {
+        "stopPropagation": True,
+        "preventDefault": True,
+        "throttle": 1000,
+    }
+
+    # Test background + event actions work together
+    bg_temporal_handler = MyTestState.handle_background_temporal
+    assert bg_temporal_handler.event_actions == {"temporal": True}
+    assert hasattr(bg_temporal_handler.fn, BACKGROUND_TASK_MARKER)  # pyright: ignore [reportAttributeAccessIssue]
+
+    # Test no event actions (existing behavior preserved)
+    no_actions_handler = MyTestState.handle_no_actions
+    assert no_actions_handler.event_actions == {}
+
+
+def test_event_decorator_actions_can_be_overridden():
+    """Test that decorator event actions can still be overridden by chaining."""
+
+    class MyTestState(BaseState):
+        @event(throttle=500, stop_propagation=True)
+        def handle_with_defaults(self):
+            pass
+
+    # Get the handler with default actions
+    handler = MyTestState.handle_with_defaults
+    assert handler.event_actions == {"throttle": 500, "stopPropagation": True}
+
+    # Chain additional actions - should combine
+    handler_with_prevent_default = handler.prevent_default
+    assert handler_with_prevent_default.event_actions == {
+        "throttle": 500,
+        "stopPropagation": True,
+        "preventDefault": True,
+    }
+
+    # Chain throttle with different value - should override
+    handler_with_new_throttle = handler.throttle(1000)
+    assert handler_with_new_throttle.event_actions == {
+        "throttle": 1000,  # New value overrides default
+        "stopPropagation": True,
+    }
+
+    # Original handler should be unchanged
+    assert handler.event_actions == {"throttle": 500, "stopPropagation": True}
+
+
+def test_event_decorator_with_none_values():
+    """Test that None values in decorator don't create event actions."""
+
+    class MyTestState(BaseState):
+        @event(stop_propagation=None, prevent_default=None, throttle=None)
+        def handle_all_none(self):
+            pass
+
+        @event(stop_propagation=True, prevent_default=None, throttle=500, debounce=None)
+        def handle_mixed(self):
+            pass
+
+    # All None should result in no event actions
+    all_none_handler = MyTestState.handle_all_none
+    assert all_none_handler.event_actions == {}
+
+    # Only non-None values should be included
+    mixed_handler = MyTestState.handle_mixed
+    assert mixed_handler.event_actions == {"stopPropagation": True, "throttle": 500}
+
+
+def test_event_decorator_backward_compatibility():
+    """Test that existing code without event action parameters continues to work."""
+
+    class MyTestState(BaseState):
+        @event
+        def handle_old_style(self):
+            pass
+
+        @event(background=True)
+        async def handle_old_background(self):
+            pass
+
+    # Old style without parameters should work unchanged
+    old_handler = MyTestState.handle_old_style
+    assert isinstance(old_handler, EventHandler)
+    assert old_handler.event_actions == {}
+    assert not hasattr(old_handler.fn, BACKGROUND_TASK_MARKER)  # pyright: ignore [reportAttributeAccessIssue]
+
+    # Old background parameter should work unchanged
+    bg_handler = MyTestState.handle_old_background
+    assert bg_handler.event_actions == {}
+    assert hasattr(bg_handler.fn, BACKGROUND_TASK_MARKER)  # pyright: ignore [reportAttributeAccessIssue]
 
 
 def test_event_var_in_rx_cond():

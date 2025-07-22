@@ -110,7 +110,7 @@ class EventActionsMixin:
         """
         return dataclasses.replace(
             self,
-            event_actions={"stopPropagation": True, **self.event_actions},
+            event_actions={**self.event_actions, "stopPropagation": True},
         )
 
     @property
@@ -122,7 +122,7 @@ class EventActionsMixin:
         """
         return dataclasses.replace(
             self,
-            event_actions={"preventDefault": True, **self.event_actions},
+            event_actions={**self.event_actions, "preventDefault": True},
         )
 
     def throttle(self, limit_ms: int) -> Self:
@@ -136,7 +136,7 @@ class EventActionsMixin:
         """
         return dataclasses.replace(
             self,
-            event_actions={"throttle": limit_ms, **self.event_actions},
+            event_actions={**self.event_actions, "throttle": limit_ms},
         )
 
     def debounce(self, delay_ms: int) -> Self:
@@ -150,7 +150,7 @@ class EventActionsMixin:
         """
         return dataclasses.replace(
             self,
-            event_actions={"debounce": delay_ms, **self.event_actions},
+            event_actions={**self.event_actions, "debounce": delay_ms},
         )
 
     @property
@@ -162,7 +162,7 @@ class EventActionsMixin:
         """
         return dataclasses.replace(
             self,
-            event_actions={"temporal": True, **self.event_actions},
+            event_actions={**self.event_actions, "temporal": True},
         )
 
 
@@ -578,7 +578,7 @@ class JavascriptInputEvent:
     init=True,
     frozen=True,
 )
-class JavasciptKeyboardEvent:
+class JavascriptKeyboardEvent:
     """Interface for a Javascript KeyboardEvent https://developer.mozilla.org/en-US/docs/Web/API/KeyboardEvent."""
 
     key: str = ""
@@ -646,7 +646,7 @@ class KeyInputInfo(TypedDict):
 
 
 def key_event(
-    e: ObjectVar[JavasciptKeyboardEvent],
+    e: ObjectVar[JavascriptKeyboardEvent],
 ) -> tuple[Var[str], Var[KeyInputInfo]]:
     """Get the key from a keyboard event.
 
@@ -1257,7 +1257,7 @@ def call_script(
     Returns:
         EventSpec: An event that will execute the client side javascript.
     """
-    callback_kwargs = {}
+    callback_kwargs = {"callback": None}
     if callback is not None:
         callback_kwargs = {
             "callback": str(
@@ -2236,7 +2236,15 @@ class EventNamespace:
 
     @overload
     def __new__(
-        cls, func: None = None, *, background: bool | None = None
+        cls,
+        func: None = None,
+        *,
+        background: bool | None = None,
+        stop_propagation: bool | None = None,
+        prevent_default: bool | None = None,
+        throttle: int | None = None,
+        debounce: int | None = None,
+        temporal: bool | None = None,
     ) -> Callable[
         [Callable[[BASE_STATE, Unpack[P]], Any]], EventCallback[Unpack[P]]  # pyright: ignore [reportInvalidTypeVarUse]
     ]: ...
@@ -2247,6 +2255,11 @@ class EventNamespace:
         func: Callable[[BASE_STATE, Unpack[P]], Any],
         *,
         background: bool | None = None,
+        stop_propagation: bool | None = None,
+        prevent_default: bool | None = None,
+        throttle: int | None = None,
+        debounce: int | None = None,
+        temporal: bool | None = None,
     ) -> EventCallback[Unpack[P]]: ...
 
     def __new__(
@@ -2254,6 +2267,11 @@ class EventNamespace:
         func: Callable[[BASE_STATE, Unpack[P]], Any] | None = None,
         *,
         background: bool | None = None,
+        stop_propagation: bool | None = None,
+        prevent_default: bool | None = None,
+        throttle: int | None = None,
+        debounce: int | None = None,
+        temporal: bool | None = None,
     ) -> (
         EventCallback[Unpack[P]]
         | Callable[[Callable[[BASE_STATE, Unpack[P]], Any]], EventCallback[Unpack[P]]]
@@ -2263,6 +2281,11 @@ class EventNamespace:
         Args:
             func: The function to wrap.
             background: Whether the event should be run in the background. Defaults to False.
+            stop_propagation: Whether to stop the event from bubbling up the DOM tree.
+            prevent_default: Whether to prevent the default behavior of the event.
+            throttle: Throttle the event handler to limit calls (in milliseconds).
+            debounce: Debounce the event handler to delay calls (in milliseconds).
+            temporal: Whether the event should be dropped when the backend is down.
 
         Raises:
             TypeError: If background is True and the function is not a coroutine or async generator. # noqa: DAR402
@@ -2270,6 +2293,30 @@ class EventNamespace:
         Returns:
             The wrapped function.
         """
+
+        def _build_event_actions():
+            """Build event_actions dict from decorator parameters.
+
+            Returns:
+                Dict of event actions to apply, or empty dict if none specified.
+            """
+            if not any(
+                [stop_propagation, prevent_default, throttle, debounce, temporal]
+            ):
+                return {}
+
+            event_actions = {}
+            if stop_propagation is not None:
+                event_actions["stopPropagation"] = stop_propagation
+            if prevent_default is not None:
+                event_actions["preventDefault"] = prevent_default
+            if throttle is not None:
+                event_actions["throttle"] = throttle
+            if debounce is not None:
+                event_actions["debounce"] = debounce
+            if temporal is not None:
+                event_actions["temporal"] = temporal
+            return event_actions
 
         def wrapper(
             func: Callable[[BASE_STATE, Unpack[P]], T],
@@ -2306,8 +2353,22 @@ class EventNamespace:
                     object.__setattr__(func, "__name__", name)
                     object.__setattr__(func, "__qualname__", name)
                     state_cls._add_event_handler(name, func)
-                    return getattr(state_cls, name)
+                    event_callback = getattr(state_cls, name)
 
+                    # Apply decorator event actions
+                    event_actions = _build_event_actions()
+                    if event_actions:
+                        # Create new EventCallback with updated event_actions
+                        event_callback = dataclasses.replace(
+                            event_callback, event_actions=event_actions
+                        )
+
+                    return event_callback
+
+            # Store decorator event actions on the function for later processing
+            event_actions = _build_event_actions()
+            if event_actions:
+                func._rx_event_actions = event_actions  # pyright: ignore [reportFunctionMemberAccess]
             return func  # pyright: ignore [reportReturnType]
 
         if func is not None:

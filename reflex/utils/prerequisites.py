@@ -1175,7 +1175,7 @@ def download_and_run(url: str, *args, show_status: bool = False, **env):
         response.raise_for_status()
     except httpx.HTTPError as e:
         console.error(
-            f"Failed to download bun install script. You can install or update bun manually from https://bun.sh \n{e}"
+            f"Failed to download bun install script. You can install or update bun manually from https://bun.com \n{e}"
         )
         raise click.exceptions.Exit(1) from None
 

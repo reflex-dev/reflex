@@ -841,7 +841,7 @@ async def test_process_event_substate(test_state, child_state, grandchild_state)
         }
         test_state._clean()
 
-    # Test with the granchild state.
+    # Test with the grandchild state.
     assert grandchild_state.value2 == ""
     event = Event(
         token="t",
@@ -3600,7 +3600,7 @@ def test_assignment_to_undeclared_vars():
         def handle_supported_regular_vars(self):
             self.val = "no underscore"
             self._val = "single leading underscore"
-            self.__val = "double leading undercore"
+            self.__val = "double leading underscore"
 
         def handle_regular_var(self):
             self.num = 5

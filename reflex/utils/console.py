@@ -31,7 +31,7 @@ _EMITTED_DEPRECATION_WARNINGS = set()
 _EMITTED_INFO = set()
 
 # Warnings which have been printed.
-_EMIITED_WARNINGS = set()
+_EMITTED_WARNINGS = set()
 
 # Errors which have been printed.
 _EMITTED_ERRORS = set()
@@ -79,7 +79,7 @@ def is_debug() -> bool:
     return _LOG_LEVEL <= LogLevel.DEBUG
 
 
-def print(msg: str, dedupe: bool = False, **kwargs):
+def print(msg: str, *, dedupe: bool = False, **kwargs):
     """Print a message.
 
     Args:
@@ -128,7 +128,7 @@ def should_use_log_file_console() -> bool:
     return environment.REFLEX_ENABLE_FULL_LOGGING.get()
 
 
-def print_to_log_file(msg: str, dedupe: bool = False, **kwargs):
+def print_to_log_file(msg: str, *, dedupe: bool = False, **kwargs):
     """Print a message to the log file.
 
     Args:
@@ -139,7 +139,7 @@ def print_to_log_file(msg: str, dedupe: bool = False, **kwargs):
     log_file_console().print(msg, **kwargs)
 
 
-def debug(msg: str, dedupe: bool = False, **kwargs):
+def debug(msg: str, *, dedupe: bool = False, **kwargs):
     """Print a debug message.
 
     Args:
@@ -161,7 +161,7 @@ def debug(msg: str, dedupe: bool = False, **kwargs):
         print_to_log_file(f"[purple]Debug: {msg}[/purple]", **kwargs)
 
 
-def info(msg: str, dedupe: bool = False, **kwargs):
+def info(msg: str, *, dedupe: bool = False, **kwargs):
     """Print an info message.
 
     Args:
@@ -179,7 +179,7 @@ def info(msg: str, dedupe: bool = False, **kwargs):
         print_to_log_file(f"[cyan]Info: {msg}[/cyan]", **kwargs)
 
 
-def success(msg: str, dedupe: bool = False, **kwargs):
+def success(msg: str, *, dedupe: bool = False, **kwargs):
     """Print a success message.
 
     Args:
@@ -197,7 +197,7 @@ def success(msg: str, dedupe: bool = False, **kwargs):
         print_to_log_file(f"[green]Success: {msg}[/green]", **kwargs)
 
 
-def log(msg: str, dedupe: bool = False, **kwargs):
+def log(msg: str, *, dedupe: bool = False, **kwargs):
     """Takes a string and logs it to the console.
 
     Args:
@@ -225,7 +225,7 @@ def rule(title: str, **kwargs):
     _console.rule(title, **kwargs)
 
 
-def warn(msg: str, dedupe: bool = False, **kwargs):
+def warn(msg: str, *, dedupe: bool = False, **kwargs):
     """Print a warning message.
 
     Args:
@@ -235,9 +235,9 @@ def warn(msg: str, dedupe: bool = False, **kwargs):
     """
     if _LOG_LEVEL <= LogLevel.WARNING:
         if dedupe:
-            if msg in _EMIITED_WARNINGS:
+            if msg in _EMITTED_WARNINGS:
                 return
-            _EMIITED_WARNINGS.add(msg)
+            _EMITTED_WARNINGS.add(msg)
         print(f"[orange1]Warning: {msg}[/orange1]", **kwargs)
     if should_use_log_file_console():
         print_to_log_file(f"[orange1]Warning: {msg}[/orange1]", **kwargs)
@@ -312,7 +312,7 @@ def deprecate(
             _EMITTED_DEPRECATION_WARNINGS.add(dedupe_key)
 
 
-def error(msg: str, dedupe: bool = False, **kwargs):
+def error(msg: str, *, dedupe: bool = False, **kwargs):
     """Print an error message.
 
     Args:

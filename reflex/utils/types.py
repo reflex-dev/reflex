@@ -462,7 +462,7 @@ def get_attribute_access_type(cls: GenericType, name: str) -> GenericType | None
                             if type_ in PrimitiveToAnnotation:
                                 type_ = PrimitiveToAnnotation[type_]
                             type_ = type_[item_type]  # pyright: ignore [reportIndexIssue]
-                    if column.nullable:
+                    if hasattr(column, "nullable") and column.nullable:
                         type_ = type_ | None
                     return type_
             if name in insp.all_orm_descriptors:

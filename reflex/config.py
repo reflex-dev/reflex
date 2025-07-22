@@ -25,6 +25,7 @@ from reflex.environment import (
 from reflex.environment import env_var as env_var
 from reflex.environment import environment as environment
 from reflex.plugins import Plugin
+from reflex.plugins.sitemap import SitemapPlugin
 from reflex.utils import console
 from reflex.utils.exceptions import ConfigError
 
@@ -235,7 +236,15 @@ class BaseConfig:
     # List of plugins to use in the app.
     plugins: list[Plugin] = dataclasses.field(default_factory=list)
 
+    # List of fully qualified import paths of plugins to disable in the app (e.g. reflex.plugins.sitemap.SitemapPlugin).
+    disable_plugins: list[str] = dataclasses.field(default_factory=list)
+
     _prefixes: ClassVar[list[str]] = ["REFLEX_"]
+
+
+_PLUGINS_ENABLED_BY_DEFAULT = [
+    SitemapPlugin,
+]
 
 
 @dataclasses.dataclass(kw_only=True, init=False)
@@ -254,8 +263,8 @@ class Config(BaseConfig):
     )
     ```
 
-    Every config value can be overridden by an environment variable with the same name in uppercase.
-    For example, `db_url` can be overridden by setting the `DB_URL` environment variable.
+    Every config value can be overridden by an environment variable with the same name in uppercase and a REFLEX_ prefix.
+    For example, `db_url` can be overridden by setting the `REFLEX_DB_URL` environment variable.
 
     See the [configuration](https://reflex.dev/docs/getting-started/configuration/) docs for more info.
     """
@@ -290,6 +299,9 @@ class Config(BaseConfig):
         for key, env_value in env_kwargs.items():
             setattr(self, key, env_value)
 
+        # Add builtin plugins if not disabled.
+        self._add_builtin_plugins()
+
         #   Update default URLs if ports were set
         kwargs.update(env_kwargs)
         self._non_default_attributes = set(kwargs.keys())
@@ -301,6 +313,39 @@ class Config(BaseConfig):
         ):
             msg = f"{self._prefixes[0]}REDIS_URL is required when using the redis state manager."
             raise ConfigError(msg)
+
+    def _add_builtin_plugins(self):
+        """Add the builtin plugins to the config."""
+        for plugin in _PLUGINS_ENABLED_BY_DEFAULT:
+            plugin_name = plugin.__module__ + "." + plugin.__qualname__
+            if plugin_name not in self.disable_plugins:
+                if not any(isinstance(p, plugin) for p in self.plugins):
+                    console.warn(
+                        f"`{plugin_name}` plugin is enabled by default, but not explicitly added to the config. "
+                        "If you want to use it, please add it to the `plugins` list in your config inside of `rxconfig.py`. "
+                        f"To disable this plugin, set `disable_plugins` to `{[plugin_name, *self.disable_plugins]!r}`.",
+                    )
+                    self.plugins.append(plugin())
+            else:
+                if any(isinstance(p, plugin) for p in self.plugins):
+                    console.warn(
+                        f"`{plugin_name}` is disabled in the config, but it is still present in the `plugins` list. "
+                        "Please remove it from the `plugins` list in your config inside of `rxconfig.py`.",
+                    )
+
+        for disabled_plugin in self.disable_plugins:
+            if not isinstance(disabled_plugin, str):
+                console.warn(
+                    f"reflex.Config.disable_plugins should only contain strings, but got {disabled_plugin!r}. "
+                )
+            if not any(
+                plugin.__module__ + "." + plugin.__qualname__ == disabled_plugin
+                for plugin in _PLUGINS_ENABLED_BY_DEFAULT
+            ):
+                console.warn(
+                    f"`{disabled_plugin}` is disabled in the config, but it is not a built-in plugin. "
+                    "Please remove it from the `disable_plugins` list in your config inside of `rxconfig.py`.",
+                )
 
     @classmethod
     def class_fields(cls) -> set[str]:

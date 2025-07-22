@@ -131,7 +131,7 @@ def replace_brackets_with_keywords(input_string: str) -> str:
     )
 
 
-def route_specifity(keyworded_route: str) -> tuple[int, int, int]:
+def route_specificity(keyworded_route: str) -> tuple[int, int, int]:
     """Get the specificity of a route with keywords.
 
     The smaller the number, the more specific the route is.
@@ -193,13 +193,13 @@ def get_router(routes: list[str]) -> Callable[[str], str | None]:
     keyworded_routes = {
         replace_brackets_with_keywords(route): route for route in routes
     }
-    sorted_routes_by_specifity = sorted(
+    sorted_routes_by_specificity = sorted(
         keyworded_routes.items(),
-        key=lambda item: route_specifity(item[0]),
+        key=lambda item: route_specificity(item[0]),
     )
     regexed_routes = [
         (get_route_regex(keyworded_route), original_route)
-        for keyworded_route, original_route in sorted_routes_by_specifity
+        for keyworded_route, original_route in sorted_routes_by_specificity
     ]
 
     def get_route(path: str) -> str | None:
