@@ -101,8 +101,7 @@ def cached_procedure(
     cache_file_path: Callable[[], Path],
     payload_fn: Callable[P, str],
 ) -> Callable[[Callable[P, Picklable]], Callable[P, Picklable]]:
-    """Decorator to cache the runs of a procedure on disk. Procedures should not have
-       a return value.
+    """Decorator to cache the result of a function based on its arguments.
 
     Args:
         cache_file_path: Function that computes the cache file path.
