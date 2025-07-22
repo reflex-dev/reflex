@@ -791,7 +791,7 @@ export const hydrateClientStorage = (client_storage) => {
     for (const state_key in client_storage.cookies) {
       const cookie_options = client_storage.cookies[state_key];
       const cookie_name = cookie_options.name || state_key;
-      const cookie_value = cookies.get(cookie_name, true);
+      const cookie_value = cookies.get(cookie_name, { doNotParse: true });
       if (cookie_value !== undefined) {
         client_storage_values[state_key] = cookie_value;
       }
