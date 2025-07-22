@@ -793,7 +793,7 @@ export const hydrateClientStorage = (client_storage) => {
       const cookie_name = cookie_options.name || state_key;
       const cookie_value = cookies.get(cookie_name, true);
       if (cookie_value !== undefined) {
-        client_storage_values[state_key] = cookies.get(cookie_name, true);
+        client_storage_values[state_key] = cookie_value;
       }
     }
   }
