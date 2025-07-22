@@ -62,7 +62,11 @@ def test_update_react_router_config(config, export, expected_output):
 def test_cached_procedure():
     call_count = 0
 
-    @cached_procedure(tempfile.mktemp(), payload_fn=lambda: "constant")
+    temp_file = tempfile.mktemp()
+
+    @cached_procedure(
+        cache_file_path=lambda: Path(temp_file), payload_fn=lambda: "constant"
+    )
     def _function_with_no_args():
         nonlocal call_count
         call_count += 1
@@ -74,8 +78,10 @@ def test_cached_procedure():
 
     call_count = 0
 
+    another_temp_file = tempfile.mktemp()
+
     @cached_procedure(
-        cache_file=tempfile.mktemp(),
+        cache_file_path=lambda: Path(another_temp_file),
         payload_fn=lambda *args, **kwargs: f"{repr(args), repr(kwargs)}",
     )
     def _function_with_some_args(*args, **kwargs):
@@ -94,7 +100,7 @@ def test_cached_procedure():
     call_count = 0
 
     @cached_procedure(
-        cache_file=None, cache_file_fn=tempfile.mktemp, payload_fn=lambda: "constant"
+        cache_file_path=lambda: Path(tempfile.mktemp()), payload_fn=lambda: "constant"
     )
     def _function_with_no_args_fn():
         nonlocal call_count
