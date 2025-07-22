@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import contextlib
+import datetime
 import inspect
 import os
 import shutil
@@ -136,7 +137,7 @@ def print_to_log_file(msg: str, *, dedupe: bool = False, **kwargs):
         dedupe: If True, suppress multiple console logs of print message.
         kwargs: Keyword arguments to pass to the print function.
     """
-    log_file_console().print(msg, **kwargs)
+    log_file_console().print(f"[{datetime.datetime.now()}] {msg}", **kwargs)
 
 
 def debug(msg: str, *, dedupe: bool = False, **kwargs):
