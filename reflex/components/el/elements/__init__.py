@@ -125,6 +125,7 @@ _MAPPING = {
         "dl",
         "dt",
         "figcaption",
+        "figure",
         "hr",
         "ol",
         "li",

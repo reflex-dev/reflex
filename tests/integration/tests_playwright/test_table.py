@@ -11,7 +11,7 @@ expected_col_headers = ["Name", "Age", "Location"]
 expected_row_headers = ["John", "Jane", "Joe"]
 expected_cells_data = [
     ["30", "New York"],
-    ["31", "San Fransisco"],
+    ["31", "San Francisco"],
     ["32", "Los Angeles"],
 ]
 
@@ -42,7 +42,7 @@ def Table():
                     rx.table.row(
                         rx.table.row_header_cell("Jane"),
                         rx.table.cell(31),
-                        rx.table.cell("San Fransisco"),
+                        rx.table.cell("San Francisco"),
                     ),
                     rx.table.row(
                         rx.table.row_header_cell("Joe"),

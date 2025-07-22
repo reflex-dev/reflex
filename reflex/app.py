@@ -28,7 +28,6 @@ from timeit import default_timer as timer
 from types import SimpleNamespace
 from typing import TYPE_CHECKING, Any, BinaryIO, ParamSpec, get_args, get_type_hints
 
-from fastapi import FastAPI
 from rich.progress import MofNCompleteColumn, Progress, TimeElapsedColumn
 from socketio import ASGIApp as EngineIOApp
 from socketio import AsyncNamespace, AsyncServer
@@ -400,6 +399,9 @@ class App(MiddlewareMixin, LifespanMixin):
     # The state class to use for the app.
     _state: type[BaseState] | None = None
 
+    # Whether to enable state for the app. If False, the app will not use state.
+    enable_state: bool = True
+
     # Class to manage many client states.
     _state_manager: StateManager | None = None
 
@@ -437,9 +439,6 @@ class App(MiddlewareMixin, LifespanMixin):
         | Starlette
         | None
     ) = None
-
-    # FastAPI app for compatibility with FastAPI.
-    _cached_fastapi_app: FastAPI | None = None
 
     @property
     def event_namespace(self) -> EventNamespace | None:
@@ -480,7 +479,8 @@ class App(MiddlewareMixin, LifespanMixin):
             if issubclass(clz, AppMixin):
                 clz._init_mixin(self)
 
-        self._setup_state()
+        if self.enable_state:
+            self._enable_state()
 
         # Set up the admin dash.
         self._setup_admin_dash()
@@ -495,7 +495,7 @@ class App(MiddlewareMixin, LifespanMixin):
         """Enable state for the app."""
         if not self._state:
             self._state = State
-            self._setup_state()
+        self._setup_state()
 
     def _setup_state(self) -> None:
         """Set up the state for the app.
@@ -594,32 +594,22 @@ class App(MiddlewareMixin, LifespanMixin):
         Returns:
             The backend api.
         """
+        from reflex.vars.base import GLOBAL_CACHE
+
         # For py3.9 compatibility when redis is used, we MUST add any decorator pages
         # before compiling the app in a thread to avoid event loop error (REF-2172).
         self._apply_decorated_pages()
 
-        compile_future = concurrent.futures.ThreadPoolExecutor(max_workers=1).submit(
-            self._compile, prerender_routes=is_prod_mode()
-        )
+        self._compile(prerender_routes=is_prod_mode())
 
-        def callback(f: concurrent.futures.Future):
-            # Force background compile errors to print eagerly
-            return f.result()
-
-        compile_future.add_done_callback(callback)
-        # Wait for the compile to finish to ensure all optional endpoints are mounted.
-        compile_future.result()
+        # We will not be making more vars, so we can clear the global cache to free up memory.
+        GLOBAL_CACHE.clear()
 
         if not self._api:
             msg = "The app has not been initialized."
             raise ValueError(msg)
 
-        if self._cached_fastapi_app is not None:
-            asgi_app = self._cached_fastapi_app
-            asgi_app.mount("", self._api)
-            App._add_cors(asgi_app)
-        else:
-            asgi_app = self._api
+        asgi_app = self._api
 
         if self.api_transformer is not None:
             api_transformers: Sequence[Starlette | Callable[[ASGIApp], ASGIApp]] = (
@@ -847,13 +837,9 @@ class App(MiddlewareMixin, LifespanMixin):
             save_page: If True, the compiled page is saved to self._pages.
         """
         n_states_before = len(all_base_state_classes)
-        component, enable_state = compiler.compile_unevaluated_page(
-            route, self._unevaluated_pages[route], self._state, self.style, self.theme
+        component = compiler.compile_unevaluated_page(
+            route, self._unevaluated_pages[route], self.style, self.theme
         )
-
-        # Indicate that the app should use state.
-        if enable_state:
-            self._enable_state()
 
         # Indicate that evaluating this page creates one or more state classes.
         if len(all_base_state_classes) > n_states_before:
@@ -1146,7 +1132,6 @@ class App(MiddlewareMixin, LifespanMixin):
                 for route in stateful_pages:
                     console.debug(f"BE Evaluating stateful page: {route}")
                     self._compile_page(route, save_page=False)
-                self._enable_state()
             self._add_optional_endpoints()
             return
 
@@ -1344,8 +1329,6 @@ class App(MiddlewareMixin, LifespanMixin):
 
         for route, component in zip(self._pages, page_components, strict=True):
             ExecutorSafeFunctions.COMPONENTS[route] = component
-
-        ExecutorSafeFunctions.STATE = self._state
 
         modify_files_tasks: list[tuple[str, str, Callable[[str], str]]] = []
 

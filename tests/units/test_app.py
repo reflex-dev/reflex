@@ -11,10 +11,10 @@ from unittest.mock import AsyncMock
 
 import pytest
 import sqlmodel
-from fastapi.responses import StreamingResponse
 from pytest_mock import MockerFixture
 from starlette.applications import Starlette
 from starlette.datastructures import UploadFile
+from starlette.responses import StreamingResponse
 from starlette_admin.auth import AuthProvider
 from starlette_admin.contrib.sqla.admin import Admin
 from starlette_admin.contrib.sqla.view import ModelView
@@ -778,7 +778,6 @@ async def test_upload_file(tmp_path, state, delta, token: str, mocker: MockerFix
     state._tmp_path = tmp_path
     # The App state must be the "root" of the state tree
     app = App()
-    app._enable_state()
     app.event_namespace.emit = AsyncMock()  # pyright: ignore [reportOptionalMemberAccess]
     current_state = await app.state_manager.get_state(_substate_key(token, state))
     data = b"This is binary data"
@@ -1363,13 +1362,19 @@ def test_app_wrap_compile_theme(
         "const [addEvents, connectErrors] = useContext(EventLoopContext);"
         "return ("
         + ("jsx(StrictMode,{}," if react_strict_mode else "")
-        + """jsx(ErrorBoundary,{fallbackRender:((event_args) => (jsx("div", ({css:({ ["height"] : "100%", ["width"] : "100%", ["position"] : "absolute", ["display"] : "flex", ["alignItems"] : "center", ["justifyContent"] : "center" })}), (jsx("div", ({css:({ ["display"] : "flex", ["flexDirection"] : "column", ["gap"] : "1rem" })}), (jsx("div", ({css:({ ["display"] : "flex", ["flexDirection"] : "column", ["gap"] : "1rem", ["maxWidth"] : "50ch", ["border"] : "1px solid #888888", ["borderRadius"] : "0.25rem", ["padding"] : "1rem" })}), (jsx("h2", ({css:({ ["fontSize"] : "1.25rem", ["fontWeight"] : "bold" })}), (jsx(Fragment, ({}), "An error occurred while rendering this page.")))), (jsx("p", ({css:({ ["opacity"] : "0.75" })}), (jsx(Fragment, ({}), "This is an error with the application itself.")))), (jsx("details", ({}), (jsx("summary", ({css:({ ["padding"] : "0.5rem" })}), (jsx(Fragment, ({}), "Error message")))), (jsx("div", ({css:({ ["width"] : "100%", ["maxHeight"] : "50vh", ["overflow"] : "auto", ["background"] : "#000", ["color"] : "#fff", ["borderRadius"] : "0.25rem" })}), (jsx("div", ({css:({ ["padding"] : "0.5rem", ["width"] : "fit-content" })}), (jsx("pre", ({}), (jsx(Fragment, ({}), event_args.error.stack)))))))), (jsx("button", ({css:({ ["padding"] : "0.35rem 0.75rem", ["margin"] : "0.5rem", ["background"] : "#fff", ["color"] : "#000", ["border"] : "1px solid #000", ["borderRadius"] : "0.25rem", ["fontWeight"] : "bold" }),onClick:((_e) => (addEvents([(Event("_call_function", ({ ["function"] : (() => (navigator["clipboard"]["writeText"](event_args.error.stack))), ["callback"] : null }), ({  })))], [_e], ({  }))))}), (jsx(Fragment, ({}), "Copy")))))))), (jsx("hr", ({css:({ ["borderColor"] : "currentColor", ["opacity"] : "0.25" })}))), (jsx(ReactRouterLink, ({to:"https://reflex.dev"}), (jsx("div", ({css:({ ["display"] : "flex", ["alignItems"] : "baseline", ["justifyContent"] : "center", ["fontFamily"] : "monospace", ["--default-font-family"] : "monospace", ["gap"] : "0.5rem" })}), (jsx(Fragment, ({}), "Built with ")), (jsx("svg", ({"aria-label":"Reflex",css:({ ["fill"] : "currentColor" }),height:"12",role:"img",width:"56",xmlns:"http://www.w3.org/2000/svg"}), (jsx("path", ({d:"M0 11.5999V0.399902H8.96V4.8799H6.72V2.6399H2.24V4.8799H6.72V7.1199H2.24V11.5999H0ZM6.72 11.5999V7.1199H8.96V11.5999H6.72Z"}))), (jsx("path", ({d:"M11.2 11.5999V0.399902H17.92V2.6399H13.44V4.8799H17.92V7.1199H13.44V9.3599H17.92V11.5999H11.2Z"}))), (jsx("path", ({d:"M20.16 11.5999V0.399902H26.88V2.6399H22.4V4.8799H26.88V7.1199H22.4V11.5999H20.16Z"}))), (jsx("path", ({d:"M29.12 11.5999V0.399902H31.36V9.3599H35.84V11.5999H29.12Z"}))), (jsx("path", ({d:"M38.08 11.5999V0.399902H44.8V2.6399H40.32V4.8799H44.8V7.1199H40.32V9.3599H44.8V11.5999H38.08Z"}))), (jsx("path", ({d:"M47.04 4.8799V0.399902H49.28V4.8799H47.04ZM53.76 4.8799V0.399902H56V4.8799H53.76ZM49.28 7.1199V4.8799H53.76V7.1199H49.28ZM47.04 11.5999V7.1199H49.28V11.5999H47.04ZM53.76 11.5999V7.1199H56V11.5999H53.76Z"}))), (jsx("title", ({}), (jsx(Fragment, ({}), "Reflex"))))))))))))))),onError:((_error, _info) => (addEvents([(Event("_call_function", ({ ["function"] : (() => null), ["callback"] : null }), ({  })))], [_error, _info], ({  }))))},"""
+        + "jsx(ErrorBoundary,{"
+        """fallbackRender:((event_args) => (jsx("div", ({css:({ ["height"] : "100%", ["width"] : "100%", ["position"] : "absolute", ["display"] : "flex", ["alignItems"] : "center", ["justifyContent"] : "center" })}), (jsx("div", ({css:({ ["display"] : "flex", ["flexDirection"] : "column", ["gap"] : "1rem" })}), (jsx("div", ({css:({ ["display"] : "flex", ["flexDirection"] : "column", ["gap"] : "1rem", ["maxWidth"] : "50ch", ["border"] : "1px solid #888888", ["borderRadius"] : "0.25rem", ["padding"] : "1rem" })}), (jsx("h2", ({css:({ ["fontSize"] : "1.25rem", ["fontWeight"] : "bold" })}), (jsx(Fragment, ({}), "An error occurred while rendering this page.")))), (jsx("p", ({css:({ ["opacity"] : "0.75" })}), (jsx(Fragment, ({}), "This is an error with the application itself.")))), (jsx("details", ({}), (jsx("summary", ({css:({ ["padding"] : "0.5rem" })}), (jsx(Fragment, ({}), "Error message")))), (jsx("div", ({css:({ ["width"] : "100%", ["maxHeight"] : "50vh", ["overflow"] : "auto", ["background"] : "#000", ["color"] : "#fff", ["borderRadius"] : "0.25rem" })}), (jsx("div", ({css:({ ["padding"] : "0.5rem", ["width"] : "fit-content" })}), (jsx("pre", ({}), (jsx(Fragment, ({}), event_args.error.name + \': \' + event_args.error.message + \'\\n\' + event_args.error.stack)))))))), (jsx("button", ({css:({ ["padding"] : "0.35rem 0.75rem", ["margin"] : "0.5rem", ["background"] : "#fff", ["color"] : "#000", ["border"] : "1px solid #000", ["borderRadius"] : "0.25rem", ["fontWeight"] : "bold" }),onClick:((_e) => (addEvents([(Event("_call_function", ({ ["function"] : (() => (navigator["clipboard"]["writeText"](event_args.error.name + \': \' + event_args.error.message + \'\\n\' + event_args.error.stack))), ["callback"] : null }), ({  })))], [_e], ({  }))))}), (jsx(Fragment, ({}), "Copy")))))))), (jsx("hr", ({css:({ ["borderColor"] : "currentColor", ["opacity"] : "0.25" })}))), (jsx(ReactRouterLink, ({to:"https://reflex.dev"}), (jsx("div", ({css:({ ["display"] : "flex", ["alignItems"] : "baseline", ["justifyContent"] : "center", ["fontFamily"] : "monospace", ["--default-font-family"] : "monospace", ["gap"] : "0.5rem" })}), (jsx(Fragment, ({}), "Built with ")), (jsx("svg", ({"aria-label":"Reflex",css:({ ["fill"] : "currentColor" }),height:"12",role:"img",width:"56",xmlns:"http://www.w3.org/2000/svg"}), (jsx("path", ({d:"M0 11.5999V0.399902H8.96V4.8799H6.72V2.6399H2.24V4.8799H6.72V7.1199H2.24V11.5999H0ZM6.72 11.5999V7.1199H8.96V11.5999H6.72Z"}))), (jsx("path", ({d:"M11.2 11.5999V0.399902H17.92V2.6399H13.44V4.8799H17.92V7.1199H13.44V9.3599H17.92V11.5999H11.2Z"}))), (jsx("path", ({d:"M20.16 11.5999V0.399902H26.88V2.6399H22.4V4.8799H26.88V7.1199H22.4V11.5999H20.16Z"}))), (jsx("path", ({d:"M29.12 11.5999V0.399902H31.36V9.3599H35.84V11.5999H29.12Z"}))), (jsx("path", ({d:"M38.08 11.5999V0.399902H44.8V2.6399H40.32V4.8799H44.8V7.1199H40.32V9.3599H44.8V11.5999H38.08Z"}))), (jsx("path", ({d:"M47.04 4.8799V0.399902H49.28V4.8799H47.04ZM53.76 4.8799V0.399902H56V4.8799H53.76ZM49.28 7.1199V4.8799H53.76V7.1199H49.28ZM47.04 11.5999V7.1199H49.28V11.5999H47.04ZM53.76 11.5999V7.1199H56V11.5999H53.76Z"}))), (jsx("title", ({}), (jsx(Fragment, ({}), "Reflex"))))))))))))))),"""
+        """onError:((_error, _info) => (addEvents([(Event("reflex___state____state.reflex___state____frontend_event_exception_state.handle_frontend_exception", ({ ["info"] : ((((_error["name"]+": ")+_error["message"])+"\\n")+_error["stack"]), ["component_stack"] : _info["componentStack"] }), ({  })))], [_error, _info], ({  }))))"""
+        "},"
         "jsx(RadixThemesColorModeProvider,{},"
         "jsx(RadixThemesTheme,{accentColor:\"plum\",css:{...theme.styles.global[':root'], ...theme.styles.global.body}},"
+        "jsx(Fragment,{},"
+        "jsx(DefaultOverlayComponents,{},),"
         "jsx(Fragment,{},"
         "jsx(MemoizedToastProvider,{},),"
         "jsx(Fragment,{},"
         "children,"
+        "),"
         "),"
         "),"
         "),"
@@ -1435,15 +1440,20 @@ def test_app_wrap_priority(
         "return ("
         + ("jsx(StrictMode,{}," if react_strict_mode else "")
         + "jsx(RadixThemesBox,{},"
-        """jsx(ErrorBoundary,{fallbackRender:((event_args) => (jsx("div", ({css:({ ["height"] : "100%", ["width"] : "100%", ["position"] : "absolute", ["display"] : "flex", ["alignItems"] : "center", ["justifyContent"] : "center" })}), (jsx("div", ({css:({ ["display"] : "flex", ["flexDirection"] : "column", ["gap"] : "1rem" })}), (jsx("div", ({css:({ ["display"] : "flex", ["flexDirection"] : "column", ["gap"] : "1rem", ["maxWidth"] : "50ch", ["border"] : "1px solid #888888", ["borderRadius"] : "0.25rem", ["padding"] : "1rem" })}), (jsx("h2", ({css:({ ["fontSize"] : "1.25rem", ["fontWeight"] : "bold" })}), (jsx(Fragment, ({}), "An error occurred while rendering this page.")))), (jsx("p", ({css:({ ["opacity"] : "0.75" })}), (jsx(Fragment, ({}), "This is an error with the application itself.")))), (jsx("details", ({}), (jsx("summary", ({css:({ ["padding"] : "0.5rem" })}), (jsx(Fragment, ({}), "Error message")))), (jsx("div", ({css:({ ["width"] : "100%", ["maxHeight"] : "50vh", ["overflow"] : "auto", ["background"] : "#000", ["color"] : "#fff", ["borderRadius"] : "0.25rem" })}), (jsx("div", ({css:({ ["padding"] : "0.5rem", ["width"] : "fit-content" })}), (jsx("pre", ({}), (jsx(Fragment, ({}), event_args.error.stack)))))))), (jsx("button", ({css:({ ["padding"] : "0.35rem 0.75rem", ["margin"] : "0.5rem", ["background"] : "#fff", ["color"] : "#000", ["border"] : "1px solid #000", ["borderRadius"] : "0.25rem", ["fontWeight"] : "bold" }),onClick:((_e) => (addEvents([(Event("_call_function", ({ ["function"] : (() => (navigator["clipboard"]["writeText"](event_args.error.stack))), ["callback"] : null }), ({  })))], [_e], ({  }))))}), (jsx(Fragment, ({}), "Copy")))))))), (jsx("hr", ({css:({ ["borderColor"] : "currentColor", ["opacity"] : "0.25" })}))), (jsx(ReactRouterLink, ({to:"https://reflex.dev"}), (jsx("div", ({css:({ ["display"] : "flex", ["alignItems"] : "baseline", ["justifyContent"] : "center", ["fontFamily"] : "monospace", ["--default-font-family"] : "monospace", ["gap"] : "0.5rem" })}), (jsx(Fragment, ({}), "Built with ")), (jsx("svg", ({"aria-label":"Reflex",css:({ ["fill"] : "currentColor" }),height:"12",role:"img",width:"56",xmlns:"http://www.w3.org/2000/svg"}), (jsx("path", ({d:"M0 11.5999V0.399902H8.96V4.8799H6.72V2.6399H2.24V4.8799H6.72V7.1199H2.24V11.5999H0ZM6.72 11.5999V7.1199H8.96V11.5999H6.72Z"}))), (jsx("path", ({d:"M11.2 11.5999V0.399902H17.92V2.6399H13.44V4.8799H17.92V7.1199H13.44V9.3599H17.92V11.5999H11.2Z"}))), (jsx("path", ({d:"M20.16 11.5999V0.399902H26.88V2.6399H22.4V4.8799H26.88V7.1199H22.4V11.5999H20.16Z"}))), (jsx("path", ({d:"M29.12 11.5999V0.399902H31.36V9.3599H35.84V11.5999H29.12Z"}))), (jsx("path", ({d:"M38.08 11.5999V0.399902H44.8V2.6399H40.32V4.8799H44.8V7.1199H40.32V9.3599H44.8V11.5999H38.08Z"}))), (jsx("path", ({d:"M47.04 4.8799V0.399902H49.28V4.8799H47.04ZM53.76 4.8799V0.399902H56V4.8799H53.76ZM49.28 7.1199V4.8799H53.76V7.1199H49.28ZM47.04 11.5999V7.1199H49.28V11.5999H47.04ZM53.76 11.5999V7.1199H56V11.5999H53.76Z"}))), (jsx("title", ({}), (jsx(Fragment, ({}), "Reflex"))))))))))))))),onError:((_error, _info) => (addEvents([(Event("_call_function", ({ ["function"] : (() => null), ["callback"] : null }), ({  })))], [_error, _info], ({  }))))},"""
+        "jsx(ErrorBoundary,{"
+        """fallbackRender:((event_args) => (jsx("div", ({css:({ ["height"] : "100%", ["width"] : "100%", ["position"] : "absolute", ["display"] : "flex", ["alignItems"] : "center", ["justifyContent"] : "center" })}), (jsx("div", ({css:({ ["display"] : "flex", ["flexDirection"] : "column", ["gap"] : "1rem" })}), (jsx("div", ({css:({ ["display"] : "flex", ["flexDirection"] : "column", ["gap"] : "1rem", ["maxWidth"] : "50ch", ["border"] : "1px solid #888888", ["borderRadius"] : "0.25rem", ["padding"] : "1rem" })}), (jsx("h2", ({css:({ ["fontSize"] : "1.25rem", ["fontWeight"] : "bold" })}), (jsx(Fragment, ({}), "An error occurred while rendering this page.")))), (jsx("p", ({css:({ ["opacity"] : "0.75" })}), (jsx(Fragment, ({}), "This is an error with the application itself.")))), (jsx("details", ({}), (jsx("summary", ({css:({ ["padding"] : "0.5rem" })}), (jsx(Fragment, ({}), "Error message")))), (jsx("div", ({css:({ ["width"] : "100%", ["maxHeight"] : "50vh", ["overflow"] : "auto", ["background"] : "#000", ["color"] : "#fff", ["borderRadius"] : "0.25rem" })}), (jsx("div", ({css:({ ["padding"] : "0.5rem", ["width"] : "fit-content" })}), (jsx("pre", ({}), (jsx(Fragment, ({}), event_args.error.name + \': \' + event_args.error.message + \'\\n\' + event_args.error.stack)))))))), (jsx("button", ({css:({ ["padding"] : "0.35rem 0.75rem", ["margin"] : "0.5rem", ["background"] : "#fff", ["color"] : "#000", ["border"] : "1px solid #000", ["borderRadius"] : "0.25rem", ["fontWeight"] : "bold" }),onClick:((_e) => (addEvents([(Event("_call_function", ({ ["function"] : (() => (navigator["clipboard"]["writeText"](event_args.error.name + \': \' + event_args.error.message + \'\\n\' + event_args.error.stack))), ["callback"] : null }), ({  })))], [_e], ({  }))))}), (jsx(Fragment, ({}), "Copy")))))))), (jsx("hr", ({css:({ ["borderColor"] : "currentColor", ["opacity"] : "0.25" })}))), (jsx(ReactRouterLink, ({to:"https://reflex.dev"}), (jsx("div", ({css:({ ["display"] : "flex", ["alignItems"] : "baseline", ["justifyContent"] : "center", ["fontFamily"] : "monospace", ["--default-font-family"] : "monospace", ["gap"] : "0.5rem" })}), (jsx(Fragment, ({}), "Built with ")), (jsx("svg", ({"aria-label":"Reflex",css:({ ["fill"] : "currentColor" }),height:"12",role:"img",width:"56",xmlns:"http://www.w3.org/2000/svg"}), (jsx("path", ({d:"M0 11.5999V0.399902H8.96V4.8799H6.72V2.6399H2.24V4.8799H6.72V7.1199H2.24V11.5999H0ZM6.72 11.5999V7.1199H8.96V11.5999H6.72Z"}))), (jsx("path", ({d:"M11.2 11.5999V0.399902H17.92V2.6399H13.44V4.8799H17.92V7.1199H13.44V9.3599H17.92V11.5999H11.2Z"}))), (jsx("path", ({d:"M20.16 11.5999V0.399902H26.88V2.6399H22.4V4.8799H26.88V7.1199H22.4V11.5999H20.16Z"}))), (jsx("path", ({d:"M29.12 11.5999V0.399902H31.36V9.3599H35.84V11.5999H29.12Z"}))), (jsx("path", ({d:"M38.08 11.5999V0.399902H44.8V2.6399H40.32V4.8799H44.8V7.1199H40.32V9.3599H44.8V11.5999H38.08Z"}))), (jsx("path", ({d:"M47.04 4.8799V0.399902H49.28V4.8799H47.04ZM53.76 4.8799V0.399902H56V4.8799H53.76ZM49.28 7.1199V4.8799H53.76V7.1199H49.28ZM47.04 11.5999V7.1199H49.28V11.5999H47.04ZM53.76 11.5999V7.1199H56V11.5999H53.76Z"}))), (jsx("title", ({}), (jsx(Fragment, ({}), "Reflex"))))))))))))))),"""
+        """onError:((_error, _info) => (addEvents([(Event("reflex___state____state.reflex___state____frontend_event_exception_state.handle_frontend_exception", ({ ["info"] : ((((_error["name"]+": ")+_error["message"])+"\\n")+_error["stack"]), ["component_stack"] : _info["componentStack"] }), ({  })))], [_error, _info], ({  }))))"""
+        "},"
         'jsx(RadixThemesText,{as:"p"},'
         "jsx(RadixThemesColorModeProvider,{},"
         "jsx(Fragment2,{},"
         "jsx(Fragment,{},"
+        "jsx(DefaultOverlayComponents,{},),"
+        "jsx(Fragment,{},"
         "jsx(MemoizedToastProvider,{},),"
         "jsx(Fragment,{},"
         "children"
-        ",),),),),),)" + (",)" if react_strict_mode else "")
+        ",),),),),),),)" + (",)" if react_strict_mode else "")
     )
     assert expected in lines
 
@@ -1451,44 +1461,10 @@ def test_app_wrap_priority(
 def test_app_state_determination():
     """Test that the stateless status of an app is determined correctly."""
     a1 = App()
-    assert a1._state is None
-
-    # No state, no router, no event handlers.
-    a1.add_page(rx.box("Index"), route="/")
-    assert a1._state is None
-
-    # Add a page with `on_load` enables state.
-    a1.add_page(rx.box("About"), route="/about", on_load=rx.console_log(""))
-    a1._compile_page("about")
     assert a1._state is not None
 
-    a2 = App()
+    a2 = App(enable_state=False)
     assert a2._state is None
-
-    # Referencing a state Var enables state.
-    a2.add_page(rx.box(rx.text(GenState.value)), route="/")
-    a2._compile_page("index")
-    assert a2._state is not None
-
-    a3 = App()
-    assert a3._state is None
-
-    # Referencing router enables state.
-    a3.add_page(rx.box(rx.text(State.router._page.full_path)), route="/")
-    a3._compile_page("index")
-    assert a3._state is not None
-
-    a4 = App()
-    assert a4._state is None
-
-    a4.add_page(rx.box(rx.button("Click", on_click=rx.console_log(""))), route="/")
-    assert a4._state is None
-
-    a4.add_page(
-        rx.box(rx.button("Click", on_click=DynamicState.on_counter)), route="/page2"
-    )
-    a4._compile_page("page2")
-    assert a4._state is not None
 
 
 def test_raise_on_state():
@@ -1517,7 +1493,7 @@ def test_app_with_optional_endpoints():
 
 
 def test_app_state_manager():
-    app = App()
+    app = App(enable_state=False)
     with pytest.raises(ValueError):
         app.state_manager
     app._enable_state()

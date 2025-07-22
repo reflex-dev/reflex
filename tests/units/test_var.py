@@ -1168,7 +1168,7 @@ def nested_base():
     )
 
 
-def test_retrival():
+def test_retrieval():
     var_without_data = Var(_js_expr="test")
     assert var_without_data is not None
 

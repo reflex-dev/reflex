@@ -17,7 +17,7 @@ class CommonContext(TypedDict):
 P = ParamSpec("P")
 
 
-class AddTaskProtcol(Protocol):
+class AddTaskProtocol(Protocol):
     """Protocol for adding a task to the pre-compile context."""
 
     def __call__(
@@ -39,7 +39,7 @@ class AddTaskProtcol(Protocol):
 class PreCompileContext(CommonContext):
     """Context for pre-compile hooks."""
 
-    add_save_task: AddTaskProtcol
+    add_save_task: AddTaskProtocol
     add_modify_task: Callable[[str, Callable[[str], str]], None]
     unevaluated_pages: Sequence["UnevaluatedPage"]
 

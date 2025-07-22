@@ -1100,7 +1100,12 @@ class BaseState(EvenMoreBasicBaseState):
         Returns:
             The event handler.
         """
-        return EventHandler(fn=fn, state_full_name=cls.get_full_name())
+        # Check if function has stored event_actions from decorator
+        event_actions = getattr(fn, "_rx_event_actions", {})
+
+        return EventHandler(
+            fn=fn, state_full_name=cls.get_full_name(), event_actions=event_actions
+        )
 
     @classmethod
     def _create_setvar(cls):
@@ -2412,19 +2417,19 @@ class FrontendEventExceptionState(State):
     """Substate for handling frontend exceptions."""
 
     @event
-    def handle_frontend_exception(self, stack: str, component_stack: str) -> None:
+    def handle_frontend_exception(self, info: str, component_stack: str) -> None:
         """Handle frontend exceptions.
 
         If a frontend exception handler is provided, it will be called.
         Otherwise, the default frontend exception handler will be called.
 
         Args:
-            stack: The stack trace of the exception.
+            info: The exception information.
             component_stack: The stack trace of the component where the exception occurred.
 
         """
         prerequisites.get_and_validate_app().app.frontend_exception_handler(
-            Exception(stack)
+            Exception(info)
         )
 
 
