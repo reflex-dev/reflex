@@ -818,70 +818,45 @@ async def test_json_cookie_values(
         input_value_input.send_keys(value)
         set_sub_state_button.click()
 
-    poll_for_token()
+    def test_json_cookie_with_refresh(cookie_id: str, json_value: str):
+        """Helper function to test JSON cookie values with browser refresh.
+        
+        This function:
+        1. Polls for token to ensure app is ready
+        2. Gets the cookie element
+        3. Sets the JSON value
+        4. Asserts the value is displayed correctly
+        5. Refreshes the browser to trigger cookie hydration
+        6. Polls for token again to ensure app is ready after refresh
+        7. Gets the element again (to avoid stale references)
+        8. Asserts the value is still preserved as a string
+        """
+        poll_for_token()
+        element = driver.find_element(By.ID, cookie_id)
+        set_sub(cookie_id, json_value)
+        AppHarness.expect(lambda: element.text == json_value)
 
-    # Get references to cookie elements
-    c1 = driver.find_element(By.ID, "c1")
-    c2 = driver.find_element(By.ID, "c2")
+        driver.refresh()
+        poll_for_token()
+        element = driver.find_element(By.ID, cookie_id)
+        AppHarness.expect(lambda: element.text == json_value)
 
     json_dict = '{"access_token": "redacted", "refresh_token": "redacted", "created_at": 1234567890, "expires_in": 3600}'
-    set_sub("c1", json_dict)
-    AppHarness.expect(lambda: c1.text == json_dict)
-
-    driver.refresh()
-    poll_for_token()
-    c1 = driver.find_element(By.ID, "c1")
-    c2 = driver.find_element(By.ID, "c2")
-    AppHarness.expect(lambda: c1.text == json_dict)
+    test_json_cookie_with_refresh("c1", json_dict)
 
     json_array = '["item1", "item2", "item3"]'
-    set_sub("c2", json_array)
-    AppHarness.expect(lambda: c2.text == json_array)
-
-    driver.refresh()
-    poll_for_token()
-    c1 = driver.find_element(By.ID, "c1")
-    c2 = driver.find_element(By.ID, "c2")
-    AppHarness.expect(lambda: c2.text == json_array)
+    test_json_cookie_with_refresh("c2", json_array)
 
     complex_json = '{"user": {"id": 123, "name": "test"}, "settings": {"theme": "dark", "notifications": true}, "data": [1, 2, 3]}'
-    set_sub("c1", complex_json)
-    AppHarness.expect(lambda: c1.text == complex_json)
-
-    driver.refresh()
-    poll_for_token()
-    c1 = driver.find_element(By.ID, "c1")
-    c2 = driver.find_element(By.ID, "c2")
-    AppHarness.expect(lambda: c1.text == complex_json)
+    test_json_cookie_with_refresh("c1", complex_json)
 
     json_with_escapes = (
         '{"message": "Hello \\"world\\"", "path": "/api/v1", "count": 42}'
     )
-    set_sub("c2", json_with_escapes)
-    AppHarness.expect(lambda: c2.text == json_with_escapes)
-
-    driver.refresh()
-    poll_for_token()
-    c1 = driver.find_element(By.ID, "c1")
-    c2 = driver.find_element(By.ID, "c2")
-    AppHarness.expect(lambda: c2.text == json_with_escapes)
+    test_json_cookie_with_refresh("c2", json_with_escapes)
 
     empty_json_obj = "{}"
-    set_sub("c1", empty_json_obj)
-    AppHarness.expect(lambda: c1.text == empty_json_obj)
-
-    driver.refresh()
-    poll_for_token()
-    c1 = driver.find_element(By.ID, "c1")
-    c2 = driver.find_element(By.ID, "c2")
-    AppHarness.expect(lambda: c1.text == empty_json_obj)
+    test_json_cookie_with_refresh("c1", empty_json_obj)
 
     empty_json_array = "[]"
-    set_sub("c2", empty_json_array)
-    AppHarness.expect(lambda: c2.text == empty_json_array)
-
-    driver.refresh()
-    poll_for_token()
-    c1 = driver.find_element(By.ID, "c1")
-    c2 = driver.find_element(By.ID, "c2")
-    AppHarness.expect(lambda: c2.text == empty_json_array)
+    test_json_cookie_with_refresh("c2", empty_json_array)
