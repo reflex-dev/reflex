@@ -11,6 +11,7 @@ from pathlib import Path
 
 from reflex.config import get_config
 from reflex.environment import environment
+from reflex.utils import console
 
 # Shorthand for join.
 join = os.linesep.join
@@ -59,11 +60,19 @@ def copy_tree(
     dest = Path(dest)
     if dest.exists():
         for item in dest.iterdir():
+            console.debug(f"copy_tree: Removing {item} before copying")
             rm(item)
+
+    def ignore_log(this_src: str, these_names: list[str]) -> set[str]:
+        console.debug(f"copy_tree: {src} -> {dest}, on {this_src} with {these_names!r}")
+        if ignore is not None:
+            return shutil.ignore_patterns(*ignore)(this_src, these_names)
+        return set()
+
     shutil.copytree(
         src,
         dest,
-        ignore=shutil.ignore_patterns(*ignore) if ignore is not None else ignore,
+        ignore=ignore_log,
         dirs_exist_ok=True,
     )
 
