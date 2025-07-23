@@ -118,8 +118,8 @@ if (typeof document !== 'undefined') {
         document.documentElement.style.colorScheme = resolvedTheme;
 
     } catch (e) {
-        // Fallback to light theme on any error
-        document.documentElement.className = "light";
+        // Fallback to system preference on any error
+        document.documentElement.className = "system";
     }
 }
 """

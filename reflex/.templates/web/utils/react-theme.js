@@ -18,9 +18,15 @@ const ThemeContext = createContext({
 
 export function ThemeProvider({ children, defaultTheme = "system" }) {
   const [theme, setTheme] = useState(defaultTheme);
-  const [systemTheme, setSystemTheme] = useState(
-    defaultTheme !== "system" ? defaultTheme : "light",
-  );
+  
+  // Detect system preference synchronously during initialization
+  const getInitialSystemTheme = () => {
+    if (defaultTheme !== "system") return defaultTheme;
+    if (typeof window === "undefined") return "light";
+    return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+  };
+  
+  const [systemTheme, setSystemTheme] = useState(getInitialSystemTheme);
   const [isInitialized, setIsInitialized] = useState(false);
 
   const firstRender = useRef(true);
