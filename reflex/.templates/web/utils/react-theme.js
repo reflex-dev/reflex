@@ -21,6 +21,7 @@ export function ThemeProvider({ children, defaultTheme = "system" }) {
   const [systemTheme, setSystemTheme] = useState(
     defaultTheme !== "system" ? defaultTheme : "light",
   );
+  const [isInitialized, setIsInitialized] = useState(false);
 
   const firstRender = useRef(true);
 
@@ -43,6 +44,7 @@ export function ThemeProvider({ children, defaultTheme = "system" }) {
     // Load saved theme from localStorage
     const savedTheme = localStorage.getItem("theme") || defaultTheme;
     setTheme(savedTheme);
+    setIsInitialized(true);
   });
 
   const resolvedTheme = useMemo(
@@ -68,10 +70,12 @@ export function ThemeProvider({ children, defaultTheme = "system" }) {
     };
   });
 
-  // Save theme to localStorage whenever it changes
+  // Save theme to localStorage whenever it changes (but not on initial mount)
   useEffect(() => {
-    localStorage.setItem("theme", theme);
-  }, [theme]);
+    if (isInitialized) {
+      localStorage.setItem("theme", theme);
+    }
+  }, [theme, isInitialized]);
 
   useEffect(() => {
     const root = window.document.documentElement;
