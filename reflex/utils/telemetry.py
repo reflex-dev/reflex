@@ -12,6 +12,8 @@ from contextlib import suppress
 from datetime import datetime, timezone
 from typing import TypedDict
 
+import httpx
+
 from reflex import constants
 from reflex.environment import environment
 from reflex.utils import console
@@ -216,8 +218,6 @@ def _prepare_event(event: str, **kwargs) -> _Event | None:
 
 
 def _send_event(event_data: _Event) -> bool:
-    import httpx
-
     try:
         httpx.post(POSTHOG_API_URL, json=event_data)
     except Exception:

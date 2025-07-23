@@ -12,6 +12,7 @@ from pathlib import Path
 from typing import Any
 
 import click
+import httpx
 
 from reflex import constants
 from reflex.constants import CustomComponents
@@ -466,7 +467,6 @@ def _collect_details_for_gallery():
     Raises:
         Exit: If pyproject.toml file is ill-formed or the request to the backend services fails.
     """
-    import httpx
     from reflex_cli.utils import hosting
 
     console.rule("[bold]Authentication with Reflex Services")

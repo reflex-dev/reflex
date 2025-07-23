@@ -3,6 +3,8 @@
 import time
 import webbrowser
 
+import httpx
+
 from reflex import constants
 from reflex.utils import net
 
@@ -23,7 +25,9 @@ def open_browser(target_url: str) -> None:
         console.info(f"Opening browser to {target_url}.")
 
 
-def open_browser_and_wait(target_url: str, poll_url: str, interval: int = 2):
+def open_browser_and_wait(
+    target_url: str, poll_url: str, interval: int = 2
+) -> httpx.Response:
     """Open a browser window to target_url and request poll_url until it returns successfully.
 
     Args:
@@ -34,8 +38,6 @@ def open_browser_and_wait(target_url: str, poll_url: str, interval: int = 2):
     Returns:
         The response from the poll_url.
     """
-    import httpx
-
     open_browser(target_url)
     console.info("[b]Complete the workflow in the browser to continue.[/b]")
     while True:
