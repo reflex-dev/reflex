@@ -3,18 +3,27 @@
 import contextlib
 from collections.abc import Callable
 
-from pyleak import no_event_loop_blocking, no_task_leaks, no_thread_leaks
-from pyleak.base import LeakAction
-
 from reflex.config import get_config
+
+try:
+    from pyleak import no_event_loop_blocking, no_task_leaks, no_thread_leaks
+    from pyleak.base import LeakAction
+
+    PYLEAK_AVAILABLE = True
+except ImportError:
+    PYLEAK_AVAILABLE = False
+    no_event_loop_blocking = no_task_leaks = no_thread_leaks = None  # pyright: ignore[reportAssignmentType]
+    LeakAction = None  # pyright: ignore[reportAssignmentType]
 
 
 def is_pyleak_enabled() -> bool:
     """Check if PyLeak monitoring is enabled and available.
 
     Returns:
-        True if PyLeak monitoring is enabled in config.
+        True if PyLeak monitoring is enabled in config and PyLeak is available.
     """
+    if not PYLEAK_AVAILABLE:
+        return False
     config = get_config()
     return config.enable_pyleak_monitoring
 
@@ -31,17 +40,17 @@ def monitor_sync():
         return
 
     config = get_config()
-    action = config.pyleak_action or LeakAction.WARN
+    action = config.pyleak_action or LeakAction.WARN  # pyright: ignore[reportOptionalMemberAccess]
 
     with contextlib.ExitStack() as stack:
         stack.enter_context(
-            no_thread_leaks(
+            no_thread_leaks(  # pyright: ignore[reportOptionalCall]
                 action=action,
                 grace_period=config.pyleak_thread_grace_period,
             )
         )
         stack.enter_context(
-            no_event_loop_blocking(
+            no_event_loop_blocking(  # pyright: ignore[reportOptionalCall]
                 action=action,
                 threshold=config.pyleak_blocking_threshold,
             )
@@ -61,22 +70,22 @@ async def monitor_async():
         return
 
     config = get_config()
-    action = config.pyleak_action or LeakAction.WARN
+    action = config.pyleak_action or LeakAction.WARN  # pyright: ignore[reportOptionalMemberAccess]
 
     async with contextlib.AsyncExitStack() as stack:
         stack.enter_context(
-            no_thread_leaks(
+            no_thread_leaks(  # pyright: ignore[reportOptionalCall]
                 action=action,
                 grace_period=config.pyleak_thread_grace_period,
             )
         )
         stack.enter_context(
-            no_event_loop_blocking(
+            no_event_loop_blocking(  # pyright: ignore[reportOptionalCall]
                 action=action,
                 threshold=config.pyleak_blocking_threshold,
             )
         )
-        await stack.enter_async_context(no_task_leaks(action=action))
+        await stack.enter_async_context(no_task_leaks(action=action))  # pyright: ignore[reportOptionalCall]
         yield
 
 
