@@ -43,6 +43,7 @@ from reflex.istate.proxy import ImmutableMutableProxy as ImmutableMutableProxy
 from reflex.istate.proxy import MutableProxy, StateProxy
 from reflex.istate.storage import ClientStorageBase
 from reflex.model import Model
+from reflex.monitoring import is_pyleak_enabled, monitor_leaks
 from reflex.utils import console, format, prerequisites, types
 from reflex.utils.exceptions import (
     ComputedVarShadowsBaseVarsError,
@@ -1784,7 +1785,11 @@ class BaseState(EvenMoreBasicBaseState):
         from reflex.utils import telemetry
 
         # Get the function to process the event.
-        fn = functools.partial(handler.fn, state)
+        if is_pyleak_enabled():
+            console.debug(f"Monitoring leaks for handler: {handler.fn.__qualname__}")
+            fn = functools.partial(monitor_leaks()(handler.fn), state)
+        else:
+            fn = functools.partial(handler.fn, state)
 
         try:
             type_hints = typing.get_type_hints(handler.fn)
@@ -1869,7 +1874,7 @@ class BaseState(EvenMoreBasicBaseState):
 
             # Handle regular event chains.
             else:
-                yield await state._as_state_update(handler, events, final=True)
+                yield await state._as_state_update(handler, events, final=True)  # pyright: ignore[reportArgumentType]
 
         # If an error occurs, throw a window alert.
         except Exception as ex:
