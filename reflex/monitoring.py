@@ -1,6 +1,8 @@
 """PyLeak integration for monitoring event loop blocking and resource leaks in Reflex applications."""
 
+import asyncio
 import contextlib
+import functools
 from collections.abc import Callable
 
 from reflex.config import get_config
@@ -95,8 +97,6 @@ def monitor_leaks():
     Returns:
         Decorator function that applies PyLeak monitoring to sync/async functions.
     """
-    import asyncio
-    import functools
 
     def decorator(func: Callable):
         if asyncio.iscoroutinefunction(func):
