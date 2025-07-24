@@ -1787,7 +1787,7 @@ class BaseState(EvenMoreBasicBaseState):
         # Get the function to process the event.
         if is_pyleak_enabled():
             console.debug(f"Monitoring leaks for handler: {handler.fn.__qualname__}")
-            fn = functools.partial(monitor_leaks()(handler.fn), state)
+            fn = functools.partial(monitor_leaks(handler.fn), state)
         else:
             fn = functools.partial(handler.fn, state)
 
@@ -1874,7 +1874,7 @@ class BaseState(EvenMoreBasicBaseState):
 
             # Handle regular event chains.
             else:
-                yield await state._as_state_update(handler, events, final=True)  # pyright: ignore[reportArgumentType]
+                yield await state._as_state_update(handler, events, final=True)
 
         # If an error occurs, throw a window alert.
         except Exception as ex:

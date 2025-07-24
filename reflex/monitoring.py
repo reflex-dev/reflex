@@ -3,7 +3,9 @@
 import asyncio
 import contextlib
 import functools
-from collections.abc import Callable
+import inspect
+from collections.abc import AsyncGenerator, Awaitable, Callable, Generator
+from typing import TypeVar, overload
 
 from reflex.config import get_config
 
@@ -91,28 +93,69 @@ async def monitor_async():
         yield
 
 
-def monitor_leaks():
+YieldType = TypeVar("YieldType")
+SendType = TypeVar("SendType")
+ReturnType = TypeVar("ReturnType")
+
+
+@overload
+def monitor_leaks(
+    func: Callable[..., AsyncGenerator[YieldType, ReturnType]],
+) -> Callable[..., AsyncGenerator[YieldType, ReturnType]]: ...
+
+
+@overload
+def monitor_leaks(
+    func: Callable[..., Generator[YieldType, SendType, ReturnType]],
+) -> Callable[..., Generator[YieldType, SendType, ReturnType]]: ...
+
+
+@overload
+def monitor_leaks(
+    func: Callable[..., Awaitable[ReturnType]],
+) -> Callable[..., Awaitable[ReturnType]]: ...
+
+
+def monitor_leaks(func: Callable) -> Callable:
     """Framework decorator using the monitoring module's context manager.
+
+    Args:
+        func: The function to be monitored for leaks.
 
     Returns:
         Decorator function that applies PyLeak monitoring to sync/async functions.
     """
-
-    def decorator(func: Callable):
-        if asyncio.iscoroutinefunction(func):
-
-            @functools.wraps(func)
-            async def async_wrapper(*args, **kwargs):
-                async with monitor_async():
-                    return await func(*args, **kwargs)
-
-            return async_wrapper
+    if inspect.isasyncgenfunction(func):
 
         @functools.wraps(func)
-        def sync_wrapper(*args, **kwargs):
+        async def async_gen_wrapper(*args, **kwargs):
+            async with monitor_async():
+                async for item in func(*args, **kwargs):
+                    yield item
+
+        return async_gen_wrapper
+
+    if asyncio.iscoroutinefunction(func):
+
+        @functools.wraps(func)
+        async def async_wrapper(*args, **kwargs):
+            async with monitor_async():
+                return await func(*args, **kwargs)
+
+        return async_wrapper
+
+    if inspect.isgeneratorfunction(func):
+
+        @functools.wraps(func)
+        def gen_wrapper(*args, **kwargs):
             with monitor_sync():
-                return func(*args, **kwargs)
+                yield from func(*args, **kwargs)
 
-        return sync_wrapper  # pyright: ignore[reportReturnType]
+        return gen_wrapper
 
-    return decorator
+    @functools.wraps(func)
+    def sync_wrapper(*args, **kwargs):
+        with monitor_sync():
+            return func(*args, **kwargs)
+
+    return sync_wrapper  # pyright: ignore[reportReturnType]
