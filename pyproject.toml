@@ -1,6 +1,6 @@
 [project]
 name = "reflex"
-version = "0.8.3dev1"
+version = "0.8.4dev1"
 description = "Web apps in pure Python."
 license.text = "Apache-2.0"
 authors = [
@@ -21,7 +21,7 @@ keywords = ["web", "framework"]
 requires-python = ">=3.10,<4.0"
 dependencies = [
   "alembic >=1.15.2,<2.0",
-  "fastapi >=0.115.0",
+  "click >=8.2",
   "granian[reload] >=2.4.0",
   "httpx >=0.28.0,<1.0",
   "jinja2 >=3.1.2,<4.0",
@@ -29,13 +29,13 @@ dependencies = [
   "platformdirs >=4.3.7,<5.0",
   "psutil >=7.0.0,<8.0; sys_platform == 'win32'",
   "pydantic >=1.10.21,<3.0",
-  "python-socketio >=5.12.0,<6.0",
   "python-multipart >=0.0.20,<1.0",
+  "python-socketio >=5.12.0,<6.0",
   "redis >=5.2.1,<7.0",
   "reflex-hosting-cli >=0.1.51",
   "rich >=13,<15",
   "sqlmodel >=0.0.24,<0.1",
-  "click >=8.2",
+  "starlette >=0.47.0",
   "typing_extensions >=4.13.0",
   "wrapt >=1.17.0,<2.0",
 ]
@@ -58,18 +58,49 @@ documentation = "https://reflex.dev/docs/getting-started/introduction"
 [project.scripts]
 reflex = "reflex.reflex:cli"
 
+[dependency-groups]
+dev = [
+  "asynctest",
+  "darglint",
+  "dill",
+  "fastapi",
+  "hatchling",
+  "libsass",
+  "numpy",
+  "pandas",
+  "pillow",
+  "playwright",
+  "plotly",
+  "pre-commit",
+  "psutil",
+  "psycopg[binary]",
+  "pyright",
+  "pytest-asyncio",
+  "pytest-benchmark",
+  "pytest-codspeed",
+  "pytest-cov",
+  "pytest-mock",
+  "pytest-playwright",
+  "pytest-retry",
+  "pytest-split",
+  "pytest",
+  "python-dotenv",
+  "ruff",
+  "selenium",
+  "starlette-admin",
+  "toml",
+  "uvicorn",
+]
+
+
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [tool.hatch.build]
 include = ["reflex", "scripts/hatch_build.py"]
-
-[tool.hatch.build.targets.sdist]
-artifacts = ["*.pyi"]
-
-[tool.hatch.build.targets.wheel]
-artifacts = ["*.pyi"]
+targets.sdist.artifacts = ["*.pyi"]
+targets.wheel.artifacts = ["*.pyi"]
 
 [tool.hatch.build.hooks.custom]
 path = "scripts/hatch_build.py"
@@ -151,39 +182,6 @@ asyncio_mode = "auto"
 [tool.codespell]
 skip = "docs/*,*.html,examples/*, *.pyi, poetry.lock, uv.lock"
 ignore-words-list = "te, TreeE"
-
-[dependency-groups]
-dev = [
-  "asynctest >=0.13",
-  "darglint >=1.8",
-  "dill >=0.3",
-  "hatchling >=1.27",
-  "libsass >=0.23",
-  "numpy >=2.2",
-  "pandas >=2.2",
-  "pillow >=11",
-  "playwright >=1.51",
-  "plotly >=6.0",
-  "pre-commit ==4.2.0",
-  "psutil >=7.0.0",
-  "psycopg[binary] >=3.2",
-  "pyright >=1.1.400",
-  "pytest >=8.3",
-  "pytest-asyncio >=0.26",
-  "pytest-benchmark >=5.1",
-  "pytest-codspeed >=3.2",
-  "pytest-cov >=6.1",
-  "pytest-mock >=3.14",
-  "pytest-playwright >=0.7",
-  "pytest-retry >=1.7",
-  "pytest-split >=0.10",
-  "python-dotenv >=1",
-  "ruff >=0.11",
-  "selenium >=4.31",
-  "starlette-admin >=0.14",
-  "toml >=0.10.2",
-  "uvicorn >=0.34.0",
-]
 
 
 [tool.coverage.run]

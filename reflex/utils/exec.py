@@ -405,7 +405,10 @@ def get_reload_paths() -> Sequence[Path]:
         module_path = module_path.parent
 
         while module_path.parent.name and _has_child_file(module_path, "__init__.py"):
-            if _has_child_file(module_path, "rxconfig.py"):
+            if (
+                _has_child_file(module_path, "rxconfig.py")
+                and module_path == Path.cwd()
+            ):
                 init_file = module_path / "__init__.py"
                 init_file_content = init_file.read_text()
                 if init_file_content.strip():
@@ -603,8 +606,6 @@ def run_uvicorn_backend_prod(host: str, port: int, loglevel: LogLevel):
 
         # Our default args, then env args (env args win on conflicts)
         command = [
-            sys.executable,
-            "-m",
             "gunicorn",
             "--preload",
             *("--worker-class", "uvicorn.workers.UvicornH11Worker"),
@@ -641,8 +642,6 @@ def run_granian_backend_prod(host: str, port: int, loglevel: LogLevel):
     from reflex.utils import processes
 
     command = [
-        sys.executable,
-        "-m",
         "granian",
         *("--log-level", "critical"),
         *("--host", host),

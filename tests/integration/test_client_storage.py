@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import asyncio
 from collections.abc import Generator
-from pathlib import Path
 
 import pytest
 from selenium.webdriver import Firefox
@@ -39,11 +38,6 @@ def ClientSide():
         @rx.event
         def set_input_value(self, value: str):
             self.input_value = value
-
-        @rx.event
-        async def do_reset(self):
-            root_state = await self.get_state(rx.State)
-            root_state.reset()
 
     class ClientSideSubState(ClientSideState):
         # cookies with default settings
@@ -98,9 +92,6 @@ def ClientSide():
                 value=ClientSideState.router.session.client_token,
                 read_only=True,
                 id="token",
-            ),
-            rx.button(
-                "State Reset", on_click=ClientSideState.do_reset, id="reset-button"
             ),
             rx.input(
                 placeholder="state var",
@@ -247,7 +238,6 @@ async def test_client_side_state(
     driver: WebDriver,
     local_storage: utils.LocalStorage,
     session_storage: utils.SessionStorage,
-    tmp_path: Path,
 ):
     """Test client side state.
 
@@ -256,7 +246,6 @@ async def test_client_side_state(
         driver: WebDriver instance.
         local_storage: Local storage helper.
         session_storage: Session storage helper.
-        tmp_path: pytest tmp_path fixture
     """
     app = client_side.app_instance
     assert app is not None
@@ -546,8 +535,8 @@ async def test_client_side_state(
     assert s1s.text == "s1s value"
 
     # reset the backend state to force refresh from client storage
-    reset_button = driver.find_element(By.ID, "reset-button")
-    reset_button.click()
+    async with client_side.modify_state(f"{token}_{state_name}") as state:
+        state.reset()
     driver.refresh()
 
     # wait for the backend connection to send the token (again)
@@ -663,7 +652,7 @@ async def test_client_side_state(
             _substate_key(token, sub_sub_state_name)
         )
     elif isinstance(client_side.state_manager, (StateManagerMemory, StateManagerDisk)):
-        client_side.state_manager.states.pop(token, None)
+        del client_side.state_manager.states[token]
     if isinstance(client_side.state_manager, StateManagerDisk):
         client_side.state_manager.token_expiration = 0
         client_side.state_manager._purge_expired_states()
@@ -677,7 +666,6 @@ async def test_client_side_state(
 
     # Trigger event to get a new instance of the state since the old was expired.
     set_sub("c1", "c1 post expire")
-    set_sub_sub("s1s", "s1s post expire")
 
     # get new references to all cookie and local storage elements (again)
     c1 = driver.find_element(By.ID, "c1")
@@ -714,7 +702,7 @@ async def test_client_side_state(
     assert s3.text == "s3 value"
     assert c1s.text == "c1s value"
     assert l1s.text == "l1s value"
-    assert s1s.text == "s1s post expire"
+    assert s1s.text == "s1s value"
 
     # Get the backend state and ensure the values are still set
     async def get_sub_state():
@@ -724,20 +712,11 @@ async def test_client_side_state(
         state = root_state.substates[client_side.get_state_name("_client_side_state")]
         return state.substates[client_side.get_state_name("_client_side_sub_state")]
 
-    async def get_sub_sub_state():
+    async def poll_for_c1_set():
         sub_state = await get_sub_state()
-        return sub_state.substates[
-            client_side.get_state_name("_client_side_sub_sub_state")
-        ]
+        return sub_state.c1 == "c1 post expire"
 
-    async def poll_for_post_expire_set():
-        sub_state = await get_sub_state()
-        sub_sub_state = await get_sub_sub_state()
-        return (
-            sub_state.c1 == "c1 post expire" and sub_sub_state.s1s == "s1s post expire"
-        )
-
-    assert await AppHarness._poll_for_async(poll_for_post_expire_set)
+    assert await AppHarness._poll_for_async(poll_for_c1_set)
     sub_state = await get_sub_state()
     assert sub_state.c1 == "c1 post expire"
     assert sub_state.c2 == "c2 value"
@@ -753,10 +732,12 @@ async def test_client_side_state(
     assert sub_state.s1 == "s1 value"
     assert sub_state.s2 == "s2 value"
     assert sub_state.s3 == "s3 value"
-    sub_sub_state = await get_sub_sub_state()
+    sub_sub_state = sub_state.substates[
+        client_side.get_state_name("_client_side_sub_sub_state")
+    ]
     assert sub_sub_state.c1s == "c1s value"
     assert sub_sub_state.l1s == "l1s value"
-    assert sub_sub_state.s1s == "s1s post expire"
+    assert sub_sub_state.s1s == "s1s value"
 
     # clear the cookie jar and local storage, ensure state reset to default
     driver.delete_all_cookies()
@@ -801,3 +782,75 @@ async def test_client_side_state(
     assert l4.text == "l4 default"
     assert c1s.text == ""
     assert l1s.text == ""
+
+
+@pytest.mark.asyncio
+async def test_json_cookie_values(
+    client_side: AppHarness,
+    driver: WebDriver,
+):
+    """Test that JSON-formatted cookie values are preserved as strings.
+
+    Args:
+        client_side: harness for ClientSide app.
+        driver: WebDriver instance.
+    """
+    app = client_side.app_instance
+    assert app is not None
+    assert client_side.frontend_url is not None
+
+    def poll_for_token():
+        token_input = AppHarness.poll_for_or_raise_timeout(
+            lambda: driver.find_element(By.ID, "token")
+        )
+        token = client_side.poll_for_value(token_input)
+        assert token is not None
+        return token
+
+    def set_sub(var: str, value: str):
+        state_var_input = driver.find_element(By.ID, "state_var")
+        input_value_input = driver.find_element(By.ID, "input_value")
+        set_sub_state_button = driver.find_element(By.ID, "set_sub_state")
+        AppHarness.expect(lambda: state_var_input.get_attribute("value") == "")
+        AppHarness.expect(lambda: input_value_input.get_attribute("value") == "")
+
+        state_var_input.send_keys(var)
+        input_value_input.send_keys(value)
+        set_sub_state_button.click()
+
+    def _assert_json_cookie_with_refresh(cookie_id: str, json_value: str):
+        """Helper function to test JSON cookie values with browser refresh.
+
+        Args:
+            cookie_id: ID of the cookie element to manipulate.
+            json_value: JSON string to set as the cookie value.
+        """
+        poll_for_token()
+        element = driver.find_element(By.ID, cookie_id)
+        set_sub(cookie_id, json_value)
+        AppHarness.expect(lambda: element.text == json_value)
+
+        driver.refresh()
+        poll_for_token()
+        element = driver.find_element(By.ID, cookie_id)
+        AppHarness.expect(lambda: element.text == json_value)
+
+    json_dict = '{"access_token": "redacted", "refresh_token": "redacted", "created_at": 1234567890, "expires_in": 3600}'
+    _assert_json_cookie_with_refresh("c1", json_dict)
+
+    json_array = '["item1", "item2", "item3"]'
+    _assert_json_cookie_with_refresh("c2", json_array)
+
+    complex_json = '{"user": {"id": 123, "name": "test"}, "settings": {"theme": "dark", "notifications": true}, "data": [1, 2, 3]}'
+    _assert_json_cookie_with_refresh("c1", complex_json)
+
+    json_with_escapes = (
+        '{"message": "Hello \\"world\\"", "path": "/api/v1", "count": 42}'
+    )
+    _assert_json_cookie_with_refresh("c2", json_with_escapes)
+
+    empty_json_obj = "{}"
+    _assert_json_cookie_with_refresh("c1", empty_json_obj)
+
+    empty_json_array = "[]"
+    _assert_json_cookie_with_refresh("c2", empty_json_array)

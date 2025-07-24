@@ -19,7 +19,7 @@ import sys
 import tempfile
 import typing
 import zipfile
-from collections.abc import Callable, Sequence
+from collections.abc import Sequence
 from datetime import datetime
 from pathlib import Path
 from types import ModuleType
@@ -27,7 +27,6 @@ from typing import NamedTuple
 from urllib.parse import urlparse
 
 import click
-import httpx
 from alembic.util.exc import CommandError
 from packaging import version
 from redis import Redis as RedisSync
@@ -39,6 +38,7 @@ from reflex.compiler import templates
 from reflex.config import Config, get_config
 from reflex.environment import environment
 from reflex.utils import console, net, path_ops, processes, redir
+from reflex.utils.decorator import cached_procedure
 from reflex.utils.exceptions import SystemPackageMissingError
 from reflex.utils.misc import get_module_path
 from reflex.utils.registry import get_npm_registry
@@ -1170,6 +1170,8 @@ def download_and_run(url: str, *args, show_status: bool = False, **env):
     Raises:
         Exit: If the script fails to download.
     """
+    import httpx
+
     # Download the script
     console.debug(f"Downloading {url}")
     try:
@@ -1177,7 +1179,7 @@ def download_and_run(url: str, *args, show_status: bool = False, **env):
         response.raise_for_status()
     except httpx.HTTPError as e:
         console.error(
-            f"Failed to download bun install script. You can install or update bun manually from https://bun.sh \n{e}"
+            f"Failed to download bun install script. You can install or update bun manually from https://bun.com \n{e}"
         )
         raise click.exceptions.Exit(1) from None
 
@@ -1251,71 +1253,9 @@ def install_bun():
         )
 
 
-def _write_cached_procedure_file(payload: str, cache_file: str | Path):
-    cache_file = Path(cache_file)
-    cache_file.write_text(payload)
-
-
-def _read_cached_procedure_file(cache_file: str | Path) -> str | None:
-    cache_file = Path(cache_file)
-    if cache_file.exists():
-        return cache_file.read_text()
-    return None
-
-
-def _clear_cached_procedure_file(cache_file: str | Path):
-    cache_file = Path(cache_file)
-    if cache_file.exists():
-        cache_file.unlink()
-
-
-def cached_procedure(
-    cache_file: str | None,
-    payload_fn: Callable[..., str],
-    cache_file_fn: Callable[[], str] | None = None,
-):
-    """Decorator to cache the runs of a procedure on disk. Procedures should not have
-       a return value.
-
-    Args:
-        cache_file: The file to store the cache payload in.
-        payload_fn: Function that computes cache payload from function args.
-        cache_file_fn: Function that computes the cache file name at runtime.
-
-    Returns:
-        The decorated function.
-
-    Raises:
-        ValueError: If both cache_file and cache_file_fn are provided.
-    """
-    if cache_file and cache_file_fn is not None:
-        msg = "cache_file and cache_file_fn cannot both be provided."
-        raise ValueError(msg)
-
-    def _inner_decorator(func: Callable):
-        def _inner(*args, **kwargs):
-            _cache_file = cache_file_fn() if cache_file_fn is not None else cache_file
-            if not _cache_file:
-                msg = "Unknown cache file, cannot cache result."
-                raise ValueError(msg)
-            payload = _read_cached_procedure_file(_cache_file)
-            new_payload = payload_fn(*args, **kwargs)
-            if payload != new_payload:
-                _clear_cached_procedure_file(_cache_file)
-                func(*args, **kwargs)
-                _write_cached_procedure_file(new_payload, _cache_file)
-
-        return _inner
-
-    return _inner_decorator
-
-
 @cached_procedure(
-    cache_file_fn=lambda: str(
-        get_web_dir() / "reflex.install_frontend_packages.cached"
-    ),
-    payload_fn=lambda p, c: f"{sorted(p)!r},{c.json()}",
-    cache_file=None,
+    cache_file_path=lambda: get_web_dir() / "reflex.install_frontend_packages.cached",
+    payload_fn=lambda packages, config: f"{sorted(packages)!r},{config.json()}",
 )
 def install_frontend_packages(packages: set[str], config: Config):
     """Installs the base and custom frontend packages.
@@ -1725,6 +1665,8 @@ def create_config_init_app_from_remote_template(app_name: str, template_url: str
         Exit: If any download, file operations fail or unexpected zip file format.
 
     """
+    import httpx
+
     # Create a temp directory for the zip download.
     try:
         temp_dir = tempfile.mkdtemp()
