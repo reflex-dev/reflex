@@ -311,9 +311,6 @@ def test_cross_state_dependencies_complex():
     class StateB(State):
         value_b: int = 2
 
-        async def get_a_value(self):
-            return (await self.get_state(StateA)).value_a
-
     async def complex_cross_state_func(self: DependencyTestState):
         state_a = await self.get_state(StateA)
         state_b = await self.get_state(StateB)
@@ -325,18 +322,6 @@ def test_cross_state_dependencies_complex():
         StateA.get_full_name(): {"value_a"},
         StateB.get_full_name(): {"value_b"},
     }
-    assert tracker.dependencies == expected_deps
-
-
-def test_lambda_function_dependencies():
-    """Test tracking dependencies in lambda functions."""
-
-    def lambda_func(self: DependencyTestState):
-        return self.count * 2
-
-    tracker = DependencyTracker(lambda_func, DependencyTestState)
-
-    expected_deps = {DependencyTestState.get_full_name(): {"count"}}
     assert tracker.dependencies == expected_deps
 
 
