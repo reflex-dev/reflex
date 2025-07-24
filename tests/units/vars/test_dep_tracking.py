@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import sys
+
 import pytest
 
 import reflex as rx
@@ -133,11 +135,32 @@ def test_get_state_with_local_var_error():
         DependencyTracker(invalid_get_state_func, DependencyTestState)
 
 
+@pytest.mark.skipif(
+    sys.version_info < (3, 11), reason="Requires Python 3.11+ for positions"
+)
 def test_get_var_value_functionality():
     """Test tracking dependencies when using get_var_value."""
 
     async def func_with_get_var_value(self: DependencyTestState):
         return await self.get_var_value(DependencyTestState.count)
+
+    tracker = DependencyTracker(func_with_get_var_value, DependencyTestState)
+    expected_deps = {DependencyTestState.get_full_name(): {"count"}}
+    assert tracker.dependencies == expected_deps
+
+
+@pytest.mark.skipif(
+    sys.version_info < (3, 11), reason="Requires Python 3.11+ for positions"
+)
+def test_get_var_value_multiple_lines_functionality():
+    """Test tracking dependencies when using get_var_value spread out on multiple lines."""
+
+    async def func_with_get_var_value(self: DependencyTestState):
+        return await self.get_var_value(
+            DependencyTestState.
+            # annoying comment
+            count
+        )
 
     tracker = DependencyTracker(func_with_get_var_value, DependencyTestState)
     expected_deps = {DependencyTestState.get_full_name(): {"count"}}

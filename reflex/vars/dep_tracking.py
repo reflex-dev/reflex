@@ -7,6 +7,7 @@ import dataclasses
 import dis
 import enum
 import inspect
+import sys
 from types import CellType, CodeType, FunctionType
 from typing import TYPE_CHECKING, Any, ClassVar, cast
 
@@ -60,9 +61,7 @@ class DependencyTracker:
     tracked_locals: dict[str, type[BaseState]] = dataclasses.field(default_factory=dict)
 
     _getting_state_class: type[BaseState] | None = dataclasses.field(default=None)
-    _getting_var_instructions: list[dis.Instruction] = dataclasses.field(
-        default_factory=list
-    )
+    _get_var_value_positions: dis.Positions | None = dataclasses.field(default=None)
 
     INVALID_NAMES: ClassVar[list[str]] = ["parent_state", "substates", "get_substate"]
 
@@ -114,6 +113,8 @@ class DependencyTracker:
             return
         if instruction.argval == "get_var_value":
             # Special case: arbitrary var access requested.
+            if sys.version_info >= (3, 11):
+                self._get_var_value_positions = instruction.positions
             self.scan_status = ScanStatus.GETTING_VAR
             return
 
@@ -222,8 +223,11 @@ class DependencyTracker:
             self.scan_status = ScanStatus.SCANNING
             self._getting_state_class = None
 
-    def _eval_var(self) -> Var:
+    def _eval_var(self, positions: dis.Positions) -> Var:
         """Evaluate instructions from the wrapped function to get the Var object.
+
+        Args:
+            positions: The disassembly positions of the get_var_value call.
 
         Returns:
             The Var object.
@@ -233,15 +237,13 @@ class DependencyTracker:
         """
         # Get the original source code and eval it to get the Var.
         module = inspect.getmodule(self.func)
-        positions0 = self._getting_var_instructions[0].positions
-        positions1 = self._getting_var_instructions[-1].positions
-        if module is None or positions0 is None or positions1 is None:
+        if module is None or self._get_var_value_positions is None:
             msg = f"Cannot determine the source code for the var in {self.func!r}."
             raise VarValueError(msg)
-        start_line = positions0.lineno
-        start_column = positions0.col_offset
-        end_line = positions1.end_lineno
-        end_column = positions1.end_col_offset
+        start_line = self._get_var_value_positions.end_lineno
+        start_column = self._get_var_value_positions.end_col_offset
+        end_line = positions.end_lineno
+        end_column = positions.end_col_offset
         if (
             start_line is None
             or start_column is None
@@ -275,20 +277,19 @@ class DependencyTracker:
         Raises:
             VarValueError: if the source code for the var cannot be determined.
         """
-        if instruction.opname == "CALL" and self._getting_var_instructions:
-            if self._getting_var_instructions:
-                the_var = self._eval_var()
-                the_var_data = the_var._get_all_var_data()
-                if the_var_data is None:
-                    msg = f"Cannot determine the source code for the var in {self.func!r}."
-                    raise VarValueError(msg)
-                self.dependencies.setdefault(the_var_data.state, set()).add(
-                    the_var_data.field_name
-                )
-            self._getting_var_instructions.clear()
+        if instruction.opname == "CALL":
+            if instruction.positions is None:
+                msg = f"Cannot determine the source code for the var in {self.func!r}."
+                raise VarValueError(msg)
+            the_var = self._eval_var(instruction.positions)
+            the_var_data = the_var._get_all_var_data()
+            if the_var_data is None:
+                msg = f"Cannot determine the source code for the var in {self.func!r}."
+                raise VarValueError(msg)
+            self.dependencies.setdefault(the_var_data.state, set()).add(
+                the_var_data.field_name
+            )
             self.scan_status = ScanStatus.SCANNING
-        else:
-            self._getting_var_instructions.append(instruction)
 
     def _populate_dependencies(self) -> None:
         """Update self.dependencies based on the disassembly of self.func.
