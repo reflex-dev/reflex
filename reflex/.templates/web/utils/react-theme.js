@@ -18,17 +18,9 @@ const ThemeContext = createContext({
 
 export function ThemeProvider({ children, defaultTheme = "system" }) {
   const [theme, setTheme] = useState(defaultTheme);
-
-  // Detect system preference synchronously during initialization
-  const getInitialSystemTheme = () => {
-    if (defaultTheme !== "system") return defaultTheme;
-    if (typeof window === "undefined") return "light";
-    return window.matchMedia("(prefers-color-scheme: dark)").matches
-      ? "dark"
-      : "light";
-  };
-
-  const [systemTheme, setSystemTheme] = useState(getInitialSystemTheme);
+  const [systemTheme, setSystemTheme] = useState(
+    defaultTheme !== "system" ? defaultTheme : "light",
+  );
   const [isInitialized, setIsInitialized] = useState(false);
 
   const firstRender = useRef(true);
@@ -45,6 +37,7 @@ export function ThemeProvider({ children, defaultTheme = "system" }) {
       if (lastCompiledTheme !== defaultColorMode) {
         // on app startup, make sure the application color mode is persisted correctly.
         localStorage.setItem("last_compiled_theme", defaultColorMode);
+        setIsInitialized(true);
         return;
       }
     }
@@ -78,19 +71,21 @@ export function ThemeProvider({ children, defaultTheme = "system" }) {
     };
   });
 
-  // Save theme to localStorage whenever it changes (but not on initial mount)
+  // Save theme to localStorage whenever it changes
+  // Skip saving only if theme key already exists and we haven't initialized yet
   useEffect(() => {
-    if (isInitialized) {
-      localStorage.setItem("theme", theme);
-    }
-  }, [theme, isInitialized]);
+    const existingTheme = localStorage.getItem("theme");
+    if (!isInitialized && existingTheme !== null) return;
+    localStorage.setItem("theme", theme);
+  }, [theme]);
 
   useEffect(() => {
+    if (!isInitialized) return;
     const root = window.document.documentElement;
     root.classList.remove("light", "dark");
     root.classList.add(resolvedTheme);
     root.style.colorScheme = resolvedTheme;
-  }, [resolvedTheme]);
+  }, [resolvedTheme, isInitialized]);
 
   return createElement(
     ThemeContext.Provider,
