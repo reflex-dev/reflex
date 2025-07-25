@@ -9,6 +9,7 @@ import {
 } from "react";
 
 import { isDevMode, defaultColorMode } from "$/utils/context";
+import { resolve } from "path";
 
 const ThemeContext = createContext({
   theme: defaultColorMode,
@@ -17,28 +18,13 @@ const ThemeContext = createContext({
 });
 
 export function ThemeProvider({ children, defaultTheme = "system" }) {
-  // Read the actual saved theme immediately during initialization to avoid double theme changes
-  const getInitialTheme = () => {
-    if (typeof window === "undefined") return defaultTheme;
-    return localStorage.getItem("theme") || defaultTheme;
-  };
-
-  const [theme, setTheme] = useState(getInitialTheme);
-
-  // Detect system preference synchronously during initialization
-  const getInitialSystemTheme = () => {
-    if (defaultTheme !== "system") return defaultTheme;
-    if (typeof window === "undefined") return "light";
-    return window.matchMedia("(prefers-color-scheme: dark)").matches
-      ? "dark"
-      : "light";
-  };
-
-  const [systemTheme, setSystemTheme] = useState(getInitialSystemTheme);
-  const [isInitialized, setIsInitialized] = useState(false);
+  const [theme, setTheme] = useState(defaultTheme);
+  const [systemTheme, setSystemTheme] = useState(
+    defaultTheme !== "system" ? defaultTheme : "light",
+  );
+  const [isInitialized, setIsInitialized] = useState(false); // ← Add this flag
 
   const firstRender = useRef(true);
-
   useEffect(() => {
     if (!firstRender.current) {
       return;
@@ -55,13 +41,11 @@ export function ThemeProvider({ children, defaultTheme = "system" }) {
       }
     }
 
+    // Load saved theme from localStorage
+    const savedTheme = localStorage.getItem("theme") || defaultTheme;
+    setTheme(savedTheme);
     setIsInitialized(true);
   });
-
-  const resolvedTheme = useMemo(
-    () => (theme === "system" ? systemTheme : theme),
-    [theme, systemTheme],
-  );
 
   useEffect(() => {
     // Set up media query for system preference detection
@@ -80,17 +64,20 @@ export function ThemeProvider({ children, defaultTheme = "system" }) {
       mediaQuery.removeEventListener("change", handleChange);
     };
   });
+  const resolvedTheme = useMemo(
+    () => (theme === "system" ? systemTheme : theme),
+    [theme, systemTheme],
+  );
+  console.log(theme, defaultTheme, resolvedTheme);
 
-  // Save theme to localStorage whenever it changes (but not on initial mount)
+  // Save theme to localStorage whenever it changes
   useEffect(() => {
-    if (isInitialized) {
-      localStorage.setItem("theme", theme);
-    }
-  }, [theme, isInitialized]);
+    localStorage.setItem("theme", theme);
+  }, [theme]);
 
   useEffect(() => {
+    if (!isInitialized) return;
     const root = window.document.documentElement;
-
     root.classList.remove("light", "dark");
     root.classList.add(resolvedTheme);
     root.style.colorScheme = resolvedTheme;
