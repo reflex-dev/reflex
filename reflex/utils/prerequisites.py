@@ -569,13 +569,11 @@ def compile_or_validate_app(
 
         import traceback
 
-        sys_exception = sys.exception()
-
         try:
             colorize = _can_colorize()
             traceback.print_exception(e, colorize=colorize)  # pyright: ignore[reportCallIssue]
         except Exception:
-            traceback.print_exception(sys_exception)
+            traceback.print_exception(e)
         return False
     return True
 
