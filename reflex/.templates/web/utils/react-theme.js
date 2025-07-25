@@ -9,7 +9,6 @@ import {
 } from "react";
 
 import { isDevMode, defaultColorMode } from "$/utils/context";
-import { resolve } from "path";
 
 const ThemeContext = createContext({
   theme: defaultColorMode,
