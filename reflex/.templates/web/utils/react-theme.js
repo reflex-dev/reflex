@@ -37,6 +37,7 @@ export function ThemeProvider({ children, defaultTheme = "system" }) {
       if (lastCompiledTheme !== defaultColorMode) {
         // on app startup, make sure the application color mode is persisted correctly.
         localStorage.setItem("last_compiled_theme", defaultColorMode);
+        setIsInitialized(true);
         return;
       }
     }
@@ -70,9 +71,11 @@ export function ThemeProvider({ children, defaultTheme = "system" }) {
     };
   });
 
-  // Save theme to localStorage whenever it changes (but not on initial mount)
+  // Save theme to localStorage whenever it changes
+  // Skip saving only if theme key already exists and we haven't initialized yet
   useEffect(() => {
-    if (!isInitialized) return;
+    const existingTheme = localStorage.getItem("theme");
+    if (!isInitialized && existingTheme !== null) return;
     localStorage.setItem("theme", theme);
   }, [theme]);
 
@@ -82,7 +85,7 @@ export function ThemeProvider({ children, defaultTheme = "system" }) {
     root.classList.remove("light", "dark");
     root.classList.add(resolvedTheme);
     root.style.colorScheme = resolvedTheme;
-  }, [resolvedTheme]);
+  }, [resolvedTheme, isInitialized]);
 
   return createElement(
     ThemeContext.Provider,
