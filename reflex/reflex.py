@@ -216,12 +216,9 @@ def _run(
             *args,
             **kwargs,
         )
-        validation_result = compile_future.result()
+        compile_future.result()
     else:
-        validation_result = app_task(*args, **kwargs)
-
-    if not validation_result:
-        raise click.exceptions.Exit(1)
+        app_task(*args, **kwargs)
 
     # Get the frontend and backend commands, based on the environment.
     setup_frontend = frontend_cmd = backend_cmd = None
