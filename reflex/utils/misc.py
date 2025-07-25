@@ -113,7 +113,6 @@ if (typeof document !== 'undefined') {
         const systemPreference = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
         const resolvedTheme = theme === "system" ? systemPreference : theme;
 
-
         // Apply theme immediately - blocks until complete
         // Use classList to avoid overwriting other classes
         document.documentElement.classList.remove("light", "dark");
@@ -123,12 +122,10 @@ if (typeof document !== 'undefined') {
     } catch (e) {
         // Fallback to system preference on any error (resolve "system" to actual theme)
         const fallbackTheme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
-
         document.documentElement.classList.remove("light", "dark");
         document.documentElement.classList.add(fallbackTheme);
         document.documentElement.style.colorScheme = fallbackTheme;
     }
-
 }
 """
 
