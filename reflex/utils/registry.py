@@ -1,8 +1,10 @@
 """Utilities for working with registries."""
 
+from pathlib import Path
+
 from reflex.environment import environment
 from reflex.utils import console, net
-from reflex.utils.decorator import once
+from reflex.utils.decorator import cache_result_in_disk, once
 
 
 def latency(registry: str) -> int:
@@ -41,6 +43,16 @@ def average_latency(registry: str, attempts: int = 3) -> int:
     return registry_latency
 
 
+def _best_registry_file_path() -> Path:
+    """Get the file path for the best registry cache.
+
+    Returns:
+        The file path for the best registry cache.
+    """
+    return environment.REFLEX_DIR.get() / "reflex_best_registry.cached"
+
+
+@cache_result_in_disk(cache_file_path=_best_registry_file_path)
 def _get_best_registry() -> str:
     """Get the best registry based on latency.
 
