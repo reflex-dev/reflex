@@ -1,47 +1,75 @@
 """Define the base Reflex class."""
 
-from pydantic.v1 import BaseModel
+from importlib.util import find_spec
 
+if find_spec("pydantic") and find_spec("pydantic.v1"):
+    from pydantic.v1 import BaseModel
 
-class Base(BaseModel):
-    """The base class subclassed by all Reflex classes.
+    class Base(BaseModel):
+        """The base class subclassed by all Reflex classes.
 
-    This class wraps Pydantic and provides common methods such as
-    serialization and setting fields.
+        This class wraps Pydantic and provides common methods such as
+        serialization and setting fields.
 
-    Any data structure that needs to be transferred between the
-    frontend and backend should subclass this class.
-    """
-
-    class Config:
-        """Pydantic config."""
-
-        arbitrary_types_allowed = True
-        use_enum_values = True
-        extra = "allow"
-
-    def json(self) -> str:
-        """Convert the object to a json string.
-
-        Returns:
-            The object as a json string.
+        Any data structure that needs to be transferred between the
+        frontend and backend should subclass this class.
         """
-        from reflex.utils.serializers import serialize
 
-        return self.__config__.json_dumps(
-            self.dict(),
-            default=serialize,
-        )
+        class Config:
+            """Pydantic config."""
 
-    def set(self, **kwargs: object):
-        """Set multiple fields and return the object.
+            arbitrary_types_allowed = True
+            use_enum_values = True
+            extra = "allow"
 
-        Args:
-            **kwargs: The fields and values to set.
+        def __init__(self, *args, **kwargs):
+            """Initialize the base class.
 
-        Returns:
-            The object with the fields set.
-        """
-        for key, value in kwargs.items():
-            setattr(self, key, value)
-        return self
+            Args:
+                *args: Positional arguments.
+                **kwargs: Keyword arguments.
+            """
+            from reflex.utils import console
+
+            console.deprecate(
+                feature_name="rx.Base",
+                reason="You can subclass from `pydantic.BaseModel` directly instead or use dataclasses if possible.",
+                deprecation_version="0.8.2",
+                removal_version="0.9.0",
+            )
+            super().__init__(*args, **kwargs)
+
+        def json(self) -> str:
+            """Convert the object to a json string.
+
+            Returns:
+                The object as a json string.
+            """
+            from reflex.utils.serializers import serialize
+
+            return self.__config__.json_dumps(
+                self.dict(),
+                default=serialize,
+            )
+else:
+
+    class PydanticNotFoundFallback:
+        """Fallback base class for environments without Pydantic."""
+
+        def __init__(self, *args, **kwargs):
+            """Initialize the base class.
+
+            Args:
+                *args: Positional arguments.
+                **kwargs: Keyword arguments.
+
+            Raises:
+                ImportError: As Pydantic is not installed.
+            """
+            msg = (
+                "Pydantic is not installed. Please install it to use rx.Base."
+                "You can install it with `pip install pydantic`."
+            )
+            raise ImportError(msg)
+
+    Base = PydanticNotFoundFallback  # pyright: ignore[reportAssignmentType]

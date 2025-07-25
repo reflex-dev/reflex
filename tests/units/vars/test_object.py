@@ -2,7 +2,6 @@ import dataclasses
 from collections.abc import Sequence
 
 import pytest
-from sqlalchemy.orm import DeclarativeBase, Mapped, MappedAsDataclass, mapped_column
 from typing_extensions import assert_type
 
 import reflex as rx
@@ -10,6 +9,11 @@ from reflex.utils.types import GenericType
 from reflex.vars.base import Var
 from reflex.vars.object import LiteralObjectVar, ObjectVar
 from reflex.vars.sequence import ArrayVar
+
+pytest.importorskip("sqlalchemy")
+pytest.importorskip("pydantic")
+
+from sqlalchemy.orm import DeclarativeBase, Mapped, MappedAsDataclass, mapped_column
 
 
 class Bare:

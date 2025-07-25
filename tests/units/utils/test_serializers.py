@@ -13,6 +13,8 @@ from reflex.utils import serializers
 from reflex.utils.format import json_dumps
 from reflex.vars.base import LiteralVar
 
+pytest.importorskip("pydantic")
+
 
 @pytest.mark.parametrize(
     ("type_", "expected"),
