@@ -108,7 +108,6 @@ def preload_color_theme():
     script_content = """
 // Only run in browser environment, not during SSR
 if (typeof document !== 'undefined') {
-
     try {
         const theme = localStorage.getItem("theme") || "system";
         const systemPreference = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
