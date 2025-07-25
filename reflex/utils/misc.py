@@ -108,12 +108,12 @@ def preload_color_theme():
     script_content = """
 // Only run in browser environment, not during SSR
 if (typeof document !== 'undefined') {
+
     try {
         const theme = localStorage.getItem("theme") || "system";
         const systemPreference = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
         const resolvedTheme = theme === "system" ? systemPreference : theme;
 
-        console.log("[PRELOAD] Theme applied:", resolvedTheme, "from theme:", theme, "system:", systemPreference);
 
         // Apply theme immediately - blocks until complete
         // Use classList to avoid overwriting other classes
@@ -124,11 +124,12 @@ if (typeof document !== 'undefined') {
     } catch (e) {
         // Fallback to system preference on any error (resolve "system" to actual theme)
         const fallbackTheme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
-        console.log("[PRELOAD] Error, falling back to:", fallbackTheme);
+
         document.documentElement.classList.remove("light", "dark");
         document.documentElement.classList.add(fallbackTheme);
         document.documentElement.style.colorScheme = fallbackTheme;
     }
+
 }
 """
 

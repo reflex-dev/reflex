@@ -17,7 +17,13 @@ const ThemeContext = createContext({
 });
 
 export function ThemeProvider({ children, defaultTheme = "system" }) {
-  const [theme, setTheme] = useState(defaultTheme);
+  // Read the actual saved theme immediately during initialization to avoid double theme changes
+  const getInitialTheme = () => {
+    if (typeof window === "undefined") return defaultTheme;
+    return localStorage.getItem("theme") || defaultTheme;
+  };
+
+  const [theme, setTheme] = useState(getInitialTheme);
 
   // Detect system preference synchronously during initialization
   const getInitialSystemTheme = () => {
@@ -49,9 +55,6 @@ export function ThemeProvider({ children, defaultTheme = "system" }) {
       }
     }
 
-    // Load saved theme from localStorage
-    const savedTheme = localStorage.getItem("theme") || defaultTheme;
-    setTheme(savedTheme);
     setIsInitialized(true);
   });
 
@@ -87,6 +90,7 @@ export function ThemeProvider({ children, defaultTheme = "system" }) {
 
   useEffect(() => {
     const root = window.document.documentElement;
+
     root.classList.remove("light", "dark");
     root.classList.add(resolvedTheme);
     root.style.colorScheme = resolvedTheme;
