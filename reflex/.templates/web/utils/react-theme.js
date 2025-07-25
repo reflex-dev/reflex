@@ -46,7 +46,10 @@ export function ThemeProvider({ children, defaultTheme = "system" }) {
     setTheme(savedTheme);
     setIsInitialized(true);
   });
-
+  const resolvedTheme = useMemo(
+    () => (theme === "system" ? systemTheme : theme),
+    [theme, systemTheme],
+  );
   useEffect(() => {
     // Set up media query for system preference detection
     const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
@@ -64,12 +67,7 @@ export function ThemeProvider({ children, defaultTheme = "system" }) {
       mediaQuery.removeEventListener("change", handleChange);
     };
   });
-  const resolvedTheme = useMemo(
-    () => (theme === "system" ? systemTheme : theme),
-    [theme, systemTheme],
-  );
-
-  // Save theme to localStorage whenever it changes
+  // Save theme to localStorage whenever it changes (but not on initial mount)
   useEffect(() => {
     if (!isInitialized) return;
     localStorage.setItem("theme", theme);
