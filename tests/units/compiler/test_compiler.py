@@ -364,17 +364,17 @@ def test_create_document_root():
     assert isinstance(lang, LiteralStringVar)
     assert lang.equals(Var.create("en"))
     # No children in head.
-    assert len(root.children[0].children) == 4
-    assert isinstance(root.children[0].children[0], utils.Meta)
-    char_set = root.children[0].children[0].char_set  # pyright: ignore [reportAttributeAccessIssue]
+    assert len(root.children[0].children) == 5
+    assert isinstance(root.children[0].children[1], utils.Meta)
+    char_set = root.children[0].children[1].char_set  # pyright: ignore [reportAttributeAccessIssue]
     assert isinstance(char_set, LiteralStringVar)
     assert char_set.equals(Var.create("utf-8"))
-    assert isinstance(root.children[0].children[1], utils.Meta)
-    name = root.children[0].children[1].name  # pyright: ignore [reportAttributeAccessIssue]
+    assert isinstance(root.children[0].children[2], utils.Meta)
+    name = root.children[0].children[2].name  # pyright: ignore [reportAttributeAccessIssue]
     assert isinstance(name, LiteralStringVar)
     assert name.equals(Var.create("viewport"))
-    assert isinstance(root.children[0].children[2], document.Meta)
-    assert isinstance(root.children[0].children[3], document.Links)
+    assert isinstance(root.children[0].children[3], document.Meta)
+    assert isinstance(root.children[0].children[4], document.Links)
 
 
 def test_create_document_root_with_scripts():
@@ -389,9 +389,9 @@ def test_create_document_root_with_scripts():
         html_custom_attrs={"project": "reflex"},
     )
     assert isinstance(root, utils.Html)
-    assert len(root.children[0].children) == 6
+    assert len(root.children[0].children) == 7
     names = [c.tag for c in root.children[0].children]
-    assert names == ["Scripts", "Scripts", "meta", "meta", "Meta", "Links"]
+    assert names == ["script", "Scripts", "Scripts", "meta", "meta", "Meta", "Links"]
     lang = root.lang  # pyright: ignore [reportAttributeAccessIssue]
     assert isinstance(lang, LiteralStringVar)
     assert lang.equals(Var.create("rx"))
@@ -408,10 +408,10 @@ def test_create_document_root_with_meta_char_set():
         head_components=comps,
     )
     assert isinstance(root, utils.Html)
-    assert len(root.children[0].children) == 4
+    assert len(root.children[0].children) == 5
     names = [c.tag for c in root.children[0].children]
-    assert names == ["meta", "meta", "Meta", "Links"]
-    assert str(root.children[0].children[0].char_set) == '"cp1252"'  # pyright: ignore [reportAttributeAccessIssue]
+    assert names == ["script", "meta", "meta", "Meta", "Links"]
+    assert str(root.children[0].children[1].char_set) == '"cp1252"'  # pyright: ignore [reportAttributeAccessIssue]
 
 
 def test_create_document_root_with_meta_viewport():
@@ -424,10 +424,10 @@ def test_create_document_root_with_meta_viewport():
         head_components=comps,
     )
     assert isinstance(root, utils.Html)
-    assert len(root.children[0].children) == 5
+    assert len(root.children[0].children) == 6
     names = [c.tag for c in root.children[0].children]
-    assert names == ["meta", "meta", "meta", "Meta", "Links"]
-    assert str(root.children[0].children[0].http_equiv) == '"refresh"'  # pyright: ignore [reportAttributeAccessIssue]
-    assert str(root.children[0].children[1].name) == '"viewport"'  # pyright: ignore [reportAttributeAccessIssue]
-    assert str(root.children[0].children[1].content) == '"foo"'  # pyright: ignore [reportAttributeAccessIssue]
-    assert str(root.children[0].children[2].char_set) == '"utf-8"'  # pyright: ignore [reportAttributeAccessIssue]
+    assert names == ["script", "meta", "meta", "meta", "Meta", "Links"]
+    assert str(root.children[0].children[1].http_equiv) == '"refresh"'  # pyright: ignore [reportAttributeAccessIssue]
+    assert str(root.children[0].children[2].name) == '"viewport"'  # pyright: ignore [reportAttributeAccessIssue]
+    assert str(root.children[0].children[2].content) == '"foo"'  # pyright: ignore [reportAttributeAccessIssue]
+    assert str(root.children[0].children[3].char_set) == '"utf-8"'  # pyright: ignore [reportAttributeAccessIssue]
