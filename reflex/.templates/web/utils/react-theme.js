@@ -22,7 +22,7 @@ export function ThemeProvider({ children, defaultTheme = "system" }) {
   const [systemTheme, setSystemTheme] = useState(
     defaultTheme !== "system" ? defaultTheme : "light",
   );
-  const [isInitialized, setIsInitialized] = useState(false); // ← Add this flag
+  const [isInitialized, setIsInitialized] = useState(false);
 
   const firstRender = useRef(true);
   useEffect(() => {
@@ -68,10 +68,10 @@ export function ThemeProvider({ children, defaultTheme = "system" }) {
     () => (theme === "system" ? systemTheme : theme),
     [theme, systemTheme],
   );
-  console.log(theme, defaultTheme, resolvedTheme);
 
   // Save theme to localStorage whenever it changes
   useEffect(() => {
+    if (!isInitialized) return;
     localStorage.setItem("theme", theme);
   }, [theme]);
 
