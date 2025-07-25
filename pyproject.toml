@@ -39,6 +39,7 @@ dependencies = [
   "typing_extensions >=4.13.0",
   "wrapt >=1.17.0,<2.0",
 ]
+
 classifiers = [
   "Development Status :: 4 - Beta",
   "License :: OSI Approved :: Apache Software License",
@@ -49,6 +50,10 @@ classifiers = [
   "Programming Language :: Python :: 3.13",
 ]
 
+[project.optional-dependencies]
+monitoring = [
+  "pyleak >=0.1.14,<1.0",
+]
 
 [project.urls]
 homepage = "https://reflex.dev"
@@ -74,6 +79,7 @@ dev = [
   "pre-commit",
   "psutil",
   "psycopg[binary]",
+  "pyleak >=0.1.14,<1.0",
   "pyright",
   "pytest-asyncio",
   "pytest-benchmark",
