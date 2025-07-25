@@ -84,19 +84,10 @@ In the example above, you will be able to do `rx.list`
 
 from __future__ import annotations
 
-from types import ModuleType
-from typing import Any
-
 from reflex.utils import (
     compat,  # for side-effects
     lazy_loader,
 )
-
-from .event import event as event
-
-# import this here explicitly to avoid returning the page module since page attr has the
-# same name as page module(page.py)
-from .page import page as page
 
 # Remove the `compat` name from the namespace, it was imported for side-effects only.
 del compat
@@ -301,6 +292,7 @@ _MAPPING: dict = {
     "constants": ["Env"],
     "constants.colors": ["Color"],
     "event": [
+        "event",
         "EventChain",
         "EventHandler",
         "call_script",
@@ -331,6 +323,7 @@ _MAPPING: dict = {
     ],
     "middleware": ["middleware", "Middleware"],
     "model": ["asession", "session", "Model"],
+    "page": ["page"],
     "state": [
         "var",
         "ComponentState",
