@@ -152,14 +152,19 @@ def _httpx_client():
     import httpx
     from httpx._utils import get_environment_proxies
 
+    verify_setting = _httpx_verify_kwarg()
     return httpx.Client(
         transport=httpx.HTTPTransport(
             local_address=_httpx_local_address_kwarg(),
-            verify=_httpx_verify_kwarg(),
+            verify=verify_setting,
         ),
         mounts={
             key: (
-                None if url is None else httpx.HTTPTransport(proxy=httpx.Proxy(url=url))
+                None
+                if url is None
+                else httpx.HTTPTransport(
+                    proxy=httpx.Proxy(url=url), verify=verify_setting
+                )
             )
             for key, url in get_environment_proxies().items()
         },
