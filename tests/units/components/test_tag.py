@@ -67,7 +67,6 @@ def test_add_props():
                 "children": [],
                 "contents": "",
                 "props": [],
-                "special_props": [],
             },
         ),
         (
@@ -77,7 +76,6 @@ def test_add_props():
                 "children": [],
                 "contents": "",
                 "props": [],
-                "special_props": [],
             },
         ),
         (
@@ -87,7 +85,6 @@ def test_add_props():
                 "children": [],
                 "contents": "hello",
                 "props": [],
-                "special_props": [],
             },
         ),
         (
@@ -97,7 +94,6 @@ def test_add_props():
                 "children": [],
                 "contents": "hello",
                 "props": [],
-                "special_props": [],
             },
         ),
         (
@@ -107,7 +103,6 @@ def test_add_props():
                 "children": [],
                 "contents": "",
                 "props": ['color:"red"', 'textAlign:"center"'],
-                "special_props": [],
             },
         ),
         (
@@ -121,7 +116,6 @@ def test_add_props():
                 "children": [],
                 "contents": "text",
                 "props": ['color:"red"', 'textAlign:"center"'],
-                "special_props": [],
             },
         ),
     ],

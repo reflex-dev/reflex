@@ -78,7 +78,7 @@ class Tag:
         for field in dataclasses.fields(self):
             if field.name == "props":
                 yield "props", self.format_props()
-            else:
+            elif field.name != "special_props":
                 rendered_value = render_prop(getattr(self, field.name))
                 if rendered_value is not None:
                     yield field.name, rendered_value
