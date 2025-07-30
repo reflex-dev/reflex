@@ -237,7 +237,7 @@ def get_nodejs_compatible_package_managers(
         FileNotFoundError: If the package manager is not found and raise_on_none is True.
     """
     bun_package_manager = (
-        [str(bun_path), "--backend=copyfile"]
+        [str(bun_path), "--no-cache"]
         if (bun_path := path_ops.get_bun_path())
         else None
     )
