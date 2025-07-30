@@ -1,4 +1,4 @@
-from typing import Generator
+from collections.abc import Generator
 
 import pytest
 from playwright.sync_api import Page, expect
@@ -41,7 +41,7 @@ def DatetimeOperationsApp():
         )
 
 
-@pytest.fixture()
+@pytest.fixture
 def datetime_operations_app(tmp_path_factory) -> Generator[AppHarness, None, None]:
     """Start Table app at tmp_path via AppHarness.
 
@@ -64,7 +64,7 @@ def test_datetime_operations(datetime_operations_app: AppHarness, page: Page):
     assert datetime_operations_app.frontend_url is not None
 
     page.goto(datetime_operations_app.frontend_url)
-    expect(page).to_have_url(datetime_operations_app.frontend_url + "/")
+    expect(page).to_have_url(datetime_operations_app.frontend_url)
     # Check the actual values
     expect(page.locator("id=date1")).to_have_text("2021-01-01 00:00:00")
     expect(page.locator("id=date2")).to_have_text("2031-01-01 00:00:00")

@@ -28,6 +28,7 @@ _SUBMOD_ATTRS: dict[str, list[str]] = {
         "Foreach",
     ],
     "html": ["html", "Html"],
+    "helmet": ["Helmet"],
     "match": [
         "match",
         "Match",
@@ -49,6 +50,7 @@ _SUBMOD_ATTRS: dict[str, list[str]] = {
         "selected_files",
     ],
     "auto_scroll": ["auto_scroll"],
+    "window_events": ["WindowEventListener", "window_event_listener"],
 }
 
 __getattr__, __dir__, __all__ = lazy_loader.attach(

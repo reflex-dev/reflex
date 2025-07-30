@@ -4,7 +4,8 @@ from __future__ import annotations
 
 import dataclasses
 import re
-from typing import Any, Callable, Union
+from collections.abc import Callable
+from typing import Any
 
 from reflex import constants
 from reflex.event import EventChain, EventHandler, EventSpec, run_script
@@ -77,7 +78,7 @@ class ClientStateVar(Var):
         var_name: str | None = None,
         default: Any = NoValue,
         global_ref: bool = True,
-    ) -> "ClientStateVar":
+    ) -> ClientStateVar:
         """Create a local_state Var that can be accessed and updated on the client.
 
         The `ClientStateVar` should be included in the highest parent component
@@ -110,7 +111,8 @@ class ClientStateVar(Var):
             var_name = get_unique_variable_name()
         id_name = "id_" + get_unique_variable_name()
         if not isinstance(var_name, str):
-            raise ValueError("var_name must be a string.")
+            msg = "var_name must be a string."
+            raise ValueError(msg)
         if default is NoValue:
             default_var = Var(_js_expr="")
         elif not isinstance(default, Var):
@@ -157,7 +159,9 @@ class ClientStateVar(Var):
             hooks[f"{_client_state_ref(var_name)} ??= {var_name!s}"] = None
             hooks[f"{_client_state_ref_dict(var_name)} ??= {{}}"] = None
             hooks[f"{_client_state_ref_dict(setter_name)} ??= {{}}"] = None
-            hooks[f"{_client_state_ref_dict(var_name)}[{id_name}] = {var_name}"] = None
+            hooks[
+                f"{_client_state_ref_dict(var_name)}[{id_name}] = {_client_state_ref(var_name)}"
+            ] = None
             hooks[
                 f"{_client_state_ref_dict(setter_name)}[{id_name}] = {setter_name}"
             ] = None
@@ -253,9 +257,7 @@ class ClientStateVar(Var):
         """
         return self.set_value()
 
-    def retrieve(
-        self, callback: Union[EventHandler, Callable, None] = None
-    ) -> EventSpec:
+    def retrieve(self, callback: EventHandler | Callable | None = None) -> EventSpec:
         """Pass the value of the client state variable to a backend EventHandler.
 
         The event handler must `yield` or `return` the EventSpec to trigger the event.
@@ -270,7 +272,8 @@ class ClientStateVar(Var):
             ValueError: If the ClientStateVar is not global.
         """
         if not self._global_ref:
-            raise ValueError("ClientStateVar must be global to retrieve the value.")
+            msg = "ClientStateVar must be global to retrieve the value."
+            raise ValueError(msg)
         return run_script(_client_state_ref(self._getter_name), callback=callback)
 
     def push(self, value: Any) -> EventSpec:
@@ -288,6 +291,7 @@ class ClientStateVar(Var):
             ValueError: If the ClientStateVar is not global.
         """
         if not self._global_ref:
-            raise ValueError("ClientStateVar must be global to push the value.")
+            msg = "ClientStateVar must be global to push the value."
+            raise ValueError(msg)
         value = Var.create(value)
         return run_script(f"{_client_state_ref(self._setter_name)}({value})")

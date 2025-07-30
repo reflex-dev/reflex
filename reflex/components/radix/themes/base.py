@@ -2,12 +2,11 @@
 
 from __future__ import annotations
 
-from typing import Any, Dict, Literal
+from typing import Any, ClassVar, Literal
 
 from reflex.components import Component
 from reflex.components.core.breakpoints import Responsive
 from reflex.components.tags import Tag
-from reflex.config import get_config
 from reflex.utils.imports import ImportDict, ImportVar
 from reflex.vars.base import Var
 
@@ -110,13 +109,10 @@ class RadixLoadingProp(Component):
 class RadixThemesComponent(Component):
     """Base class for all @radix-ui/themes components."""
 
-    library = "@radix-ui/themes@^3.0.0"
-
-    # Temporary pin < 3.1.5 until radix-ui/themes#627 is resolved.
-    library = library + " && <3.1.5"
+    library = "@radix-ui/themes@3.2.1"
 
     # "Fake" prop color_scheme is used to avoid shadowing CSS prop "color".
-    _rename_props: Dict[str, str] = {"colorScheme": "color"}
+    _rename_props: ClassVar[dict[str, str]] = {"colorScheme": "color"}
 
     @classmethod
     def create(
@@ -138,7 +134,9 @@ class RadixThemesComponent(Component):
         """
         component = super().create(*children, **props)
         if component.library is None:
-            component.library = RadixThemesComponent.__fields__["library"].default
+            component.library = RadixThemesComponent.get_fields()[
+                "library"
+            ].default_value()
         component.alias = "RadixThemes" + (component.tag or type(component).__name__)
         return component
 
@@ -242,17 +240,9 @@ class Theme(RadixThemesComponent):
         Returns:
             The import dict.
         """
-        _imports: ImportDict = {
-            "$/utils/theme.js": [ImportVar(tag="theme", is_default=True)],
+        return {
+            "$/utils/theme": [ImportVar(tag="theme", is_default=True)],
         }
-        if get_config().tailwind is None:
-            # When tailwind is disabled, import the radix-ui styles directly because they will
-            # not be included in the tailwind.css file.
-            _imports[""] = ImportVar(
-                tag="@radix-ui/themes/styles.css",
-                install=False,
-            )
-        return _imports
 
     def _render(self, props: dict[str, Any] | None = None) -> Tag:
         tag = super()._render(props)
@@ -286,9 +276,9 @@ class ThemePanel(RadixThemesComponent):
 
 
 class RadixThemesColorModeProvider(Component):
-    """Next-themes integration for radix themes components."""
+    """React-themes integration for radix themes components."""
 
-    library = "$/components/reflex/radix_themes_color_mode_provider.js"
+    library = "$/components/reflex/radix_themes_color_mode_provider"
     tag = "RadixThemesColorModeProvider"
     is_default = True
 

@@ -2,13 +2,13 @@
 
 from __future__ import annotations
 
-from typing import Dict, Tuple, TypeVar, Union
+from typing import TypeVar
 
 breakpoints_values = ["30em", "48em", "62em", "80em", "96em"]
 breakpoint_names = ["xs", "sm", "md", "lg", "xl"]
 
 
-def set_breakpoints(values: Tuple[str, str, str, str, str]):
+def set_breakpoints(values: tuple[str, str, str, str, str]):
     """Overwrite default breakpoint values.
 
     Args:
@@ -22,7 +22,7 @@ K = TypeVar("K", bound=str)
 V = TypeVar("V")
 
 
-class Breakpoints(Dict[K, V]):
+class Breakpoints(dict[K, V]):
     """A responsive styling helper."""
 
     def factorize(self):
@@ -46,7 +46,7 @@ class Breakpoints(Dict[K, V]):
     @classmethod
     def create(
         cls,
-        custom: Dict[K, V] | None = None,
+        custom: dict[K, V] | None = None,
         initial: V | None = None,
         xs: V | None = None,
         sm: V | None = None,
@@ -74,24 +74,22 @@ class Breakpoints(Dict[K, V]):
         thresholds = [initial, xs, sm, md, lg, xl]
 
         if custom is not None:
-            if any((threshold is not None for threshold in thresholds)):
-                raise ValueError("Named props cannot be used with custom thresholds")
+            if any(threshold is not None for threshold in thresholds):
+                msg = "Named props cannot be used with custom thresholds"
+                raise ValueError(msg)
 
             return Breakpoints(custom)
-        else:
-            return Breakpoints(
-                {
-                    k: v
-                    for k, v in zip(
-                        ["initial", *breakpoint_names], thresholds, strict=True
-                    )
-                    if v is not None
-                }
-            )
+        return Breakpoints(
+            {
+                k: v
+                for k, v in zip(["initial", *breakpoint_names], thresholds, strict=True)
+                if v is not None
+            }
+        )
 
 
 breakpoints = Breakpoints.create
 
 T = TypeVar("T")
 
-Responsive = Union[T, Breakpoints[str, T]]
+Responsive = T | Breakpoints[str, T]

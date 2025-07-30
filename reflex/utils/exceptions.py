@@ -1,6 +1,11 @@
 """Custom Exceptions."""
 
-from typing import Any
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    from reflex.vars import Var
 
 
 class ReflexError(Exception):
@@ -77,6 +82,31 @@ class VarAttributeError(ReflexError, AttributeError):
 
 class UntypedVarError(ReflexError, TypeError):
     """Custom TypeError for untyped var errors."""
+
+    def __init__(self, var: Var, action: str, doc_link: str = ""):
+        """Create an UntypedVarError from a var.
+
+        Args:
+            var: The var.
+            action: The action that caused the error.
+            doc_link: The link to the documentation.
+        """
+        var_data = var._get_all_var_data()
+        is_state_var = (
+            var_data
+            and var_data.state
+            and var_data.field_name
+            and var_data.state + "." + var_data.field_name == str(var)
+        )
+        super().__init__(
+            f"Cannot {action} on untyped var '{var!s}' of type '{var._var_type!s}'."
+            + (
+                " Please add a type annotation to the var in the state class."
+                if is_state_var
+                else " You can call the var's .to(desired_type) method to convert it to the desired type."
+            )
+            + (f" See {doc_link}" if doc_link else "")
+        )
 
 
 class UntypedComputedVarError(ReflexError, TypeError):

@@ -28,18 +28,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, windows-latest]
-        python-version: ["3.10.16", "3.11.11", "3.12.8", "3.13.1"]
-        # Windows is a bit behind on Python version availability in Github
-        exclude:
-          - os: windows-latest
-            python-version: "3.11.11"
-          - os: windows-latest
-            python-version: "3.10.16"
-        include:
-          - os: windows-latest
-            python-version: "3.11.9"
-          - os: windows-latest
-            python-version: "3.10.11"
+        python-version: ["3.10", "3.11", "3.12", "3.13"]
     runs-on: ${{ matrix.os }}
 
     # Service containers to run with `runner-job`
@@ -61,26 +50,26 @@ jobs:
       - uses: ./.github/actions/setup_build_env
         with:
           python-version: ${{ matrix.python-version }}
-          run-poetry-install: true
-          create-venv-at-path: .venv
+          run-uv-sync: true
+
       - name: Run unit tests
         run: |
           export PYTHONUNBUFFERED=1
-          poetry run pytest tests/units --cov --no-cov-on-fail --cov-report=
+          uv run pytest tests/units --cov --no-cov-on-fail --cov-report=
       - name: Run unit tests w/ redis
         if: ${{ matrix.os == 'ubuntu-latest' }}
         run: |
           export PYTHONUNBUFFERED=1
-          export REDIS_URL=redis://localhost:6379
-          poetry run pytest tests/units --cov --no-cov-on-fail --cov-report=
+          export REFLEX_REDIS_URL=redis://localhost:6379
+          uv run pytest tests/units --cov --no-cov-on-fail --cov-report=
       # Change to explicitly install v1 when reflex-hosting-cli is compatible with v2
       - name: Run unit tests w/ pydantic v1
         run: |
           export PYTHONUNBUFFERED=1
-          poetry run uv pip install "pydantic~=1.10"
-          poetry run pytest tests/units --cov --no-cov-on-fail --cov-report=
+          uv pip install "pydantic~=1.10"
+          uv run pytest tests/units --cov --no-cov-on-fail --cov-report=
       - name: Generate coverage report
-        run: poetry run coverage html
+        run: uv run coverage html
 
   unit-tests-macos:
     timeout-minutes: 30
@@ -88,22 +77,21 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # Note: py310, py311 versions chosen due to available arm64 darwin builds.
-        python-version: ["3.10.11", "3.11.9", "3.12.8", "3.13.1"]
+        python-version: ["3.10", "3.11", "3.12", "3.13"]
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/setup_build_env
         with:
           python-version: ${{ matrix.python-version }}
-          run-poetry-install: true
-          create-venv-at-path: .venv
+          run-uv-sync: true
+
       - name: Run unit tests
         run: |
           export PYTHONUNBUFFERED=1
-          poetry run pytest tests/units --cov --no-cov-on-fail --cov-report=
+          uv run pytest tests/units --cov --no-cov-on-fail --cov-report=
       - name: Run unit tests w/ pydantic v1
         run: |
           export PYTHONUNBUFFERED=1
-          poetry run uv pip install "pydantic~=1.10"
-          poetry run pytest tests/units --cov --no-cov-on-fail --cov-report=
+          uv pip install "pydantic~=1.10"
+          uv run pytest tests/units --cov --no-cov-on-fail --cov-report=

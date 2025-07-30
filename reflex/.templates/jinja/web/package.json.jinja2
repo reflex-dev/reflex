@@ -1,9 +1,9 @@
 {
   "name": "reflex",
+  "type": "module",
   "scripts": {
     "dev": "{{ scripts.dev }}",
     "export": "{{ scripts.export }}",
-    "export-sitemap": "{{ scripts.export_sitemap }}",
     "prod": "{{ scripts.prod }}"
   },
   "dependencies": {
@@ -15,7 +15,13 @@
   "devDependencies": {
     {% for package, version in dev_dependencies.items() %}
     "{{ package }}": "{{ version }}"{% if not loop.last %},{% endif %}
-    
+
+    {% endfor %}
+  },
+  "overrides": {
+    {% for package, version in overrides.items() %}
+    "{{ package }}": "{{ version }}"{% if not loop.last %},{% endif %}
+
     {% endfor %}
   }
 }

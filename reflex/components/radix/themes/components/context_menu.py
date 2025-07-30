@@ -1,14 +1,14 @@
 """Interactive components provided by @radix-ui/themes."""
 
-from typing import Dict, List, Literal, Union
+from typing import ClassVar, Literal
 
 from reflex.components.component import ComponentNamespace
 from reflex.components.core.breakpoints import Responsive
+from reflex.components.radix.themes.base import LiteralAccentColor, RadixThemesComponent
 from reflex.constants.compiler import MemoizationMode
 from reflex.event import EventHandler, no_args_event_spec, passthrough_event_spec
 from reflex.vars.base import Var
 
-from ..base import LiteralAccentColor, RadixThemesComponent
 from .checkbox import Checkbox
 from .radio_group import HighLevelRadioGroup
 
@@ -36,7 +36,7 @@ class ContextMenuRoot(RadixThemesComponent):
     # The modality of the context menu. When set to true, interaction with outside elements will be disabled and only menu content will be visible to screen readers.
     modal: Var[bool]
 
-    _invalid_children: List[str] = ["ContextMenuItem"]
+    _invalid_children: ClassVar[list[str]] = ["ContextMenuItem"]
 
     # Fired when the open state changes.
     on_open_change: EventHandler[passthrough_event_spec(bool)]
@@ -53,9 +53,9 @@ class ContextMenuTrigger(RadixThemesComponent):
     # Whether the trigger is disabled
     disabled: Var[bool]
 
-    _valid_parents: List[str] = ["ContextMenuRoot"]
+    _valid_parents: ClassVar[list[str]] = ["ContextMenuRoot"]
 
-    _invalid_children: List[str] = ["ContextMenuContent"]
+    _invalid_children: ClassVar[list[str]] = ["ContextMenuContent"]
 
     _memoization_mode = MemoizationMode(recursive=False)
 
@@ -90,19 +90,19 @@ class ContextMenuContent(RadixThemesComponent):
     side: Var[LiteralSideType]
 
     # The distance in pixels from the trigger. Defaults to 0.
-    side_offset: Var[Union[float, int]]
+    side_offset: Var[float | int]
 
     # The preferred alignment against the trigger. May change when collisions occur. Defaults to "center".
     align: Var[LiteralAlignType]
 
     # An offset in pixels from the "start" or "end" alignment options.
-    align_offset: Var[Union[float, int]]
+    align_offset: Var[float | int]
 
     # When true, overrides the side and align preferences to prevent collisions with boundary edges. Defaults to True.
     avoid_collisions: Var[bool]
 
     # The distance in pixels from the boundary edges where collision detection should occur. Accepts a number (same for all sides), or a partial padding object, for example: { "top": 20, "left": 20 }. Defaults to 0.
-    collision_padding: Var[Union[float, int, Dict[str, Union[float, int]]]]
+    collision_padding: Var[float | int | dict[str, float | int]]
 
     # The sticky behavior on the align axis. "partial" will keep the content in the boundary as long as the trigger is at least partially in the boundary whilst "always" will keep the content in the boundary regardless. Defaults to "partial".
     sticky: Var[LiteralStickyType]
@@ -155,7 +155,7 @@ class ContextMenuSubTrigger(RadixThemesComponent):
     # Optional text used for typeahead purposes. By default the typeahead behavior will use the .textContent of the item. Use this when the content is complex, or you have non-textual content inside.
     text_value: Var[str]
 
-    _valid_parents: List[str] = ["ContextMenuContent", "ContextMenuSub"]
+    _valid_parents: ClassVar[list[str]] = ["ContextMenuContent", "ContextMenuSub"]
 
     _memoization_mode = MemoizationMode(recursive=False)
 
@@ -175,16 +175,16 @@ class ContextMenuSubContent(RadixThemesComponent):
     force_mount: Var[bool]
 
     # The distance in pixels from the trigger. Defaults to 0.
-    side_offset: Var[Union[float, int]]
+    side_offset: Var[float | int]
 
     # An offset in pixels from the "start" or "end" alignment options.
-    align_offset: Var[Union[float, int]]
+    align_offset: Var[float | int]
 
     # When true, overrides the side and align preferences to prevent collisions with boundary edges. Defaults to True.
     avoid_collisions: Var[bool]
 
     # The distance in pixels from the boundary edges where collision detection should occur. Accepts a number (same for all sides), or a partial padding object, for example: { "top": 20, "left": 20 }. Defaults to 0.
-    collision_padding: Var[Union[float, int, Dict[str, Union[float, int]]]]
+    collision_padding: Var[float | int | dict[str, float | int]]
 
     # The sticky behavior on the align axis. "partial" will keep the content in the boundary as long as the trigger is at least partially in the boundary whilst "always" will keep the content in the boundary regardless. Defaults to "partial".
     sticky: Var[LiteralStickyType]
@@ -192,7 +192,7 @@ class ContextMenuSubContent(RadixThemesComponent):
     # Whether to hide the content when the trigger becomes fully occluded. Defaults to False.
     hide_when_detached: Var[bool]
 
-    _valid_parents: List[str] = ["ContextMenuSub"]
+    _valid_parents: ClassVar[list[str]] = ["ContextMenuSub"]
 
     # Fired when the escape key is pressed.
     on_escape_key_down: EventHandler[no_args_event_spec]
@@ -227,7 +227,7 @@ class ContextMenuItem(RadixThemesComponent):
     # Optional text used for typeahead purposes. By default the typeahead behavior will use the content of the item. Use this when the content is complex, or you have non-textual content inside.
     text_value: Var[str]
 
-    _valid_parents: List[str] = [
+    _valid_parents: ClassVar[list[str]] = [
         "ContextMenuContent",
         "ContextMenuSubContent",
         "ContextMenuGroup",
@@ -269,7 +269,10 @@ class ContextMenuGroup(RadixThemesComponent):
     # Change the default rendered element for the one passed as a child, merging their props and behavior. Defaults to False.
     as_child: Var[bool]
 
-    _valid_parents: List[str] = ["ContextMenuContent", "ContextMenuSubContent"]
+    _valid_parents: ClassVar[list[str]] = [
+        "ContextMenuContent",
+        "ContextMenuSubContent",
+    ]
 
 
 class ContextMenuRadioGroup(RadixThemesComponent):
@@ -289,7 +292,7 @@ class ContextMenuRadioGroup(RadixThemesComponent):
     # Fired when the value of the radio group changes.
     on_change: EventHandler[passthrough_event_spec(str)]
 
-    _valid_parents: List[str] = [
+    _valid_parents: ClassVar[list[str]] = [
         "ContextMenuRadioItem",
         "ContextMenuSubContent",
         "ContextMenuContent",

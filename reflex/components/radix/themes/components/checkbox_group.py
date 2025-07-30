@@ -1,12 +1,12 @@
 """Components for the CheckboxGroup component of Radix Themes."""
 
+from collections.abc import Sequence
 from types import SimpleNamespace
-from typing import List, Literal
+from typing import Literal
 
 from reflex.components.core.breakpoints import Responsive
+from reflex.components.radix.themes.base import LiteralAccentColor, RadixThemesComponent
 from reflex.vars.base import Var
-
-from ..base import LiteralAccentColor, RadixThemesComponent
 
 
 class CheckboxGroupRoot(RadixThemesComponent):
@@ -27,7 +27,7 @@ class CheckboxGroupRoot(RadixThemesComponent):
     high_contrast: Var[bool]
 
     # determines which checkboxes, if any, are checked by default.
-    default_value: Var[List[str]]
+    default_value: Var[Sequence[str]]
 
     # used to assign a name to the entire group of checkboxes
     name: Var[str]

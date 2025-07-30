@@ -1,6 +1,6 @@
 """Integration tests for var operations."""
 
-from typing import Generator
+from collections.abc import Generator
 
 import pytest
 from selenium.webdriver.common.by import By
@@ -18,6 +18,8 @@ def VarOperations():
 
     class Object(rx.Base):
         name: str = "hello"
+        optional_none: str | None = None
+        optional_str: str | None = "hello"
 
     class Person(TypedDict):
         name: str
@@ -29,10 +31,15 @@ def VarOperations():
         int_var3: rx.Field[int] = rx.field(7)
         float_var1: rx.Field[float] = rx.field(10.5)
         float_var2: rx.Field[float] = rx.field(5.5)
+        long_float: rx.Field[float] = rx.field(13212312312.1231231)
         list1: rx.Field[list] = rx.field([1, 2])
         list2: rx.Field[list] = rx.field([3, 4])
         list3: rx.Field[list] = rx.field(["first", "second", "third"])
         list4: rx.Field[list] = rx.field([Object(name="obj_1"), Object(name="obj_2")])
+        optional_list: rx.Field[list | None] = rx.field(None)
+        optional_dict: rx.Field[dict[str, str] | None] = rx.field(None)
+        optional_list_value: rx.Field[list[str] | None] = rx.field(["red", "yellow"])
+        optional_dict_value: rx.Field[dict[str, str] | None] = rx.field({"name": "red"})
         str_var1: rx.Field[str] = rx.field("first")
         str_var2: rx.Field[str] = rx.field("second")
         str_var3: rx.Field[str] = rx.field("ThIrD")
@@ -43,8 +50,9 @@ def VarOperations():
         people: rx.Field[list[Person]] = rx.field(
             [{"name": "Alice", "age": 30}, {"name": "Bob", "age": 25}]
         )
+        obj: rx.Field[Object] = rx.field(Object())
 
-    app = rx.App(_state=rx.State)
+    app = rx.App()
 
     @rx.memo
     def memo_comp(list1: list[int], int_var1: int, id: str):
@@ -57,6 +65,7 @@ def VarOperations():
     @app.add_page
     def index():
         return rx.vstack(
+            None,  # Testing that None doesn't break everything
             rx.el.input(
                 id="token",
                 value=VarOperationState.router.session.client_token,
@@ -582,13 +591,20 @@ def VarOperations():
             ),
             rx.box(
                 rx.foreach(
-                    LiteralVar.create(list(range(0, 3))).to(ArrayVar, list[int]),
+                    LiteralVar.create(list(range(3))).to(ArrayVar, list[int]),
                     lambda x: rx.foreach(
                         ArrayVar.range(x),
                         lambda y: rx.text(VarOperationState.list1[y], as_="p"),
                     ),
                 ),
                 id="foreach_list_nested",
+            ),
+            rx.box(
+                rx.foreach(
+                    ArrayVar.range(0, 2),
+                    lambda x: VarOperationState.list1[x],
+                ),
+                id="foreach_list_arg2",
             ),
             memo_comp(
                 list1=VarOperationState.list1,
@@ -598,6 +614,15 @@ def VarOperations():
             memo_comp_nested(
                 int_var2=VarOperationState.int_var2,
                 id="memo_comp_nested",
+            ),
+            # length
+            rx.box(
+                rx.text(VarOperationState.list3.length()),
+                id="list_length",
+            ),
+            rx.box(
+                rx.text(VarOperationState.obj.length()),
+                id="obj_length",
             ),
             # foreach in a match
             rx.box(
@@ -645,6 +670,99 @@ def VarOperations():
                 ),
                 id="typed_dict_in_foreach",
             ),
+            rx.box(
+                rx.foreach(VarOperationState.optional_list, rx.text.span),
+                id="optional_list",
+            ),
+            rx.box(
+                rx.foreach(VarOperationState.optional_dict, rx.text.span),
+                id="optional_dict",
+            ),
+            rx.box(
+                rx.foreach(VarOperationState.optional_list_value, rx.text.span),
+                id="optional_list_value",
+            ),
+            rx.box(
+                rx.foreach(VarOperationState.optional_dict_value, rx.text.span),
+                id="optional_dict_value",
+            ),
+            rx.box(
+                rx.text.span(f"{rx.Var.create(13212312312.1231231)}"),
+                id="float_format",
+            ),
+            rx.box(
+                rx.text.span(f"{rx.Var.create(13212312312.1231231):.0f}"),
+                id="float_format_0f",
+            ),
+            rx.box(
+                rx.text.span(f"{rx.Var.create(13212312312.1231231):.1f}"),
+                id="float_format_1f",
+            ),
+            rx.box(
+                rx.text.span(f"{rx.Var.create(13212312312.1231231):.2f}"),
+                id="float_format_2f",
+            ),
+            rx.box(
+                rx.text.span(f"{rx.Var.create(13212312312.1231231):,}"),
+                id="float_format_comma",
+            ),
+            rx.box(
+                rx.text.span(f"{rx.Var.create(13212312312.1231231):_}"),
+                id="float_format_underscore",
+            ),
+            rx.box(
+                rx.text.span(f"{rx.Var.create(13212312312.1231231):,.0f}"),
+                id="float_format_comma_0f",
+            ),
+            rx.box(
+                rx.text.span(f"{rx.Var.create(13212312312.1231231):,.1f}"),
+                id="float_format_comma_1f",
+            ),
+            rx.box(
+                rx.text.span(f"{rx.Var.create(13212312312.1231231):,.2f}"),
+                id="float_format_comma_2f",
+            ),
+            rx.box(
+                rx.text.span(f"{rx.Var.create(13212312312.1231231):_.0f}"),
+                id="float_format_underscore_0f",
+            ),
+            rx.box(
+                rx.text.span(f"{rx.Var.create(13212312312.1231231):_.1f}"),
+                id="float_format_underscore_1f",
+            ),
+            rx.box(
+                rx.text.span(f"{rx.Var.create(13212312312.1231231):_.2f}"),
+                id="float_format_underscore_2f",
+            ),
+            # ObjectVar
+            rx.box(
+                rx.text.span(VarOperationState.obj.name),
+                id="obj_name",
+            ),
+            rx.box(
+                rx.text.span(VarOperationState.obj.optional_none),
+                id="obj_optional_none",
+            ),
+            rx.box(
+                rx.text.span(VarOperationState.obj.optional_str),
+                id="obj_optional_str",
+            ),
+            rx.box(
+                rx.text.span(VarOperationState.obj.get("optional_none")),
+                id="obj_optional_none_get_none",
+            ),
+            rx.box(
+                rx.text.span(VarOperationState.obj.get("optional_none", "foo")),
+                id="obj_optional_none_get_foo",
+            ),
+            rx.box(
+                rx.text.span(round(VarOperationState.long_float)),
+                id="float_round",
+            ),
+            rx.box(
+                rx.text.span(round(VarOperationState.long_float, 2)),
+                id="float_round_2",
+            ),
         )
 
 
@@ -678,8 +796,9 @@ def driver(var_operations: AppHarness):
     """
     driver = var_operations.frontend()
     try:
-        token_input = driver.find_element(By.ID, "token")
-        assert token_input
+        token_input = AppHarness.poll_for_or_raise_timeout(
+            lambda: driver.find_element(By.ID, "token")
+        )
         # wait for the backend connection to send the token
         token = var_operations.poll_for_value(token_input)
         assert token is not None
@@ -839,9 +958,13 @@ def test_var_operations(driver, var_operations: AppHarness):
         ("foreach_list_arg", "1\n2"),
         ("foreach_list_ix", "1\n2"),
         ("foreach_list_nested", "1\n1\n2"),
+        ("foreach_list_arg2", "12"),
         # rx.memo component with state
         ("memo_comp", "1210"),
         ("memo_comp_nested", "345"),
+        # length
+        ("list_length", "3"),
+        ("obj_length", "3"),
         # foreach in a match
         ("foreach_in_match", "first\nsecond\nthird"),
         # literal range in a foreach
@@ -855,11 +978,33 @@ def test_var_operations(driver, var_operations: AppHarness):
         ("str_in_foreach", "a b c d e f"),
         ("str_var_in_foreach", "f i r s t"),
         ("typed_dict_in_foreach", "Hello Alice33Hello Bob28"),
+        # fstring operations
+        ("float_format", "13212312312.123123"),
+        ("float_format_0f", "13212312312"),
+        ("float_format_1f", "13212312312.1"),
+        ("float_format_2f", "13212312312.12"),
+        ("float_format_comma", "13,212,312,312.123"),
+        ("float_format_underscore", "13_212_312_312.123"),
+        ("float_format_comma_0f", "13,212,312,312"),
+        ("float_format_comma_1f", "13,212,312,312.1"),
+        ("float_format_comma_2f", "13,212,312,312.12"),
+        ("float_format_underscore_0f", "13_212_312_312"),
+        ("float_format_underscore_1f", "13_212_312_312.1"),
+        ("float_format_underscore_2f", "13_212_312_312.12"),
+        ("obj_name", "hello"),
+        ("obj_optional_none", ""),
+        ("obj_optional_str", "hello"),
+        ("obj_optional_none_get_none", ""),
+        ("obj_optional_none_get_foo", "foo"),
+        ("float_round", "13212312312"),
+        ("float_round_2", "13212312312.12"),
     ]
 
     for tag, expected in tests:
-        print(tag)
-        assert driver.find_element(By.ID, tag).text == expected
+        existing = driver.find_element(By.ID, tag).text
+        assert existing == expected, (
+            f"Failed on {tag}, expected {expected} but got {existing}"
+        )
 
     # Highlight component with var query (does not plumb ID)
     assert driver.find_element(By.TAG_NAME, "mark").text == "second"

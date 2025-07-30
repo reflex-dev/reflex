@@ -3,7 +3,7 @@
 import asyncio
 import platform
 import uuid
-from typing import Dict, Generator, Type
+from collections.abc import Generator
 from unittest import mock
 
 import pytest
@@ -59,13 +59,13 @@ def app_module_mock(monkeypatch) -> mock.Mock:
 
 
 @pytest.fixture(scope="session")
-def windows_platform() -> Generator:
+def windows_platform() -> bool:
     """Check if system is windows.
 
-    Yields:
+    Returns:
         whether system is windows.
     """
-    yield platform.system() == "Windows"
+    return platform.system() == "Windows"
 
 
 @pytest.fixture
@@ -109,7 +109,7 @@ def upload_event_spec():
 
 
 @pytest.fixture
-def base_config_values() -> Dict:
+def base_config_values() -> dict:
     """Get base config values.
 
     Returns:
@@ -119,7 +119,7 @@ def base_config_values() -> Dict:
 
 
 @pytest.fixture
-def base_db_config_values() -> Dict:
+def base_db_config_values() -> dict:
     """Get base DBConfig values.
 
     Returns:
@@ -129,7 +129,7 @@ def base_db_config_values() -> Dict:
 
 
 @pytest.fixture
-def sqlite_db_config_values(base_db_config_values) -> Dict:
+def sqlite_db_config_values(base_db_config_values) -> dict:
     """Get sqlite DBConfig values.
 
     Args:
@@ -217,7 +217,7 @@ def mutable_state() -> MutableTestState:
     return MutableTestState()
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture
 def token() -> str:
     """Create a token.
 
@@ -228,7 +228,7 @@ def token() -> str:
 
 
 @pytest.fixture
-def model_registry() -> Generator[Type[ModelRegistry], None, None]:
+def model_registry() -> Generator[type[ModelRegistry], None, None]:
     """Create a model registry.
 
     Yields:

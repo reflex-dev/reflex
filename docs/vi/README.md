@@ -1,18 +1,15 @@
-```diff
-+ Bạn đang tìm kiếm Pynecone? Bạn đã tìm đúng. Pynecone đã được đổi tên thành Reflex. +
-```
-
 <div align="center">
-<img src="https://raw.githubusercontent.com/reflex-dev/reflex/main/docs/images/reflex_dark.svg#gh-light-mode-only" alt="Reflex Logo" width="300px">
-<img src="https://raw.githubusercontent.com/reflex-dev/reflex/main/docs/images/reflex_light.svg#gh-dark-mode-only" alt="Reflex Logo" width="300px">
-
+<img src="/docs/images/reflex.svg" alt="Reflex Logo" width="300px">
 <hr>
 
 ### **✨ Ứng dụng web hiệu suất cao, tùy chỉnh bằng Python thuần. Deploy trong vài giây. ✨**
+
 [![PyPI version](https://badge.fury.io/py/reflex.svg)](https://badge.fury.io/py/reflex)
 ![versions](https://img.shields.io/pypi/pyversions/reflex.svg)
 [![Documentation](https://img.shields.io/badge/Documentation%20-Introduction%20-%20%23007ec6)](https://reflex.dev/docs/getting-started/introduction)
+[![PyPI Downloads](https://static.pepy.tech/badge/reflex)](https://pepy.tech/projects/reflex)
 [![Discord](https://img.shields.io/discord/1029853095527727165?color=%237289da&label=Discord)](https://discord.gg/T5WSbC2YtQ)
+
 </div>
 
 ---
@@ -26,9 +23,10 @@
 Reflex là một thư viện để xây dựng ứng dụng web toàn bộ bằng Python thuần.
 
 Các tính năng chính:
-* **Python thuần tuý** - Viết toàn bộ ứng dụng cả backend và frontend hoàn toàn bằng Python, không cần học JavaScript.
-* **Full Flexibility** - Reflex dễ dàng để bắt đầu, nhưng cũng có thể mở rộng lên các ứng dụng phức tạp.
-* **Deploy Instantly** - Sau khi xây dựng ứng dụng, bạn có thể triển khai bằng [một dòng lệnh](https://reflex.dev/docs/hosting/deploy-quick-start/) hoặc triển khai trên server của riêng bạn.
+
+- **Python thuần tuý** - Viết toàn bộ ứng dụng cả backend và frontend hoàn toàn bằng Python, không cần học JavaScript.
+- **Full Flexibility** - Reflex dễ dàng để bắt đầu, nhưng cũng có thể mở rộng lên các ứng dụng phức tạp.
+- **Deploy Instantly** - Sau khi xây dựng ứng dụng, bạn có thể triển khai bằng [một dòng lệnh](https://reflex.dev/docs/hosting/deploy-quick-start/) hoặc triển khai trên server của riêng bạn.
 
 Đọc [bài viết về kiến trúc hệ thống](https://reflex.dev/blog/2024-03-21-reflex-architecture/#the-reflex-architecture) để hiểu rõ các hoạt động của Reflex.
 
@@ -52,7 +50,7 @@ cd my_app_name
 reflex init
 ```
 
-Lệnh này tạo ra một ứng dụng mẫu trong một thư mục mới. 
+Lệnh này tạo ra một ứng dụng mẫu trong một thư mục mới.
 
 Bạn có thể chạy ứng dụng ở chế độ phát triển.
 
@@ -64,23 +62,20 @@ Bạn có thể xem ứng dụng của bạn ở địa chỉ http://localhost:3
 
 Bạn có thể thay đổi mã nguồn ở `my_app_name/my_app_name.py`. Reflex nhanh chóng làm mới và bạn có thể thấy thay đổi trên ứng dụng của bạn ngay lập tức khi bạn lưu file.
 
-
 ## 🫧 Ứng dụng ví dụ
 
-Bắt đầu với ví dụ: tạo một ứng dụng tạo ảnh bằng [DALL·E](https://platform.openai.com/docs/guides/images/image-generation?context=node). Để cho đơn giản, chúng  ta sẽ sử dụng [OpenAI API](https://platform.openai.com/docs/api-reference/authentication), nhưng bạn có thể sử dụng model của chính bạn được triển khai trên local.
+Bắt đầu với ví dụ: tạo một ứng dụng tạo ảnh bằng [DALL·E](https://platform.openai.com/docs/guides/images/image-generation?context=node). Để cho đơn giản, chúng ta sẽ sử dụng [OpenAI API](https://platform.openai.com/docs/api-reference/authentication), nhưng bạn có thể sử dụng model của chính bạn được triển khai trên local.
 
 &nbsp;
 
 <div align="center">
-<img src="https://raw.githubusercontent.com/reflex-dev/reflex/main/docs/images/dalle.gif" alt="A frontend wrapper for DALL·E, shown in the process of generating an image." width="550" />
+<img src="/docs/images/dalle.gif" alt="A frontend wrapper for DALL·E, shown in the process of generating an image." width="550" />
 </div>
 
 &nbsp;
 
 Đây là toàn bộ đoạn mã để xây dựng ứng dụng trên. Nó được viết hoàn toàn trong một file Python!
 
-
-  
 ```python
 import reflex as rx
 import openai
@@ -120,7 +115,7 @@ def index():
                 width="25em",
             ),
             rx.button(
-                "Generate Image", 
+                "Generate Image",
                 on_click=State.get_image,
                 width="25em",
                 loading=State.processing
@@ -140,16 +135,11 @@ app = rx.App()
 app.add_page(index, title="Reflex:DALL-E")
 ```
 
-
-
-
-
 ## Hãy phân tích chi tiết.
 
 <div align="center">
-<img src="../images/dalle_colored_code_example.png" alt="Explaining the differences between backend and frontend parts of the DALL-E app." width="900" />
+<img src="/docs/images/dalle_colored_code_example.png" alt="Explaining the differences between backend and frontend parts of the DALL-E app." width="900" />
 </div>
-
 
 ### **Reflex UI**
 
@@ -221,7 +211,6 @@ app = rx.App()
 
 Chúng ta thêm một trang ở đầu ứng dụng bằng index component. Chúng ta cũng thêm tiêu đề của ứng dụng để hiển thị lên trình duyệt.
 
-
 ```python
 app.add_page(index, title="DALL-E")
 ```
@@ -232,16 +221,15 @@ Bạn có thể tạo một ứng dụng nhiều trang bằng cách thêm trang.
 
 <div align="center">
 
-📑 [Docs](https://reflex.dev/docs/getting-started/introduction) &nbsp; |  &nbsp; 🗞️ [Blog](https://reflex.dev/blog) &nbsp; |  &nbsp; 📱 [Component Library](https://reflex.dev/docs/library) &nbsp; |  &nbsp; 🖼️ [Templates](https://reflex.dev/templates/) &nbsp; |  &nbsp; 🛸 [Deployment](https://reflex.dev/docs/hosting/deploy-quick-start)  &nbsp;   
+📑 [Docs](https://reflex.dev/docs/getting-started/introduction) &nbsp; | &nbsp; 🗞️ [Blog](https://reflex.dev/blog) &nbsp; | &nbsp; 📱 [Component Library](https://reflex.dev/docs/library) &nbsp; | &nbsp; 🖼️ [Templates](https://reflex.dev/templates/) &nbsp; | &nbsp; 🛸 [Deployment](https://reflex.dev/docs/hosting/deploy-quick-start) &nbsp;
 
 </div>
-
 
 ## ✅ Status
 
 Reflex phát hành vào tháng 12/2022 với tên là Pynecone.
 
-Đến tháng 02/2024, chúng tôi tạo ra dịch vụ dưới phiên bản alpha! Trong thời gian này mọi người có thể triển khai ứng dụng hoàn toàn miễn phí. Xem [roadmap](https://github.com/reflex-dev/reflex/issues/2727) để biết thêm chi tiết.
+Từ năm 2025, [Reflex Cloud](https://cloud.reflex.dev) đã ra mắt để cung cấp trải nghiệm lưu trữ tốt nhất cho các ứng dụng Reflex. Chúng tôi sẽ tiếp tục phát triển và triển khai thêm nhiều tính năng mới.
 
 Reflex ra phiên bản mới với các tính năng mới hàng tuần! Hãy :star: star và :eyes: watch repo này để thấy các cập nhật mới nhất.
 
@@ -249,19 +237,19 @@ Reflex ra phiên bản mới với các tính năng mới hàng tuần! Hãy :st
 
 Chúng tôi chào đón mọi đóng góp dù lớn hay nhỏ. Dưới đây là các cách để bắt đầu với cộng đồng Reflex.
 
--   **Discord**: [Discord](https://discord.gg/T5WSbC2YtQ) của chúng tôi là nơi tốt nhất để nhờ sự giúp đỡ và thảo luận các bạn có thể đóng góp.
--   **GitHub Discussions**: Là cách tốt nhất để thảo luận về các tính năng mà bạn có thể đóng góp hoặc những điều bạn chưa rõ.
--   **GitHub Issues**: [Issues](https://github.com/reflex-dev/reflex/issues) là nơi tốt nhất để thông báo. Ngoài ra bạn có thể sửa chữa các vấn đề bằng cách tạo PR.
+- **Discord**: [Discord](https://discord.gg/T5WSbC2YtQ) của chúng tôi là nơi tốt nhất để nhờ sự giúp đỡ và thảo luận các bạn có thể đóng góp.
+- **GitHub Discussions**: Là cách tốt nhất để thảo luận về các tính năng mà bạn có thể đóng góp hoặc những điều bạn chưa rõ.
+- **GitHub Issues**: [Issues](https://github.com/reflex-dev/reflex/issues) là nơi tốt nhất để thông báo. Ngoài ra bạn có thể sửa chữa các vấn đề bằng cách tạo PR.
 
-Chúng tôi luôn sẵn sàng tìm kiếm các contributor, bất kể kinh nghiệm. Để tham gia đóng góp, xin mời xem 
+Chúng tôi luôn sẵn sàng tìm kiếm các contributor, bất kể kinh nghiệm. Để tham gia đóng góp, xin mời xem
 [CONTRIBUTING.md](https://github.com/reflex-dev/reflex/blob/main/CONTRIBUTING.md)
 
-
 ## Xin cảm ơn các Contributors:
+
 <a href="https://github.com/reflex-dev/reflex/graphs/contributors">
   <img src="https://contrib.rocks/image?repo=reflex-dev/reflex" />
 </a>
 
 ## License
 
-Reflex là mã nguồn mở và sử dụng giấy phép [Apache License 2.0](LICENSE).
+Reflex là mã nguồn mở và sử dụng giấy phép [Apache License 2.0](/LICENSE).

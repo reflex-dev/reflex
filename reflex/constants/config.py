@@ -49,6 +49,13 @@ class GitIgnore(SimpleNamespace):
     }
 
 
+class PyprojectToml(SimpleNamespace):
+    """Pyproject.toml constants."""
+
+    # The pyproject.toml file.
+    FILE = "pyproject.toml"
+
+
 class RequirementsTxt(SimpleNamespace):
     """Requirements.txt constants."""
 

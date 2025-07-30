@@ -1,17 +1,19 @@
 # production-one-port
 
 This docker deployment runs Reflex in prod mode, exposing a single HTTP port:
-  * `8080` (`$PORT`) - Caddy server hosting the frontend statically and proxying requests to the backend.
+
+- `8080` (`$PORT`) - Caddy server hosting the frontend statically and proxying requests to the backend.
 
 The deployment also runs a local Redis server to store state for each user.
 
 Conceptually it is similar to the `simple-one-port` example except it:
-  * has layer caching for python, reflex, and node dependencies
-  * uses multi-stage build to reduce the size of the final image
+
+- has layer caching for python, reflex, and node dependencies
+- uses multi-stage build to reduce the size of the final image
 
 Using this method may be preferable for deploying in memory constrained
 environments, because it serves a static frontend export, rather than running
-the NextJS server via node.
+the Vite server via node.
 
 ## Build
 

@@ -1,11 +1,12 @@
 """Specialized test for a larger state tree."""
 
-from typing import AsyncGenerator
+from collections.abc import AsyncGenerator
 
 import pytest
 import pytest_asyncio
 
 import reflex as rx
+from reflex.constants.state import FIELD_MARKER
 from reflex.state import BaseState, StateManager, StateManagerRedis, _substate_key
 
 
@@ -194,8 +195,8 @@ class SubE_A_A_A_D(SubE_A_A_A):
 
 
 ALWAYS_COMPUTED_VARS = {
-    TreeD.get_full_name(): {"d_var": 1},
-    SubE_A_A_A_A.get_full_name(): {"sub_e_a_a_a_a_var": 1},
+    TreeD.get_full_name(): {"d_var" + FIELD_MARKER: 1},
+    SubE_A_A_A_A.get_full_name(): {"sub_e_a_a_a_a_var" + FIELD_MARKER: 1},
 }
 
 ALWAYS_COMPUTED_DICT_KEYS = [

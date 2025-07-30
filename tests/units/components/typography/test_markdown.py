@@ -5,7 +5,7 @@ from reflex.components.markdown import Markdown
 
 
 @pytest.mark.parametrize(
-    "tag,expected",
+    ("tag", "expected"),
     [
         ("h1", "Heading"),
         ("h2", "Heading"),

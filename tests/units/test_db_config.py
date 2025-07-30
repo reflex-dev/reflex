@@ -6,7 +6,7 @@ from reflex.config import DBConfig
 
 
 @pytest.mark.parametrize(
-    "engine,username,password,host,port,database,expected_url",
+    ("engine", "username", "password", "host", "port", "database", "expected_url"),
     [
         (
             "postgresql",
@@ -116,7 +116,7 @@ def test_constructor_sqlite():
 
 
 @pytest.mark.parametrize(
-    "username,password,host,port,database,expected_url",
+    ("username", "password", "host", "port", "database", "expected_url"),
     [
         (
             "user",
@@ -156,7 +156,7 @@ def test_constructor_postgresql(username, password, host, port, database, expect
 
 
 @pytest.mark.parametrize(
-    "username,password,host,port,database,expected_url",
+    ("username", "password", "host", "port", "database", "expected_url"),
     [
         (
             "user",

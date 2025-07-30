@@ -1,4 +1,6 @@
 name: performance-tests
+permissions:
+  contents: read
 
 on:
   push:
@@ -10,7 +12,7 @@ on:
   workflow_dispatch:
 
 env:
-  TELEMETRY_ENABLED: false
+  REFLEX_TELEMETRY_ENABLED: false
   NODE_OPTIONS: "--max_old_space_size=8192"
   PR_TITLE: ${{ github.event.pull_request.title }}
   APP_HARNESS_HEADLESS: 1
@@ -22,13 +24,20 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: ./.github/actions/setup_build_env
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
         with:
-          python-version: 3.12.8
-          run-poetry-install: true
-          create-venv-at-path: .venv
+          python-version: "3.13"
+
+      - name: Install dependencies
+        run: uv sync --all-extras --dev
+
       - name: Run benchmarks
         uses: CodSpeedHQ/action@v3
         with:
           token: ${{ secrets.CODSPEED_TOKEN }}
-          run: poetry run pytest tests/benchmarks --codspeed
+          run: uv run pytest -v tests/benchmarks --codspeed

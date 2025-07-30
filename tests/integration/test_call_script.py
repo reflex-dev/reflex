@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Generator
+from collections.abc import Generator
 
 import pytest
 from selenium.webdriver.common.by import By
@@ -16,7 +16,6 @@ from .utils import SessionStorage
 def CallScript():
     """A test app for browser javascript integration."""
     from pathlib import Path
-    from typing import Optional, Union
 
     import reflex as rx
 
@@ -43,11 +42,11 @@ def CallScript():
     external_scripts = inline_scripts.replace("inline", "external")
 
     class CallScriptState(rx.State):
-        results: rx.Field[list[Optional[Union[str, dict, list]]]] = rx.field([])
+        results: rx.Field[list[str | dict | list | None]] = rx.field([])
         inline_counter: rx.Field[int] = rx.field(0)
         external_counter: rx.Field[int] = rx.field(0)
         value: str = "Initial"
-        last_result: int = 0
+        last_result: rx.Field[int] = rx.field(0)
 
         @rx.event
         def call_script_callback(self, result):
@@ -184,23 +183,39 @@ def CallScript():
             )
 
         @rx.event
+        def set_inline_counter(self, value: str):
+            self.inline_counter = int(value)
+
+        @rx.event
+        def set_external_counter(self, value: str):
+            self.external_counter = int(value)
+
+        @rx.event
+        def set_last_result(self, value: str):
+            self.last_result = int(value)
+
+        @rx.event
+        def set_value(self, value: str):
+            self.value = value
+
+        @rx.event
         def reset_(self):
             yield rx.call_script("inline_counter = 0; external_counter = 0")
             self.reset()
 
-    app = rx.App(_state=rx.State)
+    app = rx.App()
     Path("assets/external.js").write_text(external_scripts)
 
     @app.add_page
     def index():
         return rx.vstack(
             rx.input(
-                value=CallScriptState.inline_counter.to(str),
+                value=CallScriptState.inline_counter.to_string(),
                 id="inline_counter",
                 read_only=True,
             ),
             rx.input(
-                value=CallScriptState.external_counter.to(str),
+                value=CallScriptState.external_counter.to_string(),
                 id="external_counter",
                 read_only=True,
             ),
@@ -281,7 +296,7 @@ def CallScript():
             ),
             rx.button("Reset", id="reset", on_click=CallScriptState.reset_),
             rx.input(
-                value=CallScriptState.last_result,
+                value=CallScriptState.last_result.to_string(),
                 id="last_result",
                 read_only=True,
                 on_click=CallScriptState.setvar("last_result", 0),
@@ -391,6 +406,9 @@ def assert_token(driver: WebDriver) -> str:
     """
     ss = SessionStorage(driver)
     assert AppHarness._poll_for(lambda: ss.get("token") is not None), "token not found"
+    assert AppHarness._poll_for(
+        lambda: driver.execute_script("return typeof external4 !== 'undefined'")
+    ), "scripts not loaded"
     return ss.get("token")
 
 
@@ -434,12 +452,7 @@ def test_call_script(
     assert call_script.poll_for_value(counter, exp_not_equal="0") == "4"
     assert (
         call_script.poll_for_value(results, exp_not_equal="[]")
-        == '["%s1",null,{"%s3":42,"a":[1,2,3],"s":"js","o":{"a":1,"b":2}},"async %s4"]'
-        % (
-            script,
-            script,
-            script,
-        )
+        == f'["{script}1",null,{{"{script}3":42,"a":[1,2,3],"s":"js","o":{{"a":1,"b":2}}}},"async {script}4"]'
     )
     reset_button.click()
     assert call_script.poll_for_value(counter, exp_not_equal="4") == "0"
@@ -449,7 +462,7 @@ def test_call_script(
     assert call_script.poll_for_value(counter, exp_not_equal="0") == "1"
     assert (
         call_script.poll_for_value(results, exp_not_equal="[]")
-        == '[{"%s3":42,"a":[1,2,3],"s":"js","o":{"a":1,"b":2}}]' % script
+        == f'[{{"{script}3":42,"a":[1,2,3],"s":"js","o":{{"a":1,"b":2}}}}]'
     )
     reset_button.click()
     assert call_script.poll_for_value(counter, exp_not_equal="1") == "0"
@@ -512,7 +525,7 @@ def test_call_script_w_var(
 
     inline_return_button.click()
     call_with_var_f_string_button.click()
-    assert call_script.poll_for_value(last_result, exp_not_equal="") == "1"
+    assert call_script.poll_for_value(last_result, exp_not_equal=("", "0")) == "1"
 
     inline_return_button.click()
     call_with_var_str_cast_button.click()

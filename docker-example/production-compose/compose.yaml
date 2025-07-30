@@ -9,12 +9,12 @@ services:
   app:
     image: local/reflex-app
     environment:
-      DB_URL: sqlite:///data/reflex.db
+      REFLEX_DB_URL: sqlite:///data/reflex.db
     build:
       context: .
     volumes:
-       - db-data:/app/data
-       - upload-data:/app/uploaded_files
+      - db-data:/app/data
+      - upload-data:/app/uploaded_files
     restart: always
 
   webserver:
@@ -22,12 +22,12 @@ services:
       DOMAIN: ${DOMAIN:-localhost}
     ports:
       - 443:443
-      - 80:80  # For acme-challenge via HTTP.
+      - 80:80 # For acme-challenge via HTTP.
     build:
       context: .
       dockerfile: Caddy.Dockerfile
     volumes:
-       - caddy-data:/root/.caddy
+      - caddy-data:/root/.caddy
     restart: always
     depends_on:
       - app

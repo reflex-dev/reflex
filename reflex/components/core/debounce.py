@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any, Type, Union
+from typing import Any
 
 from reflex.components.component import Component
 from reflex.constants import EventTriggers
@@ -23,6 +23,7 @@ class DebounceInput(Component):
 
     library = "react-debounce-input@3.3.0"
     tag = "DebounceInput"
+    is_default = True
 
     # Minimum input characters before triggering the on_change event
     min_length: Var[int]
@@ -37,13 +38,13 @@ class DebounceInput(Component):
     force_notify_on_blur: Var[bool]
 
     # If provided, create a fully-controlled input
-    value: Var[Union[str, int, float]]
+    value: Var[str | int | float]
 
     # The ref to attach to the created input
     input_ref: Var[str]
 
     # The element to wrap
-    element: Var[Type[Component]]
+    element: Var[type[Component]]
 
     # Fired when the input value changes
     on_change: EventHandler[no_args_event_spec]
@@ -70,14 +71,16 @@ class DebounceInput(Component):
             ValueError: if the child element does not have an on_change handler.
         """
         if len(children) != 1:
-            raise RuntimeError(
+            msg = (
                 "Provide a single child for DebounceInput, such as rx.input() or "
-                "rx.text_area()",
+                "rx.text_area()"
             )
+            raise RuntimeError(msg)
 
         child = children[0]
         if "on_change" not in child.event_triggers:
-            raise ValueError("DebounceInput child requires an on_change handler")
+            msg = "DebounceInput child requires an on_change handler"
+            raise ValueError(msg)
 
         # Carry known props and event_triggers from the child.
         props_from_child = {
@@ -115,7 +118,7 @@ class DebounceInput(Component):
             "element",
             Var(
                 _js_expr=str(child.alias or child.tag),
-                _var_type=Type[Component],
+                _var_type=type[Component],
                 _var_data=VarData(
                     imports=child._get_imports(),
                     hooks=child._get_all_hooks(),
@@ -127,7 +130,7 @@ class DebounceInput(Component):
         component._get_style = child._get_style
         component.event_triggers.update(child.event_triggers)
         component.children = child.children
-        component._rename_props = child._rename_props
+        component._rename_props = child._rename_props  # pyright: ignore[reportAttributeAccessIssue]
         outer_get_all_custom_code = component._get_all_custom_code
         component._get_all_custom_code = lambda: outer_get_all_custom_code().union(
             child._get_all_custom_code()

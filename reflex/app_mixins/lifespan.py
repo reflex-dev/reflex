@@ -7,9 +7,9 @@ import contextlib
 import dataclasses
 import functools
 import inspect
-from typing import Callable, Coroutine, Set, Union
+from collections.abc import Callable, Coroutine
 
-from fastapi import FastAPI
+from starlette.applications import Starlette
 
 from reflex.utils import console
 from reflex.utils.exceptions import InvalidLifespanTaskTypeError
@@ -22,12 +22,12 @@ class LifespanMixin(AppMixin):
     """A Mixin that allow tasks to run during the whole app lifespan."""
 
     # Lifespan tasks that are planned to run.
-    lifespan_tasks: Set[Union[asyncio.Task, Callable]] = dataclasses.field(
+    lifespan_tasks: set[asyncio.Task | Callable] = dataclasses.field(
         default_factory=set
     )
 
     @contextlib.asynccontextmanager
-    async def _run_lifespan_tasks(self, app: FastAPI):
+    async def _run_lifespan_tasks(self, app: Starlette):
         running_tasks = []
         try:
             async with contextlib.AsyncExitStack() as stack:
@@ -67,9 +67,8 @@ class LifespanMixin(AppMixin):
             InvalidLifespanTaskTypeError: If the task is a generator function.
         """
         if inspect.isgeneratorfunction(task) or inspect.isasyncgenfunction(task):
-            raise InvalidLifespanTaskTypeError(
-                f"Task {task.__name__} of type generator must be decorated with contextlib.asynccontextmanager."
-            )
+            msg = f"Task {task.__name__} of type generator must be decorated with contextlib.asynccontextmanager."
+            raise InvalidLifespanTaskTypeError(msg)
 
         if task_kwargs:
             original_task = task

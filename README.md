@@ -1,18 +1,16 @@
-```diff
-+ Searching for Pynecone? You are in the right repo. Pynecone has been renamed to Reflex. +
-```
-
 <div align="center">
-<img src="https://raw.githubusercontent.com/reflex-dev/reflex/main/docs/images/reflex_dark.svg#gh-light-mode-only" alt="Reflex Logo" width="300px">
-<img src="https://raw.githubusercontent.com/reflex-dev/reflex/main/docs/images/reflex_light.svg#gh-dark-mode-only" alt="Reflex Logo" width="300px">
+<img src="https://raw.githubusercontent.com/reflex-dev/reflex/main/docs/images/reflex.svg" alt="Reflex Logo" width="300px">
 
 <hr>
 
 ### **✨ Performant, customizable web apps in pure Python. Deploy in seconds. ✨**
+
 [![PyPI version](https://badge.fury.io/py/reflex.svg)](https://badge.fury.io/py/reflex)
 ![versions](https://img.shields.io/pypi/pyversions/reflex.svg)
 [![Documentation](https://img.shields.io/badge/Documentation%20-Introduction%20-%20%23007ec6)](https://reflex.dev/docs/getting-started/introduction)
+[![PyPI Downloads](https://static.pepy.tech/badge/reflex)](https://pepy.tech/projects/reflex)
 [![Discord](https://img.shields.io/discord/1029853095527727165?color=%237289da&label=Discord)](https://discord.gg/T5WSbC2YtQ)
+
 </div>
 
 ---
@@ -21,14 +19,20 @@
 
 ---
 
-# Reflex
+> [!NOTE]
+> 🚀 **Try [Reflex Build](https://build.reflex.dev/)** – our AI-powered app builder that generates full-stack Reflex applications in seconds.
+
+---
+
+# Introduction
 
 Reflex is a library to build full-stack web apps in pure Python.
 
 Key features:
-* **Pure Python** - Write your app's frontend and backend all in Python, no need to learn Javascript.
-* **Full Flexibility** - Reflex is easy to get started with, but can also scale to complex apps.
-* **Deploy Instantly** - After building, deploy your app with a [single command](https://reflex.dev/docs/hosting/deploy-quick-start/) or host it on your own server.
+
+- **Pure Python** - Write your app's frontend and backend all in Python, no need to learn Javascript.
+- **Full Flexibility** - Reflex is easy to get started with, but can also scale to complex apps.
+- **Deploy Instantly** - After building, deploy your app with a [single command](https://reflex.dev/docs/hosting/deploy-quick-start/) or host it on your own server.
 
 See our [architecture page](https://reflex.dev/blog/2024-03-21-reflex-architecture/#the-reflex-architecture) to learn how Reflex works under the hood.
 
@@ -52,7 +56,7 @@ cd my_app_name
 reflex init
 ```
 
-This command initializes a template app in your new directory. 
+This command initializes a template app in your new directory.
 
 You can run this app in development mode:
 
@@ -63,7 +67,6 @@ reflex run
 You should see your app running at http://localhost:3000.
 
 Now you can modify the source code in `my_app_name/my_app_name.py`. Reflex has fast refreshes so you can see your changes instantly when you save your code.
-
 
 ## 🫧 Example App
 
@@ -79,8 +82,6 @@ Let's go over an example: creating an image generation UI around [DALL·E](https
 
 Here is the complete code to create this. This is all done in one Python file!
 
-
-  
 ```python
 import reflex as rx
 import openai
@@ -120,7 +121,7 @@ def index():
                 width="25em",
             ),
             rx.button(
-                "Generate Image", 
+                "Generate Image",
                 on_click=State.get_image,
                 width="25em",
                 loading=State.processing
@@ -140,16 +141,11 @@ app = rx.App()
 app.add_page(index, title="Reflex:DALL-E")
 ```
 
-
-
-
-
 ## Let's break this down.
 
 <div align="center">
-<img src="docs/images/dalle_colored_code_example.png" alt="Explaining the differences between backend and frontend parts of the DALL-E app." width="900" />
+<img src="https://raw.githubusercontent.com/reflex-dev/reflex/main/docs/images/dalle_colored_code_example.png" alt="Explaining the differences between backend and frontend parts of the DALL-E app." width="900" />
 </div>
-
 
 ### **Reflex UI**
 
@@ -228,16 +224,18 @@ You can create a multi-page app by adding more pages.
 
 <div align="center">
 
-📑 [Docs](https://reflex.dev/docs/getting-started/introduction) &nbsp; |  &nbsp; 🗞️ [Blog](https://reflex.dev/blog) &nbsp; |  &nbsp; 📱 [Component Library](https://reflex.dev/docs/library) &nbsp; |  &nbsp; 🖼️ [Templates](https://reflex.dev/templates/) &nbsp; |  &nbsp; 🛸 [Deployment](https://reflex.dev/docs/hosting/deploy-quick-start)  &nbsp;   
+📑 [Docs](https://reflex.dev/docs/getting-started/introduction) &nbsp; | &nbsp; 🗞️ [Blog](https://reflex.dev/blog) &nbsp; | &nbsp; 📱 [Component Library](https://reflex.dev/docs/library) &nbsp; | &nbsp; 🖼️ [Templates](https://reflex.dev/templates/) &nbsp; | &nbsp; 🛸 [Deployment](https://reflex.dev/docs/hosting/deploy-quick-start) &nbsp;
 
 </div>
-
 
 ## ✅ Status
 
 Reflex launched in December 2022 with the name Pynecone.
 
-As of February 2024, our hosting service is in alpha! During this time anyone can deploy their apps for free. See our [roadmap](https://github.com/reflex-dev/reflex/issues/2727) to see what's planned.
+🚀 Introducing [Reflex Build](https://build.reflex.dev/) — Our AI-Powered Builder
+Reflex Build uses AI to generate complete full-stack Python applications. It helps you quickly create, customize, and refine your Reflex apps — from frontend components to backend logic — so you can focus on your ideas instead of boilerplate code. Whether you’re prototyping or scaling, Reflex Build accelerates development by intelligently scaffolding and optimizing your app’s entire stack.
+
+Alongside this, [Reflex Cloud](https://cloud.reflex.dev) launched in 2025 to offer the best hosting experience for your Reflex apps. We’re continuously improving the platform with new features and capabilities.
 
 Reflex has new releases and features coming every week! Make sure to :star: star and :eyes: watch this repository to stay up to date.
 
@@ -245,18 +243,18 @@ Reflex has new releases and features coming every week! Make sure to :star: star
 
 We welcome contributions of any size! Below are some good ways to get started in the Reflex community.
 
--   **Join Our Discord**: Our [Discord](https://discord.gg/T5WSbC2YtQ) is the best place to get help on your Reflex project and to discuss how you can contribute.
--   **GitHub Discussions**: A great way to talk about features you want added or things that are confusing/need clarification.
--   **GitHub Issues**: [Issues](https://github.com/reflex-dev/reflex/issues) are an excellent way to report bugs. Additionally, you can try and solve an existing issue and submit a PR.
+- **Join Our Discord**: Our [Discord](https://discord.gg/T5WSbC2YtQ) is the best place to get help on your Reflex project and to discuss how you can contribute.
+- **GitHub Discussions**: A great way to talk about features you want added or things that are confusing/need clarification.
+- **GitHub Issues**: [Issues](https://github.com/reflex-dev/reflex/issues) are an excellent way to report bugs. Additionally, you can try and solve an existing issue and submit a PR.
 
 We are actively looking for contributors, no matter your skill level or experience. To contribute check out [CONTRIBUTING.md](https://github.com/reflex-dev/reflex/blob/main/CONTRIBUTING.md)
 
-
 ## All Thanks To Our Contributors:
+
 <a href="https://github.com/reflex-dev/reflex/graphs/contributors">
   <img src="https://contrib.rocks/image?repo=reflex-dev/reflex" />
 </a>
 
 ## License
 
-Reflex is open-source and licensed under the [Apache License 2.0](LICENSE).
+Reflex is open-source and licensed under the [Apache License 2.0](https://raw.githubusercontent.com/reflex-dev/reflex/main/LICENSE).

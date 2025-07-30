@@ -285,13 +285,6 @@ class BenchmarkState(rx.State):
 LOREM_IPSUM = "Lorem ipsum dolor sit amet, dolor ut dolore pariatur aliqua enim tempor sed. Labore excepteur sed exercitation. Ullamco aliquip lorem sunt enim in incididunt. Magna anim officia sint cillum labore. Ut eu non dolore minim nostrud magna eu, aute ex in incididunt irure eu. Fugiat et magna magna est excepteur eiusmod minim. Quis eiusmod et non pariatur dolor veniam incididunt, eiusmod irure enim sed dolor lorem pariatur do. Occaecat duis irure excepteur dolore. Proident ut laborum pariatur sit sit, nisi nostrud voluptate magna commodo laborum esse velit. Voluptate non minim deserunt adipiscing irure deserunt cupidatat. Laboris veniam commodo incididunt veniam lorem occaecat, fugiat ipsum dolor cupidatat. Ea officia sed eu excepteur culpa adipiscing, tempor consectetur ullamco eu. Anim ex proident nulla sunt culpa, voluptate veniam proident est adipiscing sint elit velit. Laboris adipiscing est culpa cillum magna. Sit veniam nulla nulla, aliqua eiusmod commodo lorem cupidatat commodo occaecat. Fugiat cillum dolor incididunt mollit eiusmod sint. Non lorem dolore labore excepteur minim laborum sed. Irure nisi do lorem nulla sunt commodo, deserunt quis mollit consectetur minim et esse est, proident nostrud officia enim sed reprehenderit. Magna cillum consequat aute reprehenderit duis sunt ullamco. Labore qui mollit voluptate. Duis dolor sint aute amet aliquip officia, est non mollit tempor enim quis fugiat, eu do culpa consectetur magna. Do ullamco aliqua voluptate culpa excepteur reprehenderit reprehenderit. Occaecat nulla sit est magna. Deserunt ea voluptate veniam cillum. Amet cupidatat duis est tempor fugiat ex eu, officia est sunt consectetur labore esse exercitation. Nisi cupidatat irure est nisi. Officia amet eu veniam reprehenderit. In amet incididunt tempor commodo ea labore. Mollit dolor aliquip excepteur, voluptate aute occaecat id officia proident. Ullamco est amet tempor. Proident aliquip proident mollit do aliquip ipsum, culpa quis aute id irure. Velit excepteur cillum cillum ut cupidatat. Occaecat qui elit esse nulla minim. Consequat velit id ad pariatur tempor. Eiusmod deserunt aliqua ex sed quis non. Dolor sint commodo ex in deserunt nostrud excepteur, pariatur ex aliqua anim adipiscing amet proident. Laboris eu laborum magna lorem ipsum fugiat velit."
 
 
-def _simple_page():
-    return rx.box(
-        rx.heading("Simple Page", size="1"),
-        rx.text(LOREM_IPSUM),
-    )
-
-
 def _complicated_page():
     return rx.hstack(
         side_bar(),
@@ -373,11 +366,11 @@ def _stateful_page():
     )
 
 
-@pytest.fixture(params=[_simple_page, _complicated_page, _stateful_page])
+@pytest.fixture(params=[_complicated_page, _stateful_page])
 def unevaluated_page(request: pytest.FixtureRequest):
     return request.param
 
 
-@pytest.fixture(params=[_simple_page, _complicated_page, _stateful_page])
+@pytest.fixture(params=[_complicated_page, _stateful_page])
 def evaluated_page(request: pytest.FixtureRequest):
     return request.param()

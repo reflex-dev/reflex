@@ -13,6 +13,9 @@ on:
     branches: ["main"]
     paths-ignore:
       - "**/*.md"
+env:
+  APP_HARNESS_HEADLESS: 1
+  PYTHONUNBUFFERED: 1
 
 permissions:
   contents: read
@@ -23,7 +26,7 @@ jobs:
     strategy:
       matrix:
         state_manager: ["redis", "memory"]
-        python-version: ["3.11.11", "3.12.8", "3.13.1"]
+        python-version: ["3.11", "3.12", "3.13"]
         split_index: [1, 2]
       fail-fast: false
     runs-on: ubuntu-22.04
@@ -45,12 +48,11 @@ jobs:
       - uses: ./.github/actions/setup_build_env
         with:
           python-version: ${{ matrix.python-version }}
-          run-poetry-install: true
-          create-venv-at-path: .venv
-      - run: poetry run uv pip install pyvirtualdisplay pillow pytest-split pytest-retry
+          run-uv-sync: true
+
       - name: Run app harness tests
         env:
-          REDIS_URL: ${{ matrix.state_manager == 'redis' && 'redis://localhost:6379' || '' }}
+          REFLEX_REDIS_URL: ${{ matrix.state_manager == 'redis' && 'redis://localhost:6379' || '' }}
         run: |
-          poetry run playwright install chromium
-          poetry run pytest tests/integration --retries 3 --maxfail=5 --splits 2 --group ${{matrix.split_index}}
+          uv run playwright install chromium
+          uv run pytest tests/integration --retries 3 -v --maxfail=5 --splits 2 --group ${{matrix.split_index}}

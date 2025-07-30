@@ -2,10 +2,12 @@
 
 from __future__ import annotations
 
-from typing import Any, Iterable, Literal, Union
+from collections.abc import Iterable
+from typing import Any, Literal
 
-from reflex.components.component import Component, ComponentNamespace
+from reflex.components.component import ComponentNamespace
 from reflex.components.core.foreach import Foreach
+from reflex.components.el.elements.base import BaseHTML
 from reflex.components.el.elements.typography import Li, Ol, Ul
 from reflex.components.lucide.icon import Icon
 from reflex.components.markdown.markdown import MarkdownComponentMap
@@ -37,14 +39,14 @@ LiteralListStyleTypeOrdered = Literal[
 ]
 
 
-class BaseList(Component, MarkdownComponentMap):
+class BaseList(BaseHTML, MarkdownComponentMap):
     """Base class for ordered and unordered lists."""
 
     tag = "ul"
 
     # The style of the list. Default to "none".
     list_style_type: Var[
-        Union[LiteralListStyleTypeUnordered, LiteralListStyleTypeOrdered]
+        LiteralListStyleTypeUnordered | LiteralListStyleTypeOrdered
     ] = Var.create("none")
 
     # A list of items to add to the list.
@@ -168,7 +170,7 @@ class ListItem(Li, MarkdownComponentMap):
         """
         for child in children:
             if isinstance(child, Text):
-                child.as_ = "span"
+                child.as_ = "span"  # pyright: ignore[reportAttributeAccessIssue]
             elif isinstance(child, Icon) and "display" not in child.style:
                 child.style["display"] = "inline"
         return super().create(*children, **props)
@@ -197,4 +199,5 @@ def __getattr__(name: Any):
     try:
         return globals()[name]
     except KeyError:
-        raise AttributeError(f"module '{__name__} has no attribute '{name}'") from None
+        msg = f"module '{__name__} has no attribute '{name}'"
+        raise AttributeError(msg) from None

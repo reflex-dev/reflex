@@ -7,8 +7,9 @@ import dataclasses
 import dis
 import enum
 import inspect
+import sys
 from types import CellType, CodeType, FunctionType
-from typing import TYPE_CHECKING, Any, ClassVar, Type, cast
+from typing import TYPE_CHECKING, Any, ClassVar, cast
 
 from reflex.utils.exceptions import VarValueError
 
@@ -50,19 +51,17 @@ class DependencyTracker:
     """State machine for identifying state attributes that are accessed by a function."""
 
     func: FunctionType | CodeType = dataclasses.field()
-    state_cls: Type[BaseState] = dataclasses.field()
+    state_cls: type[BaseState] = dataclasses.field()
 
     dependencies: dict[str, set[str]] = dataclasses.field(default_factory=dict)
 
     scan_status: ScanStatus = dataclasses.field(default=ScanStatus.SCANNING)
     top_of_stack: str | None = dataclasses.field(default=None)
 
-    tracked_locals: dict[str, Type[BaseState]] = dataclasses.field(default_factory=dict)
+    tracked_locals: dict[str, type[BaseState]] = dataclasses.field(default_factory=dict)
 
-    _getting_state_class: Type[BaseState] | None = dataclasses.field(default=None)
-    _getting_var_instructions: list[dis.Instruction] = dataclasses.field(
-        default_factory=list
-    )
+    _getting_state_class: type[BaseState] | None = dataclasses.field(default=None)
+    _get_var_value_positions: dis.Positions | None = dataclasses.field(default=None)
 
     INVALID_NAMES: ClassVar[list[str]] = ["parent_state", "substates", "get_substate"]
 
@@ -73,7 +72,7 @@ class DependencyTracker:
             self.func = cast(FunctionType, self.func.func)  # pyright: ignore[reportAttributeAccessIssue]
         with contextlib.suppress(AttributeError):
             # unbox EventHandler
-            self.func = cast(FunctionType, self.func.fn)  # pyright: ignore[reportAttributeAccessIssue]
+            self.func = cast(FunctionType, self.func.fn)  # pyright: ignore[reportAttributeAccessIssue,reportFunctionMemberAccess]
 
         if isinstance(self.func, FunctionType):
             with contextlib.suppress(AttributeError, IndexError):
@@ -106,15 +105,16 @@ class DependencyTracker:
         from .base import ComputedVar
 
         if instruction.argval in self.INVALID_NAMES:
-            raise VarValueError(
-                f"Cached var {self!s} cannot access arbitrary state via `{instruction.argval}`."
-            )
+            msg = f"Cached var {self!s} cannot access arbitrary state via `{instruction.argval}`."
+            raise VarValueError(msg)
         if instruction.argval == "get_state":
             # Special case: arbitrary state access requested.
             self.scan_status = ScanStatus.GETTING_STATE
             return
         if instruction.argval == "get_var_value":
             # Special case: arbitrary var access requested.
+            if sys.version_info >= (3, 11):
+                self._get_var_value_positions = instruction.positions
             self.scan_status = ScanStatus.GETTING_VAR
             return
 
@@ -193,43 +193,41 @@ class DependencyTracker:
         from reflex.state import BaseState
 
         if instruction.opname == "LOAD_FAST":
-            raise VarValueError(
-                f"Dependency detection cannot identify get_state class from local var {instruction.argval}."
-            )
+            msg = f"Dependency detection cannot identify get_state class from local var {instruction.argval}."
+            raise VarValueError(msg)
         if isinstance(self.func, CodeType):
-            raise VarValueError(
-                "Dependency detection cannot identify get_state class from a code object."
-            )
+            msg = "Dependency detection cannot identify get_state class from a code object."
+            raise VarValueError(msg)
         if instruction.opname == "LOAD_GLOBAL":
             # Special case: referencing state class from global scope.
             try:
                 self._getting_state_class = self._get_globals()[instruction.argval]
             except (ValueError, KeyError) as ve:
-                raise VarValueError(
-                    f"Cached var {self!s} cannot access arbitrary state `{instruction.argval}`, not found in globals."
-                ) from ve
+                msg = f"Cached var {self!s} cannot access arbitrary state `{instruction.argval}`, not found in globals."
+                raise VarValueError(msg) from ve
         elif instruction.opname == "LOAD_DEREF":
             # Special case: referencing state class from closure.
             try:
                 self._getting_state_class = self._get_closure()[instruction.argval]
             except (ValueError, KeyError) as ve:
-                raise VarValueError(
-                    f"Cached var {self!s} cannot access arbitrary state `{instruction.argval}`, is it defined yet?"
-                ) from ve
+                msg = f"Cached var {self!s} cannot access arbitrary state `{instruction.argval}`, is it defined yet?"
+                raise VarValueError(msg) from ve
         elif instruction.opname == "STORE_FAST":
             # Storing the result of get_state in a local variable.
             if not isinstance(self._getting_state_class, type) or not issubclass(
                 self._getting_state_class, BaseState
             ):
-                raise VarValueError(
-                    f"Cached var {self!s} cannot determine dependencies in fetched state `{instruction.argval}`."
-                )
+                msg = f"Cached var {self!s} cannot determine dependencies in fetched state `{instruction.argval}`."
+                raise VarValueError(msg)
             self.tracked_locals[instruction.argval] = self._getting_state_class
             self.scan_status = ScanStatus.SCANNING
             self._getting_state_class = None
 
-    def _eval_var(self) -> Var:
+    def _eval_var(self, positions: dis.Positions) -> Var:
         """Evaluate instructions from the wrapped function to get the Var object.
+
+        Args:
+            positions: The disassembly positions of the get_var_value call.
 
         Returns:
             The Var object.
@@ -239,37 +237,29 @@ class DependencyTracker:
         """
         # Get the original source code and eval it to get the Var.
         module = inspect.getmodule(self.func)
-        positions0 = self._getting_var_instructions[0].positions
-        positions1 = self._getting_var_instructions[-1].positions
-        if module is None or positions0 is None or positions1 is None:
-            raise VarValueError(
-                f"Cannot determine the source code for the var in {self.func!r}."
-            )
-        start_line = positions0.lineno
-        start_column = positions0.col_offset
-        end_line = positions1.end_lineno
-        end_column = positions1.end_col_offset
+        if module is None or self._get_var_value_positions is None:
+            msg = f"Cannot determine the source code for the var in {self.func!r}."
+            raise VarValueError(msg)
+        start_line = self._get_var_value_positions.end_lineno
+        start_column = self._get_var_value_positions.end_col_offset
+        end_line = positions.end_lineno
+        end_column = positions.end_col_offset
         if (
             start_line is None
             or start_column is None
             or end_line is None
             or end_column is None
         ):
-            raise VarValueError(
-                f"Cannot determine the source code for the var in {self.func!r}."
-            )
+            msg = f"Cannot determine the source code for the var in {self.func!r}."
+            raise VarValueError(msg)
         source = inspect.getsource(module).splitlines(True)[start_line - 1 : end_line]
         # Create a python source string snippet.
         if len(source) > 1:
             snipped_source = "".join(
-                [
-                    *source[0][start_column:],
-                    *(source[1:-2] if len(source) > 2 else []),
-                    *source[-1][: end_column - 1],
-                ]
+                [*source[0][start_column:], *source[1:-1], *source[-1][:end_column]]
             )
         else:
-            snipped_source = source[0][start_column : end_column - 1]
+            snipped_source = source[0][start_column:end_column]
         # Evaluate the string in the context of the function's globals and closure.
         return eval(f"({snipped_source})", self._get_globals(), self._get_closure())
 
@@ -287,21 +277,19 @@ class DependencyTracker:
         Raises:
             VarValueError: if the source code for the var cannot be determined.
         """
-        if instruction.opname == "CALL" and self._getting_var_instructions:
-            if self._getting_var_instructions:
-                the_var = self._eval_var()
-                the_var_data = the_var._get_all_var_data()
-                if the_var_data is None:
-                    raise VarValueError(
-                        f"Cannot determine the source code for the var in {self.func!r}."
-                    )
-                self.dependencies.setdefault(the_var_data.state, set()).add(
-                    the_var_data.field_name
-                )
-            self._getting_var_instructions.clear()
+        if instruction.opname == "CALL":
+            if instruction.positions is None:
+                msg = f"Cannot determine the source code for the var in {self.func!r}."
+                raise VarValueError(msg)
+            the_var = self._eval_var(instruction.positions)
+            the_var_data = the_var._get_all_var_data()
+            if the_var_data is None:
+                msg = f"Cannot determine the source code for the var in {self.func!r}."
+                raise VarValueError(msg)
+            self.dependencies.setdefault(the_var_data.state, set()).add(
+                the_var_data.field_name
+            )
             self.scan_status = ScanStatus.SCANNING
-        else:
-            self._getting_var_instructions.append(instruction)
 
     def _populate_dependencies(self) -> None:
         """Update self.dependencies based on the disassembly of self.func.

@@ -2,13 +2,14 @@
 
 from __future__ import annotations
 
-from typing import Any, Dict, Optional, overload
+from typing import Any, overload
 
 from reflex.components.base.fragment import Fragment
-from reflex.components.component import BaseComponent, Component, MemoizationLeaf
+from reflex.components.component import BaseComponent, Component
 from reflex.components.tags import CondTag, Tag
 from reflex.constants import Dirs
 from reflex.style import LIGHT_COLOR_MODE, resolved_color_mode
+from reflex.utils import types
 from reflex.utils.imports import ImportDict, ImportVar
 from reflex.vars import VarData
 from reflex.vars.base import LiteralVar, Var
@@ -19,23 +20,18 @@ _IS_TRUE_IMPORT: ImportDict = {
 }
 
 
-class Cond(MemoizationLeaf):
+class Cond(Component):
     """Render one of two components based on a condition."""
 
     # The cond to determine which component to render.
     cond: Var[Any]
-
-    # The component to render if the cond is true.
-    comp1: BaseComponent | None = None
-    # The component to render if the cond is false.
-    comp2: BaseComponent | None = None
 
     @classmethod
     def create(
         cls,
         cond: Var,
         comp1: BaseComponent,
-        comp2: Optional[BaseComponent] = None,
+        comp2: BaseComponent | types.Unset = types.Unset(),
     ) -> Component:
         """Create a conditional component.
 
@@ -48,27 +44,29 @@ class Cond(MemoizationLeaf):
             The conditional component.
         """
         # Wrap everything in fragments.
-        if type(comp1).__name__ != "Fragment":
+        if type(comp1) is not Fragment:
             comp1 = Fragment.create(comp1)
-        if comp2 is None or type(comp2).__name__ != "Fragment":
-            comp2 = Fragment.create(comp2) if comp2 else Fragment.create()
+        if isinstance(comp2, types.Unset) or type(comp2) is not Fragment:
+            comp2 = (
+                Fragment.create(comp2)
+                if not isinstance(comp2, types.Unset)
+                else Fragment.create()
+            )
         return Fragment.create(
-            cls(
-                cond=cond,
-                comp1=comp1,
-                comp2=comp2,
+            cls._create(
                 children=[comp1, comp2],
+                cond=cond,
             )
         )
 
     def _render(self) -> Tag:
         return CondTag(
             cond=self.cond,
-            true_value=self.comp1.render(),  # pyright: ignore [reportOptionalMemberAccess]
-            false_value=self.comp2.render(),  # pyright: ignore [reportOptionalMemberAccess]
+            true_value=self.children[0].render(),
+            false_value=self.children[1].render(),
         )
 
-    def render(self) -> Dict:
+    def render(self) -> dict:
         """Render the component.
 
         Returns:
@@ -85,7 +83,7 @@ class Cond(MemoizationLeaf):
             ).set(
                 props=tag.format_props(),
             ),
-            cond_state=f"isTrue({self.cond!s})",
+            cond_state=str(self.cond),
         )
 
     def add_imports(self) -> ImportDict:
@@ -102,18 +100,22 @@ class Cond(MemoizationLeaf):
 
 
 @overload
-def cond(condition: Any, c1: Component, c2: Any) -> Component: ...  # pyright: ignore [reportOverlappingOverload]
+def cond(condition: Any, c1: Component, c2: Any, /) -> Component: ...  # pyright: ignore [reportOverlappingOverload]
 
 
 @overload
-def cond(condition: Any, c1: Component) -> Component: ...
+def cond(condition: Any, c1: Component, /) -> Component: ...
 
 
 @overload
-def cond(condition: Any, c1: Any, c2: Any) -> Var: ...
+def cond(condition: Any, c1: Any, c2: Component, /) -> Component: ...  # pyright: ignore [reportOverlappingOverload]
 
 
-def cond(condition: Any, c1: Any, c2: Any = None) -> Component | Var:
+@overload
+def cond(condition: Any, c1: Any, c2: Any, /) -> Var: ...
+
+
+def cond(condition: Any, c1: Any, c2: Any = types.Unset(), /) -> Component | Var:
     """Create a conditional component or Prop.
 
     Args:
@@ -130,35 +132,35 @@ def cond(condition: Any, c1: Any, c2: Any = None) -> Component | Var:
     # Convert the condition to a Var.
     cond_var = LiteralVar.create(condition)
     if cond_var is None:
-        raise ValueError("The condition must be set.")
+        msg = "The condition must be set."
+        raise ValueError(msg)
 
     # If the first component is a component, create a Cond component.
     if isinstance(c1, BaseComponent):
-        if c2 is not None and not isinstance(c2, BaseComponent):
-            raise ValueError("Both arguments must be components.")
-        return Cond.create(cond_var, c1, c2)
+        if not isinstance(c2, types.Unset) and not isinstance(c2, BaseComponent):
+            return Cond.create(cond_var.bool(), c1, Fragment.create(c2))
+        return Cond.create(cond_var.bool(), c1, c2)
 
     # Otherwise, create a conditional Var.
     # Check that the second argument is valid.
     if isinstance(c2, BaseComponent):
-        raise ValueError("Both arguments must be props.")
-    if c2 is None:
-        raise ValueError("For conditional vars, the second argument must be set.")
-
-    def create_var(cond_part: Any) -> Var[Any]:
-        return LiteralVar.create(cond_part)
+        return Cond.create(cond_var.bool(), Fragment.create(c1), c2)
+    if isinstance(c2, types.Unset):
+        msg = "For conditional vars, the second argument must be set."
+        raise ValueError(msg)
 
     # convert the truth and false cond parts into vars so the _var_data can be obtained.
-    c1 = create_var(c1)
-    c2 = create_var(c2)
+    c1_var = Var.create(c1)
+    c2_var = Var.create(c2)
+
+    if c1_var is cond_var or c1_var.equals(cond_var):
+        c1_var = c1_var.to(types.value_inside_optional(c1_var._var_type))
 
     # Create the conditional var.
     return ternary_operation(
-        cond_var.bool()._replace(
-            merge_var_data=VarData(imports=_IS_TRUE_IMPORT),
-        ),
-        c1,
-        c2,
+        cond_var.bool(),
+        c1_var,
+        c2_var,
     )
 
 

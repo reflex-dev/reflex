@@ -1,4 +1,6 @@
 name: check-outdated-dependencies
+permissions:
+  contents: read
 
 on:
   push: # This will trigger the action when a pull request is opened or updated.
@@ -16,13 +18,12 @@ jobs:
 
       - uses: ./.github/actions/setup_build_env
         with:
-          python-version: '3.10'
-          run-poetry-install: true
-          create-venv-at-path: .venv
+          python-version: 3.13
+          run-uv-sync: true
 
       - name: Check outdated backend dependencies
         run: |
-          outdated=$(poetry show -oT)
+          outdated=$(uv pip list --outdated)
           echo "Outdated:"
           echo "$outdated"
 
@@ -44,26 +45,27 @@ jobs:
         uses: actions/checkout@v4
       - uses: ./.github/actions/setup_build_env
         with:
-          python-version: "3.10.16"
-          run-poetry-install: true
-          create-venv-at-path: .venv
+          python-version: 3.13
+          run-uv-sync: true
+
       - name: Clone Reflex Website Repo
         uses: actions/checkout@v4
         with:
           repository: reflex-dev/reflex-web
           ref: main
           path: reflex-web
+      - name: Compile pyproject.toml into requirements.txt
+        working-directory: ./reflex-web
+        run: uv pip compile pyproject.toml --no-annotate --no-header --no-deps --output-file requirements.txt
       - name: Install Requirements for reflex-web
         working-directory: ./reflex-web
-        run: poetry run uv pip install $(grep -ivE "reflex " requirements.txt)
-      - name: Install additional dependencies for DB access
-        run: poetry run uv pip install psycopg
+        run: uv pip install $(grep -ivE "reflex " requirements.txt)
       - name: Init Website for reflex-web
         working-directory: ./reflex-web
-        run: poetry run reflex init
+        run: uv run reflex init
       - name: Run Website and Check for errors
         run: |
-          poetry run bash scripts/integration.sh ./reflex-web dev
+          uv run bash scripts/integration.sh ./reflex-web dev
       - name: Check outdated frontend dependencies
         working-directory: ./reflex-web/.web
         run: |

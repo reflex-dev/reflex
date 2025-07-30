@@ -3,59 +3,142 @@
 from __future__ import annotations
 
 import hashlib
+import importlib.util
 import json
 import os
 import platform
 import re
 import subprocess
 import sys
+from collections.abc import Sequence
 from pathlib import Path
-from typing import Sequence
+from typing import Any, NamedTuple, TypedDict
 from urllib.parse import urljoin
 
-import psutil
-
 from reflex import constants
-from reflex.config import environment, get_config
+from reflex.config import get_config
 from reflex.constants.base import LogLevel
+from reflex.environment import environment
 from reflex.utils import console, path_ops
+from reflex.utils.decorator import once
+from reflex.utils.misc import get_module_path
 from reflex.utils.prerequisites import get_web_dir
 
 # For uvicorn windows bug fix (#2335)
 frontend_process = None
 
 
-def detect_package_change(json_file_path: Path) -> str:
-    """Calculates the SHA-256 hash of a JSON file and returns it as a hexadecimal string.
+def get_package_json_and_hash(package_json_path: Path) -> tuple[PackageJson, str]:
+    """Get the content of package.json and its hash.
 
     Args:
-        json_file_path: The path to the JSON file to be hashed.
+        package_json_path: The path to the package.json file.
 
     Returns:
-        str: The SHA-256 hash of the JSON file as a hexadecimal string.
-
-    Example:
-        >>> detect_package_change("package.json")
-        'a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6q7r8s9t0u1v2w3x4y5z6a7b8c9d0e1f2'
+        A tuple containing the content of package.json as a dictionary and its SHA-256 hash.
     """
-    with json_file_path.open("r") as file:
+    with package_json_path.open("r") as file:
         json_data = json.load(file)
 
     # Calculate the hash
     json_string = json.dumps(json_data, sort_keys=True)
     hash_object = hashlib.sha256(json_string.encode())
-    return hash_object.hexdigest()
+    return (json_data, hash_object.hexdigest())
+
+
+class PackageJson(TypedDict):
+    """package.json content."""
+
+    dependencies: dict[str, str]
+    devDependencies: dict[str, str]
+
+
+class Change(NamedTuple):
+    """A named tuple to represent a change in package dependencies."""
+
+    added: set[str]
+    removed: set[str]
+
+
+def format_change(name: str, change: Change) -> str:
+    """Format the change for display.
+
+    Args:
+        name: The name of the change (e.g., "dependencies" or "devDependencies").
+        change: The Change named tuple containing added and removed packages.
+
+    Returns:
+        A formatted string representing the changes.
+    """
+    if not change.added and not change.removed:
+        return ""
+    added_str = ", ".join(sorted(change.added))
+    removed_str = ", ".join(sorted(change.removed))
+    change_str = f"{name}:\n"
+    if change.added:
+        change_str += f"  Added: {added_str}\n"
+    if change.removed:
+        change_str += f"  Removed: {removed_str}\n"
+    return change_str.strip()
+
+
+def get_different_packages(
+    old_package_json_content: PackageJson,
+    new_package_json_content: PackageJson,
+) -> tuple[Change, Change]:
+    """Get the packages that are different between two package JSON contents.
+
+    Args:
+        old_package_json_content: The content of the old package JSON.
+        new_package_json_content: The content of the new package JSON.
+
+    Returns:
+        A tuple containing two `Change` named tuples:
+        - The first `Change` contains the changes in the `dependencies` section.
+        - The second `Change` contains the changes in the `devDependencies` section.
+    """
+
+    def get_changes(old: dict[str, str], new: dict[str, str]) -> Change:
+        """Get the changes between two dictionaries.
+
+        Args:
+            old: The old dictionary of packages.
+            new: The new dictionary of packages.
+
+        Returns:
+            A `Change` named tuple containing the added and removed packages.
+        """
+        old_keys = set(old.keys())
+        new_keys = set(new.keys())
+        added = new_keys - old_keys
+        removed = old_keys - new_keys
+        return Change(added=added, removed=removed)
+
+    dependencies_change = get_changes(
+        old_package_json_content.get("dependencies", {}),
+        new_package_json_content.get("dependencies", {}),
+    )
+    dev_dependencies_change = get_changes(
+        old_package_json_content.get("devDependencies", {}),
+        new_package_json_content.get("devDependencies", {}),
+    )
+
+    return dependencies_change, dev_dependencies_change
 
 
 def kill(proc_pid: int):
     """Kills a process and all its child processes.
 
+    Requires the `psutil` library to be installed.
+
     Args:
-        proc_pid (int): The process ID of the process to be killed.
+        proc_pid: The process ID of the process to be killed.
 
     Example:
         >>> kill(1234)
     """
+    import psutil
+
     process = psutil.Process(proc_pid)
     for proc in process.children(recursive=True):
         proc.kill()
@@ -84,13 +167,18 @@ def run_process_and_launch_url(
     from reflex.utils import processes
 
     json_file_path = get_web_dir() / constants.PackageJson.PATH
-    last_hash = detect_package_change(json_file_path)
+    last_content, last_hash = get_package_json_and_hash(json_file_path)
     process = None
     first_run = True
 
     while True:
         if process is None:
-            kwargs = {}
+            kwargs: dict[str, Any] = {
+                "env": {
+                    **os.environ,
+                    "NO_COLOR": "1",
+                }
+            }
             if constants.IS_WINDOWS and backend_present:
                 kwargs["creationflags"] = subprocess.CREATE_NEW_PROCESS_GROUP  # pyright: ignore [reportAttributeAccessIssue]
             process = processes.new_process(
@@ -103,7 +191,19 @@ def run_process_and_launch_url(
             frontend_process = process
         if process.stdout:
             for line in processes.stream_logs("Starting frontend", process):
-                match = re.search(constants.Next.FRONTEND_LISTENING_REGEX, line)
+                new_content, new_hash = get_package_json_and_hash(json_file_path)
+                if new_hash != last_hash:
+                    dependencies_change, dev_dependencies_change = (
+                        get_different_packages(last_content, new_content)
+                    )
+                    last_content, last_hash = new_content, new_hash
+                    console.info(
+                        "Detected changes in package.json.\n"
+                        + format_change("Dependencies", dependencies_change)
+                        + format_change("Dev Dependencies", dev_dependencies_change)
+                    )
+
+                match = re.search(constants.ReactRouter.FRONTEND_LISTENING_REGEX, line)
                 if match:
                     if first_run:
                         url = match.group(1)
@@ -117,22 +217,8 @@ def run_process_and_launch_url(
                             notify_backend()
                         first_run = False
                     else:
-                        console.print("New packages detected: Updating app...")
-                else:
-                    if any(
-                        x in line for x in ("bin executable does not exist on disk",)
-                    ):
-                        console.error(
-                            "Try setting `REFLEX_USE_NPM=1` and re-running `reflex init` and `reflex run` to use npm instead of bun:\n"
-                            "`REFLEX_USE_NPM=1 reflex init`\n"
-                            "`REFLEX_USE_NPM=1 reflex run`"
-                        )
-                    new_hash = detect_package_change(json_file_path)
-                    if new_hash != last_hash:
-                        last_hash = new_hash
-                        kill(process.pid)
-                        process = None
-                        break  # for line in process.stdout
+                        console.print("Frontend is restarting...")
+
         if process is not None:
             break  # while True
 
@@ -154,7 +240,11 @@ def run_frontend(root: Path, port: str, backend_present: bool = True):
     console.rule("[bold green]App Running")
     os.environ["PORT"] = str(get_config().frontend_port if port is None else port)
     run_process_and_launch_url(
-        [prerequisites.get_package_manager(), "run", "dev"],
+        [
+            *prerequisites.get_js_package_executor(raise_on_none=True)[0],
+            "run",
+            "dev",
+        ],
         backend_present,
     )
 
@@ -176,8 +266,15 @@ def run_frontend_prod(root: Path, port: str, backend_present: bool = True):
     # Run the frontend in production mode.
     console.rule("[bold green]App Running")
     run_process_and_launch_url(
-        [prerequisites.get_package_manager(), "run", "prod"],
+        [*prerequisites.get_js_package_executor(raise_on_none=True)[0], "run", "prod"],
         backend_present,
+    )
+
+
+@once
+def _warn_user_about_uvicorn():
+    console.warn(
+        "Using Uvicorn for backend as it is installed. This behavior will change in 0.8.0 to use Granian by default."
     )
 
 
@@ -187,7 +284,15 @@ def should_use_granian():
     Returns:
         True if Granian should be used.
     """
-    return environment.REFLEX_USE_GRANIAN.get()
+    if environment.REFLEX_USE_GRANIAN.is_set():
+        return environment.REFLEX_USE_GRANIAN.get()
+    if (
+        importlib.util.find_spec("uvicorn") is None
+        or importlib.util.find_spec("gunicorn") is None
+    ):
+        return True
+    _warn_user_about_uvicorn()
+    return False
 
 
 def get_app_module():
@@ -196,22 +301,46 @@ def get_app_module():
     Returns:
         The app module for the backend.
     """
-    return f"reflex.app_module_for_backend:{constants.CompileVars.APP}"
+    return get_config().module
 
 
-def get_granian_target():
-    """Get the Granian target for the backend.
+def get_app_instance():
+    """Get the app module for the backend.
 
     Returns:
-        The Granian target for the backend.
+        The app module for the backend.
     """
-    import reflex
+    return f"{get_app_module()}:{constants.CompileVars.APP}"
 
-    app_module_path = Path(reflex.__file__).parent / "app_module_for_backend.py"
 
-    return (
-        f"{app_module_path!s}:{constants.CompileVars.APP}.{constants.CompileVars.API}"
-    )
+def get_app_file() -> Path:
+    """Get the app file for the backend.
+
+    Returns:
+        The app file for the backend.
+
+    Raises:
+        ImportError: If the app module is not found.
+    """
+    current_working_dir = str(Path.cwd())
+    if current_working_dir not in sys.path:
+        # Add the current working directory to sys.path
+        sys.path.insert(0, current_working_dir)
+    app_module = get_app_module()
+    module_path = get_module_path(app_module)
+    if module_path is None:
+        msg = f"Module {app_module} not found. Make sure the module is installed."
+        raise ImportError(msg)
+    return module_path
+
+
+def get_app_instance_from_file() -> str:
+    """Get the app module for the backend.
+
+    Returns:
+        The app module for the backend.
+    """
+    return f"{get_app_file()}:{constants.CompileVars.APP}"
 
 
 def run_backend(
@@ -238,9 +367,25 @@ def run_backend(
 
     # Run the backend in development mode.
     if should_use_granian():
+        # We import reflex app because this lets granian cache the module
+        import reflex.app  # noqa: F401
+
         run_granian_backend(host, port, loglevel)
     else:
         run_uvicorn_backend(host, port, loglevel)
+
+
+def _has_child_file(directory: Path, file_name: str) -> bool:
+    """Check if a directory has a child file with the given name.
+
+    Args:
+        directory: The directory to check.
+        file_name: The name of the file to look for.
+
+    Returns:
+        True if the directory has a child file with the given name, False otherwise.
+    """
+    return any(child_file.name == file_name for child_file in directory.iterdir())
 
 
 def get_reload_paths() -> Sequence[Path]:
@@ -248,17 +393,35 @@ def get_reload_paths() -> Sequence[Path]:
 
     Returns:
         The reload paths for the backend.
+
+    Raises:
+        RuntimeError: If the `__init__.py` file is found in the app root directory.
     """
     config = get_config()
-    reload_paths = [Path(config.app_name).parent]
-    if config.app_module is not None and config.app_module.__file__:
-        module_path = Path(config.app_module.__file__).resolve().parent
+    reload_paths = [Path.cwd()]
+    app_module = config.module
+    module_path = get_module_path(app_module)
+    if module_path is not None:
+        module_path = module_path.parent
 
-        while module_path.parent.name and any(
-            sibling_file.name == "__init__.py"
-            for sibling_file in module_path.parent.iterdir()
-        ):
-            # go up a level to find dir without `__init__.py`
+        while module_path.parent.name and _has_child_file(module_path, "__init__.py"):
+            if (
+                _has_child_file(module_path, "rxconfig.py")
+                and module_path == Path.cwd()
+            ):
+                init_file = module_path / "__init__.py"
+                init_file_content = init_file.read_text()
+                if init_file_content.strip():
+                    msg = "There should not be an `__init__.py` file in your app root directory"
+                    raise RuntimeError(msg)
+                console.warn(
+                    "Removing `__init__.py` file in the app root directory. "
+                    "This file can cause issues with module imports. "
+                )
+                init_file.unlink()
+                break
+
+            # go up a level to find dir without `__init__.py` or with `rxconfig.py`
             module_path = module_path.parent
 
         reload_paths = [module_path]
@@ -313,13 +476,33 @@ def run_uvicorn_backend(host: str, port: int, loglevel: LogLevel):
     import uvicorn
 
     uvicorn.run(
-        app=f"{get_app_module()}.{constants.CompileVars.API}",
+        app=f"{get_app_instance()}",
+        factory=True,
         host=host,
         port=port,
         log_level=loglevel.value,
         reload=True,
         reload_dirs=list(map(str, get_reload_paths())),
+        reload_delay=0.1,
     )
+
+
+HOTRELOAD_IGNORE_EXTENSIONS = (
+    "txt",
+    "toml",
+    "sqlite",
+    "yaml",
+    "yml",
+    "json",
+    "sh",
+    "bash",
+    "log",
+)
+
+HOTRELOAD_IGNORE_PATTERNS = (
+    *[rf"^.*\.{ext}$" for ext in HOTRELOAD_IGNORE_EXTENSIONS],
+    r"^[^\.]*$",  # Ignore files without an extension
+)
 
 
 def run_granian_backend(host: str, port: int, loglevel: LogLevel):
@@ -331,38 +514,35 @@ def run_granian_backend(host: str, port: int, loglevel: LogLevel):
         loglevel: The log level.
     """
     console.debug("Using Granian for backend")
-    try:
-        from granian import Granian  # pyright: ignore [reportMissingImports]
-        from granian.constants import (  # pyright: ignore [reportMissingImports]
-            Interfaces,
-        )
-        from granian.log import LogLevels  # pyright: ignore [reportMissingImports]
 
-        Granian(
-            target=get_granian_target(),
-            address=host,
-            port=port,
-            interface=Interfaces.ASGI,
-            log_level=LogLevels(loglevel.value),
-            reload=True,
-            reload_paths=get_reload_paths(),
-        ).serve()
-    except ImportError:
-        console.error(
-            'InstallError: REFLEX_USE_GRANIAN is set but `granian` is not installed. (run `pip install "granian[reload]>=1.6.0"`)'
-        )
-        os._exit(1)
+    if environment.REFLEX_STRICT_HOT_RELOAD.get():
+        import multiprocessing
 
+        multiprocessing.set_start_method("spawn", force=True)
 
-def _get_backend_workers():
-    from reflex.utils import processes
+    from granian.constants import Interfaces
+    from granian.log import LogLevels
+    from granian.server import Server as Granian
 
-    config = get_config()
-    return (
-        processes.get_num_workers()
-        if not config.gunicorn_workers
-        else config.gunicorn_workers
+    from reflex.environment import _paths_from_environment
+
+    granian_app = Granian(
+        target=get_app_instance_from_file(),
+        factory=True,
+        address=host,
+        port=port,
+        interface=Interfaces.ASGI,
+        log_level=LogLevels(loglevel.value),
+        reload=True,
+        reload_paths=get_reload_paths(),
+        reload_ignore_worker_failure=True,
+        reload_ignore_patterns=HOTRELOAD_IGNORE_PATTERNS,
+        reload_tick=100,
+        env_files=_paths_from_environment() or None,
+        workers_kill_timeout=2,
     )
+
+    granian_app.serve()
 
 
 def run_backend_prod(
@@ -388,6 +568,12 @@ def run_backend_prod(
         run_uvicorn_backend_prod(host, port, loglevel)
 
 
+def _get_backend_workers():
+    from reflex.utils import processes
+
+    return processes.get_num_workers()
+
+
 def run_uvicorn_backend_prod(host: str, port: int, loglevel: LogLevel):
     """Run the backend in production mode using Uvicorn.
 
@@ -396,50 +582,38 @@ def run_uvicorn_backend_prod(host: str, port: int, loglevel: LogLevel):
         port: The app port
         loglevel: The log level.
     """
+    import os
+    import shlex
+
     from reflex.utils import processes
 
-    config = get_config()
+    app_module = get_app_instance()
 
-    app_module = get_app_module()
-
-    command = (
-        [
+    if constants.IS_WINDOWS:
+        command = [
             "uvicorn",
-            *(
-                [
-                    "--limit-max-requests",
-                    str(config.gunicorn_max_requests),
-                ]
-                if config.gunicorn_max_requests > 0
-                else []
-            ),
-            *("--timeout-keep-alive", str(config.timeout)),
             *("--host", host),
             *("--port", str(port)),
             *("--workers", str(_get_backend_workers())),
+            "--factory",
             app_module,
         ]
-        if constants.IS_WINDOWS
-        else [
+    else:
+        # Parse GUNICORN_CMD_ARGS for user overrides
+        env_args = []
+        if gunicorn_cmd_args := os.environ.get("GUNICORN_CMD_ARGS", ""):
+            env_args = shlex.split(gunicorn_cmd_args)
+
+        # Our default args, then env args (env args win on conflicts)
+        command = [
             "gunicorn",
-            *("--worker-class", config.gunicorn_worker_class),
-            *(
-                [
-                    "--max-requests",
-                    str(config.gunicorn_max_requests),
-                    "--max-requests-jitter",
-                    str(config.gunicorn_max_requests_jitter),
-                ]
-                if config.gunicorn_max_requests > 0
-                else []
-            ),
             "--preload",
-            *("--timeout", str(config.timeout)),
-            *("--bind", f"{host}:{port}"),
+            *("--worker-class", "uvicorn.workers.UvicornH11Worker"),
             *("--threads", str(_get_backend_workers())),
+            *("--bind", f"{host}:{port}"),
+            *env_args,
             f"{app_module}()",
         ]
-    )
 
     command += [
         *("--log-level", loglevel.value),
@@ -463,39 +637,32 @@ def run_granian_backend_prod(host: str, port: int, loglevel: LogLevel):
         port: The app port
         loglevel: The log level.
     """
+    from granian.constants import Interfaces
+
     from reflex.utils import processes
 
-    try:
-        from granian.constants import (  # pyright: ignore [reportMissingImports]
-            Interfaces,
-        )
+    command = [
+        "granian",
+        *("--log-level", "critical"),
+        *("--host", host),
+        *("--port", str(port)),
+        *("--interface", str(Interfaces.ASGI)),
+        *("--factory", get_app_instance_from_file()),
+    ]
 
-        command = [
-            "granian",
-            "--workers",
-            str(_get_backend_workers()),
-            "--log-level",
-            "critical",
-            "--host",
-            host,
-            "--port",
-            str(port),
-            "--interface",
-            str(Interfaces.ASGI),
-            get_granian_target(),
-        ]
-        processes.new_process(
-            command,
-            run=True,
-            show_logs=True,
-            env={
-                environment.REFLEX_SKIP_COMPILE.name: "true"
-            },  # skip compile for prod backend
-        )
-    except ImportError:
-        console.error(
-            'InstallError: REFLEX_USE_GRANIAN is set but `granian` is not installed. (run `pip install "granian[reload]>=1.6.0"`)'
-        )
+    extra_env = {
+        environment.REFLEX_SKIP_COMPILE.name: "true",  # skip compile for prod backend
+    }
+
+    if "GRANIAN_WORKERS" not in os.environ:
+        extra_env["GRANIAN_WORKERS"] = str(_get_backend_workers())
+
+    processes.new_process(
+        command,
+        run=True,
+        show_logs=True,
+        env=extra_env,
+    )
 
 
 def output_system_info():
@@ -517,29 +684,17 @@ def output_system_info():
 
     dependencies = [
         f"[Reflex {constants.Reflex.VERSION} with Python {platform.python_version()} (PATH: {sys.executable})]",
-        f"[Node {prerequisites.get_node_version()} (Expected: {constants.Node.VERSION}) (PATH:{path_ops.get_node_path()})]",
+        f"[Node {prerequisites.get_node_version()} (Minimum: {constants.Node.MIN_VERSION}) (PATH:{path_ops.get_node_path()})]",
     ]
 
     system = platform.system()
 
-    fnm_info = f"[FNM {prerequisites.get_fnm_version()} (Expected: {constants.Fnm.VERSION}) (PATH: {constants.Fnm.EXE})]"
-
-    if system != "Windows" or (
-        system == "Windows" and prerequisites.is_windows_bun_supported()
-    ):
-        dependencies.extend(
-            [
-                fnm_info,
-                f"[Bun {prerequisites.get_bun_version()} (Expected: {constants.Bun.VERSION}) (PATH: {path_ops.get_bun_path()})]",
-            ],
-        )
-    else:
-        dependencies.append(fnm_info)
+    dependencies.append(
+        f"[Bun {prerequisites.get_bun_version()} (Minimum: {constants.Bun.MIN_VERSION}) (PATH: {path_ops.get_bun_path()})]"
+    )
 
     if system == "Linux":
-        import distro  # pyright: ignore[reportMissingImports]
-
-        os_version = distro.name(pretty=True)
+        os_version = platform.freedesktop_os_release().get("PRETTY_NAME", "Unknown")
     else:
         os_version = platform.version()
 
@@ -549,10 +704,10 @@ def output_system_info():
         console.debug(f"{dep}")
 
     console.debug(
-        f"Using package installer at: {prerequisites.get_install_package_manager(on_failure_return_none=True)}"
+        f"Using package installer at: {prerequisites.get_nodejs_compatible_package_managers(raise_on_none=False)}"
     )
     console.debug(
-        f"Using package executer at: {prerequisites.get_package_manager(on_failure_return_none=True)}"
+        f"Using package executer at: {prerequisites.get_js_package_executor(raise_on_none=False)}"
     )
     if system != "Windows":
         console.debug(f"Unzip path: {path_ops.which('unzip')}")

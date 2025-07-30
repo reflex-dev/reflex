@@ -53,17 +53,18 @@ def wait_for_client_redirect(component: Component) -> Component:
         The conditionally rendered component.
     """
     return cond(
-        condition=route_not_found,
-        c1=component,
-        c2=ClientSideRouting.create(),
+        route_not_found,
+        component,
+        ClientSideRouting.create(),
     )
 
 
-class Default404Page(Component):
-    """The NextJS default 404 page."""
+def default_404_page() -> Component:
+    """Render the default 404 page.
 
-    library = "next/error"
-    tag = "Error"
-    is_default = True
+    Returns:
+        The 404 page component.
+    """
+    import reflex as rx
 
-    status_code: Var[int] = Var.create(404)
+    return rx.el.span("404: Page not found")

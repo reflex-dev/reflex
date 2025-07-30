@@ -3,41 +3,37 @@
 from __future__ import annotations
 
 import dataclasses
-import inspect
 import sys
 import types
-from functools import cached_property, lru_cache, wraps
+from collections.abc import Callable, Iterable, Mapping, Sequence
+from functools import cached_property, lru_cache
 from types import GenericAlias
-from typing import (
+from typing import (  # noqa: UP035
     TYPE_CHECKING,
     Any,
-    Callable,
+    Awaitable,
     ClassVar,
     Dict,
-    FrozenSet,
-    Iterable,
+    ForwardRef,
     List,
     Literal,
-    Mapping,
-    Optional,
-    Sequence,
+    MutableMapping,
+    NoReturn,
+    Protocol,
     Tuple,
-    Type,
+    TypeVar,
     Union,
+    _eval_type,  # pyright: ignore [reportAttributeAccessIssue]
     _GenericAlias,  # pyright: ignore [reportAttributeAccessIssue]
     _SpecialGenericAlias,  # pyright: ignore [reportAttributeAccessIssue]
     get_args,
-    get_type_hints,
+    is_typeddict,
 )
 from typing import get_origin as get_origin_og
+from typing import get_type_hints as get_type_hints_og
 
-import sqlalchemy
 from pydantic.v1.fields import ModelField
-from sqlalchemy.ext.associationproxy import AssociationProxyInstance
-from sqlalchemy.ext.hybrid import hybrid_property
-from sqlalchemy.orm import DeclarativeBase, Mapped, QueryableAttribute, Relationship
 from typing_extensions import Self as Self
-from typing_extensions import is_typeddict
 from typing_extensions import override as override
 
 import reflex
@@ -49,47 +45,123 @@ from reflex.utils import console
 # Potential GenericAlias types for isinstance checks.
 GenericAliasTypes = (_GenericAlias, GenericAlias, _SpecialGenericAlias)
 
-# Potential Union types for isinstance checks (UnionType added in py3.10).
-UnionTypes = (Union, types.UnionType) if hasattr(types, "UnionType") else (Union,)
+# Potential Union types for isinstance checks.
+UnionTypes = (Union, types.UnionType)
 
 # Union of generic types.
-GenericType = Union[Type, _GenericAlias]
+GenericType = type | _GenericAlias
 
 # Valid state var types.
 JSONType = {str, int, float, bool}
-PrimitiveType = Union[int, float, bool, str, list, dict, set, tuple]
+PrimitiveType = int | float | bool | str | list | dict | set | tuple
 PrimitiveTypes = (int, float, bool, str, list, dict, set, tuple)
-StateVar = Union[PrimitiveType, Base, None]
-StateIterVar = Union[list, set, tuple]
+StateVar = PrimitiveType | Base | None
+StateIterVar = list | set | tuple
 
 if TYPE_CHECKING:
     from reflex.vars.base import Var
 
-    ArgsSpec = (
-        Callable[[], Sequence[Var]]
-        | Callable[[Var], Sequence[Var]]
-        | Callable[[Var, Var], Sequence[Var]]
-        | Callable[[Var, Var, Var], Sequence[Var]]
-        | Callable[[Var, Var, Var, Var], Sequence[Var]]
-        | Callable[[Var, Var, Var, Var, Var], Sequence[Var]]
-        | Callable[[Var, Var, Var, Var, Var, Var], Sequence[Var]]
-        | Callable[[Var, Var, Var, Var, Var, Var, Var], Sequence[Var]]
-    )
-else:
-    ArgsSpec = Callable[..., List[Any]]
+VAR1 = TypeVar("VAR1", bound="Var")
+VAR2 = TypeVar("VAR2", bound="Var")
+VAR3 = TypeVar("VAR3", bound="Var")
+VAR4 = TypeVar("VAR4", bound="Var")
+VAR5 = TypeVar("VAR5", bound="Var")
+VAR6 = TypeVar("VAR6", bound="Var")
+VAR7 = TypeVar("VAR7", bound="Var")
 
+
+class _ArgsSpec0(Protocol):
+    def __call__(self) -> Sequence[Var]: ...
+
+
+class _ArgsSpec1(Protocol):
+    def __call__(self, var1: VAR1, /) -> Sequence[Var]: ...  # pyright: ignore [reportInvalidTypeVarUse]
+
+
+class _ArgsSpec2(Protocol):
+    def __call__(self, var1: VAR1, var2: VAR2, /) -> Sequence[Var]: ...  # pyright: ignore [reportInvalidTypeVarUse]
+
+
+class _ArgsSpec3(Protocol):
+    def __call__(self, var1: VAR1, var2: VAR2, var3: VAR3, /) -> Sequence[Var]: ...  # pyright: ignore [reportInvalidTypeVarUse]
+
+
+class _ArgsSpec4(Protocol):
+    def __call__(
+        self,
+        var1: VAR1,  # pyright: ignore [reportInvalidTypeVarUse]
+        var2: VAR2,  # pyright: ignore [reportInvalidTypeVarUse]
+        var3: VAR3,  # pyright: ignore [reportInvalidTypeVarUse]
+        var4: VAR4,  # pyright: ignore [reportInvalidTypeVarUse]
+        /,
+    ) -> Sequence[Var]: ...
+
+
+class _ArgsSpec5(Protocol):
+    def __call__(
+        self,
+        var1: VAR1,  # pyright: ignore [reportInvalidTypeVarUse]
+        var2: VAR2,  # pyright: ignore [reportInvalidTypeVarUse]
+        var3: VAR3,  # pyright: ignore [reportInvalidTypeVarUse]
+        var4: VAR4,  # pyright: ignore [reportInvalidTypeVarUse]
+        var5: VAR5,  # pyright: ignore [reportInvalidTypeVarUse]
+        /,
+    ) -> Sequence[Var]: ...
+
+
+class _ArgsSpec6(Protocol):
+    def __call__(
+        self,
+        var1: VAR1,  # pyright: ignore [reportInvalidTypeVarUse]
+        var2: VAR2,  # pyright: ignore [reportInvalidTypeVarUse]
+        var3: VAR3,  # pyright: ignore [reportInvalidTypeVarUse]
+        var4: VAR4,  # pyright: ignore [reportInvalidTypeVarUse]
+        var5: VAR5,  # pyright: ignore [reportInvalidTypeVarUse]
+        var6: VAR6,  # pyright: ignore [reportInvalidTypeVarUse]
+        /,
+    ) -> Sequence[Var]: ...
+
+
+class _ArgsSpec7(Protocol):
+    def __call__(
+        self,
+        var1: VAR1,  # pyright: ignore [reportInvalidTypeVarUse]
+        var2: VAR2,  # pyright: ignore [reportInvalidTypeVarUse]
+        var3: VAR3,  # pyright: ignore [reportInvalidTypeVarUse]
+        var4: VAR4,  # pyright: ignore [reportInvalidTypeVarUse]
+        var5: VAR5,  # pyright: ignore [reportInvalidTypeVarUse]
+        var6: VAR6,  # pyright: ignore [reportInvalidTypeVarUse]
+        var7: VAR7,  # pyright: ignore [reportInvalidTypeVarUse]
+        /,
+    ) -> Sequence[Var]: ...
+
+
+ArgsSpec = (
+    _ArgsSpec0
+    | _ArgsSpec1
+    | _ArgsSpec2
+    | _ArgsSpec3
+    | _ArgsSpec4
+    | _ArgsSpec5
+    | _ArgsSpec6
+    | _ArgsSpec7
+)
+
+Scope = MutableMapping[str, Any]
+Message = MutableMapping[str, Any]
+
+Receive = Callable[[], Awaitable[Message]]
+Send = Callable[[Message], Awaitable[None]]
+
+ASGIApp = Callable[[Scope, Receive, Send], Awaitable[None]]
 
 PrimitiveToAnnotation = {
-    list: List,
-    tuple: Tuple,
-    dict: Dict,
+    list: List,  # noqa: UP006
+    tuple: Tuple,  # noqa: UP006
+    dict: Dict,  # noqa: UP006
 }
 
-RESERVED_BACKEND_VAR_NAMES = {
-    "_abc_impl",
-    "_backend_vars",
-    "_was_touched",
-}
+RESERVED_BACKEND_VAR_NAMES = {"_abc_impl", "_backend_vars", "_was_touched", "_mixin"}
 
 
 class Unset:
@@ -115,7 +187,11 @@ class Unset:
         return False
 
 
-@lru_cache()
+@lru_cache
+def _get_origin_cached(tp: Any):
+    return get_origin_og(tp)
+
+
 def get_origin(tp: Any):
     """Get the origin of a class.
 
@@ -125,10 +201,14 @@ def get_origin(tp: Any):
     Returns:
         The origin of the class.
     """
-    return get_origin_og(tp)
+    return (
+        origin
+        if (origin := getattr(tp, "__origin__", None)) is not None
+        else _get_origin_cached(tp)
+    )
 
 
-@lru_cache()
+@lru_cache
 def is_generic_alias(cls: GenericType) -> bool:
     """Check whether the class is a generic alias.
 
@@ -138,10 +218,31 @@ def is_generic_alias(cls: GenericType) -> bool:
     Returns:
         Whether the class is a generic alias.
     """
-    return isinstance(cls, GenericAliasTypes)  # pyright: ignore [reportArgumentType]
+    return isinstance(cls, GenericAliasTypes)
 
 
-def unionize(*args: GenericType) -> Type:
+@lru_cache
+def get_type_hints(obj: Any) -> dict[str, Any]:
+    """Get the type hints of a class.
+
+    Args:
+        obj: The class to get the type hints of.
+
+    Returns:
+        The type hints of the class.
+    """
+    return get_type_hints_og(obj)
+
+
+def _unionize(args: list[GenericType]) -> GenericType:
+    if not args:
+        return Any  # pyright: ignore [reportReturnType]
+    if len(args) == 1:
+        return args[0]
+    return Union[tuple(args)]  # noqa: UP007
+
+
+def unionize(*args: GenericType) -> type:
     """Unionize the types.
 
     Args:
@@ -150,15 +251,7 @@ def unionize(*args: GenericType) -> Type:
     Returns:
         The unionized types.
     """
-    if not args:
-        return Any  # pyright: ignore [reportReturnType]
-    if len(args) == 1:
-        return args[0]
-    # We are bisecting the args list here to avoid hitting the recursion limit
-    # In Python versions >= 3.11, we can simply do `return Union[*args]`
-    midpoint = len(args) // 2
-    first_half, second_half = args[:midpoint], args[midpoint:]
-    return Union[unionize(*first_half), unionize(*second_half)]  # pyright: ignore [reportReturnType]
+    return _unionize([arg for arg in args if arg is not NoReturn])
 
 
 def is_none(cls: GenericType) -> bool:
@@ -173,7 +266,6 @@ def is_none(cls: GenericType) -> bool:
     return cls is type(None) or cls is None
 
 
-@lru_cache()
 def is_union(cls: GenericType) -> bool:
     """Check if a class is a Union.
 
@@ -183,10 +275,12 @@ def is_union(cls: GenericType) -> bool:
     Returns:
         Whether the class is a Union.
     """
-    return get_origin(cls) in UnionTypes
+    origin = getattr(cls, "__origin__", None)
+    if origin is Union:
+        return True
+    return origin is None and isinstance(cls, types.UnionType)
 
 
-@lru_cache()
 def is_literal(cls: GenericType) -> bool:
     """Check if a class is a Literal.
 
@@ -196,10 +290,10 @@ def is_literal(cls: GenericType) -> bool:
     Returns:
         Whether the class is a literal.
     """
-    return get_origin(cls) is Literal
+    return getattr(cls, "__origin__", None) is Literal
 
 
-def has_args(cls: Type) -> bool:
+def has_args(cls: type) -> bool:
     """Check if the class has generic parameters.
 
     Args:
@@ -229,7 +323,56 @@ def is_optional(cls: GenericType) -> bool:
     Returns:
         Whether the class is an Optional.
     """
-    return is_union(cls) and type(None) in get_args(cls)
+    return (
+        cls is None
+        or cls is type(None)
+        or (is_union(cls) and type(None) in get_args(cls))
+    )
+
+
+def is_classvar(a_type: Any) -> bool:
+    """Check if a type is a ClassVar.
+
+    Args:
+        a_type: The type to check.
+
+    Returns:
+        Whether the type is a ClassVar.
+    """
+    return (
+        a_type is ClassVar
+        or (type(a_type) is _GenericAlias and a_type.__origin__ is ClassVar)
+        or (
+            type(a_type) is ForwardRef and a_type.__forward_arg__.startswith("ClassVar")
+        )
+    )
+
+
+def true_type_for_pydantic_field(f: ModelField):
+    """Get the type for a pydantic field.
+
+    Args:
+        f: The field to get the type for.
+
+    Returns:
+        The type for the field.
+    """
+    if not isinstance(f.annotation, (str, ForwardRef)):
+        return f.annotation
+
+    type_ = f.outer_type_
+
+    if (
+        f.field_info.default is None
+        or (isinstance(f.annotation, str) and f.annotation.startswith("Optional"))
+        or (
+            isinstance(f.annotation, ForwardRef)
+            and f.annotation.__forward_arg__.startswith("Optional")
+        )
+    ) and not is_optional(type_):
+        return type_ | None
+
+    return type_
 
 
 def value_inside_optional(cls: GenericType) -> GenericType:
@@ -242,8 +385,31 @@ def value_inside_optional(cls: GenericType) -> GenericType:
         The value inside the Optional type or the original type.
     """
     if is_union(cls) and len(args := get_args(cls)) >= 2 and type(None) in args:
+        if len(args) == 2:
+            return args[0] if args[1] is type(None) else args[1]
         return unionize(*[arg for arg in args if arg is not type(None)])
     return cls
+
+
+def get_field_type(cls: GenericType, field_name: str) -> GenericType | None:
+    """Get the type of a field in a class.
+
+    Args:
+        cls: The class to check.
+        field_name: The name of the field to check.
+
+    Returns:
+        The type of the field, if it exists, else None.
+    """
+    if (
+        hasattr(cls, "__fields__")
+        and field_name in cls.__fields__
+        and hasattr(cls.__fields__[field_name], "annotation")
+        and not isinstance(cls.__fields__[field_name].annotation, (str, ForwardRef))
+    ):
+        return cls.__fields__[field_name].annotation
+    type_hints = get_type_hints(cls)
+    return type_hints.get(field_name, None)
 
 
 def get_property_hint(attr: Any | None) -> GenericType | None:
@@ -255,6 +421,8 @@ def get_property_hint(attr: Any | None) -> GenericType | None:
     Returns:
         The type hint of the property, if it is a property, else None.
     """
+    from sqlalchemy.ext.hybrid import hybrid_property
+
     if not isinstance(attr, (property, hybrid_property)):
         return None
     hints = get_type_hints(attr.fget)
@@ -273,6 +441,10 @@ def get_attribute_access_type(cls: GenericType, name: str) -> GenericType | None
     Returns:
         The type of the attribute, if accessible, or None
     """
+    import sqlalchemy
+    from sqlalchemy.ext.associationproxy import AssociationProxyInstance
+    from sqlalchemy.orm import DeclarativeBase, Mapped, QueryableAttribute, Relationship
+
     from reflex.model import Model
 
     try:
@@ -283,25 +455,10 @@ def get_attribute_access_type(cls: GenericType, name: str) -> GenericType | None
     if hint := get_property_hint(attr):
         return hint
 
-    if (
-        hasattr(cls, "__fields__")
-        and name in cls.__fields__
-        and hasattr(cls.__fields__[name], "outer_type_")
-    ):
+    if hasattr(cls, "__fields__") and name in cls.__fields__:
         # pydantic models
-        field = cls.__fields__[name]
-        type_ = field.outer_type_
-        if isinstance(type_, ModelField):
-            type_ = type_.type_
-        if (
-            not field.required
-            and field.default is None
-            and field.default_factory is None
-        ):
-            # Ensure frontend uses null coalescing when accessing.
-            type_ = Optional[type_]
-        return type_
-    elif isinstance(cls, type) and issubclass(cls, DeclarativeBase):
+        return get_field_type(cls, name)
+    if isinstance(cls, type) and issubclass(cls, DeclarativeBase):
         insp = sqlalchemy.inspect(cls)
         if name in insp.columns:
             # check for list types
@@ -321,8 +478,8 @@ def get_attribute_access_type(cls: GenericType, name: str) -> GenericType | None
                         if type_ in PrimitiveToAnnotation:
                             type_ = PrimitiveToAnnotation[type_]
                         type_ = type_[item_type]  # pyright: ignore [reportIndexIssue]
-                if column.nullable:
-                    type_ = Optional[type_]
+                if hasattr(column, "nullable") and column.nullable:
+                    type_ = type_ | None
                 return type_
         if name in insp.all_orm_descriptors:
             descriptor = insp.all_orm_descriptors[name]
@@ -333,13 +490,12 @@ def get_attribute_access_type(cls: GenericType, name: str) -> GenericType | None
                 if isinstance(prop, Relationship):
                     type_ = prop.mapper.class_
                     # TODO: check for nullable?
-                    type_ = List[type_] if prop.uselist else Optional[type_]
-                    return type_
+                    return list[type_] if prop.uselist else type_ | None
             if isinstance(attr, AssociationProxyInstance):
-                return List[
+                return list[
                     get_attribute_access_type(
                         attr.target_class,
-                        attr.remote_attr.key,  # type: ignore[attr-defined]
+                        attr.remote_attr.key,  # pyright: ignore [reportAttributeAccessIssue]
                     )
                 ]
     elif isinstance(cls, type) and not is_generic_alias(cls) and issubclass(cls, Model):
@@ -360,22 +516,18 @@ def get_attribute_access_type(cls: GenericType, name: str) -> GenericType | None
         )
     elif isinstance(cls, type):
         # Bare class
-        if sys.version_info >= (3, 10):
-            exceptions = NameError
-        else:
-            exceptions = (NameError, TypeError)
+        exceptions = NameError
         try:
             hints = get_type_hints(cls)
             if name in hints:
                 return hints[name]
         except exceptions as e:
             console.warn(f"Failed to resolve ForwardRefs for {cls}.{name} due to {e}")
-            pass
     return None  # Attribute is not accessible.
 
 
-@lru_cache()
-def get_base_class(cls: GenericType) -> Type:
+@lru_cache
+def get_base_class(cls: GenericType) -> type:
     """Get the base class of a class.
 
     Args:
@@ -391,7 +543,8 @@ def get_base_class(cls: GenericType) -> Type:
         # only literals of the same type are supported.
         arg_type = type(get_args(cls)[0])
         if not all(type(arg) is arg_type for arg in get_args(cls)):
-            raise TypeError("only literals of the same type are supported")
+            msg = "only literals of the same type are supported"
+            raise TypeError(msg)
         return type(get_args(cls)[0])
 
     if is_union(cls):
@@ -419,13 +572,13 @@ def _breakpoints_satisfies_typing(cls_check: GenericType, instance: Any) -> bool
                 if not isinstance(value, str) or value not in get_args(expected_type):
                     return False
         return True
-    elif isinstance(cls_check_base, tuple):
+    if isinstance(cls_check_base, tuple):
         # union type, so check all types
         return any(
             _breakpoints_satisfies_typing(type_to_check, instance)
             for type_to_check in get_args(cls_check)
         )
-    elif cls_check_base == reflex.vars.Var and "__args__" in cls_check.__dict__:
+    if cls_check_base == reflex.vars.Var and "__args__" in cls_check.__dict__:
         return _breakpoints_satisfies_typing(get_args(cls_check)[0], instance)
 
     return False
@@ -477,7 +630,8 @@ def _issubclass(cls: GenericType, cls_check: GenericType, instance: Any = None) 
     except TypeError as te:
         # These errors typically arise from bad annotations and are hard to
         # debug without knowing the type that we tried to compare.
-        raise TypeError(f"Invalid type for issubclass: {cls_base}") from te
+        msg = f"Invalid type for issubclass: {cls_base}"
+        raise TypeError(msg) from te
 
 
 def does_obj_satisfy_typed_dict(obj: Any, cls: GenericType) -> bool:
@@ -494,7 +648,7 @@ def does_obj_satisfy_typed_dict(obj: Any, cls: GenericType) -> bool:
         return False
 
     key_names_to_values = get_type_hints(cls)
-    required_keys: FrozenSet[str] = getattr(cls, "__required_keys__", frozenset())
+    required_keys: frozenset[str] = getattr(cls, "__required_keys__", frozenset())
 
     if not all(
         isinstance(key, str)
@@ -510,13 +664,22 @@ def does_obj_satisfy_typed_dict(obj: Any, cls: GenericType) -> bool:
     return required_keys.issubset(required_keys)
 
 
-def _isinstance(obj: Any, cls: GenericType, nested: int = 0) -> bool:
+def _isinstance(
+    obj: Any,
+    cls: GenericType,
+    *,
+    nested: int = 0,
+    treat_var_as_type: bool = True,
+    treat_mutable_obj_as_immutable: bool = False,
+) -> bool:
     """Check if an object is an instance of a class.
 
     Args:
         obj: The object to check.
         cls: The class to check against.
         nested: How many levels deep to check.
+        treat_var_as_type: Whether to treat Var as the type it represents, i.e. _var_type.
+        treat_mutable_obj_as_immutable: Whether to treat mutable objects as immutable. Useful if a component declares a mutable object as a prop, but the value is not expected to change.
 
     Returns:
         Whether the object is an instance of the class.
@@ -529,15 +692,26 @@ def _isinstance(obj: Any, cls: GenericType, nested: int = 0) -> bool:
     if cls is Var:
         return isinstance(obj, Var)
     if isinstance(obj, LiteralVar):
-        return _isinstance(obj._var_value, cls, nested=nested)
+        return treat_var_as_type and _isinstance(
+            obj._var_value, cls, nested=nested, treat_var_as_type=True
+        )
     if isinstance(obj, Var):
-        return _issubclass(obj._var_type, cls)
+        return treat_var_as_type and typehint_issubclass(
+            obj._var_type,
+            cls,
+            treat_mutable_superclasss_as_immutable=treat_mutable_obj_as_immutable,
+            treat_literals_as_union_of_types=True,
+            treat_any_as_subtype_of_everything=True,
+        )
 
     if cls is None or cls is type(None):
         return obj is None
 
-    if cls and is_union(cls):
-        return any(_isinstance(obj, arg, nested=nested) for arg in get_args(cls))
+    if cls is not None and is_union(cls):
+        return any(
+            _isinstance(obj, arg, nested=nested, treat_var_as_type=treat_var_as_type)
+            for arg in get_args(cls)
+        )
 
     if is_literal(cls):
         return obj in get_args(cls)
@@ -561,48 +735,102 @@ def _isinstance(obj: Any, cls: GenericType, nested: int = 0) -> bool:
     args = get_args(cls)
 
     if not args:
+        if treat_mutable_obj_as_immutable:
+            if origin is dict:
+                origin = Mapping
+            elif origin is list or origin is set:
+                origin = Sequence
         # cls is a simple generic class
         return isinstance(obj, origin)
 
+    if origin is Var and args:
+        # cls is a Var
+        return _isinstance(
+            obj,
+            args[0],
+            nested=nested,
+            treat_var_as_type=treat_var_as_type,
+            treat_mutable_obj_as_immutable=treat_mutable_obj_as_immutable,
+        )
+
     if nested > 0 and args:
         if origin is list:
-            return isinstance(obj, list) and all(
-                _isinstance(item, args[0], nested=nested - 1) for item in obj
+            expected_class = Sequence if treat_mutable_obj_as_immutable else list
+            return isinstance(obj, expected_class) and all(
+                _isinstance(
+                    item,
+                    args[0],
+                    nested=nested - 1,
+                    treat_var_as_type=treat_var_as_type,
+                )
+                for item in obj
             )
         if origin is tuple:
             if args[-1] is Ellipsis:
                 return isinstance(obj, tuple) and all(
-                    _isinstance(item, args[0], nested=nested - 1) for item in obj
+                    _isinstance(
+                        item,
+                        args[0],
+                        nested=nested - 1,
+                        treat_var_as_type=treat_var_as_type,
+                    )
+                    for item in obj
                 )
             return (
                 isinstance(obj, tuple)
                 and len(obj) == len(args)
                 and all(
-                    _isinstance(item, arg, nested=nested - 1)
+                    _isinstance(
+                        item,
+                        arg,
+                        nested=nested - 1,
+                        treat_var_as_type=treat_var_as_type,
+                    )
                     for item, arg in zip(obj, args, strict=True)
                 )
             )
         if origin in (dict, Mapping, Breakpoints):
-            return isinstance(obj, Mapping) and all(
-                _isinstance(key, args[0], nested=nested - 1)
-                and _isinstance(value, args[1], nested=nested - 1)
+            expected_class = (
+                dict
+                if origin is dict and not treat_mutable_obj_as_immutable
+                else Mapping
+            )
+            return isinstance(obj, expected_class) and all(
+                _isinstance(
+                    key, args[0], nested=nested - 1, treat_var_as_type=treat_var_as_type
+                )
+                and _isinstance(
+                    value,
+                    args[1],
+                    nested=nested - 1,
+                    treat_var_as_type=treat_var_as_type,
+                )
                 for key, value in obj.items()
             )
         if origin is set:
-            return isinstance(obj, set) and all(
-                _isinstance(item, args[0], nested=nested - 1) for item in obj
+            expected_class = Sequence if treat_mutable_obj_as_immutable else set
+            return isinstance(obj, expected_class) and all(
+                _isinstance(
+                    item,
+                    args[0],
+                    nested=nested - 1,
+                    treat_var_as_type=treat_var_as_type,
+                )
+                for item in obj
             )
 
     if args:
         from reflex.vars import Field
 
         if origin is Field:
-            return _isinstance(obj, args[0], nested=nested)
+            return _isinstance(
+                obj, args[0], nested=nested, treat_var_as_type=treat_var_as_type
+            )
 
     return isinstance(obj, get_base_class(cls))
 
 
-def is_dataframe(value: Type) -> bool:
+def is_dataframe(value: type) -> bool:
     """Check if the given value is a dataframe.
 
     Args:
@@ -616,7 +844,7 @@ def is_dataframe(value: Type) -> bool:
     return value.__name__ == "DataFrame"
 
 
-def is_valid_var_type(type_: Type) -> bool:
+def is_valid_var_type(type_: type) -> bool:
     """Check if the given type is a valid prop type.
 
     Args:
@@ -628,7 +856,7 @@ def is_valid_var_type(type_: Type) -> bool:
     from reflex.utils import serializers
 
     if is_union(type_):
-        return all((is_valid_var_type(arg) for arg in get_args(type_)))
+        return all(is_valid_var_type(arg) for arg in get_args(type_))
     return (
         _issubclass(type_, StateVar)
         or serializers.has_serializer(type_)
@@ -636,7 +864,7 @@ def is_valid_var_type(type_: Type) -> bool:
     )
 
 
-def is_backend_base_variable(name: str, cls: Type) -> bool:
+def is_backend_base_variable(name: str, cls: type) -> bool:
     """Check if this variable name correspond to a backend variable.
 
     Args:
@@ -693,7 +921,7 @@ def is_backend_base_variable(name: str, cls: Type) -> bool:
     return True
 
 
-def check_type_in_allowed_types(value_type: Type, allowed_types: Iterable) -> bool:
+def check_type_in_allowed_types(value_type: type, allowed_types: Iterable) -> bool:
     """Check that a value type is found in a list of allowed types.
 
     Args:
@@ -735,7 +963,7 @@ def is_encoded_fstring(value: Any) -> bool:
     return isinstance(value, str) and constants.REFLEX_VAR_OPENING_TAG in value
 
 
-def validate_literal(key: str, value: Any, expected_type: Type, comp_name: str):
+def validate_literal(key: str, value: Any, expected_type: type, comp_name: str):
     """Check that a value is a valid literal.
 
     Args:
@@ -761,43 +989,8 @@ def validate_literal(key: str, value: Any, expected_type: Type, comp_name: str):
                 [str(v) if not isinstance(v, str) else f"'{v}'" for v in allowed_values]
             )
             value_str = f"'{value}'" if isinstance(value, str) else value
-            raise ValueError(
-                f"prop value for {key!s} of the `{comp_name}` component should be one of the following: {allowed_value_str}. Got {value_str} instead"
-            )
-
-
-def validate_parameter_literals(func: Callable):
-    """Decorator to check that the arguments passed to a function
-    correspond to the correct function parameter if it (the parameter)
-    is a literal type.
-
-    Args:
-        func: The function to validate.
-
-    Returns:
-        The wrapper function.
-    """
-
-    @wraps(func)
-    def wrapper(*args, **kwargs):
-        func_params = list(inspect.signature(func).parameters.items())
-        annotations = {param[0]: param[1].annotation for param in func_params}
-
-        # validate args
-        for param, arg in zip(annotations, args, strict=False):
-            if annotations[param] is inspect.Parameter.empty:
-                continue
-            validate_literal(param, arg, annotations[param], func.__name__)
-
-        # validate kwargs.
-        for key, value in kwargs.items():
-            annotation = annotations.get(key)
-            if not annotation or annotation is inspect.Parameter.empty:
-                continue
-            validate_literal(key, value, annotation, func.__name__)
-        return func(*args, **kwargs)
-
-    return wrapper
+            msg = f"prop value for {key!s} of the `{comp_name}` component should be one of the following: {allowed_value_str}. Got {value_str} instead"
+            raise ValueError(msg)
 
 
 # Store this here for performance.
@@ -805,7 +998,7 @@ StateBases = get_base_class(StateVar)
 StateIterBases = get_base_class(StateIterVar)
 
 
-def safe_issubclass(cls: Type, cls_check: Type | Tuple[Type, ...]):
+def safe_issubclass(cls: Any, cls_check: Any | tuple[Any, ...]):
     """Check if a class is a subclass of another class. Returns False if internal error occurs.
 
     Args:
@@ -821,20 +1014,32 @@ def safe_issubclass(cls: Type, cls_check: Type | Tuple[Type, ...]):
         return False
 
 
-def typehint_issubclass(possible_subclass: Any, possible_superclass: Any) -> bool:
+def typehint_issubclass(
+    possible_subclass: Any,
+    possible_superclass: Any,
+    *,
+    treat_mutable_superclasss_as_immutable: bool = False,
+    treat_literals_as_union_of_types: bool = True,
+    treat_any_as_subtype_of_everything: bool = False,
+) -> bool:
     """Check if a type hint is a subclass of another type hint.
 
     Args:
         possible_subclass: The type hint to check.
         possible_superclass: The type hint to check against.
+        treat_mutable_superclasss_as_immutable: Whether to treat target classes as immutable.
+        treat_literals_as_union_of_types: Whether to treat literals as a union of their types.
+        treat_any_as_subtype_of_everything: Whether to treat Any as a subtype of everything. This is the default behavior in Python.
 
     Returns:
         Whether the type hint is a subclass of the other type hint.
     """
-    if possible_superclass is Any:
+    if possible_subclass is possible_superclass or possible_superclass is Any:
         return True
     if possible_subclass is Any:
-        return False
+        return treat_any_as_subtype_of_everything
+    if possible_subclass is NoReturn:
+        return True
 
     provided_type_origin = get_origin(possible_subclass)
     accepted_type_origin = get_origin(possible_superclass)
@@ -843,37 +1048,92 @@ def typehint_issubclass(possible_subclass: Any, possible_superclass: Any) -> boo
         # In this case, we are dealing with a non-generic type, so we can use issubclass
         return issubclass(possible_subclass, possible_superclass)
 
-    # Remove this check when Python 3.10 is the minimum supported version
-    if hasattr(types, "UnionType"):
-        provided_type_origin = (
-            Union if provided_type_origin is types.UnionType else provided_type_origin
-        )
-        accepted_type_origin = (
-            Union if accepted_type_origin is types.UnionType else accepted_type_origin
+    if treat_literals_as_union_of_types and is_literal(possible_superclass):
+        args = get_args(possible_superclass)
+        return any(
+            typehint_issubclass(
+                possible_subclass,
+                type(arg),
+                treat_mutable_superclasss_as_immutable=treat_mutable_superclasss_as_immutable,
+                treat_literals_as_union_of_types=treat_literals_as_union_of_types,
+                treat_any_as_subtype_of_everything=treat_any_as_subtype_of_everything,
+            )
+            for arg in args
         )
 
-    # Get type arguments (e.g., [float, int] for Dict[float, int])
+    if is_literal(possible_subclass):
+        args = get_args(possible_subclass)
+        return all(
+            _isinstance(
+                arg,
+                possible_superclass,
+                treat_mutable_obj_as_immutable=treat_mutable_superclasss_as_immutable,
+                nested=2,
+            )
+            for arg in args
+        )
+
+    provided_type_origin = (
+        Union if provided_type_origin is types.UnionType else provided_type_origin
+    )
+    accepted_type_origin = (
+        Union if accepted_type_origin is types.UnionType else accepted_type_origin
+    )
+
+    # Get type arguments (e.g., [float, int] for dict[float, int])
     provided_args = get_args(possible_subclass)
     accepted_args = get_args(possible_superclass)
 
     if accepted_type_origin is Union:
         if provided_type_origin is not Union:
             return any(
-                typehint_issubclass(possible_subclass, accepted_arg)
+                typehint_issubclass(
+                    possible_subclass,
+                    accepted_arg,
+                    treat_mutable_superclasss_as_immutable=treat_mutable_superclasss_as_immutable,
+                    treat_literals_as_union_of_types=treat_literals_as_union_of_types,
+                    treat_any_as_subtype_of_everything=treat_any_as_subtype_of_everything,
+                )
                 for accepted_arg in accepted_args
             )
         return all(
             any(
-                typehint_issubclass(provided_arg, accepted_arg)
+                typehint_issubclass(
+                    provided_arg,
+                    accepted_arg,
+                    treat_mutable_superclasss_as_immutable=treat_mutable_superclasss_as_immutable,
+                    treat_literals_as_union_of_types=treat_literals_as_union_of_types,
+                    treat_any_as_subtype_of_everything=treat_any_as_subtype_of_everything,
+                )
                 for accepted_arg in accepted_args
             )
             for provided_arg in provided_args
         )
+    if provided_type_origin is Union:
+        return all(
+            typehint_issubclass(
+                provided_arg,
+                possible_superclass,
+                treat_mutable_superclasss_as_immutable=treat_mutable_superclasss_as_immutable,
+                treat_literals_as_union_of_types=treat_literals_as_union_of_types,
+                treat_any_as_subtype_of_everything=treat_any_as_subtype_of_everything,
+            )
+            for provided_arg in provided_args
+        )
 
-    # Check if the origin of both types is the same (e.g., list for List[int])
-    # This probably should be issubclass instead of ==
-    if (provided_type_origin or possible_subclass) != (
-        accepted_type_origin or possible_superclass
+    provided_type_origin = provided_type_origin or possible_subclass
+    accepted_type_origin = accepted_type_origin or possible_superclass
+
+    if treat_mutable_superclasss_as_immutable:
+        if accepted_type_origin is dict:
+            accepted_type_origin = Mapping
+        elif accepted_type_origin is list or accepted_type_origin is set:
+            accepted_type_origin = Sequence
+
+    # Check if the origin of both types is the same (e.g., list for list[int])
+    if not safe_issubclass(
+        provided_type_origin or possible_subclass,
+        accepted_type_origin or possible_superclass,
     ):
         return False
 
@@ -881,9 +1141,115 @@ def typehint_issubclass(possible_subclass: Any, possible_superclass: Any) -> boo
     # Note this is not necessarily correct, as it doesn't check against contravariance and covariance
     # It also ignores when the length of the arguments is different
     return all(
-        typehint_issubclass(provided_arg, accepted_arg)
+        typehint_issubclass(
+            provided_arg,
+            accepted_arg,
+            treat_mutable_superclasss_as_immutable=treat_mutable_superclasss_as_immutable,
+            treat_literals_as_union_of_types=treat_literals_as_union_of_types,
+            treat_any_as_subtype_of_everything=treat_any_as_subtype_of_everything,
+        )
         for provided_arg, accepted_arg in zip(
             provided_args, accepted_args, strict=False
         )
         if accepted_arg is not Any
     )
+
+
+def resolve_annotations(
+    raw_annotations: Mapping[str, type[Any]], module_name: str | None
+) -> dict[str, type[Any]]:
+    """Partially taken from typing.get_type_hints.
+
+    Resolve string or ForwardRef annotations into type objects if possible.
+
+    Args:
+        raw_annotations: The raw annotations to resolve.
+        module_name: The name of the module.
+
+    Returns:
+        The resolved annotations.
+    """
+    module = sys.modules.get(module_name, None) if module_name is not None else None
+
+    base_globals: dict[str, Any] | None = (
+        module.__dict__ if module is not None else None
+    )
+
+    annotations = {}
+    for name, value in raw_annotations.items():
+        if isinstance(value, str):
+            if sys.version_info == (3, 10, 0):
+                value = ForwardRef(value, is_argument=False)
+            else:
+                value = ForwardRef(value, is_argument=False, is_class=True)
+        try:
+            if sys.version_info >= (3, 13):
+                value = _eval_type(value, base_globals, None, type_params=())
+            else:
+                value = _eval_type(value, base_globals, None)
+        except NameError:
+            # this is ok, it can be fixed with update_forward_refs
+            pass
+        annotations[name] = value
+    return annotations
+
+
+TYPES_THAT_HAS_DEFAULT_VALUE = (int, float, tuple, list, set, dict, str)
+
+
+def get_default_value_for_type(t: GenericType) -> Any:
+    """Get the default value of the var.
+
+    Args:
+        t: The type of the var.
+
+    Returns:
+        The default value of the var, if it has one, else None.
+
+    Raises:
+        ImportError: If the var is a dataframe and pandas is not installed.
+    """
+    if is_optional(t):
+        return None
+
+    origin = get_origin(t) if is_generic_alias(t) else t
+    if origin is Literal:
+        args = get_args(t)
+        return args[0] if args else None
+    if safe_issubclass(origin, TYPES_THAT_HAS_DEFAULT_VALUE):
+        return origin()
+    if safe_issubclass(origin, Mapping):
+        return {}
+    if is_dataframe(origin):
+        try:
+            import pandas as pd
+
+            return pd.DataFrame()
+        except ImportError as e:
+            msg = "Please install pandas to use dataframes in your app."
+            raise ImportError(msg) from e
+    return None
+
+
+IMMUTABLE_TYPES = (
+    int,
+    float,
+    bool,
+    str,
+    bytes,
+    frozenset,
+    tuple,
+    type(None),
+)
+
+
+def is_immutable(i: Any) -> bool:
+    """Check if a value is immutable.
+
+    Args:
+        i: The value to check.
+
+    Returns:
+        Whether the value is immutable.
+    """
+    return isinstance(i, IMMUTABLE_TYPES)

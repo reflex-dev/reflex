@@ -2,12 +2,14 @@
 {% from "web/pages/macros.js.jinja2" import renderHooks %}
 
 {% block early_imports %}
-import '$/styles/styles.css'
+import reflexGlobalStyles from '$/styles/__reflex_global_styles.css?url';
 {% endblock %}
 
 {% block declaration %}
-import { EventLoopProvider, StateProvider, defaultColorMode } from "$/utils/context.js";
-import { ThemeProvider } from 'next-themes'
+import { EventLoopProvider, StateProvider, defaultColorMode } from "$/utils/context";
+import { ThemeProvider } from '$/utils/react-theme';
+import { Layout as AppLayout } from './_document';
+import { Outlet } from 'react-router';
 {% for library_alias, library_path in  window_libraries %}
 import * as {{library_alias}} from "{{library_path}}";
 {% endfor %}
@@ -18,16 +20,21 @@ import * as {{library_alias}} from "{{library_path}}";
 {% endblock %}
 
 {% block export %}
+export const links = () => [
+  { rel: 'stylesheet', href: reflexGlobalStyles, type: 'text/css' }
+];
+
 function AppWrap({children}) {
   {{ renderHooks(hooks) }}
 
   return (
-    {{utils.render(render, indent_width=0)}}
+    {{utils.render(render)}}
   )
 }
 
-export default function MyApp({ Component, pageProps }) {
-  React.useEffect(() => {
+
+export function Layout({children}) {
+    useEffect(() => {
     // Make contexts and state objects available globally for dynamic eval'd components
     let windowImports = {
 {% for library_alias, library_path in  window_libraries %}
@@ -36,17 +43,20 @@ export default function MyApp({ Component, pageProps }) {
     };
     window["__reflex"] = windowImports;
   }, []);
-  return (
-    <ThemeProvider defaultTheme={ defaultColorMode } attribute="class">
-      <StateProvider>
-        <EventLoopProvider>
-            <AppWrap>
-              <Component {...pageProps} />
-            </AppWrap>
-        </EventLoopProvider>
-      </StateProvider>
-    </ThemeProvider>
+
+  return jsx(AppLayout, {},
+    jsx(ThemeProvider, {defaultTheme: defaultColorMode, attribute: "class"},
+      jsx(StateProvider, {},
+        jsx(EventLoopProvider, {},
+          jsx(AppWrap, {}, children)
+        )
+      )
+    )
   );
+}
+
+export default function App() {
+  return jsx(Outlet, {});
 }
 
 {% endblock %}

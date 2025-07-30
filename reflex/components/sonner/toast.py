@@ -2,12 +2,12 @@
 
 from __future__ import annotations
 
-from typing import Any, ClassVar, Literal, Optional, Union
+from typing import Any, Literal
 
 from reflex.base import Base
 from reflex.components.component import Component, ComponentNamespace
 from reflex.components.lucide.icon import Icon
-from reflex.components.props import NoExtrasAllowedProps, PropsBase
+from reflex.components.props import NoExtrasAllowedProps
 from reflex.constants.base import Dirs
 from reflex.event import EventSpec, run_script
 from reflex.style import Style, resolved_color_mode
@@ -17,6 +17,7 @@ from reflex.utils.serializers import serializer
 from reflex.vars import VarData
 from reflex.vars.base import LiteralVar, Var
 from reflex.vars.function import FunctionVar
+from reflex.vars.number import ternary_operation
 from reflex.vars.object import ObjectVar
 
 LiteralPosition = Literal[
@@ -73,68 +74,68 @@ def _toast_callback_signature(toast: Var) -> list[Var]:
     ]
 
 
-class ToastProps(PropsBase, NoExtrasAllowedProps):
+class ToastProps(NoExtrasAllowedProps):
     """Props for the toast component."""
 
     # Toast's title, renders above the description.
-    title: Optional[Union[str, Var]]
+    title: str | Var | None
 
     # Toast's description, renders underneath the title.
-    description: Optional[Union[str, Var]]
+    description: str | Var | None
 
     # Whether to show the close button.
-    close_button: Optional[bool]
+    close_button: bool | None
 
     # Dark toast in light mode and vice versa.
-    invert: Optional[bool]
+    invert: bool | None
 
     # Control the sensitivity of the toast for screen readers
-    important: Optional[bool]
+    important: bool | None
 
     # Time in milliseconds that should elapse before automatically closing the toast.
-    duration: Optional[int]
+    duration: int | None
 
     # Position of the toast.
-    position: Optional[LiteralPosition]
+    position: LiteralPosition | None
 
     # If false, it'll prevent the user from dismissing the toast.
-    dismissible: Optional[bool]
+    dismissible: bool | None
 
     # TODO: fix serialization of icons for toast? (might not be possible yet)
     # Icon displayed in front of toast's text, aligned vertically.
-    # icon: Optional[Icon] = None # noqa: ERA001
+    # icon: Icon | None = None # noqa: ERA001
 
     # TODO: fix implementation for action / cancel buttons
     # Renders a primary button, clicking it will close the toast.
-    action: Optional[ToastAction]
+    action: ToastAction | None
 
     # Renders a secondary button, clicking it will close the toast.
-    cancel: Optional[ToastAction]
+    cancel: ToastAction | None
 
     # Custom id for the toast.
-    id: Optional[Union[str, Var]]
+    id: str | Var | None
 
     # Removes the default styling, which allows for easier customization.
-    unstyled: Optional[bool]
+    unstyled: bool | None
 
     # Custom style for the toast.
-    style: Optional[Style]
+    style: Style | None
 
     # Class name for the toast.
-    class_name: Optional[str]
+    class_name: str | None
 
     # XXX: These still do not seem to work
     # Custom style for the toast primary button.
-    action_button_styles: Optional[Style]
+    action_button_styles: Style | None
 
     # Custom style for the toast secondary button.
-    cancel_button_styles: Optional[Style]
+    cancel_button_styles: Style | None
 
     # The function gets called when either the close button is clicked, or the toast is swiped.
-    on_dismiss: Optional[Any]
+    on_dismiss: Any | None
 
     # Function that gets called when the toast disappears automatically after it's timeout (duration` prop).
-    on_auto_close: Optional[Any]
+    on_auto_close: Any | None
 
     def dict(self, *args: Any, **kwargs: Any) -> dict[str, Any]:
         """Convert the object to a dictionary.
@@ -146,7 +147,6 @@ class ToastProps(PropsBase, NoExtrasAllowedProps):
         Returns:
             The object as a dictionary with ToastAction fields intact.
         """
-        kwargs.setdefault("exclude_none", True)
         d = super().dict(*args, **kwargs)
         # Keep these fields as ToastAction so they can be serialized specially
         if "action" in d:
@@ -171,7 +171,7 @@ class ToastProps(PropsBase, NoExtrasAllowedProps):
 class Toaster(Component):
     """A Toaster Component for displaying toast notifications."""
 
-    library: str | None = "sonner@1.7.2"
+    library: str | None = "sonner@2.0.6"
 
     tag = "Toaster"
 
@@ -217,9 +217,6 @@ class Toaster(Component):
     # Pauses toast timers when the page is hidden, e.g., when the tab is backgrounded, the browser is minimized, or the OS is locked.
     pause_when_page_is_hidden: Var[bool]
 
-    # Marked True when any Toast component is created.
-    is_used: ClassVar[bool] = False
-
     def add_hooks(self) -> list[Var | str]:
         """Add hooks for the toaster component.
 
@@ -241,13 +238,17 @@ class Toaster(Component):
 
     @staticmethod
     def send_toast(
-        message: str | Var = "", level: str | None = None, **props
+        message: str | Var = "",
+        level: str | None = None,
+        fallback_to_alert: bool = False,
+        **props,
     ) -> EventSpec:
         """Send a toast message.
 
         Args:
             message: The message to display.
             level: The level of the toast.
+            fallback_to_alert: Whether to fallback to an alert if the toaster is not created.
             **props: The options for the toast.
 
         Raises:
@@ -256,11 +257,6 @@ class Toaster(Component):
         Returns:
             The toast event.
         """
-        if not Toaster.is_used:
-            raise ValueError(
-                "Toaster component must be created before sending a toast. (use `rx.toast.provider()`)"
-            )
-
         toast_command = (
             ObjectVar.__getattr__(toast_ref.to(dict), level) if level else toast_ref
         ).to(FunctionVar)
@@ -269,13 +265,29 @@ class Toaster(Component):
             props.setdefault("title", message)
             message = ""
         elif message == "" and "title" not in props and "description" not in props:
-            raise ValueError("Toast message or title or description must be provided.")
+            msg = "Toast message or title or description must be provided."
+            raise ValueError(msg)
 
         if props:
             args = LiteralVar.create(ToastProps(component_name="rx.toast", **props))  # pyright: ignore [reportCallIssue]
             toast = toast_command.call(message, args)
         else:
             toast = toast_command.call(message)
+
+        if fallback_to_alert:
+            toast = ternary_operation(
+                toast_ref.bool(),
+                toast,
+                FunctionVar("window.alert").call(
+                    Var.create(
+                        message
+                        if isinstance(message, str) and message
+                        else props.get("title", props.get("description", ""))
+                    )
+                    .to(str)
+                    .replace("<br/>", "\n")
+                ),
+            )
 
         return run_script(toast)
 
@@ -379,7 +391,6 @@ class Toaster(Component):
         Returns:
             The toaster component.
         """
-        cls.is_used = True
         return super().create(*children, **props)
 
 

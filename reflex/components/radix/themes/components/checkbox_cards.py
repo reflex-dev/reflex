@@ -1,12 +1,11 @@
 """Components for the Radix CheckboxCards component."""
 
 from types import SimpleNamespace
-from typing import Literal, Union
+from typing import Literal
 
 from reflex.components.core.breakpoints import Responsive
+from reflex.components.radix.themes.base import LiteralAccentColor, RadixThemesComponent
 from reflex.vars.base import Var
-
-from ..base import LiteralAccentColor, RadixThemesComponent
 
 
 class CheckboxCardsRoot(RadixThemesComponent):
@@ -27,14 +26,10 @@ class CheckboxCardsRoot(RadixThemesComponent):
     high_contrast: Var[bool]
 
     # The number of columns:
-    columns: Var[
-        Responsive[Union[str, Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]]]
-    ]
+    columns: Var[Responsive[str | Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]]]
 
     # The gap between the checkbox cards:
-    gap: Var[
-        Responsive[Union[str, Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]]]
-    ]
+    gap: Var[Responsive[str | Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]]]
 
 
 class CheckboxCardsItem(RadixThemesComponent):

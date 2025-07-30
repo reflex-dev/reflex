@@ -1,7 +1,5 @@
 """A html component."""
 
-from typing import Dict
-
 from reflex.components.el.elements.typography import Div
 from reflex.vars.base import Var
 
@@ -14,7 +12,7 @@ class Html(Div):
     """
 
     # The HTML to render.
-    dangerouslySetInnerHTML: Var[Dict[str, str]]  # noqa: N815
+    dangerouslySetInnerHTML: Var[dict[str, str]]  # noqa: N815
 
     @classmethod
     def create(cls, *children, **props):
@@ -32,9 +30,9 @@ class Html(Div):
         """
         # If children are not provided, throw an error.
         if len(children) != 1:
-            raise ValueError("Must provide children to the html component.")
-        else:
-            props["dangerouslySetInnerHTML"] = {"__html": children[0]}
+            msg = "Must provide children to the html component."
+            raise ValueError(msg)
+        props["dangerouslySetInnerHTML"] = {"__html": children[0]}
 
         # Apply the default classname
         given_class_name = props.pop("class_name", [])

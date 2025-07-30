@@ -98,13 +98,25 @@ def get_template(name: str) -> Template:
     return ReflexJinjaEnvironment().get_template(name=name)
 
 
+def from_string(source: str) -> Template:
+    """Get render function that work with a template.
+
+    Args:
+        source: The template source.
+
+    Returns:
+        A render function.
+    """
+    return ReflexJinjaEnvironment().from_string(source=source)
+
+
 # Template for the Reflex config file.
 RXCONFIG = get_template("app/rxconfig.py.jinja2")
 
-# Code to render a NextJS Document root.
+# Code to render the Document root.
 DOCUMENT_ROOT = get_template("web/pages/_document.js.jinja2")
 
-# Code to render NextJS App root.
+# Code to render App root.
 APP_ROOT = get_template("web/pages/_app.js.jinja2")
 
 # Template for the theme file.
@@ -113,13 +125,10 @@ THEME = get_template("web/utils/theme.js.jinja2")
 # Template for the context file.
 CONTEXT = get_template("web/utils/context.js.jinja2")
 
-# Template for Tailwind config.
-TAILWIND_CONFIG = get_template("web/tailwind.config.js.jinja2")
-
 # Template to render a component tag.
 COMPONENT = get_template("web/pages/component.js.jinja2")
 
-# Code to render a single NextJS page.
+# Code to render a single react page.
 PAGE = get_template("web/pages/index.js.jinja2")
 
 # Code to render the custom components page.

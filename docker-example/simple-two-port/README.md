@@ -1,8 +1,9 @@
 # simple-two-port
 
 This docker deployment runs Reflex in prod mode, exposing two HTTP ports:
-  * `3000` - node NextJS server using optimized production build
-  * `8000` - python gunicorn server hosting the Reflex backend
+
+- `3000` - node server using optimized production build
+- `8000` - python gunicorn server hosting the Reflex backend
 
 The deployment also runs a local Redis server to store state for each user.
 

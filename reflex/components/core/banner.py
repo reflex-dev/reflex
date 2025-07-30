@@ -2,9 +2,8 @@
 
 from __future__ import annotations
 
-from typing import Optional
-
 from reflex import constants
+from reflex.components.base.fragment import Fragment
 from reflex.components.component import Component
 from reflex.components.core.cond import cond
 from reflex.components.el.elements.typography import Div
@@ -16,10 +15,10 @@ from reflex.components.radix.themes.components.dialog import (
 )
 from reflex.components.radix.themes.layout.flex import Flex
 from reflex.components.radix.themes.typography.text import Text
-from reflex.components.sonner.toast import Toaster, ToastProps
-from reflex.config import environment
+from reflex.components.sonner.toast import ToastProps, toast_ref
 from reflex.constants import Dirs, Hooks, Imports
 from reflex.constants.compiler import CompileVars
+from reflex.environment import environment
 from reflex.utils.imports import ImportVar
 from reflex.vars import VarData
 from reflex.vars.base import LiteralVar, Var
@@ -90,7 +89,7 @@ def default_connection_error() -> list[str | Var | Component]:
     ]
 
 
-class ConnectionToaster(Toaster):
+class ConnectionToaster(Fragment):
     """A connection toaster component."""
 
     def add_hooks(self) -> list[str | Var]:
@@ -113,11 +112,11 @@ class ConnectionToaster(Toaster):
         if environment.REFLEX_DOES_BACKEND_COLD_START.get():
             loading_message = Var.create("Backend is starting.")
             backend_is_loading_toast_var = Var(
-                f"toast.loading({loading_message!s}, {{...toast_props, description: '', closeButton: false, onDismiss: () => setUserDismissed(true)}},)"
+                f"toast?.loading({loading_message!s}, {{...toast_props, description: '', closeButton: false, onDismiss: () => setUserDismissed(true)}},)"
             )
             backend_is_not_responding = Var.create("Backend is not responding.")
             backend_is_down_toast_var = Var(
-                f"toast.error({backend_is_not_responding!s}, {{...toast_props, description: '', onDismiss: () => setUserDismissed(true)}},)"
+                f"toast?.error({backend_is_not_responding!s}, {{...toast_props, description: '', onDismiss: () => setUserDismissed(true)}},)"
             )
             toast_var = Var(
                 f"""
@@ -138,10 +137,11 @@ setTimeout(() => {{
                 f"Cannot connect to server: {connection_error}."
             )
             toast_var = Var(
-                f"toast.error({loading_message!s}, {{...toast_props, onDismiss: () => setUserDismissed(true)}},)"
+                f"toast?.error({loading_message!s}, {{...toast_props, onDismiss: () => setUserDismissed(true)}},)"
             )
 
         individual_hooks = [
+            Var(f"const toast = {toast_ref};"),
             f"const toast_props = {LiteralVar.create(props)!s};",
             "const [userDismissed, setUserDismissed] = useState(false);",
             "const [waitedForBackend, setWaitedForBackend] = useState(false);",
@@ -149,8 +149,12 @@ setTimeout(() => {{
                 "useEffect",
                 _var_data=VarData(
                     imports={
-                        "react": ["useEffect", "useState"],
-                        **dict(target_url._get_all_var_data().imports),  # pyright: ignore [reportArgumentType, reportOptionalMemberAccess]
+                        "react": ("useEffect", "useState"),
+                        **(
+                            dict(var_data.imports)
+                            if (var_data := target_url._get_all_var_data()) is not None
+                            else {}
+                        ),
                     }
                 ),
             ).call(
@@ -163,7 +167,7 @@ setTimeout(() => {{
             {toast_var!s}
         }}
     }} else {{
-        toast.dismiss("{toast_id}");
+        toast?.dismiss("{toast_id}");
         setUserDismissed(false);  // after reconnection reset dismissed state
     }}
 }}
@@ -189,7 +193,6 @@ setTimeout(() => {{
         Returns:
             The connection toaster component.
         """
-        Toaster.is_used = True
         return super().create(*children, **props)
 
 
@@ -197,7 +200,7 @@ class ConnectionBanner(Component):
     """A connection banner component."""
 
     @classmethod
-    def create(cls, comp: Optional[Component] = None) -> Component:
+    def create(cls, comp: Component | None = None) -> Component:
         """Create a connection banner component.
 
         Args:
@@ -227,7 +230,7 @@ class ConnectionModal(Component):
     """A connection status modal window."""
 
     @classmethod
-    def create(cls, comp: Optional[Component] = None) -> Component:
+    def create(cls, comp: Component | None = None) -> Component:
         """Create a connection banner component.
 
         Args:
@@ -265,7 +268,9 @@ class WifiOffPulse(Icon):
         Returns:
             The icon component with default props applied.
         """
-        pulse_var = Var(_js_expr="pulse")
+        pulse_var = Var(r"keyframes({ from: { opacity: 0 }, to: { opacity: 1 } })").to(
+            str
+        )
         return super().create(
             "wifi_off",
             color=props.pop("color", "crimson"),
@@ -285,18 +290,6 @@ class WifiOffPulse(Icon):
             The import dict.
         """
         return {"@emotion/react": [ImportVar(tag="keyframes")]}
-
-    def _get_custom_code(self) -> str | None:
-        return """
-const pulse = keyframes`
-    0% {
-        opacity: 0;
-    }
-    100% {
-        opacity: 1;
-    }
-`
-"""
 
 
 class ConnectionPulser(Div):
@@ -383,7 +376,7 @@ class BackendDisabled(Div):
                             ),
                             rx.hstack(
                                 rx.el.svg(
-                                    rx.el.svg.path(
+                                    rx.el.path(
                                         d="M6.90816 1.34341C7.61776 1.10786 8.38256 1.10786 9.09216 1.34341C9.7989 1.57799 10.3538 2.13435 10.9112 2.91605C11.4668 3.69515 12.0807 4.78145 12.872 6.18175L12.9031 6.23672C13.6946 7.63721 14.3085 8.72348 14.6911 9.60441C15.0755 10.4896 15.267 11.2539 15.1142 11.9881C14.9604 12.7275 14.5811 13.3997 14.0287 13.9079C13.4776 14.4147 12.7273 14.6286 11.7826 14.7313C10.8432 14.8334 9.6143 14.8334 8.0327 14.8334H7.9677C6.38604 14.8334 5.15719 14.8334 4.21778 14.7313C3.27301 14.6286 2.52269 14.4147 1.97164 13.9079C1.41924 13.3997 1.03995 12.7275 0.88613 11.9881C0.733363 11.2539 0.92483 10.4896 1.30926 9.60441C1.69184 8.72348 2.30573 7.63721 3.09722 6.23671L3.12828 6.18175C3.91964 4.78146 4.53355 3.69515 5.08914 2.91605C5.64658 2.13435 6.20146 1.57799 6.90816 1.34341ZM7.3335 11.3334C7.3335 10.9652 7.63063 10.6667 7.99716 10.6667H8.00316C8.3697 10.6667 8.66683 10.9652 8.66683 11.3334C8.66683 11.7016 8.3697 12.0001 8.00316 12.0001H7.99716C7.63063 12.0001 7.3335 11.7016 7.3335 11.3334ZM7.3335 8.66675C7.3335 9.03495 7.63196 9.33341 8.00016 9.33341C8.36836 9.33341 8.66683 9.03495 8.66683 8.66675V6.00008C8.66683 5.63189 8.36836 5.33341 8.00016 5.33341C7.63196 5.33341 7.3335 5.63189 7.3335 6.00008V8.66675Z",
                                         fill_rule="evenodd",
                                         clip_rule="evenodd",

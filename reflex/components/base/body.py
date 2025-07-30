@@ -1,9 +1,7 @@
 """Display the page body."""
 
-from reflex.components.component import Component
+from reflex.components.el import elements
 
 
-class Body(Component):
+class Body(elements.Body):
     """A body component."""
-
-    tag = "body"

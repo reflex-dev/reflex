@@ -1,6 +1,6 @@
 """Integration tests for links and related components."""
 
-from typing import Generator
+from collections.abc import Generator
 from urllib.parse import urlsplit
 
 import pytest
@@ -40,7 +40,7 @@ def NavigationApp():
         return rx.text("Internal")
 
 
-@pytest.fixture()
+@pytest.fixture
 def navigation_app(tmp_path) -> Generator[AppHarness, None, None]:
     """Start NavigationApp app at tmp_path via AppHarness.
 
@@ -74,20 +74,22 @@ async def test_navigation_app(navigation_app: AppHarness):
 
     with poll_for_navigation(driver):
         internal_link.click()
-    assert urlsplit(driver.current_url).path == "/internal/"
+    assert urlsplit(driver.current_url).path == "/internal"
     with poll_for_navigation(driver):
         driver.back()
 
-    external_link = driver.find_element(By.ID, "external")
+    external_link = AppHarness.poll_for_or_raise_timeout(
+        lambda: driver.find_element(By.ID, "external")
+    )
     external2_link = driver.find_element(By.ID, "external2")
 
     external_link.click()
     # Expect a new tab to open
-    assert AppHarness._poll_for(lambda: len(driver.window_handles) == 2)
+    AppHarness.expect(lambda: len(driver.window_handles) == 2)
 
     # Switch back to the main tab
     driver.switch_to.window(driver.window_handles[0])
 
     external2_link.click()
     # Expect another new tab to open
-    assert AppHarness._poll_for(lambda: len(driver.window_handles) == 3)
+    AppHarness.expect(lambda: len(driver.window_handles) == 3)

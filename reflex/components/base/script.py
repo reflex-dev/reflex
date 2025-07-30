@@ -1,75 +1,78 @@
-"""Next.js script wrappers and inline script functionality.
-
-https://nextjs.org/docs/app/api-reference/components/script
-"""
+"""Wrapper for the script element. Uses the Helmet component to manage the head."""
 
 from __future__ import annotations
 
-from typing import Literal
-
-from reflex.components.component import Component
-from reflex.event import EventHandler, no_args_event_spec
-from reflex.vars.base import LiteralVar, Var
+from reflex.components import el as elements
+from reflex.components.core.helmet import helmet
+from reflex.utils import console
 
 
-class Script(Component):
-    """Next.js script component.
-
-    Note that this component differs from reflex.components.base.document.NextScript
-    in that it is intended for use with custom and user-defined scripts.
-
-    It also differs from reflex.components.base.link.ScriptTag, which is the plain
-    HTML <script> tag which does not work when rendering a component.
-    """
-
-    library = "next/script"
-    tag = "Script"
-    is_default = True
-
-    # Required unless inline script is used
-    src: Var[str]
-
-    # When the script will execute: afterInteractive (defer-like behavior) | beforeInteractive | lazyOnload (async-like behavior)
-    strategy: Var[Literal["afterInteractive", "beforeInteractive", "lazyOnload"]] = (
-        LiteralVar.create("afterInteractive")
-    )
-
-    # Triggered when the script is loading
-    on_load: EventHandler[no_args_event_spec]
-
-    # Triggered when the script has loaded
-    on_ready: EventHandler[no_args_event_spec]
-
-    # Triggered when the script has errored
-    on_error: EventHandler[no_args_event_spec]
+class Script(elements.Script):
+    """Wrapper for the script element."""
 
     @classmethod
-    def create(cls, *children, **props) -> Component:
-        """Create an inline or user-defined script.
-
-        If a string is provided as the first child, it will be rendered as an inline script
-        otherwise the `src` prop must be provided.
-
-        The following event triggers are provided:
-
-        on_load: Execute code after the script has finished loading.
-        on_ready: Execute code after the script has finished loading and every
-            time the component is mounted.
-        on_error: Execute code if the script fails to load.
+    def create(
+        cls,
+        *children,
+        **props,
+    ):
+        """Display the script element.
 
         Args:
-            *children: The children of the component.
-            **props: The props of the component.
+            *children: The children of the element.
+            **props: The properties of the element.
 
         Returns:
-            The component.
+            The script element.
 
         Raises:
-            ValueError: when neither children nor `src` are specified.
+            ValueError: If neither children nor src is specified.
         """
-        if not children and not props.get("src"):
-            raise ValueError("Must provide inline script or `src` prop.")
-        return super().create(*children, **props)
+        async_ = props.pop("async_", None)
+        char_set = props.pop("char_set", None)
+        cross_origin = props.pop("cross_origin", None)
+        defer = props.pop("defer", None)
+        integrity = props.pop("integrity", None)
+        referrer_policy = props.pop("referrer_policy", None)
+        src = props.pop("src", None)
+        type = props.pop("type", None)
+        key = props.pop("key", None)
+        id = props.pop("id", None)
+        class_name = props.pop("class_name", None)
+        autofocus = props.pop("autofocus", None)
+        custom_attrs = props.pop("custom_attrs", None)
+        on_mount = props.pop("on_mount", None)
+        on_unmount = props.pop("on_unmount", None)
+
+        if props:
+            console.warn(
+                f"rx.script does not support the following properties: {list(props.keys())}"
+            )
+
+        if not children and not src:
+            msg = "You must specify either children or src for the script element."
+            raise ValueError(msg)
+
+        return helmet(
+            elements.Script.create(
+                *children,
+                async_=async_,
+                char_set=char_set,
+                cross_origin=cross_origin,
+                defer=defer,
+                integrity=integrity,
+                referrer_policy=referrer_policy,
+                src=src,
+                type=type,
+                key=key,
+                id=id,
+                class_name=class_name,
+                autofocus=autofocus,
+                custom_attrs=custom_attrs,
+                on_mount=on_mount,
+                on_unmount=on_unmount,
+            )
+        )
 
 
 script = Script.create

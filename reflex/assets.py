@@ -2,16 +2,15 @@
 
 import inspect
 from pathlib import Path
-from typing import Optional
 
 from reflex import constants
-from reflex.config import EnvironmentVariables
+from reflex.environment import EnvironmentVariables
 
 
 def asset(
     path: str,
     shared: bool = False,
-    subfolder: Optional[str] = None,
+    subfolder: str | None = None,
     _stack_level: int = 1,
 ) -> str:
     """Add an asset to the app, either shared as a symlink or local.
@@ -59,9 +58,11 @@ def asset(
         cwd = Path.cwd()
         src_file_local = cwd / assets / path
         if subfolder is not None:
-            raise ValueError("Subfolder is not supported for local assets.")
+            msg = "Subfolder is not supported for local assets."
+            raise ValueError(msg)
         if not backend_only and not src_file_local.exists():
-            raise FileNotFoundError(f"File not found: {src_file_local}")
+            msg = f"File not found: {src_file_local}"
+            raise FileNotFoundError(msg)
         return f"/{path}"
 
     # Shared asset handling
@@ -74,7 +75,8 @@ def asset(
     external = constants.Dirs.EXTERNAL_APP_ASSETS
     src_file_shared = Path(calling_file).parent / path
     if not src_file_shared.exists():
-        raise FileNotFoundError(f"File not found: {src_file_shared}")
+        msg = f"File not found: {src_file_shared}"
+        raise FileNotFoundError(msg)
 
     caller_module_path = module.__name__.replace(".", "/")
     subfolder = f"{caller_module_path}/{subfolder}" if subfolder else caller_module_path

@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import dataclasses
+
 from reflex.components.el.elements.typography import Div
 from reflex.constants.compiler import MemoizationDisposition, MemoizationMode
 from reflex.utils.imports import ImportDict
@@ -11,7 +13,9 @@ from reflex.vars.base import Var, get_unique_variable_name
 class AutoScroll(Div):
     """A div that automatically scrolls to the bottom when new content is added."""
 
-    _memoization_mode = MemoizationMode(disposition=MemoizationDisposition.ALWAYS)
+    _memoization_mode = MemoizationMode(
+        disposition=MemoizationDisposition.ALWAYS, recursive=False
+    )
 
     @classmethod
     def create(cls, *children, **props):
@@ -26,7 +30,12 @@ class AutoScroll(Div):
         """
         props.setdefault("overflow", "auto")
         props.setdefault("id", get_unique_variable_name())
-        return super().create(*children, **props)
+        component = super().create(*children, **props)
+        if "key" in props:
+            component._memoization_mode = dataclasses.replace(
+                component._memoization_mode, recursive=True
+            )
+        return component
 
     def add_imports(self) -> ImportDict | list[ImportDict]:
         """Add imports required for the component.
@@ -44,7 +53,6 @@ class AutoScroll(Div):
         """
         ref_name = self.get_ref()
         return [
-            "const containerRef = useRef(null);",
             "const wasNearBottom = useRef(false);",
             "const hadScrollbar = useRef(false);",
             f"""
@@ -84,6 +92,8 @@ const scrollToBottomIfNeeded = () => {{
 useEffect(() => {{
     const container = {ref_name}.current;
     if (!container) return;
+
+    scrollToBottomIfNeeded();
 
     // Create ResizeObserver to detect height changes
     const resizeObserver = new ResizeObserver(() => {{

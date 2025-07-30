@@ -1,4 +1,6 @@
 name: pre-commit
+permissions:
+  contents: read
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.id }}
@@ -21,14 +23,9 @@ jobs:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/setup_build_env
         with:
-          # running vs. one version of Python is OK
-          # i.e. ruff, black, etc.
-          python-version: 3.12.8
-          run-poetry-install: true
-          create-venv-at-path: .venv
-      # TODO pre-commit related stuff can be cached too (not a bottleneck yet)
-      - run: |
-          poetry run uv pip install pre-commit
-          poetry run pre-commit run --all-files
-        env:
-          SKIP: update-pyi-files
+          python-version: 3.13
+          run-uv-sync: true
+      - uses: actions/checkout@v4
+        with:
+          clean: false
+      - run: uv run pre-commit run --all-files --show-diff-on-failure

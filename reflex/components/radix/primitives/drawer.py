@@ -4,7 +4,8 @@
 # Style based on https://ui.shadcn.com/docs/components/drawer
 from __future__ import annotations
 
-from typing import Any, List, Literal, Optional, Union
+from collections.abc import Sequence
+from typing import Any, Literal
 
 from reflex.components.component import Component, ComponentNamespace
 from reflex.components.radix.primitives.base import RadixPrimitiveComponent
@@ -18,9 +19,9 @@ from reflex.vars.base import Var
 class DrawerComponent(RadixPrimitiveComponent):
     """A Drawer component."""
 
-    library = "vaul"
+    library = "vaul@1.1.2"
 
-    lib_dependencies: List[str] = ["@radix-ui/react-dialog@^1.0.5"]
+    lib_dependencies: list[str] = ["@radix-ui/react-dialog@1.1.14"]
 
 
 LiteralDirectionType = Literal["top", "bottom", "left", "right"]
@@ -58,7 +59,7 @@ class DrawerRoot(DrawerComponent):
     handle_only: Var[bool]
 
     # Array of numbers from 0 to 100 that corresponds to % of the screen a given snap point should take up. Should go from least visible. Also Accept px values, which doesn't take screen height into account.
-    snap_points: Optional[List[Union[str, float]]]
+    snap_points: Sequence[str | float] | None
 
     # Index of a snapPoint from which the overlay fade should be applied. Defaults to the last snap point.
     fade_from_index: Var[int]

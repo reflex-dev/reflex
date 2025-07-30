@@ -1,7 +1,5 @@
 """Metadata classes."""
 
-from typing import List
-
 from reflex.components.el.element import Element
 from reflex.components.el.elements.inline import ReferrerPolicy
 from reflex.components.el.elements.media import CrossOrigin
@@ -15,7 +13,6 @@ class Base(BaseHTML):
 
     tag = "base"
 
-    tag = "base"
     href: Var[str]
     target: Var[str]
 
@@ -76,6 +73,9 @@ class Meta(BaseHTML):  # Inherits common attributes from BaseHTML
     # Specifies a name for the metadata
     name: Var[str]
 
+    # The type of metadata value.
+    property: Var[str]
+
 
 class Title(Element):
     """Display the title element."""
@@ -91,7 +91,7 @@ class StyleEl(Element):
 
     media: Var[str]
 
-    special_props: List[Var] = [Var(_js_expr="suppressHydrationWarning")]
+    suppress_hydration_warning: Var[bool] = Var.create(True)
 
 
 base = Base.create

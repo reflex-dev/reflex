@@ -1,9 +1,9 @@
 from pathlib import Path
-from typing import Optional, Type
 from unittest import mock
 
 import pytest
 import sqlalchemy
+import sqlalchemy.exc
 import sqlmodel
 
 import reflex.constants
@@ -34,7 +34,7 @@ def model_custom_primary() -> Model:
     """
 
     class ChildModel(Model):
-        custom_id: Optional[int] = sqlmodel.Field(default=None, primary_key=True)
+        custom_id: int | None = sqlmodel.Field(default=None, primary_key=True)
         name: str
 
     return ChildModel(name="name")
@@ -64,7 +64,7 @@ def test_custom_primary_key(model_custom_primary: Model):
 def test_automigration(
     tmp_working_dir: Path,
     monkeypatch: pytest.MonkeyPatch,
-    model_registry: Type[ModelRegistry],
+    model_registry: type[ModelRegistry],
 ):
     """Test alembic automigration with add and drop table and column.
 
@@ -106,7 +106,7 @@ def test_automigration(
 
     # Create column t2, mark t1 as optional with default
     class AlembicThing(Model, table=True):  # pyright: ignore [reportRedeclaration]
-        t1: Optional[str] = "default"
+        t1: str | None = "default"
         t2: str = "bar"
 
     assert Model.migrate(autogenerate=True)

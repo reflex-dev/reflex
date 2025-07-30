@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-import time
-from typing import Generator
+import asyncio
+from collections.abc import Generator
 
 import pytest
 from selenium.webdriver.common.by import By
@@ -160,7 +160,7 @@ def driver(computed_vars: AppHarness) -> Generator[WebDriver, None, None]:
         driver.quit()
 
 
-@pytest.fixture()
+@pytest.fixture
 def token(computed_vars: AppHarness, driver: WebDriver) -> str:
     """Get a function that returns the active token.
 
@@ -172,8 +172,9 @@ def token(computed_vars: AppHarness, driver: WebDriver) -> str:
         The token for the connected client
     """
     assert computed_vars.app_instance is not None
-    token_input = driver.find_element(By.ID, "token")
-    assert token_input
+    token_input = AppHarness.poll_for_or_raise_timeout(
+        lambda: driver.find_element(By.ID, "token")
+    )
 
     # wait for the backend connection to send the token
     token = computed_vars.poll_for_value(token_input, timeout=DEFAULT_TIMEOUT * 2)
@@ -267,7 +268,7 @@ async def test_computed_vars(
     with pytest.raises(TimeoutError):
         _ = computed_vars.poll_for_content(count3, timeout=5, exp_not_equal="0")
 
-    time.sleep(10)
+    await asyncio.sleep(10)
     assert count3.text == "0"
     assert depends_on_count3.text == "0"
     mark_dirty.click()

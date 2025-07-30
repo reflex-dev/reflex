@@ -1,13 +1,11 @@
 """Export utilities."""
 
 from pathlib import Path
-from typing import Optional
 
 from reflex import constants
-from reflex.config import environment, get_config
+from reflex.config import get_config
+from reflex.environment import environment
 from reflex.utils import build, console, exec, prerequisites, telemetry
-
-config = get_config()
 
 
 def export(
@@ -16,8 +14,8 @@ def export(
     backend: bool = True,
     zip_dest_dir: str = str(Path.cwd()),
     upload_db_file: bool = False,
-    api_url: Optional[str] = None,
-    deploy_url: Optional[str] = None,
+    api_url: str | None = None,
+    deploy_url: str | None = None,
     env: constants.Env = constants.Env.PROD,
     loglevel: constants.LogLevel = console._LOG_LEVEL,
 ):
@@ -34,6 +32,8 @@ def export(
         env: The environment to use. Defaults to constants.Env.PROD.
         loglevel: The log level to use. Defaults to console._LOG_LEVEL.
     """
+    config = get_config()
+
     # Set the log level.
     console.set_log_level(loglevel)
 
@@ -42,10 +42,10 @@ def export(
 
     # Override the config url values if provided.
     if api_url is not None:
-        config.api_url = str(api_url)
+        config._set_persistent(api_url=str(api_url))
         console.debug(f"overriding API URL: {config.api_url}")
     if deploy_url is not None:
-        config.deploy_url = str(deploy_url)
+        config._set_persistent(deploy_url=str(deploy_url))
         console.debug(f"overriding deploy URL: {config.deploy_url}")
 
     # Show system info
@@ -56,13 +56,13 @@ def export(
 
     if frontend:
         # Ensure module can be imported and app.compile() is called.
-        prerequisites.get_compiled_app(export=True)
+        prerequisites.get_compiled_app(prerender_routes=True)
         # Set up .web directory and install frontend dependencies.
         build.setup_frontend(Path.cwd())
 
     # Build the static app.
     if frontend:
-        build.build(deploy_url=config.deploy_url, for_export=True)
+        build.build()
 
     # Zip up the app.
     if zipping:

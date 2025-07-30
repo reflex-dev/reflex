@@ -5,12 +5,12 @@
 # then copy the contents of `frontend.zip` to your static file server (github pages, s3, etc).
 #
 # Azure Static Web App example:
-#    npx @azure/static-web-apps-cli deploy --env production --app-location .web/_static
+#    npx @azure/static-web-apps-cli deploy --env production --app-location .web/build/client
 #
 # For dynamic routes to function properly, ensure that 404s are redirected to /404 on the
 # static file host (for github pages, this works out of the box; remember to create .nojekyll).
 #
-# For azure static web apps, add `staticwebapp.config.json` to to `.web/_static` with the following:
+# For azure static web apps, add `staticwebapp.config.json` to to `.web/build/client` with the following:
 #  {
 #     "responseOverrides": {
 #        "404": {

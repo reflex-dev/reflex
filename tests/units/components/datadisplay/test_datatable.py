@@ -3,13 +3,14 @@ import pytest
 
 import reflex as rx
 from reflex.components.gridjs.datatable import DataTable
+from reflex.constants.state import FIELD_MARKER
 from reflex.utils import types
 from reflex.utils.exceptions import UntypedComputedVarError
 from reflex.utils.serializers import serialize, serialize_dataframe
 
 
 @pytest.mark.parametrize(
-    "data_table_state,expected",
+    ("data_table_state", "expected"),
     [
         pytest.param(
             {
@@ -44,11 +45,20 @@ def test_validate_data_table(data_table_state: rx.State, expected):
 
     # prefix expected with state name
     state_name = data_table_state.get_name()
-    expected = f"{state_name}.{expected}" if expected else state_name
+    expected_columns = (
+        f"{state_name}.{expected}{FIELD_MARKER}.columns"
+        if expected
+        else state_name + ".columns" + FIELD_MARKER
+    )
+    expected_data = (
+        f"{state_name}.{expected}{FIELD_MARKER}.data"
+        if expected
+        else state_name + ".data" + FIELD_MARKER
+    )
 
     assert data_table_dict["props"] == [
-        f"columns={{{expected}.columns}}",
-        f"data={{{expected}.data}}",
+        "columns:" + expected_columns,
+        "data:" + expected_data,
     ]
 
 
@@ -73,7 +83,7 @@ def test_invalid_props(props):
 
 
 @pytest.mark.parametrize(
-    "fixture, err_msg, is_data_frame",
+    ("fixture", "err_msg", "is_data_frame"),
     [
         (
             "data_table_state2",
@@ -114,11 +124,11 @@ def test_computed_var_without_annotation(fixture, request, err_msg, is_data_fram
 
 def test_serialize_dataframe():
     """Test if dataframe is serialized correctly."""
-    df = pd.DataFrame(
+    simple_dataframe = pd.DataFrame(
         [["foo", "bar"], ["foo1", "bar1"]],
         columns=["column1", "column2"],  # pyright: ignore [reportArgumentType]
     )
-    value = serialize(df)
-    assert value == serialize_dataframe(df)
+    value = serialize(simple_dataframe)
+    assert value == serialize_dataframe(simple_dataframe)
     assert isinstance(value, dict)
     assert tuple(value) == ("columns", "data")

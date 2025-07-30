@@ -2,8 +2,9 @@
 
 from __future__ import annotations
 
+from collections.abc import Iterator
 from hashlib import md5
-from typing import Any, Dict, Iterator, Literal, Set, Tuple, Union
+from typing import Any, ClassVar, Literal
 
 from jinja2 import Environment
 
@@ -13,14 +14,17 @@ from reflex.constants import Dirs, EventTriggers
 from reflex.event import (
     EventChain,
     EventHandler,
+    checked_input_event,
+    float_input_event,
     input_event,
+    int_input_event,
     key_event,
     prevent_default,
 )
 from reflex.utils.imports import ImportDict
-from reflex.utils.types import is_optional
 from reflex.vars import VarData
 from reflex.vars.base import LiteralVar, Var
+from reflex.vars.number import ternary_operation
 
 from .base import BaseHTML
 
@@ -32,7 +36,7 @@ HANDLE_SUBMIT_JS_JINJA2 = Environment().from_string(
         ev.preventDefault()
         const {{ form_data }} = {...Object.fromEntries(new FormData($form).entries()), ...{{ field_ref_mapping }}};
 
-        ({{ on_submit_event_chain }}());
+        ({{ on_submit_event_chain }}(ev));
 
         if ({{ reset_on_submit }}) {
             $form.reset()
@@ -80,7 +84,9 @@ class Button(BaseHTML):
     type: Var[ButtonType]
 
     # Value of the button, used when sending form data
-    value: Var[Union[str, int, float]]
+    value: Var[str | int | float]
+
+    _invalid_children: ClassVar[list[str]] = ["Button"]
 
 
 class Datalist(BaseHTML):
@@ -104,7 +110,7 @@ class Fieldset(Element):
     name: Var[str]
 
 
-def on_submit_event_spec() -> Tuple[Var[dict[str, Any]]]:
+def on_submit_event_spec() -> tuple[Var[dict[str, Any]]]:
     """Event handler spec for the on_submit event.
 
     Returns:
@@ -113,7 +119,7 @@ def on_submit_event_spec() -> Tuple[Var[dict[str, Any]]]:
     return (FORM_DATA,)
 
 
-def on_submit_string_event_spec() -> Tuple[Var[dict[str, str]]]:
+def on_submit_string_event_spec() -> tuple[Var[dict[str, str]]]:
     """Event handler spec for the on_submit event.
 
     Returns:
@@ -183,7 +189,7 @@ class Form(BaseHTML):
         # Render the form hooks and use the hash of the resulting code to create a unique name.
         props["handle_submit_unique_name"] = ""
         form = super().create(*children, **props)
-        form.handle_submit_unique_name = md5(
+        form.handle_submit_unique_name = md5(  # pyright: ignore[reportAttributeAccessIssue]
             str(form._get_all_hooks()).encode("utf-8")
         ).hexdigest()
         return form
@@ -232,7 +238,7 @@ class Form(BaseHTML):
             )
         return render_tag
 
-    def _get_form_refs(self) -> Dict[str, Any]:
+    def _get_form_refs(self) -> dict[str, Any]:
         # Send all the input refs to the handler.
         form_refs = {}
         for ref in self._get_all_refs():
@@ -294,8 +300,8 @@ HTMLInputTypeAttribute = Literal[
 ]
 
 
-class Input(BaseHTML):
-    """Display the input element."""
+class BaseInput(BaseHTML):
+    """A base class for input elements."""
 
     tag = "input"
 
@@ -321,7 +327,7 @@ class Input(BaseHTML):
     default_checked: Var[bool]
 
     # The initial value for a text field
-    default_value: Var[Union[str, int, float]]
+    default_value: Var[str | int | float]
 
     # Disables the input
     disabled: Var[bool]
@@ -348,16 +354,16 @@ class Input(BaseHTML):
     list: Var[str]
 
     # Specifies the maximum value for the input
-    max: Var[Union[str, int, float]]
+    max: Var[str | int | float]
 
     # Specifies the maximum number of characters allowed in the input
-    max_length: Var[Union[int, float]]
+    max_length: Var[int | float]
 
     # Specifies the minimum number of characters required in the input
-    min_length: Var[Union[int, float]]
+    min_length: Var[int | float]
 
     # Specifies the minimum value for the input
-    min: Var[Union[str, int, float]]
+    min: Var[str | int | float]
 
     # Indicates whether multiple values can be entered in an input of the type email or file
     multiple: Var[bool]
@@ -378,19 +384,55 @@ class Input(BaseHTML):
     required: Var[bool]
 
     # Specifies the visible width of a text control
-    size: Var[Union[int, float]]
+    size: Var[str | int | float]
 
     # URL for image inputs
     src: Var[str]
 
     # Specifies the legal number intervals for an input
-    step: Var[Union[str, int, float]]
+    step: Var[str | int | float]
 
     # Specifies the type of input
     type: Var[HTMLInputTypeAttribute]
 
     # Value of the input
-    value: Var[Union[str, int, float]]
+    value: Var[str | int | float]
+
+    # Fired when a key is pressed down
+    on_key_down: EventHandler[key_event]
+
+    # Fired when a key is released
+    on_key_up: EventHandler[key_event]
+
+
+class CheckboxInput(BaseInput):
+    """Display the input element."""
+
+    # Fired when the input value changes
+    on_change: EventHandler[checked_input_event]
+
+    # Fired when the input gains focus
+    on_focus: EventHandler[checked_input_event]
+
+    # Fired when the input loses focus
+    on_blur: EventHandler[checked_input_event]
+
+
+class ValueNumberInput(BaseInput):
+    """Display the input element."""
+
+    # Fired when the input value changes
+    on_change: EventHandler[float_input_event, int_input_event, input_event]
+
+    # Fired when the input gains focus
+    on_focus: EventHandler[float_input_event, int_input_event, input_event]
+
+    # Fired when the input loses focus
+    on_blur: EventHandler[float_input_event, int_input_event, input_event]
+
+
+class Input(BaseInput):
+    """Display the input element."""
 
     # Fired when the input value changes
     on_change: EventHandler[input_event]
@@ -400,12 +442,6 @@ class Input(BaseHTML):
 
     # Fired when the input loses focus
     on_blur: EventHandler[input_event]
-
-    # Fired when a key is pressed down
-    on_key_down: EventHandler[key_event]
-
-    # Fired when a key is released
-    on_key_up: EventHandler[key_event]
 
     @classmethod
     def create(cls, *children, **props):
@@ -418,20 +454,28 @@ class Input(BaseHTML):
         Returns:
             The component.
         """
-        from reflex.vars.number import ternary_operation
-
         value = props.get("value")
 
         # React expects an empty string(instead of null) for controlled inputs.
-        if value is not None and is_optional(
-            (value_var := Var.create(value))._var_type
-        ):
+        if value is not None:
+            value_var = Var.create(value)
             props["value"] = ternary_operation(
-                (value_var != Var.create(None))  # pyright: ignore [reportArgumentType]
-                & (value_var != Var(_js_expr="undefined")),
-                value,
-                Var.create(""),
+                value_var.is_not_none(), value_var, Var.create("")
             )
+
+        if cls is Input:
+            input_type = props.get("type")
+
+            if isinstance(input_type, str) and input_type == "checkbox":
+                # Checkbox inputs should use the CheckboxInput class
+                return CheckboxInput.create(*children, **props)
+
+            if isinstance(input_type, str) and (
+                input_type == "number" or input_type == "range"
+            ):
+                # Number inputs should use the ValueNumberInput class
+                return ValueNumberInput.create(*children, **props)
+
         return super().create(*children, **props)
 
 
@@ -462,22 +506,22 @@ class Meter(BaseHTML):
     form: Var[str]
 
     # High limit of range (above this is considered high value)
-    high: Var[Union[int, float]]
+    high: Var[str | int | float]
 
     # Low limit of range (below this is considered low value)
-    low: Var[Union[int, float]]
+    low: Var[str | int | float]
 
     # Maximum value of the range
-    max: Var[Union[int, float]]
+    max: Var[str | int | float]
 
     # Minimum value of the range
-    min: Var[Union[int, float]]
+    min: Var[str | int | float]
 
     # Optimum value in the range
-    optimum: Var[Union[int, float]]
+    optimum: Var[str | int | float]
 
     # Current value of the meter
-    value: Var[Union[int, float]]
+    value: Var[str | int | float]
 
 
 class Optgroup(BaseHTML):
@@ -507,7 +551,7 @@ class Option(BaseHTML):
     selected: Var[bool]
 
     # Value to be sent as form data
-    value: Var[Union[str, int, float]]
+    value: Var[str | int | float]
 
 
 class Output(BaseHTML):
@@ -534,10 +578,10 @@ class Progress(BaseHTML):
     form: Var[str]
 
     # Maximum value of the progress indicator
-    max: Var[Union[str, int, float]]
+    max: Var[str | int | float]
 
     # Current value of the progress indicator
-    value: Var[Union[str, int, float]]
+    value: Var[str | int | float]
 
 
 class Select(BaseHTML):
@@ -567,10 +611,16 @@ class Select(BaseHTML):
     required: Var[bool]
 
     # Number of visible options in a drop-down list
-    size: Var[int]
+    size: Var[str | int]
 
     # Fired when the select value changes
     on_change: EventHandler[input_event]
+
+    # The controlled value of the select, read only unless used with on_change
+    value: Var[str]
+
+    # The default value of the select when initially rendered
+    default_value: Var[str]
 
 
 AUTO_HEIGHT_JS = """
@@ -618,7 +668,7 @@ class Textarea(BaseHTML):
     auto_height: Var[bool]
 
     # Visible width of the text control, in average character widths
-    cols: Var[int]
+    cols: Var[str | int]
 
     # The default value of the textarea when initially rendered
     default_value: Var[str]
@@ -636,10 +686,10 @@ class Textarea(BaseHTML):
     form: Var[str]
 
     # Maximum number of characters allowed in the textarea
-    max_length: Var[int]
+    max_length: Var[str | int]
 
     # Minimum number of characters required in the textarea
-    min_length: Var[int]
+    min_length: Var[str | int]
 
     # Name of the textarea, used when submitting the form
     name: Var[str]
@@ -654,7 +704,7 @@ class Textarea(BaseHTML):
     required: Var[bool]
 
     # Visible number of lines in the text control
-    rows: Var[int]
+    rows: Var[str | int]
 
     # The controlled value of the textarea, read only unless used with on_change
     value: Var[str]
@@ -698,9 +748,8 @@ class Textarea(BaseHTML):
         if enter_key_submit is not None:
             enter_key_submit = Var.create(enter_key_submit)
             if "on_key_down" in props:
-                raise ValueError(
-                    "Cannot combine `enter_key_submit` with `on_key_down`.",
-                )
+                msg = "Cannot combine `enter_key_submit` with `on_key_down`."
+                raise ValueError(msg)
             custom_attrs["on_key_down"] = Var(
                 _js_expr=f"(e) => enterKeySubmitOnKeyDown(e, {enter_key_submit!s})",
                 _var_data=VarData.merge(enter_key_submit._get_all_var_data()),
@@ -720,7 +769,7 @@ class Textarea(BaseHTML):
             "enter_key_submit",
         ]
 
-    def _get_all_custom_code(self) -> Set[str]:
+    def _get_all_custom_code(self) -> set[str]:
         """Include the custom code for auto_height and enter_key_submit functionality.
 
         Returns:

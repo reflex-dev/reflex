@@ -8,8 +8,6 @@ from rxconfig import config
 class State(rx.State):
     """The app state."""
 
-    ...
-
 
 def index() -> rx.Component:
     # Welcome Page (Index)
@@ -31,7 +29,6 @@ def index() -> rx.Component:
             justify="center",
             min_height="85vh",
         ),
-        rx.logo(),
     )
 
 

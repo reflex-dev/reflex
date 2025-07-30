@@ -5,7 +5,7 @@ from __future__ import annotations
 import re
 from collections import defaultdict
 from contextlib import suppress
-from typing import Any, ClassVar, Optional, Type, Union
+from typing import Any, ClassVar
 
 import alembic.autogenerate
 import alembic.command
@@ -19,9 +19,11 @@ import sqlalchemy.exc
 import sqlalchemy.ext.asyncio
 import sqlalchemy.orm
 from alembic.runtime.migration import MigrationContext
+from alembic.script.base import Script
 
 from reflex.base import Base
-from reflex.config import environment, get_config
+from reflex.config import get_config
+from reflex.environment import environment
 from reflex.utils import console
 from reflex.utils.compat import sqlmodel, sqlmodel_field_has_primary_key
 
@@ -31,6 +33,41 @@ _AsyncSessionLocal: dict[str | None, sqlalchemy.ext.asyncio.async_sessionmaker] 
 
 # Import AsyncSession _after_ reflex.utils.compat
 from sqlmodel.ext.asyncio.session import AsyncSession  # noqa: E402
+
+
+def format_revision(
+    rev: Script,
+    current_rev: str | None,
+    current_reached_ref: list[bool],
+) -> str:
+    """Format a single revision for display.
+
+    Args:
+        rev: The alembic script object
+        current_rev: The currently applied revision ID
+        current_reached_ref: Mutable reference to track if we've reached current revision
+
+    Returns:
+        Formatted string for display
+    """
+    current = rev.revision
+    message = rev.doc
+
+    # Determine if this migration is applied
+    if current_rev is None:
+        is_applied = False
+    elif current == current_rev:
+        is_applied = True
+        current_reached_ref[0] = True
+    else:
+        is_applied = not current_reached_ref[0]
+
+    # Show checkmark or X with colors
+    status_icon = "[green]✓[/green]" if is_applied else "[red]✗[/red]"
+    head_marker = " (head)" if rev.is_head else ""
+
+    # Format output with message
+    return f"  [{status_icon}] {current}{head_marker}, {message}"
 
 
 def _safe_db_url_for_logging(url: str) -> str:
@@ -83,7 +120,8 @@ def get_engine(url: str | None = None) -> sqlalchemy.engine.Engine:
     conf = get_config()
     url = url or conf.db_url
     if url is None:
-        raise ValueError("No database url configured")
+        msg = "No database url configured"
+        raise ValueError(msg)
 
     global _ENGINE
     if url in _ENGINE:
@@ -125,7 +163,8 @@ def get_async_engine(url: str | None) -> sqlalchemy.ext.asyncio.AsyncEngine:
                     f"db_url `{_safe_db_url_for_logging(conf.db_url)}`."
                 )
     if url is None:
-        raise ValueError("No async database url configured")
+        msg = "No async database url configured"
+        raise ValueError(msg)
 
     global _ASYNC_ENGINE
     if url in _ASYNC_ENGINE:
@@ -161,9 +200,7 @@ async def get_db_status() -> dict[str, bool]:
     return {"db": status}
 
 
-SQLModelOrSqlAlchemy = Union[
-    Type[sqlmodel.SQLModel], Type[sqlalchemy.orm.DeclarativeBase]
-]
+SQLModelOrSqlAlchemy = type[sqlmodel.SQLModel] | type[sqlalchemy.orm.DeclarativeBase]
 
 
 class ModelRegistry:
@@ -247,7 +284,7 @@ class Model(Base, sqlmodel.SQLModel):  # pyright: ignore [reportGeneralTypeIssue
     """Base class to define a table in the database."""
 
     # The primary key for the table.
-    id: Optional[int] = sqlmodel.Field(default=None, primary_key=True)
+    id: int | None = sqlmodel.Field(default=None, primary_key=True)
 
     def __init_subclass__(cls):
         """Drop the default primary key field if any primary key field is defined."""
@@ -273,7 +310,7 @@ class Model(Base, sqlmodel.SQLModel):  # pyright: ignore [reportGeneralTypeIssue
         """
         if hasattr(value, "dict"):
             return value.dict()
-        elif isinstance(value, list):
+        if isinstance(value, list):
             return [cls._dict_recursive(item) for item in value]
         return value
 
@@ -322,15 +359,15 @@ class Model(Base, sqlmodel.SQLModel):  # pyright: ignore [reportGeneralTypeIssue
             tuple of (config, script_directory)
         """
         config = alembic.config.Config(environment.ALEMBIC_CONFIG.get())
-        return config, alembic.script.ScriptDirectory(
-            config.get_main_option("script_location", default="version"),
-        )
+        if not config.get_main_option("script_location"):
+            config.set_main_option("script_location", "version")
+        return config, alembic.script.ScriptDirectory.from_config(config)
 
     @staticmethod
     def _alembic_render_item(
         type_: str,
         obj: Any,
-        autogen_context: "alembic.autogenerate.api.AutogenContext",
+        autogen_context: alembic.autogenerate.api.AutogenContext,
     ):
         """Alembic render_item hook call.
 
@@ -359,6 +396,25 @@ class Model(Base, sqlmodel.SQLModel):  # pyright: ignore [reportGeneralTypeIssue
             config=alembic.config.Config(environment.ALEMBIC_CONFIG.get()),
             directory=str(environment.ALEMBIC_CONFIG.get().parent / "alembic"),
         )
+
+    @classmethod
+    def get_migration_history(cls):
+        """Get migration history with current database state.
+
+        Returns:
+            tuple: (current_revision, revisions_list) where revisions_list is in chronological order
+        """
+        # Get current revision from database
+        with cls.get_db_engine().connect() as connection:
+            context = MigrationContext.configure(connection)
+            current_rev = context.get_current_revision()
+
+        # Get all revisions from base to head
+        _, script_dir = cls._alembic_config()
+        revisions = list(script_dir.walk_revisions())
+        revisions.reverse()  # Reverse to get chronological order (base first)
+
+        return current_rev, revisions
 
     @classmethod
     def alembic_autogenerate(
@@ -483,7 +539,7 @@ class Model(Base, sqlmodel.SQLModel):  # pyright: ignore [reportGeneralTypeIssue
             None - indicating the process was skipped.
         """
         if not environment.ALEMBIC_CONFIG.get().exists():
-            return
+            return None
 
         with cls.get_db_engine().connect() as connection:
             cls._alembic_upgrade(connection=connection)

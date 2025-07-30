@@ -20,6 +20,8 @@ class Ext(SimpleNamespace):
 
     # The extension for JS files.
     JS = ".js"
+    # The extension for JSX files.
+    JSX = ".jsx"
     # The extension for python files.
     PY = ".py"
     # The extension for css files.
@@ -78,16 +80,16 @@ class CompileVars(SimpleNamespace):
 
 
 class PageNames(SimpleNamespace):
-    """The name of basic pages deployed in NextJS."""
+    """The name of basic pages deployed in the frontend."""
 
     # The name of the index page.
     INDEX_ROUTE = "index"
     # The name of the app root page.
-    APP_ROOT = "_app"
+    APP_ROOT = "root.jsx"
     # The root stylesheet filename.
-    STYLESHEET_ROOT = "styles"
+    STYLESHEET_ROOT = "__reflex_global_styles"
     # The name of the document root page.
-    DOCUMENT_ROOT = "_document"
+    DOCUMENT_ROOT = "_document.js"
     # The name of the theme page.
     THEME = "theme"
     # The module containing components.
@@ -171,17 +173,25 @@ class MemoizationMode:
     recursive: bool = True
 
 
+DATA_UNDERSCORE = "data_"
+DATA_DASH = "data-"
+ARIA_UNDERSCORE = "aria_"
+ARIA_DASH = "aria-"
+
+SPECIAL_ATTRS = (
+    DATA_UNDERSCORE,
+    DATA_DASH,
+    ARIA_UNDERSCORE,
+    ARIA_DASH,
+)
+
+
 class SpecialAttributes(enum.Enum):
     """Special attributes for components.
 
     These are placed in custom_attrs and rendered as-is rather than converting
     to a style prop.
     """
-
-    DATA_UNDERSCORE = "data_"
-    DATA_DASH = "data-"
-    ARIA_UNDERSCORE = "aria_"
-    ARIA_DASH = "aria-"
 
     @classmethod
     def is_special(cls, attr: str) -> bool:
@@ -193,4 +203,11 @@ class SpecialAttributes(enum.Enum):
         Returns:
             True if the attribute is special.
         """
-        return any(attr.startswith(value.value) for value in cls)
+        return attr.startswith(SPECIAL_ATTRS)
+
+
+class ResetStylesheet(SimpleNamespace):
+    """Constants for CSS reset stylesheet."""
+
+    # The filename of the CSS reset file.
+    FILENAME = "__reflex_style_reset.css"

@@ -1,113 +1,44 @@
 # Entry conditions:
 # - `setup/checkout` has already happened
 # - working dir is the root directory of your project (e.g. `reflex/`).
-# - You have a `poetry.lock` file in the root directory of your project
+# - You have a `uv.lock` file in the root directory of your project
 # - You have a `pyproject.toml` file in the root directory of your project
 #
 # Exit conditions:
 # - Python of version `python-version` is ready to be invoked as `python`.
-# - Poetry of version `poetry-version` is ready to be invoked as `poetry`.
-# - If `run-poetry-install` is true, deps as defined in `pyproject.toml` will have been installed into the venv at `create-venv-at-path`.
+# - If `run-uv-sync` is true, deps as defined in `pyproject.toml` will have been installed into the venv at `create-venv-at-path`.
 
-name: 'Setup Reflex build environment'
-description: 'Sets up Python, install poetry (cached), install project deps (cached)'
+name: "Setup Reflex build environment"
+description: "Sets up Python, install uv (cached), install project deps (cached)"
 inputs:
   python-version:
-    description: 'Python version setup'
+    description: "Python version setup"
     required: true
-  poetry-version:
-    description: 'Poetry version to install'
-    required: false
-    default: '1.8.3'
-  run-poetry-install:
-    description: 'Whether to run poetry install on current dir'
+  run-uv-sync:
+    description: "Whether to run uv sync on current dir"
     required: false
     default: false
   create-venv-at-path:
-    description: 'Path to venv (if poetry install is enabled)'
+    description: "Path to venv (if uv sync is enabled)"
     required: false
-    default: '.venv'
+    default: ".venv"
 
 runs:
-  using: 'composite'
+  using: "composite"
   steps:
-    - name: Set up Python ${{ inputs.python-version }}
-      uses: actions/setup-python@v5
+    - name: Install UV
+      uses: astral-sh/setup-uv@v6
       with:
         python-version: ${{ inputs.python-version }}
-
-    # This is required for OS portability in presence of caching.
-    #
-    # The act of installing poetry has the side effect of adding
-    # poetry bin path to system path.
-    #
-    # But, if we get a cache hit on the poetry installation, we
-    # don't get this important side effect. As a result, bare calls
-    # to "poetry" fails.
-    - name: Prepare PATH env to include where poetry will be installed into
+        enable-cache: true
+        prune-cache: false
+        activate-environment: true
+        cache-dependency-glob: "uv.lock"
+    - name: Setup Node
+      uses: actions/setup-node@v4
+      with:
+        node-version: 22
+    - name: Install Dependencies
+      if: inputs.run-uv-sync == 'true'
+      run: uv sync
       shell: bash
-      run: |
-        echo "~/.local/bin/" >> $GITHUB_PATH
-
-    - name: Restore cached poetry install
-      id: restore-poetry-cache
-      uses: actions/cache/restore@v4
-      with:
-        path: ~/.local
-        key: ${{ runner.os }}-python-${{ inputs.python-version }}-poetry-${{ inputs.poetry-version }}
-
-    - if: steps.restore-poetry-cache.outputs.cache-hit != 'true'
-      name: Install Poetry
-      uses: snok/install-poetry@v1
-      with:
-        version: ${{ inputs.poetry-version }}
-        virtualenvs-create: true
-        virtualenvs-in-project: true
-        virtualenvs-path: ${{ inputs.create-venv-at-path }}
-
-    - if: steps.restore-poetry-cache.outputs.cache-hit != 'true'
-      name: Save poetry install to cache
-      uses: actions/cache/save@v4
-      with:
-        path: ~/.local
-        key: ${{ steps.restore-poetry-cache.outputs.cache-primary-key }}
-
-    - name: Restore cached project python deps
-      id: restore-pydeps-cache
-      uses: actions/cache/restore@v4
-      with:
-        path: ${{ inputs.create-venv-at-path }}
-        key: ${{ runner.os }}-python-${{ inputs.python-version }}-pydeps-${{ hashFiles('**/poetry.lock') }}
-
-    - if: ${{ inputs.run-poetry-install == 'true' && steps.restore-pydeps-cache.outputs.cache-hit != 'true' }}
-      name: Run poetry install (will get cached)
-      # We skip over installing the root package (the current project code under CI)
-      # Root package should not be cached - its content is not reflected in poetry.lock / cache key
-
-      # On Windows, it is scripts/activate. On Linux and MacOS, it is bin/activate
-      shell: bash
-      run: |
-        python -m venv ${{ inputs.create-venv-at-path }}
-        source ${{ inputs.create-venv-at-path }}/*/activate
-        poetry install --no-interaction --no-root
-
-    - if: steps.restore-pydeps-cache.outputs.cache-hit != 'true'
-      name: Save Python deps to cache
-      uses: actions/cache/save@v4
-      with:
-        path: ${{ inputs.create-venv-at-path }}
-        key: ${{ steps.restore-pydeps-cache.outputs.cache-primary-key }}
-
-    - if: ${{ inputs.run-poetry-install == 'true' }}
-      name: Run poetry install (root package)
-      # Here we really install the root package (the current project code under CI).env:
-      # This should not be cached.
-      shell: bash
-      run: |
-        source ${{ inputs.create-venv-at-path }}/*/activate
-        poetry install --only-root --no-interaction
-
-    - name: Install uv
-      shell: bash
-      run: |
-        poetry run pip install uv

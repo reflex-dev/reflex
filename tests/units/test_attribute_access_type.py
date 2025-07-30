@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Dict, List, Optional, Type, Union
+from typing import List  # noqa: UP035
 
 import attrs
 import pydantic.v1
@@ -27,13 +27,13 @@ class SQLAType(TypeDecorator):
     impl = JSON
 
     @property
-    def python_type(self) -> Type[Dict[str, str]]:
+    def python_type(self) -> type[dict[str, str]]:
         """Python type.
 
         Returns:
             Python Type of the column.
         """
-        return Dict[str, str]
+        return dict[str, str]
 
 
 class SQLABase(DeclarativeBase):
@@ -42,7 +42,7 @@ class SQLABase(DeclarativeBase):
     type_annotation_map = {
         # do not use lower case dict here!
         # https://github.com/sqlalchemy/sqlalchemy/issues/9902
-        Dict[str, str]: SQLAType,
+        dict[str, str]: SQLAType,
     }
 
 
@@ -74,19 +74,19 @@ class SQLAClass(SQLABase):
     id: Mapped[int] = mapped_column(primary_key=True)
     count: Mapped[int] = mapped_column()
     name: Mapped[str] = mapped_column()
-    int_list: Mapped[List[int]] = mapped_column(
+    int_list: Mapped[list[int]] = mapped_column(
         sqlalchemy.types.ARRAY(item_type=sqlalchemy.INTEGER)
     )
-    str_list: Mapped[List[str]] = mapped_column(
+    str_list: Mapped[list[str]] = mapped_column(
         sqlalchemy.types.ARRAY(item_type=sqlalchemy.String)
     )
-    optional_int: Mapped[Optional[int]] = mapped_column(nullable=True)
+    optional_int: Mapped[int | None] = mapped_column(nullable=True)
     sqla_tag_id: Mapped[int] = mapped_column(sqlalchemy.ForeignKey(SQLATag.id))
-    sqla_tag: Mapped[Optional[SQLATag]] = relationship()
-    labels: Mapped[List[SQLALabel]] = relationship(back_populates="test")
+    sqla_tag: Mapped[SQLATag | None] = relationship()
+    labels: Mapped[list[SQLALabel]] = relationship(back_populates="test")
     # do not use lower case dict here!
     # https://github.com/sqlalchemy/sqlalchemy/issues/9902
-    dict_str_str: Mapped[Dict[str, str]] = mapped_column()
+    dict_str_str: Mapped[dict[str, str]] = mapped_column()
 
     @property
     def str_property(self) -> str:
@@ -98,7 +98,7 @@ class SQLAClass(SQLABase):
         return self.name
 
     @hybrid_property
-    def str_or_int_property(self) -> Union[str, int]:
+    def str_or_int_property(self) -> str | int:
         """String or int property.
 
         Returns:
@@ -107,7 +107,7 @@ class SQLAClass(SQLABase):
         return self.name
 
     @hybrid_property
-    def first_label(self) -> Optional[SQLALabel]:
+    def first_label(self) -> SQLALabel | None:
         """First label property.
 
         Returns:
@@ -123,20 +123,20 @@ class SQLAClassDataclass(MappedAsDataclass, SQLABase):
     no_default: Mapped[int] = mapped_column(nullable=True)
     count: Mapped[int] = mapped_column()
     name: Mapped[str] = mapped_column()
-    int_list: Mapped[List[int]] = mapped_column(
+    int_list: Mapped[list[int]] = mapped_column(
         sqlalchemy.types.ARRAY(item_type=sqlalchemy.INTEGER)
     )
-    str_list: Mapped[List[str]] = mapped_column(
+    str_list: Mapped[list[str]] = mapped_column(
         sqlalchemy.types.ARRAY(item_type=sqlalchemy.String)
     )
-    optional_int: Mapped[Optional[int]] = mapped_column(nullable=True)
+    optional_int: Mapped[int | None] = mapped_column(nullable=True)
     sqla_tag_id: Mapped[int] = mapped_column(sqlalchemy.ForeignKey(SQLATag.id))
-    sqla_tag: Mapped[Optional[SQLATag]] = relationship()
-    labels: Mapped[List[SQLALabel]] = relationship(back_populates="test_dataclass")
+    sqla_tag: Mapped[SQLATag | None] = relationship()
+    labels: Mapped[list[SQLALabel]] = relationship(back_populates="test_dataclass")
     # do not use lower case dict here!
     # https://github.com/sqlalchemy/sqlalchemy/issues/9902
-    dict_str_str: Mapped[Dict[str, str]] = mapped_column()
-    default_factory: Mapped[List[int]] = mapped_column(
+    dict_str_str: Mapped[dict[str, str]] = mapped_column()
+    default_factory: Mapped[list[int]] = mapped_column(
         sqlalchemy.types.ARRAY(item_type=sqlalchemy.INTEGER),
         default_factory=list,
     )
@@ -152,7 +152,7 @@ class SQLAClassDataclass(MappedAsDataclass, SQLABase):
         return self.name
 
     @hybrid_property
-    def str_or_int_property(self) -> Union[str, int]:
+    def str_or_int_property(self) -> str | int:
         """String or int property.
 
         Returns:
@@ -161,7 +161,7 @@ class SQLAClassDataclass(MappedAsDataclass, SQLABase):
         return self.name
 
     @hybrid_property
-    def first_label(self) -> Optional[SQLALabel]:
+    def first_label(self) -> SQLALabel | None:
         """First label property.
 
         Returns:
@@ -173,16 +173,16 @@ class SQLAClassDataclass(MappedAsDataclass, SQLABase):
 class ModelClass(rx.Model):
     """Test reflex model."""
 
-    no_default: Optional[int] = sqlmodel.Field(nullable=True)
+    no_default: int | None = sqlmodel.Field(nullable=True)
     count: int = 0
     name: str = "test"
-    int_list: List[int] = []
-    str_list: List[str] = []
-    optional_int: Optional[int] = None
-    sqla_tag: Optional[SQLATag] = None
-    labels: List[SQLALabel] = []
-    dict_str_str: Dict[str, str] = {}
-    default_factory: List[int] = sqlmodel.Field(default_factory=list)
+    int_list: list[int] = []
+    str_list: list[str] = []
+    optional_int: int | None = None
+    sqla_tag: SQLATag | None = None
+    labels: list[SQLALabel] = []
+    dict_str_str: dict[str, str] = {}
+    default_factory: list[int] = sqlmodel.Field(default_factory=list)
 
     @property
     def str_property(self) -> str:
@@ -194,7 +194,7 @@ class ModelClass(rx.Model):
         return self.name
 
     @property
-    def str_or_int_property(self) -> Union[str, int]:
+    def str_or_int_property(self) -> str | int:
         """String or int property.
 
         Returns:
@@ -203,7 +203,7 @@ class ModelClass(rx.Model):
         return self.name
 
     @property
-    def first_label(self) -> Optional[SQLALabel]:
+    def first_label(self) -> SQLALabel | None:
         """First label property.
 
         Returns:
@@ -215,16 +215,16 @@ class ModelClass(rx.Model):
 class BaseClass(rx.Base):
     """Test rx.Base class."""
 
-    no_default: Optional[int] = pydantic.v1.Field(required=False)
+    no_default: int | None = pydantic.v1.Field(required=False)
     count: int = 0
     name: str = "test"
-    int_list: List[int] = []
-    str_list: List[str] = []
-    optional_int: Optional[int] = None
-    sqla_tag: Optional[SQLATag] = None
-    labels: List[SQLALabel] = []
-    dict_str_str: Dict[str, str] = {}
-    default_factory: List[int] = pydantic.v1.Field(default_factory=list)
+    int_list: list[int] = []
+    str_list: list[str] = []
+    optional_int: int | None = None
+    sqla_tag: SQLATag | None = None
+    labels: list[SQLALabel] = []
+    dict_str_str: dict[str, str] = {}
+    default_factory: list[int] = pydantic.v1.Field(default_factory=list)
 
     @property
     def str_property(self) -> str:
@@ -236,7 +236,7 @@ class BaseClass(rx.Base):
         return self.name
 
     @property
-    def str_or_int_property(self) -> Union[str, int]:
+    def str_or_int_property(self) -> str | int:
         """String or int property.
 
         Returns:
@@ -245,7 +245,7 @@ class BaseClass(rx.Base):
         return self.name
 
     @property
-    def first_label(self) -> Optional[SQLALabel]:
+    def first_label(self) -> SQLALabel | None:
         """First label property.
 
         Returns:
@@ -259,12 +259,12 @@ class BareClass:
 
     count: int = 0
     name: str = "test"
-    int_list: List[int] = []
-    str_list: List[str] = []
-    optional_int: Optional[int] = None
-    sqla_tag: Optional[SQLATag] = None
-    labels: List[SQLALabel] = []
-    dict_str_str: Dict[str, str] = {}
+    int_list: list[int] = []
+    str_list: list[str] = []
+    optional_int: int | None = None
+    sqla_tag: SQLATag | None = None
+    labels: list[SQLALabel] = []
+    dict_str_str: dict[str, str] = {}
 
     @property
     def str_property(self) -> str:
@@ -276,7 +276,7 @@ class BareClass:
         return self.name
 
     @property
-    def str_or_int_property(self) -> Union[str, int]:
+    def str_or_int_property(self) -> str | int:
         """String or int property.
 
         Returns:
@@ -285,7 +285,7 @@ class BareClass:
         return self.name
 
     @property
-    def first_label(self) -> Optional[SQLALabel]:
+    def first_label(self) -> SQLALabel | None:
         """First label property.
 
         Returns:
@@ -300,13 +300,13 @@ class AttrClass:
 
     count: int = 0
     name: str = "test"
-    int_list: List[int] = []
-    str_list: List[str] = []
-    optional_int: Optional[int] = None
-    sqla_tag: Optional[SQLATag] = None
-    labels: List[SQLALabel] = []
-    dict_str_str: Dict[str, str] = {}
-    default_factory: List[int] = attrs.field(factory=list)
+    int_list: list[int] = attrs.field(factory=list)
+    str_list: list[str] = attrs.field(factory=list)
+    optional_int: int | None = None
+    sqla_tag: SQLATag | None = None
+    labels: list[SQLALabel] = attrs.field(factory=list)
+    dict_str_str: dict[str, str] = attrs.field(factory=dict)
+    default_factory: list[int] = attrs.field(factory=list)
 
     @property
     def str_property(self) -> str:
@@ -318,7 +318,7 @@ class AttrClass:
         return self.name
 
     @property
-    def str_or_int_property(self) -> Union[str, int]:
+    def str_or_int_property(self) -> str | int:
         """String or int property.
 
         Returns:
@@ -327,7 +327,7 @@ class AttrClass:
         return self.name
 
     @property
-    def first_label(self) -> Optional[SQLALabel]:
+    def first_label(self) -> SQLALabel | None:
         """First label property.
 
         Returns:
@@ -348,19 +348,19 @@ class AttrClass:
     ],
 )
 @pytest.mark.parametrize(
-    "attr, expected",
+    ("attr", "expected"),
     [
         pytest.param("count", int, id="int"),
         pytest.param("name", str, id="str"),
-        pytest.param("int_list", List[int], id="List[int]"),
-        pytest.param("str_list", List[str], id="List[str]"),
-        pytest.param("optional_int", Optional[int], id="Optional[int]"),
-        pytest.param("sqla_tag", Optional[SQLATag], id="Optional[SQLATag]"),
-        pytest.param("labels", List[SQLALabel], id="List[SQLALabel]"),
-        pytest.param("dict_str_str", Dict[str, str], id="Dict[str, str]"),
+        pytest.param("int_list", (list[int], List[int]), id="list[int]"),  # noqa: UP006
+        pytest.param("str_list", (list[str], List[str]), id="list[str]"),  # noqa: UP006
+        pytest.param("optional_int", int | None, id="int | None"),
+        pytest.param("sqla_tag", SQLATag | None, id="SQLATag | None"),
+        pytest.param("labels", list[SQLALabel], id="list[SQLALabel]"),
+        pytest.param("dict_str_str", dict[str, str], id="dict[str, str]"),
         pytest.param("str_property", str, id="str_property"),
-        pytest.param("str_or_int_property", Union[str, int], id="str_or_int_property"),
-        pytest.param("first_label", Optional[SQLALabel], id="first_label"),
+        pytest.param("str_or_int_property", str | int, id="str_or_int_property"),
+        pytest.param("first_label", SQLALabel | None, id="first_label"),
     ],
 )
 def test_get_attribute_access_type(cls: type, attr: str, expected: GenericType) -> None:
@@ -371,25 +371,31 @@ def test_get_attribute_access_type(cls: type, attr: str, expected: GenericType) 
         attr: Attribute to test.
         expected: Expected type.
     """
-    assert get_attribute_access_type(cls, attr) == expected
+    if isinstance(expected, tuple):
+        assert get_attribute_access_type(cls, attr) in expected
+    else:
+        assert get_attribute_access_type(cls, attr) == expected
 
 
 @pytest.mark.parametrize(
-    "cls",
+    ("cls", "expected"),
     [
-        SQLAClassDataclass,
-        BaseClass,
-        ModelClass,
-        AttrClass,
+        (SQLAClassDataclass, List[int]),  # noqa: UP006
+        (BaseClass, list[int]),
+        (ModelClass, list[int]),
+        (AttrClass, list[int]),
     ],
 )
-def test_get_attribute_access_type_default_factory(cls: type) -> None:
+def test_get_attribute_access_type_default_factory(
+    cls: type, expected: GenericType
+) -> None:
     """Test get_attribute_access_type returns the correct type for default factory fields.
 
     Args:
         cls: Class to test.
+        expected: Expected type.
     """
-    assert get_attribute_access_type(cls, "default_factory") == List[int]
+    assert get_attribute_access_type(cls, "default_factory") == expected
 
 
 @pytest.mark.parametrize(
@@ -406,4 +412,4 @@ def test_get_attribute_access_type_no_default(cls: type) -> None:
     Args:
         cls: Class to test.
     """
-    assert get_attribute_access_type(cls, "no_default") == Optional[int]
+    assert get_attribute_access_type(cls, "no_default") == int | None

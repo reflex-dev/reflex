@@ -2,16 +2,14 @@
 
 from __future__ import annotations
 
-from typing import Optional
-
 from reflex.components.base.bare import Bare
-from reflex.components.component import Component
+from reflex.components.el import elements
+from reflex.components.el.elements.metadata import Meta as Meta  # for compatibility
+from reflex.vars.base import Var
 
 
-class Title(Component):
+class Title(elements.Title):
     """A component that displays the title of the current page."""
-
-    tag = "title"
 
     def render(self) -> dict:
         """Render the title component.
@@ -24,40 +22,20 @@ class Title(Component):
         """
         # Make sure the title is a single string.
         if len(self.children) != 1 or not isinstance(self.children[0], Bare):
-            raise ValueError("Title must be a single string.")
+            msg = "Title must be a single string."
+            raise ValueError(msg)
         return super().render()
 
 
-class Meta(Component):
-    """A component that displays metadata for the current page."""
-
-    tag = "meta"
-
-    # The description of character encoding.
-    char_set: Optional[str] = None
-
-    # The value of meta.
-    content: Optional[str] = None
-
-    # The name of metadata.
-    name: Optional[str] = None
-
-    # The type of metadata value.
-    property: Optional[str] = None
-
-    # The type of metadata value.
-    http_equiv: Optional[str] = None
-
-
-class Description(Meta):
+class Description(elements.Meta):
     """A component that displays the title of the current page."""
 
     # The type of the description.
-    name: str | None = "description"
+    name: Var[str] = Var.create("description")
 
 
-class Image(Meta):
+class Image(elements.Meta):
     """A component that displays the title of the current page."""
 
     # The type of the image.
-    property: str | None = "og:image"
+    property: Var[str] = Var.create("og:image")

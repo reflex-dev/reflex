@@ -65,13 +65,16 @@ def test_large_state(var_count: int, tmp_path_factory, benchmark):
         driver = get_driver(large_state)
         try:
             assert large_state.app_instance is not None
-            button = driver.find_element(By.ID, "button")
+            button = AppHarness.poll_for_or_raise_timeout(
+                lambda: driver.find_element(By.ID, "button")
+            )
 
             t = time.time()
             while button.text != "0":
                 time.sleep(0.1)
                 if time.time() - t > 30.0:
-                    raise TimeoutError("Timeout waiting for initial state")
+                    msg = "Timeout waiting for initial state"
+                    raise TimeoutError(msg)
 
             times_clicked = 0
 
@@ -84,7 +87,8 @@ def test_large_state(var_count: int, tmp_path_factory, benchmark):
                 while button.text != str(times_clicked):
                     time.sleep(0.005)
                     if time.time() - t > timeout:
-                        raise TimeoutError("Timeout waiting for state update")
+                        msg = "Timeout waiting for state update"
+                        raise TimeoutError(msg)
 
             benchmark(round_trip, clicks=10, timeout=30.0)
         finally:

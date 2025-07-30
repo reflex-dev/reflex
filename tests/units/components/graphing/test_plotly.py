@@ -14,7 +14,8 @@ def plotly_fig() -> go.Figure:
         A random plotly figure.
     """
     # Generate random data.
-    data = np.random.randint(0, 10, size=(10, 4))
+    rng = np.random.default_rng()
+    data = rng.integers(0, 10, size=(10, 4))
     trace = go.Scatter(
         x=list(range(len(data))), y=data[:, 0], mode="lines", name="Trace 1"
     )

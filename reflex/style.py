@@ -2,7 +2,8 @@
 
 from __future__ import annotations
 
-from typing import Any, Literal, Tuple, Type
+from collections.abc import Mapping
+from typing import Any, Literal
 
 from reflex import constants
 from reflex.components.core.breakpoints import Breakpoints, breakpoints_values
@@ -10,7 +11,7 @@ from reflex.event import EventChain, EventHandler, EventSpec, run_script
 from reflex.utils import format
 from reflex.utils.exceptions import ReflexError
 from reflex.utils.imports import ImportVar
-from reflex.utils.types import get_origin
+from reflex.utils.types import typehint_issubclass
 from reflex.vars import VarData
 from reflex.vars.base import LiteralVar, Var
 from reflex.vars.function import FunctionVar
@@ -28,7 +29,7 @@ color_mode_imports = {
 }
 
 
-def _color_mode_var(_js_expr: str, _var_type: Type = str) -> Var:
+def _color_mode_var(_js_expr: str, _var_type: type = str) -> Var:
     """Create a Var that destructs the _js_expr from ColorModeContext.
 
     Args:
@@ -120,10 +121,11 @@ def convert_item(
         ReflexError: If an EventHandler is used as a style value
     """
     if isinstance(style_item, EventHandler):
-        raise ReflexError(
+        msg = (
             "EventHandlers cannot be used as style values. "
             "Please use a Var or a literal value."
         )
+        raise ReflexError(msg)
 
     if isinstance(style_item, Var):
         return style_item, style_item._get_all_var_data()
@@ -189,7 +191,7 @@ def convert(
             or (isinstance(value, list) and all(not isinstance(v, dict) for v in value))
             or (
                 isinstance(value, ObjectVar)
-                and not issubclass(get_origin(value._var_type) or value._var_type, dict)
+                and not typehint_issubclass(value._var_type, Mapping)
             )
             else (key,)
         )
@@ -218,7 +220,7 @@ def convert(
     return out, var_data
 
 
-def format_style_key(key: str) -> Tuple[str, ...]:
+def format_style_key(key: str) -> tuple[str, ...]:
     """Convert style keys to camel case and convert shorthand
     styles names to their corresponding css names.
 
@@ -234,10 +236,13 @@ def format_style_key(key: str) -> Tuple[str, ...]:
     return STYLE_PROP_SHORTHAND_MAPPING.get(key, (key,))
 
 
-class Style(dict):
+EMPTY_VAR_DATA = VarData()
+
+
+class Style(dict[str, Any]):
     """A style dictionary."""
 
-    def __init__(self, style_dict: dict | None = None, **kwargs):
+    def __init__(self, style_dict: dict[str, Any] | None = None, **kwargs):
         """Initialize the style.
 
         Args:
@@ -248,7 +253,10 @@ class Style(dict):
             style_dict.update(kwargs)
         else:
             style_dict = kwargs
-        style_dict, self._var_data = convert(style_dict or {})
+        if style_dict:
+            style_dict, self._var_data = convert(style_dict)
+        else:
+            self._var_data = EMPTY_VAR_DATA
         super().__init__(style_dict)
 
     def update(self, style_dict: dict | None, **kwargs):
@@ -374,6 +382,7 @@ def format_as_emotion(style_dict: dict[str, Any]) -> Style | None:
         if _var_data is not None:
             emotion_style._var_data = VarData.merge(emotion_style._var_data, _var_data)
         return emotion_style
+    return None
 
 
 def convert_dict_to_style_and_format_emotion(

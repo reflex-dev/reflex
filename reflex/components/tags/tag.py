@@ -3,10 +3,11 @@
 from __future__ import annotations
 
 import dataclasses
-from typing import Any, Dict, List, Mapping, Optional, Sequence
+from collections.abc import Mapping, Sequence
+from typing import Any
 
 from reflex.event import EventChain
-from reflex.utils import format, types
+from reflex.utils import format
 from reflex.vars.base import LiteralVar, Var
 
 
@@ -38,16 +39,16 @@ class Tag:
     name: str = ""
 
     # The props of the tag.
-    props: Dict[str, Any] = dataclasses.field(default_factory=dict)
+    props: dict[str, Any] = dataclasses.field(default_factory=dict)
 
     # The inner contents of the tag.
     contents: str = ""
 
     # Special props that aren't key value pairs.
-    special_props: List[Var] = dataclasses.field(default_factory=list)
+    special_props: list[Var] = dataclasses.field(default_factory=list)
 
     # The children components.
-    children: List[Any] = dataclasses.field(default_factory=list)
+    children: list[Any] = dataclasses.field(default_factory=list)
 
     def __post_init__(self):
         """Post initialize the tag."""
@@ -57,7 +58,7 @@ class Tag:
             {name: LiteralVar.create(value) for name, value in self.props.items()},
         )
 
-    def format_props(self) -> List:
+    def format_props(self) -> list:
         """Format the tag's props.
 
         Returns:
@@ -83,14 +84,14 @@ class Tag:
         """Iterate over the tag's fields.
 
         Yields:
-            Tuple[str, Any]: The field name and value.
+            tuple[str, Any]: The field name and value.
         """
         for field in dataclasses.fields(self):
             rendered_value = render_prop(getattr(self, field.name))
             if rendered_value is not None:
                 yield field.name, rendered_value
 
-    def add_props(self, **kwargs: Optional[Any]) -> Tag:
+    def add_props(self, **kwargs: Any | None) -> Tag:
         """Add props to the tag.
 
         Args:
@@ -103,9 +104,9 @@ class Tag:
             {
                 format.to_camel_case(name, treat_hyphens_as_underscores=False): (
                     prop
-                    if types._isinstance(prop, (EventChain, Mapping))
+                    if isinstance(prop, (EventChain, Mapping))
                     else LiteralVar.create(prop)
-                )  # rx.color is always a string
+                )
                 for name, prop in kwargs.items()
                 if self.is_valid_prop(prop)
             }
@@ -128,7 +129,7 @@ class Tag:
         return self
 
     @staticmethod
-    def is_valid_prop(prop: Optional[Var]) -> bool:
+    def is_valid_prop(prop: Var | None) -> bool:
         """Check if the prop is valid.
 
         Args:

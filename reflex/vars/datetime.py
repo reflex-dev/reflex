@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import dataclasses
 from datetime import date, datetime
-from typing import Any, NoReturn, TypeVar, Union, overload
+from typing import Any, TypeVar
 
 from reflex.utils.exceptions import VarTypeError
 from reflex.vars.number import BooleanVar
@@ -20,7 +20,7 @@ from .base import (
 
 DATETIME_T = TypeVar("DATETIME_T", datetime, date)
 
-datetime_types = Union[datetime, date]
+datetime_types = datetime | date
 
 
 def raise_var_type_error():
@@ -29,19 +29,14 @@ def raise_var_type_error():
     Raises:
         VarTypeError: Cannot compare a datetime object with a non-datetime object.
     """
-    raise VarTypeError("Cannot compare a datetime object with a non-datetime object.")
+    msg = "Cannot compare a datetime object with a non-datetime object."
+    raise VarTypeError(msg)
 
 
 class DateTimeVar(Var[DATETIME_T], python_types=(datetime, date)):
     """A variable that holds a datetime or date object."""
 
-    @overload
-    def __lt__(self, other: datetime_types) -> BooleanVar: ...
-
-    @overload
-    def __lt__(self, other: NoReturn) -> NoReturn: ...  # pyright: ignore [reportOverlappingOverload]
-
-    def __lt__(self, other: Any):
+    def __lt__(self, other: datetime_types | DateTimeVar) -> BooleanVar:
         """Less than comparison.
 
         Args:
@@ -54,13 +49,7 @@ class DateTimeVar(Var[DATETIME_T], python_types=(datetime, date)):
             raise_var_type_error()
         return date_lt_operation(self, other)
 
-    @overload
-    def __le__(self, other: datetime_types) -> BooleanVar: ...
-
-    @overload
-    def __le__(self, other: NoReturn) -> NoReturn: ...  # pyright: ignore [reportOverlappingOverload]
-
-    def __le__(self, other: Any):
+    def __le__(self, other: datetime_types | DateTimeVar) -> BooleanVar:
         """Less than or equal comparison.
 
         Args:
@@ -73,13 +62,7 @@ class DateTimeVar(Var[DATETIME_T], python_types=(datetime, date)):
             raise_var_type_error()
         return date_le_operation(self, other)
 
-    @overload
-    def __gt__(self, other: datetime_types) -> BooleanVar: ...
-
-    @overload
-    def __gt__(self, other: NoReturn) -> NoReturn: ...  # pyright: ignore [reportOverlappingOverload]
-
-    def __gt__(self, other: Any):
+    def __gt__(self, other: datetime_types | DateTimeVar) -> BooleanVar:
         """Greater than comparison.
 
         Args:
@@ -92,13 +75,7 @@ class DateTimeVar(Var[DATETIME_T], python_types=(datetime, date)):
             raise_var_type_error()
         return date_gt_operation(self, other)
 
-    @overload
-    def __ge__(self, other: datetime_types) -> BooleanVar: ...
-
-    @overload
-    def __ge__(self, other: NoReturn) -> NoReturn: ...  # pyright: ignore [reportOverlappingOverload]
-
-    def __ge__(self, other: Any):
+    def __ge__(self, other: datetime_types | DateTimeVar) -> BooleanVar:
         """Greater than or equal comparison.
 
         Args:
@@ -113,7 +90,7 @@ class DateTimeVar(Var[DATETIME_T], python_types=(datetime, date)):
 
 
 @var_operation
-def date_gt_operation(lhs: Var | Any, rhs: Var | Any) -> CustomVarOperationReturn:
+def date_gt_operation(lhs: DateTimeVar | Any, rhs: DateTimeVar | Any):
     """Greater than comparison.
 
     Args:
@@ -127,7 +104,7 @@ def date_gt_operation(lhs: Var | Any, rhs: Var | Any) -> CustomVarOperationRetur
 
 
 @var_operation
-def date_lt_operation(lhs: Var | Any, rhs: Var | Any) -> CustomVarOperationReturn:
+def date_lt_operation(lhs: DateTimeVar | Any, rhs: DateTimeVar | Any):
     """Less than comparison.
 
     Args:
@@ -141,7 +118,7 @@ def date_lt_operation(lhs: Var | Any, rhs: Var | Any) -> CustomVarOperationRetur
 
 
 @var_operation
-def date_le_operation(lhs: Var | Any, rhs: Var | Any) -> CustomVarOperationReturn:
+def date_le_operation(lhs: DateTimeVar | Any, rhs: DateTimeVar | Any):
     """Less than or equal comparison.
 
     Args:
@@ -155,7 +132,7 @@ def date_le_operation(lhs: Var | Any, rhs: Var | Any) -> CustomVarOperationRetur
 
 
 @var_operation
-def date_ge_operation(lhs: Var | Any, rhs: Var | Any) -> CustomVarOperationReturn:
+def date_ge_operation(lhs: DateTimeVar | Any, rhs: DateTimeVar | Any):
     """Greater than or equal comparison.
 
     Args:
@@ -172,7 +149,7 @@ def date_compare_operation(
     lhs: DateTimeVar[DATETIME_T] | Any,
     rhs: DateTimeVar[DATETIME_T] | Any,
     strict: bool = False,
-) -> CustomVarOperationReturn:
+) -> CustomVarOperationReturn[bool]:
     """Check if the value is less than the other value.
 
     Args:

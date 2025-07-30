@@ -2,9 +2,10 @@
 
 from __future__ import annotations
 
-from typing import Any, Dict, List, Union
+from collections.abc import Sequence
+from typing import Any
 
-from reflex.components.component import Component
+from reflex.components.component import NoSSRComponent
 from reflex.components.tags import Tag
 from reflex.utils import types
 from reflex.utils.imports import ImportDict
@@ -12,12 +13,12 @@ from reflex.utils.serializers import serialize
 from reflex.vars.base import LiteralVar, Var, is_computed_var
 
 
-class Gridjs(Component):
+class Gridjs(NoSSRComponent):
     """A component that wraps a nivo bar component."""
 
     library = "gridjs-react@6.1.1"
 
-    lib_dependencies: List[str] = ["gridjs@6.2.0"]
+    lib_dependencies: list[str] = ["gridjs@6.2.0"]
 
 
 class DataTable(Gridjs):
@@ -32,7 +33,7 @@ class DataTable(Gridjs):
 
     # The list of columns to display. Required if data is a list and should not be provided
     # if the data field is a dataframe
-    columns: Var[List]
+    columns: Var[Sequence]
 
     # Enable a search bar.
     search: Var[bool]
@@ -44,7 +45,7 @@ class DataTable(Gridjs):
     resizable: Var[bool]
 
     # Enable pagination.
-    pagination: Var[Union[bool, Dict]]
+    pagination: Var[bool | dict]
 
     @classmethod
     def create(cls, *children, **props):
@@ -66,36 +67,32 @@ class DataTable(Gridjs):
         # The annotation should be provided if data is a computed var. We need this to know how to
         # render pandas dataframes.
         if is_computed_var(data) and data._var_type == Any:
-            raise ValueError(
-                "Annotation of the computed var assigned to the data field should be provided."
-            )
+            msg = "Annotation of the computed var assigned to the data field should be provided."
+            raise ValueError(msg)
 
         if (
             columns is not None
             and is_computed_var(columns)
             and columns._var_type == Any
         ):
-            raise ValueError(
-                "Annotation of the computed var assigned to the column field should be provided."
-            )
+            msg = "Annotation of the computed var assigned to the column field should be provided."
+            raise ValueError(msg)
 
         # If data is a pandas dataframe and columns are provided throw an error.
         if (
             types.is_dataframe(type(data))
             or (isinstance(data, Var) and types.is_dataframe(data._var_type))
         ) and columns is not None:
-            raise ValueError(
-                "Cannot pass in both a pandas dataframe and columns to the data_table component."
-            )
+            msg = "Cannot pass in both a pandas dataframe and columns to the data_table component."
+            raise ValueError(msg)
 
         # If data is a list and columns are not provided, throw an error
         if (
-            (isinstance(data, Var) and types._issubclass(data._var_type, List))
-            or issubclass(type(data), List)
+            (isinstance(data, Var) and types.typehint_issubclass(data._var_type, list))
+            or isinstance(data, list)
         ) and columns is None:
-            raise ValueError(
-                "column field should be specified when the data field is a list type"
-            )
+            msg = "column field should be specified when the data field is a list type"
+            raise ValueError(msg)
 
         # Create the component.
         return super().create(
@@ -115,17 +112,18 @@ class DataTable(Gridjs):
         if isinstance(self.data, Var) and types.is_dataframe(self.data._var_type):
             self.columns = self.data._replace(
                 _js_expr=f"{self.data._js_expr}.columns",
-                _var_type=List[Any],
+                _var_type=list[Any],
             )
             self.data = self.data._replace(
                 _js_expr=f"{self.data._js_expr}.data",
-                _var_type=List[List[Any]],
+                _var_type=list[list[Any]],
             )
         if types.is_dataframe(type(self.data)):
             # If given a pandas df break up the data and columns
             data = serialize(self.data)
             if not isinstance(data, dict):
-                raise ValueError("Serialized dataframe should be a dict.")
+                msg = "Serialized dataframe should be a dict."
+                raise ValueError(msg)
             self.columns = LiteralVar.create(data["columns"])
             self.data = LiteralVar.create(data["data"])
 

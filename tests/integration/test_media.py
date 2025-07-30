@@ -1,6 +1,6 @@
 """Integration tests for media components."""
 
-from typing import Generator
+from collections.abc import Generator
 
 import pytest
 from selenium.webdriver.common.by import By
@@ -10,6 +10,8 @@ from reflex.testing import AppHarness
 
 def MediaApp():
     """Reflex app with generated images."""
+    import io
+
     import httpx
     from PIL import Image
 
@@ -50,7 +52,8 @@ def MediaApp():
         def img_from_url(self) -> Image.Image:
             img_url = "https://picsum.photos/id/1/200/300"
             img_resp = httpx.get(img_url, follow_redirects=True)
-            return Image.open(img_resp)  # pyright: ignore [reportArgumentType]
+            img_bytes = img_resp.content
+            return Image.open(io.BytesIO(img_bytes))
 
     app = rx.App()
 
@@ -72,7 +75,7 @@ def MediaApp():
         )
 
 
-@pytest.fixture()
+@pytest.fixture
 def media_app(tmp_path) -> Generator[AppHarness, None, None]:
     """Start MediaApp app at tmp_path via AppHarness.
 
@@ -100,7 +103,9 @@ async def test_media_app(media_app: AppHarness):
     driver = media_app.frontend()
 
     # wait for the backend connection to send the token
-    token_input = driver.find_element(By.ID, "token")
+    token_input = AppHarness.poll_for_or_raise_timeout(
+        lambda: driver.find_element(By.ID, "token")
+    )
     token = media_app.poll_for_value(token_input)
     assert token
 

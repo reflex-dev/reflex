@@ -2,7 +2,8 @@ import json
 from unittest.mock import MagicMock, Mock
 
 import pytest
-import sqlalchemy
+import sqlalchemy.exc
+from pytest_mock import MockerFixture
 from redis.exceptions import RedisError
 
 from reflex.app import health
@@ -12,7 +13,7 @@ from reflex.utils.prerequisites import get_redis_status
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize(
-    "mock_redis_client, expected_status",
+    ("mock_redis_client", "expected_status"),
     [
         # Case 1: Redis client is available and responds to ping
         (Mock(ping=lambda: None), {"redis": True}),
@@ -22,7 +23,9 @@ from reflex.utils.prerequisites import get_redis_status
         (None, {"redis": None}),
     ],
 )
-async def test_get_redis_status(mock_redis_client, expected_status, mocker):
+async def test_get_redis_status(
+    mock_redis_client, expected_status, mocker: MockerFixture
+):
     # Mock the `get_redis_sync` function to return the mock Redis client
     mock_get_redis_sync = mocker.patch(
         "reflex.utils.prerequisites.get_redis_sync", return_value=mock_redis_client
@@ -38,19 +41,21 @@ async def test_get_redis_status(mock_redis_client, expected_status, mocker):
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize(
-    "mock_engine, execute_side_effect, expected_status",
+    ("mock_engine", "execute_side_effect", "expected_status"),
     [
         # Case 1: Database is accessible
         (MagicMock(), None, {"db": True}),
         # Case 2: Database connection error (OperationalError)
         (
             MagicMock(),
-            sqlalchemy.exc.OperationalError("error", "error", "error"),
+            sqlalchemy.exc.OperationalError("error", "error", "error"),  # pyright: ignore[reportArgumentType]
             {"db": False},
         ),
     ],
 )
-async def test_get_db_status(mock_engine, execute_side_effect, expected_status, mocker):
+async def test_get_db_status(
+    mock_engine, execute_side_effect, expected_status, mocker: MockerFixture
+):
     # Mock get_engine to return the mock_engine
     mock_get_engine = mocker.patch("reflex.model.get_engine", return_value=mock_engine)
 
@@ -74,7 +79,14 @@ async def test_get_db_status(mock_engine, execute_side_effect, expected_status, 
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize(
-    "db_enabled, redis_enabled, db_status, redis_status, expected_status, expected_code",
+    (
+        "db_enabled",
+        "redis_enabled",
+        "db_status",
+        "redis_status",
+        "expected_status",
+        "expected_code",
+    ),
     [
         # Case 1: Both services are connected
         (True, True, True, True, {"status": True, "db": True, "redis": True}, 200),
@@ -99,7 +111,7 @@ async def test_health(
     redis_status,
     expected_status,
     expected_code,
-    mocker,
+    mocker: MockerFixture,
 ):
     # Mock get_db_status and get_redis_status
     mocker.patch(
@@ -119,12 +131,12 @@ async def test_health(
         return_value={"redis": redis_status},
     )
 
-    # Call the async health function
-    response = await health()
+    request = Mock()
 
-    print(json.loads(response.body))  # pyright: ignore [reportArgumentType]
-    print(expected_status)
+    # Call the async health function
+    response = await health(request)
 
     # Verify the response content and status code
     assert response.status_code == expected_code
-    assert json.loads(response.body) == expected_status  # pyright: ignore [reportArgumentType]
+    assert isinstance(response.body, bytes)
+    assert json.loads(response.body) == expected_status

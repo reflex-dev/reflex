@@ -2,8 +2,9 @@
 
 from __future__ import annotations
 
+from collections.abc import Callable, Sequence
 from pathlib import Path
-from typing import Any, Callable, ClassVar, Dict, List, Optional, Tuple
+from typing import Any, ClassVar
 
 from reflex.components.base.fragment import Fragment
 from reflex.components.component import (
@@ -11,21 +12,25 @@ from reflex.components.component import (
     ComponentNamespace,
     MemoizationLeaf,
     StatefulComponent,
+    field,
 )
+from reflex.components.core.cond import cond
 from reflex.components.el.elements.forms import Input
 from reflex.components.radix.themes.layout.box import Box
-from reflex.config import environment
 from reflex.constants import Dirs
 from reflex.constants.compiler import Hooks, Imports
+from reflex.environment import environment
 from reflex.event import (
     CallableEventSpec,
     EventChain,
     EventHandler,
     EventSpec,
     call_event_fn,
+    call_event_handler,
     parse_args_spec,
     run_script,
 )
+from reflex.style import Style
 from reflex.utils import format
 from reflex.utils.imports import ImportVar
 from reflex.vars import VarData
@@ -45,7 +50,7 @@ upload_files_context_var_data: VarData = VarData(
 )
 
 
-def upload_file(id_: str = DEFAULT_UPLOAD_ID) -> Var:
+def upload_file(id_: str | Var[str] = DEFAULT_UPLOAD_ID) -> Var:
     """Get the file upload drop trigger.
 
     This var is passed to the dropzone component to update the file list when a
@@ -57,7 +62,7 @@ def upload_file(id_: str = DEFAULT_UPLOAD_ID) -> Var:
     Returns:
         A var referencing the file upload drop trigger.
     """
-    id_var = LiteralStringVar.create(id_)
+    id_var = LiteralStringVar.create(id_) if not isinstance(id_, Var) else id_
     var_name = f"""e => setFilesById(filesById => {{
     const updatedFilesById = Object.assign({{}}, filesById);
     updatedFilesById[{id_var!s}] = e;
@@ -74,7 +79,7 @@ def upload_file(id_: str = DEFAULT_UPLOAD_ID) -> Var:
     )
 
 
-def selected_files(id_: str = DEFAULT_UPLOAD_ID) -> Var:
+def selected_files(id_: str | Var[str] = DEFAULT_UPLOAD_ID) -> Var:
     """Get the list of selected files.
 
     Args:
@@ -83,10 +88,10 @@ def selected_files(id_: str = DEFAULT_UPLOAD_ID) -> Var:
     Returns:
         A var referencing the list of selected file paths.
     """
-    id_var = LiteralStringVar.create(id_)
+    id_var = LiteralStringVar.create(id_) if not isinstance(id_, Var) else id_
     return Var(
-        _js_expr=f"(filesById[{id_var!s}] ? filesById[{id_var!s}].map((f) => (f.path || f.name)) : [])",
-        _var_type=List[str],
+        _js_expr=f"(filesById[{id_var!s}] ? filesById[{id_var!s}].map((f) => f.name) : [])",
+        _var_type=list[str],
         _var_data=VarData.merge(
             upload_files_context_var_data, id_var._get_all_var_data()
         ),
@@ -161,7 +166,7 @@ def get_upload_url(file_path: str | Var[str]) -> Var[str]:
     return Var.create(f"{uploaded_files_url_prefix}/{file_path}")
 
 
-def _on_drop_spec(files: Var) -> Tuple[Var[Any]]:
+def _on_drop_spec(files: Var) -> tuple[Var[Any]]:
     """Args spec for the on_drop event trigger.
 
     Args:
@@ -190,14 +195,14 @@ class GhostUpload(Fragment):
 class Upload(MemoizationLeaf):
     """A file upload component."""
 
-    library = "react-dropzone@14.3.5"
+    library = "react-dropzone@14.3.8"
 
     tag = ""
 
     # The list of accepted file types. This should be a dictionary of MIME types as keys and array of file formats as
     # values.
     # supported MIME types: https://developer.mozilla.org/en-US/docs/Web/HTTP/Basics_of_HTTP/MIME_types/Common_types
-    accept: Var[Optional[Dict[str, List]]]
+    accept: Var[dict[str, Sequence] | None]
 
     # Whether the dropzone is disabled.
     disabled: Var[bool]
@@ -228,6 +233,9 @@ class Upload(MemoizationLeaf):
 
     # Fired when files are dropped.
     on_drop: EventHandler[_on_drop_spec]
+
+    # Style rules to apply when actively dragging.
+    drag_active_style: Style | None = field(default=None, is_javascript_property=False)
 
     @classmethod
     def create(cls, *children, **props) -> Component:
@@ -264,22 +272,46 @@ class Upload(MemoizationLeaf):
             # If on_drop is not provided, save files to be uploaded later.
             upload_props["on_drop"] = upload_file(upload_props["id"])
         else:
-            on_drop = upload_props["on_drop"]
-            if isinstance(on_drop, Callable):
-                # Call the lambda to get the event chain.
-                on_drop = call_event_fn(on_drop, _on_drop_spec)
-            if isinstance(on_drop, EventSpec):
-                # Update the provided args for direct use with on_drop.
-                on_drop = on_drop.with_args(
-                    args=tuple(
-                        cls._update_arg_tuple_for_on_drop(arg_value)
-                        for arg_value in on_drop.args
-                    ),
-                )
+            on_drop = (
+                [on_drop_prop]
+                if not isinstance(on_drop_prop := upload_props["on_drop"], Sequence)
+                else list(on_drop_prop)
+            )
+            for ix, event in enumerate(on_drop):
+                if isinstance(event, (EventHandler, EventSpec)):
+                    # Call the lambda to get the event chain.
+                    event = call_event_handler(event, _on_drop_spec)
+                elif isinstance(event, Callable):
+                    # Call the lambda to get the event chain.
+                    event = call_event_fn(event, _on_drop_spec)
+                if isinstance(event, EventSpec):
+                    # Update the provided args for direct use with on_drop.
+                    event = event.with_args(
+                        args=tuple(
+                            cls._update_arg_tuple_for_on_drop(arg_value)
+                            for arg_value in event.args
+                        ),
+                    )
+                on_drop[ix] = event
             upload_props["on_drop"] = on_drop
 
         input_props_unique_name = get_unique_variable_name()
         root_props_unique_name = get_unique_variable_name()
+        is_drag_active_unique_name = get_unique_variable_name()
+        drag_active_css_class_unique_name = get_unique_variable_name() + "-drag-active"
+
+        # Handle special style when dragging over the drop zone.
+        if "drag_active_style" in props:
+            props.setdefault("style", Style())[
+                f"&:where(.{drag_active_css_class_unique_name})"
+            ] = props.pop("drag_active_style")
+            props["class_name"].append(
+                cond(
+                    Var(is_drag_active_unique_name),
+                    drag_active_css_class_unique_name,
+                    "",
+                ),
+            )
 
         event_var, callback_str = StatefulComponent._get_memoized_event_triggers(
             GhostUpload.create(on_drop=upload_props["on_drop"])
@@ -298,7 +330,13 @@ class Upload(MemoizationLeaf):
             }
         )
 
-        left_side = f"const {{getRootProps: {root_props_unique_name}, getInputProps: {input_props_unique_name}}} "
+        left_side = (
+            "const { "
+            f"getRootProps: {root_props_unique_name}, "
+            f"getInputProps: {input_props_unique_name}, "
+            f"isDragActive: {is_drag_active_unique_name}"
+            "}"
+        )
         right_side = f"useDropzone({use_dropzone_arguments!s})"
 
         var_data = VarData.merge(
@@ -324,7 +362,7 @@ class Upload(MemoizationLeaf):
         upload = Input.create(type="file")
         upload.special_props = [
             Var(
-                _js_expr=f"{{...{input_props_unique_name}()}}",
+                _js_expr=f"{input_props_unique_name}()",
                 _var_type=None,
                 _var_data=var_data,
             )
@@ -338,7 +376,7 @@ class Upload(MemoizationLeaf):
         )
         zone.special_props = [
             Var(
-                _js_expr=f"{{...{root_props_unique_name}()}}",
+                _js_expr=f"{root_props_unique_name}()",
                 _var_type=None,
                 _var_data=var_data,
             )
@@ -359,7 +397,8 @@ class Upload(MemoizationLeaf):
             The updated arg_value tuple when arg is "files", otherwise the original arg_value.
         """
         if arg_value[0]._js_expr == "files":
-            placeholder = parse_args_spec(_on_drop_spec)[0]
+            placeholders, _ = parse_args_spec(_on_drop_spec)
+            placeholder = placeholders[0]
             return (arg_value[0], placeholder)
         return arg_value
 

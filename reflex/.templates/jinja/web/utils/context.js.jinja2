@@ -1,5 +1,6 @@
-import { createContext, useContext, useMemo, useReducer, useState } from "react"
-import { applyDelta, Event, hydrateClientStorage, useEventLoop, refs } from "$/utils/state.js"
+import { createContext, useContext, useMemo, useReducer, useState, createElement, useEffect } from "react"
+import { applyDelta, Event, hydrateClientStorage, useEventLoop, refs } from "$/utils/state"
+import { jsx } from "@emotion/react";
 
 {% if initial_state %}
 export const initialState = {{ initial_state|json_dumps }}
@@ -68,8 +69,6 @@ export const initialEvents = () => []
 
 export const isDevMode = {{ is_dev_mode|json_dumps }}
 
-export const lastCompiledTimeStamp = {{ last_compiled_time|json_dumps }}
-
 export function UploadFilesProvider({ children }) {
   const [filesById, setFilesById] = useState({})
   refs["__clear_selected_files"] = (id) => setFilesById(filesById => {
@@ -77,11 +76,21 @@ export function UploadFilesProvider({ children }) {
     delete newFilesById[id]
     return newFilesById
   })
-  return (
-    <UploadFilesContext.Provider value={[filesById, setFilesById]}>
-      {children}
-    </UploadFilesContext.Provider>
-  )
+  return createElement(
+    UploadFilesContext.Provider,
+    { value: [filesById, setFilesById] },
+    children
+  );
+}
+
+export function ClientSide(component) {
+  return ({ children, ...props }) => {
+    const [Component, setComponent] = useState(null);
+    useEffect(() => {
+      setComponent(component);
+    }, []);
+    return Component ? jsx(Component, props, children) : null;
+  };
 }
 
 export function EventLoopProvider({ children }) {
@@ -91,11 +100,11 @@ export function EventLoopProvider({ children }) {
     initialEvents,
     clientStorage,
   )
-  return (
-    <EventLoopContext.Provider value={[addEvents, connectErrors]}>
-      {children}
-    </EventLoopContext.Provider>
-  )
+  return createElement(
+    EventLoopContext.Provider,
+    { value: [addEvents, connectErrors] },
+    children
+  );
 }
 
 export function StateProvider({ children }) {
@@ -112,13 +121,9 @@ export function StateProvider({ children }) {
 
   return (
     {% for state_name in initial_state %}
-    <StateContexts.{{state_name|var_name}}.Provider value={ {{state_name|var_name}} }>
+    createElement(StateContexts.{{state_name|var_name}},{value: {{state_name|var_name}}},
     {% endfor %}
-      <DispatchContext.Provider value={dispatchers}>
-        {children}
-      </DispatchContext.Provider>
-    {% for state_name in initial_state|reverse %}
-    </StateContexts.{{state_name|var_name}}.Provider>
-    {% endfor %}
+    createElement(DispatchContext, {value: dispatchers}, children)
+    {% for state_name in initial_state %}){% endfor %}
   )
 }

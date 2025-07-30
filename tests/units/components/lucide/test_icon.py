@@ -12,7 +12,7 @@ from reflex.utils import format
 def test_icon(tag):
     icon = Icon.create(tag)
     assert icon.alias == "Lucide" + LUCIDE_ICON_MAPPING_OVERRIDE.get(
-        tag, f"{format.to_title_case(tag)}Icon"
+        tag, format.to_title_case(tag)
     )
 
 
@@ -22,8 +22,8 @@ def test_icon_missing_tag():
 
 
 def test_icon_invalid_tag():
-    with pytest.raises(ValueError):
-        _ = Icon.create("invalid-tag")
+    invalid = Icon.create("invalid-tag")
+    assert invalid.tag == "CircleHelp"
 
 
 def test_icon_multiple_children():

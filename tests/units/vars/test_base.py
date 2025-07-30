@@ -1,4 +1,4 @@
-from typing import List, Mapping, Union
+from collections.abc import Mapping, Sequence
 
 import pytest
 
@@ -9,25 +9,17 @@ from reflex.vars.base import computed_var, figure_out_type
 class CustomDict(dict[str, str]):
     """A custom dict with generic arguments."""
 
-    pass
-
 
 class ChildCustomDict(CustomDict):
     """A child of CustomDict."""
-
-    pass
 
 
 class GenericDict(dict):
     """A generic dict with no generic arguments."""
 
-    pass
-
 
 class ChildGenericDict(GenericDict):
     """A child of GenericDict."""
-
-    pass
 
 
 @pytest.mark.parametrize(
@@ -36,10 +28,10 @@ class ChildGenericDict(GenericDict):
         (1, int),
         (1.0, float),
         ("a", str),
-        ([1, 2, 3], List[int]),
-        ([1, 2.0, "a"], List[Union[int, float, str]]),
+        ([1, 2, 3], Sequence[int]),
+        ([1, 2.0, "a"], Sequence[int | float | str]),
         ({"a": 1, "b": 2}, Mapping[str, int]),
-        ({"a": 1, 2: "b"}, Mapping[Union[int, str], Union[str, int]]),
+        ({"a": 1, 2: "b"}, Mapping[int | str, str | int]),
         (CustomDict(), CustomDict),
         (ChildCustomDict(), ChildCustomDict),
         (GenericDict({1: 1}), Mapping[int, int]),

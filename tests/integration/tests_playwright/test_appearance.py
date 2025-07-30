@@ -1,4 +1,4 @@
-from typing import Generator
+from collections.abc import Generator
 
 import pytest
 from playwright.sync_api import Page, expect
@@ -72,7 +72,7 @@ def ColorToggleApp():
         )
 
 
-@pytest.fixture()
+@pytest.fixture
 def light_mode_app(tmp_path_factory) -> Generator[AppHarness, None, None]:
     """Start DefaultLightMode app at tmp_path via AppHarness.
 
@@ -91,7 +91,7 @@ def light_mode_app(tmp_path_factory) -> Generator[AppHarness, None, None]:
         yield harness
 
 
-@pytest.fixture()
+@pytest.fixture
 def dark_mode_app(tmp_path_factory) -> Generator[AppHarness, None, None]:
     """Start DefaultDarkMode app at tmp_path via AppHarness.
 
@@ -110,7 +110,7 @@ def dark_mode_app(tmp_path_factory) -> Generator[AppHarness, None, None]:
         yield harness
 
 
-@pytest.fixture()
+@pytest.fixture
 def system_mode_app(tmp_path_factory) -> Generator[AppHarness, None, None]:
     """Start DefaultSystemMode app at tmp_path via AppHarness.
 
@@ -129,7 +129,7 @@ def system_mode_app(tmp_path_factory) -> Generator[AppHarness, None, None]:
         yield harness
 
 
-@pytest.fixture()
+@pytest.fixture
 def color_toggle_app(tmp_path_factory) -> Generator[AppHarness, None, None]:
     """Start ColorToggle app at tmp_path via AppHarness.
 

@@ -1,10 +1,12 @@
-from typing import List, Mapping, Tuple
+import re
+from collections.abc import Mapping, Sequence
 
 import pytest
 
 import reflex as rx
 from reflex.components.component import Component
 from reflex.components.core.match import Match
+from reflex.constants.state import FIELD_MARKER
 from reflex.state import BaseState
 from reflex.utils.exceptions import MatchTypeError
 from reflex.vars.base import Var
@@ -38,7 +40,7 @@ def test_match_components():
     [match_child] = match_dict["children"]
 
     assert match_child["name"] == "match"
-    assert str(match_child["cond"]) == f"{MatchState.get_name()}.value"
+    assert str(match_child["cond"]) == f"{MatchState.get_name()}.value" + FIELD_MARKER
 
     match_cases = match_child["match_cases"]
     assert len(match_cases) == 6
@@ -47,7 +49,7 @@ def test_match_components():
     assert match_cases[0][0]._var_type is int
     first_return_value_render = match_cases[0][1]
     assert first_return_value_render["name"] == "RadixThemesText"
-    assert first_return_value_render["children"][0]["contents"] == '{"first value"}'
+    assert first_return_value_render["children"][0]["contents"] == '"first value"'
 
     assert match_cases[1][0]._js_expr == "2"
     assert match_cases[1][0]._var_type is int
@@ -55,40 +57,42 @@ def test_match_components():
     assert match_cases[1][1]._var_type is int
     second_return_value_render = match_cases[1][2]
     assert second_return_value_render["name"] == "RadixThemesText"
-    assert second_return_value_render["children"][0]["contents"] == '{"second value"}'
+    assert second_return_value_render["children"][0]["contents"] == '"second value"'
 
     assert match_cases[2][0]._js_expr == "[1, 2]"
-    assert match_cases[2][0]._var_type == List[int]
+    assert match_cases[2][0]._var_type == Sequence[int]
     third_return_value_render = match_cases[2][1]
     assert third_return_value_render["name"] == "RadixThemesText"
-    assert third_return_value_render["children"][0]["contents"] == '{"third value"}'
+    assert third_return_value_render["children"][0]["contents"] == '"third value"'
 
     assert match_cases[3][0]._js_expr == '"random"'
     assert match_cases[3][0]._var_type is str
     fourth_return_value_render = match_cases[3][1]
     assert fourth_return_value_render["name"] == "RadixThemesText"
-    assert fourth_return_value_render["children"][0]["contents"] == '{"fourth value"}'
+    assert fourth_return_value_render["children"][0]["contents"] == '"fourth value"'
 
     assert match_cases[4][0]._js_expr == '({ ["foo"] : "bar" })'
     assert match_cases[4][0]._var_type == Mapping[str, str]
     fifth_return_value_render = match_cases[4][1]
     assert fifth_return_value_render["name"] == "RadixThemesText"
-    assert fifth_return_value_render["children"][0]["contents"] == '{"fifth value"}'
+    assert fifth_return_value_render["children"][0]["contents"] == '"fifth value"'
 
-    assert match_cases[5][0]._js_expr == f"({MatchState.get_name()}.num + 1)"
+    assert (
+        match_cases[5][0]._js_expr == f"({MatchState.get_name()}.num{FIELD_MARKER} + 1)"
+    )
     assert match_cases[5][0]._var_type is int
     fifth_return_value_render = match_cases[5][1]
     assert fifth_return_value_render["name"] == "RadixThemesText"
-    assert fifth_return_value_render["children"][0]["contents"] == '{"sixth value"}'
+    assert fifth_return_value_render["children"][0]["contents"] == '"sixth value"'
 
     default = match_child["default"]
 
     assert default["name"] == "RadixThemesText"
-    assert default["children"][0]["contents"] == '{"default value"}'
+    assert default["children"][0]["contents"] == '"default value"'
 
 
 @pytest.mark.parametrize(
-    "cases, expected",
+    ("cases", "expected"),
     [
         (
             (
@@ -102,11 +106,11 @@ def test_match_components():
                 (MatchState.string, f"{MatchState.value} - string"),
                 "default value",
             ),
-            f'(() => {{ switch (JSON.stringify({MatchState.get_name()}.value)) {{case JSON.stringify(1):  return ("first");  break;case JSON.stringify(2): case JSON.stringify(3):  return '
+            f'(() => {{ switch (JSON.stringify({MatchState.get_name()}.value{FIELD_MARKER})) {{case JSON.stringify(1):  return ("first");  break;case JSON.stringify(2): case JSON.stringify(3):  return '
             '("second value");  break;case JSON.stringify([1, 2]):  return ("third-value");  break;case JSON.stringify("random"):  '
             'return ("fourth_value");  break;case JSON.stringify(({ ["foo"] : "bar" })):  return ("fifth value");  '
-            f'break;case JSON.stringify(({MatchState.get_name()}.num + 1)):  return ("sixth value");  break;case JSON.stringify(({MatchState.get_name()}.value+" - string")):  '
-            f'return ({MatchState.get_name()}.string);  break;case JSON.stringify({MatchState.get_name()}.string):  return (({MatchState.get_name()}.value+" - string"));  break;default:  '
+            f'break;case JSON.stringify(({MatchState.get_name()}.num{FIELD_MARKER} + 1)):  return ("sixth value");  break;case JSON.stringify(({MatchState.get_name()}.value{FIELD_MARKER}+" - string")):  '
+            f'return ({MatchState.get_name()}.string{FIELD_MARKER});  break;case JSON.stringify({MatchState.get_name()}.string{FIELD_MARKER}):  return (({MatchState.get_name()}.value{FIELD_MARKER}+" - string"));  break;default:  '
             'return ("default value");  break;};})()',
         ),
         (
@@ -121,12 +125,12 @@ def test_match_components():
                 (MatchState.string, f"{MatchState.value} - string"),
                 MatchState.string,
             ),
-            f'(() => {{ switch (JSON.stringify({MatchState.get_name()}.value)) {{case JSON.stringify(1):  return ("first");  break;case JSON.stringify(2): case JSON.stringify(3):  return '
+            f'(() => {{ switch (JSON.stringify({MatchState.get_name()}.value{FIELD_MARKER})) {{case JSON.stringify(1):  return ("first");  break;case JSON.stringify(2): case JSON.stringify(3):  return '
             '("second value");  break;case JSON.stringify([1, 2]):  return ("third-value");  break;case JSON.stringify("random"):  '
             'return ("fourth_value");  break;case JSON.stringify(({ ["foo"] : "bar" })):  return ("fifth value");  '
-            f'break;case JSON.stringify(({MatchState.get_name()}.num + 1)):  return ("sixth value");  break;case JSON.stringify(({MatchState.get_name()}.value+" - string")):  '
-            f'return ({MatchState.get_name()}.string);  break;case JSON.stringify({MatchState.get_name()}.string):  return (({MatchState.get_name()}.value+" - string"));  break;default:  '
-            f"return ({MatchState.get_name()}.string);  break;}};}})()",
+            f'break;case JSON.stringify(({MatchState.get_name()}.num{FIELD_MARKER} + 1)):  return ("sixth value");  break;case JSON.stringify(({MatchState.get_name()}.value{FIELD_MARKER}+" - string")):  '
+            f'return ({MatchState.get_name()}.string{FIELD_MARKER});  break;case JSON.stringify({MatchState.get_name()}.string{FIELD_MARKER}):  return (({MatchState.get_name()}.value{FIELD_MARKER}+" - string"));  break;default:  '
+            f"return ({MatchState.get_name()}.string{FIELD_MARKER});  break;}};}})()",
         ),
     ],
 )
@@ -157,7 +161,8 @@ def test_match_on_component_without_default():
     assert isinstance(match_comp, Component)
     default = match_comp.render()["children"][0]["default"]
 
-    assert isinstance(default, dict) and default["name"] == Fragment.__name__
+    assert isinstance(default, dict)
+    assert default["name"] == Fragment.__name__
 
 
 def test_match_on_var_no_default():
@@ -239,7 +244,7 @@ def test_match_case_tuple_elements(match_case):
 
 
 @pytest.mark.parametrize(
-    "cases, error_msg",
+    ("cases", "error_msg"),
     [
         (
             (
@@ -264,19 +269,19 @@ def test_match_case_tuple_elements(match_case):
                 ([1, 2], rx.text("third value")),
                 rx.text("default value"),
             ),
-            'Match cases should have the same return types. Case 3 with return value `<RadixThemesText as={"p"}> {"first value"} </RadixThemesText>` '
+            'Match cases should have the same return types. Case 3 with return value `jsx( RadixThemesText, {as:"p"}, "first value" ,)` '
             "of type <class 'reflex.components.radix.themes.typography.text.Text'> is not <class 'reflex.vars.base.Var'>",
         ),
     ],
 )
-def test_match_different_return_types(cases: Tuple, error_msg: str):
+def test_match_different_return_types(cases: tuple, error_msg: str):
     """Test that an error is thrown when the return values are of different types.
 
     Args:
         cases: The match cases.
         error_msg: Expected error message.
     """
-    with pytest.raises(MatchTypeError, match=error_msg):
+    with pytest.raises(MatchTypeError, match=re.escape(error_msg)):
         Match.create(MatchState.value, *cases)
 
 

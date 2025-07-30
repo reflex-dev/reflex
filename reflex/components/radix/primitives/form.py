@@ -17,7 +17,7 @@ from .base import RadixPrimitiveComponentWithClassName
 class FormComponent(RadixPrimitiveComponentWithClassName):
     """Base class for all @radix-ui/react-form components."""
 
-    library = "@radix-ui/react-form@^0.1.0"
+    library = "@radix-ui/react-form@0.1.7"
 
 
 class FormRoot(FormComponent, HTMLForm):
@@ -100,14 +100,12 @@ class FormControl(FormComponent):
             The form control component.
         """
         if len(children) > 1:
-            raise ValueError(
-                f"FormControl can only have at most one child, got {len(children)} children"
-            )
+            msg = f"FormControl can only have at most one child, got {len(children)} children"
+            raise ValueError(msg)
         for child in children:
             if not isinstance(child, (TextFieldRoot, DebounceInput)):
-                raise TypeError(
-                    "Only Radix TextFieldRoot and DebounceInput are allowed as children of FormControl"
-                )
+                msg = "Only Radix TextFieldRoot and DebounceInput are allowed as children of FormControl"
+                raise TypeError(msg)
         return super().create(*children, **props)
 
 
@@ -167,8 +165,6 @@ class FormSubmit(FormComponent):
 # This class is created mainly for reflex-web docs.
 class Form(FormRoot):
     """The Form component."""
-
-    pass
 
 
 class FormNamespace(ComponentNamespace):
