@@ -130,7 +130,7 @@ jobs:
           grep -ivE "reflex " requirements.txt > requirements.txt.tmp && mv requirements.txt.tmp requirements.txt
       - name: Install Requirements for reflex-web
         working-directory: ./reflex-web
-        run: uv pip install requirements.txt
+        run: uv pip install -r requirements.txt
       - name: Init Website for reflex-web
         working-directory: ./reflex-web
         run: uv run --active --no-sync reflex init
@@ -196,7 +196,7 @@ jobs:
           grep -ivE "reflex " requirements.txt > requirements.txt.tmp && mv requirements.txt.tmp requirements.txt
       - name: Install Requirements for reflex-web
         working-directory: ./reflex-web
-        run: uv pip install requirements.txt
+        run: uv pip install -r requirements.txt
       - name: Init Website for reflex-web
         working-directory: ./reflex-web
         run: uv run --active --no-sync reflex init
