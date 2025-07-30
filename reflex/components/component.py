@@ -964,7 +964,7 @@ class Component(BaseComponent, ABC):
         # Create the base tag.
         tag = Tag(
             name=name,
-            special_props=self.special_props,
+            special_props=self.special_props.copy(),
         )
 
         if props is None:
@@ -2413,7 +2413,6 @@ class StatefulComponent(BaseComponent):
             tag_name = cls._get_tag_name(component)
             if tag_name is None:
                 return None
-
             # Look up the tag in the cache
             stateful_component = cls.tag_to_stateful_component.get(tag_name)
             if stateful_component is None:
