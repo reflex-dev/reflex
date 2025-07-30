@@ -964,7 +964,7 @@ class Component(BaseComponent, ABC):
         # Create the base tag.
         tag = Tag(
             name=name,
-            special_props=self.special_props,
+            special_props=self.special_props.copy(),
         )
 
         if props is None:

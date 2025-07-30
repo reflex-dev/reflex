@@ -636,6 +636,27 @@ def checked_input_event(e: ObjectVar[JavascriptInputEvent]) -> tuple[Var[bool]]:
     return (e.target.checked,)
 
 
+FORM_DATA = Var(_js_expr="form_data")
+
+
+def on_submit_event() -> tuple[Var[dict[str, Any]]]:
+    """Event handler spec for the on_submit event.
+
+    Returns:
+        The event handler spec.
+    """
+    return (FORM_DATA,)
+
+
+def on_submit_string_event() -> tuple[Var[dict[str, str]]]:
+    """Event handler spec for the on_submit event.
+
+    Returns:
+        The event handler spec.
+    """
+    return (FORM_DATA,)
+
+
 class KeyInputInfo(TypedDict):
     """Information about a key input event."""
 
@@ -2224,6 +2245,7 @@ class EventNamespace:
     # Constants
     BACKGROUND_TASK_MARKER = BACKGROUND_TASK_MARKER
     _EVENT_FIELDS = _EVENT_FIELDS
+    FORM_DATA = FORM_DATA
     upload_files = upload_files
     stop_propagation = stop_propagation
     prevent_default = prevent_default
@@ -2396,6 +2418,8 @@ class EventNamespace:
     key_event = staticmethod(key_event)
     pointer_event_spec = staticmethod(pointer_event_spec)
     no_args_event_spec = staticmethod(no_args_event_spec)
+    on_submit_event = staticmethod(on_submit_event)
+    on_submit_string_event = staticmethod(on_submit_string_event)
 
     # Server Side Events
     server_side = staticmethod(server_side)
