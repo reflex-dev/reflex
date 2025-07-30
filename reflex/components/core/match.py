@@ -256,8 +256,7 @@ class Match(MemoizationLeaf):
             The dictionary for template of component.
         """
         tag = self._render()
-        tag.name = "match"
-        return dict(tag)
+        return dict(tag.set(name="match"))
 
     def add_imports(self) -> ImportDict:
         """Add imports for the Match component.

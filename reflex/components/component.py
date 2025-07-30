@@ -1274,7 +1274,6 @@ class Component(BaseComponent, ABC):
             tag.set(
                 children=[child.render() for child in self.children],
                 contents=str(tag.contents),
-                props=tag.format_props(),
             ),
             autofocus=self.autofocus,
         )

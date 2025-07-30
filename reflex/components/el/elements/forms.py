@@ -228,7 +228,7 @@ class Form(BaseHTML):
     def _render(self) -> Tag:
         render_tag = super()._render()
         if EventTriggers.ON_SUBMIT in self.event_triggers:
-            render_tag.add_props(
+            render_tag = render_tag.add_props(
                 **{
                     EventTriggers.ON_SUBMIT: Var(
                         _js_expr=f"handleSubmit_{self.handle_submit_unique_name}",

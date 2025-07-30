@@ -1,13 +1,14 @@
 """Tag to conditionally render components."""
 
 import dataclasses
+from collections.abc import Mapping
 from typing import Any
 
 from reflex.components.tags.tag import Tag
 from reflex.vars.base import Var
 
 
-@dataclasses.dataclass()
+@dataclasses.dataclass(frozen=True)
 class CondTag(Tag):
     """A conditional tag."""
 
@@ -15,7 +16,7 @@ class CondTag(Tag):
     cond: Var[Any] = dataclasses.field(default_factory=lambda: Var.create(True))
 
     # The code to render if the condition is true.
-    true_value: dict = dataclasses.field(default_factory=dict)
+    true_value: Mapping = dataclasses.field(default_factory=dict)
 
     # The code to render if the condition is false.
-    false_value: dict | None = None
+    false_value: Mapping | None = None
