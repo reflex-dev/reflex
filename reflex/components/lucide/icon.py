@@ -6,7 +6,7 @@ from reflex.utils.imports import ImportVar
 from reflex.vars.base import LiteralVar, Var
 from reflex.vars.sequence import LiteralStringVar, StringVar
 
-LUCIDE_LIBRARY = "lucide-react@0.525.0"
+LUCIDE_LIBRARY = "lucide-react@0.534.0"
 
 
 class LucideIconComponent(Component):
@@ -231,6 +231,7 @@ LUCIDE_ICON_LIST = [
     "badge_pound_sterling",
     "badge_russian_ruble",
     "badge_swiss_franc",
+    "badge_turkish_lira",
     "badge_x",
     "badge",
     "baggage_claim",
@@ -501,6 +502,7 @@ LUCIDE_ICON_LIST = [
     "citrus",
     "clapperboard",
     "clipboard_check",
+    "clipboard_clock",
     "clipboard_copy",
     "clipboard_list",
     "clipboard_minus",
@@ -529,6 +531,7 @@ LUCIDE_ICON_LIST = [
     "clock_fading",
     "clock_plus",
     "clock",
+    "closed_caption",
     "cloud_alert",
     "cloud_check",
     "cloud_cog",
@@ -876,12 +879,14 @@ LUCIDE_ICON_LIST = [
     "hand_metal",
     "hand_platter",
     "hand",
+    "handbag",
     "handshake",
     "hard_drive_download",
     "hard_drive_upload",
     "hard_drive",
     "hard_hat",
     "hash",
+    "hat_glasses",
     "haze",
     "hdmi_port",
     "heading_1",
@@ -1034,6 +1039,7 @@ LUCIDE_ICON_LIST = [
     "mail",
     "mailbox",
     "mails",
+    "map_minus",
     "map_pin_check_inside",
     "map_pin_check",
     "map_pin_house",
@@ -1289,6 +1295,7 @@ LUCIDE_ICON_LIST = [
     "receipt_russian_ruble",
     "receipt_swiss_franc",
     "receipt_text",
+    "receipt_turkish_lira",
     "receipt",
     "rectangle_circle",
     "rectangle_ellipsis",
@@ -1450,6 +1457,7 @@ LUCIDE_ICON_LIST = [
     "spline",
     "split",
     "spool",
+    "spotlight",
     "spray_can",
     "sprout",
     "square_activity",
@@ -1635,6 +1643,7 @@ LUCIDE_ICON_LIST = [
     "trophy",
     "truck_electric",
     "truck",
+    "turkish_lira",
     "turtle",
     "tv_2",
     "tv_minimal_play",
@@ -1674,6 +1683,7 @@ LUCIDE_ICON_LIST = [
     "user_round_x",
     "user_round",
     "user_search",
+    "user_star",
     "user_x",
     "user",
     "users_round",
@@ -1726,6 +1736,7 @@ LUCIDE_ICON_LIST = [
     "wifi_low",
     "wifi_off",
     "wifi_pen",
+    "wifi_sync",
     "wifi_zero",
     "wifi",
     "wind_arrow_down",

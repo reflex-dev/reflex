@@ -87,13 +87,13 @@ def _can_bind_at_any_port(address_family: socket.AddressFamily | int) -> bool:
     Returns:
         Whether any port is available for binding.
     """
-    with closing(socket.socket(address_family, socket.SOCK_STREAM)) as sock:
-        try:
+    try:
+        with closing(socket.socket(address_family, socket.SOCK_STREAM)) as sock:
             sock.bind(("", 0))  # Bind to any available port
-        except (OverflowError, PermissionError, OSError) as e:
-            console.debug(f"Unable to bind to any port for {address_family}: {e}")
-            return False
-    return True
+            return True
+    except (OverflowError, PermissionError, OSError) as e:
+        console.debug(f"Unable to bind to any port for {address_family}: {e}")
+        return False
 
 
 def is_process_on_port(
