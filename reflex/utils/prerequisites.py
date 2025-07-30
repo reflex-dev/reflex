@@ -224,7 +224,7 @@ def prefer_npm_over_bun() -> bool:
 
 def get_nodejs_compatible_package_managers(
     raise_on_none: bool = True,
-) -> Sequence[str]:
+) -> Sequence[list[str]]:
     """Get the package manager executable for installation. Typically, bun is used for installation.
 
     Args:
@@ -237,11 +237,13 @@ def get_nodejs_compatible_package_managers(
         FileNotFoundError: If the package manager is not found and raise_on_none is True.
     """
     bun_package_manager = (
-        str(bun_path) if (bun_path := path_ops.get_bun_path()) else None
+        [str(bun_path), "--backend=copyfile"]
+        if (bun_path := path_ops.get_bun_path())
+        else None
     )
 
     npm_package_manager = (
-        str(npm_path) if (npm_path := path_ops.get_npm_path()) else None
+        [str(npm_path)] if (npm_path := path_ops.get_npm_path()) else None
     )
 
     if prefer_npm_over_bun():
@@ -1229,7 +1231,7 @@ def install_frontend_packages(packages: set[str], config: Config):
     )
 
     run_package_manager(
-        [primary_package_manager, "install", "--legacy-peer-deps"],
+        [*primary_package_manager, "install", "--legacy-peer-deps"],
         show_status_message="Installing base frontend packages",
     )
 
@@ -1241,7 +1243,7 @@ def install_frontend_packages(packages: set[str], config: Config):
     if development_deps:
         run_package_manager(
             [
-                primary_package_manager,
+                *primary_package_manager,
                 "add",
                 "--legacy-peer-deps",
                 "-d",
@@ -1253,7 +1255,7 @@ def install_frontend_packages(packages: set[str], config: Config):
     # Install custom packages defined in frontend_packages
     if packages:
         run_package_manager(
-            [primary_package_manager, "add", "--legacy-peer-deps", *packages],
+            [*primary_package_manager, "add", "--legacy-peer-deps", *packages],
             show_status_message="Installing frontend packages from config and components",
         )
 
