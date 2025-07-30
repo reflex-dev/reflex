@@ -150,4 +150,5 @@ class PackageJson(SimpleNamespace):
         "react-is": _react_version,
         "cookie": "1.0.2",
         "rollup": "4.46.2",
+        "esbuild": "0.25.6",
     }
