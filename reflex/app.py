@@ -14,7 +14,6 @@ import json
 import sys
 import traceback
 import urllib.parse
-import uuid
 from collections.abc import (
     AsyncGenerator,
     AsyncIterator,
@@ -116,6 +115,7 @@ from reflex.utils import (
 )
 from reflex.utils.exec import get_compile_context, is_prod_mode, is_testing_env
 from reflex.utils.imports import ImportVar
+from reflex.utils.token_manager import TokenManager
 from reflex.utils.types import ASGIApp, Message, Receive, Scope, Send
 
 if TYPE_CHECKING:
@@ -1954,12 +1954,6 @@ class EventNamespace(AsyncNamespace):
     # The application object.
     app: App
 
-    # Keep a mapping between socket ID and client token.
-    token_to_sid: dict[str, str]
-
-    # Keep a mapping between client token and socket ID.
-    sid_to_token: dict[str, str]
-
     def __init__(self, namespace: str, app: App):
         """Initialize the event namespace.
 
@@ -1968,9 +1962,30 @@ class EventNamespace(AsyncNamespace):
             app: The application object.
         """
         super().__init__(namespace)
-        self.token_to_sid = {}
-        self.sid_to_token = {}
         self.app = app
+
+        # Use TokenManager for distributed duplicate tab prevention
+        self._token_manager = TokenManager.create()
+
+    @property
+    def token_to_sid(self) -> dict[str, str]:
+        """Get token to SID mapping for backward compatibility.
+
+        Returns:
+            The token to SID mapping dict.
+        """
+        # For backward compatibility, expose the underlying dict
+        return self._token_manager.token_to_sid
+
+    @property
+    def sid_to_token(self) -> dict[str, str]:
+        """Get SID to token mapping for backward compatibility.
+
+        Returns:
+            The SID to token mapping dict.
+        """
+        # For backward compatibility, expose the underlying dict
+        return self._token_manager.sid_to_token
 
     async def on_connect(self, sid: str, environ: dict):
         """Event for when the websocket is connected.
@@ -1994,9 +2009,18 @@ class EventNamespace(AsyncNamespace):
         Args:
             sid: The Socket.IO session id.
         """
-        disconnect_token = self.sid_to_token.pop(sid, None)
+        # Get token before cleaning up
+        disconnect_token = self.sid_to_token.get(sid)
         if disconnect_token:
-            self.token_to_sid.pop(disconnect_token, None)
+            # Use async cleanup through token manager
+            task = asyncio.create_task(
+                self._token_manager.disconnect_token(disconnect_token, sid)
+            )
+            # Don't await to avoid blocking disconnect, but handle potential errors
+            task.add_done_callback(
+                lambda t: t.exception()
+                and console.error(f"Token cleanup error: {t.exception()}")
+            )
 
     async def emit_update(self, update: StateUpdate, sid: str) -> None:
         """Emit an update to the client.
@@ -2110,9 +2134,9 @@ class EventNamespace(AsyncNamespace):
             sid: The Socket.IO session id.
             token: The client token.
         """
-        if token in self.sid_to_token.values() and sid != self.token_to_sid.get(token):
-            token = str(uuid.uuid4())
-            await self.emit("new_token", token, to=sid)
+        # Use TokenManager for duplicate detection and Redis support
+        new_token = await self._token_manager.link_token_to_sid(token, sid)
 
-        self.token_to_sid[token] = sid
-        self.sid_to_token[sid] = token
+        if new_token:
+            # Duplicate detected, emit new token to client
+            await self.emit("new_token", new_token, to=sid)
