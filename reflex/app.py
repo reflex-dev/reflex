@@ -1994,8 +1994,12 @@ class EventNamespace(AsyncNamespace):
             sid: The Socket.IO session id.
             environ: The request information, including HTTP headers.
         """
-        query_params = urllib.parse.parse_qs(environ.get("QUERY_STRING"))
-        await self.link_token_to_sid(sid, query_params.get("token", [])[0])
+        query_params = urllib.parse.parse_qs(environ.get("QUERY_STRING", ""))
+        token_list = query_params.get("token", [])
+        if token_list:
+            await self.link_token_to_sid(sid, token_list[0])
+        else:
+            console.warn(f"No token provided in connection for session {sid}")
 
         subprotocol = environ.get("HTTP_SEC_WEBSOCKET_PROTOCOL")
         if subprotocol and subprotocol != constants.Reflex.VERSION:
