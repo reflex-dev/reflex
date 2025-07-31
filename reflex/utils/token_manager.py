@@ -52,13 +52,6 @@ class TokenManager(ABC):
             sid: The Socket.IO session ID.
         """
 
-    @abstractmethod
-    async def close(self) -> None:
-        """Close any resources used by the token manager.
-
-        Subclasses must implement this method.
-        """
-
     @classmethod
     def create(cls) -> TokenManager:
         """Factory method to create appropriate TokenManager implementation.
@@ -113,13 +106,6 @@ class LocalTokenManager(TokenManager):
         # Clean up both mappings
         self.token_to_sid.pop(token, None)
         self.sid_to_token.pop(sid, None)
-
-    async def close(self) -> None:
-        """Close any resources used by the token manager.
-
-        LocalTokenManager has no resources to close.
-        """
-        # No resources to clean up for local manager
 
 
 class RedisTokenManager(LocalTokenManager):
@@ -229,17 +215,3 @@ class RedisTokenManager(LocalTokenManager):
 
             # Clean up local dicts (always do this)
             await super().disconnect_token(token, sid)
-
-    async def close(self) -> None:
-        """Close Redis connection to prevent closed loop errors in tests.
-
-        It is necessary in testing scenarios to close between asyncio test cases
-        to avoid having lingering redis connections associated with event loops
-        that will be closed (each test case uses its own event loop).
-
-        Note: Connections will be automatically reopened when needed.
-        """
-        try:
-            await self.redis.aclose(close_connection_pool=True)
-        except Exception as e:
-            console.error(f"Redis close error: {e}")

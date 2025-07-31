@@ -174,15 +174,6 @@ class TestLocalTokenManager:
         assert len(manager.token_to_sid) == 0
         assert len(manager.sid_to_token) == 0
 
-    async def test_close_does_nothing(self, manager):
-        """Test close method does nothing for LocalTokenManager.
-
-        Args:
-            manager: LocalTokenManager fixture instance.
-        """
-        await manager.close()
-        # Should not raise any errors
-
 
 class TestRedisTokenManager:
     """Tests for RedisTokenManager."""
@@ -411,28 +402,3 @@ class TestRedisTokenManager:
         assert isinstance(manager, LocalTokenManager)
         assert hasattr(manager, "token_to_sid")
         assert hasattr(manager, "sid_to_token")
-
-    async def test_close_calls_redis_aclose(self, manager, mock_redis):
-        """Test close method calls Redis aclose with proper parameters.
-
-        Args:
-            manager: RedisTokenManager fixture instance.
-            mock_redis: Mock Redis client fixture.
-        """
-        await manager.close()
-
-        mock_redis.aclose.assert_called_once_with(close_connection_pool=True)
-
-    async def test_close_handles_redis_error(self, manager, mock_redis):
-        """Test close method handles Redis errors gracefully.
-
-        Args:
-            manager: RedisTokenManager fixture instance.
-            mock_redis: Mock Redis client fixture.
-        """
-        mock_redis.aclose.side_effect = Exception("Redis close error")
-
-        # Should not raise an error
-        await manager.close()
-
-        mock_redis.aclose.assert_called_once_with(close_connection_pool=True)

@@ -313,15 +313,6 @@ class AppHarness:
                 with contextlib.suppress(ValueError):
                     await self.app_instance._state_manager.close()
 
-            # ensure token manager redis connections are closed
-            if (
-                self.app_instance is not None
-                and hasattr(self.app_instance, "event_namespace")
-                and self.app_instance.event_namespace is not None
-            ):
-                with contextlib.suppress(Exception):
-                    await self.app_instance.event_namespace.close()
-
             # socketio shutdown handler
             if self.app_instance is not None and self.app_instance.sio is not None:
                 with contextlib.suppress(TypeError):
@@ -384,6 +375,17 @@ class AppHarness:
             if not isinstance(self.app_instance.state_manager, StateManagerRedis):
                 msg = "Failed to reset state manager."
                 raise RuntimeError(msg)
+
+            # Also reset the TokenManager to avoid loop affinity issues
+            if (
+                hasattr(self.app_instance, "event_namespace")
+                and self.app_instance.event_namespace is not None
+                and hasattr(self.app_instance.event_namespace, "_token_manager")
+            ):
+                # Import here to avoid circular imports
+                from reflex.utils.token_manager import TokenManager
+
+                self.app_instance.event_namespace._token_manager = TokenManager.create()
 
     def _start_frontend(self):
         # Set up the frontend.
