@@ -685,19 +685,16 @@ def test_component_create_unallowed_types(children, test_component):
                 "name": "Fragment",
                 "props": [],
                 "contents": "",
-                "special_props": [],
                 "children": [
                     {
                         "name": "RadixThemesText",
                         "props": ['as:"p"'],
                         "contents": "",
-                        "special_props": [],
                         "children": [
                             {
                                 "name": "",
                                 "props": [],
                                 "contents": '"first_text"',
-                                "special_props": [],
                                 "children": [],
                             }
                         ],
@@ -716,13 +713,11 @@ def test_component_create_unallowed_types(children, test_component):
                                 "contents": '"first_text"',
                                 "name": "",
                                 "props": [],
-                                "special_props": [],
                             }
                         ],
                         "contents": "",
                         "name": "RadixThemesText",
                         "props": ['as:"p"'],
-                        "special_props": [],
                     },
                     {
                         "children": [
@@ -731,19 +726,16 @@ def test_component_create_unallowed_types(children, test_component):
                                 "contents": '"second_text"',
                                 "name": "",
                                 "props": [],
-                                "special_props": [],
                             }
                         ],
                         "contents": "",
                         "name": "RadixThemesText",
                         "props": ['as:"p"'],
-                        "special_props": [],
                     },
                 ],
                 "contents": "",
                 "name": "Fragment",
                 "props": [],
-                "special_props": [],
             },
         ),
         (
@@ -757,13 +749,11 @@ def test_component_create_unallowed_types(children, test_component):
                                 "contents": '"first_text"',
                                 "name": "",
                                 "props": [],
-                                "special_props": [],
                             }
                         ],
                         "contents": "",
                         "name": "RadixThemesText",
                         "props": ['as:"p"'],
-                        "special_props": [],
                     },
                     {
                         "children": [
@@ -776,31 +766,26 @@ def test_component_create_unallowed_types(children, test_component):
                                                 "contents": '"second_text"',
                                                 "name": "",
                                                 "props": [],
-                                                "special_props": [],
                                             }
                                         ],
                                         "contents": "",
                                         "name": "RadixThemesText",
                                         "props": ['as:"p"'],
-                                        "special_props": [],
                                     }
                                 ],
                                 "contents": "",
                                 "name": "Fragment",
                                 "props": [],
-                                "special_props": [],
                             }
                         ],
                         "contents": "",
                         "name": "RadixThemesBox",
                         "props": [],
-                        "special_props": [],
                     },
                 ],
                 "contents": "",
                 "name": "Fragment",
                 "props": [],
-                "special_props": [],
             },
         ),
     ],
