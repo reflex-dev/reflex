@@ -142,7 +142,22 @@ if find_spec("sqlmodel") and find_spec("sqlalchemy") and find_spec("pydantic"):
     from alembic.runtime.migration import MigrationContext
     from alembic.script.base import Script
 
-    from reflex.utils.compat import sqlmodel, sqlmodel_field_has_primary_key
+    from reflex.utils.compat import sqlmodel
+
+    def _sqlmodel_field_has_primary_key(field: Any) -> bool:
+        """Determines if a field is a primary.
+
+        Args:
+            field: a rx.model field
+
+        Returns:
+            If field is a primary key (Bool)
+        """
+        if getattr(field.field_info, "primary_key", None) is True:
+            return True
+        if getattr(field.field_info, "sa_column", None) is None:
+            return False
+        return bool(getattr(field.field_info.sa_column, "primary_key", None))
 
     _ENGINE: dict[str, sqlalchemy.engine.Engine] = {}
     _ASYNC_ENGINE: dict[str, sqlalchemy.ext.asyncio.AsyncEngine] = {}
@@ -321,7 +336,7 @@ if find_spec("sqlmodel") and find_spec("sqlalchemy") and find_spec("pydantic"):
             non_default_primary_key_fields = [
                 field_name
                 for field_name, field in cls.__fields__.items()
-                if field_name != "id" and sqlmodel_field_has_primary_key(field)
+                if field_name != "id" and _sqlmodel_field_has_primary_key(field)
             ]
             if non_default_primary_key_fields:
                 cls.__fields__.pop("id", None)

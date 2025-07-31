@@ -1,9 +1,6 @@
 """Compatibility hacks and helpers."""
 
-import contextlib
-import sys
 from importlib.util import find_spec
-from typing import Any
 
 
 async def windows_hot_reload_lifespan_hack():
@@ -30,64 +27,50 @@ async def windows_hot_reload_lifespan_hack():
         pass
 
 
-@contextlib.contextmanager
-def pydantic_v1_patch():
-    """A context manager that patches the Pydantic module to mimic v1 behaviour.
-
-    Yields:
-        None when the Pydantic module is patched.
-    """
-    import pydantic
-
-    if pydantic.__version__.startswith("1."):
-        # pydantic v1 is already installed
-        yield
-        return
-
-    patched_modules = [
-        "pydantic",
-        "pydantic.fields",
-        "pydantic.errors",
-        "pydantic.main",
-    ]
-    originals = {module: sys.modules.get(module) for module in patched_modules}
-    try:
-        import pydantic.v1
-
-        sys.modules["pydantic.fields"] = pydantic.v1.fields  # pyright: ignore [reportAttributeAccessIssue]
-        sys.modules["pydantic.main"] = pydantic.v1.main  # pyright: ignore [reportAttributeAccessIssue]
-        sys.modules["pydantic.errors"] = pydantic.v1.errors  # pyright: ignore [reportAttributeAccessIssue]
-        sys.modules["pydantic"] = pydantic.v1
-        yield
-    except (ImportError, AttributeError):
-        # pydantic v1 is already installed
-        yield
-    finally:
-        # Restore the original Pydantic module
-        for k, original in originals.items():
-            if k in sys.modules:
-                if original:
-                    sys.modules[k] = original
-                else:
-                    del sys.modules[k]
-
-
 if find_spec("pydantic") and find_spec("sqlmodel"):
+    import contextlib
+    import sys
+
+    @contextlib.contextmanager
+    def pydantic_v1_patch():
+        """A context manager that patches the Pydantic module to mimic v1 behaviour.
+
+        Yields:
+            None when the Pydantic module is patched.
+        """
+        import pydantic
+
+        if pydantic.__version__.startswith("1."):
+            # pydantic v1 is already installed
+            yield
+            return
+
+        patched_modules = [
+            "pydantic",
+            "pydantic.fields",
+            "pydantic.errors",
+            "pydantic.main",
+        ]
+        originals = {module: sys.modules.get(module) for module in patched_modules}
+        try:
+            import pydantic.v1
+
+            sys.modules["pydantic.fields"] = pydantic.v1.fields  # pyright: ignore [reportAttributeAccessIssue]
+            sys.modules["pydantic.main"] = pydantic.v1.main  # pyright: ignore [reportAttributeAccessIssue]
+            sys.modules["pydantic.errors"] = pydantic.v1.errors  # pyright: ignore [reportAttributeAccessIssue]
+            sys.modules["pydantic"] = pydantic.v1
+            yield
+        except (ImportError, AttributeError):
+            # pydantic v1 is already installed
+            yield
+        finally:
+            # Restore the original Pydantic module
+            for k, original in originals.items():
+                if k in sys.modules:
+                    if original:
+                        sys.modules[k] = original
+                    else:
+                        del sys.modules[k]
+
     with pydantic_v1_patch():
         import sqlmodel as sqlmodel
-
-
-def sqlmodel_field_has_primary_key(field: Any) -> bool:
-    """Determines if a field is a primary.
-
-    Args:
-        field: a rx.model field
-
-    Returns:
-        If field is a primary key (Bool)
-    """
-    if getattr(field.field_info, "primary_key", None) is True:
-        return True
-    if getattr(field.field_info, "sa_column", None) is None:
-        return False
-    return bool(getattr(field.field_info.sa_column, "primary_key", None))
