@@ -588,9 +588,6 @@ class Component(BaseComponent, ABC):
     # Special component props.
     special_props: list[Var] = field(default_factory=list, is_javascript_property=False)
 
-    # Whether the component should take the focus once the page is loaded
-    autofocus: bool = field(default=False, is_javascript_property=False)
-
     # components that cannot be children
     _invalid_children: ClassVar[list[str]] = []
 
@@ -1274,8 +1271,7 @@ class Component(BaseComponent, ABC):
             tag.set(
                 children=[child.render() for child in self.children],
                 contents=str(tag.contents),
-            ),
-            autofocus=self.autofocus,
+            )
         )
         self._replace_prop_names(rendered_dict)
         return rendered_dict
@@ -1434,7 +1430,6 @@ class Component(BaseComponent, ABC):
             self.class_name,
             self.id,
             self.key,
-            self.autofocus,
             *self.custom_attrs.values(),
         ):
             if isinstance(comp_prop, Var):
@@ -1626,15 +1621,6 @@ class Component(BaseComponent, ABC):
             # Handle hooks for `on_mount` / `on_unmount`.
             _imports.setdefault("react", set()).add(ImportVar(tag="useEffect"))
 
-        if self._get_special_hooks():
-            # Handle additional internal hooks (autofocus, etc).
-            _imports.setdefault("react", set()).update(
-                {
-                    ImportVar(tag="useRef"),
-                    ImportVar(tag="useEffect"),
-                },
-            )
-
         other_imports = []
         user_hooks = self._get_hooks()
         user_hooks_data = (
@@ -1780,18 +1766,6 @@ class Component(BaseComponent, ABC):
             else {}
         )
 
-    def _get_special_hooks(self) -> dict[str, VarData | None]:
-        """Get the hooks required by special actions referenced in this component.
-
-        Returns:
-            The hooks for special actions.
-        """
-        return (
-            {Hooks.AUTOFOCUS: VarData(position=Hooks.HookPosition.INTERNAL)}
-            if self.autofocus
-            else {}
-        )
-
     def _get_hooks_internal(self) -> dict[str, VarData | None]:
         """Get the React hooks for this component managed by the framework.
 
@@ -1809,7 +1783,6 @@ class Component(BaseComponent, ABC):
             },
             **self._get_vars_hooks(),
             **self._get_events_hooks(),
-            **self._get_special_hooks(),
         }
 
     def _get_added_hooks(self) -> dict[str, VarData | None]:

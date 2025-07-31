@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import sys
-from collections.abc import Iterable, Sequence
+from collections.abc import Callable, Iterable, Sequence
 from inspect import getmodule
 from pathlib import Path
 from typing import TYPE_CHECKING
@@ -588,6 +588,7 @@ def compile_components(
 
 def compile_stateful_components(
     pages: Iterable[Component],
+    progress_function: Callable[[], None],
 ) -> tuple[str, str, list[BaseComponent]]:
     """Separately compile components that depend on State vars.
 
@@ -597,14 +598,20 @@ def compile_stateful_components(
 
     Args:
         pages: The pages to extract stateful components from.
+        progress_function: A function to call to indicate progress, called once per page.
 
     Returns:
         The path and code of the compiled stateful components.
     """
     output_path = utils.get_stateful_components_path()
 
-    # Compile the stateful components.
-    page_components = [StatefulComponent.compile_from(page) or page for page in pages]
+    page_components = []
+    for page in pages:
+        # Compile the stateful components
+        page_component = StatefulComponent.compile_from(page) or page
+        progress_function()
+        page_components.append(page_component)
+
     code = _compile_stateful_components(page_components)
     return output_path, code, page_components
 

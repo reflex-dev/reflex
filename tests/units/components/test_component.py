@@ -696,25 +696,19 @@ def test_component_create_unallowed_types(children, test_component):
                                 "props": [],
                                 "contents": '"first_text"',
                                 "children": [],
-                                "autofocus": False,
                             }
                         ],
-                        "autofocus": False,
                     }
                 ],
-                "autofocus": False,
             },
         ),
         (
             (rx.text("first_text"), rx.text("second_text")),
             {
-                "autofocus": False,
                 "children": [
                     {
-                        "autofocus": False,
                         "children": [
                             {
-                                "autofocus": False,
                                 "children": [],
                                 "contents": '"first_text"',
                                 "name": "",
@@ -726,10 +720,8 @@ def test_component_create_unallowed_types(children, test_component):
                         "props": ['as:"p"'],
                     },
                     {
-                        "autofocus": False,
                         "children": [
                             {
-                                "autofocus": False,
                                 "children": [],
                                 "contents": '"second_text"',
                                 "name": "",
@@ -749,13 +741,10 @@ def test_component_create_unallowed_types(children, test_component):
         (
             (rx.text("first_text"), rx.box((rx.text("second_text"),))),
             {
-                "autofocus": False,
                 "children": [
                     {
-                        "autofocus": False,
                         "children": [
                             {
-                                "autofocus": False,
                                 "children": [],
                                 "contents": '"first_text"',
                                 "name": "",
@@ -767,16 +756,12 @@ def test_component_create_unallowed_types(children, test_component):
                         "props": ['as:"p"'],
                     },
                     {
-                        "autofocus": False,
                         "children": [
                             {
-                                "autofocus": False,
                                 "children": [
                                     {
-                                        "autofocus": False,
                                         "children": [
                                             {
-                                                "autofocus": False,
                                                 "children": [],
                                                 "contents": '"second_text"',
                                                 "name": "",
