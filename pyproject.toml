@@ -49,6 +49,12 @@ classifiers = [
   "Programming Language :: Python :: 3.13",
 ]
 
+[project.optional-dependencies]
+db = [
+  "alembic >=1.15.2,<2.0",
+  "pydantic >=1.10.21,<3.0",
+  "sqlmodel >=0.0.24,<0.1",
+]
 
 [project.urls]
 homepage = "https://reflex.dev"
