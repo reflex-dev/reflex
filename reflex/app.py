@@ -2140,3 +2140,12 @@ class EventNamespace(AsyncNamespace):
         if new_token:
             # Duplicate detected, emit new token to client
             await self.emit("new_token", new_token, to=sid)
+
+    async def close(self) -> None:
+        """Close any resources used by the event namespace.
+
+        This is necessary in testing scenarios to close between asyncio test cases
+        to avoid having lingering connections associated with event loops.
+        """
+        if hasattr(self, "_token_manager"):
+            await self._token_manager.close()

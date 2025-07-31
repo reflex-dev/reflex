@@ -313,6 +313,15 @@ class AppHarness:
                 with contextlib.suppress(ValueError):
                     await self.app_instance._state_manager.close()
 
+            # ensure token manager redis connections are closed
+            if (
+                self.app_instance is not None
+                and hasattr(self.app_instance, "event_namespace")
+                and self.app_instance.event_namespace is not None
+            ):
+                with contextlib.suppress(Exception):
+                    await self.app_instance.event_namespace.close()
+
             # socketio shutdown handler
             if self.app_instance is not None and self.app_instance.sio is not None:
                 with contextlib.suppress(TypeError):
