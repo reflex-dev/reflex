@@ -36,7 +36,7 @@ from reflex.compiler import templates
 from reflex.config import Config, get_config
 from reflex.environment import environment
 from reflex.utils import console, net, path_ops, processes, redir
-from reflex.utils.decorator import cached_procedure, once
+from reflex.utils.decorator import cached_procedure
 from reflex.utils.exceptions import SystemPackageMissingError
 from reflex.utils.misc import get_module_path
 from reflex.utils.registry import get_npm_registry
@@ -517,7 +517,6 @@ def compile_or_validate_app(
         validate_app(check_if_schema_up_to_date=check_if_schema_up_to_date)
 
 
-@once
 def get_redis() -> Redis | None:
     """Get the asynchronous redis client.
 
