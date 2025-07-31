@@ -11,8 +11,6 @@ from typing import Literal
 
 from platformdirs import PlatformDirs
 
-from .utils import classproperty
-
 IS_WINDOWS = platform.system() == "Windows"
 IS_MACOS = platform.system() == "Darwin"
 IS_LINUX = platform.system() == "Linux"
@@ -119,9 +117,6 @@ class ReflexHostingCLI(SimpleNamespace):
 class Templates(SimpleNamespace):
     """Constants related to Templates."""
 
-    # The route on Reflex backend to query which templates are available and their URLs.
-    APP_TEMPLATES_ROUTE = "/app-templates"
-
     # The default template
     DEFAULT = "blank"
 
@@ -132,58 +127,12 @@ class Templates(SimpleNamespace):
     CHOOSE_TEMPLATES = "choose-templates"
 
     # The URL to find reflex templates.
-    REFLEX_TEMPLATES_URL = "https://reflex.dev/templates"
-
-    # Demo url for the default template.
-    DEFAULT_TEMPLATE_URL = "https://blank-template.reflex.run"
+    REFLEX_TEMPLATES_URL = (
+        "https://reflex.dev/docs/getting-started/open-source-templates/"
+    )
 
     # The reflex.build frontend host
-    REFLEX_BUILD_FRONTEND = "https://reflex.build"
-
-    # The reflex.build backend host
-    REFLEX_BUILD_BACKEND = "https://flexgen-prod-flexgen.fly.dev"
-
-    @classproperty
-    @classmethod
-    def REFLEX_BUILD_URL(cls):
-        """The URL to redirect to reflex.build.
-
-        Returns:
-            The URL to redirect to reflex.build.
-        """
-        from reflex.environment import environment
-
-        return (
-            environment.REFLEX_BUILD_FRONTEND.get()
-            + "/gen?reflex_init_token={reflex_init_token}"
-        )
-
-    @classproperty
-    @classmethod
-    def REFLEX_BUILD_POLL_URL(cls):
-        """The URL to poll waiting for the user to select a generation.
-
-        Returns:
-            The URL to poll waiting for the user to select a generation.
-        """
-        from reflex.environment import environment
-
-        return environment.REFLEX_BUILD_BACKEND.get() + "/api/init/{reflex_init_token}"
-
-    @classproperty
-    @classmethod
-    def REFLEX_BUILD_CODE_URL(cls):
-        """The URL to fetch the generation's reflex code.
-
-        Returns:
-            The URL to fetch the generation's reflex code.
-        """
-        from reflex.environment import environment
-
-        return (
-            environment.REFLEX_BUILD_BACKEND.get()
-            + "/api/gen/{generation_hash}/refactored"
-        )
+    REFLEX_BUILD_FRONTEND = "https://build.reflex.dev"
 
     class Dirs(SimpleNamespace):
         """Folders used by the template system of Reflex."""
@@ -203,9 +152,6 @@ class Javascript(SimpleNamespace):
 
     # The node modules directory.
     NODE_MODULES = "node_modules"
-
-    # The package lock file.
-    PACKAGE_LOCK = "package-lock.json"
 
 
 class ReactRouter(Javascript):
