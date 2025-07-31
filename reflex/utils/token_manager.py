@@ -85,7 +85,7 @@ class LocalTokenManager(TokenManager):
             New token if duplicate detected and new token generated, None otherwise.
         """
         # Check if token is already mapped to a different SID (duplicate tab)
-        if token in self.sid_to_token.values() and sid != self.token_to_sid.get(token):
+        if token in self.token_to_sid and sid != self.token_to_sid.get(token):
             new_token = _get_new_token()
             self.token_to_sid[new_token] = sid
             self.sid_to_token[sid] = new_token
