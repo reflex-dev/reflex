@@ -54,8 +54,8 @@ class AutoScroll(Div):
         ref_name = self.get_ref()
         unique_id = ref_name
         return [
-            "const wasNearBottom = useRef(false);",
-            "const hadScrollbar = useRef(false);",
+            f"const wasNearBottom_{unique_id} = useRef(false);",
+            f"const hadScrollbar_{unique_id} = useRef(false);",
             f"""
 const checkIfNearBottom_{unique_id} = () => {{
     if (!{ref_name}.current) return;
@@ -65,10 +65,10 @@ const checkIfNearBottom_{unique_id} = () => {{
 
     const distanceFromBottom = container.scrollHeight - container.scrollTop - container.clientHeight;
 
-    wasNearBottom.current = distanceFromBottom <= nearBottomThreshold;
+    wasNearBottom_{unique_id}.current = distanceFromBottom <= nearBottomThreshold;
 
     // Track if container had a scrollbar
-    hadScrollbar.current = container.scrollHeight > container.clientHeight;
+    hadScrollbar_{unique_id}.current = container.scrollHeight > container.clientHeight;
 }};
 """,
             f"""
@@ -81,12 +81,12 @@ const scrollToBottomIfNeeded_{unique_id} = () => {{
     // Scroll if:
     // 1. User was near bottom, OR
     // 2. Container didn't have scrollbar before but does now
-    if (wasNearBottom.current || (!hadScrollbar.current && hasScrollbarNow)) {{
+    if (wasNearBottom_{unique_id}.current || (!hadScrollbar_{unique_id}.current && hasScrollbarNow)) {{
       container.scrollTop = container.scrollHeight;
     }}
 
     // Update scrollbar state for next check
-    hadScrollbar.current = hasScrollbarNow;
+    hadScrollbar_{unique_id}.current = hasScrollbarNow;
 }};
 """,
             f"""
