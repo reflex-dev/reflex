@@ -1186,8 +1186,8 @@ class App(MiddlewareMixin, LifespanMixin):
         progress.start()
         task = progress.add_task(
             f"[{get_compilation_time()}] Compiling:",
-            total=len(self._pages)
-            + (len(self._unevaluated_pages) * 2)
+            total=len(self._unevaluated_pages)
+            + ((len(self._unevaluated_pages) + len(self._pages)) * 3)
             + fixed_pages_within_executor
             + adhoc_steps_without_executor
             + plugin_count,
@@ -1272,14 +1272,17 @@ class App(MiddlewareMixin, LifespanMixin):
         all_imports.update(custom_components_imports)
         progress.advance(task)
 
-        # This has to happen before compiling stateful components as that
-        # prevents recursive functions from reaching all components.
-        for component in self._pages.values():
-            # Add component._get_all_imports() to all_imports.
-            all_imports.update(component._get_all_imports())
+        with console.timing("Collect all imports and app wraps"):
+            # This has to happen before compiling stateful components as that
+            # prevents recursive functions from reaching all components.
+            for component in self._pages.values():
+                # Add component._get_all_imports() to all_imports.
+                all_imports.update(component._get_all_imports())
 
-            # Add the app wrappers from this component.
-            app_wrappers.update(component._get_all_app_wrap_components())
+                # Add the app wrappers from this component.
+                app_wrappers.update(component._get_all_app_wrap_components())
+
+                progress.advance(task)
 
         # Perform auto-memoization of stateful components.
         with console.timing("Auto-memoize StatefulComponents"):
@@ -1287,7 +1290,10 @@ class App(MiddlewareMixin, LifespanMixin):
                 stateful_components_path,
                 stateful_components_code,
                 page_components,
-            ) = compiler.compile_stateful_components(self._pages.values())
+            ) = compiler.compile_stateful_components(
+                self._pages.values(),
+                progress_function=lambda task=task: progress.advance(task),
+            )
             progress.advance(task)
 
         # Catch "static" apps (that do not define a rx.State subclass) which are trying to access rx.State.
