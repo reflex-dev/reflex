@@ -643,7 +643,7 @@ def run_granian_backend_prod(host: str, port: int, loglevel: LogLevel):
 
     command = [
         "granian",
-        *("--log-level", "critical"),
+        *("--log-level", "debug"),
         *("--host", host),
         *("--port", str(port)),
         *("--interface", str(Interfaces.ASGI)),
