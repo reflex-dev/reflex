@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import concurrent.futures
 import traceback
 from collections.abc import Mapping, Sequence
 from datetime import datetime
@@ -195,12 +196,15 @@ def compile_state(state: type[BaseState]) -> dict:
     """
     initial_state = state(_reflex_internal_init=True).dict(initial=True)
     try:
-        loop = asyncio.get_running_loop()
+        _ = asyncio.get_running_loop()
     except RuntimeError:
         pass
     else:
-        future = asyncio.run_coroutine_threadsafe(_resolve_delta(initial_state), loop)
-        return _sorted_keys(future.result())
+        with concurrent.futures.ThreadPoolExecutor() as pool:
+            resolved_initial_state = pool.submit(
+                asyncio.run, _resolve_delta(initial_state)
+            ).result()
+            return _sorted_keys(resolved_initial_state)
 
     # Normally the compile runs before any event loop starts, we asyncio.run is available for calling.
     return _sorted_keys(asyncio.run(_resolve_delta(initial_state)))
