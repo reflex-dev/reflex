@@ -199,7 +199,8 @@ def compile_state(state: type[BaseState]) -> dict:
     except RuntimeError:
         pass
     else:
-        return _sorted_keys(loop.run_until_complete(_resolve_delta(initial_state)))
+        future = asyncio.run_coroutine_threadsafe(_resolve_delta(initial_state), loop)
+        return _sorted_keys(future.result())
 
     # Normally the compile runs before any event loop starts, we asyncio.run is available for calling.
     return _sorted_keys(asyncio.run(_resolve_delta(initial_state)))
