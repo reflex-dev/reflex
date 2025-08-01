@@ -33,6 +33,16 @@ export default defineConfig((config) => ({
   build: {
     rollupOptions: {
       jsx: {},
+      output: {
+        advancedChunks: {
+          groups: [
+            {
+              test: /env.json/,
+              name: "reflex-env",
+            },
+          ],
+        },
+      },
     },
   },
   server: {
