@@ -563,16 +563,6 @@ class EnvironmentVariables:
     # Whether to skip purging the web directory in dev mode.
     REFLEX_PERSIST_WEB_DIR: EnvVar[bool] = env_var(False)
 
-    # The reflex.build frontend host.
-    REFLEX_BUILD_FRONTEND: EnvVar[str] = env_var(
-        constants.Templates.REFLEX_BUILD_FRONTEND
-    )
-
-    # The reflex.build backend host.
-    REFLEX_BUILD_BACKEND: EnvVar[str] = env_var(
-        constants.Templates.REFLEX_BUILD_BACKEND
-    )
-
     # This env var stores the execution mode of the app
     REFLEX_ENV_MODE: EnvVar[constants.Env] = env_var(constants.Env.DEV)
 
