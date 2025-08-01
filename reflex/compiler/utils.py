@@ -23,8 +23,7 @@ from reflex.constants.state import FIELD_MARKER
 from reflex.istate.storage import Cookie, LocalStorage, SessionStorage
 from reflex.state import BaseState, _resolve_delta
 from reflex.style import Style
-from reflex.utils import console, format, imports, path_ops
-from reflex.utils.exec import is_in_app_harness
+from reflex.utils import format, imports, path_ops
 from reflex.utils.imports import ImportVar, ParsedImportDict
 from reflex.utils.prerequisites import get_web_dir
 from reflex.vars.base import Field, Var
@@ -201,16 +200,11 @@ def compile_state(state: type[BaseState]) -> dict:
     except RuntimeError:
         pass
     else:
-        if is_in_app_harness():
-            # Playwright tests already have an event loop running, so we can't use asyncio.run.
-            with concurrent.futures.ThreadPoolExecutor() as pool:
-                resolved_initial_state = pool.submit(
-                    asyncio.run, _resolve_delta(initial_state)
-                ).result()
-                console.warn(
-                    f"Had to get initial state in a thread 🤮 {resolved_initial_state}",
-                )
-                return _sorted_keys(resolved_initial_state)
+        with concurrent.futures.ThreadPoolExecutor() as pool:
+            resolved_initial_state = pool.submit(
+                asyncio.run, _resolve_delta(initial_state)
+            ).result()
+            return _sorted_keys(resolved_initial_state)
 
     # Normally the compile runs before any event loop starts, we asyncio.run is available for calling.
     return _sorted_keys(asyncio.run(_resolve_delta(initial_state)))
