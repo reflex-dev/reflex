@@ -37,7 +37,7 @@ export default defineConfig((config) => ({
         advancedChunks: {
           groups: [
             {
-              test: /env/,
+              test: /env.json/,
               name: "reflex-env",
             },
           ],
