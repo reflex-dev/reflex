@@ -181,8 +181,6 @@ class RedisTokenManager(LocalTokenManager):
             # Store in local dicts (always do this)
             self.token_to_sid[new_token] = sid
             self.sid_to_token[sid] = new_token
-
-            console.debug(f"Duplicate tab detected. Generated new token: {new_token}")
             return new_token
 
         # Normal case - store in both Redis and local dicts

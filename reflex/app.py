@@ -2082,6 +2082,14 @@ class EventNamespace(AsyncNamespace):
             msg = f"Failed to deserialize event data: {fields}."
             raise exceptions.EventDeserializationError(msg) from ex
 
+        # Correct the token if it doesn't match what we expect for this SID
+        expected_token = self.sid_to_token.get(sid)
+        if expected_token and event.token != expected_token:
+            # Create new event with corrected token since Event is frozen
+            from dataclasses import replace
+
+            event = replace(event, token=expected_token)
+
         # Get the event environment.
         if self.app.sio is None:
             msg = "Socket.IO is not initialized."
