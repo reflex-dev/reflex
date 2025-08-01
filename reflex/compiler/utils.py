@@ -359,6 +359,8 @@ def create_document_root(
     Returns:
         The document root.
     """
+    from reflex.utils.misc import preload_color_theme
+
     existing_meta_types = set()
 
     for component in head_components or []:
@@ -385,7 +387,11 @@ def create_document_root(
             Meta.create(name="viewport", content="width=device-width, initial-scale=1")
         )
 
+    # Add theme preload script as the very first component to prevent FOUC
+    theme_preload_components = [preload_color_theme()]
+
     head_components = [
+        *theme_preload_components,
         *(head_components or []),
         *maybe_head_components,
         *always_head_components,

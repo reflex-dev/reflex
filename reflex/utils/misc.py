@@ -90,3 +90,43 @@ def with_cwd_in_syspath():
             yield
         finally:
             sys.path[:] = orig_sys_path
+
+
+def preload_color_theme():
+    """Create a script component that preloads the color theme to prevent FOUC.
+
+    This script runs immediately in the document head before React hydration,
+    reading the saved theme from localStorage and applying the correct CSS classes
+    to prevent flash of unstyled content.
+
+    Returns:
+        Script: A script component to add to App.head_components
+    """
+    from reflex.components.el.elements.scripts import Script
+
+    # Create direct inline script content (like next-themes dangerouslySetInnerHTML)
+    script_content = """
+// Only run in browser environment, not during SSR
+if (typeof document !== 'undefined') {
+    try {
+        const theme = localStorage.getItem("theme") || "system";
+        const systemPreference = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+        const resolvedTheme = theme === "system" ? systemPreference : theme;
+
+        // Apply theme immediately - blocks until complete
+        // Use classList to avoid overwriting other classes
+        document.documentElement.classList.remove("light", "dark");
+        document.documentElement.classList.add(resolvedTheme);
+        document.documentElement.style.colorScheme = resolvedTheme;
+
+    } catch (e) {
+        // Fallback to system preference on any error (resolve "system" to actual theme)
+        const fallbackTheme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+        document.documentElement.classList.remove("light", "dark");
+        document.documentElement.classList.add(fallbackTheme);
+        document.documentElement.style.colorScheme = fallbackTheme;
+    }
+}
+"""
+
+    return Script.create(script_content)

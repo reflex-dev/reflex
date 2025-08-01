@@ -72,7 +72,7 @@ class Plotly(NoSSRComponent):
 
     library = "react-plotly.js@2.6.0"
 
-    lib_dependencies: list[str] = ["plotly.js@3.0.1"]
+    lib_dependencies: list[str] = ["plotly.js@3.0.3"]
 
     tag = "Plot"
 
@@ -245,16 +245,24 @@ const extractPoints = (points) => {
             template_dict = LiteralVar.create({"layout": {"template": self.template}})
             merge_dicts.append(template_dict._without_data())
         if merge_dicts:
-            tag.special_props.append(
-                # Merge all dictionaries and spread the result over props.
-                Var(
-                    _js_expr=f"{{...mergician({figure!s},"
-                    f"{','.join(str(md) for md in merge_dicts)})}}",
-                ),
+            tag = tag.set(
+                special_props=[
+                    *tag.special_props,
+                    # Merge all dictionaries and spread the result over props.
+                    Var(
+                        _js_expr=f"{{...mergician({figure!s},"
+                        f"{','.join(str(md) for md in merge_dicts)})}}",
+                    ),
+                ]
             )
         else:
-            # Spread the figure dict over props, nothing to merge.
-            tag.special_props.append(Var(_js_expr=f"{figure!s}"))
+            tag = tag.set(
+                special_props=[
+                    *tag.special_props,
+                    # Spread the figure dict over props, nothing to merge.
+                    Var(_js_expr=str(figure)),
+                ]
+            )
         return tag
 
 
@@ -295,7 +303,7 @@ class PlotlyBasic(Plotly):
 
     library = "react-plotly.js@2.6.0"
 
-    lib_dependencies: list[str] = ["plotly.js-basic-dist-min@3.0.1"]
+    lib_dependencies: list[str] = ["plotly.js-basic-dist-min@3.0.3"]
 
     def add_imports(self) -> ImportDict | list[ImportDict]:
         """Add imports for the plotly basic component.
@@ -321,7 +329,7 @@ class PlotlyCartesian(Plotly):
 
     library = "react-plotly.js@2.6.0"
 
-    lib_dependencies: list[str] = ["plotly.js-cartesian-dist-min@3.0.1"]
+    lib_dependencies: list[str] = ["plotly.js-cartesian-dist-min@3.0.3"]
 
     def add_imports(self) -> ImportDict | list[ImportDict]:
         """Add imports for the plotly cartesian component.
@@ -347,7 +355,7 @@ class PlotlyGeo(Plotly):
 
     library = "react-plotly.js@2.6.0"
 
-    lib_dependencies: list[str] = ["plotly.js-geo-dist-min@3.0.1"]
+    lib_dependencies: list[str] = ["plotly.js-geo-dist-min@3.0.3"]
 
     def add_imports(self) -> ImportDict | list[ImportDict]:
         """Add imports for the plotly geo component.
@@ -373,7 +381,7 @@ class PlotlyGl3d(Plotly):
 
     library = "react-plotly.js@2.6.0"
 
-    lib_dependencies: list[str] = ["plotly.js-gl3d-dist-min@3.0.1"]
+    lib_dependencies: list[str] = ["plotly.js-gl3d-dist-min@3.0.3"]
 
     def add_imports(self) -> ImportDict | list[ImportDict]:
         """Add imports for the plotly 3d component.
@@ -399,7 +407,7 @@ class PlotlyGl2d(Plotly):
 
     library = "react-plotly.js@2.6.0"
 
-    lib_dependencies: list[str] = ["plotly.js-gl2d-dist-min@3.0.1"]
+    lib_dependencies: list[str] = ["plotly.js-gl2d-dist-min@3.0.3"]
 
     def add_imports(self) -> ImportDict | list[ImportDict]:
         """Add imports for the plotly 2d component.
@@ -425,7 +433,7 @@ class PlotlyMapbox(Plotly):
 
     library = "react-plotly.js@2.6.0"
 
-    lib_dependencies: list[str] = ["plotly.js-mapbox-dist-min@3.0.1"]
+    lib_dependencies: list[str] = ["plotly.js-mapbox-dist-min@3.0.3"]
 
     def add_imports(self) -> ImportDict | list[ImportDict]:
         """Add imports for the plotly mapbox component.
@@ -451,7 +459,7 @@ class PlotlyFinance(Plotly):
 
     library = "react-plotly.js@2.6.0"
 
-    lib_dependencies: list[str] = ["plotly.js-finance-dist-min@3.0.1"]
+    lib_dependencies: list[str] = ["plotly.js-finance-dist-min@3.0.3"]
 
     def add_imports(self) -> ImportDict | list[ImportDict]:
         """Add imports for the plotly finance component.
@@ -477,7 +485,7 @@ class PlotlyStrict(Plotly):
 
     library = "react-plotly.js@2.6.0"
 
-    lib_dependencies: list[str] = ["plotly.js-strict-dist-min@3.0.1"]
+    lib_dependencies: list[str] = ["plotly.js-strict-dist-min@3.0.3"]
 
     def add_imports(self) -> ImportDict | list[ImportDict]:
         """Add imports for the plotly strict component.

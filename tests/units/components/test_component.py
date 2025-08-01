@@ -685,137 +685,107 @@ def test_component_create_unallowed_types(children, test_component):
                 "name": "Fragment",
                 "props": [],
                 "contents": "",
-                "special_props": [],
                 "children": [
                     {
                         "name": "RadixThemesText",
                         "props": ['as:"p"'],
                         "contents": "",
-                        "special_props": [],
                         "children": [
                             {
                                 "name": "",
                                 "props": [],
                                 "contents": '"first_text"',
-                                "special_props": [],
                                 "children": [],
-                                "autofocus": False,
                             }
                         ],
-                        "autofocus": False,
                     }
                 ],
-                "autofocus": False,
             },
         ),
         (
             (rx.text("first_text"), rx.text("second_text")),
             {
-                "autofocus": False,
                 "children": [
                     {
-                        "autofocus": False,
                         "children": [
                             {
-                                "autofocus": False,
                                 "children": [],
                                 "contents": '"first_text"',
                                 "name": "",
                                 "props": [],
-                                "special_props": [],
                             }
                         ],
                         "contents": "",
                         "name": "RadixThemesText",
                         "props": ['as:"p"'],
-                        "special_props": [],
                     },
                     {
-                        "autofocus": False,
                         "children": [
                             {
-                                "autofocus": False,
                                 "children": [],
                                 "contents": '"second_text"',
                                 "name": "",
                                 "props": [],
-                                "special_props": [],
                             }
                         ],
                         "contents": "",
                         "name": "RadixThemesText",
                         "props": ['as:"p"'],
-                        "special_props": [],
                     },
                 ],
                 "contents": "",
                 "name": "Fragment",
                 "props": [],
-                "special_props": [],
             },
         ),
         (
             (rx.text("first_text"), rx.box((rx.text("second_text"),))),
             {
-                "autofocus": False,
                 "children": [
                     {
-                        "autofocus": False,
                         "children": [
                             {
-                                "autofocus": False,
                                 "children": [],
                                 "contents": '"first_text"',
                                 "name": "",
                                 "props": [],
-                                "special_props": [],
                             }
                         ],
                         "contents": "",
                         "name": "RadixThemesText",
                         "props": ['as:"p"'],
-                        "special_props": [],
                     },
                     {
-                        "autofocus": False,
                         "children": [
                             {
-                                "autofocus": False,
                                 "children": [
                                     {
-                                        "autofocus": False,
                                         "children": [
                                             {
-                                                "autofocus": False,
                                                 "children": [],
                                                 "contents": '"second_text"',
                                                 "name": "",
                                                 "props": [],
-                                                "special_props": [],
                                             }
                                         ],
                                         "contents": "",
                                         "name": "RadixThemesText",
                                         "props": ['as:"p"'],
-                                        "special_props": [],
                                     }
                                 ],
                                 "contents": "",
                                 "name": "Fragment",
                                 "props": [],
-                                "special_props": [],
                             }
                         ],
                         "contents": "",
                         "name": "RadixThemesBox",
                         "props": [],
-                        "special_props": [],
                     },
                 ],
                 "contents": "",
                 "name": "Fragment",
                 "props": [],
-                "special_props": [],
             },
         ),
     ],

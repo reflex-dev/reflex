@@ -2,6 +2,7 @@
 
 import dataclasses
 import inspect
+import sys
 import types
 import urllib.parse
 from base64 import b64encode
@@ -403,7 +404,7 @@ class CallableEventSpec(EventSpec):
 
         Args:
             fn: The function to decorate.
-            **kwargs: The kwargs to pass to pydantic initializer
+            **kwargs: The kwargs to pass to the EventSpec constructor.
         """
         if fn is not None:
             default_event_spec = fn()
@@ -633,6 +634,27 @@ def checked_input_event(e: ObjectVar[JavascriptInputEvent]) -> tuple[Var[bool]]:
         The checked state from the input event.
     """
     return (e.target.checked,)
+
+
+FORM_DATA = Var(_js_expr="form_data")
+
+
+def on_submit_event() -> tuple[Var[dict[str, Any]]]:
+    """Event handler spec for the on_submit event.
+
+    Returns:
+        The event handler spec.
+    """
+    return (FORM_DATA,)
+
+
+def on_submit_string_event() -> tuple[Var[dict[str, str]]]:
+    """Event handler spec for the on_submit event.
+
+    Returns:
+        The event handler spec.
+    """
+    return (FORM_DATA,)
 
 
 class KeyInputInfo(TypedDict):
@@ -1241,19 +1263,6 @@ def download(
         url=url,
         filename=filename,
     )
-
-
-# This function seems unused. Check if we still need it. If not, remove in 0.7.0
-def _callback_arg_spec(eval_result: Any):
-    """ArgSpec for call_script callback function.
-
-    Args:
-        eval_result: The result of the javascript execution.
-
-    Returns:
-        Args for the callback function
-    """
-    return [eval_result]
 
 
 def call_script(
@@ -2197,7 +2206,9 @@ else:
 class EventNamespace:
     """A namespace for event related classes."""
 
+    # Core Event Classes
     Event = Event
+    EventActionsMixin = EventActionsMixin
     EventHandler = EventHandler
     EventSpec = EventSpec
     CallableEventSpec = CallableEventSpec
@@ -2206,8 +2217,44 @@ class EventNamespace:
     LiteralEventVar = LiteralEventVar
     EventChainVar = EventChainVar
     LiteralEventChainVar = LiteralEventChainVar
-    EventType = EventType
     EventCallback = EventCallback
+    LambdaEventCallback = LambdaEventCallback
+
+    # Javascript Event Classes
+    JavascriptHTMLInputElement = JavascriptHTMLInputElement
+    JavascriptInputEvent = JavascriptInputEvent
+    JavascriptKeyboardEvent = JavascriptKeyboardEvent
+    JavascriptMouseEvent = JavascriptMouseEvent
+    JavascriptPointerEvent = JavascriptPointerEvent
+
+    # Type Info Classes
+    KeyInputInfo = KeyInputInfo
+    MouseEventInfo = MouseEventInfo
+    PointerEventInfo = PointerEventInfo
+    IdentityEventReturn = IdentityEventReturn
+
+    # File Upload
+    FileUpload = FileUpload
+
+    # Type Aliases
+    EventType = EventType
+    LAMBDA_OR_STATE = LAMBDA_OR_STATE
+    BASIC_EVENT_TYPES = BASIC_EVENT_TYPES
+    IndividualEventType = IndividualEventType
+
+    # Constants
+    BACKGROUND_TASK_MARKER = BACKGROUND_TASK_MARKER
+    _EVENT_FIELDS = _EVENT_FIELDS
+    FORM_DATA = FORM_DATA
+    upload_files = upload_files
+    stop_propagation = stop_propagation
+    prevent_default = prevent_default
+
+    # Private/Internal Functions
+    _values_returned_from_event = staticmethod(_values_returned_from_event)
+    _check_event_args_subclass_of_callback = staticmethod(
+        _check_event_args_subclass_of_callback
+    )
 
     @overload
     def __new__(
@@ -2359,10 +2406,22 @@ class EventNamespace:
     check_fn_match_arg_spec = staticmethod(check_fn_match_arg_spec)
     resolve_annotation = staticmethod(resolve_annotation)
     parse_args_spec = staticmethod(parse_args_spec)
+    unwrap_var_annotation = staticmethod(unwrap_var_annotation)
+    get_fn_signature = staticmethod(get_fn_signature)
+
+    # Event Spec Functions
     passthrough_event_spec = staticmethod(passthrough_event_spec)
     input_event = staticmethod(input_event)
+    int_input_event = staticmethod(int_input_event)
+    float_input_event = staticmethod(float_input_event)
+    checked_input_event = staticmethod(checked_input_event)
     key_event = staticmethod(key_event)
+    pointer_event_spec = staticmethod(pointer_event_spec)
     no_args_event_spec = staticmethod(no_args_event_spec)
+    on_submit_event = staticmethod(on_submit_event)
+    on_submit_string_event = staticmethod(on_submit_string_event)
+
+    # Server Side Events
     server_side = staticmethod(server_side)
     redirect = staticmethod(redirect)
     console_log = staticmethod(console_log)
@@ -2383,6 +2442,9 @@ class EventNamespace:
     call_script = staticmethod(call_script)
     call_function = staticmethod(call_function)
     run_script = staticmethod(run_script)
+    __file__ = __file__
 
 
 event = EventNamespace
+event.event = event  # pyright: ignore[reportAttributeAccessIssue]
+sys.modules[__name__] = event  # pyright: ignore[reportArgumentType]

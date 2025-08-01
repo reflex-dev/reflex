@@ -78,19 +78,41 @@ def _can_bind_at_port(
     return True
 
 
-def is_process_on_port(port: int) -> bool:
+def _can_bind_at_any_port(address_family: socket.AddressFamily | int) -> bool:
+    """Check if any port is available for binding.
+
+    Args:
+        address_family: The address family (e.g., socket.AF_INET or socket.AF_INET6).
+
+    Returns:
+        Whether any port is available for binding.
+    """
+    try:
+        with closing(socket.socket(address_family, socket.SOCK_STREAM)) as sock:
+            sock.bind(("", 0))  # Bind to any available port
+            return True
+    except (OverflowError, PermissionError, OSError) as e:
+        console.debug(f"Unable to bind to any port for {address_family}: {e}")
+        return False
+
+
+def is_process_on_port(
+    port: int,
+    address_families: Sequence[socket.AddressFamily | int] = (
+        socket.AF_INET,
+        socket.AF_INET6,
+    ),
+) -> bool:
     """Check if a process is running on the given port.
 
     Args:
         port: The port.
+        address_families: The address families to check (default: IPv4 and IPv6).
 
     Returns:
         Whether a process is running on the given port.
     """
-    return (
-        not _can_bind_at_port(socket.AF_INET, "", port)  # Test IPv4 local network
-        or not _can_bind_at_port(socket.AF_INET6, "", port)  # Test IPv6 local network
-    )
+    return any(not _can_bind_at_port(family, "", port) for family in address_families)
 
 
 MAXIMUM_PORT = 2**16 - 1
@@ -113,13 +135,30 @@ def handle_port(service_name: str, port: int, auto_increment: bool) -> int:
     """
     console.debug(f"Checking if {service_name.capitalize()} port: {port} is in use.")
 
-    if not is_process_on_port(port):
+    families = [
+        address_family
+        for address_family in (socket.AF_INET, socket.AF_INET6)
+        if _can_bind_at_any_port(address_family)
+    ]
+
+    if not families:
+        console.error(
+            f"Unable to bind to any port for {service_name}. "
+            "Please check your network configuration."
+        )
+        raise click.exceptions.Exit(1)
+
+    console.debug(
+        f"Checking if {service_name.capitalize()} port: {port} is in use for families: {families}."
+    )
+
+    if not is_process_on_port(port, families):
         console.debug(f"{service_name.capitalize()} port: {port} is not in use.")
         return port
 
     if auto_increment:
         for new_port in range(port + 1, MAXIMUM_PORT + 1):
-            if not is_process_on_port(new_port):
+            if not is_process_on_port(new_port, families):
                 console.info(
                     f"The {service_name} will run on port [bold underline]{new_port}[/bold underline]."
                 )

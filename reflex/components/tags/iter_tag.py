@@ -16,7 +16,7 @@ if TYPE_CHECKING:
     from reflex.components.component import Component
 
 
-@dataclasses.dataclass()
+@dataclasses.dataclass(frozen=True)
 class IterTag(Tag):
     """An iterator tag."""
 

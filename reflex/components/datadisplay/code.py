@@ -500,11 +500,13 @@ class CodeBlock(Component, MarkdownComponentMap):
 
         theme = self.theme
 
-        out.add_props(style=theme).remove_props("theme", "code").add_props(
-            children=self.code,
+        return (
+            out.add_props(style=theme)
+            .remove_props("theme", "code")
+            .add_props(
+                children=self.code,
+            )
         )
-
-        return out
 
 
 class CodeblockNamespace(ComponentNamespace):

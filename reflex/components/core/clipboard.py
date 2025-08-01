@@ -56,10 +56,8 @@ class Clipboard(Fragment):
 
     def _render(self) -> Tag:
         tag = super()._render()
-        tag.remove_props("targets")
         # Ensure a different Fragment component is created whenever targets differ
-        tag.add_props(key=self.targets)
-        return tag
+        return tag.remove_props("targets").add_props(key=self.targets)
 
     def add_imports(self) -> dict[str, ImportVar]:
         """Add the imports for the Clipboard component.

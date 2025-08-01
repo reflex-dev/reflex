@@ -39,7 +39,6 @@ class Script(elements.Script):
         key = props.pop("key", None)
         id = props.pop("id", None)
         class_name = props.pop("class_name", None)
-        autofocus = props.pop("autofocus", None)
         custom_attrs = props.pop("custom_attrs", None)
         on_mount = props.pop("on_mount", None)
         on_unmount = props.pop("on_unmount", None)
@@ -67,7 +66,6 @@ class Script(elements.Script):
                 key=key,
                 id=id,
                 class_name=class_name,
-                autofocus=autofocus,
                 custom_attrs=custom_attrs,
                 on_mount=on_mount,
                 on_unmount=on_unmount,
