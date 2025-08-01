@@ -47,12 +47,13 @@ def monitor_sync():
     action = config.pyleak_action or LeakAction.WARN  # pyright: ignore[reportOptionalMemberAccess]
 
     with contextlib.ExitStack() as stack:
-        stack.enter_context(
-            no_thread_leaks(  # pyright: ignore[reportOptionalCall]
-                action=action,
-                grace_period=config.pyleak_thread_grace_period,
-            )
-        )
+        # Thread leak detection has issues with background tasks
+        # stack.enter_context(
+        #     no_thread_leaks(  # pyright: ignore[reportOptionalCall]
+        #         action=action,
+        #         grace_period=config.pyleak_thread_grace_period,
+        #     )
+        # )
         stack.enter_context(
             no_event_loop_blocking(  # pyright: ignore[reportOptionalCall]
                 action=action,
@@ -77,12 +78,12 @@ async def monitor_async():
     action = config.pyleak_action or LeakAction.WARN  # pyright: ignore[reportOptionalMemberAccess]
 
     async with contextlib.AsyncExitStack() as stack:
-        stack.enter_context(
-            no_thread_leaks(  # pyright: ignore[reportOptionalCall]
-                action=action,
-                grace_period=config.pyleak_thread_grace_period,
-            )
-        )
+        # stack.enter_context(
+        #     no_thread_leaks(  # pyright: ignore[reportOptionalCall]
+        #         action=action,
+        #         grace_period=config.pyleak_thread_grace_period,
+        #     )
+        # )
         stack.enter_context(
             no_event_loop_blocking(  # pyright: ignore[reportOptionalCall]
                 action=action,
