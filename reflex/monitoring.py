@@ -90,7 +90,7 @@ async def monitor_async():
                 threshold=config.pyleak_blocking_threshold,
             )
         )
-        await stack.enter_async_context(no_task_leaks(action=action))  # pyright: ignore[reportOptionalCall]
+        #await stack.enter_async_context(no_task_leaks(action=action))  # pyright: ignore[reportOptionalCall]
         yield
 
 
