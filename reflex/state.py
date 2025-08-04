@@ -2464,15 +2464,25 @@ class OnLoadInternalState(State):
     """
 
     # Cannot properly annotate this as `App` due to circular import issues.
-    _app_ref: ClassVar = None
+    _app_ref: ClassVar[Any] = None
 
     def on_load_internal(self) -> list[Event | EventSpec | event.EventCallback] | None:
         """Queue on_load handlers for the current page.
 
         Returns:
             The list of events to queue for on load handling.
+
+        Raises:
+            TypeError: If the app reference is not of type App.
         """
+        from reflex.app import App
+
         app = type(self)._app_ref or prerequisites.get_and_validate_app().app
+        if not isinstance(app, App):
+            msg = (
+                f"Expected app to be of type {App.__name__}, got {type(app).__name__}."
+            )
+            raise TypeError(msg)
         # Cache the app reference for subsequent calls.
         if type(self)._app_ref is None:
             type(self)._app_ref = app
