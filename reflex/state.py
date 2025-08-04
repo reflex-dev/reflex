@@ -2463,16 +2463,20 @@ class OnLoadInternalState(State):
     This is a separate substate to avoid deserializing the entire state tree for every page navigation.
     """
 
+    # Cannot properly annotate this as `App` due to circular import issues.
+    _app_ref: ClassVar = None
+
     def on_load_internal(self) -> list[Event | EventSpec | event.EventCallback] | None:
         """Queue on_load handlers for the current page.
 
         Returns:
             The list of events to queue for on load handling.
         """
-        # Do not app._compile()!  It should be already compiled by now.
-        load_events = prerequisites.get_and_validate_app().app.get_load_events(
-            self.router._page.path
-        )
+        app = type(self)._app_ref or prerequisites.get_and_validate_app().app
+        # Cache the app reference for subsequent calls.
+        if type(self)._app_ref is None:
+            type(self)._app_ref = app
+        load_events = app.get_load_events(self.router._page.path)
         if not load_events:
             self.is_hydrated = True
             return None  # Fast path for navigation with no on_load events defined.
@@ -2646,6 +2650,9 @@ def reload_state_module(
         state: Recursive argument for the state class to reload.
 
     """
+    # Reset the _app_ref of OnLoadInternalState to avoid stale references.
+    if state is OnLoadInternalState:
+        state._app_ref = None
     # Clean out all potentially dirty states of reloaded modules.
     for pd_state in tuple(state._potentially_dirty_states):
         with contextlib.suppress(ValueError):

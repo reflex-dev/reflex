@@ -7,6 +7,7 @@ import uuid
 from collections.abc import Generator
 from contextlib import nullcontext as does_not_raise
 from pathlib import Path
+from typing import ClassVar
 from unittest.mock import AsyncMock
 
 import pytest
@@ -945,6 +946,7 @@ class DynamicState(BaseState):
     is_hydrated: bool = False
     loaded: int = 0
     counter: int = 0
+    _app_ref: ClassVar = None
 
     @rx.event
     def on_load(self):
@@ -982,6 +984,7 @@ def test_dynamic_arg_shadow(
         app_module_mock: Mocked app module.
         mocker: pytest mocker object.
     """
+    DynamicState._app_ref = None
     arg_name = "counter"
     route = f"/test/[{arg_name}]"
     app = app_module_mock.app = App(_state=DynamicState)
@@ -1030,6 +1033,7 @@ async def test_dynamic_route_var_route_change_completed_on_load(
         app_module_mock: Mocked app module.
         mocker: pytest mocker object.
     """
+    DynamicState._app_ref = None
     arg_name = "dynamic"
     route = f"test/[{arg_name}]"
     app = app_module_mock.app = App(_state=DynamicState)
