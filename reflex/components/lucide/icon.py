@@ -93,6 +93,7 @@ class DynamicIcon(LucideIconComponent):
     tag = "DynamicIcon"
 
     name: Var[str]
+    size: Var[int]
 
     def _get_imports(self):
         _imports = super()._get_imports()
