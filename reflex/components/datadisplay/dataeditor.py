@@ -197,6 +197,9 @@ class DataEditor(NoSSRComponent):
     # Enables or disables the overlay shadow when scrolling vertically.
     fixed_shadow_y: Var[bool]
 
+    # Controls the presence of the fill indicator
+    fill_handle: Var[bool]
+
     # The number of columns which should remain in place when scrolling horizontally. Doesn't include rowMarkers.
     freeze_columns: Var[int]
 
