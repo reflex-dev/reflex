@@ -93,24 +93,24 @@ ReturnType = TypeVar("ReturnType")
 
 
 @overload
-def monitor_leaks(
+def monitor_loopblocks(
     func: Callable[..., AsyncGenerator[YieldType, ReturnType]],
 ) -> Callable[..., AsyncGenerator[YieldType, ReturnType]]: ...
 
 
 @overload
-def monitor_leaks(
+def monitor_loopblocks(
     func: Callable[..., Generator[YieldType, SendType, ReturnType]],
 ) -> Callable[..., Generator[YieldType, SendType, ReturnType]]: ...
 
 
 @overload
-def monitor_leaks(
+def monitor_loopblocks(
     func: Callable[..., Awaitable[ReturnType]],
 ) -> Callable[..., Awaitable[ReturnType]]: ...
 
 
-def monitor_leaks(func: Callable) -> Callable:
+def monitor_loopblocks(func: Callable) -> Callable:
     """Framework decorator using the monitoring module's context manager.
 
     Args:
