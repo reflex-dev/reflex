@@ -193,7 +193,7 @@ class BaseConfig:
     enable_pyleak_monitoring: bool = False
 
     # Threshold in seconds for detecting event loop blocking operations.
-    pyleak_blocking_threshold: float = 0.001
+    pyleak_blocking_threshold: float = 0.1
 
     # Grace period in seconds for thread leak detection cleanup.
     pyleak_thread_grace_period: float = 0.2
