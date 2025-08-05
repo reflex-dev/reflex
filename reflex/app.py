@@ -1926,6 +1926,8 @@ def upload(app: App):
                 )
             )
 
+            await file.close()
+
         event = Event(
             token=token,
             name=handler,
