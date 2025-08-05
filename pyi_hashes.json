@@ -24,7 +24,7 @@
   "reflex/components/core/window_events.pyi": "76bf03a273a1fbbb3b333e10d5d08c30",
   "reflex/components/datadisplay/__init__.pyi": "52755871369acbfd3a96b46b9a11d32e",
   "reflex/components/datadisplay/code.pyi": "ec35c215a219c616ff38c30047d9b601",
-  "reflex/components/datadisplay/dataeditor.pyi": "afc6df39dbbdbb5b209d4751c3e189b2",
+  "reflex/components/datadisplay/dataeditor.pyi": "82c652f0679148d8431a0cf645686a50",
   "reflex/components/datadisplay/shiki_code_block.pyi": "1d53e75b6be0d3385a342e7b3011babd",
   "reflex/components/el/__init__.pyi": "00ded672c0336da6225036f56855b042",
   "reflex/components/el/element.pyi": "c5974a92fbc310e42d0f6cfdd13472f4",
