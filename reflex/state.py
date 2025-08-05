@@ -43,7 +43,6 @@ from reflex.istate.proxy import ImmutableMutableProxy as ImmutableMutableProxy
 from reflex.istate.proxy import MutableProxy, StateProxy
 from reflex.istate.storage import ClientStorageBase
 from reflex.model import Model
-from reflex.monitoring import is_pyleak_enabled, monitor_leaks
 from reflex.utils import console, format, prerequisites, types
 from reflex.utils.exceptions import (
     ComputedVarShadowsBaseVarsError,
@@ -61,6 +60,7 @@ from reflex.utils.exceptions import (
 )
 from reflex.utils.exceptions import ImmutableStateError as ImmutableStateError
 from reflex.utils.exec import is_testing_env
+from reflex.utils.monitoring import is_pyleak_enabled, monitor_leaks
 from reflex.utils.types import _isinstance, is_union, value_inside_optional
 from reflex.vars import Field, VarData, field
 from reflex.vars.base import (
