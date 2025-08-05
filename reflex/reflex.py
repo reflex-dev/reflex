@@ -491,6 +491,18 @@ def export(
     help="The height of the screenshot.",
 )
 @click.option(
+    "--headed/--headless",
+    default=False,
+    is_flag=True,
+    help="Whether to run the browser in headed mode (visible) or headless mode (invisible).",
+)
+@click.option(
+    "--stateful/--stateless",
+    default=True,
+    is_flag=True,
+    help="Whether to run the browser in stateful mode (preserving session) or stateless mode (fresh session).",
+)
+@click.option(
     "--output-dir",
     type=Path,
     default=".",
@@ -503,6 +515,8 @@ def take_screenshots(
     full_page: bool,
     width: int,
     height: int,
+    headed: bool,
+    stateful: bool,
     output_dir: Path,
 ):
     """Take screenshots of the app in the current directory.
@@ -519,6 +533,7 @@ def take_screenshots(
 
     import playwright.sync_api
 
+    from reflex.route import replace_brackets_with_keywords
     from reflex.utils.net import get, post
 
     backend_url_parsed = urllib.parse.urlsplit(backend_url)
@@ -526,11 +541,6 @@ def take_screenshots(
         path=backend_url_parsed.path.removesuffix("/")
         + "/"
         + constants.Endpoint.ALL_ROUTES.value
-    )
-    active_connections_url = backend_url_parsed._replace(
-        path=backend_url_parsed.path.removesuffix("/")
-        + "/"
-        + constants.Endpoint.ACTIVE_CONNECTIONS.value
     )
 
     endpoints: list[str] = []
@@ -547,57 +557,73 @@ def take_screenshots(
 
     token = ""
 
-    try:
-        response = get(active_connections_url.geturl())
-        response.raise_for_status()
-        active_connections = response.json()
-        if active_connections:
-            token = list(active_connections.keys())[-1]
-            console.info(f"Identified active connection with token {token}.")
-    except Exception:
-        token = ""
-
-    if token:
-        clone_state_url = backend_url_parsed._replace(
+    if stateful:
+        active_connections_url = backend_url_parsed._replace(
             path=backend_url_parsed.path.removesuffix("/")
             + "/"
-            + constants.Endpoint.CLONE_STATE.value
+            + constants.Endpoint.ACTIVE_CONNECTIONS.value
         )
+
         try:
-            response = post(clone_state_url.geturl(), json=token)
+            response = get(active_connections_url.geturl())
             response.raise_for_status()
-            token = response.json()
-            console.info(
-                f"Cloned state from {clone_state_url.geturl()} using token {token}."
-            )
+            active_connections = response.json()
+            if active_connections:
+                token = list(active_connections.keys())[-1]
+                console.info(f"Identified active connection with token {token}.")
         except Exception:
-            console.warn(
-                f"Failed to clone state from {clone_state_url.geturl()} using token {token}. "
-                "This may result in screenshots not being accurate."
-            )
             token = ""
+
+        if token:
+            clone_state_url = backend_url_parsed._replace(
+                path=backend_url_parsed.path.removesuffix("/")
+                + "/"
+                + constants.Endpoint.CLONE_STATE.value
+            )
+            try:
+                response = post(clone_state_url.geturl(), json=token)
+                response.raise_for_status()
+                token = response.json()
+                console.info(
+                    f"Cloned state from {clone_state_url.geturl()} using token {token}."
+                )
+            except Exception:
+                console.warn(
+                    f"Failed to clone state from {clone_state_url.geturl()} using token {token}. "
+                    "This may result in screenshots not being accurate."
+                )
+                token = ""
 
     frontend_url_parsed = urllib.parse.urlsplit(frontend_url)
 
-    for endpoint in endpoints:
-        normalized_endpoint = endpoint
-        if not normalized_endpoint.startswith("/"):
-            normalized_endpoint = "/" + normalized_endpoint
-        if normalized_endpoint == "/index":
-            normalized_endpoint = "/"
-        full_url = frontend_url_parsed._replace(
-            path=frontend_url_parsed.path.removesuffix("/") + normalized_endpoint
-        ).geturl()
-        console.info(f"Taking screenshot of {full_url}")
+    with playwright.sync_api.sync_playwright() as p:
+        browser = p.chromium.launch(headless=not headed)
+        page = browser.new_page()
+        page.set_viewport_size({"width": width, "height": height})
+        if token:
+            page.add_init_script(f"window.sessionStorage.setItem('token', '{token}')")
 
-        with playwright.sync_api.sync_playwright() as p:
-            browser = p.chromium.launch(headless=False)
-            page = browser.new_page()
-            page.set_viewport_size({"width": width, "height": height})
-            if token:
-                page.add_init_script(
-                    f"window.sessionStorage.setItem('token', '{token}')"
+        for endpoint in endpoints:
+            normalized_endpoint = endpoint
+            if not normalized_endpoint.startswith("/"):
+                normalized_endpoint = "/" + normalized_endpoint
+            if normalized_endpoint == "/index":
+                normalized_endpoint = "/"
+
+            if (
+                replace_brackets_with_keywords(normalized_endpoint)
+                != normalized_endpoint
+            ):
+                console.warn(
+                    f"Skipping endpoint {normalized_endpoint} because it contains dynamic route args."
                 )
+                continue
+
+            full_url = frontend_url_parsed._replace(
+                path=frontend_url_parsed.path.removesuffix("/") + normalized_endpoint
+            ).geturl()
+            console.info(f"Taking screenshot of {full_url}")
+
             page.goto(full_url)
             page.wait_for_load_state("networkidle")
             if delay > 0:
@@ -606,7 +632,9 @@ def take_screenshots(
                 path=output_dir / f"{endpoint.strip('/').replace('/', '_')}.png",
                 full_page=full_page,
             )
-            browser.close()
+
+        console.success("All screenshots taken successfully.")
+        browser.close()
 
 
 @cli.command()
