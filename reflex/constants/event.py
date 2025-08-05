@@ -13,6 +13,8 @@ class Endpoint(Enum):
     AUTH_CODESPACE = "auth-codespace"
     HEALTH = "_health"
     ALL_ROUTES = "_all_routes"
+    ACTIVE_CONNECTIONS = "_active_connections"
+    CLONE_STATE = "_clone_state"
 
     def __str__(self) -> str:
         """Get the string representation of the endpoint.

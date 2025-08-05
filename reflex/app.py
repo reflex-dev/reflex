@@ -14,6 +14,7 @@ import json
 import sys
 import traceback
 import urllib.parse
+import uuid
 from collections.abc import (
     AsyncGenerator,
     AsyncIterator,
@@ -685,6 +686,10 @@ class App(MiddlewareMixin, LifespanMixin):
             )
         if environment.REFLEX_ADD_ALL_ROUTES_ENDPOINT.get():
             self.add_all_routes_endpoint()
+        if environment.REFLEX_ADD_ACTIVE_CONNECTIONS_ENDPOINT.get():
+            self.add_active_connections_endpoint()
+        if environment.REFLEX_ADD_CLONE_STATE_ENDPOINT.get():
+            self.add_clone_state_endpoint()
 
     @staticmethod
     def _add_cors(api: Starlette):
@@ -1502,6 +1507,65 @@ class App(MiddlewareMixin, LifespanMixin):
             stateful_pages_marker.parent.mkdir(parents=True, exist_ok=True)
             with stateful_pages_marker.open("w") as f:
                 json.dump(list(self._stateful_pages), f)
+
+    def add_active_connections_endpoint(self):
+        """Add an endpoint to the app that returns the active connections."""
+        if not self._api:
+            return
+
+        async def active_connections(_request: Request) -> Response:
+            if not self.event_namespace:
+                return JSONResponse({})
+            return JSONResponse(self.event_namespace.token_to_sid)
+
+        self._api.add_route(
+            str(constants.Endpoint.ACTIVE_CONNECTIONS),
+            active_connections,
+            methods=["GET"],
+        )
+
+    def add_clone_state_endpoint(self):
+        """Add an endpoint to the app that clones the current state."""
+        if not self._api:
+            return
+
+        async def clone_state(request: Request) -> Response:
+            if not self.event_namespace:
+                return JSONResponse({})
+
+            token_to_clone = await request.json()
+            if not isinstance(token_to_clone, str):
+                return JSONResponse(
+                    {"error": "Token to clone must be a string."}, status_code=400
+                )
+
+            old_state = await self.state_manager.get_state(token_to_clone)
+            new_state = old_state._deep_copy()
+
+            new_token = uuid.uuid4().hex
+
+            all_states = [new_state]
+            found_new = True
+            while found_new:
+                found_new = False
+                for state in all_states:
+                    for substate in state.substates.values():
+                        substate._was_touched = True
+                        if substate not in all_states:
+                            all_states.append(substate)
+                            found_new = True
+
+            await self.state_manager.set_state(
+                new_token + "_" + new_state.get_full_name(), new_state
+            )
+
+            return JSONResponse(new_token)
+
+        self._api.add_route(
+            str(constants.Endpoint.CLONE_STATE),
+            clone_state,
+            methods=["POST"],
+        )
 
     def add_all_routes_endpoint(self):
         """Add an endpoint to the app that returns all the routes."""

@@ -454,6 +454,163 @@ def export(
 
 @cli.command()
 @loglevel_option
+@click.option(
+    "--backend-url",
+    type=str,
+    default="http://localhost:8000",
+    help="The URL of the backend server.",
+)
+@click.option(
+    "--frontend-url",
+    type=str,
+    default="http://localhost:3000",
+    help="The URL of the frontend server.",
+)
+@click.option(
+    "--delay",
+    type=int,
+    default=0,
+    help="The delay (in milliseconds) to wait before taking a screenshot.",
+)
+@click.option(
+    "--full-page/--no-full-page",
+    default=False,
+    is_flag=True,
+    help="Whether to capture the full page or just the viewport.",
+)
+@click.option(
+    "--width",
+    type=int,
+    default=1280,
+    help="The width of the screenshot.",
+)
+@click.option(
+    "--height",
+    type=int,
+    default=720,
+    help="The height of the screenshot.",
+)
+@click.option(
+    "--output-dir",
+    type=Path,
+    default=".",
+    help="The directory to save screenshots to.",
+)
+def take_screenshots(
+    backend_url: str,
+    frontend_url: str,
+    delay: int,
+    full_page: bool,
+    width: int,
+    height: int,
+    output_dir: Path,
+):
+    """Take screenshots of the app in the current directory.
+
+    Requires an app with active_connections and all_routes endpoints enabled.
+    """
+    if not find_spec("playwright"):
+        console.error(
+            "playwright is not installed. Please install it with `pip install playwright`."
+        )
+        raise click.exceptions.Exit(1)
+
+    import urllib.parse
+
+    import playwright.sync_api
+
+    from reflex.utils.net import get, post
+
+    backend_url_parsed = urllib.parse.urlsplit(backend_url)
+    all_routes_url = backend_url_parsed._replace(
+        path=backend_url_parsed.path.removesuffix("/")
+        + "/"
+        + constants.Endpoint.ALL_ROUTES.value
+    )
+    active_connections_url = backend_url_parsed._replace(
+        path=backend_url_parsed.path.removesuffix("/")
+        + "/"
+        + constants.Endpoint.ACTIVE_CONNECTIONS.value
+    )
+
+    endpoints: list[str] = []
+
+    try:
+        response = get(all_routes_url.geturl())
+        response.raise_for_status()
+        endpoints = response.json()
+    except Exception as e:
+        console.error(
+            f"Failed to fetch all routes from {all_routes_url.geturl()}: {e}\nMake sure that the url is the backend url and that the app has the all_routes endpoint enabled."
+        )
+        raise click.exceptions.Exit(1) from None
+
+    token = ""
+
+    try:
+        response = get(active_connections_url.geturl())
+        response.raise_for_status()
+        active_connections = response.json()
+        if active_connections:
+            token = list(active_connections.keys())[-1]
+            console.info(f"Identified active connection with token {token}.")
+    except Exception:
+        token = ""
+
+    if token:
+        clone_state_url = backend_url_parsed._replace(
+            path=backend_url_parsed.path.removesuffix("/")
+            + "/"
+            + constants.Endpoint.CLONE_STATE.value
+        )
+        try:
+            response = post(clone_state_url.geturl(), json=token)
+            response.raise_for_status()
+            token = response.json()
+            console.info(
+                f"Cloned state from {clone_state_url.geturl()} using token {token}."
+            )
+        except Exception:
+            console.warn(
+                f"Failed to clone state from {clone_state_url.geturl()} using token {token}. "
+                "This may result in screenshots not being accurate."
+            )
+            token = ""
+
+    frontend_url_parsed = urllib.parse.urlsplit(frontend_url)
+
+    for endpoint in endpoints:
+        normalized_endpoint = endpoint
+        if not normalized_endpoint.startswith("/"):
+            normalized_endpoint = "/" + normalized_endpoint
+        if normalized_endpoint == "/index":
+            normalized_endpoint = "/"
+        full_url = frontend_url_parsed._replace(
+            path=frontend_url_parsed.path.removesuffix("/") + normalized_endpoint
+        ).geturl()
+        console.info(f"Taking screenshot of {full_url}")
+
+        with playwright.sync_api.sync_playwright() as p:
+            browser = p.chromium.launch(headless=False)
+            page = browser.new_page()
+            page.set_viewport_size({"width": width, "height": height})
+            if token:
+                page.add_init_script(
+                    f"window.sessionStorage.setItem('token', '{token}')"
+                )
+            page.goto(full_url)
+            page.wait_for_load_state("networkidle")
+            if delay > 0:
+                page.wait_for_timeout(delay)
+            page.screenshot(
+                path=output_dir / f"{endpoint.strip('/').replace('/', '_')}.png",
+                full_page=full_page,
+            )
+            browser.close()
+
+
+@cli.command()
+@loglevel_option
 def login():
     """Authenticate with experimental Reflex hosting service."""
     from reflex_cli.v2 import cli as hosting_cli

@@ -2322,6 +2322,26 @@ class BaseState(EvenMoreBasicBaseState):
             raise StateSchemaMismatchError
         return state
 
+    def _deep_copy(self) -> BaseState:
+        """Create a deep copy of the state.
+
+        Returns:
+            A deep copy of the state.
+        """
+        copy_of_state = copy.deepcopy(self)
+
+        def copy_substate(substate: BaseState) -> BaseState:
+            substate_copy = substate._deep_copy()
+            substate_copy.parent_state = copy_of_state
+            return substate_copy
+
+        copy_of_state.substates = {
+            substate_name: copy_substate(substate)
+            for substate_name, substate in self.substates.items()
+        }
+
+        return copy_of_state
+
 
 def _serialize_type(type_: Any) -> str:
     """Serialize a type.

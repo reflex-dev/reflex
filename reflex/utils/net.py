@@ -172,3 +172,4 @@ def _httpx_client():
 
 
 get = _wrap_https_lazy_func(lambda: _httpx_client().get)
+post = _wrap_https_lazy_func(lambda: _httpx_client().post)
