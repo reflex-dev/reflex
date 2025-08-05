@@ -7,7 +7,7 @@ import uuid
 from collections.abc import Generator
 from contextlib import nullcontext as does_not_raise
 from pathlib import Path
-from typing import ClassVar
+from typing import Any, ClassVar
 from unittest.mock import AsyncMock
 
 import pytest
@@ -946,7 +946,7 @@ class DynamicState(BaseState):
     is_hydrated: bool = False
     loaded: int = 0
     counter: int = 0
-    _app_ref: ClassVar = None
+    _app_ref: ClassVar[Any] = None
 
     @rx.event
     def on_load(self):
