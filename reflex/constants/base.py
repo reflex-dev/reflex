@@ -160,6 +160,9 @@ class ReactRouter(Javascript):
     # The react router config file
     CONFIG_FILE = "react-router.config.js"
 
+    # The associated Vite config file
+    VITE_CONFIG_FILE = "vite.config.js"
+
     # Regex to check for message displayed when frontend comes up
     DEV_FRONTEND_LISTENING_REGEX = r"Local:[\s]+"
 

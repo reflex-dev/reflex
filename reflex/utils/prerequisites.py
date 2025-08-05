@@ -972,6 +972,9 @@ def initialize_web_directory():
     console.debug("Initializing the react-router.config.js file.")
     update_react_router_config()
 
+    console.debug("Initializing the vite.config.js file.")
+    initialize_vite_config()
+
     console.debug("Initializing the reflex.json file.")
     # Initialize the reflex json file.
     init_reflex_json(project_hash=project_hash)
@@ -994,6 +997,20 @@ def initialize_package_json():
     """Render and write in .web the package.json file."""
     output_path = get_web_dir() / constants.PackageJson.PATH
     output_path.write_text(_compile_package_json())
+
+
+def _compile_vite_config(config: Config):
+    # base must have exactly one trailing slash
+    base = "/"
+    if frontend_path := config.frontend_path.strip("/"):
+        base += frontend_path + "/"
+    return templates.VITE_CONFIG.render(base=base)
+
+
+def initialize_vite_config():
+    """Render and write in .web the vite.config.js file using Reflex config."""
+    vite_config_file_path = get_web_dir() / constants.ReactRouter.VITE_CONFIG_FILE
+    vite_config_file_path.write_text(_compile_vite_config(get_config()))
 
 
 def initialize_bun_config():
