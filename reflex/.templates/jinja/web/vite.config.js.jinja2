@@ -25,6 +25,7 @@ function alwaysUseReactDomServerNode() {
 }
 
 export default defineConfig((config) => ({
+  base: "{{base}}",
   plugins: [
     alwaysUseReactDomServerNode(),
     reactRouter(),

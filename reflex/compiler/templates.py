@@ -149,6 +149,9 @@ STYLE = get_template("web/styles/styles.css.jinja2")
 # Code that generate the package json file
 PACKAGE_JSON = get_template("web/package.json.jinja2")
 
+# Code that generate the vite.config.js file
+VITE_CONFIG = get_template("web/vite.config.js.jinja2")
+
 # Template containing some macros used in the web pages.
 MACROS = get_template("web/pages/macros.js.jinja2")
 
