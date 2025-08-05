@@ -2948,6 +2948,7 @@ async def test_preprocess(
         expected: Expected delta.
         mocker: pytest mock object.
     """
+    OnLoadInternalState._app_ref = None
     mocker.patch(
         "reflex.state.State.class_subclasses", {test_state, OnLoadInternalState}
     )
@@ -3002,6 +3003,7 @@ async def test_preprocess_multiple_load_events(
         token: A token.
         mocker: pytest mock object.
     """
+    OnLoadInternalState._app_ref = None
     mocker.patch(
         "reflex.state.State.class_subclasses", {OnLoadState, OnLoadInternalState}
     )
