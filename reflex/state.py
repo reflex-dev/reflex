@@ -508,7 +508,7 @@ class BaseState(EvenMoreBasicBaseState):
 
         new_backend_vars = {
             name: value
-            for name, value in cls.__dict__.items()
+            for name, value in list(cls.__dict__.items())
             if types.is_backend_base_variable(name, cls)
         }
         # Add annotated backend vars that may not have a default value.
