@@ -171,7 +171,7 @@ class ToastProps(NoExtrasAllowedProps):
 class Toaster(Component):
     """A Toaster Component for displaying toast notifications."""
 
-    library: str | None = "sonner@2.0.6"
+    library: str | None = "sonner@2.0.7"
 
     tag = "Toaster"
 
