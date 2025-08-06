@@ -268,7 +268,7 @@ _MAPPING: dict = {
         "memo",
         "ComponentNamespace",
     ],
-    "components.el.elements.media": ["image", "marker"],
+    "components.el.elements.media": ["image"],
     "components.lucide": ["icon"],
     **COMPONENTS_BASE_MAPPING,
     "components": ["el", "radix", "lucide", "recharts"],
