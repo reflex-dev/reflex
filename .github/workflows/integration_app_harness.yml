@@ -50,9 +50,10 @@ jobs:
           python-version: ${{ matrix.python-version }}
           run-uv-sync: true
 
+      - name: Install playwright
+        run: uv run playwright install chromium --only-shell
+
       - name: Run app harness tests
         env:
           REFLEX_REDIS_URL: ${{ matrix.state_manager == 'redis' && 'redis://localhost:6379' || '' }}
-        run: |
-          uv run playwright install chromium
-          uv run pytest tests/integration --retries 3 -v --maxfail=5 --splits 2 --group ${{matrix.split_index}}
+        run: uv run pytest tests/integration --retries 3 -v --maxfail=5 --splits 2 --group ${{matrix.split_index}}
