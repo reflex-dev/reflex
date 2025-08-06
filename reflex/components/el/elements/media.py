@@ -484,6 +484,36 @@ class Path(BaseHTML):
     d: Var[str | int | float]
 
 
+class Marker(BaseHTML):
+    """Display the marker element."""
+
+    tag = "marker"
+
+    # The height of the marker viewport.
+    marker_height: Var[str | int | float]
+
+    # The width of the marker viewport.
+    marker_width: Var[str | int | float]
+
+    # The coordinate system for the marker attributes.
+    marker_units: Var[str]
+
+    # The orientation of the marker relative to the shape it is attached to.
+    orient: Var[str | int | float]
+
+    # How the svg fragment must be deformed if it is embedded in a container with a different aspect ratio.
+    preserve_aspect_ratio: Var[str]
+
+    # The x coordinate for the reference point of the marker.
+    ref_x: Var[str | int | float]
+
+    # The y coordinate for the reference point of the marker.
+    ref_y: Var[str | int | float]
+
+    # The bound of the SVG viewport for the current SVG fragment.
+    view_box: Var[str]
+
+
 class G(BaseHTML):
     """The SVG g component, used to group other SVG elements."""
 
@@ -522,6 +552,7 @@ class SVG(ComponentNamespace):
     linear_gradient = staticmethod(LinearGradient.create)
     radial_gradient = staticmethod(RadialGradient.create)
     defs = staticmethod(Defs.create)
+    marker = staticmethod(Marker.create)
     g = staticmethod(G.create)
     __call__ = staticmethod(Svg.create)
 
@@ -537,6 +568,7 @@ stop = Stop.create
 linear_gradient = LinearGradient.create
 radial_gradient = RadialGradient.create
 defs = Defs.create
+marker = Marker.create
 g = G.create
 area = Area.create
 audio = Audio.create
