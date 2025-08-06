@@ -18,6 +18,25 @@ def take_screenshots(
     """Take screenshots of the app in the current directory.
 
     Requires an app with active_connections and all_routes endpoints enabled.
+
+    Args:
+        backend_url: The URL of the backend server.
+        frontend_url: The URL of the frontend server.
+        delay: The delay in milliseconds to wait after loading each page.
+        full_page: Whether to take a full-page screenshot.
+        width: The width of the viewport for the screenshot.
+        height: The height of the viewport for the screenshot.
+        headed: Whether to run the browser in headed mode (visible).
+        stateful: Whether to clone the state of the app.
+
+    Returns:
+        A tuple containing:
+            - A token for the cloned state if stateful, otherwise None.
+            - A dictionary mapping endpoints to their corresponding screenshot images as bytes.
+
+    Raises:
+        ImportError: If Playwright is not installed.
+        ValueError: If fetching routes or cloning state fails.
     """
     if not find_spec("playwright"):
         msg = "Playwright is not installed. Please install it with `pip install playwright`."
