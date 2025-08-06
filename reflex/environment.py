@@ -618,10 +618,10 @@ class EnvironmentVariables:
     REFLEX_ADD_ALL_ROUTES_ENDPOINT: EnvVar[bool] = env_var(False)
 
     # Used by flexgen to list all active connections.
-    REFLEX_ADD_ACTIVE_CONNECTIONS_ENDPOINT: EnvVar[bool] = env_var(False)
+    REFLEX_INSECURE_ADD_ACTIVE_CONNECTIONS_ENDPOINT: EnvVar[bool] = env_var(False)
 
     # Used by flexgen to clone the state of the app.
-    REFLEX_ADD_CLONE_STATE_ENDPOINT: EnvVar[bool] = env_var(False)
+    REFLEX_INSECURE_ADD_CLONE_STATE_ENDPOINT: EnvVar[bool] = env_var(False)
 
     # The address to bind the HTTP client to. You can set this to "::" to enable IPv6.
     REFLEX_HTTP_CLIENT_BIND_ADDRESS: EnvVar[str | None] = env_var(None)

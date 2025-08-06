@@ -686,9 +686,17 @@ class App(MiddlewareMixin, LifespanMixin):
             )
         if environment.REFLEX_ADD_ALL_ROUTES_ENDPOINT.get():
             self.add_all_routes_endpoint()
-        if environment.REFLEX_ADD_ACTIVE_CONNECTIONS_ENDPOINT.get():
+        if environment.REFLEX_INSECURE_ADD_ACTIVE_CONNECTIONS_ENDPOINT.get():
+            console.warn(
+                f"The `{environment.REFLEX_INSECURE_ADD_ACTIVE_CONNECTIONS_ENDPOINT.name}` environment variable is set to True. "
+                "This endpoint is insecure and should not be used in production."
+            )
             self.add_active_connections_endpoint()
-        if environment.REFLEX_ADD_CLONE_STATE_ENDPOINT.get():
+        if environment.REFLEX_INSECURE_ADD_CLONE_STATE_ENDPOINT.get():
+            console.warn(
+                f"The `{environment.REFLEX_INSECURE_ADD_CLONE_STATE_ENDPOINT.name}` environment variable is set to True. "
+                "This endpoint is insecure and should not be used in production."
+            )
             self.add_clone_state_endpoint()
 
     @staticmethod
@@ -1556,7 +1564,7 @@ class App(MiddlewareMixin, LifespanMixin):
                             found_new = True
 
             await self.state_manager.set_state(
-                new_token + "_" + new_state.get_full_name(), new_state
+                _substate_key(new_token, new_state), new_state
             )
 
             return JSONResponse(new_token)
