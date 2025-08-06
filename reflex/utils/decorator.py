@@ -76,6 +76,7 @@ def debug(f: Callable[P, T]) -> Callable[P, T]:
 def _write_cached_procedure_file(payload: str, cache_file: Path, value: object):
     import pickle
 
+    cache_file.parent.mkdir(parents=True, exist_ok=True)
     cache_file.write_bytes(pickle.dumps((payload, value)))
 
 
