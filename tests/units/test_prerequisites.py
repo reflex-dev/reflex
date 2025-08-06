@@ -10,6 +10,7 @@ from reflex.reflex import cli
 from reflex.testing import chdir
 from reflex.utils.prerequisites import (
     CpuInfo,
+    _compile_vite_config,
     _update_react_router_config,
     cached_procedure,
     get_cpu_info,
@@ -57,6 +58,37 @@ runner = CliRunner()
 def test_update_react_router_config(config, export, expected_output):
     output = _update_react_router_config(config, prerender_routes=export)
     assert output == expected_output
+
+
+@pytest.mark.parametrize(
+    ("config", "expected_output"),
+    [
+        (
+            Config(
+                app_name="test",
+                frontend_path="",
+            ),
+            'base: "/",',
+        ),
+        (
+            Config(
+                app_name="test",
+                frontend_path="/test",
+            ),
+            'base: "/test/",',
+        ),
+        (
+            Config(
+                app_name="test",
+                frontend_path="/test/",
+            ),
+            'base: "/test/",',
+        ),
+    ],
+)
+def test_initialise_vite_config(config, expected_output):
+    output = _compile_vite_config(config)
+    assert expected_output in output
 
 
 def test_cached_procedure():

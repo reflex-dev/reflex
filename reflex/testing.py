@@ -376,6 +376,17 @@ class AppHarness:
                 msg = "Failed to reset state manager."
                 raise RuntimeError(msg)
 
+            # Also reset the TokenManager to avoid loop affinity issues
+            if (
+                hasattr(self.app_instance, "event_namespace")
+                and self.app_instance.event_namespace is not None
+                and hasattr(self.app_instance.event_namespace, "_token_manager")
+            ):
+                # Import here to avoid circular imports
+                from reflex.utils.token_manager import TokenManager
+
+                self.app_instance.event_namespace._token_manager = TokenManager.create()
+
     def _start_frontend(self):
         # Set up the frontend.
         with chdir(self.app_path):

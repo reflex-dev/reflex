@@ -13,6 +13,7 @@ import io
 import json
 import sys
 import traceback
+import urllib.parse
 from collections.abc import (
     AsyncGenerator,
     AsyncIterator,
@@ -114,6 +115,7 @@ from reflex.utils import (
 )
 from reflex.utils.exec import get_compile_context, is_prod_mode, is_testing_env
 from reflex.utils.imports import ImportVar
+from reflex.utils.token_manager import TokenManager
 from reflex.utils.types import ASGIApp, Message, Receive, Scope, Send
 
 if TYPE_CHECKING:
@@ -1958,12 +1960,6 @@ class EventNamespace(AsyncNamespace):
     # The application object.
     app: App
 
-    # Keep a mapping between socket ID and client token.
-    token_to_sid: dict[str, str]
-
-    # Keep a mapping between client token and socket ID.
-    sid_to_token: dict[str, str]
-
     def __init__(self, namespace: str, app: App):
         """Initialize the event namespace.
 
@@ -1972,17 +1968,45 @@ class EventNamespace(AsyncNamespace):
             app: The application object.
         """
         super().__init__(namespace)
-        self.token_to_sid = {}
-        self.sid_to_token = {}
         self.app = app
 
-    def on_connect(self, sid: str, environ: dict):
+        # Use TokenManager for distributed duplicate tab prevention
+        self._token_manager = TokenManager.create()
+
+    @property
+    def token_to_sid(self) -> dict[str, str]:
+        """Get token to SID mapping for backward compatibility.
+
+        Returns:
+            The token to SID mapping dict.
+        """
+        # For backward compatibility, expose the underlying dict
+        return self._token_manager.token_to_sid
+
+    @property
+    def sid_to_token(self) -> dict[str, str]:
+        """Get SID to token mapping for backward compatibility.
+
+        Returns:
+            The SID to token mapping dict.
+        """
+        # For backward compatibility, expose the underlying dict
+        return self._token_manager.sid_to_token
+
+    async def on_connect(self, sid: str, environ: dict):
         """Event for when the websocket is connected.
 
         Args:
             sid: The Socket.IO session id.
             environ: The request information, including HTTP headers.
         """
+        query_params = urllib.parse.parse_qs(environ.get("QUERY_STRING", ""))
+        token_list = query_params.get("token", [])
+        if token_list:
+            await self.link_token_to_sid(sid, token_list[0])
+        else:
+            console.warn(f"No token provided in connection for session {sid}")
+
         subprotocol = environ.get("HTTP_SEC_WEBSOCKET_PROTOCOL")
         if subprotocol and subprotocol != constants.Reflex.VERSION:
             console.warn(
@@ -1995,9 +2019,18 @@ class EventNamespace(AsyncNamespace):
         Args:
             sid: The Socket.IO session id.
         """
-        disconnect_token = self.sid_to_token.pop(sid, None)
+        # Get token before cleaning up
+        disconnect_token = self.sid_to_token.get(sid)
         if disconnect_token:
-            self.token_to_sid.pop(disconnect_token, None)
+            # Use async cleanup through token manager
+            task = asyncio.create_task(
+                self._token_manager.disconnect_token(disconnect_token, sid)
+            )
+            # Don't await to avoid blocking disconnect, but handle potential errors
+            task.add_done_callback(
+                lambda t: t.exception()
+                and console.error(f"Token cleanup error: {t.exception()}")
+            )
 
     async def emit_update(self, update: StateUpdate, sid: str) -> None:
         """Emit an update to the client.
@@ -2055,8 +2088,13 @@ class EventNamespace(AsyncNamespace):
             msg = f"Failed to deserialize event data: {fields}."
             raise exceptions.EventDeserializationError(msg) from ex
 
-        self.token_to_sid[event.token] = sid
-        self.sid_to_token[sid] = event.token
+        # Correct the token if it doesn't match what we expect for this SID
+        expected_token = self.sid_to_token.get(sid)
+        if expected_token and event.token != expected_token:
+            # Create new event with corrected token since Event is frozen
+            from dataclasses import replace
+
+            event = replace(event, token=expected_token)
 
         # Get the event environment.
         if self.app.sio is None:
@@ -2106,3 +2144,17 @@ class EventNamespace(AsyncNamespace):
         """
         # Emit the test event.
         await self.emit(str(constants.SocketEvent.PING), "pong", to=sid)
+
+    async def link_token_to_sid(self, sid: str, token: str):
+        """Link a token to a session id.
+
+        Args:
+            sid: The Socket.IO session id.
+            token: The client token.
+        """
+        # Use TokenManager for duplicate detection and Redis support
+        new_token = await self._token_manager.link_token_to_sid(token, sid)
+
+        if new_token:
+            # Duplicate detected, emit new token to client
+            await self.emit("new_token", new_token, to=sid)

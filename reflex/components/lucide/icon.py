@@ -6,7 +6,7 @@ from reflex.utils.imports import ImportVar
 from reflex.vars.base import LiteralVar, Var
 from reflex.vars.sequence import LiteralStringVar, StringVar
 
-LUCIDE_LIBRARY = "lucide-react@0.534.0"
+LUCIDE_LIBRARY = "lucide-react@0.536.0"
 
 
 class LucideIconComponent(Component):
@@ -93,6 +93,7 @@ class DynamicIcon(LucideIconComponent):
     tag = "DynamicIcon"
 
     name: Var[str]
+    size: Var[int]
 
     def _get_imports(self):
         _imports = super()._get_imports()
@@ -874,6 +875,7 @@ LUCIDE_ICON_LIST = [
     "hamburger",
     "hammer",
     "hand_coins",
+    "hand_fist",
     "hand_heart",
     "hand_helping",
     "hand_metal",
@@ -1644,6 +1646,7 @@ LUCIDE_ICON_LIST = [
     "truck_electric",
     "truck",
     "turkish_lira",
+    "turntable",
     "turtle",
     "tv_2",
     "tv_minimal_play",

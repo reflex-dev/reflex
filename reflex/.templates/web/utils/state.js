@@ -530,6 +530,7 @@ export const connect = async (
     transports: transports,
     protocols: [reflexEnvironment.version],
     autoUnref: false,
+    query: { token: getToken() },
   });
   // Ensure undefined fields in events are sent as null instead of removed
   socket.current.io.encoder.replacer = (k, v) => (v === undefined ? null : v);
@@ -600,6 +601,10 @@ export const connect = async (
   socket.current.on("reload", async (event) => {
     event_processing = false;
     queueEvents([...initialEvents(), event], socket, true, navigate, params);
+  });
+  socket.current.on("new_token", async (new_token) => {
+    token = new_token;
+    window.sessionStorage.setItem(TOKEN_KEY, new_token);
   });
 
   document.addEventListener("visibilitychange", checkVisibility);
