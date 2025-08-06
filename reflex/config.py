@@ -29,6 +29,9 @@ from reflex.plugins.sitemap import SitemapPlugin
 from reflex.utils import console
 from reflex.utils.exceptions import ConfigError
 
+if TYPE_CHECKING:
+    from pyleak.base import LeakAction
+
 
 @dataclasses.dataclass(kw_only=True)
 class DBConfig:
@@ -185,6 +188,18 @@ class BaseConfig:
 
     # Telemetry opt-in.
     telemetry_enabled: bool = True
+
+    # PyLeak monitoring configuration for detecting event loop blocking and resource leaks.
+    enable_pyleak_monitoring: bool = False
+
+    # Threshold in seconds for detecting event loop blocking operations.
+    pyleak_blocking_threshold: float = 0.1
+
+    # Grace period in seconds for thread leak detection cleanup.
+    pyleak_thread_grace_period: float = 0.2
+
+    # Action to take when PyLeak detects issues
+    pyleak_action: "LeakAction | None" = None
 
     # The bun path
     bun_path: ExistingPath = constants.Bun.DEFAULT_PATH

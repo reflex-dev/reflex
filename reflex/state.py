@@ -60,6 +60,7 @@ from reflex.utils.exceptions import (
 )
 from reflex.utils.exceptions import ImmutableStateError as ImmutableStateError
 from reflex.utils.exec import is_testing_env
+from reflex.utils.monitoring import is_pyleak_enabled, monitor_loopblocks
 from reflex.utils.types import _isinstance, is_union, value_inside_optional
 from reflex.vars import Field, VarData, field
 from reflex.vars.base import (
@@ -1784,7 +1785,11 @@ class BaseState(EvenMoreBasicBaseState):
         from reflex.utils import telemetry
 
         # Get the function to process the event.
-        fn = functools.partial(handler.fn, state)
+        if is_pyleak_enabled():
+            console.debug(f"Monitoring leaks for handler: {handler.fn.__qualname__}")
+            fn = functools.partial(monitor_loopblocks(handler.fn), state)
+        else:
+            fn = functools.partial(handler.fn, state)
 
         try:
             type_hints = typing.get_type_hints(handler.fn)
