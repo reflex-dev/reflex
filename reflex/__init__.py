@@ -285,6 +285,7 @@ _MAPPING: dict = {
         "data_editor_theme",
     ],
     "components.sonner.toast": ["toast"],
+    "components.props": ["PropsBase"],
     "components.datadisplay.logo": ["logo"],
     "components.gridjs": ["data_table"],
     "components.moment": ["MomentDelta", "moment"],
