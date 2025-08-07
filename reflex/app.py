@@ -604,6 +604,11 @@ class App(MiddlewareMixin, LifespanMixin):
 
         self._compile(prerender_routes=is_prod_mode())
 
+        config = get_config()
+
+        for plugin in config.plugins:
+            plugin.post_compile(app=self)
+
         # We will not be making more vars, so we can clear the global cache to free up memory.
         GLOBAL_CACHE.clear()
 
