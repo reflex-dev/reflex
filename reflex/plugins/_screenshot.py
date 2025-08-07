@@ -20,6 +20,9 @@ CLONE_STATE = "/_clone_state"
 def _deep_copy(state: "BaseState") -> "BaseState":
     """Create a deep copy of the state.
 
+    Args:
+        state: The state to copy.
+
     Returns:
         A deep copy of the state.
     """
@@ -57,7 +60,11 @@ class ScreenshotPlugin(BasePlugin):
 
     @staticmethod
     def _add_active_connections_endpoint(app: "App") -> None:
-        """Add an endpoint to the app that returns the active connections."""
+        """Add an endpoint to the app that returns the active connections.
+
+        Args:
+            app: The application instance to which the endpoint will be added.
+        """
         if not app._api:
             return
 
@@ -77,7 +84,11 @@ class ScreenshotPlugin(BasePlugin):
 
     @staticmethod
     def _add_clone_state_endpoint(app: "App") -> None:
-        """Add an endpoint to the app that clones the current state."""
+        """Add an endpoint to the app that clones the current state.
+
+        Args:
+            app: The application instance to which the endpoint will be added.
+        """
         if not app._api:
             return
 
