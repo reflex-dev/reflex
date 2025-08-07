@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING, ParamSpec, Protocol, TypedDict
 from typing_extensions import Unpack
 
 if TYPE_CHECKING:
-    from reflex.app import UnevaluatedPage
+    from reflex.app import App, UnevaluatedPage
 
 
 class CommonContext(TypedDict):
@@ -42,6 +42,12 @@ class PreCompileContext(CommonContext):
     add_save_task: AddTaskProtocol
     add_modify_task: Callable[[str, Callable[[str], str]], None]
     unevaluated_pages: Sequence["UnevaluatedPage"]
+
+
+class PostCompileContext(CommonContext):
+    """Context for post-compile hooks."""
+
+    app: "App"
 
 
 class Plugin:
@@ -99,6 +105,13 @@ class Plugin:
 
     def pre_compile(self, **context: Unpack[PreCompileContext]) -> None:
         """Called before the compilation of the plugin.
+
+        Args:
+            context: The context for the plugin.
+        """
+
+    def post_compile(self, **context: Unpack[PostCompileContext]) -> None:
+        """Called after the compilation of the plugin.
 
         Args:
             context: The context for the plugin.

@@ -143,6 +143,8 @@ class StateManagerMemory(StateManager):
             token: The token to set the state for.
             state: The state to set.
         """
+        token = _split_substate_key(token)[0]
+        self.states[token] = state
 
     @override
     @contextlib.asynccontextmanager
@@ -165,7 +167,6 @@ class StateManagerMemory(StateManager):
         async with self._states_locks[token]:
             state = await self.get_state(token)
             yield state
-            await self.set_state(token, state)
 
 
 def _default_token_expiration() -> int:
