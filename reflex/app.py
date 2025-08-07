@@ -1926,6 +1926,13 @@ def upload(app: App):
                 )
             )
 
+        for file in files:
+            if not isinstance(file, StarletteUploadFile):
+                raise UploadValueError(
+                    "Uploaded file is not an UploadFile." + str(file)
+                )
+            await file.close()
+
         event = Event(
             token=token,
             name=handler,
