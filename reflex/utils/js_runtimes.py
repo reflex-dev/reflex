@@ -226,12 +226,18 @@ def install_bun():
 
     Raises:
         SystemPackageMissingError: If "unzip" is missing.
+        Exit: If REFLEX_USE_NPM is set but Node.js is not installed.
     """
-    one_drive_in_path = windows_check_onedrive_in_path()
-    if constants.IS_WINDOWS and one_drive_in_path:
-        console.warn(
-            "Creating project directories in OneDrive is not recommended for bun usage on windows. This will fallback to npm."
+    if npm_escape_hatch():
+        if get_node_version() is not None:
+            console.info(
+                "Skipping bun installation as REFLEX_USE_NPM is set. Using npm instead."
+            )
+            return
+        console.error(
+            "REFLEX_USE_NPM is set, but Node.js is not installed. Please install Node.js to use npm."
         )
+        raise click.exceptions.Exit(1)
 
     bun_path = path_ops.get_bun_path()
 
@@ -248,7 +254,6 @@ def install_bun():
         validate_bun(bun_path=bun_path)
         return
 
-    #  if unzip is installed
     if constants.IS_WINDOWS:
         processes.new_process(
             [
