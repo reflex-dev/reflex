@@ -294,7 +294,7 @@ def validate_bun(bun_path: Path | None = None):
 
     if not path_ops.samefile(bun_path, constants.Bun.DEFAULT_PATH):
         console.info(f"Using custom Bun path: {bun_path}")
-        bun_version = get_bun_version()
+        bun_version = get_bun_version(bun_path=bun_path)
         if bun_version is None:
             console.error(
                 "Failed to obtain bun version. Make sure the specified bun path in your config is correct."
