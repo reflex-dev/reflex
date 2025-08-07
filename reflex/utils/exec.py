@@ -231,17 +231,17 @@ def run_frontend(root: Path, port: str, backend_present: bool = True):
         port: The port to run the frontend on.
         backend_present: Whether the backend is present.
     """
-    from reflex.utils import prerequisites
+    from reflex.utils import js_runtimes
 
     # validate dependencies before run
-    prerequisites.validate_frontend_dependencies(init=False)
+    js_runtimes.validate_frontend_dependencies(init=False)
 
     # Run the frontend in development mode.
     console.rule("[bold green]App Running")
     os.environ["PORT"] = str(get_config().frontend_port if port is None else port)
     run_process_and_launch_url(
         [
-            *prerequisites.get_js_package_executor(raise_on_none=True)[0],
+            *js_runtimes.get_js_package_executor(raise_on_none=True)[0],
             "run",
             "dev",
         ],
@@ -257,16 +257,16 @@ def run_frontend_prod(root: Path, port: str, backend_present: bool = True):
         port: The port to run the frontend on.
         backend_present: Whether the backend is present.
     """
-    from reflex.utils import prerequisites
+    from reflex.utils import js_runtimes
 
     # Set the port.
     os.environ["PORT"] = str(get_config().frontend_port if port is None else port)
     # validate dependencies before run
-    prerequisites.validate_frontend_dependencies(init=False)
+    js_runtimes.validate_frontend_dependencies(init=False)
     # Run the frontend in production mode.
     console.rule("[bold green]App Running")
     run_process_and_launch_url(
-        [*prerequisites.get_js_package_executor(raise_on_none=True)[0], "run", "prod"],
+        [*js_runtimes.get_js_package_executor(raise_on_none=True)[0], "run", "prod"],
         backend_present,
     )
 
@@ -670,7 +670,7 @@ def output_system_info():
     if console._LOG_LEVEL > constants.LogLevel.DEBUG:
         return
 
-    from reflex.utils import prerequisites
+    from reflex.utils import js_runtimes
 
     config = get_config()
     try:
@@ -684,13 +684,13 @@ def output_system_info():
 
     dependencies = [
         f"[Reflex {constants.Reflex.VERSION} with Python {platform.python_version()} (PATH: {sys.executable})]",
-        f"[Node {prerequisites.get_node_version()} (Minimum: {constants.Node.MIN_VERSION}) (PATH:{path_ops.get_node_path()})]",
+        f"[Node {js_runtimes.get_node_version()} (Minimum: {constants.Node.MIN_VERSION}) (PATH:{path_ops.get_node_path()})]",
     ]
 
     system = platform.system()
 
     dependencies.append(
-        f"[Bun {prerequisites.get_bun_version()} (Minimum: {constants.Bun.MIN_VERSION}) (PATH: {path_ops.get_bun_path()})]"
+        f"[Bun {js_runtimes.get_bun_version()} (Minimum: {constants.Bun.MIN_VERSION}) (PATH: {path_ops.get_bun_path()})]"
     )
 
     if system == "Linux":
@@ -704,10 +704,10 @@ def output_system_info():
         console.debug(f"{dep}")
 
     console.debug(
-        f"Using package installer at: {prerequisites.get_nodejs_compatible_package_managers(raise_on_none=False)}"
+        f"Using package installer at: {js_runtimes.get_nodejs_compatible_package_managers(raise_on_none=False)}"
     )
     console.debug(
-        f"Using package executer at: {prerequisites.get_js_package_executor(raise_on_none=False)}"
+        f"Using package executer at: {js_runtimes.get_js_package_executor(raise_on_none=False)}"
     )
     if system != "Windows":
         console.debug(f"Unzip path: {path_ops.which('unzip')}")

@@ -58,7 +58,7 @@ def _init(
     ai: bool = False,
 ):
     """Initialize a new Reflex app in the given directory."""
-    from reflex.utils import exec, prerequisites
+    from reflex.utils import exec, frontend_skeleton, prerequisites, templates
 
     # Show system info
     exec.output_system_info()
@@ -80,13 +80,13 @@ def _init(
     prerequisites.initialize_frontend_dependencies()
 
     # Initialize the app.
-    template = prerequisites.initialize_app(app_name, template)
+    template = templates.initialize_app(app_name, template)
 
     # Initialize the .gitignore.
-    prerequisites.initialize_gitignore()
+    frontend_skeleton.initialize_gitignore()
 
     # Initialize the requirements.txt.
-    needs_user_manual_update = prerequisites.initialize_requirements_txt()
+    needs_user_manual_update = frontend_skeleton.initialize_requirements_txt()
 
     template_msg = f" using the {template} template" if template else ""
     # Finish initializing the app.
@@ -371,7 +371,7 @@ def compile(dry: bool):
         _init(name=get_config().app_name)
     get_config(reload=True)
     starting_time = time.monotonic()
-    prerequisites.compile_app(dry_run=dry)
+    prerequisites.get_compiled_app(dry_run=dry)
     elapsed_time = time.monotonic() - starting_time
     console.success(f"App compiled successfully in {elapsed_time:.3f} seconds.")
 
@@ -737,9 +737,10 @@ def deploy(
 def rename(new_name: str):
     """Rename the app in the current directory."""
     from reflex.utils import prerequisites
+    from reflex.utils.rename import rename_app
 
     prerequisites.validate_app_name(new_name)
-    prerequisites.rename_app(new_name, get_config().loglevel)
+    rename_app(new_name, get_config().loglevel)
 
 
 if TYPE_CHECKING:

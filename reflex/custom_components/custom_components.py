@@ -15,7 +15,7 @@ import click
 
 from reflex import constants
 from reflex.constants import CustomComponents
-from reflex.utils import console
+from reflex.utils import console, frontend_skeleton
 
 
 def set_loglevel(ctx: Any, self: Any, value: str | None):
@@ -328,7 +328,7 @@ def init(
     Raises:
         Exit: If the pyproject.toml already exists.
     """
-    from reflex.utils import exec, prerequisites
+    from reflex.utils import exec
 
     if CustomComponents.PYPROJECT_TOML.exists():
         console.error(f"A {CustomComponents.PYPROJECT_TOML} already exists. Aborting.")
@@ -347,7 +347,7 @@ def init(
     _populate_demo_app(name_variants)
 
     # Initialize the .gitignore.
-    prerequisites.initialize_gitignore(
+    frontend_skeleton.initialize_gitignore(
         gitignore_file=CustomComponents.FILE, files_to_ignore=CustomComponents.DEFAULTS
     )
 
