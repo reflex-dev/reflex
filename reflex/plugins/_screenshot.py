@@ -111,7 +111,7 @@ class ScreenshotPlugin(BasePlugin):
 
             old_state = await app.state_manager.get_state(token_to_clone)
 
-            new_state = old_state._deep_copy()
+            new_state = _deep_copy(old_state)
 
             new_token = uuid.uuid4().hex
 
