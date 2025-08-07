@@ -109,6 +109,8 @@ from reflex.utils import (
     console,
     exceptions,
     format,
+    frontend_skeleton,
+    js_runtimes,
     path_ops,
     prerequisites,
     types,
@@ -598,10 +600,6 @@ class App(MiddlewareMixin, LifespanMixin):
         """
         from reflex.vars.base import GLOBAL_CACHE
 
-        # For py3.9 compatibility when redis is used, we MUST add any decorator pages
-        # before compiling the app in a thread to avoid event loop error (REF-2172).
-        self._apply_decorated_pages()
-
         self._compile(prerender_routes=is_prod_mode())
 
         # We will not be making more vars, so we can clear the global cache to free up memory.
@@ -987,7 +985,7 @@ class App(MiddlewareMixin, LifespanMixin):
                 continue
             _frontend_packages.append(package)
         page_imports.update(_frontend_packages)
-        prerequisites.install_frontend_packages(page_imports, get_config())
+        js_runtimes.install_frontend_packages(page_imports, get_config())
 
     def _app_root(self, app_wrappers: dict[tuple[int, str], Component]) -> Component:
         for component in tuple(app_wrappers.values()):
@@ -1060,16 +1058,8 @@ class App(MiddlewareMixin, LifespanMixin):
         self.app_wraps[(0, "StickyBadge")] = lambda _: memoized_badge()
 
     def _apply_decorated_pages(self):
-        """Add @rx.page decorated pages to the app.
-
-        This has to be done in the MainThread for py38 and py39 compatibility, so the
-        decorated pages are added to the app before the app is compiled (in a thread)
-        to workaround REF-2172.
-
-        This can move back into `compile_` when py39 support is dropped.
-        """
+        """Add @rx.page decorated pages to the app."""
         app_name = get_config().app_name
-        # Add the @rx.page decorated pages to collect on_load events.
         for render, kwargs in DECORATED_PAGES[app_name]:
             self.add_page(render, **kwargs)
 
@@ -1118,6 +1108,8 @@ class App(MiddlewareMixin, LifespanMixin):
             FileNotFoundError: When a plugin requires a file that does not exist.
         """
         from reflex.utils.exceptions import ReflexRuntimeError
+
+        self._apply_decorated_pages()
 
         self._pages = {}
 
@@ -1435,7 +1427,7 @@ class App(MiddlewareMixin, LifespanMixin):
             self._get_frontend_packages(all_imports)
 
         # Setup the react-router.config.js
-        prerequisites.update_react_router_config(
+        frontend_skeleton.update_react_router_config(
             prerender_routes=prerender_routes,
         )
 
