@@ -136,6 +136,8 @@ class ErrorBoundary(Component):
                         height="100%",
                         width="100%",
                         position="absolute",
+                        background_color="#fff",
+                        color="#000",
                         display="flex",
                         align_items="center",
                         justify_content="center",
