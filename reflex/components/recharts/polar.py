@@ -281,7 +281,7 @@ class PolarAngleAxis(Recharts):
     # The customized event handler of click on the ticks of this axis.
     on_click: EventHandler[no_args_event_spec]
 
-    # The customized event handler of mousedown on the the ticks of this axis.
+    # The customized event handler of mousedown on the ticks of this axis.
     on_mouse_down: EventHandler[no_args_event_spec]
 
     # The customized event handler of mouseup on the ticks of this axis.

@@ -324,11 +324,11 @@ class Line(BaseHTML):
     tag = "line"
     # The x-axis coordinate of the line starting point.
     x1: Var[str | int]
-    # The x-axis coordinate of the the line ending point.
+    # The x-axis coordinate of the line ending point.
     x2: Var[str | int]
     # The y-axis coordinate of the line starting point.
     y1: Var[str | int]
-    # The y-axis coordinate of the the line ending point.
+    # The y-axis coordinate of the line ending point.
     y2: Var[str | int]
     # The total path length, in user units.
     path_length: Var[int]

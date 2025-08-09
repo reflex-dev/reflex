@@ -163,7 +163,7 @@ def test_typehint_issubclass(subclass, superclass, expected):
 def test_typehint_issubclass_mutable_as_immutable(subclass, superclass, expected):
     assert (
         types.typehint_issubclass(
-            subclass, superclass, treat_mutable_superclasss_as_immutable=True
+            subclass, superclass, treat_mutable_superclass_as_immutable=True
         )
         == expected
     )

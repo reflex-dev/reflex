@@ -297,10 +297,10 @@ class RadarChart(ChartBase):
     # The sizes of whitespace around the chart, i.e. {"top": 50, "right": 30, "left": 20, "bottom": 5}. Default: {"top": 0, "right": 0, "left": 0, "bottom": 0}
     margin: Var[dict[str, Any]]
 
-    # The The x-coordinate of center. If set a percentage, the final value is obtained by multiplying the percentage of width. Number | Percentage. Default: "50%"
+    # The x-coordinate of center. If set a percentage, the final value is obtained by multiplying the percentage of width. Number | Percentage. Default: "50%"
     cx: Var[int | str]
 
-    # The The y-coordinate of center. If set a percentage, the final value is obtained by multiplying the percentage of height. Number | Percentage. Default: "50%"
+    # The y-coordinate of center. If set a percentage, the final value is obtained by multiplying the percentage of height. Number | Percentage. Default: "50%"
     cy: Var[int | str]
 
     # The angle of first radial direction line. Default: 90
@@ -352,10 +352,10 @@ class RadialBarChart(ChartBase):
     # The sizes of whitespace around the chart. Default: {"top": 5, "right": 5, "left": 5 "bottom": 5}
     margin: Var[dict[str, Any]]
 
-    # The The x-coordinate of center. If set a percentage, the final value is obtained by multiplying the percentage of width. Number | Percentage. Default: "50%"
+    # The x-coordinate of center. If set a percentage, the final value is obtained by multiplying the percentage of width. Number | Percentage. Default: "50%"
     cx: Var[int | str]
 
-    # The The y-coordinate of center. If set a percentage, the final value is obtained by multiplying the percentage of height. Number | Percentage. Default: "50%"
+    # The y-coordinate of center. If set a percentage, the final value is obtained by multiplying the percentage of height. Number | Percentage. Default: "50%"
     cy: Var[int | str]
 
     # The angle of first radial direction line. Default: 0

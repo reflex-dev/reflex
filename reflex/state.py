@@ -317,7 +317,7 @@ class BaseState(EvenMoreBasicBaseState):
     # The event handlers.
     event_handlers: ClassVar[builtins.dict[str, EventHandler]] = {}
 
-    # A set of subclassses of this class.
+    # A set of subclasses of this class.
     class_subclasses: ClassVar[set[type[BaseState]]] = set()
 
     # Mapping of var name to set of (state_full_name, var_name) that depend on it.
