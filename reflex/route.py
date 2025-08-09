@@ -6,6 +6,7 @@ import re
 from collections.abc import Callable
 
 from reflex import constants
+from reflex.config import get_config
 
 
 def verify_route_validity(route: str) -> None:
@@ -211,6 +212,9 @@ def get_router(routes: list[str]) -> Callable[[str], str | None]:
         Returns:
             The first matching route, or None if no match is found.
         """
+        config = get_config()
+        if config.frontend_path:
+            path = path.removeprefix(config.frontend_path)
         path = "/" + path.removeprefix("/").removesuffix("/")
         if path == "/index":
             path = "/"
