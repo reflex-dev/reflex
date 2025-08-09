@@ -1061,7 +1061,12 @@ async def test_dynamic_route_var_route_change_completed_on_load(
             token=kwargs.pop("token", token),
             name=name,
             router_data=kwargs.pop(
-                "router_data", {"pathname": "/" + route, "query": {arg_name: val}}
+                "router_data",
+                {
+                    "pathname": "/" + route,
+                    "query": {arg_name: val},
+                    "asPath": "/test/something",
+                },
             ),
             payload=kwargs.pop("payload", {}),
             **kwargs,
