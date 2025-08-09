@@ -969,17 +969,7 @@ export const useEventLoop = (
   useEffect(() => {
     if (!sentHydrate.current) {
       queueEvents(
-        initial_events().map((e) => ({
-          ...e,
-          router_data: {
-            pathname: location.pathname,
-            query: {
-              ...Object.fromEntries(searchParams.entries()),
-              ...params.current,
-            },
-            asPath: location.pathname + location.search,
-          },
-        })),
+        initial_events(),
         socket,
         true,
         navigate,

@@ -1090,8 +1090,11 @@ def update_react_router_config(prerender_routes: bool = False):
 
 
 def _update_react_router_config(config: Config, prerender_routes: bool = False):
+    basename = "/" + (config.frontend_path or "").strip("/")
+    if not basename.endswith("/"):
+        basename += "/"
     react_router_config = {
-        "basename": "/" + (config.frontend_path or "").removeprefix("/"),
+        "basename": basename,
         "future": {
             "unstable_optimizeDeps": True,
         },

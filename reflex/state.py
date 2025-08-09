@@ -2491,7 +2491,7 @@ class OnLoadInternalState(State):
         # Cache the app reference for subsequent calls.
         if type(self)._app_ref is None:
             type(self)._app_ref = app
-        load_events = app.get_load_events(self.router._page.path)
+        load_events = app.get_load_events(self.router.url.path)
         if not load_events:
             self.is_hydrated = True
             return None  # Fast path for navigation with no on_load events defined.
