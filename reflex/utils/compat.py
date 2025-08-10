@@ -2,6 +2,7 @@
 
 import contextlib
 import sys
+from typing import Any
 
 
 async def windows_hot_reload_lifespan_hack():
@@ -50,11 +51,11 @@ def pydantic_v1_patch():
     ]
     originals = {module: sys.modules.get(module) for module in patched_modules}
     try:
-        import pydantic.v1  # type: ignore
+        import pydantic.v1
 
-        sys.modules["pydantic.fields"] = pydantic.v1.fields  # type: ignore
-        sys.modules["pydantic.main"] = pydantic.v1.main  # type: ignore
-        sys.modules["pydantic.errors"] = pydantic.v1.errors  # type: ignore
+        sys.modules["pydantic.fields"] = pydantic.v1.fields  # pyright: ignore [reportAttributeAccessIssue]
+        sys.modules["pydantic.main"] = pydantic.v1.main  # pyright: ignore [reportAttributeAccessIssue]
+        sys.modules["pydantic.errors"] = pydantic.v1.errors  # pyright: ignore [reportAttributeAccessIssue]
         sys.modules["pydantic"] = pydantic.v1
         yield
     except (ImportError, AttributeError):
@@ -74,7 +75,7 @@ with pydantic_v1_patch():
     import sqlmodel as sqlmodel
 
 
-def sqlmodel_field_has_primary_key(field) -> bool:
+def sqlmodel_field_has_primary_key(field: Any) -> bool:
     """Determines if a field is a priamary.
 
     Args:

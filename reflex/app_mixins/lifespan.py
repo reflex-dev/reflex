@@ -7,12 +7,12 @@ import contextlib
 import dataclasses
 import functools
 import inspect
-from typing import Callable, Coroutine, Set, Union
+from collections.abc import Callable, Coroutine
 
-from fastapi import FastAPI
+from starlette.applications import Starlette
 
 from reflex.utils import console
-from reflex.utils.exceptions import InvalidLifespanTaskType
+from reflex.utils.exceptions import InvalidLifespanTaskTypeError
 
 from .mixin import AppMixin
 
@@ -22,17 +22,17 @@ class LifespanMixin(AppMixin):
     """A Mixin that allow tasks to run during the whole app lifespan."""
 
     # Lifespan tasks that are planned to run.
-    lifespan_tasks: Set[Union[asyncio.Task, Callable]] = dataclasses.field(
+    lifespan_tasks: set[asyncio.Task | Callable] = dataclasses.field(
         default_factory=set
     )
 
     @contextlib.asynccontextmanager
-    async def _run_lifespan_tasks(self, app: FastAPI):
+    async def _run_lifespan_tasks(self, app: Starlette):
         running_tasks = []
         try:
             async with contextlib.AsyncExitStack() as stack:
                 for task in self.lifespan_tasks:
-                    run_msg = f"Started lifespan task: {task.__name__} as {{type}}"  # type: ignore
+                    run_msg = f"Started lifespan task: {task.__name__} as {{type}}"  # pyright: ignore [reportAttributeAccessIssue]
                     if isinstance(task, asyncio.Task):
                         running_tasks.append(task)
                     else:
@@ -61,19 +61,18 @@ class LifespanMixin(AppMixin):
 
         Args:
             task: The task to register.
-            task_kwargs: The kwargs of the task.
+            **task_kwargs: The kwargs of the task.
 
         Raises:
-            InvalidLifespanTaskType: If the task is a generator function.
+            InvalidLifespanTaskTypeError: If the task is a generator function.
         """
         if inspect.isgeneratorfunction(task) or inspect.isasyncgenfunction(task):
-            raise InvalidLifespanTaskType(
-                f"Task {task.__name__} of type generator must be decorated with contextlib.asynccontextmanager."
-            )
+            msg = f"Task {task.__name__} of type generator must be decorated with contextlib.asynccontextmanager."
+            raise InvalidLifespanTaskTypeError(msg)
 
         if task_kwargs:
             original_task = task
-            task = functools.partial(task, **task_kwargs)  # type: ignore
-            functools.update_wrapper(task, original_task)  # type: ignore
-        self.lifespan_tasks.add(task)  # type: ignore
-        console.debug(f"Registered lifespan task: {task.__name__}")  # type: ignore
+            task = functools.partial(task, **task_kwargs)  # pyright: ignore [reportArgumentType]
+            functools.update_wrapper(task, original_task)  # pyright: ignore [reportArgumentType]
+        self.lifespan_tasks.add(task)
+        console.debug(f"Registered lifespan task: {task.__name__}")  # pyright: ignore [reportAttributeAccessIssue]

@@ -4,22 +4,22 @@ from __future__ import annotations
 
 import dataclasses
 import textwrap
+from collections.abc import Callable, Sequence
 from functools import lru_cache
 from hashlib import md5
-from typing import Any, Callable, Dict, Sequence, Union
+from typing import Any
 
-from reflex.components.component import Component, CustomComponent
+from reflex.components.component import BaseComponent, Component, CustomComponent, field
 from reflex.components.tags.tag import Tag
-from reflex.utils import types
 from reflex.utils.imports import ImportDict, ImportVar
-from reflex.vars.base import LiteralVar, Var
+from reflex.vars.base import LiteralVar, Var, VarData
 from reflex.vars.function import ARRAY_ISARRAY, ArgsFunctionOperation, DestructuredArg
 from reflex.vars.number import ternary_operation
 
 # Special vars used in the component map.
 _CHILDREN = Var(_js_expr="children", _var_type=str)
-_PROPS = Var(_js_expr="...props")
-_PROPS_IN_TAG = Var(_js_expr="{...props}")
+_PROPS = Var(_js_expr="props")
+_PROPS_SPREAD = Var(_js_expr="...props")
 _MOCK_ARG = Var(_js_expr="", _var_type=str)
 _LANGUAGE = Var(_js_expr="_language", _var_type=str)
 
@@ -65,8 +65,8 @@ def get_base_component_map() -> dict[str, Callable]:
         "h5": lambda value: Heading.create(value, as_="h5", size="2", margin_y="0.5em"),
         "h6": lambda value: Heading.create(value, as_="h6", size="1", margin_y="0.5em"),
         "p": lambda value: Text.create(value, margin_y="1em"),
-        "ul": lambda value: UnorderedList.create(value, margin_y="1em"),  # type: ignore
-        "ol": lambda value: OrderedList.create(value, margin_y="1em"),  # type: ignore
+        "ul": lambda value: UnorderedList.create(value, margin_y="1em"),
+        "ol": lambda value: OrderedList.create(value, margin_y="1em"),
         "li": lambda value: ListItem.create(value, margin_y="0.5em"),
         "a": lambda value: Link.create(value),
         "code": lambda value: Code.create(value),
@@ -83,13 +83,13 @@ class MarkdownComponentMap:
     _explicit_return: bool = dataclasses.field(default=False)
 
     @classmethod
-    def get_component_map_custom_code(cls) -> str:
+    def get_component_map_custom_code(cls) -> Var:
         """Get the custom code for the component map.
 
         Returns:
             The custom code for the component map.
         """
-        return ""
+        return Var("")
 
     @classmethod
     def create_map_fn_var(
@@ -97,6 +97,7 @@ class MarkdownComponentMap:
         fn_body: Var | None = None,
         fn_args: Sequence[str] | None = None,
         explicit_return: bool | None = None,
+        var_data: VarData | None = None,
     ) -> Var:
         """Create a function Var for the component map.
 
@@ -104,6 +105,7 @@ class MarkdownComponentMap:
             fn_body: The formatted component as a string.
             fn_args: The function arguments.
             explicit_return: Whether to use explicit return syntax.
+            var_data: The var data for the function.
 
         Returns:
             The function Var for the component map.
@@ -116,6 +118,7 @@ class MarkdownComponentMap:
             args_names=(DestructuredArg(fields=tuple(fn_args)),),
             return_expr=fn_body,
             explicit_return=explicit_return,
+            _var_data=var_data,
         )
 
     @classmethod
@@ -125,7 +128,7 @@ class MarkdownComponentMap:
         Returns:
             The function arguments as a list of strings.
         """
-        return ["node", _CHILDREN._js_expr, _PROPS._js_expr]
+        return ["node", _CHILDREN._js_expr, _PROPS_SPREAD._js_expr]
 
     @classmethod
     def get_fn_body(cls) -> Var:
@@ -147,10 +150,12 @@ class Markdown(Component):
     is_default = True
 
     # The component map from a tag to a lambda that creates a component.
-    component_map: Dict[str, Any] = {}
+    component_map: dict[str, Any] = field(
+        default_factory=dict, is_javascript_property=False
+    )
 
     # The hash of the component map, generated at create() time.
-    component_map_hash: str = ""
+    component_map_hash: str = field(default="", is_javascript_property=False)
 
     @classmethod
     def create(cls, *children, **props) -> Component:
@@ -166,10 +171,9 @@ class Markdown(Component):
         Returns:
             The markdown component.
         """
-        if len(children) != 1 or not types._isinstance(children[0], Union[str, Var]):
-            raise ValueError(
-                "Markdown component must have exactly one child containing the markdown source."
-            )
+        if len(children) != 1 or not isinstance(children[0], (str, Var)):
+            msg = "Markdown component must have exactly one child containing the markdown source."
+            raise ValueError(msg)
 
         # Update the base component map with the custom component map.
         component_map = {**get_base_component_map(), **props.pop("component_map", {})}
@@ -188,27 +192,6 @@ class Markdown(Component):
             component_map_hash=cls._component_map_hash(component_map),
             **props,
         )
-
-    def _get_all_custom_components(
-        self, seen: set[str] | None = None
-    ) -> set[CustomComponent]:
-        """Get all the custom components used by the component.
-
-        Args:
-            seen: The tags of the components that have already been seen.
-
-        Returns:
-            The set of custom components.
-        """
-        custom_components = super()._get_all_custom_components(seen=seen)
-
-        # Get the custom components for each tag.
-        for component in self.component_map.values():
-            custom_components |= component(_MOCK_ARG)._get_all_custom_components(
-                seen=seen
-            )
-
-        return custom_components
 
     def add_imports(self) -> ImportDict | list[ImportDict]:
         """Add imports for the markdown component.
@@ -236,9 +219,18 @@ class Markdown(Component):
                 ),
             },
             *[
-                component(_MOCK_ARG)._get_all_imports()  # type: ignore
+                component(_MOCK_ARG)._get_all_imports()
                 for component in self.component_map.values()
             ],
+            *(
+                [inline_code_var_data.old_school_imports()]
+                if (
+                    inline_code_var_data
+                    := self._get_inline_code_fn_var()._get_all_var_data()
+                )
+                is not None
+                else []
+            ),
         ]
 
     def _get_tag_map_fn_var(self, tag: str) -> Var:
@@ -278,12 +270,20 @@ class Markdown(Component):
             self._get_map_fn_custom_code_from_children(self.get_component("code"))
         )
 
-        codeblock_custom_code = "\n".join(custom_code_list)
+        var_data = VarData.merge(
+            *[
+                code._get_all_var_data()
+                for code in custom_code_list
+                if isinstance(code, Var)
+            ]
+        )
+
+        codeblock_custom_code = "\n".join(map(str, custom_code_list))
 
         # Format the code to handle inline and block code.
         formatted_code = f"""
 const match = (className || '').match(/language-(?<lang>.*)/);
-const {str(_LANGUAGE)} = match ? match[1] : '';
+let {_LANGUAGE!s} = match ? match[1] : '';
 {codeblock_custom_code};
             return inline ? (
                 {self.format_component("code")}
@@ -298,10 +298,11 @@ const {str(_LANGUAGE)} = match ? match[1] : '';
                 "inline",
                 "className",
                 _CHILDREN._js_expr,
-                _PROPS._js_expr,
+                _PROPS_SPREAD._js_expr,
             ),
             fn_body=Var(_js_expr=formatted_code),
             explicit_return=True,
+            var_data=var_data,
         )
 
     def get_component(self, tag: str, **props) -> Component:
@@ -319,15 +320,16 @@ const {str(_LANGUAGE)} = match ? match[1] : '';
         """
         # Check the tag is valid.
         if tag not in self.component_map:
-            raise ValueError(f"No markdown component found for tag: {tag}.")
+            msg = f"No markdown component found for tag: {tag}."
+            raise ValueError(msg)
 
-        special_props = [_PROPS_IN_TAG]
+        special_props = [_PROPS]
         children = [
             _CHILDREN
             if tag != "codeblock"
             # For codeblock, the mapping for some cases returns an array of elements. Let's join them into a string.
             else ternary_operation(
-                ARRAY_ISARRAY.call(_CHILDREN),  # type: ignore
+                ARRAY_ISARRAY.call(_CHILDREN),
                 _CHILDREN.to(list).join("\n"),
                 _CHILDREN,
             ).to(str)
@@ -338,15 +340,13 @@ const {str(_LANGUAGE)} = match ? match[1] : '';
             special_props = []
 
         # If the children are set as a prop, don't pass them as children.
-        children_prop = props.pop("children", None)
+        children_prop = props.get("children")
         if children_prop is not None:
-            special_props.append(Var(_js_expr=f"children={{{str(children_prop)}}}"))
             children = []
         # Get the component.
-        component = self.component_map[tag](*children, **props).set(
+        return self.component_map[tag](*children, **props).set(
             special_props=special_props
         )
-        return component
 
     def format_component(self, tag: str, **props) -> str:
         """Format a component for rendering in the component map.
@@ -379,7 +379,9 @@ const {str(_LANGUAGE)} = match ? match[1] : '';
         # fallback to the default fn Var creation if the component is not a MarkdownComponentMap.
         return MarkdownComponentMap.create_map_fn_var(fn_body=formatted_component)
 
-    def _get_map_fn_custom_code_from_children(self, component) -> list[str]:
+    def _get_map_fn_custom_code_from_children(
+        self, component: BaseComponent
+    ) -> list[str | Var]:
         """Recursively get markdown custom code from children components.
 
         Args:
@@ -388,7 +390,7 @@ const {str(_LANGUAGE)} = match ? match[1] : '';
         Returns:
             A list of markdown custom code strings.
         """
-        custom_code_list = []
+        custom_code_list: list[str | Var] = []
         if isinstance(component, MarkdownComponentMap):
             custom_code_list.append(component.get_component_map_custom_code())
 
@@ -409,7 +411,7 @@ const {str(_LANGUAGE)} = match ? match[1] : '';
         return custom_code_list
 
     @staticmethod
-    def _component_map_hash(component_map) -> str:
+    def _component_map_hash(component_map: dict) -> str:
         inp = str(
             {tag: component(_MOCK_ARG) for tag, component in component_map.items()}
         ).encode()
@@ -420,22 +422,23 @@ const {str(_LANGUAGE)} = match ? match[1] : '';
 
     def _get_custom_code(self) -> str | None:
         hooks = {}
+        from reflex.compiler.templates import MACROS
+
         for _component in self.component_map.values():
             comp = _component(_MOCK_ARG)
-            hooks.update(comp._get_all_hooks_internal())
             hooks.update(comp._get_all_hooks())
-        formatted_hooks = "\n".join(hooks.keys())
+        formatted_hooks = MACROS.module.renderHooks(hooks)  # pyright: ignore [reportAttributeAccessIssue]
         return f"""
         function {self._get_component_map_name()} () {{
             {formatted_hooks}
             return (
-                {str(LiteralVar.create(self.format_component_map()))}
+                {LiteralVar.create(self.format_component_map())!s}
             )
         }}
         """
 
     def _render(self) -> Tag:
-        tag = (
+        return (
             super()
             ._render()
             .add_props(
@@ -445,4 +448,3 @@ const {str(_LANGUAGE)} = match ? match[1] : '';
             )
             .remove_props("componentMap", "componentMapHash")
         )
-        return tag

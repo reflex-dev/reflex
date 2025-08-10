@@ -11,10 +11,11 @@ from reflex.components.lucide.icon import Icon
 from reflex.components.radix.themes.layout.box import Box
 from reflex.style import Style
 from reflex.vars import Var
+from reflex.vars.base import LiteralVar
 
 
 @pytest.mark.parametrize(
-    "library, fns, expected_output, raises_exception",
+    ("library", "fns", "expected_output", "raises_exception"),
     [
         ("some_library", ["function_one"], ["function_one"], False),
         ("some_library", [123], None, True),
@@ -46,7 +47,7 @@ def test_create_transformer(library, fns, expected_output, raises_exception):
 
 
 @pytest.mark.parametrize(
-    "code_block, children, props, expected_first_child, expected_styles",
+    ("code_block", "children", "props", "expected_first_child", "expected_styles"),
     [
         ("print('Hello')", ["print('Hello')"], {}, "print('Hello')", {}),
         (
@@ -95,15 +96,17 @@ def test_create_shiki_code_block(
 
     # Test that the first child is the code
     code_block_component = component.children[0]
-    assert code_block_component.code._var_value == expected_first_child  # type: ignore
+    assert code_block_component.code._var_value == expected_first_child  # pyright: ignore [reportAttributeAccessIssue]
 
     applied_styles = component.style
     for key, value in expected_styles.items():
-        assert Var.create(applied_styles[key])._var_value == value
+        var = Var.create(applied_styles[key])
+        assert isinstance(var, LiteralVar)
+        assert var._var_value == value
 
 
 @pytest.mark.parametrize(
-    "children, props, expected_transformers, expected_button_type",
+    ("children", "props", "expected_transformers", "expected_button_type"),
     [
         (["print('Hello')"], {"use_transformers": True}, [ShikiJsTransformer], None),
         (["print('Hello')"], {"can_copy": True}, None, Button),
@@ -128,12 +131,12 @@ def test_create_shiki_high_level_code_block(
 
     # Test that the first child is the code block component
     code_block_component = component.children[0]
-    assert code_block_component.code._var_value == children[0]  # type: ignore
+    assert code_block_component.code._var_value == children[0]  # pyright: ignore [reportAttributeAccessIssue]
 
     # Check if the transformer is set correctly if expected
     if expected_transformers:
         exp_trans_names = [t.__name__ for t in expected_transformers]
-        for transformer in code_block_component.transformers._var_value:  # type: ignore
+        for transformer in code_block_component.transformers._var_value:  # pyright: ignore [reportAttributeAccessIssue]
             assert type(transformer).__name__ in exp_trans_names
 
     # Check if the second child is the copy button if can_copy is True
@@ -148,7 +151,7 @@ def test_create_shiki_high_level_code_block(
 
 
 @pytest.mark.parametrize(
-    "children, props",
+    ("children", "props"),
     [
         (["print('Hello')"], {"theme": "dark"}),
         (["print('Hello')"], {"language": "javascript"}),
@@ -161,12 +164,12 @@ def test_shiki_high_level_code_block_theme_language_mapping(children, props):
     if "theme" in props:
         assert component.children[
             0
-        ].theme._var_value == ShikiHighLevelCodeBlock._map_themes(props["theme"])  # type: ignore
+        ].theme._var_value == ShikiHighLevelCodeBlock._map_themes(props["theme"])  # pyright: ignore [reportAttributeAccessIssue]
 
     # Test that the language is mapped correctly
     if "language" in props:
         assert component.children[
             0
-        ].language._var_value == ShikiHighLevelCodeBlock._map_languages(  # type: ignore
+        ].language._var_value == ShikiHighLevelCodeBlock._map_languages(  # pyright: ignore [reportAttributeAccessIssue]
             props["language"]
         )

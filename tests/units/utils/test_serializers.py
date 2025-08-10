@@ -1,8 +1,9 @@
 import datetime
+import decimal
 import json
 from enum import Enum
 from pathlib import Path
-from typing import Any, Type
+from typing import Any
 
 import pytest
 
@@ -14,10 +15,10 @@ from reflex.vars.base import LiteralVar
 
 
 @pytest.mark.parametrize(
-    "type_,expected",
+    ("type_", "expected"),
     [(Enum, True)],
 )
-def test_has_serializer(type_: Type, expected: bool):
+def test_has_serializer(type_: type, expected: bool):
     """Test that has_serializer returns the correct value.
 
     Args:
@@ -28,7 +29,7 @@ def test_has_serializer(type_: Type, expected: bool):
 
 
 @pytest.mark.parametrize(
-    "type_,expected",
+    ("type_", "expected"),
     [
         (datetime.datetime, serializers.serialize_datetime),
         (datetime.date, serializers.serialize_datetime),
@@ -37,7 +38,7 @@ def test_has_serializer(type_: Type, expected: bool):
         (Enum, serializers.serialize_enum),
     ],
 )
-def test_get_serializer(type_: Type, expected: serializers.Serializer):
+def test_get_serializer(type_: type, expected: serializers.Serializer):
     """Test that get_serializer returns the correct value.
 
     Args:
@@ -120,7 +121,7 @@ class BaseSubclass(Base):
 
 
 @pytest.mark.parametrize(
-    "value,expected",
+    ("value", "expected"),
     [
         ("test", "test"),
         (1, 1),
@@ -188,6 +189,9 @@ class BaseSubclass(Base):
         (Color(color="slate", shade=1), "var(--slate-1)"),
         (Color(color="orange", shade=1, alpha=True), "var(--orange-a1)"),
         (Color(color="accent", shade=1, alpha=True), "var(--accent-a1)"),
+        (decimal.Decimal("123.456"), 123.456),
+        (decimal.Decimal("-0.5"), -0.5),
+        (decimal.Decimal(0), 0.0),
     ],
 )
 def test_serialize(value: Any, expected: str):
@@ -201,7 +205,7 @@ def test_serialize(value: Any, expected: str):
 
 
 @pytest.mark.parametrize(
-    "value,expected,exp_var_is_string",
+    ("value", "expected", "exp_var_is_string"),
     [
         ("test", '"test"', False),
         (1, "1", False),
@@ -222,9 +226,12 @@ def test_serialize(value: Any, expected: str):
             '"2021-01-01 01:01:01.000001"',
             True,
         ),
+        (datetime.date(2021, 1, 1), '"2021-01-01"', True),
         (Color(color="slate", shade=1), '"var(--slate-1)"', True),
         (BaseSubclass, '"BaseSubclass"', True),
-        (Path("."), '"."', True),
+        (Path(), '"."', True),
+        (decimal.Decimal("123.456"), "123.456", True),
+        (decimal.Decimal("-0.5"), "-0.5", True),
     ],
 )
 def test_serialize_var_to_str(value: Any, expected: str, exp_var_is_string: bool):

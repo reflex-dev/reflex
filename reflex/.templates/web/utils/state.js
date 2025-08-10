@@ -1,18 +1,23 @@
 // State management for Reflex web apps.
-import axios from "axios";
 import io from "socket.io-client";
 import JSON5 from "json5";
 import env from "$/env.json";
+import reflexEnvironment from "$/reflex.json";
 import Cookies from "universal-cookie";
-import { useEffect, useRef, useState } from "react";
-import Router, { useRouter } from "next/router";
+import { useCallback, useEffect, useRef, useState } from "react";
+import {
+  useLocation,
+  useNavigate,
+  useSearchParams,
+  useParams,
+} from "react-router";
 import {
   initialEvents,
   initialState,
   onLoadInternalEvent,
   state_name,
   exception_state_name,
-} from "$/utils/context.js";
+} from "$/utils/context";
 import debounce from "$/utils/helpers/debounce";
 import throttle from "$/utils/helpers/throttle";
 
@@ -39,9 +44,6 @@ export const refs = {};
 let event_processing = false;
 // Array holding pending events to be processed.
 const event_queue = [];
-
-// Pending upload promises, by id
-const upload_controllers = {};
 
 /**
  * Generate a UUID (Used for session tokens).
@@ -109,6 +111,18 @@ export const getBackendURL = (url_str) => {
 };
 
 /**
+ * Check if the backend is disabled.
+ *
+ * @returns True if the backend is disabled, false otherwise.
+ */
+export const isBackendDisabled = () => {
+  const cookie = document.cookie
+    .split("; ")
+    .find((row) => row.startsWith("backend-enabled="));
+  return cookie !== undefined && cookie.split("=")[1] == "false";
+};
+
+/**
  * Determine if any event in the event queue is stateful.
  *
  * @returns True if there's any event that requires state and False if none of them do.
@@ -148,74 +162,119 @@ export const evalReactComponent = async (component) => {
  * Only Queue and process events when websocket connection exists.
  * @param event The event to queue.
  * @param socket The socket object to send the event on.
+ * @param navigate The navigate function from React Router
+ * @param params The params object from React Router
  *
  * @returns Adds event to queue and processes it if websocket exits, does nothing otherwise.
  */
-export const queueEventIfSocketExists = async (events, socket) => {
+export const queueEventIfSocketExists = async (
+  events,
+  socket,
+  navigate,
+  params,
+) => {
   if (!socket) {
     return;
   }
-  await queueEvents(events, socket);
+  await queueEvents(events, socket, navigate, params);
 };
+
+/**
+ * Check if a string is a valid HTTP URL.
+ * @param string The string to check.
+ *
+ * @returns The URL object if valid, undefined otherwise.
+ * */
+function urlFrom(string) {
+  try {
+    return new URL(string);
+  } catch {
+    return undefined;
+  }
+  return undefined;
+}
 
 /**
  * Handle frontend event or send the event to the backend via Websocket.
  * @param event The event to send.
  * @param socket The socket object to send the event on.
+ * @param navigate The navigate function from useNavigate
+ * @param params The params object from useParams
  *
  * @returns True if the event was sent, false if it was handled locally.
  */
-export const applyEvent = async (event, socket) => {
+export const applyEvent = async (event, socket, navigate, params) => {
   // Handle special events
   if (event.name == "_redirect") {
+    if ((event.payload.path ?? undefined) === undefined) {
+      return false;
+    }
     if (event.payload.external) {
-      window.open(event.payload.path, "_blank");
-    } else if (event.payload.replace) {
-      Router.replace(event.payload.path);
+      window.open(event.payload.path, "_blank", "noopener");
+      return false;
+    }
+    const url = urlFrom(event.payload.path);
+    let pathname = event.payload.path;
+    if (url) {
+      if (url.host !== window.location.host) {
+        // External URL
+        window.location.assign(event.payload.path);
+        return false;
+      } else {
+        pathname = url.pathname + url.search + url.hash;
+      }
+    }
+    if (event.payload.replace) {
+      navigate(pathname, { replace: true });
     } else {
-      Router.push(event.payload.path);
+      navigate(pathname);
     }
     return false;
   }
 
   if (event.name == "_remove_cookie") {
     cookies.remove(event.payload.key, { ...event.payload.options });
-    queueEventIfSocketExists(initialEvents(), socket);
+    queueEventIfSocketExists(initialEvents(), socket, navigate, params);
     return false;
   }
 
   if (event.name == "_clear_local_storage") {
     localStorage.clear();
-    queueEventIfSocketExists(initialEvents(), socket);
+    queueEventIfSocketExists(initialEvents(), socket, navigate, params);
     return false;
   }
 
   if (event.name == "_remove_local_storage") {
     localStorage.removeItem(event.payload.key);
-    queueEventIfSocketExists(initialEvents(), socket);
+    queueEventIfSocketExists(initialEvents(), socket, navigate, params);
     return false;
   }
 
   if (event.name == "_clear_session_storage") {
     sessionStorage.clear();
-    queueEvents(initialEvents(), socket);
+    queueEvents(initialEvents(), socket, navigate, params);
     return false;
   }
 
   if (event.name == "_remove_session_storage") {
     sessionStorage.removeItem(event.payload.key);
-    queueEvents(initialEvents(), socket);
+    queueEvents(initialEvents(), socket, navigate, params);
     return false;
   }
 
   if (event.name == "_download") {
     const a = document.createElement("a");
     a.hidden = true;
+    a.href = event.payload.url;
     // Special case when linking to uploaded files
-    a.href = event.payload.url.replace(
-      "${getBackendURL(env.UPLOAD)}",
-      getBackendURL(env.UPLOAD)
-    );
+    if (a.href.includes("getBackendURL(env.UPLOAD)")) {
+      a.href = eval?.(
+        event.payload.url.replace(
+          "getBackendURL(env.UPLOAD)",
+          `"${getBackendURL(env.UPLOAD)}"`,
+        ),
+      );
+    }
     a.download = event.payload.filename;
     a.click();
     a.remove();
@@ -225,7 +284,28 @@ export const applyEvent = async (event, socket) => {
   if (event.name == "_set_focus") {
     const ref =
       event.payload.ref in refs ? refs[event.payload.ref] : event.payload.ref;
-    ref.current.focus();
+    const current = ref?.current;
+    if (current === undefined || current?.focus === undefined) {
+      console.error(
+        `No element found for ref ${event.payload.ref} in _set_focus`,
+      );
+    } else {
+      current.focus();
+    }
+    return false;
+  }
+
+  if (event.name == "_blur_focus") {
+    const ref =
+      event.payload.ref in refs ? refs[event.payload.ref] : event.payload.ref;
+    const current = ref?.current;
+    if (current === undefined || current?.blur === undefined) {
+      console.error(
+        `No element found for ref ${event.payload.ref} in _blur_focus`,
+      );
+    } else {
+      current.blur();
+    }
     return false;
   }
 
@@ -245,11 +325,15 @@ export const applyEvent = async (event, socket) => {
     try {
       const eval_result = event.payload.function();
       if (event.payload.callback) {
-        if (!!eval_result && typeof eval_result.then === "function") {
-          event.payload.callback(await eval_result);
-        } else {
-          event.payload.callback(eval_result);
-        }
+        const final_result =
+          !!eval_result && typeof eval_result.then === "function"
+            ? await eval_result
+            : eval_result;
+        const callback =
+          typeof event.payload.callback === "string"
+            ? eval(event.payload.callback)
+            : event.payload.callback;
+        callback(final_result);
       }
     } catch (e) {
       console.log("_call_function", e);
@@ -268,11 +352,15 @@ export const applyEvent = async (event, socket) => {
           : eval(event.payload.function)();
 
       if (event.payload.callback) {
-        if (!!eval_result && typeof eval_result.then === "function") {
-          eval(event.payload.callback)(await eval_result);
-        } else {
-          eval(event.payload.callback)(eval_result);
-        }
+        const final_result =
+          !!eval_result && typeof eval_result.then === "function"
+            ? await eval_result
+            : eval_result;
+        const callback =
+          typeof event.payload.callback === "string"
+            ? eval(event.payload.callback)
+            : event.payload.callback;
+        callback(final_result);
       }
     } catch (e) {
       console.log("_call_script", e);
@@ -289,19 +377,23 @@ export const applyEvent = async (event, socket) => {
     event.router_data === undefined ||
     Object.keys(event.router_data).length === 0
   ) {
-    event.router_data = (({ pathname, query, asPath }) => ({
-      pathname,
-      query,
-      asPath,
-    }))(Router);
+    // Since we don't have router directly, we need to get info from our hooks
+    event.router_data = {
+      pathname: window.location.pathname,
+      query: {
+        ...Object.fromEntries(new URLSearchParams(window.location.search)),
+        ...params(),
+      },
+      asPath:
+        window.location.pathname +
+        window.location.search +
+        window.location.hash,
+    };
   }
 
   // Send the event to the server.
   if (socket) {
-    socket.emit(
-      "event",
-      JSON.stringify(event, (k, v) => (v === undefined ? null : v))
-    );
+    socket.emit("event", event);
     return true;
   }
 
@@ -312,15 +404,22 @@ export const applyEvent = async (event, socket) => {
  * Send an event to the server via REST.
  * @param event The current event.
  * @param socket The socket object to send the response event(s) on.
+ * @param navigate The navigate function from React Router
+ * @param params The params object from React Router
  *
  * @returns Whether the event was sent.
  */
-export const applyRestEvent = async (event, socket) => {
+export const applyRestEvent = async (event, socket, navigate, params) => {
   let eventSent = false;
   if (event.handler === "uploadFiles") {
     if (event.payload.files === undefined || event.payload.files.length === 0) {
       // Submit the event over the websocket to trigger the event handler.
-      return await applyEvent(Event(event.name), socket);
+      return await applyEvent(
+        Event(event.name, { files: [] }),
+        socket,
+        navigate,
+        params,
+      );
     }
 
     // Start upload, but do not wait for it, which would block other events.
@@ -329,7 +428,7 @@ export const applyRestEvent = async (event, socket) => {
       event.payload.files,
       event.payload.upload_id,
       event.payload.on_upload_progress,
-      socket
+      socket,
     );
     return false;
   }
@@ -340,17 +439,37 @@ export const applyRestEvent = async (event, socket) => {
  * Queue events to be processed and trigger processing of queue.
  * @param events Array of events to queue.
  * @param socket The socket object to send the event on.
+ * @param prepend Whether to place the events at the beginning of the queue.
+ * @param navigate The navigate function from React Router
+ * @param params The params object from React Router
  */
-export const queueEvents = async (events, socket) => {
-  event_queue.push(...events);
-  await processEvent(socket.current);
+export const queueEvents = async (
+  events,
+  socket,
+  prepend,
+  navigate,
+  params,
+) => {
+  if (prepend) {
+    // Drain the existing queue and place it after the given events.
+    events = [
+      ...events,
+      ...Array.from({ length: event_queue.length }).map(() =>
+        event_queue.shift(),
+      ),
+    ];
+  }
+  event_queue.push(...events.filter((e) => e !== undefined && e !== null));
+  await processEvent(socket.current, navigate, params);
 };
 
 /**
  * Process an event off the event queue.
  * @param socket The socket object to send the event on.
+ * @param navigate The navigate function from React Router
+ * @param params The params object from React Router
  */
-export const processEvent = async (socket) => {
+export const processEvent = async (socket, navigate, params) => {
   // Only proceed if the socket is up and no event in the queue uses state, otherwise we throw the event into the void
   if (!socket && isStateful()) {
     return;
@@ -370,16 +489,16 @@ export const processEvent = async (socket) => {
   let eventSent = false;
   // Process events with handlers via REST and all others via websockets.
   if (event.handler) {
-    eventSent = await applyRestEvent(event, socket);
+    eventSent = await applyRestEvent(event, socket, navigate, params);
   } else {
-    eventSent = await applyEvent(event, socket);
+    eventSent = await applyEvent(event, socket, navigate, params);
   }
   // If no event was sent, set processing to false.
   if (!eventSent) {
     event_processing = false;
     // recursively call processEvent to drain the queue, since there is
     // no state update to trigger the useEffect event loop.
-    await processEvent(socket);
+    await processEvent(socket, navigate, params);
   }
 };
 
@@ -390,13 +509,17 @@ export const processEvent = async (socket) => {
  * @param transports The transports to use.
  * @param setConnectErrors The function to update connection error value.
  * @param client_storage The client storage object from context.js
+ * @param navigate The navigate function from React Router
+ * @param params The params object from React Router
  */
 export const connect = async (
   socket,
   dispatch,
   transports,
   setConnectErrors,
-  client_storage = {}
+  client_storage = {},
+  navigate,
+  params,
 ) => {
   // Get backend URL object from the endpoint.
   const endpoint = getBackendURL(EVENTURL);
@@ -405,8 +528,19 @@ export const connect = async (
   socket.current = io(endpoint.href, {
     path: endpoint["pathname"],
     transports: transports,
+    protocols: [reflexEnvironment.version],
     autoUnref: false,
+    query: { token: getToken() },
   });
+  // Ensure undefined fields in events are sent as null instead of removed
+  socket.current.io.encoder.replacer = (k, v) => (v === undefined ? null : v);
+  socket.current.io.decoder.tryParse = (str) => {
+    try {
+      return JSON5.parse(str);
+    } catch (e) {
+      return false;
+    }
+  };
 
   function checkVisibility() {
     if (document.visibilityState === "visible") {
@@ -419,6 +553,13 @@ export const connect = async (
     }
   }
 
+  const disconnectTrigger = (event) => {
+    if (socket.current?.connected) {
+      console.log("Disconnect websocket on unload");
+      socket.current.disconnect();
+    }
+  };
+
   const pagehideHandler = (event) => {
     if (event.persisted && socket.current?.connected) {
       console.log("Disconnect backend before bfcache on navigation");
@@ -430,6 +571,8 @@ export const connect = async (
   socket.current.on("connect", () => {
     setConnectErrors([]);
     window.addEventListener("pagehide", pagehideHandler);
+    window.addEventListener("beforeunload", disconnectTrigger);
+    window.addEventListener("unload", disconnectTrigger);
   });
 
   socket.current.on("connect_error", (error) => {
@@ -439,20 +582,29 @@ export const connect = async (
   // When the socket disconnects reset the event_processing flag
   socket.current.on("disconnect", () => {
     event_processing = false;
+    window.removeEventListener("unload", disconnectTrigger);
+    window.removeEventListener("beforeunload", disconnectTrigger);
     window.removeEventListener("pagehide", pagehideHandler);
   });
 
   // On each received message, queue the updates and events.
-  socket.current.on("event", async (message) => {
-    const update = JSON5.parse(message);
+  socket.current.on("event", async (update) => {
     for (const substate in update.delta) {
       dispatch[substate](update.delta[substate]);
     }
     applyClientStorageDelta(client_storage, update.delta);
     event_processing = !update.final;
     if (update.events) {
-      queueEvents(update.events, socket);
+      queueEvents(update.events, socket, false, navigate, params);
     }
+  });
+  socket.current.on("reload", async (event) => {
+    event_processing = false;
+    queueEvents([...initialEvents(), event], socket, true, navigate, params);
+  });
+  socket.current.on("new_token", async (new_token) => {
+    token = new_token;
+    window.sessionStorage.setItem(TOKEN_KEY, new_token);
   });
 
   document.addEventListener("visibilitychange", checkVisibility);
@@ -474,32 +626,49 @@ export const uploadFiles = async (
   files,
   upload_id,
   on_upload_progress,
-  socket
+  socket,
 ) => {
   // return if there's no file to upload
   if (files === undefined || files.length === 0) {
     return false;
   }
 
-  if (upload_controllers[upload_id]) {
+  const upload_ref_name = `__upload_controllers_${upload_id}`;
+
+  if (refs[upload_ref_name]) {
     console.log("Upload already in progress for ", upload_id);
     return false;
   }
 
+  // Track how many partial updates have been processed for this upload.
   let resp_idx = 0;
   const eventHandler = (progressEvent) => {
-    // handle any delta / event streamed from the upload event handler
+    const event_callbacks = socket._callbacks.$event;
+    // Whenever called, responseText will contain the entire response so far.
     const chunks = progressEvent.event.target.responseText.trim().split("\n");
-    chunks.slice(resp_idx).map((chunk) => {
+    // So only process _new_ chunks beyond resp_idx.
+    chunks.slice(resp_idx).map((chunk_json) => {
       try {
-        socket._callbacks.$event.map((f) => {
-          f(chunk);
+        const chunk = JSON5.parse(chunk_json);
+        event_callbacks.map((f, ix) => {
+          f(chunk)
+            .then(() => {
+              if (ix === event_callbacks.length - 1) {
+                // Mark this chunk as processed.
+                resp_idx += 1;
+              }
+            })
+            .catch((e) => {
+              if (progressEvent.progress === 1) {
+                // Chunk may be incomplete, so only report errors when full response is available.
+                console.log("Error processing chunk", chunk, e);
+              }
+              return;
+            });
         });
-        resp_idx += 1;
       } catch (e) {
         if (progressEvent.progress === 1) {
-          // Chunk may be incomplete, so only report errors when full response is available.
-          console.log("Error parsing chunk", chunk, e);
+          console.log("Error parsing chunk", chunk_json, e);
         }
         return;
       }
@@ -507,17 +676,6 @@ export const uploadFiles = async (
   };
 
   const controller = new AbortController();
-  const config = {
-    headers: {
-      "Reflex-Client-Token": getToken(),
-      "Reflex-Event-Handler": handler,
-    },
-    signal: controller.signal,
-    onDownloadProgress: eventHandler,
-  };
-  if (on_upload_progress) {
-    config["onUploadProgress"] = on_upload_progress;
-  }
   const formdata = new FormData();
 
   // Add the token and handler to the file name.
@@ -526,28 +684,87 @@ export const uploadFiles = async (
   });
 
   // Send the file to the server.
-  upload_controllers[upload_id] = controller;
+  refs[upload_ref_name] = controller;
 
-  try {
-    return await axios.post(getBackendURL(UPLOADURL), formdata, config);
-  } catch (error) {
-    if (error.response) {
-      // The request was made and the server responded with a status code
-      // that falls out of the range of 2xx
-      console.log(error.response.data);
-    } else if (error.request) {
-      // The request was made but no response was received
-      // `error.request` is an instance of XMLHttpRequest in the browser and an instance of
-      // http.ClientRequest in node.js
-      console.log(error.request);
-    } else {
-      // Something happened in setting up the request that triggered an Error
-      console.log(error.message);
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+
+    // Set up event handlers
+    xhr.onload = function () {
+      if (xhr.status >= 200 && xhr.status < 300) {
+        resolve({
+          data: xhr.responseText,
+          status: xhr.status,
+          statusText: xhr.statusText,
+          headers: {
+            get: (name) => xhr.getResponseHeader(name),
+          },
+        });
+      } else {
+        reject(new Error(`HTTP error! status: ${xhr.status}`));
+      }
+    };
+
+    xhr.onerror = function () {
+      reject(new Error("Network error"));
+    };
+
+    xhr.onabort = function () {
+      reject(new Error("Upload aborted"));
+    };
+
+    // Handle upload progress
+    if (on_upload_progress) {
+      xhr.upload.onprogress = function (event) {
+        if (event.lengthComputable) {
+          const progressEvent = {
+            loaded: event.loaded,
+            total: event.total,
+            progress: event.loaded / event.total,
+          };
+          on_upload_progress(progressEvent);
+        }
+      };
     }
-    return false;
-  } finally {
-    delete upload_controllers[upload_id];
-  }
+
+    // Handle download progress with streaming response parsing
+    xhr.onprogress = function (event) {
+      if (eventHandler) {
+        const progressEvent = {
+          event: {
+            target: {
+              responseText: xhr.responseText,
+            },
+          },
+          progress: event.lengthComputable ? event.loaded / event.total : 0,
+        };
+        eventHandler(progressEvent);
+      }
+    };
+
+    // Handle abort controller
+    controller.signal.addEventListener("abort", () => {
+      xhr.abort();
+    });
+
+    // Configure and send request
+    xhr.open("POST", getBackendURL(UPLOADURL));
+    xhr.setRequestHeader("Reflex-Client-Token", getToken());
+    xhr.setRequestHeader("Reflex-Event-Handler", handler);
+
+    try {
+      xhr.send(formdata);
+    } catch (error) {
+      reject(error);
+    }
+  })
+    .catch((error) => {
+      console.log("Upload error:", error.message);
+      return false;
+    })
+    .finally(() => {
+      delete refs[upload_ref_name];
+    });
 };
 
 /**
@@ -562,7 +779,7 @@ export const Event = (
   name,
   payload = {},
   event_actions = {},
-  handler = null
+  handler = null,
 ) => {
   return { name, payload, handler, event_actions };
 };
@@ -579,9 +796,9 @@ export const hydrateClientStorage = (client_storage) => {
     for (const state_key in client_storage.cookies) {
       const cookie_options = client_storage.cookies[state_key];
       const cookie_name = cookie_options.name || state_key;
-      const cookie_value = cookies.get(cookie_name);
+      const cookie_value = cookies.get(cookie_name, { doNotParse: true });
       if (cookie_value !== undefined) {
-        client_storage_values[state_key] = cookies.get(cookie_name);
+        client_storage_values[state_key] = cookie_value;
       }
     }
   }
@@ -589,7 +806,7 @@ export const hydrateClientStorage = (client_storage) => {
     for (const state_key in client_storage.local_storage) {
       const options = client_storage.local_storage[state_key];
       const local_storage_value = localStorage.getItem(
-        options.name || state_key
+        options.name || state_key,
       );
       if (local_storage_value !== null) {
         client_storage_values[state_key] = local_storage_value;
@@ -600,7 +817,7 @@ export const hydrateClientStorage = (client_storage) => {
     for (const state_key in client_storage.session_storage) {
       const session_options = client_storage.session_storage[state_key];
       const session_storage_value = sessionStorage.getItem(
-        session_options.name || state_key
+        session_options.name || state_key,
       );
       if (session_storage_value != null) {
         client_storage_values[state_key] = session_storage_value;
@@ -625,11 +842,14 @@ export const hydrateClientStorage = (client_storage) => {
 const applyClientStorageDelta = (client_storage, delta) => {
   // find the main state and check for is_hydrated
   const unqualified_states = Object.keys(delta).filter(
-    (key) => key.split(".").length === 1
+    (key) => key.split(".").length === 1,
   );
   if (unqualified_states.length === 1) {
     const main_state = delta[unqualified_states[0]];
-    if (main_state.is_hydrated !== undefined && !main_state.is_hydrated) {
+    if (
+      main_state.is_hydrated_rx_state_ !== undefined &&
+      !main_state.is_hydrated_rx_state_
+    ) {
       // skip if the state is not hydrated yet, since all client storage
       // values are sent in the hydrate event
       return;
@@ -659,7 +879,7 @@ const applyClientStorageDelta = (client_storage, delta) => {
         const session_options = client_storage.session_storage[state_key];
         sessionStorage.setItem(
           session_options.name || state_key,
-          delta[substate][key]
+          delta[substate][key],
         );
       }
     }
@@ -667,7 +887,7 @@ const applyClientStorageDelta = (client_storage, delta) => {
 };
 
 /**
- * Establish websocket event loop for a NextJS page.
+ * Establish websocket event loop for a React Router page.
  * @param dispatch The reducer dispatch function to update state.
  * @param initial_events The initial app events.
  * @param client_storage The client storage object from context.js
@@ -679,21 +899,37 @@ const applyClientStorageDelta = (client_storage, delta) => {
 export const useEventLoop = (
   dispatch,
   initial_events = () => [],
-  client_storage = {}
+  client_storage = {},
 ) => {
   const socket = useRef(null);
-  const router = useRouter();
+  const location = useLocation();
+  const navigate = useNavigate();
+  const paramsR = useParams();
+  const prevLocationRef = useRef(location);
+  const [searchParams] = useSearchParams();
   const [connectErrors, setConnectErrors] = useState([]);
+  const params = useRef(paramsR);
+
+  useEffect(() => {
+    const { "*": splat, ...remainingParams } = paramsR;
+    if (splat) {
+      params.current = { ...remainingParams, splat: splat.split("/") };
+    } else {
+      params.current = remainingParams;
+    }
+  }, [paramsR]);
 
   // Function to add new events to the event queue.
-  const addEvents = (events, args, event_actions) => {
+  const addEvents = useCallback((events, args, event_actions) => {
+    const _events = events.filter((e) => e !== undefined && e !== null);
+
     if (!(args instanceof Array)) {
       args = [args];
     }
 
-    event_actions = events.reduce(
+    event_actions = _events.reduce(
       (acc, e) => ({ ...acc, ...e.event_actions }),
-      event_actions ?? {}
+      event_actions ?? {},
     );
 
     const _e = args.filter((o) => o?.preventDefault !== undefined)[0];
@@ -704,7 +940,12 @@ export const useEventLoop = (
     if (event_actions?.stopPropagation && _e?.stopPropagation) {
       _e.stopPropagation();
     }
-    const combined_name = events.map((e) => e.name).join("+++");
+    const combined_name = _events.map((e) => e.name).join("+++");
+    if (event_actions?.temporal) {
+      if (!socket.current || !socket.current.connected) {
+        return; // don't queue when the backend is not connected
+      }
+    }
     if (event_actions?.throttle) {
       // If throttle returns false, the events are not added to the queue.
       if (!throttle(combined_name, event_actions.throttle)) {
@@ -715,31 +956,38 @@ export const useEventLoop = (
       // If debounce is used, queue the events after some delay
       debounce(
         combined_name,
-        () => queueEvents(events, socket),
-        event_actions.debounce
+        () =>
+          queueEvents(_events, socket, false, navigate, () => params.current),
+        event_actions.debounce,
       );
     } else {
-      queueEvents(events, socket);
+      queueEvents(_events, socket, false, navigate, () => params.current);
     }
-  };
+  }, []);
 
   const sentHydrate = useRef(false); // Avoid double-hydrate due to React strict-mode
   useEffect(() => {
-    if (router.isReady && !sentHydrate.current) {
-      const events = initial_events();
-      addEvents(
-        events.map((e) => ({
+    if (!sentHydrate.current) {
+      queueEvents(
+        initial_events().map((e) => ({
           ...e,
-          router_data: (({ pathname, query, asPath }) => ({
-            pathname,
-            query,
-            asPath,
-          }))(router),
-        }))
+          router_data: {
+            pathname: location.pathname,
+            query: {
+              ...Object.fromEntries(searchParams.entries()),
+              ...params.current,
+            },
+            asPath: location.pathname + location.search,
+          },
+        })),
+        socket,
+        true,
+        navigate,
+        () => params.current,
       );
       sentHydrate.current = true;
     }
-  }, [router.isReady]);
+  }, []);
 
   // Handle frontend errors and send them to the backend via websocket.
   useEffect(() => {
@@ -750,7 +998,7 @@ export const useEventLoop = (
     window.onerror = function (msg, url, lineNo, columnNo, error) {
       addEvents([
         Event(`${exception_state_name}.handle_frontend_exception`, {
-          stack: error.stack,
+          info: error.name + ": " + error.message + "\n" + error.stack,
           component_stack: "",
         }),
       ]);
@@ -762,7 +1010,12 @@ export const useEventLoop = (
     window.onunhandledrejection = function (event) {
       addEvents([
         Event(`${exception_state_name}.handle_frontend_exception`, {
-          stack: event.reason.stack,
+          info:
+            event.reason?.name +
+            ": " +
+            event.reason?.message +
+            "\n" +
+            event.reason?.stack,
           component_stack: "",
         }),
       ]);
@@ -770,31 +1023,44 @@ export const useEventLoop = (
     };
   }, []);
 
-  // Main event loop.
+  // Handle socket connect/disconnect.
   useEffect(() => {
-    // Skip if the router is not ready.
-    if (!router.isReady) {
-      return;
-    }
-    // only use websockets if state is present
-    if (Object.keys(initialState).length > 1) {
+    // only use websockets if state is present and backend is not disabled (reflex cloud).
+    if (Object.keys(initialState).length > 1 && !isBackendDisabled()) {
       // Initialize the websocket connection.
       if (!socket.current) {
         connect(
           socket,
           dispatch,
-          ["websocket", "polling"],
+          ["websocket"],
           setConnectErrors,
-          client_storage
+          client_storage,
+          navigate,
+          () => params.current,
         );
       }
-      (async () => {
-        // Process all outstanding events.
-        while (event_queue.length > 0 && !event_processing) {
-          await processEvent(socket.current);
-        }
-      })();
     }
+
+    // Cleanup function.
+    return () => {
+      if (socket.current) {
+        socket.current.disconnect();
+      }
+    };
+  }, []);
+
+  // Main event loop.
+  useEffect(() => {
+    // Skip if the backend is disabled
+    if (isBackendDisabled()) {
+      return;
+    }
+    (async () => {
+      // Process all outstanding events.
+      while (event_queue.length > 0 && !event_processing) {
+        await processEvent(socket.current, navigate, () => params.current);
+      }
+    })();
   });
 
   // localStorage event handling
@@ -818,7 +1084,7 @@ export const useEventLoop = (
         vars[storage_to_state_map[e.key]] = e.newValue;
         const event = Event(
           `${state_name}.reflex___state____update_vars_internal_state.update_vars_internal`,
-          { vars: vars }
+          { vars: vars },
         );
         addEvents([event], e);
       }
@@ -828,22 +1094,43 @@ export const useEventLoop = (
     return () => window.removeEventListener("storage", handleStorage);
   });
 
-  // Route after the initial page hydration.
+  const handleNavigationEvents = useRef(false);
+  // Route after the initial page hydration
   useEffect(() => {
-    const change_start = () => {
-      const main_state_dispatch = dispatch["reflex___state____state"];
-      if (main_state_dispatch !== undefined) {
-        main_state_dispatch({ is_hydrated: false });
+    // The first time this effect runs is initial load, so don't handle
+    // any navigation events.
+    if (!handleNavigationEvents.current) {
+      handleNavigationEvents.current = true;
+      return;
+    }
+    if (location.state?.fromNotFound) {
+      // If the redirect is from a 404 page, we skip onLoadInternalEvent,
+      // since it was already run when the 404 page was first rendered.
+      return;
+    }
+    // This will run when the location changes
+    if (
+      location.pathname + location.search ===
+      prevLocationRef.current.pathname + prevLocationRef.current.search
+    ) {
+      if (location.hash) {
+        // If the hash is the same, we don't need to do anything.
+        return;
       }
-    };
-    const change_complete = () => addEvents(onLoadInternalEvent());
-    router.events.on("routeChangeStart", change_start);
-    router.events.on("routeChangeComplete", change_complete);
-    return () => {
-      router.events.off("routeChangeStart", change_start);
-      router.events.off("routeChangeComplete", change_complete);
-    };
-  }, [router]);
+    }
+
+    // Equivalent to routeChangeStart - runs when navigation begins
+    const main_state_dispatch = dispatch["reflex___state____state"];
+    if (main_state_dispatch !== undefined) {
+      main_state_dispatch({ is_hydrated_rx_state_: false });
+    }
+
+    // Equivalent to routeChangeComplete - runs after navigation completes
+    addEvents(onLoadInternalEvent());
+
+    // Update the ref
+    prevLocationRef.current = location;
+  }, [location, dispatch, onLoadInternalEvent, addEvents]);
 
   return [addEvents, connectErrors];
 };
@@ -857,6 +1144,15 @@ export const isTrue = (val) => {
   if (Array.isArray(val)) return val.length > 0;
   if (val === Object(val)) return Object.keys(val).length > 0;
   return Boolean(val);
+};
+
+/***
+ * Check if a value is not null or undefined.
+ * @param val The value to check.
+ * @returns True if the value is not null or undefined, false otherwise.
+ */
+export const isNotNullOrUndefined = (val) => {
+  return (val ?? undefined) !== undefined;
 };
 
 /**
@@ -902,7 +1198,7 @@ export const getRefValues = (refs) => {
   return refs.map((ref) =>
     ref.current
       ? ref.current.value || ref.current.getAttribute("aria-valuenow")
-      : null
+      : null,
   );
 };
 

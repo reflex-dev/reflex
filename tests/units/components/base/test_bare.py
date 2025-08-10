@@ -7,15 +7,12 @@ STATE_VAR = Var(_js_expr="default_state.name")
 
 
 @pytest.mark.parametrize(
-    "contents,expected",
+    ("contents", "expected"),
     [
-        ("hello", '{"hello"}'),
-        ("{}", '{"{}"}'),
-        (None, '{""}'),
-        (STATE_VAR, "{default_state.name}"),
-        # This behavior is now unsupported.
-        # ("${default_state.name}", "${default_state.name}"),
-        # ("{state.name}", "{state.name}"),
+        ("hello", '"hello"'),
+        ("{}", '"{}"'),
+        (None, '""'),
+        (STATE_VAR, "default_state.name"),
     ],
 )
 def test_fstrings(contents, expected):

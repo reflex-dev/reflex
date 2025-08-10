@@ -1,6 +1,7 @@
 """hybrid_property decorator which functions like a normal python property but additionally allows (class-level) access from the frontend. You can use the same code for frontend and backend, or implement 2 different methods."""
 
-from typing import Any, Callable
+from collections.abc import Callable
+from typing import Any
 
 from reflex.utils.types import Self, override
 from reflex.vars.base import Var
@@ -28,10 +29,9 @@ class HybridProperty(property):
         if self._var is not None:
             # Call custom var function if set
             return self._var(owner)
-        else:
-            # Call the property getter function if no custom var function is set
-            assert self.fget is not None
-            return self.fget(owner)
+        # Call the property getter function if no custom var function is set
+        assert self.fget is not None
+        return self.fget(owner)
 
     def var(self, func: Callable[[Any], Var]) -> Self:
         """Set the (optional) var function for the property.

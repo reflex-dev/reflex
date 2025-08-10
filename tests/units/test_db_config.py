@@ -6,7 +6,7 @@ from reflex.config import DBConfig
 
 
 @pytest.mark.parametrize(
-    "engine,username,password,host,port,database,expected_url",
+    ("engine", "username", "password", "host", "port", "database", "expected_url"),
     [
         (
             "postgresql",
@@ -116,7 +116,7 @@ def test_constructor_sqlite():
 
 
 @pytest.mark.parametrize(
-    "username,password,host,port,database,expected_url",
+    ("username", "password", "host", "port", "database", "expected_url"),
     [
         (
             "user",
@@ -156,7 +156,7 @@ def test_constructor_postgresql(username, password, host, port, database, expect
 
 
 @pytest.mark.parametrize(
-    "username,password,host,port,database,expected_url",
+    ("username", "password", "host", "port", "database", "expected_url"),
     [
         (
             "user",
@@ -164,7 +164,7 @@ def test_constructor_postgresql(username, password, host, port, database, expect
             "localhost",
             5432,
             "db",
-            "postgresql+psycopg2://user:pass@localhost:5432/db",
+            "postgresql+psycopg://user:pass@localhost:5432/db",
         ),
         (
             "user",
@@ -172,17 +172,17 @@ def test_constructor_postgresql(username, password, host, port, database, expect
             "localhost",
             None,
             "db",
-            "postgresql+psycopg2://user@localhost/db",
+            "postgresql+psycopg://user@localhost/db",
         ),
-        ("user", "", "", None, "db", "postgresql+psycopg2://user@/db"),
-        ("", "", "localhost", 5432, "db", "postgresql+psycopg2://localhost:5432/db"),
-        ("", "", "", None, "db", "postgresql+psycopg2:///db"),
+        ("user", "", "", None, "db", "postgresql+psycopg://user@/db"),
+        ("", "", "localhost", 5432, "db", "postgresql+psycopg://localhost:5432/db"),
+        ("", "", "", None, "db", "postgresql+psycopg:///db"),
     ],
 )
-def test_constructor_postgresql_psycopg2(
+def test_constructor_postgresql_psycopg(
     username, password, host, port, database, expected_url
 ):
-    """Test DBConfig.postgresql_psycopg2 constructor creates the instance correctly.
+    """Test DBConfig.postgresql_psycopg constructor creates the instance correctly.
 
     Args:
         username: Database username.
@@ -192,10 +192,10 @@ def test_constructor_postgresql_psycopg2(
         database: Database name.
         expected_url: Expected database URL generated.
     """
-    db_config = DBConfig.postgresql_psycopg2(
+    db_config = DBConfig.postgresql_psycopg(
         username=username, password=password, host=host, port=port, database=database
     )
-    assert db_config.engine == "postgresql+psycopg2"
+    assert db_config.engine == "postgresql+psycopg"
     assert db_config.username == username
     assert db_config.password == password
     assert db_config.host == host

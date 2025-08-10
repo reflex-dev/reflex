@@ -1,11 +1,12 @@
 """Specialized test for a larger state tree."""
 
-from typing import AsyncGenerator
+from collections.abc import AsyncGenerator
 
 import pytest
 import pytest_asyncio
 
 import reflex as rx
+from reflex.constants.state import FIELD_MARKER
 from reflex.state import BaseState, StateManager, StateManagerRedis, _substate_key
 
 
@@ -42,7 +43,7 @@ class SubA_A_A_A(SubA_A_A):
 class SubA_A_A_B(SubA_A_A):
     """SubA_A_A_B is a child of SubA_A_A."""
 
-    @rx.var(cache=True)
+    @rx.var
     def sub_a_a_a_cached(self) -> int:
         """A cached var.
 
@@ -117,7 +118,7 @@ class TreeD(Root):
 
     d: int
 
-    @rx.var
+    @rx.var(cache=False)
     def d_var(self) -> int:
         """A computed var.
 
@@ -156,7 +157,7 @@ class SubE_A_A_A_A(SubE_A_A_A):
 
     sub_e_a_a_a_a: int
 
-    @rx.var
+    @rx.var(cache=False)
     def sub_e_a_a_a_a_var(self) -> int:
         """A computed var.
 
@@ -183,7 +184,7 @@ class SubE_A_A_A_D(SubE_A_A_A):
 
     sub_e_a_a_a_d: int
 
-    @rx.var(cache=True)
+    @rx.var
     def sub_e_a_a_a_d_var(self) -> int:
         """A computed var.
 
@@ -194,8 +195,8 @@ class SubE_A_A_A_D(SubE_A_A_A):
 
 
 ALWAYS_COMPUTED_VARS = {
-    TreeD.get_full_name(): {"d_var": 1},
-    SubE_A_A_A_A.get_full_name(): {"sub_e_a_a_a_a_var": 1},
+    TreeD.get_full_name(): {"d_var" + FIELD_MARKER: 1},
+    SubE_A_A_A_A.get_full_name(): {"sub_e_a_a_a_a_var" + FIELD_MARKER: 1},
 }
 
 ALWAYS_COMPUTED_DICT_KEYS = [
@@ -222,7 +223,7 @@ async def state_manager_redis(
     Yields:
         A state manager instance
     """
-    app_module_mock.app = rx.App(state=Root)
+    app_module_mock.app = rx.App(_state=Root)
     state_manager = app_module_mock.app.state_manager
 
     if not isinstance(state_manager, StateManagerRedis):

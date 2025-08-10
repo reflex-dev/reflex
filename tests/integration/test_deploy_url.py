@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Generator
+from collections.abc import Generator
 
 import pytest
 from selenium.webdriver.common.by import By
@@ -19,14 +19,16 @@ def DeployUrlSample() -> None:
     class State(rx.State):
         @rx.event
         def goto_self(self):
-            return rx.redirect(rx.config.get_config().deploy_url)  # type: ignore
+            if (deploy_url := rx.config.get_config().deploy_url) is not None:
+                return rx.redirect(deploy_url)
+            return None
 
     def index():
         return rx.fragment(
             rx.button("GOTO SELF", on_click=State.goto_self, id="goto_self")
         )
 
-    app = rx.App(state=rx.State)
+    app = rx.App()
     app.add_page(index)
 
 
@@ -49,7 +51,7 @@ def deploy_url_sample(
         yield harness
 
 
-@pytest.fixture()
+@pytest.fixture
 def driver(deploy_url_sample: AppHarness) -> Generator[WebDriver, None, None]:
     """WebDriver fixture for testing deploy_url.
 
@@ -81,7 +83,7 @@ def test_deploy_url(deploy_url_sample: AppHarness, driver: WebDriver) -> None:
     assert deploy_url != "http://localhost:3000"
     assert deploy_url == deploy_url_sample.frontend_url
     driver.get(deploy_url)
-    assert driver.current_url == deploy_url + "/"
+    assert driver.current_url.removesuffix("/") == deploy_url.removesuffix("/")
 
 
 def test_deploy_url_in_app(deploy_url_sample: AppHarness, driver: WebDriver) -> None:
@@ -95,5 +97,7 @@ def test_deploy_url_in_app(deploy_url_sample: AppHarness, driver: WebDriver) -> 
     driver.find_element(By.ID, "goto_self").click()
 
     WebDriverWait(driver, 10).until(
-        lambda driver: driver.current_url == f"{deploy_url_sample.frontend_url}/"
+        lambda driver: deploy_url_sample.frontend_url
+        and driver.current_url.removesuffix("/")
+        == deploy_url_sample.frontend_url.removesuffix("/")
     )

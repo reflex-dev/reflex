@@ -1,35 +1,23 @@
 """A component that wraps a recharts lib."""
 
-from typing import Dict, Literal
+from typing import Any, Literal
 
 from reflex.components.component import Component, MemoizationLeaf, NoSSRComponent
-from reflex.utils import console
 
 
 class Recharts(Component):
     """A component that wraps a recharts lib."""
 
-    library = "recharts@2.13.0"
+    library = "recharts@3.1.0"
 
-    def render(self) -> Dict:
-        """Render the tag.
-
-        Returns:
-            The rendered tag.
-        """
-        tag = super().render()
-        if any(p.startswith("css") for p in tag["props"]):
-            console.warn(
-                f"CSS props do not work for {self.__class__.__name__}. Consult docs to style it with its own prop."
-            )
-        tag["props"] = [p for p in tag["props"] if not p.startswith("css")]
-        return tag
+    def _get_style(self) -> dict:
+        return {"wrapperStyle": self.style}
 
 
 class RechartsCharts(NoSSRComponent, MemoizationLeaf):
     """A component that wraps a recharts lib."""
 
-    library = "recharts@2.13.0"
+    library = "recharts@3.1.0"
 
 
 LiteralAnimationEasing = Literal["ease", "ease-in", "ease-out", "ease-in-out", "linear"]
@@ -85,25 +73,25 @@ LiteralPosition = Literal[
     "center",
 ]
 LiteralIconType = Literal[
-    "line",
-    "plainline",
-    "square",
-    "rect",
     "circle",
     "cross",
     "diamond",
+    "line",
+    "plainline",
+    "rect",
+    "square",
     "star",
     "triangle",
     "wye",
 ]
 LiteralLegendType = Literal[
-    "line",
-    "plainline",
-    "square",
-    "rect",
     "circle",
     "cross",
     "diamond",
+    "line",
+    "plainline",
+    "rect",
+    "square",
     "star",
     "triangle",
     "wye",
@@ -115,7 +103,7 @@ LiteralStackOffset = Literal["expand", "none", "wiggle", "silhouette"]
 LiteralBarChartStackOffset = Literal["expand", "none", "wiggle", "silhouette", "sign"]
 LiteralComposedChartBaseValue = Literal["dataMin", "dataMax", "auto"]
 LiteralAxisType = Literal["number", "category"]
-LiteralAreaType = Literal[
+LiteralCurveType = Literal[
     "basis",
     "basisClosed",
     "basisOpen",
@@ -138,3 +126,5 @@ LiteralIntervalAxis = Literal[
     "preserveStart", "preserveEnd", "preserveStartEnd", "equidistantPreserveStart"
 ]
 LiteralSyncMethod = Literal["index", "value"]
+
+ACTIVE_DOT_TYPE = bool | dict[str, Any]

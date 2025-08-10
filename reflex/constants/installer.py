@@ -1,35 +1,12 @@
-"""File for constants related to the installation process. (Bun/FNM/Node)."""
+"""File for constants related to the installation process. (Bun/Node)."""
 
 from __future__ import annotations
 
-import platform
-from pathlib import Path
+import os
 from types import SimpleNamespace
 
 from .base import IS_WINDOWS
 from .utils import classproperty
-
-
-def get_fnm_name() -> str | None:
-    """Get the appropriate fnm executable name based on the current platform.
-
-    Returns:
-            The fnm executable name for the current platform.
-    """
-    platform_os = platform.system()
-
-    if platform_os == "Windows":
-        return "fnm-windows"
-    elif platform_os == "Darwin":
-        return "fnm-macos"
-    elif platform_os == "Linux":
-        machine = platform.machine()
-        if machine == "arm" or machine.startswith("armv7"):
-            return "fnm-arm32"
-        elif machine.startswith("aarch") or machine.startswith("armv8"):
-            return "fnm-arm64"
-        return "fnm-linux"
-    return None
 
 
 # Bun config.
@@ -37,10 +14,10 @@ class Bun(SimpleNamespace):
     """Bun constants."""
 
     # The Bun version.
-    VERSION = "1.1.29"
+    VERSION = "1.2.19"
 
     # Min Bun Version
-    MIN_VERSION = "0.7.0"
+    MIN_VERSION = "1.2.17"
 
     # URL to bun install script.
     INSTALL_URL = "https://raw.githubusercontent.com/reflex-dev/reflex/main/scripts/bun_install.sh"
@@ -61,7 +38,7 @@ class Bun(SimpleNamespace):
         Returns:
             The directory to store the bun.
         """
-        from reflex.config import environment
+        from reflex.environment import environment
 
         return environment.REFLEX_DIR.get() / "bun"
 
@@ -81,87 +58,44 @@ registry = "{registry}"
 """
 
 
-# FNM config.
-class Fnm(SimpleNamespace):
-    """FNM constants."""
-
-    # The FNM version.
-    VERSION = "1.35.1"
-
-    FILENAME = get_fnm_name()
-
-    # The URL to the fnm release binary
-    INSTALL_URL = (
-        f"https://github.com/Schniz/fnm/releases/download/v{VERSION}/{FILENAME}.zip"
-    )
-
-    @classproperty
-    @classmethod
-    def DIR(cls) -> Path:
-        """The directory to store fnm.
-
-        Returns:
-            The directory to store fnm.
-        """
-        from reflex.config import environment
-
-        return environment.REFLEX_DIR.get() / "fnm"
-
-    @classproperty
-    @classmethod
-    def EXE(cls):
-        """The fnm executable binary.
-
-        Returns:
-            The fnm executable binary.
-        """
-        return cls.DIR / ("fnm.exe" if IS_WINDOWS else "fnm")
-
-
 # Node / NPM config
 class Node(SimpleNamespace):
     """Node/ NPM constants."""
 
-    # The Node version.
-    VERSION = "22.11.0"
     # The minimum required node version.
-    MIN_VERSION = "18.18.0"
+    MIN_VERSION = "20.19.0"
 
-    @classproperty
-    @classmethod
-    def BIN_PATH(cls):
-        """The node bin path.
+    # Path of the node config file.
+    CONFIG_PATH = ".npmrc"
 
-        Returns:
-            The node bin path.
-        """
-        return (
-            Fnm.DIR
-            / "node-versions"
-            / f"v{cls.VERSION}"
-            / "installation"
-            / ("bin" if not IS_WINDOWS else "")
+    DEFAULT_CONFIG = """
+registry={registry}
+fetch-retries=0
+"""
+
+
+def _determine_react_router_version() -> str:
+    default_version = "7.7.1"
+    if (version := os.getenv("REACT_ROUTER_VERSION")) and version != default_version:
+        from reflex.utils import console
+
+        console.warn(
+            f"You have requested react-router@{version} but the supported version is {default_version}, abandon all hope ye who enter here."
         )
+        return version
+    return default_version
 
-    @classproperty
-    @classmethod
-    def PATH(cls):
-        """The default path where node is installed.
 
-        Returns:
-            The default path where node is installed.
-        """
-        return cls.BIN_PATH / ("node.exe" if IS_WINDOWS else "node")
+def _determine_react_version() -> str:
+    default_version = "19.1.1"
+    if (version := os.getenv("REACT_VERSION")) and version != default_version:
+        from reflex.utils import console
 
-    @classproperty
-    @classmethod
-    def NPM_PATH(cls):
-        """The default path where npm is installed.
-
-        Returns:
-            The default path where npm is installed.
-        """
-        return cls.BIN_PATH / "npm"
+        console.warn(
+            f"You have requested react@{version} but the supported version is {default_version}, abandon all hope ye who enter here."
+        )
+        return version
+    return default_version
 
 
 class PackageJson(SimpleNamespace):
@@ -170,29 +104,50 @@ class PackageJson(SimpleNamespace):
     class Commands(SimpleNamespace):
         """The commands to define in package.json."""
 
-        DEV = "next dev"
-        EXPORT = "next build"
-        EXPORT_SITEMAP = "next build && next-sitemap"
-        PROD = "next start"
+        DEV = "react-router dev --host"
+        EXPORT = "react-router build"
+        PROD = "serve ./build/client"
 
     PATH = "package.json"
 
-    DEPENDENCIES = {
-        "@babel/standalone": "7.26.0",
-        "@emotion/react": "11.13.3",
-        "axios": "1.7.7",
-        "json5": "2.2.3",
-        "next": "14.2.16",
-        "next-sitemap": "4.2.3",
-        "next-themes": "0.4.3",
-        "react": "18.3.1",
-        "react-dom": "18.3.1",
-        "react-focus-lock": "2.13.2",
-        "socket.io-client": "4.8.1",
-        "universal-cookie": "7.2.2",
-    }
+    _react_version = _determine_react_version()
+
+    _react_router_version = _determine_react_router_version()
+
+    @classproperty
+    @classmethod
+    def DEPENDENCIES(cls) -> dict[str, str]:
+        """The dependencies to include in package.json.
+
+        Returns:
+            A dictionary of dependencies with their versions.
+        """
+        return {
+            "json5": "2.2.3",
+            "react-router": cls._react_router_version,
+            "react-router-dom": cls._react_router_version,
+            "@react-router/node": cls._react_router_version,
+            "serve": "14.2.4",
+            "react": cls._react_version,
+            "react-helmet": "6.1.0",
+            "react-dom": cls._react_version,
+            "isbot": "5.1.29",
+            "socket.io-client": "4.8.1",
+            "universal-cookie": "7.2.2",
+        }
+
     DEV_DEPENDENCIES = {
-        "autoprefixer": "10.4.20",
-        "postcss": "8.4.49",
-        "postcss-import": "16.1.0",
+        "@emotion/react": "11.14.0",
+        "autoprefixer": "10.4.21",
+        "postcss": "8.5.6",
+        "postcss-import": "16.1.1",
+        "@react-router/dev": _react_router_version,
+        "@react-router/fs-routes": _react_router_version,
+        "vite": "npm:rolldown-vite@7.0.12",
+    }
+    OVERRIDES = {
+        # This should always match the `react` version in DEPENDENCIES for recharts compatibility.
+        "react-is": _react_version,
+        "cookie": "1.0.2",
+        "vite": "npm:rolldown-vite@7.0.12",
     }

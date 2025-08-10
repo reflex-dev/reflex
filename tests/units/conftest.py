@@ -1,12 +1,9 @@
 """Test fixtures."""
 
 import asyncio
-import contextlib
-import os
 import platform
 import uuid
-from pathlib import Path
-from typing import Dict, Generator, Type
+from collections.abc import Generator
 from unittest import mock
 
 import pytest
@@ -14,6 +11,7 @@ import pytest
 from reflex.app import App
 from reflex.event import EventSpec
 from reflex.model import ModelRegistry
+from reflex.testing import chdir
 from reflex.utils import prerequisites
 
 from .states import (
@@ -61,13 +59,13 @@ def app_module_mock(monkeypatch) -> mock.Mock:
 
 
 @pytest.fixture(scope="session")
-def windows_platform() -> Generator:
+def windows_platform() -> bool:
     """Check if system is windows.
 
-    Yields:
+    Returns:
         whether system is windows.
     """
-    yield platform.system() == "Windows"
+    return platform.system() == "Windows"
 
 
 @pytest.fixture
@@ -97,7 +95,7 @@ def upload_sub_state_event_spec():
     Returns:
         Event Spec.
     """
-    return EventSpec(handler=SubUploadState.handle_upload, upload=True)  # type: ignore
+    return EventSpec(handler=SubUploadState.handle_upload, upload=True)  # pyright: ignore [reportCallIssue]
 
 
 @pytest.fixture
@@ -107,11 +105,11 @@ def upload_event_spec():
     Returns:
         Event Spec.
     """
-    return EventSpec(handler=UploadState.handle_upload1, upload=True)  # type: ignore
+    return EventSpec(handler=UploadState.handle_upload1, upload=True)  # pyright: ignore [reportCallIssue]
 
 
 @pytest.fixture
-def base_config_values() -> Dict:
+def base_config_values() -> dict:
     """Get base config values.
 
     Returns:
@@ -121,7 +119,7 @@ def base_config_values() -> Dict:
 
 
 @pytest.fixture
-def base_db_config_values() -> Dict:
+def base_db_config_values() -> dict:
     """Get base DBConfig values.
 
     Returns:
@@ -131,7 +129,7 @@ def base_db_config_values() -> Dict:
 
 
 @pytest.fixture
-def sqlite_db_config_values(base_db_config_values) -> Dict:
+def sqlite_db_config_values(base_db_config_values) -> dict:
     """Get sqlite DBConfig values.
 
     Args:
@@ -145,7 +143,7 @@ def sqlite_db_config_values(base_db_config_values) -> Dict:
 
 
 @pytest.fixture
-def router_data_headers() -> Dict[str, str]:
+def router_data_headers() -> dict[str, str]:
     """Router data headers.
 
     Returns:
@@ -172,7 +170,7 @@ def router_data_headers() -> Dict[str, str]:
 
 
 @pytest.fixture
-def router_data(router_data_headers) -> Dict[str, str]:
+def router_data(router_data_headers: dict[str, str]) -> dict[str, str | dict]:
     """Router data.
 
     Args:
@@ -181,7 +179,7 @@ def router_data(router_data_headers) -> Dict[str, str]:
     Returns:
         Dict of router data.
     """
-    return {  # type: ignore
+    return {
         "pathname": "/",
         "query": {},
         "token": "b181904c-3953-4a79-dc18-ae9518c22f05",
@@ -189,33 +187,6 @@ def router_data(router_data_headers) -> Dict[str, str]:
         "headers": router_data_headers,
         "ip": "127.0.0.1",
     }
-
-
-# borrowed from py3.11
-class chdir(contextlib.AbstractContextManager):
-    """Non thread-safe context manager to change the current working directory."""
-
-    def __init__(self, path):
-        """Prepare contextmanager.
-
-        Args:
-            path: the path to change to
-        """
-        self.path = path
-        self._old_cwd = []
-
-    def __enter__(self):
-        """Save current directory and perform chdir."""
-        self._old_cwd.append(Path(".").resolve())
-        os.chdir(self.path)
-
-    def __exit__(self, *excinfo):
-        """Change back to previous directory on stack.
-
-        Args:
-            excinfo: sys.exc_info captured in the context block
-        """
-        os.chdir(self._old_cwd.pop())
 
 
 @pytest.fixture
@@ -246,7 +217,7 @@ def mutable_state() -> MutableTestState:
     return MutableTestState()
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture
 def token() -> str:
     """Create a token.
 
@@ -257,7 +228,7 @@ def token() -> str:
 
 
 @pytest.fixture
-def model_registry() -> Generator[Type[ModelRegistry], None, None]:
+def model_registry() -> Generator[type[ModelRegistry], None, None]:
     """Create a model registry.
 
     Yields:

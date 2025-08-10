@@ -4,26 +4,27 @@ from __future__ import annotations
 
 import asyncio
 import dataclasses
+import importlib.metadata
 import multiprocessing
 import platform
 import warnings
-
-from reflex.config import environment
-
-try:
-    from datetime import UTC, datetime
-except ImportError:
-    from datetime import datetime
-
-    UTC = None
-
-import httpx
-import psutil
+from contextlib import suppress
+from datetime import datetime, timezone
+from typing import TypedDict
 
 from reflex import constants
+from reflex.environment import environment
 from reflex.utils import console
-from reflex.utils.prerequisites import ensure_reflex_installation_id, get_project_hash
+from reflex.utils.decorator import once_unless_none
+from reflex.utils.exceptions import ReflexError
+from reflex.utils.prerequisites import (
+    ensure_reflex_installation_id,
+    get_bun_version,
+    get_node_version,
+    get_project_hash,
+)
 
+UTC = timezone.utc
 POSTHOG_API_URL: str = "https://app.posthog.com/capture/"
 
 
@@ -73,16 +74,16 @@ def get_cpu_count() -> int:
     return multiprocessing.cpu_count()
 
 
-def get_memory() -> int:
-    """Get the total memory in MB.
+def get_reflex_enterprise_version() -> str | None:
+    """Get the version of reflex-enterprise if installed.
 
     Returns:
-        The total memory in MB.
+        The version string if installed, None if not installed.
     """
     try:
-        return psutil.virtual_memory().total >> 20
-    except ValueError:  # needed to pass ubuntu test
-        return 0
+        return importlib.metadata.version("reflex-enterprise")
+    except importlib.metadata.PackageNotFoundError:
+        return None
 
 
 def _raise_on_missing_project_hash() -> bool:
@@ -99,15 +100,41 @@ def _raise_on_missing_project_hash() -> bool:
     return not environment.REFLEX_SKIP_COMPILE.get()
 
 
-def _prepare_event(event: str, **kwargs) -> dict:
-    """Prepare the event to be sent to the PostHog server.
+class _Properties(TypedDict):
+    """Properties type for telemetry."""
 
-    Args:
-        event: The event name.
-        kwargs: Additional data to send with the event.
+    distinct_id: int
+    distinct_app_id: int
+    user_os: str
+    user_os_detail: str
+    reflex_version: str
+    python_version: str
+    node_version: str | None
+    bun_version: str | None
+    reflex_enterprise_version: str | None
+    cpu_count: int
+    cpu_info: dict
+
+
+class _DefaultEvent(TypedDict):
+    """Default event type for telemetry."""
+
+    api_key: str
+    properties: _Properties
+
+
+class _Event(_DefaultEvent):
+    """Event type for telemetry."""
+
+    event: str
+    timestamp: str
+
+
+def _get_event_defaults() -> _DefaultEvent | None:
+    """Get the default event data.
 
     Returns:
-        The event data.
+        The default event data.
     """
     from reflex.utils.prerequisites import get_cpu_info
 
@@ -118,24 +145,12 @@ def _prepare_event(event: str, **kwargs) -> dict:
         console.debug(
             f"Could not get installation_id or project_hash: {installation_id}, {project_hash}"
         )
-        return {}
-
-    if UTC is None:
-        # for python 3.9 & 3.10
-        stamp = datetime.utcnow().isoformat()
-    else:
-        # for python 3.11 & 3.12
-        stamp = datetime.now(UTC).isoformat()
+        return None
 
     cpuinfo = get_cpu_info()
 
-    additional_keys = ["template", "context", "detail"]
-    additional_fields = {
-        key: value for key in additional_keys if (value := kwargs.get(key)) is not None
-    }
     return {
         "api_key": "phc_JoMo0fOyi0GQAooY3UyO9k0hebGkMyFJrrCw1Gt5SGb",
-        "event": event,
         "properties": {
             "distinct_id": installation_id,
             "distinct_app_id": project_hash,
@@ -143,24 +158,75 @@ def _prepare_event(event: str, **kwargs) -> dict:
             "user_os_detail": get_detailed_platform_str(),
             "reflex_version": get_reflex_version(),
             "python_version": get_python_version(),
+            "node_version": (
+                str(node_version) if (node_version := get_node_version()) else None
+            ),
+            "bun_version": (
+                str(bun_version) if (bun_version := get_bun_version()) else None
+            ),
+            "reflex_enterprise_version": get_reflex_enterprise_version(),
             "cpu_count": get_cpu_count(),
-            "memory": get_memory(),
             "cpu_info": dataclasses.asdict(cpuinfo) if cpuinfo else {},
-            **additional_fields,
         },
+    }
+
+
+@once_unless_none
+def get_event_defaults() -> _DefaultEvent | None:
+    """Get the default event data.
+
+    Returns:
+        The default event data.
+    """
+    return _get_event_defaults()
+
+
+def _prepare_event(event: str, **kwargs) -> _Event | None:
+    """Prepare the event to be sent to the PostHog server.
+
+    Args:
+        event: The event name.
+        kwargs: Additional data to send with the event.
+
+    Returns:
+        The event data.
+    """
+    event_data = get_event_defaults()
+    if not event_data:
+        return None
+
+    additional_keys = ["template", "context", "detail", "user_uuid"]
+
+    properties = event_data["properties"]
+
+    for key in additional_keys:
+        if key in properties or key not in kwargs:
+            continue
+
+        properties[key] = kwargs[key]
+
+    stamp = datetime.now(UTC).isoformat()
+
+    return {
+        "api_key": event_data["api_key"],
+        "event": event,
+        "properties": properties,
         "timestamp": stamp,
     }
 
 
-def _send_event(event_data: dict) -> bool:
+def _send_event(event_data: _Event) -> bool:
+    import httpx
+
     try:
         httpx.post(POSTHOG_API_URL, json=event_data)
-        return True
     except Exception:
         return False
+    else:
+        return True
 
 
-def _send(event, telemetry_enabled, **kwargs):
+def _send(event: str, telemetry_enabled: bool | None, **kwargs) -> bool:
     from reflex.config import get_config
 
     # Get the telemetry_enabled from the config if it is not specified.
@@ -171,10 +237,15 @@ def _send(event, telemetry_enabled, **kwargs):
     if not telemetry_enabled:
         return False
 
-    event_data = _prepare_event(event, **kwargs)
-    if not event_data:
-        return False
-    return _send_event(event_data)
+    with suppress(Exception):
+        event_data = _prepare_event(event, **kwargs)
+        if not event_data:
+            return False
+        return _send_event(event_data)
+    return False
+
+
+background_tasks = set()
 
 
 def send(event: str, telemetry_enabled: bool | None = None, **kwargs):
@@ -186,12 +257,14 @@ def send(event: str, telemetry_enabled: bool | None = None, **kwargs):
         kwargs: Additional data to send with the event.
     """
 
-    async def async_send(event, telemetry_enabled, **kwargs):
+    async def async_send(event: str, telemetry_enabled: bool | None, **kwargs):
         return _send(event, telemetry_enabled, **kwargs)
 
     try:
         # Within an event loop context, send the event asynchronously.
-        asyncio.create_task(async_send(event, telemetry_enabled, **kwargs))
+        task = asyncio.create_task(async_send(event, telemetry_enabled, **kwargs))
+        background_tasks.add(task)
+        task.add_done_callback(background_tasks.discard)
     except RuntimeError:
         # If there is no event loop, send the event synchronously.
         warnings.filterwarnings("ignore", category=RuntimeWarning)
@@ -204,8 +277,6 @@ def send_error(error: Exception, context: str):
     Args:
         error: The error to send.
         context: The context of the error (e.g. "frontend" or "backend")
-
-    Returns:
-        Whether the telemetry was sent successfully.
     """
-    return send("error", detail=type(error).__name__, context=context)
+    if isinstance(error, ReflexError):
+        send("error", detail=type(error).__name__, context=context)

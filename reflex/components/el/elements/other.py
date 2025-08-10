@@ -1,6 +1,4 @@
-"""Element classes. This is an auto-generated file. Do not edit. See ../generate.py."""
-
-from typing import Union
+"""Other classes."""
 
 from reflex.vars.base import Var
 
@@ -13,7 +11,7 @@ class Details(BaseHTML):
     tag = "details"
 
     # Indicates whether the details will be visible (expanded) to the user
-    open: Var[Union[str, int, bool]]
+    open: Var[bool]
 
 
 class Dialog(BaseHTML):
@@ -22,35 +20,43 @@ class Dialog(BaseHTML):
     tag = "dialog"
 
     # Indicates whether the dialog is active and can be interacted with
-    open: Var[Union[str, int, bool]]
+    open: Var[bool]
 
 
 class Summary(BaseHTML):
-    """Display the summary element."""
+    """Display the summary element.
+
+    Used as a summary or caption for a <details> element.
+    """
 
     tag = "summary"
-    # No unique attributes, only common ones are inherited; used as a summary or caption for a <details> element
 
 
 class Slot(BaseHTML):
-    """Display the slot element."""
+    """Display the slot element.
+
+    Used as a placeholder inside a web component.
+    """
 
     tag = "slot"
-    # No unique attributes, only common ones are inherited; used as a placeholder inside a web component
 
 
 class Template(BaseHTML):
-    """Display the template element."""
+    """Display the template element.
+
+    Used for declaring fragments of HTML that can be cloned and inserted in the document.
+    """
 
     tag = "template"
-    # No unique attributes, only common ones are inherited; used for declaring fragments of HTML that can be cloned and inserted in the document
 
 
 class Math(BaseHTML):
-    """Display the math element."""
+    """Display the math element.
+
+    Represents a mathematical expression.
+    """
 
     tag = "math"
-    # No unique attributes, only common ones are inherited; used for displaying mathematical expressions
 
 
 class Html(BaseHTML):
@@ -59,7 +65,7 @@ class Html(BaseHTML):
     tag = "html"
 
     # Specifies the URL of the document's cache manifest (obsolete in HTML5)
-    manifest: Var[Union[str, int, bool]]
+    manifest: Var[str]
 
 
 details = Details.create

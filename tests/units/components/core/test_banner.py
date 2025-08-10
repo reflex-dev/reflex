@@ -12,7 +12,7 @@ def test_websocket_target_url():
     url = WebsocketTargetURL.create()
     var_data = url._get_all_var_data()
     assert var_data is not None
-    assert sorted(tuple((key for key, _ in var_data.imports))) == sorted(
+    assert sorted(key for key, _ in var_data.imports) == sorted(
         ("$/utils/state", "$/env.json")
     )
 
@@ -20,12 +20,12 @@ def test_websocket_target_url():
 def test_connection_banner():
     banner = ConnectionBanner.create()
     _imports = banner._get_all_imports(collapse=True)
-    assert sorted(tuple(_imports)) == sorted(
+    assert sorted(_imports) == sorted(
         (
             "react",
             "$/utils/context",
             "$/utils/state",
-            RadixThemesComponent().library or "",
+            RadixThemesComponent.create().library or "",
             "$/env.json",
         )
     )
@@ -38,12 +38,12 @@ def test_connection_banner():
 def test_connection_modal():
     modal = ConnectionModal.create()
     _imports = modal._get_all_imports(collapse=True)
-    assert sorted(tuple(_imports)) == sorted(
+    assert sorted(_imports) == sorted(
         (
             "react",
             "$/utils/context",
             "$/utils/state",
-            RadixThemesComponent().library or "",
+            RadixThemesComponent.create().library or "",
             "$/env.json",
         )
     )

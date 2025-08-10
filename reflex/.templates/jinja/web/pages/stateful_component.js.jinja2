@@ -1,19 +1,15 @@
 {% import 'web/pages/utils.js.jinja2' as utils %}
+{% from 'web/pages/macros.js.jinja2' import renderHooksWithMemo %}
+{% set all_hooks = component._get_all_hooks() %}
 
+{% if export %}
 export function {{tag_name}} () {
-  {% for hook in component._get_all_hooks_internal() %}
-  {{ hook }}
-  {% endfor %}
-
-  {% for hook in memo_trigger_hooks %}
-  {{ hook }}
-  {% endfor %}
-
-  {% for hook in component._get_all_hooks() %}
-  {{ hook }}
-  {% endfor %}
-
+{% else %}
+function {{tag_name}} () {
+{% endif %}
+  {{ renderHooksWithMemo(all_hooks, memo_trigger_hooks) }}
+  
   return (
-    {{utils.render(component.render(), indent_width=0)}}
+    {{utils.render(component.render())}}
   )
 }

@@ -1,9 +1,9 @@
 """Skeleton theme from Radix components."""
 
 from reflex.components.core.breakpoints import Responsive
+from reflex.components.radix.themes.base import RadixLoadingProp, RadixThemesComponent
+from reflex.constants.compiler import MemoizationMode
 from reflex.vars.base import Var
-
-from ..base import RadixLoadingProp, RadixThemesComponent
 
 
 class Skeleton(RadixLoadingProp, RadixThemesComponent):
@@ -28,6 +28,8 @@ class Skeleton(RadixLoadingProp, RadixThemesComponent):
 
     # The maximum height of the skeleton
     max_height: Var[Responsive[str]]
+
+    _memoization_mode = MemoizationMode(recursive=False)
 
 
 skeleton = Skeleton.create

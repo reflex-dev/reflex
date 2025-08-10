@@ -1,6 +1,6 @@
 """Test that per-component state scaffold works and operates independently."""
 
-from typing import Generator
+from collections.abc import Generator
 
 import pytest
 from selenium.webdriver.common.by import By
@@ -30,7 +30,7 @@ def ComponentStateApp():
         @rx.event
         def increment(self):
             self.count += 1
-            self._be = self.count  # type: ignore
+            self._be = self.count  # pyright: ignore [reportAttributeAccessIssue]
 
         @classmethod
         def get_component(cls, *children, **props):
@@ -72,7 +72,7 @@ def ComponentStateApp():
             State=_Counter,
         )
 
-    app = rx.App(state=rx.State)  # noqa
+    app = rx.App()  # noqa: F841
 
     @rx.page()
     def index():
@@ -89,7 +89,7 @@ def ComponentStateApp():
             mc_d,
             rx.button(
                 "Inc A",
-                on_click=mc_a.State.increment,  # type: ignore
+                on_click=mc_a.State.increment,  # pyright: ignore [reportAttributeAccessIssue, reportOptionalMemberAccess]
                 id="inc-a",
             ),
             rx.text(
@@ -103,7 +103,7 @@ def ComponentStateApp():
         )
 
 
-@pytest.fixture()
+@pytest.fixture
 def component_state_app(tmp_path) -> Generator[AppHarness, None, None]:
     """Start ComponentStateApp app at tmp_path via AppHarness.
 

@@ -1,9 +1,12 @@
 """The Reflex Admin Dashboard."""
 
-from dataclasses import dataclass, field
-from typing import Optional
+from __future__ import annotations
 
-from starlette_admin.base import BaseAdmin as Admin
+from dataclasses import dataclass, field
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from starlette_admin.base import BaseAdmin as Admin
 
 
 @dataclass
@@ -12,4 +15,4 @@ class AdminDash:
 
     models: list = field(default_factory=list)
     view_overrides: dict = field(default_factory=dict)
-    admin: Optional[Admin] = None
+    admin: Admin | None = None

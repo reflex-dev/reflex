@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any, Optional
+from typing import Any
 
 from reflex.components.component import Component, ComponentNamespace
 from reflex.components.core.colors import color
@@ -15,7 +15,7 @@ from reflex.vars.base import Var
 class ProgressComponent(RadixPrimitiveComponentWithClassName):
     """A Progress component."""
 
-    library = "@radix-ui/react-progress@^1.0.3"
+    library = "@radix-ui/react-progress@1.1.7"
 
 
 class ProgressRoot(ProgressComponent):
@@ -58,10 +58,10 @@ class ProgressIndicator(ProgressComponent):
     alias = "RadixProgressIndicator"
 
     # The current progress value.
-    value: Var[Optional[int]]
+    value: Var[int | None]
 
     # The maximum progress value.
-    max: Var[Optional[int]]
+    max: Var[int | None]
 
     # The color scheme of the progress indicator.
     color_scheme: Var[LiteralAccentColor]
@@ -83,7 +83,7 @@ class ProgressIndicator(ProgressComponent):
             "&[data_state='loading']": {
                 "transition": f"transform {DEFAULT_ANIMATION_DURATION}ms linear",
             },
-            "transform": f"translateX(calc(-100% + ({self.value} / {self.max} * 100%)))",  # type: ignore
+            "transform": f"translateX(calc(-100% + ({self.value} / {self.max} * 100%)))",
             "boxShadow": "inset 0 0 0 1px var(--gray-a5)",
         }
 
@@ -98,10 +98,10 @@ class Progress(ProgressRoot):
     color_scheme: Var[LiteralAccentColor]
 
     # The current progress value.
-    value: Var[Optional[int]]
+    value: Var[int | None]
 
     # The maximum progress value.
-    max: Var[Optional[int]]
+    max: Var[int | None]
 
     @classmethod
     def create(cls, **props) -> Component:

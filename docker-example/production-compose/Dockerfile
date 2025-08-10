@@ -2,11 +2,11 @@
 # instance of a Reflex app.
 
 # Stage 1: init
-FROM python:3.11 as init
+FROM python:3.13 as init
 
 ARG uv=/root/.local/bin/uv
 
-# Install `uv` for faster package boostrapping
+# Install `uv` for faster package bootstrapping
 ADD --chmod=755 https://astral.sh/uv/install.sh /install.sh
 RUN /install.sh && rm /install.sh
 
@@ -26,20 +26,20 @@ RUN $uv pip install -r requirements.txt
 # Deploy templates and prepare app
 RUN reflex init
 
-# Export static copy of frontend to /app/.web/_static
+# Export static copy of frontend to /app/.web/build/client
 RUN reflex export --frontend-only --no-zip
 
 # Copy static files out of /app to save space in backend image
-RUN mv .web/_static /tmp/_static
-RUN rm -rf .web && mkdir .web
-RUN mv /tmp/_static .web/_static
+RUN mv .web/build/client /tmp/client
+RUN rm -rf .web && mkdir -p .web/build
+RUN mv /tmp/client .web/build/client
 
 # Stage 2: copy artifacts into slim image 
-FROM python:3.11-slim
+FROM python:3.13-slim
 WORKDIR /app
 RUN adduser --disabled-password --home /app reflex
 COPY --chown=reflex --from=init /app /app
-# Install libpq-dev for psycopg2 (skip if not using postgres).
+# Install libpq-dev for psycopg (skip if not using postgres).
 RUN apt-get update -y && apt-get install -y libpq-dev && rm -rf /var/lib/apt/lists/*
 USER reflex
 ENV PATH="/app/.venv/bin:$PATH" PYTHONUNBUFFERED=1

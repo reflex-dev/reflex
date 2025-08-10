@@ -2,8 +2,10 @@
 
 from __future__ import annotations
 
+import re
 from collections import defaultdict
-from typing import Any, ClassVar, Optional, Type, Union
+from contextlib import suppress
+from typing import Any, ClassVar
 
 import alembic.autogenerate
 import alembic.command
@@ -14,12 +16,93 @@ import alembic.script
 import alembic.util
 import sqlalchemy
 import sqlalchemy.exc
+import sqlalchemy.ext.asyncio
 import sqlalchemy.orm
+from alembic.runtime.migration import MigrationContext
+from alembic.script.base import Script
 
 from reflex.base import Base
-from reflex.config import environment, get_config
+from reflex.config import get_config
+from reflex.environment import environment
 from reflex.utils import console
 from reflex.utils.compat import sqlmodel, sqlmodel_field_has_primary_key
+
+_ENGINE: dict[str, sqlalchemy.engine.Engine] = {}
+_ASYNC_ENGINE: dict[str, sqlalchemy.ext.asyncio.AsyncEngine] = {}
+_AsyncSessionLocal: dict[str | None, sqlalchemy.ext.asyncio.async_sessionmaker] = {}
+
+# Import AsyncSession _after_ reflex.utils.compat
+from sqlmodel.ext.asyncio.session import AsyncSession  # noqa: E402
+
+
+def format_revision(
+    rev: Script,
+    current_rev: str | None,
+    current_reached_ref: list[bool],
+) -> str:
+    """Format a single revision for display.
+
+    Args:
+        rev: The alembic script object
+        current_rev: The currently applied revision ID
+        current_reached_ref: Mutable reference to track if we've reached current revision
+
+    Returns:
+        Formatted string for display
+    """
+    current = rev.revision
+    message = rev.doc
+
+    # Determine if this migration is applied
+    if current_rev is None:
+        is_applied = False
+    elif current == current_rev:
+        is_applied = True
+        current_reached_ref[0] = True
+    else:
+        is_applied = not current_reached_ref[0]
+
+    # Show checkmark or X with colors
+    status_icon = "[green]✓[/green]" if is_applied else "[red]✗[/red]"
+    head_marker = " (head)" if rev.is_head else ""
+
+    # Format output with message
+    return f"  [{status_icon}] {current}{head_marker}, {message}"
+
+
+def _safe_db_url_for_logging(url: str) -> str:
+    """Remove username and password from the database URL for logging.
+
+    Args:
+        url: The database URL.
+
+    Returns:
+        The database URL with the username and password removed.
+    """
+    return re.sub(r"://[^@]+@", "://<username>:<password>@", url)
+
+
+def get_engine_args(url: str | None = None) -> dict[str, Any]:
+    """Get the database engine arguments.
+
+    Args:
+        url: The database url.
+
+    Returns:
+        The database engine arguments as a dict.
+    """
+    kwargs: dict[str, Any] = {
+        # Print the SQL queries if the log level is INFO or lower.
+        "echo": environment.SQLALCHEMY_ECHO.get(),
+        # Check connections before returning them.
+        "pool_pre_ping": environment.SQLALCHEMY_POOL_PRE_PING.get(),
+    }
+    conf = get_config()
+    url = url or conf.db_url
+    if url is not None and url.startswith("sqlite"):
+        # Needed for the admin dash on sqlite.
+        kwargs["connect_args"] = {"check_same_thread": False}
+    return kwargs
 
 
 def get_engine(url: str | None = None) -> sqlalchemy.engine.Engine:
@@ -37,27 +120,74 @@ def get_engine(url: str | None = None) -> sqlalchemy.engine.Engine:
     conf = get_config()
     url = url or conf.db_url
     if url is None:
-        raise ValueError("No database url configured")
+        msg = "No database url configured"
+        raise ValueError(msg)
+
+    global _ENGINE
+    if url in _ENGINE:
+        return _ENGINE[url]
+
     if not environment.ALEMBIC_CONFIG.get().exists():
         console.warn(
             "Database is not initialized, run [bold]reflex db init[/bold] first."
         )
-    # Print the SQL queries if the log level is INFO or lower.
-    echo_db_query = environment.SQLALCHEMY_ECHO.get()
-    # Needed for the admin dash on sqlite.
-    connect_args = {"check_same_thread": False} if url.startswith("sqlite") else {}
-    return sqlmodel.create_engine(url, echo=echo_db_query, connect_args=connect_args)
+    _ENGINE[url] = sqlmodel.create_engine(
+        url,
+        **get_engine_args(url),
+    )
+    return _ENGINE[url]
 
 
-async def get_db_status() -> bool:
+def get_async_engine(url: str | None) -> sqlalchemy.ext.asyncio.AsyncEngine:
+    """Get the async database engine.
+
+    Args:
+        url: The database url.
+
+    Returns:
+        The async database engine.
+
+    Raises:
+        ValueError: If the async database url is None.
+    """
+    if url is None:
+        conf = get_config()
+        url = conf.async_db_url
+        if url is not None and conf.db_url is not None:
+            async_db_url_tail = url.partition("://")[2]
+            db_url_tail = conf.db_url.partition("://")[2]
+            if async_db_url_tail != db_url_tail:
+                console.warn(
+                    f"async_db_url `{_safe_db_url_for_logging(url)}` "
+                    "should reference the same database as "
+                    f"db_url `{_safe_db_url_for_logging(conf.db_url)}`."
+                )
+    if url is None:
+        msg = "No async database url configured"
+        raise ValueError(msg)
+
+    global _ASYNC_ENGINE
+    if url in _ASYNC_ENGINE:
+        return _ASYNC_ENGINE[url]
+
+    if not environment.ALEMBIC_CONFIG.get().exists():
+        console.warn(
+            "Database is not initialized, run [bold]reflex db init[/bold] first."
+        )
+    _ASYNC_ENGINE[url] = sqlalchemy.ext.asyncio.create_async_engine(
+        url,
+        **get_engine_args(url),
+    )
+    return _ASYNC_ENGINE[url]
+
+
+async def get_db_status() -> dict[str, bool]:
     """Checks the status of the database connection.
 
     Attempts to connect to the database and execute a simple query to verify connectivity.
 
     Returns:
-        bool: The status of the database connection:
-            - True: The database is accessible.
-            - False: The database is not accessible.
+        The status of the database connection.
     """
     status = True
     try:
@@ -67,12 +197,10 @@ async def get_db_status() -> bool:
     except sqlalchemy.exc.OperationalError:
         status = False
 
-    return status
+    return {"db": status}
 
 
-SQLModelOrSqlAlchemy = Union[
-    Type[sqlmodel.SQLModel], Type[sqlalchemy.orm.DeclarativeBase]
-]
+SQLModelOrSqlAlchemy = type[sqlmodel.SQLModel] | type[sqlalchemy.orm.DeclarativeBase]
 
 
 class ModelRegistry:
@@ -152,11 +280,11 @@ class ModelRegistry:
         return metadata
 
 
-class Model(Base, sqlmodel.SQLModel):  # pyright: ignore [reportGeneralTypeIssues]
+class Model(Base, sqlmodel.SQLModel):  # pyright: ignore [reportGeneralTypeIssues,reportIncompatibleVariableOverride]
     """Base class to define a table in the database."""
 
     # The primary key for the table.
-    id: Optional[int] = sqlmodel.Field(default=None, primary_key=True)
+    id: int | None = sqlmodel.Field(default=None, primary_key=True)
 
     def __init_subclass__(cls):
         """Drop the default primary key field if any primary key field is defined."""
@@ -171,7 +299,7 @@ class Model(Base, sqlmodel.SQLModel):  # pyright: ignore [reportGeneralTypeIssue
         super().__init_subclass__()
 
     @classmethod
-    def _dict_recursive(cls, value):
+    def _dict_recursive(cls, value: Any):
         """Recursively serialize the relationship object(s).
 
         Args:
@@ -182,7 +310,7 @@ class Model(Base, sqlmodel.SQLModel):  # pyright: ignore [reportGeneralTypeIssue
         """
         if hasattr(value, "dict"):
             return value.dict()
-        elif isinstance(value, list):
+        if isinstance(value, list):
             return [cls._dict_recursive(item) for item in value]
         return value
 
@@ -199,11 +327,10 @@ class Model(Base, sqlmodel.SQLModel):  # pyright: ignore [reportGeneralTypeIssue
         relationships = {}
         # SQLModel relationships do not appear in __fields__, but should be included if present.
         for name in self.__sqlmodel_relationships__:
-            try:
+            with suppress(
+                sqlalchemy.orm.exc.DetachedInstanceError  # This happens when the relationship was never loaded and the session is closed.
+            ):
                 relationships[name] = self._dict_recursive(getattr(self, name))
-            except sqlalchemy.orm.exc.DetachedInstanceError:
-                # This happens when the relationship was never loaded and the session is closed.
-                continue
         return {
             **base_fields,
             **relationships,
@@ -232,15 +359,15 @@ class Model(Base, sqlmodel.SQLModel):  # pyright: ignore [reportGeneralTypeIssue
             tuple of (config, script_directory)
         """
         config = alembic.config.Config(environment.ALEMBIC_CONFIG.get())
-        return config, alembic.script.ScriptDirectory(
-            config.get_main_option("script_location", default="version"),
-        )
+        if not config.get_main_option("script_location"):
+            config.set_main_option("script_location", "version")
+        return config, alembic.script.ScriptDirectory.from_config(config)
 
     @staticmethod
     def _alembic_render_item(
         type_: str,
         obj: Any,
-        autogen_context: "alembic.autogenerate.api.AutogenContext",
+        autogen_context: alembic.autogenerate.api.AutogenContext,
     ):
         """Alembic render_item hook call.
 
@@ -269,6 +396,25 @@ class Model(Base, sqlmodel.SQLModel):  # pyright: ignore [reportGeneralTypeIssue
             config=alembic.config.Config(environment.ALEMBIC_CONFIG.get()),
             directory=str(environment.ALEMBIC_CONFIG.get().parent / "alembic"),
         )
+
+    @classmethod
+    def get_migration_history(cls):
+        """Get migration history with current database state.
+
+        Returns:
+            tuple: (current_revision, revisions_list) where revisions_list is in chronological order
+        """
+        # Get current revision from database
+        with cls.get_db_engine().connect() as connection:
+            context = MigrationContext.configure(connection)
+            current_rev = context.get_current_revision()
+
+        # Get all revisions from base to head
+        _, script_dir = cls._alembic_config()
+        revisions = list(script_dir.walk_revisions())
+        revisions.reverse()  # Reverse to get chronological order (base first)
+
+        return current_rev, revisions
 
     @classmethod
     def alembic_autogenerate(
@@ -304,7 +450,11 @@ class Model(Base, sqlmodel.SQLModel):  # pyright: ignore [reportGeneralTypeIssue
         writer = alembic.autogenerate.rewriter.Rewriter()
 
         @writer.rewrites(alembic.operations.ops.AddColumnOp)
-        def render_add_column_with_server_default(context, revision, op):
+        def render_add_column_with_server_default(
+            context: MigrationContext,
+            revision: str | None,
+            op: Any,
+        ):
             # Carry the sqlmodel default as server_default so that newly added
             # columns get the desired default value in existing rows.
             if op.column.default is not None and op.column.server_default is None:
@@ -313,7 +463,7 @@ class Model(Base, sqlmodel.SQLModel):  # pyright: ignore [reportGeneralTypeIssue
                 )
             return op
 
-        def run_autogenerate(rev, context):
+        def run_autogenerate(rev: str, context: MigrationContext):
             revision_context.run_autogenerate(rev, context)
             return []
 
@@ -326,7 +476,7 @@ class Model(Base, sqlmodel.SQLModel):  # pyright: ignore [reportGeneralTypeIssue
                 connection=connection,
                 target_metadata=ModelRegistry.get_metadata(),
                 render_item=cls._alembic_render_item,
-                process_revision_directives=writer,  # type: ignore
+                process_revision_directives=writer,
                 compare_type=False,
                 render_as_batch=True,  # for sqlite compatibility
             )
@@ -355,7 +505,7 @@ class Model(Base, sqlmodel.SQLModel):  # pyright: ignore [reportGeneralTypeIssue
         """
         config, script_directory = cls._alembic_config()
 
-        def run_upgrade(rev, context):
+        def run_upgrade(rev: str, context: MigrationContext):
             return script_directory._upgrade_revs(to_rev, rev)
 
         with alembic.runtime.environment.EnvironmentContext(
@@ -389,7 +539,7 @@ class Model(Base, sqlmodel.SQLModel):  # pyright: ignore [reportGeneralTypeIssue
             None - indicating the process was skipped.
         """
         if not environment.ALEMBIC_CONFIG.get().exists():
-            return
+            return None
 
         with cls.get_db_engine().connect() as connection:
             cls._alembic_upgrade(connection=connection)
@@ -423,6 +573,32 @@ def session(url: str | None = None) -> sqlmodel.Session:
         A database session.
     """
     return sqlmodel.Session(get_engine(url))
+
+
+def asession(url: str | None = None) -> AsyncSession:
+    """Get an async sqlmodel session to interact with the database.
+
+    async with rx.asession() as asession:
+        ...
+
+    Most operations against the `asession` must be awaited.
+
+    Args:
+        url: The database url.
+
+    Returns:
+        An async database session.
+    """
+    global _AsyncSessionLocal
+    if url not in _AsyncSessionLocal:
+        _AsyncSessionLocal[url] = sqlalchemy.ext.asyncio.async_sessionmaker(
+            bind=get_async_engine(url),
+            class_=AsyncSession,
+            expire_on_commit=False,
+            autocommit=False,
+            autoflush=False,
+        )
+    return _AsyncSessionLocal[url]()
 
 
 def sqla_session(url: str | None = None) -> sqlalchemy.orm.Session:

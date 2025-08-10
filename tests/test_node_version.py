@@ -2,7 +2,8 @@
 
 from __future__ import annotations
 
-from typing import Any, Generator
+from collections.abc import Generator
+from typing import Any
 
 import httpx
 import pytest
@@ -31,7 +32,7 @@ def TestNodeVersionApp():
         return rx.heading("Node Version check v", TestNodeVersionState.node_version)
 
 
-@pytest.fixture()
+@pytest.fixture
 def node_version_app(tmp_path) -> Generator[AppHarness, Any, None]:
     """Fixture to start TestNodeVersionApp app at tmp_path via AppHarness.
 
@@ -62,8 +63,7 @@ def test_node_version(node_version_app: AppHarness, page: Page):
 
         # Assuming the first entry in the API response is the most recent version
         if versions:
-            latest_version = versions[0]["version"]
-            return latest_version
+            return versions[0]["version"]
         return None
 
     assert node_version_app.frontend_url is not None

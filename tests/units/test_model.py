@@ -1,9 +1,9 @@
 from pathlib import Path
-from typing import Optional, Type
 from unittest import mock
 
 import pytest
 import sqlalchemy
+import sqlalchemy.exc
 import sqlmodel
 
 import reflex.constants
@@ -34,7 +34,7 @@ def model_custom_primary() -> Model:
     """
 
     class ChildModel(Model):
-        custom_id: Optional[int] = sqlmodel.Field(default=None, primary_key=True)
+        custom_id: int | None = sqlmodel.Field(default=None, primary_key=True)
         name: str
 
     return ChildModel(name="name")
@@ -46,7 +46,7 @@ def test_default_primary_key(model_default_primary: Model):
     Args:
         model_default_primary: Fixture.
     """
-    assert "id" in model_default_primary.__class__.__fields__
+    assert "id" in type(model_default_primary).__fields__
 
 
 def test_custom_primary_key(model_custom_primary: Model):
@@ -55,7 +55,7 @@ def test_custom_primary_key(model_custom_primary: Model):
     Args:
         model_custom_primary: Fixture.
     """
-    assert "id" not in model_custom_primary.__class__.__fields__
+    assert "id" not in type(model_custom_primary).__fields__
 
 
 @pytest.mark.filterwarnings(
@@ -64,7 +64,7 @@ def test_custom_primary_key(model_custom_primary: Model):
 def test_automigration(
     tmp_working_dir: Path,
     monkeypatch: pytest.MonkeyPatch,
-    model_registry: Type[ModelRegistry],
+    model_registry: type[ModelRegistry],
 ):
     """Test alembic automigration with add and drop table and column.
 
@@ -86,7 +86,7 @@ def test_automigration(
     assert versions.exists()
 
     # initial table
-    class AlembicThing(Model, table=True):  # type: ignore
+    class AlembicThing(Model, table=True):  # pyright: ignore [reportRedeclaration]
         t1: str
 
     with Model.get_db_engine().connect() as connection:
@@ -105,8 +105,8 @@ def test_automigration(
     model_registry.get_metadata().clear()
 
     # Create column t2, mark t1 as optional with default
-    class AlembicThing(Model, table=True):  # type: ignore
-        t1: Optional[str] = "default"
+    class AlembicThing(Model, table=True):  # pyright: ignore [reportRedeclaration]
+        t1: str | None = "default"
         t2: str = "bar"
 
     assert Model.migrate(autogenerate=True)
@@ -125,7 +125,7 @@ def test_automigration(
     model_registry.get_metadata().clear()
 
     # Drop column t1
-    class AlembicThing(Model, table=True):  # type: ignore
+    class AlembicThing(Model, table=True):  # pyright: ignore [reportRedeclaration]
         t2: str = "bar"
 
     assert Model.migrate(autogenerate=True)
@@ -138,7 +138,7 @@ def test_automigration(
         assert result[1].t2 == "baz"
 
     # Add table
-    class AlembicSecond(Model, table=True):  # type: ignore
+    class AlembicSecond(Model, table=True):
         a: int = 42
         b: float = 4.2
 
@@ -160,14 +160,14 @@ def test_automigration(
     # drop table (AlembicSecond)
     model_registry.get_metadata().clear()
 
-    class AlembicThing(Model, table=True):  # type: ignore
+    class AlembicThing(Model, table=True):  # pyright: ignore [reportRedeclaration]
         t2: str = "bar"
 
     assert Model.migrate(autogenerate=True)
     assert len(list(versions.glob("*.py"))) == 5
 
     with reflex.model.session() as session:
-        with pytest.raises(sqlalchemy.exc.OperationalError) as errctx:  # type: ignore
+        with pytest.raises(sqlalchemy.exc.OperationalError) as errctx:
             session.exec(sqlmodel.select(AlembicSecond)).all()
         assert errctx.match(r"no such table: alembicsecond")
         # first table should still exist
@@ -178,7 +178,7 @@ def test_automigration(
 
     model_registry.get_metadata().clear()
 
-    class AlembicThing(Model, table=True):  # type: ignore
+    class AlembicThing(Model, table=True):
         # changing column type not supported by default
         t2: int = 42
 

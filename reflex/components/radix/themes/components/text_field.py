@@ -2,22 +2,27 @@
 
 from __future__ import annotations
 
-from typing import Literal, Union
+from typing import Literal
 
 from reflex.components.component import Component, ComponentNamespace
 from reflex.components.core.breakpoints import Responsive
 from reflex.components.core.debounce import DebounceInput
 from reflex.components.el import elements
+from reflex.components.radix.themes.base import (
+    LiteralAccentColor,
+    LiteralRadius,
+    RadixThemesComponent,
+)
 from reflex.event import EventHandler, input_event, key_event
+from reflex.utils.types import is_optional
 from reflex.vars.base import Var
-
-from ..base import LiteralAccentColor, LiteralRadius, RadixThemesComponent
+from reflex.vars.number import ternary_operation
 
 LiteralTextFieldSize = Literal["1", "2", "3"]
 LiteralTextFieldVariant = Literal["classic", "surface", "soft"]
 
 
-class TextFieldRoot(elements.Div, RadixThemesComponent):
+class TextFieldRoot(elements.Input, RadixThemesComponent):
     """Captures user input with an optional slot for buttons and icons."""
 
     tag = "TextField.Root"
@@ -65,10 +70,10 @@ class TextFieldRoot(elements.Div, RadixThemesComponent):
     type: Var[str]
 
     # Value of the input
-    value: Var[Union[str, int, float]]
+    value: Var[str | int | float]
 
     # References a datalist for suggested options
-    list: Var[Union[str, int, bool]]
+    list: Var[str]
 
     # Fired when the value of the textarea changes.
     on_change: EventHandler[input_event]
@@ -96,6 +101,20 @@ class TextFieldRoot(elements.Div, RadixThemesComponent):
         Returns:
             The component.
         """
+        value = props.get("value")
+
+        # React expects an empty string(instead of null) for controlled inputs.
+        if value is not None and is_optional(
+            (value_var := Var.create(value))._var_type
+        ):
+            value_var_is_not_none = value_var != Var.create(None)
+            value_var_is_not_undefined = value_var != Var(_js_expr="undefined")
+            props["value"] = ternary_operation(
+                value_var_is_not_none & value_var_is_not_undefined,
+                value,
+                Var.create(""),
+            )
+
         component = super().create(*children, **props)
         if props.get("value") is not None and props.get("on_change") is not None:
             # create a debounced input if the user requests full control to avoid typing jank
@@ -110,6 +129,9 @@ class TextFieldSlot(RadixThemesComponent):
 
     # Override theme color for text field slot
     color_scheme: Var[LiteralAccentColor]
+
+    # Which side of the input the slot should be placed on
+    side: Var[Literal["left", "right"]]
 
 
 class TextField(ComponentNamespace):

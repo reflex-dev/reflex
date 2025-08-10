@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
+from collections.abc import Generator, Iterator
 from contextlib import contextmanager
-from typing import Generator, Iterator
 
 from selenium.webdriver.remote.webdriver import WebDriver
 
@@ -30,7 +30,7 @@ def poll_for_navigation(
 
     yield
 
-    AppHarness._poll_for(lambda: prev_url != driver.current_url, timeout=timeout)
+    AppHarness.expect(lambda: prev_url != driver.current_url, timeout=timeout)
 
 
 class LocalStorage:

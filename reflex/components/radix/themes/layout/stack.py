@@ -3,9 +3,10 @@
 from __future__ import annotations
 
 from reflex.components.component import Component
+from reflex.components.core.breakpoints import Responsive
+from reflex.components.radix.themes.base import LiteralAlign, LiteralSpacing
 from reflex.vars.base import Var
 
-from ..base import LiteralAlign, LiteralSpacing
 from .flex import Flex, LiteralFlexDirection
 
 
@@ -13,10 +14,10 @@ class Stack(Flex):
     """A stack component."""
 
     # The spacing between each stack item.
-    spacing: Var[LiteralSpacing] = Var.create("3")
+    spacing: Var[Responsive[LiteralSpacing]] = Var.create("3")
 
     # The alignment of the stack items.
-    align: Var[LiteralAlign] = Var.create("start")
+    align: Var[Responsive[LiteralAlign]] = Var.create("start")
 
     @classmethod
     def create(
@@ -49,14 +50,14 @@ class VStack(Stack):
     """A vertical stack component."""
 
     # The direction of the stack.
-    direction: Var[LiteralFlexDirection] = "column"  # type: ignore
+    direction: Var[Responsive[LiteralFlexDirection]] = Var.create("column")
 
 
 class HStack(Stack):
     """A horizontal stack component."""
 
     # The direction of the stack.
-    direction: Var[LiteralFlexDirection] = "row"  # type: ignore
+    direction: Var[Responsive[LiteralFlexDirection]] = Var.create("row")
 
 
 stack = Stack.create

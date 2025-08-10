@@ -1,11 +1,12 @@
 import json
-from typing import Any, Union
+from typing import Any
 
 import pytest
 
 from reflex.components.base.fragment import Fragment
 from reflex.components.core.cond import Cond, cond
 from reflex.components.radix.themes.typography.text import Text
+from reflex.constants.state import FIELD_MARKER
 from reflex.state import BaseState
 from reflex.utils.format import format_state_name
 from reflex.vars.base import LiteralVar, Var, computed_var
@@ -14,7 +15,7 @@ from reflex.vars.base import LiteralVar, Var, computed_var
 @pytest.fixture
 def cond_state(request):
     class CondState(BaseState):
-        value: request.param["value_type"] = request.param["value"]  # noqa
+        value: request.param["value_type"] = request.param["value"]  # pyright: ignore [reportInvalidTypeForm, reportUndefinedVariable] # noqa: F821
 
     return CondState
 
@@ -49,7 +50,7 @@ def test_validate_cond(cond_state: BaseState):
     assert cond_dict["name"] == "Fragment"
 
     [condition] = cond_dict["children"]
-    assert condition["cond_state"] == f"isTrue({cond_state.get_full_name()}.value)"
+    assert condition["cond_state"] == str(cond_state.value.bool())
 
     # true value
     true_value = condition["true_value"]
@@ -57,7 +58,7 @@ def test_validate_cond(cond_state: BaseState):
 
     [true_value_text] = true_value["children"]
     assert true_value_text["name"] == "RadixThemesText"
-    assert true_value_text["children"][0]["contents"] == '{"cond is True"}'
+    assert true_value_text["children"][0]["contents"] == '"cond is True"'
 
     # false value
     false_value = condition["false_value"]
@@ -65,11 +66,11 @@ def test_validate_cond(cond_state: BaseState):
 
     [false_value_text] = false_value["children"]
     assert false_value_text["name"] == "RadixThemesText"
-    assert false_value_text["children"][0]["contents"] == '{"cond is False"}'
+    assert false_value_text["children"][0]["contents"] == '"cond is False"'
 
 
 @pytest.mark.parametrize(
-    "c1, c2",
+    ("c1", "c2"),
     [
         (True, False),
         (32, 0),
@@ -96,13 +97,12 @@ def test_prop_cond(c1: Any, c2: Any):
         c1 = json.dumps(c1)
     if not isinstance(c2, Var):
         c2 = json.dumps(c2)
-    assert str(prop_cond) == f"(true ? {str(c1)} : {str(c2)})"
+    assert str(prop_cond) == f"(true ? {c1!s} : {c2!s})"
 
 
 def test_cond_no_mix():
-    """Test if cond can't mix components and props."""
-    with pytest.raises(ValueError):
-        cond(True, LiteralVar.create("hello"), Text.create("world"))
+    """Test if cond can mix components and props."""
+    cond(True, LiteralVar.create("hello"), Text.create("world"))
 
 
 def test_cond_no_else():
@@ -112,13 +112,13 @@ def test_cond_no_else():
     assert isinstance(comp, Fragment)
     comp = comp.children[0]
     assert isinstance(comp, Cond)
-    assert comp.cond._decode() is True  # type: ignore
-    assert comp.comp1.render() == Fragment.create(Text.create("hello")).render()
-    assert comp.comp2 == Fragment.create()
+    assert comp.cond._decode() is True
+    assert comp.children[0].render() == Fragment.create(Text.create("hello")).render()  # pyright: ignore [reportOptionalMemberAccess]
+    assert comp.children[1] == Fragment.create()
 
     # Props do not support the use of cond without else
     with pytest.raises(ValueError):
-        cond(True, "hello")  # type: ignore
+        cond(True, "hello")  # pyright: ignore [reportArgumentType]
 
 
 def test_cond_computed_var():
@@ -135,12 +135,13 @@ def test_cond_computed_var():
 
     comp = cond(True, CondStateComputed.computed_int, CondStateComputed.computed_str)
 
-    # TODO: shouln't this be a ComputedVar?
+    # TODO: shouldn't this be a ComputedVar?
     assert isinstance(comp, Var)
 
     state_name = format_state_name(CondStateComputed.get_full_name())
     assert (
-        str(comp) == f"(true ? {state_name}.computed_int : {state_name}.computed_str)"
+        str(comp)
+        == f"(true ? {state_name}.computed_int{FIELD_MARKER} : {state_name}.computed_str{FIELD_MARKER})"
     )
 
-    assert comp._var_type == Union[int, str]
+    assert comp._var_type == int | str

@@ -3,18 +3,18 @@
 from __future__ import annotations
 
 import dataclasses
-from typing import ClassVar, Dict, Literal, Optional, Union
+from typing import ClassVar, Literal
 
-from reflex.components.component import Component, ComponentNamespace
+from reflex.components.component import Component, ComponentNamespace, field
 from reflex.components.core.cond import color_mode_cond
 from reflex.components.lucide.icon import Icon
-from reflex.components.markdown.markdown import _LANGUAGE, MarkdownComponentMap
+from reflex.components.markdown.markdown import MarkdownComponentMap
 from reflex.components.radix.themes.components.button import Button
 from reflex.components.radix.themes.layout.box import Box
 from reflex.constants.colors import Color
 from reflex.event import set_clipboard
 from reflex.style import Style
-from reflex.utils import console, format
+from reflex.utils import format
 from reflex.utils.imports import ImportVar
 from reflex.vars.base import LiteralVar, Var, VarData
 
@@ -314,7 +314,7 @@ def construct_theme_var(theme: str) -> Var[Theme]:
         theme,
         _var_data=VarData(
             imports={
-                f"react-syntax-highlighter/dist/cjs/styles/prism/{format.to_kebab_case(theme)}": [
+                f"react-syntax-highlighter/dist/esm/styles/prism/{format.to_kebab_case(theme)}": [
                     ImportVar(tag=theme, is_default=True, install=False)
                 ]
             }
@@ -389,7 +389,7 @@ class CodeBlock(Component, MarkdownComponentMap):
     alias = "SyntaxHighlighter"
 
     # The theme to use ("light" or "dark").
-    theme: Var[Union[Theme, str]] = Theme.one_light
+    theme: Var[Theme | str] = Theme.one_light
 
     # The language to use.
     language: Var[LiteralCodeLanguage] = Var.create("python")
@@ -407,16 +407,24 @@ class CodeBlock(Component, MarkdownComponentMap):
     wrap_long_lines: Var[bool]
 
     # A custom style for the code block.
-    custom_style: Dict[str, Union[str, Var, Color]] = {}
+    custom_style: dict[str, str | Var | Color] = field(
+        default_factory=dict, is_javascript_property=False
+    )
 
     # Props passed down to the code tag.
-    code_tag_props: Var[Dict[str, str]]
+    code_tag_props: Var[dict[str, str]]
 
     # Whether a copy button should appear.
-    can_copy: Optional[bool] = False
+    can_copy: bool | None = field(
+        default=False,
+        is_javascript_property=False,
+    )
 
     # A custom copy button to override the default one.
-    copy_button: Optional[Union[bool, Component]] = None
+    copy_button: bool | Component | None = field(
+        default=None,
+        is_javascript_property=False,
+    )
 
     @classmethod
     def create(
@@ -438,6 +446,8 @@ class CodeBlock(Component, MarkdownComponentMap):
         can_copy = props.pop("can_copy", False)
         copy_button = props.pop("copy_button", None)
 
+        # react-syntax-highlighter doesn't have an explicit "light" or "dark" theme so we use one-light and one-dark
+        # themes respectively to ensure code compatibility.
         if "theme" not in props:
             # Default color scheme responds to global color mode.
             props["theme"] = color_mode_cond(
@@ -445,20 +455,9 @@ class CodeBlock(Component, MarkdownComponentMap):
                 dark=Theme.one_dark,
             )
 
-        # react-syntax-highlighter doesnt have an explicit "light" or "dark" theme so we use one-light and one-dark
-        # themes respectively to ensure code compatibility.
-        if "theme" in props and not isinstance(props["theme"], Var):
-            props["theme"] = getattr(Theme, format.to_snake_case(props["theme"]))  # type: ignore
-            console.deprecate(
-                feature_name="theme prop as string",
-                reason="Use code_block.themes instead.",
-                deprecation_version="0.6.0",
-                removal_version="0.7.0",
-            )
-
         if can_copy:
             code = children[0]
-            copy_button = (  # type: ignore
+            copy_button = (
                 copy_button
                 if copy_button is not None
                 else Button.create(
@@ -490,8 +489,7 @@ class CodeBlock(Component, MarkdownComponentMap):
 
         if copy_button:
             return Box.create(code_block, copy_button, position="relative")
-        else:
-            return code_block
+        return code_block
 
     def add_style(self):
         """Add style to the component."""
@@ -502,54 +500,13 @@ class CodeBlock(Component, MarkdownComponentMap):
 
         theme = self.theme
 
-        out.add_props(style=theme).remove_props("theme", "code", "language").add_props(
-            children=self.code, language=_LANGUAGE
+        return (
+            out.add_props(style=theme)
+            .remove_props("theme", "code")
+            .add_props(
+                children=self.code,
+            )
         )
-
-        return out
-
-    def _exclude_props(self) -> list[str]:
-        return ["can_copy", "copy_button"]
-
-    @classmethod
-    def _get_language_registration_hook(cls) -> str:
-        """Get the hook to register the language.
-
-        Returns:
-            The hook to register the language.
-        """
-        return f"""
- if ({str(_LANGUAGE)}) {{
-    (async () => {{
-      try {{
-        const module = await import(`react-syntax-highlighter/dist/cjs/languages/prism/${{{str(_LANGUAGE)}}}`);
-        SyntaxHighlighter.registerLanguage({str(_LANGUAGE)}, module.default);
-      }} catch (error) {{
-        console.error(`Error importing language module for ${{{str(_LANGUAGE)}}}:`, error);
-      }}
-    }})();
-  }}
-"""
-
-    @classmethod
-    def get_component_map_custom_code(cls) -> str:
-        """Get the custom code for the component.
-
-        Returns:
-            The custom code for the component.
-        """
-        return cls._get_language_registration_hook()
-
-    def add_hooks(self) -> list[str | Var]:
-        """Add hooks for the component.
-
-        Returns:
-            The hooks for the component.
-        """
-        return [
-            f"const {str(_LANGUAGE)} = {str(self.language)}",
-            self._get_language_registration_hook(),
-        ]
 
 
 class CodeblockNamespace(ComponentNamespace):

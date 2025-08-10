@@ -1,6 +1,11 @@
 """Custom Exceptions."""
 
-from typing import NoReturn
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    from reflex.vars import Var
 
 
 class ReflexError(Exception):
@@ -11,7 +16,7 @@ class ConfigError(ReflexError):
     """Custom exception for config related errors."""
 
 
-class InvalidStateManagerMode(ReflexError, ValueError):
+class InvalidStateManagerModeError(ReflexError, ValueError):
     """Raised when an invalid state manager mode is provided."""
 
 
@@ -29,6 +34,22 @@ class EnvVarValueError(ReflexError, ValueError):
 
 class ComponentTypeError(ReflexError, TypeError):
     """Custom TypeError for component related errors."""
+
+
+class ChildrenTypeError(ComponentTypeError):
+    """Raised when the children prop of a component is not a valid type."""
+
+    def __init__(self, component: str, child: Any):
+        """Initialize the exception.
+
+        Args:
+            component: The name of the component.
+            child: The child that caused the error.
+        """
+        super().__init__(
+            f"Component {component} received child {child} of type {type(child)}. "
+            "Accepted types are other components, state vars, or primitive Python types (dict excluded)."
+        )
 
 
 class EventHandlerTypeError(ReflexError, TypeError):
@@ -59,8 +80,78 @@ class VarAttributeError(ReflexError, AttributeError):
     """Custom AttributeError for var related errors."""
 
 
+class UntypedVarError(ReflexError, TypeError):
+    """Custom TypeError for untyped var errors."""
+
+    def __init__(self, var: Var, action: str, doc_link: str = ""):
+        """Create an UntypedVarError from a var.
+
+        Args:
+            var: The var.
+            action: The action that caused the error.
+            doc_link: The link to the documentation.
+        """
+        var_data = var._get_all_var_data()
+        is_state_var = (
+            var_data
+            and var_data.state
+            and var_data.field_name
+            and var_data.state + "." + var_data.field_name == str(var)
+        )
+        super().__init__(
+            f"Cannot {action} on untyped var '{var!s}' of type '{var._var_type!s}'."
+            + (
+                " Please add a type annotation to the var in the state class."
+                if is_state_var
+                else " You can call the var's .to(desired_type) method to convert it to the desired type."
+            )
+            + (f" See {doc_link}" if doc_link else "")
+        )
+
+
+class UntypedComputedVarError(ReflexError, TypeError):
+    """Custom TypeError for untyped computed var errors."""
+
+    def __init__(self, var_name: str):
+        """Initialize the UntypedComputedVarError.
+
+        Args:
+            var_name: The name of the computed var.
+        """
+        super().__init__(f"Computed var '{var_name}' must have a type annotation.")
+
+
+class ComputedVarSignatureError(ReflexError, TypeError):
+    """Custom TypeError for computed var signature errors."""
+
+    def __init__(self, var_name: str, signature: str):
+        """Initialize the ComputedVarSignatureError.
+
+        Args:
+            var_name: The name of the var.
+            signature: The invalid signature.
+        """
+        super().__init__(f"Computed var `{var_name}{signature}` cannot take arguments.")
+
+
+class MissingAnnotationError(ReflexError, TypeError):
+    """Custom TypeError for missing annotations."""
+
+    def __init__(self, var_name: str):
+        """Initialize the MissingAnnotationError.
+
+        Args:
+            var_name: The name of the var.
+        """
+        super().__init__(f"Var '{var_name}' must have a type annotation.")
+
+
 class UploadValueError(ReflexError, ValueError):
     """Custom ValueError for upload related errors."""
+
+
+class PageValueError(ReflexError, ValueError):
+    """Custom ValueError for page related errors."""
 
 
 class RouteValueError(ReflexError, ValueError):
@@ -91,43 +182,43 @@ class MatchTypeError(ReflexError, TypeError):
     """Raised when the return types of match cases are different."""
 
 
-class EventHandlerArgTypeMismatch(ReflexError, TypeError):
+class EventHandlerArgTypeMismatchError(ReflexError, TypeError):
     """Raised when the annotations of args accepted by an EventHandler differs from the spec of the event trigger."""
 
 
-class EventFnArgMismatch(ReflexError, TypeError):
+class EventFnArgMismatchError(ReflexError, TypeError):
     """Raised when the number of args required by an event handler is more than provided by the event trigger."""
 
 
-class DynamicRouteArgShadowsStateVar(ReflexError, NameError):
+class DynamicRouteArgShadowsStateVarError(ReflexError, NameError):
     """Raised when a dynamic route arg shadows a state var."""
 
 
-class ComputedVarShadowsStateVar(ReflexError, NameError):
+class ComputedVarShadowsStateVarError(ReflexError, NameError):
     """Raised when a computed var shadows a state var."""
 
 
-class ComputedVarShadowsBaseVars(ReflexError, NameError):
+class ComputedVarShadowsBaseVarsError(ReflexError, NameError):
     """Raised when a computed var shadows a base var."""
 
 
-class EventHandlerShadowsBuiltInStateMethod(ReflexError, NameError):
+class EventHandlerShadowsBuiltInStateMethodError(ReflexError, NameError):
     """Raised when an event handler shadows a built-in state method."""
 
 
-class GeneratedCodeHasNoFunctionDefs(ReflexError):
+class GeneratedCodeHasNoFunctionDefsError(ReflexError):
     """Raised when refactored code generated with flexgen has no functions defined."""
 
 
-class PrimitiveUnserializableToJSON(ReflexError, ValueError):
+class PrimitiveUnserializableToJSONError(ReflexError, ValueError):
     """Raised when a primitive type is unserializable to JSON. Usually with NaN and Infinity."""
 
 
-class InvalidLifespanTaskType(ReflexError, TypeError):
+class InvalidLifespanTaskTypeError(ReflexError, TypeError):
     """Raised when an invalid task type is registered as a lifespan task."""
 
 
-class DynamicComponentMissingLibrary(ReflexError, ValueError):
+class DynamicComponentMissingLibraryError(ReflexError, ValueError):
     """Raised when a dynamic component is missing a library."""
 
 
@@ -143,7 +234,7 @@ class EnvironmentVarValueError(ReflexError, ValueError):
     """Raised when an environment variable is set to an invalid value."""
 
 
-class DynamicComponentInvalidSignature(ReflexError, TypeError):
+class DynamicComponentInvalidSignatureError(ReflexError, TypeError):
     """Raised when a dynamic component has an invalid signature."""
 
 
@@ -151,23 +242,45 @@ class InvalidPropValueError(ReflexError):
     """Raised when a prop value is invalid."""
 
 
+class StateTooLargeError(ReflexError):
+    """Raised when the state is too large to be serialized."""
+
+
+class StateSerializationError(ReflexError):
+    """Raised when the state cannot be serialized."""
+
+
+class StateMismatchError(ReflexError, ValueError):
+    """Raised when the state retrieved does not match the expected state."""
+
+
 class SystemPackageMissingError(ReflexError):
     """Raised when a system package is missing."""
 
+    def __init__(self, package: str):
+        """Initialize the SystemPackageMissingError.
 
-def raise_system_package_missing_error(package: str) -> NoReturn:
-    """Raise a SystemPackageMissingError.
+        Args:
+            package: The missing package.
+        """
+        from reflex.constants import IS_MACOS
 
-    Args:
-        package: The name of the missing system package.
+        extra = (
+            f" You can do so by running 'brew install {package}'." if IS_MACOS else ""
+        )
+        super().__init__(
+            f"System package '{package}' is missing."
+            f" Please install it through your system package manager.{extra}"
+        )
 
-    Raises:
-        SystemPackageMissingError: The raised exception.
-    """
-    from reflex.constants import IS_MACOS
 
-    raise SystemPackageMissingError(
-        f"System package '{package}' is missing."
-        " Please install it through your system package manager."
-        + (f" You can do so by running 'brew install {package}'." if IS_MACOS else "")
-    )
+class EventDeserializationError(ReflexError, ValueError):
+    """Raised when an event cannot be deserialized."""
+
+
+class InvalidLockWarningThresholdError(ReflexError):
+    """Raised when an invalid lock warning threshold is provided."""
+
+
+class UnretrievableVarValueError(ReflexError):
+    """Raised when the value of a var is not retrievable."""

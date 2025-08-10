@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import pytest
+from pytest_mock import MockerFixture
 
 from reflex.app import App
 from reflex.middleware.hydrate_middleware import HydrateMiddleware
@@ -30,7 +31,7 @@ def hydrate_middleware() -> HydrateMiddleware:
 
 
 @pytest.mark.asyncio
-async def test_preprocess_no_events(hydrate_middleware, event1, mocker):
+async def test_preprocess_no_events(hydrate_middleware, event1, mocker: MockerFixture):
     """Test that app without on_load is processed correctly.
 
     Args:
@@ -41,7 +42,7 @@ async def test_preprocess_no_events(hydrate_middleware, event1, mocker):
     mocker.patch("reflex.state.State.class_subclasses", {TestState})
     state = State()
     update = await hydrate_middleware.preprocess(
-        app=App(state=State),
+        app=App(_state=State),
         event=event1,
         state=state,
     )

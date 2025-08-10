@@ -2,31 +2,21 @@
 
 from __future__ import annotations
 
+import collections.abc
 import dataclasses
+import decimal
 import inspect
 import json
 import re
-import sys
-import typing
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Dict,
-    List,
-    Literal,
-    NoReturn,
-    Set,
-    Tuple,
-    Type,
-    Union,
-    overload,
-)
+from collections.abc import Iterable, Mapping, Sequence
+from typing import TYPE_CHECKING, Any, Literal, TypeVar, get_args, overload
 
-from typing_extensions import TypeVar
+from typing_extensions import TypeVar as TypingExtensionsTypeVar
 
 from reflex import constants
 from reflex.constants.base import REFLEX_VAR_OPENING_TAG
 from reflex.constants.colors import Color
+from reflex.utils import types
 from reflex.utils.exceptions import VarTypeError
 from reflex.utils.types import GenericType, get_origin
 
@@ -54,729 +44,27 @@ from .number import (
 )
 
 if TYPE_CHECKING:
+    from .base import BASE_TYPE, DATACLASS_TYPE, SQLA_TYPE
+    from .function import FunctionVar
     from .object import ObjectVar
 
-STRING_TYPE = TypeVar("STRING_TYPE", default=str)
-
-
-class StringVar(Var[STRING_TYPE], python_types=str):
-    """Base class for immutable string vars."""
-
-    @overload
-    def __add__(self, other: StringVar | str) -> ConcatVarOperation: ...
-
-    @overload
-    def __add__(self, other: NoReturn) -> NoReturn: ...
-
-    def __add__(self, other: Any) -> ConcatVarOperation:
-        """Concatenate two strings.
-
-        Args:
-            other: The other string.
-
-        Returns:
-            The string concatenation operation.
-        """
-        if not isinstance(other, (StringVar, str)):
-            raise_unsupported_operand_types("+", (type(self), type(other)))
-
-        return ConcatVarOperation.create(self, other)
-
-    @overload
-    def __radd__(self, other: StringVar | str) -> ConcatVarOperation: ...
-
-    @overload
-    def __radd__(self, other: NoReturn) -> NoReturn: ...
-
-    def __radd__(self, other: Any) -> ConcatVarOperation:
-        """Concatenate two strings.
-
-        Args:
-            other: The other string.
-
-        Returns:
-            The string concatenation operation.
-        """
-        if not isinstance(other, (StringVar, str)):
-            raise_unsupported_operand_types("+", (type(other), type(self)))
-
-        return ConcatVarOperation.create(other, self)
-
-    @overload
-    def __mul__(self, other: NumberVar | int) -> StringVar: ...
-
-    @overload
-    def __mul__(self, other: NoReturn) -> NoReturn: ...
-
-    def __mul__(self, other: Any) -> StringVar:
-        """Multiply the sequence by a number or an integer.
-
-        Args:
-            other: The number or integer to multiply the sequence by.
-
-        Returns:
-            StringVar: The resulting sequence after multiplication.
-        """
-        if not isinstance(other, (NumberVar, int)):
-            raise_unsupported_operand_types("*", (type(self), type(other)))
-
-        return (self.split() * other).join()
-
-    @overload
-    def __rmul__(self, other: NumberVar | int) -> StringVar: ...
-
-    @overload
-    def __rmul__(self, other: NoReturn) -> NoReturn: ...
-
-    def __rmul__(self, other: Any) -> StringVar:
-        """Multiply the sequence by a number or an integer.
-
-        Args:
-            other: The number or integer to multiply the sequence by.
-
-        Returns:
-            StringVar: The resulting sequence after multiplication.
-        """
-        if not isinstance(other, (NumberVar, int)):
-            raise_unsupported_operand_types("*", (type(other), type(self)))
-
-        return (self.split() * other).join()
-
-    @overload
-    def __getitem__(self, i: slice) -> StringVar: ...
-
-    @overload
-    def __getitem__(self, i: int | NumberVar) -> StringVar: ...
-
-    def __getitem__(self, i: Any) -> StringVar:
-        """Get a slice of the string.
-
-        Args:
-            i: The slice.
-
-        Returns:
-            The string slice operation.
-        """
-        if isinstance(i, slice):
-            return self.split()[i].join()
-        if not isinstance(i, (int, NumberVar)) or (
-            isinstance(i, NumberVar) and i._is_strict_float()
-        ):
-            raise_unsupported_operand_types("[]", (type(self), type(i)))
-        return string_item_operation(self, i)
-
-    def length(self) -> NumberVar:
-        """Get the length of the string.
-
-        Returns:
-            The string length operation.
-        """
-        return self.split().length()
-
-    def lower(self) -> StringVar:
-        """Convert the string to lowercase.
-
-        Returns:
-            The string lower operation.
-        """
-        return string_lower_operation(self)
-
-    def upper(self) -> StringVar:
-        """Convert the string to uppercase.
-
-        Returns:
-            The string upper operation.
-        """
-        return string_upper_operation(self)
-
-    def strip(self) -> StringVar:
-        """Strip the string.
-
-        Returns:
-            The string strip operation.
-        """
-        return string_strip_operation(self)
-
-    def reversed(self) -> StringVar:
-        """Reverse the string.
-
-        Returns:
-            The string reverse operation.
-        """
-        return self.split().reverse().join()
-
-    @overload
-    def contains(
-        self, other: StringVar | str, field: StringVar | str | None = None
-    ) -> BooleanVar: ...
-
-    @overload
-    def contains(
-        self, other: NoReturn, field: StringVar | str | None = None
-    ) -> NoReturn: ...
-
-    def contains(self, other: Any, field: Any = None) -> BooleanVar:
-        """Check if the string contains another string.
-
-        Args:
-            other: The other string.
-            field: The field to check.
-
-        Returns:
-            The string contains operation.
-        """
-        if not isinstance(other, (StringVar, str)):
-            raise_unsupported_operand_types("contains", (type(self), type(other)))
-        if field is not None:
-            if not isinstance(field, (StringVar, str)):
-                raise_unsupported_operand_types("contains", (type(self), type(field)))
-            return string_contains_field_operation(self, other, field)
-        return string_contains_operation(self, other)
-
-    @overload
-    def split(self, separator: StringVar | str = "") -> ArrayVar[List[str]]: ...
-
-    @overload
-    def split(self, separator: NoReturn) -> NoReturn: ...
-
-    def split(self, separator: Any = "") -> ArrayVar[List[str]]:
-        """Split the string.
-
-        Args:
-            separator: The separator.
-
-        Returns:
-            The string split operation.
-        """
-        if not isinstance(separator, (StringVar, str)):
-            raise_unsupported_operand_types("split", (type(self), type(separator)))
-        return string_split_operation(self, separator)
-
-    @overload
-    def startswith(self, prefix: StringVar | str) -> BooleanVar: ...
-
-    @overload
-    def startswith(self, prefix: NoReturn) -> NoReturn: ...
-
-    def startswith(self, prefix: Any) -> BooleanVar:
-        """Check if the string starts with a prefix.
-
-        Args:
-            prefix: The prefix.
-
-        Returns:
-            The string starts with operation.
-        """
-        if not isinstance(prefix, (StringVar, str)):
-            raise_unsupported_operand_types("startswith", (type(self), type(prefix)))
-        return string_starts_with_operation(self, prefix)
-
-    @overload
-    def __lt__(self, other: StringVar | str) -> BooleanVar: ...
-
-    @overload
-    def __lt__(self, other: NoReturn) -> NoReturn: ...
-
-    def __lt__(self, other: Any):
-        """Check if the string is less than another string.
-
-        Args:
-            other: The other string.
-
-        Returns:
-            The string less than operation.
-        """
-        if not isinstance(other, (StringVar, str)):
-            raise_unsupported_operand_types("<", (type(self), type(other)))
-
-        return string_lt_operation(self, other)
-
-    @overload
-    def __gt__(self, other: StringVar | str) -> BooleanVar: ...
-
-    @overload
-    def __gt__(self, other: NoReturn) -> NoReturn: ...
-
-    def __gt__(self, other: Any):
-        """Check if the string is greater than another string.
-
-        Args:
-            other: The other string.
-
-        Returns:
-            The string greater than operation.
-        """
-        if not isinstance(other, (StringVar, str)):
-            raise_unsupported_operand_types(">", (type(self), type(other)))
-
-        return string_gt_operation(self, other)
-
-    @overload
-    def __le__(self, other: StringVar | str) -> BooleanVar: ...
-
-    @overload
-    def __le__(self, other: NoReturn) -> NoReturn: ...
-
-    def __le__(self, other: Any):
-        """Check if the string is less than or equal to another string.
-
-        Args:
-            other: The other string.
-
-        Returns:
-            The string less than or equal operation.
-        """
-        if not isinstance(other, (StringVar, str)):
-            raise_unsupported_operand_types("<=", (type(self), type(other)))
-
-        return string_le_operation(self, other)
-
-    @overload
-    def __ge__(self, other: StringVar | str) -> BooleanVar: ...
-
-    @overload
-    def __ge__(self, other: NoReturn) -> NoReturn: ...
-
-    def __ge__(self, other: Any):
-        """Check if the string is greater than or equal to another string.
-
-        Args:
-            other: The other string.
-
-        Returns:
-            The string greater than or equal operation.
-        """
-        if not isinstance(other, (StringVar, str)):
-            raise_unsupported_operand_types(">=", (type(self), type(other)))
-
-        return string_ge_operation(self, other)
-
-
-@var_operation
-def string_lt_operation(lhs: StringVar[Any] | str, rhs: StringVar[Any] | str):
-    """Check if a string is less than another string.
-
-    Args:
-        lhs: The left-hand side string.
-        rhs: The right-hand side string.
-
-    Returns:
-        The string less than operation.
-    """
-    return var_operation_return(js_expression=f"{lhs} < {rhs}", var_type=bool)
-
-
-@var_operation
-def string_gt_operation(lhs: StringVar[Any] | str, rhs: StringVar[Any] | str):
-    """Check if a string is greater than another string.
-
-    Args:
-        lhs: The left-hand side string.
-        rhs: The right-hand side string.
-
-    Returns:
-        The string greater than operation.
-    """
-    return var_operation_return(js_expression=f"{lhs} > {rhs}", var_type=bool)
-
-
-@var_operation
-def string_le_operation(lhs: StringVar[Any] | str, rhs: StringVar[Any] | str):
-    """Check if a string is less than or equal to another string.
-
-    Args:
-        lhs: The left-hand side string.
-        rhs: The right-hand side string.
-
-    Returns:
-        The string less than or equal operation.
-    """
-    return var_operation_return(js_expression=f"{lhs} <= {rhs}", var_type=bool)
-
-
-@var_operation
-def string_ge_operation(lhs: StringVar[Any] | str, rhs: StringVar[Any] | str):
-    """Check if a string is greater than or equal to another string.
-
-    Args:
-        lhs: The left-hand side string.
-        rhs: The right-hand side string.
-
-    Returns:
-        The string greater than or equal operation.
-    """
-    return var_operation_return(js_expression=f"{lhs} >= {rhs}", var_type=bool)
-
-
-@var_operation
-def string_lower_operation(string: StringVar[Any]):
-    """Convert a string to lowercase.
-
-    Args:
-        string: The string to convert.
-
-    Returns:
-        The lowercase string.
-    """
-    return var_operation_return(js_expression=f"{string}.toLowerCase()", var_type=str)
-
-
-@var_operation
-def string_upper_operation(string: StringVar[Any]):
-    """Convert a string to uppercase.
-
-    Args:
-        string: The string to convert.
-
-    Returns:
-        The uppercase string.
-    """
-    return var_operation_return(js_expression=f"{string}.toUpperCase()", var_type=str)
-
-
-@var_operation
-def string_strip_operation(string: StringVar[Any]):
-    """Strip a string.
-
-    Args:
-        string: The string to strip.
-
-    Returns:
-        The stripped string.
-    """
-    return var_operation_return(js_expression=f"{string}.trim()", var_type=str)
-
-
-@var_operation
-def string_contains_field_operation(
-    haystack: StringVar[Any], needle: StringVar[Any] | str, field: StringVar[Any] | str
-):
-    """Check if a string contains another string.
-
-    Args:
-        haystack: The haystack.
-        needle: The needle.
-        field: The field to check.
-
-    Returns:
-        The string contains operation.
-    """
-    return var_operation_return(
-        js_expression=f"{haystack}.some(obj => obj[{field}] === {needle})",
-        var_type=bool,
-    )
-
-
-@var_operation
-def string_contains_operation(haystack: StringVar[Any], needle: StringVar[Any] | str):
-    """Check if a string contains another string.
-
-    Args:
-        haystack: The haystack.
-        needle: The needle.
-
-    Returns:
-        The string contains operation.
-    """
-    return var_operation_return(
-        js_expression=f"{haystack}.includes({needle})", var_type=bool
-    )
-
-
-@var_operation
-def string_starts_with_operation(
-    full_string: StringVar[Any], prefix: StringVar[Any] | str
-):
-    """Check if a string starts with a prefix.
-
-    Args:
-        full_string: The full string.
-        prefix: The prefix.
-
-    Returns:
-        Whether the string starts with the prefix.
-    """
-    return var_operation_return(
-        js_expression=f"{full_string}.startsWith({prefix})", var_type=bool
-    )
-
-
-@var_operation
-def string_item_operation(string: StringVar[Any], index: NumberVar | int):
-    """Get an item from a string.
-
-    Args:
-        string: The string.
-        index: The index of the item.
-
-    Returns:
-        The item from the string.
-    """
-    return var_operation_return(js_expression=f"{string}.at({index})", var_type=str)
-
-
-@var_operation
-def array_join_operation(array: ArrayVar, sep: StringVar[Any] | str = ""):
-    """Join the elements of an array.
-
-    Args:
-        array: The array.
-        sep: The separator.
-
-    Returns:
-        The joined elements.
-    """
-    return var_operation_return(js_expression=f"{array}.join({sep})", var_type=str)
-
-
-@var_operation
-def string_replace_operation(
-    string: StringVar, search_value: StringVar | str, new_value: StringVar | str
-):
-    """Replace a string with a value.
-
-    Args:
-        string: The string.
-        search_value: The string to search.
-        new_value: The value to be replaced with.
-
-    Returns:
-        The string replace operation.
-    """
-    return var_operation_return(
-        js_expression=f"{string}.replace({search_value}, {new_value})",
-        var_type=str,
-    )
-
-
-# Compile regex for finding reflex var tags.
-_decode_var_pattern_re = (
-    rf"{constants.REFLEX_VAR_OPENING_TAG}(.*?){constants.REFLEX_VAR_CLOSING_TAG}"
-)
-_decode_var_pattern = re.compile(_decode_var_pattern_re, flags=re.DOTALL)
-
-
-@dataclasses.dataclass(
-    eq=False,
-    frozen=True,
-    **{"slots": True} if sys.version_info >= (3, 10) else {},
-)
-class LiteralStringVar(LiteralVar, StringVar[str]):
-    """Base class for immutable literal string vars."""
-
-    _var_value: str = dataclasses.field(default="")
-
-    @classmethod
-    def create(
-        cls,
-        value: str,
-        _var_type: GenericType | None = None,
-        _var_data: VarData | None = None,
-    ) -> StringVar:
-        """Create a var from a string value.
-
-        Args:
-            value: The value to create the var from.
-            _var_type: The type of the var.
-            _var_data: Additional hooks and imports associated with the Var.
-
-        Returns:
-            The var.
-        """
-        # Determine var type in case the value is inherited from str.
-        _var_type = _var_type or type(value) or str
-
-        if REFLEX_VAR_OPENING_TAG in value:
-            strings_and_vals: list[Var | str] = []
-            offset = 0
-
-            # Find all tags
-            while m := _decode_var_pattern.search(value):
-                start, end = m.span()
-
-                strings_and_vals.append(value[:start])
-
-                serialized_data = m.group(1)
-
-                if serialized_data.isnumeric() or (
-                    serialized_data[0] == "-" and serialized_data[1:].isnumeric()
-                ):
-                    # This is a global immutable var.
-                    var = _global_vars[int(serialized_data)]
-                    strings_and_vals.append(var)
-                    value = value[(end + len(var._js_expr)) :]
-
-                offset += end - start
-
-            strings_and_vals.append(value)
-
-            filtered_strings_and_vals = [
-                s for s in strings_and_vals if isinstance(s, Var) or s
-            ]
-            if len(filtered_strings_and_vals) == 1:
-                only_string = filtered_strings_and_vals[0]
-                if isinstance(only_string, str):
-                    return LiteralVar.create(only_string).to(StringVar, _var_type)
-                else:
-                    return only_string.to(StringVar, only_string._var_type)
-
-            if len(
-                literal_strings := [
-                    s
-                    for s in filtered_strings_and_vals
-                    if isinstance(s, (str, LiteralStringVar))
-                ]
-            ) == len(filtered_strings_and_vals):
-                return LiteralStringVar.create(
-                    "".join(
-                        s._var_value if isinstance(s, LiteralStringVar) else s
-                        for s in literal_strings
-                    ),
-                    _var_type=_var_type,
-                    _var_data=VarData.merge(
-                        _var_data,
-                        *(
-                            s._get_all_var_data()
-                            for s in filtered_strings_and_vals
-                            if isinstance(s, Var)
-                        ),
-                    ),
-                )
-
-            concat_result = ConcatVarOperation.create(
-                *filtered_strings_and_vals,
-                _var_data=_var_data,
-            )
-
-            return (
-                concat_result
-                if _var_type is str
-                else concat_result.to(StringVar, _var_type)
-            )
-
-        return LiteralStringVar(
-            _js_expr=json.dumps(value),
-            _var_type=_var_type,
-            _var_data=_var_data,
-            _var_value=value,
-        )
-
-    def __hash__(self) -> int:
-        """Get the hash of the var.
-
-        Returns:
-            The hash of the var.
-        """
-        return hash((self.__class__.__name__, self._var_value))
-
-    def json(self) -> str:
-        """Get the JSON representation of the var.
-
-        Returns:
-            The JSON representation of the var.
-        """
-        return json.dumps(self._var_value)
-
-
-@dataclasses.dataclass(
-    eq=False,
-    frozen=True,
-    **{"slots": True} if sys.version_info >= (3, 10) else {},
-)
-class ConcatVarOperation(CachedVarOperation, StringVar[str]):
-    """Representing a concatenation of literal string vars."""
-
-    _var_value: Tuple[Var, ...] = dataclasses.field(default_factory=tuple)
-
-    @cached_property_no_lock
-    def _cached_var_name(self) -> str:
-        """The name of the var.
-
-        Returns:
-            The name of the var.
-        """
-        list_of_strs: List[Union[str, Var]] = []
-        last_string = ""
-        for var in self._var_value:
-            if isinstance(var, LiteralStringVar):
-                last_string += var._var_value
-            else:
-                if last_string:
-                    list_of_strs.append(last_string)
-                    last_string = ""
-                list_of_strs.append(var)
-
-        if last_string:
-            list_of_strs.append(last_string)
-
-        list_of_strs_filtered = [
-            str(LiteralVar.create(s)) for s in list_of_strs if isinstance(s, Var) or s
-        ]
-
-        if len(list_of_strs_filtered) == 1:
-            return list_of_strs_filtered[0]
-
-        return "(" + "+".join(list_of_strs_filtered) + ")"
-
-    @cached_property_no_lock
-    def _cached_get_all_var_data(self) -> VarData | None:
-        """Get all the VarData asVarDatae Var.
-
-        Returns:
-            The VarData associated with the Var.
-        """
-        return VarData.merge(
-            *[
-                var._get_all_var_data()
-                for var in self._var_value
-                if isinstance(var, Var)
-            ],
-            self._var_data,
-        )
-
-    @classmethod
-    def create(
-        cls,
-        *value: Var | str,
-        _var_data: VarData | None = None,
-    ) -> ConcatVarOperation:
-        """Create a var from a string value.
-
-        Args:
-            value: The values to concatenate.
-            _var_data: Additional hooks and imports associated with the Var.
-
-        Returns:
-            The var.
-        """
-        return cls(
-            _js_expr="",
-            _var_type=str,
-            _var_data=_var_data,
-            _var_value=tuple(map(LiteralVar.create, value)),
-        )
-
-
-ARRAY_VAR_TYPE = TypeVar("ARRAY_VAR_TYPE", bound=Union[List, Tuple, Set])
+ARRAY_VAR_TYPE = TypeVar("ARRAY_VAR_TYPE", bound=Sequence, covariant=True)
+OTHER_ARRAY_VAR_TYPE = TypeVar("OTHER_ARRAY_VAR_TYPE", bound=Sequence, covariant=True)
+MAPPING_VAR_TYPE = TypeVar("MAPPING_VAR_TYPE", bound=Mapping, covariant=True)
 
 OTHER_TUPLE = TypeVar("OTHER_TUPLE")
 
 INNER_ARRAY_VAR = TypeVar("INNER_ARRAY_VAR")
 
+
 KEY_TYPE = TypeVar("KEY_TYPE")
 VALUE_TYPE = TypeVar("VALUE_TYPE")
 
 
-class ArrayVar(Var[ARRAY_VAR_TYPE], python_types=(list, tuple, set)):
+class ArrayVar(Var[ARRAY_VAR_TYPE], python_types=(Sequence, set)):
     """Base class for immutable array vars."""
 
-    @overload
-    def join(self, sep: StringVar | str = "") -> StringVar: ...
-
-    @overload
-    def join(self, sep: NoReturn) -> NoReturn: ...
-
-    def join(self, sep: Any = "") -> StringVar:
+    def join(self, sep: StringVar | str = "") -> StringVar:
         """Join the elements of the array.
 
         Args:
@@ -817,13 +105,7 @@ class ArrayVar(Var[ARRAY_VAR_TYPE], python_types=(list, tuple, set)):
         """
         return array_reverse_operation(self)
 
-    @overload
-    def __add__(self, other: ArrayVar[ARRAY_VAR_TYPE]) -> ArrayVar[ARRAY_VAR_TYPE]: ...
-
-    @overload
-    def __add__(self, other: NoReturn) -> NoReturn: ...
-
-    def __add__(self, other: Any) -> ArrayVar[ARRAY_VAR_TYPE]:
+    def __add__(self, other: ArrayVar[ARRAY_VAR_TYPE]) -> ArrayVar[ARRAY_VAR_TYPE]:
         """Concatenate two arrays.
 
         Parameters:
@@ -843,92 +125,90 @@ class ArrayVar(Var[ARRAY_VAR_TYPE], python_types=(list, tuple, set)):
     @overload
     def __getitem__(
         self: (
-            ArrayVar[Tuple[int, OTHER_TUPLE]]
-            | ArrayVar[Tuple[float, OTHER_TUPLE]]
-            | ArrayVar[Tuple[int | float, OTHER_TUPLE]]
+            ArrayVar[tuple[int, OTHER_TUPLE]]
+            | ArrayVar[tuple[float, OTHER_TUPLE]]
+            | ArrayVar[tuple[int | float, OTHER_TUPLE]]
         ),
         i: Literal[0, -2],
     ) -> NumberVar: ...
 
     @overload
     def __getitem__(
+        self: ArrayVar[tuple[Any, bool]], i: Literal[1, -1]
+    ) -> BooleanVar: ...
+
+    @overload
+    def __getitem__(
         self: (
-            ArrayVar[Tuple[Any, int]]
-            | ArrayVar[Tuple[Any, float]]
-            | ArrayVar[Tuple[Any, int | float]]
+            ArrayVar[tuple[Any, int]]
+            | ArrayVar[tuple[Any, float]]
+            | ArrayVar[tuple[Any, int | float]]
         ),
         i: Literal[1, -1],
     ) -> NumberVar: ...
 
     @overload
-    def __getitem__(
-        self: ArrayVar[Tuple[str, Any]], i: Literal[0, -2]
+    def __getitem__(  # pyright: ignore [reportOverlappingOverload]
+        self: ArrayVar[tuple[str, Any]], i: Literal[0, -2]
     ) -> StringVar: ...
 
     @overload
     def __getitem__(
-        self: ArrayVar[Tuple[Any, str]], i: Literal[1, -1]
+        self: ArrayVar[tuple[Any, str]], i: Literal[1, -1]
     ) -> StringVar: ...
 
     @overload
     def __getitem__(
-        self: ArrayVar[Tuple[bool, Any]], i: Literal[0, -2]
+        self: ArrayVar[tuple[bool, Any]], i: Literal[0, -2]
     ) -> BooleanVar: ...
 
     @overload
     def __getitem__(
-        self: ArrayVar[Tuple[Any, bool]], i: Literal[1, -1]
+        self: ArrayVar[Sequence[bool]], i: int | NumberVar
     ) -> BooleanVar: ...
 
     @overload
     def __getitem__(
         self: (
-            ARRAY_VAR_OF_LIST_ELEMENT[int]
-            | ARRAY_VAR_OF_LIST_ELEMENT[float]
-            | ARRAY_VAR_OF_LIST_ELEMENT[int | float]
+            ArrayVar[Sequence[int]]
+            | ArrayVar[Sequence[float]]
+            | ArrayVar[Sequence[int | float]]
         ),
         i: int | NumberVar,
     ) -> NumberVar: ...
 
     @overload
-    def __getitem__(
-        self: ARRAY_VAR_OF_LIST_ELEMENT[str], i: int | NumberVar
-    ) -> StringVar: ...
+    def __getitem__(self: ArrayVar[Sequence[str]], i: int | NumberVar) -> StringVar: ...
 
     @overload
     def __getitem__(
-        self: ARRAY_VAR_OF_LIST_ELEMENT[bool], i: int | NumberVar
-    ) -> BooleanVar: ...
-
-    @overload
-    def __getitem__(
-        self: ARRAY_VAR_OF_LIST_ELEMENT[List[INNER_ARRAY_VAR]],
+        self: ArrayVar[Sequence[OTHER_ARRAY_VAR_TYPE]],
         i: int | NumberVar,
-    ) -> ArrayVar[List[INNER_ARRAY_VAR]]: ...
+    ) -> ArrayVar[OTHER_ARRAY_VAR_TYPE]: ...
 
     @overload
     def __getitem__(
-        self: ARRAY_VAR_OF_LIST_ELEMENT[Set[INNER_ARRAY_VAR]],
+        self: ArrayVar[Sequence[MAPPING_VAR_TYPE]],
         i: int | NumberVar,
-    ) -> ArrayVar[Set[INNER_ARRAY_VAR]]: ...
+    ) -> ObjectVar[MAPPING_VAR_TYPE]: ...
 
     @overload
     def __getitem__(
-        self: ARRAY_VAR_OF_LIST_ELEMENT[Tuple[KEY_TYPE, VALUE_TYPE]],
+        self: ArrayVar[Sequence[BASE_TYPE]],
         i: int | NumberVar,
-    ) -> ArrayVar[Tuple[KEY_TYPE, VALUE_TYPE]]: ...
+    ) -> ObjectVar[BASE_TYPE]: ...
 
     @overload
     def __getitem__(
-        self: ARRAY_VAR_OF_LIST_ELEMENT[Tuple[INNER_ARRAY_VAR, ...]],
+        self: ArrayVar[Sequence[SQLA_TYPE]],
         i: int | NumberVar,
-    ) -> ArrayVar[Tuple[INNER_ARRAY_VAR, ...]]: ...
+    ) -> ObjectVar[SQLA_TYPE]: ...
 
     @overload
     def __getitem__(
-        self: ARRAY_VAR_OF_LIST_ELEMENT[Dict[KEY_TYPE, VALUE_TYPE]],
+        self: ArrayVar[Sequence[DATACLASS_TYPE]],
         i: int | NumberVar,
-    ) -> ObjectVar[Dict[KEY_TYPE, VALUE_TYPE]]: ...
+    ) -> ObjectVar[DATACLASS_TYPE]: ...
 
     @overload
     def __getitem__(self, i: int | NumberVar) -> Var: ...
@@ -950,7 +230,7 @@ class ArrayVar(Var[ARRAY_VAR_TYPE], python_types=(list, tuple, set)):
             raise_unsupported_operand_types("[]", (type(self), type(i)))
         return array_item_operation(self, i)
 
-    def length(self) -> NumberVar:
+    def length(self) -> NumberVar[int]:
         """Get the length of the array.
 
         Returns:
@@ -960,7 +240,7 @@ class ArrayVar(Var[ARRAY_VAR_TYPE], python_types=(list, tuple, set)):
 
     @overload
     @classmethod
-    def range(cls, stop: int | NumberVar, /) -> ArrayVar[List[int]]: ...
+    def range(cls, stop: int | NumberVar, /) -> ArrayVar[list[int]]: ...
 
     @overload
     @classmethod
@@ -970,7 +250,7 @@ class ArrayVar(Var[ARRAY_VAR_TYPE], python_types=(list, tuple, set)):
         end: int | NumberVar,
         step: int | NumberVar = 1,
         /,
-    ) -> ArrayVar[List[int]]: ...
+    ) -> ArrayVar[list[int]]: ...
 
     @overload
     @classmethod
@@ -979,7 +259,7 @@ class ArrayVar(Var[ARRAY_VAR_TYPE], python_types=(list, tuple, set)):
         first_endpoint: int | NumberVar,
         second_endpoint: int | NumberVar | None = None,
         step: int | NumberVar | None = None,
-    ) -> ArrayVar[List[int]]: ...
+    ) -> ArrayVar[list[int]]: ...
 
     @classmethod
     def range(
@@ -987,7 +267,7 @@ class ArrayVar(Var[ARRAY_VAR_TYPE], python_types=(list, tuple, set)):
         first_endpoint: int | NumberVar,
         second_endpoint: int | NumberVar | None = None,
         step: int | NumberVar | None = None,
-    ) -> ArrayVar[List[int]]:
+    ) -> ArrayVar[list[int]]:
         """Create a range of numbers.
 
         Args:
@@ -1048,13 +328,7 @@ class ArrayVar(Var[ARRAY_VAR_TYPE], python_types=(list, tuple, set)):
         """
         return array_pluck_operation(self, field)
 
-    @overload
-    def __mul__(self, other: NumberVar | int) -> ArrayVar[ARRAY_VAR_TYPE]: ...
-
-    @overload
-    def __mul__(self, other: NoReturn) -> NoReturn: ...
-
-    def __mul__(self, other: Any) -> ArrayVar[ARRAY_VAR_TYPE]:
+    def __mul__(self, other: NumberVar | int) -> ArrayVar[ARRAY_VAR_TYPE]:
         """Multiply the sequence by a number or integer.
 
         Parameters:
@@ -1070,7 +344,7 @@ class ArrayVar(Var[ARRAY_VAR_TYPE], python_types=(list, tuple, set)):
 
         return repeat_array_operation(self, other)
 
-    __rmul__ = __mul__  # type: ignore
+    __rmul__ = __mul__
 
     @overload
     def __lt__(self, other: ArrayVar[ARRAY_VAR_TYPE]) -> BooleanVar: ...
@@ -1171,13 +445,12 @@ class ArrayVar(Var[ARRAY_VAR_TYPE], python_types=(list, tuple, set)):
         # get the number of arguments of the function
         num_args = len(inspect.signature(fn).parameters)
         if num_args > 1:
-            raise VarTypeError(
-                "The function passed to foreach should take at most one argument."
-            )
+            msg = "The function passed to foreach should take at most one argument."
+            raise VarTypeError(msg)
 
         if num_args == 0:
             return_value = fn()
-            function_var = ArgsFunctionOperation.create(tuple(), return_value)
+            function_var = ArgsFunctionOperation.create((), return_value)
         else:
             # generic number var
             number_var = Var("").to(NumberVar, int)
@@ -1200,28 +473,15 @@ class ArrayVar(Var[ARRAY_VAR_TYPE], python_types=(list, tuple, set)):
         return map_array_operation(self, function_var)
 
 
-LIST_ELEMENT = TypeVar("LIST_ELEMENT")
-
-ARRAY_VAR_OF_LIST_ELEMENT = Union[
-    ArrayVar[List[LIST_ELEMENT]],
-    ArrayVar[Set[LIST_ELEMENT]],
-    ArrayVar[Tuple[LIST_ELEMENT, ...]],
-]
-
-
 @dataclasses.dataclass(
     eq=False,
     frozen=True,
-    **{"slots": True} if sys.version_info >= (3, 10) else {},
+    slots=True,
 )
 class LiteralArrayVar(CachedVarOperation, LiteralVar, ArrayVar[ARRAY_VAR_TYPE]):
     """Base class for immutable literal array vars."""
 
-    _var_value: Union[
-        List[Union[Var, Any]],
-        Set[Union[Var, Any]],
-        Tuple[Union[Var, Any], ...],
-    ] = dataclasses.field(default_factory=list)
+    _var_value: Sequence[Var | Any] = dataclasses.field(default=())
 
     @cached_property_no_lock
     def _cached_var_name(self) -> str:
@@ -1266,26 +526,807 @@ class LiteralArrayVar(CachedVarOperation, LiteralVar, ArrayVar[ARRAY_VAR_TYPE]):
 
         Returns:
             The JSON representation of the var.
+
+        Raises:
+            TypeError: If the array elements are not of type LiteralVar.
         """
-        return (
-            "["
-            + ", ".join(
-                [LiteralVar.create(element).json() for element in self._var_value]
+        elements = []
+        for element in self._var_value:
+            element_var = LiteralVar.create(element)
+            if not isinstance(element_var, LiteralVar):
+                msg = f"Array elements must be of type LiteralVar, not {type(element_var)}"
+                raise TypeError(msg)
+            elements.append(element_var.json())
+
+        return "[" + ", ".join(elements) + "]"
+
+    @classmethod
+    def create(
+        cls,
+        value: OTHER_ARRAY_VAR_TYPE,
+        _var_type: type[OTHER_ARRAY_VAR_TYPE] | None = None,
+        _var_data: VarData | None = None,
+    ) -> LiteralArrayVar[OTHER_ARRAY_VAR_TYPE]:
+        """Create a var from a string value.
+
+        Args:
+            value: The value to create the var from.
+            _var_type: The type of the var.
+            _var_data: Additional hooks and imports associated with the Var.
+
+        Returns:
+            The var.
+        """
+        return LiteralArrayVar(
+            _js_expr="",
+            _var_type=figure_out_type(value) if _var_type is None else _var_type,
+            _var_data=_var_data,
+            _var_value=value,
+        )
+
+
+STRING_TYPE = TypingExtensionsTypeVar("STRING_TYPE", default=str)
+
+
+class StringVar(Var[STRING_TYPE], python_types=str):
+    """Base class for immutable string vars."""
+
+    def __add__(self, other: StringVar | str) -> ConcatVarOperation:
+        """Concatenate two strings.
+
+        Args:
+            other: The other string.
+
+        Returns:
+            The string concatenation operation.
+        """
+        if not isinstance(other, (StringVar, str)):
+            raise_unsupported_operand_types("+", (type(self), type(other)))
+
+        return ConcatVarOperation.create(self, other)
+
+    def __radd__(self, other: StringVar | str) -> ConcatVarOperation:
+        """Concatenate two strings.
+
+        Args:
+            other: The other string.
+
+        Returns:
+            The string concatenation operation.
+        """
+        if not isinstance(other, (StringVar, str)):
+            raise_unsupported_operand_types("+", (type(other), type(self)))
+
+        return ConcatVarOperation.create(other, self)
+
+    def __mul__(self, other: NumberVar | int) -> StringVar:
+        """Multiply the sequence by a number or an integer.
+
+        Args:
+            other: The number or integer to multiply the sequence by.
+
+        Returns:
+            StringVar: The resulting sequence after multiplication.
+        """
+        if not isinstance(other, (NumberVar, int)):
+            raise_unsupported_operand_types("*", (type(self), type(other)))
+
+        return (self.split() * other).join()
+
+    def __rmul__(self, other: NumberVar | int) -> StringVar:
+        """Multiply the sequence by a number or an integer.
+
+        Args:
+            other: The number or integer to multiply the sequence by.
+
+        Returns:
+            StringVar: The resulting sequence after multiplication.
+        """
+        if not isinstance(other, (NumberVar, int)):
+            raise_unsupported_operand_types("*", (type(other), type(self)))
+
+        return (self.split() * other).join()
+
+    @overload
+    def __getitem__(self, i: slice) -> StringVar: ...
+
+    @overload
+    def __getitem__(self, i: int | NumberVar) -> StringVar: ...
+
+    def __getitem__(self, i: Any) -> StringVar:
+        """Get a slice of the string.
+
+        Args:
+            i: The slice.
+
+        Returns:
+            The string slice operation.
+        """
+        if isinstance(i, slice):
+            return self.split()[i].join()
+        if not isinstance(i, (int, NumberVar)) or (
+            isinstance(i, NumberVar) and i._is_strict_float()
+        ):
+            raise_unsupported_operand_types("[]", (type(self), type(i)))
+        return string_item_operation(self, i)
+
+    def length(self) -> NumberVar:
+        """Get the length of the string.
+
+        Returns:
+            The string length operation.
+        """
+        return self.split().length()
+
+    def lower(self) -> StringVar:
+        """Convert the string to lowercase.
+
+        Returns:
+            The string lower operation.
+        """
+        return string_lower_operation(self)
+
+    def upper(self) -> StringVar:
+        """Convert the string to uppercase.
+
+        Returns:
+            The string upper operation.
+        """
+        return string_upper_operation(self)
+
+    def title(self) -> StringVar:
+        """Convert the string to title case.
+
+        Returns:
+            The string title operation.
+        """
+        return string_title_operation(self)
+
+    def capitalize(self) -> StringVar:
+        """Capitalize the string.
+
+        Returns:
+            The string capitalize operation.
+        """
+        return string_capitalize_operation(self)
+
+    def strip(self) -> StringVar:
+        """Strip the string.
+
+        Returns:
+            The string strip operation.
+        """
+        return string_strip_operation(self)
+
+    def reversed(self) -> StringVar:
+        """Reverse the string.
+
+        Returns:
+            The string reverse operation.
+        """
+        return self.split().reverse().join()
+
+    def contains(
+        self, other: StringVar | str, field: StringVar | str | None = None
+    ) -> BooleanVar:
+        """Check if the string contains another string.
+
+        Args:
+            other: The other string.
+            field: The field to check.
+
+        Returns:
+            The string contains operation.
+        """
+        if not isinstance(other, (StringVar, str)):
+            raise_unsupported_operand_types("contains", (type(self), type(other)))
+        if field is not None:
+            if not isinstance(field, (StringVar, str)):
+                raise_unsupported_operand_types("contains", (type(self), type(field)))
+            return string_contains_field_operation(self, other, field)
+        return string_contains_operation(self, other)
+
+    def split(self, separator: StringVar | str = "") -> ArrayVar[list[str]]:
+        """Split the string.
+
+        Args:
+            separator: The separator.
+
+        Returns:
+            The string split operation.
+        """
+        if not isinstance(separator, (StringVar, str)):
+            raise_unsupported_operand_types("split", (type(self), type(separator)))
+        return string_split_operation(self, separator)
+
+    def startswith(self, prefix: StringVar | str) -> BooleanVar:
+        """Check if the string starts with a prefix.
+
+        Args:
+            prefix: The prefix.
+
+        Returns:
+            The string starts with operation.
+        """
+        if not isinstance(prefix, (StringVar, str)):
+            raise_unsupported_operand_types("startswith", (type(self), type(prefix)))
+        return string_starts_with_operation(self, prefix)
+
+    def endswith(self, suffix: StringVar | str) -> BooleanVar:
+        """Check if the string ends with a suffix.
+
+        Args:
+            suffix: The suffix.
+
+        Returns:
+            The string ends with operation.
+        """
+        if not isinstance(suffix, (StringVar, str)):
+            raise_unsupported_operand_types("endswith", (type(self), type(suffix)))
+        return string_ends_with_operation(self, suffix)
+
+    def __lt__(self, other: StringVar | str) -> BooleanVar:
+        """Check if the string is less than another string.
+
+        Args:
+            other: The other string.
+
+        Returns:
+            The string less than operation.
+        """
+        if not isinstance(other, (StringVar, str)):
+            raise_unsupported_operand_types("<", (type(self), type(other)))
+
+        return string_lt_operation(self, other)
+
+    def __gt__(self, other: StringVar | str) -> BooleanVar:
+        """Check if the string is greater than another string.
+
+        Args:
+            other: The other string.
+
+        Returns:
+            The string greater than operation.
+        """
+        if not isinstance(other, (StringVar, str)):
+            raise_unsupported_operand_types(">", (type(self), type(other)))
+
+        return string_gt_operation(self, other)
+
+    def __le__(self, other: StringVar | str) -> BooleanVar:
+        """Check if the string is less than or equal to another string.
+
+        Args:
+            other: The other string.
+
+        Returns:
+            The string less than or equal operation.
+        """
+        if not isinstance(other, (StringVar, str)):
+            raise_unsupported_operand_types("<=", (type(self), type(other)))
+
+        return string_le_operation(self, other)
+
+    def __ge__(self, other: StringVar | str) -> BooleanVar:
+        """Check if the string is greater than or equal to another string.
+
+        Args:
+            other: The other string.
+
+        Returns:
+            The string greater than or equal operation.
+        """
+        if not isinstance(other, (StringVar, str)):
+            raise_unsupported_operand_types(">=", (type(self), type(other)))
+
+        return string_ge_operation(self, other)
+
+    @overload
+    def replace(  # pyright: ignore [reportOverlappingOverload]
+        self, search_value: StringVar | str, new_value: StringVar | str
+    ) -> StringVar: ...
+
+    @overload
+    def replace(
+        self, search_value: Any, new_value: Any
+    ) -> CustomVarOperationReturn[StringVar]: ...
+
+    def replace(self, search_value: Any, new_value: Any) -> StringVar:  # pyright: ignore [reportInconsistentOverload]
+        """Replace a string with a value.
+
+        Args:
+            search_value: The string to search.
+            new_value: The value to be replaced with.
+
+        Returns:
+            The string replace operation.
+        """
+        if not isinstance(search_value, (StringVar, str)):
+            raise_unsupported_operand_types("replace", (type(self), type(search_value)))
+        if not isinstance(new_value, (StringVar, str)):
+            raise_unsupported_operand_types("replace", (type(self), type(new_value)))
+
+        return string_replace_operation(self, search_value, new_value)
+
+
+@var_operation
+def string_lt_operation(lhs: StringVar[Any] | str, rhs: StringVar[Any] | str):
+    """Check if a string is less than another string.
+
+    Args:
+        lhs: The left-hand side string.
+        rhs: The right-hand side string.
+
+    Returns:
+        The string less than operation.
+    """
+    return var_operation_return(js_expression=f"{lhs} < {rhs}", var_type=bool)
+
+
+@var_operation
+def string_gt_operation(lhs: StringVar[Any] | str, rhs: StringVar[Any] | str):
+    """Check if a string is greater than another string.
+
+    Args:
+        lhs: The left-hand side string.
+        rhs: The right-hand side string.
+
+    Returns:
+        The string greater than operation.
+    """
+    return var_operation_return(js_expression=f"{lhs} > {rhs}", var_type=bool)
+
+
+@var_operation
+def string_le_operation(lhs: StringVar[Any] | str, rhs: StringVar[Any] | str):
+    """Check if a string is less than or equal to another string.
+
+    Args:
+        lhs: The left-hand side string.
+        rhs: The right-hand side string.
+
+    Returns:
+        The string less than or equal operation.
+    """
+    return var_operation_return(js_expression=f"{lhs} <= {rhs}", var_type=bool)
+
+
+@var_operation
+def string_ge_operation(lhs: StringVar[Any] | str, rhs: StringVar[Any] | str):
+    """Check if a string is greater than or equal to another string.
+
+    Args:
+        lhs: The left-hand side string.
+        rhs: The right-hand side string.
+
+    Returns:
+        The string greater than or equal operation.
+    """
+    return var_operation_return(js_expression=f"{lhs} >= {rhs}", var_type=bool)
+
+
+@var_operation
+def string_lower_operation(string: StringVar[Any]):
+    """Convert a string to lowercase.
+
+    Args:
+        string: The string to convert.
+
+    Returns:
+        The lowercase string.
+    """
+    return var_operation_return(js_expression=f"{string}.toLowerCase()", var_type=str)
+
+
+@var_operation
+def string_upper_operation(string: StringVar[Any]):
+    """Convert a string to uppercase.
+
+    Args:
+        string: The string to convert.
+
+    Returns:
+        The uppercase string.
+    """
+    return var_operation_return(js_expression=f"{string}.toUpperCase()", var_type=str)
+
+
+@var_operation
+def string_title_operation(string: StringVar[Any]):
+    """Convert a string to title case.
+
+    Args:
+        string: The string to convert.
+
+    Returns:
+        The title case string.
+    """
+    return var_operation_return(
+        js_expression=f"{string}.split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()).join(' ')",
+        var_type=str,
+    )
+
+
+@var_operation
+def string_capitalize_operation(string: StringVar[Any]):
+    """Capitalize a string.
+
+    Args:
+        string: The string to capitalize.
+
+    Returns:
+        The capitalized string.
+    """
+    return var_operation_return(
+        js_expression=f"(((s) => s.charAt(0).toUpperCase() + s.slice(1).toLowerCase())({string}))",
+        var_type=str,
+    )
+
+
+@var_operation
+def string_strip_operation(string: StringVar[Any]):
+    """Strip a string.
+
+    Args:
+        string: The string to strip.
+
+    Returns:
+        The stripped string.
+    """
+    return var_operation_return(js_expression=f"{string}.trim()", var_type=str)
+
+
+@var_operation
+def string_contains_field_operation(
+    haystack: StringVar[Any], needle: StringVar[Any] | str, field: StringVar[Any] | str
+):
+    """Check if a string contains another string.
+
+    Args:
+        haystack: The haystack.
+        needle: The needle.
+        field: The field to check.
+
+    Returns:
+        The string contains operation.
+    """
+    return var_operation_return(
+        js_expression=f"{haystack}.some(obj => obj[{field}] === {needle})",
+        var_type=bool,
+    )
+
+
+@var_operation
+def string_contains_operation(haystack: StringVar[Any], needle: StringVar[Any] | str):
+    """Check if a string contains another string.
+
+    Args:
+        haystack: The haystack.
+        needle: The needle.
+
+    Returns:
+        The string contains operation.
+    """
+    return var_operation_return(
+        js_expression=f"{haystack}.includes({needle})", var_type=bool
+    )
+
+
+@var_operation
+def string_starts_with_operation(
+    full_string: StringVar[Any], prefix: StringVar[Any] | str
+):
+    """Check if a string starts with a prefix.
+
+    Args:
+        full_string: The full string.
+        prefix: The prefix.
+
+    Returns:
+        Whether the string starts with the prefix.
+    """
+    return var_operation_return(
+        js_expression=f"{full_string}.startsWith({prefix})", var_type=bool
+    )
+
+
+@var_operation
+def string_ends_with_operation(
+    full_string: StringVar[Any], suffix: StringVar[Any] | str
+):
+    """Check if a string ends with a suffix.
+
+    Args:
+        full_string: The full string.
+        suffix: The suffix.
+
+    Returns:
+        Whether the string ends with the suffix.
+    """
+    return var_operation_return(
+        js_expression=f"{full_string}.endsWith({suffix})", var_type=bool
+    )
+
+
+@var_operation
+def string_item_operation(string: StringVar[Any], index: NumberVar | int):
+    """Get an item from a string.
+
+    Args:
+        string: The string.
+        index: The index of the item.
+
+    Returns:
+        The item from the string.
+    """
+    return var_operation_return(js_expression=f"{string}.at({index})", var_type=str)
+
+
+@var_operation
+def array_join_operation(array: ArrayVar, sep: StringVar[Any] | str = ""):
+    """Join the elements of an array.
+
+    Args:
+        array: The array.
+        sep: The separator.
+
+    Returns:
+        The joined elements.
+    """
+    return var_operation_return(js_expression=f"{array}.join({sep})", var_type=str)
+
+
+@var_operation
+def string_replace_operation(
+    string: StringVar[Any], search_value: StringVar | str, new_value: StringVar | str
+):
+    """Replace a string with a value.
+
+    Args:
+        string: The string.
+        search_value: The string to search.
+        new_value: The value to be replaced with.
+
+    Returns:
+        The string replace operation.
+    """
+    return var_operation_return(
+        js_expression=f"{string}.replaceAll({search_value}, {new_value})",
+        var_type=str,
+    )
+
+
+@var_operation
+def get_decimal_string_separator_operation(value: NumberVar, separator: StringVar):
+    """Get the decimal string separator.
+
+    Args:
+        value: The number.
+        separator: The separator.
+
+    Returns:
+        The decimal string separator.
+    """
+    return var_operation_return(
+        js_expression=f"({value}.toLocaleString('en-US').replaceAll(',', {separator}))",
+        var_type=str,
+    )
+
+
+@var_operation
+def get_decimal_string_operation(
+    value: NumberVar, decimals: NumberVar, separator: StringVar
+):
+    """Get the decimal string of the number.
+
+    Args:
+        value: The number.
+        decimals: The number of decimals.
+        separator: The separator.
+
+    Returns:
+        The decimal string of the number.
+    """
+    return var_operation_return(
+        js_expression=f"({value}.toLocaleString('en-US', ((decimals) => ({{minimumFractionDigits: decimals, maximumFractionDigits: decimals}}))({decimals})).replaceAll(',', {separator}))",
+        var_type=str,
+    )
+
+
+# Compile regex for finding reflex var tags.
+_decode_var_pattern_re = (
+    rf"{constants.REFLEX_VAR_OPENING_TAG}(.*?){constants.REFLEX_VAR_CLOSING_TAG}"
+)
+_decode_var_pattern = re.compile(_decode_var_pattern_re, flags=re.DOTALL)
+
+
+@dataclasses.dataclass(
+    eq=False,
+    frozen=True,
+    slots=True,
+)
+class LiteralStringVar(LiteralVar, StringVar[str]):
+    """Base class for immutable literal string vars."""
+
+    _var_value: str = dataclasses.field(default="")
+
+    @classmethod
+    def create(
+        cls,
+        value: str,
+        _var_type: GenericType | None = None,
+        _var_data: VarData | None = None,
+    ) -> StringVar:
+        """Create a var from a string value.
+
+        Args:
+            value: The value to create the var from.
+            _var_type: The type of the var.
+            _var_data: Additional hooks and imports associated with the Var.
+
+        Returns:
+            The var.
+        """
+        # Determine var type in case the value is inherited from str.
+        _var_type = _var_type or type(value) or str
+
+        if REFLEX_VAR_OPENING_TAG in value:
+            strings_and_vals: list[Var | str] = []
+            offset = 0
+
+            # Find all tags
+            while m := _decode_var_pattern.search(value):
+                start, end = m.span()
+
+                strings_and_vals.append(value[:start])
+
+                serialized_data = m.group(1)
+
+                if serialized_data.isnumeric() or (
+                    serialized_data[0] == "-" and serialized_data[1:].isnumeric()
+                ):
+                    # This is a global immutable var.
+                    var = _global_vars[int(serialized_data)]
+                    strings_and_vals.append(var)
+                    value = value[(end + len(var._js_expr)) :]
+
+                offset += end - start
+
+            strings_and_vals.append(value)
+
+            filtered_strings_and_vals = [
+                s for s in strings_and_vals if isinstance(s, Var) or s
+            ]
+            if len(filtered_strings_and_vals) == 1:
+                only_string = filtered_strings_and_vals[0]
+                if isinstance(only_string, str):
+                    return LiteralVar.create(only_string).to(StringVar, _var_type)
+                return only_string.to(StringVar, only_string._var_type)
+
+            if len(
+                literal_strings := [
+                    s
+                    for s in filtered_strings_and_vals
+                    if isinstance(s, (str, LiteralStringVar))
+                ]
+            ) == len(filtered_strings_and_vals):
+                return LiteralStringVar.create(
+                    "".join(
+                        s._var_value if isinstance(s, LiteralStringVar) else s
+                        for s in literal_strings
+                    ),
+                    _var_type=_var_type,
+                    _var_data=VarData.merge(
+                        _var_data,
+                        *(
+                            s._get_all_var_data()
+                            for s in filtered_strings_and_vals
+                            if isinstance(s, Var)
+                        ),
+                    ),
+                )
+
+            concat_result = ConcatVarOperation.create(
+                *filtered_strings_and_vals,
+                _var_data=_var_data,
             )
-            + "]"
+
+            return (
+                concat_result
+                if _var_type is str
+                else concat_result.to(StringVar, _var_type)
+            )
+
+        return LiteralStringVar(
+            _js_expr=json.dumps(value),
+            _var_type=_var_type,
+            _var_data=_var_data,
+            _var_value=value,
+        )
+
+    def __hash__(self) -> int:
+        """Get the hash of the var.
+
+        Returns:
+            The hash of the var.
+        """
+        return hash((type(self).__name__, self._var_value))
+
+    def json(self) -> str:
+        """Get the JSON representation of the var.
+
+        Returns:
+            The JSON representation of the var.
+        """
+        return json.dumps(self._var_value)
+
+
+@dataclasses.dataclass(
+    eq=False,
+    frozen=True,
+    slots=True,
+)
+class ConcatVarOperation(CachedVarOperation, StringVar[str]):
+    """Representing a concatenation of literal string vars."""
+
+    _var_value: tuple[Var, ...] = dataclasses.field(default_factory=tuple)
+
+    @cached_property_no_lock
+    def _cached_var_name(self) -> str:
+        """The name of the var.
+
+        Returns:
+            The name of the var.
+        """
+        list_of_strs: list[str | Var] = []
+        last_string = ""
+        for var in self._var_value:
+            if isinstance(var, LiteralStringVar):
+                last_string += var._var_value
+            else:
+                if last_string:
+                    list_of_strs.append(last_string)
+                    last_string = ""
+                list_of_strs.append(var)
+
+        if last_string:
+            list_of_strs.append(last_string)
+
+        list_of_strs_filtered = [
+            str(LiteralVar.create(s)) for s in list_of_strs if isinstance(s, Var) or s
+        ]
+
+        if len(list_of_strs_filtered) == 1:
+            return list_of_strs_filtered[0]
+
+        return "(" + "+".join(list_of_strs_filtered) + ")"
+
+    @cached_property_no_lock
+    def _cached_get_all_var_data(self) -> VarData | None:
+        """Get all the VarData asVarDatae Var.
+
+        Returns:
+            The VarData associated with the Var.
+        """
+        return VarData.merge(
+            *[
+                var._get_all_var_data()
+                for var in self._var_value
+                if isinstance(var, Var)
+            ],
+            self._var_data,
         )
 
     @classmethod
     def create(
         cls,
-        value: ARRAY_VAR_TYPE,
-        _var_type: Type[ARRAY_VAR_TYPE] | None = None,
+        *value: Var | str,
         _var_data: VarData | None = None,
-    ) -> LiteralArrayVar[ARRAY_VAR_TYPE]:
+    ) -> ConcatVarOperation:
         """Create a var from a string value.
 
         Args:
-            value: The value to create the var from.
+            *value: The values to concatenate.
             _var_data: Additional hooks and imports associated with the Var.
 
         Returns:
@@ -1293,9 +1334,9 @@ class LiteralArrayVar(CachedVarOperation, LiteralVar, ArrayVar[ARRAY_VAR_TYPE]):
         """
         return cls(
             _js_expr="",
-            _var_type=figure_out_type(value) if _var_type is None else _var_type,
+            _var_type=str,
             _var_data=_var_data,
-            _var_value=value,
+            _var_value=tuple(map(LiteralVar.create, value)),
         )
 
 
@@ -1311,14 +1352,14 @@ def string_split_operation(string: StringVar[Any], sep: StringVar | str = ""):
         The split string.
     """
     return var_operation_return(
-        js_expression=f"{string}.split({sep})", var_type=List[str]
+        js_expression=f"{string}.split({sep})", var_type=list[str]
     )
 
 
 @dataclasses.dataclass(
     eq=False,
     frozen=True,
-    **{"slots": True} if sys.version_info >= (3, 10) else {},
+    slots=True,
 )
 class ArraySliceOperation(CachedVarOperation, ArrayVar):
     """Base class for immutable string vars that are the result of a string slice operation."""
@@ -1349,20 +1390,21 @@ class ArraySliceOperation(CachedVarOperation, ArrayVar):
             LiteralVar.create(end) if end is not None else Var(_js_expr="undefined")
         )
         if step is None:
-            return f"{str(self._array)}.slice({str(normalized_start)}, {str(normalized_end)})"
+            return f"{self._array!s}.slice({normalized_start!s}, {normalized_end!s})"
         if not isinstance(step, Var):
             if step < 0:
                 actual_start = end + 1 if end is not None else 0
                 actual_end = start + 1 if start is not None else self._array.length()
                 return str(self._array[actual_start:actual_end].reverse()[::-step])
             if step == 0:
-                raise ValueError("slice step cannot be zero")
-            return f"{str(self._array)}.slice({str(normalized_start)}, {str(normalized_end)}).filter((_, i) => i % {str(step)} === 0)"
+                msg = "slice step cannot be zero"
+                raise ValueError(msg)
+            return f"{self._array!s}.slice({normalized_start!s}, {normalized_end!s}).filter((_, i) => i % {step!s} === 0)"
 
         actual_start_reverse = end + 1 if end is not None else 0
         actual_end_reverse = start + 1 if start is not None else self._array.length()
 
-        return f"{str(self.step)} > 0 ? {str(self._array)}.slice({str(normalized_start)}, {str(normalized_end)}).filter((_, i) => i % {str(step)} === 0) : {str(self._array)}.slice({str(actual_start_reverse)}, {str(actual_end_reverse)}).reverse().filter((_, i) => i % {str(-step)} === 0)"
+        return f"{self.step!s} > 0 ? {self._array!s}.slice({normalized_start!s}, {normalized_end!s}).filter((_, i) => i % {step!s} === 0) : {self._array!s}.slice({actual_start_reverse!s}, {actual_end_reverse!s}).reverse().filter((_, i) => i % {-step!s} === 0)"
 
     @classmethod
     def create(
@@ -1511,9 +1553,52 @@ def is_tuple_type(t: GenericType) -> bool:
     Returns:
         Whether the type is a tuple type.
     """
-    if inspect.isclass(t):
-        return issubclass(t, tuple)
     return get_origin(t) is tuple
+
+
+def _determine_value_of_array_index(
+    var_type: GenericType, index: int | float | decimal.Decimal | None = None
+):
+    """Determine the value of an array index.
+
+    Args:
+        var_type: The type of the array.
+        index: The index of the array.
+
+    Returns:
+        The value of the array index.
+    """
+    origin_var_type = get_origin(var_type) or var_type
+    if origin_var_type in types.UnionTypes:
+        return unionize(
+            *[
+                _determine_value_of_array_index(t, index)
+                for t in get_args(var_type)
+                if t is not type(None)
+            ]
+        )
+    if origin_var_type is range:
+        return int
+    if origin_var_type in [
+        Sequence,
+        Iterable,
+        list,
+        set,
+        collections.abc.Sequence,
+        collections.abc.Iterable,
+    ]:
+        args = get_args(var_type)
+        return args[0] if args else Any
+    if origin_var_type is tuple:
+        args = get_args(var_type)
+        if len(args) == 2 and args[1] is ...:
+            return args[0]
+        return (
+            args[int(index) % len(args)]
+            if args and index is not None
+            else (unionize(*args) if args else Any)
+        )
+    return Any
 
 
 @var_operation
@@ -1527,15 +1612,17 @@ def array_item_operation(array: ArrayVar, index: NumberVar | int):
     Returns:
         The item from the array.
     """
-    args = typing.get_args(array._var_type)
-    if args and isinstance(index, LiteralNumberVar) and is_tuple_type(array._var_type):
-        index_value = int(index._var_value)
-        element_type = args[index_value % len(args)]
-    else:
-        element_type = unionize(*args)
+    element_type = _determine_value_of_array_index(
+        array._var_type,
+        (
+            index
+            if isinstance(index, int)
+            else (index._var_value if isinstance(index, LiteralNumberVar) else None)
+        ),
+    )
 
     return var_operation_return(
-        js_expression=f"{str(array)}.at({str(index)})",
+        js_expression=f"{array!s}.at({index!s})",
         var_type=element_type,
     )
 
@@ -1555,8 +1642,8 @@ def array_range_operation(
         The range of numbers.
     """
     return var_operation_return(
-        js_expression=f"Array.from({{ length: ({str(stop)} - {str(start)}) / {str(step)} }}, (_, i) => {str(start)} + i * {str(step)})",
-        var_type=List[int],
+        js_expression=f"Array.from({{ length: Math.ceil(({stop!s} - {start!s}) / {step!s}) }}, (_, i) => {start!s} + i * {step!s})",
+        var_type=list[int],
     )
 
 
@@ -1581,7 +1668,9 @@ def array_contains_field_operation(
 
 
 @var_operation
-def array_contains_operation(haystack: ArrayVar, needle: Any | Var):
+def array_contains_operation(
+    haystack: ArrayVar, needle: Any | Var
+) -> CustomVarOperationReturn[bool]:
     """Check if an array contains an element.
 
     Args:
@@ -1616,15 +1705,11 @@ def repeat_array_operation(
     )
 
 
-if TYPE_CHECKING:
-    from .function import FunctionVar
-
-
 @var_operation
 def map_array_operation(
     array: ArrayVar[ARRAY_VAR_TYPE],
     function: FunctionVar,
-):
+) -> CustomVarOperationReturn[list[Any]]:
     """Map a function over an array.
 
     Args:
@@ -1635,7 +1720,7 @@ def map_array_operation(
         The mapped array.
     """
     return var_operation_return(
-        js_expression=f"{array}.map({function})", var_type=List[Any]
+        js_expression=f"{array}.map({function})", var_type=list[Any]
     )
 
 
@@ -1654,7 +1739,7 @@ def array_concat_operation(
     """
     return var_operation_return(
         js_expression=f"[...{lhs}, ...{rhs}]",
-        var_type=Union[lhs._var_type, rhs._var_type],
+        var_type=lhs._var_type | rhs._var_type,
     )
 
 
@@ -1665,7 +1750,7 @@ class ColorVar(StringVar[Color], python_types=Color):
 @dataclasses.dataclass(
     eq=False,
     frozen=True,
-    **{"slots": True} if sys.version_info >= (3, 10) else {},
+    slots=True,
 )
 class LiteralColorVar(CachedVarOperation, LiteralVar, ColorVar):
     """Base class for immutable literal color vars."""
@@ -1676,7 +1761,7 @@ class LiteralColorVar(CachedVarOperation, LiteralVar, ColorVar):
     def create(
         cls,
         value: Color,
-        _var_type: Type[Color] | None = None,
+        _var_type: type[Color] | None = None,
         _var_data: VarData | None = None,
     ) -> ColorVar:
         """Create a var from a string value.
@@ -1779,11 +1864,95 @@ class LiteralColorVar(CachedVarOperation, LiteralVar, ColorVar):
             (self._var_value.color, self._var_value.alpha, self._var_value.shade),
         )
         if color is None or alpha is None or shade is None:
-            raise TypeError("Cannot serialize color that contains non-literal vars.")
+            msg = "Cannot serialize color that contains non-literal vars."
+            raise TypeError(msg)
         if (
             not isinstance(color, str)
             or not isinstance(alpha, bool)
             or not isinstance(shade, int)
         ):
-            raise TypeError("Color is not a valid color.")
+            msg = "Color is not a valid color."
+            raise TypeError(msg)
         return f"var(--{color}-{'a' if alpha else ''}{shade})"
+
+
+class RangeVar(ArrayVar[Sequence[int]], python_types=range):
+    """Base class for immutable range vars."""
+
+
+@dataclasses.dataclass(
+    eq=False,
+    frozen=True,
+    slots=True,
+)
+class LiteralRangeVar(CachedVarOperation, LiteralVar, RangeVar):
+    """Base class for immutable literal range vars."""
+
+    _var_value: range = dataclasses.field(default_factory=lambda: range(0))
+
+    @classmethod
+    def create(
+        cls,
+        value: range,
+        _var_type: type[range] | None = None,
+        _var_data: VarData | None = None,
+    ) -> RangeVar:
+        """Create a var from a string value.
+
+        Args:
+            value: The value to create the var from.
+            _var_type: The type of the var.
+            _var_data: Additional hooks and imports associated with the Var.
+
+        Returns:
+            The var.
+        """
+        return cls(
+            _js_expr="",
+            _var_type=_var_type or range,
+            _var_data=_var_data,
+            _var_value=value,
+        )
+
+    def __hash__(self) -> int:
+        """Get the hash of the var.
+
+        Returns:
+            The hash of the var.
+        """
+        return hash(
+            (
+                self.__class__.__name__,
+                self._var_value.start,
+                self._var_value.stop,
+                self._var_value.step,
+            )
+        )
+
+    @cached_property_no_lock
+    def _cached_var_name(self) -> str:
+        """The name of the var.
+
+        Returns:
+            The name of the var.
+        """
+        return f"Array.from({{ length: Math.ceil(({self._var_value.stop!s} - {self._var_value.start!s}) / {self._var_value.step!s}) }}, (_, i) => {self._var_value.start!s} + i * {self._var_value.step!s})"
+
+    @cached_property_no_lock
+    def _cached_get_all_var_data(self) -> VarData | None:
+        """Get all the var data.
+
+        Returns:
+            The var data.
+        """
+        return self._var_data
+
+    def json(self) -> str:
+        """Get the JSON representation of the var.
+
+        Returns:
+            The JSON representation of the var.
+        """
+        return json.dumps(
+            list(self._var_value),
+        )

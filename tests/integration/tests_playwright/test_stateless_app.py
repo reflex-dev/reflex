@@ -1,6 +1,6 @@
 """Integration tests for a stateless app."""
 
-from typing import Generator
+from collections.abc import Generator
 
 import httpx
 import pytest
@@ -17,7 +17,7 @@ def StatelessApp():
     def index():
         return rx.heading("This is a stateless app")
 
-    app = rx.App()
+    app = rx.App(enable_state=False)
     app.add_page(index)
 
 

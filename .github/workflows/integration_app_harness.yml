@@ -13,6 +13,9 @@ on:
     branches: ["main"]
     paths-ignore:
       - "**/*.md"
+env:
+  APP_HARNESS_HEADLESS: 1
+  PYTHONUNBUFFERED: 1
 
 permissions:
   contents: read
@@ -23,8 +26,8 @@ jobs:
     strategy:
       matrix:
         state_manager: ["redis", "memory"]
+        python-version: ["3.11", "3.12", "3.13"]
         split_index: [1, 2]
-        python-version: ["3.11.5", "3.12.0"]
       fail-fast: false
     runs-on: ubuntu-22.04
     services:
@@ -45,19 +48,12 @@ jobs:
       - uses: ./.github/actions/setup_build_env
         with:
           python-version: ${{ matrix.python-version }}
-          run-poetry-install: true
-          create-venv-at-path: .venv
-      - run: poetry run uv pip install pyvirtualdisplay pillow pytest-split
+          run-uv-sync: true
+
+      - name: Install playwright
+        run: uv run playwright install chromium --only-shell
+
       - name: Run app harness tests
         env:
-          SCREENSHOT_DIR: /tmp/screenshots/${{ matrix.state_manager }}/${{ matrix.python-version }}/${{ matrix.split_index }}
-          REDIS_URL: ${{ matrix.state_manager == 'redis' && 'redis://localhost:6379' || '' }}
-        run: |
-          poetry run playwright install --with-deps
-          poetry run pytest tests/integration --splits 2 --group ${{matrix.split_index}}
-      - uses: actions/upload-artifact@v4
-        name: Upload failed test screenshots
-        if: always()
-        with:
-          name: failed_test_screenshots
-          path: /tmp/screenshots
+          REFLEX_REDIS_URL: ${{ matrix.state_manager == 'redis' && 'redis://localhost:6379' || '' }}
+        run: uv run pytest tests/integration --retries 3 -v --maxfail=5 --splits 2 --group ${{matrix.split_index}}

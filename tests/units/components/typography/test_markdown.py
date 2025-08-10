@@ -5,7 +5,7 @@ from reflex.components.markdown import Markdown
 
 
 @pytest.mark.parametrize(
-    "tag,expected",
+    ("tag", "expected"),
     [
         ("h1", "Heading"),
         ("h2", "Heading"),
@@ -29,8 +29,8 @@ def test_get_component(tag, expected):
         expected: The expected component.
     """
     md = Markdown.create("# Hello")
-    assert tag in md.component_map  # type: ignore
-    assert md.get_component(tag).tag == expected  # type: ignore
+    assert tag in md.component_map  # pyright: ignore [reportAttributeAccessIssue]
+    assert md.get_component(tag).tag == expected
 
 
 def test_set_component_map():
@@ -42,8 +42,8 @@ def test_set_component_map():
     md = Markdown.create("# Hello", component_map=component_map)
 
     # Check that the new tags have been added.
-    assert md.get_component("h1").tag == "Box"  # type: ignore
-    assert md.get_component("p").tag == "Box"  # type: ignore
+    assert md.get_component("h1").tag == "Box"
+    assert md.get_component("p").tag == "Box"
 
     # Make sure the old tags are still there.
-    assert md.get_component("h2").tag == "Heading"  # type: ignore
+    assert md.get_component("h2").tag == "Heading"

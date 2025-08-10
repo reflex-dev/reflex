@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Generator
+from collections.abc import Generator
 
 import pytest
 from selenium.webdriver.common.by import By
@@ -95,8 +95,8 @@ def hybrid_properties(
         running AppHarness instance
     """
     with AppHarness.create(
-        root=tmp_path_factory.mktemp(f"hybrid_properties"),
-        app_source=HybridProperties,  # type: ignore
+        root=tmp_path_factory.mktemp("hybrid_properties"),
+        app_source=HybridProperties,
     ) as harness:
         yield harness
 
@@ -119,7 +119,7 @@ def driver(hybrid_properties: AppHarness) -> Generator[WebDriver, None, None]:
         driver.quit()
 
 
-@pytest.fixture()
+@pytest.fixture
 def token(hybrid_properties: AppHarness, driver: WebDriver) -> str:
     """Get a function that returns the active token.
 

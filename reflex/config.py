@@ -1,53 +1,47 @@
 """The Reflex config."""
 
-from __future__ import annotations
-
 import dataclasses
-import enum
 import importlib
-import inspect
 import os
 import sys
+import threading
 import urllib.parse
+from collections.abc import Sequence
 from importlib.util import find_spec
 from pathlib import Path
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Dict,
-    Generic,
-    List,
-    Optional,
-    Set,
-    TypeVar,
-    get_args,
-)
-
-from typing_extensions import Annotated, get_type_hints
-
-from reflex.utils.exceptions import ConfigError, EnvironmentVarValueError
-from reflex.utils.types import GenericType, is_union, value_inside_optional
-
-try:
-    import pydantic.v1 as pydantic
-except ModuleNotFoundError:
-    import pydantic
-
-from reflex_cli.constants.hosting import Hosting
+from types import ModuleType
+from typing import TYPE_CHECKING, Any, ClassVar
 
 from reflex import constants
-from reflex.base import Base
+from reflex.constants.base import LogLevel
+from reflex.environment import EnvironmentVariables as EnvironmentVariables
+from reflex.environment import EnvVar as EnvVar
+from reflex.environment import (
+    ExistingPath,
+    _load_dotenv_from_files,
+    _paths_from_env_files,
+    interpret_env_var_value,
+)
+from reflex.environment import env_var as env_var
+from reflex.environment import environment as environment
+from reflex.plugins import Plugin
+from reflex.plugins.sitemap import SitemapPlugin
 from reflex.utils import console
+from reflex.utils.exceptions import ConfigError
+
+if TYPE_CHECKING:
+    from pyleak.base import LeakAction
 
 
-class DBConfig(Base):
+@dataclasses.dataclass(kw_only=True)
+class DBConfig:
     """Database config."""
 
     engine: str
-    username: Optional[str] = ""
-    password: Optional[str] = ""
-    host: Optional[str] = ""
-    port: Optional[int] = None
+    username: str | None = ""
+    password: str | None = ""
+    host: str | None = ""
+    port: int | None = None
     database: str
 
     @classmethod
@@ -58,7 +52,7 @@ class DBConfig(Base):
         password: str | None = None,
         host: str | None = None,
         port: int | None = 5432,
-    ) -> DBConfig:
+    ) -> "DBConfig":
         """Create an instance with postgresql engine.
 
         Args:
@@ -81,15 +75,15 @@ class DBConfig(Base):
         )
 
     @classmethod
-    def postgresql_psycopg2(
+    def postgresql_psycopg(
         cls,
         database: str,
         username: str,
         password: str | None = None,
         host: str | None = None,
         port: int | None = 5432,
-    ) -> DBConfig:
-        """Create an instance with postgresql+psycopg2 engine.
+    ) -> "DBConfig":
+        """Create an instance with postgresql+psycopg engine.
 
         Args:
             database: Database name.
@@ -102,7 +96,7 @@ class DBConfig(Base):
             DBConfig instance.
         """
         return cls(
-            engine="postgresql+psycopg2",
+            engine="postgresql+psycopg",
             username=username,
             password=password,
             host=host,
@@ -114,7 +108,7 @@ class DBConfig(Base):
     def sqlite(
         cls,
         database: str,
-    ) -> DBConfig:
+    ) -> "DBConfig":
         """Create an instance with sqlite engine.
 
         Args:
@@ -148,409 +142,128 @@ class DBConfig(Base):
         return f"{self.engine}://{path}/{self.database}"
 
 
-def get_default_value_for_field(field: dataclasses.Field) -> Any:
-    """Get the default value for a field.
+# These vars are not logged because they may contain sensitive information.
+_sensitive_env_vars = {"DB_URL", "ASYNC_DB_URL", "REDIS_URL"}
 
-    Args:
-        field: The field.
-
-    Returns:
-        The default value.
 
-    Raises:
-        ValueError: If no default value is found.
-    """
-    if field.default != dataclasses.MISSING:
-        return field.default
-    elif field.default_factory != dataclasses.MISSING:
-        return field.default_factory()
-    else:
-        raise ValueError(
-            f"Missing value for environment variable {field.name} and no default value found"
-        )
-
-
-# TODO: Change all interpret_.* signatures to value: str, field: dataclasses.Field once we migrate rx.Config to dataclasses
-def interpret_boolean_env(value: str, field_name: str) -> bool:
-    """Interpret a boolean environment variable value.
-
-    Args:
-        value: The environment variable value.
-        field_name: The field name.
-
-    Returns:
-        The interpreted value.
-
-    Raises:
-        EnvironmentVarValueError: If the value is invalid.
-    """
-    true_values = ["true", "1", "yes", "y"]
-    false_values = ["false", "0", "no", "n"]
-
-    if value.lower() in true_values:
-        return True
-    elif value.lower() in false_values:
-        return False
-    raise EnvironmentVarValueError(f"Invalid boolean value: {value} for {field_name}")
-
-
-def interpret_int_env(value: str, field_name: str) -> int:
-    """Interpret an integer environment variable value.
-
-    Args:
-        value: The environment variable value.
-        field_name: The field name.
-
-    Returns:
-        The interpreted value.
-
-    Raises:
-        EnvironmentVarValueError: If the value is invalid.
-    """
-    try:
-        return int(value)
-    except ValueError as ve:
-        raise EnvironmentVarValueError(
-            f"Invalid integer value: {value} for {field_name}"
-        ) from ve
-
-
-def interpret_existing_path_env(value: str, field_name: str) -> ExistingPath:
-    """Interpret a path environment variable value as an existing path.
-
-    Args:
-        value: The environment variable value.
-        field_name: The field name.
-
-    Returns:
-        The interpreted value.
-
-    Raises:
-        EnvironmentVarValueError: If the path does not exist.
-    """
-    path = Path(value)
-    if not path.exists():
-        raise EnvironmentVarValueError(f"Path does not exist: {path} for {field_name}")
-    return path
-
-
-def interpret_path_env(value: str, field_name: str) -> Path:
-    """Interpret a path environment variable value.
-
-    Args:
-        value: The environment variable value.
-        field_name: The field name.
-
-    Returns:
-        The interpreted value.
-    """
-    return Path(value)
-
-
-def interpret_enum_env(value: str, field_type: GenericType, field_name: str) -> Any:
-    """Interpret an enum environment variable value.
-
-    Args:
-        value: The environment variable value.
-        field_type: The field type.
-        field_name: The field name.
-
-    Returns:
-        The interpreted value.
-
-    Raises:
-        EnvironmentVarValueError: If the value is invalid.
-    """
-    try:
-        return field_type(value)
-    except ValueError as ve:
-        raise EnvironmentVarValueError(
-            f"Invalid enum value: {value} for {field_name}"
-        ) from ve
-
-
-def interpret_env_var_value(
-    value: str, field_type: GenericType, field_name: str
-) -> Any:
-    """Interpret an environment variable value based on the field type.
-
-    Args:
-        value: The environment variable value.
-        field_type: The field type.
-        field_name: The field name.
-
-    Returns:
-        The interpreted value.
-
-    Raises:
-        ValueError: If the value is invalid.
-    """
-    field_type = value_inside_optional(field_type)
-
-    if is_union(field_type):
-        raise ValueError(
-            f"Union types are not supported for environment variables: {field_name}."
-        )
-
-    if field_type is bool:
-        return interpret_boolean_env(value, field_name)
-    elif field_type is str:
-        return value
-    elif field_type is int:
-        return interpret_int_env(value, field_name)
-    elif field_type is Path:
-        return interpret_path_env(value, field_name)
-    elif field_type is ExistingPath:
-        return interpret_existing_path_env(value, field_name)
-    elif inspect.isclass(field_type) and issubclass(field_type, enum.Enum):
-        return interpret_enum_env(value, field_type, field_name)
-
-    else:
-        raise ValueError(
-            f"Invalid type for environment variable {field_name}: {field_type}. This is probably an issue in Reflex."
-        )
-
-
-T = TypeVar("T")
-
-
-class EnvVar(Generic[T]):
-    """Environment variable."""
-
-    name: str
-    default: Any
-    type_: T
-
-    def __init__(self, name: str, default: Any, type_: T) -> None:
-        """Initialize the environment variable.
-
-        Args:
-            name: The environment variable name.
-            default: The default value.
-            type_: The type of the value.
-        """
-        self.name = name
-        self.default = default
-        self.type_ = type_
-
-    def interpret(self, value: str) -> T:
-        """Interpret the environment variable value.
-
-        Args:
-            value: The environment variable value.
-
-        Returns:
-            The interpreted value.
-        """
-        return interpret_env_var_value(value, self.type_, self.name)
-
-    def getenv(self) -> Optional[T]:
-        """Get the interpreted environment variable value.
-
-        Returns:
-            The environment variable value.
-        """
-        env_value = os.getenv(self.name, None)
-        if env_value is not None:
-            return self.interpret(env_value)
-        return None
-
-    def is_set(self) -> bool:
-        """Check if the environment variable is set.
-
-        Returns:
-            True if the environment variable is set.
-        """
-        return self.name in os.environ
-
-    def get(self) -> T:
-        """Get the interpreted environment variable value or the default value if not set.
-
-        Returns:
-            The interpreted value.
-        """
-        env_value = self.getenv()
-        if env_value is not None:
-            return env_value
-        return self.default
-
-    def set(self, value: T | None) -> None:
-        """Set the environment variable. None unsets the variable.
+@dataclasses.dataclass(kw_only=True)
+class BaseConfig:
+    """Base config for the Reflex app."""
 
-        Args:
-            value: The value to set.
-        """
-        if value is None:
-            _ = os.environ.pop(self.name, None)
-        else:
-            if isinstance(value, enum.Enum):
-                value = value.value
-            os.environ[self.name] = str(value)
+    # The name of the app (should match the name of the app directory).
+    app_name: str
 
+    # The path to the app module.
+    app_module_import: str | None = None
 
-class env_var:  # type: ignore
-    """Descriptor for environment variables."""
+    # The log level to use.
+    loglevel: constants.LogLevel = constants.LogLevel.DEFAULT
 
-    name: str
-    default: Any
-    internal: bool = False
+    # The port to run the frontend on. NOTE: When running in dev mode, the next available port will be used if this is taken.
+    frontend_port: int | None = None
 
-    def __init__(self, default: Any, internal: bool = False) -> None:
-        """Initialize the descriptor.
+    # The path to run the frontend on. For example, "/app" will run the frontend on http://localhost:3000/app
+    frontend_path: str = ""
 
-        Args:
-            default: The default value.
-            internal: Whether the environment variable is reflex internal.
-        """
-        self.default = default
-        self.internal = internal
+    # The port to run the backend on. NOTE: When running in dev mode, the next available port will be used if this is taken.
+    backend_port: int | None = None
 
-    def __set_name__(self, owner, name):
-        """Set the name of the descriptor.
+    # The backend url the frontend will connect to. This must be updated if the backend is hosted elsewhere, or in production.
+    api_url: str = f"http://localhost:{constants.DefaultPorts.BACKEND_PORT}"
 
-        Args:
-            owner: The owner class.
-            name: The name of the descriptor.
-        """
-        self.name = name
+    # The url the frontend will be hosted on.
+    deploy_url: str | None = f"http://localhost:{constants.DefaultPorts.FRONTEND_PORT}"
 
-    def __get__(self, instance, owner):
-        """Get the EnvVar instance.
+    # The url the backend will be hosted on.
+    backend_host: str = "0.0.0.0"
 
-        Args:
-            instance: The instance.
-            owner: The owner class.
+    # The database url used by rx.Model.
+    db_url: str | None = "sqlite:///reflex.db"
 
-        Returns:
-            The EnvVar instance.
-        """
-        type_ = get_args(get_type_hints(owner)[self.name])[0]
-        env_name = self.name
-        if self.internal:
-            env_name = f"__{env_name}"
-        return EnvVar(name=env_name, default=self.default, type_=type_)
+    # The async database url used by rx.Model.
+    async_db_url: str | None = None
 
+    # The redis url
+    redis_url: str | None = None
 
-if TYPE_CHECKING:
+    # Telemetry opt-in.
+    telemetry_enabled: bool = True
 
-    def env_var(default, internal=False) -> EnvVar:
-        """Typing helper for the env_var descriptor.
+    # PyLeak monitoring configuration for detecting event loop blocking and resource leaks.
+    enable_pyleak_monitoring: bool = False
 
-        Args:
-            default: The default value.
-            internal: Whether the environment variable is reflex internal.
+    # Threshold in seconds for detecting event loop blocking operations.
+    pyleak_blocking_threshold: float = 0.1
 
-        Returns:
-            The EnvVar instance.
-        """
-        return default
+    # Grace period in seconds for thread leak detection cleanup.
+    pyleak_thread_grace_period: float = 0.2
 
+    # Action to take when PyLeak detects issues
+    pyleak_action: "LeakAction | None" = None
 
-class PathExistsFlag:
-    """Flag to indicate that a path must exist."""
+    # The bun path
+    bun_path: ExistingPath = constants.Bun.DEFAULT_PATH
 
+    # Timeout to do a production build of a frontend page.
+    static_page_generation_timeout: int = 60
 
-ExistingPath = Annotated[Path, PathExistsFlag]
+    # List of origins that are allowed to connect to the backend API.
+    cors_allowed_origins: Sequence[str] = dataclasses.field(default=("*",))
 
+    # Whether to use React strict mode.
+    react_strict_mode: bool = True
 
-class EnvironmentVariables:
-    """Environment variables class to instantiate environment variables."""
+    # Additional frontend packages to install.
+    frontend_packages: list[str] = dataclasses.field(default_factory=list)
 
-    # Whether to use npm over bun to install frontend packages.
-    REFLEX_USE_NPM: EnvVar[bool] = env_var(False)
+    # Indicate which type of state manager to use
+    state_manager_mode: constants.StateManagerMode = constants.StateManagerMode.DISK
 
-    # The npm registry to use.
-    NPM_CONFIG_REGISTRY: EnvVar[Optional[str]] = env_var(None)
+    # Maximum expiration lock time for redis state manager
+    redis_lock_expiration: int = constants.Expiration.LOCK
 
-    # Whether to use Granian for the backend. Otherwise, use Uvicorn.
-    REFLEX_USE_GRANIAN: EnvVar[bool] = env_var(False)
+    # Maximum lock time before warning for redis state manager.
+    redis_lock_warning_threshold: int = constants.Expiration.LOCK_WARNING_THRESHOLD
 
-    # The username to use for authentication on python package repository. Username and password must both be provided.
-    TWINE_USERNAME: EnvVar[Optional[str]] = env_var(None)
+    # Token expiration time for redis state manager
+    redis_token_expiration: int = constants.Expiration.TOKEN
 
-    # The password to use for authentication on python package repository. Username and password must both be provided.
-    TWINE_PASSWORD: EnvVar[Optional[str]] = env_var(None)
-
-    # Whether to use the system installed bun. If set to false, bun will be bundled with the app.
-    REFLEX_USE_SYSTEM_BUN: EnvVar[bool] = env_var(False)
-
-    # Whether to use the system installed node and npm. If set to false, node and npm will be bundled with the app.
-    REFLEX_USE_SYSTEM_NODE: EnvVar[bool] = env_var(False)
-
-    # The working directory for the next.js commands.
-    REFLEX_WEB_WORKDIR: EnvVar[Path] = env_var(Path(constants.Dirs.WEB))
-
-    # Path to the alembic config file
-    ALEMBIC_CONFIG: EnvVar[ExistingPath] = env_var(Path(constants.ALEMBIC_CONFIG))
-
-    # Disable SSL verification for HTTPX requests.
-    SSL_NO_VERIFY: EnvVar[bool] = env_var(False)
-
-    # The directory to store uploaded files.
-    REFLEX_UPLOADED_FILES_DIR: EnvVar[Path] = env_var(
-        Path(constants.Dirs.UPLOADED_FILES)
+    # Attributes that were explicitly set by the user.
+    _non_default_attributes: set[str] = dataclasses.field(
+        default_factory=set, init=False
     )
 
-    # Whether to use separate processes to compile the frontend and how many. If not set, defaults to thread executor.
-    REFLEX_COMPILE_PROCESSES: EnvVar[Optional[int]] = env_var(None)
+    # Path to file containing key-values pairs to override in the environment; Dotenv format.
+    env_file: str | None = None
 
-    # Whether to use separate threads to compile the frontend and how many. Defaults to `min(32, os.cpu_count() + 4)`.
-    REFLEX_COMPILE_THREADS: EnvVar[Optional[int]] = env_var(None)
+    # Whether to automatically create setters for state base vars
+    state_auto_setters: bool = True
 
-    # The directory to store reflex dependencies.
-    REFLEX_DIR: EnvVar[Path] = env_var(Path(constants.Reflex.DIR))
+    # Whether to display the sticky "Built with Reflex" badge on all pages.
+    show_built_with_reflex: bool | None = None
 
-    # Whether to print the SQL queries if the log level is INFO or lower.
-    SQLALCHEMY_ECHO: EnvVar[bool] = env_var(False)
+    # Whether the app is running in the reflex cloud environment.
+    is_reflex_cloud: bool = False
 
-    # Whether to ignore the redis config error. Some redis servers only allow out-of-band configuration.
-    REFLEX_IGNORE_REDIS_CONFIG_ERROR: EnvVar[bool] = env_var(False)
+    # Extra overlay function to run after the app is built. Formatted such that `from path_0.path_1... import path[-1]`, and calling it with no arguments would work. For example, "reflex.components.moment.moment".
+    extra_overlay_function: str | None = None
 
-    # Whether to skip purging the web directory in dev mode.
-    REFLEX_PERSIST_WEB_DIR: EnvVar[bool] = env_var(False)
+    # List of plugins to use in the app.
+    plugins: list[Plugin] = dataclasses.field(default_factory=list)
 
-    # The reflex.build frontend host.
-    REFLEX_BUILD_FRONTEND: EnvVar[str] = env_var(
-        constants.Templates.REFLEX_BUILD_FRONTEND
-    )
+    # List of fully qualified import paths of plugins to disable in the app (e.g. reflex.plugins.sitemap.SitemapPlugin).
+    disable_plugins: list[str] = dataclasses.field(default_factory=list)
 
-    # The reflex.build backend host.
-    REFLEX_BUILD_BACKEND: EnvVar[str] = env_var(
-        constants.Templates.REFLEX_BUILD_BACKEND
-    )
-
-    # This env var stores the execution mode of the app
-    REFLEX_ENV_MODE: EnvVar[constants.Env] = env_var(constants.Env.DEV)
-
-    # Whether to run the backend only. Exclusive with REFLEX_FRONTEND_ONLY.
-    REFLEX_BACKEND_ONLY: EnvVar[bool] = env_var(False)
-
-    # Whether to run the frontend only. Exclusive with REFLEX_BACKEND_ONLY.
-    REFLEX_FRONTEND_ONLY: EnvVar[bool] = env_var(False)
-
-    # Reflex internal env to reload the config.
-    RELOAD_CONFIG: EnvVar[bool] = env_var(False, internal=True)
-
-    # If this env var is set to "yes", App.compile will be a no-op
-    REFLEX_SKIP_COMPILE: EnvVar[bool] = env_var(False, internal=True)
-
-    # Whether to run app harness tests in headless mode.
-    APP_HARNESS_HEADLESS: EnvVar[bool] = env_var(False)
-
-    # Which app harness driver to use.
-    APP_HARNESS_DRIVER: EnvVar[str] = env_var("Chrome")
-
-    # Arguments to pass to the app harness driver.
-    APP_HARNESS_DRIVER_ARGS: EnvVar[str] = env_var("")
-
-    # Where to save screenshots when tests fail.
-    SCREENSHOT_DIR: EnvVar[Optional[Path]] = env_var(None)
+    _prefixes: ClassVar[list[str]] = ["REFLEX_"]
 
 
-environment = EnvironmentVariables()
+_PLUGINS_ENABLED_BY_DEFAULT = [
+    SitemapPlugin,
+]
 
 
-class Config(Base):
+@dataclasses.dataclass(kw_only=True, init=False)
+class Config(BaseConfig):
     """The config defines runtime settings for the app.
 
     By default, the config is defined in an `rxconfig.py` file in the root of the app.
@@ -565,135 +278,137 @@ class Config(Base):
     )
     ```
 
-    Every config value can be overridden by an environment variable with the same name in uppercase.
-    For example, `db_url` can be overridden by setting the `DB_URL` environment variable.
+    Every config value can be overridden by an environment variable with the same name in uppercase and a REFLEX_ prefix.
+    For example, `db_url` can be overridden by setting the `REFLEX_DB_URL` environment variable.
 
     See the [configuration](https://reflex.dev/docs/getting-started/configuration/) docs for more info.
     """
 
-    class Config:
-        """Pydantic config for the config."""
+    def _post_init(self, **kwargs):
+        """Post-initialization method to set up the config.
 
-        validate_assignment = True
-
-    # The name of the app (should match the name of the app directory).
-    app_name: str
-
-    # The log level to use.
-    loglevel: constants.LogLevel = constants.LogLevel.DEFAULT
-
-    # The port to run the frontend on. NOTE: When running in dev mode, the next available port will be used if this is taken.
-    frontend_port: int = constants.DefaultPorts.FRONTEND_PORT
-
-    # The path to run the frontend on. For example, "/app" will run the frontend on http://localhost:3000/app
-    frontend_path: str = ""
-
-    # The port to run the backend on. NOTE: When running in dev mode, the next available port will be used if this is taken.
-    backend_port: int = constants.DefaultPorts.BACKEND_PORT
-
-    # The backend url the frontend will connect to. This must be updated if the backend is hosted elsewhere, or in production.
-    api_url: str = f"http://localhost:{backend_port}"
-
-    # The url the frontend will be hosted on.
-    deploy_url: Optional[str] = f"http://localhost:{frontend_port}"
-
-    # The url the backend will be hosted on.
-    backend_host: str = "0.0.0.0"
-
-    # The database url used by rx.Model.
-    db_url: Optional[str] = "sqlite:///reflex.db"
-
-    # The redis url
-    redis_url: Optional[str] = None
-
-    # Telemetry opt-in.
-    telemetry_enabled: bool = True
-
-    # The bun path
-    bun_path: ExistingPath = constants.Bun.DEFAULT_PATH
-
-    # Timeout to do a production build of a frontend page.
-    static_page_generation_timeout: int = 60
-
-    # List of origins that are allowed to connect to the backend API.
-    cors_allowed_origins: List[str] = ["*"]
-
-    # Tailwind config.
-    tailwind: Optional[Dict[str, Any]] = {"plugins": ["@tailwindcss/typography"]}
-
-    # Timeout when launching the gunicorn server. TODO(rename this to backend_timeout?)
-    timeout: int = 120
-
-    # Whether to enable or disable nextJS gzip compression.
-    next_compression: bool = True
-
-    # Whether to use React strict mode in nextJS
-    react_strict_mode: bool = True
-
-    # Additional frontend packages to install.
-    frontend_packages: List[str] = []
-
-    # The hosting service backend URL.
-    cp_backend_url: str = Hosting.CP_BACKEND_URL
-    # The hosting service frontend URL.
-    cp_web_url: str = Hosting.CP_WEB_URL
-
-    # The worker class used in production mode
-    gunicorn_worker_class: str = "uvicorn.workers.UvicornH11Worker"
-
-    # Number of gunicorn workers from user
-    gunicorn_workers: Optional[int] = None
-
-    # Number of requests before a worker is restarted
-    gunicorn_max_requests: int = 100
-
-    # Variance limit for max requests; gunicorn only
-    gunicorn_max_requests_jitter: int = 25
-
-    # Indicate which type of state manager to use
-    state_manager_mode: constants.StateManagerMode = constants.StateManagerMode.DISK
-
-    # Maximum expiration lock time for redis state manager
-    redis_lock_expiration: int = constants.Expiration.LOCK
-
-    # Token expiration time for redis state manager
-    redis_token_expiration: int = constants.Expiration.TOKEN
-
-    # Attributes that were explicitly set by the user.
-    _non_default_attributes: Set[str] = pydantic.PrivateAttr(set())
-
-    # Path to file containing key-values pairs to override in the environment; Dotenv format.
-    env_file: Optional[str] = None
-
-    def __init__(self, *args, **kwargs):
-        """Initialize the config values.
+        This method is called after the config is initialized. It sets up the
+        environment variables, updates the config from the environment, and
+        replaces default URLs if ports were set.
 
         Args:
-            *args: The args to pass to the Pydantic init method.
-            **kwargs: The kwargs to pass to the Pydantic init method.
+            **kwargs: The kwargs passed to the Pydantic init method.
 
         Raises:
             ConfigError: If some values in the config are invalid.
         """
-        super().__init__(*args, **kwargs)
+        class_fields = self.class_fields()
+        for key, value in kwargs.items():
+            if key not in class_fields:
+                setattr(self, key, value)
+
+        # Clean up this code when we remove plain envvar in 0.8.0
+        env_loglevel = os.environ.get("REFLEX_LOGLEVEL")
+        if env_loglevel is not None:
+            env_loglevel = LogLevel(env_loglevel.lower())
+        if env_loglevel or self.loglevel != LogLevel.DEFAULT:
+            console.set_log_level(env_loglevel or self.loglevel)
 
         # Update the config from environment variables.
         env_kwargs = self.update_from_env()
         for key, env_value in env_kwargs.items():
             setattr(self, key, env_value)
 
-        # Update default URLs if ports were set
+        # Add builtin plugins if not disabled.
+        self._add_builtin_plugins()
+
+        #   Update default URLs if ports were set
         kwargs.update(env_kwargs)
-        self._non_default_attributes.update(kwargs)
+        self._non_default_attributes = set(kwargs.keys())
         self._replace_defaults(**kwargs)
 
         if (
             self.state_manager_mode == constants.StateManagerMode.REDIS
             and not self.redis_url
         ):
-            raise ConfigError(
-                "REDIS_URL is required when using the redis state manager."
-            )
+            msg = f"{self._prefixes[0]}REDIS_URL is required when using the redis state manager."
+            raise ConfigError(msg)
+
+    def _add_builtin_plugins(self):
+        """Add the builtin plugins to the config."""
+        for plugin in _PLUGINS_ENABLED_BY_DEFAULT:
+            plugin_name = plugin.__module__ + "." + plugin.__qualname__
+            if plugin_name not in self.disable_plugins:
+                if not any(isinstance(p, plugin) for p in self.plugins):
+                    console.warn(
+                        f"`{plugin_name}` plugin is enabled by default, but not explicitly added to the config. "
+                        "If you want to use it, please add it to the `plugins` list in your config inside of `rxconfig.py`. "
+                        f"To disable this plugin, set `disable_plugins` to `{[plugin_name, *self.disable_plugins]!r}`.",
+                    )
+                    self.plugins.append(plugin())
+            else:
+                if any(isinstance(p, plugin) for p in self.plugins):
+                    console.warn(
+                        f"`{plugin_name}` is disabled in the config, but it is still present in the `plugins` list. "
+                        "Please remove it from the `plugins` list in your config inside of `rxconfig.py`.",
+                    )
+
+        for disabled_plugin in self.disable_plugins:
+            if not isinstance(disabled_plugin, str):
+                console.warn(
+                    f"reflex.Config.disable_plugins should only contain strings, but got {disabled_plugin!r}. "
+                )
+            if not any(
+                plugin.__module__ + "." + plugin.__qualname__ == disabled_plugin
+                for plugin in _PLUGINS_ENABLED_BY_DEFAULT
+            ):
+                console.warn(
+                    f"`{disabled_plugin}` is disabled in the config, but it is not a built-in plugin. "
+                    "Please remove it from the `disable_plugins` list in your config inside of `rxconfig.py`.",
+                )
+
+    @classmethod
+    def class_fields(cls) -> set[str]:
+        """Get the fields of the config class.
+
+        Returns:
+            The fields of the config class.
+        """
+        return {field.name for field in dataclasses.fields(cls)}
+
+    if not TYPE_CHECKING:
+
+        def __init__(self, **kwargs):
+            """Initialize the config values.
+
+            Args:
+                **kwargs: The kwargs to pass to the Pydantic init method.
+
+            # noqa: DAR101 self
+            """
+            class_fields = self.class_fields()
+            super().__init__(**{k: v for k, v in kwargs.items() if k in class_fields})
+            self._post_init(**kwargs)
+
+    def json(self) -> str:
+        """Get the config as a JSON string.
+
+        Returns:
+            The config as a JSON string.
+        """
+        import json
+
+        from reflex.utils.serializers import serialize
+
+        return json.dumps(self, default=serialize)
+
+    @property
+    def app_module(self) -> ModuleType | None:
+        """Return the app module if `app_module_import` is set.
+
+        Returns:
+            The app module.
+        """
+        return (
+            importlib.import_module(self.app_module_import)
+            if self.app_module_import
+            else None
+        )
 
     @property
     def module(self) -> str:
@@ -702,7 +417,9 @@ class Config(Base):
         Returns:
             The module name.
         """
-        return ".".join([self.app_name, self.app_name])
+        if self.app_module_import is not None:
+            return self.app_module_import
+        return self.app_name + "." + self.app_name
 
     def update_from_env(self) -> dict[str, Any]:
         """Update the config values based on set environment variables.
@@ -712,36 +429,39 @@ class Config(Base):
             The updated config values.
         """
         if self.env_file:
-            try:
-                from dotenv import load_dotenv  # type: ignore
-
-                # load env file if exists
-                load_dotenv(self.env_file, override=True)
-            except ImportError:
-                console.error(
-                    """The `python-dotenv` package is required to load environment variables from a file. Run `pip install "python-dotenv>=1.0.1"`."""
-                )
+            _load_dotenv_from_files(_paths_from_env_files(self.env_file))
 
         updated_values = {}
         # Iterate over the fields.
-        for key, field in self.__fields__.items():
+        for field in dataclasses.fields(self):
             # The env var name is the key in uppercase.
-            env_var = os.environ.get(key.upper())
+            environment_variable = None
+            for prefix in self._prefixes:
+                if environment_variable := os.environ.get(
+                    f"{prefix}{field.name.upper()}"
+                ):
+                    break
 
             # If the env var is set, override the config value.
-            if env_var is not None:
-                if key.upper() != "DB_URL":
-                    console.info(
-                        f"Overriding config value {key} with env var {key.upper()}={env_var}",
-                        dedupe=True,
-                    )
-
+            if environment_variable and environment_variable.strip():
                 # Interpret the value.
-                value = interpret_env_var_value(env_var, field.outer_type_, field.name)
+                value = interpret_env_var_value(
+                    environment_variable,
+                    field.type,
+                    field.name,
+                )
 
                 # Set the value.
-                updated_values[key] = value
+                updated_values[field.name] = value
 
+                if field.name.upper() in _sensitive_env_vars:
+                    environment_variable = "***"
+
+                if value != getattr(self, field.name):
+                    console.debug(
+                        f"Overriding config value {field.name} with env var {field.name.upper()}={environment_variable}",
+                        dedupe=True,
+                    )
         return updated_values
 
     def get_event_namespace(self) -> str:
@@ -771,16 +491,16 @@ class Config(Base):
         if "api_url" not in self._non_default_attributes:
             # If running in Github Codespaces, override API_URL
             codespace_name = os.getenv("CODESPACE_NAME")
-            GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN = os.getenv(
+            github_codespaces_port_forwarding_domain = os.getenv(
                 "GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN"
             )
             # If running on Replit.com interactively, override API_URL to ensure we maintain the backend_port
             replit_dev_domain = os.getenv("REPLIT_DEV_DOMAIN")
             backend_port = kwargs.get("backend_port", self.backend_port)
-            if codespace_name and GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN:
+            if codespace_name and github_codespaces_port_forwarding_domain:
                 self.api_url = (
                     f"https://{codespace_name}-{kwargs.get('backend_port', self.backend_port)}"
-                    f".{GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN}"
+                    f".{github_codespaces_port_forwarding_domain}"
                 )
             elif replit_dev_domain and backend_port:
                 self.api_url = f"https://{replit_dev_domain}:{backend_port}"
@@ -793,7 +513,7 @@ class Config(Base):
         """
         for key, value in kwargs.items():
             if value is not None:
-                os.environ[key.upper()] = str(value)
+                os.environ[self._prefixes[0] + key.upper()] = str(value)
             setattr(self, key, value)
         self._non_default_attributes.update(kwargs)
         self._replace_defaults(**kwargs)
@@ -816,6 +536,10 @@ def _get_config() -> Config:
     return rxconfig.config
 
 
+# Protect sys.path from concurrent modification
+_config_lock = threading.RLock()
+
+
 def get_config(reload: bool = False) -> Config:
     """Get the app config.
 
@@ -825,21 +549,31 @@ def get_config(reload: bool = False) -> Config:
     Returns:
         The app config.
     """
-    # Remove any cached module when `reload` is requested.
-    if reload and constants.Config.MODULE in sys.modules:
-        del sys.modules[constants.Config.MODULE]
+    cached_rxconfig = sys.modules.get(constants.Config.MODULE, None)
+    if cached_rxconfig is not None:
+        if reload:
+            # Remove any cached module when `reload` is requested.
+            del sys.modules[constants.Config.MODULE]
+        else:
+            return cached_rxconfig.config
 
-    sys_path = sys.path.copy()
-    sys.path.clear()
-    sys.path.append(os.getcwd())
-    try:
-        # Try to import the module with only the current directory in the path.
-        return _get_config()
-    except Exception:
-        # If the module import fails, try to import with the original sys.path.
-        sys.path.extend(sys_path)
-        return _get_config()
-    finally:
-        # Restore the original sys.path.
+    with _config_lock:
+        orig_sys_path = sys.path.copy()
         sys.path.clear()
-        sys.path.extend(sys_path)
+        sys.path.append(str(Path.cwd()))
+        try:
+            # Try to import the module with only the current directory in the path.
+            return _get_config()
+        except Exception:
+            # If the module import fails, try to import with the original sys.path.
+            sys.path.extend(orig_sys_path)
+            return _get_config()
+        finally:
+            # Find any entries added to sys.path by rxconfig.py itself.
+            extra_paths = [
+                p for p in sys.path if p not in orig_sys_path and p != str(Path.cwd())
+            ]
+            # Restore the original sys.path.
+            sys.path.clear()
+            sys.path.extend(extra_paths)
+            sys.path.extend(orig_sys_path)

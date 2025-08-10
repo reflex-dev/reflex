@@ -2,37 +2,31 @@
 
 from __future__ import annotations
 
+import asyncio
+import concurrent.futures
+import traceback
+from collections.abc import Mapping, Sequence
+from datetime import datetime
 from pathlib import Path
-from typing import Any, Callable, Dict, Optional, Type, Union
+from typing import Any
 from urllib.parse import urlparse
 
-from reflex.utils.prerequisites import get_web_dir
-from reflex.vars.base import Var
-
-try:
-    from pydantic.v1.fields import ModelField
-except ModuleNotFoundError:
-    from pydantic.fields import ModelField  # type: ignore
-
 from reflex import constants
-from reflex.components.base import (
-    Body,
-    Description,
-    DocumentHead,
-    Head,
-    Html,
-    Image,
-    Main,
-    Meta,
-    NextScript,
-    Title,
-)
+from reflex.components.base import Description, Image, Scripts
+from reflex.components.base.document import Links, ScrollRestoration
+from reflex.components.base.document import Meta as ReactMeta
 from reflex.components.component import Component, ComponentStyle, CustomComponent
+from reflex.components.el.elements.metadata import Head, Meta, Title
+from reflex.components.el.elements.other import Html
+from reflex.components.el.elements.sectioning import Body
+from reflex.constants.state import FIELD_MARKER
 from reflex.istate.storage import Cookie, LocalStorage, SessionStorage
-from reflex.state import BaseState
+from reflex.state import BaseState, _resolve_delta
 from reflex.style import Style
-from reflex.utils import console, format, imports, path_ops
+from reflex.utils import format, imports, path_ops
 from reflex.utils.imports import ImportVar, ParsedImportDict
+from reflex.utils.prerequisites import get_web_dir
+from reflex.vars.base import Field, Var
 
 # To re-export this function.
 merge_imports = imports.merge_imports
@@ -58,13 +52,14 @@ def compile_import_statement(fields: list[ImportVar]) -> tuple[str, list[str]]:
     # Check for default imports.
     defaults = {field for field in fields_set if field.is_default}
     if len(defaults) >= 2:
-        raise ValueError("Only one default import is allowed.")
+        msg = "Only one default import is allowed."
+        raise ValueError(msg)
 
     # Get the default import, and the specific imports.
     default = next(iter({field.name for field in defaults}), "")
     rest = {field.name for field in fields_set - defaults}
 
-    return default, list(rest)
+    return default, sorted(rest)
 
 
 def validate_imports(import_dict: ParsedImportDict):
@@ -89,9 +84,8 @@ def validate_imports(import_dict: ParsedImportDict):
                 ):
                     used_tags[import_name] = lib if lib[0] == "$" else already_imported
                     continue
-                raise ValueError(
-                    f"Can not compile, the tag {import_name} is used multiple time from {lib} and {used_tags[import_name]}"
-                )
+                msg = f"Can not compile, the tag {import_name} is used multiple time from {lib} and {used_tags[import_name]}"
+                raise ValueError(msg)
             if import_name is not None:
                 used_tags[import_name] = lib
 
@@ -112,25 +106,36 @@ def compile_imports(import_dict: ParsedImportDict) -> list[dict]:
     validate_imports(collapsed_import_dict)
     import_dicts = []
     for lib, fields in collapsed_import_dict.items():
-        default, rest = compile_import_statement(fields)
-
         # prevent lib from being rendered on the page if all imports are non rendered kind
-        if not any({f.render for f in fields}):  # type: ignore
+        if not any(f.render for f in fields):
             continue
 
-        if not lib:
-            if default:
-                raise ValueError("No default field allowed for empty library.")
-            if rest is None or len(rest) == 0:
-                raise ValueError("No fields to import.")
-            for module in sorted(rest):
-                import_dicts.append(get_import_dict(module))
-            continue
+        lib_paths: dict[str, list[ImportVar]] = {}
 
-        # remove the version before rendering the package imports
-        lib = format.format_library_name(lib)
+        for field in fields:
+            lib_paths.setdefault(field.package_path, []).append(field)
 
-        import_dicts.append(get_import_dict(lib, default, rest))
+        compiled = {
+            path: compile_import_statement(fields) for path, fields in lib_paths.items()
+        }
+
+        for path, (default, rest) in compiled.items():
+            if not lib:
+                if default:
+                    msg = "No default field allowed for empty library."
+                    raise ValueError(msg)
+                if rest is None or len(rest) == 0:
+                    msg = "No fields to import."
+                    raise ValueError(msg)
+                import_dicts.extend(get_import_dict(module) for module in sorted(rest))
+                continue
+
+            # remove the version before rendering the package imports
+            formatted_lib = format.format_library_name(lib) + (
+                path if path != "/" else ""
+            )
+
+            import_dicts.append(get_import_dict(formatted_lib, default, rest))
     return import_dicts
 
 
@@ -152,7 +157,35 @@ def get_import_dict(lib: str, default: str = "", rest: list[str] | None = None) 
     }
 
 
-def compile_state(state: Type[BaseState]) -> dict:
+def save_error(error: Exception) -> str:
+    """Save the error to a file.
+
+    Args:
+        error: The error to save.
+
+    Returns:
+        The path of the saved error.
+    """
+    timestamp = datetime.now().strftime("%Y-%m-%d__%H-%M-%S")
+    constants.Reflex.LOGS_DIR.mkdir(parents=True, exist_ok=True)
+    log_path = constants.Reflex.LOGS_DIR / f"error_{timestamp}.log"
+    traceback.TracebackException.from_exception(error).print(file=log_path.open("w+"))
+    return str(log_path)
+
+
+def _sorted_keys(d: Mapping[str, Any]) -> dict[str, Any]:
+    """Sort the keys of a dictionary.
+
+    Args:
+        d: The dictionary to sort.
+
+    Returns:
+        A new dictionary with sorted keys.
+    """
+    return dict(sorted(d.items(), key=lambda kv: kv[0]))
+
+
+def compile_state(state: type[BaseState]) -> dict:
     """Compile the state of the app.
 
     Args:
@@ -161,22 +194,26 @@ def compile_state(state: Type[BaseState]) -> dict:
     Returns:
         A dictionary of the compiled state.
     """
+    initial_state = state(_reflex_internal_init=True).dict(initial=True)
     try:
-        initial_state = state(_reflex_internal_init=True).dict(initial=True)
-    except Exception as e:
-        console.warn(
-            f"Failed to compile initial state with computed vars, excluding them: {e}"
-        )
-        initial_state = state(_reflex_internal_init=True).dict(
-            initial=True, include_computed=False
-        )
-    return initial_state
+        _ = asyncio.get_running_loop()
+    except RuntimeError:
+        pass
+    else:
+        with concurrent.futures.ThreadPoolExecutor() as pool:
+            resolved_initial_state = pool.submit(
+                asyncio.run, _resolve_delta(initial_state)
+            ).result()
+            return _sorted_keys(resolved_initial_state)
+
+    # Normally the compile runs before any event loop starts, we asyncio.run is available for calling.
+    return _sorted_keys(asyncio.run(_resolve_delta(initial_state)))
 
 
 def _compile_client_storage_field(
-    field: ModelField,
+    field: Field,
 ) -> tuple[
-    Type[Cookie] | Type[LocalStorage] | Type[SessionStorage] | None,
+    type[Cookie] | type[LocalStorage] | type[SessionStorage] | None,
     dict[str, Any] | None,
 ]:
     """Compile the given cookie, local_storage or session_storage field.
@@ -199,7 +236,7 @@ def _compile_client_storage_field(
 
 
 def _compile_client_storage_recursive(
-    state: Type[BaseState],
+    state: type[BaseState],
 ) -> tuple[dict[str, dict], dict[str, dict], dict[str, dict]]:
     """Compile the client-side storage for the given state recursively.
 
@@ -222,7 +259,7 @@ def _compile_client_storage_recursive(
         if name in state.inherited_vars:
             # only include vars defined in this state
             continue
-        state_key = f"{state_name}.{name}"
+        state_key = f"{state_name}.{name}" + FIELD_MARKER
         field_type, options = _compile_client_storage_field(field)
         if field_type is Cookie:
             cookies[state_key] = options
@@ -244,7 +281,7 @@ def _compile_client_storage_recursive(
     return cookies, local_storage, session_storage
 
 
-def compile_client_storage(state: Type[BaseState]) -> dict[str, dict]:
+def compile_client_storage(state: type[BaseState]) -> dict[str, dict]:
     """Compile the client-side storage for the given state.
 
     Args:
@@ -273,7 +310,7 @@ def compile_custom_component(
         A tuple of the compiled component and the imports required by the component.
     """
     # Render the component.
-    render = component.get_component(component)
+    render = component.get_component()
 
     # Get the imports.
     imports: ParsedImportDict = {
@@ -282,8 +319,10 @@ def compile_custom_component(
         if lib != component.library
     }
 
+    imports.setdefault("@emotion/react", []).append(ImportVar("jsx"))
+
     # Concatenate the props.
-    props = [prop._js_expr for prop in component.get_prop_vars()]
+    props = list(component.props)
 
     # Compile the component.
     return (
@@ -291,17 +330,18 @@ def compile_custom_component(
             "name": component.tag,
             "props": props,
             "render": render.render(),
-            "hooks": {**render._get_all_hooks_internal(), **render._get_all_hooks()},
+            "hooks": render._get_all_hooks(),
             "custom_code": render._get_all_custom_code(),
+            "dynamic_imports": render._get_all_dynamic_imports(),
         },
         imports,
     )
 
 
 def create_document_root(
-    head_components: list[Component] | None = None,
-    html_lang: Optional[str] = None,
-    html_custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
+    head_components: Sequence[Component] | None = None,
+    html_lang: str | None = None,
+    html_custom_attrs: dict[str, Var | str] | None = None,
 ) -> Component:
     """Create the document root.
 
@@ -313,12 +353,49 @@ def create_document_root(
     Returns:
         The document root.
     """
-    head_components = head_components or []
+    from reflex.utils.misc import preload_color_theme
+
+    existing_meta_types = set()
+
+    for component in head_components or []:
+        if isinstance(component, Meta):
+            if component.char_set is not None:  # pyright: ignore[reportAttributeAccessIssue]
+                existing_meta_types.add("char_set")
+            if (
+                (name := component.name) is not None  # pyright: ignore[reportAttributeAccessIssue]
+                and name.equals(Var.create("viewport"))
+            ):
+                existing_meta_types.add("viewport")
+
+    # Always include the framework meta and link tags.
+    always_head_components = [
+        ReactMeta.create(),
+        Links.create(),
+    ]
+    maybe_head_components = []
+    # Only include these if the user has not specified them.
+    if "char_set" not in existing_meta_types:
+        maybe_head_components.append(Meta.create(char_set="utf-8"))
+    if "viewport" not in existing_meta_types:
+        maybe_head_components.append(
+            Meta.create(name="viewport", content="width=device-width, initial-scale=1")
+        )
+
+    # Add theme preload script as the very first component to prevent FOUC
+    theme_preload_components = [preload_color_theme()]
+
+    head_components = [
+        *theme_preload_components,
+        *(head_components or []),
+        *maybe_head_components,
+        *always_head_components,
+    ]
     return Html.create(
-        DocumentHead.create(*head_components),
+        Head.create(*head_components),
         Body.create(
-            Main.create(),
-            NextScript.create(),
+            Var("children"),
+            ScrollRestoration.create(),
+            Scripts.create(),
         ),
         lang=html_lang or "en",
         custom_attrs=html_custom_attrs or {},
@@ -335,7 +412,7 @@ def create_theme(style: ComponentStyle) -> dict:
         The base style for the app.
     """
     # Get the global style from the style dict.
-    style_rules = Style({k: v for k, v in style.items() if not isinstance(k, Callable)})
+    style_rules = Style({k: v for k, v in style.items() if isinstance(k, str)})
 
     root_style = {
         # Root styles.
@@ -352,6 +429,25 @@ def create_theme(style: ComponentStyle) -> dict:
     return {"styles": {"global": root_style}}
 
 
+def _format_route_part(part: str) -> str:
+    if part.startswith("[") and part.endswith("]"):
+        if part.startswith(("[...", "[[...")):
+            return "$"
+        if part.startswith("[["):
+            return "($" + part.removeprefix("[[").removesuffix("]]") + ")"
+        # We don't add [] here since we are reusing them from the input
+        return "$" + part
+    return "[" + part + "]"
+
+
+def _path_to_file_stem(path: str) -> str:
+    if path == "index":
+        return "_index"
+    path = path if path != "index" else "/"
+    name = ".".join([_format_route_part(part) for part in path.split("/")]).lstrip(".")
+    return name + "._index" if not name.endswith("$") else name
+
+
 def get_page_path(path: str) -> str:
     """Get the path of the compiled JS file for the given page.
 
@@ -361,7 +457,12 @@ def get_page_path(path: str) -> str:
     Returns:
         The path of the compiled JS file.
     """
-    return str(get_web_dir() / constants.Dirs.PAGES / (path + constants.Ext.JS))
+    return str(
+        get_web_dir()
+        / constants.Dirs.PAGES
+        / constants.Dirs.ROUTES
+        / (_path_to_file_stem(path) + constants.Ext.JSX)
+    )
 
 
 def get_theme_path() -> str:
@@ -408,7 +509,7 @@ def get_components_path() -> str:
     return str(
         get_web_dir()
         / constants.Dirs.UTILS
-        / (constants.PageNames.COMPONENTS + constants.Ext.JS),
+        / (constants.PageNames.COMPONENTS + constants.Ext.JSX),
     )
 
 
@@ -421,7 +522,7 @@ def get_stateful_components_path() -> str:
     return str(
         get_web_dir()
         / constants.Dirs.UTILS
-        / (constants.PageNames.STATEFUL_COMPONENTS + constants.Ext.JS)
+        / (constants.PageNames.STATEFUL_COMPONENTS + constants.Ext.JSX)
     )
 
 
@@ -453,17 +554,29 @@ def add_meta(
         children.append(Description.create(content=description))
     children.append(Image.create(content=image))
 
-    page.children.append(
-        Head.create(
-            *children,
-            *meta_tags,
-        )
-    )
+    page.children.extend(children)
+    page.children.extend(meta_tags)
 
     return page
 
 
-def write_page(path: str | Path, code: str):
+def resolve_path_of_web_dir(path: str | Path) -> Path:
+    """Get the path under the web directory.
+
+    Args:
+        path: The path to get. It can be a relative or absolute path.
+
+    Returns:
+        The path under the web directory.
+    """
+    path = Path(path)
+    web_dir = get_web_dir()
+    if path.is_relative_to(web_dir):
+        return path.absolute()
+    return (web_dir / path).absolute()
+
+
+def write_file(path: str | Path, code: str):
     """Write the given code to the given path.
 
     Args:
@@ -471,7 +584,9 @@ def write_page(path: str | Path, code: str):
         code: The code to write.
     """
     path = Path(path)
-    path_ops.mkdir(path.parent)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    if path.exists() and path.read_text(encoding="utf-8") == code:
+        return
     path.write_text(code, encoding="utf-8")
 
 
@@ -495,7 +610,7 @@ def empty_dir(path: str | Path, keep_files: list[str] | None = None):
             path_ops.rm(element)
 
 
-def is_valid_url(url) -> bool:
+def is_valid_url(url: str) -> bool:
     """Check if a url is valid.
 
     Args:

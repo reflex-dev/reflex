@@ -2,12 +2,13 @@
 
 from __future__ import annotations
 
+import dataclasses
 import re
 from collections import defaultdict
-from typing import Any, Literal, Optional, Union
+from dataclasses import dataclass
+from typing import Any, Literal
 
-from reflex.base import Base
-from reflex.components.component import Component, ComponentNamespace
+from reflex.components.component import Component, ComponentNamespace, field
 from reflex.components.core.colors import color
 from reflex.components.core.cond import color_mode_cond
 from reflex.components.el.elements.forms import Button
@@ -403,106 +404,116 @@ class Position(NoExtrasAllowedProps):
 class ShikiDecorations(NoExtrasAllowedProps):
     """Decorations for the code block."""
 
-    start: Union[int, Position]
-    end: Union[int, Position]
+    start: int | Position
+    end: int | Position
     tag_name: str = "span"
     properties: dict[str, Any] = {}
     always_wrap: bool = False
 
 
-class ShikiBaseTransformers(Base):
+@dataclass(kw_only=True)
+class ShikiBaseTransformers:
     """Base for creating transformers."""
 
-    library: str
-    fns: list[FunctionStringVar]
-    style: Optional[Style]
+    library: str = ""
+    fns: list[FunctionStringVar] = dataclasses.field(default_factory=list)
+    style: Style | None = dataclasses.field(default=None)
 
 
+@dataclass(kw_only=True)
 class ShikiJsTransformer(ShikiBaseTransformers):
     """A Wrapped shikijs transformer."""
 
-    library: str = "@shikijs/transformers"
-    fns: list[FunctionStringVar] = [
-        FunctionStringVar.create(fn) for fn in SHIKIJS_TRANSFORMER_FNS
-    ]
-    style: Optional[Style] = Style(
-        {
-            "code": {"line-height": "1.7", "font-size": "0.875em", "display": "grid"},
-            # Diffs
-            ".diff": {
-                "margin": "0 -24px",
-                "padding": "0 24px",
-                "width": "calc(100% + 48px)",
-                "display": "inline-block",
-            },
-            ".diff.add": {
-                "background-color": "rgba(16, 185, 129, .14)",
-                "position": "relative",
-            },
-            ".diff.remove": {
-                "background-color": "rgba(244, 63, 94, .14)",
-                "opacity": "0.7",
-                "position": "relative",
-            },
-            ".diff.remove:after": {
-                "position": "absolute",
-                "left": "10px",
-                "content": "'-'",
-                "color": "#b34e52",
-            },
-            ".diff.add:after": {
-                "position": "absolute",
-                "left": "10px",
-                "content": "'+'",
-                "color": "#18794e",
-            },
-            # Highlight
-            ".highlighted": {
-                "background-color": "rgba(142, 150, 170, .14)",
-                "margin": "0 -24px",
-                "padding": "0 24px",
-                "width": "calc(100% + 48px)",
-                "display": "inline-block",
-            },
-            ".highlighted.error": {
-                "background-color": "rgba(244, 63, 94, .14)",
-            },
-            ".highlighted.warning": {
-                "background-color": "rgba(234, 179, 8, .14)",
-            },
-            # Highlighted Word
-            ".highlighted-word": {
-                "background-color": color("gray", 2),
-                "border": f"1px solid {color('gray', 5)}",
-                "padding": "1px 3px",
-                "margin": "-1px -3px",
-                "border-radius": "4px",
-            },
-            # Focused Lines
-            ".has-focused .line:not(.focused)": {
-                "opacity": "0.7",
-                "filter": "blur(0.095rem)",
-                "transition": "filter .35s, opacity .35s",
-            },
-            ".has-focused:hover .line:not(.focused)": {
-                "opacity": "1",
-                "filter": "none",
-            },
-            # White Space
-            # ".tab, .space": {
-            #     "position": "relative",
-            # },
-            # ".tab::before": {
-            #     "content": "'⇥'",
-            #     "position": "absolute",
-            #     "opacity": "0.3",
-            # },
-            # ".space::before": {
-            #     "content": "'·'",
-            #     "position": "absolute",
-            #     "opacity": "0.3",
-            # },
-        }
+    library: str = "@shikijs/transformers@3.3.0"
+    fns: list[FunctionStringVar] = dataclasses.field(
+        default_factory=lambda: [
+            FunctionStringVar.create(fn) for fn in SHIKIJS_TRANSFORMER_FNS
+        ]
+    )
+    style: Style | None = dataclasses.field(
+        default_factory=lambda: Style(
+            {
+                "code": {
+                    "line-height": "1.7",
+                    "font-size": "0.875em",
+                    "display": "grid",
+                },
+                # Diffs
+                ".diff": {
+                    "margin": "0 -24px",
+                    "padding": "0 24px",
+                    "width": "calc(100% + 48px)",
+                    "display": "inline-block",
+                },
+                ".diff.add": {
+                    "background-color": "rgba(16, 185, 129, .14)",
+                    "position": "relative",
+                },
+                ".diff.remove": {
+                    "background-color": "rgba(244, 63, 94, .14)",
+                    "opacity": "0.7",
+                    "position": "relative",
+                },
+                ".diff.remove:after": {
+                    "position": "absolute",
+                    "left": "10px",
+                    "content": "'-'",
+                    "color": "#b34e52",
+                },
+                ".diff.add:after": {
+                    "position": "absolute",
+                    "left": "10px",
+                    "content": "'+'",
+                    "color": "#18794e",
+                },
+                # Highlight
+                ".highlighted": {
+                    "background-color": "rgba(142, 150, 170, .14)",
+                    "margin": "0 -24px",
+                    "padding": "0 24px",
+                    "width": "calc(100% + 48px)",
+                    "display": "inline-block",
+                },
+                ".highlighted.error": {
+                    "background-color": "rgba(244, 63, 94, .14)",
+                },
+                ".highlighted.warning": {
+                    "background-color": "rgba(234, 179, 8, .14)",
+                },
+                # Highlighted Word
+                ".highlighted-word": {
+                    "background-color": color("gray", 2),
+                    "border": f"1px solid {color('gray', 5)}",
+                    "padding": "1px 3px",
+                    "margin": "-1px -3px",
+                    "border-radius": "4px",
+                },
+                # Focused Lines
+                ".has-focused .line:not(.focused)": {
+                    "opacity": "0.7",
+                    "filter": "blur(0.095rem)",
+                    "transition": "filter .35s, opacity .35s",
+                },
+                ".has-focused:hover .line:not(.focused)": {
+                    "opacity": "1",
+                    "filter": "none",
+                },
+                # White Space
+                # ".tab, .space": {
+                #     "position": "relative", # noqa: ERA001
+                # },
+                # ".tab::before": {
+                #     "content": "'⇥'", # noqa: ERA001
+                #     "position": "absolute", # noqa: ERA001
+                #     "opacity": "0.3",# noqa: ERA001
+                # },
+                # ".space::before": {
+                #     "content": "'·'", # noqa: ERA001
+                #     "position": "absolute", # noqa: ERA001
+                #     "opacity": "0.3", # noqa: ERA001
+                # },
+            }
+        )
     )
 
     def __init__(self, **kwargs):
@@ -538,7 +549,7 @@ class ShikiCodeBlock(Component, MarkdownComponentMap):
 
     alias = "ShikiCode"
 
-    lib_dependencies: list[str] = ["shiki"]
+    lib_dependencies: list[str] = ["shiki@3.3.0"]
 
     # The language to use.
     language: Var[LiteralCodeLanguage] = Var.create("python")
@@ -547,15 +558,13 @@ class ShikiCodeBlock(Component, MarkdownComponentMap):
     theme: Var[LiteralCodeTheme] = Var.create("one-light")
 
     # The set of themes to use for different modes.
-    themes: Var[Union[list[dict[str, Any]], dict[str, str]]]
+    themes: Var[list[dict[str, Any]] | dict[str, str]]
 
     # The code to display.
     code: Var[str]
 
     # The transformers to use for the syntax highlighter.
-    transformers: Var[list[Union[ShikiBaseTransformers, dict[str, Any]]]] = Var.create(
-        []
-    )
+    transformers: Var[list[ShikiBaseTransformers | dict[str, Any]]] = Var.create([])
 
     # The decorations to use for the syntax highlighter.
     decorations: Var[list[ShikiDecorations]] = Var.create([])
@@ -602,7 +611,7 @@ class ShikiCodeBlock(Component, MarkdownComponentMap):
 
         transformer_styles = {}
         # Collect styles from transformers and wrapper
-        for transformer in code_block.transformers._var_value:  # type: ignore
+        for transformer in code_block.transformers._var_value:  # pyright: ignore [reportAttributeAccessIssue]
             if isinstance(transformer, ShikiBaseTransformers) and transformer.style:
                 transformer_styles.update(transformer.style)
         transformer_styles.update(code_wrapper_props.pop("style", {}))
@@ -621,18 +630,21 @@ class ShikiCodeBlock(Component, MarkdownComponentMap):
 
         Returns:
             Imports for the component.
+
+        Raises:
+            ValueError: If the transformers are not of type LiteralVar.
         """
         imports = defaultdict(list)
+        if not isinstance(self.transformers, LiteralVar):
+            msg = f"transformers should be a LiteralVar type. Got {type(self.transformers)} instead."
+            raise ValueError(msg)
         for transformer in self.transformers._var_value:
             if isinstance(transformer, ShikiBaseTransformers):
                 imports[transformer.library].extend(
                     [ImportVar(tag=str(fn)) for fn in transformer.fns]
                 )
-                (
+                if transformer.library not in self.lib_dependencies:
                     self.lib_dependencies.append(transformer.library)
-                    if transformer.library not in self.lib_dependencies
-                    else None
-                )
         return imports
 
     @classmethod
@@ -650,11 +662,11 @@ class ShikiCodeBlock(Component, MarkdownComponentMap):
             ValueError: If a supplied function name is not valid str.
         """
         if any(not isinstance(fn_name, str) for fn_name in fns):
-            raise ValueError(
-                f"the function names should be str names of functions in the specified transformer: {library!r}"
-            )
-        return ShikiBaseTransformers(  # type: ignore
-            library=library, fns=[FunctionStringVar.create(fn) for fn in fns]
+            msg = f"the function names should be str names of functions in the specified transformer: {library!r}"
+            raise ValueError(msg)
+        return ShikiBaseTransformers(
+            library=library,
+            fns=[FunctionStringVar.create(fn) for fn in fns],  # pyright: ignore [reportCallIssue]
         )
 
     def _render(self, props: dict[str, Any] | None = None):
@@ -709,10 +721,12 @@ class ShikiHighLevelCodeBlock(ShikiCodeBlock):
     show_line_numbers: Var[bool]
 
     # Whether a copy button should appear.
-    can_copy: bool = False
+    can_copy: bool = field(default=False, is_javascript_property=False)
 
     # copy_button: A custom copy button to override the default one.
-    copy_button: Optional[Union[Component, bool]] = None
+    copy_button: Component | bool | None = field(
+        default=None, is_javascript_property=False
+    )
 
     @classmethod
     def create(
@@ -757,13 +771,13 @@ class ShikiHighLevelCodeBlock(ShikiCodeBlock):
 
         if can_copy:
             code = children[0]
-            copy_button = (  # type: ignore
+            copy_button = (
                 copy_button
                 if copy_button is not None
                 else Button.create(
                     Icon.create(tag="copy", size=16, color=color("gray", 11)),
                     on_click=[
-                        set_clipboard(cls._strip_transformer_triggers(code)),  # type: ignore
+                        set_clipboard(cls._strip_transformer_triggers(code)),
                         copy_script(),
                     ],
                     style=Style(
@@ -797,8 +811,7 @@ class ShikiHighLevelCodeBlock(ShikiCodeBlock):
             return ShikiCodeBlock.create(
                 children[0], copy_button, position="relative", **props
             )
-        else:
-            return ShikiCodeBlock.create(children[0], **props)
+        return ShikiCodeBlock.create(children[0], **props)
 
     @staticmethod
     def _map_themes(theme: str) -> str:
@@ -815,9 +828,8 @@ class ShikiHighLevelCodeBlock(ShikiCodeBlock):
     @staticmethod
     def _strip_transformer_triggers(code: str | StringVar) -> StringVar | str:
         if not isinstance(code, (StringVar, str)):
-            raise VarTypeError(
-                f"code should be string literal or a StringVar type. Got {type(code)} instead."
-            )
+            msg = f"code should be string literal or a StringVar type. Got {type(code)} instead."
+            raise VarTypeError(msg)
         regex_pattern = r"[\/#]+ *\[!code.*?\]"
 
         if isinstance(code, Var):
@@ -826,6 +838,7 @@ class ShikiHighLevelCodeBlock(ShikiCodeBlock):
             )
         if isinstance(code, str):
             return re.sub(regex_pattern, "", code)
+        return None
 
 
 class TransformerNamespace(ComponentNamespace):

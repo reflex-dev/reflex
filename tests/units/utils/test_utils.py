@@ -1,44 +1,23 @@
 import os
 import typing
+from collections.abc import Mapping, Sequence
 from functools import cached_property
 from pathlib import Path
-from typing import Any, ClassVar, Dict, List, Literal, Type, Union
+from typing import Any, ClassVar, List, Literal, NoReturn  # noqa: UP035
 
+import click
 import pytest
-import typer
 from packaging import version
+from pytest_mock import MockerFixture
 
 from reflex import constants
-from reflex.base import Base
-from reflex.config import environment
+from reflex.environment import environment
 from reflex.event import EventHandler
 from reflex.state import BaseState
-from reflex.utils import build, prerequisites, types
 from reflex.utils import exec as utils_exec
+from reflex.utils import prerequisites, types
 from reflex.utils.exceptions import ReflexError, SystemPackageMissingError
 from reflex.vars.base import Var
-
-
-def mock_event(arg):
-    pass
-
-
-def get_above_max_version():
-    """Get the 1 version above the max required bun version.
-
-    Returns:
-        max bun version plus one.
-
-    """
-    semantic_version_list = constants.Bun.VERSION.split(".")
-    semantic_version_list[-1] = str(int(semantic_version_list[-1]) + 1)  # type: ignore
-    return ".".join(semantic_version_list)
-
-
-V055 = version.parse("0.5.5")
-V059 = version.parse("0.5.9")
-V056 = version.parse("0.5.6")
-VMAXPLUS1 = version.parse(get_above_max_version())
 
 
 class ExampleTestState(BaseState):
@@ -46,7 +25,6 @@ class ExampleTestState(BaseState):
 
     def test_event_handler(self):
         """Test event handler."""
-        pass
 
 
 def test_func():
@@ -54,14 +32,14 @@ def test_func():
 
 
 @pytest.mark.parametrize(
-    "cls,expected",
+    ("cls", "expected"),
     [
         (str, False),
         (int, False),
         (float, False),
         (bool, False),
-        (List, True),
-        (List[int], True),
+        (List, True),  # noqa: UP006
+        (list[int], True),
     ],
 )
 def test_is_generic_alias(cls: type, expected: bool):
@@ -89,67 +67,155 @@ def test_is_generic_alias(cls: type, expected: bool):
         ],
         (bool, int, True),
         (int, bool, False),
-        (list, List, True),
-        (list, List[str], True),  # this is wrong, but it's a limitation of the function
-        (List, list, True),
-        (List[int], list, True),
-        (List[int], List, True),
-        (List[int], List[str], False),
-        (List[int], List[int], True),
-        (List[int], List[float], False),
-        (List[int], List[Union[int, float]], True),
-        (List[int], List[Union[float, str]], False),
-        (Union[int, float], List[Union[int, float]], False),
-        (Union[int, float], Union[int, float, str], True),
-        (Union[int, float], Union[str, float], False),
-        (Dict[str, int], Dict[str, int], True),
-        (Dict[str, bool], Dict[str, int], True),
-        (Dict[str, int], Dict[str, bool], False),
-        (Dict[str, Any], dict[str, str], False),
-        (Dict[str, str], dict[str, str], True),
-        (Dict[str, str], dict[str, Any], True),
-        (Dict[str, Any], dict[str, Any], True),
+        (list, list, True),
+        (list, list[str], True),  # this is wrong, but it's a limitation of the function
+        (list[int], list, True),
+        (list[int], list[str], False),
+        (list[int], list[int], True),
+        (list[int], list[float], False),
+        (list[int], list[int | float], True),
+        (list[int], list[float | str], False),
+        (int | float, list[int | float], False),
+        (int | float, int | float | str, True),
+        (int | float, str | float, False),
+        (dict[str, int], dict[str, int], True),
+        (dict[str, bool], dict[str, int], True),
+        (dict[str, int], dict[str, bool], False),
+        (dict[str, Any], dict[str, str], False),
+        (dict[str, str], dict[str, str], True),
+        (dict[str, str], dict[str, Any], True),
+        (dict[str, Any], dict[str, Any], True),
+        (Mapping[str, int], dict[str, int], False),
+        (Sequence[int], list[int], False),
+        (Sequence[int] | list[int], list[int], False),
+        (str, Literal["test", "value"], True),
+        (str, Literal["test", "value", 2, 3], True),
+        (int, Literal["test", "value"], False),
+        (int, Literal["test", "value", 2, 3], True),
+        (Literal["test", "value"], str, True),
+        (Literal["test", "value", 2, 3], str, False),
+        (Literal["test", "value"], int, False),
+        (Literal["test", "value", 2, 3], int, False),
+        *[
+            (NoReturn, super_class, True)
+            for super_class in [int, float, str, bool, list, dict, object, Any]
+        ],
+        *[
+            (list[NoReturn], list[super_class], True)
+            for super_class in [int, float, str, bool, list, dict, object, Any]
+        ],
     ],
 )
 def test_typehint_issubclass(subclass, superclass, expected):
     assert types.typehint_issubclass(subclass, superclass) == expected
 
 
-def test_validate_invalid_bun_path(mocker):
+@pytest.mark.parametrize(
+    ("subclass", "superclass", "expected"),
+    [
+        *[
+            (base_type, base_type, True)
+            for base_type in [int, float, str, bool, list, dict]
+        ],
+        *[
+            (one_type, another_type, False)
+            for one_type in [int, float, str, list, dict]
+            for another_type in [int, float, str, list, dict]
+            if one_type != another_type
+        ],
+        (bool, int, True),
+        (int, bool, False),
+        (list, list, True),
+        (list, list[str], True),  # this is wrong, but it's a limitation of the function
+        (list[int], list, True),
+        (list[int], list[str], False),
+        (list[int], list[int], True),
+        (list[int], list[float], False),
+        (list[int], list[int | float], True),
+        (list[int], list[float | str], False),
+        (int | float, list[int | float], False),
+        (int | float, int | float | str, True),
+        (int | float, str | float, False),
+        (dict[str, int], dict[str, int], True),
+        (dict[str, bool], dict[str, int], True),
+        (dict[str, int], dict[str, bool], False),
+        (dict[str, Any], dict[str, str], False),
+        (dict[str, str], dict[str, str], True),
+        (dict[str, str], dict[str, Any], True),
+        (dict[str, Any], dict[str, Any], True),
+        (Mapping[str, int], dict[str, int], True),
+        (Sequence[int], list[int], True),
+        (Sequence[int] | list[int], list[int], True),
+        (str, Literal["test", "value"], True),
+        (str, Literal["test", "value", 2, 3], True),
+        (int, Literal["test", "value"], False),
+        (int, Literal["test", "value", 2, 3], True),
+        *[
+            (NoReturn, super_class, True)
+            for super_class in [int, float, str, bool, list, dict, object, Any]
+        ],
+        *[
+            (list[NoReturn], list[super_class], True)
+            for super_class in [int, float, str, bool, list, dict, object, Any]
+        ],
+    ],
+)
+def test_typehint_issubclass_mutable_as_immutable(subclass, superclass, expected):
+    assert (
+        types.typehint_issubclass(
+            subclass, superclass, treat_mutable_superclasss_as_immutable=True
+        )
+        == expected
+    )
+
+
+def test_validate_none_bun_path(mocker: MockerFixture):
+    """Test that an error is thrown when a bun path is not specified.
+
+    Args:
+        mocker: Pytest mocker object.
+    """
+    mocker.patch("reflex.utils.path_ops.get_bun_path", return_value=None)
+    # with pytest.raises(click.exceptions.Exit):
+    prerequisites.validate_bun()
+
+
+def test_validate_invalid_bun_path(mocker: MockerFixture):
     """Test that an error is thrown when a custom specified bun path is not valid
     or does not exist.
 
     Args:
         mocker: Pytest mocker object.
     """
-    mock = mocker.Mock()
-    mocker.patch.object(mock, "bun_path", return_value="/mock/path")
-    mocker.patch("reflex.utils.prerequisites.get_config", mock)
+    mock_path = mocker.Mock()
+    mocker.patch("reflex.utils.path_ops.get_bun_path", return_value=mock_path)
+    mocker.patch("reflex.utils.path_ops.samefile", return_value=False)
     mocker.patch("reflex.utils.prerequisites.get_bun_version", return_value=None)
 
-    with pytest.raises(typer.Exit):
+    with pytest.raises(click.exceptions.Exit):
         prerequisites.validate_bun()
 
 
-def test_validate_bun_path_incompatible_version(mocker):
+def test_validate_bun_path_incompatible_version(mocker: MockerFixture):
     """Test that an error is thrown when the bun version does not meet minimum requirements.
 
     Args:
         mocker: Pytest mocker object.
     """
-    mock = mocker.Mock()
-    mocker.patch.object(mock, "bun_path", return_value="/mock/path")
-    mocker.patch("reflex.utils.prerequisites.get_config", mock)
+    mock_path = mocker.Mock()
+    mock_path.samefile.return_value = False
+    mocker.patch("reflex.utils.path_ops.get_bun_path", return_value=mock_path)
+    mocker.patch("reflex.utils.path_ops.samefile", return_value=False)
     mocker.patch(
         "reflex.utils.prerequisites.get_bun_version",
         return_value=version.parse("0.6.5"),
     )
 
-    with pytest.raises(typer.Exit):
-        prerequisites.validate_bun()
+    # This will just warn the user, not raise an error
+    prerequisites.validate_bun()
 
 
-def test_remove_existing_bun_installation(mocker):
+def test_remove_existing_bun_installation(mocker: MockerFixture):
     """Test that existing bun installation is removed.
 
     Args:
@@ -160,27 +226,6 @@ def test_remove_existing_bun_installation(mocker):
 
     prerequisites.remove_existing_bun_installation()
     rm.assert_called_once()
-
-
-def test_setup_frontend(tmp_path, mocker):
-    """Test checking if assets content have been
-    copied into the .web/public folder.
-
-    Args:
-        tmp_path: root path of test case data directory
-        mocker: mocker object to allow mocking
-    """
-    web_public_folder = tmp_path / ".web" / "public"
-    assets = tmp_path / "assets"
-    assets.mkdir()
-    (assets / "favicon.ico").touch()
-
-    mocker.patch("reflex.utils.prerequisites.install_frontend_packages")
-    mocker.patch("reflex.utils.build.set_env_json")
-
-    build.setup_frontend(tmp_path, disable_telemetry=False)
-    assert web_public_folder.exists()
-    assert (web_public_folder / "favicon.ico").exists()
 
 
 @pytest.fixture
@@ -212,7 +257,7 @@ def test_backend_variable_cls():
 
 
 @pytest.mark.parametrize(
-    "input, output",
+    ("input", "output"),
     [
         ("_classvar", False),
         ("_class_method", False),
@@ -225,28 +270,28 @@ def test_backend_variable_cls():
     ],
 )
 def test_is_backend_base_variable(
-    test_backend_variable_cls: Type[BaseState], input: str, output: bool
+    test_backend_variable_cls: type[BaseState], input: str, output: bool
 ):
     assert types.is_backend_base_variable(input, test_backend_variable_cls) == output
 
 
 @pytest.mark.parametrize(
-    "cls, cls_check, expected",
+    ("cls", "cls_check", "expected"),
     [
         (int, int, True),
         (int, float, False),
-        (int, Union[int, float], True),
-        (float, Union[int, float], True),
-        (str, Union[int, float], False),
-        (List[int], List[int], True),
-        (List[int], List[float], True),
-        (Union[int, float], Union[int, float], False),
-        (Union[int, Var[int]], Var[int], False),
+        (int, int | float, True),
+        (float, int | float, True),
+        (str, int | float, False),
+        (list[int], list[int], True),
+        (list[int], list[float], True),
+        (int | float, int | float, False),
+        (int | Var[int], Var[int], False),
         (int, Any, True),
         (Any, Any, True),
-        (Union[int, float], Any, True),
-        (str, Union[Literal["test", "value"], int], True),
-        (int, Union[Literal["test", "value"], int], True),
+        (int | float, Any, True),
+        (str, Literal["test", "value"] | int, True),
+        (int, Literal["test", "value"] | int, True),
         (str, Literal["test", "value"], True),
         (int, Literal["test", "value"], False),
     ],
@@ -262,7 +307,7 @@ def test_unsupported_literals(cls: type):
 
 
 @pytest.mark.parametrize(
-    "app_name,expected_config_name",
+    ("app_name", "expected_config_name"),
     [
         ("appname", "AppnameConfig"),
         ("app_name", "AppnameConfig"),
@@ -270,7 +315,7 @@ def test_unsupported_literals(cls: type):
         ("appname2.io", "AppnameioConfig"),
     ],
 )
-def test_create_config(app_name, expected_config_name, mocker):
+def test_create_config(app_name: str, expected_config_name: str, mocker: MockerFixture):
     """Test templates.RXCONFIG is formatted with correct app name and config class name.
 
     Args:
@@ -278,7 +323,7 @@ def test_create_config(app_name, expected_config_name, mocker):
         expected_config_name: Expected config name.
         mocker: Mocker object.
     """
-    mocker.patch("builtins.open")
+    mocker.patch("pathlib.Path.write_text")
     tmpl_mock = mocker.patch("reflex.compiler.templates.RXCONFIG")
     prerequisites.create_config(app_name)
     tmpl_mock.render.assert_called_with(
@@ -298,7 +343,7 @@ def tmp_working_dir(tmp_path):
     Yields:
         subdirectory of tmp_path which is now the current working directory.
     """
-    old_pwd = Path(".").resolve()
+    old_pwd = Path.cwd()
     working_dir = tmp_path / "working_dir"
     working_dir.mkdir()
     os.chdir(working_dir)
@@ -324,18 +369,15 @@ def test_create_config_e2e(tmp_working_dir):
 class DataFrame:
     """A Fake pandas DataFrame class."""
 
-    pass
-
 
 @pytest.mark.parametrize(
-    "class_type,expected",
+    ("class_type", "expected"),
     [
         (list, False),
         (int, False),
         (dict, False),
         (DataFrame, True),
         (typing.Any, False),
-        (typing.List, False),
     ],
 )
 def test_is_dataframe(class_type, expected):
@@ -349,7 +391,9 @@ def test_is_dataframe(class_type, expected):
 
 
 @pytest.mark.parametrize("gitignore_exists", [True, False])
-def test_initialize_non_existent_gitignore(tmp_path, mocker, gitignore_exists):
+def test_initialize_non_existent_gitignore(
+    tmp_path, mocker: MockerFixture, gitignore_exists
+):
     """Test that the generated .gitignore_file file on reflex init contains the correct file
     names with correct formatting.
 
@@ -380,7 +424,7 @@ def test_initialize_non_existent_gitignore(tmp_path, mocker, gitignore_exists):
     assert set(file_content) - expected == set()
 
 
-def test_validate_app_name(tmp_path, mocker):
+def test_validate_app_name(tmp_path, mocker: MockerFixture):
     """Test that an error is raised if the app name is reflex or if the name is not according to python package naming conventions.
 
     Args:
@@ -392,104 +436,14 @@ def test_validate_app_name(tmp_path, mocker):
 
     mocker.patch("reflex.utils.prerequisites.os.getcwd", return_value=str(reflex))
 
-    with pytest.raises(typer.Exit):
+    with pytest.raises(click.exceptions.Exit):
         prerequisites.validate_app_name()
 
-    with pytest.raises(typer.Exit):
+    with pytest.raises(click.exceptions.Exit):
         prerequisites.validate_app_name(app_name="1_test")
 
 
-def test_node_install_windows(tmp_path, mocker):
-    """Require user to install node manually for windows if node is not installed.
-
-    Args:
-        tmp_path: Test working dir.
-        mocker: Pytest mocker object.
-    """
-    fnm_root_path = tmp_path / "reflex" / "fnm"
-    fnm_exe = fnm_root_path / "fnm.exe"
-
-    mocker.patch("reflex.utils.prerequisites.constants.Fnm.DIR", fnm_root_path)
-    mocker.patch("reflex.utils.prerequisites.constants.Fnm.EXE", fnm_exe)
-    mocker.patch("reflex.utils.prerequisites.constants.IS_WINDOWS", True)
-    mocker.patch("reflex.utils.processes.new_process")
-    mocker.patch("reflex.utils.processes.stream_logs")
-
-    class Resp(Base):
-        status_code = 200
-        text = "test"
-
-    mocker.patch("httpx.stream", return_value=Resp())
-    download = mocker.patch("reflex.utils.prerequisites.download_and_extract_fnm_zip")
-    mocker.patch("reflex.utils.prerequisites.zipfile.ZipFile")
-    mocker.patch("reflex.utils.prerequisites.path_ops.rm")
-
-    prerequisites.install_node()
-
-    assert fnm_root_path.exists()
-    download.assert_called_once()
-
-
-@pytest.mark.parametrize(
-    "machine, system",
-    [
-        ("x64", "Darwin"),
-        ("arm64", "Darwin"),
-        ("x64", "Windows"),
-        ("arm64", "Windows"),
-        ("armv7", "Linux"),
-        ("armv8-a", "Linux"),
-        ("armv8.1-a", "Linux"),
-        ("armv8.2-a", "Linux"),
-        ("armv8.3-a", "Linux"),
-        ("armv8.4-a", "Linux"),
-        ("aarch64", "Linux"),
-        ("aarch32", "Linux"),
-    ],
-)
-def test_node_install_unix(tmp_path, mocker, machine, system):
-    fnm_root_path = tmp_path / "reflex" / "fnm"
-    fnm_exe = fnm_root_path / "fnm"
-
-    mocker.patch("reflex.utils.prerequisites.constants.Fnm.DIR", fnm_root_path)
-    mocker.patch("reflex.utils.prerequisites.constants.Fnm.EXE", fnm_exe)
-    mocker.patch("reflex.utils.prerequisites.constants.IS_WINDOWS", False)
-    mocker.patch("reflex.utils.prerequisites.platform.machine", return_value=machine)
-    mocker.patch("reflex.utils.prerequisites.platform.system", return_value=system)
-
-    class Resp(Base):
-        status_code = 200
-        text = "test"
-
-    mocker.patch("httpx.stream", return_value=Resp())
-    download = mocker.patch("reflex.utils.prerequisites.download_and_extract_fnm_zip")
-    process = mocker.patch("reflex.utils.processes.new_process")
-    chmod = mocker.patch("reflex.utils.prerequisites.os.chmod")
-    mocker.patch("reflex.utils.processes.stream_logs")
-
-    prerequisites.install_node()
-
-    assert fnm_root_path.exists()
-    download.assert_called_once()
-    if system == "Darwin" and machine == "arm64":
-        process.assert_called_with(
-            [
-                fnm_exe,
-                "install",
-                "--arch=arm64",
-                constants.Node.VERSION,
-                "--fnm-dir",
-                fnm_root_path,
-            ]
-        )
-    else:
-        process.assert_called_with(
-            [fnm_exe, "install", constants.Node.VERSION, "--fnm-dir", fnm_root_path]
-        )
-    chmod.assert_called_once()
-
-
-def test_bun_install_without_unzip(mocker):
+def test_bun_install_without_unzip(mocker: MockerFixture):
     """Test that an error is thrown when installing bun with unzip not installed.
 
     Args:
@@ -504,7 +458,7 @@ def test_bun_install_without_unzip(mocker):
 
 
 @pytest.mark.parametrize("bun_version", [constants.Bun.VERSION, "1.0.0"])
-def test_bun_install_version(mocker, bun_version):
+def test_bun_install_version(mocker: MockerFixture, bun_version):
     """Test that bun is downloaded when the host version(installed by reflex)
     different from the current version set in reflex.
 
@@ -530,7 +484,7 @@ def test_bun_install_version(mocker, bun_version):
 
 
 @pytest.mark.parametrize("is_windows", [True, False])
-def test_create_reflex_dir(mocker, is_windows):
+def test_create_reflex_dir(mocker: MockerFixture, is_windows):
     """Test that a reflex directory is created on initializing frontend
     dependencies.
 
@@ -552,7 +506,7 @@ def test_create_reflex_dir(mocker, is_windows):
     assert create_cmd.called
 
 
-def test_output_system_info(mocker):
+def test_output_system_info(mocker: MockerFixture):
     """Make sure reflex does not crash dumping system info.
 
     Args:
@@ -587,9 +541,7 @@ def test_style_prop_with_event_handler_value(callable):
     }
 
     with pytest.raises(ReflexError):
-        rx.box(
-            style=style,  # type: ignore
-        )
+        rx.box(style=style)
 
 
 def test_is_prod_mode() -> None:

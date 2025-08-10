@@ -25,7 +25,7 @@ If the app uses additional backend API routes, those should be added to the
 ## Build Reflex Production Service
 
 During build, set `DOMAIN` environment variable to the domain where the app will
-be hosted!  (Do not include http or https, it will always use https).
+be hosted! (Do not include http or https, it will always use https).
 
 **If `DOMAIN` is not provided, the service will default to `localhost`.**
 

@@ -5,12 +5,12 @@
 # then copy the contents of `frontend.zip` to your static file server (github pages, s3, etc).
 #
 # Azure Static Web App example:
-#    npx @azure/static-web-apps-cli deploy --env production --app-location .web/_static
+#    npx @azure/static-web-apps-cli deploy --env production --app-location .web/build/client
 #
 # For dynamic routes to function properly, ensure that 404s are redirected to /404 on the
 # static file host (for github pages, this works out of the box; remember to create .nojekyll).
 #
-# For azure static web apps, add `staticwebapp.config.json` to to `.web/_static` with the following:
+# For azure static web apps, add `staticwebapp.config.json` to to `.web/build/client` with the following:
 #  {
 #     "responseOverrides": {
 #        "404": {
@@ -23,11 +23,11 @@
 # for example, pass `docker build --platform=linux/amd64 ...`
 
 # Stage 1: init
-FROM python:3.11 as init
+FROM python:3.13 as init
 
 ARG uv=/root/.local/bin/uv
 
-# Install `uv` for faster package boostrapping
+# Install `uv` for faster package bootstrapping
 ADD --chmod=755 https://astral.sh/uv/install.sh /install.sh
 RUN /install.sh && rm /install.sh
 
@@ -48,11 +48,11 @@ RUN $uv pip install -r requirements.txt
 RUN reflex init
 
 # Stage 2: copy artifacts into slim image 
-FROM python:3.11-slim
+FROM python:3.13-slim
 WORKDIR /app
 RUN adduser --disabled-password --home /app reflex
 COPY --chown=reflex --from=init /app /app
-# Install libpq-dev for psycopg2 (skip if not using postgres).
+# Install libpq-dev for psycopg (skip if not using postgres).
 RUN apt-get update -y && apt-get install -y libpq-dev && rm -rf /var/lib/apt/lists/*
 USER reflex
 ENV PATH="/app/.venv/bin:$PATH" PYTHONUNBUFFERED=1

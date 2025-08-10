@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-from typing import Dict, Tuple
-
 from reflex.components.component import Component
 from reflex.components.datadisplay.logo import svg_logo
 from reflex.components.el import a, button, details, div, h2, hr, p, pre, summary
@@ -11,11 +9,12 @@ from reflex.event import EventHandler, set_clipboard
 from reflex.state import FrontendEventExceptionState
 from reflex.vars.base import Var
 from reflex.vars.function import ArgsFunctionOperation
+from reflex.vars.object import ObjectVar
 
 
 def on_error_spec(
-    error: Var[Dict[str, str]], info: Var[Dict[str, str]]
-) -> Tuple[Var[str], Var[str]]:
+    error: ObjectVar[dict[str, str]], info: ObjectVar[dict[str, str]]
+) -> tuple[Var[str], Var[str]]:
     """The spec for the on_error event handler.
 
     Args:
@@ -26,15 +25,18 @@ def on_error_spec(
         The arguments for the event handler.
     """
     return (
-        error.stack,
+        error.name.to(str) + ": " + error.message.to(str) + "\n" + error.stack.to(str),
         info.componentStack,
     )
+
+
+_ERROR_DISPLAY: str = r"""event_args.error.name + ': ' + event_args.error.message + '\n' + event_args.error.stack"""
 
 
 class ErrorBoundary(Component):
     """A React Error Boundary component that catches unhandled frontend exceptions."""
 
-    library = "react-error-boundary"
+    library = "react-error-boundary@6.0.0"
     tag = "ErrorBoundary"
 
     # Fired when the boundary catches an error.
@@ -77,9 +79,7 @@ class ErrorBoundary(Component):
                                     div(
                                         div(
                                             pre(
-                                                Var(
-                                                    _js_expr="event_args.error.stack",
-                                                ),
+                                                Var(_js_expr=_ERROR_DISPLAY),
                                             ),
                                             padding="0.5rem",
                                             width="fit-content",
@@ -94,7 +94,7 @@ class ErrorBoundary(Component):
                                     button(
                                         "Copy",
                                         on_click=set_clipboard(
-                                            Var(_js_expr="event_args.error.stack"),
+                                            Var(_js_expr=_ERROR_DISPLAY)
                                         ),
                                         padding="0.35rem 0.75rem",
                                         margin="0.5rem",
@@ -136,6 +136,8 @@ class ErrorBoundary(Component):
                         height="100%",
                         width="100%",
                         position="absolute",
+                        background_color="#fff",
+                        color="#000",
                         display="flex",
                         align_items="center",
                         justify_content="center",

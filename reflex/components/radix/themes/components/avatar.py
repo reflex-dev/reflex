@@ -3,9 +3,12 @@
 from typing import Literal
 
 from reflex.components.core.breakpoints import Responsive
+from reflex.components.radix.themes.base import (
+    LiteralAccentColor,
+    LiteralRadius,
+    RadixThemesComponent,
+)
 from reflex.vars.base import Var
-
-from ..base import LiteralAccentColor, LiteralRadius, RadixThemesComponent
 
 LiteralSize = Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]
 

@@ -1,9 +1,9 @@
 """Integration tests for table and related components."""
 
-from typing import Generator
+from collections.abc import Generator
 
 import pytest
-from playwright.sync_api import Page
+from playwright.sync_api import Page, expect
 
 from reflex.testing import AppHarness
 
@@ -11,7 +11,7 @@ expected_col_headers = ["Name", "Age", "Location"]
 expected_row_headers = ["John", "Jane", "Joe"]
 expected_cells_data = [
     ["30", "New York"],
-    ["31", "San Fransisco"],
+    ["31", "San Francisco"],
     ["32", "Los Angeles"],
 ]
 
@@ -20,7 +20,7 @@ def Table():
     """App using table component."""
     import reflex as rx
 
-    app = rx.App(state=rx.State)
+    app = rx.App()
 
     @app.add_page
     def index():
@@ -42,7 +42,7 @@ def Table():
                     rx.table.row(
                         rx.table.row_header_cell("Jane"),
                         rx.table.cell(31),
-                        rx.table.cell("San Fransisco"),
+                        rx.table.cell("San Francisco"),
                     ),
                     rx.table.row(
                         rx.table.row_header_cell("Joe"),
@@ -55,7 +55,7 @@ def Table():
         )
 
 
-@pytest.fixture()
+@pytest.fixture
 def table_app(tmp_path_factory) -> Generator[AppHarness, None, None]:
     """Start Table app at tmp_path via AppHarness.
 
@@ -87,14 +87,18 @@ def test_table(page: Page, table_app: AppHarness):
     table = page.get_by_role("table")
 
     # Check column headers
-    headers = table.get_by_role("columnheader").all_inner_texts()
-    assert headers == expected_col_headers
+    expect(table.get_by_role("columnheader")).to_have_count(3)
+    headers = table.get_by_role("columnheader")
+    for header, exp_value in zip(headers.all(), expected_col_headers, strict=True):
+        expect(header).to_have_text(exp_value)
 
     # Check rows headers
-    rows = table.get_by_role("rowheader").all_inner_texts()
-    assert rows == expected_row_headers
+    rows = table.get_by_role("rowheader")
+    for row, expected_row in zip(rows.all(), expected_row_headers, strict=True):
+        expect(row).to_have_text(expected_row)
 
     # Check cells
     rows = table.get_by_role("cell").all_inner_texts()
     for i, expected_row in enumerate(expected_cells_data):
-        assert [rows[idx := i * 2], rows[idx + 1]] == expected_row
+        idx = i * 2
+        assert [rows[idx], rows[idx + 1]] == expected_row

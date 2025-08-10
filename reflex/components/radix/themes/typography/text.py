@@ -11,9 +11,9 @@ from reflex.components.component import ComponentNamespace
 from reflex.components.core.breakpoints import Responsive
 from reflex.components.el import elements
 from reflex.components.markdown.markdown import MarkdownComponentMap
+from reflex.components.radix.themes.base import LiteralAccentColor, RadixThemesComponent
 from reflex.vars.base import Var
 
-from ..base import LiteralAccentColor, RadixThemesComponent
 from .base import LiteralTextAlign, LiteralTextSize, LiteralTextTrim, LiteralTextWeight
 
 LiteralType = Literal[
@@ -47,7 +47,7 @@ class Text(elements.Span, RadixThemesComponent, MarkdownComponentMap):
     as_child: Var[bool]
 
     # Change the default rendered element into a semantically appropriate alternative (cannot be used with asChild)
-    as_: Var[LiteralType] = "p"  # type: ignore
+    as_: Var[LiteralType] = Var.create("p")
 
     # Text size: "1" - "9"
     size: Var[Responsive[LiteralTextSize]]
@@ -71,7 +71,7 @@ class Text(elements.Span, RadixThemesComponent, MarkdownComponentMap):
 class Span(Text):
     """A variant of text rendering as <span> element."""
 
-    as_: Var[LiteralType] = "span"  # type: ignore
+    as_: Var[LiteralType] = Var.create("span")
 
 
 class Em(elements.Em, RadixThemesComponent):

@@ -4,23 +4,24 @@
 # Style based on https://ui.shadcn.com/docs/components/drawer
 from __future__ import annotations
 
-from typing import Any, List, Literal, Optional, Union
+from collections.abc import Sequence
+from typing import Any, Literal
 
 from reflex.components.component import Component, ComponentNamespace
 from reflex.components.radix.primitives.base import RadixPrimitiveComponent
 from reflex.components.radix.themes.base import Theme
 from reflex.components.radix.themes.layout.flex import Flex
+from reflex.constants.compiler import MemoizationMode
 from reflex.event import EventHandler, no_args_event_spec, passthrough_event_spec
-from reflex.utils import console
 from reflex.vars.base import Var
 
 
 class DrawerComponent(RadixPrimitiveComponent):
     """A Drawer component."""
 
-    library = "vaul"
+    library = "vaul@1.1.2"
 
-    lib_dependencies: List[str] = ["@radix-ui/react-dialog@^1.0.5"]
+    lib_dependencies: list[str] = ["@radix-ui/react-dialog@1.1.14"]
 
 
 LiteralDirectionType = Literal["top", "bottom", "left", "right"]
@@ -58,7 +59,7 @@ class DrawerRoot(DrawerComponent):
     handle_only: Var[bool]
 
     # Array of numbers from 0 to 100 that corresponds to % of the screen a given snap point should take up. Should go from least visible. Also Accept px values, which doesn't take screen height into account.
-    snap_points: Optional[List[Union[str, float]]]
+    snap_points: Sequence[str | float] | None
 
     # Index of a snapPoint from which the overlay fade should be applied. Defaults to the last snap point.
     fade_from_index: Var[int]
@@ -67,7 +68,7 @@ class DrawerRoot(DrawerComponent):
     scroll_lock_timeout: Var[int]
 
     # When `True`, it prevents scroll restoration. Defaults to `True`.
-    preventScrollRestoration: Var[bool]
+    prevent_scroll_restoration: Var[bool]
 
     # Enable background scaling, it requires container element with `vaul-drawer-wrapper` attribute to scale its background.
     should_scale_background: Var[bool]
@@ -84,7 +85,9 @@ class DrawerTrigger(DrawerComponent):
     alias = "Vaul" + tag
 
     # Defaults to true, if the first child acts as the trigger.
-    as_child: Var[bool] = True  # type: ignore
+    as_child: Var[bool] = Var.create(True)
+
+    _memoization_mode = MemoizationMode(recursive=False)
 
     @classmethod
     def create(cls, *children: Any, **props: Any) -> Component:
@@ -140,19 +143,19 @@ class DrawerContent(DrawerComponent):
         base_style.update(style)
         return {"css": base_style}
 
-    # Fired when the drawer content is opened. Deprecated.
+    # Fired when the drawer content is opened.
     on_open_auto_focus: EventHandler[no_args_event_spec]
 
-    # Fired when the drawer content is closed. Deprecated.
+    # Fired when the drawer content is closed.
     on_close_auto_focus: EventHandler[no_args_event_spec]
 
-    # Fired when the escape key is pressed. Deprecated.
+    # Fired when the escape key is pressed.
     on_escape_key_down: EventHandler[no_args_event_spec]
 
-    # Fired when the pointer is down outside the drawer content. Deprecated.
+    # Fired when the pointer is down outside the drawer content.
     on_pointer_down_outside: EventHandler[no_args_event_spec]
 
-    # Fired when interacting outside the drawer content. Deprecated.
+    # Fired when interacting outside the drawer content.
     on_interact_outside: EventHandler[no_args_event_spec]
 
     @classmethod
@@ -170,23 +173,6 @@ class DrawerContent(DrawerComponent):
         Returns:
                  The drawer content.
         """
-        deprecated_properties = [
-            "on_open_auto_focus",
-            "on_close_auto_focus",
-            "on_escape_key_down",
-            "on_pointer_down_outside",
-            "on_interact_outside",
-        ]
-
-        for prop in deprecated_properties:
-            if prop in props:
-                console.deprecate(
-                    feature_name="drawer content events",
-                    reason=f"The `{prop}` event is deprecated and will be removed in 0.7.0.",
-                    deprecation_version="0.6.3",
-                    removal_version="0.7.0",
-                )
-
         comp = super().create(*children, **props)
 
         return Theme.create(comp)

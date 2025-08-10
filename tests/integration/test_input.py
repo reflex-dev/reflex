@@ -1,6 +1,6 @@
 """Integration tests for text input and related components."""
 
-from typing import Generator
+from collections.abc import Generator
 
 import pytest
 from selenium.webdriver.common.by import By
@@ -16,7 +16,11 @@ def FullyControlledInput():
     class State(rx.State):
         text: str = "initial"
 
-    app = rx.App(state=rx.State)
+        @rx.event
+        def set_text(self, text: str):
+            self.text = text
+
+    app = rx.App()
 
     @app.add_page
     def index():
@@ -26,11 +30,11 @@ def FullyControlledInput():
             ),
             rx.input(
                 id="debounce_input_input",
-                on_change=State.set_text,  # type: ignore
+                on_change=State.set_text,
                 value=State.text,
             ),
             rx.input(value=State.text, id="value_input", is_read_only=True),
-            rx.input(on_change=State.set_text, id="on_change_input"),  # type: ignore
+            rx.input(on_change=State.set_text, id="on_change_input"),
             rx.el.input(
                 value=State.text,
                 id="plain_value_input",
@@ -51,7 +55,7 @@ def FullyControlledInput():
         )
 
 
-@pytest.fixture()
+@pytest.fixture
 def fully_controlled_input(tmp_path) -> Generator[AppHarness, None, None]:
     """Start FullyControlledInput app at tmp_path via AppHarness.
 
@@ -79,8 +83,9 @@ async def test_fully_controlled_input(fully_controlled_input: AppHarness):
     driver = fully_controlled_input.frontend()
 
     # get a reference to the connected client
-    token_input = driver.find_element(By.ID, "token")
-    assert token_input
+    token_input = AppHarness.poll_for_or_raise_timeout(
+        lambda: driver.find_element(By.ID, "token")
+    )
 
     # wait for the backend connection to send the token
     token = fully_controlled_input.poll_for_value(token_input)
@@ -133,7 +138,7 @@ async def test_fully_controlled_input(fully_controlled_input: AppHarness):
     # move cursor to home, then to the right and type characters
     debounce_input.send_keys(*([Keys.ARROW_LEFT] * len("initial")), Keys.ARROW_RIGHT)
     debounce_input.send_keys("foo")
-    assert AppHarness._poll_for(
+    AppHarness.expect(
         lambda: fully_controlled_input.poll_for_value(value_input) == "ifoonitial"
     )
     assert debounce_input.get_attribute("value") == "ifoonitial"
@@ -155,7 +160,7 @@ async def test_fully_controlled_input(fully_controlled_input: AppHarness):
 
     # type more characters
     debounce_input.send_keys("getting testing done")
-    assert AppHarness._poll_for(
+    AppHarness.expect(
         lambda: fully_controlled_input.poll_for_value(value_input)
         == "getting testing done"
     )
@@ -168,7 +173,7 @@ async def test_fully_controlled_input(fully_controlled_input: AppHarness):
 
     # type into the on_change input
     on_change_input.send_keys("overwrite the state")
-    assert AppHarness._poll_for(
+    AppHarness.expect(
         lambda: fully_controlled_input.poll_for_value(value_input)
         == "overwrite the state"
     )
@@ -181,8 +186,8 @@ async def test_fully_controlled_input(fully_controlled_input: AppHarness):
     )
 
     clear_button.click()
-    assert AppHarness._poll_for(lambda: on_change_input.get_attribute("value") == "")
+    AppHarness.expect(lambda: on_change_input.get_attribute("value") == "")
     # potential bug: clearing the on_change field doesn't itself trigger on_change
-    # assert backend_state.text == ""
-    # assert debounce_input.get_attribute("value") == ""
-    # assert value_input.get_attribute("value") == ""
+    # assert backend_state.text == "" #noqa: ERA001
+    # assert debounce_input.get_attribute("value") == "" #noqa: ERA001
+    # assert value_input.get_attribute("value") == "" #noqa: ERA001

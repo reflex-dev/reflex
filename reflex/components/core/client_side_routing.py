@@ -24,7 +24,7 @@ class ClientSideRouting(Component):
     library = "$/utils/client_side_routing"
     tag = "useClientSideRouting"
 
-    def add_hooks(self) -> list[str]:
+    def add_hooks(self) -> list[str | Var]:
         """Get the hooks to render.
 
         Returns:
@@ -41,7 +41,7 @@ class ClientSideRouting(Component):
         return ""
 
 
-def wait_for_client_redirect(component) -> Component:
+def wait_for_client_redirect(component: Component) -> Component:
     """Wait for a redirect to occur before rendering a component.
 
     This prevents the 404 page from flashing while the redirect is happening.
@@ -53,17 +53,18 @@ def wait_for_client_redirect(component) -> Component:
         The conditionally rendered component.
     """
     return cond(
-        condition=route_not_found,
-        c1=component,
-        c2=ClientSideRouting.create(),
+        route_not_found,
+        component,
+        ClientSideRouting.create(),
     )
 
 
-class Default404Page(Component):
-    """The NextJS default 404 page."""
+def default_404_page() -> Component:
+    """Render the default 404 page.
 
-    library = "next/error"
-    tag = "Error"
-    is_default = True
+    Returns:
+        The 404 page component.
+    """
+    import reflex as rx
 
-    status_code: Var[int] = 404  # type: ignore
+    return rx.el.span("404: Page not found")

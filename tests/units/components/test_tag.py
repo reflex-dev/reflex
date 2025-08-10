@@ -1,5 +1,3 @@
-from typing import Dict, List
-
 import pytest
 
 from reflex.components.tags import CondTag, Tag, tagless
@@ -7,16 +5,16 @@ from reflex.vars.base import LiteralVar, Var
 
 
 @pytest.mark.parametrize(
-    "props,test_props",
+    ("props", "test_props"),
     [
         ({}, []),
-        ({"key-hypen": 1}, ["key-hypen={1}"]),
-        ({"key": 1}, ["key={1}"]),
-        ({"key": "value"}, ['key={"value"}']),
-        ({"key": True, "key2": "value2"}, ["key={true}", 'key2={"value2"}']),
+        ({"key-hyphen": 1}, ['"key-hyphen":1']),
+        ({"key": 1}, ["key:1"]),
+        ({"key": "value"}, ['key:"value"']),
+        ({"key": True, "key2": "value2"}, ["key:true", 'key2:"value2"']),
     ],
 )
-def test_format_props(props: Dict[str, Var], test_props: List):
+def test_format_props(props: dict[str, Var], test_props: list):
     """Test that the formatted props are correct.
 
     Args:
@@ -29,7 +27,7 @@ def test_format_props(props: Dict[str, Var], test_props: List):
 
 
 @pytest.mark.parametrize(
-    "prop,valid",
+    ("prop", "valid"),
     [
         (1, True),
         (3.14, True),
@@ -60,21 +58,51 @@ def test_add_props():
 
 
 @pytest.mark.parametrize(
-    "tag,expected",
+    ("tag", "expected"),
     [
-        (Tag(), {"name": "", "contents": "", "props": {}}),
-        (Tag(name="br"), {"name": "br", "contents": "", "props": {}}),
-        (Tag(contents="hello"), {"name": "", "contents": "hello", "props": {}}),
+        (
+            Tag(),
+            {
+                "name": "",
+                "children": [],
+                "contents": "",
+                "props": [],
+            },
+        ),
+        (
+            Tag(name="br"),
+            {
+                "name": "br",
+                "children": [],
+                "contents": "",
+                "props": [],
+            },
+        ),
+        (
+            Tag(contents="hello"),
+            {
+                "name": "",
+                "children": [],
+                "contents": "hello",
+                "props": [],
+            },
+        ),
         (
             Tag(name="h1", contents="hello"),
-            {"name": "h1", "contents": "hello", "props": {}},
+            {
+                "name": "h1",
+                "children": [],
+                "contents": "hello",
+                "props": [],
+            },
         ),
         (
             Tag(name="box", props={"color": "red", "textAlign": "center"}),
             {
                 "name": "box",
+                "children": [],
                 "contents": "",
-                "props": {"color": "red", "textAlign": "center"},
+                "props": ['color:"red"', 'textAlign:"center"'],
             },
         ),
         (
@@ -85,13 +113,14 @@ def test_add_props():
             ),
             {
                 "name": "box",
+                "children": [],
                 "contents": "text",
-                "props": {"color": "red", "textAlign": "center"},
+                "props": ['color:"red"', 'textAlign:"center"'],
             },
         ),
     ],
 )
-def test_format_tag(tag: Tag, expected: Dict):
+def test_format_tag(tag: Tag, expected: dict):
     """Test that the tag dict is correct.
 
     Args:
@@ -99,10 +128,7 @@ def test_format_tag(tag: Tag, expected: Dict):
         expected: The expected tag dictionary.
     """
     tag_dict = dict(tag)
-    assert tag_dict["name"] == expected["name"]
-    assert tag_dict["contents"] == expected["contents"]
-    for prop, prop_value in tag_dict["props"].items():
-        assert prop_value.equals(LiteralVar.create(expected["props"][prop]))
+    assert tag_dict == expected
 
 
 def test_format_cond_tag():
@@ -110,7 +136,7 @@ def test_format_cond_tag():
     tag = CondTag(
         true_value=dict(Tag(name="h1", contents="True content")),
         false_value=dict(Tag(name="h2", contents="False content")),
-        cond=Var(_js_expr="logged_in", _var_type=bool),
+        cond=Var("logged_in", _var_type=bool),
     )
     tag_dict = dict(tag)
     cond, true_value, false_value = (

@@ -1,10 +1,7 @@
 """Interactive components provided by @radix-ui/themes."""
 
-from typing import Union
-
+from reflex.components.radix.themes.base import RadixThemesComponent
 from reflex.vars.base import Var
-
-from ..base import RadixThemesComponent
 
 
 class AspectRatio(RadixThemesComponent):
@@ -13,7 +10,7 @@ class AspectRatio(RadixThemesComponent):
     tag = "AspectRatio"
 
     # The ratio of the width to the height of the element
-    ratio: Var[Union[float, int]]
+    ratio: Var[float | int]
 
 
 aspect_ratio = AspectRatio.create

@@ -1,6 +1,7 @@
-"""Test cases for the FastAPI lifespan integration."""
+"""Test cases for the Starlette lifespan integration."""
 
-from typing import Generator
+import functools
+from collections.abc import Generator
 
 import pytest
 from selenium.webdriver.common.by import By
@@ -10,8 +11,15 @@ from reflex.testing import AppHarness
 from .utils import SessionStorage
 
 
-def LifespanApp():
-    """App with lifespan tasks and context."""
+def LifespanApp(
+    mount_cached_fastapi: bool = False, mount_api_transformer: bool = False
+) -> None:
+    """App with lifespan tasks and context.
+
+    Args:
+        mount_cached_fastapi: Whether to mount the cached FastAPI app.
+        mount_api_transformer: Whether to mount the API transformer.
+    """
     import asyncio
     from contextlib import asynccontextmanager
 
@@ -36,18 +44,20 @@ def LifespanApp():
         print("Lifespan global started.")
         try:
             while True:
-                lifespan_task_global += inc  # pyright: ignore[reportUnboundVariable]
+                lifespan_task_global += inc  # pyright: ignore[reportUnboundVariable, reportPossiblyUnboundVariable]
                 await asyncio.sleep(0.1)
         except asyncio.CancelledError as ce:
             print(f"Lifespan global cancelled: {ce}.")
             lifespan_task_global = 0
 
     class LifespanState(rx.State):
-        @rx.var
+        interval: int = 100
+
+        @rx.var(cache=False)
         def task_global(self) -> int:
             return lifespan_task_global
 
-        @rx.var
+        @rx.var(cache=False)
         def context_global(self) -> int:
             return lifespan_context_global
 
@@ -59,28 +69,79 @@ def LifespanApp():
         return rx.vstack(
             rx.text(LifespanState.task_global, id="task_global"),
             rx.text(LifespanState.context_global, id="context_global"),
-            rx.moment(interval=100, on_change=LifespanState.tick),
+            rx.button(
+                rx.moment(
+                    interval=LifespanState.interval, on_change=LifespanState.tick
+                ),
+                on_click=LifespanState.set_interval(  # pyright: ignore [reportAttributeAccessIssue]
+                    rx.cond(LifespanState.interval, 0, 100)
+                ),
+                id="toggle-tick",
+            ),
         )
 
-    app = rx.App()
+    from fastapi import FastAPI
+
+    app = rx.App(api_transformer=FastAPI() if mount_api_transformer else None)
+
+    if mount_cached_fastapi:
+        assert app._api is not None
+
     app.register_lifespan_task(lifespan_task)
     app.register_lifespan_task(lifespan_context, inc=2)
     app.add_page(index)
 
 
-@pytest.fixture()
-def lifespan_app(tmp_path) -> Generator[AppHarness, None, None]:
+@pytest.fixture(
+    params=[False, True], ids=["no_api_transformer", "mount_api_transformer"]
+)
+def mount_api_transformer(request: pytest.FixtureRequest) -> bool:
+    """Whether to use api_transformer in the app.
+
+    Args:
+        request: pytest fixture request object
+
+    Returns:
+        bool: Whether to use api_transformer
+    """
+    return request.param
+
+
+@pytest.fixture(params=[False, True], ids=["no_fastapi", "mount_cached_fastapi"])
+def mount_cached_fastapi(request: pytest.FixtureRequest) -> bool:
+    """Whether to use cached FastAPI in the app (app.api).
+
+    Args:
+        request: pytest fixture request object
+
+    Returns:
+        Whether to use cached FastAPI
+    """
+    return request.param
+
+
+@pytest.fixture
+def lifespan_app(
+    tmp_path, mount_api_transformer: bool, mount_cached_fastapi: bool
+) -> Generator[AppHarness, None, None]:
     """Start LifespanApp app at tmp_path via AppHarness.
 
     Args:
         tmp_path: pytest tmp_path fixture
+        mount_api_transformer: Whether to mount the API transformer.
+        mount_cached_fastapi: Whether to mount the cached FastAPI app.
 
     Yields:
         running AppHarness instance
     """
     with AppHarness.create(
         root=tmp_path,
-        app_source=LifespanApp,
+        app_source=functools.partial(
+            LifespanApp,
+            mount_cached_fastapi=mount_cached_fastapi,
+            mount_api_transformer=mount_api_transformer,
+        ),
+        app_name=f"lifespanapp_fastapi{mount_cached_fastapi}_transformer{mount_api_transformer}",
     ) as harness:
         yield harness
 
@@ -102,13 +163,14 @@ async def test_lifespan(lifespan_app: AppHarness):
     context_global = driver.find_element(By.ID, "context_global")
     task_global = driver.find_element(By.ID, "task_global")
 
-    assert context_global.text == "2"
-    assert lifespan_app.app_module.lifespan_context_global == 2  # type: ignore
+    assert lifespan_app.poll_for_content(context_global, exp_not_equal="0") == "2"
+    assert lifespan_app.app_module.lifespan_context_global == 2
 
     original_task_global_text = task_global.text
     original_task_global_value = int(original_task_global_text)
     lifespan_app.poll_for_content(task_global, exp_not_equal=original_task_global_text)
-    assert lifespan_app.app_module.lifespan_task_global > original_task_global_value  # type: ignore
+    driver.find_element(By.ID, "toggle-tick").click()  # avoid teardown errors
+    assert lifespan_app.app_module.lifespan_task_global > original_task_global_value
     assert int(task_global.text) > original_task_global_value
 
     # Kill the backend

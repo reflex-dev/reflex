@@ -8,39 +8,38 @@ Here is a quick guide on how to run Reflex repo locally so you can start contrib
 
 **Prerequisites:**
 
-- Python >= 3.9
-- Poetry version >= 1.4.0 and add it to your path (see [Poetry Docs](https://python-poetry.org/docs/#installation) for more info).
+- uv version >= 0.6.0 and add it to your path (see [UV Docs](https://docs.astral.sh/uv/getting-started/installation/) for more info).
 
 **1. Fork this repository:**
 Fork this repository by clicking on the `Fork` button on the top right.
 
 **2. Clone Reflex and navigate into the repo:**
 
-``` bash
+```bash
 git clone https://github.com/<YOUR-USERNAME>/reflex.git
 cd reflex
 ```
 
 **3. Install your local Reflex build:**
 
-``` bash
-poetry install
+```bash
+uv sync
 ```
 
 **4. Now create an examples folder so you can test the local Python build in this repository.**
 
 - We have the `examples` folder in the `.gitignore`, so your changes in `reflex/examples` won't be reflected in your commit.
 
-``` bash
+```bash
 mkdir examples
 cd examples
 ```
 
 **5. Init and Run**
 
-``` bash
-poetry run reflex init
-poetry run reflex run
+```bash
+uv run reflex init
+uv run reflex run
 ```
 
 All the changes you make to the repository will be reflected in your running app.
@@ -68,35 +67,33 @@ Before submitting, a pull request, ensure the following steps are taken and test
 In your `reflex` directory run make sure all the unit tests are still passing using the following command.
 This will fail if code coverage is below 70%.
 
-``` bash
-poetry run pytest tests/units --cov --no-cov-on-fail --cov-report= 
+```bash
+uv run pytest tests/units --cov --no-cov-on-fail --cov-report=
 ```
 
 Next make sure all the following tests pass. This ensures that every new change has proper documentation and type checking.
 
-``` bash
-poetry run ruff check .
-poetry run pyright reflex tests
-find reflex tests -name "*.py" -not -path reflex/reflex.py | xargs poetry run darglint
+```bash
+uv run ruff check .
+uv run pyright reflex tests
+find reflex tests -name "*.py" -not -path reflex/reflex.py | xargs uv run darglint
 ```
 
 Finally, run `ruff` to format your code.
 
-``` bash
-poetry run ruff format .
+```bash
+uv run ruff format .
 ```
 
 Consider installing git pre-commit hooks so Ruff, Pyright, Darglint and `make_pyi` will run automatically before each commit.
-Note that pre-commit will only be installed when you use a Python version >= 3.9.
 
-``` bash
-pre-commit install
+```bash
+uv run pre-commit install
 ```
 
 That's it you can now submit your PR. Thanks for contributing to Reflex!
 
-
-## Editing Templates 
+## Editing Templates
 
 To edit the templates in Reflex you can do so in two way.
 
@@ -104,13 +101,12 @@ Change to the basic `blank` template can be done in the `reflex/.templates/apps/
 
 Others templates can be edited in their own repository. For example the `sidebar` template can be found in the [`reflex-sidebar`](https://github.com/reflex-dev/sidebar-template) repository.
 
-
 ## Other Notes
 
 For some pull requests when adding new components you will have to generate a pyi file for the new component. This is done by running the following command in the `reflex` directory.
 
 (Please check in with the team before adding a new component to Reflex we are cautious about adding new components to Reflex's core.)
 
-``` bash
-poetry run python scripts/make_pyi.py 
+```bash
+uv run python -m reflex.utils.pyi_generator
 ```

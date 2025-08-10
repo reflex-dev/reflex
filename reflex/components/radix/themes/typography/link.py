@@ -13,16 +13,17 @@ from reflex.components.core.colors import color
 from reflex.components.core.cond import cond
 from reflex.components.el.elements.inline import A
 from reflex.components.markdown.markdown import MarkdownComponentMap
-from reflex.components.next.link import NextLink
-from reflex.utils.imports import ImportDict
+from reflex.components.radix.themes.base import LiteralAccentColor, RadixThemesComponent
+from reflex.components.react_router.dom import ReactRouterLink
+from reflex.utils.imports import ImportDict, ImportVar
 from reflex.vars.base import Var
 
-from ..base import LiteralAccentColor, RadixThemesComponent
 from .base import LiteralTextSize, LiteralTextTrim, LiteralTextWeight
 
 LiteralLinkUnderline = Literal["auto", "hover", "always", "none"]
 
-next_link = NextLink.create()
+
+_KNOWN_REACT_ROUTER_LINK_PROPS = frozenset(ReactRouterLink.get_props())
 
 
 class Link(RadixThemesComponent, A, MemoizationLeaf, MarkdownComponentMap):
@@ -60,7 +61,9 @@ class Link(RadixThemesComponent, A, MemoizationLeaf, MarkdownComponentMap):
         Returns:
             The import dict.
         """
-        return next_link._get_imports()  # type: ignore
+        return {
+            "react-router": [ImportVar(tag="Link", alias="ReactRouterLink")],
+        }
 
     @classmethod
     def create(cls, *children, **props) -> Component:
@@ -76,31 +79,39 @@ class Link(RadixThemesComponent, A, MemoizationLeaf, MarkdownComponentMap):
         Returns:
             Component: The link component
         """
-        props.setdefault(":hover", {"color": color("accent", 8)})
+        props.setdefault("_hover", {"color": color("accent", 8)})
+        href = props.get("href")
 
         is_external = props.pop("is_external", None)
 
         if is_external is not None:
             props["target"] = cond(is_external, "_blank", "")
 
-        if props.get("href") is not None:
+        if href is not None:
             if not len(children):
-                raise ValueError("Link without a child will not display")
+                msg = "Link without a child will not display"
+                raise ValueError(msg)
 
             if "as_child" not in props:
-                # Extract props for the NextLink, the rest go to the Link/A element.
-                known_next_link_props = NextLink.get_props()
-                next_link_props = {}
+                # Extract props for the ReactRouterLink, the rest go to the Link/A element.
+                react_router_link_props = {}
                 for prop in props.copy():
-                    if prop in known_next_link_props:
-                        next_link_props[prop] = props.pop(prop)
+                    if prop in _KNOWN_REACT_ROUTER_LINK_PROPS:
+                        react_router_link_props[prop] = props.pop(prop)
 
-                # If user does not use `as_child`, by default we render using next_link to avoid page refresh during internal navigation
+                react_router_link_props["to"] = react_router_link_props.pop(
+                    "href", href
+                )
+
+                # If user does not use `as_child`, by default we render using react_router_link to avoid page refresh during internal navigation
                 return super().create(
-                    NextLink.create(*children, **next_link_props),
+                    ReactRouterLink.create(*children, **react_router_link_props),
                     as_child=True,
                     **props,
                 )
+        else:
+            props["href"] = "#"
+
         return super().create(*children, **props)
 
 

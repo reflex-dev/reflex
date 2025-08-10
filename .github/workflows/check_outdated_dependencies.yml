@@ -1,88 +1,90 @@
 name: check-outdated-dependencies
+permissions:
+  contents: read
 
 on:
-  push:  # This will trigger the action when a pull request is opened or updated.
+  push: # This will trigger the action when a pull request is opened or updated.
     branches:
-      - 'release/**'  # This will trigger the action when any branch starting with "release/" is created.
-  workflow_dispatch:  # Allow manual triggering if needed.
+      - "release/**" # This will trigger the action when any branch starting with "release/" is created.
+  workflow_dispatch: # Allow manual triggering if needed.
 
 jobs:
   backend:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v3
+      - name: Checkout code
+        uses: actions/checkout@v3
 
-    - uses: ./.github/actions/setup_build_env
-      with:
-        python-version: '3.9'
-        run-poetry-install: true
-        create-venv-at-path: .venv
+      - uses: ./.github/actions/setup_build_env
+        with:
+          python-version: 3.13
+          run-uv-sync: true
 
-    - name: Check outdated backend dependencies
-      run: |
-        outdated=$(poetry show -oT)
-        echo "Outdated:"
-        echo "$outdated"
+      - name: Check outdated backend dependencies
+        run: |
+          outdated=$(uv pip list --outdated)
+          echo "Outdated:"
+          echo "$outdated"
 
-        filtered_outdated=$(echo "$outdated" | grep -vE 'pyright|ruff' || true)
+          filtered_outdated=$(echo "$outdated" | grep -vE 'pyright|ruff' || true)
 
-        if [ ! -z "$filtered_outdated" ]; then
-          echo "Outdated dependencies found:"
-          echo "$filtered_outdated"
-          exit 1
-        else
-          echo "All dependencies are up to date. (pyright and ruff are ignored)"
-        fi
-
+          if [ ! -z "$filtered_outdated" ]; then
+            echo "Outdated dependencies found:"
+            echo "$filtered_outdated"
+            exit 1
+          else
+            echo "All dependencies are up to date. (pyright and ruff are ignored)"
+          fi
 
   frontend:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4  
-    - uses: ./.github/actions/setup_build_env
-      with:
-        python-version: '3.10.11'
-        run-poetry-install: true
-        create-venv-at-path: .venv
-    - name: Clone Reflex Website Repo
-      uses: actions/checkout@v4
-      with:
-        repository: reflex-dev/reflex-web
-        ref: main
-        path: reflex-web
-    - name: Install Requirements for reflex-web
-      working-directory: ./reflex-web
-      run: poetry run uv pip install -r requirements.txt
-    - name: Install additional dependencies for DB access
-      run: poetry run uv pip install psycopg2-binary
-    - name: Init Website for reflex-web
-      working-directory: ./reflex-web
-      run: poetry run reflex init
-    - name: Run Website and Check for errors
-      run: |
-        poetry run bash scripts/integration.sh ./reflex-web dev
-    - name: Check outdated frontend dependencies
-      working-directory: ./reflex-web/.web
-      run: |
-        raw_outdated=$(/home/runner/.local/share/reflex/bun/bin/bun outdated)
-        outdated=$(echo "$raw_outdated" | grep -vE '\|\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\|' || true)
-        echo "Outdated:"
-        echo "$outdated"
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - uses: ./.github/actions/setup_build_env
+        with:
+          python-version: 3.13
+          run-uv-sync: true
 
-        # Ignore 3rd party dependencies that are not updated.
-        filtered_outdated=$(echo "$outdated" | grep -vE 'Package|@chakra-ui|lucide-react|@splinetool/runtime|ag-grid-react|framer-motion|react-markdown|remark-math|remark-gfm|rehype-katex|rehype-raw|remark-unwrap-images' || true)
-        no_extra=$(echo "$filtered_outdated" | grep -vE '\|\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-' || true)
+      - name: Clone Reflex Website Repo
+        uses: actions/checkout@v4
+        with:
+          repository: reflex-dev/reflex-web
+          ref: main
+          path: reflex-web
+      - name: Compile pyproject.toml into requirements.txt
+        working-directory: ./reflex-web
+        run: |
+          uv pip compile pyproject.toml --no-annotate --no-header --no-deps --output-file requirements.txt
+          grep -ivE "reflex " requirements.txt > requirements.txt.tmp && mv requirements.txt.tmp requirements.txt
+      - name: Install Requirements for reflex-web
+        working-directory: ./reflex-web
+        run: uv pip install -r requirements.txt
+      - name: Init Website for reflex-web
+        working-directory: ./reflex-web
+        run: uv run reflex init
+      - name: Run Website and Check for errors
+        run: |
+          uv run bash scripts/integration.sh ./reflex-web dev
+      - name: Check outdated frontend dependencies
+        working-directory: ./reflex-web/.web
+        run: |
+          raw_outdated=$(/home/runner/.local/share/reflex/bun/bin/bun outdated)
+          outdated=$(echo "$raw_outdated" | grep -vE '\|\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\|' || true)
+          echo "Outdated:"
+          echo "$outdated"
+
+          # Ignore 3rd party dependencies that are not updated.
+          filtered_outdated=$(echo "$outdated" | grep -vE 'Package|@chakra-ui|lucide-react|@splinetool/runtime|ag-grid-react|framer-motion|react-markdown|remark-math|remark-gfm|rehype-katex|rehype-raw|remark-unwrap-images|ag-grid' || true)
+          no_extra=$(echo "$filtered_outdated" | grep -vE '\|\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-' || true)
 
 
-        if [ ! -z "$no_extra" ]; then
-          echo "Outdated dependencies found:"
-          echo "$filtered_outdated"
-          exit 1
-        else
-          echo "All dependencies are up to date. (3rd party packages are ignored)"
-        fi
-
+          if [ ! -z "$no_extra" ]; then
+            echo "Outdated dependencies found:"
+            echo "$filtered_outdated"
+            exit 1
+          else
+            echo "All dependencies are up to date. (3rd party packages are ignored)"
+          fi

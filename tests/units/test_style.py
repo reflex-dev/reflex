@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Dict
+from typing import Any
 
 import pytest
 
@@ -11,8 +11,15 @@ from reflex.style import Style
 from reflex.vars import VarData
 from reflex.vars.base import LiteralVar, Var
 
+style_var = rx.Var.create({"height": "42px"})
+
 test_style = [
     ({"a": 1}, {"a": 1}),
+    ({"&": style_var}, {"&": {"height": "42px"}}),
+    (
+        {"&": rx.cond(style_var, style_var, {})},
+        {"&": rx.cond(style_var, style_var, {})},
+    ),
     ({"a": LiteralVar.create("abc")}, {"a": "abc"}),
     ({"test_case": 1}, {"testCase": 1}),
     ({"test_case": {"a": 1}}, {"test_case": {"a": 1}}),
@@ -39,7 +46,7 @@ test_style = [
 
 
 @pytest.mark.parametrize(
-    "style_dict,expected",
+    ("style_dict", "expected"),
     test_style,
 )
 def test_convert(style_dict, expected):
@@ -54,7 +61,7 @@ def test_convert(style_dict, expected):
 
 
 @pytest.mark.parametrize(
-    "style_dict,expected",
+    ("style_dict", "expected"),
     test_style,
 )
 def test_create_style(style_dict, expected):
@@ -65,7 +72,7 @@ def test_create_style(style_dict, expected):
         expected: The expected formatted style.
     """
     assert LiteralVar.create(style.Style(style_dict)).equals(
-        LiteralVar.create(expected)
+        LiteralVar.create(expected).to(style.Style)
     )
 
 
@@ -356,7 +363,7 @@ def test_style_via_component(
         style_dict: The style_dict to pass to the component.
         expected_get_style: The expected style dict.
     """
-    comp = rx.el.div(style=style_dict, **kwargs)  # type: ignore
+    comp = rx.el.div(style=style_dict, **kwargs)
     compare_dict_of_var(comp._get_style(), expected_get_style)
 
 
@@ -379,7 +386,7 @@ class StyleState(rx.State):
             {
                 "css": Var(
                     _js_expr=f'({{ ["color"] : ("dark"+{StyleState.color}) }})'
-                ).to(Dict[str, str])
+                ).to(Style)
             },
         ),
         (
@@ -515,17 +522,17 @@ def test_evaluate_style_namespaces():
     """Test that namespaces get converted to component create functions."""
     style_dict = {rx.text: {"color": "blue"}}
     assert rx.text.__call__ not in style_dict
-    style_dict = evaluate_style_namespaces(style_dict)  # type: ignore
+    style_dict = evaluate_style_namespaces({**style_dict})
     assert rx.text.__call__ in style_dict
 
 
 def test_style_update_with_var_data():
     """Test that .update with a Style containing VarData works."""
     red_var = LiteralVar.create("red")._replace(
-        merge_var_data=VarData(hooks={"const red = true": None}),  # type: ignore
+        merge_var_data=VarData(hooks={"const red = true": None}),
     )
     blue_var = LiteralVar.create("blue")._replace(
-        merge_var_data=VarData(hooks={"const blue = true": None}),  # type: ignore
+        merge_var_data=VarData(hooks={"const blue = true": None}),
     )
 
     s1 = Style(
@@ -541,3 +548,7 @@ def test_style_update_with_var_data():
     assert s2._var_data is not None
     assert "const red = true" in s2._var_data.hooks
     assert "const blue = true" in s2._var_data.hooks
+
+    s3 = s1 | s2
+    assert s3._var_data is not None
+    assert "_varData" not in s3

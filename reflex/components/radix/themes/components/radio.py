@@ -3,9 +3,8 @@
 from typing import Literal
 
 from reflex.components.core.breakpoints import Responsive
+from reflex.components.radix.themes.base import LiteralAccentColor, RadixThemesComponent
 from reflex.vars.base import Var
-
-from ..base import LiteralAccentColor, RadixThemesComponent
 
 
 class Radio(RadixThemesComponent):

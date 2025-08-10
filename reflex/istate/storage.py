@@ -90,7 +90,7 @@ class LocalStorage(ClientStorageBase, str):
         /,
         name: str | None = None,
         sync: bool = False,
-    ) -> "LocalStorage":
+    ) -> LocalStorage:
         """Create a client-side localStorage (str).
 
         Args:
@@ -124,7 +124,7 @@ class SessionStorage(ClientStorageBase, str):
         errors: str | None = None,
         /,
         name: str | None = None,
-    ) -> "SessionStorage":
+    ) -> SessionStorage:
         """Create a client-side sessionStorage (str).
 
         Args:

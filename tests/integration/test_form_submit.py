@@ -1,8 +1,8 @@
 """Integration tests for forms."""
 
+import asyncio
 import functools
-import time
-from typing import Generator
+from collections.abc import Generator
 
 import pytest
 from selenium.webdriver.common.by import By
@@ -18,19 +18,17 @@ def FormSubmit(form_component):
     Args:
         form_component: The str name of the form component to use.
     """
-    from typing import Dict, List
-
     import reflex as rx
 
     class FormState(rx.State):
-        form_data: Dict = {}
+        form_data: dict = {}
 
-        var_options: List[str] = ["option3", "option4"]
+        var_options: list[str] = ["option3", "option4"]
 
-        def form_submit(self, form_data: Dict):
+        def form_submit(self, form_data: dict):
             self.form_data = form_data
 
-    app = rx.App(state=rx.State)
+    app = rx.App()
 
     @app.add_page
     def index():
@@ -78,19 +76,17 @@ def FormSubmitName(form_component):
     Args:
         form_component: The str name of the form component to use.
     """
-    from typing import Dict, List
-
     import reflex as rx
 
     class FormState(rx.State):
-        form_data: Dict = {}
+        form_data: dict = {}
         val: str = "foo"
-        options: List[str] = ["option1", "option2"]
+        options: list[str] = ["option1", "option2"]
 
-        def form_submit(self, form_data: Dict):
+        def form_submit(self, form_data: dict):
             self.form_data = form_data
 
-    app = rx.App(state=rx.State)
+    app = rx.App()
 
     @app.add_page
     def index():
@@ -196,8 +192,9 @@ async def test_submit(driver, form_submit: AppHarness):
     by = By.ID if form_submit.app_source is FormSubmit else By.NAME
 
     # get a reference to the connected client
-    token_input = driver.find_element(By.ID, "token")
-    assert token_input
+    token_input = AppHarness.poll_for_or_raise_timeout(
+        lambda: driver.find_element(By.ID, "token")
+    )
 
     # wait for the backend connection to send the token
     token = form_submit.poll_for_value(token_input)
@@ -221,7 +218,7 @@ async def test_submit(driver, form_submit: AppHarness):
     debounce_input = driver.find_element(by, "debounce_input")
     debounce_input.send_keys("bar baz")
 
-    time.sleep(1)
+    await asyncio.sleep(1)
 
     prev_url = driver.current_url
 

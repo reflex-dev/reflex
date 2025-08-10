@@ -1,5 +1,3 @@
-from typing import Type
-
 import pytest
 
 from reflex.components.component import Component, memo
@@ -36,7 +34,7 @@ class CustomMarkdownComponent(Component, MarkdownComponentMap):
         return Var(_js_expr="{return custom_node + custom_children + custom_props}")
 
 
-def syntax_highlighter_memoized_component(codeblock: Type[Component]):
+def syntax_highlighter_memoized_component(codeblock: type[Component]):
     @memo
     def code_block(code: str, language: str):
         return Box.create(
@@ -58,7 +56,7 @@ def syntax_highlighter_memoized_component(codeblock: Type[Component]):
 
 
 @pytest.mark.parametrize(
-    "fn_body, fn_args, explicit_return, expected",
+    ("fn_body", "fn_args", "explicit_return", "expected"),
     [
         (
             None,
@@ -143,12 +141,12 @@ def test_create_map_fn_var_subclass(cls, fn_body, fn_args, explicit_return, expe
 
 
 @pytest.mark.parametrize(
-    "key,component_map, expected",
+    ("key", "component_map", "expected"),
     [
         (
             "code",
             {},
-            """(({node, inline, className, children, ...props}) => { const match = (className || '').match(/language-(?<lang>.*)/); const _language = match ? match[1] : '';   if (_language) {     (async () => {       try {         const module = await import(`react-syntax-highlighter/dist/cjs/languages/prism/${_language}`);         SyntaxHighlighter.registerLanguage(_language, module.default);       } catch (error) {         console.error(`Error importing language module for ${_language}:`, error);       }     })();   }  ;             return inline ? (                 <RadixThemesCode {...props}>{children}</RadixThemesCode>             ) : (                 <SyntaxHighlighter children={((Array.isArray(children)) ? children.join("\\n") : children)} css={({ ["marginTop"] : "1em", ["marginBottom"] : "1em" })} customStyle={({ ["marginTop"] : "1em", ["marginBottom"] : "1em" })} language={_language} style={((resolvedColorMode === "light") ? oneLight : oneDark)} wrapLongLines={true} {...props}/>             );         })""",
+            r"""(({node, inline, className, children, ...props}) => { const match = (className || '').match(/language-(?<lang>.*)/); let _language = match ? match[1] : '';  ;             return inline ? (                 jsx(RadixThemesCode,{...props},children,)             ) : (                 jsx(SyntaxHighlighter,{children:((Array.isArray(children)) ? children.join("\n") : children),css:({ ["marginTop"] : "1em", ["marginBottom"] : "1em" }),language:_language,style:((resolvedColorMode === "light") ? oneLight : oneDark),wrapLongLines:true,...props},)             );         })""",
         ),
         (
             "code",
@@ -157,7 +155,7 @@ def test_create_map_fn_var_subclass(cls, fn_body, fn_args, explicit_return, expe
                     value, **props
                 )
             },
-            """(({node, inline, className, children, ...props}) => { const match = (className || '').match(/language-(?<lang>.*)/); const _language = match ? match[1] : '';  ;             return inline ? (                 <RadixThemesCode {...props}>{children}</RadixThemesCode>             ) : (                 <RadixThemesBox css={({ ["pre"] : ({ ["margin"] : "0", ["padding"] : "24px", ["background"] : "transparent", ["overflow-x"] : "auto", ["border-radius"] : "6px" }) })} {...props}><ShikiCode code={((Array.isArray(children)) ? children.join("\\n") : children)} decorations={[]} language={_language} theme={((resolvedColorMode === "light") ? "one-light" : "one-dark-pro")} transformers={[]}/></RadixThemesBox>             );         })""",
+            r"""(({node, inline, className, children, ...props}) => { const match = (className || '').match(/language-(?<lang>.*)/); let _language = match ? match[1] : '';  ;             return inline ? (                 jsx(RadixThemesCode,{...props},children,)             ) : (                 jsx(RadixThemesBox,{css:({ ["pre"] : ({ ["margin"] : "0", ["padding"] : "24px", ["background"] : "transparent", ["overflowX"] : "auto", ["borderRadius"] : "6px" }) }),...props},jsx(ShikiCode,{code:((Array.isArray(children)) ? children.join("\n") : children),decorations:[],language:_language,theme:((resolvedColorMode === "light") ? "one-light" : "one-dark-pro"),transformers:[]},),)             );         })""",
         ),
         (
             "h1",
@@ -166,12 +164,12 @@ def test_create_map_fn_var_subclass(cls, fn_body, fn_args, explicit_return, expe
                     Heading.create(value, as_="h1", size="6", margin_y="0.5em")
                 )
             },
-            """(({custom_node, custom_children, custom_props}) => (<CustomMarkdownComponent {...props}><RadixThemesHeading as={"h1"} css={({ ["marginTop"] : "0.5em", ["marginBottom"] : "0.5em" })} size={"6"}>{children}</RadixThemesHeading></CustomMarkdownComponent>))""",
+            """(({custom_node, custom_children, custom_props}) => (jsx(CustomMarkdownComponent,{...props},jsx(RadixThemesHeading,{as:"h1",css:({ ["marginTop"] : "0.5em", ["marginBottom"] : "0.5em" }),size:"6"},children,),)))""",
         ),
         (
             "code",
             {"codeblock": syntax_highlighter_memoized_component(CodeBlock)},
-            """(({node, inline, className, children, ...props}) => { const match = (className || '').match(/language-(?<lang>.*)/); const _language = match ? match[1] : '';   if (_language) {     (async () => {       try {         const module = await import(`react-syntax-highlighter/dist/cjs/languages/prism/${_language}`);         SyntaxHighlighter.registerLanguage(_language, module.default);       } catch (error) {         console.error(`Error importing language module for ${_language}:`, error);       }     })();   }  ;             return inline ? (                 <RadixThemesCode {...props}>{children}</RadixThemesCode>             ) : (                 <CodeBlock code={((Array.isArray(children)) ? children.join("\\n") : children)} language={_language} {...props}/>             );         })""",
+            r"""(({node, inline, className, children, ...props}) => { const match = (className || '').match(/language-(?<lang>.*)/); let _language = match ? match[1] : '';  ;             return inline ? (                 jsx(RadixThemesCode,{...props},children,)             ) : (                 jsx(CodeBlock,{code:((Array.isArray(children)) ? children.join("\n") : children),language:_language,...props},)             );         })""",
         ),
         (
             "code",
@@ -180,11 +178,12 @@ def test_create_map_fn_var_subclass(cls, fn_body, fn_args, explicit_return, expe
                     ShikiHighLevelCodeBlock
                 )
             },
-            """(({node, inline, className, children, ...props}) => { const match = (className || '').match(/language-(?<lang>.*)/); const _language = match ? match[1] : '';  ;             return inline ? (                 <RadixThemesCode {...props}>{children}</RadixThemesCode>             ) : (                 <CodeBlock code={((Array.isArray(children)) ? children.join("\\n") : children)} language={_language} {...props}/>             );         })""",
+            r"""(({node, inline, className, children, ...props}) => { const match = (className || '').match(/language-(?<lang>.*)/); let _language = match ? match[1] : '';  ;             return inline ? (                 jsx(RadixThemesCode,{...props},children,)             ) : (                 jsx(CodeBlock,{code:((Array.isArray(children)) ? children.join("\n") : children),language:_language,...props},)             );         })""",
         ),
     ],
 )
 def test_markdown_format_component(key, component_map, expected):
     markdown = Markdown.create("# header", component_map=component_map)
     result = markdown.format_component_map()
+    print(str(result[key]))
     assert str(result[key]) == expected

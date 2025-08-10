@@ -66,6 +66,19 @@ _MAPPING = {
         "portal",
         "source",
         "svg",
+        "text",
+        "line",
+        "circle",
+        "g",
+        "ellipse",
+        "rect",
+        "polygon",
+        "path",
+        "stop",
+        "linear_gradient",
+        "radial_gradient",
+        "defs",
+        "marker",
     ],
     "metadata": [
         "base",
@@ -113,6 +126,7 @@ _MAPPING = {
         "dl",
         "dt",
         "figcaption",
+        "figure",
         "hr",
         "ol",
         "li",
@@ -126,9 +140,19 @@ _MAPPING = {
 }
 
 
-EXCLUDE = ["del_", "Del", "image"]
-for _, v in _MAPPING.items():
-    v.extend([mod.capitalize() for mod in v if mod not in EXCLUDE])
+EXCLUDE = ["del_", "Del", "image", "style"]
+for v in _MAPPING.values():
+    from reflex.utils.format import to_camel_case
+
+    v.extend(
+        [
+            to_camel_case(mod)[0].upper() + to_camel_case(mod)[1:]
+            for mod in v
+            if mod not in EXCLUDE
+        ]
+    )
+
+_MAPPING["metadata"].extend(["StyleEl"])
 
 _SUBMOD_ATTRS: dict[str, list[str]] = _MAPPING
 

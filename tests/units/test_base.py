@@ -24,7 +24,7 @@ def test_get_fields(child):
     Args:
         child: A child class.
     """
-    assert child.get_fields().keys() == {"num", "key"}
+    assert child.__fields__.keys() == {"num", "key"}
 
 
 def test_set(child):
@@ -71,7 +71,7 @@ def test_complex_get_fields(complex_child):
     Args:
         complex_child: A child class.
     """
-    assert complex_child.get_fields().keys() == {"num", "key", "name", "age", "active"}
+    assert complex_child.__fields__.keys() == {"num", "key", "name", "age", "active"}
 
 
 def test_complex_set(complex_child):

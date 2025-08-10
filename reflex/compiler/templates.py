@@ -1,9 +1,46 @@
 """Templates to use in the reflex compiler."""
 
+from __future__ import annotations
+
 from jinja2 import Environment, FileSystemLoader, Template
 
 from reflex import constants
+from reflex.constants import Hooks
 from reflex.utils.format import format_state_name, json_dumps
+from reflex.vars.base import VarData
+
+
+def _sort_hooks(hooks: dict[str, VarData | None]):
+    """Sort the hooks by their position.
+
+    Args:
+        hooks: The hooks to sort.
+
+    Returns:
+        The sorted hooks.
+    """
+    sorted_hooks = {
+        Hooks.HookPosition.INTERNAL: [],
+        Hooks.HookPosition.PRE_TRIGGER: [],
+        Hooks.HookPosition.POST_TRIGGER: [],
+    }
+
+    for hook, data in hooks.items():
+        if data and data.position and data.position == Hooks.HookPosition.INTERNAL:
+            sorted_hooks[Hooks.HookPosition.INTERNAL].append((hook, data))
+        elif not data or (
+            not data.position
+            or data.position == constants.Hooks.HookPosition.PRE_TRIGGER
+        ):
+            sorted_hooks[Hooks.HookPosition.PRE_TRIGGER].append((hook, data))
+        elif (
+            data
+            and data.position
+            and data.position == constants.Hooks.HookPosition.POST_TRIGGER
+        ):
+            sorted_hooks[Hooks.HookPosition.POST_TRIGGER].append((hook, data))
+
+    return sorted_hooks
 
 
 class ReflexJinjaEnvironment(Environment):
@@ -11,11 +48,10 @@ class ReflexJinjaEnvironment(Environment):
 
     def __init__(self) -> None:
         """Set default environment."""
-        extensions = ["jinja2.ext.debug"]
         super().__init__(
-            extensions=extensions,
             trim_blocks=True,
             lstrip_blocks=True,
+            auto_reload=False,
         )
         self.filters["json_dumps"] = json_dumps
         self.filters["react_setter"] = lambda state: f"set{state.capitalize()}"
@@ -45,7 +81,9 @@ class ReflexJinjaEnvironment(Environment):
             "on_load_internal": constants.CompileVars.ON_LOAD_INTERNAL,
             "update_vars_internal": constants.CompileVars.UPDATE_VARS_INTERNAL,
             "frontend_exception_state": constants.CompileVars.FRONTEND_EXCEPTION_STATE_FULL,
+            "hook_position": constants.Hooks.HookPosition,
         }
+        self.globals["sort_hooks"] = _sort_hooks
 
 
 def get_template(name: str) -> Template:
@@ -60,13 +98,25 @@ def get_template(name: str) -> Template:
     return ReflexJinjaEnvironment().get_template(name=name)
 
 
+def from_string(source: str) -> Template:
+    """Get render function that work with a template.
+
+    Args:
+        source: The template source.
+
+    Returns:
+        A render function.
+    """
+    return ReflexJinjaEnvironment().from_string(source=source)
+
+
 # Template for the Reflex config file.
 RXCONFIG = get_template("app/rxconfig.py.jinja2")
 
-# Code to render a NextJS Document root.
+# Code to render the Document root.
 DOCUMENT_ROOT = get_template("web/pages/_document.js.jinja2")
 
-# Code to render NextJS App root.
+# Code to render App root.
 APP_ROOT = get_template("web/pages/_app.js.jinja2")
 
 # Template for the theme file.
@@ -75,13 +125,10 @@ THEME = get_template("web/utils/theme.js.jinja2")
 # Template for the context file.
 CONTEXT = get_template("web/utils/context.js.jinja2")
 
-# Template for Tailwind config.
-TAILWIND_CONFIG = get_template("web/tailwind.config.js.jinja2")
-
 # Template to render a component tag.
 COMPONENT = get_template("web/pages/component.js.jinja2")
 
-# Code to render a single NextJS page.
+# Code to render a single react page.
 PAGE = get_template("web/pages/index.js.jinja2")
 
 # Code to render the custom components page.
@@ -101,6 +148,12 @@ STYLE = get_template("web/styles/styles.css.jinja2")
 
 # Code that generate the package json file
 PACKAGE_JSON = get_template("web/package.json.jinja2")
+
+# Code that generate the vite.config.js file
+VITE_CONFIG = get_template("web/vite.config.js.jinja2")
+
+# Template containing some macros used in the web pages.
+MACROS = get_template("web/pages/macros.js.jinja2")
 
 # Code that generate the pyproject.toml file for custom components.
 CUSTOM_COMPONENTS_PYPROJECT_TOML = get_template(

@@ -89,12 +89,6 @@ from reflex.utils import (
     lazy_loader,
 )
 
-from .event import event as event
-
-# import this here explicitly to avoid returning the page module since page attr has the
-# same name as page module(page.py)
-from .page import page as page
-
 # Remove the `compat` name from the namespace, it was imported for side-effects only.
 del compat
 
@@ -245,6 +239,8 @@ COMPONENTS_CORE_MAPPING: dict = {
         "selected_files",
         "upload",
     ],
+    "components.core.auto_scroll": ["auto_scroll"],
+    "components.core.window_events": ["window_event_listener"],
 }
 
 COMPONENTS_BASE_MAPPING: dict = {
@@ -264,6 +260,7 @@ _MAPPING: dict = {
     "experimental": ["_x"],
     "admin": ["AdminDash"],
     "app": ["App", "UploadFile"],
+    "assets": ["asset"],
     "base": ["Base"],
     "components.component": [
         "Component",
@@ -274,12 +271,7 @@ _MAPPING: dict = {
     "components.el.elements.media": ["image"],
     "components.lucide": ["icon"],
     **COMPONENTS_BASE_MAPPING,
-    "components.suneditor": [
-        "editor",
-        "EditorButtonList",
-        "EditorOptions",
-    ],
-    "components": ["el", "radix", "lucide", "recharts", "next"],
+    "components": ["el", "radix", "lucide", "recharts"],
     "components.markdown": ["markdown"],
     **RADIX_MAPPING,
     "components.plotly": ["plotly"],
@@ -293,6 +285,7 @@ _MAPPING: dict = {
         "data_editor_theme",
     ],
     "components.sonner.toast": ["toast"],
+    "components.props": ["PropsBase"],
     "components.datadisplay.logo": ["logo"],
     "components.gridjs": ["data_table"],
     "components.moment": ["MomentDelta", "moment"],
@@ -300,9 +293,9 @@ _MAPPING: dict = {
     "constants": ["Env"],
     "constants.colors": ["Color"],
     "event": [
+        "event",
         "EventChain",
         "EventHandler",
-        "background",
         "call_script",
         "call_function",
         "run_script",
@@ -330,7 +323,8 @@ _MAPPING: dict = {
         "SessionStorage",
     ],
     "middleware": ["middleware", "Middleware"],
-    "model": ["session", "Model"],
+    "model": ["asession", "session", "Model"],
+    "page": ["page"],
     "state": [
         "var",
         "ComponentState",
@@ -340,6 +334,7 @@ _MAPPING: dict = {
     "istate.wrappers": ["get_state"],
     "style": ["Style", "toggle_color_mode"],
     "utils.imports": ["ImportDict", "ImportVar"],
+    "utils.misc": ["run_in_thread"],
     "utils.serializers": ["serializer"],
     "vars": ["Var", "field", "Field"],
 }
@@ -356,6 +351,7 @@ _SUBMODULES: set[str] = {
     "vars",
     "config",
     "compiler",
+    "plugins",
 }
 _SUBMOD_ATTRS: dict = _MAPPING
 getattr, __dir__, __all__ = lazy_loader.attach(
@@ -365,20 +361,5 @@ getattr, __dir__, __all__ = lazy_loader.attach(
 )
 
 
-def __getattr__(name):
-    if name == "chakra":
-        from reflex.utils import console
-
-        console.deprecate(
-            "rx.chakra",
-            reason="and moved to a separate package. "
-            "To continue using Chakra UI components, install the `reflex-chakra` package via `pip install "
-            "reflex-chakra`.",
-            deprecation_version="0.6.0",
-            removal_version="0.7.0",
-            dedupe=True,
-        )
-        import reflex_chakra as rc
-
-        return rc
+def __getattr__(name: str):
     return getattr(name)
