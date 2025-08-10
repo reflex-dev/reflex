@@ -30,7 +30,8 @@ class HybridProperty(property):
             # Call custom var function if set
             return self._var(owner)
         # Call the property getter function if no custom var function is set
-        assert self.fget is not None
+        if self.fget is None:
+            raise AttributeError("HybridProperty has no getter function")
         return self.fget(owner)
 
     def var(self, func: Callable[[Any], Var]) -> Self:
