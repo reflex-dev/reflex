@@ -60,7 +60,7 @@ def HybridProperties():
     def index() -> rx.Component:
         return rx.center(
             rx.vstack(
-                rx.input(
+                rx.el.input(
                     id="token",
                     value=State.router.session.client_token,
                     is_read_only=True,
@@ -70,7 +70,7 @@ def HybridProperties():
                 ),
                 rx.text(f"full_name: {State.full_name}", id="full_name"),
                 rx.text(f"has_last_name: {State.has_last_name}", id="has_last_name"),
-                rx.input(
+                rx.el.input(
                     value=State.last_name,
                     on_change=State.setvar("last_name"),
                     id="set_last_name",
@@ -131,8 +131,9 @@ def token(hybrid_properties: AppHarness, driver: WebDriver) -> str:
         The token for the connected client
     """
     assert hybrid_properties.app_instance is not None
-    token_input = driver.find_element(By.ID, "token")
-    assert token_input
+    token_input = AppHarness.poll_for_or_raise_timeout(
+        lambda: driver.find_element(By.ID, "token")
+    )
 
     # wait for the backend connection to send the token
     token = hybrid_properties.poll_for_value(token_input, timeout=DEFAULT_TIMEOUT * 2)
