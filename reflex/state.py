@@ -1742,8 +1742,11 @@ class BaseState(EvenMoreBasicBaseState):
         except Exception as ex:
             state._clean()
 
+            app = prerequisites.get_and_validate_app().app
             event_specs = (
-                prerequisites.get_and_validate_app().app.backend_exception_handler(ex)
+                app.backend_exception_handler(ex)
+                if app.backend_exception_handler
+                else None
             )
 
             if event_specs is None:
