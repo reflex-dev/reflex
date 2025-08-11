@@ -1669,7 +1669,10 @@ class App(MiddlewareMixin, LifespanMixin):
                     raise ValueError(msg)
 
             # Check if the return type is valid for backend exception handler
-            if handler_domain == "backend":
+            if (
+                handler_domain == "backend"
+                and self.backend_exception_handler is not None
+            ):
                 sig = inspect.signature(self.backend_exception_handler)
                 return_type = (
                     eval(sig.return_annotation)
