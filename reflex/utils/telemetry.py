@@ -5,6 +5,7 @@ from __future__ import annotations
 import asyncio
 import dataclasses
 import importlib.metadata
+import json
 import multiprocessing
 import platform
 import warnings
@@ -14,18 +15,110 @@ from typing import TypedDict
 
 from reflex import constants
 from reflex.environment import environment
-from reflex.utils import console
-from reflex.utils.decorator import once_unless_none
+from reflex.utils import console, processes
+from reflex.utils.decorator import once, once_unless_none
 from reflex.utils.exceptions import ReflexError
-from reflex.utils.prerequisites import (
-    ensure_reflex_installation_id,
-    get_bun_version,
-    get_node_version,
-    get_project_hash,
-)
+from reflex.utils.js_runtimes import get_bun_version, get_node_version
+from reflex.utils.prerequisites import ensure_reflex_installation_id, get_project_hash
 
 UTC = timezone.utc
 POSTHOG_API_URL: str = "https://app.posthog.com/capture/"
+
+
+@dataclasses.dataclass(frozen=True)
+class CpuInfo:
+    """Model to save cpu info."""
+
+    manufacturer_id: str | None
+    model_name: str | None
+    address_width: int | None
+
+
+def format_address_width(address_width: str | None) -> int | None:
+    """Cast address width to an int.
+
+    Args:
+        address_width: The address width.
+
+    Returns:
+        Address width int
+    """
+    try:
+        return int(address_width) if address_width else None
+    except ValueError:
+        return None
+
+
+def _retrieve_cpu_info() -> CpuInfo | None:
+    """Retrieve the CPU info of the host.
+
+    Returns:
+        The CPU info.
+    """
+    platform_os = platform.system()
+    cpuinfo = {}
+    try:
+        if platform_os == "Windows":
+            cmd = 'powershell -Command "Get-CimInstance Win32_Processor | Select-Object -First 1 | Select-Object AddressWidth,Manufacturer,Name | ConvertTo-Json"'
+            output = processes.execute_command_and_return_output(cmd)
+            if output:
+                cpu_data = json.loads(output)
+                cpuinfo["address_width"] = cpu_data["AddressWidth"]
+                cpuinfo["manufacturer_id"] = cpu_data["Manufacturer"]
+                cpuinfo["model_name"] = cpu_data["Name"]
+        elif platform_os == "Linux":
+            output = processes.execute_command_and_return_output("lscpu")
+            if output:
+                lines = output.split("\n")
+                for line in lines:
+                    if "Architecture" in line:
+                        cpuinfo["address_width"] = (
+                            64 if line.split(":")[1].strip() == "x86_64" else 32
+                        )
+                    if "Vendor ID:" in line:
+                        cpuinfo["manufacturer_id"] = line.split(":")[1].strip()
+                    if "Model name" in line:
+                        cpuinfo["model_name"] = line.split(":")[1].strip()
+        elif platform_os == "Darwin":
+            cpuinfo["address_width"] = format_address_width(
+                processes.execute_command_and_return_output("getconf LONG_BIT")
+            )
+            cpuinfo["manufacturer_id"] = processes.execute_command_and_return_output(
+                "sysctl -n machdep.cpu.brand_string"
+            )
+            cpuinfo["model_name"] = processes.execute_command_and_return_output(
+                "uname -m"
+            )
+    except Exception as err:
+        console.error(f"Failed to retrieve CPU info. {err}")
+        return None
+
+    return (
+        CpuInfo(
+            manufacturer_id=cpuinfo.get("manufacturer_id"),
+            model_name=cpuinfo.get("model_name"),
+            address_width=cpuinfo.get("address_width"),
+        )
+        if cpuinfo
+        else None
+    )
+
+
+@once
+def get_cpu_info() -> CpuInfo | None:
+    """Get the CPU info of the underlining host.
+
+    Returns:
+        The CPU info.
+    """
+    cpu_info_file = environment.REFLEX_DIR.get() / "cpu_info.json"
+    if cpu_info_file.exists() and (cpu_info := json.loads(cpu_info_file.read_text())):
+        return CpuInfo(**cpu_info)
+    cpu_info = _retrieve_cpu_info()
+    if cpu_info:
+        cpu_info_file.parent.mkdir(parents=True, exist_ok=True)
+        cpu_info_file.write_text(json.dumps(dataclasses.asdict(cpu_info)))
+    return cpu_info
 
 
 def get_os() -> str:
@@ -136,8 +229,6 @@ def _get_event_defaults() -> _DefaultEvent | None:
     Returns:
         The default event data.
     """
-    from reflex.utils.prerequisites import get_cpu_info
-
     installation_id = ensure_reflex_installation_id()
     project_hash = get_project_hash(raise_on_fail=_raise_on_missing_project_hash())
 
