@@ -1,0 +1,207 @@
+name: integration-tests
+
+on:
+  push:
+    branches: ["main"]
+    paths-ignore:
+      - "**/*.md"
+  pull_request:
+    branches: ["main"]
+    paths-ignore:
+      - "**/*.md"
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.id }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+defaults:
+  run:
+    shell: bash
+
+env:
+  # Windows CI would fail without this.
+  # Ref: https://gist.github.com/NodeJSmith/e7e37f2d3f162456869f015f842bcf15
+  # TODO: can we fix windows encoding natively within reflex? Bug above can hit real users too (less common, but possible)
+  # - Catch encoding errors when printing logs
+  # - Best effort print lines that contain illegal chars (map to some default char, etc.)
+  PYTHONIOENCODING: "utf8"
+  REFLEX_TELEMETRY_ENABLED: false
+  NODE_OPTIONS: "--max_old_space_size=8192"
+  PR_TITLE: ${{ github.event.pull_request.title }}
+
+jobs:
+  example-counter-and-nba-proxy:
+    env:
+      OUTPUT_FILE: import_benchmark.json
+    timeout-minutes: 30
+    strategy:
+      # Prioritize getting more information out of the workflow (even if something fails)
+      fail-fast: false
+      matrix:
+        # Show OS combos first in GUI
+        os: [ubuntu-latest, windows-latest]
+        python-version: ["3.10", "3.11", "3.12", "3.13"]
+
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup_build_env
+        with:
+          python-version: ${{ matrix.python-version }}
+          run-uv-sync: true
+
+      - name: Clone Reflex Examples Repo
+        uses: actions/checkout@v4
+        with:
+          repository: reflex-dev/reflex-examples
+          path: reflex-examples
+      - name: Install requirements for counter example
+        working-directory: ./reflex-examples/counter
+        run: |
+          uv pip install -r requirements.txt
+      - name: Check export --backend-only before init for counter example
+        working-directory: ./reflex-examples/counter
+        run: |
+          uv run reflex export --backend-only
+      - name: Check run --backend-only before init for counter example
+        run: |
+          uv run bash scripts/integration.sh ./reflex-examples/counter dev 8001 --backend-only --backend-port 8001
+      - name: Init Website for counter example
+        working-directory: ./reflex-examples/counter
+        run: |
+          uv run reflex init --loglevel debug
+      - name: Check export for counter example
+        working-directory: ./reflex-examples/counter
+        run: |
+          uv run reflex export
+      - name: Run Website and Check for errors
+        run: |
+          # Check that npm is home
+          npm -v
+          uv run bash scripts/integration.sh ./reflex-examples/counter dev
+      - name: Install requirements for nba proxy example
+        working-directory: ./reflex-examples/nba-proxy
+        run: |
+          uv pip install -r requirements.txt
+      - name: Check export --backend-only before init for nba-proxy example
+        working-directory: ./reflex-examples/nba-proxy
+        run: |
+          uv run reflex export --backend-only
+      - name: Init Website for nba-proxy example
+        working-directory: ./reflex-examples/nba-proxy
+        run: |
+          uv run reflex init --loglevel debug
+      - name: Run Website and Check for errors
+        run: |
+          # Check that npm is home
+          npm -v
+          uv run bash scripts/integration.sh ./reflex-examples/nba-proxy dev
+
+  reflex-web:
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.11", "3.12"]
+
+    env:
+      REFLEX_WEB_WINDOWS_OVERRIDE: "1"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup_build_env
+        with:
+          python-version: ${{ matrix.python-version }}
+          run-uv-sync: true
+
+      - name: Clone Reflex Website Repo
+        uses: actions/checkout@v4
+        with:
+          repository: reflex-dev/reflex-web
+          ref: main
+          path: reflex-web
+
+      - name: Compile pyproject.toml into requirements.txt
+        working-directory: ./reflex-web
+        run: |
+          uv pip compile pyproject.toml --no-annotate --no-header --no-deps --output-file requirements.txt
+          grep -ivE "reflex " requirements.txt > requirements.txt.tmp && mv requirements.txt.tmp requirements.txt
+      - name: Install Requirements for reflex-web
+        working-directory: ./reflex-web
+        run: uv pip install -r requirements.txt
+      - name: Init Website for reflex-web
+        working-directory: ./reflex-web
+        run: uv run --active --no-sync reflex init
+      - name: Run Website and Check for errors
+        run: |
+          # Check that npm is home
+          npm -v
+          uv run --active --no-sync bash scripts/integration.sh ./reflex-web prod
+
+  rx-shout-from-template:
+    strategy:
+      fail-fast: false
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup_build_env
+        with:
+          python-version: 3.13
+          run-uv-sync: true
+
+      - name: Create app directory
+        run: mkdir rx-shout-from-template
+      - name: Init reflex-web from template
+        run: uv run reflex init --template https://github.com/masenf/rx_shout
+        working-directory: ./rx-shout-from-template
+      - name: ignore reflex pin in requirements
+        run: sed -i -e '/reflex==/d' requirements.txt
+        working-directory: ./rx-shout-from-template
+      - name: Install additional dependencies
+        run: uv pip install -r requirements.txt
+        working-directory: ./rx-shout-from-template
+      - name: Run Website and Check for errors
+        run: |
+          # Check that npm is home
+          npm -v
+          uv run bash scripts/integration.sh ./rx-shout-from-template prod
+
+  reflex-web-macos:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    strategy:
+      fail-fast: false
+      matrix:
+        # Note: py311 version chosen due to available arm64 darwin builds.
+        python-version: ["3.11", "3.12"]
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup_build_env
+        with:
+          python-version: ${{ matrix.python-version }}
+          run-uv-sync: true
+
+      - name: Clone Reflex Website Repo
+        uses: actions/checkout@v4
+        with:
+          repository: reflex-dev/reflex-web
+          ref: main
+          path: reflex-web
+      - name: Compile pyproject.toml into requirements.txt
+        working-directory: ./reflex-web
+        run: |
+          uv pip compile pyproject.toml --no-annotate --no-header --no-deps --output-file requirements.txt
+          grep -ivE "reflex " requirements.txt > requirements.txt.tmp && mv requirements.txt.tmp requirements.txt
+      - name: Install Requirements for reflex-web
+        working-directory: ./reflex-web
+        run: uv pip install -r requirements.txt
+      - name: Init Website for reflex-web
+        working-directory: ./reflex-web
+        run: uv run --active --no-sync reflex init
+      - name: Run Website and Check for errors
+        run: |
+          # Check that npm is home
+          npm -v
+          uv run --active --no-sync bash scripts/integration.sh ./reflex-web prod

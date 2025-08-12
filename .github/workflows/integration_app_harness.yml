@@ -1,0 +1,59 @@
+name: integration-app-harness
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.id }}
+  cancel-in-progress: true
+
+on:
+  push:
+    branches: ["main"]
+    paths-ignore:
+      - "**/*.md"
+  pull_request:
+    branches: ["main"]
+    paths-ignore:
+      - "**/*.md"
+env:
+  APP_HARNESS_HEADLESS: 1
+  PYTHONUNBUFFERED: 1
+
+permissions:
+  contents: read
+
+jobs:
+  integration-app-harness:
+    timeout-minutes: 30
+    strategy:
+      matrix:
+        state_manager: ["redis", "memory"]
+        python-version: ["3.11", "3.12", "3.13"]
+        split_index: [1, 2]
+      fail-fast: false
+    runs-on: ubuntu-22.04
+    services:
+      # Label used to access the service container
+      redis:
+        image: ${{ matrix.state_manager == 'redis' && 'redis' || '' }}
+        # Set health checks to wait until redis has started
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          # Maps port 6379 on service container to the host
+          - 6379:6379
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup_build_env
+        with:
+          python-version: ${{ matrix.python-version }}
+          run-uv-sync: true
+
+      - name: Install playwright
+        run: uv run playwright install chromium --only-shell
+
+      - name: Run app harness tests
+        env:
+          REFLEX_REDIS_URL: ${{ matrix.state_manager == 'redis' && 'redis://localhost:6379' || '' }}
+        run: uv run pytest tests/integration --retries 3 -v --maxfail=5 --splits 2 --group ${{matrix.split_index}}

@@ -1,0 +1,70 @@
+name: app-harness
+env:
+  REFLEX_DEP: 'reflex'
+  REFLEX_TELEMETRY_ENABLED: false
+  APP_HARNESS_HEADLESS: 1
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      reflex_dep:
+        description: 'Reflex dep (raw pip spec)'
+
+jobs:
+  list-examples-with-tests:
+    runs-on: ubuntu-latest
+    outputs:
+      examples: ${{ steps.generate-matrix.outputs.examples }}
+    steps:
+      - uses: actions/checkout@v3
+      - name: Generate Matrix
+        id: generate-matrix
+        run: |
+          # TODO fix sales export
+          # TODO fix stable_diffusion export (gets stuck)
+          EXAMPLES="$(find . -name 'tests' -type d | sort | grep -vw -E 'node_modules|site-packages' | cut -f2 -d/  | uniq | jq -R | jq -s -c)"
+          echo $EXAMPLES
+          echo "examples=$EXAMPLES" >> $GITHUB_OUTPUT
+
+  run-tests:
+    needs: [list-examples-with-tests]
+    strategy:
+      matrix:
+        example: ${{ fromJSON(needs.list-examples-with-tests.outputs.examples) }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-python@v3
+      - name: Check for requirements-dev.txt
+        working-directory: ${{ matrix.example }}
+        run: |
+          if [[ ! -f requirements-dev.txt ]]; then
+            echo "requirements-dev.txt is MISSING"
+            exit 1
+          fi
+      - name: Set up Python Virtual Environment
+        working-directory: ${{ matrix.example }}
+        run: python -m venv venv
+      - name: Install Dependencies
+        working-directory: ${{ matrix.example }}
+        run: |
+          source venv/bin/activate
+          pip install '${{ github.event.inputs.reflex_dep || env.REFLEX_DEP }}' -r requirements.txt -r requirements-dev.txt
+      - name: Install Playwright browsers
+        working-directory: ${{ matrix.example }}
+        run: |
+          source venv/bin/activate
+          playwright install chromium --with-deps --only-shell
+      - name: Initialize Reflex App
+        working-directory: ${{ matrix.example }}
+        run: |
+          source venv/bin/activate
+          reflex init
+      - name: Run Tests
+        working-directory: ${{ matrix.example }}
+        run: |
+          source venv/bin/activate
+          pytest tests -vv

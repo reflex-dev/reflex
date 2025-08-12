@@ -1,0 +1,9 @@
+import reflex as rx
+
+config = rx.Config(
+    app_name="{{ app_name }}",
+    plugins=[
+        rx.plugins.SitemapPlugin(),
+        rx.plugins.TailwindV4Plugin(),
+    ],
+)

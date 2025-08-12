@@ -1,0 +1,85 @@
+name: check-export
+env:
+  REFLEX_DEP: 'git+https://github.com/reflex-dev/reflex.git@main'
+  REFLEX_TELEMETRY_ENABLED: false
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      reflex_dep:
+        description: 'Reflex dep (raw pip spec)'
+
+jobs:
+  list-examples:
+    runs-on: ubuntu-latest
+    outputs:
+      examples: ${{ steps.generate-matrix.outputs.examples }}
+    steps:
+      - uses: actions/checkout@v3
+      - name: Generate Matrix
+        id: generate-matrix
+        run: |
+          EXAMPLES="$(find . -not -name '.*'  -maxdepth 1 -type d | cut -f2 -d/  | sort | grep -vw chat_v2 | jq -R | jq -s -c)"
+          echo $EXAMPLES
+          echo "examples=$EXAMPLES" >> $GITHUB_OUTPUT
+
+  check-export:
+    needs: [list-examples]
+    strategy:
+      fail-fast: false
+      matrix:
+        example: ${{ fromJSON(needs.list-examples.outputs.examples) }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-python@v3
+      - run: |
+          f=${{ matrix.example }}
+          if [[ ! -d $f ]]; then
+            echo "$f is not a directory!"
+            exit 1
+          fi
+
+          cd "$f"
+
+          if [[ ! -f requirements.txt ]]; then
+            echo "requirements.txt is MISSING"
+            exit 1
+          fi
+
+          if !( grep -w "^reflex" requirements.txt >/dev/null 2>&1 ); then
+            echo "requirements.txt does not contain 'reflex'"
+            exit 1
+          fi
+
+          python -m venv venv
+          source venv/bin/activate
+
+          pip install '${{ github.event.inputs.reflex_dep || env.REFLEX_DEP }}' -r requirements.txt
+
+          export OPENAI_API_KEY="dummy"
+          reflex init
+          reflex export | tee export_logs.txt
+          for a in frontend.zip backend.zip; do
+            if unzip -t "$a"; then
+              echo "$a prepared as expected"
+            else
+              echo "ERROR: $a is not a valid zip file"
+              exit 1
+            fi
+          done
+
+      - name: Check for DeprecationWarning in logs
+        run: |
+          cd ${{ matrix.example }}
+          dep_lines=$(grep -i "DeprecationWarning:" export_logs.txt || true)
+          if [ -n "$dep_lines" ]; then
+            echo "Found Deprecation warning:"
+            echo "$dep_lines"
+            exit 1
+          else
+            echo "No deprecated code, all good."
+          fi

@@ -1,0 +1,15 @@
+**/*.pyc
+**/.DS_Store
+**/*.swp
+**/.web
+**/*.db
+**/*.ipynb
+**/node_modules/**
+**/package.json
+**/package-lock.json
+bun.lockb
+poetry.lock
+frontend.zip
+backend.zip
+dist/*
+venv/

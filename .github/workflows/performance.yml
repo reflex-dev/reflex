@@ -1,0 +1,43 @@
+name: performance-tests
+permissions:
+  contents: read
+
+on:
+  push:
+    branches:
+      - "main" # or "master"
+    paths-ignore:
+      - "**/*.md"
+  pull_request:
+  workflow_dispatch:
+
+env:
+  REFLEX_TELEMETRY_ENABLED: false
+  NODE_OPTIONS: "--max_old_space_size=8192"
+  PR_TITLE: ${{ github.event.pull_request.title }}
+  APP_HARNESS_HEADLESS: 1
+  PYTHONUNBUFFERED: 1
+
+jobs:
+  benchmarks:
+    name: Run benchmarks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Install dependencies
+        run: uv sync --all-extras --dev
+
+      - name: Run benchmarks
+        uses: CodSpeedHQ/action@v3
+        with:
+          token: ${{ secrets.CODSPEED_TOKEN }}
+          run: uv run pytest -v tests/benchmarks --codspeed

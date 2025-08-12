@@ -1,0 +1,7 @@
+pytest
+selenium
+pytest-asyncio
+playwright
+pytest-playwright
+uvicorn
+psutil

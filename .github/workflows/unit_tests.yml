@@ -1,0 +1,97 @@
+name: unit-tests
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.id }}
+  cancel-in-progress: true
+
+on:
+  push:
+    branches: ["main"]
+    paths-ignore:
+      - "**/*.md"
+  pull_request:
+    branches: ["main"]
+    paths-ignore:
+      - "**/*.md"
+
+permissions:
+  contents: read
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  unit-tests:
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+        python-version: ["3.10", "3.11", "3.12", "3.13"]
+    runs-on: ${{ matrix.os }}
+
+    # Service containers to run with `runner-job`
+    services:
+      # Label used to access the service container
+      redis:
+        image: ${{ matrix.os == 'ubuntu-latest' && 'redis' || '' }}
+        # Set health checks to wait until redis has started
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          # Maps port 6379 on service container to the host
+          - 6379:6379
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup_build_env
+        with:
+          python-version: ${{ matrix.python-version }}
+          run-uv-sync: true
+
+      - name: Run unit tests
+        run: |
+          export PYTHONUNBUFFERED=1
+          uv run pytest tests/units --cov --no-cov-on-fail --cov-report=
+      - name: Run unit tests w/ redis
+        if: ${{ matrix.os == 'ubuntu-latest' }}
+        run: |
+          export PYTHONUNBUFFERED=1
+          export REFLEX_REDIS_URL=redis://localhost:6379
+          uv run pytest tests/units --cov --no-cov-on-fail --cov-report=
+      # Change to explicitly install v1 when reflex-hosting-cli is compatible with v2
+      - name: Run unit tests w/ pydantic v1
+        run: |
+          export PYTHONUNBUFFERED=1
+          uv pip install "pydantic~=1.10"
+          uv run pytest tests/units --cov --no-cov-on-fail --cov-report=
+      - name: Generate coverage report
+        run: uv run coverage html
+
+  unit-tests-macos:
+    timeout-minutes: 30
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.10", "3.11", "3.12", "3.13"]
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup_build_env
+        with:
+          python-version: ${{ matrix.python-version }}
+          run-uv-sync: true
+
+      - name: Run unit tests
+        run: |
+          export PYTHONUNBUFFERED=1
+          uv run pytest tests/units --cov --no-cov-on-fail --cov-report=
+      - name: Run unit tests w/ pydantic v1
+        run: |
+          export PYTHONUNBUFFERED=1
+          uv pip install "pydantic~=1.10"
+          uv run pytest tests/units --cov --no-cov-on-fail --cov-report=

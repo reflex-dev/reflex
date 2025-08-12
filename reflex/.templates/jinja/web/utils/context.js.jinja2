@@ -1,0 +1,129 @@
+import { createContext, useContext, useMemo, useReducer, useState, createElement, useEffect } from "react"
+import { applyDelta, Event, hydrateClientStorage, useEventLoop, refs } from "$/utils/state"
+import { jsx } from "@emotion/react";
+
+{% if initial_state %}
+export const initialState = {{ initial_state|json_dumps }}
+{% else %}
+export const initialState = {}
+{% endif %}
+
+export const defaultColorMode = {{ default_color_mode }}
+export const ColorModeContext = createContext(null);
+export const UploadFilesContext = createContext(null);
+export const DispatchContext = createContext(null);
+export const StateContexts = {
+  {% for state_name in initial_state %}
+  {{state_name|var_name}}: createContext(null),
+  {% endfor %}
+}
+export const EventLoopContext = createContext(null);
+{% if client_storage %}
+export const clientStorage = {{ client_storage|json_dumps }}
+{% else %}
+export const clientStorage = {}
+{% endif %}
+
+{% if state_name %}
+export const state_name = "{{state_name}}"
+
+export const exception_state_name = "{{const.frontend_exception_state}}"
+
+// These events are triggered on initial load and each page navigation.
+export const onLoadInternalEvent = () => {
+    const internal_events = [];
+
+    // Get tracked cookie and local storage vars to send to the backend.
+    const client_storage_vars = hydrateClientStorage(clientStorage);
+    // But only send the vars if any are actually set in the browser.
+    if (client_storage_vars && Object.keys(client_storage_vars).length !== 0) {
+        internal_events.push(
+            Event(
+                '{{state_name}}.{{const.update_vars_internal}}',
+                {vars: client_storage_vars},
+            ),
+        );
+    }
+
+    // `on_load_internal` triggers the correct on_load event(s) for the current page.
+    // If the page does not define any on_load event, this will just set `is_hydrated = true`.
+    internal_events.push(Event('{{state_name}}.{{const.on_load_internal}}'));
+
+    return internal_events;
+}
+
+// The following events are sent when the websocket connects or reconnects.
+export const initialEvents = () => [
+    Event('{{state_name}}.{{const.hydrate}}'),
+    ...onLoadInternalEvent()
+]
+{% else %}
+export const state_name = undefined
+
+export const exception_state_name = undefined
+
+export const onLoadInternalEvent = () => []
+
+export const initialEvents = () => []
+{% endif %}
+
+export const isDevMode = {{ is_dev_mode|json_dumps }}
+
+export function UploadFilesProvider({ children }) {
+  const [filesById, setFilesById] = useState({})
+  refs["__clear_selected_files"] = (id) => setFilesById(filesById => {
+    const newFilesById = {...filesById}
+    delete newFilesById[id]
+    return newFilesById
+  })
+  return createElement(
+    UploadFilesContext.Provider,
+    { value: [filesById, setFilesById] },
+    children
+  );
+}
+
+export function ClientSide(component) {
+  return ({ children, ...props }) => {
+    const [Component, setComponent] = useState(null);
+    useEffect(() => {
+      setComponent(component);
+    }, []);
+    return Component ? jsx(Component, props, children) : null;
+  };
+}
+
+export function EventLoopProvider({ children }) {
+  const dispatch = useContext(DispatchContext)
+  const [addEvents, connectErrors] = useEventLoop(
+    dispatch,
+    initialEvents,
+    clientStorage,
+  )
+  return createElement(
+    EventLoopContext.Provider,
+    { value: [addEvents, connectErrors] },
+    children
+  );
+}
+
+export function StateProvider({ children }) {
+  {% for state_name in initial_state %}
+  const [{{state_name|var_name}}, dispatch_{{state_name|var_name}}] = useReducer(applyDelta, initialState["{{state_name}}"])
+  {% endfor %}
+  const dispatchers = useMemo(() => {
+    return {
+      {% for state_name in initial_state %}
+      "{{state_name}}": dispatch_{{state_name|var_name}},
+      {% endfor %}
+    }
+  }, [])
+
+  return (
+    {% for state_name in initial_state %}
+    createElement(StateContexts.{{state_name|var_name}},{value: {{state_name|var_name}}},
+    {% endfor %}
+    createElement(DispatchContext, {value: dispatchers}, children)
+    {% for state_name in initial_state %}){% endfor %}
+  )
+}

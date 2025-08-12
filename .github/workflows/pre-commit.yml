@@ -1,0 +1,31 @@
+name: pre-commit
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.id }}
+  cancel-in-progress: true
+
+on:
+  pull_request:
+    branches: ["main"]
+  push:
+    # Note even though this job is called "pre-commit" and runs "pre-commit", this job will run
+    # also POST-commit on main also!  In case there are mishandled merge conflicts / bad auto-resolves
+    # when merging into main branch.
+    branches: ["main"]
+
+jobs:
+  pre-commit:
+    timeout-minutes: 30
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup_build_env
+        with:
+          python-version: 3.13
+          run-uv-sync: true
+      - uses: actions/checkout@v4
+        with:
+          clean: false
+      - run: uv run pre-commit run --all-files --show-diff-on-failure

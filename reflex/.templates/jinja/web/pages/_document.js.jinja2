@@ -1,0 +1,9 @@
+{% extends "web/pages/base_page.js.jinja2" %}
+
+{% block export %}
+export function Layout({children}) {
+  return (
+    {{utils.render(document)}}
+  )
+}
+{% endblock %}

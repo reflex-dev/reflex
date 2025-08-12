@@ -1,0 +1,44 @@
+# Entry conditions:
+# - `setup/checkout` has already happened
+# - working dir is the root directory of your project (e.g. `reflex/`).
+# - You have a `uv.lock` file in the root directory of your project
+# - You have a `pyproject.toml` file in the root directory of your project
+#
+# Exit conditions:
+# - Python of version `python-version` is ready to be invoked as `python`.
+# - If `run-uv-sync` is true, deps as defined in `pyproject.toml` will have been installed into the venv at `create-venv-at-path`.
+
+name: "Setup Reflex build environment"
+description: "Sets up Python, install uv (cached), install project deps (cached)"
+inputs:
+  python-version:
+    description: "Python version setup"
+    required: true
+  run-uv-sync:
+    description: "Whether to run uv sync on current dir"
+    required: false
+    default: false
+  create-venv-at-path:
+    description: "Path to venv (if uv sync is enabled)"
+    required: false
+    default: ".venv"
+
+runs:
+  using: "composite"
+  steps:
+    - name: Install UV
+      uses: astral-sh/setup-uv@v6
+      with:
+        python-version: ${{ inputs.python-version }}
+        enable-cache: true
+        prune-cache: false
+        activate-environment: true
+        cache-dependency-glob: "uv.lock"
+    - name: Setup Node
+      uses: actions/setup-node@v4
+      with:
+        node-version: 22
+    - name: Install Dependencies
+      if: inputs.run-uv-sync == 'true'
+      run: uv sync
+      shell: bash

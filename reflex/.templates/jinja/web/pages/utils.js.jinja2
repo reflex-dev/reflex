@@ -1,0 +1,93 @@
+{# Rendering components recursively. #}
+{# Args: #}
+{#     component: component dictionary #}
+{% macro render(component) %}
+{%- if component is not mapping %}{{ component }}
+{%- elif "iterable" in component %}{{ render_iterable_tag(component) }}
+{%- elif component.name == "match"%}{{ render_match_tag(component) }}
+{%- elif "cond" in component %}{{ render_condition_tag(component) }}
+{%- elif component.children|length %}{{ render_tag(component) }}
+{%- else %}{{ render_self_close_tag(component) }}
+{%- endif %}
+{% endmacro %}
+
+{# Rendering self close tag. #}
+{# Args: #}
+{#     component: component dictionary #}
+{% macro render_self_close_tag(component) %}
+{% if component.name|length %}
+jsx({{ component.name }},{{ render_props(component.props) }},{{ component.contents }})
+{% elif component.contents|length -%}{{ component.contents }}
+{% else %}""
+{% endif %}
+{% endmacro %}
+
+{# Rendering close tag with args and props. #}
+{# Args: #}
+{#     component: component dictionary #}
+{% macro render_tag(component) %}
+jsx(
+{% if component.name|length %}{{ component.name }}{% else %}Fragment{% endif %},
+{{ render_props(component.props) }},
+{% if component.contents|length %}{{ component.contents }},{% endif %}
+{% for child in component.children %}{% if child is mapping or child|length %}{{ render(child) }},{% endif %}{% endfor %}
+)
+{%- endmacro %}
+
+
+{# Rendering condition component. #}
+{# Args: #}
+{#     component: component dictionary #}
+{% macro render_condition_tag(component) %}
+({{ component.cond_state }} ? ({{ render(component.true_value) }}) : ({{ render(component.false_value) }}))
+{%- endmacro %}
+
+
+{# Rendering iterable component. #}
+{# Args: #}
+{#     component: component dictionary #}
+{% macro render_iterable_tag(component) %}
+{{ component.iterable_state }}.map(({{ component.arg_name }},{{ component.arg_index }})=>({% for child in component.children %}{{ render(child) }}{% endfor %}))
+{%- endmacro %}
+
+
+{# Rendering props of a component. #}
+{# Args: #}
+{#     component: component dictionary #}
+{% macro render_props(props) %}{{ "{" }}{% if props|length %}{{ props|join(",") }}{% endif %}{{ "}" }}{% endmacro %}
+
+{# Rendering Match component. #}
+{# Args: #}
+{#     component: component dictionary #}
+{% macro render_match_tag(component) %}
+(() => {
+  switch (JSON.stringify({{ component.cond._js_expr }})) {
+  {% for case in component.match_cases %}
+    {% for condition in case[:-1] %}
+      case JSON.stringify({{ condition._js_expr }}):
+    {% endfor %}
+      return {{ render(case[-1]) }};
+      break;
+  {% endfor %}
+    default:
+      return {{ render(component.default) }};
+      break;
+  }
+})()
+{% endmacro %}
+
+
+{# Get react libraries import . #}
+{# Args: #}
+{#     module: react module dictionary #}
+{% macro get_import(module)%}
+{%- if module.default|length and module.rest|length -%}
+  import {{module.default}}, { {{module.rest|sort|join(", ")}} } from "{{module.lib}}"
+{%- elif module.default|length -%}
+  import {{module.default}} from "{{module.lib}}"
+{%- elif module.rest|length -%}
+  import { {{module.rest|sort|join(", ")}} } from "{{module.lib}}"
+{%- else -%}
+  import "{{module.lib}}"
+{%- endif -%}
+{% endmacro %}

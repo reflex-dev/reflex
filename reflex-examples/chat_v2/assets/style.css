@@ -1,0 +1,25 @@
+/* For WebKit browsers (Chrome, Safari) */
+::-webkit-scrollbar {
+  width: 5px;
+  height: 12px;
+  padding-left: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background-color: #f1f1f1;
+  padding-left: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: #888;
+  border-radius: 6px;
+  padding-left: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background-color: #555;
+}
+
+/* For Firefox */
+scrollbar-color: #888 #f1f1f1;
+scrollbar-width: thin;

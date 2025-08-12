@@ -1,0 +1,1 @@
+"""Graphing component tests."""

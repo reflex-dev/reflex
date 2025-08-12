@@ -1,0 +1,38 @@
+name: integration-node-latest
+permissions:
+  contents: read
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+env:
+  REFLEX_TELEMETRY_ENABLED: false
+
+jobs:
+  check_latest_node:
+    runs-on: ubuntu-22.04
+    strategy:
+      matrix:
+        split_index: [1, 2]
+        node-version: ["node"]
+      fail-fast: false
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup_build_env
+        with:
+          python-version: 3.13
+          run-uv-sync: true
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+      - run: uv run playwright install --with-deps
+      - run: |
+          uv run pytest tests/test_node_version.py -v
+          uv run pytest tests/integration --splits 2 -v --group ${{matrix.split_index}}
