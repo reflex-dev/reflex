@@ -10,7 +10,7 @@ from rich.progress import MofNCompleteColumn, Progress, TimeElapsedColumn
 
 from reflex import constants
 from reflex.config import get_config
-from reflex.utils import console, path_ops, prerequisites, processes
+from reflex.utils import console, js_runtimes, path_ops, prerequisites, processes
 from reflex.utils.exec import is_in_app_harness
 
 
@@ -188,7 +188,7 @@ def build():
     # Start the subprocess with the progress bar.
     process = processes.new_process(
         [
-            *prerequisites.get_js_package_executor(raise_on_none=True)[0],
+            *js_runtimes.get_js_package_executor(raise_on_none=True)[0],
             "run",
             "export",
         ],
