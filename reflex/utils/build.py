@@ -201,7 +201,7 @@ def build():
     processes.show_progress("Creating Production Build", process, checkpoints)
     _duplicate_index_html_to_parent_dir(wdir / constants.Dirs.STATIC)
     path_ops.cp(
-        wdir / constants.Dirs.STATIC / "__spa-fallback.html",
+        wdir / constants.Dirs.STATIC / constants.ReactRouter.SPA_FALLBACK,
         wdir / constants.Dirs.STATIC / "404.html",
     )
 
