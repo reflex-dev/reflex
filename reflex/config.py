@@ -285,7 +285,7 @@ class Config(BaseConfig):
     """
 
     # Track whether the app name has already been validated for this Config instance.
-    _app_name_is_valid: bool = dataclasses.field(default=False)
+    _app_name_is_valid: bool = dataclasses.field(default=False, repr=False)
 
     def _post_init(self, **kwargs):
         """Post-initialization method to set up the config.
