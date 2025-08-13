@@ -37,7 +37,7 @@ from reflex.constants import (
     PageNames,
 )
 from reflex.constants.compiler import SpecialAttributes
-from reflex.constants.state import FRONTEND_EVENT_STATE
+from reflex.constants.state import FRONTEND_EVENT_STATE, MEMO_MARKER
 from reflex.event import (
     EventCallback,
     EventChain,
@@ -2005,10 +2005,10 @@ class CustomComponent(Component):
 
         super()._post_init(
             event_triggers={
-                key: EventChain.create(
+                key + MEMO_MARKER: EventChain.create(
                     value=props[key],
                     args_spec=get_args_spec(key),
-                    key=key,
+                    key=key + MEMO_MARKER,
                 )
                 for key in event_types
             },
@@ -2016,7 +2016,9 @@ class CustomComponent(Component):
         )
 
         to_camel_cased_props = {
-            format.to_camel_case(key) for key in props if key not in event_types
+            format.to_camel_case(key + MEMO_MARKER)
+            for key in props
+            if key not in event_types
         }
         self.get_props = lambda: to_camel_cased_props  # pyright: ignore [reportIncompatibleVariableOverride]
 
@@ -2031,7 +2033,7 @@ class CustomComponent(Component):
             if key not in props_types:
                 continue
 
-            camel_cased_key = format.to_camel_case(key)
+            camel_cased_key = format.to_camel_case(key + MEMO_MARKER)
 
             # Get the type based on the annotation.
             type_ = props_types[key]
