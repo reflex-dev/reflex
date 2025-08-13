@@ -169,7 +169,7 @@ def test_create_map_fn_var_subclass(cls, fn_body, fn_args, explicit_return, expe
         (
             "code",
             {"codeblock": syntax_highlighter_memoized_component(CodeBlock)},
-            r"""(({node, inline, className, children, ...props}) => { const match = (className || '').match(/language-(?<lang>.*)/); let _language = match ? match[1] : '';  ;             return inline ? (                 jsx(RadixThemesCode,{...props},children,)             ) : (                 jsx(CodeBlock,{code:((Array.isArray(children)) ? children.join("\n") : children),language:_language,...props},)             );         })""",
+            r"""(({node, inline, className, children, ...props}) => { const match = (className || '').match(/language-(?<lang>.*)/); let _language = match ? match[1] : '';  ;             return inline ? (                 jsx(RadixThemesCode,{...props},children,)             ) : (                 jsx(CodeBlock,{codeRxMemo:((Array.isArray(children)) ? children.join("\n") : children),languageRxMemo:_language,...props},)             );         })""",
         ),
         (
             "code",
@@ -178,7 +178,7 @@ def test_create_map_fn_var_subclass(cls, fn_body, fn_args, explicit_return, expe
                     ShikiHighLevelCodeBlock
                 )
             },
-            r"""(({node, inline, className, children, ...props}) => { const match = (className || '').match(/language-(?<lang>.*)/); let _language = match ? match[1] : '';  ;             return inline ? (                 jsx(RadixThemesCode,{...props},children,)             ) : (                 jsx(CodeBlock,{code:((Array.isArray(children)) ? children.join("\n") : children),language:_language,...props},)             );         })""",
+            r"""(({node, inline, className, children, ...props}) => { const match = (className || '').match(/language-(?<lang>.*)/); let _language = match ? match[1] : '';  ;             return inline ? (                 jsx(RadixThemesCode,{...props},children,)             ) : (                 jsx(CodeBlock,{codeRxMemo:((Array.isArray(children)) ? children.join("\n") : children),languageRxMemo:_language,...props},)             );         })""",
         ),
     ],
 )
