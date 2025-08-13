@@ -2008,7 +2008,7 @@ class CustomComponent(Component):
                 key + MEMO_MARKER: EventChain.create(
                     value=props[key],
                     args_spec=get_args_spec(key),
-                    key=key + MEMO_MARKER,
+                    key=key,
                 )
                 for key in event_types
             },
