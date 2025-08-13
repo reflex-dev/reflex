@@ -284,6 +284,9 @@ class Config(BaseConfig):
     See the [configuration](https://reflex.dev/docs/getting-started/configuration/) docs for more info.
     """
 
+    # Track whether the app name has already been validated for this Config instance.
+    _app_name_is_valid: bool = dataclasses.field(default=False)
+
     def _post_init(self, **kwargs):
         """Post-initialization method to set up the config.
 

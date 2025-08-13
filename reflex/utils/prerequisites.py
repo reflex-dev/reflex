@@ -165,6 +165,7 @@ def _check_app_name(config: Config):
             else:
                 msg += f"Ensure app_name='{config.app_name}' in rxconfig.py matches your folder structure."
             raise ModuleNotFoundError(msg)
+    config._app_name_is_valid = True
 
 
 def get_app(reload: bool = False) -> ModuleType:
@@ -184,7 +185,9 @@ def get_app(reload: bool = False) -> ModuleType:
     try:
         config = get_config()
 
-        _check_app_name(config)
+        # Avoid hitting disk when the app name has already been validated in this process.
+        if not config._app_name_is_valid:
+            _check_app_name(config)
 
         module = config.module
         sys.path.insert(0, str(Path.cwd()))
