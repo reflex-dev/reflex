@@ -1745,7 +1745,7 @@ class BaseState(EvenMoreBasicBaseState):
             app = prerequisites.get_and_validate_app().app
             event_specs = (
                 app.backend_exception_handler(ex)
-                if app.backend_exception_handler
+                if app.backend_exception_handler is not None
                 else None
             )
 
@@ -1887,7 +1887,7 @@ class BaseState(EvenMoreBasicBaseState):
 
             event_specs = (
                 app.backend_exception_handler(ex)
-                if app.backend_exception_handler
+                if app.backend_exception_handler is not None
                 else None
             )
 
