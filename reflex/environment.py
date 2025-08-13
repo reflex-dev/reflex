@@ -640,6 +640,9 @@ class EnvironmentVariables:
     # Enable full logging of debug messages to reflex user directory.
     REFLEX_ENABLE_FULL_LOGGING: EnvVar[bool] = env_var(False)
 
+    # The path underwhich the frontend is served.
+    REFLEX_FRONTEND_PATH: EnvVar[str] = env_var("")
+
 
 environment = EnvironmentVariables()
 
