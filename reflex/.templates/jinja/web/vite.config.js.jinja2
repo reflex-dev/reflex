@@ -25,13 +25,13 @@ function alwaysUseReactDomServerNode() {
 }
 
 export default defineConfig((config) => ({
-  base: "{{base}}",
   plugins: [
     alwaysUseReactDomServerNode(),
     reactRouter(),
     safariCacheBustPlugin(),
   ],
   build: {
+    assetsDir: "{{base}}assets".slice(1),
     rollupOptions: {
       jsx: {},
       output: {

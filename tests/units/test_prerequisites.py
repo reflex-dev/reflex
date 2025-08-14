@@ -43,7 +43,7 @@ runner = CliRunner()
                 frontend_path="/test",
             ),
             False,
-            'export default {"basename": "/test", "future": {"unstable_optimizeDeps": true}, "ssr": false};',
+            'export default {"basename": "/test/", "future": {"unstable_optimizeDeps": true}, "ssr": false};',
         ),
         (
             Config(
@@ -67,21 +67,21 @@ def test_update_react_router_config(config, export, expected_output):
                 app_name="test",
                 frontend_path="",
             ),
-            'base: "/",',
+            'assetsDir: "/assets".slice(1),',
         ),
         (
             Config(
                 app_name="test",
                 frontend_path="/test",
             ),
-            'base: "/test/",',
+            'assetsDir: "/test/assets".slice(1),',
         ),
         (
             Config(
                 app_name="test",
                 frontend_path="/test/",
             ),
-            'base: "/test/",',
+            'assetsDir: "/test/assets".slice(1),',
         ),
     ],
 )

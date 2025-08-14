@@ -4,11 +4,12 @@ from __future__ import annotations
 
 import os
 import zipfile
-from pathlib import Path
+from pathlib import Path, PosixPath
 
 from rich.progress import MofNCompleteColumn, Progress, TimeElapsedColumn
 
 from reflex import constants
+from reflex.config import get_config
 from reflex.utils import console, js_runtimes, path_ops, prerequisites, processes
 from reflex.utils.exec import is_in_app_harness
 
@@ -204,6 +205,19 @@ def build():
         wdir / constants.Dirs.STATIC / constants.ReactRouter.SPA_FALLBACK,
         wdir / constants.Dirs.STATIC / "404.html",
     )
+
+    config = get_config()
+
+    if frontend_path := config.frontend_path.strip("/"):
+        frontend_path = PosixPath(frontend_path)
+        first_part = frontend_path.parts[0]
+        for child in list((wdir / constants.Dirs.STATIC).iterdir()):
+            if child.is_dir() and child.name == first_part:
+                continue
+            path_ops.mv(
+                child,
+                wdir / constants.Dirs.STATIC / frontend_path / child.name,
+            )
 
 
 def setup_frontend(
