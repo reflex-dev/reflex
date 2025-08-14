@@ -23,6 +23,9 @@ class HybridProperty(property):
 
         Returns:
             The value of the property or a frontend Var.
+
+        Raises:
+            AttributeError: If the property has no getter function and no var function is set.
         """
         if instance is not None:
             return super().__get__(instance, owner)
