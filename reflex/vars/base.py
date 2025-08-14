@@ -717,7 +717,7 @@ class Var(Generic[VAR_TYPE], metaclass=MetaclassVar):
         return f"{constants.REFLEX_VAR_OPENING_TAG}{hashed_var}{constants.REFLEX_VAR_CLOSING_TAG}{self._js_expr}"
 
     @overload
-    def to(self, output: type[str]) -> StringVar: ...
+    def to(self, output: type[str]) -> StringVar: ...  # pyright: ignore[reportOverlappingOverload]
 
     @overload
     def to(self, output: type[bool]) -> BooleanVar: ...
@@ -734,8 +734,8 @@ class Var(Generic[VAR_TYPE], metaclass=MetaclassVar):
     @overload
     def to(
         self,
-        output: type[list] | type[tuple] | type[set],
-    ) -> ArrayVar: ...
+        output: type[SEQUENCE_TYPE],
+    ) -> ArrayVar[SEQUENCE_TYPE]: ...
 
     @overload
     def to(

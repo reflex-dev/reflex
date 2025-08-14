@@ -254,6 +254,9 @@ class BaseConfig:
     # List of fully qualified import paths of plugins to disable in the app (e.g. reflex.plugins.sitemap.SitemapPlugin).
     disable_plugins: list[str] = dataclasses.field(default_factory=list)
 
+    # Whether to skip plugin checks.
+    _skip_plugins_checks: bool = dataclasses.field(default=False, repr=False)
+
     _prefixes: ClassVar[list[str]] = ["REFLEX_"]
 
 
@@ -283,6 +286,9 @@ class Config(BaseConfig):
 
     See the [configuration](https://reflex.dev/docs/getting-started/configuration/) docs for more info.
     """
+
+    # Track whether the app name has already been validated for this Config instance.
+    _app_name_is_valid: bool = dataclasses.field(default=False, repr=False)
 
     def _post_init(self, **kwargs):
         """Post-initialization method to set up the config.
@@ -315,7 +321,8 @@ class Config(BaseConfig):
             setattr(self, key, env_value)
 
         # Add builtin plugins if not disabled.
-        self._add_builtin_plugins()
+        if not self._skip_plugins_checks:
+            self._add_builtin_plugins()
 
         #   Update default URLs if ports were set
         kwargs.update(env_kwargs)
@@ -531,7 +538,7 @@ def _get_config() -> Config:
     if not spec:
         # we need this condition to ensure that a ModuleNotFound error is not thrown when
         # running unit/integration tests or during `reflex init`.
-        return Config(app_name="")
+        return Config(app_name="", _skip_plugins_checks=True)
     rxconfig = importlib.import_module(constants.Config.MODULE)
     return rxconfig.config
 
