@@ -643,6 +643,9 @@ class EnvironmentVariables:
     # The path to run the frontend on. For example, "/app" will run the frontend on http://localhost:3000/app
     REFLEX_FRONTEND_PATH: EnvVar[str] = env_var("")
 
+    # Whether to display the sticky "Built with Reflex" badge on all pages.
+    REFLEX_SHOW_BUILT_WITH_REFLEX: EnvVar[bool | None] = env_var(None)
+
 
 environment = EnvironmentVariables()
 
