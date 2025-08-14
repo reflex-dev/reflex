@@ -62,7 +62,16 @@ def onload_redirect_with_prefix_app(
     tmp_path_factory,
 ) -> Generator[AppHarness, None, None]:
     prefix = "/prefix"
-    environment.REFLEX_FRONTEND_PATH.set(prefix)
+    try:
+        environment.REFLEX_FRONTEND_PATH.set(prefix)
+        with AppHarness.create(
+            root=tmp_path_factory.mktemp("frontend_path_app"),
+            app_source=OnLoadRedirectApp,
+        ) as harness:
+            assert harness.app_instance is not None, "app is not running"
+            yield harness
+    finally:
+        environment.REFLEX_FRONTEND_PATH.set("")
     with AppHarness.create(
         root=tmp_path_factory.mktemp("frontend_path_app"),
         app_source=OnLoadRedirectApp,
