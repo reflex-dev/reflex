@@ -8,14 +8,13 @@ from click.testing import CliRunner
 from reflex.config import Config
 from reflex.reflex import cli
 from reflex.testing import chdir
-from reflex.utils.prerequisites import (
-    CpuInfo,
+from reflex.utils.decorator import cached_procedure
+from reflex.utils.frontend_skeleton import (
     _compile_vite_config,
     _update_react_router_config,
-    cached_procedure,
-    get_cpu_info,
-    rename_imports_and_app_name,
 )
+from reflex.utils.rename import rename_imports_and_app_name
+from reflex.utils.telemetry import CpuInfo, get_cpu_info
 
 runner = CliRunner()
 

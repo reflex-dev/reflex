@@ -45,7 +45,7 @@ from reflex.state import (
     StateManagerRedis,
     reload_state_module,
 )
-from reflex.utils import console
+from reflex.utils import console, js_runtimes
 from reflex.utils.export import export
 from reflex.utils.types import ASGIApp
 
@@ -403,9 +403,7 @@ class AppHarness:
         # Start the frontend.
         self.frontend_process = reflex.utils.processes.new_process(
             [
-                *reflex.utils.prerequisites.get_js_package_executor(raise_on_none=True)[
-                    0
-                ],
+                *js_runtimes.get_js_package_executor(raise_on_none=True)[0],
                 "run",
                 "dev",
             ],

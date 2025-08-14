@@ -15,7 +15,7 @@ from reflex.environment import environment
 from reflex.event import EventHandler
 from reflex.state import BaseState
 from reflex.utils import exec as utils_exec
-from reflex.utils import prerequisites, types
+from reflex.utils import frontend_skeleton, js_runtimes, prerequisites, templates, types
 from reflex.utils.exceptions import ReflexError, SystemPackageMissingError
 from reflex.vars.base import Var
 
@@ -177,7 +177,7 @@ def test_validate_none_bun_path(mocker: MockerFixture):
     """
     mocker.patch("reflex.utils.path_ops.get_bun_path", return_value=None)
     # with pytest.raises(click.exceptions.Exit):
-    prerequisites.validate_bun()
+    js_runtimes.validate_bun()
 
 
 def test_validate_invalid_bun_path(mocker: MockerFixture):
@@ -190,10 +190,10 @@ def test_validate_invalid_bun_path(mocker: MockerFixture):
     mock_path = mocker.Mock()
     mocker.patch("reflex.utils.path_ops.get_bun_path", return_value=mock_path)
     mocker.patch("reflex.utils.path_ops.samefile", return_value=False)
-    mocker.patch("reflex.utils.prerequisites.get_bun_version", return_value=None)
+    mocker.patch("reflex.utils.js_runtimes.get_bun_version", return_value=None)
 
     with pytest.raises(click.exceptions.Exit):
-        prerequisites.validate_bun()
+        js_runtimes.validate_bun()
 
 
 def test_validate_bun_path_incompatible_version(mocker: MockerFixture):
@@ -207,12 +207,12 @@ def test_validate_bun_path_incompatible_version(mocker: MockerFixture):
     mocker.patch("reflex.utils.path_ops.get_bun_path", return_value=mock_path)
     mocker.patch("reflex.utils.path_ops.samefile", return_value=False)
     mocker.patch(
-        "reflex.utils.prerequisites.get_bun_version",
+        "reflex.utils.js_runtimes.get_bun_version",
         return_value=version.parse("0.6.5"),
     )
 
     # This will just warn the user, not raise an error
-    prerequisites.validate_bun()
+    js_runtimes.validate_bun()
 
 
 def test_remove_existing_bun_installation(mocker: MockerFixture):
@@ -221,10 +221,10 @@ def test_remove_existing_bun_installation(mocker: MockerFixture):
     Args:
         mocker: Pytest mocker.
     """
-    mocker.patch("reflex.utils.prerequisites.Path.exists", return_value=True)
-    rm = mocker.patch("reflex.utils.prerequisites.path_ops.rm", mocker.Mock())
+    mocker.patch("reflex.utils.js_runtimes.Path.exists", return_value=True)
+    rm = mocker.patch("reflex.utils.js_runtimes.path_ops.rm", mocker.Mock())
 
-    prerequisites.remove_existing_bun_installation()
+    js_runtimes.remove_existing_bun_installation()
     rm.assert_called_once()
 
 
@@ -325,7 +325,7 @@ def test_create_config(app_name: str, expected_config_name: str, mocker: MockerF
     """
     mocker.patch("pathlib.Path.write_text")
     tmpl_mock = mocker.patch("reflex.compiler.templates.RXCONFIG")
-    prerequisites.create_config(app_name)
+    templates.create_config(app_name)
     tmpl_mock.render.assert_called_with(
         app_name=app_name, config_name=expected_config_name
     )
@@ -359,7 +359,7 @@ def test_create_config_e2e(tmp_working_dir):
             for the duration of the test.
     """
     app_name = "e2e"
-    prerequisites.create_config(app_name)
+    templates.create_config(app_name)
     eval_globals = {}
     exec((tmp_working_dir / constants.Config.FILE).read_text(), eval_globals)
     config = eval_globals["config"]
@@ -415,7 +415,7 @@ def test_initialize_non_existent_gitignore(
         """
         )
 
-    prerequisites.initialize_gitignore(gitignore_file=gitignore_file)
+    frontend_skeleton.initialize_gitignore(gitignore_file=gitignore_file)
 
     assert gitignore_file.exists()
     file_content = [
@@ -434,7 +434,7 @@ def test_validate_app_name(tmp_path, mocker: MockerFixture):
     reflex = tmp_path / "reflex"
     reflex.mkdir()
 
-    mocker.patch("reflex.utils.prerequisites.os.getcwd", return_value=str(reflex))
+    mocker.patch("os.getcwd", return_value=str(reflex))
 
     with pytest.raises(click.exceptions.Exit):
         prerequisites.validate_app_name()
@@ -454,7 +454,7 @@ def test_bun_install_without_unzip(mocker: MockerFixture):
     mocker.patch("reflex.utils.prerequisites.constants.IS_WINDOWS", False)
 
     with pytest.raises(SystemPackageMissingError):
-        prerequisites.install_bun()
+        js_runtimes.install_bun()
 
 
 @pytest.mark.parametrize("bun_version", [constants.Bun.VERSION, "1.0.0"])
@@ -470,13 +470,13 @@ def test_bun_install_version(mocker: MockerFixture, bun_version):
     mocker.patch("reflex.utils.prerequisites.constants.IS_WINDOWS", False)
     mocker.patch("pathlib.Path.exists", return_value=True)
     mocker.patch(
-        "reflex.utils.prerequisites.get_bun_version",
+        "reflex.utils.js_runtimes.get_bun_version",
         return_value=version.parse(bun_version),
     )
     mocker.patch("reflex.utils.path_ops.which")
-    mock = mocker.patch("reflex.utils.prerequisites.download_and_run")
+    mock = mocker.patch("reflex.utils.js_runtimes.download_and_run")
 
-    prerequisites.install_bun()
+    js_runtimes.install_bun()
     if bun_version == constants.Bun.VERSION:
         mock.assert_not_called()
     else:
@@ -493,10 +493,12 @@ def test_create_reflex_dir(mocker: MockerFixture, is_windows):
         is_windows: Whether platform is windows.
     """
     mocker.patch("reflex.utils.prerequisites.constants.IS_WINDOWS", is_windows)
-    mocker.patch("reflex.utils.prerequisites.processes.run_concurrently", mocker.Mock())
-    mocker.patch("reflex.utils.prerequisites.initialize_web_directory", mocker.Mock())
+    mocker.patch("reflex.utils.processes.run_concurrently", mocker.Mock())
+    mocker.patch(
+        "reflex.utils.frontend_skeleton.initialize_web_directory", mocker.Mock()
+    )
     mocker.patch("reflex.utils.processes.run_concurrently")
-    mocker.patch("reflex.utils.prerequisites.validate_bun")
+    mocker.patch("reflex.utils.js_runtimes.validate_bun")
     create_cmd = mocker.patch(
         "reflex.utils.prerequisites.path_ops.mkdir", mocker.Mock()
     )

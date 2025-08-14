@@ -15,7 +15,7 @@ from reflex.testing import AppHarness
 def TestNodeVersionApp():
     """A test app for node latest version."""
     import reflex as rx
-    from reflex.utils.prerequisites import get_node_version
+    from reflex.utils.js_runtimes import get_node_version
 
     class TestNodeVersionConfig(rx.Config):
         pass
