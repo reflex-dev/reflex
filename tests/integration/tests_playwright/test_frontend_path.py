@@ -69,16 +69,10 @@ def onload_redirect_with_prefix_app(
             app_source=OnLoadRedirectApp,
         ) as harness:
             assert harness.app_instance is not None, "app is not running"
+            environment.REFLEX_FRONTEND_PATH.set("")
             yield harness
     finally:
         environment.REFLEX_FRONTEND_PATH.set("")
-    with AppHarness.create(
-        root=tmp_path_factory.mktemp("frontend_path_app"),
-        app_source=OnLoadRedirectApp,
-    ) as harness:
-        assert harness.app_instance is not None, "app is not running"
-        yield harness
-    environment.REFLEX_FRONTEND_PATH.set("")
 
 
 @pytest.mark.parametrize(
