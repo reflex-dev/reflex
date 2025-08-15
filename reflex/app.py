@@ -67,10 +67,6 @@ from reflex.components.core.banner import (
     connection_toaster,
 )
 from reflex.components.core.breakpoints import set_breakpoints
-from reflex.components.core.client_side_routing import (
-    default_404_page,
-    wait_for_client_redirect,
-)
 from reflex.components.core.sticky import sticky
 from reflex.components.core.upload import Upload, get_upload_dir
 from reflex.components.radix import themes
@@ -775,8 +771,10 @@ class App(MiddlewareMixin, LifespanMixin):
 
         if route == constants.Page404.SLUG:
             if component is None:
-                component = default_404_page
-            component = wait_for_client_redirect(self._generate_component(component))
+                from reflex.components.el.elements import span
+
+                component = span("404: Page not found")
+            component = self._generate_component(component)
             title = title or constants.Page404.TITLE
             description = description or constants.Page404.DESCRIPTION
             image = image or constants.Page404.IMAGE
@@ -864,7 +862,7 @@ class App(MiddlewareMixin, LifespanMixin):
         """
         from reflex.route import get_router
 
-        return get_router(list(self._unevaluated_pages))
+        return get_router(list(dict.fromkeys([*self._unevaluated_pages, *self._pages])))
 
     def get_load_events(self, path: str) -> list[IndividualEventType[()]]:
         """Get the load events for a route.
@@ -1312,7 +1310,9 @@ class App(MiddlewareMixin, LifespanMixin):
                 self.head_components,
                 html_lang=self.html_lang,
                 html_custom_attrs=(
-                    {**self.html_custom_attrs} if self.html_custom_attrs else {}
+                    {"suppressHydrationWarning": "true", **self.html_custom_attrs}
+                    if self.html_custom_attrs
+                    else {"suppressHydrationWarning": "true"}
                 ),
             )
         )

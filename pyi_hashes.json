@@ -14,7 +14,6 @@
   "reflex/components/core/__init__.pyi": "007170b97e58bdf28b2aee381d91c0c7",
   "reflex/components/core/auto_scroll.pyi": "10c4cf71d0d0c1d46a8e1205bd119c11",
   "reflex/components/core/banner.pyi": "3c07547afc4f215aefd5e5afa409aa25",
-  "reflex/components/core/client_side_routing.pyi": "57a7917e993f625c623bcef50b60b804",
   "reflex/components/core/clipboard.pyi": "a844eb927d9bc2a43f5e88161b258539",
   "reflex/components/core/debounce.pyi": "055da7aa890f44fb4d48bd5978f1a874",
   "reflex/components/core/helmet.pyi": "43f8497c8fafe51e29dca1dd535d143a",

@@ -174,6 +174,8 @@ class ReactRouter(Javascript):
         rf"(?:{DEV_FRONTEND_LISTENING_REGEX}|{PROD_FRONTEND_LISTENING_REGEX})(.*)"
     )
 
+    SPA_FALLBACK = "__spa-fallback.html"
+
 
 # Color mode variables
 class ColorMode(SimpleNamespace):
