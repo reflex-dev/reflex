@@ -8,6 +8,10 @@ from reflex.testing import AppHarness, AppHarnessProd
 
 
 def OnLoadRedirectApp():
+    """App to demonstrate an on_load redirection issue.
+
+    See https://github.com/reflex-dev/reflex/issues/5674 for details.
+    """
     import reflex as rx
 
     @rx.page("/")
@@ -49,6 +53,16 @@ def OnLoadRedirectApp():
 
 @pytest.fixture
 def onload_redirect_app(tmp_path_factory) -> Generator[AppHarness, None, None]:
+    """Start the OnLoadRedirectApp without setting REFLEX_FRONTEND_PATH".
+
+    This is a baseline used to show on_load redirects work without a frontend_path.
+
+    Args:
+        tmp_path_factory: pytest tmp_path_factory fixture
+
+    Yields:
+        running AppHarness instance
+    """
     with AppHarnessProd.create(
         root=tmp_path_factory.mktemp("frontend_path_app"),
         app_source=OnLoadRedirectApp,
@@ -61,6 +75,16 @@ def onload_redirect_app(tmp_path_factory) -> Generator[AppHarness, None, None]:
 def onload_redirect_with_prefix_app(
     tmp_path_factory,
 ) -> Generator[AppHarness, None, None]:
+    """Start the OnLoadRedirectApp with REFLEX_FRONTEND_PATH set to "/prefix".
+
+    This simulates setting the REFLEX_FRONTEND_PATH to identify issues with redirection.
+
+    Args:
+        tmp_path_factory: pytest tmp_path_factory fixture
+
+    Yields:
+        running AppHarness instance
+    """
     prefix = "/prefix"
     try:
         environment.REFLEX_FRONTEND_PATH.set(prefix)
@@ -76,18 +100,28 @@ def onload_redirect_with_prefix_app(
 
 
 @pytest.mark.parametrize(
-    ("app_fixture_name", "prefix"),
+    ("app_fixture_name", "frontend_path"),
     [
         ("onload_redirect_app", ""),
         ("onload_redirect_with_prefix_app", "/prefix"),
     ],
 )
-def test_onload_redirect(app_fixture_name: str, prefix: str, page: Page, request):
+def test_onload_redirect(
+    app_fixture_name: str, frontend_path: str, page: Page, request
+):
+    """Ensure that on_load redirects work correctly when a frontend_path is present.
+
+    Args:
+        app_fixture_name: Name of the app fixture to use for the test.
+        frontend_path: The REFLEX_FRONTEND_PATH used by the app fixture.
+        page: Playwright Page object to interact with the app.
+        request: Pytest request object to access fixtures.
+    """
     app_fixture = request.getfixturevalue(app_fixture_name)
     assert app_fixture.frontend_url is not None
 
     base_url = app_fixture.frontend_url.rstrip("/")
-    base_url += prefix
+    base_url += frontend_path
     page.goto(f"{base_url}/")
     expect(page.get_by_text("This is the index page!")).to_be_visible()
 
