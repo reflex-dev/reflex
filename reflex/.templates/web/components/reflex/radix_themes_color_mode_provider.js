@@ -1,5 +1,5 @@
 import { useTheme } from "$/utils/react-theme";
-import { createElement } from "react";
+import { createElement, useEffect } from "react";
 import { ColorModeContext, defaultColorMode } from "$/utils/context";
 
 export default function RadixThemesColorModeProvider({ children }) {
@@ -19,6 +19,16 @@ export default function RadixThemesColorModeProvider({ children }) {
     }
     setTheme(mode);
   };
+
+  useEffect(() => {
+    const radixRoot = document.querySelector(
+      '.radix-themes[data-is-root-theme="true"]',
+    );
+    if (radixRoot) {
+      radixRoot.classList.remove("light", "dark");
+      radixRoot.classList.add(resolvedTheme);
+    }
+  }, [resolvedTheme]);
 
   return createElement(
     ColorModeContext.Provider,

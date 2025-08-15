@@ -7,10 +7,12 @@ import builtins
 import contextlib
 import copy
 import dataclasses
+import datetime
 import functools
 import inspect
 import pickle
 import sys
+import time
 import typing
 import warnings
 from collections.abc import AsyncIterator, Callable, Sequence
@@ -40,7 +42,7 @@ from reflex.event import (
 from reflex.istate import HANDLED_PICKLE_ERRORS, debug_failed_pickles
 from reflex.istate.data import RouterData
 from reflex.istate.proxy import ImmutableMutableProxy as ImmutableMutableProxy
-from reflex.istate.proxy import MutableProxy, StateProxy
+from reflex.istate.proxy import MutableProxy, StateProxy, is_mutable_type
 from reflex.istate.storage import ClientStorageBase
 from reflex.model import Model
 from reflex.utils import console, format, prerequisites, types
@@ -224,7 +226,19 @@ class EventHandlerSetVar(EventHandler):
             EventHandlerValueError: If the given Var name is not a str
             NotImplementedError: If the setter for the given Var is async
         """
+        from reflex.config import get_config
         from reflex.utils.exceptions import EventHandlerValueError
+
+        config = get_config()
+        if config.state_auto_setters is None:
+            console.deprecate(
+                feature_name="state_auto_setters defaulting to True",
+                reason="The default value will be changed to False in a future release. Set state_auto_setters explicitly or define setters explicitly. "
+                f"Used {self.state_cls.__name__}.setvar without defining it.",
+                deprecation_version="0.8.9",
+                removal_version="0.9.0",
+                dedupe=True,
+            )
 
         if args:
             if not isinstance(args[0], str):
@@ -284,11 +298,22 @@ async def _resolve_delta(delta: Delta) -> Delta:
     for state_name, state_delta in delta.items():
         for var_name, value in state_delta.items():
             if asyncio.iscoroutine(value):
-                tasks[state_name, var_name] = asyncio.create_task(value)
+                tasks[state_name, var_name] = asyncio.create_task(
+                    value,
+                    name=f"reflex_resolve_delta|{state_name}|{var_name}|{time.time()}",
+                )
     for (state_name, var_name), task in tasks.items():
         delta[state_name][var_name] = await task
     return delta
 
+
+_deserializers = {
+    int: int,
+    float: float,
+    datetime.datetime: datetime.datetime.fromisoformat,
+    datetime.date: datetime.date.fromisoformat,
+    datetime.time: datetime.time.fromisoformat,
+}
 
 all_base_state_classes: dict[str, None] = {}
 
@@ -508,7 +533,7 @@ class BaseState(EvenMoreBasicBaseState):
         cls._check_overridden_computed_vars()
 
         new_backend_vars = {
-            name: value
+            name: value if not isinstance(value, Field) else value.default_value()
             for name, value in list(cls.__dict__.items())
             if types.is_backend_base_variable(name, cls)
         }
@@ -1032,7 +1057,7 @@ class BaseState(EvenMoreBasicBaseState):
             )
             raise VarTypeError(msg)
         cls._set_var(name, prop)
-        if cls.is_user_defined() and get_config().state_auto_setters:
+        if cls.is_user_defined() and get_config().state_auto_setters is not False:
             cls._create_setter(name, prop)
         cls._set_default_value(name, prop)
 
@@ -1092,11 +1117,14 @@ class BaseState(EvenMoreBasicBaseState):
         setattr(cls, name, prop)
 
     @classmethod
-    def _create_event_handler(cls, fn: Any):
+    def _create_event_handler(
+        cls, fn: Any, event_handler_cls: type[EventHandler] = EventHandler
+    ):
         """Create an event handler for the given function.
 
         Args:
             fn: The function to create an event handler for.
+            event_handler_cls: The event handler class to use.
 
         Returns:
             The event handler.
@@ -1104,7 +1132,7 @@ class BaseState(EvenMoreBasicBaseState):
         # Check if function has stored event_actions from decorator
         event_actions = getattr(fn, "_rx_event_actions", {})
 
-        return EventHandler(
+        return event_handler_cls(
             fn=fn, state_full_name=cls.get_full_name(), event_actions=event_actions
         )
 
@@ -1121,9 +1149,34 @@ class BaseState(EvenMoreBasicBaseState):
             name: The name of the var.
             prop: The var to create a setter for.
         """
+        from reflex.config import get_config
+
+        config = get_config()
+        _create_event_handler_kwargs = {}
+
+        if config.state_auto_setters is None:
+
+            class EventHandlerDeprecatedSetter(EventHandler):
+                def __call__(self, *args, **kwargs):
+                    console.deprecate(
+                        feature_name="state_auto_setters defaulting to True",
+                        reason="The default value will be changed to False in a future release. Set state_auto_setters explicitly or define setters explicitly. "
+                        f"Used {setter_name} in {cls.__name__} without defining it.",
+                        deprecation_version="0.8.9",
+                        removal_version="0.9.0",
+                        dedupe=True,
+                    )
+                    return super().__call__(*args, **kwargs)
+
+            _create_event_handler_kwargs["event_handler_cls"] = (
+                EventHandlerDeprecatedSetter
+            )
+
         setter_name = Var._get_setter_name_for_name(name)
         if setter_name not in cls.__dict__:
-            event_handler = cls._create_event_handler(prop._get_setter(name))
+            event_handler = cls._create_event_handler(
+                prop._get_setter(name), **_create_event_handler_kwargs
+            )
             cls.event_handlers[setter_name] = event_handler
             setattr(cls, setter_name, event_handler)
 
@@ -1154,7 +1207,8 @@ class BaseState(EvenMoreBasicBaseState):
             The default value of the var or None.
         """
         try:
-            return getattr(cls, name)
+            value = getattr(cls, name)
+            return value if not isinstance(value, Field) else value.default_value()
         except AttributeError:
             try:
                 return types.get_default_value_for_type(annotation_value)
@@ -1315,7 +1369,7 @@ class BaseState(EvenMoreBasicBaseState):
             if parent_state is not None:
                 return getattr(parent_state, name)
 
-        if MutableProxy._is_mutable_type(value) and (
+        if is_mutable_type(type(value)) and (
             name in super().__getattribute__("base_vars") or name in backend_vars
         ):
             # track changes in mutable containers (list, dict, set, etc)
@@ -1806,7 +1860,7 @@ class BaseState(EvenMoreBasicBaseState):
                 hinted_args = value_inside_optional(hinted_args)
             if (
                 isinstance(value, dict)
-                and inspect.isclass(hinted_args)
+                and isinstance(hinted_args, type)
                 and not types.is_generic_alias(hinted_args)  # py3.10
             ):
                 if issubclass(hinted_args, Model):
@@ -1828,11 +1882,12 @@ class BaseState(EvenMoreBasicBaseState):
                 hinted_args is tuple or hinted_args is tuple
             ):
                 payload[arg] = tuple(value)
-            elif isinstance(value, str) and (
-                hinted_args is int or hinted_args is float
+            elif (
+                isinstance(value, str)
+                and (deserializer := _deserializers.get(hinted_args)) is not None
             ):
                 try:
-                    payload[arg] = hinted_args(value)
+                    payload[arg] = deserializer(value)
                 except ValueError:
                     msg = f"Received a string value ({value}) for {arg} but expected a {hinted_args}"
                     raise ValueError(msg) from None
@@ -2337,7 +2392,7 @@ def _serialize_type(type_: Any) -> str:
     Returns:
         The serialized type.
     """
-    if not inspect.isclass(type_):
+    if not isinstance(type_, type):
         return f"{type_}"
     return f"{type_.__module__}.{type_.__qualname__}"
 
@@ -2491,7 +2546,7 @@ class OnLoadInternalState(State):
         # Cache the app reference for subsequent calls.
         if type(self)._app_ref is None:
             type(self)._app_ref = app
-        load_events = app.get_load_events(self.router._page.path)
+        load_events = app.get_load_events(self.router.url.path)
         if not load_events:
             self.is_hydrated = True
             return None  # Fast path for navigation with no on_load events defined.

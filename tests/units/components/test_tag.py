@@ -65,7 +65,6 @@ def test_add_props():
             {
                 "name": "",
                 "children": [],
-                "contents": "",
                 "props": [],
             },
         ),
@@ -74,26 +73,13 @@ def test_add_props():
             {
                 "name": "br",
                 "children": [],
-                "contents": "",
                 "props": [],
             },
         ),
         (
-            Tag(contents="hello"),
+            tagless.Tagless(contents="hello"),
             {
-                "name": "",
-                "children": [],
                 "contents": "hello",
-                "props": [],
-            },
-        ),
-        (
-            Tag(name="h1", contents="hello"),
-            {
-                "name": "h1",
-                "children": [],
-                "contents": "hello",
-                "props": [],
             },
         ),
         (
@@ -101,20 +87,6 @@ def test_add_props():
             {
                 "name": "box",
                 "children": [],
-                "contents": "",
-                "props": ['color:"red"', 'textAlign:"center"'],
-            },
-        ),
-        (
-            Tag(
-                name="box",
-                props={"color": "red", "textAlign": "center"},
-                contents="text",
-            ),
-            {
-                "name": "box",
-                "children": [],
-                "contents": "text",
                 "props": ['color:"red"', 'textAlign:"center"'],
             },
         ),
@@ -134,23 +106,20 @@ def test_format_tag(tag: Tag, expected: dict):
 def test_format_cond_tag():
     """Test that the cond tag dict is correct."""
     tag = CondTag(
-        true_value=dict(Tag(name="h1", contents="True content")),
-        false_value=dict(Tag(name="h2", contents="False content")),
-        cond=Var("logged_in", _var_type=bool),
+        cond_state="logged_in",
+        true_value=dict(tagless.Tagless(contents="True content")),
+        false_value=dict(tagless.Tagless(contents="False content")),
     )
     tag_dict = dict(tag)
-    cond, true_value, false_value = (
-        tag_dict["cond"],
+    cond_state, true_value, false_value = (
+        tag_dict["cond_state"],
         tag_dict["true_value"],
         tag_dict["false_value"],
     )
-    assert cond._js_expr == "logged_in"
-    assert cond._var_type is bool
+    assert cond_state == "logged_in"
 
-    assert true_value["name"] == "h1"
     assert true_value["contents"] == "True content"
 
-    assert false_value["name"] == "h2"
     assert false_value["contents"] == "False content"
 
 

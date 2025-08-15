@@ -1,20 +1,20 @@
 [project]
 name = "reflex"
-version = "0.8.7dev1"
+version = "0.8.14dev1"
 description = "Web apps in pure Python."
 license.text = "Apache-2.0"
 authors = [
-  { name = "Nikhil Rao", email = "nikhil@reflex.dev" },
-  { name = "Alek Petuskey", email = "alek@reflex.dev" },
-  { name = "Masen Furer", email = "masen@reflex.dev" },
-  { name = "Elijah Ahianyo", email = "elijahahianyo@gmail.com" },
-  { name = "Thomas Brandeho", email = "thomas@reflex.dev" },
-  { name = "Khaleel Al-Adhami", email = "khaleel@reflex.dev" },
+  { name = "Nikhil Rao" },
+  { name = "Alek Petuskey" },
+  { name = "Masen Furer" },
+  { name = "Elijah Ahianyo" },
+  { name = "Thomas Brandeho" },
+  { name = "Khaleel Al-Adhami" },
 ]
 maintainers = [
-  { name = "Masen Furer", email = "masen@reflex.dev" },
-  { name = "Thomas Brandeho", email = "thomas@reflex.dev" },
-  { name = "Khaleel Al-Adhami", email = "khaleel@reflex.dev" },
+  { name = "Masen Furer" },
+  { name = "Khaleel Al-Adhami" },
+  { email = "maintainers@reflex.dev" },
 ]
 readme = "README.md"
 keywords = ["web", "framework"]
@@ -23,8 +23,7 @@ dependencies = [
   "alembic >=1.15.2,<2.0",
   "click >=8.2",
   "granian[reload] >=2.4.0",
-  "httpx >=0.28.0,<1.0",
-  "jinja2 >=3.1.2,<4.0",
+  "httpx >=0.23.3,<1.0",
   "packaging >=24.2,<26",
   "platformdirs >=4.3.7,<5.0",
   "psutil >=7.0.0,<8.0; sys_platform == 'win32'",
@@ -32,7 +31,7 @@ dependencies = [
   "python-multipart >=0.0.20,<1.0",
   "python-socketio >=5.12.0,<6.0",
   "redis >=5.2.1,<7.0",
-  "reflex-hosting-cli >=0.1.54",
+  "reflex-hosting-cli >=0.1.55",
   "rich >=13,<15",
   "sqlmodel >=0.0.24,<0.1",
   "starlette >=0.47.0",
@@ -51,9 +50,7 @@ classifiers = [
 ]
 
 [project.optional-dependencies]
-monitoring = [
-  "pyleak >=0.1.14,<1.0",
-]
+monitoring = ["pyleak >=0.1.14,<1.0"]
 
 [project.urls]
 homepage = "https://reflex.dev"
@@ -152,7 +149,6 @@ lint.ignore = [
   "TC",
   "TD",
   "TRY0",
-  "UP038",
 ]
 lint.pydocstyle.convention = "google"
 lint.flake8-bugbear.extend-immutable-calls = [
@@ -233,7 +229,7 @@ fail_fast = true
 
 [[tool.pre-commit.repos]]
 repo = "https://github.com/astral-sh/ruff-pre-commit"
-rev = "v0.12.8"
+rev = "v0.13.2"
 hooks = [
   { id = "ruff-format", args = [
     "reflex",
@@ -265,7 +261,7 @@ hooks = [
 
 [[tool.pre-commit.repos]]
 repo = "https://github.com/RobertCraigie/pyright-python"
-rev = "v1.1.403"
+rev = "v1.1.405"
 hooks = [{ id = "pyright", args = ["reflex", "tests"], language = "system" }]
 
 [[tool.pre-commit.repos]]

@@ -2,12 +2,12 @@
 
 import socket
 import threading
-import time
 from contextlib import closing
 from unittest import mock
 
 import pytest
 
+from reflex.testing import DEFAULT_TIMEOUT, AppHarness
 from reflex.utils.processes import is_process_on_port
 
 
@@ -116,9 +116,11 @@ def test_is_process_on_port_permission_error():
 def test_is_process_on_port_concurrent_access():
     """Test is_process_on_port works correctly with concurrent access."""
     shared = None
+    is_open = threading.Event()
+    do_close = threading.Event()
 
     def create_server_and_test():
-        nonlocal shared
+        nonlocal do_close, is_open, shared
         server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         server.bind(("", 0))
 
@@ -127,23 +129,27 @@ def test_is_process_on_port_concurrent_access():
         port = server.getsockname()[1]
         shared = port
 
-        # Small delay to ensure the test runs while server is active
-        time.sleep(0.1)
+        is_open.set()
+        do_close.wait(timeout=DEFAULT_TIMEOUT)
+
         server.close()
 
     thread = threading.Thread(target=create_server_and_test)
     thread.start()
+    is_open.wait(timeout=DEFAULT_TIMEOUT)
 
-    # Wait a bit for the server to start
-    time.sleep(0.05)
+    try:
+        assert shared is not None
 
-    assert shared is not None
-
-    # Port should be occupied while server is running (both bound-only and listening)
-    assert is_process_on_port(shared)
-
-    thread.join()
+        # Port should be occupied while server is running (both bound-only and listening)
+        assert AppHarness._poll_for(
+            lambda: shared is not None and is_process_on_port(shared)
+        )
+    finally:
+        do_close.set()
+        thread.join(timeout=DEFAULT_TIMEOUT)
 
     # Give it a moment for the socket to be fully released
-    time.sleep(0.1)
-    assert not is_process_on_port(shared)
+    assert AppHarness._poll_for(
+        lambda: shared is not None and not is_process_on_port(shared)
+    )

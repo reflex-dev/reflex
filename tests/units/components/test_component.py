@@ -501,7 +501,7 @@ def test_get_imports(component1, component2):
     }
 
 
-def test_get_custom_code(component1, component2):
+def test_get_custom_code(component1: Component, component2: Component):
     """Test getting the custom code of a component.
 
     Args:
@@ -511,21 +511,21 @@ def test_get_custom_code(component1, component2):
     # Check that the code gets compiled correctly.
     c1 = component1.create()
     c2 = component2.create()
-    assert c1._get_all_custom_code() == {"console.log('component1')"}
-    assert c2._get_all_custom_code() == {"console.log('component2')"}
+    assert c1._get_all_custom_code() == {"console.log('component1')": None}
+    assert c2._get_all_custom_code() == {"console.log('component2')": None}
 
     # Check that nesting components compiles both codes.
     c1 = component1.create(c2)
     assert c1._get_all_custom_code() == {
-        "console.log('component1')",
-        "console.log('component2')",
+        "console.log('component1')": None,
+        "console.log('component2')": None,
     }
 
     # Check that code is not duplicated.
     c1 = component1.create(c2, c2, c1, c1)
     assert c1._get_all_custom_code() == {
-        "console.log('component1')",
-        "console.log('component2')",
+        "console.log('component1')": None,
+        "console.log('component2')": None,
     }
 
 
@@ -536,8 +536,8 @@ def test_get_props(component1, component2):
         component1: A test component.
         component2: A test component.
     """
-    assert component1.get_props() == {"text", "number", "text_or_number"}
-    assert component2.get_props() == {"arr", "on_prop_event"}
+    assert set(component1.get_props()) == {"text", "number", "text_or_number"}
+    assert set(component2.get_props()) == {"arr", "on_prop_event"}
 
 
 @pytest.mark.parametrize(
@@ -684,18 +684,13 @@ def test_component_create_unallowed_types(children, test_component):
             {
                 "name": "Fragment",
                 "props": [],
-                "contents": "",
                 "children": [
                     {
                         "name": "RadixThemesText",
                         "props": ['as:"p"'],
-                        "contents": "",
                         "children": [
                             {
-                                "name": "",
-                                "props": [],
                                 "contents": '"first_text"',
-                                "children": [],
                             }
                         ],
                     }
@@ -709,31 +704,22 @@ def test_component_create_unallowed_types(children, test_component):
                     {
                         "children": [
                             {
-                                "children": [],
                                 "contents": '"first_text"',
-                                "name": "",
-                                "props": [],
                             }
                         ],
-                        "contents": "",
                         "name": "RadixThemesText",
                         "props": ['as:"p"'],
                     },
                     {
                         "children": [
                             {
-                                "children": [],
                                 "contents": '"second_text"',
-                                "name": "",
-                                "props": [],
                             }
                         ],
-                        "contents": "",
                         "name": "RadixThemesText",
                         "props": ['as:"p"'],
                     },
                 ],
-                "contents": "",
                 "name": "Fragment",
                 "props": [],
             },
@@ -745,13 +731,9 @@ def test_component_create_unallowed_types(children, test_component):
                     {
                         "children": [
                             {
-                                "children": [],
                                 "contents": '"first_text"',
-                                "name": "",
-                                "props": [],
                             }
                         ],
-                        "contents": "",
                         "name": "RadixThemesText",
                         "props": ['as:"p"'],
                     },
@@ -762,28 +744,21 @@ def test_component_create_unallowed_types(children, test_component):
                                     {
                                         "children": [
                                             {
-                                                "children": [],
                                                 "contents": '"second_text"',
-                                                "name": "",
-                                                "props": [],
                                             }
                                         ],
-                                        "contents": "",
                                         "name": "RadixThemesText",
                                         "props": ['as:"p"'],
                                     }
                                 ],
-                                "contents": "",
                                 "name": "Fragment",
                                 "props": [],
                             }
                         ],
-                        "contents": "",
                         "name": "RadixThemesBox",
                         "props": [],
                     },
                 ],
-                "contents": "",
                 "name": "Fragment",
                 "props": [],
             },
@@ -850,7 +825,7 @@ def test_create_custom_component(my_component):
     """
     component = rx.memo(my_component)(prop1="test", prop2=1)
     assert component.tag == "MyComponent"
-    assert component.get_props() == {"prop1RxMemo", "prop2RxMemo"}
+    assert set(component.get_props()) == {"prop1", "prop2"}
     assert component.tag in CUSTOM_COMPONENTS
 
 
@@ -1152,10 +1127,10 @@ def test_component_with_only_valid_children(fixture, request):
 @pytest.mark.parametrize(
     ("component", "rendered"),
     [
-        (rx.text("hi"), 'jsx(\nRadixThemesText,\n{as:"p"},\n"hi"\n,)'),
+        (rx.text("hi"), 'jsx(RadixThemesText,{as:"p"},"hi")'),
         (
             rx.box(rx.heading("test", size="3")),
-            'jsx(\nRadixThemesBox,\n{},\njsx(\nRadixThemesHeading,\n{size:"3"},\n"test"\n,),)',
+            'jsx(RadixThemesBox,{},jsx(RadixThemesHeading,{size:"3"},"test"))',
         ),
     ],
 )
@@ -1592,12 +1567,12 @@ def test_validate_valid_children():
             ),
             (
                 "fifth",
+                "sixth",
                 rx.match(
                     "nested_condition",
                     ("nested_first", valid_component2()),
                     rx.fragment(valid_component2()),
                 ),
-                valid_component2(),
             ),
         )
     )
@@ -1654,12 +1629,12 @@ def test_validate_valid_parents():
             ),
             (
                 "fifth",
+                "sixth",
                 rx.match(
                     "nested_condition",
                     ("nested_first", valid_component3()),
                     rx.fragment(valid_component3()),
                 ),
-                valid_component3(),
             ),
         )
     )
@@ -2042,50 +2017,52 @@ def test_component_add_custom_code():
                 "const custom_code6 = 47",
             ]
 
-    assert BaseComponent.create()._get_all_custom_code() == {"const custom_code1 = 42"}
+    assert BaseComponent.create()._get_all_custom_code() == {
+        "const custom_code1 = 42": None
+    }
     assert ChildComponent1.create()._get_all_custom_code() == {
-        "const custom_code1 = 42"
+        "const custom_code1 = 42": None
     }
     assert GrandchildComponent1.create()._get_all_custom_code() == {
-        "const custom_code1 = 42",
-        "const custom_code2 = 43",
-        "const custom_code3 = 44",
+        "const custom_code1 = 42": None,
+        "const custom_code2 = 43": None,
+        "const custom_code3 = 44": None,
     }
     assert GreatGrandchildComponent1.create()._get_all_custom_code() == {
-        "const custom_code1 = 42",
-        "const custom_code2 = 43",
-        "const custom_code3 = 44",
-        "const custom_code4 = 45",
+        "const custom_code1 = 42": None,
+        "const custom_code2 = 43": None,
+        "const custom_code3 = 44": None,
+        "const custom_code4 = 45": None,
     }
     assert GrandchildComponent2.create()._get_all_custom_code() == {
-        "const custom_code5 = 46"
+        "const custom_code5 = 46": None
     }
     assert GreatGrandchildComponent2.create()._get_all_custom_code() == {
-        "const custom_code2 = 43",
-        "const custom_code5 = 46",
-        "const custom_code6 = 47",
+        "const custom_code2 = 43": None,
+        "const custom_code5 = 46": None,
+        "const custom_code6 = 47": None,
     }
     assert BaseComponent.create(
         GrandchildComponent1.create(GreatGrandchildComponent2.create()),
         GreatGrandchildComponent1.create(),
     )._get_all_custom_code() == {
-        "const custom_code1 = 42",
-        "const custom_code2 = 43",
-        "const custom_code3 = 44",
-        "const custom_code4 = 45",
-        "const custom_code5 = 46",
-        "const custom_code6 = 47",
+        "const custom_code1 = 42": None,
+        "const custom_code2 = 43": None,
+        "const custom_code3 = 44": None,
+        "const custom_code4 = 45": None,
+        "const custom_code5 = 46": None,
+        "const custom_code6 = 47": None,
     }
     assert Fragment.create(
         GreatGrandchildComponent2.create(),
         GreatGrandchildComponent1.create(),
     )._get_all_custom_code() == {
-        "const custom_code1 = 42",
-        "const custom_code2 = 43",
-        "const custom_code3 = 44",
-        "const custom_code4 = 45",
-        "const custom_code5 = 46",
-        "const custom_code6 = 47",
+        "const custom_code1 = 42": None,
+        "const custom_code2 = 43": None,
+        "const custom_code3 = 44": None,
+        "const custom_code4 = 45": None,
+        "const custom_code5 = 46": None,
+        "const custom_code6 = 47": None,
     }
 
 
@@ -2166,9 +2143,10 @@ def test_add_style_embedded_vars(test_state: BaseState):
     )
     assert "useText" in page._get_all_hooks_internal()
     assert "useParent" in page._get_all_hooks_internal()
+    str_page = str(page)
     assert (
-        str(page).count(
-            f'css:({{ ["fakeParent"] : "parent", ["color"] : "var(--plum-10)", ["fake"] : "text", ["margin"] : ({test_state.get_name()}.num{FIELD_MARKER}+"%") }})'
+        str_page.count(
+            f'css:({{ ["fakeParent"] : "parent", ["color"] : (((__to_string) => __to_string.toString())(Object.assign(new String("var(--plum-10)"), ({{ ["color"] : "plum", ["alpha"] : false, ["shade"] : 10 }})))), ["fake"] : "text", ["margin"] : ({test_state.get_name()}.num{FIELD_MARKER}+"%") }})'
         )
         == 1
     )

@@ -12,6 +12,7 @@ import inspect
 import io
 import json
 import sys
+import time
 import traceback
 import urllib.parse
 from collections.abc import (
@@ -67,10 +68,6 @@ from reflex.components.core.banner import (
     connection_toaster,
 )
 from reflex.components.core.breakpoints import set_breakpoints
-from reflex.components.core.client_side_routing import (
-    default_404_page,
-    wait_for_client_redirect,
-)
 from reflex.components.core.sticky import sticky
 from reflex.components.core.upload import Upload, get_upload_dir
 from reflex.components.radix import themes
@@ -100,6 +97,7 @@ from reflex.state import (
     State,
     StateManager,
     StateUpdate,
+    _split_substate_key,
     _substate_key,
     all_base_state_classes,
     code_uses_state_contexts,
@@ -115,7 +113,12 @@ from reflex.utils import (
     prerequisites,
     types,
 )
-from reflex.utils.exec import get_compile_context, is_prod_mode, is_testing_env
+from reflex.utils.exec import (
+    get_compile_context,
+    is_prod_mode,
+    is_testing_env,
+    should_prerender_routes,
+)
 from reflex.utils.imports import ImportVar
 from reflex.utils.token_manager import TokenManager
 from reflex.utils.types import ASGIApp, Message, Receive, Scope, Send
@@ -260,6 +263,15 @@ class UploadFile(StarletteUploadFile):
     size: int | None = dataclasses.field(default=None)
 
     headers: Headers = dataclasses.field(default_factory=Headers)
+
+    @property
+    def filename(self) -> str | None:
+        """Get the name of the uploaded file.
+
+        Returns:
+            The name of the uploaded file.
+        """
+        return self.name
 
     @property
     def name(self) -> str | None:
@@ -600,7 +612,7 @@ class App(MiddlewareMixin, LifespanMixin):
         """
         from reflex.vars.base import GLOBAL_CACHE
 
-        self._compile(prerender_routes=is_prod_mode())
+        self._compile(prerender_routes=should_prerender_routes())
 
         config = get_config()
 
@@ -775,8 +787,10 @@ class App(MiddlewareMixin, LifespanMixin):
 
         if route == constants.Page404.SLUG:
             if component is None:
-                component = default_404_page
-            component = wait_for_client_redirect(self._generate_component(component))
+                from reflex.components.el.elements import span
+
+                component = span("404: Page not found")
+            component = self._generate_component(component)
             title = title or constants.Page404.TITLE
             description = description or constants.Page404.DESCRIPTION
             image = image or constants.Page404.IMAGE
@@ -864,7 +878,7 @@ class App(MiddlewareMixin, LifespanMixin):
         """
         from reflex.route import get_router
 
-        return get_router(list(self._unevaluated_pages))
+        return get_router(list(dict.fromkeys([*self._unevaluated_pages, *self._pages])))
 
     def get_load_events(self, path: str) -> list[IndividualEventType[()]]:
         """Get the load events for a route.
@@ -1101,12 +1115,18 @@ class App(MiddlewareMixin, LifespanMixin):
         for substate in state.class_subclasses:
             self._validate_var_dependencies(substate)
 
-    def _compile(self, prerender_routes: bool = False, dry_run: bool = False):
+    def _compile(
+        self,
+        prerender_routes: bool = False,
+        dry_run: bool = False,
+        use_rich: bool = True,
+    ):
         """Compile the app and output it to the pages folder.
 
         Args:
             prerender_routes: Whether to prerender the routes.
             dry_run: Whether to compile the app without saving it.
+            use_rich: Whether to use rich progress bars.
 
         Raises:
             ReflexRuntimeError: When any page uses state, but no rx.State subclass is defined.
@@ -1172,10 +1192,14 @@ class App(MiddlewareMixin, LifespanMixin):
             return
 
         # Create a progress bar.
-        progress = Progress(
-            *Progress.get_default_columns()[:-1],
-            MofNCompleteColumn(),
-            TimeElapsedColumn(),
+        progress = (
+            Progress(
+                *Progress.get_default_columns()[:-1],
+                MofNCompleteColumn(),
+                TimeElapsedColumn(),
+            )
+            if use_rich
+            else console.PoorProgress()
         )
 
         # try to be somewhat accurate - but still not 100%
@@ -1263,12 +1287,12 @@ class App(MiddlewareMixin, LifespanMixin):
 
         # Compile custom components.
         (
-            custom_components_output,
-            custom_components_result,
-            custom_components_imports,
-        ) = compiler.compile_components(dict.fromkeys(CUSTOM_COMPONENTS.values()))
-        compile_results.append((custom_components_output, custom_components_result))
-        all_imports.update(custom_components_imports)
+            memo_components_output,
+            memo_components_result,
+            memo_components_imports,
+        ) = compiler.compile_memo_components(dict.fromkeys(CUSTOM_COMPONENTS.values()))
+        compile_results.append((memo_components_output, memo_components_result))
+        all_imports.update(memo_components_imports)
         progress.advance(task)
 
         with console.timing("Collect all imports and app wraps"):
@@ -1312,7 +1336,9 @@ class App(MiddlewareMixin, LifespanMixin):
                 self.head_components,
                 html_lang=self.html_lang,
                 html_custom_attrs=(
-                    {**self.html_custom_attrs} if self.html_custom_attrs else {}
+                    {"suppressHydrationWarning": True, **self.html_custom_attrs}
+                    if self.html_custom_attrs
+                    else {"suppressHydrationWarning": True}
                 ),
             )
         )
@@ -1539,7 +1565,7 @@ class App(MiddlewareMixin, LifespanMixin):
                 state._clean()
                 await self.event_namespace.emit_update(
                     update=StateUpdate(delta=delta),
-                    sid=state.router.session.session_id,
+                    token=token,
                 )
 
     def _process_background(
@@ -1579,10 +1605,13 @@ class App(MiddlewareMixin, LifespanMixin):
                 # Send the update to the client.
                 await self.event_namespace.emit_update(
                     update=update,
-                    sid=state.router.session.session_id,
+                    token=event.token,
                 )
 
-        task = asyncio.create_task(_coro())
+        task = asyncio.create_task(
+            _coro(),
+            name=f"reflex_background_task|{event.name}|{time.time()}|{event.token}",
+        )
         self._background_tasks.add(task)
         # Clean up task from background_tasks set when complete.
         task.add_done_callback(self._background_tasks.discard)
@@ -1727,7 +1756,8 @@ async def process(
                         "reload",
                         data=event,
                         to=sid,
-                    )
+                    ),
+                    name=f"reflex_emit_reload|{event.name}|{time.time()}|{event.token}",
                 )
                 return
             # re-assign only when the value is different
@@ -2028,7 +2058,8 @@ class EventNamespace(AsyncNamespace):
         if disconnect_token:
             # Use async cleanup through token manager
             task = asyncio.create_task(
-                self._token_manager.disconnect_token(disconnect_token, sid)
+                self._token_manager.disconnect_token(disconnect_token, sid),
+                name=f"reflex_disconnect_token|{disconnect_token}|{time.time()}",
             )
             # Don't await to avoid blocking disconnect, but handle potential errors
             task.add_done_callback(
@@ -2036,23 +2067,24 @@ class EventNamespace(AsyncNamespace):
                 and console.error(f"Token cleanup error: {t.exception()}")
             )
 
-    async def emit_update(self, update: StateUpdate, sid: str) -> None:
+    async def emit_update(self, update: StateUpdate, token: str) -> None:
         """Emit an update to the client.
 
         Args:
             update: The state update to send.
-            sid: The Socket.IO session id.
+            token: The client token (tab) associated with the event.
         """
-        if not sid:
+        client_token, _ = _split_substate_key(token)
+        sid = self.token_to_sid.get(client_token)
+        if sid is None:
             # If the sid is None, we are not connected to a client. Prevent sending
             # updates to all clients.
-            return
-        if sid not in self.sid_to_token:
-            console.warn(f"Attempting to send delta to disconnected websocket {sid}")
+            console.warn(f"Attempting to send delta to disconnected client {token!r}")
             return
         # Creating a task prevents the update from being blocked behind other coroutines.
         await asyncio.create_task(
-            self.emit(str(constants.SocketEvent.EVENT), update, to=sid)
+            self.emit(str(constants.SocketEvent.EVENT), update, to=sid),
+            name=f"reflex_emit_event|{token}|{sid}|{time.time()}",
         )
 
     async def on_event(self, sid: str, data: Any):
@@ -2138,7 +2170,7 @@ class EventNamespace(AsyncNamespace):
             # Process the events.
             async for update in updates_gen:
                 # Emit the update from processing the event.
-                await self.emit_update(update=update, sid=sid)
+                await self.emit_update(update=update, token=event.token)
 
     async def on_ping(self, sid: str):
         """Event for testing the API endpoint.
@@ -2162,3 +2194,10 @@ class EventNamespace(AsyncNamespace):
         if new_token:
             # Duplicate detected, emit new token to client
             await self.emit("new_token", new_token, to=sid)
+
+        # Update client state to apply new sid/token for running background tasks.
+        async with self.app.modify_state(
+            _substate_key(new_token or token, self.app.state_manager.state)
+        ) as state:
+            state.router_data[constants.RouteVar.SESSION_ID] = sid
+            state.router = RouterData.from_router_data(state.router_data)

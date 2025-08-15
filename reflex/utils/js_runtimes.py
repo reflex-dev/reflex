@@ -6,7 +6,6 @@ import tempfile
 from collections.abc import Sequence
 from pathlib import Path
 
-import click
 from packaging import version
 
 from reflex import constants
@@ -193,7 +192,7 @@ def download_and_run(url: str, *args, show_status: bool = False, **env):
         env: The environment variables to use.
 
     Raises:
-        Exit: If the script fails to download.
+        SystemExit: If the script fails to download.
     """
     import httpx
 
@@ -206,7 +205,7 @@ def download_and_run(url: str, *args, show_status: bool = False, **env):
         console.error(
             f"Failed to download bun install script. You can install or update bun manually from https://bun.com \n{e}"
         )
-        raise click.exceptions.Exit(1) from None
+        raise SystemExit(1) from None
 
     # Save the script to a temporary file.
     with tempfile.NamedTemporaryFile() as tempfile_file:
@@ -226,7 +225,7 @@ def install_bun():
 
     Raises:
         SystemPackageMissingError: If "unzip" is missing.
-        Exit: If REFLEX_USE_NPM is set but Node.js is not installed.
+        SystemExit: If REFLEX_USE_NPM is set but Node.js is not installed.
     """
     if npm_escape_hatch():
         if get_node_version() is not None:
@@ -237,7 +236,7 @@ def install_bun():
         console.error(
             "REFLEX_USE_NPM is set, but Node.js is not installed. Please install Node.js to use npm."
         )
-        raise click.exceptions.Exit(1)
+        raise SystemExit(1)
 
     bun_path = path_ops.get_bun_path()
 
@@ -290,7 +289,7 @@ def validate_bun(bun_path: Path | None = None):
         bun_path: The path to the bun executable. If None, the default bun path is used.
 
     Raises:
-        Exit: If custom specified bun does not exist or does not meet requirements.
+        SystemExit: If custom specified bun does not exist or does not meet requirements.
     """
     bun_path = bun_path or path_ops.get_bun_path()
 
@@ -304,7 +303,7 @@ def validate_bun(bun_path: Path | None = None):
             console.error(
                 "Failed to obtain bun version. Make sure the specified bun path in your config is correct."
             )
-            raise click.exceptions.Exit(1)
+            raise SystemExit(1)
         if bun_version < version.parse(constants.Bun.MIN_VERSION):
             console.warn(
                 f"Reflex requires bun version {constants.Bun.MIN_VERSION} or higher to run, but the detected version is "
@@ -320,20 +319,21 @@ def validate_frontend_dependencies(init: bool = True):
         init: whether running `reflex init`
 
     Raises:
-        Exit: If the package manager is invalid.
+        SystemExit: If the package manager is invalid.
     """
     if not init:
         try:
             get_js_package_executor(raise_on_none=True)
         except FileNotFoundError as e:
-            raise click.exceptions.Exit(1) from e
+            console.error(f"Failed to find a valid package manager due to {e}.")
+            raise SystemExit(1) from None
 
     if prefer_npm_over_bun() and not check_node_version():
         node_version = get_node_version()
         console.error(
             f"Reflex requires node version {constants.Node.MIN_VERSION} or higher to run, but the detected version is {node_version}",
         )
-        raise click.exceptions.Exit(1)
+        raise SystemExit(1)
 
 
 def remove_existing_bun_installation():

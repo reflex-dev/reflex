@@ -1,3 +1,4 @@
+import json
 from collections.abc import Callable
 
 import pytest
@@ -57,7 +58,7 @@ def test_call_event_handler():
 
     assert event_spec.handler == handler
     assert event_spec.args == ()
-    assert format.format_event(event_spec) == 'Event("test_fn", {})'
+    assert format.format_event(event_spec) == 'ReflexEvent("test_fn", {})'
 
     handler = EventHandler(fn=fn_with_args)
     event_spec = handler(make_var("first"), make_var("second"))
@@ -70,14 +71,14 @@ def test_call_event_handler():
     assert event_spec.args[1][1].equals(Var(_js_expr="second"))
     assert (
         format.format_event(event_spec)
-        == 'Event("fn_with_args", {arg1:first,arg2:second})'
+        == 'ReflexEvent("fn_with_args", {arg1:first,arg2:second})'
     )
 
     # Passing args as strings should format differently.
     event_spec = handler("first", "second")
     assert (
         format.format_event(event_spec)
-        == 'Event("fn_with_args", {arg1:"first",arg2:"second"})'
+        == 'ReflexEvent("fn_with_args", {arg1:"first",arg2:"second"})'
     )
 
     first, second = 123, "456"
@@ -85,7 +86,7 @@ def test_call_event_handler():
     event_spec = handler(first, second)
     assert (
         format.format_event(event_spec)
-        == 'Event("fn_with_args", {arg1:123,arg2:"456"})'
+        == 'ReflexEvent("fn_with_args", {arg1:123,arg2:"456"})'
     )
 
     assert event_spec.handler == handler
@@ -120,7 +121,7 @@ def test_call_event_handler_partial():
     assert event_spec.args[0][1].equals(Var(_js_expr="first"))
     assert (
         format.format_event(event_spec)
-        == 'Event("BigState.fn_with_args", {arg1:first})'
+        == 'ReflexEvent("BigState.fn_with_args", {arg1:first})'
     )
 
     assert event_spec2 is not event_spec
@@ -132,7 +133,7 @@ def test_call_event_handler_partial():
     assert event_spec2.args[1][1].equals(Var(_js_expr="_a2", _var_type=str))
     assert (
         format.format_event(event_spec2)
-        == 'Event("BigState.fn_with_args", {arg1:first,arg2:_a2})'
+        == 'ReflexEvent("BigState.fn_with_args", {arg1:first,arg2:_a2})'
     )
 
 
@@ -169,29 +170,13 @@ def test_fix_events(arg1, arg2):
     ("input", "output"),
     [
         (
-            ("/path", None, None),
-            'Event("_redirect", {path:"/path",external:false,replace:false})',
-        ),
-        (
-            ("/path", True, None),
-            'Event("_redirect", {path:"/path",external:true,replace:false})',
-        ),
-        (
-            ("/path", False, None),
-            'Event("_redirect", {path:"/path",external:false,replace:false})',
-        ),
-        (
-            (Var(_js_expr="path"), None, None),
-            'Event("_redirect", {path:path,external:false,replace:false})',
-        ),
-        (
-            ("/path", None, True),
-            'Event("_redirect", {path:"/path",external:false,replace:true})',
-        ),
-        (
-            ("/path", True, True),
-            'Event("_redirect", {path:"/path",external:true,replace:true})',
-        ),
+            (path, is_external, replace, popup),
+            f'ReflexEvent("_redirect", {{path:{json.dumps(path) if isinstance(path, str) else path._js_expr},external:{"true" if is_external else "false"},popup:{"true" if popup else "false"},replace:{"true" if replace else "false"}}})',
+        )
+        for path in ("/path", Var(_js_expr="path"))
+        for is_external in (None, True, False)
+        for replace in (None, True, False)
+        for popup in (None, True, False)
     ],
 )
 def test_event_redirect(input, output):
@@ -201,12 +186,14 @@ def test_event_redirect(input, output):
         input: The input for running the test.
         output: The expected output to validate the test.
     """
-    path, is_external, replace = input
+    path, is_external, replace, popup = input
     kwargs = {}
     if is_external is not None:
         kwargs["is_external"] = is_external
     if replace is not None:
         kwargs["replace"] = replace
+    if popup is not None:
+        kwargs["popup"] = popup
     spec = event.redirect(path, **kwargs)
     assert isinstance(spec, EventSpec)
     assert spec.handler.fn.__qualname__ == "_redirect"
@@ -224,17 +211,17 @@ def test_event_console_log():
     )
     assert (
         format.format_event(spec)
-        == 'Event("_call_function", {function:(() => (console["log"]("message"))),callback:null})'
+        == 'ReflexEvent("_call_function", {function:(() => (console["log"]("message"))),callback:null})'
     )
     spec = event.console_log(Var(_js_expr="message"))
     assert (
         format.format_event(spec)
-        == 'Event("_call_function", {function:(() => (console["log"](message))),callback:null})'
+        == 'ReflexEvent("_call_function", {function:(() => (console["log"](message))),callback:null})'
     )
     spec2 = event.console_log(Var(_js_expr="message2")).add_args(Var("throwaway"))
     assert (
         format.format_event(spec2)
-        == 'Event("_call_function", {function:(() => (console["log"](message2))),callback:null})'
+        == 'ReflexEvent("_call_function", {function:(() => (console["log"](message2))),callback:null})'
     )
 
 
@@ -249,17 +236,17 @@ def test_event_window_alert():
     )
     assert (
         format.format_event(spec)
-        == 'Event("_call_function", {function:(() => (window["alert"]("message"))),callback:null})'
+        == 'ReflexEvent("_call_function", {function:(() => (window["alert"]("message"))),callback:null})'
     )
     spec = event.window_alert(Var(_js_expr="message"))
     assert (
         format.format_event(spec)
-        == 'Event("_call_function", {function:(() => (window["alert"](message))),callback:null})'
+        == 'ReflexEvent("_call_function", {function:(() => (window["alert"](message))),callback:null})'
     )
     spec2 = event.window_alert(Var(_js_expr="message2")).add_args(Var("throwaway"))
     assert (
         format.format_event(spec2)
-        == 'Event("_call_function", {function:(() => (window["alert"](message2))),callback:null})'
+        == 'ReflexEvent("_call_function", {function:(() => (window["alert"](message2))),callback:null})'
     )
 
 
@@ -278,9 +265,13 @@ def test_focus(func: str, qualname: str):
     assert spec.handler.fn.__qualname__ == qualname
     assert spec.args[0][0].equals(Var(_js_expr="ref"))
     assert spec.args[0][1].equals(LiteralVar.create("ref_input1"))
-    assert format.format_event(spec) == f'Event("{qualname}", {{ref:"ref_input1"}})'
+    assert (
+        format.format_event(spec) == f'ReflexEvent("{qualname}", {{ref:"ref_input1"}})'
+    )
     spec = getattr(event, func)("input1")
-    assert format.format_event(spec) == f'Event("{qualname}", {{ref:"ref_input1"}})'
+    assert (
+        format.format_event(spec) == f'ReflexEvent("{qualname}", {{ref:"ref_input1"}})'
+    )
 
 
 def test_set_value():
@@ -293,12 +284,13 @@ def test_set_value():
     assert spec.args[1][0].equals(Var(_js_expr="value"))
     assert spec.args[1][1].equals(LiteralVar.create(""))
     assert (
-        format.format_event(spec) == 'Event("_set_value", {ref:"ref_input1",value:""})'
+        format.format_event(spec)
+        == 'ReflexEvent("_set_value", {ref:"ref_input1",value:""})'
     )
     spec = event.set_value("input1", Var(_js_expr="message"))
     assert (
         format.format_event(spec)
-        == 'Event("_set_value", {ref:"ref_input1",value:message})'
+        == 'ReflexEvent("_set_value", {ref:"ref_input1",value:message})'
     )
 
 
@@ -313,7 +305,7 @@ def test_remove_cookie():
     assert spec.args[1][1].equals(LiteralVar.create({"path": "/"}))
     assert (
         format.format_event(spec)
-        == 'Event("_remove_cookie", {key:"testkey",options:({ ["path"] : "/" })})'
+        == 'ReflexEvent("_remove_cookie", {key:"testkey",options:({ ["path"] : "/" })})'
     )
 
 
@@ -334,7 +326,7 @@ def test_remove_cookie_with_options():
     assert spec.args[1][1].equals(LiteralVar.create(options))
     assert (
         format.format_event(spec)
-        == f'Event("_remove_cookie", {{key:"testkey",options:{LiteralVar.create(options)!s}}})'
+        == f'ReflexEvent("_remove_cookie", {{key:"testkey",options:{LiteralVar.create(options)!s}}})'
     )
 
 
@@ -344,7 +336,7 @@ def test_clear_local_storage():
     assert isinstance(spec, EventSpec)
     assert spec.handler.fn.__qualname__ == "_clear_local_storage"
     assert not spec.args
-    assert format.format_event(spec) == 'Event("_clear_local_storage", {})'
+    assert format.format_event(spec) == 'ReflexEvent("_clear_local_storage", {})'
 
 
 def test_remove_local_storage():
@@ -355,7 +347,8 @@ def test_remove_local_storage():
     assert spec.args[0][0].equals(Var(_js_expr="key"))
     assert spec.args[0][1].equals(LiteralVar.create("testkey"))
     assert (
-        format.format_event(spec) == 'Event("_remove_local_storage", {key:"testkey"})'
+        format.format_event(spec)
+        == 'ReflexEvent("_remove_local_storage", {key:"testkey"})'
     )
 
 

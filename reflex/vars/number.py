@@ -909,7 +909,7 @@ def equal_operation(lhs: Var, rhs: Var):
     Returns:
         The result of the comparison.
     """
-    return f"({lhs} === {rhs})"
+    return f"({lhs}?.valueOf?.() === {rhs}?.valueOf?.())"
 
 
 @comparison_operator
@@ -923,7 +923,7 @@ def not_equal_operation(lhs: Var, rhs: Var):
     Returns:
         The result of the comparison.
     """
-    return f"({lhs} !== {rhs})"
+    return f"({lhs}?.valueOf?.() !== {rhs}?.valueOf?.())"
 
 
 @var_operation

@@ -47,6 +47,7 @@ from reflex.state import (
 )
 from reflex.utils import console, js_runtimes
 from reflex.utils.export import export
+from reflex.utils.token_manager import TokenManager
 from reflex.utils.types import ASGIApp
 
 try:
@@ -472,7 +473,7 @@ class AppHarness:
         Returns:
             The rendered app global code.
         """
-        if not inspect.isclass(value) and not inspect.isfunction(value):
+        if not isinstance(value, type) and not inspect.isfunction(value):
             return f"{key} = {value!r}"
         return inspect.getsource(value)
 
@@ -774,6 +775,19 @@ class AppHarness:
                 self.app_instance._state_manager = app_state_manager
                 await self.state_manager.close()
 
+    def token_manager(self) -> TokenManager:
+        """Get the token manager for the app instance.
+
+        Returns:
+            The current token_manager attached to the app's EventNamespace.
+        """
+        assert self.app_instance is not None
+        app_event_namespace = self.app_instance.event_namespace
+        assert app_event_namespace is not None
+        app_token_manager = app_event_namespace._token_manager
+        assert app_token_manager is not None
+        return app_token_manager
+
     def poll_for_content(
         self,
         element: WebElement,
@@ -1008,7 +1022,7 @@ class AppHarnessProd(AppHarness):
             / reflex.constants.Dirs.STATIC
         )
         error_page_map = {
-            404: web_root / "404" / "index.html",
+            404: web_root / "404.html",
         }
         with Subdir404TCPServer(
             ("", 0),

@@ -2,20 +2,22 @@
 
 import time
 
-import jinja2
 import pytest
 from selenium.webdriver.common.by import By
 
 from reflex.testing import AppHarness, WebDriver
 
-LARGE_STATE_APP_TEMPLATE = """
+
+def _large_state_app_template(var_count: int) -> str:
+    var_part = "\n".join(
+        f'    var{i}: str = "{i}" * 10000' for i in range(1, var_count)
+    )
+    return f"""
 import reflex as rx
 
 class State(rx.State):
     var0: int = 0
-    {% for i in range(1, var_count) %}
-    var{{ i }}: str = "{{ i }}" * 10000
-    {% endfor %}
+    {var_part}
 
     def increment_var0(self):
         self.var0 += 1
@@ -54,8 +56,7 @@ def test_large_state(var_count: int, tmp_path_factory, benchmark):
     Raises:
         TimeoutError: if the state doesn't update within 30 seconds
     """
-    template = jinja2.Template(LARGE_STATE_APP_TEMPLATE)
-    large_state_rendered = template.render(var_count=var_count)
+    large_state_rendered = _large_state_app_template(var_count)
 
     with AppHarness.create(
         root=tmp_path_factory.mktemp("large_state"),

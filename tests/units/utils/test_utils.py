@@ -5,7 +5,6 @@ from functools import cached_property
 from pathlib import Path
 from typing import Any, ClassVar, List, Literal, NoReturn  # noqa: UP035
 
-import click
 import pytest
 from packaging import version
 from pytest_mock import MockerFixture
@@ -192,7 +191,7 @@ def test_validate_invalid_bun_path(mocker: MockerFixture):
     mocker.patch("reflex.utils.path_ops.samefile", return_value=False)
     mocker.patch("reflex.utils.js_runtimes.get_bun_version", return_value=None)
 
-    with pytest.raises(click.exceptions.Exit):
+    with pytest.raises(SystemExit):
         js_runtimes.validate_bun()
 
 
@@ -316,7 +315,7 @@ def test_unsupported_literals(cls: type):
     ],
 )
 def test_create_config(app_name: str, expected_config_name: str, mocker: MockerFixture):
-    """Test templates.RXCONFIG is formatted with correct app name and config class name.
+    """Test templates.rxconfig_template is formatted with correct app name and config class name.
 
     Args:
         app_name: App name.
@@ -324,11 +323,9 @@ def test_create_config(app_name: str, expected_config_name: str, mocker: MockerF
         mocker: Mocker object.
     """
     mocker.patch("pathlib.Path.write_text")
-    tmpl_mock = mocker.patch("reflex.compiler.templates.RXCONFIG")
+    tmpl_mock = mocker.patch("reflex.compiler.templates.rxconfig_template")
     templates.create_config(app_name)
-    tmpl_mock.render.assert_called_with(
-        app_name=app_name, config_name=expected_config_name
-    )
+    tmpl_mock.assert_called_with(app_name=app_name)
 
 
 @pytest.fixture
@@ -436,10 +433,10 @@ def test_validate_app_name(tmp_path, mocker: MockerFixture):
 
     mocker.patch("os.getcwd", return_value=str(reflex))
 
-    with pytest.raises(click.exceptions.Exit):
+    with pytest.raises(SystemExit):
         prerequisites.validate_app_name()
 
-    with pytest.raises(click.exceptions.Exit):
+    with pytest.raises(SystemExit):
         prerequisites.validate_app_name(app_name="1_test")
 
 

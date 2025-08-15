@@ -296,8 +296,8 @@ def test_basic_operations(TestObj):
     Args:
         TestObj: The test object.
     """
-    assert str(v(1) == v(2)) == "(1 === 2)"
-    assert str(v(1) != v(2)) == "(1 !== 2)"
+    assert str(v(1) == v(2)) == "(1?.valueOf?.() === 2?.valueOf?.())"
+    assert str(v(1) != v(2)) == "(1?.valueOf?.() !== 2?.valueOf?.())"
     assert str(LiteralNumberVar.create(1) < 2) == "(1 < 2)"
     assert str(LiteralNumberVar.create(1) <= 2) == "(1 <= 2)"
     assert str(LiteralNumberVar.create(1) > 2) == "(1 > 2)"
@@ -316,10 +316,14 @@ def test_basic_operations(TestObj):
         str(LiteralObjectVar.create({"a": 1, "b": 2})["a"])
         == '({ ["a"] : 1, ["b"] : 2 })["a"]'
     )
-    assert str(v("foo") == v("bar")) == '("foo" === "bar")'
-    assert str(Var(_js_expr="foo") == Var(_js_expr="bar")) == "(foo === bar)"
+    assert str(v("foo") == v("bar")) == '("foo"?.valueOf?.() === "bar"?.valueOf?.())'
     assert (
-        str(LiteralVar.create("foo") == LiteralVar.create("bar")) == '("foo" === "bar")'
+        str(Var(_js_expr="foo") == Var(_js_expr="bar"))
+        == "(foo?.valueOf?.() === bar?.valueOf?.())"
+    )
+    assert (
+        str(LiteralVar.create("foo") == LiteralVar.create("bar"))
+        == '("foo"?.valueOf?.() === "bar"?.valueOf?.())'
     )
     print(Var(_js_expr="foo").to(ObjectVar, TestObj)._var_set_state("state"))
     assert (
@@ -327,7 +331,7 @@ def test_basic_operations(TestObj):
             Var(_js_expr="foo").to(ObjectVar, TestObj)._var_set_state("state").bar
             == LiteralVar.create("bar")
         )
-        == '(state.foo["bar"] === "bar")'
+        == '(state.foo["bar"]?.valueOf?.() === "bar"?.valueOf?.())'
     )
     assert (
         str(Var(_js_expr="foo").to(ObjectVar, TestObj)._var_set_state("state").bar)
@@ -1079,15 +1083,16 @@ def test_object_operations():
     object_var = LiteralObjectVar.create({"a": 1, "b": 2, "c": 3})
 
     assert (
-        str(object_var.keys()) == 'Object.keys(({ ["a"] : 1, ["b"] : 2, ["c"] : 3 }))'
+        str(object_var.keys())
+        == 'Object.keys(({ ["a"] : 1, ["b"] : 2, ["c"] : 3 }) ?? {})'
     )
     assert (
         str(object_var.values())
-        == 'Object.values(({ ["a"] : 1, ["b"] : 2, ["c"] : 3 }))'
+        == 'Object.values(({ ["a"] : 1, ["b"] : 2, ["c"] : 3 }) ?? {})'
     )
     assert (
         str(object_var.entries())
-        == 'Object.entries(({ ["a"] : 1, ["b"] : 2, ["c"] : 3 }))'
+        == 'Object.entries(({ ["a"] : 1, ["b"] : 2, ["c"] : 3 }) ?? {})'
     )
     assert str(object_var.a) == '({ ["a"] : 1, ["b"] : 2, ["c"] : 3 })["a"]'
     assert str(object_var["a"]) == '({ ["a"] : 1, ["b"] : 2, ["c"] : 3 })["a"]'
@@ -1129,11 +1134,11 @@ def test_type_chains():
     )
     assert (
         str(object_var.keys()[0].upper())
-        == 'Object.keys(({ ["a"] : 1, ["b"] : 2, ["c"] : 3 })).at(0).toUpperCase()'
+        == 'Object.keys(({ ["a"] : 1, ["b"] : 2, ["c"] : 3 }) ?? {}).at(0).toUpperCase()'
     )
     assert (
         str(object_var.entries()[1][1] - 1)
-        == '(Object.entries(({ ["a"] : 1, ["b"] : 2, ["c"] : 3 })).at(1).at(1) - 1)'
+        == '(Object.entries(({ ["a"] : 1, ["b"] : 2, ["c"] : 3 }) ?? {}).at(1).at(1) - 1)'
     )
     assert (
         str(object_var["c"] + object_var["b"])  # pyright: ignore [reportCallIssue, reportOperatorIssue]

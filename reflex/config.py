@@ -237,7 +237,7 @@ class BaseConfig:
     env_file: str | None = None
 
     # Whether to automatically create setters for state base vars
-    state_auto_setters: bool = True
+    state_auto_setters: bool | None = None
 
     # Whether to display the sticky "Built with Reflex" badge on all pages.
     show_built_with_reflex: bool | None = None
@@ -254,6 +254,9 @@ class BaseConfig:
     # List of fully qualified import paths of plugins to disable in the app (e.g. reflex.plugins.sitemap.SitemapPlugin).
     disable_plugins: list[str] = dataclasses.field(default_factory=list)
 
+    # Whether to skip plugin checks.
+    _skip_plugins_checks: bool = dataclasses.field(default=False, repr=False)
+
     _prefixes: ClassVar[list[str]] = ["REFLEX_"]
 
 
@@ -264,9 +267,12 @@ _PLUGINS_ENABLED_BY_DEFAULT = [
 
 @dataclasses.dataclass(kw_only=True, init=False)
 class Config(BaseConfig):
-    """The config defines runtime settings for the app.
+    """Configuration class for Reflex applications.
 
-    By default, the config is defined in an `rxconfig.py` file in the root of the app.
+    The config defines runtime settings for your app including server ports, database connections,
+    frontend packages, and deployment settings.
+
+    By default, the config is defined in an `rxconfig.py` file in the root of your app:
 
     ```python
     # rxconfig.py
@@ -274,15 +280,42 @@ class Config(BaseConfig):
 
     config = rx.Config(
         app_name="myapp",
-        api_url="http://localhost:8000",
+        # Server configuration
+        frontend_port=3000,
+        backend_port=8000,
+        # Database
+        db_url="postgresql://user:pass@localhost:5432/mydb",
+        # Additional frontend packages
+        frontend_packages=["react-icons"],
+        # CORS settings for production
+        cors_allowed_origins=["https://mydomain.com"],
     )
     ```
 
-    Every config value can be overridden by an environment variable with the same name in uppercase and a REFLEX_ prefix.
-    For example, `db_url` can be overridden by setting the `REFLEX_DB_URL` environment variable.
+    ## Environment Variable Overrides
 
-    See the [configuration](https://reflex.dev/docs/getting-started/configuration/) docs for more info.
+    Any config value can be overridden by setting an environment variable with the `REFLEX_`
+    prefix and the parameter name in uppercase:
+
+    ```bash
+    REFLEX_DB_URL="postgresql://user:pass@localhost/db" reflex run
+    REFLEX_FRONTEND_PORT=3001 reflex run
+    ```
+
+    ## Key Configuration Areas
+
+    - **App Settings**: `app_name`, `loglevel`, `telemetry_enabled`
+    - **Server**: `frontend_port`, `backend_port`, `api_url`, `cors_allowed_origins`
+    - **Database**: `db_url`, `async_db_url`, `redis_url`
+    - **Frontend**: `frontend_packages`, `react_strict_mode`
+    - **State Management**: `state_manager_mode`, `state_auto_setters`
+    - **Plugins**: `plugins`, `disable_plugins`
+
+    See the [configuration docs](https://reflex.dev/docs/advanced-onboarding/configuration) for complete details on all available options.
     """
+
+    # Track whether the app name has already been validated for this Config instance.
+    _app_name_is_valid: bool = dataclasses.field(default=False, repr=False)
 
     def _post_init(self, **kwargs):
         """Post-initialization method to set up the config.
@@ -315,7 +348,8 @@ class Config(BaseConfig):
             setattr(self, key, env_value)
 
         # Add builtin plugins if not disabled.
-        self._add_builtin_plugins()
+        if not self._skip_plugins_checks:
+            self._add_builtin_plugins()
 
         #   Update default URLs if ports were set
         kwargs.update(env_kwargs)
@@ -531,7 +565,7 @@ def _get_config() -> Config:
     if not spec:
         # we need this condition to ensure that a ModuleNotFound error is not thrown when
         # running unit/integration tests or during `reflex init`.
-        return Config(app_name="")
+        return Config(app_name="", _skip_plugins_checks=True)
     rxconfig = importlib.import_module(constants.Config.MODULE)
     return rxconfig.config
 

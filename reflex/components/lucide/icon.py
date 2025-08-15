@@ -6,7 +6,7 @@ from reflex.utils.imports import ImportVar
 from reflex.vars.base import LiteralVar, Var
 from reflex.vars.sequence import LiteralStringVar, StringVar
 
-LUCIDE_LIBRARY = "lucide-react@0.539.0"
+LUCIDE_LIBRARY = "lucide-react@0.544.0"
 
 
 class LucideIconComponent(Component):
@@ -453,6 +453,7 @@ LUCIDE_ICON_LIST = [
     "chevrons_up_down",
     "chevrons_up",
     "chrome",
+    "chromium",
     "church",
     "cigarette_off",
     "cigarette",
@@ -673,6 +674,7 @@ LUCIDE_ICON_LIST = [
     "eraser",
     "ethernet_port",
     "euro",
+    "ev_charger",
     "expand",
     "external_link",
     "eye_closed",
@@ -920,6 +922,7 @@ LUCIDE_ICON_LIST = [
     "hospital",
     "hotel",
     "hourglass",
+    "house_heart",
     "house_plug",
     "house_plus",
     "house_wifi",
@@ -1001,6 +1004,7 @@ LUCIDE_ICON_LIST = [
     "linkedin",
     "list_check",
     "list_checks",
+    "list_chevrons_down_up",
     "list_collapse",
     "list_end",
     "list_filter_plus",
@@ -1198,11 +1202,13 @@ LUCIDE_ICON_LIST = [
     "panel_left_close",
     "panel_left_dashed",
     "panel_left_open",
+    "panel_left_right_dashed",
     "panel_left",
     "panel_right_close",
     "panel_right_dashed",
     "panel_right_open",
     "panel_right",
+    "panel_top_bottom_dashed",
     "panel_top_close",
     "panel_top_dashed",
     "panel_top_open",
@@ -1330,6 +1336,7 @@ LUCIDE_ICON_LIST = [
     "rocket",
     "rocking_chair",
     "roller_coaster",
+    "rose",
     "rotate_3d",
     "rotate_ccw_key",
     "rotate_ccw_square",

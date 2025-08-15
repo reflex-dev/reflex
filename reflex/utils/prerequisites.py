@@ -15,7 +15,6 @@ from pathlib import Path
 from types import ModuleType
 from typing import NamedTuple
 
-import click
 from alembic.util.exc import CommandError
 from packaging import version
 from redis import Redis as RedisSync
@@ -165,6 +164,7 @@ def _check_app_name(config: Config):
             else:
                 msg += f"Ensure app_name='{config.app_name}' in rxconfig.py matches your folder structure."
             raise ModuleNotFoundError(msg)
+    config._app_name_is_valid = True
 
 
 def get_app(reload: bool = False) -> ModuleType:
@@ -184,7 +184,9 @@ def get_app(reload: bool = False) -> ModuleType:
     try:
         config = get_config()
 
-        _check_app_name(config)
+        # Avoid hitting disk when the app name has already been validated in this process.
+        if not config._app_name_is_valid:
+            _check_app_name(config)
 
         module = config.module
         sys.path.insert(0, str(Path.cwd()))
@@ -245,6 +247,7 @@ def get_compiled_app(
     prerender_routes: bool = False,
     dry_run: bool = False,
     check_if_schema_up_to_date: bool = False,
+    use_rich: bool = True,
 ) -> ModuleType:
     """Get the app module based on the default config after first compiling it.
 
@@ -253,6 +256,7 @@ def get_compiled_app(
         prerender_routes: Whether to prerender routes.
         dry_run: If True, do not write the compiled app to disk.
         check_if_schema_up_to_date: If True, check if the schema is up to date.
+        use_rich: Whether to use rich progress bars.
 
     Returns:
         The compiled app based on the default config.
@@ -260,29 +264,104 @@ def get_compiled_app(
     app, app_module = get_and_validate_app(
         reload=reload, check_if_schema_up_to_date=check_if_schema_up_to_date
     )
-    app._compile(prerender_routes=prerender_routes, dry_run=dry_run)
+    app._compile(prerender_routes=prerender_routes, dry_run=dry_run, use_rich=use_rich)
     return app_module
+
+
+def _can_colorize() -> bool:
+    """Check if the output can be colorized.
+
+    Copied from _colorize.can_colorize.
+
+    https://raw.githubusercontent.com/python/cpython/refs/heads/main/Lib/_colorize.py
+
+    Returns:
+        If the output can be colorized
+    """
+    import io
+    import os
+
+    def _safe_getenv(k: str, fallback: str | None = None) -> str | None:
+        """Exception-safe environment retrieval. See gh-128636.
+
+        Args:
+            k: The environment variable key.
+            fallback: The fallback value if the environment variable is not set.
+
+        Returns:
+            The value of the environment variable or the fallback value.
+        """
+        try:
+            return os.environ.get(k, fallback)
+        except Exception:
+            return fallback
+
+    file = sys.stdout
+
+    if not sys.flags.ignore_environment:
+        if _safe_getenv("PYTHON_COLORS") == "0":
+            return False
+        if _safe_getenv("PYTHON_COLORS") == "1":
+            return True
+    if _safe_getenv("NO_COLOR"):
+        return False
+    if _safe_getenv("FORCE_COLOR"):
+        return True
+    if _safe_getenv("TERM") == "dumb":
+        return False
+
+    if not hasattr(file, "fileno"):
+        return False
+
+    if sys.platform == "win32":
+        try:
+            import nt
+
+            if not nt._supports_virtual_terminal():
+                return False
+        except (ImportError, AttributeError):
+            return False
+
+    try:
+        return os.isatty(file.fileno())
+    except io.UnsupportedOperation:
+        return hasattr(file, "isatty") and file.isatty()
 
 
 def compile_or_validate_app(
     compile: bool = False,
     check_if_schema_up_to_date: bool = False,
     prerender_routes: bool = False,
-):
+) -> bool:
     """Compile or validate the app module based on the default config.
 
     Args:
         compile: Whether to compile the app.
         check_if_schema_up_to_date: If True, check if the schema is up to date.
         prerender_routes: Whether to prerender routes.
+
+    Returns:
+        True if the app was successfully compiled or validated, False otherwise.
     """
-    if compile:
-        get_compiled_app(
-            check_if_schema_up_to_date=check_if_schema_up_to_date,
-            prerender_routes=prerender_routes,
-        )
+    try:
+        if compile:
+            get_compiled_app(
+                check_if_schema_up_to_date=check_if_schema_up_to_date,
+                prerender_routes=prerender_routes,
+            )
+        else:
+            get_and_validate_app(check_if_schema_up_to_date=check_if_schema_up_to_date)
+    except Exception as e:
+        import traceback
+
+        try:
+            colorize = _can_colorize()
+            traceback.print_exception(e, colorize=colorize)  # pyright: ignore[reportCallIssue]
+        except Exception:
+            traceback.print_exception(e)
+        return False
     else:
-        get_and_validate_app(check_if_schema_up_to_date=check_if_schema_up_to_date)
+        return True
 
 
 def get_redis() -> Redis | None:
@@ -364,7 +443,7 @@ def validate_app_name(app_name: str | None = None) -> str:
         The app name after validation.
 
     Raises:
-        Exit: if the app directory name is reflex or if the name is not standard for a python package name.
+        SystemExit: if the app directory name is reflex or if the name is not standard for a python package name.
     """
     app_name = app_name if app_name else Path.cwd().name.replace("-", "_")
     # Make sure the app is not named "reflex".
@@ -372,14 +451,14 @@ def validate_app_name(app_name: str | None = None) -> str:
         console.error(
             f"The app directory cannot be named [bold]{constants.Reflex.MODULE_NAME}[/bold]."
         )
-        raise click.exceptions.Exit(1)
+        raise SystemExit(1)
 
     # Make sure the app name is standard for a python package name.
     if not re.match(r"^[a-zA-Z][a-zA-Z0-9_]*$", app_name):
         console.error(
             "The app directory name must start with a letter and can contain letters, numbers, and underscores."
         )
-        raise click.exceptions.Exit(1)
+        raise SystemExit(1)
 
     return app_name
 
@@ -419,13 +498,13 @@ def assert_in_reflex_dir():
     """Assert that the current working directory is the reflex directory.
 
     Raises:
-        Exit: If the current working directory is not the reflex directory.
+        SystemExit: If the current working directory is not the reflex directory.
     """
     if not constants.Config.FILE.exists():
         console.error(
             f"[cyan]{constants.Config.FILE}[/cyan] not found. Move to the root folder of your project, or run [bold]{constants.Reflex.MODULE_NAME} init[/bold] to start a new project."
         )
-        raise click.exceptions.Exit(1)
+        raise SystemExit(1)
 
 
 def needs_reinit() -> bool:

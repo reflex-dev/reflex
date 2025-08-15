@@ -204,7 +204,7 @@ def _run(
     args = (frontend,)
     kwargs = {
         "check_if_schema_up_to_date": True,
-        "prerender_routes": env == constants.Env.PROD,
+        "prerender_routes": exec.should_prerender_routes(),
     }
 
     # Granian fails if the app is already imported.
@@ -216,9 +216,12 @@ def _run(
             *args,
             **kwargs,
         )
-        compile_future.result()
+        return_result = compile_future.result()
     else:
-        app_task(*args, **kwargs)
+        return_result = app_task(*args, **kwargs)
+
+    if not return_result:
+        raise SystemExit(1)
 
     # Get the frontend and backend commands, based on the environment.
     setup_frontend = frontend_cmd = backend_cmd = None
@@ -330,7 +333,7 @@ def run(
     """Run the app in the current directory."""
     if frontend_only and backend_only:
         console.error("Cannot use both --frontend-only and --backend-only options.")
-        raise click.exceptions.Exit(1)
+        raise SystemExit(1)
 
     config = get_config()
 
@@ -360,7 +363,13 @@ def run(
     default=False,
     help="Run the command without making any changes.",
 )
-def compile(dry: bool):
+@click.option(
+    "--rich/--no-rich",
+    default=True,
+    is_flag=True,
+    help="Whether to use rich progress bars.",
+)
+def compile(dry: bool, rich: bool):
     """Compile the app in the current directory."""
     import time
 
@@ -371,7 +380,7 @@ def compile(dry: bool):
         _init(name=get_config().app_name)
     get_config(reload=True)
     starting_time = time.monotonic()
-    prerequisites.get_compiled_app(dry_run=dry)
+    prerequisites.get_compiled_app(dry_run=dry, use_rich=rich)
     elapsed_time = time.monotonic() - starting_time
     console.success(f"App compiled successfully in {elapsed_time:.3f} seconds.")
 
@@ -416,6 +425,21 @@ def compile(dry: bool):
     default=constants.Env.PROD.value,
     help="The environment to export the app in.",
 )
+@click.option(
+    "--exclude-from-backend",
+    "backend_excluded_dirs",
+    multiple=True,
+    type=click.Path(exists=True, path_type=Path, resolve_path=True),
+    help="Files or directories to exclude from the backend zip. Can be used multiple times.",
+)
+@click.option(
+    "--server-side-rendering/--no-server-side-rendering",
+    "--ssr/--no-ssr",
+    "ssr",
+    default=True,
+    is_flag=True,
+    help="Whether to enable server side rendering for the frontend.",
+)
 def export(
     zip: bool,
     frontend_only: bool,
@@ -423,10 +447,17 @@ def export(
     zip_dest_dir: str,
     upload_db_file: bool,
     env: LITERAL_ENV,
+    backend_excluded_dirs: tuple[Path, ...] = (),
+    ssr: bool = True,
 ):
     """Export the app to a zip file."""
     from reflex.utils import export as export_utils
     from reflex.utils import prerequisites
+
+    if not environment.REFLEX_SSR.is_set():
+        environment.REFLEX_SSR.set(ssr)
+    elif environment.REFLEX_SSR.get() != ssr:
+        ssr = environment.REFLEX_SSR.get()
 
     environment.REFLEX_COMPILE_CONTEXT.set(constants.CompileContext.EXPORT)
 
@@ -449,6 +480,8 @@ def export(
         upload_db_file=upload_db_file,
         env=constants.Env.DEV if env == constants.Env.DEV else constants.Env.PROD,
         loglevel=config.loglevel.subprocess_level(),
+        backend_excluded_dirs=backend_excluded_dirs,
+        prerender_routes=ssr,
     )
 
 
@@ -654,6 +687,21 @@ def makemigrations(message: str | None):
     "--config",
     help="path to the config file",
 )
+@click.option(
+    "--exclude-from-backend",
+    "backend_excluded_dirs",
+    multiple=True,
+    type=click.Path(exists=True, path_type=Path, resolve_path=True),
+    help="Files or directories to exclude from the backend zip. Can be used multiple times.",
+)
+@click.option(
+    "--server-side-rendering/--no-server-side-rendering",
+    "--ssr/--no-ssr",
+    "ssr",
+    default=True,
+    is_flag=True,
+    help="Whether to enable server side rendering for the frontend.",
+)
 def deploy(
     app_name: str | None,
     app_id: str | None,
@@ -667,6 +715,8 @@ def deploy(
     project_name: str | None,
     token: str | None,
     config_path: str | None,
+    backend_excluded_dirs: tuple[Path, ...] = (),
+    ssr: bool = True,
 ):
     """Deploy the app to the Reflex hosting service."""
     from reflex_cli.utils import dependency
@@ -683,6 +733,11 @@ def deploy(
     check_version()
 
     environment.REFLEX_COMPILE_CONTEXT.set(constants.CompileContext.DEPLOY)
+
+    if not environment.REFLEX_SSR.is_set():
+        environment.REFLEX_SSR.set(ssr)
+    elif environment.REFLEX_SSR.get() != ssr:
+        ssr = environment.REFLEX_SSR.get()
 
     # Only check requirements if interactive.
     # There is user interaction for requirements update.
@@ -715,6 +770,8 @@ def deploy(
                 zipping=zipping,
                 loglevel=config.loglevel.subprocess_level(),
                 upload_db_file=upload_db,
+                backend_excluded_dirs=backend_excluded_dirs,
+                prerender_routes=ssr,
             )
         ),
         regions=list(region),

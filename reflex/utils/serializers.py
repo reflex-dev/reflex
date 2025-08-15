@@ -20,7 +20,7 @@ from pydantic import BaseModel as BaseModelV2
 from pydantic.v1 import BaseModel as BaseModelV1
 
 from reflex.base import Base
-from reflex.constants.colors import Color, format_color
+from reflex.constants.colors import Color
 from reflex.utils import console, types
 
 # Mapping from type to a serializer.
@@ -187,7 +187,7 @@ def get_serializer(type_: type) -> Serializer | None:
 
     # If the type is not registered, check if it is a subclass of a registered type.
     for registered_type, serializer in reversed(SERIALIZERS.items()):
-        if types._issubclass(type_, registered_type):
+        if issubclass(type_, registered_type):
             return serializer
 
     # If there is no serializer, return None.
@@ -211,7 +211,7 @@ def get_serializer_type(type_: type) -> type | None:
 
     # If the type is not registered, check if it is a subclass of a registered type.
     for registered_type, serializer in reversed(SERIALIZER_TYPES.items()):
-        if types._issubclass(type_, registered_type):
+        if issubclass(type_, registered_type):
             return serializer
 
     # If there is no serializer, return None.
@@ -244,11 +244,11 @@ def can_serialize(type_: type, into_type: type | None = None) -> bool:
     Returns:
         Whether there is a serializer for the type.
     """
-    return has_serializer(type_, into_type) or (
+    return (
         isinstance(type_, type)
         and dataclasses.is_dataclass(type_)
         and (into_type is None or into_type is dict)
-    )
+    ) or has_serializer(type_, into_type)
 
 
 @serializer(to=str)
@@ -413,8 +413,8 @@ def serialize_decimal(value: decimal.Decimal) -> float:
     return float(value)
 
 
-@serializer(to=str)
-def serialize_color(color: Color) -> str:
+@serializer(to=dict)
+def serialize_color(color: Color) -> dict:
     """Serialize a color.
 
     Args:
@@ -423,7 +423,11 @@ def serialize_color(color: Color) -> str:
     Returns:
         The serialized color.
     """
-    return format_color(color.color, color.shade, color.alpha)
+    return {
+        "color": color.color,
+        "shade": color.shade,
+        "alpha": color.alpha,
+    }
 
 
 with contextlib.suppress(ImportError):

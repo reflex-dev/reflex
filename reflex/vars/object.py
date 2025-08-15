@@ -6,7 +6,6 @@ import collections.abc
 import dataclasses
 import typing
 from collections.abc import Mapping
-from inspect import isclass
 from typing import (
     Any,
     NoReturn,
@@ -328,7 +327,10 @@ class ObjectVar(Var[OBJECT_TYPE], python_types=Mapping):
 
         if (
             is_typeddict(fixed_type)
-            or (isclass(fixed_type) and not safe_issubclass(fixed_type, Mapping))
+            or (
+                isinstance(fixed_type, type)
+                and not safe_issubclass(fixed_type, Mapping)
+            )
             or (fixed_type in types.UnionTypes)
         ):
             attribute_type = get_attribute_access_type(var_type, name)
@@ -477,14 +479,9 @@ def object_keys_operation(value: ObjectVar):
     Returns:
         The keys of the object.
     """
-    if not types.is_optional(value._var_type):
-        return var_operation_return(
-            js_expression=f"Object.keys({value})",
-            var_type=list[str],
-        )
     return var_operation_return(
-        js_expression=f"((value) => value ?? undefined === undefined ? undefined : Object.keys(value))({value})",
-        var_type=(list[str] | None),
+        js_expression=f"Object.keys({value} ?? {{}})",
+        var_type=list[str],
     )
 
 
@@ -498,14 +495,9 @@ def object_values_operation(value: ObjectVar):
     Returns:
         The values of the object.
     """
-    if not types.is_optional(value._var_type):
-        return var_operation_return(
-            js_expression=f"Object.values({value})",
-            var_type=list[value._value_type()],
-        )
     return var_operation_return(
-        js_expression=f"((value) => value ?? undefined === undefined ? undefined : Object.values(value))({value})",
-        var_type=(list[value._value_type()] | None),
+        js_expression=f"Object.values({value} ?? {{}})",
+        var_type=list[value._value_type()],
     )
 
 
@@ -519,14 +511,9 @@ def object_entries_operation(value: ObjectVar):
     Returns:
         The entries of the object.
     """
-    if not types.is_optional(value._var_type):
-        return var_operation_return(
-            js_expression=f"Object.entries({value})",
-            var_type=list[tuple[str, value._value_type()]],
-        )
     return var_operation_return(
-        js_expression=f"((value) => value ?? undefined === undefined ? undefined : Object.entries(value))({value})",
-        var_type=(list[tuple[str, value._value_type()]] | None),
+        js_expression=f"Object.entries({value} ?? {{}})",
+        var_type=list[tuple[str, value._value_type()]],
     )
 
 

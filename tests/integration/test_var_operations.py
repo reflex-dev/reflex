@@ -576,6 +576,29 @@ def VarOperations():
             rx.text(ArrayVar.range(5, 0, -1).join(","), id="list_join_range3"),
             rx.text(ArrayVar.range(0, 3).join(","), id="list_join_range4"),
             rx.box(
+                # Test that foreach works with various non-array inputs without throwing
+                rx.foreach(
+                    rx.Var("undefined").to(list),
+                    rx.text.span,
+                ),
+                rx.foreach(
+                    rx.Var("null").to(list),
+                    rx.text.span,
+                ),
+                rx.foreach(
+                    rx.Var("({})").to(list),
+                    rx.text.span,
+                ),
+                rx.foreach(
+                    rx.Var("2").to(list),
+                    rx.text.span,
+                ),
+                rx.foreach(
+                    rx.Var("false").to(list),
+                    rx.text.span,
+                ),
+            ),
+            rx.box(
                 rx.foreach(
                     ArrayVar.range(0, 2),
                     lambda x: rx.text(VarOperationState.list1[x], as_="p"),
