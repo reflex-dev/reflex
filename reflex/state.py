@@ -11,6 +11,7 @@ import functools
 import inspect
 import pickle
 import sys
+import time
 import typing
 import warnings
 from collections.abc import AsyncIterator, Callable, Sequence
@@ -284,7 +285,10 @@ async def _resolve_delta(delta: Delta) -> Delta:
     for state_name, state_delta in delta.items():
         for var_name, value in state_delta.items():
             if asyncio.iscoroutine(value):
-                tasks[state_name, var_name] = asyncio.create_task(value)
+                tasks[state_name, var_name] = asyncio.create_task(
+                    value,
+                    name=f"reflex_resolve_delta|{state_name}|{var_name}|{time.time()}",
+                )
     for (state_name, var_name), task in tasks.items():
         delta[state_name][var_name] = await task
     return delta
@@ -2491,7 +2495,7 @@ class OnLoadInternalState(State):
         # Cache the app reference for subsequent calls.
         if type(self)._app_ref is None:
             type(self)._app_ref = app
-        load_events = app.get_load_events(self.router._page.path)
+        load_events = app.get_load_events(self.router.url.path)
         if not load_events:
             self.is_hydrated = True
             return None  # Fast path for navigation with no on_load events defined.

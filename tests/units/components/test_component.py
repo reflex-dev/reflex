@@ -684,18 +684,13 @@ def test_component_create_unallowed_types(children, test_component):
             {
                 "name": "Fragment",
                 "props": [],
-                "contents": "",
                 "children": [
                     {
                         "name": "RadixThemesText",
                         "props": ['as:"p"'],
-                        "contents": "",
                         "children": [
                             {
-                                "name": "",
-                                "props": [],
                                 "contents": '"first_text"',
-                                "children": [],
                             }
                         ],
                     }
@@ -709,31 +704,22 @@ def test_component_create_unallowed_types(children, test_component):
                     {
                         "children": [
                             {
-                                "children": [],
                                 "contents": '"first_text"',
-                                "name": "",
-                                "props": [],
                             }
                         ],
-                        "contents": "",
                         "name": "RadixThemesText",
                         "props": ['as:"p"'],
                     },
                     {
                         "children": [
                             {
-                                "children": [],
                                 "contents": '"second_text"',
-                                "name": "",
-                                "props": [],
                             }
                         ],
-                        "contents": "",
                         "name": "RadixThemesText",
                         "props": ['as:"p"'],
                     },
                 ],
-                "contents": "",
                 "name": "Fragment",
                 "props": [],
             },
@@ -745,13 +731,9 @@ def test_component_create_unallowed_types(children, test_component):
                     {
                         "children": [
                             {
-                                "children": [],
                                 "contents": '"first_text"',
-                                "name": "",
-                                "props": [],
                             }
                         ],
-                        "contents": "",
                         "name": "RadixThemesText",
                         "props": ['as:"p"'],
                     },
@@ -762,28 +744,21 @@ def test_component_create_unallowed_types(children, test_component):
                                     {
                                         "children": [
                                             {
-                                                "children": [],
                                                 "contents": '"second_text"',
-                                                "name": "",
-                                                "props": [],
                                             }
                                         ],
-                                        "contents": "",
                                         "name": "RadixThemesText",
                                         "props": ['as:"p"'],
                                     }
                                 ],
-                                "contents": "",
                                 "name": "Fragment",
                                 "props": [],
                             }
                         ],
-                        "contents": "",
                         "name": "RadixThemesBox",
                         "props": [],
                     },
                 ],
-                "contents": "",
                 "name": "Fragment",
                 "props": [],
             },
@@ -1152,10 +1127,10 @@ def test_component_with_only_valid_children(fixture, request):
 @pytest.mark.parametrize(
     ("component", "rendered"),
     [
-        (rx.text("hi"), 'jsx(\nRadixThemesText,\n{as:"p"},\n"hi"\n,)'),
+        (rx.text("hi"), 'jsx(RadixThemesText,{as:"p"},"hi")'),
         (
             rx.box(rx.heading("test", size="3")),
-            'jsx(\nRadixThemesBox,\n{},\njsx(\nRadixThemesHeading,\n{size:"3"},\n"test"\n,),)',
+            'jsx(RadixThemesBox,{},jsx(RadixThemesHeading,{size:"3"},"test"))',
         ),
     ],
 )
@@ -1592,12 +1567,12 @@ def test_validate_valid_children():
             ),
             (
                 "fifth",
+                "sixth",
                 rx.match(
                     "nested_condition",
                     ("nested_first", valid_component2()),
                     rx.fragment(valid_component2()),
                 ),
-                valid_component2(),
             ),
         )
     )
@@ -1654,12 +1629,12 @@ def test_validate_valid_parents():
             ),
             (
                 "fifth",
+                "sixth",
                 rx.match(
                     "nested_condition",
                     ("nested_first", valid_component3()),
                     rx.fragment(valid_component3()),
                 ),
-                valid_component3(),
             ),
         )
     )

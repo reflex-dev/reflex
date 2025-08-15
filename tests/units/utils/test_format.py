@@ -313,13 +313,16 @@ def test_format_route(route: str, expected: str):
         (
             "state__state.value",
             [
-                [LiteralVar.create(1), LiteralVar.create("red")],
-                [LiteralVar.create(2), LiteralVar.create(3), LiteralVar.create("blue")],
-                [TestState.mapping, TestState.num1],
-                [
-                    LiteralVar.create(f"{TestState.map_key}-key"),
+                ([LiteralVar.create(1)], LiteralVar.create("red")),
+                (
+                    [LiteralVar.create(2), LiteralVar.create(3)],
+                    LiteralVar.create("blue"),
+                ),
+                ([TestState.mapping], TestState.num1),
+                (
+                    [LiteralVar.create(f"{TestState.map_key}-key")],
                     LiteralVar.create("return-key"),
-                ],
+                ),
             ],
             LiteralVar.create("yellow"),
             '(() => { switch (JSON.stringify(state__state.value)) {case JSON.stringify(1):  return ("red");  break;case JSON.stringify(2): case JSON.stringify(3):  '
@@ -331,7 +334,7 @@ def test_format_route(route: str, expected: str):
 )
 def test_format_match(
     condition: str,
-    match_cases: list[list[Var]],
+    match_cases: list[tuple[list[Var], Var]],
     default: Var,
     expected: str,
 ):
@@ -371,7 +374,7 @@ def test_format_match(
                 events=[EventSpec(handler=EventHandler(fn=mock_event))],
                 args_spec=no_args_event_spec,
             ),
-            '((...args) => (addEvents([(Event("mock_event", ({  }), ({  })))], args, ({  }))))',
+            '((...args) => (addEvents([(ReflexEvent("mock_event", ({  }), ({  })))], args, ({  }))))',
         ),
         (
             EventChain(
@@ -392,7 +395,7 @@ def test_format_match(
                 ],
                 args_spec=lambda e: [e.target.value],
             ),
-            '((_e) => (addEvents([(Event("mock_event", ({ ["arg"] : _e["target"]["value"] }), ({  })))], [_e], ({  }))))',
+            '((_e) => (addEvents([(ReflexEvent("mock_event", ({ ["arg"] : _e["target"]["value"] }), ({  })))], [_e], ({  }))))',
         ),
         (
             EventChain(
@@ -400,7 +403,7 @@ def test_format_match(
                 args_spec=no_args_event_spec,
                 event_actions={"stopPropagation": True},
             ),
-            '((...args) => (addEvents([(Event("mock_event", ({  }), ({  })))], args, ({ ["stopPropagation"] : true }))))',
+            '((...args) => (addEvents([(ReflexEvent("mock_event", ({  }), ({  })))], args, ({ ["stopPropagation"] : true }))))',
         ),
         (
             EventChain(
@@ -412,7 +415,7 @@ def test_format_match(
                 ],
                 args_spec=no_args_event_spec,
             ),
-            '((...args) => (addEvents([(Event("mock_event", ({  }), ({ ["stopPropagation"] : true })))], args, ({  }))))',
+            '((...args) => (addEvents([(ReflexEvent("mock_event", ({  }), ({ ["stopPropagation"] : true })))], args, ({  }))))',
         ),
         (
             EventChain(
@@ -420,7 +423,7 @@ def test_format_match(
                 args_spec=no_args_event_spec,
                 event_actions={"preventDefault": True},
             ),
-            '((...args) => (addEvents([(Event("mock_event", ({  }), ({  })))], args, ({ ["preventDefault"] : true }))))',
+            '((...args) => (addEvents([(ReflexEvent("mock_event", ({  }), ({  })))], args, ({ ["preventDefault"] : true }))))',
         ),
         ({"a": "red", "b": "blue"}, '({ ["a"] : "red", ["b"] : "blue" })'),
         (Var(_js_expr="var", _var_type=int).guess_type(), "var"),
@@ -528,7 +531,7 @@ def test_format_event_handler(input, output):
     [
         (
             EventSpec(handler=EventHandler(fn=mock_event)),
-            '(Event("mock_event", ({  }), ({  })))',
+            '(ReflexEvent("mock_event", ({  }), ({  })))',
         ),
     ],
 )

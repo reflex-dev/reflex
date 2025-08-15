@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import dataclasses
-from collections.abc import Mapping, Sequence
+from collections.abc import Iterator, Mapping, Sequence
 from typing import Any
 
 from reflex.event import EventChain
@@ -41,16 +41,13 @@ class Tag:
     # The props of the tag.
     props: Mapping[str, Any] = dataclasses.field(default_factory=dict)
 
-    # The inner contents of the tag.
-    contents: str = ""
-
     # Special props that aren't key value pairs.
     special_props: Sequence[Var] = dataclasses.field(default_factory=list)
 
     # The children components.
     children: Sequence[Any] = dataclasses.field(default_factory=list)
 
-    def format_props(self) -> list:
+    def format_props(self) -> list[str]:
         """Format the tag's props.
 
         Returns:
@@ -69,7 +66,7 @@ class Tag:
         """
         return dataclasses.replace(self, **kwargs)
 
-    def __iter__(self):
+    def __iter__(self) -> Iterator[tuple[str, Any]]:
         """Iterate over the tag's fields.
 
         Yields:

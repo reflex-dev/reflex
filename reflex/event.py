@@ -1930,7 +1930,7 @@ class LiteralEventVar(VarOperationCall, LiteralVar, EventVar):
             _var_type=EventSpec,
             _var_data=_var_data,
             _var_value=value,
-            _func=FunctionStringVar("Event"),
+            _func=FunctionStringVar("ReflexEvent"),
             _args=(
                 # event handler name
                 ".".join(

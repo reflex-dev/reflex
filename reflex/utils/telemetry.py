@@ -353,7 +353,10 @@ def send(event: str, telemetry_enabled: bool | None = None, **kwargs):
 
     try:
         # Within an event loop context, send the event asynchronously.
-        task = asyncio.create_task(async_send(event, telemetry_enabled, **kwargs))
+        task = asyncio.create_task(
+            async_send(event, telemetry_enabled, **kwargs),
+            name=f"reflex_send_telemetry_event|{event}",
+        )
         background_tasks.add(task)
         task.add_done_callback(background_tasks.discard)
     except RuntimeError:

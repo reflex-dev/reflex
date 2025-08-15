@@ -167,7 +167,7 @@ class ClientStateVar(Var):
             ] = None
             imports.update(_refs_import)
         return cls(
-            _js_expr="",
+            _js_expr="null",
             _setter_name=setter_name,
             _getter_name=var_name,
             _id_name=id_name,

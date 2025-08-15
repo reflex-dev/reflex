@@ -10,7 +10,6 @@ def test_script_inline():
     component = Script.create("let x = 42")
     render_dict = component.render()["children"][0]
     assert render_dict["name"] == '"script"'
-    assert not render_dict["contents"]
     assert len(render_dict["children"]) == 1
     assert render_dict["children"][0]["contents"] == '"let x = 42"'
 
@@ -20,7 +19,6 @@ def test_script_src():
     component = Script.create(src="foo.js")
     render_dict = component.render()["children"][0]
     assert render_dict["name"] == '"script"'
-    assert not render_dict["contents"]
     assert not render_dict["children"]
     assert 'src:"foo.js"' in render_dict["props"]
 

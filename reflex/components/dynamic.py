@@ -86,7 +86,7 @@ def load_dynamic_serializer():
         )
 
         rendered_components[
-            templates.STATEFUL_COMPONENT.render(
+            templates.stateful_component_template(
                 tag_name="MySSRComponent",
                 memo_trigger_hooks=[],
                 component=component,
@@ -111,10 +111,10 @@ def load_dynamic_serializer():
             else:
                 imports[lib] = names
 
-        module_code_lines = templates.STATEFUL_COMPONENTS.render(
+        module_code_lines = templates.stateful_components_template(
             imports=utils.compile_imports(imports),
             memoized_code="\n".join(rendered_components),
-        ).splitlines()[1:]
+        ).splitlines()
 
         # Rewrite imports from `/` to destructure from window
         for ix, line in enumerate(module_code_lines[:]):

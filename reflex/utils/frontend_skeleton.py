@@ -149,8 +149,12 @@ def update_react_router_config(prerender_routes: bool = False):
 
 
 def _update_react_router_config(config: Config, prerender_routes: bool = False):
+    basename = "/" + (config.frontend_path or "").strip("/")
+    if not basename.endswith("/"):
+        basename += "/"
+
     react_router_config = {
-        "basename": "/" + (config.frontend_path or "").removeprefix("/"),
+        "basename": basename,
         "future": {
             "unstable_optimizeDeps": True,
         },
@@ -165,7 +169,7 @@ def _update_react_router_config(config: Config, prerender_routes: bool = False):
 
 
 def _compile_package_json():
-    return templates.PACKAGE_JSON.render(
+    return templates.package_json_template(
         scripts={
             "dev": constants.PackageJson.Commands.DEV,
             "export": constants.PackageJson.Commands.EXPORT,
@@ -188,7 +192,7 @@ def _compile_vite_config(config: Config):
     base = "/"
     if frontend_path := config.frontend_path.strip("/"):
         base += frontend_path + "/"
-    return templates.VITE_CONFIG.render(base=base)
+    return templates.vite_config_template(base=base)
 
 
 def initialize_vite_config():

@@ -12,6 +12,7 @@ import inspect
 import io
 import json
 import sys
+import time
 import traceback
 import urllib.parse
 from collections.abc import (
@@ -67,10 +68,6 @@ from reflex.components.core.banner import (
     connection_toaster,
 )
 from reflex.components.core.breakpoints import set_breakpoints
-from reflex.components.core.client_side_routing import (
-    default_404_page,
-    wait_for_client_redirect,
-)
 from reflex.components.core.sticky import sticky
 from reflex.components.core.upload import Upload, get_upload_dir
 from reflex.components.radix import themes
@@ -775,8 +772,10 @@ class App(MiddlewareMixin, LifespanMixin):
 
         if route == constants.Page404.SLUG:
             if component is None:
-                component = default_404_page
-            component = wait_for_client_redirect(self._generate_component(component))
+                from reflex.components.el.elements import span
+
+                component = span("404: Page not found")
+            component = self._generate_component(component)
             title = title or constants.Page404.TITLE
             description = description or constants.Page404.DESCRIPTION
             image = image or constants.Page404.IMAGE
@@ -864,7 +863,7 @@ class App(MiddlewareMixin, LifespanMixin):
         """
         from reflex.route import get_router
 
-        return get_router(list(self._unevaluated_pages))
+        return get_router(list(dict.fromkeys([*self._unevaluated_pages, *self._pages])))
 
     def get_load_events(self, path: str) -> list[IndividualEventType[()]]:
         """Get the load events for a route.
@@ -1312,7 +1311,9 @@ class App(MiddlewareMixin, LifespanMixin):
                 self.head_components,
                 html_lang=self.html_lang,
                 html_custom_attrs=(
-                    {**self.html_custom_attrs} if self.html_custom_attrs else {}
+                    {"suppressHydrationWarning": True, **self.html_custom_attrs}
+                    if self.html_custom_attrs
+                    else {"suppressHydrationWarning": True}
                 ),
             )
         )
@@ -1582,7 +1583,10 @@ class App(MiddlewareMixin, LifespanMixin):
                     sid=state.router.session.session_id,
                 )
 
-        task = asyncio.create_task(_coro())
+        task = asyncio.create_task(
+            _coro(),
+            name=f"reflex_background_task|{event.name}|{time.time()}|{event.token}",
+        )
         self._background_tasks.add(task)
         # Clean up task from background_tasks set when complete.
         task.add_done_callback(self._background_tasks.discard)
@@ -1727,7 +1731,8 @@ async def process(
                         "reload",
                         data=event,
                         to=sid,
-                    )
+                    ),
+                    name=f"reflex_emit_reload|{event.name}|{time.time()}|{event.token}",
                 )
                 return
             # re-assign only when the value is different
@@ -2028,7 +2033,8 @@ class EventNamespace(AsyncNamespace):
         if disconnect_token:
             # Use async cleanup through token manager
             task = asyncio.create_task(
-                self._token_manager.disconnect_token(disconnect_token, sid)
+                self._token_manager.disconnect_token(disconnect_token, sid),
+                name=f"reflex_disconnect_token|{disconnect_token}|{time.time()}",
             )
             # Don't await to avoid blocking disconnect, but handle potential errors
             task.add_done_callback(
@@ -2047,12 +2053,14 @@ class EventNamespace(AsyncNamespace):
             # If the sid is None, we are not connected to a client. Prevent sending
             # updates to all clients.
             return
-        if sid not in self.sid_to_token:
+        token = self.sid_to_token.get(sid)
+        if token is None:
             console.warn(f"Attempting to send delta to disconnected websocket {sid}")
             return
         # Creating a task prevents the update from being blocked behind other coroutines.
         await asyncio.create_task(
-            self.emit(str(constants.SocketEvent.EVENT), update, to=sid)
+            self.emit(str(constants.SocketEvent.EVENT), update, to=sid),
+            name=f"reflex_emit_event|{token}|{sid}|{time.time()}",
         )
 
     async def on_event(self, sid: str, data: Any):

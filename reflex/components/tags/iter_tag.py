@@ -68,32 +68,6 @@ class IterTag(Tag):
             _var_type=self.get_iterable_var_type(),
         ).guess_type()
 
-    def get_index_var_arg(self) -> Var:
-        """Get the index var for the tag (without curly braces).
-
-        This is used to render the index var in the .map() function.
-
-        Returns:
-            The index var.
-        """
-        return Var(
-            _js_expr=self.index_var_name,
-            _var_type=int,
-        ).guess_type()
-
-    def get_arg_var_arg(self) -> Var:
-        """Get the arg var for the tag (without curly braces).
-
-        This is used to render the arg var in the .map() function.
-
-        Returns:
-            The arg var.
-        """
-        return Var(
-            _js_expr=self.arg_var_name,
-            _var_type=self.get_iterable_var_type(),
-        ).guess_type()
-
     def render_component(self) -> Component:
         """Render the component.
 
