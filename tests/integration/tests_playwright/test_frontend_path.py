@@ -79,11 +79,7 @@ def onload_redirect_with_prefix_app(
     ("app_fixture_name", "prefix"),
     [
         ("onload_redirect_app", ""),
-        pytest.param(
-            "onload_redirect_with_prefix_app",
-            "/prefix",
-            marks=pytest.mark.xfail(reason="bug #5674"),
-        ),
+        ("onload_redirect_with_prefix_app", "/prefix"),
     ],
 )
 def test_onload_redirect(app_fixture_name: str, prefix: str, page: Page, request):
