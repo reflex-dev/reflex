@@ -128,10 +128,12 @@ def test_onload_redirect(
     # Go to /subpage
     page.get_by_role("button", name="Go to Subpage!").click()
     expect(page.get_by_text("This is the sub page!")).to_be_visible()
+    expect(page).to_have_url(f"{base_url}/subpage")
 
     # Click "Bounce to index!" (should redirect to index via on_load)
     page.get_by_role("button", name="Bounce to index!").click()
     expect(page.get_by_text("This is the index page!")).to_be_visible()
+    expect(page).to_have_url(f"{base_url}/")
 
     # Optionally, reload /prefix/bouncer/ and check redirect
     page.goto(f"{base_url}/bouncer/")
