@@ -136,3 +136,8 @@ def test_onload_redirect(
     # Optionally, reload /prefix/bouncer/ and check redirect
     page.goto(f"{base_url}/bouncer/")
     expect(page.get_by_text("This is the index page!")).to_be_visible()
+
+    # Check that 404's work and do not change the url
+    page.goto(f"{base_url}/not-a-page")
+    expect(page.get_by_text("404: Page not found")).to_be_visible()
+    expect(page).to_have_url(f"{base_url}/not-a-page")
