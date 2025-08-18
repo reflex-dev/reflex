@@ -159,12 +159,12 @@ def test_compile_stylesheets(tmp_path: Path, mocker: MockerFixture):
             / (PageNames.STYLESHEET_ROOT + ".css")
         ),
         "@layer __reflex_base;\n"
-        "@import url('./__reflex_style_reset.css'); \n"
-        "@import url('@radix-ui/themes/styles.css'); \n"
-        "@import url('https://fonts.googleapis.com/css?family=Sofia&effect=neon|outline|emboss|shadow-multiple'); \n"
-        "@import url('https://cdn.jsdelivr.net/npm/bootstrap@3.3.7/dist/css/bootstrap.min.css'); \n"
-        "@import url('https://cdn.jsdelivr.net/npm/bootstrap@3.3.7/dist/css/bootstrap-theme.min.css'); \n"
-        "@import url('./style.css'); \n",
+        "@import url('./__reflex_style_reset.css');\n"
+        "@import url('@radix-ui/themes/styles.css');\n"
+        "@import url('https://fonts.googleapis.com/css?family=Sofia&effect=neon|outline|emboss|shadow-multiple');\n"
+        "@import url('https://cdn.jsdelivr.net/npm/bootstrap@3.3.7/dist/css/bootstrap.min.css');\n"
+        "@import url('https://cdn.jsdelivr.net/npm/bootstrap@3.3.7/dist/css/bootstrap-theme.min.css');\n"
+        "@import url('./style.css');\n",
     )
 
     assert (project / constants.Dirs.WEB / "styles" / "style.css").read_text() == (
@@ -221,11 +221,11 @@ def test_compile_stylesheets_scss_sass(tmp_path: Path, mocker: MockerFixture):
             / (PageNames.STYLESHEET_ROOT + ".css")
         ),
         "@layer __reflex_base;\n"
-        "@import url('./__reflex_style_reset.css'); \n"
-        "@import url('@radix-ui/themes/styles.css'); \n"
-        "@import url('./style.css'); \n"
-        f"@import url('./{Path('preprocess') / Path('styles_a.css')!s}'); \n"
-        f"@import url('./{Path('preprocess') / Path('styles_b.css')!s}'); \n",
+        "@import url('./__reflex_style_reset.css');\n"
+        "@import url('@radix-ui/themes/styles.css');\n"
+        "@import url('./style.css');\n"
+        f"@import url('./{Path('preprocess') / Path('styles_a.css')!s}');\n"
+        f"@import url('./{Path('preprocess') / Path('styles_b.css')!s}');\n",
     )
 
     stylesheets = [
@@ -241,11 +241,11 @@ def test_compile_stylesheets_scss_sass(tmp_path: Path, mocker: MockerFixture):
             / (PageNames.STYLESHEET_ROOT + ".css")
         ),
         "@layer __reflex_base;\n"
-        "@import url('./__reflex_style_reset.css'); \n"
-        "@import url('@radix-ui/themes/styles.css'); \n"
-        "@import url('./style.css'); \n"
-        f"@import url('./{Path('preprocess') / Path('styles_a.css')!s}'); \n"
-        f"@import url('./{Path('preprocess') / Path('styles_b.css')!s}'); \n",
+        "@import url('./__reflex_style_reset.css');\n"
+        "@import url('@radix-ui/themes/styles.css');\n"
+        "@import url('./style.css');\n"
+        f"@import url('./{Path('preprocess') / Path('styles_a.css')!s}');\n"
+        f"@import url('./{Path('preprocess') / Path('styles_b.css')!s}');\n",
     )
 
     assert (project / constants.Dirs.WEB / "styles" / "style.css").read_text() == (
@@ -288,7 +288,7 @@ def test_compile_stylesheets_exclude_tailwind(tmp_path, mocker: MockerFixture):
 
     assert compiler.compile_root_stylesheet(stylesheets) == (
         str(Path(".web") / "styles" / (PageNames.STYLESHEET_ROOT + ".css")),
-        "@layer __reflex_base;\n@import url('./__reflex_style_reset.css'); \n@import url('@radix-ui/themes/styles.css'); \n@import url('./style.css'); \n",
+        "@layer __reflex_base;\n@import url('./__reflex_style_reset.css');\n@import url('@radix-ui/themes/styles.css');\n@import url('./style.css');\n",
     )
 
 
@@ -327,7 +327,7 @@ def test_compile_stylesheets_no_reset(tmp_path: Path, mocker: MockerFixture):
             / "styles"
             / (PageNames.STYLESHEET_ROOT + ".css")
         ),
-        "@layer __reflex_base;\n@import url('@radix-ui/themes/styles.css'); \n@import url('./style.css'); \n",
+        "@layer __reflex_base;\n@import url('@radix-ui/themes/styles.css');\n@import url('./style.css');\n",
     )
 
 

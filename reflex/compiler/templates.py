@@ -199,12 +199,15 @@ def _render_component_utils(**kwargs):
         for case in component.get("match_cases", []):
             for condition in case[:-1]:
                 cases_code += f"    case JSON.stringify({condition._js_expr}):\n"
-            cases_code += f"      return {render(case[-1])};\n      break;\n"
+            cases_code += f"""      return {render(case[-1])};
+      break;
+"""
 
         return f"""(() => {{
   switch (JSON.stringify({component["cond"]._js_expr})) {{
 {cases_code}    default:
-      return {render(component["default"])};\n      break;
+      return {render(component["default"])};
+      break;
   }}
 }})()"""
 
@@ -248,6 +251,10 @@ def _rxconfig_template(**kwargs):
 
 config = rx.Config(
     app_name="{app_name}",
+    plugins=[
+        rx.plugins.SitemapPlugin(),
+        rx.plugins.TailwindV4Plugin(),
+    ]
 )"""
 
 
@@ -604,7 +611,7 @@ def _styles_template(**kwargs) -> str:
     stylesheets = kwargs.get("stylesheets", [])
     imports_code = "@layer __reflex_base;\n"
     for sheet_name in stylesheets:
-        imports_code += f"@import url('{sheet_name}'); \n"
+        imports_code += f"@import url('{sheet_name}');\n"
     return imports_code
 
 
@@ -721,7 +728,65 @@ def _custom_components_source_template(**kwargs) -> str:
     component_class_name = kwargs.get("component_class_name", "")
     module_name = kwargs.get("module_name", "")
 
-    return f"""\"\"\"Reflex custom component {component_class_name}.\"\"\"\n\n# For wrapping react guide, visit https://reflex.dev/docs/wrapping-react/overview/\n\nimport reflex as rx\n\n# Some libraries you want to wrap may require dynamic imports.\n# This is because they they may not be compatible with Server-Side Rendering (SSR).\n# To handle this in Reflex, all you need to do is subclass `NoSSRComponent` instead.\n# For example:\n# from reflex.components.component import NoSSRComponent\n# class {component_class_name}(NoSSRComponent):\n#     pass\n\n\nclass {component_class_name}(rx.Component):\n    \"\"\"{component_class_name} component.\"\"\"\n\n    # The React library to wrap.\n    library = \"Fill-Me\"\n\n    # The React component tag.\n    tag = \"Fill-Me\"\n\n    # If the tag is the default export from the module, you must set is_default = True.\n    # This is normally used when components don't have curly braces around them when importing.\n    # is_default = True\n\n    # If you are wrapping another components with the same tag as a component in your project\n    # you can use aliases to differentiate between them and avoid naming conflicts.\n    # alias = \"Other{component_class_name}\"\n\n    # The props of the React component.\n    # Note: when Reflex compiles the component to Javascript,\n    # `snake_case` property names are automatically formatted as `camelCase`.\n    # The prop names may be defined in `camelCase` as well.\n    # some_prop: rx.Var[str] = \"some default value\"\n    # some_other_prop: rx.Var[int] = 1\n\n    # By default Reflex will install the library you have specified in the library property.\n    # However, sometimes you may need to install other libraries to use a component.\n    # In this case you can use the lib_dependencies property to specify other libraries to install.\n    # lib_dependencies: list[str] = []\n\n    # Event triggers declaration if any.\n    # Below is equivalent to merging `{{ \"on_change\": lambda e: [e] }}`\n    # onto the default event triggers of parent/base Component.\n    # The function defined for the `on_change` trigger maps event for the javascript\n    # trigger to what will be passed to the backend event handler function.\n    # on_change: rx.EventHandler[lambda e: [e]]\n\n    # To add custom code to your component\n    # def _get_custom_code(self) -> str:\n    #     return \"const customCode = 'customCode';\"\n\n\n{module_name} = {component_class_name}.create\n"""
+    return rf'''
+"""Reflex custom component {component_class_name}."""
+
+# For wrapping react guide, visit https://reflex.dev/docs/wrapping-react/overview/
+
+import reflex as rx
+
+# Some libraries you want to wrap may require dynamic imports.
+# This is because they they may not be compatible with Server-Side Rendering (SSR).
+# To handle this in Reflex, all you need to do is subclass `NoSSRComponent` instead.
+# For example:
+# from reflex.components.component import NoSSRComponent
+# class {component_class_name}(NoSSRComponent):
+#     pass
+
+
+class {component_class_name}(rx.Component):
+    """{component_class_name} component."""
+
+    # The React library to wrap.
+    library = "Fill-Me"
+
+    # The React component tag.
+    tag = "Fill-Me"
+
+    # If the tag is the default export from the module, you must set is_default = True.
+    # This is normally used when components don't have curly braces around them when importing.
+    # is_default = True
+
+    # If you are wrapping another components with the same tag as a component in your project
+    # you can use aliases to differentiate between them and avoid naming conflicts.
+    # alias = "Other{component_class_name}"
+
+    # The props of the React component.
+    # Note: when Reflex compiles the component to Javascript,
+    # `snake_case` property names are automatically formatted as `camelCase`.
+    # The prop names may be defined in `camelCase` as well.
+    # some_prop: rx.Var[str] = "some default value"
+    # some_other_prop: rx.Var[int] = 1
+
+    # By default Reflex will install the library you have specified in the library property.
+    # However, sometimes you may need to install other libraries to use a component.
+    # In this case you can use the lib_dependencies property to specify other libraries to install.
+    # lib_dependencies: list[str] = []
+
+    # Event triggers declaration if any.
+    # Below is equivalent to merging `{{ "on_change": lambda e: [e] }}`
+    # onto the default event triggers of parent/base Component.
+    # The function defined for the `on_change` trigger maps event for the javascript
+    # trigger to what will be passed to the backend event handler function.
+    # on_change: rx.EventHandler[lambda e: [e]]
+
+    # To add custom code to your component
+    # def _get_custom_code(self) -> str:
+    #     return "const customCode = 'customCode';"
+
+
+{module_name} = {component_class_name}.create
+'''
 
 
 def _custom_components_init_template(**kwargs) -> str:
@@ -749,7 +814,44 @@ def _custom_components_demo_app_template(**kwargs) -> str:
     custom_component_module_dir = kwargs.get("custom_component_module_dir", "")
     module_name = kwargs.get("module_name", "")
 
-    return f"""\"\"\"Welcome to Reflex! This file showcases the custom component in a basic app.\"\"\"\n\nfrom rxconfig import config\n\nimport reflex as rx\n\nfrom {custom_component_module_dir} import {module_name}\n\nfilename = f\"{{config.app_name}}/{{config.app_name}}.py\"\n\n\nclass State(rx.State):\n    \"\"\"The app state.\"\"\"\n\n    pass\n\n\ndef index() -> rx.Component:\n    return rx.center(\n        rx.theme_panel(),\n        rx.vstack(\n            rx.heading(\"Welcome to Reflex!\", size=\"9\"),\n            rx.text(\n                \"Test your custom component by editing \", \n                rx.code(filename),\n                font_size=\"2em\",\n            ),\n            {module_name}(),\n            align=\"center\",\n            spacing=\"7\",\n        ),\n        height=\"100vh\",\n    )\n\n\n# Add state and page to the app.\napp = rx.App()\napp.add_page(index)\n\n"""
+    return rf'''
+"""Welcome to Reflex! This file showcases the custom component in a basic app."""
+
+from rxconfig import config
+
+import reflex as rx
+
+from {custom_component_module_dir} import {module_name}
+
+filename = f"{{config.app_name}}/{{config.app_name}}.py"
+
+
+class State(rx.State):
+    """The app state."""
+    pass
+
+def index() -> rx.Component:
+    return rx.center(
+        rx.theme_panel(),
+        rx.vstack(
+            rx.heading("Welcome to Reflex!", size="9"),
+            rx.text(
+                "Test your custom component by editing ",
+                rx.code(filename),
+                font_size="2em",
+            ),
+            {module_name}(),
+            align="center",
+            spacing="7",
+        ),
+        height="100vh",
+    )
+
+
+# Add state and page to the app.
+app = rx.App()
+app.add_page(index)
+'''
 
 
 # Template instances
