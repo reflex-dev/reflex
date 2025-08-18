@@ -2,9 +2,9 @@
 
 import dataclasses
 from copy import deepcopy
-from typing import Any, Literal, TypedDict, Unpack
+from typing import Any, Literal, TypedDict
 
-from typing_extensions import NotRequired
+from typing_extensions import NotRequired, Unpack
 
 from .base import Plugin as PluginBase
 
