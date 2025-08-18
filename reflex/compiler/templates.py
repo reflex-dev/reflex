@@ -120,7 +120,14 @@ class Template:
 
 
 def _render_component_utils(**kwargs):
-    """Utility functions for rendering components."""
+    """Utility functions for rendering components.
+
+    Args:
+        **kwargs: Template context variables for rendering.
+
+    Returns:
+        Dictionary of utility functions for component rendering.
+    """
 
     def render(component: Any) -> str:
         if not isinstance(component, dict):
@@ -228,7 +235,14 @@ def _render_component_utils(**kwargs):
 
 
 def _rxconfig_template(**kwargs):
-    """Template for the Reflex config file."""
+    """Template for the Reflex config file.
+
+    Args:
+        **kwargs: Template context variables including app_name.
+
+    Returns:
+        Rendered Reflex config file content as string.
+    """
     app_name = kwargs.get("app_name", "")
     return f"""import reflex as rx
 
@@ -238,7 +252,14 @@ config = rx.Config(
 
 
 def _document_root_template(**kwargs):
-    """Template for the Document root."""
+    """Template for the Document root.
+
+    Args:
+        **kwargs: Template context variables including imports and document.
+
+    Returns:
+        Rendered Document root component as string.
+    """
     imports = kwargs.get("imports", "")
     document = kwargs.get("document", "")
     utils = _render_component_utils(**kwargs)
@@ -253,7 +274,14 @@ export default function Document() {{
 
 
 def _app_root_template(**kwargs):
-    """Template for the App root."""
+    """Template for the App root.
+
+    Args:
+        **kwargs: Template context variables including imports, hooks, render content, etc.
+
+    Returns:
+        Rendered App root component as string.
+    """
     imports = kwargs.get("imports", "")
     custom_codes = kwargs.get("custom_codes", [])
     hooks = kwargs.get("hooks", {})
@@ -343,13 +371,27 @@ export default function App({{ Component, pageProps }}) {{
 
 
 def _theme_template(**kwargs):
-    """Template for the theme file."""
+    """Template for the theme file.
+
+    Args:
+        **kwargs: Template context variables including theme.
+
+    Returns:
+        Rendered theme export as string.
+    """
     theme = kwargs.get("theme", "")
     return f"""export const theme = {theme}"""
 
 
 def _context_template(**kwargs):
-    """Template for the context file."""
+    """Template for the context file.
+
+    Args:
+        **kwargs: Template context variables including initial_state, state_name, etc.
+
+    Returns:
+        Rendered context file content as string.
+    """
     initial_state = kwargs.get("initial_state", "null")
     state_name = kwargs.get("state_name", "")
     client_storage = kwargs.get("client_storage", "")
@@ -377,7 +419,14 @@ export const colorModeManager = {{
 
 
 def _component_template(**kwargs):
-    """Template to render a component tag."""
+    """Template to render a component tag.
+
+    Args:
+        **kwargs: Template context variables including component.
+
+    Returns:
+        Rendered component as string.
+    """
     component = kwargs.get("component", {})
     utils = _render_component_utils(**kwargs)
     # If component has a render method, call it, otherwise use it as-is
@@ -395,7 +444,14 @@ def _component_template(**kwargs):
 
 
 def _page_template(**kwargs):
-    """Template for a single react page."""
+    """Template for a single react page.
+
+    Args:
+        **kwargs: Template context variables including imports, hooks, render content, etc.
+
+    Returns:
+        Rendered React page component as string.
+    """
     imports = kwargs.get("imports", "")
     dynamic_imports = kwargs.get("dynamic_imports", [])
     custom_codes = kwargs.get("custom_codes", [])
@@ -429,7 +485,14 @@ export default function Component() {{
 
 
 def _package_json_template(**kwargs):
-    """Template for package.json."""
+    """Template for package.json.
+
+    Args:
+        **kwargs: Template context variables including dependencies, dev_dependencies, scripts.
+
+    Returns:
+        Rendered package.json content as string.
+    """
     return f"""{{
   "name": "frontend",
   "version": "0.1.0",
@@ -441,7 +504,14 @@ def _package_json_template(**kwargs):
 
 
 def _vite_config_template(**kwargs):
-    """Template for vite.config.js."""
+    """Template for vite.config.js.
+
+    Args:
+        **kwargs: Template context variables including base path.
+
+    Returns:
+        Rendered vite.config.js content as string.
+    """
     base = kwargs.get("base", "/")
 
     # Generate assetsDir from base path
@@ -459,17 +529,38 @@ export default defineConfig({{
 
 
 def _stateful_component_template(**kwargs):
-    """Template for stateful component."""
+    """Template for stateful component.
+
+    Args:
+        **kwargs: Template context variables including code.
+
+    Returns:
+        Rendered stateful component code as string.
+    """
     return kwargs.get("code", "")
 
 
 def _stateful_components_template(**kwargs) -> str:
-    """Template for stateful components."""
+    """Template for stateful components.
+
+    Args:
+        **kwargs: Template context variables including code.
+
+    Returns:
+        Rendered stateful components code as string.
+    """
     return kwargs.get("code", "")
 
 
 def _custom_component_template(**kwargs) -> str:
-    """Template for custom components."""
+    """Template for custom components.
+
+    Args:
+        **kwargs: Template context variables including custom_codes, components, etc.
+
+    Returns:
+        Rendered custom components code as string.
+    """
     custom_codes = kwargs.get("custom_codes", [])
     components = kwargs.get("components", [])
     utils = _render_component_utils(**kwargs)
@@ -502,7 +593,14 @@ export const {component["name"]} = memo({{ {props_str} }}) => {{
 
 
 def _styles_template(**kwargs) -> str:
-    """Template for styles.css."""
+    """Template for styles.css.
+
+    Args:
+        **kwargs: Template context variables including stylesheets.
+
+    Returns:
+        Rendered styles.css content as string.
+    """
     stylesheets = kwargs.get("stylesheets", [])
     imports_code = "@layer __reflex_base;\n"
     for sheet_name in stylesheets:
@@ -513,7 +611,16 @@ def _styles_template(**kwargs) -> str:
 def _render_hooks(
     hooks: dict, sort_hooks_func: Callable = _sort_hooks, memo: list | None = None
 ) -> str:
-    """Render hooks for macros."""
+    """Render hooks for macros.
+
+    Args:
+        hooks: Dictionary of hooks to render.
+        sort_hooks_func: Function to sort hooks by position.
+        memo: Optional list of memo hooks.
+
+    Returns:
+        Rendered hooks code as string.
+    """
     sorted_hooks = sort_hooks_func(hooks)
     hooks_code = ""
 
@@ -538,7 +645,14 @@ def _render_hooks(
 
 
 def _custom_components_pyproject_toml_template(**kwargs) -> str:
-    """Template for custom components pyproject.toml."""
+    """Template for custom components pyproject.toml.
+
+    Args:
+        **kwargs: Template context variables including package_name, module_name, reflex_version.
+
+    Returns:
+        Rendered pyproject.toml content as string.
+    """
     package_name = kwargs.get("package_name", "")
     module_name = kwargs.get("module_name", "")
     reflex_version = kwargs.get("reflex_version", "")
@@ -572,7 +686,14 @@ where = ["custom_components"]
 
 
 def _custom_components_readme_template(**kwargs) -> str:
-    """Template for custom components README."""
+    """Template for custom components README.
+
+    Args:
+        **kwargs: Template context variables including module_name, package_name.
+
+    Returns:
+        Rendered README.md content as string.
+    """
     module_name = kwargs.get("module_name", "")
     package_name = kwargs.get("package_name", "")
 
@@ -589,7 +710,14 @@ pip install {package_name}
 
 
 def _custom_components_source_template(**kwargs) -> str:
-    """Template for custom components source."""
+    """Template for custom components source.
+
+    Args:
+        **kwargs: Template context variables including component_class_name, module_name.
+
+    Returns:
+        Rendered custom component source code as string.
+    """
     component_class_name = kwargs.get("component_class_name", "")
     module_name = kwargs.get("module_name", "")
 
@@ -597,13 +725,27 @@ def _custom_components_source_template(**kwargs) -> str:
 
 
 def _custom_components_init_template(**kwargs) -> str:
-    """Template for custom components __init__.py."""
+    """Template for custom components __init__.py.
+
+    Args:
+        **kwargs: Template context variables including module_name.
+
+    Returns:
+        Rendered __init__.py content as string.
+    """
     module_name = kwargs.get("module_name", "")
     return f"from .{module_name} import *"
 
 
 def _custom_components_demo_app_template(**kwargs) -> str:
-    """Template for custom components demo app."""
+    """Template for custom components demo app.
+
+    Args:
+        **kwargs: Template context variables including custom_component_module_dir, module_name.
+
+    Returns:
+        Rendered demo app source code as string.
+    """
     custom_component_module_dir = kwargs.get("custom_component_module_dir", "")
     module_name = kwargs.get("module_name", "")
 
@@ -615,11 +757,22 @@ class TemplateFunction:
     """Wrapper for template functions to match Jinja Template interface."""
 
     def __init__(self, func: Callable[..., str]):
-        """Initialize with template function."""
+        """Initialize with template function.
+
+        Args:
+            func: Template function to wrap.
+        """
         self.func = func
 
     def render(self, **kwargs) -> str:
-        """Render template with kwargs."""
+        """Render template with kwargs.
+
+        Args:
+            **kwargs: Template context variables.
+
+        Returns:
+            Rendered template as string.
+        """
         return self.func(**kwargs)
 
 

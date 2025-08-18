@@ -81,6 +81,9 @@ class TailwindConfig(TypedDict):
 def tailwind_config_js_template(**kwargs):
     """Get the Tailwind config template.
 
+    Args:
+        **kwargs: The template variables.
+
     Returns:
         The Tailwind config template.
     """

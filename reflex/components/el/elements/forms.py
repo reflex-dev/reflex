@@ -37,7 +37,18 @@ def _handle_submit_js_template(
     on_submit_event_chain: str,
     reset_on_submit: str,
 ) -> str:
-    """Generate handle submit JS using f-string formatting."""
+    """Generate handle submit JS using f-string formatting.
+
+    Args:
+        handle_submit_unique_name: Unique name for the handle submit function.
+        form_data: Name of the form data variable.
+        field_ref_mapping: JSON string of field reference mappings.
+        on_submit_event_chain: Event chain for the submit handler.
+        reset_on_submit: Boolean string indicating if form should reset after submit.
+
+    Returns:
+        JavaScript code for the form submit handler.
+    """
     return f"""
     const handleSubmit_{handle_submit_unique_name} = useCallback((ev) => {{
         const $form = ev.target
