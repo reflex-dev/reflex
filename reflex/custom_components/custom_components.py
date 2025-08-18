@@ -164,9 +164,7 @@ def _init_template(module_name: str) -> str:
     return f"from .{module_name} import *"
 
 
-def _demo_app_template(
-    custom_component_module_dir: str, module_name: str
-) -> str:
+def _demo_app_template(custom_component_module_dir: str, module_name: str) -> str:
     """Template for custom components demo app.
 
     Args:

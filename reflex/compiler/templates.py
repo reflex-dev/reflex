@@ -521,18 +521,80 @@ def _vite_config_template(**kwargs):
     """
     base = kwargs.get("base", "/")
 
-    # Generate assetsDir from base path
-    # Remove trailing slash, add /assets, then .slice(1) to remove leading slash
-    assets_path = base.rstrip("/") + "/assets"
+    return rf"""import {{ fileURLToPath, URL }} from "url";
+import {{ reactRouter }} from "@react-router/dev/vite";
+import {{ defineConfig }} from "vite";
+import safariCacheBustPlugin from "./vite-plugin-safari-cachebust";
 
-    return f"""import {{ defineConfig }} from 'vite'
-import react from '@vitejs/plugin-react'
+// Ensure that bun always uses the react-dom/server.node functions.
+function alwaysUseReactDomServerNode() {{
+  return {{
+    name: "vite-plugin-always-use-react-dom-server-node",
+    enforce: "pre",
 
-export default defineConfig({{
-  plugins: [react()],
-  base: "{base}",
-  assetsDir: "{assets_path}".slice(1),
-}})"""
+    resolveId(source, importer) {{
+      if (
+        typeof importer === "string" &&
+        importer.endsWith("/entry.server.node.tsx") &&
+        source.includes("react-dom/server")
+      ) {{
+        return this.resolve("react-dom/server.node", importer, {{
+          skipSelf: true,
+        }});
+      }}
+      return null;
+    }},
+  }};
+}}
+
+export default defineConfig((config) => ({{
+  plugins: [
+    alwaysUseReactDomServerNode(),
+    reactRouter(),
+    safariCacheBustPlugin(),
+  ],
+  build: {{
+    assetsDir: "{base}assets".slice(1),
+    rollupOptions: {{
+      jsx: {{}},
+      output: {{
+        advancedChunks: {{
+          groups: [
+            {{
+              test: /env.json/,
+              name: "reflex-env",
+            }},
+          ],
+        }},
+      }},
+    }},
+  }},
+  experimental: {{
+    enableNativePlugin: false,
+  }},
+  server: {{
+    port: process.env.PORT,
+    watch: {{
+      ignored: [
+        "**/.web/backend/**",
+        "**/.web/reflex.install_frontend_packages.cached",
+      ],
+    }},
+  }},
+  resolve: {{
+    mainFields: ["browser", "module", "jsnext"],
+    alias: [
+      {{
+        find: "$",
+        replacement: fileURLToPath(new URL("./", import.meta.url)),
+      }},
+      {{
+        find: "@",
+        replacement: fileURLToPath(new URL("./public", import.meta.url)),
+      }},
+    ],
+  }},
+}}));"""
 
 
 def _stateful_component_template(**kwargs):
