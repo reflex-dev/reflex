@@ -316,7 +316,7 @@ def test_unsupported_literals(cls: type):
     ],
 )
 def test_create_config(app_name: str, expected_config_name: str, mocker: MockerFixture):
-    """Test templates._rxconfig_template is formatted with correct app name and config class name.
+    """Test templates.rxconfig_template is formatted with correct app name and config class name.
 
     Args:
         app_name: App name.
@@ -324,7 +324,7 @@ def test_create_config(app_name: str, expected_config_name: str, mocker: MockerF
         mocker: Mocker object.
     """
     mocker.patch("pathlib.Path.write_text")
-    tmpl_mock = mocker.patch("reflex.compiler.templates._rxconfig_template")
+    tmpl_mock = mocker.patch("reflex.compiler.templates.rxconfig_template")
     templates.create_config(app_name)
     tmpl_mock.assert_called_with(app_name=app_name)
 

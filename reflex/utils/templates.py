@@ -33,7 +33,7 @@ def create_config(app_name: str):
     from reflex.compiler import templates
 
     console.debug(f"Creating {constants.Config.FILE}")
-    constants.Config.FILE.write_text(templates._rxconfig_template(app_name=app_name))
+    constants.Config.FILE.write_text(templates.rxconfig_template(app_name=app_name))
 
 
 def initialize_app_directory(

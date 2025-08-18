@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import json
-from collections.abc import Callable, Mapping
+from collections.abc import Callable, Iterable, Mapping
 from typing import TYPE_CHECKING, Any
 
 from reflex import constants
@@ -86,8 +86,6 @@ class ReflexTemplateRenderer:
             "hook_position": constants.Hooks.HookPosition,
         }
 
-        self.sort_hooks = _sort_hooks
-
 
 class Template:
     """Template class for f-string based rendering."""
@@ -113,7 +111,6 @@ class Template:
         # Merge renderer utilities into context
         context = {
             "const": renderer.const,
-            "sort_hooks": renderer.sort_hooks,
             **renderer.filters,
             **kwargs,
         }
@@ -212,7 +209,7 @@ class _RenderUtils:
         return f'import "{module["lib"]}"'
 
 
-def _rxconfig_template(app_name: str):
+def rxconfig_template(app_name: str):
     """Template for the Reflex config file.
 
     Args:
@@ -232,9 +229,16 @@ config = rx.Config(
 )"""
 
 
-def _document_root_template(
-    *, imports: list[_ImportDict], document: dict[str, Any], **kwargs
-):
+def document_root_template(*, imports: list[_ImportDict], document: dict[str, Any]):
+    """Template for the document root.
+
+    Args:
+        imports: List of import statements.
+        document: Document root component.
+
+    Returns:
+        Rendered document root code as string.
+    """
     imports_rendered = "\n".join([_RenderUtils.get_import(mod) for mod in imports])
     return f"""{imports_rendered}
 
@@ -245,7 +249,7 @@ export default function Layout() {{
 }}"""
 
 
-def _app_root_template(
+def app_root_template(
     *,
     imports: list[_ImportDict],
     custom_codes: set[str],
@@ -335,7 +339,15 @@ export default function App() {{
 """
 
 
-def _theme_template(theme: str):
+def theme_template(theme: str):
+    """Template for the theme file.
+
+    Args:
+        theme: The theme to render.
+
+    Returns:
+        Rendered theme file content as string.
+    """
     return f"""export default {theme}"""
 
 
@@ -412,13 +424,12 @@ def _page_template(**kwargs):
     custom_codes = kwargs.get("custom_codes", [])
     hooks = kwargs.get("hooks", {})
     render_content = kwargs.get("render", "")
-    sort_hooks = kwargs.get("sort_hooks", _sort_hooks)
 
     custom_code_str = "\n".join(custom_codes)
     dynamic_imports_str = "\n".join(dynamic_imports)
 
     # Render hooks
-    sorted_hooks = sort_hooks(hooks)
+    sorted_hooks = _sort_hooks(hooks)
     hooks_code = ""
     for hook_list in sorted_hooks.values():
         for hook, _ in hook_list:
@@ -438,11 +449,19 @@ export default function Component() {{
 }}"""
 
 
-def _package_json_template(**kwargs):
+def package_json_template(
+    scripts: dict[str, str],
+    dependencies: dict[str, str],
+    dev_dependencies: dict[str, str],
+    overrides: dict[str, str],
+):
     """Template for package.json.
 
     Args:
-        **kwargs: Template context variables including dependencies, dev_dependencies, scripts.
+        scripts: The scripts to include in the package.json file.
+        dependencies: The dependencies to include in the package.json file.
+        dev_dependencies: The devDependencies to include in the package.json file.
+        overrides: The overrides to include in the package.json file.
 
     Returns:
         Rendered package.json content as string.
@@ -451,25 +470,23 @@ def _package_json_template(**kwargs):
         {
             "name": "reflex",
             "type": "module",
-            "scripts": kwargs.get("scripts", {}),
-            "dependencies": kwargs.get("dependencies", {}),
-            "devDependencies": kwargs.get("dev_dependencies", {}),
-            "overrides": kwargs.get("overrides", {}),
+            "scripts": scripts,
+            "dependencies": dependencies,
+            "devDependencies": dev_dependencies,
+            "overrides": overrides,
         }
     )
 
 
-def _vite_config_template(**kwargs):
+def vite_config_template(base: str):
     """Template for vite.config.js.
 
     Args:
-        **kwargs: Template context variables including base path.
+        base: The base path for the Vite config.
 
     Returns:
         Rendered vite.config.js content as string.
     """
-    base = kwargs.get("base", "/")
-
     return rf"""import {{ fileURLToPath, URL }} from "url";
 import {{ reactRouter }} from "@react-router/dev/vite";
 import {{ defineConfig }} from "vite";
@@ -570,42 +587,45 @@ def _stateful_components_template(**kwargs) -> str:
     return kwargs.get("code", "")
 
 
-def _custom_component_template(**kwargs) -> str:
-    """Template for custom components.
+def custom_component_template(
+    imports: list[_ImportDict],
+    components: list[dict[str, Any]],
+    dynamic_imports: Iterable[str],
+    custom_codes: Iterable[str],
+) -> str:
+    """Template for custom component.
 
     Args:
-        **kwargs: Template context variables including custom_codes, components, etc.
+        imports: List of import statements.
+        components: List of component definitions.
+        dynamic_imports: List of dynamic import statements.
+        custom_codes: List of custom code snippets.
 
     Returns:
-        Rendered custom components code as string.
+        Rendered custom component code as string.
     """
-    custom_codes = kwargs.get("custom_codes", [])
-    components = kwargs.get("components", [])
-    sort_hooks = kwargs.get("sort_hooks", _sort_hooks)
-
+    imports_str = "\n".join([_RenderUtils.get_import(imp) for imp in imports])
+    dynamic_imports_str = "\n".join(dynamic_imports)
     custom_code_str = "\n".join(custom_codes)
 
     components_code = ""
     for component in components:
-        # Render hooks for each component
-        hooks = component.get("hooks", {})
-        sorted_hooks = sort_hooks(hooks)
-        hooks_code = ""
-        for hook_list in sorted_hooks.values():
-            for hook, _ in hook_list:
-                hooks_code += f"    {hook}\n"
-
-        props_str = ", ".join(component.get("props", []))
         components_code += f"""
-export const {component["name"]} = memo({{ {props_str} }}) => {{
-{hooks_code}
+export const {component["name"]} = memo({{ {", ".join(component.get("props", []))} }}) => {{
+    {_render_hooks(component.get("hooks", {}))}
     return(
         {_RenderUtils.render(component["render"])}
-      )
+    )
+}}
+"""
 
-}}"""
+    return f"""
+{imports_str}
 
-    return f"""{custom_code_str}
+{dynamic_imports_str}
+
+{custom_code_str}
+
 {components_code}"""
 
 
@@ -625,36 +645,29 @@ def _styles_template(**kwargs) -> str:
     return imports_code
 
 
-def _render_hooks(
-    hooks: dict, sort_hooks_func: Callable = _sort_hooks, memo: list | None = None
-) -> str:
+def _render_hooks(hooks: dict, memo: list | None = None) -> str:
     """Render hooks for macros.
 
     Args:
         hooks: Dictionary of hooks to render.
-        sort_hooks_func: Function to sort hooks by position.
         memo: Optional list of memo hooks.
 
     Returns:
         Rendered hooks code as string.
     """
-    sorted_hooks = sort_hooks_func(hooks)
+    sorted_hooks = _sort_hooks(hooks)
     hooks_code = ""
 
-    # Internal hooks
     for hook, _ in sorted_hooks.get(constants.Hooks.HookPosition.INTERNAL, []):
         hooks_code += f"  {hook}\n"
 
-    # Pre-trigger hooks
     for hook, _ in sorted_hooks.get(constants.Hooks.HookPosition.PRE_TRIGGER, []):
         hooks_code += f"  {hook}\n"
 
-    # Memo hooks if provided
     if memo:
         for hook in memo:
             hooks_code += f"  {hook}\n"
 
-    # Post-trigger hooks
     for hook, _ in sorted_hooks.get(constants.Hooks.HookPosition.POST_TRIGGER, []):
         hooks_code += f"  {hook}\n"
 
@@ -694,9 +707,6 @@ COMPONENT = TemplateFunction(_component_template)
 # Code to render a single react page.
 PAGE = TemplateFunction(_page_template)
 
-# Code to render the custom components page.
-COMPONENTS = TemplateFunction(_custom_component_template)
-
 # Code to render Component instances as part of StatefulComponent
 STATEFUL_COMPONENT = TemplateFunction(_stateful_component_template)
 
@@ -709,17 +719,10 @@ SITEMAP_CONFIG = "module.exports = {config}".format
 # Code to render the root stylesheet.
 STYLE = TemplateFunction(_styles_template)
 
-# Code that generate the package json file
-PACKAGE_JSON = TemplateFunction(_package_json_template)
-
-# Code that generate the vite.config.js file
-VITE_CONFIG = TemplateFunction(_vite_config_template)
-
 # Template containing some macros used in the web pages.
 MACROS = TemplateFunction(
     lambda **kwargs: _render_hooks(
         kwargs.get("hooks", {}),
-        kwargs.get("sort_hooks", _sort_hooks),
         kwargs.get("memo", None),
     )
 )
