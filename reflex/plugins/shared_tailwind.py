@@ -2,7 +2,7 @@
 
 import dataclasses
 from copy import deepcopy
-from typing import Any, Literal, TypedDict
+from typing import Any, Literal, TypedDict, Unpack
 
 from typing_extensions import NotRequired
 
@@ -78,10 +78,13 @@ class TailwindConfig(TypedDict):
     plugins: NotRequired[list[TailwindPluginConfig]]
 
 
-def tailwind_config_js_template(**kwargs):
+def tailwind_config_js_template(
+    *, default_content: list[str], **kwargs: Unpack[TailwindConfig]
+):
     """Get the Tailwind config template.
 
     Args:
+        default_content: The default content to use if none is provided.
         **kwargs: The template variables.
 
     Returns:
@@ -99,7 +102,6 @@ def tailwind_config_js_template(**kwargs):
     important = kwargs.get("important")
     prefix = kwargs.get("prefix")
     separator = kwargs.get("separator")
-    default_content = kwargs.get("DEFAULT_CONTENT", [])
 
     # Extract destructured imports from plugin dicts only
     imports = [

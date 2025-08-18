@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 from collections.abc import Callable
 from typing import Any
 
@@ -500,14 +501,16 @@ def _package_json_template(**kwargs):
     Returns:
         Rendered package.json content as string.
     """
-    return f"""{{
-  "name": "frontend",
-  "version": "0.1.0",
-  "private": true,
-  "dependencies": {kwargs.get("dependencies", {})},
-  "devDependencies": {kwargs.get("dev_dependencies", {})},
-  "scripts": {kwargs.get("scripts", {})}
-}}"""
+    return json.dumps(
+        {
+            "name": "reflex",
+            "type": "module",
+            "scripts": kwargs.get("scripts", {}),
+            "dependencies": kwargs.get("dependencies", {}),
+            "devDependencies": kwargs.get("dev_dependencies", {}),
+            "overrides": kwargs.get("overrides", {}),
+        }
+    )
 
 
 def _vite_config_template(**kwargs):
