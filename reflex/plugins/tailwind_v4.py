@@ -47,7 +47,7 @@ def compile_config(config: TailwindConfig):
     Returns:
         The compiled Tailwind config.
     """
-    return Constants.CONFIG, tailwind_config_js_template().render(
+    return Constants.CONFIG, tailwind_config_js_template(
         **config,
         DEFAULT_CONTENT=Constants.CONTENT,
     )
