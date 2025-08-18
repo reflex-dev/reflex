@@ -8,7 +8,7 @@ import traceback
 from collections.abc import Mapping, Sequence
 from datetime import datetime
 from pathlib import Path
-from typing import Any
+from typing import Any, TypedDict
 from urllib.parse import urlparse
 
 from reflex import constants
@@ -90,7 +90,13 @@ def validate_imports(import_dict: ParsedImportDict):
                 used_tags[import_name] = lib
 
 
-def compile_imports(import_dict: ParsedImportDict) -> list[dict]:
+class _ImportDict(TypedDict):
+    lib: str
+    default: str
+    rest: list[str]
+
+
+def compile_imports(import_dict: ParsedImportDict) -> list[_ImportDict]:
     """Compile an import dict.
 
     Args:
@@ -104,7 +110,7 @@ def compile_imports(import_dict: ParsedImportDict) -> list[dict]:
     """
     collapsed_import_dict: ParsedImportDict = imports.collapse_imports(import_dict)
     validate_imports(collapsed_import_dict)
-    import_dicts = []
+    import_dicts: list[_ImportDict] = []
     for lib, fields in collapsed_import_dict.items():
         # prevent lib from being rendered on the page if all imports are non rendered kind
         if not any(f.render for f in fields):
@@ -139,7 +145,9 @@ def compile_imports(import_dict: ParsedImportDict) -> list[dict]:
     return import_dicts
 
 
-def get_import_dict(lib: str, default: str = "", rest: list[str] | None = None) -> dict:
+def get_import_dict(
+    lib: str, default: str = "", rest: list[str] | None = None
+) -> _ImportDict:
     """Get dictionary for import template.
 
     Args:
@@ -150,11 +158,11 @@ def get_import_dict(lib: str, default: str = "", rest: list[str] | None = None) 
     Returns:
         A dictionary for import template.
     """
-    return {
-        "lib": lib,
-        "default": default,
-        "rest": rest if rest else [],
-    }
+    return _ImportDict(
+        lib=lib,
+        default=default,
+        rest=rest if rest else [],
+    )
 
 
 def save_error(error: Exception) -> str:

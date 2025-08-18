@@ -3,13 +3,16 @@
 from __future__ import annotations
 
 import json
-from collections.abc import Callable
-from typing import Any
+from collections.abc import Callable, Mapping
+from typing import TYPE_CHECKING, Any
 
 from reflex import constants
 from reflex.constants import Hooks
 from reflex.utils.format import format_state_name, json_dumps
 from reflex.vars.base import VarData
+
+if TYPE_CHECKING:
+    from reflex.compiler.utils import _ImportDict
 
 
 def _sort_hooks(hooks: dict[str, VarData | None]):
@@ -117,102 +120,87 @@ class Template:
         return self.template_func(**context)
 
 
-# Legacy functions removed - all templates now use f-strings
-
-
-def _render_component_utils(**kwargs):
+class _RenderUtils:
     """Utility functions for rendering components.
-
-    Args:
-        **kwargs: Template context variables for rendering.
 
     Returns:
         Dictionary of utility functions for component rendering.
     """
 
+    @staticmethod
     def render(component: Any) -> str:
-        if not isinstance(component, dict):
+        if not isinstance(component, Mapping):
             return str(component)
 
         if "iterable" in component:
-            return render_iterable_tag(component)
+            return _RenderUtils.render_iterable_tag(component)
         if component.get("name") == "match":
-            return render_match_tag(component)
+            return _RenderUtils.render_match_tag(component)
         if "cond" in component:
-            return render_condition_tag(component)
+            return _RenderUtils.render_condition_tag(component)
         if component.get("children", []):
-            return render_tag(component)
-        return render_self_close_tag(component)
+            return _RenderUtils.render_tag(component)
+        return _RenderUtils.render_self_close_tag(component)
 
-    def render_self_close_tag(component: Any) -> str:
+    @staticmethod
+    def render_self_close_tag(component: Mapping[str, Any]) -> str:
         if component.get("name"):
             name = component["name"]
-            props = render_props(component.get("props", {}))
+            props = _RenderUtils.render_props(component.get("props", {}))
             contents = component.get("contents", "")
-            if contents:
-                return f"jsx({name},{props},{contents},)"
-            return f"jsx({name},{props},)"
+            return f"jsx({name},{props},{contents})"
         if component.get("contents"):
             return component["contents"]
         return '""'
 
-    def render_tag(component: Any) -> str:
+    @staticmethod
+    def render_tag(component: Mapping[str, Any]) -> str:
         name = component.get("name") or "Fragment"
-        props = render_props(component.get("props", {}))
+        props = _RenderUtils.render_props(component.get("props", {}))
         contents = component.get("contents", "")
         rendered_children = [
-            render(child) for child in component.get("children", []) if child
+            _RenderUtils.render(child)
+            for child in component.get("children", [])
+            if child
         ]
 
-        jsx_content = f"jsx(\n{name},\n{props}"
-        if contents:
-            jsx_content += f",\n{contents}"
+        return f"jsx(\n{name},\n{props},\n{contents + ',' if contents else ''}\n{''.join([_RenderUtils.render(child) + ',' for child in rendered_children])}\n)"
 
-        # Handle children with special logic for the last one
-        for i, child in enumerate(rendered_children):
-            jsx_content += f",\n{child}"
-            # If this is the last child and it ends with ), don't add newline before final comma
-            if i == len(rendered_children) - 1 and child.endswith(")"):
-                jsx_content += ",)"
-                return jsx_content
-
-        jsx_content += "\n,)"
-        return jsx_content
-
+    @staticmethod
     def render_condition_tag(component: Any) -> str:
-        return f"({component['cond_state']} ? ({render(component['true_value'])}) : ({render(component['false_value'])}))"
+        return f"({component['cond_state']} ? ({_RenderUtils.render(component['true_value'])}) : ({_RenderUtils.render(component['false_value'])}))"
 
+    @staticmethod
     def render_iterable_tag(component: Any) -> str:
         children_rendered = "".join(
-            [render(child) for child in component.get("children", [])]
+            [_RenderUtils.render(child) for child in component.get("children", [])]
         )
         return f"{component['iterable_state']}.map(({component['arg_name']},{component['arg_index']})=>({children_rendered}))"
 
-    def render_props(props: Any) -> str:
-        if not props:
-            return "{}"
-        if isinstance(props, list):
-            return "{" + ",".join(props) + "}"
-        return str(props)
+    @staticmethod
+    def render_props(props: list[str]) -> str:
+        return "{" + ",".join(props) + "}"
 
+    @staticmethod
     def render_match_tag(component: Any) -> str:
         cases_code = ""
         for case in component.get("match_cases", []):
             for condition in case[:-1]:
                 cases_code += f"    case JSON.stringify({condition._js_expr}):\n"
-            cases_code += f"""      return {render(case[-1])};
+            cases_code += f"""      return {_RenderUtils.render(case[-1])};
       break;
 """
 
         return f"""(() => {{
   switch (JSON.stringify({component["cond"]._js_expr})) {{
 {cases_code}    default:
-      return {render(component["default"])};
+      return {_RenderUtils.render(component["default"])};
       break;
   }}
 }})()"""
 
-    def get_import(module: Any) -> str:
+    @staticmethod
+    def get_import(module: _ImportDict) -> str:
         if module.get("default") and module.get("rest"):
             rest_imports = ", ".join(sorted(module["rest"]))
             return f'import {module["default"]}, {{ {rest_imports} }} from "{module["lib"]}"'
@@ -223,31 +211,16 @@ def _render_component_utils(**kwargs):
             return f'import {{ {rest_imports} }} from "{module["lib"]}"'
         return f'import "{module["lib"]}"'
 
-    return {
-        "render": render,
-        "render_self_close_tag": render_self_close_tag,
-        "render_tag": render_tag,
-        "render_condition_tag": render_condition_tag,
-        "render_iterable_tag": render_iterable_tag,
-        "render_props": render_props,
-        "render_match_tag": render_match_tag,
-        "get_import": get_import,
-    }
 
-
-# Template functions using f-strings
-
-
-def _rxconfig_template(**kwargs):
+def _rxconfig_template(app_name: str):
     """Template for the Reflex config file.
 
     Args:
-        **kwargs: Template context variables including app_name.
+        app_name: The name of the application.
 
     Returns:
         Rendered Reflex config file content as string.
     """
-    app_name = kwargs.get("app_name", "")
     return f"""import reflex as rx
 
 config = rx.Config(
@@ -259,136 +232,111 @@ config = rx.Config(
 )"""
 
 
-def _document_root_template(**kwargs):
-    """Template for the Document root.
+def _document_root_template(
+    *, imports: list[_ImportDict], document: dict[str, Any], **kwargs
+):
+    imports_rendered = "\n".join([_RenderUtils.get_import(mod) for mod in imports])
+    return f"""{imports_rendered}
 
-    Args:
-        **kwargs: Template context variables including imports and document.
-
-    Returns:
-        Rendered Document root component as string.
-    """
-    imports = kwargs.get("imports", "")
-    document = kwargs.get("document", "")
-    utils = _render_component_utils(**kwargs)
-
-    return f"""{imports}
-
-export default function Document() {{
+export default function Layout() {{
   return (
-    {utils["render"](document)}
+    {_RenderUtils.render(document)}
   )
 }}"""
 
 
-def _app_root_template(**kwargs):
+def _app_root_template(
+    *,
+    imports: list[_ImportDict],
+    custom_codes: set[str],
+    hooks: dict[str, VarData | None],
+    window_libraries: list[tuple[str, str]],
+    render: dict[str, Any],
+    dynamic_imports: set[str],
+):
     """Template for the App root.
 
     Args:
-        **kwargs: Template context variables including imports, hooks, render content, etc.
+        imports: The list of import statements.
+        custom_codes: The set of custom code snippets.
+        hooks: The dictionary of hooks.
+        window_libraries: The list of window libraries.
+        render: The dictionary of render functions.
+        dynamic_imports: The set of dynamic imports.
 
     Returns:
         Rendered App root component as string.
     """
-    imports = kwargs.get("imports", "")
-    custom_codes = kwargs.get("custom_codes", [])
-    hooks = kwargs.get("hooks", {})
-    window_libraries = kwargs.get("window_libraries", [])
-    render_content = kwargs.get("render", "")
-    dynamic_imports = kwargs.get("dynamic_imports", [])
-    sort_hooks = kwargs.get("sort_hooks", _sort_hooks)
-    utils = _render_component_utils(**kwargs)
-
-    custom_code_str = "\n".join(custom_codes)
+    imports_str = "\n".join([_RenderUtils.get_import(mod) for mod in imports])
     dynamic_imports_str = "\n".join(dynamic_imports)
 
-    # Render hooks
-    sorted_hooks = sort_hooks(hooks)
-    hooks_code = ""
-    for hook_list in sorted_hooks.values():
-        for hook, _ in hook_list:
-            hooks_code += f"  {hook}\n"
+    custom_code_str = "\n".join(custom_codes)
 
-    # Window libraries
-    window_lib_code = ""
-    for norm_name, lib_name in window_libraries:
-        window_lib_code += f"  {norm_name}: {lib_name},\n"
-
-    # Check if we need to generate AppWrap function (when wrappers exist)
-    has_app_wrappers = (
-        isinstance(render_content, dict)
-        and render_content.get("name") != "Fragment"
-        and render_content.get("name") != ""
+    import_window_libraries = "\n".join(
+        [
+            f'import * as {lib_alias} from "{lib_path}";'
+            for lib_alias, lib_path in window_libraries
+        ]
     )
 
-    if has_app_wrappers:
-        # Check if we need to strip StrictMode based on actual config
-        from reflex.config import _get_config
+    window_imports_str = "\n".join(
+        [f'    "{lib_path}": {lib_alias},' for lib_alias, lib_path in window_libraries]
+    )
 
-        config = _get_config()
-        should_include_strict_mode = config.react_strict_mode
-
-        # If render_content starts with StrictMode but config says not to include it,
-        # strip the StrictMode wrapper
-        actual_render_content = render_content
-        if (
-            not should_include_strict_mode
-            and isinstance(render_content, dict)
-            and render_content.get("name") == "StrictMode"
-            and render_content.get("children")
-            and len(render_content["children"]) > 0
-        ):
-            actual_render_content = render_content["children"][0]
-
-        # Generate AppWrap function with wrapper logic
-        app_wrap_function = f"""
-function AppWrap({{children}}) {{
-  const [addEvents, connectErrors] = useContext(EventLoopContext);
-  return (
-    {utils["render"](actual_render_content)}
-  )
-}}"""
-
-        # Main App function calls AppWrap
-        main_app_function = f"""
-export default function App({{ Component, pageProps }}) {{
-{hooks_code}
-
-  return (
-    jsx(AppWrap,{{}},jsx(Component,pageProps,),)
-  )
-}}"""
-    else:
-        # Simple case - no AppWrap needed
-        app_wrap_function = ""
-        main_app_function = f"""
-export default function App({{ Component, pageProps }}) {{
-{hooks_code}
-
-  return (
-    {utils["render"](render_content)}
-  )
-}}"""
-
-    return f"""{imports}
+    return f"""
+import reflexGlobalStyles from '$/styles/__reflex_global_styles.css?url';
+{imports_str}
 {dynamic_imports_str}
+import {{ EventLoopProvider, StateProvider, defaultColorMode }} from "$/utils/context";
+import {{ ThemeProvider }} from '$/utils/react-theme';
+import {{ Layout as AppLayout }} from './_document';
+import {{ Outlet }} from 'react-router';
+{import_window_libraries}
 
 {custom_code_str}
-{app_wrap_function}
-{main_app_function}"""
+
+export const links = () => [
+  {{ rel: 'stylesheet', href: reflexGlobalStyles, type: 'text/css' }}
+];
+
+function AppWrap({{children}}) {{
+  {_render_hooks(hooks)}
+
+  return (
+    {_RenderUtils.render(render)}
+  )
+}}
 
 
-def _theme_template(**kwargs):
-    """Template for the theme file.
+export function Layout({{children}}) {{
+  useEffect(() => {{
+    // Make contexts and state objects available globally for dynamic eval'd components
+    let windowImports = {{
+      {window_imports_str}
+    }};
+    window["__reflex"] = windowImports;
+  }}, []);
 
-    Args:
-        **kwargs: Template context variables including theme.
+  return jsx(AppLayout, {{}},
+    jsx(ThemeProvider, {{defaultTheme: defaultColorMode, attribute: "class"}},
+      jsx(StateProvider, {{}},
+        jsx(EventLoopProvider, {{}},
+          jsx(AppWrap, {{}}, children)
+        )
+      )
+    )
+  );
+}}
 
-    Returns:
-        Rendered theme export as string.
-    """
-    theme = kwargs.get("theme", "")
-    return f"""export const theme = {theme}"""
+export default function App() {{
+  return jsx(Outlet, {{}});
+}}
+
+"""
+
+
+def _theme_template(theme: str):
+    return f"""export default {theme}"""
 
 
 def _context_template(**kwargs):
@@ -436,10 +384,9 @@ def _component_template(**kwargs):
         Rendered component as string.
     """
     component = kwargs.get("component", {})
-    utils = _render_component_utils(**kwargs)
     # If component has a render method, call it, otherwise use it as-is
     rendered_data = component.render() if hasattr(component, "render") else component
-    result = utils["render"](rendered_data)
+    result = _RenderUtils.render(rendered_data)
 
     # Add trailing newline for HTML elements (those with quoted tag names)
     # to match original Jinja behavior
@@ -466,7 +413,6 @@ def _page_template(**kwargs):
     hooks = kwargs.get("hooks", {})
     render_content = kwargs.get("render", "")
     sort_hooks = kwargs.get("sort_hooks", _sort_hooks)
-    utils = _render_component_utils(**kwargs)
 
     custom_code_str = "\n".join(custom_codes)
     dynamic_imports_str = "\n".join(dynamic_imports)
@@ -487,7 +433,7 @@ export default function Component() {{
 {hooks_code}
 
   return (
-    {utils["render"](render_content)}
+    {_RenderUtils.render(render_content)}
   )
 }}"""
 
@@ -635,7 +581,6 @@ def _custom_component_template(**kwargs) -> str:
     """
     custom_codes = kwargs.get("custom_codes", [])
     components = kwargs.get("components", [])
-    utils = _render_component_utils(**kwargs)
     sort_hooks = kwargs.get("sort_hooks", _sort_hooks)
 
     custom_code_str = "\n".join(custom_codes)
@@ -655,7 +600,7 @@ def _custom_component_template(**kwargs) -> str:
 export const {component["name"]} = memo({{ {props_str} }}) => {{
 {hooks_code}
     return(
-        {utils["render"](component["render"])}
+        {_RenderUtils.render(component["render"])}
       )
 
 }}"""
@@ -739,18 +684,6 @@ class TemplateFunction:
         """
         return self.func(**kwargs)
 
-
-# Template for the Reflex config file.
-RXCONFIG = TemplateFunction(_rxconfig_template)
-
-# Code to render the Document root.
-DOCUMENT_ROOT = TemplateFunction(_document_root_template)
-
-# Code to render App root.
-APP_ROOT = TemplateFunction(_app_root_template)
-
-# Template for the theme file.
-THEME = TemplateFunction(_theme_template)
 
 # Template for the context file.
 CONTEXT = TemplateFunction(_context_template)

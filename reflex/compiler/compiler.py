@@ -53,7 +53,7 @@ def _compile_document_root(root: Component) -> str:
     """
     document_root_imports = root._get_all_imports()
     _apply_common_imports(document_root_imports)
-    return templates.DOCUMENT_ROOT.render(
+    return templates._document_root_template(
         imports=utils.compile_imports(document_root_imports),
         document=root.render(),
     )
@@ -93,7 +93,7 @@ def _compile_app(app_root: Component) -> str:
     app_root_imports = app_root._get_all_imports()
     _apply_common_imports(app_root_imports)
 
-    return templates.APP_ROOT.render(
+    return templates._app_root_template(
         imports=utils.compile_imports(app_root_imports),
         custom_codes=app_root._get_all_custom_code(),
         hooks=app_root._get_all_hooks(),
@@ -112,7 +112,7 @@ def _compile_theme(theme: str) -> str:
     Returns:
         The compiled theme.
     """
-    return templates.THEME.render(theme=theme)
+    return templates._theme_template(theme=theme)
 
 
 def _compile_contexts(state: type[BaseState] | None, theme: Component | None) -> str:

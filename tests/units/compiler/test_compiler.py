@@ -107,12 +107,12 @@ def test_compile_imports(import_dict: ParsedImportDict, test_dicts: list[dict]):
         test_dicts: The expected output.
     """
     imports = utils.compile_imports(import_dict)
-    for import_dict, test_dict in zip(imports, test_dicts, strict=True):
-        assert import_dict["lib"] == test_dict["lib"]
-        assert import_dict["default"] == test_dict["default"]
+    for one_import_dict, test_dict in zip(imports, test_dicts, strict=True):
+        assert one_import_dict["lib"] == test_dict["lib"]
+        assert one_import_dict["default"] == test_dict["default"]
         assert (
             sorted(
-                import_dict["rest"],
+                one_import_dict["rest"],
                 key=lambda i: i if isinstance(i, str) else (i.tag or ""),
             )
             == test_dict["rest"]
