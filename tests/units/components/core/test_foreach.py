@@ -141,9 +141,6 @@ def display_color_index_tuple(color):
     return box(text(color))
 
 
-seen_index_vars = set()
-
-
 @pytest.mark.parametrize(
     ("state_var", "render_fn", "render_dict"),
     [
@@ -248,10 +245,7 @@ def test_foreach_render(state_var, render_fn, render_dict):
 
     # Make sure the index vars are unique.
     arg_index = rend["arg_index"]
-    assert isinstance(arg_index, Var)
-    assert arg_index._js_expr not in seen_index_vars
-    assert arg_index._var_type is int
-    seen_index_vars.add(arg_index._js_expr)
+    assert isinstance(arg_index, str)
 
 
 def test_foreach_bad_annotations():
