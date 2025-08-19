@@ -377,7 +377,7 @@ export const initialEvents = () => []
 import {{ applyDelta, Event, hydrateClientStorage, useEventLoop, refs }} from "$/utils/state"
 import {{ jsx }} from "@emotion/react";
 
-export const initialState = {"{}" if initial_state else json_dumps(initial_state)}
+export const initialState = {"{}" if not initial_state else json_dumps(initial_state)}
 
 export const defaultColorMode = {default_color_mode}
 export const ColorModeContext = createContext(null);
