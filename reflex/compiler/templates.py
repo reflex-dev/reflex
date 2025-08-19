@@ -611,12 +611,12 @@ def custom_component_template(
     components_code = ""
     for component in components:
         components_code += f"""
-export const {component["name"]} = memo({{ {", ".join(component.get("props", []))} }}) => {{
+export const {component["name"]} = memo(({{ {", ".join(component.get("props", []))} }}) => {{
     {_render_hooks(component.get("hooks", {}))}
     return(
         {_RenderUtils.render(component["render"])}
     )
-}}
+}});
 """
 
     return f"""
