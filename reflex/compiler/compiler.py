@@ -333,7 +333,7 @@ def _compile_component(component: Component | StatefulComponent) -> str:
     Returns:
         The compiled component.
     """
-    return templates.COMPONENT.render(component=component)
+    return templates.component_template(component=component)
 
 
 def _compile_components(

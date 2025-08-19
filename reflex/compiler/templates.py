@@ -13,6 +13,7 @@ from reflex.vars.base import VarData
 
 if TYPE_CHECKING:
     from reflex.compiler.utils import _ImportDict
+    from reflex.components.component import Component, StatefulComponent
 
 
 def _sort_hooks(hooks: dict[str, VarData | None]):
@@ -513,28 +514,16 @@ export function StateProvider({{ children }}) {{
 }}"""
 
 
-def _component_template(**kwargs):
+def component_template(component: Component | StatefulComponent):
     """Template to render a component tag.
 
     Args:
-        **kwargs: Template context variables including component.
+        component: The component to render.
 
     Returns:
         Rendered component as string.
     """
-    component = kwargs.get("component", {})
-    # If component has a render method, call it, otherwise use it as-is
-    rendered_data = component.render() if hasattr(component, "render") else component
-    result = _RenderUtils.render(rendered_data)
-
-    # Add trailing newline for HTML elements (those with quoted tag names)
-    # to match original Jinja behavior
-    if isinstance(rendered_data, dict) and rendered_data.get("name", "").startswith(
-        '"'
-    ):
-        result += "\n"
-
-    return result
+    return _RenderUtils.render(component.render())
 
 
 def page_template(
@@ -822,9 +811,6 @@ class TemplateFunction:
         """
         return self.func(**kwargs)
 
-
-# Template to render a component tag.
-COMPONENT = TemplateFunction(_component_template)
 
 # Code to render Component instances as part of StatefulComponent
 STATEFUL_COMPONENT = TemplateFunction(_stateful_component_template)
