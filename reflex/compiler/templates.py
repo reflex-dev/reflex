@@ -242,7 +242,7 @@ def document_root_template(*, imports: list[_ImportDict], document: dict[str, An
     imports_rendered = "\n".join([_RenderUtils.get_import(mod) for mod in imports])
     return f"""{imports_rendered}
 
-export default function Layout() {{
+export function Layout() {{
   return (
     {_RenderUtils.render(document)}
   )
