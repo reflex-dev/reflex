@@ -22,7 +22,7 @@ from typing_extensions import dataclass_transform
 
 import reflex.state
 from reflex import constants
-from reflex.compiler.templates import STATEFUL_COMPONENT
+from reflex.compiler.templates import stateful_component_template
 from reflex.components.core.breakpoints import Breakpoints
 from reflex.components.dynamic import load_dynamic_serializer
 from reflex.components.field import BaseField, FieldBasedMeta
@@ -2470,7 +2470,7 @@ class StatefulComponent(BaseComponent):
         if not self.tag:
             return ""
         # Render the code for this component and hooks.
-        return STATEFUL_COMPONENT.render(
+        return stateful_component_template(
             tag_name=self.tag,
             memo_trigger_hooks=self.memo_trigger_hooks,
             component=self.component,

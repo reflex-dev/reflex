@@ -679,16 +679,29 @@ export default defineConfig((config) => ({{
 }}));"""
 
 
-def _stateful_component_template(**kwargs):
+def stateful_component_template(
+    tag_name: str, memo_trigger_hooks: list[str], component: Component, export: bool
+):
     """Template for stateful component.
 
     Args:
-        **kwargs: Template context variables including code.
+        tag_name: The tag name for the component.
+        memo_trigger_hooks: The memo trigger hooks for the component.
+        component: The component to render.
+        export: Whether to export the component.
 
     Returns:
         Rendered stateful component code as string.
     """
-    return kwargs.get("code", "")
+    all_hooks = component._get_all_hooks()
+    return f"""
+{"export " if export else ""}function {tag_name} () {{
+  {_render_hooks(all_hooks, memo_trigger_hooks)}
+  return (
+    {_RenderUtils.render(component.render())}
+  )
+}}
+"""
 
 
 def _stateful_components_template(**kwargs) -> str:
@@ -811,9 +824,6 @@ class TemplateFunction:
         """
         return self.func(**kwargs)
 
-
-# Code to render Component instances as part of StatefulComponent
-STATEFUL_COMPONENT = TemplateFunction(_stateful_component_template)
 
 # Code to render StatefulComponent to an external file to be shared
 STATEFUL_COMPONENTS = TemplateFunction(_stateful_components_template)

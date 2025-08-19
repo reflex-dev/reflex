@@ -86,7 +86,7 @@ def load_dynamic_serializer():
         )
 
         rendered_components[
-            templates.STATEFUL_COMPONENT.render(
+            templates.stateful_component_template(
                 tag_name="MySSRComponent",
                 memo_trigger_hooks=[],
                 component=component,
