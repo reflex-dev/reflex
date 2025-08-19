@@ -756,20 +756,18 @@ export const {component["name"]} = memo(({{ {", ".join(component.get("props", []
 {components_code}"""
 
 
-def _styles_template(**kwargs) -> str:
+def styles_template(stylesheets: list[str]) -> str:
     """Template for styles.css.
 
     Args:
-        **kwargs: Template context variables including stylesheets.
+        stylesheets: List of stylesheets to include.
 
     Returns:
         Rendered styles.css content as string.
     """
-    stylesheets = kwargs.get("stylesheets", [])
-    imports_code = "@layer __reflex_base;\n"
-    for sheet_name in stylesheets:
-        imports_code += f"@import url('{sheet_name}');\n"
-    return imports_code
+    return "@layer __reflex_base;\n" + "\n".join(
+        [f"@import url('{sheet_name}');" for sheet_name in stylesheets]
+    )
 
 
 def _render_hooks(hooks: dict, memo: list | None = None) -> str:
@@ -833,6 +831,3 @@ STATEFUL_COMPONENT = TemplateFunction(_stateful_component_template)
 
 # Code to render StatefulComponent to an external file to be shared
 STATEFUL_COMPONENTS = TemplateFunction(_stateful_components_template)
-
-# Code to render the root stylesheet.
-STYLE = TemplateFunction(_styles_template)

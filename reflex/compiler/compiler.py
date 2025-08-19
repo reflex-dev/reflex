@@ -321,7 +321,7 @@ def _compile_root_stylesheet(stylesheets: list[str], reset_style: bool = True) -
             'The `libsass` package is required to compile sass/scss stylesheet files. Run `pip install "libsass>=0.23.0"`.'
         )
 
-    return templates.STYLE.render(stylesheets=sheets)
+    return templates.styles_template(stylesheets=sheets)
 
 
 def _compile_component(component: Component | StatefulComponent) -> str:
