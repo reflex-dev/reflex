@@ -181,7 +181,7 @@ class Foreach(Component):
             tag,
             iterable_state=str(tag.iterable),
             arg_name=tag.arg_var_name,
-            arg_index=tag.get_index_var_arg(),
+            arg_index=tag.index_var_name,
         )
 
 
