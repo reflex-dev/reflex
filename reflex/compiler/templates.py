@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import json
-from collections.abc import Callable, Iterable, Mapping
+from collections.abc import Iterable, Mapping
 from typing import TYPE_CHECKING, Any
 
 from reflex import constants
@@ -47,75 +47,6 @@ def _sort_hooks(hooks: dict[str, VarData | None]):
             sorted_hooks[Hooks.HookPosition.POST_TRIGGER].append((hook, data))
 
     return sorted_hooks
-
-
-class ReflexTemplateRenderer:
-    """Template renderer using f-string formatting."""
-
-    def __init__(self) -> None:
-        """Initialize template renderer with helper functions."""
-        self.filters = {
-            "json_dumps": json_dumps,
-            "react_setter": lambda state: f"set{state.capitalize()}",
-            "var_name": format_state_name,
-        }
-
-        self.const = {
-            "socket": constants.CompileVars.SOCKET,
-            "result": constants.CompileVars.RESULT,
-            "router": constants.CompileVars.ROUTER,
-            "event_endpoint": constants.Endpoint.EVENT.name,
-            "events": constants.CompileVars.EVENTS,
-            "state": constants.CompileVars.STATE,
-            "final": constants.CompileVars.FINAL,
-            "processing": constants.CompileVars.PROCESSING,
-            "initial_result": {
-                constants.CompileVars.STATE: None,
-                constants.CompileVars.EVENTS: [],
-                constants.CompileVars.FINAL: True,
-                constants.CompileVars.PROCESSING: False,
-            },
-            "color_mode": constants.ColorMode.NAME,
-            "resolved_color_mode": constants.ColorMode.RESOLVED_NAME,
-            "toggle_color_mode": constants.ColorMode.TOGGLE,
-            "set_color_mode": constants.ColorMode.SET,
-            "use_color_mode": constants.ColorMode.USE,
-            "hydrate": constants.CompileVars.HYDRATE,
-            "on_load_internal": constants.CompileVars.ON_LOAD_INTERNAL,
-            "update_vars_internal": constants.CompileVars.UPDATE_VARS_INTERNAL,
-            "frontend_exception_state": constants.CompileVars.FRONTEND_EXCEPTION_STATE_FULL,
-            "hook_position": constants.Hooks.HookPosition,
-        }
-
-
-class Template:
-    """Template class for f-string based rendering."""
-
-    def __init__(self, template_func: Callable[..., str]):
-        """Initialize with a template function.
-
-        Args:
-            template_func: Function that takes kwargs and returns rendered string.
-        """
-        self.template_func = template_func
-
-    def render(self, **kwargs) -> str:
-        """Render the template with provided context.
-
-        Args:
-            **kwargs: Template context variables.
-
-        Returns:
-            Rendered template string.
-        """
-        renderer = ReflexTemplateRenderer()
-        # Merge renderer utilities into context
-        context = {
-            "const": renderer.const,
-            **renderer.filters,
-            **kwargs,
-        }
-        return self.template_func(**context)
 
 
 class _RenderUtils:
@@ -704,16 +635,18 @@ def stateful_component_template(
 """
 
 
-def _stateful_components_template(**kwargs) -> str:
+def stateful_components_template(imports: list[_ImportDict], memoized_code: str) -> str:
     """Template for stateful components.
 
     Args:
-        **kwargs: Template context variables including code.
+        imports: List of import statements.
+        memoized_code: Memoized code for stateful components.
 
     Returns:
         Rendered stateful components code as string.
     """
-    return kwargs.get("code", "")
+    imports_str = "\n".join([_RenderUtils.get_import(imp) for imp in imports])
+    return f"{imports_str}\n{memoized_code}"
 
 
 def custom_component_template(
@@ -799,31 +732,3 @@ def _render_hooks(hooks: dict, memo: list | None = None) -> str:
         hooks_code += f"  {hook}\n"
 
     return hooks_code
-
-
-# Template instances
-class TemplateFunction:
-    """Wrapper for template functions to match Jinja Template interface."""
-
-    def __init__(self, func: Callable[..., str]):
-        """Initialize with template function.
-
-        Args:
-            func: Template function to wrap.
-        """
-        self.func = func
-
-    def render(self, **kwargs) -> str:
-        """Render template with kwargs.
-
-        Args:
-            **kwargs: Template context variables.
-
-        Returns:
-            Rendered template as string.
-        """
-        return self.func(**kwargs)
-
-
-# Code to render StatefulComponent to an external file to be shared
-STATEFUL_COMPONENTS = TemplateFunction(_stateful_components_template)

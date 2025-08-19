@@ -111,7 +111,7 @@ def load_dynamic_serializer():
             else:
                 imports[lib] = names
 
-        module_code_lines = templates.STATEFUL_COMPONENTS.render(
+        module_code_lines = templates.stateful_components_template(
             imports=utils.compile_imports(imports),
             memoized_code="\n".join(rendered_components),
         ).splitlines()[1:]

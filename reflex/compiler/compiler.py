@@ -456,7 +456,7 @@ def _compile_stateful_components(
     if rendered_components:
         _apply_common_imports(all_imports)
 
-    return templates.STATEFUL_COMPONENTS.render(
+    return templates.stateful_components_template(
         imports=utils.compile_imports(all_imports),
         memoized_code="\n".join(rendered_components),
     )
