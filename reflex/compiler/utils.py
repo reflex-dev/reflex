@@ -245,23 +245,20 @@ def _compile_client_storage_field(
 
 def _compile_client_storage_recursive(
     state: type[BaseState],
-) -> tuple[dict[str, dict], dict[str, dict], dict[str, dict]]:
+) -> tuple[
+    dict[str, dict[str, Any]], dict[str, dict[str, Any]], dict[str, dict[str, Any]]
+]:
     """Compile the client-side storage for the given state recursively.
 
     Args:
         state: The app state object.
 
     Returns:
-        A tuple of the compiled client-side storage info:
-            (
-                cookies: dict[str, dict],
-                local_storage: dict[str, dict[str, str]]
-                session_storage: dict[str, dict[str, str]]
-            ).
+        A tuple of the compiled client-side storage info: (cookies, local_storage, session_storage).
     """
-    cookies = {}
-    local_storage = {}
-    session_storage = {}
+    cookies: dict[str, dict[str, Any]] = {}
+    local_storage: dict[str, dict[str, Any]] = {}
+    session_storage: dict[str, dict[str, Any]] = {}
     state_name = state.get_full_name()
     for name, field in state.__fields__.items():
         if name in state.inherited_vars:
@@ -269,6 +266,8 @@ def _compile_client_storage_recursive(
             continue
         state_key = f"{state_name}.{name}" + FIELD_MARKER
         field_type, options = _compile_client_storage_field(field)
+        if field_type is None or options is None:
+            continue
         if field_type is Cookie:
             cookies[state_key] = options
         elif field_type is LocalStorage:
@@ -289,7 +288,9 @@ def _compile_client_storage_recursive(
     return cookies, local_storage, session_storage
 
 
-def compile_client_storage(state: type[BaseState]) -> dict[str, dict]:
+def compile_client_storage(
+    state: type[BaseState],
+) -> dict[str, dict[str, dict[str, Any]]]:
     """Compile the client-side storage for the given state.
 
     Args:

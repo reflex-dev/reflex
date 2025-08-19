@@ -351,38 +351,161 @@ def theme_template(theme: str):
     return f"""export default {theme}"""
 
 
-def _context_template(**kwargs):
+def context_template(
+    *,
+    is_dev_mode: bool,
+    default_color_mode: str,
+    initial_state: dict[str, Any] | None = None,
+    state_name: str | None = None,
+    client_storage: dict[str, dict[str, dict[str, Any]]] | None = None,
+):
     """Template for the context file.
 
     Args:
-        **kwargs: Template context variables including initial_state, state_name, etc.
+        initial_state: The initial state for the context.
+        state_name: The name of the state.
+        client_storage: The client storage for the context.
+        is_dev_mode: Whether the app is in development mode.
+        default_color_mode: The default color mode for the context.
 
     Returns:
         Rendered context file content as string.
     """
-    initial_state = kwargs.get("initial_state", "null")
-    state_name = kwargs.get("state_name", "")
-    client_storage = kwargs.get("client_storage", "")
-    is_dev_mode = kwargs.get("is_dev_mode", False)
-    default_color_mode = kwargs.get("default_color_mode", "")
+    initial_state = initial_state or {}
+    state_contexts_str = "".join(
+        [f"{state_name}: createContext(null)," for state_name in initial_state]
+    )
 
-    return f"""import {{ createContext, useContext, useMemo, useReducer, useState }} from "react"
+    state_str = (
+        rf"""
+export const state_name = "{state_name}"
 
-export const StateContexts = {{
-  {state_name or ""}: createContext(null),
+export const exception_state_name = "{constants.CompileVars.FRONTEND_EXCEPTION_STATE_FULL}"
+
+// These events are triggered on initial load and each page navigation.
+export const onLoadInternalEvent = () => {{
+    const internal_events = [];
+
+    // Get tracked cookie and local storage vars to send to the backend.
+    const client_storage_vars = hydrateClientStorage(clientStorage);
+    // But only send the vars if any are actually set in the browser.
+    if (client_storage_vars && Object.keys(client_storage_vars).length !== 0) {{
+        internal_events.push(
+            Event(
+                '{state_name}.{constants.CompileVars.UPDATE_VARS_INTERNAL}',
+                {{vars: client_storage_vars}},
+            ),
+        );
+    }}
+
+    // `on_load_internal` triggers the correct on_load event(s) for the current page.
+    // If the page does not define any on_load event, this will just set `is_hydrated = true`.
+    internal_events.push(Event('{state_name}.{constants.CompileVars.ON_LOAD_INTERNAL}'));
+
+    return internal_events;
 }}
 
-export const EventContexts = {{
-  {state_name or ""}: createContext(null),
+// The following events are sent when the websocket connects or reconnects.
+export const initialEvents = () => [
+    Event('{state_name}.{constants.CompileVars.HYDRATE}'),
+    ...onLoadInternalEvent()
+]
+    """
+        if state_name
+        else """
+export const state_name = undefined
+
+export const exception_state_name = undefined
+
+export const onLoadInternalEvent = () => []
+
+export const initialEvents = () => []
+"""
+    )
+
+    state_reducer_str = "\n".join(
+        rf'const [{state_name}, dispatch_{state_name}] = useReducer(applyDelta, initialState["{state_name}"])'
+        for state_name in initial_state
+    )
+
+    create_state_contexts_str = "\n".join(
+        rf"createElement(StateContexts.{state_name},{{value: {state_name}}},"
+        for state_name in initial_state
+    )
+
+    dispatchers_str = "\n".join(
+        f'"{state_name}": dispatch_{state_name},' for state_name in initial_state
+    )
+
+    return rf"""import {{ createContext, useContext, useMemo, useReducer, useState, createElement, useEffect }} from "react"
+import {{ applyDelta, Event, hydrateClientStorage, useEventLoop, refs }} from "$/utils/state"
+import {{ jsx }} from "@emotion/react";
+
+export const initialState = {"{}" if initial_state else json_dumps(initial_state)}
+
+export const defaultColorMode = { default_color_mode }
+export const ColorModeContext = createContext(null);
+export const UploadFilesContext = createContext(null);
+export const DispatchContext = createContext(null);
+export const StateContexts = {{{state_contexts_str}}};
+export const EventLoopContext = createContext(null);
+export const clientStorage = {"{}" if client_storage is None else json_dumps(client_storage)}
+
+{state_str}
+
+export const isDevMode = {json.dumps(is_dev_mode)};
+
+export function UploadFilesProvider({{ children }}) {{
+  const [filesById, setFilesById] = useState({{}})
+  refs["__clear_selected_files"] = (id) => setFilesById(filesById => {{
+    const newFilesById = {{...filesById}}
+    delete newFilesById[id]
+    return newFilesById
+  }})
+  return createElement(
+    UploadFilesContext.Provider,
+    {{ value: [filesById, setFilesById] }},
+    children
+  );
 }}
 
-export const initialState = {initial_state}
-export const clientStorage = {client_storage}
-export const isDevMode = {str(is_dev_mode).lower()}
-export const colorModeManager = {{
-  get: () => {default_color_mode},
-  set: () => {{}},
-  type: "localStorage"
+export function ClientSide(component) {{
+  return ({{ children, ...props }}) => {{
+    const [Component, setComponent] = useState(null);
+    useEffect(() => {{
+      setComponent(component);
+    }}, []);
+    return Component ? jsx(Component, props, children) : null;
+  }};
+}}
+
+export function EventLoopProvider({{ children }}) {{
+  const dispatch = useContext(DispatchContext)
+  const [addEvents, connectErrors] = useEventLoop(
+    dispatch,
+    initialEvents,
+    clientStorage,
+  )
+  return createElement(
+    EventLoopContext.Provider,
+    {{ value: [addEvents, connectErrors] }},
+    children
+  );
+}}
+
+export function StateProvider({{ children }}) {{
+  {state_reducer_str}
+  const dispatchers = useMemo(() => {{
+    return {{
+      {dispatchers_str}
+    }}
+  }}, [])
+
+  return (
+    {create_state_contexts_str}
+    createElement(DispatchContext, {{value: dispatchers}}, children)
+    {")" * len(initial_state)}
+  )
 }}"""
 
 
@@ -697,9 +820,6 @@ class TemplateFunction:
         """
         return self.func(**kwargs)
 
-
-# Template for the context file.
-CONTEXT = TemplateFunction(_context_template)
 
 # Template to render a component tag.
 COMPONENT = TemplateFunction(_component_template)

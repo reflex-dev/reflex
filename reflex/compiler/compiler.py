@@ -130,17 +130,17 @@ def _compile_contexts(state: type[BaseState] | None, theme: Component | None) ->
         appearance = LiteralVar.create(SYSTEM_COLOR_MODE)
 
     return (
-        templates.CONTEXT.render(
+        templates.context_template(
             initial_state=utils.compile_state(state),
             state_name=state.get_name(),
             client_storage=utils.compile_client_storage(state),
             is_dev_mode=not is_prod_mode(),
-            default_color_mode=appearance,
+            default_color_mode=str(appearance),
         )
         if state
-        else templates.CONTEXT.render(
+        else templates.context_template(
             is_dev_mode=not is_prod_mode(),
-            default_color_mode=appearance,
+            default_color_mode=str(appearance),
         )
     )
 
