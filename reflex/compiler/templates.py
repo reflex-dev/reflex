@@ -373,7 +373,10 @@ def context_template(
     """
     initial_state = initial_state or {}
     state_contexts_str = "".join(
-        [f"{state_name}: createContext(null)," for state_name in initial_state]
+        [
+            f"{format_state_name(state_name)}: createContext(null),"
+            for state_name in initial_state
+        ]
     )
 
     state_str = (
@@ -424,17 +427,18 @@ export const initialEvents = () => []
     )
 
     state_reducer_str = "\n".join(
-        rf'const [{state_name}, dispatch_{state_name}] = useReducer(applyDelta, initialState["{state_name}"])'
+        rf'const [{format_state_name(state_name)}, dispatch_{format_state_name(state_name)}] = useReducer(applyDelta, initialState["{state_name}"])'
         for state_name in initial_state
     )
 
     create_state_contexts_str = "\n".join(
-        rf"createElement(StateContexts.{state_name},{{value: {state_name}}},"
+        rf"createElement(StateContexts.{format_state_name(state_name)},{{value: {format_state_name(state_name)}}},"
         for state_name in initial_state
     )
 
     dispatchers_str = "\n".join(
-        f'"{state_name}": dispatch_{state_name},' for state_name in initial_state
+        f'"{state_name}": dispatch_{format_state_name(state_name)},'
+        for state_name in initial_state
     )
 
     return rf"""import {{ createContext, useContext, useMemo, useReducer, useState, createElement, useEffect }} from "react"
@@ -443,7 +447,7 @@ import {{ jsx }} from "@emotion/react";
 
 export const initialState = {"{}" if initial_state else json_dumps(initial_state)}
 
-export const defaultColorMode = { default_color_mode }
+export const defaultColorMode = {default_color_mode}
 export const ColorModeContext = createContext(null);
 export const UploadFilesContext = createContext(null);
 export const DispatchContext = createContext(null);
@@ -830,16 +834,5 @@ STATEFUL_COMPONENT = TemplateFunction(_stateful_component_template)
 # Code to render StatefulComponent to an external file to be shared
 STATEFUL_COMPONENTS = TemplateFunction(_stateful_components_template)
 
-# Sitemap config file.
-SITEMAP_CONFIG = "module.exports = {config}".format
-
 # Code to render the root stylesheet.
 STYLE = TemplateFunction(_styles_template)
-
-# Template containing some macros used in the web pages.
-MACROS = TemplateFunction(
-    lambda **kwargs: _render_hooks(
-        kwargs.get("hooks", {}),
-        kwargs.get("memo", None),
-    )
-)
