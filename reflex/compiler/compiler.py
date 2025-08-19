@@ -159,7 +159,7 @@ def _compile_page(component: BaseComponent) -> str:
     imports = utils.compile_imports(imports)
 
     # Compile the code to render the component.
-    return templates.PAGE.render(
+    return templates.page_template(
         imports=imports,
         dynamic_imports=component._get_all_dynamic_imports(),
         custom_codes=component._get_all_custom_code(),

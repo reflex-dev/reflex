@@ -410,41 +410,41 @@ def _component_template(**kwargs):
     return result
 
 
-def _page_template(**kwargs):
+def page_template(
+    imports: Iterable[_ImportDict],
+    dynamic_imports: Iterable[str],
+    custom_codes: Iterable[str],
+    hooks: dict[str, VarData | None],
+    render: dict[str, Any],
+):
     """Template for a single react page.
 
     Args:
-        **kwargs: Template context variables including imports, hooks, render content, etc.
+        imports: List of import statements.
+        dynamic_imports: List of dynamic import statements.
+        custom_codes: List of custom code snippets.
+        hooks: Dictionary of hooks.
+        render: Render function for the component.
 
     Returns:
         Rendered React page component as string.
     """
-    imports = kwargs.get("imports", "")
-    dynamic_imports = kwargs.get("dynamic_imports", [])
-    custom_codes = kwargs.get("custom_codes", [])
-    hooks = kwargs.get("hooks", {})
-    render_content = kwargs.get("render", "")
-
+    imports_str = "\n".join([_RenderUtils.get_import(imp) for imp in imports])
     custom_code_str = "\n".join(custom_codes)
     dynamic_imports_str = "\n".join(dynamic_imports)
 
-    # Render hooks
-    sorted_hooks = _sort_hooks(hooks)
-    hooks_code = ""
-    for hook_list in sorted_hooks.values():
-        for hook, _ in hook_list:
-            hooks_code += f"  {hook}\n"
+    hooks_str = _render_hooks(hooks)
+    return f"""{imports_str}
 
-    return f"""{imports}
 {dynamic_imports_str}
 
 {custom_code_str}
 
 export default function Component() {{
-{hooks_code}
+{hooks_str}
 
   return (
-    {_RenderUtils.render(render_content)}
+    {_RenderUtils.render(render)}
   )
 }}"""
 
@@ -703,9 +703,6 @@ CONTEXT = TemplateFunction(_context_template)
 
 # Template to render a component tag.
 COMPONENT = TemplateFunction(_component_template)
-
-# Code to render a single react page.
-PAGE = TemplateFunction(_page_template)
 
 # Code to render Component instances as part of StatefulComponent
 STATEFUL_COMPONENT = TemplateFunction(_stateful_component_template)
