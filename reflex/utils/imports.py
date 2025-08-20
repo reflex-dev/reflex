@@ -8,7 +8,7 @@ from collections.abc import Mapping, Sequence
 
 
 def merge_parsed_imports(
-    *imports: ParsedImportDict,
+    *imports: ImmutableParsedImportDict,
 ) -> ParsedImportDict:
     """Merge multiple parsed import dicts together.
 

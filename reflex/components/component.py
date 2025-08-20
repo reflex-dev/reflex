@@ -1655,30 +1655,30 @@ class Component(BaseComponent, ABC):
         event_imports = Imports.EVENTS if self.event_triggers else {}
 
         # Collect imports from Vars used directly by this component.
-        var_imports = imports.merge_imports(
-            *[
-                var_data.imports
-                for var in self._get_vars()
-                if (var_data := var._get_all_var_data()) is not None
-            ]
-        )
+        var_imports = [
+            dict(var_data.imports)
+            for var in self._get_vars()
+            if (var_data := var._get_all_var_data()) is not None
+        ]
 
-        added_import_dicts: list[ImportDict] = []
+        added_import_dicts: list[ParsedImportDict] = []
         for clz in self._iter_parent_classes_with_method("add_imports"):
             list_of_import_dict = clz.add_imports(self)
 
             if not isinstance(list_of_import_dict, list):
-                added_import_dicts.append(list_of_import_dict)
+                added_import_dicts.append(imports.parse_imports(list_of_import_dict))
             else:
-                added_import_dicts.extend(list_of_import_dict)
+                added_import_dicts.extend(
+                    [imports.parse_imports(item) for item in list_of_import_dict]
+                )
 
         return imports.merge_parsed_imports(
             self._get_dependencies_imports(),
             self._get_hooks_imports(),
             _imports,
             event_imports,
-            var_imports,
-            imports.merge_imports(*added_import_dicts),
+            *var_imports,
+            *added_import_dicts,
         )
 
     def _get_all_imports(self, collapse: bool = False) -> ParsedImportDict:
