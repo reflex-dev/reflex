@@ -16,7 +16,9 @@ if TYPE_CHECKING:
     from reflex.components.component import Component, StatefulComponent
 
 
-def _sort_hooks(hooks: dict[str, VarData | None]):
+def _sort_hooks(
+    hooks: dict[str, VarData | None],
+) -> tuple[list[str], list[str], list[str]]:
     """Sort the hooks by their position.
 
     Args:
@@ -25,28 +27,26 @@ def _sort_hooks(hooks: dict[str, VarData | None]):
     Returns:
         The sorted hooks.
     """
-    sorted_hooks = {
-        Hooks.HookPosition.INTERNAL: [],
-        Hooks.HookPosition.PRE_TRIGGER: [],
-        Hooks.HookPosition.POST_TRIGGER: [],
-    }
+    internal_hooks = []
+    pre_trigger_hooks = []
+    post_trigger_hooks = []
 
     for hook, data in hooks.items():
         if data and data.position and data.position == Hooks.HookPosition.INTERNAL:
-            sorted_hooks[Hooks.HookPosition.INTERNAL].append((hook, data))
+            internal_hooks.append(hook)
         elif not data or (
             not data.position
             or data.position == constants.Hooks.HookPosition.PRE_TRIGGER
         ):
-            sorted_hooks[Hooks.HookPosition.PRE_TRIGGER].append((hook, data))
+            pre_trigger_hooks.append(hook)
         elif (
             data
             and data.position
             and data.position == constants.Hooks.HookPosition.POST_TRIGGER
         ):
-            sorted_hooks[Hooks.HookPosition.POST_TRIGGER].append((hook, data))
+            post_trigger_hooks.append(hook)
 
-    return sorted_hooks
+    return internal_hooks, pre_trigger_hooks, post_trigger_hooks
 
 
 class _RenderUtils:
@@ -705,7 +705,7 @@ def styles_template(stylesheets: list[str]) -> str:
     )
 
 
-def _render_hooks(hooks: dict, memo: list | None = None) -> str:
+def _render_hooks(hooks: dict[str, VarData | None], memo: list | None = None) -> str:
     """Render hooks for macros.
 
     Args:
@@ -715,20 +715,9 @@ def _render_hooks(hooks: dict, memo: list | None = None) -> str:
     Returns:
         Rendered hooks code as string.
     """
-    sorted_hooks = _sort_hooks(hooks)
-    hooks_code = ""
-
-    for hook, _ in sorted_hooks.get(constants.Hooks.HookPosition.INTERNAL, []):
-        hooks_code += f"  {hook}\n"
-
-    for hook, _ in sorted_hooks.get(constants.Hooks.HookPosition.PRE_TRIGGER, []):
-        hooks_code += f"  {hook}\n"
-
-    if memo:
-        for hook in memo:
-            hooks_code += f"  {hook}\n"
-
-    for hook, _ in sorted_hooks.get(constants.Hooks.HookPosition.POST_TRIGGER, []):
-        hooks_code += f"  {hook}\n"
-
-    return hooks_code
+    internal, pre_trigger, post_trigger = _sort_hooks(hooks)
+    internal_str = "\n".join(internal)
+    pre_trigger_str = "\n".join(pre_trigger)
+    post_trigger_str = "\n".join(post_trigger)
+    memo_str = "\n".join(memo) if memo is not None else ""
+    return f"{internal_str}\n{pre_trigger_str}\n{memo_str}\n{post_trigger_str}"
