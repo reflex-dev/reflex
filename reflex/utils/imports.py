@@ -7,6 +7,24 @@ from collections import defaultdict
 from collections.abc import Mapping, Sequence
 
 
+def merge_parsed_imports(
+    *imports: ParsedImportDict,
+) -> ParsedImportDict:
+    """Merge multiple parsed import dicts together.
+
+    Args:
+        *imports: The list of import dicts to merge.
+
+    Returns:
+        The merged import dicts.
+    """
+    all_imports: defaultdict[str, list[ImportVar]] = defaultdict(list)
+    for import_dict in imports:
+        for lib, fields in import_dict.items():
+            all_imports[lib].extend(fields)
+    return all_imports
+
+
 def merge_imports(
     *imports: ImportDict | ParsedImportDict | ParsedImportTuple,
 ) -> ParsedImportDict:

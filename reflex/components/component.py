@@ -1688,7 +1688,7 @@ class Component(BaseComponent, ABC):
         Returns:
             The import dict with the required imports.
         """
-        _imports = imports.merge_imports(
+        _imports = imports.merge_parsed_imports(
             self._get_imports(), *[child._get_all_imports() for child in self.children]
         )
         return imports.collapse_imports(_imports) if collapse else _imports
