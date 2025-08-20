@@ -1362,13 +1362,9 @@ def test_app_wrap_compile_theme(
     app_js_contents = (
         web_dir / constants.Dirs.PAGES / constants.PageNames.APP_ROOT
     ).read_text()
-    app_js_lines = [
-        line.strip() for line in app_js_contents.splitlines() if line.strip()
-    ]
-    lines = "".join(app_js_lines)
     expected = (
-        "function AppWrap({children}) {"
-        "const [addEvents, connectErrors] = useContext(EventLoopContext);"
+        "function AppWrap({children}) {\n"
+        "const [addEvents, connectErrors] = useContext(EventLoopContext);\n\n\n\n"
         "return ("
         + ("jsx(StrictMode,{}," if react_strict_mode else "")
         + "jsx(ErrorBoundary,{"
@@ -1382,16 +1378,11 @@ def test_app_wrap_compile_theme(
         "jsx(Fragment,{},"
         "jsx(MemoizedToastProvider,{},),"
         "jsx(Fragment,{},"
-        "children,"
-        "),"
-        "),"
-        "),"
-        "),"
-        "),"
-        ")" + (",)" if react_strict_mode else "") + ")"
-        "}"
+        "children"
+        "))))))" + (")" if react_strict_mode else "") + ")"
+        "\n}"
     )
-    assert expected in lines
+    assert expected in app_js_contents
 
 
 @pytest.mark.parametrize(
@@ -1439,13 +1430,9 @@ def test_app_wrap_priority(
     app_js_contents = (
         web_dir / constants.Dirs.PAGES / constants.PageNames.APP_ROOT
     ).read_text()
-    app_js_lines = [
-        line.strip() for line in app_js_contents.splitlines() if line.strip()
-    ]
-    lines = "".join(app_js_lines)
     expected = (
-        "function AppWrap({children}) {"
-        "const [addEvents, connectErrors] = useContext(EventLoopContext);"
+        "function AppWrap({children}) {\n"
+        "const [addEvents, connectErrors] = useContext(EventLoopContext);\n\n\n\n"
         "return ("
         + ("jsx(StrictMode,{}," if react_strict_mode else "")
         + "jsx(RadixThemesBox,{},"
@@ -1462,9 +1449,9 @@ def test_app_wrap_priority(
         "jsx(MemoizedToastProvider,{},),"
         "jsx(Fragment,{},"
         "children"
-        ",),),),),),),)" + (",)" if react_strict_mode else "")
+        ")))))))" + (")" if react_strict_mode else "")
     )
-    assert expected in lines
+    assert expected in app_js_contents
 
 
 def test_app_state_determination():

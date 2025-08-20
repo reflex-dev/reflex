@@ -269,7 +269,7 @@ def test_match_case_tuple_elements(match_case):
                 ([1, 2], rx.text("third value")),
                 rx.text("default value"),
             ),
-            'Match cases should have the same return types. Case 3 with return value `jsx( RadixThemesText, {as:"p"}, "first value", )` '
+            'Match cases should have the same return types. Case 3 with return value `jsx(RadixThemesText,{as:"p"},"first value")` '
             "of type <class 'reflex.components.radix.themes.typography.text.Text'> is not <class 'reflex.vars.base.Var'>",
         ),
     ],

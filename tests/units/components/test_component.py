@@ -1152,10 +1152,10 @@ def test_component_with_only_valid_children(fixture, request):
 @pytest.mark.parametrize(
     ("component", "rendered"),
     [
-        (rx.text("hi"), 'jsx(\nRadixThemesText,\n{as:"p"},\n\n"hi",\n)'),
+        (rx.text("hi"), 'jsx(RadixThemesText,{as:"p"},"hi")'),
         (
             rx.box(rx.heading("test", size="3")),
-            'jsx(\nRadixThemesBox,\n{},\n\njsx(\nRadixThemesHeading,\n{size:"3"},\n\n"test",\n),\n)',
+            'jsx(RadixThemesBox,{},jsx(RadixThemesHeading,{size:"3"},"test"))',
         ),
     ],
 )

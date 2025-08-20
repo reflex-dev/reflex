@@ -93,11 +93,11 @@ class _RenderUtils:
             if child
         ]
 
-        return f"jsx(\n{name},\n{props},\n{contents + ',' if contents else ''}\n{''.join([_RenderUtils.render(child) + ',' for child in rendered_children])}\n)"
+        return f"jsx({name},{props},{contents + ',' if contents else ''}{','.join([_RenderUtils.render(child) for child in rendered_children])})"
 
     @staticmethod
     def render_condition_tag(component: Any) -> str:
-        return f"({component['cond_state']} ? ({_RenderUtils.render(component['true_value'])}) : ({_RenderUtils.render(component['false_value'])}))"
+        return f"({component['cond_state']}?({_RenderUtils.render(component['true_value'])}):({_RenderUtils.render(component['false_value'])}))"
 
     @staticmethod
     def render_iterable_tag(component: Any) -> str:
@@ -108,7 +108,7 @@ class _RenderUtils:
 
     @staticmethod
     def render_props(props: list[str]) -> str:
-        return "{" + ",".join(props) + "}"
+        return f"{{{','.join(props)}}}"
 
     @staticmethod
     def render_match_tag(component: Any) -> str:
@@ -131,13 +131,15 @@ class _RenderUtils:
     @staticmethod
     def get_import(module: _ImportDict) -> str:
         if module.get("default") and module.get("rest"):
-            rest_imports = ", ".join(sorted(module["rest"]))
-            return f'import {module["default"]}, {{ {rest_imports} }} from "{module["lib"]}"'
+            rest_imports = ",".join(sorted(module["rest"]))
+            return (
+                f'import {module["default"]}, {{{rest_imports}}} from "{module["lib"]}"'
+            )
         if module.get("default"):
             return f'import {module["default"]} from "{module["lib"]}"'
         if module.get("rest"):
-            rest_imports = ", ".join(sorted(module["rest"]))
-            return f'import {{ {rest_imports} }} from "{module["lib"]}"'
+            rest_imports = ",".join(sorted(module["rest"]))
+            return f'import {{{rest_imports}}} from "{module["lib"]}"'
         return f'import "{module["lib"]}"'
 
 
@@ -236,11 +238,8 @@ export const links = () => [
 ];
 
 function AppWrap({{children}}) {{
-  {_render_hooks(hooks)}
-
-  return (
-    {_RenderUtils.render(render)}
-  )
+{_render_hooks(hooks)}
+return ({_RenderUtils.render(render)})
 }}
 
 
