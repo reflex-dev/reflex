@@ -1,6 +1,7 @@
 """Tailwind CSS configuration types for Reflex plugins."""
 
 import dataclasses
+from collections.abc import Mapping
 from copy import deepcopy
 from typing import Any, Literal, TypedDict
 
@@ -81,7 +82,7 @@ class TailwindConfig(TypedDict):
 def tailwind_config_js_template(
     *, default_content: list[str], **kwargs: Unpack[TailwindConfig]
 ):
-    """Get the Tailwind config template.
+    """Generate a Tailwind CSS configuration file in JavaScript format.
 
     Args:
         default_content: The default content to use if none is provided.
@@ -107,92 +108,68 @@ def tailwind_config_js_template(
     imports = [
         plugin["import"]
         for plugin in plugins
-        if isinstance(plugin, dict) and "import" in plugin
+        if isinstance(plugin, Mapping) and "import" in plugin
     ]
 
     # Generate import statements for destructured imports
-    import_lines = [
-        f"import {{ {imp['name']} }} from {json.dumps(imp['from'])};" for imp in imports
-    ]
+    import_lines = "\n".join(
+        [
+            f"import {{ {imp['name']} }} from {json.dumps(imp['from'])};"
+            for imp in imports
+        ]
+    )
 
     # Generate plugin imports
     plugin_imports = []
     for i, plugin in enumerate(plugins, 1):
-        if isinstance(plugin, dict) and "call" not in plugin:
+        if isinstance(plugin, Mapping) and "call" not in plugin:
             plugin_imports.append(
                 f"import plugin{i} from {json.dumps(plugin['name'])};"
             )
-        elif not isinstance(plugin, dict):
+        elif not isinstance(plugin, Mapping):
             plugin_imports.append(f"import plugin{i} from {json.dumps(plugin)};")
 
-    # Generate preset imports
-    preset_imports = [
-        f"import preset{i} from {json.dumps(preset)};"
-        for i, preset in enumerate(presets, 1)
-    ]
+    plugin_imports_lines = "\n".join(plugin_imports)
 
-    # Generate preset array
-    preset_array = ""
-    if presets:
-        preset_list = [f"        preset{i}," for i in range(1, len(presets) + 1)]
-        preset_array = f"""    presets: [
-{chr(10).join(preset_list)}
-    ],"""
+    presets_imports_lines = "\n".join(
+        [
+            f"import preset{i} from {json.dumps(preset)};"
+            for i, preset in enumerate(presets, 1)
+        ]
+    )
 
     # Generate plugin array
     plugin_list = []
     for i, plugin in enumerate(plugins, 1):
-        if isinstance(plugin, dict) and "call" in plugin:
+        if isinstance(plugin, Mapping) and "call" in plugin:
             args_part = ""
             if "args" in plugin:
                 args_part = json.dumps(plugin["args"])
-            plugin_list.append(f"        {plugin['call']}({args_part}),")
+            plugin_list.append(f"{plugin['call']}({args_part})")
         else:
-            plugin_list.append(f"        plugin{i},")
+            plugin_list.append(f"plugin{i}")
 
-    # Build the config
-    all_imports = import_lines + plugin_imports + preset_imports
-    imports_section = "\n".join(all_imports)
-    if imports_section:
-        imports_section += "\n"
+    plugin_use_str = ",".join(plugin_list)
 
-    content_value = json.dumps(content if content is not None else default_content)
-    theme_part = f"theme: {json.dumps(theme)}," if theme is not None else "theme: {},"
-    dark_mode_part = (
-        f"    darkMode: {json.dumps(dark_mode)}," if dark_mode is not None else ""
-    )
-    core_plugins_part = (
-        f"    corePlugins: {json.dumps(core_plugins)},"
-        if core_plugins is not None
-        else ""
-    )
-    important_part = (
-        f"    important: {json.dumps(important)}," if important is not None else ""
-    )
-    prefix_part = f"    prefix: {json.dumps(prefix)}," if prefix is not None else ""
-    separator_part = (
-        f"    separator: {json.dumps(separator)}," if separator is not None else ""
-    )
+    return rf"""
+{import_lines}
 
-    plugins_section = "\n".join(plugin_list)
+{plugin_imports_lines}
 
-    config_parts = [
-        f"    content: {content_value},",
-        f"    {theme_part}",
-        dark_mode_part,
-        core_plugins_part,
-        important_part,
-        prefix_part,
-        separator_part,
-        preset_array,
-        f"    plugins: [\n{plugins_section}\n    ]",
-    ]
+{presets_imports_lines}
 
-    config_body = "\n".join(part for part in config_parts if part.strip())
-
-    return f"""{imports_section}export default {{
-{config_body}
-}};"""
+export default {{
+    content: {json.dumps(content if content else default_content)},
+    theme: {json.dumps(theme if theme else {})},
+    {f"darkMode: {json.dumps(dark_mode)}," if dark_mode is not None else ""}
+    {f"corePlugins: {json.dumps(core_plugins)}," if core_plugins is not None else ""}
+    {f"importants: {json.dumps(important)}," if important is not None else ""}
+    {f"prefix: {json.dumps(prefix)}," if prefix is not None else ""}
+    {f"separator: {json.dumps(separator)}," if separator is not None else ""}
+    {f"presets: [{', '.join(f'preset{i}' for i in range(1, len(presets) + 1))}]," if presets else ""}
+    plugins: [{plugin_use_str}]
+}};
+"""
 
 
 @dataclasses.dataclass
