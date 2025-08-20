@@ -106,18 +106,17 @@ def test_format_tag(tag: Tag, expected: dict):
 def test_format_cond_tag():
     """Test that the cond tag dict is correct."""
     tag = CondTag(
+        cond_state="logged_in",
         true_value=dict(tagless.Tagless(contents="True content")),
         false_value=dict(tagless.Tagless(contents="False content")),
-        cond=Var("logged_in", _var_type=bool),
     )
     tag_dict = dict(tag)
-    cond, true_value, false_value = (
-        tag_dict["cond"],
+    cond_state, true_value, false_value = (
+        tag_dict["cond_state"],
         tag_dict["true_value"],
         tag_dict["false_value"],
     )
-    assert cond._js_expr == "logged_in"
-    assert cond._var_type is bool
+    assert cond_state == "logged_in"
 
     assert true_value["contents"] == "True content"
 

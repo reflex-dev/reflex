@@ -2817,27 +2817,30 @@ def render_dict_to_var(tag: dict | Component | str) -> Var:
             func,
         )
 
-    if tag["name"] == "match":
-        element = tag["cond"]
+    if "match_cases" in tag:
+        element = Var(tag["cond"])
 
         conditionals = render_dict_to_var(tag["default"])
 
         for case in tag["match_cases"][::-1]:
-            condition = case[0].to_string() == element.to_string()
-            for pattern in case[1:-1]:
-                condition = condition | (pattern.to_string() == element.to_string())
+            conditions, return_value = case
+            condition = Var.create(False)
+            for pattern in conditions:
+                condition = condition | (
+                    Var(pattern).to_string() == element.to_string()
+                )
 
             conditionals = ternary_operation(
                 condition,
-                render_dict_to_var(case[-1]),
+                render_dict_to_var(return_value),
                 conditionals,
             )
 
         return conditionals
 
-    if "cond" in tag:
+    if "cond_state" in tag:
         return ternary_operation(
-            tag["cond"],
+            Var(tag["cond_state"]),
             render_dict_to_var(tag["true_value"]),
             render_dict_to_var(tag["false_value"])
             if tag["false_value"] is not None

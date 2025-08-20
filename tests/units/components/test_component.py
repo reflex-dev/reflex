@@ -1567,12 +1567,12 @@ def test_validate_valid_children():
             ),
             (
                 "fifth",
+                "sixth",
                 rx.match(
                     "nested_condition",
                     ("nested_first", valid_component2()),
                     rx.fragment(valid_component2()),
                 ),
-                valid_component2(),
             ),
         )
     )
@@ -1629,12 +1629,12 @@ def test_validate_valid_parents():
             ),
             (
                 "fifth",
+                "sixth",
                 rx.match(
                     "nested_condition",
                     ("nested_first", valid_component3()),
                     rx.fragment(valid_component3()),
                 ),
-                valid_component3(),
             ),
         )
     )

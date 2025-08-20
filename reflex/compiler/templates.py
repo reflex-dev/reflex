@@ -56,9 +56,9 @@ class _RenderUtils:
             return component
         if "iterable" in component:
             return _RenderUtils.render_iterable_tag(component)
-        if component.get("name") == "match":
+        if "match_cases" in component:
             return _RenderUtils.render_match_tag(component)
-        if "cond" in component:
+        if "cond_state" in component:
             return _RenderUtils.render_condition_tag(component)
         if (contents := component.get("contents")) is not None:
             return contents
@@ -90,15 +90,15 @@ class _RenderUtils:
     @staticmethod
     def render_match_tag(component: Any) -> str:
         cases_code = ""
-        for case in component.get("match_cases", []):
-            for condition in case[:-1]:
-                cases_code += f"    case JSON.stringify({condition._js_expr}):\n"
-            cases_code += f"""      return {_RenderUtils.render(case[-1])};
+        for conditions, return_value in component["match_cases"]:
+            for condition in conditions:
+                cases_code += f"    case JSON.stringify({condition}):\n"
+            cases_code += f"""      return {_RenderUtils.render(return_value)};
       break;
 """
 
         return f"""(() => {{
-  switch (JSON.stringify({component["cond"]._js_expr})) {{
+  switch (JSON.stringify({component["cond"]})) {{
 {cases_code}    default:
       return {_RenderUtils.render(component["default"])};
       break;
@@ -107,16 +107,17 @@ class _RenderUtils:
 
     @staticmethod
     def get_import(module: _ImportDict) -> str:
-        if module.get("default") and module.get("rest"):
-            rest_imports = ",".join(sorted(module["rest"]))
-            return (
-                f'import {module["default"]}, {{{rest_imports}}} from "{module["lib"]}"'
-            )
-        if module.get("default"):
-            return f'import {module["default"]} from "{module["lib"]}"'
-        if module.get("rest"):
-            rest_imports = ",".join(sorted(module["rest"]))
-            return f'import {{{rest_imports}}} from "{module["lib"]}"'
+        default_import = module["default"]
+        rest_imports = module["rest"]
+
+        if default_import and rest_imports:
+            rest_imports_str = ",".join(sorted(rest_imports))
+            return f'import {default_import}, {{{rest_imports_str}}} from "{module["lib"]}"'
+        if default_import:
+            return f'import {default_import} from "{module["lib"]}"'
+        if rest_imports:
+            rest_imports_str = ",".join(sorted(rest_imports))
+            return f'import {{{rest_imports_str}}} from "{module["lib"]}"'
         return f'import "{module["lib"]}"'
 
 
