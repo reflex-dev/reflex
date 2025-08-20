@@ -1497,7 +1497,7 @@ class Component(BaseComponent, ABC):
             yield clz.__name__
 
     @classmethod
-    def _iter_parent_classes_with_method(cls, method: str) -> Iterator[type[Component]]:
+    def _iter_parent_classes_with_method(cls, method: str) -> Sequence[type[Component]]:
         """Iterate through parent classes that define a given method.
 
         Used for handling the `add_*` API functions that internally simulate a super() call chain.
@@ -1505,12 +1505,13 @@ class Component(BaseComponent, ABC):
         Args:
             method: The method to look for.
 
-        Yields:
-            The parent classes that define the method (differently than the base).
+        Returns:
+            A sequence of parent classes that define the method (differently than the base).
         """
         seen_methods = (
             {getattr(Component, method)} if hasattr(Component, method) else set()
         )
+        clzs: list[type[Component]] = []
         for clz in cls.mro():
             if clz is Component:
                 break
@@ -1520,7 +1521,8 @@ class Component(BaseComponent, ABC):
             if not callable(method_func) or method_func in seen_methods:
                 continue
             seen_methods.add(method_func)
-            yield clz
+            clzs.append(clz)
+        return clzs
 
     def _get_custom_code(self) -> str | None:
         """Get custom code for the component.
@@ -1673,7 +1675,7 @@ class Component(BaseComponent, ABC):
         return imports.merge_parsed_imports(
             self._get_dependencies_imports(),
             self._get_hooks_imports(),
-            {**_imports},
+            _imports,
             event_imports,
             var_imports,
             imports.merge_imports(*added_import_dicts),
