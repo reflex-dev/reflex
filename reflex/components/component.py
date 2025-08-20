@@ -51,7 +51,7 @@ from reflex.event import (
 )
 from reflex.style import Style, format_as_emotion
 from reflex.utils import console, format, imports, types
-from reflex.utils.imports import ImportDict, ImportVar, ParsedImportDict, parse_imports
+from reflex.utils.imports import ImportDict, ImportVar, ParsedImportDict
 from reflex.vars import VarData
 from reflex.vars.base import (
     CachedVarOperation,
@@ -1676,7 +1676,7 @@ class Component(BaseComponent, ABC):
             {**_imports},
             event_imports,
             var_imports,
-            parse_imports(*added_import_dicts),
+            imports.merge_imports(*added_import_dicts),
         )
 
     def _get_all_imports(self, collapse: bool = False) -> ParsedImportDict:
