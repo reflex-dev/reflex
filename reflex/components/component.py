@@ -1643,40 +1643,40 @@ class Component(BaseComponent, ABC):
         Returns:
             The imports needed by the component.
         """
-        _imports = {}
-
-        # Import this component's tag from the main library.
-        if self.library is not None and self.tag is not None:
-            _imports[self.library] = self.import_var
+        _imports = (
+            {self.library: [self.import_var]}
+            if self.library is not None and self.tag is not None
+            else {}
+        )
 
         # Get static imports required for event processing.
         event_imports = Imports.EVENTS if self.event_triggers else {}
 
         # Collect imports from Vars used directly by this component.
-        var_imports = [
-            var_data.imports
-            for var in self._get_vars()
-            if (var_data := var._get_all_var_data()) is not None
-        ]
+        var_imports = imports.merge_imports(
+            *[
+                var_data.imports
+                for var in self._get_vars()
+                if (var_data := var._get_all_var_data()) is not None
+            ]
+        )
 
-        added_import_dicts: list[ParsedImportDict] = []
+        added_import_dicts: list[ImportDict] = []
         for clz in self._iter_parent_classes_with_method("add_imports"):
             list_of_import_dict = clz.add_imports(self)
 
             if not isinstance(list_of_import_dict, list):
-                list_of_import_dict = [list_of_import_dict]
+                added_import_dicts.append(list_of_import_dict)
+            else:
+                added_import_dicts.extend(list_of_import_dict)
 
-            added_import_dicts.extend(
-                [parse_imports(import_dict) for import_dict in list_of_import_dict]
-            )
-
-        return imports.merge_imports(
+        return imports.merge_parsed_imports(
             self._get_dependencies_imports(),
             self._get_hooks_imports(),
             {**_imports},
             event_imports,
-            *var_imports,
-            *added_import_dicts,
+            var_imports,
+            parse_imports(*added_import_dicts),
         )
 
     def _get_all_imports(self, collapse: bool = False) -> ParsedImportDict:
