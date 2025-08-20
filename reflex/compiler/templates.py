@@ -75,7 +75,7 @@ class _RenderUtils:
     def render_self_close_tag(component: Mapping[str, Any]) -> str:
         if component.get("name"):
             name = component["name"]
-            props = _RenderUtils.render_props(component.get("props", {}))
+            props = f"{{{','.join(component['props'])}}}"
             contents = component.get("contents", "")
             return f"jsx({name},{props},{contents})"
         if component.get("contents"):
@@ -85,7 +85,7 @@ class _RenderUtils:
     @staticmethod
     def render_tag(component: Mapping[str, Any]) -> str:
         name = component.get("name") or "Fragment"
-        props = _RenderUtils.render_props(component.get("props", {}))
+        props = f"{{{','.join(component['props'])}}}"
         contents = component.get("contents", "")
         rendered_children = [
             _RenderUtils.render(child)
@@ -105,10 +105,6 @@ class _RenderUtils:
             [_RenderUtils.render(child) for child in component.get("children", [])]
         )
         return f"{component['iterable_state']}.map(({component['arg_name']},{component['arg_index']})=>({children_rendered}))"
-
-    @staticmethod
-    def render_props(props: list[str]) -> str:
-        return f"{{{','.join(props)}}}"
 
     @staticmethod
     def render_match_tag(component: Any) -> str:

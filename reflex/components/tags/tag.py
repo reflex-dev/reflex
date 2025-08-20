@@ -50,7 +50,7 @@ class Tag:
     # The children components.
     children: Sequence[Any] = dataclasses.field(default_factory=list)
 
-    def format_props(self) -> list:
+    def format_props(self) -> list[str]:
         """Format the tag's props.
 
         Returns:
