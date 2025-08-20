@@ -1270,7 +1270,6 @@ class Component(BaseComponent, ABC):
         rendered_dict = dict(
             tag.set(
                 children=[child.render() for child in self.children],
-                contents=str(tag.contents),
             )
         )
         self._replace_prop_names(rendered_dict)
@@ -2796,6 +2795,9 @@ def render_dict_to_var(tag: dict | Component | str) -> Var:
             return render_dict_to_var(tag.render())
         return Var.create(tag)
 
+    if "contents" in tag:
+        return Var(tag["contents"])
+
     if "iterable" in tag:
         function_return = LiteralArrayVar.create(
             [render_dict_to_var(child.render()) for child in tag["children"]]
@@ -2842,8 +2844,6 @@ def render_dict_to_var(tag: dict | Component | str) -> Var:
 
     props = Var("({" + ",".join(tag["props"]) + "})")
 
-    contents = tag["contents"] if tag["contents"] else None
-
     raw_tag_name = tag.get("name")
     tag_name = Var(raw_tag_name or "Fragment")
 
@@ -2852,7 +2852,6 @@ def render_dict_to_var(tag: dict | Component | str) -> Var:
     ).call(
         tag_name,
         props,
-        *([Var(contents)] if contents is not None else []),
         *[render_dict_to_var(child) for child in tag["children"]],
     )
 

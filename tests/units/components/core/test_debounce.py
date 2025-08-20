@@ -65,7 +65,6 @@ def test_render_child_props():
     )
     assert len(tag.props["onChange"].events) == 1
     assert tag.props["onChange"].events[0].handler == S.on_change
-    assert tag.contents == ""
 
 
 def test_render_with_class_name():
@@ -161,7 +160,6 @@ def test_render_child_props_recursive():
     assert tag.props["debounceTimeout"]._js_expr == "42"
     assert len(tag.props["onChange"].events) == 1
     assert tag.props["onChange"].events[0].handler == S.on_change
-    assert tag.contents == ""
 
 
 def test_full_control_implicit_debounce():
@@ -173,7 +171,6 @@ def test_full_control_implicit_debounce():
     assert tag.props["debounceTimeout"]._js_expr == str(DEFAULT_DEBOUNCE_TIMEOUT)
     assert len(tag.props["onChange"].events) == 1
     assert tag.props["onChange"].events[0].handler == S.on_change
-    assert tag.contents == ""
 
 
 def test_full_control_implicit_debounce_text_area():
@@ -185,4 +182,3 @@ def test_full_control_implicit_debounce_text_area():
     assert tag.props["debounceTimeout"]._js_expr == str(DEFAULT_DEBOUNCE_TIMEOUT)
     assert len(tag.props["onChange"].events) == 1
     assert tag.props["onChange"].events[0].handler == S.on_change
-    assert tag.contents == ""

@@ -67,9 +67,9 @@ class _RenderUtils:
             return _RenderUtils.render_match_tag(component)
         if "cond" in component:
             return _RenderUtils.render_condition_tag(component)
-        if component.get("children", []):
-            return _RenderUtils.render_tag(component)
-        return _RenderUtils.render_self_close_tag(component)
+        if (contents := component.get("contents")) is not None:
+            return contents
+        return _RenderUtils.render_tag(component)
 
     @staticmethod
     def render_self_close_tag(component: Mapping[str, Any]) -> str:
@@ -86,14 +86,13 @@ class _RenderUtils:
     def render_tag(component: Mapping[str, Any]) -> str:
         name = component.get("name") or "Fragment"
         props = f"{{{','.join(component['props'])}}}"
-        contents = component.get("contents", "")
         rendered_children = [
             _RenderUtils.render(child)
             for child in component.get("children", [])
             if child
         ]
 
-        return f"jsx({name},{props},{contents + ',' if contents else ''}{','.join([_RenderUtils.render(child) for child in rendered_children])})"
+        return f"jsx({name},{props},{','.join(rendered_children)})"
 
     @staticmethod
     def render_condition_tag(component: Any) -> str:
