@@ -57,10 +57,9 @@ class _RenderUtils:
     """
 
     @staticmethod
-    def render(component: Any) -> str:
-        if not isinstance(component, Mapping):
-            return str(component)
-
+    def render(component: Mapping[str, Any] | str) -> str:
+        if isinstance(component, str):
+            return component
         if "iterable" in component:
             return _RenderUtils.render_iterable_tag(component)
         if component.get("name") == "match":
@@ -70,17 +69,6 @@ class _RenderUtils:
         if (contents := component.get("contents")) is not None:
             return contents
         return _RenderUtils.render_tag(component)
-
-    @staticmethod
-    def render_self_close_tag(component: Mapping[str, Any]) -> str:
-        if component.get("name"):
-            name = component["name"]
-            props = f"{{{','.join(component['props'])}}}"
-            contents = component.get("contents", "")
-            return f"jsx({name},{props},{contents})"
-        if component.get("contents"):
-            return component["contents"]
-        return '""'
 
     @staticmethod
     def render_tag(component: Mapping[str, Any]) -> str:
