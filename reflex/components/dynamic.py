@@ -114,7 +114,7 @@ def load_dynamic_serializer():
         module_code_lines = templates.stateful_components_template(
             imports=utils.compile_imports(imports),
             memoized_code="\n".join(rendered_components),
-        ).splitlines()[1:]
+        ).splitlines()
 
         # Rewrite imports from `/` to destructure from window
         for ix, line in enumerate(module_code_lines[:]):

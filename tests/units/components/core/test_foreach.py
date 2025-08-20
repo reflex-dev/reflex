@@ -15,7 +15,6 @@ from reflex.components.radix.themes.layout.box import box
 from reflex.components.radix.themes.typography.text import text
 from reflex.constants.state import FIELD_MARKER
 from reflex.state import BaseState, ComponentState
-from reflex.vars.base import Var
 from reflex.vars.number import NumberVar
 from reflex.vars.sequence import ArrayVar
 
