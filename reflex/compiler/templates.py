@@ -50,12 +50,6 @@ def _sort_hooks(
 
 
 class _RenderUtils:
-    """Utility functions for rendering components.
-
-    Returns:
-        Dictionary of utility functions for component rendering.
-    """
-
     @staticmethod
     def render(component: Mapping[str, Any] | str) -> str:
         if isinstance(component, str):
