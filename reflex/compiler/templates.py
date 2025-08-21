@@ -53,7 +53,7 @@ class _RenderUtils:
     @staticmethod
     def render(component: Mapping[str, Any] | str) -> str:
         if isinstance(component, str):
-            return component
+            return component or "null"
         if "iterable" in component:
             return _RenderUtils.render_iterable_tag(component)
         if "match_cases" in component:
@@ -61,7 +61,7 @@ class _RenderUtils:
         if "cond_state" in component:
             return _RenderUtils.render_condition_tag(component)
         if (contents := component.get("contents")) is not None:
-            return contents
+            return contents or "null"
         return _RenderUtils.render_tag(component)
 
     @staticmethod
