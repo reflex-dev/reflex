@@ -12,6 +12,7 @@ import inspect
 import io
 import json
 import sys
+import time
 import traceback
 import urllib.parse
 from collections.abc import (
@@ -1582,7 +1583,10 @@ class App(MiddlewareMixin, LifespanMixin):
                     sid=state.router.session.session_id,
                 )
 
-        task = asyncio.create_task(_coro())
+        task = asyncio.create_task(
+            _coro(),
+            name=f"reflex_background_task|{event.name}|{time.time()}|{event.token}",
+        )
         self._background_tasks.add(task)
         # Clean up task from background_tasks set when complete.
         task.add_done_callback(self._background_tasks.discard)
@@ -1727,7 +1731,8 @@ async def process(
                         "reload",
                         data=event,
                         to=sid,
-                    )
+                    ),
+                    name=f"reflex_emit_reload|{event.name}|{time.time()}|{event.token}",
                 )
                 return
             # re-assign only when the value is different
@@ -2028,7 +2033,8 @@ class EventNamespace(AsyncNamespace):
         if disconnect_token:
             # Use async cleanup through token manager
             task = asyncio.create_task(
-                self._token_manager.disconnect_token(disconnect_token, sid)
+                self._token_manager.disconnect_token(disconnect_token, sid),
+                name=f"reflex_disconnect_token|{disconnect_token}|{time.time()}",
             )
             # Don't await to avoid blocking disconnect, but handle potential errors
             task.add_done_callback(
@@ -2047,12 +2053,14 @@ class EventNamespace(AsyncNamespace):
             # If the sid is None, we are not connected to a client. Prevent sending
             # updates to all clients.
             return
-        if sid not in self.sid_to_token:
+        token = self.sid_to_token.get(sid)
+        if token is None:
             console.warn(f"Attempting to send delta to disconnected websocket {sid}")
             return
         # Creating a task prevents the update from being blocked behind other coroutines.
         await asyncio.create_task(
-            self.emit(str(constants.SocketEvent.EVENT), update, to=sid)
+            self.emit(str(constants.SocketEvent.EVENT), update, to=sid),
+            name=f"reflex_emit_event|{token}|{sid}|{time.time()}",
         )
 
     async def on_event(self, sid: str, data: Any):

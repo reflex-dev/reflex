@@ -667,7 +667,8 @@ class StateManagerRedis(StateManager):
                     _substate_key(client_token, substate),
                     substate,
                     lock_id,
-                )
+                ),
+                name=f"reflex_set_state|{client_token}|{substate.get_full_name()}",
             )
             for substate in state.substates.values()
         ]

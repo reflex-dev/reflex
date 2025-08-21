@@ -11,6 +11,7 @@ import functools
 import inspect
 import pickle
 import sys
+import time
 import typing
 import warnings
 from collections.abc import AsyncIterator, Callable, Sequence
@@ -284,7 +285,10 @@ async def _resolve_delta(delta: Delta) -> Delta:
     for state_name, state_delta in delta.items():
         for var_name, value in state_delta.items():
             if asyncio.iscoroutine(value):
-                tasks[state_name, var_name] = asyncio.create_task(value)
+                tasks[state_name, var_name] = asyncio.create_task(
+                    value,
+                    name=f"reflex_resolve_delta|{state_name}|{var_name}|{time.time()}",
+                )
     for (state_name, var_name), task in tasks.items():
         delta[state_name][var_name] = await task
     return delta
