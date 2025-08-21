@@ -75,7 +75,7 @@ fetch-retries=0
 
 
 def _determine_react_router_version() -> str:
-    default_version = "7.8.0"
+    default_version = "7.8.1"
     if (version := os.getenv("REACT_ROUTER_VERSION")) and version != default_version:
         from reflex.utils import console
 
@@ -131,7 +131,7 @@ class PackageJson(SimpleNamespace):
             "react": cls._react_version,
             "react-helmet": "6.1.0",
             "react-dom": cls._react_version,
-            "isbot": "5.1.29",
+            "isbot": "5.1.30",
             "socket.io-client": "4.8.1",
             "universal-cookie": "7.2.2",
         }
@@ -143,11 +143,11 @@ class PackageJson(SimpleNamespace):
         "postcss-import": "16.1.1",
         "@react-router/dev": _react_router_version,
         "@react-router/fs-routes": _react_router_version,
-        "vite": "npm:rolldown-vite@7.1.2",
+        "vite": "npm:rolldown-vite@7.1.3",
     }
     OVERRIDES = {
         # This should always match the `react` version in DEPENDENCIES for recharts compatibility.
         "react-is": _react_version,
         "cookie": "1.0.2",
-        "vite": "npm:rolldown-vite@7.1.2",
+        "vite": "npm:rolldown-vite@7.1.3",
     }
