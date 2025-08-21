@@ -6,8 +6,6 @@ from collections.abc import Iterator
 from hashlib import md5
 from typing import Any, ClassVar, Literal
 
-from jinja2 import Environment
-
 from reflex.components.el.element import Element
 from reflex.components.tags.tag import Tag
 from reflex.constants import Dirs, EventTriggers
@@ -31,21 +29,40 @@ from reflex.vars.number import ternary_operation
 
 from .base import BaseHTML
 
-HANDLE_SUBMIT_JS_JINJA2 = Environment().from_string(
+
+def _handle_submit_js_template(
+    handle_submit_unique_name: str,
+    form_data: str,
+    field_ref_mapping: str,
+    on_submit_event_chain: str,
+    reset_on_submit: str,
+) -> str:
+    """Generate handle submit JS using f-string formatting.
+
+    Args:
+        handle_submit_unique_name: Unique name for the handle submit function.
+        form_data: Name of the form data variable.
+        field_ref_mapping: JSON string of field reference mappings.
+        on_submit_event_chain: Event chain for the submit handler.
+        reset_on_submit: Boolean string indicating if form should reset after submit.
+
+    Returns:
+        JavaScript code for the form submit handler.
     """
-    const handleSubmit_{{ handle_submit_unique_name }} = useCallback((ev) => {
+    return f"""
+    const handleSubmit_{handle_submit_unique_name} = useCallback((ev) => {{
         const $form = ev.target
         ev.preventDefault()
-        const {{ form_data }} = {...Object.fromEntries(new FormData($form).entries()), ...{{ field_ref_mapping }}};
+        const {form_data} = {{...Object.fromEntries(new FormData($form).entries()), ...{field_ref_mapping}}};
 
-        ({{ on_submit_event_chain }}(ev));
+        ({on_submit_event_chain}(ev));
 
-        if ({{ reset_on_submit }}) {
+        if ({reset_on_submit}) {{
             $form.reset()
-        }
-    })
+        }}
+    }})
     """
-)
+
 
 ButtonType = Literal["submit", "reset", "button"]
 
@@ -198,14 +215,14 @@ class Form(BaseHTML):
         if EventTriggers.ON_SUBMIT not in self.event_triggers:
             return []
         return [
-            HANDLE_SUBMIT_JS_JINJA2.render(
-                handle_submit_unique_name=self.handle_submit_unique_name,
-                form_data=FORM_DATA,
+            _handle_submit_js_template(
+                handle_submit_unique_name=str(self.handle_submit_unique_name),
+                form_data=str(FORM_DATA),
                 field_ref_mapping=str(LiteralVar.create(self._get_form_refs())),
                 on_submit_event_chain=str(
                     LiteralVar.create(self.event_triggers[EventTriggers.ON_SUBMIT])
                 ),
-                reset_on_submit=self.reset_on_submit,
+                reset_on_submit=str(self.reset_on_submit).lower(),
             )
         ]
 

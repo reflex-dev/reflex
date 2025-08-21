@@ -313,13 +313,16 @@ def test_format_route(route: str, expected: str):
         (
             "state__state.value",
             [
-                [LiteralVar.create(1), LiteralVar.create("red")],
-                [LiteralVar.create(2), LiteralVar.create(3), LiteralVar.create("blue")],
-                [TestState.mapping, TestState.num1],
-                [
-                    LiteralVar.create(f"{TestState.map_key}-key"),
+                ([LiteralVar.create(1)], LiteralVar.create("red")),
+                (
+                    [LiteralVar.create(2), LiteralVar.create(3)],
+                    LiteralVar.create("blue"),
+                ),
+                ([TestState.mapping], TestState.num1),
+                (
+                    [LiteralVar.create(f"{TestState.map_key}-key")],
                     LiteralVar.create("return-key"),
-                ],
+                ),
             ],
             LiteralVar.create("yellow"),
             '(() => { switch (JSON.stringify(state__state.value)) {case JSON.stringify(1):  return ("red");  break;case JSON.stringify(2): case JSON.stringify(3):  '
@@ -331,7 +334,7 @@ def test_format_route(route: str, expected: str):
 )
 def test_format_match(
     condition: str,
-    match_cases: list[list[Var]],
+    match_cases: list[tuple[list[Var], Var]],
     default: Var,
     expected: str,
 ):

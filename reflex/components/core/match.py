@@ -1,11 +1,12 @@
 """rx.match."""
 
 import textwrap
-from typing import Any
+from typing import Any, cast
 
 from reflex.components.base import Fragment
 from reflex.components.component import BaseComponent, Component, MemoizationLeaf, field
-from reflex.components.tags import MatchTag, Tag
+from reflex.components.tags import Tag
+from reflex.components.tags.match_tag import MatchTag
 from reflex.style import Style
 from reflex.utils import format
 from reflex.utils.exceptions import MatchTypeError
@@ -21,10 +22,14 @@ class Match(MemoizationLeaf):
     cond: Var[Any]
 
     # The list of match cases to be matched.
-    match_cases: list[Any] = field(default_factory=list, is_javascript_property=False)
+    match_cases: list[tuple[list[Var], BaseComponent]] = field(
+        default_factory=list, is_javascript_property=False
+    )
 
     # The catchall case to match.
-    default: Any = field(default=None, is_javascript_property=False)
+    default: BaseComponent = field(
+        default_factory=Fragment.create, is_javascript_property=False
+    )
 
     @classmethod
     def create(cls, cond: Any, *cases) -> Component | Var:
@@ -44,9 +49,9 @@ class Match(MemoizationLeaf):
         cases, default = cls._process_cases(list(cases))
         match_cases = cls._process_match_cases(cases)
 
-        cls._validate_return_types(match_cases)
+        match_cases = cls._validate_return_types(match_cases)
 
-        if default is None and isinstance(match_cases[0][-1], Var):
+        if default is None and isinstance(match_cases[0][1], Var):
             msg = "For cases with return types as Vars, a default case must be provided"
             raise ValueError(msg)
 
@@ -75,7 +80,9 @@ class Match(MemoizationLeaf):
         return match_cond_var
 
     @classmethod
-    def _process_cases(cls, cases: list) -> tuple[list, Var | BaseComponent | None]:
+    def _process_cases(
+        cls, cases: list
+    ) -> tuple[list[tuple], Var | BaseComponent | None]:
         """Process the list of match cases and the catchall default case.
 
         Args:
@@ -87,26 +94,29 @@ class Match(MemoizationLeaf):
         Raises:
             ValueError: If there are multiple default cases.
         """
-        default = None
+        if not cases:
+            msg = "rx.match should have at least one case."
+            raise ValueError(msg)
 
-        if len([case for case in cases if not isinstance(case, tuple)]) > 1:
-            msg = "rx.match can only have one default case."
+        if not isinstance(cases[-1], tuple):
+            *cases, default_return = cases
+            default_return = (
+                cls._create_case_var_with_var_data(default_return)
+                if not isinstance(default_return, BaseComponent)
+                else default_return
+            )
+        else:
+            default_return = None
+
+        if any(case for case in cases if not isinstance(case, tuple)):
+            msg = "rx.match should have tuples of cases and one default case as the last argument."
             raise ValueError(msg)
 
         if not cases:
             msg = "rx.match should have at least one case."
             raise ValueError(msg)
 
-        # Get the default case which should be the last non-tuple arg
-        if not isinstance(cases[-1], tuple):
-            default = cases.pop()
-            default = (
-                cls._create_case_var_with_var_data(default)
-                if not isinstance(default, BaseComponent)
-                else default
-            )
-
-        return cases, default
+        return cases, default_return
 
     @classmethod
     def _create_case_var_with_var_data(cls, case_element: Any) -> Var:
@@ -124,7 +134,9 @@ class Match(MemoizationLeaf):
         return LiteralVar.create(case_element, _var_data=_var_data)
 
     @classmethod
-    def _process_match_cases(cls, cases: list) -> list[list[Var]]:
+    def _process_match_cases(
+        cls, cases: list[tuple]
+    ) -> list[tuple[list[Var], BaseComponent | Var]]:
         """Process the individual match cases.
 
         Args:
@@ -136,39 +148,47 @@ class Match(MemoizationLeaf):
         Raises:
             ValueError: If the default case is not the last case or the tuple elements are less than 2.
         """
-        match_cases = []
-        for case in cases:
-            if not isinstance(case, tuple):
-                msg = "rx.match should have tuples of cases and a default case as the last argument."
-                raise ValueError(msg)
+        match_cases: list[tuple[list[Var], BaseComponent | Var]] = []
+        for case_index, case in enumerate(cases):
             # There should be at least two elements in a case tuple(a condition and return value)
             if len(case) < 2:
                 msg = "A case tuple should have at least a match case element and a return value."
                 raise ValueError(msg)
 
-            case_list = []
-            for element in case:
-                # convert all non component element to vars.
-                el = (
-                    cls._create_case_var_with_var_data(element)
-                    if not isinstance(element, BaseComponent)
-                    else element
-                )
-                if not isinstance(el, (Var, BaseComponent)):
-                    msg = "Case element must be a var or component"
-                    raise ValueError(msg)
-                case_list.append(el)
+            *conditions, return_value = case
 
-            match_cases.append(case_list)
+            conditions_vars: list[Var] = []
+            for condition_index, condition in enumerate(conditions):
+                if isinstance(condition, BaseComponent):
+                    msg = f"Match condition {condition_index} of case {case_index} cannot be a component."
+                    raise ValueError(msg)
+                conditions_vars.append(cls._create_case_var_with_var_data(condition))
+
+            return_value = (
+                cls._create_case_var_with_var_data(return_value)
+                if not isinstance(return_value, BaseComponent)
+                else return_value
+            )
+
+            if not isinstance(return_value, (Var, BaseComponent)):
+                msg = "Return value must be a var or component"
+                raise ValueError(msg)
+
+            match_cases.append((conditions_vars, return_value))
 
         return match_cases
 
     @classmethod
-    def _validate_return_types(cls, match_cases: list[list[Var]]) -> None:
+    def _validate_return_types(
+        cls, match_cases: list[tuple[list[Var], BaseComponent | Var]]
+    ) -> list[tuple[list[Var], Var]] | list[tuple[list[Var], BaseComponent]]:
         """Validate that match cases have the same return types.
 
         Args:
             match_cases: The match cases.
+
+        Returns:
+            The validated match cases.
 
         Raises:
             MatchTypeError: If the return types of cases are different.
@@ -181,20 +201,25 @@ class Match(MemoizationLeaf):
         elif isinstance(first_case_return, Var):
             return_type = Var
 
+        cases = []
         for index, case in enumerate(match_cases):
-            if not isinstance(case[-1], return_type):
+            conditions, return_value = case
+            if not isinstance(return_value, return_type):
                 msg = (
                     f"Match cases should have the same return types. Case {index} with return "
-                    f"value `{case[-1]._js_expr if isinstance(case[-1], Var) else textwrap.shorten(str(case[-1]), width=250)}`"
-                    f" of type {type(case[-1])!r} is not {return_type}"
+                    f"value `{return_value._js_expr if isinstance(return_value, Var) else textwrap.shorten(str(return_value), width=250)}`"
+                    f" of type {type(return_value)!r} is not {return_type}"
                 )
                 raise MatchTypeError(msg)
+            cases.append((conditions, return_value))
+        return cases
 
     @classmethod
     def _create_match_cond_var_or_component(
         cls,
         match_cond_var: Var,
-        match_cases: list[list[Var]],
+        match_cases: list[tuple[list[Var], BaseComponent]]
+        | list[tuple[list[Var], Var]],
         default: Var | BaseComponent | None,
     ) -> Component | Var:
         """Create and return the match condition var or component.
@@ -206,29 +231,22 @@ class Match(MemoizationLeaf):
 
         Returns:
             The match component wrapped in a fragment or the match var.
-
-        Raises:
-            ValueError: If the return types are not vars when creating a match var for Var types.
         """
-        if default is None and isinstance(match_cases[0][-1], BaseComponent):
-            default = Fragment.create()
+        if isinstance(match_cases[0][1], BaseComponent):
+            if default is None:
+                default = Fragment.create()
 
-        if isinstance(match_cases[0][-1], BaseComponent):
             return Fragment.create(
                 cls._create(
                     cond=match_cond_var,
                     match_cases=match_cases,
                     default=default,
-                    children=[case[-1] for case in match_cases] + [default],  # pyright: ignore [reportArgumentType]
+                    children=[case[1] for case in match_cases] + [default],  # pyright: ignore [reportArgumentType]
                 )
             )
 
-        # Validate the match cases (as well as the default case) to have Var return types.
-        if any(
-            case for case in match_cases if not isinstance(case[-1], Var)
-        ) or not isinstance(default, Var):
-            msg = "Return types of match cases should be Vars."
-            raise ValueError(msg)
+        match_cases = cast("list[tuple[list[Var], Var]]", match_cases)
+        default = cast("Var", default)
 
         return Var(
             _js_expr=format.format_match(
@@ -239,14 +257,20 @@ class Match(MemoizationLeaf):
             _var_type=default._var_type,
             _var_data=VarData.merge(
                 match_cond_var._get_all_var_data(),
-                *[el._get_all_var_data() for case in match_cases for el in case],
+                *[el._get_all_var_data() for case in match_cases for el in case[0]],
+                *[case[1]._get_all_var_data() for case in match_cases],
                 default._get_all_var_data(),
             ),
         )
 
     def _render(self) -> Tag:
         return MatchTag(
-            cond=self.cond, match_cases=self.match_cases, default=self.default
+            cond=str(self.cond),
+            match_cases=[
+                ([str(cond) for cond in conditions], return_value.render())
+                for conditions, return_value in self.match_cases
+            ],
+            default=self.default.render(),
         )
 
     def render(self) -> dict:
@@ -255,8 +279,7 @@ class Match(MemoizationLeaf):
         Returns:
             The dictionary for template of component.
         """
-        tag = self._render()
-        return dict(tag.set(name="match"))
+        return dict(self._render())
 
     def add_imports(self) -> ImportDict:
         """Add imports for the Match component.

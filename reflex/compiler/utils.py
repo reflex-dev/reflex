@@ -8,7 +8,7 @@ import traceback
 from collections.abc import Mapping, Sequence
 from datetime import datetime
 from pathlib import Path
-from typing import Any
+from typing import Any, TypedDict
 from urllib.parse import urlparse
 
 from reflex import constants
@@ -90,7 +90,13 @@ def validate_imports(import_dict: ParsedImportDict):
                 used_tags[import_name] = lib
 
 
-def compile_imports(import_dict: ParsedImportDict) -> list[dict]:
+class _ImportDict(TypedDict):
+    lib: str
+    default: str
+    rest: list[str]
+
+
+def compile_imports(import_dict: ParsedImportDict) -> list[_ImportDict]:
     """Compile an import dict.
 
     Args:
@@ -104,7 +110,7 @@ def compile_imports(import_dict: ParsedImportDict) -> list[dict]:
     """
     collapsed_import_dict: ParsedImportDict = imports.collapse_imports(import_dict)
     validate_imports(collapsed_import_dict)
-    import_dicts = []
+    import_dicts: list[_ImportDict] = []
     for lib, fields in collapsed_import_dict.items():
         # prevent lib from being rendered on the page if all imports are non rendered kind
         if not any(f.render for f in fields):
@@ -139,7 +145,9 @@ def compile_imports(import_dict: ParsedImportDict) -> list[dict]:
     return import_dicts
 
 
-def get_import_dict(lib: str, default: str = "", rest: list[str] | None = None) -> dict:
+def get_import_dict(
+    lib: str, default: str = "", rest: list[str] | None = None
+) -> _ImportDict:
     """Get dictionary for import template.
 
     Args:
@@ -150,11 +158,11 @@ def get_import_dict(lib: str, default: str = "", rest: list[str] | None = None) 
     Returns:
         A dictionary for import template.
     """
-    return {
-        "lib": lib,
-        "default": default,
-        "rest": rest if rest else [],
-    }
+    return _ImportDict(
+        lib=lib,
+        default=default,
+        rest=rest if rest else [],
+    )
 
 
 def save_error(error: Exception) -> str:
@@ -237,23 +245,20 @@ def _compile_client_storage_field(
 
 def _compile_client_storage_recursive(
     state: type[BaseState],
-) -> tuple[dict[str, dict], dict[str, dict], dict[str, dict]]:
+) -> tuple[
+    dict[str, dict[str, Any]], dict[str, dict[str, Any]], dict[str, dict[str, Any]]
+]:
     """Compile the client-side storage for the given state recursively.
 
     Args:
         state: The app state object.
 
     Returns:
-        A tuple of the compiled client-side storage info:
-            (
-                cookies: dict[str, dict],
-                local_storage: dict[str, dict[str, str]]
-                session_storage: dict[str, dict[str, str]]
-            ).
+        A tuple of the compiled client-side storage info: (cookies, local_storage, session_storage).
     """
-    cookies = {}
-    local_storage = {}
-    session_storage = {}
+    cookies: dict[str, dict[str, Any]] = {}
+    local_storage: dict[str, dict[str, Any]] = {}
+    session_storage: dict[str, dict[str, Any]] = {}
     state_name = state.get_full_name()
     for name, field in state.__fields__.items():
         if name in state.inherited_vars:
@@ -261,6 +266,8 @@ def _compile_client_storage_recursive(
             continue
         state_key = f"{state_name}.{name}" + FIELD_MARKER
         field_type, options = _compile_client_storage_field(field)
+        if field_type is None or options is None:
+            continue
         if field_type is Cookie:
             cookies[state_key] = options
         elif field_type is LocalStorage:
@@ -281,7 +288,9 @@ def _compile_client_storage_recursive(
     return cookies, local_storage, session_storage
 
 
-def compile_client_storage(state: type[BaseState]) -> dict[str, dict]:
+def compile_client_storage(
+    state: type[BaseState],
+) -> dict[str, dict[str, dict[str, Any]]]:
     """Compile the client-side storage for the given state.
 
     Args:

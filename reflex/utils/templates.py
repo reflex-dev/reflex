@@ -1,7 +1,6 @@
 """This module provides utilities for managing Reflex app templates."""
 
 import dataclasses
-import re
 import shutil
 import tempfile
 import zipfile
@@ -33,12 +32,8 @@ def create_config(app_name: str):
     # Import here to avoid circular imports.
     from reflex.compiler import templates
 
-    config_name = f"{re.sub(r'[^a-zA-Z]', '', app_name).capitalize()}Config"
-
     console.debug(f"Creating {constants.Config.FILE}")
-    constants.Config.FILE.write_text(
-        templates.RXCONFIG.render(app_name=app_name, config_name=config_name)
-    )
+    constants.Config.FILE.write_text(templates.rxconfig_template(app_name=app_name))
 
 
 def initialize_app_directory(

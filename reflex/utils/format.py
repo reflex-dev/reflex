@@ -330,7 +330,7 @@ def format_route(route: str) -> str:
 
 def format_match(
     cond: str | Var,
-    match_cases: list[list[Var]],
+    match_cases: list[tuple[list[Var], Var]],
     default: Var,
 ) -> str:
     """Format a match expression whose return type is a Var.
@@ -347,8 +347,7 @@ def format_match(
     switch_code = f"(() => {{ switch (JSON.stringify({cond})) {{"
 
     for case in match_cases:
-        conditions = case[:-1]
-        return_value = case[-1]
+        conditions, return_value = case
 
         case_conditions = " ".join(
             [f"case JSON.stringify({condition!s}):" for condition in conditions]

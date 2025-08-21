@@ -1,5 +1,4 @@
 import re
-from collections.abc import Mapping, Sequence
 
 import pytest
 
@@ -31,7 +30,7 @@ def test_match_components():
         (MatchState.num + 1, rx.text("sixth value")),
         rx.text("default value"),
     )
-    match_comp = Match.create(MatchState.value, *match_case_tuples)
+    match_comp = rx.match(MatchState.value, *match_case_tuples)
 
     assert isinstance(match_comp, Component)
     match_dict = match_comp.render()
@@ -39,48 +38,36 @@ def test_match_components():
 
     [match_child] = match_dict["children"]
 
-    assert match_child["name"] == "match"
     assert str(match_child["cond"]) == f"{MatchState.get_name()}.value" + FIELD_MARKER
 
     match_cases = match_child["match_cases"]
     assert len(match_cases) == 6
-
-    assert match_cases[0][0]._js_expr == "1"
-    assert match_cases[0][0]._var_type is int
+    assert match_cases[0][0] == ["1"]
     first_return_value_render = match_cases[0][1]
     assert first_return_value_render["name"] == "RadixThemesText"
     assert first_return_value_render["children"][0]["contents"] == '"first value"'
 
-    assert match_cases[1][0]._js_expr == "2"
-    assert match_cases[1][0]._var_type is int
-    assert match_cases[1][1]._js_expr == "3"
-    assert match_cases[1][1]._var_type is int
-    second_return_value_render = match_cases[1][2]
+    assert match_cases[1][0] == ["2", "3"]
+    second_return_value_render = match_cases[1][1]
     assert second_return_value_render["name"] == "RadixThemesText"
     assert second_return_value_render["children"][0]["contents"] == '"second value"'
 
-    assert match_cases[2][0]._js_expr == "[1, 2]"
-    assert match_cases[2][0]._var_type == Sequence[int]
+    assert match_cases[2][0] == ["[1, 2]"]
     third_return_value_render = match_cases[2][1]
     assert third_return_value_render["name"] == "RadixThemesText"
     assert third_return_value_render["children"][0]["contents"] == '"third value"'
 
-    assert match_cases[3][0]._js_expr == '"random"'
-    assert match_cases[3][0]._var_type is str
+    assert match_cases[3][0] == ['"random"']
     fourth_return_value_render = match_cases[3][1]
     assert fourth_return_value_render["name"] == "RadixThemesText"
     assert fourth_return_value_render["children"][0]["contents"] == '"fourth value"'
 
-    assert match_cases[4][0]._js_expr == '({ ["foo"] : "bar" })'
-    assert match_cases[4][0]._var_type == Mapping[str, str]
+    assert match_cases[4][0] == ['({ ["foo"] : "bar" })']
     fifth_return_value_render = match_cases[4][1]
     assert fifth_return_value_render["name"] == "RadixThemesText"
     assert fifth_return_value_render["children"][0]["contents"] == '"fifth value"'
 
-    assert (
-        match_cases[5][0]._js_expr == f"({MatchState.get_name()}.num{FIELD_MARKER} + 1)"
-    )
-    assert match_cases[5][0]._var_type is int
+    assert match_cases[5][0] == [f"({MatchState.get_name()}.num{FIELD_MARKER} + 1)"]
     fifth_return_value_render = match_cases[5][1]
     assert fifth_return_value_render["name"] == "RadixThemesText"
     assert fifth_return_value_render["children"][0]["contents"] == '"sixth value"'
@@ -157,7 +144,7 @@ def test_match_on_component_without_default():
         (2, 3, rx.text("second value")),
     )
 
-    match_comp = Match.create(MatchState.value, *match_case_tuples)
+    match_comp = rx.match(MatchState.value, *match_case_tuples)
     assert isinstance(match_comp, Component)
     default = match_comp.render()["children"][0]["default"]
 
@@ -208,7 +195,7 @@ def test_match_default_not_last_arg(match_case):
     """
     with pytest.raises(
         ValueError,
-        match="rx.match should have tuples of cases and a default case as the last argument.",
+        match="rx.match should have tuples of cases and one default case as the last argument.",
     ):
         Match.create(MatchState.value, *match_case)
 
@@ -269,7 +256,7 @@ def test_match_case_tuple_elements(match_case):
                 ([1, 2], rx.text("third value")),
                 rx.text("default value"),
             ),
-            'Match cases should have the same return types. Case 3 with return value `jsx( RadixThemesText, {as:"p"}, "first value" ,)` '
+            'Match cases should have the same return types. Case 3 with return value `jsx(RadixThemesText,{as:"p"},"first value")` '
             "of type <class 'reflex.components.radix.themes.typography.text.Text'> is not <class 'reflex.vars.base.Var'>",
         ),
     ],
@@ -313,7 +300,10 @@ def test_match_multiple_default_cases(match_case):
     Args:
         match_case: the cases to match.
     """
-    with pytest.raises(ValueError, match="rx.match can only have one default case."):
+    with pytest.raises(
+        ValueError,
+        match="rx.match should have tuples of cases and one default case as the last argument.",
+    ):
         Match.create(MatchState.value, *match_case)
 
 

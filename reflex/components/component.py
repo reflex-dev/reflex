@@ -22,7 +22,7 @@ from typing_extensions import dataclass_transform
 
 import reflex.state
 from reflex import constants
-from reflex.compiler.templates import STATEFUL_COMPONENT
+from reflex.compiler.templates import stateful_component_template
 from reflex.components.core.breakpoints import Breakpoints
 from reflex.components.dynamic import load_dynamic_serializer
 from reflex.components.field import BaseField, FieldBasedMeta
@@ -51,7 +51,7 @@ from reflex.event import (
 )
 from reflex.style import Style, format_as_emotion
 from reflex.utils import console, format, imports, types
-from reflex.utils.imports import ImportDict, ImportVar, ParsedImportDict, parse_imports
+from reflex.utils.imports import ImportDict, ImportVar, ParsedImportDict
 from reflex.vars import VarData
 from reflex.vars.base import (
     CachedVarOperation,
@@ -1270,7 +1270,6 @@ class Component(BaseComponent, ABC):
         rendered_dict = dict(
             tag.set(
                 children=[child.render() for child in self.children],
-                contents=str(tag.contents),
             )
         )
         self._replace_prop_names(rendered_dict)
@@ -1498,7 +1497,7 @@ class Component(BaseComponent, ABC):
             yield clz.__name__
 
     @classmethod
-    def _iter_parent_classes_with_method(cls, method: str) -> Iterator[type[Component]]:
+    def _iter_parent_classes_with_method(cls, method: str) -> Sequence[type[Component]]:
         """Iterate through parent classes that define a given method.
 
         Used for handling the `add_*` API functions that internally simulate a super() call chain.
@@ -1506,12 +1505,13 @@ class Component(BaseComponent, ABC):
         Args:
             method: The method to look for.
 
-        Yields:
-            The parent classes that define the method (differently than the base).
+        Returns:
+            A sequence of parent classes that define the method (differently than the base).
         """
         seen_methods = (
             {getattr(Component, method)} if hasattr(Component, method) else set()
         )
+        clzs: list[type[Component]] = []
         for clz in cls.mro():
             if clz is Component:
                 break
@@ -1521,7 +1521,8 @@ class Component(BaseComponent, ABC):
             if not callable(method_func) or method_func in seen_methods:
                 continue
             seen_methods.add(method_func)
-            yield clz
+            clzs.append(clz)
+        return clzs
 
     def _get_custom_code(self) -> str | None:
         """Get custom code for the component.
@@ -1644,18 +1645,18 @@ class Component(BaseComponent, ABC):
         Returns:
             The imports needed by the component.
         """
-        _imports = {}
-
-        # Import this component's tag from the main library.
-        if self.library is not None and self.tag is not None:
-            _imports[self.library] = self.import_var
+        _imports = (
+            {self.library: [self.import_var]}
+            if self.library is not None and self.tag is not None
+            else {}
+        )
 
         # Get static imports required for event processing.
         event_imports = Imports.EVENTS if self.event_triggers else {}
 
         # Collect imports from Vars used directly by this component.
         var_imports = [
-            var_data.imports
+            dict(var_data.imports)
             for var in self._get_vars()
             if (var_data := var._get_all_var_data()) is not None
         ]
@@ -1665,16 +1666,16 @@ class Component(BaseComponent, ABC):
             list_of_import_dict = clz.add_imports(self)
 
             if not isinstance(list_of_import_dict, list):
-                list_of_import_dict = [list_of_import_dict]
+                added_import_dicts.append(imports.parse_imports(list_of_import_dict))
+            else:
+                added_import_dicts.extend(
+                    [imports.parse_imports(item) for item in list_of_import_dict]
+                )
 
-            added_import_dicts.extend(
-                [parse_imports(import_dict) for import_dict in list_of_import_dict]
-            )
-
-        return imports.merge_imports(
+        return imports.merge_parsed_imports(
             self._get_dependencies_imports(),
             self._get_hooks_imports(),
-            {**_imports},
+            _imports,
             event_imports,
             *var_imports,
             *added_import_dicts,
@@ -1689,7 +1690,7 @@ class Component(BaseComponent, ABC):
         Returns:
             The import dict with the required imports.
         """
-        _imports = imports.merge_imports(
+        _imports = imports.merge_parsed_imports(
             self._get_imports(), *[child._get_all_imports() for child in self.children]
         )
         return imports.collapse_imports(_imports) if collapse else _imports
@@ -2470,7 +2471,7 @@ class StatefulComponent(BaseComponent):
         if not self.tag:
             return ""
         # Render the code for this component and hooks.
-        return STATEFUL_COMPONENT.render(
+        return stateful_component_template(
             tag_name=self.tag,
             memo_trigger_hooks=self.memo_trigger_hooks,
             component=self.component,
@@ -2796,6 +2797,9 @@ def render_dict_to_var(tag: dict | Component | str) -> Var:
             return render_dict_to_var(tag.render())
         return Var.create(tag)
 
+    if "contents" in tag:
+        return Var(tag["contents"])
+
     if "iterable" in tag:
         function_return = LiteralArrayVar.create(
             [render_dict_to_var(child.render()) for child in tag["children"]]
@@ -2813,27 +2817,30 @@ def render_dict_to_var(tag: dict | Component | str) -> Var:
             func,
         )
 
-    if tag["name"] == "match":
-        element = tag["cond"]
+    if "match_cases" in tag:
+        element = Var(tag["cond"])
 
         conditionals = render_dict_to_var(tag["default"])
 
         for case in tag["match_cases"][::-1]:
-            condition = case[0].to_string() == element.to_string()
-            for pattern in case[1:-1]:
-                condition = condition | (pattern.to_string() == element.to_string())
+            conditions, return_value = case
+            condition = Var.create(False)
+            for pattern in conditions:
+                condition = condition | (
+                    Var(pattern).to_string() == element.to_string()
+                )
 
             conditionals = ternary_operation(
                 condition,
-                render_dict_to_var(case[-1]),
+                render_dict_to_var(return_value),
                 conditionals,
             )
 
         return conditionals
 
-    if "cond" in tag:
+    if "cond_state" in tag:
         return ternary_operation(
-            tag["cond"],
+            Var(tag["cond_state"]),
             render_dict_to_var(tag["true_value"]),
             render_dict_to_var(tag["false_value"])
             if tag["false_value"] is not None
@@ -2841,8 +2848,6 @@ def render_dict_to_var(tag: dict | Component | str) -> Var:
         )
 
     props = Var("({" + ",".join(tag["props"]) + "})")
-
-    contents = tag["contents"] if tag["contents"] else None
 
     raw_tag_name = tag.get("name")
     tag_name = Var(raw_tag_name or "Fragment")
@@ -2852,7 +2857,6 @@ def render_dict_to_var(tag: dict | Component | str) -> Var:
     ).call(
         tag_name,
         props,
-        *([Var(contents)] if contents is not None else []),
         *[render_dict_to_var(child) for child in tag["children"]],
     )
 

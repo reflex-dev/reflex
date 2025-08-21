@@ -1,12 +1,11 @@
 """Tailwind CSS configuration types for Reflex plugins."""
 
 import dataclasses
+from collections.abc import Mapping
 from copy import deepcopy
 from typing import Any, Literal, TypedDict
 
-from typing_extensions import NotRequired
-
-from reflex.utils.decorator import once
+from typing_extensions import NotRequired, Unpack
 
 from .base import Plugin as PluginBase
 
@@ -80,71 +79,97 @@ class TailwindConfig(TypedDict):
     plugins: NotRequired[list[TailwindPluginConfig]]
 
 
-@once
-def tailwind_config_js_template():
-    """Get the Tailwind config template.
+def tailwind_config_js_template(
+    *, default_content: list[str], **kwargs: Unpack[TailwindConfig]
+):
+    """Generate a Tailwind CSS configuration file in JavaScript format.
+
+    Args:
+        default_content: The default content to use if none is provided.
+        **kwargs: The template variables.
 
     Returns:
         The Tailwind config template.
     """
-    from reflex.compiler.templates import from_string
+    import json
 
-    source = r"""
-{# Extract destructured imports from plugin dicts only #}
-{%- set imports = [] %}
+    # Extract parameters
+    plugins = kwargs.get("plugins", [])
+    presets = kwargs.get("presets", [])
+    content = kwargs.get("content")
+    theme = kwargs.get("theme")
+    dark_mode = kwargs.get("darkMode")
+    core_plugins = kwargs.get("corePlugins")
+    important = kwargs.get("important")
+    prefix = kwargs.get("prefix")
+    separator = kwargs.get("separator")
 
-{%- for plugin in plugins if plugin is mapping and plugin.import is defined %}
-  {%- set _ = imports.append(plugin.import) %}
-{%- endfor %}
-
-{%- for imp in imports %}
-import { {{ imp.name }} } from {{ imp.from | tojson }};
-{%- endfor %}
-
-{%- for plugin in plugins %}
-{% if plugin is mapping and plugin.call is not defined %}
-import plugin{{ loop.index }} from {{ plugin.name | tojson }};
-{%- elif plugin is not mapping %}
-import plugin{{ loop.index }} from {{ plugin | tojson }};
-{%- endif %}
-{%- endfor %}
-
-{%- for preset in presets %}
-import preset{{ loop.index }} from {{ preset | tojson }};
-{%- endfor %}
-
-export default {
-    content: {{ (content if content is defined else DEFAULT_CONTENT) | tojson }},
-    {% if theme is defined %}theme: {{ theme | tojson }},{% else %}theme: {},{% endif %}
-    {% if darkMode is defined %}darkMode: {{ darkMode | tojson }},{% endif %}
-    {% if corePlugins is defined %}corePlugins: {{ corePlugins | tojson }},{% endif %}
-    {% if important is defined %}important: {{ important | tojson }},{% endif %}
-    {% if prefix is defined %}prefix: {{ prefix | tojson }},{% endif %}
-    {% if separator is defined %}separator: {{ separator | tojson }},{% endif %}
-    {% if presets is defined %}
-    presets: [
-        {% for preset in presets %}
-            preset{{ loop.index }},
-        {% endfor %}
-    ],
-    {% endif %}
-    plugins: [
-        {% for plugin in plugins %}
-            {% if plugin is mapping and plugin.call is defined %}
-                {{ plugin.call }}(
-                    {%- if plugin.args is defined -%}
-                        {{ plugin.args | tojson }}
-                    {%- endif -%}
-                ),
-            {% else %}
-                plugin{{ loop.index }},
-            {% endif %}
-        {% endfor %}
+    # Extract destructured imports from plugin dicts only
+    imports = [
+        plugin["import"]
+        for plugin in plugins
+        if isinstance(plugin, Mapping) and "import" in plugin
     ]
-};
-"""
 
-    return from_string(source)
+    # Generate import statements for destructured imports
+    import_lines = "\n".join(
+        [
+            f"import {{ {imp['name']} }} from {json.dumps(imp['from'])};"
+            for imp in imports
+        ]
+    )
+
+    # Generate plugin imports
+    plugin_imports = []
+    for i, plugin in enumerate(plugins, 1):
+        if isinstance(plugin, Mapping) and "call" not in plugin:
+            plugin_imports.append(
+                f"import plugin{i} from {json.dumps(plugin['name'])};"
+            )
+        elif not isinstance(plugin, Mapping):
+            plugin_imports.append(f"import plugin{i} from {json.dumps(plugin)};")
+
+    plugin_imports_lines = "\n".join(plugin_imports)
+
+    presets_imports_lines = "\n".join(
+        [
+            f"import preset{i} from {json.dumps(preset)};"
+            for i, preset in enumerate(presets, 1)
+        ]
+    )
+
+    # Generate plugin array
+    plugin_list = []
+    for i, plugin in enumerate(plugins, 1):
+        if isinstance(plugin, Mapping) and "call" in plugin:
+            args_part = ""
+            if "args" in plugin:
+                args_part = json.dumps(plugin["args"])
+            plugin_list.append(f"{plugin['call']}({args_part})")
+        else:
+            plugin_list.append(f"plugin{i}")
+
+    plugin_use_str = ",".join(plugin_list)
+
+    return rf"""
+{import_lines}
+
+{plugin_imports_lines}
+
+{presets_imports_lines}
+
+export default {{
+    content: {json.dumps(content if content else default_content)},
+    theme: {json.dumps(theme if theme else {})},
+    {f"darkMode: {json.dumps(dark_mode)}," if dark_mode is not None else ""}
+    {f"corePlugins: {json.dumps(core_plugins)}," if core_plugins is not None else ""}
+    {f"importants: {json.dumps(important)}," if important is not None else ""}
+    {f"prefix: {json.dumps(prefix)}," if prefix is not None else ""}
+    {f"separator: {json.dumps(separator)}," if separator is not None else ""}
+    {f"presets: [{', '.join(f'preset{i}' for i in range(1, len(presets) + 1))}]," if presets else ""}
+    plugins: [{plugin_use_str}]
+}};
+"""
 
 
 @dataclasses.dataclass
