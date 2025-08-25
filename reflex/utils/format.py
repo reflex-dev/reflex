@@ -518,7 +518,7 @@ def format_event(event_spec: EventSpec) -> str:
 
     if event_spec.client_handler_name:
         event_args.append(wrap(event_spec.client_handler_name, '"'))
-    return f"Event({', '.join(event_args)})"
+    return f"ReflexEvent({', '.join(event_args)})"
 
 
 if TYPE_CHECKING:

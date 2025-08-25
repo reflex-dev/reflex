@@ -1311,9 +1311,9 @@ class App(MiddlewareMixin, LifespanMixin):
                 self.head_components,
                 html_lang=self.html_lang,
                 html_custom_attrs=(
-                    {"suppressHydrationWarning": "true", **self.html_custom_attrs}
+                    {"suppressHydrationWarning": True, **self.html_custom_attrs}
                     if self.html_custom_attrs
-                    else {"suppressHydrationWarning": "true"}
+                    else {"suppressHydrationWarning": True}
                 ),
             )
         )
