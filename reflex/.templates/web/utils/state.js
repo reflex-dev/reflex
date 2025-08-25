@@ -415,7 +415,7 @@ export const applyRestEvent = async (event, socket, navigate, params) => {
     if (event.payload.files === undefined || event.payload.files.length === 0) {
       // Submit the event over the websocket to trigger the event handler.
       return await applyEvent(
-        Event(event.name, { files: [] }),
+        ReflexEvent(event.name, { files: [] }),
         socket,
         navigate,
         params,
@@ -775,7 +775,7 @@ export const uploadFiles = async (
  * @param {string} handler The client handler to process event.
  * @returns The event object.
  */
-export const Event = (
+export const ReflexEvent = (
   name,
   payload = {},
   event_actions = {},
@@ -987,7 +987,7 @@ export const useEventLoop = (
 
     window.onerror = function (msg, url, lineNo, columnNo, error) {
       addEvents([
-        Event(`${exception_state_name}.handle_frontend_exception`, {
+        ReflexEvent(`${exception_state_name}.handle_frontend_exception`, {
           info: error.name + ": " + error.message + "\n" + error.stack,
           component_stack: "",
         }),
@@ -999,7 +999,7 @@ export const useEventLoop = (
     //https://github.com/mknichel/javascript-errors?tab=readme-ov-file#promise-rejection-events
     window.onunhandledrejection = function (event) {
       addEvents([
-        Event(`${exception_state_name}.handle_frontend_exception`, {
+        ReflexEvent(`${exception_state_name}.handle_frontend_exception`, {
           info:
             event.reason?.name +
             ": " +
@@ -1072,7 +1072,7 @@ export const useEventLoop = (
       if (storage_to_state_map[e.key]) {
         const vars = {};
         vars[storage_to_state_map[e.key]] = e.newValue;
-        const event = Event(
+        const event = ReflexEvent(
           `${state_name}.reflex___state____update_vars_internal_state.update_vars_internal`,
           { vars: vars },
         );
