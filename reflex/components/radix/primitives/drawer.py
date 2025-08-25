@@ -225,7 +225,7 @@ class DrawerTitle(DrawerComponent):
         return {
             "font-size": "1.125rem",
             "font-weight": "600",
-            "line-weight": "1",
+            "line-height": "1",
             "letter-spacing": "-0.05em",
         }
 
