@@ -2599,7 +2599,7 @@ class StatefulComponent(BaseComponent):
             memo_name = f"{event_trigger}_{chain_hash}"
 
             # Calculate Var dependencies accessed by the handler for useCallback dep array.
-            var_deps = ["addEvents", "Event"]
+            var_deps = ["addEvents", "ReflexEvent"]
 
             # Get deps from event trigger var data.
             var_deps.extend(cls._get_deps_from_event_trigger(event))

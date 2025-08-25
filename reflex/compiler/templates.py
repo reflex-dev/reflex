@@ -303,7 +303,7 @@ export const onLoadInternalEvent = () => {{
     // But only send the vars if any are actually set in the browser.
     if (client_storage_vars && Object.keys(client_storage_vars).length !== 0) {{
         internal_events.push(
-            Event(
+            ReflexEvent(
                 '{state_name}.{constants.CompileVars.UPDATE_VARS_INTERNAL}',
                 {{vars: client_storage_vars}},
             ),
@@ -312,14 +312,14 @@ export const onLoadInternalEvent = () => {{
 
     // `on_load_internal` triggers the correct on_load event(s) for the current page.
     // If the page does not define any on_load event, this will just set `is_hydrated = true`.
-    internal_events.push(Event('{state_name}.{constants.CompileVars.ON_LOAD_INTERNAL}'));
+    internal_events.push(ReflexEvent('{state_name}.{constants.CompileVars.ON_LOAD_INTERNAL}'));
 
     return internal_events;
 }}
 
 // The following events are sent when the websocket connects or reconnects.
 export const initialEvents = () => [
-    Event('{state_name}.{constants.CompileVars.HYDRATE}'),
+    ReflexEvent('{state_name}.{constants.CompileVars.HYDRATE}'),
     ...onLoadInternalEvent()
 ]
     """
@@ -351,7 +351,7 @@ export const initialEvents = () => []
     )
 
     return rf"""import {{ createContext, useContext, useMemo, useReducer, useState, createElement, useEffect }} from "react"
-import {{ applyDelta, Event, hydrateClientStorage, useEventLoop, refs }} from "$/utils/state"
+import {{ applyDelta, ReflexEvent, hydrateClientStorage, useEventLoop, refs }} from "$/utils/state"
 import {{ jsx }} from "@emotion/react";
 
 export const initialState = {"{}" if not initial_state else json_dumps(initial_state)}
