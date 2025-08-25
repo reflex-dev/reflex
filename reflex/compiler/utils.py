@@ -350,7 +350,7 @@ def compile_custom_component(
 def create_document_root(
     head_components: Sequence[Component] | None = None,
     html_lang: str | None = None,
-    html_custom_attrs: dict[str, Var | str] | None = None,
+    html_custom_attrs: dict[str, Var | Any] | None = None,
 ) -> Component:
     """Create the document root.
 
