@@ -6,7 +6,7 @@ import sys
 from collections.abc import Callable, Iterable, Sequence
 from inspect import getmodule
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from reflex import constants
 from reflex.compiler import templates, utils
@@ -465,7 +465,7 @@ def _compile_stateful_components(
 def compile_document_root(
     head_components: list[Component],
     html_lang: str | None = None,
-    html_custom_attrs: dict[str, Var | str] | None = None,
+    html_custom_attrs: dict[str, Var | Any] | None = None,
 ) -> tuple[str, str]:
     """Compile the document root.
 
