@@ -47,7 +47,7 @@
   "reflex/components/radix/primitives/__init__.pyi": "68fcf93acb9a40d94561d375a3a5fdb1",
   "reflex/components/radix/primitives/accordion.pyi": "9192299dac04a5172edd7b2f6b125f53",
   "reflex/components/radix/primitives/base.pyi": "336f5e26669a809454bb343e698ab563",
-  "reflex/components/radix/primitives/drawer.pyi": "5c04c3598100aa4d562c242fabf7e404",
+  "reflex/components/radix/primitives/drawer.pyi": "c6ad2f60217fe25952f3a1ba88fbd72a",
   "reflex/components/radix/primitives/form.pyi": "8a5ec180a50acdc35dfe53e4e65c20e0",
   "reflex/components/radix/primitives/progress.pyi": "b26c99c1d827c0f599fff344746aeec3",
   "reflex/components/radix/primitives/slider.pyi": "c03b716ffbbc3e1a0c766951de04e83b",

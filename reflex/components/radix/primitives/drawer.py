@@ -124,13 +124,13 @@ class DrawerContent(DrawerComponent):
     alias = "Vaul" + tag
 
     # Style set partially based on the source code at https://ui.shadcn.com/docs/components/drawer
-    def _get_style(self) -> dict:
+    def add_style(self) -> dict:
         """Get the style for the component.
 
         Returns:
             The dictionary of the component style as value and the style notation as key.
         """
-        base_style = {
+        return {
             "left": "0",
             "right": "0",
             "bottom": "0",
@@ -139,9 +139,6 @@ class DrawerContent(DrawerComponent):
             "z_index": 50,
             "display": "flex",
         }
-        style = self.style or {}
-        base_style.update(style)
-        return {"css": base_style}
 
     # Fired when the drawer content is opened.
     on_open_auto_focus: EventHandler[no_args_event_spec]
@@ -186,13 +183,13 @@ class DrawerOverlay(DrawerComponent):
     alias = "Vaul" + tag
 
     # Style set based on the source code at https://ui.shadcn.com/docs/components/drawer
-    def _get_style(self) -> dict:
+    def add_style(self) -> dict:
         """Get the style for the component.
 
         Returns:
             The dictionary of the component style as value and the style notation as key.
         """
-        base_style = {
+        return {
             "position": "fixed",
             "left": "0",
             "right": "0",
@@ -201,9 +198,6 @@ class DrawerOverlay(DrawerComponent):
             "z_index": 50,
             "background": "rgba(0, 0, 0, 0.5)",
         }
-        style = self.style or {}
-        base_style.update(style)
-        return {"css": base_style}
 
 
 class DrawerClose(DrawerTrigger):
@@ -222,21 +216,18 @@ class DrawerTitle(DrawerComponent):
     alias = "Vaul" + tag
 
     # Style set based on the source code at https://ui.shadcn.com/docs/components/drawer
-    def _get_style(self) -> dict:
+    def add_style(self) -> dict:
         """Get the style for the component.
 
         Returns:
             The dictionary of the component style as value and the style notation as key.
         """
-        base_style = {
+        return {
             "font-size": "1.125rem",
             "font-weight": "600",
-            "line-weight": "1",
+            "line-height": "1",
             "letter-spacing": "-0.05em",
         }
-        style = self.style or {}
-        base_style.update(style)
-        return {"css": base_style}
 
 
 class DrawerDescription(DrawerComponent):
@@ -247,18 +238,15 @@ class DrawerDescription(DrawerComponent):
     alias = "Vaul" + tag
 
     # Style set based on the source code at https://ui.shadcn.com/docs/components/drawer
-    def _get_style(self) -> dict:
+    def add_style(self) -> dict:
         """Get the style for the component.
 
         Returns:
             The dictionary of the component style as value and the style notation as key.
         """
-        base_style = {
+        return {
             "font-size": "0.875rem",
         }
-        style = self.style or {}
-        base_style.update(style)
-        return {"css": base_style}
 
 
 class DrawerHandle(DrawerComponent):
