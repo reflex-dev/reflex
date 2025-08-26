@@ -22,7 +22,6 @@ from typing_extensions import dataclass_transform
 
 import reflex.state
 from reflex import constants
-from reflex import constants
 from reflex.compiler.templates import stateful_component_template
 from reflex.components.core.breakpoints import Breakpoints
 from reflex.components.dynamic import load_dynamic_serializer
@@ -2243,24 +2242,23 @@ def custom_component(
 
     # Register this component so it can be compiled.
     dummy_component = _register_custom_component(component_fn)
-    object.__setattr__(
-        wrapper,
-        "_as_var",
-        lambda: Var(
-            f"jsx({dummy_component.tag})",
-            _var_type=Component,
-            _var_data=VarData(
-                imports={
-                    f"$/{constants.Dirs.UTILS}/components": [
-                        ImportVar(tag=dummy_component.tag)
-                    ],
-                    "@emotion/react": [
-                        ImportVar(tag="jsx"),
-                    ],
-                }
+    if tag := dummy_component.tag:
+        object.__setattr__(
+            wrapper,
+            "_as_var",
+            lambda: Var(
+                tag,
+                _var_type=type[Component],
+                _var_data=VarData(
+                    imports={
+                        f"$/{constants.Dirs.UTILS}/components": [ImportVar(tag=tag)],
+                        "@emotion/react": [
+                            ImportVar(tag="jsx"),
+                        ],
+                    }
+                ),
             ),
-        ),
-    )
+        )
 
     return wrapper
 
