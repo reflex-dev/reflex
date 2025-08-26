@@ -6,6 +6,7 @@ import pytest
 from reflex.components.base.fragment import Fragment
 from reflex.components.core.cond import Cond, cond
 from reflex.components.radix.themes.typography.text import Text
+from reflex.constants.state import FIELD_MARKER
 from reflex.state import BaseState
 from reflex.utils.format import format_state_name
 from reflex.vars.base import LiteralVar, Var, computed_var
@@ -57,7 +58,7 @@ def test_validate_cond(cond_state: BaseState):
 
     [true_value_text] = true_value["children"]
     assert true_value_text["name"] == "RadixThemesText"
-    assert true_value_text["children"][0]["contents"] == '{"cond is True"}'
+    assert true_value_text["children"][0]["contents"] == '"cond is True"'
 
     # false value
     false_value = condition["false_value"]
@@ -65,11 +66,11 @@ def test_validate_cond(cond_state: BaseState):
 
     [false_value_text] = false_value["children"]
     assert false_value_text["name"] == "RadixThemesText"
-    assert false_value_text["children"][0]["contents"] == '{"cond is False"}'
+    assert false_value_text["children"][0]["contents"] == '"cond is False"'
 
 
 @pytest.mark.parametrize(
-    "c1, c2",
+    ("c1", "c2"),
     [
         (True, False),
         (32, 0),
@@ -139,7 +140,8 @@ def test_cond_computed_var():
 
     state_name = format_state_name(CondStateComputed.get_full_name())
     assert (
-        str(comp) == f"(true ? {state_name}.computed_int : {state_name}.computed_str)"
+        str(comp)
+        == f"(true ? {state_name}.computed_int{FIELD_MARKER} : {state_name}.computed_str{FIELD_MARKER})"
     )
 
     assert comp._var_type == int | str

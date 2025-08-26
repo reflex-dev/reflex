@@ -15,7 +15,7 @@ from reflex.vars.base import LiteralVar
 
 
 @pytest.mark.parametrize(
-    "library, fns, expected_output, raises_exception",
+    ("library", "fns", "expected_output", "raises_exception"),
     [
         ("some_library", ["function_one"], ["function_one"], False),
         ("some_library", [123], None, True),
@@ -47,7 +47,7 @@ def test_create_transformer(library, fns, expected_output, raises_exception):
 
 
 @pytest.mark.parametrize(
-    "code_block, children, props, expected_first_child, expected_styles",
+    ("code_block", "children", "props", "expected_first_child", "expected_styles"),
     [
         ("print('Hello')", ["print('Hello')"], {}, "print('Hello')", {}),
         (
@@ -106,7 +106,7 @@ def test_create_shiki_code_block(
 
 
 @pytest.mark.parametrize(
-    "children, props, expected_transformers, expected_button_type",
+    ("children", "props", "expected_transformers", "expected_button_type"),
     [
         (["print('Hello')"], {"use_transformers": True}, [ShikiJsTransformer], None),
         (["print('Hello')"], {"can_copy": True}, None, Button),
@@ -151,7 +151,7 @@ def test_create_shiki_high_level_code_block(
 
 
 @pytest.mark.parametrize(
-    "children, props",
+    ("children", "props"),
     [
         (["print('Hello')"], {"theme": "dark"}),
         (["print('Hello')"], {"language": "javascript"}),

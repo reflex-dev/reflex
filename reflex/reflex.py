@@ -11,9 +11,10 @@ import click
 from reflex_cli.v2.deployments import hosting_cli
 
 from reflex import constants
-from reflex.config import environment, get_config
+from reflex.config import get_config
 from reflex.constants.base import LITERAL_ENV
 from reflex.custom_components.custom_components import custom_components_cli
+from reflex.environment import environment
 from reflex.state import reset_disk_state_manager
 from reflex.utils import console, redir, telemetry
 from reflex.utils.exec import should_use_granian
@@ -36,7 +37,6 @@ def set_loglevel(ctx: click.Context, self: click.Parameter, value: str | None):
 @click.version_option(constants.Reflex.VERSION, message="%(version)s")
 def cli():
     """Reflex CLI to create, run, and deploy apps."""
-    pass
 
 
 loglevel_option = click.option(
@@ -58,7 +58,7 @@ def _init(
     ai: bool = False,
 ):
     """Initialize a new Reflex app in the given directory."""
-    from reflex.utils import exec, prerequisites
+    from reflex.utils import exec, frontend_skeleton, prerequisites, templates
 
     # Show system info
     exec.output_system_info()
@@ -80,13 +80,13 @@ def _init(
     prerequisites.initialize_frontend_dependencies()
 
     # Initialize the app.
-    template = prerequisites.initialize_app(app_name, template)
+    template = templates.initialize_app(app_name, template)
 
     # Initialize the .gitignore.
-    prerequisites.initialize_gitignore()
+    frontend_skeleton.initialize_gitignore()
 
     # Initialize the requirements.txt.
-    wrote_to_requirements = prerequisites.initialize_requirements_txt()
+    needs_user_manual_update = frontend_skeleton.initialize_requirements_txt()
 
     template_msg = f" using the {template} template" if template else ""
     # Finish initializing the app.
@@ -94,7 +94,7 @@ def _init(
         f"Initialized {app_name}{template_msg}."
         + (
             f" Make sure to add {constants.RequirementsTxt.DEFAULTS_STUB + constants.Reflex.VERSION} to your requirements.txt or pyproject.toml file."
-            if not wrote_to_requirements
+            if needs_user_manual_update
             else ""
         )
     )
@@ -151,8 +151,10 @@ def _run(
     if not frontend and backend:
         _skip_compile()
 
+    prerequisites.assert_in_reflex_dir()
+
     # Check that the app is initialized.
-    if prerequisites.needs_reinit(frontend=frontend):
+    if frontend and prerequisites.needs_reinit():
         _init(name=config.app_name)
 
     # Delete the states folder if it exists.
@@ -200,6 +202,10 @@ def _run(
     # Get the app module.
     app_task = prerequisites.compile_or_validate_app
     args = (frontend,)
+    kwargs = {
+        "check_if_schema_up_to_date": True,
+        "prerender_routes": env == constants.Env.PROD,
+    }
 
     # Granian fails if the app is already imported.
     if should_use_granian():
@@ -208,15 +214,11 @@ def _run(
         compile_future = concurrent.futures.ProcessPoolExecutor(max_workers=1).submit(
             app_task,
             *args,
+            **kwargs,
         )
-        validation_result = compile_future.result()
+        compile_future.result()
     else:
-        validation_result = app_task(*args)
-    if not validation_result:
-        raise click.exceptions.Exit(1)
-
-    # Warn if schema is not up to date.
-    prerequisites.check_schema_up_to_date()
+        app_task(*args, **kwargs)
 
     # Get the frontend and backend commands, based on the environment.
     setup_frontend = frontend_cmd = backend_cmd = None
@@ -233,7 +235,8 @@ def _run(
             exec.run_backend_prod,
         )
     if not setup_frontend or not frontend_cmd or not backend_cmd:
-        raise ValueError(f"Invalid env: {env}. Must be DEV or PROD.")
+        msg = f"Invalid env: {env}. Must be DEV or PROD."
+        raise ValueError(msg)
 
     # Post a telemetry event.
     telemetry.send(f"run-{env.value}")
@@ -352,8 +355,33 @@ def run(
 @cli.command()
 @loglevel_option
 @click.option(
+    "--dry",
+    is_flag=True,
+    default=False,
+    help="Run the command without making any changes.",
+)
+def compile(dry: bool):
+    """Compile the app in the current directory."""
+    import time
+
+    from reflex.utils import prerequisites
+
+    # Check the app.
+    if prerequisites.needs_reinit():
+        _init(name=get_config().app_name)
+    get_config(reload=True)
+    starting_time = time.monotonic()
+    prerequisites.get_compiled_app(dry_run=dry)
+    elapsed_time = time.monotonic() - starting_time
+    console.success(f"App compiled successfully in {elapsed_time:.3f} seconds.")
+
+
+@cli.command()
+@loglevel_option
+@click.option(
     "--zip/--no-zip",
     default=True,
+    is_flag=True,
     help="Whether to zip the backend and frontend exports.",
 )
 @click.option(
@@ -402,19 +430,21 @@ def export(
 
     environment.REFLEX_COMPILE_CONTEXT.set(constants.CompileContext.EXPORT)
 
-    frontend_only, backend_only = prerequisites.check_running_mode(
+    should_frontend_run, should_backend_run = prerequisites.check_running_mode(
         frontend_only, backend_only
     )
 
     config = get_config()
 
-    if prerequisites.needs_reinit(frontend=frontend_only or not backend_only):
+    prerequisites.assert_in_reflex_dir()
+
+    if should_frontend_run and prerequisites.needs_reinit():
         _init(name=config.app_name)
 
     export_utils.export(
         zipping=zip,
-        frontend=frontend_only,
-        backend=backend_only,
+        frontend=should_frontend_run,
+        backend=should_backend_run,
         zip_dest_dir=zip_dest_dir,
         upload_db_file=upload_db_file,
         env=constants.Env.DEV if env == constants.Env.DEV else constants.Env.PROD,
@@ -452,13 +482,11 @@ def logout():
 @click.group
 def db_cli():
     """Subcommands for managing the database schema."""
-    pass
 
 
 @click.group
 def script_cli():
     """Subcommands for running helper scripts."""
-    pass
 
 
 def _skip_compile():
@@ -502,13 +530,44 @@ def migrate():
     from reflex import model
     from reflex.utils import prerequisites
 
-    # TODO see if we can use `get_app()` instead (no compile).  Would _skip_compile still be needed then?
-    _skip_compile()
-    prerequisites.get_compiled_app()
+    prerequisites.get_app()
     if not prerequisites.check_db_initialized():
         return
     model.Model.migrate()
     prerequisites.check_schema_up_to_date()
+
+
+@db_cli.command()
+def status():
+    """Check the status of the database schema."""
+    from reflex.model import Model, format_revision
+    from reflex.utils import prerequisites
+
+    prerequisites.get_app()
+    if not prerequisites.check_db_initialized():
+        console.info(
+            "Database is not initialized. Run [bold]reflex db init[/bold] to initialize."
+        )
+        return
+
+    # Run alembic check command and display output
+    import reflex.config
+
+    config = reflex.config.get_config()
+    console.print(f"[bold]\\[{config.db_url}][/bold]")
+
+    # Get migration history using Model method
+    current_rev, revisions = Model.get_migration_history()
+    if current_rev is None and not revisions:
+        return
+
+    current_reached_ref = [current_rev is None]
+
+    # Show migration history in chronological order
+    console.print("<base>")
+    for rev in revisions:
+        # Format and print the revision
+        console.print(format_revision(rev, current_rev, current_reached_ref))
 
 
 @db_cli.command()
@@ -569,7 +628,7 @@ def makemigrations(message: str | None):
     help="The hostname of the frontend.",
 )
 @click.option(
-    "--interactive",
+    "--interactive/--no-interactive",
     is_flag=True,
     default=True,
     help="Whether to list configuration options and ask for confirmation.",
@@ -630,8 +689,10 @@ def deploy(
     if interactive:
         dependency.check_requirements()
 
+    prerequisites.assert_in_reflex_dir()
+
     # Check if we are set up.
-    if prerequisites.needs_reinit(frontend=True):
+    if prerequisites.needs_reinit():
         _init(name=config.app_name)
     prerequisites.check_latest_package_version(constants.ReflexHostingCLI.MODULE_NAME)
 
@@ -676,9 +737,10 @@ def deploy(
 def rename(new_name: str):
     """Rename the app in the current directory."""
     from reflex.utils import prerequisites
+    from reflex.utils.rename import rename_app
 
     prerequisites.validate_app_name(new_name)
-    prerequisites.rename_app(new_name, get_config().loglevel)
+    rename_app(new_name, get_config().loglevel)
 
 
 if TYPE_CHECKING:
@@ -711,7 +773,7 @@ def _convert_reflex_loglevel_to_reflex_cli_loglevel(
     return HostingLogLevel.INFO
 
 
-if find_spec("typer"):
+if find_spec("typer") and find_spec("typer.main"):
     import typer  # pyright: ignore[reportMissingImports]
 
     if isinstance(hosting_cli, typer.Typer):

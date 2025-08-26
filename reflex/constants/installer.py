@@ -14,10 +14,10 @@ class Bun(SimpleNamespace):
     """Bun constants."""
 
     # The Bun version.
-    VERSION = "1.2.10"
+    VERSION = "1.2.20"
 
     # Min Bun Version
-    MIN_VERSION = "1.2.8"
+    MIN_VERSION = "1.2.17"
 
     # URL to bun install script.
     INSTALL_URL = "https://raw.githubusercontent.com/reflex-dev/reflex/main/scripts/bun_install.sh"
@@ -38,7 +38,7 @@ class Bun(SimpleNamespace):
         Returns:
             The directory to store the bun.
         """
-        from reflex.config import environment
+        from reflex.environment import environment
 
         return environment.REFLEX_DIR.get() / "bun"
 
@@ -63,7 +63,7 @@ class Node(SimpleNamespace):
     """Node/ NPM constants."""
 
     # The minimum required node version.
-    MIN_VERSION = "18.18.0"
+    MIN_VERSION = "20.19.0"
 
     # Path of the node config file.
     CONFIG_PATH = ".npmrc"
@@ -74,13 +74,25 @@ fetch-retries=0
 """
 
 
-def _determine_nextjs_version() -> str:
-    default_version = "15.3.1"
-    if (version := os.getenv("NEXTJS_VERSION")) and version != default_version:
+def _determine_react_router_version() -> str:
+    default_version = "7.8.1"
+    if (version := os.getenv("REACT_ROUTER_VERSION")) and version != default_version:
         from reflex.utils import console
 
         console.warn(
-            f"You have requested next@{version} but the supported version is {default_version}, abandon all hope ye who enter here."
+            f"You have requested react-router@{version} but the supported version is {default_version}, abandon all hope ye who enter here."
+        )
+        return version
+    return default_version
+
+
+def _determine_react_version() -> str:
+    default_version = "19.1.1"
+    if (version := os.getenv("REACT_VERSION")) and version != default_version:
+        from reflex.utils import console
+
+        console.warn(
+            f"You have requested react@{version} but the supported version is {default_version}, abandon all hope ye who enter here."
         )
         return version
     return default_version
@@ -92,32 +104,50 @@ class PackageJson(SimpleNamespace):
     class Commands(SimpleNamespace):
         """The commands to define in package.json."""
 
-        DEV = "next dev {flags}"
-        EXPORT = "next build {flags}"
-        EXPORT_SITEMAP = "next build {flags} && next-sitemap"
-        PROD = "next start"
+        DEV = "react-router dev --host"
+        EXPORT = "react-router build"
+        PROD = "sirv ./build/client --single 404.html --host"
 
     PATH = "package.json"
 
-    DEPENDENCIES = {
-        "@emotion/react": "11.14.0",
-        "axios": "1.8.4",
-        "json5": "2.2.3",
-        "next": _determine_nextjs_version(),
-        "next-sitemap": "4.2.3",
-        "next-themes": "0.4.6",
-        "react": "19.1.0",
-        "react-dom": "19.1.0",
-        "react-focus-lock": "2.13.6",
-        "socket.io-client": "4.8.1",
-        "universal-cookie": "7.2.2",
-    }
+    _react_version = _determine_react_version()
+
+    _react_router_version = _determine_react_router_version()
+
+    @classproperty
+    @classmethod
+    def DEPENDENCIES(cls) -> dict[str, str]:
+        """The dependencies to include in package.json.
+
+        Returns:
+            A dictionary of dependencies with their versions.
+        """
+        return {
+            "json5": "2.2.3",
+            "react-router": cls._react_router_version,
+            "react-router-dom": cls._react_router_version,
+            "@react-router/node": cls._react_router_version,
+            "sirv-cli": "3.0.1",
+            "react": cls._react_version,
+            "react-helmet": "6.1.0",
+            "react-dom": cls._react_version,
+            "isbot": "5.1.30",
+            "socket.io-client": "4.8.1",
+            "universal-cookie": "7.2.2",
+        }
+
     DEV_DEPENDENCIES = {
+        "@emotion/react": "11.14.0",
         "autoprefixer": "10.4.21",
-        "postcss": "8.5.3",
-        "postcss-import": "16.1.0",
+        "postcss": "8.5.6",
+        "postcss-import": "16.1.1",
+        "@react-router/dev": _react_router_version,
+        "@react-router/fs-routes": _react_router_version,
+        "vite": "npm:rolldown-vite@7.1.3",
     }
     OVERRIDES = {
         # This should always match the `react` version in DEPENDENCIES for recharts compatibility.
-        "react-is": "19.1.0"
+        "react-is": _react_version,
+        "cookie": "1.0.2",
+        "vite": "npm:rolldown-vite@7.1.3",
     }

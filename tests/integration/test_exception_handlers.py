@@ -23,8 +23,6 @@ def TestApp():
     class TestAppConfig(rx.Config):
         """Config for the TestApp app."""
 
-        pass
-
     class TestAppState(rx.State):
         """State for the TestApp app."""
 
@@ -134,10 +132,8 @@ def test_frontend_exception_handler_during_runtime(
     time.sleep(2)
 
     captured_default_handler_output = capsys.readouterr()
-    assert (
-        "induce_frontend_error" in captured_default_handler_output.out
-        and "ReferenceError" in captured_default_handler_output.out
-    )
+    assert "induce_frontend_error" in captured_default_handler_output.out
+    assert "ReferenceError" in captured_default_handler_output.out
 
 
 def test_backend_exception_handler_during_runtime(
@@ -164,10 +160,8 @@ def test_backend_exception_handler_during_runtime(
     time.sleep(2)
 
     captured_default_handler_output = capsys.readouterr()
-    assert (
-        "divide_by_number" in captured_default_handler_output.out
-        and "ZeroDivisionError" in captured_default_handler_output.out
-    )
+    assert "divide_by_number" in captured_default_handler_output.out
+    assert "ZeroDivisionError" in captured_default_handler_output.out
 
 
 def test_frontend_exception_handler_with_react(

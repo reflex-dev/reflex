@@ -8,14 +8,17 @@ from typing import Literal
 import reflex as rx
 from reflex.components.component import Component, ComponentNamespace
 from reflex.components.core.breakpoints import Responsive
+from reflex.components.radix.themes.base import (
+    LiteralAccentColor,
+    LiteralSpacing,
+    RadixThemesComponent,
+)
 from reflex.components.radix.themes.layout.flex import Flex
 from reflex.components.radix.themes.typography.text import Text
 from reflex.event import EventHandler, passthrough_event_spec
 from reflex.utils import types
 from reflex.vars.base import LiteralVar, Var
 from reflex.vars.sequence import StringVar
-
-from ..base import LiteralAccentColor, LiteralSpacing, RadixThemesComponent
 
 LiteralFlexDirection = Literal["row", "column", "row-reverse", "column-reverse"]
 
@@ -145,9 +148,8 @@ class HighLevelRadioGroup(RadixThemesComponent):
             isinstance(items, Var) and not types._issubclass(items._var_type, list)
         ):
             items_type = type(items) if not isinstance(items, Var) else items._var_type
-            raise TypeError(
-                f"The radio group component takes in a list, got {items_type} instead"
-            )
+            msg = f"The radio group component takes in a list, got {items_type} instead"
+            raise TypeError(msg)
 
         default_value = LiteralVar.create(default_value)
 

@@ -38,7 +38,7 @@ def test_shared_asset() -> None:
 
 
 @pytest.mark.parametrize(
-    "path,shared",
+    ("path", "shared"),
     [
         pytest.param("non_existing_file", True),
         pytest.param("non_existing_file", False),

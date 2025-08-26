@@ -484,6 +484,60 @@ class Path(BaseHTML):
     d: Var[str | int | float]
 
 
+class Marker(BaseHTML):
+    """Display the marker element."""
+
+    tag = "marker"
+
+    # The height of the marker viewport.
+    marker_height: Var[str | int | float]
+
+    # The width of the marker viewport.
+    marker_width: Var[str | int | float]
+
+    # The coordinate system for the marker attributes.
+    marker_units: Var[str]
+
+    # The orientation of the marker relative to the shape it is attached to.
+    orient: Var[str | int | float]
+
+    # How the svg fragment must be deformed if it is embedded in a container with a different aspect ratio.
+    preserve_aspect_ratio: Var[str]
+
+    # The x coordinate for the reference point of the marker.
+    ref_x: Var[str | int | float]
+
+    # The y coordinate for the reference point of the marker.
+    ref_y: Var[str | int | float]
+
+    # The bound of the SVG viewport for the current SVG fragment.
+    view_box: Var[str]
+
+
+class G(BaseHTML):
+    """The SVG g component, used to group other SVG elements."""
+
+    tag = "g"
+
+    # The fill color of the group.
+    fill: Var[str | Color]
+
+    # The fill opacity of the group.
+    fill_opacity: Var[str | int | float]
+
+    # The stroke color of the group.
+    stroke: Var[str | Color]
+
+    # The stroke opacity of the group.
+    stroke_opacity: Var[str | int | float]
+
+    # The stroke width of the group.
+    stroke_width: Var[str | int | float]
+
+    # The transform applied to the group.
+    transform: Var[str]
+
+
 class SVG(ComponentNamespace):
     """SVG component namespace."""
 
@@ -498,6 +552,8 @@ class SVG(ComponentNamespace):
     linear_gradient = staticmethod(LinearGradient.create)
     radial_gradient = staticmethod(RadialGradient.create)
     defs = staticmethod(Defs.create)
+    marker = staticmethod(Marker.create)
+    g = staticmethod(G.create)
     __call__ = staticmethod(Svg.create)
 
 
@@ -512,6 +568,8 @@ stop = Stop.create
 linear_gradient = LinearGradient.create
 radial_gradient = RadialGradient.create
 defs = Defs.create
+marker = Marker.create
+g = G.create
 area = Area.create
 audio = Audio.create
 image = img = Img.create

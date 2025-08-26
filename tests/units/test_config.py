@@ -4,10 +4,12 @@ from pathlib import Path
 from typing import Any
 
 import pytest
+from pytest_mock import MockerFixture
 
 import reflex as rx
 import reflex.config
-from reflex.config import (
+from reflex.constants import Endpoint, Env
+from reflex.environment import (
     EnvVar,
     env_var,
     environment,
@@ -15,13 +17,12 @@ from reflex.config import (
     interpret_enum_env,
     interpret_int_env,
 )
-from reflex.constants import Endpoint, Env
 
 
 def test_requires_app_name():
     """Test that a config requires an app_name."""
-    with pytest.raises(ValueError):
-        rx.Config()
+    with pytest.raises(TypeError):
+        rx.Config()  # pyright: ignore[reportCallIssue]
 
 
 def test_set_app_name(base_config_values):
@@ -35,20 +36,19 @@ def test_set_app_name(base_config_values):
 
 
 @pytest.mark.parametrize(
-    "env_var, value",
+    ("env_var", "value"),
     [
-        ("APP_NAME", "my_test_app"),
-        ("FRONTEND_PORT", 3001),
-        ("FRONTEND_PATH", "/test"),
-        ("BACKEND_PORT", 8001),
-        ("API_URL", "https://mybackend.com:8000"),
-        ("DEPLOY_URL", "https://myfrontend.com"),
-        ("BACKEND_HOST", "127.0.0.1"),
-        ("DB_URL", "postgresql://user:pass@localhost:5432/db"),
-        ("REDIS_URL", "redis://localhost:6379"),
-        ("TIMEOUT", 600),
-        ("TELEMETRY_ENABLED", False),
-        ("TELEMETRY_ENABLED", True),
+        ("REFLEX_APP_NAME", "my_test_app"),
+        ("REFLEX_FRONTEND_PORT", 3001),
+        ("REFLEX_FRONTEND_PATH", "/test"),
+        ("REFLEX_BACKEND_PORT", 8001),
+        ("REFLEX_API_URL", "https://mybackend.com:8000"),
+        ("REFLEX_DEPLOY_URL", "https://myfrontend.com"),
+        ("REFLEX_BACKEND_HOST", "127.0.0.1"),
+        ("REFLEX_DB_URL", "postgresql://user:pass@localhost:5432/db"),
+        ("REFLEX_REDIS_URL", "redis://localhost:6379"),
+        ("REFLEX_TELEMETRY_ENABLED", False),
+        ("REFLEX_TELEMETRY_ENABLED", True),
     ],
 )
 def test_update_from_env(
@@ -68,7 +68,9 @@ def test_update_from_env(
     monkeypatch.setenv(env_var, str(value))
     assert os.environ.get(env_var) == str(value)
     config = rx.Config(**base_config_values)
-    assert getattr(config, env_var.lower()) == value
+    # Remove REFLEX_ prefix to get the actual field name
+    field_name = env_var.removeprefix("REFLEX_").lower()
+    assert getattr(config, field_name) == value
 
 
 def test_update_from_env_path(
@@ -83,19 +85,19 @@ def test_update_from_env_path(
         monkeypatch: The pytest monkeypatch object.
         tmp_path: The pytest tmp_path fixture object.
     """
-    monkeypatch.setenv("BUN_PATH", "/test")
-    assert os.environ.get("BUN_PATH") == "/test"
+    monkeypatch.setenv("REFLEX_BUN_PATH", "/test")
+    assert os.environ.get("REFLEX_BUN_PATH") == "/test"
     with pytest.raises(ValueError):
         rx.Config(**base_config_values)
 
-    monkeypatch.setenv("BUN_PATH", str(tmp_path))
-    assert os.environ.get("BUN_PATH") == str(tmp_path)
+    monkeypatch.setenv("REFLEX_BUN_PATH", str(tmp_path))
+    assert os.environ.get("REFLEX_BUN_PATH") == str(tmp_path)
     config = rx.Config(**base_config_values)
     assert config.bun_path == tmp_path
 
 
 @pytest.mark.parametrize(
-    "kwargs, expected",
+    ("kwargs", "expected"),
     [
         (
             {"app_name": "test_app", "api_url": "http://example.com"},
@@ -107,7 +109,7 @@ def test_update_from_env_path(
         ),
     ],
 )
-def test_event_namespace(mocker, kwargs, expected):
+def test_event_namespace(mocker: MockerFixture, kwargs, expected):
     """Test the event namespace.
 
     Args:
@@ -155,7 +157,7 @@ DEFAULT_CONFIG = rx.Config(app_name="a")
         # Ports set in environment take precedence
         (
             {"backend_port": 8001, "frontend_port": 3001},
-            {"BACKEND_PORT": 8002},
+            {"REFLEX_BACKEND_PORT": 8002},
             {},
             {
                 "api_url": "http://localhost:8002",
@@ -167,8 +169,8 @@ DEFAULT_CONFIG = rx.Config(app_name="a")
         # Ports set on the command line take precedence
         (
             {"backend_port": 8001, "frontend_port": 3001},
-            {"BACKEND_PORT": 8002},
-            {"frontend_port": "3005"},
+            {"REFLEX_BACKEND_PORT": 8002},
+            {"frontend_port": 3005},
             {
                 "api_url": "http://localhost:8002",
                 "backend_port": 8002,
@@ -179,8 +181,8 @@ DEFAULT_CONFIG = rx.Config(app_name="a")
         # api_url / deploy_url already set should not be overridden
         (
             {"api_url": "http://foo.bar:8900", "deploy_url": "http://foo.bar:3001"},
-            {"BACKEND_PORT": 8002},
-            {"frontend_port": "3005"},
+            {"REFLEX_BACKEND_PORT": 8002},
+            {"frontend_port": 3005},
             {
                 "api_url": "http://foo.bar:8900",
                 "backend_port": 8002,
@@ -242,7 +244,7 @@ def test_interpret_int_env() -> None:
     assert interpret_int_env("3001", "FRONTEND_PORT") == 3001
 
 
-@pytest.mark.parametrize("value, expected", [("true", True), ("false", False)])
+@pytest.mark.parametrize(("value", "expected"), [("true", True), ("false", False)])
 def test_interpret_bool_env(value: str, expected: bool) -> None:
     assert interpret_boolean_env(value, "TELEMETRY_ENABLED") == expected
 

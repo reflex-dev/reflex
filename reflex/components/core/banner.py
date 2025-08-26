@@ -16,9 +16,9 @@ from reflex.components.radix.themes.components.dialog import (
 from reflex.components.radix.themes.layout.flex import Flex
 from reflex.components.radix.themes.typography.text import Text
 from reflex.components.sonner.toast import ToastProps, toast_ref
-from reflex.config import environment
 from reflex.constants import Dirs, Hooks, Imports
 from reflex.constants.compiler import CompileVars
+from reflex.environment import environment
 from reflex.utils.imports import ImportVar
 from reflex.vars import VarData
 from reflex.vars.base import LiteralVar, Var
@@ -268,7 +268,9 @@ class WifiOffPulse(Icon):
         Returns:
             The icon component with default props applied.
         """
-        pulse_var = Var(_js_expr="pulse")
+        pulse_var = Var(r"keyframes({ from: { opacity: 0 }, to: { opacity: 1 } })").to(
+            str
+        )
         return super().create(
             "wifi_off",
             color=props.pop("color", "crimson"),
@@ -288,18 +290,6 @@ class WifiOffPulse(Icon):
             The import dict.
         """
         return {"@emotion/react": [ImportVar(tag="keyframes")]}
-
-    def _get_custom_code(self) -> str | None:
-        return """
-const pulse = keyframes`
-    0% {
-        opacity: 0;
-    }
-    100% {
-        opacity: 1;
-    }
-`
-"""
 
 
 class ConnectionPulser(Div):

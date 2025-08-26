@@ -1,7 +1,7 @@
 """Integration tests for forms."""
 
+import asyncio
 import functools
-import time
 from collections.abc import Generator
 
 import pytest
@@ -192,8 +192,9 @@ async def test_submit(driver, form_submit: AppHarness):
     by = By.ID if form_submit.app_source is FormSubmit else By.NAME
 
     # get a reference to the connected client
-    token_input = driver.find_element(By.ID, "token")
-    assert token_input
+    token_input = AppHarness.poll_for_or_raise_timeout(
+        lambda: driver.find_element(By.ID, "token")
+    )
 
     # wait for the backend connection to send the token
     token = form_submit.poll_for_value(token_input)
@@ -217,7 +218,7 @@ async def test_submit(driver, form_submit: AppHarness):
     debounce_input = driver.find_element(by, "debounce_input")
     debounce_input.send_keys("bar baz")
 
-    time.sleep(1)
+    await asyncio.sleep(1)
 
     prev_url = driver.current_url
 

@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import dataclasses
-from collections.abc import Mapping, Sequence
+from collections.abc import Iterator, Mapping, Sequence
 from typing import Any
 
 from reflex.event import EventChain
@@ -31,7 +31,7 @@ def render_prop(value: Any) -> Any:
     return value
 
 
-@dataclasses.dataclass()
+@dataclasses.dataclass(frozen=True)
 class Tag:
     """A React tag."""
 
@@ -39,26 +39,15 @@ class Tag:
     name: str = ""
 
     # The props of the tag.
-    props: dict[str, Any] = dataclasses.field(default_factory=dict)
-
-    # The inner contents of the tag.
-    contents: str = ""
+    props: Mapping[str, Any] = dataclasses.field(default_factory=dict)
 
     # Special props that aren't key value pairs.
-    special_props: list[Var] = dataclasses.field(default_factory=list)
+    special_props: Sequence[Var] = dataclasses.field(default_factory=list)
 
     # The children components.
-    children: list[Any] = dataclasses.field(default_factory=list)
+    children: Sequence[Any] = dataclasses.field(default_factory=list)
 
-    def __post_init__(self):
-        """Post initialize the tag."""
-        object.__setattr__(
-            self,
-            "props",
-            {name: LiteralVar.create(value) for name, value in self.props.items()},
-        )
-
-    def format_props(self) -> list:
+    def format_props(self) -> list[str]:
         """Format the tag's props.
 
         Returns:
@@ -67,32 +56,32 @@ class Tag:
         return format.format_props(*self.special_props, **self.props)
 
     def set(self, **kwargs: Any):
-        """Set the tag's fields.
+        """Return a new tag with the given fields set.
 
         Args:
             **kwargs: The fields to set.
 
         Returns:
-            The tag with the fields
+            The tag with the fields set.
         """
-        for name, value in kwargs.items():
-            setattr(self, name, value)
+        return dataclasses.replace(self, **kwargs)
 
-        return self
-
-    def __iter__(self):
+    def __iter__(self) -> Iterator[tuple[str, Any]]:
         """Iterate over the tag's fields.
 
         Yields:
             tuple[str, Any]: The field name and value.
         """
         for field in dataclasses.fields(self):
-            rendered_value = render_prop(getattr(self, field.name))
-            if rendered_value is not None:
-                yield field.name, rendered_value
+            if field.name == "props":
+                yield "props", self.format_props()
+            elif field.name != "special_props":
+                rendered_value = render_prop(getattr(self, field.name))
+                if rendered_value is not None:
+                    yield field.name, rendered_value
 
     def add_props(self, **kwargs: Any | None) -> Tag:
-        """Add props to the tag.
+        """Return a new tag with the given props added.
 
         Args:
             **kwargs: The props to add.
@@ -100,33 +89,40 @@ class Tag:
         Returns:
             The tag with the props added.
         """
-        self.props.update(
-            {
-                format.to_camel_case(name, treat_hyphens_as_underscores=False): (
-                    prop
-                    if isinstance(prop, (EventChain, Mapping))
-                    else LiteralVar.create(prop)
-                )
-                for name, prop in kwargs.items()
-                if self.is_valid_prop(prop)
-            }
+        return dataclasses.replace(
+            self,
+            props={
+                **self.props,
+                **{
+                    format.to_camel_case(name, treat_hyphens_as_underscores=False): (
+                        prop
+                        if isinstance(prop, (EventChain, Mapping))
+                        else LiteralVar.create(prop)
+                    )
+                    for name, prop in kwargs.items()
+                    if self.is_valid_prop(prop)
+                },
+            },
         )
-        return self
 
     def remove_props(self, *args: str) -> Tag:
-        """Remove props from the tag.
+        """Return a new tag with the given props removed.
 
         Args:
-            *args: The props to remove.
+            *args: The names of the props to remove.
 
         Returns:
             The tag with the props removed.
         """
-        for name in args:
-            prop_name = format.to_camel_case(name)
-            if prop_name in self.props:
-                del self.props[prop_name]
-        return self
+        formatted_args = [format.to_camel_case(arg) for arg in args]
+        return dataclasses.replace(
+            self,
+            props={
+                name: value
+                for name, value in self.props.items()
+                if name not in formatted_args
+            },
+        )
 
     @staticmethod
     def is_valid_prop(prop: Var | None) -> bool:

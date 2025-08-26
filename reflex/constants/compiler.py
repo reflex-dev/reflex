@@ -20,6 +20,8 @@ class Ext(SimpleNamespace):
 
     # The extension for JS files.
     JS = ".js"
+    # The extension for JSX files.
+    JSX = ".jsx"
     # The extension for python files.
     PY = ".py"
     # The extension for css files.
@@ -62,7 +64,7 @@ class CompileVars(SimpleNamespace):
     # The name of the var storing any connection error.
     CONNECT_ERROR = "connectErrors"
     # The name of the function for converting a dict to an event.
-    TO_EVENT = "Event"
+    TO_EVENT = "ReflexEvent"
     # The name of the internal on_load event.
     ON_LOAD_INTERNAL = "reflex___state____on_load_internal_state.on_load_internal"
     # The name of the internal event to update generic state vars.
@@ -78,16 +80,16 @@ class CompileVars(SimpleNamespace):
 
 
 class PageNames(SimpleNamespace):
-    """The name of basic pages deployed in NextJS."""
+    """The name of basic pages deployed in the frontend."""
 
     # The name of the index page.
     INDEX_ROUTE = "index"
     # The name of the app root page.
-    APP_ROOT = "_app"
+    APP_ROOT = "root.jsx"
     # The root stylesheet filename.
     STYLESHEET_ROOT = "__reflex_global_styles"
     # The name of the document root page.
-    DOCUMENT_ROOT = "_document"
+    DOCUMENT_ROOT = "_document.js"
     # The name of the theme page.
     THEME = "theme"
     # The module containing components.
@@ -134,14 +136,6 @@ class Hooks(SimpleNamespace):
     """Common sets of hook declarations."""
 
     EVENTS = f"const [{CompileVars.ADD_EVENTS}, {CompileVars.CONNECT_ERROR}] = useContext(EventLoopContext);"
-    AUTOFOCUS = """
-                // Set focus to the specified element.
-                const focusRef = useRef(null)
-                useEffect(() => {
-                  if (focusRef.current) {
-                    focusRef.current.focus();
-                  }
-                })"""
 
     class HookPosition(enum.Enum):
         """The position of the hook in the component."""
@@ -171,17 +165,25 @@ class MemoizationMode:
     recursive: bool = True
 
 
+DATA_UNDERSCORE = "data_"
+DATA_DASH = "data-"
+ARIA_UNDERSCORE = "aria_"
+ARIA_DASH = "aria-"
+
+SPECIAL_ATTRS = (
+    DATA_UNDERSCORE,
+    DATA_DASH,
+    ARIA_UNDERSCORE,
+    ARIA_DASH,
+)
+
+
 class SpecialAttributes(enum.Enum):
     """Special attributes for components.
 
     These are placed in custom_attrs and rendered as-is rather than converting
     to a style prop.
     """
-
-    DATA_UNDERSCORE = "data_"
-    DATA_DASH = "data-"
-    ARIA_UNDERSCORE = "aria_"
-    ARIA_DASH = "aria-"
 
     @classmethod
     def is_special(cls, attr: str) -> bool:
@@ -193,4 +195,11 @@ class SpecialAttributes(enum.Enum):
         Returns:
             True if the attribute is special.
         """
-        return any(attr.startswith(value.value) for value in cls)
+        return attr.startswith(SPECIAL_ATTRS)
+
+
+class ResetStylesheet(SimpleNamespace):
+    """Constants for CSS reset stylesheet."""
+
+    # The filename of the CSS reset file.
+    FILENAME = "__reflex_style_reset.css"

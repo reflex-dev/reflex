@@ -40,8 +40,6 @@ class Base(rx.Base):
 class SqlaBase(DeclarativeBase, MappedAsDataclass):
     """Sqlalchemy declarative mapping base class."""
 
-    pass
-
 
 class SqlaModel(SqlaBase):
     """A sqlalchemy model with a single attribute."""

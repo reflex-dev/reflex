@@ -9,7 +9,7 @@ services:
   app:
     image: local/reflex-app
     environment:
-      DB_URL: sqlite:///data/reflex.db
+      REFLEX_DB_URL: sqlite:///data/reflex.db
     build:
       context: .
     volumes:

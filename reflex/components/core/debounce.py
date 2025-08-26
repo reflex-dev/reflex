@@ -23,6 +23,7 @@ class DebounceInput(Component):
 
     library = "react-debounce-input@3.3.0"
     tag = "DebounceInput"
+    is_default = True
 
     # Minimum input characters before triggering the on_change event
     min_length: Var[int]
@@ -70,14 +71,16 @@ class DebounceInput(Component):
             ValueError: if the child element does not have an on_change handler.
         """
         if len(children) != 1:
-            raise RuntimeError(
+            msg = (
                 "Provide a single child for DebounceInput, such as rx.input() or "
-                "rx.text_area()",
+                "rx.text_area()"
             )
+            raise RuntimeError(msg)
 
         child = children[0]
         if "on_change" not in child.event_triggers:
-            raise ValueError("DebounceInput child requires an on_change handler")
+            msg = "DebounceInput child requires an on_change handler"
+            raise ValueError(msg)
 
         # Carry known props and event_triggers from the child.
         props_from_child = {

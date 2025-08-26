@@ -28,7 +28,7 @@ env:
   # - Catch encoding errors when printing logs
   # - Best effort print lines that contain illegal chars (map to some default char, etc.)
   PYTHONIOENCODING: "utf8"
-  TELEMETRY_ENABLED: false
+  REFLEX_TELEMETRY_ENABLED: false
   NODE_OPTIONS: "--max_old_space_size=8192"
   PR_TITLE: ${{ github.event.pull_request.title }}
 
@@ -123,17 +123,22 @@ jobs:
           ref: main
           path: reflex-web
 
+      - name: Compile pyproject.toml into requirements.txt
+        working-directory: ./reflex-web
+        run: |
+          uv pip compile pyproject.toml --no-annotate --no-header --no-deps --output-file requirements.txt
+          grep -ivE "reflex " requirements.txt > requirements.txt.tmp && mv requirements.txt.tmp requirements.txt
       - name: Install Requirements for reflex-web
         working-directory: ./reflex-web
-        run: uv pip install $(grep -ivE "reflex " requirements.txt)
+        run: uv pip install -r requirements.txt
       - name: Init Website for reflex-web
         working-directory: ./reflex-web
-        run: uv run reflex init
+        run: uv run --active --no-sync reflex init
       - name: Run Website and Check for errors
         run: |
           # Check that npm is home
           npm -v
-          uv run bash scripts/integration.sh ./reflex-web prod
+          uv run --active --no-sync bash scripts/integration.sh ./reflex-web prod
 
   rx-shout-from-template:
     strategy:
@@ -184,14 +189,19 @@ jobs:
           repository: reflex-dev/reflex-web
           ref: main
           path: reflex-web
+      - name: Compile pyproject.toml into requirements.txt
+        working-directory: ./reflex-web
+        run: |
+          uv pip compile pyproject.toml --no-annotate --no-header --no-deps --output-file requirements.txt
+          grep -ivE "reflex " requirements.txt > requirements.txt.tmp && mv requirements.txt.tmp requirements.txt
       - name: Install Requirements for reflex-web
         working-directory: ./reflex-web
         run: uv pip install -r requirements.txt
       - name: Init Website for reflex-web
         working-directory: ./reflex-web
-        run: uv run reflex init
+        run: uv run --active --no-sync reflex init
       - name: Run Website and Check for errors
         run: |
           # Check that npm is home
           npm -v
-          uv run bash scripts/integration.sh ./reflex-web prod
+          uv run --active --no-sync bash scripts/integration.sh ./reflex-web prod

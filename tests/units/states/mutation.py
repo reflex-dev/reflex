@@ -150,8 +150,6 @@ class CustomVar(rx.Base):
 class MutableSQLABase(DeclarativeBase):
     """SQLAlchemy base model for mutable vars."""
 
-    pass
-
 
 class MutableSQLAModel(MutableSQLABase):
     """SQLAlchemy model for mutable vars."""

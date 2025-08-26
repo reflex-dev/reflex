@@ -7,10 +7,17 @@ import dataclasses
 import typing
 from collections.abc import Mapping
 from inspect import isclass
-from typing import Any, NoReturn, TypeVar, get_args, get_type_hints, overload
+from typing import (
+    Any,
+    NoReturn,
+    TypeVar,
+    get_args,
+    get_type_hints,
+    is_typeddict,
+    overload,
+)
 
 from rich.markup import escape
-from typing_extensions import is_typeddict
 
 from reflex.utils import types
 from reflex.utils.exceptions import VarAttributeError
@@ -136,6 +143,14 @@ class ObjectVar(Var[OBJECT_TYPE], python_types=Mapping):
         return object_entries_operation(self)
 
     items = entries
+
+    def length(self) -> NumberVar[int]:
+        """Get the length of the object.
+
+        Returns:
+            The length of the object.
+        """
+        return self.keys().length()
 
     def merge(self, other: ObjectVar):
         """Merge two objects.
@@ -318,13 +333,13 @@ class ObjectVar(Var[OBJECT_TYPE], python_types=Mapping):
         ):
             attribute_type = get_attribute_access_type(var_type, name)
             if attribute_type is None:
-                raise VarAttributeError(
+                msg = (
                     f"The State var `{self!s}` of type {escape(str(self._var_type))} has no attribute '{name}' or may have been annotated "
                     f"wrongly."
                 )
+                raise VarAttributeError(msg)
             return ObjectItemOperation.create(self, name, attribute_type).guess_type()
-        else:
-            return ObjectItemOperation.create(self, name).guess_type()
+        return ObjectItemOperation.create(self, name).guess_type()
 
     def contains(self, key: Var | Any) -> BooleanVar:
         """Check if the object contains a key.
@@ -398,9 +413,8 @@ class LiteralObjectVar(CachedVarOperation, ObjectVar[OBJECT_TYPE], LiteralVar):
             key = LiteralVar.create(key)
             value = LiteralVar.create(value)
             if not isinstance(key, LiteralVar) or not isinstance(value, LiteralVar):
-                raise TypeError(
-                    "The keys and values of the object must be literal vars to get the JSON representation."
-                )
+                msg = "The keys and values of the object must be literal vars to get the JSON representation."
+                raise TypeError(msg)
             keys_and_values.append(f"{key.json()}:{value.json()}")
         return "{" + ", ".join(keys_and_values) + "}"
 

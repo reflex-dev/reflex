@@ -7,11 +7,10 @@ from typing import Any, ClassVar, Literal
 from reflex.components.component import Component, ComponentNamespace
 from reflex.components.core.breakpoints import Responsive
 from reflex.components.core.colors import color
+from reflex.components.radix.themes.base import LiteralAccentColor, RadixThemesComponent
 from reflex.constants.compiler import MemoizationMode
 from reflex.event import EventHandler, passthrough_event_spec
 from reflex.vars.base import Var
-
-from ..base import LiteralAccentColor, RadixThemesComponent
 
 vertical_orientation_css = "&[data-orientation='vertical']"
 

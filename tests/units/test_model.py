@@ -3,6 +3,7 @@ from unittest import mock
 
 import pytest
 import sqlalchemy
+import sqlalchemy.exc
 import sqlmodel
 
 import reflex.constants

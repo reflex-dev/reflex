@@ -3,15 +3,11 @@
 from types import SimpleNamespace
 
 from reflex.components.datadisplay.shiki_code_block import code_block as code_block
-from reflex.components.props import PropsBase
-from reflex.components.radix.themes.components.progress import progress as progress
-from reflex.components.sonner.toast import toast as toast
+from reflex.utils.console import warn
+from reflex.utils.misc import run_in_thread
 
-from ..utils.console import warn
-from ..utils.misc import run_in_thread
 from . import hooks as hooks
 from .client_state import ClientStateVar as ClientStateVar
-from .layout import layout as layout
 
 
 class ExperimentalNamespace(SimpleNamespace):
@@ -31,30 +27,6 @@ class ExperimentalNamespace(SimpleNamespace):
             dedupe=True,
         )
         return super().__getattribute__(item)
-
-    @property
-    def toast(self):
-        """Temporary property returning the toast namespace.
-
-        Remove this property when toast is fully promoted.
-
-        Returns:
-            The toast namespace.
-        """
-        self.register_component_warning("toast")
-        return toast
-
-    @property
-    def progress(self):
-        """Temporary property returning the progress component.
-
-        Remove this property when progress is fully promoted.
-
-        Returns:
-            The progress component.
-        """
-        self.register_component_warning("progress")
-        return progress
 
     @property
     def run_in_thread(self):
@@ -85,7 +57,5 @@ class ExperimentalNamespace(SimpleNamespace):
 _x = ExperimentalNamespace(
     client_state=ClientStateVar.create,
     hooks=hooks,
-    layout=layout,
-    PropsBase=PropsBase,
     code_block=code_block,
 )

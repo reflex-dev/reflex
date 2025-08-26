@@ -3,7 +3,7 @@
 set -euxo pipefail
 
 SCRIPTPATH="$( cd -- "$(dirname "$0")" >/dev/null 2>&1 ; pwd -P )"
-export TELEMETRY_ENABLED=false
+export REFLEX_TELEMETRY_ENABLED=false
 
 function do_export () {
     template=$1
@@ -15,10 +15,10 @@ function do_export () {
     (
         cd "$SCRIPTPATH/../../.."
         scripts/integration.sh ~/"$template" dev
-        pkill -9 -f 'next-server|python3' || true
+        pkill -9 -f 'node|python3' || true
         sleep 10
-        REDIS_URL=redis://localhost scripts/integration.sh ~/"$template" prod
-        pkill -9 -f 'next-server|python3' || true
+        REFLEX_REDIS_URL=redis://localhost scripts/integration.sh ~/"$template" prod
+        pkill -9 -f 'node|python3' || true
         sleep 10
     )
 }
@@ -31,6 +31,7 @@ pip install -U pip
 echo "Installing reflex from local repo code"
 cp -r /reflex-repo ~/reflex-repo
 pip install ~/reflex-repo
+pip install psutil
 
 redis-server &
 

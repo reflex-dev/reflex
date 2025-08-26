@@ -1,6 +1,5 @@
 """Test case for displaying the connection banner when the websocket drops."""
 
-import functools
 from collections.abc import Generator
 
 import pytest
@@ -8,7 +7,7 @@ from selenium.common.exceptions import NoSuchElementException
 from selenium.webdriver.common.by import By
 
 from reflex import constants
-from reflex.config import environment
+from reflex.environment import environment
 from reflex.testing import AppHarness, WebDriver
 
 from .utils import SessionStorage
@@ -59,7 +58,7 @@ def simulate_compile_context(request) -> constants.CompileContext:
     return request.param
 
 
-@pytest.fixture()
+@pytest.fixture
 def connection_banner(
     tmp_path,
     simulate_compile_context: constants.CompileContext,
@@ -77,7 +76,7 @@ def connection_banner(
 
     with AppHarness.create(
         root=tmp_path,
-        app_source=functools.partial(ConnectionBanner),
+        app_source=ConnectionBanner,
         app_name=(
             "connection_banner_reflex_cloud"
             if simulate_compile_context == constants.CompileContext.DEPLOY
@@ -149,7 +148,7 @@ async def test_connection_banner(connection_banner: AppHarness):
     driver = connection_banner.frontend()
 
     _assert_token(connection_banner, driver)
-    assert connection_banner._poll_for(lambda: not has_error_modal(driver))
+    AppHarness.expect(lambda: not has_error_modal(driver))
 
     delay_button = driver.find_element(By.ID, "delay")
     increment_button = driver.find_element(By.ID, "increment")
@@ -171,7 +170,7 @@ async def test_connection_banner(connection_banner: AppHarness):
         connection_banner.backend_thread.join()
 
     # Error modal should now be displayed
-    assert connection_banner._poll_for(lambda: has_error_modal(driver))
+    AppHarness.expect(lambda: has_error_modal(driver))
 
     # Increment the counter with backend down
     increment_button.click()
@@ -184,7 +183,7 @@ async def test_connection_banner(connection_banner: AppHarness):
     await connection_banner._reset_backend_state_manager()
 
     # Banner should be gone now
-    assert connection_banner._poll_for(lambda: not has_error_modal(driver))
+    AppHarness.expect(lambda: not has_error_modal(driver))
 
     # Count should have incremented after coming back up
     assert connection_banner.poll_for_value(counter_element, exp_not_equal="1") == "2"
@@ -207,17 +206,17 @@ async def test_cloud_banner(
     driver.add_cookie({"name": "backend-enabled", "value": "truly"})
     driver.refresh()
     _assert_token(connection_banner, driver)
-    assert connection_banner._poll_for(lambda: not has_cloud_banner(driver))
+    AppHarness.expect(lambda: not has_cloud_banner(driver))
 
     driver.add_cookie({"name": "backend-enabled", "value": "false"})
     driver.refresh()
     if simulate_compile_context == constants.CompileContext.DEPLOY:
-        assert connection_banner._poll_for(lambda: has_cloud_banner(driver))
+        AppHarness.expect(lambda: has_cloud_banner(driver))
     else:
         _assert_token(connection_banner, driver)
-        assert connection_banner._poll_for(lambda: not has_cloud_banner(driver))
+        AppHarness.expect(lambda: not has_cloud_banner(driver))
 
     driver.delete_cookie("backend-enabled")
     driver.refresh()
     _assert_token(connection_banner, driver)
-    assert connection_banner._poll_for(lambda: not has_cloud_banner(driver))
+    AppHarness.expect(lambda: not has_cloud_banner(driver))

@@ -34,7 +34,7 @@ COPY . .
 
 ARG PORT API_URL
 # Download other npm dependencies and compile frontend
-RUN API_URL=${API_URL:-http://localhost:$PORT} reflex export --loglevel debug --frontend-only --no-zip && mv .web/_static/* /srv/ && rm -rf .web
+RUN REFLEX_API_URL=${API_URL:-http://localhost:$PORT} reflex export --loglevel debug --frontend-only --no-zip && mv .web/build/client/* /srv/ && rm -rf .web
 
 
 # Final image with only necessary files
@@ -44,7 +44,7 @@ FROM python:3.13-slim
 RUN apt-get update -y && apt-get install -y caddy redis-server && rm -rf /var/lib/apt/lists/*
 
 ARG PORT API_URL
-ENV PATH="/app/.venv/bin:$PATH" PORT=$PORT API_URL=${API_URL:-http://localhost:$PORT} REDIS_URL=redis://localhost PYTHONUNBUFFERED=1
+ENV PATH="/app/.venv/bin:$PATH" PORT=$PORT REFLEX_API_URL=${API_URL:-http://localhost:$PORT} REFLEX_REDIS_URL=redis://localhost PYTHONUNBUFFERED=1
 
 WORKDIR /app
 COPY --from=builder /app /app

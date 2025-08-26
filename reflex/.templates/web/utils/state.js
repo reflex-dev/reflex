@@ -1,19 +1,23 @@
 // State management for Reflex web apps.
-import axios from "axios";
 import io from "socket.io-client";
 import JSON5 from "json5";
 import env from "$/env.json";
 import reflexEnvironment from "$/reflex.json";
 import Cookies from "universal-cookie";
-import { useEffect, useRef, useState } from "react";
-import Router, { useRouter } from "next/router";
+import { useCallback, useEffect, useRef, useState } from "react";
+import {
+  useLocation,
+  useNavigate,
+  useSearchParams,
+  useParams,
+} from "react-router";
 import {
   initialEvents,
   initialState,
   onLoadInternalEvent,
   state_name,
   exception_state_name,
-} from "$/utils/context.js";
+} from "$/utils/context";
 import debounce from "$/utils/helpers/debounce";
 import throttle from "$/utils/helpers/throttle";
 
@@ -158,24 +162,48 @@ export const evalReactComponent = async (component) => {
  * Only Queue and process events when websocket connection exists.
  * @param event The event to queue.
  * @param socket The socket object to send the event on.
+ * @param navigate The navigate function from React Router
+ * @param params The params object from React Router
  *
  * @returns Adds event to queue and processes it if websocket exits, does nothing otherwise.
  */
-export const queueEventIfSocketExists = async (events, socket) => {
+export const queueEventIfSocketExists = async (
+  events,
+  socket,
+  navigate,
+  params,
+) => {
   if (!socket) {
     return;
   }
-  await queueEvents(events, socket);
+  await queueEvents(events, socket, navigate, params);
 };
+
+/**
+ * Check if a string is a valid HTTP URL.
+ * @param string The string to check.
+ *
+ * @returns The URL object if valid, undefined otherwise.
+ * */
+function urlFrom(string) {
+  try {
+    return new URL(string);
+  } catch {
+    return undefined;
+  }
+  return undefined;
+}
 
 /**
  * Handle frontend event or send the event to the backend via Websocket.
  * @param event The event to send.
  * @param socket The socket object to send the event on.
+ * @param navigate The navigate function from useNavigate
+ * @param params The params object from useParams
  *
  * @returns True if the event was sent, false if it was handled locally.
  */
-export const applyEvent = async (event, socket) => {
+export const applyEvent = async (event, socket, navigate, params) => {
   // Handle special events
   if (event.name == "_redirect") {
     if ((event.payload.path ?? undefined) === undefined) {
@@ -183,41 +211,54 @@ export const applyEvent = async (event, socket) => {
     }
     if (event.payload.external) {
       window.open(event.payload.path, "_blank", "noopener");
-    } else if (event.payload.replace) {
-      Router.replace(event.payload.path);
+      return false;
+    }
+    const url = urlFrom(event.payload.path);
+    let pathname = event.payload.path;
+    if (url) {
+      if (url.host !== window.location.host) {
+        // External URL
+        window.location.assign(event.payload.path);
+        return false;
+      } else {
+        pathname = url.pathname + url.search + url.hash;
+      }
+    }
+    if (event.payload.replace) {
+      navigate(pathname, { replace: true });
     } else {
-      Router.push(event.payload.path);
+      navigate(pathname);
     }
     return false;
   }
 
   if (event.name == "_remove_cookie") {
     cookies.remove(event.payload.key, { ...event.payload.options });
-    queueEventIfSocketExists(initialEvents(), socket);
+    queueEventIfSocketExists(initialEvents(), socket, navigate, params);
     return false;
   }
 
   if (event.name == "_clear_local_storage") {
     localStorage.clear();
-    queueEventIfSocketExists(initialEvents(), socket);
+    queueEventIfSocketExists(initialEvents(), socket, navigate, params);
     return false;
   }
 
   if (event.name == "_remove_local_storage") {
     localStorage.removeItem(event.payload.key);
-    queueEventIfSocketExists(initialEvents(), socket);
+    queueEventIfSocketExists(initialEvents(), socket, navigate, params);
     return false;
   }
 
   if (event.name == "_clear_session_storage") {
     sessionStorage.clear();
-    queueEvents(initialEvents(), socket);
+    queueEvents(initialEvents(), socket, navigate, params);
     return false;
   }
 
   if (event.name == "_remove_session_storage") {
     sessionStorage.removeItem(event.payload.key);
-    queueEvents(initialEvents(), socket);
+    queueEvents(initialEvents(), socket, navigate, params);
     return false;
   }
 
@@ -243,13 +284,27 @@ export const applyEvent = async (event, socket) => {
   if (event.name == "_set_focus") {
     const ref =
       event.payload.ref in refs ? refs[event.payload.ref] : event.payload.ref;
-    const focus = ref?.current?.focus;
-    if (focus === undefined) {
+    const current = ref?.current;
+    if (current === undefined || current?.focus === undefined) {
       console.error(
         `No element found for ref ${event.payload.ref} in _set_focus`,
       );
     } else {
-      focus();
+      current.focus();
+    }
+    return false;
+  }
+
+  if (event.name == "_blur_focus") {
+    const ref =
+      event.payload.ref in refs ? refs[event.payload.ref] : event.payload.ref;
+    const current = ref?.current;
+    if (current === undefined || current?.blur === undefined) {
+      console.error(
+        `No element found for ref ${event.payload.ref} in _blur_focus`,
+      );
+    } else {
+      current.blur();
     }
     return false;
   }
@@ -322,11 +377,18 @@ export const applyEvent = async (event, socket) => {
     event.router_data === undefined ||
     Object.keys(event.router_data).length === 0
   ) {
-    event.router_data = (({ pathname, query, asPath }) => ({
-      pathname,
-      query,
-      asPath,
-    }))(Router);
+    // Since we don't have router directly, we need to get info from our hooks
+    event.router_data = {
+      pathname: window.location.pathname,
+      query: {
+        ...Object.fromEntries(new URLSearchParams(window.location.search)),
+        ...params(),
+      },
+      asPath:
+        window.location.pathname +
+        window.location.search +
+        window.location.hash,
+    };
   }
 
   // Send the event to the server.
@@ -342,15 +404,22 @@ export const applyEvent = async (event, socket) => {
  * Send an event to the server via REST.
  * @param event The current event.
  * @param socket The socket object to send the response event(s) on.
+ * @param navigate The navigate function from React Router
+ * @param params The params object from React Router
  *
  * @returns Whether the event was sent.
  */
-export const applyRestEvent = async (event, socket) => {
+export const applyRestEvent = async (event, socket, navigate, params) => {
   let eventSent = false;
   if (event.handler === "uploadFiles") {
     if (event.payload.files === undefined || event.payload.files.length === 0) {
       // Submit the event over the websocket to trigger the event handler.
-      return await applyEvent(Event(event.name), socket);
+      return await applyEvent(
+        ReflexEvent(event.name, { files: [] }),
+        socket,
+        navigate,
+        params,
+      );
     }
 
     // Start upload, but do not wait for it, which would block other events.
@@ -371,8 +440,16 @@ export const applyRestEvent = async (event, socket) => {
  * @param events Array of events to queue.
  * @param socket The socket object to send the event on.
  * @param prepend Whether to place the events at the beginning of the queue.
+ * @param navigate The navigate function from React Router
+ * @param params The params object from React Router
  */
-export const queueEvents = async (events, socket, prepend) => {
+export const queueEvents = async (
+  events,
+  socket,
+  prepend,
+  navigate,
+  params,
+) => {
   if (prepend) {
     // Drain the existing queue and place it after the given events.
     events = [
@@ -383,14 +460,16 @@ export const queueEvents = async (events, socket, prepend) => {
     ];
   }
   event_queue.push(...events.filter((e) => e !== undefined && e !== null));
-  await processEvent(socket.current);
+  await processEvent(socket.current, navigate, params);
 };
 
 /**
  * Process an event off the event queue.
  * @param socket The socket object to send the event on.
+ * @param navigate The navigate function from React Router
+ * @param params The params object from React Router
  */
-export const processEvent = async (socket) => {
+export const processEvent = async (socket, navigate, params) => {
   // Only proceed if the socket is up and no event in the queue uses state, otherwise we throw the event into the void
   if (!socket && isStateful()) {
     return;
@@ -410,16 +489,16 @@ export const processEvent = async (socket) => {
   let eventSent = false;
   // Process events with handlers via REST and all others via websockets.
   if (event.handler) {
-    eventSent = await applyRestEvent(event, socket);
+    eventSent = await applyRestEvent(event, socket, navigate, params);
   } else {
-    eventSent = await applyEvent(event, socket);
+    eventSent = await applyEvent(event, socket, navigate, params);
   }
   // If no event was sent, set processing to false.
   if (!eventSent) {
     event_processing = false;
     // recursively call processEvent to drain the queue, since there is
     // no state update to trigger the useEffect event loop.
-    await processEvent(socket);
+    await processEvent(socket, navigate, params);
   }
 };
 
@@ -430,6 +509,8 @@ export const processEvent = async (socket) => {
  * @param transports The transports to use.
  * @param setConnectErrors The function to update connection error value.
  * @param client_storage The client storage object from context.js
+ * @param navigate The navigate function from React Router
+ * @param params The params object from React Router
  */
 export const connect = async (
   socket,
@@ -437,6 +518,8 @@ export const connect = async (
   transports,
   setConnectErrors,
   client_storage = {},
+  navigate,
+  params,
 ) => {
   // Get backend URL object from the endpoint.
   const endpoint = getBackendURL(EVENTURL);
@@ -447,6 +530,7 @@ export const connect = async (
     transports: transports,
     protocols: [reflexEnvironment.version],
     autoUnref: false,
+    query: { token: getToken() },
   });
   // Ensure undefined fields in events are sent as null instead of removed
   socket.current.io.encoder.replacer = (k, v) => (v === undefined ? null : v);
@@ -511,12 +595,16 @@ export const connect = async (
     applyClientStorageDelta(client_storage, update.delta);
     event_processing = !update.final;
     if (update.events) {
-      queueEvents(update.events, socket);
+      queueEvents(update.events, socket, false, navigate, params);
     }
   });
   socket.current.on("reload", async (event) => {
     event_processing = false;
-    queueEvents([...initialEvents(), event], socket, true);
+    queueEvents([...initialEvents(), event], socket, true, navigate, params);
+  });
+  socket.current.on("new_token", async (new_token) => {
+    token = new_token;
+    window.sessionStorage.setItem(TOKEN_KEY, new_token);
   });
 
   document.addEventListener("visibilitychange", checkVisibility);
@@ -588,17 +676,6 @@ export const uploadFiles = async (
   };
 
   const controller = new AbortController();
-  const config = {
-    headers: {
-      "Reflex-Client-Token": getToken(),
-      "Reflex-Event-Handler": handler,
-    },
-    signal: controller.signal,
-    onDownloadProgress: eventHandler,
-  };
-  if (on_upload_progress) {
-    config["onUploadProgress"] = on_upload_progress;
-  }
   const formdata = new FormData();
 
   // Add the token and handler to the file name.
@@ -609,26 +686,85 @@ export const uploadFiles = async (
   // Send the file to the server.
   refs[upload_ref_name] = controller;
 
-  try {
-    return await axios.post(getBackendURL(UPLOADURL), formdata, config);
-  } catch (error) {
-    if (error.response) {
-      // The request was made and the server responded with a status code
-      // that falls out of the range of 2xx
-      console.log(error.response.data);
-    } else if (error.request) {
-      // The request was made but no response was received
-      // `error.request` is an instance of XMLHttpRequest in the browser and an instance of
-      // http.ClientRequest in node.js
-      console.log(error.request);
-    } else {
-      // Something happened in setting up the request that triggered an Error
-      console.log(error.message);
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+
+    // Set up event handlers
+    xhr.onload = function () {
+      if (xhr.status >= 200 && xhr.status < 300) {
+        resolve({
+          data: xhr.responseText,
+          status: xhr.status,
+          statusText: xhr.statusText,
+          headers: {
+            get: (name) => xhr.getResponseHeader(name),
+          },
+        });
+      } else {
+        reject(new Error(`HTTP error! status: ${xhr.status}`));
+      }
+    };
+
+    xhr.onerror = function () {
+      reject(new Error("Network error"));
+    };
+
+    xhr.onabort = function () {
+      reject(new Error("Upload aborted"));
+    };
+
+    // Handle upload progress
+    if (on_upload_progress) {
+      xhr.upload.onprogress = function (event) {
+        if (event.lengthComputable) {
+          const progressEvent = {
+            loaded: event.loaded,
+            total: event.total,
+            progress: event.loaded / event.total,
+          };
+          on_upload_progress(progressEvent);
+        }
+      };
     }
-    return false;
-  } finally {
-    delete refs[upload_ref_name];
-  }
+
+    // Handle download progress with streaming response parsing
+    xhr.onprogress = function (event) {
+      if (eventHandler) {
+        const progressEvent = {
+          event: {
+            target: {
+              responseText: xhr.responseText,
+            },
+          },
+          progress: event.lengthComputable ? event.loaded / event.total : 0,
+        };
+        eventHandler(progressEvent);
+      }
+    };
+
+    // Handle abort controller
+    controller.signal.addEventListener("abort", () => {
+      xhr.abort();
+    });
+
+    // Configure and send request
+    xhr.open("POST", getBackendURL(UPLOADURL));
+    xhr.setRequestHeader("Reflex-Client-Token", getToken());
+    xhr.setRequestHeader("Reflex-Event-Handler", handler);
+
+    try {
+      xhr.send(formdata);
+    } catch (error) {
+      reject(error);
+    }
+  })
+    .catch((error) => {
+      console.log("Upload error:", error.message);
+      return false;
+    })
+    .finally(() => {
+      delete refs[upload_ref_name];
+    });
 };
 
 /**
@@ -639,7 +775,7 @@ export const uploadFiles = async (
  * @param {string} handler The client handler to process event.
  * @returns The event object.
  */
-export const Event = (
+export const ReflexEvent = (
   name,
   payload = {},
   event_actions = {},
@@ -660,9 +796,9 @@ export const hydrateClientStorage = (client_storage) => {
     for (const state_key in client_storage.cookies) {
       const cookie_options = client_storage.cookies[state_key];
       const cookie_name = cookie_options.name || state_key;
-      const cookie_value = cookies.get(cookie_name);
+      const cookie_value = cookies.get(cookie_name, { doNotParse: true });
       if (cookie_value !== undefined) {
-        client_storage_values[state_key] = cookies.get(cookie_name);
+        client_storage_values[state_key] = cookie_value;
       }
     }
   }
@@ -710,7 +846,10 @@ const applyClientStorageDelta = (client_storage, delta) => {
   );
   if (unqualified_states.length === 1) {
     const main_state = delta[unqualified_states[0]];
-    if (main_state.is_hydrated !== undefined && !main_state.is_hydrated) {
+    if (
+      main_state.is_hydrated_rx_state_ !== undefined &&
+      !main_state.is_hydrated_rx_state_
+    ) {
       // skip if the state is not hydrated yet, since all client storage
       // values are sent in the hydrate event
       return;
@@ -748,7 +887,7 @@ const applyClientStorageDelta = (client_storage, delta) => {
 };
 
 /**
- * Establish websocket event loop for a NextJS page.
+ * Establish websocket event loop for a React Router page.
  * @param dispatch The reducer dispatch function to update state.
  * @param initial_events The initial app events.
  * @param client_storage The client storage object from context.js
@@ -763,11 +902,25 @@ export const useEventLoop = (
   client_storage = {},
 ) => {
   const socket = useRef(null);
-  const router = useRouter();
+  const location = useLocation();
+  const navigate = useNavigate();
+  const paramsR = useParams();
+  const prevLocationRef = useRef(location);
+  const [searchParams] = useSearchParams();
   const [connectErrors, setConnectErrors] = useState([]);
+  const params = useRef(paramsR);
+
+  useEffect(() => {
+    const { "*": splat, ...remainingParams } = paramsR;
+    if (splat) {
+      params.current = { ...remainingParams, splat: splat.split("/") };
+    } else {
+      params.current = remainingParams;
+    }
+  }, [paramsR]);
 
   // Function to add new events to the event queue.
-  const addEvents = (events, args, event_actions) => {
+  const addEvents = useCallback((events, args, event_actions) => {
     const _events = events.filter((e) => e !== undefined && e !== null);
 
     if (!(args instanceof Array)) {
@@ -803,32 +956,28 @@ export const useEventLoop = (
       // If debounce is used, queue the events after some delay
       debounce(
         combined_name,
-        () => queueEvents(_events, socket),
+        () =>
+          queueEvents(_events, socket, false, navigate, () => params.current),
         event_actions.debounce,
       );
     } else {
-      queueEvents(_events, socket);
+      queueEvents(_events, socket, false, navigate, () => params.current);
     }
-  };
+  }, []);
 
   const sentHydrate = useRef(false); // Avoid double-hydrate due to React strict-mode
   useEffect(() => {
-    if (router.isReady && !sentHydrate.current) {
+    if (!sentHydrate.current) {
       queueEvents(
-        initial_events().map((e) => ({
-          ...e,
-          router_data: (({ pathname, query, asPath }) => ({
-            pathname,
-            query,
-            asPath,
-          }))(router),
-        })),
+        initial_events(),
         socket,
         true,
+        navigate,
+        () => params.current,
       );
       sentHydrate.current = true;
     }
-  }, [router.isReady]);
+  }, []);
 
   // Handle frontend errors and send them to the backend via websocket.
   useEffect(() => {
@@ -838,8 +987,8 @@ export const useEventLoop = (
 
     window.onerror = function (msg, url, lineNo, columnNo, error) {
       addEvents([
-        Event(`${exception_state_name}.handle_frontend_exception`, {
-          stack: error.stack,
+        ReflexEvent(`${exception_state_name}.handle_frontend_exception`, {
+          info: error.name + ": " + error.message + "\n" + error.stack,
           component_stack: "",
         }),
       ]);
@@ -850,8 +999,13 @@ export const useEventLoop = (
     //https://github.com/mknichel/javascript-errors?tab=readme-ov-file#promise-rejection-events
     window.onunhandledrejection = function (event) {
       addEvents([
-        Event(`${exception_state_name}.handle_frontend_exception`, {
-          stack: event.reason?.stack,
+        ReflexEvent(`${exception_state_name}.handle_frontend_exception`, {
+          info:
+            event.reason?.name +
+            ": " +
+            event.reason?.message +
+            "\n" +
+            event.reason?.stack,
           component_stack: "",
         }),
       ]);
@@ -871,6 +1025,8 @@ export const useEventLoop = (
           ["websocket"],
           setConnectErrors,
           client_storage,
+          navigate,
+          () => params.current,
         );
       }
     }
@@ -885,14 +1041,14 @@ export const useEventLoop = (
 
   // Main event loop.
   useEffect(() => {
-    // Skip if the router is not ready.
-    if (!router.isReady || isBackendDisabled()) {
+    // Skip if the backend is disabled
+    if (isBackendDisabled()) {
       return;
     }
     (async () => {
       // Process all outstanding events.
       while (event_queue.length > 0 && !event_processing) {
-        await processEvent(socket.current);
+        await processEvent(socket.current, navigate, () => params.current);
       }
     })();
   });
@@ -916,7 +1072,7 @@ export const useEventLoop = (
       if (storage_to_state_map[e.key]) {
         const vars = {};
         vars[storage_to_state_map[e.key]] = e.newValue;
-        const event = Event(
+        const event = ReflexEvent(
           `${state_name}.reflex___state____update_vars_internal_state.update_vars_internal`,
           { vars: vars },
         );
@@ -928,31 +1084,43 @@ export const useEventLoop = (
     return () => window.removeEventListener("storage", handleStorage);
   });
 
-  // Route after the initial page hydration.
+  const handleNavigationEvents = useRef(false);
+  // Route after the initial page hydration
   useEffect(() => {
-    const change_start = () => {
-      const main_state_dispatch = dispatch["reflex___state____state"];
-      if (main_state_dispatch !== undefined) {
-        main_state_dispatch({ is_hydrated: false });
+    // The first time this effect runs is initial load, so don't handle
+    // any navigation events.
+    if (!handleNavigationEvents.current) {
+      handleNavigationEvents.current = true;
+      return;
+    }
+    if (location.state?.fromNotFound) {
+      // If the redirect is from a 404 page, we skip onLoadInternalEvent,
+      // since it was already run when the 404 page was first rendered.
+      return;
+    }
+    // This will run when the location changes
+    if (
+      location.pathname + location.search ===
+      prevLocationRef.current.pathname + prevLocationRef.current.search
+    ) {
+      if (location.hash) {
+        // If the hash is the same, we don't need to do anything.
+        return;
       }
-    };
-    const change_complete = () => addEvents(onLoadInternalEvent());
-    const change_error = () => {
-      // Remove cached error state from router for this page, otherwise the
-      // page will never send on_load events again.
-      if (router.components[router.pathname].error) {
-        delete router.components[router.pathname].error;
-      }
-    };
-    router.events.on("routeChangeStart", change_start);
-    router.events.on("routeChangeComplete", change_complete);
-    router.events.on("routeChangeError", change_error);
-    return () => {
-      router.events.off("routeChangeStart", change_start);
-      router.events.off("routeChangeComplete", change_complete);
-      router.events.off("routeChangeError", change_error);
-    };
-  }, [router]);
+    }
+
+    // Equivalent to routeChangeStart - runs when navigation begins
+    const main_state_dispatch = dispatch["reflex___state____state"];
+    if (main_state_dispatch !== undefined) {
+      main_state_dispatch({ is_hydrated_rx_state_: false });
+    }
+
+    // Equivalent to routeChangeComplete - runs after navigation completes
+    addEvents(onLoadInternalEvent());
+
+    // Update the ref
+    prevLocationRef.current = location;
+  }, [location, dispatch, onLoadInternalEvent, addEvents]);
 
   return [addEvents, connectErrors];
 };

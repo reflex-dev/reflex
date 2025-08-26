@@ -46,7 +46,7 @@ test_style = [
 
 
 @pytest.mark.parametrize(
-    "style_dict,expected",
+    ("style_dict", "expected"),
     test_style,
 )
 def test_convert(style_dict, expected):
@@ -61,7 +61,7 @@ def test_convert(style_dict, expected):
 
 
 @pytest.mark.parametrize(
-    "style_dict,expected",
+    ("style_dict", "expected"),
     test_style,
 )
 def test_create_style(style_dict, expected):

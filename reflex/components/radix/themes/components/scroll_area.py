@@ -2,9 +2,8 @@
 
 from typing import Literal
 
+from reflex.components.radix.themes.base import RadixThemesComponent
 from reflex.vars.base import Var
-
-from ..base import RadixThemesComponent
 
 
 class ScrollArea(RadixThemesComponent):

@@ -17,6 +17,7 @@ from reflex.components.component import (
 )
 from reflex.components.radix.themes.layout.box import Box
 from reflex.constants import EventTriggers
+from reflex.constants.state import FIELD_MARKER
 from reflex.event import (
     EventChain,
     EventHandler,
@@ -115,7 +116,8 @@ def component2() -> type[Component]:
 
         on_prop_event: EventHandler[on_prop_event_spec]
 
-        def get_event_triggers(self) -> dict[str, Any]:
+        @classmethod
+        def get_event_triggers(cls) -> dict[str, Any]:
             """Test controlled triggers.
 
             Returns:
@@ -302,7 +304,7 @@ def test_create_component(component1):
 
 
 @pytest.mark.parametrize(
-    "prop_name,var,expected",
+    ("prop_name", "var", "expected"),
     [
         pytest.param(
             "text",
@@ -539,7 +541,7 @@ def test_get_props(component1, component2):
 
 
 @pytest.mark.parametrize(
-    "text,number",
+    ("text", "number"),
     [
         ("", 0),
         ("test", 1),
@@ -560,7 +562,7 @@ def test_valid_props(component1, text: str, number: int):
 
 
 @pytest.mark.parametrize(
-    "text,number", [("", "bad_string"), (13, 1), ("test", [1, 2, 3])]
+    ("text", "number"), [("", "bad_string"), (13, 1), ("test", [1, 2, 3])]
 )
 def test_invalid_prop_type(component1, text: str, number: int):
     """Test that an invalid prop type raises an error.
@@ -607,6 +609,7 @@ def test_get_event_triggers(component1, component2):
         EventTriggers.ON_MOUSE_OVER,
         EventTriggers.ON_MOUSE_UP,
         EventTriggers.ON_SCROLL,
+        EventTriggers.ON_SCROLL_END,
         EventTriggers.ON_MOUNT,
         EventTriggers.ON_UNMOUNT,
     }
@@ -674,145 +677,90 @@ def test_component_create_unallowed_types(children, test_component):
 
 
 @pytest.mark.parametrize(
-    "element, expected",
+    ("element", "expected"),
     [
         (
             (rx.text("first_text"),),
             {
                 "name": "Fragment",
                 "props": [],
-                "contents": "",
-                "special_props": [],
                 "children": [
                     {
                         "name": "RadixThemesText",
-                        "props": ['as={"p"}'],
-                        "contents": "",
-                        "special_props": [],
+                        "props": ['as:"p"'],
                         "children": [
                             {
-                                "name": "",
-                                "props": [],
-                                "contents": '{"first_text"}',
-                                "special_props": [],
-                                "children": [],
-                                "autofocus": False,
+                                "contents": '"first_text"',
                             }
                         ],
-                        "autofocus": False,
                     }
                 ],
-                "autofocus": False,
             },
         ),
         (
             (rx.text("first_text"), rx.text("second_text")),
             {
-                "autofocus": False,
                 "children": [
                     {
-                        "autofocus": False,
                         "children": [
                             {
-                                "autofocus": False,
-                                "children": [],
-                                "contents": '{"first_text"}',
-                                "name": "",
-                                "props": [],
-                                "special_props": [],
+                                "contents": '"first_text"',
                             }
                         ],
-                        "contents": "",
                         "name": "RadixThemesText",
-                        "props": ['as={"p"}'],
-                        "special_props": [],
+                        "props": ['as:"p"'],
                     },
                     {
-                        "autofocus": False,
                         "children": [
                             {
-                                "autofocus": False,
-                                "children": [],
-                                "contents": '{"second_text"}',
-                                "name": "",
-                                "props": [],
-                                "special_props": [],
+                                "contents": '"second_text"',
                             }
                         ],
-                        "contents": "",
                         "name": "RadixThemesText",
-                        "props": ['as={"p"}'],
-                        "special_props": [],
+                        "props": ['as:"p"'],
                     },
                 ],
-                "contents": "",
                 "name": "Fragment",
                 "props": [],
-                "special_props": [],
             },
         ),
         (
             (rx.text("first_text"), rx.box((rx.text("second_text"),))),
             {
-                "autofocus": False,
                 "children": [
                     {
-                        "autofocus": False,
                         "children": [
                             {
-                                "autofocus": False,
-                                "children": [],
-                                "contents": '{"first_text"}',
-                                "name": "",
-                                "props": [],
-                                "special_props": [],
+                                "contents": '"first_text"',
                             }
                         ],
-                        "contents": "",
                         "name": "RadixThemesText",
-                        "props": ['as={"p"}'],
-                        "special_props": [],
+                        "props": ['as:"p"'],
                     },
                     {
-                        "autofocus": False,
                         "children": [
                             {
-                                "autofocus": False,
                                 "children": [
                                     {
-                                        "autofocus": False,
                                         "children": [
                                             {
-                                                "autofocus": False,
-                                                "children": [],
-                                                "contents": '{"second_text"}',
-                                                "name": "",
-                                                "props": [],
-                                                "special_props": [],
+                                                "contents": '"second_text"',
                                             }
                                         ],
-                                        "contents": "",
                                         "name": "RadixThemesText",
-                                        "props": ['as={"p"}'],
-                                        "special_props": [],
+                                        "props": ['as:"p"'],
                                     }
                                 ],
-                                "contents": "",
                                 "name": "Fragment",
                                 "props": [],
-                                "special_props": [],
                             }
                         ],
-                        "contents": "",
                         "name": "RadixThemesBox",
                         "props": [],
-                        "special_props": [],
                     },
                 ],
-                "contents": "",
                 "name": "Fragment",
                 "props": [],
-                "special_props": [],
             },
         ),
     ],
@@ -842,7 +790,6 @@ class C1State(BaseState):
 
     def mock_handler(self, _e: JavascriptInputEvent, _bravo: dict, _charlie: _Obj):
         """Mock handler."""
-        pass
 
 
 def test_component_event_trigger_arbitrary_args():
@@ -860,7 +807,8 @@ def test_component_event_trigger_arbitrary_args():
         library = "/local"
         tag = "C1"
 
-        def get_event_triggers(self) -> dict[str, Any]:
+        @classmethod
+        def get_event_triggers(cls) -> dict[str, Any]:
             return {
                 **super().get_event_triggers(),
                 "on_foo": on_foo_spec,
@@ -877,7 +825,7 @@ def test_create_custom_component(my_component):
     """
     component = rx.memo(my_component)(prop1="test", prop2=1)
     assert component.tag == "MyComponent"
-    assert component.get_props() == {"prop1", "prop2"}
+    assert component.get_props() == {"prop1RxMemo", "prop2RxMemo"}
     assert component.tag in CUSTOM_COMPONENTS
 
 
@@ -911,7 +859,7 @@ def test_custom_component_wrapper():
     assert len(ccomponent.children) == 1
     assert isinstance(ccomponent.children[0], Text)
 
-    component = ccomponent.get_component(ccomponent)
+    component = ccomponent.get_component()
     assert isinstance(component, Box)
 
 
@@ -924,16 +872,16 @@ def test_invalid_event_handler_args(component2, test_state):
     """
     # EventHandler args must match
     with pytest.raises(EventFnArgMismatchError):
-        component2.create(on_click=test_state.do_something_arg)
+        component2.create(on_blur=test_state.do_something_arg)
 
     # EventHandler args must have at least as many default args as the spec.
     with pytest.raises(EventFnArgMismatchError):
-        component2.create(on_click=test_state.do_something_required_optional)
+        component2.create(on_blur=test_state.do_something_required_optional)
 
     # Multiple EventHandler args: all must match
     with pytest.raises(EventFnArgMismatchError):
         component2.create(
-            on_click=[test_state.do_something_arg, test_state.do_something]
+            on_blur=[test_state.do_something_arg, test_state.do_something]
         )
 
     # # Event Handler types must match
@@ -945,6 +893,22 @@ def test_invalid_event_handler_args(component2, test_state):
         component2.create(on_user_list_changed=test_state.do_something_with_int)
     with pytest.raises(EventHandlerArgTypeMismatchError):
         component2.create(on_user_list_changed=test_state.do_something_with_list_int)
+    with pytest.raises(EventHandlerArgTypeMismatchError):
+        component2.create(
+            on_user_visited_count_changed=test_state.do_something_with_bool()
+        )
+    with pytest.raises(EventHandlerArgTypeMismatchError):
+        component2.create(on_user_list_changed=test_state.do_something_with_int())
+    with pytest.raises(EventHandlerArgTypeMismatchError):
+        component2.create(on_user_list_changed=test_state.do_something_with_list_int())
+
+    component2.create(
+        on_user_visited_count_changed=test_state.do_something_with_bool(False)
+    )
+    component2.create(on_user_list_changed=test_state.do_something_with_int(23))
+    component2.create(
+        on_user_list_changed=test_state.do_something_with_list_int([2321, 321])
+    )
 
     component2.create(on_open=test_state.do_something_with_int)
     component2.create(on_open=test_state.do_something_with_bool)
@@ -953,26 +917,26 @@ def test_invalid_event_handler_args(component2, test_state):
 
     # lambda cannot return weird values.
     with pytest.raises(ValueError):
-        component2.create(on_click=lambda: 1)
+        component2.create(on_blur=lambda: 1)
     with pytest.raises(ValueError):
-        component2.create(on_click=lambda: [1])
+        component2.create(on_blur=lambda: [1])
     with pytest.raises(ValueError):
         component2.create(
-            on_click=lambda: (test_state.do_something_arg(1), test_state.do_something)
+            on_blur=lambda: (test_state.do_something_arg(1), test_state.do_something)
         )
 
     # lambda signature must match event trigger.
     with pytest.raises(EventFnArgMismatchError):
-        component2.create(on_click=lambda _: test_state.do_something_arg(1))
+        component2.create(on_blur=lambda _: test_state.do_something_arg(1))
 
     # lambda returning EventHandler must match spec
     with pytest.raises(EventFnArgMismatchError):
-        component2.create(on_click=lambda: test_state.do_something_arg)
+        component2.create(on_blur=lambda: test_state.do_something_arg)
 
     # Mixed EventSpec and EventHandler must match spec.
     with pytest.raises(EventFnArgMismatchError):
         component2.create(
-            on_click=lambda: [
+            on_blur=lambda: [
                 test_state.do_something_arg(1),
                 test_state.do_something_arg,
             ]
@@ -987,8 +951,8 @@ def test_valid_event_handler_args(component2, test_state):
         test_state: A test state.
     """
     # Uncontrolled event handlers should not take args.
-    component2.create(on_click=test_state.do_something)
-    component2.create(on_click=test_state.do_something_arg(1))
+    component2.create(on_blur=test_state.do_something)
+    component2.create(on_blur=test_state.do_something_arg(1))
 
     # Does not raise because event handlers are allowed to have less args than the spec.
     component2.create(on_open=test_state.do_something)
@@ -1015,7 +979,7 @@ def test_valid_event_handler_args(component2, test_state):
     )
 
     # lambda returning EventHandler is okay if the spec matches.
-    component2.create(on_click=lambda: test_state.do_something)
+    component2.create(on_blur=lambda: test_state.do_something)
     component2.create(on_open=lambda _: test_state.do_something_arg)
     component2.create(on_prop_event=lambda _: test_state.do_something_arg)
     component2.create(on_open=lambda: test_state.do_something)
@@ -1024,16 +988,16 @@ def test_valid_event_handler_args(component2, test_state):
     component2.create(on_prop_event=lambda _: test_state.do_something)
 
     # lambda can always return an EventSpec.
-    component2.create(on_click=lambda: test_state.do_something_arg(1))
+    component2.create(on_blur=lambda: test_state.do_something_arg(1))
     component2.create(on_open=lambda _: test_state.do_something_arg(1))
     component2.create(on_prop_event=lambda _: test_state.do_something_arg(1))
 
     # Return EventSpec and EventHandler (no arg).
     component2.create(
-        on_click=lambda: [test_state.do_something_arg(1), test_state.do_something]
+        on_blur=lambda: [test_state.do_something_arg(1), test_state.do_something]
     )
     component2.create(
-        on_click=lambda: [test_state.do_something_arg(1), test_state.do_something()]
+        on_blur=lambda: [test_state.do_something_arg(1), test_state.do_something()]
     )
 
     # Return 2 EventSpec.
@@ -1161,12 +1125,12 @@ def test_component_with_only_valid_children(fixture, request):
 
 
 @pytest.mark.parametrize(
-    "component,rendered",
+    ("component", "rendered"),
     [
-        (rx.text("hi"), '<RadixThemesText as={"p"}>\n\n{"hi"}\n</RadixThemesText>'),
+        (rx.text("hi"), 'jsx(RadixThemesText,{as:"p"},"hi")'),
         (
             rx.box(rx.heading("test", size="3")),
-            '<RadixThemesBox>\n\n<RadixThemesHeading size={"3"}>\n\n{"test"}\n</RadixThemesHeading>\n</RadixThemesBox>',
+            'jsx(RadixThemesBox,{},jsx(RadixThemesHeading,{size:"3"},"test"))',
         ),
     ],
 )
@@ -1204,7 +1168,7 @@ def test_stateful_component_memoize_event_trigger(test_state):
     Args:
         test_state: A test state.
     """
-    button_component = rx.button("Click me", on_click=test_state.do_something)
+    button_component = rx.button("Click me", on_blur=test_state.do_something)
     stateful_component = StatefulComponent.compile_from(button_component)
     assert isinstance(stateful_component, StatefulComponent)
 
@@ -1221,10 +1185,10 @@ def test_stateful_banner():
     assert isinstance(stateful_component, StatefulComponent)
 
 
-TEST_VAR = LiteralVar.create("test")._replace(
+TEST_VAR = LiteralVar.create("p")._replace(
     merge_var_data=VarData(
         hooks={"useTest": None},
-        imports={"test": [ImportVar(tag="test")]},
+        imports={"test": [ImportVar(tag="p")]},
         state="Test",
     )
 )
@@ -1233,31 +1197,31 @@ STYLE_VAR = TEST_VAR._replace(_js_expr="style")
 EVENT_CHAIN_VAR = TEST_VAR.to(EventChain)
 ARG_VAR = Var(_js_expr="arg")
 
-TEST_VAR_DICT_OF_DICT = LiteralVar.create({"a": {"b": "test"}})._replace(
+TEST_VAR_DICT_OF_DICT = LiteralVar.create({"a": {"b": "p"}})._replace(
     merge_var_data=TEST_VAR._var_data
 )
-FORMATTED_TEST_VAR_DICT_OF_DICT = LiteralVar.create(
-    {"a": {"b": "footestbar"}}
-)._replace(merge_var_data=TEST_VAR._var_data)
-
-TEST_VAR_LIST_OF_LIST = LiteralVar.create([["test"]])._replace(
-    merge_var_data=TEST_VAR._var_data
-)
-FORMATTED_TEST_VAR_LIST_OF_LIST = LiteralVar.create([["footestbar"]])._replace(
+FORMATTED_TEST_VAR_DICT_OF_DICT = LiteralVar.create({"a": {"b": "foopbar"}})._replace(
     merge_var_data=TEST_VAR._var_data
 )
 
-TEST_VAR_LIST_OF_LIST_OF_LIST = LiteralVar.create([[["test"]]])._replace(
+TEST_VAR_LIST_OF_LIST = LiteralVar.create([["p"]])._replace(
     merge_var_data=TEST_VAR._var_data
 )
-FORMATTED_TEST_VAR_LIST_OF_LIST_OF_LIST = LiteralVar.create(
-    [[["footestbar"]]]
-)._replace(merge_var_data=TEST_VAR._var_data)
+FORMATTED_TEST_VAR_LIST_OF_LIST = LiteralVar.create([["foopbar"]])._replace(
+    merge_var_data=TEST_VAR._var_data
+)
 
-TEST_VAR_LIST_OF_DICT = LiteralVar.create([{"a": "test"}])._replace(
+TEST_VAR_LIST_OF_LIST_OF_LIST = LiteralVar.create([[["p"]]])._replace(
     merge_var_data=TEST_VAR._var_data
 )
-FORMATTED_TEST_VAR_LIST_OF_DICT = LiteralVar.create([{"a": "footestbar"}])._replace(
+FORMATTED_TEST_VAR_LIST_OF_LIST_OF_LIST = LiteralVar.create([[["foopbar"]]])._replace(
+    merge_var_data=TEST_VAR._var_data
+)
+
+TEST_VAR_LIST_OF_DICT = LiteralVar.create([{"a": "p"}])._replace(
+    merge_var_data=TEST_VAR._var_data
+)
+FORMATTED_TEST_VAR_LIST_OF_DICT = LiteralVar.create([{"a": "foopbar"}])._replace(
     merge_var_data=TEST_VAR._var_data
 )
 
@@ -1290,7 +1254,7 @@ class EventState(rx.State):
 
 @pytest.mark.parametrize(
     ("component", "exp_vars"),
-    (
+    [
         pytest.param(
             Bare.create(TEST_VAR),
             [TEST_VAR],
@@ -1393,27 +1357,27 @@ class EventState(rx.State):
             id="fstring-style-background_color",
         ),
         pytest.param(
-            rx.fragment(on_click=EVENT_CHAIN_VAR),
+            rx.fragment(on_blur=EVENT_CHAIN_VAR),
             [EVENT_CHAIN_VAR],
             id="direct-event-chain",
         ),
         pytest.param(
-            rx.fragment(on_click=EventState.handler),
+            rx.fragment(on_blur=EventState.handler),
             [],
             id="direct-event-handler",
         ),
         pytest.param(
-            rx.fragment(on_click=EventState.handler2(TEST_VAR)),  # pyright: ignore [reportCallIssue]
+            rx.fragment(on_blur=EventState.handler2(TEST_VAR)),  # pyright: ignore [reportCallIssue]
             [ARG_VAR, TEST_VAR],
             id="direct-event-handler-arg",
         ),
         pytest.param(
-            rx.fragment(on_click=EventState.handler2(EventState.v)),  # pyright: ignore [reportCallIssue]
+            rx.fragment(on_blur=EventState.handler2(EventState.v)),  # pyright: ignore [reportCallIssue]
             [ARG_VAR, EventState.v],
             id="direct-event-handler-arg2",
         ),
         pytest.param(
-            rx.fragment(on_click=lambda: EventState.handler2(TEST_VAR)),  # pyright: ignore [reportCallIssue]
+            rx.fragment(on_blur=lambda: EventState.handler2(TEST_VAR)),  # pyright: ignore [reportCallIssue]
             [ARG_VAR, TEST_VAR],
             id="direct-event-handler-lambda",
         ),
@@ -1457,7 +1421,7 @@ class EventState(rx.State):
             [FORMATTED_TEST_VAR_LIST_OF_DICT],
             id="fstring-list_of_dict",
         ),
-    ),
+    ],
 )
 def test_get_vars(component, exp_vars):
     comp_vars = sorted(component._get_vars(), key=lambda v: v._js_expr)
@@ -1520,8 +1484,6 @@ def test_instantiate_all_components():
 class InvalidParentComponent(Component):
     """Invalid Parent Component."""
 
-    ...
-
 
 class ValidComponent1(Component):
     """Test valid component."""
@@ -1531,8 +1493,6 @@ class ValidComponent1(Component):
 
 class ValidComponent2(Component):
     """Test valid component."""
-
-    ...
 
 
 class ValidComponent3(Component):
@@ -1549,8 +1509,6 @@ class ValidComponent4(Component):
 
 class InvalidComponent(Component):
     """Test invalid component."""
-
-    ...
 
 
 valid_component1 = ValidComponent1.create
@@ -1609,12 +1567,12 @@ def test_validate_valid_children():
             ),
             (
                 "fifth",
+                "sixth",
                 rx.match(
                     "nested_condition",
                     ("nested_first", valid_component2()),
                     rx.fragment(valid_component2()),
                 ),
-                valid_component2(),
             ),
         )
     )
@@ -1671,12 +1629,12 @@ def test_validate_valid_parents():
             ),
             (
                 "fifth",
+                "sixth",
                 rx.match(
                     "nested_condition",
                     ("nested_first", valid_component3()),
                     rx.fragment(valid_component3()),
                 ),
-                valid_component3(),
             ),
         )
     )
@@ -1690,6 +1648,24 @@ def test_validate_invalid_children():
         valid_component4(
             rx.fragment(invalid_component()),
         )
+
+    with pytest.raises(ValueError):
+        rx.el.p(rx.el.p("what"))
+
+    with pytest.raises(ValueError):
+        rx.el.p(rx.el.div("what"))
+
+    with pytest.raises(ValueError):
+        rx.el.button(rx.el.button("what"))
+
+    with pytest.raises(ValueError):
+        rx.el.p(rx.el.ol(rx.el.li("what")))
+
+    with pytest.raises(ValueError):
+        rx.el.p(rx.el.ul(rx.el.li("what")))
+
+    with pytest.raises(ValueError):
+        rx.el.a(rx.el.a("what"))
 
     with pytest.raises(ValueError):
         valid_component2(
@@ -1771,14 +1747,14 @@ def test_rename_props():
 
     c1 = C1.create(prop1="prop1_1", prop2="prop2_1")
     rendered_c1 = c1.render()
-    assert 'renamed_prop1={"prop1_1"}' in rendered_c1["props"]
-    assert 'renamed_prop2={"prop2_1"}' in rendered_c1["props"]
+    assert 'renamed_prop1:"prop1_1"' in rendered_c1["props"]
+    assert 'renamed_prop2:"prop2_1"' in rendered_c1["props"]
 
     c2 = C2.create(prop1="prop1_2", prop2="prop2_2", prop3="prop3_2")
     rendered_c2 = c2.render()
-    assert 'renamed_prop1={"prop1_2"}' in rendered_c2["props"]
-    assert 'subclass_prop2={"prop2_2"}' in rendered_c2["props"]
-    assert 'renamed_prop3={"prop3_2"}' in rendered_c2["props"]
+    assert 'renamed_prop1:"prop1_2"' in rendered_c2["props"]
+    assert 'subclass_prop2:"prop2_2"' in rendered_c2["props"]
+    assert 'renamed_prop3:"prop3_2"' in rendered_c2["props"]
 
 
 def test_custom_component_get_imports():
@@ -1805,7 +1781,7 @@ def test_custom_component_get_imports():
     assert "outer" not in custom_comp._get_all_imports()
 
     # The imports are only resolved during compilation.
-    custom_comp.get_component(custom_comp)
+    custom_comp.get_component()
     _, imports_inner = compile_custom_component(custom_comp)
     assert "inner" in imports_inner
     assert "outer" not in imports_inner
@@ -1824,7 +1800,8 @@ def test_custom_component_get_imports():
 
 def test_custom_component_declare_event_handlers_in_fields():
     class ReferenceComponent(Component):
-        def get_event_triggers(self) -> dict[str, Any]:
+        @classmethod
+        def get_event_triggers(cls) -> dict[str, Any]:
             """Test controlled triggers.
 
             Returns:
@@ -1833,8 +1810,8 @@ def test_custom_component_declare_event_handlers_in_fields():
             return {
                 **super().get_event_triggers(),
                 "on_b": input_event,
-                "on_d": lambda: [],
-                "on_e": lambda: [],
+                "on_d": no_args_event_spec,
+                "on_e": no_args_event_spec,
             }
 
     class TestComponent(Component):
@@ -1849,8 +1826,8 @@ def test_custom_component_declare_event_handlers_in_fields():
     assert custom_triggers.keys() == test_triggers.keys()
     for trigger_name in custom_component.get_event_triggers():
         for v1, v2 in zip(
-            parse_args_spec(test_triggers[trigger_name]),
-            parse_args_spec(custom_triggers[trigger_name]),
+            parse_args_spec(test_triggers[trigger_name])[0],
+            parse_args_spec(custom_triggers[trigger_name])[0],
             strict=True,
         ):
             assert v1.equals(v2)
@@ -1860,7 +1837,8 @@ def test_invalid_event_trigger():
     class TriggerComponent(Component):
         on_push: Var[bool]
 
-        def get_event_triggers(self) -> dict[str, Any]:
+        @classmethod
+        def get_event_triggers(cls) -> dict[str, Any]:
             """Test controlled triggers.
 
             Returns:
@@ -1868,7 +1846,7 @@ def test_invalid_event_trigger():
             """
             return {
                 **super().get_event_triggers(),
-                "on_a": lambda: [],
+                "on_a": no_args_event_spec,
             }
 
     trigger_comp = TriggerComponent.create
@@ -1883,13 +1861,13 @@ def test_invalid_event_trigger():
 
 @pytest.mark.parametrize(
     "tags",
-    (
+    [
         ["Component"],
         ["Component", "useState"],
         [ImportVar(tag="Component")],
         [ImportVar(tag="Component"), ImportVar(tag="useState")],
         ["Component", ImportVar(tag="useState")],
-    ),
+    ],
 )
 def test_component_add_imports(tags):
     class BaseComponent(Component):
@@ -2165,7 +2143,7 @@ def test_add_style_embedded_vars(test_state: BaseState):
     assert "useParent" in page._get_all_hooks_internal()
     assert (
         str(page).count(
-            f'css={{({{ ["fakeParent"] : "parent", ["color"] : "var(--plum-10)", ["fake"] : "text", ["margin"] : ({test_state.get_name()}.num+"%") }})}}'
+            f'css:({{ ["fakeParent"] : "parent", ["color"] : "var(--plum-10)", ["fake"] : "text", ["margin"] : ({test_state.get_name()}.num{FIELD_MARKER}+"%") }})'
         )
         == 1
     )
@@ -2186,10 +2164,10 @@ def test_add_style_foreach():
     assert len(page.children[0].children) == 1
 
     # Expect the style to be added to the child of the foreach
-    assert 'css={({ ["color"] : "red" })}' in str(page.children[0].children[0])
+    assert 'css:({ ["color"] : "red" })' in str(page.children[0].children[0])
 
     # Expect only one instance of this CSS dict in the rendered page
-    assert str(page).count('css={({ ["color"] : "red" })}') == 1
+    assert str(page).count('css:({ ["color"] : "red" })') == 1
 
 
 class TriggerState(rx.State):
@@ -2198,46 +2176,45 @@ class TriggerState(rx.State):
     @rx.event
     def do_something(self):
         """Sample event handler."""
-        pass
 
 
 @pytest.mark.parametrize(
-    "component, output",
+    ("component", "output"),
     [
         (rx.box(rx.text("random text")), False),
         (
-            rx.box(rx.text("random text", on_click=rx.console_log("log"))),
+            rx.box(rx.text("random text", on_blur=rx.console_log("log"))),
             False,
         ),
         (
             rx.box(
-                rx.text("random text", on_click=TriggerState.do_something),
+                rx.text("random text", on_blur=TriggerState.do_something),
                 rx.text(
                     "random text",
-                    on_click=Var(_js_expr="toggleColorMode").to(EventChain),
+                    on_blur=Var(_js_expr="toggleColorMode").to(EventChain),
                 ),
             ),
             True,
         ),
         (
             rx.box(
-                rx.text("random text", on_click=rx.console_log("log")),
+                rx.text("random text", on_blur=rx.console_log("log")),
                 rx.text(
                     "random text",
-                    on_click=Var(_js_expr="toggleColorMode").to(EventChain),
+                    on_blur=Var(_js_expr="toggleColorMode").to(EventChain),
                 ),
             ),
             False,
         ),
         (
-            rx.box(rx.text("random text", on_click=TriggerState.do_something)),
+            rx.box(rx.text("random text", on_blur=TriggerState.do_something)),
             True,
         ),
         (
             rx.box(
                 rx.text(
                     "random text",
-                    on_click=[rx.console_log("log"), rx.window_alert("alert")],
+                    on_blur=[rx.console_log("log"), rx.window_alert("alert")],
                 ),
             ),
             False,
@@ -2246,7 +2223,7 @@ class TriggerState(rx.State):
             rx.box(
                 rx.text(
                     "random text",
-                    on_click=[rx.console_log("log"), TriggerState.do_something],
+                    on_blur=[rx.console_log("log"), TriggerState.do_something],
                 ),
             ),
             True,
@@ -2317,3 +2294,15 @@ def test_special_props(component_kwargs, exp_custom_attrs, exp_style):
     for prop in SpecialComponent.get_props():
         if prop in component_kwargs:
             assert getattr(component, prop)._var_value == component_kwargs[prop]
+
+
+def test_ref():
+    """Test that the ref prop is correctly added to the component."""
+    custom_ref = Var("custom_ref")
+    ref_component = rx.box(ref=custom_ref)
+    assert ref_component._render().props["ref"].equals(custom_ref)
+
+    id_component = rx.box(id="custom_id")
+    assert id_component._render().props["ref"].equals(Var("ref_custom_id"))
+
+    assert "ref" not in rx.box()._render().props

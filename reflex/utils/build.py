@@ -2,17 +2,15 @@
 
 from __future__ import annotations
 
-import json
 import os
-import subprocess
 import zipfile
-from pathlib import Path
+from pathlib import Path, PosixPath
 
 from rich.progress import MofNCompleteColumn, Progress, TimeElapsedColumn
 
 from reflex import constants
 from reflex.config import get_config
-from reflex.utils import console, path_ops, prerequisites, processes
+from reflex.utils import console, js_runtimes, path_ops, prerequisites, processes
 from reflex.utils.exec import is_in_app_harness
 
 
@@ -25,30 +23,6 @@ def set_env_json():
             "TEST_MODE": is_in_app_harness(),
         },
     )
-
-
-def generate_sitemap_config(deploy_url: str, export: bool = False):
-    """Generate the sitemap config file.
-
-    Args:
-        deploy_url: The URL of the deployed app.
-        export: If the sitemap are generated for an export.
-    """
-    # Import here to avoid circular imports.
-    from reflex.compiler import templates
-
-    config = {
-        "siteUrl": deploy_url,
-        "generateRobotsTxt": True,
-    }
-
-    if export:
-        config["outDir"] = constants.Dirs.STATIC
-
-    config = json.dumps(config)
-
-    sitemap = prerequisites.get_web_dir() / constants.Next.SITEMAP_CONFIG_FILE
-    sitemap.write_text(templates.SITEMAP_CONFIG(config=config))
 
 
 def _zip(
@@ -83,7 +57,7 @@ def _zip(
     files_to_zip: list[str] = []
     # Traverse the root directory in a top-down manner. In this traversal order,
     # we can modify the dirs list in-place to remove directories we don't want to include.
-    for root, dirs, files in os.walk(root_dir, topdown=True):
+    for root, dirs, files in os.walk(root_dir, topdown=True, followlinks=True):
         root = Path(root)
         # Modify the dirs in-place so excluded and hidden directories are skipped in next traversal.
         dirs[:] = [
@@ -112,7 +86,6 @@ def _zip(
                 for file in root_dir.glob(glob)
                 if file.name not in files_to_exclude
             ]
-
     # Create a progress bar for zipping the component.
     progress = Progress(
         *Progress.get_default_columns()[:-1],
@@ -133,7 +106,7 @@ def _zip(
 def zip_app(
     frontend: bool = True,
     backend: bool = True,
-    zip_dest_dir: str | Path = Path.cwd(),
+    zip_dest_dir: str | Path | None = None,
     upload_db_file: bool = False,
 ):
     """Zip up the app.
@@ -144,6 +117,7 @@ def zip_app(
         zip_dest_dir: The directory to export the zip file to.
         upload_db_file: Whether to upload the database file.
     """
+    zip_dest_dir = zip_dest_dir or Path.cwd()
     zip_dest_dir = Path(zip_dest_dir)
     files_to_exclude = {
         constants.ComponentName.FRONTEND.zip(),
@@ -175,102 +149,102 @@ def zip_app(
         )
 
 
-def build(
-    deploy_url: str | None = None,
-    for_export: bool = False,
-):
-    """Build the app for deployment.
+def _duplicate_index_html_to_parent_dir(directory: Path):
+    """Duplicate index.html in the child directories to the given directory.
+
+    This makes accessing /route and /route/ work in production.
 
     Args:
-        deploy_url: The deployment URL.
-        for_export: Whether the build is for export.
+        directory: The directory to duplicate index.html to.
     """
+    for child in directory.iterdir():
+        if child.is_dir():
+            # If the child directory has an index.html, copy it to the parent directory.
+            index_html = child / "index.html"
+            if index_html.exists():
+                target = directory / (child.name + ".html")
+                if not target.exists():
+                    console.debug(f"Copying {index_html} to {target}")
+                    path_ops.cp(index_html, target)
+                else:
+                    console.debug(f"Skipping {index_html}, already exists at {target}")
+            # Recursively call this function for the child directory.
+            _duplicate_index_html_to_parent_dir(child)
+
+
+def build():
+    """Build the app for deployment."""
     wdir = prerequisites.get_web_dir()
 
     # Clean the static directory if it exists.
-    path_ops.rm(str(wdir / constants.Dirs.STATIC))
-
-    # The export command to run.
-    command = "export"
+    path_ops.rm(str(wdir / constants.Dirs.BUILD_DIR))
 
     checkpoints = [
-        "Linting and checking ",
-        "Creating an optimized production build",
-        "Route (pages)",
-        "prerendered as static HTML",
-        "Collecting page data",
-        "Finalizing page optimization",
-        "Collecting build traces",
+        "building for production",
+        "building SSR bundle for production",
+        "built in",
     ]
-
-    # Generate a sitemap if a deploy URL is provided.
-    if deploy_url is not None:
-        generate_sitemap_config(deploy_url, export=for_export)
-        command = "export-sitemap"
-
-        checkpoints.extend(["Loading next-sitemap", "Generation completed"])
 
     # Start the subprocess with the progress bar.
     process = processes.new_process(
-        [*prerequisites.get_js_package_executor(raise_on_none=True)[0], "run", command],
+        [
+            *js_runtimes.get_js_package_executor(raise_on_none=True)[0],
+            "run",
+            "export",
+        ],
         cwd=wdir,
         shell=constants.IS_WINDOWS,
+        env={
+            **os.environ,
+            "NO_COLOR": "1",
+        },
     )
     processes.show_progress("Creating Production Build", process, checkpoints)
+    _duplicate_index_html_to_parent_dir(wdir / constants.Dirs.STATIC)
+    path_ops.cp(
+        wdir / constants.Dirs.STATIC / constants.ReactRouter.SPA_FALLBACK,
+        wdir / constants.Dirs.STATIC / "404.html",
+    )
+
+    config = get_config()
+
+    if frontend_path := config.frontend_path.strip("/"):
+        frontend_path = PosixPath(frontend_path)
+        first_part = frontend_path.parts[0]
+        for child in list((wdir / constants.Dirs.STATIC).iterdir()):
+            if child.is_dir() and child.name == first_part:
+                continue
+            path_ops.mv(
+                child,
+                wdir / constants.Dirs.STATIC / frontend_path / child.name,
+            )
 
 
 def setup_frontend(
     root: Path,
-    disable_telemetry: bool = True,
 ):
     """Set up the frontend to run the app.
 
     Args:
         root: The root path of the project.
-        disable_telemetry: Whether to disable the Next telemetry.
     """
-    # Create the assets dir if it doesn't exist.
-    path_ops.mkdir(constants.Dirs.APP_ASSETS)
-    path_ops.cp(
-        src=str(root / constants.Dirs.APP_ASSETS),
-        dest=str(root / prerequisites.get_web_dir() / constants.Dirs.PUBLIC),
-        ignore=tuple(f"*.{ext}" for ext in constants.Reflex.STYLESHEETS_SUPPORTED),
-    )
-
     # Set the environment variables in client (env.json).
     set_env_json()
 
     # update the last reflex run time.
     prerequisites.set_last_reflex_run_time()
 
-    # Disable the Next telemetry.
-    if disable_telemetry:
-        processes.new_process(
-            [
-                *prerequisites.get_js_package_executor(raise_on_none=True)[0],
-                "run",
-                "next",
-                "telemetry",
-                "disable",
-            ],
-            cwd=prerequisites.get_web_dir(),
-            stdout=subprocess.DEVNULL,
-            shell=constants.IS_WINDOWS,
-        )
-
 
 def setup_frontend_prod(
     root: Path,
-    disable_telemetry: bool = True,
 ):
     """Set up the frontend for prod mode.
 
     Args:
         root: The root path of the project.
-        disable_telemetry: Whether to disable the Next telemetry.
     """
-    setup_frontend(root, disable_telemetry)
-    build(deploy_url=get_config().deploy_url)
+    setup_frontend(root)
+    build()
 
 
 def _looks_like_venv_dir(dir_to_check: str | Path) -> bool:

@@ -1,6 +1,5 @@
 <div align="center">
-<img src="https://raw.githubusercontent.com/reflex-dev/reflex/main/docs/images/reflex_dark.svg#gh-light-mode-only" alt="Reflex Logo" width="300px">
-<img src="https://raw.githubusercontent.com/reflex-dev/reflex/main/docs/images/reflex_light.svg#gh-dark-mode-only" alt="Reflex Logo" width="300px">
+<img src="https://raw.githubusercontent.com/reflex-dev/reflex/main/docs/images/reflex.svg" alt="Reflex Logo" width="300px">
 
 <hr>
 
@@ -11,6 +10,7 @@
 [![Documentation](https://img.shields.io/badge/Documentation%20-Introduction%20-%20%23007ec6)](https://reflex.dev/docs/getting-started/introduction)
 [![PyPI Downloads](https://static.pepy.tech/badge/reflex)](https://pepy.tech/projects/reflex)
 [![Discord](https://img.shields.io/discord/1029853095527727165?color=%237289da&label=Discord)](https://discord.gg/T5WSbC2YtQ)
+[![Twitter](https://img.shields.io/twitter/follow/getreflex)](https://x.com/getreflex)
 
 </div>
 
@@ -20,7 +20,12 @@
 
 ---
 
-# Reflex
+> [!NOTE]
+> 🚀 **Try [Reflex Build](https://build.reflex.dev/)** – our AI-powered app builder that generates full-stack Reflex applications in seconds.
+
+---
+
+# Introduction
 
 Reflex is a library to build full-stack web apps in pure Python.
 
@@ -140,7 +145,7 @@ app.add_page(index, title="Reflex:DALL-E")
 ## Let's break this down.
 
 <div align="center">
-<img src="docs/images/dalle_colored_code_example.png" alt="Explaining the differences between backend and frontend parts of the DALL-E app." width="900" />
+<img src="https://raw.githubusercontent.com/reflex-dev/reflex/main/docs/images/dalle_colored_code_example.png" alt="Explaining the differences between backend and frontend parts of the DALL-E app." width="900" />
 </div>
 
 ### **Reflex UI**
@@ -198,7 +203,7 @@ def get_image(self):
 
 Within the state, we define functions called event handlers that change the state vars. Event handlers are the way that we can modify the state in Reflex. They can be called in response to user actions, such as clicking a button or typing in a text box. These actions are called events.
 
-Our DALL·E. app has an event handler, `get_image` to which get this image from the OpenAI API. Using `yield` in the middle of an event handler will cause the UI to update. Otherwise the UI will update at the end of the event handler.
+Our DALL·E app has an event handler, `get_image` which gets this image from the OpenAI API. Using `yield` in the middle of an event handler will cause the UI to update. Otherwise the UI will update at the end of the event handler.
 
 ### **Routing**
 
@@ -228,9 +233,12 @@ You can create a multi-page app by adding more pages.
 
 Reflex launched in December 2022 with the name Pynecone.
 
-Beginning in 2025, [Reflex Cloud](https://cloud.reflex.dev) has launched to provide the best hosting experience for Reflex apps. We will continue to develop it and implement more features.
+🚀 Introducing [Reflex Build](https://build.reflex.dev/) — Our AI-Powered Builder
+Reflex Build uses AI to generate complete full-stack Python applications. It helps you quickly create, customize, and refine your Reflex apps — from frontend components to backend logic — so you can focus on your ideas instead of boilerplate code. Whether you’re prototyping or scaling, Reflex Build accelerates development by intelligently scaffolding and optimizing your app’s entire stack.
 
-Reflex has new releases and features coming every other week! Make sure to :star: star and :eyes: watch this repository to stay up to date.
+Alongside this, [Reflex Cloud](https://cloud.reflex.dev) launched in 2025 to offer the best hosting experience for your Reflex apps. We’re continuously improving the platform with new features and capabilities.
+
+Reflex has new releases and features coming every week! Make sure to :star: star and :eyes: watch this repository to stay up to date.
 
 ## Contributing
 
@@ -250,4 +258,4 @@ We are actively looking for contributors, no matter your skill level or experien
 
 ## License
 
-Reflex is open-source and licensed under the [Apache License 2.0](LICENSE).
+Reflex is open-source and licensed under the [Apache License 2.0](https://raw.githubusercontent.com/reflex-dev/reflex/main/LICENSE).

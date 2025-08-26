@@ -13,7 +13,7 @@ Conceptually it is similar to the `simple-one-port` example except it:
 
 Using this method may be preferable for deploying in memory constrained
 environments, because it serves a static frontend export, rather than running
-the NextJS server via node.
+the Vite server via node.
 
 ## Build
 

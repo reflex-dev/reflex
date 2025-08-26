@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 from collections.abc import Generator
 
 import pytest
@@ -274,6 +275,7 @@ def event_chain(tmp_path_factory) -> Generator[AppHarness, None, None]:
     Yields:
         running AppHarness instance
     """
+    os.environ["REFLEX_REACT_STRICT_MODE"] = "0"
     with AppHarness.create(
         root=tmp_path_factory.mktemp("event_chain"),
         app_source=EventChain,
@@ -299,6 +301,42 @@ def driver(event_chain: AppHarness) -> Generator[WebDriver, None, None]:
         driver.quit()
 
 
+@pytest.fixture(scope="module")
+def event_chain_strict(tmp_path_factory) -> Generator[AppHarness, None, None]:
+    """Start EventChain app at tmp_path via AppHarness.
+
+    Args:
+        tmp_path_factory: pytest tmp_path_factory fixture
+
+    Yields:
+        running AppHarness instance
+    """
+    os.environ["REFLEX_REACT_STRICT_MODE"] = "1"
+    with AppHarness.create(
+        root=tmp_path_factory.mktemp("event_chain_strict"),
+        app_source=EventChain,
+    ) as harness:
+        yield harness
+
+
+@pytest.fixture
+def driver_strict(event_chain_strict: AppHarness) -> Generator[WebDriver, None, None]:
+    """Get an instance of the browser open to the event_chain_strict app.
+
+    Args:
+        event_chain_strict: harness for EventChain app
+
+    Yields:
+        WebDriver instance.
+    """
+    assert event_chain_strict.app_instance is not None, "app is not running"
+    driver = event_chain_strict.frontend()
+    try:
+        yield driver
+    finally:
+        driver.quit()
+
+
 def assert_token(event_chain: AppHarness, driver: WebDriver) -> str:
     """Get the token associated with backend state.
 
@@ -310,8 +348,9 @@ def assert_token(event_chain: AppHarness, driver: WebDriver) -> str:
         The token visible in the driver browser.
     """
     assert event_chain.app_instance is not None
-    token_input = driver.find_element(By.ID, "token")
-    assert token_input
+    token_input = AppHarness.poll_for_or_raise_timeout(
+        lambda: driver.find_element(By.ID, "token")
+    )
 
     # wait for the backend connection to send the token
     token = event_chain.poll_for_value(token_input)
@@ -470,7 +509,7 @@ async def test_event_chain_on_load(
         exp_event_order: the expected events recorded in the State
     """
     assert event_chain.frontend_url is not None
-    driver.get(event_chain.frontend_url + uri)
+    driver.get(event_chain.frontend_url.removesuffix("/") + uri)
     token = assert_token(event_chain, driver)
     state_name = event_chain.get_state_name("_state")
 
@@ -532,12 +571,13 @@ async def test_event_chain_on_mount(
         exp_event_order: the expected events recorded in the State
     """
     assert event_chain.frontend_url is not None
-    driver.get(event_chain.frontend_url + uri)
+    driver.get(event_chain.frontend_url.removesuffix("/") + uri)
+
+    unmount_button = AppHarness.poll_for_or_raise_timeout(
+        lambda: driver.find_element(By.ID, "unmount")
+    )
     token = assert_token(event_chain, driver)
     state_name = event_chain.get_state_name("_state")
-
-    unmount_button = driver.find_element(By.ID, "unmount")
-    assert unmount_button
     unmount_button.click()
 
     async def _has_all_events():
@@ -547,14 +587,74 @@ async def test_event_chain_on_mount(
 
     await AppHarness._poll_for_async(_has_all_events)
     event_order = (await event_chain.get_state(token)).substates[state_name].event_order
-    assert event_order == exp_event_order
+    assert list(event_order) == exp_event_order
 
 
 @pytest.mark.parametrize(
-    ("button_id",),
+    ("uri", "exp_event_order"),
     [
-        ("click_yield_interim_value_async",),
-        ("click_yield_interim_value",),
+        (
+            "/on-mount-return-chain",
+            [
+                "on_load_return_chain",
+                "event_arg:unmount",
+                "on_load_return_chain",
+                "event_arg:1",
+                "event_arg:2",
+                "event_arg:3",
+                "event_arg:1",
+                "event_arg:2",
+                "event_arg:3",
+                "event_arg:unmount",
+            ],
+        ),
+        (
+            "/on-mount-yield-chain",
+            [
+                "on_load_yield_chain",
+                "event_arg:mount",
+                "event_no_args",
+                "on_load_yield_chain",
+                "event_arg:mount",
+                "event_arg:4",
+                "event_arg:5",
+                "event_arg:6",
+                "event_arg:4",
+                "event_arg:5",
+                "event_arg:6",
+                "event_no_args",
+            ],
+        ),
+    ],
+)
+@pytest.mark.asyncio
+async def test_event_chain_on_mount_strict(
+    event_chain_strict: AppHarness,
+    driver_strict: WebDriver,
+    uri: str,
+    exp_event_order: list[str],
+):
+    """Run the test_event_chain_on_mount test with strict mode enabled.
+
+    Args:
+        event_chain_strict: AppHarness for the event_chain app with strict mode enabled
+        driver_strict: selenium WebDriver open to the app with strict mode enabled
+        uri: the page to load
+        exp_event_order: the expected events recorded in the State
+    """
+    await test_event_chain_on_mount(
+        event_chain=event_chain_strict,
+        driver=driver_strict,
+        uri=uri,
+        exp_event_order=exp_event_order,
+    )
+
+
+@pytest.mark.parametrize(
+    "button_id",
+    [
+        "click_yield_interim_value_async",
+        "click_yield_interim_value",
     ],
 )
 def test_yield_state_update(event_chain: AppHarness, driver: WebDriver, button_id: str):
@@ -565,8 +665,8 @@ def test_yield_state_update(event_chain: AppHarness, driver: WebDriver, button_i
         driver: selenium WebDriver open to the app
         button_id: the ID of the button to click
     """
-    interim_value_input = driver.find_element(By.ID, "interim_value")
     assert_token(event_chain, driver)
+    interim_value_input = driver.find_element(By.ID, "interim_value")
 
     btn = driver.find_element(By.ID, button_id)
     btn.click()

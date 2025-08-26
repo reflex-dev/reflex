@@ -4,14 +4,13 @@ from __future__ import annotations
 
 from collections.abc import Iterator
 from hashlib import md5
-from typing import Any, Literal
-
-from jinja2 import Environment
+from typing import Any, ClassVar, Literal
 
 from reflex.components.el.element import Element
 from reflex.components.tags.tag import Tag
 from reflex.constants import Dirs, EventTriggers
 from reflex.event import (
+    FORM_DATA,
     EventChain,
     EventHandler,
     checked_input_event,
@@ -19,6 +18,8 @@ from reflex.event import (
     input_event,
     int_input_event,
     key_event,
+    on_submit_event,
+    on_submit_string_event,
     prevent_default,
 )
 from reflex.utils.imports import ImportDict
@@ -28,22 +29,40 @@ from reflex.vars.number import ternary_operation
 
 from .base import BaseHTML
 
-FORM_DATA = Var(_js_expr="form_data")
-HANDLE_SUBMIT_JS_JINJA2 = Environment().from_string(
+
+def _handle_submit_js_template(
+    handle_submit_unique_name: str,
+    form_data: str,
+    field_ref_mapping: str,
+    on_submit_event_chain: str,
+    reset_on_submit: str,
+) -> str:
+    """Generate handle submit JS using f-string formatting.
+
+    Args:
+        handle_submit_unique_name: Unique name for the handle submit function.
+        form_data: Name of the form data variable.
+        field_ref_mapping: JSON string of field reference mappings.
+        on_submit_event_chain: Event chain for the submit handler.
+        reset_on_submit: Boolean string indicating if form should reset after submit.
+
+    Returns:
+        JavaScript code for the form submit handler.
     """
-    const handleSubmit_{{ handle_submit_unique_name }} = useCallback((ev) => {
+    return f"""
+    const handleSubmit_{handle_submit_unique_name} = useCallback((ev) => {{
         const $form = ev.target
         ev.preventDefault()
-        const {{ form_data }} = {...Object.fromEntries(new FormData($form).entries()), ...{{ field_ref_mapping }}};
+        const {form_data} = {{...Object.fromEntries(new FormData($form).entries()), ...{field_ref_mapping}}};
 
-        ({{ on_submit_event_chain }}(ev));
+        ({on_submit_event_chain}(ev));
 
-        if ({{ reset_on_submit }}) {
+        if ({reset_on_submit}) {{
             $form.reset()
-        }
-    })
+        }}
+    }})
     """
-)
+
 
 ButtonType = Literal["submit", "reset", "button"]
 
@@ -86,6 +105,8 @@ class Button(BaseHTML):
     # Value of the button, used when sending form data
     value: Var[str | int | float]
 
+    _invalid_children: ClassVar[list[str]] = ["Button"]
+
 
 class Datalist(BaseHTML):
     """Display the datalist element."""
@@ -106,24 +127,6 @@ class Fieldset(Element):
 
     # Name of the fieldset, used for scripting
     name: Var[str]
-
-
-def on_submit_event_spec() -> tuple[Var[dict[str, Any]]]:
-    """Event handler spec for the on_submit event.
-
-    Returns:
-        The event handler spec.
-    """
-    return (FORM_DATA,)
-
-
-def on_submit_string_event_spec() -> tuple[Var[dict[str, str]]]:
-    """Event handler spec for the on_submit event.
-
-    Returns:
-        The event handler spec.
-    """
-    return (FORM_DATA,)
 
 
 class Form(BaseHTML):
@@ -165,7 +168,7 @@ class Form(BaseHTML):
     handle_submit_unique_name: Var[str]
 
     # Fired when the form is submitted
-    on_submit: EventHandler[on_submit_event_spec, on_submit_string_event_spec]
+    on_submit: EventHandler[on_submit_event, on_submit_string_event]
 
     @classmethod
     def create(cls, *children, **props):
@@ -187,7 +190,7 @@ class Form(BaseHTML):
         # Render the form hooks and use the hash of the resulting code to create a unique name.
         props["handle_submit_unique_name"] = ""
         form = super().create(*children, **props)
-        form.handle_submit_unique_name = md5(
+        form.handle_submit_unique_name = md5(  # pyright: ignore[reportAttributeAccessIssue]
             str(form._get_all_hooks()).encode("utf-8")
         ).hexdigest()
         return form
@@ -212,21 +215,21 @@ class Form(BaseHTML):
         if EventTriggers.ON_SUBMIT not in self.event_triggers:
             return []
         return [
-            HANDLE_SUBMIT_JS_JINJA2.render(
-                handle_submit_unique_name=self.handle_submit_unique_name,
-                form_data=FORM_DATA,
+            _handle_submit_js_template(
+                handle_submit_unique_name=str(self.handle_submit_unique_name),
+                form_data=str(FORM_DATA),
                 field_ref_mapping=str(LiteralVar.create(self._get_form_refs())),
                 on_submit_event_chain=str(
                     LiteralVar.create(self.event_triggers[EventTriggers.ON_SUBMIT])
                 ),
-                reset_on_submit=self.reset_on_submit,
+                reset_on_submit=str(self.reset_on_submit).lower(),
             )
         ]
 
     def _render(self) -> Tag:
         render_tag = super()._render()
         if EventTriggers.ON_SUBMIT in self.event_triggers:
-            render_tag.add_props(
+            render_tag = render_tag.add_props(
                 **{
                     EventTriggers.ON_SUBMIT: Var(
                         _js_expr=f"handleSubmit_{self.handle_submit_unique_name}",
@@ -382,7 +385,7 @@ class BaseInput(BaseHTML):
     required: Var[bool]
 
     # Specifies the visible width of a text control
-    size: Var[int | float]
+    size: Var[str | int | float]
 
     # URL for image inputs
     src: Var[str]
@@ -464,11 +467,13 @@ class Input(BaseInput):
         if cls is Input:
             input_type = props.get("type")
 
-            if input_type == "checkbox":
+            if isinstance(input_type, str) and input_type == "checkbox":
                 # Checkbox inputs should use the CheckboxInput class
                 return CheckboxInput.create(*children, **props)
 
-            if input_type == "number" or input_type == "range":
+            if isinstance(input_type, str) and (
+                input_type == "number" or input_type == "range"
+            ):
                 # Number inputs should use the ValueNumberInput class
                 return ValueNumberInput.create(*children, **props)
 
@@ -502,22 +507,22 @@ class Meter(BaseHTML):
     form: Var[str]
 
     # High limit of range (above this is considered high value)
-    high: Var[int | float]
+    high: Var[str | int | float]
 
     # Low limit of range (below this is considered low value)
-    low: Var[int | float]
+    low: Var[str | int | float]
 
     # Maximum value of the range
-    max: Var[int | float]
+    max: Var[str | int | float]
 
     # Minimum value of the range
-    min: Var[int | float]
+    min: Var[str | int | float]
 
     # Optimum value in the range
-    optimum: Var[int | float]
+    optimum: Var[str | int | float]
 
     # Current value of the meter
-    value: Var[int | float]
+    value: Var[str | int | float]
 
 
 class Optgroup(BaseHTML):
@@ -607,7 +612,7 @@ class Select(BaseHTML):
     required: Var[bool]
 
     # Number of visible options in a drop-down list
-    size: Var[int]
+    size: Var[str | int]
 
     # Fired when the select value changes
     on_change: EventHandler[input_event]
@@ -664,7 +669,7 @@ class Textarea(BaseHTML):
     auto_height: Var[bool]
 
     # Visible width of the text control, in average character widths
-    cols: Var[int]
+    cols: Var[str | int]
 
     # The default value of the textarea when initially rendered
     default_value: Var[str]
@@ -682,10 +687,10 @@ class Textarea(BaseHTML):
     form: Var[str]
 
     # Maximum number of characters allowed in the textarea
-    max_length: Var[int]
+    max_length: Var[str | int]
 
     # Minimum number of characters required in the textarea
-    min_length: Var[int]
+    min_length: Var[str | int]
 
     # Name of the textarea, used when submitting the form
     name: Var[str]
@@ -700,7 +705,7 @@ class Textarea(BaseHTML):
     required: Var[bool]
 
     # Visible number of lines in the text control
-    rows: Var[int]
+    rows: Var[str | int]
 
     # The controlled value of the textarea, read only unless used with on_change
     value: Var[str]
@@ -744,9 +749,8 @@ class Textarea(BaseHTML):
         if enter_key_submit is not None:
             enter_key_submit = Var.create(enter_key_submit)
             if "on_key_down" in props:
-                raise ValueError(
-                    "Cannot combine `enter_key_submit` with `on_key_down`.",
-                )
+                msg = "Cannot combine `enter_key_submit` with `on_key_down`."
+                raise ValueError(msg)
             custom_attrs["on_key_down"] = Var(
                 _js_expr=f"(e) => enterKeySubmitOnKeyDown(e, {enter_key_submit!s})",
                 _var_data=VarData.merge(enter_key_submit._get_all_var_data()),

@@ -7,6 +7,24 @@ from collections import defaultdict
 from collections.abc import Mapping, Sequence
 
 
+def merge_parsed_imports(
+    *imports: ImmutableParsedImportDict,
+) -> ParsedImportDict:
+    """Merge multiple parsed import dicts together.
+
+    Args:
+        *imports: The list of import dicts to merge.
+
+    Returns:
+        The merged import dicts.
+    """
+    all_imports: defaultdict[str, list[ImportVar]] = defaultdict(list)
+    for import_dict in imports:
+        for lib, fields in import_dict.items():
+            all_imports[lib].extend(fields)
+    return all_imports
+
+
 def merge_imports(
     *imports: ImportDict | ParsedImportDict | ParsedImportTuple,
 ) -> ParsedImportDict:
@@ -52,19 +70,12 @@ def parse_imports(
     Returns:
         The parsed import dict.
     """
-
-    def _make_list(
-        value: ImmutableImportTypes,
-    ) -> list[str | ImportVar] | list[ImportVar]:
-        if isinstance(value, (str, ImportVar)):
-            return [value]
-        return list(value)
-
     return {
-        package: [
-            ImportVar(tag=tag) if isinstance(tag, str) else tag
-            for tag in _make_list(maybe_tags)
-        ]
+        package: [maybe_tags]
+        if isinstance(maybe_tags, ImportVar)
+        else [ImportVar(tag=maybe_tags)]
+        if isinstance(maybe_tags, str)
+        else [ImportVar(tag=tag) if isinstance(tag, str) else tag for tag in maybe_tags]
         for package, maybe_tags in imports.items()
     }
 
@@ -114,10 +125,6 @@ class ImportVar:
     # The path of the package to import from.
     package_path: str = "/"
 
-    # whether this import package should be added to transpilePackages in next.config.js
-    # https://nextjs.org/docs/app/api-reference/next-config-js/transpilePackages
-    transpile: bool | None = False
-
     @property
     def name(self) -> str:
         """The name of the import.
@@ -127,10 +134,11 @@ class ImportVar:
         """
         if self.alias:
             return (
-                self.alias if self.is_default else " as ".join([self.tag, self.alias])  # pyright: ignore [reportCallIssue,reportArgumentType]
+                self.alias
+                if self.is_default
+                else (self.tag + " as " + self.alias if self.tag else self.alias)
             )
-        else:
-            return self.tag or ""
+        return self.tag or ""
 
 
 ImportTypes = str | ImportVar | list[str | ImportVar] | list[ImportVar]

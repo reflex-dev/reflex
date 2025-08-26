@@ -1,6 +1,6 @@
 """Typography classes."""
 
-from typing import Literal
+from typing import ClassVar, Literal
 
 from reflex.vars.base import Var
 
@@ -46,6 +46,12 @@ class Figcaption(BaseHTML):
     tag = "figcaption"
 
 
+class Figure(BaseHTML):
+    """Display the figure element."""
+
+    tag = "figure"
+
+
 class Hr(BaseHTML):
     """Display the hr element."""
 
@@ -86,6 +92,8 @@ class P(BaseHTML):
     """Display the p element."""
 
     tag = "p"
+
+    _invalid_children: ClassVar[list] = ["P", "Ol", "Ul", "Div"]
 
 
 class Pre(BaseHTML):
@@ -130,6 +138,7 @@ div = Div.create
 dl = Dl.create
 dt = Dt.create
 figcaption = Figcaption.create
+figure = Figure.create
 hr = Hr.create
 li = Li.create
 ol = Ol.create

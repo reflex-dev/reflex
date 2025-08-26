@@ -52,11 +52,12 @@ class AutoScroll(Div):
             The hooks required for the component.
         """
         ref_name = self.get_ref()
+        unique_id = ref_name
         return [
-            "const wasNearBottom = useRef(false);",
-            "const hadScrollbar = useRef(false);",
+            f"const wasNearBottom_{unique_id} = useRef(false);",
+            f"const hadScrollbar_{unique_id} = useRef(false);",
             f"""
-const checkIfNearBottom = () => {{
+const checkIfNearBottom_{unique_id} = () => {{
     if (!{ref_name}.current) return;
 
     const container = {ref_name}.current;
@@ -64,14 +65,14 @@ const checkIfNearBottom = () => {{
 
     const distanceFromBottom = container.scrollHeight - container.scrollTop - container.clientHeight;
 
-    wasNearBottom.current = distanceFromBottom <= nearBottomThreshold;
+    wasNearBottom_{unique_id}.current = distanceFromBottom <= nearBottomThreshold;
 
     // Track if container had a scrollbar
-    hadScrollbar.current = container.scrollHeight > container.clientHeight;
+    hadScrollbar_{unique_id}.current = container.scrollHeight > container.clientHeight;
 }};
 """,
             f"""
-const scrollToBottomIfNeeded = () => {{
+const scrollToBottomIfNeeded_{unique_id} = () => {{
     if (!{ref_name}.current) return;
 
     const container = {ref_name}.current;
@@ -80,12 +81,12 @@ const scrollToBottomIfNeeded = () => {{
     // Scroll if:
     // 1. User was near bottom, OR
     // 2. Container didn't have scrollbar before but does now
-    if (wasNearBottom.current || (!hadScrollbar.current && hasScrollbarNow)) {{
+    if (wasNearBottom_{unique_id}.current || (!hadScrollbar_{unique_id}.current && hasScrollbarNow)) {{
       container.scrollTop = container.scrollHeight;
     }}
 
     // Update scrollbar state for next check
-    hadScrollbar.current = hasScrollbarNow;
+    hadScrollbar_{unique_id}.current = hasScrollbarNow;
 }};
 """,
             f"""
@@ -93,24 +94,24 @@ useEffect(() => {{
     const container = {ref_name}.current;
     if (!container) return;
 
-    scrollToBottomIfNeeded();
+    scrollToBottomIfNeeded_{unique_id}();
 
     // Create ResizeObserver to detect height changes
     const resizeObserver = new ResizeObserver(() => {{
-        scrollToBottomIfNeeded();
+        scrollToBottomIfNeeded_{unique_id}();
     }});
 
     // Track scroll position before height changes
-    container.addEventListener('scroll', checkIfNearBottom);
+    container.addEventListener('scroll', checkIfNearBottom_{unique_id});
 
     // Initial check
-    checkIfNearBottom();
+    checkIfNearBottom_{unique_id}();
 
     // Observe container for size changes
     resizeObserver.observe(container);
 
     return () => {{
-        container.removeEventListener('scroll', checkIfNearBottom);
+        container.removeEventListener('scroll', checkIfNearBottom_{unique_id});
         resizeObserver.disconnect();
     }};
 }});

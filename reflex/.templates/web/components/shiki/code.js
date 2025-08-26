@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, createElement } from "react";
 import { codeToHtml } from "shiki";
 
 /**
@@ -33,7 +33,8 @@ export function Code({
     }
     fetchCode();
   }, [code, language, theme, transformers, decorations]);
-  return (
-    <div dangerouslySetInnerHTML={{ __html: codeResult }} {...divProps}></div>
-  );
+  return createElement("div", {
+    dangerouslySetInnerHTML: { __html: codeResult },
+    ...divProps,
+  });
 }

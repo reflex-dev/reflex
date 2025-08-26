@@ -240,8 +240,9 @@ def poll_for_token(driver: WebDriver, upload_file: AppHarness) -> str:
     Returns:
         token value
     """
-    token_input = driver.find_element(By.ID, "token")
-    assert token_input
+    token_input = AppHarness.poll_for_or_raise_timeout(
+        lambda: driver.find_element(By.ID, "token")
+    )
     # wait for the backend connection to send the token
     token = upload_file.poll_for_value(token_input)
     assert token is not None
@@ -290,7 +291,7 @@ async def test_upload_file(
 
     if secondary:
         event_order_displayed = driver.find_element(By.ID, "event-order")
-        AppHarness._poll_for(lambda: "chain_event" in event_order_displayed.text)
+        AppHarness.expect(lambda: "chain_event" in event_order_displayed.text)
 
         state = await upload_file.get_state(substate_token)
         # only the secondary form tracks progress and chain events
@@ -341,7 +342,7 @@ async def test_upload_file_multiple(tmp_path, upload_file: AppHarness, driver):
         target_file.write_text(exp_contents)
         upload_box.send_keys(str(target_file))
 
-    time.sleep(0.2)
+    await asyncio.sleep(0.2)
 
     # check that the selected files are displayed
     selected_files = driver.find_element(By.ID, "selected_files")
@@ -432,6 +433,16 @@ async def test_cancel_upload(tmp_path, upload_file: AppHarness, driver: WebDrive
         driver: WebDriver instance.
     """
     assert upload_file.app_instance is not None
+    driver.execute_cdp_cmd("Network.enable", {})
+    driver.execute_cdp_cmd(
+        "Network.emulateNetworkConditions",
+        {
+            "offline": False,
+            "downloadThroughput": 1024 * 1024 / 8,  # 1 Mbps
+            "uploadThroughput": 1024 * 1024 / 8,  #  1 Mbps
+            "latency": 200,  # 200ms
+        },
+    )
     token = poll_for_token(driver, upload_file)
     state_name = upload_file.get_state_name("_upload_state")
     state_full_name = upload_file.get_full_state_name(["_upload_state"])
@@ -444,16 +455,16 @@ async def test_cancel_upload(tmp_path, upload_file: AppHarness, driver: WebDrive
     exp_name = "large.txt"
     target_file = tmp_path / exp_name
     with target_file.open("wb") as f:
-        f.seek(1024 * 1024 * 256)
+        f.seek(1024 * 1024)  # 1 MB file, should upload in ~8 seconds
         f.write(b"0")
 
     upload_box.send_keys(str(target_file))
     upload_button.click()
-    await asyncio.sleep(0.3)
+    await asyncio.sleep(1)
     cancel_button.click()
 
     # Wait a bit for the upload to get cancelled.
-    await asyncio.sleep(0.5)
+    await asyncio.sleep(12)
 
     # Get interim progress dicts saved in the on_upload_progress handler.
     async def _progress_dicts():

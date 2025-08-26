@@ -30,7 +30,7 @@ def poll_for_navigation(
 
     yield
 
-    AppHarness._poll_for(lambda: prev_url != driver.current_url, timeout=timeout)
+    AppHarness.expect(lambda: prev_url != driver.current_url, timeout=timeout)
 
 
 class LocalStorage:

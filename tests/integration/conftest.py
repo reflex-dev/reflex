@@ -1,6 +1,7 @@
 """Shared conftest for all integration tests."""
 
 import pytest
+from pytest_mock import MockerFixture
 
 import reflex.app
 from reflex.testing import AppHarness, AppHarnessProd
@@ -22,7 +23,7 @@ def app_harness_env(request):
 
 
 @pytest.fixture(autouse=True)
-def raise_console_error(request, mocker):
+def raise_console_error(request, mocker: MockerFixture):
     """Spy on calls to `console.error` used by the framework.
 
     Help catch spurious error conditions that might otherwise go unnoticed.

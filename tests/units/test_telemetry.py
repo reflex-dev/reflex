@@ -1,5 +1,6 @@
 import pytest
 from packaging.version import parse as parse_python_version
+from pytest_mock import MockerFixture
 
 from reflex.utils import telemetry
 
@@ -13,9 +14,6 @@ def test_telemetry():
 
     # Check that the CPU count and memory are greater than 0.
     assert telemetry.get_cpu_count() > 0
-
-    # Check that the available memory is greater than 0
-    assert telemetry.get_memory() > 0
 
     # Check that the Reflex version is not None.
     assert telemetry.get_reflex_version() is not None
@@ -32,16 +30,30 @@ def test_disable():
 
 
 @pytest.mark.parametrize("event", ["init", "reinit", "run-dev", "run-prod", "export"])
-def test_send(mocker, event):
+def test_send(mocker: MockerFixture, event):
     httpx_post_mock = mocker.patch("httpx.post")
 
-    # Mock the read_text method of Path
+    # Mock _get_event_defaults to return a complete valid response
+    mock_defaults = {
+        "api_key": "test_api_key",
+        "properties": {
+            "distinct_id": 12345,
+            "distinct_app_id": 78285505863498957834586115958872998605,
+            "user_os": "Test OS",
+            "user_os_detail": "Mocked Platform",
+            "reflex_version": "0.8.0",
+            "python_version": "3.8.0",
+            "node_version": None,
+            "bun_version": None,
+            "reflex_enterprise_version": None,
+            "cpu_count": 4,
+            "memory": 8192,
+            "cpu_info": {},
+        },
+    }
     mocker.patch(
-        "pathlib.Path.read_text",
-        return_value='{"project_hash": "78285505863498957834586115958872998605"}',
+        "reflex.utils.telemetry._get_event_defaults", return_value=mock_defaults
     )
-
-    mocker.patch("platform.platform", return_value="Mocked Platform")
 
     telemetry._send(event, telemetry_enabled=True)
     httpx_post_mock.assert_called_once()

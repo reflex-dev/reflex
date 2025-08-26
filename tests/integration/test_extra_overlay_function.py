@@ -24,7 +24,9 @@ def ExtraOverlay():
         )
 
     app = rx.App()
-    rx.config.get_config().extra_overlay_function = "reflex.components.moment.moment"
+    rx.config.get_config().extra_overlay_function = (
+        "reflex.components.radix.themes.components.button"
+    )
     app.add_page(index)
 
 
@@ -58,8 +60,9 @@ def driver(extra_overlay: AppHarness):
     """
     driver = extra_overlay.frontend()
     try:
-        token_input = driver.find_element(By.ID, "token")
-        assert token_input
+        token_input = AppHarness.poll_for_or_raise_timeout(
+            lambda: driver.find_element(By.ID, "token")
+        )
         # wait for the backend connection to send the token
         token = extra_overlay.poll_for_value(token_input)
         assert token is not None
@@ -81,6 +84,6 @@ def test_extra_overlay(driver: WebDriver, extra_overlay: AppHarness):
     assert text
     assert text.text == "Hello World"
 
-    time = driver.find_element(By.TAG_NAME, "time")
-    assert time
-    assert time.text
+    button = driver.find_element(By.TAG_NAME, "button")
+    assert button
+    assert not button.text

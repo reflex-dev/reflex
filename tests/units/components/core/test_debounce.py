@@ -44,7 +44,6 @@ class S(BaseState):
         Args:
             v: The changed value.
         """
-        pass
 
 
 def test_render_child_props():
@@ -57,7 +56,8 @@ def test_render_child_props():
             on_change=S.on_change,
         )
     )._render()
-    assert "css" in tag.props and isinstance(tag.props["css"], rx.vars.Var)
+    assert "css" in tag.props
+    assert isinstance(tag.props["css"], rx.vars.Var)
     for prop in ["foo", "bar", "baz", "quuc"]:
         assert prop in str(tag.props["css"])
     assert tag.props["value"].equals(
@@ -65,7 +65,6 @@ def test_render_child_props():
     )
     assert len(tag.props["onChange"].events) == 1
     assert tag.props["onChange"].events[0].handler == S.on_change
-    assert tag.contents == ""
 
 
 def test_render_with_class_name():
@@ -120,7 +119,7 @@ def test_event_triggers():
         )
     )
     assert tuple(debounced_input.get_event_triggers()) == (
-        *rx.Component.create().get_event_triggers(),  # default event triggers
+        *rx.Component.get_event_triggers(),  # default event triggers
         "on_change",
     )
 
@@ -151,7 +150,8 @@ def test_render_child_props_recursive():
         ),
         force_notify_by_enter=False,
     )._render()
-    assert "css" in tag.props and isinstance(tag.props["css"], rx.vars.Var)
+    assert "css" in tag.props
+    assert isinstance(tag.props["css"], rx.vars.Var)
     for prop in ["foo", "bar", "baz", "quuc"]:
         assert prop in str(tag.props["css"])
     assert tag.props["value"].equals(LiteralVar.create("outer"))
@@ -160,7 +160,6 @@ def test_render_child_props_recursive():
     assert tag.props["debounceTimeout"]._js_expr == "42"
     assert len(tag.props["onChange"].events) == 1
     assert tag.props["onChange"].events[0].handler == S.on_change
-    assert tag.contents == ""
 
 
 def test_full_control_implicit_debounce():
@@ -172,7 +171,6 @@ def test_full_control_implicit_debounce():
     assert tag.props["debounceTimeout"]._js_expr == str(DEFAULT_DEBOUNCE_TIMEOUT)
     assert len(tag.props["onChange"].events) == 1
     assert tag.props["onChange"].events[0].handler == S.on_change
-    assert tag.contents == ""
 
 
 def test_full_control_implicit_debounce_text_area():
@@ -184,4 +182,3 @@ def test_full_control_implicit_debounce_text_area():
     assert tag.props["debounceTimeout"]._js_expr == str(DEFAULT_DEBOUNCE_TIMEOUT)
     assert len(tag.props["onChange"].events) == 1
     assert tag.props["onChange"].events[0].handler == S.on_change
-    assert tag.contents == ""

@@ -3,33 +3,37 @@
 from reflex.components.component import Component
 
 
-class NextDocumentLib(Component):
+class ReactRouterLib(Component):
     """Root document components."""
 
-    library = "next/document"
+    library = "react-router"
 
 
-class Html(NextDocumentLib):
-    """The document html."""
+class Meta(ReactRouterLib):
+    """The document meta tags."""
 
-    tag = "Html"
-
-    lang: str | None
+    tag = "Meta"
 
 
-class DocumentHead(NextDocumentLib):
-    """The document head."""
+class Links(ReactRouterLib):
+    """The document link tags."""
 
-    tag = "Head"
-
-
-class Main(NextDocumentLib):
-    """The document main section."""
-
-    tag = "Main"
+    tag = "Links"
 
 
-class NextScript(NextDocumentLib):
+class ScrollRestoration(ReactRouterLib):
+    """The document scroll restoration."""
+
+    tag = "ScrollRestoration"
+
+
+class Outlet(ReactRouterLib):
+    """The document outlet."""
+
+    tag = "Outlet"
+
+
+class Scripts(ReactRouterLib):
     """The document main scripts."""
 
-    tag = "NextScript"
+    tag = "Scripts"

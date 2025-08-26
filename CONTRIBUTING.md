@@ -23,7 +23,7 @@ cd reflex
 **3. Install your local Reflex build:**
 
 ```bash
-uv sync --python 3.13
+uv sync
 ```
 
 **4. Now create an examples folder so you can test the local Python build in this repository.**
@@ -108,5 +108,5 @@ For some pull requests when adding new components you will have to generate a py
 (Please check in with the team before adding a new component to Reflex we are cautious about adding new components to Reflex's core.)
 
 ```bash
-uv run python scripts/make_pyi.py
+uv run python -m reflex.utils.pyi_generator
 ```
