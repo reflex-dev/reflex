@@ -1036,7 +1036,7 @@ class BaseState(EvenMoreBasicBaseState):
             )
             raise VarTypeError(msg)
         cls._set_var(name, prop)
-        if cls.is_user_defined() and get_config().state_auto_setters:
+        if cls.is_user_defined() and get_config().state_auto_setters is not False:
             cls._create_setter(name, prop)
         cls._set_default_value(name, prop)
 
