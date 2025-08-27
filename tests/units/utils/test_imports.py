@@ -36,9 +36,13 @@ from reflex.utils.imports import (
             ImportVar(tag="BaseTag", is_default=False, alias="AliasTag"),
             "BaseTag as AliasTag",
         ),
+        (
+            ImportVar(tag="*", alias="AliasTag"),
+            "* as AliasTag",
+        ),
     ],
 )
-def test_import_var(import_var, expected_name):
+def test_import_var(import_var: ImportVar, expected_name: str):
     """Test that the import var name is computed correctly.
 
     Args:
