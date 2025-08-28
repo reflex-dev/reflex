@@ -640,6 +640,9 @@ class EnvironmentVariables:
     # Enable full logging of debug messages to reflex user directory.
     REFLEX_ENABLE_FULL_LOGGING: EnvVar[bool] = env_var(False)
 
+    # Whether to enable hot module replacement.
+    VITE_HMR: EnvVar[bool] = env_var(True)
+
 
 environment = EnvironmentVariables()
 

@@ -502,11 +502,12 @@ def package_json_template(
     )
 
 
-def vite_config_template(base: str):
+def vite_config_template(base: str, hmr: bool):
     """Template for vite.config.js.
 
     Args:
         base: The base path for the Vite config.
+        hmr: Whether to enable hot module replacement.
 
     Returns:
         Rendered vite.config.js content as string.
@@ -559,6 +560,7 @@ export default defineConfig((config) => ({{
       }},
     }},
   }},
+  hmr: {"true" if hmr else "false"},
   experimental: {{
     enableNativePlugin: false,
   }},
