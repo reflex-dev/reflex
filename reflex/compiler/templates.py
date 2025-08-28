@@ -538,12 +538,25 @@ function alwaysUseReactDomServerNode() {{
   }};
 }}
 
+function fullReload() {{
+  return {{
+    name: "full-reload",
+    enforce: "pre",
+    handleHotUpdate({{ server }}) {{
+      server.ws.send({{
+        type: "full-reload",
+      }});
+      return [];
+    }}
+  }};
+}}
+
 export default defineConfig((config) => ({{
   plugins: [
     alwaysUseReactDomServerNode(),
     reactRouter(),
     safariCacheBustPlugin(),
-  ],
+  ] + {"[fullReload()]" if not hmr else "[]"},
   build: {{
     assetsDir: "{base}assets".slice(1),
     rollupOptions: {{
@@ -560,7 +573,6 @@ export default defineConfig((config) => ({{
       }},
     }},
   }},
-  hmr: {"true" if hmr else "false"},
   experimental: {{
     enableNativePlugin: false,
   }},
