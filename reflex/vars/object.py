@@ -6,7 +6,6 @@ import collections.abc
 import dataclasses
 import typing
 from collections.abc import Mapping
-from inspect import isclass
 from typing import (
     Any,
     NoReturn,
@@ -328,7 +327,10 @@ class ObjectVar(Var[OBJECT_TYPE], python_types=Mapping):
 
         if (
             is_typeddict(fixed_type)
-            or (isclass(fixed_type) and not safe_issubclass(fixed_type, Mapping))
+            or (
+                isinstance(fixed_type, type)
+                and not safe_issubclass(fixed_type, Mapping)
+            )
             or (fixed_type in types.UnionTypes)
         ):
             attribute_type = get_attribute_access_type(var_type, name)

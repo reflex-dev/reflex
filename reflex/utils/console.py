@@ -12,7 +12,7 @@ from pathlib import Path
 from types import FrameType
 
 from rich.console import Console
-from rich.progress import MofNCompleteColumn, Progress, TimeElapsedColumn
+from rich.progress import MofNCompleteColumn, Progress, TaskID, TimeElapsedColumn
 from rich.prompt import Prompt
 
 from reflex.constants import LogLevel
@@ -395,3 +395,47 @@ def timing(msg: str):
         yield
     finally:
         debug(f"[white]\\[timing] {msg}: {time.time() - start:.2f}s[/white]")
+
+
+class PoorProgress:
+    """A poor man's progress bar."""
+
+    def __init__(self):
+        """Initialize the progress bar."""
+        super().__init__()
+        self.tasks = {}
+        self.progress = 0
+        self.total = 0
+
+    def add_task(self, task: str, total: int):
+        """Add a task to the progress bar.
+
+        Args:
+            task: The task name.
+            total: The total number of steps for the task.
+
+        Returns:
+            The task ID.
+        """
+        self.total = total
+        task_id = TaskID(len(self.tasks))
+        self.tasks[task_id] = {"total": total, "current": 0}
+        return task_id
+
+    def advance(self, task: TaskID, advance: int = 1):
+        """Advance the progress of a task.
+
+        Args:
+            task: The task ID.
+            advance: The number of steps to advance.
+        """
+        if task in self.tasks:
+            self.tasks[task]["current"] += advance
+            self.progress += advance
+            _console.print(f"Progress: {self.progress}/{self.total}")
+
+    def start(self):
+        """Start the progress bar."""
+
+    def stop(self):
+        """Stop the progress bar."""

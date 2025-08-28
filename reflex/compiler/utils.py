@@ -220,10 +220,13 @@ def compile_state(state: type[BaseState]) -> dict:
 
 def _compile_client_storage_field(
     field: Field,
-) -> tuple[
-    type[Cookie] | type[LocalStorage] | type[SessionStorage] | None,
-    dict[str, Any] | None,
-]:
+) -> (
+    tuple[
+        type[Cookie] | type[LocalStorage] | type[SessionStorage],
+        dict[str, Any],
+    ]
+    | tuple[None, None]
+):
     """Compile the given cookie, local_storage or session_storage field.
 
     Args:

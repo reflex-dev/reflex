@@ -1100,12 +1100,18 @@ class App(MiddlewareMixin, LifespanMixin):
         for substate in state.class_subclasses:
             self._validate_var_dependencies(substate)
 
-    def _compile(self, prerender_routes: bool = False, dry_run: bool = False):
+    def _compile(
+        self,
+        prerender_routes: bool = False,
+        dry_run: bool = False,
+        use_rich: bool = True,
+    ):
         """Compile the app and output it to the pages folder.
 
         Args:
             prerender_routes: Whether to prerender the routes.
             dry_run: Whether to compile the app without saving it.
+            use_rich: Whether to use rich progress bars.
 
         Raises:
             ReflexRuntimeError: When any page uses state, but no rx.State subclass is defined.
@@ -1171,10 +1177,14 @@ class App(MiddlewareMixin, LifespanMixin):
             return
 
         # Create a progress bar.
-        progress = Progress(
-            *Progress.get_default_columns()[:-1],
-            MofNCompleteColumn(),
-            TimeElapsedColumn(),
+        progress = (
+            Progress(
+                *Progress.get_default_columns()[:-1],
+                MofNCompleteColumn(),
+                TimeElapsedColumn(),
+            )
+            if use_rich
+            else console.PoorProgress()
         )
 
         # try to be somewhat accurate - but still not 100%

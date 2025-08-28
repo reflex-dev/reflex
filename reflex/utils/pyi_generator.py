@@ -547,7 +547,7 @@ def _generate_component_create_functiondef(
     kwargs.extend(prop_kwargs)
 
     def figure_out_return_type(annotation: Any):
-        if inspect.isclass(annotation) and issubclass(annotation, inspect._empty):
+        if isinstance(annotation, type) and issubclass(annotation, inspect._empty):
             return ast.Name(id="EventType[Any]")
 
         if not isinstance(annotation, str) and get_origin(annotation) is tuple:
@@ -1181,7 +1181,7 @@ class PyiGenerator:
         class_names = {
             name: obj
             for name, obj in vars(module).items()
-            if inspect.isclass(obj)
+            if isinstance(obj, type)
             and (
                 rx_types.safe_issubclass(obj, Component)
                 or rx_types.safe_issubclass(obj, SimpleNamespace)
