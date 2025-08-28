@@ -556,7 +556,7 @@ export default defineConfig((config) => ({{
     alwaysUseReactDomServerNode(),
     reactRouter(),
     safariCacheBustPlugin(),
-  ] + {"[fullReload()]" if not hmr else "[]"},
+  ].concat({"[fullReload()]" if not hmr else "[]"}),
   build: {{
     assetsDir: "{base}assets".slice(1),
     rollupOptions: {{
