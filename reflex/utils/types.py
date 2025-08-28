@@ -856,6 +856,9 @@ def is_valid_var_type(type_: type) -> bool:
 
     if is_union(type_):
         return all(is_valid_var_type(arg) for arg in get_args(type_))
+
+    type_ = origin if (origin := get_origin(type_)) is not None else type_
+
     return (
         issubclass(type_, StateVarTypes)
         or serializers.has_serializer(type_)

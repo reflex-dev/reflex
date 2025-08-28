@@ -1516,7 +1516,7 @@ class Component(BaseComponent, ABC):
         Returns:
             A sequence of parent classes that define the method (differently than the base).
         """
-        current_class_method = getattr(cls, method, None)
+        current_class_method = getattr(Component, method, None)
         seen_methods = (
             {current_class_method} if current_class_method is not None else set()
         )

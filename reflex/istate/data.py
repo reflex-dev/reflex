@@ -85,7 +85,7 @@ class HeaderData(_HeaderData):
 
 @serializer(to=dict)
 def _serialize_header_data(obj: HeaderData) -> dict:
-    return dataclasses.asdict(obj)
+    return {k.name: getattr(obj, k.name) for k in dataclasses.fields(obj)}
 
 
 @serializer(to=dict)
