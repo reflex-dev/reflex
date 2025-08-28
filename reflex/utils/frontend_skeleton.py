@@ -193,7 +193,11 @@ def _compile_vite_config(config: Config):
     base = "/"
     if frontend_path := config.frontend_path.strip("/"):
         base += frontend_path + "/"
-    return templates.vite_config_template(base=base, hmr=environment.VITE_HMR.get())
+    return templates.vite_config_template(
+        base=base,
+        hmr=environment.VITE_HMR.get(),
+        force_full_reload=environment.VITE_FORCE_FULL_RELOAD.get(),
+    )
 
 
 def initialize_vite_config():

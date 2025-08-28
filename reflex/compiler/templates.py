@@ -502,12 +502,13 @@ def package_json_template(
     )
 
 
-def vite_config_template(base: str, hmr: bool):
+def vite_config_template(base: str, hmr: bool, force_full_reload: bool):
     """Template for vite.config.js.
 
     Args:
         base: The base path for the Vite config.
         hmr: Whether to enable hot module replacement.
+        force_full_reload: Whether to force a full reload on changes.
 
     Returns:
         Rendered vite.config.js content as string.
@@ -556,7 +557,7 @@ export default defineConfig((config) => ({{
     alwaysUseReactDomServerNode(),
     reactRouter(),
     safariCacheBustPlugin(),
-  ].concat({"[fullReload()]" if not hmr else "[]"}),
+  ].concat({"[fullReload()]" if force_full_reload else "[]"}),
   build: {{
     assetsDir: "{base}assets".slice(1),
     rollupOptions: {{
@@ -578,6 +579,7 @@ export default defineConfig((config) => ({{
   }},
   server: {{
     port: process.env.PORT,
+    hmr: {"true" if hmr else "false"},
     watch: {{
       ignored: [
         "**/.web/backend/**",
