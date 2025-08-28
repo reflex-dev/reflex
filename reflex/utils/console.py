@@ -417,7 +417,7 @@ class PoorProgress:
         Returns:
             The task ID.
         """
-        self.total = total
+        self.total += total
         task_id = TaskID(len(self.tasks))
         self.tasks[task_id] = {"total": total, "current": 0}
         return task_id
