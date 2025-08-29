@@ -52,11 +52,8 @@ UnionTypes = (Union, types.UnionType)
 GenericType = type | _GenericAlias
 
 # Valid state var types.
-JSONType = {str, int, float, bool}
-PrimitiveType = int | float | bool | str | list | dict | set | tuple
 PrimitiveTypes = (int, float, bool, str, list, dict, set, tuple)
-StateVar = PrimitiveType | Base | None
-StateIterVar = list | set | tuple
+StateVarTypes = (*PrimitiveTypes, Base, type(None))
 
 if TYPE_CHECKING:
     from reflex.vars.base import Var
@@ -401,6 +398,8 @@ def get_field_type(cls: GenericType, field_name: str) -> GenericType | None:
     Returns:
         The type of the field, if it exists, else None.
     """
+    if (fields := getattr(cls, "_fields", None)) is not None and field_name in fields:
+        return fields[field_name].annotated_type
     if (
         hasattr(cls, "__fields__")
         and field_name in cls.__fields__
@@ -857,8 +856,11 @@ def is_valid_var_type(type_: type) -> bool:
 
     if is_union(type_):
         return all(is_valid_var_type(arg) for arg in get_args(type_))
+
+    type_ = origin if (origin := get_origin(type_)) is not None else type_
+
     return (
-        _issubclass(type_, StateVar)
+        issubclass(type_, StateVarTypes)
         or serializers.has_serializer(type_)
         or dataclasses.is_dataclass(type_)
     )
@@ -991,11 +993,6 @@ def validate_literal(key: str, value: Any, expected_type: type, comp_name: str):
             value_str = f"'{value}'" if isinstance(value, str) else value
             msg = f"prop value for {key!s} of the `{comp_name}` component should be one of the following: {allowed_value_str}. Got {value_str} instead"
             raise ValueError(msg)
-
-
-# Store this here for performance.
-StateBases = get_base_class(StateVar)
-StateIterBases = get_base_class(StateIterVar)
 
 
 def safe_issubclass(cls: Any, cls_check: Any | tuple[Any, ...]):

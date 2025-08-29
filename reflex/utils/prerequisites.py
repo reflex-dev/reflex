@@ -248,6 +248,7 @@ def get_compiled_app(
     prerender_routes: bool = False,
     dry_run: bool = False,
     check_if_schema_up_to_date: bool = False,
+    use_rich: bool = True,
 ) -> ModuleType:
     """Get the app module based on the default config after first compiling it.
 
@@ -256,6 +257,7 @@ def get_compiled_app(
         prerender_routes: Whether to prerender routes.
         dry_run: If True, do not write the compiled app to disk.
         check_if_schema_up_to_date: If True, check if the schema is up to date.
+        use_rich: Whether to use rich progress bars.
 
     Returns:
         The compiled app based on the default config.
@@ -263,7 +265,7 @@ def get_compiled_app(
     app, app_module = get_and_validate_app(
         reload=reload, check_if_schema_up_to_date=check_if_schema_up_to_date
     )
-    app._compile(prerender_routes=prerender_routes, dry_run=dry_run)
+    app._compile(prerender_routes=prerender_routes, dry_run=dry_run, use_rich=use_rich)
     return app_module
 
 

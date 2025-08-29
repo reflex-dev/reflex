@@ -360,7 +360,13 @@ def run(
     default=False,
     help="Run the command without making any changes.",
 )
-def compile(dry: bool):
+@click.option(
+    "--rich/--no-rich",
+    default=True,
+    is_flag=True,
+    help="Whether to use rich progress bars.",
+)
+def compile(dry: bool, rich: bool):
     """Compile the app in the current directory."""
     import time
 
@@ -371,7 +377,7 @@ def compile(dry: bool):
         _init(name=get_config().app_name)
     get_config(reload=True)
     starting_time = time.monotonic()
-    prerequisites.get_compiled_app(dry_run=dry)
+    prerequisites.get_compiled_app(dry_run=dry, use_rich=rich)
     elapsed_time = time.monotonic() - starting_time
     console.success(f"App compiled successfully in {elapsed_time:.3f} seconds.")
 

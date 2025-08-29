@@ -1810,7 +1810,7 @@ class BaseState(EvenMoreBasicBaseState):
                 hinted_args = value_inside_optional(hinted_args)
             if (
                 isinstance(value, dict)
-                and inspect.isclass(hinted_args)
+                and isinstance(hinted_args, type)
                 and not types.is_generic_alias(hinted_args)  # py3.10
             ):
                 if issubclass(hinted_args, Model):
@@ -2341,7 +2341,7 @@ def _serialize_type(type_: Any) -> str:
     Returns:
         The serialized type.
     """
-    if not inspect.isclass(type_):
+    if not isinstance(type_, type):
         return f"{type_}"
     return f"{type_.__module__}.{type_.__qualname__}"
 

@@ -362,7 +362,7 @@ export const UploadFilesContext = createContext(null);
 export const DispatchContext = createContext(null);
 export const StateContexts = {{{state_contexts_str}}};
 export const EventLoopContext = createContext(null);
-export const clientStorage = {"{}" if client_storage is None else json_dumps(client_storage)}
+export const clientStorage = {"{}" if client_storage is None else json.dumps(client_storage)}
 
 {state_str}
 
