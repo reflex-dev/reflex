@@ -28,6 +28,10 @@ def TestApp():
 
         react_error: bool = False
 
+        @rx.event
+        def set_react_error(self, value: bool):
+            self.react_error = value
+
         def divide_by_number(self, number: int):
             """Divide by number and print the result.
 
@@ -54,7 +58,7 @@ def TestApp():
             ),
             rx.button(
                 "induce_react_error",
-                on_click=TestAppState.set_react_error(True),  # pyright: ignore [reportAttributeAccessIssue]
+                on_click=TestAppState.set_react_error(True),
                 id="induce-react-error-btn",
             ),
             rx.box(

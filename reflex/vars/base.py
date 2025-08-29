@@ -941,6 +941,7 @@ class Var(Generic[VAR_TYPE], metaclass=MetaclassVar):
         Returns:
             A function that that creates a setter for the var.
         """
+        setter_name = Var._get_setter_name_for_name(name)
 
         def setter(state: Any, value: Any):
             """Get the setter for the var.
@@ -962,7 +963,7 @@ class Var(Generic[VAR_TYPE], metaclass=MetaclassVar):
 
         setter.__annotations__["value"] = self._var_type
 
-        setter.__qualname__ = Var._get_setter_name_for_name(name)
+        setter.__qualname__ = setter_name
 
         return setter
 

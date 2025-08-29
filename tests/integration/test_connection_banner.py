@@ -23,6 +23,10 @@ def ConnectionBanner():
         foo: int = 0
 
         @rx.event
+        def set_foo(self, foo: int):
+            self.foo = foo
+
+        @rx.event
         async def delay(self):
             await asyncio.sleep(5)
 
@@ -33,7 +37,7 @@ def ConnectionBanner():
             rx.button(
                 "Increment",
                 id="increment",
-                on_click=State.set_foo(State.foo + 1),  # pyright: ignore [reportAttributeAccessIssue]
+                on_click=State.set_foo(State.foo + 1),
             ),
             rx.button("Delay", id="delay", on_click=State.delay),
         )
