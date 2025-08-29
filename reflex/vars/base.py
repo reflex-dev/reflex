@@ -1475,6 +1475,13 @@ class LiteralVar(Var):
             if isinstance(value, var_subclass.python_types):
                 return literal_subclass.create(value, _var_data=_var_data)
 
+        if (
+            (as_var_method := getattr(value, "_as_var", None)) is not None
+            and callable(as_var_method)
+            and isinstance((resulting_var := as_var_method()), Var)
+        ):
+            return resulting_var
+
         from reflex.event import EventHandler
         from reflex.utils.format import get_event_handler_parts
 

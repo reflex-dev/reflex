@@ -2199,6 +2199,9 @@ def _register_custom_component(
     Args:
         component_fn: The function that creates the component.
 
+    Returns:
+        The custom component.
+
     Raises:
         TypeError: If the tag name cannot be determined.
     """
@@ -2223,6 +2226,7 @@ def _register_custom_component(
         msg = f"Could not determine the tag name for {component_fn!r}"
         raise TypeError(msg)
     CUSTOM_COMPONENTS[dummy_component.tag] = dummy_component
+    return dummy_component
 
 
 def custom_component(
@@ -2246,7 +2250,24 @@ def custom_component(
         )
 
     # Register this component so it can be compiled.
-    _register_custom_component(component_fn)
+    dummy_component = _register_custom_component(component_fn)
+    if tag := dummy_component.tag:
+        object.__setattr__(
+            wrapper,
+            "_as_var",
+            lambda: Var(
+                tag,
+                _var_type=type[Component],
+                _var_data=VarData(
+                    imports={
+                        f"$/{constants.Dirs.UTILS}/components": [ImportVar(tag=tag)],
+                        "@emotion/react": [
+                            ImportVar(tag="jsx"),
+                        ],
+                    }
+                ),
+            ),
+        )
 
     return wrapper
 
