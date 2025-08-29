@@ -225,7 +225,19 @@ class EventHandlerSetVar(EventHandler):
             EventHandlerValueError: If the given Var name is not a str
             NotImplementedError: If the setter for the given Var is async
         """
+        from reflex.config import get_config
         from reflex.utils.exceptions import EventHandlerValueError
+
+        config = get_config()
+        if config.state_auto_setters is None:
+            console.deprecate(
+                feature_name="state_auto_setters defaulting to True",
+                reason="The default value will be changed to False in a future release. Set state_auto_setters explicitly or define setters explicitly. "
+                f"Used {self.state_cls.__name__}.setvar without defining it.",
+                deprecation_version="0.8.9",
+                removal_version="0.9.0",
+                dedupe=True,
+            )
 
         if args:
             if not isinstance(args[0], str):
