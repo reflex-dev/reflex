@@ -930,10 +930,6 @@ class Var(Generic[VAR_TYPE], metaclass=MetaclassVar):
         Returns:
             A function that that creates a setter for the var.
         """
-        from reflex.config import get_config
-
-        config = get_config()
-
         setter_name = Var._get_setter_name_for_name(name)
 
         def setter(state: Any, value: Any):
@@ -943,15 +939,6 @@ class Var(Generic[VAR_TYPE], metaclass=MetaclassVar):
                 state: The state within which we add the setter function.
                 value: The value to set.
             """
-            if config.state_auto_setters is None:
-                console.deprecate(
-                    feature_name="state_auto_setters defaulting to True",
-                    reason="The default value will be changed to False in a future release. Set state_auto_setters explicitly or define setters explicitly. "
-                    f"Used {setter_name} in {type(state).__name__} without defining it.",
-                    deprecation_version="0.8.9",
-                    removal_version="0.9.0",
-                    dedupe=True,
-                )
             if self._var_type in [int, float]:
                 try:
                     value = self._var_type(value)

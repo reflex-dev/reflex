@@ -225,7 +225,19 @@ class EventHandlerSetVar(EventHandler):
             EventHandlerValueError: If the given Var name is not a str
             NotImplementedError: If the setter for the given Var is async
         """
+        from reflex.config import get_config
         from reflex.utils.exceptions import EventHandlerValueError
+
+        config = get_config()
+        if config.state_auto_setters is None:
+            console.deprecate(
+                feature_name="state_auto_setters defaulting to True",
+                reason="The default value will be changed to False in a future release. Set state_auto_setters explicitly or define setters explicitly. "
+                f"Used {self.state_cls.__name__}.setvar without defining it.",
+                deprecation_version="0.8.9",
+                removal_version="0.9.0",
+                dedupe=True,
+            )
 
         if args:
             if not isinstance(args[0], str):
@@ -1096,11 +1108,14 @@ class BaseState(EvenMoreBasicBaseState):
         setattr(cls, name, prop)
 
     @classmethod
-    def _create_event_handler(cls, fn: Any):
+    def _create_event_handler(
+        cls, fn: Any, event_handler_cls: type[EventHandler] = EventHandler
+    ):
         """Create an event handler for the given function.
 
         Args:
             fn: The function to create an event handler for.
+            event_handler_cls: The event handler class to use.
 
         Returns:
             The event handler.
@@ -1108,7 +1123,7 @@ class BaseState(EvenMoreBasicBaseState):
         # Check if function has stored event_actions from decorator
         event_actions = getattr(fn, "_rx_event_actions", {})
 
-        return EventHandler(
+        return event_handler_cls(
             fn=fn, state_full_name=cls.get_full_name(), event_actions=event_actions
         )
 
@@ -1125,9 +1140,34 @@ class BaseState(EvenMoreBasicBaseState):
             name: The name of the var.
             prop: The var to create a setter for.
         """
+        from reflex.config import get_config
+
+        config = get_config()
+        _create_event_handler_kwargs = {}
+
+        if config.state_auto_setters is None:
+
+            class EventHandlerDeprecatedSetter(EventHandler):
+                def __call__(self, *args, **kwargs):
+                    console.deprecate(
+                        feature_name="state_auto_setters defaulting to True",
+                        reason="The default value will be changed to False in a future release. Set state_auto_setters explicitly or define setters explicitly. "
+                        f"Used {setter_name} in {cls.__name__} without defining it.",
+                        deprecation_version="0.8.9",
+                        removal_version="0.9.0",
+                        dedupe=True,
+                    )
+                    return super().__call__(*args, **kwargs)
+
+            _create_event_handler_kwargs["event_handler_cls"] = (
+                EventHandlerDeprecatedSetter
+            )
+
         setter_name = Var._get_setter_name_for_name(name)
         if setter_name not in cls.__dict__:
-            event_handler = cls._create_event_handler(prop._get_setter(name))
+            event_handler = cls._create_event_handler(
+                prop._get_setter(name), **_create_event_handler_kwargs
+            )
             cls.event_handlers[setter_name] = event_handler
             setattr(cls, setter_name, event_handler)
 
