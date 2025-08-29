@@ -135,7 +135,7 @@ class ImportVar:
         if self.alias:
             return (
                 self.alias
-                if self.is_default
+                if self.is_default and self.tag != "*"
                 else (self.tag + " as " + self.alias if self.tag else self.alias)
             )
         return self.tag or ""
