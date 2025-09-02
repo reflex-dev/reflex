@@ -857,6 +857,10 @@ def is_valid_var_type(type_: type) -> bool:
     if is_union(type_):
         return all(is_valid_var_type(arg) for arg in get_args(type_))
 
+    if is_literal(type_):
+        types = {type(value) for value in get_args(type_)}
+        return all(is_valid_var_type(type_) for type_ in types)
+
     type_ = origin if (origin := get_origin(type_)) is not None else type_
 
     return (
