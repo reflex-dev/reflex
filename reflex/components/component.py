@@ -1021,48 +1021,12 @@ class Component(BaseComponent, ABC):
         """
         return set()
 
-    @classmethod
-    def _are_fields_known(cls) -> bool:
-        """Check if all fields are known at compile time. True for most components.
-
-        Returns:
-            Whether all fields are known at compile time.
-        """
-        return True
-
-    @classmethod
-    @functools.cache
-    def _get_component_prop_names(cls) -> set[str]:
-        """Get the names of the component props. NOTE: This assumes all fields are known.
-
-        Returns:
-            The names of the component props.
-        """
-        return {
-            name
-            for name in cls.get_fields()
-            if name in cls.get_props()
-            and isinstance(
-                field_type := types.value_inside_optional(
-                    types.get_field_type(cls, name)
-                ),
-                type,
-            )
-            and issubclass(field_type, Component)
-        }
-
     def _get_components_in_props(self) -> Sequence[BaseComponent]:
         """Get the components in the props.
 
         Returns:
             The components in the props
         """
-        if self._are_fields_known():
-            return [
-                component
-                for name in self._get_component_prop_names()
-                for component in _components_from(getattr(self, name))
-            ]
         return [
             component
             for prop in self.get_props()
@@ -2059,15 +2023,6 @@ class CustomComponent(Component):
             value = LiteralVar.create(value)
             self.props[camel_cased_key] = value
             setattr(self, camel_cased_key, value)
-
-    @classmethod
-    def _are_fields_known(cls) -> bool:
-        """Check if the fields are known.
-
-        Returns:
-            Whether the fields are known.
-        """
-        return False
 
     def __eq__(self, other: Any) -> bool:
         """Check if the component is equal to another.
