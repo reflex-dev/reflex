@@ -1021,12 +1021,8 @@ class Component(BaseComponent, ABC):
         """
         return set()
 
-    def _get_components_in_props(self) -> Sequence[BaseComponent]:
-        """Get the components in the props.
-
-        Returns:
-            The components in the props
-        """
+    @functools.cached_property
+    def _get_component_prop_property(self) -> Sequence[BaseComponent]:
         return [
             component
             for prop in self.get_props()
@@ -1034,6 +1030,14 @@ class Component(BaseComponent, ABC):
             and isinstance(value, (BaseComponent, Var))
             for component in _components_from(value)
         ]
+
+    def _get_components_in_props(self) -> Sequence[BaseComponent]:
+        """Get the components in the props.
+
+        Returns:
+            The components in the props
+        """
+        return self._get_component_prop_property
 
     @classmethod
     def _validate_children(cls, children: tuple | list):
