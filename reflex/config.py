@@ -311,7 +311,7 @@ class Config(BaseConfig):
     - **State Management**: `state_manager_mode`, `state_auto_setters`
     - **Plugins**: `plugins`, `disable_plugins`
 
-    See the [configuration docs](https://reflex.dev/docs/getting-started/configuration/) for complete details on all available options.
+    See the [configuration docs](https://reflex.dev/docs/advanced-onboarding/configuration) for complete details on all available options.
     """
 
     # Track whether the app name has already been validated for this Config instance.
