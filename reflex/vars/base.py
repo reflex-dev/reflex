@@ -9,7 +9,6 @@ import datetime
 import functools
 import inspect
 import json
-import random
 import re
 import string
 import uuid
@@ -50,6 +49,7 @@ from reflex.base import Base
 from reflex.constants.compiler import Hooks
 from reflex.constants.state import FIELD_MARKER
 from reflex.utils import console, exceptions, imports, serializers, types
+from reflex.utils.decorator import once
 from reflex.utils.exceptions import (
     ComputedVarSignatureError,
     UntypedComputedVarError,
@@ -3033,13 +3033,20 @@ def get_uuid_string_var() -> Var:
 USED_VARIABLES = set()
 
 
+@once
+def _rng():
+    import random
+
+    return random.Random(42)
+
+
 def get_unique_variable_name() -> str:
     """Get a unique variable name.
 
     Returns:
         The unique variable name.
     """
-    name = "".join([random.choice(string.ascii_lowercase) for _ in range(8)])
+    name = "".join([_rng().choice(string.ascii_lowercase) for _ in range(8)])
     if name not in USED_VARIABLES:
         USED_VARIABLES.add(name)
         return name

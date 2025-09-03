@@ -10,7 +10,7 @@ import functools
 import inspect
 import typing
 from abc import ABC, ABCMeta, abstractmethod
-from collections.abc import Callable, Iterator, Mapping, Sequence
+from collections.abc import Callable, Iterable, Iterator, Mapping, Sequence
 from dataclasses import _MISSING_TYPE, MISSING
 from functools import wraps
 from hashlib import md5
@@ -374,7 +374,7 @@ class BaseComponent(metaclass=BaseComponentMeta):
         """
 
     @abstractmethod
-    def _get_all_custom_code(self) -> set[str]:
+    def _get_all_custom_code(self) -> dict[str, None]:
         """Get custom code for the component.
 
         Returns:
@@ -382,7 +382,7 @@ class BaseComponent(metaclass=BaseComponentMeta):
         """
 
     @abstractmethod
-    def _get_all_refs(self) -> set[str]:
+    def _get_all_refs(self) -> dict[str, None]:
         """Get the refs for the children of the component.
 
         Returns:
@@ -1003,13 +1003,13 @@ class Component(BaseComponent, ABC):
 
     @classmethod
     @functools.cache
-    def get_props(cls) -> set[str]:
+    def get_props(cls) -> Iterable[str]:
         """Get the unique fields for the component.
 
         Returns:
             The unique fields.
         """
-        return set(cls.get_js_fields())
+        return cls.get_js_fields()
 
     @classmethod
     @functools.cache
@@ -1509,19 +1509,19 @@ class Component(BaseComponent, ABC):
         """
         return None
 
-    def _get_all_custom_code(self) -> set[str]:
+    def _get_all_custom_code(self) -> dict[str, None]:
         """Get custom code for the component and its children.
 
         Returns:
             The custom code.
         """
         # Store the code in a set to avoid duplicates.
-        code = set()
+        code: dict[str, None] = {}
 
         # Add the custom code for this component.
         custom_code = self._get_custom_code()
         if custom_code is not None:
-            code.add(custom_code)
+            code[custom_code] = None
 
         for component in self._get_components_in_props():
             code |= component._get_all_custom_code()
@@ -1529,7 +1529,7 @@ class Component(BaseComponent, ABC):
         # Add the custom code from add_custom_code method.
         for clz in self._iter_parent_classes_with_method("add_custom_code"):
             for item in clz.add_custom_code(self):
-                code.add(item)
+                code[item] = None
 
         # Add the custom code for the children.
         for child in self.children:
@@ -1814,7 +1814,7 @@ class Component(BaseComponent, ABC):
 
         # Add the hook code for the children.
         for child in self.children:
-            code = {**code, **child._get_all_hooks_internal()}
+            code.update(child._get_all_hooks_internal())
 
         return code
 
@@ -1838,7 +1838,7 @@ class Component(BaseComponent, ABC):
 
         # Add the hook code for the children.
         for child in self.children:
-            code = {**code, **child._get_all_hooks()}
+            code.update(child._get_all_hooks())
 
         return code
 
@@ -1853,16 +1853,16 @@ class Component(BaseComponent, ABC):
             return None
         return format.format_ref(self.id)
 
-    def _get_all_refs(self) -> set[str]:
+    def _get_all_refs(self) -> dict[str, None]:
         """Get the refs for the children of the component.
 
         Returns:
             The refs for the children.
         """
-        refs = set()
+        refs = {}
         ref = self.get_ref()
         if ref is not None:
-            refs.add(ref)
+            refs[ref] = None
         for child in self.children:
             refs |= child._get_all_refs()
         for component in self._get_components_in_props():
@@ -1994,7 +1994,7 @@ class CustomComponent(Component):
         )
 
         to_camel_cased_props = {
-            format.to_camel_case(key + MEMO_MARKER)
+            format.to_camel_case(key + MEMO_MARKER): None
             for key in props
             if key not in event_types
         }
@@ -2048,13 +2048,13 @@ class CustomComponent(Component):
         return hash(self.tag)
 
     @classmethod
-    def get_props(cls) -> set[str]:
+    def get_props(cls) -> Iterable[str]:
         """Get the props for the component.
 
         Returns:
             The set of component props.
         """
-        return set()
+        return ()
 
     @staticmethod
     def _get_event_spec_from_args_spec(name: str, event: EventChain) -> Callable:
@@ -2656,7 +2656,7 @@ class StatefulComponent(BaseComponent):
             return set()
         return self.component._get_all_dynamic_imports()
 
-    def _get_all_custom_code(self, export: bool = False) -> set[str]:
+    def _get_all_custom_code(self, export: bool = False) -> dict[str, None]:
         """Get custom code for the component.
 
         Args:
@@ -2666,19 +2666,19 @@ class StatefulComponent(BaseComponent):
             The custom code.
         """
         if self.rendered_as_shared:
-            return set()
-        return self.component._get_all_custom_code().union(
-            {self._render_stateful_code(export=export)}
+            return {}
+        return self.component._get_all_custom_code() | (
+            {self._render_stateful_code(export=export): None}
         )
 
-    def _get_all_refs(self) -> set[str]:
+    def _get_all_refs(self) -> dict[str, None]:
         """Get the refs for the children of the component.
 
         Returns:
             The refs for the children.
         """
         if self.rendered_as_shared:
-            return set()
+            return {}
         return self.component._get_all_refs()
 
     def render(self) -> dict:

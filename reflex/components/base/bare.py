@@ -129,7 +129,7 @@ class Bare(Component):
                 dynamic_imports |= component._get_all_dynamic_imports()
         return dynamic_imports
 
-    def _get_all_custom_code(self) -> set[str]:
+    def _get_all_custom_code(self) -> dict[str, None]:
         """Get custom code for the component.
 
         Returns:
@@ -166,7 +166,7 @@ class Bare(Component):
                     )
         return app_wrap_components
 
-    def _get_all_refs(self) -> set[str]:
+    def _get_all_refs(self) -> dict[str, None]:
         """Get the refs for the children of the component.
 
         Returns:

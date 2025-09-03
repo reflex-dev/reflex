@@ -161,7 +161,7 @@ def _compile_page(component: BaseComponent) -> str:
     # Compile the code to render the component.
     return templates.page_template(
         imports=imports,
-        dynamic_imports=component._get_all_dynamic_imports(),
+        dynamic_imports=sorted(component._get_all_dynamic_imports()),
         custom_codes=component._get_all_custom_code(),
         hooks=component._get_all_hooks(),
         render=component.render(),
@@ -379,7 +379,7 @@ def _compile_components(
         templates.custom_component_template(
             imports=utils.compile_imports(imports),
             components=component_renders,
-            dynamic_imports=dynamic_imports,
+            dynamic_imports=sorted(dynamic_imports),
             custom_codes=custom_codes,
         ),
         imports,
@@ -435,9 +435,7 @@ def _compile_stateful_components(
                 rendered_components.update(dict.fromkeys(dynamic_imports))
 
             # Include custom code in the shared component.
-            rendered_components.update(
-                dict.fromkeys(component._get_all_custom_code(export=True)),
-            )
+            rendered_components.update(component._get_all_custom_code(export=True))
 
             # Include all imports in the shared component.
             all_import_dicts.append(component._get_all_imports())

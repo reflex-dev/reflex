@@ -5,6 +5,7 @@ from __future__ import annotations
 import functools
 import inspect
 from collections.abc import Callable, Iterable
+from hashlib import md5
 from typing import Any
 
 from reflex.components.base.fragment import Fragment
@@ -141,25 +142,12 @@ class Foreach(Component):
         else:
             render_fn = self.render_fn
             # Otherwise, use a deterministic index, based on the render function bytecode.
-            code_hash = (
-                hash(
-                    getattr(
-                        render_fn,
-                        "__code__",
-                        (
-                            repr(self.render_fn)
-                            if not isinstance(render_fn, functools.partial)
-                            else render_fn.func.__code__
-                        ),
-                    )
-                )
-                .to_bytes(
-                    length=8,
-                    byteorder="big",
-                    signed=True,
-                )
-                .hex()
-            )
+            if (render_fn_code := getattr(render_fn, "__code__", None)) is not None:
+                code_hash = md5(render_fn_code.co_code).hexdigest()
+            elif isinstance(render_fn, functools.partial):
+                code_hash = md5(render_fn.func.__code__.co_code).hexdigest()
+            else:
+                code_hash = md5(repr(render_fn).encode()).hexdigest()
             props["index_var_name"] = f"index_{code_hash}"
 
         return IterTag(

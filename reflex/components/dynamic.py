@@ -81,9 +81,7 @@ def load_dynamic_serializer():
             rendered_components.update(dict.fromkeys(dynamic_imports))
 
         # Include custom code in the shared component.
-        rendered_components.update(
-            dict.fromkeys(component._get_all_custom_code()),
-        )
+        rendered_components.update(component._get_all_custom_code())
 
         rendered_components[
             templates.stateful_component_template(

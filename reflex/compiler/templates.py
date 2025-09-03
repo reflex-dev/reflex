@@ -164,7 +164,7 @@ export function Layout({{children}}) {{
 def app_root_template(
     *,
     imports: list[_ImportDict],
-    custom_codes: set[str],
+    custom_codes: Iterable[str],
     hooks: dict[str, VarData | None],
     window_libraries: list[tuple[str, str]],
     render: dict[str, Any],
