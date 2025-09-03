@@ -260,7 +260,7 @@ class Upload(MemoizationLeaf):
         props["class_name"] = ["rx-Upload", *given_class_name]
 
         # get only upload component props
-        supported_props = cls.get_props().union({"on_drop"})
+        supported_props = set(cls.get_props()) | {"on_drop"}
         upload_props = {
             key: value for key, value in props.items() if key in supported_props
         }

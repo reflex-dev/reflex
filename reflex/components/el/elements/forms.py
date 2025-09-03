@@ -770,7 +770,7 @@ class Textarea(BaseHTML):
             "enter_key_submit",
         ]
 
-    def _get_all_custom_code(self) -> set[str]:
+    def _get_all_custom_code(self) -> dict[str, None]:
         """Include the custom code for auto_height and enter_key_submit functionality.
 
         Returns:
@@ -778,9 +778,9 @@ class Textarea(BaseHTML):
         """
         custom_code = super()._get_all_custom_code()
         if self.auto_height is not None:
-            custom_code.add(AUTO_HEIGHT_JS)
+            custom_code[AUTO_HEIGHT_JS] = None
         if self.enter_key_submit is not None:
-            custom_code.add(ENTER_KEY_SUBMIT_JS)
+            custom_code[ENTER_KEY_SUBMIT_JS] = None
         return custom_code
 
 
