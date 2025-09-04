@@ -8,6 +8,7 @@ from pytest_mock import MockerFixture
 from reflex import constants
 from reflex.compiler import compiler, utils
 from reflex.components.base import document
+from reflex.components.el.elements.metadata import Link
 from reflex.constants.compiler import PageNames
 from reflex.utils.imports import ImportVar, ParsedImportDict
 from reflex.vars.base import Var
@@ -364,7 +365,7 @@ def test_create_document_root():
     assert isinstance(lang, LiteralStringVar)
     assert lang.equals(Var.create("en"))
     # No children in head.
-    assert len(root.children[0].children) == 5
+    assert len(root.children[0].children) == 6
     assert isinstance(root.children[0].children[1], utils.Meta)
     char_set = root.children[0].children[1].char_set  # pyright: ignore [reportAttributeAccessIssue]
     assert isinstance(char_set, LiteralStringVar)
@@ -374,7 +375,8 @@ def test_create_document_root():
     assert isinstance(name, LiteralStringVar)
     assert name.equals(Var.create("viewport"))
     assert isinstance(root.children[0].children[3], document.Meta)
-    assert isinstance(root.children[0].children[4], document.Links)
+    assert isinstance(root.children[0].children[4], Link)
+    assert isinstance(root.children[0].children[5], document.Links)
 
 
 def test_create_document_root_with_scripts():
@@ -389,9 +391,18 @@ def test_create_document_root_with_scripts():
         html_custom_attrs={"project": "reflex"},
     )
     assert isinstance(root, utils.Html)
-    assert len(root.children[0].children) == 7
+    assert len(root.children[0].children) == 8
     names = [c.tag for c in root.children[0].children]
-    assert names == ["script", "Scripts", "Scripts", "meta", "meta", "Meta", "Links"]
+    assert names == [
+        "script",
+        "Scripts",
+        "Scripts",
+        "meta",
+        "meta",
+        "Meta",
+        "link",
+        "Links",
+    ]
     lang = root.lang  # pyright: ignore [reportAttributeAccessIssue]
     assert isinstance(lang, LiteralStringVar)
     assert lang.equals(Var.create("rx"))
@@ -408,9 +419,9 @@ def test_create_document_root_with_meta_char_set():
         head_components=comps,
     )
     assert isinstance(root, utils.Html)
-    assert len(root.children[0].children) == 5
+    assert len(root.children[0].children) == 6
     names = [c.tag for c in root.children[0].children]
-    assert names == ["script", "meta", "meta", "Meta", "Links"]
+    assert names == ["script", "meta", "meta", "Meta", "link", "Links"]
     assert str(root.children[0].children[1].char_set) == '"cp1252"'  # pyright: ignore [reportAttributeAccessIssue]
 
 
@@ -424,9 +435,9 @@ def test_create_document_root_with_meta_viewport():
         head_components=comps,
     )
     assert isinstance(root, utils.Html)
-    assert len(root.children[0].children) == 6
+    assert len(root.children[0].children) == 7
     names = [c.tag for c in root.children[0].children]
-    assert names == ["script", "meta", "meta", "meta", "Meta", "Links"]
+    assert names == ["script", "meta", "meta", "meta", "Meta", "link", "Links"]
     assert str(root.children[0].children[1].http_equiv) == '"refresh"'  # pyright: ignore [reportAttributeAccessIssue]
     assert str(root.children[0].children[2].name) == '"viewport"'  # pyright: ignore [reportAttributeAccessIssue]
     assert str(root.children[0].children[2].content) == '"foo"'  # pyright: ignore [reportAttributeAccessIssue]
