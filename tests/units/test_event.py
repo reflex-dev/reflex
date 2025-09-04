@@ -1,3 +1,4 @@
+import json
 from collections.abc import Callable
 
 import pytest
@@ -169,29 +170,13 @@ def test_fix_events(arg1, arg2):
     ("input", "output"),
     [
         (
-            ("/path", None, None),
-            'ReflexEvent("_redirect", {path:"/path",external:false,replace:false})',
-        ),
-        (
-            ("/path", True, None),
-            'ReflexEvent("_redirect", {path:"/path",external:true,replace:false})',
-        ),
-        (
-            ("/path", False, None),
-            'ReflexEvent("_redirect", {path:"/path",external:false,replace:false})',
-        ),
-        (
-            (Var(_js_expr="path"), None, None),
-            'ReflexEvent("_redirect", {path:path,external:false,replace:false})',
-        ),
-        (
-            ("/path", None, True),
-            'ReflexEvent("_redirect", {path:"/path",external:false,replace:true})',
-        ),
-        (
-            ("/path", True, True),
-            'ReflexEvent("_redirect", {path:"/path",external:true,replace:true})',
-        ),
+            (path, is_external, replace, popup),
+            f'ReflexEvent("_redirect", {{path:{json.dumps(path) if isinstance(path, str) else path._js_expr},external:{"true" if is_external else "false"},popup:{"true" if popup else "false"},replace:{"true" if replace else "false"}}})',
+        )
+        for path in ("/path", Var(_js_expr="path"))
+        for is_external in (None, True, False)
+        for replace in (None, True, False)
+        for popup in (None, True, False)
     ],
 )
 def test_event_redirect(input, output):
@@ -201,12 +186,14 @@ def test_event_redirect(input, output):
         input: The input for running the test.
         output: The expected output to validate the test.
     """
-    path, is_external, replace = input
+    path, is_external, replace, popup = input
     kwargs = {}
     if is_external is not None:
         kwargs["is_external"] = is_external
     if replace is not None:
         kwargs["replace"] = replace
+    if popup is not None:
+        kwargs["popup"] = popup
     spec = event.redirect(path, **kwargs)
     assert isinstance(spec, EventSpec)
     assert spec.handler.fn.__qualname__ == "_redirect"
