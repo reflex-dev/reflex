@@ -16,7 +16,7 @@ from reflex.components.base import Description, Image, Scripts
 from reflex.components.base.document import Links, ScrollRestoration
 from reflex.components.base.document import Meta as ReactMeta
 from reflex.components.component import Component, ComponentStyle, CustomComponent
-from reflex.components.el.elements.metadata import Head, Meta, Title
+from reflex.components.el.elements.metadata import Head, Link, Meta, Title
 from reflex.components.el.elements.other import Html
 from reflex.components.el.elements.sectioning import Body
 from reflex.constants.state import FIELD_MARKER
@@ -26,7 +26,7 @@ from reflex.style import Style
 from reflex.utils import format, imports, path_ops
 from reflex.utils.imports import ImportVar, ParsedImportDict
 from reflex.utils.prerequisites import get_web_dir
-from reflex.vars.base import Field, Var
+from reflex.vars.base import Field, Var, VarData
 
 # To re-export this function.
 merge_imports = imports.merge_imports
@@ -382,6 +382,20 @@ def create_document_root(
     # Always include the framework meta and link tags.
     always_head_components = [
         ReactMeta.create(),
+        Link.create(
+            rel="stylesheet",
+            type="text/css",
+            href=Var(
+                "reflexGlobalStyles",
+                _var_data=VarData(
+                    imports={
+                        "$/styles/__reflex_global_styles.css?url": [
+                            ImportVar(tag="reflexGlobalStyles", is_default=True)
+                        ]
+                    }
+                ),
+            ),
+        ),
         Links.create(),
     ]
     maybe_head_components = []
