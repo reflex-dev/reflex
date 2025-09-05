@@ -556,6 +556,18 @@ class EnvironmentVariables:
     # Whether to check db connections before using them.
     SQLALCHEMY_POOL_PRE_PING: EnvVar[bool] = env_var(True)
 
+    # The size of the database connection pool.
+    SQLALCHEMY_POOL_SIZE: EnvVar[int] = env_var(5)
+
+    # The maximum overflow size of the database connection pool.
+    SQLALCHEMY_MAX_OVERFLOW: EnvVar[int] = env_var(10)
+
+    # Recycle connections after this many seconds.
+    SQLALCHEMY_POOL_RECYCLE: EnvVar[int] = env_var(-1)
+
+    # The timeout for acquiring a connection from the pool.
+    SQLALCHEMY_POOL_TIMEOUT: EnvVar[int] = env_var(30)
+
     # Whether to ignore the redis config error. Some redis servers only allow out-of-band configuration.
     REFLEX_IGNORE_REDIS_CONFIG_ERROR: EnvVar[bool] = env_var(False)
 
