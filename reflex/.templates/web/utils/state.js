@@ -210,7 +210,11 @@ export const applyEvent = async (event, socket, navigate, params) => {
       return false;
     }
     if (event.payload.external) {
-      window.open(event.payload.path, "_blank", "noopener");
+      window.open(
+        event.payload.path,
+        "_blank",
+        "noopener" + (event.payload.popup ? ",popup" : ""),
+      );
       return false;
     }
     const url = urlFrom(event.payload.path);

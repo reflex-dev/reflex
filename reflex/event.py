@@ -13,6 +13,7 @@ from typing import (
     Annotated,
     Any,
     Generic,
+    Literal,
     NoReturn,
     Protocol,
     TypeVar,
@@ -962,9 +963,29 @@ def server_side(name: str, sig: inspect.Signature, **kwargs) -> EventSpec:
     )
 
 
+@overload
 def redirect(
     path: str | Var[str],
+    *,
+    is_external: Literal[False] = False,
+    replace: bool = False,
+) -> EventSpec: ...
+
+
+@overload
+def redirect(
+    path: str | Var[str],
+    *,
+    is_external: Literal[True],
+    popup: bool = False,
+) -> EventSpec: ...
+
+
+def redirect(
+    path: str | Var[str],
+    *,
     is_external: bool = False,
+    popup: bool = False,
     replace: bool = False,
 ) -> EventSpec:
     """Redirect to a new path.
@@ -972,6 +993,7 @@ def redirect(
     Args:
         path: The path to redirect to.
         is_external: Whether to open in new tab or not.
+        popup: Whether to open in a new window or not.
         replace: If True, the current page will not create a new history entry.
 
     Returns:
@@ -982,6 +1004,7 @@ def redirect(
         get_fn_signature(redirect),
         path=path,
         external=is_external,
+        popup=popup,
         replace=replace,
     )
 
