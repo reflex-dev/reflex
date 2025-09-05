@@ -43,6 +43,7 @@ from reflex.event import (
     EventChain,
     EventHandler,
     EventSpec,
+    args_specs_from_fields,
     no_args_event_spec,
     parse_args_spec,
     pointer_event_spec,
@@ -909,18 +910,7 @@ class Component(BaseComponent, ABC):
         """
         # Look for component specific triggers,
         # e.g. variable declared as EventHandler types.
-        return DEFAULT_TRIGGERS | {
-            name: (
-                metadata[0]
-                if (
-                    (metadata := getattr(field.annotated_type, "__metadata__", None))
-                    is not None
-                )
-                else no_args_event_spec
-            )
-            for name, field in cls.get_fields().items()
-            if field.type_origin is EventHandler
-        }  # pyright: ignore [reportOperatorIssue]
+        return DEFAULT_TRIGGERS | args_specs_from_fields(cls.get_fields())  # pyright: ignore [reportOperatorIssue]
 
     def __repr__(self) -> str:
         """Represent the component in React.
