@@ -232,7 +232,9 @@ def interpret_env_var_value(
         if len(args) != 2:
             msg = f"Invalid mapping type for environment variable {field_name}: {field_type}. Must have exactly two type arguments."
             raise ValueError(msg)
-        items = value.split(":")
+        if not value.strip():
+            return {}
+        items = value.strip().split(":")
         if len(items) % 2 != 0:
             msg = f"Invalid mapping value: {value!r} for {field_name}. Must be in the format key1:value1:key2:value2"
             raise EnvironmentVarValueError(msg)
