@@ -432,6 +432,7 @@ export const applyRestEvent = async (event, socket, navigate, params) => {
       event.payload.files,
       event.payload.upload_id,
       event.payload.on_upload_progress,
+      event.payload.extra_headers,
       socket,
       refs,
       getBackendURL,

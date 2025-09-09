@@ -145,18 +145,6 @@ def _compile_contexts(state: type[BaseState] | None, theme: Component | None) ->
     )
 
 
-def _compile_upload_js(extra_headers: Iterable[tuple[str, str]]) -> str:
-    """Compile the upload.js file.
-
-    Args:
-        extra_headers: Extra headers to include in the upload request.
-
-    Returns:
-        The compiled upload.js file.
-    """
-    return templates.upload_js_template(extra_headers=extra_headers)
-
-
 def _compile_page(component: BaseComponent) -> str:
     """Compile the component.
 
@@ -557,20 +545,6 @@ def compile_contexts(
     output_path = utils.get_context_path()
 
     return output_path, _compile_contexts(state, theme)
-
-
-def compile_upload_js(extra_headers: Iterable[tuple[str, str]]) -> tuple[str, str]:
-    """Compile the upload.js file.
-
-    Args:
-        extra_headers: Extra headers to include in the upload request.
-
-    Returns:
-        The path and code of the compiled upload.js file.
-    """
-    output_path = utils.get_upload_js_path()
-
-    return output_path, _compile_upload_js(extra_headers=extra_headers)
 
 
 def compile_page(path: str, component: BaseComponent) -> tuple[str, str]:

@@ -872,6 +872,7 @@ class FileUpload:
             DEFAULT_UPLOAD_ID,
             upload_files_context_var_data,
         )
+        from reflex.environment import environment
 
         upload_id = self.upload_id or DEFAULT_UPLOAD_ID
         spec_args = [
@@ -886,6 +887,12 @@ class FileUpload:
             (
                 Var(_js_expr="upload_id"),
                 LiteralVar.create(upload_id),
+            ),
+            (
+                Var(_js_expr="extra_headers"),
+                LiteralVar.create(
+                    dict(environment.REFLEX_UPLOAD_ENDPOINT_EXTRA_HEADERS.get())
+                ),
             ),
         ]
         if self.on_upload_progress is not None:
