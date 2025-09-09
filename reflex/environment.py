@@ -204,7 +204,8 @@ def interpret_env_var_value(
         The interpreted value.
 
     Raises:
-        ValueError: If the value is invalid.
+        ValueError: If the environment variable type is invalid.
+        EnvironmentVarValueError: If the environment variable value is invalid.
     """
     field_type = value_inside_optional(field_type)
 
