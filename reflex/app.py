@@ -1422,6 +1422,11 @@ class App(MiddlewareMixin, LifespanMixin):
         compile_results.append(
             compiler.compile_contexts(self._state, self.theme),
         )
+        compile_results.append(
+            compiler.compile_upload_js(
+                environment.REFLEX_UPLOAD_ENDPOINT_EXTRA_HEADERS.get().items()
+            )
+        )
         if self.theme is not None:
             # Fix #2992 by removing the top-level appearance prop
             self.theme.appearance = None  # pyright: ignore[reportAttributeAccessIssue]

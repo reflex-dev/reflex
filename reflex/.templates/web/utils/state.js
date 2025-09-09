@@ -433,6 +433,9 @@ export const applyRestEvent = async (event, socket, navigate, params) => {
       event.payload.upload_id,
       event.payload.on_upload_progress,
       socket,
+      refs,
+      getBackendURL,
+      getToken,
     );
     return false;
   }

@@ -9,7 +9,7 @@ import importlib
 import multiprocessing
 import os
 import platform
-from collections.abc import Callable, Sequence
+from collections.abc import Callable, Mapping, Sequence
 from functools import lru_cache
 from pathlib import Path
 from typing import (
@@ -226,6 +226,24 @@ def interpret_env_var_value(
         return interpret_existing_path_env(value, field_name)
     if field_type is Plugin:
         return interpret_plugin_env(value, field_name)
+    if get_origin(field_type) is Mapping:
+        args = get_args(field_type)
+        if len(args) != 2:
+            msg = f"Invalid mapping type for environment variable {field_name}: {field_type}. Must have exactly two type arguments."
+            raise ValueError(msg)
+        items = value.split(":")
+        if len(items) % 2 != 0:
+            msg = f"Invalid mapping value: {value!r} for {field_name}. Must be in the format key1:value1:key2:value2"
+            raise EnvironmentVarValueError(msg)
+        keys = [
+            interpret_env_var_value(k, args[0], f"{field_name}[{i}].key")
+            for i, k in enumerate(items[0::2])
+        ]
+        vals = [
+            interpret_env_var_value(v, args[1], f"{field_name}[{i}].value")
+            for i, v in enumerate(items[1::2])
+        ]
+        return dict(zip(keys, vals, strict=True))
     if get_origin(field_type) in (list, Sequence):
         return [
             interpret_env_var_value(
@@ -656,6 +674,9 @@ class EnvironmentVariables:
 
     # Whether to force a full reload on changes.
     VITE_FORCE_FULL_RELOAD: EnvVar[bool] = env_var(False)
+
+    # Extra headers to include in the upload request to the REFLEX_UPLOAD_ENDPOINT. Formatted as key1:value1:key2:value2
+    REFLEX_UPLOAD_ENDPOINT_EXTRA_HEADERS: EnvVar[Mapping[str, str]] = env_var({})
 
 
 environment = EnvironmentVariables()
