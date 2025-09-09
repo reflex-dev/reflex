@@ -526,15 +526,6 @@ def get_context_path() -> str:
     return str(get_web_dir() / (constants.Dirs.CONTEXTS_PATH + constants.Ext.JS))
 
 
-def get_upload_js_path() -> str:
-    """Get the path of the upload.js file.
-
-    Returns:
-        The path of the upload.js file.
-    """
-    return str(get_web_dir() / (constants.Dirs.UPLOAD_PATH + constants.Ext.JS))
-
-
 def get_components_path() -> str:
     """Get the path of the compiled components.
 

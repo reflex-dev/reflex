@@ -36,8 +36,6 @@ class Dirs(SimpleNamespace):
     COMPONENTS_PATH = UTILS + "/components"
     # The name of the contexts file.
     CONTEXTS_PATH = UTILS + "/context"
-    # The name of the helpers file.
-    UPLOAD_PATH = UTILS + "/helpers/upload"
     # The name of the output directory.
     BUILD_DIR = "build"
     # The name of the static files directory.

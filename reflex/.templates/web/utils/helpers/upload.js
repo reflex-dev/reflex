@@ -25,7 +25,7 @@ export const uploadFiles = async (
   socket,
   refs,
   getBackendURL,
-  getToken
+  getToken,
 ) => {
   // return if there's no file to upload
   if (files === undefined || files.length === 0) {
