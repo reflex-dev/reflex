@@ -846,6 +846,7 @@ class FileUpload:
 
     upload_id: str | None = None
     on_upload_progress: EventHandler | Callable | None = None
+    extra_headers: dict[str, str] | None = None
 
     @staticmethod
     def on_upload_progress_args_spec(_prog: Var[dict[str, int | float | bool]]):
@@ -872,7 +873,6 @@ class FileUpload:
             DEFAULT_UPLOAD_ID,
             upload_files_context_var_data,
         )
-        from reflex.environment import environment
 
         upload_id = self.upload_id or DEFAULT_UPLOAD_ID
         spec_args = [
@@ -890,9 +890,7 @@ class FileUpload:
             ),
             (
                 Var(_js_expr="extra_headers"),
-                LiteralVar.create(
-                    dict(environment.REFLEX_UPLOAD_ENDPOINT_EXTRA_HEADERS.get())
-                ),
+                LiteralVar.create(self.extra_headers or {}),
             ),
         ]
         if self.on_upload_progress is not None:
