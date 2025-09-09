@@ -890,7 +890,9 @@ class FileUpload:
             ),
             (
                 Var(_js_expr="extra_headers"),
-                LiteralVar.create(self.extra_headers or {}),
+                LiteralVar.create(
+                    self.extra_headers if self.extra_headers is not None else {}
+                ),
             ),
         ]
         if self.on_upload_progress is not None:
