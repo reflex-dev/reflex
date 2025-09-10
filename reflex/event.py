@@ -846,6 +846,7 @@ class FileUpload:
 
     upload_id: str | None = None
     on_upload_progress: EventHandler | Callable | None = None
+    extra_headers: dict[str, str] | None = None
 
     @staticmethod
     def on_upload_progress_args_spec(_prog: Var[dict[str, int | float | bool]]):
@@ -886,6 +887,12 @@ class FileUpload:
             (
                 Var(_js_expr="upload_id"),
                 LiteralVar.create(upload_id),
+            ),
+            (
+                Var(_js_expr="extra_headers"),
+                LiteralVar.create(
+                    self.extra_headers if self.extra_headers is not None else {}
+                ),
             ),
         ]
         if self.on_upload_progress is not None:

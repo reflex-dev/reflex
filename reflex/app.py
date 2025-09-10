@@ -259,6 +259,15 @@ class UploadFile(StarletteUploadFile):
     headers: Headers = dataclasses.field(default_factory=Headers)
 
     @property
+    def filename(self) -> str | None:
+        """Get the name of the uploaded file.
+
+        Returns:
+            The name of the uploaded file.
+        """
+        return self.name
+
+    @property
     def name(self) -> str | None:
         """Get the name of the uploaded file.
 
