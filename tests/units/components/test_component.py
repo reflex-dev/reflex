@@ -825,7 +825,7 @@ def test_create_custom_component(my_component):
     """
     component = rx.memo(my_component)(prop1="test", prop2=1)
     assert component.tag == "MyComponent"
-    assert set(component.get_props()) == {"prop1RxMemo", "prop2RxMemo"}
+    assert set(component.get_props()) == {"prop1", "prop2"}
     assert component.tag in CUSTOM_COMPONENTS
 
 
