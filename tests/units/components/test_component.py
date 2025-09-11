@@ -1276,16 +1276,6 @@ class EventState(rx.State):
             id="fstring-prop",
         ),
         pytest.param(
-            rx.fragment(id=TEST_VAR),
-            [TEST_VAR],
-            id="direct-id",
-        ),
-        pytest.param(
-            rx.fragment(id=f"foo{TEST_VAR}bar"),
-            [FORMATTED_TEST_VAR],
-            id="fstring-id",
-        ),
-        pytest.param(
             rx.fragment(key=TEST_VAR),
             [TEST_VAR],
             id="direct-key",

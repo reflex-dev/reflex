@@ -36,6 +36,7 @@ from reflex.constants import (
     MemoizationMode,
     PageNames,
 )
+from reflex.constants.base import REFLEX_VAR_OPENING_TAG
 from reflex.constants.compiler import SpecialAttributes
 from reflex.constants.state import CAMEL_CASE_MEMO_MARKER, FRONTEND_EVENT_STATE
 from reflex.event import (
@@ -581,7 +582,7 @@ class Component(BaseComponent, ABC):
     key: Any = field(default=None, is_javascript_property=False)
 
     # The id for the component.
-    id: Any = field(default=None, is_javascript_property=False)
+    id: str | None = field(default=None, is_javascript_property=False)
 
     # The Var to pass as the ref to the component.
     ref: Var | None = field(default=None, is_javascript_property=False)
@@ -1097,9 +1098,18 @@ class Component(BaseComponent, ABC):
 
         Returns:
             The component.
+
+        Raises:
+            TypeError: If the id is not a string or is a Var.
         """
         comp = cls.__new__(cls)
-        super(Component, comp).__init__(id=props.get("id"), children=list(children))
+        component_id = props.get("id")
+        if component_id is not None and (
+            not isinstance(component_id, str) or REFLEX_VAR_OPENING_TAG in component_id
+        ):
+            msg = "Component id must be a string and cannot be a Var."
+            raise TypeError(msg)
+        super(Component, comp).__init__(id=component_id, children=list(children))
         comp._post_init(children=list(children), **props)
         return comp
 
@@ -1115,9 +1125,18 @@ class Component(BaseComponent, ABC):
 
         Returns:
             The component.
+
+        Raises:
+            TypeError: If the id is not a string or is a Var.
         """
         comp = cls.__new__(cls)
-        super(Component, comp).__init__(id=props.get("id"), children=list(children))
+        component_id = props.get("id")
+        if component_id is not None and (
+            not isinstance(component_id, str) or REFLEX_VAR_OPENING_TAG in component_id
+        ):
+            msg = "Component id must be a string and cannot be a Var."
+            raise TypeError(msg)
+        super(Component, comp).__init__(id=component_id, children=list(children))
         for prop, value in props.items():
             setattr(comp, prop, value)
         return comp
