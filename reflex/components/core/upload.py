@@ -35,6 +35,7 @@ from reflex.utils import format
 from reflex.utils.imports import ImportVar
 from reflex.vars import VarData
 from reflex.vars.base import Var, get_unique_variable_name
+from reflex.vars.function import FunctionVar
 from reflex.vars.sequence import LiteralStringVar
 
 DEFAULT_UPLOAD_ID: str = "default"
@@ -111,8 +112,7 @@ def clear_selected_files(id_: str = DEFAULT_UPLOAD_ID) -> EventSpec:
     # UploadFilesProvider assigns a special function to clear selected files
     # into the shared global refs object to make it accessible outside a React
     # component via `run_script` (otherwise backend could never clear files).
-    func = Var("__clear_selected_files")._as_ref()
-    return run_script(f"{func}({id_!r})")
+    return run_script(Var("__clear_selected_files")._as_ref().to(FunctionVar).call(id_))
 
 
 def cancel_upload(upload_id: str) -> EventSpec:
