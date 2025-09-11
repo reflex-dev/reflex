@@ -129,7 +129,7 @@ class PackageJson(SimpleNamespace):
             "@react-router/node": cls._react_router_version,
             "sirv-cli": "3.0.1",
             "react": cls._react_version,
-            "react-helmet": "6.1.0",
+            "react-helmet-async": "2.0.5",
             "react-dom": cls._react_version,
             "isbot": "5.1.30",
             "socket.io-client": "4.8.1",
