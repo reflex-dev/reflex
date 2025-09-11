@@ -336,7 +336,7 @@ def _compile_component(component: Component | StatefulComponent) -> str:
     return templates.component_template(component=component)
 
 
-def _compile_components(
+def _compile_memo_components(
     components: Iterable[CustomComponent],
 ) -> tuple[str, dict[str, list[ImportVar]]]:
     """Compile the components.
@@ -376,7 +376,7 @@ def _compile_components(
 
     # Compile the components page.
     return (
-        templates.custom_component_template(
+        templates.memo_components_template(
             imports=utils.compile_imports(imports),
             components=component_renders,
             dynamic_imports=sorted(dynamic_imports),
@@ -565,7 +565,7 @@ def compile_page(path: str, component: BaseComponent) -> tuple[str, str]:
     return output_path, code
 
 
-def compile_components(
+def compile_memo_components(
     components: Iterable[CustomComponent],
 ) -> tuple[str, str, dict[str, list[ImportVar]]]:
     """Compile the custom components.
@@ -580,7 +580,7 @@ def compile_components(
     output_path = utils.get_components_path()
 
     # Compile the components.
-    code, imports = _compile_components(components)
+    code, imports = _compile_memo_components(components)
     return output_path, code, imports
 
 

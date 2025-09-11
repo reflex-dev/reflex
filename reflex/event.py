@@ -13,6 +13,7 @@ from typing import (
     Annotated,
     Any,
     Generic,
+    Literal,
     NoReturn,
     Protocol,
     TypeVar,
@@ -846,6 +847,7 @@ class FileUpload:
 
     upload_id: str | None = None
     on_upload_progress: EventHandler | Callable | None = None
+    extra_headers: dict[str, str] | None = None
 
     @staticmethod
     def on_upload_progress_args_spec(_prog: Var[dict[str, int | float | bool]]):
@@ -886,6 +888,12 @@ class FileUpload:
             (
                 Var(_js_expr="upload_id"),
                 LiteralVar.create(upload_id),
+            ),
+            (
+                Var(_js_expr="extra_headers"),
+                LiteralVar.create(
+                    self.extra_headers if self.extra_headers is not None else {}
+                ),
             ),
         ]
         if self.on_upload_progress is not None:
@@ -963,9 +971,29 @@ def server_side(name: str, sig: inspect.Signature, **kwargs) -> EventSpec:
     )
 
 
+@overload
 def redirect(
     path: str | Var[str],
+    *,
+    is_external: Literal[False] = False,
+    replace: bool = False,
+) -> EventSpec: ...
+
+
+@overload
+def redirect(
+    path: str | Var[str],
+    *,
+    is_external: Literal[True],
+    popup: bool = False,
+) -> EventSpec: ...
+
+
+def redirect(
+    path: str | Var[str],
+    *,
     is_external: bool = False,
+    popup: bool = False,
     replace: bool = False,
 ) -> EventSpec:
     """Redirect to a new path.
@@ -973,6 +1001,7 @@ def redirect(
     Args:
         path: The path to redirect to.
         is_external: Whether to open in new tab or not.
+        popup: Whether to open in a new window or not.
         replace: If True, the current page will not create a new history entry.
 
     Returns:
@@ -983,6 +1012,7 @@ def redirect(
         get_fn_signature(redirect),
         path=path,
         external=is_external,
+        popup=popup,
         replace=replace,
     )
 

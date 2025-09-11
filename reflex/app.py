@@ -259,6 +259,15 @@ class UploadFile(StarletteUploadFile):
     headers: Headers = dataclasses.field(default_factory=Headers)
 
     @property
+    def filename(self) -> str | None:
+        """Get the name of the uploaded file.
+
+        Returns:
+            The name of the uploaded file.
+        """
+        return self.name
+
+    @property
     def name(self) -> str | None:
         """Get the name of the uploaded file.
 
@@ -1272,12 +1281,12 @@ class App(MiddlewareMixin, LifespanMixin):
 
         # Compile custom components.
         (
-            custom_components_output,
-            custom_components_result,
-            custom_components_imports,
-        ) = compiler.compile_components(dict.fromkeys(CUSTOM_COMPONENTS.values()))
-        compile_results.append((custom_components_output, custom_components_result))
-        all_imports.update(custom_components_imports)
+            memo_components_output,
+            memo_components_result,
+            memo_components_imports,
+        ) = compiler.compile_memo_components(dict.fromkeys(CUSTOM_COMPONENTS.values()))
+        compile_results.append((memo_components_output, memo_components_result))
+        all_imports.update(memo_components_imports)
         progress.advance(task)
 
         with console.timing("Collect all imports and app wraps"):
