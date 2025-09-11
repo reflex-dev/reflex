@@ -6,7 +6,7 @@ from reflex.components.component import Component
 class Helmet(Component):
     """A helmet component."""
 
-    library = "react-helmet-async@2.0.5"
+    library = "@dr.pogodin/react-helmet@3.0.4"
 
     tag = "Helmet"
 
@@ -14,7 +14,7 @@ class Helmet(Component):
 class HelmetProvider(Component):
     """A helmet provider component."""
 
-    library = "react-helmet-async@2.0.5"
+    library = "@dr.pogodin/react-helmet@3.0.4"
 
     tag = "HelmetProvider"
 
