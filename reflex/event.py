@@ -26,6 +26,7 @@ from typing import (
 from typing_extensions import Self, TypeAliasType, TypedDict, TypeVarTuple, Unpack
 
 from reflex import constants
+from reflex.components.field import BaseField
 from reflex.constants.compiler import CompileVars, Hooks, Imports
 from reflex.constants.state import FRONTEND_EVENT_STATE
 from reflex.utils import format
@@ -1684,6 +1685,31 @@ def parse_args_spec(arg_spec: ArgsSpec | Sequence[ArgsSpec]):
     ), annotations
 
 
+def args_specs_from_fields(
+    fields_dict: Mapping[str, BaseField],
+) -> dict[str, ArgsSpec | Sequence[ArgsSpec]]:
+    """Get the event triggers and arg specs from the given fields.
+
+    Args:
+        fields_dict: The fields, keyed by name
+
+    Returns:
+        The args spec for any field annotated as EventHandler.
+    """
+    return {
+        name: (
+            metadata[0]
+            if (
+                (metadata := getattr(field.annotated_type, "__metadata__", None))
+                is not None
+            )
+            else no_args_event_spec
+        )
+        for name, field in fields_dict.items()
+        if field.type_origin is EventHandler
+    }
+
+
 def check_fn_match_arg_spec(
     user_func: Callable,
     user_func_parameters: Mapping[str, inspect.Parameter],
@@ -2436,6 +2462,7 @@ class EventNamespace:
     check_fn_match_arg_spec = staticmethod(check_fn_match_arg_spec)
     resolve_annotation = staticmethod(resolve_annotation)
     parse_args_spec = staticmethod(parse_args_spec)
+    args_specs_from_fields = staticmethod(args_specs_from_fields)
     unwrap_var_annotation = staticmethod(unwrap_var_annotation)
     get_fn_signature = staticmethod(get_fn_signature)
 

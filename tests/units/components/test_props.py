@@ -1,7 +1,17 @@
+from __future__ import annotations
+
 import pytest
 from pydantic.v1 import ValidationError
 
 from reflex.components.props import NoExtrasAllowedProps, PropsBase
+from reflex.event import (
+    EventChain,
+    EventHandler,
+    event,
+    no_args_event_spec,
+    passthrough_event_spec,
+)
+from reflex.state import State
 from reflex.utils.exceptions import InvalidPropValueError
 
 
@@ -177,3 +187,29 @@ def test_props_base_dict_conversion(props_class, props_kwargs, expected_dict):
     props = props_class(**props_kwargs)
     result = props.dict()
     assert result == expected_dict
+
+
+class EventProps(PropsBase):
+    """Test props with event handler fields."""
+
+    on_click: EventHandler[no_args_event_spec]
+    not_start_with_on: EventHandler[passthrough_event_spec(str)]
+
+
+def test_event_handler_props():
+    class FooState(State):
+        @event
+        def handle_click(self):
+            pass
+
+        @event
+        def handle_input(self, value: str):
+            pass
+
+    props = EventProps(
+        on_click=FooState.handle_click,  # pyright: ignore[reportArgumentType]
+        not_start_with_on=FooState.handle_input,  # pyright: ignore[reportArgumentType]
+    )
+    props_dict = props.dict()
+    assert isinstance(props_dict["onClick"], EventChain)
+    assert isinstance(props_dict["notStartWithOn"], EventChain)

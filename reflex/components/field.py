@@ -6,6 +6,8 @@ from collections.abc import Callable
 from dataclasses import _MISSING_TYPE, MISSING
 from typing import Annotated, Any, Generic, TypeVar, get_origin
 
+from reflex.utils import types
+
 FIELD_TYPE = TypeVar("FIELD_TYPE")
 
 
@@ -114,7 +116,9 @@ class FieldBasedMeta(type):
     def _resolve_annotations(
         cls, namespace: dict[str, Any], name: str
     ) -> dict[str, Any]:
-        return namespace.get("__annotations__", {})
+        return types.resolve_annotations(
+            namespace.get("__annotations__", {}), namespace["__module__"]
+        )
 
     @classmethod
     def _process_field_overrides(
