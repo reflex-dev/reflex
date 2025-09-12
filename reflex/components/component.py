@@ -145,14 +145,6 @@ class BaseComponentMeta(FieldBasedMeta, ABCMeta):
         _js_fields: Mapping[str, ComponentField]
 
     @classmethod
-    def _resolve_annotations(
-        cls, namespace: dict[str, Any], name: str
-    ) -> dict[str, Any]:
-        return types.resolve_annotations(
-            namespace.get("__annotations__", {}), namespace["__module__"]
-        )
-
-    @classmethod
     def _process_annotated_fields(
         cls,
         namespace: dict[str, Any],
