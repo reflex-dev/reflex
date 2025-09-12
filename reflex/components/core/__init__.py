@@ -28,7 +28,7 @@ _SUBMOD_ATTRS: dict[str, list[str]] = {
         "Foreach",
     ],
     "html": ["html", "Html"],
-    "helmet": ["Helmet"],
+    "helmet": ["Helmet", "helmet", "HelmetProvider", "helmet_provider"],
     "match": [
         "match",
         "Match",
