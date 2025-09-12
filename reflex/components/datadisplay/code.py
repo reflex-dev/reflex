@@ -382,7 +382,7 @@ for theme_name in dir(Theme):
 class CodeBlock(Component, MarkdownComponentMap):
     """A code block."""
 
-    library = "react-syntax-highlighter@15.6.1"
+    library = "react-syntax-highlighter@15.6.6"
 
     tag = "PrismAsyncLight"
 
@@ -412,7 +412,7 @@ class CodeBlock(Component, MarkdownComponentMap):
     )
 
     # Props passed down to the code tag.
-    code_tag_props: Var[dict[str, str]]
+    code_tag_props: Var[dict[str, str | dict[str, str]]]
 
     # Whether a copy button should appear.
     can_copy: bool | None = field(
