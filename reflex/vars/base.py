@@ -2345,7 +2345,7 @@ class ComputedVar(Var[RETURN_TYPE]):
     def _check_deprecated_return_type(self, instance: BaseState, value: Any) -> None:
         if not _isinstance(value, self._var_type, nested=1, treat_var_as_type=False):
             console.error(
-                f"Computed var '{type(instance).__name__}.{self._js_expr}' must return"
+                f"Computed var '{type(instance).__name__}.{self._name}' must return"
                 f" a value of type '{escape(str(self._var_type))}', got '{value!s}' of type {type(value)}."
             )
 
@@ -2395,7 +2395,7 @@ class ComputedVar(Var[RETURN_TYPE]):
         except Exception as e:
             console.warn(
                 "Failed to automatically determine dependencies for computed var "
-                f"{objclass.__name__}.{self._js_expr}: {e}. "
+                f"{objclass.__name__}.{self._name}: {e}. "
                 "Provide static_deps and set auto_deps=False to suppress this warning."
             )
             return d

@@ -22,6 +22,7 @@ from reflex.utils.decorator import once
 
 # Console for pretty printing.
 _console = Console()
+_console_stderr = Console(stderr=True)
 
 # The current log level.
 _LOG_LEVEL = LogLevel.INFO
@@ -94,6 +95,21 @@ def print(msg: str, *, dedupe: bool = False, **kwargs):
             return
         _EMITTED_PRINTS.add(msg)
     _console.print(msg, **kwargs)
+
+
+def _print_stderr(msg: str, *, dedupe: bool = False, **kwargs):
+    """Print a message to stderr.
+
+    Args:
+        msg: The message to print.
+        dedupe: If True, suppress multiple console logs of print message.
+        kwargs: Keyword arguments to pass to the print function.
+    """
+    if dedupe:
+        if msg in _EMITTED_PRINTS:
+            return
+        _EMITTED_PRINTS.add(msg)
+    _console_stderr.print(msg, **kwargs)
 
 
 @once
@@ -342,7 +358,7 @@ def error(msg: str, *, dedupe: bool = False, **kwargs):
             if msg in _EMITTED_ERRORS:
                 return
             _EMITTED_ERRORS.add(msg)
-        print(f"[red]{msg}[/red]", **kwargs)
+        _print_stderr(f"[red]{msg}[/red]", **kwargs)
     if should_use_log_file_console():
         print_to_log_file(f"[red]{msg}[/red]", **kwargs)
 
