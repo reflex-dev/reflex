@@ -1,6 +1,6 @@
 [project]
 name = "reflex"
-version = "0.8.11dev1"
+version = "0.8.12dev1"
 description = "Web apps in pure Python."
 license.text = "Apache-2.0"
 authors = [
@@ -149,7 +149,6 @@ lint.ignore = [
   "TC",
   "TD",
   "TRY0",
-  "UP038",
 ]
 lint.pydocstyle.convention = "google"
 lint.flake8-bugbear.extend-immutable-calls = [
@@ -230,7 +229,7 @@ fail_fast = true
 
 [[tool.pre-commit.repos]]
 repo = "https://github.com/astral-sh/ruff-pre-commit"
-rev = "v0.12.12"
+rev = "v0.13.0"
 hooks = [
   { id = "ruff-format", args = [
     "reflex",
