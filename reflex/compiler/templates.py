@@ -86,7 +86,7 @@ class _RenderUtils:
         children_rendered = "".join(
             [_RenderUtils.render(child) for child in component.get("children", [])]
         )
-        return f"{component['iterable_state']}.map(({component['arg_name']},{component['arg_index']})=>({children_rendered}))"
+        return f"Array.prototype.map.call({component['iterable_state']} ?? [],(({component['arg_name']},{component['arg_index']})=>({children_rendered})))"
 
     @staticmethod
     def render_match_tag(component: Any) -> str:
