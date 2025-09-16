@@ -114,7 +114,7 @@ def driver(test_app: AppHarness) -> Generator[WebDriver, None, None]:
 
 def test_frontend_exception_handler_during_runtime(
     driver: WebDriver,
-    capsys,
+    capsys: pytest.CaptureFixture[str],
 ):
     """Test calling frontend exception handler during runtime.
 
@@ -136,13 +136,13 @@ def test_frontend_exception_handler_during_runtime(
     time.sleep(2)
 
     captured_default_handler_output = capsys.readouterr()
-    assert "induce_frontend_error" in captured_default_handler_output.out
-    assert "ReferenceError" in captured_default_handler_output.out
+    assert "induce_frontend_error" in captured_default_handler_output.err
+    assert "ReferenceError" in captured_default_handler_output.err
 
 
 def test_backend_exception_handler_during_runtime(
     driver: WebDriver,
-    capsys,
+    capsys: pytest.CaptureFixture[str],
 ):
     """Test calling backend exception handler during runtime.
 
@@ -164,14 +164,14 @@ def test_backend_exception_handler_during_runtime(
     time.sleep(2)
 
     captured_default_handler_output = capsys.readouterr()
-    assert "divide_by_number" in captured_default_handler_output.out
-    assert "ZeroDivisionError" in captured_default_handler_output.out
+    assert "divide_by_number" in captured_default_handler_output.err
+    assert "ZeroDivisionError" in captured_default_handler_output.err
 
 
 def test_frontend_exception_handler_with_react(
     test_app: AppHarness,
     driver: WebDriver,
-    capsys,
+    capsys: pytest.CaptureFixture[str],
 ):
     """Test calling frontend exception handler during runtime.
 
@@ -194,9 +194,9 @@ def test_frontend_exception_handler_with_react(
 
     captured_default_handler_output = capsys.readouterr()
     if isinstance(test_app, AppHarnessProd):
-        assert "Error: Minified React error #31" in captured_default_handler_output.out
+        assert "Error: Minified React error #31" in captured_default_handler_output.err
     else:
         assert (
             "Error: Objects are not valid as a React child (found: object with keys \n{invalid})"
-            in captured_default_handler_output.out
+            in captured_default_handler_output.err
         )
