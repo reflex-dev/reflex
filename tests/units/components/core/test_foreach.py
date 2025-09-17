@@ -171,28 +171,28 @@ def display_color_index_tuple(color):
             ForEachState.primary_color,
             display_primary_colors,
             {
-                "iterable_state": f"Object.entries({ForEachState.get_full_name()}.primary_color{FIELD_MARKER})",
+                "iterable_state": f"Object.entries({ForEachState.get_full_name()}.primary_color{FIELD_MARKER} ?? {{}})",
             },
         ),
         (
             ForEachState.color_with_shades,
             display_color_with_shades,
             {
-                "iterable_state": f"Object.entries({ForEachState.get_full_name()}.color_with_shades{FIELD_MARKER})",
+                "iterable_state": f"Object.entries({ForEachState.get_full_name()}.color_with_shades{FIELD_MARKER} ?? {{}})",
             },
         ),
         (
             ForEachState.nested_colors_with_shades,
             display_nested_color_with_shades,
             {
-                "iterable_state": f"Object.entries({ForEachState.get_full_name()}.nested_colors_with_shades{FIELD_MARKER})",
+                "iterable_state": f"Object.entries({ForEachState.get_full_name()}.nested_colors_with_shades{FIELD_MARKER} ?? {{}})",
             },
         ),
         (
             ForEachState.nested_colors_with_shades,
             display_nested_color_with_shades_v2,
             {
-                "iterable_state": f"Object.entries({ForEachState.get_full_name()}.nested_colors_with_shades{FIELD_MARKER})",
+                "iterable_state": f"Object.entries({ForEachState.get_full_name()}.nested_colors_with_shades{FIELD_MARKER} ?? {{}})",
             },
         ),
         (

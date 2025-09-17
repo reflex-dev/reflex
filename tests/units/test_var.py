@@ -1079,15 +1079,16 @@ def test_object_operations():
     object_var = LiteralObjectVar.create({"a": 1, "b": 2, "c": 3})
 
     assert (
-        str(object_var.keys()) == 'Object.keys(({ ["a"] : 1, ["b"] : 2, ["c"] : 3 }))'
+        str(object_var.keys())
+        == 'Object.keys(({ ["a"] : 1, ["b"] : 2, ["c"] : 3 }) ?? {})'
     )
     assert (
         str(object_var.values())
-        == 'Object.values(({ ["a"] : 1, ["b"] : 2, ["c"] : 3 }))'
+        == 'Object.values(({ ["a"] : 1, ["b"] : 2, ["c"] : 3 }) ?? {})'
     )
     assert (
         str(object_var.entries())
-        == 'Object.entries(({ ["a"] : 1, ["b"] : 2, ["c"] : 3 }))'
+        == 'Object.entries(({ ["a"] : 1, ["b"] : 2, ["c"] : 3 }) ?? {})'
     )
     assert str(object_var.a) == '({ ["a"] : 1, ["b"] : 2, ["c"] : 3 })["a"]'
     assert str(object_var["a"]) == '({ ["a"] : 1, ["b"] : 2, ["c"] : 3 })["a"]'
@@ -1129,11 +1130,11 @@ def test_type_chains():
     )
     assert (
         str(object_var.keys()[0].upper())
-        == 'Object.keys(({ ["a"] : 1, ["b"] : 2, ["c"] : 3 })).at(0).toUpperCase()'
+        == 'Object.keys(({ ["a"] : 1, ["b"] : 2, ["c"] : 3 }) ?? {}).at(0).toUpperCase()'
     )
     assert (
         str(object_var.entries()[1][1] - 1)
-        == '(Object.entries(({ ["a"] : 1, ["b"] : 2, ["c"] : 3 })).at(1).at(1) - 1)'
+        == '(Object.entries(({ ["a"] : 1, ["b"] : 2, ["c"] : 3 }) ?? {}).at(1).at(1) - 1)'
     )
     assert (
         str(object_var["c"] + object_var["b"])  # pyright: ignore [reportCallIssue, reportOperatorIssue]
