@@ -1625,7 +1625,7 @@ def test_error_on_state_method_shadow():
 
 
 @pytest.mark.asyncio
-async def test_state_with_invalid_yield(capsys, mock_app):
+async def test_state_with_invalid_yield(capsys: pytest.CaptureFixture[str], mock_app):
     """Test that an error is thrown when a state yields an invalid value.
 
     Args:
@@ -1664,7 +1664,7 @@ async def test_state_with_invalid_yield(capsys, mock_app):
             token="",
         )
     captured = capsys.readouterr()
-    assert "must only return/yield: None, Events or other EventHandlers" in captured.out
+    assert "must only return/yield: None, Events or other EventHandlers" in captured.err
 
 
 @pytest_asyncio.fixture(
