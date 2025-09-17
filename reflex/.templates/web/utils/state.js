@@ -582,7 +582,9 @@ export const connect = async (
     window.addEventListener("beforeunload", disconnectTrigger);
     window.addEventListener("unload", disconnectTrigger);
     // Drain any initial events from the queue.
-    await processEvent(socket.current, navigate, () => params.current);
+    while (event_queue.length > 0 && !event_processing) {
+      await processEvent(socket.current, navigate, () => params.current);
+    }
   });
 
   socket.current.on("connect_error", (error) => {
