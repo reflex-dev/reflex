@@ -355,7 +355,7 @@ class StateManagerDisk(StateManager):
             token: The token to set the state for.
             state: The state to set.
         """
-        client_token, substate = _split_substate_key(token)
+        client_token, _ = _split_substate_key(token)
         await self.set_state_for_substate(client_token, state)
 
     @override
@@ -370,7 +370,7 @@ class StateManagerDisk(StateManager):
             The state for the token.
         """
         # Memory state manager ignores the substate suffix and always returns the top-level state.
-        client_token, substate = _split_substate_key(token)
+        client_token, _ = _split_substate_key(token)
         if client_token not in self._states_locks:
             async with self._state_manager_lock:
                 if client_token not in self._states_locks:

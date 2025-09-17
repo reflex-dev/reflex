@@ -1782,7 +1782,7 @@ def call_event_fn(
     from reflex.event import EventHandler, EventSpec
     from reflex.utils.exceptions import EventHandlerValueError
 
-    parsed_args, event_annotations = parse_args_spec(arg_spec)
+    parsed_args, _ = parse_args_spec(arg_spec)
 
     parameters = inspect.signature(fn).parameters
 

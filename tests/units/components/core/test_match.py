@@ -195,7 +195,7 @@ def test_match_default_not_last_arg(match_case):
     """
     with pytest.raises(
         ValueError,
-        match="rx.match should have tuples of cases and one default case as the last argument.",
+        match=r"rx\.match should have tuples of cases and one default case as the last argument\.",
     ):
         Match.create(MatchState.value, *match_case)
 
@@ -225,7 +225,7 @@ def test_match_case_tuple_elements(match_case):
     """
     with pytest.raises(
         ValueError,
-        match="A case tuple should have at least a match case element and a return value.",
+        match=r"A case tuple should have at least a match case element and a return value\.",
     ):
         Match.create(MatchState.value, *match_case)
 
@@ -302,7 +302,7 @@ def test_match_multiple_default_cases(match_case):
     """
     with pytest.raises(
         ValueError,
-        match="rx.match should have tuples of cases and one default case as the last argument.",
+        match=r"rx\.match should have tuples of cases and one default case as the last argument\.",
     ):
         Match.create(MatchState.value, *match_case)
 

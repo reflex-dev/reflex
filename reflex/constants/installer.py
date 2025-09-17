@@ -14,7 +14,7 @@ class Bun(SimpleNamespace):
     """Bun constants."""
 
     # The Bun version.
-    VERSION = "1.2.21"
+    VERSION = "1.2.22"
 
     # Min Bun Version
     MIN_VERSION = "1.2.17"
@@ -75,7 +75,7 @@ fetch-retries=0
 
 
 def _determine_react_router_version() -> str:
-    default_version = "7.8.2"
+    default_version = "7.9.1"
     if (version := os.getenv("REACT_ROUTER_VERSION")) and version != default_version:
         from reflex.utils import console
 
@@ -143,11 +143,11 @@ class PackageJson(SimpleNamespace):
         "postcss-import": "16.1.1",
         "@react-router/dev": _react_router_version,
         "@react-router/fs-routes": _react_router_version,
-        "vite": "npm:rolldown-vite@7.1.8",
+        "vite": "npm:rolldown-vite@7.1.9",
     }
     OVERRIDES = {
         # This should always match the `react` version in DEPENDENCIES for recharts compatibility.
         "react-is": _react_version,
         "cookie": "1.0.2",
-        "vite": "npm:rolldown-vite@7.1.8",
+        "vite": "npm:rolldown-vite@7.1.9",
     }
