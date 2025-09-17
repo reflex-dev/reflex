@@ -478,8 +478,8 @@ export const queueEvents = async (
  * @param params The params object from React Router
  */
 export const processEvent = async (socket, navigate, params) => {
-  // Only proceed if the socket is up and no event in the queue uses state, otherwise we throw the event into the void
-  if (!socket && isStateful()) {
+  // Only proceed if the socket is up or no event in the queue uses state, otherwise we throw the event into the void
+  if (isStateful() && !(socket && socket.connected)) {
     return;
   }
 
@@ -576,11 +576,15 @@ export const connect = async (
   };
 
   // Once the socket is open, hydrate the page.
-  socket.current.on("connect", () => {
+  socket.current.on("connect", async () => {
     setConnectErrors([]);
     window.addEventListener("pagehide", pagehideHandler);
     window.addEventListener("beforeunload", disconnectTrigger);
     window.addEventListener("unload", disconnectTrigger);
+    // Drain any initial events from the queue.
+    while (event_queue.length > 0 && !event_processing) {
+      await processEvent(socket.current, navigate, () => params.current);
+    }
   });
 
   socket.current.on("connect_error", (error) => {
@@ -893,7 +897,7 @@ export const useEventLoop = (
   // Main event loop.
   useEffect(() => {
     // Skip if the backend is disabled
-    if (isBackendDisabled()) {
+    if (isBackendDisabled() || !socket.current || !socket.current.connected) {
       return;
     }
     (async () => {
