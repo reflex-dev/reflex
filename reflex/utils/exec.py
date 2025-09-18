@@ -497,6 +497,7 @@ HOTRELOAD_IGNORE_EXTENSIONS = (
     "sh",
     "bash",
     "log",
+    "db",
 )
 
 HOTRELOAD_IGNORE_PATTERNS = (
