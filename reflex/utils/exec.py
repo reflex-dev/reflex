@@ -524,7 +524,7 @@ def run_granian_backend(host: str, port: int, loglevel: LogLevel):
     from granian.log import LogLevels
     from granian.server import Server as Granian
 
-    from reflex.environment import _paths_from_environment
+    from reflex.environment import _load_dotenv_from_env
 
     granian_app = Granian(
         target=get_app_instance_from_file(),
@@ -538,9 +538,10 @@ def run_granian_backend(host: str, port: int, loglevel: LogLevel):
         reload_ignore_worker_failure=True,
         reload_ignore_patterns=HOTRELOAD_IGNORE_PATTERNS,
         reload_tick=100,
-        env_files=_paths_from_environment() or None,
         workers_kill_timeout=2,
     )
+
+    granian_app.on_reload(_load_dotenv_from_env)
 
     granian_app.serve()
 
