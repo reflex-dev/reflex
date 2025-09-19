@@ -531,6 +531,7 @@ export const connect = async (
 ) => {
   // Get backend URL object from the endpoint.
   const endpoint = getBackendURL(EVENTURL);
+  const on_hydrated_queue = [];
 
   // Create the socket.
   socket.current = io(endpoint.href, {
@@ -552,7 +553,17 @@ export const connect = async (
 
   function checkVisibility() {
     if (document.visibilityState === "visible") {
-      if (!socket.current.connected) {
+      if (!socket.current) {
+        connect(
+          socket,
+          dispatch,
+          transports,
+          setConnectErrors,
+          client_storage,
+          navigate,
+          params,
+        );
+      } else if (!socket.current.connected) {
         console.log("Socket is disconnected, attempting to reconnect ");
         socket.current.connect();
       } else {
@@ -593,6 +604,7 @@ export const connect = async (
 
   // When the socket disconnects reset the event_processing flag
   socket.current.on("disconnect", () => {
+    socket.current = null; // allow reconnect to occur automatically
     event_processing = false;
     window.removeEventListener("unload", disconnectTrigger);
     window.removeEventListener("beforeunload", disconnectTrigger);
@@ -603,6 +615,14 @@ export const connect = async (
   socket.current.on("event", async (update) => {
     for (const substate in update.delta) {
       dispatch[substate](update.delta[substate]);
+      // handle events waiting for `is_hydrated`
+      if (
+        substate === state_name &&
+        update.delta[substate]?.is_hydrated_rx_state_
+      ) {
+        queueEvents(on_hydrated_queue, socket, false, navigate, params);
+        on_hydrated_queue.length = 0;
+      }
     }
     applyClientStorageDelta(client_storage, update.delta);
     event_processing = !update.final;
@@ -612,7 +632,8 @@ export const connect = async (
   });
   socket.current.on("reload", async (event) => {
     event_processing = false;
-    queueEvents([...initialEvents(), event], socket, true, navigate, params);
+    on_hydrated_queue.push(event);
+    queueEvents(initialEvents(), socket, true, navigate, params);
   });
   socket.current.on("new_token", async (new_token) => {
     token = new_token;
@@ -774,9 +795,31 @@ export const useEventLoop = (
     }
   }, [paramsR]);
 
+  const ensureSocketConnected = useCallback(async () => {
+    // only use websockets if state is present and backend is not disabled (reflex cloud).
+    if (
+      Object.keys(initialState).length > 1 &&
+      !isBackendDisabled() &&
+      !socket.current
+    ) {
+      // Initialize the websocket connection.
+      await connect(
+        socket,
+        dispatch,
+        ["websocket"],
+        setConnectErrors,
+        client_storage,
+        navigate,
+        () => params.current,
+      );
+    }
+  }, [socket, dispatch, setConnectErrors, client_storage, navigate, params]);
+
   // Function to add new events to the event queue.
   const addEvents = useCallback((events, args, event_actions) => {
     const _events = events.filter((e) => e !== undefined && e !== null);
+
+    ensureSocketConnected();
 
     if (!(args instanceof Array)) {
       args = [args];
@@ -870,21 +913,8 @@ export const useEventLoop = (
 
   // Handle socket connect/disconnect.
   useEffect(() => {
-    // only use websockets if state is present and backend is not disabled (reflex cloud).
-    if (Object.keys(initialState).length > 1 && !isBackendDisabled()) {
-      // Initialize the websocket connection.
-      if (!socket.current) {
-        connect(
-          socket,
-          dispatch,
-          ["websocket"],
-          setConnectErrors,
-          client_storage,
-          navigate,
-          () => params.current,
-        );
-      }
-    }
+    // Initialize the websocket connection.
+    ensureSocketConnected();
 
     // Cleanup function.
     return () => {
@@ -903,6 +933,7 @@ export const useEventLoop = (
     (async () => {
       // Process all outstanding events.
       while (event_queue.length > 0 && !event_processing) {
+        await ensureSocketConnected();
         await processEvent(socket.current, navigate, () => params.current);
       }
     })();
