@@ -60,6 +60,17 @@ class LifespanMixin(AppMixin):
             for task in running_tasks:
                 console.debug(f"Canceling lifespan task: {task}")
                 task.cancel(msg="lifespan_cleanup")
+        # Disassociate sid / token pairings so they can be reconnected properly.
+        try:
+            event_namespace = self.event_namespace  # pyright: ignore[reportAttributeAccessIssue]
+        except AttributeError:
+            pass
+        else:
+            try:
+                if event_namespace:
+                    await event_namespace._token_manager.disconnect_all()
+            except Exception as e:
+                console.error(f"Error during lifespan cleanup: {e}")
 
     def register_lifespan_task(self, task: Callable | asyncio.Task, **task_kwargs):
         """Register a task to run during the lifespan of the app.

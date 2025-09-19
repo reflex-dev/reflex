@@ -66,6 +66,16 @@ class TokenManager(ABC):
 
         return LocalTokenManager()
 
+    async def disconnect_all(self):
+        """Disconnect all tracked tokens when the server is going down."""
+        token_sid_pairs: set[tuple[str, str]] = set(self.token_to_sid.items())
+        token_sid_pairs.update(
+            ((token, sid) for sid, token in self.sid_to_token.items())
+        )
+        # Perform the disconnection logic here
+        for token, sid in token_sid_pairs:
+            await self.disconnect_token(token, sid)
+
 
 class LocalTokenManager(TokenManager):
     """Token manager using local in-memory dictionaries (single worker)."""
