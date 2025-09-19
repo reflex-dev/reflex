@@ -71,10 +71,15 @@ class StateProxy(wrapt.ObjectProxy):
             state_instance: The state instance to proxy.
             parent_state_proxy: The parent state proxy, for linked mutability and context tracking.
         """
+        from reflex.state import _substate_key
+
         super().__init__(state_instance)
-        # compile is not relevant to backend logic
         self._self_app = prerequisites.get_and_validate_app().app
         self._self_substate_path = tuple(state_instance.get_full_name().split("."))
+        self._self_substate_token = _substate_key(
+            state_instance.router.session.client_token,
+            self._self_substate_path,
+        )
         self._self_actx = None
         self._self_mutable = False
         self._self_actx_lock = asyncio.Lock()
@@ -127,16 +132,9 @@ class StateProxy(wrapt.ObjectProxy):
             msg = "The state is already mutable. Do not nest `async with self` blocks."
             raise ImmutableStateError(msg)
 
-        from reflex.state import _substate_key
-
         await self._self_actx_lock.acquire()
         self._self_actx_lock_holder = current_task
-        self._self_actx = self._self_app.modify_state(
-            token=_substate_key(
-                self.__wrapped__.router.session.client_token,
-                self._self_substate_path,
-            )
-        )
+        self._self_actx = self._self_app.modify_state(token=self._self_substate_token)
         mutable_state = await self._self_actx.__aenter__()
         super().__setattr__(
             "__wrapped__", mutable_state.get_substate(self._self_substate_path)
