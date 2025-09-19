@@ -97,6 +97,7 @@ from reflex.state import (
     State,
     StateManager,
     StateUpdate,
+    _split_substate_key,
     _substate_key,
     all_base_state_classes,
     code_uses_state_contexts,
@@ -1559,7 +1560,7 @@ class App(MiddlewareMixin, LifespanMixin):
                 state._clean()
                 await self.event_namespace.emit_update(
                     update=StateUpdate(delta=delta),
-                    sid=state.router.session.session_id,
+                    token=token,
                 )
 
     def _process_background(
@@ -1599,7 +1600,7 @@ class App(MiddlewareMixin, LifespanMixin):
                 # Send the update to the client.
                 await self.event_namespace.emit_update(
                     update=update,
-                    sid=state.router.session.session_id,
+                    token=event.token,
                 )
 
         task = asyncio.create_task(
@@ -2061,20 +2062,19 @@ class EventNamespace(AsyncNamespace):
                 and console.error(f"Token cleanup error: {t.exception()}")
             )
 
-    async def emit_update(self, update: StateUpdate, sid: str) -> None:
+    async def emit_update(self, update: StateUpdate, token: str) -> None:
         """Emit an update to the client.
 
         Args:
             update: The state update to send.
-            sid: The Socket.IO session id.
+            token: The client token (tab) associated with the event.
         """
-        if not sid:
+        client_token, _ = _split_substate_key(token)
+        sid = self.token_to_sid.get(client_token)
+        if sid is None:
             # If the sid is None, we are not connected to a client. Prevent sending
             # updates to all clients.
-            return
-        token = self.sid_to_token.get(sid)
-        if token is None:
-            console.warn(f"Attempting to send delta to disconnected websocket {sid}")
+            console.warn(f"Attempting to send delta to disconnected client {token!r}")
             return
         # Creating a task prevents the update from being blocked behind other coroutines.
         await asyncio.create_task(
@@ -2165,7 +2165,7 @@ class EventNamespace(AsyncNamespace):
             # Process the events.
             async for update in updates_gen:
                 # Emit the update from processing the event.
-                await self.emit_update(update=update, sid=sid)
+                await self.emit_update(update=update, token=event.token)
 
     async def on_ping(self, sid: str):
         """Event for testing the API endpoint.
