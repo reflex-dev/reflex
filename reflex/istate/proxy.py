@@ -378,17 +378,6 @@ class MutableProxy(wrapt.ObjectProxy):
         pydantic.BaseModel.__dict__
     )
 
-    # These types will be wrapped in MutableProxy
-    __mutable_types__ = (
-        list,
-        dict,
-        set,
-        Base,
-        DeclarativeBase,
-        BaseModelV2,
-        BaseModelV1,
-    )
-
     # Dynamically generated classes for tracking dataclass mutations.
     __dataclass_proxies__: dict[type, type] = {}
 
@@ -469,20 +458,6 @@ class MutableProxy(wrapt.ObjectProxy):
             return wrapped(*args, **(kwargs or {}))
         return None
 
-    @classmethod
-    def _is_mutable_type(cls, value: Any) -> bool:
-        """Check if a value is of a mutable type and should be wrapped.
-
-        Args:
-            value: The value to check.
-
-        Returns:
-            Whether the value is of a mutable type.
-        """
-        return isinstance(value, cls.__mutable_types__) or (
-            dataclasses.is_dataclass(value) and not isinstance(value, Var)
-        )
-
     @staticmethod
     def _is_called_from_dataclasses_internal() -> bool:
         """Check if the current function is called from dataclasses helper.
@@ -514,7 +489,7 @@ class MutableProxy(wrapt.ObjectProxy):
         if self._is_called_from_dataclasses_internal():
             return value
         # Recursively wrap mutable types, but do not re-wrap MutableProxy instances.
-        if self._is_mutable_type(value) and not isinstance(value, MutableProxy):
+        if is_mutable_type(value) and not isinstance(value, MutableProxy):
             base_cls = globals()[self.__base_proxy__]
             return base_cls(
                 wrapped=value,
@@ -575,7 +550,7 @@ class MutableProxy(wrapt.ObjectProxy):
                     self._wrap_recursive_decorator,
                 )
 
-        if self._is_mutable_type(value) and __name not in (
+        if is_mutable_type(value) and __name not in (
             "__wrapped__",
             "_self_state",
             "__dict__",
@@ -764,3 +739,30 @@ class ImmutableMutableProxy(MutableProxy):
         return super()._mark_dirty(
             wrapped=wrapped, instance=instance, args=args, kwargs=kwargs
         )
+
+
+# These types will be wrapped in MutableProxy
+MUTABLE_TYPES = (
+    list,
+    dict,
+    set,
+    Base,
+    DeclarativeBase,
+    BaseModelV2,
+    BaseModelV1,
+)
+
+
+@functools.lru_cache(maxsize=1024)
+def is_mutable_type(type_: type) -> bool:
+    """Check if a type is mutable and should be wrapped.
+
+    Args:
+        type_: The type to check.
+
+    Returns:
+        Whether the type is mutable and should be wrapped.
+    """
+    return issubclass(type_, MUTABLE_TYPES) or (
+        dataclasses.is_dataclass(type_) and not issubclass(type_, Var)
+    )
