@@ -17,6 +17,7 @@ from reflex.components.component import (
 from reflex.components.core.cond import cond
 from reflex.components.el.elements.forms import Input
 from reflex.components.radix.themes.layout.box import Box
+from reflex.components.sonner.toast import toast
 from reflex.constants import Dirs
 from reflex.constants.compiler import Hooks, Imports
 from reflex.environment import environment
@@ -36,7 +37,8 @@ from reflex.utils.imports import ImportVar
 from reflex.vars import VarData
 from reflex.vars.base import Var, get_unique_variable_name
 from reflex.vars.function import FunctionVar
-from reflex.vars.sequence import LiteralStringVar
+from reflex.vars.object import ObjectVar
+from reflex.vars.sequence import ArrayVar, LiteralStringVar
 
 DEFAULT_UPLOAD_ID: str = "default"
 
@@ -178,6 +180,34 @@ def _on_drop_spec(files: Var) -> tuple[Var[Any]]:
     return (files,)
 
 
+def _default_drop_rejected(rejected_files: ArrayVar[list[dict[str, Any]]]) -> EventSpec:
+    """Event handler for showing a toast with rejected file info.
+
+    Args:
+        rejected_files: The files that were rejected.
+
+    Returns:
+        An event spec that shows a toast with the rejected file info when triggered.
+    """
+
+    def _format_rejected_file_record(rf: ObjectVar[dict[str, Any]]) -> str:
+        rf = rf.to(ObjectVar, dict[str, dict[str, Any]])
+        file = rf["file"].to(ObjectVar, dict[str, Any])
+        errors = rf["errors"].to(ArrayVar, list[dict[str, Any]])
+        return (
+            f"{file['path']}: {errors.foreach(lambda err: err['message']).join(', ')}"
+        )
+
+    return toast.error(
+        title="Files not Accepted",
+        description=rejected_files.to(ArrayVar)
+        .foreach(_format_rejected_file_record)
+        .join("\n\n"),
+        close_button=True,
+        style={"white_space": "pre-line"},
+    )
+
+
 class UploadFilesProvider(Component):
     """AppWrap component that provides a dict of selected files by ID via useContext."""
 
@@ -190,6 +220,9 @@ class GhostUpload(Fragment):
 
     # Fired when files are dropped.
     on_drop: EventHandler[_on_drop_spec]
+
+    # Fired when dropped files do not meet the specified criteria.
+    on_drop_rejected: EventHandler[_on_drop_spec]
 
 
 class Upload(MemoizationLeaf):
@@ -233,6 +266,9 @@ class Upload(MemoizationLeaf):
 
     # Fired when files are dropped.
     on_drop: EventHandler[_on_drop_spec]
+
+    # Fired when dropped files do not meet the specified criteria.
+    on_drop_rejected: EventHandler[_on_drop_spec]
 
     # Style rules to apply when actively dragging.
     drag_active_style: Style | None = field(default=None, is_javascript_property=False)
@@ -295,6 +331,10 @@ class Upload(MemoizationLeaf):
                 on_drop[ix] = event
             upload_props["on_drop"] = on_drop
 
+        if upload_props.get("on_drop_rejected") is None:
+            # If on_drop_rejected is not provided, show an error toast.
+            upload_props["on_drop_rejected"] = _default_drop_rejected
+
         input_props_unique_name = get_unique_variable_name()
         root_props_unique_name = get_unique_variable_name()
         is_drag_active_unique_name = get_unique_variable_name()
@@ -313,22 +353,22 @@ class Upload(MemoizationLeaf):
                 ),
             )
 
-        event_var, callback_str = StatefulComponent._get_memoized_event_triggers(
-            GhostUpload.create(on_drop=upload_props["on_drop"])
-        )["on_drop"]
-
-        upload_props["on_drop"] = event_var
+        event_triggers = StatefulComponent._get_memoized_event_triggers(
+            GhostUpload.create(
+                on_drop=upload_props["on_drop"],
+                on_drop_rejected=upload_props["on_drop_rejected"],
+            )
+        )
+        callback_hooks = []
+        for trigger_name, (event_var, callback_str) in event_triggers.items():
+            upload_props[trigger_name] = event_var
+            callback_hooks.append(callback_str)
 
         upload_props = {
             format.to_camel_case(key): value for key, value in upload_props.items()
         }
 
-        use_dropzone_arguments = Var.create(
-            {
-                "onDrop": event_var,
-                **upload_props,
-            }
-        )
+        use_dropzone_arguments = Var.create(upload_props)
 
         left_side = (
             "const { "
@@ -344,11 +384,10 @@ class Upload(MemoizationLeaf):
                 imports=Imports.EVENTS,
                 hooks={Hooks.EVENTS: None},
             ),
-            event_var._get_all_var_data(),
             use_dropzone_arguments._get_all_var_data(),
             VarData(
                 hooks={
-                    callback_str: None,
+                    **dict.fromkeys(callback_hooks, None),
                     f"{left_side} = {right_side};": None,
                 },
                 imports={
