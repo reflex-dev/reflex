@@ -41,7 +41,7 @@ from reflex.event import (
 from reflex.istate import HANDLED_PICKLE_ERRORS, debug_failed_pickles
 from reflex.istate.data import RouterData
 from reflex.istate.proxy import ImmutableMutableProxy as ImmutableMutableProxy
-from reflex.istate.proxy import MutableProxy, StateProxy
+from reflex.istate.proxy import MutableProxy, StateProxy, is_mutable_type
 from reflex.istate.storage import ClientStorageBase
 from reflex.model import Model
 from reflex.utils import console, format, prerequisites, types
@@ -1359,7 +1359,7 @@ class BaseState(EvenMoreBasicBaseState):
             if parent_state is not None:
                 return getattr(parent_state, name)
 
-        if MutableProxy._is_mutable_type(value) and (
+        if is_mutable_type(type(value)) and (
             name in super().__getattribute__("base_vars") or name in backend_vars
         ):
             # track changes in mutable containers (list, dict, set, etc)

@@ -6,6 +6,7 @@ import dataclasses
 import sys
 import types
 from collections.abc import Callable, Iterable, Mapping, Sequence
+from enum import Enum
 from functools import cached_property, lru_cache
 from types import GenericAlias
 from typing import (  # noqa: UP035
@@ -1241,6 +1242,7 @@ IMMUTABLE_TYPES = (
     frozenset,
     tuple,
     type(None),
+    Enum,
 )
 
 
