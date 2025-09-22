@@ -489,7 +489,7 @@ class MutableProxy(wrapt.ObjectProxy):
         if self._is_called_from_dataclasses_internal():
             return value
         # Recursively wrap mutable types, but do not re-wrap MutableProxy instances.
-        if is_mutable_type(value) and not isinstance(value, MutableProxy):
+        if is_mutable_type(type(value)) and not isinstance(value, MutableProxy):
             base_cls = globals()[self.__base_proxy__]
             return base_cls(
                 wrapped=value,
@@ -550,7 +550,7 @@ class MutableProxy(wrapt.ObjectProxy):
                     self._wrap_recursive_decorator,
                 )
 
-        if is_mutable_type(value) and __name not in (
+        if is_mutable_type(type(value)) and __name not in (
             "__wrapped__",
             "_self_state",
             "__dict__",
