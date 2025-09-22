@@ -161,10 +161,7 @@ async def test_connection_banner(connection_banner: AppHarness):
     AppHarness.expect(lambda: not has_error_modal(driver))
 
     # Check that the token association was established.
-    app_event_namespace = connection_banner.app_instance.event_namespace
-    assert app_event_namespace is not None
-    app_token_manager = app_event_namespace._token_manager
-    assert app_token_manager is not None
+    app_token_manager = connection_banner.token_manager()
     assert token in app_token_manager.token_to_sid
     sid_before = app_token_manager.token_to_sid[token]
     if isinstance(connection_banner.state_manager, StateManagerRedis):
@@ -223,6 +220,7 @@ async def test_connection_banner(connection_banner: AppHarness):
     AppHarness.expect(lambda: not has_error_modal(driver))
 
     # After reconnecting, the token association should be re-established.
+    app_token_manager = connection_banner.token_manager()
     if isinstance(connection_banner.state_manager, StateManagerRedis):
         assert isinstance(app_token_manager, RedisTokenManager)
         assert (

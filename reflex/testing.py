@@ -47,6 +47,7 @@ from reflex.state import (
 )
 from reflex.utils import console, js_runtimes
 from reflex.utils.export import export
+from reflex.utils.token_manager import TokenManager
 from reflex.utils.types import ASGIApp
 
 try:
@@ -773,6 +774,19 @@ class AppHarness:
             if isinstance(self.state_manager, StateManagerRedis):
                 self.app_instance._state_manager = app_state_manager
                 await self.state_manager.close()
+
+    def token_manager(self) -> TokenManager:
+        """Get the token manager for the app instance.
+
+        Returns:
+            The current token_manager attached to the app's EventNamespace.
+        """
+        assert self.app_instance is not None
+        app_event_namespace = self.app_instance.event_namespace
+        assert app_event_namespace is not None
+        app_token_manager = app_event_namespace._token_manager
+        assert app_token_manager is not None
+        return app_token_manager
 
     def poll_for_content(
         self,
