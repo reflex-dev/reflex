@@ -109,13 +109,6 @@ def BackgroundTask():
                 yield
                 self.counter += 1
 
-        @rx.event
-        async def disconnect_reconnect(self):
-            self.counter += 1
-            yield rx.call_script("socket.disconnect()")
-            await asyncio.sleep(0.5)
-            self.counter += 1
-
         @rx.event(background=True)
         async def disconnect_reconnect_background(self):
             async with self:
@@ -203,11 +196,6 @@ def BackgroundTask():
                 "Yield in Async with Self",
                 on_click=State.yield_in_async_with_self,
                 id="yield-in-async-with-self",
-            ),
-            rx.button(
-                "Disconnect / Reconnect",
-                on_click=State.disconnect_reconnect_background,
-                id="disconnect-reconnect",
             ),
             rx.button(
                 "Disconnect / Reconnect Background",
@@ -429,7 +417,6 @@ def test_yield_in_async_with_self(
 @pytest.mark.parametrize(
     "button_id",
     [
-        "disconnect-reconnect",
         "disconnect-reconnect-background",
     ],
 )
