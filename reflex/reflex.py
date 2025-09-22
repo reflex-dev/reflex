@@ -422,6 +422,13 @@ def compile(dry: bool, rich: bool):
     default=constants.Env.PROD.value,
     help="The environment to export the app in.",
 )
+@click.option(
+    "--exclude-from-backend",
+    "backend_excluded_dirs",
+    multiple=True,
+    type=click.Path(exists=True, path_type=Path, resolve_path=True),
+    help="Files or directories to exclude from the backend zip. Can be used multiple times.",
+)
 def export(
     zip: bool,
     frontend_only: bool,
@@ -429,6 +436,7 @@ def export(
     zip_dest_dir: str,
     upload_db_file: bool,
     env: LITERAL_ENV,
+    backend_excluded_dirs: tuple[Path, ...] = (),
 ):
     """Export the app to a zip file."""
     from reflex.utils import export as export_utils
@@ -455,6 +463,7 @@ def export(
         upload_db_file=upload_db_file,
         env=constants.Env.DEV if env == constants.Env.DEV else constants.Env.PROD,
         loglevel=config.loglevel.subprocess_level(),
+        backend_excluded_dirs=backend_excluded_dirs,
     )
 
 
@@ -660,6 +669,13 @@ def makemigrations(message: str | None):
     "--config",
     help="path to the config file",
 )
+@click.option(
+    "--exclude-from-backend",
+    "backend_excluded_dirs",
+    multiple=True,
+    type=click.Path(exists=True, path_type=Path, resolve_path=True),
+    help="Files or directories to exclude from the backend zip. Can be used multiple times.",
+)
 def deploy(
     app_name: str | None,
     app_id: str | None,
@@ -673,6 +689,7 @@ def deploy(
     project_name: str | None,
     token: str | None,
     config_path: str | None,
+    backend_excluded_dirs: tuple[Path, ...] = (),
 ):
     """Deploy the app to the Reflex hosting service."""
     from reflex_cli.utils import dependency
@@ -721,6 +738,7 @@ def deploy(
                 zipping=zipping,
                 loglevel=config.loglevel.subprocess_level(),
                 upload_db_file=upload_db,
+                backend_excluded_dirs=backend_excluded_dirs,
             )
         ),
         regions=list(region),

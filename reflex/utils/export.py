@@ -18,6 +18,7 @@ def export(
     deploy_url: str | None = None,
     env: constants.Env = constants.Env.PROD,
     loglevel: constants.LogLevel = console._LOG_LEVEL,
+    backend_excluded_dirs: tuple[Path, ...] = (),
 ):
     """Export the app to a zip file.
 
@@ -31,6 +32,7 @@ def export(
         deploy_url: The deploy URL to use. Defaults to None.
         env: The environment to use. Defaults to constants.Env.PROD.
         loglevel: The log level to use. Defaults to console._LOG_LEVEL.
+        backend_excluded_dirs: A tuple of files or directories to exclude from the backend zip.  Defaults to ().
     """
     config = get_config()
 
@@ -70,7 +72,8 @@ def export(
             frontend=frontend,
             backend=backend,
             zip_dest_dir=zip_dest_dir,
-            upload_db_file=upload_db_file,
+            include_db_file=upload_db_file,
+            backend_excluded_dirs=backend_excluded_dirs,
         )
 
     # Post a telemetry event.
