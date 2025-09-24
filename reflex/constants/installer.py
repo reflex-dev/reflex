@@ -123,6 +123,7 @@ class PackageJson(SimpleNamespace):
             A dictionary of dependencies with their versions.
         """
         return {
+            "json5": "2.2.3",
             "react-router": cls._react_router_version,
             "react-router-dom": cls._react_router_version,
             "@react-router/node": cls._react_router_version,
@@ -142,11 +143,11 @@ class PackageJson(SimpleNamespace):
         "postcss-import": "16.1.1",
         "@react-router/dev": _react_router_version,
         "@react-router/fs-routes": _react_router_version,
-        "vite": "npm:rolldown-vite@7.1.9",
+        "vite": "npm:rolldown-vite@7.1.12",
     }
     OVERRIDES = {
         # This should always match the `react` version in DEPENDENCIES for recharts compatibility.
         "react-is": _react_version,
         "cookie": "1.0.2",
-        "vite": "npm:rolldown-vite@7.1.9",
+        "vite": "npm:rolldown-vite@7.1.12",
     }
