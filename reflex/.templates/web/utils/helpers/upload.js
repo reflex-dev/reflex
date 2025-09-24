@@ -1,4 +1,3 @@
-import JSON5 from "json5";
 import env from "$/env.json";
 
 /**
@@ -48,7 +47,7 @@ export const uploadFiles = async (
     // So only process _new_ chunks beyond resp_idx.
     chunks.slice(resp_idx).map((chunk_json) => {
       try {
-        const chunk = JSON5.parse(chunk_json);
+        const chunk = JSON.parse(chunk_json);
         event_callbacks.map((f, ix) => {
           f(chunk)
             .then(() => {
