@@ -96,4 +96,6 @@ class Color:
         Returns:
             The formatted color.
         """
-        return format_color(self.color, self.shade, self.alpha)
+        from reflex.vars import LiteralColorVar
+
+        return LiteralColorVar.create(self).__format__(format_spec)

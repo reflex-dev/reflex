@@ -146,7 +146,7 @@ def test_create_map_fn_var_subclass(cls, fn_body, fn_args, explicit_return, expe
         (
             "code",
             {},
-            r"""(({node, inline, className, children, ...props}) => { const match = (className || '').match(/language-(?<lang>.*)/); let _language = match ? match[1] : '';  ;             return inline ? (                 jsx(RadixThemesCode,{...props},children)             ) : (                 jsx(SyntaxHighlighter,{children:((Array.isArray(children)) ? children.join("\n") : children),css:({ ["marginTop"] : "1em", ["marginBottom"] : "1em" }),language:_language,style:((resolvedColorMode === "light") ? oneLight : oneDark),wrapLongLines:true,...props},)             );         })""",
+            r"""(({node, inline, className, children, ...props}) => { const match = (className || '').match(/language-(?<lang>.*)/); let _language = match ? match[1] : '';  ;             return inline ? (                 jsx(RadixThemesCode,{...props},children)             ) : (                 jsx(SyntaxHighlighter,{children:((Array.isArray(children)) ? children.join("\n") : children),css:({ ["marginTop"] : "1em", ["marginBottom"] : "1em" }),language:_language,style:((resolvedColorMode?.valueOf?.() === "light"?.valueOf?.()) ? oneLight : oneDark),wrapLongLines:true,...props},)             );         })""",
         ),
         (
             "code",
@@ -155,7 +155,7 @@ def test_create_map_fn_var_subclass(cls, fn_body, fn_args, explicit_return, expe
                     value, **props
                 )
             },
-            r"""(({node, inline, className, children, ...props}) => { const match = (className || '').match(/language-(?<lang>.*)/); let _language = match ? match[1] : '';  ;             return inline ? (                 jsx(RadixThemesCode,{...props},children)             ) : (                 jsx(RadixThemesBox,{css:({ ["pre"] : ({ ["margin"] : "0", ["padding"] : "24px", ["background"] : "transparent", ["overflowX"] : "auto", ["borderRadius"] : "6px" }) }),...props},jsx(ShikiCode,{code:((Array.isArray(children)) ? children.join("\n") : children),decorations:[],language:_language,theme:((resolvedColorMode === "light") ? "one-light" : "one-dark-pro"),transformers:[]},))             );         })""",
+            r"""(({node, inline, className, children, ...props}) => { const match = (className || '').match(/language-(?<lang>.*)/); let _language = match ? match[1] : '';  ;             return inline ? (                 jsx(RadixThemesCode,{...props},children)             ) : (                 jsx(RadixThemesBox,{css:({ ["pre"] : ({ ["margin"] : "0", ["padding"] : "24px", ["background"] : "transparent", ["overflowX"] : "auto", ["borderRadius"] : "6px" }) }),...props},jsx(ShikiCode,{code:((Array.isArray(children)) ? children.join("\n") : children),decorations:[],language:_language,theme:((resolvedColorMode?.valueOf?.() === "light"?.valueOf?.()) ? "one-light" : "one-dark-pro"),transformers:[]},))             );         })""",
         ),
         (
             "h1",

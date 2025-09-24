@@ -1,6 +1,5 @@
 // State management for Reflex web apps.
 import io from "socket.io-client";
-import JSON5 from "json5";
 import env from "$/env.json";
 import reflexEnvironment from "$/reflex.json";
 import Cookies from "universal-cookie";
@@ -543,13 +542,6 @@ export const connect = async (
   });
   // Ensure undefined fields in events are sent as null instead of removed
   socket.current.io.encoder.replacer = (k, v) => (v === undefined ? null : v);
-  socket.current.io.decoder.tryParse = (str) => {
-    try {
-      return JSON5.parse(str);
-    } catch (e) {
-      return false;
-    }
-  };
 
   function checkVisibility() {
     if (document.visibilityState === "visible") {
