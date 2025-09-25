@@ -12,6 +12,7 @@ from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.wait import WebDriverWait
 
+from reflex.state import BaseState
 from reflex.testing import AppHarness, WebDriver
 
 
@@ -242,6 +243,12 @@ def token(event_action: AppHarness, driver: WebDriver) -> str:
     return token
 
 
+async def _backend_state(app: AppHarness, token: str) -> BaseState:
+    state_name = app.get_state_name("_event_action_state")
+    state_full_name = app.get_full_state_name(["_event_action_state"])
+    return (await app.get_state(f"{token}_{state_full_name}")).substates[state_name]
+
+
 @pytest.fixture
 def poll_for_order(
     event_action: AppHarness, token: str
@@ -255,18 +262,13 @@ def poll_for_order(
     Returns:
         An async function that polls for the order list to match the expected order.
     """
-    state_name = event_action.get_state_name("_event_action_state")
-    state_full_name = event_action.get_full_state_name(["_event_action_state"])
 
     async def _poll_for_order(exp_order: list[str]):
-        async def _backend_state():
-            return await event_action.get_state(f"{token}_{state_full_name}")
-
         async def _check():
-            return (await _backend_state()).substates[state_name].order == exp_order
+            return (await _backend_state(event_action, token)).order == exp_order
 
         await AppHarness._poll_for_async(_check)
-        assert (await _backend_state()).substates[state_name].order == exp_order
+        assert (await _backend_state(event_action, token)).order == exp_order
 
     return _poll_for_order
 
@@ -328,17 +330,18 @@ async def test_event_actions(
         assert driver.current_url == prev_url
 
 
-@pytest.mark.usefixtures("token")
 @pytest.mark.asyncio
 async def test_event_actions_throttle_debounce(
+    event_action: AppHarness,
     driver: WebDriver,
-    poll_for_order: Callable[[list[str]], Coroutine[None, None, None]],
+    token: str,
 ):
     """Click buttons with debounce and throttle and assert on fired events.
 
     Args:
+        event_action: harness for TestEventAction app.
         driver: WebDriver instance.
-        poll_for_order: function that polls for the order list to match the expected order.
+        token: The client_token associated with the driver browser.
     """
     btn_throttle = driver.find_element(By.ID, "btn-throttle")
     assert btn_throttle
@@ -352,13 +355,23 @@ async def test_event_actions_throttle_debounce(
         btn_throttle.click()
         btn_debounce.click()
 
-    try:
-        await poll_for_order(["on_click_throttle"] * exp_events + ["on_click_debounce"])
-    except AssertionError:
-        # Sometimes the last event gets throttled due to race, this is okay.
-        await poll_for_order(
-            ["on_click_throttle"] * (exp_events - 1) + ["on_click_debounce"]
-        )
+    # Wait until the debounce event shows up
+    async def _debounce_received():
+        state = await _backend_state(event_action, token)
+        return state.order and state.order[-1] == "on_click_debounce"
+
+    await AppHarness._poll_for_async(_debounce_received)
+
+    # This test is inherently racy, so ensure the `on_click_throttle` event is fired approximately the expected number of times.
+    final_event_order = (await _backend_state(event_action, token)).order
+    n_on_click_throttle_received = final_event_order.count("on_click_throttle")
+    print(
+        f"Expected ~{exp_events} on_click_throttle events, received {n_on_click_throttle_received}"
+    )
+    assert exp_events - 2 <= n_on_click_throttle_received <= exp_events + 1
+    assert final_event_order == ["on_click_throttle"] * n_on_click_throttle_received + [
+        "on_click_debounce"
+    ]
 
 
 @pytest.mark.usefixtures("token")
