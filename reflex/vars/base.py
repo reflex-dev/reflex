@@ -18,21 +18,16 @@ from collections.abc import Callable, Coroutine, Iterable, Mapping, Sequence
 from dataclasses import _MISSING_TYPE, MISSING
 from decimal import Decimal
 from types import CodeType, FunctionType
-from typing import (  # noqa: UP035
+from typing import (
     TYPE_CHECKING,
     Annotated,
     Any,
     ClassVar,
-    Dict,
-    FrozenSet,
     Generic,
-    List,
     Literal,
     NoReturn,
     ParamSpec,
     Protocol,
-    Set,
-    Tuple,
     TypeGuard,
     TypeVar,
     cast,
@@ -78,8 +73,10 @@ from reflex.utils.types import (
 
 if TYPE_CHECKING:
     from reflex.components.component import BaseComponent
+    from reflex.constants.colors import Color
     from reflex.state import BaseState
 
+    from .color import LiteralColorVar
     from .number import BooleanVar, LiteralBooleanVar, LiteralNumberVar, NumberVar
     from .object import LiteralObjectVar, ObjectVar
     from .sequence import ArrayVar, LiteralArrayVar, LiteralStringVar, StringVar
@@ -641,6 +638,14 @@ class Var(Generic[VAR_TYPE], metaclass=MetaclassVar):
         value: Decimal,
         _var_data: VarData | None = None,
     ) -> LiteralNumberVar[Decimal]: ...
+
+    @overload
+    @classmethod
+    def create(  # pyright: ignore [reportOverlappingOverload]
+        cls,
+        value: Color,
+        _var_data: VarData | None = None,
+    ) -> LiteralColorVar: ...
 
     @overload
     @classmethod
@@ -3080,7 +3085,8 @@ def transform(fn: Callable[[Var], Var]) -> Callable[[Var], Var]:
         TypeError: If the Var return type does not have a generic type.
         ValueError: If a function for the generic type is already registered.
     """
-    return_type = fn.__annotations__["return"]
+    types = get_type_hints(fn)
+    return_type = types["return"]
 
     origin = get_origin(return_type)
 
@@ -3103,101 +3109,6 @@ def transform(fn: Callable[[Var], Var]) -> Callable[[Var], Var]:
     dispatchers[generic_type] = fn
 
     return fn
-
-
-def generic_type_to_actual_type_map(
-    generic_type: GenericType, actual_type: GenericType
-) -> dict[TypeVar, GenericType]:
-    """Map the generic type to the actual type.
-
-    Args:
-        generic_type: The generic type.
-        actual_type: The actual type.
-
-    Returns:
-        The mapping of type variables to actual types.
-
-    Raises:
-        TypeError: If the generic type and actual type do not match.
-        TypeError: If the number of generic arguments and actual arguments do not match.
-    """
-    generic_origin = get_origin(generic_type) or generic_type
-    actual_origin = get_origin(actual_type) or actual_type
-
-    if generic_origin is not actual_origin:
-        if isinstance(generic_origin, TypeVar):
-            return {generic_origin: actual_origin}
-        msg = f"Type mismatch: expected {generic_origin}, got {actual_origin}."
-        raise TypeError(msg)
-
-    generic_args = get_args(generic_type)
-    actual_args = get_args(actual_type)
-
-    if len(generic_args) != len(actual_args):
-        msg = f"Number of generic arguments mismatch: expected {len(generic_args)}, got {len(actual_args)}."
-        raise TypeError(msg)
-
-    # call recursively for nested generic types and merge the results
-    return {
-        k: v
-        for generic_arg, actual_arg in zip(generic_args, actual_args, strict=True)
-        for k, v in generic_type_to_actual_type_map(generic_arg, actual_arg).items()
-    }
-
-
-def resolve_generic_type_with_mapping(
-    generic_type: GenericType, type_mapping: dict[TypeVar, GenericType]
-):
-    """Resolve a generic type with a type mapping.
-
-    Args:
-        generic_type: The generic type.
-        type_mapping: The type mapping.
-
-    Returns:
-        The resolved generic type.
-    """
-    if isinstance(generic_type, TypeVar):
-        return type_mapping.get(generic_type, generic_type)
-
-    generic_origin = get_origin(generic_type) or generic_type
-
-    generic_args = get_args(generic_type)
-
-    if not generic_args:
-        return generic_type
-
-    mapping_for_older_python = {
-        list: List,  # noqa: UP006
-        set: Set,  # noqa: UP006
-        dict: Dict,  # noqa: UP006
-        tuple: Tuple,  # noqa: UP006
-        frozenset: FrozenSet,  # noqa: UP006
-    }
-
-    return mapping_for_older_python.get(generic_origin, generic_origin)[
-        tuple(
-            resolve_generic_type_with_mapping(arg, type_mapping) for arg in generic_args
-        )
-    ]
-
-
-def resolve_arg_type_from_return_type(
-    arg_type: GenericType, return_type: GenericType, actual_return_type: GenericType
-) -> GenericType:
-    """Resolve the argument type from the return type.
-
-    Args:
-        arg_type: The argument type.
-        return_type: The return type.
-        actual_return_type: The requested return type.
-
-    Returns:
-        The argument type without the generics that are resolved.
-    """
-    return resolve_generic_type_with_mapping(
-        arg_type, generic_type_to_actual_type_map(return_type, actual_return_type)
-    )
 
 
 def dispatch(
@@ -3227,11 +3138,12 @@ def dispatch(
 
     if result_origin_var_type in dispatchers:
         fn = dispatchers[result_origin_var_type]
-        fn_first_arg_type = next(
-            iter(inspect.signature(fn).parameters.values())
-        ).annotation
+        fn_types = get_type_hints(fn)
+        fn_first_arg_type = fn_types.get(
+            next(iter(inspect.signature(fn).parameters.values())).name, Any
+        )
 
-        fn_return = inspect.signature(fn).return_annotation
+        fn_return = fn_types.get("return", Any)
 
         fn_return_origin = get_origin(fn_return) or fn_return
 
@@ -3257,22 +3169,17 @@ def dispatch(
             msg = f"Expected generic type of {fn_first_arg_type} to be a type."
             raise TypeError(msg)
 
-        arg_type = arg_generic_args[0]
         fn_return_type = fn_return_generic_args[0]
 
         var = (
             Var(
                 field_name,
                 _var_data=var_data,
-                _var_type=resolve_arg_type_from_return_type(
-                    arg_type, fn_return_type, result_var_type
-                ),
+                _var_type=fn_return_type,
             ).guess_type()
             if existing_var is None
             else existing_var._replace(
-                _var_type=resolve_arg_type_from_return_type(
-                    arg_type, fn_return_type, result_var_type
-                ),
+                _var_type=fn_return_type,
                 _var_data=var_data,
                 _js_expr=field_name,
             ).guess_type()

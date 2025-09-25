@@ -20,7 +20,7 @@ from pydantic import BaseModel as BaseModelV2
 from pydantic.v1 import BaseModel as BaseModelV1
 
 from reflex.base import Base
-from reflex.constants.colors import Color, format_color
+from reflex.constants.colors import Color
 from reflex.utils import console, types
 
 # Mapping from type to a serializer.
@@ -413,8 +413,8 @@ def serialize_decimal(value: decimal.Decimal) -> float:
     return float(value)
 
 
-@serializer(to=str)
-def serialize_color(color: Color) -> str:
+@serializer(to=dict)
+def serialize_color(color: Color) -> dict:
     """Serialize a color.
 
     Args:
@@ -423,7 +423,11 @@ def serialize_color(color: Color) -> str:
     Returns:
         The serialized color.
     """
-    return format_color(color.color, color.shade, color.alpha)
+    return {
+        "color": color.color,
+        "shade": color.shade,
+        "alpha": color.alpha,
+    }
 
 
 with contextlib.suppress(ImportError):
