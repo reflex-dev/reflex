@@ -269,25 +269,92 @@ def get_compiled_app(
     return app_module
 
 
+def _can_colorize() -> bool:
+    """Check if the output can be colorized.
+
+    Copied from _colorize.can_colorize.
+
+    https://raw.githubusercontent.com/python/cpython/refs/heads/main/Lib/_colorize.py
+
+    Returns:
+        If the output can be colorized
+    """
+    import io
+    import os
+
+    def _safe_getenv(k: str, fallback: str | None = None) -> str | None:
+        """Exception-safe environment retrieval. See gh-128636."""
+        try:
+            return os.environ.get(k, fallback)
+        except Exception:
+            return fallback
+
+    file = sys.stdout
+
+    if not sys.flags.ignore_environment:
+        if _safe_getenv("PYTHON_COLORS") == "0":
+            return False
+        if _safe_getenv("PYTHON_COLORS") == "1":
+            return True
+    if _safe_getenv("NO_COLOR"):
+        return False
+    if _safe_getenv("FORCE_COLOR"):
+        return True
+    if _safe_getenv("TERM") == "dumb":
+        return False
+
+    if not hasattr(file, "fileno"):
+        return False
+
+    if sys.platform == "win32":
+        try:
+            import nt
+
+            if not nt._supports_virtual_terminal():
+                return False
+        except (ImportError, AttributeError):
+            return False
+
+    try:
+        return os.isatty(file.fileno())
+    except io.UnsupportedOperation:
+        return hasattr(file, "isatty") and file.isatty()
+
+
 def compile_or_validate_app(
     compile: bool = False,
     check_if_schema_up_to_date: bool = False,
     prerender_routes: bool = False,
-):
+) -> bool:
     """Compile or validate the app module based on the default config.
 
     Args:
         compile: Whether to compile the app.
         check_if_schema_up_to_date: If True, check if the schema is up to date.
         prerender_routes: Whether to prerender routes.
+
+    Returns:
+        True if the app was successfully compiled or validated, False otherwise.
     """
-    if compile:
-        get_compiled_app(
-            check_if_schema_up_to_date=check_if_schema_up_to_date,
-            prerender_routes=prerender_routes,
-        )
+    try:
+        if compile:
+            get_compiled_app(
+                check_if_schema_up_to_date=check_if_schema_up_to_date,
+                prerender_routes=prerender_routes,
+            )
+        else:
+            get_and_validate_app(check_if_schema_up_to_date=check_if_schema_up_to_date)
+    except Exception as e:
+        import traceback
+
+        try:
+            colorize = _can_colorize()
+            traceback.print_exception(e, colorize=colorize)  # pyright: ignore[reportCallIssue]
+        except Exception:
+            traceback.print_exception(e)
+        return False
     else:
-        get_and_validate_app(check_if_schema_up_to_date=check_if_schema_up_to_date)
+        return True
 
 
 def get_redis() -> Redis | None:
