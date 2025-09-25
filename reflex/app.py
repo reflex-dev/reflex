@@ -1010,11 +1010,18 @@ class App(MiddlewareMixin, LifespanMixin):
         for component in tuple(app_wrappers.values()):
             app_wrappers.update(component._get_all_app_wrap_components())
         order = sorted(app_wrappers, key=lambda k: k[0], reverse=True)
-        root = parent = copy.deepcopy(app_wrappers[order[0]])
-        for key in order[1:]:
+        root = copy.deepcopy(app_wrappers[order[0]])
+
+        def reducer(parent: Component, key: tuple[int, str]) -> Component:
             child = copy.deepcopy(app_wrappers[key])
             parent.children.append(child)
-            parent = child
+            return child
+
+        functools.reduce(
+            lambda parent, key: reducer(parent, key),
+            order[1:],
+            root,
+        )
         return root
 
     def _should_compile(self) -> bool:
@@ -1274,7 +1281,7 @@ class App(MiddlewareMixin, LifespanMixin):
 
             toast_provider = Fragment.create(memoized_toast_provider())
 
-            app_wrappers[(1, "ToasterProvider")] = toast_provider
+            app_wrappers[(44, "ToasterProvider")] = toast_provider
 
         # Add the app wraps to the app.
         for key, app_wrap in chain(
