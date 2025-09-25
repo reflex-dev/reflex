@@ -216,9 +216,12 @@ def _run(
             *args,
             **kwargs,
         )
-        compile_future.result()
+        return_result = compile_future.result()
     else:
-        app_task(*args, **kwargs)
+        return_result = app_task(*args, **kwargs)
+
+    if not return_result:
+        raise SystemExit(1)
 
     # Get the frontend and backend commands, based on the environment.
     setup_frontend = frontend_cmd = backend_cmd = None
