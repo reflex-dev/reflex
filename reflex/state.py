@@ -7,6 +7,7 @@ import builtins
 import contextlib
 import copy
 import dataclasses
+import datetime
 import functools
 import inspect
 import pickle
@@ -305,6 +306,14 @@ async def _resolve_delta(delta: Delta) -> Delta:
         delta[state_name][var_name] = await task
     return delta
 
+
+_deserializers = {
+    int: int,
+    float: float,
+    datetime.datetime: datetime.datetime.fromisoformat,
+    datetime.date: datetime.date.fromisoformat,
+    datetime.time: datetime.time.fromisoformat,
+}
 
 all_base_state_classes: dict[str, None] = {}
 
@@ -1872,11 +1881,12 @@ class BaseState(EvenMoreBasicBaseState):
                 hinted_args is tuple or hinted_args is tuple
             ):
                 payload[arg] = tuple(value)
-            elif isinstance(value, str) and (
-                hinted_args is int or hinted_args is float
+            elif (
+                isinstance(value, str)
+                and (deserializer := _deserializers.get(hinted_args)) is not None
             ):
                 try:
-                    payload[arg] = hinted_args(value)
+                    payload[arg] = deserializer(value)
                 except ValueError:
                     msg = f"Received a string value ({value}) for {arg} but expected a {hinted_args}"
                     raise ValueError(msg) from None
