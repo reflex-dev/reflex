@@ -283,7 +283,15 @@ def _can_colorize() -> bool:
     import os
 
     def _safe_getenv(k: str, fallback: str | None = None) -> str | None:
-        """Exception-safe environment retrieval. See gh-128636."""
+        """Exception-safe environment retrieval. See gh-128636.
+
+        Args:
+            k: The environment variable key.
+            fallback: The fallback value if the environment variable is not set.
+
+        Returns:
+            The value of the environment variable or the fallback value.
+        """
         try:
             return os.environ.get(k, fallback)
         except Exception:
