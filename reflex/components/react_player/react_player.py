@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Any, TypedDict
 
-from reflex.components.component import NoSSRComponent
+from reflex.components.component import Component
 from reflex.components.core.cond import cond
 from reflex.event import EventHandler, no_args_event_spec
 from reflex.utils import console
@@ -125,7 +125,7 @@ _DEPRECATED_PROP_MAP = {
 }
 
 
-class ReactPlayer(NoSSRComponent):
+class ReactPlayer(Component):
     """Using react-player and not implement all props and callback yet.
     reference: https://github.com/cookpete/react-player.
     """
@@ -172,10 +172,10 @@ class ReactPlayer(NoSSRComponent):
     # Called when media starts or resumes playing after pausing or buffering.
     on_playing: EventHandler[no_args_event_spec]
 
-    # Called while the video is loading. Contains played and loaded progress as a fraction, and playedSeconds and loadedSeconds in seconds. eg { played: 0.12, playedSeconds: 11.3, loaded: 0.34, loadedSeconds: 16.7 }
+    # Called while the video is loading only. Contains played and loaded progress as a fraction, and playedSeconds and loadedSeconds in seconds. eg { played: 0.12, playedSeconds: 11.3, loaded: 0.34, loadedSeconds: 16.7 }
     on_progress: EventHandler[_on_progress_signature]
 
-    # Called when the media's current time changes.
+    # Called when the media's current time changes (~4Hz, use .throttle to limit calls to backend).
     on_time_update: EventHandler[_on_time_update_signature]
 
     # Callback containing duration of the media, in seconds.
@@ -187,7 +187,7 @@ class ReactPlayer(NoSSRComponent):
     # Called when media starts buffering.
     on_waiting: EventHandler[no_args_event_spec]
 
-    # Callend when the media is seeking.
+    # Called when the media is seeking.
     on_seeking: EventHandler[no_args_event_spec]
 
     # Called when media seeks with seconds parameter.

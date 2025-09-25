@@ -108,7 +108,7 @@
   "reflex/components/radix/themes/typography/link.pyi": "85d50a3c89a8b3b019289d20d85e9960",
   "reflex/components/radix/themes/typography/text.pyi": "5397e5691b5f0b324378f2fcb6bf0f1f",
   "reflex/components/react_player/audio.pyi": "9de7d9830534c6ec1f305434c4d8abd8",
-  "reflex/components/react_player/react_player.pyi": "c7dd02e62b26b51344a3fc26e10f08bb",
+  "reflex/components/react_player/react_player.pyi": "7a7a29a64a0d127c12c8131abcd012d1",
   "reflex/components/react_player/video.pyi": "e946b4915b41326d4e4b39381349d152",
   "reflex/components/react_router/dom.pyi": "ea17a16e817523009e30fb049b1cf9dc",
   "reflex/components/recharts/__init__.pyi": "6ee7f1ca2c0912f389ba6f3251a74d99",
