@@ -743,6 +743,17 @@ def is_prod_mode() -> bool:
     return current_mode == constants.Env.PROD
 
 
+def should_prerender_routes() -> bool:
+    """Check if the app should prerender routes.
+
+    Returns:
+        True if the app should prerender routes.
+    """
+    if not environment.REFLEX_SSR.is_set():
+        return is_prod_mode()
+    return environment.REFLEX_SSR.get()
+
+
 def get_compile_context() -> constants.CompileContext:
     """Check if the app is compiled for deploy.
 

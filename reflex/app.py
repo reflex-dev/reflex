@@ -113,7 +113,12 @@ from reflex.utils import (
     prerequisites,
     types,
 )
-from reflex.utils.exec import get_compile_context, is_prod_mode, is_testing_env
+from reflex.utils.exec import (
+    get_compile_context,
+    is_prod_mode,
+    is_testing_env,
+    should_prerender_routes,
+)
 from reflex.utils.imports import ImportVar
 from reflex.utils.token_manager import TokenManager
 from reflex.utils.types import ASGIApp, Message, Receive, Scope, Send
@@ -607,7 +612,7 @@ class App(MiddlewareMixin, LifespanMixin):
         """
         from reflex.vars.base import GLOBAL_CACHE
 
-        self._compile(prerender_routes=is_prod_mode())
+        self._compile(prerender_routes=should_prerender_routes())
 
         config = get_config()
 

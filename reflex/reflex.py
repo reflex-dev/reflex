@@ -204,7 +204,7 @@ def _run(
     args = (frontend,)
     kwargs = {
         "check_if_schema_up_to_date": True,
-        "prerender_routes": env == constants.Env.PROD,
+        "prerender_routes": exec.should_prerender_routes(),
     }
 
     # Granian fails if the app is already imported.
@@ -429,6 +429,14 @@ def compile(dry: bool, rich: bool):
     type=click.Path(exists=True, path_type=Path, resolve_path=True),
     help="Files or directories to exclude from the backend zip. Can be used multiple times.",
 )
+@click.option(
+    "--server-side-rendering/--no-server-side-rendering",
+    "--ssr/--no-ssr",
+    "ssr",
+    default=True,
+    is_flag=True,
+    help="Whether to enable server side rendering for the frontend.",
+)
 def export(
     zip: bool,
     frontend_only: bool,
@@ -437,10 +445,16 @@ def export(
     upload_db_file: bool,
     env: LITERAL_ENV,
     backend_excluded_dirs: tuple[Path, ...] = (),
+    ssr: bool = True,
 ):
     """Export the app to a zip file."""
     from reflex.utils import export as export_utils
     from reflex.utils import prerequisites
+
+    if not environment.REFLEX_SSR.is_set():
+        environment.REFLEX_SSR.set(ssr)
+    elif environment.REFLEX_SSR.get() != ssr:
+        ssr = environment.REFLEX_SSR.get()
 
     environment.REFLEX_COMPILE_CONTEXT.set(constants.CompileContext.EXPORT)
 
@@ -464,6 +478,7 @@ def export(
         env=constants.Env.DEV if env == constants.Env.DEV else constants.Env.PROD,
         loglevel=config.loglevel.subprocess_level(),
         backend_excluded_dirs=backend_excluded_dirs,
+        prerender_routes=ssr,
     )
 
 
@@ -676,6 +691,14 @@ def makemigrations(message: str | None):
     type=click.Path(exists=True, path_type=Path, resolve_path=True),
     help="Files or directories to exclude from the backend zip. Can be used multiple times.",
 )
+@click.option(
+    "--server-side-rendering/--no-server-side-rendering",
+    "--ssr/--no-ssr",
+    "ssr",
+    default=True,
+    is_flag=True,
+    help="Whether to enable server side rendering for the frontend.",
+)
 def deploy(
     app_name: str | None,
     app_id: str | None,
@@ -690,6 +713,7 @@ def deploy(
     token: str | None,
     config_path: str | None,
     backend_excluded_dirs: tuple[Path, ...] = (),
+    ssr: bool = True,
 ):
     """Deploy the app to the Reflex hosting service."""
     from reflex_cli.utils import dependency
@@ -706,6 +730,11 @@ def deploy(
     check_version()
 
     environment.REFLEX_COMPILE_CONTEXT.set(constants.CompileContext.DEPLOY)
+
+    if not environment.REFLEX_SSR.is_set():
+        environment.REFLEX_SSR.set(ssr)
+    elif environment.REFLEX_SSR.get() != ssr:
+        ssr = environment.REFLEX_SSR.get()
 
     # Only check requirements if interactive.
     # There is user interaction for requirements update.
@@ -739,6 +768,7 @@ def deploy(
                 loglevel=config.loglevel.subprocess_level(),
                 upload_db_file=upload_db,
                 backend_excluded_dirs=backend_excluded_dirs,
+                prerender_routes=ssr,
             )
         ),
         regions=list(region),

@@ -657,6 +657,9 @@ class EnvironmentVariables:
     # Whether to force a full reload on changes.
     VITE_FORCE_FULL_RELOAD: EnvVar[bool] = env_var(False)
 
+    # Whether to enable SSR for the frontend.
+    REFLEX_SSR: EnvVar[bool] = env_var(True)
+
 
 environment = EnvironmentVariables()
 

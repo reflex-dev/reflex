@@ -19,6 +19,7 @@ def export(
     env: constants.Env = constants.Env.PROD,
     loglevel: constants.LogLevel = console._LOG_LEVEL,
     backend_excluded_dirs: tuple[Path, ...] = (),
+    prerender_routes: bool = True,
 ):
     """Export the app to a zip file.
 
@@ -33,6 +34,7 @@ def export(
         env: The environment to use. Defaults to constants.Env.PROD.
         loglevel: The log level to use. Defaults to console._LOG_LEVEL.
         backend_excluded_dirs: A tuple of files or directories to exclude from the backend zip.  Defaults to ().
+        prerender_routes: Whether to prerender the routes. Defaults to True.
     """
     config = get_config()
 
@@ -58,7 +60,7 @@ def export(
 
     if frontend:
         # Ensure module can be imported and app.compile() is called.
-        prerequisites.get_compiled_app(prerender_routes=True)
+        prerequisites.get_compiled_app(prerender_routes=prerender_routes)
         # Set up .web directory and install frontend dependencies.
         build.setup_frontend(Path.cwd())
 
