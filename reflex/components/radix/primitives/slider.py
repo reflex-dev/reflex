@@ -7,7 +7,7 @@ from typing import Any, Literal
 
 from reflex.components.component import Component, ComponentNamespace
 from reflex.components.radix.primitives.base import RadixPrimitiveComponentWithClassName
-from reflex.event import EventHandler
+from reflex.event import EventHandler, passthrough_event_spec
 from reflex.vars.base import Var
 
 LiteralSliderOrientation = Literal["horizontal", "vertical"]
@@ -18,20 +18,6 @@ class SliderComponent(RadixPrimitiveComponentWithClassName):
     """Base class for all @radix-ui/react-slider components."""
 
     library = "@radix-ui/react-slider@1.3.6"
-
-
-def on_value_event_spec(
-    value: Var[list[int]],
-) -> tuple[Var[list[int]]]:
-    """Event handler spec for the value event.
-
-    Args:
-        value: The value of the event.
-
-    Returns:
-        The event handler spec.
-    """
-    return (value,)
 
 
 class SliderRoot(SliderComponent):
@@ -63,10 +49,10 @@ class SliderRoot(SliderComponent):
     min_steps_between_thumbs: Var[int]
 
     # Fired when the value of a thumb changes.
-    on_value_change: EventHandler[on_value_event_spec]
+    on_value_change: EventHandler[passthrough_event_spec(list[float])]
 
     # Fired when a thumb is released.
-    on_value_commit: EventHandler[on_value_event_spec]
+    on_value_commit: EventHandler[passthrough_event_spec(list[float])]
 
     def add_style(self) -> dict[str, Any] | None:
         """Add style to the component.
