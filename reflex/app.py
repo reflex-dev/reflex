@@ -436,14 +436,14 @@ class App(MiddlewareMixin, LifespanMixin):
     _background_tasks: set[asyncio.Task] = dataclasses.field(default_factory=set)
 
     # Frontend Error Handler Function
-    frontend_exception_handler: Callable[[Exception], None] = (
+    frontend_exception_handler: Callable[[Exception], None] | None = (
         default_frontend_exception_handler
     )
 
     # Backend Error Handler Function
-    backend_exception_handler: Callable[
-        [Exception], EventSpec | list[EventSpec] | None
-    ] = default_backend_exception_handler
+    backend_exception_handler: (
+        Callable[[Exception], EventSpec | list[EventSpec] | None] | None
+    ) = default_backend_exception_handler
 
     # Put the toast provider in the app wrap.
     toaster: Component | None = dataclasses.field(default_factory=toast.provider)
@@ -1641,6 +1641,10 @@ class App(MiddlewareMixin, LifespanMixin):
             ],
             strict=True,
         ):
+            if handler_fn is None:
+                # If the handler is None, skip validation.
+                continue
+
             if hasattr(handler_fn, "__name__"):
                 _fn_name = handler_fn.__name__
             else:
@@ -1686,7 +1690,10 @@ class App(MiddlewareMixin, LifespanMixin):
                     raise ValueError(msg)
 
             # Check if the return type is valid for backend exception handler
-            if handler_domain == "backend":
+            if (
+                handler_domain == "backend"
+                and self.backend_exception_handler is not None
+            ):
                 sig = inspect.signature(self.backend_exception_handler)
                 return_type = (
                     eval(sig.return_annotation)
@@ -1795,7 +1802,8 @@ async def process(
     except Exception as ex:
         telemetry.send_error(ex, context="backend")
 
-        app.backend_exception_handler(ex)
+        if app.backend_exception_handler is not None:
+            app.backend_exception_handler(ex)
         raise
 
 
