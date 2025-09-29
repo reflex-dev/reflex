@@ -533,7 +533,7 @@ class BaseState(EvenMoreBasicBaseState):
         cls._check_overridden_computed_vars()
 
         new_backend_vars = {
-            name: value
+            name: value if not isinstance(value, Field) else value.default_value()
             for name, value in list(cls.__dict__.items())
             if types.is_backend_base_variable(name, cls)
         }
@@ -1207,7 +1207,8 @@ class BaseState(EvenMoreBasicBaseState):
             The default value of the var or None.
         """
         try:
-            return getattr(cls, name)
+            value = getattr(cls, name)
+            return value if not isinstance(value, Field) else value.default_value()
         except AttributeError:
             try:
                 return types.get_default_value_for_type(annotation_value)
