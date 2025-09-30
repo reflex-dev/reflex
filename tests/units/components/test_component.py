@@ -2146,7 +2146,7 @@ def test_add_style_embedded_vars(test_state: BaseState):
     str_page = str(page)
     assert (
         str_page.count(
-            f'css:({{ ["fakeParent"] : "parent", ["color"] : Object.assign(new String("var(--plum-10)"), ({{ ["color"] : "plum", ["alpha"] : false, ["shade"] : 10 }})), ["fake"] : "text", ["margin"] : ({test_state.get_name()}.num{FIELD_MARKER}+"%") }})'
+            f'css:({{ ["fakeParent"] : "parent", ["color"] : (((__to_string) => __to_string.toString())(Object.assign(new String("var(--plum-10)"), ({{ ["color"] : "plum", ["alpha"] : false, ["shade"] : 10 }})))), ["fake"] : "text", ["margin"] : ({test_state.get_name()}.num{FIELD_MARKER}+"%") }})'
         )
         == 1
     )
