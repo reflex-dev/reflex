@@ -7,6 +7,7 @@ from typing import Any, Literal
 
 from reflex import constants
 from reflex.components.core.breakpoints import Breakpoints, breakpoints_values
+from reflex.constants.colors import Color
 from reflex.event import EventChain, EventHandler, EventSpec, run_script
 from reflex.utils import format
 from reflex.utils.exceptions import ReflexError
@@ -14,6 +15,7 @@ from reflex.utils.imports import ImportVar
 from reflex.utils.types import typehint_issubclass
 from reflex.vars import VarData
 from reflex.vars.base import LiteralVar, Var
+from reflex.vars.color import LiteralColorVar
 from reflex.vars.function import FunctionVar
 from reflex.vars.object import ObjectVar
 
@@ -131,6 +133,9 @@ def convert_item(
 
     if isinstance(style_item, Var):
         return style_item, style_item._get_all_var_data()
+
+    if isinstance(style_item, Color):
+        return LiteralColorVar.create(style_item).to_string(use_json=False), None
 
     # Otherwise, convert to Var to collapse VarData encoded in f-string.
     new_var = LiteralVar.create(style_item)
