@@ -146,7 +146,12 @@ def kill(proc_pid: int):
 
 
 def notify_frontend(url: str, backend_present: bool):
-    """Output a string notifying where the frontend is running."""
+    """Output a string notifying where the frontend is running.
+
+    Args:
+        url: The URL where the frontend is running.
+        backend_present: Whether the backend is present.
+    """
     console.print(
         f"App running at: [bold green]{url}[/bold green]{' (Frontend-only mode)' if not backend_present else ''}"
     )
