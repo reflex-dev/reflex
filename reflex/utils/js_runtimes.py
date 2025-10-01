@@ -325,7 +325,8 @@ def validate_frontend_dependencies(init: bool = True):
         try:
             get_js_package_executor(raise_on_none=True)
         except FileNotFoundError as e:
-            raise SystemExit(1) from e
+            console.error(f"Failed to find a valid package manager due to {e}.")
+            raise SystemExit(1) from None
 
     if prefer_npm_over_bun() and not check_node_version():
         node_version = get_node_version()

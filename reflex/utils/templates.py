@@ -125,7 +125,7 @@ def create_config_init_app_from_remote_template(app_name: str, template_url: str
         temp_dir = tempfile.mkdtemp()
     except OSError as ose:
         console.error(f"Failed to create temp directory for download: {ose}")
-        raise SystemExit(1) from ose
+        raise SystemExit(1) from None
 
     # Use httpx GET with redirects to download the zip file.
     zip_file_path: Path = Path(temp_dir) / "template.zip"
@@ -136,20 +136,20 @@ def create_config_init_app_from_remote_template(app_name: str, template_url: str
         response.raise_for_status()
     except httpx.HTTPError as he:
         console.error(f"Failed to download the template: {he}")
-        raise SystemExit(1) from he
+        raise SystemExit(1) from None
     try:
         zip_file_path.write_bytes(response.content)
         console.debug(f"Downloaded the zip to {zip_file_path}")
     except OSError as ose:
         console.error(f"Unable to write the downloaded zip to disk {ose}")
-        raise SystemExit(1) from ose
+        raise SystemExit(1) from None
 
     # Create a temp directory for the zip extraction.
     try:
         unzip_dir = Path(tempfile.mkdtemp())
     except OSError as ose:
         console.error(f"Failed to create temp directory for extracting zip: {ose}")
-        raise SystemExit(1) from ose
+        raise SystemExit(1) from None
 
     try:
         zipfile.ZipFile(zip_file_path).extractall(path=unzip_dir)
@@ -157,7 +157,7 @@ def create_config_init_app_from_remote_template(app_name: str, template_url: str
         # repo-name-branch/**/*, so we need to remove the top level directory.
     except Exception as uze:
         console.error(f"Failed to unzip the template: {uze}")
-        raise SystemExit(1) from uze
+        raise SystemExit(1) from None
 
     if len(subdirs := list(unzip_dir.iterdir())) != 1:
         console.error(f"Expected one directory in the zip, found {subdirs}")

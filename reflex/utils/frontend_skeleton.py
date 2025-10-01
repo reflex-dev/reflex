@@ -70,8 +70,8 @@ def initialize_requirements_txt() -> bool:
         except UnicodeDecodeError:
             continue
         except Exception as e:
-            console.error(f"Failed to read {requirements_file_path}.")
-            raise SystemExit(1) from e
+            console.error(f"Failed to read {requirements_file_path} due to {e}.")
+            raise SystemExit(1) from None
     else:
         return True
 

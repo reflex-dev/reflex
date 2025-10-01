@@ -698,7 +698,7 @@ def _collect_details_for_gallery():
         response.raise_for_status()
     except httpx.HTTPError as he:
         console.error(f"Unable to complete request due to {he}.")
-        raise SystemExit(1) from he
+        raise SystemExit(1) from None
 
     files = []
     if (image_file_and_extension := _get_file_from_prompt_in_loop()) is not None:
@@ -733,7 +733,7 @@ def _collect_details_for_gallery():
 
     except httpx.HTTPError as he:
         console.error(f"Unable to complete request due to {he}.")
-        raise SystemExit(1) from he
+        raise SystemExit(1) from None
 
     console.info("Custom component information successfully shared!")
 
@@ -769,7 +769,7 @@ def _get_file_from_prompt_in_loop() -> tuple[bytes, str] | None:
             image_file = image_file_path.read_bytes()
         except OSError as ose:
             console.error(f"Unable to read the {file_extension} file due to {ose}")
-            raise SystemExit(1) from ose
+            raise SystemExit(1) from None
         else:
             return image_file, file_extension
 

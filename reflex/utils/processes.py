@@ -49,7 +49,7 @@ def get_num_workers() -> int:
         redis_client.ping()
     except RedisError as re:
         console.error(f"Unable to connect to Redis: {re}")
-        raise SystemExit(1) from re
+        raise SystemExit(1) from None
     return (os.cpu_count() or 1) * 2 + 1
 
 
