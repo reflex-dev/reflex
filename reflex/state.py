@@ -1796,8 +1796,11 @@ class BaseState(EvenMoreBasicBaseState):
         except Exception as ex:
             state._clean()
 
+            app = prerequisites.get_and_validate_app().app
             event_specs = (
-                prerequisites.get_and_validate_app().app.backend_exception_handler(ex)
+                app.backend_exception_handler(ex)
+                if app.backend_exception_handler is not None
+                else None
             )
 
             if event_specs is None:
@@ -1935,8 +1938,12 @@ class BaseState(EvenMoreBasicBaseState):
         except Exception as ex:
             telemetry.send_error(ex, context="backend")
 
+            app = prerequisites.get_and_validate_app().app
+
             event_specs = (
-                prerequisites.get_and_validate_app().app.backend_exception_handler(ex)
+                app.backend_exception_handler(ex)
+                if app.backend_exception_handler is not None
+                else None
             )
 
             yield await state._as_state_update(
@@ -2488,9 +2495,10 @@ class FrontendEventExceptionState(State):
             component_stack: The stack trace of the component where the exception occurred.
 
         """
-        prerequisites.get_and_validate_app().app.frontend_exception_handler(
-            Exception(info)
-        )
+        app = prerequisites.get_and_validate_app().app
+
+        if app.frontend_exception_handler is not None:
+            app.frontend_exception_handler(Exception(info))
 
 
 class UpdateVarsInternalState(State):
