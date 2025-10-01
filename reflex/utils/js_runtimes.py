@@ -206,7 +206,7 @@ def download_and_run(url: str, *args, show_status: bool = False, **env):
         console.error(
             f"Failed to download bun install script. You can install or update bun manually from https://bun.com \n{e}"
         )
-        raise click.exceptions.Exit(1) from None
+        raise SystemExit(1) from None
 
     # Save the script to a temporary file.
     with tempfile.NamedTemporaryFile() as tempfile_file:
@@ -237,7 +237,7 @@ def install_bun():
         console.error(
             "REFLEX_USE_NPM is set, but Node.js is not installed. Please install Node.js to use npm."
         )
-        raise click.exceptions.Exit(1)
+        raise SystemExit(1)
 
     bun_path = path_ops.get_bun_path()
 
@@ -304,7 +304,7 @@ def validate_bun(bun_path: Path | None = None):
             console.error(
                 "Failed to obtain bun version. Make sure the specified bun path in your config is correct."
             )
-            raise click.exceptions.Exit(1)
+            raise SystemExit(1)
         if bun_version < version.parse(constants.Bun.MIN_VERSION):
             console.warn(
                 f"Reflex requires bun version {constants.Bun.MIN_VERSION} or higher to run, but the detected version is "
@@ -326,14 +326,14 @@ def validate_frontend_dependencies(init: bool = True):
         try:
             get_js_package_executor(raise_on_none=True)
         except FileNotFoundError as e:
-            raise click.exceptions.Exit(1) from e
+            raise SystemExit(1) from e
 
     if prefer_npm_over_bun() and not check_node_version():
         node_version = get_node_version()
         console.error(
             f"Reflex requires node version {constants.Node.MIN_VERSION} or higher to run, but the detected version is {node_version}",
         )
-        raise click.exceptions.Exit(1)
+        raise SystemExit(1)
 
 
 def remove_existing_bun_installation():

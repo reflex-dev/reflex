@@ -452,14 +452,14 @@ def validate_app_name(app_name: str | None = None) -> str:
         console.error(
             f"The app directory cannot be named [bold]{constants.Reflex.MODULE_NAME}[/bold]."
         )
-        raise click.exceptions.Exit(1)
+        raise SystemExit(1)
 
     # Make sure the app name is standard for a python package name.
     if not re.match(r"^[a-zA-Z][a-zA-Z0-9_]*$", app_name):
         console.error(
             "The app directory name must start with a letter and can contain letters, numbers, and underscores."
         )
-        raise click.exceptions.Exit(1)
+        raise SystemExit(1)
 
     return app_name
 
@@ -505,7 +505,7 @@ def assert_in_reflex_dir():
         console.error(
             f"[cyan]{constants.Config.FILE}[/cyan] not found. Move to the root folder of your project, or run [bold]{constants.Reflex.MODULE_NAME} init[/bold] to start a new project."
         )
-        raise click.exceptions.Exit(1)
+        raise SystemExit(1)
 
 
 def needs_reinit() -> bool:

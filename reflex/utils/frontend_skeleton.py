@@ -73,7 +73,7 @@ def initialize_requirements_txt() -> bool:
             continue
         except Exception as e:
             console.error(f"Failed to read {requirements_file_path}.")
-            raise click.exceptions.Exit(1) from e
+            raise SystemExit(1) from e
     else:
         return True
 

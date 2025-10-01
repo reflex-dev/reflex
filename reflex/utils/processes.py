@@ -50,7 +50,7 @@ def get_num_workers() -> int:
         redis_client.ping()
     except RedisError as re:
         console.error(f"Unable to connect to Redis: {re}")
-        raise click.exceptions.Exit(1) from re
+        raise SystemExit(1) from re
     return (os.cpu_count() or 1) * 2 + 1
 
 
@@ -146,7 +146,7 @@ def handle_port(service_name: str, port: int, auto_increment: bool) -> int:
             f"Unable to bind to any port for {service_name}. "
             "Please check your network configuration."
         )
-        raise click.exceptions.Exit(1)
+        raise SystemExit(1)
 
     console.debug(
         f"Checking if {service_name.capitalize()} port: {port} is in use for families: {families}."
@@ -172,7 +172,7 @@ def handle_port(service_name: str, port: int, auto_increment: bool) -> int:
     else:
         console.error(f"{service_name.capitalize()} port: {port} is already in use.")
 
-    raise click.exceptions.Exit(1)
+    raise SystemExit(1)
 
 
 @overload
@@ -217,7 +217,7 @@ def new_process(
     non_empty_args = list(filter(None, args)) if isinstance(args, list) else [args]
     if isinstance(args, list) and len(non_empty_args) != len(args):
         console.error(f"Invalid command: {args}")
-        raise click.exceptions.Exit(1)
+        raise SystemExit(1)
 
     path_env: str = os.environ.get("PATH", "")
 
@@ -376,7 +376,7 @@ def stream_logs(
                 "NPM_CONFIG_REGISTRY environment variable. If TLS is the issue, and you know what "
                 "you are doing, you can disable it by setting the SSL_NO_VERIFY environment variable."
             )
-            raise click.exceptions.Exit(1)
+            raise SystemExit(1)
         for set_of_logs in (*prior_logs, tuple(logs)):
             for line in set_of_logs:
                 console.error(line, end="")
@@ -384,7 +384,7 @@ def stream_logs(
         if analytics_enabled:
             telemetry.send("error", context=message)
         console.error("Run with [bold]--loglevel debug [/bold] for the full log.")
-        raise click.exceptions.Exit(1)
+        raise SystemExit(1)
 
 
 def show_logs(message: str, process: subprocess.Popen):

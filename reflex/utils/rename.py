@@ -66,7 +66,7 @@ def rename_app(new_app_name: str, loglevel: constants.LogLevel):
         console.error(
             "No rxconfig.py found. Make sure you are in the root directory of your app."
         )
-        raise click.exceptions.Exit(1)
+        raise SystemExit(1)
 
     sys.path.insert(0, str(Path.cwd()))
 
@@ -74,7 +74,7 @@ def rename_app(new_app_name: str, loglevel: constants.LogLevel):
     module_path = get_module_path(config.module)
     if module_path is None:
         console.error(f"Could not find module {config.module}.")
-        raise click.exceptions.Exit(1)
+        raise SystemExit(1)
 
     console.info(f"Renaming app directory to {new_app_name}.")
     process_directory(

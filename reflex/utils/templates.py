@@ -61,7 +61,7 @@ def initialize_app_directory(
             console.error(
                 f"Only {template_name=} should be provided, got {template_code_dir_name=}, {template_dir=}."
             )
-            raise click.exceptions.Exit(1)
+            raise SystemExit(1)
         template_code_dir_name = constants.Templates.Dirs.CODE
         template_dir = Path(constants.Templates.Dirs.BASE, "apps", template_name)
     else:
@@ -69,7 +69,7 @@ def initialize_app_directory(
             console.error(
                 f"For `{template_name}` template, `template_code_dir_name` and `template_dir` should both be provided."
             )
-            raise click.exceptions.Exit(1)
+            raise SystemExit(1)
 
     console.debug(f"Using {template_name=} {template_dir=} {template_code_dir_name=}.")
 
@@ -127,7 +127,7 @@ def create_config_init_app_from_remote_template(app_name: str, template_url: str
         temp_dir = tempfile.mkdtemp()
     except OSError as ose:
         console.error(f"Failed to create temp directory for download: {ose}")
-        raise click.exceptions.Exit(1) from ose
+        raise SystemExit(1) from ose
 
     # Use httpx GET with redirects to download the zip file.
     zip_file_path: Path = Path(temp_dir) / "template.zip"
@@ -138,20 +138,20 @@ def create_config_init_app_from_remote_template(app_name: str, template_url: str
         response.raise_for_status()
     except httpx.HTTPError as he:
         console.error(f"Failed to download the template: {he}")
-        raise click.exceptions.Exit(1) from he
+        raise SystemExit(1) from he
     try:
         zip_file_path.write_bytes(response.content)
         console.debug(f"Downloaded the zip to {zip_file_path}")
     except OSError as ose:
         console.error(f"Unable to write the downloaded zip to disk {ose}")
-        raise click.exceptions.Exit(1) from ose
+        raise SystemExit(1) from ose
 
     # Create a temp directory for the zip extraction.
     try:
         unzip_dir = Path(tempfile.mkdtemp())
     except OSError as ose:
         console.error(f"Failed to create temp directory for extracting zip: {ose}")
-        raise click.exceptions.Exit(1) from ose
+        raise SystemExit(1) from ose
 
     try:
         zipfile.ZipFile(zip_file_path).extractall(path=unzip_dir)
@@ -159,11 +159,11 @@ def create_config_init_app_from_remote_template(app_name: str, template_url: str
         # repo-name-branch/**/*, so we need to remove the top level directory.
     except Exception as uze:
         console.error(f"Failed to unzip the template: {uze}")
-        raise click.exceptions.Exit(1) from uze
+        raise SystemExit(1) from uze
 
     if len(subdirs := list(unzip_dir.iterdir())) != 1:
         console.error(f"Expected one directory in the zip, found {subdirs}")
-        raise click.exceptions.Exit(1)
+        raise SystemExit(1)
 
     template_dir = unzip_dir / subdirs[0]
     console.debug(f"Template folder is located at {template_dir}")
@@ -215,7 +215,7 @@ def validate_and_create_app_using_remote_template(
             console.print(
                 f"Please use `reflex login` to access the '{template}' template."
             )
-            raise click.exceptions.Exit(3)
+            raise SystemExit(3)
 
         template_url = templates[template].code_url
     else:
@@ -226,7 +226,7 @@ def validate_and_create_app_using_remote_template(
             template_url = f"https://github.com/{path}/archive/main.zip"
         else:
             console.error(f"Template `{template}` not found or invalid.")
-            raise click.exceptions.Exit(1)
+            raise SystemExit(1)
 
     if template_url is None:
         return
@@ -345,17 +345,17 @@ def prompt_for_template_options(templates: list[Template]) -> str:
 
     if not template:
         console.error("No template selected.")
-        raise click.exceptions.Exit(1)
+        raise SystemExit(1)
 
     try:
         template_index = int(template)
     except ValueError:
         console.error("Invalid template selected.")
-        raise click.exceptions.Exit(1) from None
+        raise SystemExit(1) from None
 
     if template_index < 0 or template_index >= len(templates):
         console.error("Invalid template selected.")
-        raise click.exceptions.Exit(1)
+        raise SystemExit(1)
 
     # Return the template.
     return templates[template_index].name
@@ -393,11 +393,11 @@ def initialize_app(app_name: str, template: str | None = None) -> str | None:
 
         if template == constants.Templates.CHOOSE_TEMPLATES:
             redir.reflex_templates()
-            raise click.exceptions.Exit(0)
+            raise SystemExit(0)
 
     if template == constants.Templates.AI:
         redir.reflex_build_redirect()
-        raise click.exceptions.Exit(0)
+        raise SystemExit(0)
 
     # If the blank template is selected, create a blank app.
     if template == constants.Templates.DEFAULT:

@@ -333,7 +333,7 @@ def run(
     """Run the app in the current directory."""
     if frontend_only and backend_only:
         console.error("Cannot use both --frontend-only and --backend-only options.")
-        raise click.exceptions.Exit(1)
+        raise SystemExit(1)
 
     config = get_config()
 
