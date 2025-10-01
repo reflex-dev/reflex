@@ -519,7 +519,7 @@ def init(
 
     if CustomComponents.PYPROJECT_TOML.exists():
         console.error(f"A {CustomComponents.PYPROJECT_TOML} already exists. Aborting.")
-        SystemExit(1)
+        raise SystemExit(1)
 
     # Show system info.
     exec.output_system_info()
