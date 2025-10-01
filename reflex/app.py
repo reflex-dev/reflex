@@ -628,6 +628,16 @@ class App(MiddlewareMixin, LifespanMixin):
 
         asgi_app = self._api
 
+        if environment.REFLEX_MOUNT_FRONTEND_COMPILED_APP.get():
+            asgi_app.mount(
+                "/",
+                StaticFiles(
+                    directory=prerequisites.get_web_dir() / constants.Dirs.STATIC,
+                    html=True,
+                ),
+                name="frontend",
+            )
+
         if self.api_transformer is not None:
             api_transformers: Sequence[Starlette | Callable[[ASGIApp], ASGIApp]] = (
                 [self.api_transformer]

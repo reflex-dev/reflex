@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import atexit
 from importlib.util import find_spec
 from pathlib import Path
 from typing import TYPE_CHECKING
@@ -132,8 +131,11 @@ def _run(
     frontend_port: int | None = None,
     backend_port: int | None = None,
     backend_host: str | None = None,
+    single_port: bool = False,
 ):
     """Run the app in the given directory."""
+    import atexit
+
     from reflex.utils import build, exec, prerequisites, processes
 
     config = get_config()
@@ -173,7 +175,9 @@ def _run(
             auto_increment=auto_increment_frontend,
         )
 
-    if backend:
+    if single_port:
+        backend_port = frontend_port
+    elif backend:
         auto_increment_backend = not bool(backend_port or config.backend_port)
 
         backend_port = processes.handle_port(
@@ -223,23 +227,23 @@ def _run(
     if not return_result:
         raise SystemExit(1)
 
+    if env != constants.Env.PROD and env != constants.Env.DEV:
+        msg = f"Invalid env: {env}. Must be DEV or PROD."
+        raise ValueError(msg)
+
     # Get the frontend and backend commands, based on the environment.
-    setup_frontend = frontend_cmd = backend_cmd = None
     if env == constants.Env.DEV:
         setup_frontend, frontend_cmd, backend_cmd = (
             build.setup_frontend,
             exec.run_frontend,
             exec.run_backend,
         )
-    if env == constants.Env.PROD:
+    elif env == constants.Env.PROD:
         setup_frontend, frontend_cmd, backend_cmd = (
             build.setup_frontend_prod,
             exec.run_frontend_prod,
             exec.run_backend_prod,
         )
-    if not setup_frontend or not frontend_cmd or not backend_cmd:
-        msg = f"Invalid env: {env}. Must be DEV or PROD."
-        raise ValueError(msg)
 
     # Post a telemetry event.
     telemetry.send(f"run-{env.value}")
@@ -251,7 +255,7 @@ def _run(
     commands = []
 
     # Run the frontend on a separate thread.
-    if frontend:
+    if frontend and not single_port:
         setup_frontend(Path.cwd())
         commands.append((frontend_cmd, Path.cwd(), frontend_port, backend))
 
@@ -267,21 +271,30 @@ def _run(
             )
         )
 
-    # Start the frontend and backend.
-    with processes.run_concurrently_context(*commands):
-        # In dev mode, run the backend on the main thread.
-        if backend and backend_port and env == constants.Env.DEV:
-            backend_cmd(
-                backend_host,
-                int(backend_port),
-                config.loglevel.subprocess_level(),
-                frontend,
-            )
-            # The windows uvicorn bug workaround
-            # https://github.com/reflex-dev/reflex/issues/2335
-            if constants.IS_WINDOWS and exec.frontend_process:
-                # Sends SIGTERM in windows
-                exec.kill(exec.frontend_process.pid)
+    if single_port:
+        setup_frontend(Path.cwd())
+        backend_function, *args = commands[0]
+        exec.notify_app_running()
+        exec.notify_frontend(
+            f"http://0.0.0.0:{get_config().frontend_port}", backend_present=True
+        )
+        backend_function(*args, mount_frontend_compiled_app=True)
+    else:
+        # Start the frontend and backend.
+        with processes.run_concurrently_context(*commands):
+            # In dev mode, run the backend on the main thread.
+            if backend and backend_port and env == constants.Env.DEV:
+                backend_cmd(
+                    backend_host,
+                    int(backend_port),
+                    config.loglevel.subprocess_level(),
+                    frontend,
+                )
+                # The windows uvicorn bug workaround
+                # https://github.com/reflex-dev/reflex/issues/2335
+                if constants.IS_WINDOWS and exec.frontend_process:
+                    # Sends SIGTERM in windows
+                    exec.kill(exec.frontend_process.pid)
 
 
 @cli.command()
@@ -322,6 +335,12 @@ def _run(
     "--backend-host",
     help="Specify the backend host.",
 )
+@click.option(
+    "--single-port",
+    is_flag=True,
+    help="Run both frontend and backend on the same port.",
+    default=False,
+)
 def run(
     env: LITERAL_ENV,
     frontend_only: bool,
@@ -329,11 +348,29 @@ def run(
     frontend_port: int | None,
     backend_port: int | None,
     backend_host: str | None,
+    single_port: bool,
 ):
     """Run the app in the current directory."""
     if frontend_only and backend_only:
         console.error("Cannot use both --frontend-only and --backend-only options.")
         raise click.exceptions.Exit(1)
+
+    if single_port:
+        if env != constants.Env.PROD.value:
+            console.error("--single-port can only be used with --env=PROD.")
+            raise click.exceptions.Exit(1)
+        if frontend_only or backend_only:
+            console.error(
+                "Cannot use --single-port with --frontend-only or --backend-only options."
+            )
+            raise click.exceptions.Exit(1)
+        if backend_port and frontend_port and backend_port != frontend_port:
+            console.error(
+                "When using --single-port, --backend-port and --frontend-port must be the same."
+            )
+            raise click.exceptions.Exit(1)
+    elif frontend_port and backend_port and frontend_port == backend_port:
+        single_port = True
 
     config = get_config()
 
@@ -352,6 +389,7 @@ def run(
         frontend_port,
         backend_port,
         backend_host,
+        single_port,
     )
 
 

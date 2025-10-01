@@ -660,6 +660,9 @@ class EnvironmentVariables:
     # Whether to enable SSR for the frontend.
     REFLEX_SSR: EnvVar[bool] = env_var(True)
 
+    # Whether to mount the compiled frontend app in the backend server in production.
+    REFLEX_MOUNT_FRONTEND_COMPILED_APP: EnvVar[bool] = env_var(False, internal=True)
+
 
 environment = EnvironmentVariables()
 
