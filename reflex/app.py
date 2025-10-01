@@ -630,9 +630,11 @@ class App(MiddlewareMixin, LifespanMixin):
 
         if environment.REFLEX_MOUNT_FRONTEND_COMPILED_APP.get():
             asgi_app.mount(
-                "/",
+                "/" + config.frontend_path.strip("/"),
                 StaticFiles(
-                    directory=prerequisites.get_web_dir() / constants.Dirs.STATIC,
+                    directory=prerequisites.get_web_dir()
+                    / constants.Dirs.STATIC
+                    / config.frontend_path.strip("/"),
                     html=True,
                 ),
                 name="frontend",

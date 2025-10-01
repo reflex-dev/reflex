@@ -153,7 +153,7 @@ def notify_frontend(url: str, backend_present: bool):
         backend_present: Whether the backend is present.
     """
     console.print(
-        f"App running at: [bold green]{url}[/bold green]{' (Frontend-only mode)' if not backend_present else ''}"
+        f"App running at: [bold green]{url.rstrip('/')}/[/bold green]{' (Frontend-only mode)' if not backend_present else ''}"
     )
 
 
