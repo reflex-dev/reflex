@@ -5,8 +5,6 @@ import random
 import re
 from pathlib import Path
 
-import click
-
 from reflex import constants
 from reflex.compiler import templates
 from reflex.config import Config, get_config
@@ -54,7 +52,7 @@ def initialize_requirements_txt() -> bool:
         True if the user has to update the requirements.txt file.
 
     Raises:
-        Exit: If the requirements.txt file cannot be read or written to.
+        SystemExit: If the requirements.txt file cannot be read or written to.
     """
     requirements_file_path = Path(constants.RequirementsTxt.FILE)
     if (

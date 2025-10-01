@@ -15,7 +15,6 @@ from contextlib import closing
 from pathlib import Path
 from typing import Any, Literal, overload
 
-import click
 import rich.markup
 from redis.exceptions import RedisError
 from rich.progress import Progress
@@ -39,7 +38,7 @@ def get_num_workers() -> int:
     """Get the number of backend worker processes.
 
     Raises:
-        Exit: If unable to connect to Redis.
+        SystemExit: If unable to connect to Redis.
 
     Returns:
         The number of backend worker processes.
@@ -131,7 +130,7 @@ def handle_port(service_name: str, port: int, auto_increment: bool) -> int:
         The port to run the service on.
 
     Raises:
-        Exit:when the port is in use.
+        SystemExit:when the port is in use.
     """
     console.debug(f"Checking if {service_name.capitalize()} port: {port} is in use.")
 
@@ -211,7 +210,7 @@ def new_process(
         Execute a child program in a new process.
 
     Raises:
-        Exit: When attempting to run a command with a None value.
+        SystemExit: When attempting to run a command with a None value.
     """
     # Check for invalid command first.
     non_empty_args = list(filter(None, args)) if isinstance(args, list) else [args]
@@ -325,7 +324,7 @@ def stream_logs(
         The lines of the process output.
 
     Raises:
-        Exit: If the process failed.
+        SystemExit: If the process failed.
         ValueError: If the process stdout pipe is closed, but the process remains running.
     """
     from reflex.utils import telemetry

@@ -7,8 +7,6 @@ import zipfile
 from pathlib import Path
 from urllib.parse import urlparse
 
-import click
-
 from reflex import constants
 from reflex.config import get_config
 from reflex.utils import console, net, path_ops, redir
@@ -51,7 +49,7 @@ def initialize_app_directory(
         template_dir: The directory of the template source files.
 
     Raises:
-        Exit: If template_name, template_code_dir_name, template_dir combination is not supported.
+        SystemExit: If template_name, template_code_dir_name, template_dir combination is not supported.
     """
     console.log("Initializing the app directory.")
 
@@ -117,7 +115,7 @@ def create_config_init_app_from_remote_template(app_name: str, template_url: str
         template_url: The path to the template source code as a zip file.
 
     Raises:
-        Exit: If any download, file operations fail or unexpected zip file format.
+        SystemExit: If any download, file operations fail or unexpected zip file format.
 
     """
     import httpx
@@ -204,7 +202,7 @@ def validate_and_create_app_using_remote_template(
         templates: The available templates.
 
     Raises:
-        Exit: If the template is not found.
+        SystemExit: If the template is not found.
     """
     # If user selects a template, it needs to exist.
     if template in templates:
@@ -327,7 +325,7 @@ def prompt_for_template_options(templates: list[Template]) -> str:
         The template name the user selects.
 
     Raises:
-        Exit: If the user does not select a template.
+        SystemExit: If the user does not select a template.
     """
     # Show the user the URLs of each template to preview.
     console.print("\nGet started with a template:")
@@ -372,7 +370,7 @@ def initialize_app(app_name: str, template: str | None = None) -> str | None:
         The name of the template.
 
     Raises:
-        Exit: If the template is not valid or unspecified.
+        SystemExit: If the template is not valid or unspecified.
     """
     # Local imports to avoid circular imports.
     from reflex.utils import telemetry

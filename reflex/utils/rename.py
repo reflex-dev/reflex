@@ -4,8 +4,6 @@ import re
 import sys
 from pathlib import Path
 
-import click
-
 from reflex import constants
 from reflex.config import get_config
 from reflex.utils import console
@@ -57,7 +55,7 @@ def rename_app(new_app_name: str, loglevel: constants.LogLevel):
         loglevel: The log level to use.
 
     Raises:
-        Exit: If the command is not ran in the root dir or the app module cannot be imported.
+        SystemExit: If the command is not ran in the root dir or the app module cannot be imported.
     """
     # Set the log level.
     console.set_log_level(loglevel)

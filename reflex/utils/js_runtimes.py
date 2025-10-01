@@ -6,7 +6,6 @@ import tempfile
 from collections.abc import Sequence
 from pathlib import Path
 
-import click
 from packaging import version
 
 from reflex import constants
@@ -193,7 +192,7 @@ def download_and_run(url: str, *args, show_status: bool = False, **env):
         env: The environment variables to use.
 
     Raises:
-        Exit: If the script fails to download.
+        SystemExit: If the script fails to download.
     """
     import httpx
 
@@ -226,7 +225,7 @@ def install_bun():
 
     Raises:
         SystemPackageMissingError: If "unzip" is missing.
-        Exit: If REFLEX_USE_NPM is set but Node.js is not installed.
+        SystemExit: If REFLEX_USE_NPM is set but Node.js is not installed.
     """
     if npm_escape_hatch():
         if get_node_version() is not None:
@@ -290,7 +289,7 @@ def validate_bun(bun_path: Path | None = None):
         bun_path: The path to the bun executable. If None, the default bun path is used.
 
     Raises:
-        Exit: If custom specified bun does not exist or does not meet requirements.
+        SystemExit: If custom specified bun does not exist or does not meet requirements.
     """
     bun_path = bun_path or path_ops.get_bun_path()
 
@@ -320,7 +319,7 @@ def validate_frontend_dependencies(init: bool = True):
         init: whether running `reflex init`
 
     Raises:
-        Exit: If the package manager is invalid.
+        SystemExit: If the package manager is invalid.
     """
     if not init:
         try:

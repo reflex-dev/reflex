@@ -5,7 +5,6 @@ from functools import cached_property
 from pathlib import Path
 from typing import Any, ClassVar, List, Literal, NoReturn  # noqa: UP035
 
-import click
 import pytest
 from packaging import version
 from pytest_mock import MockerFixture
@@ -192,7 +191,7 @@ def test_validate_invalid_bun_path(mocker: MockerFixture):
     mocker.patch("reflex.utils.path_ops.samefile", return_value=False)
     mocker.patch("reflex.utils.js_runtimes.get_bun_version", return_value=None)
 
-    with pytest.raises(click.exceptions.Exit):
+    with pytest.raises(SystemExit):
         js_runtimes.validate_bun()
 
 
@@ -434,10 +433,10 @@ def test_validate_app_name(tmp_path, mocker: MockerFixture):
 
     mocker.patch("os.getcwd", return_value=str(reflex))
 
-    with pytest.raises(click.exceptions.Exit):
+    with pytest.raises(SystemExit):
         prerequisites.validate_app_name()
 
-    with pytest.raises(click.exceptions.Exit):
+    with pytest.raises(SystemExit):
         prerequisites.validate_app_name(app_name="1_test")
 
 

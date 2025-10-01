@@ -359,7 +359,7 @@ def _get_default_library_name_parts() -> list[str]:
     """Get the default library name. Based on the current directory name, remove any non-alphanumeric characters.
 
     Raises:
-        Exit: If the current directory name is not suitable for python projects, and we cannot find a valid library name based off it.
+        SystemExit: If the current directory name is not suitable for python projects, and we cannot find a valid library name based off it.
 
     Returns:
         The parts of default library name.
@@ -408,7 +408,7 @@ def _validate_library_name(library_name: str | None) -> NameVariants:
         library_name: The name of the library if picked otherwise None.
 
     Raises:
-        Exit: If the library name is not suitable for python projects.
+        SystemExit: If the library name is not suitable for python projects.
 
     Returns:
         A tuple containing the various names such as package name, class name, etc., needed for the project.
@@ -513,7 +513,7 @@ def init(
         install: Whether to install package from this local custom component in editable mode.
 
     Raises:
-        Exit: If the pyproject.toml already exists.
+        SystemExit: If the pyproject.toml already exists.
     """
     from reflex.utils import exec
 
@@ -627,7 +627,7 @@ def _run_build():
     """Run the build command.
 
     Raises:
-        Exit: If the build fails.
+        SystemExit: If the build fails.
     """
     console.print("Building custom component...")
 
@@ -651,7 +651,7 @@ def _collect_details_for_gallery():
     """Helper to collect details on the custom component to be included in the gallery.
 
     Raises:
-        Exit: If pyproject.toml file is ill-formed or the request to the backend services fails.
+        SystemExit: If pyproject.toml file is ill-formed or the request to the backend services fails.
     """
     import httpx
     from reflex_cli.utils import hosting
@@ -790,7 +790,7 @@ def install():
     """Install package from this local custom component in editable mode.
 
     Raises:
-        Exit: If unable to install the current directory in editable mode.
+        SystemExit: If unable to install the current directory in editable mode.
     """
     if _pip_install_on_demand(package_name=".", install_args=["-e"]):
         console.info("Package installed successfully!")
