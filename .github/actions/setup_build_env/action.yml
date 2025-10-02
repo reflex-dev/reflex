@@ -42,3 +42,5 @@ runs:
       if: inputs.run-uv-sync == 'true'
       run: uv sync
       shell: bash
+      env:
+        PYO3_USE_ABI3_FORWARD_COMPATIBILITY: 1
