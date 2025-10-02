@@ -8,7 +8,7 @@ from reflex.utils import lazy_loader
 _SUBMOD_ATTRS: dict[str, list[str]] = {
     "".join(k.split("components.radix.primitives.")[-1]): v
     for k, v in RADIX_PRIMITIVES_MAPPING.items()
-}
+} | {"dialog": ["dialog"]}
 
 __getattr__, __dir__, __all__ = lazy_loader.attach(
     __name__,
