@@ -145,6 +145,18 @@ def kill(proc_pid: int):
     process.kill()
 
 
+def notify_frontend(url: str, backend_present: bool):
+    """Output a string notifying where the frontend is running.
+
+    Args:
+        url: The URL where the frontend is running.
+        backend_present: Whether the backend is present.
+    """
+    console.print(
+        f"App running at: [bold green]{url.rstrip('/')}/[/bold green]{' (Frontend-only mode)' if not backend_present else ''}"
+    )
+
+
 def notify_backend():
     """Output a string notifying where the backend is running."""
     console.print(
@@ -210,9 +222,7 @@ def run_process_and_launch_url(
                         if get_config().frontend_path != "":
                             url = urljoin(url, get_config().frontend_path)
 
-                        console.print(
-                            f"App running at: [bold green]{url}[/bold green]{' (Frontend-only mode)' if not backend_present else ''}"
-                        )
+                        notify_frontend(url, backend_present)
                         if backend_present:
                             notify_backend()
                         first_run = False
@@ -249,6 +259,11 @@ def run_frontend(root: Path, port: str, backend_present: bool = True):
     )
 
 
+def notify_app_running():
+    """Notify that the app is running."""
+    console.rule("[bold green]App Running")
+
+
 def run_frontend_prod(root: Path, port: str, backend_present: bool = True):
     """Run the frontend.
 
@@ -264,7 +279,7 @@ def run_frontend_prod(root: Path, port: str, backend_present: bool = True):
     # validate dependencies before run
     js_runtimes.validate_frontend_dependencies(init=False)
     # Run the frontend in production mode.
-    console.rule("[bold green]App Running")
+    notify_app_running()
     run_process_and_launch_url(
         [*js_runtimes.get_js_package_executor(raise_on_none=True)[0], "run", "prod"],
         backend_present,
@@ -552,6 +567,7 @@ def run_backend_prod(
     port: int,
     loglevel: constants.LogLevel = constants.LogLevel.ERROR,
     frontend_present: bool = False,
+    mount_frontend_compiled_app: bool = False,
 ):
     """Run the backend.
 
@@ -560,9 +576,12 @@ def run_backend_prod(
         port: The app port
         loglevel: The log level.
         frontend_present: Whether the frontend is present.
+        mount_frontend_compiled_app: Whether to mount the compiled frontend app with the backend.
     """
     if not frontend_present:
         notify_backend()
+
+    environment.REFLEX_MOUNT_FRONTEND_COMPILED_APP.set(mount_frontend_compiled_app)
 
     if should_use_granian():
         run_granian_backend_prod(host, port, loglevel)
