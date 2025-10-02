@@ -1,9 +1,8 @@
 """Interactive components provided by @radix-ui/themes."""
 
-from typing import Any, Literal
+from typing import Any
 
 from reflex.components.component import ComponentNamespace
-from reflex.components.core.breakpoints import Responsive
 from reflex.components.el import elements
 from reflex.constants.compiler import MemoizationMode
 from reflex.event import EventHandler, no_args_event_spec, passthrough_event_spec
