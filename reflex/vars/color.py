@@ -10,71 +10,13 @@ from reflex.vars.base import (
     VarData,
     cached_property_no_lock,
     get_python_literal,
-    transform,
 )
-from reflex.vars.number import BooleanVar, NumberVar, ternary_operation
-from reflex.vars.object import LiteralObjectVar
+from reflex.vars.number import ternary_operation
 from reflex.vars.sequence import ConcatVarOperation, LiteralStringVar, StringVar
-
-
-@transform
-def evaluate_color(js_dict: Var[dict]) -> Var[Color]:
-    """Evaluate a color var.
-
-    Args:
-        js_dict: The color var as a dict.
-
-    Returns:
-        The color var as a string.
-    """
-    js_color_dict = js_dict.to(dict)
-    str_part = ConcatVarOperation.create(
-        LiteralStringVar.create("var(--"),
-        js_color_dict.color,
-        LiteralStringVar.create("-"),
-        ternary_operation(
-            js_color_dict.alpha,
-            LiteralStringVar.create("a"),
-            LiteralStringVar.create(""),
-        ),
-        js_color_dict.shade.to_string(use_json=False),
-        LiteralStringVar.create(")"),
-    )
-    return js_dict._replace(
-        _js_expr=f"Object.assign(new String({str_part!s}), {js_dict!s})",
-        _var_type=Color,
-    )
 
 
 class ColorVar(StringVar[Color], python_types=Color):
     """Base class for immutable color vars."""
-
-    @property
-    def color(self) -> StringVar:
-        """Get the color of the color var.
-
-        Returns:
-            The color of the color var.
-        """
-        return self.to(dict).color.to(str)
-
-    @property
-    def alpha(self) -> BooleanVar:
-        """Get the alpha of the color var.
-
-        Returns:
-            The alpha of the color var.
-        """
-        return self.to(dict).alpha.to(bool)
-
-    @property
-    def shade(self) -> NumberVar:
-        """Get the shade of the color var.
-
-        Returns:
-            The shade of the color var.
-        """
-        return self.to(dict).shade.to(int)
 
 
 @dataclasses.dataclass(
@@ -150,7 +92,7 @@ class LiteralColorVar(CachedVarOperation, LiteralVar, ColorVar):
             if isinstance(shade, Var)
             else LiteralStringVar.create(str(shade))
         )
-        string_part = str(
+        return str(
             ConcatVarOperation.create(
                 LiteralStringVar.create("var(--"),
                 self._var_value.color,
@@ -160,14 +102,6 @@ class LiteralColorVar(CachedVarOperation, LiteralVar, ColorVar):
                 LiteralStringVar.create(")"),
             )
         )
-        dict_part = LiteralObjectVar.create(
-            {
-                "color": self._var_value.color,
-                "alpha": self._var_value.alpha,
-                "shade": self._var_value.shade,
-            }
-        )
-        return f"Object.assign(new String({string_part!s}), {dict_part!s})"
 
     @cached_property_no_lock
     def _cached_get_all_var_data(self) -> VarData | None:

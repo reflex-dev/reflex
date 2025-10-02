@@ -413,8 +413,8 @@ def serialize_decimal(value: decimal.Decimal) -> float:
     return float(value)
 
 
-@serializer(to=dict)
-def serialize_color(color: Color) -> dict:
+@serializer(to=str)
+def serialize_color(color: Color) -> str:
     """Serialize a color.
 
     Args:
@@ -423,11 +423,7 @@ def serialize_color(color: Color) -> dict:
     Returns:
         The serialized color.
     """
-    return {
-        "color": color.color,
-        "shade": color.shade,
-        "alpha": color.alpha,
-    }
+    return color.__format__("")
 
 
 with contextlib.suppress(ImportError):

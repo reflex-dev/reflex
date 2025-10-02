@@ -32,36 +32,24 @@ color_with_fstring = rx.color(
 @pytest.mark.parametrize(
     ("color", "expected", "expected_type"),
     [
-        (
-            create_color_var(rx.color("mint")),
-            'Object.assign(new String("var(--mint-7)"), ({ ["color"] : "mint", ["alpha"] : false, ["shade"] : 7 }))',
-            Color,
-        ),
-        (
-            create_color_var(rx.color("mint", 3)),
-            'Object.assign(new String("var(--mint-3)"), ({ ["color"] : "mint", ["alpha"] : false, ["shade"] : 3 }))',
-            Color,
-        ),
-        (
-            create_color_var(rx.color("mint", 3, True)),
-            'Object.assign(new String("var(--mint-a3)"), ({ ["color"] : "mint", ["alpha"] : true, ["shade"] : 3 }))',
-            Color,
-        ),
+        (create_color_var(rx.color("mint")), '"var(--mint-7)"', Color),
+        (create_color_var(rx.color("mint", 3)), '"var(--mint-3)"', Color),
+        (create_color_var(rx.color("mint", 3, True)), '"var(--mint-a3)"', Color),
         (
             create_color_var(rx.color(ColorState.color, ColorState.shade)),
-            f'Object.assign(new String(("var(--"+{color_state_name!s}.color{FIELD_MARKER}+"-"+(((__to_string) => __to_string.toString())({color_state_name!s}.shade{FIELD_MARKER}))+")")), ({{ ["color"] : {color_state_name!s}.color{FIELD_MARKER}, ["alpha"] : false, ["shade"] : {color_state_name!s}.shade{FIELD_MARKER} }}))',
+            f'("var(--"+{color_state_name!s}.color{FIELD_MARKER}+"-"+(((__to_string) => __to_string.toString())({color_state_name!s}.shade{FIELD_MARKER}))+")")',
             Color,
         ),
         (
             create_color_var(
                 rx.color(ColorState.color, ColorState.shade, ColorState.alpha)
             ),
-            f'Object.assign(new String(("var(--"+{color_state_name!s}.color{FIELD_MARKER}+"-"+({color_state_name!s}.alpha{FIELD_MARKER} ? "a" : "")+(((__to_string) => __to_string.toString())({color_state_name!s}.shade{FIELD_MARKER}))+")")), ({{ ["color"] : {color_state_name!s}.color{FIELD_MARKER}, ["alpha"] : {color_state_name!s}.alpha{FIELD_MARKER}, ["shade"] : {color_state_name!s}.shade{FIELD_MARKER} }}))',
+            f'("var(--"+{color_state_name!s}.color{FIELD_MARKER}+"-"+({color_state_name!s}.alpha{FIELD_MARKER} ? "a" : "")+(((__to_string) => __to_string.toString())({color_state_name!s}.shade{FIELD_MARKER}))+")")',
             Color,
         ),
         (
             create_color_var(color_with_fstring),
-            f'Object.assign(new String(("var(--"+{color_state_name!s}.color{FIELD_MARKER}+"-"+(((__to_string) => __to_string.toString())({color_state_name!s}.shade{FIELD_MARKER}))+")")), ({{ ["color"] : {color_state_name!s}.color{FIELD_MARKER}, ["alpha"] : false, ["shade"] : {color_state_name!s}.shade{FIELD_MARKER} }}))',
+            f'("var(--"+{color_state_name!s}.color{FIELD_MARKER}+"-"+(((__to_string) => __to_string.toString())({color_state_name!s}.shade{FIELD_MARKER}))+")")',
             Color,
         ),
         (
@@ -71,18 +59,18 @@ color_with_fstring = rx.color(
                     ColorState.shade,
                 )
             ),
-            f'Object.assign(new String(("var(--"+({color_state_name!s}.color_part{FIELD_MARKER}+"ato")+"-"+(((__to_string) => __to_string.toString())({color_state_name!s}.shade{FIELD_MARKER}))+")")), ({{ ["color"] : ({color_state_name!s}.color_part{FIELD_MARKER}+"ato"), ["alpha"] : false, ["shade"] : {color_state_name!s}.shade{FIELD_MARKER} }}))',
+            f'("var(--"+({color_state_name!s}.color_part{FIELD_MARKER}+"ato")+"-"+(((__to_string) => __to_string.toString())({color_state_name!s}.shade{FIELD_MARKER}))+")")',
             Color,
         ),
         (
             create_color_var(f"{rx.color(ColorState.color, ColorState.shade)}"),
-            f'Object.assign(new String(("var(--"+{color_state_name!s}.color{FIELD_MARKER}+"-"+(((__to_string) => __to_string.toString())({color_state_name!s}.shade{FIELD_MARKER}))+")")), ({{ ["color"] : {color_state_name!s}.color{FIELD_MARKER}, ["alpha"] : false, ["shade"] : {color_state_name!s}.shade{FIELD_MARKER} }}))',
-            Color,
+            f'("var(--"+{color_state_name!s}.color{FIELD_MARKER}+"-"+{color_state_name!s}.shade{FIELD_MARKER}+")")',
+            str,
         ),
         (
             create_color_var(f"{color_with_fstring}"),
-            f'Object.assign(new String(("var(--"+{color_state_name!s}.color{FIELD_MARKER}+"-"+(((__to_string) => __to_string.toString())({color_state_name!s}.shade{FIELD_MARKER}))+")")), ({{ ["color"] : {color_state_name!s}.color{FIELD_MARKER}, ["alpha"] : false, ["shade"] : {color_state_name!s}.shade{FIELD_MARKER} }}))',
-            Color,
+            f'("var(--"+{color_state_name!s}.color{FIELD_MARKER}+"-"+{color_state_name!s}.shade{FIELD_MARKER}+")")',
+            str,
         ),
     ],
 )
@@ -96,11 +84,11 @@ def test_color(color, expected, expected_type: type[str] | type[Color]):
     [
         (
             rx.cond(True, rx.color("mint"), rx.color("tomato", 5)),
-            '(true ? Object.assign(new String("var(--mint-7)"), ({ ["color"] : "mint", ["alpha"] : false, ["shade"] : 7 })) : Object.assign(new String("var(--tomato-5)"), ({ ["color"] : "tomato", ["alpha"] : false, ["shade"] : 5 })))',
+            '(true ? "var(--mint-7)" : "var(--tomato-5)")',
         ),
         (
             rx.cond(True, rx.color(ColorState.color), rx.color(ColorState.color, 5)),
-            f'(true ? Object.assign(new String(("var(--"+{color_state_name!s}.color{FIELD_MARKER}+"-7)")), ({{ ["color"] : {color_state_name!s}.color{FIELD_MARKER}, ["alpha"] : false, ["shade"] : 7 }})) : Object.assign(new String(("var(--"+{color_state_name!s}.color{FIELD_MARKER}+"-5)")), ({{ ["color"] : {color_state_name!s}.color{FIELD_MARKER}, ["alpha"] : false, ["shade"] : 5 }})))',
+            f'(true ? ("var(--"+{color_state_name!s}.color{FIELD_MARKER}+"-7)") : ("var(--"+{color_state_name!s}.color{FIELD_MARKER}+"-5)"))',
         ),
         (
             rx.match(
@@ -109,9 +97,9 @@ def test_color(color, expected, expected_type: type[str] | type[Color]):
                 ("second", rx.color("tomato", 5)),
                 rx.color(ColorState.color, 2),
             ),
-            '(() => { switch (JSON.stringify("condition")) {case JSON.stringify("first"):  return (Object.assign(new String("var(--mint-7)"), ({ ["color"] : "mint", ["alpha"] : false, ["shade"] : 7 })));'
-            '  break;case JSON.stringify("second"):  return (Object.assign(new String("var(--tomato-5)"), ({ ["color"] : "tomato", ["alpha"] : false, ["shade"] : 5 })));  break;default:  '
-            f'return (Object.assign(new String(("var(--"+{color_state_name!s}.color{FIELD_MARKER}+"-2)")), ({{ ["color"] : {color_state_name!s}.color{FIELD_MARKER}, ["alpha"] : false, ["shade"] : 2 }})));  break;}};}})()',
+            '(() => { switch (JSON.stringify("condition")) {case JSON.stringify("first"):  return ("var(--mint-7)");'
+            '  break;case JSON.stringify("second"):  return ("var(--tomato-5)");  break;default:  '
+            f'return (("var(--"+{color_state_name!s}.color{FIELD_MARKER}+"-2)"));  break;}};}})()',
         ),
         (
             rx.match(
@@ -121,9 +109,9 @@ def test_color(color, expected, expected_type: type[str] | type[Color]):
                 rx.color(ColorState.color, 2),
             ),
             '(() => { switch (JSON.stringify("condition")) {case JSON.stringify("first"):  '
-            f'return (Object.assign(new String(("var(--"+{color_state_name!s}.color{FIELD_MARKER}+"-7)")), ({{ ["color"] : {color_state_name!s}.color{FIELD_MARKER}, ["alpha"] : false, ["shade"] : 7 }})));  break;case JSON.stringify("second"):  '
-            f'return (Object.assign(new String(("var(--"+{color_state_name!s}.color{FIELD_MARKER}+"-5)")), ({{ ["color"] : {color_state_name!s}.color{FIELD_MARKER}, ["alpha"] : false, ["shade"] : 5 }})));  break;default:  '
-            f'return (Object.assign(new String(("var(--"+{color_state_name!s}.color{FIELD_MARKER}+"-2)")), ({{ ["color"] : {color_state_name!s}.color{FIELD_MARKER}, ["alpha"] : false, ["shade"] : 2 }})));  break;}};}})()',
+            f'return (("var(--"+{color_state_name!s}.color{FIELD_MARKER}+"-7)"));  break;case JSON.stringify("second"):  '
+            f'return (("var(--"+{color_state_name!s}.color{FIELD_MARKER}+"-5)"));  break;default:  '
+            f'return (("var(--"+{color_state_name!s}.color{FIELD_MARKER}+"-2)"));  break;}};}})()',
         ),
     ],
 )
@@ -134,18 +122,9 @@ def test_color_with_conditionals(cond_var, expected):
 @pytest.mark.parametrize(
     ("color", "expected"),
     [
-        (
-            create_color_var(rx.color("red")),
-            'Object.assign(new String("var(--red-7)"), ({ ["color"] : "red", ["alpha"] : false, ["shade"] : 7 }))',
-        ),
-        (
-            create_color_var(rx.color("green", shade=1)),
-            'Object.assign(new String("var(--green-1)"), ({ ["color"] : "green", ["alpha"] : false, ["shade"] : 1 }))',
-        ),
-        (
-            create_color_var(rx.color("blue", alpha=True)),
-            'Object.assign(new String("var(--blue-a7)"), ({ ["color"] : "blue", ["alpha"] : true, ["shade"] : 7 }))',
-        ),
+        (create_color_var(rx.color("red")), '"var(--red-7)"'),
+        (create_color_var(rx.color("green", shade=1)), '"var(--green-1)"'),
+        (create_color_var(rx.color("blue", alpha=True)), '"var(--blue-a7)"'),
         ("red", '"red"'),
         ("green", '"green"'),
         ("blue", '"blue"'),
