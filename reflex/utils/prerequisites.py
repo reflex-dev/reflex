@@ -15,7 +15,6 @@ from pathlib import Path
 from types import ModuleType
 from typing import NamedTuple
 
-import click
 from alembic.util.exc import CommandError
 from packaging import version
 from redis import Redis as RedisSync
@@ -444,7 +443,7 @@ def validate_app_name(app_name: str | None = None) -> str:
         The app name after validation.
 
     Raises:
-        Exit: if the app directory name is reflex or if the name is not standard for a python package name.
+        SystemExit: if the app directory name is reflex or if the name is not standard for a python package name.
     """
     app_name = app_name if app_name else Path.cwd().name.replace("-", "_")
     # Make sure the app is not named "reflex".
@@ -452,14 +451,14 @@ def validate_app_name(app_name: str | None = None) -> str:
         console.error(
             f"The app directory cannot be named [bold]{constants.Reflex.MODULE_NAME}[/bold]."
         )
-        raise click.exceptions.Exit(1)
+        raise SystemExit(1)
 
     # Make sure the app name is standard for a python package name.
     if not re.match(r"^[a-zA-Z][a-zA-Z0-9_]*$", app_name):
         console.error(
             "The app directory name must start with a letter and can contain letters, numbers, and underscores."
         )
-        raise click.exceptions.Exit(1)
+        raise SystemExit(1)
 
     return app_name
 
@@ -499,13 +498,13 @@ def assert_in_reflex_dir():
     """Assert that the current working directory is the reflex directory.
 
     Raises:
-        Exit: If the current working directory is not the reflex directory.
+        SystemExit: If the current working directory is not the reflex directory.
     """
     if not constants.Config.FILE.exists():
         console.error(
             f"[cyan]{constants.Config.FILE}[/cyan] not found. Move to the root folder of your project, or run [bold]{constants.Reflex.MODULE_NAME} init[/bold] to start a new project."
         )
-        raise click.exceptions.Exit(1)
+        raise SystemExit(1)
 
 
 def needs_reinit() -> bool:

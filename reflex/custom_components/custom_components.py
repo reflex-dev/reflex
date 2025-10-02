@@ -359,7 +359,7 @@ def _get_default_library_name_parts() -> list[str]:
     """Get the default library name. Based on the current directory name, remove any non-alphanumeric characters.
 
     Raises:
-        Exit: If the current directory name is not suitable for python projects, and we cannot find a valid library name based off it.
+        SystemExit: If the current directory name is not suitable for python projects, and we cannot find a valid library name based off it.
 
     Returns:
         The parts of default library name.
@@ -377,13 +377,13 @@ def _get_default_library_name_parts() -> list[str]:
             console.error(
                 f"Based on current directory name {current_dir_name}, the library name is {constants.Reflex.MODULE_NAME}. This package already exists. Please use --library-name to specify a different name."
             )
-            raise click.exceptions.Exit(code=1)
+            raise SystemExit(1)
     if not parts:
         # The folder likely has a name not suitable for python paths.
         console.error(
             f"Could not find a valid library name based on the current directory: got {current_dir_name}."
         )
-        raise click.exceptions.Exit(code=1)
+        raise SystemExit(1)
     return parts
 
 
@@ -408,7 +408,7 @@ def _validate_library_name(library_name: str | None) -> NameVariants:
         library_name: The name of the library if picked otherwise None.
 
     Raises:
-        Exit: If the library name is not suitable for python projects.
+        SystemExit: If the library name is not suitable for python projects.
 
     Returns:
         A tuple containing the various names such as package name, class name, etc., needed for the project.
@@ -419,7 +419,7 @@ def _validate_library_name(library_name: str | None) -> NameVariants:
         console.error(
             f"Please use only alphanumeric characters or dashes: got {library_name}"
         )
-        raise click.exceptions.Exit(code=1)
+        raise SystemExit(1)
 
     # If not specified, use the current directory name to form the module name.
     name_parts = (
@@ -513,13 +513,13 @@ def init(
         install: Whether to install package from this local custom component in editable mode.
 
     Raises:
-        Exit: If the pyproject.toml already exists.
+        SystemExit: If the pyproject.toml already exists.
     """
     from reflex.utils import exec
 
     if CustomComponents.PYPROJECT_TOML.exists():
         console.error(f"A {CustomComponents.PYPROJECT_TOML} already exists. Aborting.")
-        click.exceptions.Exit(code=1)
+        raise SystemExit(1)
 
     # Show system info.
     exec.output_system_info()
@@ -544,7 +544,7 @@ def init(
         if _pip_install_on_demand(package_name=".", install_args=["-e"]):
             console.info(f"Package {package_name} installed!")
         else:
-            raise click.exceptions.Exit(code=1)
+            raise SystemExit(1)
 
     console.print("[bold]Custom component initialized successfully!")
     console.rule("[bold]Project Summary")
@@ -627,7 +627,7 @@ def _run_build():
     """Run the build command.
 
     Raises:
-        Exit: If the build fails.
+        SystemExit: If the build fails.
     """
     console.print("Building custom component...")
 
@@ -637,7 +637,7 @@ def _run_build():
     if _run_commands_in_subprocess(cmds):
         console.info("Custom component built successfully!")
     else:
-        raise click.exceptions.Exit(code=1)
+        raise SystemExit(1)
 
 
 @custom_components_cli.command(name="build")
@@ -651,7 +651,7 @@ def _collect_details_for_gallery():
     """Helper to collect details on the custom component to be included in the gallery.
 
     Raises:
-        Exit: If pyproject.toml file is ill-formed or the request to the backend services fails.
+        SystemExit: If pyproject.toml file is ill-formed or the request to the backend services fails.
     """
     import httpx
     from reflex_cli.utils import hosting
@@ -664,7 +664,7 @@ def _collect_details_for_gallery():
         console.error(
             "Unable to authenticate with Reflex backend services. Make sure you are logged in."
         )
-        raise click.exceptions.Exit(code=1)
+        raise SystemExit(1)
 
     console.rule("[bold]Custom Component Information")
     params = {}
@@ -694,11 +694,11 @@ def _collect_details_for_gallery():
             console.error(
                 f"{package_name} is owned by another user. Unable to update the information for it."
             )
-            raise click.exceptions.Exit(code=1)
+            raise SystemExit(1)
         response.raise_for_status()
     except httpx.HTTPError as he:
         console.error(f"Unable to complete request due to {he}.")
-        raise click.exceptions.Exit(code=1) from he
+        raise SystemExit(1) from None
 
     files = []
     if (image_file_and_extension := _get_file_from_prompt_in_loop()) is not None:
@@ -733,7 +733,7 @@ def _collect_details_for_gallery():
 
     except httpx.HTTPError as he:
         console.error(f"Unable to complete request due to {he}.")
-        raise click.exceptions.Exit(code=1) from he
+        raise SystemExit(1) from None
 
     console.info("Custom component information successfully shared!")
 
@@ -769,7 +769,7 @@ def _get_file_from_prompt_in_loop() -> tuple[bytes, str] | None:
             image_file = image_file_path.read_bytes()
         except OSError as ose:
             console.error(f"Unable to read the {file_extension} file due to {ose}")
-            raise click.exceptions.Exit(code=1) from ose
+            raise SystemExit(1) from None
         else:
             return image_file, file_extension
 
@@ -790,9 +790,9 @@ def install():
     """Install package from this local custom component in editable mode.
 
     Raises:
-        Exit: If unable to install the current directory in editable mode.
+        SystemExit: If unable to install the current directory in editable mode.
     """
     if _pip_install_on_demand(package_name=".", install_args=["-e"]):
         console.info("Package installed successfully!")
     else:
-        raise click.exceptions.Exit(code=1)
+        raise SystemExit(1)
