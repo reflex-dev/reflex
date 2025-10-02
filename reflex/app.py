@@ -69,7 +69,6 @@ from reflex.components.core.banner import (
 )
 from reflex.components.core.breakpoints import set_breakpoints
 from reflex.components.core.sticky import sticky
-from reflex.components.core.upload import Upload, get_upload_dir
 from reflex.components.radix import themes
 from reflex.components.sonner.toast import toast
 from reflex.config import get_config
@@ -670,6 +669,8 @@ class App(MiddlewareMixin, LifespanMixin):
 
     def _add_optional_endpoints(self):
         """Add optional api endpoints (_upload)."""
+        from reflex.components.core.upload import Upload, get_upload_dir
+
         if not self._api:
             return
         upload_is_used_marker = (

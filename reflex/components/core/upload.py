@@ -6,6 +6,7 @@ from collections.abc import Callable, Sequence
 from pathlib import Path
 from typing import Any, ClassVar
 
+from reflex.app import UploadFile
 from reflex.components.base.fragment import Fragment
 from reflex.components.component import (
     Component,
@@ -29,7 +30,9 @@ from reflex.event import (
     call_event_fn,
     call_event_handler,
     parse_args_spec,
+    passthrough_event_spec,
     run_script,
+    upload_files,
 )
 from reflex.style import Style
 from reflex.utils import format
@@ -168,16 +171,7 @@ def get_upload_url(file_path: str | Var[str]) -> Var[str]:
     return Var.create(f"{uploaded_files_url_prefix}/{file_path}")
 
 
-def _on_drop_spec(files: Var) -> tuple[Var[Any]]:
-    """Args spec for the on_drop event trigger.
-
-    Args:
-        files: The files to upload.
-
-    Returns:
-        Signature for on_drop handler including the files to upload.
-    """
-    return (files,)
+_on_drop_spec = passthrough_event_spec(list[UploadFile])
 
 
 def _default_drop_rejected(rejected_files: ArrayVar[list[dict[str, Any]]]) -> EventSpec:
@@ -302,11 +296,11 @@ class Upload(MemoizationLeaf):
         }
 
         # Create the component.
-        upload_props["id"] = props.get("id", DEFAULT_UPLOAD_ID)
+        upload_props["id"] = upload_id = props.get("id", DEFAULT_UPLOAD_ID)
 
         if upload_props.get("on_drop") is None:
             # If on_drop is not provided, save files to be uploaded later.
-            upload_props["on_drop"] = upload_file(upload_props["id"])
+            upload_props["on_drop"] = upload_file(upload_id)
         else:
             on_drop = (
                 [on_drop_prop]
@@ -314,7 +308,9 @@ class Upload(MemoizationLeaf):
                 else list(on_drop_prop)
             )
             for ix, event in enumerate(on_drop):
-                if isinstance(event, (EventHandler, EventSpec)):
+                if isinstance(event, EventHandler):
+                    event = event(upload_files(upload_id))
+                if isinstance(event, EventSpec):
                     # Call the lambda to get the event chain.
                     event = call_event_handler(event, _on_drop_spec)
                 elif isinstance(event, Callable):
