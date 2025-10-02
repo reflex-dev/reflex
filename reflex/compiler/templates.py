@@ -557,6 +557,10 @@ export default defineConfig((config) => ({{
   build: {{
     assetsDir: "{base}assets".slice(1),
     rollupOptions: {{
+      onwarn(warning, warn) {{
+        if (warning.code === "EVAL" && warning.id && warning.id.endsWith("state.js")) return;
+        warn(warning);
+      }},
       jsx: {{}},
       output: {{
         advancedChunks: {{
