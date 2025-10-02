@@ -1056,7 +1056,7 @@ def string_item_operation(string: StringVar[Any], index: NumberVar | int):
     Returns:
         The item from the string.
     """
-    return var_operation_return(js_expression=f"{string}.at({index})", var_type=str)
+    return var_operation_return(js_expression=f"{string}?.at?.({index})", var_type=str)
 
 
 @var_operation
@@ -1619,7 +1619,7 @@ def array_item_operation(array: ArrayVar, index: NumberVar | int):
     )
 
     return var_operation_return(
-        js_expression=f"{array!s}.at({index!s})",
+        js_expression=f"{array!s}?.at?.({index!s})",
         var_type=element_type,
     )
 
