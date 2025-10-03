@@ -1,4 +1,4 @@
-"""Interactive components provided by @radix-ui/themes."""
+"""Interactive components provided by @radix-ui/react-dialog."""
 
 from typing import Any
 
