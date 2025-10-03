@@ -2819,7 +2819,8 @@ def test_state_union_optional():
         str(UnionState.c3.c2r.c1.foo) == f'{UnionState.c3!s}?.["c2r"]?.["c1"]?.["foo"]'  # pyright: ignore [reportOptionalMemberAccess]
     )
     assert (
-        str(UnionState.c3.c2r.c1r.foo) == f'{UnionState.c3!s}?.["c2r"]?.["c1r"]?.["foo"]'  # pyright: ignore [reportOptionalMemberAccess]
+        str(UnionState.c3.c2r.c1r.foo)
+        == f'{UnionState.c3!s}?.["c2r"]?.["c1r"]?.["foo"]'  # pyright: ignore [reportOptionalMemberAccess]
     )
     assert str(UnionState.c3i.c2) == f'{UnionState.c3i!s}?.["c2"]'
     assert str(UnionState.c3r.c2) == f'{UnionState.c3r!s}?.["c2"]'
