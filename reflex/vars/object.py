@@ -557,9 +557,7 @@ class ObjectItemOperation(CachedVarOperation, Var):
         Returns:
             The name of the operation.
         """
-        if types.is_optional(self._object._var_type):
-            return f"{self._object!s}?.[{self._key!s}]"
-        return f"{self._object!s}[{self._key!s}]"
+        return f"{self._object!s}?.[{self._key!s}]"
 
     @classmethod
     def create(

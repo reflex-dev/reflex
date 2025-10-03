@@ -29,6 +29,37 @@ def check_node_version() -> bool:
     )
 
 
+def _get_version_of_executable(
+    executable_path: Path | None, version_arg: str = "--version"
+) -> version.Version | None:
+    """Get the version of an executable.
+
+    Args:
+        executable_path: The path to the executable.
+        version_arg: The argument to pass to the executable to get its version.
+
+    Returns:
+        The version of the executable.
+    """
+    if executable_path is None:
+        return None
+    try:
+        result = processes.new_process([executable_path, version_arg], run=True)
+        if result.returncode != 0:
+            console.error(
+                f"Failed to run {executable_path} {version_arg} to get version. Return code: {result.returncode}. Standard error: {result.stderr!r}."
+            )
+            return None
+        return version.parse(result.stdout.strip())
+    except (FileNotFoundError, TypeError):
+        return None
+    except version.InvalidVersion as e:
+        console.warn(
+            f"The detected version of {executable_path} ({e.args[0]}) is not valid. Defaulting to None."
+        )
+        return None
+
+
 @once
 def get_node_version() -> version.Version | None:
     """Get the version of node.
@@ -36,15 +67,7 @@ def get_node_version() -> version.Version | None:
     Returns:
         The version of node.
     """
-    node_path = path_ops.get_node_path()
-    if node_path is None:
-        return None
-    try:
-        result = processes.new_process([node_path, "-v"], run=True)
-        # The output will be in the form "vX.Y.Z", but version.parse() can handle it
-        return version.parse(result.stdout)
-    except (FileNotFoundError, TypeError):
-        return None
+    return _get_version_of_executable(path_ops.get_node_path())
 
 
 def get_bun_version(bun_path: Path | None = None) -> version.Version | None:
@@ -56,20 +79,7 @@ def get_bun_version(bun_path: Path | None = None) -> version.Version | None:
     Returns:
         The version of bun.
     """
-    bun_path = bun_path or path_ops.get_bun_path()
-    if bun_path is None:
-        return None
-    try:
-        # Run the bun -v command and capture the output
-        result = processes.new_process([str(bun_path), "-v"], run=True)
-        return version.parse(str(result.stdout))
-    except FileNotFoundError:
-        return None
-    except version.InvalidVersion as e:
-        console.warn(
-            f"The detected bun version ({e.args[0]}) is not valid. Defaulting to None."
-        )
-        return None
+    return _get_version_of_executable(bun_path or path_ops.get_bun_path())
 
 
 def npm_escape_hatch() -> bool:

@@ -1135,17 +1135,14 @@ class Var(Generic[VAR_TYPE], metaclass=MetaclassVar):
         Returns:
             The reference to the var.
         """
-        from .object import ObjectVar
-
-        refs = Var(
-            _js_expr="refs",
+        return Var(
+            _js_expr=f"refs[{Var.create(str(self))}]",
             _var_data=VarData(
                 imports={
                     f"$/{constants.Dirs.STATE_PATH}": [imports.ImportVar(tag="refs")]
                 }
             ),
-        ).to(ObjectVar, Mapping[str, str])
-        return refs[LiteralVar.create(str(self))]
+        ).to(str)
 
     def js_type(self) -> StringVar:
         """Returns the javascript type of the object.
