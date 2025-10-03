@@ -6,11 +6,11 @@ import dataclasses
 import time
 import uuid
 from collections.abc import AsyncIterator
-from typing import override
 
 from redis import ResponseError
 from redis.asyncio import Redis
 from redis.asyncio.client import PubSub
+from typing_extensions import override
 
 from reflex.config import get_config
 from reflex.environment import environment
