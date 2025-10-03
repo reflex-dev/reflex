@@ -395,7 +395,7 @@ def test_format_match(
                 ],
                 args_spec=lambda e: [e.target.value],
             ),
-            '((_e) => (addEvents([(ReflexEvent("mock_event", ({ ["arg"] : _e["target"]["value"] }), ({  })))], [_e], ({  }))))',
+            '((_e) => (addEvents([(ReflexEvent("mock_event", ({ ["arg"] : _e?.["target"]?.["value"] }), ({  })))], [_e], ({  }))))',
         ),
         (
             EventChain(
