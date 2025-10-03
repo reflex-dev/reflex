@@ -48,10 +48,10 @@ class RadixPrimitiveTriggerComponent(RadixPrimitiveComponent):
         Returns:
             The new RadixPrimitiveTriggerComponent instance.
         """
-        from reflex.components.radix.themes.layout.flex import Flex
+        from reflex.components.el.elements.typography import Div
 
         for child in children:
             if "on_click" in getattr(child, "event_triggers", {}):
-                children = (Flex.create(*children),)
+                children = (Div.create(*children),)
                 break
         return super().create(*children, **props)
