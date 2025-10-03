@@ -875,7 +875,7 @@ class FileUpload:
             upload_files_context_var_data,
         )
 
-        upload_id = self.upload_id or DEFAULT_UPLOAD_ID
+        upload_id = self.upload_id if self.upload_id is not None else DEFAULT_UPLOAD_ID
         spec_args = [
             (
                 Var(_js_expr="files"),
