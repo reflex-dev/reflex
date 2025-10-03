@@ -197,7 +197,7 @@ class StateManagerDisk(StateManager):
         Yields:
             The state for the token.
         """
-        # Memory state manager ignores the substate suffix and always returns the top-level state.
+        # Disk state manager ignores the substate suffix and always returns the top-level state.
         client_token, _ = _split_substate_key(token)
         if client_token not in self._states_locks:
             async with self._state_manager_lock:
