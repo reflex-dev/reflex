@@ -34,7 +34,7 @@ class StateManagerDisk(StateManager):
     # The token expiration time (s).
     token_expiration: int = dataclasses.field(default_factory=_default_token_expiration)
 
-    def __post_init_(self):
+    def __post_init__(self):
         """Create a new state manager."""
         path_ops.mkdir(self.states_directory)
 
