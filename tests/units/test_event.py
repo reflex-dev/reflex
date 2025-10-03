@@ -207,21 +207,21 @@ def test_event_console_log():
     assert spec.handler.fn.__qualname__ == "_call_function"
     assert spec.args[0][0].equals(Var(_js_expr="function"))
     assert spec.args[0][1].equals(
-        Var('(() => (console["log"]("message")))', _var_type=Callable)
+        Var('(() => (console?.["log"]("message")))', _var_type=Callable)
     )
     assert (
         format.format_event(spec)
-        == 'ReflexEvent("_call_function", {function:(() => (console["log"]("message"))),callback:null})'
+        == 'ReflexEvent("_call_function", {function:(() => (console?.["log"]("message"))),callback:null})'
     )
     spec = event.console_log(Var(_js_expr="message"))
     assert (
         format.format_event(spec)
-        == 'ReflexEvent("_call_function", {function:(() => (console["log"](message))),callback:null})'
+        == 'ReflexEvent("_call_function", {function:(() => (console?.["log"](message))),callback:null})'
     )
     spec2 = event.console_log(Var(_js_expr="message2")).add_args(Var("throwaway"))
     assert (
         format.format_event(spec2)
-        == 'ReflexEvent("_call_function", {function:(() => (console["log"](message2))),callback:null})'
+        == 'ReflexEvent("_call_function", {function:(() => (console?.["log"](message2))),callback:null})'
     )
 
 
@@ -232,21 +232,21 @@ def test_event_window_alert():
     assert spec.handler.fn.__qualname__ == "_call_function"
     assert spec.args[0][0].equals(Var(_js_expr="function"))
     assert spec.args[0][1].equals(
-        Var('(() => (window["alert"]("message")))', _var_type=Callable)
+        Var('(() => (window?.["alert"]("message")))', _var_type=Callable)
     )
     assert (
         format.format_event(spec)
-        == 'ReflexEvent("_call_function", {function:(() => (window["alert"]("message"))),callback:null})'
+        == 'ReflexEvent("_call_function", {function:(() => (window?.["alert"]("message"))),callback:null})'
     )
     spec = event.window_alert(Var(_js_expr="message"))
     assert (
         format.format_event(spec)
-        == 'ReflexEvent("_call_function", {function:(() => (window["alert"](message))),callback:null})'
+        == 'ReflexEvent("_call_function", {function:(() => (window?.["alert"](message))),callback:null})'
     )
     spec2 = event.window_alert(Var(_js_expr="message2")).add_args(Var("throwaway"))
     assert (
         format.format_event(spec2)
-        == 'ReflexEvent("_call_function", {function:(() => (window["alert"](message2))),callback:null})'
+        == 'ReflexEvent("_call_function", {function:(() => (window?.["alert"](message2))),callback:null})'
     )
 
 
