@@ -52,19 +52,19 @@ def OnLoadRedirectApp():
 
 
 @pytest.fixture
-def onload_redirect_app(tmp_path_factory) -> Generator[AppHarness, None, None]:
+def onload_redirect_app(tmp_path) -> Generator[AppHarness, None, None]:
     """Start the OnLoadRedirectApp without setting REFLEX_FRONTEND_PATH".
 
     This is a baseline used to show on_load redirects work without a frontend_path.
 
     Args:
-        tmp_path_factory: pytest tmp_path_factory fixture
+        tmp_path: pytest tmp_path fixture
 
     Yields:
         running AppHarness instance
     """
     with AppHarnessProd.create(
-        root=tmp_path_factory.mktemp("frontend_path_app"),
+        root=tmp_path / "onload_redirect_app",
         app_source=OnLoadRedirectApp,
     ) as harness:
         assert harness.app_instance is not None, "app is not running"
@@ -72,15 +72,13 @@ def onload_redirect_app(tmp_path_factory) -> Generator[AppHarness, None, None]:
 
 
 @pytest.fixture
-def onload_redirect_with_prefix_app(
-    tmp_path_factory,
-) -> Generator[AppHarness, None, None]:
+def onload_redirect_with_prefix_app(tmp_path) -> Generator[AppHarness, None, None]:
     """Start the OnLoadRedirectApp with REFLEX_FRONTEND_PATH set to "/prefix".
 
     This simulates setting the REFLEX_FRONTEND_PATH to identify issues with redirection.
 
     Args:
-        tmp_path_factory: pytest tmp_path_factory fixture
+        tmp_path: pytest tmp_path fixture
 
     Yields:
         running AppHarness instance
@@ -89,7 +87,7 @@ def onload_redirect_with_prefix_app(
     try:
         environment.REFLEX_FRONTEND_PATH.set(prefix)
         with AppHarness.create(
-            root=tmp_path_factory.mktemp("frontend_path_app"),
+            root=tmp_path / "onload_redirect_with_prefix_app",
             app_source=OnLoadRedirectApp,
         ) as harness:
             assert harness.app_instance is not None, "app is not running"
