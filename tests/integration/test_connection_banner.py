@@ -8,7 +8,7 @@ from selenium.webdriver.common.by import By
 
 from reflex import constants
 from reflex.environment import environment
-from reflex.istate.manager import StateManagerRedis
+from reflex.istate.manager.redis import StateManagerRedis
 from reflex.testing import AppHarness, WebDriver
 from reflex.utils.token_manager import RedisTokenManager
 

@@ -29,13 +29,10 @@ from reflex.base import Base
 from reflex.constants import CompileVars, RouteVar, SocketEvent
 from reflex.constants.state import FIELD_MARKER
 from reflex.event import Event, EventHandler
-from reflex.istate.manager import (
-    LockExpiredError,
-    StateManager,
-    StateManagerDisk,
-    StateManagerMemory,
-    StateManagerRedis,
-)
+from reflex.istate.manager import StateManager
+from reflex.istate.manager.disk import StateManagerDisk
+from reflex.istate.manager.memory import StateManagerMemory
+from reflex.istate.manager.redis import StateManagerRedis
 from reflex.state import (
     BaseState,
     ImmutableStateError,
@@ -51,6 +48,7 @@ from reflex.testing import chdir
 from reflex.utils import format, prerequisites, types
 from reflex.utils.exceptions import (
     InvalidLockWarningThresholdError,
+    LockExpiredError,
     ReflexRuntimeError,
     SetUndefinedStateVarError,
     StateSerializationError,
