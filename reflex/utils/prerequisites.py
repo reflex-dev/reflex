@@ -370,8 +370,12 @@ def get_redis() -> Redis | None:
     Returns:
         The asynchronous redis client.
     """
-    from redis.asyncio import Redis
-    from redis.exceptions import RedisError
+    try:
+        from redis.asyncio import Redis
+        from redis.exceptions import RedisError
+    except ImportError:
+        console.debug("Redis package not installed.")
+        return None
     if (redis_url := parse_redis_url()) is not None:
         return Redis.from_url(
             redis_url,
@@ -386,8 +390,12 @@ def get_redis_sync() -> RedisSync | None:
     Returns:
         The synchronous redis client.
     """
-    from redis import Redis as RedisSync
-    from redis.exceptions import RedisError
+    try:
+        from redis import Redis as RedisSync
+        from redis.exceptions import RedisError
+    except ImportError:
+        console.debug("Redis package not installed.")
+        return None
     if (redis_url := parse_redis_url()) is not None:
         return RedisSync.from_url(
             redis_url,
@@ -423,6 +431,7 @@ async def get_redis_status() -> dict[str, bool | None]:
         The status of the Redis connection.
     """
     from redis.exceptions import RedisError
+
     try:
         status = True
         redis_client = get_redis()
