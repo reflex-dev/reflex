@@ -37,14 +37,10 @@ import reflex.utils.processes
 from reflex.components.component import CustomComponent
 from reflex.config import get_config
 from reflex.environment import environment
-from reflex.state import (
-    BaseState,
-    StateManager,
-    StateManagerDisk,
-    StateManagerMemory,
-    StateManagerRedis,
-    reload_state_module,
-)
+from reflex.istate.manager.disk import StateManagerDisk
+from reflex.istate.manager.memory import StateManagerMemory
+from reflex.istate.manager.redis import StateManagerRedis
+from reflex.state import BaseState, StateManager, reload_state_module
 from reflex.utils import console, js_runtimes
 from reflex.utils.export import export
 from reflex.utils.token_manager import TokenManager

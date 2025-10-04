@@ -11,13 +11,10 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.remote.webdriver import WebDriver
 
 from reflex.constants.state import FIELD_MARKER
-from reflex.state import (
-    State,
-    StateManagerDisk,
-    StateManagerMemory,
-    StateManagerRedis,
-    _substate_key,
-)
+from reflex.istate.manager.disk import StateManagerDisk
+from reflex.istate.manager.memory import StateManagerMemory
+from reflex.istate.manager.redis import StateManagerRedis
+from reflex.state import State, _substate_key
 from reflex.testing import AppHarness
 
 from . import utils

@@ -7,7 +7,8 @@ import pytest_asyncio
 
 import reflex as rx
 from reflex.constants.state import FIELD_MARKER
-from reflex.state import BaseState, StateManager, StateManagerRedis, _substate_key
+from reflex.istate.manager.redis import StateManagerRedis
+from reflex.state import BaseState, StateManager, _substate_key
 
 
 class Root(BaseState):
