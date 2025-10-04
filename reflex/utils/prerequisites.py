@@ -17,9 +17,6 @@ from typing import NamedTuple
 
 from alembic.util.exc import CommandError
 from packaging import version
-from redis import Redis as RedisSync
-from redis.asyncio import Redis
-from redis.exceptions import RedisError
 
 from reflex import constants, model
 from reflex.config import Config, get_config
@@ -29,6 +26,9 @@ from reflex.utils.decorator import once
 from reflex.utils.misc import get_module_path
 
 if typing.TYPE_CHECKING:
+    from redis import Redis as RedisSync
+    from redis.asyncio import Redis
+
     from reflex.app import App
 
 
@@ -370,6 +370,8 @@ def get_redis() -> Redis | None:
     Returns:
         The asynchronous redis client.
     """
+    from redis.asyncio import Redis
+    from redis.exceptions import RedisError
     if (redis_url := parse_redis_url()) is not None:
         return Redis.from_url(
             redis_url,
@@ -384,6 +386,8 @@ def get_redis_sync() -> RedisSync | None:
     Returns:
         The synchronous redis client.
     """
+    from redis import Redis as RedisSync
+    from redis.exceptions import RedisError
     if (redis_url := parse_redis_url()) is not None:
         return RedisSync.from_url(
             redis_url,
@@ -418,6 +422,7 @@ async def get_redis_status() -> dict[str, bool | None]:
     Returns:
         The status of the Redis connection.
     """
+    from redis.exceptions import RedisError
     try:
         status = True
         redis_client = get_redis()
