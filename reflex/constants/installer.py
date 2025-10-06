@@ -143,11 +143,11 @@ class PackageJson(SimpleNamespace):
         "postcss-import": "16.1.1",
         "@react-router/dev": _react_router_version,
         "@react-router/fs-routes": _react_router_version,
-        "vite": "npm:rolldown-vite@7.1.15",
+        "vite": "npm:rolldown-vite@7.1.13",
     }
     OVERRIDES = {
         # This should always match the `react` version in DEPENDENCIES for recharts compatibility.
         "react-is": _react_version,
         "cookie": "1.0.2",
-        "vite": "npm:rolldown-vite@7.1.15",
+        "vite": "npm:rolldown-vite@7.1.13",
     }

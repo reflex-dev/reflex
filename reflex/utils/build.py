@@ -187,7 +187,11 @@ def _duplicate_index_html_to_parent_directory(directory: Path):
 
 
 def build():
-    """Build the app for deployment."""
+    """Build the app for deployment.
+
+    Raises:
+        SystemExit: If the build process fails.
+    """
     wdir = prerequisites.get_web_dir()
 
     # Clean the static directory if it exists.
