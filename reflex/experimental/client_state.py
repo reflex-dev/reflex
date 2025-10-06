@@ -236,7 +236,7 @@ class ClientStateVar(Var):
 
             setter = ArgsFunctionOperationBuilder.create(
                 # remove patterns of ["*"] from the value_str using regex
-                args_names=(re.sub(r"\[\".*\"\]", "", value_str),)
+                args_names=(re.sub(r"(\?\.)?\[\".*\"\]", "", value_str),)
                 if value_str.startswith("_")
                 else (),
                 return_expr=setter.call(value_var),
