@@ -11,7 +11,7 @@ function do_export () {
     cd ~/"$template"
     rm -rf ~/.local/share/reflex ~/"$template"/.web
     reflex init --template "$template"
-    reflex export
+    reflex export --log-level debug
     (
         cd "$SCRIPTPATH/../../.."
         scripts/integration.sh ~/"$template" dev
