@@ -97,17 +97,106 @@ def onload_redirect_with_prefix_app(tmp_path) -> Generator[AppHarness, None, Non
         environment.REFLEX_FRONTEND_PATH.set("")
 
 
+def OnMountRedirectApp():
+    """App demonstrate on_mount redirection behaviour."""
+    import reflex as rx
+
+    @rx.page("/")
+    def index():
+        return rx.container(
+            rx.input(
+                value=rx.State.router.session.client_token,
+                read_only=True,
+                id="token",
+            ),
+            rx.vstack(
+                rx.heading("This is the index page!"),
+                rx.button("Go to Subpage!", on_click=rx.redirect("/subpage")),
+            ),
+        )
+
+    @rx.page("/subpage")
+    def subpage():
+        return rx.container(
+            rx.vstack(
+                rx.heading("This is the sub page!"),
+                rx.button("Go to index!", on_click=rx.redirect("/")),
+                rx.button("Bounce to index!", on_click=rx.redirect("/bouncer")),
+            )
+        )
+
+    @rx.page("/bouncer")
+    def bouncer():
+        return rx.container(
+            rx.vstack(
+                rx.heading("This is the bouncer page!"),
+                rx.text("You should not be here!"),
+                rx.spinner("Go to index!", on_mount=rx.redirect("/")),
+            ),
+        )
+
+    app = rx.App()  # noqa: F841
+
+
+@pytest.fixture
+def onmount_redirect_app(tmp_path) -> Generator[AppHarness, None, None]:
+    """Start the OnMountRedirectApp without setting REFLEX_FRONTEND_PATH".
+
+    This is a baseline used to show on_mount redirects work without a frontend_path.
+
+    Args:
+        tmp_path: pytest tmp_path fixture
+
+    Yields:
+        running AppHarness instance
+    """
+    with AppHarnessProd.create(
+        root=tmp_path / "onmount_redirect_app",
+        app_source=OnMountRedirectApp,
+    ) as harness:
+        assert harness.app_instance is not None, "app is not running"
+        yield harness
+
+
+@pytest.fixture
+def onmount_redirect_with_prefix_app(tmp_path) -> Generator[AppHarness, None, None]:
+    """Start the OnMountRedirectApp with REFLEX_FRONTEND_PATH set to "/prefix".
+
+    This simulates setting the REFLEX_FRONTEND_PATH to identify issues with redirection.
+
+    Args:
+        tmp_path: pytest tmp_path fixture
+
+    Yields:
+        running AppHarness instance
+    """
+    prefix = "/prefix"
+    try:
+        environment.REFLEX_FRONTEND_PATH.set(prefix)
+        with AppHarness.create(
+            root=tmp_path / "onmount_redirect_with_prefix_app",
+            app_source=OnMountRedirectApp,
+        ) as harness:
+            assert harness.app_instance is not None, "app is not running"
+            environment.REFLEX_FRONTEND_PATH.set("")
+            yield harness
+    finally:
+        environment.REFLEX_FRONTEND_PATH.set("")
+
+
 @pytest.mark.parametrize(
     ("app_fixture_name", "frontend_path"),
     [
         ("onload_redirect_app", ""),
         ("onload_redirect_with_prefix_app", "/prefix"),
+        ("onmount_redirect_app", ""),
+        ("onmount_redirect_with_prefix_app", "/prefix"),
     ],
 )
-def test_onload_redirect(
+def test_redirection_triggers(
     app_fixture_name: str, frontend_path: str, page: Page, request
 ):
-    """Ensure that on_load redirects work correctly when a frontend_path is present.
+    """Ensure that on_load and on_mount redirects work with/without a frontend_path.
 
     Args:
         app_fixture_name: Name of the app fixture to use for the test.
