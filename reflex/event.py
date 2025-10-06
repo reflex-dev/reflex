@@ -1866,7 +1866,7 @@ def fix_events(
     # Fix the events created by the handler.
     out = []
     for e in events:
-        if callable(e) and e.__qualname__ == "<lambda>":
+        if callable(e) and getattr(e, "__name__", "") == "<lambda>":
             # A lambda was returned, assume the user wants to call it with no args.
             e = e()
         if isinstance(e, Event):
