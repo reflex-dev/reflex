@@ -87,7 +87,7 @@ def _determine_react_router_version() -> str:
 
 
 def _determine_react_version() -> str:
-    default_version = "19.1.1"
+    default_version = "19.2.0"
     if (version := os.getenv("REACT_VERSION")) and version != default_version:
         from reflex.utils import console
 
