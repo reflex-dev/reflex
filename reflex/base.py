@@ -34,7 +34,7 @@ if find_spec("pydantic") and find_spec("pydantic.v1"):
             console.deprecate(
                 feature_name="rx.Base",
                 reason="You can subclass from `pydantic.BaseModel` directly instead or use dataclasses if possible.",
-                deprecation_version="0.8.2",
+                deprecation_version="0.8.15",
                 removal_version="0.9.0",
             )
             super().__init__(*args, **kwargs)
