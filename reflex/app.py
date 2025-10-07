@@ -83,7 +83,6 @@ from reflex.event import (
     get_hydrate_event,
     noop,
 )
-from reflex.model import Model, get_db_status
 from reflex.page import DECORATED_PAGES
 from reflex.route import (
     get_route_args,
@@ -648,7 +647,7 @@ class App(MiddlewareMixin, LifespanMixin):
 
             for api_transformer in api_transformers:
                 if isinstance(api_transformer, Starlette):
-                    # Mount the api to the fastapi app.
+                    # Mount the api to the starlette app.
                     App._add_cors(api_transformer)
                     api_transformer.mount("", asgi_app)
                     asgi_app = api_transformer
@@ -957,6 +956,8 @@ class App(MiddlewareMixin, LifespanMixin):
         try:
             from starlette_admin.contrib.sqla.admin import Admin
             from starlette_admin.contrib.sqla.view import ModelView
+
+            from reflex.model import Model
         except ImportError:
             return
 
@@ -1849,6 +1850,8 @@ async def health(_request: Request) -> JSONResponse:
     tasks = []
 
     if prerequisites.check_db_used():
+        from reflex.model import get_db_status
+
         tasks.append(get_db_status())
     if prerequisites.check_redis_used():
         tasks.append(prerequisites.get_redis_status())

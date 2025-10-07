@@ -17,8 +17,6 @@ from unittest.mock import AsyncMock, Mock
 import pytest
 import pytest_asyncio
 from plotly.graph_objects import Figure
-from pydantic import BaseModel as BaseModelV2
-from pydantic.v1 import BaseModel as BaseModelV1
 from pytest_mock import MockerFixture
 
 import reflex as rx
@@ -58,9 +56,15 @@ from reflex.utils.exceptions import (
 )
 from reflex.utils.format import json_dumps
 from reflex.vars.base import Var, computed_var
-from tests.units.states.mutation import MutableSQLAModel, MutableTestState
 
 from .states import GenState
+
+pytest.importorskip("pydantic")
+
+from pydantic import BaseModel as BaseModelV2
+from pydantic.v1 import BaseModel as BaseModelV1
+
+from tests.units.states.mutation import MutableTestState
 
 CI = bool(os.environ.get("CI", False))
 LOCK_EXPIRATION = 2500 if CI else 300
@@ -1526,6 +1530,16 @@ def test_backend_method():
     assert bms._be_method()
 
 
+@pytest.fixture
+def mutable_state() -> MutableTestState:
+    """Create a Test state containing mutable types.
+
+    Returns:
+        A state object.
+    """
+    return MutableTestState()
+
+
 def test_setattr_of_mutable_types(mutable_state: MutableTestState):
     """Test that mutable types are converted to corresponding Reflex wrappers.
 
@@ -1535,7 +1549,6 @@ def test_setattr_of_mutable_types(mutable_state: MutableTestState):
     array = mutable_state.array
     hashmap = mutable_state.hashmap
     test_set = mutable_state.test_set
-    sqla_model = mutable_state.sqla_model
 
     assert isinstance(array, MutableProxy)
     assert isinstance(array, list)
@@ -1567,21 +1580,11 @@ def test_setattr_of_mutable_types(mutable_state: MutableTestState):
     assert isinstance(mutable_state.custom.test_set, set)
     assert isinstance(mutable_state.custom.custom, MutableProxy)
 
-    assert isinstance(sqla_model, MutableProxy)
-    assert isinstance(sqla_model, MutableSQLAModel)
-    assert isinstance(sqla_model.strlist, MutableProxy)
-    assert isinstance(sqla_model.strlist, list)
-    assert isinstance(sqla_model.hashmap, MutableProxy)
-    assert isinstance(sqla_model.hashmap, dict)
-    assert isinstance(sqla_model.test_set, MutableProxy)
-    assert isinstance(sqla_model.test_set, set)
-
     mutable_state.reassign_mutables()
 
     array = mutable_state.array
     hashmap = mutable_state.hashmap
     test_set = mutable_state.test_set
-    sqla_model = mutable_state.sqla_model
 
     assert isinstance(array, MutableProxy)
     assert isinstance(array, list)
@@ -1599,15 +1602,6 @@ def test_setattr_of_mutable_types(mutable_state: MutableTestState):
 
     assert isinstance(test_set, MutableProxy)
     assert isinstance(test_set, set)
-
-    assert isinstance(sqla_model, MutableProxy)
-    assert isinstance(sqla_model, MutableSQLAModel)
-    assert isinstance(sqla_model.strlist, MutableProxy)
-    assert isinstance(sqla_model.strlist, list)
-    assert isinstance(sqla_model.hashmap, MutableProxy)
-    assert isinstance(sqla_model.hashmap, dict)
-    assert isinstance(sqla_model.test_set, MutableProxy)
-    assert isinstance(sqla_model.test_set, set)
 
 
 def test_error_on_state_method_shadow():
@@ -2581,27 +2575,6 @@ def test_mutable_custom(mutable_state: MutableTestState):
     assert_custom_dirty()
 
 
-def test_mutable_sqla_model(mutable_state: MutableTestState):
-    """Test that mutable SQLA models are tracked correctly.
-
-    Args:
-        mutable_state: A test state.
-    """
-    assert not mutable_state.dirty_vars
-
-    def assert_sqla_model_dirty():
-        assert mutable_state.dirty_vars == {"sqla_model"}
-        mutable_state._clean()
-        assert not mutable_state.dirty_vars
-
-    mutable_state.sqla_model.strlist.append("foo")
-    assert_sqla_model_dirty()
-    mutable_state.sqla_model.hashmap["key"] = "value"
-    assert_sqla_model_dirty()
-    mutable_state.sqla_model.test_set.add("bar")
-    assert_sqla_model_dirty()
-
-
 def test_mutable_backend(mutable_state: MutableTestState):
     """Test that mutable backend vars are tracked correctly.
 
@@ -2854,7 +2827,7 @@ def test_set_base_field_via_setter():
     assert "c1" not in bfss.dirty_vars
 
     # Mutating function from Base, dirty
-    bfss.c1.set(foo="bar")
+    bfss.c1.foo = "bar"
     assert "c1" in bfss.dirty_vars
     bfss.dirty_vars.clear()
     assert "c1" not in bfss.dirty_vars
@@ -2862,9 +2835,7 @@ def test_set_base_field_via_setter():
     # Assert identity of MutableProxy
     mp = bfss.c1
     assert isinstance(mp, MutableProxy)
-    mp2 = mp.set()
-    assert mp is mp2
-    mp3 = bfss.c1.set()
+    mp3 = bfss.c1
     assert mp is not mp3
     # Since none of these set calls had values, the state should not be dirty
     assert not bfss.dirty_vars
@@ -3900,20 +3871,10 @@ def test_init_mixin() -> None:
         SubMixin()
 
 
-class ReflexModel(rx.Model):
-    """A model for testing."""
-
-    foo: str
-
-
 class UpcastState(rx.State):
     """A state for testing upcasting."""
 
     passed: bool = False
-
-    def rx_model(self, m: ReflexModel):  # noqa: D102
-        assert isinstance(m, ReflexModel)
-        self.passed = True
 
     def rx_base(self, o: Object):  # noqa: D102
         assert isinstance(o, Object)
@@ -3974,7 +3935,6 @@ class UpcastState(rx.State):
 @pytest.mark.parametrize(
     ("handler", "payload"),
     [
-        (UpcastState.rx_model, {"m": {"foo": "bar"}}),
         (UpcastState.rx_base, {"o": {"foo": "bar"}}),
         (UpcastState.rx_base_or_none, {"o": {"foo": "bar"}}),
         (UpcastState.rx_base_or_none, {"o": None}),

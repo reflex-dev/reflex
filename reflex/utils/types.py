@@ -8,6 +8,7 @@ import types
 from collections.abc import Callable, Iterable, Mapping, Sequence
 from enum import Enum
 from functools import cached_property, lru_cache
+from importlib.util import find_spec
 from types import GenericAlias
 from typing import (  # noqa: UP035
     TYPE_CHECKING,
@@ -33,7 +34,6 @@ from typing import (  # noqa: UP035
 from typing import get_origin as get_origin_og
 from typing import get_type_hints as get_type_hints_og
 
-from pydantic.v1.fields import ModelField
 from typing_extensions import Self as Self
 from typing_extensions import override as override
 
@@ -346,33 +346,6 @@ def is_classvar(a_type: Any) -> bool:
     )
 
 
-def true_type_for_pydantic_field(f: ModelField):
-    """Get the type for a pydantic field.
-
-    Args:
-        f: The field to get the type for.
-
-    Returns:
-        The type for the field.
-    """
-    if not isinstance(f.annotation, (str, ForwardRef)):
-        return f.annotation
-
-    type_ = f.outer_type_
-
-    if (
-        f.field_info.default is None
-        or (isinstance(f.annotation, str) and f.annotation.startswith("Optional"))
-        or (
-            isinstance(f.annotation, ForwardRef)
-            and f.annotation.__forward_arg__.startswith("Optional")
-        )
-    ) and not is_optional(type_):
-        return type_ | None
-
-    return type_
-
-
 def value_inside_optional(cls: GenericType) -> GenericType:
     """Get the value inside an Optional type or the original type.
 
@@ -412,6 +385,13 @@ def get_field_type(cls: GenericType, field_name: str) -> GenericType | None:
     return type_hints.get(field_name, None)
 
 
+PROPERTY_CLASSES = (property,)
+if find_spec("sqlalchemy") and find_spec("sqlalchemy.ext"):
+    from sqlalchemy.ext.hybrid import hybrid_property
+
+    PROPERTY_CLASSES += (hybrid_property,)
+
+
 def get_property_hint(attr: Any | None) -> GenericType | None:
     """Check if an attribute is a property and return its type hint.
 
@@ -421,9 +401,7 @@ def get_property_hint(attr: Any | None) -> GenericType | None:
     Returns:
         The type hint of the property, if it is a property, else None.
     """
-    from sqlalchemy.ext.hybrid import hybrid_property
-
-    if not isinstance(attr, (property, hybrid_property)):
+    if not isinstance(attr, PROPERTY_CLASSES):
         return None
     hints = get_type_hints(attr.fget)
     return hints.get("return", None)
@@ -441,12 +419,6 @@ def get_attribute_access_type(cls: GenericType, name: str) -> GenericType | None
     Returns:
         The type of the attribute, if accessible, or None
     """
-    import sqlalchemy
-    from sqlalchemy.ext.associationproxy import AssociationProxyInstance
-    from sqlalchemy.orm import DeclarativeBase, Mapped, QueryableAttribute, Relationship
-
-    from reflex.model import Model
-
     try:
         attr = getattr(cls, name, None)
     except NotImplementedError:
@@ -458,67 +430,86 @@ def get_attribute_access_type(cls: GenericType, name: str) -> GenericType | None
     if hasattr(cls, "__fields__") and name in cls.__fields__:
         # pydantic models
         return get_field_type(cls, name)
-    if isinstance(cls, type) and issubclass(cls, DeclarativeBase):
-        insp = sqlalchemy.inspect(cls)
-        if name in insp.columns:
-            # check for list types
-            column = insp.columns[name]
-            column_type = column.type
-            try:
-                type_ = insp.columns[name].type.python_type
-            except NotImplementedError:
-                type_ = None
-            if type_ is not None:
-                if hasattr(column_type, "item_type"):
-                    try:
-                        item_type = column_type.item_type.python_type  # pyright: ignore [reportAttributeAccessIssue]
-                    except NotImplementedError:
-                        item_type = None
-                    if item_type is not None:
-                        if type_ in PrimitiveToAnnotation:
-                            type_ = PrimitiveToAnnotation[type_]
-                        type_ = type_[item_type]  # pyright: ignore [reportIndexIssue]
-                if hasattr(column, "nullable") and column.nullable:
-                    type_ = type_ | None
+    if find_spec("sqlalchemy") and find_spec("sqlalchemy.orm"):
+        import sqlalchemy
+        from sqlalchemy.ext.associationproxy import AssociationProxyInstance
+        from sqlalchemy.orm import (
+            DeclarativeBase,
+            Mapped,
+            QueryableAttribute,
+            Relationship,
+        )
+
+        from reflex.model import Model
+
+        if isinstance(cls, type) and issubclass(cls, DeclarativeBase):
+            insp = sqlalchemy.inspect(cls)
+            if name in insp.columns:
+                # check for list types
+                column = insp.columns[name]
+                column_type = column.type
+                try:
+                    type_ = insp.columns[name].type.python_type
+                except NotImplementedError:
+                    type_ = None
+                if type_ is not None:
+                    if hasattr(column_type, "item_type"):
+                        try:
+                            item_type = column_type.item_type.python_type  # pyright: ignore [reportAttributeAccessIssue]
+                        except NotImplementedError:
+                            item_type = None
+                        if item_type is not None:
+                            if type_ in PrimitiveToAnnotation:
+                                type_ = PrimitiveToAnnotation[type_]
+                            type_ = type_[item_type]  # pyright: ignore [reportIndexIssue]
+                    if hasattr(column, "nullable") and column.nullable:
+                        type_ = type_ | None
+                    return type_
+            if name in insp.all_orm_descriptors:
+                descriptor = insp.all_orm_descriptors[name]
+                if hint := get_property_hint(descriptor):
+                    return hint
+                if isinstance(descriptor, QueryableAttribute):
+                    prop = descriptor.property
+                    if isinstance(prop, Relationship):
+                        type_ = prop.mapper.class_
+                        # TODO: check for nullable?
+                        return list[type_] if prop.uselist else type_ | None
+                if isinstance(attr, AssociationProxyInstance):
+                    return list[
+                        get_attribute_access_type(
+                            attr.target_class,
+                            attr.remote_attr.key,  # pyright: ignore [reportAttributeAccessIssue]
+                        )
+                    ]
+        elif (
+            isinstance(cls, type)
+            and not is_generic_alias(cls)
+            and issubclass(cls, Model)
+        ):
+            # Check in the annotations directly (for sqlmodel.Relationship)
+            hints = get_type_hints(cls)  # pyright: ignore [reportArgumentType]
+            if name in hints:
+                type_ = hints[name]
+                type_origin = get_origin(type_)
+                if isinstance(type_origin, type) and issubclass(type_origin, Mapped):
+                    return get_args(type_)[0]  # SQLAlchemy v2
+                if find_spec("pydantic"):
+                    from pydantic.v1.fields import ModelField
+
+                    if isinstance(type_, ModelField):
+                        return type_.type_  # SQLAlchemy v1.4
                 return type_
-        if name in insp.all_orm_descriptors:
-            descriptor = insp.all_orm_descriptors[name]
-            if hint := get_property_hint(descriptor):
-                return hint
-            if isinstance(descriptor, QueryableAttribute):
-                prop = descriptor.property
-                if isinstance(prop, Relationship):
-                    type_ = prop.mapper.class_
-                    # TODO: check for nullable?
-                    return list[type_] if prop.uselist else type_ | None
-            if isinstance(attr, AssociationProxyInstance):
-                return list[
-                    get_attribute_access_type(
-                        attr.target_class,
-                        attr.remote_attr.key,  # pyright: ignore [reportAttributeAccessIssue]
-                    )
-                ]
-    elif isinstance(cls, type) and not is_generic_alias(cls) and issubclass(cls, Model):
-        # Check in the annotations directly (for sqlmodel.Relationship)
-        hints = get_type_hints(cls)
-        if name in hints:
-            type_ = hints[name]
-            type_origin = get_origin(type_)
-            if isinstance(type_origin, type) and issubclass(type_origin, Mapped):
-                return get_args(type_)[0]  # SQLAlchemy v2
-            if isinstance(type_, ModelField):
-                return type_.type_  # SQLAlchemy v1.4
-            return type_
-    elif is_union(cls):
+    if is_union(cls):
         # Check in each arg of the annotation.
         return unionize(
             *(get_attribute_access_type(arg, name) for arg in get_args(cls))
         )
-    elif isinstance(cls, type):
+    if isinstance(cls, type):
         # Bare class
         exceptions = NameError
         try:
-            hints = get_type_hints(cls)
+            hints = get_type_hints(cls)  # pyright: ignore [reportArgumentType]
             if name in hints:
                 return hints[name]
         except exceptions as e:

@@ -15,7 +15,6 @@ from pathlib import Path
 from types import ModuleType
 from typing import NamedTuple
 
-from alembic.util.exc import CommandError
 from packaging import version
 from redis import Redis as RedisSync
 from redis.asyncio import Redis
@@ -639,6 +638,8 @@ def check_schema_up_to_date():
     if get_config().db_url is None or not environment.ALEMBIC_CONFIG.get().exists():
         return
     with model.Model.get_db_engine().connect() as connection:
+        from alembic.util.exc import CommandError
+
         try:
             if model.Model.alembic_autogenerate(
                 connection=connection,

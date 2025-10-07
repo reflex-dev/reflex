@@ -11,12 +11,14 @@ from reflex_cli.v2.deployments import hosting_cli
 
 from reflex import constants
 from reflex.config import get_config
-from reflex.constants.base import LITERAL_ENV
 from reflex.custom_components.custom_components import custom_components_cli
 from reflex.environment import environment
-from reflex.state import reset_disk_state_manager
-from reflex.utils import console, redir, telemetry
-from reflex.utils.exec import should_use_granian
+from reflex.utils import console
+
+if TYPE_CHECKING:
+    from reflex_cli.constants.base import LogLevel as HostingLogLevel
+
+    from reflex.constants.base import LITERAL_ENV
 
 
 def set_loglevel(ctx: click.Context, self: click.Parameter, value: str | None):
@@ -65,7 +67,9 @@ def _init(
     exec.output_system_info()
 
     if ai:
-        redir.reflex_build_redirect()
+        from reflex.utils.redir import reflex_build_redirect
+
+        reflex_build_redirect()
         return
 
     # Validate the app name.
@@ -138,7 +142,9 @@ def _run(
     """Run the app in the given directory."""
     import atexit
 
-    from reflex.utils import build, exec, prerequisites, processes
+    from reflex.state import reset_disk_state_manager
+    from reflex.utils import build, exec, prerequisites, processes, telemetry
+    from reflex.utils.exec import should_use_granian
 
     config = get_config()
 
@@ -537,6 +543,8 @@ def login():
     validated_info = hosting_cli.login()
     if validated_info is not None:
         _skip_compile()  # Allow running outside of an app dir
+        from reflex.utils import telemetry
+
         telemetry.send("login", user_uuid=validated_info.get("user_id"))
 
 
@@ -838,10 +846,6 @@ def rename(new_name: str):
 
     prerequisites.validate_app_name(new_name)
     rename_app(new_name, get_config().loglevel)
-
-
-if TYPE_CHECKING:
-    from reflex_cli.constants.base import LogLevel as HostingLogLevel
 
 
 def _convert_reflex_loglevel_to_reflex_cli_loglevel(

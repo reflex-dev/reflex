@@ -50,6 +50,11 @@ classifiers = [
 ]
 
 [project.optional-dependencies]
+db = [
+  "alembic >=1.15.2,<2.0",
+  "pydantic >=1.10.21,<3.0",
+  "sqlmodel >=0.0.24,<0.1",
+]
 monitoring = ["pyleak >=0.1.14,<1.0"]
 
 [project.urls]

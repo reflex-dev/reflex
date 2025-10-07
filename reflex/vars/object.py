@@ -6,6 +6,7 @@ import collections.abc
 import dataclasses
 import typing
 from collections.abc import Mapping
+from importlib.util import find_spec
 from typing import (
     Any,
     NoReturn,
@@ -74,7 +75,15 @@ def _determine_value_type(var_type: GenericType):
     return Any
 
 
-class ObjectVar(Var[OBJECT_TYPE], python_types=Mapping):
+PYTHON_TYPES = (Mapping,)
+if find_spec("pydantic"):
+    import pydantic
+    import pydantic.v1
+
+    PYTHON_TYPES += (pydantic.BaseModel, pydantic.v1.BaseModel)
+
+
+class ObjectVar(Var[OBJECT_TYPE], python_types=PYTHON_TYPES):
     """Base class for immutable object vars."""
 
     def _key_type(self) -> type:
@@ -460,7 +469,25 @@ class LiteralObjectVar(CachedVarOperation, ObjectVar[OBJECT_TYPE], LiteralVar):
 
         Returns:
             The literal object var.
+
+        Raises:
+            TypeError: If the value is not a mapping type or a dataclass.
         """
+        if not isinstance(_var_value, collections.abc.Mapping):
+            from reflex.utils.serializers import serialize
+
+            serialized = serialize(_var_value, get_type=False)
+            if not isinstance(serialized, collections.abc.Mapping):
+                msg = f"Expected a mapping type or a dataclass, got {_var_value!r} of type {type(_var_value).__name__}."
+                raise TypeError(msg)
+
+            return LiteralObjectVar(
+                _js_expr="",
+                _var_type=(type(_var_value) if _var_type is None else _var_type),
+                _var_data=_var_data,
+                _var_value=serialized,
+            )
+
         return LiteralObjectVar(
             _js_expr="",
             _var_type=(figure_out_type(_var_value) if _var_type is None else _var_type),

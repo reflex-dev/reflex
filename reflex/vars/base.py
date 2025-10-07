@@ -40,7 +40,6 @@ from rich.markup import escape
 from typing_extensions import dataclass_transform, override
 
 from reflex import constants
-from reflex.base import Base
 from reflex.constants.compiler import Hooks
 from reflex.constants.state import FIELD_MARKER
 from reflex.utils import console, exceptions, imports, serializers, types
@@ -1504,21 +1503,6 @@ class LiteralVar(Var):
                     serialized_value, _var_type=type(value), _var_data=_var_data
                 )
             return LiteralVar.create(serialized_value, _var_data=_var_data)
-
-        if isinstance(value, Base):
-            # get the fields of the pydantic class
-            fields = value.__fields__.keys()
-            one_level_dict = {field: getattr(value, field) for field in fields}
-
-            return LiteralObjectVar.create(
-                {
-                    field: value
-                    for field, value in one_level_dict.items()
-                    if not callable(value)
-                },
-                _var_type=type(value),
-                _var_data=_var_data,
-            )
 
         if dataclasses.is_dataclass(value) and not isinstance(value, type):
             return LiteralObjectVar.create(
@@ -3200,6 +3184,8 @@ def dispatch(
 if TYPE_CHECKING:
     from _typeshed import DataclassInstance
     from sqlalchemy.orm import DeclarativeBase
+
+    from reflex.base import Base
 
     SQLA_TYPE = TypeVar("SQLA_TYPE", bound=DeclarativeBase | None)
     BASE_TYPE = TypeVar("BASE_TYPE", bound=Base | None)

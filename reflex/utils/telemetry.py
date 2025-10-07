@@ -1,7 +1,5 @@
 """Anonymous telemetry for Reflex."""
 
-from __future__ import annotations
-
 import asyncio
 import dataclasses
 import importlib.metadata

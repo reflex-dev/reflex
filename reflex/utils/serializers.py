@@ -12,12 +12,10 @@ import warnings
 from collections.abc import Callable, Mapping, Sequence
 from datetime import date, datetime, time, timedelta
 from enum import Enum
+from importlib.util import find_spec
 from pathlib import Path
 from typing import Any, Literal, TypeVar, get_type_hints, overload
 from uuid import UUID
-
-from pydantic import BaseModel as BaseModelV2
-from pydantic.v1 import BaseModel as BaseModelV1
 
 from reflex.base import Base
 from reflex.constants.colors import Color
@@ -281,24 +279,13 @@ def serialize_base(value: Base) -> dict:
     }
 
 
-@serializer(to=dict)
-def serialize_base_model_v1(model: BaseModelV1) -> dict:
-    """Serialize a pydantic v1 BaseModel instance.
-
-    Args:
-        model: The BaseModel to serialize.
-
-    Returns:
-        The serialized BaseModel.
-    """
-    return model.dict()
-
-
-if BaseModelV1 is not BaseModelV2:
+if find_spec("pydantic"):
+    from pydantic import BaseModel as BaseModelV2
+    from pydantic.v1 import BaseModel as BaseModelV1
 
     @serializer(to=dict)
-    def serialize_base_model_v2(model: BaseModelV2) -> dict:
-        """Serialize a pydantic v2 BaseModel instance.
+    def serialize_base_model_v1(model: BaseModelV1) -> dict:
+        """Serialize a pydantic v1 BaseModel instance.
 
         Args:
             model: The BaseModel to serialize.
@@ -306,7 +293,21 @@ if BaseModelV1 is not BaseModelV2:
         Returns:
             The serialized BaseModel.
         """
-        return model.model_dump()
+        return model.dict()
+
+    if BaseModelV1 is not BaseModelV2:
+
+        @serializer(to=dict)
+        def serialize_base_model_v2(model: BaseModelV2) -> dict:
+            """Serialize a pydantic v2 BaseModel instance.
+
+            Args:
+                model: The BaseModel to serialize.
+
+            Returns:
+                The serialized BaseModel.
+            """
+            return model.model_dump()
 
 
 @serializer

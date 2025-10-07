@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import pytest
-from pydantic.v1 import ValidationError
 
 from reflex.components.props import NoExtrasAllowedProps, PropsBase
 from reflex.event import (
@@ -62,7 +61,7 @@ class PropB(NoExtrasAllowedProps):
 )
 def test_no_extras_allowed_props(props_class, kwargs, should_raise):
     if should_raise:
-        with pytest.raises((ValidationError, InvalidPropValueError)):
+        with pytest.raises(InvalidPropValueError):
             props_class(**kwargs)
     else:
         props_instance = props_class(**kwargs)
