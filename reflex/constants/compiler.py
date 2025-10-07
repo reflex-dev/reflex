@@ -64,7 +64,7 @@ class CompileVars(SimpleNamespace):
     # The name of the var storing any connection error.
     CONNECT_ERROR = "connectErrors"
     # The name of the function for converting a dict to an event.
-    TO_EVENT = "Event"
+    TO_EVENT = "ReflexEvent"
     # The name of the internal on_load event.
     ON_LOAD_INTERNAL = "reflex___state____on_load_internal_state.on_load_internal"
     # The name of the internal event to update generic state vars.
@@ -136,14 +136,6 @@ class Hooks(SimpleNamespace):
     """Common sets of hook declarations."""
 
     EVENTS = f"const [{CompileVars.ADD_EVENTS}, {CompileVars.CONNECT_ERROR}] = useContext(EventLoopContext);"
-    AUTOFOCUS = """
-                // Set focus to the specified element.
-                const focusRef = useRef(null)
-                useEffect(() => {
-                  if (focusRef.current) {
-                    focusRef.current.focus();
-                  }
-                })"""
 
     class HookPosition(enum.Enum):
         """The position of the hook in the component."""

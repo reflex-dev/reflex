@@ -13,9 +13,8 @@ from reflex.utils.types import typehint_issubclass
 from reflex.vars.base import Var
 
 on_value_event_spec = (
-    passthrough_event_spec(list[int | float]),
-    passthrough_event_spec(list[int]),
     passthrough_event_spec(list[float]),
+    passthrough_event_spec(list[int]),
 )
 
 

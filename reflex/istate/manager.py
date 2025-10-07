@@ -143,6 +143,8 @@ class StateManagerMemory(StateManager):
             token: The token to set the state for.
             state: The state to set.
         """
+        token = _split_substate_key(token)[0]
+        self.states[token] = state
 
     @override
     @contextlib.asynccontextmanager
@@ -165,7 +167,6 @@ class StateManagerMemory(StateManager):
         async with self._states_locks[token]:
             state = await self.get_state(token)
             yield state
-            await self.set_state(token, state)
 
 
 def _default_token_expiration() -> int:
@@ -354,7 +355,7 @@ class StateManagerDisk(StateManager):
             token: The token to set the state for.
             state: The state to set.
         """
-        client_token, substate = _split_substate_key(token)
+        client_token, _ = _split_substate_key(token)
         await self.set_state_for_substate(client_token, state)
 
     @override
@@ -369,7 +370,7 @@ class StateManagerDisk(StateManager):
             The state for the token.
         """
         # Memory state manager ignores the substate suffix and always returns the top-level state.
-        client_token, substate = _split_substate_key(token)
+        client_token, _ = _split_substate_key(token)
         if client_token not in self._states_locks:
             async with self._state_manager_lock:
                 if client_token not in self._states_locks:
@@ -666,7 +667,8 @@ class StateManagerRedis(StateManager):
                     _substate_key(client_token, substate),
                     substate,
                     lock_id,
-                )
+                ),
+                name=f"reflex_set_state|{client_token}|{substate.get_full_name()}",
             )
             for substate in state.substates.values()
         ]

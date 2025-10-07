@@ -422,12 +422,12 @@ let {_LANGUAGE!s} = match ? match[1] : '';
 
     def _get_custom_code(self) -> str | None:
         hooks = {}
-        from reflex.compiler.templates import MACROS
+        from reflex.compiler.templates import _render_hooks
 
         for _component in self.component_map.values():
             comp = _component(_MOCK_ARG)
             hooks.update(comp._get_all_hooks())
-        formatted_hooks = MACROS.module.renderHooks(hooks)  # pyright: ignore [reportAttributeAccessIssue]
+        formatted_hooks = _render_hooks(hooks)
         return f"""
         function {self._get_component_map_name()} () {{
             {formatted_hooks}

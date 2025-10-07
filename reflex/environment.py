@@ -6,7 +6,6 @@ import concurrent.futures
 import dataclasses
 import enum
 import importlib
-import inspect
 import multiprocessing
 import os
 import platform
@@ -160,7 +159,7 @@ def interpret_plugin_env(value: str, field_name: str) -> Plugin:
         msg = f"Failed to get plugin class {plugin_name!r} from module {import_path!r} for {field_name}: {e}"
         raise EnvironmentVarValueError(msg) from e
 
-    if not inspect.isclass(plugin_class) or not issubclass(plugin_class, Plugin):
+    if not isinstance(plugin_class, type) or not issubclass(plugin_class, Plugin):
         msg = f"Invalid plugin class: {plugin_name!r} for {field_name}. Must be a subclass of Plugin."
         raise EnvironmentVarValueError(msg)
 
@@ -244,7 +243,7 @@ def interpret_env_var_value(
             )
             for i, v in enumerate(value.split(":"))
         ]
-    if inspect.isclass(field_type) and issubclass(field_type, enum.Enum):
+    if isinstance(field_type, type) and issubclass(field_type, enum.Enum):
         return interpret_enum_env(value, field_type, field_name)
 
     msg = f"Invalid type for environment variable {field_name}: {field_type}. This is probably an issue in Reflex."
@@ -565,21 +564,23 @@ class EnvironmentVariables:
     # Whether to check db connections before using them.
     SQLALCHEMY_POOL_PRE_PING: EnvVar[bool] = env_var(True)
 
+    # The size of the database connection pool.
+    SQLALCHEMY_POOL_SIZE: EnvVar[int] = env_var(5)
+
+    # The maximum overflow size of the database connection pool.
+    SQLALCHEMY_MAX_OVERFLOW: EnvVar[int] = env_var(10)
+
+    # Recycle connections after this many seconds.
+    SQLALCHEMY_POOL_RECYCLE: EnvVar[int] = env_var(-1)
+
+    # The timeout for acquiring a connection from the pool.
+    SQLALCHEMY_POOL_TIMEOUT: EnvVar[int] = env_var(30)
+
     # Whether to ignore the redis config error. Some redis servers only allow out-of-band configuration.
     REFLEX_IGNORE_REDIS_CONFIG_ERROR: EnvVar[bool] = env_var(False)
 
     # Whether to skip purging the web directory in dev mode.
     REFLEX_PERSIST_WEB_DIR: EnvVar[bool] = env_var(False)
-
-    # The reflex.build frontend host.
-    REFLEX_BUILD_FRONTEND: EnvVar[str] = env_var(
-        constants.Templates.REFLEX_BUILD_FRONTEND
-    )
-
-    # The reflex.build backend host.
-    REFLEX_BUILD_BACKEND: EnvVar[str] = env_var(
-        constants.Templates.REFLEX_BUILD_BACKEND
-    )
 
     # This env var stores the execution mode of the app
     REFLEX_ENV_MODE: EnvVar[constants.Env] = env_var(constants.Env.DEV)
@@ -657,6 +658,18 @@ class EnvironmentVariables:
 
     # Enable full logging of debug messages to reflex user directory.
     REFLEX_ENABLE_FULL_LOGGING: EnvVar[bool] = env_var(False)
+
+    # Whether to enable hot module replacement
+    VITE_HMR: EnvVar[bool] = env_var(True)
+
+    # Whether to force a full reload on changes.
+    VITE_FORCE_FULL_RELOAD: EnvVar[bool] = env_var(False)
+
+    # Whether to enable SSR for the frontend.
+    REFLEX_SSR: EnvVar[bool] = env_var(True)
+
+    # Whether to mount the compiled frontend app in the backend server in production.
+    REFLEX_MOUNT_FRONTEND_COMPILED_APP: EnvVar[bool] = env_var(False, internal=True)
 
 
 environment = EnvironmentVariables()

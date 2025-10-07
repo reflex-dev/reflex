@@ -10,7 +10,7 @@ import functools
 import inspect
 import typing
 from abc import ABC, ABCMeta, abstractmethod
-from collections.abc import Callable, Iterator, Mapping, Sequence
+from collections.abc import Callable, Iterable, Iterator, Mapping, Sequence
 from dataclasses import _MISSING_TYPE, MISSING
 from functools import wraps
 from hashlib import md5
@@ -22,7 +22,7 @@ from typing_extensions import dataclass_transform
 
 import reflex.state
 from reflex import constants
-from reflex.compiler.templates import STATEFUL_COMPONENT
+from reflex.compiler.templates import stateful_component_template
 from reflex.components.core.breakpoints import Breakpoints
 from reflex.components.dynamic import load_dynamic_serializer
 from reflex.components.field import BaseField, FieldBasedMeta
@@ -37,12 +37,13 @@ from reflex.constants import (
     PageNames,
 )
 from reflex.constants.compiler import SpecialAttributes
-from reflex.constants.state import FRONTEND_EVENT_STATE
+from reflex.constants.state import CAMEL_CASE_MEMO_MARKER, FRONTEND_EVENT_STATE
 from reflex.event import (
     EventCallback,
     EventChain,
     EventHandler,
     EventSpec,
+    args_specs_from_fields,
     no_args_event_spec,
     parse_args_spec,
     pointer_event_spec,
@@ -51,7 +52,7 @@ from reflex.event import (
 )
 from reflex.style import Style, format_as_emotion
 from reflex.utils import console, format, imports, types
-from reflex.utils.imports import ImportDict, ImportVar, ParsedImportDict, parse_imports
+from reflex.utils.imports import ImportDict, ImportVar, ParsedImportDict
 from reflex.vars import VarData
 from reflex.vars.base import (
     CachedVarOperation,
@@ -142,14 +143,6 @@ class BaseComponentMeta(FieldBasedMeta, ABCMeta):
         _own_fields: Mapping[str, ComponentField]
         _fields: Mapping[str, ComponentField]
         _js_fields: Mapping[str, ComponentField]
-
-    @classmethod
-    def _resolve_annotations(
-        cls, namespace: dict[str, Any], name: str
-    ) -> dict[str, Any]:
-        return types.resolve_annotations(
-            namespace.get("__annotations__", {}), namespace["__module__"]
-        )
 
     @classmethod
     def _process_annotated_fields(
@@ -374,7 +367,7 @@ class BaseComponent(metaclass=BaseComponentMeta):
         """
 
     @abstractmethod
-    def _get_all_custom_code(self) -> set[str]:
+    def _get_all_custom_code(self) -> dict[str, None]:
         """Get custom code for the component.
 
         Returns:
@@ -382,7 +375,7 @@ class BaseComponent(metaclass=BaseComponentMeta):
         """
 
     @abstractmethod
-    def _get_all_refs(self) -> set[str]:
+    def _get_all_refs(self) -> dict[str, None]:
         """Get the refs for the children of the component.
 
         Returns:
@@ -419,7 +412,6 @@ def evaluate_style_namespaces(style: ComponentStyle) -> dict:
 
 # Map from component to styling.
 ComponentStyle = dict[str | type[BaseComponent] | Callable | ComponentNamespace, Any]
-ComponentChild = types.PrimitiveType | Var | BaseComponent
 ComponentChildTypes = (*types.PrimitiveTypes, Var, BaseComponent, type(None))
 
 
@@ -480,7 +472,21 @@ def _components_from(
     return ()
 
 
-def _deterministic_hash(value: object) -> int:
+def _hash_str(value: str) -> str:
+    return md5(f'"{value}"'.encode(), usedforsecurity=False).hexdigest()
+
+
+def _hash_sequence(value: Sequence) -> str:
+    return _hash_str(str([_deterministic_hash(v) for v in value]))
+
+
+def _hash_dict(value: dict) -> str:
+    return _hash_sequence(
+        sorted([(k, _deterministic_hash(v)) for k, v in value.items()])
+    )
+
+
+def _deterministic_hash(value: object) -> str:
     """Hash a rendered dictionary.
 
     Args:
@@ -492,37 +498,28 @@ def _deterministic_hash(value: object) -> int:
     Raises:
         TypeError: If the value is not hashable.
     """
-    if isinstance(value, BaseComponent):
-        # If the value is a component, hash its rendered code.
-        rendered_code = value.render()
-        return _deterministic_hash(rendered_code)
-    if isinstance(value, Var):
-        return _deterministic_hash((value._js_expr, value._get_all_var_data()))
-    if isinstance(value, VarData):
-        return _deterministic_hash(dataclasses.asdict(value))
-    if isinstance(value, dict):
-        # Sort the dictionary to ensure consistent hashing.
-        return _deterministic_hash(
-            tuple(sorted((k, _deterministic_hash(v)) for k, v in value.items()))
-        )
-    if isinstance(value, int):
-        # Hash numbers and booleans directly.
-        return int(value)
-    if isinstance(value, float):
-        return _deterministic_hash(str(value))
-    if isinstance(value, str):
-        return int(md5(f'"{value}"'.encode()).hexdigest(), 16)
-    if isinstance(value, (tuple, list)):
-        # Hash tuples by hashing each element.
-        return _deterministic_hash(
-            "[" + ",".join(map(str, map(_deterministic_hash, value))) + "]"
-        )
-    if isinstance(value, enum.Enum):
-        # Hash enums by their name.
-        return _deterministic_hash(str(value))
     if value is None:
         # Hash None as a special case.
-        return _deterministic_hash("None")
+        return "None"
+    if isinstance(value, (int, float, enum.Enum)):
+        # Hash numbers and booleans directly.
+        return str(value)
+    if isinstance(value, str):
+        return _hash_str(value)
+    if isinstance(value, dict):
+        return _hash_dict(value)
+    if isinstance(value, (tuple, list)):
+        # Hash tuples by hashing each element.
+        return _hash_sequence(value)
+    if isinstance(value, Var):
+        return _hash_str(
+            str((value._js_expr, _deterministic_hash(value._get_all_var_data())))
+        )
+    if isinstance(value, VarData):
+        return _hash_dict(dataclasses.asdict(value))
+    if isinstance(value, BaseComponent):
+        # If the value is a component, hash its rendered code.
+        return _hash_dict(value.render())
 
     msg = (
         f"Cannot hash value `{value}` of type `{type(value).__name__}`. "
@@ -587,9 +584,6 @@ class Component(BaseComponent, ABC):
 
     # Special component props.
     special_props: list[Var] = field(default_factory=list, is_javascript_property=False)
-
-    # Whether the component should take the focus once the page is loaded
-    autofocus: bool = field(default=False, is_javascript_property=False)
 
     # components that cannot be children
     _invalid_children: ClassVar[list[str]] = []
@@ -908,18 +902,7 @@ class Component(BaseComponent, ABC):
         """
         # Look for component specific triggers,
         # e.g. variable declared as EventHandler types.
-        return DEFAULT_TRIGGERS | {
-            name: (
-                metadata[0]
-                if (
-                    (metadata := getattr(field.annotated_type, "__metadata__", None))
-                    is not None
-                )
-                else no_args_event_spec
-            )
-            for name, field in cls.get_fields().items()
-            if field.type_origin is EventHandler
-        }  # pyright: ignore [reportOperatorIssue]
+        return DEFAULT_TRIGGERS | args_specs_from_fields(cls.get_fields())  # pyright: ignore [reportOperatorIssue]
 
     def __repr__(self) -> str:
         """Represent the component in React.
@@ -1002,13 +985,13 @@ class Component(BaseComponent, ABC):
 
     @classmethod
     @functools.cache
-    def get_props(cls) -> set[str]:
+    def get_props(cls) -> Iterable[str]:
         """Get the unique fields for the component.
 
         Returns:
             The unique fields.
         """
-        return set(cls.get_js_fields())
+        return cls.get_js_fields()
 
     @classmethod
     @functools.cache
@@ -1020,44 +1003,8 @@ class Component(BaseComponent, ABC):
         """
         return set()
 
-    @classmethod
-    def _are_fields_known(cls) -> bool:
-        """Check if all fields are known at compile time. True for most components.
-
-        Returns:
-            Whether all fields are known at compile time.
-        """
-        return True
-
-    @classmethod
-    @functools.cache
-    def _get_component_prop_names(cls) -> set[str]:
-        """Get the names of the component props. NOTE: This assumes all fields are known.
-
-        Returns:
-            The names of the component props.
-        """
-        return {
-            name
-            for name in cls.get_fields()
-            if name in cls.get_props()
-            and types._issubclass(
-                types.value_inside_optional(types.get_field_type(cls, name)), Component
-            )
-        }
-
-    def _get_components_in_props(self) -> Sequence[BaseComponent]:
-        """Get the components in the props.
-
-        Returns:
-            The components in the props
-        """
-        if self._are_fields_known():
-            return [
-                component
-                for name in self._get_component_prop_names()
-                for component in _components_from(getattr(self, name))
-            ]
+    @functools.cached_property
+    def _get_component_prop_property(self) -> Sequence[BaseComponent]:
         return [
             component
             for prop in self.get_props()
@@ -1065,6 +1012,14 @@ class Component(BaseComponent, ABC):
             and isinstance(value, (BaseComponent, Var))
             for component in _components_from(value)
         ]
+
+    def _get_components_in_props(self) -> Sequence[BaseComponent]:
+        """Get the components in the props.
+
+        Returns:
+            The components in the props
+        """
+        return self._get_component_prop_property
 
     @classmethod
     def _validate_children(cls, children: tuple | list):
@@ -1273,10 +1228,7 @@ class Component(BaseComponent, ABC):
         rendered_dict = dict(
             tag.set(
                 children=[child.render() for child in self.children],
-                contents=str(tag.contents),
-                props=tag.format_props(),
-            ),
-            autofocus=self.autofocus,
+            )
         )
         self._replace_prop_names(rendered_dict)
         return rendered_dict
@@ -1435,7 +1387,6 @@ class Component(BaseComponent, ABC):
             self.class_name,
             self.id,
             self.key,
-            self.autofocus,
             *self.custom_attrs.values(),
         ):
             if isinstance(comp_prop, Var):
@@ -1504,7 +1455,7 @@ class Component(BaseComponent, ABC):
             yield clz.__name__
 
     @classmethod
-    def _iter_parent_classes_with_method(cls, method: str) -> Iterator[type[Component]]:
+    def _iter_parent_classes_with_method(cls, method: str) -> Sequence[type[Component]]:
         """Iterate through parent classes that define a given method.
 
         Used for handling the `add_*` API functions that internally simulate a super() call chain.
@@ -1512,12 +1463,14 @@ class Component(BaseComponent, ABC):
         Args:
             method: The method to look for.
 
-        Yields:
-            The parent classes that define the method (differently than the base).
+        Returns:
+            A sequence of parent classes that define the method (differently than the base).
         """
+        current_class_method = getattr(Component, method, None)
         seen_methods = (
-            {getattr(Component, method)} if hasattr(Component, method) else set()
+            {current_class_method} if current_class_method is not None else set()
         )
+        clzs: list[type[Component]] = []
         for clz in cls.mro():
             if clz is Component:
                 break
@@ -1527,7 +1480,8 @@ class Component(BaseComponent, ABC):
             if not callable(method_func) or method_func in seen_methods:
                 continue
             seen_methods.add(method_func)
-            yield clz
+            clzs.append(clz)
+        return clzs
 
     def _get_custom_code(self) -> str | None:
         """Get custom code for the component.
@@ -1537,19 +1491,19 @@ class Component(BaseComponent, ABC):
         """
         return None
 
-    def _get_all_custom_code(self) -> set[str]:
+    def _get_all_custom_code(self) -> dict[str, None]:
         """Get custom code for the component and its children.
 
         Returns:
             The custom code.
         """
         # Store the code in a set to avoid duplicates.
-        code = set()
+        code: dict[str, None] = {}
 
         # Add the custom code for this component.
         custom_code = self._get_custom_code()
         if custom_code is not None:
-            code.add(custom_code)
+            code[custom_code] = None
 
         for component in self._get_components_in_props():
             code |= component._get_all_custom_code()
@@ -1557,7 +1511,7 @@ class Component(BaseComponent, ABC):
         # Add the custom code from add_custom_code method.
         for clz in self._iter_parent_classes_with_method("add_custom_code"):
             for item in clz.add_custom_code(self):
-                code.add(item)
+                code[item] = None
 
         # Add the custom code for the children.
         for child in self.children:
@@ -1627,15 +1581,6 @@ class Component(BaseComponent, ABC):
             # Handle hooks for `on_mount` / `on_unmount`.
             _imports.setdefault("react", set()).add(ImportVar(tag="useEffect"))
 
-        if self._get_special_hooks():
-            # Handle additional internal hooks (autofocus, etc).
-            _imports.setdefault("react", set()).update(
-                {
-                    ImportVar(tag="useRef"),
-                    ImportVar(tag="useEffect"),
-                },
-            )
-
         other_imports = []
         user_hooks = self._get_hooks()
         user_hooks_data = (
@@ -1659,18 +1604,18 @@ class Component(BaseComponent, ABC):
         Returns:
             The imports needed by the component.
         """
-        _imports = {}
-
-        # Import this component's tag from the main library.
-        if self.library is not None and self.tag is not None:
-            _imports[self.library] = self.import_var
+        _imports = (
+            {self.library: [self.import_var]}
+            if self.library is not None and self.tag is not None
+            else {}
+        )
 
         # Get static imports required for event processing.
         event_imports = Imports.EVENTS if self.event_triggers else {}
 
         # Collect imports from Vars used directly by this component.
         var_imports = [
-            var_data.imports
+            dict(var_data.imports)
             for var in self._get_vars()
             if (var_data := var._get_all_var_data()) is not None
         ]
@@ -1680,16 +1625,16 @@ class Component(BaseComponent, ABC):
             list_of_import_dict = clz.add_imports(self)
 
             if not isinstance(list_of_import_dict, list):
-                list_of_import_dict = [list_of_import_dict]
+                added_import_dicts.append(imports.parse_imports(list_of_import_dict))
+            else:
+                added_import_dicts.extend(
+                    [imports.parse_imports(item) for item in list_of_import_dict]
+                )
 
-            added_import_dicts.extend(
-                [parse_imports(import_dict) for import_dict in list_of_import_dict]
-            )
-
-        return imports.merge_imports(
+        return imports.merge_parsed_imports(
             self._get_dependencies_imports(),
             self._get_hooks_imports(),
-            {**_imports},
+            _imports,
             event_imports,
             *var_imports,
             *added_import_dicts,
@@ -1704,7 +1649,7 @@ class Component(BaseComponent, ABC):
         Returns:
             The import dict with the required imports.
         """
-        _imports = imports.merge_imports(
+        _imports = imports.merge_parsed_imports(
             self._get_imports(), *[child._get_all_imports() for child in self.children]
         )
         return imports.collapse_imports(_imports) if collapse else _imports
@@ -1781,18 +1726,6 @@ class Component(BaseComponent, ABC):
             else {}
         )
 
-    def _get_special_hooks(self) -> dict[str, VarData | None]:
-        """Get the hooks required by special actions referenced in this component.
-
-        Returns:
-            The hooks for special actions.
-        """
-        return (
-            {Hooks.AUTOFOCUS: VarData(position=Hooks.HookPosition.INTERNAL)}
-            if self.autofocus
-            else {}
-        )
-
     def _get_hooks_internal(self) -> dict[str, VarData | None]:
         """Get the React hooks for this component managed by the framework.
 
@@ -1810,7 +1743,6 @@ class Component(BaseComponent, ABC):
             },
             **self._get_vars_hooks(),
             **self._get_events_hooks(),
-            **self._get_special_hooks(),
         }
 
     def _get_added_hooks(self) -> dict[str, VarData | None]:
@@ -1834,7 +1766,7 @@ class Component(BaseComponent, ABC):
 
         # Add the hook code from add_hooks for each parent class (this is reversed to preserve
         # the order of the hooks in the final output)
-        for clz in reversed(tuple(self._iter_parent_classes_with_method("add_hooks"))):
+        for clz in reversed(self._iter_parent_classes_with_method("add_hooks")):
             for hook in clz.add_hooks(self):
                 if isinstance(hook, Var):
                     extract_var_hooks(hook)
@@ -1864,7 +1796,7 @@ class Component(BaseComponent, ABC):
 
         # Add the hook code for the children.
         for child in self.children:
-            code = {**code, **child._get_all_hooks_internal()}
+            code.update(child._get_all_hooks_internal())
 
         return code
 
@@ -1888,7 +1820,7 @@ class Component(BaseComponent, ABC):
 
         # Add the hook code for the children.
         for child in self.children:
-            code = {**code, **child._get_all_hooks()}
+            code.update(child._get_all_hooks())
 
         return code
 
@@ -1903,16 +1835,16 @@ class Component(BaseComponent, ABC):
             return None
         return format.format_ref(self.id)
 
-    def _get_all_refs(self) -> set[str]:
+    def _get_all_refs(self) -> dict[str, None]:
         """Get the refs for the children of the component.
 
         Returns:
             The refs for the children.
         """
-        refs = set()
+        refs = {}
         ref = self.get_ref()
         if ref is not None:
-            refs.add(ref)
+            refs[ref] = None
         for child in self.children:
             refs |= child._get_all_refs()
         for component in self._get_components_in_props():
@@ -2044,7 +1976,7 @@ class CustomComponent(Component):
         )
 
         to_camel_cased_props = {
-            format.to_camel_case(key) for key in props if key not in event_types
+            format.to_camel_case(key): None for key in props if key not in event_types
         }
         self.get_props = lambda: to_camel_cased_props  # pyright: ignore [reportIncompatibleVariableOverride]
 
@@ -2076,15 +2008,6 @@ class CustomComponent(Component):
             self.props[camel_cased_key] = value
             setattr(self, camel_cased_key, value)
 
-    @classmethod
-    def _are_fields_known(cls) -> bool:
-        """Check if the fields are known.
-
-        Returns:
-            Whether the fields are known.
-        """
-        return False
-
     def __eq__(self, other: Any) -> bool:
         """Check if the component is equal to another.
 
@@ -2105,13 +2028,13 @@ class CustomComponent(Component):
         return hash(self.tag)
 
     @classmethod
-    def get_props(cls) -> set[str]:
+    def get_props(cls) -> Iterable[str]:
         """Get the props for the component.
 
         Returns:
             The set of component props.
         """
-        return set()
+        return ()
 
     @staticmethod
     def _get_event_spec_from_args_spec(name: str, event: EventChain) -> Callable:
@@ -2158,11 +2081,13 @@ class CustomComponent(Component):
         """
         return [
             Var(
-                _js_expr=name,
+                _js_expr=name + CAMEL_CASE_MEMO_MARKER,
                 _var_type=(prop._var_type if isinstance(prop, Var) else type(prop)),
             ).guess_type()
             if isinstance(prop, Var) or not isinstance(prop, EventChain)
-            else CustomComponent._get_event_spec_from_args_spec(name, prop)
+            else CustomComponent._get_event_spec_from_args_spec(
+                name + CAMEL_CASE_MEMO_MARKER, prop
+            )
             for name, prop in self.props.items()
         ]
 
@@ -2215,6 +2140,9 @@ def _register_custom_component(
     Args:
         component_fn: The function that creates the component.
 
+    Returns:
+        The custom component.
+
     Raises:
         TypeError: If the tag name cannot be determined.
     """
@@ -2239,6 +2167,7 @@ def _register_custom_component(
         msg = f"Could not determine the tag name for {component_fn!r}"
         raise TypeError(msg)
     CUSTOM_COMPONENTS[dummy_component.tag] = dummy_component
+    return dummy_component
 
 
 def custom_component(
@@ -2262,7 +2191,24 @@ def custom_component(
         )
 
     # Register this component so it can be compiled.
-    _register_custom_component(component_fn)
+    dummy_component = _register_custom_component(component_fn)
+    if tag := dummy_component.tag:
+        object.__setattr__(
+            wrapper,
+            "_as_var",
+            lambda: Var(
+                tag,
+                _var_type=type[Component],
+                _var_data=VarData(
+                    imports={
+                        f"$/{constants.Dirs.UTILS}/components": [ImportVar(tag=tag)],
+                        "@emotion/react": [
+                            ImportVar(tag="jsx"),
+                        ],
+                    }
+                ),
+            ),
+        )
 
     return wrapper
 
@@ -2482,7 +2428,7 @@ class StatefulComponent(BaseComponent):
             return None
 
         # Compute the hash based on the rendered code.
-        code_hash = _deterministic_hash(rendered_code)
+        code_hash = _hash_str(_deterministic_hash(rendered_code))
 
         # Format the tag name including the hash.
         return format.format_state_name(
@@ -2496,7 +2442,7 @@ class StatefulComponent(BaseComponent):
         if not self.tag:
             return ""
         # Render the code for this component and hooks.
-        return STATEFUL_COMPONENT.render(
+        return stateful_component_template(
             tag_name=self.tag,
             memo_trigger_hooks=self.memo_trigger_hooks,
             component=self.component,
@@ -2624,7 +2570,7 @@ class StatefulComponent(BaseComponent):
             memo_name = f"{event_trigger}_{chain_hash}"
 
             # Calculate Var dependencies accessed by the handler for useCallback dep array.
-            var_deps = ["addEvents", "Event"]
+            var_deps = ["addEvents", "ReflexEvent"]
 
             # Get deps from event trigger var data.
             var_deps.extend(cls._get_deps_from_event_trigger(event))
@@ -2692,7 +2638,7 @@ class StatefulComponent(BaseComponent):
             return set()
         return self.component._get_all_dynamic_imports()
 
-    def _get_all_custom_code(self, export: bool = False) -> set[str]:
+    def _get_all_custom_code(self, export: bool = False) -> dict[str, None]:
         """Get custom code for the component.
 
         Args:
@@ -2702,19 +2648,19 @@ class StatefulComponent(BaseComponent):
             The custom code.
         """
         if self.rendered_as_shared:
-            return set()
-        return self.component._get_all_custom_code().union(
-            {self._render_stateful_code(export=export)}
+            return {}
+        return self.component._get_all_custom_code() | (
+            {self._render_stateful_code(export=export): None}
         )
 
-    def _get_all_refs(self) -> set[str]:
+    def _get_all_refs(self) -> dict[str, None]:
         """Get the refs for the children of the component.
 
         Returns:
             The refs for the children.
         """
         if self.rendered_as_shared:
-            return set()
+            return {}
         return self.component._get_all_refs()
 
     def render(self) -> dict:
@@ -2822,6 +2768,9 @@ def render_dict_to_var(tag: dict | Component | str) -> Var:
             return render_dict_to_var(tag.render())
         return Var.create(tag)
 
+    if "contents" in tag:
+        return Var(tag["contents"])
+
     if "iterable" in tag:
         function_return = LiteralArrayVar.create(
             [render_dict_to_var(child.render()) for child in tag["children"]]
@@ -2839,27 +2788,30 @@ def render_dict_to_var(tag: dict | Component | str) -> Var:
             func,
         )
 
-    if tag["name"] == "match":
-        element = tag["cond"]
+    if "match_cases" in tag:
+        element = Var(tag["cond"])
 
         conditionals = render_dict_to_var(tag["default"])
 
         for case in tag["match_cases"][::-1]:
-            condition = case[0].to_string() == element.to_string()
-            for pattern in case[1:-1]:
-                condition = condition | (pattern.to_string() == element.to_string())
+            conditions, return_value = case
+            condition = Var.create(False)
+            for pattern in conditions:
+                condition = condition | (
+                    Var(pattern).to_string() == element.to_string()
+                )
 
             conditionals = ternary_operation(
                 condition,
-                render_dict_to_var(case[-1]),
+                render_dict_to_var(return_value),
                 conditionals,
             )
 
         return conditionals
 
-    if "cond" in tag:
+    if "cond_state" in tag:
         return ternary_operation(
-            tag["cond"],
+            Var(tag["cond_state"]),
             render_dict_to_var(tag["true_value"]),
             render_dict_to_var(tag["false_value"])
             if tag["false_value"] is not None
@@ -2867,8 +2819,6 @@ def render_dict_to_var(tag: dict | Component | str) -> Var:
         )
 
     props = Var("({" + ",".join(tag["props"]) + "})")
-
-    contents = tag["contents"] if tag["contents"] else None
 
     raw_tag_name = tag.get("name")
     tag_name = Var(raw_tag_name or "Fragment")
@@ -2878,7 +2828,6 @@ def render_dict_to_var(tag: dict | Component | str) -> Var:
     ).call(
         tag_name,
         props,
-        *([Var(contents)] if contents is not None else []),
         *[render_dict_to_var(child) for child in tag["children"]],
     )
 

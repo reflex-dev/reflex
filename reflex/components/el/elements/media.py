@@ -296,6 +296,12 @@ class Svg(BaseHTML):
     height: Var[str | int]
     # The XML namespace declaration.
     xmlns: Var[str]
+    # The viewBox attribute defines the position and dimension, in user space, of an SVG viewport.
+    view_box: Var[str]
+    # Controls how the SVG scales to fit its viewport.
+    preserve_aspect_ratio: Var[str]
+    # Defines a list of transform definitions that are applied to an element and the element's children.
+    transform: Var[str]
 
 
 class Text(BaseHTML):
@@ -394,6 +400,16 @@ class Polygon(BaseHTML):
     path_length: Var[int]
 
 
+class Polyline(BaseHTML):
+    """The SVG polyline component."""
+
+    tag = "polyline"
+    # List of points (pairs of x,y coordinates) that define the polyline.
+    points: Var[str]
+    # The total path length, in user units.
+    path_length: Var[int]
+
+
 class Defs(BaseHTML):
     """Display the defs element."""
 
@@ -413,6 +429,9 @@ class LinearGradient(BaseHTML):
 
     # Method used to spread the gradient.
     spread_method: Var[str | bool]
+
+    # Reference to another gradient to inherit from.
+    href: Var[str]
 
     # X coordinate of the starting point of the gradient.
     x1: Var[str | int | float]
@@ -453,6 +472,9 @@ class RadialGradient(BaseHTML):
     # Transform applied to the gradient.
     gradient_transform: Var[str | bool]
 
+    # Reference to another gradient to inherit from.
+    href: Var[str]
+
     # The radius of the end circle of the radial gradient.
     r: Var[str | int | float]
 
@@ -482,6 +504,38 @@ class Path(BaseHTML):
 
     # Defines the shape of the path.
     d: Var[str | int | float]
+    # The total path length, in user units.
+    path_length: Var[int]
+
+
+class Marker(BaseHTML):
+    """Display the marker element."""
+
+    tag = "marker"
+
+    # The height of the marker viewport.
+    marker_height: Var[str | int | float]
+
+    # The width of the marker viewport.
+    marker_width: Var[str | int | float]
+
+    # The coordinate system for the marker attributes.
+    marker_units: Var[str]
+
+    # The orientation of the marker relative to the shape it is attached to.
+    orient: Var[str | int | float]
+
+    # How the svg fragment must be deformed if it is embedded in a container with a different aspect ratio.
+    preserve_aspect_ratio: Var[str]
+
+    # The x coordinate for the reference point of the marker.
+    ref_x: Var[str | int | float]
+
+    # The y coordinate for the reference point of the marker.
+    ref_y: Var[str | int | float]
+
+    # The bound of the SVG viewport for the current SVG fragment.
+    view_box: Var[str]
 
 
 class G(BaseHTML):
@@ -508,6 +562,459 @@ class G(BaseHTML):
     transform: Var[str]
 
 
+class SvgImage(BaseHTML):
+    """The SVG image component."""
+
+    tag = "image"
+
+    # URL of the image to display.
+    href: Var[str]
+
+    # X coordinate of the image.
+    x: Var[str | int]
+
+    # Y coordinate of the image.
+    y: Var[str | int]
+
+    # Width of the image.
+    width: Var[str | int]
+
+    # Height of the image.
+    height: Var[str | int]
+
+    # How the image should scale to fit its viewport.
+    preserve_aspect_ratio: Var[str]
+
+    # CORS settings for the image.
+    crossorigin: Var[str]
+
+
+class Use(BaseHTML):
+    """The SVG use component for reusing defined elements."""
+
+    tag = "use"
+
+    # Reference to the element to reuse.
+    href: Var[str]
+
+    # X coordinate where the referenced element should be positioned.
+    x: Var[str | int]
+
+    # Y coordinate where the referenced element should be positioned.
+    y: Var[str | int]
+
+    # Width of the referenced element.
+    width: Var[str | int]
+
+    # Height of the referenced element.
+    height: Var[str | int]
+
+
+class TSpan(BaseHTML):
+    """The SVG tspan component for text spans within text elements."""
+
+    tag = "tspan"
+
+    # X coordinate of the text.
+    x: Var[str | int]
+
+    # Y coordinate of the text.
+    y: Var[str | int]
+
+    # Horizontal offset from the previous text element.
+    dx: Var[str | int]
+
+    # Vertical offset from the previous text element.
+    dy: Var[str | int]
+
+    # Rotation of the text.
+    rotate: Var[str | int]
+
+    # How the text is stretched or compressed to fit the width defined by text_length.
+    length_adjust: Var[str]
+
+    # A width that the text should be scaled to fit.
+    text_length: Var[str | int]
+
+
+class TextPath(BaseHTML):
+    """The SVG textPath component for text along a path."""
+
+    tag = "textPath"
+
+    # Reference to the path along which the text should be rendered.
+    href: Var[str]
+
+    # Inline path data.
+    path: Var[str]
+
+    # Distance along the path from its beginning to the initial position of the text.
+    start_offset: Var[str | int]
+
+    # Method for rendering text along the path.
+    method: Var[str]
+
+    # Spacing method for text.
+    spacing: Var[str]
+
+    # Which side of the path the text should be rendered on.
+    side: Var[str]
+
+    # How the text is stretched or compressed to fit the specified length.
+    length_adjust: Var[str]
+
+    # Target length for the text.
+    text_length: Var[str | int]
+
+
+class Pattern(BaseHTML):
+    """The SVG pattern component for defining repeating patterns."""
+
+    tag = "pattern"
+
+    # X coordinate of the pattern.
+    x: Var[str | int]
+
+    # Y coordinate of the pattern.
+    y: Var[str | int]
+
+    # Width of the pattern.
+    width: Var[str | int]
+
+    # Height of the pattern.
+    height: Var[str | int]
+
+    # Units for the pattern coordinates.
+    pattern_units: Var[str]
+
+    # Units for the pattern content coordinates.
+    pattern_content_units: Var[str]
+
+    # Transform applied to the pattern.
+    pattern_transform: Var[str]
+
+    # ViewBox definition for the pattern.
+    view_box: Var[str]
+
+    # How the pattern should scale to fit its viewport.
+    preserve_aspect_ratio: Var[str]
+
+    # Reference to another pattern to inherit from.
+    href: Var[str]
+
+
+class ClipPath(BaseHTML):
+    """The SVG clipPath component for defining clipping paths."""
+
+    tag = "clipPath"
+
+    # Units for the clipping path coordinates.
+    clip_path_units: Var[str]
+
+
+class Symbol(BaseHTML):
+    """The SVG symbol component for defining reusable symbols."""
+
+    tag = "symbol"
+
+    # ViewBox definition for the symbol.
+    view_box: Var[str]
+
+    # How the symbol should scale to fit its viewport.
+    preserve_aspect_ratio: Var[str]
+
+    # Reference X coordinate.
+    ref_x: Var[str | int]
+
+    # Reference Y coordinate.
+    ref_y: Var[str | int]
+
+
+class Mask(BaseHTML):
+    """The SVG mask component for defining masks."""
+
+    tag = "mask"
+
+    # X coordinate of the mask.
+    x: Var[str | int]
+
+    # Y coordinate of the mask.
+    y: Var[str | int]
+
+    # Width of the mask.
+    width: Var[str | int]
+
+    # Height of the mask.
+    height: Var[str | int]
+
+    # Units for the mask coordinates.
+    mask_units: Var[str]
+
+    # Units for the mask content coordinates.
+    mask_content_units: Var[str]
+
+
+class ForeignObject(BaseHTML):
+    """The SVG foreignObject component for embedding foreign content."""
+
+    tag = "foreignObject"
+
+    # X coordinate of the foreign object.
+    x: Var[str | int]
+
+    # Y coordinate of the foreign object.
+    y: Var[str | int]
+
+    # Width of the foreign object.
+    width: Var[str | int]
+
+    # Height of the foreign object.
+    height: Var[str | int]
+
+
+class SvgA(BaseHTML):
+    """The SVG anchor component for creating links."""
+
+    tag = "a"
+
+    # URL of the link.
+    href: Var[str]
+
+    # Where to open the linked resource.
+    target: Var[str]
+
+    # Download attribute for the link.
+    download: Var[str]
+
+    # Relationship between the current document and the linked resource.
+    rel: Var[str]
+
+    # Language of the linked resource.
+    hreflang: Var[str]
+
+    # MIME type of the linked resource.
+    type: Var[str]
+
+    # Referrer policy for the link.
+    referrerpolicy: Var[str]
+
+
+class Animate(BaseHTML):
+    """The SVG animate component for animations."""
+
+    tag = "animate"
+
+    # Name of the attribute to animate.
+    attribute_name: Var[str]
+
+    # Starting value of the animation.
+    from_: Var[str]
+
+    # Ending value of the animation.
+    to: Var[str]
+
+    # Duration of the animation.
+    dur: Var[str]
+
+    # When the animation should begin.
+    begin: Var[str]
+
+    # When the animation should end.
+    end: Var[str]
+
+    # Number of times to repeat the animation.
+    repeat_count: Var[str]
+
+    # How values should be calculated during the animation.
+    calc_mode: Var[str]
+
+    # List of values for the animation.
+    values: Var[str]
+
+    # Key times for the animation values.
+    key_times: Var[str]
+
+    # Key splines for smooth transitions.
+    key_splines: Var[str]
+
+    # Whether animation values should accumulate.
+    accumulate: Var[str]
+
+    # Whether animation values should be additive.
+    additive: Var[str]
+
+    # Reference to the target element.
+    href: Var[str]
+
+
+class AnimateMotion(BaseHTML):
+    """The SVG animateMotion component for motion animations."""
+
+    tag = "animateMotion"
+
+    # Path along which to animate.
+    path: Var[str]
+
+    # Duration of the animation.
+    dur: Var[str]
+
+    # When the animation should begin.
+    begin: Var[str]
+
+    # When the animation should end.
+    end: Var[str]
+
+    # Number of times to repeat the animation.
+    repeat_count: Var[str]
+
+    # Rotation behavior during motion.
+    rotate: Var[str]
+
+    # Key times for the motion.
+    key_times: Var[str]
+
+    # Key points along the path.
+    key_points: Var[str]
+
+    # Reference to the target element.
+    href: Var[str]
+
+
+class AnimateTransform(BaseHTML):
+    """The SVG animateTransform component for transform animations."""
+
+    tag = "animateTransform"
+
+    # Name of the transform attribute to animate.
+    attribute_name: Var[str]
+
+    # Type of transformation.
+    type: Var[str]
+
+    # Starting value of the transformation.
+    from_: Var[str]
+
+    # Ending value of the transformation.
+    to: Var[str]
+
+    # Duration of the animation.
+    dur: Var[str]
+
+    # When the animation should begin.
+    begin: Var[str]
+
+    # When the animation should end.
+    end: Var[str]
+
+    # Number of times to repeat the animation.
+    repeat_count: Var[str]
+
+    # List of values for the transformation.
+    values: Var[str]
+
+    # Reference to the target element.
+    href: Var[str]
+
+
+class Set(BaseHTML):
+    """The SVG set component for setting attribute values."""
+
+    tag = "set"
+
+    # Name of the attribute to set.
+    attribute_name: Var[str]
+
+    # Value to set the attribute to.
+    to: Var[str]
+
+    # When to set the attribute.
+    begin: Var[str]
+
+    # Duration for which to maintain the value.
+    dur: Var[str]
+
+    # When to end the setting.
+    end: Var[str]
+
+    # Reference to the target element.
+    href: Var[str]
+
+
+class MPath(BaseHTML):
+    """The SVG mpath component for motion path references."""
+
+    tag = "mpath"
+
+    # Reference to a path element.
+    href: Var[str]
+
+
+class Desc(BaseHTML):
+    """The SVG desc component for descriptions."""
+
+    tag = "desc"
+
+
+class Title(BaseHTML):
+    """The SVG title component for titles."""
+
+    tag = "title"
+
+
+class Metadata(BaseHTML):
+    """The SVG metadata component for metadata."""
+
+    tag = "metadata"
+
+
+class Script(BaseHTML):
+    """The SVG script component for scripts."""
+
+    tag = "script"
+
+    # MIME type of the script.
+    type: Var[str]
+
+    # URL of external script.
+    href: Var[str]
+
+    # CORS settings for the script.
+    crossorigin: Var[str]
+
+
+class SvgStyle(BaseHTML):
+    """The SVG style component for stylesheets."""
+
+    tag = "style"
+
+    # MIME type of the stylesheet.
+    type: Var[str]
+
+    # Media query for the stylesheet.
+    media: Var[str]
+
+    # Title of the stylesheet.
+    title: Var[str]
+
+
+class Switch(BaseHTML):
+    """The SVG switch component for conditional processing."""
+
+    tag = "switch"
+
+
+class View(BaseHTML):
+    """The SVG view component for view definitions."""
+
+    tag = "view"
+
+    # ViewBox definition for the view.
+    view_box: Var[str]
+
+    # How the view should scale to fit its viewport.
+    preserve_aspect_ratio: Var[str]
+
+
 class SVG(ComponentNamespace):
     """SVG component namespace."""
 
@@ -517,12 +1024,36 @@ class SVG(ComponentNamespace):
     ellipse = staticmethod(Ellipse.create)
     rect = staticmethod(Rect.create)
     polygon = staticmethod(Polygon.create)
+    polyline = staticmethod(Polyline.create)
     path = staticmethod(Path.create)
     stop = staticmethod(Stop.create)
     linear_gradient = staticmethod(LinearGradient.create)
     radial_gradient = staticmethod(RadialGradient.create)
     defs = staticmethod(Defs.create)
+    marker = staticmethod(Marker.create)
     g = staticmethod(G.create)
+    image = staticmethod(SvgImage.create)
+    use = staticmethod(Use.create)
+    tspan = staticmethod(TSpan.create)
+    text_path = staticmethod(TextPath.create)
+    pattern = staticmethod(Pattern.create)
+    clip_path = staticmethod(ClipPath.create)
+    symbol = staticmethod(Symbol.create)
+    mask = staticmethod(Mask.create)
+    foreign_object = staticmethod(ForeignObject.create)
+    a = staticmethod(SvgA.create)
+    animate = staticmethod(Animate.create)
+    animate_motion = staticmethod(AnimateMotion.create)
+    animate_transform = staticmethod(AnimateTransform.create)
+    set = staticmethod(Set.create)
+    mpath = staticmethod(MPath.create)
+    desc = staticmethod(Desc.create)
+    title = staticmethod(Title.create)
+    metadata = staticmethod(Metadata.create)
+    script = staticmethod(Script.create)
+    style = staticmethod(SvgStyle.create)
+    switch = staticmethod(Switch.create)
+    view = staticmethod(View.create)
     __call__ = staticmethod(Svg.create)
 
 
@@ -532,12 +1063,31 @@ circle = Circle.create
 ellipse = Ellipse.create
 rect = Rect.create
 polygon = Polygon.create
+polyline = Polyline.create
 path = Path.create
 stop = Stop.create
 linear_gradient = LinearGradient.create
 radial_gradient = RadialGradient.create
 defs = Defs.create
+marker = Marker.create
 g = G.create
+use = Use.create
+tspan = TSpan.create
+text_path = TextPath.create
+pattern = Pattern.create
+clip_path = ClipPath.create
+symbol = Symbol.create
+mask = Mask.create
+foreign_object = ForeignObject.create
+animate = Animate.create
+animate_motion = AnimateMotion.create
+animate_transform = AnimateTransform.create
+set_svg = Set.create
+mpath = MPath.create
+desc = Desc.create
+metadata = Metadata.create
+switch = Switch.create
+view = View.create
 area = Area.create
 audio = Audio.create
 image = img = Img.create

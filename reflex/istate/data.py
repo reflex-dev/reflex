@@ -84,6 +84,11 @@ class HeaderData(_HeaderData):
 
 
 @serializer(to=dict)
+def _serialize_header_data(obj: HeaderData) -> dict:
+    return {k.name: getattr(obj, k.name) for k in dataclasses.fields(obj)}
+
+
+@serializer(to=dict)
 def serialize_frozen_dict_str_str(obj: _FrozenDictStrStr) -> dict:
     """Serialize a _FrozenDictStrStr object to a dict.
 
@@ -165,6 +170,11 @@ class PageData:
         )
 
 
+@serializer(to=dict)
+def _serialize_page_data(obj: PageData) -> dict:
+    return dataclasses.asdict(obj)
+
+
 @dataclasses.dataclass(frozen=True)
 class SessionData:
     """An object containing session data."""
@@ -188,6 +198,11 @@ class SessionData:
             client_ip=router_data.get(constants.RouteVar.CLIENT_IP, ""),
             session_id=router_data.get(constants.RouteVar.SESSION_ID, ""),
         )
+
+
+@serializer(to=dict)
+def _serialize_session_data(obj: SessionData) -> dict:
+    return dataclasses.asdict(obj)
 
 
 @dataclasses.dataclass(frozen=True)

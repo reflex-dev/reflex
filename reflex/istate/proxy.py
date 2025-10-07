@@ -68,10 +68,15 @@ class StateProxy(wrapt.ObjectProxy):
             state_instance: The state instance to proxy.
             parent_state_proxy: The parent state proxy, for linked mutability and context tracking.
         """
+        from reflex.state import _substate_key
+
         super().__init__(state_instance)
-        # compile is not relevant to backend logic
         self._self_app = prerequisites.get_and_validate_app().app
         self._self_substate_path = tuple(state_instance.get_full_name().split("."))
+        self._self_substate_token = _substate_key(
+            state_instance.router.session.client_token,
+            self._self_substate_path,
+        )
         self._self_actx = None
         self._self_mutable = False
         self._self_actx_lock = asyncio.Lock()
@@ -124,16 +129,9 @@ class StateProxy(wrapt.ObjectProxy):
             msg = "The state is already mutable. Do not nest `async with self` blocks."
             raise ImmutableStateError(msg)
 
-        from reflex.state import _substate_key
-
         await self._self_actx_lock.acquire()
         self._self_actx_lock_holder = current_task
-        self._self_actx = self._self_app.modify_state(
-            token=_substate_key(
-                self.__wrapped__.router.session.client_token,
-                self._self_substate_path,
-            )
-        )
+        self._self_actx = self._self_app.modify_state(token=self._self_substate_token)
         mutable_state = await self._self_actx.__aenter__()
         super().__setattr__(
             "__wrapped__", mutable_state.get_substate(self._self_substate_path)
@@ -478,20 +476,6 @@ class MutableProxy(wrapt.ObjectProxy):
             return wrapped(*args, **(kwargs or {}))
         return None
 
-    @classmethod
-    def _is_mutable_type(cls, value: Any) -> bool:
-        """Check if a value is of a mutable type and should be wrapped.
-
-        Args:
-            value: The value to check.
-
-        Returns:
-            Whether the value is of a mutable type.
-        """
-        return isinstance(value, MUTABLE_TYPES) or (
-            dataclasses.is_dataclass(value) and not isinstance(value, Var)
-        )
-
     @staticmethod
     def _is_called_from_dataclasses_internal() -> bool:
         """Check if the current function is called from dataclasses helper.
@@ -523,7 +507,7 @@ class MutableProxy(wrapt.ObjectProxy):
         if self._is_called_from_dataclasses_internal():
             return value
         # Recursively wrap mutable types, but do not re-wrap MutableProxy instances.
-        if self._is_mutable_type(value) and not isinstance(value, MutableProxy):
+        if is_mutable_type(type(value)) and not isinstance(value, MutableProxy):
             base_cls = globals()[self.__base_proxy__]
             return base_cls(
                 wrapped=value,
@@ -584,7 +568,7 @@ class MutableProxy(wrapt.ObjectProxy):
                     self._wrap_recursive_decorator,
                 )
 
-        if self._is_mutable_type(value) and __name not in (
+        if is_mutable_type(type(value)) and __name not in (
             "__wrapped__",
             "_self_state",
             "__dict__",
@@ -773,3 +757,18 @@ class ImmutableMutableProxy(MutableProxy):
         return super()._mark_dirty(
             wrapped=wrapped, instance=instance, args=args, kwargs=kwargs
         )
+
+
+@functools.lru_cache(maxsize=1024)
+def is_mutable_type(type_: type) -> bool:
+    """Check if a type is mutable and should be wrapped.
+
+    Args:
+        type_: The type to check.
+
+    Returns:
+        Whether the type is mutable and should be wrapped.
+    """
+    return issubclass(type_, MUTABLE_TYPES) or (
+        dataclasses.is_dataclass(type_) and not issubclass(type_, Var)
+    )

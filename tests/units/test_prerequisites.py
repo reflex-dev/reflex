@@ -8,13 +8,13 @@ from click.testing import CliRunner
 from reflex.config import Config
 from reflex.reflex import cli
 from reflex.testing import chdir
-from reflex.utils.prerequisites import (
-    CpuInfo,
+from reflex.utils.decorator import cached_procedure
+from reflex.utils.frontend_skeleton import (
+    _compile_vite_config,
     _update_react_router_config,
-    cached_procedure,
-    get_cpu_info,
-    rename_imports_and_app_name,
 )
+from reflex.utils.rename import rename_imports_and_app_name
+from reflex.utils.telemetry import CpuInfo, get_cpu_info
 
 runner = CliRunner()
 
@@ -43,7 +43,7 @@ runner = CliRunner()
                 frontend_path="/test",
             ),
             False,
-            'export default {"basename": "/test", "future": {"unstable_optimizeDeps": true}, "ssr": false};',
+            'export default {"basename": "/test/", "future": {"unstable_optimizeDeps": true}, "ssr": false};',
         ),
         (
             Config(
@@ -57,6 +57,37 @@ runner = CliRunner()
 def test_update_react_router_config(config, export, expected_output):
     output = _update_react_router_config(config, prerender_routes=export)
     assert output == expected_output
+
+
+@pytest.mark.parametrize(
+    ("config", "expected_output"),
+    [
+        (
+            Config(
+                app_name="test",
+                frontend_path="",
+            ),
+            'assetsDir: "/assets".slice(1),',
+        ),
+        (
+            Config(
+                app_name="test",
+                frontend_path="/test",
+            ),
+            'assetsDir: "/test/assets".slice(1),',
+        ),
+        (
+            Config(
+                app_name="test",
+                frontend_path="/test/",
+            ),
+            'assetsDir: "/test/assets".slice(1),',
+        ),
+    ],
+)
+def test_initialise_vite_config(config, expected_output):
+    output = _compile_vite_config(config)
+    assert expected_output in output
 
 
 def test_cached_procedure():

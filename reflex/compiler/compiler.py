@@ -3,10 +3,10 @@
 from __future__ import annotations
 
 import sys
-from collections.abc import Iterable, Sequence
+from collections.abc import Callable, Iterable, Sequence
 from inspect import getmodule
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from reflex import constants
 from reflex.compiler import templates, utils
@@ -53,7 +53,7 @@ def _compile_document_root(root: Component) -> str:
     """
     document_root_imports = root._get_all_imports()
     _apply_common_imports(document_root_imports)
-    return templates.DOCUMENT_ROOT.render(
+    return templates.document_root_template(
         imports=utils.compile_imports(document_root_imports),
         document=root.render(),
     )
@@ -93,7 +93,7 @@ def _compile_app(app_root: Component) -> str:
     app_root_imports = app_root._get_all_imports()
     _apply_common_imports(app_root_imports)
 
-    return templates.APP_ROOT.render(
+    return templates.app_root_template(
         imports=utils.compile_imports(app_root_imports),
         custom_codes=app_root._get_all_custom_code(),
         hooks=app_root._get_all_hooks(),
@@ -112,7 +112,7 @@ def _compile_theme(theme: str) -> str:
     Returns:
         The compiled theme.
     """
-    return templates.THEME.render(theme=theme)
+    return templates.theme_template(theme=theme)
 
 
 def _compile_contexts(state: type[BaseState] | None, theme: Component | None) -> str:
@@ -130,17 +130,17 @@ def _compile_contexts(state: type[BaseState] | None, theme: Component | None) ->
         appearance = LiteralVar.create(SYSTEM_COLOR_MODE)
 
     return (
-        templates.CONTEXT.render(
+        templates.context_template(
             initial_state=utils.compile_state(state),
             state_name=state.get_name(),
             client_storage=utils.compile_client_storage(state),
             is_dev_mode=not is_prod_mode(),
-            default_color_mode=appearance,
+            default_color_mode=str(appearance),
         )
         if state
-        else templates.CONTEXT.render(
+        else templates.context_template(
             is_dev_mode=not is_prod_mode(),
-            default_color_mode=appearance,
+            default_color_mode=str(appearance),
         )
     )
 
@@ -159,9 +159,9 @@ def _compile_page(component: BaseComponent) -> str:
     imports = utils.compile_imports(imports)
 
     # Compile the code to render the component.
-    return templates.PAGE.render(
+    return templates.page_template(
         imports=imports,
-        dynamic_imports=component._get_all_dynamic_imports(),
+        dynamic_imports=sorted(component._get_all_dynamic_imports()),
         custom_codes=component._get_all_custom_code(),
         hooks=component._get_all_hooks(),
         render=component.render(),
@@ -321,7 +321,7 @@ def _compile_root_stylesheet(stylesheets: list[str], reset_style: bool = True) -
             'The `libsass` package is required to compile sass/scss stylesheet files. Run `pip install "libsass>=0.23.0"`.'
         )
 
-    return templates.STYLE.render(stylesheets=sheets)
+    return templates.styles_template(stylesheets=sheets)
 
 
 def _compile_component(component: Component | StatefulComponent) -> str:
@@ -333,10 +333,10 @@ def _compile_component(component: Component | StatefulComponent) -> str:
     Returns:
         The compiled component.
     """
-    return templates.COMPONENT.render(component=component)
+    return templates.component_template(component=component)
 
 
-def _compile_components(
+def _compile_memo_components(
     components: Iterable[CustomComponent],
 ) -> tuple[str, dict[str, list[ImportVar]]]:
     """Compile the components.
@@ -376,10 +376,10 @@ def _compile_components(
 
     # Compile the components page.
     return (
-        templates.COMPONENTS.render(
+        templates.memo_components_template(
             imports=utils.compile_imports(imports),
             components=component_renders,
-            dynamic_imports=dynamic_imports,
+            dynamic_imports=sorted(dynamic_imports),
             custom_codes=custom_codes,
         ),
         imports,
@@ -435,9 +435,7 @@ def _compile_stateful_components(
                 rendered_components.update(dict.fromkeys(dynamic_imports))
 
             # Include custom code in the shared component.
-            rendered_components.update(
-                dict.fromkeys(component._get_all_custom_code(export=True)),
-            )
+            rendered_components.update(component._get_all_custom_code(export=True))
 
             # Include all imports in the shared component.
             all_import_dicts.append(component._get_all_imports())
@@ -456,7 +454,7 @@ def _compile_stateful_components(
     if rendered_components:
         _apply_common_imports(all_imports)
 
-    return templates.STATEFUL_COMPONENTS.render(
+    return templates.stateful_components_template(
         imports=utils.compile_imports(all_imports),
         memoized_code="\n".join(rendered_components),
     )
@@ -465,7 +463,7 @@ def _compile_stateful_components(
 def compile_document_root(
     head_components: list[Component],
     html_lang: str | None = None,
-    html_custom_attrs: dict[str, Var | str] | None = None,
+    html_custom_attrs: dict[str, Var | Any] | None = None,
 ) -> tuple[str, str]:
     """Compile the document root.
 
@@ -567,7 +565,7 @@ def compile_page(path: str, component: BaseComponent) -> tuple[str, str]:
     return output_path, code
 
 
-def compile_components(
+def compile_memo_components(
     components: Iterable[CustomComponent],
 ) -> tuple[str, str, dict[str, list[ImportVar]]]:
     """Compile the custom components.
@@ -582,12 +580,13 @@ def compile_components(
     output_path = utils.get_components_path()
 
     # Compile the components.
-    code, imports = _compile_components(components)
+    code, imports = _compile_memo_components(components)
     return output_path, code, imports
 
 
 def compile_stateful_components(
     pages: Iterable[Component],
+    progress_function: Callable[[], None],
 ) -> tuple[str, str, list[BaseComponent]]:
     """Separately compile components that depend on State vars.
 
@@ -597,14 +596,20 @@ def compile_stateful_components(
 
     Args:
         pages: The pages to extract stateful components from.
+        progress_function: A function to call to indicate progress, called once per page.
 
     Returns:
         The path and code of the compiled stateful components.
     """
     output_path = utils.get_stateful_components_path()
 
-    # Compile the stateful components.
-    page_components = [StatefulComponent.compile_from(page) or page for page in pages]
+    page_components = []
+    for page in pages:
+        # Compile the stateful components
+        page_component = StatefulComponent.compile_from(page) or page
+        progress_function()
+        page_components.append(page_component)
+
     code = _compile_stateful_components(page_components)
     return output_path, code, page_components
 
@@ -616,7 +621,10 @@ def purge_web_pages_dir():
         return
 
     # Empty out the web pages directory.
-    utils.empty_dir(get_web_dir() / constants.Dirs.PAGES, keep_files=["routes.js"])
+    utils.empty_dir(
+        get_web_dir() / constants.Dirs.PAGES,
+        keep_files=["routes.js", "entry.client.js"],
+    )
 
 
 if TYPE_CHECKING:

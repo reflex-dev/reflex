@@ -55,6 +55,10 @@ def LifespanApp(
     class LifespanState(rx.State):
         interval: int = 100
 
+        @rx.event
+        def set_interval(self, interval: int):
+            self.interval = interval
+
         @rx.var(cache=False)
         def task_global(self) -> int:
             return lifespan_task_global
@@ -75,7 +79,7 @@ def LifespanApp(
                 rx.moment(
                     interval=LifespanState.interval, on_change=LifespanState.tick
                 ),
-                on_click=LifespanState.set_interval(  # pyright: ignore [reportAttributeAccessIssue]
+                on_click=LifespanState.set_interval(
                     rx.cond(LifespanState.interval, 0, 100)
                 ),
                 id="toggle-tick",

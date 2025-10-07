@@ -78,6 +78,7 @@ _MAPPING = {
         "linear_gradient",
         "radial_gradient",
         "defs",
+        "marker",
     ],
     "metadata": [
         "base",

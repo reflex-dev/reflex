@@ -172,7 +172,7 @@ class ToastProps(NoExtrasAllowedProps):
 class Toaster(Component):
     """A Toaster Component for displaying toast notifications."""
 
-    library: str | None = "sonner@2.0.6"
+    library: str | None = "sonner@2.0.7"
 
     tag = "Toaster"
 
@@ -239,7 +239,7 @@ class Toaster(Component):
 
     @staticmethod
     def send_toast(
-        message: str | Var = "",
+        message: str | Var[str] = "",
         level: str | None = None,
         fallback_to_alert: bool = False,
         **props,
@@ -293,7 +293,7 @@ class Toaster(Component):
         return run_script(toast)
 
     @staticmethod
-    def toast_info(message: str | Var = "", **kwargs: Any):
+    def toast_info(message: str | Var[str] = "", **kwargs: Any) -> EventSpec:
         """Display an info toast message.
 
         Args:
@@ -306,7 +306,7 @@ class Toaster(Component):
         return Toaster.send_toast(message, level="info", **kwargs)
 
     @staticmethod
-    def toast_warning(message: str | Var = "", **kwargs: Any):
+    def toast_warning(message: str | Var[str] = "", **kwargs: Any) -> EventSpec:
         """Display a warning toast message.
 
         Args:
@@ -319,7 +319,7 @@ class Toaster(Component):
         return Toaster.send_toast(message, level="warning", **kwargs)
 
     @staticmethod
-    def toast_error(message: str | Var = "", **kwargs: Any):
+    def toast_error(message: str | Var[str] = "", **kwargs: Any) -> EventSpec:
         """Display an error toast message.
 
         Args:
@@ -332,7 +332,7 @@ class Toaster(Component):
         return Toaster.send_toast(message, level="error", **kwargs)
 
     @staticmethod
-    def toast_success(message: str | Var = "", **kwargs: Any):
+    def toast_success(message: str | Var[str] = "", **kwargs: Any) -> EventSpec:
         """Display a success toast message.
 
         Args:
@@ -345,7 +345,7 @@ class Toaster(Component):
         return Toaster.send_toast(message, level="success", **kwargs)
 
     @staticmethod
-    def toast_loading(message: str | Var = "", **kwargs: Any):
+    def toast_loading(message: str | Var[str] = "", **kwargs: Any) -> EventSpec:
         """Display a loading toast message.
 
         Args:
@@ -358,7 +358,7 @@ class Toaster(Component):
         return Toaster.send_toast(message, level="loading", **kwargs)
 
     @staticmethod
-    def toast_dismiss(id: Var | str | None = None):
+    def toast_dismiss(id: Var[str] | str | None = None) -> EventSpec:
         """Dismiss a toast.
 
         Args:

@@ -435,29 +435,29 @@ def test_class_indexing_with_vars():
     prop = TestState.array[TestState.num1]  # pyright: ignore [reportCallIssue, reportArgumentType]
     assert (
         str(prop)
-        == f"{TestState.get_name()}.array{FIELD_MARKER}.at({TestState.get_name()}.num1{FIELD_MARKER})"
+        == f"{TestState.get_name()}.array{FIELD_MARKER}?.at?.({TestState.get_name()}.num1{FIELD_MARKER})"
     )
 
     prop = TestState.mapping["a"][TestState.num1]  # pyright: ignore [reportCallIssue, reportArgumentType]
     assert (
         str(prop)
-        == f'{TestState.get_name()}.mapping{FIELD_MARKER}["a"].at({TestState.get_name()}.num1{FIELD_MARKER})'
+        == f'{TestState.get_name()}.mapping{FIELD_MARKER}?.["a"]?.at?.({TestState.get_name()}.num1{FIELD_MARKER})'
     )
 
     prop = TestState.mapping[TestState.map_key]
     assert (
         str(prop)
-        == f"{TestState.get_name()}.mapping{FIELD_MARKER}[{TestState.get_name()}.map_key{FIELD_MARKER}]"
+        == f"{TestState.get_name()}.mapping{FIELD_MARKER}?.[{TestState.get_name()}.map_key{FIELD_MARKER}]"
     )
 
 
 def test_class_attributes():
     """Test that we can get class attributes."""
     prop = TestState.obj.prop1
-    assert str(prop) == f'{TestState.get_name()}.obj{FIELD_MARKER}["prop1"]'
+    assert str(prop) == f'{TestState.get_name()}.obj{FIELD_MARKER}?.["prop1"]'
 
     prop = TestState.complex[1].prop1
-    assert str(prop) == f'{TestState.get_name()}.complex{FIELD_MARKER}[1]["prop1"]'
+    assert str(prop) == f'{TestState.get_name()}.complex{FIELD_MARKER}?.[1]?.["prop1"]'
 
 
 def test_get_parent_state():
@@ -1619,7 +1619,7 @@ def test_error_on_state_method_shadow():
 
 
 @pytest.mark.asyncio
-async def test_state_with_invalid_yield(capsys, mock_app):
+async def test_state_with_invalid_yield(capsys: pytest.CaptureFixture[str], mock_app):
     """Test that an error is thrown when a state yields an invalid value.
 
     Args:
@@ -1658,7 +1658,7 @@ async def test_state_with_invalid_yield(capsys, mock_app):
             token="",
         )
     captured = capsys.readouterr()
-    assert "must only return/yield: None, Events or other EventHandlers" in captured.out
+    assert "must only return/yield: None, Events or other EventHandlers" in captured.err
 
 
 @pytest_asyncio.fixture(
@@ -1999,6 +1999,7 @@ async def test_state_proxy(
     namespace = mock_app.event_namespace
     assert namespace is not None
     namespace.sid_to_token[router_data.session.session_id] = token
+    namespace.token_to_sid[token] = router_data.session.session_id
     if isinstance(mock_app.state_manager, (StateManagerMemory, StateManagerDisk)):
         mock_app.state_manager.states[parent_state.router.session.client_token] = (
             parent_state
@@ -2208,6 +2209,7 @@ async def test_background_task_no_block(mock_app: rx.App, token: str):
     namespace = mock_app.event_namespace
     assert namespace is not None
     namespace.sid_to_token[sid] = token
+    namespace.token_to_sid[token] = sid
     mock_app.state_manager.state = mock_app._state = BackgroundTaskState
     async for update in rx.app.process(
         mock_app,
@@ -2783,17 +2785,18 @@ def test_state_union_optional():
         str(UnionState.c3.c2.c1.foo) == f'{UnionState.c3!s}?.["c2"]?.["c1"]?.["foo"]'  # pyright: ignore [reportOptionalMemberAccess]
     )
     assert (
-        str(UnionState.c3.c2.c1r.foo) == f'{UnionState.c3!s}?.["c2"]?.["c1r"]["foo"]'  # pyright: ignore [reportOptionalMemberAccess]
+        str(UnionState.c3.c2.c1r.foo) == f'{UnionState.c3!s}?.["c2"]?.["c1r"]?.["foo"]'  # pyright: ignore [reportOptionalMemberAccess]
     )
-    assert str(UnionState.c3.c2r.c1) == f'{UnionState.c3!s}?.["c2r"]["c1"]'  # pyright: ignore [reportOptionalMemberAccess]
+    assert str(UnionState.c3.c2r.c1) == f'{UnionState.c3!s}?.["c2r"]?.["c1"]'  # pyright: ignore [reportOptionalMemberAccess]
     assert (
-        str(UnionState.c3.c2r.c1.foo) == f'{UnionState.c3!s}?.["c2r"]["c1"]?.["foo"]'  # pyright: ignore [reportOptionalMemberAccess]
+        str(UnionState.c3.c2r.c1.foo) == f'{UnionState.c3!s}?.["c2r"]?.["c1"]?.["foo"]'  # pyright: ignore [reportOptionalMemberAccess]
     )
     assert (
-        str(UnionState.c3.c2r.c1r.foo) == f'{UnionState.c3!s}?.["c2r"]["c1r"]["foo"]'  # pyright: ignore [reportOptionalMemberAccess]
+        str(UnionState.c3.c2r.c1r.foo)  # pyright: ignore [reportOptionalMemberAccess]
+        == f'{UnionState.c3!s}?.["c2r"]?.["c1r"]?.["foo"]'
     )
     assert str(UnionState.c3i.c2) == f'{UnionState.c3i!s}?.["c2"]'
-    assert str(UnionState.c3r.c2) == f'{UnionState.c3r!s}["c2"]'
+    assert str(UnionState.c3r.c2) == f'{UnionState.c3r!s}?.["c2"]'
     assert UnionState.custom_union.foo is not None  # pyright: ignore [reportAttributeAccessIssue]
     assert UnionState.custom_union.c1 is not None  # pyright: ignore [reportAttributeAccessIssue]
     assert UnionState.custom_union.c1r is not None  # pyright: ignore [reportAttributeAccessIssue]
@@ -2919,6 +2922,7 @@ async def test_preprocess(
         expected: Expected delta.
         mocker: pytest mock object.
     """
+    OnLoadInternalState._app_ref = None
     mocker.patch(
         "reflex.state.State.class_subclasses", {test_state, OnLoadInternalState}
     )
@@ -2973,6 +2977,7 @@ async def test_preprocess_multiple_load_events(
         token: A token.
         mocker: pytest mock object.
     """
+    OnLoadInternalState._app_ref = None
     mocker.patch(
         "reflex.state.State.class_subclasses", {OnLoadState, OnLoadInternalState}
     )

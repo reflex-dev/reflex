@@ -46,8 +46,9 @@ from reflex.state import (
     StateManagerRedis,
     reload_state_module,
 )
-from reflex.utils import console
+from reflex.utils import console, js_runtimes
 from reflex.utils.export import export
+from reflex.utils.token_manager import TokenManager
 from reflex.utils.types import ASGIApp
 
 try:
@@ -378,6 +379,17 @@ class AppHarness:
                 msg = "Failed to reset state manager."
                 raise RuntimeError(msg)
 
+            # Also reset the TokenManager to avoid loop affinity issues
+            if (
+                hasattr(self.app_instance, "event_namespace")
+                and self.app_instance.event_namespace is not None
+                and hasattr(self.app_instance.event_namespace, "_token_manager")
+            ):
+                # Import here to avoid circular imports
+                from reflex.utils.token_manager import TokenManager
+
+                self.app_instance.event_namespace._token_manager = TokenManager.create()
+
     def _start_frontend(self):
         # Set up the frontend.
         with chdir(self.app_path):
@@ -394,9 +406,7 @@ class AppHarness:
         # Start the frontend.
         self.frontend_process = reflex.utils.processes.new_process(
             [
-                *reflex.utils.prerequisites.get_js_package_executor(raise_on_none=True)[
-                    0
-                ],
+                *js_runtimes.get_js_package_executor(raise_on_none=True)[0],
                 "run",
                 "dev",
             ],
@@ -465,7 +475,7 @@ class AppHarness:
         Returns:
             The rendered app global code.
         """
-        if not inspect.isclass(value) and not inspect.isfunction(value):
+        if not isinstance(value, type) and not inspect.isfunction(value):
             return f"{key} = {value!r}"
         return inspect.getsource(value)
 
@@ -767,6 +777,19 @@ class AppHarness:
                 self.app_instance._state_manager = app_state_manager
                 await self.state_manager.close()
 
+    def token_manager(self) -> TokenManager:
+        """Get the token manager for the app instance.
+
+        Returns:
+            The current token_manager attached to the app's EventNamespace.
+        """
+        assert self.app_instance is not None
+        app_event_namespace = self.app_instance.event_namespace
+        assert app_event_namespace is not None
+        app_token_manager = app_event_namespace._token_manager
+        assert app_token_manager is not None
+        return app_token_manager
+
     def poll_for_content(
         self,
         element: WebElement,
@@ -1001,7 +1024,7 @@ class AppHarnessProd(AppHarness):
             / reflex.constants.Dirs.STATIC
         )
         error_page_map = {
-            404: web_root / "404" / "index.html",
+            404: web_root / "404.html",
         }
         with Subdir404TCPServer(
             ("", 0),

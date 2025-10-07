@@ -145,7 +145,7 @@ def _get_type_hint(
     res = ""
     args = get_args(value)
 
-    if value is type(None):
+    if value is type(None) or value is None:
         return "None"
 
     if rx_types.is_union(value):
@@ -425,10 +425,18 @@ def type_to_ast(typ: Any, cls: type) -> ast.expr:
     Returns:
         The AST representation of the type annotation.
     """
-    if typ is type(None):
+    if typ is type(None) or typ is None:
         return ast.Name(id="None")
 
     origin = get_origin(typ)
+    if origin is typing.Literal:
+        return ast.Subscript(
+            value=ast.Name(id="Literal"),
+            slice=ast.Tuple(
+                elts=[ast.Constant(value=val) for val in get_args(typ)], ctx=ast.Load()
+            ),
+            ctx=ast.Load(),
+        )
     if origin is UnionType:
         origin = typing.Union
 
@@ -539,7 +547,7 @@ def _generate_component_create_functiondef(
     kwargs.extend(prop_kwargs)
 
     def figure_out_return_type(annotation: Any):
-        if inspect.isclass(annotation) and issubclass(annotation, inspect._empty):
+        if isinstance(annotation, type) and issubclass(annotation, inspect._empty):
             return ast.Name(id="EventType[Any]")
 
         if not isinstance(annotation, str) and get_origin(annotation) is tuple:
@@ -1173,7 +1181,7 @@ class PyiGenerator:
         class_names = {
             name: obj
             for name, obj in vars(module).items()
-            if inspect.isclass(obj)
+            if isinstance(obj, type)
             and (
                 rx_types.safe_issubclass(obj, Component)
                 or rx_types.safe_issubclass(obj, SimpleNamespace)

@@ -120,9 +120,11 @@ def convert_item(
     Raises:
         ReflexError: If an EventHandler is used as a style value
     """
-    if isinstance(style_item, EventHandler):
+    from reflex.components.component import BaseComponent
+
+    if isinstance(style_item, (EventHandler, BaseComponent)):
         msg = (
-            "EventHandlers cannot be used as style values. "
+            f"{type(style_item)} cannot be used as style values. "
             "Please use a Var or a literal value."
         )
         raise ReflexError(msg)

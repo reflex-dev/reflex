@@ -61,7 +61,7 @@ class Cond(Component):
 
     def _render(self) -> Tag:
         return CondTag(
-            cond=self.cond,
+            cond_state=str(self.cond),
             true_value=self.children[0].render(),
             false_value=self.children[1].render(),
         )
@@ -72,19 +72,11 @@ class Cond(Component):
         Returns:
             The dictionary for template of component.
         """
-        tag = self._render()
-        return dict(
-            tag.add_props(
-                **self.event_triggers,
-                key=self.key,
-                sx=self.style,
-                id=self.id,
-                class_name=self.class_name,
-            ).set(
-                props=tag.format_props(),
-            ),
-            cond_state=str(self.cond),
-        )
+        return {
+            "cond_state": str(self.cond),
+            "true_value": self.children[0].render(),
+            "false_value": self.children[1].render(),
+        }
 
     def add_imports(self) -> ImportDict:
         """Add imports for the Cond component.

@@ -5,6 +5,7 @@ from reflex.components.el.elements.media import (
     G,
     Line,
     LinearGradient,
+    Marker,
     Path,
     Polygon,
     RadialGradient,
@@ -73,6 +74,11 @@ def test_text():
 def test_stop():
     stop = Stop.create().render()
     assert stop["name"] == '"stop"'
+
+
+def test_marker():
+    marker = Marker.create().render()
+    assert marker["name"] == '"marker"'
 
 
 def test_g():

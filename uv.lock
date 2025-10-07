@@ -1,5 +1,5 @@
 version = 1
-revision = 2
+revision = 3
 requires-python = ">=3.10, <4.0"
 resolution-markers = [
     "python_full_version >= '3.12'",
@@ -370,7 +370,7 @@ name = "exceptiongroup"
 version = "1.3.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "typing-extensions", marker = "python_full_version < '3.11'" },
+    { name = "typing-extensions", marker = "python_full_version < '3.13'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/0b/9f/a65090624ecf468cdca03533906e7c69ed7588582240cfe7cc9e770b50eb/exceptiongroup-1.3.0.tar.gz", hash = "sha256:b241f5885f560bc56a59ee63ca4c6a8bfa46ae4ad651af316d4e81817bb9fd88", size = 29749, upload-time = "2025-05-10T17:42:51.123Z" }
 wheels = [
@@ -1386,6 +1386,18 @@ wheels = [
 ]
 
 [[package]]
+name = "pyleak"
+version = "0.1.14"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "exceptiongroup" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/98/fd/49af96e55001fe611abd891b7c482cf1324fb6997e3430c87a7ec0f7c887/pyleak-0.1.14.tar.gz", hash = "sha256:51be2741542fdaa6024c31a1b8212e59485e2a91e7fdc34c151d488e9a6fb3c4", size = 105644, upload-time = "2025-07-03T09:28:54.965Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/67/75/55c968828bf81a73d9c484f7be4e6f7d04d07da3d1d78cc5705461802b24/pyleak-0.1.14-py3-none-any.whl", hash = "sha256:98d6cf19f3eeed172effef42415bf9f01a3d46cbde59780b85924f9dcd57003a", size = 24813, upload-time = "2025-07-03T09:28:53.79Z" },
+]
+
+[[package]]
 name = "pyright"
 version = "1.1.403"
 source = { registry = "https://pypi.org/simple" }
@@ -1685,14 +1697,13 @@ wheels = [
 
 [[package]]
 name = "reflex"
-version = "0.8.5.dev1"
+version = "0.8.14.dev1"
 source = { editable = "." }
 dependencies = [
     { name = "alembic" },
     { name = "click" },
     { name = "granian", extra = ["reload"] },
     { name = "httpx" },
-    { name = "jinja2" },
     { name = "packaging" },
     { name = "platformdirs" },
     { name = "psutil", marker = "sys_platform == 'win32'" },
@@ -1714,6 +1725,9 @@ db = [
     { name = "pydantic" },
     { name = "sqlmodel" },
 ]
+monitoring = [
+    { name = "pyleak" },
+]
 
 [package.dev-dependencies]
 dev = [
@@ -1732,6 +1746,7 @@ dev = [
     { name = "pre-commit" },
     { name = "psutil" },
     { name = "psycopg", extra = ["binary"] },
+    { name = "pyleak" },
     { name = "pyright" },
     { name = "pytest" },
     { name = "pytest-asyncio" },
@@ -1756,17 +1771,17 @@ requires-dist = [
     { name = "alembic", marker = "extra == 'db'", specifier = ">=1.15.2,<2.0" },
     { name = "click", specifier = ">=8.2" },
     { name = "granian", extras = ["reload"], specifier = ">=2.4.0" },
-    { name = "httpx", specifier = ">=0.28.0,<1.0" },
-    { name = "jinja2", specifier = ">=3.1.2,<4.0" },
+    { name = "httpx", specifier = ">=0.23.3,<1.0" },
     { name = "packaging", specifier = ">=24.2,<26" },
     { name = "platformdirs", specifier = ">=4.3.7,<5.0" },
     { name = "psutil", marker = "sys_platform == 'win32'", specifier = ">=7.0.0,<8.0" },
     { name = "pydantic", specifier = ">=1.10.21,<3.0" },
     { name = "pydantic", marker = "extra == 'db'", specifier = ">=1.10.21,<3.0" },
+    { name = "pyleak", marker = "extra == 'monitoring'", specifier = ">=0.1.14,<1.0" },
     { name = "python-multipart", specifier = ">=0.0.20,<1.0" },
     { name = "python-socketio", specifier = ">=5.12.0,<6.0" },
     { name = "redis", specifier = ">=5.2.1,<7.0" },
-    { name = "reflex-hosting-cli", specifier = ">=0.1.53" },
+    { name = "reflex-hosting-cli", specifier = ">=0.1.55" },
     { name = "rich", specifier = ">=13,<15" },
     { name = "sqlmodel", specifier = ">=0.0.24,<0.1" },
     { name = "sqlmodel", marker = "extra == 'db'", specifier = ">=0.0.24,<0.1" },
@@ -1774,7 +1789,7 @@ requires-dist = [
     { name = "typing-extensions", specifier = ">=4.13.0" },
     { name = "wrapt", specifier = ">=1.17.0,<2.0" },
 ]
-provides-extras = ["db"]
+provides-extras = ["db", "monitoring"]
 
 [package.metadata.requires-dev]
 dev = [
@@ -1792,6 +1807,7 @@ dev = [
     { name = "pre-commit" },
     { name = "psutil" },
     { name = "psycopg", extras = ["binary"] },
+    { name = "pyleak", specifier = ">=0.1.14,<1.0" },
     { name = "pyright" },
     { name = "pytest" },
     { name = "pytest-asyncio" },
@@ -1812,7 +1828,7 @@ dev = [
 
 [[package]]
 name = "reflex-hosting-cli"
-version = "0.1.53"
+version = "0.1.56"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "click" },
@@ -1821,9 +1837,9 @@ dependencies = [
     { name = "platformdirs" },
     { name = "rich" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/24/e5/239a487a18ba9fb135cce25228d3209260c0610a8f8280b763ff1eeaaf17/reflex_hosting_cli-0.1.53.tar.gz", hash = "sha256:a7152767302e79c8336c48be3cd5ceaf2f7246302c3e1ce86e3495efe3cf0ee9", size = 35181, upload-time = "2025-07-21T23:43:47.333Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/98/51/029207a63593f25cddb9cfe5c59147cf1e5de9a967dfa87cd8b6296e7c41/reflex_hosting_cli-0.1.56.tar.gz", hash = "sha256:b29bb0a2bee0ee59ac4f1c7beecc727e914c3c0ab73fc4a536a5b33c237f40b7", size = 35889, upload-time = "2025-09-25T03:28:29.977Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/90/7d/6a31ef3c2dac3074babe1e94cfacc6028b6a70e7108916cc242128e1aa7d/reflex_hosting_cli-0.1.53-py3-none-any.whl", hash = "sha256:30675693373b264d70bde11a50435de74ee2d80a9951bb1d4ec8663e6e3b1af1", size = 44508, upload-time = "2025-07-21T23:43:45.973Z" },
+    { url = "https://files.pythonhosted.org/packages/c6/10/ab023eabe375eed3a0e0ac3350f007465e10a59ca6d70dbde455abcb404d/reflex_hosting_cli-0.1.56-py3-none-any.whl", hash = "sha256:9c6e5f0a26ab61fa20a89a4ea053d36d94e3134507fc1fca428500a0738139b2", size = 45420, upload-time = "2025-09-25T03:28:28.685Z" },
 ]
 
 [[package]]

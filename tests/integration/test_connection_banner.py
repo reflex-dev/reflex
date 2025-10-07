@@ -8,7 +8,9 @@ from selenium.webdriver.common.by import By
 
 from reflex import constants
 from reflex.environment import environment
+from reflex.istate.manager import StateManagerRedis
 from reflex.testing import AppHarness, WebDriver
+from reflex.utils.token_manager import RedisTokenManager
 
 from .utils import SessionStorage
 
@@ -23,6 +25,10 @@ def ConnectionBanner():
         foo: int = 0
 
         @rx.event
+        def set_foo(self, foo: int):
+            self.foo = foo
+
+        @rx.event
         async def delay(self):
             await asyncio.sleep(5)
 
@@ -33,7 +39,7 @@ def ConnectionBanner():
             rx.button(
                 "Increment",
                 id="increment",
-                on_click=State.set_foo(State.foo + 1),  # pyright: ignore [reportAttributeAccessIssue]
+                on_click=State.set_foo(State.foo + 1),
             ),
             rx.button("Delay", id="delay", on_click=State.delay),
         )
@@ -123,17 +129,21 @@ def has_cloud_banner(driver: WebDriver) -> bool:
         return True
 
 
-def _assert_token(connection_banner, driver):
+def _assert_token(connection_banner, driver) -> str:
     """Poll for backend to be up.
 
     Args:
         connection_banner: AppHarness instance.
         driver: Selenium webdriver instance.
+
+    Returns:
+        The token if found, raises an assertion error otherwise.
     """
     ss = SessionStorage(driver)
     assert connection_banner._poll_for(lambda: ss.get("token") is not None), (
         "token not found"
     )
+    return ss.get("token")
 
 
 @pytest.mark.asyncio
@@ -147,8 +157,21 @@ async def test_connection_banner(connection_banner: AppHarness):
     assert connection_banner.backend is not None
     driver = connection_banner.frontend()
 
-    _assert_token(connection_banner, driver)
+    token = _assert_token(connection_banner, driver)
     AppHarness.expect(lambda: not has_error_modal(driver))
+
+    # Check that the token association was established.
+    app_token_manager = connection_banner.token_manager()
+    assert token in app_token_manager.token_to_sid
+    sid_before = app_token_manager.token_to_sid[token]
+    if isinstance(connection_banner.state_manager, StateManagerRedis):
+        assert isinstance(app_token_manager, RedisTokenManager)
+        assert (
+            await connection_banner.state_manager.redis.get(
+                app_token_manager._get_redis_key(token)
+            )
+            == b"1"
+        )
 
     delay_button = driver.find_element(By.ID, "delay")
     increment_button = driver.find_element(By.ID, "increment")
@@ -172,6 +195,17 @@ async def test_connection_banner(connection_banner: AppHarness):
     # Error modal should now be displayed
     AppHarness.expect(lambda: has_error_modal(driver))
 
+    # The token association should have been removed when the server exited.
+    assert token not in app_token_manager.token_to_sid
+    if isinstance(connection_banner.state_manager, StateManagerRedis):
+        assert isinstance(app_token_manager, RedisTokenManager)
+        assert (
+            await connection_banner.state_manager.redis.get(
+                app_token_manager._get_redis_key(token)
+            )
+            is None
+        )
+
     # Increment the counter with backend down
     increment_button.click()
     assert connection_banner.poll_for_value(counter_element, exp_not_equal="0") == "1"
@@ -184,6 +218,20 @@ async def test_connection_banner(connection_banner: AppHarness):
 
     # Banner should be gone now
     AppHarness.expect(lambda: not has_error_modal(driver))
+
+    # After reconnecting, the token association should be re-established.
+    app_token_manager = connection_banner.token_manager()
+    if isinstance(connection_banner.state_manager, StateManagerRedis):
+        assert isinstance(app_token_manager, RedisTokenManager)
+        assert (
+            await connection_banner.state_manager.redis.get(
+                app_token_manager._get_redis_key(token)
+            )
+            == b"1"
+        )
+    # Make sure the new connection has a different websocket sid.
+    sid_after = app_token_manager.token_to_sid[token]
+    assert sid_before != sid_after
 
     # Count should have incremented after coming back up
     assert connection_banner.poll_for_value(counter_element, exp_not_equal="1") == "2"

@@ -8,7 +8,7 @@ import traceback
 from collections.abc import Mapping, Sequence
 from datetime import datetime
 from pathlib import Path
-from typing import Any
+from typing import Any, TypedDict
 from urllib.parse import urlparse
 
 from reflex import constants
@@ -16,18 +16,17 @@ from reflex.components.base import Description, Image, Scripts
 from reflex.components.base.document import Links, ScrollRestoration
 from reflex.components.base.document import Meta as ReactMeta
 from reflex.components.component import Component, ComponentStyle, CustomComponent
-from reflex.components.el.elements.metadata import Head, Meta, Title
+from reflex.components.el.elements.metadata import Head, Link, Meta, Title
 from reflex.components.el.elements.other import Html
 from reflex.components.el.elements.sectioning import Body
 from reflex.constants.state import FIELD_MARKER
 from reflex.istate.storage import Cookie, LocalStorage, SessionStorage
 from reflex.state import BaseState, _resolve_delta
 from reflex.style import Style
-from reflex.utils import console, format, imports, path_ops
-from reflex.utils.exec import is_in_app_harness
+from reflex.utils import format, imports, path_ops
 from reflex.utils.imports import ImportVar, ParsedImportDict
 from reflex.utils.prerequisites import get_web_dir
-from reflex.vars.base import Field, Var
+from reflex.vars.base import Field, Var, VarData
 
 # To re-export this function.
 merge_imports = imports.merge_imports
@@ -91,7 +90,13 @@ def validate_imports(import_dict: ParsedImportDict):
                 used_tags[import_name] = lib
 
 
-def compile_imports(import_dict: ParsedImportDict) -> list[dict]:
+class _ImportDict(TypedDict):
+    lib: str
+    default: str
+    rest: list[str]
+
+
+def compile_imports(import_dict: ParsedImportDict) -> list[_ImportDict]:
     """Compile an import dict.
 
     Args:
@@ -105,7 +110,7 @@ def compile_imports(import_dict: ParsedImportDict) -> list[dict]:
     """
     collapsed_import_dict: ParsedImportDict = imports.collapse_imports(import_dict)
     validate_imports(collapsed_import_dict)
-    import_dicts = []
+    import_dicts: list[_ImportDict] = []
     for lib, fields in collapsed_import_dict.items():
         # prevent lib from being rendered on the page if all imports are non rendered kind
         if not any(f.render for f in fields):
@@ -140,7 +145,9 @@ def compile_imports(import_dict: ParsedImportDict) -> list[dict]:
     return import_dicts
 
 
-def get_import_dict(lib: str, default: str = "", rest: list[str] | None = None) -> dict:
+def get_import_dict(
+    lib: str, default: str = "", rest: list[str] | None = None
+) -> _ImportDict:
     """Get dictionary for import template.
 
     Args:
@@ -151,11 +158,11 @@ def get_import_dict(lib: str, default: str = "", rest: list[str] | None = None) 
     Returns:
         A dictionary for import template.
     """
-    return {
-        "lib": lib,
-        "default": default,
-        "rest": rest if rest else [],
-    }
+    return _ImportDict(
+        lib=lib,
+        default=default,
+        rest=rest if rest else [],
+    )
 
 
 def save_error(error: Exception) -> str:
@@ -201,16 +208,11 @@ def compile_state(state: type[BaseState]) -> dict:
     except RuntimeError:
         pass
     else:
-        if is_in_app_harness():
-            # Playwright tests already have an event loop running, so we can't use asyncio.run.
-            with concurrent.futures.ThreadPoolExecutor() as pool:
-                resolved_initial_state = pool.submit(
-                    asyncio.run, _resolve_delta(initial_state)
-                ).result()
-                console.warn(
-                    f"Had to get initial state in a thread 🤮 {resolved_initial_state}",
-                )
-                return _sorted_keys(resolved_initial_state)
+        with concurrent.futures.ThreadPoolExecutor() as pool:
+            resolved_initial_state = pool.submit(
+                asyncio.run, _resolve_delta(initial_state)
+            ).result()
+            return _sorted_keys(resolved_initial_state)
 
     # Normally the compile runs before any event loop starts, we asyncio.run is available for calling.
     return _sorted_keys(asyncio.run(_resolve_delta(initial_state)))
@@ -218,10 +220,13 @@ def compile_state(state: type[BaseState]) -> dict:
 
 def _compile_client_storage_field(
     field: Field,
-) -> tuple[
-    type[Cookie] | type[LocalStorage] | type[SessionStorage] | None,
-    dict[str, Any] | None,
-]:
+) -> (
+    tuple[
+        type[Cookie] | type[LocalStorage] | type[SessionStorage],
+        dict[str, Any],
+    ]
+    | tuple[None, None]
+):
     """Compile the given cookie, local_storage or session_storage field.
 
     Args:
@@ -243,23 +248,20 @@ def _compile_client_storage_field(
 
 def _compile_client_storage_recursive(
     state: type[BaseState],
-) -> tuple[dict[str, dict], dict[str, dict], dict[str, dict]]:
+) -> tuple[
+    dict[str, dict[str, Any]], dict[str, dict[str, Any]], dict[str, dict[str, Any]]
+]:
     """Compile the client-side storage for the given state recursively.
 
     Args:
         state: The app state object.
 
     Returns:
-        A tuple of the compiled client-side storage info:
-            (
-                cookies: dict[str, dict],
-                local_storage: dict[str, dict[str, str]]
-                session_storage: dict[str, dict[str, str]]
-            ).
+        A tuple of the compiled client-side storage info: (cookies, local_storage, session_storage).
     """
-    cookies = {}
-    local_storage = {}
-    session_storage = {}
+    cookies: dict[str, dict[str, Any]] = {}
+    local_storage: dict[str, dict[str, Any]] = {}
+    session_storage: dict[str, dict[str, Any]] = {}
     state_name = state.get_full_name()
     for name, field in state.__fields__.items():
         if name in state.inherited_vars:
@@ -267,6 +269,8 @@ def _compile_client_storage_recursive(
             continue
         state_key = f"{state_name}.{name}" + FIELD_MARKER
         field_type, options = _compile_client_storage_field(field)
+        if field_type is None or options is None:
+            continue
         if field_type is Cookie:
             cookies[state_key] = options
         elif field_type is LocalStorage:
@@ -287,7 +291,9 @@ def _compile_client_storage_recursive(
     return cookies, local_storage, session_storage
 
 
-def compile_client_storage(state: type[BaseState]) -> dict[str, dict]:
+def compile_client_storage(
+    state: type[BaseState],
+) -> dict[str, dict[str, dict[str, Any]]]:
     """Compile the client-side storage for the given state.
 
     Args:
@@ -347,7 +353,7 @@ def compile_custom_component(
 def create_document_root(
     head_components: Sequence[Component] | None = None,
     html_lang: str | None = None,
-    html_custom_attrs: dict[str, Var | str] | None = None,
+    html_custom_attrs: dict[str, Var | Any] | None = None,
 ) -> Component:
     """Create the document root.
 
@@ -376,6 +382,20 @@ def create_document_root(
     # Always include the framework meta and link tags.
     always_head_components = [
         ReactMeta.create(),
+        Link.create(
+            rel="stylesheet",
+            type="text/css",
+            href=Var(
+                "reflexGlobalStyles",
+                _var_data=VarData(
+                    imports={
+                        "$/styles/__reflex_global_styles.css?url": [
+                            ImportVar(tag="reflexGlobalStyles", is_default=True)
+                        ]
+                    }
+                ),
+            ),
+        ),
         Links.create(),
     ]
     maybe_head_components = []

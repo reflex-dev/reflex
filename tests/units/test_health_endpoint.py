@@ -15,14 +15,24 @@ pytest.importorskip("sqlalchemy")
 import sqlalchemy.exc
 
 
+def _get_async_function(func):
+    async def _async_func(*args, **kwargs):
+        return func(*args, **kwargs)
+
+    return _async_func
+
+
 @pytest.mark.asyncio
 @pytest.mark.parametrize(
     ("mock_redis_client", "expected_status"),
     [
         # Case 1: Redis client is available and responds to ping
-        (Mock(ping=lambda: None), {"redis": True}),
+        (Mock(ping=_get_async_function(lambda: None)), {"redis": True}),
         # Case 2: Redis client raises RedisError
-        (Mock(ping=lambda: (_ for _ in ()).throw(RedisError)), {"redis": False}),
+        (
+            Mock(ping=_get_async_function(lambda: (_ for _ in ()).throw(RedisError))),
+            {"redis": False},
+        ),
         # Case 3: Redis client is not used
         (None, {"redis": None}),
     ],
@@ -30,9 +40,9 @@ import sqlalchemy.exc
 async def test_get_redis_status(
     mock_redis_client, expected_status, mocker: MockerFixture
 ):
-    # Mock the `get_redis_sync` function to return the mock Redis client
-    mock_get_redis_sync = mocker.patch(
-        "reflex.utils.prerequisites.get_redis_sync", return_value=mock_redis_client
+    # Mock the `get_redis` function to return the mock Redis client
+    mock_get_redis = mocker.patch(
+        "reflex.utils.prerequisites.get_redis", return_value=mock_redis_client
     )
 
     # Call the function
@@ -40,7 +50,7 @@ async def test_get_redis_status(
 
     # Verify the result
     assert status == expected_status
-    mock_get_redis_sync.assert_called_once()
+    mock_get_redis.assert_called_once()
 
 
 @pytest.mark.skipif(

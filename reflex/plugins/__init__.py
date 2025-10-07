@@ -1,5 +1,6 @@
 """Reflex Plugin System."""
 
+from ._screenshot import ScreenshotPlugin as _ScreenshotPlugin
 from .base import CommonContext, Plugin, PreCompileContext
 from .sitemap import SitemapPlugin
 from .tailwind_v3 import TailwindV3Plugin
@@ -12,4 +13,5 @@ __all__ = [
     "SitemapPlugin",
     "TailwindV3Plugin",
     "TailwindV4Plugin",
+    "_ScreenshotPlugin",
 ]
