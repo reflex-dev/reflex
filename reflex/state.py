@@ -94,13 +94,11 @@ if environment.REFLEX_PERF_MODE.get() != PerformanceMode.OFF:
 VAR_TYPE = TypeVar("VAR_TYPE")
 
 
-def _no_chain_background_task(
-    state_cls: type[BaseState], name: str, fn: Callable
-) -> Callable:
+def _no_chain_background_task(state: BaseState, name: str, fn: Callable) -> Callable:
     """Protect against directly chaining a background task from another event handler.
 
     Args:
-        state_cls: The state class that the event handler is in.
+        state: The state instance the background task is bound to.
         name: The name of the background task.
         fn: The background task coroutine function / generator.
 
@@ -110,7 +108,7 @@ def _no_chain_background_task(
     Raises:
         TypeError: If the background task is not async.
     """
-    call = f"{state_cls.__name__}.{name}"
+    call = f"{type(state).__name__}.{name}"
     message = (
         f"Cannot directly call background task {name!r}, use "
         f"`yield {call}` or `return {call}` instead."
@@ -1349,7 +1347,7 @@ class BaseState(EvenMoreBasicBaseState):
         if name in event_handlers:
             handler = event_handlers[name]
             if handler.is_background:
-                fn = _no_chain_background_task(type(self), name, handler.fn)
+                fn = _no_chain_background_task(self, name, handler.fn)
             else:
                 fn = functools.partial(handler.fn, self)
             fn.__module__ = handler.fn.__module__
