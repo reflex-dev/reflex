@@ -852,7 +852,7 @@ class BaseState(EvenMoreBasicBaseState):
             ComputedVarShadowsBaseVarsError: When a computed var shadows a base var.
         """
         for name, computed_var_ in cls._get_computed_vars():
-            if name in cls.__annotations__:
+            if name in get_type_hints(cls):
                 msg = f"The computed var name `{computed_var_._js_expr}` shadows a base var in {cls.__module__}.{cls.__name__}; use a different name instead"
                 raise ComputedVarShadowsBaseVarsError(msg)
 

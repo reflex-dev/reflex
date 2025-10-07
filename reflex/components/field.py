@@ -116,9 +116,12 @@ class FieldBasedMeta(type):
     def _resolve_annotations(
         cls, namespace: dict[str, Any], name: str
     ) -> dict[str, Any]:
-        return types.resolve_annotations(
-            namespace.get("__annotations__", {}), namespace["__module__"]
-        )
+        if (_annotate := namespace.get("__annotate_func__")) is not None:
+            # python3.14 style
+            raw_annotations = _annotate(0)
+        else:
+            raw_annotations = namespace.get("__annotations__", {})
+        return types.resolve_annotations(raw_annotations, namespace["__module__"])
 
     @classmethod
     def _process_field_overrides(

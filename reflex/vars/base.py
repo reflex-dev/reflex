@@ -3477,8 +3477,12 @@ class BaseStateMeta(ABCMeta):
         # Add the field to the class
         inherited_fields: dict[str, Field] = {}
         own_fields: dict[str, Field] = {}
+        if (_annotate := namespace.get("__annotate_func__")) is not None:
+            raw_annotations = _annotate(0)
+        else:
+            raw_annotations = namespace.get("__annotations__", {})
         resolved_annotations = types.resolve_annotations(
-            namespace.get("__annotations__", {}), namespace["__module__"]
+            raw_annotations, namespace["__module__"]
         )
 
         for base in bases[::-1]:
