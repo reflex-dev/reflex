@@ -1,5 +1,7 @@
 """Database built into Reflex."""
 
+from __future__ import annotations
+
 import re
 from collections import defaultdict
 from contextlib import suppress
@@ -165,13 +167,13 @@ if find_spec("sqlalchemy"):
     class ModelRegistry:
         """Registry for all models."""
 
-        models: ClassVar[set["SQLModelOrSqlAlchemy"]] = set()
+        models: ClassVar[set[SQLModelOrSqlAlchemy]] = set()
 
         # Cache the metadata to avoid re-creating it.
         _metadata: ClassVar[sqlalchemy.MetaData | None] = None
 
         @classmethod
-        def register(cls, model: "SQLModelOrSqlAlchemy"):
+        def register(cls, model: SQLModelOrSqlAlchemy):
             """Register a model. Can be used directly or as a decorator.
 
             Args:
@@ -184,7 +186,7 @@ if find_spec("sqlalchemy"):
             return model
 
         @classmethod
-        def get_models(cls, include_empty: bool = False) -> set["SQLModelOrSqlAlchemy"]:
+        def get_models(cls, include_empty: bool = False) -> set[SQLModelOrSqlAlchemy]:
             """Get registered models.
 
             Args:
@@ -200,7 +202,7 @@ if find_spec("sqlalchemy"):
             }
 
         @staticmethod
-        def _model_metadata_is_empty(model: "SQLModelOrSqlAlchemy") -> bool:
+        def _model_metadata_is_empty(model: SQLModelOrSqlAlchemy) -> bool:
             """Check if the model metadata is empty.
 
             Args:
