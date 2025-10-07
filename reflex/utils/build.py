@@ -187,7 +187,11 @@ def _duplicate_index_html_to_parent_directory(directory: Path):
 
 
 def build():
-    """Build the app for deployment."""
+    """Build the app for deployment.
+
+    Raises:
+        SystemExit: If the build process fails.
+    """
     wdir = prerequisites.get_web_dir()
 
     # Clean the static directory if it exists.
@@ -214,6 +218,12 @@ def build():
         },
     )
     processes.show_progress("Creating Production Build", process, checkpoints)
+    process.wait()
+    if process.returncode != 0:
+        console.error(
+            "Failed to build the frontend. Please run with --loglevel debug for more information.",
+        )
+        raise SystemExit(1)
     _duplicate_index_html_to_parent_directory(wdir / constants.Dirs.STATIC)
 
     spa_fallback = wdir / constants.Dirs.STATIC / constants.ReactRouter.SPA_FALLBACK

@@ -42,6 +42,8 @@ def cli():
 
 loglevel_option = click.option(
     "--loglevel",
+    "--log-level",
+    "loglevel",
     type=click.Choice(
         [loglevel.value for loglevel in constants.LogLevel],
         case_sensitive=False,
