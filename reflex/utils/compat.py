@@ -92,30 +92,3 @@ def sqlmodel_field_has_primary_key(field_info: "FieldInfo") -> bool:
     if getattr(field_info, "sa_column", None) is None:
         return False
     return bool(getattr(field_info.sa_column, "primary_key", None))  # pyright: ignore[reportAttributeAccessIssue]
-
-
-def sqlmodel_get_annotations(class_dict: dict[str, Any]) -> dict[str, Any]:
-    """Python3.14 compatible implementation of get_annotations for sqlmodel models.
-
-    See https://github.com/fastapi/sqlmodel/discussions/1594
-
-    Args:
-        class_dict: The class dictionary.
-
-    Returns:
-        The resolved annotations.
-    """
-    from reflex.utils.types import resolve_annotations
-
-    return resolve_annotations(  # type: ignore[no-any-return]
-        annotations_from_namespace(class_dict),
-        class_dict.get("__module__"),
-    )
-
-
-if find_spec("sqlmodel"):
-    # Ensure sqlmodel uses our get_annotations implementation.
-    import sqlmodel.main
-
-    if sqlmodel.main.get_annotations != sqlmodel_get_annotations:  # pyright: ignore[reportPrivateImportUsage]
-        sqlmodel.main.get_annotations = sqlmodel_get_annotations  # pyright: ignore[reportPrivateImportUsage]
