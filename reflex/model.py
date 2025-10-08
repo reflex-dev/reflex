@@ -71,6 +71,10 @@ if find_spec("sqlalchemy"):
             "echo": environment.SQLALCHEMY_ECHO.get(),
             # Check connections before returning them.
             "pool_pre_ping": environment.SQLALCHEMY_POOL_PRE_PING.get(),
+            "pool_size": environment.SQLALCHEMY_POOL_SIZE.get(),
+            "max_overflow": environment.SQLALCHEMY_MAX_OVERFLOW.get(),
+            "pool_recycle": environment.SQLALCHEMY_POOL_RECYCLE.get(),
+            "pool_timeout": environment.SQLALCHEMY_POOL_TIMEOUT.get(),
         }
         conf = get_config()
         url = url or conf.db_url
