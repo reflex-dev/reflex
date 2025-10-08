@@ -16,6 +16,7 @@ import time
 import typing
 import warnings
 from collections.abc import AsyncIterator, Callable, Sequence
+from enum import Enum
 from hashlib import md5
 from importlib.util import find_spec
 from types import FunctionType
@@ -1880,6 +1881,12 @@ class BaseState(EvenMoreBasicBaseState):
                 hinted_args is tuple or hinted_args is tuple
             ):
                 payload[arg] = tuple(value)
+            elif isinstance(hinted_args, type) and issubclass(hinted_args, Enum):
+                try:
+                    payload[arg] = hinted_args(value)
+                except ValueError:
+                    msg = f"Received an invalid enum value ({value}) for {arg} of type {hinted_args}"
+                    raise ValueError(msg) from None
             elif (
                 isinstance(value, str)
                 and (deserializer := _deserializers.get(hinted_args)) is not None
