@@ -9,23 +9,22 @@ import functools
 import inspect
 import json
 from collections.abc import Callable, Sequence
+from importlib.util import find_spec
 from types import MethodType
-from typing import TYPE_CHECKING, Any, SupportsIndex
+from typing import TYPE_CHECKING, Any, SupportsIndex, TypeVar
 
-import pydantic
 import wrapt
-from pydantic import BaseModel as BaseModelV2
-from pydantic.v1 import BaseModel as BaseModelV1
-from sqlalchemy.orm import DeclarativeBase
 
 from reflex.base import Base
 from reflex.utils import prerequisites
 from reflex.utils.exceptions import ImmutableStateError
-from reflex.utils.serializers import serializer
+from reflex.utils.serializers import can_serialize, serialize, serializer
 from reflex.vars.base import Var
 
 if TYPE_CHECKING:
     from reflex.state import BaseState, StateUpdate
+
+T_STATE = TypeVar("T_STATE", bound="BaseState")
 
 
 class StateProxy(wrapt.ObjectProxy):
@@ -69,10 +68,15 @@ class StateProxy(wrapt.ObjectProxy):
             state_instance: The state instance to proxy.
             parent_state_proxy: The parent state proxy, for linked mutability and context tracking.
         """
+        from reflex.state import _substate_key
+
         super().__init__(state_instance)
-        # compile is not relevant to backend logic
         self._self_app = prerequisites.get_and_validate_app().app
         self._self_substate_path = tuple(state_instance.get_full_name().split("."))
+        self._self_substate_token = _substate_key(
+            state_instance.router.session.client_token,
+            self._self_substate_path,
+        )
         self._self_actx = None
         self._self_mutable = False
         self._self_actx_lock = asyncio.Lock()
@@ -122,20 +126,12 @@ class StateProxy(wrapt.ObjectProxy):
             self._self_actx_lock.locked()
             and current_task == self._self_actx_lock_holder
         ):
-            raise ImmutableStateError(
-                "The state is already mutable. Do not nest `async with self` blocks."
-            )
-
-        from reflex.state import _substate_key
+            msg = "The state is already mutable. Do not nest `async with self` blocks."
+            raise ImmutableStateError(msg)
 
         await self._self_actx_lock.acquire()
         self._self_actx_lock_holder = current_task
-        self._self_actx = self._self_app.modify_state(
-            token=_substate_key(
-                self.__wrapped__.router.session.client_token,
-                self._self_substate_path,
-            )
-        )
+        self._self_actx = self._self_app.modify_state(token=self._self_substate_token)
         mutable_state = await self._self_actx.__aenter__()
         super().__setattr__(
             "__wrapped__", mutable_state.get_substate(self._self_substate_path)
@@ -173,7 +169,8 @@ class StateProxy(wrapt.ObjectProxy):
         Raises:
             TypeError: always, because only async contextmanager protocol is supported.
         """
-        raise TypeError("Background task must use `async with self` to modify state.")
+        msg = "Background task must use `async with self` to modify state."
+        raise TypeError(msg)
 
     def __exit__(self, *exc_info: Any) -> None:
         """Exit the regular context manager protocol.
@@ -181,7 +178,6 @@ class StateProxy(wrapt.ObjectProxy):
         Args:
             exc_info: The exception info tuple.
         """
-        pass
 
     def __getattr__(self, name: str) -> Any:
         """Get the attribute from the underlying state instance.
@@ -196,10 +192,11 @@ class StateProxy(wrapt.ObjectProxy):
             ImmutableStateError: If the state is not in mutable mode.
         """
         if name in ["substates", "parent_state"] and not self._is_mutable():
-            raise ImmutableStateError(
+            msg = (
                 "Background task StateProxy is immutable outside of a context "
                 "manager. Use `async with self` to modify state."
             )
+            raise ImmutableStateError(msg)
 
         value = super().__getattr__(name)
         if not name.startswith("_self_") and isinstance(value, MutableProxy):
@@ -243,10 +240,11 @@ class StateProxy(wrapt.ObjectProxy):
             super().__setattr__(name, value)
             return
 
-        raise ImmutableStateError(
+        msg = (
             "Background task StateProxy is immutable outside of a context "
             "manager. Use `async with self` to modify state."
         )
+        raise ImmutableStateError(msg)
 
     def get_substate(self, path: Sequence[str]) -> BaseState:
         """Only allow substate access with lock held.
@@ -261,13 +259,14 @@ class StateProxy(wrapt.ObjectProxy):
             ImmutableStateError: If the state is not in mutable mode.
         """
         if not self._is_mutable():
-            raise ImmutableStateError(
+            msg = (
                 "Background task StateProxy is immutable outside of a context "
                 "manager. Use `async with self` to modify state."
             )
+            raise ImmutableStateError(msg)
         return self.__wrapped__.get_substate(path)
 
-    async def get_state(self, state_cls: type[BaseState]) -> BaseState:
+    async def get_state(self, state_cls: type[T_STATE]) -> T_STATE:
         """Get an instance of the state associated with this token.
 
         Args:
@@ -280,13 +279,14 @@ class StateProxy(wrapt.ObjectProxy):
             ImmutableStateError: If the state is not in mutable mode.
         """
         if not self._is_mutable():
-            raise ImmutableStateError(
+            msg = (
                 "Background task StateProxy is immutable outside of a context "
                 "manager. Use `async with self` to modify state."
             )
+            raise ImmutableStateError(msg)
         return type(self)(
             await self.__wrapped__.get_state(state_cls), parent_state_proxy=self
-        )
+        )  # pyright: ignore [reportReturnType]
 
     async def _as_state_update(self, *args, **kwargs) -> StateUpdate:
         """Temporarily allow mutability to access parent_state.
@@ -323,7 +323,8 @@ class ReadOnlyStateProxy(StateProxy):
             # Special case attributes of the proxy itself, not applied to the wrapped object.
             super().__setattr__(name, value)
             return
-        raise NotImplementedError("This is a read-only state proxy.")
+        msg = "This is a read-only state proxy."
+        raise NotImplementedError(msg)
 
     def mark_dirty(self):
         """Mark the state as dirty.
@@ -331,7 +332,36 @@ class ReadOnlyStateProxy(StateProxy):
         Raises:
             NotImplementedError: Always raised when trying to mark the proxied state as dirty.
         """
-        raise NotImplementedError("This is a read-only state proxy.")
+        msg = "This is a read-only state proxy."
+        raise NotImplementedError(msg)
+
+
+if find_spec("pydantic"):
+    import pydantic
+
+    NEVER_WRAP_BASE_ATTRS = set(Base.__dict__) - {"set"} | set(
+        pydantic.BaseModel.__dict__
+    )
+else:
+    NEVER_WRAP_BASE_ATTRS = {}
+
+MUTABLE_TYPES = (
+    list,
+    dict,
+    set,
+    Base,
+)
+
+if find_spec("sqlalchemy"):
+    from sqlalchemy.orm import DeclarativeBase
+
+    MUTABLE_TYPES += (DeclarativeBase,)
+
+if find_spec("pydantic"):
+    from pydantic import BaseModel as BaseModelV2
+    from pydantic.v1 import BaseModel as BaseModelV1
+
+    MUTABLE_TYPES += (BaseModelV1, BaseModelV2)
 
 
 class MutableProxy(wrapt.ObjectProxy):
@@ -365,22 +395,6 @@ class MutableProxy(wrapt.ObjectProxy):
         "get",
         "setdefault",
     }
-
-    # These internal attributes on rx.Base should NOT be wrapped in a MutableProxy.
-    __never_wrap_base_attrs__ = set(Base.__dict__) - {"set"} | set(
-        pydantic.BaseModel.__dict__
-    )
-
-    # These types will be wrapped in MutableProxy
-    __mutable_types__ = (
-        list,
-        dict,
-        set,
-        Base,
-        DeclarativeBase,
-        BaseModelV2,
-        BaseModelV1,
-    )
 
     # Dynamically generated classes for tracking dataclass mutations.
     __dataclass_proxies__: dict[type, type] = {}
@@ -460,20 +474,7 @@ class MutableProxy(wrapt.ObjectProxy):
         self._self_state._mark_dirty()
         if wrapped is not None:
             return wrapped(*args, **(kwargs or {}))
-
-    @classmethod
-    def _is_mutable_type(cls, value: Any) -> bool:
-        """Check if a value is of a mutable type and should be wrapped.
-
-        Args:
-            value: The value to check.
-
-        Returns:
-            Whether the value is of a mutable type.
-        """
-        return isinstance(value, cls.__mutable_types__) or (
-            dataclasses.is_dataclass(value) and not isinstance(value, Var)
-        )
+        return None
 
     @staticmethod
     def _is_called_from_dataclasses_internal() -> bool:
@@ -506,7 +507,7 @@ class MutableProxy(wrapt.ObjectProxy):
         if self._is_called_from_dataclasses_internal():
             return value
         # Recursively wrap mutable types, but do not re-wrap MutableProxy instances.
-        if self._is_mutable_type(value) and not isinstance(value, MutableProxy):
+        if is_mutable_type(type(value)) and not isinstance(value, MutableProxy):
             base_cls = globals()[self.__base_proxy__]
             return base_cls(
                 wrapped=value,
@@ -558,7 +559,7 @@ class MutableProxy(wrapt.ObjectProxy):
 
             if (
                 isinstance(self.__wrapped__, Base)
-                and __name not in self.__never_wrap_base_attrs__
+                and __name not in NEVER_WRAP_BASE_ATTRS
                 and hasattr(value, "__func__")
             ):
                 # Wrap methods called on Base subclasses, which might do _anything_
@@ -567,7 +568,7 @@ class MutableProxy(wrapt.ObjectProxy):
                     self._wrap_recursive_decorator,
                 )
 
-        if self._is_mutable_type(value) and __name not in (
+        if is_mutable_type(type(value)) and __name not in (
             "__wrapped__",
             "_self_state",
             "__dict__",
@@ -688,7 +689,10 @@ def serialize_mutable_proxy(mp: MutableProxy):
     Returns:
         The wrapped object.
     """
-    return mp.__wrapped__
+    obj = mp.__wrapped__
+    if can_serialize(type(obj)):
+        return serialize(obj)
+    return obj
 
 
 _orig_json_encoder_default = json.JSONEncoder.default
@@ -748,10 +752,26 @@ class ImmutableMutableProxy(MutableProxy):
             ImmutableStateError: if the StateProxy is not mutable.
         """
         if not self._self_state._is_mutable():
-            raise ImmutableStateError(
+            msg = (
                 "Background task StateProxy is immutable outside of a context "
                 "manager. Use `async with self` to modify state."
             )
+            raise ImmutableStateError(msg)
         return super()._mark_dirty(
             wrapped=wrapped, instance=instance, args=args, kwargs=kwargs
         )
+
+
+@functools.lru_cache(maxsize=1024)
+def is_mutable_type(type_: type) -> bool:
+    """Check if a type is mutable and should be wrapped.
+
+    Args:
+        type_: The type to check.
+
+    Returns:
+        Whether the type is mutable and should be wrapped.
+    """
+    return issubclass(type_, MUTABLE_TYPES) or (
+        dataclasses.is_dataclass(type_) and not issubclass(type_, Var)
+    )

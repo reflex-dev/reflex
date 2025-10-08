@@ -1,7 +1,5 @@
 <div align="center">
-<img src="../../images/reflex_dark.svg#gh-light-mode-only" alt="Reflex Logo" width="300px">
-<img src="../../images/reflex_light.svg#gh-dark-mode-only" alt="Reflex Logo" width="300px">
-
+<img src="/docs/images/reflex.svg" alt="Reflex Logo" width="300px">
 <hr>
 
 **✨ 使用 Python 建立高效且可自訂的網頁應用程式，幾秒鐘內即可部署。✨**
@@ -9,13 +7,14 @@
 [![PyPI version](https://badge.fury.io/py/reflex.svg)](https://badge.fury.io/py/reflex)
 ![versions](https://img.shields.io/pypi/pyversions/reflex.svg)
 [![Documentaiton](https://img.shields.io/badge/Documentation%20-Introduction%20-%20%23007ec6)](https://reflex.dev/docs/getting-started/introduction)
+[![PyPI Downloads](https://static.pepy.tech/badge/reflex)](https://pepy.tech/projects/reflex)
 [![Discord](https://img.shields.io/discord/1029853095527727165?color=%237289da&label=Discord)](https://discord.gg/T5WSbC2YtQ)
 
 </div>
 
 ---
 
-[English](https://github.com/reflex-dev/reflex/blob/main/README.md) | [简体中文](https://github.com/reflex-dev/reflex/blob/main/docs/zh/zh_cn/README.md) | [繁體中文](https://github.com/reflex-dev/reflex/blob/main/docs/zh/zh_tw/README.md) | [Türkçe](https://github.com/reflex-dev/reflex/blob/main/docs/tr/README.md) | [हिंदी](https://github.com/reflex-dev/reflex/blob/main/docs/in/README.md) | [Português (Brasil)](https://github.com/reflex-dev/reflex/blob/main/docs/pt/pt_br/README.md) | [Italiano](https://github.com/reflex-dev/reflex/blob/main/docs/it/README.md) | [Español](https://github.com/reflex-dev/reflex/blob/main/docs/es/README.md) | [한국어](https://github.com/reflex-dev/reflex/blob/main/docs/kr/README.md) | [日本語](https://github.com/reflex-dev/reflex/blob/main/docs/ja/README.md) | [Deutsch](https://github.com/reflex-dev/reflex/blob/main/docs/de/README.md) | [Persian (پارسی)](https://github.com/reflex-dev/reflex/blob/main/docs/pe/README.md)
+[English](https://github.com/reflex-dev/reflex/blob/main/README.md) | [简体中文](https://github.com/reflex-dev/reflex/blob/main/docs/zh/zh_cn/README.md) | [繁體中文](https://github.com/reflex-dev/reflex/blob/main/docs/zh/zh_tw/README.md) | [Türkçe](https://github.com/reflex-dev/reflex/blob/main/docs/tr/README.md) | [हिंदी](https://github.com/reflex-dev/reflex/blob/main/docs/in/README.md) | [Português (Brasil)](https://github.com/reflex-dev/reflex/blob/main/docs/pt/pt_br/README.md) | [Italiano](https://github.com/reflex-dev/reflex/blob/main/docs/it/README.md) | [Español](https://github.com/reflex-dev/reflex/blob/main/docs/es/README.md) | [한국어](https://github.com/reflex-dev/reflex/blob/main/docs/kr/README.md) | [日本語](https://github.com/reflex-dev/reflex/blob/main/docs/ja/README.md) | [Deutsch](https://github.com/reflex-dev/reflex/blob/main/docs/de/README.md) | [Persian (پارسی)](https://github.com/reflex-dev/reflex/blob/main/docs/pe/README.md) | [Tiếng Việt](https://github.com/reflex-dev/reflex/blob/main/docs/vi/README.md)
 
 ---
 
@@ -28,7 +27,8 @@ Reflex 是一個可以用純 Python 構建全端網頁應用程式的函式庫�
 - **純 Python** - 您可以用 Python 撰寫應用程式的前端和後端，無需學習 Javascript。
 - **完全靈活性** - Reflex 易於上手，但也可以擴展到複雜的應用程式。
 - **立即部署** - 構建後，只需使用[單一指令](https://reflex.dev/docs/hosting/deploy-quick-start/)即可部署您的應用程式，或在您自己的伺服器上託管。
-  請參閱我們的[架構頁面](https://reflex.dev/blog/2024-03-21-reflex-architecture/#the-reflex-architecture)了解 Reflex 如何在底層運作。
+
+請參閱我們的[架構頁面](https://reflex.dev/blog/2024-03-21-reflex-architecture/#the-reflex-architecture)了解 Reflex 如何在底層運作。
 
 ## ⚙️ 安裝
 
@@ -69,7 +69,7 @@ reflex run
 &nbsp;
 
 <div align="center">
-<img src="../../images/dalle.gif" alt="A frontend wrapper for DALL·E, shown in the process of generating an image." width="550" />
+<img src="/docs/images/dalle.gif" alt="A frontend wrapper for DALL·E, shown in the process of generating an image." width="550" />
 </div>
 
 &nbsp;
@@ -137,7 +137,7 @@ app.add_page(index, title="Reflex:DALL-E")
 ## 讓我們來拆解一下。
 
 <div align="center">
-<img src="../../images/dalle_colored_code_example.png" alt="解釋 DALL-E app 的前端和後端部分的區別。" width="900" />
+<img src="/docs/images/dalle_colored_code_example.png" alt="解釋 DALL-E app 的前端和後端部分的區別。" width="900" />
 </div>
 
 ### **Reflex 使用者介面**
@@ -226,7 +226,7 @@ app.add_page(index, title="DALL-E")
 
 Reflex 在 2022 年 12 月以 Pynecone 的名字推出。
 
-截至 2024 年 2 月，我們的託管服務已進入 alpha 階段！在此期間，任何人都可以免費部署他們的應用程式。請參閱我們的[產品地圖](https://github.com/reflex-dev/reflex/issues/2727)了解未來的計劃。
+自 2025 年起，[Reflex Cloud](https://cloud.reflex.dev) 已推出，為 Reflex 應用程式提供最佳的託管體驗。我們將繼續開發並實施更多功能。
 
 Reflex 每周都有新功能和釋出新版本! 確保你按下 :star: 和 :eyes: watch 這個 repository 來確保知道最新資訊。
 
@@ -248,4 +248,4 @@ Reflex 每周都有新功能和釋出新版本! 確保你按下 :star: 和 :eyes
 
 ## 授權
 
-Reflex 是一個開源專案且使用 [Apache License 2.0](LICENSE) 授權。
+Reflex 是一個開源專案且使用 [Apache License 2.0](/LICENSE) 授權。

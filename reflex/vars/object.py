@@ -6,11 +6,18 @@ import collections.abc
 import dataclasses
 import typing
 from collections.abc import Mapping
-from inspect import isclass
-from typing import Any, NoReturn, TypeVar, get_args, get_type_hints, overload
+from importlib.util import find_spec
+from typing import (
+    Any,
+    NoReturn,
+    TypeVar,
+    get_args,
+    get_type_hints,
+    is_typeddict,
+    overload,
+)
 
 from rich.markup import escape
-from typing_extensions import is_typeddict
 
 from reflex.utils import types
 from reflex.utils.exceptions import VarAttributeError
@@ -68,7 +75,15 @@ def _determine_value_type(var_type: GenericType):
     return Any
 
 
-class ObjectVar(Var[OBJECT_TYPE], python_types=Mapping):
+PYTHON_TYPES = (Mapping,)
+if find_spec("pydantic"):
+    import pydantic
+    import pydantic.v1
+
+    PYTHON_TYPES += (pydantic.BaseModel, pydantic.v1.BaseModel)
+
+
+class ObjectVar(Var[OBJECT_TYPE], python_types=PYTHON_TYPES):
     """Base class for immutable object vars."""
 
     def _key_type(self) -> type:
@@ -136,6 +151,14 @@ class ObjectVar(Var[OBJECT_TYPE], python_types=Mapping):
         return object_entries_operation(self)
 
     items = entries
+
+    def length(self) -> NumberVar[int]:
+        """Get the length of the object.
+
+        Returns:
+            The length of the object.
+        """
+        return self.keys().length()
 
     def merge(self, other: ObjectVar):
         """Merge two objects.
@@ -313,18 +336,21 @@ class ObjectVar(Var[OBJECT_TYPE], python_types=Mapping):
 
         if (
             is_typeddict(fixed_type)
-            or (isclass(fixed_type) and not safe_issubclass(fixed_type, Mapping))
+            or (
+                isinstance(fixed_type, type)
+                and not safe_issubclass(fixed_type, Mapping)
+            )
             or (fixed_type in types.UnionTypes)
         ):
             attribute_type = get_attribute_access_type(var_type, name)
             if attribute_type is None:
-                raise VarAttributeError(
+                msg = (
                     f"The State var `{self!s}` of type {escape(str(self._var_type))} has no attribute '{name}' or may have been annotated "
                     f"wrongly."
                 )
+                raise VarAttributeError(msg)
             return ObjectItemOperation.create(self, name, attribute_type).guess_type()
-        else:
-            return ObjectItemOperation.create(self, name).guess_type()
+        return ObjectItemOperation.create(self, name).guess_type()
 
     def contains(self, key: Var | Any) -> BooleanVar:
         """Check if the object contains a key.
@@ -398,9 +424,8 @@ class LiteralObjectVar(CachedVarOperation, ObjectVar[OBJECT_TYPE], LiteralVar):
             key = LiteralVar.create(key)
             value = LiteralVar.create(value)
             if not isinstance(key, LiteralVar) or not isinstance(value, LiteralVar):
-                raise TypeError(
-                    "The keys and values of the object must be literal vars to get the JSON representation."
-                )
+                msg = "The keys and values of the object must be literal vars to get the JSON representation."
+                raise TypeError(msg)
             keys_and_values.append(f"{key.json()}:{value.json()}")
         return "{" + ", ".join(keys_and_values) + "}"
 
@@ -444,7 +469,25 @@ class LiteralObjectVar(CachedVarOperation, ObjectVar[OBJECT_TYPE], LiteralVar):
 
         Returns:
             The literal object var.
+
+        Raises:
+            TypeError: If the value is not a mapping type or a dataclass.
         """
+        if not isinstance(_var_value, collections.abc.Mapping):
+            from reflex.utils.serializers import serialize
+
+            serialized = serialize(_var_value, get_type=False)
+            if not isinstance(serialized, collections.abc.Mapping):
+                msg = f"Expected a mapping type or a dataclass, got {_var_value!r} of type {type(_var_value).__name__}."
+                raise TypeError(msg)
+
+            return LiteralObjectVar(
+                _js_expr="",
+                _var_type=(type(_var_value) if _var_type is None else _var_type),
+                _var_data=_var_data,
+                _var_value=serialized,
+            )
+
         return LiteralObjectVar(
             _js_expr="",
             _var_type=(figure_out_type(_var_value) if _var_type is None else _var_type),
@@ -463,14 +506,9 @@ def object_keys_operation(value: ObjectVar):
     Returns:
         The keys of the object.
     """
-    if not types.is_optional(value._var_type):
-        return var_operation_return(
-            js_expression=f"Object.keys({value})",
-            var_type=list[str],
-        )
     return var_operation_return(
-        js_expression=f"((value) => value ?? undefined === undefined ? undefined : Object.keys(value))({value})",
-        var_type=(list[str] | None),
+        js_expression=f"Object.keys({value} ?? {{}})",
+        var_type=list[str],
     )
 
 
@@ -484,14 +522,9 @@ def object_values_operation(value: ObjectVar):
     Returns:
         The values of the object.
     """
-    if not types.is_optional(value._var_type):
-        return var_operation_return(
-            js_expression=f"Object.values({value})",
-            var_type=list[value._value_type()],
-        )
     return var_operation_return(
-        js_expression=f"((value) => value ?? undefined === undefined ? undefined : Object.values(value))({value})",
-        var_type=(list[value._value_type()] | None),
+        js_expression=f"Object.values({value} ?? {{}})",
+        var_type=list[value._value_type()],
     )
 
 
@@ -505,14 +538,9 @@ def object_entries_operation(value: ObjectVar):
     Returns:
         The entries of the object.
     """
-    if not types.is_optional(value._var_type):
-        return var_operation_return(
-            js_expression=f"Object.entries({value})",
-            var_type=list[tuple[str, value._value_type()]],
-        )
     return var_operation_return(
-        js_expression=f"((value) => value ?? undefined === undefined ? undefined : Object.entries(value))({value})",
-        var_type=(list[tuple[str, value._value_type()]] | None),
+        js_expression=f"Object.entries({value} ?? {{}})",
+        var_type=list[tuple[str, value._value_type()]],
     )
 
 
@@ -556,9 +584,7 @@ class ObjectItemOperation(CachedVarOperation, Var):
         Returns:
             The name of the operation.
         """
-        if types.is_optional(self._object._var_type):
-            return f"{self._object!s}?.[{self._key!s}]"
-        return f"{self._object!s}[{self._key!s}]"
+        return f"{self._object!s}?.[{self._key!s}]"
 
     @classmethod
     def create(

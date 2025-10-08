@@ -7,7 +7,7 @@ from reflex.vars.base import Var
 
 
 @pytest.mark.parametrize(
-    "params, allowed_value_str, value_str",
+    ("params", "allowed_value_str", "value_str"),
     [
         (["size", 1, Literal["1", "2", "3"], "Heading"], "'1','2','3'", "1"),
         (["size", "1", Literal[1, 2, 3], "Heading"], "1,2,3", "'1'"),
@@ -24,7 +24,7 @@ def test_validate_literal_error_msg(params, allowed_value_str, value_str):
 
 
 @pytest.mark.parametrize(
-    "cls,cls_check,expected",
+    ("cls", "cls_check", "expected"),
     [
         (int, Any, True),
         (tuple[int], Any, True),
@@ -51,29 +51,21 @@ def test_issubclass(
 class CustomDict(dict[str, str]):
     """A custom dict with generic arguments."""
 
-    pass
-
 
 class ChildCustomDict(CustomDict):
     """A child of CustomDict."""
-
-    pass
 
 
 class GenericDict(dict):
     """A generic dict with no generic arguments."""
 
-    pass
-
 
 class ChildGenericDict(GenericDict):
     """A child of GenericDict."""
 
-    pass
-
 
 @pytest.mark.parametrize(
-    "cls,expected",
+    ("cls", "expected"),
     [
         (int, False),
         (str, False),

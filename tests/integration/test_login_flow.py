@@ -9,6 +9,7 @@ from selenium.common.exceptions import NoSuchElementException
 from selenium.webdriver.common.by import By
 from selenium.webdriver.remote.webdriver import WebDriver
 
+from reflex.constants.state import FIELD_MARKER
 from reflex.testing import AppHarness
 
 from . import utils
@@ -67,7 +68,7 @@ def login_sample(tmp_path_factory) -> Generator[AppHarness, None, None]:
         yield harness
 
 
-@pytest.fixture()
+@pytest.fixture
 def driver(login_sample: AppHarness) -> Generator[WebDriver, None, None]:
     """Get an instance of the browser open to the login_sample app.
 
@@ -85,7 +86,7 @@ def driver(login_sample: AppHarness) -> Generator[WebDriver, None, None]:
         driver.quit()
 
 
-@pytest.fixture()
+@pytest.fixture
 def local_storage(driver: WebDriver) -> Generator[utils.LocalStorage, None, None]:
     """Get an instance of the local storage helper.
 
@@ -113,19 +114,21 @@ def test_login_flow(
     assert login_sample.frontend_url is not None
     local_storage.clear()
 
+    login_button = AppHarness.poll_for_or_raise_timeout(
+        lambda: driver.find_element(By.ID, "login")
+    )
     with pytest.raises(NoSuchElementException):
         driver.find_element(By.ID, "auth-token")
 
-    login_button = driver.find_element(By.ID, "login")
     login_sample.poll_for_content(login_button)
     with utils.poll_for_navigation(driver):
         login_button.click()
-    assert driver.current_url.endswith("/login/")
+    assert driver.current_url.endswith("/login")
 
     do_it_button = driver.find_element(By.ID, "doit")
     with utils.poll_for_navigation(driver):
         do_it_button.click()
-    assert driver.current_url == login_sample.frontend_url + "/"
+    assert driver.current_url == login_sample.frontend_url
 
     def check_auth_token_header():
         try:
@@ -134,14 +137,14 @@ def test_login_flow(
             return False
         return auth_token_header.text
 
-    assert login_sample._poll_for(check_auth_token_header) == "12345"
+    assert AppHarness.poll_for_or_raise_timeout(check_auth_token_header) == "12345"
 
     logout_button = driver.find_element(By.ID, "logout")
     logout_button.click()
 
     state_name = login_sample.get_full_state_name(["_state"])
-    assert login_sample._poll_for(
-        lambda: local_storage[f"{state_name}.auth_token"] == ""
+    AppHarness.expect(
+        lambda: local_storage[f"{state_name}.auth_token" + FIELD_MARKER] == ""
     )
     with pytest.raises(NoSuchElementException):
         driver.find_element(By.ID, "auth-token")

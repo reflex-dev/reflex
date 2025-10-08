@@ -11,8 +11,6 @@ from typing import Literal
 
 from platformdirs import PlatformDirs
 
-from .utils import classproperty
-
 IS_WINDOWS = platform.system() == "Windows"
 IS_MACOS = platform.system() == "Darwin"
 IS_LINUX = platform.system() == "Linux"
@@ -22,7 +20,7 @@ class Dirs(SimpleNamespace):
     """Various directories/paths used by Reflex."""
 
     # The frontend directories in a project.
-    # The web folder where the NextJS app is compiled to.
+    # The web folder where the frontend app is compiled to.
     WEB = ".web"
     # The directory where uploaded files are stored.
     UPLOADED_FILES = "uploaded_files"
@@ -33,19 +31,23 @@ class Dirs(SimpleNamespace):
     # The name of the utils file.
     UTILS = "utils"
     # The name of the state file.
-    STATE_PATH = "/".join([UTILS, "state"])
+    STATE_PATH = UTILS + "/state"
     # The name of the components file.
-    COMPONENTS_PATH = "/".join([UTILS, "components"])
+    COMPONENTS_PATH = UTILS + "/components"
     # The name of the contexts file.
-    CONTEXTS_PATH = "/".join([UTILS, "context"])
-    # The name of the output static directory.
-    STATIC = "_static"
+    CONTEXTS_PATH = UTILS + "/context"
+    # The name of the output directory.
+    BUILD_DIR = "build"
+    # The name of the static files directory.
+    STATIC = BUILD_DIR + "/client"
     # The name of the public html directory served at "/"
     PUBLIC = "public"
     # The directory where styles are located.
     STYLES = "styles"
     # The name of the pages directory.
-    PAGES = "pages"
+    PAGES = "app"
+    # The name of the routes directory.
+    ROUTES = "routes"
     # The name of the env json file.
     ENV_JSON = "env.json"
     # The name of the reflex json file.
@@ -115,9 +117,6 @@ class ReflexHostingCLI(SimpleNamespace):
 class Templates(SimpleNamespace):
     """Constants related to Templates."""
 
-    # The route on Reflex backend to query which templates are available and their URLs.
-    APP_TEMPLATES_ROUTE = "/app-templates"
-
     # The default template
     DEFAULT = "blank"
 
@@ -128,58 +127,12 @@ class Templates(SimpleNamespace):
     CHOOSE_TEMPLATES = "choose-templates"
 
     # The URL to find reflex templates.
-    REFLEX_TEMPLATES_URL = "https://reflex.dev/templates"
-
-    # Demo url for the default template.
-    DEFAULT_TEMPLATE_URL = "https://blank-template.reflex.run"
+    REFLEX_TEMPLATES_URL = (
+        "https://reflex.dev/docs/getting-started/open-source-templates/"
+    )
 
     # The reflex.build frontend host
-    REFLEX_BUILD_FRONTEND = "https://reflex.build"
-
-    # The reflex.build backend host
-    REFLEX_BUILD_BACKEND = "https://flexgen-prod-flexgen.fly.dev"
-
-    @classproperty
-    @classmethod
-    def REFLEX_BUILD_URL(cls):
-        """The URL to redirect to reflex.build.
-
-        Returns:
-            The URL to redirect to reflex.build.
-        """
-        from reflex.config import environment
-
-        return (
-            environment.REFLEX_BUILD_FRONTEND.get()
-            + "/gen?reflex_init_token={reflex_init_token}"
-        )
-
-    @classproperty
-    @classmethod
-    def REFLEX_BUILD_POLL_URL(cls):
-        """The URL to poll waiting for the user to select a generation.
-
-        Returns:
-            The URL to poll waiting for the user to select a generation.
-        """
-        from reflex.config import environment
-
-        return environment.REFLEX_BUILD_BACKEND.get() + "/api/init/{reflex_init_token}"
-
-    @classproperty
-    @classmethod
-    def REFLEX_BUILD_CODE_URL(cls):
-        """The URL to fetch the generation's reflex code.
-
-        Returns:
-            The URL to fetch the generation's reflex code.
-        """
-        from reflex.config import environment
-
-        return (
-            environment.REFLEX_BUILD_BACKEND.get()
-            + "/api/gen/{generation_hash}/refactored"
-        )
+    REFLEX_BUILD_FRONTEND = "https://build.reflex.dev"
 
     class Dirs(SimpleNamespace):
         """Folders used by the template system of Reflex."""
@@ -188,25 +141,38 @@ class Templates(SimpleNamespace):
         BASE = Reflex.ROOT_DIR / Reflex.MODULE_NAME / ".templates"
         # The web subdirectory of the template directory.
         WEB_TEMPLATE = BASE / "web"
-        # The jinja template directory.
-        JINJA_TEMPLATE = BASE / "jinja"
         # Where the code for the templates is stored.
         CODE = "code"
 
 
-class Next(SimpleNamespace):
-    """Constants related to NextJS."""
+class Javascript(SimpleNamespace):
+    """Constants related to Javascript."""
 
-    # The NextJS config file
-    CONFIG_FILE = "next.config.js"
-    # The sitemap config file.
-    SITEMAP_CONFIG_FILE = "next-sitemap.config.js"
     # The node modules directory.
     NODE_MODULES = "node_modules"
-    # The package lock file.
-    PACKAGE_LOCK = "package-lock.json"
+
+
+class ReactRouter(Javascript):
+    """Constants related to React Router."""
+
+    # The react router config file
+    CONFIG_FILE = "react-router.config.js"
+
+    # The associated Vite config file
+    VITE_CONFIG_FILE = "vite.config.js"
+
     # Regex to check for message displayed when frontend comes up
-    FRONTEND_LISTENING_REGEX = "Local:[\\s]+(.*)"
+    DEV_FRONTEND_LISTENING_REGEX = r"Local:[\s]+"
+
+    # Regex to pattern the route path in the config file
+    # INFO  Accepting connections at http://localhost:3000
+    PROD_FRONTEND_LISTENING_REGEX = r"Accepting connections at[\s]+"
+
+    FRONTEND_LISTENING_REGEX = (
+        rf"(?:{DEV_FRONTEND_LISTENING_REGEX}|{PROD_FRONTEND_LISTENING_REGEX})(.*)"
+    )
+
+    SPA_FALLBACK = "__spa-fallback.html"
 
 
 # Color mode variables

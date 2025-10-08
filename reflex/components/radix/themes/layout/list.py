@@ -170,7 +170,7 @@ class ListItem(Li, MarkdownComponentMap):
         """
         for child in children:
             if isinstance(child, Text):
-                child.as_ = "span"
+                child.as_ = "span"  # pyright: ignore[reportAttributeAccessIssue]
             elif isinstance(child, Icon) and "display" not in child.style:
                 child.style["display"] = "inline"
         return super().create(*children, **props)
@@ -199,4 +199,5 @@ def __getattr__(name: Any):
     try:
         return globals()[name]
     except KeyError:
-        raise AttributeError(f"module '{__name__} has no attribute '{name}'") from None
+        msg = f"module '{__name__} has no attribute '{name}'"
+        raise AttributeError(msg) from None

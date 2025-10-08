@@ -2,11 +2,10 @@
 
 import reflex as rx
 
+SVG_COLOR = rx.color_mode_cond("#110F1F", "white")
 
-def svg_logo(
-    color: str | rx.Var[str] = rx.color_mode_cond("#110F1F", "white"),
-    **props,
-):
+
+def svg_logo(color: str | rx.Var[str] = SVG_COLOR, **props):
     """A Reflex logo SVG.
 
     Args:

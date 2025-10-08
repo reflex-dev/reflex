@@ -8,12 +8,22 @@ import plotly.graph_objects as go
 import pytest
 
 from reflex.components.tags.tag import Tag
-from reflex.event import EventChain, EventHandler, EventSpec, JavascriptInputEvent
+from reflex.constants.state import FIELD_MARKER
+from reflex.event import (
+    EventChain,
+    EventHandler,
+    EventSpec,
+    JavascriptInputEvent,
+    no_args_event_spec,
+)
 from reflex.style import Style
 from reflex.utils import format
 from reflex.utils.serializers import serialize_figure
 from reflex.vars.base import LiteralVar, Var
 from reflex.vars.object import ObjectVar
+
+pytest.importorskip("pydantic")
+
 from tests.units.test_state import (
     ChildState,
     ChildState2,
@@ -31,7 +41,7 @@ def mock_event(arg):
 
 
 @pytest.mark.parametrize(
-    "input,output",
+    ("input", "output"),
     [
         ("{", "}"),
         ("(", ")"),
@@ -52,7 +62,7 @@ def test_get_close_char(input: str, output: str):
 
 
 @pytest.mark.parametrize(
-    "text,open,expected",
+    ("text", "open", "expected"),
     [
         ("", "{", False),
         ("{wrap}", "{", True),
@@ -73,7 +83,7 @@ def test_is_wrapped(text: str, open: str, expected: bool):
 
 
 @pytest.mark.parametrize(
-    "text,open,check_first,num,expected",
+    ("text", "open", "check_first", "num", "expected"),
     [
         ("", "{", True, 1, "{}"),
         ("wrap", "{", True, 1, "{wrap}"),
@@ -99,13 +109,9 @@ def test_wrap(text: str, open: str, expected: str, check_first: bool, num: int):
 
 
 @pytest.mark.parametrize(
-    "string,expected_output",
+    ("string", "expected_output"),
     [
         ("This is a random string", "This is a random string"),
-        (
-            "This is a random string with `backticks`",
-            "This is a random string with \\`backticks\\`",
-        ),
         (
             "This is a random string with `backticks`",
             "This is a random string with \\`backticks\\`",
@@ -129,7 +135,7 @@ def test_escape_js_string(string, expected_output):
 
 
 @pytest.mark.parametrize(
-    "text,indent_level,expected",
+    ("text", "indent_level", "expected"),
     [
         ("", 2, ""),
         ("hello", 2, "hello"),
@@ -153,7 +159,7 @@ def test_indent(text: str, indent_level: int, expected: str, windows_platform: b
 
 
 @pytest.mark.parametrize(
-    "input,output",
+    ("input", "output"),
     [
         ("", ""),
         ("hello", "hello"),
@@ -179,7 +185,7 @@ def test_to_snake_case(input: str, output: str):
 
 
 @pytest.mark.parametrize(
-    "input,output",
+    ("input", "output"),
     [
         ("", ""),
         ("hello", "hello"),
@@ -209,7 +215,7 @@ def test_to_camel_case(input: str, output: str):
 
 
 @pytest.mark.parametrize(
-    "input,output",
+    ("input", "output"),
     [
         ("", ""),
         ("hello", "Hello"),
@@ -229,7 +235,7 @@ def test_to_title_case(input: str, output: str):
 
 
 @pytest.mark.parametrize(
-    "input,output",
+    ("input", "output"),
     [
         ("", ""),
         ("hello", "hello"),
@@ -253,7 +259,7 @@ def test_to_kebab_case(input: str, output: str):
 
 
 @pytest.mark.parametrize(
-    "input,output",
+    ("input", "output"),
     [
         ("", "{``}"),
         ("hello", "{`hello`}"),
@@ -272,7 +278,7 @@ def test_format_string(input: str, output: str):
 
 
 @pytest.mark.parametrize(
-    "input,output",
+    ("input", "output"),
     [
         (LiteralVar.create(value="test"), '"test"'),
         (Var(_js_expr="test"), "test"),
@@ -283,58 +289,55 @@ def test_format_var(input: Var, output: str):
 
 
 @pytest.mark.parametrize(
-    "route,format_case,expected",
+    ("route", "expected"),
     [
-        ("", True, "index"),
-        ("/", True, "index"),
-        ("custom-route", True, "custom-route"),
-        ("custom-route", False, "custom-route"),
-        ("custom-route/", True, "custom-route"),
-        ("custom-route/", False, "custom-route"),
-        ("/custom-route", True, "custom-route"),
-        ("/custom-route", False, "custom-route"),
-        ("/custom_route", True, "custom-route"),
-        ("/custom_route", False, "custom_route"),
-        ("/CUSTOM_route", True, "custom-route"),
-        ("/CUSTOM_route", False, "CUSTOM_route"),
+        ("", "index"),
+        ("/", "index"),
+        ("custom-route", "custom-route"),
+        ("custom-route/", "custom-route"),
+        ("/custom-route", "custom-route"),
+        ("/custom_route", "custom_route"),
+        ("/CUSTOM_route", "CUSTOM_route"),
     ],
 )
-def test_format_route(route: str, format_case: bool, expected: bool):
+def test_format_route(route: str, expected: str):
     """Test formatting a route.
 
     Args:
         route: The route to format.
-        format_case: Whether to change casing to snake_case.
         expected: The expected formatted route.
     """
-    assert format.format_route(route, format_case=format_case) == expected
+    assert format.format_route(route) == expected
 
 
 @pytest.mark.parametrize(
-    "condition, match_cases, default,expected",
+    ("condition", "match_cases", "default", "expected"),
     [
         (
             "state__state.value",
             [
-                [LiteralVar.create(1), LiteralVar.create("red")],
-                [LiteralVar.create(2), LiteralVar.create(3), LiteralVar.create("blue")],
-                [TestState.mapping, TestState.num1],
-                [
-                    LiteralVar.create(f"{TestState.map_key}-key"),
+                ([LiteralVar.create(1)], LiteralVar.create("red")),
+                (
+                    [LiteralVar.create(2), LiteralVar.create(3)],
+                    LiteralVar.create("blue"),
+                ),
+                ([TestState.mapping], TestState.num1),
+                (
+                    [LiteralVar.create(f"{TestState.map_key}-key")],
                     LiteralVar.create("return-key"),
-                ],
+                ),
             ],
             LiteralVar.create("yellow"),
             '(() => { switch (JSON.stringify(state__state.value)) {case JSON.stringify(1):  return ("red");  break;case JSON.stringify(2): case JSON.stringify(3):  '
-            f'return ("blue");  break;case JSON.stringify({TestState.get_full_name()}.mapping):  return '
-            f'({TestState.get_full_name()}.num1);  break;case JSON.stringify(({TestState.get_full_name()}.map_key+"-key")):  return ("return-key");'
+            f'return ("blue");  break;case JSON.stringify({TestState.get_full_name()}.mapping{FIELD_MARKER}):  return '
+            f'({TestState.get_full_name()}.num1{FIELD_MARKER});  break;case JSON.stringify(({TestState.get_full_name()}.map_key{FIELD_MARKER}+"-key")):  return ("return-key");'
             '  break;default:  return ("yellow");  break;};})()',
         )
     ],
 )
 def test_format_match(
     condition: str,
-    match_cases: list[list[Var]],
+    match_cases: list[tuple[list[Var], Var]],
     default: Var,
     expected: str,
 ):
@@ -350,7 +353,7 @@ def test_format_match(
 
 
 @pytest.mark.parametrize(
-    "prop,formatted",
+    ("prop", "formatted"),
     [
         ("string", '"string"'),
         ("{wrapped_string}", '"{wrapped_string}"'),
@@ -372,9 +375,9 @@ def test_format_match(
         (
             EventChain(
                 events=[EventSpec(handler=EventHandler(fn=mock_event))],
-                args_spec=lambda: [],
+                args_spec=no_args_event_spec,
             ),
-            '((...args) => (addEvents([(Event("mock_event", ({  }), ({  })))], args, ({  }))))',
+            '((...args) => (addEvents([(ReflexEvent("mock_event", ({  }), ({  })))], args, ({  }))))',
         ),
         (
             EventChain(
@@ -395,15 +398,15 @@ def test_format_match(
                 ],
                 args_spec=lambda e: [e.target.value],
             ),
-            '((_e) => (addEvents([(Event("mock_event", ({ ["arg"] : _e["target"]["value"] }), ({  })))], [_e], ({  }))))',
+            '((_e) => (addEvents([(ReflexEvent("mock_event", ({ ["arg"] : _e?.["target"]?.["value"] }), ({  })))], [_e], ({  }))))',
         ),
         (
             EventChain(
                 events=[EventSpec(handler=EventHandler(fn=mock_event))],
-                args_spec=lambda: [],
+                args_spec=no_args_event_spec,
                 event_actions={"stopPropagation": True},
             ),
-            '((...args) => (addEvents([(Event("mock_event", ({  }), ({  })))], args, ({ ["stopPropagation"] : true }))))',
+            '((...args) => (addEvents([(ReflexEvent("mock_event", ({  }), ({  })))], args, ({ ["stopPropagation"] : true }))))',
         ),
         (
             EventChain(
@@ -413,17 +416,17 @@ def test_format_match(
                         event_actions={"stopPropagation": True},
                     )
                 ],
-                args_spec=lambda: [],
+                args_spec=no_args_event_spec,
             ),
-            '((...args) => (addEvents([(Event("mock_event", ({  }), ({ ["stopPropagation"] : true })))], args, ({  }))))',
+            '((...args) => (addEvents([(ReflexEvent("mock_event", ({  }), ({ ["stopPropagation"] : true })))], args, ({  }))))',
         ),
         (
             EventChain(
                 events=[EventSpec(handler=EventHandler(fn=mock_event))],
-                args_spec=lambda: [],
+                args_spec=no_args_event_spec,
                 event_actions={"preventDefault": True},
             ),
-            '((...args) => (addEvents([(Event("mock_event", ({  }), ({  })))], args, ({ ["preventDefault"] : true }))))',
+            '((...args) => (addEvents([(ReflexEvent("mock_event", ({  }), ({  })))], args, ({ ["preventDefault"] : true }))))',
         ),
         ({"a": "red", "b": "blue"}, '({ ["a"] : "red", ["b"] : "blue" })'),
         (Var(_js_expr="var", _var_type=int).guess_type(), "var"),
@@ -472,7 +475,7 @@ def test_format_prop(prop: Var, formatted: str):
 
 
 @pytest.mark.parametrize(
-    "single_props,key_value_props,output",
+    ("single_props", "key_value_props", "output"),
     [
         (
             [Var(_js_expr="props")],
@@ -493,7 +496,7 @@ def test_format_props(single_props, key_value_props, output):
 
 
 @pytest.mark.parametrize(
-    "input,output",
+    ("input", "output"),
     [
         (EventHandler(fn=mock_event), ("", "mock_event")),
     ],
@@ -503,7 +506,7 @@ def test_get_handler_parts(input, output):
 
 
 @pytest.mark.parametrize(
-    "input,output",
+    ("input", "output"),
     [
         (TestState.do_something, f"{TestState.get_full_name()}.do_something"),
         (
@@ -527,11 +530,11 @@ def test_format_event_handler(input, output):
 
 
 @pytest.mark.parametrize(
-    "input,output",
+    ("input", "output"),
     [
         (
             EventSpec(handler=EventHandler(fn=mock_event)),
-            '(Event("mock_event", ({  }), ({  })))',
+            '(ReflexEvent("mock_event", ({  }), ({  })))',
         ),
     ],
 )
@@ -540,7 +543,7 @@ def test_format_event(input, output):
 
 
 @pytest.mark.parametrize(
-    "input,output",
+    ("input", "output"),
     [
         ({"query": {"k1": 1, "k2": 2}}, {"k1": 1, "k2": 2}),
         ({"query": {"k1": 1, "k-2": 2}}, {"k1": 1, "k_2": 2}),
@@ -551,6 +554,8 @@ def test_format_query_params(input, output):
 
 
 formatted_router = {
+    "route_id": "",
+    "url": "",
     "session": {"client_token": "", "client_ip": "", "session_id": ""},
     "headers": {
         "host": "",
@@ -580,50 +585,50 @@ formatted_router = {
 
 
 @pytest.mark.parametrize(
-    "input, output",
+    ("input", "output"),
     [
         (
             TestState(_reflex_internal_init=True).dict(),  # pyright: ignore [reportCallIssue]
             {
                 TestState.get_full_name(): {
-                    "array": [1, 2, 3.14],
-                    "complex": {
+                    "array" + FIELD_MARKER: [1, 2, 3.14],
+                    "complex" + FIELD_MARKER: {
                         1: {"prop1": 42, "prop2": "hello"},
                         2: {"prop1": 42, "prop2": "hello"},
                     },
-                    "dt": "1989-11-09 18:53:00+01:00",
-                    "fig": serialize_figure(go.Figure()),
-                    "key": "",
-                    "map_key": "a",
-                    "mapping": {"a": [1, 2, 3], "b": [4, 5, 6]},
-                    "num1": 0,
-                    "num2": 3.14,
-                    "obj": {"prop1": 42, "prop2": "hello"},
-                    "sum": 3.14,
-                    "upper": "",
-                    "router": formatted_router,
-                    "asynctest": 0,
+                    "dt" + FIELD_MARKER: "1989-11-09 18:53:00+01:00",
+                    "fig" + FIELD_MARKER: serialize_figure(go.Figure()),
+                    "key" + FIELD_MARKER: "",
+                    "map_key" + FIELD_MARKER: "a",
+                    "mapping" + FIELD_MARKER: {"a": [1, 2, 3], "b": [4, 5, 6]},
+                    "num1" + FIELD_MARKER: 0,
+                    "num2" + FIELD_MARKER: 3.14,
+                    "obj" + FIELD_MARKER: {"prop1": 42, "prop2": "hello"},
+                    "sum" + FIELD_MARKER: 3.14,
+                    "upper" + FIELD_MARKER: "",
+                    "router" + FIELD_MARKER: formatted_router,
+                    "asynctest" + FIELD_MARKER: 0,
                 },
                 ChildState.get_full_name(): {
-                    "count": 23,
-                    "value": "",
+                    "count" + FIELD_MARKER: 23,
+                    "value" + FIELD_MARKER: "",
                 },
-                ChildState2.get_full_name(): {"value": ""},
-                ChildState3.get_full_name(): {"value": ""},
-                GrandchildState.get_full_name(): {"value2": ""},
-                GrandchildState2.get_full_name(): {"cached": ""},
-                GrandchildState3.get_full_name(): {"computed": ""},
+                ChildState2.get_full_name(): {"value" + FIELD_MARKER: ""},
+                ChildState3.get_full_name(): {"value" + FIELD_MARKER: ""},
+                GrandchildState.get_full_name(): {"value2" + FIELD_MARKER: ""},
+                GrandchildState2.get_full_name(): {"cached" + FIELD_MARKER: ""},
+                GrandchildState3.get_full_name(): {"computed" + FIELD_MARKER: ""},
             },
         ),
         (
             DateTimeState(_reflex_internal_init=True).dict(),  # pyright: ignore [reportCallIssue]
             {
                 DateTimeState.get_full_name(): {
-                    "d": "1989-11-09",
-                    "dt": "1989-11-09 18:53:00+01:00",
-                    "t": "18:53:00+01:00",
-                    "td": "11 days, 0:11:00",
-                    "router": formatted_router,
+                    "d" + FIELD_MARKER: "1989-11-09",
+                    "dt" + FIELD_MARKER: "1989-11-09 18:53:00+01:00",
+                    "t" + FIELD_MARKER: "18:53:00+01:00",
+                    "td" + FIELD_MARKER: "11 days, 0:11:00",
+                    "router" + FIELD_MARKER: formatted_router,
                 },
             },
         ),
@@ -640,7 +645,7 @@ def test_format_state(input, output):
 
 
 @pytest.mark.parametrize(
-    "input,output",
+    ("input", "output"),
     [
         ("input1", "ref_input1"),
         ("input 1", "ref_input_1"),
@@ -660,7 +665,7 @@ def test_format_ref(input, output):
 
 
 @pytest.mark.parametrize(
-    "input,output",
+    ("input", "output"),
     [
         (("my_array", None), "refs_my_array"),
         (("my_array", LiteralVar.create(0)), "refs_my_array[0]"),
@@ -672,7 +677,7 @@ def test_format_array_ref(input, output):
 
 
 @pytest.mark.parametrize(
-    "input, output",
+    ("input", "output"),
     [
         ("library@^0.1.2", "library"),
         ("library", "library"),
@@ -691,7 +696,7 @@ def test_format_library_name(input: str, output: str):
 
 
 @pytest.mark.parametrize(
-    "input,output",
+    ("input", "output"),
     [
         (None, "null"),
         (True, "true"),

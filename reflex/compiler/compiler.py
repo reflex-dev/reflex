@@ -2,11 +2,11 @@
 
 from __future__ import annotations
 
-from collections.abc import Iterable, Sequence
-from datetime import datetime
+import sys
+from collections.abc import Callable, Iterable, Sequence
 from inspect import getmodule
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from reflex import constants
 from reflex.compiler import templates, utils
@@ -18,13 +18,16 @@ from reflex.components.component import (
     CustomComponent,
     StatefulComponent,
 )
-from reflex.config import environment, get_config
-from reflex.constants.compiler import PageNames
+from reflex.config import get_config
+from reflex.constants.compiler import PageNames, ResetStylesheet
+from reflex.constants.state import FIELD_MARKER
+from reflex.environment import environment
 from reflex.state import BaseState
 from reflex.style import SYSTEM_COLOR_MODE
 from reflex.utils import console, path_ops
 from reflex.utils.exceptions import ReflexError
 from reflex.utils.exec import is_prod_mode
+from reflex.utils.format import to_title_case
 from reflex.utils.imports import ImportVar
 from reflex.utils.prerequisites import get_web_dir
 from reflex.vars.base import LiteralVar, Var
@@ -34,7 +37,9 @@ def _apply_common_imports(
     imports: dict[str, list[ImportVar]],
 ):
     imports.setdefault("@emotion/react", []).append(ImportVar("jsx"))
-    imports.setdefault("react", []).append(ImportVar("Fragment"))
+    imports.setdefault("react", []).extend(
+        [ImportVar("Fragment"), ImportVar("useEffect")],
+    )
 
 
 def _compile_document_root(root: Component) -> str:
@@ -48,7 +53,7 @@ def _compile_document_root(root: Component) -> str:
     """
     document_root_imports = root._get_all_imports()
     _apply_common_imports(document_root_imports)
-    return templates.DOCUMENT_ROOT.render(
+    return templates.document_root_template(
         imports=utils.compile_imports(document_root_imports),
         document=root.render(),
     )
@@ -83,14 +88,16 @@ def _compile_app(app_root: Component) -> str:
         (_normalize_library_name(name), name) for name in bundled_libraries
     ]
 
+    window_libraries_deduped = list(dict.fromkeys(window_libraries))
+
     app_root_imports = app_root._get_all_imports()
     _apply_common_imports(app_root_imports)
 
-    return templates.APP_ROOT.render(
+    return templates.app_root_template(
         imports=utils.compile_imports(app_root_imports),
         custom_codes=app_root._get_all_custom_code(),
         hooks=app_root._get_all_hooks(),
-        window_libraries=window_libraries,
+        window_libraries=window_libraries_deduped,
         render=app_root.render(),
         dynamic_imports=app_root._get_all_dynamic_imports(),
     )
@@ -105,7 +112,7 @@ def _compile_theme(theme: str) -> str:
     Returns:
         The compiled theme.
     """
-    return templates.THEME.render(theme=theme)
+    return templates.theme_template(theme=theme)
 
 
 def _compile_contexts(state: type[BaseState] | None, theme: Component | None) -> str:
@@ -122,34 +129,27 @@ def _compile_contexts(state: type[BaseState] | None, theme: Component | None) ->
     if appearance is None or str(LiteralVar.create(appearance)) == '"inherit"':
         appearance = LiteralVar.create(SYSTEM_COLOR_MODE)
 
-    last_compiled_time = str(datetime.now())
     return (
-        templates.CONTEXT.render(
+        templates.context_template(
             initial_state=utils.compile_state(state),
             state_name=state.get_name(),
             client_storage=utils.compile_client_storage(state),
             is_dev_mode=not is_prod_mode(),
-            last_compiled_time=last_compiled_time,
-            default_color_mode=appearance,
+            default_color_mode=str(appearance),
         )
         if state
-        else templates.CONTEXT.render(
+        else templates.context_template(
             is_dev_mode=not is_prod_mode(),
-            default_color_mode=appearance,
-            last_compiled_time=last_compiled_time,
+            default_color_mode=str(appearance),
         )
     )
 
 
-def _compile_page(
-    component: BaseComponent,
-    state: type[BaseState] | None,
-) -> str:
-    """Compile the component given the app state.
+def _compile_page(component: BaseComponent) -> str:
+    """Compile the component.
 
     Args:
         component: The component to compile.
-        state: The app state.
 
     Returns:
         The compiled component.
@@ -159,30 +159,30 @@ def _compile_page(
     imports = utils.compile_imports(imports)
 
     # Compile the code to render the component.
-    kwargs = {"state_name": state.get_name()} if state is not None else {}
-
-    return templates.PAGE.render(
+    return templates.page_template(
         imports=imports,
-        dynamic_imports=component._get_all_dynamic_imports(),
+        dynamic_imports=sorted(component._get_all_dynamic_imports()),
         custom_codes=component._get_all_custom_code(),
         hooks=component._get_all_hooks(),
         render=component.render(),
-        **kwargs,
     )
 
 
-def compile_root_stylesheet(stylesheets: list[str]) -> tuple[str, str]:
+def compile_root_stylesheet(
+    stylesheets: list[str], reset_style: bool = True
+) -> tuple[str, str]:
     """Compile the root stylesheet.
 
     Args:
         stylesheets: The stylesheets to include in the root stylesheet.
+        reset_style: Whether to include CSS reset for margin and padding.
 
     Returns:
         The path and code of the compiled root stylesheet.
     """
     output_path = utils.get_root_stylesheet_path()
 
-    code = _compile_root_stylesheet(stylesheets)
+    code = _compile_root_stylesheet(stylesheets, reset_style)
 
     return output_path, code
 
@@ -200,15 +200,14 @@ def _validate_stylesheet(stylesheet_full_path: Path, assets_app_path: Path) -> N
     """
     suffix = stylesheet_full_path.suffix[1:] if stylesheet_full_path.suffix else ""
     if suffix not in constants.Reflex.STYLESHEETS_SUPPORTED:
-        raise ValueError(f"Stylesheet file {stylesheet_full_path} is not supported.")
+        msg = f"Stylesheet file {stylesheet_full_path} is not supported."
+        raise ValueError(msg)
     if not stylesheet_full_path.absolute().is_relative_to(assets_app_path.absolute()):
-        raise FileNotFoundError(
-            f"Cannot include stylesheets from outside the assets directory: {stylesheet_full_path}"
-        )
+        msg = f"Cannot include stylesheets from outside the assets directory: {stylesheet_full_path}"
+        raise FileNotFoundError(msg)
     if not stylesheet_full_path.name:
-        raise ValueError(
-            f"Stylesheet file name cannot be empty: {stylesheet_full_path}"
-        )
+        msg = f"Stylesheet file name cannot be empty: {stylesheet_full_path}"
+        raise ValueError(msg)
     if (
         len(
             stylesheet_full_path.absolute()
@@ -218,16 +217,19 @@ def _validate_stylesheet(stylesheet_full_path: Path, assets_app_path: Path) -> N
         == 1
         and stylesheet_full_path.stem == PageNames.STYLESHEET_ROOT
     ):
-        raise ValueError(
-            f"Stylesheet file name cannot be '{PageNames.STYLESHEET_ROOT}': {stylesheet_full_path}"
-        )
+        msg = f"Stylesheet file name cannot be '{PageNames.STYLESHEET_ROOT}': {stylesheet_full_path}"
+        raise ValueError(msg)
 
 
-def _compile_root_stylesheet(stylesheets: list[str]) -> str:
+RADIX_THEMES_STYLESHEET = "@radix-ui/themes/styles.css"
+
+
+def _compile_root_stylesheet(stylesheets: list[str], reset_style: bool = True) -> str:
     """Compile the root stylesheet.
 
     Args:
         stylesheets: The stylesheets to include in the root stylesheet.
+        reset_style: Whether to include CSS reset for margin and padding.
 
     Returns:
         The compiled root stylesheet.
@@ -235,11 +237,21 @@ def _compile_root_stylesheet(stylesheets: list[str]) -> str:
     Raises:
         FileNotFoundError: If a specified stylesheet in assets directory does not exist.
     """
-    # Add tailwind css if enabled.
-    sheets = (
-        [constants.Tailwind.ROOT_STYLE_PATH]
-        if get_config().tailwind is not None
-        else []
+    # Add stylesheets from plugins.
+    sheets = []
+
+    # Add CSS reset if enabled
+    if reset_style:
+        # Reference the vendored style reset file (automatically copied from .templates/web)
+        sheets.append(f"./{ResetStylesheet.FILENAME}")
+
+    sheets.extend(
+        [RADIX_THEMES_STYLESHEET]
+        + [
+            sheet
+            for plugin in get_config().plugins
+            for sheet in plugin.get_stylesheet_paths()
+        ]
     )
 
     failed_to_import_sass = False
@@ -254,9 +266,8 @@ def _compile_root_stylesheet(stylesheets: list[str]) -> str:
             stylesheet_full_path = assets_app_path / stylesheet.strip("/")
 
             if not stylesheet_full_path.exists():
-                raise FileNotFoundError(
-                    f"The stylesheet file {stylesheet_full_path} does not exist."
-                )
+                msg = f"The stylesheet file {stylesheet_full_path} does not exist."
+                raise FileNotFoundError(msg)
 
             if stylesheet_full_path.is_dir():
                 all_files = (
@@ -310,7 +321,7 @@ def _compile_root_stylesheet(stylesheets: list[str]) -> str:
             'The `libsass` package is required to compile sass/scss stylesheet files. Run `pip install "libsass>=0.23.0"`.'
         )
 
-    return templates.STYLE.render(stylesheets=sheets)
+    return templates.styles_template(stylesheets=sheets)
 
 
 def _compile_component(component: Component | StatefulComponent) -> str:
@@ -322,11 +333,11 @@ def _compile_component(component: Component | StatefulComponent) -> str:
     Returns:
         The compiled component.
     """
-    return templates.COMPONENT.render(component=component)
+    return templates.component_template(component=component)
 
 
-def _compile_components(
-    components: set[CustomComponent],
+def _compile_memo_components(
+    components: Iterable[CustomComponent],
 ) -> tuple[str, dict[str, list[ImportVar]]]:
     """Compile the components.
 
@@ -365,10 +376,10 @@ def _compile_components(
 
     # Compile the components page.
     return (
-        templates.COMPONENTS.render(
+        templates.memo_components_template(
             imports=utils.compile_imports(imports),
             components=component_renders,
-            dynamic_imports=dynamic_imports,
+            dynamic_imports=sorted(dynamic_imports),
             custom_codes=custom_codes,
         ),
         imports,
@@ -424,9 +435,7 @@ def _compile_stateful_components(
                 rendered_components.update(dict.fromkeys(dynamic_imports))
 
             # Include custom code in the shared component.
-            rendered_components.update(
-                dict.fromkeys(component._get_all_custom_code()),
-            )
+            rendered_components.update(component._get_all_custom_code(export=True))
 
             # Include all imports in the shared component.
             all_import_dicts.append(component._get_all_imports())
@@ -445,32 +454,16 @@ def _compile_stateful_components(
     if rendered_components:
         _apply_common_imports(all_imports)
 
-    return templates.STATEFUL_COMPONENTS.render(
+    return templates.stateful_components_template(
         imports=utils.compile_imports(all_imports),
         memoized_code="\n".join(rendered_components),
-    )
-
-
-def _compile_tailwind(
-    config: dict,
-) -> str:
-    """Compile the Tailwind config.
-
-    Args:
-        config: The Tailwind config.
-
-    Returns:
-        The compiled Tailwind config.
-    """
-    return templates.TAILWIND_CONFIG.render(
-        **config,
     )
 
 
 def compile_document_root(
     head_components: list[Component],
     html_lang: str | None = None,
-    html_custom_attrs: dict[str, Var | str] | None = None,
+    html_custom_attrs: dict[str, Var | Any] | None = None,
 ) -> tuple[str, str]:
     """Compile the document root.
 
@@ -483,7 +476,9 @@ def compile_document_root(
         The path and code of the compiled document root.
     """
     # Get the path for the output file.
-    output_path = utils.get_page_path(constants.PageNames.DOCUMENT_ROOT)
+    output_path = str(
+        get_web_dir() / constants.Dirs.PAGES / constants.PageNames.DOCUMENT_ROOT
+    )
 
     # Create the document root.
     document_root = utils.create_document_root(
@@ -505,7 +500,9 @@ def compile_app(app_root: Component) -> tuple[str, str]:
         The path and code of the compiled app wrapper.
     """
     # Get the path for the output file.
-    output_path = utils.get_page_path(constants.PageNames.APP_ROOT)
+    output_path = str(
+        get_web_dir() / constants.Dirs.PAGES / constants.PageNames.APP_ROOT
+    )
 
     # Compile the document root.
     code = _compile_app(app_root)
@@ -550,15 +547,12 @@ def compile_contexts(
     return output_path, _compile_contexts(state, theme)
 
 
-def compile_page(
-    path: str, component: BaseComponent, state: type[BaseState] | None
-) -> tuple[str, str]:
+def compile_page(path: str, component: BaseComponent) -> tuple[str, str]:
     """Compile a single page.
 
     Args:
         path: The path to compile the page to.
         component: The component to compile.
-        state: The app state.
 
     Returns:
         The path and code of the compiled page.
@@ -567,12 +561,12 @@ def compile_page(
     output_path = utils.get_page_path(path)
 
     # Add the style to the component.
-    code = _compile_page(component, state)
+    code = _compile_page(component)
     return output_path, code
 
 
-def compile_components(
-    components: set[CustomComponent],
+def compile_memo_components(
+    components: Iterable[CustomComponent],
 ) -> tuple[str, str, dict[str, list[ImportVar]]]:
     """Compile the custom components.
 
@@ -586,12 +580,13 @@ def compile_components(
     output_path = utils.get_components_path()
 
     # Compile the components.
-    code, imports = _compile_components(components)
+    code, imports = _compile_memo_components(components)
     return output_path, code, imports
 
 
 def compile_stateful_components(
     pages: Iterable[Component],
+    progress_function: Callable[[], None],
 ) -> tuple[str, str, list[BaseComponent]]:
     """Separately compile components that depend on State vars.
 
@@ -601,54 +596,22 @@ def compile_stateful_components(
 
     Args:
         pages: The pages to extract stateful components from.
+        progress_function: A function to call to indicate progress, called once per page.
 
     Returns:
         The path and code of the compiled stateful components.
     """
     output_path = utils.get_stateful_components_path()
 
-    # Compile the stateful components.
-    page_components = [StatefulComponent.compile_from(page) or page for page in pages]
+    page_components = []
+    for page in pages:
+        # Compile the stateful components
+        page_component = StatefulComponent.compile_from(page) or page
+        progress_function()
+        page_components.append(page_component)
+
     code = _compile_stateful_components(page_components)
     return output_path, code, page_components
-
-
-def compile_tailwind(
-    config: dict,
-):
-    """Compile the Tailwind config.
-
-    Args:
-        config: The Tailwind config.
-
-    Returns:
-        The compiled Tailwind config.
-    """
-    # Get the path for the output file.
-    output_path = str((get_web_dir() / constants.Tailwind.CONFIG).absolute())
-
-    # Compile the config.
-    code = _compile_tailwind(config)
-    return output_path, code
-
-
-def remove_tailwind_from_postcss() -> tuple[str, str]:
-    """If tailwind is not to be used, remove it from postcss.config.js.
-
-    Returns:
-        The path and code of the compiled postcss.config.js.
-    """
-    # Get the path for the output file.
-    output_path = str(get_web_dir() / constants.Dirs.POSTCSS_JS)
-
-    code = [
-        line
-        for line in Path(output_path).read_text().splitlines(keepends=True)
-        if "tailwindcss: " not in line
-    ]
-
-    # Compile the config.
-    return output_path, "".join(code)
 
 
 def purge_web_pages_dir():
@@ -658,7 +621,10 @@ def purge_web_pages_dir():
         return
 
     # Empty out the web pages directory.
-    utils.empty_dir(get_web_dir() / constants.Dirs.PAGES, keep_files=["_app.js"])
+    utils.empty_dir(
+        get_web_dir() / constants.Dirs.PAGES,
+        keep_files=["routes.js", "entry.client.js"],
+    )
 
 
 if TYPE_CHECKING:
@@ -720,6 +686,32 @@ def readable_name_from_component(
     return None
 
 
+def _modify_exception(e: Exception) -> None:
+    """Modify the exception to make it more readable.
+
+    Args:
+        e: The exception to modify.
+    """
+    if len(e.args) == 1 and isinstance((msg := e.args[0]), str):
+        while (state_index := msg.find("reflex___")) != -1:
+            dot_index = msg.find(".", state_index)
+            if dot_index == -1:
+                break
+            state_name = msg[state_index:dot_index]
+            module_dot_state_name = state_name.replace("___", ".").rsplit("__", 1)[-1]
+            module_path, _, state_snake_case = module_dot_state_name.rpartition(".")
+            if not state_snake_case:
+                break
+            actual_state_name = to_title_case(state_snake_case)
+            msg = (
+                f"{msg[:state_index]}{module_path}.{actual_state_name}{msg[dot_index:]}"
+            )
+
+        msg = msg.replace(FIELD_MARKER, "")
+
+        e.args = (msg,)
+
+
 def into_component(component: Component | ComponentCallable) -> Component:
     """Convert a component to a Component.
 
@@ -736,14 +728,15 @@ def into_component(component: Component | ComponentCallable) -> Component:
     """
     if (converted := _into_component_once(component)) is not None:
         return converted
+    if not callable(component):
+        msg = f"Expected a Component or callable, got {component!r} of type {type(component)}"
+        raise TypeError(msg)
+
     try:
-        if (
-            callable(component)
-            and (converted := _into_component_once(component())) is not None
-        ):
-            return converted
+        component_called = component()
     except KeyError as e:
         if isinstance(e, ReflexError):
+            _modify_exception(e)
             raise
         key = e.args[0] if e.args else None
         if key is not None and isinstance(key, Var):
@@ -753,6 +746,7 @@ def into_component(component: Component | ComponentCallable) -> Component:
         raise
     except TypeError as e:
         if isinstance(e, ReflexError):
+            _modify_exception(e)
             raise
         message = e.args[0] if e.args else None
         if message and isinstance(message, str):
@@ -765,9 +759,10 @@ def into_component(component: Component | ComponentCallable) -> Component:
                     "Cannot pass a Var to a built-in function. Consider using .length() for accessing the length of an iterable Var."
                 ).with_traceback(e.__traceback__) from None
             if message.endswith(
-                "indices must be integers or slices, not NumberCastedVar"
-            ) or message.endswith(
-                "indices must be integers or slices, not BooleanCastedVar"
+                (
+                    "indices must be integers or slices, not NumberCastedVar",
+                    "indices must be integers or slices, not BooleanCastedVar",
+                )
             ):
                 raise TypeError(
                     "Cannot index into a primitive sequence with a Var. Consider calling rx.Var.create() on the sequence."
@@ -777,74 +772,72 @@ def into_component(component: Component | ComponentCallable) -> Component:
                 "Cannot pass a Var to a built-in function. Consider moving the operation to the backend, using existing Var operations, or defining a custom Var operation."
             ).with_traceback(e.__traceback__) from None
         raise
+    except ReflexError as e:
+        _modify_exception(e)
+        raise
 
-    raise TypeError(f"Expected a Component, got {type(component)}")
+    if (converted := _into_component_once(component_called)) is not None:
+        return converted
+
+    msg = f"Expected a Component, got {component_called!r} of type {type(component_called)}"
+    raise TypeError(msg)
 
 
 def compile_unevaluated_page(
     route: str,
     page: UnevaluatedPage,
-    state: type[BaseState] | None = None,
     style: ComponentStyle | None = None,
     theme: Component | None = None,
-) -> tuple[Component, bool]:
+) -> Component:
     """Compiles an uncompiled page into a component and adds meta information.
 
     Args:
         route: The route of the page.
         page: The uncompiled page object.
-        state: The state of the app.
         style: The style of the page.
         theme: The theme of the page.
 
     Returns:
         The compiled component and whether state should be enabled.
+
+    Raises:
+        Exception: If an error occurs while evaluating the page.
     """
-    # Generate the component if it is a callable.
-    component = into_component(page.component)
+    try:
+        # Generate the component if it is a callable.
+        component = into_component(page.component)
 
-    component._add_style_recursive(style or {}, theme)
+        component._add_style_recursive(style or {}, theme)
 
-    enable_state = False
-    # Ensure state is enabled if this page uses state.
-    if state is None:
-        if page.on_load or component._has_stateful_event_triggers():
-            enable_state = True
-        else:
-            for var in component._get_vars(include_children=True):
-                var_data = var._get_all_var_data()
-                if not var_data:
-                    continue
-                if not var_data.state:
-                    continue
-                enable_state = True
-                break
+        from reflex.utils.format import make_default_page_title
 
-    from reflex.app import OverlayFragment
-    from reflex.utils.format import make_default_page_title
+        component = Fragment.create(component)
 
-    component = OverlayFragment.create(component)
+        meta_args = {
+            "title": (
+                page.title
+                if page.title is not None
+                else make_default_page_title(get_config().app_name, route)
+            ),
+            "image": page.image,
+            "meta": page.meta,
+        }
 
-    meta_args = {
-        "title": (
-            page.title
-            if page.title is not None
-            else make_default_page_title(get_config().app_name, route)
-        ),
-        "image": page.image,
-        "meta": page.meta,
-    }
+        if page.description is not None:
+            meta_args["description"] = page.description
 
-    if page.description is not None:
-        meta_args["description"] = page.description
+        # Add meta information to the component.
+        utils.add_meta(
+            component,
+            **meta_args,
+        )
 
-    # Add meta information to the component.
-    utils.add_meta(
-        component,
-        **meta_args,
-    )
-
-    return component, enable_state
+    except Exception as e:
+        if sys.version_info >= (3, 11):
+            e.add_note(f"Happened while evaluating page {route!r}")
+        raise
+    else:
+        return component
 
 
 class ExecutorSafeFunctions:
@@ -874,7 +867,6 @@ class ExecutorSafeFunctions:
 
     COMPONENTS: dict[str, BaseComponent] = {}
     UNCOMPILED_PAGES: dict[str, UnevaluatedPage] = {}
-    STATE: type[BaseState] | None = None
 
     @classmethod
     def compile_page(cls, route: str) -> tuple[str, str]:
@@ -886,7 +878,7 @@ class ExecutorSafeFunctions:
         Returns:
             The path and code of the compiled page.
         """
-        return compile_page(route, cls.COMPONENTS[route], cls.STATE)
+        return compile_page(route, cls.COMPONENTS[route])
 
     @classmethod
     def compile_unevaluated_page(
@@ -905,10 +897,10 @@ class ExecutorSafeFunctions:
         Returns:
             The route, compiled component, and compiled page.
         """
-        component, enable_state = compile_unevaluated_page(
-            route, cls.UNCOMPILED_PAGES[route], cls.STATE, style, theme
+        component = compile_unevaluated_page(
+            route, cls.UNCOMPILED_PAGES[route], style, theme
         )
-        return route, component, compile_page(route, component, cls.STATE)
+        return route, component, compile_page(route, component)
 
     @classmethod
     def compile_theme(cls, style: ComponentStyle | None) -> tuple[str, str]:
@@ -924,5 +916,6 @@ class ExecutorSafeFunctions:
             ValueError: If the style is not set.
         """
         if style is None:
-            raise ValueError("STYLE should be set")
+            msg = "STYLE should be set"
+            raise ValueError(msg)
         return compile_theme(style)

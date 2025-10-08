@@ -2,9 +2,11 @@
 
 import dataclasses
 from collections.abc import Mapping
+from typing import TYPE_CHECKING
+from urllib.parse import _NetlocResultMixinStr, parse_qsl, urlsplit
 
 from reflex import constants
-from reflex.utils import format
+from reflex.utils import console, format
 from reflex.utils.serializers import serializer
 
 
@@ -45,36 +47,45 @@ class _HeaderData:
     )
 
 
-@dataclasses.dataclass(frozen=True, init=False)
+_HEADER_DATA_FIELDS = frozenset(
+    [field.name for field in dataclasses.fields(_HeaderData)]
+)
+
+
+@dataclasses.dataclass(frozen=True)
 class HeaderData(_HeaderData):
     """An object containing headers data."""
 
-    def __init__(self, router_data: dict | None = None):
-        """Initialize the HeaderData object based on router_data.
+    @classmethod
+    def from_router_data(cls, router_data: dict) -> "HeaderData":
+        """Create a HeaderData object from the given router_data.
 
         Args:
             router_data: the router_data dict.
+
+        Returns:
+            A HeaderData object initialized with the provided router_data.
         """
-        super().__init__()
-        if router_data:
-            fields_names = [f.name for f in dataclasses.fields(self)]
-            for k, v in router_data.get(constants.RouteVar.HEADERS, {}).items():
-                snake_case_key = format.to_snake_case(k)
-                if snake_case_key in fields_names:
-                    object.__setattr__(self, snake_case_key, v)
-            object.__setattr__(
-                self,
-                "raw_headers",
-                _FrozenDictStrStr(
-                    **{
-                        k: v
-                        for k, v in router_data.get(
-                            constants.RouteVar.HEADERS, {}
-                        ).items()
-                        if v
-                    }
-                ),
-            )
+        return cls(
+            **{
+                snake_case_key: v
+                for k, v in router_data.get(constants.RouteVar.HEADERS, {}).items()
+                if v
+                and (snake_case_key := format.to_snake_case(k)) in _HEADER_DATA_FIELDS
+            },
+            raw_headers=_FrozenDictStrStr(
+                **{
+                    k: v
+                    for k, v in router_data.get(constants.RouteVar.HEADERS, {}).items()
+                    if v
+                }
+            ),
+        )
+
+
+@serializer(to=dict)
+def _serialize_header_data(obj: HeaderData) -> dict:
+    return {k.name: getattr(obj, k.name) for k in dataclasses.fields(obj)}
 
 
 @serializer(to=dict)
@@ -90,6 +101,41 @@ def serialize_frozen_dict_str_str(obj: _FrozenDictStrStr) -> dict:
     return dict(obj._data)
 
 
+class ReflexURL(str, _NetlocResultMixinStr):
+    """A class representing a URL split result."""
+
+    if TYPE_CHECKING:
+        scheme: str
+        netloc: str
+        origin: str
+        path: str
+        query: str
+        query_parameters: Mapping[str, str]
+        fragment: str
+
+    def __new__(cls, url: str):
+        """Create a new ReflexURL instance.
+
+        Args:
+            url: the URL to split.
+
+        Returns:
+            A new ReflexURL instance.
+        """
+        (scheme, netloc, path, query, fragment) = urlsplit(url)
+        obj = super().__new__(cls, url)
+        object.__setattr__(obj, "scheme", scheme)
+        object.__setattr__(obj, "netloc", netloc)
+        object.__setattr__(obj, "path", path)
+        object.__setattr__(obj, "query", query)
+        object.__setattr__(obj, "origin", f"{scheme}://{netloc}")
+        object.__setattr__(
+            obj, "query_parameters", _FrozenDictStrStr(**dict(parse_qsl(query)))
+        )
+        object.__setattr__(obj, "fragment", fragment)
+        return obj
+
+
 @dataclasses.dataclass(frozen=True)
 class PageData:
     """An object containing page data."""
@@ -101,39 +147,35 @@ class PageData:
     full_raw_path: str = ""
     params: dict = dataclasses.field(default_factory=dict)
 
-    def __init__(self, router_data: dict | None = None):
-        """Initialize the PageData object based on router_data.
+    @classmethod
+    def from_router_data(cls, router_data: dict) -> "PageData":
+        """Create a PageData object from the given router_data.
 
         Args:
             router_data: the router_data dict.
+
+        Returns:
+            A PageData object initialized with the provided router_data.
         """
-        if router_data:
-            object.__setattr__(
-                self,
-                "host",
-                router_data.get(constants.RouteVar.HEADERS, {}).get("origin", ""),
-            )
-            object.__setattr__(
-                self, "path", router_data.get(constants.RouteVar.PATH, "")
-            )
-            object.__setattr__(
-                self, "raw_path", router_data.get(constants.RouteVar.ORIGIN, "")
-            )
-            object.__setattr__(self, "full_path", f"{self.host}{self.path}")
-            object.__setattr__(self, "full_raw_path", f"{self.host}{self.raw_path}")
-            object.__setattr__(
-                self, "params", router_data.get(constants.RouteVar.QUERY, {})
-            )
-        else:
-            object.__setattr__(self, "host", "")
-            object.__setattr__(self, "path", "")
-            object.__setattr__(self, "raw_path", "")
-            object.__setattr__(self, "full_path", "")
-            object.__setattr__(self, "full_raw_path", "")
-            object.__setattr__(self, "params", {})
+        host = router_data.get(constants.RouteVar.HEADERS, {}).get("origin", "")
+        path = router_data.get(constants.RouteVar.PATH, "")
+        raw_path = router_data.get(constants.RouteVar.ORIGIN, "")
+        return cls(
+            host=host,
+            path=path,
+            raw_path=raw_path,
+            full_path=f"{host}{path}",
+            full_raw_path=f"{host}{raw_path}",
+            params=router_data.get(constants.RouteVar.QUERY, {}),
+        )
 
 
-@dataclasses.dataclass(frozen=True, init=False)
+@serializer(to=dict)
+def _serialize_page_data(obj: PageData) -> dict:
+    return dataclasses.asdict(obj)
+
+
+@dataclasses.dataclass(frozen=True)
 class SessionData:
     """An object containing session data."""
 
@@ -141,37 +183,89 @@ class SessionData:
     client_ip: str = ""
     session_id: str = ""
 
-    def __init__(self, router_data: dict | None = None):
-        """Initialize the SessionData object based on router_data.
+    @classmethod
+    def from_router_data(cls, router_data: dict) -> "SessionData":
+        """Create a SessionData object from the given router_data.
 
         Args:
             router_data: the router_data dict.
+
+        Returns:
+            A SessionData object initialized with the provided router_data.
         """
-        if router_data:
-            client_token = router_data.get(constants.RouteVar.CLIENT_TOKEN, "")
-            client_ip = router_data.get(constants.RouteVar.CLIENT_IP, "")
-            session_id = router_data.get(constants.RouteVar.SESSION_ID, "")
-        else:
-            client_token = client_ip = session_id = ""
-        object.__setattr__(self, "client_token", client_token)
-        object.__setattr__(self, "client_ip", client_ip)
-        object.__setattr__(self, "session_id", session_id)
+        return cls(
+            client_token=router_data.get(constants.RouteVar.CLIENT_TOKEN, ""),
+            client_ip=router_data.get(constants.RouteVar.CLIENT_IP, ""),
+            session_id=router_data.get(constants.RouteVar.SESSION_ID, ""),
+        )
 
 
-@dataclasses.dataclass(frozen=True, init=False)
+@serializer(to=dict)
+def _serialize_session_data(obj: SessionData) -> dict:
+    return dataclasses.asdict(obj)
+
+
+@dataclasses.dataclass(frozen=True)
 class RouterData:
     """An object containing RouterData."""
 
     session: SessionData = dataclasses.field(default_factory=SessionData)
     headers: HeaderData = dataclasses.field(default_factory=HeaderData)
-    page: PageData = dataclasses.field(default_factory=PageData)
+    _page: PageData = dataclasses.field(default_factory=PageData)
+    url: ReflexURL = dataclasses.field(default=ReflexURL(""))
+    route_id: str = ""
 
-    def __init__(self, router_data: dict | None = None):
-        """Initialize the RouterData object.
+    @property
+    def page(self) -> PageData:
+        """Get the page data.
+
+        Returns:
+            The PageData object.
+        """
+        console.deprecate(
+            feature_name="RouterData.page",
+            reason="Use RouterData.url instead",
+            deprecation_version="0.8.1",
+            removal_version="0.9.0",
+        )
+        return self._page
+
+    @classmethod
+    def from_router_data(cls, router_data: dict) -> "RouterData":
+        """Create a RouterData object from the given router_data.
 
         Args:
             router_data: the router_data dict.
+
+        Returns:
+            A RouterData object initialized with the provided router_data.
         """
-        object.__setattr__(self, "session", SessionData(router_data))
-        object.__setattr__(self, "headers", HeaderData(router_data))
-        object.__setattr__(self, "page", PageData(router_data))
+        return cls(
+            session=SessionData.from_router_data(router_data),
+            headers=HeaderData.from_router_data(router_data),
+            _page=PageData.from_router_data(router_data),
+            url=ReflexURL(
+                router_data.get(constants.RouteVar.HEADERS, {}).get("origin", "")
+                + router_data.get(constants.RouteVar.ORIGIN, "")
+            ),
+            route_id=router_data.get(constants.RouteVar.PATH, ""),
+        )
+
+
+@serializer(to=dict)
+def serialize_router_data(obj: RouterData) -> dict:
+    """Serialize a RouterData object to a dict.
+
+    Args:
+        obj: the RouterData object.
+
+    Returns:
+        A dict representation of the RouterData object.
+    """
+    return {
+        "session": obj.session,
+        "headers": obj.headers,
+        "page": obj._page,
+        "url": obj.url,
+        "route_id": obj.route_id,
+    }

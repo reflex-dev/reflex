@@ -58,7 +58,7 @@ def MemoApp():
     app.add_page(index)
 
 
-@pytest.fixture()
+@pytest.fixture
 def memo_app(tmp_path) -> Generator[AppHarness, None, None]:
     """Start MemoApp app at tmp_path via AppHarness.
 
@@ -86,7 +86,9 @@ async def test_memo_app(memo_app: AppHarness):
     driver = memo_app.frontend()
 
     # check that the output matches
-    memo_custom_code_stack = driver.find_element(By.ID, "memo-custom-code")
+    memo_custom_code_stack = AppHarness.poll_for_or_raise_timeout(
+        lambda: driver.find_element(By.ID, "memo-custom-code")
+    )
     assert (
         memo_app.poll_for_content(memo_custom_code_stack, exp_not_equal="")
         == "foobarbarbar"
@@ -102,6 +104,4 @@ async def test_memo_app(memo_app: AppHarness):
     # enter text to trigger passed argument to event handler
     textbox = driver.find_element(By.ID, "memo-input")
     textbox.send_keys("new_value")
-    assert memo_app._poll_for(
-        lambda: memo_app.poll_for_content(last_value) == "new_value"
-    )
+    AppHarness.expect(lambda: memo_app.poll_for_content(last_value) == "new_value")

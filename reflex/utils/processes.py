@@ -4,22 +4,23 @@ from __future__ import annotations
 
 import collections
 import contextlib
-import importlib.metadata
 import os
 import signal
+import socket
 import subprocess
+import sys
 from collections.abc import Callable, Generator, Sequence
 from concurrent import futures
+from contextlib import closing
 from pathlib import Path
 from typing import Any, Literal, overload
 
-import click
-import psutil
+import rich.markup
 from redis.exceptions import RedisError
 from rich.progress import Progress
 
 from reflex import constants
-from reflex.config import environment
+from reflex.environment import environment
 from reflex.utils import console, path_ops, prerequisites
 from reflex.utils.registry import get_npm_registry
 
@@ -37,7 +38,7 @@ def get_num_workers() -> int:
     """Get the number of backend worker processes.
 
     Raises:
-        Exit: If unable to connect to Redis.
+        SystemExit: If unable to connect to Redis.
 
     Returns:
         The number of backend worker processes.
@@ -48,74 +49,72 @@ def get_num_workers() -> int:
         redis_client.ping()
     except RedisError as re:
         console.error(f"Unable to connect to Redis: {re}")
-        raise click.exceptions.Exit(1) from re
+        raise SystemExit(1) from None
     return (os.cpu_count() or 1) * 2 + 1
 
 
-def get_process_on_port(port: int) -> psutil.Process | None:
-    """Get the process on the given port.
+def _can_bind_at_port(
+    address_family: socket.AddressFamily | int, address: str, port: int
+) -> bool:
+    """Check if a given address and port are responsive.
 
     Args:
-        port: The port.
+        address_family: The address family (e.g., socket.AF_INET or socket.AF_INET6).
+        address: The address to check.
+        port: The port to check.
 
     Returns:
-        The process on the given port.
+        Whether the address and port are responsive.
     """
-    for proc in psutil.process_iter(["pid", "name", "cmdline"]):
-        with contextlib.suppress(
-            psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess
-        ):
-            if importlib.metadata.version("psutil") >= "6.0.0":
-                conns = proc.net_connections(kind="inet")
-            else:
-                conns = proc.connections(kind="inet")
-            for conn in conns:
-                if conn.laddr.port == int(port):
-                    return proc
-    return None
+    try:
+        with closing(socket.socket(address_family, socket.SOCK_STREAM)) as sock:
+            if sys.platform != "win32":
+                sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+            sock.bind((address, port))
+    except (OverflowError, PermissionError, OSError) as e:
+        console.warn(f"Unable to bind to {address}:{port} due to: {e}.")
+        return False
+    return True
 
 
-def is_process_on_port(port: int) -> bool:
+def _can_bind_at_any_port(address_family: socket.AddressFamily | int) -> bool:
+    """Check if any port is available for binding.
+
+    Args:
+        address_family: The address family (e.g., socket.AF_INET or socket.AF_INET6).
+
+    Returns:
+        Whether any port is available for binding.
+    """
+    try:
+        with closing(socket.socket(address_family, socket.SOCK_STREAM)) as sock:
+            sock.bind(("", 0))  # Bind to any available port
+            return True
+    except (OverflowError, PermissionError, OSError) as e:
+        console.debug(f"Unable to bind to any port for {address_family}: {e}")
+        return False
+
+
+def is_process_on_port(
+    port: int,
+    address_families: Sequence[socket.AddressFamily | int] = (
+        socket.AF_INET,
+        socket.AF_INET6,
+    ),
+) -> bool:
     """Check if a process is running on the given port.
 
     Args:
         port: The port.
+        address_families: The address families to check (default: IPv4 and IPv6).
 
     Returns:
         Whether a process is running on the given port.
     """
-    return get_process_on_port(port) is not None
+    return any(not _can_bind_at_port(family, "", port) for family in address_families)
 
 
-def kill_process_on_port(port: int):
-    """Kill the process on the given port.
-
-    Args:
-        port: The port.
-    """
-    if get_process_on_port(port) is not None:
-        with contextlib.suppress(psutil.AccessDenied):
-            get_process_on_port(port).kill()  # pyright: ignore [reportOptionalMemberAccess]
-
-
-def change_port(port: int, _type: str) -> int:
-    """Change the port.
-
-    Args:
-        port: The port.
-        _type: The type of the port.
-
-    Returns:
-        The new port.
-
-    """
-    new_port = port + 1
-    if is_process_on_port(new_port):
-        return change_port(new_port, _type)
-    console.info(
-        f"The {_type} will run on port [bold underline]{new_port}[/bold underline]."
-    )
-    return new_port
+MAXIMUM_PORT = 2**16 - 1
 
 
 def handle_port(service_name: str, port: int, auto_increment: bool) -> int:
@@ -131,17 +130,48 @@ def handle_port(service_name: str, port: int, auto_increment: bool) -> int:
         The port to run the service on.
 
     Raises:
-        Exit:when the port is in use.
+        SystemExit:when the port is in use.
     """
-    if (process := get_process_on_port(port)) is None:
-        return port
-    if auto_increment:
-        return change_port(port, service_name)
-    else:
+    console.debug(f"Checking if {service_name.capitalize()} port: {port} is in use.")
+
+    families = [
+        address_family
+        for address_family in (socket.AF_INET, socket.AF_INET6)
+        if _can_bind_at_any_port(address_family)
+    ]
+
+    if not families:
         console.error(
-            f"{service_name.capitalize()} port: {port} is already in use by PID: {process.pid}."
+            f"Unable to bind to any port for {service_name}. "
+            "Please check your network configuration."
         )
-        raise click.exceptions.Exit()
+        raise SystemExit(1)
+
+    console.debug(
+        f"Checking if {service_name.capitalize()} port: {port} is in use for families: {families}."
+    )
+
+    if not is_process_on_port(port, families):
+        console.debug(f"{service_name.capitalize()} port: {port} is not in use.")
+        return port
+
+    if auto_increment:
+        for new_port in range(port + 1, MAXIMUM_PORT + 1):
+            if not is_process_on_port(new_port, families):
+                console.info(
+                    f"The {service_name} will run on port [bold underline]{new_port}[/bold underline]."
+                )
+                return new_port
+            console.debug(
+                f"{service_name.capitalize()} port: {new_port} is already in use."
+            )
+
+        # If we reach here, it means we couldn't find an available port.
+        console.error(f"Unable to find an available port for {service_name}")
+    else:
+        console.error(f"{service_name.capitalize()} port: {port} is already in use.")
+
+    raise SystemExit(1)
 
 
 @overload
@@ -180,13 +210,13 @@ def new_process(
         Execute a child program in a new process.
 
     Raises:
-        Exit: When attempting to run a command with a None value.
+        SystemExit: When attempting to run a command with a None value.
     """
     # Check for invalid command first.
     non_empty_args = list(filter(None, args)) if isinstance(args, list) else [args]
     if isinstance(args, list) and len(non_empty_args) != len(args):
         console.error(f"Invalid command: {args}")
-        raise click.exceptions.Exit(1)
+        raise SystemExit(1)
 
     path_env: str = os.environ.get("PATH", "")
 
@@ -294,7 +324,7 @@ def stream_logs(
         The lines of the process output.
 
     Raises:
-        Exit: If the process failed.
+        SystemExit: If the process failed.
         ValueError: If the process stdout pipe is closed, but the process remains running.
     """
     from reflex.utils import telemetry
@@ -307,7 +337,7 @@ def stream_logs(
             return
         try:
             for line in process.stdout:
-                console.debug(line, end="", progress=progress)
+                console.debug(rich.markup.escape(line), end="", progress=progress)
                 logs.append(line)
                 yield line
         except ValueError:
@@ -316,13 +346,13 @@ def stream_logs(
                 # But if the process is still running that is weird.
                 raise
             # If the process exited, break out of the loop for post processing.
-            pass
 
     # Check if the process failed (not printing the logs for SIGINT).
 
     # Windows uvicorn bug
     # https://github.com/reflex-dev/reflex/issues/2335
-    accepted_return_codes = [0, -2, 15] if constants.IS_WINDOWS else [0, -2]
+    # 130 is the exit code that react router returns when it is interrupted by a signal.
+    accepted_return_codes = [0, -2, 15, 130] if constants.IS_WINDOWS else [0, -2, 130]
     if process.returncode not in accepted_return_codes and not suppress_errors:
         console.error(f"{message} failed with exit code {process.returncode}")
         if "".join(logs).count("CERT_HAS_EXPIRED") > 0:
@@ -345,7 +375,7 @@ def stream_logs(
                 "NPM_CONFIG_REGISTRY environment variable. If TLS is the issue, and you know what "
                 "you are doing, you can disable it by setting the SSL_NO_VERIFY environment variable."
             )
-            raise click.exceptions.Exit(1)
+            raise SystemExit(1)
         for set_of_logs in (*prior_logs, tuple(logs)):
             for line in set_of_logs:
                 console.error(line, end="")
@@ -353,7 +383,7 @@ def stream_logs(
         if analytics_enabled:
             telemetry.send("error", context=message)
         console.error("Run with [bold]--loglevel debug [/bold] for the full log.")
-        raise click.exceptions.Exit(1)
+        raise SystemExit(1)
 
 
 def show_logs(message: str, process: subprocess.Popen):
@@ -414,12 +444,12 @@ def show_progress(message: str, process: subprocess.Popen, checkpoints: list[str
         task = progress.add_task(f"{message}: ", total=len(checkpoints))
         for line in stream_logs(message, process, progress=progress):
             # Check for special strings and update the progress bar.
-            for special_string in checkpoints:
-                if special_string in line:
-                    progress.update(task, advance=1)
-                    if special_string == checkpoints[-1]:
-                        progress.update(task, completed=len(checkpoints))
-                    break
+            special_string = checkpoints[0]
+            if special_string in line:
+                progress.update(task, advance=1)
+                checkpoints.pop(0)
+            if not checkpoints:
+                break
 
 
 def atexit_handler():

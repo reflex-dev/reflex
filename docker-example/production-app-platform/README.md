@@ -33,7 +33,7 @@ Deploy a `redis` instance on the vnet.
 ### Backend
 
 The backend is built by the `Dockerfile` in this directory. When deploying the
-backend, be sure to set REDIS_URL=redis://internal-redis-hostname to connect to
+backend, be sure to set REFLEX_REDIS_URL=redis://internal-redis-hostname to connect to
 the redis service.
 
 ### Ingress
@@ -51,7 +51,7 @@ The frontend should be hosted on a static file server or CDN.
 to the ingress hostname of the backend service.
 
 If you will host the frontend from a path other than the root, set the
-`FRONTEND_PATH` environment variable appropriately when exporting the frontend.
+`REFLEX_FRONTEND_PATH` environment variable appropriately when exporting the frontend.
 
 Most static hosts will automatically use the `/404.html` file to handle 404
 errors. _This is essential for dynamic routes to work correctly._ Ensure that
@@ -108,7 +108,7 @@ container volume. Use Azure Files and mount it into the container at /app/upload
   - In the environment, create a new files share (get the storage key)
 - Deploy the backend as a Container App
   - Create a custom Container App Environment linked up to the same vnet as the redis container.
-  - Set REDIS_URL and DB_URL environment variables
+  - Set REFLEX_REDIS_URL and REFLEX_DB_URL environment variables
   - Add the volume from the environment
   - Add the volume mount to the container
 - Deploy the frontend as a Static Web App

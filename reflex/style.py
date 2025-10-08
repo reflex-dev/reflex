@@ -120,11 +120,14 @@ def convert_item(
     Raises:
         ReflexError: If an EventHandler is used as a style value
     """
-    if isinstance(style_item, EventHandler):
-        raise ReflexError(
-            "EventHandlers cannot be used as style values. "
+    from reflex.components.component import BaseComponent
+
+    if isinstance(style_item, (EventHandler, BaseComponent)):
+        msg = (
+            f"{type(style_item)} cannot be used as style values. "
             "Please use a Var or a literal value."
         )
+        raise ReflexError(msg)
 
     if isinstance(style_item, Var):
         return style_item, style_item._get_all_var_data()
@@ -381,6 +384,7 @@ def format_as_emotion(style_dict: dict[str, Any]) -> Style | None:
         if _var_data is not None:
             emotion_style._var_data = VarData.merge(emotion_style._var_data, _var_data)
         return emotion_style
+    return None
 
 
 def convert_dict_to_style_and_format_emotion(

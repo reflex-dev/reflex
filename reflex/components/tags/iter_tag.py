@@ -16,7 +16,7 @@ if TYPE_CHECKING:
     from reflex.components.component import Component
 
 
-@dataclasses.dataclass()
+@dataclasses.dataclass(frozen=True)
 class IterTag(Tag):
     """An iterator tag."""
 
@@ -68,32 +68,6 @@ class IterTag(Tag):
             _var_type=self.get_iterable_var_type(),
         ).guess_type()
 
-    def get_index_var_arg(self) -> Var:
-        """Get the index var for the tag (without curly braces).
-
-        This is used to render the index var in the .map() function.
-
-        Returns:
-            The index var.
-        """
-        return Var(
-            _js_expr=self.index_var_name,
-            _var_type=int,
-        ).guess_type()
-
-    def get_arg_var_arg(self) -> Var:
-        """Get the arg var for the tag (without curly braces).
-
-        This is used to render the arg var in the .map() function.
-
-        Returns:
-            The arg var.
-        """
-        return Var(
-            _js_expr=self.arg_var_name,
-            _var_type=self.get_iterable_var_type(),
-        ).guess_type()
-
     def render_component(self) -> Component:
         """Render the component.
 
@@ -105,8 +79,8 @@ class IterTag(Tag):
             The rendered component.
         """
         # Import here to avoid circular imports.
+        from reflex.compiler.compiler import _into_component_once
         from reflex.components.base.fragment import Fragment
-        from reflex.components.component import Component
         from reflex.components.core.cond import Cond
         from reflex.components.core.foreach import Foreach
 
@@ -121,19 +95,19 @@ class IterTag(Tag):
         else:
             # If the render function takes the index as an argument.
             if len(args) != 2:
-                raise ValueError("The render function must take 2 arguments.")
+                msg = "The render function must take 2 arguments."
+                raise ValueError(msg)
             component = self.render_fn(arg, index)
 
         # Nested foreach components or cond must be wrapped in fragments.
         if isinstance(component, (Foreach, Cond)):
             component = Fragment.create(component)
 
-        # If the component is a tuple, unpack and wrap it in a fragment.
-        if isinstance(component, tuple):
-            component = Fragment.create(*component)
+        component = _into_component_once(component)
 
-        if not isinstance(component, Component):
-            raise ValueError("The render function must return a component.")
+        if component is None:
+            msg = "The render function must return a component."
+            raise ValueError(msg)
 
         # Set the component key.
         if component.key is None:

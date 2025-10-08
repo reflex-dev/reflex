@@ -8,6 +8,7 @@ import reflex as rx
 from reflex import style
 from reflex.components.component import evaluate_style_namespaces
 from reflex.style import Style
+from reflex.utils.exceptions import ReflexError
 from reflex.vars import VarData
 from reflex.vars.base import LiteralVar, Var
 
@@ -46,7 +47,7 @@ test_style = [
 
 
 @pytest.mark.parametrize(
-    "style_dict,expected",
+    ("style_dict", "expected"),
     test_style,
 )
 def test_convert(style_dict, expected):
@@ -61,7 +62,7 @@ def test_convert(style_dict, expected):
 
 
 @pytest.mark.parametrize(
-    "style_dict,expected",
+    ("style_dict", "expected"),
     test_style,
 )
 def test_create_style(style_dict, expected):
@@ -552,3 +553,31 @@ def test_style_update_with_var_data():
     s3 = s1 | s2
     assert s3._var_data is not None
     assert "_varData" not in s3
+
+
+def test_component_as_css_value_raises_error():
+    """Test that passing a component as a CSS prop value raises ReflexError."""
+    with pytest.raises(ReflexError, match="cannot be used as style values"):
+        rx.el.button(
+            "Import",
+            class_name="px-3 py-2 text-sm font-medium text-gray-600",
+            left_icon=rx.icon(tag="cloud_upload", class_name="w-4 h-4"),
+        )
+
+    # Test other CSS props that might receive components
+    with pytest.raises(ReflexError, match="cannot be used as style values"):
+        rx.el.div(
+            right_icon=rx.icon(tag="settings"),
+        )
+
+    # Test components passed to style dict
+    with pytest.raises(ReflexError, match="cannot be used as style values"):
+        rx.el.div(
+            style={"background": rx.icon(tag="star")},
+        )
+
+    # Test nested style with component
+    with pytest.raises(ReflexError, match="cannot be used as style values"):
+        rx.el.div(
+            style={"_hover": {"content": rx.text("hover")}},
+        )

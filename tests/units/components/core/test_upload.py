@@ -24,7 +24,6 @@ class UploadStateTest(State):
         Args:
             files: The files dropped.
         """
-        pass
 
     @event
     def not_drop_handler(self, not_files: Any):
@@ -33,7 +32,6 @@ class UploadStateTest(State):
         Args:
             not_files: The files dropped.
         """
-        pass
 
 
 def test_cancel_upload():

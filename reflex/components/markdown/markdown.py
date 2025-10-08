@@ -9,7 +9,7 @@ from functools import lru_cache
 from hashlib import md5
 from typing import Any
 
-from reflex.components.component import BaseComponent, Component, CustomComponent
+from reflex.components.component import BaseComponent, Component, CustomComponent, field
 from reflex.components.tags.tag import Tag
 from reflex.utils.imports import ImportDict, ImportVar
 from reflex.vars.base import LiteralVar, Var, VarData
@@ -150,10 +150,12 @@ class Markdown(Component):
     is_default = True
 
     # The component map from a tag to a lambda that creates a component.
-    component_map: dict[str, Any] = {}
+    component_map: dict[str, Any] = field(
+        default_factory=dict, is_javascript_property=False
+    )
 
     # The hash of the component map, generated at create() time.
-    component_map_hash: str = ""
+    component_map_hash: str = field(default="", is_javascript_property=False)
 
     @classmethod
     def create(cls, *children, **props) -> Component:
@@ -170,9 +172,8 @@ class Markdown(Component):
             The markdown component.
         """
         if len(children) != 1 or not isinstance(children[0], (str, Var)):
-            raise ValueError(
-                "Markdown component must have exactly one child containing the markdown source."
-            )
+            msg = "Markdown component must have exactly one child containing the markdown source."
+            raise ValueError(msg)
 
         # Update the base component map with the custom component map.
         component_map = {**get_base_component_map(), **props.pop("component_map", {})}
@@ -319,7 +320,8 @@ let {_LANGUAGE!s} = match ? match[1] : '';
         """
         # Check the tag is valid.
         if tag not in self.component_map:
-            raise ValueError(f"No markdown component found for tag: {tag}.")
+            msg = f"No markdown component found for tag: {tag}."
+            raise ValueError(msg)
 
         special_props = [_PROPS]
         children = [
@@ -342,10 +344,9 @@ let {_LANGUAGE!s} = match ? match[1] : '';
         if children_prop is not None:
             children = []
         # Get the component.
-        component = self.component_map[tag](*children, **props).set(
+        return self.component_map[tag](*children, **props).set(
             special_props=special_props
         )
-        return component
 
     def format_component(self, tag: str, **props) -> str:
         """Format a component for rendering in the component map.
@@ -421,12 +422,12 @@ let {_LANGUAGE!s} = match ? match[1] : '';
 
     def _get_custom_code(self) -> str | None:
         hooks = {}
-        from reflex.compiler.templates import MACROS
+        from reflex.compiler.templates import _render_hooks
 
         for _component in self.component_map.values():
             comp = _component(_MOCK_ARG)
             hooks.update(comp._get_all_hooks())
-        formatted_hooks = MACROS.module.renderHooks(hooks)  # pyright: ignore [reportAttributeAccessIssue]
+        formatted_hooks = _render_hooks(hooks)
         return f"""
         function {self._get_component_map_name()} () {{
             {formatted_hooks}
@@ -437,7 +438,7 @@ let {_LANGUAGE!s} = match ? match[1] : '';
         """
 
     def _render(self) -> Tag:
-        tag = (
+        return (
             super()
             ._render()
             .add_props(
@@ -447,4 +448,3 @@ let {_LANGUAGE!s} = match ? match[1] : '';
             )
             .remove_props("componentMap", "componentMapHash")
         )
-        return tag

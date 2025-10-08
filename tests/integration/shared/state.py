@@ -4,6 +4,4 @@ import reflex as rx
 
 
 class SharedState(rx.State):
-    """Shared state class for reflexers using librarys."""
-
-    pass
+    """Shared state class for reflexers using libraries."""

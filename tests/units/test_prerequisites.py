@@ -1,5 +1,3 @@
-import json
-import re
 import shutil
 import tempfile
 from pathlib import Path
@@ -10,26 +8,26 @@ from click.testing import CliRunner
 from reflex.config import Config
 from reflex.reflex import cli
 from reflex.testing import chdir
-from reflex.utils.prerequisites import (
-    CpuInfo,
-    _update_next_config,
-    cached_procedure,
-    get_cpu_info,
-    rename_imports_and_app_name,
+from reflex.utils.decorator import cached_procedure
+from reflex.utils.frontend_skeleton import (
+    _compile_vite_config,
+    _update_react_router_config,
 )
+from reflex.utils.rename import rename_imports_and_app_name
+from reflex.utils.telemetry import CpuInfo, get_cpu_info
 
 runner = CliRunner()
 
 
 @pytest.mark.parametrize(
-    "config, export, expected_output",
+    ("config", "export", "expected_output"),
     [
         (
             Config(
                 app_name="test",
             ),
             False,
-            'module.exports = {basePath: "", compress: true, trailingSlash: true, staticPageGenerationTimeout: 60, devIndicators: false};',
+            'export default {"basename": "/", "future": {"unstable_optimizeDeps": true}, "ssr": false};',
         ),
         (
             Config(
@@ -37,15 +35,7 @@ runner = CliRunner()
                 static_page_generation_timeout=30,
             ),
             False,
-            'module.exports = {basePath: "", compress: true, trailingSlash: true, staticPageGenerationTimeout: 30, devIndicators: false};',
-        ),
-        (
-            Config(
-                app_name="test",
-                next_compression=False,
-            ),
-            False,
-            'module.exports = {basePath: "", compress: false, trailingSlash: true, staticPageGenerationTimeout: 60, devIndicators: false};',
+            'export default {"basename": "/", "future": {"unstable_optimizeDeps": true}, "ssr": false};',
         ),
         (
             Config(
@@ -53,69 +43,61 @@ runner = CliRunner()
                 frontend_path="/test",
             ),
             False,
-            'module.exports = {basePath: "/test", compress: true, trailingSlash: true, staticPageGenerationTimeout: 60, devIndicators: false};',
-        ),
-        (
-            Config(
-                app_name="test",
-                frontend_path="/test",
-                next_compression=False,
-            ),
-            False,
-            'module.exports = {basePath: "/test", compress: false, trailingSlash: true, staticPageGenerationTimeout: 60, devIndicators: false};',
+            'export default {"basename": "/test/", "future": {"unstable_optimizeDeps": true}, "ssr": false};',
         ),
         (
             Config(
                 app_name="test",
             ),
             True,
-            'module.exports = {basePath: "", compress: true, trailingSlash: true, staticPageGenerationTimeout: 60, devIndicators: false, output: "export", distDir: "_static"};',
-        ),
-        (
-            Config(
-                app_name="test",
-                next_dev_indicators=True,
-            ),
-            True,
-            'module.exports = {basePath: "", compress: true, trailingSlash: true, staticPageGenerationTimeout: 60, output: "export", distDir: "_static"};',
+            'export default {"basename": "/", "future": {"unstable_optimizeDeps": true}, "ssr": false, "prerender": true, "build": "build"};',
         ),
     ],
 )
-def test_update_next_config(config, export, expected_output):
-    output = _update_next_config(config, export=export)
+def test_update_react_router_config(config, export, expected_output):
+    output = _update_react_router_config(config, prerender_routes=export)
     assert output == expected_output
 
 
 @pytest.mark.parametrize(
-    ("transpile_packages", "expected_transpile_packages"),
-    (
+    ("config", "expected_output"),
+    [
         (
-            ["foo", "@bar/baz"],
-            ["@bar/baz", "foo"],
+            Config(
+                app_name="test",
+                frontend_path="",
+            ),
+            'assetsDir: "/assets".slice(1),',
         ),
         (
-            ["foo", "@bar/baz", "foo", "@bar/baz@3.2.1"],
-            ["@bar/baz", "foo"],
+            Config(
+                app_name="test",
+                frontend_path="/test",
+            ),
+            'assetsDir: "/test/assets".slice(1),',
         ),
-        (["@bar/baz", {"name": "foo"}], ["@bar/baz", "foo"]),
-        (["@bar/baz", {"name": "@foo/baz"}], ["@bar/baz", "@foo/baz"]),
-    ),
+        (
+            Config(
+                app_name="test",
+                frontend_path="/test/",
+            ),
+            'assetsDir: "/test/assets".slice(1),',
+        ),
+    ],
 )
-def test_transpile_packages(transpile_packages, expected_transpile_packages):
-    output = _update_next_config(
-        Config(app_name="test"),
-        transpile_packages=transpile_packages,
-    )
-    transpile_packages_match = re.search(r"transpilePackages: (\[.*?\])", output)
-    transpile_packages_json = transpile_packages_match.group(1)  # pyright: ignore [reportOptionalMemberAccess]
-    actual_transpile_packages = sorted(json.loads(transpile_packages_json))
-    assert actual_transpile_packages == expected_transpile_packages
+def test_initialise_vite_config(config, expected_output):
+    output = _compile_vite_config(config)
+    assert expected_output in output
 
 
 def test_cached_procedure():
     call_count = 0
 
-    @cached_procedure(tempfile.mktemp(), payload_fn=lambda: "constant")
+    temp_file = tempfile.mktemp()
+
+    @cached_procedure(
+        cache_file_path=lambda: Path(temp_file), payload_fn=lambda: "constant"
+    )
     def _function_with_no_args():
         nonlocal call_count
         call_count += 1
@@ -127,8 +109,10 @@ def test_cached_procedure():
 
     call_count = 0
 
+    another_temp_file = tempfile.mktemp()
+
     @cached_procedure(
-        cache_file=tempfile.mktemp(),
+        cache_file_path=lambda: Path(another_temp_file),
         payload_fn=lambda *args, **kwargs: f"{repr(args), repr(kwargs)}",
     )
     def _function_with_some_args(*args, **kwargs):
@@ -147,7 +131,7 @@ def test_cached_procedure():
     call_count = 0
 
     @cached_procedure(
-        cache_file=None, cache_file_fn=tempfile.mktemp, payload_fn=lambda: "constant"
+        cache_file_path=lambda: Path(tempfile.mktemp()), payload_fn=lambda: "constant"
     )
     def _function_with_no_args_fn():
         nonlocal call_count
@@ -178,7 +162,7 @@ def temp_directory():
 
 
 @pytest.mark.parametrize(
-    "config_code,expected",
+    ("config_code", "expected"),
     [
         ("rx.Config(app_name='old_name')", 'rx.Config(app_name="new_name")'),
         ('rx.Config(app_name="old_name")', 'rx.Config(app_name="new_name")'),

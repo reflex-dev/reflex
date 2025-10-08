@@ -26,15 +26,14 @@ def get_cdn_url(lib: str) -> str:
     return f"https://cdn.jsdelivr.net/npm/{lib}" + "/+esm"
 
 
-bundled_libraries = {
+bundled_libraries = [
     "react",
     "@radix-ui/themes",
     "@emotion/react",
-    "next/link",
     f"$/{constants.Dirs.UTILS}/context",
     f"$/{constants.Dirs.UTILS}/state",
     f"$/{constants.Dirs.UTILS}/components",
-}
+]
 
 
 def bundle_library(component: Union["Component", str]):
@@ -47,13 +46,12 @@ def bundle_library(component: Union["Component", str]):
         DynamicComponentMissingLibraryError: Raised when a dynamic component is missing a library.
     """
     if isinstance(component, str):
-        bundled_libraries.add(component)
+        bundled_libraries.append(component)
         return
     if component.library is None:
-        raise DynamicComponentMissingLibraryError(
-            "Component must have a library to bundle."
-        )
-    bundled_libraries.add(format_library_name(component.library))
+        msg = "Component must have a library to bundle."
+        raise DynamicComponentMissingLibraryError(msg)
+    bundled_libraries.append(format_library_name(component.library))
 
 
 def load_dynamic_serializer():
@@ -83,15 +81,14 @@ def load_dynamic_serializer():
             rendered_components.update(dict.fromkeys(dynamic_imports))
 
         # Include custom code in the shared component.
-        rendered_components.update(
-            dict.fromkeys(component._get_all_custom_code()),
-        )
+        rendered_components.update(component._get_all_custom_code())
 
         rendered_components[
-            templates.STATEFUL_COMPONENT.render(
+            templates.stateful_component_template(
                 tag_name="MySSRComponent",
                 memo_trigger_hooks=[],
                 component=component,
+                export=True,
             )
         ] = None
 
@@ -112,10 +109,10 @@ def load_dynamic_serializer():
             else:
                 imports[lib] = names
 
-        module_code_lines = templates.STATEFUL_COMPONENTS.render(
+        module_code_lines = templates.stateful_components_template(
             imports=utils.compile_imports(imports),
             memoized_code="\n".join(rendered_components),
-        ).splitlines()[1:]
+        ).splitlines()
 
         # Rewrite imports from `/` to destructure from window
         for ix, line in enumerate(module_code_lines[:]):

@@ -53,9 +53,8 @@ def raise_unsupported_operand_types(
     Raises:
         VarTypeError: The operand types are unsupported.
     """
-    raise VarTypeError(
-        f"Unsupported Operand type(s) for {operator}: {', '.join(t.__name__ for t in operands_types)}"
-    )
+    msg = f"Unsupported Operand type(s) for {operator}: {', '.join(t.__name__ for t in operands_types)}"
+    raise VarTypeError(msg)
 
 
 class NumberVar(Var[NUMBER_T], python_types=(int, float, decimal.Decimal)):
@@ -486,10 +485,11 @@ class NumberVar(Var[NUMBER_T], python_types=(int, float, decimal.Decimal)):
             )
 
         if format_spec:
-            raise VarValueError(
+            msg = (
                 f"Unknown format code '{format_spec}' for object of type 'NumberVar'. It is only supported to use ',', '_', and '.f' for float numbers."
                 "If possible, use computed variables instead: https://reflex.dev/docs/vars/computed-vars/"
             )
+            raise VarValueError(msg)
 
         return super().__format__(format_spec)
 
@@ -909,7 +909,7 @@ def equal_operation(lhs: Var, rhs: Var):
     Returns:
         The result of the comparison.
     """
-    return f"({lhs} === {rhs})"
+    return f"({lhs}?.valueOf?.() === {rhs}?.valueOf?.())"
 
 
 @comparison_operator
@@ -923,7 +923,7 @@ def not_equal_operation(lhs: Var, rhs: Var):
     Returns:
         The result of the comparison.
     """
-    return f"({lhs} !== {rhs})"
+    return f"({lhs}?.valueOf?.() !== {rhs}?.valueOf?.())"
 
 
 @var_operation
@@ -961,9 +961,8 @@ class LiteralNumberVar(LiteralVar, NumberVar[NUMBER_T]):
         if isinstance(self._var_value, decimal.Decimal):
             return json.dumps(float(self._var_value))
         if math.isinf(self._var_value) or math.isnan(self._var_value):
-            raise PrimitiveUnserializableToJSONError(
-                f"No valid JSON representation for {self}"
-            )
+            msg = f"No valid JSON representation for {self}"
+            raise PrimitiveUnserializableToJSONError(msg)
         return json.dumps(self._var_value)
 
     def __hash__(self) -> int:

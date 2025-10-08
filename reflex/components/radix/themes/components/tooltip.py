@@ -3,12 +3,11 @@
 from typing import Literal
 
 from reflex.components.component import Component
+from reflex.components.radix.themes.base import RadixThemesComponent
 from reflex.constants.compiler import MemoizationMode
 from reflex.event import EventHandler, no_args_event_spec, passthrough_event_spec
 from reflex.utils import format
 from reflex.vars.base import Var
-
-from ..base import RadixThemesComponent
 
 LiteralSideType = Literal[
     "top",

@@ -3,21 +3,26 @@
 from __future__ import annotations
 
 import contextlib
+import datetime
 import inspect
 import os
 import shutil
+import sys
 import time
 from pathlib import Path
 from types import FrameType
 
 from rich.console import Console
-from rich.progress import MofNCompleteColumn, Progress, TimeElapsedColumn
+from rich.progress import MofNCompleteColumn, Progress, TaskID, TimeElapsedColumn
 from rich.prompt import Prompt
 
 from reflex.constants import LogLevel
+from reflex.constants.base import Reflex
+from reflex.utils.decorator import once
 
 # Console for pretty printing.
 _console = Console()
+_console_stderr = Console(stderr=True)
 
 # The current log level.
 _LOG_LEVEL = LogLevel.INFO
@@ -29,7 +34,7 @@ _EMITTED_DEPRECATION_WARNINGS = set()
 _EMITTED_INFO = set()
 
 # Warnings which have been printed.
-_EMIITED_WARNINGS = set()
+_EMITTED_WARNINGS = set()
 
 # Errors which have been printed.
 _EMITTED_ERRORS = set()
@@ -59,13 +64,12 @@ def set_log_level(log_level: LogLevel | None):
     if log_level is None:
         return
     if not isinstance(log_level, LogLevel):
-        raise TypeError(
-            f"log_level must be a LogLevel enum value, got {log_level} of type {type(log_level)} instead."
-        )
+        msg = f"log_level must be a LogLevel enum value, got {log_level} of type {type(log_level)} instead."
+        raise TypeError(msg)
     global _LOG_LEVEL
     if log_level != _LOG_LEVEL:
         # Set the loglevel persistenly for subprocesses.
-        os.environ["LOGLEVEL"] = log_level.value
+        os.environ["REFLEX_LOGLEVEL"] = log_level.value
     _LOG_LEVEL = log_level
 
 
@@ -78,7 +82,7 @@ def is_debug() -> bool:
     return _LOG_LEVEL <= LogLevel.DEBUG
 
 
-def print(msg: str, dedupe: bool = False, **kwargs):
+def print(msg: str, *, dedupe: bool = False, **kwargs):
     """Print a message.
 
     Args:
@@ -89,12 +93,71 @@ def print(msg: str, dedupe: bool = False, **kwargs):
     if dedupe:
         if msg in _EMITTED_PRINTS:
             return
-        else:
-            _EMITTED_PRINTS.add(msg)
+        _EMITTED_PRINTS.add(msg)
     _console.print(msg, **kwargs)
 
 
-def debug(msg: str, dedupe: bool = False, **kwargs):
+def _print_stderr(msg: str, *, dedupe: bool = False, **kwargs):
+    """Print a message to stderr.
+
+    Args:
+        msg: The message to print.
+        dedupe: If True, suppress multiple console logs of print message.
+        kwargs: Keyword arguments to pass to the print function.
+    """
+    if dedupe:
+        if msg in _EMITTED_PRINTS:
+            return
+        _EMITTED_PRINTS.add(msg)
+    _console_stderr.print(msg, **kwargs)
+
+
+@once
+def log_file_console():
+    """Create a console that logs to a file.
+
+    Returns:
+        A Console object that logs to a file.
+    """
+    from reflex.environment import environment
+
+    if not (env_log_file := environment.REFLEX_LOG_FILE.get()):
+        subseconds = int((time.time() % 1) * 1000)
+        timestamp = time.strftime("%Y-%m-%d_%H-%M-%S") + f"_{subseconds:03d}"
+        log_file = Reflex.DIR / "logs" / (timestamp + ".log")
+        log_file.parent.mkdir(parents=True, exist_ok=True)
+    else:
+        log_file = env_log_file
+    if log_file.exists():
+        log_file.unlink()
+    log_file.touch()
+    return Console(file=log_file.open("a", encoding="utf-8"))
+
+
+@once
+def should_use_log_file_console() -> bool:
+    """Check if the log file console should be used.
+
+    Returns:
+        True if the log file console should be used, False otherwise.
+    """
+    from reflex.environment import environment
+
+    return environment.REFLEX_ENABLE_FULL_LOGGING.get()
+
+
+def print_to_log_file(msg: str, *, dedupe: bool = False, **kwargs):
+    """Print a message to the log file.
+
+    Args:
+        msg: The message to print.
+        dedupe: If True, suppress multiple console logs of print message.
+        kwargs: Keyword arguments to pass to the print function.
+    """
+    log_file_console().print(f"[{datetime.datetime.now()}] {msg}", **kwargs)
+
+
+def debug(msg: str, *, dedupe: bool = False, **kwargs):
     """Print a debug message.
 
     Args:
@@ -107,15 +170,16 @@ def debug(msg: str, dedupe: bool = False, **kwargs):
         if dedupe:
             if msg_ in _EMITTED_DEBUG:
                 return
-            else:
-                _EMITTED_DEBUG.add(msg_)
+            _EMITTED_DEBUG.add(msg_)
         if progress := kwargs.pop("progress", None):
             progress.console.print(msg_, **kwargs)
         else:
             print(msg_, **kwargs)
+    if should_use_log_file_console() and kwargs.pop("progress", None) is None:
+        print_to_log_file(f"[purple]Debug: {msg}[/purple]", **kwargs)
 
 
-def info(msg: str, dedupe: bool = False, **kwargs):
+def info(msg: str, *, dedupe: bool = False, **kwargs):
     """Print an info message.
 
     Args:
@@ -127,12 +191,13 @@ def info(msg: str, dedupe: bool = False, **kwargs):
         if dedupe:
             if msg in _EMITTED_INFO:
                 return
-            else:
-                _EMITTED_INFO.add(msg)
+            _EMITTED_INFO.add(msg)
         print(f"[cyan]Info: {msg}[/cyan]", **kwargs)
+    if should_use_log_file_console():
+        print_to_log_file(f"[cyan]Info: {msg}[/cyan]", **kwargs)
 
 
-def success(msg: str, dedupe: bool = False, **kwargs):
+def success(msg: str, *, dedupe: bool = False, **kwargs):
     """Print a success message.
 
     Args:
@@ -144,12 +209,13 @@ def success(msg: str, dedupe: bool = False, **kwargs):
         if dedupe:
             if msg in _EMITTED_SUCCESS:
                 return
-            else:
-                _EMITTED_SUCCESS.add(msg)
+            _EMITTED_SUCCESS.add(msg)
         print(f"[green]Success: {msg}[/green]", **kwargs)
+    if should_use_log_file_console():
+        print_to_log_file(f"[green]Success: {msg}[/green]", **kwargs)
 
 
-def log(msg: str, dedupe: bool = False, **kwargs):
+def log(msg: str, *, dedupe: bool = False, **kwargs):
     """Takes a string and logs it to the console.
 
     Args:
@@ -161,9 +227,10 @@ def log(msg: str, dedupe: bool = False, **kwargs):
         if dedupe:
             if msg in _EMITTED_LOGS:
                 return
-            else:
-                _EMITTED_LOGS.add(msg)
+            _EMITTED_LOGS.add(msg)
         _console.log(msg, **kwargs)
+    if should_use_log_file_console():
+        print_to_log_file(msg, **kwargs)
 
 
 def rule(title: str, **kwargs):
@@ -176,7 +243,7 @@ def rule(title: str, **kwargs):
     _console.rule(title, **kwargs)
 
 
-def warn(msg: str, dedupe: bool = False, **kwargs):
+def warn(msg: str, *, dedupe: bool = False, **kwargs):
     """Print a warning message.
 
     Args:
@@ -186,29 +253,45 @@ def warn(msg: str, dedupe: bool = False, **kwargs):
     """
     if _LOG_LEVEL <= LogLevel.WARNING:
         if dedupe:
-            if msg in _EMIITED_WARNINGS:
+            if msg in _EMITTED_WARNINGS:
                 return
-            else:
-                _EMIITED_WARNINGS.add(msg)
+            _EMITTED_WARNINGS.add(msg)
         print(f"[orange1]Warning: {msg}[/orange1]", **kwargs)
+    if should_use_log_file_console():
+        print_to_log_file(f"[orange1]Warning: {msg}[/orange1]", **kwargs)
 
 
-def _get_first_non_framework_frame() -> FrameType | None:
+@once
+def _exclude_paths_from_frame_info() -> list[Path]:
+    import importlib.util
+
     import click
+    import granian
+    import socketio
     import typing_extensions
 
     import reflex as rx
 
     # Exclude utility modules that should never be the source of deprecated reflex usage.
-    exclude_modules = [click, rx, typing_extensions]
+    exclude_modules = [click, rx, typing_extensions, socketio, granian]
+    modules_paths = [file for m in exclude_modules if (file := m.__file__)] + [
+        spec.origin
+        for m in [*sys.builtin_module_names, *sys.stdlib_module_names]
+        if (spec := importlib.util.find_spec(m)) and spec.origin
+    ]
     exclude_roots = [
         p.parent.resolve() if (p := Path(file)).name == "__init__.py" else p.resolve()
-        for m in exclude_modules
-        if (file := m.__file__)
+        for file in modules_paths
     ]
     # Specifically exclude the reflex cli module.
     if reflex_bin := shutil.which(b"reflex"):
         exclude_roots.append(Path(reflex_bin.decode()))
+
+    return exclude_roots
+
+
+def _get_first_non_framework_frame() -> FrameType | None:
+    exclude_roots = _exclude_paths_from_frame_info()
 
     frame = inspect.currentframe()
     while frame := frame and frame.f_back:
@@ -219,6 +302,7 @@ def _get_first_non_framework_frame() -> FrameType | None:
 
 
 def deprecate(
+    *,
     feature_name: str,
     reason: str,
     deprecation_version: str,
@@ -245,21 +329,23 @@ def deprecate(
         filename = Path(origin_frame.f_code.co_filename)
         if filename.is_relative_to(Path.cwd()):
             filename = filename.relative_to(Path.cwd())
-        loc = f"{filename}:{origin_frame.f_lineno}"
+        loc = f" ({filename}:{origin_frame.f_lineno})"
         dedupe_key = f"{dedupe_key} {loc}"
 
     if dedupe_key not in _EMITTED_DEPRECATION_WARNINGS:
         msg = (
             f"{feature_name} has been deprecated in version {deprecation_version}. {reason.rstrip('.').lstrip('. ')}. It will be completely "
-            f"removed in {removal_version}. ({loc})"
+            f"removed in {removal_version}.{loc}"
         )
         if _LOG_LEVEL <= LogLevel.WARNING:
             print(f"[yellow]DeprecationWarning: {msg}[/yellow]", **kwargs)
+        if should_use_log_file_console():
+            print_to_log_file(f"[yellow]DeprecationWarning: {msg}[/yellow]", **kwargs)
         if dedupe:
             _EMITTED_DEPRECATION_WARNINGS.add(dedupe_key)
 
 
-def error(msg: str, dedupe: bool = False, **kwargs):
+def error(msg: str, *, dedupe: bool = False, **kwargs):
     """Print an error message.
 
     Args:
@@ -271,9 +357,10 @@ def error(msg: str, dedupe: bool = False, **kwargs):
         if dedupe:
             if msg in _EMITTED_ERRORS:
                 return
-            else:
-                _EMITTED_ERRORS.add(msg)
-        print(f"[red]{msg}[/red]", **kwargs)
+            _EMITTED_ERRORS.add(msg)
+        _print_stderr(f"[red]{msg}[/red]", **kwargs)
+    if should_use_log_file_console():
+        print_to_log_file(f"[red]{msg}[/red]", **kwargs)
 
 
 def ask(
@@ -340,3 +427,47 @@ def timing(msg: str):
         yield
     finally:
         debug(f"[white]\\[timing] {msg}: {time.time() - start:.2f}s[/white]")
+
+
+class PoorProgress:
+    """A poor man's progress bar."""
+
+    def __init__(self):
+        """Initialize the progress bar."""
+        super().__init__()
+        self.tasks = {}
+        self.progress = 0
+        self.total = 0
+
+    def add_task(self, task: str, total: int):
+        """Add a task to the progress bar.
+
+        Args:
+            task: The task name.
+            total: The total number of steps for the task.
+
+        Returns:
+            The task ID.
+        """
+        self.total += total
+        task_id = TaskID(len(self.tasks))
+        self.tasks[task_id] = {"total": total, "current": 0}
+        return task_id
+
+    def advance(self, task: TaskID, advance: int = 1):
+        """Advance the progress of a task.
+
+        Args:
+            task: The task ID.
+            advance: The number of steps to advance.
+        """
+        if task in self.tasks:
+            self.tasks[task]["current"] += advance
+            self.progress += advance
+            _console.print(f"Progress: {self.progress}/{self.total}")
+
+    def start(self):
+        """Start the progress bar."""
+
+    def stop(self):
+        """Stop the progress bar."""

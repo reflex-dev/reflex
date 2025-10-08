@@ -9,25 +9,17 @@ from reflex.vars.base import computed_var, figure_out_type
 class CustomDict(dict[str, str]):
     """A custom dict with generic arguments."""
 
-    pass
-
 
 class ChildCustomDict(CustomDict):
     """A child of CustomDict."""
-
-    pass
 
 
 class GenericDict(dict):
     """A generic dict with no generic arguments."""
 
-    pass
-
 
 class ChildGenericDict(GenericDict):
     """A child of GenericDict."""
-
-    pass
 
 
 @pytest.mark.parametrize(

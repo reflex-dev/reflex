@@ -11,7 +11,7 @@ on:
       - main
 
 env:
-  TELEMETRY_ENABLED: false
+  REFLEX_TELEMETRY_ENABLED: false
 
 jobs:
   check_latest_node:
@@ -34,5 +34,5 @@ jobs:
           node-version: ${{ matrix.node-version }}
       - run: uv run playwright install --with-deps
       - run: |
-          uv run pytest tests/test_node_version.py
-          uv run pytest tests/integration --splits 2 --group ${{matrix.split_index}}
+          uv run pytest tests/test_node_version.py -v
+          uv run pytest tests/integration --splits 2 -v --group ${{matrix.split_index}}

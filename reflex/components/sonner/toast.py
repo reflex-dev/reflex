@@ -2,12 +2,12 @@
 
 from __future__ import annotations
 
+import dataclasses
 from typing import Any, Literal
 
-from reflex.base import Base
 from reflex.components.component import Component, ComponentNamespace
 from reflex.components.lucide.icon import Icon
-from reflex.components.props import NoExtrasAllowedProps, PropsBase
+from reflex.components.props import NoExtrasAllowedProps
 from reflex.constants.base import Dirs
 from reflex.event import EventSpec, run_script
 from reflex.style import Style, resolved_color_mode
@@ -35,7 +35,8 @@ toast_ref = Var(
 )
 
 
-class ToastAction(Base):
+@dataclasses.dataclass
+class ToastAction:
     """A toast action that render a button in the toast."""
 
     label: str
@@ -74,7 +75,7 @@ def _toast_callback_signature(toast: Var) -> list[Var]:
     ]
 
 
-class ToastProps(PropsBase, NoExtrasAllowedProps):
+class ToastProps(NoExtrasAllowedProps):
     """Props for the toast component."""
 
     # Toast's title, renders above the description.
@@ -147,7 +148,6 @@ class ToastProps(PropsBase, NoExtrasAllowedProps):
         Returns:
             The object as a dictionary with ToastAction fields intact.
         """
-        kwargs.setdefault("exclude_none", True)
         d = super().dict(*args, **kwargs)
         # Keep these fields as ToastAction so they can be serialized specially
         if "action" in d:
@@ -172,7 +172,7 @@ class ToastProps(PropsBase, NoExtrasAllowedProps):
 class Toaster(Component):
     """A Toaster Component for displaying toast notifications."""
 
-    library: str | None = "sonner@2.0.3"
+    library: str | None = "sonner@2.0.7"
 
     tag = "Toaster"
 
@@ -239,7 +239,7 @@ class Toaster(Component):
 
     @staticmethod
     def send_toast(
-        message: str | Var = "",
+        message: str | Var[str] = "",
         level: str | None = None,
         fallback_to_alert: bool = False,
         **props,
@@ -266,7 +266,8 @@ class Toaster(Component):
             props.setdefault("title", message)
             message = ""
         elif message == "" and "title" not in props and "description" not in props:
-            raise ValueError("Toast message or title or description must be provided.")
+            msg = "Toast message or title or description must be provided."
+            raise ValueError(msg)
 
         if props:
             args = LiteralVar.create(ToastProps(component_name="rx.toast", **props))  # pyright: ignore [reportCallIssue]
@@ -292,7 +293,7 @@ class Toaster(Component):
         return run_script(toast)
 
     @staticmethod
-    def toast_info(message: str | Var = "", **kwargs: Any):
+    def toast_info(message: str | Var[str] = "", **kwargs: Any) -> EventSpec:
         """Display an info toast message.
 
         Args:
@@ -305,7 +306,7 @@ class Toaster(Component):
         return Toaster.send_toast(message, level="info", **kwargs)
 
     @staticmethod
-    def toast_warning(message: str | Var = "", **kwargs: Any):
+    def toast_warning(message: str | Var[str] = "", **kwargs: Any) -> EventSpec:
         """Display a warning toast message.
 
         Args:
@@ -318,7 +319,7 @@ class Toaster(Component):
         return Toaster.send_toast(message, level="warning", **kwargs)
 
     @staticmethod
-    def toast_error(message: str | Var = "", **kwargs: Any):
+    def toast_error(message: str | Var[str] = "", **kwargs: Any) -> EventSpec:
         """Display an error toast message.
 
         Args:
@@ -331,7 +332,7 @@ class Toaster(Component):
         return Toaster.send_toast(message, level="error", **kwargs)
 
     @staticmethod
-    def toast_success(message: str | Var = "", **kwargs: Any):
+    def toast_success(message: str | Var[str] = "", **kwargs: Any) -> EventSpec:
         """Display a success toast message.
 
         Args:
@@ -344,7 +345,7 @@ class Toaster(Component):
         return Toaster.send_toast(message, level="success", **kwargs)
 
     @staticmethod
-    def toast_loading(message: str | Var = "", **kwargs: Any):
+    def toast_loading(message: str | Var[str] = "", **kwargs: Any) -> EventSpec:
         """Display a loading toast message.
 
         Args:
@@ -357,7 +358,7 @@ class Toaster(Component):
         return Toaster.send_toast(message, level="loading", **kwargs)
 
     @staticmethod
-    def toast_dismiss(id: Var | str | None = None):
+    def toast_dismiss(id: Var[str] | str | None = None) -> EventSpec:
         """Dismiss a toast.
 
         Args:

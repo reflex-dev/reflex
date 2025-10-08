@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import Any, overload
 
 from reflex.components.base.fragment import Fragment
-from reflex.components.component import BaseComponent, Component, MemoizationLeaf
+from reflex.components.component import BaseComponent, Component
 from reflex.components.tags import CondTag, Tag
 from reflex.constants import Dirs
 from reflex.style import LIGHT_COLOR_MODE, resolved_color_mode
@@ -20,7 +20,7 @@ _IS_TRUE_IMPORT: ImportDict = {
 }
 
 
-class Cond(MemoizationLeaf):
+class Cond(Component):
     """Render one of two components based on a condition."""
 
     # The cond to determine which component to render.
@@ -61,7 +61,7 @@ class Cond(MemoizationLeaf):
 
     def _render(self) -> Tag:
         return CondTag(
-            cond=self.cond,
+            cond_state=str(self.cond),
             true_value=self.children[0].render(),
             false_value=self.children[1].render(),
         )
@@ -72,19 +72,11 @@ class Cond(MemoizationLeaf):
         Returns:
             The dictionary for template of component.
         """
-        tag = self._render()
-        return dict(
-            tag.add_props(
-                **self.event_triggers,
-                key=self.key,
-                sx=self.style,
-                id=self.id,
-                class_name=self.class_name,
-            ).set(
-                props=tag.format_props(),
-            ),
-            cond_state=str(self.cond),
-        )
+        return {
+            "cond_state": str(self.cond),
+            "true_value": self.children[0].render(),
+            "false_value": self.children[1].render(),
+        }
 
     def add_imports(self) -> ImportDict:
         """Add imports for the Cond component.
@@ -132,7 +124,8 @@ def cond(condition: Any, c1: Any, c2: Any = types.Unset(), /) -> Component | Var
     # Convert the condition to a Var.
     cond_var = LiteralVar.create(condition)
     if cond_var is None:
-        raise ValueError("The condition must be set.")
+        msg = "The condition must be set."
+        raise ValueError(msg)
 
     # If the first component is a component, create a Cond component.
     if isinstance(c1, BaseComponent):
@@ -145,7 +138,8 @@ def cond(condition: Any, c1: Any, c2: Any = types.Unset(), /) -> Component | Var
     if isinstance(c2, BaseComponent):
         return Cond.create(cond_var.bool(), Fragment.create(c1), c2)
     if isinstance(c2, types.Unset):
-        raise ValueError("For conditional vars, the second argument must be set.")
+        msg = "For conditional vars, the second argument must be set."
+        raise ValueError(msg)
 
     # convert the truth and false cond parts into vars so the _var_data can be obtained.
     c1_var = Var.create(c1)

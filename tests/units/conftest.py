@@ -14,13 +14,7 @@ from reflex.model import ModelRegistry
 from reflex.testing import chdir
 from reflex.utils import prerequisites
 
-from .states import (
-    DictMutationTestState,
-    ListMutationTestState,
-    MutableTestState,
-    SubUploadState,
-    UploadState,
-)
+from .states.upload import SubUploadState, UploadState
 
 
 def pytest_configure(config):
@@ -59,33 +53,13 @@ def app_module_mock(monkeypatch) -> mock.Mock:
 
 
 @pytest.fixture(scope="session")
-def windows_platform() -> Generator:
+def windows_platform() -> bool:
     """Check if system is windows.
 
-    Yields:
+    Returns:
         whether system is windows.
     """
-    yield platform.system() == "Windows"
-
-
-@pytest.fixture
-def list_mutation_state():
-    """Create a state with list mutation features.
-
-    Returns:
-        A state with list mutation features.
-    """
-    return ListMutationTestState()
-
-
-@pytest.fixture
-def dict_mutation_state():
-    """Create a state with dict mutation features.
-
-    Returns:
-        A state with dict mutation features.
-    """
-    return DictMutationTestState()
+    return platform.system() == "Windows"
 
 
 @pytest.fixture
@@ -208,16 +182,6 @@ def tmp_working_dir(tmp_path):
 
 
 @pytest.fixture
-def mutable_state() -> MutableTestState:
-    """Create a Test state containing mutable types.
-
-    Returns:
-        A state object.
-    """
-    return MutableTestState()
-
-
-@pytest.fixture(scope="function")
 def token() -> str:
     """Create a token.
 

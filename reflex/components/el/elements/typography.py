@@ -46,6 +46,12 @@ class Figcaption(BaseHTML):
     tag = "figcaption"
 
 
+class Figure(BaseHTML):
+    """Display the figure element."""
+
+    tag = "figure"
+
+
 class Hr(BaseHTML):
     """Display the hr element."""
 
@@ -132,6 +138,7 @@ div = Div.create
 dl = Dl.create
 dt = Dt.create
 figcaption = Figcaption.create
+figure = Figure.create
 hr = Hr.create
 li = Li.create
 ol = Ol.create

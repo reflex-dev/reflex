@@ -7,7 +7,7 @@ STATE_VAR = Var(_js_expr="default_state.name")
 
 
 @pytest.mark.parametrize(
-    "contents,expected",
+    ("contents", "expected"),
     [
         ("hello", '"hello"'),
         ("{}", '"{}"'),

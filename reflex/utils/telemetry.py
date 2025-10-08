@@ -1,9 +1,9 @@
 """Anonymous telemetry for Reflex."""
 
-from __future__ import annotations
-
 import asyncio
 import dataclasses
+import importlib.metadata
+import json
 import multiprocessing
 import platform
 import warnings
@@ -11,18 +11,112 @@ from contextlib import suppress
 from datetime import datetime, timezone
 from typing import TypedDict
 
-import httpx
-import psutil
-
 from reflex import constants
-from reflex.config import environment
-from reflex.utils import console
-from reflex.utils.decorator import once_unless_none
+from reflex.environment import environment
+from reflex.utils import console, processes
+from reflex.utils.decorator import once, once_unless_none
 from reflex.utils.exceptions import ReflexError
+from reflex.utils.js_runtimes import get_bun_version, get_node_version
 from reflex.utils.prerequisites import ensure_reflex_installation_id, get_project_hash
 
 UTC = timezone.utc
 POSTHOG_API_URL: str = "https://app.posthog.com/capture/"
+
+
+@dataclasses.dataclass(frozen=True)
+class CpuInfo:
+    """Model to save cpu info."""
+
+    manufacturer_id: str | None
+    model_name: str | None
+    address_width: int | None
+
+
+def format_address_width(address_width: str | None) -> int | None:
+    """Cast address width to an int.
+
+    Args:
+        address_width: The address width.
+
+    Returns:
+        Address width int
+    """
+    try:
+        return int(address_width) if address_width else None
+    except ValueError:
+        return None
+
+
+def _retrieve_cpu_info() -> CpuInfo | None:
+    """Retrieve the CPU info of the host.
+
+    Returns:
+        The CPU info.
+    """
+    platform_os = platform.system()
+    cpuinfo = {}
+    try:
+        if platform_os == "Windows":
+            cmd = 'powershell -Command "Get-CimInstance Win32_Processor | Select-Object -First 1 | Select-Object AddressWidth,Manufacturer,Name | ConvertTo-Json"'
+            output = processes.execute_command_and_return_output(cmd)
+            if output:
+                cpu_data = json.loads(output)
+                cpuinfo["address_width"] = cpu_data["AddressWidth"]
+                cpuinfo["manufacturer_id"] = cpu_data["Manufacturer"]
+                cpuinfo["model_name"] = cpu_data["Name"]
+        elif platform_os == "Linux":
+            output = processes.execute_command_and_return_output("lscpu")
+            if output:
+                lines = output.split("\n")
+                for line in lines:
+                    if "Architecture" in line:
+                        cpuinfo["address_width"] = (
+                            64 if line.split(":")[1].strip() == "x86_64" else 32
+                        )
+                    if "Vendor ID:" in line:
+                        cpuinfo["manufacturer_id"] = line.split(":")[1].strip()
+                    if "Model name" in line:
+                        cpuinfo["model_name"] = line.split(":")[1].strip()
+        elif platform_os == "Darwin":
+            cpuinfo["address_width"] = format_address_width(
+                processes.execute_command_and_return_output("getconf LONG_BIT")
+            )
+            cpuinfo["manufacturer_id"] = processes.execute_command_and_return_output(
+                "sysctl -n machdep.cpu.brand_string"
+            )
+            cpuinfo["model_name"] = processes.execute_command_and_return_output(
+                "uname -m"
+            )
+    except Exception as err:
+        console.error(f"Failed to retrieve CPU info. {err}")
+        return None
+
+    return (
+        CpuInfo(
+            manufacturer_id=cpuinfo.get("manufacturer_id"),
+            model_name=cpuinfo.get("model_name"),
+            address_width=cpuinfo.get("address_width"),
+        )
+        if cpuinfo
+        else None
+    )
+
+
+@once
+def get_cpu_info() -> CpuInfo | None:
+    """Get the CPU info of the underlining host.
+
+    Returns:
+        The CPU info.
+    """
+    cpu_info_file = environment.REFLEX_DIR.get() / "cpu_info.json"
+    if cpu_info_file.exists() and (cpu_info := json.loads(cpu_info_file.read_text())):
+        return CpuInfo(**cpu_info)
+    cpu_info = _retrieve_cpu_info()
+    if cpu_info:
+        cpu_info_file.parent.mkdir(parents=True, exist_ok=True)
+        cpu_info_file.write_text(json.dumps(dataclasses.asdict(cpu_info)))
+    return cpu_info
 
 
 def get_os() -> str:
@@ -71,16 +165,16 @@ def get_cpu_count() -> int:
     return multiprocessing.cpu_count()
 
 
-def get_memory() -> int:
-    """Get the total memory in MB.
+def get_reflex_enterprise_version() -> str | None:
+    """Get the version of reflex-enterprise if installed.
 
     Returns:
-        The total memory in MB.
+        The version string if installed, None if not installed.
     """
     try:
-        return psutil.virtual_memory().total >> 20
-    except ValueError:  # needed to pass ubuntu test
-        return 0
+        return importlib.metadata.version("reflex-enterprise")
+    except importlib.metadata.PackageNotFoundError:
+        return None
 
 
 def _raise_on_missing_project_hash() -> bool:
@@ -106,8 +200,10 @@ class _Properties(TypedDict):
     user_os_detail: str
     reflex_version: str
     python_version: str
+    node_version: str | None
+    bun_version: str | None
+    reflex_enterprise_version: str | None
     cpu_count: int
-    memory: int
     cpu_info: dict
 
 
@@ -131,8 +227,6 @@ def _get_event_defaults() -> _DefaultEvent | None:
     Returns:
         The default event data.
     """
-    from reflex.utils.prerequisites import get_cpu_info
-
     installation_id = ensure_reflex_installation_id()
     project_hash = get_project_hash(raise_on_fail=_raise_on_missing_project_hash())
 
@@ -153,8 +247,14 @@ def _get_event_defaults() -> _DefaultEvent | None:
             "user_os_detail": get_detailed_platform_str(),
             "reflex_version": get_reflex_version(),
             "python_version": get_python_version(),
+            "node_version": (
+                str(node_version) if (node_version := get_node_version()) else None
+            ),
+            "bun_version": (
+                str(bun_version) if (bun_version := get_bun_version()) else None
+            ),
+            "reflex_enterprise_version": get_reflex_enterprise_version(),
             "cpu_count": get_cpu_count(),
-            "memory": get_memory(),
             "cpu_info": dataclasses.asdict(cpuinfo) if cpuinfo else {},
         },
     }
@@ -205,6 +305,8 @@ def _prepare_event(event: str, **kwargs) -> _Event | None:
 
 
 def _send_event(event_data: _Event) -> bool:
+    import httpx
+
     try:
         httpx.post(POSTHOG_API_URL, json=event_data)
     except Exception:
@@ -232,6 +334,9 @@ def _send(event: str, telemetry_enabled: bool | None, **kwargs) -> bool:
     return False
 
 
+background_tasks = set()
+
+
 def send(event: str, telemetry_enabled: bool | None = None, **kwargs):
     """Send anonymous telemetry for Reflex.
 
@@ -246,7 +351,12 @@ def send(event: str, telemetry_enabled: bool | None = None, **kwargs):
 
     try:
         # Within an event loop context, send the event asynchronously.
-        asyncio.create_task(async_send(event, telemetry_enabled, **kwargs))
+        task = asyncio.create_task(
+            async_send(event, telemetry_enabled, **kwargs),
+            name=f"reflex_send_telemetry_event|{event}",
+        )
+        background_tasks.add(task)
+        task.add_done_callback(background_tasks.discard)
     except RuntimeError:
         # If there is no event loop, send the event synchronously.
         warnings.filterwarnings("ignore", category=RuntimeWarning)

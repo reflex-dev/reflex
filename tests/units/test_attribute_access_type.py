@@ -3,8 +3,16 @@ from __future__ import annotations
 from typing import List  # noqa: UP035
 
 import attrs
-import pydantic.v1
 import pytest
+
+import reflex as rx
+from reflex.utils.types import GenericType, get_attribute_access_type
+
+pytest.importorskip("sqlalchemy")
+pytest.importorskip("sqlmodel")
+pytest.importorskip("pydantic")
+
+import pydantic.v1
 import sqlalchemy
 import sqlmodel
 from sqlalchemy import JSON, TypeDecorator
@@ -16,9 +24,6 @@ from sqlalchemy.orm import (
     mapped_column,
     relationship,
 )
-
-import reflex as rx
-from reflex.utils.types import GenericType, get_attribute_access_type
 
 
 class SQLAType(TypeDecorator):
@@ -300,12 +305,12 @@ class AttrClass:
 
     count: int = 0
     name: str = "test"
-    int_list: list[int] = []
-    str_list: list[str] = []
+    int_list: list[int] = attrs.field(factory=list)
+    str_list: list[str] = attrs.field(factory=list)
     optional_int: int | None = None
     sqla_tag: SQLATag | None = None
-    labels: list[SQLALabel] = []
-    dict_str_str: dict[str, str] = {}
+    labels: list[SQLALabel] = attrs.field(factory=list)
+    dict_str_str: dict[str, str] = attrs.field(factory=dict)
     default_factory: list[int] = attrs.field(factory=list)
 
     @property
@@ -348,7 +353,7 @@ class AttrClass:
     ],
 )
 @pytest.mark.parametrize(
-    "attr, expected",
+    ("attr", "expected"),
     [
         pytest.param("count", int, id="int"),
         pytest.param("name", str, id="str"),

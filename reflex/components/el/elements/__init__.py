@@ -69,6 +69,7 @@ _MAPPING = {
         "text",
         "line",
         "circle",
+        "g",
         "ellipse",
         "rect",
         "polygon",
@@ -77,6 +78,7 @@ _MAPPING = {
         "linear_gradient",
         "radial_gradient",
         "defs",
+        "marker",
     ],
     "metadata": [
         "base",
@@ -124,6 +126,7 @@ _MAPPING = {
         "dl",
         "dt",
         "figcaption",
+        "figure",
         "hr",
         "ol",
         "li",

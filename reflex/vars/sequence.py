@@ -15,7 +15,6 @@ from typing_extensions import TypeVar as TypingExtensionsTypeVar
 
 from reflex import constants
 from reflex.constants.base import REFLEX_VAR_OPENING_TAG
-from reflex.constants.colors import Color
 from reflex.utils import types
 from reflex.utils.exceptions import VarTypeError
 from reflex.utils.types import GenericType, get_origin
@@ -29,7 +28,6 @@ from .base import (
     _global_vars,
     cached_property_no_lock,
     figure_out_type,
-    get_python_literal,
     get_unique_variable_name,
     unionize,
     var_operation,
@@ -40,7 +38,6 @@ from .number import (
     LiteralNumberVar,
     NumberVar,
     raise_unsupported_operand_types,
-    ternary_operation,
 )
 
 if TYPE_CHECKING:
@@ -445,9 +442,8 @@ class ArrayVar(Var[ARRAY_VAR_TYPE], python_types=(Sequence, set)):
         # get the number of arguments of the function
         num_args = len(inspect.signature(fn).parameters)
         if num_args > 1:
-            raise VarTypeError(
-                "The function passed to foreach should take at most one argument."
-            )
+            msg = "The function passed to foreach should take at most one argument."
+            raise VarTypeError(msg)
 
         if num_args == 0:
             return_value = fn()
@@ -535,9 +531,8 @@ class LiteralArrayVar(CachedVarOperation, LiteralVar, ArrayVar[ARRAY_VAR_TYPE]):
         for element in self._var_value:
             element_var = LiteralVar.create(element)
             if not isinstance(element_var, LiteralVar):
-                raise TypeError(
-                    f"Array elements must be of type LiteralVar, not {type(element_var)}"
-                )
+                msg = f"Array elements must be of type LiteralVar, not {type(element_var)}"
+                raise TypeError(msg)
             elements.append(element_var.json())
 
         return "[" + ", ".join(elements) + "]"
@@ -1061,7 +1056,7 @@ def string_item_operation(string: StringVar[Any], index: NumberVar | int):
     Returns:
         The item from the string.
     """
-    return var_operation_return(js_expression=f"{string}.at({index})", var_type=str)
+    return var_operation_return(js_expression=f"{string}?.at?.({index})", var_type=str)
 
 
 @var_operation
@@ -1203,8 +1198,7 @@ class LiteralStringVar(LiteralVar, StringVar[str]):
                 only_string = filtered_strings_and_vals[0]
                 if isinstance(only_string, str):
                     return LiteralVar.create(only_string).to(StringVar, _var_type)
-                else:
-                    return only_string.to(StringVar, only_string._var_type)
+                return only_string.to(StringVar, only_string._var_type)
 
             if len(
                 literal_strings := [
@@ -1400,7 +1394,8 @@ class ArraySliceOperation(CachedVarOperation, ArrayVar):
                 actual_end = start + 1 if start is not None else self._array.length()
                 return str(self._array[actual_start:actual_end].reverse()[::-step])
             if step == 0:
-                raise ValueError("slice step cannot be zero")
+                msg = "slice step cannot be zero"
+                raise ValueError(msg)
             return f"{self._array!s}.slice({normalized_start!s}, {normalized_end!s}).filter((_, i) => i % {step!s} === 0)"
 
         actual_start_reverse = end + 1 if end is not None else 0
@@ -1624,7 +1619,7 @@ def array_item_operation(array: ArrayVar, index: NumberVar | int):
     )
 
     return var_operation_return(
-        js_expression=f"{array!s}.at({index!s})",
+        js_expression=f"{array!s}?.at?.({index!s})",
         var_type=element_type,
     )
 
@@ -1743,137 +1738,6 @@ def array_concat_operation(
         js_expression=f"[...{lhs}, ...{rhs}]",
         var_type=lhs._var_type | rhs._var_type,
     )
-
-
-class ColorVar(StringVar[Color], python_types=Color):
-    """Base class for immutable color vars."""
-
-
-@dataclasses.dataclass(
-    eq=False,
-    frozen=True,
-    slots=True,
-)
-class LiteralColorVar(CachedVarOperation, LiteralVar, ColorVar):
-    """Base class for immutable literal color vars."""
-
-    _var_value: Color = dataclasses.field(default_factory=lambda: Color(color="black"))
-
-    @classmethod
-    def create(
-        cls,
-        value: Color,
-        _var_type: type[Color] | None = None,
-        _var_data: VarData | None = None,
-    ) -> ColorVar:
-        """Create a var from a string value.
-
-        Args:
-            value: The value to create the var from.
-            _var_type: The type of the var.
-            _var_data: Additional hooks and imports associated with the Var.
-
-        Returns:
-            The var.
-        """
-        return cls(
-            _js_expr="",
-            _var_type=_var_type or Color,
-            _var_data=_var_data,
-            _var_value=value,
-        )
-
-    def __hash__(self) -> int:
-        """Get the hash of the var.
-
-        Returns:
-            The hash of the var.
-        """
-        return hash(
-            (
-                self.__class__.__name__,
-                self._var_value.color,
-                self._var_value.alpha,
-                self._var_value.shade,
-            )
-        )
-
-    @cached_property_no_lock
-    def _cached_var_name(self) -> str:
-        """The name of the var.
-
-        Returns:
-            The name of the var.
-        """
-        alpha = self._var_value.alpha
-        alpha = (
-            ternary_operation(
-                alpha,
-                LiteralStringVar.create("a"),
-                LiteralStringVar.create(""),
-            )
-            if isinstance(alpha, Var)
-            else LiteralStringVar.create("a" if alpha else "")
-        )
-
-        shade = self._var_value.shade
-        shade = (
-            shade.to_string(use_json=False)
-            if isinstance(shade, Var)
-            else LiteralStringVar.create(str(shade))
-        )
-        return str(
-            ConcatVarOperation.create(
-                LiteralStringVar.create("var(--"),
-                self._var_value.color,
-                LiteralStringVar.create("-"),
-                alpha,
-                shade,
-                LiteralStringVar.create(")"),
-            )
-        )
-
-    @cached_property_no_lock
-    def _cached_get_all_var_data(self) -> VarData | None:
-        """Get all the var data.
-
-        Returns:
-            The var data.
-        """
-        return VarData.merge(
-            *[
-                LiteralVar.create(var)._get_all_var_data()
-                for var in (
-                    self._var_value.color,
-                    self._var_value.alpha,
-                    self._var_value.shade,
-                )
-            ],
-            self._var_data,
-        )
-
-    def json(self) -> str:
-        """Get the JSON representation of the var.
-
-        Returns:
-            The JSON representation of the var.
-
-        Raises:
-            TypeError: If the color is not a valid color.
-        """
-        color, alpha, shade = map(
-            get_python_literal,
-            (self._var_value.color, self._var_value.alpha, self._var_value.shade),
-        )
-        if color is None or alpha is None or shade is None:
-            raise TypeError("Cannot serialize color that contains non-literal vars.")
-        if (
-            not isinstance(color, str)
-            or not isinstance(alpha, bool)
-            or not isinstance(shade, int)
-        ):
-            raise TypeError("Color is not a valid color.")
-        return f"var(--{color}-{'a' if alpha else ''}{shade})"
 
 
 class RangeVar(ArrayVar[Sequence[int]], python_types=range):

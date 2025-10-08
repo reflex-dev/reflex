@@ -1,31 +1,48 @@
 import json
+from importlib.util import find_spec
 from unittest.mock import MagicMock, Mock
 
 import pytest
-import sqlalchemy
+from pytest_mock import MockerFixture
 from redis.exceptions import RedisError
 
 from reflex.app import health
 from reflex.model import get_db_status
 from reflex.utils.prerequisites import get_redis_status
 
+pytest.importorskip("sqlalchemy")
+
+import sqlalchemy.exc
+
+
+def _get_async_function(func):
+    async def _async_func(*args, **kwargs):
+        return func(*args, **kwargs)
+
+    return _async_func
+
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize(
-    "mock_redis_client, expected_status",
+    ("mock_redis_client", "expected_status"),
     [
         # Case 1: Redis client is available and responds to ping
-        (Mock(ping=lambda: None), {"redis": True}),
+        (Mock(ping=_get_async_function(lambda: None)), {"redis": True}),
         # Case 2: Redis client raises RedisError
-        (Mock(ping=lambda: (_ for _ in ()).throw(RedisError)), {"redis": False}),
+        (
+            Mock(ping=_get_async_function(lambda: (_ for _ in ()).throw(RedisError))),
+            {"redis": False},
+        ),
         # Case 3: Redis client is not used
         (None, {"redis": None}),
     ],
 )
-async def test_get_redis_status(mock_redis_client, expected_status, mocker):
-    # Mock the `get_redis_sync` function to return the mock Redis client
-    mock_get_redis_sync = mocker.patch(
-        "reflex.utils.prerequisites.get_redis_sync", return_value=mock_redis_client
+async def test_get_redis_status(
+    mock_redis_client, expected_status, mocker: MockerFixture
+):
+    # Mock the `get_redis` function to return the mock Redis client
+    mock_get_redis = mocker.patch(
+        "reflex.utils.prerequisites.get_redis", return_value=mock_redis_client
     )
 
     # Call the function
@@ -33,24 +50,30 @@ async def test_get_redis_status(mock_redis_client, expected_status, mocker):
 
     # Verify the result
     assert status == expected_status
-    mock_get_redis_sync.assert_called_once()
+    mock_get_redis.assert_called_once()
 
 
+@pytest.mark.skipif(
+    not find_spec("sqlmodel") or not find_spec("pydantici"),
+    reason="sqlmodel not installed or pydantic is not installed",
+)
 @pytest.mark.asyncio
 @pytest.mark.parametrize(
-    "mock_engine, execute_side_effect, expected_status",
+    ("mock_engine", "execute_side_effect", "expected_status"),
     [
         # Case 1: Database is accessible
         (MagicMock(), None, {"db": True}),
         # Case 2: Database connection error (OperationalError)
         (
             MagicMock(),
-            sqlalchemy.exc.OperationalError("error", "error", "error"),
+            sqlalchemy.exc.OperationalError("error", "error", "error"),  # pyright: ignore[reportArgumentType]
             {"db": False},
         ),
     ],
 )
-async def test_get_db_status(mock_engine, execute_side_effect, expected_status, mocker):
+async def test_get_db_status(
+    mock_engine, execute_side_effect, expected_status, mocker: MockerFixture
+):
     # Mock get_engine to return the mock_engine
     mock_get_engine = mocker.patch("reflex.model.get_engine", return_value=mock_engine)
 
@@ -72,9 +95,20 @@ async def test_get_db_status(mock_engine, execute_side_effect, expected_status, 
     mock_get_engine.assert_called_once()
 
 
+@pytest.mark.skipif(
+    not find_spec("sqlmodel") or not find_spec("pydantic"),
+    reason="sqlmodel not installed or pydantic is not installed",
+)
 @pytest.mark.asyncio
 @pytest.mark.parametrize(
-    "db_enabled, redis_enabled, db_status, redis_status, expected_status, expected_code",
+    (
+        "db_enabled",
+        "redis_enabled",
+        "db_status",
+        "redis_status",
+        "expected_status",
+        "expected_code",
+    ),
     [
         # Case 1: Both services are connected
         (True, True, True, True, {"status": True, "db": True, "redis": True}, 200),
@@ -99,7 +133,7 @@ async def test_health(
     redis_status,
     expected_status,
     expected_code,
-    mocker,
+    mocker: MockerFixture,
 ):
     # Mock get_db_status and get_redis_status
     mocker.patch(
@@ -111,7 +145,7 @@ async def test_health(
         return_value=redis_enabled,
     )
     mocker.patch(
-        "reflex.app.get_db_status",
+        "reflex.model.get_db_status",
         return_value={"db": db_status},
     )
     mocker.patch(

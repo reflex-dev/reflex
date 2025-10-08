@@ -5,16 +5,16 @@ from functools import cached_property
 from pathlib import Path
 from typing import Any, ClassVar, List, Literal, NoReturn  # noqa: UP035
 
-import click
 import pytest
 from packaging import version
+from pytest_mock import MockerFixture
 
 from reflex import constants
-from reflex.config import environment
+from reflex.environment import environment
 from reflex.event import EventHandler
 from reflex.state import BaseState
-from reflex.utils import build, prerequisites, types
 from reflex.utils import exec as utils_exec
+from reflex.utils import frontend_skeleton, js_runtimes, prerequisites, templates, types
 from reflex.utils.exceptions import ReflexError, SystemPackageMissingError
 from reflex.vars.base import Var
 
@@ -24,7 +24,6 @@ class ExampleTestState(BaseState):
 
     def test_event_handler(self):
         """Test event handler."""
-        pass
 
 
 def test_func():
@@ -32,7 +31,7 @@ def test_func():
 
 
 @pytest.mark.parametrize(
-    "cls,expected",
+    ("cls", "expected"),
     [
         (str, False),
         (int, False),
@@ -69,8 +68,6 @@ def test_is_generic_alias(cls: type, expected: bool):
         (int, bool, False),
         (list, list, True),
         (list, list[str], True),  # this is wrong, but it's a limitation of the function
-        (list, list, True),
-        (list[int], list, True),
         (list[int], list, True),
         (list[int], list[str], False),
         (list[int], list[int], True),
@@ -129,8 +126,6 @@ def test_typehint_issubclass(subclass, superclass, expected):
         (int, bool, False),
         (list, list, True),
         (list, list[str], True),  # this is wrong, but it's a limitation of the function
-        (list, list, True),
-        (list[int], list, True),
         (list[int], list, True),
         (list[int], list[str], False),
         (list[int], list[int], True),
@@ -173,7 +168,7 @@ def test_typehint_issubclass_mutable_as_immutable(subclass, superclass, expected
     )
 
 
-def test_validate_none_bun_path(mocker):
+def test_validate_none_bun_path(mocker: MockerFixture):
     """Test that an error is thrown when a bun path is not specified.
 
     Args:
@@ -181,12 +176,10 @@ def test_validate_none_bun_path(mocker):
     """
     mocker.patch("reflex.utils.path_ops.get_bun_path", return_value=None)
     # with pytest.raises(click.exceptions.Exit):
-    prerequisites.validate_bun()
+    js_runtimes.validate_bun()
 
 
-def test_validate_invalid_bun_path(
-    mocker,
-):
+def test_validate_invalid_bun_path(mocker: MockerFixture):
     """Test that an error is thrown when a custom specified bun path is not valid
     or does not exist.
 
@@ -196,13 +189,13 @@ def test_validate_invalid_bun_path(
     mock_path = mocker.Mock()
     mocker.patch("reflex.utils.path_ops.get_bun_path", return_value=mock_path)
     mocker.patch("reflex.utils.path_ops.samefile", return_value=False)
-    mocker.patch("reflex.utils.prerequisites.get_bun_version", return_value=None)
+    mocker.patch("reflex.utils.js_runtimes.get_bun_version", return_value=None)
 
-    with pytest.raises(click.exceptions.Exit):
-        prerequisites.validate_bun()
+    with pytest.raises(SystemExit):
+        js_runtimes.validate_bun()
 
 
-def test_validate_bun_path_incompatible_version(mocker):
+def test_validate_bun_path_incompatible_version(mocker: MockerFixture):
     """Test that an error is thrown when the bun version does not meet minimum requirements.
 
     Args:
@@ -213,46 +206,25 @@ def test_validate_bun_path_incompatible_version(mocker):
     mocker.patch("reflex.utils.path_ops.get_bun_path", return_value=mock_path)
     mocker.patch("reflex.utils.path_ops.samefile", return_value=False)
     mocker.patch(
-        "reflex.utils.prerequisites.get_bun_version",
+        "reflex.utils.js_runtimes.get_bun_version",
         return_value=version.parse("0.6.5"),
     )
 
     # This will just warn the user, not raise an error
-    prerequisites.validate_bun()
+    js_runtimes.validate_bun()
 
 
-def test_remove_existing_bun_installation(mocker):
+def test_remove_existing_bun_installation(mocker: MockerFixture):
     """Test that existing bun installation is removed.
 
     Args:
         mocker: Pytest mocker.
     """
-    mocker.patch("reflex.utils.prerequisites.Path.exists", return_value=True)
-    rm = mocker.patch("reflex.utils.prerequisites.path_ops.rm", mocker.Mock())
+    mocker.patch("reflex.utils.js_runtimes.Path.exists", return_value=True)
+    rm = mocker.patch("reflex.utils.js_runtimes.path_ops.rm", mocker.Mock())
 
-    prerequisites.remove_existing_bun_installation()
+    js_runtimes.remove_existing_bun_installation()
     rm.assert_called_once()
-
-
-def test_setup_frontend(tmp_path, mocker):
-    """Test checking if assets content have been
-    copied into the .web/public folder.
-
-    Args:
-        tmp_path: root path of test case data directory
-        mocker: mocker object to allow mocking
-    """
-    web_public_folder = tmp_path / ".web" / "public"
-    assets = tmp_path / "assets"
-    assets.mkdir()
-    (assets / "favicon.ico").touch()
-
-    mocker.patch("reflex.utils.prerequisites.install_frontend_packages")
-    mocker.patch("reflex.utils.build.set_env_json")
-
-    build.setup_frontend(tmp_path, disable_telemetry=False)
-    assert web_public_folder.exists()
-    assert (web_public_folder / "favicon.ico").exists()
 
 
 @pytest.fixture
@@ -284,7 +256,7 @@ def test_backend_variable_cls():
 
 
 @pytest.mark.parametrize(
-    "input, output",
+    ("input", "output"),
     [
         ("_classvar", False),
         ("_class_method", False),
@@ -303,7 +275,7 @@ def test_is_backend_base_variable(
 
 
 @pytest.mark.parametrize(
-    "cls, cls_check, expected",
+    ("cls", "cls_check", "expected"),
     [
         (int, int, True),
         (int, float, False),
@@ -334,7 +306,7 @@ def test_unsupported_literals(cls: type):
 
 
 @pytest.mark.parametrize(
-    "app_name,expected_config_name",
+    ("app_name", "expected_config_name"),
     [
         ("appname", "AppnameConfig"),
         ("app_name", "AppnameConfig"),
@@ -342,8 +314,8 @@ def test_unsupported_literals(cls: type):
         ("appname2.io", "AppnameioConfig"),
     ],
 )
-def test_create_config(app_name: str, expected_config_name: str, mocker):
-    """Test templates.RXCONFIG is formatted with correct app name and config class name.
+def test_create_config(app_name: str, expected_config_name: str, mocker: MockerFixture):
+    """Test templates.rxconfig_template is formatted with correct app name and config class name.
 
     Args:
         app_name: App name.
@@ -351,11 +323,9 @@ def test_create_config(app_name: str, expected_config_name: str, mocker):
         mocker: Mocker object.
     """
     mocker.patch("pathlib.Path.write_text")
-    tmpl_mock = mocker.patch("reflex.compiler.templates.RXCONFIG")
-    prerequisites.create_config(app_name)
-    tmpl_mock.render.assert_called_with(
-        app_name=app_name, config_name=expected_config_name
-    )
+    tmpl_mock = mocker.patch("reflex.compiler.templates.rxconfig_template")
+    templates.create_config(app_name)
+    tmpl_mock.assert_called_with(app_name=app_name)
 
 
 @pytest.fixture
@@ -386,7 +356,7 @@ def test_create_config_e2e(tmp_working_dir):
             for the duration of the test.
     """
     app_name = "e2e"
-    prerequisites.create_config(app_name)
+    templates.create_config(app_name)
     eval_globals = {}
     exec((tmp_working_dir / constants.Config.FILE).read_text(), eval_globals)
     config = eval_globals["config"]
@@ -396,18 +366,15 @@ def test_create_config_e2e(tmp_working_dir):
 class DataFrame:
     """A Fake pandas DataFrame class."""
 
-    pass
-
 
 @pytest.mark.parametrize(
-    "class_type,expected",
+    ("class_type", "expected"),
     [
         (list, False),
         (int, False),
         (dict, False),
         (DataFrame, True),
         (typing.Any, False),
-        (list, False),
     ],
 )
 def test_is_dataframe(class_type, expected):
@@ -421,7 +388,9 @@ def test_is_dataframe(class_type, expected):
 
 
 @pytest.mark.parametrize("gitignore_exists", [True, False])
-def test_initialize_non_existent_gitignore(tmp_path, mocker, gitignore_exists):
+def test_initialize_non_existent_gitignore(
+    tmp_path, mocker: MockerFixture, gitignore_exists
+):
     """Test that the generated .gitignore_file file on reflex init contains the correct file
     names with correct formatting.
 
@@ -443,7 +412,7 @@ def test_initialize_non_existent_gitignore(tmp_path, mocker, gitignore_exists):
         """
         )
 
-    prerequisites.initialize_gitignore(gitignore_file=gitignore_file)
+    frontend_skeleton.initialize_gitignore(gitignore_file=gitignore_file)
 
     assert gitignore_file.exists()
     file_content = [
@@ -452,7 +421,7 @@ def test_initialize_non_existent_gitignore(tmp_path, mocker, gitignore_exists):
     assert set(file_content) - expected == set()
 
 
-def test_validate_app_name(tmp_path, mocker):
+def test_validate_app_name(tmp_path, mocker: MockerFixture):
     """Test that an error is raised if the app name is reflex or if the name is not according to python package naming conventions.
 
     Args:
@@ -462,16 +431,16 @@ def test_validate_app_name(tmp_path, mocker):
     reflex = tmp_path / "reflex"
     reflex.mkdir()
 
-    mocker.patch("reflex.utils.prerequisites.os.getcwd", return_value=str(reflex))
+    mocker.patch("os.getcwd", return_value=str(reflex))
 
-    with pytest.raises(click.exceptions.Exit):
+    with pytest.raises(SystemExit):
         prerequisites.validate_app_name()
 
-    with pytest.raises(click.exceptions.Exit):
+    with pytest.raises(SystemExit):
         prerequisites.validate_app_name(app_name="1_test")
 
 
-def test_bun_install_without_unzip(mocker):
+def test_bun_install_without_unzip(mocker: MockerFixture):
     """Test that an error is thrown when installing bun with unzip not installed.
 
     Args:
@@ -482,11 +451,11 @@ def test_bun_install_without_unzip(mocker):
     mocker.patch("reflex.utils.prerequisites.constants.IS_WINDOWS", False)
 
     with pytest.raises(SystemPackageMissingError):
-        prerequisites.install_bun()
+        js_runtimes.install_bun()
 
 
 @pytest.mark.parametrize("bun_version", [constants.Bun.VERSION, "1.0.0"])
-def test_bun_install_version(mocker, bun_version):
+def test_bun_install_version(mocker: MockerFixture, bun_version):
     """Test that bun is downloaded when the host version(installed by reflex)
     different from the current version set in reflex.
 
@@ -498,13 +467,13 @@ def test_bun_install_version(mocker, bun_version):
     mocker.patch("reflex.utils.prerequisites.constants.IS_WINDOWS", False)
     mocker.patch("pathlib.Path.exists", return_value=True)
     mocker.patch(
-        "reflex.utils.prerequisites.get_bun_version",
+        "reflex.utils.js_runtimes.get_bun_version",
         return_value=version.parse(bun_version),
     )
     mocker.patch("reflex.utils.path_ops.which")
-    mock = mocker.patch("reflex.utils.prerequisites.download_and_run")
+    mock = mocker.patch("reflex.utils.js_runtimes.download_and_run")
 
-    prerequisites.install_bun()
+    js_runtimes.install_bun()
     if bun_version == constants.Bun.VERSION:
         mock.assert_not_called()
     else:
@@ -512,7 +481,7 @@ def test_bun_install_version(mocker, bun_version):
 
 
 @pytest.mark.parametrize("is_windows", [True, False])
-def test_create_reflex_dir(mocker, is_windows):
+def test_create_reflex_dir(mocker: MockerFixture, is_windows):
     """Test that a reflex directory is created on initializing frontend
     dependencies.
 
@@ -521,10 +490,12 @@ def test_create_reflex_dir(mocker, is_windows):
         is_windows: Whether platform is windows.
     """
     mocker.patch("reflex.utils.prerequisites.constants.IS_WINDOWS", is_windows)
-    mocker.patch("reflex.utils.prerequisites.processes.run_concurrently", mocker.Mock())
-    mocker.patch("reflex.utils.prerequisites.initialize_web_directory", mocker.Mock())
+    mocker.patch("reflex.utils.processes.run_concurrently", mocker.Mock())
+    mocker.patch(
+        "reflex.utils.frontend_skeleton.initialize_web_directory", mocker.Mock()
+    )
     mocker.patch("reflex.utils.processes.run_concurrently")
-    mocker.patch("reflex.utils.prerequisites.validate_bun")
+    mocker.patch("reflex.utils.js_runtimes.validate_bun")
     create_cmd = mocker.patch(
         "reflex.utils.prerequisites.path_ops.mkdir", mocker.Mock()
     )
@@ -534,7 +505,7 @@ def test_create_reflex_dir(mocker, is_windows):
     assert create_cmd.called
 
 
-def test_output_system_info(mocker):
+def test_output_system_info(mocker: MockerFixture):
     """Make sure reflex does not crash dumping system info.
 
     Args:

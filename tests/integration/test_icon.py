@@ -6,8 +6,7 @@ import pytest
 from selenium.webdriver.common.by import By
 
 from reflex.components.lucide.icon import LUCIDE_ICON_LIST
-from reflex.testing import AppHarness
-from tests.integration.test_dynamic_components import poll_for_result
+from reflex.testing import AppHarness, WebDriver
 
 
 def Icons():
@@ -17,7 +16,9 @@ def Icons():
     app = rx.App()
 
     class State(rx.State):
-        pass
+        """State for the Icons app."""
+
+        dynamic_icon: str = "airplay"
 
     @app.add_page
     def index():
@@ -28,6 +29,10 @@ def Icons():
                 },
                 value=State.router.session.client_token,
                 is_read_only=True,
+            ),
+            rx.el.div(
+                rx.icon(State.dynamic_icon),
+                id="dynamic_icon",
             ),
             *[
                 rx.el.div(
@@ -40,16 +45,19 @@ def Icons():
 
 
 @pytest.fixture(scope="module")
-def icons(tmp_path_factory) -> Generator[AppHarness, None, None]:
+def icons(
+    tmp_path_factory, app_harness_env: type[AppHarness]
+) -> Generator[AppHarness, None, None]:
     """Start Icons app at tmp_path via AppHarness.
 
     Args:
         tmp_path_factory: pytest tmp_path_factory fixture
+        app_harness_env: The AppHarness environment to use
 
     Yields:
         running AppHarness instance
     """
-    with AppHarness.create(
+    with app_harness_env.create(
         root=tmp_path_factory.mktemp("icons"),
         app_source=Icons,
     ) as harness:
@@ -69,10 +77,9 @@ def driver(icons: AppHarness):
     """
     driver = icons.frontend()
     try:
-        token_input = poll_for_result(
-            lambda: driver.find_element(By.ID, "token"), max_attempts=30
+        token_input = AppHarness.poll_for_or_raise_timeout(
+            lambda: driver.find_element(By.ID, "token")
         )
-        assert token_input
         # wait for the backend connection to send the token
         token = icons.poll_for_value(token_input)
         assert token is not None
@@ -82,15 +89,16 @@ def driver(icons: AppHarness):
         driver.quit()
 
 
-def test_icons(driver, icons: AppHarness):
+def test_icons(driver: WebDriver, icons: AppHarness):
     """Test that the var operations produce the right results.
 
     Args:
         driver: selenium WebDriver open to the app
         icons: AppHarness for the dynamic components
     """
-    for icon_name in LUCIDE_ICON_LIST:
-        icon = poll_for_result(
-            lambda icon_name=icon_name: driver.find_element(By.ID, icon_name)
+    for icon_name in [*LUCIDE_ICON_LIST, "dynamic_icon"]:
+        AppHarness.expect(
+            lambda icon_name=icon_name: driver.find_element(
+                By.ID, icon_name
+            ).find_element(By.TAG_NAME, "svg")
         )
-        assert icon

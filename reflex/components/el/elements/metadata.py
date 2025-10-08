@@ -13,7 +13,6 @@ class Base(BaseHTML):
 
     tag = "base"
 
-    tag = "base"
     href: Var[str]
     target: Var[str]
 
@@ -73,6 +72,9 @@ class Meta(BaseHTML):  # Inherits common attributes from BaseHTML
 
     # Specifies a name for the metadata
     name: Var[str]
+
+    # The type of metadata value.
+    property: Var[str]
 
 
 class Title(Element):

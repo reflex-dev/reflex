@@ -111,8 +111,9 @@ def driver(server_side_event: AppHarness):
     assert server_side_event.app_instance is not None, "app is not running"
     driver = server_side_event.frontend()
     try:
-        token_input = driver.find_element(By.ID, "token")
-        assert token_input
+        token_input = AppHarness.poll_for_or_raise_timeout(
+            lambda: driver.find_element(By.ID, "token")
+        )
         # wait for the backend connection to send the token
         token = server_side_event.poll_for_value(token_input)
         assert token is not None

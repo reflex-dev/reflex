@@ -8,7 +8,7 @@ from typing import Any
 from reflex.components.component import BaseComponent, Component, ComponentStyle
 from reflex.components.tags import Tag
 from reflex.components.tags.tagless import Tagless
-from reflex.config import PerformanceMode, environment
+from reflex.environment import PerformanceMode, environment
 from reflex.utils import console
 from reflex.utils.decorator import once
 from reflex.utils.imports import ParsedImportDict
@@ -43,9 +43,8 @@ def validate_str(value: str):
                 f"Output includes {value!s} which will be displayed as a string. If you are calling `str` on a Var, consider using .to_string() instead."
             )
         elif perf_mode == PerformanceMode.RAISE:
-            raise ValueError(
-                f"Output includes {value!s} which will be displayed as a string. If you are calling `str` on a Var, consider using .to_string() instead."
-            )
+            msg = f"Output includes {value!s} which will be displayed as a string. If you are calling `str` on a Var, consider using .to_string() instead."
+            raise ValueError(msg)
 
 
 def _components_from_var(var: Var) -> Sequence[BaseComponent]:
@@ -72,10 +71,9 @@ class Bare(Component):
             if isinstance(contents, LiteralStringVar):
                 validate_str(contents._var_value)
             return cls._unsafe_create(children=[], contents=contents)
-        else:
-            if isinstance(contents, str):
-                validate_str(contents)
-            contents = Var.create(contents if contents is not None else "")
+        if isinstance(contents, str):
+            validate_str(contents)
+        contents = Var.create(contents if contents is not None else "")
 
         return cls._unsafe_create(children=[], contents=contents)
 
@@ -131,7 +129,7 @@ class Bare(Component):
                 dynamic_imports |= component._get_all_dynamic_imports()
         return dynamic_imports
 
-    def _get_all_custom_code(self) -> set[str]:
+    def _get_all_custom_code(self) -> dict[str, None]:
         """Get custom code for the component.
 
         Returns:
@@ -143,20 +141,32 @@ class Bare(Component):
                 custom_code |= component._get_all_custom_code()
         return custom_code
 
-    def _get_all_app_wrap_components(self) -> dict[tuple[int, str], Component]:
+    def _get_all_app_wrap_components(
+        self, *, ignore_ids: set[int] | None = None
+    ) -> dict[tuple[int, str], Component]:
         """Get the components that should be wrapped in the app.
+
+        Args:
+            ignore_ids: The ids to ignore when collecting components.
 
         Returns:
             The components that should be wrapped in the app.
         """
-        app_wrap_components = super()._get_all_app_wrap_components()
+        ignore_ids = ignore_ids or set()
+        app_wrap_components = super()._get_all_app_wrap_components(
+            ignore_ids=ignore_ids
+        )
         if isinstance(self.contents, Var):
             for component in _components_from_var(self.contents):
-                if isinstance(component, Component):
-                    app_wrap_components |= component._get_all_app_wrap_components()
+                component_id = id(component)
+                if isinstance(component, Component) and component_id not in ignore_ids:
+                    ignore_ids.add(component_id)
+                    app_wrap_components |= component._get_all_app_wrap_components(
+                        ignore_ids=ignore_ids
+                    )
         return app_wrap_components
 
-    def _get_all_refs(self) -> set[str]:
+    def _get_all_refs(self) -> dict[str, None]:
         """Get the refs for the children of the component.
 
         Returns:
@@ -177,6 +187,23 @@ class Bare(Component):
         if isinstance(contents, (BooleanVar, ObjectVar)):
             return Tagless(contents=f"{contents.to_string()!s}")
         return Tagless(contents=f"{contents!s}")
+
+    def render(self) -> dict:
+        """Render the component as a dictionary.
+
+        This is overridden to provide a short performant path for rendering.
+
+        Returns:
+            The rendered component.
+        """
+        contents = (
+            Var.create(self.contents)
+            if not isinstance(self.contents, Var)
+            else self.contents
+        )
+        if isinstance(contents, (BooleanVar, ObjectVar)):
+            return {"contents": f"{contents.to_string()!s}"}
+        return {"contents": f"{contents!s}"}
 
     def _add_style_recursive(
         self, style: ComponentStyle, theme: Component | None = None

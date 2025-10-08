@@ -9,17 +9,12 @@ import socket
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
-# psutil is already a dependency of Reflex itself - so it's OK to use
-import psutil
-
 
 def _pid_exists(pid: int):
-    # os.kill(pid, 0) doesn't work on Windows (actually kills the PID)
-    # psutil.pid_exists() doesn't work on Windows (does os.kill underneath)
-    # psutil.pids() seems to return the right thing. Inefficient but doesn't matter - keeps things simple.
-    #
     # Note: For windows, the pid here is really the "winpid".
-    return pid in psutil.pids()
+    import psutil
+
+    return psutil.pid_exists(pid)
 
 
 def _wait_for_port(port: int, server_pid: int, timeout: float) -> tuple[bool, str]:

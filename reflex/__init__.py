@@ -84,19 +84,10 @@ In the example above, you will be able to do `rx.list`
 
 from __future__ import annotations
 
-from types import ModuleType
-from typing import Any
-
 from reflex.utils import (
     compat,  # for side-effects
     lazy_loader,
 )
-
-from .event import event as event
-
-# import this here explicitly to avoid returning the page module since page attr has the
-# same name as page module(page.py)
-from .page import page as page
 
 # Remove the `compat` name from the namespace, it was imported for side-effects only.
 del compat
@@ -249,6 +240,7 @@ COMPONENTS_CORE_MAPPING: dict = {
         "upload",
     ],
     "components.core.auto_scroll": ["auto_scroll"],
+    "components.core.window_events": ["window_event_listener"],
 }
 
 COMPONENTS_BASE_MAPPING: dict = {
@@ -279,12 +271,7 @@ _MAPPING: dict = {
     "components.el.elements.media": ["image"],
     "components.lucide": ["icon"],
     **COMPONENTS_BASE_MAPPING,
-    "components.suneditor": [
-        "editor",
-        "EditorButtonList",
-        "EditorOptions",
-    ],
-    "components": ["el", "radix", "lucide", "recharts", "next"],
+    "components": ["el", "radix", "lucide", "recharts"],
     "components.markdown": ["markdown"],
     **RADIX_MAPPING,
     "components.plotly": ["plotly"],
@@ -298,6 +285,7 @@ _MAPPING: dict = {
         "data_editor_theme",
     ],
     "components.sonner.toast": ["toast"],
+    "components.props": ["PropsBase"],
     "components.datadisplay.logo": ["logo"],
     "components.gridjs": ["data_table"],
     "components.moment": ["MomentDelta", "moment"],
@@ -305,6 +293,7 @@ _MAPPING: dict = {
     "constants": ["Env"],
     "constants.colors": ["Color"],
     "event": [
+        "event",
         "EventChain",
         "EventHandler",
         "call_script",
@@ -334,7 +323,8 @@ _MAPPING: dict = {
         "SessionStorage",
     ],
     "middleware": ["middleware", "Middleware"],
-    "model": ["asession", "session", "Model"],
+    "model": ["asession", "session", "Model", "ModelRegistry"],
+    "page": ["page"],
     "state": [
         "var",
         "ComponentState",
@@ -361,6 +351,7 @@ _SUBMODULES: set[str] = {
     "vars",
     "config",
     "compiler",
+    "plugins",
 }
 _SUBMOD_ATTRS: dict = _MAPPING
 getattr, __dir__, __all__ = lazy_loader.attach(

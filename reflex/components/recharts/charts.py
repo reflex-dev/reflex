@@ -64,10 +64,11 @@ class ChartBase(RechartsCharts):
             return
         if isinstance(value, Var) and issubclass(value._var_type, int):
             return
-        raise ValueError(
+        msg = (
             f"Chart {name} must be specified as int pixels or percentage, not {value!r}. "
             "CSS unit dimensions are allowed on parent container."
         )
+        raise ValueError(msg)
 
     @classmethod
     def create(cls, *children: Any, **props: Any) -> Component:
@@ -324,7 +325,8 @@ class RadarChart(ChartBase):
         "Radar",
     ]
 
-    def get_event_triggers(self) -> dict[str, Var | Any]:
+    @classmethod
+    def get_event_triggers(cls) -> dict[str, Var | Any]:
         """Get the event triggers that pass the component's value to the handler.
 
         Returns:
@@ -413,7 +415,8 @@ class ScatterChart(ChartBase):
         "Scatter",
     ]
 
-    def get_event_triggers(self) -> dict[str, Var | Any]:
+    @classmethod
+    def get_event_triggers(cls) -> dict[str, Var | Any]:
         """Get the event triggers that pass the component's value to the handler.
 
         Returns:

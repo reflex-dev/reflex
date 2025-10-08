@@ -2,32 +2,26 @@ from __future__ import annotations
 
 import functools
 import io
-import json
-import os.path
-import re
 import unittest.mock
 import uuid
 from collections.abc import Generator
 from contextlib import nullcontext as does_not_raise
+from importlib.util import find_spec
 from pathlib import Path
+from typing import TYPE_CHECKING, Any, ClassVar
 from unittest.mock import AsyncMock
 
 import pytest
-import sqlmodel
-from fastapi.responses import StreamingResponse
 from pytest_mock import MockerFixture
 from starlette.applications import Starlette
 from starlette.datastructures import UploadFile
-from starlette_admin.auth import AuthProvider
-from starlette_admin.contrib.sqla.admin import Admin
-from starlette_admin.contrib.sqla.view import ModelView
+from starlette.responses import StreamingResponse
 
 import reflex as rx
 from reflex import AdminDash, constants
 from reflex.app import (
     App,
     ComponentCallable,
-    OverlayFragment,
     default_overlay_component,
     process,
     upload,
@@ -37,6 +31,7 @@ from reflex.components.base.bare import Bare
 from reflex.components.base.fragment import Fragment
 from reflex.components.core.cond import Cond
 from reflex.components.radix.themes.typography.text import Text
+from reflex.constants.state import FIELD_MARKER
 from reflex.event import Event
 from reflex.middleware import HydrateMiddleware
 from reflex.model import Model
@@ -56,19 +51,17 @@ from reflex.utils import console, exceptions, format
 from reflex.vars.base import computed_var
 
 from .conftest import chdir
-from .states import (
+from .states import GenState
+from .states.upload import (
     ChildFileUploadState,
     FileStateBase1,
     FileUploadState,
-    GenState,
     GrandChildFileUploadState,
 )
 
 
 class EmptyState(BaseState):
     """An empty state."""
-
-    pass
 
 
 @pytest.fixture
@@ -105,7 +98,7 @@ class ATestState(BaseState):
     var: int
 
 
-@pytest.fixture()
+@pytest.fixture
 def test_state() -> type[BaseState]:
     """A default state.
 
@@ -115,7 +108,7 @@ def test_state() -> type[BaseState]:
     return ATestState
 
 
-@pytest.fixture()
+@pytest.fixture
 def redundant_test_state() -> type[BaseState]:
     """A default state.
 
@@ -154,18 +147,18 @@ def test_model_auth() -> type[Model]:
     class TestModelAuth(Model, table=True):
         """A test model with auth."""
 
-        pass
-
     return TestModelAuth
 
 
-@pytest.fixture()
+@pytest.fixture
 def test_get_engine():
     """A default database engine.
 
     Returns:
         A default database engine.
     """
+    import sqlmodel
+
     enable_admin = True
     url = "sqlite:///test.db"
     return sqlmodel.create_engine(
@@ -175,13 +168,18 @@ def test_get_engine():
     )
 
 
-@pytest.fixture()
+if TYPE_CHECKING:
+    from starlette_admin.auth import AuthProvider
+
+
+@pytest.fixture
 def test_custom_auth_admin() -> type[AuthProvider]:
     """A default auth provider.
 
     Returns:
         A default default auth provider.
     """
+    from starlette_admin.auth import AuthProvider
 
     class TestAuthProvider(AuthProvider):
         """A test auth provider."""
@@ -191,19 +189,15 @@ def test_custom_auth_admin() -> type[AuthProvider]:
 
         def login(self):  # pyright: ignore [reportIncompatibleMethodOverride]
             """Login."""
-            pass
 
         def is_authenticated(self):  # pyright: ignore [reportIncompatibleMethodOverride]
             """Is authenticated."""
-            pass
 
         def get_admin_user(self):  # pyright: ignore [reportIncompatibleMethodOverride]
             """Get admin user."""
-            pass
 
         def logout(self):  # pyright: ignore [reportIncompatibleMethodOverride]
             """Logout."""
-            pass
 
     return TestAuthProvider
 
@@ -250,27 +244,25 @@ def test_add_page_default_route(app: App, index_page, about_page):
     assert app._pages.keys() == {"index", "about"}
 
 
-def test_add_page_set_route(app: App, index_page, windows_platform: bool):
+def test_add_page_set_route(app: App, index_page):
     """Test adding a page to an app.
 
     Args:
         app: The app to test.
         index_page: The index page.
-        windows_platform: Whether the system is windows.
     """
-    route = "test" if windows_platform else "/test"
+    route = "/test"
     assert app._unevaluated_pages == {}
     app.add_page(index_page, route=route)
     app._compile_page("test")
     assert app._pages.keys() == {"test"}
 
 
-def test_add_page_set_route_dynamic(index_page, windows_platform: bool):
+def test_add_page_set_route_dynamic(index_page):
     """Test adding a page with dynamic route variable to an app.
 
     Args:
         index_page: The index page.
-        windows_platform: Whether the system is windows.
     """
     app = App(_state=EmptyState)
     assert app._state is not None
@@ -286,18 +278,17 @@ def test_add_page_set_route_dynamic(index_page, windows_platform: bool):
     assert constants.ROUTER in app._state()._var_dependencies
 
 
-def test_add_page_set_route_nested(app: App, index_page, windows_platform: bool):
+def test_add_page_set_route_nested(app: App, index_page):
     """Test adding a page to an app.
 
     Args:
         app: The app to test.
         index_page: The index page.
-        windows_platform: Whether the system is windows.
     """
-    route = "test\\nested" if windows_platform else "/test/nested"
+    route = "test/nested"
     assert app._unevaluated_pages == {}
     app.add_page(index_page, route=route)
-    assert app._unevaluated_pages.keys() == {route.strip(os.path.sep)}
+    assert app._unevaluated_pages.keys() == {route}
 
 
 def test_add_page_invalid_api_route(app: App, index_page):
@@ -307,16 +298,11 @@ def test_add_page_invalid_api_route(app: App, index_page):
         app: The app to test.
         index_page: The index page.
     """
-    with pytest.raises(ValueError):
-        app.add_page(index_page, route="api")
-    with pytest.raises(ValueError):
-        app.add_page(index_page, route="/api")
-    with pytest.raises(ValueError):
-        app.add_page(index_page, route="/api/")
-    with pytest.raises(ValueError):
-        app.add_page(index_page, route="api/foo")
-    with pytest.raises(ValueError):
-        app.add_page(index_page, route="/api/foo")
+    app.add_page(index_page, route="api")
+    app.add_page(index_page, route="/api")
+    app.add_page(index_page, route="/api/")
+    app.add_page(index_page, route="api/foo")
+    app.add_page(index_page, route="/api/foo")
     # These should be fine
     app.add_page(index_page, route="api2")
     app.add_page(index_page, route="/foo/api")
@@ -374,6 +360,12 @@ def test_add_duplicate_page_route_error(app: App, first_page, second_page, route
         app.add_page(second_page, route="/" + route.strip("/") if route else None)
 
 
+@pytest.mark.skipif(
+    not find_spec("starlette_admin")
+    or not find_spec("sqlmodel")
+    or not find_spec("pydantic"),
+    reason="starlette_admin not installed or sqlmodel not installed or pydantic not installed",
+)
 def test_initialize_with_admin_dashboard(test_model):
     """Test setting the admin dashboard of an app.
 
@@ -386,6 +378,12 @@ def test_initialize_with_admin_dashboard(test_model):
     assert app.admin_dash.models[0] == test_model
 
 
+@pytest.mark.skipif(
+    not find_spec("starlette_admin")
+    or not find_spec("sqlmodel")
+    or not find_spec("pydantic"),
+    reason="starlette_admin not installed or sqlmodel not installed or pydantic not installed",
+)
 def test_initialize_with_custom_admin_dashboard(
     test_get_engine,
     test_custom_auth_admin,
@@ -398,6 +396,8 @@ def test_initialize_with_custom_admin_dashboard(
         test_model_auth: The default model for an auth admin dashboard.
         test_custom_auth_admin: The custom auth provider.
     """
+    from starlette_admin.contrib.sqla.admin import Admin
+
     custom_auth_provider = test_custom_auth_admin()
     custom_admin = Admin(engine=test_get_engine, auth_provider=custom_auth_provider)
     app = App(admin_dash=AdminDash(models=[test_model_auth], admin=custom_admin))
@@ -408,12 +408,19 @@ def test_initialize_with_custom_admin_dashboard(
     assert app.admin_dash.admin.auth_provider == custom_auth_provider
 
 
+@pytest.mark.skipif(
+    not find_spec("starlette_admin")
+    or not find_spec("sqlmodel")
+    or not find_spec("pydantic"),
+    reason="starlette_admin not installed or sqlmodel not installed or pydantic not installed",
+)
 def test_initialize_admin_dashboard_with_view_overrides(test_model):
     """Test setting the admin dashboard of an app with view class overridden.
 
     Args:
         test_model: The default model.
     """
+    from starlette_admin.contrib.sqla.view import ModelView
 
     class TestModelView(ModelView):
         pass
@@ -502,7 +509,83 @@ async def test_dynamic_var_event(test_state: type[ATestState], token: str):
             payload={"value": 50},
         )
     ):
-        assert result.delta == {test_state.get_name(): {"int_val": 50}}
+        assert result.delta == {test_state.get_name(): {"int_val" + FIELD_MARKER: 50}}
+
+
+@pytest.fixture
+def list_mutation_state():
+    """Create a state with list mutation features.
+
+    Returns:
+        A state with list mutation features.
+    """
+
+    class ListMutationTestState(BaseState):
+        """A state for testing ReflexList mutation."""
+
+        # plain list
+        plain_friends = ["Tommy"]
+
+        def make_friend(self):
+            """Add a friend to the list."""
+            self.plain_friends.append("another-fd")
+
+        def change_first_friend(self):
+            """Change the first friend in the list."""
+            self.plain_friends[0] = "Jenny"
+
+        def unfriend_all_friends(self):
+            """Unfriend all friends in the list."""
+            self.plain_friends.clear()
+
+        def unfriend_first_friend(self):
+            """Unfriend the first friend in the list."""
+            del self.plain_friends[0]
+
+        def remove_last_friend(self):
+            """Remove the last friend in the list."""
+            self.plain_friends.pop()
+
+        def make_friends_with_colleagues(self):
+            """Add list of friends to the list."""
+            colleagues = ["Peter", "Jimmy"]
+            self.plain_friends.extend(colleagues)
+
+        def remove_tommy(self):
+            """Remove Tommy from the list."""
+            self.plain_friends.remove("Tommy")
+
+        # list in dict
+        friends_in_dict = {"Tommy": ["Jenny"]}
+
+        def remove_jenny_from_tommy(self):
+            """Remove Jenny from Tommy's friends list."""
+            self.friends_in_dict["Tommy"].remove("Jenny")
+
+        def add_jimmy_to_tommy_friends(self):
+            """Add Jimmy to Tommy's friends list."""
+            self.friends_in_dict["Tommy"].append("Jimmy")
+
+        def tommy_has_no_fds(self):
+            """Clear Tommy's friends list."""
+            self.friends_in_dict["Tommy"].clear()
+
+        # nested list
+        friends_in_nested_list = [["Tommy"], ["Jenny"]]
+
+        def remove_first_group(self):
+            """Remove the first group of friends from the nested list."""
+            self.friends_in_nested_list.pop(0)
+
+        def remove_first_person_from_first_group(self):
+            """Remove the first person from the first group of friends in the nested list."""
+            self.friends_in_nested_list[0].pop(0)
+
+        def add_jimmy_to_second_group(self):
+            """Add Jimmy to the second group of friends in the nested list."""
+            self.friends_in_nested_list[1].append("Jimmy")
+
+    return ListMutationTestState()
 
 
 @pytest.mark.asyncio
@@ -513,11 +596,11 @@ async def test_dynamic_var_event(test_state: type[ATestState], token: str):
             [
                 (
                     "make_friend",
-                    {"plain_friends": ["Tommy", "another-fd"]},
+                    {"plain_friends" + FIELD_MARKER: ["Tommy", "another-fd"]},
                 ),
                 (
                     "change_first_friend",
-                    {"plain_friends": ["Jenny", "another-fd"]},
+                    {"plain_friends" + FIELD_MARKER: ["Jenny", "another-fd"]},
                 ),
             ],
             id="append then __setitem__",
@@ -526,11 +609,11 @@ async def test_dynamic_var_event(test_state: type[ATestState], token: str):
             [
                 (
                     "unfriend_first_friend",
-                    {"plain_friends": []},
+                    {"plain_friends" + FIELD_MARKER: []},
                 ),
                 (
                     "make_friend",
-                    {"plain_friends": ["another-fd"]},
+                    {"plain_friends" + FIELD_MARKER: ["another-fd"]},
                 ),
             ],
             id="delitem then append",
@@ -539,19 +622,19 @@ async def test_dynamic_var_event(test_state: type[ATestState], token: str):
             [
                 (
                     "make_friends_with_colleagues",
-                    {"plain_friends": ["Tommy", "Peter", "Jimmy"]},
+                    {"plain_friends" + FIELD_MARKER: ["Tommy", "Peter", "Jimmy"]},
                 ),
                 (
                     "remove_tommy",
-                    {"plain_friends": ["Peter", "Jimmy"]},
+                    {"plain_friends" + FIELD_MARKER: ["Peter", "Jimmy"]},
                 ),
                 (
                     "remove_last_friend",
-                    {"plain_friends": ["Peter"]},
+                    {"plain_friends" + FIELD_MARKER: ["Peter"]},
                 ),
                 (
                     "unfriend_all_friends",
-                    {"plain_friends": []},
+                    {"plain_friends" + FIELD_MARKER: []},
                 ),
             ],
             id="extend, remove, pop, clear",
@@ -560,15 +643,20 @@ async def test_dynamic_var_event(test_state: type[ATestState], token: str):
             [
                 (
                     "add_jimmy_to_second_group",
-                    {"friends_in_nested_list": [["Tommy"], ["Jenny", "Jimmy"]]},
+                    {
+                        "friends_in_nested_list" + FIELD_MARKER: [
+                            ["Tommy"],
+                            ["Jenny", "Jimmy"],
+                        ]
+                    },
                 ),
                 (
                     "remove_first_person_from_first_group",
-                    {"friends_in_nested_list": [[], ["Jenny", "Jimmy"]]},
+                    {"friends_in_nested_list" + FIELD_MARKER: [[], ["Jenny", "Jimmy"]]},
                 ),
                 (
                     "remove_first_group",
-                    {"friends_in_nested_list": [["Jenny", "Jimmy"]]},
+                    {"friends_in_nested_list" + FIELD_MARKER: [["Jenny", "Jimmy"]]},
                 ),
             ],
             id="nested list",
@@ -577,15 +665,15 @@ async def test_dynamic_var_event(test_state: type[ATestState], token: str):
             [
                 (
                     "add_jimmy_to_tommy_friends",
-                    {"friends_in_dict": {"Tommy": ["Jenny", "Jimmy"]}},
+                    {"friends_in_dict" + FIELD_MARKER: {"Tommy": ["Jenny", "Jimmy"]}},
                 ),
                 (
                     "remove_jenny_from_tommy",
-                    {"friends_in_dict": {"Tommy": ["Jimmy"]}},
+                    {"friends_in_dict" + FIELD_MARKER: {"Tommy": ["Jimmy"]}},
                 ),
                 (
                     "tommy_has_no_fds",
-                    {"friends_in_dict": {"Tommy": []}},
+                    {"friends_in_dict" + FIELD_MARKER: {"Tommy": []}},
                 ),
             ],
             id="list in dict",
@@ -619,6 +707,73 @@ async def test_list_mutation_detection__plain_list(
             assert result.delta == expected_delta
 
 
+@pytest.fixture
+def dict_mutation_state():
+    """Create a state with dict mutation features.
+
+    Returns:
+        A state with dict mutation features.
+    """
+
+    class DictMutationTestState(BaseState):
+        """A state for testing ReflexDict mutation."""
+
+        # plain dict
+        details = {"name": "Tommy"}
+
+        def add_age(self):
+            """Add an age to the dict."""
+            self.details.update({"age": 20})  # pyright: ignore [reportCallIssue, reportArgumentType]
+
+        def change_name(self):
+            """Change the name in the dict."""
+            self.details["name"] = "Jenny"
+
+        def remove_last_detail(self):
+            """Remove the last item in the dict."""
+            self.details.popitem()
+
+        def clear_details(self):
+            """Clear the dict."""
+            self.details.clear()
+
+        def remove_name(self):
+            """Remove the name from the dict."""
+            del self.details["name"]
+
+        def pop_out_age(self):
+            """Pop out the age from the dict."""
+            self.details.pop("age")
+
+        # dict in list
+        address = [{"home": "home address"}, {"work": "work address"}]
+
+        def remove_home_address(self):
+            """Remove the home address from dict in the list."""
+            self.address[0].pop("home")
+
+        def add_street_to_home_address(self):
+            """Set street key in the dict in the list."""
+            self.address[0]["street"] = "street address"
+
+        # nested dict
+        friend_in_nested_dict = {"name": "Nikhil", "friend": {"name": "Alek"}}
+
+        def change_friend_name(self):
+            """Change the friend's name in the nested dict."""
+            self.friend_in_nested_dict["friend"]["name"] = "Tommy"
+
+        def remove_friend(self):
+            """Remove the friend from the nested dict."""
+            self.friend_in_nested_dict.pop("friend")
+
+        def add_friend_age(self):
+            """Add an age to the friend in the nested dict."""
+            self.friend_in_nested_dict["friend"]["age"] = 30
+
+    return DictMutationTestState()
+
+
 @pytest.mark.asyncio
 @pytest.mark.parametrize(
     "event_tuples",
@@ -627,15 +782,15 @@ async def test_list_mutation_detection__plain_list(
             [
                 (
                     "add_age",
-                    {"details": {"name": "Tommy", "age": 20}},
+                    {"details" + FIELD_MARKER: {"name": "Tommy", "age": 20}},
                 ),
                 (
                     "change_name",
-                    {"details": {"name": "Jenny", "age": 20}},
+                    {"details" + FIELD_MARKER: {"name": "Jenny", "age": 20}},
                 ),
                 (
                     "remove_last_detail",
-                    {"details": {"name": "Jenny"}},
+                    {"details" + FIELD_MARKER: {"name": "Jenny"}},
                 ),
             ],
             id="update then __setitem__",
@@ -644,11 +799,11 @@ async def test_list_mutation_detection__plain_list(
             [
                 (
                     "clear_details",
-                    {"details": {}},
+                    {"details" + FIELD_MARKER: {}},
                 ),
                 (
                     "add_age",
-                    {"details": {"age": 20}},
+                    {"details" + FIELD_MARKER: {"age": 20}},
                 ),
             ],
             id="delitem then update",
@@ -657,15 +812,15 @@ async def test_list_mutation_detection__plain_list(
             [
                 (
                     "add_age",
-                    {"details": {"name": "Tommy", "age": 20}},
+                    {"details" + FIELD_MARKER: {"name": "Tommy", "age": 20}},
                 ),
                 (
                     "remove_name",
-                    {"details": {"age": 20}},
+                    {"details" + FIELD_MARKER: {"age": 20}},
                 ),
                 (
                     "pop_out_age",
-                    {"details": {}},
+                    {"details" + FIELD_MARKER: {}},
                 ),
             ],
             id="add, remove, pop",
@@ -674,12 +829,12 @@ async def test_list_mutation_detection__plain_list(
             [
                 (
                     "remove_home_address",
-                    {"address": [{}, {"work": "work address"}]},
+                    {"address" + FIELD_MARKER: [{}, {"work": "work address"}]},
                 ),
                 (
                     "add_street_to_home_address",
                     {
-                        "address": [
+                        "address" + FIELD_MARKER: [
                             {"street": "street address"},
                             {"work": "work address"},
                         ]
@@ -693,7 +848,7 @@ async def test_list_mutation_detection__plain_list(
                 (
                     "change_friend_name",
                     {
-                        "friend_in_nested_dict": {
+                        "friend_in_nested_dict" + FIELD_MARKER: {
                             "name": "Nikhil",
                             "friend": {"name": "Tommy"},
                         }
@@ -702,7 +857,7 @@ async def test_list_mutation_detection__plain_list(
                 (
                     "add_friend_age",
                     {
-                        "friend_in_nested_dict": {
+                        "friend_in_nested_dict" + FIELD_MARKER: {
                             "name": "Nikhil",
                             "friend": {"name": "Tommy", "age": 30},
                         }
@@ -710,7 +865,7 @@ async def test_list_mutation_detection__plain_list(
                 ),
                 (
                     "remove_friend",
-                    {"friend_in_nested_dict": {"name": "Nikhil"}},
+                    {"friend_in_nested_dict" + FIELD_MARKER: {"name": "Nikhil"}},
                 ),
             ],
             id="nested dict",
@@ -753,7 +908,7 @@ async def test_dict_mutation_detection__plain_list(
             FileUploadState,
             {
                 FileUploadState.get_full_name(): {
-                    "img_list": ["image1.jpg", "image2.jpg"]
+                    "img_list" + FIELD_MARKER: ["image1.jpg", "image2.jpg"]
                 }
             },
         ),
@@ -761,7 +916,7 @@ async def test_dict_mutation_detection__plain_list(
             ChildFileUploadState,
             {
                 ChildFileUploadState.get_full_name(): {
-                    "img_list": ["image1.jpg", "image2.jpg"]
+                    "img_list" + FIELD_MARKER: ["image1.jpg", "image2.jpg"]
                 }
             },
         ),
@@ -769,13 +924,13 @@ async def test_dict_mutation_detection__plain_list(
             GrandChildFileUploadState,
             {
                 GrandChildFileUploadState.get_full_name(): {
-                    "img_list": ["image1.jpg", "image2.jpg"]
+                    "img_list" + FIELD_MARKER: ["image1.jpg", "image2.jpg"]
                 }
             },
         ),
     ],
 )
-async def test_upload_file(tmp_path, state, delta, token: str, mocker):
+async def test_upload_file(tmp_path, state, delta, token: str, mocker: MockerFixture):
     """Test that file upload works correctly.
 
     Args:
@@ -792,7 +947,6 @@ async def test_upload_file(tmp_path, state, delta, token: str, mocker):
     state._tmp_path = tmp_path
     # The App state must be the "root" of the state tree
     app = App()
-    app._enable_state()
     app.event_namespace.emit = AsyncMock()  # pyright: ignore [reportOptionalMemberAccess]
     current_state = await app.state_manager.get_state(_substate_key(token, state))
     data = b"This is binary data"
@@ -840,7 +994,7 @@ async def test_upload_file(tmp_path, state, delta, token: str, mocker):
 
     current_state = await app.state_manager.get_state(_substate_key(token, state))
     state_dict = current_state.dict()[state.get_full_name()]
-    assert state_dict["img_list"] == [
+    assert state_dict["img_list" + FIELD_MARKER] == [
         "image1.jpg",
         "image2.jpg",
     ]
@@ -960,6 +1114,7 @@ class DynamicState(BaseState):
     is_hydrated: bool = False
     loaded: int = 0
     counter: int = 0
+    _app_ref: ClassVar[Any] = None
 
     @rx.event
     def on_load(self):
@@ -985,20 +1140,19 @@ class DynamicState(BaseState):
 
 def test_dynamic_arg_shadow(
     index_page: ComponentCallable,
-    windows_platform: bool,
     token: str,
     app_module_mock: unittest.mock.Mock,
-    mocker,
+    mocker: MockerFixture,
 ):
     """Create app with dynamic route var and try to add a page with a dynamic arg that shadows a state var.
 
     Args:
         index_page: The index page.
-        windows_platform: Whether the system is windows.
         token: a Token.
         app_module_mock: Mocked app module.
         mocker: pytest mocker object.
     """
+    DynamicState._app_ref = None
     arg_name = "counter"
     route = f"/test/[{arg_name}]"
     app = app_module_mock.app = App(_state=DynamicState)
@@ -1009,16 +1163,14 @@ def test_dynamic_arg_shadow(
 
 def test_multiple_dynamic_args(
     index_page: ComponentCallable,
-    windows_platform: bool,
     token: str,
     app_module_mock: unittest.mock.Mock,
-    mocker,
+    mocker: MockerFixture,
 ):
     """Create app with multiple dynamic route vars with the same name.
 
     Args:
         index_page: The index page.
-        windows_platform: Whether the system is windows.
         token: a Token.
         app_module_mock: Mocked app module.
         mocker: pytest mocker object.
@@ -1034,10 +1186,9 @@ def test_multiple_dynamic_args(
 @pytest.mark.asyncio
 async def test_dynamic_route_var_route_change_completed_on_load(
     index_page: ComponentCallable,
-    windows_platform: bool,
     token: str,
     app_module_mock: unittest.mock.Mock,
-    mocker,
+    mocker: MockerFixture,
 ):
     """Create app with dynamic route var, and simulate navigation.
 
@@ -1046,17 +1197,18 @@ async def test_dynamic_route_var_route_change_completed_on_load(
 
     Args:
         index_page: The index page.
-        windows_platform: Whether the system is windows.
         token: a Token.
         app_module_mock: Mocked app module.
         mocker: pytest mocker object.
     """
+    DynamicState._app_ref = None
     arg_name = "dynamic"
-    route = f"/test/[{arg_name}]"
+    route = f"test/[{arg_name}]"
     app = app_module_mock.app = App(_state=DynamicState)
     assert app._state is not None
     assert arg_name not in app._state.vars
     app.add_page(index_page, route=route, on_load=DynamicState.on_load)
+    app._compile_page(route)
     assert arg_name in app._state.vars
     assert arg_name in app._state.computed_vars
     assert app._state.computed_vars[arg_name]._deps(objclass=DynamicState) == {
@@ -1077,7 +1229,12 @@ async def test_dynamic_route_var_route_change_completed_on_load(
             token=kwargs.pop("token", token),
             name=name,
             router_data=kwargs.pop(
-                "router_data", {"pathname": route, "query": {arg_name: val}}
+                "router_data",
+                {
+                    "pathname": "/" + route,
+                    "query": {arg_name: val},
+                    "asPath": "/test/something",
+                },
             ),
             payload=kwargs.pop("payload", {}),
             **kwargs,
@@ -1103,7 +1260,7 @@ async def test_dynamic_route_var_route_change_completed_on_load(
             "token": token,
             **on_load_internal.router_data,
         }
-        exp_router = RouterData(exp_router_data)
+        exp_router = RouterData.from_router_data(exp_router_data)
         process_coro = process(
             app,
             event=on_load_internal,
@@ -1116,10 +1273,10 @@ async def test_dynamic_route_var_route_change_completed_on_load(
         assert update == StateUpdate(
             delta={
                 state.get_name(): {
-                    arg_name: exp_val,
-                    f"comp_{arg_name}": exp_val,
-                    constants.CompileVars.IS_HYDRATED: False,
-                    "router": exp_router,
+                    arg_name + FIELD_MARKER: exp_val,
+                    f"comp_{arg_name}" + FIELD_MARKER: exp_val,
+                    constants.CompileVars.IS_HYDRATED + FIELD_MARKER: False,
+                    "router" + FIELD_MARKER: exp_router,
                 }
             },
             events=[
@@ -1159,7 +1316,7 @@ async def test_dynamic_route_var_route_change_completed_on_load(
         assert on_load_update == StateUpdate(
             delta={
                 state.get_name(): {
-                    "loaded": exp_index + 1,
+                    "loaded" + FIELD_MARKER: exp_index + 1,
                 },
             },
             events=[],
@@ -1180,7 +1337,7 @@ async def test_dynamic_route_var_route_change_completed_on_load(
         assert on_set_is_hydrated_update == StateUpdate(
             delta={
                 state.get_name(): {
-                    "is_hydrated": True,
+                    "is_hydrated" + FIELD_MARKER: True,
                 },
             },
             events=[],
@@ -1201,7 +1358,7 @@ async def test_dynamic_route_var_route_change_completed_on_load(
         assert update == StateUpdate(
             delta={
                 state.get_name(): {
-                    "counter": exp_index + 1,
+                    "counter" + FIELD_MARKER: exp_index + 1,
                 }
             },
             events=[],
@@ -1220,7 +1377,7 @@ async def test_dynamic_route_var_route_change_completed_on_load(
 
 
 @pytest.mark.asyncio
-async def test_process_events(mocker, token: str):
+async def test_process_events(mocker: MockerFixture, token: str):
     """Test that an event is processed properly and that it is postprocessed
     n+1 times. Also check that the processing flag of the last stateupdate is set to
     False.
@@ -1253,7 +1410,7 @@ async def test_process_events(mocker, token: str):
         pass
 
     assert (await app.state_manager.get_state(event.substate_token)).value == 5
-    assert app._postprocess.call_count == 6  # pyright: ignore [reportFunctionMemberAccess]
+    assert app._postprocess.call_count == 6  # pyright: ignore [reportAttributeAccessIssue]
 
     if isinstance(app.state_manager, StateManagerRedis):
         await app.state_manager.close()
@@ -1262,7 +1419,7 @@ async def test_process_events(mocker, token: str):
 @pytest.mark.parametrize(
     ("state", "overlay_component", "exp_page_child"),
     [
-        (None, default_overlay_component, None),
+        (None, default_overlay_component, Fragment),
         (None, None, None),
         (None, Text.create("foo"), Text),
         (State, default_overlay_component, Fragment),
@@ -1287,10 +1444,10 @@ def test_overlay_component(
     app._setup_overlay_component()
     if exp_page_child is None:
         assert app.overlay_component is None
-    elif isinstance(exp_page_child, OverlayFragment):
+    elif isinstance(exp_page_child, Fragment):
         assert app.overlay_component is not None
         generated_component = app._generate_component(app.overlay_component)
-        assert isinstance(generated_component, OverlayFragment)
+        assert isinstance(generated_component, Fragment)
         assert isinstance(
             generated_component.children[0],
             Cond,  # ConnectionModal is a Cond under the hood
@@ -1309,11 +1466,11 @@ def test_overlay_component(
     page = app._pages["test"]
 
     if exp_page_child is not None:
-        assert len(page.children) == 3
+        assert len(page.children) == 4
         children_types = (type(child) for child in page.children)
         assert exp_page_child in children_types  # pyright: ignore [reportOperatorIssue]
     else:
-        assert len(page.children) == 2
+        assert len(page.children) == 3
 
 
 @pytest.fixture
@@ -1333,6 +1490,17 @@ def compilable_app(tmp_path) -> Generator[tuple[App, Path], None, None]:
     web_dir = app_path / ".web"
     web_dir.mkdir(parents=True)
     (web_dir / constants.PackageJson.PATH).touch()
+    (web_dir / constants.Dirs.POSTCSS_JS).touch()
+    (web_dir / constants.Dirs.POSTCSS_JS).write_text(
+        """
+module.exports = {
+  plugins: {
+    "postcss-import": {},
+    autoprefixer: {},
+  },
+};
+""",
+    )
     app = App(theme=None)
     app._get_frontend_packages = unittest.mock.Mock()
     with chdir(app_path):
@@ -1355,32 +1523,39 @@ def test_app_wrap_compile_theme(
     """
     conf = rx.Config(app_name="testing", react_strict_mode=react_strict_mode)
     mocker.patch("reflex.config._get_config", return_value=conf)
-
     app, web_dir = compilable_app
+    mocker.patch("reflex.utils.prerequisites.get_web_dir", return_value=web_dir)
     app.theme = rx.theme(accent_color="plum")
     app._compile()
-    app_js_contents = (web_dir / "pages" / "_app.js").read_text()
-    app_js_lines = [
-        line.strip() for line in app_js_contents.splitlines() if line.strip()
-    ]
-    lines = "".join(app_js_lines)
+    app_js_contents = (
+        web_dir / constants.Dirs.PAGES / constants.PageNames.APP_ROOT
+    ).read_text()
+    function_app_definition = app_js_contents[
+        app_js_contents.index("function AppWrap") : app_js_contents.index(
+            "export function Layout"
+        )
+    ].strip()
     expected = (
-        "function AppWrap({children}) {"
+        "function AppWrap({children}) {\n"
+        "const [addEvents, connectErrors] = useContext(EventLoopContext);\n\n\n\n"
         "return ("
         + ("jsx(StrictMode,{}," if react_strict_mode else "")
-        + "jsx(RadixThemesColorModeProvider,{},"
-        "jsx(RadixThemesTheme,{accentColor:\"plum\",css:{...theme.styles.global[':root'], ...theme.styles.global.body}},"
+        + "jsx(ErrorBoundary,{"
+        """fallbackRender:((event_args) => (jsx("div", ({css:({ ["height"] : "100%", ["width"] : "100%", ["position"] : "absolute", ["backgroundColor"] : "#fff", ["color"] : "#000", ["display"] : "flex", ["alignItems"] : "center", ["justifyContent"] : "center" })}), (jsx("div", ({css:({ ["display"] : "flex", ["flexDirection"] : "column", ["gap"] : "1rem" })}), (jsx("div", ({css:({ ["display"] : "flex", ["flexDirection"] : "column", ["gap"] : "1rem", ["maxWidth"] : "50ch", ["border"] : "1px solid #888888", ["borderRadius"] : "0.25rem", ["padding"] : "1rem" })}), (jsx("h2", ({css:({ ["fontSize"] : "1.25rem", ["fontWeight"] : "bold" })}), "An error occurred while rendering this page.")), (jsx("p", ({css:({ ["opacity"] : "0.75" })}), "This is an error with the application itself.")), (jsx("details", ({}), (jsx("summary", ({css:({ ["padding"] : "0.5rem" })}), "Error message")), (jsx("div", ({css:({ ["width"] : "100%", ["maxHeight"] : "50vh", ["overflow"] : "auto", ["background"] : "#000", ["color"] : "#fff", ["borderRadius"] : "0.25rem" })}), (jsx("div", ({css:({ ["padding"] : "0.5rem", ["width"] : "fit-content" })}), (jsx("pre", ({}), event_args.error.name + \': \' + event_args.error.message + \'\\n\' + event_args.error.stack)))))), (jsx("button", ({css:({ ["padding"] : "0.35rem 0.75rem", ["margin"] : "0.5rem", ["background"] : "#fff", ["color"] : "#000", ["border"] : "1px solid #000", ["borderRadius"] : "0.25rem", ["fontWeight"] : "bold" }),onClick:((_e) => (addEvents([(ReflexEvent("_call_function", ({ ["function"] : (() => (navigator?.["clipboard"]?.["writeText"](event_args.error.name + \': \' + event_args.error.message + \'\\n\' + event_args.error.stack))), ["callback"] : null }), ({  })))], [_e], ({  }))))}), "Copy")))))), (jsx("hr", ({css:({ ["borderColor"] : "currentColor", ["opacity"] : "0.25" })}))), (jsx(ReactRouterLink, ({to:"https://reflex.dev"}), (jsx("div", ({css:({ ["display"] : "flex", ["alignItems"] : "baseline", ["justifyContent"] : "center", ["fontFamily"] : "monospace", ["--default-font-family"] : "monospace", ["gap"] : "0.5rem" })}), "Built with ", (jsx("svg", ({"aria-label":"Reflex",css:({ ["fill"] : "currentColor" }),height:"12",role:"img",width:"56",xmlns:"http://www.w3.org/2000/svg"}), (jsx("path", ({d:"M0 11.5999V0.399902H8.96V4.8799H6.72V2.6399H2.24V4.8799H6.72V7.1199H2.24V11.5999H0ZM6.72 11.5999V7.1199H8.96V11.5999H6.72Z"}))), (jsx("path", ({d:"M11.2 11.5999V0.399902H17.92V2.6399H13.44V4.8799H17.92V7.1199H13.44V9.3599H17.92V11.5999H11.2Z"}))), (jsx("path", ({d:"M20.16 11.5999V0.399902H26.88V2.6399H22.4V4.8799H26.88V7.1199H22.4V11.5999H20.16Z"}))), (jsx("path", ({d:"M29.12 11.5999V0.399902H31.36V9.3599H35.84V11.5999H29.12Z"}))), (jsx("path", ({d:"M38.08 11.5999V0.399902H44.8V2.6399H40.32V4.8799H44.8V7.1199H40.32V9.3599H44.8V11.5999H38.08Z"}))), (jsx("path", ({d:"M47.04 4.8799V0.399902H49.28V4.8799H47.04ZM53.76 4.8799V0.399902H56V4.8799H53.76ZM49.28 7.1199V4.8799H53.76V7.1199H49.28ZM47.04 11.5999V7.1199H49.28V11.5999H47.04ZM53.76 11.5999V7.1199H56V11.5999H53.76Z"}))), (jsx("title", ({}), "Reflex"))))))))))))),"""
+        """onError:((_error, _info) => (addEvents([(ReflexEvent("reflex___state____state.reflex___state____frontend_event_exception_state.handle_frontend_exception", ({ ["info"] : ((((_error?.["name"]+": ")+_error?.["message"])+"\\n")+_error?.["stack"]), ["component_stack"] : _info?.["componentStack"] }), ({  })))], [_error, _info], ({  }))))"""
+        "},"
+        "jsx(RadixThemesColorModeProvider,{},"
         "jsx(Fragment,{},"
         "jsx(MemoizedToastProvider,{},),"
+        "jsx(RadixThemesTheme,{accentColor:\"plum\",css:{...theme.styles.global[':root'], ...theme.styles.global.body}},"
         "jsx(Fragment,{},"
-        "children,"
-        "),"
-        "),"
-        "),"
-        ")" + (",)" if react_strict_mode else "") + ")"
-        "}"
+        "jsx(DefaultOverlayComponents,{},),"
+        "jsx(Fragment,{},"
+        "children"
+        "))))))" + (")" if react_strict_mode else "") + ")"
+        "\n}"
     )
-    assert expected in lines
+    assert expected.split(",") == function_app_definition.split(",")
 
 
 @pytest.mark.parametrize(
@@ -1425,69 +1600,45 @@ def test_app_wrap_priority(
 
     app.add_page(page)
     app._compile()
-    app_js_contents = (web_dir / "pages" / "_app.js").read_text()
-    app_js_lines = [
-        line.strip() for line in app_js_contents.splitlines() if line.strip()
-    ]
-    lines = "".join(app_js_lines)
+    app_js_contents = (
+        web_dir / constants.Dirs.PAGES / constants.PageNames.APP_ROOT
+    ).read_text()
+    function_app_definition = app_js_contents[
+        app_js_contents.index("function AppWrap") : app_js_contents.index(
+            "export function Layout"
+        )
+    ].strip()
     expected = (
-        "function AppWrap({children}) {"
+        "function AppWrap({children}) {\n"
+        "const [addEvents, connectErrors] = useContext(EventLoopContext);\n\n\n\n"
         "return ("
         + ("jsx(StrictMode,{}," if react_strict_mode else "")
         + "jsx(RadixThemesBox,{},"
+        "jsx(ErrorBoundary,{"
+        """fallbackRender:((event_args) => (jsx("div", ({css:({ ["height"] : "100%", ["width"] : "100%", ["position"] : "absolute", ["backgroundColor"] : "#fff", ["color"] : "#000", ["display"] : "flex", ["alignItems"] : "center", ["justifyContent"] : "center" })}), (jsx("div", ({css:({ ["display"] : "flex", ["flexDirection"] : "column", ["gap"] : "1rem" })}), (jsx("div", ({css:({ ["display"] : "flex", ["flexDirection"] : "column", ["gap"] : "1rem", ["maxWidth"] : "50ch", ["border"] : "1px solid #888888", ["borderRadius"] : "0.25rem", ["padding"] : "1rem" })}), (jsx("h2", ({css:({ ["fontSize"] : "1.25rem", ["fontWeight"] : "bold" })}), "An error occurred while rendering this page.")), (jsx("p", ({css:({ ["opacity"] : "0.75" })}), "This is an error with the application itself.")), (jsx("details", ({}), (jsx("summary", ({css:({ ["padding"] : "0.5rem" })}), "Error message")), (jsx("div", ({css:({ ["width"] : "100%", ["maxHeight"] : "50vh", ["overflow"] : "auto", ["background"] : "#000", ["color"] : "#fff", ["borderRadius"] : "0.25rem" })}), (jsx("div", ({css:({ ["padding"] : "0.5rem", ["width"] : "fit-content" })}), (jsx("pre", ({}), event_args.error.name + \': \' + event_args.error.message + \'\\n\' + event_args.error.stack)))))), (jsx("button", ({css:({ ["padding"] : "0.35rem 0.75rem", ["margin"] : "0.5rem", ["background"] : "#fff", ["color"] : "#000", ["border"] : "1px solid #000", ["borderRadius"] : "0.25rem", ["fontWeight"] : "bold" }),onClick:((_e) => (addEvents([(ReflexEvent("_call_function", ({ ["function"] : (() => (navigator?.["clipboard"]?.["writeText"](event_args.error.name + \': \' + event_args.error.message + \'\\n\' + event_args.error.stack))), ["callback"] : null }), ({  })))], [_e], ({  }))))}), "Copy")))))), (jsx("hr", ({css:({ ["borderColor"] : "currentColor", ["opacity"] : "0.25" })}))), (jsx(ReactRouterLink, ({to:"https://reflex.dev"}), (jsx("div", ({css:({ ["display"] : "flex", ["alignItems"] : "baseline", ["justifyContent"] : "center", ["fontFamily"] : "monospace", ["--default-font-family"] : "monospace", ["gap"] : "0.5rem" })}), "Built with ", (jsx("svg", ({"aria-label":"Reflex",css:({ ["fill"] : "currentColor" }),height:"12",role:"img",width:"56",xmlns:"http://www.w3.org/2000/svg"}), (jsx("path", ({d:"M0 11.5999V0.399902H8.96V4.8799H6.72V2.6399H2.24V4.8799H6.72V7.1199H2.24V11.5999H0ZM6.72 11.5999V7.1199H8.96V11.5999H6.72Z"}))), (jsx("path", ({d:"M11.2 11.5999V0.399902H17.92V2.6399H13.44V4.8799H17.92V7.1199H13.44V9.3599H17.92V11.5999H11.2Z"}))), (jsx("path", ({d:"M20.16 11.5999V0.399902H26.88V2.6399H22.4V4.8799H26.88V7.1199H22.4V11.5999H20.16Z"}))), (jsx("path", ({d:"M29.12 11.5999V0.399902H31.36V9.3599H35.84V11.5999H29.12Z"}))), (jsx("path", ({d:"M38.08 11.5999V0.399902H44.8V2.6399H40.32V4.8799H44.8V7.1199H40.32V9.3599H44.8V11.5999H38.08Z"}))), (jsx("path", ({d:"M47.04 4.8799V0.399902H49.28V4.8799H47.04ZM53.76 4.8799V0.399902H56V4.8799H53.76ZM49.28 7.1199V4.8799H53.76V7.1199H49.28ZM47.04 11.5999V7.1199H49.28V11.5999H47.04ZM53.76 11.5999V7.1199H56V11.5999H53.76Z"}))), (jsx("title", ({}), "Reflex"))))))))))))),"""
+        """onError:((_error, _info) => (addEvents([(ReflexEvent("reflex___state____state.reflex___state____frontend_event_exception_state.handle_frontend_exception", ({ ["info"] : ((((_error?.["name"]+": ")+_error?.["message"])+"\\n")+_error?.["stack"]), ["component_stack"] : _info?.["componentStack"] }), ({  })))], [_error, _info], ({  }))))"""
+        "},"
         'jsx(RadixThemesText,{as:"p"},'
         "jsx(RadixThemesColorModeProvider,{},"
-        "jsx(Fragment2,{},"
         "jsx(Fragment,{},"
         "jsx(MemoizedToastProvider,{},),"
+        "jsx(Fragment2,{},"
+        "jsx(Fragment,{},"
+        "jsx(DefaultOverlayComponents,{},),"
         "jsx(Fragment,{},"
         "children"
-        ",),),),),)" + (",)" if react_strict_mode else "")
+        ")))))))" + (")" if react_strict_mode else "") + "))\n}"
     )
-    assert expected in lines
+    assert expected.split(",") == function_app_definition.split(",")
 
 
 def test_app_state_determination():
     """Test that the stateless status of an app is determined correctly."""
     a1 = App()
-    assert a1._state is None
-
-    # No state, no router, no event handlers.
-    a1.add_page(rx.box("Index"), route="/")
-    assert a1._state is None
-
-    # Add a page with `on_load` enables state.
-    a1.add_page(rx.box("About"), route="/about", on_load=rx.console_log(""))
-    a1._compile_page("about")
     assert a1._state is not None
 
-    a2 = App()
+    a2 = App(enable_state=False)
     assert a2._state is None
-
-    # Referencing a state Var enables state.
-    a2.add_page(rx.box(rx.text(GenState.value)), route="/")
-    a2._compile_page("index")
-    assert a2._state is not None
-
-    a3 = App()
-    assert a3._state is None
-
-    # Referencing router enables state.
-    a3.add_page(rx.box(rx.text(State.router.page.full_path)), route="/")
-    a3._compile_page("index")
-    assert a3._state is not None
-
-    a4 = App()
-    assert a4._state is None
-
-    a4.add_page(rx.box(rx.button("Click", on_click=rx.console_log(""))), route="/")
-    assert a4._state is None
-
-    a4.add_page(
-        rx.box(rx.button("Click", on_click=DynamicState.on_counter)), route="/page2"
-    )
-    a4._compile_page("page2")
-    assert a4._state is not None
 
 
 def test_raise_on_state():
@@ -1516,7 +1667,7 @@ def test_app_with_optional_endpoints():
 
 
 def test_app_state_manager():
-    app = App()
+    app = App(enable_state=False)
     with pytest.raises(ValueError):
         app.state_manager
     app._enable_state()
@@ -1581,58 +1732,6 @@ def test_add_page_component_returning_tuple():
     assert isinstance(third_text, Text)
     assert isinstance(third_text.children[0], Bare)
     assert str(third_text.children[0].contents) == '"third"'
-
-
-@pytest.mark.parametrize("export", (True, False))
-def test_app_with_transpile_packages(compilable_app: tuple[App, Path], export: bool):
-    class C1(rx.Component):
-        library = "foo@1.2.3"
-        tag = "Foo"
-        transpile_packages: list[str] = ["foo"]
-
-    class C2(rx.Component):
-        library = "bar@4.5.6"
-        tag = "Bar"
-        transpile_packages: list[str] = ["bar@4.5.6"]
-
-    class C3(rx.NoSSRComponent):
-        library = "baz@7.8.10"
-        tag = "Baz"
-        transpile_packages: list[str] = ["baz@7.8.9"]
-
-    class C4(rx.NoSSRComponent):
-        library = "quuc@2.3.4"
-        tag = "Quuc"
-        transpile_packages: list[str] = ["quuc"]
-
-    class C5(rx.Component):
-        library = "quuc"
-        tag = "Quuc"
-
-    app, web_dir = compilable_app
-    page = Fragment.create(
-        C1.create(), C2.create(), C3.create(), C4.create(), C5.create()
-    )
-    app.add_page(page, route="/")
-    app._compile(export=export)
-
-    next_config = (web_dir / "next.config.js").read_text()
-    transpile_packages_match = re.search(r"transpilePackages: (\[.*?\])", next_config)
-    transpile_packages_json = transpile_packages_match.group(1)  # pyright: ignore [reportOptionalMemberAccess]
-    transpile_packages = sorted(json.loads(transpile_packages_json))
-
-    assert transpile_packages == [
-        "bar",
-        "foo",
-        "quuc",
-    ]
-
-    if export:
-        assert 'output: "export"' in next_config
-        assert f'distDir: "{constants.Dirs.STATIC}"' in next_config
-    else:
-        assert 'output: "export"' not in next_config
-        assert f'distDir: "{constants.Dirs.STATIC}"' not in next_config
 
 
 def test_app_with_valid_var_dependencies(compilable_app: tuple[App, Path]):
@@ -1725,7 +1824,7 @@ custom_exception_handlers = {
 
 
 @pytest.mark.parametrize(
-    "handler_fn, expected",
+    ("handler_fn", "expected"),
     [
         pytest.param(
             custom_exception_handlers["partial"],
@@ -1788,7 +1887,7 @@ def backend_exception_handler_with_wrong_return_type(exception: Exception) -> in
 
 
 @pytest.mark.parametrize(
-    "handler_fn, expected",
+    ("handler_fn", "expected"),
     [
         pytest.param(
             backend_exception_handler_with_wrong_return_type,

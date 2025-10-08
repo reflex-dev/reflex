@@ -109,6 +109,15 @@ def BackgroundTask():
                 yield
                 self.counter += 1
 
+        @rx.event(background=True)
+        async def disconnect_reconnect_background(self):
+            async with self:
+                self.counter += 1
+            yield rx.call_script("socket.disconnect()")
+            await asyncio.sleep(0.5)
+            async with self:
+                self.counter += 1
+
     class OtherState(rx.State):
         @rx.event(background=True)
         async def get_other_state(self):
@@ -133,6 +142,9 @@ def BackgroundTask():
         return rx.vstack(
             rx.input(
                 id="token", value=State.router.session.client_token, is_read_only=True
+            ),
+            rx.input(
+                id="sid", value=State.router.session.session_id, is_read_only=True
             ),
             rx.hstack(
                 rx.heading(State.counter, id="counter"),
@@ -185,6 +197,11 @@ def BackgroundTask():
                 on_click=State.yield_in_async_with_self,
                 id="yield-in-async-with-self",
             ),
+            rx.button(
+                "Disconnect / Reconnect Background",
+                on_click=State.disconnect_reconnect_background,
+                id="disconnect-reconnect-background",
+            ),
             rx.button("Reset", on_click=State.reset_counter, id="reset"),
         )
 
@@ -229,7 +246,7 @@ def driver(background_task: AppHarness) -> Generator[WebDriver, None, None]:
         driver.quit()
 
 
-@pytest.fixture()
+@pytest.fixture
 def token(background_task: AppHarness, driver: WebDriver) -> str:
     """Get a function that returns the active token.
 
@@ -241,8 +258,10 @@ def token(background_task: AppHarness, driver: WebDriver) -> str:
         The token for the connected client
     """
     assert background_task.app_instance is not None
-    token_input = driver.find_element(By.ID, "token")
-    assert token_input
+
+    token_input = AppHarness.poll_for_or_raise_timeout(
+        lambda: driver.find_element(By.ID, "token")
+    )
 
     # wait for the backend connection to send the token
     token = background_task.poll_for_value(token_input, timeout=DEFAULT_TIMEOUT * 2)
@@ -302,10 +321,10 @@ def test_background_task(
         increment_button.click()
     yield_increment_button.click()
     blocking_pause_button.click()
-    assert background_task._poll_for(lambda: counter.text == "620", timeout=40)
-    assert background_task._poll_for(lambda: counter_async_cv.text == "620", timeout=40)
+    AppHarness.expect(lambda: counter.text == "620", timeout=40)
+    AppHarness.expect(lambda: counter_async_cv.text == "620", timeout=40)
     # all tasks should have exited and cleaned up
-    assert background_task._poll_for(
+    AppHarness.expect(
         lambda: not background_task.app_instance._background_tasks  # pyright: ignore [reportOptionalMemberAccess]
     )
 
@@ -330,13 +349,13 @@ def test_nested_async_with_self(
 
     # get a reference to the counter
     counter = driver.find_element(By.ID, "counter")
-    assert background_task._poll_for(lambda: counter.text == "0", timeout=5)
+    AppHarness.expect(lambda: counter.text == "0", timeout=5)
 
     nested_async_with_self_button.click()
-    assert background_task._poll_for(lambda: counter.text == "1", timeout=5)
+    AppHarness.expect(lambda: counter.text == "1", timeout=5)
 
     increment_button.click()
-    assert background_task._poll_for(lambda: counter.text == "2", timeout=5)
+    AppHarness.expect(lambda: counter.text == "2", timeout=5)
 
 
 def test_get_state(
@@ -359,13 +378,13 @@ def test_get_state(
 
     # get a reference to the counter
     counter = driver.find_element(By.ID, "counter")
-    assert background_task._poll_for(lambda: counter.text == "0", timeout=5)
+    AppHarness.expect(lambda: counter.text == "0", timeout=5)
 
     other_state_button.click()
-    assert background_task._poll_for(lambda: counter.text == "12", timeout=5)
+    AppHarness.expect(lambda: counter.text == "12", timeout=5)
 
     increment_button.click()
-    assert background_task._poll_for(lambda: counter.text == "13", timeout=5)
+    AppHarness.expect(lambda: counter.text == "13", timeout=5)
 
 
 def test_yield_in_async_with_self(
@@ -389,7 +408,46 @@ def test_yield_in_async_with_self(
 
     # get a reference to the counter
     counter = driver.find_element(By.ID, "counter")
-    assert background_task._poll_for(lambda: counter.text == "0", timeout=5)
+    AppHarness.expect(lambda: counter.text == "0", timeout=5)
 
     yield_in_async_with_self_button.click()
-    assert background_task._poll_for(lambda: counter.text == "2", timeout=5)
+    AppHarness.expect(lambda: counter.text == "2", timeout=5)
+
+
+@pytest.mark.parametrize(
+    "button_id",
+    [
+        "disconnect-reconnect-background",
+    ],
+)
+def test_disconnect_reconnect(
+    background_task: AppHarness,
+    driver: WebDriver,
+    token: str,
+    button_id: str,
+):
+    """Test that disconnecting and reconnecting works as expected.
+
+    Args:
+        background_task: harness for BackgroundTask app.
+        driver: WebDriver instance.
+        token: The token for the connected client.
+        button_id: The ID of the button to click.
+    """
+    counter = driver.find_element(By.ID, "counter")
+    button = driver.find_element(By.ID, button_id)
+    increment_button = driver.find_element(By.ID, "increment")
+    sid_input = driver.find_element(By.ID, "sid")
+    sid = background_task.poll_for_value(sid_input, timeout=5)
+    assert sid is not None
+
+    AppHarness.expect(lambda: counter.text == "0", timeout=5)
+    button.click()
+    AppHarness.expect(lambda: counter.text == "1", timeout=5)
+    increment_button.click()
+    # should get a new sid after the reconnect
+    assert (
+        background_task.poll_for_value(sid_input, timeout=5, exp_not_equal=sid) != sid
+    )
+    # Final update should come through on the new websocket connection
+    AppHarness.expect(lambda: counter.text == "3", timeout=5)

@@ -1,22 +1,20 @@
 <div align="center">
-<img src="https://raw.githubusercontent.com/reflex-dev/reflex/main/docs/images/reflex_dark.svg#gh-light-mode-only" alt="Reflex Logo" width="300px">
-<img src="https://raw.githubusercontent.com/reflex-dev/reflex/main/docs/images/reflex_light.svg#gh-dark-mode-only" alt="Reflex Logo" width="300px">
-
+<img src="/docs/images/reflex.svg" alt="Reflex Logo" width="300px">
 <hr>
 
 ### **✨ Aplicaciones web personalizables y eficaces en Python puro. Despliega tu aplicación en segundos. ✨**
 
 [![PyPI version](https://badge.fury.io/py/reflex.svg)](https://badge.fury.io/py/reflex)
-![Pruebas](https://github.com/pynecone-io/pynecone/actions/workflows/integration.yml/badge.svg)
 ![Versiones](https://img.shields.io/pypi/pyversions/reflex.svg)
 [![Documentación](https://img.shields.io/badge/Documentation%20-Introduction%20-%20%23007ec6)](https://reflex.dev/docs/getting-started/introduction)
+[![PyPI Downloads](https://static.pepy.tech/badge/reflex)](https://pepy.tech/projects/reflex)
 [![Discord](https://img.shields.io/discord/1029853095527727165?color=%237289da&label=Discord)](https://discord.gg/T5WSbC2YtQ)
 
 </div>
 
 ---
 
-[English](https://github.com/reflex-dev/reflex/blob/main/README.md) | [简体中文](https://github.com/reflex-dev/reflex/blob/main/docs/zh/zh_cn/README.md) | [繁體中文](https://github.com/reflex-dev/reflex/blob/main/docs/zh/zh_tw/README.md) | [Türkçe](https://github.com/reflex-dev/reflex/blob/main/docs/tr/README.md) | [हिंदी](https://github.com/reflex-dev/reflex/blob/main/docs/in/README.md) | [Português (Brasil)](https://github.com/reflex-dev/reflex/blob/main/docs/pt/pt_br/README.md) | [Italiano](https://github.com/reflex-dev/reflex/blob/main/docs/it/README.md) | [Español](https://github.com/reflex-dev/reflex/blob/main/docs/es/README.md) | [한국어](https://github.com/reflex-dev/reflex/blob/main/docs/kr/README.md) | [日本語](https://github.com/reflex-dev/reflex/blob/main/docs/ja/README.md) | [Deutsch](https://github.com/reflex-dev/reflex/blob/main/docs/de/README.md) | [Persian (پارسی)](https://github.com/reflex-dev/reflex/blob/main/docs/pe/README.md)
+[English](https://github.com/reflex-dev/reflex/blob/main/README.md) | [简体中文](https://github.com/reflex-dev/reflex/blob/main/docs/zh/zh_cn/README.md) | [繁體中文](https://github.com/reflex-dev/reflex/blob/main/docs/zh/zh_tw/README.md) | [Türkçe](https://github.com/reflex-dev/reflex/blob/main/docs/tr/README.md) | [हिंदी](https://github.com/reflex-dev/reflex/blob/main/docs/in/README.md) | [Português (Brasil)](https://github.com/reflex-dev/reflex/blob/main/docs/pt/pt_br/README.md) | [Italiano](https://github.com/reflex-dev/reflex/blob/main/docs/it/README.md) | [Español](https://github.com/reflex-dev/reflex/blob/main/docs/es/README.md) | [한국어](https://github.com/reflex-dev/reflex/blob/main/docs/kr/README.md) | [日本語](https://github.com/reflex-dev/reflex/blob/main/docs/ja/README.md) | [Deutsch](https://github.com/reflex-dev/reflex/blob/main/docs/de/README.md) | [Persian (پارسی)](https://github.com/reflex-dev/reflex/blob/main/docs/pe/README.md) | [Tiếng Việt](https://github.com/reflex-dev/reflex/blob/main/docs/vi/README.md)
 
 ---
 
@@ -71,7 +69,7 @@ Veamos un ejemplo: crearemos una UI de generación de imágenes en torno a [DALL
 &nbsp;
 
 <div align="center">
-<img src="https://raw.githubusercontent.com/reflex-dev/reflex/main/docs/images/dalle.gif" alt="Un envoltorio frontend para DALL·E, mostrado en el proceso de generar una imagen." width="550" />
+<img src="/docs/images/dalle.gif" alt="Un envoltorio frontend para DALL·E, mostrado en el proceso de generar una imagen." width="550" />
 </div>
 
 &nbsp;
@@ -138,7 +136,7 @@ app.add_page(index, title="Reflex:DALL-E")
 ## Vamos a analizarlo.
 
 <div align="center">
-<img src="https://github.com/reflex-dev/reflex/blob/main/docs/images/dalle_colored_code_example.png?raw=true" alt="Explicando las diferencias entre las partes del backend y frontend de la aplicación DALL-E." width="900" />
+<img src="/docs/images/dalle_colored_code_example.png" alt="Explicando las diferencias entre las partes del backend y frontend de la aplicación DALL-E." width="900" />
 </div>
 
 ### **Reflex UI**
@@ -216,7 +214,7 @@ Puedes crear una aplicación multipágina añadiendo más páginas.
 
 <div align="center">
 
-📑 [Docs](https://reflex.dev/docs/getting-started/introduction) &nbsp; | &nbsp; 🗞️ [Blog](https://reflex.dev/blog) &nbsp; | &nbsp; 📱 [Librería de componentes](https://reflex.dev/docs/library) &nbsp; | &nbsp; 🖼️ [Galería](https://reflex.dev/docs/gallery) &nbsp; | &nbsp; 🛸 [Despliegue](https://reflex.dev/docs/hosting/deploy-quick-start) &nbsp;
+📑 [Docs](https://reflex.dev/docs/getting-started/introduction) &nbsp; | &nbsp; 🗞️ [Blog](https://reflex.dev/blog) &nbsp; | &nbsp; 📱 [Librería de componentes](https://reflex.dev/docs/library) &nbsp; | &nbsp; 🖼️ [Templates](https://reflex.dev/templates/) &nbsp; | &nbsp; 🛸 [Despliegue](https://reflex.dev/docs/hosting/deploy-quick-start) &nbsp;
 
 </div>
 
@@ -224,7 +222,7 @@ Puedes crear una aplicación multipágina añadiendo más páginas.
 
 Reflex se lanzó en diciembre de 2022 con el nombre de Pynecone.
 
-¡Desde febrero de 2024, nuestro servicio de alojamiento está en fase alfa! Durante este tiempo, cualquiera puede implementar sus aplicaciones de forma gratuita. Consulta nuestra [hoja de ruta](https://github.com/reflex-dev/reflex/issues/2727) para ver qué está planeado.
+A partir de 2025, [Reflex Cloud](https://cloud.reflex.dev) se ha lanzado para proporcionar la mejor experiencia de alojamiento para aplicaciones Reflex. Continuaremos desarrollándolo e implementando más características.
 
 ¡Reflex tiene nuevas versiones y características cada semana! Asegúrate de :star: marcar como favorito y :eyes: seguir este repositorio para mantenerte actualizado.
 
@@ -238,6 +236,12 @@ Reflex se lanzó en diciembre de 2022 con el nombre de Pynecone.
 
 Buscamos colaboradores, sin importar su nivel o experiencia. Para contribuir consulta [CONTRIBUTING.md](https://github.com/reflex-dev/reflex/blob/main/CONTRIBUTING.md)
 
+## Todo Gracias A Nuestros Contribuidores:
+
+<a href="https://github.com/reflex-dev/reflex/graphs/contributors">
+  <img src="https://contrib.rocks/image?repo=reflex-dev/reflex" />
+</a>
+
 ## Licencia
 
-Reflex es de código abierto y está licenciado bajo la [Apache License 2.0](LICENSE).
+Reflex es de código abierto y está licenciado bajo la [Apache License 2.0](/LICENSE).

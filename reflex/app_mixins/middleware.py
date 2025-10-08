@@ -56,6 +56,7 @@ class MiddlewareMixin(AppMixin):
                 out = await out
             if out is not None:
                 return out
+        return None
 
     async def _postprocess(
         self, state: BaseState, event: Event, update: StateUpdate

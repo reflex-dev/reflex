@@ -14,8 +14,8 @@ _SUBMODULES: set[str] = {
     "plotly",
     "radix",
     "react_player",
+    "react_router",
     "sonner",
-    "suneditor",
     "el",
     "base",
     "recharts",
@@ -26,7 +26,6 @@ _SUBMOD_ATTRS: dict[str, list[str]] = {
         "Component",
         "NoSSRComponent",
     ],
-    "next": ["NextLink", "next_link"],
 }
 __getattr__, __dir__, __all__ = lazy_loader.attach(
     __name__,

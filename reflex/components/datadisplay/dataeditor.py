@@ -2,11 +2,11 @@
 
 from __future__ import annotations
 
+import dataclasses
 from collections.abc import Mapping, Sequence
 from enum import Enum
 from typing import Any, Literal, TypedDict
 
-from reflex.base import Base
 from reflex.components.component import Component, NoSSRComponent
 from reflex.components.literals import LiteralRowMarker
 from reflex.event import EventHandler, no_args_event_spec, passthrough_event_spec
@@ -50,7 +50,8 @@ class GridColumnIcons(Enum):
     VideoUri = "video_uri"
 
 
-class DataEditorTheme(Base):
+@dataclasses.dataclass
+class DataEditorThemeBase:
     """The theme for the DataEditor component."""
 
     accent_color: str | None = None
@@ -85,6 +86,20 @@ class DataEditorTheme(Base):
     text_header_selected: str | None = None
     text_light: str | None = None
     text_medium: str | None = None
+
+
+@dataclasses.dataclass(init=False)
+class DataEditorTheme(DataEditorThemeBase):
+    """The theme for the DataEditor component."""
+
+    def __init__(self, **kwargs: Any):
+        """Initialize the DataEditorTheme.
+
+        Args:
+            **kwargs: The keyword arguments to initialize the theme.
+        """
+        kwargs = {format.to_snake_case(k): v for k, v in kwargs.items()}
+        super().__init__(**kwargs)
 
 
 class Bounds(TypedDict):
@@ -164,10 +179,10 @@ class DataEditor(NoSSRComponent):
 
     tag = "DataEditor"
     is_default = True
-    library: str | None = "@glideapps/glide-data-grid@^6.0.3"
+    library: str | None = "@glideapps/glide-data-grid@6.0.3"
     lib_dependencies: list[str] = [
-        "lodash@^4.17.21",
-        "react-responsive-carousel@^3.2.7",
+        "lodash@4.17.21",
+        "react-responsive-carousel@3.2.23",
     ]
 
     # Number of rows.
@@ -196,6 +211,9 @@ class DataEditor(NoSSRComponent):
 
     # Enables or disables the overlay shadow when scrolling vertically.
     fixed_shadow_y: Var[bool]
+
+    # Controls the presence of the fill indicator
+    fill_handle: Var[bool]
 
     # The number of columns which should remain in place when scrolling horizontally. Doesn't include rowMarkers.
     freeze_columns: Var[int]
@@ -383,9 +401,8 @@ class DataEditor(NoSSRComponent):
         # If rows is not provided, determine from data.
         if rows is None:
             if isinstance(data, Var) and not isinstance(data, ArrayVar):
-                raise ValueError(
-                    "DataEditor data must be an ArrayVar if rows is not provided."
-                )
+                msg = "DataEditor data must be an ArrayVar if rows is not provided."
+                raise ValueError(msg)
 
             props["rows"] = data.length() if isinstance(data, ArrayVar) else len(data)
 
@@ -393,13 +410,11 @@ class DataEditor(NoSSRComponent):
             if types.is_dataframe(type(data)) or (
                 isinstance(data, Var) and types.is_dataframe(data._var_type)
             ):
-                raise ValueError(
-                    "Cannot pass in both a pandas dataframe and columns to the data_editor component."
-                )
-            else:
-                props["columns"] = [
-                    format.format_data_editor_column(col) for col in columns
-                ]
+                msg = "Cannot pass in both a pandas dataframe and columns to the data_editor component."
+                raise ValueError(msg)
+            props["columns"] = [
+                format.format_data_editor_column(col) for col in columns
+            ]
 
         if "theme" in props:
             theme = props.get("theme")

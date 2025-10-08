@@ -4,11 +4,11 @@ from typing import ClassVar, Literal
 
 from reflex.components.component import ComponentNamespace
 from reflex.components.core.breakpoints import Responsive
+from reflex.components.radix.themes.base import LiteralAccentColor, RadixThemesComponent
 from reflex.constants.compiler import MemoizationMode
 from reflex.event import EventHandler, no_args_event_spec, passthrough_event_spec
 from reflex.vars.base import Var
 
-from ..base import LiteralAccentColor, RadixThemesComponent
 from .checkbox import Checkbox
 from .radio_group import HighLevelRadioGroup
 
