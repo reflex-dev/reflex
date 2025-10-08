@@ -246,7 +246,7 @@ class EventHandlerSetVar(EventHandler):
                 msg = f"Variable `{args[0]}` cannot be set on `{self.state_cls.get_full_name()}`"
                 raise AttributeError(msg)
 
-            if asyncio.iscoroutinefunction(handler.fn):
+            if inspect.iscoroutinefunction(handler.fn):
                 msg = f"Setter for {args[0]} is async, which is not supported."
                 raise NotImplementedError(msg)
 
@@ -287,7 +287,7 @@ async def _resolve_delta(delta: Delta) -> Delta:
     tasks = {}
     for state_name, state_delta in delta.items():
         for var_name, value in state_delta.items():
-            if asyncio.iscoroutine(value):
+            if inspect.iscoroutine(value):
                 tasks[state_name, var_name] = asyncio.create_task(
                     value,
                     name=f"reflex_resolve_delta|{state_name}|{var_name}|{time.time()}",
@@ -1733,7 +1733,7 @@ class BaseState(EvenMoreBasicBaseState):
         except TypeError:
             pass
 
-        coroutines = [e for e in events if asyncio.iscoroutine(e)]
+        coroutines = [e for e in events if inspect.iscoroutine(e)]
 
         for coroutine in coroutines:
             coroutine_name = coroutine.__qualname__
@@ -1895,7 +1895,7 @@ class BaseState(EvenMoreBasicBaseState):
         # Wrap the function in a try/except block.
         try:
             # Handle async functions.
-            if asyncio.iscoroutinefunction(fn.func):
+            if inspect.iscoroutinefunction(fn.func):
                 events = await fn(**payload)
 
             # Handle regular functions.
