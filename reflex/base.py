@@ -5,7 +5,9 @@ from importlib.util import find_spec
 if find_spec("pydantic") and find_spec("pydantic.v1"):
     from pydantic.v1 import BaseModel
 
-    class Base(BaseModel):
+    from reflex.utils.compat import ModelMetaclassLazyAnnotations
+
+    class Base(BaseModel, metaclass=ModelMetaclassLazyAnnotations):
         """The base class subclassed by all Reflex classes.
 
         This class wraps Pydantic and provides common methods such as
