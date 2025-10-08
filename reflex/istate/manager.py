@@ -49,6 +49,8 @@ class StateManager(ABC):
         Returns:
             The state manager (either disk, memory or redis).
         """
+        from .manager_hybrid import StateManagerHybridSqlite
+
         config = get_config()
         if prerequisites.parse_redis_url() is not None:
             config.state_manager_mode = constants.StateManagerMode.REDIS
@@ -56,6 +58,8 @@ class StateManager(ABC):
             return StateManagerMemory(state=state)
         if config.state_manager_mode == constants.StateManagerMode.DISK:
             return StateManagerDisk(state=state)
+        if config.state_manager_mode == constants.StateManagerMode.SQLITE:
+            return StateManagerHybridSqlite(state=state)
         if config.state_manager_mode == constants.StateManagerMode.REDIS:
             redis = prerequisites.get_redis()
             if redis is not None:
@@ -206,7 +210,7 @@ class StateManagerDisk(StateManager):
     # The token expiration time (s).
     token_expiration: int = dataclasses.field(default_factory=_default_token_expiration)
 
-    def __post_init_(self):
+    def __post_init__(self):
         """Create a new state manager."""
         path_ops.mkdir(self.states_directory)
 

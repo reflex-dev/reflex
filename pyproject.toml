@@ -20,6 +20,7 @@ readme = "README.md"
 keywords = ["web", "framework"]
 requires-python = ">=3.10,<4.0"
 dependencies = [
+  "aiosqlite >=0.17.0,<1.0",
   "alembic >=1.15.2,<2.0",
   "click >=8.2",
   "granian[reload] >=2.4.0",

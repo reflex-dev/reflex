@@ -9,6 +9,7 @@ class StateManagerMode(str, Enum):
     DISK = "disk"
     MEMORY = "memory"
     REDIS = "redis"
+    SQLITE = "sqlite"
 
 
 # Used for things like console_log, etc.
