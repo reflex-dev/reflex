@@ -1898,7 +1898,7 @@ requires-dist = [
     { name = "alembic", specifier = ">=1.15.2,<2.0" },
     { name = "alembic", marker = "extra == 'db'", specifier = ">=1.15.2,<2.0" },
     { name = "click", specifier = ">=8.2" },
-    { name = "granian", extras = ["reload"], specifier = ">=2.4.0" },
+    { name = "granian", extras = ["reload"], specifier = ">=2.5.5" },
     { name = "httpx", specifier = ">=0.23.3,<1.0" },
     { name = "packaging", specifier = ">=24.2,<26" },
     { name = "platformdirs", specifier = ">=4.3.7,<5.0" },

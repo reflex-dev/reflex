@@ -22,7 +22,7 @@ requires-python = ">=3.10,<4.0"
 dependencies = [
   "alembic >=1.15.2,<2.0",
   "click >=8.2",
-  "granian[reload] >=2.4.0",
+  "granian[reload] >=2.5.5",
   "httpx >=0.23.3,<1.0",
   "packaging >=24.2,<26",
   "platformdirs >=4.3.7,<5.0",
