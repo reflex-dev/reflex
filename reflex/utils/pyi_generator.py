@@ -19,7 +19,7 @@ from itertools import chain
 from multiprocessing import Pool, cpu_count
 from pathlib import Path
 from types import ModuleType, SimpleNamespace, UnionType
-from typing import Any, get_args, get_origin, get_type_hints
+from typing import Any, get_args, get_origin
 
 from reflex.components.component import Component
 from reflex.utils import types as rx_types
@@ -368,7 +368,7 @@ def _extract_class_props_as_ast_nodes(
         event_triggers = target_class.get_event_triggers()
         # Import from the target class to ensure type hints are resolvable.
         exec(f"from {target_class.__module__} import *", type_hint_globals)
-        for name, value in get_type_hints(target_class).items():
+        for name, value in target_class.__annotations__.items():
             if (
                 name in spec.kwonlyargs
                 or name in EXCLUDED_PROPS
