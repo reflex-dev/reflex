@@ -104,7 +104,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ["3.11", "3.12", "3.14"]
+        python-version: ["3.11", "3.12"]
 
     env:
       REFLEX_WEB_WINDOWS_OVERRIDE: "1"
