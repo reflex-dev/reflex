@@ -363,7 +363,7 @@ if find_spec("sqlmodel") and find_spec("sqlalchemy") and find_spec("pydantic"):
                     reason=(
                         "Register sqlmodel.SQLModel classes with `@rx.ModelRegistry.register`"
                     ),
-                    deprecation_version="0.8.0",
+                    deprecation_version="0.8.15",
                     removal_version="0.9.0",
                 )
             super().__pydantic_init_subclass__()

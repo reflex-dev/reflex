@@ -5,7 +5,9 @@ from importlib.util import find_spec
 if find_spec("pydantic") and find_spec("pydantic.v1"):
     from pydantic.v1 import BaseModel
 
-    class Base(BaseModel):
+    from reflex.utils.compat import ModelMetaclassLazyAnnotations
+
+    class Base(BaseModel, metaclass=ModelMetaclassLazyAnnotations):
         """The base class subclassed by all Reflex classes.
 
         This class wraps Pydantic and provides common methods such as
@@ -34,7 +36,7 @@ if find_spec("pydantic") and find_spec("pydantic.v1"):
             console.deprecate(
                 feature_name="rx.Base",
                 reason="You can subclass from `pydantic.BaseModel` directly instead or use dataclasses if possible.",
-                deprecation_version="0.8.2",
+                deprecation_version="0.8.15",
                 removal_version="0.9.0",
             )
             super().__init__(*args, **kwargs)

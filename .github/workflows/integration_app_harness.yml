@@ -26,7 +26,7 @@ jobs:
     strategy:
       matrix:
         state_manager: ["redis", "memory"]
-        python-version: ["3.11", "3.12", "3.13"]
+        python-version: ["3.11", "3.12", "3.13", "3.14"]
         split_index: [1, 2]
       fail-fast: false
     runs-on: ubuntu-22.04
