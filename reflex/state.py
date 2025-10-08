@@ -1554,6 +1554,8 @@ class BaseState(EvenMoreBasicBaseState):
             RuntimeError: If redis is not used in this backend process.
             StateMismatchError: If the state instance is not of the expected type.
         """
+        from reflex.istate.manager.redis import StateManagerRedis
+
         # Then get the target state and all its substates.
         state_manager = get_state_manager()
         if not isinstance(state_manager, StateManagerRedis):
@@ -2738,11 +2740,7 @@ def reload_state_module(
     state.get_class_substate.cache_clear()
 
 
-from reflex.istate.manager import LockExpiredError as LockExpiredError  # noqa: E402
 from reflex.istate.manager import StateManager as StateManager  # noqa: E402
-from reflex.istate.manager import StateManagerDisk as StateManagerDisk  # noqa: E402
-from reflex.istate.manager import StateManagerMemory as StateManagerMemory  # noqa: E402
-from reflex.istate.manager import StateManagerRedis as StateManagerRedis  # noqa: E402
 from reflex.istate.manager import get_state_manager as get_state_manager  # noqa: E402
 from reflex.istate.manager import (  # noqa: E402
     reset_disk_state_manager as reset_disk_state_manager,
