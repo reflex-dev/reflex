@@ -16,7 +16,7 @@ shift
 
 # Start the server in the background
 export REFLEX_TELEMETRY_ENABLED=false
-reflex run --loglevel debug --env "$env_mode" "$@" & pid=$!
+reflex run --env "$env_mode" "$@" & pid=$!
 
 # Within the context of this bash, $pid_in_bash is what we need to pass to "kill" on exit
 # This is true on all platforms.
