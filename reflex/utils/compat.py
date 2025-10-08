@@ -1,5 +1,7 @@
 """Compatibility hacks and helpers."""
 
+import sys
+from collections.abc import Mapping
 from importlib.util import find_spec
 from typing import TYPE_CHECKING, Any
 
@@ -31,6 +33,27 @@ async def windows_hot_reload_lifespan_hack():
         pass
 
 
+def annotations_from_namespace(namespace: Mapping[str, Any]) -> dict[str, Any]:
+    """Get the annotations from a class namespace.
+
+    Args:
+        namespace: The class namespace.
+
+    Returns:
+        The (forward-ref) annotations from the class namespace.
+    """
+    if sys.version_info >= (3, 14) and "__annotations__" not in namespace:
+        from annotationlib import (
+            Format,
+            call_annotate_function,
+            get_annotate_from_class_namespace,
+        )
+
+        if annotate := get_annotate_from_class_namespace(namespace):
+            return call_annotate_function(annotate, format=Format.FORWARDREF)
+    return namespace.get("__annotations__", {})
+
+
 if find_spec("pydantic") and find_spec("pydantic.v1"):
     from pydantic.v1.main import ModelMetaclass
 
@@ -49,8 +72,7 @@ if find_spec("pydantic") and find_spec("pydantic.v1"):
             Returns:
                 The created class.
             """
-            if (_anotate := namespace.get("__annotate_func__")) is not None:
-                namespace["__annotations__"] = _anotate(0)
+            namespace["__annotations__"] = annotations_from_namespace(namespace)
             return super().__new__(mcs, name, bases, namespace, **kwargs)
 else:
     ModelMetaclassLazyAnnotations = type  # type: ignore[assignment]
@@ -85,12 +107,8 @@ def sqlmodel_get_annotations(class_dict: dict[str, Any]) -> dict[str, Any]:
     """
     from reflex.utils.types import resolve_annotations
 
-    if (_annotate := class_dict.get("__annotate_func__")) is not None:
-        annotations = _annotate(0)
-    else:
-        annotations = class_dict.get("__annotations__", {})
     return resolve_annotations(  # type: ignore[no-any-return]
-        annotations,
+        annotations_from_namespace(class_dict),
         class_dict.get("__module__"),
     )
 
