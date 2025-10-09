@@ -134,6 +134,11 @@ class Templates(SimpleNamespace):
     # The reflex.build frontend host
     REFLEX_BUILD_FRONTEND = "https://build.reflex.dev"
 
+    # The reflex.build frontend with referrer
+    REFLEX_BUILD_FRONTEND_WITH_REFERRER = (
+        f"{REFLEX_BUILD_FRONTEND}/?utm_source=reflex_cli"
+    )
+
     class Dirs(SimpleNamespace):
         """Folders used by the template system of Reflex."""
 

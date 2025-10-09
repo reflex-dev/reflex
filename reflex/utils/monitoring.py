@@ -1,6 +1,5 @@
 """PyLeak integration for monitoring event loop blocking and resource leaks in Reflex applications."""
 
-import asyncio
 import contextlib
 import functools
 import inspect
@@ -154,7 +153,7 @@ def monitor_loopblocks(func: Callable) -> Callable:
 
         return async_gen_wrapper
 
-    if asyncio.iscoroutinefunction(func):
+    if inspect.iscoroutinefunction(func):
 
         @functools.wraps(func)
         async def async_wrapper(*args, **kwargs):

@@ -16,7 +16,6 @@ from pathlib import Path
 from typing import Any, Literal, overload
 
 import rich.markup
-from redis.exceptions import RedisError
 from rich.progress import Progress
 
 from reflex import constants
@@ -45,6 +44,9 @@ def get_num_workers() -> int:
     """
     if (redis_client := prerequisites.get_redis_sync()) is None:
         return 1
+
+    from redis.exceptions import RedisError
+
     try:
         redis_client.ping()
     except RedisError as re:

@@ -16,6 +16,7 @@ import time
 import typing
 import warnings
 from collections.abc import AsyncIterator, Callable, Sequence
+from enum import Enum
 from hashlib import md5
 from importlib.util import find_spec
 from types import FunctionType
@@ -246,7 +247,7 @@ class EventHandlerSetVar(EventHandler):
                 msg = f"Variable `{args[0]}` cannot be set on `{self.state_cls.get_full_name()}`"
                 raise AttributeError(msg)
 
-            if asyncio.iscoroutinefunction(handler.fn):
+            if inspect.iscoroutinefunction(handler.fn):
                 msg = f"Setter for {args[0]} is async, which is not supported."
                 raise NotImplementedError(msg)
 
@@ -287,7 +288,7 @@ async def _resolve_delta(delta: Delta) -> Delta:
     tasks = {}
     for state_name, state_delta in delta.items():
         for var_name, value in state_delta.items():
-            if asyncio.iscoroutine(value):
+            if inspect.iscoroutine(value):
                 tasks[state_name, var_name] = asyncio.create_task(
                     value,
                     name=f"reflex_resolve_delta|{state_name}|{var_name}|{time.time()}",
@@ -852,7 +853,7 @@ class BaseState(EvenMoreBasicBaseState):
             ComputedVarShadowsBaseVarsError: When a computed var shadows a base var.
         """
         for name, computed_var_ in cls._get_computed_vars():
-            if name in cls.__annotations__:
+            if name in get_type_hints(cls):
                 msg = f"The computed var name `{computed_var_._js_expr}` shadows a base var in {cls.__module__}.{cls.__name__}; use a different name instead"
                 raise ComputedVarShadowsBaseVarsError(msg)
 
@@ -1554,6 +1555,8 @@ class BaseState(EvenMoreBasicBaseState):
             RuntimeError: If redis is not used in this backend process.
             StateMismatchError: If the state instance is not of the expected type.
         """
+        from reflex.istate.manager.redis import StateManagerRedis
+
         # Then get the target state and all its substates.
         state_manager = get_state_manager()
         if not isinstance(state_manager, StateManagerRedis):
@@ -1733,7 +1736,7 @@ class BaseState(EvenMoreBasicBaseState):
         except TypeError:
             pass
 
-        coroutines = [e for e in events if asyncio.iscoroutine(e)]
+        coroutines = [e for e in events if inspect.iscoroutine(e)]
 
         for coroutine in coroutines:
             coroutine_name = coroutine.__qualname__
@@ -1878,6 +1881,12 @@ class BaseState(EvenMoreBasicBaseState):
                 hinted_args is tuple or hinted_args is tuple
             ):
                 payload[arg] = tuple(value)
+            elif isinstance(hinted_args, type) and issubclass(hinted_args, Enum):
+                try:
+                    payload[arg] = hinted_args(value)
+                except ValueError:
+                    msg = f"Received an invalid enum value ({value}) for {arg} of type {hinted_args}"
+                    raise ValueError(msg) from None
             elif (
                 isinstance(value, str)
                 and (deserializer := _deserializers.get(hinted_args)) is not None
@@ -1895,7 +1904,7 @@ class BaseState(EvenMoreBasicBaseState):
         # Wrap the function in a try/except block.
         try:
             # Handle async functions.
-            if asyncio.iscoroutinefunction(fn.func):
+            if inspect.iscoroutinefunction(fn.func):
                 events = await fn(**payload)
 
             # Handle regular functions.
@@ -2738,11 +2747,7 @@ def reload_state_module(
     state.get_class_substate.cache_clear()
 
 
-from reflex.istate.manager import LockExpiredError as LockExpiredError  # noqa: E402
 from reflex.istate.manager import StateManager as StateManager  # noqa: E402
-from reflex.istate.manager import StateManagerDisk as StateManagerDisk  # noqa: E402
-from reflex.istate.manager import StateManagerMemory as StateManagerMemory  # noqa: E402
-from reflex.istate.manager import StateManagerRedis as StateManagerRedis  # noqa: E402
 from reflex.istate.manager import get_state_manager as get_state_manager  # noqa: E402
 from reflex.istate.manager import (  # noqa: E402
     reset_disk_state_manager as reset_disk_state_manager,

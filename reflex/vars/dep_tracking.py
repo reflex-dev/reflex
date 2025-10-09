@@ -192,7 +192,7 @@ class DependencyTracker:
         """
         from reflex.state import BaseState
 
-        if instruction.opname == "LOAD_FAST":
+        if instruction.opname in ("LOAD_FAST", "LOAD_FAST_BORROW"):
             msg = f"Dependency detection cannot identify get_state class from local var {instruction.argval}."
             raise VarValueError(msg)
         if isinstance(self.func, CodeType):
@@ -305,7 +305,7 @@ class DependencyTracker:
             elif self.scan_status == ScanStatus.GETTING_VAR:
                 self.handle_getting_var(instruction)
             elif (
-                instruction.opname in ("LOAD_FAST", "LOAD_DEREF")
+                instruction.opname in ("LOAD_FAST", "LOAD_DEREF", "LOAD_FAST_BORROW")
                 and instruction.argval in self.tracked_locals
             ):
                 # bytecode loaded the class instance to the top of stack, next load instruction

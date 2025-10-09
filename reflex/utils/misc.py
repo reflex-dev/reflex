@@ -2,6 +2,7 @@
 
 import asyncio
 import contextlib
+import inspect
 import sys
 import threading
 from collections.abc import Callable
@@ -62,7 +63,7 @@ async def run_in_thread(func: Callable) -> Any:
     Returns:
         Any: The return value of the function.
     """
-    if asyncio.coroutines.iscoroutinefunction(func):
+    if inspect.iscoroutinefunction(func):
         msg = "func must be a non-async function"
         raise ValueError(msg)
     return await asyncio.get_event_loop().run_in_executor(None, func)

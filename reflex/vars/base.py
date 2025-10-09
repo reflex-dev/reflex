@@ -43,6 +43,7 @@ from reflex import constants
 from reflex.constants.compiler import Hooks
 from reflex.constants.state import FIELD_MARKER
 from reflex.utils import console, exceptions, imports, serializers, types
+from reflex.utils.compat import annotations_from_namespace
 from reflex.utils.decorator import once
 from reflex.utils.exceptions import (
     ComputedVarSignatureError,
@@ -3478,7 +3479,7 @@ class BaseStateMeta(ABCMeta):
         inherited_fields: dict[str, Field] = {}
         own_fields: dict[str, Field] = {}
         resolved_annotations = types.resolve_annotations(
-            namespace.get("__annotations__", {}), namespace["__module__"]
+            annotations_from_namespace(namespace), namespace["__module__"]
         )
 
         for base in bases[::-1]:

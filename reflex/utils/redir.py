@@ -1,10 +1,12 @@
 """Utilities to handle redirection to browser UI."""
 
-from reflex import constants
-from reflex.utils import console
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from urllib.parse import SplitResult
 
 
-def open_browser(target_url: str) -> None:
+def open_browser(target_url: "SplitResult") -> None:
     """Open a browser window to target_url.
 
     Args:
@@ -12,19 +14,30 @@ def open_browser(target_url: str) -> None:
     """
     import webbrowser
 
-    if not webbrowser.open(target_url):
+    from reflex.utils import console
+
+    if not webbrowser.open(target_url.geturl()):
         console.warn(
             f"Unable to automatically open the browser. Please navigate to {target_url} in your browser."
         )
     else:
-        console.info(f"Opening browser to {target_url}.")
+        simplified_url = target_url._replace(path="", query="", fragment="").geturl()
+        console.info(f"Opened browser to {simplified_url}")
 
 
 def reflex_build_redirect() -> None:
     """Open the browser window to reflex.build."""
-    open_browser(constants.Templates.REFLEX_BUILD_FRONTEND)
+    from urllib.parse import urlsplit
+
+    from reflex import constants
+
+    open_browser(urlsplit(constants.Templates.REFLEX_BUILD_FRONTEND_WITH_REFERRER))
 
 
 def reflex_templates():
     """Open the browser window to reflex.build/templates."""
-    open_browser(constants.Templates.REFLEX_TEMPLATES_URL)
+    from urllib.parse import urlsplit
+
+    from reflex import constants
+
+    open_browser(urlsplit(constants.Templates.REFLEX_TEMPLATES_URL))

@@ -5,7 +5,9 @@ from importlib.util import find_spec
 if find_spec("pydantic") and find_spec("pydantic.v1"):
     from pydantic.v1 import BaseModel
 
-    class Base(BaseModel):
+    from reflex.utils.compat import ModelMetaclassLazyAnnotations
+
+    class Base(BaseModel, metaclass=ModelMetaclassLazyAnnotations):
         """The base class subclassed by all Reflex classes.
 
         This class wraps Pydantic and provides common methods such as
@@ -22,22 +24,17 @@ if find_spec("pydantic") and find_spec("pydantic.v1"):
             use_enum_values = True
             extra = "allow"
 
-        def __init__(self, *args, **kwargs):
-            """Initialize the base class.
-
-            Args:
-                *args: Positional arguments.
-                **kwargs: Keyword arguments.
-            """
+        def __init_subclass__(cls):
+            """Warn that rx.Base is deprecated."""
             from reflex.utils import console
 
             console.deprecate(
                 feature_name="rx.Base",
-                reason="You can subclass from `pydantic.BaseModel` directly instead or use dataclasses if possible.",
-                deprecation_version="0.8.2",
+                reason=f"{cls!r} is subclassing rx.Base. You can subclass from `pydantic.BaseModel` directly instead or use dataclasses if possible.",
+                deprecation_version="0.8.15",
                 removal_version="0.9.0",
             )
-            super().__init__(*args, **kwargs)
+            super().__init_subclass__()
 
         def json(self) -> str:
             """Convert the object to a json string.
