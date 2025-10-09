@@ -419,13 +419,13 @@ def get_init_cli_prompt_options() -> list[Template]:
     """
     return [
         Template(
-            name=constants.Templates.DEFAULT,
-            description="A blank Reflex app.",
+            name=constants.Templates.AI,
+            description="[bold]Try our free AI builder.",
             code_url="",
         ),
         Template(
-            name=constants.Templates.AI,
-            description="[bold]Try our free AI builder.",
+            name=constants.Templates.DEFAULT,
+            description="A blank Reflex app.",
             code_url="",
         ),
         Template(

@@ -1866,6 +1866,9 @@ def fix_events(
     # Fix the events created by the handler.
     out = []
     for e in events:
+        if callable(e) and getattr(e, "__name__", "") == "<lambda>":
+            # A lambda was returned, assume the user wants to call it with no args.
+            e = e()
         if isinstance(e, Event):
             # If the event is already an event, append it to the list.
             out.append(e)

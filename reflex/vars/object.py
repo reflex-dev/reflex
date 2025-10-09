@@ -40,7 +40,7 @@ from .base import (
     var_operation_return,
 )
 from .number import BooleanVar, NumberVar, raise_unsupported_operand_types
-from .sequence import ArrayVar, StringVar
+from .sequence import ArrayVar, LiteralArrayVar, StringVar
 
 OBJECT_TYPE = TypeVar("OBJECT_TYPE", covariant=True)
 
@@ -437,6 +437,24 @@ class LiteralObjectVar(CachedVarOperation, ObjectVar[OBJECT_TYPE], LiteralVar):
         """
         return hash((type(self).__name__, self._js_expr))
 
+    @classmethod
+    def _get_all_var_data_without_creating_var(
+        cls,
+        value: Mapping,
+    ) -> VarData | None:
+        """Get all the var data without creating a var.
+
+        Args:
+            value: The value to get the var data from.
+
+        Returns:
+            The var data.
+        """
+        return VarData.merge(
+            LiteralArrayVar._get_all_var_data_without_creating_var(value),
+            LiteralArrayVar._get_all_var_data_without_creating_var(value.values()),
+        )
+
     @cached_property_no_lock
     def _cached_get_all_var_data(self) -> VarData | None:
         """Get all the var data.
@@ -445,11 +463,10 @@ class LiteralObjectVar(CachedVarOperation, ObjectVar[OBJECT_TYPE], LiteralVar):
             The var data.
         """
         return VarData.merge(
-            *[LiteralVar.create(var)._get_all_var_data() for var in self._var_value],
-            *[
-                LiteralVar.create(var)._get_all_var_data()
-                for var in self._var_value.values()
-            ],
+            LiteralArrayVar._get_all_var_data_without_creating_var(self._var_value),
+            LiteralArrayVar._get_all_var_data_without_creating_var(
+                self._var_value.values()
+            ),
             self._var_data,
         )
 

@@ -38,6 +38,84 @@ _REHYPE_PLUGINS = LiteralVar.create([_REHYPE_KATEX, _REHYPE_RAW])
 NO_PROPS_TAGS = ("ul", "ol", "li")
 
 
+def _h1(value: object):
+    from reflex.components.radix.themes.typography.heading import Heading
+
+    return Heading.create(value, as_="h1", size="6", margin_y="0.5em")
+
+
+def _h2(value: object):
+    from reflex.components.radix.themes.typography.heading import Heading
+
+    return Heading.create(value, as_="h2", size="5", margin_y="0.5em")
+
+
+def _h3(value: object):
+    from reflex.components.radix.themes.typography.heading import Heading
+
+    return Heading.create(value, as_="h3", size="4", margin_y="0.5em")
+
+
+def _h4(value: object):
+    from reflex.components.radix.themes.typography.heading import Heading
+
+    return Heading.create(value, as_="h4", size="3", margin_y="0.5em")
+
+
+def _h5(value: object):
+    from reflex.components.radix.themes.typography.heading import Heading
+
+    return Heading.create(value, as_="h5", size="2", margin_y="0.5em")
+
+
+def _h6(value: object):
+    from reflex.components.radix.themes.typography.heading import Heading
+
+    return Heading.create(value, as_="h6", size="1", margin_y="0.5em")
+
+
+def _p(value: object):
+    from reflex.components.radix.themes.typography.text import Text
+
+    return Text.create(value, margin_y="1em")
+
+
+def _ul(value: object):
+    from reflex.components.radix.themes.layout.list import UnorderedList
+
+    return UnorderedList.create(value, margin_y="1em")
+
+
+def _ol(value: object):
+    from reflex.components.radix.themes.layout.list import OrderedList
+
+    return OrderedList.create(value, margin_y="1em")
+
+
+def _li(value: object):
+    from reflex.components.radix.themes.layout.list import ListItem
+
+    return ListItem.create(value, margin_y="0.5em")
+
+
+def _a(value: object):
+    from reflex.components.radix.themes.typography.link import Link
+
+    return Link.create(value)
+
+
+def _code(value: object):
+    from reflex.components.radix.themes.typography.code import Code
+
+    return Code.create(value)
+
+
+def _codeblock(value: object, **props):
+    from reflex.components.datadisplay.code import CodeBlock
+
+    return CodeBlock.create(value, margin_y="1em", wrap_long_lines=True, **props)
+
+
 # Component Mapping
 @lru_cache
 def get_base_component_map() -> dict[str, Callable]:
@@ -46,33 +124,20 @@ def get_base_component_map() -> dict[str, Callable]:
     Returns:
         The base component map.
     """
-    from reflex.components.datadisplay.code import CodeBlock
-    from reflex.components.radix.themes.layout.list import (
-        ListItem,
-        OrderedList,
-        UnorderedList,
-    )
-    from reflex.components.radix.themes.typography.code import Code
-    from reflex.components.radix.themes.typography.heading import Heading
-    from reflex.components.radix.themes.typography.link import Link
-    from reflex.components.radix.themes.typography.text import Text
-
     return {
-        "h1": lambda value: Heading.create(value, as_="h1", size="6", margin_y="0.5em"),
-        "h2": lambda value: Heading.create(value, as_="h2", size="5", margin_y="0.5em"),
-        "h3": lambda value: Heading.create(value, as_="h3", size="4", margin_y="0.5em"),
-        "h4": lambda value: Heading.create(value, as_="h4", size="3", margin_y="0.5em"),
-        "h5": lambda value: Heading.create(value, as_="h5", size="2", margin_y="0.5em"),
-        "h6": lambda value: Heading.create(value, as_="h6", size="1", margin_y="0.5em"),
-        "p": lambda value: Text.create(value, margin_y="1em"),
-        "ul": lambda value: UnorderedList.create(value, margin_y="1em"),
-        "ol": lambda value: OrderedList.create(value, margin_y="1em"),
-        "li": lambda value: ListItem.create(value, margin_y="0.5em"),
-        "a": lambda value: Link.create(value),
-        "code": lambda value: Code.create(value),
-        "codeblock": lambda value, **props: CodeBlock.create(
-            value, margin_y="1em", wrap_long_lines=True, **props
-        ),
+        "h1": _h1,
+        "h2": _h2,
+        "h3": _h3,
+        "h4": _h4,
+        "h5": _h5,
+        "h6": _h6,
+        "p": _p,
+        "ul": _ul,
+        "ol": _ol,
+        "li": _li,
+        "a": _a,
+        "code": _code,
+        "codeblock": _codeblock,
     }
 
 
@@ -413,7 +478,16 @@ let {_LANGUAGE!s} = match ? match[1] : '';
     @staticmethod
     def _component_map_hash(component_map: dict) -> str:
         inp = str(
-            {tag: component(_MOCK_ARG) for tag, component in component_map.items()}
+            {
+                tag: (
+                    f"{component.__module__}.{component.__qualname__}"
+                    if (
+                        "<" not in component.__name__
+                    )  # simple way to check against lambdas
+                    else component(_MOCK_ARG)
+                )
+                for tag, component in component_map.items()
+            }
         ).encode()
         return md5(inp).hexdigest()
 

@@ -1648,15 +1648,16 @@ wheels = [
 ]
 
 [[package]]
-name = "pytest-retry"
-version = "1.7.0"
+name = "pytest-rerunfailures"
+version = "16.0.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
+    { name = "packaging" },
     { name = "pytest" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/c5/5b/607b017994cca28de3a1ad22a3eee8418e5d428dcd8ec25b26b18e995a73/pytest_retry-1.7.0.tar.gz", hash = "sha256:f8d52339f01e949df47c11ba9ee8d5b362f5824dff580d3870ec9ae0057df80f", size = 19977, upload-time = "2025-01-19T01:56:13.115Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/26/53/a543a76f922a5337d10df22441af8bf68f1b421cadf9aedf8a77943b81f6/pytest_rerunfailures-16.0.1.tar.gz", hash = "sha256:ed4b3a6e7badb0a720ddd93f9de1e124ba99a0cb13bc88561b3c168c16062559", size = 27612, upload-time = "2025-09-02T06:48:25.193Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/7c/ff/3266c8a73b9b93c4b14160a7e2b31d1e1088e28ed29f4c2d93ae34093bfd/pytest_retry-1.7.0-py3-none-any.whl", hash = "sha256:a2dac85b79a4e2375943f1429479c65beb6c69553e7dae6b8332be47a60954f4", size = 13775, upload-time = "2025-01-19T01:56:11.199Z" },
+    { url = "https://files.pythonhosted.org/packages/38/73/67dc14cda1942914e70fbb117fceaf11e259362c517bdadd76b0dd752524/pytest_rerunfailures-16.0.1-py3-none-any.whl", hash = "sha256:0bccc0e3b0e3388275c25a100f7077081318196569a121217688ed05e58984b9", size = 13610, upload-time = "2025-09-02T06:48:23.615Z" },
 ]
 
 [[package]]
@@ -1883,7 +1884,7 @@ dev = [
     { name = "pytest-cov" },
     { name = "pytest-mock" },
     { name = "pytest-playwright" },
-    { name = "pytest-retry" },
+    { name = "pytest-rerunfailures" },
     { name = "pytest-split" },
     { name = "python-dotenv" },
     { name = "ruff" },
@@ -1898,7 +1899,7 @@ requires-dist = [
     { name = "alembic", specifier = ">=1.15.2,<2.0" },
     { name = "alembic", marker = "extra == 'db'", specifier = ">=1.15.2,<2.0" },
     { name = "click", specifier = ">=8.2" },
-    { name = "granian", extras = ["reload"], specifier = ">=2.4.0" },
+    { name = "granian", extras = ["reload"], specifier = ">=2.5.5" },
     { name = "httpx", specifier = ">=0.23.3,<1.0" },
     { name = "packaging", specifier = ">=24.2,<26" },
     { name = "platformdirs", specifier = ">=4.3.7,<5.0" },
@@ -1911,7 +1912,7 @@ requires-dist = [
     { name = "redis", specifier = ">=5.2.1,<7.0" },
     { name = "reflex-hosting-cli", specifier = ">=0.1.55" },
     { name = "rich", specifier = ">=13,<15" },
-    { name = "sqlmodel", specifier = ">=0.0.24,<0.1" },
+    { name = "sqlmodel", specifier = ">=0.0.27,<0.1" },
     { name = "sqlmodel", marker = "extra == 'db'", specifier = ">=0.0.24,<0.1" },
     { name = "starlette", specifier = ">=0.47.0" },
     { name = "typing-extensions", specifier = ">=4.13.0" },
@@ -1944,7 +1945,7 @@ dev = [
     { name = "pytest-cov" },
     { name = "pytest-mock" },
     { name = "pytest-playwright" },
-    { name = "pytest-retry" },
+    { name = "pytest-rerunfailures" },
     { name = "pytest-split" },
     { name = "python-dotenv" },
     { name = "ruff" },
@@ -2127,15 +2128,15 @@ wheels = [
 
 [[package]]
 name = "sqlmodel"
-version = "0.0.25"
+version = "0.0.27"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "pydantic" },
     { name = "sqlalchemy" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/ea/80/d9c098a88724ee4554907939cf39590cf67e10c6683723216e228d3315f7/sqlmodel-0.0.25.tar.gz", hash = "sha256:56548c2e645975b1ed94d6c53f0d13c85593f57926a575e2bf566650b2243fa4", size = 117075, upload-time = "2025-09-17T21:44:41.219Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/90/5a/693d90866233e837d182da76082a6d4c2303f54d3aaaa5c78e1238c5d863/sqlmodel-0.0.27.tar.gz", hash = "sha256:ad1227f2014a03905aef32e21428640848ac09ff793047744a73dfdd077ff620", size = 118053, upload-time = "2025-10-08T16:39:11.938Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/57/cf/5d175ce8de07fe694ec4e3d4d65c2dd06cc30f6c79599b31f9d2f6dd2830/sqlmodel-0.0.25-py3-none-any.whl", hash = "sha256:c98234cda701fb77e9dcbd81688c23bb251c13bb98ce1dd8d4adc467374d45b7", size = 28893, upload-time = "2025-09-17T21:44:39.764Z" },
+    { url = "https://files.pythonhosted.org/packages/8c/92/c35e036151fe53822893979f8a13e6f235ae8191f4164a79ae60a95d66aa/sqlmodel-0.0.27-py3-none-any.whl", hash = "sha256:667fe10aa8ff5438134668228dc7d7a08306f4c5c4c7e6ad3ad68defa0e7aa49", size = 29131, upload-time = "2025-10-08T16:39:10.917Z" },
 ]
 
 [[package]]
