@@ -1527,6 +1527,82 @@ class LiteralVar(Var):
     def __post_init__(self):
         """Post-initialize the var."""
 
+    @classmethod
+    def _get_all_var_data_without_creating_var(
+        cls,
+        value: Any,
+    ) -> VarData | None:
+        return cls.create(value)._get_all_var_data()
+
+    @classmethod
+    def _get_all_var_data_without_creating_var_dispatch(
+        cls,
+        value: Any,
+    ) -> VarData | None:
+        """Get all the var data without creating a var.
+
+        Args:
+            value: The value to get the var data from.
+
+        Returns:
+            The var data or None.
+
+        Raises:
+            TypeError: If the value is not a supported type for LiteralVar.
+        """
+        from .object import LiteralObjectVar
+        from .sequence import LiteralStringVar
+
+        if isinstance(value, Var):
+            return value._get_all_var_data()
+
+        for literal_subclass, var_subclass in _var_literal_subclasses[::-1]:
+            if isinstance(value, var_subclass.python_types):
+                return literal_subclass._get_all_var_data_without_creating_var(value)
+
+        if (
+            (as_var_method := getattr(value, "_as_var", None)) is not None
+            and callable(as_var_method)
+            and isinstance((resulting_var := as_var_method()), Var)
+        ):
+            return resulting_var._get_all_var_data()
+
+        from reflex.event import EventHandler
+        from reflex.utils.format import get_event_handler_parts
+
+        if isinstance(value, EventHandler):
+            return Var(
+                _js_expr=".".join(filter(None, get_event_handler_parts(value)))
+            )._get_all_var_data()
+
+        serialized_value = serializers.serialize(value)
+        if serialized_value is not None:
+            if isinstance(serialized_value, Mapping):
+                return LiteralObjectVar._get_all_var_data_without_creating_var(
+                    serialized_value
+                )
+            if isinstance(serialized_value, str):
+                return LiteralStringVar._get_all_var_data_without_creating_var(
+                    serialized_value
+                )
+            return LiteralVar._get_all_var_data_without_creating_var_dispatch(
+                serialized_value
+            )
+
+        if dataclasses.is_dataclass(value) and not isinstance(value, type):
+            return LiteralObjectVar._get_all_var_data_without_creating_var(
+                {
+                    k: (None if callable(v) else v)
+                    for k, v in dataclasses.asdict(value).items()
+                }
+            )
+
+        if isinstance(value, range):
+            return None
+
+        msg = f"Unsupported type {type(value)} for LiteralVar. Tried to create a LiteralVar from {value}."
+        raise TypeError(msg)
+
     @property
     def _var_value(self) -> Any:
         msg = "LiteralVar subclasses must implement the _var_value property."
@@ -1688,30 +1764,30 @@ def figure_out_type(value: Any) -> types.GenericType:
     Returns:
         The type of the value.
     """
-    if isinstance(value, Var):
-        return value._var_type
-    type_ = type(value)
-    if has_args(type_):
-        return type_
-    if isinstance(value, list):
-        if not value:
-            return Sequence[NoReturn]
-        return Sequence[unionize(*(figure_out_type(v) for v in value))]
-    if isinstance(value, set):
-        return set[unionize(*(figure_out_type(v) for v in value))]
-    if isinstance(value, tuple):
-        if not value:
-            return tuple[NoReturn, ...]
-        if len(value) <= 5:
-            return tuple[tuple(figure_out_type(v) for v in value)]
-        return tuple[unionize(*(figure_out_type(v) for v in value)), ...]
-    if isinstance(value, Mapping):
-        if not value:
-            return Mapping[NoReturn, NoReturn]
-        return Mapping[
-            unionize(*(figure_out_type(k) for k in value)),
-            unionize(*(figure_out_type(v) for v in value.values())),
-        ]
+    if isinstance(value, (list, set, tuple, Mapping, Var)):
+        if isinstance(value, Var):
+            return value._var_type
+        if has_args(value_type := type(value)):
+            return value_type
+        if isinstance(value, list):
+            if not value:
+                return Sequence[NoReturn]
+            return Sequence[unionize(*{figure_out_type(v) for v in value[:100]})]
+        if isinstance(value, set):
+            return set[unionize(*{figure_out_type(v) for v in value})]
+        if isinstance(value, tuple):
+            if not value:
+                return tuple[NoReturn, ...]
+            if len(value) <= 5:
+                return tuple[tuple(figure_out_type(v) for v in value)]
+            return tuple[unionize(*{figure_out_type(v) for v in value[:100]}), ...]
+        if isinstance(value, Mapping):
+            if not value:
+                return Mapping[NoReturn, NoReturn]
+            return Mapping[
+                unionize(*{figure_out_type(k) for k in list(value.keys())[:100]}),
+                unionize(*{figure_out_type(v) for v in list(value.values())[:100]}),
+            ]
     return type(value)
 
 
@@ -2882,6 +2958,10 @@ class LiteralNoneVar(LiteralVar, NoneVar):
             The JSON string.
         """
         return "null"
+
+    @classmethod
+    def _get_all_var_data_without_creating_var(cls, value: None) -> VarData | None:
+        return None
 
     @classmethod
     def create(

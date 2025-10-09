@@ -974,6 +974,20 @@ class LiteralNumberVar(LiteralVar, NumberVar[NUMBER_T]):
         return hash((type(self).__name__, self._var_value))
 
     @classmethod
+    def _get_all_var_data_without_creating_var(
+        cls, value: float | int | decimal.Decimal
+    ) -> VarData | None:
+        """Get all the var data without creating the var.
+
+        Args:
+            value: The value of the var.
+
+        Returns:
+            The var data.
+        """
+        return None
+
+    @classmethod
     def create(
         cls, value: float | int | decimal.Decimal, _var_data: VarData | None = None
     ):
@@ -1026,6 +1040,18 @@ class LiteralBooleanVar(LiteralVar, BooleanVar):
             int: The hash value of the object.
         """
         return hash((type(self).__name__, self._var_value))
+
+    @classmethod
+    def _get_all_var_data_without_creating_var(cls, value: bool) -> VarData | None:
+        """Get all the var data without creating the var.
+
+        Args:
+            value: The value of the var.
+
+        Returns:
+            The var data.
+        """
+        return None
 
     @classmethod
     def create(cls, value: bool, _var_data: VarData | None = None):

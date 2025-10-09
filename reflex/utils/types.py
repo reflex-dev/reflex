@@ -291,6 +291,7 @@ def is_literal(cls: GenericType) -> bool:
     return getattr(cls, "__origin__", None) is Literal
 
 
+@lru_cache
 def has_args(cls: type) -> bool:
     """Check if the class has generic parameters.
 

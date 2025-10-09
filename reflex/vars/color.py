@@ -30,6 +30,23 @@ class LiteralColorVar(CachedVarOperation, LiteralVar, ColorVar):
     _var_value: Color = dataclasses.field(default_factory=lambda: Color(color="black"))
 
     @classmethod
+    def _get_all_var_data_without_creating_var(
+        cls,
+        value: Color,
+    ) -> VarData | None:
+        return VarData.merge(
+            LiteralStringVar._get_all_var_data_without_creating_var(value.color)
+            if isinstance(value.color, str)
+            else value.color._get_all_var_data(),
+            value.alpha._get_all_var_data()
+            if not isinstance(value.alpha, bool)
+            else None,
+            value.shade._get_all_var_data()
+            if not isinstance(value.shade, int)
+            else None,
+        )
+
+    @classmethod
     def create(
         cls,
         value: Color,
@@ -111,14 +128,17 @@ class LiteralColorVar(CachedVarOperation, LiteralVar, ColorVar):
             The var data.
         """
         return VarData.merge(
-            *[
-                LiteralVar.create(var)._get_all_var_data()
-                for var in (
-                    self._var_value.color,
-                    self._var_value.alpha,
-                    self._var_value.shade,
-                )
-            ],
+            LiteralStringVar._get_all_var_data_without_creating_var(
+                self._var_value.color
+            )
+            if isinstance(self._var_value.color, str)
+            else self._var_value.color._get_all_var_data(),
+            self._var_value.alpha._get_all_var_data()
+            if not isinstance(self._var_value.alpha, bool)
+            else None,
+            self._var_value.shade._get_all_var_data()
+            if not isinstance(self._var_value.shade, int)
+            else None,
             self._var_data,
         )
 
