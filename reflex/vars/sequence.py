@@ -495,6 +495,23 @@ class LiteralArrayVar(CachedVarOperation, LiteralVar, ArrayVar[ARRAY_VAR_TYPE]):
             + "]"
         )
 
+    @classmethod
+    def _get_all_var_data_without_creating_var(cls, value: Iterable) -> VarData | None:
+        """Get all the VarData associated with the Var without creating a Var.
+
+        Args:
+            value: The value to get the VarData for.
+
+        Returns:
+            The VarData associated with the Var.
+        """
+        return VarData.merge(
+            *[
+                LiteralVar._get_all_var_data_without_creating_var_dispatch(element)
+                for element in value
+            ]
+        )
+
     @cached_property_no_lock
     def _cached_get_all_var_data(self) -> VarData | None:
         """Get all the VarData associated with the Var.
@@ -504,7 +521,7 @@ class LiteralArrayVar(CachedVarOperation, LiteralVar, ArrayVar[ARRAY_VAR_TYPE]):
         """
         return VarData.merge(
             *[
-                LiteralVar.create(element)._get_all_var_data()
+                LiteralVar._get_all_var_data_without_creating_var_dispatch(element)
                 for element in self._var_value
             ],
             self._var_data,
@@ -1146,6 +1163,20 @@ class LiteralStringVar(LiteralVar, StringVar[str]):
     """Base class for immutable literal string vars."""
 
     _var_value: str = dataclasses.field(default="")
+
+    @classmethod
+    def _get_all_var_data_without_creating_var(cls, value: str) -> VarData | None:
+        """Get all the VarData associated with the Var without creating a Var.
+
+        Args:
+            value: The value to get the VarData for.
+
+        Returns:
+            The VarData associated with the Var.
+        """
+        if REFLEX_VAR_OPENING_TAG not in value:
+            return None
+        return cls.create(value)._get_all_var_data()
 
     @classmethod
     def create(
