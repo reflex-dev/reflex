@@ -24,13 +24,8 @@ if find_spec("pydantic") and find_spec("pydantic.v1"):
             use_enum_values = True
             extra = "allow"
 
-        def __init__(self, *args, **kwargs):
-            """Initialize the base class.
-
-            Args:
-                *args: Positional arguments.
-                **kwargs: Keyword arguments.
-            """
+        def __init_subclass__(cls) -> None:
+            """Warn that rx.Base is deprecated."""
             from reflex.utils import console
 
             console.deprecate(
@@ -39,7 +34,7 @@ if find_spec("pydantic") and find_spec("pydantic.v1"):
                 deprecation_version="0.8.15",
                 removal_version="0.9.0",
             )
-            super().__init__(*args, **kwargs)
+            return super().__init_subclass__()
 
         def json(self) -> str:
             """Convert the object to a json string.
