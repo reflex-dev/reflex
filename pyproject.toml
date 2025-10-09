@@ -90,7 +90,7 @@ dev = [
   "pytest-cov",
   "pytest-mock",
   "pytest-playwright",
-  "pytest-retry",
+  "pytest-rerunfailures",
   "pytest-split",
   "pytest",
   "python-dotenv",
