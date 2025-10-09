@@ -1772,7 +1772,7 @@ def figure_out_type(value: Any) -> types.GenericType:
         if isinstance(value, list):
             if not value:
                 return Sequence[NoReturn]
-            return Sequence[unionize(*{figure_out_type(v) for v in value})]
+            return Sequence[unionize(*{figure_out_type(v) for v in value[:100]})]
         if isinstance(value, set):
             return set[unionize(*{figure_out_type(v) for v in value})]
         if isinstance(value, tuple):
@@ -1780,13 +1780,13 @@ def figure_out_type(value: Any) -> types.GenericType:
                 return tuple[NoReturn, ...]
             if len(value) <= 5:
                 return tuple[tuple(figure_out_type(v) for v in value)]
-            return tuple[unionize(*{figure_out_type(v) for v in value}), ...]
+            return tuple[unionize(*{figure_out_type(v) for v in value[:100]}), ...]
         if isinstance(value, Mapping):
             if not value:
                 return Mapping[NoReturn, NoReturn]
             return Mapping[
-                unionize(*{figure_out_type(k) for k in value}),
-                unionize(*{figure_out_type(v) for v in value.values()}),
+                unionize(*{figure_out_type(k) for k in list(value.keys())[:100]}),
+                unionize(*{figure_out_type(v) for v in list(value.values())[:100]}),
             ]
     return type(value)
 
