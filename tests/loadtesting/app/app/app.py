@@ -1,6 +1,6 @@
 import contextlib
-import cProfile
 import os
+
 import reflex as rx
 
 
@@ -78,4 +78,3 @@ async def profile_lifespan():
 
 app = rx.App()
 app.add_page(index)
-app.register_lifespan_task(profile_lifespan)

@@ -1,7 +1,5 @@
-import json
 import logging
 import re
-import time
 
 import gevent
 import websocket
@@ -9,8 +7,7 @@ from locust import User
 
 
 class SocketIOUser(User):
-    """
-    A User that includes a socket io websocket connection.
+    """A User that includes a socket io websocket connection.
     You could easily use this a template for plain WebSockets,
     socket.io just happens to be my use case. You can use multiple
     inheritance to combine this with an HttpUser
