@@ -1,14 +1,14 @@
-from collections.abc import Callable
 import dataclasses
 import json
 import sys
 import time
-from urllib.parse import urlsplit, urlunsplit
 import uuid
+from collections.abc import Callable
 from pathlib import Path
+from urllib.parse import urlsplit, urlunsplit
 
 import gevent.event
-from locust import task
+from locust import tag, task
 
 from reflex.event import fix_events
 from reflex.state import State as ReflexState
@@ -208,7 +208,7 @@ class ReflexLoadTest(SocketIOUser):
             callback_func=self.validate_event_response_message,
         )
 
-    @task
+    @task(50)
     def test_state_simple_event(self):
         self.send(
             self.event_message(State.simple(uuid.uuid4())),
@@ -216,7 +216,7 @@ class ReflexLoadTest(SocketIOUser):
             callback_func=self.validate_event_response_message,
         )
 
-    @task
+    @task(25)
     def test_sub_state_simple_event(self):
         self.send(
             self.event_message(SubState.simple_sub_state(uuid.uuid4())),
@@ -224,7 +224,7 @@ class ReflexLoadTest(SocketIOUser):
             callback_func=self.validate_event_response_message,
         )
 
-    @task
+    @task(50)
     def test_state_simple_async_event(self):
         self.send(
             self.event_message(State.simple_async(uuid.uuid4())),
@@ -232,7 +232,8 @@ class ReflexLoadTest(SocketIOUser):
             callback_func=self.validate_event_response_message,
         )
 
-    # @task
+    @tag("slow")
+    @task(5)
     def test_state_multi_5_event(self):
         self.send(
             self.event_message(State.multi(uuid.uuid4(), 5)),
@@ -240,7 +241,8 @@ class ReflexLoadTest(SocketIOUser):
             callback_func=self.validate_event_response_message,
         )
 
-    @task
+    @tag("slow")
+    @task(5)
     def test_state_multi_background_5_event(self):
         self.send(
             self.event_message(State.multi_background(uuid.uuid4(), 5)),
@@ -248,7 +250,7 @@ class ReflexLoadTest(SocketIOUser):
             callback_func=self.validate_event_response_message,
         )
 
-    @task
+    @task(25)
     def test_other_state_update_my_var_event(self):
         self.send(
             self.event_message(OtherState.update_my_var(uuid.uuid4())),
@@ -256,7 +258,7 @@ class ReflexLoadTest(SocketIOUser):
             callback_func=self.validate_event_response_message,
         )
 
-    @task
+    @task(50)
     def test_other_state_update_other_var_event(self):
         self.send(
             self.event_message(OtherState.update_other_var(uuid.uuid4())),
@@ -264,7 +266,8 @@ class ReflexLoadTest(SocketIOUser):
             callback_func=self.validate_event_response_message,
         )
 
-    # @task
+    @tag("slow")
+    @task(5)
     def test_large_state_simple_event(self):
         self.send(
             self.event_message(LargeState.simple(uuid.uuid4())),
