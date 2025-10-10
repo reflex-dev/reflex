@@ -92,11 +92,14 @@ class StateManagerHybridDisk(StateManagerDisk):
     async def _kill_stale_instances(self):
         """Remove leases held by instances that have not heartbeated recently."""
         db = await self.db()
-        await db.execute(
-            "DELETE FROM instance WHERE "
-            "strftime('%s','now') - strftime('%s', heartbeat) > ?",
-            (self._instance_heartbeat_seconds * 2,),
-        )
+        async with db.cursor() as cursor:
+            await cursor.execute(
+                "DELETE FROM instance WHERE "
+                "strftime('%s','now') - strftime('%s', heartbeat) > ?"
+                "RETURNING id",
+                (self._instance_heartbeat_seconds * 2,),
+            )
+            print("Cleaned up stale instances:", [row[0] async for row in cursor])
         await db.execute(
             "DELETE FROM lease WHERE instance_id NOT IN (SELECT id FROM instance)"
         )
