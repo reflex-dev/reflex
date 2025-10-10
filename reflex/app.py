@@ -1790,16 +1790,16 @@ async def process(
                     name=f"reflex_emit_reload|{event.name}|{time.time()}|{event.token}",
                 )
                 return
+            router_data[constants.RouteVar.PATH] = "/" + (
+                app.router(path) or "404"
+                if (path := router_data.get(constants.RouteVar.PATH))
+                else "404"
+            ).removeprefix("/")
             # re-assign only when the value is different
             if state.router_data != router_data:
                 # assignment will recurse into substates and force recalculation of
                 # dependent ComputedVar (dynamic route variables)
                 state.router_data = router_data
-                router_data[constants.RouteVar.PATH] = "/" + (
-                    app.router(path) or "404"
-                    if (path := router_data.get(constants.RouteVar.PATH))
-                    else "404"
-                ).removeprefix("/")
                 state.router = RouterData.from_router_data(router_data)
 
             # Preprocess the event.
