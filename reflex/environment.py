@@ -671,6 +671,9 @@ class EnvironmentVariables:
     # Whether to mount the compiled frontend app in the backend server in production.
     REFLEX_MOUNT_FRONTEND_COMPILED_APP: EnvVar[bool] = env_var(False, internal=True)
 
+    # How many seconds to wait before timing out acquiring a lease on a state.
+    REFLEX_STATE_LEASE_ACQUIRE_TIMEOUT: EnvVar[float] = env_var(10.0)
+
 
 environment = EnvironmentVariables()
 

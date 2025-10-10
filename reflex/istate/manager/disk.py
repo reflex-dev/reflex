@@ -123,6 +123,29 @@ class StateManagerDisk(StateManager):
 
             await self.populate_substates(client_token, instance, root_state)
 
+    async def _load_root_state(self, token: str) -> BaseState:
+        """Get the root state for a token.
+
+        Args:
+            token: The token to get the root state for.
+
+        Returns:
+            The root state for the token.
+        """
+        client_token = _split_substate_key(token)[0]
+        # Deserialize root state from disk.
+        root_state = await self.load_state(_substate_key(client_token, self.state))
+        # Create a new root state tree with all substates instantiated.
+        fresh_root_state = self.state(_reflex_internal_init=True)
+        if root_state is None:
+            root_state = fresh_root_state
+        else:
+            # Ensure all substates exist, even if they were not serialized previously.
+            root_state.substates = fresh_root_state.substates
+        self.states[client_token] = root_state
+        await self.populate_substates(client_token, root_state, root_state)
+        return root_state
+
     @override
     async def get_state(
         self,
@@ -142,18 +165,7 @@ class StateManagerDisk(StateManager):
             # Retrieved state from memory.
             return root_state
 
-        # Deserialize root state from disk.
-        root_state = await self.load_state(_substate_key(client_token, self.state))
-        # Create a new root state tree with all substates instantiated.
-        fresh_root_state = self.state(_reflex_internal_init=True)
-        if root_state is None:
-            root_state = fresh_root_state
-        else:
-            # Ensure all substates exist, even if they were not serialized previously.
-            root_state.substates = fresh_root_state.substates
-        self.states[client_token] = root_state
-        await self.populate_substates(client_token, root_state, root_state)
-        return root_state
+        return await self._load_root_state(token)
 
     async def set_state_for_substate(self, client_token: str, substate: BaseState):
         """Set the state for a substate.

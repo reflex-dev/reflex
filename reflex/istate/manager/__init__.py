@@ -56,7 +56,11 @@ class StateManager(ABC):
                     lock_expiration=config.redis_lock_expiration,
                     lock_warning_threshold=config.redis_lock_warning_threshold,
                 )
-        msg = f"Expected one of: DISK, MEMORY, REDIS, got {config.state_manager_mode}"
+        if config.state_manager_mode == constants.StateManagerMode.HYBRID_DISK:
+            from reflex.istate.manager.hybrid_disk import StateManagerHybridDisk
+
+            return StateManagerHybridDisk(state=state)
+        msg = f"Expected one of: DISK, MEMORY, REDIS, HYBRID_DISK, got {config.state_manager_mode}"
         raise InvalidStateManagerModeError(msg)
 
     @abstractmethod

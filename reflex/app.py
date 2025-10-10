@@ -525,6 +525,15 @@ class App(MiddlewareMixin, LifespanMixin):
         # Set up the state manager.
         self._state_manager = StateManager.create(state=self._state)
 
+        @contextlib.asynccontextmanager
+        async def _cleanup_state_manager():
+            yield
+            if self._state_manager and hasattr(self._state_manager, "close"):
+                print("Closing state manager...")
+                await self._state_manager.close()
+
+        self.register_lifespan_task(_cleanup_state_manager)
+
         # Set up the Socket.IO AsyncServer.
         if not self.sio:
             self.sio = AsyncServer(

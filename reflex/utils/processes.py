@@ -19,6 +19,7 @@ import rich.markup
 from rich.progress import Progress
 
 from reflex import constants
+from reflex.config import get_config
 from reflex.environment import environment
 from reflex.utils import console, path_ops, prerequisites
 from reflex.utils.registry import get_npm_registry
@@ -42,16 +43,23 @@ def get_num_workers() -> int:
     Returns:
         The number of backend worker processes.
     """
-    if (redis_client := prerequisites.get_redis_sync()) is None:
+    config = get_config()
+    if (
+        redis_client := prerequisites.get_redis_sync()
+    ) is not None:
+        from redis.exceptions import RedisError
+
+        try:
+            redis_client.ping()
+        except RedisError as re:
+            console.error(f"Unable to connect to Redis: {re}")
+            raise SystemExit(1) from None
+
+    elif config.state_manager_mode not in (
+        constants.StateManagerMode.HYBRID_DISK,
+    ):
+        # MEMORY and DISK modes do not function with multiple processes.
         return 1
-
-    from redis.exceptions import RedisError
-
-    try:
-        redis_client.ping()
-    except RedisError as re:
-        console.error(f"Unable to connect to Redis: {re}")
-        raise SystemExit(1) from None
     return (os.cpu_count() or 1) * 2 + 1
 
 
