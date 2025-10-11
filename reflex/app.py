@@ -68,6 +68,7 @@ from reflex.components.core.banner import (
     connection_toaster,
 )
 from reflex.components.core.breakpoints import set_breakpoints
+from reflex.components.core.helmet import HelmetProvider
 from reflex.components.core.sticky import sticky
 from reflex.components.radix import themes
 from reflex.components.sonner.toast import toast
@@ -1185,7 +1186,8 @@ class App(MiddlewareMixin, LifespanMixin):
         # Add the app wrappers.
         app_wrappers: dict[tuple[int, str], Component] = {
             # Default app wrap component renders {children}
-            (0, "AppWrap"): AppWrap.create()
+            (0, "AppWrap"): AppWrap.create(),
+            (199, "HelmetProvider"): HelmetProvider.create(),
         }
 
         if self.theme is not None:
