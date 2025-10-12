@@ -1,9 +1,11 @@
 import asyncio
+from collections.abc import AsyncIterator
 import contextlib
 import dataclasses
 import enum
 from hashlib import md5
 from pathlib import Path
+import random
 import time
 import uuid
 from typing import TypedDict, override
@@ -88,37 +90,91 @@ class StateManagerHybridDisk(StateManagerDisk):
             );""")
         await db.execute("CREATE INDEX IF NOT EXISTS idx_lease_instance ON lease(instance_id);")
         await db.commit()
+        self._schedule_heartbeat()
+
+    async def _db_execute_with_retry(self, query, params=(), retries=5, delay=0.1):
+        db = await self.db()
+        for attempt in range(retries):
+            try:
+                await db.execute(query, params)
+                await db.commit()
+            except aiosqlite.OperationalError as e:  # noqa: PERF203
+                if "database is locked" in str(e):
+                    await asyncio.sleep(delay)
+                else:
+                    raise
+            else:
+                return
+        msg = f"Failed to execute query after {retries} retries"
+        raise ReflexError(msg)
+
+    @contextlib.asynccontextmanager
+    async def _db_query_with_retry(self, query, params=(), retries=5, delay=0.1) -> AsyncIterator[aiosqlite.Cursor]:
+        db = await self.db()
+        for attempt in range(retries):
+            try:
+                async with db.cursor() as cursor:
+                    await cursor.execute(query, params)
+                    yield cursor
+                    await db.commit()
+            except aiosqlite.OperationalError as e:  # noqa: PERF203
+                if "database is locked" in str(e):
+                    await asyncio.sleep(delay)
+                else:
+                    raise
+            else:
+                return
+        msg = f"Failed to execute query after {retries} retries"
+        raise ReflexError(msg)
 
     async def _kill_stale_instances(self):
         """Remove leases held by instances that have not heartbeated recently."""
-        db = await self.db()
-        async with db.cursor() as cursor:
-            await cursor.execute(
+        # Clear any contended leases we hold that do not have pending writes.
+        async with self._db_query_with_retry(
+            "SELECT token FROM lease WHERE instance_id = ? AND contend = 1",
+            (str(self._instance_id),),
+        ) as cursor:
+            rows = await cursor.fetchall()
+            for row in rows:
+                token = row[0]
+                if token not in self._write_queue:
+                    print(f"{self._instance_id=} releasing contended lease on {token} with no pending writes")
+                    await self._release_lease(token)
+
+        async with self._db_query_with_retry(
+            "SELECT count(id) FROM instance WHERE "
+            "strftime('%s','now') - strftime('%s', heartbeat) > ?",
+            (self._instance_heartbeat_seconds * 2,),
+        ) as cursor:
+            result = await cursor.fetchone()
+
+        if result is not None and result[0] > 0:
+            async with self._db_query_with_retry(
                 "DELETE FROM instance WHERE "
-                "strftime('%s','now') - strftime('%s', heartbeat) > ?"
+                "strftime('%s','now') - strftime('%s', heartbeat) > ? "
                 "RETURNING id",
                 (self._instance_heartbeat_seconds * 2,),
+            ) as cursor:
+                print(f"{self._instance_id=} Cleaned up stale instances:", [row[0] async for row in cursor])
+            await self._db_execute_with_retry(
+                "DELETE FROM lease WHERE instance_id NOT IN (SELECT id FROM instance)"
             )
-            print("Cleaned up stale instances:", [row[0] async for row in cursor])
-        await db.execute(
-            "DELETE FROM lease WHERE instance_id NOT IN (SELECT id FROM instance)"
-        )
-        await db.commit()
 
     async def _heartbeat(self):
         """Update the heartbeat for this instance."""
         if self._should_stop:
             return
-        db = await self.db()
-        await db.execute(
+        await self._db_execute_with_retry(
             "INSERT OR REPLACE INTO instance (id) VALUES (?)",
             (str(self._instance_id),)
         )
-        await db.commit()
-        await self._kill_stale_instances()
+        print(f"Heartbeat from instance {self._instance_id}")
+        await asyncio.create_task(self._kill_stale_instances())
         # Schedule the next heartbeat.
-        asyncio.get_event_loop().call_later(
-            self._instance_heartbeat_seconds,
+        await asyncio.sleep(self._instance_heartbeat_seconds)
+        self._heartbeat_task = None
+        asyncio.get_event_loop().call_soon(
+            # random.random() * self._instance_heartbeat_seconds,
             self._schedule_heartbeat,
         )
 
@@ -146,7 +202,7 @@ class StateManagerHybridDisk(StateManagerDisk):
         )
         failed_writes = []
         if items_to_write:
-            print("WQ:", [item.token for item in items_to_write])
+            print(f"WQ {self._instance_id=}:", [(item.token, now - item.timestamp) for item in items_to_write])
         for item in items_to_write:
             token = item.token
             client_token, _ = _split_substate_key(token)
@@ -160,6 +216,7 @@ class StateManagerHybridDisk(StateManagerDisk):
             )
             if leased_tokens[client_token].contend:
                 # Another instance wants the lease, release it immediately.
+                print(f"{self._instance_id=} releasing contended lease on {token} after writes")
                 await self._release_lease(client_token)
         if self._write_queue:
             # There are still items in the queue, schedule another run.
@@ -169,9 +226,10 @@ class StateManagerHybridDisk(StateManagerDisk):
                 for item in self._write_queue.values()
             )
             await asyncio.sleep(next_write_in)
-            self._schedule_write_queue()
+            self._write_queue_task = None
+            asyncio.get_event_loop().call_soon(self._schedule_write_queue)
         if failed_writes and not self._should_stop:
-            msg = f"Lost lease before writing for tokens: {[item.token for item in failed_writes]}"
+            msg = f"Lost lease before writing for tokens: {[(item.token, now - item.timestamp) for item in failed_writes]}"
             raise LeaseLostBeforeWriteError(msg)
 
     def _schedule_write_queue(self) -> asyncio.Task:
@@ -194,21 +252,15 @@ class StateManagerHybridDisk(StateManagerDisk):
         if self._should_stop:
             # Do NOT acquire leases after stopping.
             return AcquireLeaseOutcome.FAILED
-        self._schedule_heartbeat()
-        try:
-            db = await self.db()
-            await db.execute(
+        with contextlib.suppress(Exception):
+            await self._db_execute_with_retry(
                 "INSERT INTO lease (token, instance_id) VALUES (?, ?)",
                 (client_token, str(self._instance_id)),
             )
-            await db.commit()
             self._leased_tokens[client_token] = LeaseData(
                 instance_id=str(self._instance_id),
                 contend=False,
             )
-        except aiosqlite.IntegrityError:
-            pass
-        else:
             return AcquireLeaseOutcome.ACQUIRED
         return AcquireLeaseOutcome.FAILED
 
@@ -218,26 +270,23 @@ class StateManagerHybridDisk(StateManagerDisk):
         Args:
             client_token: The token to release the lease for.
         """
-        db = await self.db()
-        await db.execute(
+        await self._db_execute_with_retry(
             "DELETE FROM lease WHERE token = ? AND instance_id = ?",
             (client_token, str(self._instance_id)),
         )
-        await db.commit()
         self._leased_tokens.pop(client_token, None)
 
-    async def _contend_lease(self, client_token: str):
+    async def _contend_lease(self, client_token: str) -> bool:
         """Mark a lease as contended.
 
         Args:
             client_token: The token to mark as contended.
         """
-        db = await self.db()
-        await db.execute(
+        await self._db_execute_with_retry(
             "UPDATE lease SET contend = 1 WHERE token = ?",
             (client_token,),
         )
-        await db.commit()
+        return True
 
     async def _lease(self, token: str) -> AcquireLeaseOutcome:
         """Attempt to lease a token.
@@ -255,11 +304,14 @@ class StateManagerHybridDisk(StateManagerDisk):
             return AcquireLeaseOutcome.ALREADY_OWNED
         # SLOW PATH: Wait for the lease to be free and try to acquire it
         deadline = time.time() + environment.REFLEX_STATE_LEASE_ACQUIRE_TIMEOUT.get()
+        is_contended = False
         while (lease_acquired := await self._maybe_acquire_lease(client_token)) == AcquireLeaseOutcome.FAILED:
-            # Someone else has the lease, mark as contended and wait.
-            await self._contend_lease(client_token)
             if time.time() > deadline:
                 break
+            if not is_contended:
+                # Someone else has the lease, mark as contended and wait.
+                print(f"Contending for lease on {client_token} from {self._instance_id}")
+                is_contended = await self._contend_lease(client_token)
             await asyncio.sleep(0.2)
         return lease_acquired
 
@@ -271,18 +323,10 @@ class StateManagerHybridDisk(StateManagerDisk):
         Returns:
             The updated _leased_tokens mapping.
         """
-        db = await self.db()
-        async with db.cursor() as cursor:
-            try:
-                await cursor.execute(
-                    "SELECT token, contend FROM lease WHERE instance_id = ?",
-                    (str(self._instance_id),)
-                )
-            except aiosqlite.OperationalError:
-                if "database is locked" in str(e):
-                    # The database is locked, likely due to another process writing.
-                    # We will just keep our existing lease data and try again later.
-                    return self._leased_tokens
+        async with self._db_query_with_retry(
+            "SELECT token, contend FROM lease WHERE instance_id = ?",
+            (str(self._instance_id),)
+        ) as cursor:
             rows = await cursor.fetchall()
             self._leased_tokens = {
                 row[0]: LeaseData(
@@ -307,10 +351,10 @@ class StateManagerHybridDisk(StateManagerDisk):
             The state for the token.
         """
         client_token = _split_substate_key(token)[0]
-        lease_outcome = await self._lease(client_token)
+        lease_outcome = await asyncio.create_task(self._lease(client_token))
 
         if lease_outcome == AcquireLeaseOutcome.FAILED:
-            msg = f"Failed to acquire lease for token {token}."
+            msg = f"Failed to acquire lease for {token=} {self._instance_id=}."
             raise RuntimeError(msg)
 
         if lease_outcome == AcquireLeaseOutcome.ALREADY_OWNED:
@@ -341,11 +385,10 @@ class StateManagerHybridDisk(StateManagerDisk):
         self._should_stop = True
         while self._write_queue:
             await self._schedule_write_queue()
-        db = await self.db()
-        await db.execute(
+        await self._db_execute_with_retry(
             "DELETE FROM instance WHERE id = ?",
             (str(self._instance_id),)
         )
-        await db.commit()
-        await db.close()
+        if self._db is not None:
+            await self._db.close()
         self._db = None

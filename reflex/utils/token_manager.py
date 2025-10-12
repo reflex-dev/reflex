@@ -96,11 +96,13 @@ class LocalTokenManager(TokenManager):
         """
         # Check if token is already mapped to a different SID (duplicate tab)
         if token in self.token_to_sid and sid != self.token_to_sid.get(token):
+            print(f"Forced new token for duplicate token {token} with SID {sid} != {self.token_to_sid.get(token)}")
             new_token = _get_new_token()
             self.token_to_sid[new_token] = sid
             self.sid_to_token[sid] = new_token
             return new_token
 
+        print(f"Linked token {token} with SID {sid}")
         # Normal case - link token to SID
         self.token_to_sid[token] = sid
         self.sid_to_token[sid] = token
@@ -113,6 +115,7 @@ class LocalTokenManager(TokenManager):
             token: The client token.
             sid: The Socket.IO session ID.
         """
+        print(f"Disconnecting token {token} with SID {sid}")
         # Clean up both mappings
         self.token_to_sid.pop(token, None)
         self.sid_to_token.pop(sid, None)
