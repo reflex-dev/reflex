@@ -555,6 +555,7 @@ def run_granian_backend(host: str, port: int, loglevel: LogLevel):
         reload_ignore_patterns=HOTRELOAD_IGNORE_PATTERNS,
         reload_tick=100,
         workers_kill_timeout=2,
+        workers=3,
     )
 
     granian_app.on_reload(_load_dotenv_from_env)

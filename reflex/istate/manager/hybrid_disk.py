@@ -1,11 +1,14 @@
 import asyncio
-from collections.abc import AsyncIterator
+from collections.abc import AsyncIterator, Iterator
 import contextlib
 import dataclasses
 import enum
 from hashlib import md5
+import logging
 from pathlib import Path
 import random
+import sqlite3
+import threading
 import time
 import uuid
 from typing import TypedDict, override
@@ -16,6 +19,10 @@ from reflex.environment import environment
 from reflex.istate.manager.disk import StateManagerDisk
 from reflex.state import BaseState, _split_substate_key
 from reflex.utils.exceptions import ReflexError
+
+
+logger = logging.getLogger(__name__)
+logging.basicConfig(format="[%(asctime)s] %(name)s.%(levelname)s %(message)s", level=logging.DEBUG)
 
 
 class LeaseLostBeforeWriteError(ReflexError):
@@ -41,6 +48,130 @@ class LeaseData:
     contend: bool
 
 
+@dataclasses.dataclass(frozen=True)
+class HeartbeatThread:
+    _db_file: Path
+    _instance_id: uuid.UUID
+    _heartbeat_seconds: float
+    _stop_event: threading.Event = dataclasses.field(default_factory=threading.Event)
+    _db: sqlite3.Connection | None = dataclasses.field(default=None, init=False)
+    _exceptions: list[BaseException] = dataclasses.field(default_factory=list, init=False)
+
+    # The actual underlying thread (for joining, etc).
+    thread: threading.Thread = dataclasses.field(init=False)
+
+    # The main state manager can respond to this event to query and release leases without pending writes.
+    lease_contention_event: asyncio.Event = dataclasses.field(
+        default_factory=asyncio.Event, init=False
+    )
+
+    @classmethod
+    def launch(cls, db_file: Path, instance_id: uuid.UUID, heartbeat_seconds: float) -> "HeartbeatThread":
+        """Launch the heartbeat thread."""
+        heartbeat = cls(
+            _db_file=db_file,
+            _instance_id=instance_id,
+            _heartbeat_seconds=heartbeat_seconds,
+        )
+        thread = threading.Thread(
+            target=heartbeat.run,
+            name=f"HeartbeatThread-{instance_id}",
+            daemon=True,
+        )
+        object.__setattr__(heartbeat, "thread", thread)
+        thread.start()
+        return heartbeat
+
+    def db(self) -> sqlite3.Connection:
+        if self._db is None:
+            db = sqlite3.connect(self._db_file)
+            db.execute("PRAGMA journal_mode=WAL") # Enable Write-Ahead Logging for better concurrency
+            db.execute(f"PRAGMA busy_timeout = {int(self._heartbeat_seconds * 1000)}") # Set timeout to 2 seconds
+            object.__setattr__(self, "_db", db)
+            return db
+        return self._db
+
+    @contextlib.contextmanager
+    def _db_query_with_retry(self, query, params=(), retries=5, delay=0.1) -> Iterator[sqlite3.Cursor]:
+        db = self.db()
+        for attempt in range(retries):
+            try:
+                cursor = db.cursor()
+                try:
+                    cursor.execute(query, params)
+                    yield cursor
+                finally:
+                    cursor.close()
+                db.commit()
+            except sqlite3.Error as e:  # noqa: PERF203
+                db.rollback()
+                if "database is locked" in str(e):
+                    time.sleep(delay * attempt)
+                else:
+                    raise
+            else:
+                return
+        msg = f"Failed to execute query after {retries} retries: {query} {params}"
+        raise ReflexError(msg)
+
+    def _db_execute_with_retry(self, query, params=(), retries=5, delay=0.1):
+        with self._db_query_with_retry(query, params, retries, delay):
+            pass
+
+    def run(self):
+        try:
+            while not self._stop_event.is_set():
+                try:
+                    self._heartbeat()
+                except BaseException as e:
+                    self._exceptions.append(e)
+                    logger.exception(f"Heartbeat thread {self._instance_id} exiting due to exception:")
+                    return
+                time.sleep(self._heartbeat_seconds)
+        finally:
+            if self._db is not None:
+                self._db.close()
+
+    def _kill_stale_instances(self):
+        """Remove leases held by instances that have not heartbeated recently."""
+        if not self.lease_contention_event.is_set():
+            with self._db_query_with_retry(
+                "SELECT COUNT(token) FROM lease WHERE instance_id = ? AND contend = 1",
+                (str(self._instance_id),),
+            ) as cursor:
+                result = cursor.fetchone()
+                if result is not None and result[0] > 0:
+                    logger.info(f"{self._instance_id=} Detected lease contention, setting event")
+                    self.lease_contention_event.set()
+        with self._db_query_with_retry(
+            "SELECT count(id) FROM instance WHERE "
+            "strftime('%s','now') - strftime('%s', heartbeat) > ?",
+            (self._heartbeat_seconds * 2,),
+        ) as cursor:
+            result = cursor.fetchone()
+
+        if result is not None and result[0] > 0:
+            with self._db_query_with_retry(
+                "DELETE FROM instance WHERE "
+                "strftime('%s','now') - strftime('%s', heartbeat) > ? "
+                "RETURNING id",
+                (self._heartbeat_seconds * 2,),
+            ) as cursor:
+                logger.info(f"{self._instance_id=} Cleaned up stale instances: {[row[0] for row in cursor]}")
+            self._db_execute_with_retry(
+                "DELETE FROM lease WHERE instance_id NOT IN (SELECT id FROM instance)"
+            )
+
+    def _heartbeat(self):
+        """Update the heartbeat for this instance."""
+        self._db_execute_with_retry(
+            "INSERT OR REPLACE INTO instance (id) VALUES (?)",
+            (str(self._instance_id),)
+        )
+        logger.debug(f"Heartbeat from instance {self._instance_id}")
+        self._kill_stale_instances()
+
+
 @dataclasses.dataclass
 class StateManagerHybridDisk(StateManagerDisk):
     """Caching state manager that implements token leasing.
@@ -64,7 +195,8 @@ class StateManagerHybridDisk(StateManagerDisk):
     )
 
     _instance_heartbeat_seconds: float = 2.0
-    _heartbeat_task: asyncio.Task | None = dataclasses.field(default=None, init=False)
+    _heartbeat_thread: HeartbeatThread | None = dataclasses.field(default=None, init=False)
+    _lease_contention_task: asyncio.Task | None = dataclasses.field(default=None, init=False)
     _should_stop: bool = dataclasses.field(default=False, init=False)
 
     async def db(self) -> aiosqlite.Connection:
@@ -90,23 +222,13 @@ class StateManagerHybridDisk(StateManagerDisk):
             );""")
         await db.execute("CREATE INDEX IF NOT EXISTS idx_lease_instance ON lease(instance_id);")
         await db.commit()
-        self._schedule_heartbeat()
-
-    async def _db_execute_with_retry(self, query, params=(), retries=5, delay=0.1):
-        db = await self.db()
-        for attempt in range(retries):
-            try:
-                await db.execute(query, params)
-                await db.commit()
-            except aiosqlite.OperationalError as e:  # noqa: PERF203
-                if "database is locked" in str(e):
-                    await asyncio.sleep(delay)
-                else:
-                    raise
-            else:
-                return
-        msg = f"Failed to execute query after {retries} retries"
-        raise ReflexError(msg)
+        self._heartbeat_thread = HeartbeatThread.launch(
+            db_file=self.states_directory / "leases.db",
+            instance_id=self._instance_id,
+            heartbeat_seconds=self._instance_heartbeat_seconds,
+        )
+        self._lease_contention_task = asyncio.create_task(self._handle_lease_contention())
+        logger.info(f"Started {self._heartbeat_thread=} {self._lease_contention_task=}")
 
     @contextlib.asynccontextmanager
     async def _db_query_with_retry(self, query, params=(), retries=5, delay=0.1) -> AsyncIterator[aiosqlite.Cursor]:
@@ -117,9 +239,10 @@ class StateManagerHybridDisk(StateManagerDisk):
                     await cursor.execute(query, params)
                     yield cursor
                     await db.commit()
-            except aiosqlite.OperationalError as e:  # noqa: PERF203
+            except aiosqlite.Error as e:  # noqa: PERF203
+                await db.rollback()
                 if "database is locked" in str(e):
-                    await asyncio.sleep(delay)
+                    await asyncio.sleep(delay * attempt)
                 else:
                     raise
             else:
@@ -127,62 +250,30 @@ class StateManagerHybridDisk(StateManagerDisk):
         msg = f"Failed to execute query after {retries} retries"
         raise ReflexError(msg)
 
-    async def _kill_stale_instances(self):
-        """Remove leases held by instances that have not heartbeated recently."""
-        # Clear any contended leases we hold that do not have pending writes.
-        async with self._db_query_with_retry(
-            "SELECT token FROM lease WHERE instance_id = ? AND contend = 1",
-            (str(self._instance_id),),
-        ) as cursor:
-            rows = await cursor.fetchall()
-            for row in rows:
-                token = row[0]
-                if token not in self._write_queue:
-                    print(f"{self._instance_id=} releasing contended lease on {token} with no pending writes")
-                    await self._release_lease(token)
+    async def _db_execute_with_retry(self, query, params=(), retries=5, delay=0.1):
+        async with self._db_query_with_retry(query, params, retries, delay):
+            pass
 
-        async with self._db_query_with_retry(
-            "SELECT count(id) FROM instance WHERE "
-            "strftime('%s','now') - strftime('%s', heartbeat) > ?",
-            (self._instance_heartbeat_seconds * 2,),
-        ) as cursor:
-            result = await cursor.fetchone()
-
-        if result is not None and result[0] > 0:
-            async with self._db_query_with_retry(
-                "DELETE FROM instance WHERE "
-                "strftime('%s','now') - strftime('%s', heartbeat) > ? "
-                "RETURNING id",
-                (self._instance_heartbeat_seconds * 2,),
-            ) as cursor:
-                print(f"{self._instance_id=} Cleaned up stale instances:", [row[0] async for row in cursor])
-            await self._db_execute_with_retry(
-                "DELETE FROM lease WHERE instance_id NOT IN (SELECT id FROM instance)"
-            )
-
-    async def _heartbeat(self):
-        """Update the heartbeat for this instance."""
-        if self._should_stop:
+    async def _handle_lease_contention(self):
+        """Remove leases held by this instances that are in contention."""
+        if self._heartbeat_thread is None:
             return
-        await self._db_execute_with_retry(
-            "INSERT OR REPLACE INTO instance (id) VALUES (?)",
-            (str(self._instance_id),)
-        )
-        print(f"Heartbeat from instance {self._instance_id}")
-        await asyncio.create_task(self._kill_stale_instances())
-        # Schedule the next heartbeat.
-        await asyncio.sleep(self._instance_heartbeat_seconds)
-        self._heartbeat_task = None
-        asyncio.get_event_loop().call_soon(
-            # random.random() * self._instance_heartbeat_seconds,
-            self._schedule_heartbeat,
-        )
-
-    def _schedule_heartbeat(self) -> asyncio.Task:
-        """Schedule the heartbeat task."""
-        if self._heartbeat_task is None or self._heartbeat_task.done():
-            self._heartbeat_task = asyncio.create_task(self._heartbeat())
-        return self._heartbeat_task
+        # Clear any contended leases we hold that do not have pending writes.
+        while not self._should_stop:
+            logger.debug(f"{self._instance_id=} Waiting for lease contention event")
+            await self._heartbeat_thread.lease_contention_event.wait()
+            logger.debug(f"{self._instance_id=} Detected lease contention event, releasing leases with no pending writes")
+            async with self._db_query_with_retry(
+                "SELECT token FROM lease WHERE instance_id = ? AND contend = 1",
+                (str(self._instance_id),),
+            ) as cursor:
+                rows = await cursor.fetchall()
+                for row in rows:
+                    token = row[0]
+                    if token not in self._write_queue:
+                        logger.debug(f"{self._instance_id=} releasing contended lease on {token} with no pending writes")
+                        await self._release_lease(token)
+            self._heartbeat_thread.lease_contention_event.clear()
 
     async def _process_write_queue(self):
         """coroutine that checks for states to write to disk."""
@@ -202,7 +293,7 @@ class StateManagerHybridDisk(StateManagerDisk):
         )
         failed_writes = []
         if items_to_write:
-            print(f"WQ {self._instance_id=}:", [(item.token, now - item.timestamp) for item in items_to_write])
+            logger.debug(f"WQ {self._instance_id=}: {[(item.token, now - item.timestamp) for item in items_to_write]}")
         for item in items_to_write:
             token = item.token
             client_token, _ = _split_substate_key(token)
@@ -216,7 +307,7 @@ class StateManagerHybridDisk(StateManagerDisk):
             )
             if leased_tokens[client_token].contend:
                 # Another instance wants the lease, release it immediately.
-                print(f"{self._instance_id=} releasing contended lease on {token} after writes")
+                logger.debug(f"{self._instance_id=} releasing contended lease on {token} after writes")
                 await self._release_lease(client_token)
         if self._write_queue:
             # There are still items in the queue, schedule another run.
@@ -235,7 +326,7 @@ class StateManagerHybridDisk(StateManagerDisk):
     def _schedule_write_queue(self) -> asyncio.Task:
         """Initialize the write queue processing task."""
         if self._should_stop:
-            print("Waring: Scheduling _process_write_queue after close()")
+            logger.warning("Waring: Scheduling _process_write_queue after close()")
         if self._write_queue_task is None or self._write_queue_task.done():
             self._write_queue_task = asyncio.create_task(self._process_write_queue())
         return self._write_queue_task
@@ -282,10 +373,13 @@ class StateManagerHybridDisk(StateManagerDisk):
         Args:
             client_token: The token to mark as contended.
         """
-        await self._db_execute_with_retry(
-            "UPDATE lease SET contend = 1 WHERE token = ?",
+        async with self._db_query_with_retry(
+            "UPDATE lease SET contend = 1 WHERE token = ? RETURNING instance_id",
             (client_token,),
-        )
+        ) as cursor:
+            row = await cursor.fetchone()
+            if row is not None:
+                logger.info(f"{self._instance_id=} Contending for lease on {client_token} held by {row[0]}")
         return True
 
     async def _lease(self, token: str) -> AcquireLeaseOutcome:
@@ -305,14 +399,15 @@ class StateManagerHybridDisk(StateManagerDisk):
         # SLOW PATH: Wait for the lease to be free and try to acquire it
         deadline = time.time() + environment.REFLEX_STATE_LEASE_ACQUIRE_TIMEOUT.get()
         is_contended = False
+        sleep_time = 0.2
         while (lease_acquired := await self._maybe_acquire_lease(client_token)) == AcquireLeaseOutcome.FAILED:
             if time.time() > deadline:
                 break
             if not is_contended:
                 # Someone else has the lease, mark as contended and wait.
-                print(f"Contending for lease on {client_token} from {self._instance_id}")
                 is_contended = await self._contend_lease(client_token)
-            await asyncio.sleep(0.2)
+            await asyncio.sleep(sleep_time)
+            sleep_time = min(sleep_time * 2, 2.0)  # Exponential backoff up to 2 seconds
         return lease_acquired
 
     async def _refresh_lease_data(self) -> dict[str, LeaseData]:
@@ -382,13 +477,22 @@ class StateManagerHybridDisk(StateManagerDisk):
 
     async def close(self):
         """Close the state manager, ensuring all states are written to disk."""
+        if self._heartbeat_thread is not None:
+            self._heartbeat_thread._stop_event.set()
         self._should_stop = True
         while self._write_queue:
             await self._schedule_write_queue()
-        await self._db_execute_with_retry(
-            "DELETE FROM instance WHERE id = ?",
-            (str(self._instance_id),)
-        )
         if self._db is not None:
+            await self._db_execute_with_retry(
+                "DELETE FROM instance WHERE id = ?",
+                (str(self._instance_id),)
+            )
             await self._db.close()
-        self._db = None
+            self._db = None
+        if self._lease_contention_task is not None:
+            self._lease_contention_task.cancel()
+            with contextlib.suppress(asyncio.CancelledError):
+                await self._lease_contention_task
+        if self._heartbeat_thread is not None:
+            logger.debug("Stopping heartbeat thread")
+            self._heartbeat_thread.thread.join(timeout=5)

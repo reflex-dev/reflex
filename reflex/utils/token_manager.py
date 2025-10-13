@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 import uuid
 from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING
@@ -102,7 +103,7 @@ class LocalTokenManager(TokenManager):
             self.sid_to_token[sid] = new_token
             return new_token
 
-        print(f"Linked token {token} with SID {sid}")
+        print(f"[{os.getpid()}] Linked token {token} with SID {sid}")
         # Normal case - link token to SID
         self.token_to_sid[token] = sid
         self.sid_to_token[sid] = token
