@@ -1,24 +1,18 @@
 import reflex as rx
 from pathlib import Path
+from reflex.utils.prerequisites import get_web_dir
+
 
 def test_frontend_path_resolves_correctly(tmp_path):
-    """Ensure the frontend path resolves correctly to the .web directory."""
+    """Ensure get_web_dir() resolves relative to the Reflex package root."""
 
-    # Simulate a reflex project structure
-    project_root = tmp_path / "my_app"
-    frontend_dir = project_root / ".web"
-    frontend_dir.mkdir(parents=True)
+    # Get what Reflex actually considers its root
+    reflex_root = Path(rx.__file__).parent.parent  # reflex/reflex/... -> project root
+    expected_path = reflex_root / ".web"
 
-    # Monkeypatch rxconfig to simulate project root
-    rx.config.app_name = "my_app"
-    rx.config.root = project_root
+    # Ensure the returned path is correct
+    resolved_path = get_web_dir()
 
-    # ✅ Reflex always expects frontend path at <root>/.web
-    resolved_path = Path(rx.config.root) / ".web"
-
-    expected_path = frontend_dir
-
-    # Normalize paths (important on Windows)
-    assert resolved_path.resolve() == expected_path.resolve(), (
+    assert Path(resolved_path).resolve() == expected_path.resolve(), (
         f"Expected {expected_path}, got {resolved_path}"
     )
