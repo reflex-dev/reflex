@@ -59,6 +59,7 @@ def _init(
     name: str,
     template: str | None = None,
     ai: bool = False,
+    dry_run: bool = False,
 ):
     """Initialize a new Reflex app in the given directory."""
     from reflex.utils import exec, frontend_skeleton, prerequisites, templates
@@ -75,6 +76,16 @@ def _init(
     # Validate the app name.
     app_name = prerequisites.validate_app_name(name)
     console.rule(f"[bold]Initializing {app_name}")
+
+    if dry_run:
+        console.print(f"[DRY-RUN] Would initialize app: {app_name}")
+        console.print("[DRY-RUN] Would check prerequisites and create:")
+        console.print("  - Frontend dependencies (.web/)")
+        console.print("  - Template files")
+        console.print("  - .gitignore and requirements.txt")
+        console.print("  - Reflex config and setup files")
+        console.success("[DRY-RUN] No files were created.")
+        return
 
     # Check prerequisites.
     prerequisites.check_latest_package_version(constants.Reflex.MODULE_NAME)
@@ -121,13 +132,19 @@ def _init(
     is_flag=True,
     help="Use AI to create the initial template. Cannot be used with existing app or `--template` option.",
 )
+@click.option(
+    "--dry-run",
+    is_flag=True,
+    help="Preview app initialization steps without creating any files.",
+)
 def init(
     name: str,
     template: str | None,
     ai: bool,
+    dry_run: bool,
 ):
     """Initialize a new Reflex app in the current directory."""
-    _init(name, template, ai)
+    _init(name, template, ai, dry_run)
 
 
 def _run(
