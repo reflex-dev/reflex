@@ -305,8 +305,9 @@ class AppHarness:
 
         async def _shutdown(*args, **kwargs) -> None:
             # ensure redis is closed before event loop
-            if self.app_instance is not None and isinstance(
-                self.app_instance._state_manager, StateManagerRedis
+            if (
+                self.app_instance is not None
+                and self.app_instance._state_manager is not None
             ):
                 with contextlib.suppress(ValueError):
                     await self.app_instance._state_manager.close()
@@ -360,14 +361,18 @@ class AppHarness:
         """
         if (
             self.app_instance is not None
+            and self.app_instance._state_manager is not None
+        ):
+            with contextlib.suppress(RuntimeError):
+                await self.app_instance._state_manager.close()
+        if (
+            self.app_instance is not None
             and isinstance(
                 self.app_instance._state_manager,
                 StateManagerRedis,
             )
             and self.app_instance._state is not None
         ):
-            with contextlib.suppress(RuntimeError):
-                await self.app_instance._state_manager.close()
             self.app_instance._state_manager = StateManagerRedis.create(
                 state=self.app_instance._state,
             )
@@ -716,8 +721,7 @@ class AppHarness:
         try:
             return await self.state_manager.get_state(token)
         finally:
-            if isinstance(self.state_manager, StateManagerRedis):
-                await self.state_manager.close()
+            await self.state_manager.close()
 
     async def set_state(self, token: str, **kwargs) -> None:
         """Set the state associated with the given token.
@@ -738,8 +742,7 @@ class AppHarness:
         try:
             await self.state_manager.set_state(token, state)
         finally:
-            if isinstance(self.state_manager, StateManagerRedis):
-                await self.state_manager.close()
+            await self.state_manager.close()
 
     @contextlib.asynccontextmanager
     async def modify_state(self, token: str) -> AsyncIterator[BaseState]:
@@ -769,9 +772,8 @@ class AppHarness:
             async with self.app_instance.modify_state(token) as state:
                 yield state
         finally:
-            if isinstance(self.state_manager, StateManagerRedis):
-                self.app_instance._state_manager = app_state_manager
-                await self.state_manager.close()
+            self.app_instance._state_manager = app_state_manager
+            await self.state_manager.close()
 
     def token_manager(self) -> TokenManager:
         """Get the token manager for the app instance.
