@@ -825,7 +825,7 @@ export const useEventLoop = (
   const [searchParams] = useSearchParams();
   const [connectErrors, setConnectErrors] = useState([]);
   const params = useRef(paramsR);
-  let mounted = false;
+  const mounted = useRef(false);
 
   useEffect(() => {
     const { "*": splat, ...remainingParams } = paramsR;
@@ -837,7 +837,7 @@ export const useEventLoop = (
   }, [paramsR]);
 
   const ensureSocketConnected = useCallback(async () => {
-    if (!mounted) {
+    if (!mounted.current) {
       // During hot reload, some components may still have a reference to
       // addEvents, so avoid reconnecting the socket of an unmounted event loop.
       return;
@@ -859,7 +859,15 @@ export const useEventLoop = (
         () => params.current,
       );
     }
-  }, [socket, dispatch, setConnectErrors, client_storage, navigate, params]);
+  }, [
+    socket,
+    dispatch,
+    setConnectErrors,
+    client_storage,
+    navigate,
+    params,
+    mounted,
+  ]);
 
   // Function to add new events to the event queue.
   const addEvents = useCallback((events, args, event_actions) => {
@@ -962,12 +970,12 @@ export const useEventLoop = (
   // Handle socket connect/disconnect.
   useEffect(() => {
     // Initialize the websocket connection.
-    mounted = true;
+    mounted.current = true;
     ensureSocketConnected();
 
     // Cleanup function.
     return () => {
-      mounted = false;
+      mounted.current = false;
       if (socket.current) {
         socket.current.disconnect();
         socket.current.off();
