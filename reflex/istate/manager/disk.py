@@ -209,9 +209,12 @@ class StateManagerDisk(StateManager):
         if self._write_queue:
             # There are still items in the queue, schedule another run.
             now = time.time()
-            next_write_in = min(
-                self._write_debounce_seconds - (now - item.timestamp)
-                for item in self._write_queue.values()
+            next_write_in = max(
+                0,
+                min(
+                    self._write_debounce_seconds - (now - item.timestamp)
+                    for item in self._write_queue.values()
+                ),
             )
             await asyncio.sleep(next_write_in)
         elif self._write_debounce_seconds > 0:
