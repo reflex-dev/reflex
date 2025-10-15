@@ -26,11 +26,35 @@ def redirect_script() -> str:
 const thisUrl = new URL(window.location.href);
 const params = new URLSearchParams(thisUrl.search)
 
+function sameHostnameDifferentPort(one, two) {{
+    const hostnameOne = one.hostname;
+    const hostnameTwo = two.hostname;
+    const partsOne = hostnameOne.split(".");
+    const partsTwo = hostnameTwo.split(".");
+    if (partsOne.length !== partsTwo.length) {{ return false;  }}
+    for (let i = 1; i < partsOne.length; i++) {{
+        if (partsOne[i] !== partsTwo[i]) {{ return false; }}
+    }}
+    const uniqueNameOne = partsOne[0];
+    const uniqueNameTwo = partsTwo[0];
+    const uniqueNamePartsOne = uniqueNameOne.split("-");
+    const uniqueNamePartsTwo = uniqueNameTwo.split("-");
+    if (uniqueNamePartsOne.length !== uniqueNamePartsTwo.length) {{ return false;  }}
+    for (let i = 0; i < uniqueNamePartsOne.length - 1; i++) {{
+        if (uniqueNamePartsOne[i] !== uniqueNamePartsTwo[i]) {{ return false;  }}
+    }}
+    return true;
+}}
+
 function doRedirect(url) {{
     if (!window.sessionStorage.getItem("authenticated_github_codespaces")) {{
         const a = document.createElement("a");
         if (params.has("redirect_to")) {{
-            a.href = params.get("redirect_to")
+            const redirect_to = new URL(params.get("redirect_to"));
+            if (!sameHostnameDifferentPort(thisUrl, redirect_to)) {{
+                return;
+            }}
+            a.href = redirect_to.href;
         }} else if (!window.location.href.startsWith(url)) {{
             a.href = url + `?redirect_to=${{window.location.href}}`
         }} else {{
