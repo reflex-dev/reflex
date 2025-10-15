@@ -443,6 +443,13 @@ def get_attribute_access_type(cls: GenericType, name: str) -> GenericType | None
 
         from reflex.model import Model
 
+        if find_spec("sqlmodel"):
+            from sqlmodel import SQLModel
+
+            sqlmodel_types = (Model, SQLModel)
+        else:
+            sqlmodel_types = (Model,)
+
         if isinstance(cls, type) and issubclass(cls, DeclarativeBase):
             insp = sqlalchemy.inspect(cls)
             if name in insp.columns:
@@ -486,7 +493,7 @@ def get_attribute_access_type(cls: GenericType, name: str) -> GenericType | None
         elif (
             isinstance(cls, type)
             and not is_generic_alias(cls)
-            and issubclass(cls, Model)
+            and issubclass(cls, sqlmodel_types)
         ):
             # Check in the annotations directly (for sqlmodel.Relationship)
             hints = get_type_hints(cls)  # pyright: ignore [reportArgumentType]
