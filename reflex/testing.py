@@ -41,7 +41,12 @@ from reflex.environment import environment
 from reflex.istate.manager.disk import StateManagerDisk
 from reflex.istate.manager.memory import StateManagerMemory
 from reflex.istate.manager.redis import StateManagerRedis
-from reflex.state import BaseState, StateManager, reload_state_module
+from reflex.state import (
+    BaseState,
+    StateManager,
+    _split_substate_key,
+    reload_state_module,
+)
 from reflex.utils import console, js_runtimes
 from reflex.utils.export import export
 from reflex.utils.token_manager import TokenManager
@@ -279,15 +284,16 @@ class AppHarness:
                 )
             )
             self.app_asgi = self.app_instance()
-        if self.app_instance and isinstance(
-            self.app_instance._state_manager, StateManagerRedis
-        ):
+        if self.app_instance and self.app_instance._state_manager is not None:
             if self.app_instance._state is None:
                 msg = "State is not set."
                 raise RuntimeError(msg)
-            # Create our own redis connection for testing.
-            self.state_manager = StateManagerRedis.create(self.app_instance._state)
-        else:
+            if isinstance(self.app_instance._state_manager, StateManagerRedis):
+                # Create our own redis connection for testing.
+                self.state_manager = StateManagerRedis.create(self.app_instance._state)
+            elif isinstance(self.app_instance._state_manager, StateManagerDisk):
+                self.state_manager = StateManagerDisk.create(self.app_instance._state)
+        if self.state_manager is None:
             self.state_manager = (
                 self.app_instance._state_manager if self.app_instance else None
             )
@@ -718,6 +724,24 @@ class AppHarness:
         if self.state_manager is None:
             msg = "state_manager is not set."
             raise RuntimeError(msg)
+        if self.app_instance is not None and isinstance(
+            self.app_instance.state_manager, StateManagerDisk
+        ):
+            # Song and dance to convince the instance's state manager to flush
+            # (we can't directly await the _other_ loop's Future)
+            og_write_queue_task = self.app_instance.state_manager._write_queue_task
+            self.app_instance.state_manager._write_queue_task = None
+            await self.app_instance.state_manager._schedule_process_write_queue()
+            assert (
+                self.app_instance.state_manager._write_queue_task
+                is not og_write_queue_task
+            )
+            await self.app_instance.state_manager.close()
+            self.app_instance.state_manager._write_queue_task = og_write_queue_task
+        if isinstance(self.state_manager, StateManagerDisk):
+            # Force reload the latest state from disk.
+            client_token, _ = _split_substate_key(token)
+            self.state_manager.states.pop(client_token, None)
         try:
             return await self.state_manager.get_state(token)
         finally:
@@ -742,6 +766,12 @@ class AppHarness:
         try:
             await self.state_manager.set_state(token, state)
         finally:
+            if self.app_instance is not None and isinstance(
+                self.app_instance.state_manager, StateManagerDisk
+            ):
+                # Clear the token from the backend's cache so it will be reloaded.
+                client_token, _ = _split_substate_key(token)
+                self.app_instance.state_manager.states.pop(client_token, None)
             await self.state_manager.close()
 
     @contextlib.asynccontextmanager
@@ -764,16 +794,20 @@ class AppHarness:
             msg = "App is not running."
             raise RuntimeError(msg)
         app_state_manager = self.app_instance.state_manager
-        if isinstance(self.state_manager, StateManagerRedis):
+        if isinstance(self.state_manager, (StateManagerRedis, StateManagerDisk)):
             # Temporarily replace the app's state manager with our own, since
-            # the redis connection is on the backend_thread event loop
+            # the redis/disk connection is on the backend_thread event loop
             self.app_instance._state_manager = self.state_manager
         try:
             async with self.app_instance.modify_state(token) as state:
                 yield state
         finally:
-            self.app_instance._state_manager = app_state_manager
+            if isinstance(app_state_manager, StateManagerDisk):
+                # Clear the token from the cache so it will be reloaded.
+                client_token, _ = _split_substate_key(token)
+                app_state_manager.states.pop(client_token, None)
             await self.state_manager.close()
+            self.app_instance._state_manager = app_state_manager
 
     def token_manager(self) -> TokenManager:
         """Get the token manager for the app instance.
