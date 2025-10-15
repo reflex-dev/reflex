@@ -11,6 +11,7 @@ import functools
 import inspect
 import io
 import json
+import operator
 import sys
 import time
 import traceback
@@ -118,6 +119,7 @@ from reflex.utils.exec import (
     should_prerender_routes,
 )
 from reflex.utils.imports import ImportVar
+from reflex.utils.misc import run_in_thread
 from reflex.utils.token_manager import TokenManager
 from reflex.utils.types import ASGIApp, Message, Receive, Scope, Send
 
@@ -849,7 +851,7 @@ class App(MiddlewareMixin, LifespanMixin):
 
         # Setup dynamic args for the route.
         # this state assignment is only required for tests using the deprecated state kwarg for App
-        state = self._state if self._state else State
+        state = self._state or State
         state.setup_dynamic_args(get_route_args(route))
 
         self._load_events[route] = (
@@ -969,14 +971,10 @@ class App(MiddlewareMixin, LifespanMixin):
 
         if admin_dash and admin_dash.models:
             # Build the admin dashboard
-            admin = (
-                admin_dash.admin
-                if admin_dash.admin
-                else Admin(
-                    engine=Model.get_db_engine(),
-                    title="Reflex Admin Dashboard",
-                    logo_url="https://reflex.dev/Reflex.svg",
-                )
+            admin = admin_dash.admin or Admin(
+                engine=Model.get_db_engine(),
+                title="Reflex Admin Dashboard",
+                logo_url="https://reflex.dev/Reflex.svg",
             )
 
             for model in admin_dash.models:
@@ -1009,21 +1007,21 @@ class App(MiddlewareMixin, LifespanMixin):
         page_imports = {i for i in page_imports if i not in pinned}
 
         frontend_packages = get_config().frontend_packages
-        _frontend_packages = []
+        filtered_frontend_packages = []
         for package in frontend_packages:
             if package in page_imports:
                 console.warn(
                     f"React packages and their dependencies are inferred from Component.library and Component.lib_dependencies, remove `{package}` from `frontend_packages`"
                 )
                 continue
-            _frontend_packages.append(package)
-        page_imports.update(_frontend_packages)
+            filtered_frontend_packages.append(package)
+        page_imports.update(filtered_frontend_packages)
         js_runtimes.install_frontend_packages(page_imports, get_config())
 
     def _app_root(self, app_wrappers: dict[tuple[int, str], Component]) -> Component:
         for component in tuple(app_wrappers.values()):
             app_wrappers.update(component._get_all_app_wrap_components())
-        order = sorted(app_wrappers, key=lambda k: k[0], reverse=True)
+        order = sorted(app_wrappers, key=operator.itemgetter(0), reverse=True)
         root = copy.deepcopy(app_wrappers[order[0]])
 
         def reducer(parent: Component, key: tuple[int, str]) -> Component:
@@ -1095,7 +1093,7 @@ class App(MiddlewareMixin, LifespanMixin):
             sticky_badge._add_style_recursive({})
             return sticky_badge
 
-        self.app_wraps[(0, "StickyBadge")] = lambda _: memoized_badge()
+        self.app_wraps[0, "StickyBadge"] = lambda _: memoized_badge()
 
     def _apply_decorated_pages(self):
         """Add @rx.page decorated pages to the app."""
@@ -1190,13 +1188,13 @@ class App(MiddlewareMixin, LifespanMixin):
 
         if self.theme is not None:
             # If a theme component was provided, wrap the app with it
-            app_wrappers[(20, "Theme")] = self.theme
+            app_wrappers[20, "Theme"] = self.theme
 
         # Get the env mode.
         config = get_config()
 
         if config.react_strict_mode:
-            app_wrappers[(200, "StrictMode")] = StrictMode.create()
+            app_wrappers[200, "StrictMode"] = StrictMode.create()
 
         if not should_compile and not dry_run:
             with console.timing("Evaluate Pages (Backend)"):
@@ -1251,7 +1249,7 @@ class App(MiddlewareMixin, LifespanMixin):
                 + "\n".join(
                     f"{route}: {time * 1000:.1f}ms"
                     for route, time in sorted(
-                        performance_metrics, key=lambda x: x[1], reverse=True
+                        performance_metrics, key=operator.itemgetter(1), reverse=True
                     )[:10]
                 )
             )
@@ -1295,7 +1293,7 @@ class App(MiddlewareMixin, LifespanMixin):
 
             toast_provider = Fragment.create(memoized_toast_provider())
 
-            app_wrappers[(44, "ToasterProvider")] = toast_provider
+            app_wrappers[44, "ToasterProvider"] = toast_provider
 
         # Add the app wraps to the app.
         for key, app_wrap in chain(
@@ -1427,12 +1425,10 @@ class App(MiddlewareMixin, LifespanMixin):
                 plugin.pre_compile(
                     add_save_task=_submit_work_without_advancing,
                     add_modify_task=(
-                        lambda *args, plugin=plugin: modify_files_tasks.append(
-                            (
-                                plugin.__class__.__module__ + plugin.__class__.__name__,
-                                *args,
-                            )
-                        )
+                        lambda *args, plugin=plugin: modify_files_tasks.append((
+                            plugin.__class__.__module__ + plugin.__class__.__name__,
+                            *args,
+                        ))
                     ),
                     unevaluated_pages=list(self._unevaluated_pages.values()),
                 )
@@ -1552,7 +1548,7 @@ class App(MiddlewareMixin, LifespanMixin):
         if not self._api:
             return
 
-        async def all_routes(_request: Request) -> Response:
+        def all_routes(_request: Request) -> Response:
             return JSONResponse(list(self._unevaluated_pages.keys()))
 
         self._api.add_route(
@@ -1663,21 +1659,21 @@ class App(MiddlewareMixin, LifespanMixin):
             strict=True,
         ):
             if hasattr(handler_fn, "__name__"):
-                _fn_name = handler_fn.__name__
+                fn_name_ = handler_fn.__name__
             else:
-                _fn_name = type(handler_fn).__name__
+                fn_name_ = type(handler_fn).__name__
 
             if isinstance(handler_fn, functools.partial):
-                msg = f"Provided custom {handler_domain} exception handler `{_fn_name}` is a partial function. Please provide a named function instead."
+                msg = f"Provided custom {handler_domain} exception handler `{fn_name_}` is a partial function. Please provide a named function instead."
                 raise ValueError(msg)
 
             if not callable(handler_fn):
-                msg = f"Provided custom {handler_domain} exception handler `{_fn_name}` is not a function."
+                msg = f"Provided custom {handler_domain} exception handler `{fn_name_}` is not a function."
                 raise ValueError(msg)
 
             # Allow named functions only as lambda functions cannot be introspected
-            if _fn_name == "<lambda>":
-                msg = f"Provided custom {handler_domain} exception handler `{_fn_name}` is a lambda function. Please use a named function instead."
+            if fn_name_ == "<lambda>":
+                msg = f"Provided custom {handler_domain} exception handler `{fn_name_}` is a lambda function. Please use a named function instead."
                 raise ValueError(msg)
 
             # Check if the function has the necessary annotations and types in the right order
@@ -1690,18 +1686,18 @@ class App(MiddlewareMixin, LifespanMixin):
 
             for required_arg_index, required_arg in enumerate(handler_spec):
                 if required_arg not in arg_annotations:
-                    msg = f"Provided custom {handler_domain} exception handler `{_fn_name}` does not take the required argument `{required_arg}`"
+                    msg = f"Provided custom {handler_domain} exception handler `{fn_name_}` does not take the required argument `{required_arg}`"
                     raise ValueError(msg)
                 if list(arg_annotations.keys())[required_arg_index] != required_arg:
                     msg = (
-                        f"Provided custom {handler_domain} exception handler `{_fn_name}` has the wrong argument order."
+                        f"Provided custom {handler_domain} exception handler `{fn_name_}` has the wrong argument order."
                         f"Expected `{required_arg}` as the {required_arg_index + 1} argument but got `{list(arg_annotations.keys())[required_arg_index]}`"
                     )
                     raise ValueError(msg)
 
                 if not issubclass(arg_annotations[required_arg], Exception):
                     msg = (
-                        f"Provided custom {handler_domain} exception handler `{_fn_name}` has the wrong type for {required_arg} argument."
+                        f"Provided custom {handler_domain} exception handler `{fn_name_}` has the wrong type for {required_arg} argument."
                         f"Expected to be `Exception` but got `{arg_annotations[required_arg]}`"
                     )
                     raise ValueError(msg)
@@ -1725,7 +1721,7 @@ class App(MiddlewareMixin, LifespanMixin):
 
                 if not valid:
                     msg = (
-                        f"Provided custom {handler_domain} exception handler `{_fn_name}` has the wrong return type."
+                        f"Provided custom {handler_domain} exception handler `{fn_name_}` has the wrong return type."
                         f"Expected `EventSpec | list[EventSpec] | None` but got `{return_type}`"
                     )
                     raise ValueError(msg)
@@ -1754,15 +1750,13 @@ async def process(
     try:
         # Add request data to the state.
         router_data = event.router_data
-        router_data.update(
-            {
-                constants.RouteVar.QUERY: format.format_query_params(event.router_data),
-                constants.RouteVar.CLIENT_TOKEN: event.token,
-                constants.RouteVar.SESSION_ID: sid,
-                constants.RouteVar.HEADERS: headers,
-                constants.RouteVar.CLIENT_IP: client_ip,
-            }
-        )
+        router_data.update({
+            constants.RouteVar.QUERY: format.format_query_params(event.router_data),
+            constants.RouteVar.CLIENT_TOKEN: event.token,
+            constants.RouteVar.SESSION_ID: sid,
+            constants.RouteVar.HEADERS: headers,
+            constants.RouteVar.CLIENT_IP: client_ip,
+        })
         # Get the state for the session exclusively.
         async with app.state_manager.modify_state(event.substate_token) as state:
             # When this is a brand new instance of the state, signal the
@@ -1820,7 +1814,7 @@ async def process(
         raise
 
 
-async def ping(_request: Request) -> Response:
+def ping(_request: Request) -> Response:
     """Test API endpoint.
 
     Args:
@@ -1852,7 +1846,7 @@ async def health(_request: Request) -> JSONResponse:
     if prerequisites.check_db_used():
         from reflex.model import get_db_status
 
-        tasks.append(get_db_status())
+        tasks.append(run_in_thread(get_db_status))
     if prerequisites.check_redis_used():
         tasks.append(prerequisites.get_redis_status())
 

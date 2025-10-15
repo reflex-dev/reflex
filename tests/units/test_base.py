@@ -1,3 +1,5 @@
+import math
+
 import pytest
 
 from reflex.base import Base
@@ -17,7 +19,7 @@ def child() -> Base:
         num: float
         key: str
 
-    return Child(num=3.14, key="pi")
+    return Child(num=math.pi, key="pi")
 
 
 def test_get_fields(child):
@@ -53,7 +55,7 @@ def complex_child() -> Base:
         age: int
         active: bool
 
-    return Child(num=3.14, key="pi", name="John Doe", age=30, active=True)
+    return Child(num=math.pi, key="pi", name="John Doe", age=30, active=True)
 
 
 def test_complex_get_fields(complex_child):

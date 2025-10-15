@@ -43,12 +43,10 @@ def _inherited_variant_selector(
         selectors = ("&",)
     # Prefer the `data-variant` that is set directly on the selector,
     # but also inherit the `data-variant` from any parent element.
-    return ", ".join(
-        [
-            f"{selector}[data-variant='{variant}'], *:where([data-variant='{variant}']) {selector}"
-            for selector in selectors
-        ]
-    )
+    return ", ".join([
+        f"{selector}[data-variant='{variant}'], *:where([data-variant='{variant}']) {selector}"
+        for selector in selectors
+    ])
 
 
 class AccordionComponent(RadixPrimitiveComponent):

@@ -56,13 +56,11 @@ def _determine_value_type(var_type: GenericType):
     origin_var_type = get_origin(var_type) or var_type
 
     if origin_var_type in types.UnionTypes:
-        return unionize(
-            *[
-                _determine_value_type(arg)
-                for arg in get_args(var_type)
-                if arg is not type(None)
-            ]
-        )
+        return unionize(*[
+            _determine_value_type(arg)
+            for arg in get_args(var_type)
+            if arg is not type(None)
+        ])
 
     if is_typeddict(origin_var_type) or dataclasses.is_dataclass(origin_var_type):
         annotations = get_type_hints(origin_var_type)
@@ -401,12 +399,10 @@ class LiteralObjectVar(CachedVarOperation, ObjectVar[OBJECT_TYPE], LiteralVar):
         """
         return (
             "({ "
-            + ", ".join(
-                [
-                    f"[{LiteralVar.create(key)!s}] : {LiteralVar.create(value)!s}"
-                    for key, value in self._var_value.items()
-                ]
-            )
+            + ", ".join([
+                f"[{LiteralVar.create(key)!s}] : {LiteralVar.create(value)!s}"
+                for key, value in self._var_value.items()
+            ])
             + " })"
         )
 

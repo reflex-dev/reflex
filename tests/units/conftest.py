@@ -1,6 +1,5 @@
 """Test fixtures."""
 
-import asyncio
 import platform
 import uuid
 from collections.abc import Generator
@@ -15,11 +14,6 @@ from reflex.testing import chdir
 from reflex.utils import prerequisites
 
 from .states.upload import SubUploadState, UploadState
-
-
-def pytest_configure(config):
-    if config.getoption("asyncio_mode") == "auto":
-        asyncio.set_event_loop_policy(asyncio.DefaultEventLoopPolicy())
 
 
 @pytest.fixture

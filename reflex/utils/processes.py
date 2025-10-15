@@ -12,6 +12,7 @@ import sys
 from collections.abc import Callable, Generator, Sequence
 from concurrent import futures
 from contextlib import closing
+from itertools import starmap
 from pathlib import Path
 from typing import Any, Literal, overload
 
@@ -279,7 +280,7 @@ def run_concurrently_context(
     try:
         executor = futures.ThreadPoolExecutor(max_workers=len(fns))
         # Submit the tasks.
-        tasks = [executor.submit(*fn) for fn in fns]
+        tasks = list(starmap(executor.submit, fns))
 
         # Yield control back to the main thread while tasks are running.
         yield tasks

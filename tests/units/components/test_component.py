@@ -326,7 +326,7 @@ def test_create_component(component1):
         ),
         pytest.param(
             "text",
-            Var(_js_expr="hello", _var_type=None | str),
+            Var(_js_expr="hello", _var_type=None | str),  # noqa: RUF036
             None,
             id="text-union-none-str",
         ),
@@ -356,7 +356,7 @@ def test_create_component(component1):
         ),
         pytest.param(
             "number",
-            Var(_js_expr="1", _var_type=None | int),
+            Var(_js_expr="1", _var_type=None | int),  # noqa: RUF036
             None,
             id="number-union-none-int",
         ),
@@ -392,7 +392,7 @@ def test_create_component(component1):
         ),
         pytest.param(
             "text_or_number",
-            Var(_js_expr="hello", _var_type=None | str),
+            Var(_js_expr="hello", _var_type=None | str),  # noqa: RUF036
             None,
             id="text_or_number-union-none-str",
         ),
@@ -410,7 +410,7 @@ def test_create_component(component1):
         ),
         pytest.param(
             "text_or_number",
-            Var(_js_expr="1", _var_type=None | int),
+            Var(_js_expr="1", _var_type=None | int),  # noqa: RUF036
             None,
             id="text_or_number-union-none-int",
         ),
@@ -1897,12 +1897,10 @@ def test_component_add_imports(tags):
     baseline = Reference.create()
     test = Test.create()
 
-    assert baseline._get_all_imports() == parse_imports(
-        {
-            "react": tags,
-            "foo": [ImportVar(tag="bar")],
-        }
-    )
+    assert baseline._get_all_imports() == parse_imports({
+        "react": tags,
+        "foo": [ImportVar(tag="bar")],
+    })
     assert test._get_all_imports() == baseline._get_all_imports()
 
 
@@ -2118,11 +2116,9 @@ def test_add_style_embedded_vars(test_state: BaseState):
 
     class ParentComponent(Component):
         def add_style(self):
-            return Style(
-                {
-                    "fake_parent": v0,
-                }
-            )
+            return Style({
+                "fake_parent": v0,
+            })
 
     class StyledComponent(ParentComponent):
         tag = "StyledComponent"

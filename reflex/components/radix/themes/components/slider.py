@@ -103,11 +103,9 @@ class Slider(RadixThemesComponent):
             default_value = [default_value]
 
         style = props.setdefault("style", {})
-        style.update(
-            {
-                "width": width,
-            }
-        )
+        style.update({
+            "width": width,
+        })
         return super().create(*children, default_value=default_value, **props)
 
 

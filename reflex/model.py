@@ -299,7 +299,7 @@ if find_spec("sqlmodel") and find_spec("sqlalchemy") and find_spec("pydantic"):
         # Format output with message
         return f"  [{status_icon}] {current}{head_marker}, {message}"
 
-    async def get_db_status() -> dict[str, bool]:
+    def get_db_status() -> dict[str, bool]:
         """Checks the status of the database connection.
 
         Attempts to connect to the database and execute a simple query to verify connectivity.

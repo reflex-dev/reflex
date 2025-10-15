@@ -74,6 +74,7 @@ if find_spec("pydantic") and find_spec("pydantic.v1"):
             """
             namespace["__annotations__"] = annotations_from_namespace(namespace)
             return super().__new__(mcs, name, bases, namespace, **kwargs)
+
 else:
     ModelMetaclassLazyAnnotations = type  # type: ignore[assignment]
 

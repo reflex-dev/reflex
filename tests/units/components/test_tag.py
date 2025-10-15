@@ -1,3 +1,5 @@
+import math
+
 import pytest
 
 from reflex.components.tags import CondTag, Tag, tagless
@@ -30,7 +32,7 @@ def test_format_props(props: dict[str, Var], test_props: list):
     ("prop", "valid"),
     [
         (1, True),
-        (3.14, True),
+        (math.pi, True),
         ("string", True),
         (False, True),
         ([], True),

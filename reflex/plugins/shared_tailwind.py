@@ -112,12 +112,9 @@ def tailwind_config_js_template(
     ]
 
     # Generate import statements for destructured imports
-    import_lines = "\n".join(
-        [
-            f"import {{ {imp['name']} }} from {json.dumps(imp['from'])};"
-            for imp in imports
-        ]
-    )
+    import_lines = "\n".join([
+        f"import {{ {imp['name']} }} from {json.dumps(imp['from'])};" for imp in imports
+    ])
 
     # Generate plugin imports
     plugin_imports = []
@@ -131,12 +128,10 @@ def tailwind_config_js_template(
 
     plugin_imports_lines = "\n".join(plugin_imports)
 
-    presets_imports_lines = "\n".join(
-        [
-            f"import preset{i} from {json.dumps(preset)};"
-            for i, preset in enumerate(presets, 1)
-        ]
-    )
+    presets_imports_lines = "\n".join([
+        f"import preset{i} from {json.dumps(preset)};"
+        for i, preset in enumerate(presets, 1)
+    ])
 
     # Generate plugin array
     plugin_list = []
@@ -159,8 +154,8 @@ def tailwind_config_js_template(
 {presets_imports_lines}
 
 export default {{
-    content: {json.dumps(content if content else default_content)},
-    theme: {json.dumps(theme if theme else {})},
+    content: {json.dumps(content or default_content)},
+    theme: {json.dumps(theme or {})},
     {f"darkMode: {json.dumps(dark_mode)}," if dark_mode is not None else ""}
     {f"corePlugins: {json.dumps(core_plugins)}," if core_plugins is not None else ""}
     {f"importants: {json.dumps(important)}," if important is not None else ""}

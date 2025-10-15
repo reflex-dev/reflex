@@ -255,9 +255,11 @@ class DependencyTracker:
         source = inspect.getsource(module).splitlines(True)[start_line - 1 : end_line]
         # Create a python source string snippet.
         if len(source) > 1:
-            snipped_source = "".join(
-                [*source[0][start_column:], *source[1:-1], *source[-1][:end_column]]
-            )
+            snipped_source = "".join([
+                *source[0][start_column:],
+                *source[1:-1],
+                *source[-1][:end_column],
+            ])
         else:
             snipped_source = source[0][start_column:end_column]
         # Evaluate the string in the context of the function's globals and closure.

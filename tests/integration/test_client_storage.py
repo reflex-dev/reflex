@@ -351,12 +351,15 @@ async def test_client_side_state(
     set_sub_sub("s1s", "s1s value")
 
     state_name = client_side.get_full_state_name(["_client_side_state"])
-    sub_state_name = client_side.get_full_state_name(
-        ["_client_side_state", "_client_side_sub_state"]
-    )
-    sub_sub_state_name = client_side.get_full_state_name(
-        ["_client_side_state", "_client_side_sub_state", "_client_side_sub_sub_state"]
-    )
+    sub_state_name = client_side.get_full_state_name([
+        "_client_side_state",
+        "_client_side_sub_state",
+    ])
+    sub_sub_state_name = client_side.get_full_state_name([
+        "_client_side_state",
+        "_client_side_sub_state",
+        "_client_side_sub_sub_state",
+    ])
 
     exp_cookies = {
         f"{sub_state_name}.c1" + FIELD_MARKER: {
@@ -781,8 +784,7 @@ async def test_client_side_state(
     assert l1s.text == ""
 
 
-@pytest.mark.asyncio
-async def test_json_cookie_values(
+def test_json_cookie_values(
     client_side: AppHarness,
     driver: WebDriver,
 ):

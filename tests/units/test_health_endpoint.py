@@ -16,7 +16,7 @@ import sqlalchemy.exc
 
 
 def _get_async_function(func):
-    async def _async_func(*args, **kwargs):
+    async def _async_func(*args, **kwargs):  # noqa: RUF029
         return func(*args, **kwargs)
 
     return _async_func

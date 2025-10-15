@@ -210,9 +210,9 @@ async def test_computed_vars(
     count1_backend = driver.find_element(By.ID, "count1_backend")
     assert count1_backend
     assert count1_backend.text == ""
-    _count1_backend = driver.find_element(By.ID, "_count1_backend")
-    assert _count1_backend
-    assert _count1_backend.text == ""
+    count1_backend_ = driver.find_element(By.ID, "_count1_backend")
+    assert count1_backend_
+    assert count1_backend_.text == ""
 
     count = driver.find_element(By.ID, "count")
     assert count
@@ -262,7 +262,7 @@ async def test_computed_vars(
     assert state.count1_backend == 1
     assert count1_backend.text == ""
     assert state._count1_backend == 1
-    assert _count1_backend.text == ""
+    assert count1_backend_.text == ""
 
     mark_dirty.click()
     with pytest.raises(TimeoutError):

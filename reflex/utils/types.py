@@ -991,9 +991,9 @@ def validate_literal(key: str, value: Any, expected_type: type, comp_name: str):
     ):
         allowed_values = expected_type.__args__
         if value not in allowed_values:
-            allowed_value_str = ",".join(
-                [str(v) if not isinstance(v, str) else f"'{v}'" for v in allowed_values]
-            )
+            allowed_value_str = ",".join([
+                str(v) if not isinstance(v, str) else f"'{v}'" for v in allowed_values
+            ])
             value_str = f"'{value}'" if isinstance(value, str) else value
             msg = f"prop value for {key!s} of the `{comp_name}` component should be one of the following: {allowed_value_str}. Got {value_str} instead"
             raise ValueError(msg)

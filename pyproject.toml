@@ -135,12 +135,17 @@ lint.ignore = [
   "BLE",
   "C901",
   "COM",
+  "CPY001",
   "D205",
+  "DOC202",
+  "DOC501",
+  "DOC502",
   "DTZ",
   "E501",
   "F403",
   "FBT",
   "FIX",
+  "FURB189",
   "G004",
   "ISC003",
   "PLC",
@@ -181,6 +186,7 @@ lint.flake8-bugbear.extend-immutable-calls = [
 "*.pyi" = ["D301", "D415", "D417", "D418", "E742", "N", "PGH"]
 "pyi_generator.py" = ["N802"]
 "reflex/constants/*.py" = ["N"]
+"reflex/.templates/apps/blank/code/*" = ["INP001"]
 "*/blank.py" = ["I001"]
 
 [tool.pytest.ini_options]
@@ -270,11 +276,6 @@ hooks = [
 repo = "https://github.com/RobertCraigie/pyright-python"
 rev = "v1.1.406"
 hooks = [{ id = "pyright", args = ["reflex", "tests"], language = "system" }]
-
-[[tool.pre-commit.repos]]
-repo = "https://github.com/terrencepreilly/darglint"
-rev = "v1.8.1"
-hooks = [{ id = "darglint", exclude = "^reflex/reflex.py" }]
 
 [[tool.pre-commit.repos]]
 repo = "https://github.com/pre-commit/mirrors-prettier"

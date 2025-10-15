@@ -53,7 +53,7 @@ def test_get_serializer(type_: type, expected: serializers.Serializer):
 def test_add_serializer():
     """Test that adding a serializer works."""
 
-    class Foo:
+    class Foo:  # noqa: B903
         """A test class."""
 
         def __init__(self, name: str):

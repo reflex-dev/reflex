@@ -104,7 +104,7 @@ def codespaces_auto_redirect() -> list[Component]:
     return []
 
 
-async def auth_codespace(_request: Request) -> HTMLResponse:
+def auth_codespace(_request: Request) -> HTMLResponse:
     """Page automatically redirecting back to the app after authenticating a codespace port forward.
 
     Args:

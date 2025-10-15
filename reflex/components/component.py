@@ -823,12 +823,9 @@ class Component(BaseComponent, ABC):
         ]
         if special_attributes:
             custom_attrs = kwargs.setdefault("custom_attrs", {})
-            custom_attrs.update(
-                {
-                    format.to_kebab_case(key): kwargs.pop(key)
-                    for key in special_attributes
-                }
-            )
+            custom_attrs.update({
+                format.to_kebab_case(key): kwargs.pop(key) for key in special_attributes
+            })
 
         # Add style props to the component.
         style = kwargs.get("style", {})
@@ -851,13 +848,11 @@ class Component(BaseComponent, ABC):
 
         fields_style = self.get_fields()["style"]
 
-        kwargs["style"] = Style(
-            {
-                **fields_style.default_value(),
-                **style,
-                **{attr: value for attr, value in kwargs.items() if attr not in fields},
-            }
-        )
+        kwargs["style"] = Style({
+            **fields_style.default_value(),
+            **style,
+            **{attr: value for attr, value in kwargs.items() if attr not in fields},
+        })
 
         # Convert class_name to str if it's list
         class_name = kwargs.get("class_name", "")
@@ -1131,10 +1126,10 @@ class Component(BaseComponent, ABC):
             if s is not None:
                 styles.append(s)
 
-        _style = Style()
+        style_ = Style()
         for s in reversed(styles):
-            _style.update(s)
-        return _style
+            style_.update(s)
+        return style_
 
     def _get_component_style(self, styles: ComponentStyle | Style) -> Style | None:
         """Get the style to the component from `App.style`.
@@ -1298,9 +1293,9 @@ class Component(BaseComponent, ABC):
                 *self._valid_children,
                 *allowed_components,
             ]:
-                valid_child_list = ", ".join(
-                    [f"`{v_child}`" for v_child in self._valid_children]
-                )
+                valid_child_list = ", ".join([
+                    f"`{v_child}`" for v_child in self._valid_children
+                ])
                 msg = f"The component `{comp_name}` only allows the components: {valid_child_list} as children. Got `{child_name}` instead."
                 raise ValueError(msg)
 
@@ -1308,9 +1303,9 @@ class Component(BaseComponent, ABC):
                 clz_name not in [*child._valid_parents, *allowed_components]
                 for clz_name in self._iter_parent_classes_names()
             ):
-                valid_parent_list = ", ".join(
-                    [f"`{v_parent}`" for v_parent in child._valid_parents]
-                )
+                valid_parent_list = ", ".join([
+                    f"`{v_parent}`" for v_parent in child._valid_parents
+                ])
                 msg = f"The component `{child_name}` can only be a child of the components: {valid_parent_list}. Got `{comp_name}` instead."
                 raise ValueError(msg)
 
@@ -1568,18 +1563,18 @@ class Component(BaseComponent, ABC):
         Returns:
             The imports required for all selected hooks.
         """
-        _imports = {}
+        imports_ = {}
 
         if self._get_ref_hook() is not None:
             # Handle hooks needed for attaching react refs to DOM nodes.
-            _imports.setdefault("react", set()).add(ImportVar(tag="useRef"))
-            _imports.setdefault(f"$/{Dirs.STATE_PATH}", set()).add(
+            imports_.setdefault("react", set()).add(ImportVar(tag="useRef"))
+            imports_.setdefault(f"$/{Dirs.STATE_PATH}", set()).add(
                 ImportVar(tag="refs")
             )
 
         if self._get_mount_lifecycle_hook():
             # Handle hooks for `on_mount` / `on_unmount`.
-            _imports.setdefault("react", set()).add(ImportVar(tag="useEffect"))
+            imports_.setdefault("react", set()).add(ImportVar(tag="useEffect"))
 
         other_imports = []
         user_hooks = self._get_hooks()
@@ -1596,7 +1591,7 @@ class Component(BaseComponent, ABC):
             if hook_vardata is not None
         )
 
-        return imports.merge_imports(_imports, *other_imports)
+        return imports.merge_imports(imports_, *other_imports)
 
     def _get_imports(self) -> ParsedImportDict:
         """Get all the libraries and fields that are used by the component.
@@ -1604,7 +1599,7 @@ class Component(BaseComponent, ABC):
         Returns:
             The imports needed by the component.
         """
-        _imports = (
+        imports_ = (
             {self.library: [self.import_var]}
             if self.library is not None and self.tag is not None
             else {}
@@ -1627,14 +1622,14 @@ class Component(BaseComponent, ABC):
             if not isinstance(list_of_import_dict, list):
                 added_import_dicts.append(imports.parse_imports(list_of_import_dict))
             else:
-                added_import_dicts.extend(
-                    [imports.parse_imports(item) for item in list_of_import_dict]
-                )
+                added_import_dicts.extend([
+                    imports.parse_imports(item) for item in list_of_import_dict
+                ])
 
         return imports.merge_parsed_imports(
             self._get_dependencies_imports(),
             self._get_hooks_imports(),
-            _imports,
+            imports_,
             event_imports,
             *var_imports,
             *added_import_dicts,
@@ -1649,10 +1644,10 @@ class Component(BaseComponent, ABC):
         Returns:
             The import dict with the required imports.
         """
-        _imports = imports.merge_parsed_imports(
+        imports_ = imports.merge_parsed_imports(
             self._get_imports(), *[child._get_all_imports() for child in self.children]
         )
-        return imports.collapse_imports(_imports) if collapse else _imports
+        return imports.collapse_imports(imports_) if collapse else imports_
 
     def _get_mount_lifecycle_hook(self) -> str | None:
         """Generate the component lifecycle hook.
@@ -2220,7 +2215,7 @@ memo = custom_component
 class NoSSRComponent(Component):
     """A dynamic component that is not rendered on the server."""
 
-    def _get_import_name(self) -> None | str:
+    def _get_import_name(self) -> str | None:
         if not self.library:
             return None
         return f"${self.library}" if self.library.startswith("/") else self.library
@@ -2238,18 +2233,18 @@ class NoSSRComponent(Component):
         }
 
         # The normal imports for this component.
-        _imports = super()._get_imports()
+        imports_ = super()._get_imports()
 
         # Do NOT import the main library/tag statically.
         import_name = self._get_import_name()
         if import_name is not None:
             with contextlib.suppress(ValueError):
-                _imports[import_name].remove(self.import_var)
-            _imports[import_name].append(ImportVar(tag=None, render=False))
+                imports_[import_name].remove(self.import_var)
+            imports_[import_name].append(ImportVar(tag=None, render=False))
 
         return imports.merge_imports(
             dynamic_import,
-            _imports,
+            imports_,
             self._get_dependencies_imports(),
         )
 
@@ -2269,7 +2264,7 @@ class NoSSRComponent(Component):
             else ""
         )
         return (
-            f"const {self.alias if self.alias else self.tag} = ClientSide(lazy(() => "
+            f"const {self.alias or self.tag} = ClientSide(lazy(() => "
             + library_import
             + mod_import
             + "))"
@@ -2649,9 +2644,9 @@ class StatefulComponent(BaseComponent):
         """
         if self.rendered_as_shared:
             return {}
-        return self.component._get_all_custom_code() | (
-            {self._render_stateful_code(export=export): None}
-        )
+        return self.component._get_all_custom_code() | ({
+            self._render_stateful_code(export=export): None
+        })
 
     def _get_all_refs(self) -> dict[str, None]:
         """Get the refs for the children of the component.
@@ -2772,9 +2767,9 @@ def render_dict_to_var(tag: dict | Component | str) -> Var:
         return Var(tag["contents"])
 
     if "iterable" in tag:
-        function_return = LiteralArrayVar.create(
-            [render_dict_to_var(child.render()) for child in tag["children"]]
-        )
+        function_return = LiteralArrayVar.create([
+            render_dict_to_var(child.render()) for child in tag["children"]
+        ])
 
         func = ArgsFunctionOperation.create(
             (tag["arg_var_name"], tag["index_var_name"]),

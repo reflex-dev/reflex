@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import operator
 from collections.abc import Callable, Sequence
 from pathlib import Path
 from typing import Any, ClassVar
@@ -188,9 +189,7 @@ def _default_drop_rejected(rejected_files: ArrayVar[list[dict[str, Any]]]) -> Ev
         rf = rf.to(ObjectVar, dict[str, dict[str, Any]])
         file = rf["file"].to(ObjectVar, dict[str, Any])
         errors = rf["errors"].to(ArrayVar, list[dict[str, Any]])
-        return (
-            f"{file['path']}: {errors.foreach(lambda err: err['message']).join(', ')}"
-        )
+        return f"{file['path']}: {errors.foreach(operator.itemgetter('message')).join(', ')}"
 
     return toast.error(
         title="Files not Accepted",

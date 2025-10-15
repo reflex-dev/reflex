@@ -80,7 +80,6 @@ def test_automigration(
         monkeypatch: pytest fixture to overwrite attributes
         model_registry: clean reflex ModelRegistry
     """
-    import sqlalchemy
     import sqlalchemy.exc
     import sqlmodel
 

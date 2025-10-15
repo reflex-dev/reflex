@@ -301,9 +301,9 @@ class PropsBase(metaclass=PropsBaseMeta):
         Returns:
             The object as a Javascript Object literal.
         """
-        return LiteralObjectVar.create(
-            {format.to_camel_case(key): value for key, value in self.dict().items()}
-        ).json()
+        return LiteralObjectVar.create({
+            format.to_camel_case(key): value for key, value in self.dict().items()
+        }).json()
 
     def dict(
         self,

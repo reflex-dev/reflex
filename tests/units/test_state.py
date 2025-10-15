@@ -59,6 +59,8 @@ from .states import GenState
 
 pytest.importorskip("pydantic")
 
+import math
+
 from pydantic import BaseModel as BaseModelV2
 from pydantic.v1 import BaseModel as BaseModelV1
 
@@ -116,10 +118,10 @@ class TestState(BaseState):
     __test__ = False
 
     num1: rx.Field[int]
-    num2: float = 3.14
+    num2: float = math.pi
     key: str
     map_key: str = "a"
-    array: list[float] = [1, 2, 3.14]
+    array: list[float] = [1, 2, math.pi]
     mapping: rx.Field[dict[str, list[int]]] = rx.field({"a": [1, 2, 3], "b": [4, 5, 6]})
     obj: Object = Object()
     complex: dict[int, Object] = {1: Object(), 2: Object()}
@@ -373,9 +375,9 @@ def test_default_value(test_state):
         test_state: A state.
     """
     assert test_state.num1 == 0
-    assert test_state.num2 == 3.14
+    assert test_state.num2 == math.pi
     assert test_state.key == ""
-    assert test_state.sum == 3.14
+    assert test_state.sum == math.pi
     assert test_state.upper == ""
 
 
@@ -510,20 +512,19 @@ def test_get_class_substate():
         ChildState.get_class_substate((GrandchildState.get_name(),)) == GrandchildState
     )
     assert (
-        TestState.get_class_substate(
-            (ChildState.get_name(), GrandchildState.get_name())
-        )
+        TestState.get_class_substate((
+            ChildState.get_name(),
+            GrandchildState.get_name(),
+        ))
         == GrandchildState
     )
     with pytest.raises(ValueError):
         TestState.get_class_substate(("invalid_child",))
     with pytest.raises(ValueError):
-        TestState.get_class_substate(
-            (
-                ChildState.get_name(),
-                "invalid_child",
-            )
-        )
+        TestState.get_class_substate((
+            ChildState.get_name(),
+            "invalid_child",
+        ))
 
 
 def test_get_class_var():
@@ -535,9 +536,11 @@ def test_get_class_var():
     assert TestState.get_class_var((ChildState.get_name(), "value")).equals(
         ChildState.value
     )
-    assert TestState.get_class_var(
-        (ChildState.get_name(), GrandchildState.get_name(), "value2")
-    ).equals(
+    assert TestState.get_class_var((
+        ChildState.get_name(),
+        GrandchildState.get_name(),
+        "value2",
+    )).equals(
         GrandchildState.value2,
     )
     assert ChildState.get_class_var((GrandchildState.get_name(), "value2")).equals(
@@ -546,12 +549,10 @@ def test_get_class_var():
     with pytest.raises(ValueError):
         TestState.get_class_var(("invalid_var",))
     with pytest.raises(ValueError):
-        TestState.get_class_var(
-            (
-                ChildState.get_name(),
-                "invalid_var",
-            )
-        )
+        TestState.get_class_var((
+            ChildState.get_name(),
+            "invalid_var",
+        ))
 
 
 def test_set_class_var():
@@ -663,9 +664,11 @@ def test_get_substate(test_state, child_state, child_state2, grandchild_state):
     with pytest.raises(ValueError):
         test_state.get_substate((ChildState.get_name(), "invalid"))
     with pytest.raises(ValueError):
-        test_state.get_substate(
-            (ChildState.get_name(), GrandchildState.get_name(), "invalid")
-        )
+        test_state.get_substate((
+            ChildState.get_name(),
+            GrandchildState.get_name(),
+            "invalid",
+        ))
 
 
 def test_set_dirty_var(test_state):
@@ -751,7 +754,7 @@ def test_reset(test_state, child_state):
 
     # The values should be reset.
     assert test_state.num1 == 0
-    assert test_state.num2 == 3.14
+    assert test_state.num2 == math.pi
     assert test_state._backend == 0
     assert child_state.value == ""
 
@@ -1990,9 +1993,11 @@ async def test_state_proxy(
     assert child_state is not None
     parent_state = child_state.parent_state
     assert parent_state is not None
-    router_data = RouterData.from_router_data(
-        {"query": {}, "token": token, "sid": "test_sid"}
-    )
+    router_data = RouterData.from_router_data({
+        "query": {},
+        "token": token,
+        "sid": "test_sid",
+    })
     grandchild_state.router = router_data
     namespace = mock_app.event_namespace
     assert namespace is not None
@@ -3081,9 +3086,9 @@ async def test_get_state(mock_app: rx.App, token: str):
     assert child_state_direct is child_state_get_state
 
     # GrandchildState instance should be the same as the one retrieved from the child_state2.
-    assert grandchild_state is child_state_direct.get_substate(
-        [GrandchildState.get_name()]
-    )
+    assert grandchild_state is child_state_direct.get_substate([
+        GrandchildState.get_name()
+    ])
     grandchild_state.value2 = "set_value"
 
     assert test_state.get_delta() == {
@@ -3330,8 +3335,7 @@ async def test_setvar(mock_app: rx.App, token: str):
         TestState.setvar(42, 42)
 
 
-@pytest.mark.asyncio
-async def test_setvar_async_setter():
+def test_setvar_async_setter():
     """Test that overridden async setters raise Exception when used with setvar."""
     with pytest.raises(NotImplementedError):
         TestState.setvar("asynctest", 42)

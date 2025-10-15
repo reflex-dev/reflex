@@ -47,9 +47,9 @@ class _HeaderData:
     )
 
 
-_HEADER_DATA_FIELDS = frozenset(
-    [field.name for field in dataclasses.fields(_HeaderData)]
-)
+_HEADER_DATA_FIELDS = frozenset([
+    field.name for field in dataclasses.fields(_HeaderData)
+])
 
 
 @dataclasses.dataclass(frozen=True)
@@ -73,13 +73,11 @@ class HeaderData(_HeaderData):
                 if v
                 and (snake_case_key := format.to_snake_case(k)) in _HEADER_DATA_FIELDS
             },
-            raw_headers=_FrozenDictStrStr(
-                **{
-                    k: v
-                    for k, v in router_data.get(constants.RouteVar.HEADERS, {}).items()
-                    if v
-                }
-            ),
+            raw_headers=_FrozenDictStrStr(**{
+                k: v
+                for k, v in router_data.get(constants.RouteVar.HEADERS, {}).items()
+                if v
+            }),
         )
 
 

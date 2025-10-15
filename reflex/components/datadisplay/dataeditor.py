@@ -369,12 +369,10 @@ class DataEditor(NoSSRComponent):
         columns_path = str(self.columns)
         data_path = str(self.data)
 
-        code.extend(
-            [
-                f"    return formatDataEditorCells(col, row, {columns_path}, {data_path});",
-                "  }",
-            ]
-        )
+        code.extend([
+            f"    return formatDataEditorCells(col, row, {columns_path}, {data_path});",
+            "  }",
+        ])
 
         return ["\n".join(code)]
 

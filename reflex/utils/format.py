@@ -165,8 +165,8 @@ def to_snake_case(text: str) -> str:
     Returns:
         The snake case string.
     """
-    s1 = re.sub("(.)([A-Z][a-z]+)", r"\1_\2", text)
-    return re.sub("([a-z0-9])([A-Z])", r"\1_\2", s1).lower().replace("-", "_")
+    s1 = re.sub(r"(.)([A-Z][a-z]+)", r"\1_\2", text)
+    return re.sub(r"([a-z0-9])([A-Z])", r"\1_\2", s1).lower().replace("-", "_")
 
 
 def to_camel_case(text: str, treat_hyphens_as_underscores: bool = True) -> str:
@@ -349,9 +349,9 @@ def format_match(
     for case in match_cases:
         conditions, return_value = case
 
-        case_conditions = " ".join(
-            [f"case JSON.stringify({condition!s}):" for condition in conditions]
-        )
+        case_conditions = " ".join([
+            f"case JSON.stringify({condition!s}):" for condition in conditions
+        ])
         case_code = f"{case_conditions}  return ({return_value!s});  break;"
         switch_code += case_code
 
@@ -493,24 +493,20 @@ def format_event(event_spec: EventSpec) -> str:
     Returns:
         The compiled event.
     """
-    args = ",".join(
-        [
-            ":".join(
-                (
-                    name._js_expr,
-                    (
-                        wrap(
-                            json.dumps(val._js_expr).strip('"').replace("`", "\\`"),
-                            "`",
-                        )
-                        if val._var_is_string
-                        else str(val)
-                    ),
+    args = ",".join([
+        ":".join((
+            name._js_expr,
+            (
+                wrap(
+                    json.dumps(val._js_expr).strip('"').replace("`", "\\`"),
+                    "`",
                 )
-            )
-            for name, val in event_spec.args
-        ]
-    )
+                if val._var_is_string
+                else str(val)
+            ),
+        ))
+        for name, val in event_spec.args
+    ])
     event_args = [
         wrap(format_event_handler(event_spec.handler), '"'),
     ]

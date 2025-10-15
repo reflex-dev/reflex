@@ -36,11 +36,9 @@ class StickyLogo(Svg):
         Returns:
             The style of the component.
         """
-        return Style(
-            {
-                "fill": "white",
-            }
-        )
+        return Style({
+            "fill": "white",
+        })
 
 
 class StickyLabel(Text):
@@ -61,16 +59,14 @@ class StickyLabel(Text):
         Returns:
             The style of the component.
         """
-        return Style(
-            {
-                "color": color("slate", 1),
-                "font_weight": "600",
-                "font_family": "'Instrument Sans', sans-serif",
-                "font_size": "0.875rem",
-                "line_height": "1rem",
-                "letter_spacing": "-0.00656rem",
-            }
-        )
+        return Style({
+            "color": color("slate", 1),
+            "font_weight": "600",
+            "font_family": "'Instrument Sans', sans-serif",
+            "font_size": "0.875rem",
+            "line_height": "1rem",
+            "letter_spacing": "-0.00656rem",
+        })
 
 
 class StickyBadge(A):

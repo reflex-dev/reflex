@@ -1672,16 +1672,14 @@ def parse_args_spec(arg_spec: ArgsSpec | Sequence[ArgsSpec]):
     spec = inspect.getfullargspec(arg_spec)
 
     return list(
-        arg_spec(
-            *[
-                Var(f"_{l_arg}").to(
-                    unwrap_var_annotation(
-                        resolve_annotation(annotations[0], l_arg, spec=arg_spec)
-                    )
+        arg_spec(*[
+            Var(f"_{l_arg}").to(
+                unwrap_var_annotation(
+                    resolve_annotation(annotations[0], l_arg, spec=arg_spec)
                 )
-                for l_arg in spec.args
-            ]
-        )
+            )
+            for l_arg in spec.args
+        ])
     ), annotations
 
 
@@ -2381,9 +2379,13 @@ class EventNamespace:
             Returns:
                 Dict of event actions to apply, or empty dict if none specified.
             """
-            if not any(
-                [stop_propagation, prevent_default, throttle, debounce, temporal]
-            ):
+            if not any([
+                stop_propagation,
+                prevent_default,
+                throttle,
+                debounce,
+                temporal,
+            ]):
                 return {}
 
             event_actions = {}

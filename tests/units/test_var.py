@@ -255,7 +255,7 @@ def test_default_value(prop: Var, expected):
         (None, Var(_js_expr="null", _var_type=None)),
         (1, Var(_js_expr="1", _var_type=int)),
         ("key", Var(_js_expr='"key"', _var_type=str)),
-        (3.14, Var(_js_expr="3.14", _var_type=float)),
+        (math.pi, Var(_js_expr="3.14", _var_type=float)),
         ([1, 2, 3], Var(_js_expr="[1, 2, 3]", _var_type=Sequence[int])),
         (
             {"a": 1, "b": 2},
@@ -887,18 +887,16 @@ def test_state_with_initial_computed_var(
 
 
 def test_literal_var():
-    complicated_var = LiteralVar.create(
-        [
-            {"a": 1, "b": 2, "c": {"d": 3, "e": 4}},
-            [1, 2, 3, 4],
-            9,
-            "string",
-            True,
-            False,
-            None,
-            {1, 2, 3},
-        ]
-    )
+    complicated_var = LiteralVar.create([
+        {"a": 1, "b": 2, "c": {"d": 3, "e": 4}},
+        [1, 2, 3, 4],
+        9,
+        "string",
+        True,
+        False,
+        None,
+        {1, 2, 3},
+    ])
     assert (
         str(complicated_var)
         == '[({ ["a"] : 1, ["b"] : 2, ["c"] : ({ ["d"] : 3, ["e"] : 4 }) }), [1, 2, 3, 4], 9, "string", true, false, null, [1, 2, 3]]'
@@ -1945,7 +1943,7 @@ def test_decimal_var_type_compatibility():
     """Test that decimal.Decimal values are compatible with NumberVar type system."""
     dec_num = Var.create(decimal.Decimal("123.456"))
     int_num = Var.create(42)
-    float_num = Var.create(3.14)
+    float_num = Var.create(math.pi)
 
     result = dec_num + int_num
     assert str(result) == "(123.456 + 42)"

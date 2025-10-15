@@ -458,7 +458,7 @@ def validate_app_name(app_name: str | None = None) -> str:
     Raises:
         SystemExit: if the app directory name is reflex or if the name is not standard for a python package name.
     """
-    app_name = app_name if app_name else Path.cwd().name.replace("-", "_")
+    app_name = app_name or Path.cwd().name.replace("-", "_")
     # Make sure the app is not named "reflex".
     if app_name.lower() == constants.Reflex.MODULE_NAME:
         console.error(

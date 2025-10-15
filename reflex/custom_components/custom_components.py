@@ -366,8 +366,8 @@ def _get_default_library_name_parts() -> list[str]:
     """
     current_dir_name = Path.cwd().name
 
-    cleaned_dir_name = re.sub("[^0-9a-zA-Z-_]+", "", current_dir_name).lower()
-    parts = [part for part in re.split("-|_", cleaned_dir_name) if part]
+    cleaned_dir_name = re.sub(r"[^0-9a-zA-Z-_]+", "", current_dir_name).lower()
+    parts = [part for part in re.split(r"-|_", cleaned_dir_name) if part]
     if parts and parts[0] == constants.Reflex.MODULE_NAME:
         # If the directory name already starts with "reflex", remove it from the parts.
         parts = parts[1:]
@@ -702,9 +702,10 @@ def _collect_details_for_gallery():
 
     files = []
     if (image_file_and_extension := _get_file_from_prompt_in_loop()) is not None:
-        files.append(
-            ("files", (image_file_and_extension[1], image_file_and_extension[0]))
-        )
+        files.append((
+            "files",
+            (image_file_and_extension[1], image_file_and_extension[0]),
+        ))
 
     demo_url = None
     while True:
