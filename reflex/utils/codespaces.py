@@ -52,9 +52,11 @@ function doRedirect(url) {{
         if (params.has("redirect_to")) {{
             const redirect_to = new URL(params.get("redirect_to"));
             if (!sameHostnameDifferentPort(thisUrl, redirect_to)) {{
+                console.warn("Reflex: Not redirecting to different hostname");
                 return;
             }}
             if (!redirect_to.hostname.endsWith(".app.github.dev")) {{
+                console.warn("Reflex: Not redirecting to non .app.github.dev hostname");
                 return;
             }}
             a.href = redirect_to.href;
