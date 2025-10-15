@@ -272,6 +272,9 @@ class StateManagerDisk(StateManager):
                 raise
             except Exception as e:
                 console.error(f"Error processing write queue: {e!r}")
+                if e.args == ("cannot schedule new futures after shutdown",):
+                    # Event loop is shutdown, nothing else we can really do...
+                    return
                 await self._process_write_queue_delay()
 
     async def _schedule_process_write_queue(self):
@@ -280,7 +283,8 @@ class StateManagerDisk(StateManager):
             async with self._state_manager_lock:
                 if self._write_queue_task is None or self._write_queue_task.done():
                     self._write_queue_task = asyncio.create_task(
-                        self._process_write_queue()
+                        self._process_write_queue(),
+                        name="StateManagerDisk|WriteQueueProcessor",
                     )
                     await asyncio.sleep(0)  # Yield to allow the task to start.
 
