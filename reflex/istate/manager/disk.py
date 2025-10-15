@@ -256,12 +256,14 @@ class StateManagerDisk(StateManager):
                 await run_in_thread(self._purge_expired_states)
                 await self._process_write_queue_delay()
             except asyncio.CancelledError:  # noqa: PERF203
-                n_outstanding_items = len(self._write_queue)
+                outstanding_items = list(self._write_queue.values())
+                n_outstanding_items = len(outstanding_items)
+                self._write_queue.clear()
                 # When the task is cancelled, write all remaining items to disk.
                 console.debug(
                     f"Closing StateManagerDisk, writing {n_outstanding_items} remaining items to disk"
                 )
-                for item in self._write_queue.values():
+                for item in outstanding_items:
                     token = item.token
                     client_token, _ = _split_substate_key(token)
                     await self.set_state_for_substate(
