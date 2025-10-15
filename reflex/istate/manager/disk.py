@@ -256,21 +256,7 @@ class StateManagerDisk(StateManager):
                 await run_in_thread(self._purge_expired_states)
                 await self._process_write_queue_delay()
             except asyncio.CancelledError:  # noqa: PERF203
-                outstanding_items = list(self._write_queue.values())
-                n_outstanding_items = len(outstanding_items)
-                self._write_queue.clear()
-                # When the task is cancelled, write all remaining items to disk.
-                console.debug(
-                    f"Closing StateManagerDisk, writing {n_outstanding_items} remaining items to disk"
-                )
-                for item in outstanding_items:
-                    token = item.token
-                    client_token, _ = _split_substate_key(token)
-                    await self.set_state_for_substate(
-                        client_token,
-                        item.state,
-                    )
-                console.debug(f"Finished writing {n_outstanding_items} items to disk")
+                await self._flush_write_queue()
                 raise
             except Exception as e:
                 console.error(f"Error processing write queue: {e!r}")
@@ -278,6 +264,26 @@ class StateManagerDisk(StateManager):
                     # Event loop is shutdown, nothing else we can really do...
                     return
                 await self._process_write_queue_delay()
+
+    async def _flush_write_queue(self):
+        """Flush any remaining items in the write queue to disk."""
+        outstanding_items = list(self._write_queue.values())
+        n_outstanding_items = len(outstanding_items)
+        self._write_queue.clear()
+        # When the task is cancelled, write all remaining items to disk.
+        console.debug(
+            f"StateManagerDisk._flush_write_queue: writing {n_outstanding_items} remaining items to disk"
+        )
+        for item in outstanding_items:
+            token = item.token
+            client_token, _ = _split_substate_key(token)
+            await self.set_state_for_substate(
+                client_token,
+                item.state,
+            )
+        console.debug(
+            f"StateManagerDisk._flush_write_queue: Finished writing {n_outstanding_items} items"
+        )
 
     async def _schedule_process_write_queue(self):
         """Schedule the write queue processing task if not already running."""
