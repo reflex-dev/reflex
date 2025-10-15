@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import operator
 from collections.abc import Callable, Sequence
 from pathlib import Path
 from typing import Any, ClassVar
