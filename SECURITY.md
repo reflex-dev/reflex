@@ -8,4 +8,4 @@
 
 ## Reporting a Vulnerability
 
-Please report any security vulnerabilities to contact@reflex.dev
+Please report any security vulnerabilities by using: https://github.com/reflex-dev/reflex/security/advisories/new
