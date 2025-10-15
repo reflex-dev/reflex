@@ -255,7 +255,7 @@ def test_default_value(prop: Var, expected):
         (None, Var(_js_expr="null", _var_type=None)),
         (1, Var(_js_expr="1", _var_type=int)),
         ("key", Var(_js_expr='"key"', _var_type=str)),
-        (math.pi, Var(_js_expr="3.14", _var_type=float)),
+        (math.pi, Var(_js_expr="3.141592653589793", _var_type=float)),
         ([1, 2, 3], Var(_js_expr="[1, 2, 3]", _var_type=Sequence[int])),
         (
             {"a": 1, "b": 2},
@@ -1949,10 +1949,10 @@ def test_decimal_var_type_compatibility():
     assert str(result) == "(123.456 + 42)"
 
     result = dec_num * float_num
-    assert str(result) == "(123.456 * 3.14)"
+    assert str(result) == "(123.456 * 3.141592653589793)"
 
     result = (dec_num + int_num) / float_num
-    assert str(result) == "((123.456 + 42) / 3.14)"
+    assert str(result) == "((123.456 + 42) / 3.141592653589793)"
 
 
 def test_computed_var_type_compatibility():

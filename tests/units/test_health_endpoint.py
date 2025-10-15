@@ -71,7 +71,7 @@ async def test_get_redis_status(
         ),
     ],
 )
-async def test_get_db_status(
+def test_get_db_status(
     mock_engine, execute_side_effect, expected_status, mocker: MockerFixture
 ):
     # Mock get_engine to return the mock_engine
@@ -88,7 +88,7 @@ async def test_get_db_status(
             mock_connection.execute.return_value = None
 
     # Call the function
-    status = await get_db_status()
+    status = get_db_status()
 
     # Verify the result
     assert status == expected_status

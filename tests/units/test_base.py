@@ -37,7 +37,7 @@ def test_json(child):
     Args:
         child: A child class.
     """
-    assert child.json().replace(" ", "") == '{"num":3.14,"key":"pi"}'
+    assert child.json().replace(" ", "") == '{"num":3.141592653589793,"key":"pi"}'
 
 
 @pytest.fixture
@@ -75,5 +75,5 @@ def test_complex_json(complex_child):
     """
     assert (
         complex_child.json().replace(" ", "")
-        == '{"num":3.14,"key":"pi","name":"JohnDoe","age":30,"active":true}'
+        == '{"num":3.141592653589793,"key":"pi","name":"JohnDoe","age":30,"active":true}'
     )

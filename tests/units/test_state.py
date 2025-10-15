@@ -805,7 +805,7 @@ async def test_process_event_simple(test_state):
         assert update.delta == {
             TestState.get_full_name(): {
                 "num1" + FIELD_MARKER: 69,
-                "sum" + FIELD_MARKER: 72.14,
+                "sum" + FIELD_MARKER: 72.1415926535898,
             },
             GrandchildState3.get_full_name(): {"computed" + FIELD_MARKER: ""},
         }
