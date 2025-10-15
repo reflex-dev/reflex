@@ -729,16 +729,7 @@ class AppHarness:
         ):
             # Song and dance to convince the instance's state manager to flush
             # (we can't directly await the _other_ loop's Future)
-            og_write_queue_task = self.app_instance.state_manager._write_queue_task
-            self.app_instance.state_manager._write_queue_task = None
-            while self.app_instance.state_manager._write_queue:
-                await self.app_instance.state_manager._schedule_process_write_queue()
-                assert (
-                    self.app_instance.state_manager._write_queue_task
-                    is not og_write_queue_task
-                )
-                await self.app_instance.state_manager.close()
-            self.app_instance.state_manager._write_queue_task = og_write_queue_task
+            await self.app_instance.state_manager._flush_write_queue()
         if isinstance(self.state_manager, StateManagerDisk):
             # Force reload the latest state from disk.
             client_token, _ = _split_substate_key(token)
