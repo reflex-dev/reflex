@@ -1,6 +1,6 @@
 [project]
 name = "reflex"
-version = "0.8.15dev1"
+version = "0.8.16dev1"
 description = "Web apps in pure Python."
 license.text = "Apache-2.0"
 authors = [
@@ -123,6 +123,7 @@ reportIncompatibleMethodOverride = false
 target-version = "py310"
 output-format = "concise"
 lint.isort.split-on-trailing-comma = false
+preview = true
 lint.select = ["ALL"]
 lint.ignore = [
   "A",
@@ -235,7 +236,7 @@ fail_fast = true
 
 [[tool.pre-commit.repos]]
 repo = "https://github.com/astral-sh/ruff-pre-commit"
-rev = "v0.13.3"
+rev = "v0.14.0"
 hooks = [
   { id = "ruff-format", args = [
     "reflex",
