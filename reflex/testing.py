@@ -731,12 +731,13 @@ class AppHarness:
             # (we can't directly await the _other_ loop's Future)
             og_write_queue_task = self.app_instance.state_manager._write_queue_task
             self.app_instance.state_manager._write_queue_task = None
-            await self.app_instance.state_manager._schedule_process_write_queue()
-            assert (
-                self.app_instance.state_manager._write_queue_task
-                is not og_write_queue_task
-            )
-            await self.app_instance.state_manager.close()
+            while self.app_instance.state_manager._write_queue:
+                await self.app_instance.state_manager._schedule_process_write_queue()
+                assert (
+                    self.app_instance.state_manager._write_queue_task
+                    is not og_write_queue_task
+                )
+                await self.app_instance.state_manager.close()
             self.app_instance.state_manager._write_queue_task = og_write_queue_task
         if isinstance(self.state_manager, StateManagerDisk):
             # Force reload the latest state from disk.
