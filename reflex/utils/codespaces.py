@@ -54,6 +54,9 @@ function doRedirect(url) {{
             if (!sameHostnameDifferentPort(thisUrl, redirect_to)) {{
                 return;
             }}
+            if (!redirect_to.hostname.endsWith(".app.github.dev")) {{
+                return;
+            }}
             a.href = redirect_to.href;
         }} else if (!window.location.href.startsWith(url)) {{
             a.href = url + `?redirect_to=${{window.location.href}}`
