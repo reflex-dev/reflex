@@ -348,8 +348,9 @@ class StateManagerDisk(StateManager):
 
     async def close(self):
         """Close the state manager, flushing any pending writes to disk."""
-        if self._write_queue_task:
-            self._write_queue_task.cancel()
-            with contextlib.suppress(asyncio.CancelledError):
-                await self._write_queue_task
-            self._write_queue_task = None
+        async with self._state_manager_lock:
+            if self._write_queue_task:
+                self._write_queue_task.cancel()
+                with contextlib.suppress(asyncio.CancelledError):
+                    await self._write_queue_task
+                    self._write_queue_task = None
