@@ -206,9 +206,9 @@ class StateManagerDisk(StateManager):
 
     async def _process_write_queue_delay(self):
         """Wait for the debounce period before processing the write queue again."""
+        now = time.time()
         if self._write_queue:
             # There are still items in the queue, schedule another run.
-            now = time.time()
             next_write_in = max(
                 0,
                 min(
@@ -221,8 +221,12 @@ class StateManagerDisk(StateManager):
             # No items left, wait a bit before checking again.
             await asyncio.sleep(self._write_debounce_seconds)
         else:
-            # No debounce, wait a minute before processing expirations.
-            await asyncio.sleep(60)
+            # Debounce is disabled, so sleep until the next token expiration.
+            oldest_token_last_touch = min(
+                self._token_last_touched.values(), default=now
+            )
+            next_expiration_in = self.token_expiration - (now - oldest_token_last_touch)
+            await asyncio.sleep(next_expiration_in)
 
     async def _process_write_queue(self):
         """Long running task that checks for states to write to disk.
