@@ -92,6 +92,9 @@ class StateManager(ABC):
         """
         yield self.state()
 
+    async def close(self):  # noqa: B027
+        """Close the state manager."""
+
 
 def _default_token_expiration() -> int:
     """Get the default token expiration time.

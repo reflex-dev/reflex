@@ -653,9 +653,18 @@ async def test_client_side_state(
         )
     elif isinstance(client_side.state_manager, (StateManagerMemory, StateManagerDisk)):
         del client_side.state_manager.states[token]
-    if isinstance(client_side.state_manager, StateManagerDisk):
-        client_side.state_manager.token_expiration = 0
-        client_side.state_manager._purge_expired_states()
+    if (
+        client_side.app_instance is not None
+        and (app_state_manager := client_side.app_instance.state_manager) is not None
+        and isinstance(app_state_manager, StateManagerDisk)
+    ):
+        # Purge the backend's disk manager
+        del app_state_manager.states[token]
+        del app_state_manager._write_queue[token]
+        og_token_expiration = app_state_manager.token_expiration
+        app_state_manager.token_expiration = 0
+        app_state_manager._purge_expired_states()
+        app_state_manager.token_expiration = og_token_expiration
 
     # Ensure the state is gone (not hydrated)
     async def poll_for_not_hydrated():

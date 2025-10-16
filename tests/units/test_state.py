@@ -1688,8 +1688,7 @@ async def state_manager(request) -> AsyncGenerator[StateManager, None]:
 
     yield state_manager
 
-    if isinstance(state_manager, StateManagerRedis):
-        await state_manager.close()
+    await state_manager.close()
 
 
 @pytest.fixture
@@ -1739,6 +1738,8 @@ async def test_state_manager_modify_state(
         assert not sm2._states_locks
         if state_manager._states_locks:
             assert sm2._states_locks != state_manager._states_locks
+
+        await sm2.close()
 
 
 @pytest.mark.asyncio
@@ -2965,8 +2966,7 @@ async def test_preprocess(
     async for update in state._process(events[1]):
         assert update.delta == exp_is_hydrated(state)
 
-    if isinstance(app.state_manager, StateManagerRedis):
-        await app.state_manager.close()
+    await app.state_manager.close()
 
 
 @pytest.mark.asyncio
@@ -3021,8 +3021,7 @@ async def test_preprocess_multiple_load_events(
     async for update in state._process(events[2]):
         assert update.delta == exp_is_hydrated(state)
 
-    if isinstance(app.state_manager, StateManagerRedis):
-        await app.state_manager.close()
+    await app.state_manager.close()
 
 
 @pytest.mark.asyncio
@@ -3662,6 +3661,7 @@ async def test_deserialize_gc_state_disk(token):
         c = await root.get_state(Child)
         assert s._get_was_touched()
         assert not c._get_was_touched()
+    await dsm.close()
 
     dsm2 = StateManagerDisk(state=Root)
     root = await dsm2.get_state(token)
@@ -3669,6 +3669,7 @@ async def test_deserialize_gc_state_disk(token):
     assert s.num == 43
     c = await root.get_state(Child)
     assert c.foo == "bar"
+    await dsm2.close()
 
 
 class Obj(Base):

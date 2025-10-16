@@ -451,8 +451,7 @@ async def test_initialize_with_state(test_state: type[ATestState], token: str):
     assert isinstance(state, test_state)
     assert state.var == 0
 
-    if isinstance(app.state_manager, StateManagerRedis):
-        await app.state_manager.close()
+    await app.state_manager.close()
 
 
 @pytest.mark.asyncio
@@ -486,8 +485,7 @@ async def test_set_and_get_state(test_state):
     assert state1.var == 1
     assert state2.var == 2
 
-    if isinstance(app.state_manager, StateManagerRedis):
-        await app.state_manager.close()
+    await app.state_manager.close()
 
 
 @pytest.mark.asyncio
@@ -999,8 +997,7 @@ async def test_upload_file(tmp_path, state, delta, token: str, mocker: MockerFix
         "image2.jpg",
     ]
 
-    if isinstance(app.state_manager, StateManagerRedis):
-        await app.state_manager.close()
+    await app.state_manager.close()
 
 
 @pytest.mark.asyncio
@@ -1046,8 +1043,7 @@ async def test_upload_file_without_annotation(state, tmp_path, token):
         == f"`{state.get_full_name()}.handle_upload2` handler should have a parameter annotated as list[rx.UploadFile]"
     )
 
-    if isinstance(app.state_manager, StateManagerRedis):
-        await app.state_manager.close()
+    await app.state_manager.close()
 
 
 @pytest.mark.asyncio
@@ -1093,8 +1089,7 @@ async def test_upload_file_background(state, tmp_path, token):
         == f"@rx.event(background=True) is not supported for upload handler `{state.get_full_name()}.bg_upload`."
     )
 
-    if isinstance(app.state_manager, StateManagerRedis):
-        await app.state_manager.close()
+    await app.state_manager.close()
 
 
 class DynamicState(BaseState):
@@ -1372,8 +1367,7 @@ async def test_dynamic_route_var_route_change_completed_on_load(
     assert state.loaded == len(exp_vals)
     assert state.counter == len(exp_vals)
 
-    if isinstance(app.state_manager, StateManagerRedis):
-        await app.state_manager.close()
+    await app.state_manager.close()
 
 
 @pytest.mark.asyncio
@@ -1412,8 +1406,7 @@ async def test_process_events(mocker: MockerFixture, token: str):
     assert (await app.state_manager.get_state(event.substate_token)).value == 5
     assert app._postprocess.call_count == 6  # pyright: ignore [reportAttributeAccessIssue]
 
-    if isinstance(app.state_manager, StateManagerRedis):
-        await app.state_manager.close()
+    await app.state_manager.close()
 
 
 @pytest.mark.parametrize(

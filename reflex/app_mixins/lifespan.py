@@ -71,6 +71,13 @@ class LifespanMixin(AppMixin):
                     await event_namespace._token_manager.disconnect_all()
             except Exception as e:
                 console.error(f"Error during lifespan cleanup: {e}")
+        # Flush any pending writes from the state manager.
+        try:
+            state_manager = self.state_manager  # pyright: ignore[reportAttributeAccessIssue]
+        except AttributeError:
+            pass
+        else:
+            await state_manager.close()
 
     def register_lifespan_task(self, task: Callable | asyncio.Task, **task_kwargs):
         """Register a task to run during the lifespan of the app.
