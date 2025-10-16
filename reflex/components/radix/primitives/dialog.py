@@ -73,6 +73,8 @@ class DialogTrigger(DialogElement, RadixPrimitiveTriggerComponent):
 
     _memoization_mode = MemoizationMode(recursive=False)
 
+    _valid_parents = ["DialogRoot"]
+
 
 class DialogContent(elements.Div, DialogElement):
     """Content component to display inside a Dialog modal."""
