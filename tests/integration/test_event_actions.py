@@ -396,5 +396,6 @@ async def test_event_actions_dialog_form_in_form(
     el.send_keys(Keys.ESCAPE)  # pyright: ignore[reportAttributeAccessIssue]
 
     btn_no_events = wait.until(EC.element_to_be_clickable((By.ID, "btn-no-events")))
+    btn_no_events.location_once_scrolled_into_view
     btn_no_events.click()
     await poll_for_order(["on_submit", "on_click:outer"])

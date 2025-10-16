@@ -95,6 +95,26 @@ def interpret_int_env(value: str, field_name: str) -> int:
         raise EnvironmentVarValueError(msg) from ve
 
 
+def interpret_float_env(value: str, field_name: str) -> float:
+    """Interpret a float environment variable value.
+
+    Args:
+        value: The environment variable value.
+        field_name: The field name.
+
+    Returns:
+        The interpreted value.
+
+    Raises:
+        EnvironmentVarValueError: If the value is invalid.
+    """
+    try:
+        return float(value)
+    except ValueError as ve:
+        msg = f"Invalid float value: {value!r} for {field_name}"
+        raise EnvironmentVarValueError(msg) from ve
+
+
 def interpret_existing_path_env(value: str, field_name: str) -> ExistingPath:
     """Interpret a path environment variable value as an existing path.
 
@@ -228,6 +248,8 @@ def interpret_env_var_value(
         return loglevel
     if field_type is int:
         return interpret_int_env(value, field_name)
+    if field_type is float:
+        return interpret_float_env(value, field_name)
     if field_type is Path:
         return interpret_path_env(value, field_name)
     if field_type is ExistingPath:
@@ -670,6 +692,9 @@ class EnvironmentVariables:
 
     # Whether to mount the compiled frontend app in the backend server in production.
     REFLEX_MOUNT_FRONTEND_COMPILED_APP: EnvVar[bool] = env_var(False, internal=True)
+
+    # How long to delay writing updated states to disk. (Higher values mean less writes, but more chance of lost data.)
+    REFLEX_STATE_MANAGER_DISK_DEBOUNCE_SECONDS: EnvVar[float] = env_var(2.0)
 
 
 environment = EnvironmentVariables()
