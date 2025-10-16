@@ -24,7 +24,6 @@ from reflex.vars.object import ObjectVar
 
 pytest.importorskip("pydantic")
 
-import math
 
 from tests.units.test_state import (
     ChildState,
@@ -362,7 +361,7 @@ def test_format_match(
         (True, "true"),
         (False, "false"),
         (123, "123"),
-        (math.pi, "3.141592653589793"),
+        (3.15, "3.15"),
         ([1, 2, 3], "[1, 2, 3]"),
         (["a", "b", "c"], '["a", "b", "c"]'),
         ({"a": 1, "b": 2, "c": 3}, '({ ["a"] : 1, ["b"] : 2, ["c"] : 3 })'),
@@ -593,7 +592,7 @@ formatted_router = {
             TestState(_reflex_internal_init=True).dict(),  # pyright: ignore [reportCallIssue]
             {
                 TestState.get_full_name(): {
-                    "array" + FIELD_MARKER: [1, 2, math.pi],
+                    "array" + FIELD_MARKER: [1, 2, 3.15],
                     "complex" + FIELD_MARKER: {
                         1: {"prop1": 42, "prop2": "hello"},
                         2: {"prop1": 42, "prop2": "hello"},
@@ -604,9 +603,9 @@ formatted_router = {
                     "map_key" + FIELD_MARKER: "a",
                     "mapping" + FIELD_MARKER: {"a": [1, 2, 3], "b": [4, 5, 6]},
                     "num1" + FIELD_MARKER: 0,
-                    "num2" + FIELD_MARKER: math.pi,
+                    "num2" + FIELD_MARKER: 3.15,
                     "obj" + FIELD_MARKER: {"prop1": 42, "prop2": "hello"},
-                    "sum" + FIELD_MARKER: math.pi,
+                    "sum" + FIELD_MARKER: 3.15,
                     "upper" + FIELD_MARKER: "",
                     "router" + FIELD_MARKER: formatted_router,
                     "asynctest" + FIELD_MARKER: 0,

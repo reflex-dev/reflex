@@ -59,7 +59,6 @@ from .states import GenState
 
 pytest.importorskip("pydantic")
 
-import math
 
 from pydantic import BaseModel as BaseModelV2
 from pydantic.v1 import BaseModel as BaseModelV1
@@ -118,10 +117,10 @@ class TestState(BaseState):
     __test__ = False
 
     num1: rx.Field[int]
-    num2: float = math.pi
+    num2: float = 3.15
     key: str
     map_key: str = "a"
-    array: list[float] = [1, 2, math.pi]
+    array: list[float] = [1, 2, 3.15]
     mapping: rx.Field[dict[str, list[int]]] = rx.field({"a": [1, 2, 3], "b": [4, 5, 6]})
     obj: Object = Object()
     complex: dict[int, Object] = {1: Object(), 2: Object()}
@@ -375,9 +374,9 @@ def test_default_value(test_state):
         test_state: A state.
     """
     assert test_state.num1 == 0
-    assert test_state.num2 == math.pi
+    assert test_state.num2 == 3.15
     assert test_state.key == ""
-    assert test_state.sum == math.pi
+    assert test_state.sum == 3.15
     assert test_state.upper == ""
 
 
@@ -754,7 +753,7 @@ def test_reset(test_state, child_state):
 
     # The values should be reset.
     assert test_state.num1 == 0
-    assert test_state.num2 == math.pi
+    assert test_state.num2 == 3.15
     assert test_state._backend == 0
     assert child_state.value == ""
 
@@ -805,7 +804,7 @@ async def test_process_event_simple(test_state):
         assert update.delta == {
             TestState.get_full_name(): {
                 "num1" + FIELD_MARKER: 69,
-                "sum" + FIELD_MARKER: 72.1415926535898,
+                "sum" + FIELD_MARKER: 72.15,
             },
             GrandchildState3.get_full_name(): {"computed" + FIELD_MARKER: ""},
         }

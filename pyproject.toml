@@ -146,6 +146,7 @@ lint.ignore = [
   "FBT",
   "FIX",
   "FURB189",
+  "FURB140",
   "G004",
   "ISC003",
   "PLC",

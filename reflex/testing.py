@@ -22,7 +22,6 @@ import types
 from collections.abc import AsyncIterator, Callable, Coroutine, Sequence
 from http.server import SimpleHTTPRequestHandler
 from importlib.util import find_spec
-from itertools import starmap
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Literal, TypeVar
 
@@ -251,7 +250,9 @@ class AppHarness:
                 self.app_source = self.app_source.func
             # get the source from a function or module object
             source_code = "\n".join([
-                "\n".join(starmap(self.get_app_global_source, app_globals.items())),
+                "\n".join([
+                    self.get_app_global_source(k, v) for k, v in app_globals.items()
+                ]),
                 self._get_source_from_app_source(self.app_source),
             ])
             get_config().loglevel = reflex.constants.LogLevel.INFO
