@@ -12,23 +12,22 @@ def test_websocket_target_url():
     url = WebsocketTargetURL.create()
     var_data = url._get_all_var_data()
     assert var_data is not None
-    assert sorted(key for key, _ in var_data.imports) == sorted(
-        ("$/utils/state", "$/env.json")
-    )
+    assert sorted(key for key, _ in var_data.imports) == sorted((
+        "$/utils/state",
+        "$/env.json",
+    ))
 
 
 def test_connection_banner():
     banner = ConnectionBanner.create()
-    _imports = banner._get_all_imports(collapse=True)
-    assert sorted(_imports) == sorted(
-        (
-            "react",
-            "$/utils/context",
-            "$/utils/state",
-            RadixThemesComponent.create().library or "",
-            "$/env.json",
-        )
-    )
+    imports = banner._get_all_imports(collapse=True)
+    assert sorted(imports) == sorted((
+        "react",
+        "$/utils/context",
+        "$/utils/state",
+        RadixThemesComponent.create().library or "",
+        "$/env.json",
+    ))
 
     msg = "Connection error"
     custom_banner = ConnectionBanner.create(Text.create(msg))
@@ -37,16 +36,14 @@ def test_connection_banner():
 
 def test_connection_modal():
     modal = ConnectionModal.create()
-    _imports = modal._get_all_imports(collapse=True)
-    assert sorted(_imports) == sorted(
-        (
-            "react",
-            "$/utils/context",
-            "$/utils/state",
-            RadixThemesComponent.create().library or "",
-            "$/env.json",
-        )
-    )
+    imports = modal._get_all_imports(collapse=True)
+    assert sorted(imports) == sorted((
+        "react",
+        "$/utils/context",
+        "$/utils/state",
+        RadixThemesComponent.create().library or "",
+        "$/env.json",
+    ))
 
     msg = "Connection error"
     custom_modal = ConnectionModal.create(Text.create(msg))

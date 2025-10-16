@@ -233,7 +233,7 @@ class VarData:
             hook: None for var_data in all_var_datas for hook in var_data.hooks
         }
 
-        _imports = imports.merge_imports(
+        imports_ = imports.merge_imports(
             *(var_data.imports for var_data in all_var_datas)
         )
 
@@ -261,7 +261,7 @@ class VarData:
         return VarData(
             state=state,
             field_name=field_name,
-            imports=_imports,
+            imports=imports_,
             hooks=hooks,
             deps=deps,
             position=position,
@@ -488,13 +488,13 @@ class Var(Generic[VAR_TYPE], metaclass=MetaclassVar):
             raise TypeError(msg)
 
         # Decode any inline Var markup and apply it to the instance
-        _var_data, _js_expr = _decode_var_immutable(self._js_expr)
+        var_data_, js_expr_ = _decode_var_immutable(self._js_expr)
 
-        if _var_data or _js_expr != self._js_expr:
+        if var_data_ or js_expr_ != self._js_expr:
             self.__init__(
-                _js_expr=_js_expr,
+                _js_expr=js_expr_,
                 _var_type=self._var_type,
-                _var_data=VarData.merge(self._var_data, _var_data),
+                _var_data=VarData.merge(self._var_data, var_data_),
             )
 
     def __hash__(self) -> int:
@@ -1590,12 +1590,10 @@ class LiteralVar(Var):
             )
 
         if dataclasses.is_dataclass(value) and not isinstance(value, type):
-            return LiteralObjectVar._get_all_var_data_without_creating_var(
-                {
-                    k: (None if callable(v) else v)
-                    for k, v in dataclasses.asdict(value).items()
-                }
-            )
+            return LiteralObjectVar._get_all_var_data_without_creating_var({
+                k: (None if callable(v) else v)
+                for k, v in dataclasses.asdict(value).items()
+            })
 
         if isinstance(value, range):
             return None
@@ -1949,16 +1947,14 @@ class CachedVarOperation:
         Returns:
             The hash of the object.
         """
-        return hash(
-            (
-                type(self).__name__,
-                *[
-                    getattr(self, field.name)
-                    for field in dataclasses.fields(self)
-                    if field.name not in ["_js_expr", "_var_data", "_var_type"]
-                ],
-            )
-        )
+        return hash((
+            type(self).__name__,
+            *[
+                getattr(self, field.name)
+                for field in dataclasses.fields(self)
+                if field.name not in ["_js_expr", "_var_data", "_var_type"]
+            ],
+        ))
 
 
 def and_operation(
@@ -2171,11 +2167,11 @@ class ComputedVar(Var[RETURN_TYPE]):
         if isinstance(deps, dict):
             # Assume a dict is coming from _replace, so no special processing.
             return deps
-        _static_deps = {}
+        static_deps = {}
         if deps is not None:
             for dep in deps:
-                _static_deps = self._add_static_dep(dep, _static_deps)
-        return _static_deps
+                static_deps = self._add_static_dep(dep, static_deps)
+        return static_deps
 
     def _add_static_dep(
         self, dep: str | Var, deps: dict[str | None, set[str]] | None = None
@@ -2494,9 +2490,10 @@ class ComputedVar(Var[RETURN_TYPE]):
                     self._static_deps.setdefault(state_name, set()).add(var_name)
                     objclass.get_root_state().get_class_substate(
                         state_name
-                    )._var_dependencies.setdefault(var_name, set()).add(
-                        (objclass.get_full_name(), self._name)
-                    )
+                    )._var_dependencies.setdefault(var_name, set()).add((
+                        objclass.get_full_name(),
+                        self._name,
+                    ))
                     return
         msg = (
             "ComputedVar dependencies must be Var instances with a state and "
@@ -2538,7 +2535,7 @@ class DynamicRouteVar(ComputedVar[str | list[str]]):
     """A ComputedVar that represents a dynamic route."""
 
 
-async def _default_async_computed_var(_self: BaseState) -> Any:
+async def _default_async_computed_var(_self: BaseState) -> Any:  # noqa: RUF029
     return None
 
 

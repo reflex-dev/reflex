@@ -237,8 +237,7 @@ async def test_connection_banner(connection_banner: AppHarness):
     assert connection_banner.poll_for_value(counter_element, exp_not_equal="1") == "2"
 
 
-@pytest.mark.asyncio
-async def test_cloud_banner(
+def test_cloud_banner(
     connection_banner: AppHarness, simulate_compile_context: constants.CompileContext
 ):
     """Test that the connection banner is displayed when the websocket drops.

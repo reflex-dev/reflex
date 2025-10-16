@@ -68,7 +68,7 @@ class ScreenshotPlugin(BasePlugin):
         if not app._api:
             return
 
-        async def active_connections(_request: "Request") -> "Response":
+        def active_connections(_request: "Request") -> "Response":
             from starlette.responses import JSONResponse
 
             if not app.event_namespace:
@@ -122,7 +122,7 @@ class ScreenshotPlugin(BasePlugin):
             while found_new:
                 found_new = False
 
-                for state in all_states:
+                for state in list(all_states):
                     for substate in state.substates.values():
                         substate._was_touched = True
 

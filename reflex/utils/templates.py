@@ -285,9 +285,9 @@ def fetch_app_templates(version: str) -> dict[str, Template]:
         if tp["hidden"] or tp["code_url"] is None:
             continue
         known_fields = {f.name for f in dataclasses.fields(Template)}
-        filtered_templates[tp["name"]] = Template(
-            **{k: v for k, v in tp.items() if k in known_fields}
-        )
+        filtered_templates[tp["name"]] = Template(**{
+            k: v for k, v in tp.items() if k in known_fields
+        })
     return filtered_templates
 
 
@@ -383,7 +383,7 @@ def initialize_app(app_name: str, template: str | None = None) -> str | None:
     templates: dict[str, Template] = {}
 
     # Don't fetch app templates if the user directly asked for DEFAULT.
-    if template is not None and (template not in (constants.Templates.DEFAULT,)):
+    if template is not None and template != constants.Templates.DEFAULT:
         template, templates = fetch_remote_templates(template)
 
     if template is None:

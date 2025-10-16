@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import concurrent.futures
+import operator
 import traceback
 from collections.abc import Mapping, Sequence
 from datetime import datetime
@@ -161,7 +162,7 @@ def get_import_dict(
     return _ImportDict(
         lib=lib,
         default=default,
-        rest=rest if rest else [],
+        rest=rest or [],
     )
 
 
@@ -190,7 +191,7 @@ def _sorted_keys(d: Mapping[str, Any]) -> dict[str, Any]:
     Returns:
         A new dictionary with sorted keys.
     """
-    return dict(sorted(d.items(), key=lambda kv: kv[0]))
+    return dict(sorted(d.items(), key=operator.itemgetter(0)))
 
 
 def compile_state(state: type[BaseState]) -> dict:
@@ -442,9 +443,9 @@ def create_theme(style: ComponentStyle) -> dict:
 
     root_style = {
         # Root styles.
-        ":root": Style(
-            {f"*{k}": v for k, v in style_rules.items() if k.startswith(":")}
-        ),
+        ":root": Style({
+            f"*{k}": v for k, v in style_rules.items() if k.startswith(":")
+        }),
         # Body styles.
         "body": Style(
             {k: v for k, v in style_rules.items() if not k.startswith(":")},

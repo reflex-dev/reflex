@@ -346,7 +346,7 @@ def send(event: str, telemetry_enabled: bool | None = None, **kwargs):
         kwargs: Additional data to send with the event.
     """
 
-    async def async_send(event: str, telemetry_enabled: bool | None, **kwargs):
+    async def async_send(event: str, telemetry_enabled: bool | None, **kwargs):  # noqa: RUF029
         return _send(event, telemetry_enabled, **kwargs)
 
     try:

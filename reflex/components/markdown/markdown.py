@@ -335,13 +335,11 @@ class Markdown(Component):
             self._get_map_fn_custom_code_from_children(self.get_component("code"))
         )
 
-        var_data = VarData.merge(
-            *[
-                code._get_all_var_data()
-                for code in custom_code_list
-                if isinstance(code, Var)
-            ]
-        )
+        var_data = VarData.merge(*[
+            code._get_all_var_data()
+            for code in custom_code_list
+            if isinstance(code, Var)
+        ])
 
         codeblock_custom_code = "\n".join(map(str, custom_code_list))
 
@@ -477,18 +475,16 @@ let {_LANGUAGE!s} = match ? match[1] : '';
 
     @staticmethod
     def _component_map_hash(component_map: dict) -> str:
-        inp = str(
-            {
-                tag: (
-                    f"{component.__module__}.{component.__qualname__}"
-                    if (
-                        "<" not in component.__name__
-                    )  # simple way to check against lambdas
-                    else component(_MOCK_ARG)
-                )
-                for tag, component in component_map.items()
-            }
-        ).encode()
+        inp = str({
+            tag: (
+                f"{component.__module__}.{component.__qualname__}"
+                if (
+                    "<" not in component.__name__
+                )  # simple way to check against lambdas
+                else component(_MOCK_ARG)
+            )
+            for tag, component in component_map.items()
+        }).encode()
         return md5(inp).hexdigest()
 
     def _get_component_map_name(self) -> str:

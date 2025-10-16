@@ -31,17 +31,15 @@ class Breakpoints(dict[K, V]):
         Returns:
             The factorized breakpoints.
         """
-        return Breakpoints(
-            {
-                (
-                    breakpoints_values[breakpoint_names.index(k)]
-                    if k in breakpoint_names
-                    else ("0px" if k == "initial" else k)
-                ): v
-                for k, v in self.items()
-                if v is not None
-            }
-        )
+        return Breakpoints({
+            (
+                breakpoints_values[breakpoint_names.index(k)]
+                if k in breakpoint_names
+                else ("0px" if k == "initial" else k)
+            ): v
+            for k, v in self.items()
+            if v is not None
+        })
 
     @classmethod
     def create(
@@ -79,13 +77,11 @@ class Breakpoints(dict[K, V]):
                 raise ValueError(msg)
 
             return Breakpoints(custom)
-        return Breakpoints(
-            {
-                k: v
-                for k, v in zip(["initial", *breakpoint_names], thresholds, strict=True)
-                if v is not None
-            }
-        )
+        return Breakpoints({
+            k: v
+            for k, v in zip(["initial", *breakpoint_names], thresholds, strict=True)
+            if v is not None
+        })
 
 
 breakpoints = Breakpoints.create

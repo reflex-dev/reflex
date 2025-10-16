@@ -968,7 +968,7 @@ async def test_upload_file(tmp_path, state, delta, token: str, mocker: MockerFix
         file=bio,
     )
 
-    async def form():
+    async def form():  # noqa: RUF029
         files_mock = unittest.mock.Mock()
 
         def getlist(key: str):
@@ -1022,7 +1022,7 @@ async def test_upload_file_without_annotation(state, tmp_path, token):
         "reflex-event-handler": f"{state.get_full_name()}.handle_upload2",
     }
 
-    async def form():
+    async def form():  # noqa: RUF029
         files_mock = unittest.mock.Mock()
 
         def getlist(key: str):
@@ -1068,7 +1068,7 @@ async def test_upload_file_background(state, tmp_path, token):
         "reflex-event-handler": f"{state.get_full_name()}.bg_upload",
     }
 
-    async def form():
+    async def form():  # noqa: RUF029
         files_mock = unittest.mock.Mock()
 
         def getlist(key: str):
@@ -1637,9 +1637,9 @@ def test_app_state_determination():
 def test_raise_on_state():
     """Test that the state is set."""
     # state kwargs is deprecated, we just make sure the app is created anyway.
-    _app = App(_state=State)
-    assert _app._state is not None
-    assert issubclass(_app._state, State)
+    app = App(_state=State)
+    assert app._state is not None
+    assert issubclass(app._state, State)
 
 
 def test_call_app():

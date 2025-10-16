@@ -41,13 +41,13 @@ class LifespanMixin(AppMixin):
                         signature = inspect.signature(task)
                         if "app" in signature.parameters:
                             task = functools.partial(task, app=app)
-                        _t = task()
-                        if isinstance(_t, contextlib._AsyncGeneratorContextManager):
-                            await stack.enter_async_context(_t)
+                        t_ = task()
+                        if isinstance(t_, contextlib._AsyncGeneratorContextManager):
+                            await stack.enter_async_context(t_)
                             console.debug(run_msg.format(type="asynccontextmanager"))
-                        elif isinstance(_t, Coroutine):
+                        elif isinstance(t_, Coroutine):
                             task_ = asyncio.create_task(
-                                _t,
+                                t_,
                                 name=f"reflex_lifespan_task|{task_name}|{time.time()}",
                             )
                             task_.add_done_callback(lambda t: t.result())

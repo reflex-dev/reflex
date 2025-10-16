@@ -431,89 +431,87 @@ class ShikiJsTransformer(ShikiBaseTransformers):
         ]
     )
     style: Style | None = dataclasses.field(
-        default_factory=lambda: Style(
-            {
-                "code": {
-                    "line-height": "1.7",
-                    "font-size": "0.875em",
-                    "display": "grid",
-                },
-                # Diffs
-                ".diff": {
-                    "margin": "0 -24px",
-                    "padding": "0 24px",
-                    "width": "calc(100% + 48px)",
-                    "display": "inline-block",
-                },
-                ".diff.add": {
-                    "background-color": "rgba(16, 185, 129, .14)",
-                    "position": "relative",
-                },
-                ".diff.remove": {
-                    "background-color": "rgba(244, 63, 94, .14)",
-                    "opacity": "0.7",
-                    "position": "relative",
-                },
-                ".diff.remove:after": {
-                    "position": "absolute",
-                    "left": "10px",
-                    "content": "'-'",
-                    "color": "#b34e52",
-                },
-                ".diff.add:after": {
-                    "position": "absolute",
-                    "left": "10px",
-                    "content": "'+'",
-                    "color": "#18794e",
-                },
-                # Highlight
-                ".highlighted": {
-                    "background-color": "rgba(142, 150, 170, .14)",
-                    "margin": "0 -24px",
-                    "padding": "0 24px",
-                    "width": "calc(100% + 48px)",
-                    "display": "inline-block",
-                },
-                ".highlighted.error": {
-                    "background-color": "rgba(244, 63, 94, .14)",
-                },
-                ".highlighted.warning": {
-                    "background-color": "rgba(234, 179, 8, .14)",
-                },
-                # Highlighted Word
-                ".highlighted-word": {
-                    "background-color": color("gray", 2),
-                    "border": f"1px solid {color('gray', 5)}",
-                    "padding": "1px 3px",
-                    "margin": "-1px -3px",
-                    "border-radius": "4px",
-                },
-                # Focused Lines
-                ".has-focused .line:not(.focused)": {
-                    "opacity": "0.7",
-                    "filter": "blur(0.095rem)",
-                    "transition": "filter .35s, opacity .35s",
-                },
-                ".has-focused:hover .line:not(.focused)": {
-                    "opacity": "1",
-                    "filter": "none",
-                },
-                # White Space
-                # ".tab, .space": {
-                #     "position": "relative", # noqa: ERA001
-                # },
-                # ".tab::before": {
-                #     "content": "'⇥'", # noqa: ERA001
-                #     "position": "absolute", # noqa: ERA001
-                #     "opacity": "0.3",# noqa: ERA001
-                # },
-                # ".space::before": {
-                #     "content": "'·'", # noqa: ERA001
-                #     "position": "absolute", # noqa: ERA001
-                #     "opacity": "0.3", # noqa: ERA001
-                # },
-            }
-        )
+        default_factory=lambda: Style({
+            "code": {
+                "line-height": "1.7",
+                "font-size": "0.875em",
+                "display": "grid",
+            },
+            # Diffs
+            ".diff": {
+                "margin": "0 -24px",
+                "padding": "0 24px",
+                "width": "calc(100% + 48px)",
+                "display": "inline-block",
+            },
+            ".diff.add": {
+                "background-color": "rgba(16, 185, 129, .14)",
+                "position": "relative",
+            },
+            ".diff.remove": {
+                "background-color": "rgba(244, 63, 94, .14)",
+                "opacity": "0.7",
+                "position": "relative",
+            },
+            ".diff.remove:after": {
+                "position": "absolute",
+                "left": "10px",
+                "content": "'-'",
+                "color": "#b34e52",
+            },
+            ".diff.add:after": {
+                "position": "absolute",
+                "left": "10px",
+                "content": "'+'",
+                "color": "#18794e",
+            },
+            # Highlight
+            ".highlighted": {
+                "background-color": "rgba(142, 150, 170, .14)",
+                "margin": "0 -24px",
+                "padding": "0 24px",
+                "width": "calc(100% + 48px)",
+                "display": "inline-block",
+            },
+            ".highlighted.error": {
+                "background-color": "rgba(244, 63, 94, .14)",
+            },
+            ".highlighted.warning": {
+                "background-color": "rgba(234, 179, 8, .14)",
+            },
+            # Highlighted Word
+            ".highlighted-word": {
+                "background-color": color("gray", 2),
+                "border": f"1px solid {color('gray', 5)}",
+                "padding": "1px 3px",
+                "margin": "-1px -3px",
+                "border-radius": "4px",
+            },
+            # Focused Lines
+            ".has-focused .line:not(.focused)": {
+                "opacity": "0.7",
+                "filter": "blur(0.095rem)",
+                "transition": "filter .35s, opacity .35s",
+            },
+            ".has-focused:hover .line:not(.focused)": {
+                "opacity": "1",
+                "filter": "none",
+            },
+            # White Space
+            # ".tab, .space": {
+            #     "position": "relative", # noqa: ERA001
+            # },
+            # ".tab::before": {
+            #     "content": "'⇥'", # noqa: ERA001
+            #     "position": "absolute", # noqa: ERA001
+            #     "opacity": "0.3",# noqa: ERA001
+            # },
+            # ".space::before": {
+            #     "content": "'·'", # noqa: ERA001
+            #     "position": "absolute", # noqa: ERA001
+            #     "opacity": "0.3", # noqa: ERA001
+            # },
+        })
     )
 
     def __init__(self, **kwargs):
@@ -640,9 +638,9 @@ class ShikiCodeBlock(Component, MarkdownComponentMap):
             raise ValueError(msg)
         for transformer in self.transformers._var_value:
             if isinstance(transformer, ShikiBaseTransformers):
-                imports[transformer.library].extend(
-                    [ImportVar(tag=str(fn)) for fn in transformer.fns]
-                )
+                imports[transformer.library].extend([
+                    ImportVar(tag=str(fn)) for fn in transformer.fns
+                ])
                 if transformer.library not in self.lib_dependencies:
                     self.lib_dependencies.append(transformer.library)
         return imports
@@ -780,30 +778,28 @@ class ShikiHighLevelCodeBlock(ShikiCodeBlock):
                         set_clipboard(cls._strip_transformer_triggers(code)),
                         copy_script(),
                     ],
-                    style=Style(
-                        {
-                            "position": "absolute",
-                            "top": "4px",
-                            "right": "4px",
-                            "background": color("gray", 3),
-                            "border": "1px solid",
-                            "border-color": color("gray", 5),
-                            "border-radius": "6px",
-                            "padding": "5px",
-                            "opacity": "1",
-                            "cursor": "pointer",
-                            "_hover": {
-                                "background": color("gray", 4),
-                            },
-                            "transition": "background 0.250s ease-out",
-                            "&>svg": {
-                                "transition": "transform 0.250s ease-out, opacity 0.250s ease-out",
-                            },
-                            "_active": {
-                                "background": color("gray", 5),
-                            },
-                        }
-                    ),
+                    style=Style({
+                        "position": "absolute",
+                        "top": "4px",
+                        "right": "4px",
+                        "background": color("gray", 3),
+                        "border": "1px solid",
+                        "border-color": color("gray", 5),
+                        "border-radius": "6px",
+                        "padding": "5px",
+                        "opacity": "1",
+                        "cursor": "pointer",
+                        "_hover": {
+                            "background": color("gray", 4),
+                        },
+                        "transition": "background 0.250s ease-out",
+                        "&>svg": {
+                            "transition": "transform 0.250s ease-out, opacity 0.250s ease-out",
+                        },
+                        "_active": {
+                            "background": color("gray", 5),
+                        },
+                    }),
                 )
             )
 

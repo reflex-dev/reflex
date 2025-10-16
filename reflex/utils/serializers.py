@@ -137,7 +137,7 @@ def serialize(value: Any) -> SerializedType | None: ...
 
 def serialize(
     value: Any, get_type: bool = False
-) -> SerializedType | None | tuple[SerializedType | None, types.GenericType | None]:
+) -> SerializedType | tuple[SerializedType | None, types.GenericType | None] | None:
     """Serialize the value to a JSON string.
 
     Args:

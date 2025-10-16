@@ -30,7 +30,7 @@ def test_format_props(props: dict[str, Var], test_props: list):
     ("prop", "valid"),
     [
         (1, True),
-        (3.14, True),
+        (3.15, True),
         ("string", True),
         (False, True),
         ([], True),

@@ -269,15 +269,13 @@ def _run(
 
     # In prod mode, run the backend on a separate thread.
     if backend and env == constants.Env.PROD:
-        commands.append(
-            (
-                backend_cmd,
-                backend_host,
-                backend_port,
-                config.loglevel.subprocess_level(),
-                frontend,
-            )
-        )
+        commands.append((
+            backend_cmd,
+            backend_host,
+            backend_port,
+            config.loglevel.subprocess_level(),
+            frontend,
+        ))
 
     if single_port:
         setup_frontend(Path.cwd())

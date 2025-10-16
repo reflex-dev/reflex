@@ -110,14 +110,14 @@ def cached_procedure(
 
     def _inner_decorator(func: Callable[P, Picklable]) -> Callable[P, Picklable]:
         def _inner(*args: P.args, **kwargs: P.kwargs) -> Picklable:
-            _cache_file = cache_file_path()
+            cache_file = cache_file_path()
 
-            payload, value = _read_cached_procedure_file(_cache_file)
+            payload, value = _read_cached_procedure_file(cache_file)
             new_payload = payload_fn(*args, **kwargs)
 
             if payload != new_payload:
                 new_value = func(*args, **kwargs)
-                _write_cached_procedure_file(new_payload, _cache_file, new_value)
+                _write_cached_procedure_file(new_payload, cache_file, new_value)
                 return new_value
 
             from reflex.utils import console

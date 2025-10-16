@@ -758,12 +758,10 @@ def into_component(component: Component | ComponentCallable) -> Component:
                 raise TypeError(
                     "Cannot pass a Var to a built-in function. Consider using .length() for accessing the length of an iterable Var."
                 ).with_traceback(e.__traceback__) from None
-            if message.endswith(
-                (
-                    "indices must be integers or slices, not NumberCastedVar",
-                    "indices must be integers or slices, not BooleanCastedVar",
-                )
-            ):
+            if message.endswith((
+                "indices must be integers or slices, not NumberCastedVar",
+                "indices must be integers or slices, not BooleanCastedVar",
+            )):
                 raise TypeError(
                     "Cannot index into a primitive sequence with a Var. Consider calling rx.Var.create() on the sequence."
                 ).with_traceback(e.__traceback__) from None

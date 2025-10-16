@@ -96,13 +96,13 @@ class DynamicIcon(LucideIconComponent):
     size: Var[int]
 
     def _get_imports(self):
-        _imports = super()._get_imports()
+        imports_ = super()._get_imports()
         if self.library:
-            _imports.pop(self.library)
-        _imports[LUCIDE_LIBRARY] = [
+            imports_.pop(self.library)
+        imports_[LUCIDE_LIBRARY] = [
             ImportVar("DynamicIcon", package_path="/dynamic.mjs")
         ]
-        return _imports
+        return imports_
 
 
 LUCIDE_ICON_LIST = [

@@ -161,12 +161,10 @@ def load_dynamic_serializer():
             )
         ]
 
-        return "\n".join(
-            [
-                "//__reflex_evaluate",
-                *module_code_lines,
-            ]
-        )
+        return "\n".join([
+            "//__reflex_evaluate",
+            *module_code_lines,
+        ])
 
     @transform
     def evaluate_component(js_string: Var[str]) -> Var[Component]:

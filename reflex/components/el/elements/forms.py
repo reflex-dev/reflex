@@ -229,14 +229,12 @@ class Form(BaseHTML):
     def _render(self) -> Tag:
         render_tag = super()._render()
         if EventTriggers.ON_SUBMIT in self.event_triggers:
-            render_tag = render_tag.add_props(
-                **{
-                    EventTriggers.ON_SUBMIT: Var(
-                        _js_expr=f"handleSubmit_{self.handle_submit_unique_name}",
-                        _var_type=EventChain,
-                    )
-                }
-            )
+            render_tag = render_tag.add_props(**{
+                EventTriggers.ON_SUBMIT: Var(
+                    _js_expr=f"handleSubmit_{self.handle_submit_unique_name}",
+                    _var_type=EventChain,
+                )
+            })
         return render_tag
 
     def _get_form_refs(self) -> dict[str, Any]:
@@ -319,7 +317,7 @@ class BaseInput(BaseHTML):
     auto_focus: Var[bool]
 
     # Captures media from the user (camera or microphone)
-    capture: Var[Literal[True, False, "user", "environment"]]
+    capture: Var[Literal["user", "environment"] | bool]
 
     # Indicates whether the input is checked (for checkboxes and radio buttons)
     checked: Var[bool]

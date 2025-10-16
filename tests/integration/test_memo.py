@@ -75,8 +75,7 @@ def memo_app(tmp_path) -> Generator[AppHarness, None, None]:
         yield harness
 
 
-@pytest.mark.asyncio
-async def test_memo_app(memo_app: AppHarness):
+def test_memo_app(memo_app: AppHarness):
     """Render various memo'd components and assert on the output.
 
     Args:

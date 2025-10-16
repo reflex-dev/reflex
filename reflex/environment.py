@@ -716,13 +716,11 @@ def _paths_from_env_files(env_files: str) -> list[Path]:
     """
     # load env files in reverse order
     return list(
-        reversed(
-            [
-                Path(path)
-                for path_element in env_files.split(os.pathsep)
-                if (path := path_element.strip())
-            ]
-        )
+        reversed([
+            Path(path)
+            for path_element in env_files.split(os.pathsep)
+            if (path := path_element.strip())
+        ])
     )
 
 

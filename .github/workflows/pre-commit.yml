@@ -23,7 +23,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/setup_build_env
         with:
-          python-version: 3.13
+          python-version: 3.14
           run-uv-sync: true
       - uses: actions/checkout@v4
         with:

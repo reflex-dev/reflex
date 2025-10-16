@@ -439,7 +439,7 @@ async def test_cancel_upload(tmp_path, upload_file: AppHarness, driver: WebDrive
         {
             "offline": False,
             "downloadThroughput": 1024 * 1024 / 8,  # 1 Mbps
-            "uploadThroughput": 1024 * 1024 / 8,  #  1 Mbps
+            "uploadThroughput": 1024 * 1024 / 8,  # 1 Mbps
             "latency": 200,  # 200ms
         },
     )
@@ -487,8 +487,7 @@ async def test_cancel_upload(tmp_path, upload_file: AppHarness, driver: WebDrive
     target_file.unlink()
 
 
-@pytest.mark.asyncio
-async def test_upload_download_file(
+def test_upload_download_file(
     tmp_path,
     upload_file: AppHarness,
     driver: WebDriver,

@@ -92,8 +92,7 @@ def media_app(tmp_path) -> Generator[AppHarness, None, None]:
         yield harness
 
 
-@pytest.mark.asyncio
-async def test_media_app(media_app: AppHarness):
+def test_media_app(media_app: AppHarness):
     """Display images, ensure the data uri mime type is correct and images load.
 
     Args:

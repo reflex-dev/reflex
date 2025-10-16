@@ -6,7 +6,7 @@ from reflex.components.el.element import Element
 from reflex.vars.base import Var
 
 AutoCapitalize = Literal["off", "none", "on", "sentences", "words", "characters"]
-ContentEditable = Literal[True, False, "inherit", "plaintext-only"]
+ContentEditable = Literal["inherit", "plaintext-only"] | bool
 EnterKeyHint = Literal["enter", "done", "go", "next", "previous", "search", "send"]
 InputMode = Literal[
     "none", "text", "tel", "url", "email", "numeric", "decimal", "search", "search"

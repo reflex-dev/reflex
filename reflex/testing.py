@@ -28,10 +28,8 @@ from typing import TYPE_CHECKING, Any, Literal, TypeVar
 import uvicorn
 
 import reflex
-import reflex.environment
 import reflex.reflex
 import reflex.utils.build
-import reflex.utils.exec
 import reflex.utils.format
 import reflex.utils.prerequisites
 import reflex.utils.processes
@@ -251,14 +249,12 @@ class AppHarness:
             if isinstance(self.app_source, functools.partial):
                 self.app_source = self.app_source.func
             # get the source from a function or module object
-            source_code = "\n".join(
-                [
-                    "\n".join(
-                        self.get_app_global_source(k, v) for k, v in app_globals.items()
-                    ),
-                    self._get_source_from_app_source(self.app_source),
-                ]
-            )
+            source_code = "\n".join([
+                "\n".join([
+                    self.get_app_global_source(k, v) for k, v in app_globals.items()
+                ]),
+                self._get_source_from_app_source(self.app_source),
+            ])
             get_config().loglevel = reflex.constants.LogLevel.INFO
             with chdir(self.app_path):
                 reflex.reflex._init(

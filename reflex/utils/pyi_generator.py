@@ -193,9 +193,9 @@ def _get_type_hint(
 
         if value.__name__ == "Var":
             args = list(
-                chain.from_iterable(
-                    [get_args(arg) if rx_types.is_union(arg) else [arg] for arg in args]
-                )
+                chain.from_iterable([
+                    get_args(arg) if rx_types.is_union(arg) else [arg] for arg in args
+                ])
             )
 
             # For Var types, Union with the inner args so they can be passed directly.
@@ -270,7 +270,7 @@ def _generate_docstrings(clzs: list[type[Component]], props: list[str]) -> str:
     comments = []
     for clz in clzs:
         for line in inspect.getsource(clz).splitlines():
-            reached_functions = re.search("def ", line)
+            reached_functions = re.search(r"def ", line)
             if reached_functions:
                 # We've reached the functions, so stop.
                 break
@@ -288,7 +288,7 @@ def _generate_docstrings(clzs: list[type[Component]], props: list[str]) -> str:
                 continue
 
             # Check if this line has a prop.
-            match = re.search("\\w+:", line)
+            match = re.search(r"\w+:", line)
             if match is None:
                 # This line doesn't have a var, so continue.
                 continue
@@ -307,9 +307,9 @@ def _generate_docstrings(clzs: list[type[Component]], props: list[str]) -> str:
     for line in (clz.create.__doc__ or "").splitlines():
         if "**" in line:
             indent = line.split("**")[0]
-            new_docstring.extend(
-                [f"{indent}{n}:{' '.join(c)}" for n, c in props_comments.items()]
-            )
+            new_docstring.extend([
+                f"{indent}{n}:{' '.join(c)}" for n, c in props_comments.items()
+            ])
         new_docstring.append(line)
     return "\n".join(new_docstring)
 
@@ -394,23 +394,21 @@ def _extract_class_props_as_ast_nodes(
             for module in modules:
                 available_vars.update(sys.modules[module].__dict__)
 
-            kwargs.append(
-                (
-                    ast.arg(
-                        arg=name,
-                        annotation=ast.Name(
-                            id=OVERWRITE_TYPES.get(
-                                name,
-                                _get_type_hint(
-                                    value,
-                                    type_hint_globals | available_vars,
-                                ),
-                            )
-                        ),
+            kwargs.append((
+                ast.arg(
+                    arg=name,
+                    annotation=ast.Name(
+                        id=OVERWRITE_TYPES.get(
+                            name,
+                            _get_type_hint(
+                                value,
+                                type_hint_globals | available_vars,
+                            ),
+                        )
                     ),
-                    ast.Constant(value=default),  # pyright: ignore [reportArgumentType]
-                )
-            )
+                ),
+                ast.Constant(value=default),  # pyright: ignore [reportArgumentType]
+            ))
     return kwargs
 
 
@@ -489,7 +487,7 @@ def type_to_ast(typ: Any, cls: type) -> ast.expr:
 
 
 def _get_parent_imports(func: Callable):
-    _imports = {"reflex.vars": ["Var"]}
+    imports_ = {"reflex.vars": ["Var"]}
     for type_hint in inspect.get_annotations(func).values():
         try:
             match = re.match(r"\w+\[([\w\d]+)\]", type_hint)
@@ -498,8 +496,8 @@ def _get_parent_imports(func: Callable):
         if match:
             type_hint = match.group(1)
             if type_hint in importlib.import_module(func.__module__).__dir__():
-                _imports.setdefault(func.__module__, []).append(type_hint)
-    return _imports
+                imports_.setdefault(func.__module__, []).append(type_hint)
+    return imports_
 
 
 def _generate_component_create_functiondef(
@@ -527,13 +525,13 @@ def _generate_component_create_functiondef(
         raise TypeError(msg)
 
     # add the imports needed by get_type_hint later
-    type_hint_globals.update(
-        {name: getattr(typing, name) for name in DEFAULT_TYPING_IMPORTS}
-    )
+    type_hint_globals.update({
+        name: getattr(typing, name) for name in DEFAULT_TYPING_IMPORTS
+    })
 
     if clz.__module__ != clz.create.__module__:
-        _imports = _get_parent_imports(clz.create)
-        for name, values in _imports.items():
+        imports_ = _get_parent_imports(clz.create)
+        for name, values in imports_.items():
             exec(f"from {name} import {','.join(values)}", type_hint_globals)
 
     kwargs = _extract_func_kwargs_as_ast_nodes(clz.create, type_hint_globals)
@@ -637,16 +635,12 @@ def _generate_component_create_functiondef(
                             )
                             else ast.Subscript(
                                 ast.Name("Union"),
-                                ast.Tuple(
-                                    [
-                                        figure_out_return_type(
-                                            inspect.signature(
-                                                event_spec
-                                            ).return_annotation
-                                        )
-                                        for event_spec in event_specs
-                                    ]
-                                ),
+                                ast.Tuple([
+                                    figure_out_return_type(
+                                        inspect.signature(event_spec).return_annotation
+                                    )
+                                    for event_spec in event_specs
+                                ]),
                             )
                         )
                     ),
@@ -759,9 +753,9 @@ def _generate_namespace_call_functiondef(
         The create functiondef node for the ast.
     """
     # add the imports needed by get_type_hint later
-    type_hint_globals.update(
-        {name: getattr(typing, name) for name in DEFAULT_TYPING_IMPORTS}
-    )
+    type_hint_globals.update({
+        name: getattr(typing, name) for name in DEFAULT_TYPING_IMPORTS
+    })
 
     clz = classes[clz_name]
 
@@ -1093,15 +1087,13 @@ class PyiGenerator:
     def _write_pyi_file(self, module_path: Path, source: str) -> str:
         relpath = str(_relative_to_pwd(module_path)).replace("\\", "/")
         pyi_content = (
-            "\n".join(
-                [
-                    f'"""Stub file for {relpath}"""',
-                    "# ------------------- DO NOT EDIT ----------------------",
-                    "# This file was generated by `reflex/utils/pyi_generator.py`!",
-                    "# ------------------------------------------------------",
-                    "",
-                ]
-            )
+            "\n".join([
+                f'"""Stub file for {relpath}"""',
+                "# ------------------- DO NOT EDIT ----------------------",
+                "# This file was generated by `reflex/utils/pyi_generator.py`!",
+                "# ------------------------------------------------------",
+                "",
+            ])
             + source
         )
 
@@ -1159,9 +1151,11 @@ class PyiGenerator:
 
         text = (
             "\n"
-            + "\n".join(
-                [*sub_mods_imports, *sub_mod_attrs_imports, *extra_mappings_imports]
-            )
+            + "\n".join([
+                *sub_mods_imports,
+                *sub_mod_attrs_imports,
+                *extra_mappings_imports,
+            ])
             + "\n"
         )
         text += ast.unparse(new_tree) + "\n\n"

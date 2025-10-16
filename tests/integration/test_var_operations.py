@@ -47,9 +47,10 @@ def VarOperations():
         dict1: rx.Field[dict[int, int]] = rx.field({1: 2})
         dict2: rx.Field[dict[int, int]] = rx.field({3: 4})
         html_str: rx.Field[str] = rx.field("<div>hello</div>")
-        people: rx.Field[list[Person]] = rx.field(
-            [{"name": "Alice", "age": 30}, {"name": "Bob", "age": 25}]
-        )
+        people: rx.Field[list[Person]] = rx.field([
+            {"name": "Alice", "age": 30},
+            {"name": "Bob", "age": 25},
+        ])
         obj: rx.Field[Object] = rx.field(Object())
 
     app = rx.App()

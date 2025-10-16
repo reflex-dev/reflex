@@ -489,9 +489,9 @@ class LiteralArrayVar(CachedVarOperation, LiteralVar, ArrayVar[ARRAY_VAR_TYPE]):
         """
         return (
             "["
-            + ", ".join(
-                [str(LiteralVar.create(element)) for element in self._var_value]
-            )
+            + ", ".join([
+                str(LiteralVar.create(element)) for element in self._var_value
+            ])
             + "]"
         )
 
@@ -505,12 +505,10 @@ class LiteralArrayVar(CachedVarOperation, LiteralVar, ArrayVar[ARRAY_VAR_TYPE]):
         Returns:
             The VarData associated with the Var.
         """
-        return VarData.merge(
-            *[
-                LiteralVar._get_all_var_data_without_creating_var_dispatch(element)
-                for element in value
-            ]
-        )
+        return VarData.merge(*[
+            LiteralVar._get_all_var_data_without_creating_var_dispatch(element)
+            for element in value
+        ])
 
     @cached_property_no_lock
     def _cached_get_all_var_data(self) -> VarData | None:
@@ -1598,13 +1596,11 @@ def _determine_value_of_array_index(
     """
     origin_var_type = get_origin(var_type) or var_type
     if origin_var_type in types.UnionTypes:
-        return unionize(
-            *[
-                _determine_value_of_array_index(t, index)
-                for t in get_args(var_type)
-                if t is not type(None)
-            ]
-        )
+        return unionize(*[
+            _determine_value_of_array_index(t, index)
+            for t in get_args(var_type)
+            if t is not type(None)
+        ])
     if origin_var_type is range:
         return int
     if origin_var_type in [
@@ -1815,14 +1811,12 @@ class LiteralRangeVar(CachedVarOperation, LiteralVar, RangeVar):
         Returns:
             The hash of the var.
         """
-        return hash(
-            (
-                self.__class__.__name__,
-                self._var_value.start,
-                self._var_value.stop,
-                self._var_value.step,
-            )
-        )
+        return hash((
+            self.__class__.__name__,
+            self._var_value.start,
+            self._var_value.stop,
+            self._var_value.step,
+        ))
 
     @cached_property_no_lock
     def _cached_var_name(self) -> str:

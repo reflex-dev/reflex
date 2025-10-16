@@ -48,6 +48,7 @@ if find_spec("pydantic") and find_spec("pydantic.v1"):
                 self.dict(),
                 default=serialize,
             )
+
 else:
 
     class PydanticNotFoundFallback:

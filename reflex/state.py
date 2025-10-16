@@ -112,13 +112,13 @@ def _no_chain_background_task(state: BaseState, name: str, fn: Callable) -> Call
     )
     if inspect.iscoroutinefunction(fn):
 
-        async def _no_chain_background_task_co(*args, **kwargs):
+        async def _no_chain_background_task_co(*args, **kwargs):  # noqa: RUF029
             raise RuntimeError(message)
 
         return _no_chain_background_task_co
     if inspect.isasyncgenfunction(fn):
 
-        async def _no_chain_background_task_gen(*args, **kwargs):
+        async def _no_chain_background_task_gen(*args, **kwargs):  # noqa: RUF029
             yield
             raise RuntimeError(message)
 
@@ -187,14 +187,12 @@ class EventHandlerSetVar(EventHandler):
         Returns:
             The hash of the event handler.
         """
-        return hash(
-            (
-                tuple(self.event_actions.items()),
-                self.fn,
-                self.state_full_name,
-                self.state_cls,
-            )
-        )
+        return hash((
+            tuple(self.event_actions.items()),
+            self.fn,
+            self.state_full_name,
+            self.state_cls,
+        ))
 
     def setvar(self, var_name: str, value: Any):
         """Set the state variable to the value of the event.
@@ -529,14 +527,12 @@ class BaseState(EvenMoreBasicBaseState):
             if types.is_backend_base_variable(name, cls)
         }
         # Add annotated backend vars that may not have a default value.
-        new_backend_vars.update(
-            {
-                name: cls._get_var_default(name, annotation_value)
-                for name, annotation_value in cls._get_type_hints().items()
-                if name not in new_backend_vars
-                and types.is_backend_base_variable(name, cls)
-            }
-        )
+        new_backend_vars.update({
+            name: cls._get_var_default(name, annotation_value)
+            for name, annotation_value in cls._get_type_hints().items()
+            if name not in new_backend_vars
+            and types.is_backend_base_variable(name, cls)
+        })
 
         cls.backend_vars = {
             **cls.inherited_backend_vars,
@@ -794,9 +790,10 @@ class BaseState(EvenMoreBasicBaseState):
                         parent_state = defining_state_cls.get_parent_state()
                         if parent_state is not None:
                             defining_state_cls = parent_state
-                    defining_state_cls._var_dependencies.setdefault(dvar, set()).add(
-                        (cls.get_full_name(), cvar_name)
-                    )
+                    defining_state_cls._var_dependencies.setdefault(dvar, set()).add((
+                        cls.get_full_name(),
+                        cvar_name,
+                    ))
                     defining_state_cls._potentially_dirty_states.add(
                         cls.get_full_name()
                     )
@@ -1143,7 +1140,7 @@ class BaseState(EvenMoreBasicBaseState):
         from reflex.config import get_config
 
         config = get_config()
-        _create_event_handler_kwargs = {}
+        create_event_handler_kwargs = {}
 
         if config.state_auto_setters is None:
 
@@ -1159,14 +1156,14 @@ class BaseState(EvenMoreBasicBaseState):
                     )
                     return super().__call__(*args, **kwargs)
 
-            _create_event_handler_kwargs["event_handler_cls"] = (
+            create_event_handler_kwargs["event_handler_cls"] = (
                 EventHandlerDeprecatedSetter
             )
 
         setter_name = Var._get_setter_name_for_name(name)
         if setter_name not in cls.__dict__:
             event_handler = cls._create_event_handler(
-                prop._get_setter(name), **_create_event_handler_kwargs
+                prop._get_setter(name), **create_event_handler_kwargs
             )
             cls.event_handlers[setter_name] = event_handler
             setattr(cls, setter_name, event_handler)
@@ -1524,12 +1521,10 @@ class BaseState(EvenMoreBasicBaseState):
         return {
             cls.get_class_substate(substate_name)
             for substate_name in cls._always_dirty_substates
-        }.union(
-            {
-                cls.get_root_state().get_class_substate(substate_name)
-                for substate_name in cls._potentially_dirty_states
-            }
-        )
+        }.union({
+            cls.get_root_state().get_class_substate(substate_name)
+            for substate_name in cls._potentially_dirty_states
+        })
 
     def _get_root_state(self) -> BaseState:
         """Get the root state of the state tree.
@@ -1858,13 +1853,11 @@ class BaseState(EvenMoreBasicBaseState):
             ):
                 if issubclass(hinted_args, Model):
                     # Remove non-fields from the payload
-                    payload[arg] = hinted_args(
-                        **{
-                            key: value
-                            for key, value in value.items()
-                            if key in hinted_args.__fields__
-                        }
-                    )
+                    payload[arg] = hinted_args(**{
+                        key: value
+                        for key, value in value.items()
+                        if key in hinted_args.__fields__
+                    })
                 elif dataclasses.is_dataclass(hinted_args):
                     payload[arg] = hinted_args(**value)
                 elif find_spec("pydantic"):
