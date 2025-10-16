@@ -5,7 +5,7 @@
 from __future__ import annotations
 
 from collections.abc import Sequence
-from typing import Any, Literal
+from typing import Any, ClassVar, Literal
 
 from reflex.components.component import Component, ComponentNamespace
 from reflex.components.radix.primitives.base import RadixPrimitiveComponent
@@ -89,6 +89,8 @@ class DrawerTrigger(DrawerComponent):
 
     _memoization_mode = MemoizationMode(recursive=False)
 
+    _valid_parents: ClassVar[list[str]] = ["DrawerRoot"]
+
     @classmethod
     def create(cls, *children: Any, **props: Any) -> Component:
         """Create a new DrawerTrigger instance.
@@ -113,6 +115,8 @@ class DrawerPortal(DrawerComponent):
     tag = "Drawer.Portal"
 
     alias = "Vaul" + tag
+
+    _valid_parents: ClassVar[list[str]] = ["DrawerRoot"]
 
 
 # Based on https://www.radix-ui.com/primitives/docs/components/dialog#content
@@ -155,6 +159,8 @@ class DrawerContent(DrawerComponent):
     # Fired when interacting outside the drawer content.
     on_interact_outside: EventHandler[no_args_event_spec]
 
+    _valid_parents: ClassVar[list[str]] = ["DrawerRoot", "DrawerPortal"]
+
     @classmethod
     def create(cls, *children, **props):
         """Create a Drawer Content.
@@ -182,6 +188,8 @@ class DrawerOverlay(DrawerComponent):
 
     alias = "Vaul" + tag
 
+    _valid_parents: ClassVar[list[str]] = ["DrawerRoot", "DrawerPortal"]
+
     # Style set based on the source code at https://ui.shadcn.com/docs/components/drawer
     def add_style(self) -> dict:
         """Get the style for the component.
@@ -207,6 +215,12 @@ class DrawerClose(DrawerTrigger):
 
     alias = "Vaul" + tag
 
+    _valid_parents: ClassVar[list[str]] = [
+        "DrawerRoot",
+        "DrawerPortal",
+        "DrawerContent",
+    ]
+
 
 class DrawerTitle(DrawerComponent):
     """A title for the drawer."""
@@ -214,6 +228,12 @@ class DrawerTitle(DrawerComponent):
     tag = "Drawer.Title"
 
     alias = "Vaul" + tag
+
+    _valid_parents: ClassVar[list[str]] = [
+        "DrawerRoot",
+        "DrawerPortal",
+        "DrawerContent",
+    ]
 
     # Style set based on the source code at https://ui.shadcn.com/docs/components/drawer
     def add_style(self) -> dict:
@@ -237,6 +257,12 @@ class DrawerDescription(DrawerComponent):
 
     alias = "Vaul" + tag
 
+    _valid_parents: ClassVar[list[str]] = [
+        "DrawerRoot",
+        "DrawerPortal",
+        "DrawerContent",
+    ]
+
     # Style set based on the source code at https://ui.shadcn.com/docs/components/drawer
     def add_style(self) -> dict:
         """Get the style for the component.
@@ -255,6 +281,12 @@ class DrawerHandle(DrawerComponent):
     tag = "Drawer.Handle"
 
     alias = "Vaul" + tag
+
+    _valid_parents: ClassVar[list[str]] = [
+        "DrawerRoot",
+        "DrawerPortal",
+        "DrawerContent",
+    ]
 
 
 class Drawer(ComponentNamespace):

@@ -1,6 +1,6 @@
 """Interactive components provided by @radix-ui/themes."""
 
-from typing import Literal
+from typing import ClassVar, Literal
 
 from reflex.components.component import ComponentNamespace
 from reflex.components.core.breakpoints import Responsive
@@ -36,11 +36,15 @@ class DialogTrigger(RadixThemesTriggerComponent):
 
     _memoization_mode = MemoizationMode(recursive=False)
 
+    _valid_parents: ClassVar[list[str]] = ["DialogRoot"]
+
 
 class DialogTitle(RadixThemesComponent):
     """Title component to display inside a Dialog modal."""
 
     tag = "Dialog.Title"
+
+    _valid_parents: ClassVar[list[str]] = ["DialogRoot", "DialogContent"]
 
 
 class DialogContent(elements.Div, RadixThemesComponent):
@@ -66,17 +70,23 @@ class DialogContent(elements.Div, RadixThemesComponent):
     # Fired when the pointer interacts outside the dialog.
     on_interact_outside: EventHandler[no_args_event_spec]
 
+    _valid_parents: ClassVar[list[str]] = ["DialogRoot"]
+
 
 class DialogDescription(RadixThemesComponent):
     """Description component to display inside a Dialog modal."""
 
     tag = "Dialog.Description"
 
+    _valid_parents: ClassVar[list[str]] = ["DialogRoot", "DialogContent"]
+
 
 class DialogClose(RadixThemesTriggerComponent):
     """Close button component to close an open Dialog modal."""
 
     tag = "Dialog.Close"
+
+    _valid_parents: ClassVar[list[str]] = ["DialogRoot", "DialogContent"]
 
 
 class Dialog(ComponentNamespace):

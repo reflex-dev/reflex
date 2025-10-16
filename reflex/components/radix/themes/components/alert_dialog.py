@@ -1,6 +1,6 @@
 """Interactive components provided by @radix-ui/themes."""
 
-from typing import Literal
+from typing import ClassVar, Literal
 
 from reflex.components.component import ComponentNamespace
 from reflex.components.core.breakpoints import Responsive
@@ -38,6 +38,8 @@ class AlertDialogTrigger(RadixThemesTriggerComponent):
 
     _memoization_mode = MemoizationMode(recursive=False)
 
+    _valid_parents: ClassVar[list[str]] = ["AlertDialogRoot"]
+
 
 class AlertDialogContent(elements.Div, RadixThemesComponent):
     """Contains the content of the dialog. This component is based on the div element."""
@@ -59,6 +61,8 @@ class AlertDialogContent(elements.Div, RadixThemesComponent):
     # Fired when the escape key is pressed.
     on_escape_key_down: EventHandler[no_args_event_spec]
 
+    _valid_parents: ClassVar[list[str]] = ["AlertDialogRoot"]
+
 
 class AlertDialogTitle(RadixThemesComponent):
     """An accessible title that is announced when the dialog is opened.
@@ -68,6 +72,8 @@ class AlertDialogTitle(RadixThemesComponent):
 
     tag = "AlertDialog.Title"
 
+    _valid_parents: ClassVar[list[str]] = ["AlertDialogRoot", "AlertDialogContent"]
+
 
 class AlertDialogDescription(RadixThemesComponent):
     """An optional accessible description that is announced when the dialog is opened.
@@ -75,6 +81,8 @@ class AlertDialogDescription(RadixThemesComponent):
     """
 
     tag = "AlertDialog.Description"
+
+    _valid_parents: ClassVar[list[str]] = ["AlertDialogRoot", "AlertDialogContent"]
 
 
 class AlertDialogAction(RadixThemesTriggerComponent):
@@ -84,6 +92,8 @@ class AlertDialogAction(RadixThemesTriggerComponent):
 
     tag = "AlertDialog.Action"
 
+    _valid_parents: ClassVar[list[str]] = ["AlertDialogRoot", "AlertDialogContent"]
+
 
 class AlertDialogCancel(RadixThemesTriggerComponent):
     """Wraps the control that will close the dialog. This should be distinguished
@@ -91,6 +101,8 @@ class AlertDialogCancel(RadixThemesTriggerComponent):
     """
 
     tag = "AlertDialog.Cancel"
+
+    _valid_parents: ClassVar[list[str]] = ["AlertDialogRoot", "AlertDialogContent"]
 
 
 class AlertDialog(ComponentNamespace):

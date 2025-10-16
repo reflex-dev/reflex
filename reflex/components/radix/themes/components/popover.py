@@ -1,6 +1,6 @@
 """Interactive components provided by @radix-ui/themes."""
 
-from typing import Literal
+from typing import ClassVar, Literal
 
 from reflex.components.component import ComponentNamespace
 from reflex.components.core.breakpoints import Responsive
@@ -38,6 +38,8 @@ class PopoverTrigger(RadixThemesTriggerComponent):
     tag = "Popover.Trigger"
 
     _memoization_mode = MemoizationMode(recursive=False)
+
+    _valid_parents: ClassVar[list[str]] = ["PopoverRoot"]
 
 
 class PopoverContent(elements.Div, RadixThemesComponent):
@@ -90,11 +92,15 @@ class PopoverContent(elements.Div, RadixThemesComponent):
     # Fired when the pointer interacts outside the dialog.
     on_interact_outside: EventHandler[no_args_event_spec]
 
+    _valid_parents: ClassVar[list[str]] = ["PopoverRoot"]
+
 
 class PopoverClose(RadixThemesTriggerComponent):
     """Wraps the control that will close the popover."""
 
     tag = "Popover.Close"
+
+    _valid_parents: ClassVar[list[str]] = ["PopoverRoot", "PopoverContent"]
 
 
 class Popover(ComponentNamespace):

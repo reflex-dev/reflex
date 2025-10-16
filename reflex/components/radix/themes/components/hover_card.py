@@ -1,6 +1,6 @@
 """Interactive components provided by @radix-ui/themes."""
 
-from typing import Literal
+from typing import ClassVar, Literal
 
 from reflex.components.component import ComponentNamespace
 from reflex.components.core.breakpoints import Responsive
@@ -42,6 +42,8 @@ class HoverCardTrigger(RadixThemesTriggerComponent):
 
     _memoization_mode = MemoizationMode(recursive=False)
 
+    _valid_parents: ClassVar[list[str]] = ["HoverCardRoot"]
+
 
 class HoverCardContent(elements.Div, RadixThemesComponent):
     """Contains the content of the open hover card."""
@@ -74,6 +76,8 @@ class HoverCardContent(elements.Div, RadixThemesComponent):
 
     # Hovercard size "1" - "3"
     size: Var[Responsive[Literal["1", "2", "3"]]]
+
+    _valid_parents: ClassVar[list[str]] = ["HoverCardRoot"]
 
 
 class HoverCard(ComponentNamespace):

@@ -1,6 +1,6 @@
 """Interactive components provided by @radix-ui/react-dialog."""
 
-from typing import Any
+from typing import Any, ClassVar
 
 from reflex.components.component import ComponentNamespace
 from reflex.components.el import elements
@@ -48,6 +48,8 @@ class DialogPortal(DialogElement):
     # Specify a container element to portal the content into.
     container: Var[Any]
 
+    _valid_parents: ClassVar[list[str]] = ["DialogRoot"]
+
 
 class DialogOverlay(DialogElement):
     """A layer that covers the inert portion of the view when the dialog is open."""
@@ -61,6 +63,8 @@ class DialogOverlay(DialogElement):
     # Used to force mounting when more control is needed. Useful when controlling animation with React animation libraries. It inherits from Dialog.Portal.
     force_mount: Var[bool]
 
+    _valid_parents: ClassVar[list[str]] = ["DialogRoot", "DialogPortal"]
+
 
 class DialogTrigger(DialogElement, RadixPrimitiveTriggerComponent):
     """Trigger an action or event, to open a Dialog modal."""
@@ -72,6 +76,8 @@ class DialogTrigger(DialogElement, RadixPrimitiveTriggerComponent):
     as_child: Var[bool]
 
     _memoization_mode = MemoizationMode(recursive=False)
+
+    _valid_parents: ClassVar[list[str]] = ["DialogRoot"]
 
 
 class DialogContent(elements.Div, DialogElement):
@@ -101,6 +107,8 @@ class DialogContent(elements.Div, DialogElement):
     # Fired when the pointer interacts outside the dialog.
     on_interact_outside: EventHandler[no_args_event_spec]
 
+    _valid_parents: ClassVar[list[str]] = ["DialogRoot", "DialogPortal"]
+
 
 class DialogTitle(DialogElement):
     """Title component to display inside a Dialog modal."""
@@ -110,6 +118,12 @@ class DialogTitle(DialogElement):
 
     # Change the default rendered element for the one passed as a child, merging their props and behavior.
     as_child: Var[bool]
+
+    _valid_parents: ClassVar[list[str]] = [
+        "DialogRoot",
+        "DialogPortal",
+        "DialogContent",
+    ]
 
 
 class DialogDescription(DialogElement):
@@ -121,6 +135,12 @@ class DialogDescription(DialogElement):
     # Change the default rendered element for the one passed as a child, merging their props and behavior.
     as_child: Var[bool]
 
+    _valid_parents: ClassVar[list[str]] = [
+        "DialogRoot",
+        "DialogPortal",
+        "DialogContent",
+    ]
+
 
 class DialogClose(DialogElement, RadixPrimitiveTriggerComponent):
     """Close button component to close an open Dialog modal."""
@@ -130,6 +150,12 @@ class DialogClose(DialogElement, RadixPrimitiveTriggerComponent):
 
     # Change the default rendered element for the one passed as a child, merging their props and behavior.
     as_child: Var[bool]
+
+    _valid_parents: ClassVar[list[str]] = [
+        "DialogRoot",
+        "DialogPortal",
+        "DialogContent",
+    ]
 
 
 class Dialog(ComponentNamespace):
