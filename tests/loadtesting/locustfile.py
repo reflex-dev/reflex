@@ -186,9 +186,20 @@ class ReflexLoadTest(SocketIOUser):
             callback_func=self.validate_event_response_message,
         )
 
-    # def disconnect_socket_connection(self):
-    #     print("disconnecting connection")
-    #     self.send("41/_event", name="disconnect")
+    #@task(1)
+    def bounce_socket_connection(self):
+        start = time.time()
+        self.ws.close()
+        self.on_start()
+        response_time_ms = (time.time() - start) * 1000
+        self.environment.events.request.fire(
+            request_type="WSR",
+            name="bounce_socket_connection",
+            response_time=response_time_ms,
+            response_length=0,
+            exception=None,
+            context=self.context(),
+        )
 
     def event_message(self, event_like):
         if not self.token:
