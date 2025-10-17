@@ -208,7 +208,10 @@ def _get_type_hint(
                 res = " | ".join(sorted(types))
 
     elif isinstance(value, str):
-        ev = eval(value, type_hint_globals)
+try:
+        ev = ast.literal_eval(value, type_hint_globals)
+except ValueError as e:
+    raise ValueError(f"Invalid literal in pyi generation: {e}") from e
         if rx_types.is_optional(ev):
             return _get_type_hint(ev, type_hint_globals, is_optional=False)
 
