@@ -263,7 +263,7 @@ class DependencyTracker:
         else:
             snipped_source = source[0][start_column:end_column]
         # Evaluate the string in the context of the function's globals and closure.
-        return eval(f"({snipped_source})", self._get_globals(), self._get_closure())
+        return eval(f"({snipped_source}, {"__builtins__": {}}, {})", self._get_globals(), self._get_closure())
 
     def handle_getting_var(self, instruction: dis.Instruction) -> None:
         """Handle bytecode analysis when `get_var_value` was called in the function.
