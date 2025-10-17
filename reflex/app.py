@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import ast
 import asyncio
 import concurrent.futures
 import contextlib
@@ -1679,7 +1680,7 @@ class App(MiddlewareMixin, LifespanMixin):
             # Check if the function has the necessary annotations and types in the right order
             argspec = inspect.getfullargspec(handler_fn)
             arg_annotations = {
-                k: eval(v) if isinstance(v, str) else v
+                k: ast.literal_eval(v) if isinstance(v, str) else v
                 for k, v in argspec.annotations.items()
                 if k not in ["args", "kwargs", "return"]
             }
@@ -1706,7 +1707,7 @@ class App(MiddlewareMixin, LifespanMixin):
             if handler_domain == "backend":
                 sig = inspect.signature(self.backend_exception_handler)
                 return_type = (
-                    eval(sig.return_annotation)
+                    ast.literal_eval(sig.return_annotation)
                     if isinstance(sig.return_annotation, str)
                     else sig.return_annotation
                 )
