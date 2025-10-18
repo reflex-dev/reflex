@@ -131,7 +131,9 @@ class StateProxy(wrapt.ObjectProxy):
 
         await self._self_actx_lock.acquire()
         self._self_actx_lock_holder = current_task
-        self._self_actx = self._self_app.modify_state(token=self._self_substate_token)
+        self._self_actx = self._self_app.modify_state(
+            token=self._self_substate_token, background=True
+        )
         mutable_state = await self._self_actx.__aenter__()
         super().__setattr__(
             "__wrapped__", mutable_state.get_substate(self._self_substate_path)

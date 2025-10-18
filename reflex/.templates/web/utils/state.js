@@ -665,7 +665,9 @@ export const connect = async (
       }
     }
     applyClientStorageDelta(client_storage, update.delta);
-    event_processing = !update.final;
+    if (update.final !== null) {
+      event_processing = !update.final;
+    }
     if (update.events) {
       queueEvents(update.events, socket, false, navigate, params);
     }

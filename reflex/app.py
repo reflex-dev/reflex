@@ -1556,11 +1556,14 @@ class App(MiddlewareMixin, LifespanMixin):
         )
 
     @contextlib.asynccontextmanager
-    async def modify_state(self, token: str) -> AsyncIterator[BaseState]:
+    async def modify_state(
+        self, token: str, background: bool = False
+    ) -> AsyncIterator[BaseState]:
         """Modify the state out of band.
 
         Args:
             token: The token to modify the state for.
+            background: Whether the modification is happening in a background task.
 
         Yields:
             The state to modify.
@@ -1581,7 +1584,10 @@ class App(MiddlewareMixin, LifespanMixin):
                 # When the state is modified reset dirty status and emit the delta to the frontend.
                 state._clean()
                 await self.event_namespace.emit_update(
-                    update=StateUpdate(delta=delta),
+                    update=StateUpdate(
+                        delta=delta,
+                        final=True if not background else None,
+                    ),
                     token=token,
                 )
 
