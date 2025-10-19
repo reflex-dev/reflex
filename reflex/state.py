@@ -525,7 +525,7 @@ class BaseState(EvenMoreBasicBaseState):
             name: value if not isinstance(value, Field) else value.default_value()
             for mixin_cls in [*cls._mixins(), cls]
             for name, value in list(mixin_cls.__dict__.items())
-            if types.is_backend_base_variable(name, cls)
+            if types.is_backend_base_variable(name, mixin_cls)
         }
         # Add annotated backend vars that may not have a default value.
         new_backend_vars.update({
@@ -533,7 +533,7 @@ class BaseState(EvenMoreBasicBaseState):
             for mixin_cls in [*cls._mixins(), cls]
             for name, annotation_value in mixin_cls._get_type_hints().items()
             if name not in new_backend_vars
-            and types.is_backend_base_variable(name, cls)
+            and types.is_backend_base_variable(name, mixin_cls)
         })
 
         cls.backend_vars = {
