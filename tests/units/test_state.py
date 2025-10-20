@@ -110,7 +110,14 @@ class Object(Base):
     prop2: str = "hello"
 
 
-class TestState(BaseState):
+class TestMixin(BaseState, mixin=True):
+    """A test mixin."""
+
+    mixin: rx.Field[str] = rx.field("mixin_value")
+    _mixin_backend: rx.Field[int] = rx.field(default_factory=lambda: 10)
+
+
+class TestState(TestMixin, BaseState):  # pyright: ignore[reportUnsafeMultipleInheritance]
     """A test state."""
 
     # Set this class as not test one
@@ -342,6 +349,7 @@ def test_class_vars(test_state):
         "fig",
         "dt",
         "asynctest",
+        "mixin",
     }
 
 
@@ -367,7 +375,7 @@ def test_event_handlers(test_state):
     assert all(key in cls.event_handlers for key in expected_keys)
 
 
-def test_default_value(test_state):
+def test_default_value(test_state: TestState):
     """Test that the default value of a var is correct.
 
     Args:
@@ -378,6 +386,10 @@ def test_default_value(test_state):
     assert test_state.key == ""
     assert test_state.sum == 3.15
     assert test_state.upper == ""
+    assert test_state._backend == 0
+    assert test_state.mixin == "mixin_value"
+    assert test_state._mixin_backend == 10
+    assert test_state.array == [1, 2, 3.15]
 
 
 def test_computed_vars(test_state):
@@ -735,7 +747,7 @@ def test_set_dirty_substate(
     assert grandchild_state.dirty_vars == set()
 
 
-def test_reset(test_state, child_state):
+def test_reset(test_state: TestState, child_state: ChildState):
     """Test resetting the state.
 
     Args:
@@ -771,6 +783,8 @@ def test_reset(test_state, child_state):
         "mapping",
         "dt",
         "_backend",
+        "mixin",
+        "_mixin_backend",
         "asynctest",
     }
 
