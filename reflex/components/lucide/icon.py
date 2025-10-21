@@ -6,7 +6,7 @@ from reflex.utils.imports import ImportVar
 from reflex.vars.base import LiteralVar, Var
 from reflex.vars.sequence import LiteralStringVar, StringVar
 
-LUCIDE_LIBRARY = "lucide-react@0.545.0"
+LUCIDE_LIBRARY = "lucide-react@0.546.0"
 
 
 class LucideIconComponent(Component):
@@ -1129,6 +1129,7 @@ LUCIDE_ICON_LIST = [
     "monitor",
     "moon_star",
     "moon",
+    "monitor_cloud",
     "motorbike",
     "mountain_snow",
     "mountain",
