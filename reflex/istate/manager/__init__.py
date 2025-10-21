@@ -7,6 +7,7 @@ from collections.abc import AsyncIterator
 
 from reflex import constants
 from reflex.config import get_config
+from reflex.event import Event
 from reflex.state import BaseState
 from reflex.utils import console, prerequisites
 from reflex.utils.exceptions import InvalidStateManagerModeError
@@ -71,21 +72,27 @@ class StateManager(ABC):
         """
 
     @abstractmethod
-    async def set_state(self, token: str, state: BaseState):
+    async def set_state(
+        self, token: str, state: BaseState, *, context: Event | None = None
+    ):
         """Set the state for a token.
 
         Args:
             token: The token to set the state for.
             state: The state to set.
+            context: The event context.
         """
 
     @abstractmethod
     @contextlib.asynccontextmanager
-    async def modify_state(self, token: str) -> AsyncIterator[BaseState]:
+    async def modify_state(
+        self, token: str, *, context: Event | None = None
+    ) -> AsyncIterator[BaseState]:
         """Modify the state for a token while holding exclusive lock.
 
         Args:
             token: The token to modify the state for.
+            context: The event context.
 
         Yields:
             The state for the token.

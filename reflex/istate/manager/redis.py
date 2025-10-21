@@ -14,6 +14,7 @@ from typing_extensions import override
 
 from reflex.config import get_config
 from reflex.environment import environment
+from reflex.event import Event
 from reflex.istate.manager import StateManager, _default_token_expiration
 from reflex.state import BaseState, _split_substate_key, _substate_key
 from reflex.utils import console
@@ -261,7 +262,9 @@ class StateManagerRedis(StateManager):
         self,
         token: str,
         state: BaseState,
+        *,
         lock_id: bytes | None = None,
+        context: Event | None = None,
     ):
         """Set the state for a token.
 
@@ -269,6 +272,7 @@ class StateManagerRedis(StateManager):
             token: The token to set the state for.
             state: The state to set.
             lock_id: If provided, the lock_key must be set to this value to set the state.
+            context: The event context.
 
         Raises:
             LockExpiredError: If lock_id is provided and the lock for the token is not held by that ID.
@@ -283,6 +287,7 @@ class StateManagerRedis(StateManager):
                 f"Lock expired for token {token} while processing. Consider increasing "
                 f"`app.state_manager.lock_expiration` (currently {self.lock_expiration}) "
                 "or use `@rx.event(background=True)` decorator for long-running tasks."
+                + (f" Happened in event: {context.name}" if context is not None else "")
             )
             raise LockExpiredError(msg)
         if lock_id is not None:
@@ -292,7 +297,12 @@ class StateManagerRedis(StateManager):
             if time_taken > self.lock_warning_threshold / 1000:
                 console.warn(
                     f"Lock for token {token} was held too long {time_taken=}s, "
-                    f"use `@rx.event(background=True)` decorator for long-running tasks.",
+                    f"use `@rx.event(background=True)` decorator for long-running tasks."
+                    + (
+                        f" Happened in event: {context.name}"
+                        if context is not None
+                        else ""
+                    ),
                     dedupe=True,
                 )
 
@@ -308,7 +318,8 @@ class StateManagerRedis(StateManager):
                 self.set_state(
                     _substate_key(client_token, substate),
                     substate,
-                    lock_id,
+                    lock_id=lock_id,
+                    context=context,
                 ),
                 name=f"reflex_set_state|{client_token}|{substate.get_full_name()}",
             )
@@ -330,11 +341,14 @@ class StateManagerRedis(StateManager):
 
     @override
     @contextlib.asynccontextmanager
-    async def modify_state(self, token: str) -> AsyncIterator[BaseState]:
+    async def modify_state(
+        self, token: str, *, context: Event | None = None
+    ) -> AsyncIterator[BaseState]:
         """Modify the state for a token while holding exclusive lock.
 
         Args:
             token: The token to modify the state for.
+            context: The event context.
 
         Yields:
             The state for the token.
@@ -342,7 +356,7 @@ class StateManagerRedis(StateManager):
         async with self._lock(token) as lock_id:
             state = await self.get_state(token)
             yield state
-            await self.set_state(token, state, lock_id)
+            await self.set_state(token, state, lock_id=lock_id, context=context)
 
     @staticmethod
     def _lock_key(token: str) -> bytes:
