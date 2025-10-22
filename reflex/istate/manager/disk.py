@@ -9,11 +9,14 @@ from collections.abc import AsyncIterator
 from hashlib import md5
 from pathlib import Path
 
-from typing_extensions import override
+from typing_extensions import Unpack, override
 
 from reflex.environment import environment
-from reflex.event import Event
-from reflex.istate.manager import StateManager, _default_token_expiration
+from reflex.istate.manager import (
+    StateManager,
+    StateModificationContext,
+    _default_token_expiration,
+)
 from reflex.state import BaseState, _split_substate_key, _substate_key
 from reflex.utils import console, path_ops, prerequisites
 from reflex.utils.misc import run_in_thread
@@ -303,14 +306,14 @@ class StateManagerDisk(StateManager):
 
     @override
     async def set_state(
-        self, token: str, state: BaseState, *, context: Event | None = None
+        self, token: str, state: BaseState, **context: Unpack[StateModificationContext]
     ):
         """Set the state for a token.
 
         Args:
             token: The token to set the state for.
             state: The state to set.
-            context: The event context.
+            context: The state modification context.
         """
         client_token, _ = _split_substate_key(token)
         if self._write_debounce_seconds > 0:
@@ -330,13 +333,13 @@ class StateManagerDisk(StateManager):
     @override
     @contextlib.asynccontextmanager
     async def modify_state(
-        self, token: str, *, context: Event | None = None
+        self, token: str, **context: Unpack[StateModificationContext]
     ) -> AsyncIterator[BaseState]:
         """Modify the state for a token while holding exclusive lock.
 
         Args:
             token: The token to modify the state for.
-            context: The event context.
+            context: The state modification context.
 
         Yields:
             The state for the token.
@@ -351,7 +354,7 @@ class StateManagerDisk(StateManager):
         async with self._states_locks[client_token]:
             state = await self.get_state(token)
             yield state
-            await self.set_state(token, state, context=context)
+            await self.set_state(token, state, **context)
 
     async def close(self):
         """Close the state manager, flushing any pending writes to disk."""

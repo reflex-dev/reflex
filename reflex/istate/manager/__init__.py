@@ -4,6 +4,9 @@ import contextlib
 import dataclasses
 from abc import ABC, abstractmethod
 from collections.abc import AsyncIterator
+from typing import TypedDict
+
+from typing_extensions import ReadOnly, Unpack
 
 from reflex import constants
 from reflex.config import get_config
@@ -11,6 +14,15 @@ from reflex.event import Event
 from reflex.state import BaseState
 from reflex.utils import console, prerequisites
 from reflex.utils.exceptions import InvalidStateManagerModeError
+
+
+class StateModificationContext(TypedDict, total=False):
+    """The context for modifying state."""
+
+    event: ReadOnly[Event]
+
+
+EmptyContext = StateModificationContext()
 
 
 @dataclasses.dataclass
@@ -73,26 +85,29 @@ class StateManager(ABC):
 
     @abstractmethod
     async def set_state(
-        self, token: str, state: BaseState, *, context: Event | None = None
+        self,
+        token: str,
+        state: BaseState,
+        **context: Unpack[StateModificationContext],
     ):
         """Set the state for a token.
 
         Args:
             token: The token to set the state for.
             state: The state to set.
-            context: The event context.
+            context: The state modification context.
         """
 
     @abstractmethod
     @contextlib.asynccontextmanager
     async def modify_state(
-        self, token: str, *, context: Event | None = None
+        self, token: str, **context: Unpack[StateModificationContext]
     ) -> AsyncIterator[BaseState]:
         """Modify the state for a token while holding exclusive lock.
 
         Args:
             token: The token to modify the state for.
-            context: The event context.
+            context: The state modification context.
 
         Yields:
             The state for the token.
