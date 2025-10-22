@@ -2446,7 +2446,7 @@ def test_mutable_list(mutable_state: MutableTestState):
     assert isinstance(mutable_state.array[0], MutableProxy)
     for item in mutable_state.array:
         assert isinstance(item, MutableProxy)
-        item["foo"] = "bar"
+        item["foo"] = "bar"  # pyright: ignore[reportArgumentType, reportCallIssue]
         assert_array_dirty()
 
 
@@ -2521,7 +2521,7 @@ def test_mutable_dict(mutable_state: MutableTestState):
     mutable_value_third_ref.append("baz")  # pyright: ignore[reportAttributeAccessIssue]
     assert not mutable_state.dirty_vars
     # Unfortunately previous refs still will mark the state dirty... nothing doing about that
-    assert mutable_value.pop()
+    assert mutable_value.pop()  # pyright: ignore[reportCallIssue]
     assert_hashmap_dirty()
 
 
