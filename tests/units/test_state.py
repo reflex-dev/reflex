@@ -2102,7 +2102,8 @@ async def test_state_proxy(
             GrandchildState3.get_full_name(): {
                 "computed" + FIELD_MARKER: "",
             },
-        }
+        },
+        final=None,
     )
     assert mcall.kwargs["to"] == grandchild_state.router.session.session_id
 
@@ -2273,7 +2274,7 @@ async def test_background_task_no_block(mock_app: rx.App, token: str):
                         "other",
                     ],
                 }
-            }
+            },
         )
 
     # Explicit wait for background tasks
@@ -2313,7 +2314,7 @@ async def test_background_task_no_block(mock_app: rx.App, token: str):
             }
         },
         events=[],
-        final=True,
+        final=None,
     )
     for call in emit_mock.mock_calls[1:5]:  # pyright: ignore [reportAttributeAccessIssue]
         assert call.args[1] == StateUpdate(
@@ -2323,7 +2324,7 @@ async def test_background_task_no_block(mock_app: rx.App, token: str):
                 }
             },
             events=[],
-            final=True,
+            final=None,
         )
     assert emit_mock.mock_calls[-2].args[1] == StateUpdate(  # pyright: ignore [reportAttributeAccessIssue]
         delta={
@@ -2334,7 +2335,7 @@ async def test_background_task_no_block(mock_app: rx.App, token: str):
             }
         },
         events=[],
-        final=True,
+        final=None,
     )
     assert emit_mock.mock_calls[-1].args[1] == StateUpdate(  # pyright: ignore [reportAttributeAccessIssue]
         delta={
@@ -2343,7 +2344,7 @@ async def test_background_task_no_block(mock_app: rx.App, token: str):
             },
         },
         events=[],
-        final=True,
+        final=None,
     )
 
 
