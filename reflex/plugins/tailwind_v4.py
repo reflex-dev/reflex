@@ -17,7 +17,7 @@ class Constants(SimpleNamespace):
     """Tailwind constants."""
 
     # The Tailwindcss version
-    VERSION = "tailwindcss@4.1.14"
+    VERSION = "tailwindcss@4.1.15"
     # The Tailwind config.
     CONFIG = "tailwind.config.js"
     # Default Tailwind content paths
@@ -156,7 +156,7 @@ class TailwindV4Plugin(TailwindPlugin):
         return [
             *super().get_frontend_development_dependencies(**context),
             Constants.VERSION,
-            "@tailwindcss/postcss@4.1.14",
+            "@tailwindcss/postcss@4.1.15",
         ]
 
     def pre_compile(self, **context):

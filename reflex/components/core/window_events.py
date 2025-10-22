@@ -1,7 +1,12 @@
 """Window event listener component for Reflex."""
 
+from __future__ import annotations
+
+from typing import Any, cast
+
 import reflex as rx
 from reflex.components.base.fragment import Fragment
+from reflex.components.component import StatefulComponent, field
 from reflex.constants.compiler import Hooks
 from reflex.event import key_event, no_args_event_spec
 from reflex.vars.base import Var, VarData
@@ -61,6 +66,23 @@ class WindowEventListener(Fragment):
     on_popstate: rx.EventHandler[no_args_event_spec]
     on_storage: rx.EventHandler[_on_storage_spec]
 
+    hooks: list[str] = field(default_factory=list, is_javascript_property=False)
+
+    @classmethod
+    def create(cls, **props) -> WindowEventListener:
+        """Create a WindowEventListener component.
+
+        Args:
+            **props: The props to set on the component.
+
+        Returns:
+            The created component.
+        """
+        real_component = cast("WindowEventListener", super().create(**props))
+        hooks = StatefulComponent._fix_event_triggers(real_component)
+        real_component.hooks = hooks
+        return real_component
+
     def _exclude_props(self) -> list[str]:
         """Exclude event handler props from being passed to Fragment.
 
@@ -69,31 +91,30 @@ class WindowEventListener(Fragment):
         """
         return [*super()._exclude_props(), *self.event_triggers.keys()]
 
-    def add_hooks(self) -> list[str | Var[str]]:
+    def add_hooks(self) -> list[str | Var[Any]]:
         """Add hooks to register window event listeners.
 
         Returns:
             The hooks to add to the component.
         """
-        hooks = []
+        hooks: list[str | Var[Any]] = [*self.hooks]
 
         for prop_name, event_trigger in self.event_triggers.items():
             # Get JS event name: remove on_ prefix and underscores
             event_name = prop_name.removeprefix("on_").replace("_", "")
 
             hook_expr = f"""
-                    useEffect(() => {{
-                        if (typeof window === 'undefined') return;
-
-                        window.addEventListener('{event_name}', {event_trigger});
-                        return () => window.removeEventListener('{event_name}', {event_trigger});
-                    }}, []);
+useEffect(() => {{
+    if (typeof window === 'undefined') return;
+    const fn = {Var.create(event_trigger)};
+    window.addEventListener('{event_name}', fn);
+    return () => window.removeEventListener('{event_name}', fn);
+}}, []);
                 """
 
             hooks.append(
                 Var(
                     hook_expr,
-                    _var_type="str",
                     _var_data=VarData(position=Hooks.HookPosition.POST_TRIGGER),
                 )
             )

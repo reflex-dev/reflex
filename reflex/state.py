@@ -523,15 +523,17 @@ class BaseState(EvenMoreBasicBaseState):
 
         new_backend_vars = {
             name: value if not isinstance(value, Field) else value.default_value()
-            for name, value in list(cls.__dict__.items())
-            if types.is_backend_base_variable(name, cls)
+            for mixin_cls in [*cls._mixins(), cls]
+            for name, value in list(mixin_cls.__dict__.items())
+            if types.is_backend_base_variable(name, mixin_cls)
         }
         # Add annotated backend vars that may not have a default value.
         new_backend_vars.update({
             name: cls._get_var_default(name, annotation_value)
-            for name, annotation_value in cls._get_type_hints().items()
+            for mixin_cls in [*cls._mixins(), cls]
+            for name, annotation_value in mixin_cls._get_type_hints().items()
             if name not in new_backend_vars
-            and types.is_backend_base_variable(name, cls)
+            and types.is_backend_base_variable(name, mixin_cls)
         })
 
         cls.backend_vars = {
@@ -578,9 +580,6 @@ class BaseState(EvenMoreBasicBaseState):
                     setattr(cls, name, newcv)
                     cls.computed_vars[name] = newcv
                     cls.vars[name] = newcv
-                    continue
-                if types.is_backend_base_variable(name, mixin_cls):
-                    cls.backend_vars[name] = copy.deepcopy(value)
                     continue
                 if events.get(name) is not None:
                     continue
