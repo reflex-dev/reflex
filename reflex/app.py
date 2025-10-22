@@ -1758,7 +1758,9 @@ async def process(
             constants.RouteVar.CLIENT_IP: client_ip,
         })
         # Get the state for the session exclusively.
-        async with app.state_manager.modify_state(event.substate_token) as state:
+        async with app.state_manager.modify_state(
+            event.substate_token, event=event
+        ) as state:
             # When this is a brand new instance of the state, signal the
             # frontend to reload before processing it.
             if (

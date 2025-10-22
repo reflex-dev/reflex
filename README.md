@@ -98,7 +98,6 @@ Now you can modify the source code in `my_app_name/my_app_name.py`. Reflex has f
 
 If you installed Reflex without a virtual environment and the `reflex` command is not found, you can run commands using: `python3 -m reflex init` and `python3 -m reflex run`
 
-
 ## 🫧 Example App
 
 Let's go over an example: creating an image generation UI around [DALL·E](https://platform.openai.com/docs/guides/images/image-generation?context=node). For simplicity, we just call the [OpenAI API](https://platform.openai.com/docs/api-reference/authentication), but you could replace this with an ML model run locally.
