@@ -5,9 +5,9 @@ import contextlib
 import dataclasses
 from collections.abc import AsyncIterator
 
-from typing_extensions import override
+from typing_extensions import Unpack, override
 
-from reflex.istate.manager import StateManager
+from reflex.istate.manager import StateManager, StateModificationContext
 from reflex.state import BaseState, _split_substate_key
 
 
@@ -43,23 +43,32 @@ class StateManagerMemory(StateManager):
         return self.states[token]
 
     @override
-    async def set_state(self, token: str, state: BaseState):
+    async def set_state(
+        self,
+        token: str,
+        state: BaseState,
+        **context: Unpack[StateModificationContext],
+    ):
         """Set the state for a token.
 
         Args:
             token: The token to set the state for.
             state: The state to set.
+            context: The state modification context.
         """
         token = _split_substate_key(token)[0]
         self.states[token] = state
 
     @override
     @contextlib.asynccontextmanager
-    async def modify_state(self, token: str) -> AsyncIterator[BaseState]:
+    async def modify_state(
+        self, token: str, **context: Unpack[StateModificationContext]
+    ) -> AsyncIterator[BaseState]:
         """Modify the state for a token while holding exclusive lock.
 
         Args:
             token: The token to modify the state for.
+            context: The state modification context.
 
         Yields:
             The state for the token.
