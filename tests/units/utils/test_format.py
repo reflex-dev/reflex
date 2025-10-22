@@ -602,6 +602,7 @@ formatted_router = {
                     "key" + FIELD_MARKER: "",
                     "map_key" + FIELD_MARKER: "a",
                     "mapping" + FIELD_MARKER: {"a": [1, 2, 3], "b": [4, 5, 6]},
+                    "mixin" + FIELD_MARKER: "mixin_value",
                     "num1" + FIELD_MARKER: 0,
                     "num2" + FIELD_MARKER: 3.15,
                     "obj" + FIELD_MARKER: {"prop1": 42, "prop2": "hello"},
