@@ -11,6 +11,7 @@ import datetime
 import functools
 import inspect
 import pickle
+import re
 import sys
 import time
 import typing
@@ -2471,15 +2472,23 @@ def dynamic(func: Callable[[T], Component]):
     return wrapper
 
 
+# sessionStorage key holding the ms timestamp of the last reload on error
+LAST_RELOADED_KEY = "reflex_last_reloaded_on_error"
+
+
 class FrontendEventExceptionState(State):
     """Substate for handling frontend exceptions."""
 
     # If the frontend error message contains any of these strings, automatically reload the page.
-    auto_reload_on_errors: ClassVar[list[str]] = [
-        "TypeError: Cannot read properties of null",
+    auto_reload_on_errors: ClassVar[list[re.Pattern]] = [
+        re.compile(  # Chrome/Edge
+            re.escape("TypeError: Cannot read properties of null")
+        ),
+        re.compile(re.escape("TypeError: null is not an object")),  # Safari
+        re.compile(r"TypeError: can't access property \".*\" of null"),  # Firefox
     ]
     # Reload the page only once per cooldown period to avoid reload loops.
-    auto_reload_cooldown_time_ms: ClassVar[int] = 10000
+    auto_reload_cooldown_time_ms: ClassVar[int] = 10000  # 10 seconds
 
     @event
     def handle_frontend_exception(
@@ -2499,12 +2508,15 @@ class FrontendEventExceptionState(State):
         """
         # Handle automatic reload for certain errors.
         if type(self).auto_reload_on_errors and any(
-            error in info for error in type(self).auto_reload_on_errors
+            error.search(info) for error in type(self).auto_reload_on_errors
         ):
             yield call_script(
-                "const last_reload = parseInt(window.sessionStorage.getItem('reflex_last_reloaded_on_error')) || 0;"
+                f"const last_reload = parseInt(window.sessionStorage.getItem('{LAST_RELOADED_KEY}')) || 0;"
                 f"if (Date.now() - last_reload > {type(self).auto_reload_cooldown_time_ms})"
-                "{window.sessionStorage.setItem('reflex_last_reloaded_on_error', Date.now().toString()); window.location.reload(true);}"
+                "{"
+                f"window.sessionStorage.setItem('{LAST_RELOADED_KEY}', Date.now().toString());"
+                "window.location.reload(true);"
+                "}"
             )
         prerequisites.get_and_validate_app().app.frontend_exception_handler(
             Exception(info)
