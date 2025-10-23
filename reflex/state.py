@@ -2486,6 +2486,7 @@ class FrontendEventExceptionState(State):
         ),
         re.compile(re.escape("TypeError: null is not an object")),  # Safari
         re.compile(r"TypeError: can't access property \".*\" of null"),  # Firefox
+        re.compile(re.escape("resolveDispatcher() is null")),
     ]
 
     @event
