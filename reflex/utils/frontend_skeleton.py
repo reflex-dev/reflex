@@ -195,6 +195,8 @@ def _compile_vite_config(config: Config):
         base=base,
         hmr=environment.VITE_HMR.get(),
         force_full_reload=environment.VITE_FORCE_FULL_RELOAD.get(),
+        experimental_hmr=environment.VITE_EXPERIMENTAL_HMR.get(),
+        sourcemap=environment.VITE_SOURCEMAP.get(),
     )
 
 
