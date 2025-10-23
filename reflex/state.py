@@ -15,7 +15,7 @@ import sys
 import time
 import typing
 import warnings
-from collections.abc import AsyncIterator, Callable, Sequence
+from collections.abc import AsyncIterator, Callable, Iterator, Sequence
 from enum import Enum
 from hashlib import md5
 from importlib.util import find_spec
@@ -34,6 +34,7 @@ from reflex.event import (
     Event,
     EventHandler,
     EventSpec,
+    call_script,
     fix_events,
 )
 from reflex.istate import HANDLED_PICKLE_ERRORS, debug_failed_pickles
@@ -2473,8 +2474,17 @@ def dynamic(func: Callable[[T], Component]):
 class FrontendEventExceptionState(State):
     """Substate for handling frontend exceptions."""
 
+    # If the frontend error message contains any of these strings, automatically reload the page.
+    auto_reload_on_errors: ClassVar[list[str]] = [
+        "TypeError: Cannot read properties of null",
+    ]
+    # Reload the page only once per cooldown period to avoid reload loops.
+    auto_reload_cooldown_time_ms: ClassVar[int] = 10000
+
     @event
-    def handle_frontend_exception(self, info: str, component_stack: str) -> None:
+    def handle_frontend_exception(
+        self, info: str, component_stack: str
+    ) -> Iterator[EventSpec]:
         """Handle frontend exceptions.
 
         If a frontend exception handler is provided, it will be called.
@@ -2484,7 +2494,18 @@ class FrontendEventExceptionState(State):
             info: The exception information.
             component_stack: The stack trace of the component where the exception occurred.
 
+        Yields:
+            Optional auto-reload event for certain errors outside cooldown period.
         """
+        # Handle automatic reload for certain errors.
+        if type(self).auto_reload_on_errors and any(
+            error in info for error in type(self).auto_reload_on_errors
+        ):
+            yield call_script(
+                "const last_reload = parseInt(window.sessionStorage.getItem('reflex_last_reloaded_on_error')) || 0;"
+                f"if (Date.now() - last_reload > {type(self).auto_reload_cooldown_time_ms})"
+                "{window.sessionStorage.setItem('reflex_last_reloaded_on_error', Date.now().toString()); window.location.reload(true);}"
+            )
         prerequisites.get_and_validate_app().app.frontend_exception_handler(
             Exception(info)
         )
