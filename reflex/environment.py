@@ -710,7 +710,7 @@ class EnvironmentVariables:
     VITE_FORCE_FULL_RELOAD: EnvVar[bool] = env_var(False)
 
     # Whether to enable Rolldown's experimental HMR.
-    VITE_EXPERIMENTAL_HMR: EnvVar[bool] = env_var(True)
+    VITE_EXPERIMENTAL_HMR: EnvVar[bool] = env_var(False)
 
     # Whether to generate sourcemaps for the frontend.
     VITE_SOURCEMAP: EnvVar[Literal[False, True, "inline", "hidden"]] = env_var(False)  # noqa: RUF038
