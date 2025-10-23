@@ -696,6 +696,9 @@ class EnvironmentVariables:
     # How long to delay writing updated states to disk. (Higher values mean less writes, but more chance of lost data.)
     REFLEX_STATE_MANAGER_DISK_DEBOUNCE_SECONDS: EnvVar[float] = env_var(2.0)
 
+    # How long to wait between automatic reload on frontend error to avoid reload loops.
+    REFLEX_AUTO_RELOAD_COOLDOWN_TIME_MS: EnvVar[int] = env_var(10_000)
+
 
 environment = EnvironmentVariables()
 
