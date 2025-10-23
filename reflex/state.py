@@ -1780,7 +1780,7 @@ class BaseState(EvenMoreBasicBaseState):
             return StateUpdate(
                 delta=delta,
                 events=fixed_events,
-                final=final if not handler.is_background else True,
+                final=final if not handler.is_background else None,
             )
         except Exception as ex:
             state._clean()
@@ -2714,7 +2714,7 @@ class StateUpdate:
     events: list[Event] = dataclasses.field(default_factory=list)
 
     # Whether this is the final state update for the event.
-    final: bool = True
+    final: bool | None = True
 
     def json(self) -> str:
         """Convert the state update to a JSON string.
