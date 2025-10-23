@@ -2487,8 +2487,6 @@ class FrontendEventExceptionState(State):
         re.compile(re.escape("TypeError: null is not an object")),  # Safari
         re.compile(r"TypeError: can't access property \".*\" of null"),  # Firefox
     ]
-    # Reload the page only once per cooldown period to avoid reload loops.
-    auto_reload_cooldown_time_ms: ClassVar[int] = 10000  # 10 seconds
 
     @event
     def handle_frontend_exception(
@@ -2512,10 +2510,10 @@ class FrontendEventExceptionState(State):
         ):
             yield call_script(
                 f"const last_reload = parseInt(window.sessionStorage.getItem('{LAST_RELOADED_KEY}')) || 0;"
-                f"if (Date.now() - last_reload > {type(self).auto_reload_cooldown_time_ms})"
+                f"if (Date.now() - last_reload > {environment.REFLEX_AUTO_RELOAD_COOLDOWN_TIME_MS.get()})"
                 "{"
                 f"window.sessionStorage.setItem('{LAST_RELOADED_KEY}', Date.now().toString());"
-                "window.location.reload(true);"
+                "window.location.reload();"
                 "}"
             )
         prerequisites.get_and_validate_app().app.frontend_exception_handler(
