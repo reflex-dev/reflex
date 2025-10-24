@@ -239,20 +239,6 @@ class RedisTokenManager(LocalTokenManager):
         ) is not None and socket_record.instance_id != self.instance_id:
             self.sid_to_token.pop(socket_record.sid, None)
 
-    async def _handle_socket_record_set(self, token: str) -> None:
-        """Handle setting/updating of a socket record from Redis.
-
-        Args:
-            token: The client token whose record was set/updated.
-        """
-        # Fetch updated record from Redis
-        record_json = await self.redis.get(self._get_redis_key(token))
-        if record_json:
-            record_data = json.loads(record_json)
-            socket_record = SocketRecord(**record_data)
-            self.token_to_socket[token] = socket_record
-            self.sid_to_token[socket_record.sid] = token
-
     async def _subscribe_socket_record_updates(self, redis_db: int) -> None:
         """Subscribe to Redis keyspace notifications for socket record updates."""
         async with self.redis.pubsub() as pubsub:
@@ -272,7 +258,7 @@ class RedisTokenManager(LocalTokenManager):
                     if event in ("del", "expired", "evicted"):
                         self._handle_socket_record_del(token)
                     elif event == "set":
-                        await self._handle_socket_record_set(token)
+                        await self._get_token_owner(token, refresh=True)
 
     async def _socket_record_updates_forever(self) -> None:
         """Background task to monitor Redis keyspace notifications for socket record updates."""
