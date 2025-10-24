@@ -7,9 +7,9 @@ import dataclasses
 import json
 import uuid
 from abc import ABC, abstractmethod
-from collections.abc import Callable, Coroutine
+from collections.abc import AsyncIterator, Callable, Coroutine
 from types import MappingProxyType
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, ClassVar
 
 from reflex.istate.manager.redis import StateManagerRedis
 from reflex.state import BaseState, StateUpdate
@@ -66,6 +66,15 @@ class TokenManager(ABC):
         return MappingProxyType({
             token: sr.sid for token, sr in self.token_to_socket.items()
         })
+
+    async def enumerate_tokens(self) -> AsyncIterator[str]:
+        """Iterate over all tokens in the system.
+
+        Yields:
+            All client tokens known to the TokenManager.
+        """
+        for token in self.token_to_socket:
+            yield token
 
     @abstractmethod
     async def link_token_to_sid(self, token: str, sid: str) -> str | None:
@@ -169,6 +178,8 @@ class RedisTokenManager(LocalTokenManager):
     for cross-worker duplicate detection.
     """
 
+    _token_socket_record_prefix: ClassVar[str] = "token_manager_socket_record_"
+
     def __init__(self, redis: Redis):
         """Initialize the Redis token manager.
 
@@ -199,7 +210,23 @@ class RedisTokenManager(LocalTokenManager):
         Returns:
             Redis key following Reflex conventions: token_manager_socket_record_{token}
         """
-        return f"token_manager_socket_record_{token}"
+        return f"{self._token_socket_record_prefix}{token}"
+
+    async def enumerate_tokens(self) -> AsyncIterator[str]:
+        """Iterate over all tokens in the system.
+
+        Yields:
+            All client tokens known to the RedisTokenManager.
+        """
+        cursor = 0
+        while scan_result := await self.redis.scan(
+            cursor=cursor, match=self._get_redis_key("*")
+        ):
+            cursor = int(scan_result[0])
+            for key in scan_result[1]:
+                yield key.decode().replace(self._token_socket_record_prefix, "")
+            if not cursor:
+                break
 
     def _handle_socket_record_del(self, token: str) -> None:
         """Handle deletion of a socket record from Redis.
@@ -230,12 +257,12 @@ class RedisTokenManager(LocalTokenManager):
         """Subscribe to Redis keyspace notifications for socket record updates."""
         async with self.redis.pubsub() as pubsub:
             await pubsub.psubscribe(
-                f"__keyspace@{redis_db}__:token_manager_socket_record_*"
+                f"__keyspace@{redis_db}__:{self._get_redis_key('*')}"
             )
             async for message in pubsub.listen():
                 if message["type"] == "pmessage":
                     key = message["channel"].split(b":", 1)[1].decode()
-                    token = key.replace("token_manager_socket_record_", "")
+                    token = key.replace(self._token_socket_record_prefix, "")
 
                     if token not in self.token_to_socket:
                         # We don't know about this token, skip
