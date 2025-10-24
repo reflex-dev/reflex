@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import dataclasses
 import json
 import uuid
@@ -9,6 +10,8 @@ from abc import ABC, abstractmethod
 from types import MappingProxyType
 from typing import TYPE_CHECKING
 
+from reflex.istate.manager.redis import StateManagerRedis
+from reflex.state import BaseState
 from reflex.utils import console, prerequisites
 
 if TYPE_CHECKING:
@@ -173,6 +176,7 @@ class RedisTokenManager(LocalTokenManager):
 
         config = get_config()
         self.token_expiration = config.redis_token_expiration
+        self._update_task = None
 
     def _get_redis_key(self, token: str) -> str:
         """Get Redis key for token mapping.
@@ -184,6 +188,48 @@ class RedisTokenManager(LocalTokenManager):
             Redis key following Reflex conventions: token_manager_socket_record_{token}
         """
         return f"token_manager_socket_record_{token}"
+
+    async def _socket_record_update_task(self) -> None:
+        """Background task to monitor Redis keyspace notifications for socket record updates."""
+        await StateManagerRedis(
+            state=BaseState, redis=self.redis
+        )._enable_keyspace_notifications()
+        redis_db = self.redis.get_connection_kwargs().get("db", 0)
+        while True:
+            try:
+                await self._subscribe_socket_record_updates(redis_db)
+            except asyncio.CancelledError:  # noqa: PERF203
+                break
+            except Exception as e:
+                console.error(f"RedisTokenManager socket record update task error: {e}")
+
+    async def _subscribe_socket_record_updates(self, redis_db: int) -> None:
+        """Subscribe to Redis keyspace notifications for socket record updates."""
+        pubsub = self.redis.pubsub()
+        await pubsub.psubscribe(
+            f"__keyspace@{redis_db}__:token_manager_socket_record_*"
+        )
+
+        async for message in pubsub.listen():
+            if message["type"] == "pmessage":
+                key = message["channel"].split(b":", 1)[1].decode()
+                event = message["data"].decode()
+                token = key.replace("token_manager_socket_record_", "")
+
+                if event in ("del", "expired", "evicted"):
+                    # Remove from local dicts if exists
+                    if (
+                        socket_record := self.token_to_socket.pop(token, None)
+                    ) is not None:
+                        self.sid_to_token.pop(socket_record.sid, None)
+                elif event == "set":
+                    # Fetch updated record from Redis
+                    record_json = await self.redis.get(key)
+                    if record_json:
+                        record_data = json.loads(record_json)
+                        socket_record = SocketRecord(**record_data)
+                        self.token_to_socket[token] = socket_record
+                        self.sid_to_token[socket_record.sid] = token
 
     async def link_token_to_sid(self, token: str, sid: str) -> str | None:
         """Link a token to a session ID with Redis-based duplicate detection.
@@ -200,6 +246,10 @@ class RedisTokenManager(LocalTokenManager):
             socket_record := self.token_to_socket.get(token)
         ) is not None and sid == socket_record.sid:
             return None  # Same token, same SID = reconnection, no Redis check needed
+
+        # Make sure the update subscriber is running
+        if self._update_task is None or self._update_task.done():
+            self._update_task = asyncio.create_task(self._socket_record_update_task())
 
         # Check Redis for cross-worker duplicates
         redis_key = self._get_redis_key(token)

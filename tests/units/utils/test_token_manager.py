@@ -1,5 +1,6 @@
 """Unit tests for TokenManager implementations."""
 
+import asyncio
 import json
 from unittest.mock import AsyncMock, Mock, patch
 
@@ -63,6 +64,7 @@ class TestTokenManager:
         """
         mock_check_redis_used.return_value = True
         mock_redis_client = Mock()
+        mock_redis_client.get_connection_kwargs.return_value = {"db": 0}
         mock_get_redis.return_value = mock_redis_client
 
         manager = TokenManager.create()
@@ -191,6 +193,20 @@ class TestRedisTokenManager:
         redis.exists = AsyncMock()
         redis.set = AsyncMock()
         redis.delete = AsyncMock()
+
+        # Non-async call
+        redis.get_connection_kwargs = Mock(return_value={"db": 0})
+
+        # Mock out pubsub
+        async def listen():
+            await asyncio.sleep(1)
+            if False:
+                yield
+            return
+
+        psubscribe = AsyncMock()
+        psubscribe.listen = listen
+        redis.pubsub = Mock(return_value=psubscribe)
         return redis
 
     @pytest.fixture
