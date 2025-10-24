@@ -2,8 +2,11 @@
 
 from __future__ import annotations
 
+import dataclasses
+import json
 import uuid
 from abc import ABC, abstractmethod
+from types import MappingProxyType
 from typing import TYPE_CHECKING
 
 from reflex.utils import console, prerequisites
@@ -21,15 +24,36 @@ def _get_new_token() -> str:
     return str(uuid.uuid4())
 
 
+@dataclasses.dataclass(frozen=True, kw_only=True)
+class SocketRecord:
+    """Record for a connected socket client."""
+
+    instance_id: str
+    sid: str
+
+
 class TokenManager(ABC):
     """Abstract base class for managing client token to session ID mappings."""
 
     def __init__(self):
         """Initialize the token manager with local dictionaries."""
-        # Keep a mapping between socket ID and client token.
-        self.token_to_sid: dict[str, str] = {}
+        # Each process has an instance_id to identify its own sockets.
+        self.instance_id: str = _get_new_token()
         # Keep a mapping between client token and socket ID.
+        self.token_to_socket: dict[str, SocketRecord] = {}
+        # Keep a mapping between socket ID and client token.
         self.sid_to_token: dict[str, str] = {}
+
+    @property
+    def token_to_sid(self) -> MappingProxyType[str, str]:
+        """Read-only compatibility property for token_to_socket mapping.
+
+        Returns:
+            The token to session ID mapping.
+        """
+        return MappingProxyType({
+            token: sr.sid for token, sr in self.token_to_socket.items()
+        })
 
     @abstractmethod
     async def link_token_to_sid(self, token: str, sid: str) -> str | None:
@@ -68,7 +92,9 @@ class TokenManager(ABC):
 
     async def disconnect_all(self):
         """Disconnect all tracked tokens when the server is going down."""
-        token_sid_pairs: set[tuple[str, str]] = set(self.token_to_sid.items())
+        token_sid_pairs: set[tuple[str, str]] = {
+            (token, sr.sid) for token, sr in self.token_to_socket.items()
+        }
         token_sid_pairs.update(
             ((token, sid) for sid, token in self.sid_to_token.items())
         )
@@ -95,14 +121,20 @@ class LocalTokenManager(TokenManager):
             New token if duplicate detected and new token generated, None otherwise.
         """
         # Check if token is already mapped to a different SID (duplicate tab)
-        if token in self.token_to_sid and sid != self.token_to_sid.get(token):
+        if (
+            socket_record := self.token_to_socket.get(token)
+        ) is not None and sid != socket_record.sid:
             new_token = _get_new_token()
-            self.token_to_sid[new_token] = sid
+            self.token_to_socket[new_token] = SocketRecord(
+                instance_id=self.instance_id, sid=sid
+            )
             self.sid_to_token[sid] = new_token
             return new_token
 
         # Normal case - link token to SID
-        self.token_to_sid[token] = sid
+        self.token_to_socket[token] = SocketRecord(
+            instance_id=self.instance_id, sid=sid
+        )
         self.sid_to_token[sid] = token
         return None
 
@@ -114,7 +146,7 @@ class LocalTokenManager(TokenManager):
             sid: The Socket.IO session ID.
         """
         # Clean up both mappings
-        self.token_to_sid.pop(token, None)
+        self.token_to_socket.pop(token, None)
         self.sid_to_token.pop(sid, None)
 
 
@@ -149,9 +181,9 @@ class RedisTokenManager(LocalTokenManager):
             token: The client token.
 
         Returns:
-            Redis key following Reflex conventions: {token}_sid
+            Redis key following Reflex conventions: token_manager_socket_record_{token}
         """
-        return f"{token}_sid"
+        return f"token_manager_socket_record_{token}"
 
     async def link_token_to_sid(self, token: str, sid: str) -> str | None:
         """Link a token to a session ID with Redis-based duplicate detection.
@@ -164,7 +196,9 @@ class RedisTokenManager(LocalTokenManager):
             New token if duplicate detected and new token generated, None otherwise.
         """
         # Fast local check first (handles reconnections)
-        if token in self.token_to_sid and self.token_to_sid[token] == sid:
+        if (
+            socket_record := self.token_to_socket.get(token)
+        ) is not None and sid == socket_record.sid:
             return None  # Same token, same SID = reconnection, no Redis check needed
 
         # Check Redis for cross-worker duplicates
@@ -176,34 +210,29 @@ class RedisTokenManager(LocalTokenManager):
             console.error(f"Redis error checking token existence: {e}")
             return await super().link_token_to_sid(token, sid)
 
+        new_token = None
         if token_exists_in_redis:
             # Duplicate exists somewhere - generate new token
-            new_token = _get_new_token()
-            new_redis_key = self._get_redis_key(new_token)
+            token = new_token = _get_new_token()
+            redis_key = self._get_redis_key(new_token)
 
-            try:
-                # Store in Redis
-                await self.redis.set(new_redis_key, "1", ex=self.token_expiration)
-            except Exception as e:
-                console.error(f"Redis error storing new token: {e}")
-                # Still update local dicts and continue
+        # Store in local dicts
+        socket_record = self.token_to_socket[token] = SocketRecord(
+            instance_id=self.instance_id, sid=sid
+        )
+        self.sid_to_token[sid] = token
 
-            # Store in local dicts (always do this)
-            self.token_to_sid[new_token] = sid
-            self.sid_to_token[sid] = new_token
-            return new_token
-
-        # Normal case - store in both Redis and local dicts
+        # Store in Redis if possible
         try:
-            await self.redis.set(redis_key, "1", ex=self.token_expiration)
+            await self.redis.set(
+                redis_key,
+                json.dumps(dataclasses.asdict(socket_record)),
+                ex=self.token_expiration,
+            )
         except Exception as e:
             console.error(f"Redis error storing token: {e}")
-            # Continue with local storage
-
-        # Store in local dicts (always do this)
-        self.token_to_sid[token] = sid
-        self.sid_to_token[sid] = token
-        return None
+        # Return the new token if one was generated
+        return new_token
 
     async def disconnect_token(self, token: str, sid: str) -> None:
         """Clean up token mapping when client disconnects.
@@ -213,7 +242,9 @@ class RedisTokenManager(LocalTokenManager):
             sid: The Socket.IO session ID.
         """
         # Only clean up if we own it locally (fast ownership check)
-        if self.token_to_sid.get(token) == sid:
+        if (
+            socket_record := self.token_to_socket.get(token)
+        ) is not None and socket_record.sid == sid:
             # Clean up Redis
             redis_key = self._get_redis_key(token)
             try:

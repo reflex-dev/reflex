@@ -53,6 +53,7 @@ from reflex.utils.exceptions import (
     UnretrievableVarValueError,
 )
 from reflex.utils.format import json_dumps
+from reflex.utils.token_manager import SocketRecord
 from reflex.vars.base import Var, computed_var
 
 from .states import GenState
@@ -2016,7 +2017,9 @@ async def test_state_proxy(
     namespace = mock_app.event_namespace
     assert namespace is not None
     namespace.sid_to_token[router_data.session.session_id] = token
-    namespace.token_to_sid[token] = router_data.session.session_id
+    namespace._token_manager.token_to_socket[token] = SocketRecord(
+        instance_id="", sid=router_data.session.session_id
+    )
     if isinstance(mock_app.state_manager, (StateManagerMemory, StateManagerDisk)):
         mock_app.state_manager.states[parent_state.router.session.client_token] = (
             parent_state
@@ -2227,7 +2230,9 @@ async def test_background_task_no_block(mock_app: rx.App, token: str):
     namespace = mock_app.event_namespace
     assert namespace is not None
     namespace.sid_to_token[sid] = token
-    namespace.token_to_sid[token] = sid
+    namespace._token_manager.token_to_socket[token] = SocketRecord(
+        instance_id="", sid=sid
+    )
     mock_app.state_manager.state = mock_app._state = BackgroundTaskState
     async for update in rx.app.process(
         mock_app,

@@ -2033,11 +2033,13 @@ class EventNamespace(AsyncNamespace):
         self._token_manager = TokenManager.create()
 
     @property
-    def token_to_sid(self) -> dict[str, str]:
+    def token_to_sid(self) -> Mapping[str, str]:
         """Get token to SID mapping for backward compatibility.
 
+        Note: this mapping is read-only.
+
         Returns:
-            The token to SID mapping dict.
+            The token to SID mapping.
         """
         # For backward compatibility, expose the underlying dict
         return self._token_manager.token_to_sid
