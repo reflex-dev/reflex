@@ -2017,8 +2017,9 @@ async def test_state_proxy(
     namespace = mock_app.event_namespace
     assert namespace is not None
     namespace.sid_to_token[router_data.session.session_id] = token
+    namespace._token_manager.instance_id = "mock"
     namespace._token_manager.token_to_socket[token] = SocketRecord(
-        instance_id="", sid=router_data.session.session_id
+        instance_id="mock", sid=router_data.session.session_id
     )
     if isinstance(mock_app.state_manager, (StateManagerMemory, StateManagerDisk)):
         mock_app.state_manager.states[parent_state.router.session.client_token] = (
@@ -2230,8 +2231,9 @@ async def test_background_task_no_block(mock_app: rx.App, token: str):
     namespace = mock_app.event_namespace
     assert namespace is not None
     namespace.sid_to_token[sid] = token
+    namespace._token_manager.instance_id = "mock"
     namespace._token_manager.token_to_socket[token] = SocketRecord(
-        instance_id="", sid=sid
+        instance_id="mock", sid=sid
     )
     mock_app.state_manager.state = mock_app._state = BackgroundTaskState
     async for update in rx.app.process(

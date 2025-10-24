@@ -7,11 +7,12 @@ import dataclasses
 import json
 import uuid
 from abc import ABC, abstractmethod
+from collections.abc import Callable, Coroutine
 from types import MappingProxyType
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from reflex.istate.manager.redis import StateManagerRedis
-from reflex.state import BaseState
+from reflex.state import BaseState, StateUpdate
 from reflex.utils import console, prerequisites
 
 if TYPE_CHECKING:
@@ -33,6 +34,14 @@ class SocketRecord:
 
     instance_id: str
     sid: str
+
+
+@dataclasses.dataclass(frozen=True, kw_only=True)
+class LostAndFoundRecord:
+    """Record for a StateUpdate for a token with its socket on another instance."""
+
+    token: str
+    update: dict[str, Any]
 
 
 class TokenManager(ABC):
@@ -176,7 +185,10 @@ class RedisTokenManager(LocalTokenManager):
 
         config = get_config()
         self.token_expiration = config.redis_token_expiration
-        self._update_task = None
+
+        # Pub/sub tasks for handling sockets owned by other instances.
+        self._socket_record_task: asyncio.Task | None = None
+        self._lost_and_found_task: asyncio.Task | None = None
 
     def _get_redis_key(self, token: str) -> str:
         """Get Redis key for token mapping.
@@ -189,7 +201,53 @@ class RedisTokenManager(LocalTokenManager):
         """
         return f"token_manager_socket_record_{token}"
 
-    async def _socket_record_update_task(self) -> None:
+    def _handle_socket_record_del(self, token: str) -> None:
+        """Handle deletion of a socket record from Redis.
+
+        Args:
+            token: The client token whose record was deleted.
+        """
+        if (
+            socket_record := self.token_to_socket.pop(token, None)
+        ) is not None and socket_record.instance_id != self.instance_id:
+            self.sid_to_token.pop(socket_record.sid, None)
+
+    async def _handle_socket_record_set(self, token: str) -> None:
+        """Handle setting/updating of a socket record from Redis.
+
+        Args:
+            token: The client token whose record was set/updated.
+        """
+        # Fetch updated record from Redis
+        record_json = await self.redis.get(self._get_redis_key(token))
+        if record_json:
+            record_data = json.loads(record_json)
+            socket_record = SocketRecord(**record_data)
+            self.token_to_socket[token] = socket_record
+            self.sid_to_token[socket_record.sid] = token
+
+    async def _subscribe_socket_record_updates(self, redis_db: int) -> None:
+        """Subscribe to Redis keyspace notifications for socket record updates."""
+        async with self.redis.pubsub() as pubsub:
+            await pubsub.psubscribe(
+                f"__keyspace@{redis_db}__:token_manager_socket_record_*"
+            )
+            async for message in pubsub.listen():
+                if message["type"] == "pmessage":
+                    key = message["channel"].split(b":", 1)[1].decode()
+                    token = key.replace("token_manager_socket_record_", "")
+
+                    if token not in self.token_to_socket:
+                        # We don't know about this token, skip
+                        continue
+
+                    event = message["data"].decode()
+                    if event in ("del", "expired", "evicted"):
+                        self._handle_socket_record_del(token)
+                    elif event == "set":
+                        await self._handle_socket_record_set(token)
+
+    async def _socket_record_updates_forever(self) -> None:
         """Background task to monitor Redis keyspace notifications for socket record updates."""
         await StateManagerRedis(
             state=BaseState, redis=self.redis
@@ -203,33 +261,12 @@ class RedisTokenManager(LocalTokenManager):
             except Exception as e:
                 console.error(f"RedisTokenManager socket record update task error: {e}")
 
-    async def _subscribe_socket_record_updates(self, redis_db: int) -> None:
-        """Subscribe to Redis keyspace notifications for socket record updates."""
-        pubsub = self.redis.pubsub()
-        await pubsub.psubscribe(
-            f"__keyspace@{redis_db}__:token_manager_socket_record_*"
-        )
-
-        async for message in pubsub.listen():
-            if message["type"] == "pmessage":
-                key = message["channel"].split(b":", 1)[1].decode()
-                event = message["data"].decode()
-                token = key.replace("token_manager_socket_record_", "")
-
-                if event in ("del", "expired", "evicted"):
-                    # Remove from local dicts if exists
-                    if (
-                        socket_record := self.token_to_socket.pop(token, None)
-                    ) is not None:
-                        self.sid_to_token.pop(socket_record.sid, None)
-                elif event == "set":
-                    # Fetch updated record from Redis
-                    record_json = await self.redis.get(key)
-                    if record_json:
-                        record_data = json.loads(record_json)
-                        socket_record = SocketRecord(**record_data)
-                        self.token_to_socket[token] = socket_record
-                        self.sid_to_token[socket_record.sid] = token
+    def _ensure_socket_record_task(self) -> None:
+        """Ensure the socket record updates subscriber task is running."""
+        if self._socket_record_task is None or self._socket_record_task.done():
+            self._socket_record_task = asyncio.create_task(
+                self._socket_record_updates_forever()
+            )
 
     async def link_token_to_sid(self, token: str, sid: str) -> str | None:
         """Link a token to a session ID with Redis-based duplicate detection.
@@ -248,8 +285,7 @@ class RedisTokenManager(LocalTokenManager):
             return None  # Same token, same SID = reconnection, no Redis check needed
 
         # Make sure the update subscriber is running
-        if self._update_task is None or self._update_task.done():
-            self._update_task = asyncio.create_task(self._socket_record_update_task())
+        self._ensure_socket_record_task()
 
         # Check Redis for cross-worker duplicates
         redis_key = self._get_redis_key(token)
@@ -293,8 +329,10 @@ class RedisTokenManager(LocalTokenManager):
         """
         # Only clean up if we own it locally (fast ownership check)
         if (
-            socket_record := self.token_to_socket.get(token)
-        ) is not None and socket_record.sid == sid:
+            (socket_record := self.token_to_socket.get(token)) is not None
+            and socket_record.sid == sid
+            and socket_record.instance_id == self.instance_id
+        ):
             # Clean up Redis
             redis_key = self._get_redis_key(token)
             try:
@@ -304,3 +342,124 @@ class RedisTokenManager(LocalTokenManager):
 
             # Clean up local dicts (always do this)
             await super().disconnect_token(token, sid)
+
+    @staticmethod
+    def _get_lost_and_found_key(instance_id: str) -> str:
+        """Get the Redis key for lost and found deltas for an instance.
+
+        Args:
+            instance_id: The instance ID.
+
+        Returns:
+            The Redis key for lost and found deltas.
+        """
+        return f"token_manager_lost_and_found_{instance_id}"
+
+    async def _subscribe_lost_and_found_updates(
+        self,
+        emit_update: Callable[[StateUpdate, str], Coroutine[None, None, None]],
+    ) -> None:
+        """Subscribe to Redis channel notifications for lost and found deltas.
+
+        Args:
+            emit_update: The function to emit state updates.
+        """
+        async with self.redis.pubsub() as pubsub:
+            await pubsub.psubscribe(
+                f"channel:{self._get_lost_and_found_key(self.instance_id)}"
+            )
+            async for message in pubsub.listen():
+                if message["type"] == "pmessage":
+                    record = LostAndFoundRecord(**json.loads(message["data"].decode()))
+                    await emit_update(StateUpdate(**record.update), record.token)
+
+    async def _lost_and_found_updates_forever(
+        self,
+        emit_update: Callable[[StateUpdate, str], Coroutine[None, None, None]],
+    ):
+        """Background task to monitor Redis lost and found deltas.
+
+        Args:
+            emit_update: The function to emit state updates.
+        """
+        while True:
+            try:
+                await self._subscribe_lost_and_found_updates(emit_update)
+            except asyncio.CancelledError:  # noqa: PERF203
+                break
+            except Exception as e:
+                console.error(f"RedisTokenManager lost and found task error: {e}")
+
+    def ensure_lost_and_found_task(
+        self,
+        emit_update: Callable[[StateUpdate, str], Coroutine[None, None, None]],
+    ) -> None:
+        """Ensure the lost and found subscriber task is running.
+
+        Args:
+            emit_update: The function to emit state updates.
+        """
+        if self._lost_and_found_task is None or self._lost_and_found_task.done():
+            self._lost_and_found_task = asyncio.create_task(
+                self._lost_and_found_updates_forever(emit_update)
+            )
+
+    async def _get_token_owner(self, token: str, refresh: bool = False) -> str | None:
+        """Get the instance ID of the owner of a token.
+
+        Args:
+            token: The client token.
+            refresh: Whether to fetch the latest record from Redis.
+
+        Returns:
+            The instance ID of the owner, or None if not found.
+        """
+        if (
+            not refresh
+            and (socket_record := self.token_to_socket.get(token)) is not None
+        ):
+            return socket_record.instance_id
+
+        redis_key = self._get_redis_key(token)
+        try:
+            record_json = await self.redis.get(redis_key)
+            if record_json:
+                record_data = json.loads(record_json)
+                socket_record = SocketRecord(**record_data)
+                self.token_to_socket[token] = socket_record
+                self.sid_to_token[socket_record.sid] = token
+                return socket_record.instance_id
+            console.error(f"Redis token owner not found for token {token}")
+        except Exception as e:
+            console.error(f"Redis error getting token owner: {e}")
+        return None
+
+    async def emit_lost_and_found(
+        self,
+        token: str,
+        update: StateUpdate,
+    ) -> bool:
+        """Emit a lost and found delta to Redis.
+
+        Args:
+            token: The client token.
+            update: The state update.
+
+        Returns:
+            True if the delta was published, False otherwise.
+        """
+        # See where this update belongs
+        owner_instance_id = await self._get_token_owner(token)
+        if owner_instance_id is None:
+            return False
+        record = LostAndFoundRecord(token=token, update=dataclasses.asdict(update))
+        try:
+            await self.redis.publish(
+                f"channel:{self._get_lost_and_found_key(owner_instance_id)}",
+                json.dumps(dataclasses.asdict(record)),
+            )
+        except Exception as e:
+            console.error(f"Redis error publishing lost and found delta: {e}")
+        else:
+            return True
+        return False

@@ -2,6 +2,7 @@
 
 import asyncio
 import json
+from contextlib import asynccontextmanager
 from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
@@ -204,9 +205,13 @@ class TestRedisTokenManager:
                 yield
             return
 
-        psubscribe = AsyncMock()
-        psubscribe.listen = listen
-        redis.pubsub = Mock(return_value=psubscribe)
+        @asynccontextmanager
+        async def pubsub():  # noqa: RUF029
+            pubsub_mock = AsyncMock()
+            pubsub_mock.listen = listen
+            yield pubsub_mock
+
+        redis.pubsub = pubsub
         return redis
 
     @pytest.fixture

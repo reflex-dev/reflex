@@ -120,7 +120,7 @@ from reflex.utils.exec import (
 )
 from reflex.utils.imports import ImportVar
 from reflex.utils.misc import run_in_thread
-from reflex.utils.token_manager import TokenManager
+from reflex.utils.token_manager import RedisTokenManager, TokenManager
 from reflex.utils.types import ASGIApp, Message, Receive, Scope, Send
 
 if TYPE_CHECKING:
@@ -2061,6 +2061,9 @@ class EventNamespace(AsyncNamespace):
             sid: The Socket.IO session id.
             environ: The request information, including HTTP headers.
         """
+        if isinstance(self._token_manager, RedisTokenManager):
+            # Make sure this instance is watching for updates from other instances.
+            self._token_manager.ensure_lost_and_found_task(self.emit_update)
         query_params = urllib.parse.parse_qs(environ.get("QUERY_STRING", ""))
         token_list = query_params.get("token", [])
         if token_list:
@@ -2102,16 +2105,30 @@ class EventNamespace(AsyncNamespace):
             token: The client token (tab) associated with the event.
         """
         client_token, _ = _split_substate_key(token)
-        sid = self.token_to_sid.get(client_token)
-        if sid is None:
-            # If the sid is None, we are not connected to a client. Prevent sending
-            # updates to all clients.
-            console.warn(f"Attempting to send delta to disconnected client {token!r}")
+        socket_record = self._token_manager.token_to_socket.get(client_token)
+        if (
+            socket_record is None
+            or socket_record.instance_id != self._token_manager.instance_id
+        ):
+            if isinstance(self._token_manager, RedisTokenManager):
+                # The socket belongs to another instance of the app, send it to the lost and found.
+                if not await self._token_manager.emit_lost_and_found(
+                    client_token, update
+                ):
+                    console.warn(
+                        f"Failed to send delta to lost and found for client {token!r}"
+                    )
+            else:
+                # If the socket record is None, we are not connected to a client. Prevent sending
+                # updates to all clients.
+                console.warn(
+                    f"Attempting to send delta to disconnected client {token!r}"
+                )
             return
         # Creating a task prevents the update from being blocked behind other coroutines.
         await asyncio.create_task(
-            self.emit(str(constants.SocketEvent.EVENT), update, to=sid),
-            name=f"reflex_emit_event|{token}|{sid}|{time.time()}",
+            self.emit(str(constants.SocketEvent.EVENT), update, to=socket_record.sid),
+            name=f"reflex_emit_event|{token}|{socket_record.sid}|{time.time()}",
         )
 
     async def on_event(self, sid: str, data: Any):
