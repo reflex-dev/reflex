@@ -442,7 +442,7 @@ class RedisTokenManager(LocalTokenManager):
                 self.token_to_socket[token] = socket_record
                 self.sid_to_token[socket_record.sid] = token
                 return socket_record.instance_id
-            console.error(f"Redis token owner not found for token {token}")
+            console.warn(f"Redis token owner not found for token {token}")
         except Exception as e:
             console.error(f"Redis error getting token owner: {e}")
         return None

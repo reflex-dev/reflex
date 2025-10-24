@@ -170,7 +170,7 @@ async def test_connection_banner(connection_banner: AppHarness):
             await connection_banner.state_manager.redis.get(
                 app_token_manager._get_redis_key(token)
             )
-            == b"1"
+            == f'{{"instance_id": "{app_token_manager.instance_id}", "sid": "{sid_before}"}}'.encode()
         )
 
     delay_button = driver.find_element(By.ID, "delay")
@@ -221,17 +221,17 @@ async def test_connection_banner(connection_banner: AppHarness):
 
     # After reconnecting, the token association should be re-established.
     app_token_manager = connection_banner.token_manager()
+    # Make sure the new connection has a different websocket sid.
+    sid_after = app_token_manager.token_to_sid[token]
+    assert sid_before != sid_after
     if isinstance(connection_banner.state_manager, StateManagerRedis):
         assert isinstance(app_token_manager, RedisTokenManager)
         assert (
             await connection_banner.state_manager.redis.get(
                 app_token_manager._get_redis_key(token)
             )
-            == b"1"
+            == f'{{"instance_id": "{app_token_manager.instance_id}", "sid": "{sid_after}"}}'.encode()
         )
-    # Make sure the new connection has a different websocket sid.
-    sid_after = app_token_manager.token_to_sid[token]
-    assert sid_before != sid_after
 
     # Count should have incremented after coming back up
     assert connection_banner.poll_for_value(counter_element, exp_not_equal="1") == "2"
