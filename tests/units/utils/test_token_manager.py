@@ -1,5 +1,8 @@
 """Unit tests for TokenManager implementations."""
 
+import asyncio
+import json
+from contextlib import asynccontextmanager
 from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
@@ -7,6 +10,7 @@ import pytest
 from reflex.utils.token_manager import (
     LocalTokenManager,
     RedisTokenManager,
+    SocketRecord,
     TokenManager,
 )
 
@@ -61,6 +65,7 @@ class TestTokenManager:
         """
         mock_check_redis_used.return_value = True
         mock_redis_client = Mock()
+        mock_redis_client.get_connection_kwargs.return_value = {"db": 0}
         mock_get_redis.return_value = mock_redis_client
 
         manager = TokenManager.create()
@@ -189,6 +194,24 @@ class TestRedisTokenManager:
         redis.exists = AsyncMock()
         redis.set = AsyncMock()
         redis.delete = AsyncMock()
+
+        # Non-async call
+        redis.get_connection_kwargs = Mock(return_value={"db": 0})
+
+        # Mock out pubsub
+        async def listen():
+            await asyncio.sleep(1)
+            if False:
+                yield
+            return
+
+        @asynccontextmanager
+        async def pubsub():  # noqa: RUF029
+            pubsub_mock = AsyncMock()
+            pubsub_mock.listen = listen
+            yield pubsub_mock
+
+        redis.pubsub = pubsub
         return redis
 
     @pytest.fixture
@@ -215,7 +238,7 @@ class TestRedisTokenManager:
             manager: RedisTokenManager fixture instance.
         """
         token = "test_token_123"
-        expected_key = f"{token}_sid"
+        expected_key = f"token_manager_socket_record_{token}"
 
         assert manager._get_redis_key(token) == expected_key
 
@@ -232,9 +255,15 @@ class TestRedisTokenManager:
         result = await manager.link_token_to_sid(token, sid)
 
         assert result is None
-        mock_redis.exists.assert_called_once_with(f"{token}_sid")
-        mock_redis.set.assert_called_once_with(f"{token}_sid", "1", ex=3600)
-        assert manager.token_to_sid[token] == sid
+        mock_redis.exists.assert_called_once_with(
+            f"token_manager_socket_record_{token}"
+        )
+        mock_redis.set.assert_called_once_with(
+            f"token_manager_socket_record_{token}",
+            json.dumps({"instance_id": manager.instance_id, "sid": sid}),
+            ex=3600,
+        )
+        assert manager.token_to_socket[token].sid == sid
         assert manager.sid_to_token[sid] == token
 
     async def test_link_token_to_sid_reconnection_skips_redis(
@@ -247,7 +276,9 @@ class TestRedisTokenManager:
             mock_redis: Mock Redis client fixture.
         """
         token, sid = "token1", "sid1"
-        manager.token_to_sid[token] = sid
+        manager.token_to_socket[token] = SocketRecord(
+            instance_id=manager.instance_id, sid=sid
+        )
 
         result = await manager.link_token_to_sid(token, sid)
 
@@ -271,8 +302,14 @@ class TestRedisTokenManager:
         assert result != token
         assert len(result) == 36  # UUID4 length
 
-        mock_redis.exists.assert_called_once_with(f"{token}_sid")
-        mock_redis.set.assert_called_once_with(f"{result}_sid", "1", ex=3600)
+        mock_redis.exists.assert_called_once_with(
+            f"token_manager_socket_record_{token}"
+        )
+        mock_redis.set.assert_called_once_with(
+            f"token_manager_socket_record_{result}",
+            json.dumps({"instance_id": manager.instance_id, "sid": sid}),
+            ex=3600,
+        )
         assert manager.token_to_sid[result] == sid
         assert manager.sid_to_token[sid] == result
 
@@ -323,12 +360,16 @@ class TestRedisTokenManager:
             mock_redis: Mock Redis client fixture.
         """
         token, sid = "token1", "sid1"
-        manager.token_to_sid[token] = sid
+        manager.token_to_socket[token] = SocketRecord(
+            instance_id=manager.instance_id, sid=sid
+        )
         manager.sid_to_token[sid] = token
 
         await manager.disconnect_token(token, sid)
 
-        mock_redis.delete.assert_called_once_with(f"{token}_sid")
+        mock_redis.delete.assert_called_once_with(
+            f"token_manager_socket_record_{token}"
+        )
         assert token not in manager.token_to_sid
         assert sid not in manager.sid_to_token
 
@@ -353,7 +394,9 @@ class TestRedisTokenManager:
             mock_redis: Mock Redis client fixture.
         """
         token, sid = "token1", "sid1"
-        manager.token_to_sid[token] = sid
+        manager.token_to_socket[token] = SocketRecord(
+            instance_id=manager.instance_id, sid=sid
+        )
         manager.sid_to_token[sid] = token
         mock_redis.delete.side_effect = Exception("Redis delete error")
 
