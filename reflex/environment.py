@@ -727,6 +727,12 @@ class EnvironmentVariables:
     # How long to wait between automatic reload on frontend error to avoid reload loops.
     REFLEX_AUTO_RELOAD_COOLDOWN_TIME_MS: EnvVar[int] = env_var(10_000)
 
+    # Whether to enable debug logging for the redis state manager.
+    REFLEX_REDIS_STATE_MANAGER_DEBUG: EnvVar[bool] = env_var(False)
+
+    # Whether to opportunistically hold the redis lock to allow fast in-memory access while uncontended.
+    REFLEX_OPLOCK_ENABLED: EnvVar[bool] = env_var(True)
+
 
 environment = EnvironmentVariables()
 
