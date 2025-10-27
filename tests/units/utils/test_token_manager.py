@@ -2,11 +2,15 @@
 
 import asyncio
 import json
+from collections.abc import Callable, Generator
 from contextlib import asynccontextmanager
 from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
 
+from reflex import config
+from reflex.app import EventNamespace
+from reflex.state import StateUpdate
 from reflex.utils.token_manager import (
     LocalTokenManager,
     RedisTokenManager,
@@ -178,6 +182,41 @@ class TestLocalTokenManager:
 
         assert len(manager.token_to_sid) == 0
         assert len(manager.sid_to_token) == 0
+
+    async def test_enumerate_tokens(self, manager):
+        """Test enumerate_tokens yields all linked tokens.
+
+        Args:
+            manager: LocalTokenManager fixture instance.
+        """
+        tokens_sids = [("token1", "sid1"), ("token2", "sid2"), ("token3", "sid3")]
+
+        for token, sid in tokens_sids:
+            await manager.link_token_to_sid(token, sid)
+
+        found_tokens = set()
+        async for token in manager.enumerate_tokens():
+            found_tokens.add(token)
+
+        expected_tokens = {token for token, _ in tokens_sids}
+        assert found_tokens == expected_tokens
+
+        # Disconnect a token and ensure it's removed.
+        await manager.disconnect_token("token2", "sid2")
+        expected_tokens.remove("token2")
+
+        found_tokens = set()
+        async for token in manager.enumerate_tokens():
+            found_tokens.add(token)
+
+        assert found_tokens == expected_tokens
+
+        # Disconnect all tokens, none should remain
+        await manager.disconnect_all()
+        found_tokens = set()
+        async for token in manager.enumerate_tokens():
+            found_tokens.add(token)
+        assert not found_tokens
 
 
 class TestRedisTokenManager:
@@ -445,3 +484,171 @@ class TestRedisTokenManager:
         assert isinstance(manager, LocalTokenManager)
         assert hasattr(manager, "token_to_sid")
         assert hasattr(manager, "sid_to_token")
+
+
+@pytest.fixture
+def redis_url():
+    """Returns the Redis URL from the environment."""
+    redis_url = config.get_config().redis_url
+    if redis_url is None:
+        pytest.skip("Redis URL not configured")
+    return redis_url
+
+
+def query_string_for(token: str) -> dict[str, str]:
+    """Generate query string for given token.
+
+    Args:
+        token: The token to generate query string for.
+
+    Returns:
+        The generated query string.
+    """
+    return {"QUERY_STRING": f"token={token}"}
+
+
+@pytest.fixture
+def event_namespace_factory() -> Generator[Callable[[], EventNamespace], None, None]:
+    """Yields the EventNamespace factory function."""
+    namespace = config.get_config().get_event_namespace()
+    created_objs = []
+
+    def new_event_namespace() -> EventNamespace:
+        state = Mock()
+        state.router_data = {}
+
+        mock_app = Mock()
+        mock_app.modify_state = Mock(
+            return_value=AsyncMock(__aenter__=AsyncMock(return_value=state))
+        )
+
+        event_namespace = EventNamespace(namespace=namespace, app=mock_app)
+        event_namespace.emit = AsyncMock()
+        created_objs.append(event_namespace)
+        return event_namespace
+
+    yield new_event_namespace
+
+    for obj in created_objs:
+        asyncio.run(obj._token_manager.disconnect_all())
+
+
+@pytest.mark.usefixtures("redis_url")
+@pytest.mark.asyncio
+async def test_redis_token_manager_enumerate_tokens(
+    event_namespace_factory: Callable[[], EventNamespace],
+):
+    """Integration test for RedisTokenManager enumerate_tokens interface.
+
+    Should support enumerating tokens across separate instances of the
+    RedisTokenManager.
+
+    Args:
+        event_namespace_factory: Factory fixture for EventNamespace instances.
+    """
+    event_namespace1 = event_namespace_factory()
+    event_namespace2 = event_namespace_factory()
+
+    await event_namespace1.on_connect(sid="sid1", environ=query_string_for("token1"))
+    await event_namespace2.on_connect(sid="sid2", environ=query_string_for("token2"))
+
+    found_tokens = set()
+    async for token in event_namespace1._token_manager.enumerate_tokens():
+        found_tokens.add(token)
+
+    assert "token1" in found_tokens
+    assert "token2" in found_tokens
+    assert len(found_tokens) == 2
+
+    await event_namespace1._token_manager.disconnect_all()
+
+    found_tokens = set()
+    async for token in event_namespace1._token_manager.enumerate_tokens():
+        found_tokens.add(token)
+    assert "token2" in found_tokens
+    assert len(found_tokens) == 1
+
+    await event_namespace2._token_manager.disconnect_all()
+
+    found_tokens = set()
+    async for token in event_namespace1._token_manager.enumerate_tokens():
+        found_tokens.add(token)
+    assert not found_tokens
+
+
+@pytest.mark.usefixtures("redis_url")
+@pytest.mark.asyncio
+async def test_redis_token_manager_get_token_owner(
+    event_namespace_factory: Callable[[], EventNamespace],
+):
+    """Integration test for RedisTokenManager get_token_owner interface.
+
+    Should support retrieving the owner of a token across separate instances of the
+    RedisTokenManager.
+
+    Args:
+        event_namespace_factory: Factory fixture for EventNamespace instances.
+    """
+    event_namespace1 = event_namespace_factory()
+    event_namespace2 = event_namespace_factory()
+
+    await event_namespace1.on_connect(sid="sid1", environ=query_string_for("token1"))
+    await event_namespace2.on_connect(sid="sid2", environ=query_string_for("token2"))
+
+    assert isinstance((manager1 := event_namespace1._token_manager), RedisTokenManager)
+    assert isinstance((manager2 := event_namespace2._token_manager), RedisTokenManager)
+
+    assert await manager1._get_token_owner("token1") == manager1.instance_id
+    assert await manager1._get_token_owner("token2") == manager2.instance_id
+    assert await manager2._get_token_owner("token1") == manager1.instance_id
+    assert await manager2._get_token_owner("token2") == manager2.instance_id
+
+
+@pytest.mark.usefixtures("redis_url")
+@pytest.mark.asyncio
+async def test_redis_token_manager_lost_and_found(
+    event_namespace_factory: Callable[[], EventNamespace],
+):
+    """Updates emitted for lost and found tokens should be routed correctly via redis.
+
+    Args:
+        event_namespace_factory: Factory fixture for EventNamespace instances.
+    """
+    event_namespace1 = event_namespace_factory()
+    emit1_mock: Mock = event_namespace1.emit  # pyright: ignore[reportAssignmentType]
+    event_namespace2 = event_namespace_factory()
+    emit2_mock: Mock = event_namespace2.emit  # pyright: ignore[reportAssignmentType]
+
+    await event_namespace1.on_connect(sid="sid1", environ=query_string_for("token1"))
+    await event_namespace2.on_connect(sid="sid2", environ=query_string_for("token2"))
+
+    await event_namespace2.emit_update(StateUpdate(), token="token1")
+    emit2_mock.assert_not_called()
+    emit1_mock.assert_called_once()
+    emit1_mock.reset_mock()
+
+    await event_namespace2.emit_update(StateUpdate(), token="token2")
+    emit1_mock.assert_not_called()
+    emit2_mock.assert_called_once()
+    emit2_mock.reset_mock()
+
+    if task := event_namespace1.on_disconnect(sid="sid1"):
+        await task
+    await event_namespace2.emit_update(StateUpdate(), token="token1")
+    # Update should be dropped on the floor.
+    emit1_mock.assert_not_called()
+    emit2_mock.assert_not_called()
+
+    await event_namespace2.on_connect(sid="sid1", environ=query_string_for("token1"))
+    await event_namespace2.emit_update(StateUpdate(), token="token1")
+    emit1_mock.assert_not_called()
+    emit2_mock.assert_called_once()
+    emit2_mock.reset_mock()
+
+    if task := event_namespace2.on_disconnect(sid="sid1"):
+        await task
+    await event_namespace1.on_connect(sid="sid1", environ=query_string_for("token1"))
+    await event_namespace2.emit_update(StateUpdate(), token="token1")
+    emit2_mock.assert_not_called()
+    emit1_mock.assert_called_once()
+    emit1_mock.reset_mock()
