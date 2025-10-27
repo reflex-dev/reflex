@@ -731,7 +731,7 @@ class EnvironmentVariables:
     REFLEX_REDIS_STATE_MANAGER_DEBUG: EnvVar[bool] = env_var(False)
 
     # Whether to opportunistically hold the redis lock to allow fast in-memory access while uncontended.
-    REFLEX_OPLOCK_ENABLED: EnvVar[bool] = env_var(True)
+    REFLEX_OPLOCK_ENABLED: EnvVar[bool] = env_var(False)
 
 
 environment = EnvironmentVariables()
