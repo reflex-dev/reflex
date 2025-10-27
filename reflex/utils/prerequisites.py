@@ -5,6 +5,7 @@ from __future__ import annotations
 import contextlib
 import importlib
 import importlib.metadata
+import inspect
 import json
 import random
 import re
@@ -435,7 +436,9 @@ async def get_redis_status() -> dict[str, bool | None]:
         status = True
         redis_client = get_redis()
         if redis_client is not None:
-            await redis_client.ping()
+            ping_command = redis_client.ping()
+            if inspect.isawaitable(ping_command):
+                await ping_command
         else:
             status = None
     except RedisError:
