@@ -5,7 +5,7 @@
   "reflex/components/base/app_wrap.pyi": "22e94feaa9fe675bcae51c412f5b67f1",
   "reflex/components/base/body.pyi": "e8ab029a730824bab6d4211203609e6a",
   "reflex/components/base/document.pyi": "311c53c90a60587a82e760103758a3cf",
-  "reflex/components/base/error_boundary.pyi": "c4e5f60589ad997bfab92c83ca938b33",
+  "reflex/components/base/error_boundary.pyi": "a678cceea014cb16048647257cd24ba6",
   "reflex/components/base/fragment.pyi": "745f1be02c23a0b25d7c52d7423ec76a",
   "reflex/components/base/link.pyi": "0bc1d26ee29d8864aed14a12991bd47d",
   "reflex/components/base/meta.pyi": "129aecf65ab53f756c4d1cbe1d0b188d",
