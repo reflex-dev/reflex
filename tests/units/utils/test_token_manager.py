@@ -2,6 +2,7 @@
 
 import asyncio
 import json
+import time
 from collections.abc import Callable, Generator
 from contextlib import asynccontextmanager
 from unittest.mock import AsyncMock, Mock, patch
@@ -604,6 +605,18 @@ async def test_redis_token_manager_get_token_owner(
     assert await manager2._get_token_owner("token2") == manager2.instance_id
 
 
+async def _wait_for_call_count_positive(mock: Mock, timeout: float = 5.0):
+    """Wait until the mock's call count is positive.
+
+    Args:
+        mock: The mock to wait on.
+        timeout: The maximum time to wait in seconds.
+    """
+    deadline = time.monotonic() + timeout
+    while mock.call_count == 0 and time.monotonic() < deadline:  # noqa: ASYNC110
+        await asyncio.sleep(0.1)
+
+
 @pytest.mark.usefixtures("redis_url")
 @pytest.mark.asyncio
 async def test_redis_token_manager_lost_and_found(
@@ -623,11 +636,13 @@ async def test_redis_token_manager_lost_and_found(
     await event_namespace2.on_connect(sid="sid2", environ=query_string_for("token2"))
 
     await event_namespace2.emit_update(StateUpdate(), token="token1")
+    await _wait_for_call_count_positive(emit1_mock)
     emit2_mock.assert_not_called()
     emit1_mock.assert_called_once()
     emit1_mock.reset_mock()
 
     await event_namespace2.emit_update(StateUpdate(), token="token2")
+    await _wait_for_call_count_positive(emit2_mock)
     emit1_mock.assert_not_called()
     emit2_mock.assert_called_once()
     emit2_mock.reset_mock()
@@ -636,11 +651,13 @@ async def test_redis_token_manager_lost_and_found(
         await task
     await event_namespace2.emit_update(StateUpdate(), token="token1")
     # Update should be dropped on the floor.
+    await asyncio.sleep(2)
     emit1_mock.assert_not_called()
     emit2_mock.assert_not_called()
 
     await event_namespace2.on_connect(sid="sid1", environ=query_string_for("token1"))
     await event_namespace2.emit_update(StateUpdate(), token="token1")
+    await _wait_for_call_count_positive(emit2_mock)
     emit1_mock.assert_not_called()
     emit2_mock.assert_called_once()
     emit2_mock.reset_mock()
@@ -649,6 +666,7 @@ async def test_redis_token_manager_lost_and_found(
         await task
     await event_namespace1.on_connect(sid="sid1", environ=query_string_for("token1"))
     await event_namespace2.emit_update(StateUpdate(), token="token1")
+    await _wait_for_call_count_positive(emit1_mock)
     emit2_mock.assert_not_called()
     emit1_mock.assert_called_once()
     emit1_mock.reset_mock()
