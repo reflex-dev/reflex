@@ -727,6 +727,11 @@ class EnvironmentVariables:
     # How long to wait between automatic reload on frontend error to avoid reload loops.
     REFLEX_AUTO_RELOAD_COOLDOWN_TIME_MS: EnvVar[int] = env_var(10_000)
 
+    # Wheter to allow entering a state mutation with `async with self` in normal (non background) event handlers
+    REFLEX_STATE_ALLOW_CONTEXTMANAGER_WITHOUT_BACKGROUND_TASK: EnvVar[bool] = env_var(
+        False
+    )
+
 
 environment = EnvironmentVariables()
 

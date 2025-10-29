@@ -2192,9 +2192,14 @@ class BaseState(EvenMoreBasicBaseState):
         This should not be used for the State class, but exists for
         type-compatibility with StateProxy.
 
+        Returns:
+            The unmodified state (self)
+
         Raises:
             TypeError: always, because async contextmanager protocol is only supported for background task.
         """
+        if environment.REFLEX_STATE_ALLOW_CONTEXTMANAGER_WITHOUT_BACKGROUND_TASK.get():
+            return self
         msg = "Only background task should use `async with self` to modify state."
         raise TypeError(msg)
 
