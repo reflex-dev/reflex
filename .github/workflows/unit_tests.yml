@@ -62,6 +62,13 @@ jobs:
           export PYTHONUNBUFFERED=1
           export REFLEX_REDIS_URL=redis://localhost:6379
           uv run pytest tests/units --cov --no-cov-on-fail --cov-report=
+      - name: Run unit tests w/ redis and OPLOCK_ENABLED
+        if: ${{ matrix.os == 'ubuntu-latest' }}
+        run: |
+          export PYTHONUNBUFFERED=1
+          export REFLEX_REDIS_URL=redis://localhost:6379
+          export REFLEX_OPLOCK_ENABLED=true
+          uv run pytest tests/units --cov --no-cov-on-fail --cov-report=
       # Change to explicitly install v1 when reflex-hosting-cli is compatible with v2
       - name: Run unit tests w/ pydantic v1
         run: |

@@ -26,6 +26,7 @@ from reflex.app import App
 from reflex.base import Base
 from reflex.constants import CompileVars, RouteVar, SocketEvent
 from reflex.constants.state import FIELD_MARKER
+from reflex.environment import environment
 from reflex.event import Event, EventHandler
 from reflex.istate.manager import StateManager
 from reflex.istate.manager.disk import StateManagerDisk
@@ -1740,6 +1741,10 @@ async def test_state_manager_modify_state(
         complex_1 = state.complex[1]
         assert isinstance(complex_1, MutableProxy)
         state.complex[3] = complex_1
+
+    if environment.REFLEX_OPLOCK_ENABLED.get():
+        await state_manager.close()
+
     # lock should be dropped after exiting the context
     if isinstance(state_manager, StateManagerRedis):
         assert (await state_manager.redis.get(f"{token}_lock")) is None
@@ -1782,6 +1787,9 @@ async def test_state_manager_contend(
 
     for f in asyncio.as_completed(tasks):
         await f
+
+    if environment.REFLEX_OPLOCK_ENABLED.get():
+        await state_manager.close()
 
     assert (await state_manager.get_state(substate_token)).num1 == exp_num1
 
@@ -1837,12 +1845,35 @@ async def test_state_manager_lock_expire(
     state_manager_redis.lock_expiration = LOCK_EXPIRATION
     state_manager_redis.lock_warning_threshold = LOCK_WARNING_THRESHOLD
 
+    loop_exception = None
+
+    def loop_exception_handler(loop, context):
+        """Catch the LockExpiredError from the event loop.
+
+        Args:
+            loop: The event loop.
+            context: The exception context.
+        """
+        nonlocal loop_exception
+        loop_exception = context["exception"]
+
+    asyncio.get_event_loop().set_exception_handler(loop_exception_handler)
+
     async with state_manager_redis.modify_state(substate_token_redis):
         await asyncio.sleep(0.01)
 
-    with pytest.raises(LockExpiredError):
+    if environment.REFLEX_OPLOCK_ENABLED.get():
         async with state_manager_redis.modify_state(substate_token_redis):
             await asyncio.sleep(LOCK_EXPIRE_SLEEP)
+        await asyncio.sleep(LOCK_EXPIRE_SLEEP)
+        assert loop_exception is not None
+        with pytest.raises(LockExpiredError):
+            raise loop_exception
+    else:
+        with pytest.raises(LockExpiredError):
+            async with state_manager_redis.modify_state(substate_token_redis):
+                await asyncio.sleep(LOCK_EXPIRE_SLEEP)
+        assert loop_exception is None
 
 
 @pytest.mark.asyncio
@@ -1862,6 +1893,20 @@ async def test_state_manager_lock_expire_contend(
     state_manager_redis.lock_expiration = LOCK_EXPIRATION
     state_manager_redis.lock_warning_threshold = LOCK_WARNING_THRESHOLD
 
+    loop_exception = None
+
+    def loop_exception_handler(loop, context):
+        """Catch the LockExpiredError from the event loop.
+
+        Args:
+            loop: The event loop.
+            context: The exception context.
+        """
+        nonlocal loop_exception
+        loop_exception = context["exception"]
+
+    asyncio.get_event_loop().set_exception_handler(loop_exception_handler)
+
     order = []
     waiter_event = asyncio.Event()
 
@@ -1876,19 +1921,31 @@ async def test_state_manager_lock_expire_contend(
         await waiter_event.wait()
         async with state_manager_redis.modify_state(substate_token_redis) as state:
             order.append("waiter")
-            assert state.num1 != unexp_num1
             state.num1 = exp_num1
 
     tasks = [
         asyncio.create_task(_coro_blocker()),
         asyncio.create_task(_coro_waiter()),
     ]
-    with pytest.raises(LockExpiredError):
-        await tasks[0]
-    await tasks[1]
+    if environment.REFLEX_OPLOCK_ENABLED.get():
+        await tasks[0]  # Doesn't raise during `modify_state`, only on exit
+        await tasks[1]
+        await asyncio.sleep(LOCK_EXPIRE_SLEEP)
+        assert loop_exception is not None
+        with pytest.raises(LockExpiredError):
+            raise loop_exception
+        # In oplock mode, the blocker block's both updates
+        assert (await state_manager_redis.get_state(substate_token_redis)).num1 == 0
+    else:
+        with pytest.raises(LockExpiredError):
+            await tasks[0]
+        await tasks[1]
+        assert loop_exception is None
+        assert (
+            await state_manager_redis.get_state(substate_token_redis)
+        ).num1 == exp_num1
 
     assert order == ["blocker", "waiter"]
-    assert (await state_manager_redis.get_state(substate_token_redis)).num1 == exp_num1
 
 
 @pytest.mark.asyncio
@@ -1923,8 +1980,12 @@ async def test_state_manager_lock_warning_threshold_contend(
     ]
 
     await tasks[0]
-    console_warn.assert_called()
-    assert console_warn.call_count == 7
+    if environment.REFLEX_OPLOCK_ENABLED.get():
+        # When Oplock is enabled, we don't warn when lock is held too long.
+        console_warn.assert_not_called()
+    else:
+        console_warn.assert_called()
+        assert console_warn.call_count == 7
 
 
 class CopyingAsyncMock(AsyncMock):
@@ -2078,6 +2139,9 @@ async def test_state_proxy(
     assert not sp._self_mutable  # proxy is not mutable after exiting context
     assert sp._self_actx is None
     assert sp.value2 == "42"
+
+    if environment.REFLEX_OPLOCK_ENABLED.get():
+        await mock_app.state_manager.close()
 
     # Get the state from the state manager directly and check that the value is updated
     gotten_state = await mock_app.state_manager.get_state(
@@ -2289,6 +2353,9 @@ async def test_background_task_no_block(mock_app: rx.App, token: str):
         await task
     assert not mock_app._background_tasks
 
+    if environment.REFLEX_OPLOCK_ENABLED.get():
+        await mock_app.state_manager.close()
+
     exp_order = [
         "background_task:start",
         "other",
@@ -2384,6 +2451,9 @@ async def test_background_task_reset(mock_app: rx.App, token: str):
     for task in tuple(mock_app._background_tasks):
         await task
     assert not mock_app._background_tasks
+
+    if environment.REFLEX_OPLOCK_ENABLED.get():
+        await mock_app.state_manager.close()
 
     assert (
         await mock_app.state_manager.get_state(

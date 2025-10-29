@@ -603,19 +603,21 @@ class StateManagerRedis(StateManager):
             async with state_lock:
                 # Write the state to redis while no one else can modify the cached copy.
                 state = self._cached_states.pop(client_token, None)
-                if state:
-                    if self._debug_enabled:
+                try:
+                    if state:
+                        if self._debug_enabled:
+                            console.debug(
+                                f"{SMR} [{time.monotonic() - start:.3f}] {client_token} lease breaker {lock_id.decode()} flushing state"
+                            )
+                        await self.set_state(token, state, lock_id=lock_id, **context)
+                finally:
+                    if (current_lease := self._local_leases.get(client_token)) is task:
+                        self._local_leases.pop(client_token, None)
+                        # TODO: clean up the cached states locks periodically
+                    elif self._debug_enabled:
                         console.debug(
-                            f"{SMR} [{time.monotonic() - start:.3f}] {client_token} lease breaker {lock_id.decode()} flushing state"
+                            f"{SMR} [{time.monotonic() - start:.3f}] {client_token} lease breaker {lock_id.decode()} cleanup of {task=} found different task in _local_leases {current_lease=}."
                         )
-                    await self.set_state(token, state, lock_id=lock_id, **context)
-                if (current_lease := self._local_leases.get(client_token)) is task:
-                    self._local_leases.pop(client_token, None)
-                    # TODO: clean up the cached states locks periodically
-                elif self._debug_enabled:
-                    console.debug(
-                        f"{SMR} [{time.monotonic() - start:.3f}] {client_token} lease breaker {lock_id.decode()} cleanup of {task=} found different task in _local_leases {current_lease=}."
-                    )
 
         async def lease_breaker():
             cancelled_error: asyncio.CancelledError | None = None
@@ -638,6 +640,14 @@ class StateManagerRedis(StateManager):
                 try:
                     # Shield the flush from cancellation to ensure it always runs to completion.
                     await asyncio.shield(do_flush())
+                except Exception as e:
+                    # Propagate exception to the main loop, since we have nowhere to catch it.
+                    if not isinstance(e, asyncio.CancelledError):
+                        asyncio.get_running_loop().call_exception_handler({
+                            "message": "Exception in Redis State Manager lease breaker",
+                            "exception": e,
+                        })
+                    raise
                 finally:
                     # Re-raise any cancellation error after cleaning up.
                     if cancelled_error is not None:
@@ -993,7 +1003,7 @@ class StateManagerRedis(StateManager):
                         console.debug(
                             f"{SMR} [{time.monotonic() - start:.3f}] {lock_key.decode()} released by {lock_id.decode()}"
                         )
-                else:
+                elif deleted_lock_id is not None:
                     # This can happen if the caller never tried to `set_state` before the lock expired and is a pretty bad bug.
                     console.warn(
                         f"{lock_key.decode()} was released by {lock_id.decode()}, but it belonged to {deleted_lock_id.decode()}. This is a bug."
@@ -1020,5 +1030,6 @@ class StateManagerRedis(StateManager):
             # Then cancel all outstanding leases and write the cached states to redis.
             for lease_task in self._local_leases.values():
                 lease_task.cancel()
+            await asyncio.gather(*self._local_leases.values(), return_exceptions=True)
         finally:
             await self.redis.aclose(close_connection_pool=True)
