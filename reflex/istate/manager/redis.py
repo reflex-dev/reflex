@@ -67,6 +67,7 @@ class StateManagerRedis(StateManager):
     # The keyspace subscription string when redis is waiting for lock to be released.
     _redis_notify_keyspace_events: str = dataclasses.field(
         default="K"  # Enable keyspace notifications (target a particular key)
+        "$"  # For String commands (like setting keys)
         "g"  # For generic commands (DEL, EXPIRE, etc)
         "x"  # For expired events
         "e"  # For evicted events (i.e. maxmemory exceeded)
@@ -76,7 +77,6 @@ class StateManagerRedis(StateManager):
     _redis_keyspace_lock_release_events: set[bytes] = dataclasses.field(
         default_factory=lambda: {
             b"del",
-            b"expire",
             b"expired",
             b"evicted",
         }
