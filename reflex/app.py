@@ -2077,11 +2077,14 @@ class EventNamespace(AsyncNamespace):
                 f"Frontend version {subprotocol} for session {sid} does not match the backend version {constants.Reflex.VERSION}."
             )
 
-    def on_disconnect(self, sid: str):
+    def on_disconnect(self, sid: str) -> asyncio.Task | None:
         """Event for when the websocket disconnects.
 
         Args:
             sid: The Socket.IO session id.
+
+        Returns:
+            An asyncio Task for cleaning up the token, or None.
         """
         # Get token before cleaning up
         disconnect_token = self.sid_to_token.get(sid)
@@ -2096,6 +2099,8 @@ class EventNamespace(AsyncNamespace):
                 lambda t: t.exception()
                 and console.error(f"Token cleanup error: {t.exception()}")
             )
+            return task
+        return None
 
     async def emit_update(self, update: StateUpdate, token: str) -> None:
         """Emit an update to the client.
