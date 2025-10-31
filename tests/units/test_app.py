@@ -32,6 +32,7 @@ from reflex.components.base.fragment import Fragment
 from reflex.components.core.cond import Cond
 from reflex.components.radix.themes.typography.text import Text
 from reflex.constants.state import FIELD_MARKER
+from reflex.environment import environment
 from reflex.event import Event
 from reflex.istate.manager.disk import StateManagerDisk
 from reflex.istate.manager.memory import StateManagerMemory
@@ -990,6 +991,9 @@ async def test_upload_file(tmp_path, state, delta, token: str, mocker: MockerFix
             == StateUpdate(delta=delta, events=[], final=True).json() + "\n"
         )
 
+    if environment.REFLEX_OPLOCK_ENABLED.get():
+        await app.state_manager.close()
+
     current_state = await app.state_manager.get_state(_substate_key(token, state))
     state_dict = current_state.dict()[state.get_full_name()]
     assert state_dict["img_list" + FIELD_MARKER] == [
@@ -1296,6 +1300,9 @@ async def test_dynamic_route_var_route_change_completed_on_load(
         with pytest.raises(StopAsyncIteration):
             await process_coro.__anext__()
 
+        if environment.REFLEX_OPLOCK_ENABLED.get():
+            await app.state_manager.close()
+
         # check that router data was written to the state_manager store
         state = await app.state_manager.get_state(substate_token)
         assert state.dynamic == exp_val
@@ -1363,6 +1370,9 @@ async def test_dynamic_route_var_route_change_completed_on_load(
             await process_coro.__anext__()
 
         prev_exp_val = exp_val
+
+    if environment.REFLEX_OPLOCK_ENABLED.get():
+        await app.state_manager.close()
     state = await app.state_manager.get_state(substate_token)
     assert state.loaded == len(exp_vals)
     assert state.counter == len(exp_vals)
@@ -1402,6 +1412,9 @@ async def test_process_events(mocker: MockerFixture, token: str):
 
     async for _update in process(app, event, "mock_sid", {}, "127.0.0.1"):
         pass
+
+    if environment.REFLEX_OPLOCK_ENABLED.get():
+        await app.state_manager.close()
 
     assert (await app.state_manager.get_state(event.substate_token)).value == 5
     assert app._postprocess.call_count == 6  # pyright: ignore [reportAttributeAccessIssue]
