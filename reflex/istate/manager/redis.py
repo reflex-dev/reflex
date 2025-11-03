@@ -786,6 +786,9 @@ class StateManagerRedis(StateManager):
             except asyncio.CancelledError:  # noqa: PERF203
                 raise
             except Exception as e:
+                if isinstance(e, RuntimeError) and str(e) == "no running event loop":
+                    # Happens when shutting down, break out of the loop.
+                    raise
                 console.error(f"StateManagerRedis lock update task error: {e}")
 
     async def _ensure_lock_task(self) -> None:

@@ -270,8 +270,11 @@ class RedisTokenManager(LocalTokenManager):
             try:
                 await self._subscribe_socket_record_updates(redis_db)
             except asyncio.CancelledError:  # noqa: PERF203
-                break
+                raise
             except Exception as e:
+                if isinstance(e, RuntimeError) and str(e) == "no running event loop":
+                    # Happens when shutting down, break out of the loop.
+                    raise
                 console.error(f"RedisTokenManager socket record update task error: {e}")
 
     def _ensure_socket_record_task(self) -> None:
@@ -399,8 +402,11 @@ class RedisTokenManager(LocalTokenManager):
             try:
                 await self._subscribe_lost_and_found_updates(emit_update)
             except asyncio.CancelledError:  # noqa: PERF203
-                break
+                raise
             except Exception as e:
+                if isinstance(e, RuntimeError) and str(e) == "no running event loop":
+                    # Happens when shutting down, break out of the loop.
+                    raise
                 console.error(f"RedisTokenManager lost and found task error: {e}")
 
     def ensure_lost_and_found_task(
