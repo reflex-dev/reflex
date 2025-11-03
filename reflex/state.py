@@ -2189,14 +2189,12 @@ class BaseState(EvenMoreBasicBaseState):
     async def __aenter__(self) -> BaseState:
         """Enter the async context manager protocol.
 
-        This should not be used for the State class, but exists for
-        type-compatibility with StateProxy.
+        This is a no-op for the State class and mainly used in background-tasks/StateProxy.
 
-        Raises:
-            TypeError: always, because async contextmanager protocol is only supported for background task.
+        Returns:
+            The unmodified state (self)
         """
-        msg = "Only background task should use `async with self` to modify state."
-        raise TypeError(msg)
+        return self
 
     async def __aexit__(self, *exc_info: Any) -> None:
         """Exit the async context manager protocol.
