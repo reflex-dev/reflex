@@ -72,6 +72,8 @@ async def test_basic_get_set(
         state_manager_redis: The StateManagerRedis to test.
         root_state: The root state class.
     """
+    state_manager_redis._oplock_enabled = False
+
     token = str(uuid.uuid4())
 
     fresh_state = await state_manager_redis.get_state(_substate_key(token, root_state))
@@ -90,6 +92,8 @@ async def test_modify(
         state_manager_redis: The StateManagerRedis to test.
         root_state: The root state class.
     """
+    state_manager_redis._oplock_enabled = False
+
     token = str(uuid.uuid4())
 
     # Initial modify should set count to 1
