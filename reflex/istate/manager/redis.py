@@ -657,7 +657,8 @@ class StateManagerRedis(StateManager):
                     # There's already a lease break task, so cancel it to clear it out.
                     existing_task.cancel()
             if existing_task is not None:
-                await existing_task
+                with contextlib.suppress(asyncio.CancelledError):
+                    await existing_task
 
         # Now we might need to create a new lock.
         if (state_lock := self._cached_states_locks.get(client_token)) is None:
@@ -783,7 +784,7 @@ class StateManagerRedis(StateManager):
             try:
                 await self._subscribe_lock_updates(redis_db)
             except asyncio.CancelledError:  # noqa: PERF203
-                break
+                raise
             except Exception as e:
                 console.error(f"StateManagerRedis lock update task error: {e}")
 
