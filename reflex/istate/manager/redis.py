@@ -974,7 +974,7 @@ class StateManagerRedis(StateManager):
                         lock_released_event.wait(),
                         timeout=max(self.lock_expiration / 1000, 0),
                     )
-                except TimeoutError:
+                except (TimeoutError, asyncio.TimeoutError):
                     if self._debug_enabled:
                         console.debug(
                             f"{SMR} [{time.monotonic() - start:.3f}] {lock_key.decode()} wait timeout for {lock_id.decode()}"
