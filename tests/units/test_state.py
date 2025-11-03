@@ -56,6 +56,7 @@ from reflex.utils.exceptions import (
 from reflex.utils.format import json_dumps
 from reflex.utils.token_manager import SocketRecord
 from reflex.vars.base import Var, computed_var
+from tests.units.mock_redis import mock_redis
 
 from .states import GenState
 
@@ -1692,7 +1693,7 @@ async def state_manager(request) -> AsyncGenerator[StateManager, None]:
     state_manager = StateManager.create(state=TestState)
     if request.param == "redis":
         if not isinstance(state_manager, StateManagerRedis):
-            pytest.skip("Test requires redis")
+            state_manager = StateManagerRedis(state=TestState, redis=mock_redis())
     elif request.param == "disk":
         # explicitly NOT using redis
         state_manager = StateManagerDisk(state=TestState)
@@ -1810,7 +1811,8 @@ async def state_manager_redis() -> AsyncGenerator[StateManager, None]:
     state_manager = StateManager.create(TestState)
 
     if not isinstance(state_manager, StateManagerRedis):
-        pytest.skip("Test requires redis")
+        # Create a mocked redis client instead of skipping.
+        state_manager = StateManagerRedis(state=TestState, redis=mock_redis())
 
     yield state_manager
 
@@ -3431,10 +3433,6 @@ def test_setvar_async_setter():
         TestState.setvar("asynctest", 42)
 
 
-@pytest.mark.skipif(
-    "REDIS_URL" not in os.environ and "REFLEX_REDIS_URL" not in os.environ,
-    reason="Test requires redis",
-)
 @pytest.mark.parametrize(
     ("expiration_kwargs", "expected_values"),
     [
@@ -3498,19 +3496,14 @@ config = rx.Config(
     with chdir(proj_root):
         # reload config for each parameter to avoid stale values
         reflex.config.get_config(reload=True)
-        from reflex.istate.manager import StateManager
         from reflex.state import State
 
-        state_manager = StateManager.create(state=State)
+        state_manager = StateManagerRedis(state=State, redis=mock_redis())
         assert state_manager.lock_expiration == expected_values[0]  # pyright: ignore [reportAttributeAccessIssue]
         assert state_manager.token_expiration == expected_values[1]  # pyright: ignore [reportAttributeAccessIssue]
         assert state_manager.lock_warning_threshold == expected_values[2]  # pyright: ignore [reportAttributeAccessIssue]
 
 
-@pytest.mark.skipif(
-    "REDIS_URL" not in os.environ and "REFLEX_REDIS_URL" not in os.environ,
-    reason="Test requires redis",
-)
 @pytest.mark.parametrize(
     ("redis_lock_expiration", "redis_lock_warning_threshold"),
     [
@@ -3540,11 +3533,10 @@ config = rx.Config(
     with chdir(proj_root):
         # reload config for each parameter to avoid stale values
         reflex.config.get_config(reload=True)
-        from reflex.istate.manager import StateManager
         from reflex.state import State
 
         with pytest.raises(InvalidLockWarningThresholdError):
-            StateManager.create(state=State)
+            StateManagerRedis(state=State, redis=mock_redis())
         del sys.modules[constants.Config.MODULE]
 
 
