@@ -760,12 +760,8 @@ class StateManagerRedis(StateManager):
                             f"{SMR} [{time.monotonic() - start:.3f}] {token} OPLOCK CONTEND - lease break task cancelled {lease_task=}"
                         )
 
-    async def _subscribe_lock_updates(self, redis_db: int = 0):
-        """Subscribe to redis keyspace notifications for lock updates.
-
-        Args:
-            redis_db: The logical database number to subscribe to.
-        """
+    async def _subscribe_lock_updates(self):
+        """Subscribe to redis keyspace notifications for lock updates."""
         await self._enable_keyspace_notifications()
         redis_db = self.redis.get_connection_kwargs().get("db", 0)
 

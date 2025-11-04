@@ -240,7 +240,7 @@ class RedisTokenManager(LocalTokenManager):
         ) is not None and socket_record.instance_id != self.instance_id:
             self.sid_to_token.pop(socket_record.sid, None)
 
-    async def _subscribe_socket_record_updates(self, redis_db: int) -> None:
+    async def _subscribe_socket_record_updates(self) -> None:
         """Subscribe to Redis keyspace notifications for socket record updates."""
         await StateManagerRedis(
             state=BaseState, redis=self.redis
