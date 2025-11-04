@@ -29,6 +29,7 @@ from reflex.utils.exceptions import (
     LockExpiredError,
     StateSchemaMismatchError,
 )
+from reflex.utils.tasks import ensure_task
 
 
 def _default_lock_expiration() -> int:
@@ -155,7 +156,7 @@ class StateManagerRedis(StateManager):
             raise InvalidLockWarningThresholdError(msg)
         with contextlib.suppress(RuntimeError):
             asyncio.get_running_loop()  # Check if we're in an event loop.
-            self._lock_task = asyncio.create_task(self._lock_updates_forever())
+            self._ensure_lock_task()
 
     def _get_required_state_classes(
         self,
@@ -586,7 +587,7 @@ class StateManagerRedis(StateManager):
         Returns:
             The lease break task, or None when there is contention.
         """
-        await self._ensure_lock_task()
+        self._ensure_lock_task()
 
         client_token, _ = _split_substate_key(token)
 
@@ -765,6 +766,9 @@ class StateManagerRedis(StateManager):
         Args:
             redis_db: The logical database number to subscribe to.
         """
+        await self._enable_keyspace_notifications()
+        redis_db = self.redis.get_connection_kwargs().get("db", 0)
+
         lock_key_pattern = f"__keyspace@{redis_db}__:*_lock"
         lock_waiter_key_pattern = f"__keyspace@{redis_db}__:*_lock_waiters"
         handlers = {
@@ -776,27 +780,14 @@ class StateManagerRedis(StateManager):
             async for _ in pubsub.listen():
                 pass
 
-    async def _lock_updates_forever(self) -> None:
-        """Background task to monitor Redis keyspace notifications for lock updates."""
-        await self._enable_keyspace_notifications()
-        redis_db = self.redis.get_connection_kwargs().get("db", 0)
-        while True:
-            try:
-                await self._subscribe_lock_updates(redis_db)
-            except asyncio.CancelledError:  # noqa: PERF203
-                raise
-            except Exception as e:
-                if isinstance(e, RuntimeError) and str(e) == "no running event loop":
-                    # Happens when shutting down, break out of the loop.
-                    raise
-                console.error(f"StateManagerRedis lock update task error: {e}")
-
-    async def _ensure_lock_task(self) -> None:
+    def _ensure_lock_task(self) -> None:
         """Ensure the lock updates subscriber task is running."""
-        if self._lock_task is None or self._lock_task.done():
-            async with self._state_manager_lock:
-                if self._lock_task is None or self._lock_task.done():
-                    self._lock_task = asyncio.create_task(self._lock_updates_forever())
+        ensure_task(
+            owner=self,
+            task_attribute="_lock_task",
+            coro_function=self._subscribe_lock_updates,
+            suppress_exceptions=[Exception],
+        )
 
     async def _enable_keyspace_notifications(self):
         """Enable keyspace notifications for the redis server.
@@ -954,7 +945,7 @@ class StateManagerRedis(StateManager):
                 )
             return
         # Make sure lock waiter task is running.
-        await self._ensure_lock_task()
+        self._ensure_lock_task()
         async with (
             self._lock_waiter(lock_key) as lock_released_event,
             self._request_lock_release(lock_key, lock_id),
