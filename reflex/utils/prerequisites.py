@@ -167,6 +167,11 @@ def _check_app_name(config: Config):
     config._app_name_is_valid = True
 
 
+@once
+def _cwd():
+    return str(Path.cwd())
+
+
 def get_app(reload: bool = False) -> ModuleType:
     """Get the app module based on the default config.
 
@@ -189,7 +194,7 @@ def get_app(reload: bool = False) -> ModuleType:
             _check_app_name(config)
 
         module = config.module
-        sys.path.insert(0, str(Path.cwd()))
+        sys.path.insert(0, _cwd())
         app = (
             __import__(module, fromlist=(constants.CompileVars.APP,))
             if not config.app_module
