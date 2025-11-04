@@ -75,9 +75,10 @@ async def test_ensure_task_limit_window_passed():
     """Test that ensure_task raises after exceeding exception limit within the limit window."""
     call_count = 0
 
-    async def faulty_coro():  # noqa: RUF029
+    async def faulty_coro():
         nonlocal call_count
         call_count += 1
+        await asyncio.sleep(0.05)
         if call_count > 3:
             raise RuntimeError("Test Passed")  # noqa: EM101
         raise ValueError("Should have been suppressed")  # noqa: EM101
@@ -88,7 +89,7 @@ async def test_ensure_task_limit_window_passed():
         task_attribute="task",
         coro_function=faulty_coro,
         suppress_exceptions=[ValueError],
-        exception_delay=0.05,
+        exception_delay=0,
         exception_limit=3,
         exception_limit_window=0.1,
     )
