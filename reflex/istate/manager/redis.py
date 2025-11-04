@@ -141,7 +141,7 @@ class StateManagerRedis(StateManager):
 
     # Whether debug prints are enabled.
     _debug_enabled: bool = dataclasses.field(
-        default=environment.REFLEX_REDIS_STATE_MANAGER_DEBUG.get(),
+        default=environment.REFLEX_STATE_MANAGER_REDIS_DEBUG.get(),
         init=False,
     )
 
