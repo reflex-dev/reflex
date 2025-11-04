@@ -14,6 +14,7 @@ from typing import TYPE_CHECKING, Any, ClassVar
 from reflex.istate.manager.redis import StateManagerRedis
 from reflex.state import BaseState, StateUpdate
 from reflex.utils import console, prerequisites
+from reflex.utils.tasks import ensure_task
 
 if TYPE_CHECKING:
     from redis.asyncio import Redis
@@ -239,8 +240,13 @@ class RedisTokenManager(LocalTokenManager):
         ) is not None and socket_record.instance_id != self.instance_id:
             self.sid_to_token.pop(socket_record.sid, None)
 
-    async def _subscribe_socket_record_updates(self, redis_db: int) -> None:
+    async def _subscribe_socket_record_updates(self) -> None:
         """Subscribe to Redis keyspace notifications for socket record updates."""
+        await StateManagerRedis(
+            state=BaseState, redis=self.redis
+        )._enable_keyspace_notifications()
+        redis_db = self.redis.get_connection_kwargs().get("db", 0)
+
         async with self.redis.pubsub() as pubsub:
             await pubsub.psubscribe(
                 f"__keyspace@{redis_db}__:{self._get_redis_key('*')}"
@@ -260,26 +266,14 @@ class RedisTokenManager(LocalTokenManager):
                     elif event == "set":
                         await self._get_token_owner(token, refresh=True)
 
-    async def _socket_record_updates_forever(self) -> None:
-        """Background task to monitor Redis keyspace notifications for socket record updates."""
-        await StateManagerRedis(
-            state=BaseState, redis=self.redis
-        )._enable_keyspace_notifications()
-        redis_db = self.redis.get_connection_kwargs().get("db", 0)
-        while True:
-            try:
-                await self._subscribe_socket_record_updates(redis_db)
-            except asyncio.CancelledError:  # noqa: PERF203
-                break
-            except Exception as e:
-                console.error(f"RedisTokenManager socket record update task error: {e}")
-
     def _ensure_socket_record_task(self) -> None:
         """Ensure the socket record updates subscriber task is running."""
-        if self._socket_record_task is None or self._socket_record_task.done():
-            self._socket_record_task = asyncio.create_task(
-                self._socket_record_updates_forever()
-            )
+        ensure_task(
+            owner=self,
+            task_attribute="_socket_record_task",
+            coro_function=self._subscribe_socket_record_updates,
+            suppress_exceptions=[Exception],
+        )
 
     async def link_token_to_sid(self, token: str, sid: str) -> str | None:
         """Link a token to a session ID with Redis-based duplicate detection.
@@ -386,23 +380,6 @@ class RedisTokenManager(LocalTokenManager):
                     record = LostAndFoundRecord(**json.loads(message["data"].decode()))
                     await emit_update(StateUpdate(**record.update), record.token)
 
-    async def _lost_and_found_updates_forever(
-        self,
-        emit_update: Callable[[StateUpdate, str], Coroutine[None, None, None]],
-    ):
-        """Background task to monitor Redis lost and found deltas.
-
-        Args:
-            emit_update: The function to emit state updates.
-        """
-        while True:
-            try:
-                await self._subscribe_lost_and_found_updates(emit_update)
-            except asyncio.CancelledError:  # noqa: PERF203
-                break
-            except Exception as e:
-                console.error(f"RedisTokenManager lost and found task error: {e}")
-
     def ensure_lost_and_found_task(
         self,
         emit_update: Callable[[StateUpdate, str], Coroutine[None, None, None]],
@@ -412,10 +389,13 @@ class RedisTokenManager(LocalTokenManager):
         Args:
             emit_update: The function to emit state updates.
         """
-        if self._lost_and_found_task is None or self._lost_and_found_task.done():
-            self._lost_and_found_task = asyncio.create_task(
-                self._lost_and_found_updates_forever(emit_update)
-            )
+        ensure_task(
+            owner=self,
+            task_attribute="_lost_and_found_task",
+            coro_function=self._subscribe_lost_and_found_updates,
+            suppress_exceptions=[Exception],
+            emit_update=emit_update,
+        )
 
     async def _get_token_owner(self, token: str, refresh: bool = False) -> str | None:
         """Get the instance ID of the owner of a token.

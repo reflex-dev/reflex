@@ -26,6 +26,7 @@ from reflex.app import App
 from reflex.base import Base
 from reflex.constants import CompileVars, RouteVar, SocketEvent
 from reflex.constants.state import FIELD_MARKER
+from reflex.environment import environment
 from reflex.event import Event, EventHandler
 from reflex.istate.manager import StateManager
 from reflex.istate.manager.disk import StateManagerDisk
@@ -55,6 +56,7 @@ from reflex.utils.exceptions import (
 from reflex.utils.format import json_dumps
 from reflex.utils.token_manager import SocketRecord
 from reflex.vars.base import Var, computed_var
+from tests.units.mock_redis import mock_redis
 
 from .states import GenState
 
@@ -1691,7 +1693,7 @@ async def state_manager(request) -> AsyncGenerator[StateManager, None]:
     state_manager = StateManager.create(state=TestState)
     if request.param == "redis":
         if not isinstance(state_manager, StateManagerRedis):
-            pytest.skip("Test requires redis")
+            state_manager = StateManagerRedis(state=TestState, redis=mock_redis())
     elif request.param == "disk":
         # explicitly NOT using redis
         state_manager = StateManagerDisk(state=TestState)
@@ -1740,6 +1742,10 @@ async def test_state_manager_modify_state(
         complex_1 = state.complex[1]
         assert isinstance(complex_1, MutableProxy)
         state.complex[3] = complex_1
+
+    if environment.REFLEX_OPLOCK_ENABLED.get():
+        await state_manager.close()
+
     # lock should be dropped after exiting the context
     if isinstance(state_manager, StateManagerRedis):
         assert (await state_manager.redis.get(f"{token}_lock")) is None
@@ -1783,6 +1789,9 @@ async def test_state_manager_contend(
     for f in asyncio.as_completed(tasks):
         await f
 
+    if environment.REFLEX_OPLOCK_ENABLED.get():
+        await state_manager.close()
+
     assert (await state_manager.get_state(substate_token)).num1 == exp_num1
 
     if isinstance(state_manager, StateManagerRedis):
@@ -1802,7 +1811,8 @@ async def state_manager_redis() -> AsyncGenerator[StateManager, None]:
     state_manager = StateManager.create(TestState)
 
     if not isinstance(state_manager, StateManagerRedis):
-        pytest.skip("Test requires redis")
+        # Create a mocked redis client instead of skipping.
+        state_manager = StateManagerRedis(state=TestState, redis=mock_redis())
 
     yield state_manager
 
@@ -1837,12 +1847,35 @@ async def test_state_manager_lock_expire(
     state_manager_redis.lock_expiration = LOCK_EXPIRATION
     state_manager_redis.lock_warning_threshold = LOCK_WARNING_THRESHOLD
 
+    loop_exception = None
+
+    def loop_exception_handler(loop, context):
+        """Catch the LockExpiredError from the event loop.
+
+        Args:
+            loop: The event loop.
+            context: The exception context.
+        """
+        nonlocal loop_exception
+        loop_exception = context["exception"]
+
+    asyncio.get_event_loop().set_exception_handler(loop_exception_handler)
+
     async with state_manager_redis.modify_state(substate_token_redis):
         await asyncio.sleep(0.01)
 
-    with pytest.raises(LockExpiredError):
+    if environment.REFLEX_OPLOCK_ENABLED.get():
         async with state_manager_redis.modify_state(substate_token_redis):
             await asyncio.sleep(LOCK_EXPIRE_SLEEP)
+        await asyncio.sleep(LOCK_EXPIRE_SLEEP)
+        assert loop_exception is not None
+        with pytest.raises(LockExpiredError):
+            raise loop_exception
+    else:
+        with pytest.raises(LockExpiredError):
+            async with state_manager_redis.modify_state(substate_token_redis):
+                await asyncio.sleep(LOCK_EXPIRE_SLEEP)
+        assert loop_exception is None
 
 
 @pytest.mark.asyncio
@@ -1862,6 +1895,20 @@ async def test_state_manager_lock_expire_contend(
     state_manager_redis.lock_expiration = LOCK_EXPIRATION
     state_manager_redis.lock_warning_threshold = LOCK_WARNING_THRESHOLD
 
+    loop_exception = None
+
+    def loop_exception_handler(loop, context):
+        """Catch the LockExpiredError from the event loop.
+
+        Args:
+            loop: The event loop.
+            context: The exception context.
+        """
+        nonlocal loop_exception
+        loop_exception = context["exception"]
+
+    asyncio.get_event_loop().set_exception_handler(loop_exception_handler)
+
     order = []
     waiter_event = asyncio.Event()
 
@@ -1876,19 +1923,31 @@ async def test_state_manager_lock_expire_contend(
         await waiter_event.wait()
         async with state_manager_redis.modify_state(substate_token_redis) as state:
             order.append("waiter")
-            assert state.num1 != unexp_num1
             state.num1 = exp_num1
 
     tasks = [
         asyncio.create_task(_coro_blocker()),
         asyncio.create_task(_coro_waiter()),
     ]
-    with pytest.raises(LockExpiredError):
-        await tasks[0]
-    await tasks[1]
+    if environment.REFLEX_OPLOCK_ENABLED.get():
+        await tasks[0]  # Doesn't raise during `modify_state`, only on exit
+        await tasks[1]
+        await asyncio.sleep(LOCK_EXPIRE_SLEEP)
+        assert loop_exception is not None
+        with pytest.raises(LockExpiredError):
+            raise loop_exception
+        # In oplock mode, the blocker block's both updates
+        assert (await state_manager_redis.get_state(substate_token_redis)).num1 == 0
+    else:
+        with pytest.raises(LockExpiredError):
+            await tasks[0]
+        await tasks[1]
+        assert loop_exception is None
+        assert (
+            await state_manager_redis.get_state(substate_token_redis)
+        ).num1 == exp_num1
 
     assert order == ["blocker", "waiter"]
-    assert (await state_manager_redis.get_state(substate_token_redis)).num1 == exp_num1
 
 
 @pytest.mark.asyncio
@@ -1923,8 +1982,12 @@ async def test_state_manager_lock_warning_threshold_contend(
     ]
 
     await tasks[0]
-    console_warn.assert_called()
-    assert console_warn.call_count == 7
+    if environment.REFLEX_OPLOCK_ENABLED.get():
+        # When Oplock is enabled, we don't warn when lock is held too long.
+        console_warn.assert_not_called()
+    else:
+        console_warn.assert_called()
+        assert console_warn.call_count == 7
 
 
 class CopyingAsyncMock(AsyncMock):
@@ -2078,6 +2141,9 @@ async def test_state_proxy(
     assert not sp._self_mutable  # proxy is not mutable after exiting context
     assert sp._self_actx is None
     assert sp.value2 == "42"
+
+    if environment.REFLEX_OPLOCK_ENABLED.get():
+        await mock_app.state_manager.close()
 
     # Get the state from the state manager directly and check that the value is updated
     gotten_state = await mock_app.state_manager.get_state(
@@ -2289,6 +2355,9 @@ async def test_background_task_no_block(mock_app: rx.App, token: str):
         await task
     assert not mock_app._background_tasks
 
+    if environment.REFLEX_OPLOCK_ENABLED.get():
+        await mock_app.state_manager.close()
+
     exp_order = [
         "background_task:start",
         "other",
@@ -2384,6 +2453,9 @@ async def test_background_task_reset(mock_app: rx.App, token: str):
     for task in tuple(mock_app._background_tasks):
         await task
     assert not mock_app._background_tasks
+
+    if environment.REFLEX_OPLOCK_ENABLED.get():
+        await mock_app.state_manager.close()
 
     assert (
         await mock_app.state_manager.get_state(
@@ -3361,10 +3433,6 @@ def test_setvar_async_setter():
         TestState.setvar("asynctest", 42)
 
 
-@pytest.mark.skipif(
-    "REDIS_URL" not in os.environ and "REFLEX_REDIS_URL" not in os.environ,
-    reason="Test requires redis",
-)
 @pytest.mark.parametrize(
     ("expiration_kwargs", "expected_values"),
     [
@@ -3428,19 +3496,14 @@ config = rx.Config(
     with chdir(proj_root):
         # reload config for each parameter to avoid stale values
         reflex.config.get_config(reload=True)
-        from reflex.istate.manager import StateManager
         from reflex.state import State
 
-        state_manager = StateManager.create(state=State)
+        state_manager = StateManagerRedis(state=State, redis=mock_redis())
         assert state_manager.lock_expiration == expected_values[0]  # pyright: ignore [reportAttributeAccessIssue]
         assert state_manager.token_expiration == expected_values[1]  # pyright: ignore [reportAttributeAccessIssue]
         assert state_manager.lock_warning_threshold == expected_values[2]  # pyright: ignore [reportAttributeAccessIssue]
 
 
-@pytest.mark.skipif(
-    "REDIS_URL" not in os.environ and "REFLEX_REDIS_URL" not in os.environ,
-    reason="Test requires redis",
-)
 @pytest.mark.parametrize(
     ("redis_lock_expiration", "redis_lock_warning_threshold"),
     [
@@ -3470,11 +3533,10 @@ config = rx.Config(
     with chdir(proj_root):
         # reload config for each parameter to avoid stale values
         reflex.config.get_config(reload=True)
-        from reflex.istate.manager import StateManager
         from reflex.state import State
 
         with pytest.raises(InvalidLockWarningThresholdError):
-            StateManager.create(state=State)
+            StateManagerRedis(state=State, redis=mock_redis())
         del sys.modules[constants.Config.MODULE]
 
 
