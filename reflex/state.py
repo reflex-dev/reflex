@@ -1393,6 +1393,11 @@ class BaseState(EvenMoreBasicBaseState):
         Raises:
             SetUndefinedStateVarError: If a value of a var is set without first defining it.
         """
+        if name.startswith("__") or name in CLASS_VAR_NAMES:
+            # Fast path for dunder and class vars
+            object.__setattr__(self, name, value)
+            return
+
         if isinstance(value, MutableProxy):
             # unwrap proxy objects when assigning back to the state
             value = value.__wrapped__
