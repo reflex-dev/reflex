@@ -1979,8 +1979,8 @@ class BaseState(EvenMoreBasicBaseState):
         """
         return {
             cvar
-            for cvar in self.computed_vars
-            if self.computed_vars[cvar].needs_update(instance=self)
+            for cvar, cvar_obj in self.computed_vars.items()
+            if cvar_obj.needs_update(instance=self)
         }
 
     def _dirty_computed_vars(
