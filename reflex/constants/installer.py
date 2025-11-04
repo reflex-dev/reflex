@@ -75,7 +75,7 @@ fetch-retries=0
 
 
 def _determine_react_router_version() -> str:
-    default_version = "7.9.4"
+    default_version = "7.9.5"
     if (version := os.getenv("REACT_ROUTER_VERSION")) and version != default_version:
         from reflex.utils import console
 
@@ -131,7 +131,7 @@ class PackageJson(SimpleNamespace):
             "react": cls._react_version,
             "react-helmet": "6.1.0",
             "react-dom": cls._react_version,
-            "isbot": "5.1.31",
+            "isbot": "5.1.32",
             "socket.io-client": "4.8.1",
             "universal-cookie": "7.2.2",
         }

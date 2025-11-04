@@ -6,7 +6,7 @@ from reflex.utils.imports import ImportVar
 from reflex.vars.base import LiteralVar, Var
 from reflex.vars.sequence import LiteralStringVar, StringVar
 
-LUCIDE_LIBRARY = "lucide-react@0.548.0"
+LUCIDE_LIBRARY = "lucide-react@0.552.0"
 
 
 class LucideIconComponent(Component):
@@ -533,6 +533,7 @@ LUCIDE_ICON_LIST = [
     "clock_alert",
     "clock_arrow_down",
     "clock_arrow_up",
+    "clock_check",
     "clock_fading",
     "clock_plus",
     "clock",
@@ -838,6 +839,7 @@ LUCIDE_ICON_LIST = [
     "georgian_lari",
     "ghost",
     "gift",
+    "git_branch_minus",
     "git_branch_plus",
     "git_branch",
     "git_commit_horizontal",
@@ -915,6 +917,7 @@ LUCIDE_ICON_LIST = [
     "heart_pulse",
     "heart",
     "heater",
+    "helicopter",
     "hexagon",
     "highlighter",
     "history",
@@ -1460,6 +1463,7 @@ LUCIDE_ICON_LIST = [
     "snowflake",
     "soap_dispenser_droplet",
     "sofa",
+    "solar_panel",
     "soup",
     "space",
     "spade",
