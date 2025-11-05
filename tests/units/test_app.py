@@ -1942,3 +1942,71 @@ def test_backend_exception_handler_validation(handler_fn, expected):
     """
     with expected:
         rx.App(backend_exception_handler=handler_fn)._validate_exception_handlers()
+
+
+@pytest.mark.parametrize(
+    ("substate", "frontend"),
+    [
+        pytest.param(False, True, id="root_state_frontend"),
+        pytest.param(False, False, id="root_state_backend"),
+        pytest.param(True, True, id="substate_frontend"),
+        pytest.param(True, False, id="substate_backend"),
+    ],
+)
+@pytest.mark.asyncio
+async def test_app_modify_state_clean(token: str, substate: bool, frontend: bool):
+    """Test that modify_state does not leave dirty_vars or dirty_substates.
+
+    Args:
+        token: A client token.
+        substate: Whether to modify a substate.
+        frontend: Whether to modify a frontend or backend var.
+    """
+
+    class Base(BaseState):
+        count: int = 0
+        _backend: int = 0
+
+    class Sub(Base):
+        sub_count: int = 0
+        _sub_backend: int = 0
+
+    app = App(_state=Base)
+    app._event_namespace = AsyncMock()
+
+    async with app.modify_state(
+        token=_substate_key(token, Sub.get_name())
+    ) as root_state:
+        sub = root_state.substates[Sub.get_name()]
+        if substate:
+            if frontend:
+                sub.sub_count = 1
+            else:
+                sub._sub_backend = 1
+        else:
+            if frontend:
+                root_state.count = 1
+            else:
+                root_state._backend = 1
+
+    assert not root_state.dirty_vars
+    assert not root_state.dirty_substates
+    if substate:
+        assert sub._was_touched
+        assert not root_state._was_touched
+    else:
+        assert root_state._was_touched
+        assert not sub._was_touched
+
+    if frontend:
+        assert app._event_namespace.emit_update.call_count == 1
+        if substate:
+            exp_delta = {Sub.get_full_name(): {"sub_count_rx_state_": 1}}
+        else:
+            exp_delta = {Base.get_full_name(): {"count_rx_state_": 1}}
+        assert (
+            app._event_namespace.emit_update.call_args.kwargs["update"].delta
+            == exp_delta
+        )
+    else:
+        assert app._event_namespace.emit_update.call_count == 0

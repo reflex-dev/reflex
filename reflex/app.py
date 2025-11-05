@@ -1580,9 +1580,9 @@ class App(MiddlewareMixin, LifespanMixin):
             # No other event handler can modify the state while in this context.
             yield state
             delta = await state._get_resolved_delta()
+            state._clean()
             if delta:
-                # When the state is modified reset dirty status and emit the delta to the frontend.
-                state._clean()
+                # When the frontend vars are modified emit the delta to the frontend.
                 await self.event_namespace.emit_update(
                     update=StateUpdate(
                         delta=delta,
