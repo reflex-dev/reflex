@@ -308,6 +308,21 @@ _deserializers = {
 
 all_base_state_classes: dict[str, None] = {}
 
+CLASS_VAR_NAMES = frozenset({
+    "vars",
+    "base_vars",
+    "computed_vars",
+    "inherited_vars",
+    "backend_vars",
+    "inherited_backend_vars",
+    "event_handlers",
+    "class_subclasses",
+    "_var_dependencies",
+    "_always_dirty_computed_vars",
+    "_always_dirty_substates",
+    "_potentially_dirty_states",
+})
+
 
 class BaseState(EvenMoreBasicBaseState):
     """The state of the app."""
@@ -1320,7 +1335,7 @@ class BaseState(EvenMoreBasicBaseState):
             The value of the var.
         """
         # Fast path for dunder
-        if name.startswith("__"):
+        if name.startswith("__") or name in CLASS_VAR_NAMES:
             return super().__getattribute__(name)
 
         # For now, handle router_data updates as a special case.
@@ -1378,6 +1393,11 @@ class BaseState(EvenMoreBasicBaseState):
         Raises:
             SetUndefinedStateVarError: If a value of a var is set without first defining it.
         """
+        if name.startswith("__") or name in CLASS_VAR_NAMES:
+            # Fast path for dunder and class vars
+            object.__setattr__(self, name, value)
+            return
+
         if isinstance(value, MutableProxy):
             # unwrap proxy objects when assigning back to the state
             value = value.__wrapped__
