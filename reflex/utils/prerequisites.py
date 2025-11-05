@@ -12,6 +12,7 @@ import re
 import sys
 import typing
 from datetime import datetime
+from os import getcwd
 from pathlib import Path
 from types import ModuleType
 from typing import NamedTuple
@@ -167,11 +168,6 @@ def _check_app_name(config: Config):
     config._app_name_is_valid = True
 
 
-@once
-def _cwd():
-    return str(Path.cwd())
-
-
 def get_app(reload: bool = False) -> ModuleType:
     """Get the app module based on the default config.
 
@@ -194,7 +190,7 @@ def get_app(reload: bool = False) -> ModuleType:
             _check_app_name(config)
 
         module = config.module
-        sys.path.insert(0, _cwd())
+        sys.path.insert(0, getcwd())  # noqa: PTH109
         app = (
             __import__(module, fromlist=(constants.CompileVars.APP,))
             if not config.app_module
