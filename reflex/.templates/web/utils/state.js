@@ -274,7 +274,8 @@ export const applyEvent = async (event, socket, navigate, params) => {
         [event.payload.url.replace("DOWNLOAD_AS_BLOB:", "")],
         { type: "application/octet-stream" },
       );
-      a.href = URL.createObjectURL(blob);
+      const url = URL.createObjectURL(blob);
+      a.href = url;
       window.setTimeout(function () {
         window.URL.revokeObjectURL(url);
       }, 60000); // Wait 60 seconds
