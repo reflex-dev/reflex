@@ -1230,6 +1230,8 @@ def download(
     url: str | Var | None = None,
     filename: str | Var | None = None,
     data: str | bytes | Var | None = None,
+    as_blob: bool | None = None,
+    mime_type: str | Var | None = None,
 ) -> EventSpec:
     """Download the file at a given path or with the specified data.
 
@@ -1237,6 +1239,8 @@ def download(
         url: The URL to the file to download.
         filename: The name that the file should be saved as after download.
         data: The data to download.
+        as_blob: Downloads the provided `data` via JS `new Blob(...)`.
+        mime_type: Optional blob mime type when `as_blob` is set to True. Default is `application/octet-stream`.
 
     Raises:
         ValueError: If the URL provided is invalid, both URL and data are provided,
@@ -1258,13 +1262,20 @@ def download(
 
     if filename is None:
         filename = ""
+    if mime_type is None:
+        mime_type = "application/octet-stream"
 
     if data is not None:
         if url is not None:
             msg = "Cannot provide both URL and data to download."
             raise ValueError(msg)
 
-        if isinstance(data, str):
+        if as_blob:
+            url = f"DOWNLOAD_AS_BLOB:{data}"
+            if isinstance(data, Var):
+                url = f"DOWNLOAD_AS_BLOB:{data.to(str)}"
+
+        elif isinstance(data, str):
             # Caller provided a plain text string to download.
             url = "data:text/plain," + urllib.parse.quote(data)
         elif isinstance(data, Var):
@@ -1293,6 +1304,7 @@ def download(
         get_fn_signature(download),
         url=url,
         filename=filename,
+        mime_type=mime_type,
     )
 
 

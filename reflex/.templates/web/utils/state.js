@@ -269,7 +269,15 @@ export const applyEvent = async (event, socket, navigate, params) => {
   if (event.name == "_download") {
     const a = document.createElement("a");
     a.hidden = true;
-    a.href = event.payload.url;
+    if (event.payload.url.startsWith("DOWNLOAD_AS_BLOB:")) {
+      const blob = new Blob(
+        [event.payload.url.replace("DOWNLOAD_AS_BLOB:", "")],
+        { type: "application/octet-stream" },
+      );
+      a.href = URL.createObjectURL(blob);
+    } else {
+      a.href = event.payload.url;
+    }
     // Special case when linking to uploaded files
     if (a.href.includes("getBackendURL(env.UPLOAD)")) {
       a.href = eval?.(
