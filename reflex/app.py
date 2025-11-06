@@ -531,8 +531,16 @@ class App(MiddlewareMixin, LifespanMixin):
         if not self.sio:
             self.sio = AsyncServer(
                 async_mode="asgi",
-                cors_allowed_origins=[],
-                cors_credentials=False,
+                cors_allowed_origins=(
+                    (
+                        "*"
+                        if config.cors_allowed_origins == ("*",)
+                        else list(config.cors_allowed_origins)
+                    )
+                    if config.transport == "websocket"
+                    else []
+                ),
+                cors_credentials=config.transport == "websocket",
                 max_http_buffer_size=environment.REFLEX_SOCKET_MAX_HTTP_BUFFER_SIZE.get(),
                 ping_interval=environment.REFLEX_SOCKET_INTERVAL.get(),
                 ping_timeout=environment.REFLEX_SOCKET_TIMEOUT.get(),
