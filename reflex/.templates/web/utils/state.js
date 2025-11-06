@@ -275,6 +275,9 @@ export const applyEvent = async (event, socket, navigate, params) => {
         { type: "application/octet-stream" },
       );
       a.href = URL.createObjectURL(blob);
+      window.setTimeout(function () {
+        window.URL.revokeObjectURL(url);
+      }, 60000); // Wait 60 seconds
     } else {
       a.href = event.payload.url;
     }
