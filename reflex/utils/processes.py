@@ -19,6 +19,7 @@ import rich.markup
 from rich.progress import Progress
 
 from reflex import constants
+from reflex.config import get_config
 from reflex.environment import environment
 from reflex.utils import console, path_ops, prerequisites
 from reflex.utils.registry import get_npm_registry
@@ -42,6 +43,9 @@ def get_num_workers() -> int:
     Returns:
         The number of backend worker processes.
     """
+    if get_config().transport == "polling":
+        return 1
+
     if (redis_client := prerequisites.get_redis_sync()) is None:
         return 1
 
