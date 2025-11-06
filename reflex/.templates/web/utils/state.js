@@ -854,7 +854,7 @@ export const useEventLoop = (
       await connect(
         socket,
         dispatch,
-        ["websocket"],
+        [env.TRANSPORT],
         setConnectErrors,
         client_storage,
         navigate,

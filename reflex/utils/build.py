@@ -20,6 +20,7 @@ def set_env_json():
         str(prerequisites.get_web_dir() / constants.Dirs.ENV_JSON),
         {
             **{endpoint.name: endpoint.get_url() for endpoint in constants.Endpoint},
+            "TRANSPORT": get_config().transport,
             "TEST_MODE": is_in_app_harness(),
         },
     )
