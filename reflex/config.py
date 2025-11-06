@@ -10,7 +10,7 @@ from collections.abc import Sequence
 from importlib.util import find_spec
 from pathlib import Path
 from types import ModuleType
-from typing import TYPE_CHECKING, Any, ClassVar
+from typing import TYPE_CHECKING, Any, ClassVar, Literal
 
 from reflex import constants
 from reflex.constants.base import LogLevel
@@ -253,6 +253,9 @@ class BaseConfig:
 
     # List of fully qualified import paths of plugins to disable in the app (e.g. reflex.plugins.sitemap.SitemapPlugin).
     disable_plugins: list[str] = dataclasses.field(default_factory=list)
+
+    # The transport method for client-server communication.
+    transport: Literal["websocket", "polling"] = "websocket"
 
     # Whether to skip plugin checks.
     _skip_plugins_checks: bool = dataclasses.field(default=False, repr=False)

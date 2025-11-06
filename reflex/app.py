@@ -529,14 +529,31 @@ class App(MiddlewareMixin, LifespanMixin):
 
         # Set up the Socket.IO AsyncServer.
         if not self.sio:
+            if (
+                config.transport == "polling"
+                and (tier := prerequisites.get_user_tier()) != "enterprise"
+            ):
+                console.error(
+                    "The 'polling' transport is only available for Enterprise users. "
+                    + (
+                        "Please upgrade your plan to use this feature."
+                        if tier != "anonymous"
+                        else "Please log in with `reflex login` to use this feature."
+                    )
+                )
+                raise SystemExit(1)
             self.sio = AsyncServer(
                 async_mode="asgi",
                 cors_allowed_origins=(
-                    "*"
-                    if config.cors_allowed_origins == ("*",)
-                    else list(config.cors_allowed_origins)
+                    (
+                        "*"
+                        if config.cors_allowed_origins == ("*",)
+                        else list(config.cors_allowed_origins)
+                    )
+                    if config.transport == "websocket"
+                    else []
                 ),
-                cors_credentials=True,
+                cors_credentials=config.transport == "websocket",
                 max_http_buffer_size=environment.REFLEX_SOCKET_MAX_HTTP_BUFFER_SIZE.get(),
                 ping_interval=environment.REFLEX_SOCKET_INTERVAL.get(),
                 ping_timeout=environment.REFLEX_SOCKET_TIMEOUT.get(),
@@ -544,7 +561,8 @@ class App(MiddlewareMixin, LifespanMixin):
                     dumps=staticmethod(format.json_dumps),
                     loads=staticmethod(json.loads),
                 ),
-                transports=["websocket"],
+                allow_upgrades=False,
+                transports=[config.transport],
             )
         elif getattr(self.sio, "async_mode", "") != "asgi":
             msg = f"Custom `sio` must use `async_mode='asgi'`, not '{self.sio.async_mode}'."
@@ -1580,9 +1598,9 @@ class App(MiddlewareMixin, LifespanMixin):
             # No other event handler can modify the state while in this context.
             yield state
             delta = await state._get_resolved_delta()
+            state._clean()
             if delta:
-                # When the state is modified reset dirty status and emit the delta to the frontend.
-                state._clean()
+                # When the frontend vars are modified emit the delta to the frontend.
                 await self.event_namespace.emit_update(
                     update=StateUpdate(
                         delta=delta,

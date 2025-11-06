@@ -12,6 +12,7 @@ import re
 import sys
 import typing
 from datetime import datetime
+from os import getcwd
 from pathlib import Path
 from types import ModuleType
 from typing import NamedTuple
@@ -189,7 +190,7 @@ def get_app(reload: bool = False) -> ModuleType:
             _check_app_name(config)
 
         module = config.module
-        sys.path.insert(0, str(Path.cwd()))
+        sys.path.insert(0, getcwd())  # noqa: PTH109
         app = (
             __import__(module, fromlist=(constants.CompileVars.APP,))
             if not config.app_module
@@ -673,6 +674,7 @@ def check_schema_up_to_date():
                 )
 
 
+@once
 def get_user_tier():
     """Get the current user's tier.
 
