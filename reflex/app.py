@@ -531,12 +531,8 @@ class App(MiddlewareMixin, LifespanMixin):
         if not self.sio:
             self.sio = AsyncServer(
                 async_mode="asgi",
-                cors_allowed_origins=(
-                    "*"
-                    if config.cors_allowed_origins == ("*",)
-                    else list(config.cors_allowed_origins)
-                ),
-                cors_credentials=True,
+                cors_allowed_origins=[],
+                cors_credentials=False,
                 max_http_buffer_size=environment.REFLEX_SOCKET_MAX_HTTP_BUFFER_SIZE.get(),
                 ping_interval=environment.REFLEX_SOCKET_INTERVAL.get(),
                 ping_timeout=environment.REFLEX_SOCKET_TIMEOUT.get(),
@@ -544,7 +540,8 @@ class App(MiddlewareMixin, LifespanMixin):
                     dumps=staticmethod(format.json_dumps),
                     loads=staticmethod(json.loads),
                 ),
-                transports=["websocket"],
+                allow_upgrades=False,
+                transports=[config.transport],
             )
         elif getattr(self.sio, "async_mode", "") != "asgi":
             msg = f"Custom `sio` must use `async_mode='asgi'`, not '{self.sio.async_mode}'."
