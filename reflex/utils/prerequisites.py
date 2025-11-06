@@ -674,6 +674,7 @@ def check_schema_up_to_date():
                 )
 
 
+@once
 def get_user_tier():
     """Get the current user's tier.
 
