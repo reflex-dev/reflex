@@ -90,8 +90,8 @@ async def test_ensure_task_limit_window_passed():
         coro_function=faulty_coro,
         suppress_exceptions=[ValueError],
         exception_delay=0,
-        exception_limit=3,
-        exception_limit_window=0.1,
+        exception_limit=2,
+        exception_limit_window=0.05,
     )
 
     with contextlib.suppress(asyncio.CancelledError), pytest.raises(RuntimeError):
