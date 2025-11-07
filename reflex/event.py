@@ -56,7 +56,7 @@ from reflex.vars.function import (
     VarOperationCall,
 )
 from reflex.vars.object import ObjectVar
-from reflex.vars.sequence import ArrayVar
+from reflex.vars.sequence import ArrayVar, StringVar
 
 
 @dataclasses.dataclass(
@@ -1291,7 +1291,12 @@ def download(
                 (
                     CREATE_OBJECT_URL.call(data.to_blob(mime_type=mime_type))
                     if isinstance(data, ArrayVar)
-                    else f"data:{mime_type};base64," + BASE64_ENCODE.call(data).to(str)
+                    else f"data:{mime_type};base64,"
+                    + BASE64_ENCODE.call(
+                        data.to(str)
+                        if isinstance(data, StringVar)
+                        else data.to_string(),
+                    ).to(str)
                 ),
             )
         elif isinstance(data, bytes):
