@@ -469,6 +469,19 @@ class ArrayVar(Var[ARRAY_VAR_TYPE], python_types=(Sequence, set)):
 
         return map_array_operation(self, function_var)
 
+    def to_blob(self, mime_type: str | Var[str]):
+        """Convert the array to a Blob object.
+
+        Args:
+            mime_type: The MIME type for the Blob.
+
+        Returns:
+            A Blob object created from the array data.
+        """
+        return var_operation_return(
+            js_expression=f"new Blob([new Uint8Array({self})], {{ type: '{mime_type}' }})",
+        )
+
 
 @dataclasses.dataclass(
     eq=False,

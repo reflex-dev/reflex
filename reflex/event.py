@@ -45,6 +45,8 @@ from reflex.utils.types import (
 from reflex.vars import VarData
 from reflex.vars.base import LiteralVar, Var
 from reflex.vars.function import (
+    BASE64_ENCODE,
+    CREATE_OBJECT_URL,
     ArgsFunctionOperation,
     ArgsFunctionOperationBuilder,
     BuilderFunctionVar,
@@ -54,6 +56,7 @@ from reflex.vars.function import (
     VarOperationCall,
 )
 from reflex.vars.object import ObjectVar
+from reflex.vars.sequence import ArrayVar
 
 
 @dataclasses.dataclass(
@@ -1285,7 +1288,11 @@ def download(
             url = cond(
                 is_data_url,
                 data.to(str),
-                f"data:{mime_type}," + data.to_string(),
+                (
+                    CREATE_OBJECT_URL.call(data.to_blob(mime_type=mime_type))
+                    if isinstance(data, ArrayVar)
+                    else f"data:{mime_type};base64," + BASE64_ENCODE.call(data).to(str)
+                ),
             )
         elif isinstance(data, bytes):
             if mime_type is None:

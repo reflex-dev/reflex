@@ -469,3 +469,8 @@ PROTOTYPE_TO_STRING = FunctionStringVar.create(
     "((__to_string) => __to_string.toString())",
     _var_type=ReflexCallable[[Any], str],
 )
+BASE64_ENCODE = FunctionStringVar.create("btoa", _var_type=ReflexCallable[[Any], str])
+CREATE_OBJECT_URL = FunctionStringVar.create(
+    "window.URL.createObjectURL",
+    _var_type=ReflexCallable[[Any], str],
+)
