@@ -76,10 +76,18 @@ if TYPE_CHECKING:
     from reflex.constants.colors import Color
     from reflex.state import BaseState
 
+    from .blob import Blob, BlobVar
     from .color import LiteralColorVar
     from .number import BooleanVar, LiteralBooleanVar, LiteralNumberVar, NumberVar
     from .object import LiteralObjectVar, ObjectVar
-    from .sequence import ArrayVar, LiteralArrayVar, LiteralStringVar, StringVar
+    from .sequence import (
+        ArrayVar,
+        BytesVar,
+        LiteralArrayVar,
+        LiteralBytesVar,
+        LiteralStringVar,
+        StringVar,
+    )
 
 
 VAR_TYPE = TypeVar("VAR_TYPE", covariant=True)
@@ -659,6 +667,14 @@ class Var(Generic[VAR_TYPE], metaclass=MetaclassVar):
     @classmethod
     def create(  # pyright: ignore [reportOverlappingOverload]
         cls,
+        value: bytes,
+        _var_data: VarData | None = None,
+    ) -> LiteralBytesVar: ...
+
+    @overload
+    @classmethod
+    def create(  # pyright: ignore [reportOverlappingOverload]
+        cls,
         value: STRING_T,
         _var_data: VarData | None = None,
     ) -> StringVar[STRING_T]: ...
@@ -844,6 +860,9 @@ class Var(Generic[VAR_TYPE], metaclass=MetaclassVar):
 
     @overload
     def guess_type(self: Var[str]) -> StringVar: ...
+
+    @overload
+    def guess_type(self: Var[bytes | Sequence[bytes]]) -> BytesVar: ...
 
     @overload
     def guess_type(self: Var[bool]) -> BooleanVar: ...
@@ -1686,6 +1705,20 @@ def var_operation(
 ) -> Callable[P, StringVar]: ...
 
 
+@overload
+def var_operation(
+    func: Callable[P, CustomVarOperationReturn[bytes]]
+    | Callable[P, CustomVarOperationReturn[bytes | None]],
+) -> Callable[P, BytesVar]: ...
+
+
+@overload
+def var_operation(
+    func: Callable[P, CustomVarOperationReturn[Blob]]
+    | Callable[P, CustomVarOperationReturn[Blob | None]],
+) -> Callable[P, BlobVar]: ...
+
+
 LIST_T = TypeVar("LIST_T", bound=Sequence)
 
 
@@ -2305,6 +2338,13 @@ class ComputedVar(Var[RETURN_TYPE]):
         instance: None,
         owner: type,
     ) -> StringVar: ...
+
+    @overload
+    def __get__(
+        self: ComputedVar[bytes],
+        instance: None,
+        owner: type,
+    ) -> BytesVar: ...
 
     @overload
     def __get__(
@@ -3401,6 +3441,11 @@ class Field(Generic[FIELD_TYPE]):
     def __get__(
         self: Field[str] | Field[str | None], instance: None, owner: Any
     ) -> StringVar: ...
+
+    @overload
+    def __get__(
+        self: Field[bytes] | Field[bytes | None], instance: None, owner: Any
+    ) -> BytesVar: ...
 
     @overload
     def __get__(

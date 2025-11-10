@@ -13,6 +13,7 @@ from .base import (
     var_operation,
     var_operation_return,
 )
+from .blob import BlobVar, LiteralBlobVar
 from .color import ColorVar, LiteralColorVar
 from .datetime import DateTimeVar
 from .function import FunctionStringVar, FunctionVar, VarOperationCall
@@ -20,8 +21,10 @@ from .number import BooleanVar, LiteralBooleanVar, LiteralNumberVar, NumberVar
 from .object import LiteralObjectVar, ObjectVar
 from .sequence import (
     ArrayVar,
+    BytesVar,
     ConcatVarOperation,
     LiteralArrayVar,
+    LiteralBytesVar,
     LiteralStringVar,
     StringVar,
 )
@@ -29,7 +32,9 @@ from .sequence import (
 __all__ = [
     "ArrayVar",
     "BaseStateMeta",
+    "BlobVar",
     "BooleanVar",
+    "BytesVar",
     "ColorVar",
     "ConcatVarOperation",
     "DateTimeVar",
@@ -38,7 +43,9 @@ __all__ = [
     "FunctionStringVar",
     "FunctionVar",
     "LiteralArrayVar",
+    "LiteralBlobVar",
     "LiteralBooleanVar",
+    "LiteralBytesVar",
     "LiteralColorVar",
     "LiteralNumberVar",
     "LiteralObjectVar",

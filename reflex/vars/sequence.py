@@ -33,6 +33,7 @@ from .base import (
     var_operation,
     var_operation_return,
 )
+from .blob import Blob
 from .number import (
     BooleanVar,
     LiteralNumberVar,
@@ -469,19 +470,6 @@ class ArrayVar(Var[ARRAY_VAR_TYPE], python_types=(Sequence, set)):
 
         return map_array_operation(self, function_var)
 
-    def to_blob(self, mime_type: str | Var[str]):
-        """Convert the array to a Blob object.
-
-        Args:
-            mime_type: The MIME type for the Blob.
-
-        Returns:
-            A Blob object created from the array data.
-        """
-        return var_operation_return(
-            js_expression=f"new Blob([new Uint8Array({self})], {{ type: '{mime_type}' }})",
-        )
-
 
 @dataclasses.dataclass(
     eq=False,
@@ -872,6 +860,45 @@ class StringVar(Var[STRING_TYPE], python_types=str):
             raise_unsupported_operand_types("replace", (type(self), type(new_value)))
 
         return string_replace_operation(self, search_value, new_value)
+
+    def encode(self, encoding: StringVar | str = "utf-8"):
+        """Encode the string to bytes using the specified encoding.
+
+        Args:
+            encoding: The character encoding to use. Defaults to "utf-8".
+
+        Returns:
+            The encoded bytes.
+        """
+        return string_encode_operation(self, encoding)
+
+    def to_blob(self, mime_type: StringVar | str = "text/plain"):
+        """Convert the string to a Blob object.
+
+        Args:
+            mime_type: The MIME type of the blob. Defaults to "text/plain".
+
+        Returns:
+            A Blob object containing the string data.
+        """
+        return blob_object_create_operation(self, mime_type=mime_type)
+
+
+@var_operation
+def string_encode_operation(value: StringVar[Any] | str, encoding: StringVar | str):
+    """Encode a string to bytes using the specified encoding.
+
+    Args:
+        value: The string to encode.
+        encoding: The character encoding to use.
+
+    Returns:
+        The encoded bytes.
+    """
+    return var_operation_return(
+        f"(new TextEncoder({encoding})).encode({value})",
+        var_type=bytes,
+    )
 
 
 @var_operation
@@ -1298,6 +1325,120 @@ class LiteralStringVar(LiteralVar, StringVar[str]):
             The JSON representation of the var.
         """
         return json.dumps(self._var_value)
+
+
+class BytesVar(Var[bytes], python_types=bytes):
+    """A variable that represents Python bytes as JavaScript Uint8Array."""
+
+    @classmethod
+    def create(
+        cls, value: str | bytes, _var_data: VarData | None = None
+    ) -> LiteralBytesVar:
+        """Create a BytesVar from a string or bytes value.
+
+        Args:
+            value: The string or bytes value to create the var from.
+            _var_data: Additional hooks and imports associated with the Var.
+
+        Returns:
+            A LiteralBytesVar representing the bytes value.
+        """
+        if isinstance(value, str):
+            value = value.encode()
+        return LiteralVar.create(value, _var_data=_var_data)
+
+    def decode(self, encoding: StringVar | str = "utf-8"):
+        """Decode bytes to a string using the specified encoding.
+
+        Args:
+            encoding: The character encoding to use for decoding. Defaults to "utf-8".
+
+        Returns:
+            A StringVar containing the decoded string.
+        """
+        return bytes_decode_operation(self, encoding)
+
+    def to_blob(self, mime_type: StringVar | str = "application/octet-stream"):
+        """Convert the bytes to a Blob object.
+
+        Args:
+            mime_type: The MIME type of the blob. Defaults to "application/octet-stream".
+
+        Returns:
+            A Blob object containing the bytes data.
+        """
+        return blob_object_create_operation(self, mime_type=mime_type)
+
+
+@var_operation
+def bytes_decode_operation(value: BytesVar, encoding: StringVar | str):
+    """Decode bytes to a string using the specified encoding.
+
+    Args:
+        value: The BytesVar to decode.
+        encoding: The character encoding to use for decoding.
+
+    Returns:
+        A StringVar containing the decoded string.
+    """
+    return var_operation_return(
+        f"(new TextDecoder({encoding})).decode(new Uint8Array({value}))",
+        var_type=str,
+    )
+
+
+@dataclasses.dataclass(
+    eq=False,
+    frozen=True,
+    slots=True,
+)
+class LiteralBytesVar(LiteralVar, BytesVar):
+    """A literal version of BytesVar."""
+
+    _var_value: bytes = dataclasses.field(default=b"")
+
+    @classmethod
+    def create(cls, value: bytes, _var_data: VarData | None = None) -> BytesVar:
+        """Create a LiteralBytesVar from a bytes value.
+
+        Args:
+            value: The bytes value to create the variable from.
+            _var_data: Additional variable data, by default None.
+
+        Returns:
+            A literal bytes variable representing the given bytes value.
+        """
+        return cls(
+            _js_expr=f"new Uint8Array({list(value)})",
+            _var_type=bytes,
+            _var_data=_var_data,
+            _var_value=value,
+        )
+
+
+@var_operation
+def blob_object_create_operation(
+    value: StringVar[Any] | BytesVar,
+    mime_type: StringVar[Any] | str,
+) -> CustomVarOperationReturn[Blob]:
+    """Create a Blob object from string or bytes data.
+
+    Args:
+        value: The string or bytes data to convert to a Blob.
+        mime_type: The MIME type of the blob.
+
+    Returns:
+        A Blob object containing the data.
+    """
+    if isinstance(value, BytesVar):
+        return var_operation_return(
+            js_expression=f"new Blob([new Uint8Array({value})], {{ type: {mime_type} }})",
+            var_type=Blob,
+        )
+    return var_operation_return(
+        js_expression=f"new Blob([{value}], {{ type: {mime_type} }})",
+        var_type=Blob,
+    )
 
 
 @dataclasses.dataclass(
