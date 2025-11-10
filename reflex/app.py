@@ -2082,27 +2082,29 @@ class EventNamespace(AsyncNamespace):
         if isinstance(self._token_manager, RedisTokenManager):
             # Make sure this instance is watching for updates from other instances.
             self._token_manager.ensure_lost_and_found_task(self.emit_update)
+
         query_params = urllib.parse.parse_qs(environ.get("QUERY_STRING", ""))
         token_list = query_params.get("token", [])
         token = token_list[0] if token_list else None
-        if token_list:
-            await self.link_token_to_sid(sid, token_list[0])
-        else:
+
+        if not token:
             console.warn(f"No token provided in connection for session {sid}")
+            return
 
         try:
-            if token:
-                substate_key = _substate_key(token, self.app.state_manager.state)
-                state = await self.app.state_manager.get_state(substate_key)
-                if not getattr(state, "router_data", None):
-                    console.debug(
-                        f"[Reflex] socket reconnect detected with expired token {token}, emitting reload"
-                    )
-                    await self.emit("reload", data={"reason": "state expired"}, to=sid)
-            else:
-                console.warn(
-                    f"No valid token found, skipping state restoration for session {sid}"
+            #  Check if backend state already expired BEFORE linking the token
+            substate_key = _substate_key(token, self.app.state_manager.state)
+            state = await self.app.state_manager.get_state(substate_key)
+
+            if not getattr(state, "router_data", None):
+                console.debug(
+                    f"[Reflex] socket reconnect detected with expired token {token}, emitting reload"
                 )
+                await self.emit("reload", data={"reason": "state expired"}, to=sid)
+                return  # no need to proceed further since frontend will reload
+
+            # Only link after confirming state is still valid
+            await self.link_token_to_sid(sid, token)
 
         except Exception as e:
             console.warn(f"Failed to check state on reconnect: {e}")
