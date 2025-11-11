@@ -491,6 +491,17 @@ class EventChain(EventActionsMixin):
                     key=key,
                     **event_chain_kwargs,
                 )
+            elif isinstance(value, FunctionVar):
+                # If the caller passed a structured function, call it with the trigger arguments.
+                event_args = arg_spec_args(
+                    arg_spec=args_spec[0]
+                    if isinstance(args_spec, Sequence)
+                    else args_spec
+                )
+                return ArgsFunctionOperation.create(
+                    args_names=tuple(str(a) for a in event_args),
+                    return_expr=value.call(*event_args),
+                )
             else:
                 msg = f"Invalid event chain: {value!s} of type {value._var_type}"
                 raise ValueError(msg)
@@ -509,7 +520,9 @@ class EventChain(EventActionsMixin):
                 if isinstance(v, (EventHandler, EventSpec)):
                     # Call the event handler to get the event.
                     events.append(call_event_handler(v, args_spec, key=key))
-                elif isinstance(v, Callable):
+                elif (
+                    isinstance(v, Callable) and getattr(v, "__name__", "") == "<lambda>"
+                ):
                     # Call the lambda to get the event chain.
                     result = call_event_fn(v, args_spec, key=key)
                     if isinstance(result, Var):
@@ -1661,6 +1674,31 @@ def resolve_annotation(annotations: dict[str, Any], arg_name: str, spec: ArgsSpe
     return annotation
 
 
+def arg_spec_args(
+    arg_spec: ArgsSpec, annotations: dict[str, Any] | None = None
+) -> list[Var]:
+    """Get the args from the given ArgsSpec.
+
+    Args:
+        arg_spec: The ArgsSpec.
+        annotations: Optionally provide the annotations for arg_spec if already known.
+
+    Returns:
+        The list of typed Vars passed to the arg spec function to map their values in the frontend.
+    """
+    if annotations is None:
+        annotations = get_type_hints(arg_spec)
+
+    spec = inspect.getfullargspec(arg_spec)
+
+    return [
+        Var(f"_{l_arg}").to(
+            unwrap_var_annotation(resolve_annotation(annotations, l_arg, spec=arg_spec))
+        )
+        for l_arg in spec.args
+    ]
+
+
 @lru_cache
 def parse_args_spec(arg_spec: ArgsSpec | Sequence[ArgsSpec]):
     """Parse the args provided in the ArgsSpec of an event trigger.
@@ -1678,17 +1716,8 @@ def parse_args_spec(arg_spec: ArgsSpec | Sequence[ArgsSpec]):
     else:
         annotations = [get_type_hints(arg_spec)]
 
-    spec = inspect.getfullargspec(arg_spec)
-
     return list(
-        arg_spec(*[
-            Var(f"_{l_arg}").to(
-                unwrap_var_annotation(
-                    resolve_annotation(annotations[0], l_arg, spec=arg_spec)
-                )
-            )
-            for l_arg in spec.args
-        ])
+        arg_spec(*arg_spec_args(arg_spec=arg_spec, annotations=annotations[0]))
     ), annotations
 
 
