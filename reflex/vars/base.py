@@ -3283,6 +3283,65 @@ class Field(Generic[FIELD_TYPE]):
         default: FIELD_TYPE | _MISSING_TYPE
         default_factory: Callable[[], FIELD_TYPE] | None
 
+    @overload
+    @classmethod
+    def create(
+        cls,
+        default: FIELD_TYPE | _MISSING_TYPE = MISSING,
+        *,
+        is_var: Literal[False],
+        default_factory: Callable[[], FIELD_TYPE] | None = None,
+    ) -> FIELD_TYPE: ...
+
+    @overload
+    @classmethod
+    def create(
+        cls,
+        default: FIELD_TYPE | _MISSING_TYPE = MISSING,
+        *,
+        default_factory: Callable[[], FIELD_TYPE] | None = None,
+        is_var: Literal[True] = True,
+    ) -> Field[FIELD_TYPE]: ...
+
+    @classmethod
+    def create(
+        cls,
+        default: FIELD_TYPE | _MISSING_TYPE = MISSING,
+        *,
+        default_factory: Callable[[], FIELD_TYPE] | None = None,
+        is_var: bool = True,
+    ) -> Field[FIELD_TYPE] | FIELD_TYPE:
+        """Create a field for a state.
+
+        Args:
+            default: The default value for the field.
+            default_factory: The default factory for the field.
+            is_var: Whether the field is a Var.
+
+        Returns:
+            The field for the state.
+
+        Raises:
+            ValueError: If both default and default_factory are specified.
+        """
+        if default is not MISSING and default_factory is not None:
+            msg = "cannot specify both default and default_factory"
+            raise ValueError(msg)
+        if default is not MISSING and not types.is_immutable(default):
+            console.warn(
+                "Mutable default values are not recommended. "
+                "Use default_factory instead to avoid unexpected behavior."
+            )
+            return cls(
+                default_factory=functools.partial(copy.deepcopy, default),
+                is_var=is_var,
+            )
+        return cls(
+            default=default,
+            default_factory=default_factory,
+            is_var=is_var,
+        )
+
     def __init__(
         self,
         default: FIELD_TYPE | _MISSING_TYPE = MISSING,
@@ -3460,60 +3519,7 @@ class Field(Generic[FIELD_TYPE]):
         """
 
 
-@overload
-def field(
-    default: FIELD_TYPE | _MISSING_TYPE = MISSING,
-    *,
-    is_var: Literal[False],
-    default_factory: Callable[[], FIELD_TYPE] | None = None,
-) -> FIELD_TYPE: ...
-
-
-@overload
-def field(
-    default: FIELD_TYPE | _MISSING_TYPE = MISSING,
-    *,
-    default_factory: Callable[[], FIELD_TYPE] | None = None,
-    is_var: Literal[True] = True,
-) -> Field[FIELD_TYPE]: ...
-
-
-def field(
-    default: FIELD_TYPE | _MISSING_TYPE = MISSING,
-    *,
-    default_factory: Callable[[], FIELD_TYPE] | None = None,
-    is_var: bool = True,
-) -> Field[FIELD_TYPE] | FIELD_TYPE:
-    """Create a field for a state.
-
-    Args:
-        default: The default value for the field.
-        default_factory: The default factory for the field.
-        is_var: Whether the field is a Var.
-
-    Returns:
-        The field for the state.
-
-    Raises:
-        ValueError: If both default and default_factory are specified.
-    """
-    if default is not MISSING and default_factory is not None:
-        msg = "cannot specify both default and default_factory"
-        raise ValueError(msg)
-    if default is not MISSING and not types.is_immutable(default):
-        console.warn(
-            "Mutable default values are not recommended. "
-            "Use default_factory instead to avoid unexpected behavior."
-        )
-        return Field(
-            default_factory=functools.partial(copy.deepcopy, default),
-            is_var=is_var,
-        )
-    return Field(
-        default=default,
-        default_factory=default_factory,
-        is_var=is_var,
-    )
+field = Field.create
 
 
 @dataclass_transform(kw_only_default=True, field_specifiers=(field,))
