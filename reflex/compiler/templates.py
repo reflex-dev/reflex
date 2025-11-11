@@ -10,7 +10,8 @@ from reflex import constants
 from reflex.constants import Hooks
 from reflex.constants.state import CAMEL_CASE_MEMO_MARKER
 from reflex.utils.format import format_state_name, json_dumps
-from reflex.vars.base import VarData
+from reflex.utils.imports import collapse_imports
+from reflex.vars.base import Var, VarData
 
 if TYPE_CHECKING:
     from reflex.compiler.utils import _ImportDict
@@ -140,6 +141,28 @@ config = rx.Config(
         rx.plugins.TailwindV4Plugin(),
     ]
 )"""
+
+
+def generic_var_template(*, content: Var) -> str:
+    """Template for rendering a generic Var, with imports.
+
+    Args:
+      content: The Var to render.
+
+    Returns:
+        Rendered Var as string.
+    """
+    from reflex.compiler.utils import compile_imports
+
+    if (var_data := content._get_all_var_data()) is not None:
+        imports_compiled = compile_imports(collapse_imports(var_data.imports))
+        imports_rendered = "\n".join([
+            _RenderUtils.get_import(mod) for mod in imports_compiled
+        ])
+    else:
+        imports_rendered = ""
+    return f"""{imports_rendered}
+{content!s}"""
 
 
 def document_root_template(*, imports: list[_ImportDict], document: dict[str, Any]):
