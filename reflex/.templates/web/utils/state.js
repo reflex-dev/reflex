@@ -568,6 +568,7 @@ export const connect = async (
       !socket.current.wait_connect
     ) {
       socket.current.wait_connect = true;
+      socket.current.rehydrate = true;
       socket.current.io.opts.query = { token: getToken() }; // Update token for reconnect.
       socket.current.connect();
     }
@@ -615,6 +616,19 @@ export const connect = async (
     window.addEventListener("pagehide", pagehideHandler);
     window.addEventListener("beforeunload", disconnectTrigger);
     window.addEventListener("unload", disconnectTrigger);
+    if (socket.current.rehydrate) {
+      socket.current.rehydrate = false;
+      // On reconnect, we only hydrate, do not re-run on_load events.
+      const hydrate_event = initialEvents()[0];
+      hydrate_event.payload.is_reconnect = true;
+      queueEvents(
+        [hydrate_event],
+        socket,
+        true,
+        navigate,
+        () => params.current,
+      );
+    }
     // Drain any initial events from the queue.
     while (event_queue.length > 0 && !event_processing) {
       await processEvent(socket.current, navigate, () => params.current);

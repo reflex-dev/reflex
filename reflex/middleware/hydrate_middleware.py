@@ -35,11 +35,14 @@ class HydrateMiddleware(Middleware):
         if event.name != get_hydrate_event(state):
             return None
 
-        # Clear client storage, to respect clearing cookies
-        state._reset_client_storage()
+        # In reconnect mode, don't reset client storage or call on_load.
+        is_reconnect = event.payload.get("is_reconnect", False)
+        if not is_reconnect:
+            # Clear client storage, to respect clearing cookies
+            state._reset_client_storage()
 
-        # Mark state as not hydrated (until on_loads are complete)
-        setattr(state, constants.CompileVars.IS_HYDRATED, False)
+            # Mark state as not hydrated (until on_loads are complete)
+            setattr(state, constants.CompileVars.IS_HYDRATED, False)
 
         # Get the initial state.
         delta = await _resolve_delta(state.dict())

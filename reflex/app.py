@@ -2263,7 +2263,7 @@ class EventNamespace(AsyncNamespace):
             await self.emit("new_token", new_token, to=sid)
 
         # Update client state to apply new sid/token for running background tasks.
-        async with self.app.modify_state(
+        async with self.app.state_manager.modify_state(
             _substate_key(new_token or token, self.app.state_manager.state)
         ) as state:
             state.router_data[constants.RouteVar.SESSION_ID] = sid
