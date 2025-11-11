@@ -2256,7 +2256,7 @@ class NoSSRComponent(Component):
             raise ValueError(msg)
         import_name = format.format_library_name(base_import_name)
 
-        library_import = f"import('{import_name}')"
+        library_import = f"await import('{import_name}')"
         mod_import = (
             # https://nextjs.org/docs/pages/building-your-application/optimizing/lazy-loading#with-named-exports
             f".then((mod) => ({{default: mod.{self.tag}}}))"
@@ -2264,7 +2264,7 @@ class NoSSRComponent(Component):
             else ""
         )
         return (
-            f"const {self.alias or self.tag} = ClientSide(lazy(() => "
+            f"const {self.alias or self.tag} = ClientSide(lazy(async () => "
             + library_import
             + mod_import
             + "))"
