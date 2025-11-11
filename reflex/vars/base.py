@@ -2083,7 +2083,7 @@ class ComputedVar(Var[RETURN_TYPE]):
         self,
         fget: Callable[[BASE_STATE], RETURN_TYPE],
         initial_value: RETURN_TYPE | types.Unset = types.Unset(),
-        cache: bool = True,
+        cache: bool = False,
         deps: list[str | Var] | None = None,
         auto_deps: bool = True,
         interval: int | datetime.timedelta | None = None,
@@ -2703,7 +2703,7 @@ class _ComputedVarDecorator(Protocol):
 def computed_var(
     fget: None = None,
     initial_value: Any | types.Unset = types.Unset(),
-    cache: bool = True,
+    cache: bool = False,
     deps: list[str | Var] | None = None,
     auto_deps: bool = True,
     interval: datetime.timedelta | int | None = None,
@@ -2716,7 +2716,7 @@ def computed_var(
 def computed_var(
     fget: Callable[[BASE_STATE], Coroutine[Any, Any, RETURN_TYPE]],
     initial_value: RETURN_TYPE | types.Unset = types.Unset(),
-    cache: bool = True,
+    cache: bool = False,
     deps: list[str | Var] | None = None,
     auto_deps: bool = True,
     interval: datetime.timedelta | int | None = None,
@@ -2729,7 +2729,7 @@ def computed_var(
 def computed_var(
     fget: Callable[[BASE_STATE], RETURN_TYPE],
     initial_value: RETURN_TYPE | types.Unset = types.Unset(),
-    cache: bool = True,
+    cache: bool = False,
     deps: list[str | Var] | None = None,
     auto_deps: bool = True,
     interval: datetime.timedelta | int | None = None,
@@ -2741,7 +2741,7 @@ def computed_var(
 def computed_var(
     fget: Callable[[BASE_STATE], Any] | None = None,
     initial_value: Any | types.Unset = types.Unset(),
-    cache: bool = True,
+    cache: bool = False,
     deps: list[str | Var] | None = None,
     auto_deps: bool = True,
     interval: datetime.timedelta | int | None = None,
