@@ -76,7 +76,7 @@ if TYPE_CHECKING:
     from reflex.constants.colors import Color
     from reflex.state import BaseState
 
-    from .blob import Blob, BlobVar
+    from .blob import Blob, BlobVar, LiteralBlobVar
     from .color import LiteralColorVar
     from .number import BooleanVar, LiteralBooleanVar, LiteralNumberVar, NumberVar
     from .object import LiteralObjectVar, ObjectVar
@@ -670,6 +670,14 @@ class Var(Generic[VAR_TYPE], metaclass=MetaclassVar):
         value: bytes,
         _var_data: VarData | None = None,
     ) -> LiteralBytesVar: ...
+
+    @overload
+    @classmethod
+    def create(  # pyright: ignore [reportOverlappingOverload]
+        cls,
+        value: Blob,
+        _var_data: VarData | None = None,
+    ) -> LiteralBlobVar: ...
 
     @overload
     @classmethod

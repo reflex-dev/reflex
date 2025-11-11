@@ -19,6 +19,9 @@ if TYPE_CHECKING:
 class Blob:
     """Represents a JavaScript Blob object."""
 
+    data: str | bytes = ""
+    mime_type: str = ""
+
 
 BLOB_T = TypeVar("BLOB_T", bound=bytes | str, covariant=True)
 
@@ -27,10 +30,34 @@ class BlobVar(Var[BLOB_T], python_types=Blob):
     """A variable representing a JavaScript Blob object."""
 
     @classmethod
+    def _determine_mime_type(cls, value: str | bytes | Blob | Var) -> str:
+        mime_type = ""
+        if isinstance(value, str | bytes | Blob):
+            match value:
+                case str():
+                    mime_type = "text/plain"
+                case bytes():
+                    mime_type = "application/octet-stream"
+                case Blob():
+                    mime_type = value.mime_type
+
+        elif isinstance(value, Var):
+            if isinstance(value._var_type, str):
+                mime_type = "text/plain"
+            if isinstance(value._var_type, bytes):
+                mime_type = "application/octet-stream"
+
+        if not mime_type:
+            msg = "Unable to determine mime type for blob creation."
+            raise ValueError(msg)
+
+        return mime_type
+
+    @classmethod
     def create(
         cls,
-        value: str | bytes | Var,
-        mime_type: str | Var,
+        value: str | bytes | Blob | Var,
+        mime_type: str | Var | None = None,
         _var_data: VarData | None = None,
     ):
         """Create a BlobVar from the given value and MIME type.
@@ -43,12 +70,21 @@ class BlobVar(Var[BLOB_T], python_types=Blob):
         Returns:
             A BlobVar instance representing the JavaScript Blob object.
         """
-        if not isinstance(value, Var):
-            value = LiteralVar.create(value)
+        if mime_type is None:
+            mime_type = cls._determine_mime_type(value)
+
         if not isinstance(mime_type, Var):
             mime_type = LiteralVar.create(mime_type)
-        elif type(value).__qualname__.endswith("BytesCastedVar"):
+
+        if isinstance(value, str | bytes):
+            value = LiteralVar.create(value)
+
+        elif isinstance(value, Blob):
+            value = LiteralVar.create(value.data)
+
+        if isinstance(value._var_type, bytes):
             value = f"new Uint8Array({value})"
+
         return cls(
             _js_expr=f"new Blob([{value}], {{ type: {mime_type} }})",
             _var_type=Blob,
@@ -93,8 +129,8 @@ class LiteralBlobVar(LiteralVar, BlobVar):
     @classmethod
     def create(
         cls,
-        value: bytes | str,
-        mime_type: str,
+        value: bytes | str | Blob,
+        mime_type: str | None = None,
         _var_data: VarData | None = None,
     ) -> BlobVar:
         """Create a literal Blob variable from bytes or string data.
@@ -107,12 +143,21 @@ class LiteralBlobVar(LiteralVar, BlobVar):
         Returns:
             A BlobVar instance representing the Blob.
         """
+        if not mime_type:
+            mime_type = cls._determine_mime_type(value)
+
+        if isinstance(value, Blob):
+            value = value.data
+
+        var_type = type(value)
+
+        if isinstance(value, bytes):
+            value = f"new Uint8Array({list(value)})"
+        else:
+            value = f"'{value}'"
+
         return cls(
-            _js_expr=(
-                f"new Blob([new Uint8Array({list(value)})], {{ type: '{mime_type}' }})"
-                if isinstance(value, bytes)
-                else f"new Blob([{value}], {{ type: '{mime_type}' }})"
-            ),
-            _var_type=bytes,
+            _js_expr=f"new Blob([{value}], {{ type: '{mime_type}' }})",
+            _var_type=var_type,
             _var_data=_var_data,
         )
