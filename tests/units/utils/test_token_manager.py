@@ -519,7 +519,7 @@ def event_namespace_factory() -> Generator[Callable[[], EventNamespace], None, N
         state.router_data = {}
 
         mock_app = Mock()
-        mock_app._state_manager.modify_state = Mock(
+        mock_app.state_manager.modify_state = Mock(
             return_value=AsyncMock(__aenter__=AsyncMock(return_value=state))
         )
 
