@@ -21,8 +21,8 @@ from reflex.constants.base import Reflex
 from reflex.utils.decorator import once
 
 # Console for pretty printing.
-_console = Console()
-_console_stderr = Console(stderr=True)
+_console = Console(highlight=False)
+_console_stderr = Console(stderr=True, highlight=False)
 
 # The current log level.
 _LOG_LEVEL = LogLevel.INFO
