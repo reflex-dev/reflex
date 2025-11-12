@@ -1,6 +1,6 @@
 [project]
 name = "reflex"
-version = "0.8.19dev1"
+version = "0.8.20dev1"
 description = "Web apps in pure Python."
 license.text = "Apache-2.0"
 authors = [
@@ -31,7 +31,7 @@ dependencies = [
   "python-multipart >=0.0.20,<1.0",
   "python-socketio >=5.12.0,<6.0",
   "redis >=5.2.1,<8.0",
-  "reflex-hosting-cli >=0.1.58",
+  "reflex-hosting-cli >=0.1.59",
   "rich >=13,<15",
   "sqlmodel >=0.0.27,<0.1",
   "starlette >=0.47.0",
@@ -243,7 +243,7 @@ fail_fast = true
 
 [[tool.pre-commit.repos]]
 repo = "https://github.com/astral-sh/ruff-pre-commit"
-rev = "v0.14.2"
+rev = "v0.14.4"
 hooks = [
   { id = "ruff-format", args = [
     "reflex",

@@ -14,7 +14,7 @@ class Bun(SimpleNamespace):
     """Bun constants."""
 
     # The Bun version.
-    VERSION = "1.3.1"
+    VERSION = "1.3.2"
 
     # Min Bun Version
     MIN_VERSION = "1.3.0"
@@ -138,7 +138,7 @@ class PackageJson(SimpleNamespace):
 
     DEV_DEPENDENCIES = {
         "@emotion/react": "11.14.0",
-        "autoprefixer": "10.4.21",
+        "autoprefixer": "10.4.22",
         "postcss": "8.5.6",
         "postcss-import": "16.1.1",
         "@react-router/dev": _react_router_version,
