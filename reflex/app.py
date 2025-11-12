@@ -2092,27 +2092,32 @@ class EventNamespace(AsyncNamespace):
             return
 
         try:
-            #  Check if backend state already expired BEFORE linking the token
-            substate_key = _substate_key(token, self.app.state_manager.state)
-            state = await self.app.state_manager.get_state(substate_key)
+            # Detect reconnect (token seen before)
+            is_reconnect = token in self._token_manager.token_to_sid
 
-            if not getattr(state, "router_data", None):
-                console.debug(
-                    f"[Reflex] socket reconnect detected with expired token {token}, emitting reload"
-                )
-                await self.emit("reload", data={"reason": "state expired"}, to=sid)
-                return  # no need to proceed further since frontend will reload
-
-            # Only link after confirming state is still valid
+            # Always link first to ensure mappings are valid
             await self.link_token_to_sid(sid, token)
 
+            # If this is a reconnect and backend has lost state, trigger reload
+            if is_reconnect:
+                substate_key = _substate_key(token, self.app.state_manager.state)
+                state = await self.app.state_manager.get_state(substate_key)
+
+                if not getattr(state, "router_data", None):
+                    console.debug(
+                        f"[Reflex] Reconnect detected for expired state (token={token}), emitting reload"
+                    )
+                    await self.emit("reload", {"reason": "state_expired"}, to=sid)
+                    return
+
         except Exception as e:
-            console.warn(f"Failed to check state on reconnect: {e}")
+            console.warn(f"[Reflex] on_connect error for token {token}: {e}")
 
         subprotocol = environ.get("HTTP_SEC_WEBSOCKET_PROTOCOL")
         if subprotocol and subprotocol != constants.Reflex.VERSION:
             console.warn(
-                f"Frontend version {subprotocol} for session {sid} does not match the backend version {constants.Reflex.VERSION}."
+                f"Frontend version {subprotocol} for session {sid} "
+                f"does not match backend version {constants.Reflex.VERSION}."
             )
 
     def on_disconnect(self, sid: str) -> asyncio.Task | None:
