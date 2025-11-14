@@ -1,4 +1,5 @@
 paths:
+  - .github
   - reflex
   - reflex/.templates
 paths-ignore:
