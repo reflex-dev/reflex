@@ -553,18 +553,17 @@ class MutableProxy(wrapt.ObjectProxy):
                 value = wrapt.FunctionWrapper(value, self._mark_dirty)
 
             if __name in self.__wrap_mutable_attrs__:
-                # Wrap methods that may return mutable objects tied to the state.
+                # Wrap special methods that may return mutable objects tied to the state.
                 value = wrapt.FunctionWrapper(
                     value,
                     self._wrap_recursive_decorator,  # pyright: ignore[reportArgumentType]
                 )
 
             if (
-                isinstance(self.__wrapped__, Base)
-                and __name not in NEVER_WRAP_BASE_ATTRS
-                and hasattr(value, "__func__")
-            ):
-                # Wrap methods called on Base subclasses, which might do _anything_
+                not isinstance(self.__wrapped__, Base)
+                or __name not in NEVER_WRAP_BASE_ATTRS
+            ) and hasattr(value, "__func__"):
+                # Wrap methods which might do _anything_
                 return wrapt.FunctionWrapper(
                     functools.partial(value.__func__, self),  # pyright: ignore [reportFunctionMemberAccess, reportAttributeAccessIssue]
                     self._wrap_recursive_decorator,  # pyright: ignore[reportArgumentType]
