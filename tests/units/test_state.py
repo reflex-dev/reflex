@@ -2055,6 +2055,22 @@ class ModelDC:
     foo: str = "bar"
     ls: list[dict] = dataclasses.field(default_factory=list)
 
+    def set_foo(self, val: str):
+        """Set the attribute foo.
+
+        Args:
+            val: The value to set.
+        """
+        self.foo = val
+
+    def double_foo(self) -> str:
+        """Concatenate foo with foo.
+
+        Returns:
+            foo + foo
+        """
+        return self.foo + self.foo
+
 
 @pytest.mark.asyncio
 async def test_state_proxy(
@@ -3806,11 +3822,43 @@ class ModelV1(BaseModelV1):
 
     foo: str = "bar"
 
+    def set_foo(self, val: str):
+        """Set the attribute foo.
+
+        Args:
+            val: The value to set.
+        """
+        self.foo = val
+
+    def double_foo(self) -> str:
+        """Concatenate foo with foo.
+
+        Returns:
+            foo + foo
+        """
+        return self.foo + self.foo
+
 
 class ModelV2(BaseModelV2):
     """A pydantic BaseModel v2."""
 
     foo: str = "bar"
+
+    def set_foo(self, val: str):
+        """Set the attribute foo.
+
+        Args:
+            val: The value to set.
+        """
+        self.foo = val
+
+    def double_foo(self) -> str:
+        """Concatenate foo with foo.
+
+        Returns:
+            foo + foo
+        """
+        return self.foo + self.foo
 
 
 class PydanticState(rx.State):
@@ -3828,26 +3876,46 @@ def test_mutable_models():
     state.v1.foo = "baz"
     assert state.dirty_vars == {"v1"}
     state.dirty_vars.clear()
+    state.v1.set_foo("quuc")
+    assert state.dirty_vars == {"v1"}
+    state.dirty_vars.clear()
+    assert state.v1.double_foo() == "quucquuc"
+    assert state.dirty_vars == set()
+    state.v1.copy(update={"foo": "larp"})
+    assert state.dirty_vars == set()
 
     assert isinstance(state.v2, MutableProxy)
     state.v2.foo = "baz"
     assert state.dirty_vars == {"v2"}
     state.dirty_vars.clear()
+    state.v2.set_foo("quuc")
+    assert state.dirty_vars == {"v2"}
+    state.dirty_vars.clear()
+    assert state.v2.double_foo() == "quucquuc"
+    assert state.dirty_vars == set()
+    state.v2.model_copy(update={"foo": "larp"})
+    assert state.dirty_vars == set()
 
     assert isinstance(state.dc, MutableProxy)
     state.dc.foo = "baz"
     assert state.dirty_vars == {"dc"}
     state.dirty_vars.clear()
     assert state.dirty_vars == set()
+    state.dc.set_foo("quuc")
+    assert state.dirty_vars == {"dc"}
+    state.dirty_vars.clear()
+    assert state.dirty_vars == set()
+    assert state.dc.double_foo() == "quucquuc"
+    assert state.dirty_vars == set()
     state.dc.ls.append({"hi": "reflex"})
     assert state.dirty_vars == {"dc"}
     state.dirty_vars.clear()
     assert state.dirty_vars == set()
-    assert dataclasses.asdict(state.dc) == {"foo": "baz", "ls": [{"hi": "reflex"}]}
-    assert dataclasses.astuple(state.dc) == ("baz", [{"hi": "reflex"}])
+    assert dataclasses.asdict(state.dc) == {"foo": "quuc", "ls": [{"hi": "reflex"}]}
+    assert dataclasses.astuple(state.dc) == ("quuc", [{"hi": "reflex"}])
     # creating a new instance shouldn't mark the state dirty
-    assert dataclasses.replace(state.dc, foo="quuc") == ModelDC(
-        foo="quuc", ls=[{"hi": "reflex"}]
+    assert dataclasses.replace(state.dc, foo="larp") == ModelDC(
+        foo="larp", ls=[{"hi": "reflex"}]
     )
     assert state.dirty_vars == set()
 
