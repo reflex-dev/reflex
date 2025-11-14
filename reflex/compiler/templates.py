@@ -10,7 +10,7 @@ from reflex import constants
 from reflex.constants import Hooks
 from reflex.constants.state import CAMEL_CASE_MEMO_MARKER
 from reflex.utils.format import format_state_name, json_dumps
-from reflex.vars.base import VarData
+from reflex.vars.base import Var, VarData
 
 if TYPE_CHECKING:
     from reflex.compiler.utils import _ImportDict
@@ -52,9 +52,19 @@ def _sort_hooks(
 
 class _RenderUtils:
     @staticmethod
-    def render(component: Mapping[str, Any] | str) -> str:
+    def render(component: Mapping[str, Any] | str | Var | Any) -> str:
+
+        # If component is a Var, render it as raw JS and stop.
+        from reflex.vars.base import Var
+
+        if isinstance(component, Var):
+            return str(component)
+
         if isinstance(component, str):
             return component or "null"
+        if isinstance(component, str):
+            return component or "null"
+
         if "iterable" in component:
             return _RenderUtils.render_iterable_tag(component)
         if "match_cases" in component:
