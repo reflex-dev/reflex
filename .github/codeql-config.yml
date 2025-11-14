@@ -1,2 +1,7 @@
+paths:
+  - "**/*.py"
+  - "**/*.js"
+  - "**/*.ts"
+  - "**/*.tsx"
 paths-ignore:
   - "**/tests/**"
