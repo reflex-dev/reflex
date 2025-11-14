@@ -55,13 +55,10 @@ class _RenderUtils:
     def render(component: Mapping[str, Any] | str | Var | Any) -> str:
 
         # If component is a Var, render it as raw JS and stop.
-        from reflex.vars.base import Var
 
         if isinstance(component, Var):
             return str(component)
 
-        if isinstance(component, str):
-            return component or "null"
         if isinstance(component, str):
             return component or "null"
 
