@@ -618,19 +618,13 @@ export const connect = async (
     window.addEventListener("unload", disconnectTrigger);
     if (socket.current.rehydrate) {
       socket.current.rehydrate = false;
-      const events = initialEvents();
-      if (events.length > 0) {
-        // On reconnect, we only hydrate, do not re-run on_load events.
-        const hydrate_event = initialEvents()[0];
-        hydrate_event.payload.is_reconnect = true;
-        queueEvents(
-          [hydrate_event],
-          socket,
-          true,
-          navigate,
-          () => params.current,
-        );
-      }
+      queueEvents(
+        initialEvents(),
+        socket,
+        true,
+        navigate,
+        () => params.current,
+      );
     }
     // Drain any initial events from the queue.
     while (event_queue.length > 0 && !event_processing) {
