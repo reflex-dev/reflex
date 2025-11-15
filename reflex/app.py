@@ -529,19 +529,6 @@ class App(MiddlewareMixin, LifespanMixin):
 
         # Set up the Socket.IO AsyncServer.
         if not self.sio:
-            if (
-                config.transport == "polling"
-                and (tier := prerequisites.get_user_tier()) != "enterprise"
-            ):
-                console.error(
-                    "The 'polling' transport is only available for Enterprise users. "
-                    + (
-                        "Please upgrade your plan to use this feature."
-                        if tier != "anonymous"
-                        else "Please log in with `reflex login` to use this feature."
-                    )
-                )
-                raise SystemExit(1)
             self.sio = AsyncServer(
                 async_mode="asgi",
                 cors_allowed_origins=(
