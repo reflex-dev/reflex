@@ -733,6 +733,9 @@ class EnvironmentVariables:
     # Whether to opportunistically hold the redis lock to allow fast in-memory access while uncontended.
     REFLEX_OPLOCK_ENABLED: EnvVar[bool] = env_var(False)
 
+    # How long to opportunistically hold the redis lock in milliseconds (must be less than the token expiration).
+    REFLEX_OPLOCK_HOLD_TIME_MS: EnvVar[int] = env_var(0)
+
 
 environment = EnvironmentVariables()
 

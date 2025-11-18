@@ -529,19 +529,6 @@ class App(MiddlewareMixin, LifespanMixin):
 
         # Set up the Socket.IO AsyncServer.
         if not self.sio:
-            if (
-                config.transport == "polling"
-                and (tier := prerequisites.get_user_tier()) != "enterprise"
-            ):
-                console.error(
-                    "The 'polling' transport is only available for Enterprise users. "
-                    + (
-                        "Please upgrade your plan to use this feature."
-                        if tier != "anonymous"
-                        else "Please log in with `reflex login` to use this feature."
-                    )
-                )
-                raise SystemExit(1)
             self.sio = AsyncServer(
                 async_mode="asgi",
                 cors_allowed_origins=(
@@ -2263,7 +2250,7 @@ class EventNamespace(AsyncNamespace):
             await self.emit("new_token", new_token, to=sid)
 
         # Update client state to apply new sid/token for running background tasks.
-        async with self.app.modify_state(
+        async with self.app.state_manager.modify_state(
             _substate_key(new_token or token, self.app.state_manager.state)
         ) as state:
             state.router_data[constants.RouteVar.SESSION_ID] = sid

@@ -176,7 +176,7 @@ export const queueEventIfSocketExists = async (
   if (!socket) {
     return;
   }
-  await queueEvents(events, socket, navigate, params);
+  await queueEvents(events, socket, false, navigate, params);
 };
 
 /**
@@ -256,13 +256,13 @@ export const applyEvent = async (event, socket, navigate, params) => {
 
   if (event.name == "_clear_session_storage") {
     sessionStorage.clear();
-    queueEvents(initialEvents(), socket, navigate, params);
+    queueEventIfSocketExists(initialEvents(), socket, navigate, params);
     return false;
   }
 
   if (event.name == "_remove_session_storage") {
     sessionStorage.removeItem(event.payload.key);
-    queueEvents(initialEvents(), socket, navigate, params);
+    queueEventIfSocketExists(initialEvents(), socket, navigate, params);
     return false;
   }
 
@@ -568,6 +568,7 @@ export const connect = async (
       !socket.current.wait_connect
     ) {
       socket.current.wait_connect = true;
+      socket.current.rehydrate = true;
       socket.current.io.opts.query = { token: getToken() }; // Update token for reconnect.
       socket.current.connect();
     }
@@ -615,6 +616,16 @@ export const connect = async (
     window.addEventListener("pagehide", pagehideHandler);
     window.addEventListener("beforeunload", disconnectTrigger);
     window.addEventListener("unload", disconnectTrigger);
+    if (socket.current.rehydrate) {
+      socket.current.rehydrate = false;
+      queueEvents(
+        initialEvents(),
+        socket,
+        true,
+        navigate,
+        () => params.current,
+      );
+    }
     // Drain any initial events from the queue.
     while (event_queue.length > 0 && !event_processing) {
       await processEvent(socket.current, navigate, () => params.current);
