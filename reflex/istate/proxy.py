@@ -563,11 +563,8 @@ class MutableProxy(wrapt.ObjectProxy):
                 not isinstance(self.__wrapped__, Base)
                 or __name not in NEVER_WRAP_BASE_ATTRS
             ) and hasattr(value, "__func__"):
-                # Wrap methods which might do _anything_
-                return wrapt.FunctionWrapper(
-                    functools.partial(value.__func__, self),  # pyright: ignore [reportFunctionMemberAccess, reportAttributeAccessIssue]
-                    self._wrap_recursive_decorator,  # pyright: ignore[reportArgumentType]
-                )
+                # Rebind `self` to the proxy on methods to capture nested mutations.
+                return functools.partial(value.__func__, self)  # pyright: ignore [reportFunctionMemberAccess, reportAttributeAccessIssue]
 
         if is_mutable_type(type(value)) and __name not in (
             "__wrapped__",

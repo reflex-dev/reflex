@@ -2071,6 +2071,22 @@ class ModelDC:
         """
         return self.foo + self.foo
 
+    def copy(self, **kwargs) -> ModelDC:
+        """Create a copy of the dataclass with updated fields.
+
+        Returns:
+            A new instance of ModelDC with updated fields.
+        """
+        return dataclasses.replace(self, **kwargs)
+
+    def append_to_ls(self, item: dict):
+        """Append an item to the list attribute ls.
+
+        Args:
+            item: The item to append.
+        """
+        self.ls.append(item)
+
 
 @pytest.mark.asyncio
 async def test_state_proxy(
@@ -3918,6 +3934,15 @@ def test_mutable_models():
         foo="larp", ls=[{"hi": "reflex"}]
     )
     assert state.dirty_vars == set()
+    dc_copy = state.dc.copy()
+    assert dc_copy == state.dc
+    assert dc_copy is not state.dc
+    dc_copy.foo = "new_foo"
+    assert state.dirty_vars == set()
+    dc_copy.append_to_ls({"new": "item"})
+    assert state.dirty_vars == set()
+    state.dc.append_to_ls({"new": "item"})
+    assert state.dirty_vars == {"dc"}
 
 
 def test_dict_and_get_delta():
