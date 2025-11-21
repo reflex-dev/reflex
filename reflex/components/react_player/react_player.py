@@ -130,7 +130,7 @@ class ReactPlayer(Component):
     reference: https://github.com/cookpete/react-player.
     """
 
-    library = "react-player@3.3.3"
+    library = "react-player@3.4.0"
 
     tag = "ReactPlayer"
 
@@ -159,6 +159,9 @@ class ReactPlayer(Component):
 
     # Player-specific configuration parameters.
     config: Var[dict[str, Any]]
+
+    # Set to true to disable the default remote playback option on supported devices.
+    disable_remote_playback: Var[bool]
 
     # Called when media is loaded and ready to play. If playing is set to true, media will play immediately.
     on_ready: EventHandler[no_args_event_spec]
