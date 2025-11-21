@@ -557,7 +557,12 @@ class StateManagerRedis(StateManager):
                     ) is not None:
                         # Make sure we have the substate cached (or fetch it from redis).
                         try:
-                            _ = cached_state.get_substate(state_path.split("."))
+                            substate = cached_state.get_substate(state_path.split("."))
+                            if len(substate.substates) != len(
+                                type(substate).get_substates()
+                            ):
+                                # If the substate is missing substates, we need to refetch it.
+                                raise ValueError  # noqa: TRY301
                         except ValueError:
                             await self.get_state(token, for_state_instance=cached_state)
                         yield cached_state
