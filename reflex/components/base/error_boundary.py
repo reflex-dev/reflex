@@ -101,9 +101,10 @@ class ErrorBoundary(Component):
                                 div(
                                     pre(
                                         Var(_js_expr=_ERROR_DISPLAY),
+                                        word_break="break-word",
+                                        white_space="pre-wrap",
                                     ),
                                     padding="0.5rem",
-                                    width="fit-content",
                                 ),
                                 width="100%",
                                 background="color-mix(in srgb, currentColor 5%, transparent)",
