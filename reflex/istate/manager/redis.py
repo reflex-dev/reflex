@@ -279,7 +279,7 @@ class StateManagerRedis(StateManager):
         token, state_path = _split_substate_key(token)
         if state_path:
             # Get the State class associated with the given path.
-            state_cls = self.state.get_class_substate(state_path)
+            requested_state_cls = self.state.get_class_substate(state_path)
         else:
             msg = f"StateManagerRedis requires token to be specified in the form of {{token}}_{{state_full_name}}, but got {token}"
             raise RuntimeError(msg)
@@ -291,7 +291,7 @@ class StateManagerRedis(StateManager):
 
         # Determine which states from the tree need to be fetched.
         required_state_classes = sorted(
-            self._get_required_state_classes(state_cls, subclasses=True)
+            self._get_required_state_classes(requested_state_cls, subclasses=True)
             - {type(s) for s in flat_state_tree.values()},
             key=lambda x: x.get_full_name(),
         )
@@ -337,7 +337,7 @@ class StateManagerRedis(StateManager):
         # the top-level state which should always be fetched or already cached.
         if top_level:
             return flat_state_tree[self.state.get_full_name()]
-        return flat_state_tree[state_cls.get_full_name()]
+        return flat_state_tree[requested_state_cls.get_full_name()]
 
     @override
     async def set_state(

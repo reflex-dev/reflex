@@ -2488,12 +2488,18 @@ class ComputedVar(Var[RETURN_TYPE]):
                 var_name = all_var_data.field_name
                 if var_name:
                     self._static_deps.setdefault(state_name, set()).add(var_name)
-                    objclass.get_root_state().get_class_substate(
+                    target_state_class = objclass.get_root_state().get_class_substate(
                         state_name
-                    )._var_dependencies.setdefault(var_name, set()).add((
+                    )
+                    target_state_class._var_dependencies.setdefault(
+                        var_name, set()
+                    ).add((
                         objclass.get_full_name(),
                         self._name,
                     ))
+                    target_state_class._potentially_dirty_states.add(
+                        objclass.get_full_name()
+                    )
                     return
         msg = (
             "ComputedVar dependencies must be Var instances with a state and "
