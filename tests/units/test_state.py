@@ -55,7 +55,7 @@ from reflex.utils.exceptions import (
 )
 from reflex.utils.format import json_dumps
 from reflex.utils.token_manager import SocketRecord
-from reflex.vars.base import Var, computed_var
+from reflex.vars.base import Field, Var, computed_var, field
 from tests.units.mock_redis import mock_redis
 
 from .states import GenState
@@ -306,12 +306,12 @@ def test_base_class_vars(test_state):
     fields = test_state.get_fields()
     cls = type(test_state)
 
-    for field in fields:
-        if field.startswith("_") or field in cls.get_skip_vars():
+    for field_name in fields:
+        if field_name.startswith("_") or field_name in cls.get_skip_vars():
             continue
-        prop = getattr(cls, field)
+        prop = getattr(cls, field_name)
         assert isinstance(prop, Var)
-        assert prop._js_expr.split(".")[-1] == field + FIELD_MARKER
+        assert prop._js_expr.split(".")[-1] == field_name + FIELD_MARKER
 
     assert cls.num1._var_type is int
     assert cls.num2._var_type is float
@@ -4329,3 +4329,35 @@ def test_computed_var_mutability() -> None:
 
     assert first_cv is not second_cv
     assert first_cv._static_deps is not second_cv._static_deps
+
+
+@pytest.mark.asyncio
+async def test_add_dependency_get_state_regression(mock_app: rx.App, token: str):
+    """Ensure that a state class can be fetched separately when it's is explicit dep."""
+
+    class DataState(rx.State):
+        """A state with a var."""
+
+        data: Field[list[int]] = field(default_factory=lambda: [1, 2, 3])
+
+    class StatsState(rx.State):
+        """A state with a computed var depending on DataState."""
+
+        @rx.var(cache=True)
+        async def total(self) -> int:
+            data_state = await self.get_state(DataState)
+            return sum(data_state.data)
+
+    StatsState.computed_vars["total"].add_dependency(StatsState, DataState.data)
+
+    class OtherState(rx.State):
+        """A state that gets DataState."""
+
+        @rx.event
+        async def fetch_data_state(self) -> None:
+            print(await self.get_state(DataState))
+
+    mock_app.state_manager.state = mock_app._state = rx.State
+    state = await mock_app.state_manager.get_state(_substate_key(token, OtherState))
+    other_state = await state.get_state(OtherState)
+    await other_state.fetch_data_state()  # Should not raise exception.
