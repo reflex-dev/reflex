@@ -4304,6 +4304,8 @@ async def test_async_computed_var_get_var_value(mock_app: rx.App, token: str):
     state = await mock_app.state_manager.get_state(_substate_key(token, OtherState))
     other_state = await state.get_state(OtherState)
     assert comp.State is not None
+    # The state should have been pre-cached from the dependency.
+    assert comp.State.get_name() in state.substates
     comp_state = await state.get_state(comp.State)
     assert comp_state.dirty_vars == set()
 
