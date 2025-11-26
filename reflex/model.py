@@ -15,12 +15,16 @@ from reflex.utils.compat import sqlmodel_field_has_primary_key
 from reflex.utils.serializers import serializer
 
 if TYPE_CHECKING:
+    from typing import TypeVar
+
     import sqlalchemy
     import sqlmodel
 
     SQLModelOrSqlAlchemy = (
         type[sqlmodel.SQLModel] | type[sqlalchemy.orm.DeclarativeBase]
     )
+
+    SQLModelOrSqlAlchemyT = TypeVar("SQLModelOrSqlAlchemyT", bound=SQLModelOrSqlAlchemy)
 
 
 def _safe_db_url_for_logging(url: str) -> str:
@@ -177,7 +181,7 @@ if find_spec("sqlalchemy"):
         _metadata: ClassVar[sqlalchemy.MetaData | None] = None
 
         @classmethod
-        def register(cls, model: SQLModelOrSqlAlchemy):
+        def register(cls, model: SQLModelOrSqlAlchemyT) -> SQLModelOrSqlAlchemyT:
             """Register a model. Can be used directly or as a decorator.
 
             Args:
