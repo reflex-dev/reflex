@@ -297,7 +297,7 @@ class UnevaluatedPage:
     description: Var | str | None
     image: str
     on_load: EventType[()] | None
-    meta: Sequence[Mapping[str, str] | Component]
+    meta: Sequence[Mapping[str, Any] | Component]
     context: Mapping[str, Any]
 
     def merged_with(self, other: UnevaluatedPage) -> UnevaluatedPage:
@@ -772,7 +772,7 @@ class App(MiddlewareMixin, LifespanMixin):
         description: str | Var | None = None,
         image: str = constants.DefaultPage.IMAGE,
         on_load: EventType[()] | None = None,
-        meta: list[dict[str, str] | Component] = constants.DefaultPage.META_LIST,
+        meta: Sequence[Mapping[str, Any] | Component] = constants.DefaultPage.META_LIST,
         context: dict[str, Any] | None = None,
     ):
         """Add a page to the app.
