@@ -562,7 +562,7 @@ def add_meta(
     page: Component,
     title: str,
     image: str,
-    meta: list[dict],
+    meta: Sequence[Mapping[str, Any] | Component],
     description: str | None = None,
 ) -> Component:
     """Add metadata to a page.
