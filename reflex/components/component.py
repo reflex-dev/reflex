@@ -758,7 +758,7 @@ class Component(BaseComponent, ABC):
                 and key not in component_specific_triggers
                 and key not in props
             ):
-                valid_triggers = sorted(self.get_event_triggers().keys())
+                valid_triggers = sorted(component_specific_triggers.keys())
                 msg = (
                     f"The {(comp_name := type(self).__name__)} does not take in an `{key}` event trigger. "
                     f"Valid triggers for {comp_name}: {valid_triggers}. "
