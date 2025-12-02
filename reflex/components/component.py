@@ -758,9 +758,11 @@ class Component(BaseComponent, ABC):
                 and key not in component_specific_triggers
                 and key not in props
             ):
+                valid_triggers = sorted(self.get_event_triggers().keys())
                 msg = (
-                    f"The {(comp_name := type(self).__name__)} does not take in an `{key}` event trigger. If {comp_name}"
-                    f" is a third party component make sure to add `{key}` to the component's event triggers. "
+                    f"The {(comp_name := type(self).__name__)} does not take in an `{key}` event trigger. "
+                    f"Valid triggers for {comp_name}: {valid_triggers}. "
+                    f"If {comp_name} is a third party component make sure to add `{key}` to the component's event triggers. "
                     f"visit https://reflex.dev/docs/wrapping-react/guide/#event-triggers for more info."
                 )
                 raise ValueError(msg)
