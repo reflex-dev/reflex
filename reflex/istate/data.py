@@ -2,6 +2,7 @@
 
 import dataclasses
 from collections.abc import Mapping
+from types import MappingProxyType
 from typing import TYPE_CHECKING
 from urllib.parse import _NetlocResultMixinStr, parse_qsl, urlsplit
 
@@ -12,19 +13,33 @@ from reflex.utils.serializers import serializer
 
 @dataclasses.dataclass(frozen=True, init=False)
 class _FrozenDictStrStr(Mapping[str, str]):
-    _data: tuple[tuple[str, str], ...]
+    _data: MappingProxyType[str, str]
 
     def __init__(self, **kwargs):
-        object.__setattr__(self, "_data", tuple(sorted(kwargs.items())))
+        object.__setattr__(
+            self, "_data", MappingProxyType(dict(sorted(kwargs.items())))
+        )
 
     def __getitem__(self, key: str) -> str:
-        return dict(self._data)[key]
+        return self._data[key]
 
     def __iter__(self):
-        return (x[0] for x in self._data)
+        return iter(self._data)
 
     def __len__(self):
         return len(self._data)
+
+    def __hash__(self) -> int:
+        return hash(frozenset(self._data.items()))
+
+    def __getstate__(self) -> object:
+        return dict(self._data)
+
+    def __setstate__(self, state: object) -> None:
+        if not isinstance(state, dict):
+            msg = "Invalid state for _FrozenDictStrStr"
+            raise TypeError(msg)
+        object.__setattr__(self, "_data", MappingProxyType(state))
 
 
 @dataclasses.dataclass(frozen=True)
