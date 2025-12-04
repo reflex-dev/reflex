@@ -1508,8 +1508,8 @@ class LiteralVar(Var):
         if dataclasses.is_dataclass(value) and not isinstance(value, type):
             return LiteralObjectVar.create(
                 {
-                    k: (None if callable(v) else v)
-                    for k, v in dataclasses.asdict(value).items()
+                    k.name: (None if callable(v := getattr(value, k.name)) else v)
+                    for k in dataclasses.fields(value)
                 },
                 _var_type=type(value),
                 _var_data=_var_data,
@@ -1591,8 +1591,8 @@ class LiteralVar(Var):
 
         if dataclasses.is_dataclass(value) and not isinstance(value, type):
             return LiteralObjectVar._get_all_var_data_without_creating_var({
-                k: (None if callable(v) else v)
-                for k, v in dataclasses.asdict(value).items()
+                k.name: (None if callable(v := getattr(value, k.name)) else v)
+                for k in dataclasses.fields(value)
             })
 
         if isinstance(value, range):

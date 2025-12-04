@@ -516,7 +516,9 @@ def _deterministic_hash(value: object) -> str:
             str((value._js_expr, _deterministic_hash(value._get_all_var_data())))
         )
     if isinstance(value, VarData):
-        return _hash_dict(dataclasses.asdict(value))
+        return _hash_dict({
+            k.name: getattr(value, k.name) for k in dataclasses.fields(value)
+        })
     if isinstance(value, BaseComponent):
         # If the value is a component, hash its rendered code.
         return _hash_dict(value.render())

@@ -185,7 +185,7 @@ class PageData:
 
 @serializer(to=dict)
 def _serialize_page_data(obj: PageData) -> dict:
-    return dataclasses.asdict(obj)
+    return {key.name: getattr(obj, key.name) for key in dataclasses.fields(obj)}
 
 
 @dataclasses.dataclass(frozen=True)
@@ -215,7 +215,7 @@ class SessionData:
 
 @serializer(to=dict)
 def _serialize_session_data(obj: SessionData) -> dict:
-    return dataclasses.asdict(obj)
+    return {key.name: getattr(obj, key.name) for key in dataclasses.fields(obj)}
 
 
 @dataclasses.dataclass(frozen=True)
