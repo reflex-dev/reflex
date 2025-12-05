@@ -494,8 +494,8 @@ let {_LANGUAGE!s} = match ? match[1] : '';
         hooks = {}
         from reflex.compiler.templates import _render_hooks
 
-        for _component in self.component_map.values():
-            comp = _component(_MOCK_ARG)
+        for component_factory in self.component_map.values():
+            comp = component_factory(_MOCK_ARG)
             hooks.update(comp._get_all_hooks())
         formatted_hooks = _render_hooks(hooks)
         return f"""
