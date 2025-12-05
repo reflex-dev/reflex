@@ -6,7 +6,7 @@ from reflex.utils.imports import ImportVar
 from reflex.vars.base import LiteralVar, Var
 from reflex.vars.sequence import LiteralStringVar, StringVar
 
-LUCIDE_LIBRARY = "lucide-react@0.555.0"
+LUCIDE_LIBRARY = "lucide-react@0.556.0"
 
 
 class LucideIconComponent(Component):
@@ -317,6 +317,7 @@ LUCIDE_ICON_LIST = [
     "book_open_text",
     "book_open",
     "book_plus",
+    "book_search",
     "book_text",
     "book_type",
     "book_up_2",
@@ -386,8 +387,8 @@ LUCIDE_ICON_LIST = [
     "calendar_sync",
     "calendar_x_2",
     "calendar_x",
-    "calendars",
     "calendar",
+    "calendars",
     "camera_off",
     "camera",
     "candlestick_chart",
@@ -764,8 +765,8 @@ LUCIDE_ICON_LIST = [
     "film",
     "filter_x",
     "filter",
-    "fingerprint",
     "fingerprint_pattern",
+    "fingerprint",
     "fire_extinguisher",
     "fish_off",
     "fish_symbol",
@@ -1395,6 +1396,7 @@ LUCIDE_ICON_LIST = [
     "school",
     "scissors_line_dashed",
     "scissors",
+    "scooter",
     "screen_share_off",
     "screen_share",
     "scroll_text",
@@ -1722,6 +1724,7 @@ LUCIDE_ICON_LIST = [
     "utensils_crossed",
     "utensils",
     "utility_pole",
+    "van",
     "variable",
     "vault",
     "vector_square",
@@ -1760,6 +1763,7 @@ LUCIDE_ICON_LIST = [
     "webcam",
     "webhook_off",
     "webhook",
+    "weight_tilde",
     "weight",
     "wheat_off",
     "wheat",

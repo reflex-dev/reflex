@@ -73,10 +73,12 @@ def validate_imports(import_dict: ParsedImportDict):
         ValueError: if a conflict on "tag/alias" is detected for an import.
     """
     used_tags = {}
-    for lib, _imports in import_dict.items():
-        for _import in _imports:
+    for lib, imported_items in import_dict.items():
+        for imported_item in imported_items:
             import_name = (
-                f"{_import.tag}/{_import.alias}" if _import.alias else _import.tag
+                f"{imported_item.tag}/{imported_item.alias}"
+                if imported_item.alias
+                else imported_item.tag
             )
             if import_name in used_tags:
                 already_imported = used_tags[import_name]
