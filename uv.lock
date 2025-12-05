@@ -1888,7 +1888,7 @@ wheels = [
 
 [[package]]
 name = "reflex"
-version = "0.8.22.dev1"
+version = "0.8.22a1"
 source = { editable = "." }
 dependencies = [
     { name = "alembic" },
