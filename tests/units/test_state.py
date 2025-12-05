@@ -28,6 +28,7 @@ from reflex.constants import CompileVars, RouteVar, SocketEvent
 from reflex.constants.state import FIELD_MARKER
 from reflex.environment import environment
 from reflex.event import Event, EventHandler
+from reflex.istate.data import HeaderData, _FrozenDictStrStr
 from reflex.istate.manager import StateManager
 from reflex.istate.manager.disk import StateManagerDisk
 from reflex.istate.manager.memory import StateManagerMemory
@@ -925,7 +926,11 @@ def test_get_sid(test_state, router_data):
     assert test_state.router.session.session_id == "9fpxSzPb9aFMb4wFAAAH"
 
 
-def test_get_headers(test_state, router_data, router_data_headers):
+def test_get_headers(
+    test_state: TestState,
+    router_data: dict[str, str | dict],
+    router_data_headers: dict[str, str],
+):
     """Test getting client headers.
 
     Args:
@@ -936,13 +941,10 @@ def test_get_headers(test_state, router_data, router_data_headers):
     print(router_data_headers)
     test_state.router = RouterData.from_router_data(router_data)
     print(test_state.router.headers)
-    assert dataclasses.asdict(test_state.router.headers) == {
-        format.to_snake_case(k): v for k, v in router_data_headers.items()
-    } | {
-        "raw_headers": {
-            "_data": tuple(sorted((k, v) for k, v in router_data_headers.items()))
-        }
-    }
+    assert test_state.router.headers == HeaderData(
+        **{format.to_snake_case(k): v for k, v in router_data_headers.items()},
+        raw_headers=_FrozenDictStrStr(**router_data_headers),
+    )
 
 
 def test_get_client_ip(test_state, router_data):
