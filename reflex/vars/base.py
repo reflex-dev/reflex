@@ -2273,17 +2273,47 @@ class ComputedVar(Var[RETURN_TYPE]):
         """Check if the computed var needs to be updated.
 
         Args:
-            instance: The state instance that the computed var is attached to.
+            instance: The state instance.
 
         Returns:
-            True if the computed var needs to be updated, False otherwise.
+            Whether the computed var needs to be updated.
         """
-        if self._update_interval is None:
-            return False
-        last_updated = getattr(instance, self._last_updated_attr, None)
-        if last_updated is None:
+        # If the var is dirty, it needs to be updated.
+        if self._name in instance.dirty_vars:
             return True
-        return datetime.datetime.now() - last_updated > self._update_interval
+
+        # If the var is expired, it needs to be updated.
+        if self._update_interval is not None:
+            last_updated = getattr(
+                instance, self._last_updated_attr, datetime.datetime.min
+            )
+            if datetime.datetime.now() - last_updated > self._update_interval:
+                return True
+
+        return False
+
+    def _needs_update_check(self, instance: BaseState) -> bool:
+        """Check if the computed var needs to be updated, respecting cache.
+
+        This checks for expiration but ignores dirty_vars if cache is present.
+        The assumption is that if cache is present, mark_dirty was NOT called,
+        so we are valid despite dirty_vars persisting in get_delta loop.
+
+        Args:
+            instance: The state instance.
+
+        Returns:
+            Whether the computed var needs to be updated.
+        """
+        # If the var is expired, it needs to be updated.
+        if self._update_interval is not None:
+            last_updated = getattr(
+                instance, self._last_updated_attr, datetime.datetime.min
+            )
+            if datetime.datetime.now() - last_updated > self._update_interval:
+                return True
+
+        return False
 
     @overload
     def __get__(
@@ -2385,12 +2415,15 @@ class ComputedVar(Var[RETURN_TYPE]):
             )
 
         if not self._cache:
-            value = self.fget(instance)
+            value = self._get_value(instance)
         else:
             # handle caching
-            if not hasattr(instance, self._cache_attr) or self.needs_update(instance):
+            # If we have a cache, and we haven't been explicitly marked for update (via mark_dirty),
+            # we shouldn't update just because we are in dirty_vars (which persists across get_delta loop).
+            
+            if not hasattr(instance, self._cache_attr) or self._needs_update_check(instance):
                 # Set cache attr on state instance.
-                setattr(instance, self._cache_attr, self.fget(instance))
+                setattr(instance, self._cache_attr, self._get_value(instance))
                 # Ensure the computed var gets serialized to redis.
                 instance._was_touched = True
                 # Set the last updated timestamp on the state instance.
@@ -2399,6 +2432,27 @@ class ComputedVar(Var[RETURN_TYPE]):
 
         self._check_deprecated_return_type(instance, value)
 
+        return value
+
+    def _get_value(self, instance: BaseState) -> Any:
+        """Get the value of the computed var, handling generators.
+
+        Args:
+            instance: The state instance.
+
+        Returns:
+            The value of the computed var.
+        """
+        print(f"DEBUG: Computing {self._name} for {type(instance).__name__}")
+        value = self.fget(instance)
+        if inspect.isgenerator(value):
+            try:
+                while True:
+                    event = next(value)
+                    if hasattr(instance, "_computed_var_events"):
+                        instance._computed_var_events.append(event)
+            except StopIteration as e:
+                return e.value
         return value
 
     def _check_deprecated_return_type(self, instance: BaseState, value: Any) -> None:
