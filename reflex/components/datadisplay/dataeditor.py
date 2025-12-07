@@ -281,9 +281,6 @@ class DataEditor(NoSSRComponent):
     # Initial scroll offset on the vertical axis.
     scroll_offset_y: Var[int]
 
-    # The current grid selection.
-    grid_selection: Var[GridSelection]
-
     # Controls which types of range selections can exist at the same time. Options are "exclusive", "mixed".
     range_selection_blending: Var[Literal["exclusive", "mixed"]]
 
