@@ -260,10 +260,10 @@ class DataEditor(NoSSRComponent):
     # Allow columns selections. ("none", "single", "multi")
     column_select: Var[Literal["none", "single", "multi"]]
 
-    # Allow range selections. Options are "none", "cell", "rect", "multi-cell", "multi-rect".
+    # Allow range selections. ("none", "cell", "rect", "multi-cell", "multi-rect").
     range_select: Var[Literal["none", "cell", "rect", "multi-cell", "multi-rect"]]
 
-    # Allow row selections. Options are "none", "single", "multi".
+    # Allow row selections. ("none", "single", "multi").
     row_select: Var[Literal["none", "single", "multi"]]
 
     # Prevent diagonal scrolling.
@@ -281,16 +281,16 @@ class DataEditor(NoSSRComponent):
     # Initial scroll offset on the vertical axis.
     scroll_offset_y: Var[int]
 
-    # Controls which types of range selections can exist at the same time. Options are "exclusive", "mixed".
+    # Controls which types of range selections can exist at the same time. ("exclusive", "mixed").
     range_selection_blending: Var[Literal["exclusive", "mixed"]]
 
-    # Controls which types of column selections can exist at the same time. Options are "exclusive", "mixed".
+    # Controls which types of column selections can exist at the same time. ("exclusive", "mixed").
     column_selection_blending: Var[Literal["exclusive", "mixed"]]
 
-    # Controls which types of row selections can exist at the same time. Options are "exclusive", "mixed".
+    # Controls which types of row selections can exist at the same time. ("exclusive", "mixed").
     row_selection_blending: Var[Literal["exclusive", "mixed"]]
 
-    # Controls how spans are handled in selections. Options are "default", "allowPartial".
+    # Controls how spans are handled in selections. ("default", "allowPartial").
     span_range_behavior: Var[Literal["default", "allowPartial"]]
 
     # global theme
