@@ -257,13 +257,13 @@ class DataEditor(NoSSRComponent):
     # Controls the drawing of the left hand vertical border of a column. If set to a boolean value it controls all borders.
     vertical_border: Var[bool]  # TODO: support a mapping (dict[int, bool])
 
-    # Allow columns selections.
+    # Allow columns selections. Options are "none", "single", "multi".
     column_select: Var[Literal["none", "single", "multi"]]
 
-    # Allow range selections.
+    # Allow range selections. Options are "none", "cell", "rect", "multi-cell", "multi-rect".
     range_select: Var[Literal["none", "cell", "rect", "multi-cell", "multi-rect"]]
 
-    # Allow row selections.
+    # Allow row selections. Options are "none", "single", "multi".
     row_select: Var[Literal["none", "single", "multi"]]
 
     # Prevent diagonal scrolling.
@@ -284,16 +284,16 @@ class DataEditor(NoSSRComponent):
     # The current grid selection.
     grid_selection: Var[GridSelection]
 
-    # Controls which types of range selections can exist at the same time.
+    # Controls which types of range selections can exist at the same time. Options are "exclusive", "mixed".
     range_selection_blending: Var[Literal["exclusive", "mixed"]]
 
-    # Controls which types of column selections can exist at the same time.
+    # Controls which types of column selections can exist at the same time. Options are "exclusive", "mixed".
     column_selection_blending: Var[Literal["exclusive", "mixed"]]
 
-    # Controls which types of row selections can exist at the same time.
+    # Controls which types of row selections can exist at the same time. Options are "exclusive", "mixed".
     row_selection_blending: Var[Literal["exclusive", "mixed"]]
 
-    # Controls how spans are handled in selections.
+    # Controls how spans are handled in selections. Options are "default", "allowPartial".
     span_range_behavior: Var[Literal["default", "allowPartial"]]
 
     # Highlight regions on the grid which get drawn with a background color and a dashed line around the region.
@@ -350,7 +350,7 @@ class DataEditor(NoSSRComponent):
     # Fired when a row is appended.
     on_row_appended: EventHandler[no_args_event_spec]
 
-    # Fired when the grid selection changes.
+    # Fired when the grid selection changes. Will pass the current selection, the selected columns and the selected rows.
     on_grid_selection_change: EventHandler[passthrough_event_spec(GridSelection)]
 
     # Fired when the selection is cleared.
