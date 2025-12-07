@@ -257,8 +257,14 @@ class DataEditor(NoSSRComponent):
     # Controls the drawing of the left hand vertical border of a column. If set to a boolean value it controls all borders.
     vertical_border: Var[bool]  # TODO: support a mapping (dict[int, bool])
 
-    # Allow columns selections. ("none", "single", "multi")
+    # Allow columns selections.
     column_select: Var[Literal["none", "single", "multi"]]
+
+    # Allow range selections.
+    range_select: Var[Literal["none", "cell", "rect", "multi-cell", "multi-rect"]]
+
+    # Allow row selections.
+    row_select: Var[Literal["none", "single", "multi"]]
 
     # Prevent diagonal scrolling.
     prevent_diagonal_scrolling: Var[bool]
@@ -274,6 +280,24 @@ class DataEditor(NoSSRComponent):
 
     # Initial scroll offset on the vertical axis.
     scroll_offset_y: Var[int]
+
+    # The current grid selection.
+    grid_selection: Var[GridSelection]
+
+    # Controls which types of range selections can exist at the same time.
+    range_selection_blending: Var[Literal["exclusive", "mixed"]]
+
+    # Controls which types of column selections can exist at the same time.
+    column_selection_blending: Var[Literal["exclusive", "mixed"]]
+
+    # Controls which types of row selections can exist at the same time.
+    row_selection_blending: Var[Literal["exclusive", "mixed"]]
+
+    # Controls how spans are handled in selections.
+    span_range_behavior: Var[Literal["default", "allowPartial"]]
+
+    # Highlight regions on the grid which get drawn with a background color and a dashed line around the region.
+    highlight_regions: Var[Sequence[dict[str, Any]]]
 
     # global theme
     theme: Var[DataEditorTheme | dict]
@@ -325,6 +349,9 @@ class DataEditor(NoSSRComponent):
 
     # Fired when a row is appended.
     on_row_appended: EventHandler[no_args_event_spec]
+
+    # Fired when the grid selection changes.
+    on_grid_selection_change: EventHandler[passthrough_event_spec(GridSelection)]
 
     # Fired when the selection is cleared.
     on_selection_cleared: EventHandler[no_args_event_spec]
