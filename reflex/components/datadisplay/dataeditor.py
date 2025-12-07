@@ -296,9 +296,6 @@ class DataEditor(NoSSRComponent):
     # Controls how spans are handled in selections. Options are "default", "allowPartial".
     span_range_behavior: Var[Literal["default", "allowPartial"]]
 
-    # Highlight regions on the grid which get drawn with a background color and a dashed line around the region.
-    highlight_regions: Var[Sequence[dict[str, Any]]]
-
     # global theme
     theme: Var[DataEditorTheme | dict]
 
