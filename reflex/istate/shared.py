@@ -35,9 +35,6 @@ class SharedStateBaseInternal(State):
         if (
             previous_dirty_vars := getattr(self, "_previous_dirty_vars", None)
         ) is not None:
-            print(  # noqa: T201
-                f"{self.router.session.client_token} cleaning {self.get_full_name()} ({self.dirty_vars=}) ({previous_dirty_vars=})"
-            )
             previous_dirty_vars.clear()
             previous_dirty_vars.update(self.dirty_vars)
         super()._clean()
@@ -51,7 +48,10 @@ class SharedStateBaseInternal(State):
         """
         self.dirty_vars.discard("_original_substates")
         self.dirty_vars.discard("_previous_dirty_vars")
-        if self.dirty_vars:
+        # Only mark dirty if there are still dirty vars, or any substate is dirty
+        if self.dirty_vars or any(
+            substate.dirty_vars for substate in self.substates.values()
+        ):
             super()._mark_dirty()
 
     def _rehydrate(self):
@@ -196,14 +196,17 @@ class SharedStateBaseInternal(State):
             # Collect dirty vars and other affected clients that need to be updated.
             for linked_state in linked_states:
                 if (
-                    previous_dirty_vars := getattr(
+                    linked_state_previous_dirty_vars := getattr(
                         linked_state, "_previous_dirty_vars", None
                     )
                 ) is not None:
                     current_dirty_vars[linked_state.get_full_name()] = set(
-                        previous_dirty_vars
+                        linked_state_previous_dirty_vars
                     )
-                if linked_state._get_was_touched():
+                if (
+                    linked_state._get_was_touched()
+                    or linked_state_previous_dirty_vars is not None
+                ):
                     affected_tokens.update(
                         token
                         for token in linked_state._linked_from
@@ -224,9 +227,6 @@ class SharedStateBaseInternal(State):
                 ):
                     continue
                 # TODO: remove disconnected client's after some time.
-                print(  # noqa: T201
-                    f"{self.router.session.client_token} propagating to {affected_token} ({current_dirty_vars=})"
-                )
                 async with app.modify_state(
                     _substate_key(affected_token, type(self)),
                     previous_dirty_vars=current_dirty_vars,
