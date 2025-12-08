@@ -345,7 +345,7 @@ class DataEditor(NoSSRComponent):
     # Fired when a row is appended.
     on_row_appended: EventHandler[no_args_event_spec]
 
-    # The current grid selection state (columns, rows, and current cell/range)
+    # The current grid selection state (columns, rows, and current cell/range). Must be used when on_grid_selection_change is used otherwise updates will not be reflected in the grid.
     grid_selection: Var[GridSelection]
 
     # Fired when the grid selection changes. Will pass the current selection, the selected columns and the selected rows.
@@ -375,6 +375,10 @@ class DataEditor(NoSSRComponent):
 
     def add_custom_code(self) -> list[str]:
         """Add custom code for reconstructing GridSelection with CompactSelection objects.
+
+        Note: When using on_grid_selection_change, Glide Data Grid will not update its internal selection state automatically. Instead,
+        the grid_selection prop must be updated with a GridSelection object that has CompactSelection objects for the columns and rows properties. 
+        This function provides the necessary JavaScript code to reconstruct the GridSelection object from a dict representation.
 
         Returns:
             JavaScript code to reconstruct GridSelection.
