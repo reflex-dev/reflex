@@ -3656,7 +3656,11 @@ def test_mixin_state() -> None:
     """Test that a mixin state works correctly."""
     assert "num" in UsesMixinState.base_vars
     assert "num" in UsesMixinState.vars
-    assert UsesMixinState.backend_vars == {"_backend": 0, "_backend_no_default": {}}
+    assert UsesMixinState.backend_vars == {
+        "_backend": 0,
+        "_backend_no_default": {},
+        "_reflex_internal_links": {},
+    }
 
     assert "computed" in UsesMixinState.computed_vars
     assert "computed" in UsesMixinState.vars
