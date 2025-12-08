@@ -380,76 +380,43 @@ class DataEditor(NoSSRComponent):
             JavaScript code to reconstruct GridSelection.
         """
         return [
-            """
-function reconstructGridSelection(selection) {
-    console.log('=== reconstructGridSelection ===');
-    console.log('Input:', JSON.stringify(selection, null, 2));
-    
-    if (!selection || typeof selection !== 'object') {
-        return undefined;
-    }
-    
-    const reconstructCompactSelection = (data) => {
-        if (!data || !data.items || !Array.isArray(data.items)) {
-            return CompactSelection.empty();
-        }
-        
-        const items = data.items;
-        console.log('Items array:', JSON.stringify(items));
-        
-        if (items.length === 0) {
-            return CompactSelection.empty();
-        }
-        
-        // CompactSelection items format is actually [start, end) ranges, not [offset, length]
-        // The internal representation stores ranges as [start_index, end_index]
-        let result = CompactSelection.empty();
-        
-        // Try to reconstruct using the raw items array directly
-        // CompactSelection might have a specific constructor or method
-        console.log('Attempting to build CompactSelection from items');
-        
-        // Method 1: Try using items directly if it's already in the right format
-        try {
-            // Items are stored as [start, end) ranges in CompactSelection internal format
-            // We need to add each range properly
-            for (const item of items) {
-                if (Array.isArray(item) && item.length === 2) {
-                    const [start, end] = item;
-                    console.log(`Adding range [${start}, ${end})`);
-                    // Add range [start, end) - from start inclusive to end exclusive
-                    result = result.add([start, end]);
-                }
+                    """
+        function reconstructGridSelection(selection) {
+            if (!selection || typeof selection !== 'object') {
+                return undefined;
             }
-        } catch (e) {
-            console.error('Error building CompactSelection:', e);
-            // Fallback: add individual items
-            for (const item of items) {
-                if (Array.isArray(item) && item.length === 2) {
-                    const [start, end] = item;
-                    for (let i = start; i < end; i++) {
-                        result = result.add(i);
+            
+            const reconstructCompactSelection = (data) => {
+                if (!data || !data.items || !Array.isArray(data.items)) {
+                    return CompactSelection.empty();
+                }
+                
+                const items = data.items;
+                if (items.length === 0) {
+                    return CompactSelection.empty();
+                }
+                
+                let result = CompactSelection.empty();
+                
+                // Items are stored as [start, end) ranges in CompactSelection internal format
+                for (const item of items) {
+                    if (Array.isArray(item) && item.length === 2) {
+                        const [start, end] = item;
+                        result = result.add([start, end]);
                     }
                 }
-            }
+                
+                return result;
+            };
+            
+            return {
+                current: selection.current || undefined,
+                columns: reconstructCompactSelection(selection.columns),
+                rows: reconstructCompactSelection(selection.rows)
+            };
         }
-        
-        console.log('CompactSelection length:', result.length);
-        return result;
-    };
-    
-    const reconstructed = {
-        current: selection.current || undefined,
-        columns: reconstructCompactSelection(selection.columns),
-        rows: reconstructCompactSelection(selection.rows)
-    };
-    
-    console.log('Output columns:', reconstructed.columns.length);
-    console.log('Output rows:', reconstructed.rows.length);
-    return reconstructed;
-}
-            """
-        ]
+                    """
+                ]
 
     def add_hooks(self) -> list[str]:
         """Get the hooks to render.
