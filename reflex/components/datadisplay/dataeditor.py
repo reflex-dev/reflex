@@ -15,6 +15,7 @@ from reflex.utils.imports import ImportDict, ImportVar
 from reflex.utils.serializers import serializer
 from reflex.vars import get_unique_variable_name
 from reflex.vars.base import Var
+from reflex.vars.function import FunctionStringVar
 from reflex.vars.sequence import ArrayVar
 
 
@@ -344,6 +345,9 @@ class DataEditor(NoSSRComponent):
     # Fired when a row is appended.
     on_row_appended: EventHandler[no_args_event_spec]
 
+    # The current grid selection state (columns, rows, and current cell/range)
+    grid_selection: Var[GridSelection]
+
     # Fired when the grid selection changes. Will pass the current selection, the selected columns and the selected rows.
     on_grid_selection_change: EventHandler[passthrough_event_spec(GridSelection)]
 
@@ -363,11 +367,89 @@ class DataEditor(NoSSRComponent):
             return {}
         return {
             "": f"{format.format_library_name(self.library)}/dist/index.css",
-            self.library: "GridCellKind",
+            self.library: ["GridCellKind", "CompactSelection"],
             "$/utils/helpers/dataeditor.js": ImportVar(
                 tag="formatDataEditorCells", is_default=False, install=False
             ),
         }
+
+    def add_custom_code(self) -> list[str]:
+        """Add custom code for reconstructing GridSelection with CompactSelection objects.
+
+        Returns:
+            JavaScript code to reconstruct GridSelection.
+        """
+        return [
+            """
+function reconstructGridSelection(selection) {
+    console.log('=== reconstructGridSelection ===');
+    console.log('Input:', JSON.stringify(selection, null, 2));
+    
+    if (!selection || typeof selection !== 'object') {
+        return undefined;
+    }
+    
+    const reconstructCompactSelection = (data) => {
+        if (!data || !data.items || !Array.isArray(data.items)) {
+            return CompactSelection.empty();
+        }
+        
+        const items = data.items;
+        console.log('Items array:', JSON.stringify(items));
+        
+        if (items.length === 0) {
+            return CompactSelection.empty();
+        }
+        
+        // CompactSelection items format is actually [start, end) ranges, not [offset, length]
+        // The internal representation stores ranges as [start_index, end_index]
+        let result = CompactSelection.empty();
+        
+        // Try to reconstruct using the raw items array directly
+        // CompactSelection might have a specific constructor or method
+        console.log('Attempting to build CompactSelection from items');
+        
+        // Method 1: Try using items directly if it's already in the right format
+        try {
+            // Items are stored as [start, end) ranges in CompactSelection internal format
+            // We need to add each range properly
+            for (const item of items) {
+                if (Array.isArray(item) && item.length === 2) {
+                    const [start, end] = item;
+                    console.log(`Adding range [${start}, ${end})`);
+                    // Add range [start, end) - from start inclusive to end exclusive
+                    result = result.add([start, end]);
+                }
+            }
+        } catch (e) {
+            console.error('Error building CompactSelection:', e);
+            // Fallback: add individual items
+            for (const item of items) {
+                if (Array.isArray(item) && item.length === 2) {
+                    const [start, end] = item;
+                    for (let i = start; i < end; i++) {
+                        result = result.add(i);
+                    }
+                }
+            }
+        }
+        
+        console.log('CompactSelection length:', result.length);
+        return result;
+    };
+    
+    const reconstructed = {
+        current: selection.current || undefined,
+        columns: reconstructCompactSelection(selection.columns),
+        rows: reconstructCompactSelection(selection.rows)
+    };
+    
+    console.log('Output columns:', reconstructed.columns.length);
+    console.log('Output rows:', reconstructed.rows.length);
+    return reconstructed;
+}
+            """
+        ]
 
     def add_hooks(self) -> list[str]:
         """Get the hooks to render.
@@ -450,6 +532,12 @@ class DataEditor(NoSSRComponent):
             console.warn(
                 "get_cell_content is not user configurable, the provided value will be discarded"
             )
+        
+        # Apply the reconstruction function to grid_selection if it's a Var
+        if (grid_selection := props.get("grid_selection")) is not None:
+            if isinstance(grid_selection, Var):
+                props["grid_selection"] = FunctionStringVar.create("reconstructGridSelection").call(grid_selection)
+        
         grid = super().create(*children, **props)
         return Div.create(
             grid,
