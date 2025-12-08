@@ -1,11 +1,55 @@
 """Base classes for shared / linked states."""
 
+import asyncio
 import contextlib
 from collections.abc import AsyncIterator
 
 from reflex.event import Event, get_hydrate_event
 from reflex.state import BaseState, State, _override_base_method, _substate_key
 from reflex.utils.exceptions import ReflexRuntimeError
+
+UPDATE_OTHER_CLIENT_TASKS: set[asyncio.Task] = set()
+
+
+def _do_update_other_tokens(
+    affected_tokens: set[str],
+    previous_dirty_vars: dict[str, set[str]],
+    state_type: type[BaseState],
+) -> list[asyncio.Task]:
+    """Update other clients after a shared state update.
+
+    Submit the updates in separate asyncio tasks to avoid deadlocking.
+
+    Args:
+        affected_tokens: The tokens to update.
+        previous_dirty_vars: The dirty vars to apply to other clients.
+        state_type: The type of the shared state.
+
+    Returns:
+        The list of asyncio tasks created to perform the updates.
+    """
+    from reflex.utils.prerequisites import get_app
+
+    app = get_app().app
+
+    async def _update_client(token: str):
+        async with app.modify_state(
+            _substate_key(token, state_type),
+            previous_dirty_vars=previous_dirty_vars,
+        ):
+            pass
+
+    tasks = []
+    for affected_token in affected_tokens:
+        # Don't send updates for disconnected clients.
+        if affected_token not in app.event_namespace._token_manager.token_to_socket:
+            continue
+        # TODO: remove disconnected client's after some time.
+        t = asyncio.create_task(_update_client(affected_token))
+        UPDATE_OTHER_CLIENT_TASKS.add(t)
+        t.add_done_callback(UPDATE_OTHER_CLIENT_TASKS.discard)
+        tasks.append(t)
+    return tasks
 
 
 class SharedStateBaseInternal(State):
@@ -215,23 +259,11 @@ class SharedStateBaseInternal(State):
 
         # Only propagate dirty vars when we are not already propagating from another state.
         if previous_dirty_vars is None:
-            from reflex.utils.prerequisites import get_app
-
-            app = get_app().app
-
-            for affected_token in affected_tokens:
-                # Don't send updates for disconnected clients.
-                if (
-                    affected_token
-                    not in app.event_namespace._token_manager.token_to_socket
-                ):
-                    continue
-                # TODO: remove disconnected client's after some time.
-                async with app.modify_state(
-                    _substate_key(affected_token, type(self)),
-                    previous_dirty_vars=current_dirty_vars,
-                ):
-                    pass
+            _do_update_other_tokens(
+                affected_tokens=affected_tokens,
+                previous_dirty_vars=current_dirty_vars,
+                state_type=type(self),
+            )
 
 
 class SharedState(SharedStateBaseInternal, mixin=True):

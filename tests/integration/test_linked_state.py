@@ -16,7 +16,6 @@ from . import utils
 
 def LinkedStateApp():
     """Test that linked state works as expected."""
-    import asyncio
     from typing import Any
 
     import reflex as rx
@@ -72,13 +71,11 @@ def LinkedStateApp():
                 async with self:
                     ss = await self.get_state(SharedState)
                     ss.counter += 1
-                await asyncio.sleep(0)
             async with self:
                 ss = await self.get_state(SharedState)
             for _ in range(5):
                 async with ss:
                     ss.counter += 1
-                await asyncio.sleep(0)
 
         @rx.event
         async def bump_counter_yield(self):
