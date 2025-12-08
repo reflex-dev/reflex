@@ -1565,7 +1565,7 @@ class App(MiddlewareMixin, LifespanMixin):
         self,
         token: str,
         background: bool = False,
-        previous_dirty_vars: set[str] | None = None,
+        previous_dirty_vars: dict[str, set[str]] | None = None,
     ) -> AsyncIterator[BaseState]:
         """Modify the state out of band.
 

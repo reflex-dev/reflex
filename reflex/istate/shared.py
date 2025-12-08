@@ -11,22 +11,8 @@ from reflex.utils.exceptions import ReflexRuntimeError
 class SharedStateBaseInternal(State):
     """The private base state for all shared states."""
 
-    # Maps the state full_name to an arbitrary token it is linked to.
-    _links: dict[str, str]
     # While _modify_linked_states is active, this holds the original substates for the client's tree.
     _original_substates: dict[str, tuple[BaseState, BaseState | None]]
-
-    @classmethod
-    def _init_var_dependency_dicts(cls):
-        super()._init_var_dependency_dicts()
-        if (
-            "_links" in cls.inherited_backend_vars
-            or (parent_state_cls := cls.get_parent_state()) is None
-        ):
-            return
-        # Mark the internal state as always dirty so the state manager
-        # automatically fetches this state containing the _links.
-        parent_state_cls._always_dirty_substates.add(cls.get_name())
 
     def __getstate__(self):
         """Override redis serialization to remove temporary fields.
@@ -46,9 +32,14 @@ class SharedStateBaseInternal(State):
 
         This is necessary for applying dirty vars from one event to other linked states.
         """
-        if hasattr(self, "_previous_dirty_vars"):
-            self._previous_dirty_vars.clear()
-            self._previous_dirty_vars.update(self.dirty_vars)
+        if (
+            previous_dirty_vars := getattr(self, "_previous_dirty_vars", None)
+        ) is not None:
+            print(  # noqa: T201
+                f"{self.router.session.client_token} cleaning {self.get_full_name()} ({self.dirty_vars=}) ({previous_dirty_vars=})"
+            )
+            previous_dirty_vars.clear()
+            previous_dirty_vars.update(self.dirty_vars)
         super()._clean()
 
     @_override_base_method
@@ -59,7 +50,7 @@ class SharedStateBaseInternal(State):
         state to be considered dirty either.
         """
         self.dirty_vars.discard("_original_substates")
-        self.dirty_vars.discard("_previously_dirty_substates")
+        self.dirty_vars.discard("_previous_dirty_vars")
         if self.dirty_vars:
             super()._mark_dirty()
 
@@ -95,7 +86,7 @@ class SharedStateBaseInternal(State):
             msg = f"Invalid token {token} for linking state {self.get_full_name()}, cannot use underscore (_) in the token name."
             raise ReflexRuntimeError(msg)
         state_name = self.get_full_name()
-        self._links[state_name] = token
+        self._reflex_internal_links[state_name] = token
         async with self._modify_linked_states() as _:
             linked_state = await self.get_state(type(self))
             linked_state._linked_from.add(self.router.session.client_token)
@@ -107,7 +98,6 @@ class SharedStateBaseInternal(State):
             # Apply the updates into the existing state tree, then rehydrate.
             root_state = self._get_root_state()
             await root_state._get_resolved_delta()
-            root_state._clean()
         return self._rehydrate()
 
     async def _unlink(self):
@@ -117,10 +107,10 @@ class SharedStateBaseInternal(State):
             The events to rehydrate the state after unlinking (these should be returned/yielded
         """
         state_name = self.get_full_name()
-        if state_name not in self._links:
+        if state_name not in self._reflex_internal_links:
             msg = f"State {state_name} is not linked and cannot be unlinked."
             raise ReflexRuntimeError(msg)
-        self._links.pop(state_name)
+        self._reflex_internal_links.pop(state_name)
         self._linked_from.discard(self.router.session.client_token)
         # Rehydrate after unlinking to restore original values.
         return self._rehydrate()
@@ -164,7 +154,7 @@ class SharedStateBaseInternal(State):
         current_dirty_vars: dict[str, set[str]] = {}
         affected_tokens: set[str] = set()
         # Go through all linked states and patch them in if they are present in the tree
-        for linked_state_name, linked_token in self._links.items():
+        for linked_state_name, linked_token in self._reflex_internal_links.items():
             linked_state_cls = self.get_root_state().get_class_substate(
                 linked_state_name
             )
@@ -205,9 +195,13 @@ class SharedStateBaseInternal(State):
             yield None
             # Collect dirty vars and other affected clients that need to be updated.
             for linked_state in linked_states:
-                if hasattr(linked_state, "_previous_dirty_vars"):
+                if (
+                    previous_dirty_vars := getattr(
+                        linked_state, "_previous_dirty_vars", None
+                    )
+                ) is not None:
                     current_dirty_vars[linked_state.get_full_name()] = set(
-                        linked_state._previous_dirty_vars
+                        previous_dirty_vars
                     )
                 if linked_state._get_was_touched():
                     affected_tokens.update(
@@ -229,6 +223,10 @@ class SharedStateBaseInternal(State):
                     not in app.event_namespace._token_manager.token_to_socket
                 ):
                     continue
+                # TODO: remove disconnected client's after some time.
+                print(  # noqa: T201
+                    f"{self.router.session.client_token} propagating to {affected_token} ({current_dirty_vars=})"
+                )
                 async with app.modify_state(
                     _substate_key(affected_token, type(self)),
                     previous_dirty_vars=current_dirty_vars,

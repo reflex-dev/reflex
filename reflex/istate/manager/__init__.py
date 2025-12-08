@@ -118,7 +118,7 @@ class StateManager(ABC):
     async def modify_state_with_links(
         self,
         token: str,
-        previous_dirty_vars: set[str] | None = None,
+        previous_dirty_vars: dict[str, set[str]] | None = None,
         **context: Unpack[StateModificationContext],
     ) -> AsyncIterator[BaseState]:
         """Modify the state for a token, including linked substates, while holding exclusive lock.
@@ -133,13 +133,12 @@ class StateManager(ABC):
         """
         from reflex.istate.shared import SharedStateBaseInternal
 
-        shared_state_name = SharedStateBaseInternal.get_name()
-
         async with self.modify_state(token, **context) as root_state:
-            if shared_state_name in root_state.substates:
-                async with root_state.substates[
-                    shared_state_name
-                ]._modify_linked_states(previous_dirty_vars=previous_dirty_vars) as _:
+            if getattr(root_state, "_reflex_internal_links", None):
+                shared_state = await root_state.get_state(SharedStateBaseInternal)
+                async with shared_state._modify_linked_states(
+                    previous_dirty_vars=previous_dirty_vars
+                ) as _:
                     yield root_state
             else:
                 yield root_state
