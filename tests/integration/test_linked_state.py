@@ -345,3 +345,13 @@ def test_linked_state(
     assert AppHarness._poll_for(lambda: counter_button_1.text == "48")
     assert AppHarness._poll_for(lambda: counter_button_2.text == "48")
     assert AppHarness._poll_for(lambda: counter_button_3.text == "48")
+
+    # Link to a new token when we're already linked
+    new_shared_token = f"shared-bar-{uuid.uuid4()}"
+    tab1.find_element(By.ID, "token-input").send_keys(new_shared_token, Keys.ENTER)
+    assert linked_state.poll_for_content(n_changes_1, exp_not_equal="2") == "0"
+    assert (
+        linked_state.poll_for_content(greeting_1, exp_not_equal="Hello, Diana!")
+        == "Hello, world!"
+    )
+    assert linked_state.poll_for_content(counter_button_1, exp_not_equal="48") == "0"

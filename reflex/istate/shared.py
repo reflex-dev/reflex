@@ -56,7 +56,7 @@ class SharedStateBaseInternal(State):
     """The private base state for all shared states."""
 
     # While _modify_linked_states is active, this holds the original substates for the client's tree.
-    _original_substates: dict[str, tuple[BaseState, BaseState | None]]
+    _original_substates: dict[str, tuple[BaseState, BaseState | None]] = {}
 
     def __getstate__(self):
         """Override redis serialization to remove temporary fields.
@@ -125,23 +125,50 @@ class SharedStateBaseInternal(State):
         Returns:
             The events to rehydrate the state after linking (these should be returned/yielded).
         """
+        from reflex.istate.manager import get_state_manager
+
+        if not token:
+            msg = "Cannot link shared state to empty token."
+            raise ReflexRuntimeError(msg)
+        if self._linked_to == token:
+            return None  # already linked to this token
+        if self._linked_to and self._linked_to != token:
+            # Disassociate from previous linked token since unlink will not be called.
+            self._linked_from.discard(self.router.session.client_token)
         # TODO: Change StateManager to accept token + class instead of combining them in a string.
         if "_" in token:
             msg = f"Invalid token {token} for linking state {self.get_full_name()}, cannot use underscore (_) in the token name."
             raise ReflexRuntimeError(msg)
+
+        # Associate substate with the given link token.
         state_name = self.get_full_name()
         self._reflex_internal_links[state_name] = token
-        async with self._modify_linked_states() as _:
-            linked_state = await self.get_state(type(self))
+
+        # Get the newly linked state and update pointers/delta for subsequent events.
+        original_substate = self
+        async with get_state_manager().modify_state(
+            _substate_key(token, type(self))
+        ) as linked_root_state:
+            linked_state = await linked_root_state.get_state(type(self))
+            linked_parent_state = linked_state.parent_state
             linked_state._linked_from.add(self.router.session.client_token)
             linked_state._linked_to = token
-            linked_state.dirty_vars.update(self.base_vars)
-            linked_state.dirty_vars.update(self.backend_vars)
-            linked_state.dirty_vars.update(self.computed_vars)
-            linked_state._mark_dirty()
-            # Apply the updates into the existing state tree, then rehydrate.
-            root_state = self._get_root_state()
-            await root_state._get_resolved_delta()
+            try:
+                if (parent_state := self.parent_state) is not None:
+                    parent_state.substates[self.get_name()] = linked_state
+                    linked_state.parent_state = parent_state
+                linked_state.dirty_vars.update(self.base_vars)
+                linked_state.dirty_vars.update(self.backend_vars)
+                linked_state.dirty_vars.update(self.computed_vars)
+                linked_state._mark_dirty()
+                # Apply the updates into the existing state tree, then rehydrate.
+                root_state = self._get_root_state()
+                await root_state._get_resolved_delta()
+            finally:
+                # Put the tree back together for now, since we're about to drop the lock.
+                if self.parent_state is not None:
+                    self.parent_state.substates[self.get_name()] = original_substate
+                linked_state.parent_state = linked_parent_state
         return self._rehydrate()
 
     async def _unlink(self):
@@ -218,6 +245,8 @@ class SharedStateBaseInternal(State):
                     _substate_key(linked_token, linked_state_cls)
                 )
             linked_state = await linked_root_state.get_state(linked_state_cls)
+            linked_state._linked_to = linked_token
+            linked_state._linked_from.add(self.router.session.client_token)
             self._original_substates[linked_state_name] = (
                 original_state,
                 linked_state.parent_state,
