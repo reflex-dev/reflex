@@ -52,11 +52,45 @@ def _do_update_other_tokens(
     return tasks
 
 
+@contextlib.asynccontextmanager
+async def _patch_state(
+    original_state: BaseState, linked_state: BaseState, full_delta: bool = False
+):
+    """Patch the linked state into the original state's tree, restoring it afterward.
+
+    Args:
+        original_state: The original shared state.
+        linked_state: The linked shared state.
+        full_delta: If True, mark all Vars in linked_state dirty and resolve
+            the delta from the root. This option is used when linking or unlinking
+            to ensure that other computed vars in the tree pick up the newly
+            linked/unlinked values.
+    """
+    if (original_parent_state := original_state.parent_state) is None:
+        msg = "Cannot patch root state as linked state."
+        raise ReflexRuntimeError(msg)
+
+    state_name = original_state.get_name()
+    original_parent_state.substates[state_name] = linked_state
+    linked_parent_state = linked_state.parent_state
+    linked_state.parent_state = original_parent_state
+    try:
+        if full_delta:
+            linked_state.dirty_vars.update(linked_state.base_vars)
+            linked_state.dirty_vars.update(linked_state.backend_vars)
+            linked_state.dirty_vars.update(linked_state.computed_vars)
+            linked_state._mark_dirty()
+            # Apply the updates into the existing state tree for rehydrate.
+            root_state = original_state._get_root_state()
+            await root_state._get_resolved_delta()
+        yield
+    finally:
+        original_parent_state.substates[state_name] = original_state
+        linked_state.parent_state = linked_parent_state
+
+
 class SharedStateBaseInternal(State):
     """The private base state for all shared states."""
-
-    # While _modify_linked_states is active, this holds the original substates for the client's tree.
-    _original_substates: dict[str, tuple[BaseState, BaseState | None]] = {}
 
     def __getstate__(self):
         """Override redis serialization to remove temporary fields.
@@ -66,7 +100,6 @@ class SharedStateBaseInternal(State):
         """
         s = super().__getstate__()
         # Don't want to persist the cached substates
-        s.pop("_original_substates", None)
         s.pop("_previous_dirty_vars", None)
         return s
 
@@ -90,7 +123,6 @@ class SharedStateBaseInternal(State):
         Since these internal fields are not persisted to redis, they shouldn't cause the
         state to be considered dirty either.
         """
-        self.dirty_vars.discard("_original_substates")
         self.dirty_vars.discard("_previous_dirty_vars")
         # Only mark dirty if there are still dirty vars, or any substate is dirty
         if self.dirty_vars or any(
@@ -145,31 +177,18 @@ class SharedStateBaseInternal(State):
         self._reflex_internal_links[state_name] = token
 
         # Get the newly linked state and update pointers/delta for subsequent events.
-        original_substate = self
         async with get_state_manager().modify_state(
             _substate_key(token, type(self))
         ) as linked_root_state:
             linked_state = await linked_root_state.get_state(type(self))
-            linked_parent_state = linked_state.parent_state
             linked_state._linked_from.add(self.router.session.client_token)
             linked_state._linked_to = token
-            try:
-                if (parent_state := self.parent_state) is not None:
-                    parent_state.substates[self.get_name()] = linked_state
-                    linked_state.parent_state = parent_state
-                linked_state.dirty_vars.update(self.base_vars)
-                linked_state.dirty_vars.update(self.backend_vars)
-                linked_state.dirty_vars.update(self.computed_vars)
-                linked_state._mark_dirty()
-                # Apply the updates into the existing state tree, then rehydrate.
-                root_state = self._get_root_state()
-                await root_state._get_resolved_delta()
-            finally:
-                # Put the tree back together for now, since we're about to drop the lock.
-                if self.parent_state is not None:
-                    self.parent_state.substates[self.get_name()] = original_substate
-                linked_state.parent_state = linked_parent_state
-        return self._rehydrate()
+            async with _patch_state(
+                original_state=self,
+                linked_state=linked_state,
+                full_delta=True,
+            ):
+                return self._rehydrate()
 
     async def _unlink(self):
         """Unlink this shared state from its linked token.
@@ -177,28 +196,28 @@ class SharedStateBaseInternal(State):
         Returns:
             The events to rehydrate the state after unlinking (these should be returned/yielded
         """
+        from reflex.istate.manager import get_state_manager
+
         state_name = self.get_full_name()
         if state_name not in self._reflex_internal_links:
             msg = f"State {state_name} is not linked and cannot be unlinked."
             raise ReflexRuntimeError(msg)
+
+        # Break the linkage for future events.
         self._reflex_internal_links.pop(state_name)
         self._linked_from.discard(self.router.session.client_token)
-        # Rehydrate after unlinking to restore original values.
-        return self._rehydrate()
 
-    async def _restore_original_substates(self, *_exc_info) -> None:
-        """Restore the original substates that were linked."""
-        root_state = self._get_root_state()
-        for linked_state_name, (
-            original_state,
-            linked_parent_state,
-        ) in self._original_substates.items():
-            linked_state_cls = root_state.get_class_substate(linked_state_name)
-            linked_state = await root_state.get_state(linked_state_cls)
-            if (parent_state := linked_state.parent_state) is not None:
-                parent_state.substates[original_state.get_name()] = original_state
-                linked_state.parent_state = linked_parent_state
-        self._original_substates = {}
+        # Patch in the original state, apply updates, then rehydrate.
+        private_root_state = await get_state_manager().get_state(
+            _substate_key(self.router.session.client_token, type(self))
+        )
+        private_state = await private_root_state.get_state(type(self))
+        async with _patch_state(
+            original_state=self,
+            linked_state=private_state,
+            full_delta=True,
+        ):
+            return self._rehydrate()
 
     @contextlib.asynccontextmanager
     async def _modify_linked_states(
@@ -245,25 +264,18 @@ class SharedStateBaseInternal(State):
                     _substate_key(linked_token, linked_state_cls)
                 )
             linked_state = await linked_root_state.get_state(linked_state_cls)
+            linked_states.append(linked_state)
             linked_state._linked_to = linked_token
             linked_state._linked_from.add(self.router.session.client_token)
-            self._original_substates[linked_state_name] = (
-                original_state,
-                linked_state.parent_state,
+            await exit_stack.enter_async_context(
+                _patch_state(original_state, linked_state)
             )
-            if (parent_state := original_state.parent_state) is not None:
-                parent_state.substates[original_state.get_name()] = linked_state
-                linked_state.parent_state = parent_state
-                linked_states.append(linked_state)
             if (
                 previous_dirty_vars
                 and (dv := previous_dirty_vars.get(linked_state_name)) is not None
             ):
                 linked_state.dirty_vars.update(dv)
                 linked_state._mark_dirty()
-        # Make sure to restore the non-linked substates after exiting the context.
-        if self._original_substates:
-            exit_stack.push_async_exit(self._restore_original_substates)
         async with exit_stack:
             yield None
             # Collect dirty vars and other affected clients that need to be updated.
