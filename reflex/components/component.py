@@ -2263,9 +2263,9 @@ class NoSSRComponent(Component):
         library_import = f"import('{import_name}')"
         mod_import = (
             # https://nextjs.org/docs/pages/building-your-application/optimizing/lazy-loading#with-named-exports
-            f".then((mod) => ({{default: mod.{self.tag}}}))"
+            f".then((mod) => mod.{self.tag})"
             if not self.is_default
-            else ""
+            else ".then((mod) => mod.default)"
         )
         return (
             f"const {self.alias or self.tag} = ClientSide(lazy(() => "

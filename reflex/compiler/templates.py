@@ -581,9 +581,6 @@ export default defineConfig((config) => ({{
     enableNativePlugin: false,
     hmr: {"true" if experimental_hmr else "false"},
   }},
-  legacy: {{
-    inconsistentCjsInterop: true,
-  }},
   server: {{
     port: process.env.PORT,
     hmr: {"true" if hmr else "false"},
