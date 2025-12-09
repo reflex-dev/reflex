@@ -377,7 +377,7 @@ class DataEditor(NoSSRComponent):
         """Add custom code for reconstructing GridSelection with CompactSelection objects.
 
         Note: When using on_grid_selection_change, Glide Data Grid will not update its internal selection state automatically. Instead,
-        the grid_selection prop must be updated with a GridSelection object that has CompactSelection objects for the columns and rows properties. 
+        the grid_selection prop must be updated with a GridSelection object that has CompactSelection objects for the columns and rows properties.
         This function provides the necessary JavaScript code to reconstruct the GridSelection object from a dict representation.
 
         Returns:
@@ -389,19 +389,19 @@ class DataEditor(NoSSRComponent):
             if (!selection || typeof selection !== 'object') {
                 return undefined;
             }
-            
+
             const reconstructCompactSelection = (data) => {
                 if (!data || !data.items || !Array.isArray(data.items)) {
                     return CompactSelection.empty();
                 }
-                
+
                 const items = data.items;
                 if (items.length === 0) {
                     return CompactSelection.empty();
                 }
-                
+
                 let result = CompactSelection.empty();
-                
+
                 // Items are stored as [start, end) ranges in CompactSelection internal format
                 for (const item of items) {
                     if (Array.isArray(item) && item.length === 2) {
@@ -409,10 +409,10 @@ class DataEditor(NoSSRComponent):
                         result = result.add([start, end]);
                     }
                 }
-                
+
                 return result;
             };
-            
+
             return {
                 current: selection.current || undefined,
                 columns: reconstructCompactSelection(selection.columns),
@@ -503,12 +503,11 @@ class DataEditor(NoSSRComponent):
             console.warn(
                 "get_cell_content is not user configurable, the provided value will be discarded"
             )
-        
+
         # Apply the reconstruction function to grid_selection if it's a Var
-        if (grid_selection := props.get("grid_selection")) is not None:
-            if isinstance(grid_selection, Var):
-                props["grid_selection"] = FunctionStringVar.create("reconstructGridSelection").call(grid_selection)
-        
+        if (grid_selection := props.get("grid_selection")) is not None and isinstance(grid_selection, Var):
+            props["grid_selection"] = FunctionStringVar.create("reconstructGridSelection").call(grid_selection)
+
         grid = super().create(*children, **props)
         return Div.create(
             grid,
