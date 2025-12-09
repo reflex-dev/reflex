@@ -23,9 +23,10 @@ from collections.abc import AsyncIterator, Callable, Coroutine, Sequence
 from http.server import SimpleHTTPRequestHandler
 from importlib.util import find_spec
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Literal, Self, TypeVar
+from typing import TYPE_CHECKING, Any, Literal, TypeVar
 
 import uvicorn
+from typing_extensions import Self
 
 import reflex
 import reflex.reflex
