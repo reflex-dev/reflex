@@ -2232,7 +2232,6 @@ class NoSSRComponent(Component):
         """
         # React lazy import mechanism.
         dynamic_import = {
-            "react": [ImportVar(tag="lazy")],
             f"$/{constants.Dirs.UTILS}/context": [ImportVar(tag="ClientSide")],
         }
 
@@ -2268,10 +2267,10 @@ class NoSSRComponent(Component):
             else ".then((mod) => mod.default)"
         )
         return (
-            f"const {self.alias or self.tag} = ClientSide(lazy(() => "
+            f"const {self.alias or self.tag} = ClientSide(() => "
             + library_import
             + mod_import
-            + "))"
+            + ")"
         )
 
 

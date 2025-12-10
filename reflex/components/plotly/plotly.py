@@ -290,9 +290,9 @@ def dynamic_plotly_import(name: str, package: str) -> str:
     library_import = f"import('{package}')"
     mod_import = ".then((mod) => ({ default: createPlotlyComponent(mod) }))"
     return f"""
-const {name} = ClientSide(lazy(() =>
+const {name} = ClientSide(() =>
     {library_import}{mod_import}
-))
+)
 """
 
 
