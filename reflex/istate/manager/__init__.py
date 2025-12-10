@@ -132,7 +132,7 @@ class StateManager(ABC):
             The state for the token with linked states patched in.
         """
         async with self.modify_state(token, **context) as root_state:
-            if getattr(root_state, "_reflex_internal_links", None):
+            if getattr(root_state, "_reflex_internal_links", None) is not None:
                 from reflex.istate.shared import SharedStateBaseInternal
 
                 shared_state = await root_state.get_state(SharedStateBaseInternal)

@@ -16,6 +16,7 @@ from . import utils
 
 def LinkedStateApp():
     """Test that linked state works as expected."""
+    import uuid
     from typing import Any
 
     import reflex as rx
@@ -36,7 +37,12 @@ def LinkedStateApp():
 
         @rx.event
         async def link_to(self, token: str):
-            return await self._link_to(token)
+            await self._link_to(token)
+
+        @rx.event
+        async def link_to_and_increment(self):
+            linked_state = await self._link_to(f"arbitrary-token-{uuid.uuid4()}")
+            linked_state.counter += 1
 
         @rx.event
         async def unlink(self):
@@ -44,15 +50,18 @@ def LinkedStateApp():
 
         @rx.event
         async def on_load_link_default(self):
-            return await self._link_to(self.room or "default")
+            linked_state = await self._link_to(self.room or "default")
+            if self.room:
+                assert linked_state._linked_to == self.room
+            else:
+                assert linked_state._linked_to == "default"
 
         @rx.event
         async def handle_submit(self, form_data: dict[str, Any]):
             if "who" in form_data:
                 self.set_who(form_data["who"])
             if "token" in form_data:
-                return await self.link_to(form_data["token"])
-            return None
+                await self.link_to(form_data["token"])
 
     class PrivateState(rx.State):
         @rx.var
@@ -125,6 +134,11 @@ def LinkedStateApp():
                 "Bump Counter with Yield",
                 on_click=PrivateState.bump_counter_yield,
                 id="yield-button",
+            ),
+            rx.button(
+                "Link to arbitrary token and Increment n_changes",
+                on_click=SharedState.link_to_and_increment,
+                id="link-increment-button",
             ),
         )
 
@@ -355,3 +369,20 @@ def test_linked_state(
         == "Hello, world!"
     )
     assert linked_state.poll_for_content(counter_button_1, exp_not_equal="48") == "0"
+    counter_button_1.click()
+    assert linked_state.poll_for_content(counter_button_1, exp_not_equal="0") == "1"
+    counter_button_1.click()
+    assert linked_state.poll_for_content(counter_button_1, exp_not_equal="1") == "2"
+    counter_button_1.click()
+    assert linked_state.poll_for_content(counter_button_1, exp_not_equal="2") == "3"
+    # Ensure other tabs are unaffected
+    assert n_changes_2.text == "2"
+    assert greeting_2.text == "Hello, Diana!"
+    assert counter_button_2.text == "48"
+    assert n_changes_3.text == "2"
+    assert greeting_3.text == "Hello, Diana!"
+    assert counter_button_3.text == "48"
+
+    # Link to a new state and increment the counter in the same event
+    tab1.find_element(By.ID, "link-increment-button").click()
+    assert linked_state.poll_for_content(counter_button_1, exp_not_equal="3") == "1"

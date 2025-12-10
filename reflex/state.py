@@ -2465,7 +2465,7 @@ class State(BaseState):
     # The hydrated bool.
     is_hydrated: bool = False
     # Maps the state full_name to an arbitrary token it is linked to for shared state.
-    _reflex_internal_links: dict[str, str] = {}
+    _reflex_internal_links: dict[str, str] | None = None
 
     @event
     def set_is_hydrated(self, value: bool) -> None:
