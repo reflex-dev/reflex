@@ -288,7 +288,7 @@ def dynamic_plotly_import(name: str, package: str) -> str:
         The dynamic import for the plotly component.
     """
     library_import = f"import('{package}')"
-    mod_import = ".then((mod) => ({ default: createPlotlyComponent(mod) }))"
+    mod_import = ".then((mod) => createPlotlyComponent(mod))"
     return f"""
 const {name} = ClientSide(() =>
     {library_import}{mod_import}
