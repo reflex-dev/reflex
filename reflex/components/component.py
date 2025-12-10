@@ -2264,7 +2264,7 @@ class NoSSRComponent(Component):
             # https://nextjs.org/docs/pages/building-your-application/optimizing/lazy-loading#with-named-exports
             f".then((mod) => mod.{self.tag})"
             if not self.is_default
-            else ".then((mod) => typeof mod.default === 'function' ? mod.default : mod.default.default)"
+            else ".then((mod) => mod.default.default ?? mod.default)"
         )
         return (
             f"const {self.alias or self.tag} = ClientSide(() => "
