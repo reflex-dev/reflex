@@ -3659,7 +3659,7 @@ def test_mixin_state() -> None:
     assert UsesMixinState.backend_vars == {
         "_backend": 0,
         "_backend_no_default": {},
-        "_reflex_internal_links": {},
+        "_reflex_internal_links": None,
     }
 
     assert "computed" in UsesMixinState.computed_vars

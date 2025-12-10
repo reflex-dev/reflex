@@ -74,7 +74,7 @@ def ComputedVars():
         def mark_dirty(self):
             self._mark_dirty()
 
-    assert State.backend_vars == {"_reflex_internal_links": {}}
+    assert State.backend_vars == {"_reflex_internal_links": None}
 
     def index() -> rx.Component:
         return rx.center(
