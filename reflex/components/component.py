@@ -2232,7 +2232,6 @@ class NoSSRComponent(Component):
         """
         # React lazy import mechanism.
         dynamic_import = {
-            "react": [ImportVar(tag="lazy")],
             f"$/{constants.Dirs.UTILS}/context": [ImportVar(tag="ClientSide")],
         }
 
@@ -2265,13 +2264,13 @@ class NoSSRComponent(Component):
             # https://nextjs.org/docs/pages/building-your-application/optimizing/lazy-loading#with-named-exports
             f".then((mod) => mod.{self.tag})"
             if not self.is_default
-            else ".then((mod) => mod.default)"
+            else ".then((mod) => mod.default.default ?? mod.default)"
         )
         return (
-            f"const {self.alias or self.tag} = ClientSide(lazy(() => "
+            f"const {self.alias or self.tag} = ClientSide(() => "
             + library_import
             + mod_import
-            + "))"
+            + ")"
         )
 
 

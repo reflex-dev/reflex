@@ -378,7 +378,11 @@ export function ClientSide(component) {{
   return ({{ children, ...props }}) => {{
     const [Component, setComponent] = useState(null);
     useEffect(() => {{
-      setComponent(component);
+      async function load() {{
+        const comp = await component();
+        setComponent(() => comp);
+      }}
+      load();
     }}, []);
     return Component ? jsx(Component, props, children) : null;
   }};
