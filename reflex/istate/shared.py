@@ -5,6 +5,7 @@ import contextlib
 from collections.abc import AsyncIterator
 from typing import Self, TypeVar
 
+from reflex.constants import ROUTER_DATA
 from reflex.event import Event, get_hydrate_event
 from reflex.state import BaseState, State, _override_base_method, _substate_key
 from reflex.utils.exceptions import ReflexRuntimeError
@@ -82,9 +83,12 @@ async def _patch_state(
             linked_state.dirty_vars.update(linked_state.backend_vars)
             linked_state.dirty_vars.update(linked_state.computed_vars)
             linked_state._mark_dirty()
-            # Apply the updates into the existing state tree for rehydrate.
-            root_state = original_state._get_root_state()
-            await root_state._get_resolved_delta()
+        # Apply the updates into the existing state tree for rehydrate.
+        root_state = original_state._get_root_state()
+        root_state.dirty_vars.add("router")
+        root_state.dirty_vars.add(ROUTER_DATA)
+        root_state._mark_dirty()
+        await root_state._get_resolved_delta()
         yield
     finally:
         original_parent_state.substates[state_name] = original_state
