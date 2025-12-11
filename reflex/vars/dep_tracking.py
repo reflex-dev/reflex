@@ -273,8 +273,8 @@ class DependencyTracker:
                 self._getting_state_class,
                 instruction.argval,
             )
-        elif instruction.opname == "END_SEND":
-            # Now outside of the `await` machinery, subsequent instructions
+        elif instruction.opname == "GET_AWAITABLE":
+            # Now inside the `await` machinery, subsequent instructions
             # operate on the result of the `get_state` call.
             self.scan_status = ScanStatus.GETTING_STATE_POST_AWAIT
             if self._getting_state_class is not None:
