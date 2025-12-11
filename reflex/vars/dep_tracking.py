@@ -396,7 +396,14 @@ class DependencyTracker:
             elif self.scan_status == ScanStatus.GETTING_VAR:
                 self.handle_getting_var(instruction)
             elif (
-                instruction.opname in ("LOAD_FAST", "LOAD_DEREF", "LOAD_FAST_BORROW")
+                instruction.opname
+                in (
+                    "LOAD_FAST",
+                    "LOAD_DEREF",
+                    "LOAD_FAST_BORROW",
+                    "LOAD_FAST_CHECK",
+                    "LOAD_FAST_AND_CLEAR",
+                )
                 and instruction.argval in self.tracked_locals
             ):
                 # bytecode loaded the class instance to the top of stack, next load instruction
@@ -405,7 +412,11 @@ class DependencyTracker:
                 self.scan_status = ScanStatus.GETTING_ATTR
             elif (
                 instruction.opname
-                in ("LOAD_FAST_LOAD_FAST", "LOAD_FAST_BORROW_LOAD_FAST_BORROW")
+                in (
+                    "LOAD_FAST_LOAD_FAST",
+                    "LOAD_FAST_BORROW_LOAD_FAST_BORROW",
+                    "STORE_FAST_LOAD_FAST",
+                )
                 and instruction.argval[-1] in self.tracked_locals
             ):
                 # Double LOAD_FAST family instructions load multiple values onto the stack,
@@ -457,7 +468,6 @@ class DependencyTracker:
                 )
                 # If we see a STORE_FAST, we can assign the top of stack to an aliased name.
                 self.top_of_stack = instruction.argval
-                self._last_import_name = None
             elif instruction.opname == "STORE_FAST" and self.top_of_stack is not None:
                 self.tracked_locals[instruction.argval] = self.tracked_locals.pop(
                     self.top_of_stack
