@@ -23,6 +23,7 @@ class DependencyTestState(State):
     count: rx.Field[int] = rx.field(default=0)
     name: rx.Field[str] = rx.field(default="test")
     items: rx.Field[list[str]] = rx.field(default_factory=list)
+    board: rx.Field[list[list[int]]] = rx.field(default_factory=list)
 
 
 class AnotherTestState(State):
@@ -102,6 +103,18 @@ def test_list_comprehension_dependencies():
     assert tracker.dependencies == expected_deps
 
 
+def test_list_comprehension_dependencies_2():
+    """Test tracking dependencies in list comprehensions."""
+
+    def func_with_comprehension(self: DependencyTestState):
+        return [[self.board[r][c] for r in range(3)] for c in range(5)]
+
+    tracker = DependencyTracker(func_with_comprehension, DependencyTestState)
+
+    expected_deps = {DependencyTestState.get_full_name(): {"board"}}
+    assert tracker.dependencies == expected_deps
+
+
 def test_invalid_attribute_access():
     """Test that accessing invalid attributes raises VarValueError."""
 
@@ -164,6 +177,24 @@ def test_get_state_with_import_from():
 
     tracker = DependencyTracker(get_state_import_from, DependencyTestState)
     expected_deps = {MutableTestState.get_full_name(): {"hashmap"}}
+    assert tracker.dependencies == expected_deps
+
+
+def test_get_state_with_import_from_multiple():
+    """Test that get_state with function-local `from ... import ...` finds correct dependency."""
+
+    async def get_state_import_from(self: DependencyTestState):
+        from tests.units.states.upload import ChildFileUploadState, SubUploadState
+
+        return (await self.get_state(SubUploadState)).img, (
+            await self.get_state(ChildFileUploadState)
+        ).img_list
+
+    tracker = DependencyTracker(get_state_import_from, DependencyTestState)
+    expected_deps = {
+        tus_upload.SubUploadState.get_full_name(): {"img"},
+        tus_upload.ChildFileUploadState.get_full_name(): {"img_list"},
+    }
     assert tracker.dependencies == expected_deps
 
 
@@ -272,6 +303,9 @@ def test_get_var_value_multiple_lines_functionality():
     assert tracker.dependencies == expected_deps
 
 
+@pytest.mark.skipif(
+    sys.version_info < (3, 11), reason="Requires Python 3.11+ for positions"
+)
 def test_get_var_value_with_import_from():
     """Test that get_var_value with function-local `from ... import ...` finds correct dependency."""
 
