@@ -384,7 +384,7 @@ class DataEditor(NoSSRComponent):
             JavaScript code to reconstruct GridSelection.
         """
         return [
-                    """
+            """
         function reconstructGridSelection(selection) {
             if (!selection || typeof selection !== 'object') {
                 return undefined;
@@ -420,7 +420,7 @@ class DataEditor(NoSSRComponent):
             };
         }
                     """
-                ]
+        ]
 
     def add_hooks(self) -> list[str]:
         """Get the hooks to render.
@@ -505,8 +505,12 @@ class DataEditor(NoSSRComponent):
             )
 
         # Apply the reconstruction function to grid_selection if it's a Var
-        if (grid_selection := props.get("grid_selection")) is not None and isinstance(grid_selection, Var):
-            props["grid_selection"] = FunctionStringVar.create("reconstructGridSelection").call(grid_selection)
+        if (grid_selection := props.get("grid_selection")) is not None and isinstance(
+            grid_selection, Var
+        ):
+            props["grid_selection"] = FunctionStringVar.create(
+                "reconstructGridSelection"
+            ).call(grid_selection)
 
         grid = super().create(*children, **props)
         return Div.create(
