@@ -272,6 +272,9 @@ def test_get_var_value_multiple_lines_functionality():
     assert tracker.dependencies == expected_deps
 
 
+@pytest.mark.skipif(
+    sys.version_info < (3, 11), reason="Requires Python 3.11+ for positions"
+)
 def test_get_var_value_with_import_from():
     """Test that get_var_value with function-local `from ... import ...` finds correct dependency."""
 
