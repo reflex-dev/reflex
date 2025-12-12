@@ -122,6 +122,7 @@ jobs:
           repository: reflex-dev/reflex-web
           ref: main
           path: reflex-web
+          submodules: recursive
 
       - name: Compile pyproject.toml into requirements.txt
         working-directory: ./reflex-web
@@ -189,6 +190,7 @@ jobs:
           repository: reflex-dev/reflex-web
           ref: main
           path: reflex-web
+          submodules: recursive
       - name: Compile pyproject.toml into requirements.txt
         working-directory: ./reflex-web
         run: |
