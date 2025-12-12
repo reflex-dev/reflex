@@ -35,11 +35,9 @@ const handle_paste_data = (clipboardData) =>
   });
 
 export default function usePasteHandler(target_ids, event_actions, on_paste) {
-  // Use refs to store the latest values to avoid stale closures
   const onPasteRef = useRef(on_paste);
   const eventActionsRef = useRef(event_actions);
 
-  // Keep refs up to date
   useEffect(() => {
     onPasteRef.current = on_paste;
     eventActionsRef.current = event_actions;
@@ -67,18 +65,14 @@ export default function usePasteHandler(target_ids, event_actions, on_paste) {
     };
 
     const tryAttach = () => {
-      // If no target_ids specified, attach to document
       if (target_ids.length === 0) {
         cleanupListeners = attachListeners([document]);
         return true;
       }
-
-      // Try to find all target elements
       const targets = target_ids
         .map((id) => document.getElementById(id))
         .filter((element) => !!element);
 
-      // If all targets found, attach listeners
       if (targets.length === target_ids.length) {
         cleanupListeners = attachListeners(targets);
         return true;
@@ -87,9 +81,7 @@ export default function usePasteHandler(target_ids, event_actions, on_paste) {
       return false;
     };
 
-    // Try to attach immediately
     if (!tryAttach()) {
-      // Set up MutationObserver to watch for target elements being added
       observer = new MutationObserver(() => {
         if (tryAttach()) {
           observer.disconnect();
