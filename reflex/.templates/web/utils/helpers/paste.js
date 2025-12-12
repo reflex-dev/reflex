@@ -101,4 +101,3 @@ export default function usePasteHandler(target_ids, event_actions, on_paste) {
     };
   }, [target_ids]);
 }
-
