@@ -1562,13 +1562,17 @@ class App(MiddlewareMixin, LifespanMixin):
 
     @contextlib.asynccontextmanager
     async def modify_state(
-        self, token: str, background: bool = False
+        self,
+        token: str,
+        background: bool = False,
+        previous_dirty_vars: dict[str, set[str]] | None = None,
     ) -> AsyncIterator[BaseState]:
         """Modify the state out of band.
 
         Args:
             token: The token to modify the state for.
             background: Whether the modification is happening in a background task.
+            previous_dirty_vars: Vars that are considered dirty from a previous operation.
 
         Yields:
             The state to modify.
@@ -1581,7 +1585,9 @@ class App(MiddlewareMixin, LifespanMixin):
             raise RuntimeError(msg)
 
         # Get exclusive access to the state.
-        async with self.state_manager.modify_state(token) as state:
+        async with self.state_manager.modify_state_with_links(
+            token, previous_dirty_vars=previous_dirty_vars
+        ) as state:
             # No other event handler can modify the state while in this context.
             yield state
             delta = await state._get_resolved_delta()
@@ -1769,7 +1775,7 @@ async def process(
             constants.RouteVar.CLIENT_IP: client_ip,
         })
         # Get the state for the session exclusively.
-        async with app.state_manager.modify_state(
+        async with app.state_manager.modify_state_with_links(
             event.substate_token, event=event
         ) as state:
             # When this is a brand new instance of the state, signal the
@@ -2003,7 +2009,9 @@ def upload(app: App):
                 Each state update as JSON followed by a new line.
             """
             # Process the event.
-            async with app.state_manager.modify_state(event.substate_token) as state:
+            async with app.state_manager.modify_state_with_links(
+                event.substate_token
+            ) as state:
                 async for update in state._process(event):
                     # Postprocess the event.
                     update = await app._postprocess(state, event, update)

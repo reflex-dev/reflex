@@ -21,7 +21,16 @@ from enum import Enum
 from hashlib import md5
 from importlib.util import find_spec
 from types import FunctionType
-from typing import TYPE_CHECKING, Any, BinaryIO, ClassVar, TypeVar, cast, get_type_hints
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    BinaryIO,
+    ClassVar,
+    ParamSpec,
+    TypeVar,
+    cast,
+    get_type_hints,
+)
 
 from rich.markup import escape
 from typing_extensions import Self
@@ -296,6 +305,23 @@ async def _resolve_delta(delta: Delta) -> Delta:
     for (state_name, var_name), task in tasks.items():
         delta[state_name][var_name] = await task
     return delta
+
+
+RETURN = TypeVar("RETURN")
+PARAMS = ParamSpec("PARAMS")
+
+
+def _override_base_method(fn: Callable[PARAMS, RETURN]) -> Callable[PARAMS, RETURN]:
+    """Mark a method as overriding a base method.
+
+    Args:
+        fn: The function to mark.
+
+    Returns:
+        The marked function.
+    """
+    fn.__override_base_method__ = True  # pyright: ignore[reportFunctionMemberAccess]
+    return fn
 
 
 _deserializers = {
@@ -851,6 +877,7 @@ class BaseState(EvenMoreBasicBaseState):
                 not name.startswith("__")
                 and method.__name__ in state_base_functions
                 and state_base_functions[method.__name__] != method
+                and not getattr(method, "__override_base_method__", False)
             ):
                 overridden_methods.add(method.__name__)
 
@@ -2437,6 +2464,8 @@ class State(BaseState):
 
     # The hydrated bool.
     is_hydrated: bool = False
+    # Maps the state full_name to an arbitrary token it is linked to for shared state.
+    _reflex_internal_links: dict[str, str] | None = None
 
     @event
     def set_is_hydrated(self, value: bool) -> None:
