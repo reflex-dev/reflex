@@ -518,6 +518,7 @@ if find_spec("sqlmodel") and find_spec("sqlalchemy") and find_spec("pydantic"):
                     render_item=cls._alembic_render_item,
                     process_revision_directives=writer,
                     compare_type=False,
+                    include_schemas=environment.ALEMBIC_INCLUDE_SCHEMAS.get(),
                     render_as_batch=True,  # for sqlite compatibility
                 )
                 env.run_migrations()
