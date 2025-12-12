@@ -1770,7 +1770,7 @@ class BaseState(EvenMoreBasicBaseState):
         if events is None or _is_valid_type(events):
             return events
 
-        if not isinstance(events, Sequence):
+        if not (isinstance(events, Sequence) and not isinstance(events, (str, bytes))):
             events = [events]
 
         try:

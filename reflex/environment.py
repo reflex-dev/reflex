@@ -583,6 +583,9 @@ class EnvironmentVariables:
     # Path to the alembic config file
     ALEMBIC_CONFIG: EnvVar[ExistingPath] = env_var(Path(constants.ALEMBIC_CONFIG))
 
+    # Include schemas in alembic migrations.
+    ALEMBIC_INCLUDE_SCHEMAS: EnvVar[bool] = env_var(False)
+
     # Disable SSL verification for HTTPX requests.
     SSL_NO_VERIFY: EnvVar[bool] = env_var(False)
 
