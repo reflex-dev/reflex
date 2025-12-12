@@ -2455,7 +2455,7 @@ class ComputedVar(Var[RETURN_TYPE]):
             console.warn(
                 "Failed to automatically determine dependencies for computed var "
                 f"{objclass.__name__}.{self._name}: {e}. "
-                "Provide static_deps and set auto_deps=False to suppress this warning."
+                "Set auto_deps=False and provide accurate deps=['var1', 'var2'] to suppress this warning."
             )
             return d
 
