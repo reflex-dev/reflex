@@ -366,6 +366,9 @@ class BaseState(EvenMoreBasicBaseState):
     # The parent state.
     parent_state: BaseState | None = field(default=None, is_var=False)
 
+    # Events triggered by computed vars.
+    _computed_var_events: list[EventSpec] = field(default_factory=list, is_var=False)
+
     # The substates of the state.
     substates: builtins.dict[str, BaseState] = field(
         default_factory=builtins.dict, is_var=False
@@ -440,6 +443,9 @@ class BaseState(EvenMoreBasicBaseState):
 
         # Create a fresh copy of the backend variables for this instance
         self._backend_vars = copy.deepcopy(self.backend_vars)
+
+        # Initialize computed var events list
+        self._computed_var_events = []
 
     def __repr__(self) -> str:
         """Get the string representation of the state.
@@ -1795,6 +1801,14 @@ class BaseState(EvenMoreBasicBaseState):
         try:
             # Get the delta after processing the event.
             delta = await state._get_resolved_delta()
+
+            # Collect events from computed vars
+            computed_var_events = state._collect_computed_var_events()
+            if computed_var_events:
+                fixed_events.extend(
+                    fix_events(self._check_valid(handler, computed_var_events), token)
+                )
+
             state._clean()
 
             return StateUpdate(
@@ -1964,14 +1978,21 @@ class BaseState(EvenMoreBasicBaseState):
                 final=True,
             )
 
-    def _mark_dirty_computed_vars(self) -> None:
-        """Mark ComputedVars that need to be recalculated based on dirty_vars."""
-        # Append expired computed vars to dirty_vars to trigger recalculation
-        self.dirty_vars.update(self._expired_computed_vars())
-        # Append always dirty computed vars to dirty_vars to trigger recalculation
-        self.dirty_vars.update(self._always_dirty_computed_vars)
+    def _mark_dirty_computed_vars(self, from_vars: set[str] | None = None) -> None:
+        """Mark ComputedVars that need to be recalculated based on dirty_vars.
 
-        dirty_vars = self.dirty_vars
+        Args:
+            from_vars: The vars to start the propagation from.
+        """
+        if from_vars is None:
+            # Append expired computed vars to dirty_vars to trigger recalculation
+            self.dirty_vars.update(self._expired_computed_vars())
+            # Append always dirty computed vars to dirty_vars to trigger recalculation
+            self.dirty_vars.update(self._always_dirty_computed_vars)
+            dirty_vars = self.dirty_vars
+        else:
+            dirty_vars = from_vars
+
         while dirty_vars:
             calc_vars, dirty_vars = dirty_vars, set()
             for state_name, cvar in self._dirty_computed_vars(from_vars=calc_vars):
@@ -2022,6 +2043,21 @@ class BaseState(EvenMoreBasicBaseState):
             if include_backend or not self.computed_vars[cvar]._backend
         }
 
+    def _collect_computed_var_events(self) -> list[EventSpec]:
+        """Collect events triggered by computed vars.
+
+        Returns:
+            The list of events.
+        """
+        events = self._computed_var_events
+        self._computed_var_events = []
+
+        for substate in self.dirty_substates.union(self._always_dirty_substates):
+            if substate in self.substates:
+                events.extend(self.substates[substate]._collect_computed_var_events())
+
+        return events
+
     def get_delta(self) -> Delta:
         """Get the delta for the state.
 
@@ -2030,22 +2066,36 @@ class BaseState(EvenMoreBasicBaseState):
         """
         delta = {}
 
-        self._mark_dirty_computed_vars()
-        frontend_computed_vars: set[str] = {
-            name for name, cv in self.computed_vars.items() if not cv._backend
-        }
+        # Loop to stabilize state
+        # We limit iterations to avoid infinite loops (e.g. oscillating states)
+        
+        previous_dirty_vars = self.dirty_vars.copy()
 
-        # Return the dirty vars for this instance, any cached/dependent computed vars,
-        # and always dirty computed vars (cache=False)
-        delta_vars = self.dirty_vars.intersection(self.base_vars).union(
-            self.dirty_vars.intersection(frontend_computed_vars)
-        )
+        for i in range(10):
+            if i == 0:
+                self._mark_dirty_computed_vars()
+            else:
+                new_dirty_vars = self.dirty_vars - previous_dirty_vars
+                if not new_dirty_vars:
+                    break
+                self._mark_dirty_computed_vars(from_vars=new_dirty_vars)
+                previous_dirty_vars = self.dirty_vars.copy()
 
-        subdelta: dict[str, Any] = {
-            prop + FIELD_MARKER: self.get_value(prop)
-            for prop in delta_vars
-            if not types.is_backend_base_variable(prop, type(self))
-        }
+            frontend_computed_vars: set[str] = {
+                name for name, cv in self.computed_vars.items() if not cv._backend
+            }
+
+            # Return the dirty vars for this instance, any cached/dependent computed vars,
+            # and always dirty computed vars (cache=False)
+            delta_vars = self.dirty_vars.intersection(self.base_vars).union(
+                self.dirty_vars.intersection(frontend_computed_vars)
+            )
+
+            subdelta: dict[str, Any] = {
+                prop + FIELD_MARKER: self.get_value(prop)
+                for prop in delta_vars
+                if not types.is_backend_base_variable(prop, type(self))
+            }
 
         if len(subdelta) > 0:
             delta[self.get_full_name()] = subdelta
