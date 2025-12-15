@@ -1,6 +1,6 @@
 [project]
 name = "reflex"
-version = "0.8.23a3"
+version = "0.8.23a4"
 description = "Web apps in pure Python."
 license.text = "Apache-2.0"
 authors = [
