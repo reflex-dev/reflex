@@ -560,11 +560,15 @@ class MutableProxy(wrapt.ObjectProxy):
                 )
 
             if (
-                not isinstance(self.__wrapped__, Base)
-                or __name not in NEVER_WRAP_BASE_ATTRS
-            ) and hasattr(value, "__func__"):
+                (
+                    not isinstance(self.__wrapped__, Base)
+                    or __name not in NEVER_WRAP_BASE_ATTRS
+                )
+                and (func := getattr(value, "__func__", None)) is not None
+                and not inspect.isclass(getattr(value, "__self__", None))
+            ):
                 # Rebind `self` to the proxy on methods to capture nested mutations.
-                return functools.partial(value.__func__, self)  # pyright: ignore [reportFunctionMemberAccess, reportAttributeAccessIssue]
+                return functools.partial(func, self)
 
         if is_mutable_type(type(value)) and __name not in (
             "__wrapped__",
