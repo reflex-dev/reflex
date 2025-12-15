@@ -2624,7 +2624,7 @@ class ComponentState(State, mixin=True):
     Subclass this class and define vars and event handlers in the traditional way.
     Then define a `get_component` method that returns the UI for the component instance.
 
-    See the full [docs](https://reflex.dev/docs/substates/component-state/) for more.
+    See the full [docs](https://reflex.dev/docs/state-structure/component-state/) for more.
 
     Basic example:
     ```python
