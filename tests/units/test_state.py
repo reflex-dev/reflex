@@ -2089,6 +2089,18 @@ class ModelDC:
         """
         self.ls.append(item)
 
+    @classmethod
+    def from_dict(cls, data: dict) -> ModelDC:
+        """Create an instance of ModelDC from a dictionary.
+
+        Args:
+            data: The dictionary to create the instance from.
+
+        Returns:
+            An instance of ModelDC.
+        """
+        return cls(**data)
+
 
 @pytest.mark.asyncio
 async def test_state_proxy(
@@ -3656,7 +3668,11 @@ def test_mixin_state() -> None:
     """Test that a mixin state works correctly."""
     assert "num" in UsesMixinState.base_vars
     assert "num" in UsesMixinState.vars
-    assert UsesMixinState.backend_vars == {"_backend": 0, "_backend_no_default": {}}
+    assert UsesMixinState.backend_vars == {
+        "_backend": 0,
+        "_backend_no_default": {},
+        "_reflex_internal_links": None,
+    }
 
     assert "computed" in UsesMixinState.computed_vars
     assert "computed" in UsesMixinState.vars
@@ -3945,6 +3961,11 @@ def test_mutable_models():
     assert state.dirty_vars == set()
     state.dc.append_to_ls({"new": "item"})
     assert state.dirty_vars == {"dc"}
+    state.dirty_vars.clear()
+
+    dc_from_dict = state.dc.from_dict({"foo": "from_dict", "ls": []})
+    assert dc_from_dict == ModelDC(foo="from_dict", ls=[])
+    assert state.dirty_vars == set()
 
 
 def test_dict_and_get_delta():
