@@ -40,7 +40,7 @@ export default function usePasteHandler(target_ids, event_actions, on_paste) {
 
   useEffect(() => {
     onPasteRef.current = on_paste;
-  }, [on_paste])
+  }, [on_paste]);
   useEffect(() => {
     eventActionsRef.current = event_actions;
   }, [event_actions]);
