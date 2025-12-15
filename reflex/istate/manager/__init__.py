@@ -114,6 +114,35 @@ class StateManager(ABC):
         """
         yield self.state()
 
+    @contextlib.asynccontextmanager
+    async def modify_state_with_links(
+        self,
+        token: str,
+        previous_dirty_vars: dict[str, set[str]] | None = None,
+        **context: Unpack[StateModificationContext],
+    ) -> AsyncIterator[BaseState]:
+        """Modify the state for a token, including linked substates, while holding exclusive lock.
+
+        Args:
+            token: The token to modify the state for.
+            previous_dirty_vars: The previously dirty vars for linked states.
+            context: The state modification context.
+
+        Yields:
+            The state for the token with linked states patched in.
+        """
+        async with self.modify_state(token, **context) as root_state:
+            if getattr(root_state, "_reflex_internal_links", None) is not None:
+                from reflex.istate.shared import SharedStateBaseInternal
+
+                shared_state = await root_state.get_state(SharedStateBaseInternal)
+                async with shared_state._modify_linked_states(
+                    previous_dirty_vars=previous_dirty_vars
+                ) as _:
+                    yield root_state
+            else:
+                yield root_state
+
     async def close(self):  # noqa: B027
         """Close the state manager."""
 
