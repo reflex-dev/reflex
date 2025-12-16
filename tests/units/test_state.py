@@ -4398,20 +4398,23 @@ class MutableProxyState(BaseState):
 async def test_rebind_mutable_proxy(mock_app: rx.App, token: str) -> None:
     """Test that previously bound MutableProxy instances can be rebound correctly."""
     mock_app.state_manager.state = mock_app._state = MutableProxyState
-    state = await mock_app.state_manager.get_state(
+    async with mock_app.state_manager.modify_state(
         _substate_key(token, MutableProxyState)
-    )
-    state.router = RouterData.from_router_data({
-        "query": {},
-        "token": token,
-        "sid": "test_sid",
-    })
-    state_proxy = StateProxy(state)
-    assert isinstance(state_proxy.data, MutableProxy)
+    ) as state:
+        state.router = RouterData.from_router_data({
+            "query": {},
+            "token": token,
+            "sid": "test_sid",
+        })
+        state_proxy = StateProxy(state)
+        assert isinstance(state_proxy.data, MutableProxy)
     async with state_proxy:
         state_proxy.data["a"] = state_proxy.data["b"]
     assert state_proxy.data["a"] is not state_proxy.data["b"]
     assert state_proxy.data["a"].__wrapped__ is state_proxy.data["b"].__wrapped__
+
+    # Flush any oplock.
+    await mock_app.state_manager.close()
 
     new_state_proxy = StateProxy(state)
     assert state_proxy is not new_state_proxy
@@ -4421,13 +4424,13 @@ async def test_rebind_mutable_proxy(mock_app: rx.App, token: str) -> None:
     async with state_proxy:
         state_proxy.data["a"].append(3)
 
-    state = await mock_app.state_manager.get_state(
+    async with mock_app.state_manager.modify_state(
         _substate_key(token, MutableProxyState)
-    )
-    assert state.data["a"] == [2, 3]
-    if isinstance(mock_app.state_manager, StateManagerRedis):
-        # In redis mode, the object identity does not persist across async with self calls.
-        assert state.data["b"] == [2]
-    else:
-        # In disk/memory mode, the fact that data["b"] was mutated via data["a"] persists.
-        assert state.data["b"] == [2, 3]
+    ) as state:
+        assert state.data["a"] == [2, 3]
+        if isinstance(mock_app.state_manager, StateManagerRedis):
+            # In redis mode, the object identity does not persist across async with self calls.
+            assert state.data["b"] == [2]
+        else:
+            # In disk/memory mode, the fact that data["b"] was mutated via data["a"] persists.
+            assert state.data["b"] == [2, 3]
