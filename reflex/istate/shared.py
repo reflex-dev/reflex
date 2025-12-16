@@ -338,10 +338,11 @@ class SharedStateBaseInternal(State):
                         linked_state_name
                     )
                 )
-                # TODO: Avoid always fetched linked states, it should be based on
-                # whether the state is accessed, however then `get_state` would need
-                # to know how to fetch in a linked state.
-                original_state = await self.get_state(linked_state_cls)
+                try:
+                    original_state = self._get_state_from_cache(linked_state_cls)
+                except ValueError:
+                    # This state wasn't required for processing the event.
+                    continue
                 linked_state = await original_state._internal_patch_linked_state(
                     linked_token
                 )
@@ -400,3 +401,9 @@ class SharedState(SharedStateBaseInternal, mixin=True):
         root_state = cls.get_root_state()
         if root_state.backend_vars["_reflex_internal_links"] is None:
             root_state.backend_vars["_reflex_internal_links"] = {}
+        if root_state is State:
+            # Always fetch SharedStateBaseInternal to access
+            # `_modify_linked_states` without having to use `.get_state()` which
+            # pulls in all linked states and substates which may not actually be
+            # accessed for this event.
+            root_state._always_dirty_substates.add(SharedStateBaseInternal.get_name())
