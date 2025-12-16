@@ -6,7 +6,7 @@ from reflex.utils.imports import ImportVar
 from reflex.vars.base import LiteralVar, Var
 from reflex.vars.sequence import LiteralStringVar, StringVar
 
-LUCIDE_LIBRARY = "lucide-react@0.556.0"
+LUCIDE_LIBRARY = "lucide-react@0.561.0"
 
 
 class LucideIconComponent(Component):
@@ -236,6 +236,7 @@ LUCIDE_ICON_LIST = [
     "badge_x",
     "badge",
     "baggage_claim",
+    "balloon",
     "ban",
     "banana",
     "bandage",
@@ -395,6 +396,7 @@ LUCIDE_ICON_LIST = [
     "candy_cane",
     "candy_off",
     "candy",
+    "cannabis_off",
     "cannabis",
     "captions_off",
     "captions",
@@ -498,6 +500,7 @@ LUCIDE_ICON_LIST = [
     "circle_parking",
     "circle_pause",
     "circle_percent",
+    "circle_pile",
     "circle_play",
     "circle_plus",
     "circle_pound_sterling",
@@ -547,6 +550,7 @@ LUCIDE_ICON_LIST = [
     "clock",
     "closed_caption",
     "cloud_alert",
+    "cloud_backup",
     "cloud_check",
     "cloud_cog",
     "cloud_download",
@@ -562,6 +566,7 @@ LUCIDE_ICON_LIST = [
     "cloud_snow",
     "cloud_sun_rain",
     "cloud_sun",
+    "cloud_sync",
     "cloud_upload",
     "cloud",
     "cloudy",
@@ -771,6 +776,7 @@ LUCIDE_ICON_LIST = [
     "fish_off",
     "fish_symbol",
     "fish",
+    "fishing_hook",
     "flag_off",
     "flag_triangle_left",
     "flag_triangle_right",
@@ -908,6 +914,7 @@ LUCIDE_ICON_LIST = [
     "hash",
     "hat_glasses",
     "haze",
+    "hd",
     "hdmi_port",
     "heading_1",
     "heading_2",
@@ -994,6 +1001,7 @@ LUCIDE_ICON_LIST = [
     "laugh",
     "layers_2",
     "layers_3",
+    "layers_plus",
     "layers",
     "layout_dashboard",
     "layout_grid",
@@ -1401,6 +1409,7 @@ LUCIDE_ICON_LIST = [
     "screen_share",
     "scroll_text",
     "scroll",
+    "search_alert",
     "search_check",
     "search_code",
     "search_slash",
@@ -1571,6 +1580,7 @@ LUCIDE_ICON_LIST = [
     "stethoscope",
     "sticker",
     "sticky_note",
+    "stone",
     "store",
     "stretch_horizontal",
     "stretch_vertical",
