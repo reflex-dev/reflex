@@ -96,7 +96,7 @@ async def test_fully_controlled_input(fully_controlled_input: AppHarness):
 
     async def get_state_text():
         state = await fully_controlled_input.get_state(f"{token}_{full_state_name}")
-        return state.substates[state_name].text
+        return state.substates[state_name].text  # pyright: ignore[reportAttributeAccessIssue]
 
     # ensure defaults are set correctly
     assert (

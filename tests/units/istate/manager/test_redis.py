@@ -15,18 +15,22 @@ from reflex.state import BaseState, _substate_key
 from tests.units.mock_redis import mock_redis, real_redis
 
 
+class RedisTestState(BaseState):
+    """A test state for redis state manager tests."""
+
+    foo: str = "bar"
+    count: int = 0
+
+
 @pytest.fixture
-def root_state() -> type[BaseState]:
-    class RedisTestState(BaseState):
-        foo: str = "bar"
-        count: int = 0
+def root_state() -> type[RedisTestState]:
 
     return RedisTestState
 
 
 @pytest_asyncio.fixture(loop_scope="function", scope="function")
 async def state_manager_redis(
-    root_state: type[BaseState],
+    root_state: type[RedisTestState],
 ) -> AsyncGenerator[StateManagerRedis]:
     """Get a StateManagerRedis with a real or mocked redis client.
 
@@ -64,7 +68,7 @@ def event_log(state_manager_redis: StateManagerRedis) -> list[dict[str, Any]]:
 @pytest.mark.asyncio
 async def test_basic_get_set(
     state_manager_redis: StateManagerRedis,
-    root_state: type[BaseState],
+    root_state: type[RedisTestState],
 ):
     """Test basic operations of StateManagerRedis.
 
@@ -84,7 +88,7 @@ async def test_basic_get_set(
 
 async def test_modify(
     state_manager_redis: StateManagerRedis,
-    root_state: type[BaseState],
+    root_state: type[RedisTestState],
 ):
     """Test modifying state with StateManagerRedis.
 
@@ -106,16 +110,18 @@ async def test_modify(
     async with state_manager_redis.modify_state(
         _substate_key(token, root_state)
     ) as new_state:
+        assert isinstance(new_state, root_state)
         assert new_state.count == 1
         new_state.count += 2
 
     final_state = await state_manager_redis.get_state(_substate_key(token, root_state))
+    assert isinstance(final_state, root_state)
     assert final_state.count == 3
 
 
 async def test_modify_oplock(
     state_manager_redis: StateManagerRedis,
-    root_state: type[BaseState],
+    root_state: type[RedisTestState],
     event_log: list[dict[str, Any]],
 ):
     """Test modifying state with StateManagerRedis with optimistic locking.
@@ -244,7 +250,7 @@ async def test_modify_oplock(
 
 async def test_oplock_contention_queue(
     state_manager_redis: StateManagerRedis,
-    root_state: type[BaseState],
+    root_state: type[RedisTestState],
     event_log: list[dict[str, Any]],
 ):
     """Test the oplock contention queue.
@@ -275,6 +281,7 @@ async def test_oplock_contention_queue(
         async with state_manager_redis.modify_state(
             _substate_key(token, root_state),
         ) as new_state:
+            assert isinstance(new_state, root_state)
             new_state.count += 1
             modify_started.set()
             await modify_1_continue.wait()
@@ -285,6 +292,7 @@ async def test_oplock_contention_queue(
         async with state_manager_2.modify_state(
             _substate_key(token, root_state),
         ) as new_state:
+            assert isinstance(new_state, root_state)
             new_state.count += 1
             await modify_2_continue.wait()
 
@@ -294,6 +302,7 @@ async def test_oplock_contention_queue(
         async with state_manager_2.modify_state(
             _substate_key(token, root_state),
         ) as new_state:
+            assert isinstance(new_state, root_state)
             new_state.count += 1
             await modify_2_continue.wait()
 
@@ -316,11 +325,13 @@ async def test_oplock_contention_queue(
     interim_state = await state_manager_redis.get_state(
         _substate_key(token, root_state)
     )
+    assert isinstance(interim_state, root_state)
     assert interim_state.count == 1
 
     await state_manager_2.close()
 
     final_state = await state_manager_redis.get_state(_substate_key(token, root_state))
+    assert isinstance(final_state, root_state)
     assert final_state.count == 3
 
     # There should only be two lock acquisitions
@@ -334,7 +345,7 @@ async def test_oplock_contention_queue(
 
 async def test_oplock_contention_no_lease(
     state_manager_redis: StateManagerRedis,
-    root_state: type[BaseState],
+    root_state: type[RedisTestState],
     event_log: list[dict[str, Any]],
 ):
     """Test the oplock contention queue, when no waiters can share.
@@ -371,6 +382,7 @@ async def test_oplock_contention_no_lease(
         async with state_manager_redis.modify_state(
             _substate_key(token, root_state),
         ) as new_state:
+            assert isinstance(new_state, root_state)
             new_state.count += 1
             modify_started.set()
             await modify_1_continue.wait()
@@ -381,6 +393,7 @@ async def test_oplock_contention_no_lease(
         async with state_manager_2.modify_state(
             _substate_key(token, root_state),
         ) as new_state:
+            assert isinstance(new_state, root_state)
             new_state.count += 1
             await modify_2_continue.wait()
 
@@ -390,6 +403,7 @@ async def test_oplock_contention_no_lease(
         async with state_manager_3.modify_state(
             _substate_key(token, root_state),
         ) as new_state:
+            assert isinstance(new_state, root_state)
             new_state.count += 1
             await modify_2_continue.wait()
 
@@ -424,6 +438,7 @@ async def test_oplock_contention_no_lease(
     await state_manager_3.close()
 
     final_state = await state_manager_2.get_state(_substate_key(token, root_state))
+    assert isinstance(final_state, root_state)
     assert final_state.count == 3
 
     # There should be three lock acquisitions
@@ -439,7 +454,7 @@ async def test_oplock_contention_no_lease(
 @pytest.mark.asyncio
 async def test_oplock_contention_racers(
     state_manager_redis: StateManagerRedis,
-    root_state: type[BaseState],
+    root_state: type[RedisTestState],
     racer_delay: float | None,
 ):
     """Test the oplock contention queue with racers.
@@ -468,6 +483,7 @@ async def test_oplock_contention_racers(
             _substate_key(token, root_state),
         ) as new_state:
             lease_1 = await state_manager_redis._get_local_lease(token)
+            assert isinstance(new_state, root_state)
             new_state.count += 1
 
     async def modify_2():
@@ -478,6 +494,7 @@ async def test_oplock_contention_racers(
             _substate_key(token, root_state),
         ) as new_state:
             lease_2 = await state_manager_2._get_local_lease(token)
+            assert isinstance(new_state, root_state)
             new_state.count += 1
 
     await asyncio.gather(
@@ -500,7 +517,7 @@ async def test_oplock_contention_racers(
 @pytest.mark.asyncio
 async def test_oplock_immediate_cancel(
     state_manager_redis: StateManagerRedis,
-    root_state: type[BaseState],
+    root_state: type[RedisTestState],
     event_log: list[dict[str, Any]],
 ):
     """Test that immediate cancellation of modify releases oplock.
@@ -526,6 +543,7 @@ async def test_oplock_immediate_cancel(
         _substate_key(token, root_state),
     ) as new_state:
         assert await state_manager_redis._get_local_lease(token) is None
+        assert isinstance(new_state, root_state)
         new_state.count += 1
 
     await task
@@ -534,7 +552,7 @@ async def test_oplock_immediate_cancel(
 @pytest.mark.asyncio
 async def test_oplock_fetch_substate(
     state_manager_redis: StateManagerRedis,
-    root_state: type[BaseState],
+    root_state: type[RedisTestState],
     event_log: list[dict[str, Any]],
 ):
     """Test fetching substate with oplock enabled and partial state is cached.
@@ -607,7 +625,7 @@ def short_lock_expiration(
 @pytest.mark.asyncio
 async def test_oplock_hold_oplock_after_cancel(
     state_manager_redis: StateManagerRedis,
-    root_state: type[BaseState],
+    root_state: type[RedisTestState],
     event_log: list[dict[str, Any]],
     short_lock_expiration: int,
 ):
@@ -633,6 +651,7 @@ async def test_oplock_hold_oplock_after_cancel(
             _substate_key(token, root_state),
         ) as new_state:
             modify_started.set()
+            assert isinstance(new_state, root_state)
             new_state.count += 1
             await modify_continue.wait()
             modify_ended.set()
@@ -667,6 +686,7 @@ async def test_oplock_hold_oplock_after_cancel(
     async with state_manager_redis.modify_state(
         _substate_key(token, root_state),
     ) as new_state:
+        assert isinstance(new_state, root_state)
         new_state.count += 1
 
     # There should have been two redis lock acquisitions.
@@ -681,4 +701,5 @@ async def test_oplock_hold_oplock_after_cancel(
 
     # Both increments should be present.
     final_state = await state_manager_redis.get_state(_substate_key(token, root_state))
+    assert isinstance(final_state, root_state)
     assert final_state.count == 2

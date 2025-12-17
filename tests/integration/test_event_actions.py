@@ -265,10 +265,10 @@ def poll_for_order(
 
     async def _poll_for_order(exp_order: list[str]):
         async def _check():
-            return (await _backend_state(event_action, token)).order == exp_order
+            return (await _backend_state(event_action, token)).order == exp_order  # pyright: ignore[reportAttributeAccessIssue]
 
         await AppHarness._poll_for_async(_check)
-        assert (await _backend_state(event_action, token)).order == exp_order
+        assert (await _backend_state(event_action, token)).order == exp_order  # pyright: ignore[reportAttributeAccessIssue]
 
     return _poll_for_order
 
@@ -358,12 +358,12 @@ async def test_event_actions_throttle_debounce(
     # Wait until the debounce event shows up
     async def _debounce_received():
         state = await _backend_state(event_action, token)
-        return state.order and state.order[-1] == "on_click_debounce"
+        return state.order and state.order[-1] == "on_click_debounce"  # pyright: ignore[reportAttributeAccessIssue]
 
     await AppHarness._poll_for_async(_debounce_received)
 
     # This test is inherently racy, so ensure the `on_click_throttle` event is fired approximately the expected number of times.
-    final_event_order = (await _backend_state(event_action, token)).order
+    final_event_order = (await _backend_state(event_action, token)).order  # pyright: ignore[reportAttributeAccessIssue]
     n_on_click_throttle_received = final_event_order.count("on_click_throttle")
     print(
         f"Expected ~{exp_events} on_click_throttle events, received {n_on_click_throttle_received}"

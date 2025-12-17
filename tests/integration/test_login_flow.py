@@ -23,6 +23,10 @@ def LoginSample():
         auth_token: str = rx.LocalStorage("")
 
         @rx.event
+        def set_auth_token(self, token: str):
+            self.auth_token = token
+
+        @rx.event
         def logout(self):
             self.set_auth_token("")
 
