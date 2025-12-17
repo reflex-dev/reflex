@@ -87,7 +87,7 @@ def _determine_react_router_version() -> str:
 
 
 def _determine_react_version() -> str:
-    default_version = "19.2.1"
+    default_version = "19.2.3"
     if (version := os.getenv("REACT_VERSION")) and version != default_version:
         from reflex.utils import console
 
@@ -138,16 +138,16 @@ class PackageJson(SimpleNamespace):
 
     DEV_DEPENDENCIES = {
         "@emotion/react": "11.14.0",
-        "autoprefixer": "10.4.22",
+        "autoprefixer": "10.4.23",
         "postcss": "8.5.6",
         "postcss-import": "16.1.1",
         "@react-router/dev": _react_router_version,
         "@react-router/fs-routes": _react_router_version,
-        "vite": "npm:rolldown-vite@7.2.10",
+        "vite": "npm:rolldown-vite@7.2.11",
     }
     OVERRIDES = {
         # This should always match the `react` version in DEPENDENCIES for recharts compatibility.
         "react-is": _react_version,
         "cookie": "1.1.1",
-        "vite": "npm:rolldown-vite@7.2.10",
+        "vite": "npm:rolldown-vite@7.2.11",
     }
