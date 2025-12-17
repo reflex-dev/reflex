@@ -9,11 +9,12 @@ import uuid
 from abc import ABC, abstractmethod
 from collections.abc import AsyncIterator, Callable, Coroutine
 from types import MappingProxyType
-from typing import TYPE_CHECKING, Any, ClassVar
+from typing import TYPE_CHECKING, ClassVar
 
 from reflex.istate.manager.redis import StateManagerRedis
 from reflex.state import BaseState, StateUpdate
 from reflex.utils import console, prerequisites
+from reflex.utils.format import json_dumps
 from reflex.utils.tasks import ensure_task
 
 if TYPE_CHECKING:
@@ -42,7 +43,7 @@ class LostAndFoundRecord:
     """Record for a StateUpdate for a token with its socket on another instance."""
 
     token: str
-    update: dict[str, Any]
+    update: StateUpdate
 
 
 class TokenManager(ABC):
@@ -386,8 +387,12 @@ class RedisTokenManager(LocalTokenManager):
             )
             async for message in pubsub.listen():
                 if message["type"] == "pmessage":
-                    record = LostAndFoundRecord(**json.loads(message["data"].decode()))
-                    await emit_update(StateUpdate(**record.update), record.token)
+                    record_dict = json.loads(message["data"].decode())
+                    record = LostAndFoundRecord(
+                        token=record_dict["token"],
+                        update=StateUpdate(**record_dict["update"]),
+                    )
+                    await emit_update(record.update, record.token)
 
     def ensure_lost_and_found_task(
         self,
@@ -454,11 +459,11 @@ class RedisTokenManager(LocalTokenManager):
         owner_instance_id = await self._get_token_owner(token)
         if owner_instance_id is None:
             return False
-        record = LostAndFoundRecord(token=token, update=dataclasses.asdict(update))
+        record = LostAndFoundRecord(token=token, update=update)
         try:
             await self.redis.publish(
                 f"channel:{self._get_lost_and_found_key(owner_instance_id)}",
-                json.dumps(dataclasses.asdict(record)),
+                json_dumps(record),
             )
         except Exception as e:
             console.error(f"Redis error publishing lost and found delta: {e}")
