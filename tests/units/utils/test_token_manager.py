@@ -1,7 +1,7 @@
 """Unit tests for TokenManager implementations."""
 
 import asyncio
-import json
+import pickle
 import time
 from collections.abc import Callable, Generator
 from contextlib import asynccontextmanager
@@ -301,7 +301,7 @@ class TestRedisTokenManager:
         )
         mock_redis.set.assert_called_once_with(
             f"token_manager_socket_record_{token}",
-            json.dumps({"instance_id": manager.instance_id, "sid": sid}),
+            pickle.dumps(SocketRecord(instance_id=manager.instance_id, sid=sid)),
             ex=3600,
         )
         assert manager.token_to_socket[token].sid == sid
@@ -348,7 +348,7 @@ class TestRedisTokenManager:
         )
         mock_redis.set.assert_called_once_with(
             f"token_manager_socket_record_{result}",
-            json.dumps({"instance_id": manager.instance_id, "sid": sid}),
+            pickle.dumps(SocketRecord(instance_id=manager.instance_id, sid=sid)),
             ex=3600,
         )
         assert manager.token_to_sid[result] == sid
