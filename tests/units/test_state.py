@@ -4386,3 +4386,51 @@ async def test_add_dependency_get_state_regression(mock_app: rx.App, token: str)
     state = await mock_app.state_manager.get_state(_substate_key(token, OtherState))
     other_state = await state.get_state(OtherState)
     await other_state.fetch_data_state()  # Should not raise exception.
+
+
+class MutableProxyState(BaseState):
+    """A test state with a MutableProxy var."""
+
+    data: dict[str, list[int]] = {"a": [1], "b": [2]}
+
+
+@pytest.mark.asyncio
+async def test_rebind_mutable_proxy(mock_app: rx.App, token: str) -> None:
+    """Test that previously bound MutableProxy instances can be rebound correctly."""
+    mock_app.state_manager.state = mock_app._state = MutableProxyState
+    async with mock_app.state_manager.modify_state(
+        _substate_key(token, MutableProxyState)
+    ) as state:
+        state.router = RouterData.from_router_data({
+            "query": {},
+            "token": token,
+            "sid": "test_sid",
+        })
+        state_proxy = StateProxy(state)
+        assert isinstance(state_proxy.data, MutableProxy)
+    async with state_proxy:
+        state_proxy.data["a"] = state_proxy.data["b"]
+    assert state_proxy.data["a"] is not state_proxy.data["b"]
+    assert state_proxy.data["a"].__wrapped__ is state_proxy.data["b"].__wrapped__
+
+    # Flush any oplock.
+    await mock_app.state_manager.close()
+
+    new_state_proxy = StateProxy(state)
+    assert state_proxy is not new_state_proxy
+    assert new_state_proxy.data["a"]._self_state is new_state_proxy
+    assert state_proxy.data["a"]._self_state is state_proxy
+
+    async with state_proxy:
+        state_proxy.data["a"].append(3)
+
+    async with mock_app.state_manager.modify_state(
+        _substate_key(token, MutableProxyState)
+    ) as state:
+        assert state.data["a"] == [2, 3]
+        if isinstance(mock_app.state_manager, StateManagerRedis):
+            # In redis mode, the object identity does not persist across async with self calls.
+            assert state.data["b"] == [2]
+        else:
+            # In disk/memory mode, the fact that data["b"] was mutated via data["a"] persists.
+            assert state.data["b"] == [2, 3]
