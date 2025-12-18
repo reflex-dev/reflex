@@ -985,21 +985,20 @@ def test_add_var():
     # Existing instances get the BaseVar
     assert ds1.dynamic_int.equals(DynamicState.dynamic_int)  # pyright: ignore [reportAttributeAccessIssue]
     # New instances get an actual value with the default
-    assert DynamicState().dynamic_int == 42
+    assert DynamicState().dynamic_int == 42  # pyright: ignore[reportAttributeAccessIssue]
 
     ds1.add_var("dynamic_list", list[int], [5, 10])
     assert ds1.dynamic_list.equals(DynamicState.dynamic_list)  # pyright: ignore [reportAttributeAccessIssue]
     ds2 = DynamicState()
-    assert ds2.dynamic_list == [5, 10]
-    ds2.dynamic_list.append(15)
-    assert ds2.dynamic_list == [5, 10, 15]
-    assert DynamicState().dynamic_list == [5, 10]
+    assert ds2.dynamic_list == [5, 10]  # pyright: ignore[reportAttributeAccessIssue]
+    ds2.dynamic_list.append(15)  # pyright: ignore[reportAttributeAccessIssue]
+    assert ds2.dynamic_list == [5, 10, 15]  # pyright: ignore[reportAttributeAccessIssue]
+    assert DynamicState().dynamic_list == [5, 10]  # pyright: ignore[reportAttributeAccessIssue]
 
     ds1.add_var("dynamic_dict", dict[str, int], {"k1": 5, "k2": 10})
     assert ds1.dynamic_dict.equals(DynamicState.dynamic_dict)  # pyright: ignore [reportAttributeAccessIssue]
     assert ds2.dynamic_dict.equals(DynamicState.dynamic_dict)  # pyright: ignore [reportAttributeAccessIssue]
-    assert DynamicState().dynamic_dict == {"k1": 5, "k2": 10}
-    assert DynamicState().dynamic_dict == {"k1": 5, "k2": 10}
+    assert DynamicState().dynamic_dict == {"k1": 5, "k2": 10}  # pyright: ignore[reportAttributeAccessIssue]
 
 
 def test_add_var_default_handlers(test_state):
@@ -1192,6 +1191,7 @@ def test_child_state():
     ms = MainState()
     cs = ms.substates[ChildState.get_name()]
     assert ms.v == 2
+    assert isinstance(cs, ChildState)
     assert cs.v == 2
     assert cs.rendered_var == 2
 
@@ -1270,11 +1270,15 @@ def test_event_handlers_call_other_handlers():
     assert ms.v == 1
 
     # ensure handler can be called from substate
-    ms.substates[SubState.get_name()].set_v3(2)
+    sub_state = ms.substates[SubState.get_name()]
+    assert isinstance(sub_state, SubState)
+    sub_state.set_v3(2)
     assert ms.v == 2
 
     # ensure handler can be called from substate (referencing grandparent handler)
-    ms.get_substate(tuple(SubSubState.get_full_name().split("."))).set_v4(3)
+    sub_sub_state = ms.get_substate(tuple(SubSubState.get_full_name().split(".")))
+    assert isinstance(sub_sub_state, SubSubState)
+    sub_sub_state.set_v4(3)
     assert ms.v == 3
 
 
@@ -1741,6 +1745,7 @@ async def test_state_manager_modify_state(
             assert token in state_manager._states_locks
             assert state_manager._states_locks[token].locked()
         # Should be able to write proxy objects inside mutables
+        assert isinstance(state, TestState)
         complex_1 = state.complex[1]
         assert isinstance(complex_1, MutableProxy)
         state.complex[3] = complex_1
@@ -1784,6 +1789,7 @@ async def test_state_manager_contend(
     async def _coro():
         async with state_manager.modify_state(substate_token) as state:
             await asyncio.sleep(0.01)
+            assert isinstance(state, TestState)
             state.num1 += 1
 
     tasks = [asyncio.create_task(_coro()) for _ in range(n_coroutines)]
@@ -1794,7 +1800,9 @@ async def test_state_manager_contend(
     if environment.REFLEX_OPLOCK_ENABLED.get():
         await state_manager.close()
 
-    assert (await state_manager.get_state(substate_token)).num1 == exp_num1
+    test_state = await state_manager.get_state(substate_token)
+    assert isinstance(test_state, TestState)
+    assert test_state.num1 == exp_num1
 
     if isinstance(state_manager, StateManagerRedis):
         assert (await state_manager.redis.get(f"{token}_lock")) is None
@@ -1939,15 +1947,17 @@ async def test_state_manager_lock_expire_contend(
         with pytest.raises(LockExpiredError):
             raise loop_exception
         # In oplock mode, the blocker block's both updates
-        assert (await state_manager_redis.get_state(substate_token_redis)).num1 == 0
+        test_state = await state_manager_redis.get_state(substate_token_redis)
+        assert isinstance(test_state, TestState)
+        assert test_state.num1 == 0
     else:
         with pytest.raises(LockExpiredError):
             await tasks[0]
         await tasks[1]
         assert loop_exception is None
-        assert (
-            await state_manager_redis.get_state(substate_token_redis)
-        ).num1 == exp_num1
+        test_state = await state_manager_redis.get_state(substate_token_redis)
+        assert isinstance(test_state, TestState)
+        assert test_state.num1 == exp_num1
 
     assert order == ["blocker", "waiter"]
 
@@ -2202,6 +2212,7 @@ async def test_state_proxy(
         assert gotten_state is not parent_state
     gotten_grandchild_state = gotten_state.get_substate(sp._self_substate_path)
     assert gotten_grandchild_state is not None
+    assert isinstance(gotten_grandchild_state, GrandchildState)
     assert gotten_grandchild_state.value2 == "42"
 
     # ensure state update was emitted
@@ -2412,12 +2423,11 @@ async def test_background_task_no_block(mock_app: rx.App, token: str):
         "private",
     ]
 
-    assert (
-        await mock_app.state_manager.get_state(
-            _substate_key(token, BackgroundTaskState)
-        )
-    ).order == exp_order
-
+    background_task_state = await mock_app.state_manager.get_state(
+        _substate_key(token, BackgroundTaskState)
+    )
+    assert isinstance(background_task_state, BackgroundTaskState)
+    assert background_task_state.order == exp_order
     assert mock_app.event_namespace is not None
     emit_mock = mock_app.event_namespace.emit
 
@@ -2503,13 +2513,11 @@ async def test_background_task_reset(mock_app: rx.App, token: str):
     if environment.REFLEX_OPLOCK_ENABLED.get():
         await mock_app.state_manager.close()
 
-    assert (
-        await mock_app.state_manager.get_state(
-            _substate_key(token, BackgroundTaskState)
-        )
-    ).order == [
-        "reset",
-    ]
+    background_task_state = await mock_app.state_manager.get_state(
+        _substate_key(token, BackgroundTaskState)
+    )
+    assert isinstance(background_task_state, BackgroundTaskState)
+    assert background_task_state.order == ["reset"]
 
 
 @pytest.mark.asyncio
@@ -3193,12 +3201,11 @@ async def test_get_state(mock_app: rx.App, token: str):
         )
 
     # Because ChildState3 has a computed var, it is always dirty, and always populated.
-    assert (
-        test_state.substates[ChildState3.get_name()]
-        .substates[GrandchildState3.get_name()]
-        .computed
-        == ""
-    )
+    grandchild_state3 = test_state.substates[ChildState3.get_name()].substates[
+        GrandchildState3.get_name()
+    ]
+    assert isinstance(grandchild_state3, GrandchildState3)
+    assert grandchild_state3.computed == ""
 
     # Get the child_state2 directly.
     child_state2_direct = test_state.get_substate([ChildState2.get_name()])
@@ -3444,6 +3451,7 @@ async def test_setvar(mock_app: rx.App, token: str):
         token: A token.
     """
     state = await mock_app.state_manager.get_state(_substate_key(token, TestState))
+    assert isinstance(state, TestState)
 
     # Set Var in same state (with Var type casting)
     for event in rx.event.fix_events(
@@ -3826,7 +3834,10 @@ def test_fallback_pickle():
     pk = state._serialize()
 
     unpickled_state = BaseState._deserialize(pk)
+    assert isinstance(unpickled_state, DillState)
+    assert unpickled_state._f is not None
     assert unpickled_state._f() == 420
+    assert unpickled_state._o is not None
     assert unpickled_state._o._f() == 42
 
     # Threading locks are unpicklable normally, and raise TypeError instead of PicklingError.
@@ -3834,6 +3845,7 @@ def test_fallback_pickle():
     state2._g = threading.Lock()
     pk2 = state2._serialize()
     unpickled_state2 = BaseState._deserialize(pk2)
+    assert isinstance(unpickled_state2, DillState)
     assert isinstance(unpickled_state2._g, type(threading.Lock()))
 
     # Some object, like generator, are still unpicklable with dill.
@@ -4255,6 +4267,7 @@ async def test_async_computed_var_get_state(mock_app: rx.App, token: str):
 
     # Get the unconnected sibling state, which will be used to `get_state` other instances.
     child = root.get_substate(Child.get_full_name().split("."))
+    assert isinstance(child, Child)
 
     # Get an uncached child state.
     child2 = await child.get_state(Child2)
@@ -4427,6 +4440,7 @@ async def test_rebind_mutable_proxy(mock_app: rx.App, token: str) -> None:
     async with mock_app.state_manager.modify_state(
         _substate_key(token, MutableProxyState)
     ) as state:
+        assert isinstance(state, MutableProxyState)
         assert state.data["a"] == [2, 3]
         if isinstance(mock_app.state_manager, StateManagerRedis):
             # In redis mode, the object identity does not persist across async with self calls.

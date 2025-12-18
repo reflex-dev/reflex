@@ -190,6 +190,9 @@ class SharedStateBaseInternal(State):
         if not token:
             msg = "Cannot link shared state to empty token."
             raise ReflexRuntimeError(msg)
+        if not isinstance(self, SharedState):
+            msg = "Can only link SharedState instances."
+            raise RuntimeError(msg)
         if self._linked_to == token:
             return self  # already linked to this token
         if self._linked_to and self._linked_to != token:
@@ -214,6 +217,10 @@ class SharedStateBaseInternal(State):
             The events to rehydrate the state after unlinking (these should be returned/yielded).
         """
         from reflex.istate.manager import get_state_manager
+
+        if not isinstance(self, SharedState):
+            msg = "Can only unlink SharedState instances."
+            raise ReflexRuntimeError(msg)
 
         state_name = self.get_full_name()
         if (
@@ -272,6 +279,9 @@ class SharedStateBaseInternal(State):
                 _substate_key(token, type(self))
             )
         linked_state = await linked_root_state.get_state(type(self))
+        if not isinstance(linked_state, SharedState):
+            msg = f"Linked state for token {token} is not a SharedState."
+            raise ReflexRuntimeError(msg)
         # Avoid unnecessary dirtiness of shared state when there are no changes.
         if type(self) not in self._held_locks[token]:
             self._held_locks[token][type(self)] = linked_state

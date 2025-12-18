@@ -203,8 +203,8 @@ async def test_computed_vars(
     token = f"{token}_{full_state_name}"
     state = (await computed_vars.get_state(token)).substates[state_name]
     assert state is not None
-    assert state.count1_backend == 0
-    assert state._count1_backend == 0
+    assert state.count1_backend == 0  # pyright: ignore[reportAttributeAccessIssue]
+    assert state._count1_backend == 0  # pyright: ignore[reportAttributeAccessIssue]
 
     # test that backend var is not rendered
     count1_backend = driver.find_element(By.ID, "count1_backend")
@@ -259,9 +259,9 @@ async def test_computed_vars(
     )
     state = (await computed_vars.get_state(token)).substates[state_name]
     assert state is not None
-    assert state.count1_backend == 1
+    assert state.count1_backend == 1  # pyright: ignore[reportAttributeAccessIssue]
     assert count1_backend.text == ""
-    assert state._count1_backend == 1
+    assert state._count1_backend == 1  # pyright: ignore[reportAttributeAccessIssue]
     assert count1_backend_.text == ""
 
     mark_dirty.click()

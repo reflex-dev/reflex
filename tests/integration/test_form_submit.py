@@ -232,7 +232,7 @@ async def test_submit(driver, form_submit: AppHarness):
         return (
             (await form_submit.get_state(f"{token}_{full_state_name}"))
             .substates[state_name]
-            .form_data
+            .form_data  # pyright: ignore[reportAttributeAccessIssue]
         )
 
     # wait for the form data to arrive at the backend

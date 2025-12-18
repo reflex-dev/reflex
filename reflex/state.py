@@ -1350,7 +1350,7 @@ class BaseState(EvenMoreBasicBaseState):
         for substate in cls.get_substates():
             substate._check_overwritten_dynamic_args(args)
 
-    def __getattribute__(self, name: str) -> Any:
+    def _get_attribute(self, name: str) -> Any:
         """Get the state var.
 
         If the var is inherited, get the var from the parent state.
@@ -1407,6 +1407,9 @@ class BaseState(EvenMoreBasicBaseState):
             return MutableProxy(wrapped=value, state=self, field_name=name)
 
         return value
+
+    if not TYPE_CHECKING:
+        __getattribute__ = _get_attribute
 
     def __setattr__(self, name: str, value: Any):
         """Set the attribute.

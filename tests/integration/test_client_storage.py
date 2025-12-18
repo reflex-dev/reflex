@@ -669,6 +669,7 @@ async def test_client_side_state(
     # Ensure the state is gone (not hydrated)
     async def poll_for_not_hydrated():
         state = await client_side.get_state(_substate_key(token or "", state_name))
+        assert isinstance(state, State)
         return not state.is_hydrated
 
     assert await AppHarness._poll_for_async(poll_for_not_hydrated)
@@ -723,30 +724,30 @@ async def test_client_side_state(
 
     async def poll_for_c1_set():
         sub_state = await get_sub_state()
-        return sub_state.c1 == "c1 post expire"
+        return sub_state.c1 == "c1 post expire"  # pyright: ignore[reportAttributeAccessIssue]
 
     assert await AppHarness._poll_for_async(poll_for_c1_set)
     sub_state = await get_sub_state()
-    assert sub_state.c1 == "c1 post expire"
-    assert sub_state.c2 == "c2 value"
-    assert sub_state.c3 == ""
-    assert sub_state.c4 == "c4 value"
-    assert sub_state.c5 == "c5 value"
-    assert sub_state.c6 == "c6 value"
-    assert sub_state.c7 == "c7 value"
-    assert sub_state.l1 == "l1 value"
-    assert sub_state.l2 == "l2 value"
-    assert sub_state.l3 == "l3 value"
-    assert sub_state.l4 == "l4 value"
-    assert sub_state.s1 == "s1 value"
-    assert sub_state.s2 == "s2 value"
-    assert sub_state.s3 == "s3 value"
+    assert sub_state.c1 == "c1 post expire"  # pyright: ignore[reportAttributeAccessIssue]
+    assert sub_state.c2 == "c2 value"  # pyright: ignore[reportAttributeAccessIssue]
+    assert sub_state.c3 == ""  # pyright: ignore[reportAttributeAccessIssue]
+    assert sub_state.c4 == "c4 value"  # pyright: ignore[reportAttributeAccessIssue]
+    assert sub_state.c5 == "c5 value"  # pyright: ignore[reportAttributeAccessIssue]
+    assert sub_state.c6 == "c6 value"  # pyright: ignore[reportAttributeAccessIssue]
+    assert sub_state.c7 == "c7 value"  # pyright: ignore[reportAttributeAccessIssue]
+    assert sub_state.l1 == "l1 value"  # pyright: ignore[reportAttributeAccessIssue]
+    assert sub_state.l2 == "l2 value"  # pyright: ignore[reportAttributeAccessIssue]
+    assert sub_state.l3 == "l3 value"  # pyright: ignore[reportAttributeAccessIssue]
+    assert sub_state.l4 == "l4 value"  # pyright: ignore[reportAttributeAccessIssue]
+    assert sub_state.s1 == "s1 value"  # pyright: ignore[reportAttributeAccessIssue]
+    assert sub_state.s2 == "s2 value"  # pyright: ignore[reportAttributeAccessIssue]
+    assert sub_state.s3 == "s3 value"  # pyright: ignore[reportAttributeAccessIssue]
     sub_sub_state = sub_state.substates[
         client_side.get_state_name("_client_side_sub_sub_state")
     ]
-    assert sub_sub_state.c1s == "c1s value"
-    assert sub_sub_state.l1s == "l1s value"
-    assert sub_sub_state.s1s == "s1s value"
+    assert sub_sub_state.c1s == "c1s value"  # pyright: ignore[reportAttributeAccessIssue]
+    assert sub_sub_state.l1s == "l1s value"  # pyright: ignore[reportAttributeAccessIssue]
+    assert sub_sub_state.s1s == "s1s value"  # pyright: ignore[reportAttributeAccessIssue]
 
     # clear the cookie jar and local storage, ensure state reset to default
     driver.delete_all_cookies()

@@ -456,7 +456,7 @@ async def test_initialize_with_state(test_state: type[ATestState], token: str):
 
 
 @pytest.mark.asyncio
-async def test_set_and_get_state(test_state):
+async def test_set_and_get_state(test_state: type[ATestState]):
     """Test setting and getting the state of an app with different tokens.
 
     Args:
@@ -471,6 +471,8 @@ async def test_set_and_get_state(test_state):
     # Get the default state for each token.
     state1 = await app.state_manager.get_state(token1)
     state2 = await app.state_manager.get_state(token2)
+    assert isinstance(state1, test_state)
+    assert isinstance(state2, test_state)
     assert state1.var == 0
     assert state2.var == 0
 
@@ -483,6 +485,8 @@ async def test_set_and_get_state(test_state):
     # Get the states again and check the values.
     state1 = await app.state_manager.get_state(token1)
     state2 = await app.state_manager.get_state(token2)
+    assert isinstance(state1, test_state)
+    assert isinstance(state2, test_state)
     assert state1.var == 1
     assert state2.var == 2
 
@@ -1132,7 +1136,7 @@ class DynamicState(BaseState):
         Returns:
             same as self.dynamic
         """
-        return self.dynamic
+        return self.dynamic  # pyright: ignore[reportAttributeAccessIssue]
 
     on_load_internal = OnLoadInternalState.on_load_internal.fn  # pyright: ignore [reportFunctionMemberAccess]
 
@@ -1220,7 +1224,7 @@ async def test_dynamic_route_var_route_change_completed_on_load(
     client_ip = "127.0.0.1"
     async with app.state_manager.modify_state(substate_token) as state:
         state.router_data = {"simulate": "hydrated"}
-        assert state.dynamic == ""
+        assert state.dynamic == ""  # pyright: ignore[reportAttributeAccessIssue]
     exp_vals = ["foo", "foobar", "baz"]
 
     def _event(name, val, **kwargs):
@@ -1294,7 +1298,7 @@ async def test_dynamic_route_var_route_change_completed_on_load(
         if isinstance(app.state_manager, StateManagerRedis):
             # When redis is used, the state is not updated until the processing is complete
             state = await app.state_manager.get_state(substate_token)
-            assert state.dynamic == prev_exp_val
+            assert state.dynamic == prev_exp_val  # pyright: ignore[reportAttributeAccessIssue]
 
         # complete the processing
         with pytest.raises(StopAsyncIteration):
@@ -1305,7 +1309,7 @@ async def test_dynamic_route_var_route_change_completed_on_load(
 
         # check that router data was written to the state_manager store
         state = await app.state_manager.get_state(substate_token)
-        assert state.dynamic == exp_val
+        assert state.dynamic == exp_val  # pyright: ignore[reportAttributeAccessIssue]
 
         process_coro = process(
             app,
@@ -1374,6 +1378,7 @@ async def test_dynamic_route_var_route_change_completed_on_load(
     if environment.REFLEX_OPLOCK_ENABLED.get():
         await app.state_manager.close()
     state = await app.state_manager.get_state(substate_token)
+    assert isinstance(state, DynamicState)
     assert state.loaded == len(exp_vals)
     assert state.counter == len(exp_vals)
 
@@ -1416,7 +1421,9 @@ async def test_process_events(mocker: MockerFixture, token: str):
     if environment.REFLEX_OPLOCK_ENABLED.get():
         await app.state_manager.close()
 
-    assert (await app.state_manager.get_state(event.substate_token)).value == 5
+    gen_state = await app.state_manager.get_state(event.substate_token)
+    assert isinstance(gen_state, GenState)
+    assert gen_state.value == 5
     assert app._postprocess.call_count == 6  # pyright: ignore [reportAttributeAccessIssue]
 
     await app.state_manager.close()
