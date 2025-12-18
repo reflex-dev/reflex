@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import dataclasses
-import json
+import pickle
 import uuid
 from abc import ABC, abstractmethod
 from collections.abc import AsyncIterator, Callable, Coroutine
@@ -14,7 +14,6 @@ from typing import TYPE_CHECKING, ClassVar
 from reflex.istate.manager.redis import StateManagerRedis
 from reflex.state import BaseState, StateUpdate
 from reflex.utils import console, prerequisites
-from reflex.utils.format import json_dumps
 from reflex.utils.tasks import ensure_task
 
 if TYPE_CHECKING:
@@ -329,7 +328,7 @@ class RedisTokenManager(LocalTokenManager):
         try:
             await self.redis.set(
                 redis_key,
-                json.dumps(dataclasses.asdict(socket_record)),
+                pickle.dumps(socket_record),
                 ex=self.token_expiration,
             )
         except Exception as e:
@@ -387,11 +386,7 @@ class RedisTokenManager(LocalTokenManager):
             )
             async for message in pubsub.listen():
                 if message["type"] == "pmessage":
-                    record_dict = json.loads(message["data"].decode())
-                    record = LostAndFoundRecord(
-                        token=record_dict["token"],
-                        update=StateUpdate(**record_dict["update"]),
-                    )
+                    record = pickle.loads(message["data"])
                     await emit_update(record.update, record.token)
 
     def ensure_lost_and_found_task(
@@ -429,10 +424,9 @@ class RedisTokenManager(LocalTokenManager):
 
         redis_key = self._get_redis_key(token)
         try:
-            record_json = await self.redis.get(redis_key)
-            if record_json:
-                record_data = json.loads(record_json)
-                socket_record = SocketRecord(**record_data)
+            record_pkl = await self.redis.get(redis_key)
+            if record_pkl:
+                socket_record = pickle.loads(record_pkl)
                 self.token_to_socket[token] = socket_record
                 self.sid_to_token[socket_record.sid] = token
                 return socket_record.instance_id
@@ -463,7 +457,7 @@ class RedisTokenManager(LocalTokenManager):
         try:
             await self.redis.publish(
                 f"channel:{self._get_lost_and_found_key(owner_instance_id)}",
-                json_dumps(record),
+                pickle.dumps(record),
             )
         except Exception as e:
             console.error(f"Redis error publishing lost and found delta: {e}")

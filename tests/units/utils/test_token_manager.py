@@ -13,7 +13,6 @@ from reflex import config
 from reflex.app import EventNamespace
 from reflex.istate.data import RouterData
 from reflex.state import StateUpdate
-from reflex.utils.format import json_dumps
 from reflex.utils.token_manager import (
     LocalTokenManager,
     RedisTokenManager,
@@ -703,7 +702,6 @@ async def test_redis_token_manager_lost_and_found_router_data(
     emit2_mock.assert_not_called()
     emit1_mock.assert_called_once()
     assert isinstance(emit1_mock.call_args[0][1], StateUpdate)
-    assert emit1_mock.call_args[0][1].delta["state"]["router"] == json.loads(
-        json_dumps(router)
-    )
+    assert isinstance(emit1_mock.call_args[0][1].delta["state"]["router"], RouterData)
+    assert emit1_mock.call_args[0][1].delta["state"]["router"] == router
     emit1_mock.reset_mock()
