@@ -1,7 +1,7 @@
 """Unit tests for TokenManager implementations."""
 
 import asyncio
-import json
+import pickle
 import time
 from collections.abc import Callable, Generator
 from contextlib import asynccontextmanager
@@ -11,6 +11,7 @@ import pytest
 
 from reflex import config
 from reflex.app import EventNamespace
+from reflex.istate.data import RouterData
 from reflex.state import StateUpdate
 from reflex.utils.token_manager import (
     LocalTokenManager,
@@ -300,7 +301,7 @@ class TestRedisTokenManager:
         )
         mock_redis.set.assert_called_once_with(
             f"token_manager_socket_record_{token}",
-            json.dumps({"instance_id": manager.instance_id, "sid": sid}),
+            pickle.dumps(SocketRecord(instance_id=manager.instance_id, sid=sid)),
             ex=3600,
         )
         assert manager.token_to_socket[token].sid == sid
@@ -347,7 +348,7 @@ class TestRedisTokenManager:
         )
         mock_redis.set.assert_called_once_with(
             f"token_manager_socket_record_{result}",
-            json.dumps({"instance_id": manager.instance_id, "sid": sid}),
+            pickle.dumps(SocketRecord(instance_id=manager.instance_id, sid=sid)),
             ex=3600,
         )
         assert manager.token_to_sid[result] == sid
@@ -669,4 +670,38 @@ async def test_redis_token_manager_lost_and_found(
     await _wait_for_call_count_positive(emit1_mock)
     emit2_mock.assert_not_called()
     emit1_mock.assert_called_once()
+    emit1_mock.reset_mock()
+
+
+@pytest.mark.usefixtures("redis_url")
+@pytest.mark.asyncio
+async def test_redis_token_manager_lost_and_found_router_data(
+    event_namespace_factory: Callable[[], EventNamespace],
+):
+    """Updates emitted for lost and found tokens should serialize properly.
+
+    Args:
+        event_namespace_factory: Factory fixture for EventNamespace instances.
+    """
+    event_namespace1 = event_namespace_factory()
+    emit1_mock: Mock = event_namespace1.emit  # pyright: ignore[reportAssignmentType]
+    event_namespace2 = event_namespace_factory()
+    emit2_mock: Mock = event_namespace2.emit  # pyright: ignore[reportAssignmentType]
+
+    await event_namespace1.on_connect(sid="sid1", environ=query_string_for("token1"))
+    await event_namespace2.on_connect(sid="sid2", environ=query_string_for("token2"))
+
+    router = RouterData.from_router_data(
+        {"headers": {"x-test": "value"}},
+    )
+
+    await event_namespace2.emit_update(
+        StateUpdate(delta={"state": {"router": router}}), token="token1"
+    )
+    await _wait_for_call_count_positive(emit1_mock)
+    emit2_mock.assert_not_called()
+    emit1_mock.assert_called_once()
+    assert isinstance(emit1_mock.call_args[0][1], StateUpdate)
+    assert isinstance(emit1_mock.call_args[0][1].delta["state"]["router"], RouterData)
+    assert emit1_mock.call_args[0][1].delta["state"]["router"] == router
     emit1_mock.reset_mock()
