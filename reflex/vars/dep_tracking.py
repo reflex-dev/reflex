@@ -179,7 +179,11 @@ class DependencyTracker:
         if not self.top_of_stack:
             return
         target_obj = self.get_tracked_local(self.top_of_stack)
-        target_state = assert_base_state(target_obj, local_name=self.top_of_stack)
+        try:
+            target_state = assert_base_state(target_obj, local_name=self.top_of_stack)
+        except VarValueError:
+            # If the target state is not a BaseState, we cannot track dependencies on it.
+            return
         try:
             ref_obj = getattr(target_state, instruction.argval)
         except AttributeError:
