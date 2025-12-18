@@ -3,7 +3,7 @@
 import asyncio
 import contextlib
 from collections.abc import AsyncIterator
-from typing import Self, TypeVar, cast
+from typing import Self, TypeVar
 
 from reflex.constants import ROUTER_DATA
 from reflex.event import Event, get_hydrate_event
@@ -190,11 +190,14 @@ class SharedStateBaseInternal(State):
         if not token:
             msg = "Cannot link shared state to empty token."
             raise ReflexRuntimeError(msg)
-        if self._linked_to == token:  # pyright: ignore[reportAttributeAccessIssue]
+        if not isinstance(self, SharedState):
+            msg = "Can only link SharedState instances."
+            raise RuntimeError(msg)
+        if self._linked_to == token:
             return self  # already linked to this token
-        if self._linked_to and self._linked_to != token:  # pyright: ignore[reportAttributeAccessIssue]
+        if self._linked_to and self._linked_to != token:
             # Disassociate from previous linked token since unlink will not be called.
-            self._linked_from.discard(self.router.session.client_token)  # pyright: ignore[reportAttributeAccessIssue]
+            self._linked_from.discard(self.router.session.client_token)
         # TODO: Change StateManager to accept token + class instead of combining them in a string.
         if "_" in token:
             msg = f"Invalid token {token} for linking state {self.get_full_name()}, cannot use underscore (_) in the token name."
@@ -215,6 +218,10 @@ class SharedStateBaseInternal(State):
         """
         from reflex.istate.manager import get_state_manager
 
+        if not isinstance(self, SharedState):
+            msg = "Can only unlink SharedState instances."
+            raise ReflexRuntimeError(msg)
+
         state_name = self.get_full_name()
         if (
             not self._reflex_internal_links
@@ -225,7 +232,7 @@ class SharedStateBaseInternal(State):
 
         # Break the linkage for future events.
         self._reflex_internal_links.pop(state_name)
-        self._linked_from.discard(self.router.session.client_token)  # pyright: ignore[reportAttributeAccessIssue]
+        self._linked_from.discard(self.router.session.client_token)
 
         # Patch in the original state, apply updates, then rehydrate.
         private_root_state = await get_state_manager().get_state(
@@ -271,7 +278,10 @@ class SharedStateBaseInternal(State):
             linked_root_state = await get_state_manager().get_state(
                 _substate_key(token, type(self))
             )
-        linked_state = cast(SharedState, await linked_root_state.get_state(type(self)))
+        linked_state = await linked_root_state.get_state(type(self))
+        if not isinstance(linked_state, SharedState):
+            msg = f"Linked state for token {token} is not a SharedState."
+            raise ReflexRuntimeError(msg)
         # Avoid unnecessary dirtiness of shared state when there are no changes.
         if type(self) not in self._held_locks[token]:
             self._held_locks[token][type(self)] = linked_state
@@ -286,7 +296,7 @@ class SharedStateBaseInternal(State):
                 full_delta=full_delta,
             )
         )
-        return linked_state  # pyright: ignore[reportReturnType]
+        return linked_state
 
     def _held_locks_linked_states(self) -> list["SharedState"]:
         """Get all linked states currently held by this state.
