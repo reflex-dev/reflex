@@ -4440,6 +4440,7 @@ async def test_rebind_mutable_proxy(mock_app: rx.App, token: str) -> None:
     async with mock_app.state_manager.modify_state(
         _substate_key(token, MutableProxyState)
     ) as state:
+        assert isinstance(state, MutableProxyState)
         assert state.data["a"] == [2, 3]
         if isinstance(mock_app.state_manager, StateManagerRedis):
             # In redis mode, the object identity does not persist across async with self calls.
