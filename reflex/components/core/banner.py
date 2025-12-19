@@ -16,6 +16,7 @@ from reflex.components.radix.themes.components.dialog import (
 from reflex.components.radix.themes.layout.flex import Flex
 from reflex.components.radix.themes.typography.text import Text
 from reflex.components.sonner.toast import ToastProps, toast_ref
+from reflex.config import get_config
 from reflex.constants import Dirs, Hooks, Imports
 from reflex.constants.compiler import CompileVars
 from reflex.environment import environment
@@ -100,9 +101,13 @@ class ConnectionToaster(Fragment):
         """
         toast_id = "websocket-error"
         target_url = WebsocketTargetURL.create()
+        config = get_config()
         props = ToastProps(
             description=LiteralVar.create(
-                f"Check if server is reachable at {target_url}",
+                f"Check if server is reachable at {target_url}"
+                if environment.REFLEX_ENV_MODE.get().value == constants.Env.DEV
+                or not config.connection_error_message
+                else config.connection_error_message
             ),
             close_button=True,
             duration=120000,
@@ -135,6 +140,9 @@ setTimeout(() => {{
         else:
             loading_message = Var.create(
                 f"Cannot connect to server: {connection_error}."
+                if environment.REFLEX_ENV_MODE.get().value == constants.Env.DEV
+                or not config.connection_error_message
+                else ""
             )
             toast_var = Var(
                 f"toast?.error({loading_message!s}, {{...toast_props, onDismiss: () => setUserDismissed(true)}},)"
