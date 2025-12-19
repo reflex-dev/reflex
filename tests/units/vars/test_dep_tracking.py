@@ -271,6 +271,22 @@ def test_get_state_access_imported_global_module():
     assert tracker.dependencies == expected_deps
 
 
+def test_nested_function():
+    """Test tracking dependencies in nested functions."""
+
+    def func_with_nested(self: DependencyTestState):
+        async def inner():  # noqa: RUF029
+            if self.board:
+                pass
+
+        return self.count
+
+    tracker = DependencyTracker(func_with_nested, DependencyTestState)
+
+    expected_deps = {DependencyTestState.get_full_name(): {"board", "count"}}
+    assert tracker.dependencies == expected_deps
+
+
 @pytest.mark.skipif(
     sys.version_info < (3, 11), reason="Requires Python 3.11+ for positions"
 )

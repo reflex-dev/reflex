@@ -46,6 +46,7 @@ class ScanStatus(enum.Enum):
     GETTING_STATE = enum.auto()
     GETTING_STATE_POST_AWAIT = enum.auto()
     GETTING_VAR = enum.auto()
+    GETTING_IMPORT = enum.auto()
 
 
 class UntrackedLocalVarError(VarValueError):
@@ -446,6 +447,7 @@ class DependencyTracker:
                     )
                 )
             elif instruction.opname == "IMPORT_NAME" and instruction.argval is not None:
+                self.scan_status = ScanStatus.GETTING_IMPORT
                 self._last_import_name = instruction.argval
                 importlib.import_module(instruction.argval)
                 top_module_name = instruction.argval.split(".")[0]
@@ -472,7 +474,11 @@ class DependencyTracker:
                 )
                 # If we see a STORE_FAST, we can assign the top of stack to an aliased name.
                 self.top_of_stack = instruction.argval
-            elif instruction.opname == "STORE_FAST" and self.top_of_stack is not None:
+            elif (
+                self.scan_status == ScanStatus.GETTING_IMPORT
+                and instruction.opname == "STORE_FAST"
+                and self.top_of_stack is not None
+            ):
                 self.tracked_locals[instruction.argval] = self.tracked_locals.pop(
                     self.top_of_stack
                 )
