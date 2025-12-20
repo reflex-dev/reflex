@@ -102,11 +102,11 @@ class ConnectionToaster(Fragment):
         toast_id = "websocket-error"
         target_url = WebsocketTargetURL.create()
         config = get_config()
+        is_dev_mode = environment.REFLEX_ENV_MODE.get().value == constants.Env.DEV
         props = ToastProps(
             description=LiteralVar.create(
                 f"Check if server is reachable at {target_url}"
-                if environment.REFLEX_ENV_MODE.get().value == constants.Env.DEV
-                or not config.connection_error_message
+                if is_dev_mode or not config.connection_error_message
                 else config.connection_error_message
             ),
             close_button=True,
@@ -140,8 +140,7 @@ setTimeout(() => {{
         else:
             loading_message = Var.create(
                 f"Cannot connect to server: {connection_error}."
-                if environment.REFLEX_ENV_MODE.get().value == constants.Env.DEV
-                or not config.connection_error_message
+                if is_dev_mode or not config.connection_error_message
                 else ""
             )
             toast_var = Var(
