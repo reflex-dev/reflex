@@ -2236,7 +2236,7 @@ class BaseState(EvenMoreBasicBaseState):
 
         return d
 
-    async def __aenter__(self) -> BaseState:
+    async def __aenter__(self) -> Self:
         """Enter the async context manager protocol.
 
         This is a no-op for the State class and mainly used in background-tasks/StateProxy.

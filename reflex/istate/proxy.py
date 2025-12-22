@@ -14,6 +14,7 @@ from types import MethodType
 from typing import TYPE_CHECKING, Any, SupportsIndex, TypeVar
 
 import wrapt
+from typing_extensions import Self
 
 from reflex.base import Base
 from reflex.utils import prerequisites
@@ -93,7 +94,7 @@ class StateProxy(wrapt.ObjectProxy):
             return self._self_parent_state_proxy._is_mutable() or self._self_mutable
         return self._self_mutable
 
-    async def __aenter__(self) -> StateProxy:
+    async def __aenter__(self) -> Self:
         """Enter the async context manager protocol.
 
         Sets mutability to True and enters the `App.modify_state` async context,
