@@ -21,5 +21,14 @@ jobs:
       - name: Build
         run: uv build
 
+      - name: Verify .pyi files in wheel
+        run: |
+          if unzip -l dist/*.whl | grep '\.pyi$'; then
+            echo "✓ .pyi files found in distribution"
+          else
+            echo "Error: No .pyi files found in wheel"
+            exit 1
+          fi
+
       - name: Publish
         run: uv publish
