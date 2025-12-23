@@ -212,6 +212,17 @@ def interpret_enum_env(value: str, field_type: GenericType, field_name: str) -> 
         raise EnvironmentVarValueError(msg) from ve
 
 
+@dataclasses.dataclass(frozen=True, kw_only=True, slots=True)
+class SequenceOptions:
+    """Options for interpreting Sequence environment variables."""
+
+    delimiter: str = ":"
+    strip: bool = False
+
+
+DEFAULT_SEQUENCE_OPTIONS = SequenceOptions()
+
+
 def interpret_env_var_value(
     value: str, field_type: GenericType, field_name: str
 ) -> Any:
@@ -278,14 +289,26 @@ def interpret_env_var_value(
                     continue
         msg = f"Invalid literal value: {value!r} for {field_name}, expected one of {literal_values}"
         raise EnvironmentVarValueError(msg)
+    # If the field is Annotated with SequenceOptions, extract the options
+    sequence_options = DEFAULT_SEQUENCE_OPTIONS
+    if get_origin(field_type) is Annotated:
+        annotated_args = get_args(field_type)
+        field_type = annotated_args[0]
+        for arg in annotated_args[1:]:
+            if isinstance(arg, SequenceOptions):
+                sequence_options = arg
+                break
     if get_origin(field_type) in (list, Sequence):
+        items = value.split(sequence_options.delimiter)
+        if sequence_options.strip:
+            items = [item.strip() for item in items]
         return [
             interpret_env_var_value(
                 v,
                 get_args(field_type)[0],
                 f"{field_name}[{i}]",
             )
-            for i, v in enumerate(value.split(":"))
+            for i, v in enumerate(items)
         ]
     if isinstance(field_type, type) and issubclass(field_type, enum.Enum):
         return interpret_enum_env(value, field_type, field_name)

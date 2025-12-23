@@ -4,6 +4,7 @@ import enum
 import os
 import tempfile
 from pathlib import Path
+from typing import Annotated
 from unittest.mock import patch
 
 import pytest
@@ -15,6 +16,7 @@ from reflex.environment import (
     ExecutorType,
     ExistingPath,
     PerformanceMode,
+    SequenceOptions,
     _load_dotenv_from_files,
     _paths_from_env_files,
     _paths_from_environment,
@@ -174,6 +176,14 @@ class TestInterpretEnvVarValue:
         """Test list interpretation."""
         result = interpret_env_var_value("1:2:3", list[int], "TEST_FIELD")
         assert result == [1, 2, 3]
+
+    def test_interpret_annotated_sequence(self):
+        """Test annotated sequence interpretation."""
+        annotated_type = Annotated[
+            list[str], SequenceOptions(delimiter=",", strip=True)
+        ]
+        result = interpret_env_var_value("a, b, c ", annotated_type, "TEST_FIELD")
+        assert result == ["a", "b", "c"]
 
     def test_interpret_enum(self):
         """Test enum interpretation."""
