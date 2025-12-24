@@ -281,11 +281,10 @@ def fetch_app_templates(version: str) -> dict[str, Template]:
         )
         if template["hidden"] or code_url is None:
             continue
-        filtered_templates[template["name"]] = Template(**{
-            k: v for k, v in template.items() if k in known_fields
-        })
-        filtered_templates[template["name"]].code_url = code_url
-
+        filtered_templates[template["name"]] = Template(
+            **{k: v for k, v in template.items() if k in known_fields},
+            code_url=code_url
+        )
     return filtered_templates
 
 
