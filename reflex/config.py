@@ -262,6 +262,8 @@ class BaseConfig:
 
     _prefixes: ClassVar[list[str]] = ["REFLEX_"]
 
+    connection_error_message: str | None = None
+
 
 _PLUGINS_ENABLED_BY_DEFAULT = [
     SitemapPlugin,
