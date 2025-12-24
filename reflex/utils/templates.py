@@ -245,49 +245,47 @@ def fetch_app_templates(version: str) -> dict[str, Template]:
     """
 
     def get_release_by_tag(tag: str) -> dict | None:
-        response = net.get(constants.Reflex.RELEASES_URL)
+        url = f"{constants.Reflex.RELEASES_URL}/tags/v{tag}"
+        response = net.get(url)
+        if response.status_code == 404:
+            return None
         response.raise_for_status()
-        releases = response.json()
-        for release in releases:
-            if release["tag_name"] == f"v{tag}":
-                return release
-        return None
+        return response.json()
 
     release = get_release_by_tag(version)
     if release is None:
         console.warn(f"No templates known for version {version}")
         return {}
 
-    assets = release.get("assets", [])
-    asset = next((a for a in assets if a["name"] == "templates.json"), None)
-    if asset is None:
+    asset_map = {
+        a["name"]: a["browser_download_url"] for a in release.get("assets", [])
+    }
+
+    templates_url = asset_map.get("templates.json")
+    if not templates_url:
         console.warn(f"Templates metadata not found for version {version}")
         return {}
-    templates_url = asset["browser_download_url"]
 
-    templates_data = net.get(templates_url, follow_redirects=True).json()["templates"]
+    templates_data = (
+        net.get(templates_url, follow_redirects=True).json().get("templates", [])
+    )
 
-    for template in templates_data:
-        if template["name"] == "blank":
-            template["code_url"] = ""
-            continue
-        template["code_url"] = next(
-            (
-                a["browser_download_url"]
-                for a in assets
-                if a["name"] == f"{template['name']}.zip"
-            ),
-            None,
-        )
+    known_fields = {f.name for f in dataclasses.fields(Template)}
 
     filtered_templates = {}
-    for tp in templates_data:
-        if tp["hidden"] or tp["code_url"] is None:
+    for template in templates_data:
+        code_url = (
+            ""
+            if template["name"] == "blank"
+            else asset_map.get(f"{template['name']}.zip")
+        )
+        if template["hidden"] or code_url is None:
             continue
-        known_fields = {f.name for f in dataclasses.fields(Template)}
-        filtered_templates[tp["name"]] = Template(**{
-            k: v for k, v in tp.items() if k in known_fields
+        filtered_templates[template["name"]] = Template(**{
+            k: v for k, v in template.items() if k in known_fields
         })
+        filtered_templates[template["name"]].code_url = code_url
+
     return filtered_templates
 
 
