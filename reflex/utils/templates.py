@@ -283,7 +283,7 @@ def fetch_app_templates(version: str) -> dict[str, Template]:
             continue
         filtered_templates[template["name"]] = Template(
             **{k: v for k, v in template.items() if k in known_fields},
-            code_url=code_url
+            code_url=code_url,
         )
     return filtered_templates
 
