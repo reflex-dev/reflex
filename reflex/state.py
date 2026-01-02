@@ -15,6 +15,7 @@ import re
 import sys
 import time
 import typing
+import uuid
 import warnings
 from collections.abc import AsyncIterator, Callable, Iterator, Sequence
 from enum import Enum
@@ -330,6 +331,7 @@ _deserializers = {
     datetime.datetime: datetime.datetime.fromisoformat,
     datetime.date: datetime.date.fromisoformat,
     datetime.time: datetime.time.fromisoformat,
+    uuid.UUID: uuid.UUID,
 }
 
 all_base_state_classes: dict[str, None] = {}
