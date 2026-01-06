@@ -10,7 +10,7 @@ from collections.abc import Sequence
 from importlib.util import find_spec
 from pathlib import Path
 from types import ModuleType
-from typing import TYPE_CHECKING, Any, ClassVar, Literal
+from typing import TYPE_CHECKING, Annotated, Any, ClassVar, Literal
 
 from reflex import constants
 from reflex.constants.base import LogLevel
@@ -18,6 +18,7 @@ from reflex.environment import EnvironmentVariables as EnvironmentVariables
 from reflex.environment import EnvVar as EnvVar
 from reflex.environment import (
     ExistingPath,
+    SequenceOptions,
     _load_dotenv_from_files,
     _paths_from_env_files,
     interpret_env_var_value,
@@ -207,8 +208,10 @@ class BaseConfig:
     # Timeout to do a production build of a frontend page.
     static_page_generation_timeout: int = 60
 
-    # List of origins that are allowed to connect to the backend API.
-    cors_allowed_origins: Sequence[str] = dataclasses.field(default=("*",))
+    # Comma separated list of origins that are allowed to connect to the backend API.
+    cors_allowed_origins: Annotated[Sequence[str], SequenceOptions(delimiter=",")] = (
+        dataclasses.field(default=("*",))
+    )
 
     # Whether to use React strict mode.
     react_strict_mode: bool = True
