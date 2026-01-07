@@ -241,6 +241,45 @@ def test_generate_links_for_sitemap_404_route(
 
 
 @patch("reflex.config.get_config")
+def test_generate_links_for_sitemap_opt_out(mock_get_config: MagicMock):
+    """Test generate_links_for_sitemap with sitemap set to None.
+
+    Args:
+        mock_get_config: Mock for the get_config function.
+    """
+    mock_get_config.return_value.deploy_url = None  # No deploy URL
+
+    def mock_component():
+        return rx.text("Unlisted")
+
+    pages = [
+        UnevaluatedPage(
+            component=mock_component,
+            route="unlisted",
+            title=None,
+            description=None,
+            image="favicon.ico",
+            on_load=None,
+            meta=[],
+            context={"sitemap": None},
+        ),
+        UnevaluatedPage(
+            component=mock_component,
+            route="listed",
+            title=None,
+            description=None,
+            image="favicon.ico",
+            on_load=None,
+            meta=[],
+            context={},
+        ),
+    ]
+    links = generate_links_for_sitemap(pages)
+    assert len(links) == 1
+    assert {"loc": "/listed"} in links
+
+
+@patch("reflex.config.get_config")
 def test_generate_links_for_sitemap_loc_override(mock_get_config: MagicMock):
     """Test generate_links_for_sitemap with loc override in sitemap config.
 
