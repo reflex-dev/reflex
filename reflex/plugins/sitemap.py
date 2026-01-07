@@ -138,7 +138,11 @@ def generate_links_for_sitemap(
     links: list[SitemapLink] = []
 
     for page in unevaluated_pages:
-        sitemap_config: SitemapLinkConfiguration = page.context.get("sitemap", {})
+        sitemap_config: SitemapLinkConfiguration | None = page.context.get(
+            "sitemap", {}
+        )
+        if sitemap_config is None:
+            continue
 
         if is_route_dynamic(page.route) or page.route == "404":
             if not sitemap_config:
