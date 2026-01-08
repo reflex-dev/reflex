@@ -262,6 +262,7 @@ class BaseConfig:
 
     _prefixes: ClassVar[list[str]] = ["REFLEX_"]
 
+    # The message to display in the frontend when a connection error occurs.
     connection_error_message: str | None = None
 
 
