@@ -1,6 +1,6 @@
 [project]
 name = "reflex"
-version = "0.8.25dev1"
+version = "0.8.26dev1"
 description = "Web apps in pure Python."
 license.text = "Apache-2.0"
 authors = [
@@ -31,7 +31,7 @@ dependencies = [
   "python-multipart >=0.0.20,<1.0",
   "python-socketio >=5.12.0,<6.0",
   "redis >=5.2.1,<8.0",
-  "reflex-hosting-cli >=0.1.59",
+  "reflex-hosting-cli >=0.1.61",
   "rich >=13,<15",
   "sqlmodel >=0.0.27,<0.1",
   "starlette >=0.47.0",

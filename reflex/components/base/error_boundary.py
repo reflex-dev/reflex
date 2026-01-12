@@ -36,7 +36,7 @@ _ERROR_DISPLAY: str = r"""event_args.error.name + ': ' + event_args.error.messag
 class ErrorBoundary(Component):
     """A React Error Boundary component that catches unhandled frontend exceptions."""
 
-    library = "react-error-boundary@6.0.0"
+    library = "react-error-boundary@6.0.3"
     tag = "ErrorBoundary"
 
     # Fired when the boundary catches an error.
