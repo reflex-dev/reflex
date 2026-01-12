@@ -184,6 +184,9 @@ class BaseConfig:
     # The async database url used by rx.Model.
     async_db_url: str | None = None
 
+    # The arguments to pass to the sqlalchemy engine.
+    connect_args: dict[str, Any] = dataclasses.field(default_factory=dict)
+
     # The redis url
     redis_url: str | None = None
 
