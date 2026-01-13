@@ -35,6 +35,7 @@ from reflex.istate.manager.memory import StateManagerMemory
 from reflex.istate.manager.redis import StateManagerRedis
 from reflex.state import (
     BaseState,
+    ImmutableMutableProxy,
     ImmutableStateError,
     MutableProxy,
     OnLoadInternalState,
@@ -4419,12 +4420,21 @@ async def test_rebind_mutable_proxy(mock_app: rx.App, token: str) -> None:
             "token": token,
             "sid": "test_sid",
         })
+        assert isinstance(state, MutableProxyState)
+        assert isinstance(state.data, MutableProxy)
+        assert not isinstance(state.data, ImmutableMutableProxy)
         state_proxy = StateProxy(state)
-        assert isinstance(state_proxy.data, MutableProxy)
+        assert isinstance(state_proxy.data, ImmutableMutableProxy)
     async with state_proxy:
+        # This assigns an ImmutableMutableProxy to data["a"].
         state_proxy.data["a"] = state_proxy.data["b"]
+    assert isinstance(state_proxy.data["a"], ImmutableMutableProxy)
     assert state_proxy.data["a"] is not state_proxy.data["b"]
     assert state_proxy.data["a"].__wrapped__ is state_proxy.data["b"].__wrapped__
+
+    # Rebinding with a non-proxy should return a MutableProxy object (not ImmutableMutableProxy).
+    assert isinstance(state_proxy.__wrapped__.data["a"], MutableProxy)
+    assert not isinstance(state_proxy.__wrapped__.data["a"], ImmutableMutableProxy)
 
     # Flush any oplock.
     await mock_app.state_manager.close()
@@ -4433,6 +4443,7 @@ async def test_rebind_mutable_proxy(mock_app: rx.App, token: str) -> None:
     assert state_proxy is not new_state_proxy
     assert new_state_proxy.data["a"]._self_state is new_state_proxy
     assert state_proxy.data["a"]._self_state is state_proxy
+    assert state_proxy.__wrapped__.data["a"]._self_state is state_proxy.__wrapped__
 
     async with state_proxy:
         state_proxy.data["a"].append(3)
