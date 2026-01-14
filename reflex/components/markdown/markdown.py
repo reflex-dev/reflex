@@ -257,7 +257,7 @@ class MarkdownComponentMap:
 class Markdown(Component):
     """A markdown component."""
 
-    library = "react-markdown@10.0.0"
+    library = "react-markdown@10.1.0"
 
     tag = "ReactMarkdown"
 
