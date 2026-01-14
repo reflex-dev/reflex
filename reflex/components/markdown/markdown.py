@@ -322,8 +322,7 @@ class Markdown(Component):
             src,
             component_map=component_map,
             component_map_hash=cls._component_map_hash(component_map),
-            remark_plugins=props.pop("remark_plugins"),
-            rehype_plugins=props.pop("rehype_plugins"),
+            **props,
         )
 
     def add_imports(self) -> ImportDict | list[ImportDict]:
