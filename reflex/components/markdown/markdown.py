@@ -376,7 +376,7 @@ class Markdown(Component):
         Returns:
             The Var for pre code.
         """
-        # Get any custom code from the codeblock and code components.
+        # Get any custom code from the code block "pre" component.
         custom_code_list = self._get_map_fn_custom_code_from_children(
             self.get_component("pre")
         )
@@ -387,7 +387,7 @@ class Markdown(Component):
         ])
         codeblock_custom_code = "\n".join(map(str, custom_code_list))
 
-        # Format the code to handle inline and block code.
+        # Format the code to handle code block with language extraction.
         formatted_code = f"""
 const {{node: childNode, className, children: components, {_PROPS_SPREAD._js_expr}}} = {_REST._js_expr}.children.props;
 const {_CHILDREN._js_expr} = String(Array.isArray(components) ? components.join('\\n') : components).replace(/\\n$/, '');
