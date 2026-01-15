@@ -7,35 +7,84 @@ import textwrap
 from collections.abc import Callable, Sequence
 from functools import lru_cache
 from hashlib import md5
+from types import SimpleNamespace
 from typing import Any
 
-from reflex.components.component import BaseComponent, Component, CustomComponent, field
+from reflex.components.component import (
+    BaseComponent,
+    Component,
+    ComponentNamespace,
+    CustomComponent,
+    field,
+)
+from reflex.components.el.elements.typography import Div
 from reflex.components.tags.tag import Tag
-from reflex.utils.imports import ImportDict, ImportVar
+from reflex.utils import console
+from reflex.utils.imports import ImportDict, ImportTypes, ImportVar
 from reflex.vars.base import LiteralVar, Var, VarData
-from reflex.vars.function import ARRAY_ISARRAY, ArgsFunctionOperation, DestructuredArg
+from reflex.vars.function import ArgsFunctionOperation, DestructuredArg
 from reflex.vars.number import ternary_operation
+from reflex.vars.sequence import LiteralArrayVar
 
 # Special vars used in the component map.
 _CHILDREN = Var(_js_expr="children", _var_type=str)
 _PROPS = Var(_js_expr="props")
 _PROPS_SPREAD = Var(_js_expr="...props")
+_REST = Var(_js_expr="rest")
+_REST_SPREAD = Var(_js_expr="...rest")
 _MOCK_ARG = Var(_js_expr="", _var_type=str)
 _LANGUAGE = Var(_js_expr="_language", _var_type=str)
 
-# Special remark plugins.
-_REMARK_MATH = Var(_js_expr="remarkMath")
-_REMARK_GFM = Var(_js_expr="remarkGfm")
-_REMARK_UNWRAP_IMAGES = Var(_js_expr="remarkUnwrapImages")
-_REMARK_PLUGINS = LiteralVar.create([_REMARK_MATH, _REMARK_GFM, _REMARK_UNWRAP_IMAGES])
 
-# Special rehype plugins.
-_REHYPE_KATEX = Var(_js_expr="rehypeKatex")
-_REHYPE_RAW = Var(_js_expr="rehypeRaw")
-_REHYPE_PLUGINS = LiteralVar.create([_REHYPE_KATEX, _REHYPE_RAW])
+class Plugin(SimpleNamespace):
+    """Create new remark/rehype plugin or access pre-wrapped plugins."""
 
-# These tags do NOT get props passed to them
-NO_PROPS_TAGS = ("ul", "ol", "li")
+    @staticmethod
+    def create(
+        package: str,
+        tag: str,
+        additional_imports: dict[str, ImportTypes] | None = None,
+        **import_var_kwargs,
+    ) -> Var:
+        """Create a plugin Var.
+
+        Args:
+            package: The package to import the plugin from.
+            tag: The imported identifier.
+            additional_imports: Additional imports to include in the VarData, such as CSS.
+            **import_var_kwargs: Additional kwargs to pass to the ImportVar.
+
+        Returns:
+            The plugin Var.
+        """
+        import_var_kwargs.setdefault("is_default", True)
+        return Var(
+            _js_expr=tag,
+            _var_data=VarData(
+                imports={
+                    package: ImportVar(
+                        tag=tag,
+                        **import_var_kwargs,
+                    ),
+                    **(additional_imports or {}),
+                }
+            ),
+        )
+
+    __call__ = create
+
+    math = create("remark-math@6.0.0", "remarkMath")
+    gfm = create("remark-gfm@4.0.1", "remarkGfm")
+    unwrap_images = create("rehype-unwrap-images@1.0.0", "rehypeUnwrapImages")
+    katex = create(
+        "rehype-katex@7.0.1",
+        "rehypeKatex",
+        additional_imports={
+            "": "katex/dist/katex.min.css",
+        },
+    )
+    raw = create("rehype-raw@7.0.0", "rehypeRaw")
+    _undefined = Var(_js_expr="() => undefined")
 
 
 def _h1(value: object):
@@ -137,7 +186,7 @@ def get_base_component_map() -> dict[str, Callable]:
         "li": _li,
         "a": _a,
         "code": _code,
-        "codeblock": _codeblock,
+        "pre": _codeblock,
     }
 
 
@@ -208,7 +257,7 @@ class MarkdownComponentMap:
 class Markdown(Component):
     """A markdown component."""
 
-    library = "react-markdown@8.0.7"
+    library = "react-markdown@10.1.0"
 
     tag = "ReactMarkdown"
 
@@ -222,8 +271,18 @@ class Markdown(Component):
     # The hash of the component map, generated at create() time.
     component_map_hash: str = field(default="", is_javascript_property=False)
 
+    # Remark plugins to use when rendering the content. Provide (plugin, options) if the plugin requires options.
+    remark_plugins: Var[Sequence[Var | tuple[Var, Var]]]
+
+    # Rehype (HTML processor) plugins to use when rendering the content. Provide (plugin, options) if the plugin requires options.
+    rehype_plugins: Var[Sequence[Var | tuple[Var, Var]]]
+
     @classmethod
-    def create(cls, *children, **props) -> Component:
+    def create(
+        cls,
+        *children,
+        **props,
+    ) -> Component:
         """Create a markdown component.
 
         Args:
@@ -242,6 +301,14 @@ class Markdown(Component):
 
         # Update the base component map with the custom component map.
         component_map = {**get_base_component_map(), **props.pop("component_map", {})}
+        if "codeblock" in component_map:
+            console.deprecate(
+                feature_name="'codeblock' in component_map",
+                reason="Use 'pre' instead of 'codeblock' to customize code block rendering in markdown",
+                deprecation_version="0.8.25",
+                removal_version="0.9.0",
+            )
+            component_map["pre"] = component_map.pop("codeblock")
 
         # Get the markdown source.
         src = children[0]
@@ -265,33 +332,15 @@ class Markdown(Component):
             The imports for the markdown component.
         """
         return [
-            {
-                "": "katex/dist/katex.min.css",
-                "remark-math@5.1.1": ImportVar(
-                    tag=_REMARK_MATH._js_expr, is_default=True
-                ),
-                "remark-gfm@3.0.1": ImportVar(
-                    tag=_REMARK_GFM._js_expr, is_default=True
-                ),
-                "remark-unwrap-images@4.0.0": ImportVar(
-                    tag=_REMARK_UNWRAP_IMAGES._js_expr, is_default=True
-                ),
-                "rehype-katex@6.0.3": ImportVar(
-                    tag=_REHYPE_KATEX._js_expr, is_default=True
-                ),
-                "rehype-raw@6.1.1": ImportVar(
-                    tag=_REHYPE_RAW._js_expr, is_default=True
-                ),
-            },
             *[
                 component(_MOCK_ARG)._get_all_imports()
                 for component in self.component_map.values()
             ],
             *(
-                [inline_code_var_data.old_school_imports()]
+                [codeblock_var_data.old_school_imports()]
                 if (
-                    inline_code_var_data
-                    := self._get_inline_code_fn_var()._get_all_var_data()
+                    codeblock_var_data
+                    := self._get_codeblock_fn_var()._get_all_var_data()
                 )
                 is not None
                 else []
@@ -310,60 +359,47 @@ class Markdown(Component):
         components = {
             tag: self._get_tag_map_fn_var(tag)
             for tag in self.component_map
-            if tag not in ("code", "codeblock")
+            if tag != "pre"
         }
 
-        # Separate out inline code and code blocks.
-        components["code"] = self._get_inline_code_fn_var()
+        # Special handling for code blocks to extract the language.
+        components["pre"] = self._get_codeblock_fn_var()
 
         return components
 
-    def _get_inline_code_fn_var(self) -> Var:
-        """Get the function variable for inline code.
+    def _get_codeblock_fn_var(self) -> Var:
+        """Get the function variable for codeblock.
 
         This function creates a Var that represents a function to handle
-        both inline code and code blocks in markdown.
+        both code blocks in markdown.
 
         Returns:
-            The Var for inline code.
+            The Var for pre code.
         """
-        # Get any custom code from the codeblock and code components.
+        # Get any custom code from the code block "pre" component.
         custom_code_list = self._get_map_fn_custom_code_from_children(
-            self.get_component("codeblock")
+            self.get_component("pre")
         )
-        custom_code_list.extend(
-            self._get_map_fn_custom_code_from_children(self.get_component("code"))
-        )
-
         var_data = VarData.merge(*[
             code._get_all_var_data()
             for code in custom_code_list
             if isinstance(code, Var)
         ])
-
         codeblock_custom_code = "\n".join(map(str, custom_code_list))
 
-        # Format the code to handle inline and block code.
+        # Format the code to handle code block with language extraction.
         formatted_code = f"""
+const {{node: childNode, className, children: components, {_PROPS_SPREAD._js_expr}}} = {_REST._js_expr}.children.props;
+const {_CHILDREN._js_expr} = String(Array.isArray(components) ? components.join('\\n') : components).replace(/\\n$/, '');
 const match = (className || '').match(/language-(?<lang>.*)/);
 let {_LANGUAGE!s} = match ? match[1] : '';
 {codeblock_custom_code};
-            return inline ? (
-                {self.format_component("code")}
-            ) : (
-                {self.format_component("codeblock", language=_LANGUAGE)}
-            );
+            return {self.format_component("pre", language=_LANGUAGE)};
         """.replace("\n", " ")
 
         return MarkdownComponentMap.create_map_fn_var(
-            fn_args=(
-                "node",
-                "inline",
-                "className",
-                _CHILDREN._js_expr,
-                _PROPS_SPREAD._js_expr,
-            ),
             fn_body=Var(_js_expr=formatted_code),
+            fn_args=["node", _REST_SPREAD._js_expr],
             explicit_return=True,
             var_data=var_data,
         )
@@ -386,30 +422,10 @@ let {_LANGUAGE!s} = match ? match[1] : '';
             msg = f"No markdown component found for tag: {tag}."
             raise ValueError(msg)
 
-        special_props = [_PROPS]
-        children = [
-            _CHILDREN
-            if tag != "codeblock"
-            # For codeblock, the mapping for some cases returns an array of elements. Let's join them into a string.
-            else ternary_operation(
-                ARRAY_ISARRAY.call(_CHILDREN),
-                _CHILDREN.to(list).join("\n"),
-                _CHILDREN,
-            ).to(str)
-        ]
-
-        # For certain tags, the props from the markdown renderer are not actually valid for the component.
-        if tag in NO_PROPS_TAGS:
-            special_props = []
-
         # If the children are set as a prop, don't pass them as children.
-        children_prop = props.get("children")
-        if children_prop is not None:
-            children = []
+        children = [_CHILDREN] if props.get("children") is None else []
         # Get the component.
-        return self.component_map[tag](*children, **props).set(
-            special_props=special_props
-        )
+        return self.component_map[tag](*children, **props).set(special_props=[_PROPS])
 
     def format_component(self, tag: str, **props) -> str:
         """Format a component for rendering in the component map.
@@ -512,9 +528,117 @@ let {_LANGUAGE!s} = match ? match[1] : '';
             super()
             ._render()
             .add_props(
-                remark_plugins=_REMARK_PLUGINS,
-                rehype_plugins=_REHYPE_PLUGINS,
                 components=Var(_js_expr=f"{self._get_component_map_name()}()"),
             )
             .remove_props("componentMap", "componentMapHash")
         )
+
+
+class MarkdownWrapper(Div):
+    """A markdown component, with optional div-wrapping when style props are given."""
+
+    @classmethod
+    def create(
+        cls,
+        *children,
+        use_math: bool | Var[bool] = True,
+        use_gfm: bool | Var[bool] = True,
+        use_unwrap_images: bool | Var[bool] = True,
+        use_katex: bool | Var[bool] = True,
+        use_raw: bool | Var[bool] = True,
+        **props,
+    ) -> Component:
+        """Create a markdown component.
+
+        Args:
+            *children: The children of the component.
+            use_math: Whether to use the remark-math plugin.
+            use_gfm: Whether to use the GitHub Flavored Markdown plugin.
+            use_unwrap_images: Whether to use the unwrap images plugin.
+            use_katex: Whether to use the KaTeX plugin.
+            use_raw: Whether to use the raw HTML plugin.
+            **props: The properties of the component.
+
+        Raises:
+            ValueError: If the children are not valid.
+
+        Returns:
+            The markdown component or div wrapping markdown component.
+        """
+        # Assemble the plugin lists.
+        builtin_remark_plugins = []
+        if isinstance(use_math, Var):
+            builtin_remark_plugins.append(
+                ternary_operation(
+                    use_math, markdown.plugin.math, markdown.plugin._undefined
+                )
+            )
+        elif use_math:
+            builtin_remark_plugins.append(markdown.plugin.math)
+        if isinstance(use_gfm, Var):
+            builtin_remark_plugins.append(
+                ternary_operation(
+                    use_gfm, markdown.plugin.gfm, markdown.plugin._undefined
+                )
+            )
+        elif use_gfm:
+            builtin_remark_plugins.append(markdown.plugin.gfm)
+        remark_plugins = LiteralArrayVar.create(builtin_remark_plugins)
+        if (user_remark_plugins := props.pop("remark_plugins", None)) is not None:
+            if not isinstance(user_remark_plugins, Var):
+                user_remark_plugins = Var.create(user_remark_plugins)
+            remark_plugins = remark_plugins + user_remark_plugins.to(list)
+
+        builtin_rehype_plugins = []
+        if isinstance(use_katex, Var):
+            builtin_rehype_plugins.append(
+                ternary_operation(
+                    use_katex, markdown.plugin.katex, markdown.plugin._undefined
+                )
+            )
+        elif use_katex:
+            builtin_rehype_plugins.append(markdown.plugin.katex)
+        if isinstance(use_raw, Var):
+            builtin_rehype_plugins.append(
+                ternary_operation(
+                    use_raw, markdown.plugin.raw, markdown.plugin._undefined
+                )
+            )
+        elif use_raw:
+            builtin_rehype_plugins.append(markdown.plugin.raw)
+        if isinstance(use_unwrap_images, Var):
+            builtin_rehype_plugins.append(
+                ternary_operation(
+                    use_unwrap_images,
+                    markdown.plugin.unwrap_images,
+                    markdown.plugin._undefined,
+                )
+            )
+        elif use_unwrap_images:
+            builtin_rehype_plugins.append(markdown.plugin.unwrap_images)
+        rehype_plugins = LiteralArrayVar.create(builtin_rehype_plugins)
+        if (user_rehype_plugins := props.pop("rehype_plugins", None)) is not None:
+            if not isinstance(user_rehype_plugins, Var):
+                user_rehype_plugins = Var.create(user_rehype_plugins)
+            rehype_plugins = rehype_plugins + user_rehype_plugins.to(list)
+
+        return super().create(
+            Markdown.create(
+                *children,
+                component_map=props.pop("component_map", {}),
+                remark_plugins=remark_plugins.to(list[Var | tuple[Var, Var]]),
+                rehype_plugins=rehype_plugins.to(list[Var | tuple[Var, Var]]),
+            ),
+            **props,
+        )
+
+
+class MarkdownNamespace(ComponentNamespace):
+    """A namespace for markdown components."""
+
+    __call__ = staticmethod(MarkdownWrapper.create)
+    root = staticmethod(Markdown.create)
+    plugin = Plugin()
+
+
+markdown = MarkdownNamespace()

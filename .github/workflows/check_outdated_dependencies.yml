@@ -77,7 +77,7 @@ jobs:
           echo "$outdated"
 
           # Ignore 3rd party dependencies that are not updated.
-          filtered_outdated=$(echo "$outdated" | grep -vE 'Package|@chakra-ui|lucide-react|@splinetool/runtime|ag-grid-react|framer-motion|react-markdown|remark-math|remark-gfm|rehype-katex|rehype-raw|remark-unwrap-images|ag-grid' || true)
+          filtered_outdated=$(echo "$outdated" | grep -vE 'Package|@chakra-ui|lucide-react|@splinetool/runtime|ag-grid-react|framer-motion|ag-grid' || true)
           no_extra=$(echo "$filtered_outdated" | grep -vE '\|\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-' || true)
 
 
