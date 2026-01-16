@@ -3,6 +3,7 @@ from collections.abc import Generator
 import pytest
 from playwright.sync_api import Page, expect
 
+from reflex.environment import environment
 from reflex.testing import AppHarness
 
 
@@ -27,12 +28,17 @@ def LinkApp():
 
 @pytest.fixture
 def link_app(tmp_path_factory) -> Generator[AppHarness, None, None]:
-    with AppHarness.create(
-        root=tmp_path_factory.mktemp("link_app"),
-        app_source=LinkApp,
-    ) as harness:
-        assert harness.app_instance is not None, "app is not running"
-        yield harness
+    try:
+        environment.REFLEX_SHOW_BUILT_WITH_REFLEX.set(False)
+        with AppHarness.create(
+            root=tmp_path_factory.mktemp("link_app"),
+            app_source=LinkApp,
+        ) as harness:
+            assert harness.app_instance is not None, "app is not running"
+            environment.REFLEX_SHOW_BUILT_WITH_REFLEX.set(None)
+            yield harness
+    finally:
+        environment.REFLEX_SHOW_BUILT_WITH_REFLEX.set(None)
 
 
 def test_link_hover(link_app: AppHarness, page: Page):
