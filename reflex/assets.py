@@ -73,7 +73,7 @@ def asset(
     assert module is not None
 
     external = constants.Dirs.EXTERNAL_APP_ASSETS
-    src_file_shared = Path(calling_file).parent / path
+    src_file_shared = Path(calling_file).parent / (Path(subfolder) / path if subfolder else path)
     if not src_file_shared.exists():
         msg = f"File not found: {src_file_shared}"
         raise FileNotFoundError(msg)
