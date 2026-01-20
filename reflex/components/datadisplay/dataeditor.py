@@ -291,6 +291,9 @@ class DataEditor(NoSSRComponent):
     # Controls which types of row selections can exist at the same time. ("exclusive", "mixed").
     row_selection_blending: Var[Literal["exclusive", "mixed"]]
 
+    # Controls row marker selection behavior. "auto" adapts to touch/mouse, "multi" acts as if Ctrl is pressed. ("auto", "multi").
+    row_selection_mode: Var[Literal["auto", "multi"]]
+
     # Controls how spans are handled in selections. ("default", "allowPartial").
     span_range_behavior: Var[Literal["default", "allowPartial"]]
 
