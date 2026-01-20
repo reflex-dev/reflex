@@ -145,9 +145,11 @@ def TestEventAction():
             rx.button(
                 "Throttle",
                 id="btn-throttle",
-                on_click=lambda: EventActionState.on_click_throttle.throttle(  # pyright: ignore [reportFunctionMemberAccess]
-                    200
-                ).stop_propagation,
+                on_click=lambda: (
+                    EventActionState.on_click_throttle.throttle(  # pyright: ignore [reportFunctionMemberAccess]
+                        200
+                    ).stop_propagation
+                ),
             ),
             rx.button(
                 "Debounce",

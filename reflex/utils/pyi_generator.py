@@ -574,7 +574,8 @@ def _generate_component_create_functiondef(
 
         if isinstance(annotation, str) and annotation.lower().startswith("tuple["):
             inside_of_tuple = (
-                annotation.removeprefix("tuple[")
+                annotation
+                .removeprefix("tuple[")
                 .removeprefix("Tuple[")
                 .removesuffix("]")
             )
