@@ -431,8 +431,6 @@ async def get_redis_status() -> dict[str, bool | None]:
     Returns:
         The status of the Redis connection.
     """
-    from redis.exceptions import RedisError
-
     try:
         status = True
         redis_client = get_redis()
@@ -442,7 +440,7 @@ async def get_redis_status() -> dict[str, bool | None]:
                 await ping_command
         else:
             status = None
-    except RedisError:
+    except Exception:
         status = False
 
     return {"redis": status}
