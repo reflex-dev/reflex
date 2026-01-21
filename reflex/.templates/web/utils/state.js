@@ -451,6 +451,10 @@ export const applyRestEvent = async (event, socket, navigate, params) => {
  * @param navigate The navigate function from React Router
  * @param params The params object from React Router
  */
+const resolveSocket = (socket) => {
+  return socket?.current ?? socket;
+};
+
 export const queueEvents = async (
   events,
   socket,
@@ -468,7 +472,7 @@ export const queueEvents = async (
     ];
   }
   event_queue.push(...events.filter((e) => e !== undefined && e !== null));
-  await processEvent(socket.current, navigate, params);
+  await processEvent(resolveSocket(socket), navigate, params);
 };
 
 /**
