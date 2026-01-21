@@ -89,6 +89,9 @@ export const getToken = () => {
  * @returns The given URL modified to point to the actual backend server.
  */
 export const getBackendURL = (url_str) => {
+  if (url_str ?? undefined === undefined) {
+    url_str = env.PING;
+  }
   // Get backend URL object from the endpoint.
   const endpoint = new URL(url_str);
   if (
