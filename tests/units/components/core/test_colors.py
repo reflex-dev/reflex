@@ -97,9 +97,11 @@ def test_color(color, expected, expected_type: type[str] | type[Color]):
                 ("second", rx.color("tomato", 5)),
                 rx.color(ColorState.color, 2),
             ),
-            '(() => { switch (JSON.stringify("condition")) {case JSON.stringify("first"):  return ("var(--mint-7)");'
-            '  break;case JSON.stringify("second"):  return ("var(--tomato-5)");  break;default:  '
-            f'return (("var(--"+{color_state_name!s}.color{FIELD_MARKER}+"-2)"));  break;}};}})()',
+            (
+                '(() => { switch (JSON.stringify("condition")) {case JSON.stringify("first"):  return ("var(--mint-7)");'
+                '  break;case JSON.stringify("second"):  return ("var(--tomato-5)");  break;default:  '
+                f'return (("var(--"+{color_state_name!s}.color{FIELD_MARKER}+"-2)"));  break;}};}})()'
+            ),
         ),
         (
             rx.match(
@@ -108,10 +110,12 @@ def test_color(color, expected, expected_type: type[str] | type[Color]):
                 ("second", rx.color(ColorState.color, 5)),
                 rx.color(ColorState.color, 2),
             ),
-            '(() => { switch (JSON.stringify("condition")) {case JSON.stringify("first"):  '
-            f'return (("var(--"+{color_state_name!s}.color{FIELD_MARKER}+"-7)"));  break;case JSON.stringify("second"):  '
-            f'return (("var(--"+{color_state_name!s}.color{FIELD_MARKER}+"-5)"));  break;default:  '
-            f'return (("var(--"+{color_state_name!s}.color{FIELD_MARKER}+"-2)"));  break;}};}})()',
+            (
+                '(() => { switch (JSON.stringify("condition")) {case JSON.stringify("first"):  '
+                f'return (("var(--"+{color_state_name!s}.color{FIELD_MARKER}+"-7)"));  break;case JSON.stringify("second"):  '
+                f'return (("var(--"+{color_state_name!s}.color{FIELD_MARKER}+"-5)"));  break;default:  '
+                f'return (("var(--"+{color_state_name!s}.color{FIELD_MARKER}+"-2)"));  break;}};}})()'
+            ),
         ),
     ],
 )

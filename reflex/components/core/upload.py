@@ -192,7 +192,8 @@ def _default_drop_rejected(rejected_files: ArrayVar[list[dict[str, Any]]]) -> Ev
 
     return toast.error(
         title="Files not Accepted",
-        description=rejected_files.to(ArrayVar)
+        description=rejected_files
+        .to(ArrayVar)
         .foreach(_format_rejected_file_record)
         .join("\n\n"),
         close_button=True,

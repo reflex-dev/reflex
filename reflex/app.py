@@ -2109,8 +2109,10 @@ class EventNamespace(AsyncNamespace):
             )
             # Don't await to avoid blocking disconnect, but handle potential errors
             task.add_done_callback(
-                lambda t: t.exception()
-                and console.error(f"Token cleanup error: {t.exception()}")
+                lambda t: (
+                    t.exception()
+                    and console.error(f"Token cleanup error: {t.exception()}")
+                )
             )
             return task
         return None
@@ -2218,7 +2220,8 @@ class EventNamespace(AsyncNamespace):
 
         # Unroll reverse proxy forwarded headers.
         client_ip = (
-            headers.get(
+            headers
+            .get(
                 "x-forwarded-for",
                 client_ip,
             )
