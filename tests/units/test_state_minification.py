@@ -174,3 +174,10 @@ class TestMixinState:
         assert MixinState._state_id is None
         # Mixin states have _mixin = True set, so get_name isn't typically called
         # but the class should be created without error
+
+    def test_mixin_with_state_id_raises(self):
+        """Test that mixin states cannot have state_id."""
+        with pytest.raises(StateValueError, match="cannot have a state_id"):
+
+            class MixinWithId(BaseState, mixin=True, state_id=999):
+                pass

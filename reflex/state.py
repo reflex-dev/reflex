@@ -556,7 +556,17 @@ class BaseState(EvenMoreBasicBaseState):
 
         super().__init_subclass__(**kwargs)
 
-        # Store state_id as class variable
+        # Mixin states cannot have state_id
+        if cls._mixin:
+            if state_id is not None:
+                msg = (
+                    f"Mixin state '{cls.__module__}.{cls.__name__}' cannot have a state_id. "
+                    "Remove state_id or mixin=True."
+                )
+                raise StateValueError(msg)
+            return
+
+        # Store state_id as class variable (only for non-mixins)
         cls._state_id = state_id
 
         # Validate state_id if provided (check for duplicates)
@@ -574,9 +584,6 @@ class BaseState(EvenMoreBasicBaseState):
                     )
                     raise StateValueError(msg)
             _state_id_registry[state_id] = cls
-
-        if cls._mixin:
-            return
 
         # Handle locally-defined states for pickling.
         if "<locals>" in cls.__qualname__:
