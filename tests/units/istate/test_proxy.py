@@ -13,10 +13,6 @@ class Item:
 
     id: int
 
-    def __init__(self, id: int):
-        """Initialize the item."""
-        self.id = id
-
 
 class ProxyTestState(rx.State):
     """Test state with a list field."""
