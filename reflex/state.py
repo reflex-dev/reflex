@@ -114,7 +114,13 @@ def _int_to_minified_name(state_id: int) -> str:
 
     Returns:
         The minified state name (e.g., 0->'a', 1->'b', 54->'ba').
+
+    Raises:
+        ValueError: If state_id is negative.
     """
+    if state_id < 0:
+        raise ValueError(f"state_id must be non-negative, got {state_id}")
+    
     # All possible chars for minified state name (valid JS identifiers)
     chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ$_"
     base = len(chars)
