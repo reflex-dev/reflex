@@ -102,6 +102,34 @@ if environment.REFLEX_PERF_MODE.get() != PerformanceMode.OFF:
 # For BaseState.get_var_value
 VAR_TYPE = TypeVar("VAR_TYPE")
 
+# Global registry: state_id -> state class (for duplicate detection)
+_state_id_registry: dict[int, type[BaseState]] = {}
+
+
+def _int_to_minified_name(state_id: int) -> str:
+    """Convert integer state_id to minified name using base-54 encoding.
+
+    Args:
+        state_id: The integer state ID to convert.
+
+    Returns:
+        The minified state name (e.g., 0->'a', 1->'b', 54->'ba').
+    """
+    # All possible chars for minified state name (valid JS identifiers)
+    chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ$_"
+    base = len(chars)
+
+    if state_id == 0:
+        return chars[0]
+
+    name = ""
+    num = state_id
+    while num > 0:
+        name = chars[num % base] + name
+        num //= base
+
+    return name
+
 
 def _no_chain_background_task(state: BaseState, name: str, fn: Callable) -> Callable:
     """Protect against directly chaining a background task from another event handler.
@@ -391,6 +419,9 @@ class BaseState(EvenMoreBasicBaseState):
     # Set of states which might need to be recomputed if vars in this state change.
     _potentially_dirty_states: ClassVar[set[str]] = set()
 
+    # The explicit state ID for minification (None = use full name).
+    _state_id: ClassVar[int | None] = None
+
     # The parent state.
     parent_state: BaseState | None = field(default=None, is_var=False)
 
@@ -508,19 +539,41 @@ class BaseState(EvenMoreBasicBaseState):
             raise NameError(msg)
 
     @classmethod
-    def __init_subclass__(cls, mixin: bool = False, **kwargs):
+    def __init_subclass__(
+        cls, mixin: bool = False, state_id: int | None = None, **kwargs
+    ):
         """Do some magic for the subclass initialization.
 
         Args:
             mixin: Whether the subclass is a mixin and should not be initialized.
+            state_id: Explicit state ID for minified state names.
             **kwargs: The kwargs to pass to the init_subclass method.
 
         Raises:
-            StateValueError: If a substate class shadows another.
+            StateValueError: If a substate class shadows another or duplicate state_id.
         """
         from reflex.utils.exceptions import StateValueError
 
         super().__init_subclass__(**kwargs)
+
+        # Store state_id as class variable
+        cls._state_id = state_id
+
+        # Validate state_id if provided (check for duplicates)
+        if state_id is not None:
+            if state_id in _state_id_registry:
+                existing_cls = _state_id_registry[state_id]
+                # Allow re-registration if it's the same class (e.g., module reload)
+                existing_key = f"{existing_cls.__module__}.{existing_cls.__name__}"
+                new_key = f"{cls.__module__}.{cls.__name__}"
+                if existing_key != new_key:
+                    msg = (
+                        f"Duplicate state_id={state_id}. Already used by "
+                        f"'{existing_cls.__module__}.{existing_cls.__name__}', "
+                        f"cannot be reused by '{cls.__module__}.{cls.__name__}'."
+                    )
+                    raise StateValueError(msg)
+            _state_id_registry[state_id] = cls
 
         if cls._mixin:
             return
@@ -988,9 +1041,34 @@ class BaseState(EvenMoreBasicBaseState):
 
         Returns:
             The name of the state.
+
+        Raises:
+            StateValueError: If ENFORCE mode is set and state_id is missing.
         """
+        from reflex.environment import StateMinifyMode
+        from reflex.utils.exceptions import StateValueError
+
         module = cls.__module__.replace(".", "___")
-        return format.to_snake_case(f"{module}___{cls.__name__}")
+        full_name = format.to_snake_case(f"{module}___{cls.__name__}")
+
+        minify_mode = environment.REFLEX_MINIFY_STATES.get()
+
+        if minify_mode == StateMinifyMode.DISABLED:
+            return full_name
+
+        if cls._state_id is not None:
+            return _int_to_minified_name(cls._state_id)
+
+        # state_id not set
+        if minify_mode == StateMinifyMode.ENFORCE:
+            msg = (
+                f"State '{cls.__module__}.{cls.__name__}' is missing required state_id. "
+                f"Add state_id parameter: class {cls.__name__}(rx.State, state_id=N)"
+            )
+            raise StateValueError(msg)
+
+        # ENABLED mode with no state_id - use full name
+        return full_name
 
     @classmethod
     @functools.lru_cache
@@ -2464,7 +2542,7 @@ def is_serializable(value: Any) -> bool:
 T_STATE = TypeVar("T_STATE", bound=BaseState)
 
 
-class State(BaseState):
+class State(BaseState, state_id=0):
     """The app Base State."""
 
     # The hydrated bool.
