@@ -686,6 +686,9 @@ class BaseState(EvenMoreBasicBaseState):
         newfn.__annotations__ = fn.__annotations__
         if mark := getattr(fn, BACKGROUND_TASK_MARKER, None):
             setattr(newfn, BACKGROUND_TASK_MARKER, mark)
+        # Preserve event_actions from @rx.event decorator
+        if event_actions := getattr(fn, "_rx_event_actions", None):
+            object.__setattr__(newfn, "_rx_event_actions", event_actions)
         return newfn
 
     @staticmethod
