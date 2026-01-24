@@ -6,7 +6,16 @@ import pytest
 
 from reflex.environment import MinifyMode, environment
 from reflex.event import EVENT_ID_MARKER
-from reflex.state import BaseState, _int_to_minified_name, _state_id_registry
+from reflex.state import (
+    BaseState,
+    FrontendEventExceptionState,
+    OnLoadInternalState,
+    State,
+    UpdateVarsInternalState,
+    _int_to_minified_name,
+    _minified_name_to_int,
+    _state_id_registry,
+)
 from reflex.utils.exceptions import StateValueError
 
 
@@ -409,3 +418,106 @@ class TestMixinEventHandlers:
                 @rx.event(event_id=0)
                 def own_handler(self):
                     pass
+
+
+class TestMinifiedNameToInt:
+    """Tests for _minified_name_to_int reverse conversion."""
+
+    def test_single_char(self):
+        """Test single character conversion."""
+        assert _minified_name_to_int("a") == 0
+        assert _minified_name_to_int("b") == 1
+        assert _minified_name_to_int("z") == 25
+        assert _minified_name_to_int("A") == 26
+        assert _minified_name_to_int("Z") == 51
+
+    def test_roundtrip(self):
+        """Test that int -> minified -> int roundtrip works."""
+        for i in range(1000):
+            minified = _int_to_minified_name(i)
+            result = _minified_name_to_int(minified)
+            assert result == i, f"Roundtrip failed for {i}: {minified} -> {result}"
+
+    def test_invalid_char_raises(self):
+        """Test that invalid characters raise ValueError."""
+        with pytest.raises(ValueError, match="Invalid character"):
+            _minified_name_to_int("!")
+
+    def test_state_lookup_returns_reflex_state(self):
+        """Test that looking up state_id=0 returns reflex's internal State."""
+        # Re-register State after fixture clears the registry
+        _state_id_registry[0] = State
+
+        assert 0 in _state_id_registry
+        state_cls = _state_id_registry[0]
+        assert state_cls is State
+        assert state_cls.__module__ == "reflex.state"
+        assert state_cls.__name__ == "State"
+
+    def test_next_state_id_returns_1(self):
+        """Test that next available state_id is 1 (0 is used by internal State)."""
+        # Simulate reflex.state.State using state_id=0
+        _state_id_registry[0] = State
+
+        # Find first gap starting from 0
+        used_ids = set(_state_id_registry.keys())
+        next_id = 0
+        while next_id in used_ids:
+            next_id += 1
+
+        assert next_id == 1
+
+
+class TestInternalStateIds:
+    """Tests for internal state classes having correct state_id values."""
+
+    def test_state_has_id_0(self):
+        """Test that the base State class has state_id=0."""
+        assert State._state_id == 0
+
+    def test_frontend_exception_state_has_id_1(self):
+        """Test that FrontendEventExceptionState has state_id=1."""
+        assert FrontendEventExceptionState._state_id == 1
+
+    def test_update_vars_internal_state_has_id_2(self):
+        """Test that UpdateVarsInternalState has state_id=2."""
+        assert UpdateVarsInternalState._state_id == 2
+
+    def test_on_load_internal_state_has_id_3(self):
+        """Test that OnLoadInternalState has state_id=3."""
+        assert OnLoadInternalState._state_id == 3
+
+    def test_internal_states_minified_names(self, reset_minify_mode):
+        """Test that internal states get correct minified names when enabled."""
+        environment.REFLEX_MINIFY_STATES.set(MinifyMode.ENABLED)
+
+        # Clear the lru_cache to get fresh results
+        State.get_name.cache_clear()
+        FrontendEventExceptionState.get_name.cache_clear()
+        UpdateVarsInternalState.get_name.cache_clear()
+        OnLoadInternalState.get_name.cache_clear()
+
+        # State (id=0) -> "a"
+        assert State.get_name() == "a"
+        # FrontendEventExceptionState (id=1) -> "b"
+        assert FrontendEventExceptionState.get_name() == "b"
+        # UpdateVarsInternalState (id=2) -> "c"
+        assert UpdateVarsInternalState.get_name() == "c"
+        # OnLoadInternalState (id=3) -> "d"
+        assert OnLoadInternalState.get_name() == "d"
+
+    def test_internal_states_full_names_when_disabled(self, reset_minify_mode):
+        """Test that internal states use full names when minification is disabled."""
+        environment.REFLEX_MINIFY_STATES.set(MinifyMode.DISABLED)
+
+        # Clear the lru_cache to get fresh results
+        State.get_name.cache_clear()
+        FrontendEventExceptionState.get_name.cache_clear()
+        UpdateVarsInternalState.get_name.cache_clear()
+        OnLoadInternalState.get_name.cache_clear()
+
+        # Should contain the class name pattern
+        assert "state" in State.get_name().lower()
+        assert "frontend" in FrontendEventExceptionState.get_name().lower()
+        assert "update" in UpdateVarsInternalState.get_name().lower()
+        assert "on_load" in OnLoadInternalState.get_name().lower()

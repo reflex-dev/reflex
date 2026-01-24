@@ -17,6 +17,8 @@ import {
   onLoadInternalEvent,
   state_name,
   exception_state_name,
+  main_state_name,
+  update_vars_internal,
 } from "$/utils/context";
 import debounce from "$/utils/helpers/debounce";
 import throttle from "$/utils/helpers/throttle";
@@ -56,10 +58,10 @@ export const generateUUID = () => {
   return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (c) => {
     let r = Math.random() * 16;
     if (d > 0) {
-      r = ((d + r) % 16) | 0;
+      r = (d + r) % 16 | 0;
       d = Math.floor(d / 16);
     } else {
-      r = ((d2 + r) % 16) | 0;
+      r = (d2 + r) % 16 | 0;
       d2 = Math.floor(d2 / 16);
     }
     return (c == "x" ? r : (r & 0x7) | 0x8).toString(16);
@@ -134,7 +136,7 @@ export const isStateful = () => {
   if (event_queue.length === 0) {
     return false;
   }
-  return event_queue.some((event) => event.name.startsWith("reflex___state"));
+  return event_queue.some((event) => event.name.startsWith(main_state_name));
 };
 
 /**
@@ -1034,10 +1036,9 @@ export const useEventLoop = (
       if (storage_to_state_map[e.key]) {
         const vars = {};
         vars[storage_to_state_map[e.key]] = e.newValue;
-        const event = ReflexEvent(
-          `${state_name}.reflex___state____update_vars_internal_state.update_vars_internal`,
-          { vars: vars },
-        );
+        const event = ReflexEvent(`${state_name}.${update_vars_internal}`, {
+          vars: vars,
+        });
         addEvents([event], e);
       }
     };
@@ -1072,7 +1073,7 @@ export const useEventLoop = (
     }
 
     // Equivalent to routeChangeStart - runs when navigation begins
-    const main_state_dispatch = dispatch["reflex___state____state"];
+    const main_state_dispatch = dispatch[main_state_name];
     if (main_state_dispatch !== undefined) {
       main_state_dispatch({ is_hydrated_rx_state_: false });
     }

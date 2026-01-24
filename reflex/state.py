@@ -106,6 +106,9 @@ VAR_TYPE = TypeVar("VAR_TYPE")
 # Global registry: state_id -> state class (for duplicate detection)
 _state_id_registry: dict[int, type[BaseState]] = {}
 
+# Characters used for minified names (valid JS identifiers)
+MINIFIED_NAME_CHARS = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ$_"
+
 
 def _int_to_minified_name(state_id: int) -> str:
     """Convert integer state_id to minified name using base-54 encoding.
@@ -123,20 +126,43 @@ def _int_to_minified_name(state_id: int) -> str:
         msg = f"state_id must be non-negative, got {state_id}"
         raise ValueError(msg)
 
-    # All possible chars for minified state name (valid JS identifiers)
-    chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ$_"
-    base = len(chars)
+    base = len(MINIFIED_NAME_CHARS)
 
     if state_id == 0:
-        return chars[0]
+        return MINIFIED_NAME_CHARS[0]
 
     name = ""
     num = state_id
     while num > 0:
-        name = chars[num % base] + name
+        name = MINIFIED_NAME_CHARS[num % base] + name
         num //= base
 
     return name
+
+
+def _minified_name_to_int(name: str) -> int:
+    """Convert minified name back to integer state_id.
+
+    Args:
+        name: The minified state name (e.g., 'a', 'bU').
+
+    Returns:
+        The integer state_id.
+
+    Raises:
+        ValueError: If the name contains invalid characters.
+    """
+    base = len(MINIFIED_NAME_CHARS)
+
+    result = 0
+    for char in name:
+        index = MINIFIED_NAME_CHARS.find(char)
+        if index == -1:
+            msg = f"Invalid character '{char}' in minified name"
+            raise ValueError(msg)
+        result = result * base + index
+
+    return result
 
 
 def _no_chain_background_task(state: BaseState, name: str, fn: Callable) -> Callable:
@@ -2716,7 +2742,7 @@ def dynamic(func: Callable[[T], Component]):
 LAST_RELOADED_KEY = "reflex_last_reloaded_on_error"
 
 
-class FrontendEventExceptionState(State):
+class FrontendEventExceptionState(State, state_id=1):
     """Substate for handling frontend exceptions."""
 
     # If the frontend error message contains any of these strings, automatically reload the page.
@@ -2769,7 +2795,7 @@ class FrontendEventExceptionState(State):
         )
 
 
-class UpdateVarsInternalState(State):
+class UpdateVarsInternalState(State, state_id=2):
     """Substate for handling internal state var updates."""
 
     async def update_vars_internal(self, vars: dict[str, Any]) -> None:
@@ -2793,7 +2819,7 @@ class UpdateVarsInternalState(State):
                 setattr(var_state, var_name, value)
 
 
-class OnLoadInternalState(State):
+class OnLoadInternalState(State, state_id=3):
     """Substate for handling on_load event enumeration.
 
     This is a separate substate to avoid deserializing the entire state tree for every page navigation.

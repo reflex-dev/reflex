@@ -3094,7 +3094,7 @@ async def test_preprocess(
         app=app,
         event=Event(
             token=token,
-            name=f"{state.get_name()}.{CompileVars.ON_LOAD_INTERNAL}",
+            name=f"{state.get_name()}.{OnLoadInternalState.get_name()}.on_load_internal",
             router_data={RouteVar.PATH: "/", RouteVar.ORIGIN: "/", RouteVar.QUERY: {}},
         ),
         sid="sid",
@@ -3147,7 +3147,7 @@ async def test_preprocess_multiple_load_events(
         app=app,
         event=Event(
             token=token,
-            name=f"{state.get_full_name()}.{CompileVars.ON_LOAD_INTERNAL}",
+            name=f"{state.get_full_name()}.{OnLoadInternalState.get_name()}.on_load_internal",
             router_data={RouteVar.PATH: "/", RouteVar.ORIGIN: "/", RouteVar.QUERY: {}},
         ),
         sid="sid",

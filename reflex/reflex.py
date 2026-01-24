@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import operator
 from importlib.util import find_spec
 from pathlib import Path
 from typing import TYPE_CHECKING
@@ -840,6 +841,189 @@ def rename(new_name: str):
 
     prerequisites.validate_app_name(new_name)
     rename_app(new_name, get_config().loglevel)
+
+
+@cli.command(name="state-tree")
+@loglevel_option
+@click.option(
+    "--json",
+    "output_json",
+    is_flag=True,
+    help="Output as JSON.",
+)
+def state_tree(output_json: bool):
+    """Print the state tree with state_id's and event handlers with event_id's."""
+    from reflex.event import EVENT_ID_MARKER
+    from reflex.state import BaseState, State, _int_to_minified_name
+    from reflex.utils import prerequisites
+
+    # Load the user's app to register all state classes
+    prerequisites.get_app()
+
+    def build_state_tree(state_cls: type[BaseState]) -> dict:
+        """Recursively build state tree data.
+
+        Args:
+            state_cls: The state class to build the tree for.
+
+        Returns:
+            A dictionary containing the state tree data.
+        """
+        state_id = state_cls._state_id
+
+        # Build event handlers list
+        handlers = []
+        for name, handler in state_cls.event_handlers.items():
+            event_id = getattr(handler.fn, EVENT_ID_MARKER, None)
+            handlers.append({
+                "name": name,
+                "event_id": event_id,
+                "minified_name": (
+                    _int_to_minified_name(event_id) if event_id is not None else None
+                ),
+            })
+        handlers.sort(key=operator.itemgetter("name"))
+
+        # Build substates recursively
+        substates = [
+            build_state_tree(substate)
+            for substate in sorted(state_cls.class_subclasses, key=lambda s: s.__name__)
+        ]
+
+        return {
+            "name": state_cls.__name__,
+            "full_name": state_cls.get_full_name(),
+            "state_id": state_id,
+            "minified_name": (
+                _int_to_minified_name(state_id) if state_id is not None else None
+            ),
+            "event_handlers": handlers,
+            "substates": substates,
+        }
+
+    def print_state_tree(state_data: dict, prefix: str = "", is_last: bool = True):
+        """Print a state and its children as a tree.
+
+        Args:
+            state_data: The state data dictionary.
+            prefix: The prefix for indentation.
+            is_last: Whether this is the last item in the current level.
+        """
+        state_id = state_data["state_id"]
+        minified = state_data["minified_name"]
+
+        if state_id is not None:
+            f'{state_data["name"]} (state_id={state_id} -> "{minified}")'
+        else:
+            f"{state_data['name']} (state_id=None)"
+
+        # Calculate new prefix for children
+        child_prefix = prefix + ("    " if is_last else "|   ")
+
+        # Print event handlers
+        handlers = state_data["event_handlers"]
+        substates = state_data["substates"]
+        has_substates = len(substates) > 0
+
+        if handlers:
+            handler_prefix = child_prefix + ("|   " if has_substates else "    ")
+            for i, handler in enumerate(handlers):
+                is_last_handler = i == len(handlers) - 1
+                event_id = handler["event_id"]
+                if event_id is not None:
+                    _ = (
+                        handler_prefix,
+                        is_last_handler,
+                    )  # silence unused variable warnings
+
+        # Print substates recursively
+        for i, substate in enumerate(substates):
+            is_last_substate = i == len(substates) - 1
+            print_state_tree(substate, child_prefix, is_last_substate)
+
+    tree_data = build_state_tree(State)
+
+    if output_json:
+        pass
+    else:
+        print_state_tree(tree_data)
+
+
+@cli.command(name="state-lookup")
+@loglevel_option
+@click.option(
+    "--json",
+    "output_json",
+    is_flag=True,
+    help="Output detailed info as JSON.",
+)
+@click.argument("minified_path")
+def state_lookup(output_json: bool, minified_path: str):
+    """Lookup a state by its minified path (e.g., 'a.bU')."""
+    from reflex.state import _minified_name_to_int, _state_id_registry
+    from reflex.utils import prerequisites
+
+    # Load the user's app to register all state classes
+    prerequisites.get_app()
+
+    # Parse the dotted path
+    parts = minified_path.split(".")
+
+    # Resolve each part
+    result_parts = []
+    for part in parts:
+        try:
+            state_id = _minified_name_to_int(part)
+        except ValueError as err:
+            raise SystemExit(1) from err
+
+        state_cls = _state_id_registry.get(state_id)
+        if state_cls is None:
+            raise SystemExit(1)
+
+        result_parts.append({
+            "minified": part,
+            "state_id": state_id,
+            "module": state_cls.__module__,
+            "class": state_cls.__name__,
+            "full_name": state_cls.get_full_name(),
+        })
+
+    if output_json:
+        pass
+    else:
+        # Simple output: module.ClassName for each part
+        for _info in result_parts:
+            pass
+
+
+@cli.command(name="state-next-id")
+@loglevel_option
+@click.option(
+    "--after-max",
+    is_flag=True,
+    help="Return max(state_id) + 1 instead of first gap.",
+)
+def state_next_id(after_max: bool):
+    """Print the next available state_id."""
+    from reflex.state import _state_id_registry
+    from reflex.utils import prerequisites
+
+    # Load the user's app to register all state classes
+    prerequisites.get_app()
+
+    if not _state_id_registry:
+        return
+
+    if after_max:
+        # Return max + 1
+        next_id = max(_state_id_registry.keys()) + 1
+    else:
+        # Find first gap starting from 0
+        used_ids = set(_state_id_registry.keys())
+        next_id = 0
+        while next_id in used_ids:
+            next_id += 1
 
 
 def _convert_reflex_loglevel_to_reflex_cli_loglevel(
