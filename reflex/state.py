@@ -42,6 +42,7 @@ from reflex.constants.state import FIELD_MARKER
 from reflex.environment import PerformanceMode, environment
 from reflex.event import (
     BACKGROUND_TASK_MARKER,
+    EVENT_ID_MARKER,
     Event,
     EventHandler,
     EventSpec,
@@ -429,6 +430,9 @@ class BaseState(EvenMoreBasicBaseState):
     # The explicit state ID for minification (None = use full name).
     _state_id: ClassVar[int | None] = None
 
+    # Per-class registry mapping event_id -> event handler name for minification.
+    _event_id_to_name: ClassVar[builtins.dict[int, str]] = {}
+
     # The parent state.
     parent_state: BaseState | None = field(default=None, is_var=False)
 
@@ -711,6 +715,36 @@ class BaseState(EvenMoreBasicBaseState):
             cls.event_handlers[name] = handler
             setattr(cls, name, handler)
 
+        # Build event_id registry and validate uniqueness within this state class
+        cls._event_id_to_name = {}
+        missing_event_ids: list[str] = []
+        for name, fn in events.items():
+            event_id = getattr(fn, EVENT_ID_MARKER, None)
+            if event_id is not None:
+                if event_id in cls._event_id_to_name:
+                    existing_name = cls._event_id_to_name[event_id]
+                    msg = (
+                        f"Duplicate event_id={event_id} in state '{cls.__name__}': "
+                        f"handlers '{existing_name}' and '{name}' cannot share the same event_id."
+                    )
+                    raise StateValueError(msg)
+                cls._event_id_to_name[event_id] = name
+            else:
+                missing_event_ids.append(name)
+
+        # In ENFORCE mode, all event handlers must have event_id
+        from reflex.environment import MinifyMode
+
+        if (
+            environment.REFLEX_MINIFY_EVENTS.get() == MinifyMode.ENFORCE
+            and missing_event_ids
+        ):
+            msg = (
+                f"State '{cls.__name__}' in ENFORCE mode: event handlers "
+                f"{missing_event_ids} are missing required event_id."
+            )
+            raise StateValueError(msg)
+
         # Initialize per-class var dependency tracking.
         cls._var_dependencies = {}
         cls._init_var_dependency_dicts()
@@ -753,6 +787,10 @@ class BaseState(EvenMoreBasicBaseState):
         newfn.__annotations__ = fn.__annotations__
         if mark := getattr(fn, BACKGROUND_TASK_MARKER, None):
             setattr(newfn, BACKGROUND_TASK_MARKER, mark)
+        # Preserve event_id for minification
+        event_id = getattr(fn, EVENT_ID_MARKER, None)
+        if event_id is not None:
+            object.__setattr__(newfn, EVENT_ID_MARKER, event_id)
         return newfn
 
     @staticmethod
@@ -1059,7 +1097,7 @@ class BaseState(EvenMoreBasicBaseState):
         Raises:
             StateValueError: If ENFORCE mode is set and state_id is missing.
         """
-        from reflex.environment import StateMinifyMode
+        from reflex.environment import MinifyMode
         from reflex.utils.exceptions import StateValueError
 
         module = cls.__module__.replace(".", "___")
@@ -1067,14 +1105,14 @@ class BaseState(EvenMoreBasicBaseState):
 
         minify_mode = environment.REFLEX_MINIFY_STATES.get()
 
-        if minify_mode == StateMinifyMode.DISABLED:
+        if minify_mode == MinifyMode.DISABLED:
             return full_name
 
         if cls._state_id is not None:
             return _int_to_minified_name(cls._state_id)
 
         # state_id not set
-        if minify_mode == StateMinifyMode.ENFORCE:
+        if minify_mode == MinifyMode.ENFORCE:
             msg = (
                 f"State '{cls.__module__}.{cls.__name__}' is missing required state_id. "
                 f"Add state_id parameter: class {cls.__name__}(rx.State, state_id=N)"
@@ -1797,6 +1835,25 @@ class BaseState(EvenMoreBasicBaseState):
         )
         return getattr(other_state, var_data.field_name)
 
+    @classmethod
+    def _get_original_event_name(cls, minified_name: str) -> str | None:
+        """Look up the original event handler name from a minified name.
+
+        This is used when the frontend sends back minified event names
+        and the backend needs to find the actual event handler.
+
+        Args:
+            minified_name: The minified event name (e.g., 'a').
+
+        Returns:
+            The original event handler name, or None if not found.
+        """
+        # Build reverse lookup: minified_name -> original_name
+        for event_id, original_name in cls._event_id_to_name.items():
+            if _int_to_minified_name(event_id) == minified_name:
+                return original_name
+        return None
+
     def _get_event_handler(
         self, event: Event
     ) -> tuple[BaseState | StateProxy, EventHandler]:
@@ -1819,7 +1876,17 @@ class BaseState(EvenMoreBasicBaseState):
         if not substate:
             msg = "The value of state cannot be None when processing an event."
             raise ValueError(msg)
-        handler = substate.event_handlers[name]
+
+        # Try to look up the handler directly first
+        handler = substate.event_handlers.get(name)
+        if handler is None:
+            # If not found, the name might be minified - try reverse lookup
+            original_name = substate._get_original_event_name(name)
+            if original_name is not None:
+                handler = substate.event_handlers.get(original_name)
+            if handler is None:
+                msg = f"Event handler '{name}' not found in state '{type(substate).__name__}'"
+                raise KeyError(msg)
 
         # For background tasks, proxy the state
         if handler.is_background:

@@ -446,8 +446,12 @@ def get_event_handler_parts(handler: EventHandler) -> tuple[str, str]:
         handler: The event handler to get the parts of.
 
     Returns:
-        The state and function name.
+        The state and function name (possibly minified based on REFLEX_MINIFY_EVENTS).
     """
+    from reflex.environment import MinifyMode, environment
+    from reflex.event import EVENT_ID_MARKER
+    from reflex.state import State, _int_to_minified_name
+
     # Get the class that defines the event handler.
     parts = handler.fn.__qualname__.split(".")
 
@@ -461,10 +465,15 @@ def get_event_handler_parts(handler: EventHandler) -> tuple[str, str]:
     # Get the function name
     name = parts[-1]
 
-    from reflex.state import State
-
     if state_full_name == FRONTEND_EVENT_STATE and name not in State.__dict__:
         return ("", to_snake_case(handler.fn.__qualname__))
+
+    # Check for event_id minification
+    mode = environment.REFLEX_MINIFY_EVENTS.get()
+    if mode != MinifyMode.DISABLED:
+        event_id = getattr(handler.fn, EVENT_ID_MARKER, None)
+        if event_id is not None:
+            name = _int_to_minified_name(event_id)
 
     return (state_full_name, name)
 
