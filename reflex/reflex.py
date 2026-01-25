@@ -853,14 +853,33 @@ def rename(new_name: str):
 )
 def state_tree(output_json: bool):
     """Print the state tree with state_id's and event handlers with event_id's."""
+    from typing import TypedDict
+
     from reflex.event import EVENT_ID_MARKER
     from reflex.state import BaseState, State, _int_to_minified_name
     from reflex.utils import prerequisites
 
+    class EventHandlerData(TypedDict):
+        """Type for event handler data in state tree."""
+
+        name: str
+        event_id: int | None
+        minified_name: str | None
+
+    class StateTreeData(TypedDict):
+        """Type for state tree data."""
+
+        name: str
+        full_name: str
+        state_id: int | None
+        minified_name: str | None
+        event_handlers: list[EventHandlerData]
+        substates: list[StateTreeData]
+
     # Load the user's app to register all state classes
     prerequisites.get_app()
 
-    def build_state_tree(state_cls: type[BaseState]) -> dict:
+    def build_state_tree(state_cls: type[BaseState]) -> StateTreeData:
         """Recursively build state tree data.
 
         Args:
@@ -901,7 +920,9 @@ def state_tree(output_json: bool):
             "substates": substates,
         }
 
-    def print_state_tree(state_data: dict, prefix: str = "", is_last: bool = True):
+    def print_state_tree(
+        state_data: StateTreeData, prefix: str = "", is_last: bool = True
+    ):
         """Print a state and its children as a tree.
 
         Args:
@@ -912,10 +933,14 @@ def state_tree(output_json: bool):
         state_id = state_data["state_id"]
         minified = state_data["minified_name"]
 
+        # Print the state node
+        connector = "`-- " if is_last else "|-- "
         if state_id is not None:
-            f'{state_data["name"]} (state_id={state_id} -> "{minified}")'
+            console.log(
+                f'{prefix}{connector}{state_data["name"]} (state_id={state_id} -> "{minified}")'
+            )
         else:
-            f"{state_data['name']} (state_id=None)"
+            console.log(f"{prefix}{connector}{state_data['name']} (state_id=None)")
 
         # Calculate new prefix for children
         child_prefix = prefix + ("    " if is_last else "|   ")
@@ -926,15 +951,20 @@ def state_tree(output_json: bool):
         has_substates = len(substates) > 0
 
         if handlers:
+            console.log(f"{child_prefix}|-- Event Handlers:")
             handler_prefix = child_prefix + ("|   " if has_substates else "    ")
             for i, handler in enumerate(handlers):
                 is_last_handler = i == len(handlers) - 1
+                h_connector = "`-- " if is_last_handler else "|-- "
                 event_id = handler["event_id"]
                 if event_id is not None:
-                    _ = (
-                        handler_prefix,
-                        is_last_handler,
-                    )  # silence unused variable warnings
+                    console.log(
+                        f'{handler_prefix}{h_connector}{handler["name"]} (event_id={event_id} -> "{handler["minified_name"]}")'
+                    )
+                else:
+                    console.log(
+                        f"{handler_prefix}{h_connector}{handler['name']} (event_id=None)"
+                    )
 
         # Print substates recursively
         for i, substate in enumerate(substates):
@@ -944,8 +974,11 @@ def state_tree(output_json: bool):
     tree_data = build_state_tree(State)
 
     if output_json:
-        pass
+        import json
+
+        console.log(json.dumps(tree_data, indent=2))
     else:
+        console.log("State Tree")
         print_state_tree(tree_data)
 
 
@@ -975,10 +1008,12 @@ def state_lookup(output_json: bool, minified_path: str):
         try:
             state_id = _minified_name_to_int(part)
         except ValueError as err:
+            console.error(f"Invalid minified name: {part}")
             raise SystemExit(1) from err
 
         state_cls = _state_id_registry.get(state_id)
         if state_cls is None:
+            console.error(f"No state registered with state_id={state_id}")
             raise SystemExit(1)
 
         result_parts.append({
@@ -990,11 +1025,13 @@ def state_lookup(output_json: bool, minified_path: str):
         })
 
     if output_json:
-        pass
+        import json
+
+        console.log(json.dumps(result_parts, indent=2))
     else:
         # Simple output: module.ClassName for each part
-        for _info in result_parts:
-            pass
+        for info in result_parts:
+            console.log(f"{info['module']}.{info['class']}")
 
 
 @cli.command(name="state-next-id")
@@ -1013,6 +1050,7 @@ def state_next_id(after_max: bool):
     prerequisites.get_app()
 
     if not _state_id_registry:
+        console.log("0")
         return
 
     if after_max:
@@ -1024,6 +1062,8 @@ def state_next_id(after_max: bool):
         next_id = 0
         while next_id in used_ids:
             next_id += 1
+
+    console.log(str(next_id))
 
 
 def _convert_reflex_loglevel_to_reflex_cli_loglevel(
