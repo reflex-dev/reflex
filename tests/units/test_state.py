@@ -4459,3 +4459,41 @@ async def test_rebind_mutable_proxy(mock_app: rx.App, token: str) -> None:
         else:
             # In disk/memory mode, the fact that data["b"] was mutated via data["a"] persists.
             assert state.data["b"] == [2, 3]
+
+
+@pytest.mark.asyncio
+async def test_computed_var_cache():
+    eval_counter = 0
+
+    class CachedComputedVarState(BaseState):
+        """A test state with a cached computed var."""
+
+        counter: int = 0
+        base: int = 0
+
+        @rx.var
+        def cv(self) -> int:
+            return self.base
+
+        @rx.var
+        def cv_dep(self) -> int:
+            """A computed var that depends on cv.
+
+            Returns:
+                cv + 1
+            """
+            nonlocal eval_counter
+            eval_counter += 1
+            return self.cv + 1
+
+        @rx.event
+        async def trigger_cv(self) -> None:
+            self.base = 0
+            self.counter += self.cv_dep
+            self.counter += self.cv_dep
+            self.counter += self.cv_dep
+
+    state = CachedComputedVarState()
+    await state.trigger_cv()
+    assert state.counter == 3
+    assert eval_counter == 1
