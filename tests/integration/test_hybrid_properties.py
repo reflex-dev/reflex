@@ -163,8 +163,8 @@ async def test_hybrid_properties(
 
     state = (await hybrid_properties.get_state(token)).substates[state_name]
     assert state is not None
-    assert state.full_name == "John Doe"
-    assert state.has_last_name == "yes"
+    assert state.full_name == "John Doe"  # pyright: ignore[reportAttributeAccessIssue]
+    assert state.has_last_name == "yes"  # pyright: ignore[reportAttributeAccessIssue]
 
     full_name = driver.find_element(By.ID, "full_name")
     assert full_name.text == "full_name: John Doe"
@@ -191,5 +191,5 @@ async def test_hybrid_properties(
 
     state = (await hybrid_properties.get_state(token)).substates[state_name]
     assert state is not None
-    assert state.full_name == "John "
-    assert state.has_last_name == "no"
+    assert state.full_name == "John "  # pyright: ignore[reportAttributeAccessIssue]
+    assert state.has_last_name == "no"  # pyright: ignore[reportAttributeAccessIssue]
