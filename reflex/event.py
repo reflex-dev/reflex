@@ -89,6 +89,7 @@ class Event:
 _EVENT_FIELDS: set[str] = {f.name for f in dataclasses.fields(Event)}
 
 BACKGROUND_TASK_MARKER = "_reflex_background_task"
+EVENT_ACTIONS_MARKER = "_rx_event_actions"
 
 
 @dataclasses.dataclass(
@@ -2311,6 +2312,7 @@ class EventNamespace:
 
     # Constants
     BACKGROUND_TASK_MARKER = BACKGROUND_TASK_MARKER
+    EVENT_ACTIONS_MARKER = EVENT_ACTIONS_MARKER
     _EVENT_FIELDS = _EVENT_FIELDS
     FORM_DATA = FORM_DATA
     upload_files = upload_files
@@ -2461,7 +2463,7 @@ class EventNamespace:
             # Store decorator event actions on the function for later processing
             event_actions = _build_event_actions()
             if event_actions:
-                func._rx_event_actions = event_actions  # pyright: ignore [reportFunctionMemberAccess]
+                setattr(func, EVENT_ACTIONS_MARKER, event_actions)
             return func  # pyright: ignore [reportReturnType]
 
         if func is not None:
