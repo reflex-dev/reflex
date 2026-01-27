@@ -4,8 +4,6 @@ import re
 import sys
 from pathlib import Path
 
-import click
-
 from reflex import constants
 from reflex.config import get_config
 from reflex.utils import console
@@ -57,7 +55,7 @@ def rename_app(new_app_name: str, loglevel: constants.LogLevel):
         loglevel: The log level to use.
 
     Raises:
-        Exit: If the command is not ran in the root dir or the app module cannot be imported.
+        SystemExit: If the command is not ran in the root dir or the app module cannot be imported.
     """
     # Set the log level.
     console.set_log_level(loglevel)
@@ -66,7 +64,7 @@ def rename_app(new_app_name: str, loglevel: constants.LogLevel):
         console.error(
             "No rxconfig.py found. Make sure you are in the root directory of your app."
         )
-        raise click.exceptions.Exit(1)
+        raise SystemExit(1)
 
     sys.path.insert(0, str(Path.cwd()))
 
@@ -74,7 +72,7 @@ def rename_app(new_app_name: str, loglevel: constants.LogLevel):
     module_path = get_module_path(config.module)
     if module_path is None:
         console.error(f"Could not find module {config.module}.")
-        raise click.exceptions.Exit(1)
+        raise SystemExit(1)
 
     console.info(f"Renaming app directory to {new_app_name}.")
     process_directory(

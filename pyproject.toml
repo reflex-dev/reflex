@@ -1,20 +1,20 @@
 [project]
 name = "reflex"
-version = "0.8.7dev1"
+version = "0.8.27dev1"
 description = "Web apps in pure Python."
 license.text = "Apache-2.0"
 authors = [
-  { name = "Nikhil Rao", email = "nikhil@reflex.dev" },
-  { name = "Alek Petuskey", email = "alek@reflex.dev" },
-  { name = "Masen Furer", email = "masen@reflex.dev" },
-  { name = "Elijah Ahianyo", email = "elijahahianyo@gmail.com" },
-  { name = "Thomas Brandeho", email = "thomas@reflex.dev" },
-  { name = "Khaleel Al-Adhami", email = "khaleel@reflex.dev" },
+  { name = "Nikhil Rao" },
+  { name = "Alek Petuskey" },
+  { name = "Masen Furer" },
+  { name = "Elijah Ahianyo" },
+  { name = "Thomas Brandeho" },
+  { name = "Khaleel Al-Adhami" },
 ]
 maintainers = [
-  { name = "Masen Furer", email = "masen@reflex.dev" },
-  { name = "Thomas Brandeho", email = "thomas@reflex.dev" },
-  { name = "Khaleel Al-Adhami", email = "khaleel@reflex.dev" },
+  { name = "Masen Furer" },
+  { name = "Khaleel Al-Adhami" },
+  { email = "maintainers@reflex.dev" },
 ]
 readme = "README.md"
 keywords = ["web", "framework"]
@@ -22,22 +22,21 @@ requires-python = ">=3.10,<4.0"
 dependencies = [
   "alembic >=1.15.2,<2.0",
   "click >=8.2",
-  "granian[reload] >=2.4.0",
-  "httpx >=0.28.0,<1.0",
-  "jinja2 >=3.1.2,<4.0",
-  "packaging >=24.2,<26",
+  "granian[reload] >=2.5.5",
+  "httpx >=0.23.3,<1.0",
+  "packaging >=24.2,<27",
   "platformdirs >=4.3.7,<5.0",
   "psutil >=7.0.0,<8.0; sys_platform == 'win32'",
   "pydantic >=1.10.21,<3.0",
   "python-multipart >=0.0.20,<1.0",
   "python-socketio >=5.12.0,<6.0",
-  "redis >=5.2.1,<7.0",
-  "reflex-hosting-cli >=0.1.54",
+  "redis >=5.2.1,<8.0",
+  "reflex-hosting-cli >=0.1.61",
   "rich >=13,<15",
-  "sqlmodel >=0.0.24,<0.1",
+  "sqlmodel >=0.0.27,<0.1",
   "starlette >=0.47.0",
   "typing_extensions >=4.13.0",
-  "wrapt >=1.17.0,<2.0",
+  "wrapt >=1.17.0,<3.0",
 ]
 
 classifiers = [
@@ -48,12 +47,16 @@ classifiers = [
   "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: 3.12",
   "Programming Language :: Python :: 3.13",
+  "Programming Language :: Python :: 3.14",
 ]
 
 [project.optional-dependencies]
-monitoring = [
-  "pyleak >=0.1.14,<1.0",
+db = [
+  "alembic >=1.15.2,<2.0",
+  "pydantic >=1.10.21,<3.0",
+  "sqlmodel >=0.0.24,<0.1",
 ]
+monitoring = ["pyleak >=0.1.14,<1.0"]
 
 [project.urls]
 homepage = "https://reflex.dev"
@@ -87,7 +90,7 @@ dev = [
   "pytest-cov",
   "pytest-mock",
   "pytest-playwright",
-  "pytest-retry",
+  "pytest-rerunfailures",
   "pytest-split",
   "pytest",
   "python-dotenv",
@@ -120,6 +123,7 @@ reportIncompatibleMethodOverride = false
 target-version = "py310"
 output-format = "concise"
 lint.isort.split-on-trailing-comma = false
+preview = true
 lint.select = ["ALL"]
 lint.ignore = [
   "A",
@@ -131,12 +135,18 @@ lint.ignore = [
   "BLE",
   "C901",
   "COM",
+  "CPY001",
   "D205",
+  "DOC202",
+  "DOC501",
+  "DOC502",
   "DTZ",
   "E501",
   "F403",
   "FBT",
   "FIX",
+  "FURB189",
+  "FURB140",
   "G004",
   "ISC003",
   "PLC",
@@ -146,13 +156,13 @@ lint.ignore = [
   "PT012",
   "PYI",
   "RUF012",
+  "RUF067",
   "S",
   "SLF",
   "SLOT",
   "TC",
   "TD",
   "TRY0",
-  "UP038",
 ]
 lint.pydocstyle.convention = "google"
 lint.flake8-bugbear.extend-immutable-calls = [
@@ -178,6 +188,7 @@ lint.flake8-bugbear.extend-immutable-calls = [
 "*.pyi" = ["D301", "D415", "D417", "D418", "E742", "N", "PGH"]
 "pyi_generator.py" = ["N802"]
 "reflex/constants/*.py" = ["N"]
+"reflex/.templates/apps/blank/code/*" = ["INP001"]
 "*/blank.py" = ["I001"]
 
 [tool.pytest.ini_options]
@@ -233,7 +244,7 @@ fail_fast = true
 
 [[tool.pre-commit.repos]]
 repo = "https://github.com/astral-sh/ruff-pre-commit"
-rev = "v0.12.8"
+rev = "v0.14.13"
 hooks = [
   { id = "ruff-format", args = [
     "reflex",
@@ -265,13 +276,8 @@ hooks = [
 
 [[tool.pre-commit.repos]]
 repo = "https://github.com/RobertCraigie/pyright-python"
-rev = "v1.1.403"
+rev = "v1.1.408"
 hooks = [{ id = "pyright", args = ["reflex", "tests"], language = "system" }]
-
-[[tool.pre-commit.repos]]
-repo = "https://github.com/terrencepreilly/darglint"
-rev = "v1.8.1"
-hooks = [{ id = "darglint", exclude = "^reflex/reflex.py" }]
 
 [[tool.pre-commit.repos]]
 repo = "https://github.com/pre-commit/mirrors-prettier"

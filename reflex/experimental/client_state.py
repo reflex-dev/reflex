@@ -68,9 +68,12 @@ class ClientStateVar(Var):
         Returns:
             The hash of the var.
         """
-        return hash(
-            (self._js_expr, str(self._var_type), self._getter_name, self._setter_name)
-        )
+        return hash((
+            self._js_expr,
+            str(self._var_type),
+            self._getter_name,
+            self._setter_name,
+        ))
 
     @classmethod
     def create(
@@ -141,13 +144,9 @@ class ClientStateVar(Var):
                         .to(list)
                         .to(list)
                     )
-                    + Var.create(
-                        [
-                            Var(
-                                f"(value) => {{ {_client_state_ref(var_name)} = value; }}"
-                            )
-                        ]
-                    ).to(list),
+                    + Var.create([
+                        Var(f"(value) => {{ {_client_state_ref(var_name)} = value; }}")
+                    ]).to(list),
                     ArgsFunctionOperationBuilder.create(
                         args_names=("setter",),
                         return_expr=Var("setter").to(FunctionVar).call(Var(arg_name)),
@@ -167,7 +166,7 @@ class ClientStateVar(Var):
             ] = None
             imports.update(_refs_import)
         return cls(
-            _js_expr="",
+            _js_expr="null",
             _setter_name=setter_name,
             _getter_name=var_name,
             _id_name=id_name,
@@ -221,12 +220,12 @@ class ClientStateVar(Var):
         Returns:
             A special EventChain Var which will set the value when triggered.
         """
-        _var_data = VarData(imports=_refs_import if self._global_ref else {})
+        var_data = VarData(imports=_refs_import if self._global_ref else {})
 
         setter = (
             Var(_client_state_ref(self._setter_name))
             if self._global_ref
-            else Var(self._setter_name, _var_data=_var_data)
+            else Var(self._setter_name, _var_data=var_data)
         ).to(FunctionVar)
 
         if value is not NoValue:
@@ -236,7 +235,7 @@ class ClientStateVar(Var):
 
             setter = ArgsFunctionOperationBuilder.create(
                 # remove patterns of ["*"] from the value_str using regex
-                args_names=(re.sub(r"\[\".*\"\]", "", value_str),)
+                args_names=(re.sub(r"(\?\.)?\[\".*\"\]", "", value_str),)
                 if value_str.startswith("_")
                 else (),
                 return_expr=setter.call(value_var),

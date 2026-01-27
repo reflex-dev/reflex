@@ -24,7 +24,7 @@ def ServerSideEvent():
         def set_value_yield_return(self):
             yield rx.set_value("a", "")
             yield rx.set_value("b", "")
-            return rx.set_value("c", "")
+            return rx.set_value("c", "")  # noqa: B901
 
         @rx.event
         def set_value_return(self):

@@ -21,32 +21,34 @@ import time
 import types
 from collections.abc import AsyncIterator, Callable, Coroutine, Sequence
 from http.server import SimpleHTTPRequestHandler
+from importlib.util import find_spec
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Literal, TypeVar
 
 import uvicorn
+from typing_extensions import Self
 
 import reflex
-import reflex.environment
 import reflex.reflex
 import reflex.utils.build
-import reflex.utils.exec
 import reflex.utils.format
 import reflex.utils.prerequisites
 import reflex.utils.processes
 from reflex.components.component import CustomComponent
 from reflex.config import get_config
 from reflex.environment import environment
+from reflex.istate.manager.disk import StateManagerDisk
+from reflex.istate.manager.memory import StateManagerMemory
+from reflex.istate.manager.redis import StateManagerRedis
 from reflex.state import (
     BaseState,
     StateManager,
-    StateManagerDisk,
-    StateManagerMemory,
-    StateManagerRedis,
+    _split_substate_key,
     reload_state_module,
 )
 from reflex.utils import console, js_runtimes
 from reflex.utils.export import export
+from reflex.utils.token_manager import TokenManager
 from reflex.utils.types import ASGIApp
 
 try:
@@ -130,7 +132,7 @@ class AppHarness:
             Callable[[], None] | types.ModuleType | str | functools.partial[Any] | None
         ) = None,
         app_name: str | None = None,
-    ) -> AppHarness:
+    ) -> Self:
         """Create an AppHarness instance at root.
 
         Args:
@@ -248,14 +250,12 @@ class AppHarness:
             if isinstance(self.app_source, functools.partial):
                 self.app_source = self.app_source.func
             # get the source from a function or module object
-            source_code = "\n".join(
-                [
-                    "\n".join(
-                        self.get_app_global_source(k, v) for k, v in app_globals.items()
-                    ),
-                    self._get_source_from_app_source(self.app_source),
-                ]
-            )
+            source_code = "\n".join([
+                "\n".join([
+                    self.get_app_global_source(k, v) for k, v in app_globals.items()
+                ]),
+                self._get_source_from_app_source(self.app_source),
+            ])
             get_config().loglevel = reflex.constants.LogLevel.INFO
             with chdir(self.app_path):
                 reflex.reflex._init(
@@ -281,15 +281,16 @@ class AppHarness:
                 )
             )
             self.app_asgi = self.app_instance()
-        if self.app_instance and isinstance(
-            self.app_instance._state_manager, StateManagerRedis
-        ):
+        if self.app_instance and self.app_instance._state_manager is not None:
             if self.app_instance._state is None:
                 msg = "State is not set."
                 raise RuntimeError(msg)
-            # Create our own redis connection for testing.
-            self.state_manager = StateManagerRedis.create(self.app_instance._state)
-        else:
+            if isinstance(self.app_instance._state_manager, StateManagerRedis):
+                # Create our own redis connection for testing.
+                self.state_manager = StateManagerRedis.create(self.app_instance._state)
+            elif isinstance(self.app_instance._state_manager, StateManagerDisk):
+                self.state_manager = StateManagerDisk.create(self.app_instance._state)
+        if self.state_manager is None:
             self.state_manager = (
                 self.app_instance._state_manager if self.app_instance else None
             )
@@ -307,8 +308,9 @@ class AppHarness:
 
         async def _shutdown(*args, **kwargs) -> None:
             # ensure redis is closed before event loop
-            if self.app_instance is not None and isinstance(
-                self.app_instance._state_manager, StateManagerRedis
+            if (
+                self.app_instance is not None
+                and self.app_instance._state_manager is not None
             ):
                 with contextlib.suppress(ValueError):
                     await self.app_instance._state_manager.close()
@@ -319,12 +321,13 @@ class AppHarness:
                     await self.app_instance.sio.shutdown()
 
             # sqlalchemy async engine shutdown handler
-            try:
-                async_engine = reflex.model.get_async_engine(None)
-            except ValueError:
-                pass
-            else:
-                await async_engine.dispose()
+            if find_spec("sqlmodel"):
+                try:
+                    async_engine = reflex.model.get_async_engine(None)
+                except ValueError:
+                    pass
+                else:
+                    await async_engine.dispose()
 
             await original_shutdown(*args, **kwargs)
 
@@ -361,14 +364,18 @@ class AppHarness:
         """
         if (
             self.app_instance is not None
+            and self.app_instance._state_manager is not None
+        ):
+            with contextlib.suppress(RuntimeError):
+                await self.app_instance._state_manager.close()
+        if (
+            self.app_instance is not None
             and isinstance(
                 self.app_instance._state_manager,
                 StateManagerRedis,
             )
             and self.app_instance._state is not None
         ):
-            with contextlib.suppress(RuntimeError):
-                await self.app_instance._state_manager.close()
             self.app_instance._state_manager = StateManagerRedis.create(
                 state=self.app_instance._state,
             )
@@ -447,7 +454,7 @@ class AppHarness:
         self.frontend_output_thread = threading.Thread(target=consume_frontend_output)
         self.frontend_output_thread.start()
 
-    def start(self) -> AppHarness:
+    def start(self) -> Self:
         """Start the backend in a new thread and dev frontend as a separate process.
 
         Returns:
@@ -472,11 +479,11 @@ class AppHarness:
         Returns:
             The rendered app global code.
         """
-        if not inspect.isclass(value) and not inspect.isfunction(value):
+        if not isinstance(value, type) and not inspect.isfunction(value):
             return f"{key} = {value!r}"
         return inspect.getsource(value)
 
-    def __enter__(self) -> AppHarness:
+    def __enter__(self) -> Self:
         """Contextmanager protocol for `start()`.
 
         Returns:
@@ -714,11 +721,20 @@ class AppHarness:
         if self.state_manager is None:
             msg = "state_manager is not set."
             raise RuntimeError(msg)
+        if self.app_instance is not None and isinstance(
+            self.app_instance.state_manager, StateManagerDisk
+        ):
+            # Song and dance to convince the instance's state manager to flush
+            # (we can't directly await the _other_ loop's Future)
+            await self.app_instance.state_manager._flush_write_queue()
+        if isinstance(self.state_manager, StateManagerDisk):
+            # Force reload the latest state from disk.
+            client_token, _ = _split_substate_key(token)
+            self.state_manager.states.pop(client_token, None)
         try:
             return await self.state_manager.get_state(token)
         finally:
-            if isinstance(self.state_manager, StateManagerRedis):
-                await self.state_manager.close()
+            await self.state_manager.close()
 
     async def set_state(self, token: str, **kwargs) -> None:
         """Set the state associated with the given token.
@@ -739,8 +755,13 @@ class AppHarness:
         try:
             await self.state_manager.set_state(token, state)
         finally:
-            if isinstance(self.state_manager, StateManagerRedis):
-                await self.state_manager.close()
+            if self.app_instance is not None and isinstance(
+                self.app_instance.state_manager, StateManagerDisk
+            ):
+                # Clear the token from the backend's cache so it will be reloaded.
+                client_token, _ = _split_substate_key(token)
+                self.app_instance.state_manager.states.pop(client_token, None)
+            await self.state_manager.close()
 
     @contextlib.asynccontextmanager
     async def modify_state(self, token: str) -> AsyncIterator[BaseState]:
@@ -762,17 +783,33 @@ class AppHarness:
             msg = "App is not running."
             raise RuntimeError(msg)
         app_state_manager = self.app_instance.state_manager
-        if isinstance(self.state_manager, StateManagerRedis):
+        if isinstance(self.state_manager, (StateManagerRedis, StateManagerDisk)):
             # Temporarily replace the app's state manager with our own, since
-            # the redis connection is on the backend_thread event loop
+            # the redis/disk connection is on the backend_thread event loop
             self.app_instance._state_manager = self.state_manager
         try:
             async with self.app_instance.modify_state(token) as state:
                 yield state
         finally:
-            if isinstance(self.state_manager, StateManagerRedis):
-                self.app_instance._state_manager = app_state_manager
-                await self.state_manager.close()
+            if isinstance(app_state_manager, StateManagerDisk):
+                # Clear the token from the cache so it will be reloaded.
+                client_token, _ = _split_substate_key(token)
+                app_state_manager.states.pop(client_token, None)
+            await self.state_manager.close()
+            self.app_instance._state_manager = app_state_manager
+
+    def token_manager(self) -> TokenManager:
+        """Get the token manager for the app instance.
+
+        Returns:
+            The current token_manager attached to the app's EventNamespace.
+        """
+        assert self.app_instance is not None
+        app_event_namespace = self.app_instance.event_namespace
+        assert app_event_namespace is not None
+        app_token_manager = app_event_namespace._token_manager
+        assert app_token_manager is not None
+        return app_token_manager
 
     def poll_for_content(
         self,
@@ -1008,7 +1045,7 @@ class AppHarnessProd(AppHarness):
             / reflex.constants.Dirs.STATIC
         )
         error_page_map = {
-            404: web_root / "404" / "index.html",
+            404: web_root / "404.html",
         }
         with Subdir404TCPServer(
             ("", 0),

@@ -11,7 +11,8 @@ from reflex.plugins.sitemap import SitemapLink, generate_links_for_sitemap, gene
 def test_generate_xml_empty_links():
     """Test generate_xml with an empty list of links."""
     xml_output = generate_xml([])
-    expected = '<?xml version="1.0" ?>\n<urlset xmlns="https://www.sitemaps.org/schemas/sitemap/0.9"/>\n'
+    expected = """<?xml version='1.0' encoding='utf-8'?>
+<urlset xmlns="https://www.sitemaps.org/schemas/sitemap/0.9" />"""
     assert xml_output == expected
 
 
@@ -19,13 +20,12 @@ def test_generate_xml_single_link_loc_only():
     """Test generate_xml with a single link having only loc."""
     links: list[SitemapLink] = [{"loc": "https://example.com"}]
     xml_output = generate_xml(links)
-    expected = """<?xml version="1.0" ?>
+    expected = """<?xml version='1.0' encoding='utf-8'?>
 <urlset xmlns="https://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
     <loc>https://example.com</loc>
   </url>
-</urlset>
-"""
+</urlset>"""
     assert xml_output == expected
 
 
@@ -47,7 +47,7 @@ def test_generate_xml_multiple_links_all_fields():
         },
     ]
     xml_output = generate_xml(links)
-    expected = """<?xml version="1.0" ?>
+    expected = """<?xml version='1.0' encoding='utf-8'?>
 <urlset xmlns="https://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
     <loc>https://example.com/page1</loc>
@@ -61,8 +61,7 @@ def test_generate_xml_multiple_links_all_fields():
     <lastmod>2023-01-01T00:00:00</lastmod>
     <priority>0.5</priority>
   </url>
-</urlset>
-"""
+</urlset>"""
     assert xml_output == expected
 
 
@@ -239,6 +238,45 @@ def test_generate_links_for_sitemap_404_route(
     mock_warn.assert_called_once_with(
         "Route 404 '404' does not have a 'loc' in sitemap configuration. Skipping."
     )
+
+
+@patch("reflex.config.get_config")
+def test_generate_links_for_sitemap_opt_out(mock_get_config: MagicMock):
+    """Test generate_links_for_sitemap with sitemap set to None.
+
+    Args:
+        mock_get_config: Mock for the get_config function.
+    """
+    mock_get_config.return_value.deploy_url = None  # No deploy URL
+
+    def mock_component():
+        return rx.text("Unlisted")
+
+    pages = [
+        UnevaluatedPage(
+            component=mock_component,
+            route="unlisted",
+            title=None,
+            description=None,
+            image="favicon.ico",
+            on_load=None,
+            meta=[],
+            context={"sitemap": None},
+        ),
+        UnevaluatedPage(
+            component=mock_component,
+            route="listed",
+            title=None,
+            description=None,
+            image="favicon.ico",
+            on_load=None,
+            meta=[],
+            context={},
+        ),
+    ]
+    links = generate_links_for_sitemap(pages)
+    assert len(links) == 1
+    assert {"loc": "/listed"} in links
 
 
 @patch("reflex.config.get_config")

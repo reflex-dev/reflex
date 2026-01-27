@@ -1,8 +1,8 @@
 import json
+from importlib.util import find_spec
 from unittest.mock import MagicMock, Mock
 
 import pytest
-import sqlalchemy.exc
 from pytest_mock import MockerFixture
 from redis.exceptions import RedisError
 
@@ -10,9 +10,13 @@ from reflex.app import health
 from reflex.model import get_db_status
 from reflex.utils.prerequisites import get_redis_status
 
+pytest.importorskip("sqlalchemy")
+
+import sqlalchemy.exc
+
 
 def _get_async_function(func):
-    async def _async_func(*args, **kwargs):
+    async def _async_func(*args, **kwargs):  # noqa: RUF029
         return func(*args, **kwargs)
 
     return _async_func
@@ -49,6 +53,10 @@ async def test_get_redis_status(
     mock_get_redis.assert_called_once()
 
 
+@pytest.mark.skipif(
+    not find_spec("sqlmodel") or not find_spec("pydantici"),
+    reason="sqlmodel not installed or pydantic is not installed",
+)
 @pytest.mark.asyncio
 @pytest.mark.parametrize(
     ("mock_engine", "execute_side_effect", "expected_status"),
@@ -63,7 +71,7 @@ async def test_get_redis_status(
         ),
     ],
 )
-async def test_get_db_status(
+def test_get_db_status(
     mock_engine, execute_side_effect, expected_status, mocker: MockerFixture
 ):
     # Mock get_engine to return the mock_engine
@@ -80,13 +88,17 @@ async def test_get_db_status(
             mock_connection.execute.return_value = None
 
     # Call the function
-    status = await get_db_status()
+    status = get_db_status()
 
     # Verify the result
     assert status == expected_status
     mock_get_engine.assert_called_once()
 
 
+@pytest.mark.skipif(
+    not find_spec("sqlmodel") or not find_spec("pydantic"),
+    reason="sqlmodel not installed or pydantic is not installed",
+)
 @pytest.mark.asyncio
 @pytest.mark.parametrize(
     (
@@ -133,7 +145,7 @@ async def test_health(
         return_value=redis_enabled,
     )
     mocker.patch(
-        "reflex.app.get_db_status",
+        "reflex.model.get_db_status",
         return_value={"db": db_status},
     )
     mocker.patch(

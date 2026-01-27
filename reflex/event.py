@@ -4,7 +4,6 @@ import dataclasses
 import inspect
 import sys
 import types
-import urllib.parse
 from base64 import b64encode
 from collections.abc import Callable, Mapping, Sequence
 from functools import lru_cache, partial
@@ -13,6 +12,7 @@ from typing import (
     Annotated,
     Any,
     Generic,
+    Literal,
     NoReturn,
     Protocol,
     TypeVar,
@@ -25,6 +25,7 @@ from typing import (
 from typing_extensions import Self, TypeAliasType, TypedDict, TypeVarTuple, Unpack
 
 from reflex import constants
+from reflex.components.field import BaseField
 from reflex.constants.compiler import CompileVars, Hooks, Imports
 from reflex.constants.state import FRONTEND_EVENT_STATE
 from reflex.utils import format
@@ -845,6 +846,7 @@ class FileUpload:
 
     upload_id: str | None = None
     on_upload_progress: EventHandler | Callable | None = None
+    extra_headers: dict[str, str] | None = None
 
     @staticmethod
     def on_upload_progress_args_spec(_prog: Var[dict[str, int | float | bool]]):
@@ -872,7 +874,7 @@ class FileUpload:
             upload_files_context_var_data,
         )
 
-        upload_id = self.upload_id or DEFAULT_UPLOAD_ID
+        upload_id = self.upload_id if self.upload_id is not None else DEFAULT_UPLOAD_ID
         spec_args = [
             (
                 Var(_js_expr="files"),
@@ -885,6 +887,12 @@ class FileUpload:
             (
                 Var(_js_expr="upload_id"),
                 LiteralVar.create(upload_id),
+            ),
+            (
+                Var(_js_expr="extra_headers"),
+                LiteralVar.create(
+                    self.extra_headers if self.extra_headers is not None else {}
+                ),
             ),
         ]
         if self.on_upload_progress is not None:
@@ -962,9 +970,29 @@ def server_side(name: str, sig: inspect.Signature, **kwargs) -> EventSpec:
     )
 
 
+@overload
 def redirect(
     path: str | Var[str],
+    *,
+    is_external: Literal[False] = False,
+    replace: bool = False,
+) -> EventSpec: ...
+
+
+@overload
+def redirect(
+    path: str | Var[str],
+    *,
+    is_external: Literal[True],
+    popup: bool = False,
+) -> EventSpec: ...
+
+
+def redirect(
+    path: str | Var[str],
+    *,
     is_external: bool = False,
+    popup: bool = False,
     replace: bool = False,
 ) -> EventSpec:
     """Redirect to a new path.
@@ -972,6 +1000,7 @@ def redirect(
     Args:
         path: The path to redirect to.
         is_external: Whether to open in new tab or not.
+        popup: Whether to open in a new window or not.
         replace: If True, the current page will not create a new history entry.
 
     Returns:
@@ -982,6 +1011,7 @@ def redirect(
         get_fn_signature(redirect),
         path=path,
         external=is_external,
+        popup=popup,
         replace=replace,
     )
 
@@ -1076,7 +1106,8 @@ def scroll_to(elem_id: str, align_to_top: bool | Var[bool] = True) -> EventSpec:
     get_element_by_id = FunctionStringVar.create("document.getElementById")
 
     return run_script(
-        get_element_by_id.call(elem_id)
+        get_element_by_id
+        .call(elem_id)
         .to(ObjectVar)
         .scrollIntoView.to(FunctionVar)
         .call(align_to_top),
@@ -1199,6 +1230,7 @@ def download(
     url: str | Var | None = None,
     filename: str | Var | None = None,
     data: str | bytes | Var | None = None,
+    mime_type: str | Var | None = None,
 ) -> EventSpec:
     """Download the file at a given path or with the specified data.
 
@@ -1206,6 +1238,7 @@ def download(
         url: The URL to the file to download.
         filename: The name that the file should be saved as after download.
         data: The data to download.
+        mime_type: The mime type of the data to download.
 
     Raises:
         ValueError: If the URL provided is invalid, both URL and data are provided,
@@ -1234,9 +1267,15 @@ def download(
             raise ValueError(msg)
 
         if isinstance(data, str):
+            if mime_type is None:
+                mime_type = "text/plain"
             # Caller provided a plain text string to download.
-            url = "data:text/plain," + urllib.parse.quote(data)
+            url = f"data:{mime_type};base64," + b64encode(data.encode("utf-8")).decode(
+                "utf-8"
+            )
         elif isinstance(data, Var):
+            if mime_type is None:
+                mime_type = "text/plain"
             # Need to check on the frontend if the Var already looks like a data: URI.
 
             is_data_url = (data.js_type() == "string") & (
@@ -1247,12 +1286,14 @@ def download(
             url = cond(
                 is_data_url,
                 data.to(str),
-                "data:text/plain," + data.to_string(),
+                f"data:{mime_type}," + data.to_string(),
             )
         elif isinstance(data, bytes):
+            if mime_type is None:
+                mime_type = "application/octet-stream"
             # Caller provided bytes, so base64 encode it as a data: URI.
             b64_data = b64encode(data).decode("utf-8")
-            url = "data:application/octet-stream;base64," + b64_data
+            url = f"data:{mime_type};base64," + b64_data
         else:
             msg = f"Invalid data type {type(data)} for download. Use `str` or `bytes`."
             raise ValueError(msg)
@@ -1641,17 +1682,40 @@ def parse_args_spec(arg_spec: ArgsSpec | Sequence[ArgsSpec]):
     spec = inspect.getfullargspec(arg_spec)
 
     return list(
-        arg_spec(
-            *[
-                Var(f"_{l_arg}").to(
-                    unwrap_var_annotation(
-                        resolve_annotation(annotations[0], l_arg, spec=arg_spec)
-                    )
+        arg_spec(*[
+            Var(f"_{l_arg}").to(
+                unwrap_var_annotation(
+                    resolve_annotation(annotations[0], l_arg, spec=arg_spec)
                 )
-                for l_arg in spec.args
-            ]
-        )
+            )
+            for l_arg in spec.args
+        ])
     ), annotations
+
+
+def args_specs_from_fields(
+    fields_dict: Mapping[str, BaseField],
+) -> dict[str, ArgsSpec | Sequence[ArgsSpec]]:
+    """Get the event triggers and arg specs from the given fields.
+
+    Args:
+        fields_dict: The fields, keyed by name
+
+    Returns:
+        The args spec for any field annotated as EventHandler.
+    """
+    return {
+        name: (
+            metadata[0]
+            if (
+                (metadata := getattr(field.annotated_type, "__metadata__", None))
+                is not None
+            )
+            else no_args_event_spec
+        )
+        for name, field in fields_dict.items()
+        if field.type_origin is EventHandler
+    }
 
 
 def check_fn_match_arg_spec(
@@ -1726,7 +1790,7 @@ def call_event_fn(
     from reflex.event import EventHandler, EventSpec
     from reflex.utils.exceptions import EventHandlerValueError
 
-    parsed_args, event_annotations = parse_args_spec(arg_spec)
+    parsed_args, _ = parse_args_spec(arg_spec)
 
     parameters = inspect.signature(fn).parameters
 
@@ -1810,6 +1874,9 @@ def fix_events(
     # Fix the events created by the handler.
     out = []
     for e in events:
+        if callable(e) and getattr(e, "__name__", "") == "<lambda>":
+            # A lambda was returned, assume the user wants to call it with no args.
+            e = e()
         if isinstance(e, Event):
             # If the event is already an event, append it to the list.
             out.append(e)
@@ -1930,7 +1997,7 @@ class LiteralEventVar(VarOperationCall, LiteralVar, EventVar):
             _var_type=EventSpec,
             _var_data=_var_data,
             _var_value=value,
-            _func=FunctionStringVar("Event"),
+            _func=FunctionStringVar("ReflexEvent"),
             _args=(
                 # event handler name
                 ".".join(
@@ -2322,9 +2389,13 @@ class EventNamespace:
             Returns:
                 Dict of event actions to apply, or empty dict if none specified.
             """
-            if not any(
-                [stop_propagation, prevent_default, throttle, debounce, temporal]
-            ):
+            if not any([
+                stop_propagation,
+                prevent_default,
+                throttle,
+                debounce,
+                temporal,
+            ]):
                 return {}
 
             event_actions = {}
@@ -2406,6 +2477,7 @@ class EventNamespace:
     check_fn_match_arg_spec = staticmethod(check_fn_match_arg_spec)
     resolve_annotation = staticmethod(resolve_annotation)
     parse_args_spec = staticmethod(parse_args_spec)
+    args_specs_from_fields = staticmethod(args_specs_from_fields)
     unwrap_var_annotation = staticmethod(unwrap_var_annotation)
     get_fn_signature = staticmethod(get_fn_signature)
 

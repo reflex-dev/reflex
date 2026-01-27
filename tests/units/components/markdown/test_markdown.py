@@ -146,16 +146,16 @@ def test_create_map_fn_var_subclass(cls, fn_body, fn_args, explicit_return, expe
         (
             "code",
             {},
-            r"""(({node, inline, className, children, ...props}) => { const match = (className || '').match(/language-(?<lang>.*)/); let _language = match ? match[1] : '';  ;             return inline ? (                 jsx(RadixThemesCode,{...props},children,)             ) : (                 jsx(SyntaxHighlighter,{children:((Array.isArray(children)) ? children.join("\n") : children),css:({ ["marginTop"] : "1em", ["marginBottom"] : "1em" }),language:_language,style:((resolvedColorMode === "light") ? oneLight : oneDark),wrapLongLines:true,...props},)             );         })""",
+            r"""(({node, children, ...props}) => (jsx(RadixThemesCode,{...props},children)))""",
         ),
         (
-            "code",
+            "pre",
             {
-                "codeblock": lambda value, **props: ShikiHighLevelCodeBlock.create(
+                "pre": lambda value, **props: ShikiHighLevelCodeBlock.create(
                     value, **props
                 )
             },
-            r"""(({node, inline, className, children, ...props}) => { const match = (className || '').match(/language-(?<lang>.*)/); let _language = match ? match[1] : '';  ;             return inline ? (                 jsx(RadixThemesCode,{...props},children,)             ) : (                 jsx(RadixThemesBox,{css:({ ["pre"] : ({ ["margin"] : "0", ["padding"] : "24px", ["background"] : "transparent", ["overflowX"] : "auto", ["borderRadius"] : "6px" }) }),...props},jsx(ShikiCode,{code:((Array.isArray(children)) ? children.join("\n") : children),decorations:[],language:_language,theme:((resolvedColorMode === "light") ? "one-light" : "one-dark-pro"),transformers:[]},),)             );         })""",
+            r"""(({node, ...rest}) => { const {node: childNode, className, children: components, ...props} = rest.children.props; const children = String(Array.isArray(components) ? components.join('\n') : components).replace(/\n$/, ''); const match = (className || '').match(/language-(?<lang>.*)/); let _language = match ? match[1] : ''; ;             return jsx(RadixThemesBox,{css:({ ["pre"] : ({ ["margin"] : "0", ["padding"] : "24px", ["background"] : "transparent", ["overflowX"] : "auto", ["borderRadius"] : "6px" }) }),...props},jsx(ShikiCode,{code:children,decorations:[],language:_language,theme:((resolvedColorMode?.valueOf?.() === "light"?.valueOf?.()) ? "one-light" : "one-dark-pro"),transformers:[]},));         })""",
         ),
         (
             "h1",
@@ -164,21 +164,17 @@ def test_create_map_fn_var_subclass(cls, fn_body, fn_args, explicit_return, expe
                     Heading.create(value, as_="h1", size="6", margin_y="0.5em")
                 )
             },
-            """(({custom_node, custom_children, custom_props}) => (jsx(CustomMarkdownComponent,{...props},jsx(RadixThemesHeading,{as:"h1",css:({ ["marginTop"] : "0.5em", ["marginBottom"] : "0.5em" }),size:"6"},children,),)))""",
+            """(({custom_node, custom_children, custom_props}) => (jsx(CustomMarkdownComponent,{...props},jsx(RadixThemesHeading,{as:"h1",css:({ ["marginTop"] : "0.5em", ["marginBottom"] : "0.5em" }),size:"6"},children))))""",
         ),
         (
-            "code",
-            {"codeblock": syntax_highlighter_memoized_component(CodeBlock)},
-            r"""(({node, inline, className, children, ...props}) => { const match = (className || '').match(/language-(?<lang>.*)/); let _language = match ? match[1] : '';  ;             return inline ? (                 jsx(RadixThemesCode,{...props},children,)             ) : (                 jsx(CodeBlock,{codeRxMemo:((Array.isArray(children)) ? children.join("\n") : children),languageRxMemo:_language,...props},)             );         })""",
+            "pre",
+            {"pre": syntax_highlighter_memoized_component(CodeBlock)},
+            r"""(({node, ...rest}) => { const {node: childNode, className, children: components, ...props} = rest.children.props; const children = String(Array.isArray(components) ? components.join('\n') : components).replace(/\n$/, ''); const match = (className || '').match(/language-(?<lang>.*)/); let _language = match ? match[1] : ''; ;             return jsx(CodeBlock,{code:children,language:_language,...props},);         })""",
         ),
         (
-            "code",
-            {
-                "codeblock": syntax_highlighter_memoized_component(
-                    ShikiHighLevelCodeBlock
-                )
-            },
-            r"""(({node, inline, className, children, ...props}) => { const match = (className || '').match(/language-(?<lang>.*)/); let _language = match ? match[1] : '';  ;             return inline ? (                 jsx(RadixThemesCode,{...props},children,)             ) : (                 jsx(CodeBlock,{codeRxMemo:((Array.isArray(children)) ? children.join("\n") : children),languageRxMemo:_language,...props},)             );         })""",
+            "pre",
+            {"pre": syntax_highlighter_memoized_component(ShikiHighLevelCodeBlock)},
+            r"""(({node, ...rest}) => { const {node: childNode, className, children: components, ...props} = rest.children.props; const children = String(Array.isArray(components) ? components.join('\n') : components).replace(/\n$/, ''); const match = (className || '').match(/language-(?<lang>.*)/); let _language = match ? match[1] : ''; ;             return jsx(CodeBlock,{code:children,language:_language,...props},);         })""",
         ),
     ],
 )

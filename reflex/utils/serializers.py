@@ -12,15 +12,13 @@ import warnings
 from collections.abc import Callable, Mapping, Sequence
 from datetime import date, datetime, time, timedelta
 from enum import Enum
+from importlib.util import find_spec
 from pathlib import Path
 from typing import Any, Literal, TypeVar, get_type_hints, overload
 from uuid import UUID
 
-from pydantic import BaseModel as BaseModelV2
-from pydantic.v1 import BaseModel as BaseModelV1
-
 from reflex.base import Base
-from reflex.constants.colors import Color, format_color
+from reflex.constants.colors import Color
 from reflex.utils import console, types
 
 # Mapping from type to a serializer.
@@ -139,7 +137,7 @@ def serialize(value: Any) -> SerializedType | None: ...
 
 def serialize(
     value: Any, get_type: bool = False
-) -> SerializedType | None | tuple[SerializedType | None, types.GenericType | None]:
+) -> SerializedType | tuple[SerializedType | None, types.GenericType | None] | None:
     """Serialize the value to a JSON string.
 
     Args:
@@ -187,7 +185,7 @@ def get_serializer(type_: type) -> Serializer | None:
 
     # If the type is not registered, check if it is a subclass of a registered type.
     for registered_type, serializer in reversed(SERIALIZERS.items()):
-        if types._issubclass(type_, registered_type):
+        if issubclass(type_, registered_type):
             return serializer
 
     # If there is no serializer, return None.
@@ -211,7 +209,7 @@ def get_serializer_type(type_: type) -> type | None:
 
     # If the type is not registered, check if it is a subclass of a registered type.
     for registered_type, serializer in reversed(SERIALIZER_TYPES.items()):
-        if types._issubclass(type_, registered_type):
+        if issubclass(type_, registered_type):
             return serializer
 
     # If there is no serializer, return None.
@@ -244,11 +242,11 @@ def can_serialize(type_: type, into_type: type | None = None) -> bool:
     Returns:
         Whether there is a serializer for the type.
     """
-    return has_serializer(type_, into_type) or (
+    return (
         isinstance(type_, type)
         and dataclasses.is_dataclass(type_)
         and (into_type is None or into_type is dict)
-    )
+    ) or has_serializer(type_, into_type)
 
 
 @serializer(to=str)
@@ -281,24 +279,13 @@ def serialize_base(value: Base) -> dict:
     }
 
 
-@serializer(to=dict)
-def serialize_base_model_v1(model: BaseModelV1) -> dict:
-    """Serialize a pydantic v1 BaseModel instance.
-
-    Args:
-        model: The BaseModel to serialize.
-
-    Returns:
-        The serialized BaseModel.
-    """
-    return model.dict()
-
-
-if BaseModelV1 is not BaseModelV2:
+if find_spec("pydantic"):
+    from pydantic import BaseModel as BaseModelV2
+    from pydantic.v1 import BaseModel as BaseModelV1
 
     @serializer(to=dict)
-    def serialize_base_model_v2(model: BaseModelV2) -> dict:
-        """Serialize a pydantic v2 BaseModel instance.
+    def serialize_base_model_v1(model: BaseModelV1) -> dict:
+        """Serialize a pydantic v1 BaseModel instance.
 
         Args:
             model: The BaseModel to serialize.
@@ -306,7 +293,21 @@ if BaseModelV1 is not BaseModelV2:
         Returns:
             The serialized BaseModel.
         """
-        return model.model_dump()
+        return model.dict()
+
+    if BaseModelV1 is not BaseModelV2:
+
+        @serializer(to=dict)
+        def serialize_base_model_v2(model: BaseModelV2) -> dict:
+            """Serialize a pydantic v2 BaseModel instance.
+
+            Args:
+                model: The BaseModel to serialize.
+
+            Returns:
+                The serialized BaseModel.
+            """
+            return model.model_dump()
 
 
 @serializer
@@ -423,7 +424,7 @@ def serialize_color(color: Color) -> str:
     Returns:
         The serialized color.
     """
-    return format_color(color.color, color.shade, color.alpha)
+    return color.__format__("")
 
 
 with contextlib.suppress(ImportError):

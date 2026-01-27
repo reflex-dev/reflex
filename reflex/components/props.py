@@ -9,6 +9,7 @@ from typing import Any, TypeVar, get_args, get_origin
 from typing_extensions import dataclass_transform
 
 from reflex.components.field import BaseField, FieldBasedMeta
+from reflex.event import EventChain, args_specs_from_fields
 from reflex.utils import format
 from reflex.utils.exceptions import InvalidPropValueError
 from reflex.utils.serializers import serializer
@@ -267,6 +268,20 @@ class PropsBase(metaclass=PropsBaseMeta):
                     setattr(self, field_name, field.default_factory())
                 # Note: Fields with no default and no factory remain unset (required fields)
 
+        # Convert EventHandler to EventChain
+        args_specs = args_specs_from_fields(self.get_fields())
+        for handler_name, args_spec in args_specs.items():
+            if (handler := getattr(self, handler_name, None)) is not None:
+                setattr(
+                    self,
+                    handler_name,
+                    EventChain.create(
+                        value=handler,
+                        args_spec=args_spec,
+                        key=handler_name,
+                    ),
+                )
+
     @classmethod
     def get_fields(cls) -> dict[str, Any]:
         """Get the fields of the object.
@@ -286,9 +301,9 @@ class PropsBase(metaclass=PropsBaseMeta):
         Returns:
             The object as a Javascript Object literal.
         """
-        return LiteralObjectVar.create(
-            {format.to_camel_case(key): value for key, value in self.dict().items()}
-        ).json()
+        return LiteralObjectVar.create({
+            format.to_camel_case(key): value for key, value in self.dict().items()
+        }).json()
 
     def dict(
         self,

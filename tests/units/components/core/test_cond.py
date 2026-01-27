@@ -42,7 +42,7 @@ def test_validate_cond(cond_state: BaseState):
         cond_state: A fixture.
     """
     cond_component = cond(
-        cond_state.value,
+        cond_state.value,  # pyright: ignore[reportAttributeAccessIssue]
         Text.create("cond is True"),
         Text.create("cond is False"),
     )
@@ -50,7 +50,7 @@ def test_validate_cond(cond_state: BaseState):
     assert cond_dict["name"] == "Fragment"
 
     [condition] = cond_dict["children"]
-    assert condition["cond_state"] == str(cond_state.value.bool())
+    assert condition["cond_state"] == str(cond_state.value.bool())  # pyright: ignore[reportAttributeAccessIssue]
 
     # true value
     true_value = condition["true_value"]

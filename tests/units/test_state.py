@@ -17,8 +17,6 @@ from unittest.mock import AsyncMock, Mock
 import pytest
 import pytest_asyncio
 from plotly.graph_objects import Figure
-from pydantic import BaseModel as BaseModelV2
-from pydantic.v1 import BaseModel as BaseModelV1
 from pytest_mock import MockerFixture
 
 import reflex as rx
@@ -28,16 +26,16 @@ from reflex.app import App
 from reflex.base import Base
 from reflex.constants import CompileVars, RouteVar, SocketEvent
 from reflex.constants.state import FIELD_MARKER
+from reflex.environment import environment
 from reflex.event import Event, EventHandler
-from reflex.istate.manager import (
-    LockExpiredError,
-    StateManager,
-    StateManagerDisk,
-    StateManagerMemory,
-    StateManagerRedis,
-)
+from reflex.istate.data import HeaderData, _FrozenDictStrStr
+from reflex.istate.manager import StateManager
+from reflex.istate.manager.disk import StateManagerDisk
+from reflex.istate.manager.memory import StateManagerMemory
+from reflex.istate.manager.redis import StateManagerRedis
 from reflex.state import (
     BaseState,
+    ImmutableMutableProxy,
     ImmutableStateError,
     MutableProxy,
     OnLoadInternalState,
@@ -51,16 +49,26 @@ from reflex.testing import chdir
 from reflex.utils import format, prerequisites, types
 from reflex.utils.exceptions import (
     InvalidLockWarningThresholdError,
+    LockExpiredError,
     ReflexRuntimeError,
     SetUndefinedStateVarError,
     StateSerializationError,
     UnretrievableVarValueError,
 )
 from reflex.utils.format import json_dumps
-from reflex.vars.base import Var, computed_var
-from tests.units.states.mutation import MutableSQLAModel, MutableTestState
+from reflex.utils.token_manager import SocketRecord
+from reflex.vars.base import Field, Var, computed_var, field
+from tests.units.mock_redis import mock_redis
 
 from .states import GenState
+
+pytest.importorskip("pydantic")
+
+
+from pydantic import BaseModel as BaseModelV2
+from pydantic.v1 import BaseModel as BaseModelV1
+
+from tests.units.states.mutation import MutableTestState
 
 CI = bool(os.environ.get("CI", False))
 LOCK_EXPIRATION = 2500 if CI else 300
@@ -107,17 +115,24 @@ class Object(Base):
     prop2: str = "hello"
 
 
-class TestState(BaseState):
+class TestMixin(BaseState, mixin=True):
+    """A test mixin."""
+
+    mixin: rx.Field[str] = rx.field("mixin_value")
+    _mixin_backend: rx.Field[int] = rx.field(default_factory=lambda: 10)
+
+
+class TestState(TestMixin, BaseState):  # pyright: ignore[reportUnsafeMultipleInheritance]
     """A test state."""
 
     # Set this class as not test one
     __test__ = False
 
     num1: rx.Field[int]
-    num2: float = 3.14
+    num2: float = 3.15
     key: str
     map_key: str = "a"
-    array: list[float] = [1, 2, 3.14]
+    array: list[float] = [1, 2, 3.15]
     mapping: rx.Field[dict[str, list[int]]] = rx.field({"a": [1, 2, 3], "b": [4, 5, 6]})
     obj: Object = Object()
     complex: dict[int, Object] = {1: Object(), 2: Object()}
@@ -293,12 +308,12 @@ def test_base_class_vars(test_state):
     fields = test_state.get_fields()
     cls = type(test_state)
 
-    for field in fields:
-        if field.startswith("_") or field in cls.get_skip_vars():
+    for field_name in fields:
+        if field_name.startswith("_") or field_name in cls.get_skip_vars():
             continue
-        prop = getattr(cls, field)
+        prop = getattr(cls, field_name)
         assert isinstance(prop, Var)
-        assert prop._js_expr.split(".")[-1] == field + FIELD_MARKER
+        assert prop._js_expr.split(".")[-1] == field_name + FIELD_MARKER
 
     assert cls.num1._var_type is int
     assert cls.num2._var_type is float
@@ -339,6 +354,7 @@ def test_class_vars(test_state):
         "fig",
         "dt",
         "asynctest",
+        "mixin",
     }
 
 
@@ -364,17 +380,21 @@ def test_event_handlers(test_state):
     assert all(key in cls.event_handlers for key in expected_keys)
 
 
-def test_default_value(test_state):
+def test_default_value(test_state: TestState):
     """Test that the default value of a var is correct.
 
     Args:
         test_state: A state.
     """
     assert test_state.num1 == 0
-    assert test_state.num2 == 3.14
+    assert test_state.num2 == 3.15
     assert test_state.key == ""
-    assert test_state.sum == 3.14
+    assert test_state.sum == 3.15
     assert test_state.upper == ""
+    assert test_state._backend == 0
+    assert test_state.mixin == "mixin_value"
+    assert test_state._mixin_backend == 10
+    assert test_state.array == [1, 2, 3.15]
 
 
 def test_computed_vars(test_state):
@@ -431,29 +451,29 @@ def test_class_indexing_with_vars():
     prop = TestState.array[TestState.num1]  # pyright: ignore [reportCallIssue, reportArgumentType]
     assert (
         str(prop)
-        == f"{TestState.get_name()}.array{FIELD_MARKER}.at({TestState.get_name()}.num1{FIELD_MARKER})"
+        == f"{TestState.get_name()}.array{FIELD_MARKER}?.at?.({TestState.get_name()}.num1{FIELD_MARKER})"
     )
 
     prop = TestState.mapping["a"][TestState.num1]  # pyright: ignore [reportCallIssue, reportArgumentType]
     assert (
         str(prop)
-        == f'{TestState.get_name()}.mapping{FIELD_MARKER}["a"].at({TestState.get_name()}.num1{FIELD_MARKER})'
+        == f'{TestState.get_name()}.mapping{FIELD_MARKER}?.["a"]?.at?.({TestState.get_name()}.num1{FIELD_MARKER})'
     )
 
     prop = TestState.mapping[TestState.map_key]
     assert (
         str(prop)
-        == f"{TestState.get_name()}.mapping{FIELD_MARKER}[{TestState.get_name()}.map_key{FIELD_MARKER}]"
+        == f"{TestState.get_name()}.mapping{FIELD_MARKER}?.[{TestState.get_name()}.map_key{FIELD_MARKER}]"
     )
 
 
 def test_class_attributes():
     """Test that we can get class attributes."""
     prop = TestState.obj.prop1
-    assert str(prop) == f'{TestState.get_name()}.obj{FIELD_MARKER}["prop1"]'
+    assert str(prop) == f'{TestState.get_name()}.obj{FIELD_MARKER}?.["prop1"]'
 
     prop = TestState.complex[1].prop1
-    assert str(prop) == f'{TestState.get_name()}.complex{FIELD_MARKER}[1]["prop1"]'
+    assert str(prop) == f'{TestState.get_name()}.complex{FIELD_MARKER}?.[1]?.["prop1"]'
 
 
 def test_get_parent_state():
@@ -508,20 +528,19 @@ def test_get_class_substate():
         ChildState.get_class_substate((GrandchildState.get_name(),)) == GrandchildState
     )
     assert (
-        TestState.get_class_substate(
-            (ChildState.get_name(), GrandchildState.get_name())
-        )
+        TestState.get_class_substate((
+            ChildState.get_name(),
+            GrandchildState.get_name(),
+        ))
         == GrandchildState
     )
     with pytest.raises(ValueError):
         TestState.get_class_substate(("invalid_child",))
     with pytest.raises(ValueError):
-        TestState.get_class_substate(
-            (
-                ChildState.get_name(),
-                "invalid_child",
-            )
-        )
+        TestState.get_class_substate((
+            ChildState.get_name(),
+            "invalid_child",
+        ))
 
 
 def test_get_class_var():
@@ -533,9 +552,11 @@ def test_get_class_var():
     assert TestState.get_class_var((ChildState.get_name(), "value")).equals(
         ChildState.value
     )
-    assert TestState.get_class_var(
-        (ChildState.get_name(), GrandchildState.get_name(), "value2")
-    ).equals(
+    assert TestState.get_class_var((
+        ChildState.get_name(),
+        GrandchildState.get_name(),
+        "value2",
+    )).equals(
         GrandchildState.value2,
     )
     assert ChildState.get_class_var((GrandchildState.get_name(), "value2")).equals(
@@ -544,12 +565,10 @@ def test_get_class_var():
     with pytest.raises(ValueError):
         TestState.get_class_var(("invalid_var",))
     with pytest.raises(ValueError):
-        TestState.get_class_var(
-            (
-                ChildState.get_name(),
-                "invalid_var",
-            )
-        )
+        TestState.get_class_var((
+            ChildState.get_name(),
+            "invalid_var",
+        ))
 
 
 def test_set_class_var():
@@ -661,9 +680,11 @@ def test_get_substate(test_state, child_state, child_state2, grandchild_state):
     with pytest.raises(ValueError):
         test_state.get_substate((ChildState.get_name(), "invalid"))
     with pytest.raises(ValueError):
-        test_state.get_substate(
-            (ChildState.get_name(), GrandchildState.get_name(), "invalid")
-        )
+        test_state.get_substate((
+            ChildState.get_name(),
+            GrandchildState.get_name(),
+            "invalid",
+        ))
 
 
 def test_set_dirty_var(test_state):
@@ -731,7 +752,7 @@ def test_set_dirty_substate(
     assert grandchild_state.dirty_vars == set()
 
 
-def test_reset(test_state, child_state):
+def test_reset(test_state: TestState, child_state: ChildState):
     """Test resetting the state.
 
     Args:
@@ -749,7 +770,7 @@ def test_reset(test_state, child_state):
 
     # The values should be reset.
     assert test_state.num1 == 0
-    assert test_state.num2 == 3.14
+    assert test_state.num2 == 3.15
     assert test_state._backend == 0
     assert child_state.value == ""
 
@@ -767,6 +788,8 @@ def test_reset(test_state, child_state):
         "mapping",
         "dt",
         "_backend",
+        "mixin",
+        "_mixin_backend",
         "asynctest",
     }
 
@@ -800,7 +823,7 @@ async def test_process_event_simple(test_state):
         assert update.delta == {
             TestState.get_full_name(): {
                 "num1" + FIELD_MARKER: 69,
-                "sum" + FIELD_MARKER: 72.14,
+                "sum" + FIELD_MARKER: 72.15,
             },
             GrandchildState3.get_full_name(): {"computed" + FIELD_MARKER: ""},
         }
@@ -904,7 +927,11 @@ def test_get_sid(test_state, router_data):
     assert test_state.router.session.session_id == "9fpxSzPb9aFMb4wFAAAH"
 
 
-def test_get_headers(test_state, router_data, router_data_headers):
+def test_get_headers(
+    test_state: TestState,
+    router_data: dict[str, str | dict],
+    router_data_headers: dict[str, str],
+):
     """Test getting client headers.
 
     Args:
@@ -915,13 +942,10 @@ def test_get_headers(test_state, router_data, router_data_headers):
     print(router_data_headers)
     test_state.router = RouterData.from_router_data(router_data)
     print(test_state.router.headers)
-    assert dataclasses.asdict(test_state.router.headers) == {
-        format.to_snake_case(k): v for k, v in router_data_headers.items()
-    } | {
-        "raw_headers": {
-            "_data": tuple(sorted((k, v) for k, v in router_data_headers.items()))
-        }
-    }
+    assert test_state.router.headers == HeaderData(
+        **{format.to_snake_case(k): v for k, v in router_data_headers.items()},
+        raw_headers=_FrozenDictStrStr(**router_data_headers),
+    )
 
 
 def test_get_client_ip(test_state, router_data):
@@ -962,21 +986,20 @@ def test_add_var():
     # Existing instances get the BaseVar
     assert ds1.dynamic_int.equals(DynamicState.dynamic_int)  # pyright: ignore [reportAttributeAccessIssue]
     # New instances get an actual value with the default
-    assert DynamicState().dynamic_int == 42
+    assert DynamicState().dynamic_int == 42  # pyright: ignore[reportAttributeAccessIssue]
 
     ds1.add_var("dynamic_list", list[int], [5, 10])
     assert ds1.dynamic_list.equals(DynamicState.dynamic_list)  # pyright: ignore [reportAttributeAccessIssue]
     ds2 = DynamicState()
-    assert ds2.dynamic_list == [5, 10]
-    ds2.dynamic_list.append(15)
-    assert ds2.dynamic_list == [5, 10, 15]
-    assert DynamicState().dynamic_list == [5, 10]
+    assert ds2.dynamic_list == [5, 10]  # pyright: ignore[reportAttributeAccessIssue]
+    ds2.dynamic_list.append(15)  # pyright: ignore[reportAttributeAccessIssue]
+    assert ds2.dynamic_list == [5, 10, 15]  # pyright: ignore[reportAttributeAccessIssue]
+    assert DynamicState().dynamic_list == [5, 10]  # pyright: ignore[reportAttributeAccessIssue]
 
     ds1.add_var("dynamic_dict", dict[str, int], {"k1": 5, "k2": 10})
     assert ds1.dynamic_dict.equals(DynamicState.dynamic_dict)  # pyright: ignore [reportAttributeAccessIssue]
     assert ds2.dynamic_dict.equals(DynamicState.dynamic_dict)  # pyright: ignore [reportAttributeAccessIssue]
-    assert DynamicState().dynamic_dict == {"k1": 5, "k2": 10}
-    assert DynamicState().dynamic_dict == {"k1": 5, "k2": 10}
+    assert DynamicState().dynamic_dict == {"k1": 5, "k2": 10}  # pyright: ignore[reportAttributeAccessIssue]
 
 
 def test_add_var_default_handlers(test_state):
@@ -1169,6 +1192,7 @@ def test_child_state():
     ms = MainState()
     cs = ms.substates[ChildState.get_name()]
     assert ms.v == 2
+    assert isinstance(cs, ChildState)
     assert cs.v == 2
     assert cs.rendered_var == 2
 
@@ -1247,11 +1271,15 @@ def test_event_handlers_call_other_handlers():
     assert ms.v == 1
 
     # ensure handler can be called from substate
-    ms.substates[SubState.get_name()].set_v3(2)
+    sub_state = ms.substates[SubState.get_name()]
+    assert isinstance(sub_state, SubState)
+    sub_state.set_v3(2)
     assert ms.v == 2
 
     # ensure handler can be called from substate (referencing grandparent handler)
-    ms.get_substate(tuple(SubSubState.get_full_name().split("."))).set_v4(3)
+    sub_sub_state = ms.get_substate(tuple(SubSubState.get_full_name().split(".")))
+    assert isinstance(sub_sub_state, SubSubState)
+    sub_sub_state.set_v4(3)
     assert ms.v == 3
 
 
@@ -1526,6 +1554,16 @@ def test_backend_method():
     assert bms._be_method()
 
 
+@pytest.fixture
+def mutable_state() -> MutableTestState:
+    """Create a Test state containing mutable types.
+
+    Returns:
+        A state object.
+    """
+    return MutableTestState()
+
+
 def test_setattr_of_mutable_types(mutable_state: MutableTestState):
     """Test that mutable types are converted to corresponding Reflex wrappers.
 
@@ -1535,7 +1573,6 @@ def test_setattr_of_mutable_types(mutable_state: MutableTestState):
     array = mutable_state.array
     hashmap = mutable_state.hashmap
     test_set = mutable_state.test_set
-    sqla_model = mutable_state.sqla_model
 
     assert isinstance(array, MutableProxy)
     assert isinstance(array, list)
@@ -1567,21 +1604,11 @@ def test_setattr_of_mutable_types(mutable_state: MutableTestState):
     assert isinstance(mutable_state.custom.test_set, set)
     assert isinstance(mutable_state.custom.custom, MutableProxy)
 
-    assert isinstance(sqla_model, MutableProxy)
-    assert isinstance(sqla_model, MutableSQLAModel)
-    assert isinstance(sqla_model.strlist, MutableProxy)
-    assert isinstance(sqla_model.strlist, list)
-    assert isinstance(sqla_model.hashmap, MutableProxy)
-    assert isinstance(sqla_model.hashmap, dict)
-    assert isinstance(sqla_model.test_set, MutableProxy)
-    assert isinstance(sqla_model.test_set, set)
-
     mutable_state.reassign_mutables()
 
     array = mutable_state.array
     hashmap = mutable_state.hashmap
     test_set = mutable_state.test_set
-    sqla_model = mutable_state.sqla_model
 
     assert isinstance(array, MutableProxy)
     assert isinstance(array, list)
@@ -1600,15 +1627,6 @@ def test_setattr_of_mutable_types(mutable_state: MutableTestState):
     assert isinstance(test_set, MutableProxy)
     assert isinstance(test_set, set)
 
-    assert isinstance(sqla_model, MutableProxy)
-    assert isinstance(sqla_model, MutableSQLAModel)
-    assert isinstance(sqla_model.strlist, MutableProxy)
-    assert isinstance(sqla_model.strlist, list)
-    assert isinstance(sqla_model.hashmap, MutableProxy)
-    assert isinstance(sqla_model.hashmap, dict)
-    assert isinstance(sqla_model.test_set, MutableProxy)
-    assert isinstance(sqla_model.test_set, set)
-
 
 def test_error_on_state_method_shadow():
     """Test that an error is thrown when an event handler shadows a state method."""
@@ -1625,7 +1643,7 @@ def test_error_on_state_method_shadow():
 
 
 @pytest.mark.asyncio
-async def test_state_with_invalid_yield(capsys, mock_app):
+async def test_state_with_invalid_yield(capsys: pytest.CaptureFixture[str], mock_app):
     """Test that an error is thrown when a state yields an invalid value.
 
     Args:
@@ -1664,7 +1682,7 @@ async def test_state_with_invalid_yield(capsys, mock_app):
             token="",
         )
     captured = capsys.readouterr()
-    assert "must only return/yield: None, Events or other EventHandlers" in captured.out
+    assert "must only return/yield: None, Events or other EventHandlers" in captured.err
 
 
 @pytest_asyncio.fixture(
@@ -1682,7 +1700,7 @@ async def state_manager(request) -> AsyncGenerator[StateManager, None]:
     state_manager = StateManager.create(state=TestState)
     if request.param == "redis":
         if not isinstance(state_manager, StateManagerRedis):
-            pytest.skip("Test requires redis")
+            state_manager = StateManagerRedis(state=TestState, redis=mock_redis())
     elif request.param == "disk":
         # explicitly NOT using redis
         state_manager = StateManagerDisk(state=TestState)
@@ -1693,8 +1711,7 @@ async def state_manager(request) -> AsyncGenerator[StateManager, None]:
 
     yield state_manager
 
-    if isinstance(state_manager, StateManagerRedis):
-        await state_manager.close()
+    await state_manager.close()
 
 
 @pytest.fixture
@@ -1729,9 +1746,14 @@ async def test_state_manager_modify_state(
             assert token in state_manager._states_locks
             assert state_manager._states_locks[token].locked()
         # Should be able to write proxy objects inside mutables
+        assert isinstance(state, TestState)
         complex_1 = state.complex[1]
         assert isinstance(complex_1, MutableProxy)
         state.complex[3] = complex_1
+
+    if environment.REFLEX_OPLOCK_ENABLED.get():
+        await state_manager.close()
+
     # lock should be dropped after exiting the context
     if isinstance(state_manager, StateManagerRedis):
         assert (await state_manager.redis.get(f"{token}_lock")) is None
@@ -1744,6 +1766,8 @@ async def test_state_manager_modify_state(
         assert not sm2._states_locks
         if state_manager._states_locks:
             assert sm2._states_locks != state_manager._states_locks
+
+        await sm2.close()
 
 
 @pytest.mark.asyncio
@@ -1766,6 +1790,7 @@ async def test_state_manager_contend(
     async def _coro():
         async with state_manager.modify_state(substate_token) as state:
             await asyncio.sleep(0.01)
+            assert isinstance(state, TestState)
             state.num1 += 1
 
     tasks = [asyncio.create_task(_coro()) for _ in range(n_coroutines)]
@@ -1773,7 +1798,12 @@ async def test_state_manager_contend(
     for f in asyncio.as_completed(tasks):
         await f
 
-    assert (await state_manager.get_state(substate_token)).num1 == exp_num1
+    if environment.REFLEX_OPLOCK_ENABLED.get():
+        await state_manager.close()
+
+    test_state = await state_manager.get_state(substate_token)
+    assert isinstance(test_state, TestState)
+    assert test_state.num1 == exp_num1
 
     if isinstance(state_manager, StateManagerRedis):
         assert (await state_manager.redis.get(f"{token}_lock")) is None
@@ -1792,7 +1822,8 @@ async def state_manager_redis() -> AsyncGenerator[StateManager, None]:
     state_manager = StateManager.create(TestState)
 
     if not isinstance(state_manager, StateManagerRedis):
-        pytest.skip("Test requires redis")
+        # Create a mocked redis client instead of skipping.
+        state_manager = StateManagerRedis(state=TestState, redis=mock_redis())
 
     yield state_manager
 
@@ -1827,12 +1858,35 @@ async def test_state_manager_lock_expire(
     state_manager_redis.lock_expiration = LOCK_EXPIRATION
     state_manager_redis.lock_warning_threshold = LOCK_WARNING_THRESHOLD
 
+    loop_exception = None
+
+    def loop_exception_handler(loop, context):
+        """Catch the LockExpiredError from the event loop.
+
+        Args:
+            loop: The event loop.
+            context: The exception context.
+        """
+        nonlocal loop_exception
+        loop_exception = context["exception"]
+
+    asyncio.get_event_loop().set_exception_handler(loop_exception_handler)
+
     async with state_manager_redis.modify_state(substate_token_redis):
         await asyncio.sleep(0.01)
 
-    with pytest.raises(LockExpiredError):
+    if environment.REFLEX_OPLOCK_ENABLED.get():
         async with state_manager_redis.modify_state(substate_token_redis):
             await asyncio.sleep(LOCK_EXPIRE_SLEEP)
+        await asyncio.sleep(LOCK_EXPIRE_SLEEP)
+        assert loop_exception is not None
+        with pytest.raises(LockExpiredError):
+            raise loop_exception
+    else:
+        with pytest.raises(LockExpiredError):
+            async with state_manager_redis.modify_state(substate_token_redis):
+                await asyncio.sleep(LOCK_EXPIRE_SLEEP)
+        assert loop_exception is None
 
 
 @pytest.mark.asyncio
@@ -1852,6 +1906,20 @@ async def test_state_manager_lock_expire_contend(
     state_manager_redis.lock_expiration = LOCK_EXPIRATION
     state_manager_redis.lock_warning_threshold = LOCK_WARNING_THRESHOLD
 
+    loop_exception = None
+
+    def loop_exception_handler(loop, context):
+        """Catch the LockExpiredError from the event loop.
+
+        Args:
+            loop: The event loop.
+            context: The exception context.
+        """
+        nonlocal loop_exception
+        loop_exception = context["exception"]
+
+    asyncio.get_event_loop().set_exception_handler(loop_exception_handler)
+
     order = []
     waiter_event = asyncio.Event()
 
@@ -1866,19 +1934,33 @@ async def test_state_manager_lock_expire_contend(
         await waiter_event.wait()
         async with state_manager_redis.modify_state(substate_token_redis) as state:
             order.append("waiter")
-            assert state.num1 != unexp_num1
             state.num1 = exp_num1
 
     tasks = [
         asyncio.create_task(_coro_blocker()),
         asyncio.create_task(_coro_waiter()),
     ]
-    with pytest.raises(LockExpiredError):
-        await tasks[0]
-    await tasks[1]
+    if environment.REFLEX_OPLOCK_ENABLED.get():
+        await tasks[0]  # Doesn't raise during `modify_state`, only on exit
+        await tasks[1]
+        await asyncio.sleep(LOCK_EXPIRE_SLEEP)
+        assert loop_exception is not None
+        with pytest.raises(LockExpiredError):
+            raise loop_exception
+        # In oplock mode, the blocker block's both updates
+        test_state = await state_manager_redis.get_state(substate_token_redis)
+        assert isinstance(test_state, TestState)
+        assert test_state.num1 == 0
+    else:
+        with pytest.raises(LockExpiredError):
+            await tasks[0]
+        await tasks[1]
+        assert loop_exception is None
+        test_state = await state_manager_redis.get_state(substate_token_redis)
+        assert isinstance(test_state, TestState)
+        assert test_state.num1 == exp_num1
 
     assert order == ["blocker", "waiter"]
-    assert (await state_manager_redis.get_state(substate_token_redis)).num1 == exp_num1
 
 
 @pytest.mark.asyncio
@@ -1913,8 +1995,12 @@ async def test_state_manager_lock_warning_threshold_contend(
     ]
 
     await tasks[0]
-    console_warn.assert_called()
-    assert console_warn.call_count == 7
+    if environment.REFLEX_OPLOCK_ENABLED.get():
+        # When Oplock is enabled, we don't warn when lock is held too long.
+        console_warn.assert_not_called()
+    else:
+        console_warn.assert_called()
+        assert console_warn.call_count == 7
 
 
 class CopyingAsyncMock(AsyncMock):
@@ -1982,6 +2068,50 @@ class ModelDC:
     foo: str = "bar"
     ls: list[dict] = dataclasses.field(default_factory=list)
 
+    def set_foo(self, val: str):
+        """Set the attribute foo.
+
+        Args:
+            val: The value to set.
+        """
+        self.foo = val
+
+    def double_foo(self) -> str:
+        """Concatenate foo with foo.
+
+        Returns:
+            foo + foo
+        """
+        return self.foo + self.foo
+
+    def copy(self, **kwargs) -> ModelDC:
+        """Create a copy of the dataclass with updated fields.
+
+        Returns:
+            A new instance of ModelDC with updated fields.
+        """
+        return dataclasses.replace(self, **kwargs)
+
+    def append_to_ls(self, item: dict):
+        """Append an item to the list attribute ls.
+
+        Args:
+            item: The item to append.
+        """
+        self.ls.append(item)
+
+    @classmethod
+    def from_dict(cls, data: dict) -> ModelDC:
+        """Create an instance of ModelDC from a dictionary.
+
+        Args:
+            data: The dictionary to create the instance from.
+
+        Returns:
+            An instance of ModelDC.
+        """
+        return cls(**data)
+
 
 @pytest.mark.asyncio
 async def test_state_proxy(
@@ -1998,13 +2128,19 @@ async def test_state_proxy(
     assert child_state is not None
     parent_state = child_state.parent_state
     assert parent_state is not None
-    router_data = RouterData.from_router_data(
-        {"query": {}, "token": token, "sid": "test_sid"}
-    )
+    router_data = RouterData.from_router_data({
+        "query": {},
+        "token": token,
+        "sid": "test_sid",
+    })
     grandchild_state.router = router_data
     namespace = mock_app.event_namespace
     assert namespace is not None
     namespace.sid_to_token[router_data.session.session_id] = token
+    namespace._token_manager.instance_id = "mock"
+    namespace._token_manager.token_to_socket[token] = SocketRecord(
+        instance_id="mock", sid=router_data.session.session_id
+    )
     if isinstance(mock_app.state_manager, (StateManagerMemory, StateManagerDisk)):
         mock_app.state_manager.states[parent_state.router.session.client_token] = (
             parent_state
@@ -2063,6 +2199,9 @@ async def test_state_proxy(
     assert sp._self_actx is None
     assert sp.value2 == "42"
 
+    if environment.REFLEX_OPLOCK_ENABLED.get():
+        await mock_app.state_manager.close()
+
     # Get the state from the state manager directly and check that the value is updated
     gotten_state = await mock_app.state_manager.get_state(
         _substate_key(grandchild_state.router.session.client_token, grandchild_state)
@@ -2074,6 +2213,7 @@ async def test_state_proxy(
         assert gotten_state is not parent_state
     gotten_grandchild_state = gotten_state.get_substate(sp._self_substate_path)
     assert gotten_grandchild_state is not None
+    assert isinstance(gotten_grandchild_state, GrandchildState)
     assert gotten_grandchild_state.value2 == "42"
 
     # ensure state update was emitted
@@ -2090,7 +2230,8 @@ async def test_state_proxy(
             GrandchildState3.get_full_name(): {
                 "computed" + FIELD_MARKER: "",
             },
-        }
+        },
+        final=None,
     )
     assert mcall.kwargs["to"] == grandchild_state.router.session.session_id
 
@@ -2214,6 +2355,10 @@ async def test_background_task_no_block(mock_app: rx.App, token: str):
     namespace = mock_app.event_namespace
     assert namespace is not None
     namespace.sid_to_token[sid] = token
+    namespace._token_manager.instance_id = "mock"
+    namespace._token_manager.token_to_socket[token] = SocketRecord(
+        instance_id="mock", sid=sid
+    )
     mock_app.state_manager.state = mock_app._state = BackgroundTaskState
     async for update in rx.app.process(
         mock_app,
@@ -2260,13 +2405,16 @@ async def test_background_task_no_block(mock_app: rx.App, token: str):
                         "other",
                     ],
                 }
-            }
+            },
         )
 
     # Explicit wait for background tasks
     for task in tuple(mock_app._background_tasks):
         await task
     assert not mock_app._background_tasks
+
+    if environment.REFLEX_OPLOCK_ENABLED.get():
+        await mock_app.state_manager.close()
 
     exp_order = [
         "background_task:start",
@@ -2276,12 +2424,11 @@ async def test_background_task_no_block(mock_app: rx.App, token: str):
         "private",
     ]
 
-    assert (
-        await mock_app.state_manager.get_state(
-            _substate_key(token, BackgroundTaskState)
-        )
-    ).order == exp_order
-
+    background_task_state = await mock_app.state_manager.get_state(
+        _substate_key(token, BackgroundTaskState)
+    )
+    assert isinstance(background_task_state, BackgroundTaskState)
+    assert background_task_state.order == exp_order
     assert mock_app.event_namespace is not None
     emit_mock = mock_app.event_namespace.emit
 
@@ -2300,7 +2447,7 @@ async def test_background_task_no_block(mock_app: rx.App, token: str):
             }
         },
         events=[],
-        final=True,
+        final=None,
     )
     for call in emit_mock.mock_calls[1:5]:  # pyright: ignore [reportAttributeAccessIssue]
         assert call.args[1] == StateUpdate(
@@ -2310,7 +2457,7 @@ async def test_background_task_no_block(mock_app: rx.App, token: str):
                 }
             },
             events=[],
-            final=True,
+            final=None,
         )
     assert emit_mock.mock_calls[-2].args[1] == StateUpdate(  # pyright: ignore [reportAttributeAccessIssue]
         delta={
@@ -2321,7 +2468,7 @@ async def test_background_task_no_block(mock_app: rx.App, token: str):
             }
         },
         events=[],
-        final=True,
+        final=None,
     )
     assert emit_mock.mock_calls[-1].args[1] == StateUpdate(  # pyright: ignore [reportAttributeAccessIssue]
         delta={
@@ -2330,7 +2477,7 @@ async def test_background_task_no_block(mock_app: rx.App, token: str):
             },
         },
         events=[],
-        final=True,
+        final=None,
     )
 
 
@@ -2364,13 +2511,14 @@ async def test_background_task_reset(mock_app: rx.App, token: str):
         await task
     assert not mock_app._background_tasks
 
-    assert (
-        await mock_app.state_manager.get_state(
-            _substate_key(token, BackgroundTaskState)
-        )
-    ).order == [
-        "reset",
-    ]
+    if environment.REFLEX_OPLOCK_ENABLED.get():
+        await mock_app.state_manager.close()
+
+    background_task_state = await mock_app.state_manager.get_state(
+        _substate_key(token, BackgroundTaskState)
+    )
+    assert isinstance(background_task_state, BackgroundTaskState)
+    assert background_task_state.order == ["reset"]
 
 
 @pytest.mark.asyncio
@@ -2433,7 +2581,7 @@ def test_mutable_list(mutable_state: MutableTestState):
     assert isinstance(mutable_state.array[0], MutableProxy)
     for item in mutable_state.array:
         assert isinstance(item, MutableProxy)
-        item["foo"] = "bar"
+        item["foo"] = "bar"  # pyright: ignore[reportArgumentType, reportCallIssue]
         assert_array_dirty()
 
 
@@ -2508,7 +2656,7 @@ def test_mutable_dict(mutable_state: MutableTestState):
     mutable_value_third_ref.append("baz")  # pyright: ignore[reportAttributeAccessIssue]
     assert not mutable_state.dirty_vars
     # Unfortunately previous refs still will mark the state dirty... nothing doing about that
-    assert mutable_value.pop()
+    assert mutable_value.pop()  # pyright: ignore[reportCallIssue]
     assert_hashmap_dirty()
 
 
@@ -2577,27 +2725,6 @@ def test_mutable_custom(mutable_state: MutableTestState):
     assert_custom_dirty()
     mutable_state.custom.custom.bar = "baz"
     assert_custom_dirty()
-
-
-def test_mutable_sqla_model(mutable_state: MutableTestState):
-    """Test that mutable SQLA models are tracked correctly.
-
-    Args:
-        mutable_state: A test state.
-    """
-    assert not mutable_state.dirty_vars
-
-    def assert_sqla_model_dirty():
-        assert mutable_state.dirty_vars == {"sqla_model"}
-        mutable_state._clean()
-        assert not mutable_state.dirty_vars
-
-    mutable_state.sqla_model.strlist.append("foo")
-    assert_sqla_model_dirty()
-    mutable_state.sqla_model.hashmap["key"] = "value"
-    assert_sqla_model_dirty()
-    mutable_state.sqla_model.test_set.add("bar")
-    assert_sqla_model_dirty()
 
 
 def test_mutable_backend(mutable_state: MutableTestState):
@@ -2810,17 +2937,18 @@ def test_state_union_optional():
         str(UnionState.c3.c2.c1.foo) == f'{UnionState.c3!s}?.["c2"]?.["c1"]?.["foo"]'  # pyright: ignore [reportOptionalMemberAccess]
     )
     assert (
-        str(UnionState.c3.c2.c1r.foo) == f'{UnionState.c3!s}?.["c2"]?.["c1r"]["foo"]'  # pyright: ignore [reportOptionalMemberAccess]
+        str(UnionState.c3.c2.c1r.foo) == f'{UnionState.c3!s}?.["c2"]?.["c1r"]?.["foo"]'  # pyright: ignore [reportOptionalMemberAccess]
     )
-    assert str(UnionState.c3.c2r.c1) == f'{UnionState.c3!s}?.["c2r"]["c1"]'  # pyright: ignore [reportOptionalMemberAccess]
+    assert str(UnionState.c3.c2r.c1) == f'{UnionState.c3!s}?.["c2r"]?.["c1"]'  # pyright: ignore [reportOptionalMemberAccess]
     assert (
-        str(UnionState.c3.c2r.c1.foo) == f'{UnionState.c3!s}?.["c2r"]["c1"]?.["foo"]'  # pyright: ignore [reportOptionalMemberAccess]
+        str(UnionState.c3.c2r.c1.foo) == f'{UnionState.c3!s}?.["c2r"]?.["c1"]?.["foo"]'  # pyright: ignore [reportOptionalMemberAccess]
     )
     assert (
-        str(UnionState.c3.c2r.c1r.foo) == f'{UnionState.c3!s}?.["c2r"]["c1r"]["foo"]'  # pyright: ignore [reportOptionalMemberAccess]
+        str(UnionState.c3.c2r.c1r.foo)  # pyright: ignore [reportOptionalMemberAccess]
+        == f'{UnionState.c3!s}?.["c2r"]?.["c1r"]?.["foo"]'
     )
     assert str(UnionState.c3i.c2) == f'{UnionState.c3i!s}?.["c2"]'
-    assert str(UnionState.c3r.c2) == f'{UnionState.c3r!s}["c2"]'
+    assert str(UnionState.c3r.c2) == f'{UnionState.c3r!s}?.["c2"]'
     assert UnionState.custom_union.foo is not None  # pyright: ignore [reportAttributeAccessIssue]
     assert UnionState.custom_union.c1 is not None  # pyright: ignore [reportAttributeAccessIssue]
     assert UnionState.custom_union.c1r is not None  # pyright: ignore [reportAttributeAccessIssue]
@@ -2851,7 +2979,7 @@ def test_set_base_field_via_setter():
     assert "c1" not in bfss.dirty_vars
 
     # Mutating function from Base, dirty
-    bfss.c1.set(foo="bar")
+    bfss.c1.foo = "bar"
     assert "c1" in bfss.dirty_vars
     bfss.dirty_vars.clear()
     assert "c1" not in bfss.dirty_vars
@@ -2859,9 +2987,7 @@ def test_set_base_field_via_setter():
     # Assert identity of MutableProxy
     mp = bfss.c1
     assert isinstance(mp, MutableProxy)
-    mp2 = mp.set()
-    assert mp is mp2
-    mp3 = bfss.c1.set()
+    mp3 = bfss.c1
     assert mp is not mp3
     # Since none of these set calls had values, the state should not be dirty
     assert not bfss.dirty_vars
@@ -2988,8 +3114,7 @@ async def test_preprocess(
     async for update in state._process(events[1]):
         assert update.delta == exp_is_hydrated(state)
 
-    if isinstance(app.state_manager, StateManagerRedis):
-        await app.state_manager.close()
+    await app.state_manager.close()
 
 
 @pytest.mark.asyncio
@@ -3044,8 +3169,7 @@ async def test_preprocess_multiple_load_events(
     async for update in state._process(events[2]):
         assert update.delta == exp_is_hydrated(state)
 
-    if isinstance(app.state_manager, StateManagerRedis):
-        await app.state_manager.close()
+    await app.state_manager.close()
 
 
 @pytest.mark.asyncio
@@ -3078,12 +3202,11 @@ async def test_get_state(mock_app: rx.App, token: str):
         )
 
     # Because ChildState3 has a computed var, it is always dirty, and always populated.
-    assert (
-        test_state.substates[ChildState3.get_name()]
-        .substates[GrandchildState3.get_name()]
-        .computed
-        == ""
-    )
+    grandchild_state3 = test_state.substates[ChildState3.get_name()].substates[
+        GrandchildState3.get_name()
+    ]
+    assert isinstance(grandchild_state3, GrandchildState3)
+    assert grandchild_state3.computed == ""
 
     # Get the child_state2 directly.
     child_state2_direct = test_state.get_substate([ChildState2.get_name()])
@@ -3109,9 +3232,9 @@ async def test_get_state(mock_app: rx.App, token: str):
     assert child_state_direct is child_state_get_state
 
     # GrandchildState instance should be the same as the one retrieved from the child_state2.
-    assert grandchild_state is child_state_direct.get_substate(
-        [GrandchildState.get_name()]
-    )
+    assert grandchild_state is child_state_direct.get_substate([
+        GrandchildState.get_name()
+    ])
     grandchild_state.value2 = "set_value"
 
     assert test_state.get_delta() == {
@@ -3329,6 +3452,7 @@ async def test_setvar(mock_app: rx.App, token: str):
         token: A token.
     """
     state = await mock_app.state_manager.get_state(_substate_key(token, TestState))
+    assert isinstance(state, TestState)
 
     # Set Var in same state (with Var type casting)
     for event in rx.event.fix_events(
@@ -3358,17 +3482,12 @@ async def test_setvar(mock_app: rx.App, token: str):
         TestState.setvar(42, 42)
 
 
-@pytest.mark.asyncio
-async def test_setvar_async_setter():
+def test_setvar_async_setter():
     """Test that overridden async setters raise Exception when used with setvar."""
     with pytest.raises(NotImplementedError):
         TestState.setvar("asynctest", 42)
 
 
-@pytest.mark.skipif(
-    "REDIS_URL" not in os.environ and "REFLEX_REDIS_URL" not in os.environ,
-    reason="Test requires redis",
-)
 @pytest.mark.parametrize(
     ("expiration_kwargs", "expected_values"),
     [
@@ -3432,19 +3551,14 @@ config = rx.Config(
     with chdir(proj_root):
         # reload config for each parameter to avoid stale values
         reflex.config.get_config(reload=True)
-        from reflex.istate.manager import StateManager
         from reflex.state import State
 
-        state_manager = StateManager.create(state=State)
+        state_manager = StateManagerRedis(state=State, redis=mock_redis())
         assert state_manager.lock_expiration == expected_values[0]  # pyright: ignore [reportAttributeAccessIssue]
         assert state_manager.token_expiration == expected_values[1]  # pyright: ignore [reportAttributeAccessIssue]
         assert state_manager.lock_warning_threshold == expected_values[2]  # pyright: ignore [reportAttributeAccessIssue]
 
 
-@pytest.mark.skipif(
-    "REDIS_URL" not in os.environ and "REFLEX_REDIS_URL" not in os.environ,
-    reason="Test requires redis",
-)
 @pytest.mark.parametrize(
     ("redis_lock_expiration", "redis_lock_warning_threshold"),
     [
@@ -3474,11 +3588,10 @@ config = rx.Config(
     with chdir(proj_root):
         # reload config for each parameter to avoid stale values
         reflex.config.get_config(reload=True)
-        from reflex.istate.manager import StateManager
         from reflex.state import State
 
         with pytest.raises(InvalidLockWarningThresholdError):
-            StateManager.create(state=State)
+            StateManagerRedis(state=State, redis=mock_redis())
         del sys.modules[constants.Config.MODULE]
 
 
@@ -3564,7 +3677,11 @@ def test_mixin_state() -> None:
     """Test that a mixin state works correctly."""
     assert "num" in UsesMixinState.base_vars
     assert "num" in UsesMixinState.vars
-    assert UsesMixinState.backend_vars == {"_backend": 0, "_backend_no_default": {}}
+    assert UsesMixinState.backend_vars == {
+        "_backend": 0,
+        "_backend_no_default": {},
+        "_reflex_internal_links": None,
+    }
 
     assert "computed" in UsesMixinState.computed_vars
     assert "computed" in UsesMixinState.vars
@@ -3686,6 +3803,7 @@ async def test_deserialize_gc_state_disk(token):
         c = await root.get_state(Child)
         assert s._get_was_touched()
         assert not c._get_was_touched()
+    await dsm.close()
 
     dsm2 = StateManagerDisk(state=Root)
     root = await dsm2.get_state(token)
@@ -3693,6 +3811,7 @@ async def test_deserialize_gc_state_disk(token):
     assert s.num == 43
     c = await root.get_state(Child)
     assert c.foo == "bar"
+    await dsm2.close()
 
 
 class Obj(Base):
@@ -3716,7 +3835,10 @@ def test_fallback_pickle():
     pk = state._serialize()
 
     unpickled_state = BaseState._deserialize(pk)
+    assert isinstance(unpickled_state, DillState)
+    assert unpickled_state._f is not None
     assert unpickled_state._f() == 420
+    assert unpickled_state._o is not None
     assert unpickled_state._o._f() == 42
 
     # Threading locks are unpicklable normally, and raise TypeError instead of PicklingError.
@@ -3724,6 +3846,7 @@ def test_fallback_pickle():
     state2._g = threading.Lock()
     pk2 = state2._serialize()
     unpickled_state2 = BaseState._deserialize(pk2)
+    assert isinstance(unpickled_state2, DillState)
     assert isinstance(unpickled_state2._g, type(threading.Lock()))
 
     # Some object, like generator, are still unpicklable with dill.
@@ -3746,11 +3869,43 @@ class ModelV1(BaseModelV1):
 
     foo: str = "bar"
 
+    def set_foo(self, val: str):
+        """Set the attribute foo.
+
+        Args:
+            val: The value to set.
+        """
+        self.foo = val
+
+    def double_foo(self) -> str:
+        """Concatenate foo with foo.
+
+        Returns:
+            foo + foo
+        """
+        return self.foo + self.foo
+
 
 class ModelV2(BaseModelV2):
     """A pydantic BaseModel v2."""
 
     foo: str = "bar"
+
+    def set_foo(self, val: str):
+        """Set the attribute foo.
+
+        Args:
+            val: The value to set.
+        """
+        self.foo = val
+
+    def double_foo(self) -> str:
+        """Concatenate foo with foo.
+
+        Returns:
+            foo + foo
+        """
+        return self.foo + self.foo
 
 
 class PydanticState(rx.State):
@@ -3768,27 +3923,61 @@ def test_mutable_models():
     state.v1.foo = "baz"
     assert state.dirty_vars == {"v1"}
     state.dirty_vars.clear()
+    state.v1.set_foo("quuc")
+    assert state.dirty_vars == {"v1"}
+    state.dirty_vars.clear()
+    assert state.v1.double_foo() == "quucquuc"
+    assert state.dirty_vars == set()
+    state.v1.copy(update={"foo": "larp"})
+    assert state.dirty_vars == set()
 
     assert isinstance(state.v2, MutableProxy)
     state.v2.foo = "baz"
     assert state.dirty_vars == {"v2"}
     state.dirty_vars.clear()
+    state.v2.set_foo("quuc")
+    assert state.dirty_vars == {"v2"}
+    state.dirty_vars.clear()
+    assert state.v2.double_foo() == "quucquuc"
+    assert state.dirty_vars == set()
+    state.v2.model_copy(update={"foo": "larp"})
+    assert state.dirty_vars == set()
 
     assert isinstance(state.dc, MutableProxy)
     state.dc.foo = "baz"
     assert state.dirty_vars == {"dc"}
     state.dirty_vars.clear()
     assert state.dirty_vars == set()
+    state.dc.set_foo("quuc")
+    assert state.dirty_vars == {"dc"}
+    state.dirty_vars.clear()
+    assert state.dirty_vars == set()
+    assert state.dc.double_foo() == "quucquuc"
+    assert state.dirty_vars == set()
     state.dc.ls.append({"hi": "reflex"})
     assert state.dirty_vars == {"dc"}
     state.dirty_vars.clear()
     assert state.dirty_vars == set()
-    assert dataclasses.asdict(state.dc) == {"foo": "baz", "ls": [{"hi": "reflex"}]}
-    assert dataclasses.astuple(state.dc) == ("baz", [{"hi": "reflex"}])
+    assert dataclasses.asdict(state.dc) == {"foo": "quuc", "ls": [{"hi": "reflex"}]}
+    assert dataclasses.astuple(state.dc) == ("quuc", [{"hi": "reflex"}])
     # creating a new instance shouldn't mark the state dirty
-    assert dataclasses.replace(state.dc, foo="quuc") == ModelDC(
-        foo="quuc", ls=[{"hi": "reflex"}]
+    assert dataclasses.replace(state.dc, foo="larp") == ModelDC(
+        foo="larp", ls=[{"hi": "reflex"}]
     )
+    assert state.dirty_vars == set()
+    dc_copy = state.dc.copy()
+    assert dc_copy == state.dc
+    assert dc_copy is not state.dc
+    dc_copy.foo = "new_foo"
+    assert state.dirty_vars == set()
+    dc_copy.append_to_ls({"new": "item"})
+    assert state.dirty_vars == set()
+    state.dc.append_to_ls({"new": "item"})
+    assert state.dirty_vars == {"dc"}
+    state.dirty_vars.clear()
+
+    dc_from_dict = state.dc.from_dict({"foo": "from_dict", "ls": []})
+    assert dc_from_dict == ModelDC(foo="from_dict", ls=[])
     assert state.dirty_vars == set()
 
 
@@ -3897,20 +4086,10 @@ def test_init_mixin() -> None:
         SubMixin()
 
 
-class ReflexModel(rx.Model):
-    """A model for testing."""
-
-    foo: str
-
-
 class UpcastState(rx.State):
     """A state for testing upcasting."""
 
     passed: bool = False
-
-    def rx_model(self, m: ReflexModel):  # noqa: D102
-        assert isinstance(m, ReflexModel)
-        self.passed = True
 
     def rx_base(self, o: Object):  # noqa: D102
         assert isinstance(o, Object)
@@ -3971,7 +4150,6 @@ class UpcastState(rx.State):
 @pytest.mark.parametrize(
     ("handler", "payload"),
     [
-        (UpcastState.rx_model, {"m": {"foo": "bar"}}),
         (UpcastState.rx_base, {"o": {"foo": "bar"}}),
         (UpcastState.rx_base_or_none, {"o": {"foo": "bar"}}),
         (UpcastState.rx_base_or_none, {"o": None}),
@@ -4090,6 +4268,7 @@ async def test_async_computed_var_get_state(mock_app: rx.App, token: str):
 
     # Get the unconnected sibling state, which will be used to `get_state` other instances.
     child = root.get_substate(Child.get_full_name().split("."))
+    assert isinstance(child, Child)
 
     # Get an uncached child state.
     child2 = await child.get_state(Child2)
@@ -4162,6 +4341,8 @@ async def test_async_computed_var_get_var_value(mock_app: rx.App, token: str):
     state = await mock_app.state_manager.get_state(_substate_key(token, OtherState))
     other_state = await state.get_state(OtherState)
     assert comp.State is not None
+    # The state should have been pre-cached from the dependency.
+    assert comp.State.get_name() in state.substates
     comp_state = await state.get_state(comp.State)
     assert comp_state.dirty_vars == set()
 
@@ -4187,3 +4368,94 @@ def test_computed_var_mutability() -> None:
 
     assert first_cv is not second_cv
     assert first_cv._static_deps is not second_cv._static_deps
+
+
+@pytest.mark.asyncio
+async def test_add_dependency_get_state_regression(mock_app: rx.App, token: str):
+    """Ensure that a state class can be fetched separately when it's is explicit dep."""
+
+    class DataState(rx.State):
+        """A state with a var."""
+
+        data: Field[list[int]] = field(default_factory=lambda: [1, 2, 3])
+
+    class StatsState(rx.State):
+        """A state with a computed var depending on DataState."""
+
+        @rx.var(cache=True)
+        async def total(self) -> int:
+            data_state = await self.get_state(DataState)
+            return sum(data_state.data)
+
+    StatsState.computed_vars["total"].add_dependency(StatsState, DataState.data)
+
+    class OtherState(rx.State):
+        """A state that gets DataState."""
+
+        @rx.event
+        async def fetch_data_state(self) -> None:
+            print(await self.get_state(DataState))
+
+    mock_app.state_manager.state = mock_app._state = rx.State
+    state = await mock_app.state_manager.get_state(_substate_key(token, OtherState))
+    other_state = await state.get_state(OtherState)
+    await other_state.fetch_data_state()  # Should not raise exception.
+
+
+class MutableProxyState(BaseState):
+    """A test state with a MutableProxy var."""
+
+    data: dict[str, list[int]] = {"a": [1], "b": [2]}
+
+
+@pytest.mark.asyncio
+async def test_rebind_mutable_proxy(mock_app: rx.App, token: str) -> None:
+    """Test that previously bound MutableProxy instances can be rebound correctly."""
+    mock_app.state_manager.state = mock_app._state = MutableProxyState
+    async with mock_app.state_manager.modify_state(
+        _substate_key(token, MutableProxyState)
+    ) as state:
+        state.router = RouterData.from_router_data({
+            "query": {},
+            "token": token,
+            "sid": "test_sid",
+        })
+        assert isinstance(state, MutableProxyState)
+        assert isinstance(state.data, MutableProxy)
+        assert not isinstance(state.data, ImmutableMutableProxy)
+        state_proxy = StateProxy(state)
+        assert isinstance(state_proxy.data, ImmutableMutableProxy)
+    async with state_proxy:
+        # This assigns an ImmutableMutableProxy to data["a"].
+        state_proxy.data["a"] = state_proxy.data["b"]
+    assert isinstance(state_proxy.data["a"], ImmutableMutableProxy)
+    assert state_proxy.data["a"] is not state_proxy.data["b"]
+    assert state_proxy.data["a"].__wrapped__ is state_proxy.data["b"].__wrapped__
+
+    # Rebinding with a non-proxy should return a MutableProxy object (not ImmutableMutableProxy).
+    assert isinstance(state_proxy.__wrapped__.data["a"], MutableProxy)
+    assert not isinstance(state_proxy.__wrapped__.data["a"], ImmutableMutableProxy)
+
+    # Flush any oplock.
+    await mock_app.state_manager.close()
+
+    new_state_proxy = StateProxy(state)
+    assert state_proxy is not new_state_proxy
+    assert new_state_proxy.data["a"]._self_state is new_state_proxy
+    assert state_proxy.data["a"]._self_state is state_proxy
+    assert state_proxy.__wrapped__.data["a"]._self_state is state_proxy.__wrapped__
+
+    async with state_proxy:
+        state_proxy.data["a"].append(3)
+
+    async with mock_app.state_manager.modify_state(
+        _substate_key(token, MutableProxyState)
+    ) as state:
+        assert isinstance(state, MutableProxyState)
+        assert state.data["a"] == [2, 3]
+        if isinstance(mock_app.state_manager, StateManagerRedis):
+            # In redis mode, the object identity does not persist across async with self calls.
+            assert state.data["b"] == [2]
+        else:
+            # In disk/memory mode, the fact that data["b"] was mutated via data["a"] persists.
+            assert state.data["b"] == [2, 3]

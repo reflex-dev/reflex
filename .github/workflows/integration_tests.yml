@@ -122,6 +122,7 @@ jobs:
           repository: reflex-dev/reflex-web
           ref: main
           path: reflex-web
+          submodules: recursive
 
       - name: Compile pyproject.toml into requirements.txt
         working-directory: ./reflex-web
@@ -148,7 +149,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/setup_build_env
         with:
-          python-version: 3.13
+          python-version: 3.14
           run-uv-sync: true
 
       - name: Create app directory
@@ -189,6 +190,7 @@ jobs:
           repository: reflex-dev/reflex-web
           ref: main
           path: reflex-web
+          submodules: recursive
       - name: Compile pyproject.toml into requirements.txt
         working-directory: ./reflex-web
         run: |

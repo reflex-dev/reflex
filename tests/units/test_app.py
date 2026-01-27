@@ -6,19 +6,16 @@ import unittest.mock
 import uuid
 from collections.abc import Generator
 from contextlib import nullcontext as does_not_raise
+from importlib.util import find_spec
 from pathlib import Path
-from typing import Any, ClassVar
+from typing import TYPE_CHECKING, Any, ClassVar
 from unittest.mock import AsyncMock
 
 import pytest
-import sqlmodel
 from pytest_mock import MockerFixture
 from starlette.applications import Starlette
 from starlette.datastructures import UploadFile
 from starlette.responses import StreamingResponse
-from starlette_admin.auth import AuthProvider
-from starlette_admin.contrib.sqla.admin import Admin
-from starlette_admin.contrib.sqla.view import ModelView
 
 import reflex as rx
 from reflex import AdminDash, constants
@@ -35,7 +32,11 @@ from reflex.components.base.fragment import Fragment
 from reflex.components.core.cond import Cond
 from reflex.components.radix.themes.typography.text import Text
 from reflex.constants.state import FIELD_MARKER
+from reflex.environment import environment
 from reflex.event import Event
+from reflex.istate.manager.disk import StateManagerDisk
+from reflex.istate.manager.memory import StateManagerMemory
+from reflex.istate.manager.redis import StateManagerRedis
 from reflex.middleware import HydrateMiddleware
 from reflex.model import Model
 from reflex.state import (
@@ -43,9 +44,6 @@ from reflex.state import (
     OnLoadInternalState,
     RouterData,
     State,
-    StateManagerDisk,
-    StateManagerMemory,
-    StateManagerRedis,
     StateUpdate,
     _substate_key,
 )
@@ -54,11 +52,11 @@ from reflex.utils import console, exceptions, format
 from reflex.vars.base import computed_var
 
 from .conftest import chdir
-from .states import (
+from .states import GenState
+from .states.upload import (
     ChildFileUploadState,
     FileStateBase1,
     FileUploadState,
-    GenState,
     GrandChildFileUploadState,
 )
 
@@ -160,6 +158,8 @@ def test_get_engine():
     Returns:
         A default database engine.
     """
+    import sqlmodel
+
     enable_admin = True
     url = "sqlite:///test.db"
     return sqlmodel.create_engine(
@@ -169,6 +169,10 @@ def test_get_engine():
     )
 
 
+if TYPE_CHECKING:
+    from starlette_admin.auth import AuthProvider
+
+
 @pytest.fixture
 def test_custom_auth_admin() -> type[AuthProvider]:
     """A default auth provider.
@@ -176,6 +180,7 @@ def test_custom_auth_admin() -> type[AuthProvider]:
     Returns:
         A default default auth provider.
     """
+    from starlette_admin.auth import AuthProvider
 
     class TestAuthProvider(AuthProvider):
         """A test auth provider."""
@@ -356,6 +361,12 @@ def test_add_duplicate_page_route_error(app: App, first_page, second_page, route
         app.add_page(second_page, route="/" + route.strip("/") if route else None)
 
 
+@pytest.mark.skipif(
+    not find_spec("starlette_admin")
+    or not find_spec("sqlmodel")
+    or not find_spec("pydantic"),
+    reason="starlette_admin not installed or sqlmodel not installed or pydantic not installed",
+)
 def test_initialize_with_admin_dashboard(test_model):
     """Test setting the admin dashboard of an app.
 
@@ -368,6 +379,12 @@ def test_initialize_with_admin_dashboard(test_model):
     assert app.admin_dash.models[0] == test_model
 
 
+@pytest.mark.skipif(
+    not find_spec("starlette_admin")
+    or not find_spec("sqlmodel")
+    or not find_spec("pydantic"),
+    reason="starlette_admin not installed or sqlmodel not installed or pydantic not installed",
+)
 def test_initialize_with_custom_admin_dashboard(
     test_get_engine,
     test_custom_auth_admin,
@@ -380,6 +397,8 @@ def test_initialize_with_custom_admin_dashboard(
         test_model_auth: The default model for an auth admin dashboard.
         test_custom_auth_admin: The custom auth provider.
     """
+    from starlette_admin.contrib.sqla.admin import Admin
+
     custom_auth_provider = test_custom_auth_admin()
     custom_admin = Admin(engine=test_get_engine, auth_provider=custom_auth_provider)
     app = App(admin_dash=AdminDash(models=[test_model_auth], admin=custom_admin))
@@ -390,12 +409,19 @@ def test_initialize_with_custom_admin_dashboard(
     assert app.admin_dash.admin.auth_provider == custom_auth_provider
 
 
+@pytest.mark.skipif(
+    not find_spec("starlette_admin")
+    or not find_spec("sqlmodel")
+    or not find_spec("pydantic"),
+    reason="starlette_admin not installed or sqlmodel not installed or pydantic not installed",
+)
 def test_initialize_admin_dashboard_with_view_overrides(test_model):
     """Test setting the admin dashboard of an app with view class overridden.
 
     Args:
         test_model: The default model.
     """
+    from starlette_admin.contrib.sqla.view import ModelView
 
     class TestModelView(ModelView):
         pass
@@ -426,12 +452,11 @@ async def test_initialize_with_state(test_state: type[ATestState], token: str):
     assert isinstance(state, test_state)
     assert state.var == 0
 
-    if isinstance(app.state_manager, StateManagerRedis):
-        await app.state_manager.close()
+    await app.state_manager.close()
 
 
 @pytest.mark.asyncio
-async def test_set_and_get_state(test_state):
+async def test_set_and_get_state(test_state: type[ATestState]):
     """Test setting and getting the state of an app with different tokens.
 
     Args:
@@ -446,6 +471,8 @@ async def test_set_and_get_state(test_state):
     # Get the default state for each token.
     state1 = await app.state_manager.get_state(token1)
     state2 = await app.state_manager.get_state(token2)
+    assert isinstance(state1, test_state)
+    assert isinstance(state2, test_state)
     assert state1.var == 0
     assert state2.var == 0
 
@@ -458,11 +485,12 @@ async def test_set_and_get_state(test_state):
     # Get the states again and check the values.
     state1 = await app.state_manager.get_state(token1)
     state2 = await app.state_manager.get_state(token2)
+    assert isinstance(state1, test_state)
+    assert isinstance(state2, test_state)
     assert state1.var == 1
     assert state2.var == 2
 
-    if isinstance(app.state_manager, StateManagerRedis):
-        await app.state_manager.close()
+    await app.state_manager.close()
 
 
 @pytest.mark.asyncio
@@ -485,6 +513,82 @@ async def test_dynamic_var_event(test_state: type[ATestState], token: str):
         )
     ):
         assert result.delta == {test_state.get_name(): {"int_val" + FIELD_MARKER: 50}}
+
+
+@pytest.fixture
+def list_mutation_state():
+    """Create a state with list mutation features.
+
+    Returns:
+        A state with list mutation features.
+    """
+
+    class ListMutationTestState(BaseState):
+        """A state for testing ReflexList mutation."""
+
+        # plain list
+        plain_friends = ["Tommy"]
+
+        def make_friend(self):
+            """Add a friend to the list."""
+            self.plain_friends.append("another-fd")
+
+        def change_first_friend(self):
+            """Change the first friend in the list."""
+            self.plain_friends[0] = "Jenny"
+
+        def unfriend_all_friends(self):
+            """Unfriend all friends in the list."""
+            self.plain_friends.clear()
+
+        def unfriend_first_friend(self):
+            """Unfriend the first friend in the list."""
+            del self.plain_friends[0]
+
+        def remove_last_friend(self):
+            """Remove the last friend in the list."""
+            self.plain_friends.pop()
+
+        def make_friends_with_colleagues(self):
+            """Add list of friends to the list."""
+            colleagues = ["Peter", "Jimmy"]
+            self.plain_friends.extend(colleagues)
+
+        def remove_tommy(self):
+            """Remove Tommy from the list."""
+            self.plain_friends.remove("Tommy")
+
+        # list in dict
+        friends_in_dict = {"Tommy": ["Jenny"]}
+
+        def remove_jenny_from_tommy(self):
+            """Remove Jenny from Tommy's friends list."""
+            self.friends_in_dict["Tommy"].remove("Jenny")
+
+        def add_jimmy_to_tommy_friends(self):
+            """Add Jimmy to Tommy's friends list."""
+            self.friends_in_dict["Tommy"].append("Jimmy")
+
+        def tommy_has_no_fds(self):
+            """Clear Tommy's friends list."""
+            self.friends_in_dict["Tommy"].clear()
+
+        # nested list
+        friends_in_nested_list = [["Tommy"], ["Jenny"]]
+
+        def remove_first_group(self):
+            """Remove the first group of friends from the nested list."""
+            self.friends_in_nested_list.pop(0)
+
+        def remove_first_person_from_first_group(self):
+            """Remove the first person from the first group of friends in the nested list."""
+            self.friends_in_nested_list[0].pop(0)
+
+        def add_jimmy_to_second_group(self):
+            """Add Jimmy to the second group of friends in the nested list."""
+            self.friends_in_nested_list[1].append("Jimmy")
+
+    return ListMutationTestState()
 
 
 @pytest.mark.asyncio
@@ -604,6 +708,73 @@ async def test_list_mutation_detection__plain_list(
             # prefix keys in expected_delta with the state name
             expected_delta = {list_mutation_state.get_name(): expected_delta}
             assert result.delta == expected_delta
+
+
+@pytest.fixture
+def dict_mutation_state():
+    """Create a state with dict mutation features.
+
+    Returns:
+        A state with dict mutation features.
+    """
+
+    class DictMutationTestState(BaseState):
+        """A state for testing ReflexDict mutation."""
+
+        # plain dict
+        details = {"name": "Tommy"}
+
+        def add_age(self):
+            """Add an age to the dict."""
+            self.details.update({"age": 20})  # pyright: ignore [reportCallIssue, reportArgumentType]
+
+        def change_name(self):
+            """Change the name in the dict."""
+            self.details["name"] = "Jenny"
+
+        def remove_last_detail(self):
+            """Remove the last item in the dict."""
+            self.details.popitem()
+
+        def clear_details(self):
+            """Clear the dict."""
+            self.details.clear()
+
+        def remove_name(self):
+            """Remove the name from the dict."""
+            del self.details["name"]
+
+        def pop_out_age(self):
+            """Pop out the age from the dict."""
+            self.details.pop("age")
+
+        # dict in list
+        address = [{"home": "home address"}, {"work": "work address"}]
+
+        def remove_home_address(self):
+            """Remove the home address from dict in the list."""
+            self.address[0].pop("home")
+
+        def add_street_to_home_address(self):
+            """Set street key in the dict in the list."""
+            self.address[0]["street"] = "street address"
+
+        # nested dict
+        friend_in_nested_dict = {"name": "Nikhil", "friend": {"name": "Alek"}}
+
+        def change_friend_name(self):
+            """Change the friend's name in the nested dict."""
+            self.friend_in_nested_dict["friend"]["name"] = "Tommy"
+
+        def remove_friend(self):
+            """Remove the friend from the nested dict."""
+            self.friend_in_nested_dict.pop("friend")
+
+        def add_friend_age(self):
+            """Add an age to the friend in the nested dict."""
+            self.friend_in_nested_dict["friend"]["age"] = 30
+
+    return DictMutationTestState()
 
 
 @pytest.mark.asyncio
@@ -802,7 +973,7 @@ async def test_upload_file(tmp_path, state, delta, token: str, mocker: MockerFix
         file=bio,
     )
 
-    async def form():
+    async def form():  # noqa: RUF029
         files_mock = unittest.mock.Mock()
 
         def getlist(key: str):
@@ -824,6 +995,9 @@ async def test_upload_file(tmp_path, state, delta, token: str, mocker: MockerFix
             == StateUpdate(delta=delta, events=[], final=True).json() + "\n"
         )
 
+    if environment.REFLEX_OPLOCK_ENABLED.get():
+        await app.state_manager.close()
+
     current_state = await app.state_manager.get_state(_substate_key(token, state))
     state_dict = current_state.dict()[state.get_full_name()]
     assert state_dict["img_list" + FIELD_MARKER] == [
@@ -831,8 +1005,7 @@ async def test_upload_file(tmp_path, state, delta, token: str, mocker: MockerFix
         "image2.jpg",
     ]
 
-    if isinstance(app.state_manager, StateManagerRedis):
-        await app.state_manager.close()
+    await app.state_manager.close()
 
 
 @pytest.mark.asyncio
@@ -857,7 +1030,7 @@ async def test_upload_file_without_annotation(state, tmp_path, token):
         "reflex-event-handler": f"{state.get_full_name()}.handle_upload2",
     }
 
-    async def form():
+    async def form():  # noqa: RUF029
         files_mock = unittest.mock.Mock()
 
         def getlist(key: str):
@@ -878,8 +1051,7 @@ async def test_upload_file_without_annotation(state, tmp_path, token):
         == f"`{state.get_full_name()}.handle_upload2` handler should have a parameter annotated as list[rx.UploadFile]"
     )
 
-    if isinstance(app.state_manager, StateManagerRedis):
-        await app.state_manager.close()
+    await app.state_manager.close()
 
 
 @pytest.mark.asyncio
@@ -904,7 +1076,7 @@ async def test_upload_file_background(state, tmp_path, token):
         "reflex-event-handler": f"{state.get_full_name()}.bg_upload",
     }
 
-    async def form():
+    async def form():  # noqa: RUF029
         files_mock = unittest.mock.Mock()
 
         def getlist(key: str):
@@ -925,8 +1097,7 @@ async def test_upload_file_background(state, tmp_path, token):
         == f"@rx.event(background=True) is not supported for upload handler `{state.get_full_name()}.bg_upload`."
     )
 
-    if isinstance(app.state_manager, StateManagerRedis):
-        await app.state_manager.close()
+    await app.state_manager.close()
 
 
 class DynamicState(BaseState):
@@ -965,7 +1136,7 @@ class DynamicState(BaseState):
         Returns:
             same as self.dynamic
         """
-        return self.dynamic
+        return self.dynamic  # pyright: ignore[reportAttributeAccessIssue]
 
     on_load_internal = OnLoadInternalState.on_load_internal.fn  # pyright: ignore [reportFunctionMemberAccess]
 
@@ -1053,7 +1224,7 @@ async def test_dynamic_route_var_route_change_completed_on_load(
     client_ip = "127.0.0.1"
     async with app.state_manager.modify_state(substate_token) as state:
         state.router_data = {"simulate": "hydrated"}
-        assert state.dynamic == ""
+        assert state.dynamic == ""  # pyright: ignore[reportAttributeAccessIssue]
     exp_vals = ["foo", "foobar", "baz"]
 
     def _event(name, val, **kwargs):
@@ -1061,7 +1232,12 @@ async def test_dynamic_route_var_route_change_completed_on_load(
             token=kwargs.pop("token", token),
             name=name,
             router_data=kwargs.pop(
-                "router_data", {"pathname": "/" + route, "query": {arg_name: val}}
+                "router_data",
+                {
+                    "pathname": "/" + route,
+                    "query": {arg_name: val},
+                    "asPath": "/test/something",
+                },
             ),
             payload=kwargs.pop("payload", {}),
             **kwargs,
@@ -1122,15 +1298,18 @@ async def test_dynamic_route_var_route_change_completed_on_load(
         if isinstance(app.state_manager, StateManagerRedis):
             # When redis is used, the state is not updated until the processing is complete
             state = await app.state_manager.get_state(substate_token)
-            assert state.dynamic == prev_exp_val
+            assert state.dynamic == prev_exp_val  # pyright: ignore[reportAttributeAccessIssue]
 
         # complete the processing
         with pytest.raises(StopAsyncIteration):
             await process_coro.__anext__()
 
+        if environment.REFLEX_OPLOCK_ENABLED.get():
+            await app.state_manager.close()
+
         # check that router data was written to the state_manager store
         state = await app.state_manager.get_state(substate_token)
-        assert state.dynamic == exp_val
+        assert state.dynamic == exp_val  # pyright: ignore[reportAttributeAccessIssue]
 
         process_coro = process(
             app,
@@ -1195,12 +1374,15 @@ async def test_dynamic_route_var_route_change_completed_on_load(
             await process_coro.__anext__()
 
         prev_exp_val = exp_val
+
+    if environment.REFLEX_OPLOCK_ENABLED.get():
+        await app.state_manager.close()
     state = await app.state_manager.get_state(substate_token)
+    assert isinstance(state, DynamicState)
     assert state.loaded == len(exp_vals)
     assert state.counter == len(exp_vals)
 
-    if isinstance(app.state_manager, StateManagerRedis):
-        await app.state_manager.close()
+    await app.state_manager.close()
 
 
 @pytest.mark.asyncio
@@ -1236,11 +1418,15 @@ async def test_process_events(mocker: MockerFixture, token: str):
     async for _update in process(app, event, "mock_sid", {}, "127.0.0.1"):
         pass
 
-    assert (await app.state_manager.get_state(event.substate_token)).value == 5
+    if environment.REFLEX_OPLOCK_ENABLED.get():
+        await app.state_manager.close()
+
+    gen_state = await app.state_manager.get_state(event.substate_token)
+    assert isinstance(gen_state, GenState)
+    assert gen_state.value == 5
     assert app._postprocess.call_count == 6  # pyright: ignore [reportAttributeAccessIssue]
 
-    if isinstance(app.state_manager, StateManagerRedis):
-        await app.state_manager.close()
+    await app.state_manager.close()
 
 
 @pytest.mark.parametrize(
@@ -1357,36 +1543,32 @@ def test_app_wrap_compile_theme(
     app_js_contents = (
         web_dir / constants.Dirs.PAGES / constants.PageNames.APP_ROOT
     ).read_text()
-    app_js_lines = [
-        line.strip() for line in app_js_contents.splitlines() if line.strip()
-    ]
-    lines = "".join(app_js_lines)
+    function_app_definition = app_js_contents[
+        app_js_contents.index("function AppWrap") : app_js_contents.index(
+            "export function Layout"
+        )
+    ].strip()
     expected = (
-        "function AppWrap({children}) {"
-        "const [addEvents, connectErrors] = useContext(EventLoopContext);"
+        "function AppWrap({children}) {\n"
+        "const [addEvents, connectErrors] = useContext(EventLoopContext);\n\n\n\n"
         "return ("
         + ("jsx(StrictMode,{}," if react_strict_mode else "")
         + "jsx(ErrorBoundary,{"
-        """fallbackRender:((event_args) => (jsx("div", ({css:({ ["height"] : "100%", ["width"] : "100%", ["position"] : "absolute", ["backgroundColor"] : "#fff", ["color"] : "#000", ["display"] : "flex", ["alignItems"] : "center", ["justifyContent"] : "center" })}), (jsx("div", ({css:({ ["display"] : "flex", ["flexDirection"] : "column", ["gap"] : "1rem" })}), (jsx("div", ({css:({ ["display"] : "flex", ["flexDirection"] : "column", ["gap"] : "1rem", ["maxWidth"] : "50ch", ["border"] : "1px solid #888888", ["borderRadius"] : "0.25rem", ["padding"] : "1rem" })}), (jsx("h2", ({css:({ ["fontSize"] : "1.25rem", ["fontWeight"] : "bold" })}), (jsx(Fragment, ({}), "An error occurred while rendering this page.")))), (jsx("p", ({css:({ ["opacity"] : "0.75" })}), (jsx(Fragment, ({}), "This is an error with the application itself.")))), (jsx("details", ({}), (jsx("summary", ({css:({ ["padding"] : "0.5rem" })}), (jsx(Fragment, ({}), "Error message")))), (jsx("div", ({css:({ ["width"] : "100%", ["maxHeight"] : "50vh", ["overflow"] : "auto", ["background"] : "#000", ["color"] : "#fff", ["borderRadius"] : "0.25rem" })}), (jsx("div", ({css:({ ["padding"] : "0.5rem", ["width"] : "fit-content" })}), (jsx("pre", ({}), (jsx(Fragment, ({}), event_args.error.name + \': \' + event_args.error.message + \'\\n\' + event_args.error.stack)))))))), (jsx("button", ({css:({ ["padding"] : "0.35rem 0.75rem", ["margin"] : "0.5rem", ["background"] : "#fff", ["color"] : "#000", ["border"] : "1px solid #000", ["borderRadius"] : "0.25rem", ["fontWeight"] : "bold" }),onClick:((_e) => (addEvents([(Event("_call_function", ({ ["function"] : (() => (navigator["clipboard"]["writeText"](event_args.error.name + \': \' + event_args.error.message + \'\\n\' + event_args.error.stack))), ["callback"] : null }), ({  })))], [_e], ({  }))))}), (jsx(Fragment, ({}), "Copy")))))))), (jsx("hr", ({css:({ ["borderColor"] : "currentColor", ["opacity"] : "0.25" })}))), (jsx(ReactRouterLink, ({to:"https://reflex.dev"}), (jsx("div", ({css:({ ["display"] : "flex", ["alignItems"] : "baseline", ["justifyContent"] : "center", ["fontFamily"] : "monospace", ["--default-font-family"] : "monospace", ["gap"] : "0.5rem" })}), (jsx(Fragment, ({}), "Built with ")), (jsx("svg", ({"aria-label":"Reflex",css:({ ["fill"] : "currentColor" }),height:"12",role:"img",width:"56",xmlns:"http://www.w3.org/2000/svg"}), (jsx("path", ({d:"M0 11.5999V0.399902H8.96V4.8799H6.72V2.6399H2.24V4.8799H6.72V7.1199H2.24V11.5999H0ZM6.72 11.5999V7.1199H8.96V11.5999H6.72Z"}))), (jsx("path", ({d:"M11.2 11.5999V0.399902H17.92V2.6399H13.44V4.8799H17.92V7.1199H13.44V9.3599H17.92V11.5999H11.2Z"}))), (jsx("path", ({d:"M20.16 11.5999V0.399902H26.88V2.6399H22.4V4.8799H26.88V7.1199H22.4V11.5999H20.16Z"}))), (jsx("path", ({d:"M29.12 11.5999V0.399902H31.36V9.3599H35.84V11.5999H29.12Z"}))), (jsx("path", ({d:"M38.08 11.5999V0.399902H44.8V2.6399H40.32V4.8799H44.8V7.1199H40.32V9.3599H44.8V11.5999H38.08Z"}))), (jsx("path", ({d:"M47.04 4.8799V0.399902H49.28V4.8799H47.04ZM53.76 4.8799V0.399902H56V4.8799H53.76ZM49.28 7.1199V4.8799H53.76V7.1199H49.28ZM47.04 11.5999V7.1199H49.28V11.5999H47.04ZM53.76 11.5999V7.1199H56V11.5999H53.76Z"}))), (jsx("title", ({}), (jsx(Fragment, ({}), "Reflex"))))))))))))))),"""
-        """onError:((_error, _info) => (addEvents([(Event("reflex___state____state.reflex___state____frontend_event_exception_state.handle_frontend_exception", ({ ["info"] : ((((_error["name"]+": ")+_error["message"])+"\\n")+_error["stack"]), ["component_stack"] : _info["componentStack"] }), ({  })))], [_error, _info], ({  }))))"""
+        """fallbackRender:((event_args) => (jsx("div", ({css:({ ["height"] : "100%", ["width"] : "100%", ["position"] : "absolute", ["backgroundColor"] : "#fff", ["color"] : "#000", ["display"] : "flex", ["alignItems"] : "center", ["justifyContent"] : "center" })}), (jsx("div", ({css:({ ["display"] : "flex", ["flexDirection"] : "column", ["gap"] : "0.5rem", ["maxWidth"] : "min(80ch, 90vw)", ["borderRadius"] : "0.25rem", ["padding"] : "1rem" })}), (jsx("div", ({css:({ ["opacity"] : "0.5", ["display"] : "flex", ["gap"] : "4vmin", ["alignItems"] : "center" })}), (jsx("svg", ({className:"lucide lucide-frown-icon lucide-frown",fill:"none",stroke:"currentColor","stroke-linecap":"round","stroke-linejoin":"round","stroke-width":"2",viewBox:"0 0 24 24",width:"25vmin",xmlns:"http://www.w3.org/2000/svg"}), (jsx("circle", ({cx:"12",cy:"12",r:"10"}))), (jsx("path", ({d:"M16 16s-1.5-2-4-2-4 2-4 2"}))), (jsx("line", ({x1:"9",x2:"9.01",y1:"9",y2:"9"}))), (jsx("line", ({x1:"15",x2:"15.01",y1:"9",y2:"9"}))))), (jsx("h2", ({css:({ ["fontSize"] : "5vmin", ["fontWeight"] : "bold" })}), "An error occurred while rendering this page.")))), (jsx("p", ({css:({ ["opacity"] : "0.75", ["marginBlock"] : "1rem" })}), "This is an error with the application itself. Refreshing the page might help.")), (jsx("div", ({css:({ ["width"] : "100%", ["background"] : "color-mix(in srgb, currentColor 5%, transparent)", ["maxHeight"] : "15rem", ["overflow"] : "auto", ["borderRadius"] : "0.4rem" })}), (jsx("div", ({css:({ ["padding"] : "0.5rem" })}), (jsx("pre", ({css:({ ["wordBreak"] : "break-word", ["whiteSpace"] : "pre-wrap" })}), event_args.error.name + \': \' + event_args.error.message + \'\\n\' + event_args.error.stack)))))), (jsx("button", ({css:({ ["padding"] : "0.35rem 1.35rem", ["marginBlock"] : "0.5rem", ["marginInlineStart"] : "auto", ["background"] : "color-mix(in srgb, currentColor 15%, transparent)", ["borderRadius"] : "0.4rem", ["width"] : "fit-content", ["&:hover"] : ({ ["background"] : "color-mix(in srgb, currentColor 25%, transparent)" }), ["&:active"] : ({ ["background"] : "color-mix(in srgb, currentColor 35%, transparent)" }) }),onClick:((_e) => (addEvents([(ReflexEvent("_call_function", ({ ["function"] : (() => (navigator?.["clipboard"]?.["writeText"](event_args.error.name + \': \' + event_args.error.message + \'\\n\' + event_args.error.stack))), ["callback"] : null }), ({  })))], [_e], ({  }))))}), "Copy")), (jsx("hr", ({css:({ ["borderColor"] : "currentColor", ["opacity"] : "0.25" })}))), (jsx(ReactRouterLink, ({to:"https://reflex.dev"}), (jsx("div", ({css:({ ["display"] : "flex", ["alignItems"] : "baseline", ["justifyContent"] : "center", ["fontFamily"] : "monospace", ["--default-font-family"] : "monospace", ["gap"] : "0.5rem" })}), "Built with ", (jsx("svg", ({"aria-label":"Reflex",css:({ ["fill"] : "currentColor" }),height:"12",role:"img",width:"56",xmlns:"http://www.w3.org/2000/svg"}), (jsx("path", ({d:"M0 11.5999V0.399902H8.96V4.8799H6.72V2.6399H2.24V4.8799H6.72V7.1199H2.24V11.5999H0ZM6.72 11.5999V7.1199H8.96V11.5999H6.72Z"}))), (jsx("path", ({d:"M11.2 11.5999V0.399902H17.92V2.6399H13.44V4.8799H17.92V7.1199H13.44V9.3599H17.92V11.5999H11.2Z"}))), (jsx("path", ({d:"M20.16 11.5999V0.399902H26.88V2.6399H22.4V4.8799H26.88V7.1199H22.4V11.5999H20.16Z"}))), (jsx("path", ({d:"M29.12 11.5999V0.399902H31.36V9.3599H35.84V11.5999H29.12Z"}))), (jsx("path", ({d:"M38.08 11.5999V0.399902H44.8V2.6399H40.32V4.8799H44.8V7.1199H40.32V9.3599H44.8V11.5999H38.08Z"}))), (jsx("path", ({d:"M47.04 4.8799V0.399902H49.28V4.8799H47.04ZM53.76 4.8799V0.399902H56V4.8799H53.76ZM49.28 7.1199V4.8799H53.76V7.1199H49.28ZM47.04 11.5999V7.1199H49.28V11.5999H47.04ZM53.76 11.5999V7.1199H56V11.5999H53.76Z"}))), (jsx("title", ({}), "Reflex"))))))))))))),"""
+        """onError:((_error, _info) => (addEvents([(ReflexEvent("reflex___state____state.reflex___state____frontend_event_exception_state.handle_frontend_exception", ({ ["info"] : ((((_error?.["name"]+": ")+_error?.["message"])+"\\n")+_error?.["stack"]), ["component_stack"] : _info?.["componentStack"] }), ({  })))], [_error, _info], ({  }))))"""
         "},"
         "jsx(RadixThemesColorModeProvider,{},"
+        "jsx(Fragment,{},"
+        "jsx(MemoizedToastProvider,{},),"
         "jsx(RadixThemesTheme,{accentColor:\"plum\",css:{...theme.styles.global[':root'], ...theme.styles.global.body}},"
         "jsx(Fragment,{},"
         "jsx(DefaultOverlayComponents,{},),"
         "jsx(Fragment,{},"
-        "jsx(MemoizedToastProvider,{},),"
-        "jsx(Fragment,{},"
-        "children,"
-        "),"
-        "),"
-        "),"
-        "),"
-        "),"
-        ")" + (",)" if react_strict_mode else "") + ")"
-        "}"
+        "children"
+        "))))))" + (")" if react_strict_mode else "") + ")"
+        "\n}"
     )
-    assert expected in lines
+    assert expected.split(",") == function_app_definition.split(",")
 
 
 @pytest.mark.parametrize(
@@ -1434,32 +1616,33 @@ def test_app_wrap_priority(
     app_js_contents = (
         web_dir / constants.Dirs.PAGES / constants.PageNames.APP_ROOT
     ).read_text()
-    app_js_lines = [
-        line.strip() for line in app_js_contents.splitlines() if line.strip()
-    ]
-    lines = "".join(app_js_lines)
+    function_app_definition = app_js_contents[
+        app_js_contents.index("function AppWrap") : app_js_contents.index(
+            "export function Layout"
+        )
+    ].strip()
     expected = (
-        "function AppWrap({children}) {"
-        "const [addEvents, connectErrors] = useContext(EventLoopContext);"
+        "function AppWrap({children}) {\n"
+        "const [addEvents, connectErrors] = useContext(EventLoopContext);\n\n\n\n"
         "return ("
         + ("jsx(StrictMode,{}," if react_strict_mode else "")
         + "jsx(RadixThemesBox,{},"
         "jsx(ErrorBoundary,{"
-        """fallbackRender:((event_args) => (jsx("div", ({css:({ ["height"] : "100%", ["width"] : "100%", ["position"] : "absolute", ["backgroundColor"] : "#fff", ["color"] : "#000", ["display"] : "flex", ["alignItems"] : "center", ["justifyContent"] : "center" })}), (jsx("div", ({css:({ ["display"] : "flex", ["flexDirection"] : "column", ["gap"] : "1rem" })}), (jsx("div", ({css:({ ["display"] : "flex", ["flexDirection"] : "column", ["gap"] : "1rem", ["maxWidth"] : "50ch", ["border"] : "1px solid #888888", ["borderRadius"] : "0.25rem", ["padding"] : "1rem" })}), (jsx("h2", ({css:({ ["fontSize"] : "1.25rem", ["fontWeight"] : "bold" })}), (jsx(Fragment, ({}), "An error occurred while rendering this page.")))), (jsx("p", ({css:({ ["opacity"] : "0.75" })}), (jsx(Fragment, ({}), "This is an error with the application itself.")))), (jsx("details", ({}), (jsx("summary", ({css:({ ["padding"] : "0.5rem" })}), (jsx(Fragment, ({}), "Error message")))), (jsx("div", ({css:({ ["width"] : "100%", ["maxHeight"] : "50vh", ["overflow"] : "auto", ["background"] : "#000", ["color"] : "#fff", ["borderRadius"] : "0.25rem" })}), (jsx("div", ({css:({ ["padding"] : "0.5rem", ["width"] : "fit-content" })}), (jsx("pre", ({}), (jsx(Fragment, ({}), event_args.error.name + \': \' + event_args.error.message + \'\\n\' + event_args.error.stack)))))))), (jsx("button", ({css:({ ["padding"] : "0.35rem 0.75rem", ["margin"] : "0.5rem", ["background"] : "#fff", ["color"] : "#000", ["border"] : "1px solid #000", ["borderRadius"] : "0.25rem", ["fontWeight"] : "bold" }),onClick:((_e) => (addEvents([(Event("_call_function", ({ ["function"] : (() => (navigator["clipboard"]["writeText"](event_args.error.name + \': \' + event_args.error.message + \'\\n\' + event_args.error.stack))), ["callback"] : null }), ({  })))], [_e], ({  }))))}), (jsx(Fragment, ({}), "Copy")))))))), (jsx("hr", ({css:({ ["borderColor"] : "currentColor", ["opacity"] : "0.25" })}))), (jsx(ReactRouterLink, ({to:"https://reflex.dev"}), (jsx("div", ({css:({ ["display"] : "flex", ["alignItems"] : "baseline", ["justifyContent"] : "center", ["fontFamily"] : "monospace", ["--default-font-family"] : "monospace", ["gap"] : "0.5rem" })}), (jsx(Fragment, ({}), "Built with ")), (jsx("svg", ({"aria-label":"Reflex",css:({ ["fill"] : "currentColor" }),height:"12",role:"img",width:"56",xmlns:"http://www.w3.org/2000/svg"}), (jsx("path", ({d:"M0 11.5999V0.399902H8.96V4.8799H6.72V2.6399H2.24V4.8799H6.72V7.1199H2.24V11.5999H0ZM6.72 11.5999V7.1199H8.96V11.5999H6.72Z"}))), (jsx("path", ({d:"M11.2 11.5999V0.399902H17.92V2.6399H13.44V4.8799H17.92V7.1199H13.44V9.3599H17.92V11.5999H11.2Z"}))), (jsx("path", ({d:"M20.16 11.5999V0.399902H26.88V2.6399H22.4V4.8799H26.88V7.1199H22.4V11.5999H20.16Z"}))), (jsx("path", ({d:"M29.12 11.5999V0.399902H31.36V9.3599H35.84V11.5999H29.12Z"}))), (jsx("path", ({d:"M38.08 11.5999V0.399902H44.8V2.6399H40.32V4.8799H44.8V7.1199H40.32V9.3599H44.8V11.5999H38.08Z"}))), (jsx("path", ({d:"M47.04 4.8799V0.399902H49.28V4.8799H47.04ZM53.76 4.8799V0.399902H56V4.8799H53.76ZM49.28 7.1199V4.8799H53.76V7.1199H49.28ZM47.04 11.5999V7.1199H49.28V11.5999H47.04ZM53.76 11.5999V7.1199H56V11.5999H53.76Z"}))), (jsx("title", ({}), (jsx(Fragment, ({}), "Reflex"))))))))))))))),"""
-        """onError:((_error, _info) => (addEvents([(Event("reflex___state____state.reflex___state____frontend_event_exception_state.handle_frontend_exception", ({ ["info"] : ((((_error["name"]+": ")+_error["message"])+"\\n")+_error["stack"]), ["component_stack"] : _info["componentStack"] }), ({  })))], [_error, _info], ({  }))))"""
+        """fallbackRender:((event_args) => (jsx("div", ({css:({ ["height"] : "100%", ["width"] : "100%", ["position"] : "absolute", ["backgroundColor"] : "#fff", ["color"] : "#000", ["display"] : "flex", ["alignItems"] : "center", ["justifyContent"] : "center" })}), (jsx("div", ({css:({ ["display"] : "flex", ["flexDirection"] : "column", ["gap"] : "0.5rem", ["maxWidth"] : "min(80ch, 90vw)", ["borderRadius"] : "0.25rem", ["padding"] : "1rem" })}), (jsx("div", ({css:({ ["opacity"] : "0.5", ["display"] : "flex", ["gap"] : "4vmin", ["alignItems"] : "center" })}), (jsx("svg", ({className:"lucide lucide-frown-icon lucide-frown",fill:"none",stroke:"currentColor","stroke-linecap":"round","stroke-linejoin":"round","stroke-width":"2",viewBox:"0 0 24 24",width:"25vmin",xmlns:"http://www.w3.org/2000/svg"}), (jsx("circle", ({cx:"12",cy:"12",r:"10"}))), (jsx("path", ({d:"M16 16s-1.5-2-4-2-4 2-4 2"}))), (jsx("line", ({x1:"9",x2:"9.01",y1:"9",y2:"9"}))), (jsx("line", ({x1:"15",x2:"15.01",y1:"9",y2:"9"}))))), (jsx("h2", ({css:({ ["fontSize"] : "5vmin", ["fontWeight"] : "bold" })}), "An error occurred while rendering this page.")))), (jsx("p", ({css:({ ["opacity"] : "0.75", ["marginBlock"] : "1rem" })}), "This is an error with the application itself. Refreshing the page might help.")), (jsx("div", ({css:({ ["width"] : "100%", ["background"] : "color-mix(in srgb, currentColor 5%, transparent)", ["maxHeight"] : "15rem", ["overflow"] : "auto", ["borderRadius"] : "0.4rem" })}), (jsx("div", ({css:({ ["padding"] : "0.5rem" })}), (jsx("pre", ({css:({ ["wordBreak"] : "break-word", ["whiteSpace"] : "pre-wrap" })}), event_args.error.name + \': \' + event_args.error.message + \'\\n\' + event_args.error.stack)))))), (jsx("button", ({css:({ ["padding"] : "0.35rem 1.35rem", ["marginBlock"] : "0.5rem", ["marginInlineStart"] : "auto", ["background"] : "color-mix(in srgb, currentColor 15%, transparent)", ["borderRadius"] : "0.4rem", ["width"] : "fit-content", ["&:hover"] : ({ ["background"] : "color-mix(in srgb, currentColor 25%, transparent)" }), ["&:active"] : ({ ["background"] : "color-mix(in srgb, currentColor 35%, transparent)" }) }),onClick:((_e) => (addEvents([(ReflexEvent("_call_function", ({ ["function"] : (() => (navigator?.["clipboard"]?.["writeText"](event_args.error.name + \': \' + event_args.error.message + \'\\n\' + event_args.error.stack))), ["callback"] : null }), ({  })))], [_e], ({  }))))}), "Copy")), (jsx("hr", ({css:({ ["borderColor"] : "currentColor", ["opacity"] : "0.25" })}))), (jsx(ReactRouterLink, ({to:"https://reflex.dev"}), (jsx("div", ({css:({ ["display"] : "flex", ["alignItems"] : "baseline", ["justifyContent"] : "center", ["fontFamily"] : "monospace", ["--default-font-family"] : "monospace", ["gap"] : "0.5rem" })}), "Built with ", (jsx("svg", ({"aria-label":"Reflex",css:({ ["fill"] : "currentColor" }),height:"12",role:"img",width:"56",xmlns:"http://www.w3.org/2000/svg"}), (jsx("path", ({d:"M0 11.5999V0.399902H8.96V4.8799H6.72V2.6399H2.24V4.8799H6.72V7.1199H2.24V11.5999H0ZM6.72 11.5999V7.1199H8.96V11.5999H6.72Z"}))), (jsx("path", ({d:"M11.2 11.5999V0.399902H17.92V2.6399H13.44V4.8799H17.92V7.1199H13.44V9.3599H17.92V11.5999H11.2Z"}))), (jsx("path", ({d:"M20.16 11.5999V0.399902H26.88V2.6399H22.4V4.8799H26.88V7.1199H22.4V11.5999H20.16Z"}))), (jsx("path", ({d:"M29.12 11.5999V0.399902H31.36V9.3599H35.84V11.5999H29.12Z"}))), (jsx("path", ({d:"M38.08 11.5999V0.399902H44.8V2.6399H40.32V4.8799H44.8V7.1199H40.32V9.3599H44.8V11.5999H38.08Z"}))), (jsx("path", ({d:"M47.04 4.8799V0.399902H49.28V4.8799H47.04ZM53.76 4.8799V0.399902H56V4.8799H53.76ZM49.28 7.1199V4.8799H53.76V7.1199H49.28ZM47.04 11.5999V7.1199H49.28V11.5999H47.04ZM53.76 11.5999V7.1199H56V11.5999H53.76Z"}))), (jsx("title", ({}), "Reflex"))))))))))))),"""
+        """onError:((_error, _info) => (addEvents([(ReflexEvent("reflex___state____state.reflex___state____frontend_event_exception_state.handle_frontend_exception", ({ ["info"] : ((((_error?.["name"]+": ")+_error?.["message"])+"\\n")+_error?.["stack"]), ["component_stack"] : _info?.["componentStack"] }), ({  })))], [_error, _info], ({  }))))"""
         "},"
         'jsx(RadixThemesText,{as:"p"},'
         "jsx(RadixThemesColorModeProvider,{},"
+        "jsx(Fragment,{},"
+        "jsx(MemoizedToastProvider,{},),"
         "jsx(Fragment2,{},"
         "jsx(Fragment,{},"
         "jsx(DefaultOverlayComponents,{},),"
         "jsx(Fragment,{},"
-        "jsx(MemoizedToastProvider,{},),"
-        "jsx(Fragment,{},"
         "children"
-        ",),),),),),),)" + (",)" if react_strict_mode else "")
+        ")))))))" + (")" if react_strict_mode else "") + "))\n}"
     )
-    assert expected in lines
+    assert expected.split(",") == function_app_definition.split(",")
 
 
 def test_app_state_determination():
@@ -1474,9 +1657,9 @@ def test_app_state_determination():
 def test_raise_on_state():
     """Test that the state is set."""
     # state kwargs is deprecated, we just make sure the app is created anyway.
-    _app = App(_state=State)
-    assert _app._state is not None
-    assert issubclass(_app._state, State)
+    app = App(_state=State)
+    assert app._state is not None
+    assert issubclass(app._state, State)
 
 
 def test_call_app():
@@ -1766,3 +1949,71 @@ def test_backend_exception_handler_validation(handler_fn, expected):
     """
     with expected:
         rx.App(backend_exception_handler=handler_fn)._validate_exception_handlers()
+
+
+@pytest.mark.parametrize(
+    ("substate", "frontend"),
+    [
+        pytest.param(False, True, id="root_state_frontend"),
+        pytest.param(False, False, id="root_state_backend"),
+        pytest.param(True, True, id="substate_frontend"),
+        pytest.param(True, False, id="substate_backend"),
+    ],
+)
+@pytest.mark.asyncio
+async def test_app_modify_state_clean(token: str, substate: bool, frontend: bool):
+    """Test that modify_state does not leave dirty_vars or dirty_substates.
+
+    Args:
+        token: A client token.
+        substate: Whether to modify a substate.
+        frontend: Whether to modify a frontend or backend var.
+    """
+
+    class Base(BaseState):
+        count: int = 0
+        _backend: int = 0
+
+    class Sub(Base):
+        sub_count: int = 0
+        _sub_backend: int = 0
+
+    app = App(_state=Base)
+    app._event_namespace = AsyncMock()
+
+    async with app.modify_state(
+        token=_substate_key(token, Sub.get_name())
+    ) as root_state:
+        sub = root_state.substates[Sub.get_name()]
+        if substate:
+            if frontend:
+                sub.sub_count = 1
+            else:
+                sub._sub_backend = 1
+        else:
+            if frontend:
+                root_state.count = 1
+            else:
+                root_state._backend = 1
+
+    assert not root_state.dirty_vars
+    assert not root_state.dirty_substates
+    if substate:
+        assert sub._was_touched
+        assert not root_state._was_touched
+    else:
+        assert root_state._was_touched
+        assert not sub._was_touched
+
+    if frontend:
+        assert app._event_namespace.emit_update.call_count == 1
+        if substate:
+            exp_delta = {Sub.get_full_name(): {"sub_count_rx_state_": 1}}
+        else:
+            exp_delta = {Base.get_full_name(): {"count_rx_state_": 1}}
+        assert (
+            app._event_namespace.emit_update.call_args.kwargs["update"].delta
+            == exp_delta
+        )
+    else:
+        assert app._event_namespace.emit_update.call_count == 0

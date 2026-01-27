@@ -165,8 +165,8 @@ def to_snake_case(text: str) -> str:
     Returns:
         The snake case string.
     """
-    s1 = re.sub("(.)([A-Z][a-z]+)", r"\1_\2", text)
-    return re.sub("([a-z0-9])([A-Z])", r"\1_\2", s1).lower().replace("-", "_")
+    s1 = re.sub(r"(.)([A-Z][a-z]+)", r"\1_\2", text)
+    return re.sub(r"([a-z0-9])([A-Z])", r"\1_\2", s1).lower().replace("-", "_")
 
 
 def to_camel_case(text: str, treat_hyphens_as_underscores: bool = True) -> str:
@@ -330,7 +330,7 @@ def format_route(route: str) -> str:
 
 def format_match(
     cond: str | Var,
-    match_cases: list[list[Var]],
+    match_cases: list[tuple[list[Var], Var]],
     default: Var,
 ) -> str:
     """Format a match expression whose return type is a Var.
@@ -347,12 +347,11 @@ def format_match(
     switch_code = f"(() => {{ switch (JSON.stringify({cond})) {{"
 
     for case in match_cases:
-        conditions = case[:-1]
-        return_value = case[-1]
+        conditions, return_value = case
 
-        case_conditions = " ".join(
-            [f"case JSON.stringify({condition!s}):" for condition in conditions]
-        )
+        case_conditions = " ".join([
+            f"case JSON.stringify({condition!s}):" for condition in conditions
+        ])
         case_code = f"{case_conditions}  return ({return_value!s});  break;"
         switch_code += case_code
 
@@ -494,24 +493,20 @@ def format_event(event_spec: EventSpec) -> str:
     Returns:
         The compiled event.
     """
-    args = ",".join(
-        [
-            ":".join(
-                (
-                    name._js_expr,
-                    (
-                        wrap(
-                            json.dumps(val._js_expr).strip('"').replace("`", "\\`"),
-                            "`",
-                        )
-                        if val._var_is_string
-                        else str(val)
-                    ),
+    args = ",".join([
+        ":".join((
+            name._js_expr,
+            (
+                wrap(
+                    json.dumps(val._js_expr).strip('"').replace("`", "\\`"),
+                    "`",
                 )
-            )
-            for name, val in event_spec.args
-        ]
-    )
+                if val._var_is_string
+                else str(val)
+            ),
+        ))
+        for name, val in event_spec.args
+    ])
     event_args = [
         wrap(format_event_handler(event_spec.handler), '"'),
     ]
@@ -519,7 +514,7 @@ def format_event(event_spec: EventSpec) -> str:
 
     if event_spec.client_handler_name:
         event_args.append(wrap(event_spec.client_handler_name, '"'))
-    return f"Event({', '.join(event_args)})"
+    return f"ReflexEvent({', '.join(event_args)})"
 
 
 if TYPE_CHECKING:
@@ -591,8 +586,8 @@ def format_queue_events(
     # Return the final code snippet, expecting queueEvents, processEvent, and socket to be in scope.
     # Typically this snippet will _only_ run from within an rx.call_script eval context.
     return Var(
-        f"{arg_def} => {{queueEvents([{','.join(payloads)}], {constants.CompileVars.SOCKET}); "
-        f"processEvent({constants.CompileVars.SOCKET})}}",
+        f"{arg_def} => {{queueEvents([{','.join(payloads)}], {constants.CompileVars.SOCKET}, false, navigate, params);"
+        f"processEvent({constants.CompileVars.SOCKET}, navigate, params);}}",
     ).to(FunctionVar, EventChain)
 
 

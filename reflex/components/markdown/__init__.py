@@ -1,5 +1,3 @@
 """Markdown components."""
 
-from .markdown import Markdown
-
-markdown = Markdown.create
+from .markdown import markdown as markdown

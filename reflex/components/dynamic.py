@@ -81,12 +81,10 @@ def load_dynamic_serializer():
             rendered_components.update(dict.fromkeys(dynamic_imports))
 
         # Include custom code in the shared component.
-        rendered_components.update(
-            dict.fromkeys(component._get_all_custom_code()),
-        )
+        rendered_components.update(component._get_all_custom_code())
 
         rendered_components[
-            templates.STATEFUL_COMPONENT.render(
+            templates.stateful_component_template(
                 tag_name="MySSRComponent",
                 memo_trigger_hooks=[],
                 component=component,
@@ -111,17 +109,18 @@ def load_dynamic_serializer():
             else:
                 imports[lib] = names
 
-        module_code_lines = templates.STATEFUL_COMPONENTS.render(
+        module_code_lines = templates.stateful_components_template(
             imports=utils.compile_imports(imports),
             memoized_code="\n".join(rendered_components),
-        ).splitlines()[1:]
+        ).splitlines()
 
         # Rewrite imports from `/` to destructure from window
         for ix, line in enumerate(module_code_lines[:]):
             if line.startswith("import "):
                 if 'from "$/' in line or 'from "/' in line:
                     module_code_lines[ix] = (
-                        line.replace("import ", "const ", 1)
+                        line
+                        .replace("import ", "const ", 1)
                         .replace(" as ", ": ")
                         .replace(" from ", " = window['__reflex'][", 1)
                         + "]"
@@ -130,7 +129,8 @@ def load_dynamic_serializer():
                     for lib in libs_in_window:
                         if f'from "{lib}"' in line:
                             module_code_lines[ix] = (
-                                line.replace("import ", "const ", 1)
+                                line
+                                .replace("import ", "const ", 1)
                                 .replace(
                                     f' from "{lib}"', f" = window.__reflex['{lib}']", 1
                                 )
@@ -163,12 +163,10 @@ def load_dynamic_serializer():
             )
         ]
 
-        return "\n".join(
-            [
-                "//__reflex_evaluate",
-                *module_code_lines,
-            ]
-        )
+        return "\n".join([
+            "//__reflex_evaluate",
+            *module_code_lines,
+        ])
 
     @transform
     def evaluate_component(js_string: Var[str]) -> Var[Component]:

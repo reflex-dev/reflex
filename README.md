@@ -39,25 +39,50 @@ See our [architecture page](https://reflex.dev/blog/2024-03-21-reflex-architectu
 
 ## ⚙️ Installation
 
-Open a terminal and run (Requires Python 3.10+):
+**Important:** We strongly recommend using a virtual environment to ensure the `reflex` command is available in your PATH.
+
+## 🥳 Create your first app
+
+### 1. Create the project directory
+
+Replace `my_app_name` with your project name:
+
+```bash
+mkdir my_app_name
+cd my_app_name
+```
+
+### 2. Set up a virtual environment
+
+Create and activate virtual environment
+
+```bash
+# On Windows:
+python -m venv .venv
+.venv\Scripts\activate
+
+# On macOS/Linux:
+python3 -m venv .venv
+source .venv/bin/activate
+```
+
+### 3. Install Reflex
+
+Reflex is available as a pip package (Requires Python 3.10+):
 
 ```bash
 pip install reflex
 ```
 
-## 🥳 Create your first app
+### 4. Initialize the project
 
-Installing `reflex` also installs the `reflex` command line tool.
-
-Test that the install was successful by creating a new project. (Replace `my_app_name` with your project name):
+This command initializes a template app in your new directory:
 
 ```bash
-mkdir my_app_name
-cd my_app_name
 reflex init
 ```
 
-This command initializes a template app in your new directory.
+### 5. Run the app
 
 You can run this app in development mode:
 
@@ -68,6 +93,10 @@ reflex run
 You should see your app running at http://localhost:3000.
 
 Now you can modify the source code in `my_app_name/my_app_name.py`. Reflex has fast refreshes so you can see your changes instantly when you save your code.
+
+### Troubleshooting
+
+If you installed Reflex without a virtual environment and the `reflex` command is not found, you can run commands using: `python3 -m reflex init` and `python3 -m reflex run`
 
 ## 🫧 Example App
 

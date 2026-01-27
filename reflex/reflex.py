@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import atexit
 from importlib.util import find_spec
 from pathlib import Path
 from typing import TYPE_CHECKING
@@ -12,12 +11,14 @@ from reflex_cli.v2.deployments import hosting_cli
 
 from reflex import constants
 from reflex.config import get_config
-from reflex.constants.base import LITERAL_ENV
 from reflex.custom_components.custom_components import custom_components_cli
 from reflex.environment import environment
-from reflex.state import reset_disk_state_manager
-from reflex.utils import console, redir, telemetry
-from reflex.utils.exec import should_use_granian
+from reflex.utils import console
+
+if TYPE_CHECKING:
+    from reflex_cli.constants.base import LogLevel as HostingLogLevel
+
+    from reflex.constants.base import LITERAL_ENV
 
 
 def set_loglevel(ctx: click.Context, self: click.Parameter, value: str | None):
@@ -41,6 +42,8 @@ def cli():
 
 loglevel_option = click.option(
     "--loglevel",
+    "--log-level",
+    "loglevel",
     type=click.Choice(
         [loglevel.value for loglevel in constants.LogLevel],
         case_sensitive=False,
@@ -64,7 +67,9 @@ def _init(
     exec.output_system_info()
 
     if ai:
-        redir.reflex_build_redirect()
+        from reflex.utils.redir import reflex_build_redirect
+
+        reflex_build_redirect()
         return
 
     # Validate the app name.
@@ -132,9 +137,14 @@ def _run(
     frontend_port: int | None = None,
     backend_port: int | None = None,
     backend_host: str | None = None,
+    single_port: bool = False,
 ):
     """Run the app in the given directory."""
-    from reflex.utils import build, exec, prerequisites, processes
+    import atexit
+
+    from reflex.state import reset_disk_state_manager
+    from reflex.utils import build, exec, prerequisites, processes, telemetry
+    from reflex.utils.exec import should_use_granian
 
     config = get_config()
 
@@ -173,7 +183,9 @@ def _run(
             auto_increment=auto_increment_frontend,
         )
 
-    if backend:
+    if single_port:
+        backend_port = frontend_port
+    elif backend:
         auto_increment_backend = not bool(backend_port or config.backend_port)
 
         backend_port = processes.handle_port(
@@ -204,7 +216,7 @@ def _run(
     args = (frontend,)
     kwargs = {
         "check_if_schema_up_to_date": True,
-        "prerender_routes": env == constants.Env.PROD,
+        "prerender_routes": exec.should_prerender_routes(),
     }
 
     # Granian fails if the app is already imported.
@@ -216,27 +228,30 @@ def _run(
             *args,
             **kwargs,
         )
-        compile_future.result()
+        return_result = compile_future.result()
     else:
-        app_task(*args, **kwargs)
+        return_result = app_task(*args, **kwargs)
+
+    if not return_result:
+        raise SystemExit(1)
+
+    if env != constants.Env.PROD and env != constants.Env.DEV:
+        msg = f"Invalid env: {env}. Must be DEV or PROD."
+        raise ValueError(msg)
 
     # Get the frontend and backend commands, based on the environment.
-    setup_frontend = frontend_cmd = backend_cmd = None
     if env == constants.Env.DEV:
         setup_frontend, frontend_cmd, backend_cmd = (
             build.setup_frontend,
             exec.run_frontend,
             exec.run_backend,
         )
-    if env == constants.Env.PROD:
+    elif env == constants.Env.PROD:
         setup_frontend, frontend_cmd, backend_cmd = (
             build.setup_frontend_prod,
             exec.run_frontend_prod,
             exec.run_backend_prod,
         )
-    if not setup_frontend or not frontend_cmd or not backend_cmd:
-        msg = f"Invalid env: {env}. Must be DEV or PROD."
-        raise ValueError(msg)
 
     # Post a telemetry event.
     telemetry.send(f"run-{env.value}")
@@ -248,37 +263,44 @@ def _run(
     commands = []
 
     # Run the frontend on a separate thread.
-    if frontend:
+    if frontend and not single_port:
         setup_frontend(Path.cwd())
         commands.append((frontend_cmd, Path.cwd(), frontend_port, backend))
 
     # In prod mode, run the backend on a separate thread.
     if backend and env == constants.Env.PROD:
-        commands.append(
-            (
-                backend_cmd,
-                backend_host,
-                backend_port,
-                config.loglevel.subprocess_level(),
-                frontend,
-            )
-        )
+        commands.append((
+            backend_cmd,
+            backend_host,
+            backend_port,
+            config.loglevel.subprocess_level(),
+            frontend,
+        ))
 
-    # Start the frontend and backend.
-    with processes.run_concurrently_context(*commands):
-        # In dev mode, run the backend on the main thread.
-        if backend and backend_port and env == constants.Env.DEV:
-            backend_cmd(
-                backend_host,
-                int(backend_port),
-                config.loglevel.subprocess_level(),
-                frontend,
-            )
-            # The windows uvicorn bug workaround
-            # https://github.com/reflex-dev/reflex/issues/2335
-            if constants.IS_WINDOWS and exec.frontend_process:
-                # Sends SIGTERM in windows
-                exec.kill(exec.frontend_process.pid)
+    if single_port:
+        setup_frontend(Path.cwd())
+        backend_function, *args = commands[0]
+        exec.notify_app_running()
+        exec.notify_frontend(
+            f"http://0.0.0.0:{get_config().frontend_port}", backend_present=True
+        )
+        backend_function(*args, mount_frontend_compiled_app=True)
+    else:
+        # Start the frontend and backend.
+        with processes.run_concurrently_context(*commands):
+            # In dev mode, run the backend on the main thread.
+            if backend and backend_port and env == constants.Env.DEV:
+                backend_cmd(
+                    backend_host,
+                    int(backend_port),
+                    config.loglevel.subprocess_level(),
+                    frontend,
+                )
+                # The windows uvicorn bug workaround
+                # https://github.com/reflex-dev/reflex/issues/2335
+                if constants.IS_WINDOWS and exec.frontend_process:
+                    # Sends SIGTERM in windows
+                    exec.kill(exec.frontend_process.pid)
 
 
 @cli.command()
@@ -319,6 +341,12 @@ def _run(
     "--backend-host",
     help="Specify the backend host.",
 )
+@click.option(
+    "--single-port",
+    is_flag=True,
+    help="Run both frontend and backend on the same port.",
+    default=False,
+)
 def run(
     env: LITERAL_ENV,
     frontend_only: bool,
@@ -326,11 +354,29 @@ def run(
     frontend_port: int | None,
     backend_port: int | None,
     backend_host: str | None,
+    single_port: bool,
 ):
     """Run the app in the current directory."""
     if frontend_only and backend_only:
         console.error("Cannot use both --frontend-only and --backend-only options.")
-        raise click.exceptions.Exit(1)
+        raise SystemExit(1)
+
+    if single_port:
+        if env != constants.Env.PROD.value:
+            console.error("--single-port can only be used with --env=PROD.")
+            raise click.exceptions.Exit(1)
+        if frontend_only or backend_only:
+            console.error(
+                "Cannot use --single-port with --frontend-only or --backend-only options."
+            )
+            raise click.exceptions.Exit(1)
+        if backend_port and frontend_port and backend_port != frontend_port:
+            console.error(
+                "When using --single-port, --backend-port and --frontend-port must be the same."
+            )
+            raise click.exceptions.Exit(1)
+    elif frontend_port and backend_port and frontend_port == backend_port:
+        single_port = True
 
     config = get_config()
 
@@ -349,6 +395,7 @@ def run(
         frontend_port,
         backend_port,
         backend_host,
+        single_port,
     )
 
 
@@ -360,7 +407,13 @@ def run(
     default=False,
     help="Run the command without making any changes.",
 )
-def compile(dry: bool):
+@click.option(
+    "--rich/--no-rich",
+    default=True,
+    is_flag=True,
+    help="Whether to use rich progress bars.",
+)
+def compile(dry: bool, rich: bool):
     """Compile the app in the current directory."""
     import time
 
@@ -371,7 +424,7 @@ def compile(dry: bool):
         _init(name=get_config().app_name)
     get_config(reload=True)
     starting_time = time.monotonic()
-    prerequisites.get_compiled_app(dry_run=dry)
+    prerequisites.get_compiled_app(dry_run=dry, use_rich=rich)
     elapsed_time = time.monotonic() - starting_time
     console.success(f"App compiled successfully in {elapsed_time:.3f} seconds.")
 
@@ -416,6 +469,21 @@ def compile(dry: bool):
     default=constants.Env.PROD.value,
     help="The environment to export the app in.",
 )
+@click.option(
+    "--exclude-from-backend",
+    "backend_excluded_dirs",
+    multiple=True,
+    type=click.Path(exists=True, path_type=Path, resolve_path=True),
+    help="Files or directories to exclude from the backend zip. Can be used multiple times.",
+)
+@click.option(
+    "--server-side-rendering/--no-server-side-rendering",
+    "--ssr/--no-ssr",
+    "ssr",
+    default=True,
+    is_flag=True,
+    help="Whether to enable server side rendering for the frontend.",
+)
 def export(
     zip: bool,
     frontend_only: bool,
@@ -423,10 +491,17 @@ def export(
     zip_dest_dir: str,
     upload_db_file: bool,
     env: LITERAL_ENV,
+    backend_excluded_dirs: tuple[Path, ...] = (),
+    ssr: bool = True,
 ):
     """Export the app to a zip file."""
     from reflex.utils import export as export_utils
     from reflex.utils import prerequisites
+
+    if not environment.REFLEX_SSR.is_set():
+        environment.REFLEX_SSR.set(ssr)
+    elif environment.REFLEX_SSR.get() != ssr:
+        ssr = environment.REFLEX_SSR.get()
 
     environment.REFLEX_COMPILE_CONTEXT.set(constants.CompileContext.EXPORT)
 
@@ -449,6 +524,8 @@ def export(
         upload_db_file=upload_db_file,
         env=constants.Env.DEV if env == constants.Env.DEV else constants.Env.PROD,
         loglevel=config.loglevel.subprocess_level(),
+        backend_excluded_dirs=backend_excluded_dirs,
+        prerender_routes=ssr,
     )
 
 
@@ -464,6 +541,8 @@ def login():
     validated_info = hosting_cli.login()
     if validated_info is not None:
         _skip_compile()  # Allow running outside of an app dir
+        from reflex.utils import telemetry
+
         telemetry.send("login", user_uuid=validated_info.get("user_id"))
 
 
@@ -654,6 +733,21 @@ def makemigrations(message: str | None):
     "--config",
     help="path to the config file",
 )
+@click.option(
+    "--exclude-from-backend",
+    "backend_excluded_dirs",
+    multiple=True,
+    type=click.Path(exists=True, path_type=Path, resolve_path=True),
+    help="Files or directories to exclude from the backend zip. Can be used multiple times.",
+)
+@click.option(
+    "--server-side-rendering/--no-server-side-rendering",
+    "--ssr/--no-ssr",
+    "ssr",
+    default=True,
+    is_flag=True,
+    help="Whether to enable server side rendering for the frontend.",
+)
 def deploy(
     app_name: str | None,
     app_id: str | None,
@@ -667,6 +761,8 @@ def deploy(
     project_name: str | None,
     token: str | None,
     config_path: str | None,
+    backend_excluded_dirs: tuple[Path, ...] = (),
+    ssr: bool = True,
 ):
     """Deploy the app to the Reflex hosting service."""
     from reflex_cli.utils import dependency
@@ -684,6 +780,11 @@ def deploy(
 
     environment.REFLEX_COMPILE_CONTEXT.set(constants.CompileContext.DEPLOY)
 
+    if not environment.REFLEX_SSR.is_set():
+        environment.REFLEX_SSR.set(ssr)
+    elif environment.REFLEX_SSR.get() != ssr:
+        ssr = environment.REFLEX_SSR.get()
+
     # Only check requirements if interactive.
     # There is user interaction for requirements update.
     if interactive:
@@ -700,21 +801,19 @@ def deploy(
         app_name=app_name,
         app_id=app_id,
         export_fn=(
-            lambda zip_dest_dir,
-            api_url,
-            deploy_url,
-            frontend,
-            backend,
-            upload_db,
-            zipping: export_utils.export(
-                zip_dest_dir=zip_dest_dir,
-                api_url=api_url,
-                deploy_url=deploy_url,
-                frontend=frontend,
-                backend=backend,
-                zipping=zipping,
-                loglevel=config.loglevel.subprocess_level(),
-                upload_db_file=upload_db,
+            lambda zip_dest_dir, api_url, deploy_url, frontend, backend, upload_db, zipping: (
+                export_utils.export(
+                    zip_dest_dir=zip_dest_dir,
+                    api_url=api_url,
+                    deploy_url=deploy_url,
+                    frontend=frontend,
+                    backend=backend,
+                    zipping=zipping,
+                    loglevel=config.loglevel.subprocess_level(),
+                    upload_db_file=upload_db,
+                    backend_excluded_dirs=backend_excluded_dirs,
+                    prerender_routes=ssr,
+                )
             )
         ),
         regions=list(region),
@@ -741,10 +840,6 @@ def rename(new_name: str):
 
     prerequisites.validate_app_name(new_name)
     rename_app(new_name, get_config().loglevel)
-
-
-if TYPE_CHECKING:
-    from reflex_cli.constants.base import LogLevel as HostingLogLevel
 
 
 def _convert_reflex_loglevel_to_reflex_cli_loglevel(

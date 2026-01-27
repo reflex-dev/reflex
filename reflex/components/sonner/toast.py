@@ -2,9 +2,9 @@
 
 from __future__ import annotations
 
+import dataclasses
 from typing import Any, Literal
 
-from reflex.base import Base
 from reflex.components.component import Component, ComponentNamespace
 from reflex.components.lucide.icon import Icon
 from reflex.components.props import NoExtrasAllowedProps
@@ -35,7 +35,8 @@ toast_ref = Var(
 )
 
 
-class ToastAction(Base):
+@dataclasses.dataclass
+class ToastAction:
     """A toast action that render a button in the toast."""
 
     label: str
@@ -279,7 +280,8 @@ class Toaster(Component):
                 toast_ref.bool(),
                 toast,
                 FunctionVar("window.alert").call(
-                    Var.create(
+                    Var
+                    .create(
                         message
                         if isinstance(message, str) and message
                         else props.get("title", props.get("description", ""))

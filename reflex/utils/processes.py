@@ -15,12 +15,11 @@ from contextlib import closing
 from pathlib import Path
 from typing import Any, Literal, overload
 
-import click
 import rich.markup
-from redis.exceptions import RedisError
 from rich.progress import Progress
 
 from reflex import constants
+from reflex.config import get_config
 from reflex.environment import environment
 from reflex.utils import console, path_ops, prerequisites
 from reflex.utils.registry import get_npm_registry
@@ -39,18 +38,24 @@ def get_num_workers() -> int:
     """Get the number of backend worker processes.
 
     Raises:
-        Exit: If unable to connect to Redis.
+        SystemExit: If unable to connect to Redis.
 
     Returns:
         The number of backend worker processes.
     """
+    if get_config().transport == "polling":
+        return 1
+
     if (redis_client := prerequisites.get_redis_sync()) is None:
         return 1
+
+    from redis.exceptions import RedisError
+
     try:
         redis_client.ping()
     except RedisError as re:
         console.error(f"Unable to connect to Redis: {re}")
-        raise click.exceptions.Exit(1) from re
+        raise SystemExit(1) from None
     return (os.cpu_count() or 1) * 2 + 1
 
 
@@ -131,7 +136,7 @@ def handle_port(service_name: str, port: int, auto_increment: bool) -> int:
         The port to run the service on.
 
     Raises:
-        Exit:when the port is in use.
+        SystemExit:when the port is in use.
     """
     console.debug(f"Checking if {service_name.capitalize()} port: {port} is in use.")
 
@@ -146,7 +151,7 @@ def handle_port(service_name: str, port: int, auto_increment: bool) -> int:
             f"Unable to bind to any port for {service_name}. "
             "Please check your network configuration."
         )
-        raise click.exceptions.Exit(1)
+        raise SystemExit(1)
 
     console.debug(
         f"Checking if {service_name.capitalize()} port: {port} is in use for families: {families}."
@@ -172,7 +177,7 @@ def handle_port(service_name: str, port: int, auto_increment: bool) -> int:
     else:
         console.error(f"{service_name.capitalize()} port: {port} is already in use.")
 
-    raise click.exceptions.Exit(1)
+    raise SystemExit(1)
 
 
 @overload
@@ -211,13 +216,13 @@ def new_process(
         Execute a child program in a new process.
 
     Raises:
-        Exit: When attempting to run a command with a None value.
+        SystemExit: When attempting to run a command with a None value.
     """
     # Check for invalid command first.
     non_empty_args = list(filter(None, args)) if isinstance(args, list) else [args]
     if isinstance(args, list) and len(non_empty_args) != len(args):
         console.error(f"Invalid command: {args}")
-        raise click.exceptions.Exit(1)
+        raise SystemExit(1)
 
     path_env: str = os.environ.get("PATH", "")
 
@@ -325,7 +330,7 @@ def stream_logs(
         The lines of the process output.
 
     Raises:
-        Exit: If the process failed.
+        SystemExit: If the process failed.
         ValueError: If the process stdout pipe is closed, but the process remains running.
     """
     from reflex.utils import telemetry
@@ -376,7 +381,7 @@ def stream_logs(
                 "NPM_CONFIG_REGISTRY environment variable. If TLS is the issue, and you know what "
                 "you are doing, you can disable it by setting the SSL_NO_VERIFY environment variable."
             )
-            raise click.exceptions.Exit(1)
+            raise SystemExit(1)
         for set_of_logs in (*prior_logs, tuple(logs)):
             for line in set_of_logs:
                 console.error(line, end="")
@@ -384,7 +389,7 @@ def stream_logs(
         if analytics_enabled:
             telemetry.send("error", context=message)
         console.error("Run with [bold]--loglevel debug [/bold] for the full log.")
-        raise click.exceptions.Exit(1)
+        raise SystemExit(1)
 
 
 def show_logs(message: str, process: subprocess.Popen):
@@ -445,11 +450,12 @@ def show_progress(message: str, process: subprocess.Popen, checkpoints: list[str
         task = progress.add_task(f"{message}: ", total=len(checkpoints))
         for line in stream_logs(message, process, progress=progress):
             # Check for special strings and update the progress bar.
-            special_string = checkpoints[0]
-            if special_string in line:
-                progress.update(task, advance=1)
-                checkpoints.pop(0)
-            if not checkpoints:
+            while checkpoints:
+                special_string = checkpoints[0]
+                if special_string in line:
+                    progress.update(task, advance=1)
+                    checkpoints.pop(0)
+                    continue
                 break
 
 

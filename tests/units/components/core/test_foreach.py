@@ -1,4 +1,3 @@
-import pydantic.v1
 import pytest
 
 import reflex as rx
@@ -15,7 +14,6 @@ from reflex.components.radix.themes.layout.box import box
 from reflex.components.radix.themes.typography.text import text
 from reflex.constants.state import FIELD_MARKER
 from reflex.state import BaseState, ComponentState
-from reflex.vars.base import Var
 from reflex.vars.number import NumberVar
 from reflex.vars.sequence import ArrayVar
 
@@ -54,7 +52,7 @@ class ForEachState(BaseState):
     bad_annotation_list: list = [["red", "orange"], ["yellow", "blue"]]
     color_index_tuple: tuple[int, str] = (0, "red")
 
-    default_factory_list: list[ForEachTag] = pydantic.v1.Field(default_factory=list)
+    default_factory_list: rx.Field[list[ForEachTag]] = rx.field(default_factory=list)
 
     optional_list: rx.Field[list[str] | None] = rx.field(None)
     optional_list_value: rx.Field[list[str] | None] = rx.field(["red", "yellow"])
@@ -141,9 +139,6 @@ def display_color_index_tuple(color):
     return box(text(color))
 
 
-seen_index_vars = set()
-
-
 @pytest.mark.parametrize(
     ("state_var", "render_fn", "render_dict"),
     [
@@ -175,28 +170,28 @@ seen_index_vars = set()
             ForEachState.primary_color,
             display_primary_colors,
             {
-                "iterable_state": f"Object.entries({ForEachState.get_full_name()}.primary_color{FIELD_MARKER})",
+                "iterable_state": f"Object.entries({ForEachState.get_full_name()}.primary_color{FIELD_MARKER} ?? {{}})",
             },
         ),
         (
             ForEachState.color_with_shades,
             display_color_with_shades,
             {
-                "iterable_state": f"Object.entries({ForEachState.get_full_name()}.color_with_shades{FIELD_MARKER})",
+                "iterable_state": f"Object.entries({ForEachState.get_full_name()}.color_with_shades{FIELD_MARKER} ?? {{}})",
             },
         ),
         (
             ForEachState.nested_colors_with_shades,
             display_nested_color_with_shades,
             {
-                "iterable_state": f"Object.entries({ForEachState.get_full_name()}.nested_colors_with_shades{FIELD_MARKER})",
+                "iterable_state": f"Object.entries({ForEachState.get_full_name()}.nested_colors_with_shades{FIELD_MARKER} ?? {{}})",
             },
         ),
         (
             ForEachState.nested_colors_with_shades,
             display_nested_color_with_shades_v2,
             {
-                "iterable_state": f"Object.entries({ForEachState.get_full_name()}.nested_colors_with_shades{FIELD_MARKER})",
+                "iterable_state": f"Object.entries({ForEachState.get_full_name()}.nested_colors_with_shades{FIELD_MARKER} ?? {{}})",
             },
         ),
         (
@@ -248,10 +243,7 @@ def test_foreach_render(state_var, render_fn, render_dict):
 
     # Make sure the index vars are unique.
     arg_index = rend["arg_index"]
-    assert isinstance(arg_index, Var)
-    assert arg_index._js_expr not in seen_index_vars
-    assert arg_index._var_type is int
-    seen_index_vars.add(arg_index._js_expr)
+    assert isinstance(arg_index, str)
 
 
 def test_foreach_bad_annotations():

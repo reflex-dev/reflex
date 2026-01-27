@@ -47,9 +47,10 @@ def VarOperations():
         dict1: rx.Field[dict[int, int]] = rx.field({1: 2})
         dict2: rx.Field[dict[int, int]] = rx.field({3: 4})
         html_str: rx.Field[str] = rx.field("<div>hello</div>")
-        people: rx.Field[list[Person]] = rx.field(
-            [{"name": "Alice", "age": 30}, {"name": "Bob", "age": 25}]
-        )
+        people: rx.Field[list[Person]] = rx.field([
+            {"name": "Alice", "age": 30},
+            {"name": "Bob", "age": 25},
+        ])
         obj: rx.Field[Object] = rx.field(Object())
 
     app = rx.App()
@@ -575,6 +576,29 @@ def VarOperations():
             rx.text(ArrayVar.range(2, 10, 2).join(","), id="list_join_range2"),
             rx.text(ArrayVar.range(5, 0, -1).join(","), id="list_join_range3"),
             rx.text(ArrayVar.range(0, 3).join(","), id="list_join_range4"),
+            rx.box(
+                # Test that foreach works with various non-array inputs without throwing
+                rx.foreach(
+                    rx.Var("undefined").to(list),
+                    rx.text.span,
+                ),
+                rx.foreach(
+                    rx.Var("null").to(list),
+                    rx.text.span,
+                ),
+                rx.foreach(
+                    rx.Var("({})").to(list),
+                    rx.text.span,
+                ),
+                rx.foreach(
+                    rx.Var("2").to(list),
+                    rx.text.span,
+                ),
+                rx.foreach(
+                    rx.Var("false").to(list),
+                    rx.text.span,
+                ),
+            ),
             rx.box(
                 rx.foreach(
                     ArrayVar.range(0, 2),

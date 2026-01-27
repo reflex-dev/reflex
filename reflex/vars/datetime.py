@@ -174,10 +174,14 @@ def date_compare_operation(
 class LiteralDatetimeVar(LiteralVar, DateTimeVar):
     """Base class for immutable datetime and date vars."""
 
-    _var_value: datetime | date = dataclasses.field(default=datetime.now())
+    _var_value: date = dataclasses.field(default=datetime.now())
 
     @classmethod
-    def create(cls, value: datetime | date, _var_data: VarData | None = None):
+    def _get_all_var_data_without_creating_var(cls, value: date) -> VarData | None:
+        return None
+
+    @classmethod
+    def create(cls, value: date, _var_data: VarData | None = None):
         """Create a new instance of the class.
 
         Args:

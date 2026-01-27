@@ -120,9 +120,11 @@ def convert_item(
     Raises:
         ReflexError: If an EventHandler is used as a style value
     """
-    if isinstance(style_item, EventHandler):
+    from reflex.components.component import BaseComponent
+
+    if isinstance(style_item, (EventHandler, BaseComponent)):
         msg = (
-            "EventHandlers cannot be used as style values. "
+            f"{type(style_item)} cannot be used as style values. "
             "Please use a Var or a literal value."
         )
         raise ReflexError(msg)
@@ -287,11 +289,11 @@ class Style(dict[str, Any]):
             value: The value to set.
         """
         # Create a Var to collapse VarData encoded in f-string.
-        _var = LiteralVar.create(value)
-        if _var is not None:
+        var = LiteralVar.create(value)
+        if var is not None:
             # Carry the imports/hooks when setting a Var as a value.
             self._var_data = VarData.merge(
-                getattr(self, "_var_data", None), _var._get_all_var_data()
+                getattr(self, "_var_data", None), var._get_all_var_data()
             )
         super().__setitem__(key, value)
 
@@ -346,7 +348,7 @@ def format_as_emotion(style_dict: dict[str, Any]) -> Style | None:
     Returns:
         The emotion style dict.
     """
-    _var_data = style_dict._var_data if isinstance(style_dict, Style) else None
+    var_data = style_dict._var_data if isinstance(style_dict, Style) else None
 
     emotion_style = Style()
 
@@ -379,8 +381,8 @@ def format_as_emotion(style_dict: dict[str, Any]) -> Style | None:
         else:
             emotion_style[key] = value
     if emotion_style:
-        if _var_data is not None:
-            emotion_style._var_data = VarData.merge(emotion_style._var_data, _var_data)
+        if var_data is not None:
+            emotion_style._var_data = VarData.merge(emotion_style._var_data, var_data)
         return emotion_style
     return None
 

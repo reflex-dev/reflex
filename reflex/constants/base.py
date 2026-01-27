@@ -134,6 +134,11 @@ class Templates(SimpleNamespace):
     # The reflex.build frontend host
     REFLEX_BUILD_FRONTEND = "https://build.reflex.dev"
 
+    # The reflex.build frontend with referrer
+    REFLEX_BUILD_FRONTEND_WITH_REFERRER = (
+        f"{REFLEX_BUILD_FRONTEND}/?utm_source=reflex_cli"
+    )
+
     class Dirs(SimpleNamespace):
         """Folders used by the template system of Reflex."""
 
@@ -141,8 +146,6 @@ class Templates(SimpleNamespace):
         BASE = Reflex.ROOT_DIR / Reflex.MODULE_NAME / ".templates"
         # The web subdirectory of the template directory.
         WEB_TEMPLATE = BASE / "web"
-        # The jinja template directory.
-        JINJA_TEMPLATE = BASE / "jinja"
         # Where the code for the templates is stored.
         CODE = "code"
 
@@ -173,6 +176,8 @@ class ReactRouter(Javascript):
     FRONTEND_LISTENING_REGEX = (
         rf"(?:{DEV_FRONTEND_LISTENING_REGEX}|{PROD_FRONTEND_LISTENING_REGEX})(.*)"
     )
+
+    SPA_FALLBACK = "__spa-fallback.html"
 
 
 # Color mode variables

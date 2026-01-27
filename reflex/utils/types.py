@@ -6,7 +6,9 @@ import dataclasses
 import sys
 import types
 from collections.abc import Callable, Iterable, Mapping, Sequence
+from enum import Enum
 from functools import cached_property, lru_cache
+from importlib.util import find_spec
 from types import GenericAlias
 from typing import (  # noqa: UP035
     TYPE_CHECKING,
@@ -32,7 +34,6 @@ from typing import (  # noqa: UP035
 from typing import get_origin as get_origin_og
 from typing import get_type_hints as get_type_hints_og
 
-from pydantic.v1.fields import ModelField
 from typing_extensions import Self as Self
 from typing_extensions import override as override
 
@@ -52,11 +53,8 @@ UnionTypes = (Union, types.UnionType)
 GenericType = type | _GenericAlias
 
 # Valid state var types.
-JSONType = {str, int, float, bool}
-PrimitiveType = int | float | bool | str | list | dict | set | tuple
 PrimitiveTypes = (int, float, bool, str, list, dict, set, tuple)
-StateVar = PrimitiveType | Base | None
-StateIterVar = list | set | tuple
+StateVarTypes = (*PrimitiveTypes, Base, type(None))
 
 if TYPE_CHECKING:
     from reflex.vars.base import Var
@@ -293,6 +291,7 @@ def is_literal(cls: GenericType) -> bool:
     return getattr(cls, "__origin__", None) is Literal
 
 
+@lru_cache
 def has_args(cls: type) -> bool:
     """Check if the class has generic parameters.
 
@@ -348,33 +347,6 @@ def is_classvar(a_type: Any) -> bool:
     )
 
 
-def true_type_for_pydantic_field(f: ModelField):
-    """Get the type for a pydantic field.
-
-    Args:
-        f: The field to get the type for.
-
-    Returns:
-        The type for the field.
-    """
-    if not isinstance(f.annotation, (str, ForwardRef)):
-        return f.annotation
-
-    type_ = f.outer_type_
-
-    if (
-        f.field_info.default is None
-        or (isinstance(f.annotation, str) and f.annotation.startswith("Optional"))
-        or (
-            isinstance(f.annotation, ForwardRef)
-            and f.annotation.__forward_arg__.startswith("Optional")
-        )
-    ) and not is_optional(type_):
-        return type_ | None
-
-    return type_
-
-
 def value_inside_optional(cls: GenericType) -> GenericType:
     """Get the value inside an Optional type or the original type.
 
@@ -401,6 +373,8 @@ def get_field_type(cls: GenericType, field_name: str) -> GenericType | None:
     Returns:
         The type of the field, if it exists, else None.
     """
+    if (fields := getattr(cls, "_fields", None)) is not None and field_name in fields:
+        return fields[field_name].annotated_type
     if (
         hasattr(cls, "__fields__")
         and field_name in cls.__fields__
@@ -412,6 +386,13 @@ def get_field_type(cls: GenericType, field_name: str) -> GenericType | None:
     return type_hints.get(field_name, None)
 
 
+PROPERTY_CLASSES = (property,)
+if find_spec("sqlalchemy") and find_spec("sqlalchemy.ext"):
+    from sqlalchemy.ext.hybrid import hybrid_property
+
+    PROPERTY_CLASSES += (hybrid_property,)
+
+
 def get_property_hint(attr: Any | None) -> GenericType | None:
     """Check if an attribute is a property and return its type hint.
 
@@ -421,9 +402,7 @@ def get_property_hint(attr: Any | None) -> GenericType | None:
     Returns:
         The type hint of the property, if it is a property, else None.
     """
-    from sqlalchemy.ext.hybrid import hybrid_property
-
-    if not isinstance(attr, (property, hybrid_property)):
+    if not isinstance(attr, PROPERTY_CLASSES):
         return None
     hints = get_type_hints(attr.fget)
     return hints.get("return", None)
@@ -441,12 +420,6 @@ def get_attribute_access_type(cls: GenericType, name: str) -> GenericType | None
     Returns:
         The type of the attribute, if accessible, or None
     """
-    import sqlalchemy
-    from sqlalchemy.ext.associationproxy import AssociationProxyInstance
-    from sqlalchemy.orm import DeclarativeBase, Mapped, QueryableAttribute, Relationship
-
-    from reflex.model import Model
-
     try:
         attr = getattr(cls, name, None)
     except NotImplementedError:
@@ -458,67 +431,93 @@ def get_attribute_access_type(cls: GenericType, name: str) -> GenericType | None
     if hasattr(cls, "__fields__") and name in cls.__fields__:
         # pydantic models
         return get_field_type(cls, name)
-    if isinstance(cls, type) and issubclass(cls, DeclarativeBase):
-        insp = sqlalchemy.inspect(cls)
-        if name in insp.columns:
-            # check for list types
-            column = insp.columns[name]
-            column_type = column.type
-            try:
-                type_ = insp.columns[name].type.python_type
-            except NotImplementedError:
-                type_ = None
-            if type_ is not None:
-                if hasattr(column_type, "item_type"):
-                    try:
-                        item_type = column_type.item_type.python_type  # pyright: ignore [reportAttributeAccessIssue]
-                    except NotImplementedError:
-                        item_type = None
-                    if item_type is not None:
-                        if type_ in PrimitiveToAnnotation:
-                            type_ = PrimitiveToAnnotation[type_]
-                        type_ = type_[item_type]  # pyright: ignore [reportIndexIssue]
-                if hasattr(column, "nullable") and column.nullable:
-                    type_ = type_ | None
+    if find_spec("sqlalchemy") and find_spec("sqlalchemy.orm"):
+        import sqlalchemy
+        from sqlalchemy.ext.associationproxy import AssociationProxyInstance
+        from sqlalchemy.orm import (
+            DeclarativeBase,
+            Mapped,
+            QueryableAttribute,
+            Relationship,
+        )
+
+        from reflex.model import Model
+
+        if find_spec("sqlmodel"):
+            from sqlmodel import SQLModel
+
+            sqlmodel_types = (Model, SQLModel)
+        else:
+            sqlmodel_types = (Model,)
+
+        if isinstance(cls, type) and issubclass(cls, DeclarativeBase):
+            insp = sqlalchemy.inspect(cls)
+            if name in insp.columns:
+                # check for list types
+                column = insp.columns[name]
+                column_type = column.type
+                try:
+                    type_ = insp.columns[name].type.python_type
+                except NotImplementedError:
+                    type_ = None
+                if type_ is not None:
+                    if hasattr(column_type, "item_type"):
+                        try:
+                            item_type = column_type.item_type.python_type  # pyright: ignore [reportAttributeAccessIssue]
+                        except NotImplementedError:
+                            item_type = None
+                        if item_type is not None:
+                            if type_ in PrimitiveToAnnotation:
+                                type_ = PrimitiveToAnnotation[type_]
+                            type_ = type_[item_type]  # pyright: ignore [reportIndexIssue]
+                    if hasattr(column, "nullable") and column.nullable:
+                        type_ = type_ | None
+                    return type_
+            if name in insp.all_orm_descriptors:
+                descriptor = insp.all_orm_descriptors[name]
+                if hint := get_property_hint(descriptor):
+                    return hint
+                if isinstance(descriptor, QueryableAttribute):
+                    prop = descriptor.property
+                    if isinstance(prop, Relationship):
+                        type_ = prop.mapper.class_
+                        # TODO: check for nullable?
+                        return list[type_] if prop.uselist else type_ | None
+                if isinstance(attr, AssociationProxyInstance):
+                    return list[
+                        get_attribute_access_type(
+                            attr.target_class,
+                            attr.remote_attr.key,  # pyright: ignore [reportAttributeAccessIssue]
+                        )
+                    ]
+        elif (
+            isinstance(cls, type)
+            and not is_generic_alias(cls)
+            and issubclass(cls, sqlmodel_types)
+        ):
+            # Check in the annotations directly (for sqlmodel.Relationship)
+            hints = get_type_hints(cls)  # pyright: ignore [reportArgumentType]
+            if name in hints:
+                type_ = hints[name]
+                type_origin = get_origin(type_)
+                if isinstance(type_origin, type) and issubclass(type_origin, Mapped):
+                    return get_args(type_)[0]  # SQLAlchemy v2
+                if find_spec("pydantic"):
+                    from pydantic.v1.fields import ModelField
+
+                    if isinstance(type_, ModelField):
+                        return type_.type_  # SQLAlchemy v1.4
                 return type_
-        if name in insp.all_orm_descriptors:
-            descriptor = insp.all_orm_descriptors[name]
-            if hint := get_property_hint(descriptor):
-                return hint
-            if isinstance(descriptor, QueryableAttribute):
-                prop = descriptor.property
-                if isinstance(prop, Relationship):
-                    type_ = prop.mapper.class_
-                    # TODO: check for nullable?
-                    return list[type_] if prop.uselist else type_ | None
-            if isinstance(attr, AssociationProxyInstance):
-                return list[
-                    get_attribute_access_type(
-                        attr.target_class,
-                        attr.remote_attr.key,  # pyright: ignore [reportAttributeAccessIssue]
-                    )
-                ]
-    elif isinstance(cls, type) and not is_generic_alias(cls) and issubclass(cls, Model):
-        # Check in the annotations directly (for sqlmodel.Relationship)
-        hints = get_type_hints(cls)
-        if name in hints:
-            type_ = hints[name]
-            type_origin = get_origin(type_)
-            if isinstance(type_origin, type) and issubclass(type_origin, Mapped):
-                return get_args(type_)[0]  # SQLAlchemy v2
-            if isinstance(type_, ModelField):
-                return type_.type_  # SQLAlchemy v1.4
-            return type_
-    elif is_union(cls):
+    if is_union(cls):
         # Check in each arg of the annotation.
         return unionize(
             *(get_attribute_access_type(arg, name) for arg in get_args(cls))
         )
-    elif isinstance(cls, type):
+    if isinstance(cls, type):
         # Bare class
         exceptions = NameError
         try:
-            hints = get_type_hints(cls)
+            hints = get_type_hints(cls)  # pyright: ignore [reportArgumentType]
             if name in hints:
                 return hints[name]
         except exceptions as e:
@@ -634,12 +633,22 @@ def _issubclass(cls: GenericType, cls_check: GenericType, instance: Any = None) 
         raise TypeError(msg) from te
 
 
-def does_obj_satisfy_typed_dict(obj: Any, cls: GenericType) -> bool:
+def does_obj_satisfy_typed_dict(
+    obj: Any,
+    cls: GenericType,
+    *,
+    nested: int = 0,
+    treat_var_as_type: bool = True,
+    treat_mutable_obj_as_immutable: bool = False,
+) -> bool:
     """Check if an object satisfies a typed dict.
 
     Args:
         obj: The object to check.
         cls: The typed dict to check against.
+        nested: How many levels deep to check.
+        treat_var_as_type: Whether to treat Var as the type it represents, i.e. _var_type.
+        treat_mutable_obj_as_immutable: Whether to treat mutable objects as immutable. Useful if a component declares a mutable object as a prop, but the value is not expected to change.
 
     Returns:
         Whether the object satisfies the typed dict.
@@ -649,19 +658,35 @@ def does_obj_satisfy_typed_dict(obj: Any, cls: GenericType) -> bool:
 
     key_names_to_values = get_type_hints(cls)
     required_keys: frozenset[str] = getattr(cls, "__required_keys__", frozenset())
+    is_closed = getattr(cls, "__closed__", False)
+    extra_items_type = getattr(cls, "__extra_items__", Any)
 
-    if not all(
-        isinstance(key, str)
-        and key in key_names_to_values
-        and _isinstance(value, key_names_to_values[key])
-        for key, value in obj.items()
-    ):
-        return False
-
-    # TODO in 3.14: Implement https://peps.python.org/pep-0728/ if it's approved
+    for key, value in obj.items():
+        if is_closed and key not in key_names_to_values:
+            return False
+        if nested:
+            if key in key_names_to_values:
+                expected_type = key_names_to_values[key]
+                if not _isinstance(
+                    value,
+                    expected_type,
+                    nested=nested - 1,
+                    treat_var_as_type=treat_var_as_type,
+                    treat_mutable_obj_as_immutable=treat_mutable_obj_as_immutable,
+                ):
+                    return False
+            else:
+                if not _isinstance(
+                    value,
+                    extra_items_type,
+                    nested=nested - 1,
+                    treat_var_as_type=treat_var_as_type,
+                    treat_mutable_obj_as_immutable=treat_mutable_obj_as_immutable,
+                ):
+                    return False
 
     # required keys are all present
-    return required_keys.issubset(required_keys)
+    return required_keys.issubset(frozenset(obj))
 
 
 def _isinstance(
@@ -722,7 +747,13 @@ def _isinstance(
         # cls is a typed dict
         if is_typeddict(cls):
             if nested:
-                return does_obj_satisfy_typed_dict(obj, cls)
+                return does_obj_satisfy_typed_dict(
+                    obj,
+                    cls,
+                    nested=nested - 1,
+                    treat_var_as_type=treat_var_as_type,
+                    treat_mutable_obj_as_immutable=treat_mutable_obj_as_immutable,
+                )
             return isinstance(obj, dict)
 
         # cls is a float
@@ -857,8 +888,15 @@ def is_valid_var_type(type_: type) -> bool:
 
     if is_union(type_):
         return all(is_valid_var_type(arg) for arg in get_args(type_))
+
+    if is_literal(type_):
+        types = {type(value) for value in get_args(type_)}
+        return all(is_valid_var_type(type_) for type_ in types)
+
+    type_ = origin if (origin := get_origin(type_)) is not None else type_
+
     return (
-        _issubclass(type_, StateVar)
+        issubclass(type_, StateVarTypes)
         or serializers.has_serializer(type_)
         or dataclasses.is_dataclass(type_)
     )
@@ -985,17 +1023,12 @@ def validate_literal(key: str, value: Any, expected_type: type, comp_name: str):
     ):
         allowed_values = expected_type.__args__
         if value not in allowed_values:
-            allowed_value_str = ",".join(
-                [str(v) if not isinstance(v, str) else f"'{v}'" for v in allowed_values]
-            )
+            allowed_value_str = ",".join([
+                str(v) if not isinstance(v, str) else f"'{v}'" for v in allowed_values
+            ])
             value_str = f"'{value}'" if isinstance(value, str) else value
             msg = f"prop value for {key!s} of the `{comp_name}` component should be one of the following: {allowed_value_str}. Got {value_str} instead"
             raise ValueError(msg)
-
-
-# Store this here for performance.
-StateBases = get_base_class(StateVar)
-StateIterBases = get_base_class(StateIterVar)
 
 
 def safe_issubclass(cls: Any, cls_check: Any | tuple[Any, ...]):
@@ -1240,6 +1273,7 @@ IMMUTABLE_TYPES = (
     frozenset,
     tuple,
     type(None),
+    Enum,
 )
 
 

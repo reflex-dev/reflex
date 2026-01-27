@@ -255,7 +255,7 @@ def test_default_value(prop: Var, expected):
         (None, Var(_js_expr="null", _var_type=None)),
         (1, Var(_js_expr="1", _var_type=int)),
         ("key", Var(_js_expr='"key"', _var_type=str)),
-        (3.14, Var(_js_expr="3.14", _var_type=float)),
+        (3.15, Var(_js_expr="3.15", _var_type=float)),
         ([1, 2, 3], Var(_js_expr="[1, 2, 3]", _var_type=Sequence[int])),
         (
             {"a": 1, "b": 2},
@@ -296,8 +296,8 @@ def test_basic_operations(TestObj):
     Args:
         TestObj: The test object.
     """
-    assert str(v(1) == v(2)) == "(1 === 2)"
-    assert str(v(1) != v(2)) == "(1 !== 2)"
+    assert str(v(1) == v(2)) == "(1?.valueOf?.() === 2?.valueOf?.())"
+    assert str(v(1) != v(2)) == "(1?.valueOf?.() !== 2?.valueOf?.())"
     assert str(LiteralNumberVar.create(1) < 2) == "(1 < 2)"
     assert str(LiteralNumberVar.create(1) <= 2) == "(1 <= 2)"
     assert str(LiteralNumberVar.create(1) > 2) == "(1 > 2)"
@@ -311,15 +311,19 @@ def test_basic_operations(TestObj):
     assert str(LiteralNumberVar.create(1) ** 2) == "(1 ** 2)"
     assert str(LiteralNumberVar.create(1) & v(2)) == "(1 && 2)"
     assert str(LiteralNumberVar.create(1) | v(2)) == "(1 || 2)"
-    assert str(LiteralArrayVar.create([1, 2, 3])[0]) == "[1, 2, 3].at(0)"
+    assert str(LiteralArrayVar.create([1, 2, 3])[0]) == "[1, 2, 3]?.at?.(0)"
     assert (
         str(LiteralObjectVar.create({"a": 1, "b": 2})["a"])
-        == '({ ["a"] : 1, ["b"] : 2 })["a"]'
+        == '({ ["a"] : 1, ["b"] : 2 })?.["a"]'
     )
-    assert str(v("foo") == v("bar")) == '("foo" === "bar")'
-    assert str(Var(_js_expr="foo") == Var(_js_expr="bar")) == "(foo === bar)"
+    assert str(v("foo") == v("bar")) == '("foo"?.valueOf?.() === "bar"?.valueOf?.())'
     assert (
-        str(LiteralVar.create("foo") == LiteralVar.create("bar")) == '("foo" === "bar")'
+        str(Var(_js_expr="foo") == Var(_js_expr="bar"))
+        == "(foo?.valueOf?.() === bar?.valueOf?.())"
+    )
+    assert (
+        str(LiteralVar.create("foo") == LiteralVar.create("bar"))
+        == '("foo"?.valueOf?.() === "bar"?.valueOf?.())'
     )
     print(Var(_js_expr="foo").to(ObjectVar, TestObj)._var_set_state("state"))
     assert (
@@ -327,11 +331,11 @@ def test_basic_operations(TestObj):
             Var(_js_expr="foo").to(ObjectVar, TestObj)._var_set_state("state").bar
             == LiteralVar.create("bar")
         )
-        == '(state.foo["bar"] === "bar")'
+        == '(state.foo?.["bar"]?.valueOf?.() === "bar"?.valueOf?.())'
     )
     assert (
         str(Var(_js_expr="foo").to(ObjectVar, TestObj)._var_set_state("state").bar)
-        == 'state.foo["bar"]'
+        == 'state.foo?.["bar"]'
     )
     assert str(abs(LiteralNumberVar.create(1))) == "Math.abs(1)"
     assert str(LiteralArrayVar.create([1, 2, 3]).length()) == "[1, 2, 3].length"
@@ -476,11 +480,11 @@ def test_var_indexing_lists(var):
         var : The str, list or tuple base var.
     """
     # Test basic indexing.
-    assert str(var[0]) == f"{var._js_expr}.at(0)"
-    assert str(var[1]) == f"{var._js_expr}.at(1)"
+    assert str(var[0]) == f"{var._js_expr}?.at?.(0)"
+    assert str(var[1]) == f"{var._js_expr}?.at?.(1)"
 
     # Test negative indexing.
-    assert str(var[-1]) == f"{var._js_expr}.at(-1)"
+    assert str(var[-1]) == f"{var._js_expr}?.at?.(-1)"
 
 
 @pytest.mark.parametrize(
@@ -515,11 +519,11 @@ def test_var_indexing_str():
     assert str_var[0]._var_type is str
 
     # Test basic indexing.
-    assert str(str_var[0]) == "str.at(0)"
-    assert str(str_var[1]) == "str.at(1)"
+    assert str(str_var[0]) == "str?.at?.(0)"
+    assert str(str_var[1]) == "str?.at?.(1)"
 
     # Test negative indexing.
-    assert str(str_var[-1]) == "str.at(-1)"
+    assert str(str_var[-1]) == "str?.at?.(-1)"
 
 
 @pytest.mark.parametrize(
@@ -665,8 +669,8 @@ def test_dict_indexing():
     dct = Var(_js_expr="dct").to(ObjectVar, dict[str, str])
 
     # Check correct indexing.
-    assert str(dct["a"]) == 'dct["a"]'
-    assert str(dct["asdf"]) == 'dct["asdf"]'
+    assert str(dct["a"]) == 'dct?.["a"]'
+    assert str(dct["asdf"]) == 'dct?.["asdf"]'
 
 
 @pytest.mark.parametrize(
@@ -883,18 +887,16 @@ def test_state_with_initial_computed_var(
 
 
 def test_literal_var():
-    complicated_var = LiteralVar.create(
-        [
-            {"a": 1, "b": 2, "c": {"d": 3, "e": 4}},
-            [1, 2, 3, 4],
-            9,
-            "string",
-            True,
-            False,
-            None,
-            {1, 2, 3},
-        ]
-    )
+    complicated_var = LiteralVar.create([
+        {"a": 1, "b": 2, "c": {"d": 3, "e": 4}},
+        [1, 2, 3, 4],
+        9,
+        "string",
+        True,
+        False,
+        None,
+        {1, 2, 3},
+    ])
     assert (
         str(complicated_var)
         == '[({ ["a"] : 1, ["b"] : 2, ["c"] : ({ ["d"] : 3, ["e"] : 4 }) }), [1, 2, 3, 4], 9, "string", true, false, null, [1, 2, 3]]'
@@ -1021,7 +1023,7 @@ def test_boolify_operations(var, expected):
 
 def test_index_operation():
     array_var = LiteralArrayVar.create([1, 2, 3, 4, 5])
-    assert str(array_var[0]) == "[1, 2, 3, 4, 5].at(0)"
+    assert str(array_var[0]) == "[1, 2, 3, 4, 5]?.at?.(0)"
     assert str(array_var[1:2]) == "[1, 2, 3, 4, 5].slice(1, 2)"
     assert (
         str(array_var[1:4:2])
@@ -1032,7 +1034,7 @@ def test_index_operation():
         == "[1, 2, 3, 4, 5].slice(0, [1, 2, 3, 4, 5].length).slice().reverse().slice(undefined, undefined).filter((_, i) => i % 1 === 0)"
     )
     assert str(array_var.reverse()) == "[1, 2, 3, 4, 5].slice().reverse()"
-    assert str(array_var[0].to(NumberVar) + 9) == "([1, 2, 3, 4, 5].at(0) + 9)"
+    assert str(array_var[0].to(NumberVar) + 9) == "([1, 2, 3, 4, 5]?.at?.(0) + 9)"
 
 
 @pytest.mark.parametrize(
@@ -1079,18 +1081,19 @@ def test_object_operations():
     object_var = LiteralObjectVar.create({"a": 1, "b": 2, "c": 3})
 
     assert (
-        str(object_var.keys()) == 'Object.keys(({ ["a"] : 1, ["b"] : 2, ["c"] : 3 }))'
+        str(object_var.keys())
+        == 'Object.keys(({ ["a"] : 1, ["b"] : 2, ["c"] : 3 }) ?? {})'
     )
     assert (
         str(object_var.values())
-        == 'Object.values(({ ["a"] : 1, ["b"] : 2, ["c"] : 3 }))'
+        == 'Object.values(({ ["a"] : 1, ["b"] : 2, ["c"] : 3 }) ?? {})'
     )
     assert (
         str(object_var.entries())
-        == 'Object.entries(({ ["a"] : 1, ["b"] : 2, ["c"] : 3 }))'
+        == 'Object.entries(({ ["a"] : 1, ["b"] : 2, ["c"] : 3 }) ?? {})'
     )
-    assert str(object_var.a) == '({ ["a"] : 1, ["b"] : 2, ["c"] : 3 })["a"]'
-    assert str(object_var["a"]) == '({ ["a"] : 1, ["b"] : 2, ["c"] : 3 })["a"]'
+    assert str(object_var.a) == '({ ["a"] : 1, ["b"] : 2, ["c"] : 3 })?.["a"]'
+    assert str(object_var["a"]) == '({ ["a"] : 1, ["b"] : 2, ["c"] : 3 })?.["a"]'
     assert (
         str(object_var.merge(LiteralObjectVar.create({"c": 4, "d": 5})))
         == '({...({ ["a"] : 1, ["b"] : 2, ["c"] : 3 }), ...({ ["c"] : 4, ["d"] : 5 })})'
@@ -1129,15 +1132,15 @@ def test_type_chains():
     )
     assert (
         str(object_var.keys()[0].upper())
-        == 'Object.keys(({ ["a"] : 1, ["b"] : 2, ["c"] : 3 })).at(0).toUpperCase()'
+        == 'Object.keys(({ ["a"] : 1, ["b"] : 2, ["c"] : 3 }) ?? {})?.at?.(0).toUpperCase()'
     )
     assert (
         str(object_var.entries()[1][1] - 1)
-        == '(Object.entries(({ ["a"] : 1, ["b"] : 2, ["c"] : 3 })).at(1).at(1) - 1)'
+        == '(Object.entries(({ ["a"] : 1, ["b"] : 2, ["c"] : 3 }) ?? {})?.at?.(1)?.at?.(1) - 1)'
     )
     assert (
         str(object_var["c"] + object_var["b"])  # pyright: ignore [reportCallIssue, reportOperatorIssue]
-        == '(({ ["a"] : 1, ["b"] : 2, ["c"] : 3 })["c"] + ({ ["a"] : 1, ["b"] : 2, ["c"] : 3 })["b"])'
+        == '(({ ["a"] : 1, ["b"] : 2, ["c"] : 3 })?.["c"] + ({ ["a"] : 1, ["b"] : 2, ["c"] : 3 })?.["b"])'
     )
 
 
@@ -1145,7 +1148,8 @@ def test_nested_dict():
     arr = LiteralArrayVar.create([{"bar": ["foo", "bar"]}], list[dict[str, list[str]]])
 
     assert (
-        str(arr[0]["bar"][0]) == '[({ ["bar"] : ["foo", "bar"] })].at(0)["bar"].at(0)'  # pyright: ignore [reportIndexIssue]
+        str(arr[0]["bar"][0])
+        == '[({ ["bar"] : ["foo", "bar"] })]?.at?.(0)?.["bar"]?.at?.(0)'  # pyright: ignore [reportIndexIssue]
     )
 
 
@@ -1939,16 +1943,16 @@ def test_decimal_var_type_compatibility():
     """Test that decimal.Decimal values are compatible with NumberVar type system."""
     dec_num = Var.create(decimal.Decimal("123.456"))
     int_num = Var.create(42)
-    float_num = Var.create(3.14)
+    float_num = Var.create(3.15)
 
     result = dec_num + int_num
     assert str(result) == "(123.456 + 42)"
 
     result = dec_num * float_num
-    assert str(result) == "(123.456 * 3.14)"
+    assert str(result) == "(123.456 * 3.15)"
 
     result = (dec_num + int_num) / float_num
-    assert str(result) == "((123.456 + 42) / 3.14)"
+    assert str(result) == "((123.456 + 42) / 3.15)"
 
 
 def test_computed_var_type_compatibility():

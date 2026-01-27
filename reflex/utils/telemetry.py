@@ -1,7 +1,5 @@
 """Anonymous telemetry for Reflex."""
 
-from __future__ import annotations
-
 import asyncio
 import dataclasses
 import importlib.metadata
@@ -348,12 +346,15 @@ def send(event: str, telemetry_enabled: bool | None = None, **kwargs):
         kwargs: Additional data to send with the event.
     """
 
-    async def async_send(event: str, telemetry_enabled: bool | None, **kwargs):
+    async def async_send(event: str, telemetry_enabled: bool | None, **kwargs):  # noqa: RUF029
         return _send(event, telemetry_enabled, **kwargs)
 
     try:
         # Within an event loop context, send the event asynchronously.
-        task = asyncio.create_task(async_send(event, telemetry_enabled, **kwargs))
+        task = asyncio.create_task(
+            async_send(event, telemetry_enabled, **kwargs),
+            name=f"reflex_send_telemetry_event|{event}",
+        )
         background_tasks.add(task)
         task.add_done_callback(background_tasks.discard)
     except RuntimeError:

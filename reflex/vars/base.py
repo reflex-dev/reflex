@@ -9,7 +9,6 @@ import datetime
 import functools
 import inspect
 import json
-import random
 import re
 import string
 import uuid
@@ -19,21 +18,16 @@ from collections.abc import Callable, Coroutine, Iterable, Mapping, Sequence
 from dataclasses import _MISSING_TYPE, MISSING
 from decimal import Decimal
 from types import CodeType, FunctionType
-from typing import (  # noqa: UP035
+from typing import (
     TYPE_CHECKING,
     Annotated,
     Any,
     ClassVar,
-    Dict,
-    FrozenSet,
     Generic,
-    List,
     Literal,
     NoReturn,
     ParamSpec,
     Protocol,
-    Set,
-    Tuple,
     TypeGuard,
     TypeVar,
     cast,
@@ -46,10 +40,11 @@ from rich.markup import escape
 from typing_extensions import dataclass_transform, override
 
 from reflex import constants
-from reflex.base import Base
 from reflex.constants.compiler import Hooks
 from reflex.constants.state import FIELD_MARKER
 from reflex.utils import console, exceptions, imports, serializers, types
+from reflex.utils.compat import annotations_from_namespace
+from reflex.utils.decorator import once
 from reflex.utils.exceptions import (
     ComputedVarSignatureError,
     UntypedComputedVarError,
@@ -78,8 +73,10 @@ from reflex.utils.types import (
 
 if TYPE_CHECKING:
     from reflex.components.component import BaseComponent
+    from reflex.constants.colors import Color
     from reflex.state import BaseState
 
+    from .color import LiteralColorVar
     from .number import BooleanVar, LiteralBooleanVar, LiteralNumberVar, NumberVar
     from .object import LiteralObjectVar, ObjectVar
     from .sequence import ArrayVar, LiteralArrayVar, LiteralStringVar, StringVar
@@ -236,7 +233,7 @@ class VarData:
             hook: None for var_data in all_var_datas for hook in var_data.hooks
         }
 
-        _imports = imports.merge_imports(
+        imports_ = imports.merge_imports(
             *(var_data.imports for var_data in all_var_datas)
         )
 
@@ -264,7 +261,7 @@ class VarData:
         return VarData(
             state=state,
             field_name=field_name,
-            imports=_imports,
+            imports=imports_,
             hooks=hooks,
             deps=deps,
             position=position,
@@ -366,7 +363,7 @@ def can_use_in_object_var(cls: GenericType) -> bool:
     if types.is_union(cls):
         return all(can_use_in_object_var(t) for t in types.get_args(cls))
     return (
-        inspect.isclass(cls)
+        isinstance(cls, type)
         and not safe_issubclass(cls, Var)
         and serializers.can_serialize(cls, dict)
     )
@@ -491,13 +488,13 @@ class Var(Generic[VAR_TYPE], metaclass=MetaclassVar):
             raise TypeError(msg)
 
         # Decode any inline Var markup and apply it to the instance
-        _var_data, _js_expr = _decode_var_immutable(self._js_expr)
+        var_data_, js_expr_ = _decode_var_immutable(self._js_expr)
 
-        if _var_data or _js_expr != self._js_expr:
+        if var_data_ or js_expr_ != self._js_expr:
             self.__init__(
-                _js_expr=_js_expr,
+                _js_expr=js_expr_,
                 _var_type=self._var_type,
-                _var_data=VarData.merge(self._var_data, _var_data),
+                _var_data=VarData.merge(self._var_data, var_data_),
             )
 
     def __hash__(self) -> int:
@@ -515,6 +512,17 @@ class Var(Generic[VAR_TYPE], metaclass=MetaclassVar):
             The VarData of the components and all of its children.
         """
         return self._var_data
+
+    def __deepcopy__(self, memo: dict[int, Any]) -> Self:
+        """Deepcopy the var.
+
+        Args:
+            memo: The memo dictionary to use for the deepcopy.
+
+        Returns:
+            A deepcopy of the var.
+        """
+        return self
 
     def equals(self, other: Var) -> bool:
         """Check if two vars are equal.
@@ -630,6 +638,14 @@ class Var(Generic[VAR_TYPE], metaclass=MetaclassVar):
         value: Decimal,
         _var_data: VarData | None = None,
     ) -> LiteralNumberVar[Decimal]: ...
+
+    @overload
+    @classmethod
+    def create(  # pyright: ignore [reportOverlappingOverload]
+        cls,
+        value: Color,
+        _var_data: VarData | None = None,
+    ) -> LiteralColorVar: ...
 
     @overload
     @classmethod
@@ -795,7 +811,7 @@ class Var(Generic[VAR_TYPE], metaclass=MetaclassVar):
         if can_use_in_object_var(output):
             return self.to(ObjectVar, output)
 
-        if inspect.isclass(output):
+        if isinstance(output, type):
             for var_subclass in _var_subclasses[::-1]:
                 if safe_issubclass(output, var_subclass.var_subclass):
                     current_var_type = self._var_type
@@ -891,7 +907,7 @@ class Var(Generic[VAR_TYPE], metaclass=MetaclassVar):
             args = get_args(var_type)
             fixed_type = unionize(*(type(arg) for arg in args))
 
-        if not inspect.isclass(fixed_type):
+        if not isinstance(fixed_type, type):
             msg = f"Unsupported type {var_type} for guess_type."
             raise TypeError(msg)
 
@@ -930,6 +946,7 @@ class Var(Generic[VAR_TYPE], metaclass=MetaclassVar):
         Returns:
             A function that that creates a setter for the var.
         """
+        setter_name = Var._get_setter_name_for_name(name)
 
         def setter(state: Any, value: Any):
             """Get the setter for the var.
@@ -951,7 +968,7 @@ class Var(Generic[VAR_TYPE], metaclass=MetaclassVar):
 
         setter.__annotations__["value"] = self._var_type
 
-        setter.__qualname__ = Var._get_setter_name_for_name(name)
+        setter.__qualname__ = setter_name
 
         return setter
 
@@ -1118,17 +1135,14 @@ class Var(Generic[VAR_TYPE], metaclass=MetaclassVar):
         Returns:
             The reference to the var.
         """
-        from .object import ObjectVar
-
-        refs = Var(
-            _js_expr="refs",
+        return Var(
+            _js_expr=f"refs[{Var.create(str(self))}]",
             _var_data=VarData(
                 imports={
                     f"$/{constants.Dirs.STATE_PATH}": [imports.ImportVar(tag="refs")]
                 }
             ),
-        ).to(ObjectVar, Mapping[str, str])
-        return refs[LiteralVar.create(str(self))]
+        ).to(str)
 
     def js_type(self) -> StringVar:
         """Returns the javascript type of the object.
@@ -1152,18 +1166,6 @@ class Var(Generic[VAR_TYPE], metaclass=MetaclassVar):
             The var without the data.
         """
         return dataclasses.replace(self, _var_data=None)
-
-    def __get__(self, instance: Any, owner: Any):
-        """Get the var.
-
-        Args:
-            instance: The instance to get the var from.
-            owner: The owner of the var.
-
-        Returns:
-            The var.
-        """
-        return self
 
     def _decode(self) -> Any:
         """Decode Var as a python value.
@@ -1409,7 +1411,7 @@ class LiteralVar(Var):
         bases = cls.__bases__
 
         bases_normalized = [
-            base if inspect.isclass(base) else get_origin(base) for base in bases
+            base if isinstance(base, type) else get_origin(base) for base in bases
         ]
 
         possible_bases = [
@@ -1476,6 +1478,13 @@ class LiteralVar(Var):
             if isinstance(value, var_subclass.python_types):
                 return literal_subclass.create(value, _var_data=_var_data)
 
+        if (
+            (as_var_method := getattr(value, "_as_var", None)) is not None
+            and callable(as_var_method)
+            and isinstance((resulting_var := as_var_method()), Var)
+        ):
+            return resulting_var
+
         from reflex.event import EventHandler
         from reflex.utils.format import get_event_handler_parts
 
@@ -1496,26 +1505,11 @@ class LiteralVar(Var):
                 )
             return LiteralVar.create(serialized_value, _var_data=_var_data)
 
-        if isinstance(value, Base):
-            # get the fields of the pydantic class
-            fields = value.__fields__.keys()
-            one_level_dict = {field: getattr(value, field) for field in fields}
-
-            return LiteralObjectVar.create(
-                {
-                    field: value
-                    for field, value in one_level_dict.items()
-                    if not callable(value)
-                },
-                _var_type=type(value),
-                _var_data=_var_data,
-            )
-
         if dataclasses.is_dataclass(value) and not isinstance(value, type):
             return LiteralObjectVar.create(
                 {
-                    k: (None if callable(v) else v)
-                    for k, v in dataclasses.asdict(value).items()
+                    k.name: (None if callable(v := getattr(value, k.name)) else v)
+                    for k in dataclasses.fields(value)
                 },
                 _var_type=type(value),
                 _var_data=_var_data,
@@ -1532,6 +1526,80 @@ class LiteralVar(Var):
 
     def __post_init__(self):
         """Post-initialize the var."""
+
+    @classmethod
+    def _get_all_var_data_without_creating_var(
+        cls,
+        value: Any,
+    ) -> VarData | None:
+        return cls.create(value)._get_all_var_data()
+
+    @classmethod
+    def _get_all_var_data_without_creating_var_dispatch(
+        cls,
+        value: Any,
+    ) -> VarData | None:
+        """Get all the var data without creating a var.
+
+        Args:
+            value: The value to get the var data from.
+
+        Returns:
+            The var data or None.
+
+        Raises:
+            TypeError: If the value is not a supported type for LiteralVar.
+        """
+        from .object import LiteralObjectVar
+        from .sequence import LiteralStringVar
+
+        if isinstance(value, Var):
+            return value._get_all_var_data()
+
+        for literal_subclass, var_subclass in _var_literal_subclasses[::-1]:
+            if isinstance(value, var_subclass.python_types):
+                return literal_subclass._get_all_var_data_without_creating_var(value)
+
+        if (
+            (as_var_method := getattr(value, "_as_var", None)) is not None
+            and callable(as_var_method)
+            and isinstance((resulting_var := as_var_method()), Var)
+        ):
+            return resulting_var._get_all_var_data()
+
+        from reflex.event import EventHandler
+        from reflex.utils.format import get_event_handler_parts
+
+        if isinstance(value, EventHandler):
+            return Var(
+                _js_expr=".".join(filter(None, get_event_handler_parts(value)))
+            )._get_all_var_data()
+
+        serialized_value = serializers.serialize(value)
+        if serialized_value is not None:
+            if isinstance(serialized_value, Mapping):
+                return LiteralObjectVar._get_all_var_data_without_creating_var(
+                    serialized_value
+                )
+            if isinstance(serialized_value, str):
+                return LiteralStringVar._get_all_var_data_without_creating_var(
+                    serialized_value
+                )
+            return LiteralVar._get_all_var_data_without_creating_var_dispatch(
+                serialized_value
+            )
+
+        if dataclasses.is_dataclass(value) and not isinstance(value, type):
+            return LiteralObjectVar._get_all_var_data_without_creating_var({
+                k.name: (None if callable(v := getattr(value, k.name)) else v)
+                for k in dataclasses.fields(value)
+            })
+
+        if isinstance(value, range):
+            return None
+
+        msg = f"Unsupported type {type(value)} for LiteralVar. Tried to create a LiteralVar from {value}."
+        raise TypeError(msg)
 
     @property
     def _var_value(self) -> Any:
@@ -1694,30 +1762,30 @@ def figure_out_type(value: Any) -> types.GenericType:
     Returns:
         The type of the value.
     """
-    if isinstance(value, Var):
-        return value._var_type
-    type_ = type(value)
-    if has_args(type_):
-        return type_
-    if isinstance(value, list):
-        if not value:
-            return Sequence[NoReturn]
-        return Sequence[unionize(*(figure_out_type(v) for v in value))]
-    if isinstance(value, set):
-        return set[unionize(*(figure_out_type(v) for v in value))]
-    if isinstance(value, tuple):
-        if not value:
-            return tuple[NoReturn, ...]
-        if len(value) <= 5:
-            return tuple[tuple(figure_out_type(v) for v in value)]
-        return tuple[unionize(*(figure_out_type(v) for v in value)), ...]
-    if isinstance(value, Mapping):
-        if not value:
-            return Mapping[NoReturn, NoReturn]
-        return Mapping[
-            unionize(*(figure_out_type(k) for k in value)),
-            unionize(*(figure_out_type(v) for v in value.values())),
-        ]
+    if isinstance(value, (list, set, tuple, Mapping, Var)):
+        if isinstance(value, Var):
+            return value._var_type
+        if has_args(value_type := type(value)):
+            return value_type
+        if isinstance(value, list):
+            if not value:
+                return Sequence[NoReturn]
+            return Sequence[unionize(*{figure_out_type(v) for v in value[:100]})]
+        if isinstance(value, set):
+            return set[unionize(*{figure_out_type(v) for v in value})]
+        if isinstance(value, tuple):
+            if not value:
+                return tuple[NoReturn, ...]
+            if len(value) <= 5:
+                return tuple[tuple(figure_out_type(v) for v in value)]
+            return tuple[unionize(*{figure_out_type(v) for v in value[:100]}), ...]
+        if isinstance(value, Mapping):
+            if not value:
+                return Mapping[NoReturn, NoReturn]
+            return Mapping[
+                unionize(*{figure_out_type(k) for k in list(value.keys())[:100]}),
+                unionize(*{figure_out_type(v) for v in list(value.values())[:100]}),
+            ]
     return type(value)
 
 
@@ -1879,16 +1947,14 @@ class CachedVarOperation:
         Returns:
             The hash of the object.
         """
-        return hash(
-            (
-                type(self).__name__,
-                *[
-                    getattr(self, field.name)
-                    for field in dataclasses.fields(self)
-                    if field.name not in ["_js_expr", "_var_data", "_var_type"]
-                ],
-            )
-        )
+        return hash((
+            type(self).__name__,
+            *[
+                getattr(self, field.name)
+                for field in dataclasses.fields(self)
+                if field.name not in ["_js_expr", "_var_data", "_var_type"]
+            ],
+        ))
 
 
 def and_operation(
@@ -2101,11 +2167,11 @@ class ComputedVar(Var[RETURN_TYPE]):
         if isinstance(deps, dict):
             # Assume a dict is coming from _replace, so no special processing.
             return deps
-        _static_deps = {}
+        static_deps = {}
         if deps is not None:
             for dep in deps:
-                _static_deps = self._add_static_dep(dep, _static_deps)
-        return _static_deps
+                static_deps = self._add_static_dep(dep, static_deps)
+        return static_deps
 
     def _add_static_dep(
         self, dep: str | Var, deps: dict[str | None, set[str]] | None = None
@@ -2338,7 +2404,7 @@ class ComputedVar(Var[RETURN_TYPE]):
     def _check_deprecated_return_type(self, instance: BaseState, value: Any) -> None:
         if not _isinstance(value, self._var_type, nested=1, treat_var_as_type=False):
             console.error(
-                f"Computed var '{type(instance).__name__}.{self._js_expr}' must return"
+                f"Computed var '{type(instance).__name__}.{self._name}' must return"
                 f" a value of type '{escape(str(self._var_type))}', got '{value!s}' of type {type(value)}."
             )
 
@@ -2388,8 +2454,8 @@ class ComputedVar(Var[RETURN_TYPE]):
         except Exception as e:
             console.warn(
                 "Failed to automatically determine dependencies for computed var "
-                f"{objclass.__name__}.{self._js_expr}: {e}. "
-                "Provide static_deps and set auto_deps=False to suppress this warning."
+                f"{objclass.__name__}.{self._name}: {e}. "
+                "Set auto_deps=False and provide accurate deps=['var1', 'var2'] to suppress this warning."
             )
             return d
 
@@ -2422,10 +2488,17 @@ class ComputedVar(Var[RETURN_TYPE]):
                 var_name = all_var_data.field_name
                 if var_name:
                     self._static_deps.setdefault(state_name, set()).add(var_name)
-                    objclass.get_root_state().get_class_substate(
+                    target_state_class = objclass.get_root_state().get_class_substate(
                         state_name
-                    )._var_dependencies.setdefault(var_name, set()).add(
-                        (objclass.get_full_name(), self._name)
+                    )
+                    target_state_class._var_dependencies.setdefault(
+                        var_name, set()
+                    ).add((
+                        objclass.get_full_name(),
+                        self._name,
+                    ))
+                    target_state_class._potentially_dirty_states.add(
+                        objclass.get_full_name()
                     )
                     return
         msg = (
@@ -2468,7 +2541,7 @@ class DynamicRouteVar(ComputedVar[str | list[str]]):
     """A ComputedVar that represents a dynamic route."""
 
 
-async def _default_async_computed_var(_self: BaseState) -> Any:
+async def _default_async_computed_var(_self: BaseState) -> Any:  # noqa: RUF029
     return None
 
 
@@ -2890,6 +2963,10 @@ class LiteralNoneVar(LiteralVar, NoneVar):
         return "null"
 
     @classmethod
+    def _get_all_var_data_without_creating_var(cls, value: None) -> VarData | None:
+        return None
+
+    @classmethod
     def create(
         cls,
         value: None = None,
@@ -3026,13 +3103,20 @@ def get_uuid_string_var() -> Var:
 USED_VARIABLES = set()
 
 
+@once
+def _rng():
+    import random
+
+    return random.Random(42)
+
+
 def get_unique_variable_name() -> str:
     """Get a unique variable name.
 
     Returns:
         The unique variable name.
     """
-    name = "".join([random.choice(string.ascii_lowercase) for _ in range(8)])
+    name = "".join([_rng().choice(string.ascii_lowercase) for _ in range(8)])
     if name not in USED_VARIABLES:
         USED_VARIABLES.add(name)
         return name
@@ -3066,7 +3150,8 @@ def transform(fn: Callable[[Var], Var]) -> Callable[[Var], Var]:
         TypeError: If the Var return type does not have a generic type.
         ValueError: If a function for the generic type is already registered.
     """
-    return_type = fn.__annotations__["return"]
+    types = get_type_hints(fn)
+    return_type = types["return"]
 
     origin = get_origin(return_type)
 
@@ -3089,101 +3174,6 @@ def transform(fn: Callable[[Var], Var]) -> Callable[[Var], Var]:
     dispatchers[generic_type] = fn
 
     return fn
-
-
-def generic_type_to_actual_type_map(
-    generic_type: GenericType, actual_type: GenericType
-) -> dict[TypeVar, GenericType]:
-    """Map the generic type to the actual type.
-
-    Args:
-        generic_type: The generic type.
-        actual_type: The actual type.
-
-    Returns:
-        The mapping of type variables to actual types.
-
-    Raises:
-        TypeError: If the generic type and actual type do not match.
-        TypeError: If the number of generic arguments and actual arguments do not match.
-    """
-    generic_origin = get_origin(generic_type) or generic_type
-    actual_origin = get_origin(actual_type) or actual_type
-
-    if generic_origin is not actual_origin:
-        if isinstance(generic_origin, TypeVar):
-            return {generic_origin: actual_origin}
-        msg = f"Type mismatch: expected {generic_origin}, got {actual_origin}."
-        raise TypeError(msg)
-
-    generic_args = get_args(generic_type)
-    actual_args = get_args(actual_type)
-
-    if len(generic_args) != len(actual_args):
-        msg = f"Number of generic arguments mismatch: expected {len(generic_args)}, got {len(actual_args)}."
-        raise TypeError(msg)
-
-    # call recursively for nested generic types and merge the results
-    return {
-        k: v
-        for generic_arg, actual_arg in zip(generic_args, actual_args, strict=True)
-        for k, v in generic_type_to_actual_type_map(generic_arg, actual_arg).items()
-    }
-
-
-def resolve_generic_type_with_mapping(
-    generic_type: GenericType, type_mapping: dict[TypeVar, GenericType]
-):
-    """Resolve a generic type with a type mapping.
-
-    Args:
-        generic_type: The generic type.
-        type_mapping: The type mapping.
-
-    Returns:
-        The resolved generic type.
-    """
-    if isinstance(generic_type, TypeVar):
-        return type_mapping.get(generic_type, generic_type)
-
-    generic_origin = get_origin(generic_type) or generic_type
-
-    generic_args = get_args(generic_type)
-
-    if not generic_args:
-        return generic_type
-
-    mapping_for_older_python = {
-        list: List,  # noqa: UP006
-        set: Set,  # noqa: UP006
-        dict: Dict,  # noqa: UP006
-        tuple: Tuple,  # noqa: UP006
-        frozenset: FrozenSet,  # noqa: UP006
-    }
-
-    return mapping_for_older_python.get(generic_origin, generic_origin)[
-        tuple(
-            resolve_generic_type_with_mapping(arg, type_mapping) for arg in generic_args
-        )
-    ]
-
-
-def resolve_arg_type_from_return_type(
-    arg_type: GenericType, return_type: GenericType, actual_return_type: GenericType
-) -> GenericType:
-    """Resolve the argument type from the return type.
-
-    Args:
-        arg_type: The argument type.
-        return_type: The return type.
-        actual_return_type: The requested return type.
-
-    Returns:
-        The argument type without the generics that are resolved.
-    """
-    return resolve_generic_type_with_mapping(
-        arg_type, generic_type_to_actual_type_map(return_type, actual_return_type)
-    )
 
 
 def dispatch(
@@ -3213,11 +3203,12 @@ def dispatch(
 
     if result_origin_var_type in dispatchers:
         fn = dispatchers[result_origin_var_type]
-        fn_first_arg_type = next(
-            iter(inspect.signature(fn).parameters.values())
-        ).annotation
+        fn_types = get_type_hints(fn)
+        fn_first_arg_type = fn_types.get(
+            next(iter(inspect.signature(fn).parameters.values())).name, Any
+        )
 
-        fn_return = inspect.signature(fn).return_annotation
+        fn_return = fn_types.get("return", Any)
 
         fn_return_origin = get_origin(fn_return) or fn_return
 
@@ -3243,22 +3234,17 @@ def dispatch(
             msg = f"Expected generic type of {fn_first_arg_type} to be a type."
             raise TypeError(msg)
 
-        arg_type = arg_generic_args[0]
         fn_return_type = fn_return_generic_args[0]
 
         var = (
             Var(
                 field_name,
                 _var_data=var_data,
-                _var_type=resolve_arg_type_from_return_type(
-                    arg_type, fn_return_type, result_var_type
-                ),
+                _var_type=fn_return_type,
             ).guess_type()
             if existing_var is None
             else existing_var._replace(
-                _var_type=resolve_arg_type_from_return_type(
-                    arg_type, fn_return_type, result_var_type
-                ),
+                _var_type=fn_return_type,
                 _var_data=var_data,
                 _js_expr=field_name,
             ).guess_type()
@@ -3282,6 +3268,8 @@ def dispatch(
 if TYPE_CHECKING:
     from _typeshed import DataclassInstance
     from sqlalchemy.orm import DeclarativeBase
+
+    from reflex.base import Base
 
     SQLA_TYPE = TypeVar("SQLA_TYPE", bound=DeclarativeBase | None)
     BASE_TYPE = TypeVar("BASE_TYPE", bound=Base | None)
@@ -3574,7 +3562,7 @@ class BaseStateMeta(ABCMeta):
         inherited_fields: dict[str, Field] = {}
         own_fields: dict[str, Field] = {}
         resolved_annotations = types.resolve_annotations(
-            namespace.get("__annotations__", {}), namespace["__module__"]
+            annotations_from_namespace(namespace), namespace["__module__"]
         )
 
         for base in bases[::-1]:

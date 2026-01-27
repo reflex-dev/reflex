@@ -7,9 +7,14 @@ import sys
 import pytest
 
 import reflex as rx
+import tests.units.states.upload as tus_upload
 from reflex.state import State
 from reflex.utils.exceptions import VarValueError
-from reflex.vars.dep_tracking import DependencyTracker, get_cell_value
+from reflex.vars.dep_tracking import (
+    DependencyTracker,
+    UntrackedLocalVarError,
+    get_cell_value,
+)
 
 
 class DependencyTestState(State):
@@ -18,6 +23,7 @@ class DependencyTestState(State):
     count: rx.Field[int] = rx.field(default=0)
     name: rx.Field[str] = rx.field(default="test")
     items: rx.Field[list[str]] = rx.field(default_factory=list)
+    board: rx.Field[list[list[int]]] = rx.field(default_factory=list)
 
 
 class AnotherTestState(State):
@@ -97,6 +103,18 @@ def test_list_comprehension_dependencies():
     assert tracker.dependencies == expected_deps
 
 
+def test_list_comprehension_dependencies_2():
+    """Test tracking dependencies in list comprehensions."""
+
+    def func_with_comprehension(self: DependencyTestState):
+        return [[self.board[r][c] for r in range(3)] for c in range(5)]
+
+    tracker = DependencyTracker(func_with_comprehension, DependencyTestState)
+
+    expected_deps = {DependencyTestState.get_full_name(): {"board"}}
+    assert tracker.dependencies == expected_deps
+
+
 def test_invalid_attribute_access():
     """Test that accessing invalid attributes raises VarValueError."""
 
@@ -122,6 +140,18 @@ def test_get_state_functionality():
     assert tracker.dependencies == expected_deps
 
 
+def test_get_state_functionality_direct():
+    """Test tracking dependencies when using get_state without assigning to interim local variable."""
+
+    async def func_with_get_state_direct(self: DependencyTestState):
+        return (await self.get_state(AnotherTestState)).value
+
+    tracker = DependencyTracker(func_with_get_state_direct, DependencyTestState)
+
+    expected_deps = {AnotherTestState.get_full_name(): {"value"}}
+    assert tracker.dependencies == expected_deps
+
+
 def test_get_state_with_local_var_error():
     """Test that get_state with local variables raises appropriate error."""
 
@@ -130,9 +160,131 @@ def test_get_state_with_local_var_error():
         return (await self.get_state(state_cls)).value
 
     with pytest.raises(
-        VarValueError, match="cannot identify get_state class from local var"
+        UntrackedLocalVarError, match="'state_cls' is not tracked in the current scope"
     ):
         DependencyTracker(invalid_get_state_func, DependencyTestState)
+
+
+def test_get_state_with_import_from():
+    """Test that get_state with function-local `from ... import ...` finds correct dependency."""
+
+    async def get_state_import_from(self: DependencyTestState):
+        from tests.units.states.mutation import MutableTestState
+
+        return (await self.get_state(MutableTestState)).hashmap
+
+    from tests.units.states.mutation import MutableTestState
+
+    tracker = DependencyTracker(get_state_import_from, DependencyTestState)
+    expected_deps = {MutableTestState.get_full_name(): {"hashmap"}}
+    assert tracker.dependencies == expected_deps
+
+
+def test_get_state_with_import_from_multiple():
+    """Test that get_state with function-local `from ... import ...` finds correct dependency."""
+
+    async def get_state_import_from(self: DependencyTestState):
+        from tests.units.states.upload import ChildFileUploadState, SubUploadState
+
+        return (await self.get_state(SubUploadState)).img, (
+            await self.get_state(ChildFileUploadState)
+        ).img_list
+
+    tracker = DependencyTracker(get_state_import_from, DependencyTestState)
+    expected_deps = {
+        tus_upload.SubUploadState.get_full_name(): {"img"},
+        tus_upload.ChildFileUploadState.get_full_name(): {"img_list"},
+    }
+    assert tracker.dependencies == expected_deps
+
+
+def test_get_state_with_import_from_as():
+    """Test that get_state with function-local `from ... import ... as ...` finds correct dependency."""
+
+    async def get_state_import_from_as(self: DependencyTestState):
+        from tests.units.states.mutation import MutableTestState as mts
+
+        return (await self.get_state(mts)).hashmap
+
+    from tests.units.states.mutation import MutableTestState
+
+    tracker = DependencyTracker(get_state_import_from_as, DependencyTestState)
+    expected_deps = {MutableTestState.get_full_name(): {"hashmap"}}
+    assert tracker.dependencies == expected_deps
+
+
+def test_get_state_with_import():
+    """Test that get_state with function-local `import ...` finds correct dependency."""
+
+    async def get_state_import(self: DependencyTestState):
+        import tests.units.states.mutation
+
+        return (
+            await self.get_state(tests.units.states.mutation.MutableTestState)
+        ).hashmap
+
+    from tests.units.states.mutation import MutableTestState
+
+    tracker = DependencyTracker(get_state_import, DependencyTestState)
+    expected_deps = {MutableTestState.get_full_name(): {"hashmap"}}
+    assert tracker.dependencies == expected_deps
+
+
+def test_get_state_with_import_as():
+    """Test that get_state with function-local `import ... as ...` finds correct dependency."""
+
+    async def get_state_import_as(self: DependencyTestState):
+        import tests.units.states.mutation as mutation
+
+        return (await self.get_state(mutation.MutableTestState)).hashmap
+
+    from tests.units.states.mutation import MutableTestState
+
+    tracker = DependencyTracker(get_state_import_as, DependencyTestState)
+    expected_deps = {MutableTestState.get_full_name(): {"hashmap"}}
+    assert tracker.dependencies == expected_deps
+
+
+def test_get_state_with_import_from_method():
+    """Test that get_state with function-local `from ... import ...` finds correct dependency through a method call."""
+
+    async def get_state_import_from(self: DependencyTestState):
+        from tests.units.states.mutation import MutableTestState
+
+        return (await self.get_state(MutableTestState))._get_array()
+
+    from tests.units.states.mutation import MutableTestState
+
+    tracker = DependencyTracker(get_state_import_from, DependencyTestState)
+    expected_deps = {MutableTestState.get_full_name(): {"array"}}
+    assert tracker.dependencies == expected_deps
+
+
+def test_get_state_access_imported_global_module():
+    """Test tracking simple attribute access on self."""
+
+    async def get_state_imported_global(self: DependencyTestState):
+        return (await self.get_state(tus_upload.SubUploadState)).img
+
+    tracker = DependencyTracker(get_state_imported_global, DependencyTestState)
+    expected_deps = {tus_upload.SubUploadState.get_full_name(): {"img"}}
+    assert tracker.dependencies == expected_deps
+
+
+def test_nested_function():
+    """Test tracking dependencies in nested functions."""
+
+    def func_with_nested(self: DependencyTestState):
+        async def inner():  # noqa: RUF029
+            if self.board:
+                pass
+
+        return self.count
+
+    tracker = DependencyTracker(func_with_nested, DependencyTestState)
+
+    expected_deps = {DependencyTestState.get_full_name(): {"board", "count"}}
+    assert tracker.dependencies == expected_deps
 
 
 @pytest.mark.skipif(
@@ -164,6 +316,24 @@ def test_get_var_value_multiple_lines_functionality():
 
     tracker = DependencyTracker(func_with_get_var_value, DependencyTestState)
     expected_deps = {DependencyTestState.get_full_name(): {"count"}}
+    assert tracker.dependencies == expected_deps
+
+
+@pytest.mark.skipif(
+    sys.version_info < (3, 11), reason="Requires Python 3.11+ for positions"
+)
+def test_get_var_value_with_import_from():
+    """Test that get_var_value with function-local `from ... import ...` finds correct dependency."""
+
+    async def get_state_import_from(self: DependencyTestState):
+        from tests.units.states.mutation import MutableTestState
+
+        return await self.get_var_value(MutableTestState.hashmap)  # pyright: ignore[reportArgumentType]
+
+    from tests.units.states.mutation import MutableTestState
+
+    tracker = DependencyTracker(get_state_import_from, DependencyTestState)
+    expected_deps = {MutableTestState.get_full_name(): {"hashmap"}}
     assert tracker.dependencies == expected_deps
 
 
@@ -279,6 +449,48 @@ def test_complex_expression_dependencies():
     tracker = DependencyTracker(complex_func, DependencyTestState)
 
     expected_deps = {DependencyTestState.get_full_name(): {"count", "name", "items"}}
+    assert tracker.dependencies == expected_deps
+
+
+def test_equality_expression_dependencies():
+    """Test tracking dependencies in equality expressions.
+
+    With the state attribute on the right hand side, python generates
+    LOAD_FAST_LOAD_FAST family instructions.
+    """
+
+    def equality_func(self: DependencyTestState):
+        my_val = 2
+        return my_val == self.count
+
+    tracker = DependencyTracker(equality_func, DependencyTestState)
+    expected_deps = {DependencyTestState.get_full_name(): {"count"}}
+    assert tracker.dependencies == expected_deps
+
+
+def test_equality_expression_dependencies_lhs():
+    """Test tracking dependencies in equality expressions (state on left hand side)."""
+
+    def equality_func(self: DependencyTestState):
+        my_val = 2
+        return self.count == my_val
+
+    tracker = DependencyTracker(equality_func, DependencyTestState)
+    expected_deps = {DependencyTestState.get_full_name(): {"count"}}
+    assert tracker.dependencies == expected_deps
+
+
+def test_equality_expression_dependencies_get_state():
+    """Test tracking dependencies in equality expressions with retrieved state."""
+
+    async def equality_func_get_state(self: DependencyTestState):
+        another_state = await self.get_state(AnotherTestState)
+        my_val = 2
+        return my_val == another_state.value
+
+    tracker = DependencyTracker(equality_func_get_state, DependencyTestState)
+
+    expected_deps = {AnotherTestState.get_full_name(): {"value"}}
     assert tracker.dependencies == expected_deps
 
 

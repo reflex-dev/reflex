@@ -7,12 +7,13 @@ import datetime
 import inspect
 import os
 import shutil
+import sys
 import time
 from pathlib import Path
 from types import FrameType
 
 from rich.console import Console
-from rich.progress import MofNCompleteColumn, Progress, TimeElapsedColumn
+from rich.progress import MofNCompleteColumn, Progress, TaskID, TimeElapsedColumn
 from rich.prompt import Prompt
 
 from reflex.constants import LogLevel
@@ -20,7 +21,8 @@ from reflex.constants.base import Reflex
 from reflex.utils.decorator import once
 
 # Console for pretty printing.
-_console = Console()
+_console = Console(highlight=False)
+_console_stderr = Console(stderr=True, highlight=False)
 
 # The current log level.
 _LOG_LEVEL = LogLevel.INFO
@@ -93,6 +95,21 @@ def print(msg: str, *, dedupe: bool = False, **kwargs):
             return
         _EMITTED_PRINTS.add(msg)
     _console.print(msg, **kwargs)
+
+
+def _print_stderr(msg: str, *, dedupe: bool = False, **kwargs):
+    """Print a message to stderr.
+
+    Args:
+        msg: The message to print.
+        dedupe: If True, suppress multiple console logs of print message.
+        kwargs: Keyword arguments to pass to the print function.
+    """
+    if dedupe:
+        if msg in _EMITTED_PRINTS:
+            return
+        _EMITTED_PRINTS.add(msg)
+    _console_stderr.print(msg, **kwargs)
 
 
 @once
@@ -244,22 +261,37 @@ def warn(msg: str, *, dedupe: bool = False, **kwargs):
         print_to_log_file(f"[orange1]Warning: {msg}[/orange1]", **kwargs)
 
 
-def _get_first_non_framework_frame() -> FrameType | None:
+@once
+def _exclude_paths_from_frame_info() -> list[Path]:
+    import importlib.util
+
     import click
+    import granian
+    import socketio
     import typing_extensions
 
     import reflex as rx
 
     # Exclude utility modules that should never be the source of deprecated reflex usage.
-    exclude_modules = [click, rx, typing_extensions]
+    exclude_modules = [click, rx, typing_extensions, socketio, granian]
+    modules_paths = [file for m in exclude_modules if (file := m.__file__)] + [
+        spec.origin
+        for m in [*sys.builtin_module_names, *sys.stdlib_module_names]
+        if (spec := importlib.util.find_spec(m)) and spec.origin
+    ]
     exclude_roots = [
         p.parent.resolve() if (p := Path(file)).name == "__init__.py" else p.resolve()
-        for m in exclude_modules
-        if (file := m.__file__)
+        for file in modules_paths
     ]
     # Specifically exclude the reflex cli module.
     if reflex_bin := shutil.which(b"reflex"):
         exclude_roots.append(Path(reflex_bin.decode()))
+
+    return exclude_roots
+
+
+def _get_first_non_framework_frame() -> FrameType | None:
+    exclude_roots = _exclude_paths_from_frame_info()
 
     frame = inspect.currentframe()
     while frame := frame and frame.f_back:
@@ -297,13 +329,13 @@ def deprecate(
         filename = Path(origin_frame.f_code.co_filename)
         if filename.is_relative_to(Path.cwd()):
             filename = filename.relative_to(Path.cwd())
-        loc = f"{filename}:{origin_frame.f_lineno}"
+        loc = f" ({filename}:{origin_frame.f_lineno})"
         dedupe_key = f"{dedupe_key} {loc}"
 
     if dedupe_key not in _EMITTED_DEPRECATION_WARNINGS:
         msg = (
             f"{feature_name} has been deprecated in version {deprecation_version}. {reason.rstrip('.').lstrip('. ')}. It will be completely "
-            f"removed in {removal_version}. ({loc})"
+            f"removed in {removal_version}.{loc}"
         )
         if _LOG_LEVEL <= LogLevel.WARNING:
             print(f"[yellow]DeprecationWarning: {msg}[/yellow]", **kwargs)
@@ -326,7 +358,7 @@ def error(msg: str, *, dedupe: bool = False, **kwargs):
             if msg in _EMITTED_ERRORS:
                 return
             _EMITTED_ERRORS.add(msg)
-        print(f"[red]{msg}[/red]", **kwargs)
+        _print_stderr(f"[red]{msg}[/red]", **kwargs)
     if should_use_log_file_console():
         print_to_log_file(f"[red]{msg}[/red]", **kwargs)
 
@@ -395,3 +427,47 @@ def timing(msg: str):
         yield
     finally:
         debug(f"[white]\\[timing] {msg}: {time.time() - start:.2f}s[/white]")
+
+
+class PoorProgress:
+    """A poor man's progress bar."""
+
+    def __init__(self):
+        """Initialize the progress bar."""
+        super().__init__()
+        self.tasks = {}
+        self.progress = 0
+        self.total = 0
+
+    def add_task(self, task: str, total: int):
+        """Add a task to the progress bar.
+
+        Args:
+            task: The task name.
+            total: The total number of steps for the task.
+
+        Returns:
+            The task ID.
+        """
+        self.total += total
+        task_id = TaskID(len(self.tasks))
+        self.tasks[task_id] = {"total": total, "current": 0}
+        return task_id
+
+    def advance(self, task: TaskID, advance: int = 1):
+        """Advance the progress of a task.
+
+        Args:
+            task: The task ID.
+            advance: The number of steps to advance.
+        """
+        if task in self.tasks:
+            self.tasks[task]["current"] += advance
+            self.progress += advance
+            _console.print(f"Progress: {self.progress}/{self.total}")
+
+    def start(self):
+        """Start the progress bar."""
+
+    def stop(self):
+        """Stop the progress bar."""

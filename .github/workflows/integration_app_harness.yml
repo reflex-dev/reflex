@@ -26,7 +26,7 @@ jobs:
     strategy:
       matrix:
         state_manager: ["redis", "memory"]
-        python-version: ["3.11", "3.12", "3.13"]
+        python-version: ["3.11", "3.12", "3.13", "3.14"]
         split_index: [1, 2]
       fail-fast: false
     runs-on: ubuntu-22.04
@@ -56,4 +56,4 @@ jobs:
       - name: Run app harness tests
         env:
           REFLEX_REDIS_URL: ${{ matrix.state_manager == 'redis' && 'redis://localhost:6379' || '' }}
-        run: uv run pytest tests/integration --retries 3 -v --maxfail=5 --splits 2 --group ${{matrix.split_index}}
+        run: uv run pytest tests/integration --reruns 3 -v --maxfail=5 --splits 2 --group ${{matrix.split_index}}

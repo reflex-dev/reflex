@@ -57,8 +57,7 @@ def navigation_app(tmp_path) -> Generator[AppHarness, None, None]:
         yield harness
 
 
-@pytest.mark.asyncio
-async def test_navigation_app(navigation_app: AppHarness):
+def test_navigation_app(navigation_app: AppHarness):
     """Type text after moving cursor. Update text on backend.
 
     Args:

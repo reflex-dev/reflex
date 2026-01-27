@@ -352,12 +352,10 @@ class Area(Cartesian):
     dot: Var[ACTIVE_DOT_TYPE]
 
     # The dot is shown when user enter an area chart and this chart has tooltip. If false set, no active dot will not be drawn. If true set, active dot will be drawn which have the props calculated internally. Default: {stroke: rx.color("accent", 2), fill: rx.color("accent", 10)}
-    active_dot: Var[ACTIVE_DOT_TYPE] = LiteralVar.create(
-        {
-            "stroke": Color("accent", 2),
-            "fill": Color("accent", 10),
-        }
-    )
+    active_dot: Var[ACTIVE_DOT_TYPE] = LiteralVar.create({
+        "stroke": Color("accent", 2),
+        "fill": Color("accent", 10),
+    })
 
     # The value which can describle the line, usually calculated internally.
     base_line: Var[int | Sequence[dict[str, Any]]]
@@ -439,20 +437,16 @@ class Line(Cartesian):
     stroke_width: Var[str | int | float]
 
     # The dot is shown when mouse enter a line chart and this chart has tooltip. If false set, no active dot will not be drawn. If true set, active dot will be drawn which have the props calculated internally. Default: {"stroke": rx.color("accent", 10), "fill": rx.color("accent", 4)}
-    dot: Var[ACTIVE_DOT_TYPE] = LiteralVar.create(
-        {
-            "stroke": Color("accent", 10),
-            "fill": Color("accent", 4),
-        }
-    )
+    dot: Var[ACTIVE_DOT_TYPE] = LiteralVar.create({
+        "stroke": Color("accent", 10),
+        "fill": Color("accent", 4),
+    })
 
     # The dot is shown when user enter an area chart and this chart has tooltip. If false set, no active dot will not be drawn. If true set, active dot will be drawn which have the props calculated internally. Default: {"stroke": rx.color("accent", 2), "fill": rx.color("accent", 10)}
-    active_dot: Var[ACTIVE_DOT_TYPE] = LiteralVar.create(
-        {
-            "stroke": Color("accent", 2),
-            "fill": Color("accent", 10),
-        }
-    )
+    active_dot: Var[ACTIVE_DOT_TYPE] = LiteralVar.create({
+        "stroke": Color("accent", 2),
+        "fill": Color("accent", 10),
+    })
 
     # Hides the line when true, useful when toggling visibility state via legend. Default: False
     hide: Var[bool]

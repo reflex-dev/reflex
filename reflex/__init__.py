@@ -84,13 +84,18 @@ In the example above, you will be able to do `rx.list`
 
 from __future__ import annotations
 
-from reflex.utils import (
-    compat,  # for side-effects
-    lazy_loader,
-)
+import sys
 
-# Remove the `compat` name from the namespace, it was imported for side-effects only.
-del compat
+from reflex.utils import lazy_loader
+
+if sys.version_info < (3, 11):
+    from reflex.utils import console
+
+    console.warn(
+        "Reflex support for Python 3.10 is deprecated and will be removed in a future release. Please upgrade to Python 3.11 or higher for continued support."
+    )
+    del console
+del sys
 
 RADIX_THEMES_MAPPING: dict = {
     "components.radix.themes.base": ["color_mode", "theme", "theme_panel"],
@@ -323,7 +328,7 @@ _MAPPING: dict = {
         "SessionStorage",
     ],
     "middleware": ["middleware", "Middleware"],
-    "model": ["asession", "session", "Model"],
+    "model": ["asession", "session", "Model", "ModelRegistry"],
     "page": ["page"],
     "state": [
         "var",
@@ -331,6 +336,7 @@ _MAPPING: dict = {
         "State",
         "dynamic",
     ],
+    "istate.shared": ["SharedState"],
     "istate.wrappers": ["get_state"],
     "style": ["Style", "toggle_color_mode"],
     "utils.imports": ["ImportDict", "ImportVar"],

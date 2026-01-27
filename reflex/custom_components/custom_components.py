@@ -18,6 +18,202 @@ from reflex.constants import CustomComponents
 from reflex.utils import console, frontend_skeleton
 
 
+def _pyproject_toml_template(
+    package_name: str, module_name: str, reflex_version: str
+) -> str:
+    """Template for custom components pyproject.toml.
+
+    Args:
+        package_name: The name of the package.
+        module_name: The name of the module.
+        reflex_version: The version of Reflex.
+
+    Returns:
+        Rendered pyproject.toml content as string.
+    """
+    return f"""[build-system]
+requires = ["setuptools", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "{package_name}"
+version = "0.0.1"
+description = "Reflex custom component {module_name}"
+readme = "README.md"
+license = {{ text = "Apache-2.0" }}
+requires-python = ">=3.10"
+authors = [{{ name = "", email = "YOUREMAIL@domain.com" }}]
+keywords = ["reflex","reflex-custom-components"]
+
+dependencies = ["reflex>={reflex_version}"]
+
+classifiers = ["Development Status :: 4 - Beta"]
+
+[project.urls]
+
+[project.optional-dependencies]
+dev = ["build", "twine"]
+
+[tool.setuptools.packages.find]
+where = ["custom_components"]
+"""
+
+
+def _readme_template(module_name: str, package_name: str) -> str:
+    """Template for custom components README.
+
+    Args:
+        module_name: The name of the module.
+        package_name: The name of the package.
+
+    Returns:
+        Rendered README.md content as string.
+    """
+    return f"""# {module_name}
+
+A Reflex custom component {module_name}.
+
+## Installation
+
+```bash
+pip install {package_name}
+```
+"""
+
+
+def _source_template(component_class_name: str, module_name: str) -> str:
+    """Template for custom components source.
+
+    Args:
+        component_class_name: The name of the component class.
+        module_name: The name of the module.
+
+    Returns:
+        Rendered custom component source code as string.
+    """
+    return rf'''
+"""Reflex custom component {component_class_name}."""
+
+# For wrapping react guide, visit https://reflex.dev/docs/wrapping-react/overview/
+
+import reflex as rx
+
+# Some libraries you want to wrap may require dynamic imports.
+# This is because they they may not be compatible with Server-Side Rendering (SSR).
+# To handle this in Reflex, all you need to do is subclass `NoSSRComponent` instead.
+# For example:
+# from reflex.components.component import NoSSRComponent
+# class {component_class_name}(NoSSRComponent):
+#     pass
+
+
+class {component_class_name}(rx.Component):
+    """{component_class_name} component."""
+
+    # The React library to wrap.
+    library = "Fill-Me"
+
+    # The React component tag.
+    tag = "Fill-Me"
+
+    # If the tag is the default export from the module, you must set is_default = True.
+    # This is normally used when components don't have curly braces around them when importing.
+    # is_default = True
+
+    # If you are wrapping another components with the same tag as a component in your project
+    # you can use aliases to differentiate between them and avoid naming conflicts.
+    # alias = "Other{component_class_name}"
+
+    # The props of the React component.
+    # Note: when Reflex compiles the component to Javascript,
+    # `snake_case` property names are automatically formatted as `camelCase`.
+    # The prop names may be defined in `camelCase` as well.
+    # some_prop: rx.Var[str] = "some default value"
+    # some_other_prop: rx.Var[int] = 1
+
+    # By default Reflex will install the library you have specified in the library property.
+    # However, sometimes you may need to install other libraries to use a component.
+    # In this case you can use the lib_dependencies property to specify other libraries to install.
+    # lib_dependencies: list[str] = []
+
+    # Event triggers declaration if any.
+    # Below is equivalent to merging `{{ "on_change": lambda e: [e] }}`
+    # onto the default event triggers of parent/base Component.
+    # The function defined for the `on_change` trigger maps event for the javascript
+    # trigger to what will be passed to the backend event handler function.
+    # on_change: rx.EventHandler[lambda e: [e]]
+
+    # To add custom code to your component
+    # def _get_custom_code(self) -> str:
+    #     return "const customCode = 'customCode';"
+
+
+{module_name} = {component_class_name}.create
+'''
+
+
+def _init_template(module_name: str) -> str:
+    """Template for custom components __init__.py.
+
+    Args:
+        module_name: The name of the module.
+
+    Returns:
+        Rendered __init__.py content as string.
+    """
+    return f"from .{module_name} import *"
+
+
+def _demo_app_template(custom_component_module_dir: str, module_name: str) -> str:
+    """Template for custom components demo app.
+
+    Args:
+        custom_component_module_dir: The directory of the custom component module.
+        module_name: The name of the module.
+
+    Returns:
+        Rendered demo app source code as string.
+    """
+    return rf'''
+"""Welcome to Reflex! This file showcases the custom component in a basic app."""
+
+from rxconfig import config
+
+import reflex as rx
+
+from {custom_component_module_dir} import {module_name}
+
+filename = f"{{config.app_name}}/{{config.app_name}}.py"
+
+
+class State(rx.State):
+    """The app state."""
+    pass
+
+def index() -> rx.Component:
+    return rx.center(
+        rx.theme_panel(),
+        rx.vstack(
+            rx.heading("Welcome to Reflex!", size="9"),
+            rx.text(
+                "Test your custom component by editing ",
+                rx.code(filename),
+                font_size="2em",
+            ),
+            {module_name}(),
+            align="center",
+            spacing="7",
+        ),
+        height="100vh",
+    )
+
+
+# Add state and page to the app.
+app = rx.App()
+app.add_page(index)
+'''
+
+
 def set_loglevel(ctx: Any, self: Any, value: str | None):
     """Set the log level.
 
@@ -77,11 +273,9 @@ def _create_package_config(module_name: str, package_name: str):
         module_name: The name of the module.
         package_name: The name of the package typically constructed with `reflex-` prefix and a meaningful library name.
     """
-    from reflex.compiler import templates
-
     pyproject = Path(CustomComponents.PYPROJECT_TOML)
     pyproject.write_text(
-        templates.CUSTOM_COMPONENTS_PYPROJECT_TOML.render(
+        _pyproject_toml_template(
             module_name=module_name,
             package_name=package_name,
             reflex_version=constants.Reflex.VERSION,
@@ -96,11 +290,9 @@ def _create_readme(module_name: str, package_name: str):
         module_name: The name of the module.
         package_name: The name of the python package to be published.
     """
-    from reflex.compiler import templates
-
     readme = Path(CustomComponents.PACKAGE_README)
     readme.write_text(
-        templates.CUSTOM_COMPONENTS_README.render(
+        _readme_template(
             module_name=module_name,
             package_name=package_name,
         )
@@ -119,19 +311,15 @@ def _write_source_and_init_py(
         component_class_name: The name of the component class.
         module_name: The name of the module.
     """
-    from reflex.compiler import templates
-
     module_path = custom_component_src_dir / f"{module_name}.py"
     module_path.write_text(
-        templates.CUSTOM_COMPONENTS_SOURCE.render(
+        _source_template(
             component_class_name=component_class_name, module_name=module_name
         )
     )
 
     init_path = custom_component_src_dir / CustomComponents.INIT_FILE
-    init_path.write_text(
-        templates.CUSTOM_COMPONENTS_INIT_FILE.render(module_name=module_name)
-    )
+    init_path.write_text(_init_template(module_name=module_name))
 
 
 def _populate_demo_app(name_variants: NameVariants):
@@ -141,7 +329,6 @@ def _populate_demo_app(name_variants: NameVariants):
         name_variants: the tuple including various names such as package name, class name needed for the project.
     """
     from reflex import constants
-    from reflex.compiler import templates
     from reflex.reflex import _init
 
     demo_app_dir = Path(name_variants.demo_app_dir)
@@ -155,10 +342,10 @@ def _populate_demo_app(name_variants: NameVariants):
         # We start with the blank template as basis.
         _init(name=demo_app_name, template=constants.Templates.DEFAULT)
         # Then overwrite the app source file with the one we want for testing custom components.
-        # This source file is rendered using jinja template file.
+        # This source file is rendered using template file.
         demo_file = Path(f"{demo_app_name}/{demo_app_name}.py")
         demo_file.write_text(
-            templates.CUSTOM_COMPONENTS_DEMO_APP.render(
+            _demo_app_template(
                 custom_component_module_dir=name_variants.custom_component_module_dir,
                 module_name=name_variants.module_name,
             )
@@ -172,15 +359,15 @@ def _get_default_library_name_parts() -> list[str]:
     """Get the default library name. Based on the current directory name, remove any non-alphanumeric characters.
 
     Raises:
-        Exit: If the current directory name is not suitable for python projects, and we cannot find a valid library name based off it.
+        SystemExit: If the current directory name is not suitable for python projects, and we cannot find a valid library name based off it.
 
     Returns:
         The parts of default library name.
     """
     current_dir_name = Path.cwd().name
 
-    cleaned_dir_name = re.sub("[^0-9a-zA-Z-_]+", "", current_dir_name).lower()
-    parts = [part for part in re.split("-|_", cleaned_dir_name) if part]
+    cleaned_dir_name = re.sub(r"[^0-9a-zA-Z-_]+", "", current_dir_name).lower()
+    parts = [part for part in re.split(r"-|_", cleaned_dir_name) if part]
     if parts and parts[0] == constants.Reflex.MODULE_NAME:
         # If the directory name already starts with "reflex", remove it from the parts.
         parts = parts[1:]
@@ -190,13 +377,13 @@ def _get_default_library_name_parts() -> list[str]:
             console.error(
                 f"Based on current directory name {current_dir_name}, the library name is {constants.Reflex.MODULE_NAME}. This package already exists. Please use --library-name to specify a different name."
             )
-            raise click.exceptions.Exit(code=1)
+            raise SystemExit(1)
     if not parts:
         # The folder likely has a name not suitable for python paths.
         console.error(
             f"Could not find a valid library name based on the current directory: got {current_dir_name}."
         )
-        raise click.exceptions.Exit(code=1)
+        raise SystemExit(1)
     return parts
 
 
@@ -221,7 +408,7 @@ def _validate_library_name(library_name: str | None) -> NameVariants:
         library_name: The name of the library if picked otherwise None.
 
     Raises:
-        Exit: If the library name is not suitable for python projects.
+        SystemExit: If the library name is not suitable for python projects.
 
     Returns:
         A tuple containing the various names such as package name, class name, etc., needed for the project.
@@ -232,7 +419,7 @@ def _validate_library_name(library_name: str | None) -> NameVariants:
         console.error(
             f"Please use only alphanumeric characters or dashes: got {library_name}"
         )
-        raise click.exceptions.Exit(code=1)
+        raise SystemExit(1)
 
     # If not specified, use the current directory name to form the module name.
     name_parts = (
@@ -326,13 +513,13 @@ def init(
         install: Whether to install package from this local custom component in editable mode.
 
     Raises:
-        Exit: If the pyproject.toml already exists.
+        SystemExit: If the pyproject.toml already exists.
     """
     from reflex.utils import exec
 
     if CustomComponents.PYPROJECT_TOML.exists():
         console.error(f"A {CustomComponents.PYPROJECT_TOML} already exists. Aborting.")
-        click.exceptions.Exit(code=1)
+        raise SystemExit(1)
 
     # Show system info.
     exec.output_system_info()
@@ -357,7 +544,7 @@ def init(
         if _pip_install_on_demand(package_name=".", install_args=["-e"]):
             console.info(f"Package {package_name} installed!")
         else:
-            raise click.exceptions.Exit(code=1)
+            raise SystemExit(1)
 
     console.print("[bold]Custom component initialized successfully!")
     console.rule("[bold]Project Summary")
@@ -440,7 +627,7 @@ def _run_build():
     """Run the build command.
 
     Raises:
-        Exit: If the build fails.
+        SystemExit: If the build fails.
     """
     console.print("Building custom component...")
 
@@ -450,7 +637,7 @@ def _run_build():
     if _run_commands_in_subprocess(cmds):
         console.info("Custom component built successfully!")
     else:
-        raise click.exceptions.Exit(code=1)
+        raise SystemExit(1)
 
 
 @custom_components_cli.command(name="build")
@@ -464,7 +651,7 @@ def _collect_details_for_gallery():
     """Helper to collect details on the custom component to be included in the gallery.
 
     Raises:
-        Exit: If pyproject.toml file is ill-formed or the request to the backend services fails.
+        SystemExit: If pyproject.toml file is ill-formed or the request to the backend services fails.
     """
     import httpx
     from reflex_cli.utils import hosting
@@ -477,7 +664,7 @@ def _collect_details_for_gallery():
         console.error(
             "Unable to authenticate with Reflex backend services. Make sure you are logged in."
         )
-        raise click.exceptions.Exit(code=1)
+        raise SystemExit(1)
 
     console.rule("[bold]Custom Component Information")
     params = {}
@@ -507,17 +694,18 @@ def _collect_details_for_gallery():
             console.error(
                 f"{package_name} is owned by another user. Unable to update the information for it."
             )
-            raise click.exceptions.Exit(code=1)
+            raise SystemExit(1)
         response.raise_for_status()
     except httpx.HTTPError as he:
         console.error(f"Unable to complete request due to {he}.")
-        raise click.exceptions.Exit(code=1) from he
+        raise SystemExit(1) from None
 
     files = []
     if (image_file_and_extension := _get_file_from_prompt_in_loop()) is not None:
-        files.append(
-            ("files", (image_file_and_extension[1], image_file_and_extension[0]))
-        )
+        files.append((
+            "files",
+            (image_file_and_extension[1], image_file_and_extension[0]),
+        ))
 
     demo_url = None
     while True:
@@ -546,7 +734,7 @@ def _collect_details_for_gallery():
 
     except httpx.HTTPError as he:
         console.error(f"Unable to complete request due to {he}.")
-        raise click.exceptions.Exit(code=1) from he
+        raise SystemExit(1) from None
 
     console.info("Custom component information successfully shared!")
 
@@ -582,7 +770,7 @@ def _get_file_from_prompt_in_loop() -> tuple[bytes, str] | None:
             image_file = image_file_path.read_bytes()
         except OSError as ose:
             console.error(f"Unable to read the {file_extension} file due to {ose}")
-            raise click.exceptions.Exit(code=1) from ose
+            raise SystemExit(1) from None
         else:
             return image_file, file_extension
 
@@ -603,9 +791,9 @@ def install():
     """Install package from this local custom component in editable mode.
 
     Raises:
-        Exit: If unable to install the current directory in editable mode.
+        SystemExit: If unable to install the current directory in editable mode.
     """
     if _pip_install_on_demand(package_name=".", install_args=["-e"]):
         console.info("Package installed successfully!")
     else:
-        raise click.exceptions.Exit(code=1)
+        raise SystemExit(1)

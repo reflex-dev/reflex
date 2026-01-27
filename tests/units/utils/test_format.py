@@ -21,6 +21,10 @@ from reflex.utils import format
 from reflex.utils.serializers import serialize_figure
 from reflex.vars.base import LiteralVar, Var
 from reflex.vars.object import ObjectVar
+
+pytest.importorskip("pydantic")
+
+
 from tests.units.test_state import (
     ChildState,
     ChildState2,
@@ -313,25 +317,30 @@ def test_format_route(route: str, expected: str):
         (
             "state__state.value",
             [
-                [LiteralVar.create(1), LiteralVar.create("red")],
-                [LiteralVar.create(2), LiteralVar.create(3), LiteralVar.create("blue")],
-                [TestState.mapping, TestState.num1],
-                [
-                    LiteralVar.create(f"{TestState.map_key}-key"),
+                ([LiteralVar.create(1)], LiteralVar.create("red")),
+                (
+                    [LiteralVar.create(2), LiteralVar.create(3)],
+                    LiteralVar.create("blue"),
+                ),
+                ([TestState.mapping], TestState.num1),
+                (
+                    [LiteralVar.create(f"{TestState.map_key}-key")],
                     LiteralVar.create("return-key"),
-                ],
+                ),
             ],
             LiteralVar.create("yellow"),
-            '(() => { switch (JSON.stringify(state__state.value)) {case JSON.stringify(1):  return ("red");  break;case JSON.stringify(2): case JSON.stringify(3):  '
-            f'return ("blue");  break;case JSON.stringify({TestState.get_full_name()}.mapping{FIELD_MARKER}):  return '
-            f'({TestState.get_full_name()}.num1{FIELD_MARKER});  break;case JSON.stringify(({TestState.get_full_name()}.map_key{FIELD_MARKER}+"-key")):  return ("return-key");'
-            '  break;default:  return ("yellow");  break;};})()',
+            (
+                '(() => { switch (JSON.stringify(state__state.value)) {case JSON.stringify(1):  return ("red");  break;case JSON.stringify(2): case JSON.stringify(3):  '
+                f'return ("blue");  break;case JSON.stringify({TestState.get_full_name()}.mapping{FIELD_MARKER}):  return '
+                f'({TestState.get_full_name()}.num1{FIELD_MARKER});  break;case JSON.stringify(({TestState.get_full_name()}.map_key{FIELD_MARKER}+"-key")):  return ("return-key");'
+                '  break;default:  return ("yellow");  break;};})()'
+            ),
         )
     ],
 )
 def test_format_match(
     condition: str,
-    match_cases: list[list[Var]],
+    match_cases: list[tuple[list[Var], Var]],
     default: Var,
     expected: str,
 ):
@@ -354,7 +363,7 @@ def test_format_match(
         (True, "true"),
         (False, "false"),
         (123, "123"),
-        (3.14, "3.14"),
+        (3.15, "3.15"),
         ([1, 2, 3], "[1, 2, 3]"),
         (["a", "b", "c"], '["a", "b", "c"]'),
         ({"a": 1, "b": 2, "c": 3}, '({ ["a"] : 1, ["b"] : 2, ["c"] : 3 })'),
@@ -371,7 +380,7 @@ def test_format_match(
                 events=[EventSpec(handler=EventHandler(fn=mock_event))],
                 args_spec=no_args_event_spec,
             ),
-            '((...args) => (addEvents([(Event("mock_event", ({  }), ({  })))], args, ({  }))))',
+            '((...args) => (addEvents([(ReflexEvent("mock_event", ({  }), ({  })))], args, ({  }))))',
         ),
         (
             EventChain(
@@ -392,7 +401,7 @@ def test_format_match(
                 ],
                 args_spec=lambda e: [e.target.value],
             ),
-            '((_e) => (addEvents([(Event("mock_event", ({ ["arg"] : _e["target"]["value"] }), ({  })))], [_e], ({  }))))',
+            '((_e) => (addEvents([(ReflexEvent("mock_event", ({ ["arg"] : _e?.["target"]?.["value"] }), ({  })))], [_e], ({  }))))',
         ),
         (
             EventChain(
@@ -400,7 +409,7 @@ def test_format_match(
                 args_spec=no_args_event_spec,
                 event_actions={"stopPropagation": True},
             ),
-            '((...args) => (addEvents([(Event("mock_event", ({  }), ({  })))], args, ({ ["stopPropagation"] : true }))))',
+            '((...args) => (addEvents([(ReflexEvent("mock_event", ({  }), ({  })))], args, ({ ["stopPropagation"] : true }))))',
         ),
         (
             EventChain(
@@ -412,7 +421,7 @@ def test_format_match(
                 ],
                 args_spec=no_args_event_spec,
             ),
-            '((...args) => (addEvents([(Event("mock_event", ({  }), ({ ["stopPropagation"] : true })))], args, ({  }))))',
+            '((...args) => (addEvents([(ReflexEvent("mock_event", ({  }), ({ ["stopPropagation"] : true })))], args, ({  }))))',
         ),
         (
             EventChain(
@@ -420,7 +429,7 @@ def test_format_match(
                 args_spec=no_args_event_spec,
                 event_actions={"preventDefault": True},
             ),
-            '((...args) => (addEvents([(Event("mock_event", ({  }), ({  })))], args, ({ ["preventDefault"] : true }))))',
+            '((...args) => (addEvents([(ReflexEvent("mock_event", ({  }), ({  })))], args, ({ ["preventDefault"] : true }))))',
         ),
         ({"a": "red", "b": "blue"}, '({ ["a"] : "red", ["b"] : "blue" })'),
         (Var(_js_expr="var", _var_type=int).guess_type(), "var"),
@@ -528,7 +537,7 @@ def test_format_event_handler(input, output):
     [
         (
             EventSpec(handler=EventHandler(fn=mock_event)),
-            '(Event("mock_event", ({  }), ({  })))',
+            '(ReflexEvent("mock_event", ({  }), ({  })))',
         ),
     ],
 )
@@ -585,7 +594,7 @@ formatted_router = {
             TestState(_reflex_internal_init=True).dict(),  # pyright: ignore [reportCallIssue]
             {
                 TestState.get_full_name(): {
-                    "array" + FIELD_MARKER: [1, 2, 3.14],
+                    "array" + FIELD_MARKER: [1, 2, 3.15],
                     "complex" + FIELD_MARKER: {
                         1: {"prop1": 42, "prop2": "hello"},
                         2: {"prop1": 42, "prop2": "hello"},
@@ -595,10 +604,11 @@ formatted_router = {
                     "key" + FIELD_MARKER: "",
                     "map_key" + FIELD_MARKER: "a",
                     "mapping" + FIELD_MARKER: {"a": [1, 2, 3], "b": [4, 5, 6]},
+                    "mixin" + FIELD_MARKER: "mixin_value",
                     "num1" + FIELD_MARKER: 0,
-                    "num2" + FIELD_MARKER: 3.14,
+                    "num2" + FIELD_MARKER: 3.15,
                     "obj" + FIELD_MARKER: {"prop1": 42, "prop2": "hello"},
-                    "sum" + FIELD_MARKER: 3.14,
+                    "sum" + FIELD_MARKER: 3.15,
                     "upper" + FIELD_MARKER: "",
                     "router" + FIELD_MARKER: formatted_router,
                     "asynctest" + FIELD_MARKER: 0,

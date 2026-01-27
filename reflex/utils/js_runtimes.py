@@ -6,7 +6,6 @@ import tempfile
 from collections.abc import Sequence
 from pathlib import Path
 
-import click
 from packaging import version
 
 from reflex import constants
@@ -30,6 +29,37 @@ def check_node_version() -> bool:
     )
 
 
+def _get_version_of_executable(
+    executable_path: Path | None, version_arg: str = "--version"
+) -> version.Version | None:
+    """Get the version of an executable.
+
+    Args:
+        executable_path: The path to the executable.
+        version_arg: The argument to pass to the executable to get its version.
+
+    Returns:
+        The version of the executable.
+    """
+    if executable_path is None:
+        return None
+    try:
+        result = processes.new_process([executable_path, version_arg], run=True)
+        if result.returncode != 0:
+            console.error(
+                f"Failed to run {executable_path} {version_arg} to get version. Return code: {result.returncode}. Standard error: {result.stderr!r}."
+            )
+            return None
+        return version.parse(result.stdout.strip())
+    except (FileNotFoundError, TypeError):
+        return None
+    except version.InvalidVersion as e:
+        console.warn(
+            f"The detected version of {executable_path} ({e.args[0]}) is not valid. Defaulting to None."
+        )
+        return None
+
+
 @once
 def get_node_version() -> version.Version | None:
     """Get the version of node.
@@ -37,15 +67,7 @@ def get_node_version() -> version.Version | None:
     Returns:
         The version of node.
     """
-    node_path = path_ops.get_node_path()
-    if node_path is None:
-        return None
-    try:
-        result = processes.new_process([node_path, "-v"], run=True)
-        # The output will be in the form "vX.Y.Z", but version.parse() can handle it
-        return version.parse(result.stdout)
-    except (FileNotFoundError, TypeError):
-        return None
+    return _get_version_of_executable(path_ops.get_node_path())
 
 
 def get_bun_version(bun_path: Path | None = None) -> version.Version | None:
@@ -57,20 +79,7 @@ def get_bun_version(bun_path: Path | None = None) -> version.Version | None:
     Returns:
         The version of bun.
     """
-    bun_path = bun_path or path_ops.get_bun_path()
-    if bun_path is None:
-        return None
-    try:
-        # Run the bun -v command and capture the output
-        result = processes.new_process([str(bun_path), "-v"], run=True)
-        return version.parse(str(result.stdout))
-    except FileNotFoundError:
-        return None
-    except version.InvalidVersion as e:
-        console.warn(
-            f"The detected bun version ({e.args[0]}) is not valid. Defaulting to None."
-        )
-        return None
+    return _get_version_of_executable(bun_path or path_ops.get_bun_path())
 
 
 def npm_escape_hatch() -> bool:
@@ -193,7 +202,7 @@ def download_and_run(url: str, *args, show_status: bool = False, **env):
         env: The environment variables to use.
 
     Raises:
-        Exit: If the script fails to download.
+        SystemExit: If the script fails to download.
     """
     import httpx
 
@@ -206,7 +215,7 @@ def download_and_run(url: str, *args, show_status: bool = False, **env):
         console.error(
             f"Failed to download bun install script. You can install or update bun manually from https://bun.com \n{e}"
         )
-        raise click.exceptions.Exit(1) from None
+        raise SystemExit(1) from None
 
     # Save the script to a temporary file.
     with tempfile.NamedTemporaryFile() as tempfile_file:
@@ -226,7 +235,7 @@ def install_bun():
 
     Raises:
         SystemPackageMissingError: If "unzip" is missing.
-        Exit: If REFLEX_USE_NPM is set but Node.js is not installed.
+        SystemExit: If REFLEX_USE_NPM is set but Node.js is not installed.
     """
     if npm_escape_hatch():
         if get_node_version() is not None:
@@ -237,7 +246,7 @@ def install_bun():
         console.error(
             "REFLEX_USE_NPM is set, but Node.js is not installed. Please install Node.js to use npm."
         )
-        raise click.exceptions.Exit(1)
+        raise SystemExit(1)
 
     bun_path = path_ops.get_bun_path()
 
@@ -290,7 +299,7 @@ def validate_bun(bun_path: Path | None = None):
         bun_path: The path to the bun executable. If None, the default bun path is used.
 
     Raises:
-        Exit: If custom specified bun does not exist or does not meet requirements.
+        SystemExit: If custom specified bun does not exist or does not meet requirements.
     """
     bun_path = bun_path or path_ops.get_bun_path()
 
@@ -304,7 +313,7 @@ def validate_bun(bun_path: Path | None = None):
             console.error(
                 "Failed to obtain bun version. Make sure the specified bun path in your config is correct."
             )
-            raise click.exceptions.Exit(1)
+            raise SystemExit(1)
         if bun_version < version.parse(constants.Bun.MIN_VERSION):
             console.warn(
                 f"Reflex requires bun version {constants.Bun.MIN_VERSION} or higher to run, but the detected version is "
@@ -320,20 +329,21 @@ def validate_frontend_dependencies(init: bool = True):
         init: whether running `reflex init`
 
     Raises:
-        Exit: If the package manager is invalid.
+        SystemExit: If the package manager is invalid.
     """
     if not init:
         try:
             get_js_package_executor(raise_on_none=True)
         except FileNotFoundError as e:
-            raise click.exceptions.Exit(1) from e
+            console.error(f"Failed to find a valid package manager due to {e}.")
+            raise SystemExit(1) from None
 
     if prefer_npm_over_bun() and not check_node_version():
         node_version = get_node_version()
         console.error(
             f"Reflex requires node version {constants.Node.MIN_VERSION} or higher to run, but the detected version is {node_version}",
         )
-        raise click.exceptions.Exit(1)
+        raise SystemExit(1)
 
 
 def remove_existing_bun_installation():

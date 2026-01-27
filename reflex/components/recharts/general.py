@@ -147,34 +147,28 @@ class GraphingTooltip(Recharts):
     filter_null: Var[bool]
 
     # If set false, no cursor will be drawn when tooltip is active. Default: {"strokeWidth": 1, "fill": rx.color("gray", 3)}
-    cursor: Var[dict[str, Any] | bool] = LiteralVar.create(
-        {
-            "strokeWidth": 1,
-            "fill": Color("gray", 3),
-        }
-    )
+    cursor: Var[dict[str, Any] | bool] = LiteralVar.create({
+        "strokeWidth": 1,
+        "fill": Color("gray", 3),
+    })
 
     # The box of viewing area, which has the shape of {x: someVal, y: someVal, width: someVal, height: someVal}, usually calculated internally.
     view_box: Var[dict[str, Any]]
 
     # The style of default tooltip content item which is a li element. Default: {"color": rx.color("gray", 12)}
-    item_style: Var[dict[str, Any]] = LiteralVar.create(
-        {
-            "color": Color("gray", 12),
-        }
-    )
+    item_style: Var[dict[str, Any]] = LiteralVar.create({
+        "color": Color("gray", 12),
+    })
 
     # The style of tooltip wrapper which is a dom element. Default: {}
     wrapper_style: Var[dict[str, Any]]
 
     # The style of tooltip content which is a dom element. Default: {"background": rx.color("gray", 1), "borderColor": rx.color("gray", 4), "borderRadius": "8px"}
-    content_style: Var[dict[str, Any]] = LiteralVar.create(
-        {
-            "background": Color("gray", 1),
-            "borderColor": Color("gray", 4),
-            "borderRadius": "8px",
-        }
-    )
+    content_style: Var[dict[str, Any]] = LiteralVar.create({
+        "background": Color("gray", 1),
+        "borderColor": Color("gray", 4),
+        "borderRadius": "8px",
+    })
 
     # The style of default tooltip label which is a p element. Default: {"color": rx.color("gray", 11)}
     label_style: Var[dict[str, Any]] = LiteralVar.create({"color": Color("gray", 11)})

@@ -4,11 +4,12 @@ from __future__ import annotations
 
 import asyncio
 import concurrent.futures
+import operator
 import traceback
 from collections.abc import Mapping, Sequence
 from datetime import datetime
 from pathlib import Path
-from typing import Any
+from typing import Any, TypedDict
 from urllib.parse import urlparse
 
 from reflex import constants
@@ -16,7 +17,7 @@ from reflex.components.base import Description, Image, Scripts
 from reflex.components.base.document import Links, ScrollRestoration
 from reflex.components.base.document import Meta as ReactMeta
 from reflex.components.component import Component, ComponentStyle, CustomComponent
-from reflex.components.el.elements.metadata import Head, Meta, Title
+from reflex.components.el.elements.metadata import Head, Link, Meta, Title
 from reflex.components.el.elements.other import Html
 from reflex.components.el.elements.sectioning import Body
 from reflex.constants.state import FIELD_MARKER
@@ -26,7 +27,7 @@ from reflex.style import Style
 from reflex.utils import format, imports, path_ops
 from reflex.utils.imports import ImportVar, ParsedImportDict
 from reflex.utils.prerequisites import get_web_dir
-from reflex.vars.base import Field, Var
+from reflex.vars.base import Field, Var, VarData
 
 # To re-export this function.
 merge_imports = imports.merge_imports
@@ -72,10 +73,12 @@ def validate_imports(import_dict: ParsedImportDict):
         ValueError: if a conflict on "tag/alias" is detected for an import.
     """
     used_tags = {}
-    for lib, _imports in import_dict.items():
-        for _import in _imports:
+    for lib, imported_items in import_dict.items():
+        for imported_item in imported_items:
             import_name = (
-                f"{_import.tag}/{_import.alias}" if _import.alias else _import.tag
+                f"{imported_item.tag}/{imported_item.alias}"
+                if imported_item.alias
+                else imported_item.tag
             )
             if import_name in used_tags:
                 already_imported = used_tags[import_name]
@@ -90,7 +93,13 @@ def validate_imports(import_dict: ParsedImportDict):
                 used_tags[import_name] = lib
 
 
-def compile_imports(import_dict: ParsedImportDict) -> list[dict]:
+class _ImportDict(TypedDict):
+    lib: str
+    default: str
+    rest: list[str]
+
+
+def compile_imports(import_dict: ParsedImportDict) -> list[_ImportDict]:
     """Compile an import dict.
 
     Args:
@@ -104,7 +113,7 @@ def compile_imports(import_dict: ParsedImportDict) -> list[dict]:
     """
     collapsed_import_dict: ParsedImportDict = imports.collapse_imports(import_dict)
     validate_imports(collapsed_import_dict)
-    import_dicts = []
+    import_dicts: list[_ImportDict] = []
     for lib, fields in collapsed_import_dict.items():
         # prevent lib from being rendered on the page if all imports are non rendered kind
         if not any(f.render for f in fields):
@@ -139,7 +148,9 @@ def compile_imports(import_dict: ParsedImportDict) -> list[dict]:
     return import_dicts
 
 
-def get_import_dict(lib: str, default: str = "", rest: list[str] | None = None) -> dict:
+def get_import_dict(
+    lib: str, default: str = "", rest: list[str] | None = None
+) -> _ImportDict:
     """Get dictionary for import template.
 
     Args:
@@ -150,11 +161,11 @@ def get_import_dict(lib: str, default: str = "", rest: list[str] | None = None) 
     Returns:
         A dictionary for import template.
     """
-    return {
-        "lib": lib,
-        "default": default,
-        "rest": rest if rest else [],
-    }
+    return _ImportDict(
+        lib=lib,
+        default=default,
+        rest=rest or [],
+    )
 
 
 def save_error(error: Exception) -> str:
@@ -182,7 +193,7 @@ def _sorted_keys(d: Mapping[str, Any]) -> dict[str, Any]:
     Returns:
         A new dictionary with sorted keys.
     """
-    return dict(sorted(d.items(), key=lambda kv: kv[0]))
+    return dict(sorted(d.items(), key=operator.itemgetter(0)))
 
 
 def compile_state(state: type[BaseState]) -> dict:
@@ -212,10 +223,13 @@ def compile_state(state: type[BaseState]) -> dict:
 
 def _compile_client_storage_field(
     field: Field,
-) -> tuple[
-    type[Cookie] | type[LocalStorage] | type[SessionStorage] | None,
-    dict[str, Any] | None,
-]:
+) -> (
+    tuple[
+        type[Cookie] | type[LocalStorage] | type[SessionStorage],
+        dict[str, Any],
+    ]
+    | tuple[None, None]
+):
     """Compile the given cookie, local_storage or session_storage field.
 
     Args:
@@ -237,23 +251,20 @@ def _compile_client_storage_field(
 
 def _compile_client_storage_recursive(
     state: type[BaseState],
-) -> tuple[dict[str, dict], dict[str, dict], dict[str, dict]]:
+) -> tuple[
+    dict[str, dict[str, Any]], dict[str, dict[str, Any]], dict[str, dict[str, Any]]
+]:
     """Compile the client-side storage for the given state recursively.
 
     Args:
         state: The app state object.
 
     Returns:
-        A tuple of the compiled client-side storage info:
-            (
-                cookies: dict[str, dict],
-                local_storage: dict[str, dict[str, str]]
-                session_storage: dict[str, dict[str, str]]
-            ).
+        A tuple of the compiled client-side storage info: (cookies, local_storage, session_storage).
     """
-    cookies = {}
-    local_storage = {}
-    session_storage = {}
+    cookies: dict[str, dict[str, Any]] = {}
+    local_storage: dict[str, dict[str, Any]] = {}
+    session_storage: dict[str, dict[str, Any]] = {}
     state_name = state.get_full_name()
     for name, field in state.__fields__.items():
         if name in state.inherited_vars:
@@ -261,6 +272,8 @@ def _compile_client_storage_recursive(
             continue
         state_key = f"{state_name}.{name}" + FIELD_MARKER
         field_type, options = _compile_client_storage_field(field)
+        if field_type is None or options is None:
+            continue
         if field_type is Cookie:
             cookies[state_key] = options
         elif field_type is LocalStorage:
@@ -281,7 +294,9 @@ def _compile_client_storage_recursive(
     return cookies, local_storage, session_storage
 
 
-def compile_client_storage(state: type[BaseState]) -> dict[str, dict]:
+def compile_client_storage(
+    state: type[BaseState],
+) -> dict[str, dict[str, dict[str, Any]]]:
     """Compile the client-side storage for the given state.
 
     Args:
@@ -341,7 +356,7 @@ def compile_custom_component(
 def create_document_root(
     head_components: Sequence[Component] | None = None,
     html_lang: str | None = None,
-    html_custom_attrs: dict[str, Var | str] | None = None,
+    html_custom_attrs: dict[str, Var | Any] | None = None,
 ) -> Component:
     """Create the document root.
 
@@ -370,6 +385,20 @@ def create_document_root(
     # Always include the framework meta and link tags.
     always_head_components = [
         ReactMeta.create(),
+        Link.create(
+            rel="stylesheet",
+            type="text/css",
+            href=Var(
+                "reflexGlobalStyles",
+                _var_data=VarData(
+                    imports={
+                        "$/styles/__reflex_global_styles.css?url": [
+                            ImportVar(tag="reflexGlobalStyles", is_default=True)
+                        ]
+                    }
+                ),
+            ),
+        ),
         Links.create(),
     ]
     maybe_head_components = []
@@ -390,7 +419,7 @@ def create_document_root(
         *maybe_head_components,
         *always_head_components,
     ]
-    return Html.create(
+    html_component = Html.create(
         Head.create(*head_components),
         Body.create(
             Var("children"),
@@ -400,6 +429,11 @@ def create_document_root(
         lang=html_lang or "en",
         custom_attrs=html_custom_attrs or {},
     )
+    hooks = html_component._get_all_hooks()
+    if hooks:
+        msg = "You cannot use stateful components or hooks in the document root. Check your head components."
+        raise ValueError(msg)
+    return html_component
 
 
 def create_theme(style: ComponentStyle) -> dict:
@@ -416,9 +450,9 @@ def create_theme(style: ComponentStyle) -> dict:
 
     root_style = {
         # Root styles.
-        ":root": Style(
-            {f"*{k}": v for k, v in style_rules.items() if k.startswith(":")}
-        ),
+        ":root": Style({
+            f"*{k}": v for k, v in style_rules.items() if k.startswith(":")
+        }),
         # Body styles.
         "body": Style(
             {k: v for k, v in style_rules.items() if not k.startswith(":")},
@@ -530,7 +564,7 @@ def add_meta(
     page: Component,
     title: str,
     image: str,
-    meta: list[dict],
+    meta: Sequence[Mapping[str, Any] | Component],
     description: str | None = None,
 ) -> Component:
     """Add metadata to a page.

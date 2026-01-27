@@ -55,6 +55,11 @@ def BackgroundTask():
                     yield State.increment()
                 await asyncio.sleep(0.005)
 
+        @rx.event(background=True)
+        async def fast_yielding(self):
+            for _ in range(1000):
+                yield State.increment()
+
         @rx.event
         def increment(self):
             self.counter += 1
@@ -109,6 +114,15 @@ def BackgroundTask():
                 yield
                 self.counter += 1
 
+        @rx.event(background=True)
+        async def disconnect_reconnect_background(self):
+            async with self:
+                self.counter += 1
+            yield rx.call_script("socket.disconnect()")
+            await asyncio.sleep(0.5)
+            async with self:
+                self.counter += 1
+
     class OtherState(rx.State):
         @rx.event(background=True)
         async def get_other_state(self):
@@ -133,6 +147,9 @@ def BackgroundTask():
         return rx.vstack(
             rx.input(
                 id="token", value=State.router.session.client_token, is_read_only=True
+            ),
+            rx.input(
+                id="sid", value=State.router.session.session_id, is_read_only=True
             ),
             rx.hstack(
                 rx.heading(State.counter, id="counter"),
@@ -184,6 +201,16 @@ def BackgroundTask():
                 "Yield in Async with Self",
                 on_click=State.yield_in_async_with_self,
                 id="yield-in-async-with-self",
+            ),
+            rx.button(
+                "Disconnect / Reconnect Background",
+                on_click=State.disconnect_reconnect_background,
+                id="disconnect-reconnect-background",
+            ),
+            rx.button(
+                "Fast Yielding",
+                on_click=State.fast_yielding,
+                id="fast-yielding",
             ),
             rx.button("Reset", on_click=State.reset_counter, id="reset"),
         )
@@ -395,3 +422,67 @@ def test_yield_in_async_with_self(
 
     yield_in_async_with_self_button.click()
     AppHarness.expect(lambda: counter.text == "2", timeout=5)
+
+
+@pytest.mark.parametrize(
+    "button_id",
+    [
+        "disconnect-reconnect-background",
+    ],
+)
+def test_disconnect_reconnect(
+    background_task: AppHarness,
+    driver: WebDriver,
+    token: str,
+    button_id: str,
+):
+    """Test that disconnecting and reconnecting works as expected.
+
+    Args:
+        background_task: harness for BackgroundTask app.
+        driver: WebDriver instance.
+        token: The token for the connected client.
+        button_id: The ID of the button to click.
+    """
+    counter = driver.find_element(By.ID, "counter")
+    button = driver.find_element(By.ID, button_id)
+    increment_button = driver.find_element(By.ID, "increment")
+    sid_input = driver.find_element(By.ID, "sid")
+    sid = background_task.poll_for_value(sid_input, timeout=5)
+    assert sid is not None
+
+    AppHarness.expect(lambda: counter.text == "0", timeout=5)
+    button.click()
+    AppHarness.expect(lambda: counter.text == "1", timeout=5)
+    increment_button.click()
+    # should get a new sid after the reconnect
+    assert (
+        background_task.poll_for_value(sid_input, timeout=5, exp_not_equal=sid) != sid
+    )
+    # Final update should come through on the new websocket connection
+    AppHarness.expect(lambda: counter.text == "3", timeout=5)
+
+
+def test_fast_yielding(
+    background_task: AppHarness,
+    driver: WebDriver,
+    token: str,
+) -> None:
+    """Test that fast yielding works as expected.
+
+    Args:
+        background_task: harness for BackgroundTask app.
+        driver: WebDriver instance.
+        token: The token for the connected client.
+    """
+    assert background_task.app_instance is not None
+
+    # get a reference to all buttons
+    fast_yielding_button = driver.find_element(By.ID, "fast-yielding")
+
+    # get a reference to the counter
+    counter = driver.find_element(By.ID, "counter")
+    assert background_task._poll_for(lambda: counter.text == "0", timeout=5)
+
+    fast_yielding_button.click()
+    assert background_task._poll_for(lambda: counter.text == "1000", timeout=50)

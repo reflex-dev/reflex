@@ -6,7 +6,7 @@ import collections.abc
 import dataclasses
 import typing
 from collections.abc import Mapping
-from inspect import isclass
+from importlib.util import find_spec
 from typing import (
     Any,
     NoReturn,
@@ -40,7 +40,7 @@ from .base import (
     var_operation_return,
 )
 from .number import BooleanVar, NumberVar, raise_unsupported_operand_types
-from .sequence import ArrayVar, StringVar
+from .sequence import ArrayVar, LiteralArrayVar, StringVar
 
 OBJECT_TYPE = TypeVar("OBJECT_TYPE", covariant=True)
 
@@ -56,13 +56,11 @@ def _determine_value_type(var_type: GenericType):
     origin_var_type = get_origin(var_type) or var_type
 
     if origin_var_type in types.UnionTypes:
-        return unionize(
-            *[
-                _determine_value_type(arg)
-                for arg in get_args(var_type)
-                if arg is not type(None)
-            ]
-        )
+        return unionize(*[
+            _determine_value_type(arg)
+            for arg in get_args(var_type)
+            if arg is not type(None)
+        ])
 
     if is_typeddict(origin_var_type) or dataclasses.is_dataclass(origin_var_type):
         annotations = get_type_hints(origin_var_type)
@@ -75,7 +73,15 @@ def _determine_value_type(var_type: GenericType):
     return Any
 
 
-class ObjectVar(Var[OBJECT_TYPE], python_types=Mapping):
+PYTHON_TYPES = (Mapping,)
+if find_spec("pydantic"):
+    import pydantic
+    import pydantic.v1
+
+    PYTHON_TYPES += (pydantic.BaseModel, pydantic.v1.BaseModel)
+
+
+class ObjectVar(Var[OBJECT_TYPE], python_types=PYTHON_TYPES):
     """Base class for immutable object vars."""
 
     def _key_type(self) -> type:
@@ -328,7 +334,10 @@ class ObjectVar(Var[OBJECT_TYPE], python_types=Mapping):
 
         if (
             is_typeddict(fixed_type)
-            or (isclass(fixed_type) and not safe_issubclass(fixed_type, Mapping))
+            or (
+                isinstance(fixed_type, type)
+                and not safe_issubclass(fixed_type, Mapping)
+            )
             or (fixed_type in types.UnionTypes)
         ):
             attribute_type = get_attribute_access_type(var_type, name)
@@ -390,12 +399,10 @@ class LiteralObjectVar(CachedVarOperation, ObjectVar[OBJECT_TYPE], LiteralVar):
         """
         return (
             "({ "
-            + ", ".join(
-                [
-                    f"[{LiteralVar.create(key)!s}] : {LiteralVar.create(value)!s}"
-                    for key, value in self._var_value.items()
-                ]
-            )
+            + ", ".join([
+                f"[{LiteralVar.create(key)!s}] : {LiteralVar.create(value)!s}"
+                for key, value in self._var_value.items()
+            ])
             + " })"
         )
 
@@ -426,6 +433,24 @@ class LiteralObjectVar(CachedVarOperation, ObjectVar[OBJECT_TYPE], LiteralVar):
         """
         return hash((type(self).__name__, self._js_expr))
 
+    @classmethod
+    def _get_all_var_data_without_creating_var(
+        cls,
+        value: Mapping,
+    ) -> VarData | None:
+        """Get all the var data without creating a var.
+
+        Args:
+            value: The value to get the var data from.
+
+        Returns:
+            The var data.
+        """
+        return VarData.merge(
+            LiteralArrayVar._get_all_var_data_without_creating_var(value),
+            LiteralArrayVar._get_all_var_data_without_creating_var(value.values()),
+        )
+
     @cached_property_no_lock
     def _cached_get_all_var_data(self) -> VarData | None:
         """Get all the var data.
@@ -434,11 +459,10 @@ class LiteralObjectVar(CachedVarOperation, ObjectVar[OBJECT_TYPE], LiteralVar):
             The var data.
         """
         return VarData.merge(
-            *[LiteralVar.create(var)._get_all_var_data() for var in self._var_value],
-            *[
-                LiteralVar.create(var)._get_all_var_data()
-                for var in self._var_value.values()
-            ],
+            LiteralArrayVar._get_all_var_data_without_creating_var(self._var_value),
+            LiteralArrayVar._get_all_var_data_without_creating_var(
+                self._var_value.values()
+            ),
             self._var_data,
         )
 
@@ -458,7 +482,25 @@ class LiteralObjectVar(CachedVarOperation, ObjectVar[OBJECT_TYPE], LiteralVar):
 
         Returns:
             The literal object var.
+
+        Raises:
+            TypeError: If the value is not a mapping type or a dataclass.
         """
+        if not isinstance(_var_value, collections.abc.Mapping):
+            from reflex.utils.serializers import serialize
+
+            serialized = serialize(_var_value, get_type=False)
+            if not isinstance(serialized, collections.abc.Mapping):
+                msg = f"Expected a mapping type or a dataclass, got {_var_value!r} of type {type(_var_value).__name__}."
+                raise TypeError(msg)
+
+            return LiteralObjectVar(
+                _js_expr="",
+                _var_type=(type(_var_value) if _var_type is None else _var_type),
+                _var_data=_var_data,
+                _var_value=serialized,
+            )
+
         return LiteralObjectVar(
             _js_expr="",
             _var_type=(figure_out_type(_var_value) if _var_type is None else _var_type),
@@ -477,14 +519,9 @@ def object_keys_operation(value: ObjectVar):
     Returns:
         The keys of the object.
     """
-    if not types.is_optional(value._var_type):
-        return var_operation_return(
-            js_expression=f"Object.keys({value})",
-            var_type=list[str],
-        )
     return var_operation_return(
-        js_expression=f"((value) => value ?? undefined === undefined ? undefined : Object.keys(value))({value})",
-        var_type=(list[str] | None),
+        js_expression=f"Object.keys({value} ?? {{}})",
+        var_type=list[str],
     )
 
 
@@ -498,14 +535,9 @@ def object_values_operation(value: ObjectVar):
     Returns:
         The values of the object.
     """
-    if not types.is_optional(value._var_type):
-        return var_operation_return(
-            js_expression=f"Object.values({value})",
-            var_type=list[value._value_type()],
-        )
     return var_operation_return(
-        js_expression=f"((value) => value ?? undefined === undefined ? undefined : Object.values(value))({value})",
-        var_type=(list[value._value_type()] | None),
+        js_expression=f"Object.values({value} ?? {{}})",
+        var_type=list[value._value_type()],
     )
 
 
@@ -519,14 +551,9 @@ def object_entries_operation(value: ObjectVar):
     Returns:
         The entries of the object.
     """
-    if not types.is_optional(value._var_type):
-        return var_operation_return(
-            js_expression=f"Object.entries({value})",
-            var_type=list[tuple[str, value._value_type()]],
-        )
     return var_operation_return(
-        js_expression=f"((value) => value ?? undefined === undefined ? undefined : Object.entries(value))({value})",
-        var_type=(list[tuple[str, value._value_type()]] | None),
+        js_expression=f"Object.entries({value} ?? {{}})",
+        var_type=list[tuple[str, value._value_type()]],
     )
 
 
@@ -570,9 +597,7 @@ class ObjectItemOperation(CachedVarOperation, Var):
         Returns:
             The name of the operation.
         """
-        if types.is_optional(self._object._var_type):
-            return f"{self._object!s}?.[{self._key!s}]"
-        return f"{self._object!s}[{self._key!s}]"
+        return f"{self._object!s}?.[{self._key!s}]"
 
     @classmethod
     def create(

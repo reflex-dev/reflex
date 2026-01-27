@@ -31,13 +31,13 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: "3.13"
+          python-version: "3.14"
 
       - name: Install dependencies
         run: uv sync --all-extras --dev
 
       - name: Run benchmarks
-        uses: CodSpeedHQ/action@v3
+        uses: CodSpeedHQ/action@v4
         with:
-          token: ${{ secrets.CODSPEED_TOKEN }}
+          mode: instrumentation
           run: uv run pytest -v tests/benchmarks --codspeed

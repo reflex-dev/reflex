@@ -14,10 +14,10 @@ class Bun(SimpleNamespace):
     """Bun constants."""
 
     # The Bun version.
-    VERSION = "1.2.20"
+    VERSION = "1.3.6"
 
     # Min Bun Version
-    MIN_VERSION = "1.2.17"
+    MIN_VERSION = "1.3.0"
 
     # URL to bun install script.
     INSTALL_URL = "https://raw.githubusercontent.com/reflex-dev/reflex/main/scripts/bun_install.sh"
@@ -75,7 +75,7 @@ fetch-retries=0
 
 
 def _determine_react_router_version() -> str:
-    default_version = "7.8.0"
+    default_version = "7.12.0"
     if (version := os.getenv("REACT_ROUTER_VERSION")) and version != default_version:
         from reflex.utils import console
 
@@ -87,7 +87,7 @@ def _determine_react_router_version() -> str:
 
 
 def _determine_react_version() -> str:
-    default_version = "19.1.1"
+    default_version = "19.2.3"
     if (version := os.getenv("REACT_VERSION")) and version != default_version:
         from reflex.utils import console
 
@@ -106,7 +106,7 @@ class PackageJson(SimpleNamespace):
 
         DEV = "react-router dev --host"
         EXPORT = "react-router build"
-        PROD = "serve ./build/client"
+        PROD = "sirv ./build/client --single 404.html --host"
 
     PATH = "package.json"
 
@@ -127,27 +127,27 @@ class PackageJson(SimpleNamespace):
             "react-router": cls._react_router_version,
             "react-router-dom": cls._react_router_version,
             "@react-router/node": cls._react_router_version,
-            "serve": "14.2.4",
+            "sirv-cli": "3.0.1",
             "react": cls._react_version,
             "react-helmet": "6.1.0",
             "react-dom": cls._react_version,
-            "isbot": "5.1.29",
-            "socket.io-client": "4.8.1",
+            "isbot": "5.1.33",
+            "socket.io-client": "4.8.3",
             "universal-cookie": "7.2.2",
         }
 
     DEV_DEPENDENCIES = {
         "@emotion/react": "11.14.0",
-        "autoprefixer": "10.4.21",
+        "autoprefixer": "10.4.23",
         "postcss": "8.5.6",
         "postcss-import": "16.1.1",
         "@react-router/dev": _react_router_version,
         "@react-router/fs-routes": _react_router_version,
-        "vite": "npm:rolldown-vite@7.1.2",
+        "vite": "npm:rolldown-vite@7.3.1",
     }
     OVERRIDES = {
         # This should always match the `react` version in DEPENDENCIES for recharts compatibility.
         "react-is": _react_version,
-        "cookie": "1.0.2",
-        "vite": "npm:rolldown-vite@7.1.2",
+        "cookie": "1.1.1",
+        "vite": "npm:rolldown-vite@7.3.1",
     }

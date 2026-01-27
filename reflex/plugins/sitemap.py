@@ -5,8 +5,7 @@ from collections.abc import Sequence
 from pathlib import Path
 from types import SimpleNamespace
 from typing import TYPE_CHECKING, Literal, TypedDict
-from xml.dom import minidom
-from xml.etree.ElementTree import Element, SubElement, tostring
+from xml.etree.ElementTree import Element, SubElement, indent, tostring
 
 from typing_extensions import NotRequired
 
@@ -104,10 +103,8 @@ def generate_xml(links: Sequence[SitemapLink]) -> str:
         if (priority := link.get("priority")) is not None:
             priority_element = SubElement(url, "priority")
             priority_element.text = str(priority)
-
-    rough_string = tostring(urlset, "utf-8")
-    reparsed = minidom.parseString(rough_string)
-    return reparsed.toprettyxml(indent="  ")
+    indent(urlset, "  ")
+    return tostring(urlset, encoding="utf-8", xml_declaration=True).decode("utf-8")
 
 
 def is_route_dynamic(route: str) -> bool:
@@ -141,7 +138,11 @@ def generate_links_for_sitemap(
     links: list[SitemapLink] = []
 
     for page in unevaluated_pages:
-        sitemap_config: SitemapLinkConfiguration = page.context.get("sitemap", {})
+        sitemap_config: SitemapLinkConfiguration | None = page.context.get(
+            "sitemap", {}
+        )
+        if sitemap_config is None:
+            continue
 
         if is_route_dynamic(page.route) or page.route == "404":
             if not sitemap_config:

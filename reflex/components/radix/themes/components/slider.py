@@ -13,9 +13,8 @@ from reflex.utils.types import typehint_issubclass
 from reflex.vars.base import Var
 
 on_value_event_spec = (
-    passthrough_event_spec(list[int | float]),
-    passthrough_event_spec(list[int]),
     passthrough_event_spec(list[float]),
+    passthrough_event_spec(list[int]),
 )
 
 
@@ -104,11 +103,9 @@ class Slider(RadixThemesComponent):
             default_value = [default_value]
 
         style = props.setdefault("style", {})
-        style.update(
-            {
-                "width": width,
-            }
-        )
+        style.update({
+            "width": width,
+        })
         return super().create(*children, default_value=default_value, **props)
 
 

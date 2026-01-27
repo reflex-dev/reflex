@@ -1,6 +1,5 @@
 """Test fixtures."""
 
-import asyncio
 import platform
 import uuid
 from collections.abc import Generator
@@ -14,18 +13,7 @@ from reflex.model import ModelRegistry
 from reflex.testing import chdir
 from reflex.utils import prerequisites
 
-from .states import (
-    DictMutationTestState,
-    ListMutationTestState,
-    MutableTestState,
-    SubUploadState,
-    UploadState,
-)
-
-
-def pytest_configure(config):
-    if config.getoption("asyncio_mode") == "auto":
-        asyncio.set_event_loop_policy(asyncio.DefaultEventLoopPolicy())
+from .states.upload import SubUploadState, UploadState
 
 
 @pytest.fixture
@@ -66,26 +54,6 @@ def windows_platform() -> bool:
         whether system is windows.
     """
     return platform.system() == "Windows"
-
-
-@pytest.fixture
-def list_mutation_state():
-    """Create a state with list mutation features.
-
-    Returns:
-        A state with list mutation features.
-    """
-    return ListMutationTestState()
-
-
-@pytest.fixture
-def dict_mutation_state():
-    """Create a state with dict mutation features.
-
-    Returns:
-        A state with dict mutation features.
-    """
-    return DictMutationTestState()
 
 
 @pytest.fixture
@@ -205,16 +173,6 @@ def tmp_working_dir(tmp_path):
     working_dir.mkdir()
     with chdir(working_dir):
         yield working_dir
-
-
-@pytest.fixture
-def mutable_state() -> MutableTestState:
-    """Create a Test state containing mutable types.
-
-    Returns:
-        A state object.
-    """
-    return MutableTestState()
 
 
 @pytest.fixture
