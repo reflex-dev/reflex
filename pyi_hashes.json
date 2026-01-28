@@ -113,7 +113,7 @@
   "reflex/components/react_player/video.pyi": "998671c06103d797c554d9278eb3b2a0",
   "reflex/components/react_router/dom.pyi": "3042fa630b7e26a7378fe045d7fbf4af",
   "reflex/components/recharts/__init__.pyi": "6ee7f1ca2c0912f389ba6f3251a74d99",
-  "reflex/components/recharts/cartesian.pyi": "cfca4f880239ffaecdf9fb4c7c8caed5",
+  "reflex/components/recharts/cartesian.pyi": "642e32b6bb3dd709b2faa726833dc701",
   "reflex/components/recharts/charts.pyi": "013036b9c00ad85a570efdb813c1bc40",
   "reflex/components/recharts/general.pyi": "d87ff9b85b2a204be01753690df4fb11",
   "reflex/components/recharts/polar.pyi": "ad24bd37c6acc0bc9bd4ac01af3ffe49",
