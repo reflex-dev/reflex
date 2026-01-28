@@ -3737,6 +3737,21 @@ def test_bare_mixin_state() -> None:
     assert ChildBareMixinState.get_root_state() == State
 
 
+def test_mixin_event_handler_preserves_event_actions() -> None:
+    """Test that event_actions from @rx.event decorator are preserved when inherited from mixins."""
+
+    class EventActionsMixin(BaseState, mixin=True):
+        @rx.event(prevent_default=True, stop_propagation=True)
+        def handle_with_actions(self):
+            pass
+
+    class UsesEventActionsMixin(EventActionsMixin, State):
+        pass
+
+    handler = UsesEventActionsMixin.handle_with_actions
+    assert handler.event_actions == {"preventDefault": True, "stopPropagation": True}
+
+
 def test_assignment_to_undeclared_vars():
     """Test that an attribute error is thrown when undeclared vars are set."""
 
@@ -4453,9 +4468,5 @@ async def test_rebind_mutable_proxy(mock_app: rx.App, token: str) -> None:
     ) as state:
         assert isinstance(state, MutableProxyState)
         assert state.data["a"] == [2, 3]
-        if isinstance(mock_app.state_manager, StateManagerRedis):
-            # In redis mode, the object identity does not persist across async with self calls.
-            assert state.data["b"] == [2]
-        else:
-            # In disk/memory mode, the fact that data["b"] was mutated via data["a"] persists.
-            assert state.data["b"] == [2, 3]
+        # Object identity persists across serialization, so data["b"] is also mutated.
+        assert state.data["b"] == [2, 3]
