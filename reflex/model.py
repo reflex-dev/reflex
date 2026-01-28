@@ -82,9 +82,12 @@ if find_spec("sqlalchemy"):
         }
         conf = get_config()
         url = url or conf.db_url
+        connect_args = conf.connect_args.copy() if conf.connect_args else {}
         if url is not None and url.startswith("sqlite"):
             # Needed for the admin dash on sqlite.
-            kwargs["connect_args"] = {"check_same_thread": False}
+            connect_args["check_same_thread"] = False
+        if connect_args:
+            kwargs["connect_args"] = connect_args
         return kwargs
 
     def get_engine(url: str | None = None) -> sqlalchemy.engine.Engine:

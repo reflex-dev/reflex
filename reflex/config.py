@@ -184,6 +184,9 @@ class BaseConfig:
     # The async database url used by rx.Model.
     async_db_url: str | None = None
 
+    # The arguments to pass to the sqlalchemy engine.
+    connect_args: dict[str, Any] = dataclasses.field(default_factory=dict)
+
     # The redis url
     redis_url: str | None = None
 
@@ -312,7 +315,7 @@ class Config(BaseConfig):
 
     - **App Settings**: `app_name`, `loglevel`, `telemetry_enabled`
     - **Server**: `frontend_port`, `backend_port`, `api_url`, `cors_allowed_origins`
-    - **Database**: `db_url`, `async_db_url`, `redis_url`
+    - **Database**: `db_url`, `async_db_url`, `redis_url`, `connect_args`
     - **Frontend**: `frontend_packages`, `react_strict_mode`
     - **State Management**: `state_manager_mode`, `state_auto_setters`
     - **Plugins**: `plugins`, `disable_plugins`
