@@ -42,6 +42,7 @@ from reflex.constants.state import FIELD_MARKER
 from reflex.environment import PerformanceMode, environment
 from reflex.event import (
     BACKGROUND_TASK_MARKER,
+    EVENT_ACTIONS_MARKER,
     Event,
     EventHandler,
     EventSpec,
@@ -686,6 +687,9 @@ class BaseState(EvenMoreBasicBaseState):
         newfn.__annotations__ = fn.__annotations__
         if mark := getattr(fn, BACKGROUND_TASK_MARKER, None):
             setattr(newfn, BACKGROUND_TASK_MARKER, mark)
+        # Preserve event_actions from @rx.event decorator
+        if event_actions := getattr(fn, EVENT_ACTIONS_MARKER, None):
+            object.__setattr__(newfn, EVENT_ACTIONS_MARKER, event_actions)
         return newfn
 
     @staticmethod
@@ -1163,7 +1167,7 @@ class BaseState(EvenMoreBasicBaseState):
             The event handler.
         """
         # Check if function has stored event_actions from decorator
-        event_actions = getattr(fn, "_rx_event_actions", {})
+        event_actions = getattr(fn, EVENT_ACTIONS_MARKER, {})
 
         return event_handler_cls(
             fn=fn, state_full_name=cls.get_full_name(), event_actions=event_actions

@@ -3737,6 +3737,21 @@ def test_bare_mixin_state() -> None:
     assert ChildBareMixinState.get_root_state() == State
 
 
+def test_mixin_event_handler_preserves_event_actions() -> None:
+    """Test that event_actions from @rx.event decorator are preserved when inherited from mixins."""
+
+    class EventActionsMixin(BaseState, mixin=True):
+        @rx.event(prevent_default=True, stop_propagation=True)
+        def handle_with_actions(self):
+            pass
+
+    class UsesEventActionsMixin(EventActionsMixin, State):
+        pass
+
+    handler = UsesEventActionsMixin.handle_with_actions
+    assert handler.event_actions == {"preventDefault": True, "stopPropagation": True}
+
+
 def test_assignment_to_undeclared_vars():
     """Test that an attribute error is thrown when undeclared vars are set."""
 
