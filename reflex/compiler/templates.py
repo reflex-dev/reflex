@@ -274,6 +274,20 @@ def context_template(
     Returns:
         Rendered context file content as string.
     """
+    # Import state classes to get dynamic names (supports minification)
+    from reflex.state import (
+        FrontendEventExceptionState,
+        OnLoadInternalState,
+        State,
+        UpdateVarsInternalState,
+    )
+
+    # Compute dynamic state names that respect minification settings
+    main_state_name = State.get_name()
+    on_load_internal = f"{OnLoadInternalState.get_name()}.on_load_internal"
+    update_vars_internal = f"{UpdateVarsInternalState.get_name()}.update_vars_internal"
+    exception_state_full = FrontendEventExceptionState.get_full_name()
+
     initial_state = initial_state or {}
     state_contexts_str = "".join([
         f"{format_state_name(state_name)}: createContext(null),"
@@ -284,7 +298,11 @@ def context_template(
         rf"""
 export const state_name = "{state_name}"
 
-export const exception_state_name = "{constants.CompileVars.FRONTEND_EXCEPTION_STATE_FULL}"
+export const main_state_name = "{main_state_name}"
+
+export const update_vars_internal = "{update_vars_internal}"
+
+export const exception_state_name = "{exception_state_full}"
 
 // These events are triggered on initial load and each page navigation.
 export const onLoadInternalEvent = () => {{
@@ -296,7 +314,7 @@ export const onLoadInternalEvent = () => {{
     if (client_storage_vars && Object.keys(client_storage_vars).length !== 0) {{
         internal_events.push(
             ReflexEvent(
-                '{state_name}.{constants.CompileVars.UPDATE_VARS_INTERNAL}',
+                '{state_name}.{update_vars_internal}',
                 {{vars: client_storage_vars}},
             ),
         );
@@ -304,7 +322,7 @@ export const onLoadInternalEvent = () => {{
 
     // `on_load_internal` triggers the correct on_load event(s) for the current page.
     // If the page does not define any on_load event, this will just set `is_hydrated = true`.
-    internal_events.push(ReflexEvent('{state_name}.{constants.CompileVars.ON_LOAD_INTERNAL}'));
+    internal_events.push(ReflexEvent('{state_name}.{on_load_internal}'));
 
     return internal_events;
 }}
@@ -318,6 +336,10 @@ export const initialEvents = () => [
         if state_name
         else """
 export const state_name = undefined
+
+export const main_state_name = undefined
+
+export const update_vars_internal = undefined
 
 export const exception_state_name = undefined
 

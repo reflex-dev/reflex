@@ -486,6 +486,15 @@ class PerformanceMode(enum.Enum):
     OFF = "off"
 
 
+@enum.unique
+class MinifyMode(enum.Enum):
+    """Mode for state/event name minification."""
+
+    DISABLED = "disabled"  # Never minify names (default)
+    ENABLED = "enabled"  # Minify items that have explicit IDs
+    ENFORCE = "enforce"  # Require all items to have explicit IDs
+
+
 class ExecutorType(enum.Enum):
     """Executor for compiling the frontend."""
 
@@ -687,6 +696,12 @@ class EnvironmentVariables:
 
     # The maximum size of the reflex state in kilobytes.
     REFLEX_STATE_SIZE_LIMIT: EnvVar[int] = env_var(1000)
+
+    # State name minification mode: disabled, enabled, or enforce.
+    REFLEX_MINIFY_STATES: EnvVar[MinifyMode] = env_var(MinifyMode.DISABLED)
+
+    # Event handler name minification mode: disabled, enabled, or enforce.
+    REFLEX_MINIFY_EVENTS: EnvVar[MinifyMode] = env_var(MinifyMode.DISABLED)
 
     # Whether to use the turbopack bundler.
     REFLEX_USE_TURBOPACK: EnvVar[bool] = env_var(False)
