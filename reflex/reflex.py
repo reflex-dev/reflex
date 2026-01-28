@@ -992,36 +992,42 @@ def state_tree(output_json: bool):
 )
 @click.argument("minified_path")
 def state_lookup(output_json: bool, minified_path: str):
-    """Lookup a state by its minified path (e.g., 'a.bU')."""
-    from reflex.state import _minified_name_to_int, _state_id_registry
+    """Lookup a state by its minified path (e.g., 'a.bU').
+
+    Walks the state tree from the root to resolve each segment.
+    """
+    from reflex.state import State
     from reflex.utils import prerequisites
 
     # Load the user's app to register all state classes
     prerequisites.get_app()
 
-    # Parse the dotted path
+    try:
+        State.get_class_substate(minified_path)
+    except ValueError:
+        msg = f"No state found for path: {minified_path}"
+        console.error(msg)
+        raise ValueError(msg) from None
+
+    # Build info for each ancestor segment
     parts = minified_path.split(".")
-
-    # Resolve each part
     result_parts = []
-    for part in parts:
-        try:
-            state_id = _minified_name_to_int(part)
-        except ValueError as err:
-            console.error(f"Invalid minified name: {part}")
-            raise SystemExit(1) from err
-
-        state_cls = _state_id_registry.get(state_id)
-        if state_cls is None:
-            console.error(f"No state registered with state_id={state_id}")
-            raise SystemExit(1)
-
+    current = State
+    result_parts.append({
+        "minified": parts[0],
+        "state_id": current._state_id,
+        "module": current.__module__,
+        "class": current.__name__,
+        "full_name": current.get_full_name(),
+    })
+    for part in parts[1:]:
+        current = current.get_class_substate(part)
         result_parts.append({
             "minified": part,
-            "state_id": state_id,
-            "module": state_cls.__module__,
-            "class": state_cls.__name__,
-            "full_name": state_cls.get_full_name(),
+            "state_id": current._state_id,
+            "module": current.__module__,
+            "class": current.__name__,
+            "full_name": current.get_full_name(),
         })
 
     if output_json:
@@ -1034,6 +1040,48 @@ def state_lookup(output_json: bool, minified_path: str):
             console.log(f"{info['module']}.{info['class']}")
 
 
+def _resolve_parent_state(parent: str):
+    """Resolve a parent argument to a state class.
+
+    Accepts either a state path (minified like 'a.b' or full name) or a class
+    name (e.g., 'State', 'MySubState'). Tries path resolution first via
+    get_class_substate, then falls back to searching by class name.
+
+    Args:
+        parent: Class name or state path identifying the parent state.
+
+    Returns:
+        The resolved state class.
+
+    Raises:
+        SystemExit: If the parent cannot be resolved.
+    """
+    from reflex.state import BaseState, State
+
+    # Try as a state path (minified or full name)
+    try:
+        return State.get_class_substate(parent)
+    except ValueError:
+        pass
+
+    # Fall back to searching by class name
+    def _find_by_name(cls: type[BaseState], name: str) -> type[BaseState] | None:
+        if cls.__name__ == name:
+            return cls
+        for child in cls.class_subclasses:
+            result = _find_by_name(child, name)
+            if result is not None:
+                return result
+        return None
+
+    result = _find_by_name(State, parent)
+    if result is not None:
+        return result
+
+    console.error(f"No state found matching '{parent}'")
+    raise SystemExit(1)
+
+
 @cli.command(name="state-next-id")
 @loglevel_option
 @click.option(
@@ -1041,24 +1089,34 @@ def state_lookup(output_json: bool, minified_path: str):
     is_flag=True,
     help="Return max(state_id) + 1 instead of first gap.",
 )
-def state_next_id(after_max: bool):
-    """Print the next available state_id."""
-    from reflex.state import _state_id_registry
+@click.argument("parent")
+def state_next_id(after_max: bool, parent: str):
+    """Print the next available state_id under PARENT.
+
+    PARENT can be a class name (e.g., 'State', 'MySubState') or a
+    minified path (e.g., 'a', 'a.b'). Auto-determined from input.
+    """
     from reflex.utils import prerequisites
 
     # Load the user's app to register all state classes
     prerequisites.get_app()
 
-    if not _state_id_registry:
+    parent_cls = _resolve_parent_state(parent)
+
+    # Collect sibling state_ids under the parent
+    used_ids = {
+        child._state_id
+        for child in parent_cls.class_subclasses
+        if child._state_id is not None
+    }
+
+    if not used_ids:
         console.log("0")
         return
 
     if after_max:
-        # Return max + 1
-        next_id = max(_state_id_registry.keys()) + 1
+        next_id = max(used_ids) + 1
     else:
-        # Find first gap starting from 0
-        used_ids = set(_state_id_registry.keys())
         next_id = 0
         while next_id in used_ids:
             next_id += 1

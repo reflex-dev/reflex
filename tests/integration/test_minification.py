@@ -11,7 +11,7 @@ import pytest
 from selenium.webdriver.common.by import By
 
 from reflex.environment import MinifyMode, environment
-from reflex.state import _int_to_minified_name, _state_id_registry
+from reflex.state import _int_to_minified_name
 from reflex.testing import AppHarness
 
 if TYPE_CHECKING:
@@ -96,14 +96,6 @@ def MinificationApp(
 
     app = rx.App()
     app.add_page(index)
-
-
-@pytest.fixture(autouse=True)
-def reset_state_registry():
-    """Reset the state_id registry before and after each test."""
-    _state_id_registry.clear()
-    yield
-    _state_id_registry.clear()
 
 
 @pytest.fixture

@@ -14,17 +14,8 @@ from reflex.state import (
     UpdateVarsInternalState,
     _int_to_minified_name,
     _minified_name_to_int,
-    _state_id_registry,
 )
 from reflex.utils.exceptions import StateValueError
-
-
-@pytest.fixture(autouse=True)
-def reset_state_registry():
-    """Reset the state_id registry before and after each test."""
-    _state_id_registry.clear()
-    yield
-    _state_id_registry.clear()
 
 
 @pytest.fixture
@@ -79,8 +70,6 @@ class TestStateIdValidation:
             pass
 
         assert TestState._state_id == 100
-        assert 100 in _state_id_registry
-        assert _state_id_registry[100] is TestState
 
     def test_state_without_id(self):
         """Test that a state can be created without state_id."""
@@ -90,16 +79,44 @@ class TestStateIdValidation:
 
         assert TestState._state_id is None
 
-    def test_duplicate_state_id_raises(self):
-        """Test that duplicate state_id raises StateValueError."""
+    def test_duplicate_state_id_among_siblings_raises(self):
+        """Test that duplicate state_id among siblings raises StateValueError."""
 
-        class FirstState(BaseState, state_id=200):
+        class ParentState(BaseState, state_id=200):
             pass
 
-        with pytest.raises(StateValueError, match="Duplicate state_id=200"):
+        class FirstChild(ParentState, state_id=10):
+            pass
 
-            class SecondState(BaseState, state_id=200):
+        with pytest.raises(StateValueError, match="Duplicate state_id=10"):
+
+            class SecondChild(ParentState, state_id=10):
                 pass
+
+    def test_same_state_id_across_branches_allowed(self):
+        """Test that the same state_id can be used in different branches."""
+
+        class Root(BaseState, state_id=210):
+            pass
+
+        class BranchA(Root, state_id=1):
+            pass
+
+        class BranchB(Root, state_id=2):
+            pass
+
+        class LeafA(BranchA, state_id=5):
+            pass
+
+        class LeafB(BranchB, state_id=5):  # same state_id=5, different parent -- OK!
+            pass
+
+        # Both should succeed - state_id is per-parent (sibling uniqueness)
+        assert LeafA._state_id == 5
+        assert LeafB._state_id == 5
+        # But they have different full names
+        assert LeafA.get_parent_state() is BranchA
+        assert LeafB.get_parent_state() is BranchB
 
 
 class TestGetNameMinification:
@@ -443,29 +460,35 @@ class TestMinifiedNameToInt:
         with pytest.raises(ValueError, match="Invalid character"):
             _minified_name_to_int("!")
 
-    def test_state_lookup_returns_reflex_state(self):
-        """Test that looking up state_id=0 returns reflex's internal State."""
-        # Re-register State after fixture clears the registry
-        _state_id_registry[0] = State
+    def test_state_has_state_id_zero(self):
+        """Test that the root State class has state_id=0."""
+        assert State._state_id == 0
+        assert State.__module__ == "reflex.state"
+        assert State.__name__ == "State"
 
-        assert 0 in _state_id_registry
-        state_cls = _state_id_registry[0]
-        assert state_cls is State
-        assert state_cls.__module__ == "reflex.state"
-        assert state_cls.__name__ == "State"
+    def test_next_sibling_state_id(self):
+        """Test finding next available state_id among siblings."""
 
-    def test_next_state_id_returns_1(self):
-        """Test that next available state_id is 1 (0 is used by internal State)."""
-        # Simulate reflex.state.State using state_id=0
-        _state_id_registry[0] = State
+        class Parent(BaseState, state_id=700):
+            pass
 
-        # Find first gap starting from 0
-        used_ids = set(_state_id_registry.keys())
+        class Child0(Parent, state_id=0):
+            pass
+
+        class Child1(Parent, state_id=1):
+            pass
+
+        # Find first gap starting from 0 among Parent's children
+        used_ids = {
+            child._state_id
+            for child in Parent.class_subclasses
+            if child._state_id is not None
+        }
         next_id = 0
         while next_id in used_ids:
             next_id += 1
 
-        assert next_id == 1
+        assert next_id == 2
 
 
 class TestInternalStateIds:
@@ -475,17 +498,17 @@ class TestInternalStateIds:
         """Test that the base State class has state_id=0."""
         assert State._state_id == 0
 
-    def test_frontend_exception_state_has_id_1(self):
-        """Test that FrontendEventExceptionState has state_id=1."""
-        assert FrontendEventExceptionState._state_id == 1
+    def test_frontend_exception_state_has_id_0(self):
+        """Test that FrontendEventExceptionState has state_id=0."""
+        assert FrontendEventExceptionState._state_id == 0
 
-    def test_update_vars_internal_state_has_id_2(self):
-        """Test that UpdateVarsInternalState has state_id=2."""
-        assert UpdateVarsInternalState._state_id == 2
+    def test_update_vars_internal_state_has_id_1(self):
+        """Test that UpdateVarsInternalState has state_id=1."""
+        assert UpdateVarsInternalState._state_id == 1
 
-    def test_on_load_internal_state_has_id_3(self):
-        """Test that OnLoadInternalState has state_id=3."""
-        assert OnLoadInternalState._state_id == 3
+    def test_on_load_internal_state_has_id_2(self):
+        """Test that OnLoadInternalState has state_id=2."""
+        assert OnLoadInternalState._state_id == 2
 
     def test_internal_states_minified_names(self, reset_minify_mode):
         """Test that internal states get correct minified names when enabled."""
@@ -499,12 +522,12 @@ class TestInternalStateIds:
 
         # State (id=0) -> "a"
         assert State.get_name() == "a"
-        # FrontendEventExceptionState (id=1) -> "b"
-        assert FrontendEventExceptionState.get_name() == "b"
-        # UpdateVarsInternalState (id=2) -> "c"
-        assert UpdateVarsInternalState.get_name() == "c"
-        # OnLoadInternalState (id=3) -> "d"
-        assert OnLoadInternalState.get_name() == "d"
+        # FrontendEventExceptionState (id=0) -> "a"
+        assert FrontendEventExceptionState.get_name() == "a"
+        # UpdateVarsInternalState (id=1) -> "b"
+        assert UpdateVarsInternalState.get_name() == "b"
+        # OnLoadInternalState (id=2) -> "c"
+        assert OnLoadInternalState.get_name() == "c"
 
     def test_internal_states_full_names_when_disabled(self, reset_minify_mode):
         """Test that internal states use full names when minification is disabled."""

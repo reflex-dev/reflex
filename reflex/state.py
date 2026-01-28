@@ -104,8 +104,6 @@ if environment.REFLEX_PERF_MODE.get() != PerformanceMode.OFF:
 # For BaseState.get_var_value
 VAR_TYPE = TypeVar("VAR_TYPE")
 
-# Global registry: state_id -> state class (for duplicate detection)
-_state_id_registry: dict[int, type[BaseState]] = {}
 
 # Characters used for minified names (valid JS identifiers)
 MINIFIED_NAME_CHARS = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ$_"
@@ -607,22 +605,6 @@ class BaseState(EvenMoreBasicBaseState):
         # Store state_id as class variable (only for non-mixins)
         cls._state_id = state_id
 
-        # Validate state_id if provided (check for duplicates)
-        if state_id is not None:
-            if state_id in _state_id_registry:
-                existing_cls = _state_id_registry[state_id]
-                # Allow re-registration if it's the same class (e.g., module reload)
-                existing_key = f"{existing_cls.__module__}.{existing_cls.__name__}"
-                new_key = f"{cls.__module__}.{cls.__name__}"
-                if existing_key != new_key:
-                    msg = (
-                        f"Duplicate state_id={state_id}. Already used by "
-                        f"'{existing_cls.__module__}.{existing_cls.__name__}', "
-                        f"cannot be reused by '{cls.__module__}.{cls.__name__}'."
-                    )
-                    raise StateValueError(msg)
-            _state_id_registry[state_id] = cls
-
         # Handle locally-defined states for pickling.
         if "<locals>" in cls.__qualname__:
             cls._handle_local_def()
@@ -648,6 +630,21 @@ class BaseState(EvenMoreBasicBaseState):
         if parent_state is not None:
             cls.inherited_vars = parent_state.vars
             cls.inherited_backend_vars = parent_state.backend_vars
+
+            # Check for duplicate state_id among siblings.
+            if state_id is not None:
+                for sibling in parent_state.class_subclasses:
+                    if sibling._state_id is not None and sibling._state_id == state_id:
+                        # Allow re-registration of the same class (e.g., module reload)
+                        existing_key = f"{sibling.__module__}.{sibling.__name__}"
+                        new_key = f"{cls.__module__}.{cls.__name__}"
+                        if existing_key != new_key:
+                            msg = (
+                                f"Duplicate state_id={state_id} among siblings of "
+                                f"'{parent_state.__name__}': already used by "
+                                f"'{sibling.__name__}', cannot be reused by '{cls.__name__}'."
+                            )
+                            raise StateValueError(msg)
 
             # Check if another substate class with the same name has already been defined.
             if cls.get_name() in {c.get_name() for c in parent_state.class_subclasses}:
@@ -2746,7 +2743,7 @@ def dynamic(func: Callable[[T], Component]):
 LAST_RELOADED_KEY = "reflex_last_reloaded_on_error"
 
 
-class FrontendEventExceptionState(State, state_id=1):
+class FrontendEventExceptionState(State, state_id=0):
     """Substate for handling frontend exceptions."""
 
     # If the frontend error message contains any of these strings, automatically reload the page.
@@ -2799,7 +2796,7 @@ class FrontendEventExceptionState(State, state_id=1):
         )
 
 
-class UpdateVarsInternalState(State, state_id=2):
+class UpdateVarsInternalState(State, state_id=1):
     """Substate for handling internal state var updates."""
 
     async def update_vars_internal(self, vars: dict[str, Any]) -> None:
@@ -2823,7 +2820,7 @@ class UpdateVarsInternalState(State, state_id=2):
                 setattr(var_state, var_name, value)
 
 
-class OnLoadInternalState(State, state_id=3):
+class OnLoadInternalState(State, state_id=2):
     """Substate for handling on_load event enumeration.
 
     This is a separate substate to avoid deserializing the entire state tree for every page navigation.
