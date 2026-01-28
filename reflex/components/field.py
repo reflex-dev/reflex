@@ -67,7 +67,9 @@ class FieldBasedMeta(type):
     PropsBaseMeta and BaseComponentMeta.
     """
 
-    def __new__(cls, name: str, bases: tuple[type, ...], namespace: dict[str, Any]) -> type:
+    def __new__(
+        cls, name: str, bases: tuple[type, ...], namespace: dict[str, Any]
+    ) -> type:
         """Create a new field-based class.
 
         Args:
