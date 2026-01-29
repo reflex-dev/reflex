@@ -316,7 +316,7 @@ if find_spec("sqlmodel") and find_spec("sqlalchemy") and find_spec("pydantic"):
             engine = get_engine()
             with engine.connect() as connection:
                 connection.execute(sqlalchemy.text("SELECT 1"))
-        except sqlalchemy.exc.OperationalError:
+        except Exception:
             status = False
 
         return {"db": status}
