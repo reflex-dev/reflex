@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import operator
 from importlib.util import find_spec
 from pathlib import Path
 from typing import TYPE_CHECKING
@@ -840,6 +841,287 @@ def rename(new_name: str):
 
     prerequisites.validate_app_name(new_name)
     rename_app(new_name, get_config().loglevel)
+
+
+@cli.command(name="state-tree")
+@loglevel_option
+@click.option(
+    "--json",
+    "output_json",
+    is_flag=True,
+    help="Output as JSON.",
+)
+def state_tree(output_json: bool):
+    """Print the state tree with state_id's and event handlers with event_id's."""
+    from typing import TypedDict
+
+    from reflex.event import EVENT_ID_MARKER
+    from reflex.state import BaseState, State, _int_to_minified_name
+    from reflex.utils import prerequisites
+
+    class EventHandlerData(TypedDict):
+        """Type for event handler data in state tree."""
+
+        name: str
+        event_id: int | None
+        minified_name: str | None
+
+    class StateTreeData(TypedDict):
+        """Type for state tree data."""
+
+        name: str
+        full_name: str
+        state_id: int | None
+        minified_name: str | None
+        event_handlers: list[EventHandlerData]
+        substates: list[StateTreeData]
+
+    # Load the user's app to register all state classes
+    prerequisites.get_app()
+
+    def build_state_tree(state_cls: type[BaseState]) -> StateTreeData:
+        """Recursively build state tree data.
+
+        Args:
+            state_cls: The state class to build the tree for.
+
+        Returns:
+            A dictionary containing the state tree data.
+        """
+        state_id = state_cls._state_id
+
+        # Build event handlers list
+        handlers = []
+        for name, handler in state_cls.event_handlers.items():
+            event_id = getattr(handler.fn, EVENT_ID_MARKER, None)
+            handlers.append({
+                "name": name,
+                "event_id": event_id,
+                "minified_name": (
+                    _int_to_minified_name(event_id) if event_id is not None else None
+                ),
+            })
+        handlers.sort(key=operator.itemgetter("name"))
+
+        # Build substates recursively
+        substates = [
+            build_state_tree(substate)
+            for substate in sorted(state_cls.class_subclasses, key=lambda s: s.__name__)
+        ]
+
+        return {
+            "name": state_cls.__name__,
+            "full_name": state_cls.get_full_name(),
+            "state_id": state_id,
+            "minified_name": (
+                _int_to_minified_name(state_id) if state_id is not None else None
+            ),
+            "event_handlers": handlers,
+            "substates": substates,
+        }
+
+    def print_state_tree(
+        state_data: StateTreeData, prefix: str = "", is_last: bool = True
+    ):
+        """Print a state and its children as a tree.
+
+        Args:
+            state_data: The state data dictionary.
+            prefix: The prefix for indentation.
+            is_last: Whether this is the last item in the current level.
+        """
+        state_id = state_data["state_id"]
+        minified = state_data["minified_name"]
+
+        # Print the state node
+        connector = "`-- " if is_last else "|-- "
+        if state_id is not None:
+            console.log(
+                f'{prefix}{connector}{state_data["name"]} (state_id={state_id} -> "{minified}")'
+            )
+        else:
+            console.log(f"{prefix}{connector}{state_data['name']} (state_id=None)")
+
+        # Calculate new prefix for children
+        child_prefix = prefix + ("    " if is_last else "|   ")
+
+        # Print event handlers
+        handlers = state_data["event_handlers"]
+        substates = state_data["substates"]
+        has_substates = len(substates) > 0
+
+        if handlers:
+            console.log(f"{child_prefix}|-- Event Handlers:")
+            handler_prefix = child_prefix + ("|   " if has_substates else "    ")
+            for i, handler in enumerate(handlers):
+                is_last_handler = i == len(handlers) - 1
+                h_connector = "`-- " if is_last_handler else "|-- "
+                event_id = handler["event_id"]
+                if event_id is not None:
+                    console.log(
+                        f'{handler_prefix}{h_connector}{handler["name"]} (event_id={event_id} -> "{handler["minified_name"]}")'
+                    )
+                else:
+                    console.log(
+                        f"{handler_prefix}{h_connector}{handler['name']} (event_id=None)"
+                    )
+
+        # Print substates recursively
+        for i, substate in enumerate(substates):
+            is_last_substate = i == len(substates) - 1
+            print_state_tree(substate, child_prefix, is_last_substate)
+
+    tree_data = build_state_tree(State)
+
+    if output_json:
+        import json
+
+        console.log(json.dumps(tree_data, indent=2))
+    else:
+        console.log("State Tree")
+        print_state_tree(tree_data)
+
+
+@cli.command(name="state-lookup")
+@loglevel_option
+@click.option(
+    "--json",
+    "output_json",
+    is_flag=True,
+    help="Output detailed info as JSON.",
+)
+@click.argument("minified_path")
+def state_lookup(output_json: bool, minified_path: str):
+    """Lookup a state by its minified path (e.g., 'a.bU').
+
+    Walks the state tree from the root to resolve each segment.
+    """
+    from reflex.state import State
+    from reflex.utils import prerequisites
+
+    # Load the user's app to register all state classes
+    prerequisites.get_app()
+
+    try:
+        State.get_class_substate(minified_path)
+    except ValueError:
+        msg = f"No state found for path: {minified_path}"
+        console.error(msg)
+        raise ValueError(msg) from None
+
+    # Build info for each ancestor segment
+    parts = minified_path.split(".")
+    result_parts = []
+    current = State
+    result_parts.append({
+        "minified": parts[0],
+        "state_id": current._state_id,
+        "module": current.__module__,
+        "class": current.__name__,
+        "full_name": current.get_full_name(),
+    })
+    for part in parts[1:]:
+        current = current.get_class_substate(part)
+        result_parts.append({
+            "minified": part,
+            "state_id": current._state_id,
+            "module": current.__module__,
+            "class": current.__name__,
+            "full_name": current.get_full_name(),
+        })
+
+    if output_json:
+        import json
+
+        console.log(json.dumps(result_parts, indent=2))
+    else:
+        # Simple output: module.ClassName for each part
+        for info in result_parts:
+            console.log(f"{info['module']}.{info['class']}")
+
+
+def _resolve_parent_state(parent: str):
+    """Resolve a parent argument to a state class.
+
+    Accepts either a state path (minified like 'a.b' or full name) or a class
+    name (e.g., 'State', 'MySubState'). Tries path resolution first via
+    get_class_substate, then falls back to searching by class name.
+
+    Args:
+        parent: Class name or state path identifying the parent state.
+
+    Returns:
+        The resolved state class.
+
+    Raises:
+        SystemExit: If the parent cannot be resolved.
+    """
+    from reflex.state import BaseState, State
+
+    # Try as a state path (minified or full name)
+    try:
+        return State.get_class_substate(parent)
+    except ValueError:
+        pass
+
+    # Fall back to searching by class name
+    def _find_by_name(cls: type[BaseState], name: str) -> type[BaseState] | None:
+        if cls.__name__ == name:
+            return cls
+        for child in cls.class_subclasses:
+            result = _find_by_name(child, name)
+            if result is not None:
+                return result
+        return None
+
+    result = _find_by_name(State, parent)
+    if result is not None:
+        return result
+
+    console.error(f"No state found matching '{parent}'")
+    raise SystemExit(1)
+
+
+@cli.command(name="state-next-id")
+@loglevel_option
+@click.option(
+    "--after-max",
+    is_flag=True,
+    help="Return max(state_id) + 1 instead of first gap.",
+)
+@click.argument("parent")
+def state_next_id(after_max: bool, parent: str):
+    """Print the next available state_id under PARENT.
+
+    PARENT can be a class name (e.g., 'State', 'MySubState') or a
+    minified path (e.g., 'a', 'a.b'). Auto-determined from input.
+    """
+    from reflex.utils import prerequisites
+
+    # Load the user's app to register all state classes
+    prerequisites.get_app()
+
+    parent_cls = _resolve_parent_state(parent)
+
+    # Collect sibling state_ids under the parent
+    used_ids = {
+        child._state_id
+        for child in parent_cls.class_subclasses
+        if child._state_id is not None
+    }
+
+    if not used_ids:
+        console.log("0")
+        return
+
+    if after_max:
+        next_id = max(used_ids) + 1
+    else:
+        next_id = 0
+        while next_id in used_ids:
+            next_id += 1
+
+    console.log(str(next_id))
 
 
 def _convert_reflex_loglevel_to_reflex_cli_loglevel(

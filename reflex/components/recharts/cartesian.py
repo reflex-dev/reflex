@@ -242,10 +242,8 @@ class Brush(Recharts):
     end_index: Var[int]
 
     # The fill color of brush
-    fill: Var[str | Color]
 
     # The stroke color of brush
-    stroke: Var[str | Color]
 
     @classmethod
     def get_event_triggers(cls) -> dict[str, Var | Any]:
