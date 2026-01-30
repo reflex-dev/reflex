@@ -15,6 +15,7 @@ from reflex.utils.imports import ImportDict, ImportVar
 from reflex.utils.serializers import serializer
 from reflex.vars import get_unique_variable_name
 from reflex.vars.base import Var
+from reflex.vars.function import FunctionStringVar
 from reflex.vars.sequence import ArrayVar
 
 
@@ -260,6 +261,12 @@ class DataEditor(NoSSRComponent):
     # Allow columns selections. ("none", "single", "multi")
     column_select: Var[Literal["none", "single", "multi"]]
 
+    # Allow range selections. ("none", "cell", "rect", "multi-cell", "multi-rect").
+    range_select: Var[Literal["none", "cell", "rect", "multi-cell", "multi-rect"]]
+
+    # Allow row selections. ("none", "single", "multi").
+    row_select: Var[Literal["none", "single", "multi"]]
+
     # Prevent diagonal scrolling.
     prevent_diagonal_scrolling: Var[bool]
 
@@ -274,6 +281,18 @@ class DataEditor(NoSSRComponent):
 
     # Initial scroll offset on the vertical axis.
     scroll_offset_y: Var[int]
+
+    # Controls which types of range selections can exist at the same time. ("exclusive", "mixed").
+    range_selection_blending: Var[Literal["exclusive", "mixed"]]
+
+    # Controls which types of column selections can exist at the same time. ("exclusive", "mixed").
+    column_selection_blending: Var[Literal["exclusive", "mixed"]]
+
+    # Controls which types of row selections can exist at the same time. ("exclusive", "mixed").
+    row_selection_blending: Var[Literal["exclusive", "mixed"]]
+
+    # Controls how spans are handled in selections. ("default", "allowPartial").
+    span_range_behavior: Var[Literal["default", "allowPartial"]]
 
     # global theme
     theme: Var[DataEditorTheme | dict]
@@ -326,6 +345,12 @@ class DataEditor(NoSSRComponent):
     # Fired when a row is appended.
     on_row_appended: EventHandler[no_args_event_spec]
 
+    # The current grid selection state (columns, rows, and current cell/range). Must be used when on_grid_selection_change is used otherwise updates will not be reflected in the grid.
+    grid_selection: Var[GridSelection]
+
+    # Fired when the grid selection changes. Will pass the current selection, the selected columns and the selected rows.
+    on_grid_selection_change: EventHandler[passthrough_event_spec(GridSelection)]
+
     # Fired when the selection is cleared.
     on_selection_cleared: EventHandler[no_args_event_spec]
 
@@ -342,11 +367,60 @@ class DataEditor(NoSSRComponent):
             return {}
         return {
             "": f"{format.format_library_name(self.library)}/dist/index.css",
-            self.library: "GridCellKind",
+            self.library: ["GridCellKind", "CompactSelection"],
             "$/utils/helpers/dataeditor.js": ImportVar(
                 tag="formatDataEditorCells", is_default=False, install=False
             ),
         }
+
+    def add_custom_code(self) -> list[str]:
+        """Add custom code for reconstructing GridSelection with CompactSelection objects.
+
+        Note: When using on_grid_selection_change, Glide Data Grid will not update its internal selection state automatically. Instead,
+        the grid_selection prop must be updated with a GridSelection object that has CompactSelection objects for the columns and rows properties.
+        This function provides the necessary JavaScript code to reconstruct the GridSelection object from a dict representation.
+
+        Returns:
+            JavaScript code to reconstruct GridSelection.
+        """
+        return [
+            """
+        function reconstructGridSelection(selection) {
+            if (!selection || typeof selection !== 'object') {
+                return undefined;
+            }
+
+            const reconstructCompactSelection = (data) => {
+                if (!data || !data.items || !Array.isArray(data.items)) {
+                    return CompactSelection.empty();
+                }
+
+                const items = data.items;
+                if (items.length === 0) {
+                    return CompactSelection.empty();
+                }
+
+                let result = CompactSelection.empty();
+
+                // Items are stored as [start, end) ranges in CompactSelection internal format
+                for (const item of items) {
+                    if (Array.isArray(item) && item.length === 2) {
+                        const [start, end] = item;
+                        result = result.add([start, end]);
+                    }
+                }
+
+                return result;
+            };
+
+            return {
+                current: selection.current || undefined,
+                columns: reconstructCompactSelection(selection.columns),
+                rows: reconstructCompactSelection(selection.rows)
+            };
+        }
+                    """
+        ]
 
     def add_hooks(self) -> list[str]:
         """Get the hooks to render.
@@ -429,6 +503,15 @@ class DataEditor(NoSSRComponent):
             console.warn(
                 "get_cell_content is not user configurable, the provided value will be discarded"
             )
+
+        # Apply the reconstruction function to grid_selection if it's a Var
+        if (grid_selection := props.get("grid_selection")) is not None and isinstance(
+            grid_selection, Var
+        ):
+            props["grid_selection"] = FunctionStringVar.create(
+                "reconstructGridSelection"
+            ).call(grid_selection)
+
         grid = super().create(*children, **props)
         return Div.create(
             grid,

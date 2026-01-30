@@ -46,3 +46,6 @@ class MutableTestState(BaseState):
             "mod_third_key": {"key": "value"},
         }
         self.test_set = {1, 2, 3, 4, "five"}
+
+    def _get_array(self) -> list[str | int | list | dict[str, str]]:
+        return self.array

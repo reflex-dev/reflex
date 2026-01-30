@@ -99,7 +99,9 @@ def LifespanApp(
 
 
 @pytest.fixture(
-    params=[False, True], ids=["no_api_transformer", "mount_api_transformer"]
+    scope="session",
+    params=[False, True],
+    ids=["no_api_transformer", "mount_api_transformer"],
 )
 def mount_api_transformer(request: pytest.FixtureRequest) -> bool:
     """Whether to use api_transformer in the app.
@@ -113,7 +115,9 @@ def mount_api_transformer(request: pytest.FixtureRequest) -> bool:
     return request.param
 
 
-@pytest.fixture(params=[False, True], ids=["no_fastapi", "mount_cached_fastapi"])
+@pytest.fixture(
+    scope="session", params=[False, True], ids=["no_fastapi", "mount_cached_fastapi"]
+)
 def mount_cached_fastapi(request: pytest.FixtureRequest) -> bool:
     """Whether to use cached FastAPI in the app (app.api).
 
@@ -126,22 +130,26 @@ def mount_cached_fastapi(request: pytest.FixtureRequest) -> bool:
     return request.param
 
 
-@pytest.fixture
+@pytest.fixture(scope="session")
 def lifespan_app(
-    tmp_path, mount_api_transformer: bool, mount_cached_fastapi: bool
+    tmp_path_factory: pytest.TempPathFactory,
+    app_harness_env: type[AppHarness],
+    mount_api_transformer: bool,
+    mount_cached_fastapi: bool,
 ) -> Generator[AppHarness, None, None]:
     """Start LifespanApp app at tmp_path via AppHarness.
 
     Args:
-        tmp_path: pytest tmp_path fixture
+        tmp_path_factory: pytest tmp_path_factory fixture
+        app_harness_env: AppHarness environment
         mount_api_transformer: Whether to mount the API transformer.
         mount_cached_fastapi: Whether to mount the cached FastAPI app.
 
     Yields:
         running AppHarness instance
     """
-    with AppHarness.create(
-        root=tmp_path,
+    with app_harness_env.create(
+        root=tmp_path_factory.mktemp("lifespan_app"),
         app_source=functools.partial(
             LifespanApp,
             mount_cached_fastapi=mount_cached_fastapi,

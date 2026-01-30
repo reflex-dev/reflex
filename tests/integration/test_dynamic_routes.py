@@ -23,7 +23,7 @@ def DynamicRoute():
 
         @rx.event
         def on_load(self):
-            page_data = f"{self.router.page.path}-{self.page_id or 'no page id'}"
+            page_data = f"{self.router.page.path}-{self.page_id or 'no page id'}"  # pyright: ignore[reportAttributeAccessIssue]
             print(f"on_load: {page_data}")
             self.order.append(page_data)
 
@@ -43,7 +43,7 @@ def DynamicRoute():
         @rx.var
         def next_page(self) -> str:
             try:
-                return str(int(self.page_id) + 1)
+                return str(int(self.page_id) + 1)  # pyright: ignore[reportAttributeAccessIssue]
             except ValueError:
                 return "0"
 
@@ -81,7 +81,7 @@ def DynamicRoute():
 
         @rx.var(cache=False)
         def arg(self) -> int:
-            return int(self.arg_str or 0)
+            return int(self.arg_str or 0)  # pyright: ignore[reportAttributeAccessIssue]
 
     class ArgSubState(ArgState):
         @rx.var
@@ -90,7 +90,7 @@ def DynamicRoute():
 
         @rx.var
         def cached_arg_str(self) -> str:
-            return self.arg_str
+            return self.arg_str  # pyright: ignore[reportAttributeAccessIssue]
 
     @rx.page(route="/arg/[arg_str]")
     def arg() -> rx.Component:
@@ -238,11 +238,11 @@ def poll_for_order(
         async def _check():
             return (await _backend_state()).substates[
                 dynamic_state_name
-            ].order == exp_order
+            ].order == exp_order  # pyright: ignore[reportAttributeAccessIssue]
 
         await AppHarness._poll_for_async(_check, timeout=10)
         assert (
-            list((await _backend_state()).substates[dynamic_state_name].order)
+            list((await _backend_state()).substates[dynamic_state_name].order)  # pyright: ignore[reportAttributeAccessIssue]
             == exp_order
         )
 

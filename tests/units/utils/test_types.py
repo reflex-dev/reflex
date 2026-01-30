@@ -1,4 +1,4 @@
-from typing import Any, Literal
+from typing import Any, Literal, TypedDict
 
 import pytest
 
@@ -85,6 +85,22 @@ def test_has_args(cls, expected: bool) -> None:
     assert types.has_args(cls) == expected
 
 
+class UserInfo(TypedDict, total=False):
+    """A sample typed dict."""
+
+    sub: str
+    name: str
+    email: str
+
+
+class UserInfoTotal(TypedDict, total=True):
+    """A sample typed dict."""
+
+    sub: str
+    name: str
+    email: str
+
+
 @pytest.mark.parametrize(
     ("value", "cls", "expected"),
     [
@@ -109,7 +125,15 @@ def test_has_args(cls, expected: bool) -> None:
         (Var.create(False), Var[bool], True),
         (Var.create(False), Var[bool] | None, True),
         (Var.create(False), Var[bool] | str, True),
+        ({"sub": "123", "name": "John"}, UserInfo, True),
+        ({"sub": "123"}, UserInfo, True),
+        ({"sub": 123}, UserInfo, False),
+        ({"sub": "123", "age": 30}, UserInfo, True),
+        ({"sub": "123", "name": "John"}, UserInfoTotal, False),
+        ({"sub": "123"}, UserInfoTotal, False),
+        ({"sub": 123}, UserInfoTotal, False),
+        ({"sub": "123", "age": 30}, UserInfoTotal, False),
     ],
 )
 def test_isinstance(value, cls, expected: bool) -> None:
-    assert types._isinstance(value, cls, nested=1, treat_var_as_type=True) == expected
+    assert types._isinstance(value, cls, nested=2, treat_var_as_type=True) == expected

@@ -1508,8 +1508,8 @@ class LiteralVar(Var):
         if dataclasses.is_dataclass(value) and not isinstance(value, type):
             return LiteralObjectVar.create(
                 {
-                    k: (None if callable(v) else v)
-                    for k, v in dataclasses.asdict(value).items()
+                    k.name: (None if callable(v := getattr(value, k.name)) else v)
+                    for k in dataclasses.fields(value)
                 },
                 _var_type=type(value),
                 _var_data=_var_data,
@@ -1591,8 +1591,8 @@ class LiteralVar(Var):
 
         if dataclasses.is_dataclass(value) and not isinstance(value, type):
             return LiteralObjectVar._get_all_var_data_without_creating_var({
-                k: (None if callable(v) else v)
-                for k, v in dataclasses.asdict(value).items()
+                k.name: (None if callable(v := getattr(value, k.name)) else v)
+                for k in dataclasses.fields(value)
             })
 
         if isinstance(value, range):
@@ -2455,7 +2455,7 @@ class ComputedVar(Var[RETURN_TYPE]):
             console.warn(
                 "Failed to automatically determine dependencies for computed var "
                 f"{objclass.__name__}.{self._name}: {e}. "
-                "Provide static_deps and set auto_deps=False to suppress this warning."
+                "Set auto_deps=False and provide accurate deps=['var1', 'var2'] to suppress this warning."
             )
             return d
 
@@ -2488,12 +2488,18 @@ class ComputedVar(Var[RETURN_TYPE]):
                 var_name = all_var_data.field_name
                 if var_name:
                     self._static_deps.setdefault(state_name, set()).add(var_name)
-                    objclass.get_root_state().get_class_substate(
+                    target_state_class = objclass.get_root_state().get_class_substate(
                         state_name
-                    )._var_dependencies.setdefault(var_name, set()).add((
+                    )
+                    target_state_class._var_dependencies.setdefault(
+                        var_name, set()
+                    ).add((
                         objclass.get_full_name(),
                         self._name,
                     ))
+                    target_state_class._potentially_dirty_states.add(
+                        objclass.get_full_name()
+                    )
                     return
         msg = (
             "ComputedVar dependencies must be Var instances with a state and "

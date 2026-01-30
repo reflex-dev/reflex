@@ -19,6 +19,7 @@ import rich.markup
 from rich.progress import Progress
 
 from reflex import constants
+from reflex.config import get_config
 from reflex.environment import environment
 from reflex.utils import console, path_ops, prerequisites
 from reflex.utils.registry import get_npm_registry
@@ -42,6 +43,9 @@ def get_num_workers() -> int:
     Returns:
         The number of backend worker processes.
     """
+    if get_config().transport == "polling":
+        return 1
+
     if (redis_client := prerequisites.get_redis_sync()) is None:
         return 1
 
@@ -446,11 +450,12 @@ def show_progress(message: str, process: subprocess.Popen, checkpoints: list[str
         task = progress.add_task(f"{message}: ", total=len(checkpoints))
         for line in stream_logs(message, process, progress=progress):
             # Check for special strings and update the progress bar.
-            special_string = checkpoints[0]
-            if special_string in line:
-                progress.update(task, advance=1)
-                checkpoints.pop(0)
-            if not checkpoints:
+            while checkpoints:
+                special_string = checkpoints[0]
+                if special_string in line:
+                    progress.update(task, advance=1)
+                    checkpoints.pop(0)
+                    continue
                 break
 
 

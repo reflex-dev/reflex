@@ -4,7 +4,6 @@ import dataclasses
 import inspect
 import sys
 import types
-import urllib.parse
 from base64 import b64encode
 from collections.abc import Callable, Mapping, Sequence
 from functools import lru_cache, partial
@@ -90,6 +89,7 @@ class Event:
 _EVENT_FIELDS: set[str] = {f.name for f in dataclasses.fields(Event)}
 
 BACKGROUND_TASK_MARKER = "_reflex_background_task"
+EVENT_ACTIONS_MARKER = "_rx_event_actions"
 
 
 @dataclasses.dataclass(
@@ -1107,7 +1107,8 @@ def scroll_to(elem_id: str, align_to_top: bool | Var[bool] = True) -> EventSpec:
     get_element_by_id = FunctionStringVar.create("document.getElementById")
 
     return run_script(
-        get_element_by_id.call(elem_id)
+        get_element_by_id
+        .call(elem_id)
         .to(ObjectVar)
         .scrollIntoView.to(FunctionVar)
         .call(align_to_top),
@@ -1230,6 +1231,7 @@ def download(
     url: str | Var | None = None,
     filename: str | Var | None = None,
     data: str | bytes | Var | None = None,
+    mime_type: str | Var | None = None,
 ) -> EventSpec:
     """Download the file at a given path or with the specified data.
 
@@ -1237,6 +1239,7 @@ def download(
         url: The URL to the file to download.
         filename: The name that the file should be saved as after download.
         data: The data to download.
+        mime_type: The mime type of the data to download.
 
     Raises:
         ValueError: If the URL provided is invalid, both URL and data are provided,
@@ -1265,9 +1268,15 @@ def download(
             raise ValueError(msg)
 
         if isinstance(data, str):
+            if mime_type is None:
+                mime_type = "text/plain"
             # Caller provided a plain text string to download.
-            url = "data:text/plain," + urllib.parse.quote(data)
+            url = f"data:{mime_type};base64," + b64encode(data.encode("utf-8")).decode(
+                "utf-8"
+            )
         elif isinstance(data, Var):
+            if mime_type is None:
+                mime_type = "text/plain"
             # Need to check on the frontend if the Var already looks like a data: URI.
 
             is_data_url = (data.js_type() == "string") & (
@@ -1278,12 +1287,14 @@ def download(
             url = cond(
                 is_data_url,
                 data.to(str),
-                "data:text/plain," + data.to_string(),
+                f"data:{mime_type}," + data.to_string(),
             )
         elif isinstance(data, bytes):
+            if mime_type is None:
+                mime_type = "application/octet-stream"
             # Caller provided bytes, so base64 encode it as a data: URI.
             b64_data = b64encode(data).decode("utf-8")
-            url = "data:application/octet-stream;base64," + b64_data
+            url = f"data:{mime_type};base64," + b64_data
         else:
             msg = f"Invalid data type {type(data)} for download. Use `str` or `bytes`."
             raise ValueError(msg)
@@ -2301,6 +2312,7 @@ class EventNamespace:
 
     # Constants
     BACKGROUND_TASK_MARKER = BACKGROUND_TASK_MARKER
+    EVENT_ACTIONS_MARKER = EVENT_ACTIONS_MARKER
     _EVENT_FIELDS = _EVENT_FIELDS
     FORM_DATA = FORM_DATA
     upload_files = upload_files
@@ -2451,7 +2463,7 @@ class EventNamespace:
             # Store decorator event actions on the function for later processing
             event_actions = _build_event_actions()
             if event_actions:
-                func._rx_event_actions = event_actions  # pyright: ignore [reportFunctionMemberAccess]
+                setattr(func, EVENT_ACTIONS_MARKER, event_actions)
             return func  # pyright: ignore [reportReturnType]
 
         if func is not None:

@@ -1,6 +1,6 @@
 """Interactive components provided by @radix-ui/react-dialog."""
 
-from typing import Any
+from typing import Any, ClassVar
 
 from reflex.components.component import ComponentNamespace
 from reflex.components.el import elements
@@ -35,6 +35,11 @@ class DialogRoot(DialogElement):
     # The modality of the dialog. When set to true, interaction with outside elements will be disabled and only dialog content will be visible to screen readers.
     modal: Var[bool]
 
+    _valid_children: ClassVar[list[str]] = [
+        "DialogTrigger",
+        "DialogPortal",
+    ]
+
 
 class DialogPortal(DialogElement):
     """Portal component for Dialog."""
@@ -47,6 +52,8 @@ class DialogPortal(DialogElement):
 
     # Specify a container element to portal the content into.
     container: Var[Any]
+
+    _valid_parents: ClassVar[list[str]] = ["DialogRoot"]
 
 
 class DialogOverlay(DialogElement):
@@ -61,6 +68,8 @@ class DialogOverlay(DialogElement):
     # Used to force mounting when more control is needed. Useful when controlling animation with React animation libraries. It inherits from Dialog.Portal.
     force_mount: Var[bool]
 
+    _valid_parents: ClassVar[list[str]] = ["DialogPortal"]
+
 
 class DialogTrigger(DialogElement, RadixPrimitiveTriggerComponent):
     """Trigger an action or event, to open a Dialog modal."""
@@ -73,7 +82,7 @@ class DialogTrigger(DialogElement, RadixPrimitiveTriggerComponent):
 
     _memoization_mode = MemoizationMode(recursive=False)
 
-    _valid_parents = ["DialogRoot"]
+    _valid_parents: ClassVar[list[str]] = ["DialogRoot"]
 
 
 class DialogContent(elements.Div, DialogElement):
@@ -102,6 +111,8 @@ class DialogContent(elements.Div, DialogElement):
 
     # Fired when the pointer interacts outside the dialog.
     on_interact_outside: EventHandler[no_args_event_spec]
+
+    _valid_parents: ClassVar[list[str]] = ["DialogPortal"]
 
 
 class DialogTitle(DialogElement):

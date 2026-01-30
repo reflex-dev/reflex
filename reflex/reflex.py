@@ -801,23 +801,19 @@ def deploy(
         app_name=app_name,
         app_id=app_id,
         export_fn=(
-            lambda zip_dest_dir,
-            api_url,
-            deploy_url,
-            frontend,
-            backend,
-            upload_db,
-            zipping: export_utils.export(
-                zip_dest_dir=zip_dest_dir,
-                api_url=api_url,
-                deploy_url=deploy_url,
-                frontend=frontend,
-                backend=backend,
-                zipping=zipping,
-                loglevel=config.loglevel.subprocess_level(),
-                upload_db_file=upload_db,
-                backend_excluded_dirs=backend_excluded_dirs,
-                prerender_routes=ssr,
+            lambda zip_dest_dir, api_url, deploy_url, frontend, backend, upload_db, zipping: (
+                export_utils.export(
+                    zip_dest_dir=zip_dest_dir,
+                    api_url=api_url,
+                    deploy_url=deploy_url,
+                    frontend=frontend,
+                    backend=backend,
+                    zipping=zipping,
+                    loglevel=config.loglevel.subprocess_level(),
+                    upload_db_file=upload_db,
+                    backend_excluded_dirs=backend_excluded_dirs,
+                    prerender_routes=ssr,
+                )
             )
         ),
         regions=list(region),

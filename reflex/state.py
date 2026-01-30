@@ -11,16 +11,27 @@ import datetime
 import functools
 import inspect
 import pickle
+import re
 import sys
 import time
 import typing
+import uuid
 import warnings
-from collections.abc import AsyncIterator, Callable, Sequence
+from collections.abc import AsyncIterator, Callable, Iterator, Sequence
 from enum import Enum
 from hashlib import md5
 from importlib.util import find_spec
 from types import FunctionType
-from typing import TYPE_CHECKING, Any, BinaryIO, ClassVar, TypeVar, cast, get_type_hints
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    BinaryIO,
+    ClassVar,
+    ParamSpec,
+    TypeVar,
+    cast,
+    get_type_hints,
+)
 
 from rich.markup import escape
 from typing_extensions import Self
@@ -31,9 +42,11 @@ from reflex.constants.state import FIELD_MARKER
 from reflex.environment import PerformanceMode, environment
 from reflex.event import (
     BACKGROUND_TASK_MARKER,
+    EVENT_ACTIONS_MARKER,
     Event,
     EventHandler,
     EventSpec,
+    call_script,
     fix_events,
 )
 from reflex.istate import HANDLED_PICKLE_ERRORS, debug_failed_pickles
@@ -296,15 +309,48 @@ async def _resolve_delta(delta: Delta) -> Delta:
     return delta
 
 
+RETURN = TypeVar("RETURN")
+PARAMS = ParamSpec("PARAMS")
+
+
+def _override_base_method(fn: Callable[PARAMS, RETURN]) -> Callable[PARAMS, RETURN]:
+    """Mark a method as overriding a base method.
+
+    Args:
+        fn: The function to mark.
+
+    Returns:
+        The marked function.
+    """
+    fn.__override_base_method__ = True  # pyright: ignore[reportFunctionMemberAccess]
+    return fn
+
+
 _deserializers = {
     int: int,
     float: float,
     datetime.datetime: datetime.datetime.fromisoformat,
     datetime.date: datetime.date.fromisoformat,
     datetime.time: datetime.time.fromisoformat,
+    uuid.UUID: uuid.UUID,
 }
 
 all_base_state_classes: dict[str, None] = {}
+
+CLASS_VAR_NAMES = frozenset({
+    "vars",
+    "base_vars",
+    "computed_vars",
+    "inherited_vars",
+    "backend_vars",
+    "inherited_backend_vars",
+    "event_handlers",
+    "class_subclasses",
+    "_var_dependencies",
+    "_always_dirty_computed_vars",
+    "_always_dirty_substates",
+    "_potentially_dirty_states",
+})
 
 
 class BaseState(EvenMoreBasicBaseState):
@@ -523,15 +569,17 @@ class BaseState(EvenMoreBasicBaseState):
 
         new_backend_vars = {
             name: value if not isinstance(value, Field) else value.default_value()
-            for name, value in list(cls.__dict__.items())
-            if types.is_backend_base_variable(name, cls)
+            for mixin_cls in [*cls._mixins(), cls]
+            for name, value in list(mixin_cls.__dict__.items())
+            if types.is_backend_base_variable(name, mixin_cls)
         }
         # Add annotated backend vars that may not have a default value.
         new_backend_vars.update({
             name: cls._get_var_default(name, annotation_value)
-            for name, annotation_value in cls._get_type_hints().items()
+            for mixin_cls in [*cls._mixins(), cls]
+            for name, annotation_value in mixin_cls._get_type_hints().items()
             if name not in new_backend_vars
-            and types.is_backend_base_variable(name, cls)
+            and types.is_backend_base_variable(name, mixin_cls)
         })
 
         cls.backend_vars = {
@@ -578,9 +626,6 @@ class BaseState(EvenMoreBasicBaseState):
                     setattr(cls, name, newcv)
                     cls.computed_vars[name] = newcv
                     cls.vars[name] = newcv
-                    continue
-                if types.is_backend_base_variable(name, mixin_cls):
-                    cls.backend_vars[name] = copy.deepcopy(value)
                     continue
                 if events.get(name) is not None:
                     continue
@@ -642,6 +687,9 @@ class BaseState(EvenMoreBasicBaseState):
         newfn.__annotations__ = fn.__annotations__
         if mark := getattr(fn, BACKGROUND_TASK_MARKER, None):
             setattr(newfn, BACKGROUND_TASK_MARKER, mark)
+        # Preserve event_actions from @rx.event decorator
+        if event_actions := getattr(fn, EVENT_ACTIONS_MARKER, None):
+            object.__setattr__(newfn, EVENT_ACTIONS_MARKER, event_actions)
         return newfn
 
     @staticmethod
@@ -835,6 +883,7 @@ class BaseState(EvenMoreBasicBaseState):
                 not name.startswith("__")
                 and method.__name__ in state_base_functions
                 and state_base_functions[method.__name__] != method
+                and not getattr(method, "__override_base_method__", False)
             ):
                 overridden_methods.add(method.__name__)
 
@@ -1118,7 +1167,7 @@ class BaseState(EvenMoreBasicBaseState):
             The event handler.
         """
         # Check if function has stored event_actions from decorator
-        event_actions = getattr(fn, "_rx_event_actions", {})
+        event_actions = getattr(fn, EVENT_ACTIONS_MARKER, {})
 
         return event_handler_cls(
             fn=fn, state_full_name=cls.get_full_name(), event_actions=event_actions
@@ -1307,7 +1356,7 @@ class BaseState(EvenMoreBasicBaseState):
         for substate in cls.get_substates():
             substate._check_overwritten_dynamic_args(args)
 
-    def __getattribute__(self, name: str) -> Any:
+    def _get_attribute(self, name: str) -> Any:
         """Get the state var.
 
         If the var is inherited, get the var from the parent state.
@@ -1319,7 +1368,7 @@ class BaseState(EvenMoreBasicBaseState):
             The value of the var.
         """
         # Fast path for dunder
-        if name.startswith("__"):
+        if name.startswith("__") or name in CLASS_VAR_NAMES:
             return super().__getattribute__(name)
 
         # For now, handle router_data updates as a special case.
@@ -1365,6 +1414,9 @@ class BaseState(EvenMoreBasicBaseState):
 
         return value
 
+    if not TYPE_CHECKING:
+        __getattribute__ = _get_attribute
+
     def __setattr__(self, name: str, value: Any):
         """Set the attribute.
 
@@ -1377,6 +1429,11 @@ class BaseState(EvenMoreBasicBaseState):
         Raises:
             SetUndefinedStateVarError: If a value of a var is set without first defining it.
         """
+        if name.startswith("__") or name in CLASS_VAR_NAMES:
+            # Fast path for dunder and class vars
+            object.__setattr__(self, name, value)
+            return
+
         if isinstance(value, MutableProxy):
             # unwrap proxy objects when assigning back to the state
             value = value.__wrapped__
@@ -1722,7 +1779,7 @@ class BaseState(EvenMoreBasicBaseState):
         if events is None or _is_valid_type(events):
             return events
 
-        if not isinstance(events, Sequence):
+        if not (isinstance(events, Sequence) and not isinstance(events, (str, bytes))):
             events = [events]
 
         try:
@@ -1779,7 +1836,7 @@ class BaseState(EvenMoreBasicBaseState):
             return StateUpdate(
                 delta=delta,
                 events=fixed_events,
-                final=final if not handler.is_background else True,
+                final=final if not handler.is_background else None,
             )
         except Exception as ex:
             state._clean()
@@ -1978,8 +2035,8 @@ class BaseState(EvenMoreBasicBaseState):
         """
         return {
             cvar
-            for cvar in self.computed_vars
-            if self.computed_vars[cvar].needs_update(instance=self)
+            for cvar, cvar_obj in self.computed_vars.items()
+            if cvar_obj.needs_update(instance=self)
         }
 
     def _dirty_computed_vars(
@@ -2185,17 +2242,15 @@ class BaseState(EvenMoreBasicBaseState):
 
         return d
 
-    async def __aenter__(self) -> BaseState:
+    async def __aenter__(self) -> Self:
         """Enter the async context manager protocol.
 
-        This should not be used for the State class, but exists for
-        type-compatibility with StateProxy.
+        This is a no-op for the State class and mainly used in background-tasks/StateProxy.
 
-        Raises:
-            TypeError: always, because async contextmanager protocol is only supported for background task.
+        Returns:
+            The unmodified state (self)
         """
-        msg = "Only background task should use `async with self` to modify state."
-        raise TypeError(msg)
+        return self
 
     async def __aexit__(self, *exc_info: Any) -> None:
         """Exit the async context manager protocol.
@@ -2418,6 +2473,37 @@ class State(BaseState):
 
     # The hydrated bool.
     is_hydrated: bool = False
+    # Maps the state full_name to an arbitrary token it is linked to for shared state.
+    _reflex_internal_links: dict[str, str] | None = None
+
+    @_override_base_method
+    async def _get_state_from_redis(self, state_cls: type[T_STATE]) -> T_STATE:
+        """Get a state instance from redis with linking support.
+
+        Args:
+            state_cls: The class of the state.
+
+        Returns:
+            The instance of state_cls associated with this state's client_token.
+        """
+        state_instance = await super()._get_state_from_redis(state_cls)
+        if (
+            self._reflex_internal_links
+            and (
+                linked_token := self._reflex_internal_links.get(
+                    state_cls.get_full_name()
+                )
+            )
+            is not None
+            and (
+                internal_patch_linked_state := getattr(
+                    state_instance, "_internal_patch_linked_state", None
+                )
+            )
+            is not None
+        ):
+            return await internal_patch_linked_state(linked_token)
+        return state_instance
 
     @event
     def set_is_hydrated(self, value: bool) -> None:
@@ -2471,11 +2557,34 @@ def dynamic(func: Callable[[T], Component]):
     return wrapper
 
 
+# sessionStorage key holding the ms timestamp of the last reload on error
+LAST_RELOADED_KEY = "reflex_last_reloaded_on_error"
+
+
 class FrontendEventExceptionState(State):
     """Substate for handling frontend exceptions."""
 
+    # If the frontend error message contains any of these strings, automatically reload the page.
+    auto_reload_on_errors: ClassVar[list[re.Pattern]] = [
+        re.compile(  # Chrome/Edge
+            re.escape("TypeError: Cannot read properties of null")
+        ),
+        re.compile(re.escape("TypeError: null is not an object")),  # Safari
+        re.compile(r"TypeError: can't access property \".*\" of null"),  # Firefox
+        # Firefox: property access is on a function that returns null.
+        re.compile(
+            re.escape("TypeError: can't access property \"")
+            + r".*"
+            + re.escape('", ')
+            + r".*"
+            + re.escape(" is null")
+        ),
+    ]
+
     @event
-    def handle_frontend_exception(self, info: str, component_stack: str) -> None:
+    def handle_frontend_exception(
+        self, info: str, component_stack: str
+    ) -> Iterator[EventSpec]:
         """Handle frontend exceptions.
 
         If a frontend exception handler is provided, it will be called.
@@ -2485,7 +2594,21 @@ class FrontendEventExceptionState(State):
             info: The exception information.
             component_stack: The stack trace of the component where the exception occurred.
 
+        Yields:
+            Optional auto-reload event for certain errors outside cooldown period.
         """
+        # Handle automatic reload for certain errors.
+        if type(self).auto_reload_on_errors and any(
+            error.search(info) for error in type(self).auto_reload_on_errors
+        ):
+            yield call_script(
+                f"const last_reload = parseInt(window.sessionStorage.getItem('{LAST_RELOADED_KEY}')) || 0;"
+                f"if (Date.now() - last_reload > {environment.REFLEX_AUTO_RELOAD_COOLDOWN_TIME_MS.get()})"
+                "{"
+                f"window.sessionStorage.setItem('{LAST_RELOADED_KEY}', Date.now().toString());"
+                "window.location.reload();"
+                "}"
+            )
         prerequisites.get_and_validate_app().app.frontend_exception_handler(
             Exception(info)
         )
@@ -2568,7 +2691,7 @@ class ComponentState(State, mixin=True):
     Subclass this class and define vars and event handlers in the traditional way.
     Then define a `get_component` method that returns the UI for the component instance.
 
-    See the full [docs](https://reflex.dev/docs/substates/component-state/) for more.
+    See the full [docs](https://reflex.dev/docs/state-structure/component-state/) for more.
 
     Basic example:
     ```python
@@ -2684,7 +2807,7 @@ class StateUpdate:
     events: list[Event] = dataclasses.field(default_factory=list)
 
     # Whether this is the final state update for the event.
-    final: bool = True
+    final: bool | None = True
 
     def json(self) -> str:
         """Convert the state update to a JSON string.

@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 
 const handle_paste_data = (clipboardData) =>
   new Promise((resolve, reject) => {
@@ -35,25 +35,71 @@ const handle_paste_data = (clipboardData) =>
   });
 
 export default function usePasteHandler(target_ids, event_actions, on_paste) {
-  return useEffect(() => {
+  const onPasteRef = useRef(on_paste);
+  const eventActionsRef = useRef(event_actions);
+
+  useEffect(() => {
+    onPasteRef.current = on_paste;
+  }, [on_paste]);
+  useEffect(() => {
+    eventActionsRef.current = event_actions;
+  }, [event_actions]);
+
+  useEffect(() => {
     const handle_paste = (_ev) => {
-      event_actions.preventDefault && _ev.preventDefault();
-      event_actions.stopPropagation && _ev.stopPropagation();
-      handle_paste_data(_ev.clipboardData).then(on_paste);
+      eventActionsRef.current?.preventDefault && _ev.preventDefault();
+      eventActionsRef.current?.stopPropagation && _ev.stopPropagation();
+      handle_paste_data(_ev.clipboardData).then(onPasteRef.current);
     };
-    const targets = target_ids
-      .map((id) => document.getElementById(id))
-      .filter((element) => !!element);
-    if (target_ids.length === 0) {
-      targets.push(document);
-    }
-    targets.forEach((target) =>
-      target.addEventListener("paste", handle_paste, false),
-    );
-    return () => {
+
+    let cleanupListeners = null;
+    let observer = null;
+
+    const attachListeners = (targets) => {
       targets.forEach((target) =>
-        target.removeEventListener("paste", handle_paste, false),
+        target.addEventListener("paste", handle_paste, false),
       );
+      return () => {
+        targets.forEach((target) =>
+          target.removeEventListener("paste", handle_paste, false),
+        );
+      };
     };
-  });
+
+    const tryAttach = () => {
+      if (target_ids.length === 0) {
+        cleanupListeners = attachListeners([document]);
+        return true;
+      }
+      const targets = target_ids
+        .map((id) => document.getElementById(id))
+        .filter((element) => !!element);
+
+      if (targets.length === target_ids.length) {
+        cleanupListeners = attachListeners(targets);
+        return true;
+      }
+
+      return false;
+    };
+
+    if (!tryAttach()) {
+      observer = new MutationObserver(() => {
+        if (tryAttach()) {
+          observer.disconnect();
+          observer = null;
+        }
+      });
+      observer.observe(document.body, { childList: true, subtree: true });
+    }
+
+    return () => {
+      if (observer) {
+        observer.disconnect();
+      }
+      if (cleanupListeners) {
+        cleanupListeners();
+      }
+    };
+  }, [target_ids]);
 }

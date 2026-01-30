@@ -1,5 +1,6 @@
 """Test case for displaying the connection banner when the websocket drops."""
 
+import pickle
 from collections.abc import Generator
 
 import pytest
@@ -10,7 +11,7 @@ from reflex import constants
 from reflex.environment import environment
 from reflex.istate.manager.redis import StateManagerRedis
 from reflex.testing import AppHarness, WebDriver
-from reflex.utils.token_manager import RedisTokenManager
+from reflex.utils.token_manager import RedisTokenManager, SocketRecord
 
 from .utils import SessionStorage
 
@@ -166,11 +167,10 @@ async def test_connection_banner(connection_banner: AppHarness):
     sid_before = app_token_manager.token_to_sid[token]
     if isinstance(connection_banner.state_manager, StateManagerRedis):
         assert isinstance(app_token_manager, RedisTokenManager)
-        assert (
-            await connection_banner.state_manager.redis.get(
-                app_token_manager._get_redis_key(token)
-            )
-            == b"1"
+        assert await connection_banner.state_manager.redis.get(
+            app_token_manager._get_redis_key(token)
+        ) == pickle.dumps(
+            SocketRecord(instance_id=app_token_manager.instance_id, sid=sid_before)
         )
 
     delay_button = driver.find_element(By.ID, "delay")
@@ -221,17 +221,16 @@ async def test_connection_banner(connection_banner: AppHarness):
 
     # After reconnecting, the token association should be re-established.
     app_token_manager = connection_banner.token_manager()
-    if isinstance(connection_banner.state_manager, StateManagerRedis):
-        assert isinstance(app_token_manager, RedisTokenManager)
-        assert (
-            await connection_banner.state_manager.redis.get(
-                app_token_manager._get_redis_key(token)
-            )
-            == b"1"
-        )
     # Make sure the new connection has a different websocket sid.
     sid_after = app_token_manager.token_to_sid[token]
     assert sid_before != sid_after
+    if isinstance(connection_banner.state_manager, StateManagerRedis):
+        assert isinstance(app_token_manager, RedisTokenManager)
+        assert await connection_banner.state_manager.redis.get(
+            app_token_manager._get_redis_key(token)
+        ) == pickle.dumps(
+            SocketRecord(instance_id=app_token_manager.instance_id, sid=sid_after)
+        )
 
     # Count should have incremented after coming back up
     assert connection_banner.poll_for_value(counter_element, exp_not_equal="1") == "2"

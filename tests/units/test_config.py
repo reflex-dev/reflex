@@ -96,6 +96,41 @@ def test_update_from_env_path(
     assert config.bun_path == tmp_path
 
 
+def test_update_from_env_cors(
+    base_config_values: dict[str, Any],
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+):
+    """Test that environment variables override config values.
+
+    Args:
+        base_config_values: Config values.
+        monkeypatch: The pytest monkeypatch object.
+        tmp_path: The pytest tmp_path fixture object.
+    """
+    config = rx.Config(**base_config_values)
+    assert config.cors_allowed_origins == ("*",)
+
+    monkeypatch.setenv("REFLEX_CORS_ALLOWED_ORIGINS", "")
+    config = rx.Config(**base_config_values)
+    assert config.cors_allowed_origins == ("*",)
+
+    monkeypatch.setenv("REFLEX_CORS_ALLOWED_ORIGINS", "https://foo.example.com")
+    config = rx.Config(**base_config_values)
+    assert config.cors_allowed_origins == [
+        "https://foo.example.com",
+    ]
+
+    monkeypatch.setenv(
+        "REFLEX_CORS_ALLOWED_ORIGINS", "http://example.com, http://another.com "
+    )
+    config = rx.Config(**base_config_values)
+    assert config.cors_allowed_origins == [
+        "http://example.com",
+        "http://another.com",
+    ]
+
+
 @pytest.mark.parametrize(
     ("kwargs", "expected"),
     [

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import json
 from collections.abc import Iterable, Mapping
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Literal
 
 from reflex import constants
 from reflex.constants import Hooks
@@ -378,7 +378,11 @@ export function ClientSide(component) {{
   return ({{ children, ...props }}) => {{
     const [Component, setComponent] = useState(null);
     useEffect(() => {{
-      setComponent(component);
+      async function load() {{
+        const comp = await component();
+        setComponent(() => comp);
+      }}
+      load();
     }}, []);
     return Component ? jsx(Component, props, children) : null;
   }};
@@ -492,13 +496,21 @@ def package_json_template(
     })
 
 
-def vite_config_template(base: str, hmr: bool, force_full_reload: bool):
+def vite_config_template(
+    base: str,
+    hmr: bool,
+    force_full_reload: bool,
+    experimental_hmr: bool,
+    sourcemap: bool | Literal["inline", "hidden"],
+):
     """Template for vite.config.js.
 
     Args:
         base: The base path for the Vite config.
         hmr: Whether to enable hot module replacement.
         force_full_reload: Whether to force a full reload on changes.
+        experimental_hmr: Whether to enable experimental HMR features.
+        sourcemap: The sourcemap configuration.
 
     Returns:
         Rendered vite.config.js content as string.
@@ -550,6 +562,7 @@ export default defineConfig((config) => ({{
   ].concat({"[fullReload()]" if force_full_reload else "[]"}),
   build: {{
     assetsDir: "{base}assets".slice(1),
+    sourcemap: {"true" if sourcemap is True else "false" if sourcemap is False else repr(sourcemap)},
     rollupOptions: {{
       onwarn(warning, warn) {{
         if (warning.code === "EVAL" && warning.id && warning.id.endsWith("state.js")) return;
@@ -570,6 +583,7 @@ export default defineConfig((config) => ({{
   }},
   experimental: {{
     enableNativePlugin: false,
+    hmr: {"true" if experimental_hmr else "false"},
   }},
   server: {{
     port: process.env.PORT,

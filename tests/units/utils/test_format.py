@@ -329,10 +329,12 @@ def test_format_route(route: str, expected: str):
                 ),
             ],
             LiteralVar.create("yellow"),
-            '(() => { switch (JSON.stringify(state__state.value)) {case JSON.stringify(1):  return ("red");  break;case JSON.stringify(2): case JSON.stringify(3):  '
-            f'return ("blue");  break;case JSON.stringify({TestState.get_full_name()}.mapping{FIELD_MARKER}):  return '
-            f'({TestState.get_full_name()}.num1{FIELD_MARKER});  break;case JSON.stringify(({TestState.get_full_name()}.map_key{FIELD_MARKER}+"-key")):  return ("return-key");'
-            '  break;default:  return ("yellow");  break;};})()',
+            (
+                '(() => { switch (JSON.stringify(state__state.value)) {case JSON.stringify(1):  return ("red");  break;case JSON.stringify(2): case JSON.stringify(3):  '
+                f'return ("blue");  break;case JSON.stringify({TestState.get_full_name()}.mapping{FIELD_MARKER}):  return '
+                f'({TestState.get_full_name()}.num1{FIELD_MARKER});  break;case JSON.stringify(({TestState.get_full_name()}.map_key{FIELD_MARKER}+"-key")):  return ("return-key");'
+                '  break;default:  return ("yellow");  break;};})()'
+            ),
         )
     ],
 )
@@ -602,6 +604,7 @@ formatted_router = {
                     "key" + FIELD_MARKER: "",
                     "map_key" + FIELD_MARKER: "a",
                     "mapping" + FIELD_MARKER: {"a": [1, 2, 3], "b": [4, 5, 6]},
+                    "mixin" + FIELD_MARKER: "mixin_value",
                     "num1" + FIELD_MARKER: 0,
                     "num2" + FIELD_MARKER: 3.15,
                     "obj" + FIELD_MARKER: {"prop1": 42, "prop2": "hello"},

@@ -633,12 +633,22 @@ def _issubclass(cls: GenericType, cls_check: GenericType, instance: Any = None) 
         raise TypeError(msg) from te
 
 
-def does_obj_satisfy_typed_dict(obj: Any, cls: GenericType) -> bool:
+def does_obj_satisfy_typed_dict(
+    obj: Any,
+    cls: GenericType,
+    *,
+    nested: int = 0,
+    treat_var_as_type: bool = True,
+    treat_mutable_obj_as_immutable: bool = False,
+) -> bool:
     """Check if an object satisfies a typed dict.
 
     Args:
         obj: The object to check.
         cls: The typed dict to check against.
+        nested: How many levels deep to check.
+        treat_var_as_type: Whether to treat Var as the type it represents, i.e. _var_type.
+        treat_mutable_obj_as_immutable: Whether to treat mutable objects as immutable. Useful if a component declares a mutable object as a prop, but the value is not expected to change.
 
     Returns:
         Whether the object satisfies the typed dict.
@@ -648,19 +658,35 @@ def does_obj_satisfy_typed_dict(obj: Any, cls: GenericType) -> bool:
 
     key_names_to_values = get_type_hints(cls)
     required_keys: frozenset[str] = getattr(cls, "__required_keys__", frozenset())
+    is_closed = getattr(cls, "__closed__", False)
+    extra_items_type = getattr(cls, "__extra_items__", Any)
 
-    if not all(
-        isinstance(key, str)
-        and key in key_names_to_values
-        and _isinstance(value, key_names_to_values[key])
-        for key, value in obj.items()
-    ):
-        return False
-
-    # TODO in 3.14: Implement https://peps.python.org/pep-0728/ if it's approved
+    for key, value in obj.items():
+        if is_closed and key not in key_names_to_values:
+            return False
+        if nested:
+            if key in key_names_to_values:
+                expected_type = key_names_to_values[key]
+                if not _isinstance(
+                    value,
+                    expected_type,
+                    nested=nested - 1,
+                    treat_var_as_type=treat_var_as_type,
+                    treat_mutable_obj_as_immutable=treat_mutable_obj_as_immutable,
+                ):
+                    return False
+            else:
+                if not _isinstance(
+                    value,
+                    extra_items_type,
+                    nested=nested - 1,
+                    treat_var_as_type=treat_var_as_type,
+                    treat_mutable_obj_as_immutable=treat_mutable_obj_as_immutable,
+                ):
+                    return False
 
     # required keys are all present
-    return required_keys.issubset(required_keys)
+    return required_keys.issubset(frozenset(obj))
 
 
 def _isinstance(
@@ -721,7 +747,13 @@ def _isinstance(
         # cls is a typed dict
         if is_typeddict(cls):
             if nested:
-                return does_obj_satisfy_typed_dict(obj, cls)
+                return does_obj_satisfy_typed_dict(
+                    obj,
+                    cls,
+                    nested=nested - 1,
+                    treat_var_as_type=treat_var_as_type,
+                    treat_mutable_obj_as_immutable=treat_mutable_obj_as_immutable,
+                )
             return isinstance(obj, dict)
 
         # cls is a float

@@ -55,6 +55,11 @@ def BackgroundTask():
                     yield State.increment()
                 await asyncio.sleep(0.005)
 
+        @rx.event(background=True)
+        async def fast_yielding(self):
+            for _ in range(1000):
+                yield State.increment()
+
         @rx.event
         def increment(self):
             self.counter += 1
@@ -201,6 +206,11 @@ def BackgroundTask():
                 "Disconnect / Reconnect Background",
                 on_click=State.disconnect_reconnect_background,
                 id="disconnect-reconnect-background",
+            ),
+            rx.button(
+                "Fast Yielding",
+                on_click=State.fast_yielding,
+                id="fast-yielding",
             ),
             rx.button("Reset", on_click=State.reset_counter, id="reset"),
         )
@@ -451,3 +461,28 @@ def test_disconnect_reconnect(
     )
     # Final update should come through on the new websocket connection
     AppHarness.expect(lambda: counter.text == "3", timeout=5)
+
+
+def test_fast_yielding(
+    background_task: AppHarness,
+    driver: WebDriver,
+    token: str,
+) -> None:
+    """Test that fast yielding works as expected.
+
+    Args:
+        background_task: harness for BackgroundTask app.
+        driver: WebDriver instance.
+        token: The token for the connected client.
+    """
+    assert background_task.app_instance is not None
+
+    # get a reference to all buttons
+    fast_yielding_button = driver.find_element(By.ID, "fast-yielding")
+
+    # get a reference to the counter
+    counter = driver.find_element(By.ID, "counter")
+    assert background_task._poll_for(lambda: counter.text == "0", timeout=5)
+
+    fast_yielding_button.click()
+    assert background_task._poll_for(lambda: counter.text == "1000", timeout=50)

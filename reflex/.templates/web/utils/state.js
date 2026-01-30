@@ -56,10 +56,10 @@ export const generateUUID = () => {
   return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (c) => {
     let r = Math.random() * 16;
     if (d > 0) {
-      r = (d + r) % 16 | 0;
+      r = ((d + r) % 16) | 0;
       d = Math.floor(d / 16);
     } else {
-      r = (d2 + r) % 16 | 0;
+      r = ((d2 + r) % 16) | 0;
       d2 = Math.floor(d2 / 16);
     }
     return (c == "x" ? r : (r & 0x7) | 0x8).toString(16);
@@ -89,6 +89,9 @@ export const getToken = () => {
  * @returns The given URL modified to point to the actual backend server.
  */
 export const getBackendURL = (url_str) => {
+  if ((url_str ?? undefined) === undefined) {
+    url_str = env.PING;
+  }
   // Get backend URL object from the endpoint.
   const endpoint = new URL(url_str);
   if (
@@ -176,7 +179,7 @@ export const queueEventIfSocketExists = async (
   if (!socket) {
     return;
   }
-  await queueEvents(events, socket, navigate, params);
+  await queueEvents(events, socket, false, navigate, params);
 };
 
 /**
@@ -256,13 +259,13 @@ export const applyEvent = async (event, socket, navigate, params) => {
 
   if (event.name == "_clear_session_storage") {
     sessionStorage.clear();
-    queueEvents(initialEvents(), socket, navigate, params);
+    queueEventIfSocketExists(initialEvents(), socket, navigate, params);
     return false;
   }
 
   if (event.name == "_remove_session_storage") {
     sessionStorage.removeItem(event.payload.key);
-    queueEvents(initialEvents(), socket, navigate, params);
+    queueEventIfSocketExists(initialEvents(), socket, navigate, params);
     return false;
   }
 
@@ -444,6 +447,16 @@ export const applyRestEvent = async (event, socket, navigate, params) => {
 };
 
 /**
+ * Resolve a socket reference to the actual socket object.
+ * Handles both ref objects ({ current: Socket }) and raw sockets.
+ * @param socket Either a ref object or raw socket.
+ * @returns The actual socket object.
+ */
+const resolveSocket = (socket) => {
+  return socket?.current ?? socket;
+};
+
+/**
  * Queue events to be processed and trigger processing of queue.
  * @param events Array of events to queue.
  * @param socket The socket object to send the event on.
@@ -468,7 +481,7 @@ export const queueEvents = async (
     ];
   }
   event_queue.push(...events.filter((e) => e !== undefined && e !== null));
-  await processEvent(socket.current, navigate, params);
+  await processEvent(resolveSocket(socket), navigate, params);
 };
 
 /**
@@ -568,6 +581,7 @@ export const connect = async (
       !socket.current.wait_connect
     ) {
       socket.current.wait_connect = true;
+      socket.current.rehydrate = true;
       socket.current.io.opts.query = { token: getToken() }; // Update token for reconnect.
       socket.current.connect();
     }
@@ -615,6 +629,16 @@ export const connect = async (
     window.addEventListener("pagehide", pagehideHandler);
     window.addEventListener("beforeunload", disconnectTrigger);
     window.addEventListener("unload", disconnectTrigger);
+    if (socket.current.rehydrate) {
+      socket.current.rehydrate = false;
+      queueEvents(
+        initialEvents(),
+        socket,
+        true,
+        navigate,
+        () => params.current,
+      );
+    }
     // Drain any initial events from the queue.
     while (event_queue.length > 0 && !event_processing) {
       await processEvent(socket.current, navigate, () => params.current);
@@ -665,7 +689,9 @@ export const connect = async (
       }
     }
     applyClientStorageDelta(client_storage, update.delta);
-    event_processing = !update.final;
+    if (update.final !== null) {
+      event_processing = !update.final;
+    }
     if (update.events) {
       queueEvents(update.events, socket, false, navigate, params);
     }
@@ -852,7 +878,7 @@ export const useEventLoop = (
       await connect(
         socket,
         dispatch,
-        ["websocket"],
+        [env.TRANSPORT],
         setConnectErrors,
         client_storage,
         navigate,

@@ -382,7 +382,7 @@ for theme_name in dir(Theme):
 class CodeBlock(Component, MarkdownComponentMap):
     """A code block."""
 
-    library = "react-syntax-highlighter@15.6.6"
+    library = "react-syntax-highlighter@16.1.0"
 
     tag = "PrismAsyncLight"
 
@@ -501,7 +501,8 @@ class CodeBlock(Component, MarkdownComponentMap):
         theme = self.theme
 
         return (
-            out.add_props(style=theme)
+            out
+            .add_props(style=theme)
             .remove_props("theme", "code")
             .add_props(
                 children=self.code,

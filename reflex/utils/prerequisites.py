@@ -5,12 +5,14 @@ from __future__ import annotations
 import contextlib
 import importlib
 import importlib.metadata
+import inspect
 import json
 import random
 import re
 import sys
 import typing
 from datetime import datetime
+from os import getcwd
 from pathlib import Path
 from types import ModuleType
 from typing import NamedTuple
@@ -188,7 +190,7 @@ def get_app(reload: bool = False) -> ModuleType:
             _check_app_name(config)
 
         module = config.module
-        sys.path.insert(0, str(Path.cwd()))
+        sys.path.insert(0, getcwd())  # noqa: PTH109
         app = (
             __import__(module, fromlist=(constants.CompileVars.APP,))
             if not config.app_module
@@ -435,7 +437,9 @@ async def get_redis_status() -> dict[str, bool | None]:
         status = True
         redis_client = get_redis()
         if redis_client is not None:
-            await redis_client.ping()
+            ping_command = redis_client.ping()
+            if inspect.isawaitable(ping_command):
+                await ping_command
         else:
             status = None
     except RedisError:
@@ -670,6 +674,7 @@ def check_schema_up_to_date():
                 )
 
 
+@once
 def get_user_tier():
     """Get the current user's tier.
 

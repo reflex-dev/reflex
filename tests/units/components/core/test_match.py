@@ -93,12 +93,14 @@ def test_match_components():
                 (MatchState.string, f"{MatchState.value} - string"),
                 "default value",
             ),
-            f'(() => {{ switch (JSON.stringify({MatchState.get_name()}.value{FIELD_MARKER})) {{case JSON.stringify(1):  return ("first");  break;case JSON.stringify(2): case JSON.stringify(3):  return '
-            '("second value");  break;case JSON.stringify([1, 2]):  return ("third-value");  break;case JSON.stringify("random"):  '
-            'return ("fourth_value");  break;case JSON.stringify(({ ["foo"] : "bar" })):  return ("fifth value");  '
-            f'break;case JSON.stringify(({MatchState.get_name()}.num{FIELD_MARKER} + 1)):  return ("sixth value");  break;case JSON.stringify(({MatchState.get_name()}.value{FIELD_MARKER}+" - string")):  '
-            f'return ({MatchState.get_name()}.string{FIELD_MARKER});  break;case JSON.stringify({MatchState.get_name()}.string{FIELD_MARKER}):  return (({MatchState.get_name()}.value{FIELD_MARKER}+" - string"));  break;default:  '
-            'return ("default value");  break;};})()',
+            (
+                f'(() => {{ switch (JSON.stringify({MatchState.get_name()}.value{FIELD_MARKER})) {{case JSON.stringify(1):  return ("first");  break;case JSON.stringify(2): case JSON.stringify(3):  return '
+                '("second value");  break;case JSON.stringify([1, 2]):  return ("third-value");  break;case JSON.stringify("random"):  '
+                'return ("fourth_value");  break;case JSON.stringify(({ ["foo"] : "bar" })):  return ("fifth value");  '
+                f'break;case JSON.stringify(({MatchState.get_name()}.num{FIELD_MARKER} + 1)):  return ("sixth value");  break;case JSON.stringify(({MatchState.get_name()}.value{FIELD_MARKER}+" - string")):  '
+                f'return ({MatchState.get_name()}.string{FIELD_MARKER});  break;case JSON.stringify({MatchState.get_name()}.string{FIELD_MARKER}):  return (({MatchState.get_name()}.value{FIELD_MARKER}+" - string"));  break;default:  '
+                'return ("default value");  break;};})()'
+            ),
         ),
         (
             (
@@ -112,12 +114,14 @@ def test_match_components():
                 (MatchState.string, f"{MatchState.value} - string"),
                 MatchState.string,
             ),
-            f'(() => {{ switch (JSON.stringify({MatchState.get_name()}.value{FIELD_MARKER})) {{case JSON.stringify(1):  return ("first");  break;case JSON.stringify(2): case JSON.stringify(3):  return '
-            '("second value");  break;case JSON.stringify([1, 2]):  return ("third-value");  break;case JSON.stringify("random"):  '
-            'return ("fourth_value");  break;case JSON.stringify(({ ["foo"] : "bar" })):  return ("fifth value");  '
-            f'break;case JSON.stringify(({MatchState.get_name()}.num{FIELD_MARKER} + 1)):  return ("sixth value");  break;case JSON.stringify(({MatchState.get_name()}.value{FIELD_MARKER}+" - string")):  '
-            f'return ({MatchState.get_name()}.string{FIELD_MARKER});  break;case JSON.stringify({MatchState.get_name()}.string{FIELD_MARKER}):  return (({MatchState.get_name()}.value{FIELD_MARKER}+" - string"));  break;default:  '
-            f"return ({MatchState.get_name()}.string{FIELD_MARKER});  break;}};}})()",
+            (
+                f'(() => {{ switch (JSON.stringify({MatchState.get_name()}.value{FIELD_MARKER})) {{case JSON.stringify(1):  return ("first");  break;case JSON.stringify(2): case JSON.stringify(3):  return '
+                '("second value");  break;case JSON.stringify([1, 2]):  return ("third-value");  break;case JSON.stringify("random"):  '
+                'return ("fourth_value");  break;case JSON.stringify(({ ["foo"] : "bar" })):  return ("fifth value");  '
+                f'break;case JSON.stringify(({MatchState.get_name()}.num{FIELD_MARKER} + 1)):  return ("sixth value");  break;case JSON.stringify(({MatchState.get_name()}.value{FIELD_MARKER}+" - string")):  '
+                f'return ({MatchState.get_name()}.string{FIELD_MARKER});  break;case JSON.stringify({MatchState.get_name()}.string{FIELD_MARKER}):  return (({MatchState.get_name()}.value{FIELD_MARKER}+" - string"));  break;default:  '
+                f"return ({MatchState.get_name()}.string{FIELD_MARKER});  break;}};}})()"
+            ),
         ),
     ],
 )
@@ -243,8 +247,10 @@ def test_match_case_tuple_elements(match_case):
                 (MatchState.num + 1, "black"),
                 rx.text("default value"),
             ),
-            'Match cases should have the same return types. Case 3 with return value `"red"` of type '
-            "<class 'reflex.vars.sequence.LiteralStringVar'> is not <class 'reflex.components.component.BaseComponent'>",
+            (
+                'Match cases should have the same return types. Case 3 with return value `"red"` of type '
+                "<class 'reflex.vars.sequence.LiteralStringVar'> is not <class 'reflex.components.component.BaseComponent'>"
+            ),
         ),
         (
             (
@@ -256,8 +262,10 @@ def test_match_case_tuple_elements(match_case):
                 ([1, 2], rx.text("third value")),
                 rx.text("default value"),
             ),
-            'Match cases should have the same return types. Case 3 with return value `jsx(RadixThemesText,{as:"p"},"first value")` '
-            "of type <class 'reflex.components.radix.themes.typography.text.Text'> is not <class 'reflex.vars.base.Var'>",
+            (
+                'Match cases should have the same return types. Case 3 with return value `jsx(RadixThemesText,{as:"p"},"first value")` '
+                "of type <class 'reflex.components.radix.themes.typography.text.Text'> is not <class 'reflex.vars.base.Var'>"
+            ),
         ),
     ],
 )

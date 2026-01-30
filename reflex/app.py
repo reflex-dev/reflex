@@ -120,7 +120,7 @@ from reflex.utils.exec import (
 )
 from reflex.utils.imports import ImportVar
 from reflex.utils.misc import run_in_thread
-from reflex.utils.token_manager import TokenManager
+from reflex.utils.token_manager import RedisTokenManager, TokenManager
 from reflex.utils.types import ASGIApp, Message, Receive, Scope, Send
 
 if TYPE_CHECKING:
@@ -297,7 +297,7 @@ class UnevaluatedPage:
     description: Var | str | None
     image: str
     on_load: EventType[()] | None
-    meta: Sequence[Mapping[str, str]]
+    meta: Sequence[Mapping[str, Any] | Component]
     context: Mapping[str, Any]
 
     def merged_with(self, other: UnevaluatedPage) -> UnevaluatedPage:
@@ -532,11 +532,15 @@ class App(MiddlewareMixin, LifespanMixin):
             self.sio = AsyncServer(
                 async_mode="asgi",
                 cors_allowed_origins=(
-                    "*"
-                    if config.cors_allowed_origins == ("*",)
-                    else list(config.cors_allowed_origins)
+                    (
+                        "*"
+                        if config.cors_allowed_origins == ("*",)
+                        else list(config.cors_allowed_origins)
+                    )
+                    if config.transport == "websocket"
+                    else []
                 ),
-                cors_credentials=True,
+                cors_credentials=config.transport == "websocket",
                 max_http_buffer_size=environment.REFLEX_SOCKET_MAX_HTTP_BUFFER_SIZE.get(),
                 ping_interval=environment.REFLEX_SOCKET_INTERVAL.get(),
                 ping_timeout=environment.REFLEX_SOCKET_TIMEOUT.get(),
@@ -544,7 +548,8 @@ class App(MiddlewareMixin, LifespanMixin):
                     dumps=staticmethod(format.json_dumps),
                     loads=staticmethod(json.loads),
                 ),
-                transports=["websocket"],
+                allow_upgrades=False,
+                transports=[config.transport],
             )
         elif getattr(self.sio, "async_mode", "") != "asgi":
             msg = f"Custom `sio` must use `async_mode='asgi'`, not '{self.sio.async_mode}'."
@@ -767,7 +772,7 @@ class App(MiddlewareMixin, LifespanMixin):
         description: str | Var | None = None,
         image: str = constants.DefaultPage.IMAGE,
         on_load: EventType[()] | None = None,
-        meta: list[dict[str, str]] = constants.DefaultPage.META_LIST,
+        meta: Sequence[Mapping[str, Any] | Component] = constants.DefaultPage.META_LIST,
         context: dict[str, Any] | None = None,
     ):
         """Add a page to the app.
@@ -1556,11 +1561,18 @@ class App(MiddlewareMixin, LifespanMixin):
         )
 
     @contextlib.asynccontextmanager
-    async def modify_state(self, token: str) -> AsyncIterator[BaseState]:
+    async def modify_state(
+        self,
+        token: str,
+        background: bool = False,
+        previous_dirty_vars: dict[str, set[str]] | None = None,
+    ) -> AsyncIterator[BaseState]:
         """Modify the state out of band.
 
         Args:
             token: The token to modify the state for.
+            background: Whether the modification is happening in a background task.
+            previous_dirty_vars: Vars that are considered dirty from a previous operation.
 
         Yields:
             The state to modify.
@@ -1573,15 +1585,20 @@ class App(MiddlewareMixin, LifespanMixin):
             raise RuntimeError(msg)
 
         # Get exclusive access to the state.
-        async with self.state_manager.modify_state(token) as state:
+        async with self.state_manager.modify_state_with_links(
+            token, previous_dirty_vars=previous_dirty_vars
+        ) as state:
             # No other event handler can modify the state while in this context.
             yield state
             delta = await state._get_resolved_delta()
+            state._clean()
             if delta:
-                # When the state is modified reset dirty status and emit the delta to the frontend.
-                state._clean()
+                # When the frontend vars are modified emit the delta to the frontend.
                 await self.event_namespace.emit_update(
-                    update=StateUpdate(delta=delta),
+                    update=StateUpdate(
+                        delta=delta,
+                        final=True if not background else None,
+                    ),
                     token=token,
                 )
 
@@ -1758,7 +1775,9 @@ async def process(
             constants.RouteVar.CLIENT_IP: client_ip,
         })
         # Get the state for the session exclusively.
-        async with app.state_manager.modify_state(event.substate_token) as state:
+        async with app.state_manager.modify_state_with_links(
+            event.substate_token, event=event
+        ) as state:
             # When this is a brand new instance of the state, signal the
             # frontend to reload before processing it.
             if (
@@ -1990,7 +2009,9 @@ def upload(app: App):
                 Each state update as JSON followed by a new line.
             """
             # Process the event.
-            async with app.state_manager.modify_state(event.substate_token) as state:
+            async with app.state_manager.modify_state_with_links(
+                event.substate_token
+            ) as state:
                 async for update in state._process(event):
                     # Postprocess the event.
                     update = await app._postprocess(state, event, update)
@@ -2025,11 +2046,13 @@ class EventNamespace(AsyncNamespace):
         self._token_manager = TokenManager.create()
 
     @property
-    def token_to_sid(self) -> dict[str, str]:
+    def token_to_sid(self) -> Mapping[str, str]:
         """Get token to SID mapping for backward compatibility.
 
+        Note: this mapping is read-only.
+
         Returns:
-            The token to SID mapping dict.
+            The token to SID mapping.
         """
         # For backward compatibility, expose the underlying dict
         return self._token_manager.token_to_sid
@@ -2051,6 +2074,9 @@ class EventNamespace(AsyncNamespace):
             sid: The Socket.IO session id.
             environ: The request information, including HTTP headers.
         """
+        if isinstance(self._token_manager, RedisTokenManager):
+            # Make sure this instance is watching for updates from other instances.
+            self._token_manager.ensure_lost_and_found_task(self.emit_update)
         query_params = urllib.parse.parse_qs(environ.get("QUERY_STRING", ""))
         token_list = query_params.get("token", [])
         if token_list:
@@ -2064,11 +2090,14 @@ class EventNamespace(AsyncNamespace):
                 f"Frontend version {subprotocol} for session {sid} does not match the backend version {constants.Reflex.VERSION}."
             )
 
-    def on_disconnect(self, sid: str):
+    def on_disconnect(self, sid: str) -> asyncio.Task | None:
         """Event for when the websocket disconnects.
 
         Args:
             sid: The Socket.IO session id.
+
+        Returns:
+            An asyncio Task for cleaning up the token, or None.
         """
         # Get token before cleaning up
         disconnect_token = self.sid_to_token.get(sid)
@@ -2080,9 +2109,13 @@ class EventNamespace(AsyncNamespace):
             )
             # Don't await to avoid blocking disconnect, but handle potential errors
             task.add_done_callback(
-                lambda t: t.exception()
-                and console.error(f"Token cleanup error: {t.exception()}")
+                lambda t: (
+                    t.exception()
+                    and console.error(f"Token cleanup error: {t.exception()}")
+                )
             )
+            return task
+        return None
 
     async def emit_update(self, update: StateUpdate, token: str) -> None:
         """Emit an update to the client.
@@ -2092,16 +2125,30 @@ class EventNamespace(AsyncNamespace):
             token: The client token (tab) associated with the event.
         """
         client_token, _ = _split_substate_key(token)
-        sid = self.token_to_sid.get(client_token)
-        if sid is None:
-            # If the sid is None, we are not connected to a client. Prevent sending
-            # updates to all clients.
-            console.warn(f"Attempting to send delta to disconnected client {token!r}")
+        socket_record = self._token_manager.token_to_socket.get(client_token)
+        if (
+            socket_record is None
+            or socket_record.instance_id != self._token_manager.instance_id
+        ):
+            if isinstance(self._token_manager, RedisTokenManager):
+                # The socket belongs to another instance of the app, send it to the lost and found.
+                if not await self._token_manager.emit_lost_and_found(
+                    client_token, update
+                ):
+                    console.warn(
+                        f"Failed to send delta to lost and found for client {token!r}"
+                    )
+            else:
+                # If the socket record is None, we are not connected to a client. Prevent sending
+                # updates to all clients.
+                console.warn(
+                    f"Attempting to send delta to disconnected client {token!r}"
+                )
             return
         # Creating a task prevents the update from being blocked behind other coroutines.
         await asyncio.create_task(
-            self.emit(str(constants.SocketEvent.EVENT), update, to=sid),
-            name=f"reflex_emit_event|{token}|{sid}|{time.time()}",
+            self.emit(str(constants.SocketEvent.EVENT), update, to=socket_record.sid),
+            name=f"reflex_emit_event|{token}|{socket_record.sid}|{time.time()}",
         )
 
     async def on_event(self, sid: str, data: Any):
@@ -2173,7 +2220,8 @@ class EventNamespace(AsyncNamespace):
 
         # Unroll reverse proxy forwarded headers.
         client_ip = (
-            headers.get(
+            headers
+            .get(
                 "x-forwarded-for",
                 client_ip,
             )
@@ -2213,7 +2261,7 @@ class EventNamespace(AsyncNamespace):
             await self.emit("new_token", new_token, to=sid)
 
         # Update client state to apply new sid/token for running background tasks.
-        async with self.app.modify_state(
+        async with self.app.state_manager.modify_state(
             _substate_key(new_token or token, self.app.state_manager.state)
         ) as state:
             state.router_data[constants.RouteVar.SESSION_ID] = sid

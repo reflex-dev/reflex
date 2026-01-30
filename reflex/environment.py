@@ -17,6 +17,7 @@ from typing import (
     Annotated,
     Any,
     Generic,
+    Literal,
     TypeVar,
     get_args,
     get_origin,
@@ -211,6 +212,17 @@ def interpret_enum_env(value: str, field_type: GenericType, field_name: str) -> 
         raise EnvironmentVarValueError(msg) from ve
 
 
+@dataclasses.dataclass(frozen=True, kw_only=True, slots=True)
+class SequenceOptions:
+    """Options for interpreting Sequence environment variables."""
+
+    delimiter: str = ":"
+    strip: bool = False
+
+
+DEFAULT_SEQUENCE_OPTIONS = SequenceOptions()
+
+
 def interpret_env_var_value(
     value: str, field_type: GenericType, field_name: str
 ) -> Any:
@@ -256,14 +268,47 @@ def interpret_env_var_value(
         return interpret_existing_path_env(value, field_name)
     if field_type is Plugin:
         return interpret_plugin_env(value, field_name)
+    if get_origin(field_type) is Literal:
+        literal_values = get_args(field_type)
+        for literal_value in literal_values:
+            if isinstance(literal_value, str) and literal_value == value:
+                return literal_value
+            if isinstance(literal_value, bool):
+                try:
+                    interpreted_bool = interpret_boolean_env(value, field_name)
+                    if interpreted_bool == literal_value:
+                        return interpreted_bool
+                except EnvironmentVarValueError:
+                    continue
+            if isinstance(literal_value, int):
+                try:
+                    interpreted_int = interpret_int_env(value, field_name)
+                    if interpreted_int == literal_value:
+                        return interpreted_int
+                except EnvironmentVarValueError:
+                    continue
+        msg = f"Invalid literal value: {value!r} for {field_name}, expected one of {literal_values}"
+        raise EnvironmentVarValueError(msg)
+    # If the field is Annotated with SequenceOptions, extract the options
+    sequence_options = DEFAULT_SEQUENCE_OPTIONS
+    if get_origin(field_type) is Annotated:
+        annotated_args = get_args(field_type)
+        field_type = annotated_args[0]
+        for arg in annotated_args[1:]:
+            if isinstance(arg, SequenceOptions):
+                sequence_options = arg
+                break
     if get_origin(field_type) in (list, Sequence):
+        items = value.split(sequence_options.delimiter)
+        if sequence_options.strip:
+            items = [item.strip() for item in items]
         return [
             interpret_env_var_value(
                 v,
                 get_args(field_type)[0],
                 f"{field_name}[{i}]",
             )
-            for i, v in enumerate(value.split(":"))
+            for i, v in enumerate(items)
         ]
     if isinstance(field_type, type) and issubclass(field_type, enum.Enum):
         return interpret_enum_env(value, field_type, field_name)
@@ -561,6 +606,9 @@ class EnvironmentVariables:
     # Path to the alembic config file
     ALEMBIC_CONFIG: EnvVar[ExistingPath] = env_var(Path(constants.ALEMBIC_CONFIG))
 
+    # Include schemas in alembic migrations.
+    ALEMBIC_INCLUDE_SCHEMAS: EnvVar[bool] = env_var(False)
+
     # Disable SSL verification for HTTPX requests.
     SSL_NO_VERIFY: EnvVar[bool] = env_var(False)
 
@@ -687,6 +735,12 @@ class EnvironmentVariables:
     # Whether to force a full reload on changes.
     VITE_FORCE_FULL_RELOAD: EnvVar[bool] = env_var(False)
 
+    # Whether to enable Rolldown's experimental HMR.
+    VITE_EXPERIMENTAL_HMR: EnvVar[bool] = env_var(False)
+
+    # Whether to generate sourcemaps for the frontend.
+    VITE_SOURCEMAP: EnvVar[Literal[False, True, "inline", "hidden"]] = env_var(False)  # noqa: RUF038
+
     # Whether to enable SSR for the frontend.
     REFLEX_SSR: EnvVar[bool] = env_var(True)
 
@@ -695,6 +749,18 @@ class EnvironmentVariables:
 
     # How long to delay writing updated states to disk. (Higher values mean less writes, but more chance of lost data.)
     REFLEX_STATE_MANAGER_DISK_DEBOUNCE_SECONDS: EnvVar[float] = env_var(2.0)
+
+    # How long to wait between automatic reload on frontend error to avoid reload loops.
+    REFLEX_AUTO_RELOAD_COOLDOWN_TIME_MS: EnvVar[int] = env_var(10_000)
+
+    # Whether to enable debug logging for the redis state manager.
+    REFLEX_STATE_MANAGER_REDIS_DEBUG: EnvVar[bool] = env_var(False)
+
+    # Whether to opportunistically hold the redis lock to allow fast in-memory access while uncontended.
+    REFLEX_OPLOCK_ENABLED: EnvVar[bool] = env_var(False)
+
+    # How long to opportunistically hold the redis lock in milliseconds (must be less than the token expiration).
+    REFLEX_OPLOCK_HOLD_TIME_MS: EnvVar[int] = env_var(0)
 
 
 environment = EnvironmentVariables()

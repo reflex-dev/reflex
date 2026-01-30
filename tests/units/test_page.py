@@ -31,7 +31,7 @@ def test_page_decorator_with_kwargs():
         title="Foo",
         image="foo.png",
         description="Foo description",
-        meta=["foo-meta"],
+        meta=[{"name": "keywords", "content": "foo, test"}],
         script_tags=["foo-script"],
         on_load=load_foo,
     )(foo_)
@@ -41,7 +41,7 @@ def test_page_decorator_with_kwargs():
     assert page_data == {
         "description": "Foo description",
         "image": "foo.png",
-        "meta": ["foo-meta"],
+        "meta": [{"name": "keywords", "content": "foo, test"}],
         "on_load": load_foo,
         "route": "foo",
         "script_tags": ["foo-script"],

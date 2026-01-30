@@ -111,6 +111,7 @@ class DebounceInput(Component):
         child_ref = child.get_ref()
         if props.get("input_ref") is None and child_ref:
             props["input_ref"] = Var(_js_expr=child_ref, _var_type=str)
+        if child.id is not None:
             props["id"] = child.id
 
         # Set the child element to wrap, including any imports/hooks from the child.
@@ -132,8 +133,8 @@ class DebounceInput(Component):
         component.children = child.children
         component._rename_props = child._rename_props  # pyright: ignore[reportAttributeAccessIssue]
         outer_get_all_custom_code = component._get_all_custom_code
-        component._get_all_custom_code = lambda: outer_get_all_custom_code() | (
-            child._get_all_custom_code()
+        component._get_all_custom_code = lambda: (
+            outer_get_all_custom_code() | (child._get_all_custom_code())
         )
         return component
 

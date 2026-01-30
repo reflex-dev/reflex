@@ -31,24 +31,12 @@
     line-height: 1.5; /* 1 */
     -webkit-text-size-adjust: 100%; /* 2 */
     tab-size: 4; /* 3 */
-    font-family: --theme(
-      --default-font-family,
-      ui-sans-serif,
-      system-ui,
-      sans-serif,
-      "Apple Color Emoji",
-      "Segoe UI Emoji",
-      "Segoe UI Symbol",
-      "Noto Color Emoji"
-    ); /* 4 */
-    font-feature-settings: --theme(
-      --default-font-feature-settings,
-      normal
-    ); /* 5 */
-    font-variation-settings: --theme(
-      --default-font-variation-settings,
-      normal
-    ); /* 6 */
+    font-family:
+      --default-font-family, ui-sans-serif, system-ui, sans-serif,
+      "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol",
+      "Noto Color Emoji"; /* 4 */
+    font-feature-settings: --default-font-feature-settings, normal; /* 5 */
+    font-variation-settings: --default-font-variation-settings, normal; /* 6 */
     -webkit-tap-highlight-color: transparent; /* 7 */
   }
 
@@ -117,25 +105,12 @@
   kbd,
   samp,
   pre {
-    font-family: --theme(
-      --default-mono-font-family,
-      ui-monospace,
-      SFMono-Regular,
-      Menlo,
-      Monaco,
-      Consolas,
-      "Liberation Mono",
-      "Courier New",
-      monospace
-    ); /* 1 */
-    font-feature-settings: --theme(
-      --default-mono-font-feature-settings,
-      normal
-    ); /* 2 */
-    font-variation-settings: --theme(
-      --default-mono-font-variation-settings,
-      normal
-    ); /* 3 */
+    font-family:
+      --default-mono-font-family, ui-monospace, SFMono-Regular, Menlo, Monaco,
+      Consolas, "Liberation Mono", "Courier New", monospace; /* 1 */
+    font-feature-settings: --default-mono-font-feature-settings, normal; /* 2 */
+    font-variation-settings:
+      --default-mono-font-variation-settings, normal; /* 3 */
     font-size: 1em; /* 4 */
   }
 
