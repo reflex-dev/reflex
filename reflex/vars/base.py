@@ -8,7 +8,6 @@ import dataclasses
 import datetime
 import functools
 import inspect
-import json
 import re
 import string
 import uuid
@@ -52,7 +51,7 @@ from reflex.utils.exceptions import (
     VarDependencyError,
     VarTypeError,
 )
-from reflex.utils.format import format_state_name
+from reflex.utils.format import format_state_name, json_loads_fast
 from reflex.utils.imports import (
     ImmutableImportDict,
     ImmutableParsedImportDict,
@@ -1179,7 +1178,7 @@ class Var(Generic[VAR_TYPE], metaclass=MetaclassVar):
         if isinstance(self, LiteralVar):
             return self._var_value
         try:
-            return json.loads(str(self))
+            return json_loads_fast(str(self))
         except ValueError:
             return str(self)
 

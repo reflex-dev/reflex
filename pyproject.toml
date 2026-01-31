@@ -57,6 +57,7 @@ db = [
   "sqlmodel >=0.0.24,<0.1",
 ]
 monitoring = ["pyleak >=0.1.14,<1.0"]
+orjson = ["orjson >=3.9"]
 
 [project.urls]
 homepage = "https://reflex.dev"
@@ -75,6 +76,7 @@ dev = [
   "hatchling",
   "libsass",
   "numpy",
+  "orjson >=3.9",
   "pandas",
   "pillow",
   "playwright",

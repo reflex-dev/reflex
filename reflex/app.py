@@ -545,8 +545,8 @@ class App(MiddlewareMixin, LifespanMixin):
                 ping_interval=environment.REFLEX_SOCKET_INTERVAL.get(),
                 ping_timeout=environment.REFLEX_SOCKET_TIMEOUT.get(),
                 json=SimpleNamespace(
-                    dumps=staticmethod(format.json_dumps),
-                    loads=staticmethod(json.loads),
+                    dumps=staticmethod(format.json_dumps_fast),
+                    loads=staticmethod(format.json_loads_fast),
                 ),
                 allow_upgrades=False,
                 transports=[config.transport],

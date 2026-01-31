@@ -686,6 +686,73 @@ def json_dumps(obj: Any, **kwargs) -> str:
     return json.dumps(obj, **kwargs)
 
 
+def _orjson_default(obj: Any) -> Any:
+    """Handle custom types for orjson serialization.
+
+    Args:
+        obj: The object to serialize.
+
+    Returns:
+        A JSON-serializable representation of the object.
+
+    Raises:
+        TypeError: If the object is not JSON serializable.
+    """
+    from reflex.utils import serializers
+
+    result = serializers.serialize(obj)
+    if result is not None:
+        return result
+    msg = f"Object of type {type(obj).__name__} is not JSON serializable"
+    raise TypeError(msg)
+
+
+def json_dumps_fast(obj: Any) -> str:
+    """Fast JSON serialization using orjson when available.
+
+    This function provides a faster alternative to json_dumps() by using
+    the orjson library (written in Rust) when it's installed. Falls back
+    to the standard json_dumps() if orjson is not available.
+
+    Args:
+        obj: The object to serialize to JSON.
+
+    Returns:
+        A JSON string representation of the object.
+    """
+    try:
+        import orjson
+
+        return orjson.dumps(
+            obj,
+            default=_orjson_default,
+            option=orjson.OPT_NON_STR_KEYS | orjson.OPT_SERIALIZE_NUMPY,
+        ).decode("utf-8")
+    except ImportError:
+        return json_dumps(obj)
+
+
+def json_loads_fast(data: str | bytes) -> Any:
+    """Fast JSON deserialization using orjson when available.
+
+    This function provides a faster alternative to json.loads() by using
+    the orjson library (written in Rust) when it's installed. Falls back
+    to the standard json.loads() if orjson is not available.
+
+    Args:
+        data: The JSON string or bytes to deserialize.
+
+    Returns:
+        The deserialized Python object.
+    """
+    try:
+        import orjson
+
+        return orjson.loads(data)
+    except ImportError:
+        return json.loads(data)
+
+
 def collect_form_dict_names(form_dict: dict[str, Any]) -> dict[str, Any]:
     """Collapse keys with consecutive suffixes into a single list value.
 
