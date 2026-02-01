@@ -122,8 +122,8 @@ def minify_disabled_app(
         app_name="minify_disabled",
         app_source=partial(
             MinificationApp,
-            root_state_id=0,
-            sub_state_id=1,
+            root_state_id=3,
+            sub_state_id=4,
             increment_event_id=0,
             update_message_event_id=0,
         ),
