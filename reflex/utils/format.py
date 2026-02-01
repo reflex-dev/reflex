@@ -448,7 +448,7 @@ def get_event_handler_parts(handler: EventHandler) -> tuple[str, str]:
     Returns:
         The state and function name (possibly minified based on REFLEX_MINIFY_EVENTS).
     """
-    from reflex.environment import MinifyMode, environment
+    from reflex.environment import EventMinifyMode, environment
     from reflex.event import EVENT_ID_MARKER
     from reflex.state import State, _int_to_minified_name
 
@@ -470,7 +470,7 @@ def get_event_handler_parts(handler: EventHandler) -> tuple[str, str]:
 
     # Check for event_id minification
     mode = environment.REFLEX_MINIFY_EVENTS.get()
-    if mode != MinifyMode.DISABLED:
+    if mode != EventMinifyMode.DISABLED:
         event_id = getattr(handler.fn, EVENT_ID_MARKER, None)
         if event_id is not None:
             name = _int_to_minified_name(event_id)

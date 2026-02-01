@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from reflex.environment import MinifyMode, environment
+from reflex.environment import EventMinifyMode, StateMinifyMode, environment
 from reflex.event import EVENT_ID_MARKER
 from reflex.state import (
     BaseState,
@@ -124,7 +124,7 @@ class TestGetNameMinification:
 
     def test_disabled_mode_uses_full_name(self, reset_minify_mode):
         """Test DISABLED mode always uses full name even with state_id."""
-        environment.REFLEX_MINIFY_STATES.set(MinifyMode.DISABLED)
+        environment.REFLEX_MINIFY_STATES.set(StateMinifyMode.DISABLED)
 
         class TestState(BaseState, state_id=300):
             pass
@@ -139,7 +139,7 @@ class TestGetNameMinification:
 
     def test_enabled_mode_with_id_uses_minified(self, reset_minify_mode):
         """Test ENABLED mode with state_id uses minified name."""
-        environment.REFLEX_MINIFY_STATES.set(MinifyMode.ENABLED)
+        environment.REFLEX_MINIFY_STATES.set(StateMinifyMode.ENABLED)
 
         class TestState(BaseState, state_id=301):
             pass
@@ -152,7 +152,7 @@ class TestGetNameMinification:
 
     def test_enabled_mode_without_id_uses_full_name(self, reset_minify_mode):
         """Test ENABLED mode without state_id uses full name."""
-        environment.REFLEX_MINIFY_STATES.set(MinifyMode.ENABLED)
+        environment.REFLEX_MINIFY_STATES.set(StateMinifyMode.ENABLED)
 
         class TestState(BaseState):
             pass
@@ -166,7 +166,7 @@ class TestGetNameMinification:
 
     def test_enforce_mode_without_id_raises(self, reset_minify_mode):
         """Test ENFORCE mode without state_id raises error during class definition."""
-        environment.REFLEX_MINIFY_STATES.set(MinifyMode.ENFORCE)
+        environment.REFLEX_MINIFY_STATES.set(StateMinifyMode.ENFORCE)
 
         # Error is raised during class definition because get_name() is called
         # during __init_subclass__
@@ -177,7 +177,7 @@ class TestGetNameMinification:
 
     def test_enforce_mode_with_id_uses_minified(self, reset_minify_mode):
         """Test ENFORCE mode with state_id uses minified name."""
-        environment.REFLEX_MINIFY_STATES.set(MinifyMode.ENFORCE)
+        environment.REFLEX_MINIFY_STATES.set(StateMinifyMode.ENFORCE)
 
         class TestState(BaseState, state_id=302):
             pass
@@ -194,7 +194,7 @@ class TestMixinState:
 
     def test_mixin_no_state_id_required(self, reset_minify_mode):
         """Test that mixin states don't require state_id even in ENFORCE mode."""
-        environment.REFLEX_MINIFY_STATES.set(MinifyMode.ENFORCE)
+        environment.REFLEX_MINIFY_STATES.set(StateMinifyMode.ENFORCE)
 
         class MixinState(BaseState, mixin=True):
             pass
@@ -292,7 +292,7 @@ class TestEventHandlerMinification:
         import reflex as rx
         from reflex.utils.format import get_event_handler_parts
 
-        environment.REFLEX_MINIFY_EVENTS.set(MinifyMode.DISABLED)
+        environment.REFLEX_MINIFY_EVENTS.set(EventMinifyMode.DISABLED)
 
         class TestState(BaseState, state_id=500):
             @rx.event(event_id=0)
@@ -310,7 +310,7 @@ class TestEventHandlerMinification:
         import reflex as rx
         from reflex.utils.format import get_event_handler_parts
 
-        environment.REFLEX_MINIFY_EVENTS.set(MinifyMode.ENABLED)
+        environment.REFLEX_MINIFY_EVENTS.set(EventMinifyMode.ENABLED)
 
         class TestState(BaseState, state_id=501):
             @rx.event(event_id=5)
@@ -330,7 +330,7 @@ class TestEventHandlerMinification:
         import reflex as rx
         from reflex.utils.format import get_event_handler_parts
 
-        environment.REFLEX_MINIFY_EVENTS.set(MinifyMode.ENABLED)
+        environment.REFLEX_MINIFY_EVENTS.set(EventMinifyMode.ENABLED)
 
         class TestState(BaseState, state_id=502):
             @rx.event
@@ -348,7 +348,7 @@ class TestEventHandlerMinification:
         """Test ENFORCE mode without event_id raises error during class definition."""
         import reflex as rx
 
-        environment.REFLEX_MINIFY_EVENTS.set(MinifyMode.ENFORCE)
+        environment.REFLEX_MINIFY_EVENTS.set(EventMinifyMode.ENFORCE)
 
         with pytest.raises(StateValueError, match="missing required event_id"):
 
@@ -362,7 +362,7 @@ class TestEventHandlerMinification:
         import reflex as rx
         from reflex.utils.format import get_event_handler_parts
 
-        environment.REFLEX_MINIFY_EVENTS.set(MinifyMode.ENFORCE)
+        environment.REFLEX_MINIFY_EVENTS.set(EventMinifyMode.ENFORCE)
 
         class TestState(BaseState, state_id=504):
             @rx.event(event_id=0)
@@ -386,7 +386,7 @@ class TestMixinEventHandlers:
         import reflex as rx
         from reflex.utils.format import get_event_handler_parts
 
-        environment.REFLEX_MINIFY_EVENTS.set(MinifyMode.ENABLED)
+        environment.REFLEX_MINIFY_EVENTS.set(EventMinifyMode.ENABLED)
 
         class MixinState(BaseState, mixin=True):
             @rx.event(event_id=10)
@@ -422,7 +422,7 @@ class TestMixinEventHandlers:
         """Test that conflicting event_ids from mixin and concrete state raises error."""
         import reflex as rx
 
-        environment.REFLEX_MINIFY_EVENTS.set(MinifyMode.ENABLED)
+        environment.REFLEX_MINIFY_EVENTS.set(EventMinifyMode.ENABLED)
 
         class MixinState(BaseState, mixin=True):
             @rx.event(event_id=0)
@@ -512,7 +512,7 @@ class TestInternalStateIds:
 
     def test_internal_states_minified_names(self, reset_minify_mode):
         """Test that internal states get correct minified names when enabled."""
-        environment.REFLEX_MINIFY_STATES.set(MinifyMode.ENABLED)
+        environment.REFLEX_MINIFY_STATES.set(StateMinifyMode.ENABLED)
 
         # Clear the lru_cache to get fresh results
         State.get_name.cache_clear()
@@ -531,7 +531,7 @@ class TestInternalStateIds:
 
     def test_internal_states_full_names_when_disabled(self, reset_minify_mode):
         """Test that internal states use full names when minification is disabled."""
-        environment.REFLEX_MINIFY_STATES.set(MinifyMode.DISABLED)
+        environment.REFLEX_MINIFY_STATES.set(StateMinifyMode.DISABLED)
 
         # Clear the lru_cache to get fresh results
         State.get_name.cache_clear()
@@ -544,3 +544,197 @@ class TestInternalStateIds:
         assert "frontend" in FrontendEventExceptionState.get_name().lower()
         assert "update" in UpdateVarsInternalState.get_name().lower()
         assert "on_load" in OnLoadInternalState.get_name().lower()
+
+
+class TestBestEffortMode:
+    """Tests for BEST_EFFORT event minification mode."""
+
+    def test_best_effort_assigns_ids_to_handlers_without_explicit_id(
+        self, reset_minify_mode
+    ):
+        """Test that BEST_EFFORT mode assigns event_ids to handlers without explicit IDs."""
+        import reflex as rx
+
+        environment.REFLEX_MINIFY_EVENTS.set(EventMinifyMode.BEST_EFFORT)
+
+        class TestState(BaseState, state_id=700):
+            @rx.event
+            def handler_a(self):
+                pass
+
+            @rx.event
+            def handler_b(self):
+                pass
+
+        # Both handlers should have event_ids assigned
+        assert 0 in TestState._event_id_to_name
+        assert 1 in TestState._event_id_to_name
+        # Should be assigned alphabetically
+        assert TestState._event_id_to_name[0] == "handler_a"
+        assert TestState._event_id_to_name[1] == "handler_b"
+
+    def test_best_effort_starts_after_highest_explicit_id(self, reset_minify_mode):
+        """Test that BEST_EFFORT mode starts assigning IDs after the highest explicit ID."""
+        import reflex as rx
+
+        environment.REFLEX_MINIFY_EVENTS.set(EventMinifyMode.BEST_EFFORT)
+
+        class TestState(BaseState, state_id=701):
+            @rx.event(event_id=5)
+            def explicit_handler(self):
+                pass
+
+            @rx.event(event_id=10)
+            def another_explicit(self):
+                pass
+
+            @rx.event
+            def auto_handler(self):
+                pass
+
+        # Explicit handlers should keep their IDs
+        assert TestState._event_id_to_name[5] == "explicit_handler"
+        assert TestState._event_id_to_name[10] == "another_explicit"
+        # Auto-assigned handler should start at max_explicit_id + 1 = 11
+        assert TestState._event_id_to_name[11] == "auto_handler"
+
+    def test_best_effort_assigns_ids_alphabetically(self, reset_minify_mode):
+        """Test that BEST_EFFORT mode assigns IDs to handlers alphabetically by name."""
+        import reflex as rx
+
+        environment.REFLEX_MINIFY_EVENTS.set(EventMinifyMode.BEST_EFFORT)
+
+        class TestState(BaseState, state_id=702):
+            @rx.event
+            def zebra_handler(self):
+                pass
+
+            @rx.event
+            def alpha_handler(self):
+                pass
+
+            @rx.event
+            def middle_handler(self):
+                pass
+
+        # Should be assigned alphabetically: alpha, middle, zebra
+        assert TestState._event_id_to_name[0] == "alpha_handler"
+        assert TestState._event_id_to_name[1] == "middle_handler"
+        assert TestState._event_id_to_name[2] == "zebra_handler"
+
+    def test_best_effort_with_no_explicit_ids(self, reset_minify_mode):
+        """Test that BEST_EFFORT mode works with no explicit IDs (starts at 0)."""
+        import reflex as rx
+
+        environment.REFLEX_MINIFY_EVENTS.set(EventMinifyMode.BEST_EFFORT)
+
+        class TestState(BaseState, state_id=703):
+            @rx.event
+            def first_handler(self):
+                pass
+
+            @rx.event
+            def second_handler(self):
+                pass
+
+        # Should start at 0 since no explicit IDs
+        assert TestState._event_id_to_name[0] == "first_handler"
+        assert TestState._event_id_to_name[1] == "second_handler"
+
+    def test_best_effort_minifies_all_handlers(self, reset_minify_mode):
+        """Test that BEST_EFFORT mode minifies all handlers in format output."""
+        import reflex as rx
+        from reflex.utils.format import get_event_handler_parts
+
+        environment.REFLEX_MINIFY_EVENTS.set(EventMinifyMode.BEST_EFFORT)
+
+        class TestState(BaseState, state_id=704):
+            @rx.event(event_id=0)
+            def explicit_handler(self):
+                pass
+
+            @rx.event
+            def auto_handler(self):
+                pass
+
+        TestState.get_name.cache_clear()
+
+        explicit = TestState.event_handlers["explicit_handler"]
+        auto = TestState.event_handlers["auto_handler"]
+
+        _, explicit_name = get_event_handler_parts(explicit)
+        _, auto_name = get_event_handler_parts(auto)
+
+        # Both should be minified
+        assert explicit_name == _int_to_minified_name(0)  # 'a'
+        assert auto_name == _int_to_minified_name(1)  # 'b'
+
+    def test_best_effort_skips_gaps_in_explicit_ids(self, reset_minify_mode):
+        """Test that BEST_EFFORT mode skips gaps in explicit IDs (doesn't fill them)."""
+        import reflex as rx
+
+        environment.REFLEX_MINIFY_EVENTS.set(EventMinifyMode.BEST_EFFORT)
+
+        class TestState(BaseState, state_id=705):
+            @rx.event(event_id=0)
+            def handler_zero(self):
+                pass
+
+            @rx.event(event_id=5)
+            def handler_five(self):
+                pass
+
+            @rx.event(event_id=10)
+            def handler_ten(self):
+                pass
+
+            @rx.event
+            def auto_handler(self):
+                pass
+
+        # Explicit handlers keep their IDs
+        assert TestState._event_id_to_name[0] == "handler_zero"
+        assert TestState._event_id_to_name[5] == "handler_five"
+        assert TestState._event_id_to_name[10] == "handler_ten"
+        # Auto-assigned starts at 11, not filling gaps at 1-4 or 6-9
+        assert TestState._event_id_to_name[11] == "auto_handler"
+        # Verify gaps are not filled
+        assert 1 not in TestState._event_id_to_name
+        assert 6 not in TestState._event_id_to_name
+
+    def test_best_effort_mixed_explicit_and_auto(self, reset_minify_mode):
+        """Test BEST_EFFORT with a mix of explicit and auto-assigned handlers."""
+        import reflex as rx
+        from reflex.utils.format import get_event_handler_parts
+
+        environment.REFLEX_MINIFY_EVENTS.set(EventMinifyMode.BEST_EFFORT)
+
+        class TestState(BaseState, state_id=706):
+            @rx.event(event_id=3)
+            def explicit_three(self):
+                pass
+
+            @rx.event
+            def auto_alpha(self):
+                pass
+
+            @rx.event
+            def auto_beta(self):
+                pass
+
+        TestState.get_name.cache_clear()
+
+        # Check registry
+        assert TestState._event_id_to_name[3] == "explicit_three"
+        assert TestState._event_id_to_name[4] == "auto_alpha"  # alphabetically first
+        assert TestState._event_id_to_name[5] == "auto_beta"  # alphabetically second
+
+        # Check that all handlers are minified correctly
+        for name, expected_id in [
+            ("explicit_three", 3),
+            ("auto_alpha", 4),
+            ("auto_beta", 5),
+        ]:
+            handler = TestState.event_handlers[name]
+            _, minified = get_event_handler_parts(handler)
+            assert minified == _int_to_minified_name(expected_id)

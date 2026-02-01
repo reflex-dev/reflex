@@ -10,7 +10,7 @@ from typing import TYPE_CHECKING
 import pytest
 from selenium.webdriver.common.by import By
 
-from reflex.environment import MinifyMode, environment
+from reflex.environment import EventMinifyMode, StateMinifyMode, environment
 from reflex.state import _int_to_minified_name
 from reflex.testing import AppHarness
 
@@ -114,8 +114,8 @@ def minify_disabled_app(
     """
     os.environ["REFLEX_MINIFY_STATES"] = "disabled"
     os.environ["REFLEX_MINIFY_EVENTS"] = "disabled"
-    environment.REFLEX_MINIFY_STATES.set(MinifyMode.DISABLED)
-    environment.REFLEX_MINIFY_EVENTS.set(MinifyMode.DISABLED)
+    environment.REFLEX_MINIFY_STATES.set(StateMinifyMode.DISABLED)
+    environment.REFLEX_MINIFY_EVENTS.set(EventMinifyMode.DISABLED)
 
     with app_harness_env.create(
         root=tmp_path_factory.mktemp("minify_disabled"),
@@ -133,8 +133,8 @@ def minify_disabled_app(
     # Cleanup
     os.environ.pop("REFLEX_MINIFY_STATES", None)
     os.environ.pop("REFLEX_MINIFY_EVENTS", None)
-    environment.REFLEX_MINIFY_STATES.set(MinifyMode.DISABLED)
-    environment.REFLEX_MINIFY_EVENTS.set(MinifyMode.DISABLED)
+    environment.REFLEX_MINIFY_STATES.set(StateMinifyMode.DISABLED)
+    environment.REFLEX_MINIFY_EVENTS.set(EventMinifyMode.DISABLED)
 
 
 @pytest.fixture
@@ -153,8 +153,8 @@ def minify_enabled_app(
     """
     os.environ["REFLEX_MINIFY_STATES"] = "enabled"
     os.environ["REFLEX_MINIFY_EVENTS"] = "enabled"
-    environment.REFLEX_MINIFY_STATES.set(MinifyMode.ENABLED)
-    environment.REFLEX_MINIFY_EVENTS.set(MinifyMode.ENABLED)
+    environment.REFLEX_MINIFY_STATES.set(StateMinifyMode.ENABLED)
+    environment.REFLEX_MINIFY_EVENTS.set(EventMinifyMode.ENABLED)
 
     with app_harness_env.create(
         root=tmp_path_factory.mktemp("minify_enabled"),
@@ -172,8 +172,8 @@ def minify_enabled_app(
     # Cleanup
     os.environ.pop("REFLEX_MINIFY_STATES", None)
     os.environ.pop("REFLEX_MINIFY_EVENTS", None)
-    environment.REFLEX_MINIFY_STATES.set(MinifyMode.DISABLED)
-    environment.REFLEX_MINIFY_EVENTS.set(MinifyMode.DISABLED)
+    environment.REFLEX_MINIFY_STATES.set(StateMinifyMode.DISABLED)
+    environment.REFLEX_MINIFY_EVENTS.set(EventMinifyMode.DISABLED)
 
 
 @pytest.fixture

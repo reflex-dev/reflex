@@ -10,6 +10,7 @@ import dataclasses
 import datetime
 import functools
 import inspect
+import operator
 import pickle
 import re
 import sys
@@ -741,7 +742,9 @@ class BaseState(EvenMoreBasicBaseState):
 
         # Build event_id registry and validate uniqueness within this state class
         cls._event_id_to_name = {}
-        missing_event_ids: list[str] = []
+        handlers_with_id: list[tuple[str, Callable[..., Any], int]] = []
+        handlers_without_id: list[tuple[str, Callable[..., Any]]] = []
+
         for name, fn in events.items():
             event_id = getattr(fn, EVENT_ID_MARKER, None)
             if event_id is not None:
@@ -753,21 +756,37 @@ class BaseState(EvenMoreBasicBaseState):
                     )
                     raise StateValueError(msg)
                 cls._event_id_to_name[event_id] = name
+                handlers_with_id.append((name, fn, event_id))
             else:
-                missing_event_ids.append(name)
+                handlers_without_id.append((name, fn))
+
+        from reflex.environment import EventMinifyMode
+
+        minify_mode = environment.REFLEX_MINIFY_EVENTS.get()
 
         # In ENFORCE mode, all event handlers must have event_id
-        from reflex.environment import MinifyMode
-
-        if (
-            environment.REFLEX_MINIFY_EVENTS.get() == MinifyMode.ENFORCE
-            and missing_event_ids
-        ):
+        if minify_mode == EventMinifyMode.ENFORCE and handlers_without_id:
+            missing = [name for name, _ in handlers_without_id]
             msg = (
                 f"State '{cls.__name__}' in ENFORCE mode: event handlers "
-                f"{missing_event_ids} are missing required event_id."
+                f"{missing} are missing required event_id."
             )
             raise StateValueError(msg)
+
+        # In BEST_EFFORT mode, auto-assign IDs to handlers without explicit IDs
+        if minify_mode == EventMinifyMode.BEST_EFFORT and handlers_without_id:
+            # Find the highest user-defined event_id
+            max_explicit_id = max((eid for _, _, eid in handlers_with_id), default=-1)
+
+            # Sort handlers without IDs alphabetically by name for deterministic ordering
+            handlers_without_id.sort(key=operator.itemgetter(0))
+
+            # Assign IDs starting from max_explicit_id + 1
+            next_id = max_explicit_id + 1
+            for name, fn in handlers_without_id:
+                setattr(fn, EVENT_ID_MARKER, next_id)
+                cls._event_id_to_name[next_id] = name
+                next_id += 1
 
         # Initialize per-class var dependency tracking.
         cls._var_dependencies = {}
@@ -1124,7 +1143,7 @@ class BaseState(EvenMoreBasicBaseState):
         Raises:
             StateValueError: If ENFORCE mode is set and state_id is missing.
         """
-        from reflex.environment import MinifyMode
+        from reflex.environment import StateMinifyMode
         from reflex.utils.exceptions import StateValueError
 
         module = cls.__module__.replace(".", "___")
@@ -1132,14 +1151,14 @@ class BaseState(EvenMoreBasicBaseState):
 
         minify_mode = environment.REFLEX_MINIFY_STATES.get()
 
-        if minify_mode == MinifyMode.DISABLED:
+        if minify_mode == StateMinifyMode.DISABLED:
             return full_name
 
         if cls._state_id is not None:
             return _int_to_minified_name(cls._state_id)
 
         # state_id not set
-        if minify_mode == MinifyMode.ENFORCE:
+        if minify_mode == StateMinifyMode.ENFORCE:
             msg = (
                 f"State '{cls.__module__}.{cls.__name__}' is missing required state_id. "
                 f"Add state_id parameter: class {cls.__name__}(rx.State, state_id=N)"
