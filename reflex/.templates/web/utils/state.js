@@ -16,7 +16,7 @@ import {
   initialState,
   onLoadInternalEvent,
   state_name,
-  exception_state_name,
+  handle_frontend_exception,
   main_state_name,
   update_vars_internal,
 } from "$/utils/context";
@@ -969,7 +969,7 @@ export const useEventLoop = (
 
     window.onerror = function (msg, url, lineNo, columnNo, error) {
       addEvents([
-        ReflexEvent(`${exception_state_name}.handle_frontend_exception`, {
+        ReflexEvent(handle_frontend_exception, {
           info: error.name + ": " + error.message + "\n" + error.stack,
           component_stack: "",
         }),
@@ -981,7 +981,7 @@ export const useEventLoop = (
     //https://github.com/mknichel/javascript-errors?tab=readme-ov-file#promise-rejection-events
     window.onunhandledrejection = function (event) {
       addEvents([
-        ReflexEvent(`${exception_state_name}.handle_frontend_exception`, {
+        ReflexEvent(handle_frontend_exception, {
           info:
             event.reason?.name +
             ": " +

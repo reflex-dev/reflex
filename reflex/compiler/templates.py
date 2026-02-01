@@ -288,7 +288,9 @@ def context_template(
     update_vars_internal = format_event_handler(
         UpdateVarsInternalState.update_vars_internal
     )
-    exception_state_full = FrontendEventExceptionState.get_full_name()
+    handle_frontend_exception = format_event_handler(
+        FrontendEventExceptionState.handle_frontend_exception
+    )
 
     initial_state = initial_state or {}
     state_contexts_str = "".join([
@@ -304,7 +306,7 @@ export const main_state_name = "{main_state_name}"
 
 export const update_vars_internal = "{update_vars_internal}"
 
-export const exception_state_name = "{exception_state_full}"
+export const handle_frontend_exception = "{handle_frontend_exception}"
 
 // These events are triggered on initial load and each page navigation.
 export const onLoadInternalEvent = () => {{
@@ -343,7 +345,7 @@ export const main_state_name = undefined
 
 export const update_vars_internal = undefined
 
-export const exception_state_name = undefined
+export const handle_frontend_exception = undefined
 
 export const onLoadInternalEvent = () => []
 
