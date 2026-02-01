@@ -1,338 +1,355 @@
-"""Unit tests for state and event handler minification."""
+"""Unit tests for state and event handler minification via minify.json."""
 
 from __future__ import annotations
 
+import json
+
 import pytest
 
-from reflex.environment import EventMinifyMode, StateMinifyMode, environment
-from reflex.event import EVENT_ID_MARKER
-from reflex.state import (
-    BaseState,
-    FrontendEventExceptionState,
-    OnLoadInternalState,
-    State,
-    UpdateVarsInternalState,
-    _int_to_minified_name,
-    _minified_name_to_int,
+from reflex.minify import (
+    MINIFY_JSON,
+    SCHEMA_VERSION,
+    MinifyConfig,
+    clear_config_cache,
+    generate_minify_config,
+    get_event_id,
+    get_state_full_path,
+    get_state_id,
+    int_to_minified_name,
+    is_minify_enabled,
+    minified_name_to_int,
+    save_minify_config,
+    sync_minify_config,
+    validate_minify_config,
 )
-from reflex.utils.exceptions import StateValueError
-
-
-@pytest.fixture
-def reset_minify_mode():
-    """Reset minify modes to DISABLED after each test."""
-    original_states = environment.REFLEX_MINIFY_STATES.get()
-    original_events = environment.REFLEX_MINIFY_EVENTS.get()
-    yield
-    environment.REFLEX_MINIFY_STATES.set(original_states)
-    environment.REFLEX_MINIFY_EVENTS.set(original_events)
+from reflex.state import BaseState, State
 
 
 class TestIntToMinifiedName:
-    """Tests for _int_to_minified_name function."""
+    """Tests for int_to_minified_name function."""
 
     def test_zero(self):
         """Test that 0 maps to 'a'."""
-        assert _int_to_minified_name(0) == "a"
+        assert int_to_minified_name(0) == "a"
 
     def test_single_char(self):
         """Test single character mappings."""
-        assert _int_to_minified_name(1) == "b"
-        assert _int_to_minified_name(25) == "z"
-        assert _int_to_minified_name(26) == "A"
-        assert _int_to_minified_name(51) == "Z"
-        assert _int_to_minified_name(52) == "$"
-        assert _int_to_minified_name(53) == "_"
+        assert int_to_minified_name(1) == "b"
+        assert int_to_minified_name(25) == "z"
+        assert int_to_minified_name(26) == "A"
+        assert int_to_minified_name(51) == "Z"
+        assert int_to_minified_name(52) == "$"
+        assert int_to_minified_name(53) == "_"
 
     def test_two_chars(self):
         """Test two character mappings (base 54)."""
         # 54 = 1*54 + 0 -> 'ba'
-        assert _int_to_minified_name(54) == "ba"
+        assert int_to_minified_name(54) == "ba"
         # 55 = 1*54 + 1 -> 'bb'
-        assert _int_to_minified_name(55) == "bb"
+        assert int_to_minified_name(55) == "bb"
 
     def test_unique_names(self):
         """Test that a large range of IDs produce unique names."""
         names = set()
         for i in range(10000):
-            name = _int_to_minified_name(i)
+            name = int_to_minified_name(i)
             assert name not in names, f"Duplicate name {name} for id {i}"
             names.add(name)
 
-
-class TestStateIdValidation:
-    """Tests for state_id validation in __init_subclass__."""
-
-    def test_state_with_explicit_id(self):
-        """Test that a state can be created with an explicit state_id."""
-
-        class TestState(BaseState, state_id=100):
-            pass
-
-        assert TestState._state_id == 100
-
-    def test_state_without_id(self):
-        """Test that a state can be created without state_id."""
-
-        class TestState(BaseState):
-            pass
-
-        assert TestState._state_id is None
-
-    def test_duplicate_state_id_among_siblings_raises(self):
-        """Test that duplicate state_id among siblings raises StateValueError."""
-
-        class ParentState(BaseState, state_id=200):
-            pass
-
-        class FirstChild(ParentState, state_id=10):
-            pass
-
-        with pytest.raises(StateValueError, match="Duplicate state_id=10"):
-
-            class SecondChild(ParentState, state_id=10):
-                pass
-
-    def test_same_state_id_across_branches_allowed(self):
-        """Test that the same state_id can be used in different branches."""
-
-        class Root(BaseState, state_id=210):
-            pass
-
-        class BranchA(Root, state_id=1):
-            pass
-
-        class BranchB(Root, state_id=2):
-            pass
-
-        class LeafA(BranchA, state_id=5):
-            pass
-
-        class LeafB(BranchB, state_id=5):  # same state_id=5, different parent -- OK!
-            pass
-
-        # Both should succeed - state_id is per-parent (sibling uniqueness)
-        assert LeafA._state_id == 5
-        assert LeafB._state_id == 5
-        # But they have different full names
-        assert LeafA.get_parent_state() is BranchA
-        assert LeafB.get_parent_state() is BranchB
+    def test_negative_raises(self):
+        """Test that negative IDs raise ValueError."""
+        with pytest.raises(ValueError, match="non-negative"):
+            int_to_minified_name(-1)
 
 
-class TestGetNameMinification:
-    """Tests for get_name with minification modes."""
+class TestMinifiedNameToInt:
+    """Tests for minified_name_to_int reverse conversion."""
 
-    def test_disabled_mode_uses_full_name(self, reset_minify_mode):
-        """Test DISABLED mode always uses full name even with state_id."""
-        environment.REFLEX_MINIFY_STATES.set(StateMinifyMode.DISABLED)
+    def test_single_char(self):
+        """Test single character conversion."""
+        assert minified_name_to_int("a") == 0
+        assert minified_name_to_int("b") == 1
+        assert minified_name_to_int("z") == 25
+        assert minified_name_to_int("A") == 26
+        assert minified_name_to_int("Z") == 51
 
-        class TestState(BaseState, state_id=300):
-            pass
+    def test_roundtrip(self):
+        """Test that int -> minified -> int roundtrip works."""
+        for i in range(1000):
+            minified = int_to_minified_name(i)
+            result = minified_name_to_int(minified)
+            assert result == i, f"Roundtrip failed for {i}: {minified} -> {result}"
 
-        # Clear the lru_cache to get fresh result
-        TestState.get_name.cache_clear()
+    def test_invalid_char_raises(self):
+        """Test that invalid characters raise ValueError."""
+        with pytest.raises(ValueError, match="Invalid character"):
+            minified_name_to_int("!")
 
-        name = TestState.get_name()
-        # Should be full name, not minified
-        assert "test_state" in name.lower()
-        assert name != _int_to_minified_name(300)
 
-    def test_enabled_mode_with_id_uses_minified(self, reset_minify_mode):
-        """Test ENABLED mode with state_id uses minified name."""
-        environment.REFLEX_MINIFY_STATES.set(StateMinifyMode.ENABLED)
+class TestGetStateFullPath:
+    """Tests for get_state_full_path function."""
 
-        class TestState(BaseState, state_id=301):
-            pass
+    def test_root_state_path(self):
+        """Test that root State has correct full path."""
+        path = get_state_full_path(State)
+        assert path == "reflex.state.State"
 
-        # Clear the lru_cache to get fresh result
-        TestState.get_name.cache_clear()
-
-        name = TestState.get_name()
-        assert name == _int_to_minified_name(301)
-
-    def test_enabled_mode_without_id_uses_full_name(self, reset_minify_mode):
-        """Test ENABLED mode without state_id uses full name."""
-        environment.REFLEX_MINIFY_STATES.set(StateMinifyMode.ENABLED)
+    def test_substate_path(self):
+        """Test that substates have correct full paths."""
 
         class TestState(BaseState):
             pass
 
-        # Clear the lru_cache to get fresh result
-        TestState.get_name.cache_clear()
+        path = get_state_full_path(TestState)
+        assert "TestState" in path
+        assert path.startswith("tests.units.test_minification.")
 
+
+@pytest.fixture
+def temp_minify_json(tmp_path, monkeypatch):
+    """Create a temporary directory and mock cwd to use it for minify.json.
+
+    Yields:
+        The temporary directory path.
+    """
+    monkeypatch.chdir(tmp_path)
+    clear_config_cache()
+    # Clear State caches to ensure clean slate
+    State.get_name.cache_clear()
+    State.get_full_name.cache_clear()
+    State.get_class_substate.cache_clear()
+    yield tmp_path
+    # Clean up: clear config and all cached state names
+    clear_config_cache()
+    State.get_name.cache_clear()
+    State.get_full_name.cache_clear()
+    State.get_class_substate.cache_clear()
+
+
+class TestMinifyConfig:
+    """Tests for minify.json configuration loading and saving."""
+
+    def test_no_config_returns_none(self, temp_minify_json):
+        """Test that missing minify.json returns None."""
+        assert is_minify_enabled() is False
+        assert get_state_id("any.path") is None
+        assert get_event_id("any.path", "handler") is None
+
+    def test_save_and_load_config(self, temp_minify_json):
+        """Test saving and loading a config."""
+        config: MinifyConfig = {
+            "version": SCHEMA_VERSION,
+            "states": {"test.module.MyState": "a"},
+            "events": {"test.module.MyState": {"handler": "a"}},
+        }
+        save_minify_config(config)
+
+        # Clear cache and reload
+        clear_config_cache()
+
+        assert is_minify_enabled() is True
+        assert get_state_id("test.module.MyState") == "a"
+        assert get_event_id("test.module.MyState", "handler") == "a"
+
+    def test_invalid_version_raises(self, temp_minify_json):
+        """Test that invalid version raises ValueError."""
+        config = {"version": 999, "states": {}, "events": {}}
+        path = temp_minify_json / MINIFY_JSON
+        with path.open("w") as f:
+            json.dump(config, f)
+
+        clear_config_cache()
+
+        with pytest.raises(ValueError, match=r"Unsupported.*version"):
+            is_minify_enabled()
+
+    def test_missing_states_raises(self, temp_minify_json):
+        """Test that missing 'states' key raises ValueError."""
+        config = {"version": SCHEMA_VERSION, "events": {}}
+        path = temp_minify_json / MINIFY_JSON
+        with path.open("w") as f:
+            json.dump(config, f)
+
+        clear_config_cache()
+
+        with pytest.raises(ValueError, match="'states' must be"):
+            is_minify_enabled()
+
+
+class TestGenerateMinifyConfig:
+    """Tests for generate_minify_config function."""
+
+    def test_generate_for_root_state(self):
+        """Test generating config for the root State."""
+        config = generate_minify_config(State)
+
+        assert config["version"] == SCHEMA_VERSION
+        assert "reflex.state.State" in config["states"]
+        # State should have event handlers like set_is_hydrated
+        state_path = "reflex.state.State"
+        assert state_path in config["events"]
+        assert "set_is_hydrated" in config["events"][state_path]
+
+    def test_generates_unique_sibling_ids(self):
+        """Test that sibling states get unique IDs."""
+
+        class ParentState(BaseState):
+            pass
+
+        class ChildA(ParentState):
+            pass
+
+        class ChildB(ParentState):
+            pass
+
+        config = generate_minify_config(ParentState)
+
+        # Find the IDs for ChildA and ChildB
+        child_a_path = get_state_full_path(ChildA)
+        child_b_path = get_state_full_path(ChildB)
+
+        child_a_id = config["states"].get(child_a_path)
+        child_b_id = config["states"].get(child_b_path)
+
+        assert child_a_id is not None
+        assert child_b_id is not None
+        assert child_a_id != child_b_id
+
+
+class TestValidateMinifyConfig:
+    """Tests for validate_minify_config function."""
+
+    def test_valid_config_no_errors(self):
+        """Test that a valid config produces no errors."""
+        config = generate_minify_config(State)
+        errors, _warnings, missing = validate_minify_config(config, State)
+
+        assert len(errors) == 0
+        assert len(missing) == 0
+
+    def test_duplicate_state_ids_detected(self):
+        """Test that duplicate state IDs are detected."""
+        config: MinifyConfig = {
+            "version": SCHEMA_VERSION,
+            "states": {
+                "test.Parent": "a",
+                "test.Parent.ChildA": "b",
+                "test.Parent.ChildB": "b",  # Duplicate!
+            },
+            "events": {},
+        }
+
+        # Create a mock state tree
+        class Parent(BaseState):
+            pass
+
+        errors, _warnings, _missing = validate_minify_config(config, Parent)
+
+        assert any("Duplicate state_id='b'" in e for e in errors)
+
+
+class TestSyncMinifyConfig:
+    """Tests for sync_minify_config function."""
+
+    def test_sync_adds_new_states(self):
+        """Test that sync adds new states."""
+
+        class TestState(BaseState):
+            def handler(self):
+                pass
+
+        # Start with empty config
+        existing_config: MinifyConfig = {
+            "version": SCHEMA_VERSION,
+            "states": {},
+            "events": {},
+        }
+
+        new_config = sync_minify_config(existing_config, TestState)
+
+        # Should have added the state
+        state_path = get_state_full_path(TestState)
+        assert state_path in new_config["states"]
+        assert state_path in new_config["events"]
+        assert "handler" in new_config["events"][state_path]
+
+    def test_sync_preserves_existing_ids(self):
+        """Test that sync preserves existing IDs."""
+
+        class TestState(BaseState):
+            def handler_a(self):
+                pass
+
+            def handler_b(self):
+                pass
+
+        state_path = get_state_full_path(TestState)
+
+        # Start with partial config (using string IDs in v2 format)
+        existing_config: MinifyConfig = {
+            "version": SCHEMA_VERSION,
+            "states": {state_path: "bU"},  # Some arbitrary minified name
+            "events": {state_path: {"handler_a": "k"}},  # Another arbitrary name
+        }
+
+        new_config = sync_minify_config(existing_config, TestState)
+
+        # Existing IDs should be preserved
+        assert new_config["states"][state_path] == "bU"
+        assert new_config["events"][state_path]["handler_a"] == "k"
+        # New handler should be added with next ID (k=10, so next is l=11)
+        assert "handler_b" in new_config["events"][state_path]
+        assert (
+            new_config["events"][state_path]["handler_b"] == "l"
+        )  # 10 + 1 = 11 -> 'l'
+
+
+class TestStateMinification:
+    """Tests for state name minification with minify.json."""
+
+    def test_state_uses_full_name_without_config(self, temp_minify_json):
+        """Test that states use full names when no minify.json exists."""
+
+        class TestState(BaseState):
+            pass
+
+        TestState.get_name.cache_clear()
         name = TestState.get_name()
-        # Should contain the class name
+
+        # Should be the full name (snake_case module___class)
         assert "test_state" in name.lower()
 
-    def test_enforce_mode_without_id_raises(self, reset_minify_mode):
-        """Test ENFORCE mode without state_id raises error during class definition."""
-        environment.REFLEX_MINIFY_STATES.set(StateMinifyMode.ENFORCE)
+    def test_state_uses_minified_name_with_config(self, temp_minify_json):
+        """Test that states use minified names when minify.json exists."""
 
-        # Error is raised during class definition because get_name() is called
-        # during __init_subclass__
-        with pytest.raises(StateValueError, match="missing required state_id"):
-
-            class TestState(BaseState):
-                pass
-
-    def test_enforce_mode_with_id_uses_minified(self, reset_minify_mode):
-        """Test ENFORCE mode with state_id uses minified name."""
-        environment.REFLEX_MINIFY_STATES.set(StateMinifyMode.ENFORCE)
-
-        class TestState(BaseState, state_id=302):
+        class TestState(BaseState):
             pass
 
-        # Clear the lru_cache to get fresh result
+        state_path = get_state_full_path(TestState)
+        config: MinifyConfig = {
+            "version": SCHEMA_VERSION,
+            "states": {state_path: "f"},  # Direct minified name
+            "events": {},
+        }
+        save_minify_config(config)
+        clear_config_cache()
         TestState.get_name.cache_clear()
 
         name = TestState.get_name()
-        assert name == _int_to_minified_name(302)
+
+        # Should be the minified name directly
+        assert name == "f"
 
 
-class TestMixinState:
-    """Tests for mixin states."""
+class TestEventMinification:
+    """Tests for event handler name minification with minify.json."""
 
-    def test_mixin_no_state_id_required(self, reset_minify_mode):
-        """Test that mixin states don't require state_id even in ENFORCE mode."""
-        environment.REFLEX_MINIFY_STATES.set(StateMinifyMode.ENFORCE)
-
-        class MixinState(BaseState, mixin=True):
-            pass
-
-        # Mixin states should not raise even without state_id
-        assert MixinState._state_id is None
-        # Mixin states have _mixin = True set, so get_name isn't typically called
-        # but the class should be created without error
-
-    def test_mixin_with_state_id_raises(self):
-        """Test that mixin states cannot have state_id."""
-        with pytest.raises(StateValueError, match="cannot have a state_id"):
-
-            class MixinWithId(BaseState, mixin=True, state_id=999):
-                pass
-
-
-class TestEventIdValidation:
-    """Tests for event_id validation in __init_subclass__."""
-
-    def test_event_with_explicit_id(self):
-        """Test that an event handler can be created with an explicit event_id."""
-        import reflex as rx
-
-        class TestState(BaseState, state_id=400):
-            @rx.event(event_id=0)
-            def my_handler(self):
-                pass
-
-        assert 0 in TestState._event_id_to_name
-        assert TestState._event_id_to_name[0] == "my_handler"
-
-    def test_event_without_id(self):
-        """Test that an event handler can be created without event_id."""
-        import reflex as rx
-
-        class TestState(BaseState, state_id=401):
-            @rx.event
-            def my_handler(self):
-                pass
-
-        # Should not be in the registry
-        assert 0 not in TestState._event_id_to_name
-
-    def test_duplicate_event_id_within_state_raises(self):
-        """Test that duplicate event_id within same state raises StateValueError."""
-        import reflex as rx
-
-        with pytest.raises(StateValueError, match="Duplicate event_id=0"):
-
-            class TestState(BaseState, state_id=402):
-                @rx.event(event_id=0)
-                def handler1(self):
-                    pass
-
-                @rx.event(event_id=0)
-                def handler2(self):
-                    pass
-
-    def test_same_event_id_across_states_allowed(self):
-        """Test that same event_id can be used in different state classes."""
-        import reflex as rx
-
-        class StateA(BaseState, state_id=403):
-            @rx.event(event_id=0)
-            def handler(self):
-                pass
-
-        class StateB(BaseState, state_id=404):
-            @rx.event(event_id=0)
-            def handler(self):
-                pass
-
-        # Both should succeed - event_id is per-state
-        assert StateA._event_id_to_name[0] == "handler"
-        assert StateB._event_id_to_name[0] == "handler"
-
-    def test_event_id_stored_on_function(self):
-        """Test that event_id is stored as EVENT_ID_MARKER on the function."""
-        import reflex as rx
-
-        @rx.event(event_id=42)
-        def standalone_handler(self):
-            pass
-
-        assert hasattr(standalone_handler, EVENT_ID_MARKER)
-        assert getattr(standalone_handler, EVENT_ID_MARKER) == 42
-
-
-class TestEventHandlerMinification:
-    """Tests for event handler name minification in get_event_handler_parts."""
-
-    def test_disabled_mode_uses_full_name(self, reset_minify_mode):
-        """Test DISABLED mode uses full event name even with event_id."""
+    def test_event_uses_full_name_without_config(self, temp_minify_json):
+        """Test that event handlers use full names when no minify.json exists."""
         import reflex as rx
         from reflex.utils.format import get_event_handler_parts
 
-        environment.REFLEX_MINIFY_EVENTS.set(EventMinifyMode.DISABLED)
-
-        class TestState(BaseState, state_id=500):
-            @rx.event(event_id=0)
-            def my_handler(self):
-                pass
-
-        handler = TestState.event_handlers["my_handler"]
-        _, event_name = get_event_handler_parts(handler)
-
-        # Should use full name, not minified
-        assert event_name == "my_handler"
-
-    def test_enabled_mode_with_id_uses_minified(self, reset_minify_mode):
-        """Test ENABLED mode with event_id uses minified name."""
-        import reflex as rx
-        from reflex.utils.format import get_event_handler_parts
-
-        environment.REFLEX_MINIFY_EVENTS.set(EventMinifyMode.ENABLED)
-
-        class TestState(BaseState, state_id=501):
-            @rx.event(event_id=5)
-            def my_handler(self):
-                pass
-
-        TestState.get_name.cache_clear()
-        handler = TestState.event_handlers["my_handler"]
-        _, event_name = get_event_handler_parts(handler)
-
-        # Should use minified name
-        assert event_name == _int_to_minified_name(5)
-        assert event_name == "f"
-
-    def test_enabled_mode_without_id_uses_full_name(self, reset_minify_mode):
-        """Test ENABLED mode without event_id uses full name."""
-        import reflex as rx
-        from reflex.utils.format import get_event_handler_parts
-
-        environment.REFLEX_MINIFY_EVENTS.set(EventMinifyMode.ENABLED)
-
-        class TestState(BaseState, state_id=502):
+        class TestState(BaseState):
             @rx.event
             def my_handler(self):
                 pass
@@ -344,397 +361,61 @@ class TestEventHandlerMinification:
         # Should use full name
         assert event_name == "my_handler"
 
-    def test_enforce_mode_without_event_id_raises(self, reset_minify_mode):
-        """Test ENFORCE mode without event_id raises error during class definition."""
-        import reflex as rx
-
-        environment.REFLEX_MINIFY_EVENTS.set(EventMinifyMode.ENFORCE)
-
-        with pytest.raises(StateValueError, match="missing required event_id"):
-
-            class TestState(BaseState, state_id=503):
-                @rx.event
-                def my_handler(self):
-                    pass
-
-    def test_enforce_mode_with_event_id_works(self, reset_minify_mode):
-        """Test ENFORCE mode with event_id creates state successfully."""
+    def test_event_uses_minified_name_with_config(self, temp_minify_json):
+        """Test that event handlers use minified names when minify.json exists."""
         import reflex as rx
         from reflex.utils.format import get_event_handler_parts
 
-        environment.REFLEX_MINIFY_EVENTS.set(EventMinifyMode.ENFORCE)
+        # First, set up the config BEFORE creating the state class
+        # The event_id_to_name registry is built during __init_subclass__
+        # so the config must exist before the class is defined
 
-        class TestState(BaseState, state_id=504):
-            @rx.event(event_id=0)
+        # For this test, we extend State (not BaseState) so that
+        # get_event_handler_parts can look up our state in the State tree.
+        # We need to include State's full path in our config too.
+
+        # The state path includes the full class hierarchy from State.
+        # For a direct subclass of State defined in this test module,
+        # get_state_full_path returns: "tests.units.test_minification.State.TestStateWithMinifiedEvent"
+        # (module + class hierarchy from root state to leaf)
+
+        expected_module = "tests.units.test_minification"
+        expected_state_path = f"{expected_module}.State.TestStateWithMinifiedEvent"
+
+        # Also need to include the base State in the config (v2 format with nested events)
+        config: MinifyConfig = {
+            "version": SCHEMA_VERSION,
+            "states": {
+                "reflex.state.State": "a",  # Base State
+                expected_state_path: "b",  # Our test state
+            },
+            "events": {
+                expected_state_path: {"my_handler": "d"},  # Nested under state path
+            },
+        }
+        save_minify_config(config)
+        clear_config_cache()
+        State.get_name.cache_clear()
+        State.get_full_name.cache_clear()
+        State.get_class_substate.cache_clear()
+
+        # Now create the state class extending State - it will pick up the config
+        class TestStateWithMinifiedEvent(State):
+            @rx.event
             def my_handler(self):
                 pass
 
-        TestState.get_name.cache_clear()
-        handler = TestState.event_handlers["my_handler"]
+        # Verify the path matches what we expected
+        actual_path = get_state_full_path(TestStateWithMinifiedEvent)
+        assert actual_path == expected_state_path, (
+            f"Expected path {expected_state_path}, got {actual_path}"
+        )
+
+        # The state's _event_id_to_name should be populated (key is minified name)
+        assert TestStateWithMinifiedEvent._event_id_to_name == {"d": "my_handler"}
+
+        handler = TestStateWithMinifiedEvent.event_handlers["my_handler"]
         _, event_name = get_event_handler_parts(handler)
 
-        # Should use minified name
-        assert event_name == _int_to_minified_name(0)
-        assert event_name == "a"
-
-
-class TestMixinEventHandlers:
-    """Tests for event handlers from mixin states."""
-
-    def test_mixin_event_id_preserved(self, reset_minify_mode):
-        """Test that event_id from mixin handlers is preserved when inherited."""
-        import reflex as rx
-        from reflex.utils.format import get_event_handler_parts
-
-        environment.REFLEX_MINIFY_EVENTS.set(EventMinifyMode.ENABLED)
-
-        class MixinState(BaseState, mixin=True):
-            @rx.event(event_id=10)
-            def mixin_handler(self):
-                pass
-
-        # Need to inherit from both mixin AND a non-mixin base (BaseState)
-        # to create a non-mixin concrete state
-        class ConcreteState(MixinState, BaseState, state_id=600):
-            @rx.event(event_id=0)
-            def own_handler(self):
-                pass
-
-        ConcreteState.get_name.cache_clear()
-
-        # Both handlers should have their event_ids preserved
-        assert 10 in ConcreteState._event_id_to_name
-        assert ConcreteState._event_id_to_name[10] == "mixin_handler"
-        assert 0 in ConcreteState._event_id_to_name
-        assert ConcreteState._event_id_to_name[0] == "own_handler"
-
-        # Check minified names
-        mixin_handler = ConcreteState.event_handlers["mixin_handler"]
-        own_handler = ConcreteState.event_handlers["own_handler"]
-
-        _, mixin_name = get_event_handler_parts(mixin_handler)
-        _, own_name = get_event_handler_parts(own_handler)
-
-        assert mixin_name == _int_to_minified_name(10)  # "k"
-        assert own_name == _int_to_minified_name(0)  # "a"
-
-    def test_mixin_event_id_conflict_raises(self, reset_minify_mode):
-        """Test that conflicting event_ids from mixin and concrete state raises error."""
-        import reflex as rx
-
-        environment.REFLEX_MINIFY_EVENTS.set(EventMinifyMode.ENABLED)
-
-        class MixinState(BaseState, mixin=True):
-            @rx.event(event_id=0)
-            def mixin_handler(self):
-                pass
-
-        with pytest.raises(StateValueError, match="Duplicate event_id=0"):
-            # Need to inherit from both mixin AND a non-mixin base (BaseState)
-            class ConcreteState(MixinState, BaseState, state_id=601):
-                @rx.event(event_id=0)
-                def own_handler(self):
-                    pass
-
-
-class TestMinifiedNameToInt:
-    """Tests for _minified_name_to_int reverse conversion."""
-
-    def test_single_char(self):
-        """Test single character conversion."""
-        assert _minified_name_to_int("a") == 0
-        assert _minified_name_to_int("b") == 1
-        assert _minified_name_to_int("z") == 25
-        assert _minified_name_to_int("A") == 26
-        assert _minified_name_to_int("Z") == 51
-
-    def test_roundtrip(self):
-        """Test that int -> minified -> int roundtrip works."""
-        for i in range(1000):
-            minified = _int_to_minified_name(i)
-            result = _minified_name_to_int(minified)
-            assert result == i, f"Roundtrip failed for {i}: {minified} -> {result}"
-
-    def test_invalid_char_raises(self):
-        """Test that invalid characters raise ValueError."""
-        with pytest.raises(ValueError, match="Invalid character"):
-            _minified_name_to_int("!")
-
-    def test_state_has_state_id_zero(self):
-        """Test that the root State class has state_id=0."""
-        assert State._state_id == 0
-        assert State.__module__ == "reflex.state"
-        assert State.__name__ == "State"
-
-    def test_next_sibling_state_id(self):
-        """Test finding next available state_id among siblings."""
-
-        class Parent(BaseState, state_id=700):
-            pass
-
-        class Child0(Parent, state_id=0):
-            pass
-
-        class Child1(Parent, state_id=1):
-            pass
-
-        # Find first gap starting from 0 among Parent's children
-        used_ids = {
-            child._state_id
-            for child in Parent.class_subclasses
-            if child._state_id is not None
-        }
-        next_id = 0
-        while next_id in used_ids:
-            next_id += 1
-
-        assert next_id == 2
-
-
-class TestInternalStateIds:
-    """Tests for internal state classes having correct state_id values."""
-
-    def test_state_has_id_0(self):
-        """Test that the base State class has state_id=0."""
-        assert State._state_id == 0
-
-    def test_frontend_exception_state_has_id_0(self):
-        """Test that FrontendEventExceptionState has state_id=0."""
-        assert FrontendEventExceptionState._state_id == 0
-
-    def test_update_vars_internal_state_has_id_1(self):
-        """Test that UpdateVarsInternalState has state_id=1."""
-        assert UpdateVarsInternalState._state_id == 1
-
-    def test_on_load_internal_state_has_id_2(self):
-        """Test that OnLoadInternalState has state_id=2."""
-        assert OnLoadInternalState._state_id == 2
-
-    def test_internal_states_minified_names(self, reset_minify_mode):
-        """Test that internal states get correct minified names when enabled."""
-        environment.REFLEX_MINIFY_STATES.set(StateMinifyMode.ENABLED)
-
-        # Clear the lru_cache to get fresh results
-        State.get_name.cache_clear()
-        FrontendEventExceptionState.get_name.cache_clear()
-        UpdateVarsInternalState.get_name.cache_clear()
-        OnLoadInternalState.get_name.cache_clear()
-
-        # State (id=0) -> "a"
-        assert State.get_name() == "a"
-        # FrontendEventExceptionState (id=0) -> "a"
-        assert FrontendEventExceptionState.get_name() == "a"
-        # UpdateVarsInternalState (id=1) -> "b"
-        assert UpdateVarsInternalState.get_name() == "b"
-        # OnLoadInternalState (id=2) -> "c"
-        assert OnLoadInternalState.get_name() == "c"
-
-    def test_internal_states_full_names_when_disabled(self, reset_minify_mode):
-        """Test that internal states use full names when minification is disabled."""
-        environment.REFLEX_MINIFY_STATES.set(StateMinifyMode.DISABLED)
-
-        # Clear the lru_cache to get fresh results
-        State.get_name.cache_clear()
-        FrontendEventExceptionState.get_name.cache_clear()
-        UpdateVarsInternalState.get_name.cache_clear()
-        OnLoadInternalState.get_name.cache_clear()
-
-        # Should contain the class name pattern
-        assert "state" in State.get_name().lower()
-        assert "frontend" in FrontendEventExceptionState.get_name().lower()
-        assert "update" in UpdateVarsInternalState.get_name().lower()
-        assert "on_load" in OnLoadInternalState.get_name().lower()
-
-
-class TestBestEffortMode:
-    """Tests for BEST_EFFORT event minification mode."""
-
-    def test_best_effort_assigns_ids_to_handlers_without_explicit_id(
-        self, reset_minify_mode
-    ):
-        """Test that BEST_EFFORT mode assigns event_ids to handlers without explicit IDs."""
-        import reflex as rx
-
-        environment.REFLEX_MINIFY_EVENTS.set(EventMinifyMode.BEST_EFFORT)
-
-        class TestState(BaseState, state_id=700):
-            @rx.event
-            def handler_a(self):
-                pass
-
-            @rx.event
-            def handler_b(self):
-                pass
-
-        # Both handlers should have event_ids assigned
-        assert 0 in TestState._event_id_to_name
-        assert 1 in TestState._event_id_to_name
-        # Should be assigned alphabetically
-        assert TestState._event_id_to_name[0] == "handler_a"
-        assert TestState._event_id_to_name[1] == "handler_b"
-
-    def test_best_effort_starts_after_highest_explicit_id(self, reset_minify_mode):
-        """Test that BEST_EFFORT mode starts assigning IDs after the highest explicit ID."""
-        import reflex as rx
-
-        environment.REFLEX_MINIFY_EVENTS.set(EventMinifyMode.BEST_EFFORT)
-
-        class TestState(BaseState, state_id=701):
-            @rx.event(event_id=5)
-            def explicit_handler(self):
-                pass
-
-            @rx.event(event_id=10)
-            def another_explicit(self):
-                pass
-
-            @rx.event
-            def auto_handler(self):
-                pass
-
-        # Explicit handlers should keep their IDs
-        assert TestState._event_id_to_name[5] == "explicit_handler"
-        assert TestState._event_id_to_name[10] == "another_explicit"
-        # Auto-assigned handler should start at max_explicit_id + 1 = 11
-        assert TestState._event_id_to_name[11] == "auto_handler"
-
-    def test_best_effort_assigns_ids_alphabetically(self, reset_minify_mode):
-        """Test that BEST_EFFORT mode assigns IDs to handlers alphabetically by name."""
-        import reflex as rx
-
-        environment.REFLEX_MINIFY_EVENTS.set(EventMinifyMode.BEST_EFFORT)
-
-        class TestState(BaseState, state_id=702):
-            @rx.event
-            def zebra_handler(self):
-                pass
-
-            @rx.event
-            def alpha_handler(self):
-                pass
-
-            @rx.event
-            def middle_handler(self):
-                pass
-
-        # Should be assigned alphabetically: alpha, middle, zebra
-        assert TestState._event_id_to_name[0] == "alpha_handler"
-        assert TestState._event_id_to_name[1] == "middle_handler"
-        assert TestState._event_id_to_name[2] == "zebra_handler"
-
-    def test_best_effort_with_no_explicit_ids(self, reset_minify_mode):
-        """Test that BEST_EFFORT mode works with no explicit IDs (starts at 0)."""
-        import reflex as rx
-
-        environment.REFLEX_MINIFY_EVENTS.set(EventMinifyMode.BEST_EFFORT)
-
-        class TestState(BaseState, state_id=703):
-            @rx.event
-            def first_handler(self):
-                pass
-
-            @rx.event
-            def second_handler(self):
-                pass
-
-        # Should start at 0 since no explicit IDs
-        assert TestState._event_id_to_name[0] == "first_handler"
-        assert TestState._event_id_to_name[1] == "second_handler"
-
-    def test_best_effort_minifies_all_handlers(self, reset_minify_mode):
-        """Test that BEST_EFFORT mode minifies all handlers in format output."""
-        import reflex as rx
-        from reflex.utils.format import get_event_handler_parts
-
-        environment.REFLEX_MINIFY_EVENTS.set(EventMinifyMode.BEST_EFFORT)
-
-        class TestState(BaseState, state_id=704):
-            @rx.event(event_id=0)
-            def explicit_handler(self):
-                pass
-
-            @rx.event
-            def auto_handler(self):
-                pass
-
-        TestState.get_name.cache_clear()
-
-        explicit = TestState.event_handlers["explicit_handler"]
-        auto = TestState.event_handlers["auto_handler"]
-
-        _, explicit_name = get_event_handler_parts(explicit)
-        _, auto_name = get_event_handler_parts(auto)
-
-        # Both should be minified
-        assert explicit_name == _int_to_minified_name(0)  # 'a'
-        assert auto_name == _int_to_minified_name(1)  # 'b'
-
-    def test_best_effort_skips_gaps_in_explicit_ids(self, reset_minify_mode):
-        """Test that BEST_EFFORT mode skips gaps in explicit IDs (doesn't fill them)."""
-        import reflex as rx
-
-        environment.REFLEX_MINIFY_EVENTS.set(EventMinifyMode.BEST_EFFORT)
-
-        class TestState(BaseState, state_id=705):
-            @rx.event(event_id=0)
-            def handler_zero(self):
-                pass
-
-            @rx.event(event_id=5)
-            def handler_five(self):
-                pass
-
-            @rx.event(event_id=10)
-            def handler_ten(self):
-                pass
-
-            @rx.event
-            def auto_handler(self):
-                pass
-
-        # Explicit handlers keep their IDs
-        assert TestState._event_id_to_name[0] == "handler_zero"
-        assert TestState._event_id_to_name[5] == "handler_five"
-        assert TestState._event_id_to_name[10] == "handler_ten"
-        # Auto-assigned starts at 11, not filling gaps at 1-4 or 6-9
-        assert TestState._event_id_to_name[11] == "auto_handler"
-        # Verify gaps are not filled
-        assert 1 not in TestState._event_id_to_name
-        assert 6 not in TestState._event_id_to_name
-
-    def test_best_effort_mixed_explicit_and_auto(self, reset_minify_mode):
-        """Test BEST_EFFORT with a mix of explicit and auto-assigned handlers."""
-        import reflex as rx
-        from reflex.utils.format import get_event_handler_parts
-
-        environment.REFLEX_MINIFY_EVENTS.set(EventMinifyMode.BEST_EFFORT)
-
-        class TestState(BaseState, state_id=706):
-            @rx.event(event_id=3)
-            def explicit_three(self):
-                pass
-
-            @rx.event
-            def auto_alpha(self):
-                pass
-
-            @rx.event
-            def auto_beta(self):
-                pass
-
-        TestState.get_name.cache_clear()
-
-        # Check registry
-        assert TestState._event_id_to_name[3] == "explicit_three"
-        assert TestState._event_id_to_name[4] == "auto_alpha"  # alphabetically first
-        assert TestState._event_id_to_name[5] == "auto_beta"  # alphabetically second
-
-        # Check that all handlers are minified correctly
-        for name, expected_id in [
-            ("explicit_three", 3),
-            ("auto_alpha", 4),
-            ("auto_beta", 5),
-        ]:
-            handler = TestState.event_handlers[name]
-            _, minified = get_event_handler_parts(handler)
-            assert minified == _int_to_minified_name(expected_id)
+        # Should be the minified name directly
+        assert event_name == "d"

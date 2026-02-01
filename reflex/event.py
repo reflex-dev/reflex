@@ -2338,7 +2338,6 @@ class EventNamespace:
         throttle: int | None = None,
         debounce: int | None = None,
         temporal: bool | None = None,
-        event_id: int | None = None,
     ) -> Callable[
         [Callable[[BASE_STATE, Unpack[P]], Any]], EventCallback[Unpack[P]]  # pyright: ignore [reportInvalidTypeVarUse]
     ]: ...
@@ -2354,7 +2353,6 @@ class EventNamespace:
         throttle: int | None = None,
         debounce: int | None = None,
         temporal: bool | None = None,
-        event_id: int | None = None,
     ) -> EventCallback[Unpack[P]]: ...
 
     def __new__(
@@ -2367,7 +2365,6 @@ class EventNamespace:
         throttle: int | None = None,
         debounce: int | None = None,
         temporal: bool | None = None,
-        event_id: int | None = None,
     ) -> (
         EventCallback[Unpack[P]]
         | Callable[[Callable[[BASE_STATE, Unpack[P]], Any]], EventCallback[Unpack[P]]]
@@ -2382,7 +2379,6 @@ class EventNamespace:
             throttle: Throttle the event handler to limit calls (in milliseconds).
             debounce: Debounce the event handler to delay calls (in milliseconds).
             temporal: Whether the event should be dropped when the backend is down.
-            event_id: Optional integer ID for deterministic minified event names.
 
         Raises:
             TypeError: If background is True and the function is not a coroutine or async generator. # noqa: DAR402
@@ -2470,9 +2466,6 @@ class EventNamespace:
             event_actions = _build_event_actions()
             if event_actions:
                 setattr(func, EVENT_ACTIONS_MARKER, event_actions)
-            # Store event_id on the function for minification
-            if event_id is not None:
-                setattr(func, EVENT_ID_MARKER, event_id)
             return func  # pyright: ignore [reportReturnType]
 
         if func is not None:

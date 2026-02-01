@@ -10,7 +10,6 @@ import dataclasses
 import datetime
 import functools
 import inspect
-import operator
 import pickle
 import re
 import sys
@@ -44,7 +43,6 @@ from reflex.environment import PerformanceMode, environment
 from reflex.event import (
     BACKGROUND_TASK_MARKER,
     EVENT_ACTIONS_MARKER,
-    EVENT_ID_MARKER,
     Event,
     EventHandler,
     EventSpec,
@@ -104,65 +102,6 @@ if environment.REFLEX_PERF_MODE.get() != PerformanceMode.OFF:
 
 # For BaseState.get_var_value
 VAR_TYPE = TypeVar("VAR_TYPE")
-
-
-# Characters used for minified names (valid JS identifiers)
-MINIFIED_NAME_CHARS = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ$_"
-
-
-def _int_to_minified_name(state_id: int) -> str:
-    """Convert integer state_id to minified name using base-54 encoding.
-
-    Args:
-        state_id: The integer state ID to convert.
-
-    Returns:
-        The minified state name (e.g., 0->'a', 1->'b', 54->'ba').
-
-    Raises:
-        ValueError: If state_id is negative.
-    """
-    if state_id < 0:
-        msg = f"state_id must be non-negative, got {state_id}"
-        raise ValueError(msg)
-
-    base = len(MINIFIED_NAME_CHARS)
-
-    if state_id == 0:
-        return MINIFIED_NAME_CHARS[0]
-
-    name = ""
-    num = state_id
-    while num > 0:
-        name = MINIFIED_NAME_CHARS[num % base] + name
-        num //= base
-
-    return name
-
-
-def _minified_name_to_int(name: str) -> int:
-    """Convert minified name back to integer state_id.
-
-    Args:
-        name: The minified state name (e.g., 'a', 'bU').
-
-    Returns:
-        The integer state_id.
-
-    Raises:
-        ValueError: If the name contains invalid characters.
-    """
-    base = len(MINIFIED_NAME_CHARS)
-
-    result = 0
-    for char in name:
-        index = MINIFIED_NAME_CHARS.find(char)
-        if index == -1:
-            msg = f"Invalid character '{char}' in minified name"
-            raise ValueError(msg)
-        result = result * base + index
-
-    return result
 
 
 def _no_chain_background_task(state: BaseState, name: str, fn: Callable) -> Callable:
@@ -453,11 +392,10 @@ class BaseState(EvenMoreBasicBaseState):
     # Set of states which might need to be recomputed if vars in this state change.
     _potentially_dirty_states: ClassVar[set[str]] = set()
 
-    # The explicit state ID for minification (None = use full name).
-    _state_id: ClassVar[int | None] = None
-
     # Per-class registry mapping event_id -> event handler name for minification.
-    _event_id_to_name: ClassVar[builtins.dict[int, str]] = {}
+    # Populated from minify.json at class creation time.
+    # Maps minified event ID (e.g., "a") to original handler name (e.g., "increment").
+    _event_id_to_name: ClassVar[builtins.dict[str, str]] = {}
 
     # The parent state.
     parent_state: BaseState | None = field(default=None, is_var=False)
@@ -576,35 +514,23 @@ class BaseState(EvenMoreBasicBaseState):
             raise NameError(msg)
 
     @classmethod
-    def __init_subclass__(
-        cls, mixin: bool = False, state_id: int | None = None, **kwargs
-    ):
+    def __init_subclass__(cls, mixin: bool = False, **kwargs):
         """Do some magic for the subclass initialization.
 
         Args:
             mixin: Whether the subclass is a mixin and should not be initialized.
-            state_id: Explicit state ID for minified state names.
             **kwargs: The kwargs to pass to the init_subclass method.
 
         Raises:
-            StateValueError: If a substate class shadows another or duplicate state_id.
+            StateValueError: If a substate class shadows another.
         """
         from reflex.utils.exceptions import StateValueError
 
         super().__init_subclass__(**kwargs)
 
-        # Mixin states cannot have state_id
+        # Mixin states are not initialized
         if cls._mixin:
-            if state_id is not None:
-                msg = (
-                    f"Mixin state '{cls.__module__}.{cls.__name__}' cannot have a state_id. "
-                    "Remove state_id or mixin=True."
-                )
-                raise StateValueError(msg)
             return
-
-        # Store state_id as class variable (only for non-mixins)
-        cls._state_id = state_id
 
         # Handle locally-defined states for pickling.
         if "<locals>" in cls.__qualname__:
@@ -631,21 +557,6 @@ class BaseState(EvenMoreBasicBaseState):
         if parent_state is not None:
             cls.inherited_vars = parent_state.vars
             cls.inherited_backend_vars = parent_state.backend_vars
-
-            # Check for duplicate state_id among siblings.
-            if state_id is not None:
-                for sibling in parent_state.class_subclasses:
-                    if sibling._state_id is not None and sibling._state_id == state_id:
-                        # Allow re-registration of the same class (e.g., module reload)
-                        existing_key = f"{sibling.__module__}.{sibling.__name__}"
-                        new_key = f"{cls.__module__}.{cls.__name__}"
-                        if existing_key != new_key:
-                            msg = (
-                                f"Duplicate state_id={state_id} among siblings of "
-                                f"'{parent_state.__name__}': already used by "
-                                f"'{sibling.__name__}', cannot be reused by '{cls.__name__}'."
-                            )
-                            raise StateValueError(msg)
 
             # Check if another substate class with the same name has already been defined.
             if cls.get_name() in {c.get_name() for c in parent_state.class_subclasses}:
@@ -740,53 +651,16 @@ class BaseState(EvenMoreBasicBaseState):
             cls.event_handlers[name] = handler
             setattr(cls, name, handler)
 
-        # Build event_id registry and validate uniqueness within this state class
+        # Build event_id registry from minify.json configuration
+        from reflex.minify import get_event_id, get_state_full_path, is_minify_enabled
+
         cls._event_id_to_name = {}
-        handlers_with_id: list[tuple[str, Callable[..., Any], int]] = []
-        handlers_without_id: list[tuple[str, Callable[..., Any]]] = []
-
-        for name, fn in events.items():
-            event_id = getattr(fn, EVENT_ID_MARKER, None)
-            if event_id is not None:
-                if event_id in cls._event_id_to_name:
-                    existing_name = cls._event_id_to_name[event_id]
-                    msg = (
-                        f"Duplicate event_id={event_id} in state '{cls.__name__}': "
-                        f"handlers '{existing_name}' and '{name}' cannot share the same event_id."
-                    )
-                    raise StateValueError(msg)
-                cls._event_id_to_name[event_id] = name
-                handlers_with_id.append((name, fn, event_id))
-            else:
-                handlers_without_id.append((name, fn))
-
-        from reflex.environment import EventMinifyMode
-
-        minify_mode = environment.REFLEX_MINIFY_EVENTS.get()
-
-        # In ENFORCE mode, all event handlers must have event_id
-        if minify_mode == EventMinifyMode.ENFORCE and handlers_without_id:
-            missing = [name for name, _ in handlers_without_id]
-            msg = (
-                f"State '{cls.__name__}' in ENFORCE mode: event handlers "
-                f"{missing} are missing required event_id."
-            )
-            raise StateValueError(msg)
-
-        # In BEST_EFFORT mode, auto-assign IDs to handlers without explicit IDs
-        if minify_mode == EventMinifyMode.BEST_EFFORT and handlers_without_id:
-            # Find the highest user-defined event_id
-            max_explicit_id = max((eid for _, _, eid in handlers_with_id), default=-1)
-
-            # Sort handlers without IDs alphabetically by name for deterministic ordering
-            handlers_without_id.sort(key=operator.itemgetter(0))
-
-            # Assign IDs starting from max_explicit_id + 1
-            next_id = max_explicit_id + 1
-            for name, fn in handlers_without_id:
-                setattr(fn, EVENT_ID_MARKER, next_id)
-                cls._event_id_to_name[next_id] = name
-                next_id += 1
+        if is_minify_enabled():
+            state_path = get_state_full_path(cls)
+            for handler_name in events:
+                event_id = get_event_id(state_path, handler_name)
+                if event_id is not None:
+                    cls._event_id_to_name[event_id] = handler_name
 
         # Initialize per-class var dependency tracking.
         cls._var_dependencies = {}
@@ -830,10 +704,6 @@ class BaseState(EvenMoreBasicBaseState):
         newfn.__annotations__ = fn.__annotations__
         if mark := getattr(fn, BACKGROUND_TASK_MARKER, None):
             setattr(newfn, BACKGROUND_TASK_MARKER, mark)
-        # Preserve event_id for minification
-        event_id = getattr(fn, EVENT_ID_MARKER, None)
-        if event_id is not None:
-            object.__setattr__(newfn, EVENT_ID_MARKER, event_id)
         # Preserve event_actions from @rx.event decorator
         if event_actions := getattr(fn, EVENT_ACTIONS_MARKER, None):
             object.__setattr__(newfn, EVENT_ACTIONS_MARKER, event_actions)
@@ -1138,34 +1008,20 @@ class BaseState(EvenMoreBasicBaseState):
         """Get the name of the state.
 
         Returns:
-            The name of the state.
-
-        Raises:
-            StateValueError: If ENFORCE mode is set and state_id is missing.
+            The name of the state (minified if configured in minify.json).
         """
-        from reflex.environment import StateMinifyMode
-        from reflex.utils.exceptions import StateValueError
+        from reflex.minify import get_state_full_path, get_state_id, is_minify_enabled
 
         module = cls.__module__.replace(".", "___")
         full_name = format.to_snake_case(f"{module}___{cls.__name__}")
 
-        minify_mode = environment.REFLEX_MINIFY_STATES.get()
+        # If minification is enabled, look up the state ID from minify.json
+        if is_minify_enabled():
+            state_path = get_state_full_path(cls)
+            state_id = get_state_id(state_path)
+            if state_id is not None:
+                return state_id
 
-        if minify_mode == StateMinifyMode.DISABLED:
-            return full_name
-
-        if cls._state_id is not None:
-            return _int_to_minified_name(cls._state_id)
-
-        # state_id not set
-        if minify_mode == StateMinifyMode.ENFORCE:
-            msg = (
-                f"State '{cls.__module__}.{cls.__name__}' is missing required state_id. "
-                f"Add state_id parameter: class {cls.__name__}(rx.State, state_id=N)"
-            )
-            raise StateValueError(msg)
-
-        # ENABLED mode with no state_id - use full name
         return full_name
 
     @classmethod
@@ -1894,11 +1750,8 @@ class BaseState(EvenMoreBasicBaseState):
         Returns:
             The original event handler name, or None if not found.
         """
-        # Build reverse lookup: minified_name -> original_name
-        for event_id, original_name in cls._event_id_to_name.items():
-            if _int_to_minified_name(event_id) == minified_name:
-                return original_name
-        return None
+        # Direct lookup: _event_id_to_name maps minified_name -> original_name
+        return cls._event_id_to_name.get(minified_name)
 
     def _get_event_handler(
         self, event: Event
@@ -2669,7 +2522,7 @@ def is_serializable(value: Any) -> bool:
 T_STATE = TypeVar("T_STATE", bound=BaseState)
 
 
-class State(BaseState, state_id=0):
+class State(BaseState):
     """The app Base State."""
 
     # The hydrated bool.
@@ -2762,7 +2615,7 @@ def dynamic(func: Callable[[T], Component]):
 LAST_RELOADED_KEY = "reflex_last_reloaded_on_error"
 
 
-class FrontendEventExceptionState(State, state_id=0):
+class FrontendEventExceptionState(State):
     """Substate for handling frontend exceptions."""
 
     # If the frontend error message contains any of these strings, automatically reload the page.
@@ -2815,7 +2668,7 @@ class FrontendEventExceptionState(State, state_id=0):
         )
 
 
-class UpdateVarsInternalState(State, state_id=1):
+class UpdateVarsInternalState(State):
     """Substate for handling internal state var updates."""
 
     async def update_vars_internal(self, vars: dict[str, Any]) -> None:
@@ -2839,7 +2692,7 @@ class UpdateVarsInternalState(State, state_id=1):
                 setattr(var_state, var_name, value)
 
 
-class OnLoadInternalState(State, state_id=2):
+class OnLoadInternalState(State):
     """Substate for handling on_load event enumeration.
 
     This is a separate substate to avoid deserializing the entire state tree for every page navigation.

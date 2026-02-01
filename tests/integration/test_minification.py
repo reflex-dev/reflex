@@ -2,55 +2,46 @@
 
 from __future__ import annotations
 
-import os
+import json
 from collections.abc import Generator
-from functools import partial
 from typing import TYPE_CHECKING
 
 import pytest
 from selenium.webdriver.common.by import By
 
-from reflex.environment import EventMinifyMode, StateMinifyMode, environment
-from reflex.state import _int_to_minified_name
+from reflex.minify import MINIFY_JSON, clear_config_cache, int_to_minified_name
 from reflex.testing import AppHarness
 
 if TYPE_CHECKING:
     from selenium.webdriver.remote.webdriver import WebDriver
 
 
-def MinificationApp(
-    root_state_id: int,
-    sub_state_id: int,
-    increment_event_id: int | None = None,
-    update_message_event_id: int | None = None,
-):
+def MinificationApp():
     """Test app for state and event handler minification.
 
-    Args:
-        root_state_id: The state_id for the root state.
-        sub_state_id: The state_id for the sub state.
-        increment_event_id: The event_id for the increment event handler.
-        update_message_event_id: The event_id for the update_message event handler.
+    This app is used to test that:
+    1. Without minify.json, full state/event names are used
+    2. With minify.json, minified names are used based on the config
     """
     import reflex as rx
     from reflex.utils import format
 
-    class RootState(rx.State, state_id=root_state_id):
-        """Root state with explicit state_id."""
+    class RootState(rx.State):
+        """Root state for testing."""
 
         count: int = 0
 
-        @rx.event(event_id=increment_event_id)
+        @rx.event
         def increment(self):
             """Increment the count."""
             self.count += 1
 
-    class SubState(RootState, state_id=sub_state_id):
-        """Sub state with explicit state_id."""
+    class SubState(RootState):
+        """Sub state for testing."""
 
         message: str = "hello"
 
-        @rx.event(event_id=update_message_event_id)
+        @rx.event
         def update_message(self):
             """Update the message."""
             parent = self.parent_state
@@ -103,7 +94,7 @@ def minify_disabled_app(
     app_harness_env: type[AppHarness],
     tmp_path_factory: pytest.TempPathFactory,
 ) -> Generator[AppHarness, None, None]:
-    """Start app with REFLEX_MINIFY_STATES=disabled.
+    """Start app WITHOUT minify.json (full names).
 
     Args:
         app_harness_env: AppHarness or AppHarnessProd
@@ -112,29 +103,16 @@ def minify_disabled_app(
     Yields:
         Running AppHarness instance
     """
-    os.environ["REFLEX_MINIFY_STATES"] = "disabled"
-    os.environ["REFLEX_MINIFY_EVENTS"] = "disabled"
-    environment.REFLEX_MINIFY_STATES.set(StateMinifyMode.DISABLED)
-    environment.REFLEX_MINIFY_EVENTS.set(EventMinifyMode.DISABLED)
+    # Clear minify config cache to ensure clean state
+    clear_config_cache()
 
+    # No minify.json file - full names will be used
     with app_harness_env.create(
         root=tmp_path_factory.mktemp("minify_disabled"),
         app_name="minify_disabled",
-        app_source=partial(
-            MinificationApp,
-            root_state_id=3,
-            sub_state_id=4,
-            increment_event_id=0,
-            update_message_event_id=0,
-        ),
+        app_source=MinificationApp,
     ) as harness:
         yield harness
-
-    # Cleanup
-    os.environ.pop("REFLEX_MINIFY_STATES", None)
-    os.environ.pop("REFLEX_MINIFY_EVENTS", None)
-    environment.REFLEX_MINIFY_STATES.set(StateMinifyMode.DISABLED)
-    environment.REFLEX_MINIFY_EVENTS.set(EventMinifyMode.DISABLED)
 
 
 @pytest.fixture
@@ -142,7 +120,7 @@ def minify_enabled_app(
     app_harness_env: type[AppHarness],
     tmp_path_factory: pytest.TempPathFactory,
 ) -> Generator[AppHarness, None, None]:
-    """Start app with minification enabled.
+    """Start app WITH minify.json (minified names).
 
     Args:
         app_harness_env: AppHarness or AppHarnessProd
@@ -151,29 +129,53 @@ def minify_enabled_app(
     Yields:
         Running AppHarness instance
     """
-    os.environ["REFLEX_MINIFY_STATES"] = "enabled"
-    os.environ["REFLEX_MINIFY_EVENTS"] = "enabled"
-    environment.REFLEX_MINIFY_STATES.set(StateMinifyMode.ENABLED)
-    environment.REFLEX_MINIFY_EVENTS.set(EventMinifyMode.ENABLED)
+    # Clear minify config cache to ensure clean state
+    clear_config_cache()
 
-    with app_harness_env.create(
-        root=tmp_path_factory.mktemp("minify_enabled"),
+    app_root = tmp_path_factory.mktemp("minify_enabled")
+
+    # Create the harness object (but don't start yet)
+    harness = app_harness_env.create(
+        root=app_root,
         app_name="minify_enabled",
-        app_source=partial(
-            MinificationApp,
-            root_state_id=10,
-            sub_state_id=11,
-            increment_event_id=0,
-            update_message_event_id=0,
-        ),
-    ) as harness:
-        yield harness
+        app_source=MinificationApp,
+    )
 
-    # Cleanup
-    os.environ.pop("REFLEX_MINIFY_STATES", None)
-    os.environ.pop("REFLEX_MINIFY_EVENTS", None)
-    environment.REFLEX_MINIFY_STATES.set(StateMinifyMode.DISABLED)
-    environment.REFLEX_MINIFY_EVENTS.set(EventMinifyMode.DISABLED)
+    # Create minify.json with explicit IDs for our states and events
+    # The state paths need to match what get_state_full_path() returns
+    # Format: module.StateHierarchy (e.g., "minify_enabled.minify_enabled.State.RootState")
+    # Note: RootState extends rx.State, so the path includes State in the hierarchy
+    # Version 2 format: string IDs and nested events
+    app_module = "minify_enabled.minify_enabled"
+    root_state_path = f"{app_module}.State.RootState"
+    sub_state_path = f"{app_module}.State.RootState.SubState"
+    minify_config = {
+        "version": 1,
+        "states": {
+            # Base State needs an ID too since it's in the hierarchy
+            "reflex.state.State": "a",
+            # RootState extends State, so path is module.State.RootState
+            root_state_path: "k",  # int_to_minified_name(10) = 'k'
+            # SubState extends RootState, so path is module.State.RootState.SubState
+            sub_state_path: "l",  # int_to_minified_name(11) = 'l'
+        },
+        "events": {
+            # Events are now nested under their state path
+            root_state_path: {
+                "increment": "f",  # int_to_minified_name(5) = 'f'
+            },
+            sub_state_path: {
+                "update_message": "h",  # int_to_minified_name(7) = 'h'
+            },
+        },
+    }
+
+    # Write minify.json to the app root directory
+    minify_path = app_root / MINIFY_JSON
+    minify_path.write_text(json.dumps(minify_config, indent=2))
+
+    with harness:
+        yield harness
 
 
 @pytest.fixture
@@ -220,7 +222,7 @@ def test_minification_disabled(
     minify_disabled_app: AppHarness,
     driver_disabled: WebDriver,
 ) -> None:
-    """Test that DISABLED mode uses full state and event names.
+    """Test that without minify.json, full state and event names are used.
 
     Args:
         minify_disabled_app: harness for the app
@@ -287,7 +289,7 @@ def test_minification_enabled(
     minify_enabled_app: AppHarness,
     driver_enabled: WebDriver,
 ) -> None:
-    """Test that ENABLED mode uses minified state and event names.
+    """Test that with minify.json, minified state and event names are used.
 
     Args:
         minify_enabled_app: harness for the app
@@ -310,10 +312,11 @@ def test_minification_enabled(
     root_state_name = root_state_name_el.text
     sub_state_name = sub_state_name_el.text
 
-    # In enabled mode with state_id, names should be minified
-    # state_id=10 -> 'k', state_id=11 -> 'l'
-    expected_root_minified = _int_to_minified_name(10)
-    expected_sub_minified = _int_to_minified_name(11)
+    # In enabled mode with minify.json, names should be minified
+    # RootState has state_id=10 -> 'k'
+    # SubState has state_id=11 -> 'l'
+    expected_root_minified = int_to_minified_name(10)
+    expected_sub_minified = int_to_minified_name(11)
 
     assert expected_root_minified in root_state_name
     assert expected_sub_minified in sub_state_name
@@ -337,19 +340,22 @@ def test_minification_enabled(
         else update_handler_text
     )
 
-    # In enabled mode with event_id, names should be minified
-    # event_id=0 -> 'a' for both handlers
-    expected_event_minified = _int_to_minified_name(0)
+    # In enabled mode with minify.json:
+    # - increment has event_id=5 -> 'f'
+    # - update_message has event_id=7 -> 'h'
+    expected_increment_minified = int_to_minified_name(5)
+    expected_update_minified = int_to_minified_name(7)
 
     # Event handler format: "state_name.event_name"
-    # For increment: "k.a" (state_id=10 -> 'k', event_id=0 -> 'a')
-    # For update_message: "k.l.a" (state_id=10.11 -> 'k.l', event_id=0 -> 'a')
-    # The event name should be minified to 'a'
-    assert increment_handler.endswith(f".{expected_event_minified}"), (
-        f"Expected minified event name, got: {increment_handler}"
+    # For increment: "k.f" (state_id=10 -> 'k', event_id=5 -> 'f')
+    # For update_message: "k.l.h" (state_id=10.11 -> 'k.l', event_id=7 -> 'h')
+    assert increment_handler.endswith(f".{expected_increment_minified}"), (
+        f"Expected minified event name ending with '.{expected_increment_minified}', "
+        f"got: {increment_handler}"
     )
-    assert update_handler.endswith(f".{expected_event_minified}"), (
-        f"Expected minified event name, got: {update_handler}"
+    assert update_handler.endswith(f".{expected_update_minified}"), (
+        f"Expected minified event name ending with '.{expected_update_minified}', "
+        f"got: {update_handler}"
     )
 
     # The handler names should NOT contain the original method names
