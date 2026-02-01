@@ -419,3 +419,116 @@ class TestEventMinification:
 
         # Should be the minified name directly
         assert event_name == "d"
+
+
+class TestDynamicHandlerMinification:
+    """Tests for dynamic event handler minification (setvar, auto-setters)."""
+
+    def test_setvar_registered_with_config(self, temp_minify_json):
+        """Test that setvar is registered in _event_id_to_name when config exists."""
+        expected_module = "tests.units.test_minification"
+        expected_state_path = f"{expected_module}.State.TestStateWithSetvar"
+
+        config: MinifyConfig = {
+            "version": SCHEMA_VERSION,
+            "states": {
+                "reflex.state.State": "a",
+                expected_state_path: "b",
+            },
+            "events": {
+                expected_state_path: {"setvar": "s"},
+            },
+        }
+        save_minify_config(config)
+        clear_config_cache()
+        State.get_name.cache_clear()
+        State.get_full_name.cache_clear()
+        State.get_class_substate.cache_clear()
+
+        class TestStateWithSetvar(State):
+            pass
+
+        # Verify setvar is registered for minification
+        assert "s" in TestStateWithSetvar._event_id_to_name
+        assert TestStateWithSetvar._event_id_to_name["s"] == "setvar"
+
+    def test_auto_setter_registered_with_config(self, temp_minify_json):
+        """Test that auto-setters (set_*) are registered in _event_id_to_name when config exists."""
+        expected_module = "tests.units.test_minification"
+        expected_state_path = f"{expected_module}.State.TestStateWithAutoSetter"
+
+        config: MinifyConfig = {
+            "version": SCHEMA_VERSION,
+            "states": {
+                "reflex.state.State": "a",
+                expected_state_path: "b",
+            },
+            "events": {
+                expected_state_path: {"set_count": "c", "setvar": "v"},
+            },
+        }
+        save_minify_config(config)
+        clear_config_cache()
+        State.get_name.cache_clear()
+        State.get_full_name.cache_clear()
+        State.get_class_substate.cache_clear()
+
+        class TestStateWithAutoSetter(State):
+            count: int = 0
+
+        # Verify auto-setter is registered for minification
+        assert "c" in TestStateWithAutoSetter._event_id_to_name
+        assert TestStateWithAutoSetter._event_id_to_name["c"] == "set_count"
+
+    def test_dynamic_handlers_not_registered_without_config(self, temp_minify_json):
+        """Test that dynamic handlers are NOT registered when no config exists."""
+        # No config saved - temp_minify_json fixture ensures clean state
+
+        class TestStateNoConfig(State):
+            count: int = 0
+
+        # Without config, _event_id_to_name should be empty
+        assert TestStateNoConfig._event_id_to_name == {}
+
+    def test_add_event_handler_registered_with_config(self, temp_minify_json):
+        """Test that dynamically added event handlers via _add_event_handler are registered."""
+        import reflex as rx
+
+        expected_module = "tests.units.test_minification"
+        expected_state_path = f"{expected_module}.State.TestStateWithDynamicHandler"
+
+        config: MinifyConfig = {
+            "version": SCHEMA_VERSION,
+            "states": {
+                "reflex.state.State": "a",
+                expected_state_path: "b",
+            },
+            "events": {
+                expected_state_path: {"dynamic_handler": "d", "setvar": "v"},
+            },
+        }
+        save_minify_config(config)
+        clear_config_cache()
+        State.get_name.cache_clear()
+        State.get_full_name.cache_clear()
+        State.get_class_substate.cache_clear()
+
+        class TestStateWithDynamicHandler(State):
+            pass
+
+        # Dynamically add an event handler after class creation
+        @rx.event
+        def dynamic_handler(self):
+            pass
+
+        from reflex.event import EventHandler
+
+        handler = EventHandler(
+            fn=dynamic_handler,
+            state_full_name=TestStateWithDynamicHandler.get_full_name(),
+        )
+        TestStateWithDynamicHandler._add_event_handler("dynamic_handler", handler)
+
+        # Verify dynamic handler is registered for minification
+        assert "d" in TestStateWithDynamicHandler._event_id_to_name
+        assert TestStateWithDynamicHandler._event_id_to_name["d"] == "dynamic_handler"

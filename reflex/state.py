@@ -609,6 +609,7 @@ class BaseState(EvenMoreBasicBaseState):
             **cls.computed_vars,
         }
         cls.event_handlers = {}
+        cls._event_id_to_name = {}
 
         # Setup the base vars at the class level.
         for name, prop in cls.base_vars.items():
@@ -651,16 +652,9 @@ class BaseState(EvenMoreBasicBaseState):
             cls.event_handlers[name] = handler
             setattr(cls, name, handler)
 
-        # Build event_id registry from minify.json configuration
-        from reflex.minify import get_event_id, get_state_full_path, is_minify_enabled
-
-        cls._event_id_to_name = {}
-        if is_minify_enabled():
-            state_path = get_state_full_path(cls)
-            for handler_name in events:
-                event_id = get_event_id(state_path, handler_name)
-                if event_id is not None:
-                    cls._event_id_to_name[event_id] = handler_name
+        # Register user-defined event handlers for minification
+        for handler_name in events:
+            cls._register_event_handler_for_minify(handler_name)
 
         # Initialize per-class var dependency tracking.
         cls._var_dependencies = {}
@@ -673,16 +667,42 @@ class BaseState(EvenMoreBasicBaseState):
         cls,
         name: str,
         fn: Callable,
-    ):
+    ) -> EventHandler:
         """Add an event handler dynamically to the state.
 
         Args:
             name: The name of the event handler.
             fn: The function to call when the event is triggered.
+
+        Returns:
+            The created EventHandler instance.
         """
         handler = cls._create_event_handler(fn)
         cls.event_handlers[name] = handler
         setattr(cls, name, handler)
+        cls._register_event_handler_for_minify(name)
+        return handler
+
+    @classmethod
+    def _register_event_handler_for_minify(cls, handler_name: str) -> None:
+        """Register an event handler for minification if applicable.
+
+        Called when an event handler is added to event_handlers dict.
+        Updates _event_id_to_name if minification is enabled and the handler
+        has a minified ID in the config.
+
+        Args:
+            handler_name: The original name of the event handler.
+        """
+        from reflex.minify import get_event_id, get_minify_config, get_state_full_path
+
+        if get_minify_config() is None:
+            return
+
+        state_path = get_state_full_path(cls)
+        event_id = get_event_id(state_path, handler_name)
+        if event_id is not None:
+            cls._event_id_to_name[event_id] = handler_name
 
     @staticmethod
     def _copy_fn(fn: Callable) -> Callable:
@@ -1204,7 +1224,10 @@ class BaseState(EvenMoreBasicBaseState):
     @classmethod
     def _create_setvar(cls):
         """Create the setvar method for the state."""
-        cls.setvar = cls.event_handlers["setvar"] = EventHandlerSetVar(state_cls=cls)
+        cls.setvar = cls.event_handlers[constants.event.SETVAR] = EventHandlerSetVar(
+            state_cls=cls
+        )
+        cls._register_event_handler_for_minify(constants.event.SETVAR)
 
     @classmethod
     def _create_setter(cls, name: str, prop: Var):
@@ -1244,6 +1267,7 @@ class BaseState(EvenMoreBasicBaseState):
             )
             cls.event_handlers[setter_name] = event_handler
             setattr(cls, setter_name, event_handler)
+            cls._register_event_handler_for_minify(setter_name)
 
     @classmethod
     def _set_default_value(cls, name: str, prop: Var):

@@ -9,7 +9,7 @@ from typing import TYPE_CHECKING, Any, Literal
 from reflex import constants
 from reflex.constants import Hooks
 from reflex.constants.state import CAMEL_CASE_MEMO_MARKER
-from reflex.utils.format import format_state_name, json_dumps
+from reflex.utils.format import format_event_handler, format_state_name, json_dumps
 from reflex.vars.base import VarData
 
 if TYPE_CHECKING:
@@ -284,8 +284,10 @@ def context_template(
 
     # Compute dynamic state names that respect minification settings
     main_state_name = State.get_name()
-    on_load_internal = f"{OnLoadInternalState.get_name()}.on_load_internal"
-    update_vars_internal = f"{UpdateVarsInternalState.get_name()}.update_vars_internal"
+    on_load_internal = format_event_handler(OnLoadInternalState.on_load_internal)
+    update_vars_internal = format_event_handler(
+        UpdateVarsInternalState.update_vars_internal
+    )
     exception_state_full = FrontendEventExceptionState.get_full_name()
 
     initial_state = initial_state or {}
@@ -314,7 +316,7 @@ export const onLoadInternalEvent = () => {{
     if (client_storage_vars && Object.keys(client_storage_vars).length !== 0) {{
         internal_events.push(
             ReflexEvent(
-                '{state_name}.{update_vars_internal}',
+                '{update_vars_internal}',
                 {{vars: client_storage_vars}},
             ),
         );
@@ -322,7 +324,7 @@ export const onLoadInternalEvent = () => {{
 
     // `on_load_internal` triggers the correct on_load event(s) for the current page.
     // If the page does not define any on_load event, this will just set `is_hydrated = true`.
-    internal_events.push(ReflexEvent('{state_name}.{on_load_internal}'));
+    internal_events.push(ReflexEvent('{on_load_internal}'));
 
     return internal_events;
 }}

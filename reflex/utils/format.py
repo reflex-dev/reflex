@@ -6,7 +6,8 @@ import inspect
 import json
 import os
 import re
-from typing import TYPE_CHECKING, Any
+from collections.abc import Callable
+from typing import TYPE_CHECKING, Any, cast
 
 from reflex import constants
 from reflex.constants.state import FRONTEND_EVENT_STATE
@@ -439,7 +440,9 @@ def format_props(*single_props, **key_value_props) -> list[str]:
     ] + [(f"...{LiteralVar.create(prop)!s}") for prop in single_props]
 
 
-def get_event_handler_parts(handler: EventHandler) -> tuple[str, str]:
+def get_event_handler_parts(
+    handler: EventHandler | Callable[..., Any],
+) -> tuple[str, str]:
     """Get the state and function name of an event handler.
 
     Args:
@@ -448,8 +451,12 @@ def get_event_handler_parts(handler: EventHandler) -> tuple[str, str]:
     Returns:
         The state and function name (possibly minified based on minify.json).
     """
+    from reflex.event import EventHandler
     from reflex.minify import is_minify_enabled
     from reflex.state import State
+
+    # Cast for type checker - at runtime this is always an EventHandler
+    handler = cast(EventHandler, handler)
 
     # Get the class that defines the event handler.
     parts = handler.fn.__qualname__.split(".")
@@ -486,7 +493,7 @@ def get_event_handler_parts(handler: EventHandler) -> tuple[str, str]:
     return (state_full_name, name)
 
 
-def format_event_handler(handler: EventHandler) -> str:
+def format_event_handler(handler: EventHandler | Callable[..., Any]) -> str:
     """Format an event handler.
 
     Args:
