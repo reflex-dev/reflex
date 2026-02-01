@@ -127,5 +127,14 @@ class DataTable(Gridjs):
             self.columns = LiteralVar.create(data["columns"])
             self.data = LiteralVar.create(data["data"])
 
+        # If columns is a list of strings convert to list of dicts with id and name keys
+        if isinstance(self.columns, LiteralVar) and isinstance(
+            self.columns._var_value, list
+        ):
+            self.columns = LiteralVar.create([
+                {"id": col, "name": col} if isinstance(col, str) else col
+                for col in self.columns._var_value
+            ])
+
         # Render the table.
         return super()._render()
