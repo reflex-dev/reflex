@@ -288,14 +288,14 @@ class TestSyncMinifyConfig:
         # Start with partial config (using string IDs in v2 format)
         existing_config: MinifyConfig = {
             "version": SCHEMA_VERSION,
-            "states": {state_path: "bU"},  # Some arbitrary minified name
+            "states": {state_path: "bU"},  # codespell:ignore
             "events": {state_path: {"handler_a": "k"}},  # Another arbitrary name
         }
 
         new_config = sync_minify_config(existing_config, TestState)
 
         # Existing IDs should be preserved
-        assert new_config["states"][state_path] == "bU"
+        assert new_config["states"][state_path] == "bU"  # codespell:ignore
         assert new_config["events"][state_path]["handler_a"] == "k"
         # New handler should be added with next ID (k=10, so next is l=11)
         assert "handler_b" in new_config["events"][state_path]
