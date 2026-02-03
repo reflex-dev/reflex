@@ -362,7 +362,6 @@ class DataEditor(NoSSRComponent):
 
     # Fired when the search close button is clicked.
     on_search_close: EventHandler[no_args_event_spec]
- 
 
     def add_imports(self) -> ImportDict:
         """Add imports for the component.
