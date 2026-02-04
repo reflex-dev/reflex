@@ -881,7 +881,7 @@ def minify_init():
     save_minify_config(config)
 
     num_states = len(config["states"])
-    num_events = len(config["events"])
+    num_events = sum(len(handlers) for handlers in config["events"].values())
     console.log(
         f"Created {MINIFY_JSON} with {num_states} states and {num_events} events."
     )
@@ -931,7 +931,7 @@ def minify_sync(reassign_deleted: bool, prune: bool):
         raise SystemExit(1)
 
     old_states = len(existing_config["states"])
-    old_events = len(existing_config["events"])
+    old_events = sum(len(handlers) for handlers in existing_config["events"].values())
 
     # Sync the configuration
     new_config = sync_minify_config(
@@ -940,7 +940,7 @@ def minify_sync(reassign_deleted: bool, prune: bool):
     save_minify_config(new_config)
 
     new_states = len(new_config["states"])
-    new_events = len(new_config["events"])
+    new_events = sum(len(handlers) for handlers in new_config["events"].values())
 
     console.log(f"Updated {MINIFY_JSON}:")
     console.log(f"  States: {old_states} -> {new_states}")
