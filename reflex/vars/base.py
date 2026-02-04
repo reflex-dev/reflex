@@ -3540,7 +3540,6 @@ class BaseStateMeta(ABCMeta):
         bases: tuple[type],
         namespace: dict[str, Any],
         mixin: bool = False,
-        state_id: int | None = None,
     ) -> type:
         """Create a new class.
 
@@ -3549,7 +3548,6 @@ class BaseStateMeta(ABCMeta):
             bases: The bases of the class.
             namespace: The namespace of the class.
             mixin: Whether the class is a mixin and should not be instantiated.
-            state_id: Explicit state ID for minified state names.
 
         Returns:
             The new class.
@@ -3650,9 +3648,6 @@ class BaseStateMeta(ABCMeta):
         namespace["__inherited_fields__"] = inherited_fields
         namespace["__fields__"] = inherited_fields | own_fields
         namespace["_mixin"] = mixin
-        # Pass state_id to __init_subclass__ if provided (for BaseState subclasses)
-        if state_id is not None:
-            return super().__new__(cls, name, bases, namespace, state_id=state_id)
         return super().__new__(cls, name, bases, namespace)
 
 
