@@ -6,7 +6,7 @@ import json
 
 import pytest
 
-from reflex.environment import environment
+from reflex.environment import MinifyMode, environment
 from reflex.minify import (
     MINIFY_JSON,
     SCHEMA_VERSION,
@@ -140,8 +140,12 @@ class TestMinifyConfig:
 
     def test_save_and_load_config(self, temp_minify_json, monkeypatch):
         """Test saving and loading a config."""
-        monkeypatch.setenv(environment.REFLEX_MINIFY_STATES.name, "enabled")
-        monkeypatch.setenv(environment.REFLEX_MINIFY_EVENTS.name, "enabled")
+        monkeypatch.setenv(
+            environment.REFLEX_MINIFY_STATES.name, MinifyMode.ENABLED.value
+        )
+        monkeypatch.setenv(
+            environment.REFLEX_MINIFY_EVENTS.name, MinifyMode.ENABLED.value
+        )
         config: MinifyConfig = {
             "version": SCHEMA_VERSION,
             "states": {"test.module.MyState": "a"},
@@ -158,7 +162,9 @@ class TestMinifyConfig:
 
     def test_invalid_version_raises(self, temp_minify_json, monkeypatch):
         """Test that invalid version raises ValueError."""
-        monkeypatch.setenv(environment.REFLEX_MINIFY_STATES.name, "enabled")
+        monkeypatch.setenv(
+            environment.REFLEX_MINIFY_STATES.name, MinifyMode.ENABLED.value
+        )
         config = {"version": 999, "states": {}, "events": {}}
         path = temp_minify_json / MINIFY_JSON
         with path.open("w") as f:
@@ -171,7 +177,9 @@ class TestMinifyConfig:
 
     def test_missing_states_raises(self, temp_minify_json, monkeypatch):
         """Test that missing 'states' key raises ValueError."""
-        monkeypatch.setenv(environment.REFLEX_MINIFY_STATES.name, "enabled")
+        monkeypatch.setenv(
+            environment.REFLEX_MINIFY_STATES.name, MinifyMode.ENABLED.value
+        )
         config = {"version": SCHEMA_VERSION, "events": {}}
         path = temp_minify_json / MINIFY_JSON
         with path.open("w") as f:
@@ -328,7 +336,9 @@ class TestStateMinification:
 
     def test_state_uses_minified_name_with_config(self, temp_minify_json, monkeypatch):
         """Test that states use minified names when minify.json exists and env var is enabled."""
-        monkeypatch.setenv(environment.REFLEX_MINIFY_STATES.name, "enabled")
+        monkeypatch.setenv(
+            environment.REFLEX_MINIFY_STATES.name, MinifyMode.ENABLED.value
+        )
 
         class TestState(BaseState):
             pass
@@ -352,7 +362,9 @@ class TestStateMinification:
         self, temp_minify_json, monkeypatch
     ):
         """Test that states use full names when env var is disabled even with minify.json."""
-        monkeypatch.setenv(environment.REFLEX_MINIFY_STATES.name, "disabled")
+        monkeypatch.setenv(
+            environment.REFLEX_MINIFY_STATES.name, MinifyMode.DISABLED.value
+        )
 
         class TestState(BaseState):
             pass
@@ -399,7 +411,9 @@ class TestEventMinification:
         import reflex as rx
         from reflex.utils.format import get_event_handler_parts
 
-        monkeypatch.setenv(environment.REFLEX_MINIFY_EVENTS.name, "enabled")
+        monkeypatch.setenv(
+            environment.REFLEX_MINIFY_EVENTS.name, MinifyMode.ENABLED.value
+        )
 
         # First, set up the config BEFORE creating the state class
         # The event_id_to_name registry is built during __init_subclass__
@@ -462,7 +476,9 @@ class TestEventMinification:
         import reflex as rx
         from reflex.utils.format import get_event_handler_parts
 
-        monkeypatch.setenv(environment.REFLEX_MINIFY_EVENTS.name, "disabled")
+        monkeypatch.setenv(
+            environment.REFLEX_MINIFY_EVENTS.name, MinifyMode.DISABLED.value
+        )
 
         expected_module = "tests.units.test_minification"
         expected_state_path = (
@@ -505,7 +521,9 @@ class TestDynamicHandlerMinification:
 
     def test_setvar_registered_with_config(self, temp_minify_json, monkeypatch):
         """Test that setvar is registered in _event_id_to_name when config exists."""
-        monkeypatch.setenv(environment.REFLEX_MINIFY_EVENTS.name, "enabled")
+        monkeypatch.setenv(
+            environment.REFLEX_MINIFY_EVENTS.name, MinifyMode.ENABLED.value
+        )
         expected_module = "tests.units.test_minification"
         expected_state_path = f"{expected_module}.State.TestStateWithSetvar"
 
@@ -534,7 +552,9 @@ class TestDynamicHandlerMinification:
 
     def test_auto_setter_registered_with_config(self, temp_minify_json, monkeypatch):
         """Test that auto-setters (set_*) are registered in _event_id_to_name when config exists."""
-        monkeypatch.setenv(environment.REFLEX_MINIFY_EVENTS.name, "enabled")
+        monkeypatch.setenv(
+            environment.REFLEX_MINIFY_EVENTS.name, MinifyMode.ENABLED.value
+        )
         expected_module = "tests.units.test_minification"
         expected_state_path = f"{expected_module}.State.TestStateWithAutoSetter"
 
@@ -577,7 +597,9 @@ class TestDynamicHandlerMinification:
         """Test that dynamically added event handlers via _add_event_handler are registered."""
         import reflex as rx
 
-        monkeypatch.setenv(environment.REFLEX_MINIFY_EVENTS.name, "enabled")
+        monkeypatch.setenv(
+            environment.REFLEX_MINIFY_EVENTS.name, MinifyMode.ENABLED.value
+        )
         expected_module = "tests.units.test_minification"
         expected_state_path = f"{expected_module}.State.TestStateWithDynamicHandler"
 
@@ -649,7 +671,9 @@ class TestMinifyModeEnvVars:
         self, temp_minify_json, monkeypatch
     ):
         """Test that state minification is enabled when env var is enabled and config exists."""
-        monkeypatch.setenv(environment.REFLEX_MINIFY_STATES.name, "enabled")
+        monkeypatch.setenv(
+            environment.REFLEX_MINIFY_STATES.name, MinifyMode.ENABLED.value
+        )
         config: MinifyConfig = {
             "version": SCHEMA_VERSION,
             "states": {"test.module.MyState": "a"},
@@ -664,7 +688,9 @@ class TestMinifyModeEnvVars:
         self, temp_minify_json, monkeypatch
     ):
         """Test that event minification is enabled when env var is enabled and config exists."""
-        monkeypatch.setenv(environment.REFLEX_MINIFY_EVENTS.name, "enabled")
+        monkeypatch.setenv(
+            environment.REFLEX_MINIFY_EVENTS.name, MinifyMode.ENABLED.value
+        )
         config: MinifyConfig = {
             "version": SCHEMA_VERSION,
             "states": {},
@@ -677,22 +703,30 @@ class TestMinifyModeEnvVars:
 
     def test_state_minify_disabled_without_config(self, temp_minify_json, monkeypatch):
         """Test that state minification is disabled when env var is enabled but no config exists."""
-        monkeypatch.setenv(environment.REFLEX_MINIFY_STATES.name, "enabled")
+        monkeypatch.setenv(
+            environment.REFLEX_MINIFY_STATES.name, MinifyMode.ENABLED.value
+        )
         clear_config_cache()
 
         assert is_state_minify_enabled() is False
 
     def test_event_minify_disabled_without_config(self, temp_minify_json, monkeypatch):
         """Test that event minification is disabled when env var is enabled but no config exists."""
-        monkeypatch.setenv(environment.REFLEX_MINIFY_EVENTS.name, "enabled")
+        monkeypatch.setenv(
+            environment.REFLEX_MINIFY_EVENTS.name, MinifyMode.ENABLED.value
+        )
         clear_config_cache()
 
         assert is_event_minify_enabled() is False
 
     def test_independent_state_and_event_toggles(self, temp_minify_json, monkeypatch):
         """Test that state and event minification can be toggled independently."""
-        monkeypatch.setenv(environment.REFLEX_MINIFY_STATES.name, "enabled")
-        monkeypatch.setenv(environment.REFLEX_MINIFY_EVENTS.name, "disabled")
+        monkeypatch.setenv(
+            environment.REFLEX_MINIFY_STATES.name, MinifyMode.ENABLED.value
+        )
+        monkeypatch.setenv(
+            environment.REFLEX_MINIFY_EVENTS.name, MinifyMode.DISABLED.value
+        )
         config: MinifyConfig = {
             "version": SCHEMA_VERSION,
             "states": {"test.module.MyState": "a"},
@@ -709,8 +743,12 @@ class TestMinifyModeEnvVars:
         self, temp_minify_json, monkeypatch
     ):
         """Test that is_minify_enabled returns True when either state or event is enabled."""
-        monkeypatch.setenv(environment.REFLEX_MINIFY_STATES.name, "disabled")
-        monkeypatch.setenv(environment.REFLEX_MINIFY_EVENTS.name, "enabled")
+        monkeypatch.setenv(
+            environment.REFLEX_MINIFY_STATES.name, MinifyMode.DISABLED.value
+        )
+        monkeypatch.setenv(
+            environment.REFLEX_MINIFY_EVENTS.name, MinifyMode.ENABLED.value
+        )
         config: MinifyConfig = {
             "version": SCHEMA_VERSION,
             "states": {},
@@ -743,7 +781,9 @@ class TestMinifiedNameCollision:
         """Test that get_class_substate resolves correctly when parent and child
         share the same minified name (IDs are only sibling-unique).
         """
-        monkeypatch.setenv(environment.REFLEX_MINIFY_STATES.name, "enabled")
+        monkeypatch.setenv(
+            environment.REFLEX_MINIFY_STATES.name, MinifyMode.ENABLED.value
+        )
 
         # Build a hierarchy: State -> ParentState -> ChildState
         # where ParentState and ChildState both get minified name "b"
@@ -795,7 +835,9 @@ class TestMinifiedNameCollision:
         """
         import reflex as rx
 
-        monkeypatch.setenv(environment.REFLEX_MINIFY_STATES.name, "enabled")
+        monkeypatch.setenv(
+            environment.REFLEX_MINIFY_STATES.name, MinifyMode.ENABLED.value
+        )
 
         class ParentState2(State):
             pass

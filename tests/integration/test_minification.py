@@ -9,6 +9,7 @@ from typing import TYPE_CHECKING
 import pytest
 from selenium.webdriver.common.by import By
 
+from reflex.environment import MinifyMode, environment
 from reflex.minify import MINIFY_JSON, clear_config_cache, int_to_minified_name
 from reflex.testing import AppHarness
 
@@ -119,16 +120,22 @@ def minify_disabled_app(
 def minify_enabled_app(
     app_harness_env: type[AppHarness],
     tmp_path_factory: pytest.TempPathFactory,
+    monkeypatch: pytest.MonkeyPatch,
 ) -> Generator[AppHarness, None, None]:
-    """Start app WITH minify.json (minified names).
+    """Start app WITH minify.json and env vars enabled (minified names).
 
     Args:
         app_harness_env: AppHarness or AppHarnessProd
         tmp_path_factory: pytest tmp_path_factory fixture
+        monkeypatch: pytest monkeypatch fixture
 
     Yields:
         Running AppHarness instance
     """
+    # Enable minification via env vars (required in addition to minify.json)
+    monkeypatch.setenv(environment.REFLEX_MINIFY_STATES.name, MinifyMode.ENABLED.value)
+    monkeypatch.setenv(environment.REFLEX_MINIFY_EVENTS.name, MinifyMode.ENABLED.value)
+
     # Clear minify config cache to ensure clean state
     clear_config_cache()
 
