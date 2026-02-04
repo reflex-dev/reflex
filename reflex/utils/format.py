@@ -452,7 +452,7 @@ def get_event_handler_parts(
         The state and function name (possibly minified based on minify.json).
     """
     from reflex.event import EventHandler
-    from reflex.minify import is_minify_enabled
+    from reflex.minify import is_event_minify_enabled
     from reflex.state import State
 
     # Cast for type checker - at runtime this is always an EventHandler
@@ -477,7 +477,7 @@ def get_event_handler_parts(
     # Check for event_id minification from minify.json
     # The state class stores its event ID mapping in _event_id_to_name
     # where key is minified_name and value is original_handler_name
-    if is_minify_enabled():
+    if is_event_minify_enabled():
         try:
             # Get the state class using the path
             state_cls = State.get_class_substate(state_full_name)

@@ -115,12 +115,46 @@ def get_minify_config() -> MinifyConfig | None:
 
 
 def is_minify_enabled() -> bool:
-    """Check if minification is enabled.
+    """Check if any minification is enabled (state or event).
 
     Returns:
-        True if minify.json exists and is valid.
+        True if either state or event minification is enabled.
     """
-    return get_minify_config() is not None
+    return is_state_minify_enabled() or is_event_minify_enabled()
+
+
+@functools.cache
+def is_state_minify_enabled() -> bool:
+    """Check if state ID minification is enabled.
+
+    Requires both REFLEX_MINIFY_STATE=enabled and minify.json to exist.
+
+    Returns:
+        True if state minification is enabled.
+    """
+    from reflex.environment import MinifyMode, environment
+
+    return (
+        environment.REFLEX_MINIFY_STATE.get() == MinifyMode.ENABLED
+        and get_minify_config() is not None
+    )
+
+
+@functools.cache
+def is_event_minify_enabled() -> bool:
+    """Check if event ID minification is enabled.
+
+    Requires both REFLEX_MINIFY_EVENTS=enabled and minify.json to exist.
+
+    Returns:
+        True if event minification is enabled.
+    """
+    from reflex.environment import MinifyMode, environment
+
+    return (
+        environment.REFLEX_MINIFY_EVENTS.get() == MinifyMode.ENABLED
+        and get_minify_config() is not None
+    )
 
 
 def get_state_id(state_full_path: str) -> str | None:
@@ -175,6 +209,8 @@ def clear_config_cache() -> None:
     This should be called after modifying minify.json programmatically.
     """
     get_minify_config.cache_clear()
+    is_state_minify_enabled.cache_clear()
+    is_event_minify_enabled.cache_clear()
 
 
 # Base-54 encoding for minified names

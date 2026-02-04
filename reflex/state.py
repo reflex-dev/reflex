@@ -694,9 +694,13 @@ class BaseState(EvenMoreBasicBaseState):
         Args:
             handler_name: The original name of the event handler.
         """
-        from reflex.minify import get_event_id, get_minify_config, get_state_full_path
+        from reflex.minify import (
+            get_event_id,
+            get_state_full_path,
+            is_event_minify_enabled,
+        )
 
-        if get_minify_config() is None:
+        if not is_event_minify_enabled():
             return
 
         state_path = get_state_full_path(cls)
@@ -1030,13 +1034,17 @@ class BaseState(EvenMoreBasicBaseState):
         Returns:
             The name of the state (minified if configured in minify.json).
         """
-        from reflex.minify import get_state_full_path, get_state_id, is_minify_enabled
+        from reflex.minify import (
+            get_state_full_path,
+            get_state_id,
+            is_state_minify_enabled,
+        )
 
         module = cls.__module__.replace(".", "___")
         full_name = format.to_snake_case(f"{module}___{cls.__name__}")
 
-        # If minification is enabled, look up the state ID from minify.json
-        if is_minify_enabled():
+        # If state minification is enabled, look up the state ID from minify.json
+        if is_state_minify_enabled():
             state_path = get_state_full_path(cls)
             state_id = get_state_id(state_path)
             if state_id is not None:

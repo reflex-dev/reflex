@@ -1017,9 +1017,9 @@ def minify_list(output_json: bool):
 
     from reflex.minify import (
         get_event_id,
+        get_minify_config,
         get_state_full_path,
         get_state_id,
-        is_minify_enabled,
     )
     from reflex.state import BaseState, State
     from reflex.utils import prerequisites
@@ -1042,7 +1042,8 @@ def minify_list(output_json: bool):
     # Load the user's app to register all state classes
     prerequisites.get_app()
 
-    minify_enabled = is_minify_enabled()
+    # CLI inspection always shows config contents regardless of env var settings
+    minify_enabled = get_minify_config() is not None
 
     def build_state_tree(state_cls: type[BaseState]) -> StateTreeData:
         """Recursively build state tree data.
