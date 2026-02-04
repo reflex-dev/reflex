@@ -135,7 +135,7 @@ def is_state_minify_enabled() -> bool:
     from reflex.environment import MinifyMode, environment
 
     return (
-        environment.REFLEX_MINIFY_STATE.get() == MinifyMode.ENABLED
+        environment.REFLEX_MINIFY_STATES.get() == MinifyMode.ENABLED
         and get_minify_config() is not None
     )
 
