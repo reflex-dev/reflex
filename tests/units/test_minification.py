@@ -731,3 +731,104 @@ class TestMinifyModeEnvVars:
         clear_config_cache()
 
         assert is_minify_enabled() is False
+
+
+class TestMinifiedNameCollision:
+    """Tests for parent-child minified name collision in substate resolution."""
+
+    def test_get_class_substate_with_parent_child_name_collision(
+        self, temp_minify_json, monkeypatch
+    ):
+        """Test that get_class_substate resolves correctly when parent and child
+        share the same minified name (IDs are only sibling-unique).
+        """
+        monkeypatch.setenv("REFLEX_MINIFY_STATE", "enabled")
+
+        # Build a hierarchy: State -> ParentState -> ChildState
+        # where ParentState and ChildState both get minified name "b"
+
+        class ParentState(State):
+            pass
+
+        class ChildState(ParentState):
+            pass
+
+        parent_path = get_state_full_path(ParentState)
+        child_path = get_state_full_path(ChildState)
+
+        config: MinifyConfig = {
+            "version": SCHEMA_VERSION,
+            "states": {
+                "reflex.state.State": "a",
+                parent_path: "b",
+                child_path: "b",  # Same minified name as parent
+            },
+            "events": {},
+        }
+        save_minify_config(config)
+        clear_config_cache()
+        State.get_name.cache_clear()
+        State.get_full_name.cache_clear()
+        State.get_class_substate.cache_clear()
+        ParentState.get_name.cache_clear()
+        ParentState.get_full_name.cache_clear()
+        ChildState.get_name.cache_clear()
+        ChildState.get_full_name.cache_clear()
+
+        # Verify both get the same minified name
+        assert ParentState.get_name() == "b"
+        assert ChildState.get_name() == "b"
+
+        # Full path should be a.b.b
+        assert ChildState.get_full_name() == "a.b.b"
+
+        # get_class_substate should resolve a.b.b to ChildState, not ParentState
+        resolved = State.get_class_substate("a.b.b")
+        assert resolved is ChildState
+
+    def test_get_substate_with_parent_child_name_collision(
+        self, temp_minify_json, monkeypatch
+    ):
+        """Test that get_substate (instance method) resolves correctly when parent
+        and child share the same minified name.
+        """
+        import reflex as rx
+
+        monkeypatch.setenv("REFLEX_MINIFY_STATE", "enabled")
+
+        class ParentState2(State):
+            pass
+
+        class ChildState2(ParentState2):
+            @rx.event
+            def my_handler(self):
+                pass
+
+        parent_path = get_state_full_path(ParentState2)
+        child_path = get_state_full_path(ChildState2)
+
+        config: MinifyConfig = {
+            "version": SCHEMA_VERSION,
+            "states": {
+                "reflex.state.State": "a",
+                parent_path: "b",
+                child_path: "b",  # Same minified name as parent
+            },
+            "events": {},
+        }
+        save_minify_config(config)
+        clear_config_cache()
+        State.get_name.cache_clear()
+        State.get_full_name.cache_clear()
+        State.get_class_substate.cache_clear()
+        ParentState2.get_name.cache_clear()
+        ParentState2.get_full_name.cache_clear()
+        ChildState2.get_name.cache_clear()
+        ChildState2.get_full_name.cache_clear()
+
+        # Create a state instance tree
+        root = State(_reflex_internal_init=True)  # type: ignore[call-arg]
+
+        # Instance get_substate should resolve a.b.b to ChildState2
+        resolved = root.get_substate(["a", "b", "b"])
+        assert type(resolved) is ChildState2

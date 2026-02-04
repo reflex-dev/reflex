@@ -1068,11 +1068,17 @@ class BaseState(EvenMoreBasicBaseState):
 
     @classmethod
     @functools.lru_cache
-    def get_class_substate(cls, path: Sequence[str] | str) -> type[BaseState]:
+    def get_class_substate(
+        cls, path: Sequence[str] | str, _skip_self: bool = True
+    ) -> type[BaseState]:
         """Get the class substate.
 
         Args:
             path: The path to the substate.
+            _skip_self: If True, strip the leading segment when it matches this
+                state's name. Only the initial (root) call should use True;
+                recursive calls pass False so that a child whose minified name
+                collides with its parent is resolved correctly.
 
         Returns:
             The class substate.
@@ -1085,13 +1091,13 @@ class BaseState(EvenMoreBasicBaseState):
 
         if len(path) == 0:
             return cls
-        if path[0] == cls.get_name():
+        if _skip_self and path[0] == cls.get_name():
             if len(path) == 1:
                 return cls
             path = path[1:]
         for substate in cls.get_substates():
             if path[0] == substate.get_name():
-                return substate.get_class_substate(path[1:])
+                return substate.get_class_substate(path[1:], _skip_self=False)
         msg = f"Invalid path: {path}"
         raise ValueError(msg)
 
@@ -1605,11 +1611,15 @@ class BaseState(EvenMoreBasicBaseState):
         for substate in self.substates.values():
             substate._reset_client_storage()
 
-    def get_substate(self, path: Sequence[str]) -> BaseState:
+    def get_substate(self, path: Sequence[str], _skip_self: bool = True) -> BaseState:
         """Get the substate.
 
         Args:
             path: The path to the substate.
+            _skip_self: If True, strip the leading segment when it matches this
+                state's name. Only the initial (root) call should use True;
+                recursive calls pass False so that a child whose minified name
+                collides with its parent is resolved correctly.
 
         Returns:
             The substate.
@@ -1619,14 +1629,14 @@ class BaseState(EvenMoreBasicBaseState):
         """
         if len(path) == 0:
             return self
-        if path[0] == self.get_name():
+        if _skip_self and path[0] == self.get_name():
             if len(path) == 1:
                 return self
             path = path[1:]
         if path[0] not in self.substates:
             msg = f"Invalid path: {path}"
             raise ValueError(msg)
-        return self.substates[path[0]].get_substate(path[1:])
+        return self.substates[path[0]].get_substate(path[1:], _skip_self=False)
 
     @classmethod
     def _get_potentially_dirty_states(cls) -> set[type[BaseState]]:
