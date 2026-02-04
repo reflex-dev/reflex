@@ -7,7 +7,7 @@ import json
 import os
 import re
 from collections.abc import Callable
-from typing import TYPE_CHECKING, Any, cast
+from typing import TYPE_CHECKING, Any
 
 from reflex import constants
 from reflex.constants.state import FRONTEND_EVENT_STATE
@@ -455,8 +455,9 @@ def get_event_handler_parts(
     from reflex.minify import is_event_minify_enabled
     from reflex.state import State
 
-    # Cast for type checker - at runtime this is always an EventHandler
-    handler = cast(EventHandler, handler)
+    assert isinstance(handler, EventHandler), (
+        f"Expected EventHandler, got {type(handler)}"
+    )
 
     # Get the class that defines the event handler.
     parts = handler.fn.__qualname__.split(".")
