@@ -91,7 +91,7 @@ def tailwind_config_js_template(
     Returns:
         The Tailwind config template.
     """
-    import json
+    from reflex.utils.format import orjson_dumps
 
     # Extract parameters
     plugins = kwargs.get("plugins", [])
@@ -113,7 +113,8 @@ def tailwind_config_js_template(
 
     # Generate import statements for destructured imports
     import_lines = "\n".join([
-        f"import {{ {imp['name']} }} from {json.dumps(imp['from'])};" for imp in imports
+        f"import {{ {imp['name']} }} from {orjson_dumps(imp['from'])};"
+        for imp in imports
     ])
 
     # Generate plugin imports
@@ -121,15 +122,15 @@ def tailwind_config_js_template(
     for i, plugin in enumerate(plugins, 1):
         if isinstance(plugin, Mapping) and "call" not in plugin:
             plugin_imports.append(
-                f"import plugin{i} from {json.dumps(plugin['name'])};"
+                f"import plugin{i} from {orjson_dumps(plugin['name'])};"
             )
         elif not isinstance(plugin, Mapping):
-            plugin_imports.append(f"import plugin{i} from {json.dumps(plugin)};")
+            plugin_imports.append(f"import plugin{i} from {orjson_dumps(plugin)};")
 
     plugin_imports_lines = "\n".join(plugin_imports)
 
     presets_imports_lines = "\n".join([
-        f"import preset{i} from {json.dumps(preset)};"
+        f"import preset{i} from {orjson_dumps(preset)};"
         for i, preset in enumerate(presets, 1)
     ])
 
@@ -139,7 +140,7 @@ def tailwind_config_js_template(
         if isinstance(plugin, Mapping) and "call" in plugin:
             args_part = ""
             if "args" in plugin:
-                args_part = json.dumps(plugin["args"])
+                args_part = orjson_dumps(plugin["args"])
             plugin_list.append(f"{plugin['call']}({args_part})")
         else:
             plugin_list.append(f"plugin{i}")
@@ -154,13 +155,13 @@ def tailwind_config_js_template(
 {presets_imports_lines}
 
 export default {{
-    content: {json.dumps(content or default_content)},
-    theme: {json.dumps(theme or {})},
-    {f"darkMode: {json.dumps(dark_mode)}," if dark_mode is not None else ""}
-    {f"corePlugins: {json.dumps(core_plugins)}," if core_plugins is not None else ""}
-    {f"importants: {json.dumps(important)}," if important is not None else ""}
-    {f"prefix: {json.dumps(prefix)}," if prefix is not None else ""}
-    {f"separator: {json.dumps(separator)}," if separator is not None else ""}
+    content: {orjson_dumps(content or default_content)},
+    theme: {orjson_dumps(theme or {})},
+    {f"darkMode: {orjson_dumps(dark_mode)}," if dark_mode is not None else ""}
+    {f"corePlugins: {orjson_dumps(core_plugins)}," if core_plugins is not None else ""}
+    {f"importants: {orjson_dumps(important)}," if important is not None else ""}
+    {f"prefix: {orjson_dumps(prefix)}," if prefix is not None else ""}
+    {f"separator: {orjson_dumps(separator)}," if separator is not None else ""}
     {f"presets: [{', '.join(f'preset{i}' for i in range(1, len(presets) + 1))}]," if presets else ""}
     plugins: [{plugin_use_str}]
 }};
