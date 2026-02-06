@@ -995,12 +995,11 @@ def minify_validate():
     if missing:
         console.info("Missing entries (in code but not in config):")
         for entry in missing:
-            console.info(f"  - {entry}")
+            console.warn(f"  - {entry}")
 
-    if not errors and not warnings and not missing:
-        console.log(f"{MINIFY_JSON} is valid and up-to-date.")
-    elif errors:
+    if errors:
         raise SystemExit(1)
+    console.log(f"{MINIFY_JSON} is valid and up-to-date.")
 
 
 @minify.command(name="list")
