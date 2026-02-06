@@ -37,8 +37,7 @@ def get_package_json_and_hash(package_json_path: Path) -> tuple[PackageJson, str
     Returns:
         A tuple containing the content of package.json as a dictionary and its SHA-256 hash.
     """
-    with package_json_path.open("rb") as file:
-        json_data = orjson_loads(file.read())
+    json_data = orjson_loads(package_json_path.read_bytes())
 
     # Calculate the hash
     json_string = orjson_dumps(json_data, sort_keys=True)

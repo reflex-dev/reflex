@@ -245,8 +245,7 @@ def update_json_file(file_path: str | Path, update_dict: dict[str, int | str]):
     # Read the existing json object from the file.
     json_object = {}
     if fp.stat().st_size:
-        with fp.open("rb") as f:
-            json_object = orjson_loads(f.read())
+        json_object = orjson_loads(fp.read_bytes())
 
     # Update the json object with the new data.
     json_object.update(update_dict)

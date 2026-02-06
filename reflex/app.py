@@ -1170,8 +1170,7 @@ class App(MiddlewareMixin, LifespanMixin):
         if not dry_run and not should_compile and backend_dir.exists():
             stateful_pages_marker = backend_dir / constants.Dirs.STATEFUL_PAGES
             if stateful_pages_marker.exists():
-                with stateful_pages_marker.open("rb") as f:
-                    stateful_pages = format.orjson_loads(f.read())
+                stateful_pages = format.orjson_loads(stateful_pages_marker.read_bytes())
                 for route in stateful_pages:
                     console.debug(f"BE Evaluating stateful page: {route}")
                     self._compile_page(route, save_page=False)
