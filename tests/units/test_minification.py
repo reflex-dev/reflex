@@ -875,3 +875,148 @@ class TestMinifiedNameCollision:
         # Instance get_substate should resolve a.b.b to ChildState2
         resolved = root.get_substate(["a", "b", "b"])
         assert type(resolved) is ChildState2
+
+
+class TestMinifyLookupCLI:
+    """Tests for the 'reflex minify lookup' CLI command."""
+
+    def test_lookup_resolves_minified_path(self, temp_minify_json, monkeypatch):
+        """Test that lookup resolves a minified path to full state info."""
+        from unittest import mock
+
+        from click.testing import CliRunner
+
+        from reflex.reflex import cli
+        from reflex.utils import prerequisites
+
+        # Create test states
+        class AppState(State):
+            pass
+
+        class ChildState(AppState):
+            pass
+
+        app_state_path = get_state_full_path(AppState)
+        child_state_path = get_state_full_path(ChildState)
+
+        # Create minify.json with known mappings
+        config: MinifyConfig = {
+            "version": SCHEMA_VERSION,
+            "states": {
+                "reflex.state.State": "a",
+                app_state_path: "b",
+                child_state_path: "c",
+            },
+            "events": {},
+        }
+        save_minify_config(config)
+        clear_config_cache()
+
+        # Mock prerequisites.get_app to avoid needing a real app
+        app_module_mock = mock.Mock()
+        monkeypatch.setattr(prerequisites, "get_app", lambda *a, **kw: app_module_mock)
+
+        runner = CliRunner()
+        result = runner.invoke(cli, ["minify", "lookup", "a.b.c"])
+
+        assert result.exit_code == 0, result.output
+        # Output should include the module and class names
+        assert "State" in result.output
+        assert "AppState" in result.output
+        assert "ChildState" in result.output
+
+    def test_lookup_fails_without_minify_json(self, temp_minify_json, monkeypatch):
+        """Test that lookup fails gracefully when minify.json is missing."""
+        from unittest import mock
+
+        from click.testing import CliRunner
+
+        from reflex.reflex import cli
+        from reflex.utils import prerequisites
+
+        # Mock prerequisites.get_app
+        app_module_mock = mock.Mock()
+        monkeypatch.setattr(prerequisites, "get_app", lambda *a, **kw: app_module_mock)
+
+        # Don't create minify.json
+        clear_config_cache()
+
+        runner = CliRunner()
+        result = runner.invoke(cli, ["minify", "lookup", "a.b"])
+
+        assert result.exit_code == 1
+        assert "minify.json not found" in result.output
+
+    def test_lookup_fails_for_invalid_path(self, temp_minify_json, monkeypatch):
+        """Test that lookup fails for non-existent minified path."""
+        from unittest import mock
+
+        from click.testing import CliRunner
+
+        from reflex.reflex import cli
+        from reflex.utils import prerequisites
+
+        # Create minify.json with only root state
+        config: MinifyConfig = {
+            "version": SCHEMA_VERSION,
+            "states": {
+                "reflex.state.State": "a",
+            },
+            "events": {},
+        }
+        save_minify_config(config)
+        clear_config_cache()
+
+        # Mock prerequisites.get_app
+        app_module_mock = mock.Mock()
+        monkeypatch.setattr(prerequisites, "get_app", lambda *a, **kw: app_module_mock)
+
+        runner = CliRunner()
+        # Try to lookup a path that doesn't exist
+        result = runner.invoke(cli, ["minify", "lookup", "a.xyz"])
+
+        assert result.exit_code == 1
+        assert "No state found" in result.output
+
+    def test_lookup_with_json_output(self, temp_minify_json, monkeypatch):
+        """Test that lookup with --json flag outputs valid JSON."""
+        from unittest import mock
+
+        from click.testing import CliRunner
+
+        from reflex.reflex import cli
+        from reflex.utils import prerequisites
+
+        # Create test state
+        class JsonTestState(State):
+            pass
+
+        state_path = get_state_full_path(JsonTestState)
+
+        # Create minify.json
+        config: MinifyConfig = {
+            "version": SCHEMA_VERSION,
+            "states": {
+                "reflex.state.State": "a",
+                state_path: "b",
+            },
+            "events": {},
+        }
+        save_minify_config(config)
+        clear_config_cache()
+
+        # Mock prerequisites.get_app
+        app_module_mock = mock.Mock()
+        monkeypatch.setattr(prerequisites, "get_app", lambda *a, **kw: app_module_mock)
+
+        runner = CliRunner()
+        result = runner.invoke(cli, ["minify", "lookup", "--json", "a.b"])
+
+        assert result.exit_code == 0, result.output
+        # Parse output as JSON to verify it's valid
+        output_data = json.loads(result.output)
+        assert isinstance(output_data, list)
+        assert len(output_data) == 2  # Root state + JsonTestState
+        assert output_data[0]["class"] == "State"
+        assert output_data[1]["class"] == "JsonTestState"
+        assert output_data[1]["state_id"] == "b"

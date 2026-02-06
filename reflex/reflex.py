@@ -1160,49 +1160,88 @@ def minify_lookup(output_json: bool, minified_path: str):
 
     Walks the state tree from the root to resolve each segment.
     """
-    from reflex.minify import get_state_full_path, get_state_id
-    from reflex.state import State
+    from reflex.minify import MINIFY_JSON, get_minify_config, get_state_full_path
+    from reflex.state import BaseState, State
     from reflex.utils import prerequisites
 
     # Load the user's app to register all state classes
     prerequisites.get_app()
 
-    try:
-        State.get_class_substate(minified_path)
-    except ValueError:
-        msg = f"No state found for path: {minified_path}"
-        console.error(msg)
-        raise ValueError(msg) from None
+    config = get_minify_config()
+    if config is None:
+        console.error(
+            f"{MINIFY_JSON} not found. Run 'reflex minify init' to create it."
+        )
+        raise SystemExit(1)
 
-    # Build info for each ancestor segment
+    def collect_states(
+        state_cls: type[BaseState],
+    ) -> list[type[BaseState]]:
+        """Recursively collect all states.
+
+        Args:
+            state_cls: The state class to start from.
+
+        Returns:
+            List of all state classes in the hierarchy.
+        """
+        result = [state_cls]
+        for sub in state_cls.class_subclasses:
+            result.extend(collect_states(sub))
+        return result
+
+    # Build lookup: full_path -> (state_class, minified_id)
+    all_states = collect_states(State)
+    path_to_info: dict[str, tuple[type[BaseState], str | None]] = {}
+    for state_cls in all_states:
+        full_path = get_state_full_path(state_cls)
+        minified_id = config["states"].get(full_path)
+        path_to_info[full_path] = (state_cls, minified_id)
+
+    # Walk the minified path
     parts = minified_path.split(".")
     result_parts = []
     current = State
-    state_path = get_state_full_path(current)
-    state_id = get_state_id(state_path)
-    result_parts.append({
-        "minified": parts[0],
-        "state_id": state_id,
-        "module": current.__module__,
-        "class": current.__name__,
-        "full_path": state_path,
-    })
-    for part in parts[1:]:
-        current = current.get_class_substate(part)
-        state_path = get_state_full_path(current)
-        state_id = get_state_id(state_path)
+
+    for i, part in enumerate(parts):
+        # Find state whose minified ID matches 'part'
+        found = None
+        if i == 0:
+            # First segment should match root state
+            state_path = get_state_full_path(current)
+            _, state_id = path_to_info.get(state_path, (None, None))
+            if state_id == part:
+                found = current
+        else:
+            # Find among children of current
+            for child in current.class_subclasses:
+                child_path = get_state_full_path(child)
+                _, child_id = path_to_info.get(child_path, (None, None))
+                if child_id == part:
+                    found = child
+                    break
+
+        if found is None:
+            console.error(
+                f"No state found for minified segment '{part}' in path '{minified_path}'"
+            )
+            raise SystemExit(1)
+
+        state_path = get_state_full_path(found)
+        _, state_id = path_to_info.get(state_path, (None, None))
         result_parts.append({
             "minified": part,
             "state_id": state_id,
-            "module": current.__module__,
-            "class": current.__name__,
+            "module": found.__module__,
+            "class": found.__name__,
             "full_path": state_path,
         })
+        current = found
 
     if output_json:
         import json
 
-        console.log(json.dumps(result_parts, indent=2))
+        click.echo(json.dumps(result_parts, indent=2))
     else:
         # Simple output: module.ClassName for each part
         for info in result_parts:
