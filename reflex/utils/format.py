@@ -701,7 +701,7 @@ def orjson_dumps(obj: Any, **kwargs) -> str:
         A JSON string.
     """
     try:
-        import orjson
+        import orjson  # pyright: ignore[reportMissingImports]
     except ImportError:
         return json.dumps(obj, **kwargs)
 
@@ -735,7 +735,7 @@ def orjson_loads(data: str | bytes) -> Any:
         The deserialized Python object.
     """
     try:
-        import orjson
+        import orjson  # pyright: ignore[reportMissingImports]
     except ImportError:
         return json.loads(data)
 
