@@ -796,6 +796,7 @@ class BaseState(EvenMoreBasicBaseState):
         cls.__module__ = reflex.istate.dynamic.__name__
 
     @classmethod
+    @functools.cache
     def _get_type_hints(cls) -> dict[str, Any]:
         """Get the type hints for this class.
 
@@ -898,8 +899,9 @@ class BaseState(EvenMoreBasicBaseState):
         Raises:
             ComputedVarShadowsBaseVarsError: When a computed var shadows a base var.
         """
+        hints = cls._get_type_hints()
         for name, computed_var_ in cls._get_computed_vars():
-            if name in get_type_hints(cls):
+            if name in hints:
                 msg = f"The computed var name `{computed_var_._js_expr}` shadows a base var in {cls.__module__}.{cls.__name__}; use a different name instead"
                 raise ComputedVarShadowsBaseVarsError(msg)
 
