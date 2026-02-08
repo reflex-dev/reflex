@@ -260,6 +260,13 @@ class BaseConfig:
     # The transport method for client-server communication.
     transport: Literal["websocket", "polling"] = "websocket"
 
+    # Maximum file upload size in bytes. Files larger than this will be rejected with HTTP 413.
+    # Defaults to 10 MB. Set to 0 to disable the limit.
+    upload_max_size: int = 10 * 1024 * 1024  # 10 MB
+
+    # Maximum number of files per upload request. Set to 0 to disable the limit.
+    upload_max_files: int = 10
+
     # Whether to skip plugin checks.
     _skip_plugins_checks: bool = dataclasses.field(default=False, repr=False)
 
@@ -367,6 +374,13 @@ class Config(BaseConfig):
             and not self.redis_url
         ):
             msg = f"{self._prefixes[0]}REDIS_URL is required when using the redis state manager."
+            raise ConfigError(msg)
+
+        if self.upload_max_size < 0:
+            msg = "upload_max_size must be >= 0."
+            raise ConfigError(msg)
+        if self.upload_max_files < 0:
+            msg = "upload_max_files must be >= 0."
             raise ConfigError(msg)
 
     def _add_builtin_plugins(self):

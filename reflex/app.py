@@ -1911,15 +1911,46 @@ def upload(app: App):
         """
         from reflex.utils.exceptions import UploadTypeError, UploadValueError
 
+        config = get_config()
+        upload_max_size = config.upload_max_size
+        upload_max_files = config.upload_max_files
+
+        # Reject based on Content-Length before Starlette buffers the body.
+        # Content-Length covers the entire multipart request, so use
+        # (per-file limit * max files) as the upper bound.
+        if upload_max_size > 0 and upload_max_files > 0:
+            content_length_str = request.headers.get("content-length")
+            if content_length_str is not None:
+                try:
+                    content_length = int(content_length_str)
+                except ValueError:
+                    return JSONResponse(
+                        status_code=400,
+                        content={"detail": "Invalid Content-Length header."},
+                    )
+                max_request_size = upload_max_size * upload_max_files
+                if content_length > max_request_size:
+                    return JSONResponse(
+                        status_code=413,
+                        content={"detail": f"Upload exceeds the maximum allowed size of {max_request_size} bytes."},
+                    )
+
         # Get the files from the request.
         try:
             files = await request.form()
         except ClientDisconnect:
             return Response()  # user cancelled
-        files = files.getlist("files")
-        if not files:
+        file_list = files.getlist("files")
+        if not file_list:
             msg = "No files were uploaded."
             raise UploadValueError(msg)
+
+        # Enforce max file count.
+        if upload_max_files > 0 and len(file_list) > upload_max_files:
+            return JSONResponse(
+                status_code=400,
+                content={"detail": f"Too many files uploaded ({len(file_list)}). Maximum allowed is {upload_max_files}."},
+            )
 
         token = request.headers.get("reflex-client-token")
         handler = request.headers.get("reflex-event-handler")
@@ -1966,19 +1997,54 @@ def upload(app: App):
             )
             raise UploadValueError(msg)
 
+        async def _cleanup(upload_files, copied_files):
+            """Close all uploaded files and any already-copied BytesIO buffers.
+
+            Args:
+                upload_files: The raw uploaded file list from the request.
+                copied_files: The list of UploadFile copies made so far.
+            """
+            for f in upload_files:
+                if isinstance(f, StarletteUploadFile):
+                    await f.close()
+            for f in copied_files:
+                f.file.close()
+
         # Make a copy of the files as they are closed after the request.
         # This behaviour changed from fastapi 0.103.0 to 0.103.1 as the
         # AsyncExitStack was removed from the request scope and is now
         # part of the routing function which closes this before the
         # event is handled.
         file_copies = []
-        for file in files:
+        for file in file_list:
             if not isinstance(file, StarletteUploadFile):
+                await _cleanup(file_list, file_copies)
                 raise UploadValueError(
                     "Uploaded file is not an UploadFile." + str(file)
                 )
+            # Enforce upload size limit: early rejection via file.size header
+            if upload_max_size > 0 and file.size is not None and file.size > upload_max_size:
+                await _cleanup(file_list, file_copies)
+                return JSONResponse(
+                    status_code=413,
+                    content={"detail": f"File exceeds the maximum upload size of {upload_max_size} bytes."},
+                )
             content_copy = io.BytesIO()
-            content_copy.write(await file.read())
+            # Read in chunks to enforce limit even when file.size is not reported
+            bytes_read = 0
+            while True:
+                chunk = await file.read(1024 * 1024)  # 1 MB chunks
+                if not chunk:
+                    break
+                bytes_read += len(chunk)
+                if upload_max_size > 0 and bytes_read > upload_max_size:
+                    content_copy.close()
+                    await _cleanup(file_list, file_copies)
+                    return JSONResponse(
+                        status_code=413,
+                        content={"detail": f"File exceeds the maximum upload size of {upload_max_size} bytes."},
+                    )
+                content_copy.write(chunk)
             content_copy.seek(0)
             file_copies.append(
                 UploadFile(
@@ -1989,12 +2055,10 @@ def upload(app: App):
                 )
             )
 
-        for file in files:
-            if not isinstance(file, StarletteUploadFile):
-                raise UploadValueError(
-                    "Uploaded file is not an UploadFile." + str(file)
-                )
-            await file.close()
+        # Close the raw uploaded files (copies are kept for event processing).
+        for file in file_list:
+            if isinstance(file, StarletteUploadFile):
+                await file.close()
 
         event = Event(
             token=token,
