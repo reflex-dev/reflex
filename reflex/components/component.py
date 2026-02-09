@@ -1223,6 +1223,8 @@ class Component(BaseComponent, ABC):
         Returns:
             The dictionary for template of component.
         """
+        if (cached := self.__dict__.get("_cached_render")) is not None:
+            return cached
         tag = self._render()
         rendered_dict = dict(
             tag.set(
@@ -1230,6 +1232,7 @@ class Component(BaseComponent, ABC):
             )
         )
         self._replace_prop_names(rendered_dict)
+        self.__dict__["_cached_render"] = rendered_dict
         return rendered_dict
 
     def _replace_prop_names(self, rendered_dict: dict) -> None:
@@ -1496,6 +1499,8 @@ class Component(BaseComponent, ABC):
         Returns:
             The custom code.
         """
+        if (cached := self.__dict__.get("_cached_all_custom_code")) is not None:
+            return cached
         # Store the code in a set to avoid duplicates.
         code: dict[str, None] = {}
 
@@ -1517,6 +1522,7 @@ class Component(BaseComponent, ABC):
             code |= child._get_all_custom_code()
 
         # Return the code.
+        self.__dict__["_cached_all_custom_code"] = code
         return code
 
     def _get_dynamic_imports(self) -> str | None:
@@ -1648,10 +1654,18 @@ class Component(BaseComponent, ABC):
         Returns:
             The import dict with the required imports.
         """
+        if (
+            not collapse
+            and (cached := self.__dict__.get("_cached_all_imports")) is not None
+        ):
+            return cached
         imports_ = imports.merge_parsed_imports(
             self._get_imports(), *[child._get_all_imports() for child in self.children]
         )
-        return imports.collapse_imports(imports_) if collapse else imports_
+        result = imports.collapse_imports(imports_) if collapse else imports_
+        if not collapse:
+            self.__dict__["_cached_all_imports"] = result
+        return result
 
     def _get_mount_lifecycle_hook(self) -> str | None:
         """Generate the component lifecycle hook.
@@ -1805,6 +1819,8 @@ class Component(BaseComponent, ABC):
         Returns:
             The code that should appear just before returning the rendered component.
         """
+        if (cached := self.__dict__.get("_cached_all_hooks")) is not None:
+            return cached
         code = {}
 
         # Add the internal hooks for this component.
@@ -1821,6 +1837,7 @@ class Component(BaseComponent, ABC):
         for child in self.children:
             code.update(child._get_all_hooks())
 
+        self.__dict__["_cached_all_hooks"] = code
         return code
 
     def get_ref(self) -> str | None:
@@ -2439,13 +2456,20 @@ class StatefulComponent(BaseComponent):
     ) -> str:
         if not self.tag:
             return ""
+        cache_key = (
+            "_cached_stateful_code_export" if export else "_cached_stateful_code"
+        )
+        if (cached := self.__dict__.get(cache_key)) is not None:
+            return cached
         # Render the code for this component and hooks.
-        return stateful_component_template(
+        result = stateful_component_template(
             tag_name=self.tag,
             memo_trigger_hooks=self.memo_trigger_hooks,
             component=self.component,
             export=export,
         )
+        self.__dict__[cache_key] = result
+        return result
 
     @classmethod
     def _fix_event_triggers(

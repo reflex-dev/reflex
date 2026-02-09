@@ -163,14 +163,18 @@ class Foreach(Component):
         Returns:
             The dictionary for template of component.
         """
+        if (cached := self.__dict__.get("_cached_render")) is not None:
+            return cached
         tag = self._render()
 
-        return dict(
+        result = dict(
             tag,
             iterable_state=str(tag.iterable),
             arg_name=tag.arg_var_name,
             arg_index=tag.index_var_name,
         )
+        self.__dict__["_cached_render"] = result
+        return result
 
 
 foreach = Foreach.create

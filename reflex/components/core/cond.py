@@ -72,11 +72,15 @@ class Cond(Component):
         Returns:
             The dictionary for template of component.
         """
-        return {
+        if (cached := self.__dict__.get("_cached_render")) is not None:
+            return cached
+        result = {
             "cond_state": str(self.cond),
             "true_value": self.children[0].render(),
             "false_value": self.children[1].render(),
         }
+        self.__dict__["_cached_render"] = result
+        return result
 
     def add_imports(self) -> ImportDict:
         """Add imports for the Cond component.

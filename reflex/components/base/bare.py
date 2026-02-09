@@ -95,10 +95,13 @@ class Bare(Component):
         Returns:
             The hooks for the component.
         """
+        if (cached := self.__dict__.get("_cached_all_hooks")) is not None:
+            return cached
         hooks = super()._get_all_hooks()
         if isinstance(self.contents, Var):
             for component in _components_from_var(self.contents):
                 hooks |= component._get_all_hooks()
+        self.__dict__["_cached_all_hooks"] = hooks
         return hooks
 
     def _get_all_imports(self, collapse: bool = False) -> ParsedImportDict:
@@ -110,11 +113,18 @@ class Bare(Component):
         Returns:
             The imports for the component.
         """
+        if (
+            not collapse
+            and (cached := self.__dict__.get("_cached_all_imports")) is not None
+        ):
+            return cached
         imports = super()._get_all_imports(collapse=collapse)
         if isinstance(self.contents, Var):
             var_data = self.contents._get_all_var_data()
             if var_data:
                 imports |= {k: list(v) for k, v in var_data.imports}
+        if not collapse:
+            self.__dict__["_cached_all_imports"] = imports
         return imports
 
     def _get_all_dynamic_imports(self) -> set[str]:
@@ -135,10 +145,13 @@ class Bare(Component):
         Returns:
             The custom code.
         """
+        if (cached := self.__dict__.get("_cached_all_custom_code")) is not None:
+            return cached
         custom_code = super()._get_all_custom_code()
         if isinstance(self.contents, Var):
             for component in _components_from_var(self.contents):
                 custom_code |= component._get_all_custom_code()
+        self.__dict__["_cached_all_custom_code"] = custom_code
         return custom_code
 
     def _get_all_app_wrap_components(
@@ -196,14 +209,19 @@ class Bare(Component):
         Returns:
             The rendered component.
         """
+        if (cached := self.__dict__.get("_cached_render")) is not None:
+            return cached
         contents = (
             Var.create(self.contents)
             if not isinstance(self.contents, Var)
             else self.contents
         )
         if isinstance(contents, (BooleanVar, ObjectVar)):
-            return {"contents": f"{contents.to_string()!s}"}
-        return {"contents": f"{contents!s}"}
+            result = {"contents": f"{contents.to_string()!s}"}
+        else:
+            result = {"contents": f"{contents!s}"}
+        self.__dict__["_cached_render"] = result
+        return result
 
     def _add_style_recursive(
         self, style: ComponentStyle, theme: Component | None = None

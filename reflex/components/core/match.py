@@ -279,7 +279,11 @@ class Match(MemoizationLeaf):
         Returns:
             The dictionary for template of component.
         """
-        return dict(self._render())
+        if (cached := self.__dict__.get("_cached_render")) is not None:
+            return cached
+        result = dict(self._render())
+        self.__dict__["_cached_render"] = result
+        return result
 
     def add_imports(self) -> ImportDict:
         """Add imports for the Match component.
