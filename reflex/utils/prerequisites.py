@@ -149,7 +149,7 @@ def _check_app_name(config: Config):
     """
     if not config.app_name:
         msg = (
-            "Cannot get the app module because `app_name` is not set in rxconfig! "
+            f"Cannot get the app module because `app_name` is not set in {constants.Config.FILE}! "
             "If this error occurs in a reflex test case, ensure that `get_app` is mocked."
         )
         raise RuntimeError(msg)
@@ -161,9 +161,9 @@ def _check_app_name(config: Config):
         if module_path is None:
             msg = f"Module {config.module} not found. "
             if config.app_module_import is not None:
-                msg += f"Ensure app_module_import='{config.app_module_import}' in rxconfig.py matches your folder structure."
+                msg += f"Ensure app_module_import='{config.app_module_import}' in {constants.Config.FILE} matches your folder structure."
             else:
-                msg += f"Ensure app_name='{config.app_name}' in rxconfig.py matches your folder structure."
+                msg += f"Ensure app_name='{config.app_name}' in {constants.Config.FILE} matches your folder structure."
             raise ModuleNotFoundError(msg)
     config._app_name_is_valid = True
 
@@ -234,7 +234,7 @@ def get_and_validate_app(
     app_module = get_app(reload=reload)
     app = getattr(app_module, constants.CompileVars.APP)
     if not isinstance(app, App):
-        msg = "The app instance in the specified app_module_import in rxconfig must be an instance of rx.App."
+        msg = f"The app instance in the specified app_module_import in {constants.Config.FILE} must be an instance of rx.App."
         raise RuntimeError(msg)
 
     if check_if_schema_up_to_date:

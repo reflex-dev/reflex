@@ -1,5 +1,6 @@
 """Config constants."""
 
+import os
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -10,14 +11,45 @@ from .compiler import Ext
 # Alembic migrations
 ALEMBIC_CONFIG = "alembic.ini"
 
+# Default config module name.
+_DEFAULT_CONFIG_MODULE = "rxconfig"
 
-class Config(SimpleNamespace):
+
+def _get_config_module() -> str:
+    """Get the config module name from env or default.
+
+    Returns:
+        The config module name.
+    """
+    return os.environ.get("REFLEX_CONFIG_MODULE", _DEFAULT_CONFIG_MODULE)
+
+
+def _get_config_file() -> Path:
+    """Get the config file path from env or derive from module name.
+
+    Returns:
+        The config file path.
+    """
+    env_file = os.environ.get("REFLEX_CONFIG_FILE")
+    if env_file:
+        return Path(env_file)
+    return Path(f"{_get_config_module()}{Ext.PY}")
+
+
+class _ConfigMeta(type(SimpleNamespace)):
+    """Metaclass for Config that makes MODULE and FILE dynamic class attributes."""
+
+    @property
+    def MODULE(cls) -> str:  # noqa: N802
+        return _get_config_module()
+
+    @property
+    def FILE(cls) -> Path:  # noqa: N802
+        return _get_config_file()
+
+
+class Config(SimpleNamespace, metaclass=_ConfigMeta):
     """Config constants."""
-
-    # The name of the reflex config module.
-    MODULE = "rxconfig"
-    # The python config file.
-    FILE = Path(f"{MODULE}{Ext.PY}")
 
 
 class Expiration(SimpleNamespace):

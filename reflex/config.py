@@ -377,7 +377,7 @@ class Config(BaseConfig):
                 if not any(isinstance(p, plugin) for p in self.plugins):
                     console.warn(
                         f"`{plugin_name}` plugin is enabled by default, but not explicitly added to the config. "
-                        "If you want to use it, please add it to the `plugins` list in your config inside of `rxconfig.py`. "
+                        f"If you want to use it, please add it to the `plugins` list in your config inside of `{constants.Config.FILE}`. "
                         f"To disable this plugin, set `disable_plugins` to `{[plugin_name, *self.disable_plugins]!r}`.",
                     )
                     self.plugins.append(plugin())
@@ -385,7 +385,7 @@ class Config(BaseConfig):
                 if any(isinstance(p, plugin) for p in self.plugins):
                     console.warn(
                         f"`{plugin_name}` is disabled in the config, but it is still present in the `plugins` list. "
-                        "Please remove it from the `plugins` list in your config inside of `rxconfig.py`.",
+                        f"Please remove it from the `plugins` list in your config inside of `{constants.Config.FILE}`.",
                     )
 
         for disabled_plugin in self.disable_plugins:
@@ -399,7 +399,7 @@ class Config(BaseConfig):
             ):
                 console.warn(
                     f"`{disabled_plugin}` is disabled in the config, but it is not a built-in plugin. "
-                    "Please remove it from the `disable_plugins` list in your config inside of `rxconfig.py`.",
+                    f"Please remove it from the `disable_plugins` list in your config inside of `{constants.Config.FILE}`.",
                 )
 
     @classmethod
