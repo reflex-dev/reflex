@@ -387,6 +387,9 @@ def _parse_sentinel_nodes(nodes_str: str) -> list[tuple[str, int]]:
             msg = f"Invalid sentinel node format: {node!r}. Expected 'host:port'."
             raise ValueError(msg)
         host, port_str = parts
+        if not host:
+            msg = f"Invalid sentinel node format: {node!r}. Host cannot be empty."
+            raise ValueError(msg)
         try:
             port = int(port_str)
         except ValueError:
