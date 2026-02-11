@@ -421,7 +421,7 @@ def get_reload_paths() -> Sequence[Path]:
 
         while module_path.parent.name and _has_child_file(module_path, "__init__.py"):
             if (
-                _has_child_file(module_path, str(constants.Config.FILE))
+                _has_child_file(module_path, constants.Config.FILE.name)
                 and module_path == Path.cwd()
             ):
                 init_file = module_path / "__init__.py"
