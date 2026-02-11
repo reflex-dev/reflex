@@ -28,7 +28,7 @@ def rename_path_up_tree(full_path: str | Path, old_name: str, new_name: str) -> 
     while True:
         directory, base = current_path.parent, current_path.name
         # Stop renaming when we reach the root dir (which contains the config file)
-        if current_path.is_dir() and (current_path / constants.Config.FILE).exists():
+        if current_path.is_dir() and (current_path / constants.Config.FILE.name).exists():
             new_path = current_path
             break
 
