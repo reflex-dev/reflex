@@ -2080,7 +2080,11 @@ class EventNamespace(AsyncNamespace):
         query_params = urllib.parse.parse_qs(environ.get("QUERY_STRING", ""))
         token_list = query_params.get("token", [])
         if token_list:
-            await self.link_token_to_sid(sid, token_list[0])
+            token = token_list[0]
+            await self.link_token_to_sid(sid, token)
+            # Notify lifecycle watchers that this token/sid has connected.
+            actual_token = self._token_manager.sid_to_token.get(sid, token)
+            self._token_manager._notify_connect(actual_token, sid)
         else:
             console.warn(f"No token provided in connection for session {sid}")
 
@@ -2102,6 +2106,8 @@ class EventNamespace(AsyncNamespace):
         # Get token before cleaning up
         disconnect_token = self.sid_to_token.get(sid)
         if disconnect_token:
+            # Notify lifecycle watchers before cleanup removes the mappings.
+            self._token_manager._notify_disconnect(disconnect_token, sid)
             # Use async cleanup through token manager
             task = asyncio.create_task(
                 self._token_manager.disconnect_token(disconnect_token, sid),
