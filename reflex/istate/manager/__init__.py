@@ -48,7 +48,7 @@ class StateManager(ABC):
         config = get_config()
         if (
             prerequisites.parse_redis_url() is not None
-            or prerequisites._get_sentinel_config() is not None
+            or prerequisites.get_sentinel_config() is not None
         ):
             config.state_manager_mode = constants.StateManagerMode.REDIS
         if config.state_manager_mode == constants.StateManagerMode.MEMORY:

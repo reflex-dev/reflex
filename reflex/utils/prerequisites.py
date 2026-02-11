@@ -402,7 +402,7 @@ def _parse_sentinel_nodes(nodes_str: str) -> list[tuple[str, int]]:
     return sentinels
 
 
-def _get_sentinel_config() -> tuple[list[tuple[str, int]], str, str | None, str | None, int, bool] | None:
+def get_sentinel_config() -> tuple[list[tuple[str, int]], str, str | None, str | None, int, bool] | None:
     """Get Redis Sentinel configuration from the app config if set.
 
     Returns:
@@ -439,7 +439,7 @@ def get_redis() -> Redis | None:
         console.debug("Redis package not installed.")
         return None
 
-    sentinel_config = _get_sentinel_config()
+    sentinel_config = get_sentinel_config()
     if sentinel_config is not None:
         from redis.asyncio.sentinel import Sentinel
 
@@ -483,7 +483,7 @@ def get_redis_sync() -> RedisSync | None:
         console.debug("Redis package not installed.")
         return None
 
-    sentinel_config = _get_sentinel_config()
+    sentinel_config = get_sentinel_config()
     if sentinel_config is not None:
         from redis.sentinel import Sentinel
 
