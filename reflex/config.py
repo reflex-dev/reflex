@@ -144,7 +144,7 @@ class DBConfig:
 
 
 # These vars are not logged because they may contain sensitive information.
-_sensitive_env_vars = {"DB_URL", "ASYNC_DB_URL", "REDIS_URL"}
+_sensitive_env_vars = {"DB_URL", "ASYNC_DB_URL", "REDIS_URL", "REDIS_SENTINEL_PASSWORD"}
 
 
 @dataclasses.dataclass(kw_only=True)
@@ -186,6 +186,21 @@ class BaseConfig:
 
     # The redis url
     redis_url: str | None = None
+
+    # Comma-separated list of Redis Sentinel host:port pairs (e.g. "host1:26379,host2:26379").
+    redis_sentinel_nodes: str | None = None
+
+    # The Redis Sentinel service (master) name.
+    redis_sentinel_service: str | None = None
+
+    # Password for authenticating with Redis Sentinel instances (optional).
+    redis_sentinel_password: str | None = None
+
+    # Redis database number to use when connecting via Sentinel.
+    redis_sentinel_db: int = 0
+
+    # Whether to use SSL/TLS when connecting to Redis Sentinel.
+    redis_sentinel_ssl: bool = False
 
     # Telemetry opt-in.
     telemetry_enabled: bool = True
@@ -362,12 +377,19 @@ class Config(BaseConfig):
         self._non_default_attributes = set(kwargs.keys())
         self._replace_defaults(**kwargs)
 
-        if (
-            self.state_manager_mode == constants.StateManagerMode.REDIS
-            and not self.redis_url
-        ):
-            msg = f"{self._prefixes[0]}REDIS_URL is required when using the redis state manager."
-            raise ConfigError(msg)
+        if self.state_manager_mode == constants.StateManagerMode.REDIS:
+            has_redis_url = bool(self.redis_url)
+            has_sentinel = bool(
+                self.redis_sentinel_nodes and self.redis_sentinel_service
+            )
+            if not has_redis_url and not has_sentinel:
+                msg = (
+                    f"{self._prefixes[0]}REDIS_URL or "
+                    f"{self._prefixes[0]}REDIS_SENTINEL_NODES and "
+                    f"{self._prefixes[0]}REDIS_SENTINEL_SERVICE "
+                    "are required when using the redis state manager."
+                )
+                raise ConfigError(msg)
 
     def _add_builtin_plugins(self):
         """Add the builtin plugins to the config."""

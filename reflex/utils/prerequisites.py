@@ -365,8 +365,64 @@ def compile_or_validate_app(
         return True
 
 
+def _parse_sentinel_nodes(nodes_str: str) -> list[tuple[str, int]]:
+    """Parse a comma-separated list of sentinel host:port pairs.
+
+    Args:
+        nodes_str: Comma-separated sentinel addresses (e.g. "host1:26379,host2:26379").
+
+    Returns:
+        List of (host, port) tuples.
+
+    Raises:
+        ValueError: If the format is invalid.
+    """
+    sentinels = []
+    for node in nodes_str.split(","):
+        node = node.strip()
+        if not node:
+            continue
+        parts = node.rsplit(":", 1)
+        if len(parts) != 2:
+            msg = f"Invalid sentinel node format: {node!r}. Expected 'host:port'."
+            raise ValueError(msg)
+        host, port_str = parts
+        try:
+            port = int(port_str)
+        except ValueError:
+            msg = f"Invalid sentinel port: {port_str!r} in node {node!r}."
+            raise ValueError(msg) from None
+        sentinels.append((host, port))
+    if not sentinels:
+        msg = f"No valid sentinel nodes found in: {nodes_str!r}."
+        raise ValueError(msg)
+    return sentinels
+
+
+def _get_sentinel_config() -> tuple[list[tuple[str, int]], str, str | None, int, bool] | None:
+    """Get Redis Sentinel configuration from the app config if set.
+
+    Returns:
+        A tuple of (sentinel_nodes, service_name, password, db, ssl) or None if not configured.
+    """
+    config = get_config()
+    if not config.redis_sentinel_nodes or not config.redis_sentinel_service:
+        return None
+    nodes = _parse_sentinel_nodes(config.redis_sentinel_nodes)
+    return (
+        nodes,
+        config.redis_sentinel_service,
+        config.redis_sentinel_password,
+        config.redis_sentinel_db,
+        config.redis_sentinel_ssl,
+    )
+
+
 def get_redis() -> Redis | None:
     """Get the asynchronous redis client.
+
+    If Redis Sentinel is configured, returns a client connected to the sentinel master.
+    Otherwise falls back to direct redis_url connection.
 
     Returns:
         The asynchronous redis client.
@@ -377,6 +433,27 @@ def get_redis() -> Redis | None:
     except ImportError:
         console.debug("Redis package not installed.")
         return None
+
+    sentinel_config = _get_sentinel_config()
+    if sentinel_config is not None:
+        from redis.asyncio.sentinel import Sentinel
+
+        nodes, service_name, password, db, ssl = sentinel_config
+        sentinel_kwargs = {}
+        if password:
+            sentinel_kwargs["password"] = password
+        sentinel = Sentinel(
+            nodes,
+            sentinel_kwargs=sentinel_kwargs,
+            retry_on_error=[RedisError],
+        )
+        return sentinel.master_for(
+            service_name,
+            db=db,
+            password=password,
+            ssl=ssl,
+        )
+
     if (redis_url := parse_redis_url()) is not None:
         return Redis.from_url(
             redis_url,
@@ -388,6 +465,9 @@ def get_redis() -> Redis | None:
 def get_redis_sync() -> RedisSync | None:
     """Get the synchronous redis client.
 
+    If Redis Sentinel is configured, returns a client connected to the sentinel master.
+    Otherwise falls back to direct redis_url connection.
+
     Returns:
         The synchronous redis client.
     """
@@ -397,6 +477,27 @@ def get_redis_sync() -> RedisSync | None:
     except ImportError:
         console.debug("Redis package not installed.")
         return None
+
+    sentinel_config = _get_sentinel_config()
+    if sentinel_config is not None:
+        from redis.sentinel import Sentinel
+
+        nodes, service_name, password, db, ssl = sentinel_config
+        sentinel_kwargs = {}
+        if password:
+            sentinel_kwargs["password"] = password
+        sentinel = Sentinel(
+            nodes,
+            sentinel_kwargs=sentinel_kwargs,
+            retry_on_error=[RedisError],
+        )
+        return sentinel.master_for(
+            service_name,
+            db=db,
+            password=password,
+            ssl=ssl,
+        )
+
     if (redis_url := parse_redis_url()) is not None:
         return RedisSync.from_url(
             redis_url,
