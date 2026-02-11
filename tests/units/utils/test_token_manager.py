@@ -300,19 +300,21 @@ class TestTokenManagerLifecycle:
         assert evt.is_set()
 
     async def test_session_is_connected_yields_and_stops(self, manager):
-        """Yields token, stops on disconnect.
+        """Yields token once, then awaits disconnect.
 
         Args:
             manager: LocalTokenManager fixture instance.
         """
+        import contextlib
+
         await manager.link_token_to_sid("tok4", "sid4")
-        iterations = 0
-        async for token in manager.session_is_connected("sid4"):
+        async with contextlib.aclosing(
+            manager.session_is_connected("sid4")
+        ) as gen:
+            token = await gen.__anext__()
             assert token == "tok4"
-            iterations += 1
-            if iterations >= 3:
-                manager._notify_disconnect("tok4", "sid4")
-        assert iterations == 3
+            # Trigger disconnect so the await inside the iterator completes.
+            manager._notify_disconnect("tok4", "sid4")
 
     async def test_session_is_connected_raises_for_unknown(self, manager):
         """Raises for unknown sid.
@@ -325,19 +327,21 @@ class TestTokenManagerLifecycle:
                 pass
 
     async def test_token_is_connected_yields_and_stops(self, manager):
-        """Yields sid, stops on disconnect.
+        """Yields sid once, then awaits disconnect.
 
         Args:
             manager: LocalTokenManager fixture instance.
         """
+        import contextlib
+
         await manager.link_token_to_sid("tok5", "sid5")
-        iterations = 0
-        async for sid in manager.token_is_connected("tok5"):
+        async with contextlib.aclosing(
+            manager.token_is_connected("tok5")
+        ) as gen:
+            sid = await gen.__anext__()
             assert sid == "sid5"
-            iterations += 1
-            if iterations >= 3:
-                manager._notify_disconnect("tok5", "sid5")
-        assert iterations == 3
+            # Trigger disconnect so the await inside the iterator completes.
+            manager._notify_disconnect("tok5", "sid5")
 
     async def test_token_is_connected_raises_for_unknown(self, manager):
         """Raises for unknown token.

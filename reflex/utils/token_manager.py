@@ -155,10 +155,10 @@ class TokenManager(ABC):
             event.set()
 
     async def session_is_connected(self, sid: str) -> AsyncIterator[str]:
-        """Iterate while the given session is connected.
+        """Yield the client token, then block until the session disconnects.
 
-        Yields the client token on each iteration. Stops when the session
-        disconnects.
+        Yields the client token once, then suspends until the session
+        disconnects. Use with ``async for`` or ``contextlib.aclosing``.
 
         Args:
             sid: The Socket.IO session ID.
@@ -177,18 +177,18 @@ class TokenManager(ABC):
         disconnect_event = asyncio.Event()
         self._sid_disconnect_events.setdefault(sid, []).append(disconnect_event)
         try:
-            while not disconnect_event.is_set():
-                yield token
+            yield token
+            await disconnect_event.wait()
         finally:
             events = self._sid_disconnect_events.get(sid, [])
             if disconnect_event in events:
                 events.remove(disconnect_event)
 
     async def token_is_connected(self, client_token: str) -> AsyncIterator[str]:
-        """Iterate while the given client token is connected.
+        """Yield the session ID, then block until the token disconnects.
 
-        Yields the session ID on each iteration. Stops when the token
-        disconnects.
+        Yields the session ID once, then suspends until the token
+        disconnects. Use with ``async for`` or ``contextlib.aclosing``.
 
         Args:
             client_token: The client token.
@@ -209,8 +209,8 @@ class TokenManager(ABC):
             disconnect_event
         )
         try:
-            while not disconnect_event.is_set():
-                yield socket_record.sid
+            yield socket_record.sid
+            await disconnect_event.wait()
         finally:
             events = self._token_disconnect_events.get(client_token, [])
             if disconnect_event in events:
