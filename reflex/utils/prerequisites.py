@@ -399,11 +399,12 @@ def _parse_sentinel_nodes(nodes_str: str) -> list[tuple[str, int]]:
     return sentinels
 
 
-def _get_sentinel_config() -> tuple[list[tuple[str, int]], str, str | None, int, bool] | None:
+def _get_sentinel_config() -> tuple[list[tuple[str, int]], str, str | None, str | None, int, bool] | None:
     """Get Redis Sentinel configuration from the app config if set.
 
     Returns:
-        A tuple of (sentinel_nodes, service_name, password, db, ssl) or None if not configured.
+        A tuple of (sentinel_nodes, service_name, sentinel_password, master_password, db, ssl)
+        or None if not configured.
     """
     config = get_config()
     if not config.redis_sentinel_nodes or not config.redis_sentinel_service:
@@ -413,6 +414,7 @@ def _get_sentinel_config() -> tuple[list[tuple[str, int]], str, str | None, int,
         nodes,
         config.redis_sentinel_service,
         config.redis_sentinel_password,
+        config.redis_sentinel_master_password,
         config.redis_sentinel_db,
         config.redis_sentinel_ssl,
     )
@@ -438,10 +440,10 @@ def get_redis() -> Redis | None:
     if sentinel_config is not None:
         from redis.asyncio.sentinel import Sentinel
 
-        nodes, service_name, password, db, ssl = sentinel_config
+        nodes, service_name, sentinel_password, master_password, db, ssl = sentinel_config
         sentinel_kwargs = {}
-        if password:
-            sentinel_kwargs["password"] = password
+        if sentinel_password:
+            sentinel_kwargs["password"] = sentinel_password
         sentinel = Sentinel(
             nodes,
             sentinel_kwargs=sentinel_kwargs,
@@ -450,7 +452,7 @@ def get_redis() -> Redis | None:
         return sentinel.master_for(
             service_name,
             db=db,
-            password=password,
+            password=master_password,
             ssl=ssl,
         )
 
@@ -482,10 +484,10 @@ def get_redis_sync() -> RedisSync | None:
     if sentinel_config is not None:
         from redis.sentinel import Sentinel
 
-        nodes, service_name, password, db, ssl = sentinel_config
+        nodes, service_name, sentinel_password, master_password, db, ssl = sentinel_config
         sentinel_kwargs = {}
-        if password:
-            sentinel_kwargs["password"] = password
+        if sentinel_password:
+            sentinel_kwargs["password"] = sentinel_password
         sentinel = Sentinel(
             nodes,
             sentinel_kwargs=sentinel_kwargs,
@@ -494,7 +496,7 @@ def get_redis_sync() -> RedisSync | None:
         return sentinel.master_for(
             service_name,
             db=db,
-            password=password,
+            password=master_password,
             ssl=ssl,
         )
 

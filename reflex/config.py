@@ -144,7 +144,7 @@ class DBConfig:
 
 
 # These vars are not logged because they may contain sensitive information.
-_sensitive_env_vars = {"DB_URL", "ASYNC_DB_URL", "REDIS_URL", "REDIS_SENTINEL_PASSWORD"}
+_sensitive_env_vars = {"DB_URL", "ASYNC_DB_URL", "REDIS_URL", "REDIS_SENTINEL_PASSWORD", "REDIS_SENTINEL_MASTER_PASSWORD"}
 
 
 @dataclasses.dataclass(kw_only=True)
@@ -195,6 +195,9 @@ class BaseConfig:
 
     # Password for authenticating with Redis Sentinel instances (optional).
     redis_sentinel_password: str | None = None
+
+    # Password for authenticating with the Redis master/replicas discovered via Sentinel (optional).
+    redis_sentinel_master_password: str | None = None
 
     # Redis database number to use when connecting via Sentinel.
     redis_sentinel_db: int = 0
