@@ -3537,7 +3537,7 @@ class BaseStateMeta(ABCMeta):
     def __new__(
         cls,
         name: str,
-        bases: tuple[type],
+        bases: tuple[type, ...],
         namespace: dict[str, Any],
         mixin: bool = False,
     ) -> type:
