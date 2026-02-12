@@ -29,4 +29,6 @@ LiteralInputType = Literal[
 ]
 
 
-LiteralRowMarker = Literal["none", "number", "checkbox", "both", "clickable-number"]
+LiteralRowMarker = Literal[
+    "none", "number", "checkbox", "both", "checkbox-visible", "clickable-number"
+]
