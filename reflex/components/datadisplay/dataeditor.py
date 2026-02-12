@@ -360,6 +360,12 @@ class DataEditor(NoSSRComponent):
     # Fired when a column is resized.
     on_column_resize: EventHandler[passthrough_event_spec(GridColumn, int)]
 
+    # Shows search bar.
+    show_search: Var[bool]
+
+    # Fired when the search close button is clicked.
+    on_search_close: EventHandler[no_args_event_spec]
+
     def add_imports(self) -> ImportDict:
         """Add imports for the component.
 
