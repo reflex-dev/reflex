@@ -1709,13 +1709,11 @@ class BaseState(EvenMoreBasicBaseState):
         )
         return getattr(other_state, var_data.field_name)
 
-    def _get_event_handler(
-        self, event: Event
-    ) -> tuple[BaseState | StateProxy, EventHandler]:
+    def _get_event_handler(self, event: Event | str) -> tuple[BaseState, EventHandler]:
         """Get the event handler for the given event.
 
         Args:
-            event: The event to get the handler for.
+            event: The event to get the handler for, or a dotted handler name string.
 
 
         Returns:
@@ -1725,17 +1723,14 @@ class BaseState(EvenMoreBasicBaseState):
             ValueError: If the event handler or substate is not found.
         """
         # Get the event handler.
-        path = event.name.split(".")
+        name = event.name if isinstance(event, Event) else event
+        path = name.split(".")
         path, name = path[:-1], path[-1]
         substate = self.get_substate(path)
         if not substate:
             msg = "The value of state cannot be None when processing an event."
             raise ValueError(msg)
         handler = substate.event_handlers[name]
-
-        # For background tasks, proxy the state
-        if handler.is_background:
-            substate = StateProxy(substate)
 
         return substate, handler
 
@@ -1750,6 +1745,10 @@ class BaseState(EvenMoreBasicBaseState):
         """
         # Get the event handler.
         substate, handler = self._get_event_handler(event)
+
+        # For background tasks, proxy the state.
+        if handler.is_background:
+            substate = StateProxy(substate)
 
         # Run the event generator and yield state updates.
         async for update in self._process_event(
