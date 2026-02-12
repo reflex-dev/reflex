@@ -611,6 +611,8 @@ def run_uvicorn_backend_prod(host: str, port: int, loglevel: LogLevel):
 
     if constants.IS_WINDOWS:
         command = [
+            sys.executable,
+            "-m",
             "uvicorn",
             *("--host", host),
             *("--port", str(port)),
@@ -626,6 +628,8 @@ def run_uvicorn_backend_prod(host: str, port: int, loglevel: LogLevel):
 
         # Our default args, then env args (env args win on conflicts)
         command = [
+            sys.executable,
+            "-m",
             "gunicorn",
             "--preload",
             *("--worker-class", "uvicorn.workers.UvicornH11Worker"),
@@ -662,6 +666,8 @@ def run_granian_backend_prod(host: str, port: int, loglevel: LogLevel):
     from reflex.utils import processes
 
     command = [
+        sys.executable,
+        "-m",
         "granian",
         *("--log-level", "critical"),
         *("--host", host),

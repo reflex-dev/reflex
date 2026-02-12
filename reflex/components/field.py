@@ -67,7 +67,9 @@ class FieldBasedMeta(type):
     PropsBaseMeta and BaseComponentMeta.
     """
 
-    def __new__(cls, name: str, bases: tuple[type], namespace: dict[str, Any]) -> type:
+    def __new__(
+        cls, name: str, bases: tuple[type, ...], namespace: dict[str, Any]
+    ) -> type:
         """Create a new field-based class.
 
         Args:
@@ -100,7 +102,7 @@ class FieldBasedMeta(type):
         return super().__new__(cls, name, bases, namespace)
 
     @classmethod
-    def _collect_inherited_fields(cls, bases: tuple[type]) -> dict[str, Any]:
+    def _collect_inherited_fields(cls, bases: tuple[type, ...]) -> dict[str, Any]:
         inherited_fields: dict[str, Any] = {}
 
         # Collect inherited fields from base classes
