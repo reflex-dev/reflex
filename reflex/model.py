@@ -111,7 +111,8 @@ if find_spec("sqlalchemy"):
 
         if not environment.ALEMBIC_CONFIG.get().exists():
             console.warn(
-                "Database is not initialized, run [bold]reflex db init[/bold] first."
+                "Database is not initialized, run [bold]reflex db init[/bold] first.",
+                dedupe=True,
             )
         _ENGINE[url] = sqlalchemy.engine.create_engine(
             url,
@@ -153,7 +154,8 @@ if find_spec("sqlalchemy"):
 
         if not environment.ALEMBIC_CONFIG.get().exists():
             console.warn(
-                "Database is not initialized, run [bold]reflex db init[/bold] first."
+                "Database is not initialized, run [bold]reflex db init[/bold] first.",
+                dedupe=True,
             )
         _ASYNC_ENGINE[url] = sqlalchemy.ext.asyncio.create_async_engine(
             url,
@@ -316,8 +318,12 @@ if find_spec("sqlmodel") and find_spec("sqlalchemy") and find_spec("pydantic"):
             engine = get_engine()
             with engine.connect() as connection:
                 connection.execute(sqlalchemy.text("SELECT 1"))
-        except Exception:
+        except Exception as exc:
             status = False
+            console.error(
+                f"Database health check failed: {exc} (subsequent errors will not be logged)",
+                dedupe=True,
+            )
 
         return {"db": status}
 

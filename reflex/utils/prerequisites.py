@@ -440,8 +440,12 @@ async def get_redis_status() -> dict[str, bool | None]:
                 await ping_command
         else:
             status = None
-    except Exception:
+    except Exception as exc:
         status = False
+        console.error(
+            f"Redis health check failed: {exc} (subsequent errors will not be logged)",
+            dedupe=True,
+        )
 
     return {"redis": status}
 
@@ -643,7 +647,8 @@ def check_db_initialized() -> bool:
         and not environment.ALEMBIC_CONFIG.get().exists()
     ):
         console.error(
-            "Database is not initialized. Run [bold]reflex db init[/bold] first."
+            "Database is not initialized. Run [bold]reflex db init[/bold] first.",
+            dedupe=True,
         )
         return False
     return True
