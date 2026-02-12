@@ -25,6 +25,9 @@ import { uploadFiles } from "$/utils/helpers/upload";
 // Endpoint URLs.
 const EVENTURL = env.EVENT;
 
+// Socket event names (must match reflex/constants/event.py SocketEvent)
+const CLIENT_ERROR_EVENT = "client_error";
+
 // These hostnames indicate that the backend and frontend are reachable via the same domain.
 const SAME_DOMAIN_HOSTNAMES = ["localhost", "0.0.0.0", "::", "0:0:0:0:0:0:0:0"];
 
@@ -683,7 +686,7 @@ export const connect = async (
           const errorMsg = `Cannot process state update: dispatch function for substate "${substate}" is not available. This usually indicates a mismatch between frontend and backend state definitions. Please rebuild the frontend or check that api_url is correct.`;
           console.error(errorMsg);
           // Emit error back to backend so it appears in terminal logs
-          socket.current.emit("client_error", {
+          socket.current.emit(CLIENT_ERROR_EVENT, {
             message: errorMsg,
             substate: substate,
             error_type: "dispatch_function_missing",
@@ -711,7 +714,7 @@ export const connect = async (
       console.error("Error processing state update:", error);
       // If error wasn't already emitted above, emit it
       if (error.message && !error.message.includes("dispatch function")) {
-        socket.current.emit("client_error", {
+        socket.current.emit(CLIENT_ERROR_EVENT, {
           message: error.message,
           error_type: "state_update_processing_error",
         });
