@@ -167,12 +167,24 @@ def _update_react_router_config(config: Config, prerender_routes: bool = False):
     return f"export default {json.dumps(react_router_config)};"
 
 
-def _compile_package_json():
+def _compile_package_json(dynamic_route_prefixes: list[str] | None = None):
+    """Compile package.json with optional dynamic route handling.
+
+    Args:
+        dynamic_route_prefixes: List of route prefix patterns for sirv --ignores.
+    """
+    # Build prod command with --ignores flags for dynamic routes
+    prod_command = constants.PackageJson.Commands.PROD
+    if dynamic_route_prefixes:
+        # Add --ignores flag for each dynamic route prefix
+        ignores = " ".join(f"--ignores '{prefix}'" for prefix in dynamic_route_prefixes)
+        prod_command = f"{prod_command} {ignores}"
+
     return templates.package_json_template(
         scripts={
             "dev": constants.PackageJson.Commands.DEV,
             "export": constants.PackageJson.Commands.EXPORT,
-            "prod": constants.PackageJson.Commands.PROD,
+            "prod": prod_command,
         },
         dependencies=constants.PackageJson.DEPENDENCIES,
         dev_dependencies=constants.PackageJson.DEV_DEPENDENCIES,
@@ -180,10 +192,14 @@ def _compile_package_json():
     )
 
 
-def initialize_package_json():
-    """Render and write in .web the package.json file."""
+def initialize_package_json(dynamic_route_prefixes: list[str] | None = None):
+    """Render and write in .web the package.json file.
+
+    Args:
+        dynamic_route_prefixes: List of route prefix patterns for sirv --ignores.
+    """
     output_path = get_web_dir() / constants.PackageJson.PATH
-    output_path.write_text(_compile_package_json())
+    output_path.write_text(_compile_package_json(dynamic_route_prefixes))
 
 
 def _compile_vite_config(config: Config):
