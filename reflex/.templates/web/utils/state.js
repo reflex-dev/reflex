@@ -677,23 +677,47 @@ export const connect = async (
 
   // On each received message, queue the updates and events.
   socket.current.on("event", async (update) => {
-    for (const substate in update.delta) {
-      dispatch[substate](update.delta[substate]);
-      // handle events waiting for `is_hydrated`
-      if (
-        substate === state_name &&
-        update.delta[substate]?.is_hydrated_rx_state_
-      ) {
-        queueEvents(on_hydrated_queue, socket, false, navigate, params);
-        on_hydrated_queue.length = 0;
+    try {
+      for (const substate in update.delta) {
+        if (typeof dispatch[substate] !== "function") {
+          const errorMsg = `Cannot process state update: dispatch function for substate "${substate}" is not available. This usually indicates a mismatch between frontend and backend state definitions. Please rebuild the frontend or check that api_url is correct.`;
+          console.error(errorMsg);
+          // Emit error back to backend so it appears in terminal logs
+          socket.current.emit("client_error", {
+            message: errorMsg,
+            substate: substate,
+            error_type: "dispatch_function_missing",
+          });
+          throw new Error(errorMsg);
+        }
+        dispatch[substate](update.delta[substate]);
+        // handle events waiting for `is_hydrated`
+        if (
+          substate === state_name &&
+          update.delta[substate]?.is_hydrated_rx_state_
+        ) {
+          queueEvents(on_hydrated_queue, socket, false, navigate, params);
+          on_hydrated_queue.length = 0;
+        }
       }
-    }
-    applyClientStorageDelta(client_storage, update.delta);
-    if (update.final !== null) {
-      event_processing = !update.final;
-    }
-    if (update.events) {
-      queueEvents(update.events, socket, false, navigate, params);
+      applyClientStorageDelta(client_storage, update.delta);
+      if (update.final !== null) {
+        event_processing = !update.final;
+      }
+      if (update.events) {
+        queueEvents(update.events, socket, false, navigate, params);
+      }
+    } catch (error) {
+      console.error("Error processing state update:", error);
+      // If error wasn't already emitted above, emit it
+      if (error.message && !error.message.includes("dispatch function")) {
+        socket.current.emit("client_error", {
+          message: error.message,
+          error_type: "state_update_processing_error",
+        });
+      }
+      // Stop processing further updates to prevent cascading errors
+      event_processing = false;
     }
   });
   socket.current.on("reload", async (event) => {

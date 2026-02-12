@@ -2798,7 +2798,22 @@ class ComponentState(State, mixin=True):
     frozen=True,
 )
 class StateUpdate:
-    """A state update sent to the frontend."""
+    """A state update sent to the frontend.
+
+    The delta contains state changes keyed by substate name. Each substate must
+    have a corresponding dispatch function registered in the frontend. If the
+    frontend receives a delta with an unknown substate, it will:
+
+    1. Log a detailed error to the browser console
+    2. Emit a 'client_error' event back to the backend
+    3. Stop processing further updates to prevent cascading errors
+
+    This typically indicates a mismatch between frontend and backend state
+    definitions, which can occur if:
+    - The frontend was not rebuilt after state changes
+    - The api_url points to a different backend version
+    - Manual state manipulation created invalid substate keys
+    """
 
     # The state delta.
     delta: Delta = dataclasses.field(default_factory=dict)
