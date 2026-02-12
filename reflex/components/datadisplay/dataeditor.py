@@ -240,7 +240,7 @@ class DataEditor(NoSSRComponent):
     # Determines the height of each row.
     row_height: Var[int]
 
-    # Kind of row markers.
+    # Kind of row markers. Options are: "none", "number", "checkbox", "both", "checkbox-visible", "clickable-number".
     row_markers: Var[LiteralRowMarker]
 
     # Changes the starting index for row markers.
