@@ -28,6 +28,10 @@ const EVENTURL = env.EVENT;
 // Socket event names (must match reflex/constants/event.py SocketEvent)
 const CLIENT_ERROR_EVENT = "client_error";
 
+// Client error types (must match backend error handling in app.py)
+const ERROR_TYPE_DISPATCH_MISSING = "dispatch_function_missing";
+const ERROR_TYPE_STATE_UPDATE = "state_update_processing_error";
+
 // These hostnames indicate that the backend and frontend are reachable via the same domain.
 const SAME_DOMAIN_HOSTNAMES = ["localhost", "0.0.0.0", "::", "0:0:0:0:0:0:0:0"];
 
@@ -689,7 +693,7 @@ export const connect = async (
           socket.current.emit(CLIENT_ERROR_EVENT, {
             message: errorMsg,
             substate: substate,
-            error_type: "dispatch_function_missing",
+            error_type: ERROR_TYPE_DISPATCH_MISSING,
           });
           throw new Error(errorMsg);
         }
@@ -716,7 +720,7 @@ export const connect = async (
       if (error.message && !error.message.includes("dispatch function")) {
         socket.current.emit(CLIENT_ERROR_EVENT, {
           message: error.message,
-          error_type: "state_update_processing_error",
+          error_type: ERROR_TYPE_STATE_UPDATE,
         });
       }
       // Stop processing further updates to prevent cascading errors
