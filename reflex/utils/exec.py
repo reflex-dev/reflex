@@ -670,7 +670,6 @@ def run_granian_backend_prod(host: str, port: int, loglevel: LogLevel):
         sys.executable,
         "-m",
         "granian",
-        *("--log-level", "critical"),
         *("--host", host),
         *("--port", str(port)),
         *("--interface", str(Interfaces.ASGI)),
@@ -683,6 +682,8 @@ def run_granian_backend_prod(host: str, port: int, loglevel: LogLevel):
 
     if "GRANIAN_WORKERS" not in os.environ:
         extra_env["GRANIAN_WORKERS"] = str(_get_backend_workers())
+    if "GRANIAN_LOG_LEVEL" not in os.environ:
+        extra_env["GRANIAN_LOG_LEVEL"] = "critical"
 
     processes.new_process(
         command,
