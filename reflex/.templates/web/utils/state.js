@@ -89,6 +89,9 @@ export const getToken = () => {
  * @returns The given URL modified to point to the actual backend server.
  */
 export const getBackendURL = (url_str) => {
+  if ((url_str ?? undefined) === undefined) {
+    url_str = env.PING;
+  }
   // Get backend URL object from the endpoint.
   const endpoint = new URL(url_str);
   if (
@@ -444,6 +447,16 @@ export const applyRestEvent = async (event, socket, navigate, params) => {
 };
 
 /**
+ * Resolve a socket reference to the actual socket object.
+ * Handles both ref objects ({ current: Socket }) and raw sockets.
+ * @param socket Either a ref object or raw socket.
+ * @returns The actual socket object.
+ */
+const resolveSocket = (socket) => {
+  return socket?.current ?? socket;
+};
+
+/**
  * Queue events to be processed and trigger processing of queue.
  * @param events Array of events to queue.
  * @param socket The socket object to send the event on.
@@ -468,7 +481,7 @@ export const queueEvents = async (
     ];
   }
   event_queue.push(...events.filter((e) => e !== undefined && e !== null));
-  await processEvent(socket.current, navigate, params);
+  await processEvent(resolveSocket(socket), navigate, params);
 };
 
 /**

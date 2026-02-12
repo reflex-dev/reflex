@@ -329,10 +329,12 @@ def test_format_route(route: str, expected: str):
                 ),
             ],
             LiteralVar.create("yellow"),
-            '(() => { switch (JSON.stringify(state__state.value)) {case JSON.stringify(1):  return ("red");  break;case JSON.stringify(2): case JSON.stringify(3):  '
-            f'return ("blue");  break;case JSON.stringify({TestState.get_full_name()}.mapping{FIELD_MARKER}):  return '
-            f'({TestState.get_full_name()}.num1{FIELD_MARKER});  break;case JSON.stringify(({TestState.get_full_name()}.map_key{FIELD_MARKER}+"-key")):  return ("return-key");'
-            '  break;default:  return ("yellow");  break;};})()',
+            (
+                '(() => { switch (JSON.stringify(state__state.value)) {case JSON.stringify(1):  return ("red");  break;case JSON.stringify(2): case JSON.stringify(3):  '
+                f'return ("blue");  break;case JSON.stringify({TestState.get_full_name()}.mapping{FIELD_MARKER}):  return '
+                f'({TestState.get_full_name()}.num1{FIELD_MARKER});  break;case JSON.stringify(({TestState.get_full_name()}.map_key{FIELD_MARKER}+"-key")):  return ("return-key");'
+                '  break;default:  return ("yellow");  break;};})()'
+            ),
         )
     ],
 )
