@@ -684,6 +684,7 @@ export const connect = async (
 
   // On each received message, queue the updates and events.
   socket.current.on("event", async (update) => {
+    let errorEmitted = false;
     try {
       for (const substate in update.delta) {
         if (typeof dispatch[substate] !== "function") {
@@ -695,6 +696,7 @@ export const connect = async (
             substate: substate,
             error_type: ERROR_TYPE_DISPATCH_MISSING,
           });
+          errorEmitted = true;
           throw new Error(errorMsg);
         }
         dispatch[substate](update.delta[substate]);
@@ -716,10 +718,10 @@ export const connect = async (
       }
     } catch (error) {
       console.error("Error processing state update:", error);
-      // If error wasn't already emitted above, emit it
-      if (error.message && !error.message.includes("dispatch function")) {
+      // Emit error to backend if it wasn't already emitted
+      if (!errorEmitted) {
         socket.current.emit(CLIENT_ERROR_EVENT, {
-          message: error.message,
+          message: error.message || String(error),
           error_type: ERROR_TYPE_STATE_UPDATE,
         });
       }
