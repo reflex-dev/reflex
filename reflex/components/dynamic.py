@@ -119,7 +119,8 @@ def load_dynamic_serializer():
             if line.startswith("import "):
                 if 'from "$/' in line or 'from "/' in line:
                     module_code_lines[ix] = (
-                        line.replace("import ", "const ", 1)
+                        line
+                        .replace("import ", "const ", 1)
                         .replace(" as ", ": ")
                         .replace(" from ", " = window['__reflex'][", 1)
                         + "]"
@@ -128,7 +129,8 @@ def load_dynamic_serializer():
                     for lib in libs_in_window:
                         if f'from "{lib}"' in line:
                             module_code_lines[ix] = (
-                                line.replace("import ", "const ", 1)
+                                line
+                                .replace("import ", "const ", 1)
                                 .replace(
                                     f' from "{lib}"', f" = window.__reflex['{lib}']", 1
                                 )

@@ -14,7 +14,7 @@ class Bun(SimpleNamespace):
     """Bun constants."""
 
     # The Bun version.
-    VERSION = "1.3.5"
+    VERSION = "1.3.6"
 
     # Min Bun Version
     MIN_VERSION = "1.3.0"
@@ -131,7 +131,7 @@ class PackageJson(SimpleNamespace):
             "react": cls._react_version,
             "react-helmet": "6.1.0",
             "react-dom": cls._react_version,
-            "isbot": "5.1.32",
+            "isbot": "5.1.33",
             "socket.io-client": "4.8.3",
             "universal-cookie": "7.2.2",
         }

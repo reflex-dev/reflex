@@ -161,8 +161,9 @@ async def test_fully_controlled_input(fully_controlled_input: AppHarness):
     # type more characters
     debounce_input.send_keys("getting testing done")
     AppHarness.expect(
-        lambda: fully_controlled_input.poll_for_value(value_input)
-        == "getting testing done"
+        lambda: (
+            fully_controlled_input.poll_for_value(value_input) == "getting testing done"
+        )
     )
     assert debounce_input.get_attribute("value") == "getting testing done"
     assert await get_state_text() == "getting testing done"
@@ -174,8 +175,9 @@ async def test_fully_controlled_input(fully_controlled_input: AppHarness):
     # type into the on_change input
     on_change_input.send_keys("overwrite the state")
     AppHarness.expect(
-        lambda: fully_controlled_input.poll_for_value(value_input)
-        == "overwrite the state"
+        lambda: (
+            fully_controlled_input.poll_for_value(value_input) == "overwrite the state"
+        )
     )
     assert debounce_input.get_attribute("value") == "overwrite the state"
     assert on_change_input.get_attribute("value") == "overwrite the state"
