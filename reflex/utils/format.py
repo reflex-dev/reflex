@@ -455,9 +455,9 @@ def get_event_handler_parts(
     from reflex.minify import is_event_minify_enabled
     from reflex.state import State
 
-    assert isinstance(handler, EventHandler), (
-        f"Expected EventHandler, got {type(handler)}"
-    )
+    if not isinstance(handler, EventHandler):
+        msg = f"Expected EventHandler, got {type(handler)}"
+        raise TypeError(msg)
 
     # Get the class that defines the event handler.
     parts = handler.fn.__qualname__.split(".")
