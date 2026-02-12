@@ -161,6 +161,8 @@ def get_dynamic_route_prefixes(routes: list[str]) -> list[str]:
                 if (
                     constants.RouteRegex.ARG.match(part)
                     or constants.RouteRegex.OPTIONAL_ARG.match(part)
+                    or constants.RouteRegex.STRICT_CATCHALL.match(part)
+                    or constants.RouteRegex.OPTIONAL_CATCHALL.match(part)
                     or part == constants.RouteRegex.SPLAT_CATCHALL
                 ):
                     break
