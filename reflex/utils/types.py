@@ -57,6 +57,7 @@ PrimitiveTypes = (int, float, bool, str, list, dict, set, tuple)
 StateVarTypes = (*PrimitiveTypes, Base, type(None))
 
 if TYPE_CHECKING:
+    from reflex.state import BaseState
     from reflex.vars.base import Var
 
 VAR1 = TypeVar("VAR1", bound="Var")
@@ -902,12 +903,12 @@ def is_valid_var_type(type_: type) -> bool:
     )
 
 
-def is_backend_base_variable(name: str, cls: type) -> bool:
+def is_backend_base_variable(name: str, cls: type[BaseState]) -> bool:
     """Check if this variable name correspond to a backend variable.
 
     Args:
         name: The name of the variable to check
-        cls: The class of the variable to check
+        cls: The class of the variable to check (must be a BaseState subclass)
 
     Returns:
         bool: The result of the check
@@ -924,11 +925,7 @@ def is_backend_base_variable(name: str, cls: type) -> bool:
     if name.startswith(f"_{cls.__name__}__"):
         return False
 
-    # Extract the namespace of the original module if defined (dynamic substates).
-    if callable(getattr(cls, "_get_type_hints", None)):
-        hints = cls._get_type_hints()
-    else:
-        hints = get_type_hints(cls)
+    hints = cls._get_type_hints()
     if name in hints:
         hint = get_origin(hints[name])
         if hint == ClassVar:
