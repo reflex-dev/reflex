@@ -487,7 +487,7 @@ class BaseState(EvenMoreBasicBaseState):
         """
         return [
             (name, v)
-            for mixin in [*cls._mixins(), cls]
+            for mixin in (*cls._mixins(), cls)
             for name, v in mixin.__dict__.items()
             if is_computed_var(v) and name not in cls.inherited_vars
         ]
@@ -569,14 +569,14 @@ class BaseState(EvenMoreBasicBaseState):
 
         new_backend_vars = {
             name: value if not isinstance(value, Field) else value.default_value()
-            for mixin_cls in [*cls._mixins(), cls]
+            for mixin_cls in (*cls._mixins(), cls)
             for name, value in list(mixin_cls.__dict__.items())
             if types.is_backend_base_variable(name, mixin_cls)
         }
         # Add annotated backend vars that may not have a default value.
         new_backend_vars.update({
             name: cls._get_var_default(name, annotation_value)
-            for mixin_cls in [*cls._mixins(), cls]
+            for mixin_cls in (*cls._mixins(), cls)
             for name, annotation_value in mixin_cls._get_type_hints().items()
             if name not in new_backend_vars
             and types.is_backend_base_variable(name, mixin_cls)
@@ -764,13 +764,13 @@ class BaseState(EvenMoreBasicBaseState):
         return getattr(cls, unique_var_name)
 
     @classmethod
-    def _mixins(cls) -> list[type]:
+    def _mixins(cls) -> tuple[type[BaseState], ...]:
         """Get the mixin classes of the state.
 
         Returns:
             The mixin classes of the state.
         """
-        return [
+        return tuple(
             mixin
             for mixin in cls.__mro__
             if (
@@ -778,7 +778,7 @@ class BaseState(EvenMoreBasicBaseState):
                 and issubclass(mixin, BaseState)
                 and mixin._mixin is True
             )
-        ]
+        )
 
     @classmethod
     def _handle_local_def(cls):
