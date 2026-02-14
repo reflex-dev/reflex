@@ -26,6 +26,7 @@ if TYPE_CHECKING:
     from reflex.state import BaseState, StateUpdate
 
 T_STATE = TypeVar("T_STATE", bound="BaseState")
+T = TypeVar("T")
 
 
 class StateProxy(wrapt.ObjectProxy):
@@ -671,19 +672,23 @@ class MutableProxy(wrapt.ObjectProxy):
         return copy.deepcopy(self.__wrapped__, memo=memo)
 
     def __reduce_ex__(self, protocol_version: SupportsIndex):
-        """Get the state for redis serialization.
+        """Serialize the wrapped object for pickle, stripping off the proxy.
 
-        This method is called by cloudpickle to serialize the object.
-
-        It explicitly serializes the wrapped object, stripping off the mutable proxy.
+        Returns a function that reconstructs to the wrapped object directly,
+        ensuring pickle's memo system correctly tracks object identity.
 
         Args:
             protocol_version: The protocol version.
 
         Returns:
-            Tuple of (wrapped class, empty args, class __getstate__)
+            Tuple that reconstructs to the wrapped object.
         """
-        return self.__wrapped__.__reduce_ex__(protocol_version)
+        return (_unwrap_for_pickle, (self.__wrapped__,))
+
+
+def _unwrap_for_pickle(obj: T) -> T:
+    """Return the object unchanged. Used by MutableProxy.__reduce_ex__."""
+    return obj
 
 
 @serializer

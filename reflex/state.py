@@ -42,6 +42,7 @@ from reflex.constants.state import FIELD_MARKER
 from reflex.environment import PerformanceMode, environment
 from reflex.event import (
     BACKGROUND_TASK_MARKER,
+    EVENT_ACTIONS_MARKER,
     Event,
     EventHandler,
     EventSpec,
@@ -486,7 +487,7 @@ class BaseState(EvenMoreBasicBaseState):
         """
         return [
             (name, v)
-            for mixin in [*cls._mixins(), cls]
+            for mixin in (*cls._mixins(), cls)
             for name, v in mixin.__dict__.items()
             if is_computed_var(v) and name not in cls.inherited_vars
         ]
@@ -568,14 +569,14 @@ class BaseState(EvenMoreBasicBaseState):
 
         new_backend_vars = {
             name: value if not isinstance(value, Field) else value.default_value()
-            for mixin_cls in [*cls._mixins(), cls]
+            for mixin_cls in (*cls._mixins(), cls)
             for name, value in list(mixin_cls.__dict__.items())
             if types.is_backend_base_variable(name, mixin_cls)
         }
         # Add annotated backend vars that may not have a default value.
         new_backend_vars.update({
             name: cls._get_var_default(name, annotation_value)
-            for mixin_cls in [*cls._mixins(), cls]
+            for mixin_cls in (*cls._mixins(), cls)
             for name, annotation_value in mixin_cls._get_type_hints().items()
             if name not in new_backend_vars
             and types.is_backend_base_variable(name, mixin_cls)
@@ -686,6 +687,9 @@ class BaseState(EvenMoreBasicBaseState):
         newfn.__annotations__ = fn.__annotations__
         if mark := getattr(fn, BACKGROUND_TASK_MARKER, None):
             setattr(newfn, BACKGROUND_TASK_MARKER, mark)
+        # Preserve event_actions from @rx.event decorator
+        if event_actions := getattr(fn, EVENT_ACTIONS_MARKER, None):
+            object.__setattr__(newfn, EVENT_ACTIONS_MARKER, event_actions)
         return newfn
 
     @staticmethod
@@ -760,13 +764,13 @@ class BaseState(EvenMoreBasicBaseState):
         return getattr(cls, unique_var_name)
 
     @classmethod
-    def _mixins(cls) -> list[type]:
+    def _mixins(cls) -> tuple[type[BaseState], ...]:
         """Get the mixin classes of the state.
 
         Returns:
             The mixin classes of the state.
         """
-        return [
+        return tuple(
             mixin
             for mixin in cls.__mro__
             if (
@@ -774,7 +778,7 @@ class BaseState(EvenMoreBasicBaseState):
                 and issubclass(mixin, BaseState)
                 and mixin._mixin is True
             )
-        ]
+        )
 
     @classmethod
     def _handle_local_def(cls):
@@ -792,6 +796,7 @@ class BaseState(EvenMoreBasicBaseState):
         cls.__module__ = reflex.istate.dynamic.__name__
 
     @classmethod
+    @functools.cache
     def _get_type_hints(cls) -> dict[str, Any]:
         """Get the type hints for this class.
 
@@ -894,8 +899,9 @@ class BaseState(EvenMoreBasicBaseState):
         Raises:
             ComputedVarShadowsBaseVarsError: When a computed var shadows a base var.
         """
+        hints = cls._get_type_hints()
         for name, computed_var_ in cls._get_computed_vars():
-            if name in get_type_hints(cls):
+            if name in hints:
                 msg = f"The computed var name `{computed_var_._js_expr}` shadows a base var in {cls.__module__}.{cls.__name__}; use a different name instead"
                 raise ComputedVarShadowsBaseVarsError(msg)
 
@@ -1163,7 +1169,7 @@ class BaseState(EvenMoreBasicBaseState):
             The event handler.
         """
         # Check if function has stored event_actions from decorator
-        event_actions = getattr(fn, "_rx_event_actions", {})
+        event_actions = getattr(fn, EVENT_ACTIONS_MARKER, {})
 
         return event_handler_cls(
             fn=fn, state_full_name=cls.get_full_name(), event_actions=event_actions
@@ -1705,13 +1711,11 @@ class BaseState(EvenMoreBasicBaseState):
         )
         return getattr(other_state, var_data.field_name)
 
-    def _get_event_handler(
-        self, event: Event
-    ) -> tuple[BaseState | StateProxy, EventHandler]:
+    def _get_event_handler(self, event: Event | str) -> tuple[BaseState, EventHandler]:
         """Get the event handler for the given event.
 
         Args:
-            event: The event to get the handler for.
+            event: The event to get the handler for, or a dotted handler name string.
 
 
         Returns:
@@ -1721,17 +1725,14 @@ class BaseState(EvenMoreBasicBaseState):
             ValueError: If the event handler or substate is not found.
         """
         # Get the event handler.
-        path = event.name.split(".")
+        name = event.name if isinstance(event, Event) else event
+        path = name.split(".")
         path, name = path[:-1], path[-1]
         substate = self.get_substate(path)
         if not substate:
             msg = "The value of state cannot be None when processing an event."
             raise ValueError(msg)
         handler = substate.event_handlers[name]
-
-        # For background tasks, proxy the state
-        if handler.is_background:
-            substate = StateProxy(substate)
 
         return substate, handler
 
@@ -1746,6 +1747,10 @@ class BaseState(EvenMoreBasicBaseState):
         """
         # Get the event handler.
         substate, handler = self._get_event_handler(event)
+
+        # For background tasks, proxy the state.
+        if handler.is_background:
+            substate = StateProxy(substate)
 
         # Run the event generator and yield state updates.
         async for update in self._process_event(
