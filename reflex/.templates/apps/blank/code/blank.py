@@ -1,5 +1,11 @@
 """Welcome to Reflex! This file outlines the steps to create a basic app."""
 
+""" This page is a testing page You can Start the server by:
+     -->  Run in your Terminal : reflex run
+     -->  Open in your Browser http://localhost:3000 for FrontEnd.
+     
+"""
+
 import reflex as rx
 
 from rxconfig import config
