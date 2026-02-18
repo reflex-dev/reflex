@@ -23,7 +23,7 @@
   "reflex/components/core/window_events.pyi": "af33ccec866b9540ee7fbec6dbfbd151",
   "reflex/components/datadisplay/__init__.pyi": "52755871369acbfd3a96b46b9a11d32e",
   "reflex/components/datadisplay/code.pyi": "b86769987ef4d1cbdddb461be88539fd",
-  "reflex/components/datadisplay/dataeditor.pyi": "f8c1e816c9f22f4a7429f812214407f2",
+  "reflex/components/datadisplay/dataeditor.pyi": "7c65a41aea6dd57c06158c923e15ecc0",
   "reflex/components/datadisplay/shiki_code_block.pyi": "1d53e75b6be0d3385a342e7b3011babd",
   "reflex/components/el/__init__.pyi": "0adfd001a926a2a40aee94f6fa725ecc",
   "reflex/components/el/element.pyi": "c5974a92fbc310e42d0f6cfdd13472f4",
