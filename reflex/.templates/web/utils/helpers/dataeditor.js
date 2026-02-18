@@ -50,10 +50,10 @@ export function formatCell(value, column) {
       const cellValue = value ? String(value) : "";
       return {
         kind: GridCellKind.Custom,
-        allowOverlay: true,
+        allowOverlay: editable,
         copyData: cellValue,
         displayData: cellValue,
-        readonly: false,
+        readonly: !editable,
         data: {
           kind: "dropdown-cell",
           allowedValues: (column.allowedValues || []).map(v => String(v)),
