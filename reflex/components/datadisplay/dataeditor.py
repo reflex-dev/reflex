@@ -184,6 +184,7 @@ class DataEditor(NoSSRComponent):
     lib_dependencies: list[str] = [
         "lodash@4.17.21",
         "react-responsive-carousel@3.2.23",
+        "@glideapps/glide-data-grid-cells@6.0.3",
     ]
 
     # Number of rows.
@@ -366,6 +367,9 @@ class DataEditor(NoSSRComponent):
     # Fired when the search close button is clicked.
     on_search_close: EventHandler[no_args_event_spec]
 
+    # Custom cell renderers
+    custom_renderers: Var[Any] = Var(_js_expr="allCells")
+
     def add_imports(self) -> ImportDict:
         """Add imports for the component.
 
@@ -394,6 +398,9 @@ class DataEditor(NoSSRComponent):
         """
         return [
             """
+        import * as AllCells from "@glideapps/glide-data-grid-cells";
+        const allCells = Object.values(AllCells).filter(x => x?.isMatch);
+
         function reconstructGridSelection(selection) {
             if (!selection || typeof selection !== 'object') {
                 return undefined;
