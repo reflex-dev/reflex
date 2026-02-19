@@ -92,6 +92,11 @@ def asset(
         if not dst_file.exists() and (
             not dst_file.is_symlink() or dst_file.resolve() != src_file_shared.resolve()
         ):
-            dst_file.symlink_to(src_file_shared)
+            try:
+                dst_file.symlink_to(src_file_shared)
+            except FileExistsError:
+                # This happens when Simon builds the app on a bind mount in a docker container.
+                dst_file.unlink()
+                dst_file.symlink_to(src_file_shared)
 
     return f"/{external}/{subfolder}/{path}"
