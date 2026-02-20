@@ -14,7 +14,7 @@ from reflex.utils import console, format, types
 from reflex.utils.imports import ImportDict, ImportVar
 from reflex.utils.serializers import serializer
 from reflex.vars import get_unique_variable_name
-from reflex.vars.base import Var
+from reflex.vars.base import Var, VarData
 from reflex.vars.function import FunctionStringVar
 from reflex.vars.sequence import ArrayVar
 
@@ -184,7 +184,6 @@ class DataEditor(NoSSRComponent):
     lib_dependencies: list[str] = [
         "lodash@4.17.21",
         "react-responsive-carousel@3.2.23",
-        "@glideapps/glide-data-grid-cells@6.0.3",
     ]
 
     # Number of rows.
@@ -368,7 +367,7 @@ class DataEditor(NoSSRComponent):
     on_search_close: EventHandler[no_args_event_spec]
 
     # Custom cell renderers
-    custom_renderers: Var[Any] = Var(_js_expr="allCells")
+    custom_renderers: Var[Any]
 
     def add_imports(self) -> ImportDict:
         """Add imports for the component.
@@ -398,9 +397,6 @@ class DataEditor(NoSSRComponent):
         """
         return [
             """
-        import * as AllCells from "@glideapps/glide-data-grid-cells";
-        const allCells = Object.values(AllCells).filter(x => x?.isMatch);
-
         function reconstructGridSelection(selection) {
             if (!selection || typeof selection !== 'object') {
                 return undefined;
@@ -527,6 +523,18 @@ class DataEditor(NoSSRComponent):
             props["grid_selection"] = FunctionStringVar.create(
                 "reconstructGridSelection"
             ).call(grid_selection)
+
+        if props.get("extended_cell_types") is not None:
+            props["custom_renderers"] = Var(
+                "allCells",
+                _var_data=VarData(
+                    imports={
+                        "@glideapps/glide-data-grid-cells@6.0.3": ImportVar(
+                            tag="allCells", is_default=False
+                        )
+                    }
+                ),
+            )
 
         grid = super().create(*children, **props)
         return Div.create(
