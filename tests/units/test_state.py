@@ -4473,10 +4473,14 @@ async def test_rebind_mutable_proxy(mock_app: rx.App, token: str) -> None:
 
 
 class NormalState(rx.State):
+    """This state should be serialized."""
+
     value: rx.Field[int] = rx.field(42)
 
 
 class SkippedState(NormalState):
+    """This state should not be serialized."""
+
     skipped_value: rx.Field[int] = rx.field(43)
 
     @property
@@ -4485,6 +4489,8 @@ class SkippedState(NormalState):
 
 
 class SkippedSubState(SkippedState):
+    """This state should not be serialized."""
+
     substate_value: rx.Field[int] = rx.field(44)
 
 
