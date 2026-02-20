@@ -4539,3 +4539,12 @@ def test_substate_of_skipped_parent_is_also_skipped():
     state.substate_value = 99
     assert state.get_delta() == {}
     assert state.dict() == {}
+
+
+def test_normal_state_unaffected_by_skipped_substate():
+    """NormalState delta must not be affected by its skipped substate."""
+    state = NormalState(_reflex_internal_init=True)
+    state.value = 99
+    delta = str(state.get_delta())
+    assert "99" in delta
+    assert "43" not in delta
