@@ -2059,7 +2059,13 @@ class BaseState(EvenMoreBasicBaseState):
             if include_backend or not self.computed_vars[cvar]._backend
         }
 
-    def __skip_serialization(self) -> bool:
+    @property
+    def _skip_serialization(self) -> bool:
+        """Whether to skip serialization for this state.
+
+        Override in a subclass to skip sending state updates to the frontend.
+        Useful e.g. for permission/role-based state visibility.
+        """
         return False
 
     def get_delta(self) -> Delta:
@@ -2070,7 +2076,7 @@ class BaseState(EvenMoreBasicBaseState):
         """
         delta = {}
 
-        if self.__skip_serialization():
+        if self._skip_serialization:
             return delta
 
         self._mark_dirty_computed_vars()
@@ -2209,7 +2215,7 @@ class BaseState(EvenMoreBasicBaseState):
         Returns:
             The object as a dictionary.
         """
-        if not initial and self.__skip_serialization():
+        if not initial and self._skip_serialization:
             return {}
 
         if include_computed:

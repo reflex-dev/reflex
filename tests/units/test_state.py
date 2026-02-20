@@ -4470,3 +4470,66 @@ async def test_rebind_mutable_proxy(mock_app: rx.App, token: str) -> None:
         assert state.data["a"] == [2, 3]
         # Object identity persists across serialization, so data["b"] is also mutated.
         assert state.data["b"] == [2, 3]
+
+
+class NormalState(rx.State):
+    value: rx.Field[int] = rx.field(42)
+
+
+class SkippedState(NormalState):
+    skipped_value: rx.Field[int] = rx.field(43)
+
+    @property
+    def _skip_serialization(self) -> bool:
+        return True
+
+
+class SkippedSubState(SkippedState):
+    substate_value: rx.Field[int] = rx.field(44)
+
+
+def test_default_skip_serialization_is_false():
+    state = NormalState(_reflex_internal_init=True)
+    assert state._skip_serialization is False
+
+
+def test_subclass_override_is_respected():
+    """Subclass override must actually take effect."""
+    assert SkippedState(_reflex_internal_init=True)._skip_serialization is True
+    assert NormalState(_reflex_internal_init=True)._skip_serialization is False
+
+
+def test_dict_contains_value_by_default():
+    state = NormalState(_reflex_internal_init=True)
+    state_dict = str(state.dict())
+    assert "42" in state_dict
+    assert "43" not in state_dict
+    assert "44" not in state_dict
+
+
+def test_dict_empty_when_skip_serialization():
+    state = SkippedState(_reflex_internal_init=True)
+    assert state.dict() == {}
+
+
+def test_get_delta_contains_value_after_change():
+    state = NormalState(_reflex_internal_init=True)
+    state.value = 99
+    state_delta = str(state.get_delta())
+    assert "99" in state_delta
+    assert "43" not in state_delta
+    assert "44" not in state_delta
+
+
+def test_get_delta_empty_when_skip_serialization():
+    state = SkippedState(_reflex_internal_init=True)
+    state.skipped_value = 99
+    assert state.get_delta() == {}
+
+
+def test_substate_of_skipped_parent_is_also_skipped():
+    """Substates of a skipped parent are also skipped, even without overriding _skip_serialization."""
+    state = SkippedSubState(_reflex_internal_init=True)
+    state.substate_value = 99
+    assert state.get_delta() == {}
+    assert state.dict() == {}
