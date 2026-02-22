@@ -463,11 +463,12 @@ class DataEditor(NoSSRComponent):
         return ["\n".join(code)]
 
     @classmethod
-    def create(cls, *children, **props) -> Component:
+    def create(cls, *children, extended_cell_types: bool = False, **props) -> Component:
         """Create the DataEditor component.
 
         Args:
             *children: The children of the data editor.
+            extended_cell_types: Whether to enable extended cell types.
             **props: The props of the data editor.
 
         Raises:
@@ -524,7 +525,7 @@ class DataEditor(NoSSRComponent):
                 "reconstructGridSelection"
             ).call(grid_selection)
 
-        if props.get("extended_cell_types") is not None:
+        if extended_cell_types:
             props["custom_renderers"] = Var(
                 "allCells",
                 _var_data=VarData(
