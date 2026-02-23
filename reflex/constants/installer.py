@@ -138,7 +138,7 @@ class PackageJson(SimpleNamespace):
 
     DEV_DEPENDENCIES = {
         "@emotion/react": "11.14.0",
-        "autoprefixer": "10.4.24",
+        "autoprefixer": "10.4.23",
         "postcss": "8.5.6",
         "postcss-import": "16.1.1",
         "@react-router/dev": _react_router_version,
