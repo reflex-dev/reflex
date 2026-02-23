@@ -29,7 +29,7 @@ class Moment(NoSSRComponent):
 
     tag: str | None = "Moment"
     is_default = True
-    library: str | None = "react-moment@1.2.2"
+    library: str | None = "react-moment@1.2.0"
     lib_dependencies: list[str] = ["moment@2.30.1"]
 
     # How often the date update (how often time update / 0 to disable).
@@ -52,9 +52,6 @@ class Moment(NoSSRComponent):
 
     # Displays the date as the time from now, e.g. "5 minutes ago".
     from_now: Var[bool]
-
-    # Displays the relative time in a short format using abbreviated units (e.g., "1h", "2d", "3mo", "1y" instead of "1 hour ago", "2 days ago", etc.).
-    from_now_short: Var[bool]
 
     # Setting fromNowDuring will display the relative time as with fromNow but just during its value in milliseconds, after that format will be used instead.
     from_now_during: Var[int]

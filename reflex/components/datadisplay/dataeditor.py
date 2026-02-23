@@ -182,7 +182,7 @@ class DataEditor(NoSSRComponent):
     is_default = True
     library: str | None = "@glideapps/glide-data-grid@6.0.3"
     lib_dependencies: list[str] = [
-        "lodash@4.17.23",
+        "lodash@4.17.21",
         "react-responsive-carousel@3.2.23",
     ]
 
