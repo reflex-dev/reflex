@@ -14,7 +14,7 @@ class Bun(SimpleNamespace):
     """Bun constants."""
 
     # The Bun version.
-    VERSION = "1.3.6"
+    VERSION = "1.3.9"
 
     # Min Bun Version
     MIN_VERSION = "1.3.0"
@@ -75,7 +75,7 @@ fetch-retries=0
 
 
 def _determine_react_router_version() -> str:
-    default_version = "7.12.0"
+    default_version = "7.13.0"
     if (version := os.getenv("REACT_ROUTER_VERSION")) and version != default_version:
         from reflex.utils import console
 
@@ -131,14 +131,14 @@ class PackageJson(SimpleNamespace):
             "react": cls._react_version,
             "react-helmet": "6.1.0",
             "react-dom": cls._react_version,
-            "isbot": "5.1.33",
+            "isbot": "5.1.35",
             "socket.io-client": "4.8.3",
             "universal-cookie": "7.2.2",
         }
 
     DEV_DEPENDENCIES = {
         "@emotion/react": "11.14.0",
-        "autoprefixer": "10.4.23",
+        "autoprefixer": "10.4.24",
         "postcss": "8.5.6",
         "postcss-import": "16.1.1",
         "@react-router/dev": _react_router_version,
