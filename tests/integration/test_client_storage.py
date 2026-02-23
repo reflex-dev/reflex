@@ -6,8 +6,8 @@ import asyncio
 from collections.abc import Generator
 
 import pytest
-from selenium.webdriver import Firefox
 from selenium.webdriver.common.by import By
+from selenium.webdriver.firefox.webdriver import WebDriver as Firefox
 from selenium.webdriver.remote.webdriver import WebDriver
 
 from reflex.constants.state import FIELD_MARKER
