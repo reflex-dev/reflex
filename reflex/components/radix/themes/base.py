@@ -109,7 +109,7 @@ class RadixLoadingProp(Component):
 class RadixThemesComponent(Component):
     """Base class for all @radix-ui/themes components."""
 
-    library = "@radix-ui/themes@3.2.1"
+    library = "@radix-ui/themes@3.3.0"
 
     # "Fake" prop color_scheme is used to avoid shadowing CSS prop "color".
     _rename_props: ClassVar[dict[str, str]] = {"colorScheme": "color"}
