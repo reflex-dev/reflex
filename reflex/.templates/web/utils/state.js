@@ -25,6 +25,13 @@ import { uploadFiles } from "$/utils/helpers/upload";
 // Endpoint URLs.
 const EVENTURL = env.EVENT;
 
+// Socket event names (must match reflex/constants/event.py SocketEvent)
+const CLIENT_ERROR_EVENT = "client_error";
+
+// Client error types (must match backend error handling in app.py)
+const ERROR_TYPE_DISPATCH_MISSING = "dispatch_function_missing";
+const ERROR_TYPE_STATE_UPDATE = "state_update_processing_error";
+
 // These hostnames indicate that the backend and frontend are reachable via the same domain.
 const SAME_DOMAIN_HOSTNAMES = ["localhost", "0.0.0.0", "::", "0:0:0:0:0:0:0:0"];
 
@@ -677,23 +684,49 @@ export const connect = async (
 
   // On each received message, queue the updates and events.
   socket.current.on("event", async (update) => {
-    for (const substate in update.delta) {
-      dispatch[substate](update.delta[substate]);
-      // handle events waiting for `is_hydrated`
-      if (
-        substate === state_name &&
-        update.delta[substate]?.is_hydrated_rx_state_
-      ) {
-        queueEvents(on_hydrated_queue, socket, false, navigate, params);
-        on_hydrated_queue.length = 0;
+    let errorEmitted = false;
+    try {
+      for (const substate in update.delta) {
+        if (typeof dispatch[substate] !== "function") {
+          const errorMsg = `Cannot process state update: dispatch function for substate "${substate}" is not available. This usually indicates a mismatch between frontend and backend state definitions. Please rebuild the frontend or check that api_url is correct.`;
+          console.error(errorMsg);
+          // Emit error back to backend so it appears in terminal logs
+          socket.current.emit(CLIENT_ERROR_EVENT, {
+            message: errorMsg,
+            substate: substate,
+            error_type: ERROR_TYPE_DISPATCH_MISSING,
+          });
+          errorEmitted = true;
+          throw new Error(errorMsg);
+        }
+        dispatch[substate](update.delta[substate]);
+        // handle events waiting for `is_hydrated`
+        if (
+          substate === state_name &&
+          update.delta[substate]?.is_hydrated_rx_state_
+        ) {
+          queueEvents(on_hydrated_queue, socket, false, navigate, params);
+          on_hydrated_queue.length = 0;
+        }
       }
-    }
-    applyClientStorageDelta(client_storage, update.delta);
-    if (update.final !== null) {
-      event_processing = !update.final;
-    }
-    if (update.events) {
-      queueEvents(update.events, socket, false, navigate, params);
+      applyClientStorageDelta(client_storage, update.delta);
+      if (update.final !== null) {
+        event_processing = !update.final;
+      }
+      if (update.events) {
+        queueEvents(update.events, socket, false, navigate, params);
+      }
+    } catch (error) {
+      console.error("Error processing state update:", error);
+      // Emit error to backend if it wasn't already emitted
+      if (!errorEmitted) {
+        socket.current.emit(CLIENT_ERROR_EVENT, {
+          message: error.message || String(error),
+          error_type: ERROR_TYPE_STATE_UPDATE,
+        });
+      }
+      // Stop processing further updates to prevent cascading errors
+      event_processing = false;
     }
   });
   socket.current.on("reload", async (event) => {

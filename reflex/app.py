@@ -2140,6 +2140,12 @@ class EventNamespace(AsyncNamespace):
                     f"Attempting to send delta to disconnected client {token!r}"
                 )
             return
+        # Log the substates being sent for debugging mismatches
+        if update.delta:
+            substates = list(update.delta.keys())
+            console.debug(
+                f"Emitting state update for substates: {substates} to client {token!r}"
+            )
         # Creating a task prevents the update from being blocked behind other coroutines.
         await asyncio.create_task(
             self.emit(str(constants.SocketEvent.EVENT), update, to=socket_record.sid),
@@ -2240,6 +2246,33 @@ class EventNamespace(AsyncNamespace):
         """
         # Emit the test event.
         await self.emit(str(constants.SocketEvent.PING), "pong", to=sid)
+
+    async def on_client_error(self, sid: str, data: dict[str, Any]):
+        """Handle errors reported by the frontend.
+
+        This allows frontend errors (especially state update processing errors)
+        to be visible in backend logs, improving debuggability.
+
+        Args:
+            sid: The Socket.IO session id.
+            data: The error data from the client.
+        """
+        error_type = data.get("error_type", "unknown")
+        message = data.get("message", "No error message provided")
+        substate = data.get("substate")
+
+        # Log the error with details
+        if error_type == "dispatch_function_missing":
+            console.error(
+                f"[Frontend Error - SID: {sid}] State update failed: "
+                f"Substate '{substate}' dispatcher not found. "
+                f"This indicates a frontend/backend mismatch. "
+                f"Ensure 'reflex export' or rebuild was run after state changes."
+            )
+        else:
+            console.error(
+                f"[Frontend Error - SID: {sid}] {error_type}: {message}"
+            )
 
     async def link_token_to_sid(self, sid: str, token: str):
         """Link a token to a session id.
