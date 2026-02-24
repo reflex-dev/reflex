@@ -241,10 +241,6 @@ class Brush(Recharts):
     # The default end index of brush. If the option is not set, the end index will be calculated by the length of data.
     end_index: Var[int]
 
-    # The fill color of brush
-
-    # The stroke color of brush
-
     @classmethod
     def get_event_triggers(cls) -> dict[str, Var | Any]:
         """Get the event triggers that pass the component's value to the handler.
