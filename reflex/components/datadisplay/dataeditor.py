@@ -182,7 +182,7 @@ class DataEditor(NoSSRComponent):
     is_default = True
     library: str | None = "@glideapps/glide-data-grid@6.0.3"
     lib_dependencies: list[str] = [
-        "lodash@4.17.21",
+        "lodash@4.17.23",
         "react-responsive-carousel@3.2.23",
     ]
 
@@ -291,6 +291,9 @@ class DataEditor(NoSSRComponent):
     # Controls which types of row selections can exist at the same time. ("exclusive", "mixed").
     row_selection_blending: Var[Literal["exclusive", "mixed"]]
 
+    # Controls row marker selection behavior. "auto" adapts to touch/mouse, "multi" acts as if Ctrl is pressed. ("auto", "multi").
+    row_selection_mode: Var[Literal["auto", "multi"]]
+
     # Controls how spans are handled in selections. ("default", "allowPartial").
     span_range_behavior: Var[Literal["default", "allowPartial"]]
 
@@ -356,6 +359,12 @@ class DataEditor(NoSSRComponent):
 
     # Fired when a column is resized.
     on_column_resize: EventHandler[passthrough_event_spec(GridColumn, int)]
+
+    # Shows search bar.
+    show_search: Var[bool]
+
+    # Fired when the search close button is clicked.
+    on_search_close: EventHandler[no_args_event_spec]
 
     def add_imports(self) -> ImportDict:
         """Add imports for the component.
