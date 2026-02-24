@@ -46,6 +46,20 @@ export function formatCell(value, column) {
         data: value,
         readonly: !editable,
       };
+    case "dropdown":
+      const cellValue = value ? String(value) : "";
+      return {
+        kind: GridCellKind.Custom,
+        allowOverlay: editable,
+        copyData: cellValue,
+        displayData: cellValue,
+        readonly: !editable,
+        data: {
+          kind: "dropdown-cell",
+          allowedValues: (column.allowedValues || []).map(v => String(v)),
+          value: cellValue,
+        },
+      };
     default:
       console.log(
         "Warning: column.type is undefined for column.title=" + column.title,
