@@ -392,6 +392,11 @@ class BaseState(EvenMoreBasicBaseState):
     # Set of states which might need to be recomputed if vars in this state change.
     _potentially_dirty_states: ClassVar[set[str]] = set()
 
+    # Per-class registry mapping event_id -> event handler name for minification.
+    # Populated from minify.json at class creation time.
+    # Maps minified event ID (e.g., "a") to original handler name (e.g., "increment").
+    _event_id_to_name: ClassVar[builtins.dict[str, str]] = {}
+
     # The parent state.
     parent_state: BaseState | None = field(default=None, is_var=False)
 
@@ -523,6 +528,7 @@ class BaseState(EvenMoreBasicBaseState):
 
         super().__init_subclass__(**kwargs)
 
+        # Mixin states are not initialized
         if cls._mixin:
             return
 
@@ -603,6 +609,7 @@ class BaseState(EvenMoreBasicBaseState):
             **cls.computed_vars,
         }
         cls.event_handlers = {}
+        cls._event_id_to_name = {}
 
         # Setup the base vars at the class level.
         for name, prop in cls.base_vars.items():
@@ -645,6 +652,10 @@ class BaseState(EvenMoreBasicBaseState):
             cls.event_handlers[name] = handler
             setattr(cls, name, handler)
 
+        # Register user-defined event handlers for minification
+        for handler_name in events:
+            cls._register_event_handler_for_minify(handler_name)
+
         # Initialize per-class var dependency tracking.
         cls._var_dependencies = {}
         cls._init_var_dependency_dicts()
@@ -656,16 +667,46 @@ class BaseState(EvenMoreBasicBaseState):
         cls,
         name: str,
         fn: Callable,
-    ):
+    ) -> EventHandler:
         """Add an event handler dynamically to the state.
 
         Args:
             name: The name of the event handler.
             fn: The function to call when the event is triggered.
+
+        Returns:
+            The created EventHandler instance.
         """
         handler = cls._create_event_handler(fn)
         cls.event_handlers[name] = handler
         setattr(cls, name, handler)
+        cls._register_event_handler_for_minify(name)
+        return handler
+
+    @classmethod
+    def _register_event_handler_for_minify(cls, handler_name: str) -> None:
+        """Register an event handler for minification if applicable.
+
+        Called when an event handler is added to event_handlers dict.
+        Updates _event_id_to_name if minification is enabled and the handler
+        has a minified ID in the config.
+
+        Args:
+            handler_name: The original name of the event handler.
+        """
+        from reflex.minify import (
+            get_event_id,
+            get_state_full_path,
+            is_event_minify_enabled,
+        )
+
+        if not is_event_minify_enabled():
+            return
+
+        state_path = get_state_full_path(cls)
+        event_id = get_event_id(state_path, handler_name)
+        if event_id is not None:
+            cls._event_id_to_name[event_id] = handler_name
 
     @staticmethod
     def _copy_fn(fn: Callable) -> Callable:
@@ -993,10 +1034,25 @@ class BaseState(EvenMoreBasicBaseState):
         """Get the name of the state.
 
         Returns:
-            The name of the state.
+            The name of the state (minified if configured in minify.json).
         """
+        from reflex.minify import (
+            get_state_full_path,
+            get_state_id,
+            is_state_minify_enabled,
+        )
+
         module = cls.__module__.replace(".", "___")
-        return format.to_snake_case(f"{module}___{cls.__name__}")
+        full_name = format.to_snake_case(f"{module}___{cls.__name__}")
+
+        # If state minification is enabled, look up the state ID from minify.json
+        if is_state_minify_enabled():
+            state_path = get_state_full_path(cls)
+            state_id = get_state_id(state_path)
+            if state_id is not None:
+                return state_id
+
+        return full_name
 
     @classmethod
     @functools.lru_cache
@@ -1014,11 +1070,17 @@ class BaseState(EvenMoreBasicBaseState):
 
     @classmethod
     @functools.lru_cache
-    def get_class_substate(cls, path: Sequence[str] | str) -> type[BaseState]:
+    def get_class_substate(
+        cls, path: Sequence[str] | str, _skip_self: bool = True
+    ) -> type[BaseState]:
         """Get the class substate.
 
         Args:
             path: The path to the substate.
+            _skip_self: If True, strip the leading segment when it matches this
+                state's name. Only the initial (root) call should use True;
+                recursive calls pass False so that a child whose minified name
+                collides with its parent is resolved correctly.
 
         Returns:
             The class substate.
@@ -1031,13 +1093,13 @@ class BaseState(EvenMoreBasicBaseState):
 
         if len(path) == 0:
             return cls
-        if path[0] == cls.get_name():
+        if _skip_self and path[0] == cls.get_name():
             if len(path) == 1:
                 return cls
             path = path[1:]
         for substate in cls.get_substates():
             if path[0] == substate.get_name():
-                return substate.get_class_substate(path[1:])
+                return substate.get_class_substate(path[1:], _skip_self=False)
         msg = f"Invalid path: {path}"
         raise ValueError(msg)
 
@@ -1178,7 +1240,10 @@ class BaseState(EvenMoreBasicBaseState):
     @classmethod
     def _create_setvar(cls):
         """Create the setvar method for the state."""
-        cls.setvar = cls.event_handlers["setvar"] = EventHandlerSetVar(state_cls=cls)
+        cls.setvar = cls.event_handlers[constants.event.SETVAR] = EventHandlerSetVar(
+            state_cls=cls
+        )
+        cls._register_event_handler_for_minify(constants.event.SETVAR)
 
     @classmethod
     def _create_setter(cls, name: str, prop: Var):
@@ -1218,6 +1283,7 @@ class BaseState(EvenMoreBasicBaseState):
             )
             cls.event_handlers[setter_name] = event_handler
             setattr(cls, setter_name, event_handler)
+            cls._register_event_handler_for_minify(setter_name)
 
     @classmethod
     def _set_default_value(cls, name: str, prop: Var):
@@ -1547,11 +1613,15 @@ class BaseState(EvenMoreBasicBaseState):
         for substate in self.substates.values():
             substate._reset_client_storage()
 
-    def get_substate(self, path: Sequence[str]) -> BaseState:
+    def get_substate(self, path: Sequence[str], _skip_self: bool = True) -> BaseState:
         """Get the substate.
 
         Args:
             path: The path to the substate.
+            _skip_self: If True, strip the leading segment when it matches this
+                state's name. Only the initial (root) call should use True;
+                recursive calls pass False so that a child whose minified name
+                collides with its parent is resolved correctly.
 
         Returns:
             The substate.
@@ -1561,14 +1631,14 @@ class BaseState(EvenMoreBasicBaseState):
         """
         if len(path) == 0:
             return self
-        if path[0] == self.get_name():
+        if _skip_self and path[0] == self.get_name():
             if len(path) == 1:
                 return self
             path = path[1:]
         if path[0] not in self.substates:
             msg = f"Invalid path: {path}"
             raise ValueError(msg)
-        return self.substates[path[0]].get_substate(path[1:])
+        return self.substates[path[0]].get_substate(path[1:], _skip_self=False)
 
     @classmethod
     def _get_potentially_dirty_states(cls) -> set[type[BaseState]]:
@@ -1711,6 +1781,22 @@ class BaseState(EvenMoreBasicBaseState):
         )
         return getattr(other_state, var_data.field_name)
 
+    @classmethod
+    def _get_original_event_name(cls, minified_name: str) -> str | None:
+        """Look up the original event handler name from a minified name.
+
+        This is used when the frontend sends back minified event names
+        and the backend needs to find the actual event handler.
+
+        Args:
+            minified_name: The minified event name (e.g., 'a').
+
+        Returns:
+            The original event handler name, or None if not found.
+        """
+        # Direct lookup: _event_id_to_name maps minified_name -> original_name
+        return cls._event_id_to_name.get(minified_name)
+
     def _get_event_handler(self, event: Event | str) -> tuple[BaseState, EventHandler]:
         """Get the event handler for the given event.
 
@@ -1732,7 +1818,17 @@ class BaseState(EvenMoreBasicBaseState):
         if not substate:
             msg = "The value of state cannot be None when processing an event."
             raise ValueError(msg)
-        handler = substate.event_handlers[name]
+
+        # Try to look up the handler directly first
+        handler = substate.event_handlers.get(name)
+        if handler is None:
+            # If not found, the name might be minified - try reverse lookup
+            original_name = substate._get_original_event_name(name)
+            if original_name is not None:
+                handler = substate.event_handlers.get(original_name)
+            if handler is None:
+                msg = f"Event handler '{name}' not found in state '{type(substate).__name__}'"
+                raise KeyError(msg)
 
         return substate, handler
 

@@ -842,6 +842,411 @@ def rename(new_name: str):
     rename_app(new_name, get_config().loglevel)
 
 
+# Minify command group
+@cli.group()
+def minify():
+    """Manage state and event name minification."""
+
+
+@minify.command(name="init")
+@loglevel_option
+def minify_init():
+    """Initialize minify.json with IDs for all states and events.
+
+    This command scans the codebase and generates a minify.json file
+    with unique IDs for all states and event handlers.
+    """
+    from reflex.minify import (
+        MINIFY_JSON,
+        _get_minify_json_path,
+        generate_minify_config,
+        save_minify_config,
+    )
+    from reflex.state import State
+    from reflex.utils import prerequisites
+
+    path = _get_minify_json_path()
+    if path.exists():
+        console.error(
+            f"{MINIFY_JSON} already exists. Use 'reflex minify sync' to update "
+            "or delete the file to reinitialize."
+        )
+        raise SystemExit(1)
+
+    # Load the user's app to register all state classes
+    prerequisites.get_app()
+
+    # Generate the configuration
+    config = generate_minify_config(State)
+    save_minify_config(config)
+
+    num_states = len(config["states"])
+    num_events = sum(len(handlers) for handlers in config["events"].values())
+    console.log(
+        f"Created {MINIFY_JSON} with {num_states} states and {num_events} events."
+    )
+
+
+@minify.command(name="sync")
+@loglevel_option
+@click.option(
+    "--reassign-deleted",
+    is_flag=True,
+    help="Reassign IDs that are no longer in use (potentially breaking for existing clients).",
+)
+@click.option(
+    "--prune",
+    is_flag=True,
+    help="Remove entries for states/events that no longer exist in code.",
+)
+def minify_sync(reassign_deleted: bool, prune: bool):
+    """Synchronize minify.json with the current codebase.
+
+    Adds new states and events, optionally removes orphaned entries.
+    """
+    from reflex.minify import (
+        MINIFY_JSON,
+        _get_minify_json_path,
+        _load_minify_config_uncached,
+        save_minify_config,
+        sync_minify_config,
+    )
+    from reflex.state import State
+    from reflex.utils import prerequisites
+
+    path = _get_minify_json_path()
+    if not path.exists():
+        console.error(
+            f"{MINIFY_JSON} does not exist. Use 'reflex minify init' to create it."
+        )
+        raise SystemExit(1)
+
+    # Load the user's app to register all state classes
+    prerequisites.get_app()
+
+    # Load existing config
+    existing_config = _load_minify_config_uncached()
+    if existing_config is None:
+        console.error(f"Failed to load {MINIFY_JSON}.")
+        raise SystemExit(1)
+
+    old_states = len(existing_config["states"])
+    old_events = sum(len(handlers) for handlers in existing_config["events"].values())
+
+    # Sync the configuration
+    new_config = sync_minify_config(
+        existing_config, State, reassign_deleted=reassign_deleted, prune=prune
+    )
+    save_minify_config(new_config)
+
+    new_states = len(new_config["states"])
+    new_events = sum(len(handlers) for handlers in new_config["events"].values())
+
+    console.log(f"Updated {MINIFY_JSON}:")
+    console.log(f"  States: {old_states} -> {new_states}")
+    console.log(f"  Events: {old_events} -> {new_events}")
+
+
+@minify.command(name="validate")
+@loglevel_option
+def minify_validate():
+    """Validate minify.json against the current codebase.
+
+    Checks for duplicate IDs, missing entries, and orphaned entries.
+    """
+    from reflex.minify import (
+        MINIFY_JSON,
+        _get_minify_json_path,
+        _load_minify_config_uncached,
+        validate_minify_config,
+    )
+    from reflex.state import State
+    from reflex.utils import prerequisites
+
+    path = _get_minify_json_path()
+    if not path.exists():
+        console.error(
+            f"{MINIFY_JSON} does not exist. Use 'reflex minify init' to create it."
+        )
+        raise SystemExit(1)
+
+    # Load the user's app to register all state classes
+    prerequisites.get_app()
+
+    # Load existing config
+    config = _load_minify_config_uncached()
+    if config is None:
+        console.error(f"Failed to load {MINIFY_JSON}.")
+        raise SystemExit(1)
+
+    # Validate
+    errors, warnings, missing = validate_minify_config(config, State)
+
+    if errors:
+        console.error("Errors found:")
+        for error in errors:
+            console.error(f"  - {error}")
+
+    if warnings:
+        console.warn("Warnings:")
+        for warning in warnings:
+            console.warn(f"  - {warning}")
+
+    if missing:
+        console.info("Missing entries (in code but not in config):")
+        for entry in missing:
+            console.warn(f"  - {entry}")
+
+    if errors:
+        raise SystemExit(1)
+    console.log(f"{MINIFY_JSON} is valid and up-to-date.")
+
+
+@minify.command(name="list")
+@loglevel_option
+@click.option(
+    "--json",
+    "output_json",
+    is_flag=True,
+    help="Output as JSON.",
+)
+def minify_list(output_json: bool):
+    """Print the state tree with IDs and minified names."""
+    from typing import TypedDict
+
+    from reflex.minify import (
+        get_event_id,
+        get_minify_config,
+        get_state_full_path,
+        get_state_id,
+    )
+    from reflex.state import BaseState, State
+    from reflex.utils import prerequisites
+
+    class EventHandlerData(TypedDict):
+        """Type for event handler data in state tree."""
+
+        name: str
+        event_id: str | None  # The minified name (e.g., "a", "ba") or None
+
+    class StateTreeData(TypedDict):
+        """Type for state tree data."""
+
+        name: str
+        full_path: str
+        state_id: str | None  # The minified name (e.g., "a", "ba") or None
+        event_handlers: list[EventHandlerData]
+        substates: list[StateTreeData]
+
+    # Load the user's app to register all state classes
+    prerequisites.get_app()
+
+    # CLI inspection always shows config contents regardless of env var settings
+    minify_enabled = get_minify_config() is not None
+
+    def build_state_tree(state_cls: type[BaseState]) -> StateTreeData:
+        """Recursively build state tree data.
+
+        Args:
+            state_cls: The state class to build the tree for.
+
+        Returns:
+            A dictionary containing the state tree data.
+        """
+        state_path = get_state_full_path(state_cls)
+        # state_id is now the minified name directly (a string like "a", "ba")
+        state_id = get_state_id(state_path) if minify_enabled else None
+
+        # Build event handlers list
+        handlers = []
+        for handler_name in sorted(state_cls.event_handlers.keys()):
+            # event_id is now the minified name directly (a string like "a", "ba")
+            event_id = (
+                get_event_id(state_path, handler_name) if minify_enabled else None
+            )
+            handlers.append({
+                "name": handler_name,
+                "event_id": event_id,
+            })
+
+        # Build substates recursively
+        substates = [
+            build_state_tree(substate)
+            for substate in sorted(state_cls.class_subclasses, key=lambda s: s.__name__)
+        ]
+
+        return {
+            "name": state_cls.__name__,
+            "full_path": state_path,
+            "state_id": state_id,
+            "event_handlers": handlers,
+            "substates": substates,
+        }
+
+    def print_state_tree(
+        state_data: StateTreeData, prefix: str = "", is_last: bool = True
+    ):
+        """Print a state and its children as a tree.
+
+        Args:
+            state_data: The state data dictionary.
+            prefix: The prefix for indentation.
+            is_last: Whether this is the last item in the current level.
+        """
+        # state_id is now the minified name directly (e.g., "a", "ba")
+        state_id = state_data["state_id"]
+
+        # Print the state node
+        connector = "`-- " if is_last else "|-- "
+        if state_id is not None:
+            console.log(f'{prefix}{connector}{state_data["name"]} -> "{state_id}"')
+        else:
+            console.log(f"{prefix}{connector}{state_data['name']}")
+
+        # Calculate new prefix for children
+        child_prefix = prefix + ("    " if is_last else "|   ")
+
+        # Print event handlers
+        handlers = state_data["event_handlers"]
+        substates = state_data["substates"]
+        has_substates = len(substates) > 0
+
+        if handlers:
+            console.log(f"{child_prefix}|-- Event Handlers:")
+            handler_prefix = child_prefix + ("|   " if has_substates else "    ")
+            for i, handler in enumerate(handlers):
+                is_last_handler = i == len(handlers) - 1
+                h_connector = "`-- " if is_last_handler else "|-- "
+                # event_id is now the minified name directly
+                event_id = handler["event_id"]
+                if event_id is not None:
+                    console.log(
+                        f'{handler_prefix}{h_connector}{handler["name"]} -> "{event_id}"'
+                    )
+                else:
+                    console.log(f"{handler_prefix}{h_connector}{handler['name']}")
+
+        # Print substates recursively
+        for i, substate in enumerate(substates):
+            is_last_substate = i == len(substates) - 1
+            print_state_tree(substate, child_prefix, is_last_substate)
+
+    tree_data = build_state_tree(State)
+
+    if output_json:
+        import json
+
+        console.log(json.dumps(tree_data, indent=2))
+    else:
+        if minify_enabled:
+            console.log("State Tree (minify.json loaded)")
+        else:
+            console.log("State Tree (no minify.json)")
+        print_state_tree(tree_data)
+
+
+@minify.command(name="lookup")
+@loglevel_option
+@click.option(
+    "--json",
+    "output_json",
+    is_flag=True,
+    help="Output detailed info as JSON.",
+)
+@click.argument("minified_path")
+def minify_lookup(output_json: bool, minified_path: str):
+    """Lookup a state by its minified path (e.g., 'a.bU').
+
+    Walks the state tree from the root to resolve each segment.
+    """
+    from reflex.minify import MINIFY_JSON, get_minify_config, get_state_full_path
+    from reflex.state import BaseState, State
+    from reflex.utils import prerequisites
+
+    # Load the user's app to register all state classes
+    prerequisites.get_app()
+
+    config = get_minify_config()
+    if config is None:
+        console.error(
+            f"{MINIFY_JSON} not found. Run 'reflex minify init' to create it."
+        )
+        raise SystemExit(1)
+
+    def collect_states(
+        state_cls: type[BaseState],
+    ) -> list[type[BaseState]]:
+        """Recursively collect all states.
+
+        Args:
+            state_cls: The state class to start from.
+
+        Returns:
+            List of all state classes in the hierarchy.
+        """
+        result = [state_cls]
+        for sub in state_cls.class_subclasses:
+            result.extend(collect_states(sub))
+        return result
+
+    # Build lookup: full_path -> (state_class, minified_id)
+    all_states = collect_states(State)
+    path_to_info: dict[str, tuple[type[BaseState], str | None]] = {}
+    for state_cls in all_states:
+        full_path = get_state_full_path(state_cls)
+        minified_id = config["states"].get(full_path)
+        path_to_info[full_path] = (state_cls, minified_id)
+
+    # Walk the minified path
+    parts = minified_path.split(".")
+    result_parts = []
+    current = State
+
+    for i, part in enumerate(parts):
+        # Find state whose minified ID matches 'part'
+        found = None
+        if i == 0:
+            # First segment should match root state
+            state_path = get_state_full_path(current)
+            _, state_id = path_to_info.get(state_path, (None, None))
+            if state_id == part:
+                found = current
+        else:
+            # Find among children of current
+            for child in current.class_subclasses:
+                child_path = get_state_full_path(child)
+                _, child_id = path_to_info.get(child_path, (None, None))
+                if child_id == part:
+                    found = child
+                    break
+
+        if found is None:
+            console.error(
+                f"No state found for minified segment '{part}' in path '{minified_path}'"
+            )
+            raise SystemExit(1)
+
+        state_path = get_state_full_path(found)
+        _, state_id = path_to_info.get(state_path, (None, None))
+        result_parts.append({
+            "minified": part,
+            "state_id": state_id,
+            "module": found.__module__,
+            "class": found.__name__,
+            "full_path": state_path,
+        })
+        current = found
+
+    if output_json:
+        import json
+
+        click.echo(json.dumps(result_parts, indent=2))
+    else:
+        # Simple output: module.ClassName for each part
+        for info in result_parts:
+            console.log(f"{info['module']}.{info['class']}")
+
+
 def _convert_reflex_loglevel_to_reflex_cli_loglevel(
     loglevel: constants.LogLevel,
 ) -> HostingLogLevel:

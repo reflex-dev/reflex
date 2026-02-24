@@ -478,6 +478,13 @@ class PathExistsFlag:
 ExistingPath = Annotated[Path, PathExistsFlag]
 
 
+class MinifyMode(enum.Enum):
+    """Mode for minification of state/event IDs."""
+
+    ENABLED = "enabled"
+    DISABLED = "disabled"
+
+
 class PerformanceMode(enum.Enum):
     """Performance mode for the app."""
 
@@ -761,6 +768,12 @@ class EnvironmentVariables:
 
     # How long to opportunistically hold the redis lock in milliseconds (must be less than the token expiration).
     REFLEX_OPLOCK_HOLD_TIME_MS: EnvVar[int] = env_var(0)
+
+    # Whether to enable state ID minification (requires minify.json).
+    REFLEX_MINIFY_STATES: EnvVar[MinifyMode] = env_var(MinifyMode.DISABLED)
+
+    # Whether to enable event ID minification (requires minify.json).
+    REFLEX_MINIFY_EVENTS: EnvVar[MinifyMode] = env_var(MinifyMode.DISABLED)
 
 
 environment = EnvironmentVariables()
