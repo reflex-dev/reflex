@@ -57,6 +57,7 @@ db = [
   "sqlmodel >=0.0.24,<0.1",
 ]
 monitoring = ["pyleak >=0.1.14,<1.0"]
+orjson = ["orjson >=3.10,<4.0"]
 
 [project.urls]
 homepage = "https://reflex.dev"
@@ -99,6 +100,7 @@ dev = [
   "starlette-admin",
   "toml",
   "uvicorn",
+  "orjson >=3.10,<4.0",
 ]
 
 

@@ -2,14 +2,13 @@
 
 from __future__ import annotations
 
-import json
 from collections.abc import Iterable, Mapping
 from typing import TYPE_CHECKING, Any, Literal
 
 from reflex import constants
 from reflex.constants import Hooks
 from reflex.constants.state import CAMEL_CASE_MEMO_MARKER
-from reflex.utils.format import format_state_name, json_dumps
+from reflex.utils.format import format_state_name, json_dumps, orjson_dumps
 from reflex.vars.base import VarData
 
 if TYPE_CHECKING:
@@ -354,11 +353,11 @@ export const UploadFilesContext = createContext(null);
 export const DispatchContext = createContext(null);
 export const StateContexts = {{{state_contexts_str}}};
 export const EventLoopContext = createContext(null);
-export const clientStorage = {"{}" if client_storage is None else json.dumps(client_storage)}
+export const clientStorage = {"{}" if client_storage is None else orjson_dumps(client_storage)}
 
 {state_str}
 
-export const isDevMode = {json.dumps(is_dev_mode)};
+export const isDevMode = {orjson_dumps(is_dev_mode)};
 
 export function UploadFilesProvider({{ children }}) {{
   const [filesById, setFilesById] = useState({{}})
@@ -486,7 +485,7 @@ def package_json_template(
     Returns:
         Rendered package.json content as string.
     """
-    return json.dumps({
+    return orjson_dumps({
         "name": "reflex",
         "type": "module",
         "scripts": scripts,
