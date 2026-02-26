@@ -342,6 +342,7 @@ _MAPPING: dict = {
     "utils.imports": ["ImportDict", "ImportVar"],
     "utils.misc": ["run_in_thread"],
     "utils.serializers": ["serializer"],
+    "utils.token_manager": ["get_token_manager"],
     "vars": ["Var", "field", "Field"],
 }
 
