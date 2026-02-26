@@ -12,7 +12,7 @@ from reflex.utils.misc import get_module_path
 
 def rename_path_up_tree(full_path: str | Path, old_name: str, new_name: str) -> Path:
     """Rename all instances of `old_name` in the path (file and directories) to `new_name`.
-    The renaming stops when we reach the directory containing `rxconfig.py`.
+    The renaming stops when we reach the directory containing the config file.
 
     Args:
         full_path: The full path to start renaming from.
@@ -27,8 +27,8 @@ def rename_path_up_tree(full_path: str | Path, old_name: str, new_name: str) -> 
 
     while True:
         directory, base = current_path.parent, current_path.name
-        # Stop renaming when we reach the root dir (which contains rxconfig.py)
-        if current_path.is_dir() and (current_path / "rxconfig.py").exists():
+        # Stop renaming when we reach the root dir (which contains the config file)
+        if current_path.is_dir() and (current_path / constants.Config.FILE.name).exists():
             new_path = current_path
             break
 
@@ -62,7 +62,7 @@ def rename_app(new_app_name: str, loglevel: constants.LogLevel):
 
     if not constants.Config.FILE.exists():
         console.error(
-            "No rxconfig.py found. Make sure you are in the root directory of your app."
+            f"No {constants.Config.FILE} found. Make sure you are in the root directory of your app."
         )
         raise SystemExit(1)
 
@@ -88,7 +88,7 @@ def rename_app(new_app_name: str, loglevel: constants.LogLevel):
 
 
 def rename_imports_and_app_name(file_path: str | Path, old_name: str, new_name: str):
-    """Rename imports the file using string replacement as well as app_name in rxconfig.py.
+    """Rename imports the file using string replacement as well as app_name in the config file.
 
     Args:
         file_path: The file to process.
