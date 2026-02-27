@@ -1156,6 +1156,8 @@ class App(MiddlewareMixin, LifespanMixin):
             ReflexRuntimeError: When any page uses state, but no rx.State subclass is defined.
             FileNotFoundError: When a plugin requires a file that does not exist.
         """
+        from reflex import route as route_module
+        from reflex.utils import frontend_skeleton
         from reflex.utils.exceptions import ReflexRuntimeError
 
         self._apply_decorated_pages()
@@ -1533,6 +1535,13 @@ class App(MiddlewareMixin, LifespanMixin):
                     msg = f"Plugin {plugin_name} is trying to modify {path} but it does not exist."
                     raise FileNotFoundError(msg)
             output_mapping[path] = modify_fn(file_content)
+
+        # Update package.json with dynamic route patterns for sirv --ignores
+        routes = list(self._unevaluated_pages.keys())
+        dynamic_route_prefixes = route_module.get_dynamic_route_prefixes(routes)
+        if dynamic_route_prefixes:
+            console.debug(f"Updating package.json with dynamic route prefixes: {dynamic_route_prefixes}")
+            frontend_skeleton.initialize_package_json(dynamic_route_prefixes)
 
         with console.timing("Write to Disk"):
             for output_path, code in output_mapping.items():

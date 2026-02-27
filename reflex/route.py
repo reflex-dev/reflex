@@ -132,6 +132,56 @@ def replace_brackets_with_keywords(input_string: str) -> str:
     )
 
 
+def get_dynamic_route_prefixes(routes: list[str]) -> list[str]:
+    """Get route prefixes for dynamic routes to use with sirv --ignores.
+
+    sirv treats URLs with extensions (periods) as asset requests, not SPA routes.
+    This function extracts route patterns that have dynamic segments, so they can
+    be excluded from asset detection using sirv's --ignores flag.
+
+    Example:
+        >>> get_dynamic_route_prefixes(["/posts/[slug]", "/data/[version]/info"])
+        ['^/posts/', '^/data/']
+
+    Args:
+        routes: List of route strings.
+
+    Returns:
+        List of regex patterns for sirv --ignores flag.
+    """
+    prefixes = []
+    for route in routes:
+        # Check if route has dynamic segments
+        if get_route_args(route):
+            # Extract the prefix up to the first dynamic segment
+            parts = route.split("/")
+            prefix_parts = []
+            for part in parts:
+                # Stop at first dynamic segment
+                if (
+                    constants.RouteRegex.ARG.match(part)
+                    or constants.RouteRegex.OPTIONAL_ARG.match(part)
+                    or constants.RouteRegex.STRICT_CATCHALL.match(part)
+                    or constants.RouteRegex.OPTIONAL_CATCHALL.match(part)
+                    or part == constants.RouteRegex.SPLAT_CATCHALL
+                ):
+                    break
+                prefix_parts.append(part)
+
+            # Build prefix pattern (e.g., "/posts" -> "^/posts/")
+            prefix = "/".join(prefix_parts)
+            # Ensure prefix starts with / for absolute path matching
+            if not prefix.startswith("/"):
+                prefix = "/" + prefix
+            if prefix and prefix != "/":
+                # Add trailing slash and anchor to start for sirv pattern
+                pattern = f"^{prefix}/"
+                if pattern not in prefixes:
+                    prefixes.append(pattern)
+
+    return prefixes
+
+
 def route_specificity(keyworded_route: str) -> tuple[int, int, int]:
     """Get the specificity of a route with keywords.
 
