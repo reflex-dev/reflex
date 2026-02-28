@@ -197,6 +197,7 @@ def _compile_vite_config(config: Config):
         force_full_reload=environment.VITE_FORCE_FULL_RELOAD.get(),
         experimental_hmr=environment.VITE_EXPERIMENTAL_HMR.get(),
         sourcemap=environment.VITE_SOURCEMAP.get(),
+        allowed_hosts=config.vite_allowed_hosts,
     )
 
 
