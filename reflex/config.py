@@ -213,6 +213,9 @@ class BaseConfig:
         dataclasses.field(default=("*",))
     )
 
+    # Whether to allow all hosts in Vite dev server (prevents 403 errors in Docker, Codespaces, etc.).
+    vite_allowed_hosts: bool = False
+
     # Whether to use React strict mode.
     react_strict_mode: bool = True
 
