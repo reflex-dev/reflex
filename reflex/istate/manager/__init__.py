@@ -46,7 +46,10 @@ class StateManager(ABC):
             The state manager (either disk, memory or redis).
         """
         config = get_config()
-        if prerequisites.parse_redis_url() is not None:
+        if (
+            prerequisites.parse_redis_url() is not None
+            or prerequisites.get_sentinel_config() is not None
+        ):
             config.state_manager_mode = constants.StateManagerMode.REDIS
         if config.state_manager_mode == constants.StateManagerMode.MEMORY:
             from reflex.istate.manager.memory import StateManagerMemory
