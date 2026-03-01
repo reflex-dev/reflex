@@ -581,6 +581,11 @@ export default defineConfig((config) => ({{
       }},
     }},
   }},
+  ssr: {{
+    noExternal: config.command === "build"
+      ? ["react-syntax-highlighter", "refractor"]
+      : [],
+  }},
   experimental: {{
     enableNativePlugin: false,
     hmr: {"true" if experimental_hmr else "false"},
