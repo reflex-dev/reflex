@@ -213,8 +213,10 @@ class BaseConfig:
         dataclasses.field(default=("*",))
     )
 
-    # Whether to allow all hosts in Vite dev server (prevents 403 errors in Docker, Codespaces, etc.).
-    vite_allowed_hosts: bool = False
+    # Allowed hosts for the Vite dev server. Set to True to allow all hosts,
+    # or provide a list of hostnames (e.g. ["myservice.local"]) to allow specific ones.
+    # Prevents 403 errors in Docker, Codespaces, reverse proxies, etc.
+    vite_allowed_hosts: bool | list[str] = False
 
     # Whether to use React strict mode.
     react_strict_mode: bool = True

@@ -502,7 +502,7 @@ def vite_config_template(
     force_full_reload: bool,
     experimental_hmr: bool,
     sourcemap: bool | Literal["inline", "hidden"],
-    allowed_hosts: bool = False,
+    allowed_hosts: bool | list[str] = False,
 ):
     """Template for vite.config.js.
 
@@ -512,12 +512,17 @@ def vite_config_template(
         force_full_reload: Whether to force a full reload on changes.
         experimental_hmr: Whether to enable experimental HMR features.
         sourcemap: The sourcemap configuration.
-        allowed_hosts: Whether to allow all hosts in the Vite dev server.
+        allowed_hosts: Allow all hosts (True), specific hosts (list of strings), or only localhost (False).
 
     Returns:
         Rendered vite.config.js content as string.
     """
-    allowed_hosts_line = "\n    allowedHosts: true," if allowed_hosts else ""
+    if allowed_hosts is True:
+        allowed_hosts_line = "\n    allowedHosts: true,"
+    elif isinstance(allowed_hosts, list) and allowed_hosts:
+        allowed_hosts_line = f"\n    allowedHosts: {json.dumps(allowed_hosts)},"
+    else:
+        allowed_hosts_line = ""
     return rf"""import {{ fileURLToPath, URL }} from "url";
 import {{ reactRouter }} from "@react-router/dev/vite";
 import {{ defineConfig }} from "vite";
