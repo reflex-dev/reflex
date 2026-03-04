@@ -108,6 +108,20 @@ class PackageJson(SimpleNamespace):
         EXPORT = "react-router build"
         PROD = "sirv ./build/client --single 404.html --host"
 
+        @staticmethod
+        def get_prod_command(frontend_path: str = "") -> str:
+            """Get the prod command with the correct 404.html path for the given frontend_path.
+
+            Args:
+                frontend_path: The frontend path prefix (e.g. "/app").
+
+            Returns:
+                The sirv command with the correct --single fallback path.
+            """
+            stripped = frontend_path.strip("/")
+            fallback = f"{stripped}/404.html" if stripped else "404.html"
+            return f"sirv ./build/client --single {fallback} --host"
+
     PATH = "package.json"
 
     _react_version = _determine_react_version()
