@@ -243,8 +243,14 @@ def interpret_env_var_value(
     field_type = value_inside_optional(field_type)
 
     if is_union(field_type):
-        msg = f"Union types are not supported for environment variables: {field_name}."
-        raise ValueError(msg)
+        errors = []
+        for arg in (union_types := get_args(field_type)):
+            try:
+                return interpret_env_var_value(value, arg, field_name)
+            except (ValueError, EnvironmentVarValueError) as e:  # noqa: PERF203
+                errors.append(e)
+        msg = f"Could not interpret {value!r} for {field_name} as any of {union_types}: {errors}"
+        raise EnvironmentVarValueError(msg)
 
     value = value.strip()
 

@@ -190,10 +190,19 @@ class TestInterpretEnvVarValue:
         result = interpret_env_var_value("value1", _TestEnum, "TEST_FIELD")
         assert result == _TestEnum.VALUE1
 
-    def test_interpret_union_error(self):
-        """Test that union types raise an error."""
-        with pytest.raises(ValueError, match="Union types are not supported"):
-            interpret_env_var_value("test", int | str, "TEST_FIELD")
+    def test_interpret_union_tries_each_type(self):
+        """Test that union types try each type in order."""
+        # str matches first
+        assert interpret_env_var_value("hello", int | str, "TEST_FIELD") == "hello"
+        # int matches first
+        assert interpret_env_var_value("42", int | str, "TEST_FIELD") == 42
+        # bool matches before str
+        assert interpret_env_var_value("true", bool | str, "TEST_FIELD") is True
+
+    def test_interpret_union_no_match(self):
+        """Test that union types raise an error if no type matches."""
+        with pytest.raises(EnvironmentVarValueError, match="Could not interpret"):
+            interpret_env_var_value("not_a_number", int | bool, "TEST_FIELD")
 
     def test_interpret_unsupported_type(self):
         """Test unsupported type raises an error."""
