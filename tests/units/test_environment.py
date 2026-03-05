@@ -30,6 +30,7 @@ from reflex.environment import (
     interpret_existing_path_env,
     interpret_int_env,
     interpret_path_env,
+    interpret_plugin_class_env,
     interpret_plugin_env,
 )
 from reflex.plugins import Plugin
@@ -125,6 +126,30 @@ class TestInterpretFunctions:
         with pytest.raises(EnvironmentVarValueError, match="Invalid plugin class"):
             interpret_plugin_env("tests.units.test_environment.TestEnum", "TEST_FIELD")
 
+    def test_interpret_plugin_class_env_valid(self):
+        """Test plugin class interpretation returns the class, not an instance."""
+        result = interpret_plugin_class_env(
+            "tests.units.test_environment.TestPlugin", "TEST_FIELD"
+        )
+        assert result is TestPlugin
+
+    def test_interpret_plugin_class_env_invalid_format(self):
+        """Test plugin class interpretation with invalid format."""
+        with pytest.raises(EnvironmentVarValueError, match="Invalid plugin value"):
+            interpret_plugin_class_env("invalid_format", "TEST_FIELD")
+
+    def test_interpret_plugin_class_env_import_error(self):
+        """Test plugin class interpretation with import error."""
+        with pytest.raises(EnvironmentVarValueError, match="Failed to import module"):
+            interpret_plugin_class_env("non.existent.module.Plugin", "TEST_FIELD")
+
+    def test_interpret_plugin_class_env_invalid_class(self):
+        """Test plugin class interpretation with invalid class."""
+        with pytest.raises(EnvironmentVarValueError, match="Invalid plugin class"):
+            interpret_plugin_class_env(
+                "tests.units.test_environment.TestEnum", "TEST_FIELD"
+            )
+
     def test_interpret_enum_env_valid(self):
         """Test enum interpretation with valid values."""
         result = interpret_enum_env("value1", _TestEnum, "TEST_FIELD")
@@ -171,6 +196,15 @@ class TestInterpretEnvVarValue:
             "tests.units.test_environment.TestPlugin", Plugin, "TEST_FIELD"
         )
         assert isinstance(result, TestPlugin)
+
+    def test_interpret_plugin_class(self):
+        """Test type[Plugin] interpretation returns the class."""
+        result = interpret_env_var_value(
+            "tests.units.test_environment.TestPlugin",
+            type[Plugin],
+            "TEST_FIELD",
+        )
+        assert result is TestPlugin
 
     def test_interpret_list(self):
         """Test list interpretation."""
