@@ -29,7 +29,7 @@ runner = CliRunner()
                 app_name="test",
             ),
             False,
-            'export default {"basename": "/", "future": {"unstable_optimizeDeps": true}, "ssr": false};',
+            'export default {"basename":"/","future":{"unstable_optimizeDeps":true},"ssr":false};',
         ),
         (
             Config(
@@ -37,7 +37,7 @@ runner = CliRunner()
                 static_page_generation_timeout=30,
             ),
             False,
-            'export default {"basename": "/", "future": {"unstable_optimizeDeps": true}, "ssr": false};',
+            'export default {"basename":"/","future":{"unstable_optimizeDeps":true},"ssr":false};',
         ),
         (
             Config(
@@ -45,14 +45,14 @@ runner = CliRunner()
                 frontend_path="/test",
             ),
             False,
-            'export default {"basename": "/test/", "future": {"unstable_optimizeDeps": true}, "ssr": false};',
+            'export default {"basename":"/test/","future":{"unstable_optimizeDeps":true},"ssr":false};',
         ),
         (
             Config(
                 app_name="test",
             ),
             True,
-            'export default {"basename": "/", "future": {"unstable_optimizeDeps": true}, "ssr": false, "prerender": true, "build": "build"};',
+            'export default {"basename":"/","future":{"unstable_optimizeDeps":true},"ssr":false,"prerender":true,"build":"build"};',
         ),
     ],
 )

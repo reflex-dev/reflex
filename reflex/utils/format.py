@@ -498,7 +498,7 @@ def format_event(event_spec: EventSpec) -> str:
             name._js_expr,
             (
                 wrap(
-                    json.dumps(val._js_expr).strip('"').replace("`", "\\`"),
+                    orjson_dumps(val._js_expr).strip('"').replace("`", "\\`"),
                     "`",
                 )
                 if val._var_is_string
@@ -684,6 +684,62 @@ def json_dumps(obj: Any, **kwargs) -> str:
     kwargs.setdefault("default", serializers.serialize)
 
     return json.dumps(obj, **kwargs)
+
+
+def orjson_dumps(obj: Any, **kwargs) -> str:
+    """Serialize obj to a JSON string, using orjson when available.
+
+    Translates common json.dumps kwargs (indent, sort_keys) into orjson
+    option flags.  Falls back to stdlib json if orjson is not installed,
+    an unsupported kwarg is passed, or orjson raises TypeError.
+
+    Args:
+        obj: The object to serialize.
+        kwargs: Optional keyword arguments (indent, sort_keys).
+
+    Returns:
+        A JSON string.
+    """
+    try:
+        import orjson  # pyright: ignore[reportMissingImports]
+    except ImportError:
+        return json.dumps(obj, **kwargs)
+
+    option = 0
+    if kwargs.pop("indent", None):
+        option |= orjson.OPT_INDENT_2
+    if kwargs.pop("sort_keys", False):
+        option |= orjson.OPT_SORT_KEYS
+    kwargs.pop("ensure_ascii", None)  # orjson always produces UTF-8
+
+    if kwargs:
+        # Fall back to stdlib json for unsupported kwargs.
+        return json.dumps(obj, **kwargs)
+
+    try:
+        return orjson.dumps(obj, option=option or None).decode()
+    except TypeError:
+        # Fallback for types orjson can't handle (e.g. int > 64-bit).
+        return json.dumps(obj)
+
+
+def orjson_loads(data: str | bytes) -> Any:
+    """Deserialize a JSON string or bytes, using orjson when available.
+
+    Falls back to stdlib json.loads if orjson is not installed.
+
+    Args:
+        data: JSON string or bytes to deserialize.
+
+    Returns:
+        The deserialized Python object.
+    """
+    try:
+        import orjson  # pyright: ignore[reportMissingImports]
+    except ImportError:
+        return json.loads(data)
+
+    return orjson.loads(data)
 
 
 def collect_form_dict_names(form_dict: dict[str, Any]) -> dict[str, Any]:

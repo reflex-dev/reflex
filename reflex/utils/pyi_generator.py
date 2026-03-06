@@ -6,7 +6,6 @@ import ast
 import contextlib
 import importlib
 import inspect
-import json
 import logging
 import re
 import subprocess
@@ -23,6 +22,7 @@ from typing import Any, get_args, get_origin
 
 from reflex.components.component import Component
 from reflex.utils import types as rx_types
+from reflex.utils.format import orjson_dumps, orjson_loads
 from reflex.vars.base import Var
 
 logger = logging.getLogger("pyi_generator")
@@ -1301,7 +1301,7 @@ class PyiGenerator:
 
                 if pyi_hashes_file.exists():
                     pyi_hashes_file.write_text(
-                        json.dumps(
+                        orjson_dumps(
                             dict(
                                 zip(
                                     [
@@ -1328,7 +1328,7 @@ class PyiGenerator:
 
                 pyi_hashes_file = pyi_hashes_parent / PYI_HASHES
                 if pyi_hashes_file.exists():
-                    pyi_hashes = json.loads(pyi_hashes_file.read_text())
+                    pyi_hashes = orjson_loads(pyi_hashes_file.read_text())
                     for file_path, hashed_content in zip(
                         file_paths, hashes, strict=False
                     ):
@@ -1338,7 +1338,7 @@ class PyiGenerator:
                         pyi_hashes[formatted_path] = hashed_content
 
                     pyi_hashes_file.write_text(
-                        json.dumps(pyi_hashes, indent=2, sort_keys=True) + "\n"
+                        orjson_dumps(pyi_hashes, indent=2, sort_keys=True) + "\n"
                     )
 
 

@@ -3,7 +3,6 @@
 import asyncio
 import dataclasses
 import importlib.metadata
-import json
 import multiprocessing
 import platform
 import warnings
@@ -16,6 +15,7 @@ from reflex.environment import environment
 from reflex.utils import console, processes
 from reflex.utils.decorator import once, once_unless_none
 from reflex.utils.exceptions import ReflexError
+from reflex.utils.format import orjson_dumps, orjson_loads
 from reflex.utils.js_runtimes import get_bun_version, get_node_version
 from reflex.utils.prerequisites import ensure_reflex_installation_id, get_project_hash
 
@@ -60,7 +60,7 @@ def _retrieve_cpu_info() -> CpuInfo | None:
             cmd = 'powershell -Command "Get-CimInstance Win32_Processor | Select-Object -First 1 | Select-Object AddressWidth,Manufacturer,Name | ConvertTo-Json"'
             output = processes.execute_command_and_return_output(cmd)
             if output:
-                cpu_data = json.loads(output)
+                cpu_data = orjson_loads(output)
                 cpuinfo["address_width"] = cpu_data["AddressWidth"]
                 cpuinfo["manufacturer_id"] = cpu_data["Manufacturer"]
                 cpuinfo["model_name"] = cpu_data["Name"]
@@ -110,12 +110,12 @@ def get_cpu_info() -> CpuInfo | None:
         The CPU info.
     """
     cpu_info_file = environment.REFLEX_DIR.get() / "cpu_info.json"
-    if cpu_info_file.exists() and (cpu_info := json.loads(cpu_info_file.read_text())):
+    if cpu_info_file.exists() and (cpu_info := orjson_loads(cpu_info_file.read_text())):
         return CpuInfo(**cpu_info)
     cpu_info = _retrieve_cpu_info()
     if cpu_info:
         cpu_info_file.parent.mkdir(parents=True, exist_ok=True)
-        cpu_info_file.write_text(json.dumps(dataclasses.asdict(cpu_info)))
+        cpu_info_file.write_text(orjson_dumps(dataclasses.asdict(cpu_info)))
     return cpu_info
 
 

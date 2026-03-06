@@ -546,7 +546,7 @@ class App(MiddlewareMixin, LifespanMixin):
                 ping_timeout=environment.REFLEX_SOCKET_TIMEOUT.get(),
                 json=SimpleNamespace(
                     dumps=staticmethod(format.json_dumps),
-                    loads=staticmethod(json.loads),
+                    loads=staticmethod(format.orjson_loads),
                 ),
                 allow_upgrades=False,
                 transports=[config.transport],
@@ -1170,8 +1170,7 @@ class App(MiddlewareMixin, LifespanMixin):
         if not dry_run and not should_compile and backend_dir.exists():
             stateful_pages_marker = backend_dir / constants.Dirs.STATEFUL_PAGES
             if stateful_pages_marker.exists():
-                with stateful_pages_marker.open("r") as f:
-                    stateful_pages = json.load(f)
+                stateful_pages = format.orjson_loads(stateful_pages_marker.read_bytes())
                 for route in stateful_pages:
                     console.debug(f"BE Evaluating stateful page: {route}")
                     self._compile_page(route, save_page=False)
@@ -1546,7 +1545,7 @@ class App(MiddlewareMixin, LifespanMixin):
             )
             stateful_pages_marker.parent.mkdir(parents=True, exist_ok=True)
             with stateful_pages_marker.open("w") as f:
-                json.dump(list(self._stateful_pages), f)
+                f.write(format.orjson_dumps(list(self._stateful_pages)))
 
     def add_all_routes_endpoint(self):
         """Add an endpoint to the app that returns all the routes."""
@@ -2167,7 +2166,7 @@ class EventNamespace(AsyncNamespace):
                 f" Event data: {fields}"
             )
             try:
-                fields = json.loads(fields)
+                fields = format.orjson_loads(fields)
             except json.JSONDecodeError as ex:
                 msg = f"Failed to deserialize event data: {fields}."
                 raise exceptions.EventDeserializationError(msg) from ex

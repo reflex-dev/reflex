@@ -1,6 +1,5 @@
 """This module provides utility functions to initialize the frontend skeleton."""
 
-import json
 import random
 import re
 from pathlib import Path
@@ -10,6 +9,7 @@ from reflex.compiler import templates
 from reflex.config import Config, get_config
 from reflex.environment import environment
 from reflex.utils import console, path_ops
+from reflex.utils.format import orjson_dumps
 from reflex.utils.prerequisites import get_project_hash, get_web_dir
 from reflex.utils.registry import get_npm_registry
 
@@ -164,7 +164,7 @@ def _update_react_router_config(config: Config, prerender_routes: bool = False):
         react_router_config["prerender"] = True
         react_router_config["build"] = constants.Dirs.BUILD_DIR
 
-    return f"export default {json.dumps(react_router_config)};"
+    return f"export default {orjson_dumps(react_router_config)};"
 
 
 def _compile_package_json():
