@@ -1892,7 +1892,7 @@ class BaseState(EvenMoreBasicBaseState):
             fn = functools.partial(handler.fn, state)
 
         try:
-            type_hints = typing.get_type_hints(handler.fn)
+            type_hints = types.get_type_hints(handler.fn)
         except Exception:
             type_hints = {}
 
