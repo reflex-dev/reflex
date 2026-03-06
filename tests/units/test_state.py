@@ -6,6 +6,7 @@ import dataclasses
 import datetime
 import functools
 import json
+import math
 import os
 import sys
 import threading
@@ -387,9 +388,9 @@ def test_default_value(test_state: TestState):
         test_state: A state.
     """
     assert test_state.num1 == 0
-    assert test_state.num2 == 3.15
+    assert math.isclose(test_state.num2, 3.15)
     assert test_state.key == ""
-    assert test_state.sum == 3.15
+    assert math.isclose(test_state.sum, 3.15)
     assert test_state.upper == ""
     assert test_state._backend == 0
     assert test_state.mixin == "mixin_value"
@@ -770,7 +771,7 @@ def test_reset(test_state: TestState, child_state: ChildState):
 
     # The values should be reset.
     assert test_state.num1 == 0
-    assert test_state.num2 == 3.15
+    assert math.isclose(test_state.num2, 3.15)
     assert test_state._backend == 0
     assert child_state.value == ""
 
@@ -3461,7 +3462,7 @@ async def test_setvar(mock_app: rx.App, token: str):
         async for update in state._process(event):
             print(update)
     assert state.num1 == 42
-    assert state.num2 == 4.2
+    assert math.isclose(state.num2, 4.2)
 
     # Set Var in parent state
     for event in rx.event.fix_events([GrandchildState.setvar("array", [43])], token):
