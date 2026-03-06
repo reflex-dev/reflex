@@ -14,7 +14,6 @@ import pickle
 import re
 import sys
 import time
-import typing
 import uuid
 import warnings
 from collections.abc import AsyncIterator, Callable, Iterator, Sequence
