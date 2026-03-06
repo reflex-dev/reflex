@@ -14,7 +14,6 @@ import pickle
 import re
 import sys
 import time
-import typing
 import uuid
 import warnings
 from collections.abc import AsyncIterator, Callable, Iterator, Sequence
@@ -1892,7 +1891,7 @@ class BaseState(EvenMoreBasicBaseState):
             fn = functools.partial(handler.fn, state)
 
         try:
-            type_hints = typing.get_type_hints(handler.fn)
+            type_hints = types.get_type_hints(handler.fn)
         except Exception:
             type_hints = {}
 
