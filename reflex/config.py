@@ -383,12 +383,6 @@ class Config(BaseConfig):
             if isinstance(entry, type) and issubclass(entry, Plugin):
                 normalized.append(entry)
             elif isinstance(entry, Plugin):
-                console.deprecate(
-                    feature_name="Passing Plugin instances to disable_plugins",
-                    reason="pass Plugin classes directly instead, e.g. disable_plugins=[SitemapPlugin]",
-                    deprecation_version="0.8.28",
-                    removal_version="0.9.0",
-                )
                 normalized.append(type(entry))
             elif isinstance(entry, str):
                 console.deprecate(
