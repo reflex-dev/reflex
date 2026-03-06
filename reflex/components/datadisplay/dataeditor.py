@@ -14,7 +14,7 @@ from reflex.utils import console, format, types
 from reflex.utils.imports import ImportDict, ImportVar
 from reflex.utils.serializers import serializer
 from reflex.vars import get_unique_variable_name
-from reflex.vars.base import Var
+from reflex.vars.base import Var, VarData
 from reflex.vars.function import FunctionStringVar
 from reflex.vars.sequence import ArrayVar
 
@@ -366,6 +366,9 @@ class DataEditor(NoSSRComponent):
     # Fired when the search close button is clicked.
     on_search_close: EventHandler[no_args_event_spec]
 
+    # Custom cell renderers
+    custom_renderers: Var[Any]
+
     def add_imports(self) -> ImportDict:
         """Add imports for the component.
 
@@ -460,11 +463,12 @@ class DataEditor(NoSSRComponent):
         return ["\n".join(code)]
 
     @classmethod
-    def create(cls, *children, **props) -> Component:
+    def create(cls, *children, extended_cell_types: bool = False, **props) -> Component:
         """Create the DataEditor component.
 
         Args:
             *children: The children of the data editor.
+            extended_cell_types: Whether to enable extended cell types.
             **props: The props of the data editor.
 
         Raises:
@@ -520,6 +524,18 @@ class DataEditor(NoSSRComponent):
             props["grid_selection"] = FunctionStringVar.create(
                 "reconstructGridSelection"
             ).call(grid_selection)
+
+        if extended_cell_types:
+            props["custom_renderers"] = Var(
+                "allCells",
+                _var_data=VarData(
+                    imports={
+                        "@glideapps/glide-data-grid-cells@6.0.3": ImportVar(
+                            tag="allCells", is_default=False
+                        )
+                    }
+                ),
+            )
 
         grid = super().create(*children, **props)
         return Div.create(
