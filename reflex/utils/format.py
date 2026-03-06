@@ -6,6 +6,7 @@ import inspect
 import json
 import os
 import re
+from collections.abc import Callable
 from typing import TYPE_CHECKING, Any
 
 from reflex import constants
@@ -439,15 +440,25 @@ def format_props(*single_props, **key_value_props) -> list[str]:
     ] + [(f"...{LiteralVar.create(prop)!s}") for prop in single_props]
 
 
-def get_event_handler_parts(handler: EventHandler) -> tuple[str, str]:
+def get_event_handler_parts(
+    handler: EventHandler | Callable[..., Any],
+) -> tuple[str, str]:
     """Get the state and function name of an event handler.
 
     Args:
         handler: The event handler to get the parts of.
 
     Returns:
-        The state and function name.
+        The state and function name (possibly minified based on minify.json).
     """
+    from reflex.event import EventHandler
+    from reflex.minify import is_event_minify_enabled
+    from reflex.state import State
+
+    if not isinstance(handler, EventHandler):
+        msg = f"Expected EventHandler, got {type(handler)}"
+        raise TypeError(msg)
+
     # Get the class that defines the event handler.
     parts = handler.fn.__qualname__.split(".")
 
@@ -461,15 +472,29 @@ def get_event_handler_parts(handler: EventHandler) -> tuple[str, str]:
     # Get the function name
     name = parts[-1]
 
-    from reflex.state import State
-
     if state_full_name == FRONTEND_EVENT_STATE and name not in State.__dict__:
         return ("", to_snake_case(handler.fn.__qualname__))
+
+    # Check for event_id minification from minify.json
+    # The state class stores its event ID mapping in _event_id_to_name
+    # where key is minified_name and value is original_handler_name
+    if is_event_minify_enabled():
+        try:
+            # Get the state class using the path
+            state_cls = State.get_class_substate(state_full_name)
+            # Look up the minified name by original handler name
+            for minified_name, handler_name in state_cls._event_id_to_name.items():
+                if handler_name == name:
+                    name = minified_name
+                    break
+        except ValueError:
+            # State not found, skip minification
+            pass
 
     return (state_full_name, name)
 
 
-def format_event_handler(handler: EventHandler) -> str:
+def format_event_handler(handler: EventHandler | Callable[..., Any]) -> str:
     """Format an event handler.
 
     Args:

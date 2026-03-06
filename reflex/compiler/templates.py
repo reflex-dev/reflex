@@ -9,7 +9,7 @@ from typing import TYPE_CHECKING, Any, Literal
 from reflex import constants
 from reflex.constants import Hooks
 from reflex.constants.state import CAMEL_CASE_MEMO_MARKER
-from reflex.utils.format import format_state_name, json_dumps
+from reflex.utils.format import format_event_handler, format_state_name, json_dumps
 from reflex.vars.base import VarData
 
 if TYPE_CHECKING:
@@ -274,6 +274,24 @@ def context_template(
     Returns:
         Rendered context file content as string.
     """
+    # Import state classes to get dynamic names (supports minification)
+    from reflex.state import (
+        FrontendEventExceptionState,
+        OnLoadInternalState,
+        State,
+        UpdateVarsInternalState,
+    )
+
+    # Compute dynamic state names that respect minification settings
+    main_state_name = State.get_name()
+    on_load_internal = format_event_handler(OnLoadInternalState.on_load_internal)
+    update_vars_internal = format_event_handler(
+        UpdateVarsInternalState.update_vars_internal
+    )
+    handle_frontend_exception = format_event_handler(
+        FrontendEventExceptionState.handle_frontend_exception
+    )
+
     initial_state = initial_state or {}
     state_contexts_str = "".join([
         f"{format_state_name(state_name)}: createContext(null),"
@@ -284,7 +302,11 @@ def context_template(
         rf"""
 export const state_name = "{state_name}"
 
-export const exception_state_name = "{constants.CompileVars.FRONTEND_EXCEPTION_STATE_FULL}"
+export const main_state_name = "{main_state_name}"
+
+export const update_vars_internal = "{update_vars_internal}"
+
+export const handle_frontend_exception = "{handle_frontend_exception}"
 
 // These events are triggered on initial load and each page navigation.
 export const onLoadInternalEvent = () => {{
@@ -296,7 +318,7 @@ export const onLoadInternalEvent = () => {{
     if (client_storage_vars && Object.keys(client_storage_vars).length !== 0) {{
         internal_events.push(
             ReflexEvent(
-                '{state_name}.{constants.CompileVars.UPDATE_VARS_INTERNAL}',
+                '{update_vars_internal}',
                 {{vars: client_storage_vars}},
             ),
         );
@@ -304,7 +326,7 @@ export const onLoadInternalEvent = () => {{
 
     // `on_load_internal` triggers the correct on_load event(s) for the current page.
     // If the page does not define any on_load event, this will just set `is_hydrated = true`.
-    internal_events.push(ReflexEvent('{state_name}.{constants.CompileVars.ON_LOAD_INTERNAL}'));
+    internal_events.push(ReflexEvent('{on_load_internal}'));
 
     return internal_events;
 }}
@@ -319,7 +341,11 @@ export const initialEvents = () => [
         else """
 export const state_name = undefined
 
-export const exception_state_name = undefined
+export const main_state_name = undefined
+
+export const update_vars_internal = undefined
+
+export const handle_frontend_exception = undefined
 
 export const onLoadInternalEvent = () => []
 
