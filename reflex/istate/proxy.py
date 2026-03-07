@@ -454,6 +454,42 @@ class MutableProxy(wrapt.ObjectProxy):
         """
         return f"{type(self).__name__}({self.__wrapped__})"
 
+    @staticmethod
+    def _unwrap_proxy_arg(value: Any) -> Any:
+        """Unwrap MutableProxy instances from a value before writing.
+
+        Proxies are read-path wrappers that must not leak into underlying
+        data structures. Handles scalars and common containers (list, tuple,
+        set, dict) whose elements may be proxies.
+
+        Args:
+            value: The value to unwrap.
+
+        Returns:
+            The unwrapped value.
+        """
+        if isinstance(value, MutableProxy):
+            return value.__wrapped__
+        if isinstance(value, list):
+            return [
+                item.__wrapped__ if isinstance(item, MutableProxy) else item
+                for item in value
+            ]
+        if isinstance(value, (tuple, set)):
+            unwrapped = (
+                item.__wrapped__ if isinstance(item, MutableProxy) else item
+                for item in value
+            )
+            return type(value)(unwrapped)
+        if isinstance(value, dict):
+            return {
+                (k.__wrapped__ if isinstance(k, MutableProxy) else k): (
+                    v.__wrapped__ if isinstance(v, MutableProxy) else v
+                )
+                for k, v in value.items()
+            }
+        return value
+
     def _mark_dirty(
         self,
         wrapped: Callable | None = None,
@@ -477,6 +513,9 @@ class MutableProxy(wrapt.ObjectProxy):
         self._self_state.dirty_vars.add(self._self_field_name)
         self._self_state._mark_dirty()
         if wrapped is not None:
+            args = tuple(self._unwrap_proxy_arg(a) for a in args)
+            if kwargs:
+                kwargs = {k: self._unwrap_proxy_arg(v) for k, v in kwargs.items()}
             return wrapped(*args, **(kwargs or {}))
         return None
 
