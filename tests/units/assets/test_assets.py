@@ -123,12 +123,13 @@ def test_remove_stale_external_asset_symlinks() -> None:
         shutil.rmtree(external_dir)
 
 
-def test_remove_stale_symlinks_no_external_dir() -> None:
+def test_remove_stale_symlinks_no_external_dir(tmp_path: Path, monkeypatch) -> None:
     """Test that cleanup is a no-op when assets/external/ doesn't exist."""
     from reflex.assets import remove_stale_external_asset_symlinks
 
+    monkeypatch.chdir(tmp_path)
     external_dir = (
-        Path.cwd() / constants.Dirs.APP_ASSETS / constants.Dirs.EXTERNAL_APP_ASSETS
+        tmp_path / constants.Dirs.APP_ASSETS / constants.Dirs.EXTERNAL_APP_ASSETS
     )
     assert not external_dir.exists()
     # Should not raise.

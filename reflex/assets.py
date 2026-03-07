@@ -28,7 +28,7 @@ def remove_stale_external_asset_symlinks():
 
     # Remove empty directories left behind (deepest first).
     for dirpath in sorted(external_dir.rglob("*"), reverse=True):
-        if dirpath.is_dir() and not any(dirpath.iterdir()):
+        if dirpath.is_dir() and not dirpath.is_symlink() and not any(dirpath.iterdir()):
             dirpath.rmdir()
 
 
