@@ -79,3 +79,58 @@ def test_local_asset(custom_script_in_asset_dir: Path) -> None:
     """
     asset = rx.asset("custom_script.js", shared=False)
     assert asset == "/custom_script.js"
+
+
+def test_remove_stale_external_asset_symlinks() -> None:
+    """Test that stale symlinks and empty dirs in assets/external/ are cleaned up."""
+    from reflex.assets import remove_stale_external_asset_symlinks
+
+    external_dir = (
+        Path.cwd() / constants.Dirs.APP_ASSETS / constants.Dirs.EXTERNAL_APP_ASSETS
+    )
+
+    # Set up: create a subdirectory with a broken symlink.
+    stale_dir = external_dir / "old_module" / "subpkg"
+    stale_dir.mkdir(parents=True, exist_ok=True)
+    stale_symlink = stale_dir / "missing_file.js"
+    stale_symlink.symlink_to("/nonexistent/path/missing_file.js")
+    assert stale_symlink.is_symlink()
+    assert not stale_symlink.resolve().exists()
+
+    # Also create a valid symlink that should be preserved.
+    valid_dir = external_dir / "valid_module"
+    valid_dir.mkdir(parents=True, exist_ok=True)
+    valid_target = Path(__file__).parent / "custom_script.js"
+    valid_symlink = valid_dir / "custom_script.js"
+    valid_symlink.symlink_to(valid_target)
+    assert valid_symlink.is_symlink()
+    assert valid_symlink.resolve().exists()
+
+    try:
+        remove_stale_external_asset_symlinks()
+
+        # Broken symlink and its empty parent dirs should be removed.
+        assert not stale_symlink.exists()
+        assert not stale_symlink.is_symlink()
+        assert not stale_dir.exists()
+        assert not (external_dir / "old_module").exists()
+
+        # Valid symlink should be preserved.
+        assert valid_symlink.is_symlink()
+        assert valid_symlink.resolve().exists()
+    finally:
+        # Clean up.
+        shutil.rmtree(external_dir)
+
+
+def test_remove_stale_symlinks_no_external_dir(tmp_path: Path, monkeypatch) -> None:
+    """Test that cleanup is a no-op when assets/external/ doesn't exist."""
+    from reflex.assets import remove_stale_external_asset_symlinks
+
+    monkeypatch.chdir(tmp_path)
+    external_dir = (
+        tmp_path / constants.Dirs.APP_ASSETS / constants.Dirs.EXTERNAL_APP_ASSETS
+    )
+    assert not external_dir.exists()
+    # Should not raise.
+    remove_stale_external_asset_symlinks()
