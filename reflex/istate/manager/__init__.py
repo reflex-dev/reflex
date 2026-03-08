@@ -11,7 +11,7 @@ from typing_extensions import ReadOnly, Unpack
 from reflex import constants
 from reflex.config import get_config
 from reflex.event import Event
-from reflex.state import BaseState
+from reflex.istate.manager.token import TOKEN_TYPE, StateToken
 from reflex.utils import console, prerequisites
 from reflex.utils.exceptions import InvalidStateManagerModeError
 
@@ -29,15 +29,9 @@ EmptyContext = StateModificationContext()
 class StateManager(ABC):
     """A class to manage many client states."""
 
-    # The state class to use.
-    state: type[BaseState]
-
     @classmethod
-    def create(cls, state: type[BaseState]):
+    def create(cls):
         """Create a new state manager.
-
-        Args:
-            state: The state class to use.
 
         Raises:
             InvalidStateManagerModeError: If the state manager mode is invalid.
@@ -51,11 +45,11 @@ class StateManager(ABC):
         if config.state_manager_mode == constants.StateManagerMode.MEMORY:
             from reflex.istate.manager.memory import StateManagerMemory
 
-            return StateManagerMemory(state=state)
+            return StateManagerMemory()
         if config.state_manager_mode == constants.StateManagerMode.DISK:
             from reflex.istate.manager.disk import StateManagerDisk
 
-            return StateManagerDisk(state=state)
+            return StateManagerDisk()
         if config.state_manager_mode == constants.StateManagerMode.REDIS:
             redis = prerequisites.get_redis()
             if redis is not None:
@@ -63,7 +57,6 @@ class StateManager(ABC):
 
                 # make sure expiration values are obtained only from the config object on creation
                 return StateManagerRedis(
-                    state=state,
                     redis=redis,
                     token_expiration=config.redis_token_expiration,
                     lock_expiration=config.redis_lock_expiration,
@@ -73,7 +66,7 @@ class StateManager(ABC):
         raise InvalidStateManagerModeError(msg)
 
     @abstractmethod
-    async def get_state(self, token: str) -> BaseState:
+    async def get_state(self, token: StateToken[TOKEN_TYPE]) -> TOKEN_TYPE:
         """Get the state for a token.
 
         Args:
@@ -86,8 +79,8 @@ class StateManager(ABC):
     @abstractmethod
     async def set_state(
         self,
-        token: str,
-        state: BaseState,
+        token: StateToken[TOKEN_TYPE],
+        state: TOKEN_TYPE,
         **context: Unpack[StateModificationContext],
     ):
         """Set the state for a token.
@@ -101,8 +94,8 @@ class StateManager(ABC):
     @abstractmethod
     @contextlib.asynccontextmanager
     async def modify_state(
-        self, token: str, **context: Unpack[StateModificationContext]
-    ) -> AsyncIterator[BaseState]:
+        self, token: StateToken[TOKEN_TYPE], **context: Unpack[StateModificationContext]
+    ) -> AsyncIterator[TOKEN_TYPE]:
         """Modify the state for a token while holding exclusive lock.
 
         Args:
@@ -112,15 +105,15 @@ class StateManager(ABC):
         Yields:
             The state for the token.
         """
-        yield self.state()
+        yield  # pyright: ignore[reportReturnType]
 
     @contextlib.asynccontextmanager
     async def modify_state_with_links(
         self,
-        token: str,
+        token: StateToken[TOKEN_TYPE],
         previous_dirty_vars: dict[str, set[str]] | None = None,
         **context: Unpack[StateModificationContext],
-    ) -> AsyncIterator[BaseState]:
+    ) -> AsyncIterator[TOKEN_TYPE]:
         """Modify the state for a token, including linked substates, while holding exclusive lock.
 
         Args:
@@ -131,8 +124,13 @@ class StateManager(ABC):
         Yields:
             The state for the token with linked states patched in.
         """
+        from reflex.state import BaseState
+
         async with self.modify_state(token, **context) as root_state:
-            if getattr(root_state, "_reflex_internal_links", None) is not None:
+            if (
+                isinstance(root_state, BaseState)
+                and getattr(root_state, "_reflex_internal_links", None) is not None
+            ):
                 from reflex.istate.shared import SharedStateBaseInternal
 
                 shared_state = await root_state.get_state(SharedStateBaseInternal)

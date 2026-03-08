@@ -17,6 +17,7 @@ import wrapt
 from typing_extensions import Self
 
 from reflex.base import Base
+from reflex.istate.manager.token import BaseStateToken
 from reflex.utils import prerequisites
 from reflex.utils.exceptions import ImmutableStateError
 from reflex.utils.serializers import can_serialize, serialize, serializer
@@ -70,14 +71,12 @@ class StateProxy(wrapt.ObjectProxy):
             state_instance: The state instance to proxy.
             parent_state_proxy: The parent state proxy, for linked mutability and context tracking.
         """
-        from reflex.state import _substate_key
-
         super().__init__(state_instance)
         self._self_app = prerequisites.get_and_validate_app().app
         self._self_substate_path = tuple(state_instance.get_full_name().split("."))
-        self._self_substate_token = _substate_key(
-            state_instance.router.session.client_token,
-            self._self_substate_path,
+        self._self_substate_token = BaseStateToken(
+            ident=state_instance.router.session.client_token,
+            cls=state_instance.__class__,
         )
         self._self_actx = None
         self._self_mutable = False

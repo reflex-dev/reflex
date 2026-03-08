@@ -83,6 +83,7 @@ from reflex.event import (
     get_hydrate_event,
     noop,
 )
+from reflex.istate.manager.token import BaseStateToken
 from reflex.istate.proxy import StateProxy
 from reflex.page import DECORATED_PAGES
 from reflex.route import (
@@ -96,8 +97,6 @@ from reflex.state import (
     State,
     StateManager,
     StateUpdate,
-    _split_substate_key,
-    _substate_key,
     all_base_state_classes,
     code_uses_state_contexts,
 )
@@ -525,7 +524,7 @@ class App(MiddlewareMixin, LifespanMixin):
         config = get_config()
 
         # Set up the state manager.
-        self._state_manager = StateManager.create(state=self._state)
+        self._state_manager = StateManager.create()
 
         # Set up the Socket.IO AsyncServer.
         if not self.sio:
@@ -1563,7 +1562,7 @@ class App(MiddlewareMixin, LifespanMixin):
     @contextlib.asynccontextmanager
     async def modify_state(
         self,
-        token: str,
+        token: BaseStateToken,
         background: bool = False,
         previous_dirty_vars: dict[str, set[str]] | None = None,
     ) -> AsyncIterator[BaseState]:
@@ -1599,7 +1598,7 @@ class App(MiddlewareMixin, LifespanMixin):
                         delta=delta,
                         final=True if not background else None,
                     ),
-                    token=token,
+                    token=token.ident,
                 )
 
     def _process_background(
@@ -1933,8 +1932,12 @@ def upload(app: App):
             )
 
         # Get the state for the session.
-        substate_token = _substate_key(token, handler.rpartition(".")[0])
-        state = await app.state_manager.get_state(substate_token)
+        if app._state is None:
+            msg = "Upload failed, app has no state defined."
+            raise UploadValueError(msg)
+        state = await app.state_manager.get_state(
+            BaseStateToken(ident=token, cls=app._state)
+        )
 
         handler_upload_param = ()
 
@@ -2119,17 +2122,14 @@ class EventNamespace(AsyncNamespace):
             update: The state update to send.
             token: The client token (tab) associated with the event.
         """
-        client_token, _ = _split_substate_key(token)
-        socket_record = self._token_manager.token_to_socket.get(client_token)
+        socket_record = self._token_manager.token_to_socket.get(token)
         if (
             socket_record is None
             or socket_record.instance_id != self._token_manager.instance_id
         ):
             if isinstance(self._token_manager, RedisTokenManager):
                 # The socket belongs to another instance of the app, send it to the lost and found.
-                if not await self._token_manager.emit_lost_and_found(
-                    client_token, update
-                ):
+                if not await self._token_manager.emit_lost_and_found(token, update):
                     console.warn(
                         f"Failed to send delta to lost and found for client {token!r}"
                     )
@@ -2256,8 +2256,9 @@ class EventNamespace(AsyncNamespace):
             await self.emit("new_token", new_token, to=sid)
 
         # Update client state to apply new sid/token for running background tasks.
-        async with self.app.state_manager.modify_state(
-            _substate_key(new_token or token, self.app.state_manager.state)
-        ) as state:
-            state.router_data[constants.RouteVar.SESSION_ID] = sid
-            state.router = RouterData.from_router_data(state.router_data)
+        if self.app._state is not None:
+            async with self.app.state_manager.modify_state(
+                BaseStateToken(ident=new_token or token, cls=self.app._state)
+            ) as state:
+                state.router_data[constants.RouteVar.SESSION_ID] = sid
+                state.router = RouterData.from_router_data(state.router_data)

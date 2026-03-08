@@ -7,7 +7,8 @@ from typing import Self, TypeVar
 
 from reflex.constants import ROUTER_DATA
 from reflex.event import Event, get_hydrate_event
-from reflex.state import BaseState, State, _override_base_method, _substate_key
+from reflex.istate.manager.token import BaseStateToken
+from reflex.state import BaseState, State, _override_base_method
 from reflex.utils import console
 from reflex.utils.exceptions import ReflexRuntimeError
 
@@ -52,7 +53,7 @@ def _do_update_other_tokens(
 
     async def _update_client(token: str):
         async with app.modify_state(
-            _substate_key(token, state_type),
+            BaseStateToken(ident=token, cls=state_type),
             previous_dirty_vars=previous_dirty_vars,
         ):
             pass
@@ -236,7 +237,10 @@ class SharedStateBaseInternal(State):
 
         # Patch in the original state, apply updates, then rehydrate.
         private_root_state = await get_state_manager().get_state(
-            _substate_key(self.router.session.client_token, type(self))
+            BaseStateToken(
+                ident=self.router.session.client_token,
+                cls=type(self),
+            )
         )
         private_state = await private_root_state.get_state(type(self))
         async with _patch_state(
@@ -271,12 +275,14 @@ class SharedStateBaseInternal(State):
         # Get the newly linked state and update pointers/delta for subsequent events.
         if token not in self._held_locks:
             linked_root_state = await self._exit_stack.enter_async_context(
-                get_state_manager().modify_state(_substate_key(token, type(self)))
+                get_state_manager().modify_state(
+                    BaseStateToken(ident=token, cls=type(self))
+                )
             )
             self._held_locks.setdefault(token, {})
         else:
             linked_root_state = await get_state_manager().get_state(
-                _substate_key(token, type(self))
+                BaseStateToken(ident=token, cls=type(self))
             )
         linked_state = await linked_root_state.get_state(type(self))
         if not isinstance(linked_state, SharedState):

@@ -55,6 +55,9 @@ from reflex.vars.function import (
 )
 from reflex.vars.object import ObjectVar
 
+if TYPE_CHECKING:
+    from reflex.istate.manager.token import BaseStateToken
+
 
 @dataclasses.dataclass(
     init=True,
@@ -76,14 +79,19 @@ class Event:
     payload: dict[str, Any] = dataclasses.field(default_factory=dict)
 
     @property
-    def substate_token(self) -> str:
+    def substate_token(self) -> BaseStateToken:
         """Get the substate token for the event.
 
         Returns:
             The substate token.
         """
+        from reflex.istate.manager.token import BaseStateToken
+        from reflex.state import State
+
         substate = self.name.rpartition(".")[0]
-        return f"{self.token}_{substate}"
+        return BaseStateToken(
+            ident=self.token, cls=State.get_class_substate(tuple(substate.split(".")))
+        )
 
 
 _EVENT_FIELDS: set[str] = {f.name for f in dataclasses.fields(Event)}
