@@ -50,6 +50,17 @@ def _default_lock_warning_threshold() -> int:
     return get_config().redis_lock_warning_threshold
 
 
+def _default_oplock_hold_time_ms() -> int:
+    """Get the default opportunistic lock hold time.
+
+    Returns:
+        The default opportunistic lock hold time.
+    """
+    return environment.REFLEX_OPLOCK_HOLD_TIME_MS.get() or (
+        _default_lock_expiration() // 2
+    )
+
+
 SMR = f"[SMR:{os.getpid()}]"
 start = time.monotonic()
 
@@ -83,6 +94,11 @@ class StateManagerRedis(StateManager):
     # The maximum time to hold a lock (ms) before warning.
     lock_warning_threshold: int = dataclasses.field(
         default_factory=_default_lock_warning_threshold
+    )
+
+    # How long to opportunistically hold the redis lock in milliseconds (must be less than the token expiration).
+    oplock_hold_time_ms: int = dataclasses.field(
+        default_factory=_default_oplock_hold_time_ms
     )
 
     # The keyspace subscription string when redis is waiting for lock to be released.
@@ -153,6 +169,9 @@ class StateManagerRedis(StateManager):
         """
         if self.lock_warning_threshold >= (lock_expiration := self.lock_expiration):
             msg = f"The lock warning threshold({self.lock_warning_threshold}) must be less than the lock expiration time({lock_expiration})."
+            raise InvalidLockWarningThresholdError(msg)
+        if self._oplock_enabled and self.oplock_hold_time_ms >= lock_expiration:
+            msg = f"The opportunistic lock hold time({self.oplock_hold_time_ms}) must be less than the lock expiration time({lock_expiration})."
             raise InvalidLockWarningThresholdError(msg)
         with contextlib.suppress(RuntimeError):
             asyncio.get_running_loop()  # Check if we're in an event loop.
@@ -260,7 +279,7 @@ class StateManagerRedis(StateManager):
         token, state_path = _split_substate_key(token)
         if state_path:
             # Get the State class associated with the given path.
-            state_cls = self.state.get_class_substate(state_path)
+            requested_state_cls = self.state.get_class_substate(state_path)
         else:
             msg = f"StateManagerRedis requires token to be specified in the form of {{token}}_{{state_full_name}}, but got {token}"
             raise RuntimeError(msg)
@@ -272,7 +291,7 @@ class StateManagerRedis(StateManager):
 
         # Determine which states from the tree need to be fetched.
         required_state_classes = sorted(
-            self._get_required_state_classes(state_cls, subclasses=True)
+            self._get_required_state_classes(requested_state_cls, subclasses=True)
             - {type(s) for s in flat_state_tree.values()},
             key=lambda x: x.get_full_name(),
         )
@@ -318,7 +337,7 @@ class StateManagerRedis(StateManager):
         # the top-level state which should always be fetched or already cached.
         if top_level:
             return flat_state_tree[self.state.get_full_name()]
-        return flat_state_tree[state_cls.get_full_name()]
+        return flat_state_tree[requested_state_cls.get_full_name()]
 
     @override
     async def set_state(
@@ -538,7 +557,12 @@ class StateManagerRedis(StateManager):
                     ) is not None:
                         # Make sure we have the substate cached (or fetch it from redis).
                         try:
-                            _ = cached_state.get_substate(state_path.split("."))
+                            substate = cached_state.get_substate(state_path.split("."))
+                            if len(substate.substates) != len(
+                                type(substate).get_substates()
+                            ):
+                                # If the substate is missing substates, we need to refetch it.
+                                raise ValueError  # noqa: TRY301
                         except ValueError:
                             await self.get_state(token, for_state_instance=cached_state)
                         yield cached_state
@@ -620,7 +644,7 @@ class StateManagerRedis(StateManager):
         async def lease_breaker():
             cancelled_error: asyncio.CancelledError | None = None
             async with cleanup_ctx:
-                lease_break_time = (self.lock_expiration * 0.8) / 1000
+                lease_break_time = self.oplock_hold_time_ms / 1000
                 if self._debug_enabled:
                     console.debug(
                         f"{SMR} [{time.monotonic() - start:.3f}] {client_token} lease breaker {lock_id.decode()} started, sleeping for {lease_break_time}s"

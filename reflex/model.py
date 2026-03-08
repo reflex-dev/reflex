@@ -15,12 +15,16 @@ from reflex.utils.compat import sqlmodel_field_has_primary_key
 from reflex.utils.serializers import serializer
 
 if TYPE_CHECKING:
+    from typing import TypeVar
+
     import sqlalchemy
     import sqlmodel
 
     SQLModelOrSqlAlchemy = (
         type[sqlmodel.SQLModel] | type[sqlalchemy.orm.DeclarativeBase]
     )
+
+    SQLModelOrSqlAlchemyT = TypeVar("SQLModelOrSqlAlchemyT", bound=SQLModelOrSqlAlchemy)
 
 
 def _safe_db_url_for_logging(url: str) -> str:
@@ -107,7 +111,8 @@ if find_spec("sqlalchemy"):
 
         if not environment.ALEMBIC_CONFIG.get().exists():
             console.warn(
-                "Database is not initialized, run [bold]reflex db init[/bold] first."
+                "Database is not initialized, run [bold]reflex db init[/bold] first.",
+                dedupe=True,
             )
         _ENGINE[url] = sqlalchemy.engine.create_engine(
             url,
@@ -149,7 +154,8 @@ if find_spec("sqlalchemy"):
 
         if not environment.ALEMBIC_CONFIG.get().exists():
             console.warn(
-                "Database is not initialized, run [bold]reflex db init[/bold] first."
+                "Database is not initialized, run [bold]reflex db init[/bold] first.",
+                dedupe=True,
             )
         _ASYNC_ENGINE[url] = sqlalchemy.ext.asyncio.create_async_engine(
             url,
@@ -177,7 +183,7 @@ if find_spec("sqlalchemy"):
         _metadata: ClassVar[sqlalchemy.MetaData | None] = None
 
         @classmethod
-        def register(cls, model: SQLModelOrSqlAlchemy):
+        def register(cls, model: SQLModelOrSqlAlchemyT) -> SQLModelOrSqlAlchemyT:
             """Register a model. Can be used directly or as a decorator.
 
             Args:
@@ -312,8 +318,12 @@ if find_spec("sqlmodel") and find_spec("sqlalchemy") and find_spec("pydantic"):
             engine = get_engine()
             with engine.connect() as connection:
                 connection.execute(sqlalchemy.text("SELECT 1"))
-        except sqlalchemy.exc.OperationalError:
+        except Exception as exc:
             status = False
+            console.error(
+                f"Database health check failed: {exc} (subsequent errors will not be logged)",
+                dedupe=True,
+            )
 
         return {"db": status}
 
@@ -514,6 +524,7 @@ if find_spec("sqlmodel") and find_spec("sqlalchemy") and find_spec("pydantic"):
                     render_item=cls._alembic_render_item,
                     process_revision_directives=writer,
                     compare_type=False,
+                    include_schemas=environment.ALEMBIC_INCLUDE_SCHEMAS.get(),
                     render_as_batch=True,  # for sqlite compatibility
                 )
                 env.run_migrations()

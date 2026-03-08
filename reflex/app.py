@@ -77,13 +77,13 @@ from reflex.environment import ExecutorType, environment
 from reflex.event import (
     _EVENT_FIELDS,
     Event,
-    EventHandler,
     EventSpec,
     EventType,
     IndividualEventType,
     get_hydrate_event,
     noop,
 )
+from reflex.istate.proxy import StateProxy
 from reflex.page import DECORATED_PAGES
 from reflex.route import (
     get_route_args,
@@ -297,7 +297,7 @@ class UnevaluatedPage:
     description: Var | str | None
     image: str
     on_load: EventType[()] | None
-    meta: Sequence[Mapping[str, str]]
+    meta: Sequence[Mapping[str, Any] | Component]
     context: Mapping[str, Any]
 
     def merged_with(self, other: UnevaluatedPage) -> UnevaluatedPage:
@@ -529,19 +529,6 @@ class App(MiddlewareMixin, LifespanMixin):
 
         # Set up the Socket.IO AsyncServer.
         if not self.sio:
-            if (
-                config.transport == "polling"
-                and (tier := prerequisites.get_user_tier()) != "enterprise"
-            ):
-                console.error(
-                    "The 'polling' transport is only available for Enterprise users. "
-                    + (
-                        "Please upgrade your plan to use this feature."
-                        if tier != "anonymous"
-                        else "Please log in with `reflex login` to use this feature."
-                    )
-                )
-                raise SystemExit(1)
             self.sio = AsyncServer(
                 async_mode="asgi",
                 cors_allowed_origins=(
@@ -785,7 +772,7 @@ class App(MiddlewareMixin, LifespanMixin):
         description: str | Var | None = None,
         image: str = constants.DefaultPage.IMAGE,
         on_load: EventType[()] | None = None,
-        meta: list[dict[str, str]] = constants.DefaultPage.META_LIST,
+        meta: Sequence[Mapping[str, Any] | Component] = constants.DefaultPage.META_LIST,
         context: dict[str, Any] | None = None,
     ):
         """Add a page to the app.
@@ -1575,13 +1562,17 @@ class App(MiddlewareMixin, LifespanMixin):
 
     @contextlib.asynccontextmanager
     async def modify_state(
-        self, token: str, background: bool = False
+        self,
+        token: str,
+        background: bool = False,
+        previous_dirty_vars: dict[str, set[str]] | None = None,
     ) -> AsyncIterator[BaseState]:
         """Modify the state out of band.
 
         Args:
             token: The token to modify the state for.
             background: Whether the modification is happening in a background task.
+            previous_dirty_vars: Vars that are considered dirty from a previous operation.
 
         Yields:
             The state to modify.
@@ -1594,7 +1585,9 @@ class App(MiddlewareMixin, LifespanMixin):
             raise RuntimeError(msg)
 
         # Get exclusive access to the state.
-        async with self.state_manager.modify_state(token) as state:
+        async with self.state_manager.modify_state_with_links(
+            token, previous_dirty_vars=previous_dirty_vars
+        ) as state:
             # No other event handler can modify the state while in this context.
             yield state
             delta = await state._get_resolved_delta()
@@ -1625,6 +1618,8 @@ class App(MiddlewareMixin, LifespanMixin):
 
         if not handler.is_background:
             return None
+
+        substate = StateProxy(substate)
 
         async def _coro():
             """Coroutine to process the event and emit updates inside an asyncio.Task.
@@ -1782,7 +1777,7 @@ async def process(
             constants.RouteVar.CLIENT_IP: client_ip,
         })
         # Get the state for the session exclusively.
-        async with app.state_manager.modify_state(
+        async with app.state_manager.modify_state_with_links(
             event.substate_token, event=event
         ) as state:
             # When this is a brand new instance of the state, signal the
@@ -1941,21 +1936,14 @@ def upload(app: App):
         substate_token = _substate_key(token, handler.rpartition(".")[0])
         state = await app.state_manager.get_state(substate_token)
 
-        # get the current session ID
-        # get the current state(parent state/substate)
-        path = handler.split(".")[:-1]
-        current_state = state.get_substate(path)
         handler_upload_param = ()
 
-        # get handler function
-        func = getattr(type(current_state), handler.split(".")[-1])
+        _current_state, event_handler = state._get_event_handler(handler)
 
-        # check if there exists any handler args with annotation, list[UploadFile]
-        if isinstance(func, EventHandler):
-            if func.is_background:
-                msg = f"@rx.event(background=True) is not supported for upload handler `{handler}`."
-                raise UploadTypeError(msg)
-            func = func.fn
+        if event_handler.is_background:
+            msg = f"@rx.event(background=True) is not supported for upload handler `{handler}`."
+            raise UploadTypeError(msg)
+        func = event_handler.fn
         if isinstance(func, functools.partial):
             func = func.func
         for k, v in get_type_hints(func).items():
@@ -2016,7 +2004,9 @@ def upload(app: App):
                 Each state update as JSON followed by a new line.
             """
             # Process the event.
-            async with app.state_manager.modify_state(event.substate_token) as state:
+            async with app.state_manager.modify_state_with_links(
+                event.substate_token
+            ) as state:
                 async for update in state._process(event):
                     # Postprocess the event.
                     update = await app._postprocess(state, event, update)
@@ -2114,8 +2104,10 @@ class EventNamespace(AsyncNamespace):
             )
             # Don't await to avoid blocking disconnect, but handle potential errors
             task.add_done_callback(
-                lambda t: t.exception()
-                and console.error(f"Token cleanup error: {t.exception()}")
+                lambda t: (
+                    t.exception()
+                    and console.error(f"Token cleanup error: {t.exception()}")
+                )
             )
             return task
         return None
@@ -2223,7 +2215,8 @@ class EventNamespace(AsyncNamespace):
 
         # Unroll reverse proxy forwarded headers.
         client_ip = (
-            headers.get(
+            headers
+            .get(
                 "x-forwarded-for",
                 client_ip,
             )
@@ -2263,7 +2256,7 @@ class EventNamespace(AsyncNamespace):
             await self.emit("new_token", new_token, to=sid)
 
         # Update client state to apply new sid/token for running background tasks.
-        async with self.app.modify_state(
+        async with self.app.state_manager.modify_state(
             _substate_key(new_token or token, self.app.state_manager.state)
         ) as state:
             state.router_data[constants.RouteVar.SESSION_ID] = sid

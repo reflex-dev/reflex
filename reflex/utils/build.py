@@ -199,8 +199,9 @@ def build():
     path_ops.rm(str(wdir / constants.Dirs.BUILD_DIR))
 
     checkpoints = [
-        "building for production",
-        "building SSR bundle for production",
+        "building client environment for production...",
+        "modules transformed",
+        "building ssr environment for production...",
         "built in",
     ]
 

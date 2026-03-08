@@ -462,11 +462,11 @@ async def test_event_chain_click(
 
     async def _has_all_events():
         return len(
-            (await event_chain.get_state(token)).substates[state_name].event_order
+            (await event_chain.get_state(token)).substates[state_name].event_order  # pyright: ignore[reportAttributeAccessIssue]
         ) == len(exp_event_order)
 
     await AppHarness._poll_for_async(_has_all_events)
-    event_order = (await event_chain.get_state(token)).substates[state_name].event_order
+    event_order = (await event_chain.get_state(token)).substates[state_name].event_order  # pyright: ignore[reportAttributeAccessIssue]
     assert event_order == exp_event_order
 
 
@@ -515,13 +515,13 @@ async def test_event_chain_on_load(
 
     async def _has_all_events():
         return len(
-            (await event_chain.get_state(token)).substates[state_name].event_order
+            (await event_chain.get_state(token)).substates[state_name].event_order  # pyright: ignore[reportAttributeAccessIssue]
         ) == len(exp_event_order)
 
     await AppHarness._poll_for_async(_has_all_events)
     backend_state = (await event_chain.get_state(token)).substates[state_name]
-    assert backend_state.event_order == exp_event_order
-    assert backend_state.is_hydrated is True
+    assert backend_state.event_order == exp_event_order  # pyright: ignore[reportAttributeAccessIssue]
+    assert backend_state.is_hydrated is True  # pyright: ignore[reportAttributeAccessIssue]
 
 
 @pytest.mark.parametrize(
@@ -582,11 +582,11 @@ async def test_event_chain_on_mount(
 
     async def _has_all_events():
         return len(
-            (await event_chain.get_state(token)).substates[state_name].event_order
+            (await event_chain.get_state(token)).substates[state_name].event_order  # pyright: ignore[reportAttributeAccessIssue]
         ) == len(exp_event_order)
 
     await AppHarness._poll_for_async(_has_all_events)
-    event_order = (await event_chain.get_state(token)).substates[state_name].event_order
+    event_order = (await event_chain.get_state(token)).substates[state_name].event_order  # pyright: ignore[reportAttributeAccessIssue]
     assert list(event_order) == exp_event_order
 
 

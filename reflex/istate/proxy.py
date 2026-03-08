@@ -14,6 +14,7 @@ from types import MethodType
 from typing import TYPE_CHECKING, Any, SupportsIndex, TypeVar
 
 import wrapt
+from typing_extensions import Self
 
 from reflex.base import Base
 from reflex.utils import prerequisites
@@ -25,6 +26,7 @@ if TYPE_CHECKING:
     from reflex.state import BaseState, StateUpdate
 
 T_STATE = TypeVar("T_STATE", bound="BaseState")
+T = TypeVar("T")
 
 
 class StateProxy(wrapt.ObjectProxy):
@@ -93,7 +95,7 @@ class StateProxy(wrapt.ObjectProxy):
             return self._self_parent_state_proxy._is_mutable() or self._self_mutable
         return self._self_mutable
 
-    async def __aenter__(self) -> StateProxy:
+    async def __aenter__(self) -> Self:
         """Enter the async context manager protocol.
 
         Sets mutability to True and enters the `App.modify_state` async context,
@@ -508,8 +510,12 @@ class MutableProxy(wrapt.ObjectProxy):
         # When called from dataclasses internal code, return the unwrapped value
         if self._is_called_from_dataclasses_internal():
             return value
-        # Recursively wrap mutable types, but do not re-wrap MutableProxy instances.
-        if is_mutable_type(type(value)) and not isinstance(value, MutableProxy):
+        # If we already have a proxy, unwrap and rewrap to make sure the state
+        # reference is up to date.
+        if isinstance(value, MutableProxy):
+            value = value.__wrapped__
+        # Recursively wrap mutable types.
+        if is_mutable_type(type(value)):
             base_cls = globals()[self.__base_proxy__]
             return base_cls(
                 wrapped=value,
@@ -553,22 +559,22 @@ class MutableProxy(wrapt.ObjectProxy):
                 value = wrapt.FunctionWrapper(value, self._mark_dirty)
 
             if __name in self.__wrap_mutable_attrs__:
-                # Wrap methods that may return mutable objects tied to the state.
+                # Wrap special methods that may return mutable objects tied to the state.
                 value = wrapt.FunctionWrapper(
                     value,
                     self._wrap_recursive_decorator,  # pyright: ignore[reportArgumentType]
                 )
 
             if (
-                isinstance(self.__wrapped__, Base)
-                and __name not in NEVER_WRAP_BASE_ATTRS
-                and hasattr(value, "__func__")
-            ):
-                # Wrap methods called on Base subclasses, which might do _anything_
-                return wrapt.FunctionWrapper(
-                    functools.partial(value.__func__, self),  # pyright: ignore [reportFunctionMemberAccess, reportAttributeAccessIssue]
-                    self._wrap_recursive_decorator,  # pyright: ignore[reportArgumentType]
+                (
+                    not isinstance(self.__wrapped__, Base)
+                    or __name not in NEVER_WRAP_BASE_ATTRS
                 )
+                and (func := getattr(value, "__func__", None)) is not None
+                and not inspect.isclass(getattr(value, "__self__", None))
+            ):
+                # Rebind `self` to the proxy on methods to capture nested mutations.
+                return functools.partial(func, self)
 
         if is_mutable_type(type(value)) and __name not in (
             "__wrapped__",
@@ -666,19 +672,23 @@ class MutableProxy(wrapt.ObjectProxy):
         return copy.deepcopy(self.__wrapped__, memo=memo)
 
     def __reduce_ex__(self, protocol_version: SupportsIndex):
-        """Get the state for redis serialization.
+        """Serialize the wrapped object for pickle, stripping off the proxy.
 
-        This method is called by cloudpickle to serialize the object.
-
-        It explicitly serializes the wrapped object, stripping off the mutable proxy.
+        Returns a function that reconstructs to the wrapped object directly,
+        ensuring pickle's memo system correctly tracks object identity.
 
         Args:
             protocol_version: The protocol version.
 
         Returns:
-            Tuple of (wrapped class, empty args, class __getstate__)
+            Tuple that reconstructs to the wrapped object.
         """
-        return self.__wrapped__.__reduce_ex__(protocol_version)
+        return (_unwrap_for_pickle, (self.__wrapped__,))
+
+
+def _unwrap_for_pickle(obj: T) -> T:
+    """Return the object unchanged. Used by MutableProxy.__reduce_ex__."""
+    return obj
 
 
 @serializer
@@ -753,7 +763,7 @@ class ImmutableMutableProxy(MutableProxy):
         Raises:
             ImmutableStateError: if the StateProxy is not mutable.
         """
-        if not self._self_state._is_mutable():
+        if not self._self_state._is_mutable():  # pyright: ignore[reportAttributeAccessIssue]
             msg = (
                 "Background task StateProxy is immutable outside of a context "
                 "manager. Use `async with self` to modify state."

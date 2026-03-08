@@ -1,3 +1,4 @@
+import math
 from pathlib import Path
 from unittest import mock
 
@@ -161,7 +162,7 @@ def test_automigration(
         result = session.exec(sqlmodel.select(AlembicSecond)).all()
         assert len(result) == 1
         assert result[0].a == 42
-        assert result[0].b == 4.2
+        assert math.isclose(result[0].b, 4.2)
 
     # No-op
     assert Model.migrate(autogenerate=True)

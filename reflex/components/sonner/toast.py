@@ -280,7 +280,8 @@ class Toaster(Component):
                 toast_ref.bool(),
                 toast,
                 FunctionVar("window.alert").call(
-                    Var.create(
+                    Var
+                    .create(
                         message
                         if isinstance(message, str) and message
                         else props.get("title", props.get("description", ""))

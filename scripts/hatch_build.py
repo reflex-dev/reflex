@@ -25,15 +25,12 @@ class CustomBuilder(BuildHookInterface):
             / f".reflex-{self.metadata.version}.pyi_generated"
         )
 
-    def finalize(
-        self, version: str, build_data: dict[str, Any], artifact_path: str
-    ) -> None:
-        """Finalize the build process.
+    def initialize(self, version: str, build_data: dict[str, Any]) -> None:
+        """Initialize the build hook.
 
         Args:
-            version: The version of the package.
-            build_data: The build data.
-            artifact_path: The path to the artifact.
+            version: The version being built.
+            build_data: Additional build data.
         """
         if self.marker().exists():
             return

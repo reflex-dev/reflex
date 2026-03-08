@@ -295,15 +295,15 @@ async def test_upload_file(
 
         state = await upload_file.get_state(substate_token)
         # only the secondary form tracks progress and chain events
-        assert state.substates[state_name].event_order.count("upload_progress") == 1
-        assert state.substates[state_name].event_order.count("chain_event") == 1
+        assert state.substates[state_name].event_order.count("upload_progress") == 1  # pyright: ignore[reportAttributeAccessIssue]
+        assert state.substates[state_name].event_order.count("chain_event") == 1  # pyright: ignore[reportAttributeAccessIssue]
 
     # look up the backend state and assert on uploaded contents
     async def get_file_data():
         return (
             (await upload_file.get_state(substate_token))
             .substates[state_name]
-            ._file_data
+            ._file_data  # pyright: ignore[reportAttributeAccessIssue]
         )
 
     file_data = await AppHarness._poll_for_async(get_file_data)
@@ -358,7 +358,7 @@ async def test_upload_file_multiple(tmp_path, upload_file: AppHarness, driver):
         return (
             (await upload_file.get_state(substate_token))
             .substates[state_name]
-            ._file_data
+            ._file_data  # pyright: ignore[reportAttributeAccessIssue]
         )
 
     file_data = await AppHarness._poll_for_async(get_file_data)
@@ -469,7 +469,7 @@ async def test_cancel_upload(tmp_path, upload_file: AppHarness, driver: WebDrive
     # Get interim progress dicts saved in the on_upload_progress handler.
     async def _progress_dicts():
         state = await upload_file.get_state(substate_token)
-        return state.substates[state_name].progress_dicts
+        return state.substates[state_name].progress_dicts  # pyright: ignore[reportAttributeAccessIssue]
 
     # We should have _some_ progress
     assert await AppHarness._poll_for_async(_progress_dicts)
@@ -479,7 +479,7 @@ async def test_cancel_upload(tmp_path, upload_file: AppHarness, driver: WebDrive
         assert p["progress"] != 1
 
     state = await upload_file.get_state(substate_token)
-    file_data = state.substates[state_name]._file_data
+    file_data = state.substates[state_name]._file_data  # pyright: ignore[reportAttributeAccessIssue]
     assert isinstance(file_data, dict)
     normalized_file_data = {Path(k).name: v for k, v in file_data.items()}
     assert Path(exp_name).name not in normalized_file_data
@@ -575,11 +575,11 @@ async def test_on_drop(
 
     async def exp_name_in_quaternary():
         state = await upload_file.get_state(substate_token)
-        return exp_name in state.substates[state_name].quaternary_names
+        return exp_name in state.substates[state_name].quaternary_names  # pyright: ignore[reportAttributeAccessIssue]
 
     # Poll until the file names appear in the display
     await AppHarness._poll_for_async(exp_name_in_quaternary)
 
     # Verify through state that the file names were captured correctly
     state = await upload_file.get_state(substate_token)
-    assert exp_name in state.substates[state_name].quaternary_names
+    assert exp_name in state.substates[state_name].quaternary_names  # pyright: ignore[reportAttributeAccessIssue]

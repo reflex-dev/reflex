@@ -73,10 +73,12 @@ def validate_imports(import_dict: ParsedImportDict):
         ValueError: if a conflict on "tag/alias" is detected for an import.
     """
     used_tags = {}
-    for lib, _imports in import_dict.items():
-        for _import in _imports:
+    for lib, imported_items in import_dict.items():
+        for imported_item in imported_items:
             import_name = (
-                f"{_import.tag}/{_import.alias}" if _import.alias else _import.tag
+                f"{imported_item.tag}/{imported_item.alias}"
+                if imported_item.alias
+                else imported_item.tag
             )
             if import_name in used_tags:
                 already_imported = used_tags[import_name]
@@ -417,7 +419,7 @@ def create_document_root(
         *maybe_head_components,
         *always_head_components,
     ]
-    return Html.create(
+    html_component = Html.create(
         Head.create(*head_components),
         Body.create(
             Var("children"),
@@ -427,6 +429,11 @@ def create_document_root(
         lang=html_lang or "en",
         custom_attrs=html_custom_attrs or {},
     )
+    hooks = html_component._get_all_hooks()
+    if hooks:
+        msg = "You cannot use stateful components or hooks in the document root. Check your head components."
+        raise ValueError(msg)
+    return html_component
 
 
 def create_theme(style: ComponentStyle) -> dict:
@@ -557,7 +564,7 @@ def add_meta(
     page: Component,
     title: str,
     image: str,
-    meta: list[dict],
+    meta: Sequence[Mapping[str, Any] | Component],
     description: str | None = None,
 ) -> Component:
     """Add metadata to a page.

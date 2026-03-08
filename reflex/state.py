@@ -15,13 +15,23 @@ import re
 import sys
 import time
 import typing
+import uuid
 import warnings
 from collections.abc import AsyncIterator, Callable, Iterator, Sequence
 from enum import Enum
 from hashlib import md5
 from importlib.util import find_spec
 from types import FunctionType
-from typing import TYPE_CHECKING, Any, BinaryIO, ClassVar, TypeVar, cast, get_type_hints
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    BinaryIO,
+    ClassVar,
+    ParamSpec,
+    TypeVar,
+    cast,
+    get_type_hints,
+)
 
 from rich.markup import escape
 from typing_extensions import Self
@@ -32,6 +42,7 @@ from reflex.constants.state import FIELD_MARKER
 from reflex.environment import PerformanceMode, environment
 from reflex.event import (
     BACKGROUND_TASK_MARKER,
+    EVENT_ACTIONS_MARKER,
     Event,
     EventHandler,
     EventSpec,
@@ -298,12 +309,30 @@ async def _resolve_delta(delta: Delta) -> Delta:
     return delta
 
 
+RETURN = TypeVar("RETURN")
+PARAMS = ParamSpec("PARAMS")
+
+
+def _override_base_method(fn: Callable[PARAMS, RETURN]) -> Callable[PARAMS, RETURN]:
+    """Mark a method as overriding a base method.
+
+    Args:
+        fn: The function to mark.
+
+    Returns:
+        The marked function.
+    """
+    fn.__override_base_method__ = True  # pyright: ignore[reportFunctionMemberAccess]
+    return fn
+
+
 _deserializers = {
     int: int,
     float: float,
     datetime.datetime: datetime.datetime.fromisoformat,
     datetime.date: datetime.date.fromisoformat,
     datetime.time: datetime.time.fromisoformat,
+    uuid.UUID: uuid.UUID,
 }
 
 all_base_state_classes: dict[str, None] = {}
@@ -458,7 +487,7 @@ class BaseState(EvenMoreBasicBaseState):
         """
         return [
             (name, v)
-            for mixin in [*cls._mixins(), cls]
+            for mixin in (*cls._mixins(), cls)
             for name, v in mixin.__dict__.items()
             if is_computed_var(v) and name not in cls.inherited_vars
         ]
@@ -540,14 +569,14 @@ class BaseState(EvenMoreBasicBaseState):
 
         new_backend_vars = {
             name: value if not isinstance(value, Field) else value.default_value()
-            for mixin_cls in [*cls._mixins(), cls]
+            for mixin_cls in (*cls._mixins(), cls)
             for name, value in list(mixin_cls.__dict__.items())
             if types.is_backend_base_variable(name, mixin_cls)
         }
         # Add annotated backend vars that may not have a default value.
         new_backend_vars.update({
             name: cls._get_var_default(name, annotation_value)
-            for mixin_cls in [*cls._mixins(), cls]
+            for mixin_cls in (*cls._mixins(), cls)
             for name, annotation_value in mixin_cls._get_type_hints().items()
             if name not in new_backend_vars
             and types.is_backend_base_variable(name, mixin_cls)
@@ -658,6 +687,9 @@ class BaseState(EvenMoreBasicBaseState):
         newfn.__annotations__ = fn.__annotations__
         if mark := getattr(fn, BACKGROUND_TASK_MARKER, None):
             setattr(newfn, BACKGROUND_TASK_MARKER, mark)
+        # Preserve event_actions from @rx.event decorator
+        if event_actions := getattr(fn, EVENT_ACTIONS_MARKER, None):
+            object.__setattr__(newfn, EVENT_ACTIONS_MARKER, event_actions)
         return newfn
 
     @staticmethod
@@ -732,13 +764,13 @@ class BaseState(EvenMoreBasicBaseState):
         return getattr(cls, unique_var_name)
 
     @classmethod
-    def _mixins(cls) -> list[type]:
+    def _mixins(cls) -> tuple[type[BaseState], ...]:
         """Get the mixin classes of the state.
 
         Returns:
             The mixin classes of the state.
         """
-        return [
+        return tuple(
             mixin
             for mixin in cls.__mro__
             if (
@@ -746,7 +778,7 @@ class BaseState(EvenMoreBasicBaseState):
                 and issubclass(mixin, BaseState)
                 and mixin._mixin is True
             )
-        ]
+        )
 
     @classmethod
     def _handle_local_def(cls):
@@ -764,6 +796,7 @@ class BaseState(EvenMoreBasicBaseState):
         cls.__module__ = reflex.istate.dynamic.__name__
 
     @classmethod
+    @functools.cache
     def _get_type_hints(cls) -> dict[str, Any]:
         """Get the type hints for this class.
 
@@ -851,6 +884,7 @@ class BaseState(EvenMoreBasicBaseState):
                 not name.startswith("__")
                 and method.__name__ in state_base_functions
                 and state_base_functions[method.__name__] != method
+                and not getattr(method, "__override_base_method__", False)
             ):
                 overridden_methods.add(method.__name__)
 
@@ -865,8 +899,9 @@ class BaseState(EvenMoreBasicBaseState):
         Raises:
             ComputedVarShadowsBaseVarsError: When a computed var shadows a base var.
         """
+        hints = cls._get_type_hints()
         for name, computed_var_ in cls._get_computed_vars():
-            if name in get_type_hints(cls):
+            if name in hints:
                 msg = f"The computed var name `{computed_var_._js_expr}` shadows a base var in {cls.__module__}.{cls.__name__}; use a different name instead"
                 raise ComputedVarShadowsBaseVarsError(msg)
 
@@ -1134,7 +1169,7 @@ class BaseState(EvenMoreBasicBaseState):
             The event handler.
         """
         # Check if function has stored event_actions from decorator
-        event_actions = getattr(fn, "_rx_event_actions", {})
+        event_actions = getattr(fn, EVENT_ACTIONS_MARKER, {})
 
         return event_handler_cls(
             fn=fn, state_full_name=cls.get_full_name(), event_actions=event_actions
@@ -1323,7 +1358,7 @@ class BaseState(EvenMoreBasicBaseState):
         for substate in cls.get_substates():
             substate._check_overwritten_dynamic_args(args)
 
-    def __getattribute__(self, name: str) -> Any:
+    def _get_attribute(self, name: str) -> Any:
         """Get the state var.
 
         If the var is inherited, get the var from the parent state.
@@ -1380,6 +1415,9 @@ class BaseState(EvenMoreBasicBaseState):
             return MutableProxy(wrapped=value, state=self, field_name=name)
 
         return value
+
+    if not TYPE_CHECKING:
+        __getattribute__ = _get_attribute
 
     def __setattr__(self, name: str, value: Any):
         """Set the attribute.
@@ -1673,13 +1711,11 @@ class BaseState(EvenMoreBasicBaseState):
         )
         return getattr(other_state, var_data.field_name)
 
-    def _get_event_handler(
-        self, event: Event
-    ) -> tuple[BaseState | StateProxy, EventHandler]:
+    def _get_event_handler(self, event: Event | str) -> tuple[BaseState, EventHandler]:
         """Get the event handler for the given event.
 
         Args:
-            event: The event to get the handler for.
+            event: The event to get the handler for, or a dotted handler name string.
 
 
         Returns:
@@ -1689,17 +1725,14 @@ class BaseState(EvenMoreBasicBaseState):
             ValueError: If the event handler or substate is not found.
         """
         # Get the event handler.
-        path = event.name.split(".")
+        name = event.name if isinstance(event, Event) else event
+        path = name.split(".")
         path, name = path[:-1], path[-1]
         substate = self.get_substate(path)
         if not substate:
             msg = "The value of state cannot be None when processing an event."
             raise ValueError(msg)
         handler = substate.event_handlers[name]
-
-        # For background tasks, proxy the state
-        if handler.is_background:
-            substate = StateProxy(substate)
 
         return substate, handler
 
@@ -1714,6 +1747,10 @@ class BaseState(EvenMoreBasicBaseState):
         """
         # Get the event handler.
         substate, handler = self._get_event_handler(event)
+
+        # For background tasks, proxy the state.
+        if handler.is_background:
+            substate = StateProxy(substate)
 
         # Run the event generator and yield state updates.
         async for update in self._process_event(
@@ -1743,7 +1780,7 @@ class BaseState(EvenMoreBasicBaseState):
         if events is None or _is_valid_type(events):
             return events
 
-        if not isinstance(events, Sequence):
+        if not (isinstance(events, Sequence) and not isinstance(events, (str, bytes))):
             events = [events]
 
         try:
@@ -2206,7 +2243,7 @@ class BaseState(EvenMoreBasicBaseState):
 
         return d
 
-    async def __aenter__(self) -> BaseState:
+    async def __aenter__(self) -> Self:
         """Enter the async context manager protocol.
 
         This is a no-op for the State class and mainly used in background-tasks/StateProxy.
@@ -2437,6 +2474,37 @@ class State(BaseState):
 
     # The hydrated bool.
     is_hydrated: bool = False
+    # Maps the state full_name to an arbitrary token it is linked to for shared state.
+    _reflex_internal_links: dict[str, str] | None = None
+
+    @_override_base_method
+    async def _get_state_from_redis(self, state_cls: type[T_STATE]) -> T_STATE:
+        """Get a state instance from redis with linking support.
+
+        Args:
+            state_cls: The class of the state.
+
+        Returns:
+            The instance of state_cls associated with this state's client_token.
+        """
+        state_instance = await super()._get_state_from_redis(state_cls)
+        if (
+            self._reflex_internal_links
+            and (
+                linked_token := self._reflex_internal_links.get(
+                    state_cls.get_full_name()
+                )
+            )
+            is not None
+            and (
+                internal_patch_linked_state := getattr(
+                    state_instance, "_internal_patch_linked_state", None
+                )
+            )
+            is not None
+        ):
+            return await internal_patch_linked_state(linked_token)
+        return state_instance
 
     @event
     def set_is_hydrated(self, value: bool) -> None:
@@ -2624,7 +2692,7 @@ class ComponentState(State, mixin=True):
     Subclass this class and define vars and event handlers in the traditional way.
     Then define a `get_component` method that returns the UI for the component instance.
 
-    See the full [docs](https://reflex.dev/docs/substates/component-state/) for more.
+    See the full [docs](https://reflex.dev/docs/state-structure/component-state/) for more.
 
     Basic example:
     ```python

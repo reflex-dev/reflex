@@ -34,12 +34,13 @@ def test_validate_data_table(data_table_state: rx.State, expected):
         expected: expected var name.
 
     """
-    if not types.is_dataframe(data_table_state.data._var_type):
+    if not types.is_dataframe(data_table_state.data._var_type):  # pyright: ignore[reportAttributeAccessIssue]
         data_table_component = DataTable.create(
-            data=data_table_state.data, columns=data_table_state.columns
+            data=data_table_state.data,  # pyright: ignore[reportAttributeAccessIssue]
+            columns=data_table_state.columns,  # pyright: ignore[reportAttributeAccessIssue]
         )
     else:
-        data_table_component = DataTable.create(data=data_table_state.data)
+        data_table_component = DataTable.create(data=data_table_state.data)  # pyright: ignore[reportAttributeAccessIssue]
 
     data_table_dict = data_table_component.render()
 

@@ -167,8 +167,8 @@ async def test_component_state_app(component_state_app: AppHarness):
     a_state = root_state.substates[a_state_name]
     b_state = root_state.substates[b_state_name]
     assert a_state._backend_vars != a_state.backend_vars
-    assert a_state._be == a_state._backend_vars["_be"] == 3
-    assert b_state._be is None
+    assert a_state._be == a_state._backend_vars["_be"] == 3  # pyright: ignore[reportAttributeAccessIssue]
+    assert b_state._be is None  # pyright: ignore[reportAttributeAccessIssue]
     assert b_state._backend_vars["_be"] is None
 
     assert count_b.text == "0"
@@ -183,7 +183,7 @@ async def test_component_state_app(component_state_app: AppHarness):
     a_state = root_state.substates[a_state_name]
     b_state = root_state.substates[b_state_name]
     assert b_state._backend_vars != b_state.backend_vars
-    assert b_state._be == b_state._backend_vars["_be"] == 2
+    assert b_state._be == b_state._backend_vars["_be"] == 2  # pyright: ignore[reportAttributeAccessIssue]
 
     # Check locally-defined substate style
     count_c = driver.find_element(By.ID, "count-c")

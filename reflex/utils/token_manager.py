@@ -4,12 +4,12 @@ from __future__ import annotations
 
 import asyncio
 import dataclasses
-import json
+import pickle
 import uuid
 from abc import ABC, abstractmethod
 from collections.abc import AsyncIterator, Callable, Coroutine
 from types import MappingProxyType
-from typing import TYPE_CHECKING, Any, ClassVar
+from typing import TYPE_CHECKING, ClassVar
 
 from reflex.istate.manager.redis import StateManagerRedis
 from reflex.state import BaseState, StateUpdate
@@ -42,7 +42,7 @@ class LostAndFoundRecord:
     """Record for a StateUpdate for a token with its socket on another instance."""
 
     token: str
-    update: dict[str, Any]
+    update: StateUpdate
 
 
 class TokenManager(ABC):
@@ -229,16 +229,22 @@ class RedisTokenManager(LocalTokenManager):
             if not cursor:
                 break
 
-    def _handle_socket_record_del(self, token: str) -> None:
+    async def _handle_socket_record_del(
+        self, token: str, expired: bool = False
+    ) -> None:
         """Handle deletion of a socket record from Redis.
 
         Args:
             token: The client token whose record was deleted.
+            expired: Whether the deletion was due to expiration.
         """
         if (
             socket_record := self.token_to_socket.pop(token, None)
-        ) is not None and socket_record.instance_id != self.instance_id:
+        ) is not None and socket_record.instance_id == self.instance_id:
             self.sid_to_token.pop(socket_record.sid, None)
+            if expired:
+                # Keep the record alive as long as this process is alive and not deleted.
+                await self.link_token_to_sid(token, socket_record.sid)
 
     async def _subscribe_socket_record_updates(self) -> None:
         """Subscribe to Redis keyspace notifications for socket record updates."""
@@ -262,7 +268,10 @@ class RedisTokenManager(LocalTokenManager):
 
                     event = message["data"].decode()
                     if event in ("del", "expired", "evicted"):
-                        self._handle_socket_record_del(token)
+                        await self._handle_socket_record_del(
+                            token,
+                            expired=(event == "expired"),
+                        )
                     elif event == "set":
                         await self._get_token_owner(token, refresh=True)
 
@@ -319,7 +328,7 @@ class RedisTokenManager(LocalTokenManager):
         try:
             await self.redis.set(
                 redis_key,
-                json.dumps(dataclasses.asdict(socket_record)),
+                pickle.dumps(socket_record),
                 ex=self.token_expiration,
             )
         except Exception as e:
@@ -377,8 +386,8 @@ class RedisTokenManager(LocalTokenManager):
             )
             async for message in pubsub.listen():
                 if message["type"] == "pmessage":
-                    record = LostAndFoundRecord(**json.loads(message["data"].decode()))
-                    await emit_update(StateUpdate(**record.update), record.token)
+                    record = pickle.loads(message["data"])
+                    await emit_update(record.update, record.token)
 
     def ensure_lost_and_found_task(
         self,
@@ -415,10 +424,9 @@ class RedisTokenManager(LocalTokenManager):
 
         redis_key = self._get_redis_key(token)
         try:
-            record_json = await self.redis.get(redis_key)
-            if record_json:
-                record_data = json.loads(record_json)
-                socket_record = SocketRecord(**record_data)
+            record_pkl = await self.redis.get(redis_key)
+            if record_pkl:
+                socket_record = pickle.loads(record_pkl)
                 self.token_to_socket[token] = socket_record
                 self.sid_to_token[socket_record.sid] = token
                 return socket_record.instance_id
@@ -445,11 +453,11 @@ class RedisTokenManager(LocalTokenManager):
         owner_instance_id = await self._get_token_owner(token)
         if owner_instance_id is None:
             return False
-        record = LostAndFoundRecord(token=token, update=dataclasses.asdict(update))
+        record = LostAndFoundRecord(token=token, update=update)
         try:
             await self.redis.publish(
                 f"channel:{self._get_lost_and_found_key(owner_instance_id)}",
-                json.dumps(dataclasses.asdict(record)),
+                pickle.dumps(record),
             )
         except Exception as e:
             console.error(f"Redis error publishing lost and found delta: {e}")

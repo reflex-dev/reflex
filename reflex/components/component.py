@@ -515,8 +515,10 @@ def _deterministic_hash(value: object) -> str:
         return _hash_str(
             str((value._js_expr, _deterministic_hash(value._get_all_var_data())))
         )
-    if isinstance(value, VarData):
-        return _hash_dict(dataclasses.asdict(value))
+    if dataclasses.is_dataclass(value):
+        return _hash_dict({
+            k.name: getattr(value, k.name) for k in dataclasses.fields(value)
+        })
     if isinstance(value, BaseComponent):
         # If the value is a component, hash its rendered code.
         return _hash_dict(value.render())
@@ -758,9 +760,11 @@ class Component(BaseComponent, ABC):
                 and key not in component_specific_triggers
                 and key not in props
             ):
+                valid_triggers = sorted(component_specific_triggers.keys())
                 msg = (
-                    f"The {(comp_name := type(self).__name__)} does not take in an `{key}` event trigger. If {comp_name}"
-                    f" is a third party component make sure to add `{key}` to the component's event triggers. "
+                    f"The {(comp_name := type(self).__name__)} does not take in an `{key}` event trigger. "
+                    f"Valid triggers for {comp_name}: {valid_triggers}. "
+                    f"If {comp_name} is a third party component make sure to add `{key}` to the component's event triggers. "
                     f"visit https://reflex.dev/docs/wrapping-react/guide/#event-triggers for more info."
                 )
                 raise ValueError(msg)
@@ -2228,7 +2232,6 @@ class NoSSRComponent(Component):
         """
         # React lazy import mechanism.
         dynamic_import = {
-            "react": [ImportVar(tag="lazy")],
             f"$/{constants.Dirs.UTILS}/context": [ImportVar(tag="ClientSide")],
         }
 
@@ -2259,15 +2262,15 @@ class NoSSRComponent(Component):
         library_import = f"import('{import_name}')"
         mod_import = (
             # https://nextjs.org/docs/pages/building-your-application/optimizing/lazy-loading#with-named-exports
-            f".then((mod) => ({{default: mod.{self.tag}}}))"
+            f".then((mod) => mod.{self.tag})"
             if not self.is_default
-            else ""
+            else ".then((mod) => mod.default.default ?? mod.default)"
         )
         return (
-            f"const {self.alias or self.tag} = ClientSide(lazy(() => "
+            f"const {self.alias or self.tag} = ClientSide(() => "
             + library_import
             + mod_import
-            + "))"
+            + ")"
         )
 
 

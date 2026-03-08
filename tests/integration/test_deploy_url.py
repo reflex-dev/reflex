@@ -97,7 +97,9 @@ def test_deploy_url_in_app(deploy_url_sample: AppHarness, driver: WebDriver) -> 
     driver.find_element(By.ID, "goto_self").click()
 
     WebDriverWait(driver, 10).until(
-        lambda driver: deploy_url_sample.frontend_url
-        and driver.current_url.removesuffix("/")
-        == deploy_url_sample.frontend_url.removesuffix("/")
+        lambda driver: (
+            deploy_url_sample.frontend_url
+            and driver.current_url.removesuffix("/")
+            == deploy_url_sample.frontend_url.removesuffix("/")
+        )
     )

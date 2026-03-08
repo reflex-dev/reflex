@@ -9,8 +9,8 @@ from . import elements
 _SUBMODULES: set[str] = {"elements"}
 _SUBMOD_ATTRS: dict[str, list[str]] = {
     # rx.el.a is replaced by React Router's Link.
-    f"elements.{k}": [_v for _v in v if _v != "a"]
-    for k, v in elements._MAPPING.items()
+    f"elements.{k}": [attr for attr in attrs if attr != "a"]
+    for k, attrs in elements._MAPPING.items()
 }
 _EXTRA_MAPPINGS: dict[str, str] = {
     "a": "reflex.components.react_router.link",

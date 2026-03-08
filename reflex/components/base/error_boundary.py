@@ -36,7 +36,7 @@ _ERROR_DISPLAY: str = r"""event_args.error.name + ': ' + event_args.error.messag
 class ErrorBoundary(Component):
     """A React Error Boundary component that catches unhandled frontend exceptions."""
 
-    library = "react-error-boundary@6.0.0"
+    library = "react-error-boundary@6.1.1"
     tag = "ErrorBoundary"
 
     # Fired when the boundary catches an error.
@@ -101,9 +101,10 @@ class ErrorBoundary(Component):
                                 div(
                                     pre(
                                         Var(_js_expr=_ERROR_DISPLAY),
+                                        word_break="break-word",
+                                        white_space="pre-wrap",
                                     ),
                                     padding="0.5rem",
-                                    width="fit-content",
                                 ),
                                 width="100%",
                                 background="color-mix(in srgb, currentColor 5%, transparent)",

@@ -41,33 +41,44 @@ from reflex.vars.base import LiteralVar, Var
 from reflex.vars.object import ObjectVar
 
 
+class TestState(BaseState):
+    """A test state with various methods for event handling."""
+
+    num: int
+
+    @rx.event
+    def do_something(self):
+        """A method with no arguments."""
+
+    @rx.event
+    def do_something_arg(self, arg):
+        """A method with one unspecfied argument."""
+
+    @rx.event
+    def do_something_with_bool(self, arg: bool):
+        """A method with a boolean argument."""
+
+    @rx.event
+    def do_something_with_int(self, arg: int):
+        """A method with an integer argument."""
+
+    @rx.event
+    def do_something_with_list_int(self, arg: list[int]):
+        """A method with a list of integers argument."""
+
+    @rx.event
+    def do_something_with_list_str(self, arg: list[str]):
+        """A method with a list of strings argument."""
+
+    @rx.event
+    def do_something_required_optional(
+        self, required_arg: int, optional_arg: int | None = None
+    ):
+        """A method with one required and one optional argument."""
+
+
 @pytest.fixture
 def test_state():
-    class TestState(BaseState):
-        num: int
-
-        def do_something(self):
-            pass
-
-        def do_something_arg(self, arg):
-            pass
-
-        def do_something_with_bool(self, arg: bool):
-            pass
-
-        def do_something_with_int(self, arg: int):
-            pass
-
-        def do_something_with_list_int(self, arg: list[int]):
-            pass
-
-        def do_something_with_list_str(self, arg: list[str]):
-            pass
-
-        def do_something_required_optional(
-            self, required_arg: int, optional_arg: int | None = None
-        ):
-            pass
 
     return TestState
 
@@ -577,7 +588,7 @@ def test_invalid_prop_type(component1, text: str, number: int):
         component1.create(text=text, number=number)
 
 
-def test_var_props(component1, test_state):
+def test_var_props(component1, test_state: type[TestState]):
     """Test that we can set a Var prop.
 
     Args:
@@ -863,7 +874,7 @@ def test_custom_component_wrapper():
     assert isinstance(component, Box)
 
 
-def test_invalid_event_handler_args(component2, test_state):
+def test_invalid_event_handler_args(component2, test_state: type[TestState]):
     """Test that an invalid event handler raises an error.
 
     Args:
@@ -943,7 +954,7 @@ def test_invalid_event_handler_args(component2, test_state):
         )
 
 
-def test_valid_event_handler_args(component2, test_state):
+def test_valid_event_handler_args(component2, test_state: type[TestState]):
     """Test that an valid event handler args do not raise exception.
 
     Args:
@@ -1144,7 +1155,7 @@ def test_format_component(component, rendered):
     assert str(component) == rendered
 
 
-def test_stateful_component(test_state):
+def test_stateful_component(test_state: type[TestState]):
     """Test that a stateful component is created correctly.
 
     Args:
@@ -1162,7 +1173,7 @@ def test_stateful_component(test_state):
     assert sc2.references == 2
 
 
-def test_stateful_component_memoize_event_trigger(test_state):
+def test_stateful_component_memoize_event_trigger(test_state: type[TestState]):
     """Test that a stateful component is created correctly with events.
 
     Args:
@@ -2100,7 +2111,7 @@ def test_component_add_hooks_var():
     assert ImportVar(tag="useEffect") in imports["react"]
 
 
-def test_add_style_embedded_vars(test_state: BaseState):
+def test_add_style_embedded_vars(test_state: type[TestState]):
     """Test that add_style works with embedded vars when returning a plain dict.
 
     Args:

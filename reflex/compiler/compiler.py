@@ -210,7 +210,8 @@ def _validate_stylesheet(stylesheet_full_path: Path, assets_app_path: Path) -> N
         raise ValueError(msg)
     if (
         len(
-            stylesheet_full_path.absolute()
+            stylesheet_full_path
+            .absolute()
             .relative_to(assets_app_path.absolute())
             .parts
         )
