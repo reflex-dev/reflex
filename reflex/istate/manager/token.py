@@ -39,7 +39,9 @@ class StateToken(Generic[TOKEN_TYPE]):
         """
         # urlencode the redis token to escape the slash delimiter.
         clean_ident = self.ident.replace("/", "%2F")
-        clean_cls_name = self.cls.__name__.replace("/", "%2F")
+        clean_cls_name = f"{self.cls.__module__}.{self.cls.__name__}".replace(
+            "/", "%2F"
+        )
         return f"{clean_ident}/{clean_cls_name}"
 
     @classmethod
