@@ -289,9 +289,9 @@ class AppHarness:
                 raise RuntimeError(msg)
             if isinstance(self.app_instance._state_manager, StateManagerRedis):
                 # Create our own redis connection for testing.
-                self.state_manager = StateManagerRedis.create(self.app_instance._state)
+                self.state_manager = StateManagerRedis.create()
             elif isinstance(self.app_instance._state_manager, StateManagerDisk):
-                self.state_manager = StateManagerDisk.create(self.app_instance._state)
+                self.state_manager = StateManagerDisk.create()
         if self.state_manager is None:
             self.state_manager = (
                 self.app_instance._state_manager if self.app_instance else None
@@ -378,9 +378,7 @@ class AppHarness:
             )
             and self.app_instance._state is not None
         ):
-            self.app_instance._state_manager = StateManagerRedis.create(
-                state=self.app_instance._state,
-            )
+            self.app_instance._state_manager = StateManagerRedis.create()
             if not isinstance(self.app_instance.state_manager, StateManagerRedis):
                 msg = "Failed to reset state manager."
                 raise RuntimeError(msg)

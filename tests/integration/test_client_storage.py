@@ -660,7 +660,7 @@ async def test_client_side_state(
     ):
         # Purge the backend's disk manager
         app_state_manager.states.pop(token, None)
-        app_state_manager._write_queue.pop(token, None)
+        app_state_manager._write_queue.clear()
         og_token_expiration = app_state_manager.token_expiration
         app_state_manager.token_expiration = 0
         app_state_manager._purge_expired_states()
