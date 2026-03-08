@@ -6,12 +6,14 @@ Lets get there.
 """
 
 import asyncio
+from contextlib import asynccontextmanager
 import dataclasses
 import functools
 import inspect
 import time
 from collections.abc import (
     AsyncGenerator,
+    AsyncIterator,
     Callable,
     Coroutine,
     Generator,
@@ -28,6 +30,9 @@ from reflex.compiler.templates import generic_var_template
 from reflex.components.component import FIELD_TYPE
 from reflex.constants import Hooks
 from reflex.constants.compiler import Ext
+from reflex.istate.manager import StateManager
+from reflex.istate.manager.memory import StateManagerMemory
+from reflex.istate.manager.token import TOKEN_TYPE, StateToken
 from reflex.plugins.base import CommonContext, Plugin
 from reflex.utils import console
 from reflex.utils.format import to_snake_case
@@ -41,6 +46,7 @@ from reflex.vars.function import (
     FunctionVar,
 )
 from reflex.vars.object import ObjectVar
+from tests.units.test_state import state_manager
 
 ZUSTAND_USE_STORE_IMPORT = {"zustand": "useStore"}
 ZUSTAND_CREATE = FunctionStringVar(
@@ -79,11 +85,38 @@ class EventContext:
         default_factory=set, init=False
     )
     cached_states: dict[type, Any] = dataclasses.field(default_factory=dict, init=False)
+    state_manager: StateManager
+
+    @asynccontextmanager
+    async def modify_state(
+        self, token: StateToken[TOKEN_TYPE]
+    ) -> AsyncIterator[TOKEN_TYPE]:
+        """Context manager to modify state with automatic dirty var tracking and delta emission.
+
+        Args:
+            token: The token for the state to modify.
+
+        Yields:
+            The state instance corresponding to the token, which can be modified within the context.
+        """
+        async with self.state_manager.modify_state(token) as state:
+            self.cached_states[token.cls] = state
+            yield state
+            (await self.get_state(ContextState)).revision += 1
+            for cached_state in self.cached_states.values():
+                if cached_state is state:
+                    # This will be written when the outer block exits.
+                    continue
+                await self.state_manager.set_state(
+                    token.with_cls(type(cached_state)), cached_state
+                )
 
     async def get_state(self, object_cls: type[T]) -> T:
         if (obj := self.cached_states.get(object_cls)) is not None:
             return obj
-        obj = object_cls()
+        obj = await self.state_manager.get_state(
+            StateToken(ident=self.token, cls=object_cls)
+        )
         self.clean(object_cls)
         self.cached_states[object_cls] = obj
         return obj
@@ -741,6 +774,11 @@ class EventHandler(ArgsFunctionOperation):
 event = EventHandler.create
 
 
+@dataclasses.dataclass(kw_only=True)
+class ContextState:
+    revision: int = 0
+
+
 if __name__ == "__main__":
 
     @event
@@ -814,7 +852,11 @@ if __name__ == "__main__":
 
     def event_runner(event: EventHandler) -> asyncio.Task:
         async def event_awaiter() -> Any:
-            return await event
+            ctx = event_context.get()
+            async with ctx.modify_state(
+                StateToken(ident=ctx.token, cls=event.owner_class)
+            ) as state:
+                return await event
 
         return asyncio.create_task(
             event_awaiter(), name=f"reflex_event|{event.fn.__name__}|{time.time()}"
@@ -824,20 +866,28 @@ if __name__ == "__main__":
         token: str,
         event: EventHandler,
         enqueue: Callable[[tuple[str, EventHandler]], None],
-    ) -> [asyncio.Task, EventContext]:
+        state_manager: StateManager,
+    ) -> tuple[asyncio.Task, EventContext]:
         ctx = copy_context()
         ctx_event_context = EventContext(
-            token=token, enqueue=lambda e, token=token: enqueue((token, e))
+            token=token,
+            enqueue=lambda e, token=token: enqueue((token, e)),
+            state_manager=state_manager,
         )
         ctx.run(event_context.set, ctx_event_context)
         return ctx.run(event_runner, event), ctx_event_context
 
     async def event_loop(
-        q: asyncio.Queue[tuple[str, EventHandler]], concurrency: int = 5
+        q: asyncio.Queue[tuple[str, EventHandler]],
+        concurrency: int = 5,
+        state_manager: StateManager | None = None,
     ):
-        outstanding: dict[asyncio.Task, tuple[str, EventHandler, ContextVar]] = {}
+        outstanding: dict[asyncio.Task, tuple[str, EventHandler, EventContext]] = {}
         # When a token is already being processed, queue up events per token.
         per_token_queues: dict[str, asyncio.Queue[EventHandler]] = {}
+
+        if state_manager is None:
+            state_manager = StateManager.create()
 
         def clean_task(task: asyncio.Task):
             token, event, ctx = outstanding[task]
@@ -859,7 +909,7 @@ if __name__ == "__main__":
                 else:
                     print(f"[{token}] Dequeuing next event {next_event.fn.__name__}")
                     new_task, new_context = event_processor(
-                        token, next_event, q.put_nowait
+                        token, next_event, q.put_nowait, state_manager
                     )
                     outstanding[new_task] = (token, next_event, new_context)
                     new_task.add_done_callback(clean_task)
@@ -892,7 +942,7 @@ if __name__ == "__main__":
                 per_token_queues[token].put_nowait(event)
                 continue
             per_token_queues[token] = asyncio.Queue()
-            task, ctx = event_processor(token, event, q.put_nowait)
+            task, ctx = event_processor(token, event, q.put_nowait, state_manager)
             outstanding[task] = (token, event, ctx)
             task.add_done_callback(clean_task)
 
@@ -904,10 +954,11 @@ if __name__ == "__main__":
         # q.put_nowait(("token4", doubler(coro(99))))
         # q.put_nowait(("token5", printerrr(v=some_shiz("hello"))))
         q.put_nowait(("token67", Foo.print_bar))
-        # await event_loop(q)
-        await Foo.print_bar
-        print(Foo.print_bar("baz"))
-        print(agen(3))
+        q.put_nowait(("token67", Foo.bar))
+        await event_loop(q)
+        # await Foo.print_bar
+        # print(Foo.print_bar("baz"))
+        # print(agen(3))
 
     breakpoint()
     asyncio.run(main())
