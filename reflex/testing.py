@@ -40,8 +40,10 @@ from reflex.environment import environment
 from reflex.istate.manager.disk import StateManagerDisk
 from reflex.istate.manager.memory import StateManagerMemory
 from reflex.istate.manager.redis import StateManagerRedis
+from reflex.istate.manager.token import BaseStateToken
 from reflex.state import (
     BaseState,
+    State,
     StateManager,
     _split_substate_key,
     reload_state_module,
@@ -738,7 +740,9 @@ class AppHarness:
             client_token, _ = _split_substate_key(token)
             self.state_manager.states.pop(client_token, None)
         try:
-            return await self.state_manager.get_state(token)
+            return await self.state_manager.get_state(
+                BaseStateToken(ident=token, cls=State)
+            )
         finally:
             await self.state_manager.close()
 
@@ -759,7 +763,9 @@ class AppHarness:
         for key, value in kwargs.items():
             setattr(state, key, value)
         try:
-            await self.state_manager.set_state(token, state)
+            await self.state_manager.set_state(
+                BaseStateToken(ident=token, cls=type(state)), state
+            )
         finally:
             if self.app_instance is not None and isinstance(
                 self.app_instance.state_manager, StateManagerDisk
@@ -785,7 +791,7 @@ class AppHarness:
         if self.state_manager is None:
             msg = "state_manager is not set."
             raise RuntimeError(msg)
-        if self.app_instance is None:
+        if self.app_instance is None or self.app_instance._state is None:
             msg = "App is not running."
             raise RuntimeError(msg)
         app_state_manager = self.app_instance.state_manager
@@ -794,7 +800,9 @@ class AppHarness:
             # the redis/disk connection is on the backend_thread event loop
             self.app_instance._state_manager = self.state_manager
         try:
-            async with self.app_instance.modify_state(token) as state:
+            async with self.app_instance.modify_state(
+                BaseStateToken(ident=token, cls=self.app_instance._state)
+            ) as state:
                 yield state
         finally:
             if isinstance(app_state_manager, StateManagerDisk):

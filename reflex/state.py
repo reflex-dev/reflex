@@ -1609,6 +1609,7 @@ class BaseState(EvenMoreBasicBaseState):
             StateMismatchError: If the state instance is not of the expected type.
         """
         from reflex.istate.manager.redis import StateManagerRedis
+        from reflex.istate.manager.token import BaseStateToken
 
         # Then get the target state and all its substates.
         state_manager = get_state_manager()
@@ -1619,7 +1620,7 @@ class BaseState(EvenMoreBasicBaseState):
             )
             raise RuntimeError(msg)
         state_in_redis = await state_manager.get_state(
-            token=_substate_key(self.router.session.client_token, state_cls),
+            token=BaseStateToken(ident=self.router.session.client_token, cls=state_cls),
             top_level=False,
             for_state_instance=self,
         )

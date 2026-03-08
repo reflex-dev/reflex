@@ -97,7 +97,8 @@ class ScreenshotPlugin(BasePlugin):
 
             from starlette.responses import JSONResponse
 
-            from reflex.state import _substate_key
+            from reflex.istate.manager.token import BaseStateToken
+            from reflex.state import State
 
             if not app.event_namespace:
                 return JSONResponse({})
@@ -109,7 +110,9 @@ class ScreenshotPlugin(BasePlugin):
                     {"error": "Token to clone must be a string."}, status_code=400
                 )
 
-            old_state = await app.state_manager.get_state(token_to_clone)
+            old_state = await app.state_manager.get_state(
+                BaseStateToken(ident=token_to_clone, cls=State),
+            )
 
             new_state = _deep_copy(old_state)
 
@@ -132,7 +135,8 @@ class ScreenshotPlugin(BasePlugin):
                             found_new = True
 
             await app.state_manager.set_state(
-                _substate_key(new_token, new_state), new_state
+                BaseStateToken(ident=new_token, cls=type(new_state)),
+                new_state,
             )
 
             return JSONResponse(new_token)
