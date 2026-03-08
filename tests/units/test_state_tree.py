@@ -8,7 +8,8 @@ import pytest_asyncio
 import reflex as rx
 from reflex.constants.state import FIELD_MARKER
 from reflex.istate.manager.redis import StateManagerRedis
-from reflex.state import BaseState, StateManager, _substate_key
+from reflex.istate.manager.token import BaseStateToken
+from reflex.state import BaseState, StateManager
 
 
 class Root(BaseState):
@@ -371,7 +372,9 @@ async def test_get_state_tree(
         exp_root_substates: The expected substates of the root state.
         exp_root_dict_keys: The expected keys of the root state dict.
     """
-    state = await state_manager_redis.get_state(_substate_key(token, substate_cls))
+    state = await state_manager_redis.get_state(
+        BaseStateToken(ident=token, cls=substate_cls)
+    )
     assert isinstance(state, Root)
     assert sorted(state.substates) == sorted(exp_root_substates)
 

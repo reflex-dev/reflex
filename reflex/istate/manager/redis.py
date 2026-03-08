@@ -9,7 +9,7 @@ import sys
 import time
 import uuid
 from collections.abc import AsyncIterator
-from typing import TypedDict
+from typing import Any, TypedDict, cast
 
 from redis import ResponseError
 from redis.asyncio import Redis
@@ -22,7 +22,8 @@ from reflex.istate.manager import (
     StateModificationContext,
     _default_token_expiration,
 )
-from reflex.state import BaseState, _split_substate_key, _substate_key
+from reflex.istate.manager.token import TOKEN_TYPE, BaseStateToken, StateToken
+from reflex.state import BaseState
 from reflex.utils import console
 from reflex.utils.exceptions import (
     InvalidLockWarningThresholdError,
@@ -134,9 +135,7 @@ class StateManagerRedis(StateManager):
     )
 
     # Cached states
-    _cached_states: dict[str, BaseState] = dataclasses.field(
-        default_factory=dict, init=False
-    )
+    _cached_states: dict[str, Any] = dataclasses.field(default_factory=dict, init=False)
     _cached_states_locks: dict[str, asyncio.Lock] = dataclasses.field(
         default_factory=dict, init=False
     )
@@ -257,32 +256,31 @@ class StateManagerRedis(StateManager):
     @override
     async def get_state(
         self,
-        token: str,
+        token: StateToken[TOKEN_TYPE],
         top_level: bool = True,
         for_state_instance: BaseState | None = None,
-    ) -> BaseState:
+    ) -> TOKEN_TYPE:
         """Get the state for a token.
 
         Args:
             token: The token to get the state for.
-            top_level: If true, return an instance of the top-level state (self.state).
+            top_level: If true, return the top-level root state.
             for_state_instance: If provided, attach the requested states to this existing state tree.
 
         Returns:
             The state for the token.
 
         Raises:
-            RuntimeError: when the state_cls is not specified in the token, or when the parent state for a
-                requested state was not fetched.
+            RuntimeError: when the parent state for a requested state was not fetched.
         """
-        # Split the actual token from the fully qualified substate name.
-        token, state_path = _split_substate_key(token)
-        if state_path:
-            # Get the State class associated with the given path.
-            requested_state_cls = self.state.get_class_substate(state_path)
-        else:
-            msg = f"StateManagerRedis requires token to be specified in the form of {{token}}_{{state_full_name}}, but got {token}"
-            raise RuntimeError(msg)
+        if not isinstance(token, BaseStateToken):
+            # Non-BaseState token: simple single-key fetch.
+            redis_data = await self.redis.get(str(token))
+            if redis_data is not None:
+                return token.deserialize(data=redis_data)
+            return token.cls()
+
+        requested_state_cls = token.cls
 
         # Determine which states we already have.
         flat_state_tree: dict[str, BaseState] = (
@@ -298,7 +296,7 @@ class StateManagerRedis(StateManager):
 
         redis_pipeline = self.redis.pipeline()
         for state_cls in required_state_classes:
-            redis_pipeline.get(_substate_key(token, state_cls))
+            redis_pipeline.get(str(token.with_cls(state_cls)))
 
         for state_cls, redis_state in zip(
             required_state_classes,
@@ -336,14 +334,17 @@ class StateManagerRedis(StateManager):
         # To retain compatibility with previous implementation, by default, we return
         # the top-level state which should always be fetched or already cached.
         if top_level:
-            return flat_state_tree[self.state.get_full_name()]
-        return flat_state_tree[requested_state_cls.get_full_name()]
+            return cast(
+                TOKEN_TYPE,
+                flat_state_tree[requested_state_cls.get_root_state().get_full_name()],
+            )
+        return cast(TOKEN_TYPE, flat_state_tree[requested_state_cls.get_full_name()])
 
     @override
     async def set_state(
         self,
-        token: str,
-        state: BaseState,
+        token: StateToken[TOKEN_TYPE],
+        state: TOKEN_TYPE,
         *,
         lock_id: bytes | None = None,
         **context: Unpack[StateModificationContext],
@@ -377,7 +378,17 @@ class StateManagerRedis(StateManager):
             )
             raise LockExpiredError(msg)
 
-        client_token, substate_name = _split_substate_key(token)
+        if not isinstance(token, BaseStateToken):
+            # Non-BaseState token: simple single-key write.
+            pickle_state = token.serialize(state)
+            if pickle_state:
+                await self.redis.set(str(token), pickle_state, ex=self.token_expiration)
+            return
+
+        base_state = cast(BaseState, state)
+
+        client_token = token.ident
+        substate_name = token.cls.get_full_name()
 
         if lock_id is not None and client_token not in self._local_leases:
             time_taken = (
@@ -396,29 +407,32 @@ class StateManagerRedis(StateManager):
                 )
 
         # If the substate name on the token doesn't match the instance name, it cannot have a parent.
-        if state.parent_state is not None and state.get_full_name() != substate_name:
-            msg = f"Cannot `set_state` with mismatching token {token} and substate {state.get_full_name()}."
+        if (
+            base_state.parent_state is not None
+            and base_state.get_full_name() != substate_name
+        ):
+            msg = f"Cannot `set_state` with mismatching token {token} and substate {base_state.get_full_name()}."
             raise RuntimeError(msg)
 
         # Recursively set_state on all known substates.
         tasks = [
             asyncio.create_task(
                 self.set_state(
-                    _substate_key(client_token, substate),
+                    token.with_cls(type(substate)),
                     substate,
                     lock_id=lock_id,
                     **context,
                 ),
                 name=f"reflex_set_state|{client_token}|{substate.get_full_name()}",
             )
-            for substate in state.substates.values()
+            for substate in base_state.substates.values()
         ]
         # Persist only the given state (parents or substates are excluded by BaseState.__getstate__).
-        if state._get_was_touched():
-            pickle_state = state._serialize()
+        if base_state._get_was_touched():
+            pickle_state = base_state._serialize()
             if pickle_state:
                 await self.redis.set(
-                    _substate_key(client_token, state),
+                    str(token),
                     pickle_state,
                     ex=self.token_expiration,
                 )
@@ -429,8 +443,8 @@ class StateManagerRedis(StateManager):
 
     @contextlib.asynccontextmanager
     async def _try_modify_state(
-        self, token: str, **context: Unpack[StateModificationContext]
-    ) -> AsyncIterator[BaseState | None]:
+        self, token: StateToken[TOKEN_TYPE], **context: Unpack[StateModificationContext]
+    ) -> AsyncIterator[TOKEN_TYPE | None]:
         """Modify the state for a token while holding exclusive lock.
 
         Args:
@@ -456,7 +470,7 @@ class StateManagerRedis(StateManager):
                 return
 
         # Opportunistic locking is enabled, so try to hold the lock across multiple calls.
-        client_token, _ = _split_substate_key(token)
+        client_token = token.ident
         lock_held_ctx = contextlib.AsyncExitStack()
         try:
             lock_id = await lock_held_ctx.enter_async_context(self._lock(token))
@@ -514,8 +528,8 @@ class StateManagerRedis(StateManager):
     @override
     @contextlib.asynccontextmanager
     async def modify_state(
-        self, token: str, **context: Unpack[StateModificationContext]
-    ) -> AsyncIterator[BaseState]:
+        self, token: StateToken[TOKEN_TYPE], **context: Unpack[StateModificationContext]
+    ) -> AsyncIterator[TOKEN_TYPE]:
         """Modify the state for a token while holding exclusive lock.
 
         Args:
@@ -528,11 +542,13 @@ class StateManagerRedis(StateManager):
         while True:
             async with self._try_modify_state(token, **context) as state_instance:
                 if state_instance is not None:
-                    yield state_instance
+                    yield cast(TOKEN_TYPE, state_instance)
                     return
 
     @contextlib.asynccontextmanager
-    async def _get_state_cached(self, token: str) -> AsyncIterator[BaseState | None]:
+    async def _get_state_cached(
+        self, token: StateToken[TOKEN_TYPE]
+    ) -> AsyncIterator[TOKEN_TYPE | None]:
         """Get the cached state for a token, while holding the local lease lock.
 
         Args:
@@ -540,11 +556,8 @@ class StateManagerRedis(StateManager):
 
         Yields:
             The cached state for the token, or None if not cached/uncachable.
-
-        Raises:
-            RuntimeError: when the state_cls is not specified in the token.
         """
-        client_token, state_path = _split_substate_key(token)
+        client_token = token.ident
         # Opportunistically reuse existing lock.
         if (
             client_token in self._local_leases
@@ -555,17 +568,23 @@ class StateManagerRedis(StateManager):
                     if (
                         cached_state := self._cached_states.get(client_token)
                     ) is not None:
-                        # Make sure we have the substate cached (or fetch it from redis).
-                        try:
-                            substate = cached_state.get_substate(state_path.split("."))
-                            if len(substate.substates) != len(
-                                type(substate).get_substates()
-                            ):
-                                # If the substate is missing substates, we need to refetch it.
-                                raise ValueError  # noqa: TRY301
-                        except ValueError:
-                            await self.get_state(token, for_state_instance=cached_state)
-                        yield cached_state
+                        if isinstance(token, BaseStateToken):
+                            # Make sure we have the substate cached (or fetch it from redis).
+                            state_path = token.cls.get_full_name()
+                            try:
+                                substate = cached_state.get_substate(
+                                    state_path.split(".")
+                                )
+                                if len(substate.substates) != len(
+                                    type(substate).get_substates()
+                                ):
+                                    # If the substate is missing substates, we need to refetch it.
+                                    raise ValueError  # noqa: TRY301
+                            except ValueError:
+                                await self.get_state(
+                                    token, for_state_instance=cached_state
+                                )
+                        yield cast(TOKEN_TYPE, cached_state)
                         return
                     elif self._debug_enabled:
                         console.debug(
@@ -595,7 +614,7 @@ class StateManagerRedis(StateManager):
 
     async def _create_lease_break_task(
         self,
-        token: str,
+        token: StateToken[TOKEN_TYPE],
         lock_id: bytes,
         cleanup_ctx: contextlib.AsyncExitStack,
         **context: Unpack[StateModificationContext],
@@ -613,7 +632,7 @@ class StateManagerRedis(StateManager):
         """
         self._ensure_lock_task()
 
-        client_token, _ = _split_substate_key(token)
+        client_token = token.ident
 
         async def do_flush() -> None:
             if (state_lock := self._cached_states_locks.get(client_token)) is None:
@@ -709,7 +728,7 @@ class StateManagerRedis(StateManager):
         return None
 
     @staticmethod
-    def _lock_key(token: str) -> bytes:
+    def _lock_key(token: StateToken[Any]) -> bytes:
         """Get the redis key for a token's lock.
 
         Args:
@@ -718,9 +737,7 @@ class StateManagerRedis(StateManager):
         Returns:
             The redis lock key for the token.
         """
-        # All substates share the same lock domain, so ignore any substate path suffix.
-        client_token = _split_substate_key(token)[0]
-        return f"{client_token}_lock".encode()
+        return f"{token.ident}_lock".encode()
 
     async def _try_extend_lock(self, lock_key: bytes) -> bool | None:
         """Extends the current lock for another lock_expiration period.
@@ -1000,7 +1017,7 @@ class StateManagerRedis(StateManager):
                 )
 
     @contextlib.asynccontextmanager
-    async def _lock(self, token: str):
+    async def _lock(self, token: StateToken[Any]):
         """Obtain a redis lock for a token.
 
         Args:

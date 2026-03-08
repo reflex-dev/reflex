@@ -168,17 +168,23 @@ class StateManagerDisk(StateManager):
         Returns:
             The state for the token.
         """
-        self._token_last_touched[token.ident] = time.time()
-        root_state = self.states.get(token.ident)
+        if isinstance(token, BaseStateToken):
+            root_state = self.states.get(token.ident)
+            self._token_last_touched[token.ident] = time.time()
+        else:
+            root_state = self.states.get(str(token))
+            self._token_last_touched[str(token)] = time.time()
         if root_state is not None:
             # Retrieved state from memory.
             return root_state
 
         # Deserialize root state from disk.
-        root_state = await self.load_state(token)
         if isinstance(token, BaseStateToken):
+            # Find the root state
+            root_state_cls = token.cls.get_root_state()
+            root_state = await self.load_state(token.with_cls(root_state_cls))
             # Create a new root state tree with all substates instantiated.
-            fresh_root_state = token.cls(_reflex_internal_init=True)
+            fresh_root_state = root_state_cls(_reflex_internal_init=True)
             if root_state is None:
                 root_state = fresh_root_state
             elif not isinstance(root_state, BaseState):
@@ -188,12 +194,14 @@ class StateManagerDisk(StateManager):
                 # Ensure all substates exist, even if they were not serialized previously.
                 root_state.substates = fresh_root_state.substates
             await self.populate_substates(token, root_state, root_state)
-        else:
-            # For non-BaseState tokens, if the deserialized state is None, we create a new instance using the token's cls.
-            if root_state is None:
-                root_state = token.cls()
-        self.states[token.ident] = root_state
-        return cast(TOKEN_TYPE, root_state)
+            self.states[token.ident] = root_state
+            return cast(TOKEN_TYPE, root_state)
+        # For non-BaseState tokens, if the deserialized state is None, we create a new instance using the token's cls.
+        state = await self.load_state(token)
+        if state is None:
+            state = token.cls()
+        self.states[str(token)] = state
+        return cast(TOKEN_TYPE, state)
 
     async def set_state_for_substate(
         self, token: StateToken[TOKEN_TYPE], substate: TOKEN_TYPE

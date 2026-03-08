@@ -4,11 +4,12 @@ import asyncio
 import contextlib
 import dataclasses
 from collections.abc import AsyncIterator
+from typing import Any, cast
 
 from typing_extensions import Unpack, override
 
 from reflex.istate.manager import StateManager, StateModificationContext
-from reflex.state import BaseState, _split_substate_key
+from reflex.istate.manager.token import TOKEN_TYPE, BaseStateToken, StateToken
 
 
 @dataclasses.dataclass
@@ -16,7 +17,7 @@ class StateManagerMemory(StateManager):
     """A state manager that stores states in memory."""
 
     # The mapping of client ids to states.
-    states: dict[str, BaseState] = dataclasses.field(default_factory=dict)
+    states: dict[str, Any] = dataclasses.field(default_factory=dict)
 
     # The mutex ensures the dict of mutexes is updated exclusively
     _state_manager_lock: asyncio.Lock = dataclasses.field(default=asyncio.Lock())
@@ -27,7 +28,7 @@ class StateManagerMemory(StateManager):
     )
 
     @override
-    async def get_state(self, token: str) -> BaseState:
+    async def get_state(self, token: StateToken[TOKEN_TYPE]) -> TOKEN_TYPE:
         """Get the state for a token.
 
         Args:
@@ -36,17 +37,21 @@ class StateManagerMemory(StateManager):
         Returns:
             The state for the token.
         """
-        # Memory state manager ignores the substate suffix and always returns the top-level state.
-        token = _split_substate_key(token)[0]
-        if token not in self.states:
-            self.states[token] = self.state(_reflex_internal_init=True)
-        return self.states[token]
+        key = token.ident if isinstance(token, BaseStateToken) else str(token)
+        if key not in self.states:
+            if isinstance(token, BaseStateToken):
+                self.states[key] = token.cls.get_root_state()(
+                    _reflex_internal_init=True
+                )
+            else:
+                self.states[key] = token.cls()
+        return cast(TOKEN_TYPE, self.states[key])
 
     @override
     async def set_state(
         self,
-        token: str,
-        state: BaseState,
+        token: StateToken[TOKEN_TYPE],
+        state: TOKEN_TYPE,
         **context: Unpack[StateModificationContext],
     ):
         """Set the state for a token.
@@ -56,14 +61,14 @@ class StateManagerMemory(StateManager):
             state: The state to set.
             context: The state modification context.
         """
-        token = _split_substate_key(token)[0]
-        self.states[token] = state
+        key = token.ident if isinstance(token, BaseStateToken) else str(token)
+        self.states[key] = state
 
     @override
     @contextlib.asynccontextmanager
     async def modify_state(
-        self, token: str, **context: Unpack[StateModificationContext]
-    ) -> AsyncIterator[BaseState]:
+        self, token: StateToken[TOKEN_TYPE], **context: Unpack[StateModificationContext]
+    ) -> AsyncIterator[TOKEN_TYPE]:
         """Modify the state for a token while holding exclusive lock.
 
         Args:
@@ -73,13 +78,12 @@ class StateManagerMemory(StateManager):
         Yields:
             The state for the token.
         """
-        # Memory state manager ignores the substate suffix and always returns the top-level state.
-        token = _split_substate_key(token)[0]
-        if token not in self._states_locks:
+        if token.ident not in self._states_locks:
             async with self._state_manager_lock:
-                if token not in self._states_locks:
-                    self._states_locks[token] = asyncio.Lock()
+                if token.ident not in self._states_locks:
+                    self._states_locks[token.ident] = asyncio.Lock()
 
-        async with self._states_locks[token]:
+        async with self._states_locks[token.ident]:
             state = await self.get_state(token)
             yield state
+            await self.set_state(token, state, **context)

@@ -34,6 +34,7 @@ from reflex.istate.manager import StateManager
 from reflex.istate.manager.disk import StateManagerDisk
 from reflex.istate.manager.memory import StateManagerMemory
 from reflex.istate.manager.redis import StateManagerRedis
+from reflex.istate.manager.token import BaseStateToken
 from reflex.state import (
     BaseState,
     ImmutableMutableProxy,
@@ -44,7 +45,6 @@ from reflex.state import (
     State,
     StateProxy,
     StateUpdate,
-    _substate_key,
 )
 from reflex.testing import chdir
 from reflex.utils import format, prerequisites, types
@@ -1698,16 +1698,16 @@ async def state_manager(request) -> AsyncGenerator[StateManager, None]:
     Yields:
         A state manager instance
     """
-    state_manager = StateManager.create(state=TestState)
+    state_manager = StateManager.create()
     if request.param == "redis":
         if not isinstance(state_manager, StateManagerRedis):
-            state_manager = StateManagerRedis(state=TestState, redis=mock_redis())
+            state_manager = StateManagerRedis(redis=mock_redis())
     elif request.param == "disk":
         # explicitly NOT using redis
-        state_manager = StateManagerDisk(state=TestState)
+        state_manager = StateManagerDisk()
         assert not state_manager._states_locks
     else:
-        state_manager = StateManagerMemory(state=TestState)
+        state_manager = StateManagerMemory()
         assert not state_manager._states_locks
 
     yield state_manager
@@ -1716,7 +1716,7 @@ async def state_manager(request) -> AsyncGenerator[StateManager, None]:
 
 
 @pytest.fixture
-def substate_token(state_manager, token) -> str:
+def substate_token(state_manager, token) -> BaseStateToken:
     """A token + substate name for looking up in state manager.
 
     Args:
@@ -1726,12 +1726,12 @@ def substate_token(state_manager, token) -> str:
     Returns:
         Token concatenated with the state_manager's state full_name.
     """
-    return _substate_key(token, state_manager.state)
+    return BaseStateToken(ident=token, cls=TestState)
 
 
 @pytest.mark.asyncio
 async def test_state_manager_modify_state(
-    state_manager: StateManager, token: str, substate_token: str
+    state_manager: StateManager, token: str, substate_token: BaseStateToken
 ):
     """Test that the state manager can modify a state exclusively.
 
@@ -1762,7 +1762,7 @@ async def test_state_manager_modify_state(
         assert not state_manager._states_locks[token].locked()
 
         # separate instances should NOT share locks
-        sm2 = type(state_manager)(state=TestState)
+        sm2 = type(state_manager)()
         assert sm2._state_manager_lock is state_manager._state_manager_lock
         assert not sm2._states_locks
         if state_manager._states_locks:
@@ -1773,7 +1773,7 @@ async def test_state_manager_modify_state(
 
 @pytest.mark.asyncio
 async def test_state_manager_contend(
-    state_manager: StateManager, token: str, substate_token: str
+    state_manager: StateManager, token: str, substate_token: BaseStateToken
 ):
     """Multiple coroutines attempting to access the same state.
 
@@ -1820,11 +1820,11 @@ async def state_manager_redis() -> AsyncGenerator[StateManager, None]:
     Yields:
         A state manager instance
     """
-    state_manager = StateManager.create(TestState)
+    state_manager = StateManager.create()
 
     if not isinstance(state_manager, StateManagerRedis):
         # Create a mocked redis client instead of skipping.
-        state_manager = StateManagerRedis(state=TestState, redis=mock_redis())
+        state_manager = StateManagerRedis(redis=mock_redis())
 
     yield state_manager
 
@@ -1842,12 +1842,14 @@ def substate_token_redis(state_manager_redis, token):
     Returns:
         Token concatenated with the state_manager's state full_name.
     """
-    return _substate_key(token, state_manager_redis.state)
+    return BaseStateToken(ident=token, cls=TestState)
 
 
 @pytest.mark.asyncio
 async def test_state_manager_lock_expire(
-    state_manager_redis: StateManagerRedis, token: str, substate_token_redis: str
+    state_manager_redis: StateManagerRedis,
+    token: str,
+    substate_token_redis: BaseStateToken,
 ):
     """Test that the state manager lock expires and raises exception exiting context.
 
@@ -1892,7 +1894,9 @@ async def test_state_manager_lock_expire(
 
 @pytest.mark.asyncio
 async def test_state_manager_lock_expire_contend(
-    state_manager_redis: StateManagerRedis, token: str, substate_token_redis: str
+    state_manager_redis: StateManagerRedis,
+    token: str,
+    substate_token_redis: BaseStateToken,
 ):
     """Test that the state manager lock expires and queued waiters proceed.
 
@@ -1968,7 +1972,7 @@ async def test_state_manager_lock_expire_contend(
 async def test_state_manager_lock_warning_threshold_contend(
     state_manager_redis: StateManagerRedis,
     token: str,
-    substate_token_redis: str,
+    substate_token_redis: BaseStateToken,
     mocker: MockerFixture,
 ):
     """Test that the state manager triggers a warning when lock contention exceeds the warning threshold.
@@ -2150,7 +2154,12 @@ async def test_state_proxy(
         pickle_state = parent_state._serialize()
         if pickle_state:
             await mock_app.state_manager.redis.set(
-                _substate_key(parent_state.router.session.client_token, parent_state),
+                str(
+                    BaseStateToken(
+                        ident=parent_state.router.session.client_token,
+                        cls=type(parent_state),
+                    )
+                ),
                 pickle_state,
                 ex=mock_app.state_manager.token_expiration,
             )
@@ -2205,7 +2214,10 @@ async def test_state_proxy(
 
     # Get the state from the state manager directly and check that the value is updated
     gotten_state = await mock_app.state_manager.get_state(
-        _substate_key(grandchild_state.router.session.client_token, grandchild_state)
+        BaseStateToken(
+            ident=grandchild_state.router.session.client_token,
+            cls=type(grandchild_state),
+        )
     )
     if isinstance(mock_app.state_manager, (StateManagerMemory, StateManagerDisk)):
         # For in-process store, only one instance of the state exists
@@ -2360,7 +2372,7 @@ async def test_background_task_no_block(mock_app: rx.App, token: str):
     namespace._token_manager.token_to_socket[token] = SocketRecord(
         instance_id="mock", sid=sid
     )
-    mock_app.state_manager.state = mock_app._state = BackgroundTaskState
+    mock_app._state = BackgroundTaskState
     async for update in rx.app.process(
         mock_app,
         Event(
@@ -2426,7 +2438,7 @@ async def test_background_task_no_block(mock_app: rx.App, token: str):
     ]
 
     background_task_state = await mock_app.state_manager.get_state(
-        _substate_key(token, BackgroundTaskState)
+        BaseStateToken(ident=token, cls=BackgroundTaskState)
     )
     assert isinstance(background_task_state, BackgroundTaskState)
     assert background_task_state.order == exp_order
@@ -2491,7 +2503,7 @@ async def test_background_task_reset(mock_app: rx.App, token: str):
         token: A token.
     """
     router_data = {"query": {}}
-    mock_app.state_manager.state = mock_app._state = BackgroundTaskState
+    mock_app._state = BackgroundTaskState
     async for update in rx.app.process(
         mock_app,
         Event(
@@ -2516,7 +2528,7 @@ async def test_background_task_reset(mock_app: rx.App, token: str):
         await mock_app.state_manager.close()
 
     background_task_state = await mock_app.state_manager.get_state(
-        _substate_key(token, BackgroundTaskState)
+        BaseStateToken(ident=token, cls=BackgroundTaskState)
     )
     assert isinstance(background_task_state, BackgroundTaskState)
     assert background_task_state.order == ["reset"]
@@ -3087,7 +3099,9 @@ async def test_preprocess(
     app.add_page(index, on_load=test_state.test_handler)
     app._compile_page("index")
 
-    async with app.state_manager.modify_state(_substate_key(token, State)) as state:
+    async with app.state_manager.modify_state(
+        BaseStateToken(ident=token, cls=State)
+    ) as state:
         state.router_data = {"simulate": "hydrate"}
 
     updates = []
@@ -3140,7 +3154,9 @@ async def test_preprocess_multiple_load_events(
 
     app.add_page(index, on_load=[OnLoadState.test_handler, OnLoadState.test_handler])
     app._compile_page("index")
-    async with app.state_manager.modify_state(_substate_key(token, State)) as state:
+    async with app.state_manager.modify_state(
+        BaseStateToken(ident=token, cls=State)
+    ) as state:
         state.router_data = {"simulate": "hydrate"}
 
     updates = []
@@ -3181,11 +3197,11 @@ async def test_get_state(mock_app: rx.App, token: str):
         mock_app: An app that will be returned by `get_app()`
         token: A token.
     """
-    mock_app.state_manager.state = mock_app._state = TestState
+    mock_app._state = TestState
 
     # Get instance of ChildState2.
     test_state = await mock_app.state_manager.get_state(
-        _substate_key(token, ChildState2)
+        BaseStateToken(ident=token, cls=ChildState2)
     )
     assert isinstance(test_state, TestState)
     if isinstance(mock_app.state_manager, (StateManagerMemory, StateManagerDisk)):
@@ -3249,7 +3265,7 @@ async def test_get_state(mock_app: rx.App, token: str):
 
     # Get a fresh instance
     new_test_state = await mock_app.state_manager.get_state(
-        _substate_key(token, ChildState2)
+        BaseStateToken(ident=token, cls=ChildState2)
     )
     assert isinstance(new_test_state, TestState)
     if isinstance(mock_app.state_manager, (StateManagerMemory, StateManagerDisk)):
@@ -3342,10 +3358,12 @@ async def test_get_state_from_sibling_not_cached(mock_app: rx.App, token: str):
         has a computed var.
         """
 
-    mock_app.state_manager.state = mock_app._state = Parent
+    mock_app._state = Parent
 
     # Get the top level state via unconnected sibling.
-    root = await mock_app.state_manager.get_state(_substate_key(token, Child))
+    root = await mock_app.state_manager.get_state(
+        BaseStateToken(ident=token, cls=Child)
+    )
     # Set value in parent_var to assert it does not get refetched later.
     root.parent_var = 1
 
@@ -3428,8 +3446,7 @@ async def test_router_var_dep(state_manager: StateManager, token: str) -> None:
     ]
 
     # Get state from state manager.
-    state_manager.state = State
-    rx_state = await state_manager.get_state(_substate_key(token, State))
+    rx_state = await state_manager.get_state(BaseStateToken(ident=token, cls=State))
     assert RouterVarParentState.get_name() in rx_state.substates
     parent_state = rx_state.substates[RouterVarParentState.get_name()]
     assert RouterVarDepState.get_name() in parent_state.substates
@@ -3452,7 +3469,9 @@ async def test_setvar(mock_app: rx.App, token: str):
         mock_app: An app that will be returned by `get_app()`
         token: A token.
     """
-    state = await mock_app.state_manager.get_state(_substate_key(token, TestState))
+    state = await mock_app.state_manager.get_state(
+        BaseStateToken(ident=token, cls=TestState)
+    )
     assert isinstance(state, TestState)
 
     # Set Var in same state (with Var type casting)
@@ -3552,9 +3571,8 @@ config = rx.Config(
     with chdir(proj_root):
         # reload config for each parameter to avoid stale values
         reflex.config.get_config(reload=True)
-        from reflex.state import State
 
-        state_manager = StateManagerRedis(state=State, redis=mock_redis())
+        state_manager = StateManagerRedis(redis=mock_redis())
         assert state_manager.lock_expiration == expected_values[0]  # pyright: ignore [reportAttributeAccessIssue]
         assert state_manager.token_expiration == expected_values[1]  # pyright: ignore [reportAttributeAccessIssue]
         assert state_manager.lock_warning_threshold == expected_values[2]  # pyright: ignore [reportAttributeAccessIssue]
@@ -3589,10 +3607,9 @@ config = rx.Config(
     with chdir(proj_root):
         # reload config for each parameter to avoid stale values
         reflex.config.get_config(reload=True)
-        from reflex.state import State
 
         with pytest.raises(InvalidLockWarningThresholdError):
-            StateManagerRedis(state=State, redis=mock_redis())
+            StateManagerRedis(redis=mock_redis())
         del sys.modules[constants.Config.MODULE]
 
 
@@ -3812,8 +3829,10 @@ async def test_deserialize_gc_state_disk(token):
     class Child(State):
         foo: str = "bar"
 
-    dsm = StateManagerDisk(state=Root)
-    async with dsm.modify_state(token) as root:
+    bs_token = BaseStateToken(ident=token, cls=Root)
+
+    dsm = StateManagerDisk()
+    async with dsm.modify_state(bs_token) as root:
         s = await root.get_state(State)
         s.num += 1
         c = await root.get_state(Child)
@@ -3821,8 +3840,8 @@ async def test_deserialize_gc_state_disk(token):
         assert not c._get_was_touched()
     await dsm.close()
 
-    dsm2 = StateManagerDisk(state=Root)
-    root = await dsm2.get_state(token)
+    dsm2 = StateManagerDisk()
+    root = await dsm2.get_state(bs_token)
     s = await root.get_state(State)
     assert s.num == 43
     c = await root.get_state(Child)
@@ -4197,7 +4216,9 @@ async def test_upcast_event_handler_arg(handler, payload):
 
 
 @pytest.mark.asyncio
-async def test_get_var_value(state_manager: StateManager, substate_token: str):
+async def test_get_var_value(
+    state_manager: StateManager, substate_token: BaseStateToken
+):
     """Test that get_var_value works correctly.
 
     Args:
@@ -4270,10 +4291,12 @@ async def test_async_computed_var_get_state(mock_app: rx.App, token: str):
             child3 = await self.get_state(Child3)
             return child3.child3_var + p.parent_var
 
-    mock_app.state_manager.state = mock_app._state = Parent
+    mock_app._state = Parent
 
     # Get the top level state via unconnected sibling.
-    root = await mock_app.state_manager.get_state(_substate_key(token, Child))
+    root = await mock_app.state_manager.get_state(
+        BaseStateToken(ident=token, cls=Child)
+    )
     # Set value in parent_var to assert it does not get refetched later.
     root.parent_var = 1
 
@@ -4352,9 +4375,11 @@ async def test_async_computed_var_get_var_value(mock_app: rx.App, token: str):
 
         data: list[dict[str, Any]] = [{"foo": "bar"}]
 
-    mock_app.state_manager.state = mock_app._state = rx.State
+    mock_app._state = rx.State
     comp = Table.create(data=OtherState.data)
-    state = await mock_app.state_manager.get_state(_substate_key(token, OtherState))
+    state = await mock_app.state_manager.get_state(
+        BaseStateToken(ident=token, cls=OtherState)
+    )
     other_state = await state.get_state(OtherState)
     assert comp.State is not None
     # The state should have been pre-cached from the dependency.
@@ -4412,8 +4437,10 @@ async def test_add_dependency_get_state_regression(mock_app: rx.App, token: str)
         async def fetch_data_state(self) -> None:
             print(await self.get_state(DataState))
 
-    mock_app.state_manager.state = mock_app._state = rx.State
-    state = await mock_app.state_manager.get_state(_substate_key(token, OtherState))
+    mock_app._state = rx.State
+    state = await mock_app.state_manager.get_state(
+        BaseStateToken(ident=token, cls=OtherState)
+    )
     other_state = await state.get_state(OtherState)
     await other_state.fetch_data_state()  # Should not raise exception.
 
@@ -4427,9 +4454,9 @@ class MutableProxyState(BaseState):
 @pytest.mark.asyncio
 async def test_rebind_mutable_proxy(mock_app: rx.App, token: str) -> None:
     """Test that previously bound MutableProxy instances can be rebound correctly."""
-    mock_app.state_manager.state = mock_app._state = MutableProxyState
+    mock_app._state = MutableProxyState
     async with mock_app.state_manager.modify_state(
-        _substate_key(token, MutableProxyState)
+        BaseStateToken(ident=token, cls=MutableProxyState)
     ) as state:
         state.router = RouterData.from_router_data({
             "query": {},
@@ -4465,7 +4492,7 @@ async def test_rebind_mutable_proxy(mock_app: rx.App, token: str) -> None:
         state_proxy.data["a"].append(3)
 
     async with mock_app.state_manager.modify_state(
-        _substate_key(token, MutableProxyState)
+        BaseStateToken(ident=token, cls=MutableProxyState)
     ) as state:
         assert isinstance(state, MutableProxyState)
         assert state.data["a"] == [2, 3]

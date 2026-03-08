@@ -37,16 +37,10 @@ from reflex.event import Event
 from reflex.istate.manager.disk import StateManagerDisk
 from reflex.istate.manager.memory import StateManagerMemory
 from reflex.istate.manager.redis import StateManagerRedis
+from reflex.istate.manager.token import BaseStateToken
 from reflex.middleware import HydrateMiddleware
 from reflex.model import Model
-from reflex.state import (
-    BaseState,
-    OnLoadInternalState,
-    RouterData,
-    State,
-    StateUpdate,
-    _substate_key,
-)
+from reflex.state import BaseState, OnLoadInternalState, RouterData, State, StateUpdate
 from reflex.style import Style
 from reflex.utils import console, exceptions, format
 from reflex.vars.base import computed_var
@@ -448,7 +442,9 @@ async def test_initialize_with_state(test_state: type[ATestState], token: str):
     assert app._state == test_state
 
     # Get a state for a given token.
-    state = await app.state_manager.get_state(_substate_key(token, test_state))
+    state = await app.state_manager.get_state(
+        BaseStateToken(ident=token, cls=test_state)
+    )
     assert isinstance(state, test_state)
     assert state.var == 0
 
@@ -465,8 +461,8 @@ async def test_set_and_get_state(test_state: type[ATestState]):
     app = App(_state=test_state)
 
     # Create two tokens.
-    token1 = str(uuid.uuid4()) + f"_{test_state.get_full_name()}"
-    token2 = str(uuid.uuid4()) + f"_{test_state.get_full_name()}"
+    token1 = BaseStateToken(ident=str(uuid.uuid4()), cls=test_state)
+    token2 = BaseStateToken(ident=str(uuid.uuid4()), cls=test_state)
 
     # Get the default state for each token.
     state1 = await app.state_manager.get_state(token1)
@@ -933,7 +929,14 @@ async def test_dict_mutation_detection__plain_list(
         ),
     ],
 )
-async def test_upload_file(tmp_path, state, delta, token: str, mocker: MockerFixture):
+async def test_upload_file(
+    tmp_path,
+    state,
+    delta,
+    token: str,
+    mocker: MockerFixture,
+    app_module_mock: unittest.mock.Mock,
+):
     """Test that file upload works correctly.
 
     Args:
@@ -942,6 +945,7 @@ async def test_upload_file(tmp_path, state, delta, token: str, mocker: MockerFix
         delta: Expected delta
         token: a Token.
         mocker: pytest mocker object.
+        app_module_mock: The mock for the app module, used to patch the app instance.
     """
     mocker.patch(
         "reflex.state.State.class_subclasses",
@@ -949,9 +953,11 @@ async def test_upload_file(tmp_path, state, delta, token: str, mocker: MockerFix
     )
     state._tmp_path = tmp_path
     # The App state must be the "root" of the state tree
-    app = App()
+    app = app_module_mock.app = App()
     app.event_namespace.emit = AsyncMock()  # pyright: ignore [reportOptionalMemberAccess]
-    current_state = await app.state_manager.get_state(_substate_key(token, state))
+    current_state = await app.state_manager.get_state(
+        BaseStateToken(ident=token, cls=state)
+    )
     data = b"This is binary data"
 
     # Create a binary IO object and write data to it
@@ -998,7 +1004,9 @@ async def test_upload_file(tmp_path, state, delta, token: str, mocker: MockerFix
     if environment.REFLEX_OPLOCK_ENABLED.get():
         await app.state_manager.close()
 
-    current_state = await app.state_manager.get_state(_substate_key(token, state))
+    current_state = await app.state_manager.get_state(
+        BaseStateToken(ident=token, cls=state)
+    )
     state_dict = current_state.dict()[state.get_full_name()]
     assert state_dict["img_list" + FIELD_MARKER] == [
         "image1.jpg",
@@ -1219,7 +1227,7 @@ async def test_dynamic_route_var_route_change_completed_on_load(
     }
     assert constants.ROUTER in app._state()._var_dependencies
 
-    substate_token = _substate_key(token, DynamicState)
+    substate_token = BaseStateToken(ident=token, cls=DynamicState)
     sid = "mock_sid"
     client_ip = "127.0.0.1"
     async with app.state_manager.modify_state(substate_token) as state:
@@ -1386,7 +1394,9 @@ async def test_dynamic_route_var_route_change_completed_on_load(
 
 
 @pytest.mark.asyncio
-async def test_process_events(mocker: MockerFixture, token: str):
+async def test_process_events(
+    mocker: MockerFixture, token: str, app_module_mock: unittest.mock.Mock
+):
     """Test that an event is processed properly and that it is postprocessed
     n+1 times. Also check that the processing flag of the last stateupdate is set to
     False.
@@ -1394,6 +1404,7 @@ async def test_process_events(mocker: MockerFixture, token: str):
     Args:
         mocker: mocker object.
         token: a Token.
+        app_module_mock: The mock for the app module, used to patch the app instance.
     """
     router_data = {
         "pathname": "/",
@@ -1403,7 +1414,7 @@ async def test_process_events(mocker: MockerFixture, token: str):
         "headers": {},
         "ip": "127.0.0.1",
     }
-    app = App(_state=GenState)
+    app = app_module_mock.app = App(_state=GenState)
 
     mocker.patch.object(app, "_postprocess", AsyncMock())
     event = Event(
@@ -1982,7 +1993,7 @@ async def test_app_modify_state_clean(token: str, substate: bool, frontend: bool
     app._event_namespace = AsyncMock()
 
     async with app.modify_state(
-        token=_substate_key(token, Sub.get_name())
+        token=BaseStateToken(ident=token, cls=Sub)
     ) as root_state:
         sub = root_state.substates[Sub.get_name()]
         if substate:

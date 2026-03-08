@@ -87,10 +87,16 @@ class Event:
         """
         from reflex.istate.manager.token import BaseStateToken
         from reflex.state import State
+        from reflex.utils.prerequisites import get_app
+
+        app = get_app().app
+
+        root_state = State if app._state is None else app._state
 
         substate = self.name.rpartition(".")[0]
         return BaseStateToken(
-            ident=self.token, cls=State.get_class_substate(tuple(substate.split(".")))
+            ident=self.token,
+            cls=root_state.get_class_substate(tuple(substate.split("."))),
         )
 
 
