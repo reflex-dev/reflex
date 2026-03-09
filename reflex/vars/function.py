@@ -319,7 +319,7 @@ class FunctionArgs:
 
 
 def format_args_function_operation(
-    args: FunctionArgs, return_expr: Var | Any, explicit_return: bool
+    args: FunctionArgs, return_expr: Var | Any, explicit_return: bool, is_async: bool = False
 ) -> str:
     """Format an args function operation.
 
@@ -343,7 +343,7 @@ def format_args_function_operation(
         format.wrap(return_expr_str, "{", "}") if explicit_return else return_expr_str
     )
 
-    return f"(({arg_names_str}) => {return_expr_str_wrapped})"
+    return f"({'async ' if is_async else ''}({arg_names_str}) => {return_expr_str_wrapped})"
 
 
 @dataclasses.dataclass(
@@ -357,6 +357,7 @@ class ArgsFunctionOperation(CachedVarOperation, FunctionVar):
     _args: FunctionArgs = dataclasses.field(default_factory=FunctionArgs)
     _return_expr: Var | Any = dataclasses.field(default=None)
     _explicit_return: bool = dataclasses.field(default=False)
+    _is_async: bool = dataclasses.field(default=False)
 
     @cached_property_no_lock
     def _cached_var_name(self) -> str:
@@ -366,7 +367,7 @@ class ArgsFunctionOperation(CachedVarOperation, FunctionVar):
             The name of the var.
         """
         return format_args_function_operation(
-            self._args, self._return_expr, self._explicit_return
+            self._args, self._return_expr, self._explicit_return, self._is_async
         )
 
     @classmethod
@@ -376,6 +377,7 @@ class ArgsFunctionOperation(CachedVarOperation, FunctionVar):
         return_expr: Var | Any,
         rest: str | None = None,
         explicit_return: bool = False,
+        is_async: bool = False,
         _var_type: GenericType = Callable,
         _var_data: VarData | None = None,
     ):
@@ -386,6 +388,7 @@ class ArgsFunctionOperation(CachedVarOperation, FunctionVar):
             return_expr: The return expression of the function.
             rest: The name of the rest argument.
             explicit_return: Whether to use explicit return syntax.
+            is_async: Whether the function is async.
             _var_type: The type of the Var.
             _var_data: Additional hooks and imports associated with the Var.
 
@@ -400,6 +403,7 @@ class ArgsFunctionOperation(CachedVarOperation, FunctionVar):
             _args=FunctionArgs(args=tuple(args_names), rest=rest),
             _return_expr=return_expr,
             _explicit_return=explicit_return,
+            _is_async=is_async,
         )
 
 
