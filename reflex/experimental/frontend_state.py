@@ -6,11 +6,11 @@ Lets get there.
 """
 
 import asyncio
-from contextlib import asynccontextmanager
 import dataclasses
 import functools
 import inspect
 import time
+from abc import abstractmethod
 from collections.abc import (
     AsyncGenerator,
     AsyncIterator,
@@ -21,22 +21,25 @@ from collections.abc import (
     Mapping,
     Sequence,
 )
+from contextlib import asynccontextmanager
 from contextvars import ContextVar, Token, copy_context
 from dataclasses import _MISSING_TYPE, MISSING
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, ClassVar, TypeVar, Unpack, overload
+from typing import TYPE_CHECKING, Any, TypeVar, Unpack, overload
 
+from starlette.requests import Request
+from starlette.responses import Response
+
+from reflex import constants
 from reflex.compiler.templates import generic_var_template
 from reflex.components.component import FIELD_TYPE
-from reflex.constants import Hooks
 from reflex.constants.compiler import Ext
 from reflex.istate.manager import StateManager
-from reflex.istate.manager.memory import StateManagerMemory
 from reflex.istate.manager.token import TOKEN_TYPE, StateToken
 from reflex.plugins.base import CommonContext, Plugin
 from reflex.utils import console
 from reflex.utils.format import to_snake_case
-from reflex.utils.imports import ImportVar
+from reflex.utils.imports import ImportDict, ImportVar
 from reflex.utils.types import GenericType
 from reflex.vars.base import Field, Var, VarData, dispatch, figure_out_type
 from reflex.vars.function import (
@@ -46,13 +49,32 @@ from reflex.vars.function import (
     FunctionVar,
 )
 from reflex.vars.object import ObjectVar
-from tests.units.test_state import state_manager
 
-ZUSTAND_USE_STORE_IMPORT = {"zustand": "useStore"}
-ZUSTAND_CREATE = FunctionStringVar(
-    "zustand_create",
+REPLICACHE_LIBRARY = "replicache@15.3.0"
+REPLICACHE_CREATE = FunctionStringVar(
+    "new Replicache",
     _var_data=VarData(
-        imports={"zustand": ImportVar(tag="create", alias="zustand_create")},
+        imports={
+            REPLICACHE_LIBRARY: ImportVar(tag="Replicache"),
+        },
+    ),
+)
+REPLICACHE_REACT_LIBRARY = "replicache-react@6.0.0"
+REPLICACHE_USE_SUBSCRIBE = FunctionStringVar(
+    "useSubscribe",
+    _var_data=VarData(
+        imports={
+            REPLICACHE_REACT_LIBRARY: ImportVar(tag="useSubscribe"),
+        },
+    ),
+)
+
+GET_TOKEN = FunctionStringVar(
+    "getToken",
+    _var_data=VarData(
+        imports={
+            f"$/{constants.Dirs.STATE_PATH}": [ImportVar(tag="getToken")],
+        },
     ),
 )
 
@@ -146,10 +168,29 @@ class RegisteredState:
     """A class registered as a state class."""
 
     registered_class: type
-    state_fields: list["StateField"]
     state_name: str
-    compiled_module_path: str
-    compiled_store_name: str
+    # The domain is used to namespace the state to store related states together.
+    domain: str = dataclasses.field(default="default")
+    state_fields: dict[str, "StateField"] = dataclasses.field(default_factory=dict)
+    event_handlers: dict[str, "EventHandler"] = dataclasses.field(default_factory=dict)
+
+    @property
+    def compiled_store_name(self) -> str:
+        """Get the compiled store name for the state.
+
+        Returns:
+            The compiled store name for the state.
+        """
+        return f"{self.domain}_{GET_TOKEN()}"
+
+    @property
+    def compiled_module_path(self) -> str:
+        """Get the compiled module path for the state.
+
+        Returns:
+            The compiled module path for the state.
+        """
+        return f"state/{self.domain}"
 
 
 def register_state_class(cls: type[T]) -> type[T]:
@@ -207,47 +248,25 @@ def register_state_class(cls: type[T]) -> type[T]:
     _REGISTERED_STATE_NAMES[state_name] = _REGISTERED_STATE_CLASSES[cls] = (
         RegisteredState(
             registered_class=cls,
-            state_fields=[],
             state_name=state_name,
-            compiled_module_path=f"state/{state_name}",
-            compiled_store_name=f"{state_name}_store",
         )
     )
     return cls
 
 
-def state_imports(state: RegisteredState) -> dict[str, str]:
-    return {state.compiled_module_path: state.compiled_store_name}
-
-
-def set_state(state: RegisteredState, setter: Any) -> FunctionVar:
-    """Set the state fields to the new values.
-
-    Args:
-        state: The state class.
-        setter: The new state or a function of the state that returns the new state.
-
-    Returns:
-        The function var to set the state.
-    """
-    return ArgsFunctionOperation.create(
-        args_names=(),
-        return_expr=ObjectVar(
-            state.compiled_store_name,
-            _var_type=dict,
-        )
-        .setState.to(FunctionVar)
-        .call(setter),
-        _var_data=VarData(
-            imports=state_imports(state),
+def state_imports(state: RegisteredState) -> ImportDict:
+    return {
+        f"$/{state.compiled_module_path}": ImportVar(
+            tag="useSubscribeKey",
+            alias=f"use{state.domain}",
         ),
-    )
+        REPLICACHE_LIBRARY: ImportVar(tag="Replicache", render=False),
+        REPLICACHE_REACT_LIBRARY: ImportVar(tag="useSubscribe", render=False),
+    }
 
 
 class SettableVarMixin(Var[FIELD_TYPE]):
-    registered_state: ClassVar[RegisteredState]
-    name: ClassVar[str]
-
+    @abstractmethod
     def set(self, value: FIELD_TYPE | Var[FIELD_TYPE]) -> FunctionVar:
         """Set the value of the field.
 
@@ -257,15 +276,7 @@ class SettableVarMixin(Var[FIELD_TYPE]):
         Returns:
             The function var to set the value.
         """
-        return set_state(
-            self.registered_state,
-            ArgsFunctionOperation.create(
-                args_names=("state",),
-                return_expr=ObjectVar("state", _var_type=dict).merge(
-                    Var.create({self.name: value}),
-                ),
-            ),
-        )
+        ...
 
 
 class StateField(Field[FIELD_TYPE]):
@@ -274,6 +285,8 @@ class StateField(Field[FIELD_TYPE]):
     if TYPE_CHECKING:
         name: str
         owner_class: type
+        _setter: Callable[[Any], FIELD_TYPE] | bool | None = None
+        _frontend_setter: Callable[[Var], Var[FIELD_TYPE]] | None = None
 
     @classmethod
     def create(
@@ -282,6 +295,8 @@ class StateField(Field[FIELD_TYPE]):
         *,
         default_factory: Callable[[], FIELD_TYPE] | None = None,
         is_var: bool = True,
+        setter: Callable[[Any], FIELD_TYPE] | bool | None = None,
+        frontend_setter: Callable[[Var], Var[FIELD_TYPE]] | None = None,
     ) -> "StateField[FIELD_TYPE] | FIELD_TYPE":
         """Create a field for a state.
 
@@ -289,18 +304,25 @@ class StateField(Field[FIELD_TYPE]):
             default: The default value for the field.
             default_factory: The default factory for the field.
             is_var: Whether the field is a Var.
-
+            setter: A function to set the field, or a boolean indicating whether to generate a default setter.
+            frontend_setter: A FunctionVar to set the field on the frontend.
         Returns:
             The field for the state.
 
         Raises:
             ValueError: If both default and default_factory are specified.
         """
-        return super().create(
+        sf = super().create(
             default,
             default_factory=default_factory,
             is_var=is_var,
         )
+        if isinstance(sf, StateField):
+            if setter is not None:
+                sf._setter = setter
+            if frontend_setter is not None:
+                sf._frontend_setter = frontend_setter
+        return sf
 
     def __init__(
         self,
@@ -321,6 +343,8 @@ class StateField(Field[FIELD_TYPE]):
         if annotated_type is MISSING and default is not MISSING:
             annotated_type = figure_out_type(default)
         super().__init__(default, default_factory, is_var, annotated_type)
+        self._setter = None
+        self._frontend_setter = None
 
     def __set_name__(self, owner: type[T], name: str):
         """Set the name of the field.
@@ -331,7 +355,77 @@ class StateField(Field[FIELD_TYPE]):
         """
         self.name = name
         self.owner_class = owner
-        self.registered_state.state_fields.append(self)
+        self.registered_state.state_fields[self.js_const_name] = self
+        self._create_setter()
+
+    def _create_setter(self) -> None:
+        setter: Callable[[Any], FIELD_TYPE] | None = None
+        frontend_setter: Callable[[Var], Var[FIELD_TYPE]] | None = self._frontend_setter
+        if self._setter is True:
+
+            def default_setter(value: Any) -> FIELD_TYPE:
+                return value
+
+            def default_frontend_setter(value: Var) -> Var[FIELD_TYPE]:
+                return value
+
+            setter = default_setter
+            if frontend_setter is None:
+                frontend_setter = default_frontend_setter
+        elif callable(self._setter):
+            setter = self._setter
+        if setter is None:
+            return
+
+        def set_event_fn(state: object, value: Any) -> None:
+            setattr(state, self.name, setter(value))
+
+        set_event_fn.__name__ = f"{self.name}_set"
+        setter_handler = EventHandler.create(set_event_fn)
+        setter_handler.__set_name__(self.owner_class, set_event_fn.__name__)
+        if frontend_setter is not None:
+            setter_handler = dataclasses.replace(
+                setter_handler,
+                frontend_mutation_func=ArgsFunctionOperation.create(
+                    args_names=("tx", "payload"),
+                    return_expr=Var(
+                        f"await tx.set({Var.create(self.js_const_name)}, {frontend_setter(Var('payload.args[0]'))});"
+                    ),
+                    explicit_return=True,
+                    is_async=True,
+                ),
+            )
+        self.registered_state.event_handlers[f"{self.js_const_name}_set"] = (
+            setter_handler
+        )
+
+    def setter(self, fn: Callable[[Any], FIELD_TYPE]) -> Callable[[Any], FIELD_TYPE]:
+        """Decorator to set the setter for the field.
+
+        Args:
+            fn: The setter function.
+
+        Returns:
+            The setter function.
+        """
+        self._setter = fn
+        self._create_setter()
+        return fn
+
+    def frontend_setter(
+        self, fn: Callable[[Var], Var[FIELD_TYPE]]
+    ) -> Callable[[Var], Var[FIELD_TYPE]]:
+        """Decorator to set the frontend setter for the field.
+
+        Args:
+            fn: The frontend setter function.
+
+        Returns:
+            The frontend setter function.
+        """
+        self._frontend_setter = fn
+        self._create_setter()
+        return fn
 
     @property
     def registered_state(self) -> RegisteredState:
@@ -362,16 +456,13 @@ class StateField(Field[FIELD_TYPE]):
         return f"{self.registered_state.state_name}___{self.name}"
 
     @property
-    def imports(self) -> dict[str, str]:
+    def imports(self) -> ImportDict:
         """Get the imports for the field.
 
         Returns:
             The imports for the field.
         """
-        return {
-            **state_imports(self.registered_state),
-            **ZUSTAND_USE_STORE_IMPORT,
-        }
+        return state_imports(self.registered_state)
 
     def get_is_dirty(self) -> bool:
         """Get whether the field is dirty.
@@ -379,7 +470,7 @@ class StateField(Field[FIELD_TYPE]):
         Returns:
             Whether the field is dirty.
         """
-        return (self.owner_class, self.attribute_name) in event_context.get().dirty_vars
+        return (self.owner_class, self.name) in event_context.get().dirty_vars
 
     def set_is_dirty(self, is_dirty: bool) -> None:
         """Set whether the field is dirty.
@@ -403,9 +494,7 @@ class StateField(Field[FIELD_TYPE]):
     @overload
     def __get__(self, instance: T, owner: type[T]) -> FIELD_TYPE: ...
 
-    def __get__(
-        self, instance: T, owner: type[T]
-    ) -> FIELD_TYPE | SettableVarMixin[FIELD_TYPE]:
+    def __get__(self, instance: T, owner: type[T]) -> FIELD_TYPE | Var[FIELD_TYPE]:
         """Get the value of the field.
 
         Args:
@@ -418,31 +507,25 @@ class StateField(Field[FIELD_TYPE]):
         if instance is None:
             # Get the Var representation when accessed on the class.
             registered_state = _REGISTERED_STATE_CLASSES[owner]
-            getter = ArgsFunctionOperation.create(
-                args_names=("state",),
-                return_expr=Var("state").to(dict)[self.name],
+            use_hook = Var(
+                f"const {self.js_const_name} = use{registered_state.domain}({Var.create(self.js_const_name)})"
             )
             state_var = dispatch(
                 field_name=self.js_const_name,
                 var_data=VarData(
-                    state=owner.__module__.replace(".", "___"),
-                    field_name=self.name,
-                    hooks={
-                        f"const {self.js_const_name} = "
-                        f"useStore({registered_state.compiled_store_name}, {getter!s});": VarData(
-                            position=Hooks.HookPosition.INTERNAL
-                        ),
-                    },
+                    hooks={str(use_hook): use_hook._get_all_var_data()},
                     imports=self.imports,
                 ),
                 result_var_type=self.outer_type_,
             )
+            if self._setter is None:
+                return state_var
 
             class SettableVar(SettableVarMixin, type(state_var)):
-                registered_state: ClassVar[RegisteredState] = self.registered_state
-                name: ClassVar[str] = self.name
+                def set(set_self, value: FIELD_TYPE | Var[FIELD_TYPE]) -> FunctionVar:
+                    return self.registered_state.event_handlers[f"{self.js_const_name}_set"].partial(value)
 
-            new_var_name = f"SettableVar_{self.owner_class.__name__}_{self.name}"
+            new_var_name = f"SettableVar_{self.js_const_name}"
             SettableVar.__qualname__ = new_var_name
             SettableVar.__name__ = new_var_name
 
@@ -484,7 +567,7 @@ def get_dict(state: Any) -> dict[str, Any]:
         ) from ke
     return {
         field.name: getattr(state, field.name)
-        for field in registered_state_class.state_fields
+        for field in registered_state_class.state_fields.values()
     }
 
 
@@ -504,7 +587,9 @@ def get_delta(state: Any) -> dict[str, Any]:
             f"State class {state.__class__.__name__} is not registered."
         ) from ke
     dirty_fields = [
-        field for field in registered_state_class.state_fields if field.get_is_dirty()
+        field
+        for field in registered_state_class.state_fields.values()
+        if field.get_is_dirty()
     ]
     delta = {field.name: getattr(state, field.name) for field in dirty_fields}
     event_context.get().clean(state.__class__)
@@ -539,17 +624,107 @@ class FrontendStatePlugin(Plugin):
         Returns:
             A list of static assets required by the plugin.
         """
+        # Collect fields by domain
+        domain_module_and_store: dict[str, tuple[str, str]] = {}
+        domain_state_fields: dict[str, dict[str, StateField]] = {}
+        domain_event_handlers: dict[str, dict[str, EventHandler]] = {}
+        for registered_state in _REGISTERED_STATE_CLASSES.values():
+            if domain_module_and_store.setdefault(
+                registered_state.domain,
+                (
+                    registered_state.compiled_module_path,
+                    registered_state.compiled_store_name,
+                ),
+            ) != (
+                registered_state.compiled_module_path,
+                registered_state.compiled_store_name,
+            ):
+                raise ValueError(
+                    f"All states in domain '{registered_state.domain}' must have the same compiled module path."
+                )
+            current_state_fields = domain_state_fields.setdefault(
+                registered_state.domain, {}
+            )
+            if any(
+                name in current_state_fields for name in registered_state.state_fields
+            ):
+                raise ValueError(
+                    f"Duplicate state field names found in domain '{registered_state.domain}'. "
+                    f"State fields must have unique names within the same domain."
+                )
+            current_state_fields.update(registered_state.state_fields)
+            current_event_handlers = domain_event_handlers.setdefault(
+                registered_state.domain, {}
+            )
+            if any(
+                name in current_event_handlers
+                for name in registered_state.event_handlers
+            ):
+                raise ValueError(
+                    f"Duplicate event handler names found in domain '{registered_state.domain}'. "
+                    f"Event handlers must have unique names within the same domain."
+                )
+            current_event_handlers.update(registered_state.event_handlers)
+
+        def compile_defaults(domain) -> dict[str, Any]:
+            defaults = {}
+            for field in domain_state_fields[domain].values():
+                if field.default is not MISSING:
+                    defaults[field.js_const_name] = field.default
+                elif field.default_factory is not None:
+                    defaults[field.js_const_name] = field.default_factory()
+                else:
+                    raise ValueError(
+                        f"Field '{field.name}' in domain '{domain}' must have a default value or default factory."
+                    )
+            return defaults
+
+        def compile_domain(domain: str, name: str) -> Var:
+            event_handlers = domain_event_handlers[domain]
+            mutators = {
+                handler.js_mutation_name: handler.frontend_mutation_func
+                if handler.frontend_mutation_func is not None
+                else ArgsFunctionOperation.create(
+                    args_names=("tx", "payload"),
+                    return_expr=None,
+                    is_async=True,
+                )
+                for handler in event_handlers.values()
+            }
+            return REPLICACHE_CREATE(Var.create({"name": name, "mutators": mutators}))
+
+        def use_subscribe_key_hook() -> Var:
+            return ArgsFunctionOperation.create(
+                args_names=(
+                    "var_name",
+                    "dependency_array",
+                ),
+                return_expr=REPLICACHE_USE_SUBSCRIBE(
+                    Var("r"),
+                    ArgsFunctionOperation.create(
+                        args_names=("tx",),
+                        return_expr=Var("await tx.get(var_name)")
+                        | Var("default_key_values[var_name]"),
+                        is_async=True,
+                    ),
+                    Var("dependency_array"),
+                ),
+            )
+
         return [
             (
-                Path("state", registered_state_class.state_name).with_suffix(Ext.JS),
+                Path(compiled_module_name).with_suffix(Ext.JS),
                 generic_var_template(
                     content=Var(
-                        f"export const {registered_state_class.compiled_store_name} = "
-                        f"{ZUSTAND_CREATE(ArgsFunctionOperation.create(args_names=(), return_expr=Var.create(get_dict(cls()))))};"
+                        f"const default_key_values = {compile_defaults(domain)}; "
+                        f"export const r = {compile_domain(domain, compiled_store_name)}; "
+                        f"export const useSubscribeKey = {use_subscribe_key_hook()}; "
                     ),
                 ),
             )
-            for cls, registered_state_class in _REGISTERED_STATE_CLASSES.items()
+            for domain, (compiled_module_name, compiled_store_name) in set(
+                domain_module_and_store.items()
+            )
         ]
 
 
@@ -574,6 +749,7 @@ class EventHandler(ArgsFunctionOperation):
 
     name: str | None = None
     owner_class: type | None = None
+    frontend_mutation_func: Var | None = None
 
     @classmethod
     def create(
@@ -597,35 +773,69 @@ class EventHandler(ArgsFunctionOperation):
             fn=fn,
             args=args,
             kwargs=kwargs,
+            _is_async=True,
             _js_expr="",
             _var_type=Callable,
             _var_data=None,
         )
 
     def __post_init__(self):
-        registered_name = Var.create(get_name(self.fn))
-        payload = {
-            "args": (
-                *self.args,
-                Var("...args"),
-            ),
-            "kwargs": self.kwargs,
-        }
         object.__setattr__(
             self,
             "_args",
             FunctionArgs(args=(), rest="args"),
         )
-        object.__setattr__(
-            self,
-            "_return_expr",
-            Var(f"addEvent({registered_name}, {Var.create(payload)})"),
-        )
+        self._set_payload()
         super().__post_init__()
 
     def __set_name__(self, owner: type[RegisteredState], name: str):
         object.__setattr__(self, "name", name)
         object.__setattr__(self, "owner_class", owner)
+        self.registered_state.event_handlers[self.js_mutation_name] = self
+        self._set_payload()
+
+    def _set_payload(self):
+        if self.owner_class is None:
+            return
+        payload = {
+            "args": (*self.args,),
+            "kwargs": self.kwargs,
+        }
+
+        replicache_instance = Var(
+            f"rp_{self.registered_state.domain}",
+            _var_type=dict,
+            _var_data=VarData(
+                imports={
+                    f"$/{self.registered_state.compiled_module_path}": ImportVar(
+                        tag="r", alias=f"rp_{self.registered_state.domain}"
+                    ),
+                }
+            ),
+        )
+        mutations = Var(f"{replicache_instance}.mutate", _var_type=dict)
+        object.__setattr__(
+            self,
+            "_return_expr",
+            Var(
+                f"await {mutations}[{Var.create(self.js_mutation_name)}]({Var.create(payload)})",
+                _var_type=Callable,
+            ),
+        )
+        type(self)._cached_var_name.__delete__(self)
+        type(self)._cached_get_all_var_data.__delete__(self)
+
+    @property
+    def js_mutation_name(self) -> str:
+        """Get the JS mutation name for the event handler.
+
+        Returns:
+            The JS mutation name for the event handler.
+        """
+        if self.owner_class is None:
+            msg = "EventHandler is not bound to a class."
+            raise ValueError(msg)
+        return f"{self.registered_state.state_name}___{self.name}"
 
     @property
     def registered_state(self) -> RegisteredState:
@@ -771,7 +981,56 @@ class EventHandler(ArgsFunctionOperation):
         return results
 
 
-event = EventHandler.create
+@overload
+def _event_decorator(
+    fn: Callable[..., Any], frontend_mutation_func: None = None
+) -> EventHandler: ...
+
+
+@overload
+def _event_decorator(
+    fn: None = None, frontend_mutation_func: FunctionVar | None = None
+) -> Callable[..., EventHandler]: ...
+
+
+def _event_decorator(
+    fn: Callable[..., Any] | None = None,
+    frontend_mutation_func: FunctionVar | None = None,
+):
+    """Decorator to create an EventHandler from a function.
+
+    Args:
+        fn: The function to create the EventHandler for.
+        frontend_mutation_func: The frontend mutation function to use for the EventHandler.
+
+    Returns:
+        The created EventHandler.
+    """
+
+    def decorator(fn: Callable[..., Any]) -> EventHandler:
+        ev = EventHandler.create(fn)
+        if frontend_mutation_func is not None:
+            ev = dataclasses.replace(ev, frontend_mutation_func=frontend_mutation_func)
+        return ev
+
+    if fn is not None:
+        return decorator(fn)
+    return decorator
+
+
+event = _event_decorator
+
+
+async def push_handler(req: Request) -> Response:
+    """A simple handler to push events from the client.
+
+    Args:
+        req: The request containing the event.
+
+    Returns:
+        A response indicating the event was received.
+    """
+    # implement replicache protocol with starletter
 
 
 @dataclasses.dataclass(kw_only=True)
