@@ -1,4 +1,3 @@
-import os
 from collections.abc import Generator
 
 import pytest
@@ -27,19 +26,16 @@ def LinkApp():
 
 
 @pytest.fixture
-def link_app(tmp_path_factory) -> Generator[AppHarness, None, None]:
+def link_app(tmp_path_factory, monkeypatch) -> Generator[AppHarness, None, None]:
     # Set via env var rather than Config directly because AppHarness._initialize_app
     # calls get_config(reload=True), which resets any prior Config mutations.
-    os.environ["REFLEX_SHOW_BUILT_WITH_REFLEX"] = "false"
-    try:
-        with AppHarness.create(
-            root=tmp_path_factory.mktemp("link_app"),
-            app_source=LinkApp,
-        ) as harness:
-            assert harness.app_instance is not None, "app is not running"
-            yield harness
-    finally:
-        os.environ.pop("REFLEX_SHOW_BUILT_WITH_REFLEX", None)
+    monkeypatch.setenv("REFLEX_SHOW_BUILT_WITH_REFLEX", "false")
+    with AppHarness.create(
+        root=tmp_path_factory.mktemp("link_app"),
+        app_source=LinkApp,
+    ) as harness:
+        assert harness.app_instance is not None, "app is not running"
+        yield harness
 
 
 def test_link_hover(link_app: AppHarness, page: Page):
