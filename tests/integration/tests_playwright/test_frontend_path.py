@@ -81,6 +81,8 @@ def onload_redirect_with_prefix_app_dev(tmp_path) -> Generator[AppHarness, None,
     Yields:
         running AppHarness instance
     """
+    # Set via env var rather than Config directly because AppHarness._initialize_app
+    # calls get_config(reload=True), which resets any prior Config mutations.
     os.environ["REFLEX_FRONTEND_PATH"] = "/prefix"
     try:
         with AppHarness.create(

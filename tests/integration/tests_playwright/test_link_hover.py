@@ -28,6 +28,8 @@ def LinkApp():
 
 @pytest.fixture
 def link_app(tmp_path_factory) -> Generator[AppHarness, None, None]:
+    # Set via env var rather than Config directly because AppHarness._initialize_app
+    # calls get_config(reload=True), which resets any prior Config mutations.
     os.environ["REFLEX_SHOW_BUILT_WITH_REFLEX"] = "false"
     try:
         with AppHarness.create(
