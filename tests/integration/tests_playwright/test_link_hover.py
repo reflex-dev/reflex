@@ -1,3 +1,4 @@
+import os
 from collections.abc import Generator
 
 import pytest
@@ -27,12 +28,16 @@ def LinkApp():
 
 @pytest.fixture
 def link_app(tmp_path_factory) -> Generator[AppHarness, None, None]:
-    with AppHarness.create(
-        root=tmp_path_factory.mktemp("link_app"),
-        app_source=LinkApp,
-    ) as harness:
-        assert harness.app_instance is not None, "app is not running"
-        yield harness
+    os.environ["REFLEX_SHOW_BUILT_WITH_REFLEX"] = "false"
+    try:
+        with AppHarness.create(
+            root=tmp_path_factory.mktemp("link_app"),
+            app_source=LinkApp,
+        ) as harness:
+            assert harness.app_instance is not None, "app is not running"
+            yield harness
+    finally:
+        os.environ.pop("REFLEX_SHOW_BUILT_WITH_REFLEX", None)
 
 
 def test_link_hover(link_app: AppHarness, page: Page):
