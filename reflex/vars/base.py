@@ -1825,15 +1825,7 @@ class cached_property:  # noqa: N801
                 Args:
                     this: The object to delete the cached property from.
                 """
-                cached_field_name = "_reflex_cache_" + name
-                try:
-                    unique_id = object.__getattribute__(this, cached_field_name)
-                except AttributeError:
-                    if original_del is not None:
-                        original_del(this)
-                    return
-                GLOBAL_CACHE.pop(unique_id, None)
-
+                self.__delete__(this)
                 if original_del is not None:
                     original_del(this)
 
@@ -1859,6 +1851,8 @@ class cached_property:  # noqa: N801
         Raises:
             TypeError: If the class does not have __set_name__.
         """
+        if instance is None and owner:
+            return self
         if self._attrname is None:
             msg = "Cannot use cached_property on a class without __set_name__."
             raise TypeError(msg)
@@ -1871,6 +1865,25 @@ class cached_property:  # noqa: N801
         if unique_id not in GLOBAL_CACHE:
             GLOBAL_CACHE[unique_id] = self._func(instance)
         return GLOBAL_CACHE[unique_id]
+
+    def __delete__(self, instance: Any):
+        """Delete the cached property.
+
+        Args:
+            instance: The instance to delete the cached property from.
+
+        Raises:
+            TypeError: If the class does not have __set_name__.
+        """
+        if self._attrname is None:
+            msg = "Cannot use cached_property on a class without __set_name__."
+            raise TypeError(msg)
+        cached_field_name = "_reflex_cache_" + self._attrname
+        try:
+            unique_id = object.__getattribute__(instance, cached_field_name)
+        except AttributeError:
+            return
+        GLOBAL_CACHE.pop(unique_id, None)
 
 
 cached_property_no_lock = cached_property
@@ -3307,7 +3320,7 @@ class Field(Generic[FIELD_TYPE]):
         *,
         default_factory: Callable[[], FIELD_TYPE] | None = None,
         is_var: Literal[True] = True,
-    ) -> Field[FIELD_TYPE]: ...
+    ) -> Self: ...
 
     @classmethod
     def create(
@@ -3316,7 +3329,7 @@ class Field(Generic[FIELD_TYPE]):
         *,
         default_factory: Callable[[], FIELD_TYPE] | None = None,
         is_var: bool = True,
-    ) -> Field[FIELD_TYPE] | FIELD_TYPE:
+    ) -> Self | FIELD_TYPE:
         """Create a field for a state.
 
         Args:
