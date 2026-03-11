@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import asyncio
-import contextlib
 import copy
 import dataclasses
 import functools
@@ -161,13 +160,14 @@ class StateProxy(wrapt.ObjectProxy):
         if self._self_parent_state_proxy is not None:
             await self._self_parent_state_proxy.__aexit__(*exc_info)
             return
-        with contextlib.suppress(Exception):
+        try:
             if self._self_mutable and self._self_actx is not None:
                 await self._self_actx.__aexit__(*exc_info)
-        self._self_actx = None
-        self._self_mutable = False
-        self._self_actx_lock_holder = None
-        self._self_actx_lock.release()
+        finally:
+            self._self_actx = None
+            self._self_mutable = False
+            self._self_actx_lock_holder = None
+            self._self_actx_lock.release()
 
     def __enter__(self):
         """Enter the regular context manager protocol.
