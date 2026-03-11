@@ -1670,13 +1670,32 @@ def test_call_app():
     assert isinstance(api, Starlette)
 
 
-def test_app_with_optional_endpoints():
+def test_app_with_optional_endpoints(tmp_path: Path):
     from reflex.components.core.upload import Upload
 
-    app = App()
-    Upload.is_used = True
-    app._add_optional_endpoints()
-    # TODO: verify the availability of the endpoints in app.api
+    from starlette.routing import Mount, Route
+
+    Upload.is_used = False
+    with chdir(tmp_path):
+        app = App()
+        Upload.is_used = True
+        app._add_optional_endpoints()
+
+        assert app._api is not None
+        upload_path = str(constants.Endpoint.UPLOAD)
+        routes = list(app._api.routes)
+
+        assert any(
+            isinstance(r, Route)
+            and r.path == upload_path
+            and "POST" in getattr(r, "methods", set())
+            for r in routes
+        )
+        assert any(
+            isinstance(r, Mount) and r.path == upload_path and r.name == "uploaded_files"
+            for r in routes
+        )
+    Upload.is_used = False
 
 
 def test_app_state_manager():
