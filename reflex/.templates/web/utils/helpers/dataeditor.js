@@ -56,7 +56,7 @@ export function formatCell(value, column) {
         readonly: !editable,
         data: {
           kind: "dropdown-cell",
-          allowedValues: (column.allowedValues || []).map(v => String(v)),
+          allowedValues: (column.allowedValues || []).map((v) => String(v)),
           value: cellValue,
         },
       };
