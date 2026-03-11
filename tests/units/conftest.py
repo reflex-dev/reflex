@@ -46,6 +46,21 @@ def app_module_mock(monkeypatch) -> mock.Mock:
     return app_module_mock
 
 
+@pytest.fixture
+def mock_app(app_module_mock: mock.Mock, app: App) -> App:
+    """A mocked dummy app per test.
+
+    Args:
+        app_module_mock: The mock for the main app module.
+        app: A default App instance.
+
+    Returns:
+        The mock app instance.
+    """
+    app_module_mock.app = app
+    return app
+
+
 @pytest.fixture(scope="session")
 def windows_platform() -> bool:
     """Check if system is windows.

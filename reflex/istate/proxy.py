@@ -3,11 +3,13 @@
 from __future__ import annotations
 
 import asyncio
+import contextlib
 import copy
 import dataclasses
 import functools
 import inspect
 import json
+import sys
 from collections.abc import Callable, Sequence
 from importlib.util import find_spec
 from types import MethodType
@@ -132,15 +134,20 @@ class StateProxy(wrapt.ObjectProxy):
             raise ImmutableStateError(msg)
 
         await self._self_actx_lock.acquire()
-        self._self_actx_lock_holder = current_task
-        self._self_actx = self._self_app.modify_state(
-            token=self._self_substate_token, background=True
-        )
-        mutable_state = await self._self_actx.__aenter__()
-        super().__setattr__(
-            "__wrapped__", mutable_state.get_substate(self._self_substate_path)
-        )
-        self._self_mutable = True
+        try:
+            self._self_actx_lock_holder = current_task
+            self._self_actx = self._self_app.modify_state(
+                token=self._self_substate_token, background=True
+            )
+            mutable_state = await self._self_actx.__aenter__()
+            self._self_mutable = True
+            super().__setattr__(
+                "__wrapped__", mutable_state.get_substate(self._self_substate_path)
+            )
+        except (Exception, asyncio.CancelledError):
+            # Restore the proxy to a consistent state since __aexit__ will not be called when __aenter__ raises.
+            await self.__aexit__(*sys.exc_info())
+            raise
         return self
 
     async def __aexit__(self, *exc_info: Any) -> None:
@@ -154,15 +161,13 @@ class StateProxy(wrapt.ObjectProxy):
         if self._self_parent_state_proxy is not None:
             await self._self_parent_state_proxy.__aexit__(*exc_info)
             return
-        if self._self_actx is None:
-            return
-        self._self_mutable = False
-        try:
-            await self._self_actx.__aexit__(*exc_info)
-        finally:
-            self._self_actx_lock_holder = None
-            self._self_actx_lock.release()
+        with contextlib.suppress(Exception):
+            if self._self_mutable and self._self_actx is not None:
+                await self._self_actx.__aexit__(*exc_info)
         self._self_actx = None
+        self._self_mutable = False
+        self._self_actx_lock_holder = None
+        self._self_actx_lock.release()
 
     def __enter__(self):
         """Enter the regular context manager protocol.
