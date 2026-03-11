@@ -572,6 +572,8 @@ class MutableProxy(wrapt.ObjectProxy):
                 )
                 and (func := getattr(value, "__func__", None)) is not None
                 and not inspect.isclass(getattr(value, "__self__", None))
+                # skip SQLAlchemy instrumented methods
+                and not getattr(value, "_sa_instrumented", False)
             ):
                 # Rebind `self` to the proxy on methods to capture nested mutations.
                 return functools.partial(func, self)
