@@ -2,7 +2,6 @@
 
 import dataclasses
 import pickle
-<<<<<<< .merge_file_7wIbhS
 from asyncio import CancelledError
 from contextlib import asynccontextmanager
 from unittest.mock import patch
@@ -11,11 +10,6 @@ import pytest
 
 import reflex as rx
 from reflex.istate.proxy import MutableProxy, StateProxy
-=======
-
-import reflex as rx
-from reflex.istate.proxy import MutableProxy
->>>>>>> .merge_file_giC46q
 
 
 @dataclasses.dataclass
@@ -46,7 +40,6 @@ def test_mutable_proxy_pickle_preserves_object_identity():
     assert unpickled["direct"][0].id == 1
     assert unpickled["proxied"][0].id == 1
     assert unpickled["direct"][0] is unpickled["proxied"][0]
-<<<<<<< .merge_file_7wIbhS
 
 
 @pytest.mark.usefixtures("mock_app")
@@ -73,5 +66,3 @@ async def test_state_proxy_recovery():
     # After the exception, we should be able to enter the context again without issues
     async with state_proxy:
         pass
-=======
->>>>>>> .merge_file_giC46q

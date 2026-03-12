@@ -318,6 +318,81 @@ class TestSyncMinifyConfig:
             new_config["events"][state_path]["handler_b"] == "l"
         )  # 10 + 1 = 11 -> 'l'
 
+    def test_sync_no_sibling_collision_across_modules(self):
+        """Test that sync assigns unique IDs to siblings of the same parent.
+
+        When children of the same parent state class are defined in different
+        Python modules, their get_state_full_path() produces different string
+        prefixes. The sync function must group siblings by the actual parent
+        class object, not by string-splitting the path, to avoid ID collisions.
+        """
+
+        class ParentState(BaseState):
+            pass
+
+        class ChildA(ParentState):
+            pass
+
+        class ChildB(ParentState):
+            pass
+
+        parent_path = get_state_full_path(ParentState)
+        child_a_path = get_state_full_path(ChildA)
+
+        # Config already has ParentState and ChildA assigned
+        existing_config: MinifyConfig = {
+            "version": SCHEMA_VERSION,
+            "states": {
+                parent_path: "a",
+                child_a_path: "a",
+            },
+            "events": {},
+        }
+
+        # Sync should assign ChildB a DIFFERENT ID than ChildA
+        new_config = sync_minify_config(existing_config, ParentState)
+
+        child_b_path = get_state_full_path(ChildB)
+        assert child_b_path in new_config["states"]
+        assert (
+            new_config["states"][child_a_path] != new_config["states"][child_b_path]
+        ), (
+            f"Sibling collision: ChildA and ChildB both got "
+            f"'{new_config['states'][child_a_path]}'"
+        )
+
+    def test_validate_detects_sibling_collision(self):
+        """Test that validate catches duplicate IDs among siblings of same parent."""
+
+        class ParentState(BaseState):
+            pass
+
+        class ChildA(ParentState):
+            pass
+
+        class ChildB(ParentState):
+            pass
+
+        parent_path = get_state_full_path(ParentState)
+        child_a_path = get_state_full_path(ChildA)
+        child_b_path = get_state_full_path(ChildB)
+
+        # Manually create a config with colliding sibling IDs
+        bad_config: MinifyConfig = {
+            "version": SCHEMA_VERSION,
+            "states": {
+                parent_path: "a",
+                child_a_path: "a",
+                child_b_path: "a",  # collision!
+            },
+            "events": {},
+        }
+
+        errors, _warnings, _missing = validate_minify_config(bad_config, ParentState)
+        assert any("Duplicate" in e and "'a'" in e for e in errors), (
+            f"Expected duplicate ID error, got: {errors}"
+        )
+
 
 class TestStateMinification:
     """Tests for state name minification with minify.json."""

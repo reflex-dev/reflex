@@ -400,25 +400,24 @@ def validate_minify_config(
 
     all_states = collect_all_states(root_state)
 
-    # Check for duplicate state IDs among siblings
-    # Group states by parent path and check for duplicate minified names
-    parent_to_state_ids: dict[str | None, dict[str, list[str]]] = {}
+    # Check for duplicate state IDs among siblings.
+    # Group by actual parent class (not string-split path) since children of
+    # the same parent can be defined in different modules.
+    path_to_cls = {get_state_full_path(s): s for s in all_states}
+    parent_cls_to_state_ids: dict[type[BaseState] | None, dict[str, list[str]]] = {}
     for state_path, minified_name in config["states"].items():
-        # Get parent path
-        parts = state_path.rsplit(".", 1)
-        parent_path = parts[0] if len(parts) > 1 else None
+        state_cls = path_to_cls.get(state_path)
+        parent_cls = state_cls.get_parent_state() if state_cls else None
+        parent_cls_to_state_ids.setdefault(parent_cls, {}).setdefault(
+            minified_name, []
+        ).append(state_path)
 
-        if parent_path not in parent_to_state_ids:
-            parent_to_state_ids[parent_path] = {}
-        if minified_name not in parent_to_state_ids[parent_path]:
-            parent_to_state_ids[parent_path][minified_name] = []
-        parent_to_state_ids[parent_path][minified_name].append(state_path)
-
-    for parent_path, id_to_states in parent_to_state_ids.items():
+    for parent_cls, id_to_states in parent_cls_to_state_ids.items():
         for minified_name, state_paths in id_to_states.items():
             if len(state_paths) > 1:
+                parent_name = parent_cls.__name__ if parent_cls else "root"
                 errors.append(
-                    f"Duplicate state_id='{minified_name}' under '{parent_path or 'root'}': "
+                    f"Duplicate state_id='{minified_name}' under '{parent_name}': "
                     f"{state_paths}"
                 )
 
@@ -525,31 +524,30 @@ def sync_minify_config(
         # Remove empty event dicts
         new_events = {k: v for k, v in new_events.items() if v}
 
-    # Find states that need IDs assigned
-    # Group by parent for sibling-unique assignment
-    parent_to_children: dict[str | None, list[str]] = {}
+    # Build a map from actual parent class to existing sibling minified IDs.
+    # Using the live state classes avoids the string-split bug where children
+    # of the same parent class defined in different modules get different
+    # string-based parent paths and are assigned colliding IDs.
+    parent_cls_to_existing_ids: dict[type[BaseState] | None, set[int]] = {}
+    for state_cls in all_states:
+        state_path = get_state_full_path(state_cls)
+        if state_path in new_states:
+            parent = state_cls.get_parent_state()
+            parent_cls_to_existing_ids.setdefault(parent, set()).add(
+                minified_name_to_int(new_states[state_path])
+            )
+
+    # Find states that need IDs assigned, grouped by actual parent class.
+    parent_cls_to_new_children: dict[type[BaseState] | None, list[str]] = {}
     for state_cls in all_states:
         state_path = get_state_full_path(state_cls)
         if state_path not in new_states:
             parent = state_cls.get_parent_state()
-            parent_path = get_state_full_path(parent) if parent else None
-            if parent_path not in parent_to_children:
-                parent_to_children[parent_path] = []
-            parent_to_children[parent_path].append(state_path)
+            parent_cls_to_new_children.setdefault(parent, []).append(state_path)
 
-    # Assign new state IDs
-    for parent_path, children in parent_to_children.items():
-        # Get existing IDs for this parent's children (convert to ints for finding max)
-        existing_ids: set[int] = set()
-        for state_path, minified_name in new_states.items():
-            parts = state_path.rsplit(".", 1)
-            sp_parent = parts[0] if len(parts) > 1 else None
-            # Compare parent paths correctly
-            if parent_path is None:
-                if sp_parent is None or "." not in state_path:
-                    existing_ids.add(minified_name_to_int(minified_name))
-            elif sp_parent == parent_path:
-                existing_ids.add(minified_name_to_int(minified_name))
+    # Assign new state IDs (unique among siblings of the same parent class)
+    for parent_cls, children in parent_cls_to_new_children.items():
+        existing_ids = parent_cls_to_existing_ids.get(parent_cls, set()).copy()
 
         # Assign IDs starting from max + 1 (or 0 if reassign_deleted and gaps exist)
         next_id = 0 if reassign_deleted else (max(existing_ids, default=-1) + 1)
