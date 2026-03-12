@@ -14,7 +14,6 @@ import pickle
 import re
 import sys
 import time
-import typing
 import uuid
 import warnings
 from collections.abc import AsyncIterator, Callable, Iterator, Sequence
@@ -1781,6 +1780,7 @@ class BaseState(EvenMoreBasicBaseState):
         )
         return getattr(other_state, var_data.field_name)
 
+<<<<<<< .merge_file_rqeWiK
     @classmethod
     def _get_original_event_name(cls, minified_name: str) -> str | None:
         """Look up the original event handler name from a minified name.
@@ -1797,6 +1797,8 @@ class BaseState(EvenMoreBasicBaseState):
         # Direct lookup: _event_id_to_name maps minified_name -> original_name
         return cls._event_id_to_name.get(minified_name)
 
+=======
+>>>>>>> .merge_file_20JAsy
     def _get_event_handler(self, event: Event | str) -> tuple[BaseState, EventHandler]:
         """Get the event handler for the given event.
 
@@ -1819,6 +1821,7 @@ class BaseState(EvenMoreBasicBaseState):
             msg = "The value of state cannot be None when processing an event."
             raise ValueError(msg)
 
+<<<<<<< .merge_file_rqeWiK
         # Try to look up the handler directly first
         handler = substate.event_handlers.get(name)
         if handler is None:
@@ -1830,6 +1833,8 @@ class BaseState(EvenMoreBasicBaseState):
                 msg = f"Event handler '{name}' not found in state '{type(substate).__name__}'"
                 raise KeyError(msg)
 
+=======
+>>>>>>> .merge_file_20JAsy
         return substate, handler
 
     async def _process(self, event: Event) -> AsyncIterator[StateUpdate]:
@@ -1988,7 +1993,7 @@ class BaseState(EvenMoreBasicBaseState):
             fn = functools.partial(handler.fn, state)
 
         try:
-            type_hints = typing.get_type_hints(handler.fn)
+            type_hints = types.get_type_hints(handler.fn)
         except Exception:
             type_hints = {}
 
