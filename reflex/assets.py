@@ -22,9 +22,13 @@ def remove_stale_external_asset_symlinks():
         return
 
     # Remove broken symlinks.
-    for path in external_dir.rglob("*"):
-        if path.is_symlink() and not path.resolve().exists():
-            path.unlink()
+    broken = [
+        p
+        for p in external_dir.rglob("*")
+        if p.is_symlink() and not p.resolve().exists()
+    ]
+    for path in broken:
+        path.unlink()
 
     # Remove empty directories left behind (deepest first).
     for dirpath in sorted(external_dir.rglob("*"), reverse=True):
