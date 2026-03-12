@@ -187,7 +187,7 @@ def _compile_package_json():
     prod_command = (
         constants.PackageJson.Commands.PROD_SSR
         if config.runtime_ssr
-        else constants.PackageJson.Commands.PROD_STATIC
+        else constants.PackageJson.Commands.get_prod_command(config.frontend_path)
     )
     return templates.package_json_template(
         scripts={
@@ -218,6 +218,7 @@ def _compile_vite_config(config: Config):
         force_full_reload=environment.VITE_FORCE_FULL_RELOAD.get(),
         experimental_hmr=environment.VITE_EXPERIMENTAL_HMR.get(),
         sourcemap=environment.VITE_SOURCEMAP.get(),
+        allowed_hosts=config.vite_allowed_hosts,
     )
 
 

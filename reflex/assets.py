@@ -7,6 +7,35 @@ from reflex import constants
 from reflex.environment import EnvironmentVariables
 
 
+def remove_stale_external_asset_symlinks():
+    """Remove broken symlinks and empty directories in assets/external/.
+
+    When a Python module directory that uses rx.asset(shared=True) is renamed
+    or deleted, stale symlinks remain in assets/external/ pointing to the old
+    path. This cleanup prevents issues with file watchers detecting symlink
+    re-creation during import.
+    """
+    external_dir = (
+        Path.cwd() / constants.Dirs.APP_ASSETS / constants.Dirs.EXTERNAL_APP_ASSETS
+    )
+    if not external_dir.exists():
+        return
+
+    # Remove broken symlinks.
+    broken = [
+        p
+        for p in external_dir.rglob("*")
+        if p.is_symlink() and not p.resolve().exists()
+    ]
+    for path in broken:
+        path.unlink()
+
+    # Remove empty directories left behind (deepest first).
+    for dirpath in sorted(external_dir.rglob("*"), reverse=True):
+        if dirpath.is_dir() and not dirpath.is_symlink() and not any(dirpath.iterdir()):
+            dirpath.rmdir()
+
+
 def asset(
     path: str,
     shared: bool = False,
@@ -92,6 +121,11 @@ def asset(
         if not dst_file.exists() and (
             not dst_file.is_symlink() or dst_file.resolve() != src_file_shared.resolve()
         ):
-            dst_file.symlink_to(src_file_shared)
+            try:
+                dst_file.symlink_to(src_file_shared)
+            except FileExistsError:
+                # This happens when Simon builds the app on a bind mount in a docker container.
+                dst_file.unlink()
+                dst_file.symlink_to(src_file_shared)
 
     return f"/{external}/{subfolder}/{path}"

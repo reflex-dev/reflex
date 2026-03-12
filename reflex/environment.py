@@ -149,15 +149,17 @@ def interpret_path_env(value: str, field_name: str) -> Path:
     return Path(value)
 
 
-def interpret_plugin_env(value: str, field_name: str) -> Plugin:
-    """Interpret a plugin environment variable value.
+def interpret_plugin_class_env(value: str, field_name: str) -> type[Plugin]:
+    """Interpret an environment variable value as a Plugin subclass.
+
+    Resolves a fully qualified import path to the Plugin subclass it refers to.
 
     Args:
-        value: The environment variable value.
+        value: The environment variable value (e.g. "reflex.plugins.sitemap.SitemapPlugin").
         field_name: The field name.
 
     Returns:
-        The interpreted value.
+        The Plugin subclass.
 
     Raises:
         EnvironmentVarValueError: If the value is invalid.
@@ -184,10 +186,30 @@ def interpret_plugin_env(value: str, field_name: str) -> Plugin:
         msg = f"Invalid plugin class: {plugin_name!r} for {field_name}. Must be a subclass of Plugin."
         raise EnvironmentVarValueError(msg)
 
+    return plugin_class
+
+
+def interpret_plugin_env(value: str, field_name: str) -> Plugin:
+    """Interpret a plugin environment variable value.
+
+    Resolves a fully qualified import path and returns an instance of the Plugin.
+
+    Args:
+        value: The environment variable value (e.g. "reflex.plugins.sitemap.SitemapPlugin").
+        field_name: The field name.
+
+    Returns:
+        An instance of the Plugin subclass.
+
+    Raises:
+        EnvironmentVarValueError: If the value is invalid.
+    """
+    plugin_class = interpret_plugin_class_env(value, field_name)
+
     try:
         return plugin_class()
     except Exception as e:
-        msg = f"Failed to instantiate plugin {plugin_name!r} for {field_name}: {e}"
+        msg = f"Failed to instantiate plugin {plugin_class.__name__!r} for {field_name}: {e}"
         raise EnvironmentVarValueError(msg) from e
 
 
@@ -243,8 +265,14 @@ def interpret_env_var_value(
     field_type = value_inside_optional(field_type)
 
     if is_union(field_type):
-        msg = f"Union types are not supported for environment variables: {field_name}."
-        raise ValueError(msg)
+        errors = []
+        for arg in (union_types := get_args(field_type)):
+            try:
+                return interpret_env_var_value(value, arg, field_name)
+            except (ValueError, EnvironmentVarValueError) as e:  # noqa: PERF203
+                errors.append(e)
+        msg = f"Could not interpret {value!r} for {field_name} as any of {union_types}: {errors}"
+        raise EnvironmentVarValueError(msg)
 
     value = value.strip()
 
@@ -268,6 +296,14 @@ def interpret_env_var_value(
         return interpret_existing_path_env(value, field_name)
     if field_type is Plugin:
         return interpret_plugin_env(value, field_name)
+    if get_origin(field_type) is type:
+        type_args = get_args(field_type)
+        if (
+            type_args
+            and isinstance(type_args[0], type)
+            and issubclass(type_args[0], Plugin)
+        ):
+            return interpret_plugin_class_env(value, field_name)
     if get_origin(field_type) is Literal:
         literal_values = get_args(field_type)
         for literal_value in literal_values:
