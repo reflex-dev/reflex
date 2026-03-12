@@ -615,7 +615,12 @@ class App(MiddlewareMixin, LifespanMixin):
         Returns:
             The backend api.
         """
+        from reflex.assets import remove_stale_external_asset_symlinks
         from reflex.vars.base import GLOBAL_CACHE
+
+        # Clean up stale symlinks in assets/external/ before compiling, so that
+        # rx.asset(shared=True) symlink re-creation doesn't trigger further reloads.
+        remove_stale_external_asset_symlinks()
 
         self._compile(prerender_routes=should_prerender_routes())
 
