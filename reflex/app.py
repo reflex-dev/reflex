@@ -2035,17 +2035,14 @@ def upload(app: App):
             Yields:
                 Each state update as JSON followed by a new line.
             """
-            try:
-                # Process the event.
-                async with app.state_manager.modify_state_with_links(
-                    event.substate_token
-                ) as state:
-                    async for update in state._process(event):
-                        # Postprocess the event.
-                        update = await app._postprocess(state, event, update)
-                        yield update.json() + "\n"
-            finally:
-                await _close_form_data()
+            # Process the event.
+            async with app.state_manager.modify_state_with_links(
+                event.substate_token
+            ) as state:
+                async for update in state._process(event):
+                    # Postprocess the event.
+                    update = await app._postprocess(state, event, update)
+                    yield update.json() + "\n"
 
         # Stream updates to client
         return _UploadStreamingResponse(
