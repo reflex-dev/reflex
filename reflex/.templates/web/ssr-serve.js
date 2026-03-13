@@ -69,8 +69,10 @@ app.all("*", (req, res, next) => {
   return ssrHandler(req, res, next);
 });
 
-const port = parseInt(process.env.PORT || "3000", 10);
-app.listen(port, () => {
+const requestedPort = parseInt(process.env.PORT || "3000", 10);
+const server = app.listen(requestedPort, () => {
+  // Emit the actual port (important when PORT=0 for auto-assignment).
   // Message format matches Reflex's PROD_FRONTEND_LISTENING_REGEX.
-  console.log(`[ssr-serve] http://localhost:${port}`);
+  const actualPort = server.address().port;
+  console.log(`[ssr-serve] http://localhost:${actualPort}`);
 });
