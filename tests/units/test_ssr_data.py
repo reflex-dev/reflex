@@ -11,6 +11,33 @@ from starlette.responses import Response
 
 import reflex as rx
 from reflex.app import App, ssr_data
+from reflex.state import State, all_base_state_classes
+
+
+@pytest.fixture(autouse=True, scope="module")
+def _clean_state_subclasses():
+    """Snapshot and restore State subclass registrations after all tests.
+
+    Tests in this module define rx.State subclasses inside test functions,
+    which permanently registers them in the global class hierarchy.  Without
+    cleanup, these leak into later test modules (e.g. test_state.py) and
+    cause failures.
+    """
+    orig_subclasses = State.class_subclasses.copy()
+    orig_all = all_base_state_classes.copy()
+    orig_dirty = State._potentially_dirty_states.copy()
+    orig_always_dirty = State._always_dirty_substates.copy()
+    orig_var_deps = State._var_dependencies.copy()
+
+    yield
+
+    State.class_subclasses = orig_subclasses
+    State._potentially_dirty_states = orig_dirty
+    State._always_dirty_substates = orig_always_dirty
+    State._var_dependencies = orig_var_deps
+    all_base_state_classes.clear()
+    all_base_state_classes.update(orig_all)
+    State.get_class_substate.cache_clear()
 
 
 def _make_request(path: str = "/", headers: dict | None = None) -> Mock:
