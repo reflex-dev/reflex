@@ -37,6 +37,23 @@ class TestPackageJsonProdCommand:
         assert pkg["scripts"]["prod"].startswith("sirv")
         assert "node ssr-serve.js" not in pkg["scripts"]["prod"]
 
+    def test_ssr_deps_only_when_enabled(self, mocker: MockerFixture):
+        """SSR-specific deps are only included when runtime_ssr=True."""
+        ssr_only_deps = ("@react-router/express", "express", "compression")
+
+        for ssr in (True, False):
+            conf = rx.Config(app_name="test", runtime_ssr=ssr)
+            mocker.patch("reflex.utils.frontend_skeleton.get_config", return_value=conf)
+            pkg = json.loads(_compile_package_json())
+            deps = pkg["dependencies"]
+            for dep in ssr_only_deps:
+                if ssr:
+                    assert dep in deps, f"{dep} should be present when runtime_ssr=True"
+                else:
+                    assert dep not in deps, (
+                        f"{dep} should NOT be present when runtime_ssr=False"
+                    )
+
     def test_dev_and_export_commands_unchanged(self, mocker: MockerFixture):
         """Dev and export commands are the same regardless of runtime_ssr."""
         results = {}

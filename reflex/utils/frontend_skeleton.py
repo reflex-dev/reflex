@@ -189,13 +189,16 @@ def _compile_package_json():
         if config.runtime_ssr
         else constants.PackageJson.Commands.get_prod_command(config.frontend_path)
     )
+    deps = dict(constants.PackageJson.DEPENDENCIES)
+    if config.runtime_ssr:
+        deps.update(constants.PackageJson.SSR_DEPENDENCIES)
     return templates.package_json_template(
         scripts={
             "dev": constants.PackageJson.Commands.DEV,
             "export": constants.PackageJson.Commands.EXPORT,
             "prod": prod_command,
         },
-        dependencies=constants.PackageJson.DEPENDENCIES,
+        dependencies=deps,
         dev_dependencies=constants.PackageJson.DEV_DEPENDENCIES,
         overrides=constants.PackageJson.OVERRIDES,
     )

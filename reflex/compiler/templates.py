@@ -543,8 +543,6 @@ def page_template(
 
 {custom_code_str}
 
-
-
 export default function Component() {{
 {hooks_str}
 
