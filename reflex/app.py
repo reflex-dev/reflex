@@ -9,7 +9,6 @@ import copy
 import dataclasses
 import functools
 import inspect
-import io
 import json
 import operator
 import sys
@@ -1915,87 +1914,87 @@ def upload(app: App):
 
         # Get the files from the request.
         try:
-            files = await request.form()
+            form_data = await request.form()
         except ClientDisconnect:
             return Response()  # user cancelled
-        files = files.getlist("files")
-        if not files:
-            msg = "No files were uploaded."
-            raise UploadValueError(msg)
 
-        token = request.headers.get("reflex-client-token")
-        handler = request.headers.get("reflex-event-handler")
+        async def _create_upload_event() -> Event:
+            """Create an upload event using the live Starlette temp files.
 
-        if not token or not handler:
-            raise HTTPException(
-                status_code=400,
-                detail="Missing reflex-client-token or reflex-event-handler header.",
+            Returns:
+                The upload event backed by the original temp files.
+            """
+            files = form_data.getlist("files")
+            if not files:
+                msg = "No files were uploaded."
+                raise UploadValueError(msg)
+
+            token = request.headers.get("reflex-client-token")
+            handler = request.headers.get("reflex-event-handler")
+
+            if not token or not handler:
+                raise HTTPException(
+                    status_code=400,
+                    detail="Missing reflex-client-token or reflex-event-handler header.",
+                )
+
+            # Get the state for the session.
+            substate_token = _substate_key(token, handler.rpartition(".")[0])
+            state = await app.state_manager.get_state(substate_token)
+
+            handler_upload_param = ()
+
+            _current_state, event_handler = state._get_event_handler(handler)
+
+            if event_handler.is_background:
+                msg = f"@rx.event(background=True) is not supported for upload handler `{handler}`."
+                raise UploadTypeError(msg)
+            func = event_handler.fn
+            if isinstance(func, functools.partial):
+                func = func.func
+            for k, v in get_type_hints(func).items():
+                if types.is_generic_alias(v) and types._issubclass(
+                    get_args(v)[0],
+                    UploadFile,
+                ):
+                    handler_upload_param = (k, v)
+                    break
+
+            if not handler_upload_param:
+                msg = (
+                    f"`{handler}` handler should have a parameter annotated as "
+                    "list[rx.UploadFile]"
+                )
+                raise UploadValueError(msg)
+
+            # Keep the parsed form data alive until the upload event finishes so
+            # the underlying Starlette temp files remain available to the handler.
+            file_uploads = []
+            for file in files:
+                if not isinstance(file, StarletteUploadFile):
+                    raise UploadValueError(
+                        "Uploaded file is not an UploadFile." + str(file)
+                    )
+                file_uploads.append(
+                    UploadFile(
+                        file=file.file,
+                        path=Path(file.filename.lstrip("/")) if file.filename else None,
+                        size=file.size,
+                        headers=file.headers,
+                    )
+                )
+
+            return Event(
+                token=token,
+                name=handler,
+                payload={handler_upload_param[0]: file_uploads},
             )
 
-        # Get the state for the session.
-        substate_token = _substate_key(token, handler.rpartition(".")[0])
-        state = await app.state_manager.get_state(substate_token)
-
-        handler_upload_param = ()
-
-        _current_state, event_handler = state._get_event_handler(handler)
-
-        if event_handler.is_background:
-            msg = f"@rx.event(background=True) is not supported for upload handler `{handler}`."
-            raise UploadTypeError(msg)
-        func = event_handler.fn
-        if isinstance(func, functools.partial):
-            func = func.func
-        for k, v in get_type_hints(func).items():
-            if types.is_generic_alias(v) and types._issubclass(
-                get_args(v)[0],
-                UploadFile,
-            ):
-                handler_upload_param = (k, v)
-                break
-
-        if not handler_upload_param:
-            msg = (
-                f"`{handler}` handler should have a parameter annotated as "
-                "list[rx.UploadFile]"
-            )
-            raise UploadValueError(msg)
-
-        # Make a copy of the files as they are closed after the request.
-        # This behaviour changed from fastapi 0.103.0 to 0.103.1 as the
-        # AsyncExitStack was removed from the request scope and is now
-        # part of the routing function which closes this before the
-        # event is handled.
-        file_copies = []
-        for file in files:
-            if not isinstance(file, StarletteUploadFile):
-                raise UploadValueError(
-                    "Uploaded file is not an UploadFile." + str(file)
-                )
-            content_copy = io.BytesIO()
-            content_copy.write(await file.read())
-            content_copy.seek(0)
-            file_copies.append(
-                UploadFile(
-                    file=content_copy,
-                    path=Path(file.filename.lstrip("/")) if file.filename else None,
-                    size=file.size,
-                    headers=file.headers,
-                )
-            )
-
-        for file in files:
-            if not isinstance(file, StarletteUploadFile):
-                raise UploadValueError(
-                    "Uploaded file is not an UploadFile." + str(file)
-                )
-            await file.close()
-
-        event = Event(
-            token=token,
-            name=handler,
-            payload={handler_upload_param[0]: file_copies},
-        )
+        try:
+            event = await _create_upload_event()
+        except Exception:
+            await form_data.close()
+            raise
 
         async def _ndjson_updates():
             """Process the upload event, generating ndjson updates.
@@ -2003,14 +2002,17 @@ def upload(app: App):
             Yields:
                 Each state update as JSON followed by a new line.
             """
-            # Process the event.
-            async with app.state_manager.modify_state_with_links(
-                event.substate_token
-            ) as state:
-                async for update in state._process(event):
-                    # Postprocess the event.
-                    update = await app._postprocess(state, event, update)
-                    yield update.json() + "\n"
+            try:
+                # Process the event.
+                async with app.state_manager.modify_state_with_links(
+                    event.substate_token
+                ) as state:
+                    async for update in state._process(event):
+                        # Postprocess the event.
+                        update = await app._postprocess(state, event, update)
+                        yield update.json() + "\n"
+            finally:
+                await form_data.close()
 
         # Stream updates to client
         return StreamingResponse(
