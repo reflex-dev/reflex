@@ -18,6 +18,7 @@ import urllib.parse
 from collections.abc import (
     AsyncGenerator,
     AsyncIterator,
+    Awaitable,
     Callable,
     Coroutine,
     Mapping,
@@ -1885,6 +1886,27 @@ async def health(_request: Request) -> JSONResponse:
     return JSONResponse(content=health_status, status_code=status_code)
 
 
+class _UploadStreamingResponse(StreamingResponse):
+    """Streaming response that always releases upload form resources."""
+
+    _on_finish: Callable[[], Awaitable[None]]
+
+    def __init__(
+        self,
+        *args: Any,
+        on_finish: Callable[[], Awaitable[None]],
+        **kwargs: Any,
+    ) -> None:
+        super().__init__(*args, **kwargs)
+        self._on_finish = on_finish
+
+    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
+        try:
+            await super().__call__(scope, receive, send)
+        finally:
+            await self._on_finish()
+
+
 def upload(app: App):
     """Upload a file.
 
@@ -1917,6 +1939,16 @@ def upload(app: App):
             form_data = await request.form()
         except ClientDisconnect:
             return Response()  # user cancelled
+
+        form_data_closed = False
+
+        async def _close_form_data() -> None:
+            """Close the parsed form data exactly once."""
+            nonlocal form_data_closed
+            if form_data_closed:
+                return
+            form_data_closed = True
+            await form_data.close()
 
         async def _create_upload_event() -> Event:
             """Create an upload event using the live Starlette temp files.
@@ -1990,11 +2022,12 @@ def upload(app: App):
                 payload={handler_upload_param[0]: file_uploads},
             )
 
+        event: Event | None = None
         try:
             event = await _create_upload_event()
-        except Exception:
-            await form_data.close()
-            raise
+        finally:
+            if event is None:
+                await _close_form_data()
 
         async def _ndjson_updates():
             """Process the upload event, generating ndjson updates.
@@ -2012,12 +2045,13 @@ def upload(app: App):
                         update = await app._postprocess(state, event, update)
                         yield update.json() + "\n"
             finally:
-                await form_data.close()
+                await _close_form_data()
 
         # Stream updates to client
-        return StreamingResponse(
+        return _UploadStreamingResponse(
             _ndjson_updates(),
             media_type="application/x-ndjson",
+            on_finish=_close_form_data,
         )
 
     return upload_file

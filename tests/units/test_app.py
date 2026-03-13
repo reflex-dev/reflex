@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import functools
 import io
 import json
@@ -1070,6 +1071,115 @@ async def test_upload_file_keeps_form_open_until_stream_completes(
     # Verify files were written to the tmp dir with the correct content.
     assert (tmp_path / "image1.jpg").read_bytes() == data1
     assert (tmp_path / "image2.jpg").read_bytes() == data2
+
+    await app.state_manager.close()
+
+
+@pytest.mark.asyncio
+async def test_upload_file_closes_form_on_event_creation_cancellation(
+    token: str,
+    mocker: MockerFixture,
+):
+    """Test that cancellation during upload event creation closes form data."""
+    mocker.patch(
+        "reflex.state.State.class_subclasses",
+        {FileUploadState},
+    )
+    app = App()
+
+    request_mock = unittest.mock.Mock()
+    request_mock.headers = {
+        "reflex-client-token": token,
+        "reflex-event-handler": f"{FileUploadState.get_full_name()}.multi_handle_upload",
+    }
+
+    file1 = UploadFile(filename="image1.jpg", file=io.BytesIO(b"data"))
+    form_data = FormData([("files", file1)])
+    original_close = form_data.close
+    form_close = AsyncMock(side_effect=original_close)
+    form_data.close = form_close
+
+    async def form():  # noqa: RUF029
+        return form_data
+
+    async def cancelled_get_state(*_args, **_kwargs):
+        await asyncio.sleep(0)
+        raise asyncio.CancelledError
+
+    request_mock.form = form
+    mocker.patch.object(app.state_manager, "get_state", side_effect=cancelled_get_state)
+
+    upload_fn = upload(app)
+    with pytest.raises(asyncio.CancelledError):
+        await upload_fn(request_mock)
+
+    assert form_close.await_count == 1
+    assert file1.file.closed
+
+    await app.state_manager.close()
+
+
+@pytest.mark.asyncio
+async def test_upload_file_closes_form_if_response_cancelled_before_stream_starts(
+    tmp_path,
+    token: str,
+    mocker: MockerFixture,
+):
+    """Test that response cancellation before iteration still closes form data."""
+    mocker.patch(
+        "reflex.state.State.class_subclasses",
+        {FileUploadState},
+    )
+    app = App()
+    app.event_namespace.emit = AsyncMock()  # pyright: ignore [reportOptionalMemberAccess]
+
+    async with app.modify_state(_substate_key(token, FileUploadState)) as root_state:
+        root_state.get_substate(
+            FileUploadState.get_full_name().split(".")
+        )._tmp_path = tmp_path
+
+    request_mock = unittest.mock.Mock()
+    request_mock.headers = {
+        "reflex-client-token": token,
+        "reflex-event-handler": f"{FileUploadState.get_full_name()}.multi_handle_upload",
+    }
+
+    bio = io.BytesIO(b"contents of image one")
+    file1 = UploadFile(filename="image1.jpg", file=bio)
+    form_data = FormData([("files", file1)])
+    original_close = form_data.close
+    form_close = AsyncMock(side_effect=original_close)
+    form_data.close = form_close
+
+    async def form():  # noqa: RUF029
+        return form_data
+
+    async def receive():
+        await asyncio.sleep(0)
+        return {"type": "http.disconnect"}
+
+    async def send(_message):
+        await asyncio.sleep(0)
+        raise asyncio.CancelledError
+
+    request_mock.form = form
+
+    upload_fn = upload(app)
+    streaming_response = await upload_fn(request_mock)
+
+    assert isinstance(streaming_response, StreamingResponse)
+    assert form_close.await_count == 0
+    assert not bio.closed
+
+    with pytest.raises(asyncio.CancelledError):
+        await streaming_response(
+            {"type": "http", "asgi": {"spec_version": "2.4"}},
+            receive,
+            send,
+        )
+
+    assert form_close.await_count == 1
+    assert bio.closed
 
     await app.state_manager.close()
 
