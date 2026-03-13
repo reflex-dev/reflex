@@ -1991,7 +1991,7 @@ def ssr_data(app: App):
         # Create an ephemeral state instance (no persistent session).
         # Use State (root) rather than app._state which may be a subclass
         # with inherited vars that can't be set without a parent.
-        state = State(_reflex_internal_init=True)
+        state = State(_reflex_internal_init=True)  # pyright: ignore[reportCallIssue]
 
         # Resolve the route pattern from the concrete path.
         resolved_route = app.router(path) or "404"

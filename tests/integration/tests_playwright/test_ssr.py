@@ -42,14 +42,14 @@ def SSRBlogApp():
     }
 
     class BlogState(rx.State):
-        title: str = ""
-        content: str = ""
-        author: str = ""
-        not_found: bool = False
+        title: rx.Field[str] = rx.field("")
+        content: rx.Field[str] = rx.field("")
+        author: rx.Field[str] = rx.field("")
+        not_found: rx.Field[bool] = rx.field(False)
 
         @rx.event
         def on_load_post(self):
-            slug = self.slug
+            slug: str = self.slug  # pyright: ignore[reportAttributeAccessIssue]
             post = POSTS.get(slug)
             if post:
                 self.title = post["title"]
