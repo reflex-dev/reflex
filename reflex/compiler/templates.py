@@ -395,11 +395,11 @@ export function EventLoopProvider({{ children }}) {{
     initialEvents,
     clientStorage,
   )
-  return createElement(
+  return useMemo(() => createElement(
     EventLoopContext.Provider,
     {{ value: [addEvents, connectErrors] }},
     children
-  );
+  ), [addEvents, connectErrors, children]);
 }}
 
 export function StateProvider({{ children }}) {{

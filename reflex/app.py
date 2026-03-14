@@ -239,10 +239,15 @@ def default_error_boundary(*children: Component, **props) -> Component:
         The default error_boundary, which is an ErrorBoundary.
 
     """
-    return ErrorBoundary.create(
-        *children,
-        **props,
-    )
+    from reflex.components.component import memo
+
+    def memoized_error_boundary():
+        return ErrorBoundary.create(
+            *children,
+            **props,
+        )
+
+    return Fragment.create(memo(memoized_error_boundary)())
 
 
 @dataclasses.dataclass(frozen=True)

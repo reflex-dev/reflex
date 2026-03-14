@@ -1,24 +1,27 @@
 import { useTheme } from "$/utils/react-theme";
-import { createElement, useEffect } from "react";
+import { createElement, useCallback, useEffect, useMemo } from "react";
 import { ColorModeContext, defaultColorMode } from "$/utils/context";
 
 export default function RadixThemesColorModeProvider({ children }) {
   const { theme, resolvedTheme, setTheme } = useTheme();
 
-  const toggleColorMode = () => {
+  const toggleColorMode = useCallback(() => {
     setTheme(resolvedTheme === "light" ? "dark" : "light");
-  };
+  }, [resolvedTheme, setTheme]);
 
-  const setColorMode = (mode) => {
-    const allowedModes = ["light", "dark", "system"];
-    if (!allowedModes.includes(mode)) {
-      console.error(
-        `Invalid color mode "${mode}". Defaulting to "${defaultColorMode}".`,
-      );
-      mode = defaultColorMode;
-    }
-    setTheme(mode);
-  };
+  const setColorMode = useCallback(
+    (mode) => {
+      const allowedModes = ["light", "dark", "system"];
+      if (!allowedModes.includes(mode)) {
+        console.error(
+          `Invalid color mode "${mode}". Defaulting to "${defaultColorMode}".`,
+        );
+        mode = defaultColorMode;
+      }
+      setTheme(mode);
+    },
+    [setTheme],
+  );
 
   useEffect(() => {
     const radixRoot = document.querySelector(
@@ -30,16 +33,20 @@ export default function RadixThemesColorModeProvider({ children }) {
     }
   }, [resolvedTheme]);
 
-  return createElement(
-    ColorModeContext.Provider,
-    {
-      value: {
-        rawColorMode: theme,
-        resolvedColorMode: resolvedTheme,
-        toggleColorMode,
-        setColorMode,
-      },
-    },
-    children,
+  return useMemo(
+    () =>
+      createElement(
+        ColorModeContext.Provider,
+        {
+          value: {
+            rawColorMode: theme,
+            resolvedColorMode: resolvedTheme,
+            toggleColorMode,
+            setColorMode,
+          },
+        },
+        children,
+      ),
+    [theme, resolvedTheme, toggleColorMode, setColorMode, children],
   );
 }
