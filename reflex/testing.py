@@ -1245,7 +1245,7 @@ class AppHarnessSSR(AppHarnessProd):
     def _wait_frontend(self):
         """Wait for ssr-serve.js to emit its listening URL on stdout.
 
-        Re-uses the base ``AppHarness._wait_frontend`` which parses
+        Reuses the base ``AppHarness._wait_frontend`` which parses
         ``FRONTEND_LISTENING_REGEX`` — that regex already matches the
         ``[ssr-serve] http://localhost:<port>`` output format.
         """
