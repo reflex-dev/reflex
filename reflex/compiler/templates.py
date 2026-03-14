@@ -248,7 +248,7 @@ export async function loader({ request }) {
         ssr_imports = 'import { Outlet } from "react-router";'
         ssr_loader = ""
         ssr_layout_head = ""
-        ssr_state_provider_props = "{{}}"
+        ssr_state_provider_props = "{}"
 
     return f"""
 {imports_str}
