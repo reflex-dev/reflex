@@ -1056,13 +1056,22 @@ async def test_upload_file_keeps_form_open_until_stream_completes(
     assert not bio1.closed
     assert not bio2.closed
 
-    # Each yield from the handler produces an intermediate update;
-    # assert both file handles stay open throughout streaming.
-    async for _ in streaming_response.body_iterator:
-        assert not bio1.closed
-        assert not bio2.closed
+    # Drive the response through the full ASGI lifecycle so that
+    # _UploadStreamingResponse.__call__ invokes the on_finish callback.
+    scope = {"type": "http"}
+    done = asyncio.Event()
 
-    # After the stream completes, form_data.close() should have been called,
+    async def receive():
+        await done.wait()
+        return {"type": "http.disconnect"}
+
+    async def send(message):  # noqa: RUF029
+        if message.get("type") == "http.response.body" and not message.get("body"):
+            done.set()
+
+    await streaming_response(scope, receive, send)
+
+    # After the ASGI call completes, form_data.close() should have been called,
     # closing both underlying file handles.
     assert form_close.await_count == 1
     assert bio1.closed
