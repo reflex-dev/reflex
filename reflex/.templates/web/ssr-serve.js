@@ -15,7 +15,8 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 // Resolve all paths relative to *this file*, not process.cwd().
-const __dirname = import.meta.dirname ?? dirname(fileURLToPath(import.meta.url));
+const __dirname =
+  import.meta.dirname ?? dirname(fileURLToPath(import.meta.url));
 
 const clientDir = join(__dirname, "build", "client");
 const serverEntry = join(__dirname, "build", "server", "index.js");
@@ -29,7 +30,7 @@ app.use(compression());
 // Static assets with content-hash filenames — cache immutably.
 app.use(
   "/assets",
-  express.static(join(clientDir, "assets"), { immutable: true, maxAge: "1y" })
+  express.static(join(clientDir, "assets"), { immutable: true, maxAge: "1y" }),
 );
 
 // Other static files (favicon, sitemap, etc.) — short cache.
@@ -43,7 +44,7 @@ const shellPath = join(clientDir, "index.html");
 const hasShell = existsSync(shellPath);
 if (!hasShell) {
   console.warn(
-    "[ssr-serve] build/client/index.html not found — all requests will use SSR."
+    "[ssr-serve] build/client/index.html not found — all requests will use SSR.",
   );
 }
 

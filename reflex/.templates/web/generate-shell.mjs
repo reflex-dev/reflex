@@ -15,7 +15,8 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 // Resolve paths relative to this file, not process.cwd().
-const __dirname = import.meta.dirname ?? dirname(fileURLToPath(import.meta.url));
+const __dirname =
+  import.meta.dirname ?? dirname(fileURLToPath(import.meta.url));
 
 const build = await import(join(__dirname, "build", "server", "index.js"));
 const handler = createRequestHandler(build, "production");

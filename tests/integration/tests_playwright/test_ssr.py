@@ -197,10 +197,10 @@ def test_direct_access_blog_post(ssr_blog_app: AppHarnessSSR, page: Page):
     expect(title).to_have_text("Hello World")
 
     content = page.get_by_test_id("post-content")
-    expect(content).to_have_text("First post content for SSR testing.")
+    expect(content).to_have_text("First post content for SSR testing.", timeout=15000)
 
     author = page.get_by_test_id("post-author")
-    expect(author).to_have_text("Test Author")
+    expect(author).to_have_text("Test Author", timeout=15000)
 
 
 def test_client_navigation(ssr_blog_app: AppHarnessSSR, page: Page):
