@@ -201,7 +201,7 @@ def app_root_template(
     return f"""
 {imports_str}
 {dynamic_imports_str}
-import {{ EventLoopProvider, StateProvider, defaultColorMode }} from "$/utils/context";
+import {{ EventLoopProvider, StatesProvider, defaultColorMode }} from "$/utils/context";
 import {{ ThemeProvider }} from '$/utils/react-theme';
 import {{ Layout as AppLayout }} from './_document';
 import {{ Outlet }} from 'react-router';
@@ -226,7 +226,7 @@ export function Layout({{children}}) {{
 
   return jsx(AppLayout, {{}},
     jsx(ThemeProvider, {{defaultTheme: defaultColorMode, attribute: "class"}},
-      jsx(StateProvider, {{}},
+      jsx(StatesProvider, {{}},
         jsx(EventLoopProvider, {{}},
           jsx(AppWrap, {{}}, children)
         )
@@ -327,22 +327,12 @@ export const initialEvents = () => []
 """
     )
 
-    state_reducer_str = "\n".join(
-        rf'const [{format_state_name(state_name)}, dispatch_{format_state_name(state_name)}] = useReducer(applyDelta, initialState["{state_name}"])'
-        for state_name in initial_state
-    )
-
     create_state_contexts_str = "\n".join(
-        rf"createElement(StateContexts.{format_state_name(state_name)},{{value: {format_state_name(state_name)}}},"
+        rf"createElement(StateProvider, {{state_name: '{state_name}', ctx_name: '{format_state_name(state_name)}'}}, "
         for state_name in initial_state
     )
 
-    dispatchers_str = "\n".join(
-        f'"{state_name}": dispatch_{format_state_name(state_name)},'
-        for state_name in initial_state
-    )
-
-    return rf"""import {{ createContext, useContext, useMemo, useReducer, useState, createElement, useEffect }} from "react"
+    return rf"""import {{ createContext, useContext, useMemo, useReducer, useRef, useState, createElement, useEffect }} from "react"
 import {{ applyDelta, ReflexEvent, hydrateClientStorage, useEventLoop, refs }} from "$/utils/state"
 import {{ jsx }} from "@emotion/react";
 
@@ -402,19 +392,35 @@ export function EventLoopProvider({{ children }}) {{
   );
 }}
 
-export function StateProvider({{ children }}) {{
-  {state_reducer_str}
-  const dispatchers = useMemo(() => {{
-    return {{
-      {dispatchers_str}
-    }}
-  }}, [])
+const DispatchProvider = ({{ children }}) => {{
+  const dispatchers = useRef({{}});
+  return useMemo(() => createElement(DispatchContext, {{ value: dispatchers }}, children), [children, dispatchers]);
+}}
 
-  return (
-    {create_state_contexts_str}
-    createElement(DispatchContext, {{value: dispatchers}}, children)
+const StateProvider = ({{ children, state_name, ctx_name }}) => {{
+  const dispatchers = useContext(DispatchContext);
+  const [state, dispatch_state] = useReducer(applyDelta, initialState[state_name]);
+  useEffect(() => {{
+    dispatchers[state_name] = dispatch_state;
+    return () => delete dispatchers[state_name];
+  }}, [dispatchers, dispatch_state, state_name]);
+  return useMemo(
+    () =>
+      createElement(
+        StateContexts[ctx_name],
+        {{ value: state }},
+        children,
+      ),
+    [children, state, ctx_name],
+  );
+}}
+
+export function StatesProvider({{ children }}) {{
+  return useMemo(() => (
+    createElement(DispatchProvider, {{}},
+    {create_state_contexts_str}children
     {")" * len(initial_state)}
-  )
+  )), [children])
 }}"""
 
 
