@@ -159,6 +159,7 @@ def notify_frontend(url: str, backend_present: bool):
 
 def notify_backend():
     """Output a string notifying where the backend is running."""
+    config = get_config()
     console.print(
         f"Backend running at: [bold green]http://{get_config().backend_host}:{get_config().backend_port}[/bold green]"
     )
