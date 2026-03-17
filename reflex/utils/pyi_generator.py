@@ -252,14 +252,14 @@ def _get_source(obj: Any) -> str:
 
 
 @cache
-def _get_class_prop_comments(clz: type[Component]) -> dict[str, tuple[str, ...]]:
+def _get_class_prop_comments(clz: type[Component]) -> Mapping[str, tuple[str, ...]]:
     """Parse and cache prop comments for a component class.
 
     Args:
         clz: The class to extract prop comments from.
 
     Returns:
-        A mapping of prop name to comment lines.
+        An immutable mapping of prop name to comment lines.
     """
     props_comments: dict[str, tuple[str, ...]] = {}
     comments = []
@@ -295,7 +295,7 @@ def _get_class_prop_comments(clz: type[Component]) -> dict[str, tuple[str, ...]]
             )
         comments.clear()
 
-    return props_comments
+    return MappingProxyType(props_comments)
 
 
 @cache
@@ -621,7 +621,7 @@ def _get_parent_imports(func: Callable) -> Mapping[str, tuple[str, ...]]:
         An immutable mapping of module names to imported symbol names.
     """
     imports_: dict[str, set[str]] = {"reflex.vars": {"Var"}}
-    module_dir = set(importlib.import_module(func.__module__).__dir__())
+    module_dir = set(dir(importlib.import_module(func.__module__)))
     for type_hint in inspect.get_annotations(func).values():
         try:
             match = re.match(r"\w+\[([\w\d]+)\]", type_hint)
@@ -826,7 +826,7 @@ def _generate_staticmethod_call_functiondef(
     clz: type[Component] | type[SimpleNamespace],
     type_hint_globals: dict[str, Any],
 ) -> ast.FunctionDef | None:
-    fullspec = getfullargspec(clz.__call__)
+    fullspec = _get_full_argspec(clz.__call__)
 
     call_args = ast.arguments(
         args=[
@@ -1209,6 +1209,18 @@ class InitStubGenerator(StubGenerator):
         return [node]
 
 
+def _path_to_module_name(path: Path) -> str:
+    """Convert a file path to a dotted module name.
+
+    Args:
+        path: The file path to convert.
+
+    Returns:
+        The dotted module name.
+    """
+    return _relative_to_pwd(path).with_suffix("").as_posix().replace("/", ".")
+
+
 def _write_pyi_file(module_path: Path, source: str) -> str:
     relpath = str(_relative_to_pwd(module_path)).replace("\\", "/")
     pyi_content = (
@@ -1298,13 +1310,7 @@ def _scan_file(module_path: Path) -> tuple[str, str] | None:
     Returns:
         Tuple of (pyi_path, content_hash) or None if no stub needed.
     """
-    module_import = (
-        _relative_to_pwd(module_path)
-        .with_suffix("")
-        .as_posix()
-        .replace("/", ".")
-        .replace("\\", ".")
-    )
+    module_import = _path_to_module_name(module_path)
     module = importlib.import_module(module_import)
     logger.debug(f"Read {module_path}")
     class_names = {
@@ -1364,16 +1370,12 @@ class PyiGenerator:
 
         # Pre-import all modules sequentially to populate sys.modules
         # so forked workers inherit the cache and skip redundant imports.
+        importable_files: list[Path] = []
         for file in files:
-            module_import = (
-                _relative_to_pwd(file)
-                .with_suffix("")
-                .as_posix()
-                .replace("/", ".")
-                .replace("\\", ".")
-            )
+            module_import = _path_to_module_name(file)
             try:
                 importlib.import_module(module_import)
+                importable_files.append(file)
             except Exception:
                 logger.exception(f"Failed to import {module_import}")
 
@@ -1381,7 +1383,7 @@ class PyiGenerator:
         ctx = multiprocessing.get_context("fork")
         with ProcessPoolExecutor(max_workers=max_workers, mp_context=ctx) as executor:
             self.written_files.extend(
-                r for r in executor.map(_scan_file, files) if r is not None
+                r for r in executor.map(_scan_file, importable_files) if r is not None
             )
 
     def scan_all(
