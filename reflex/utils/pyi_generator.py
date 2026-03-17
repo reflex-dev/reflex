@@ -13,6 +13,7 @@ import subprocess
 import sys
 import typing
 from collections.abc import Callable, Iterable, Sequence
+from functools import cache
 from hashlib import md5
 from inspect import getfullargspec
 from itertools import chain
@@ -236,6 +237,157 @@ def _get_type_hint(
     return res
 
 
+@cache
+def _get_source(obj: Any) -> str:
+    """Get and cache the source for a Python object.
+
+    Args:
+        obj: The object whose source should be retrieved.
+
+    Returns:
+        The source code for the object.
+    """
+    return inspect.getsource(obj)
+
+
+@cache
+def _get_class_prop_comments(clz: type[Component]) -> dict[str, tuple[str, ...]]:
+    """Parse and cache prop comments for a component class.
+
+    Args:
+        clz: The class to extract prop comments from.
+
+    Returns:
+        A mapping of prop name to comment lines.
+    """
+    props_comments: dict[str, tuple[str, ...]] = {}
+    comments = []
+    for line in _get_source(clz).splitlines():
+        reached_functions = re.search(r"def ", line)
+        if reached_functions:
+            # We've reached the functions, so stop.
+            break
+
+        if line == "":
+            # We hit a blank line, so clear comments to avoid commented out prop appearing in next prop docs.
+            comments.clear()
+            continue
+
+        # Get comments for prop
+        if line.strip().startswith("#"):
+            # Remove noqa from the comments.
+            line = line.partition(" # noqa")[0]
+            comments.append(line)
+            continue
+
+        # Check if this line has a prop.
+        match = re.search(r"\w+:", line)
+        if match is None:
+            # This line doesn't have a var, so continue.
+            continue
+
+        # Get the prop.
+        prop = match.group(0).strip(":")
+        if comments:
+            props_comments[prop] = tuple(
+                comment.strip().strip("#") for comment in comments
+            )
+        comments.clear()
+
+    return props_comments
+
+
+@cache
+def _get_full_argspec(func: Callable) -> inspect.FullArgSpec:
+    """Get and cache the full argspec for a callable.
+
+    Args:
+        func: The callable to inspect.
+
+    Returns:
+        The full argument specification.
+    """
+    return getfullargspec(func)
+
+
+@cache
+def _get_signature_return_annotation(func: Callable) -> Any:
+    """Get and cache a callable's return annotation.
+
+    Args:
+        func: The callable to inspect.
+
+    Returns:
+        The callable's return annotation.
+    """
+    return inspect.signature(func).return_annotation
+
+
+@cache
+def _get_module_star_imports(module_name: str) -> dict[str, Any]:
+    """Resolve names imported by `from module import *`.
+
+    Args:
+        module_name: The module to inspect.
+
+    Returns:
+        The names that would be imported from the module.
+    """
+    module = importlib.import_module(module_name)
+    exported_names = getattr(module, "__all__", None)
+    if exported_names is not None:
+        return {name: getattr(module, name) for name in exported_names}
+    return {
+        name: value for name, value in vars(module).items() if not name.startswith("_")
+    }
+
+
+@cache
+def _get_module_selected_imports(
+    module_name: str, imported_names: tuple[str, ...]
+) -> dict[str, Any]:
+    """Resolve a set of imported names from a module.
+
+    Args:
+        module_name: The module to import from.
+        imported_names: The names to resolve.
+
+    Returns:
+        A mapping of imported name to value.
+    """
+    module = importlib.import_module(module_name)
+    return {name: getattr(module, name) for name in imported_names}
+
+
+@cache
+def _get_class_annotation_globals(target_class: type) -> dict[str, Any]:
+    """Get and cache globals needed to resolve class annotations.
+
+    Args:
+        target_class: The class whose annotation globals should be resolved.
+
+    Returns:
+        The merged module globals for the class MRO.
+    """
+    available_vars = {}
+    for module_name in {cls.__module__ for cls in target_class.__mro__}:
+        available_vars.update(sys.modules[module_name].__dict__)
+    return available_vars
+
+
+@cache
+def _get_class_event_triggers(target_class: type) -> frozenset[str]:
+    """Get and cache event trigger names for a class.
+
+    Args:
+        target_class: The class to inspect.
+
+    Returns:
+        The event trigger names defined on the class.
+    """
+    return frozenset(target_class.get_event_triggers())
+
+
 def _generate_imports(
     typing_imports: Iterable[str],
 ) -> list[ast.ImportFrom | ast.Import]:
@@ -267,41 +419,10 @@ def _generate_docstrings(clzs: list[type[Component]], props: list[str]) -> str:
         The docstring for the create method.
     """
     props_comments = {}
-    comments = []
     for clz in clzs:
-        for line in inspect.getsource(clz).splitlines():
-            reached_functions = re.search(r"def ", line)
-            if reached_functions:
-                # We've reached the functions, so stop.
-                break
-
-            if line == "":
-                # We hit a blank line, so clear comments to avoid commented out prop appearing in next prop docs.
-                comments.clear()
-                continue
-
-            # Get comments for prop
-            if line.strip().startswith("#"):
-                # Remove noqa from the comments.
-                line = line.partition(" # noqa")[0]
-                comments.append(line)
-                continue
-
-            # Check if this line has a prop.
-            match = re.search(r"\w+:", line)
-            if match is None:
-                # This line doesn't have a var, so continue.
-                continue
-
-            # Get the prop.
-            prop = match.group(0).strip(":")
+        for prop, comment_lines in _get_class_prop_comments(clz).items():
             if prop in props:
-                if not comments:  # do not include undocumented props
-                    continue
-                props_comments[prop] = [
-                    comment.strip().strip("#") for comment in comments
-                ]
-            comments.clear()
+                props_comments[prop] = list(comment_lines)
     clz = clzs[0]
     new_docstring = []
     for line in (clz.create.__doc__ or "").splitlines():
@@ -327,7 +448,7 @@ def _extract_func_kwargs_as_ast_nodes(
     Returns:
         The list of kwargs as ast arg nodes.
     """
-    spec = getfullargspec(func)
+    spec = _get_full_argspec(func)
     kwargs = []
 
     for kwarg in spec.kwonlyargs:
@@ -361,23 +482,27 @@ def _extract_class_props_as_ast_nodes(
     Returns:
         The list of props as ast arg nodes
     """
-    spec = getfullargspec(func)
-    all_props = []
+    spec = _get_full_argspec(func)
+    func_kwonlyargs = set(spec.kwonlyargs)
+    all_props: set[str] = set()
     kwargs = []
     for target_class in clzs:
-        event_triggers = target_class.get_event_triggers()
+        event_triggers = _get_class_event_triggers(target_class)
         # Import from the target class to ensure type hints are resolvable.
-        exec(f"from {target_class.__module__} import *", type_hint_globals)
+        type_hint_globals.update(_get_module_star_imports(target_class.__module__))
+        annotation_globals = type_hint_globals | _get_class_annotation_globals(
+            target_class
+        )
         for name, value in target_class.__annotations__.items():
             if (
-                name in spec.kwonlyargs
+                name in func_kwonlyargs
                 or name in EXCLUDED_PROPS
                 or name in all_props
                 or name in event_triggers
                 or (isinstance(value, str) and "ClassVar" in value)
             ):
                 continue
-            all_props.append(name)
+            all_props.add(name)
 
             default = None
             if extract_real_default:
@@ -389,11 +514,6 @@ def _extract_class_props_as_ast_nodes(
                     if isinstance(default, Var):
                         default = default._decode()
 
-            modules = {cls.__module__ for cls in target_class.__mro__}
-            available_vars = {}
-            for module in modules:
-                available_vars.update(sys.modules[module].__dict__)
-
             kwargs.append((
                 ast.arg(
                     arg=name,
@@ -402,7 +522,7 @@ def _extract_class_props_as_ast_nodes(
                             name,
                             _get_type_hint(
                                 value,
-                                type_hint_globals | available_vars,
+                                annotation_globals,
                             ),
                         )
                     ),
@@ -486,8 +606,10 @@ def type_to_ast(typ: Any, cls: type) -> ast.expr:
     )
 
 
-def _get_parent_imports(func: Callable):
-    imports_ = {"reflex.vars": ["Var"]}
+@cache
+def _get_parent_imports(func: Callable) -> dict[str, tuple[str, ...]]:
+    imports_ = {"reflex.vars": {"Var"}}
+    module_dir = set(importlib.import_module(func.__module__).__dir__())
     for type_hint in inspect.get_annotations(func).values():
         try:
             match = re.match(r"\w+\[([\w\d]+)\]", type_hint)
@@ -495,9 +617,12 @@ def _get_parent_imports(func: Callable):
             continue
         if match:
             type_hint = match.group(1)
-            if type_hint in importlib.import_module(func.__module__).__dir__():
-                imports_.setdefault(func.__module__, []).append(type_hint)
-    return imports_
+            if type_hint in module_dir:
+                imports_.setdefault(func.__module__, set()).add(type_hint)
+    return {
+        module_name: tuple(sorted(imported_names))
+        for module_name, imported_names in imports_.items()
+    }
 
 
 def _generate_component_create_functiondef(
@@ -532,7 +657,7 @@ def _generate_component_create_functiondef(
     if clz.__module__ != clz.create.__module__:
         imports_ = _get_parent_imports(clz.create)
         for name, values in imports_.items():
-            exec(f"from {name} import {','.join(values)}", type_hint_globals)
+            type_hint_globals.update(_get_module_selected_imports(name, values))
 
     kwargs = _extract_func_kwargs_as_ast_nodes(clz.create, type_hint_globals)
 
@@ -629,7 +754,7 @@ def _generate_component_create_functiondef(
                     ast.Name(
                         id=ast.unparse(
                             figure_out_return_type(
-                                inspect.signature(event_specs).return_annotation
+                                _get_signature_return_annotation(event_specs)
                             )
                             if not isinstance(
                                 event_specs := event_triggers[trigger], Sequence
@@ -638,7 +763,7 @@ def _generate_component_create_functiondef(
                                 ast.Name("Union"),
                                 ast.Tuple([
                                     figure_out_return_type(
-                                        inspect.signature(event_spec).return_annotation
+                                        _get_signature_return_annotation(event_spec)
                                     )
                                     for event_spec in event_specs
                                 ]),
@@ -791,7 +916,9 @@ class StubGenerator(ast.NodeTransformer):
     """A node transformer that will generate the stubs for a given module."""
 
     def __init__(
-        self, module: ModuleType, classes: dict[str, type[Component | SimpleNamespace]]
+        self,
+        module: ModuleType,
+        classes: dict[str, type[Component | SimpleNamespace]],
     ):
         """Initialize the stub generator.
 
@@ -808,8 +935,6 @@ class StubGenerator(ast.NodeTransformer):
         self.typing_imports = DEFAULT_TYPING_IMPORTS.copy()
         # Whether those typing imports have been inserted yet.
         self.inserted_imports = False
-        # Collected import statements from the module.
-        self.import_statements: list[str] = []
         # This dict is used when evaluating type hints.
         self.type_hint_globals = module.__dict__.copy()
 
@@ -872,11 +997,9 @@ class StubGenerator(ast.NodeTransformer):
         Returns:
             The modified import node(s).
         """
-        self.import_statements.append(ast.unparse(node))
         if not self.inserted_imports:
             self.inserted_imports = True
             default_imports = _generate_imports(self.typing_imports)
-            self.import_statements.extend(ast.unparse(i) for i in default_imports)
             return [*default_imports, node]
         return node
 
@@ -909,7 +1032,6 @@ class StubGenerator(ast.NodeTransformer):
         Returns:
             The modified ClassDef node.
         """
-        exec("\n".join(self.import_statements), self.type_hint_globals)
         self.current_class = node.name
         self._remove_docstring(node)
 
@@ -1190,7 +1312,7 @@ class PyiGenerator:
 
         if is_init_file:
             new_tree = InitStubGenerator(module, class_names).visit(
-                ast.parse(inspect.getsource(module))
+                ast.parse(_get_source(module))
             )
             init_imports = self._get_init_lazy_imports(module, new_tree)
             if not init_imports:
@@ -1198,7 +1320,7 @@ class PyiGenerator:
             content_hash = self._write_pyi_file(module_path, init_imports)
         else:
             new_tree = StubGenerator(module, class_names).visit(
-                ast.parse(inspect.getsource(module))
+                ast.parse(_get_source(module))
             )
             content_hash = self._write_pyi_file(module_path, ast.unparse(new_tree))
         return str(module_path.with_suffix(".pyi").resolve()), content_hash
