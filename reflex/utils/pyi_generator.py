@@ -13,14 +13,14 @@ import re
 import subprocess
 import sys
 import typing
-from collections.abc import Callable, Iterable, Sequence
+from collections.abc import Callable, Iterable, Mapping, Sequence
 from concurrent.futures import ProcessPoolExecutor
 from functools import cache
 from hashlib import md5
 from inspect import getfullargspec
 from itertools import chain
 from pathlib import Path
-from types import ModuleType, SimpleNamespace, UnionType
+from types import MappingProxyType, ModuleType, SimpleNamespace, UnionType
 from typing import Any, get_args, get_origin
 
 from reflex.components.component import Component
@@ -325,28 +325,30 @@ def _get_signature_return_annotation(func: Callable) -> Any:
 
 
 @cache
-def _get_module_star_imports(module_name: str) -> dict[str, Any]:
+def _get_module_star_imports(module_name: str) -> Mapping[str, Any]:
     """Resolve names imported by `from module import *`.
 
     Args:
         module_name: The module to inspect.
 
     Returns:
-        The names that would be imported from the module.
+        An immutable mapping of imported names to values.
     """
     module = importlib.import_module(module_name)
     exported_names = getattr(module, "__all__", None)
     if exported_names is not None:
-        return {name: getattr(module, name) for name in exported_names}
-    return {
+        return MappingProxyType({
+            name: getattr(module, name) for name in exported_names
+        })
+    return MappingProxyType({
         name: value for name, value in vars(module).items() if not name.startswith("_")
-    }
+    })
 
 
 @cache
 def _get_module_selected_imports(
     module_name: str, imported_names: tuple[str, ...]
-) -> dict[str, Any]:
+) -> Mapping[str, Any]:
     """Resolve a set of imported names from a module.
 
     Args:
@@ -354,26 +356,26 @@ def _get_module_selected_imports(
         imported_names: The names to resolve.
 
     Returns:
-        A mapping of imported name to value.
+        An immutable mapping of imported names to values.
     """
     module = importlib.import_module(module_name)
-    return {name: getattr(module, name) for name in imported_names}
+    return MappingProxyType({name: getattr(module, name) for name in imported_names})
 
 
 @cache
-def _get_class_annotation_globals(target_class: type) -> dict[str, Any]:
-    """Get and cache globals needed to resolve class annotations.
+def _get_class_annotation_globals(target_class: type) -> Mapping[str, Any]:
+    """Get globals needed to resolve class annotations.
 
     Args:
         target_class: The class whose annotation globals should be resolved.
 
     Returns:
-        The merged module globals for the class MRO.
+        An immutable mapping of globals for the class MRO.
     """
-    available_vars = {}
+    available_vars: dict[str, Any] = {}
     for module_name in {cls.__module__ for cls in target_class.__mro__}:
         available_vars.update(sys.modules[module_name].__dict__)
-    return available_vars
+    return MappingProxyType(available_vars)
 
 
 @cache
@@ -491,9 +493,10 @@ def _extract_class_props_as_ast_nodes(
         event_triggers = _get_class_event_triggers(target_class)
         # Import from the target class to ensure type hints are resolvable.
         type_hint_globals.update(_get_module_star_imports(target_class.__module__))
-        annotation_globals = type_hint_globals | _get_class_annotation_globals(
-            target_class
-        )
+        annotation_globals = {
+            **type_hint_globals,
+            **_get_class_annotation_globals(target_class),
+        }
         for name, value in target_class.__annotations__.items():
             if (
                 name in func_kwonlyargs
@@ -608,8 +611,16 @@ def type_to_ast(typ: Any, cls: type) -> ast.expr:
 
 
 @cache
-def _get_parent_imports(func: Callable) -> dict[str, tuple[str, ...]]:
-    imports_ = {"reflex.vars": {"Var"}}
+def _get_parent_imports(func: Callable) -> Mapping[str, tuple[str, ...]]:
+    """Get parent imports needed to resolve forwarded type hints.
+
+    Args:
+        func: The callable whose annotations are being analyzed.
+
+    Returns:
+        An immutable mapping of module names to imported symbol names.
+    """
+    imports_: dict[str, set[str]] = {"reflex.vars": {"Var"}}
     module_dir = set(importlib.import_module(func.__module__).__dir__())
     for type_hint in inspect.get_annotations(func).values():
         try:
@@ -620,10 +631,10 @@ def _get_parent_imports(func: Callable) -> dict[str, tuple[str, ...]]:
             type_hint = match.group(1)
             if type_hint in module_dir:
                 imports_.setdefault(func.__module__, set()).add(type_hint)
-    return {
+    return MappingProxyType({
         module_name: tuple(sorted(imported_names))
         for module_name, imported_names in imports_.items()
-    }
+    })
 
 
 def _generate_component_create_functiondef(
@@ -1420,7 +1431,6 @@ class PyiGenerator:
 
         # Fix generated pyi files with ruff.
         if file_paths:
-            subprocess.run(["ruff", "format", *file_paths])
             subprocess.run(["ruff", "check", "--fix", *file_paths])
             subprocess.run(["ruff", "format", *file_paths])
 
