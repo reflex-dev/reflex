@@ -1349,8 +1349,21 @@ class PyiGenerator:
     written_files: list[tuple[str, str]] = []
 
     def _scan_files(self, files: list[Path]):
+        max_workers = min(multiprocessing.cpu_count() or 1, len(files), 8)
+        use_parallel = (
+            max_workers > 1 and "fork" in multiprocessing.get_all_start_methods()
+        )
+
+        if not use_parallel:
+            # Serial fallback: _scan_file handles its own imports.
+            for file in files:
+                result = _scan_file(file)
+                if result is not None:
+                    self.written_files.append(result)
+            return
+
         # Pre-import all modules sequentially to populate sys.modules
-        # and avoid import deadlocks in worker processes.
+        # so forked workers inherit the cache and skip redundant imports.
         for file in files:
             module_import = (
                 _relative_to_pwd(file)
@@ -1365,9 +1378,6 @@ class PyiGenerator:
                 logger.exception(f"Failed to import {module_import}")
 
         # Generate stubs in parallel using forked worker processes.
-        # Forked workers inherit the parent's sys.modules, so
-        # importlib.import_module() in _scan_file returns immediately from cache.
-        max_workers = min(multiprocessing.cpu_count() or 1, len(files) or 1, 8)
         ctx = multiprocessing.get_context("fork")
         with ProcessPoolExecutor(max_workers=max_workers, mp_context=ctx) as executor:
             self.written_files.extend(
