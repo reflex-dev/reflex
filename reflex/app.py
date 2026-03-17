@@ -2187,7 +2187,6 @@ class EventNamespace(AsyncNamespace):
     async def on_event(self, sid: str, data: Any):
         """Event for receiving front-end websocket events.
 
-
         Args:
             sid: The Socket.IO session id.
             data: The event data.
