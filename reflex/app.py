@@ -29,7 +29,16 @@ from itertools import chain
 from pathlib import Path
 from timeit import default_timer as timer
 from types import SimpleNamespace
-from typing import TYPE_CHECKING, Any, BinaryIO, ParamSpec, get_args, get_type_hints
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    BinaryIO,
+    ParamSpec,
+    get_args,
+    get_type_hints,
+    overload,
+)
+from warnings import deprecated
 
 from rich.progress import MofNCompleteColumn, Progress, TimeElapsedColumn
 from socketio import ASGIApp as EngineIOApp
@@ -1564,10 +1573,27 @@ class App(MiddlewareMixin, LifespanMixin):
             str(constants.Endpoint.ALL_ROUTES), all_routes, methods=["GET"]
         )
 
+    @overload
+    @deprecated("pass token as rx.BaseStateToken instead of str")
+    def modify_state(
+        self,
+        token: str,
+        background: bool = False,
+        previous_dirty_vars: dict[str, set[str]] | None = None,
+    ) -> contextlib.AbstractAsyncContextManager[BaseState]: ...
+
+    @overload
+    def modify_state(
+        self,
+        token: BaseStateToken,
+        background: bool = False,
+        previous_dirty_vars: dict[str, set[str]] | None = None,
+    ) -> contextlib.AbstractAsyncContextManager[BaseState]: ...
+
     @contextlib.asynccontextmanager
     async def modify_state(
         self,
-        token: BaseStateToken,
+        token: BaseStateToken | str,
         background: bool = False,
         previous_dirty_vars: dict[str, set[str]] | None = None,
     ) -> AsyncIterator[BaseState]:
@@ -1587,6 +1613,9 @@ class App(MiddlewareMixin, LifespanMixin):
         if self.event_namespace is None:
             msg = "App has not been initialized yet."
             raise RuntimeError(msg)
+
+        if isinstance(token, str):
+            token = BaseStateToken.from_legacy_token(token, root_state=self._state)
 
         # Get exclusive access to the state.
         async with self.state_manager.modify_state_with_links(

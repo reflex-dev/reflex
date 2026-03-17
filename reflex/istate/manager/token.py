@@ -4,6 +4,8 @@ import dataclasses
 import pickle
 from typing import TYPE_CHECKING, BinaryIO, Generic, Self, TypeVar
 
+from reflex.utils import console
+
 if TYPE_CHECKING:
     from reflex.state import BaseState
 
@@ -169,3 +171,40 @@ class BaseStateToken(StateToken["BaseState"]):
         was_touched = state._get_was_touched()
         state._was_touched = False  # Reset the touched flag after serializing.
         return was_touched
+
+    @classmethod
+    def from_legacy_token(
+        cls, legacy_token: str, root_state: "type[BaseState] | None"
+    ) -> Self:
+        """Create a BaseStateToken from a legacy token string.
+
+        The legacy token format is "{ident}_{module_path}.{class_name}".
+
+        Args:
+            legacy_token: The legacy token string to convert.
+            root_state: The root state instance.
+
+        Returns:
+            A BaseStateToken instance created from the legacy token.
+
+        Raises:
+            ValueError: If the legacy token format is invalid or if the state class cannot be found
+        """
+        from reflex.state import _split_substate_key
+
+        if root_state is None:
+            msg = (
+                "Root state must be provided to convert legacy token to BaseStateToken."
+            )
+            raise ValueError(msg)
+
+        console.deprecate(
+            feature_name="Passing a string to modify_state",
+            reason="Use rx.BaseStateToken(token, state_cls) instead of the legacy string format",
+            deprecation_version="0.9.0",
+            removal_version="1.0",
+        )
+
+        client_token, state_path = _split_substate_key(legacy_token)
+        state_cls = root_state.get_class_substate(tuple(state_path.split(".")))  # type: ignore[union-attr]
+        return cls(ident=client_token, cls=state_cls)
