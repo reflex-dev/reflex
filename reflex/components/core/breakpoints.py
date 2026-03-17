@@ -63,11 +63,11 @@ class Breakpoints(dict[K, V]):
             lg: Styling when in the large width
             xl: Styling when in the extra-large width
 
-        Raises:
-            ValueError: If both custom and any other named parameters are provided.
-
         Returns:
             The responsive mapping.
+
+        Raises:
+            ValueError: If both custom and any other named parameters are provided.
         """
         thresholds = [initial, xs, sm, md, lg, xl]
 

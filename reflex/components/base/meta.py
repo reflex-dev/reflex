@@ -14,11 +14,11 @@ class Title(elements.Title):
     def render(self) -> dict:
         """Render the title component.
 
-        Raises:
-            ValueError: If the title is not a single string.
-
         Returns:
             The rendered title component.
+
+        Raises:
+            ValueError: If the title is not a single string.
         """
         # Make sure the title is a single string.
         if len(self.children) != 1 or not isinstance(self.children[0], Bare):

@@ -39,13 +39,13 @@ def compile_import_statement(fields: list[ImportVar]) -> tuple[str, list[str]]:
     Args:
         fields: The set of fields to import from the library.
 
-    Raises:
-        ValueError: If there is more than one default import.
-
     Returns:
         The libraries for default and rest.
         default: default library. When install "import def from library".
         rest: rest of libraries. When install "import {rest1, rest2} from library"
+
+    Raises:
+        ValueError: If there is more than one default import.
     """
     # ignore the ImportVar fields with render=False during compilation
     fields_set = {field for field in fields if field.render}
@@ -105,11 +105,11 @@ def compile_imports(import_dict: ParsedImportDict) -> list[_ImportDict]:
     Args:
         import_dict: The import dict to compile.
 
-    Raises:
-        ValueError: If an import in the dict is invalid.
-
     Returns:
         The list of import dict.
+
+    Raises:
+        ValueError: If an import in the dict is invalid.
     """
     collapsed_import_dict: ParsedImportDict = imports.collapse_imports(import_dict)
     validate_imports(collapsed_import_dict)
