@@ -32,6 +32,12 @@ def make_var(value) -> Var:
     return Var(_js_expr=value)
 
 
+def make_timeout_logger():
+    return rx.vars.FunctionStringVar.create(
+        "(...args) => { setTimeout(() => console.log('Timeout reached!', args), 1000); }"
+    ).to(EventChain)
+
+
 def test_create_event():
     """Test creating an event."""
     event = Event(token="token", name="state.do_thing", payload={"arg": "value"})
@@ -666,6 +672,41 @@ def test_event_var_in_rx_cond():
         rx_cond(chain_var, rx.text("True"), rx.text("False"))
     assert "Cannot convert" in str(err.value)
     assert "to bool" in str(err.value)
+
+
+def test_event_chain_create_allows_plain_function_var():
+    """Plain FunctionVars should be usable as frontend event handlers."""
+    frontend_handler = make_timeout_logger()
+
+    assert EventChain.create(frontend_handler, args_spec=lambda: ()) is frontend_handler
+
+
+def test_event_chain_create_allows_function_var_in_list():
+    """FunctionVars should be allowed inside EventChain lists."""
+    frontend_handler = make_timeout_logger()
+
+    chain = EventChain.create([frontend_handler], args_spec=lambda: ())
+
+    assert isinstance(chain, EventChain)
+    assert chain.events == [frontend_handler]
+
+
+def test_button_accepts_mixed_event_handler_and_function_var():
+    """Components should accept mixed backend/frontend event chains."""
+
+    class MixedState(BaseState):
+        @event
+        def do_a_thing(self):
+            pass
+
+    log_after_timeout = make_timeout_logger()
+
+    button = rx.button(
+        "Do both",
+        on_click=[MixedState.do_a_thing, log_after_timeout],
+    )
+
+    assert isinstance(button.event_triggers["on_click"], EventChain)
 
 
 def test_decentralized_event_with_args():

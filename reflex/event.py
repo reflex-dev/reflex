@@ -449,8 +449,8 @@ class CallableEventSpec(EventSpec):
 class EventChain(EventActionsMixin):
     """Container for a chain of events that will be executed in order."""
 
-    events: Sequence["EventSpec | EventVar | EventCallback"] = dataclasses.field(
-        default_factory=list
+    events: Sequence["EventSpec | EventVar | FunctionVar | EventCallback"] = (
+        dataclasses.field(default_factory=list)
     )
 
     args_spec: Callable | Sequence[Callable] | None = dataclasses.field(default=None)
@@ -483,6 +483,8 @@ class EventChain(EventActionsMixin):
         if isinstance(value, Var):
             if isinstance(value, EventChainVar):
                 return value
+            if isinstance(value, FunctionVar):
+                return value
             if isinstance(value, EventVar):
                 value = [value]
             elif safe_issubclass(value._var_type, (EventChain, EventSpec)):
@@ -505,23 +507,26 @@ class EventChain(EventActionsMixin):
 
         # If the input is a list of event handlers, create an event chain.
         if isinstance(value, list):
-            events: list[EventSpec | EventVar] = []
+            events: list[EventSpec | EventVar | FunctionVar] = []
             for v in value:
                 if isinstance(v, (EventHandler, EventSpec)):
                     # Call the event handler to get the event.
                     events.append(call_event_handler(v, args_spec, key=key))
+                elif isinstance(v, (EventVar, FunctionVar)):
+                    events.append(v)
                 elif isinstance(v, Callable):
                     # Call the lambda to get the event chain.
                     result = call_event_fn(v, args_spec, key=key)
                     if isinstance(result, Var):
+                        if isinstance(result, (EventVar, FunctionVar)):
+                            events.append(result)
+                            continue
                         msg = (
                             f"Invalid event chain: {v}. Cannot use a Var-returning "
                             "lambda inside an EventChain list."
                         )
                         raise ValueError(msg)
                     events.extend(result)
-                elif isinstance(v, EventVar):
-                    events.append(v)
                 else:
                     msg = f"Invalid event: {v}"
                     raise ValueError(msg)
@@ -2077,12 +2082,15 @@ class LiteralEventChainVar(ArgsFunctionOperationBuilder, LiteralVar, EventChainV
         sig = inspect.signature(arg_spec)  # pyright: ignore [reportArgumentType]
         if sig.parameters:
             arg_def = tuple(f"_{p}" for p in sig.parameters)
-            arg_def_expr = LiteralVar.create([Var(_js_expr=arg) for arg in arg_def])
+            arg_vars = tuple(Var(_js_expr=arg) for arg in arg_def)
+            arg_def_expr = LiteralVar.create(list(arg_vars))
+            call_args = arg_vars
         else:
             # add a default argument for addEvents if none were specified in value.args_spec
             # used to trigger the preventDefault() on the event.
             arg_def = ("...args",)
             arg_def_expr = Var(_js_expr="args")
+            call_args = (Var(_js_expr="...args"),)
 
         if value.invocation is None:
             invocation = FunctionStringVar.create(
@@ -2099,16 +2107,73 @@ class LiteralEventChainVar(ArgsFunctionOperationBuilder, LiteralVar, EventChainV
             msg = f"EventChain invocation must be a FunctionVar, got {invocation!s} of type {invocation._var_type!s}."
             raise ValueError(msg)
 
+        has_function_var = any(isinstance(e, FunctionVar) for e in value.events)
+
+        if not has_function_var:
+            return_expr = invocation.call(
+                LiteralVar.create([LiteralVar.create(event) for event in value.events]),
+                arg_def_expr,
+                value.event_actions,
+            )
+        else:
+            statement_js: list[str] = []
+            statement_var_data: list[VarData | None] = []
+            queueable_group: list[EventSpec | EventVar | EventCallback] = []
+
+            if value.event_actions.get("preventDefault") or value.event_actions.get(
+                "stopPropagation"
+            ):
+                statement_js.append(
+                    "const _reflex_dom_event = "
+                    f"{arg_def_expr}.filter((o) => o?.preventDefault !== undefined)[0];"
+                )
+                if value.event_actions.get("preventDefault"):
+                    statement_js.append(
+                        "if (_reflex_dom_event?.preventDefault) "
+                        "{_reflex_dom_event.preventDefault();}"
+                    )
+                if value.event_actions.get("stopPropagation"):
+                    statement_js.append(
+                        "if (_reflex_dom_event?.stopPropagation) "
+                        "{_reflex_dom_event.stopPropagation();}"
+                    )
+
+            def flush_queueable_group() -> None:
+                if not queueable_group:
+                    return
+                queue_call = invocation.call(
+                    LiteralVar.create([
+                        LiteralVar.create(event) for event in queueable_group
+                    ]),
+                    arg_def_expr,
+                    {},
+                )
+                statement_js.append(f"{queue_call!s};")
+                statement_var_data.append(queue_call._get_all_var_data())
+                queueable_group.clear()
+
+            for event in value.events:
+                if isinstance(event, FunctionVar):
+                    flush_queueable_group()
+                    function_call = event.call(*call_args)
+                    statement_js.append(f"{function_call!s};")
+                    statement_var_data.append(function_call._get_all_var_data())
+                else:
+                    queueable_group.append(event)
+
+            flush_queueable_group()
+
+            return_expr = Var(
+                _js_expr=f"{{{''.join(statement_js)}}}",
+                _var_data=VarData.merge(*statement_var_data),
+            )
+
         return cls(
             _js_expr="",
             _var_type=EventChain,
             _var_data=_var_data,
             _args=FunctionArgs(arg_def),
-            _return_expr=invocation.call(
-                LiteralVar.create([LiteralVar.create(event) for event in value.events]),
-                arg_def_expr,
-                value.event_actions,
-            ),
+            _return_expr=return_expr,
             _var_value=value,
         )
 
