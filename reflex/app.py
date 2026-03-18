@@ -29,8 +29,9 @@ from itertools import chain
 from pathlib import Path
 from timeit import default_timer as timer
 from types import SimpleNamespace
-from typing import TYPE_CHECKING, Any, BinaryIO, ParamSpec, get_args, get_type_hints
+from typing import TYPE_CHECKING, Any, BinaryIO, ParamSpec, cast
 
+from python_multipart.multipart import MultipartParser, parse_options_header
 from rich.progress import MofNCompleteColumn, Progress, TimeElapsedColumn
 from socketio import ASGIApp as EngineIOApp
 from socketio import AsyncNamespace, AsyncServer
@@ -38,6 +39,7 @@ from starlette.applications import Starlette
 from starlette.datastructures import Headers
 from starlette.datastructures import UploadFile as StarletteUploadFile
 from starlette.exceptions import HTTPException
+from starlette.formparsers import MultiPartException, _user_safe_decode
 from starlette.middleware import cors
 from starlette.requests import ClientDisconnect, Request
 from starlette.responses import JSONResponse, Response, StreamingResponse
@@ -77,11 +79,16 @@ from reflex.environment import ExecutorType, environment
 from reflex.event import (
     _EVENT_FIELDS,
     Event,
+    EventHandler,
     EventSpec,
     EventType,
     IndividualEventType,
+    UploadChunk,
+    UploadChunkIterator,
     get_hydrate_event,
     noop,
+    resolve_upload_chunk_handler_param,
+    resolve_upload_handler_param,
 )
 from reflex.istate.proxy import StateProxy
 from reflex.page import DECORATED_PAGES
@@ -110,7 +117,6 @@ from reflex.utils import (
     js_runtimes,
     path_ops,
     prerequisites,
-    types,
 )
 from reflex.utils.exec import (
     get_compile_context,
@@ -285,6 +291,422 @@ class UploadFile(StarletteUploadFile):
         return None
 
 
+@dataclasses.dataclass
+class _UploadChunkPart:
+    """Track the current multipart file part for chunk uploads."""
+
+    content_disposition: bytes | None = None
+    field_name: str = ""
+    filename: str | None = None
+    content_type: str = ""
+    item_headers: list[tuple[bytes, bytes]] = dataclasses.field(default_factory=list)
+    offset: int = 0
+    bytes_emitted: int = 0
+    is_upload_chunk: bool = False
+
+
+class _UploadChunkMultipartParser:
+    """Streaming multipart parser for chunked uploads."""
+
+    def __init__(
+        self,
+        headers: Headers,
+        stream: AsyncGenerator[bytes, None],
+        chunk_iter: UploadChunkIterator,
+    ) -> None:
+        self.headers = headers
+        self.stream = stream
+        self.chunk_iter = chunk_iter
+        self._charset = ""
+        self._current_partial_header_name = b""
+        self._current_partial_header_value = b""
+        self._current_part = _UploadChunkPart()
+        self._chunks_to_emit: list[UploadChunk] = []
+        self._seen_upload_chunk = False
+        self._part_count = 0
+        self._emitted_chunk_count = 0
+        self._emitted_bytes = 0
+        self._stream_chunk_count = 0
+
+    def on_part_begin(self) -> None:
+        """Reset parser state for a new multipart part."""
+        self._current_part = _UploadChunkPart()
+
+    def on_part_data(self, data: bytes, start: int, end: int) -> None:
+        """Record streamed chunk data for the current part."""
+        if (
+            not self._current_part.is_upload_chunk
+            or self._current_part.filename is None
+        ):
+            return
+
+        message_bytes = data[start:end]
+        self._chunks_to_emit.append(
+            UploadChunk(
+                filename=self._current_part.filename,
+                offset=self._current_part.offset + self._current_part.bytes_emitted,
+                content_type=self._current_part.content_type,
+                data=message_bytes,
+            )
+        )
+        self._current_part.bytes_emitted += len(message_bytes)
+        self._emitted_chunk_count += 1
+        self._emitted_bytes += len(message_bytes)
+
+    def on_part_end(self) -> None:
+        """Emit a zero-byte chunk for empty file parts."""
+        if (
+            self._current_part.is_upload_chunk
+            and self._current_part.filename is not None
+            and self._current_part.bytes_emitted == 0
+        ):
+            self._chunks_to_emit.append(
+                UploadChunk(
+                    filename=self._current_part.filename,
+                    offset=self._current_part.offset,
+                    content_type=self._current_part.content_type,
+                    data=b"",
+                )
+            )
+            self._emitted_chunk_count += 1
+
+    def on_header_field(self, data: bytes, start: int, end: int) -> None:
+        """Accumulate multipart header field bytes."""
+        self._current_partial_header_name += data[start:end]
+
+    def on_header_value(self, data: bytes, start: int, end: int) -> None:
+        """Accumulate multipart header value bytes."""
+        self._current_partial_header_value += data[start:end]
+
+    def on_header_end(self) -> None:
+        """Store the completed multipart header."""
+        field = self._current_partial_header_name.lower()
+        if field == b"content-disposition":
+            self._current_part.content_disposition = self._current_partial_header_value
+        self._current_part.item_headers.append((
+            field,
+            self._current_partial_header_value,
+        ))
+        self._current_partial_header_name = b""
+        self._current_partial_header_value = b""
+
+    def on_headers_finished(self) -> None:
+        """Parse upload chunk metadata from multipart headers."""
+        disposition, options = parse_options_header(
+            self._current_part.content_disposition
+        )
+        if disposition != b"form-data":
+            msg = "Invalid upload chunk disposition."
+            raise MultiPartException(msg)
+
+        try:
+            field_name = _user_safe_decode(options[b"name"], self._charset)
+        except KeyError as err:
+            msg = 'The Content-Disposition header field "name" must be provided.'
+            raise MultiPartException(msg) from err
+
+        parts = field_name.split(":")
+        if len(parts) != 3 or parts[0] != "chunk":
+            msg = f"Invalid upload chunk field name: {field_name}"
+            raise MultiPartException(msg)
+
+        try:
+            int(parts[1])
+            offset = int(parts[2])
+        except ValueError as err:
+            msg = f"Invalid upload chunk field name: {field_name}"
+            raise MultiPartException(msg) from err
+
+        if offset < 0:
+            msg = f"Invalid upload chunk field name: {field_name}"
+            raise MultiPartException(msg)
+
+        try:
+            filename = _user_safe_decode(options[b"filename"], self._charset)
+        except KeyError as err:
+            msg = f"Missing filename for upload chunk field: {field_name}"
+            raise MultiPartException(msg) from err
+
+        content_type = ""
+        for header_name, header_value in self._current_part.item_headers:
+            if header_name == b"content-type":
+                content_type = _user_safe_decode(header_value, self._charset)
+                break
+
+        self._current_part.field_name = field_name
+        self._current_part.filename = filename
+        self._current_part.content_type = content_type
+        self._current_part.offset = offset
+        self._current_part.bytes_emitted = 0
+        self._current_part.is_upload_chunk = True
+        self._seen_upload_chunk = True
+        self._part_count += 1
+
+    def on_end(self) -> None:
+        """Finalize parser callbacks."""
+
+    def stats(self) -> dict[str, int | bool]:
+        """Return parser statistics for logging."""
+        return {
+            "parts": self._part_count,
+            "emitted_chunks": self._emitted_chunk_count,
+            "emitted_bytes": self._emitted_bytes,
+            "request_chunks": self._stream_chunk_count,
+            "saw_upload_chunk": self._seen_upload_chunk,
+        }
+
+    async def parse(self) -> None:
+        """Parse the incoming request stream and push chunks to the iterator.
+
+        Raises:
+            MultiPartException: If the request is not valid multipart upload data.
+            RuntimeError: If the upload handler exits before consuming all chunks.
+        """
+        _, params = parse_options_header(self.headers["Content-Type"])
+        charset = params.get(b"charset", "utf-8")
+        if isinstance(charset, bytes):
+            charset = charset.decode("latin-1")
+        self._charset = charset
+
+        try:
+            boundary = params[b"boundary"]
+        except KeyError as err:
+            msg = "Missing boundary in multipart."
+            raise MultiPartException(msg) from err
+
+        callbacks = {
+            "on_part_begin": self.on_part_begin,
+            "on_part_data": self.on_part_data,
+            "on_part_end": self.on_part_end,
+            "on_header_field": self.on_header_field,
+            "on_header_value": self.on_header_value,
+            "on_header_end": self.on_header_end,
+            "on_headers_finished": self.on_headers_finished,
+            "on_end": self.on_end,
+        }
+        parser = MultipartParser(boundary, cast(Any, callbacks))
+
+        async for chunk in self.stream:
+            self._stream_chunk_count += 1
+            parser.write(chunk)
+            while self._chunks_to_emit:
+                await self.chunk_iter.push(self._chunks_to_emit.pop(0))
+
+        parser.finalize()
+        while self._chunks_to_emit:
+            await self.chunk_iter.push(self._chunks_to_emit.pop(0))
+
+        if not self._seen_upload_chunk:
+            msg = "No file chunks were uploaded."
+            raise MultiPartException(msg)
+
+
+@dataclasses.dataclass(frozen=True)
+class _ChunkUploadRequestMetadata:
+    """Metadata describing one chunk-upload HTTP request."""
+
+    session_id: str
+    upload_id: str
+    filename: str | None
+    offset: int
+    is_complete: bool
+    is_cancel: bool
+
+
+@dataclasses.dataclass
+class _ChunkUploadSession:
+    """Bookkeeping for a logical chunk upload spanning multiple requests."""
+
+    session_id: str
+    upload_id: str
+    iterator: UploadChunkIterator
+    task: asyncio.Task[Any]
+    request_count: int = 0
+    emitted_chunk_count: int = 0
+    emitted_bytes: int = 0
+
+    def record_request(self, *, chunk_count: int, emitted_bytes: int) -> None:
+        """Update session counters after processing a request."""
+        self.request_count += 1
+        self.emitted_chunk_count += chunk_count
+        self.emitted_bytes += emitted_bytes
+
+    def stats(self) -> dict[str, int | str]:
+        """Return summary stats for logging."""
+        return {
+            "session_id": self.session_id,
+            "upload_id": self.upload_id,
+            "requests": self.request_count,
+            "emitted_chunks": self.emitted_chunk_count,
+            "emitted_bytes": self.emitted_bytes,
+        }
+
+
+def _chunk_upload_session_key(token: str, handler_name: str, session_id: str) -> str:
+    """Build the internal key for a chunk upload session.
+
+    Returns:
+        The app-local session key.
+    """
+    return f"{token}:{handler_name}:{session_id}"
+
+
+def _parse_chunk_upload_flag(value: str | None) -> bool:
+    """Parse a truthy chunk-upload flag from query params.
+
+    Returns:
+        Whether the flag should be treated as enabled.
+    """
+    return value is not None and value.lower() in {"1", "true", "yes", "on"}
+
+
+def _extract_chunk_upload_request_metadata(
+    request: Request,
+) -> _ChunkUploadRequestMetadata:
+    """Validate and parse query params for a chunk-upload request.
+
+    Args:
+        request: The incoming request.
+
+    Returns:
+        Parsed chunk-upload metadata.
+
+    Raises:
+        ValueError: If the request is missing required chunk metadata.
+    """
+    params = request.query_params
+    session_id = params.get("session_id", "")
+    if not session_id:
+        msg = "Missing session_id for upload chunk request."
+        raise ValueError(msg)
+
+    upload_id = params.get("upload_id", "")
+    is_complete = _parse_chunk_upload_flag(params.get("complete"))
+    is_cancel = _parse_chunk_upload_flag(params.get("cancel"))
+
+    if is_cancel:
+        return _ChunkUploadRequestMetadata(
+            session_id=session_id,
+            upload_id=upload_id,
+            filename=params.get("filename"),
+            offset=0,
+            is_complete=False,
+            is_cancel=True,
+        )
+
+    filename = params.get("filename")
+    if not filename:
+        msg = "Missing filename for upload chunk request."
+        raise ValueError(msg)
+
+    offset_raw = params.get("offset")
+    if offset_raw is None:
+        msg = "Missing offset for upload chunk request."
+        raise ValueError(msg)
+
+    try:
+        offset = int(offset_raw)
+    except ValueError as err:
+        msg = f"Invalid offset for upload chunk request: {offset_raw}"
+        raise ValueError(msg) from err
+
+    if offset < 0:
+        msg = f"Invalid offset for upload chunk request: {offset_raw}"
+        raise ValueError(msg)
+
+    return _ChunkUploadRequestMetadata(
+        session_id=session_id,
+        upload_id=upload_id,
+        filename=filename,
+        offset=offset,
+        is_complete=is_complete,
+        is_cancel=False,
+    )
+
+
+async def _cleanup_chunk_upload_session(app: App, session_key: str) -> None:
+    """Remove a chunk upload session from the app if it is still present."""
+    async with app._upload_chunk_sessions_lock:
+        app._upload_chunk_sessions.pop(session_key, None)
+
+
+async def _lookup_chunk_upload_session(
+    app: App,
+    token: str,
+    handler_name: str,
+    session_id: str,
+) -> tuple[str, _ChunkUploadSession | None]:
+    """Look up an active chunk upload session.
+
+    Returns:
+        The app-local session key and any existing upload session.
+    """
+    session_key = _chunk_upload_session_key(token, handler_name, session_id)
+    async with app._upload_chunk_sessions_lock:
+        return session_key, app._upload_chunk_sessions.get(session_key)
+
+
+async def _get_or_create_chunk_upload_session(
+    app: App,
+    token: str,
+    handler_name: str,
+    metadata: _ChunkUploadRequestMetadata,
+) -> tuple[str, _ChunkUploadSession, bool]:
+    """Get or initialize the logical upload session for chunked uploads.
+
+    Returns:
+        The internal session key, the upload session, and whether it was created.
+    """
+    session_key = _chunk_upload_session_key(token, handler_name, metadata.session_id)
+    async with app._upload_chunk_sessions_lock:
+        existing = app._upload_chunk_sessions.get(session_key)
+        if existing is not None:
+            if metadata.upload_id and existing.upload_id != metadata.upload_id:
+                msg = "Chunk upload session does not match the requested upload_id."
+                raise ValueError(msg)
+            return session_key, existing, False
+
+        _state, event_handler = await _get_upload_runtime_handler(
+            app, token, handler_name
+        )
+        handler_upload_param = resolve_upload_chunk_handler_param(event_handler)
+
+        chunk_iter = UploadChunkIterator(maxsize=8)
+        event = Event(
+            token=token,
+            name=handler_name,
+            payload={handler_upload_param[0]: chunk_iter},
+        )
+
+        async with app.state_manager.modify_state_with_links(
+            event.substate_token,
+            event=event,
+        ) as state:
+            _seed_upload_router_data(state, token)
+            task = app._process_background(state, event)
+
+        if task is None:
+            msg = f"@rx.event(background=True) is required for upload_files_chunk handler `{handler_name}`."
+            raise exceptions.UploadTypeError(msg)
+
+        chunk_iter.set_consumer_task(task)
+        session = _ChunkUploadSession(
+            session_id=metadata.session_id,
+            upload_id=metadata.upload_id,
+            iterator=chunk_iter,
+            task=task,
+        )
+        app._upload_chunk_sessions[session_key] = session
+        task.add_done_callback(
+            lambda finished_task, *, _app=app, _session_key=session_key: (
+                finished_task.get_loop().create_task(
+                    _cleanup_chunk_upload_session(_app, _session_key)
+                )
+            )
+        )
+        return session_key, session, True
+
+
 @dataclasses.dataclass(
     frozen=True,
 )
@@ -434,6 +856,16 @@ class App(MiddlewareMixin, LifespanMixin):
 
     # Background tasks that are currently running.
     _background_tasks: set[asyncio.Task] = dataclasses.field(default_factory=set)
+
+    # Active logical sessions for chunked uploads that span multiple requests.
+    _upload_chunk_sessions: dict[str, _ChunkUploadSession] = dataclasses.field(
+        default_factory=dict
+    )
+
+    # Synchronize creation and cleanup of chunked upload sessions.
+    _upload_chunk_sessions_lock: asyncio.Lock = dataclasses.field(
+        default_factory=asyncio.Lock
+    )
 
     # Frontend Error Handler Function
     frontend_exception_handler: Callable[[Exception], None] = (
@@ -704,6 +1136,11 @@ class App(MiddlewareMixin, LifespanMixin):
             self._api.add_route(
                 str(constants.Endpoint.UPLOAD),
                 upload(self),
+                methods=["POST"],
+            )
+            self._api.add_route(
+                str(constants.Endpoint.UPLOAD_CHUNK),
+                upload_chunk(self),
                 methods=["POST"],
             )
 
@@ -1912,6 +2349,71 @@ class _UploadStreamingResponse(StreamingResponse):
             await self._on_finish()
 
 
+def _require_upload_headers(request: Request) -> tuple[str, str]:
+    """Extract the required upload headers from a request.
+
+    Args:
+        request: The incoming request.
+
+    Returns:
+        The client token and event handler name.
+
+    Raises:
+        HTTPException: If the upload headers are missing.
+    """
+    token = request.headers.get("reflex-client-token")
+    handler = request.headers.get("reflex-event-handler")
+
+    if not token or not handler:
+        raise HTTPException(
+            status_code=400,
+            detail="Missing reflex-client-token or reflex-event-handler header.",
+        )
+
+    return token, handler
+
+
+async def _get_upload_runtime_handler(
+    app: App,
+    token: str,
+    handler_name: str,
+) -> tuple[BaseState, EventHandler]:
+    """Resolve the runtime state and event handler for an upload request.
+
+    Args:
+        app: The Reflex app.
+        token: The client token.
+        handler_name: The fully qualified event handler name.
+
+    Returns:
+        The root state instance and resolved event handler.
+    """
+    substate_token = _substate_key(token, handler_name.rpartition(".")[0])
+    state = await app.state_manager.get_state(substate_token)
+    _current_state, event_handler = state._get_event_handler(handler_name)
+    return state, event_handler
+
+
+def _seed_upload_router_data(state: BaseState, token: str) -> None:
+    """Ensure upload-launched handlers have the client token in router state.
+
+    Background upload handlers use ``StateProxy`` which derives its mutable-state
+    token from ``self.router.session.client_token``. Upload requests do not flow
+    through the normal websocket event pipeline, so we seed the token here.
+
+    Args:
+        state: The root state instance.
+        token: The client token from the upload request.
+    """
+    router_data = dict(state.router_data)
+    if router_data.get(constants.RouteVar.CLIENT_TOKEN) == token:
+        return
+
+    router_data[constants.RouteVar.CLIENT_TOKEN] = token
+    state.router_data = router_data
+    state.router = RouterData.from_router_data(router_data)
+
+
 def upload(app: App):
     """Upload a file.
 
@@ -1937,7 +2439,7 @@ def upload(app: App):
             UploadTypeError: if a background task is used as the handler.
             HTTPException: when the request does not include token / handler headers.
         """
-        from reflex.utils.exceptions import UploadTypeError, UploadValueError
+        from reflex.utils.exceptions import UploadValueError
 
         # Get the files from the request.
         try:
@@ -1966,43 +2468,12 @@ def upload(app: App):
                 msg = "No files were uploaded."
                 raise UploadValueError(msg)
 
-            token = request.headers.get("reflex-client-token")
-            handler = request.headers.get("reflex-event-handler")
+            token, handler = _require_upload_headers(request)
 
-            if not token or not handler:
-                raise HTTPException(
-                    status_code=400,
-                    detail="Missing reflex-client-token or reflex-event-handler header.",
-                )
-
-            # Get the state for the session.
-            substate_token = _substate_key(token, handler.rpartition(".")[0])
-            state = await app.state_manager.get_state(substate_token)
-
-            handler_upload_param = ()
-
-            _current_state, event_handler = state._get_event_handler(handler)
-
-            if event_handler.is_background:
-                msg = f"@rx.event(background=True) is not supported for upload handler `{handler}`."
-                raise UploadTypeError(msg)
-            func = event_handler.fn
-            if isinstance(func, functools.partial):
-                func = func.func
-            for k, v in get_type_hints(func).items():
-                if types.is_generic_alias(v) and types._issubclass(
-                    get_args(v)[0],
-                    UploadFile,
-                ):
-                    handler_upload_param = (k, v)
-                    break
-
-            if not handler_upload_param:
-                msg = (
-                    f"`{handler}` handler should have a parameter annotated as "
-                    "list[rx.UploadFile]"
-                )
-                raise UploadValueError(msg)
+            _state, event_handler = await _get_upload_runtime_handler(
+                app, token, handler
+            )
+            handler_upload_param = resolve_upload_handler_param(event_handler)
 
             # Keep the parsed form data alive until the upload event finishes so
             # the underlying Starlette temp files remain available to the handler.
@@ -2057,6 +2528,166 @@ def upload(app: App):
         )
 
     return upload_file
+
+
+def upload_chunk(app: App):
+    """Upload file chunks to a background event handler.
+
+    Args:
+        app: The app to upload the file for.
+
+    Returns:
+        The streaming upload function.
+    """
+
+    async def upload_file_chunk(request: Request):
+        """Upload file chunks without buffering the full file in memory.
+
+        Args:
+            request: The Starlette request object.
+
+        Returns:
+            A response indicating whether the upload stream was accepted.
+
+        Raises:
+            UploadTypeError: If the handler is not a background event.
+            UploadValueError: If the handler signature is invalid.
+            HTTPException: If the request is missing required headers.
+        """
+        token, handler_name = _require_upload_headers(request)
+        try:
+            metadata = _extract_chunk_upload_request_metadata(request)
+        except ValueError as err:
+            console.error(
+                f"[chunk-upload] request failed handler={handler_name} error={err}"
+            )
+            return JSONResponse({"detail": str(err)}, status_code=400)
+        console.info(
+            "[chunk-upload] request received "
+            f"handler={handler_name} token={token[:8]}... "
+            f"session_id={metadata.session_id} upload_id={metadata.upload_id or '<default>'} "
+            f"complete={metadata.is_complete} cancel={metadata.is_cancel}"
+        )
+
+        session_key, existing_session = await _lookup_chunk_upload_session(
+            app,
+            token,
+            handler_name,
+            metadata.session_id,
+        )
+        if metadata.is_cancel:
+            if existing_session is not None:
+                await existing_session.iterator.fail(
+                    RuntimeError("Upload cancelled by client.")
+                )
+                await _cleanup_chunk_upload_session(app, session_key)
+            console.info(
+                "[chunk-upload] upload cancelled "
+                f"handler={handler_name} session_id={metadata.session_id} "
+                f"session_found={existing_session is not None}"
+            )
+            return Response(status_code=202)
+
+        try:
+            session_key, session, created = await _get_or_create_chunk_upload_session(
+                app,
+                token,
+                handler_name,
+                metadata,
+            )
+        except (exceptions.UploadTypeError, RuntimeError, ValueError) as err:
+            console.error(
+                "[chunk-upload] request failed "
+                f"handler={handler_name} session_id={metadata.session_id} error={err}"
+            )
+            return JSONResponse({"detail": str(err)}, status_code=400)
+
+        if created:
+            console.info(
+                "[chunk-upload] background task scheduled "
+                f"handler={handler_name} session_id={metadata.session_id}"
+            )
+
+        content_type = request.headers.get("content-type", "")
+        emitted_bytes = 0
+        emitted_chunk_count = 0
+
+        try:
+            async for chunk_bytes in request.stream():
+                if not chunk_bytes:
+                    continue
+                await session.iterator.push(
+                    UploadChunk(
+                        filename=metadata.filename or "",
+                        offset=metadata.offset + emitted_bytes,
+                        content_type=content_type,
+                        data=chunk_bytes,
+                    )
+                )
+                emitted_bytes += len(chunk_bytes)
+                emitted_chunk_count += 1
+        except ClientDisconnect as err:
+            console.info(
+                "[chunk-upload] client disconnected "
+                f"handler={handler_name} session_id={metadata.session_id} "
+                f"bytes={emitted_bytes} chunks={emitted_chunk_count}"
+            )
+            await session.iterator.fail(err)
+            await _cleanup_chunk_upload_session(app, session_key)
+            return Response()
+        except (RuntimeError, ValueError) as err:
+            console.error(
+                "[chunk-upload] request failed "
+                f"handler={handler_name} session_id={metadata.session_id} "
+                f"error={err} bytes={emitted_bytes} chunks={emitted_chunk_count}"
+            )
+            await session.iterator.fail(
+                err if isinstance(err, Exception) else RuntimeError()
+            )
+            await _cleanup_chunk_upload_session(app, session_key)
+            return JSONResponse({"detail": str(err)}, status_code=400)
+
+        if emitted_bytes == 0:
+            try:
+                await session.iterator.push(
+                    UploadChunk(
+                        filename=metadata.filename or "",
+                        offset=metadata.offset,
+                        content_type=content_type,
+                        data=b"",
+                    )
+                )
+            except (RuntimeError, ValueError) as err:
+                console.error(
+                    "[chunk-upload] request failed "
+                    f"handler={handler_name} session_id={metadata.session_id} "
+                    f"error={err} bytes={emitted_bytes} chunks={emitted_chunk_count}"
+                )
+                await session.iterator.fail(
+                    err if isinstance(err, Exception) else RuntimeError()
+                )
+                await _cleanup_chunk_upload_session(app, session_key)
+                return JSONResponse({"detail": str(err)}, status_code=400)
+            emitted_chunk_count = 1
+
+        session.record_request(
+            chunk_count=emitted_chunk_count,
+            emitted_bytes=emitted_bytes,
+        )
+
+        if metadata.is_complete:
+            await session.iterator.finish()
+            await _cleanup_chunk_upload_session(app, session_key)
+
+        console.info(
+            "[chunk-upload] request completed "
+            f"handler={handler_name} session_id={metadata.session_id} "
+            f"complete={metadata.is_complete} request_bytes={emitted_bytes} "
+            f"request_chunks={emitted_chunk_count} stats={session.stats()}"
+        )
+        return Response(status_code=202)
+
+    return upload_file_chunk
 
 
 class EventNamespace(AsyncNamespace):

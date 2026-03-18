@@ -1,3 +1,4 @@
+import os
 import shutil
 import tempfile
 from pathlib import Path
@@ -14,6 +15,7 @@ from reflex.utils.frontend_skeleton import (
     _compile_package_json,
     _compile_vite_config,
     _update_react_router_config,
+    sync_web_runtime_templates,
 )
 from reflex.utils.rename import rename_imports_and_app_name
 from reflex.utils.telemetry import CpuInfo, get_cpu_info
@@ -90,6 +92,76 @@ def test_update_react_router_config(config, export, expected_output):
 def test_initialise_vite_config(config, expected_output):
     output = _compile_vite_config(config)
     assert expected_output in output
+
+
+def test_sync_web_runtime_templates_preserves_generated_routes(
+    temp_directory, monkeypatch
+):
+    template_dir = temp_directory / "template_web"
+    web_dir = temp_directory / ".web"
+
+    template_files = {
+        "utils/state.js": "new state helper",
+        "utils/helpers/upload.js": "new upload helper",
+        "components/reflex/radix_themes_color_mode_provider.js": "new component",
+        "app/entry.client.js": "new entry client",
+        "app/routes.js": "new routes file",
+        "styles/__reflex_style_reset.css": "new reset",
+        "jsconfig.json": '{"compilerOptions": {}}',
+        "postcss.config.js": "module.exports = {};",
+        "vite-plugin-safari-cachebust.js": "export default function plugin() {}",
+    }
+
+    for relative_path, content in template_files.items():
+        file_path = template_dir / relative_path
+        file_path.parent.mkdir(parents=True, exist_ok=True)
+        file_path.write_text(content)
+
+    stale_files = {
+        "utils/state.js": "old state helper",
+        "utils/helpers/upload.js": "old upload helper",
+        "components/reflex/radix_themes_color_mode_provider.js": "old component",
+        "app/entry.client.js": "old entry client",
+        "app/routes.js": "old routes file",
+    }
+    for relative_path, content in stale_files.items():
+        file_path = web_dir / relative_path
+        file_path.parent.mkdir(parents=True, exist_ok=True)
+        file_path.write_text(content)
+
+    generated_route = web_dir / "app" / "routes" / "compare._index.jsx"
+    generated_route.parent.mkdir(parents=True, exist_ok=True)
+    generated_route.write_text("generated route module")
+    generated_context = web_dir / "utils" / "context.js"
+    generated_context.parent.mkdir(parents=True, exist_ok=True)
+    generated_context.write_text("generated context module")
+    generated_component = web_dir / "components" / "utils.js"
+    generated_component.parent.mkdir(parents=True, exist_ok=True)
+    generated_component.write_text("generated component module")
+
+    monkeypatch.setattr("reflex.utils.frontend_skeleton.get_web_dir", lambda: web_dir)
+    monkeypatch.setattr(
+        "reflex.utils.frontend_skeleton.constants.Templates.Dirs.WEB_TEMPLATE",
+        os.fspath(template_dir),
+    )
+
+    sync_web_runtime_templates()
+
+    assert (web_dir / "utils" / "state.js").read_text() == "new state helper"
+    assert (web_dir / "utils" / "helpers" / "upload.js").read_text() == (
+        "new upload helper"
+    )
+    assert (
+        web_dir / "components" / "reflex" / "radix_themes_color_mode_provider.js"
+    ).read_text() == "new component"
+    assert (web_dir / "app" / "entry.client.js").read_text() == "new entry client"
+    assert (web_dir / "app" / "routes.js").read_text() == "new routes file"
+    assert generated_route.exists()
+    assert generated_route.read_text() == "generated route module"
+    assert generated_context.exists()
+    assert generated_context.read_text() == "generated context module"
+    assert generated_component.exists()
+    assert generated_component.read_text() == "generated component module"
 
 
 @pytest.mark.parametrize(

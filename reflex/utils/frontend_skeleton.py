@@ -13,6 +13,20 @@ from reflex.utils import console, path_ops
 from reflex.utils.prerequisites import get_project_hash, get_web_dir
 from reflex.utils.registry import get_npm_registry
 
+_WEB_RUNTIME_TEMPLATE_DIRS = (
+    Path("components"),
+    Path(constants.Dirs.UTILS),
+)
+
+_WEB_RUNTIME_TEMPLATE_FILES = (
+    Path("app") / "entry.client.js",
+    Path("app") / "routes.js",
+    Path("styles") / "__reflex_style_reset.css",
+    Path("jsconfig.json"),
+    Path("postcss.config.js"),
+    Path("vite-plugin-safari-cachebust.js"),
+)
+
 
 def initialize_gitignore(
     gitignore_file: Path = constants.GitIgnore.FILE,
@@ -122,6 +136,37 @@ def initialize_web_directory():
     console.debug("Initializing the reflex.json file.")
     # Initialize the reflex json file.
     init_reflex_json(project_hash=project_hash)
+
+
+def sync_web_runtime_templates():
+    """Refresh the static runtime files in the web directory.
+
+    This keeps shared frontend helpers in `.web` in sync with the framework
+    templates without wiping generated route modules or installed dependencies.
+    """
+    template_dir = Path(constants.Templates.Dirs.WEB_TEMPLATE)
+    web_dir = get_web_dir()
+
+    for relative_dir in _WEB_RUNTIME_TEMPLATE_DIRS:
+        source_dir = template_dir / relative_dir
+        if not source_dir.exists():
+            continue
+        for source_file in source_dir.rglob("*"):
+            if source_file.is_dir():
+                continue
+            relative_file = source_file.relative_to(template_dir)
+            target_file = web_dir / relative_file
+            console.debug(f"Syncing {source_file} to {target_file}")
+            path_ops.mkdir(target_file.parent)
+            path_ops.cp(source_file, target_file)
+
+    for relative_file in _WEB_RUNTIME_TEMPLATE_FILES:
+        source_file = template_dir / relative_file
+        target_file = web_dir / relative_file
+        if source_file.exists():
+            console.debug(f"Syncing {source_file} to {target_file}")
+            path_ops.mkdir(target_file.parent)
+            path_ops.cp(source_file, target_file)
 
 
 def update_react_router_config(prerender_routes: bool = False):

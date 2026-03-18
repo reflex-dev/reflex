@@ -1,6 +1,7 @@
 """Test states for upload-related tests."""
 
 from pathlib import Path
+from typing import BinaryIO
 
 import reflex as rx
 from reflex.state import BaseState, State
@@ -76,6 +77,56 @@ class _FileUploadMixin(BaseState, mixin=True):
 
 class FileUploadState(_FileUploadMixin, State):
     """The base state for uploading a file."""
+
+
+class _ChunkUploadMixin(BaseState, mixin=True):
+    """Common fields and handlers for chunk upload tests."""
+
+    chunk_records: list[str]
+    completed_files: list[str]
+    _tmp_path: Path = Path()
+
+    @rx.event(background=True)
+    async def chunk_handle_upload(self, chunk_iter: rx.UploadChunkIterator):
+        """Handle a chunked upload in the background."""
+        file_handles: dict[str, BinaryIO] = {}
+
+        try:
+            async for chunk in chunk_iter:
+                outfile = self._tmp_path / chunk.filename
+                outfile.parent.mkdir(parents=True, exist_ok=True)
+
+                fh = file_handles.get(chunk.filename)
+                if fh is None:
+                    fh = outfile.open("r+b") if outfile.exists() else outfile.open("wb")
+                    file_handles[chunk.filename] = fh
+
+                fh.seek(chunk.offset)
+                fh.write(chunk.data)
+
+                async with self:
+                    self.chunk_records.append(
+                        f"{chunk.filename}:{chunk.offset}:{len(chunk.data)}:{chunk.content_type}"
+                    )
+        finally:
+            for fh in file_handles.values():
+                fh.close()
+
+        async with self:
+            self.completed_files = sorted(file_handles)
+
+    async def chunk_handle_upload_not_background(
+        self, chunk_iter: rx.UploadChunkIterator
+    ):
+        """Invalid streaming upload handler used for compile-time validation tests."""
+
+    @rx.event(background=True)
+    async def chunk_handle_upload_missing_annotation(self, chunk_iter):
+        """Invalid streaming upload handler missing the iterator annotation."""
+
+
+class ChunkUploadState(_ChunkUploadMixin, State):
+    """The base state for streaming chunk uploads."""
 
 
 class FileStateBase1(State):

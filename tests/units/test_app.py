@@ -10,13 +10,14 @@ from collections.abc import Generator
 from contextlib import nullcontext as does_not_raise
 from importlib.util import find_spec
 from pathlib import Path
+from types import SimpleNamespace
 from typing import TYPE_CHECKING, Any, ClassVar
 from unittest.mock import AsyncMock
 
 import pytest
 from pytest_mock import MockerFixture
 from starlette.applications import Starlette
-from starlette.datastructures import FormData, UploadFile
+from starlette.datastructures import FormData, Headers, UploadFile
 from starlette.responses import StreamingResponse
 
 import reflex as rx
@@ -27,6 +28,7 @@ from reflex.app import (
     default_overlay_component,
     process,
     upload,
+    upload_chunk,
 )
 from reflex.components import Component
 from reflex.components.base.bare import Bare
@@ -57,6 +59,7 @@ from .conftest import chdir
 from .states import GenState
 from .states.upload import (
     ChildFileUploadState,
+    ChunkUploadState,
     FileStateBase1,
     FileUploadState,
     GrandChildFileUploadState,
@@ -1267,6 +1270,236 @@ async def test_upload_file_background(state, tmp_path, token):
         err.value.args[0]
         == f"@rx.event(background=True) is not supported for upload handler `{state.get_full_name()}.bg_upload`."
     )
+
+    await app.state_manager.close()
+
+
+def _build_chunk_upload_body(
+    data: bytes,
+) -> bytes:
+    """Build the raw request body for chunk upload tests.
+
+    Returns:
+        The bytes that should be sent as the request body.
+    """
+    return data
+
+
+def _make_chunk_upload_request(
+    token: str,
+    handler_name: str,
+    session_id: str,
+    body: bytes,
+    *,
+    filename: str | None = None,
+    offset: int | None = None,
+    complete: bool = False,
+    cancel: bool = False,
+    upload_id: str = "streaming",
+    content_type: str = "application/octet-stream",
+    stream_chunk_size: int = 17,
+):
+    """Create a mocked request for the chunk upload endpoint.
+
+    Returns:
+        A mocked Starlette request object.
+    """
+    request_mock = unittest.mock.Mock()
+    request_mock.headers = Headers({
+        "content-type": content_type,
+        "reflex-client-token": token,
+        "reflex-event-handler": handler_name,
+    })
+    request_mock.query_params = {
+        "session_id": session_id,
+        "upload_id": upload_id,
+        **({"filename": filename} if filename is not None else {}),
+        **({"offset": str(offset)} if offset is not None else {}),
+        **({"complete": "1"} if complete else {}),
+        **({"cancel": "1"} if cancel else {}),
+    }
+
+    async def stream():
+        for index in range(0, len(body), stream_chunk_size):
+            yield body[index : index + stream_chunk_size]
+        yield b""
+        await asyncio.sleep(0)
+
+    request_mock.stream = stream
+    return request_mock
+
+
+async def _drain_background_tasks(app: App):
+    """Wait for all background tasks associated with an app.
+
+    Returns:
+        The gathered background task results.
+    """
+    tasks = tuple(app._background_tasks)
+    if tasks:
+        return await asyncio.gather(*tasks, return_exceptions=True)
+    return []
+
+
+@pytest.mark.asyncio
+async def test_upload_chunk_streams_chunks(tmp_path, token: str, mocker: MockerFixture):
+    """Test streaming upload chunks through the background upload endpoint."""
+    mocker.patch(
+        "reflex.state.State.class_subclasses",
+        {ChunkUploadState},
+    )
+    app = App()
+    mocker.patch(
+        "reflex.utils.prerequisites.get_and_validate_app",
+        return_value=SimpleNamespace(app=app),
+    )
+    app.event_namespace.emit_update = AsyncMock()  # pyright: ignore [reportOptionalMemberAccess]
+
+    async with app.modify_state(_substate_key(token, ChunkUploadState)) as root_state:
+        substate = root_state.get_substate(ChunkUploadState.get_full_name().split("."))
+        substate._tmp_path = tmp_path
+        substate.chunk_records = []
+        substate.completed_files = []
+
+    upload_fn = upload_chunk(app)
+    session_id = "stream-session"
+    for filename, offset, data in (
+        ("alpha.txt", 0, b"ab"),
+        ("beta.txt", 0, b"12"),
+        ("alpha.txt", 2, b"cde"),
+        ("beta.txt", 2, b"345"),
+    ):
+        response = await upload_fn(
+            _make_chunk_upload_request(
+                token,
+                f"{ChunkUploadState.get_full_name()}.chunk_handle_upload",
+                session_id,
+                _build_chunk_upload_body(data),
+                filename=filename,
+                offset=offset,
+                complete=filename == "beta.txt" and offset == 2,
+                content_type="text/plain",
+                stream_chunk_size=1,
+            )
+        )
+        assert response.status_code == 202
+
+    task_results = await _drain_background_tasks(app)
+    assert task_results == [None]
+
+    state = await app.state_manager.get_state(_substate_key(token, ChunkUploadState))
+    substate = (
+        state
+        if isinstance(state, ChunkUploadState)
+        else state.get_substate(ChunkUploadState.get_full_name().split("."))
+    )
+    assert isinstance(substate, ChunkUploadState)
+    parsed_chunk_records = [
+        (filename, int(offset), int(size), content_type)
+        for filename, offset, size, content_type in (
+            record.rsplit(":", 3) for record in substate.chunk_records
+        )
+    ]
+    assert len(parsed_chunk_records) >= 4
+    assert {filename for filename, *_ in parsed_chunk_records} == {
+        "alpha.txt",
+        "beta.txt",
+    }
+    assert all(
+        content_type == "text/plain" for *_, content_type in parsed_chunk_records
+    )
+    assert (
+        sum(
+            size
+            for filename, _offset, size, _content_type in parsed_chunk_records
+            if filename == "alpha.txt"
+        )
+        == 5
+    )
+    assert (
+        sum(
+            size
+            for filename, _offset, size, _content_type in parsed_chunk_records
+            if filename == "beta.txt"
+        )
+        == 5
+    )
+    beta_initial_chunk_index = next(
+        index
+        for index, (filename, offset, _size, _content_type) in enumerate(
+            parsed_chunk_records
+        )
+        if filename == "beta.txt" and offset == 0
+    )
+    alpha_later_chunk_index = next(
+        index
+        for index, (filename, offset, _size, _content_type) in enumerate(
+            parsed_chunk_records
+        )
+        if filename == "alpha.txt" and offset >= 2
+    )
+    assert beta_initial_chunk_index < alpha_later_chunk_index
+    assert substate.completed_files == ["alpha.txt", "beta.txt"]
+    assert (tmp_path / "alpha.txt").read_bytes() == b"abcde"
+    assert (tmp_path / "beta.txt").read_bytes() == b"12345"
+    assert app.event_namespace.emit_update.await_count >= 1  # pyright: ignore [reportOptionalMemberAccess]
+    assert not app._background_tasks
+
+    await app.state_manager.close()
+
+
+@pytest.mark.asyncio
+async def test_upload_chunk_invalid_offset_returns_400(
+    token: str,
+    mocker: MockerFixture,
+):
+    """Test that malformed chunk metadata fails the upload request."""
+    mocker.patch(
+        "reflex.state.State.class_subclasses",
+        {ChunkUploadState},
+    )
+    app = App()
+    mocker.patch(
+        "reflex.utils.prerequisites.get_and_validate_app",
+        return_value=SimpleNamespace(app=app),
+    )
+    app.event_namespace.emit_update = AsyncMock()  # pyright: ignore [reportOptionalMemberAccess]
+
+    async with app.modify_state(_substate_key(token, ChunkUploadState)) as root_state:
+        substate = root_state.get_substate(ChunkUploadState.get_full_name().split("."))
+        substate.chunk_records = []
+        substate.completed_files = []
+
+    upload_fn = upload_chunk(app)
+    response = await upload_fn(
+        _make_chunk_upload_request(
+            token,
+            f"{ChunkUploadState.get_full_name()}.chunk_handle_upload",
+            "bad-session",
+            _build_chunk_upload_body(b"abc"),
+            filename="alpha.txt",
+            offset=-1,
+            content_type="text/plain",
+        )
+    )
+
+    assert response.status_code == 400
+    assert json.loads(bytes(response.body).decode()) == {
+        "detail": "Invalid offset for upload chunk request: -1"
+    }
+
+    await _drain_background_tasks(app)
+
+    state = await app.state_manager.get_state(_substate_key(token, ChunkUploadState))
+    substate = (
+        state
+        if isinstance(state, ChunkUploadState)
+        else state.get_substate(ChunkUploadState.get_full_name().split("."))
+    )
+    assert isinstance(substate, ChunkUploadState)
+    assert substate.chunk_records == []
+    assert substate.completed_files == []
+    assert not app._background_tasks
 
     await app.state_manager.close()
 

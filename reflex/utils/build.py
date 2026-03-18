@@ -10,7 +10,14 @@ from rich.progress import MofNCompleteColumn, Progress, TimeElapsedColumn
 
 from reflex import constants
 from reflex.config import get_config
-from reflex.utils import console, js_runtimes, path_ops, prerequisites, processes
+from reflex.utils import (
+    console,
+    frontend_skeleton,
+    js_runtimes,
+    path_ops,
+    prerequisites,
+    processes,
+)
 from reflex.utils.exec import is_in_app_harness
 
 
@@ -260,6 +267,8 @@ def setup_frontend(
     Args:
         root: The root path of the project.
     """
+    frontend_skeleton.sync_web_runtime_templates()
+
     # Set the environment variables in client (env.json).
     set_env_json()
 

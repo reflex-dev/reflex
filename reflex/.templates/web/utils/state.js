@@ -20,7 +20,7 @@ import {
 } from "$/utils/context";
 import debounce from "$/utils/helpers/debounce";
 import throttle from "$/utils/helpers/throttle";
-import { uploadFiles } from "$/utils/helpers/upload";
+import { uploadFiles, uploadFilesChunk } from "$/utils/helpers/upload";
 
 // Endpoint URLs.
 const EVENTURL = env.EVENT;
@@ -418,11 +418,30 @@ export const applyEvent = async (event, socket, navigate, params) => {
  */
 export const applyRestEvent = async (event, socket, navigate, params) => {
   let eventSent = false;
-  if (event.handler === "uploadFiles") {
-    if (event.payload.files === undefined || event.payload.files.length === 0) {
+  if (event.handler === "uploadFiles" || event.handler === "uploadFilesChunk") {
+    const filePayloadKey = event.payload.upload_param_name || "files";
+    const uploadFilesPayload =
+      event.payload.files ?? event.payload[filePayloadKey];
+
+    console.log("[reflex upload] applyRestEvent", {
+      event_name: event.name,
+      handler: event.handler,
+      upload_id: event.payload.upload_id,
+      file_payload_key: filePayloadKey,
+      file_count: uploadFilesPayload?.length ?? 0,
+      payload_keys: Object.keys(event.payload || {}),
+    });
+
+    if (uploadFilesPayload === undefined || uploadFilesPayload.length === 0) {
+      console.warn("[reflex upload] no files available for REST upload", {
+        event_name: event.name,
+        handler: event.handler,
+        upload_id: event.payload.upload_id,
+        file_payload_key: filePayloadKey,
+      });
       // Submit the event over the websocket to trigger the event handler.
       return await applyEvent(
-        ReflexEvent(event.name, { files: [] }),
+        ReflexEvent(event.name, { [filePayloadKey]: [] }),
         socket,
         navigate,
         params,
@@ -430,9 +449,11 @@ export const applyRestEvent = async (event, socket, navigate, params) => {
     }
 
     // Start upload, but do not wait for it, which would block other events.
-    uploadFiles(
+    const uploadFn =
+      event.handler === "uploadFilesChunk" ? uploadFilesChunk : uploadFiles;
+    uploadFn(
       event.name,
-      event.payload.files,
+      uploadFilesPayload,
       event.payload.upload_id,
       event.payload.on_upload_progress,
       event.payload.extra_headers,
