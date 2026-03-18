@@ -4,6 +4,7 @@ import dataclasses
 import inspect
 import sys
 import types
+import warnings
 from base64 import b64encode
 from collections.abc import Callable, Mapping, Sequence
 from functools import lru_cache, partial
@@ -90,6 +91,7 @@ _EVENT_FIELDS: set[str] = {f.name for f in dataclasses.fields(Event)}
 
 BACKGROUND_TASK_MARKER = "_reflex_background_task"
 EVENT_ACTIONS_MARKER = "_rx_event_actions"
+DOM_EVENT_ACTIONS = frozenset({"preventDefault", "stopPropagation"})
 
 
 @dataclasses.dataclass(
@@ -482,8 +484,20 @@ class EventChain(EventActionsMixin):
         # If it's an event chain var, return it.
         if isinstance(value, Var):
             if isinstance(value, EventChainVar):
+                if event_chain_kwargs:
+                    warnings.warn(
+                        f"event_chain_kwargs {event_chain_kwargs!r} are ignored for "
+                        "EventChainVar values.",
+                        stacklevel=2,
+                    )
                 return value
             if isinstance(value, FunctionVar):
+                if event_chain_kwargs:
+                    warnings.warn(
+                        f"event_chain_kwargs {event_chain_kwargs!r} are ignored for "
+                        "FunctionVar values.",
+                        stacklevel=2,
+                    )
                 return value
             if isinstance(value, EventVar):
                 value = [value]
@@ -2106,6 +2120,7 @@ class LiteralEventChainVar(ArgsFunctionOperationBuilder, LiteralVar, EventChainV
         if invocation is not None and not isinstance(invocation, FunctionVar):
             msg = f"EventChain invocation must be a FunctionVar, got {invocation!s} of type {invocation._var_type!s}."
             raise ValueError(msg)
+        assert invocation is not None
 
         has_function_var = any(isinstance(e, FunctionVar) for e in value.events)
 
@@ -2119,6 +2134,11 @@ class LiteralEventChainVar(ArgsFunctionOperationBuilder, LiteralVar, EventChainV
             statement_js: list[str] = []
             statement_var_data: list[VarData | None] = []
             queueable_group: list[EventSpec | EventVar | EventCallback] = []
+            queueable_event_actions = {
+                key: action
+                for key, action in value.event_actions.items()
+                if key not in DOM_EVENT_ACTIONS
+            }
 
             if value.event_actions.get("preventDefault") or value.event_actions.get(
                 "stopPropagation"
@@ -2146,7 +2166,7 @@ class LiteralEventChainVar(ArgsFunctionOperationBuilder, LiteralVar, EventChainV
                         LiteralVar.create(event) for event in queueable_group
                     ]),
                     arg_def_expr,
-                    {},
+                    queueable_event_actions,
                 )
                 statement_js.append(f"{queue_call!s};")
                 statement_var_data.append(queue_call._get_all_var_data())

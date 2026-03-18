@@ -681,6 +681,36 @@ def test_event_chain_create_allows_plain_function_var():
     assert EventChain.create(frontend_handler, args_spec=lambda: ()) is frontend_handler
 
 
+def test_event_chain_create_warns_for_plain_function_var_kwargs():
+    """FunctionVar kwargs should warn when EventChain wrapping is bypassed."""
+    frontend_handler = rx.vars.FunctionStringVar.create(
+        "(...args) => { setTimeout(() => console.log('Timeout reached!', args), 1000); }"
+    )
+
+    with pytest.warns(UserWarning, match="ignored for FunctionVar values"):
+        result = EventChain.create(
+            frontend_handler,
+            args_spec=lambda: (),
+            event_actions={"preventDefault": True},
+        )
+
+    assert result is frontend_handler
+
+
+def test_event_chain_create_warns_for_event_chain_var_kwargs():
+    """Prebuilt EventChainVars should also warn when extra kwargs are ignored."""
+    frontend_handler = make_timeout_logger()
+
+    with pytest.warns(UserWarning, match="ignored for EventChainVar values"):
+        result = EventChain.create(
+            frontend_handler,
+            args_spec=lambda: (),
+            event_actions={"preventDefault": True},
+        )
+
+    assert result is frontend_handler
+
+
 def test_event_chain_create_allows_function_var_in_list():
     """FunctionVars should be allowed inside EventChain lists."""
     frontend_handler = make_timeout_logger()

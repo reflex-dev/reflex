@@ -124,6 +124,27 @@ def test_format_prop_event_chain_mixed_with_event_actions():
     )
 
 
+def test_format_prop_event_chain_mixed_with_queueable_event_actions():
+    """Mixed chains should forward non-DOM event actions to queued backend groups."""
+    log_after_timeout = make_timeout_logger()
+    chain = EventChain(
+        events=[
+            EventSpec(handler=EventHandler(fn=mock_event)),
+            log_after_timeout,
+        ],
+        args_spec=lambda e: [e],
+        event_actions={"preventDefault": True, "throttle": 250},
+    )
+
+    assert format.format_prop(LiteralVar.create(chain)) == (
+        "((_e) => {const _reflex_dom_event = [_e].filter((o) => "
+        "o?.preventDefault !== undefined)[0];if (_reflex_dom_event?.preventDefault) "
+        '{_reflex_dom_event.preventDefault();}(addEvents([(ReflexEvent("mock_event", '
+        '({  }), ({  })))], [_e], ({ ["throttle"] : 250 })));(((...args) => '
+        "{ setTimeout(() => console.log('Timeout reached!', args), 1000); })(_e));})"
+    )
+
+
 @pytest.mark.parametrize(
     ("input", "output"),
     [
