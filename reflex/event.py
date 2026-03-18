@@ -1236,7 +1236,7 @@ class UploadFilesChunk(FileUpload):
         upload_param_name, _annotation = resolve_upload_chunk_handler_param(handler)
         return self._as_event_spec(
             handler,
-            client_handler_name="uploadFilesChunk",
+            client_handler_name="uploadFiles",
             upload_param_name=upload_param_name,
         )
 

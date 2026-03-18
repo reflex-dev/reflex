@@ -1092,7 +1092,7 @@ async def test_upload_file_closes_form_on_event_creation_cancellation(
     token: str,
     mocker: MockerFixture,
 ):
-    """Test that cancellation during upload event creation closes form data."""
+    """Test that cancellation before form parsing leaves form data untouched."""
     mocker.patch(
         "reflex.state.State.class_subclasses",
         {FileUploadState},
@@ -1125,8 +1125,8 @@ async def test_upload_file_closes_form_on_event_creation_cancellation(
     with pytest.raises(asyncio.CancelledError):
         await upload_fn(request_mock)
 
-    assert form_close.await_count == 1
-    assert file1.file.closed
+    assert form_close.await_count == 0
+    assert not file1.file.closed
 
     await app.state_manager.close()
 
@@ -1388,8 +1388,9 @@ async def test_upload_chunk_streams_chunks(tmp_path, token: str, mocker: MockerF
     )
     assert response.status_code == 202
 
-    task_results = await _drain_background_tasks(app)
-    assert task_results == [None]
+    if app._background_tasks:
+        task_results = await _drain_background_tasks(app)
+        assert task_results == [None]
 
     state = await app.state_manager.get_state(_substate_key(token, ChunkUploadState))
     substate = (
@@ -1430,6 +1431,76 @@ async def test_upload_chunk_streams_chunks(tmp_path, token: str, mocker: MockerF
     )
     assert parsed_chunk_records[0][0] == "alpha.txt"
     assert parsed_chunk_records[-1][0] == "beta.txt"
+    assert substate.completed_files == ["alpha.txt", "beta.txt"]
+    assert (tmp_path / "alpha.txt").read_bytes() == b"abcde"
+    assert (tmp_path / "beta.txt").read_bytes() == b"12345"
+    assert app.event_namespace.emit_update.await_count >= 1  # pyright: ignore [reportOptionalMemberAccess]
+    assert not app._background_tasks
+
+    await app.state_manager.close()
+
+
+@pytest.mark.asyncio
+async def test_upload_dispatches_chunk_handlers_on_upload_endpoint(
+    tmp_path,
+    token: str,
+    mocker: MockerFixture,
+):
+    """Test that the standard upload endpoint dispatches chunk handlers."""
+    mocker.patch(
+        "reflex.state.State.class_subclasses",
+        {ChunkUploadState},
+    )
+    app = App()
+    mocker.patch(
+        "reflex.utils.prerequisites.get_and_validate_app",
+        return_value=SimpleNamespace(app=app),
+    )
+    app.event_namespace.emit_update = AsyncMock()  # pyright: ignore [reportOptionalMemberAccess]
+
+    async with app.modify_state(_substate_key(token, ChunkUploadState)) as root_state:
+        substate = root_state.get_substate(ChunkUploadState.get_full_name().split("."))
+        substate._tmp_path = tmp_path
+        substate.chunk_records = []
+        substate.completed_files = []
+
+    upload_fn = upload(app)
+    boundary = "chunk-upload-on-upload-endpoint-boundary"
+    response = await upload_fn(
+        _make_chunk_upload_request(
+            token,
+            f"{ChunkUploadState.get_full_name()}.chunk_handle_upload",
+            _build_chunk_upload_multipart_body(
+                boundary,
+                [
+                    ("files", "alpha.txt", "text/plain", b"abcde"),
+                    ("files", "beta.txt", "text/plain", b"12345"),
+                ],
+            ),
+            content_type=f"multipart/form-data; boundary={boundary}",
+            stream_chunk_size=1,
+        )
+    )
+
+    assert isinstance(response, StreamingResponse)
+    assert response.status_code == 202
+
+    updates = []
+    async for state_update in response.body_iterator:
+        updates.append(json.loads(str(state_update)))
+    assert updates == [{"delta": {}, "events": [], "final": True}]
+
+    if app._background_tasks:
+        task_results = await _drain_background_tasks(app)
+        assert task_results == [None]
+
+    state = await app.state_manager.get_state(_substate_key(token, ChunkUploadState))
+    substate = (
+        state
+        if isinstance(state, ChunkUploadState)
+        else state.get_substate(ChunkUploadState.get_full_name().split("."))
+    )
+    assert isinstance(substate, ChunkUploadState)
     assert substate.completed_files == ["alpha.txt", "beta.txt"]
     assert (tmp_path / "alpha.txt").read_bytes() == b"abcde"
     assert (tmp_path / "beta.txt").read_bytes() == b"12345"

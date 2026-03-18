@@ -6,6 +6,7 @@ from collections.abc import Callable, Sequence
 from pathlib import Path
 from typing import Any, ClassVar
 
+from reflex._upload import UploadFile
 from reflex.components.base.fragment import Fragment
 from reflex.components.component import (
     Component,
@@ -35,7 +36,6 @@ from reflex.event import (
     upload_files,
 )
 from reflex.style import Style
-from reflex.upload import UploadFile
 from reflex.utils import format
 from reflex.utils.imports import ImportVar
 from reflex.vars import VarData

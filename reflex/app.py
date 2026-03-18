@@ -40,6 +40,8 @@ from starlette.responses import JSONResponse, Response
 from starlette.staticfiles import StaticFiles
 
 from reflex import constants
+from reflex._upload import UploadFile as UploadFile
+from reflex._upload import upload, upload_chunk
 from reflex.admin import AdminDash
 from reflex.app_mixins import AppMixin, LifespanMixin, MiddlewareMixin
 from reflex.compiler import compiler
@@ -97,8 +99,6 @@ from reflex.state import (
     all_base_state_classes,
     code_uses_state_contexts,
 )
-from reflex.upload import UploadFile as UploadFile
-from reflex.upload import upload, upload_chunk
 from reflex.utils import (
     codespaces,
     console,

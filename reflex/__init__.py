@@ -351,7 +351,6 @@ _MAPPING: dict = {
 _SUBMODULES: set[str] = {
     "components",
     "app",
-    "upload",
     "style",
     "admin",
     "base",

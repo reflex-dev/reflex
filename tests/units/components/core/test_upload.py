@@ -161,7 +161,7 @@ def test_upload_create():
     up_comp_5 = Upload.create(
         id="foo_id",
         on_drop=StreamingUploadStateTest.chunk_drop_handler(
-            cast(Any, rx.upload_files_chunk(upload_id="foo_id"))
+            rx.upload_files_chunk(upload_id="foo_id")  # pyright: ignore[reportArgumentType]
         ),
     )
     assert isinstance(up_comp_5, Upload)
@@ -170,7 +170,7 @@ def test_upload_create():
     up_comp_6 = Upload.create(
         id="foo_id",
         on_drop=StreamingUploadStateTest.chunk_upload_alias_handler(
-            cast(Any, rx.upload_files_chunk(upload_id="foo_id"))
+            rx.upload_files_chunk(upload_id="foo_id")  # pyright: ignore[reportArgumentType]
         ),
     )
     assert isinstance(up_comp_6, Upload)
@@ -187,17 +187,19 @@ def test_upload_button_handlers_allow_custom_param_names():
     legacy_chain = cast(EventChain, legacy_button.event_triggers["on_click"])
     legacy_event = cast(EventSpec, legacy_chain.events[0])
     legacy_arg_names = [arg[0]._js_expr for arg in legacy_event.args]
+    assert legacy_event.client_handler_name == "uploadFiles"
     assert legacy_arg_names[:3] == ["files", "uploads", "upload_param_name"]
 
     chunk_button = rx.button(
         "Upload",
         on_click=StreamingUploadStateTest.chunk_upload_alias_handler(
-            cast(Any, rx.upload_files_chunk(upload_id="foo_id"))
+            rx.upload_files_chunk(upload_id="foo_id")  # pyright: ignore[reportArgumentType]
         ),
     )
     chunk_chain = cast(EventChain, chunk_button.event_triggers["on_click"])
     chunk_event = cast(EventSpec, chunk_chain.events[0])
     chunk_arg_names = [arg[0]._js_expr for arg in chunk_event.args]
+    assert chunk_event.client_handler_name == "uploadFiles"
     assert chunk_arg_names[:3] == ["files", "stream", "upload_param_name"]
 
 

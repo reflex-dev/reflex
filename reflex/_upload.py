@@ -26,7 +26,7 @@ from reflex.event import (
     resolve_upload_chunk_handler_param,
     resolve_upload_handler_param,
 )
-from reflex.state import BaseState, RouterData, _substate_key
+from reflex.state import BaseState, RouterData, StateUpdate, _substate_key
 from reflex.utils import exceptions
 from reflex.utils.types import Receive, Scope, Send
 
@@ -348,8 +348,175 @@ def _seed_upload_router_data(state: BaseState, token: str) -> None:
     state.router = RouterData.from_router_data(router_data)
 
 
+async def _upload_buffered_file(
+    request: Request,
+    app: App,
+    *,
+    token: str,
+    handler_name: str,
+    handler_upload_param: tuple[str, Any],
+) -> Response:
+    """Handle buffered uploads on the standard upload endpoint.
+
+    Returns:
+        A streaming response for the buffered upload.
+    """
+    from reflex.utils.exceptions import UploadValueError
+
+    try:
+        form_data = await request.form()
+    except ClientDisconnect:
+        return Response()
+
+    form_data_closed = False
+
+    async def _close_form_data() -> None:
+        """Close the parsed form data exactly once."""
+        nonlocal form_data_closed
+        if form_data_closed:
+            return
+        form_data_closed = True
+        await form_data.close()
+
+    def _create_upload_event() -> Event:
+        """Create an upload event using the live Starlette temp files.
+
+        Returns:
+            The upload event backed by the parsed files.
+        """
+        files = form_data.getlist("files")
+        if not files:
+            msg = "No files were uploaded."
+            raise UploadValueError(msg)
+
+        file_uploads = []
+        for file in files:
+            if not isinstance(file, StarletteUploadFile):
+                raise UploadValueError(
+                    "Uploaded file is not an UploadFile." + str(file)
+                )
+            file_uploads.append(
+                UploadFile(
+                    file=file.file,
+                    path=Path(file.filename.lstrip("/")) if file.filename else None,
+                    size=file.size,
+                    headers=file.headers,
+                )
+            )
+
+        return Event(
+            token=token,
+            name=handler_name,
+            payload={handler_upload_param[0]: file_uploads},
+        )
+
+    event: Event | None = None
+    try:
+        event = _create_upload_event()
+    finally:
+        if event is None:
+            await _close_form_data()
+
+    if event is None:
+        msg = "Upload event was not created."
+        raise RuntimeError(msg)
+
+    async def _ndjson_updates():
+        """Process the upload event, generating ndjson updates.
+
+        Yields:
+            Each state update as newline-delimited JSON.
+        """
+        async with app.state_manager.modify_state_with_links(
+            event.substate_token
+        ) as state:
+            async for update in state._process(event):
+                update = await app._postprocess(state, event, update)
+                yield update.json() + "\n"
+
+    return _UploadStreamingResponse(
+        _ndjson_updates(),
+        media_type="application/x-ndjson",
+        on_finish=_close_form_data,
+    )
+
+
+def _background_upload_accepted_response() -> StreamingResponse:
+    """Return a minimal ndjson response for background upload dispatch."""
+
+    def _accepted_updates():
+        yield StateUpdate(final=True).json() + "\n"
+
+    return StreamingResponse(
+        _accepted_updates(),
+        media_type="application/x-ndjson",
+        status_code=202,
+    )
+
+
+async def _upload_chunk_file(
+    request: Request,
+    app: App,
+    *,
+    token: str,
+    handler_name: str,
+    handler_upload_param: tuple[str, Any],
+    acknowledge_on_upload_endpoint: bool,
+) -> Response:
+    """Handle a streaming upload request.
+
+    Returns:
+        The streaming upload response.
+    """
+    chunk_iter = UploadChunkIterator(maxsize=8)
+    event = Event(
+        token=token,
+        name=handler_name,
+        payload={handler_upload_param[0]: chunk_iter},
+    )
+
+    async with app.state_manager.modify_state_with_links(
+        event.substate_token,
+        event=event,
+    ) as state:
+        _seed_upload_router_data(state, token)
+        task = app._process_background(state, event)
+
+    if task is None:
+        msg = f"@rx.event(background=True) is required for upload_files_chunk handler `{handler_name}`."
+        return JSONResponse({"detail": msg}, status_code=400)
+
+    chunk_iter.set_consumer_task(task)
+
+    parser = _UploadChunkMultipartParser(
+        request.headers,
+        request.stream(),
+        chunk_iter,
+    )
+
+    try:
+        await parser.parse()
+    except ClientDisconnect:
+        task.cancel()
+        with contextlib.suppress(asyncio.CancelledError):
+            await task
+        return Response()
+    except (MultiPartException, RuntimeError, ValueError) as err:
+        await chunk_iter.fail(err)
+        return JSONResponse({"detail": str(err)}, status_code=400)
+
+    try:
+        await chunk_iter.finish()
+    except RuntimeError as err:
+        return JSONResponse({"detail": str(err)}, status_code=400)
+
+    if acknowledge_on_upload_endpoint:
+        return _background_upload_accepted_response()
+    return Response(status_code=202)
+
+
 def upload(app: App):
-    """Upload a file.
+    """Upload files, dispatching to buffered or streaming handling.
 
     Args:
         app: The app to upload the file for.
@@ -365,94 +532,40 @@ def upload(app: App):
             request: The Starlette request object.
 
         Returns:
-            StreamingResponse yielding newline-delimited JSON of StateUpdate
-            emitted by the upload handler.
+            The upload response.
 
         Raises:
-            UploadValueError: if there are no args with supported annotation.
-            UploadTypeError: if a background task is used as the handler.
+            UploadValueError: If the handler does not have a supported annotation.
+            UploadTypeError: If a non-streaming upload is wired to a background task.
             HTTPException: when the request does not include token / handler headers.
         """
-        from reflex.utils.exceptions import UploadValueError
+        token, handler_name = _require_upload_headers(request)
+        _state, event_handler = await _get_upload_runtime_handler(
+            app, token, handler_name
+        )
 
-        try:
-            form_data = await request.form()
-        except ClientDisconnect:
-            return Response()
-
-        form_data_closed = False
-
-        async def _close_form_data() -> None:
-            """Close the parsed form data exactly once."""
-            nonlocal form_data_closed
-            if form_data_closed:
-                return
-            form_data_closed = True
-            await form_data.close()
-
-        async def _create_upload_event() -> Event:
-            """Create an upload event using the live Starlette temp files.
-
-            Returns:
-                The upload event backed by the original temp files.
-            """
-            files = form_data.getlist("files")
-            if not files:
-                msg = "No files were uploaded."
-                raise UploadValueError(msg)
-
-            token, handler = _require_upload_headers(request)
-
-            _state, event_handler = await _get_upload_runtime_handler(
-                app, token, handler
-            )
-            handler_upload_param = resolve_upload_handler_param(event_handler)
-
-            file_uploads = []
-            for file in files:
-                if not isinstance(file, StarletteUploadFile):
-                    raise UploadValueError(
-                        "Uploaded file is not an UploadFile." + str(file)
-                    )
-                file_uploads.append(
-                    UploadFile(
-                        file=file.file,
-                        path=Path(file.filename.lstrip("/")) if file.filename else None,
-                        size=file.size,
-                        headers=file.headers,
-                    )
+        if event_handler.is_background:
+            try:
+                handler_upload_param = resolve_upload_chunk_handler_param(event_handler)
+            except exceptions.UploadValueError:
+                handler_upload_param = None
+            else:
+                return await _upload_chunk_file(
+                    request,
+                    app,
+                    token=token,
+                    handler_name=handler_name,
+                    handler_upload_param=handler_upload_param,
+                    acknowledge_on_upload_endpoint=True,
                 )
 
-            return Event(
-                token=token,
-                name=handler,
-                payload={handler_upload_param[0]: file_uploads},
-            )
-
-        event: Event | None = None
-        try:
-            event = await _create_upload_event()
-        finally:
-            if event is None:
-                await _close_form_data()
-
-        async def _ndjson_updates():
-            """Process the upload event, generating ndjson updates.
-
-            Yields:
-                Each state update as JSON followed by a new line.
-            """
-            async with app.state_manager.modify_state_with_links(
-                event.substate_token
-            ) as state:
-                async for update in state._process(event):
-                    update = await app._postprocess(state, event, update)
-                    yield update.json() + "\n"
-
-        return _UploadStreamingResponse(
-            _ndjson_updates(),
-            media_type="application/x-ndjson",
-            on_finish=_close_form_data,
+        handler_upload_param = resolve_upload_handler_param(event_handler)
+        return await _upload_buffered_file(
+            request,
+            app,
+            token=token,
+            handler_name=handler_name,
+            handler_upload_param=handler_upload_param,
         )
 
     return upload_file
@@ -491,47 +604,13 @@ def upload_chunk(app: App):
         except (exceptions.UploadTypeError, RuntimeError, ValueError) as err:
             return JSONResponse({"detail": str(err)}, status_code=400)
 
-        chunk_iter = UploadChunkIterator(maxsize=8)
-        event = Event(
+        return await _upload_chunk_file(
+            request,
+            app,
             token=token,
-            name=handler_name,
-            payload={handler_upload_param[0]: chunk_iter},
+            handler_name=handler_name,
+            handler_upload_param=handler_upload_param,
+            acknowledge_on_upload_endpoint=False,
         )
-
-        async with app.state_manager.modify_state_with_links(
-            event.substate_token,
-            event=event,
-        ) as state:
-            _seed_upload_router_data(state, token)
-            task = app._process_background(state, event)
-
-        if task is None:
-            msg = f"@rx.event(background=True) is required for upload_files_chunk handler `{handler_name}`."
-            return JSONResponse({"detail": msg}, status_code=400)
-
-        chunk_iter.set_consumer_task(task)
-
-        parser = _UploadChunkMultipartParser(
-            request.headers,
-            request.stream(),
-            chunk_iter,
-        )
-
-        try:
-            await parser.parse()
-        except ClientDisconnect:
-            task.cancel()
-            with contextlib.suppress(asyncio.CancelledError):
-                await task
-            return Response()
-        except (MultiPartException, RuntimeError, ValueError) as err:
-            await chunk_iter.fail(err)
-            return JSONResponse({"detail": str(err)}, status_code=400)
-
-        try:
-            await chunk_iter.finish()
-        except RuntimeError as err:
-            return JSONResponse({"detail": str(err)}, status_code=400)
-        return Response(status_code=202)
 
     return upload_file_chunk
