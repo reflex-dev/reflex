@@ -170,8 +170,6 @@ class Plotly(NoSSRComponent):
         return [
             # For merging plotly data/layout/templates.
             {"mergician@v2.0.2": "mergician"},
-            # Plotly.js itself, needed so we can call Plotly.register() for locales.
-            {"plotly.js": ImportVar(tag="Plotly", is_default=True)},
             # React hooks used inside PlotWithLocale.
             {
                 "react": [
@@ -240,17 +238,22 @@ function _rxRegisterLocale(locale) {
     const key = locale.toLowerCase();
     if (_rxLocaleCache.has(key)) return Promise.resolve();
     if (_rxLocaleQueue[key]) return _rxLocaleQueue[key];
-    _rxLocaleQueue[key] = import("plotly.js-locales/" + key)
-        .then(mod => {
-            Plotly.register(mod.default || mod);
-            _rxLocaleCache.add(key);
-        })
+    _rxLocaleQueue[key] = Promise.all([
+        import("plotly.js-locales/" + key),
+        import("plotly.js")
+    ])
+    .then(([localeMod, plotlyMod]) => {
+        const Plotly = plotlyMod.default || plotlyMod;
+        Plotly.register(localeMod.default || localeMod);
+        _rxLocaleCache.add(key);
+    })
         .catch(() => {
             console.warn(
                 "[rx.plotly] Locale \\"" + locale + "\\" was not found in " +
                 "plotly.js-locales. Check https://www.npmjs.com/package/plotly.js-locales " +
                 "for the full list of supported locale codes. Falling back to \\"en\\"."
             );
+            _rxLocaleCache.add(key);
         });
     return _rxLocaleQueue[key];
 }
@@ -266,7 +269,7 @@ function _rxRegisterLocale(locale) {
             #      of English-formatted axes on first paint.                      #
             # ------------------------------------------------------------------ #
             """
-function _RX    PlotWithLocale({ locale, config, ...rest }) {
+function _RxPlotLocale({ locale, config, ...rest }) {
     const isEnglish = !locale || locale === "en";
     const [localeReady, setLocaleReady] = useState(isEnglish);
 
@@ -276,7 +279,7 @@ function _RX    PlotWithLocale({ locale, config, ...rest }) {
             return;
         }
         setLocaleReady(false);
-        _rxRegisterLocale(locale).then(() => setLocaleReady(true));
+        _rxRegisterLocale(locale).finally(() => setLocaleReady(true));
     }, [locale]);
 
     if (!localeReady) return null;
