@@ -93,6 +93,7 @@ DEFAULT_IMPORTS = {
         "PointerEventInfo",
     ],
     "reflex.style": ["Style"],
+    "reflex.upload": ["UploadFile"],
     "reflex.vars.base": ["Var"],
 }
 

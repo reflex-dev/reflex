@@ -97,8 +97,8 @@ from reflex.state import (
     all_base_state_classes,
     code_uses_state_contexts,
 )
-from reflex.uploads import UploadFile as UploadFile
-from reflex.uploads import upload, upload_chunk
+from reflex.upload import UploadFile as UploadFile
+from reflex.upload import upload, upload_chunk
 from reflex.utils import (
     codespaces,
     console,
