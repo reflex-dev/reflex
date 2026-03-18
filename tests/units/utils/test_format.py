@@ -63,8 +63,8 @@ def test_format_prop_event_chain_pure_eventspec_grouped():
     )
 
     assert format.format_prop(LiteralVar.create(chain)) == (
-        '((_e) => {((addEvents)([((ReflexEvent)("mock_event", ({  }), ({  })))], '
-        '[_e], ({  })));((addEvents)([((ReflexEvent)("mock_event_two", ({  }), '
+        '((_e) => {(addEvents([(ReflexEvent("mock_event", ({  }), ({  })))], '
+        '[_e], ({  })));(addEvents([(ReflexEvent("mock_event_two", ({  }), '
         "({  })))], [_e], ({  })));})"
     )
 
@@ -96,9 +96,9 @@ def test_format_prop_event_chain_mixed_queue_and_function():
     )
 
     assert format.format_prop(LiteralVar.create(chain)) == (
-        '((_e) => {((addEvents)([((ReflexEvent)("mock_event", ({  }), ({  })))], '
+        '((_e) => {(addEvents([(ReflexEvent("mock_event", ({  }), ({  })))], '
         "[_e], ({  })));(((...args) => { setTimeout(() => console.log('Timeout reached!', "
-        'args), 1000); })(_e));((addEvents)([((ReflexEvent)("mock_event_two", '
+        'args), 1000); })(_e));(addEvents([(ReflexEvent("mock_event_two", '
         "({  }), ({  })))], [_e], ({  })));})"
     )
 
@@ -116,7 +116,7 @@ def test_format_prop_event_chain_mixed_with_event_actions():
     )
 
     assert format.format_prop(LiteralVar.create(chain)) == (
-        '((_e) => ((applyEventActions)((() => {((addEvents)([((ReflexEvent)("mock_event", '
+        '((_e) => (applyEventActions((() => {(addEvents([(ReflexEvent("mock_event", '
         "({  }), ({  })))], [_e], ({  })));(((...args) => { setTimeout(() => "
         "console.log('Timeout reached!', args), 1000); })(_e));}), ({ "
         '["preventDefault"] : true, ["stopPropagation"] : true }), _e)))'
@@ -136,7 +136,7 @@ def test_format_prop_event_chain_mixed_with_queueable_event_actions():
     )
 
     assert format.format_prop(LiteralVar.create(chain)) == (
-        '((_e) => ((applyEventActions)((() => {((addEvents)([((ReflexEvent)("mock_event", '
+        '((_e) => (applyEventActions((() => {(addEvents([(ReflexEvent("mock_event", '
         "({  }), ({  })))], [_e], ({  })));(((...args) => { setTimeout(() => "
         "console.log('Timeout reached!', args), 1000); })(_e));}), ({ "
         '["preventDefault"] : true, ["throttle"] : 250 }), _e)))'
@@ -482,7 +482,7 @@ def test_format_match(
                 events=[EventSpec(handler=EventHandler(fn=mock_event))],
                 args_spec=no_args_event_spec,
             ),
-            '((...args) => ((addEvents)([((ReflexEvent)("mock_event", ({  }), ({  })))], args, ({  }))))',
+            '((...args) => (addEvents([(ReflexEvent("mock_event", ({  }), ({  })))], args, ({  }))))',
         ),
         (
             EventChain(
@@ -503,7 +503,7 @@ def test_format_match(
                 ],
                 args_spec=lambda e: [e.target.value],
             ),
-            '((_e) => ((addEvents)([((ReflexEvent)("mock_event", ({ ["arg"] : _e?.["target"]?.["value"] }), ({  })))], [_e], ({  }))))',
+            '((_e) => (addEvents([(ReflexEvent("mock_event", ({ ["arg"] : _e?.["target"]?.["value"] }), ({  })))], [_e], ({  }))))',
         ),
         (
             EventChain(
@@ -511,7 +511,7 @@ def test_format_match(
                 args_spec=no_args_event_spec,
                 event_actions={"stopPropagation": True},
             ),
-            '((...args) => ((applyEventActions)((() => {((addEvents)([((ReflexEvent)("mock_event", ({  }), ({  })))], args, ({  })));}), ({ ["stopPropagation"] : true }), ...args)))',
+            '((...args) => (applyEventActions((() => {(addEvents([(ReflexEvent("mock_event", ({  }), ({  })))], args, ({  })));}), ({ ["stopPropagation"] : true }), ...args)))',
         ),
         (
             EventChain(
@@ -523,7 +523,7 @@ def test_format_match(
                 ],
                 args_spec=no_args_event_spec,
             ),
-            '((...args) => ((addEvents)([((ReflexEvent)("mock_event", ({  }), ({ ["stopPropagation"] : true })))], args, ({  }))))',
+            '((...args) => (addEvents([(ReflexEvent("mock_event", ({  }), ({ ["stopPropagation"] : true })))], args, ({  }))))',
         ),
         (
             EventChain(
@@ -531,7 +531,7 @@ def test_format_match(
                 args_spec=no_args_event_spec,
                 event_actions={"preventDefault": True},
             ),
-            '((...args) => ((applyEventActions)((() => {((addEvents)([((ReflexEvent)("mock_event", ({  }), ({  })))], args, ({  })));}), ({ ["preventDefault"] : true }), ...args)))',
+            '((...args) => (applyEventActions((() => {(addEvents([(ReflexEvent("mock_event", ({  }), ({  })))], args, ({  })));}), ({ ["preventDefault"] : true }), ...args)))',
         ),
         ({"a": "red", "b": "blue"}, '({ ["a"] : "red", ["b"] : "blue" })'),
         (Var(_js_expr="var", _var_type=int).guess_type(), "var"),
@@ -639,7 +639,7 @@ def test_format_event_handler(input, output):
     [
         (
             EventSpec(handler=EventHandler(fn=mock_event)),
-            '((ReflexEvent)("mock_event", ({  }), ({  })))',
+            '(ReflexEvent("mock_event", ({  }), ({  })))',
         ),
     ],
 )
