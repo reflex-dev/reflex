@@ -161,7 +161,7 @@ def notify_backend():
     """Output a string notifying where the backend is running."""
     config = get_config()
     console.print(
-        f"Backend running at: [bold green]http://{config().backend_host}:{config().backend_port}[/bold green]"
+        f"Backend running at: [bold green]http://{config.backend_host}:{config.backend_port}[/bold green]"
     )
 
 
