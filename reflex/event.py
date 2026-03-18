@@ -1,11 +1,13 @@
 """Define event classes to connect the frontend and backend."""
 
+import asyncio
 import dataclasses
 import inspect
 import sys
 import types
 from base64 import b64encode
-from collections.abc import Callable, Mapping, Sequence
+from collections import deque
+from collections.abc import AsyncIterator, Callable, Mapping, Sequence
 from functools import lru_cache, partial
 from typing import (
     TYPE_CHECKING,
@@ -90,6 +92,238 @@ _EVENT_FIELDS: set[str] = {f.name for f in dataclasses.fields(Event)}
 
 BACKGROUND_TASK_MARKER = "_reflex_background_task"
 EVENT_ACTIONS_MARKER = "_rx_event_actions"
+
+
+@dataclasses.dataclass(
+    init=True,
+    frozen=True,
+)
+class UploadChunk:
+    """A chunk of uploaded file data."""
+
+    filename: str
+    offset: int
+    content_type: str
+    data: bytes
+
+
+class UploadChunkIterator(AsyncIterator[UploadChunk]):
+    """An async iterator over uploaded file chunks."""
+
+    def __init__(self, *, maxsize: int = 8):
+        """Initialize the iterator.
+
+        Args:
+            maxsize: Maximum number of chunks to buffer before blocking producers.
+        """
+        self._maxsize = maxsize
+        self._chunks: deque[UploadChunk] = deque()
+        self._condition = asyncio.Condition()
+        self._closed = False
+        self._error: Exception | None = None
+        self._consumer_task: asyncio.Task[Any] | None = None
+
+    def __aiter__(self) -> Self:
+        """Return the iterator itself.
+
+        Returns:
+            The upload chunk iterator.
+        """
+        return self
+
+    async def __anext__(self) -> UploadChunk:
+        """Yield the next available upload chunk.
+
+        Returns:
+            The next upload chunk.
+
+        Raises:
+            _error: Any error forwarded from the upload producer.
+            StopAsyncIteration: When all chunks have been consumed.
+        """
+        async with self._condition:
+            while not self._chunks and not self._closed:
+                await self._condition.wait()
+
+            if self._chunks:
+                chunk = self._chunks.popleft()
+                self._condition.notify_all()
+                return chunk
+
+            if self._error is not None:
+                raise self._error
+            raise StopAsyncIteration
+
+    def set_consumer_task(self, task: asyncio.Task[Any]) -> None:
+        """Track the task consuming this iterator.
+
+        Args:
+            task: The background task consuming upload chunks.
+        """
+        self._consumer_task = task
+        task.add_done_callback(self._wake_waiters)
+
+    async def push(self, chunk: UploadChunk) -> None:
+        """Push a new chunk into the iterator.
+
+        Args:
+            chunk: The chunk to push.
+
+        Raises:
+            RuntimeError: If the iterator is already closed or the consumer exited early.
+        """
+        async with self._condition:
+            while len(self._chunks) >= self._maxsize and not self._closed:
+                self._raise_if_consumer_finished()
+                await self._condition.wait()
+
+            if self._closed:
+                msg = "Upload chunk iterator is closed."
+                raise RuntimeError(msg)
+
+            self._raise_if_consumer_finished()
+            self._chunks.append(chunk)
+            self._condition.notify_all()
+
+    async def finish(self) -> None:
+        """Mark the iterator as complete."""
+        async with self._condition:
+            if self._closed:
+                return
+            self._closed = True
+            self._condition.notify_all()
+
+    async def fail(self, error: Exception) -> None:
+        """Mark the iterator as failed.
+
+        Args:
+            error: The error to raise from the iterator.
+        """
+        async with self._condition:
+            if self._closed:
+                return
+            self._closed = True
+            self._error = error
+            self._condition.notify_all()
+
+    def _raise_if_consumer_finished(self) -> None:
+        """Raise if the consumer task exited before draining the iterator.
+
+        Raises:
+            RuntimeError: If the consumer task completed before draining the iterator.
+        """
+        if self._consumer_task is None or not self._consumer_task.done():
+            return
+
+        try:
+            task_exc = self._consumer_task.exception()
+        except asyncio.CancelledError as err:
+            task_exc = err
+
+        msg = "Upload handler returned before consuming all upload chunks."
+        if task_exc is not None:
+            raise RuntimeError(msg) from task_exc
+        raise RuntimeError(msg)
+
+    def _wake_waiters(self, task: asyncio.Task[Any]) -> None:
+        """Wake any producers or consumers blocked on the iterator condition.
+
+        Args:
+            task: The completed consumer task.
+        """
+        task.get_loop().create_task(self._notify_waiters())
+
+    async def _notify_waiters(self) -> None:
+        """Notify tasks waiting on the iterator condition."""
+        async with self._condition:
+            self._condition.notify_all()
+
+
+def _handler_name(handler: "EventHandler") -> str:
+    """Get a stable fully qualified handler name for errors.
+
+    Args:
+        handler: The handler to name.
+
+    Returns:
+        The fully qualified handler name.
+    """
+    if handler.state_full_name:
+        return f"{handler.state_full_name}.{handler.fn.__name__}"
+    return handler.fn.__qualname__
+
+
+def resolve_upload_handler_param(handler: "EventHandler") -> tuple[str, Any]:
+    """Validate and resolve the UploadFile list parameter for a handler.
+
+    Args:
+        handler: The event handler to inspect.
+
+    Returns:
+        The parameter name and annotation for the upload file argument.
+
+    Raises:
+        UploadTypeError: If the handler is a background task.
+        UploadValueError: If the handler does not accept ``list[rx.UploadFile]``.
+    """
+    from reflex.app import UploadFile
+    from reflex.utils.exceptions import UploadTypeError, UploadValueError
+
+    handler_name = _handler_name(handler)
+    if handler.is_background:
+        msg = (
+            f"@rx.event(background=True) is not supported for upload handler "
+            f"`{handler_name}`."
+        )
+        raise UploadTypeError(msg)
+
+    func = handler.fn.func if isinstance(handler.fn, partial) else handler.fn
+    for name, annotation in get_type_hints(func).items():
+        if name == "return" or get_origin(annotation) is not list:
+            continue
+        args = get_args(annotation)
+        if len(args) == 1 and typehint_issubclass(args[0], UploadFile):
+            return name, annotation
+
+    msg = (
+        f"`{handler_name}` handler should have a parameter annotated as "
+        "list[rx.UploadFile]"
+    )
+    raise UploadValueError(msg)
+
+
+def resolve_upload_chunk_handler_param(handler: "EventHandler") -> tuple[str, type]:
+    """Validate and resolve the UploadChunkIterator parameter for a handler.
+
+    Args:
+        handler: The event handler to inspect.
+
+    Returns:
+        The parameter name and annotation for the iterator argument.
+
+    Raises:
+        UploadTypeError: If the handler is not a background task.
+        UploadValueError: If the handler does not accept an UploadChunkIterator.
+    """
+    from reflex.utils.exceptions import UploadTypeError, UploadValueError
+
+    handler_name = _handler_name(handler)
+    if not handler.is_background:
+        msg = f"@rx.event(background=True) is required for upload_files_chunk handler `{handler_name}`."
+        raise UploadTypeError(msg)
+
+    func = handler.fn.func if isinstance(handler.fn, partial) else handler.fn
+    for name, annotation in get_type_hints(func).items():
+        if name == "return":
+            continue
+        if annotation is UploadChunkIterator:
+            return name, annotation
+
+    msg = (
+        f"`{handler_name}` handler should have a parameter annotated as "
+        "rx.UploadChunkIterator"
+    )
+    raise UploadValueError(msg)
 
 
 @dataclasses.dataclass(
@@ -282,7 +516,7 @@ class EventHandler(EventActionsMixin):
         values = []
         for arg in [*args, *kwargs.values()]:
             # Special case for file uploads.
-            if isinstance(arg, FileUpload):
+            if isinstance(arg, (FileUpload, UploadFilesChunk)):
                 return arg.as_event_spec(handler=self)
 
             # Otherwise, convert to JSON.
@@ -858,14 +1092,22 @@ class FileUpload:
         """
         return [_prog]
 
-    def as_event_spec(self, handler: EventHandler) -> EventSpec:
-        """Get the EventSpec for the file upload.
+    def _as_event_spec(
+        self,
+        handler: EventHandler,
+        *,
+        client_handler_name: str,
+        upload_param_name: str,
+    ) -> EventSpec:
+        """Create an upload EventSpec.
 
         Args:
             handler: The event handler.
+            client_handler_name: The client handler name.
+            upload_param_name: The upload argument name in the event handler.
 
         Returns:
-            The event spec for the handler.
+            The upload EventSpec.
 
         Raises:
             ValueError: If the on_upload_progress is not a valid event handler.
@@ -876,14 +1118,19 @@ class FileUpload:
         )
 
         upload_id = self.upload_id if self.upload_id is not None else DEFAULT_UPLOAD_ID
+        upload_files_var = Var(
+            _js_expr="filesById",
+            _var_type=dict[str, Any],
+            _var_data=VarData.merge(upload_files_context_var_data),
+        ).to(ObjectVar)[LiteralVar.create(upload_id)]
         spec_args = [
             (
                 Var(_js_expr="files"),
-                Var(
-                    _js_expr="filesById",
-                    _var_type=dict[str, Any],
-                    _var_data=VarData.merge(upload_files_context_var_data),
-                ).to(ObjectVar)[LiteralVar.create(upload_id)],
+                upload_files_var,
+            ),
+            (
+                Var(_js_expr="upload_param_name"),
+                LiteralVar.create(upload_param_name),
             ),
             (
                 Var(_js_expr="upload_id"),
@@ -896,6 +1143,14 @@ class FileUpload:
                 ),
             ),
         ]
+        if upload_param_name != "files":
+            spec_args.insert(
+                1,
+                (
+                    Var(_js_expr=upload_param_name),
+                    upload_files_var,
+                ),
+            )
         if self.on_upload_progress is not None:
             on_upload_progress = self.on_upload_progress
             if isinstance(on_upload_progress, EventHandler):
@@ -931,14 +1186,63 @@ class FileUpload:
             )
         return EventSpec(
             handler=handler,
-            client_handler_name="uploadFiles",
+            client_handler_name=client_handler_name,
             args=tuple(spec_args),
             event_actions=handler.event_actions.copy(),
+        )
+
+    def as_event_spec(self, handler: EventHandler) -> EventSpec:
+        """Get the EventSpec for the file upload.
+
+        Args:
+            handler: The event handler.
+
+        Returns:
+            The event spec for the handler.
+        """
+        from reflex.utils.exceptions import UploadValueError
+
+        try:
+            upload_param_name, _annotation = resolve_upload_handler_param(handler)
+        except UploadValueError:
+            upload_param_name = "files"
+        return self._as_event_spec(
+            handler,
+            client_handler_name="uploadFiles",
+            upload_param_name=upload_param_name,
         )
 
 
 # Alias for rx.upload_files
 upload_files = FileUpload
+
+
+@dataclasses.dataclass(
+    init=True,
+    frozen=True,
+)
+class UploadFilesChunk(FileUpload):
+    """Class to represent a streaming file upload."""
+
+    def as_event_spec(self, handler: EventHandler) -> EventSpec:
+        """Get the EventSpec for the streaming file upload.
+
+        Args:
+            handler: The event handler.
+
+        Returns:
+            The event spec for the handler.
+        """
+        upload_param_name, _annotation = resolve_upload_chunk_handler_param(handler)
+        return self._as_event_spec(
+            handler,
+            client_handler_name="uploadFilesChunk",
+            upload_param_name=upload_param_name,
+        )
+
+
+# Alias for rx.upload_files_chunk
+upload_files_chunk = UploadFilesChunk
 
 
 # Special server-side events.
@@ -2303,6 +2607,9 @@ class EventNamespace:
 
     # File Upload
     FileUpload = FileUpload
+    UploadChunk = UploadChunk
+    UploadChunkIterator = UploadChunkIterator
+    UploadFilesChunk = UploadFilesChunk
 
     # Type Aliases
     EventType = EventType
@@ -2316,10 +2623,15 @@ class EventNamespace:
     _EVENT_FIELDS = _EVENT_FIELDS
     FORM_DATA = FORM_DATA
     upload_files = upload_files
+    upload_files_chunk = upload_files_chunk
     stop_propagation = stop_propagation
     prevent_default = prevent_default
 
     # Private/Internal Functions
+    resolve_upload_handler_param = staticmethod(resolve_upload_handler_param)
+    resolve_upload_chunk_handler_param = staticmethod(
+        resolve_upload_chunk_handler_param
+    )
     _values_returned_from_event = staticmethod(_values_returned_from_event)
     _check_event_args_subclass_of_callback = staticmethod(
         _check_event_args_subclass_of_callback

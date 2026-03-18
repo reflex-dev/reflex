@@ -301,6 +301,8 @@ _MAPPING: dict = {
         "event",
         "EventChain",
         "EventHandler",
+        "UploadChunk",
+        "UploadChunkIterator",
         "call_script",
         "call_function",
         "run_script",
@@ -320,6 +322,7 @@ _MAPPING: dict = {
         "set_value",
         "stop_propagation",
         "upload_files",
+        "upload_files_chunk",
         "window_alert",
     ],
     "istate.storage": [
@@ -348,6 +351,7 @@ _MAPPING: dict = {
 _SUBMODULES: set[str] = {
     "components",
     "app",
+    "uploads",
     "style",
     "admin",
     "base",
