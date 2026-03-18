@@ -1341,9 +1341,12 @@ async def _drain_background_tasks(app: App):
         The gathered background task results.
     """
     tasks = tuple(app._background_tasks)
-    if tasks:
-        return await asyncio.gather(*tasks, return_exceptions=True)
-    return []
+    results = await asyncio.gather(*tasks, return_exceptions=True) if tasks else []
+    if environment.REFLEX_OPLOCK_ENABLED.get():
+        # Redis oplocks can keep completed background-task writes in the local
+        # lease cache until the manager is closed.
+        await app.state_manager.close()
+    return results
 
 
 @pytest.mark.asyncio
