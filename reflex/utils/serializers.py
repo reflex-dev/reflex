@@ -7,7 +7,6 @@ import dataclasses
 import decimal
 import functools
 import inspect
-import json
 import warnings
 from collections.abc import Callable, Mapping, Sequence
 from datetime import date, datetime, time, timedelta
@@ -474,7 +473,9 @@ with contextlib.suppress(ImportError):
         Returns:
             The serialized figure.
         """
-        return json.loads(str(to_json(figure)))
+        from reflex.utils.format import orjson_loads
+
+        return orjson_loads(str(to_json(figure)))
 
     @serializer
     def serialize_template(template: layout.Template) -> dict:
@@ -486,9 +487,11 @@ with contextlib.suppress(ImportError):
         Returns:
             The serialized template.
         """
+        from reflex.utils.format import orjson_loads
+
         return {
-            "data": json.loads(str(to_json(template.data))),
-            "layout": json.loads(str(to_json(template.layout))),
+            "data": orjson_loads(str(to_json(template.data))),
+            "layout": orjson_loads(str(to_json(template.layout))),
         }
 
 
