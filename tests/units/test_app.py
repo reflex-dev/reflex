@@ -1721,16 +1721,7 @@ def test_app_wrap_compile_theme(
     ].strip()
 
     def _wrap_event_handler_calls(handler_js: str) -> str:
-        return (
-            handler_js
-            .replace("jsx(", "(jsx)(")
-            .replace("addEvents(", "(addEvents)(")
-            .replace("ReflexEvent(", "(ReflexEvent)(")
-            .replace(
-                'navigator?.["clipboard"]?.["writeText"](',
-                '(navigator?.["clipboard"]?.["writeText"])(',
-            )
-        )
+        return handler_js
 
     expected = (
         "function AppWrap({children}) {\n"
@@ -1811,16 +1802,7 @@ def test_app_wrap_priority(
     ].strip()
 
     def _wrap_event_handler_calls(handler_js: str) -> str:
-        return (
-            handler_js
-            .replace("jsx(", "(jsx)(")
-            .replace("addEvents(", "(addEvents)(")
-            .replace("ReflexEvent(", "(ReflexEvent)(")
-            .replace(
-                'navigator?.["clipboard"]?.["writeText"](',
-                '(navigator?.["clipboard"]?.["writeText"])(',
-            )
-        )
+        return handler_js
 
     expected = (
         "function AppWrap({children}) {\n"
