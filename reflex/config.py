@@ -262,6 +262,8 @@ class BaseConfig:
     # List of plugin types to disable in the app.
     disable_plugins: list[type[Plugin]] = dataclasses.field(default_factory=list)
 
+    plotly_locale: str = ""
+
     # The transport method for client-server communication.
     transport: Literal["websocket", "polling"] = "websocket"
 
