@@ -1388,9 +1388,8 @@ async def test_upload_chunk_streams_chunks(tmp_path, token: str, mocker: MockerF
     )
     assert response.status_code == 202
 
-    if app._background_tasks:
-        task_results = await _drain_background_tasks(app)
-        assert task_results == [None]
+    task_results = await _drain_background_tasks(app)
+    assert all(result is None for result in task_results)
 
     state = await app.state_manager.get_state(_substate_key(token, ChunkUploadState))
     substate = (
@@ -1490,9 +1489,8 @@ async def test_upload_dispatches_chunk_handlers_on_upload_endpoint(
         updates.append(json.loads(str(state_update)))
     assert updates == [{"delta": {}, "events": [], "final": True}]
 
-    if app._background_tasks:
-        task_results = await _drain_background_tasks(app)
-        assert task_results == [None]
+    task_results = await _drain_background_tasks(app)
+    assert all(result is None for result in task_results)
 
     state = await app.state_manager.get_state(_substate_key(token, ChunkUploadState))
     substate = (

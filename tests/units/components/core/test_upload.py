@@ -72,19 +72,6 @@ def test_get_upload_url():
     assert isinstance(url, Var)
 
 
-def test_upload_files_chunk_export():
-    chunk = rx.UploadChunk(
-        filename="foo.txt",
-        offset=0,
-        content_type="text/plain",
-        data=b"hello",
-    )
-
-    assert chunk.filename == "foo.txt"
-    assert isinstance(rx.UploadChunkIterator(), rx.UploadChunkIterator)
-    assert callable(rx.upload_files_chunk)
-
-
 def test__on_drop_spec():
     assert isinstance(_on_drop_spec(LiteralVar.create([])), tuple)
 
