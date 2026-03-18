@@ -28,7 +28,6 @@ from reflex.app import (
     default_overlay_component,
     process,
     upload,
-    upload_chunk,
 )
 from reflex.components import Component
 from reflex.components.base.bare import Bare
@@ -1350,96 +1349,6 @@ async def _drain_background_tasks(app: App):
 
 
 @pytest.mark.asyncio
-async def test_upload_chunk_streams_chunks(tmp_path, token: str, mocker: MockerFixture):
-    """Test streaming upload chunks through the background upload endpoint."""
-    mocker.patch(
-        "reflex.state.State.class_subclasses",
-        {ChunkUploadState},
-    )
-    app = App()
-    mocker.patch(
-        "reflex.utils.prerequisites.get_and_validate_app",
-        return_value=SimpleNamespace(app=app),
-    )
-    app.event_namespace.emit_update = AsyncMock()  # pyright: ignore [reportOptionalMemberAccess]
-
-    async with app.modify_state(_substate_key(token, ChunkUploadState)) as root_state:
-        substate = root_state.get_substate(ChunkUploadState.get_full_name().split("."))
-        substate._tmp_path = tmp_path
-        substate.chunk_records = []
-        substate.completed_files = []
-
-    upload_fn = upload_chunk(app)
-    boundary = "chunk-upload-boundary"
-    response = await upload_fn(
-        _make_chunk_upload_request(
-            token,
-            f"{ChunkUploadState.get_full_name()}.chunk_handle_upload",
-            _build_chunk_upload_multipart_body(
-                boundary,
-                [
-                    ("files", "alpha.txt", "text/plain", b"abcde"),
-                    ("files", "beta.txt", "text/plain", b"12345"),
-                ],
-            ),
-            content_type=f"multipart/form-data; boundary={boundary}",
-            stream_chunk_size=1,
-        )
-    )
-    assert response.status_code == 202
-
-    task_results = await _drain_background_tasks(app)
-    assert all(result is None for result in task_results)
-
-    state = await app.state_manager.get_state(_substate_key(token, ChunkUploadState))
-    substate = (
-        state
-        if isinstance(state, ChunkUploadState)
-        else state.get_substate(ChunkUploadState.get_full_name().split("."))
-    )
-    assert isinstance(substate, ChunkUploadState)
-    parsed_chunk_records = [
-        (filename, int(offset), int(size), content_type)
-        for filename, offset, size, content_type in (
-            record.rsplit(":", 3) for record in substate.chunk_records
-        )
-    ]
-    assert len(parsed_chunk_records) >= 4
-    assert {filename for filename, *_ in parsed_chunk_records} == {
-        "alpha.txt",
-        "beta.txt",
-    }
-    assert all(
-        content_type == "text/plain" for *_, content_type in parsed_chunk_records
-    )
-    assert (
-        sum(
-            size
-            for filename, _offset, size, _content_type in parsed_chunk_records
-            if filename == "alpha.txt"
-        )
-        == 5
-    )
-    assert (
-        sum(
-            size
-            for filename, _offset, size, _content_type in parsed_chunk_records
-            if filename == "beta.txt"
-        )
-        == 5
-    )
-    assert parsed_chunk_records[0][0] == "alpha.txt"
-    assert parsed_chunk_records[-1][0] == "beta.txt"
-    assert substate.completed_files == ["alpha.txt", "beta.txt"]
-    assert (tmp_path / "alpha.txt").read_bytes() == b"abcde"
-    assert (tmp_path / "beta.txt").read_bytes() == b"12345"
-    assert app.event_namespace.emit_update.await_count >= 1  # pyright: ignore [reportOptionalMemberAccess]
-    assert not app._background_tasks
-
-    await app.state_manager.close()
-
-
-@pytest.mark.asyncio
 async def test_upload_dispatches_chunk_handlers_on_upload_endpoint(
     tmp_path,
     token: str,
@@ -1499,6 +1408,38 @@ async def test_upload_dispatches_chunk_handlers_on_upload_endpoint(
         else state.get_substate(ChunkUploadState.get_full_name().split("."))
     )
     assert isinstance(substate, ChunkUploadState)
+    parsed_chunk_records = [
+        (filename, int(offset), int(size), content_type)
+        for filename, offset, size, content_type in (
+            record.rsplit(":", 3) for record in substate.chunk_records
+        )
+    ]
+    assert len(parsed_chunk_records) >= 4
+    assert {filename for filename, *_ in parsed_chunk_records} == {
+        "alpha.txt",
+        "beta.txt",
+    }
+    assert all(
+        content_type == "text/plain" for *_, content_type in parsed_chunk_records
+    )
+    assert (
+        sum(
+            size
+            for filename, _offset, size, _content_type in parsed_chunk_records
+            if filename == "alpha.txt"
+        )
+        == 5
+    )
+    assert (
+        sum(
+            size
+            for filename, _offset, size, _content_type in parsed_chunk_records
+            if filename == "beta.txt"
+        )
+        == 5
+    )
+    assert parsed_chunk_records[0][0] == "alpha.txt"
+    assert parsed_chunk_records[-1][0] == "beta.txt"
     assert substate.completed_files == ["alpha.txt", "beta.txt"]
     assert (tmp_path / "alpha.txt").read_bytes() == b"abcde"
     assert (tmp_path / "beta.txt").read_bytes() == b"12345"
@@ -1513,7 +1454,7 @@ async def test_upload_chunk_invalid_offset_returns_400(
     token: str,
     mocker: MockerFixture,
 ):
-    """Test that malformed chunk metadata fails the upload request."""
+    """Test that malformed chunk metadata fails the standard upload request."""
     mocker.patch(
         "reflex.state.State.class_subclasses",
         {ChunkUploadState},
@@ -1530,7 +1471,7 @@ async def test_upload_chunk_invalid_offset_returns_400(
         substate.chunk_records = []
         substate.completed_files = []
 
-    upload_fn = upload_chunk(app)
+    upload_fn = upload(app)
     response = await upload_fn(
         _make_chunk_upload_request(
             token,

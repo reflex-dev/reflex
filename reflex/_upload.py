@@ -5,6 +5,7 @@ from __future__ import annotations
 import asyncio
 import contextlib
 import dataclasses
+from collections import deque
 from collections.abc import AsyncGenerator, Awaitable, Callable
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, BinaryIO, cast
@@ -104,7 +105,7 @@ class _UploadChunkMultipartParser:
         self._current_partial_header_name = b""
         self._current_partial_header_value = b""
         self._current_part = _UploadChunkPart()
-        self._chunks_to_emit: list[UploadChunk] = []
+        self._chunks_to_emit: deque[UploadChunk] = deque()
         self._seen_upload_chunk = False
         self._part_count = 0
         self._emitted_chunk_count = 0
@@ -216,7 +217,7 @@ class _UploadChunkMultipartParser:
     async def _flush_emitted_chunks(self) -> None:
         """Push parsed upload chunks into the handler iterator."""
         while self._chunks_to_emit:
-            await self.chunk_iter.push(self._chunks_to_emit.pop(0))
+            await self.chunk_iter.push(self._chunks_to_emit.popleft())
 
     async def parse(self) -> None:
         """Parse the incoming request stream and push chunks to the iterator.
@@ -548,7 +549,7 @@ def upload(app: App):
             try:
                 handler_upload_param = resolve_upload_chunk_handler_param(event_handler)
             except exceptions.UploadValueError:
-                handler_upload_param = None
+                pass
             else:
                 return await _upload_chunk_file(
                     request,
@@ -569,48 +570,3 @@ def upload(app: App):
         )
 
     return upload_file
-
-
-def upload_chunk(app: App):
-    """Upload file chunks to a background event handler.
-
-    Args:
-        app: The app to upload the file for.
-
-    Returns:
-        The streaming upload function.
-    """
-
-    async def upload_file_chunk(request: Request):
-        """Upload file chunks without buffering the full file in memory.
-
-        Args:
-            request: The Starlette request object.
-
-        Returns:
-            A response indicating whether the upload stream was accepted.
-
-        Raises:
-            UploadTypeError: If the handler is not a background event.
-            UploadValueError: If the handler signature is invalid.
-            HTTPException: If the request is missing required headers.
-        """
-        token, handler_name = _require_upload_headers(request)
-        try:
-            _state, event_handler = await _get_upload_runtime_handler(
-                app, token, handler_name
-            )
-            handler_upload_param = resolve_upload_chunk_handler_param(event_handler)
-        except (exceptions.UploadTypeError, RuntimeError, ValueError) as err:
-            return JSONResponse({"detail": str(err)}, status_code=400)
-
-        return await _upload_chunk_file(
-            request,
-            app,
-            token=token,
-            handler_name=handler_name,
-            handler_upload_param=handler_upload_param,
-            acknowledge_on_upload_endpoint=False,
-        )
-
-    return upload_file_chunk

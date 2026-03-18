@@ -177,6 +177,7 @@ _on_drop_args_spec = (
     _on_drop_spec,
     passthrough_event_spec(UploadChunkIterator),
 )
+_UPLOAD_FILES_CLIENT_HANDLER = "uploadFiles"
 
 
 def _default_drop_rejected(rejected_files: ArrayVar[list[dict[str, Any]]]) -> EventSpec:
@@ -220,7 +221,7 @@ class GhostUpload(Fragment):
     on_drop: EventHandler[_on_drop_args_spec]
 
     # Fired when dropped files do not meet the specified criteria.
-    on_drop_rejected: EventHandler[_on_drop_args_spec]
+    on_drop_rejected: EventHandler[_on_drop_spec]
 
 
 class Upload(MemoizationLeaf):
@@ -266,7 +267,7 @@ class Upload(MemoizationLeaf):
     on_drop: EventHandler[_on_drop_args_spec]
 
     # Fired when dropped files do not meet the specified criteria.
-    on_drop_rejected: EventHandler[_on_drop_args_spec]
+    on_drop_rejected: EventHandler[_on_drop_spec]
 
     # Style rules to apply when actively dragging.
     drag_active_style: Style | None = field(default=None, is_javascript_property=False)
@@ -315,10 +316,7 @@ class Upload(MemoizationLeaf):
                 if isinstance(event, EventHandler):
                     event = event(upload_files(upload_id))
                 if isinstance(event, EventSpec):
-                    if event.client_handler_name not in {
-                        "uploadFiles",
-                        "uploadFilesChunk",
-                    }:
+                    if event.client_handler_name != _UPLOAD_FILES_CLIENT_HANDLER:
                         # Call the lambda to get the event chain.
                         event = call_event_handler(event, _on_drop_args_spec)
                 elif isinstance(event, Callable):

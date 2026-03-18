@@ -10,7 +10,6 @@ class Endpoint(Enum):
     PING = "ping"
     EVENT = "_event"
     UPLOAD = "_upload"
-    UPLOAD_CHUNK = "_upload_chunk"
     AUTH_CODESPACE = "auth-codespace"
     HEALTH = "_health"
     ALL_ROUTES = "_all_routes"

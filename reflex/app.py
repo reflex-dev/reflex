@@ -41,7 +41,7 @@ from starlette.staticfiles import StaticFiles
 
 from reflex import constants
 from reflex._upload import UploadFile as UploadFile
-from reflex._upload import upload, upload_chunk
+from reflex._upload import upload
 from reflex.admin import AdminDash
 from reflex.app_mixins import AppMixin, LifespanMixin, MiddlewareMixin
 from reflex.compiler import compiler
@@ -661,11 +661,6 @@ class App(MiddlewareMixin, LifespanMixin):
             self._api.add_route(
                 str(constants.Endpoint.UPLOAD),
                 upload(self),
-                methods=["POST"],
-            )
-            self._api.add_route(
-                str(constants.Endpoint.UPLOAD_CHUNK),
-                upload_chunk(self),
                 methods=["POST"],
             )
 

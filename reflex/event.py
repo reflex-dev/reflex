@@ -92,6 +92,7 @@ _EVENT_FIELDS: set[str] = {f.name for f in dataclasses.fields(Event)}
 
 BACKGROUND_TASK_MARKER = "_reflex_background_task"
 EVENT_ACTIONS_MARKER = "_rx_event_actions"
+UPLOAD_FILES_CLIENT_HANDLER = "uploadFiles"
 
 
 @dataclasses.dataclass(
@@ -266,7 +267,7 @@ def resolve_upload_handler_param(handler: "EventHandler") -> tuple[str, Any]:
         UploadTypeError: If the handler is a background task.
         UploadValueError: If the handler does not accept ``list[rx.UploadFile]``.
     """
-    from reflex.app import UploadFile
+    from reflex._upload import UploadFile
     from reflex.utils.exceptions import UploadTypeError, UploadValueError
 
     handler_name = _handler_name(handler)
@@ -1208,7 +1209,7 @@ class FileUpload:
             upload_param_name = "files"
         return self._as_event_spec(
             handler,
-            client_handler_name="uploadFiles",
+            client_handler_name=UPLOAD_FILES_CLIENT_HANDLER,
             upload_param_name=upload_param_name,
         )
 
@@ -1236,7 +1237,7 @@ class UploadFilesChunk(FileUpload):
         upload_param_name, _annotation = resolve_upload_chunk_handler_param(handler)
         return self._as_event_spec(
             handler,
-            client_handler_name="uploadFiles",
+            client_handler_name=UPLOAD_FILES_CLIENT_HANDLER,
             upload_param_name=upload_param_name,
         )
 
