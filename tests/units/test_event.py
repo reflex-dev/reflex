@@ -213,21 +213,21 @@ def test_event_console_log():
     assert spec.handler.fn.__qualname__ == "_call_function"
     assert spec.args[0][0].equals(Var(_js_expr="function"))
     assert spec.args[0][1].equals(
-        Var('(() => (console?.["log"]("message")))', _var_type=Callable)
+        Var('(() => ((console?.["log"])("message")))', _var_type=Callable)
     )
     assert (
         format.format_event(spec)
-        == 'ReflexEvent("_call_function", {function:(() => (console?.["log"]("message"))),callback:null})'
+        == 'ReflexEvent("_call_function", {function:(() => ((console?.["log"])("message"))),callback:null})'
     )
     spec = event.console_log(Var(_js_expr="message"))
     assert (
         format.format_event(spec)
-        == 'ReflexEvent("_call_function", {function:(() => (console?.["log"](message))),callback:null})'
+        == 'ReflexEvent("_call_function", {function:(() => ((console?.["log"])(message))),callback:null})'
     )
     spec2 = event.console_log(Var(_js_expr="message2")).add_args(Var("throwaway"))
     assert (
         format.format_event(spec2)
-        == 'ReflexEvent("_call_function", {function:(() => (console?.["log"](message2))),callback:null})'
+        == 'ReflexEvent("_call_function", {function:(() => ((console?.["log"])(message2))),callback:null})'
     )
 
 
@@ -238,21 +238,21 @@ def test_event_window_alert():
     assert spec.handler.fn.__qualname__ == "_call_function"
     assert spec.args[0][0].equals(Var(_js_expr="function"))
     assert spec.args[0][1].equals(
-        Var('(() => (window?.["alert"]("message")))', _var_type=Callable)
+        Var('(() => ((window?.["alert"])("message")))', _var_type=Callable)
     )
     assert (
         format.format_event(spec)
-        == 'ReflexEvent("_call_function", {function:(() => (window?.["alert"]("message"))),callback:null})'
+        == 'ReflexEvent("_call_function", {function:(() => ((window?.["alert"])("message"))),callback:null})'
     )
     spec = event.window_alert(Var(_js_expr="message"))
     assert (
         format.format_event(spec)
-        == 'ReflexEvent("_call_function", {function:(() => (window?.["alert"](message))),callback:null})'
+        == 'ReflexEvent("_call_function", {function:(() => ((window?.["alert"])(message))),callback:null})'
     )
     spec2 = event.window_alert(Var(_js_expr="message2")).add_args(Var("throwaway"))
     assert (
         format.format_event(spec2)
-        == 'ReflexEvent("_call_function", {function:(() => (window?.["alert"](message2))),callback:null})'
+        == 'ReflexEvent("_call_function", {function:(() => ((window?.["alert"])(message2))),callback:null})'
     )
 
 
@@ -676,39 +676,45 @@ def test_event_var_in_rx_cond():
 
 def test_event_chain_create_allows_plain_function_var():
     """Plain FunctionVars should be usable as frontend event handlers."""
-    frontend_handler = make_timeout_logger()
-
-    assert EventChain.create(frontend_handler, args_spec=lambda: ()) is frontend_handler
-
-
-def test_event_chain_create_warns_for_plain_function_var_kwargs():
-    """FunctionVar kwargs should warn when EventChain wrapping is bypassed."""
     frontend_handler = rx.vars.FunctionStringVar.create(
         "(...args) => { setTimeout(() => console.log('Timeout reached!', args), 1000); }"
     )
 
-    with pytest.warns(UserWarning, match="ignored for FunctionVar values"):
-        result = EventChain.create(
-            frontend_handler,
-            args_spec=lambda: (),
-            event_actions={"preventDefault": True},
-        )
+    chain = EventChain.create(frontend_handler, args_spec=lambda: ())
 
-    assert result is frontend_handler
+    assert isinstance(chain, EventChain)
+    assert chain.events == [frontend_handler]
+
+
+def test_event_chain_create_wraps_plain_function_var_kwargs():
+    """FunctionVars should compose with chain-level kwargs instead of bypassing wrapping."""
+    frontend_handler = rx.vars.FunctionStringVar.create(
+        "(...args) => { setTimeout(() => console.log('Timeout reached!', args), 1000); }"
+    )
+
+    chain = EventChain.create(
+        frontend_handler,
+        args_spec=lambda: (),
+        event_actions={"preventDefault": True},
+    )
+
+    assert isinstance(chain, EventChain)
+    assert chain.events == [frontend_handler]
+    assert chain.event_actions == {"preventDefault": True}
 
 
 def test_event_chain_create_warns_for_event_chain_var_kwargs():
     """Prebuilt EventChainVars should also warn when extra kwargs are ignored."""
-    frontend_handler = make_timeout_logger()
+    prebuilt_chain = Var.create(EventChain(events=[], args_spec=lambda: ()))
 
     with pytest.warns(UserWarning, match="ignored for EventChainVar values"):
         result = EventChain.create(
-            frontend_handler,
+            prebuilt_chain,
             args_spec=lambda: (),
             event_actions={"preventDefault": True},
         )
 
-    assert result is frontend_handler
+    assert result is prebuilt_chain
 
 
 def test_event_chain_create_allows_function_var_in_list():

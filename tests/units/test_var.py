@@ -358,7 +358,7 @@ def test_basic_operations(TestObj):
         == "state.foo.slice().reverse()"
     )
     assert str(Var(_js_expr="foo").to(list).reverse()) == "foo.slice().reverse()"
-    assert str(Var(_js_expr="foo", _var_type=str).js_type()) == "(typeof(foo))"
+    assert str(Var(_js_expr="foo", _var_type=str).js_type()) == "((typeof)(foo))"
 
 
 @pytest.mark.parametrize(
@@ -960,10 +960,10 @@ def test_function_var():
     )
 
     nested_arrow_expr = FunctionStringVar.create("factory(() => 1)")
-    assert str(nested_arrow_expr.call()) == "(factory(() => 1)())"
+    assert str(nested_arrow_expr.call()) == "((factory(() => 1))())"
 
     string_arrow_expr = FunctionStringVar.create('factory("=>")')
-    assert str(string_arrow_expr.call()) == '(factory("=>")())'
+    assert str(string_arrow_expr.call()) == '((factory("=>"))())'
 
 
 def test_var_operation():

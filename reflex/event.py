@@ -91,7 +91,6 @@ _EVENT_FIELDS: set[str] = {f.name for f in dataclasses.fields(Event)}
 
 BACKGROUND_TASK_MARKER = "_reflex_background_task"
 EVENT_ACTIONS_MARKER = "_rx_event_actions"
-DOM_EVENT_ACTIONS = frozenset({"preventDefault", "stopPropagation"})
 
 
 @dataclasses.dataclass(
@@ -483,7 +482,7 @@ class EventChain(EventActionsMixin):
         """
         # If it's an event chain var, return it.
         if isinstance(value, Var):
-            if isinstance(value, EventChainVar):
+            if isinstance(value, LiteralEventChainVar):
                 if event_chain_kwargs:
                     warnings.warn(
                         f"event_chain_kwargs {event_chain_kwargs!r} are ignored for "
@@ -491,16 +490,16 @@ class EventChain(EventActionsMixin):
                         stacklevel=2,
                     )
                 return value
-            if isinstance(value, FunctionVar):
+            if isinstance(value, (EventVar, FunctionVar)):
+                value = [value]
+            elif isinstance(value, EventChainVar):
                 if event_chain_kwargs:
                     warnings.warn(
                         f"event_chain_kwargs {event_chain_kwargs!r} are ignored for "
-                        "FunctionVar values.",
+                        "EventChainVar values.",
                         stacklevel=2,
                     )
                 return value
-            if isinstance(value, EventVar):
-                value = [value]
             elif safe_issubclass(value._var_type, (EventChain, EventSpec)):
                 return cls.create(
                     value=value.guess_type(),
@@ -2122,71 +2121,45 @@ class LiteralEventChainVar(ArgsFunctionOperationBuilder, LiteralVar, EventChainV
             raise ValueError(msg)
         assert invocation is not None
 
-        has_function_var = any(isinstance(e, FunctionVar) for e in value.events)
-
-        if not has_function_var:
-            return_expr = invocation.call(
-                LiteralVar.create([LiteralVar.create(event) for event in value.events]),
-                arg_def_expr,
-                value.event_actions,
-            )
-        else:
-            statement_js: list[str] = []
-            statement_var_data: list[VarData | None] = []
-            queueable_group: list[EventSpec | EventVar | EventCallback] = []
-            queueable_event_actions = {
-                key: action
-                for key, action in value.event_actions.items()
-                if key not in DOM_EVENT_ACTIONS
-            }
-
-            if value.event_actions.get("preventDefault") or value.event_actions.get(
-                "stopPropagation"
-            ):
-                statement_js.append(
-                    "const _reflex_dom_event = "
-                    f"{arg_def_expr}.filter((o) => o?.preventDefault !== undefined)[0];"
-                )
-                if value.event_actions.get("preventDefault"):
-                    statement_js.append(
-                        "if (_reflex_dom_event?.preventDefault) "
-                        "{_reflex_dom_event.preventDefault();}"
-                    )
-                if value.event_actions.get("stopPropagation"):
-                    statement_js.append(
-                        "if (_reflex_dom_event?.stopPropagation) "
-                        "{_reflex_dom_event.stopPropagation();}"
-                    )
-
-            def flush_queueable_group() -> None:
-                if not queueable_group:
-                    return
-                queue_call = invocation.call(
-                    LiteralVar.create([
-                        LiteralVar.create(event) for event in queueable_group
-                    ]),
+        statements = [
+            (
+                event.call(*call_args)
+                if isinstance(event, FunctionVar)
+                else invocation.call(
+                    LiteralVar.create([LiteralVar.create(event)]),
                     arg_def_expr,
-                    queueable_event_actions,
+                    {},
                 )
-                statement_js.append(f"{queue_call!s};")
-                statement_var_data.append(queue_call._get_all_var_data())
-                queueable_group.clear()
+            )
+            for event in value.events
+        ]
 
-            for event in value.events:
-                if isinstance(event, FunctionVar):
-                    flush_queueable_group()
-                    function_call = event.call(*call_args)
-                    statement_js.append(f"{function_call!s};")
-                    statement_var_data.append(function_call._get_all_var_data())
-                else:
-                    queueable_group.append(event)
+        if not statements:
+            statements.append(invocation.call(LiteralVar.create([]), arg_def_expr, {}))
 
-            flush_queueable_group()
-
-            return_expr = Var(
-                _js_expr=f"{{{''.join(statement_js)}}}",
+        statement_var_data = [statement._get_all_var_data() for statement in statements]
+        if len(statements) == 1 and not value.event_actions:
+            return_expr = statements[0]
+        else:
+            statement_block = Var(
+                _js_expr=f"{{{''.join(f'{statement!s};' for statement in statements)}}}",
                 _var_data=VarData.merge(*statement_var_data),
             )
+            if value.event_actions:
+                apply_event_actions = FunctionStringVar.create(
+                    CompileVars.APPLY_EVENT_ACTIONS,
+                    _var_data=VarData(
+                        imports=Imports.EVENTS,
+                        hooks={Hooks.EVENTS: None},
+                    ),
+                )
+                return_expr = apply_event_actions.call(
+                    ArgsFunctionOperation.create((), statement_block),
+                    value.event_actions,
+                    *call_args,
+                )
+            else:
+                return_expr = statement_block
 
         return cls(
             _js_expr="",

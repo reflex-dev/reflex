@@ -33,84 +33,6 @@ OTHER_CALLABLE_TYPE = TypeVar(
 )
 
 
-def _is_js_identifier_start(char: str) -> bool:
-    """Check whether a character can start a JavaScript identifier.
-
-    Returns:
-        True if the character is valid as the first character of a JS identifier.
-    """
-    return char == "$" or char == "_" or char.isalpha()
-
-
-def _is_js_identifier_char(char: str) -> bool:
-    """Check whether a character can continue a JavaScript identifier.
-
-    Returns:
-        True if the character is valid within a JS identifier.
-    """
-    return _is_js_identifier_start(char) or char.isdigit()
-
-
-def _starts_with_arrow_function(expr: str) -> bool:
-    """Check whether an expression starts with an inline arrow function.
-
-    Returns:
-        True if the expression begins with an arrow function.
-    """
-    if "=>" not in expr:
-        return False
-
-    expr = expr.lstrip()
-    if not expr:
-        return False
-
-    if expr.startswith("async"):
-        async_remainder = expr[len("async") :]
-        if async_remainder[:1].isspace():
-            expr = async_remainder.lstrip()
-
-    if not expr:
-        return False
-
-    if _is_js_identifier_start(expr[0]):
-        end_index = 1
-        while end_index < len(expr) and _is_js_identifier_char(expr[end_index]):
-            end_index += 1
-        return expr[end_index:].lstrip().startswith("=>")
-
-    if not expr.startswith("("):
-        return False
-
-    depth = 0
-    string_delimiter: str | None = None
-    escaped = False
-
-    for index, char in enumerate(expr):
-        if string_delimiter is not None:
-            if escaped:
-                escaped = False
-            elif char == "\\":
-                escaped = True
-            elif char == string_delimiter:
-                string_delimiter = None
-            continue
-
-        if char in {"'", '"', "`"}:
-            string_delimiter = char
-            continue
-
-        if char == "(":
-            depth += 1
-            continue
-
-        if char == ")":
-            depth -= 1
-            if depth == 0:
-                return expr[index + 1 :].lstrip().startswith("=>")
-
-    return False
-
-
 class FunctionVar(Var[CALLABLE_TYPE], default_type=ReflexCallable[Any, Any]):
     """Base class for immutable function vars."""
 
@@ -318,9 +240,7 @@ class VarOperationCall(Generic[P, R], CachedVarOperation, Var[R]):
             The name of the var.
         """
         func_expr = str(self._func)
-        if _starts_with_arrow_function(func_expr) and not format.is_wrapped(
-            func_expr, "("
-        ):
+        if not format.is_wrapped(func_expr, "("):
             func_expr = format.wrap(func_expr, "(")
 
         return f"({func_expr}({', '.join([str(LiteralVar.create(arg)) for arg in self._args])}))"
