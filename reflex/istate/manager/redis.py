@@ -153,6 +153,10 @@ class StateManagerRedis(StateManager):
         default_factory=dict,
         init=False,
     )
+    _lock_updates_subscribed: asyncio.Event = dataclasses.field(
+        default_factory=asyncio.Event,
+        init=False,
+    )
     _lock_task: asyncio.Task | None = dataclasses.field(default=None, init=False)
 
     # Whether debug prints are enabled.
@@ -802,8 +806,12 @@ class StateManagerRedis(StateManager):
         }
         async with self.redis.pubsub() as pubsub:
             await pubsub.psubscribe(**handlers)  # pyright: ignore[reportArgumentType]
-            async for _ in pubsub.listen():
-                pass
+            self._lock_updates_subscribed.set()
+            try:
+                async for _ in pubsub.listen():
+                    pass
+            finally:
+                self._lock_updates_subscribed.clear()
 
     def _ensure_lock_task(self) -> None:
         """Ensure the lock updates subscriber task is running."""
@@ -971,6 +979,8 @@ class StateManagerRedis(StateManager):
             return
         # Make sure lock waiter task is running.
         self._ensure_lock_task()
+        # Make sure the lock waiter is subscribed to avoid missing notifications.
+        await self._lock_updates_subscribed.wait()
         async with (
             self._lock_waiter(lock_key) as lock_released_event,
             self._request_lock_release(lock_key, lock_id),
