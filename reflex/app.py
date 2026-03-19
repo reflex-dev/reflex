@@ -29,15 +29,7 @@ from itertools import chain
 from pathlib import Path
 from timeit import default_timer as timer
 from types import SimpleNamespace
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    BinaryIO,
-    ParamSpec,
-    Unpack,
-    get_args,
-    get_type_hints,
-)
+from typing import TYPE_CHECKING, Any, BinaryIO, ParamSpec, get_args, get_type_hints
 
 from rich.progress import MofNCompleteColumn, Progress, TimeElapsedColumn
 from socketio import ASGIApp as EngineIOApp
@@ -50,6 +42,7 @@ from starlette.middleware import cors
 from starlette.requests import ClientDisconnect, Request
 from starlette.responses import JSONResponse, Response, StreamingResponse
 from starlette.staticfiles import StaticFiles
+from typing_extensions import Unpack
 
 from reflex import constants
 from reflex.admin import AdminDash
