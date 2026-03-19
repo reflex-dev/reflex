@@ -826,6 +826,30 @@ class StateManagerRedis(StateManager):
             suppress_exceptions=[Exception],
         )
 
+    async def _ensure_lock_task_subscribed(self, timeout: float | None = None) -> None:
+        """Ensure the lock updates subscriber task is running and subscribed to avoid missing notifications.
+
+        Args:
+            timeout: How long to wait for the subscriber to be subscribed before
+                raising an error. If None, defaults to
+                min(LOCK_SUBSCRIBE_TASK_TIMEOUT, lock_expiration).
+
+        Raises:
+            TimeoutError: If the lock updates subscriber task fails to subscribe in time.
+        """
+        if timeout is None:
+            timeout = min(
+                LOCK_SUBSCRIBE_TASK_TIMEOUT,
+                max(self.lock_expiration / 1000, 0),
+            )
+        # Make sure lock waiter task is running.
+        self._ensure_lock_task()
+        # Make sure the lock waiter is subscribed to avoid missing notifications.
+        await asyncio.wait_for(
+            self._lock_updates_subscribed.wait(),
+            timeout=timeout,
+        )
+
     async def _enable_keyspace_notifications(self):
         """Enable keyspace notifications for the redis server.
 
@@ -982,14 +1006,8 @@ class StateManagerRedis(StateManager):
                 )
             return
         # Make sure lock waiter task is running.
-        self._ensure_lock_task()
-        # Make sure the lock waiter is subscribed to avoid missing notifications.
-        await asyncio.wait_for(
-            self._lock_updates_subscribed.wait(),
-            timeout=min(
-                LOCK_SUBSCRIBE_TASK_TIMEOUT, max(self.lock_expiration / 1000, 0)
-            ),
-        )
+        with contextlib.suppress(TimeoutError, asyncio.TimeoutError):
+            await self._ensure_lock_task_subscribed()
         async with (
             self._lock_waiter(lock_key) as lock_released_event,
             self._request_lock_release(lock_key, lock_id),
