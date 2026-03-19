@@ -18,6 +18,7 @@ import wrapt
 from typing_extensions import Self
 
 from reflex.base import Base
+from reflex.event import Event
 from reflex.utils import prerequisites
 from reflex.utils.exceptions import ImmutableStateError
 from reflex.utils.serializers import can_serialize, serialize, serializer
@@ -59,6 +60,7 @@ class StateProxy(wrapt.ObjectProxy):
     def __init__(
         self,
         state_instance: BaseState,
+        event: Event | None = None,
         parent_state_proxy: StateProxy | None = None,
     ):
         """Create a proxy for a state instance.
@@ -69,11 +71,13 @@ class StateProxy(wrapt.ObjectProxy):
 
         Args:
             state_instance: The state instance to proxy.
+            event: The event associated with the state modification context.
             parent_state_proxy: The parent state proxy, for linked mutability and context tracking.
         """
         from reflex.state import _substate_key
 
         super().__init__(state_instance)
+        self._self_event = event
         self._self_app = prerequisites.get_and_validate_app().app
         self._self_substate_path = tuple(state_instance.get_full_name().split("."))
         self._self_substate_token = _substate_key(
@@ -136,7 +140,7 @@ class StateProxy(wrapt.ObjectProxy):
         try:
             self._self_actx_lock_holder = current_task
             self._self_actx = self._self_app.modify_state(
-                token=self._self_substate_token, background=True
+                token=self._self_substate_token, background=True, event=self._self_event
             )
             mutable_state = await self._self_actx.__aenter__()
             self._self_mutable = True
@@ -294,7 +298,9 @@ class StateProxy(wrapt.ObjectProxy):
             )
             raise ImmutableStateError(msg)
         return type(self)(
-            await self.__wrapped__.get_state(state_cls), parent_state_proxy=self
+            await self.__wrapped__.get_state(state_cls),
+            event=self._self_event,
+            parent_state_proxy=self,
         )  # pyright: ignore [reportReturnType]
 
     async def _as_state_update(self, *args, **kwargs) -> StateUpdate:

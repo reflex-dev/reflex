@@ -1749,7 +1749,7 @@ class BaseState(EvenMoreBasicBaseState):
 
         # For background tasks, proxy the state.
         if handler.is_background:
-            substate = StateProxy(substate)
+            substate = StateProxy(substate, event)
 
         # Run the event generator and yield state updates.
         async for update in self._process_event(
