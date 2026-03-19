@@ -387,7 +387,7 @@ def _compile_memo_components(
     )
 
 
-def get_shared_components_recursive(
+def _get_shared_components_recursive(
     component: BaseComponent,
     rendered_components: dict[str, None],
     all_import_dicts: list[ParsedImportDict],
@@ -405,7 +405,7 @@ def get_shared_components_recursive(
     """
     for child in component.children:
         # Depth-first traversal.
-        get_shared_components_recursive(child, rendered_components, all_import_dicts)
+        _get_shared_components_recursive(child, rendered_components, all_import_dicts)
 
     # When the component is referenced by more than one page, render it
     # to be included in the STATEFUL_COMPONENTS module.
@@ -452,7 +452,7 @@ def _compile_stateful_components(
     rendered_components = {}
 
     for page_component in page_components:
-        get_shared_components_recursive(
+        _get_shared_components_recursive(
             page_component, rendered_components, all_import_dicts
         )
 
