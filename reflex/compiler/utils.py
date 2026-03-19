@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import concurrent.futures
+import copy
 import operator
 import traceback
 from collections.abc import Mapping, Sequence
@@ -392,7 +393,7 @@ def compile_experimental_component_memo(
     Returns:
         A tuple of the compiled component definition and its imports.
     """
-    render = _apply_component_style_for_compile(definition.component)
+    render = _apply_component_style_for_compile(copy.deepcopy(definition.component))
 
     imports: ParsedImportDict = {
         lib: fields

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from types import SimpleNamespace
 from typing import Any
 
 import pytest
@@ -16,6 +17,7 @@ from reflex.experimental.memo import (
     ExperimentalMemoComponentDefinition,
     ExperimentalMemoFunctionDefinition,
 )
+from reflex.style import Style
 from reflex.utils.imports import ImportVar
 from reflex.vars import VarData
 from reflex.vars.base import Var
@@ -48,6 +50,10 @@ def test_var_returning_memo():
 
     assert (
         str(format_price(amount=price, currency=currency))
+        == "(format_price(price, currency))"
+    )
+    assert (
+        str(format_price.call(amount=price, currency=currency))
         == "(format_price(price, currency))"
     )
     assert isinstance(format_price._as_var(), FunctionVar)
@@ -198,6 +204,36 @@ def test_memo_rejects_multiple_rest_props():
             return first
 
 
+def test_memo_rejects_component_and_function_name_collision():
+    """Experimental memos should reject same exported name across kinds."""
+
+    @rx._x.memo
+    def foo_bar() -> rx.Component:
+        return rx.box()
+
+    assert "FooBar" in EXPERIMENTAL_MEMOS
+
+    with pytest.raises(ValueError, match=r"name collision.*FooBar"):
+
+        @rx._x.memo
+        def FooBar() -> rx.Var[str]:
+            return rx.Var.create("x")
+
+
+def test_memo_rejects_component_export_name_collision():
+    """Experimental memos should reject duplicate component export names."""
+
+    @rx._x.memo
+    def foo_bar() -> rx.Component:
+        return rx.box()
+
+    with pytest.raises(ValueError, match=r"name collision.*FooBar"):
+
+        @rx._x.memo
+        def foo__bar() -> rx.Component:
+            return rx.box()
+
+
 def test_memo_rejects_varargs():
     """Experimental memos should reject *args and **kwargs."""
     with pytest.raises(TypeError, match=r"\*args"):
@@ -326,6 +362,34 @@ def test_experimental_component_memo_get_imports():
     assert isinstance(definition, ExperimentalMemoComponentDefinition)
     _, imports = compiler_utils.compile_experimental_component_memo(definition)
     assert "inner" in imports
+
+
+def test_compile_experimental_component_memo_does_not_mutate_definition(
+    monkeypatch: pytest.MonkeyPatch,
+):
+    """Experimental component memo compilation should not mutate stored components."""
+
+    @rx._x.memo
+    def wrapper() -> rx.Component:
+        return rx.box("hi")
+
+    definition = EXPERIMENTAL_MEMOS["Wrapper"]
+    assert isinstance(definition, ExperimentalMemoComponentDefinition)
+    assert definition.component.style == Style()
+
+    monkeypatch.setattr(
+        "reflex.utils.prerequisites.get_and_validate_app",
+        lambda: SimpleNamespace(
+            app=SimpleNamespace(
+                style={type(definition.component): Style({"color": "red"})}
+            )
+        ),
+    )
+
+    render, _ = compiler_utils.compile_experimental_component_memo(definition)
+
+    assert render["render"]["props"] == ['css:({ ["color"] : "red" })']
+    assert definition.component.style == Style()
 
 
 def test_compile_memo_components_includes_experimental_custom_code():

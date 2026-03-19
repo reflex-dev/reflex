@@ -383,8 +383,6 @@ def _compile_memo_components(
             },
             imports,
         )
-
-    if component_renders:
         _apply_common_imports(imports)
 
     dynamic_imports = {

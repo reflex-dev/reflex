@@ -119,6 +119,65 @@ class ExperimentalMemoComponent(Component):
 EXPERIMENTAL_MEMOS: dict[str, ExperimentalMemoDefinition] = {}
 
 
+def _memo_registry_key(definition: ExperimentalMemoDefinition) -> str:
+    """Get the registry key for an experimental memo.
+
+    Args:
+        definition: The memo definition.
+
+    Returns:
+        The registry key for the memo.
+    """
+    if isinstance(definition, ExperimentalMemoComponentDefinition):
+        return definition.export_name
+    return definition.python_name
+
+
+def _is_memo_reregistration(
+    existing: ExperimentalMemoDefinition,
+    definition: ExperimentalMemoDefinition,
+) -> bool:
+    """Check whether a memo definition replaces the same memo during reload.
+
+    Args:
+        existing: The currently registered memo definition.
+        definition: The new memo definition being registered.
+
+    Returns:
+        Whether the new definition should replace the existing one.
+    """
+    return (
+        type(existing) is type(definition)
+        and existing.python_name == definition.python_name
+        and existing.fn.__module__ == definition.fn.__module__
+        and existing.fn.__qualname__ == definition.fn.__qualname__
+    )
+
+
+def _register_memo_definition(definition: ExperimentalMemoDefinition) -> None:
+    """Register an experimental memo definition.
+
+    Args:
+        definition: The memo definition to register.
+
+    Raises:
+        ValueError: If another memo already compiles to the same exported name.
+    """
+    key = _memo_registry_key(definition)
+    if (existing := EXPERIMENTAL_MEMOS.get(key)) is not None and (
+        not _is_memo_reregistration(existing, definition)
+    ):
+        msg = (
+            f"Experimental memo name collision for `{key}`: "
+            f"`{existing.fn.__module__}.{existing.python_name}` and "
+            f"`{definition.fn.__module__}.{definition.python_name}` both compile "
+            "to the same memo name."
+        )
+        raise ValueError(msg)
+
+    EXPERIMENTAL_MEMOS[key] = definition
+
+
 def _annotation_inner_type(annotation: Any) -> Any:
     """Unwrap a Var-like annotation to its inner type.
 
@@ -670,17 +729,12 @@ def _create_function_wrapper(
             *_bind_function_runtime_args(definition, *args, **kwargs)
         )
 
-    def call(*args: Any, **kwargs: Any) -> Var:
-        return imported_var.call(
-            *_bind_function_runtime_args(definition, *args, **kwargs)
-        )
-
     def partial(*args: Any, **kwargs: Any) -> FunctionVar:
         return imported_var.partial(
             *_bind_function_runtime_args(definition, *args, **kwargs)
         )
 
-    object.__setattr__(wrapper, "call", call)
+    object.__setattr__(wrapper, "call", wrapper)
     object.__setattr__(wrapper, "partial", partial)
     object.__setattr__(wrapper, "_as_var", lambda: imported_var)
     return wrapper
@@ -781,12 +835,12 @@ def memo(fn: Callable[..., Any]) -> Callable[..., Any]:
 
     if _is_component_annotation(return_annotation):
         definition = _create_component_definition(fn, return_annotation)
-        EXPERIMENTAL_MEMOS[definition.export_name] = definition
+        _register_memo_definition(definition)
         return _create_component_wrapper(definition)
 
     if _is_var_annotation(return_annotation):
         definition = _create_function_definition(fn, return_annotation)
-        EXPERIMENTAL_MEMOS[definition.python_name] = definition
+        _register_memo_definition(definition)
         return _create_function_wrapper(definition)
 
     msg = (
