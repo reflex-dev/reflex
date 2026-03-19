@@ -363,12 +363,14 @@ class StateManagerRedis(StateManager):
         # Check that we're holding the lock.
         if (
             lock_id is not None
-            and await self.redis.get(self._lock_key(token)) != lock_id
+            and (existing_lock_id := await self.redis.get(self._lock_key(token)))
+            != lock_id
         ):
             msg = (
                 f"Lock expired for token {token} while processing. Consider increasing "
                 f"`app.state_manager.lock_expiration` (currently {self.lock_expiration}) "
-                "or use `@rx.event(background=True)` decorator for long-running tasks."
+                "or use `@rx.event(background=True)` decorator for long-running tasks. "
+                f"Current lock id: {existing_lock_id!r}, expected lock id: {lock_id!r}."
                 + (
                     f" Happened in event: {event.name}"
                     if (event := context.get("event")) is not None
@@ -440,9 +442,10 @@ class StateManagerRedis(StateManager):
         Yields:
             The state for the token or None if we couldn't get the lock.
         """
+        event_name = event.name if (event := context.get("event")) is not None else None
         if not self._oplock_enabled:
             # OpLock is disabled, get a fresh lock, write, and release.
-            async with self._lock(token) as lock_id:
+            async with self._lock(token, event_name=event_name) as lock_id:
                 state = await self.get_state(token)
                 yield state
                 await self.set_state(token, state, lock_id=lock_id, **context)
@@ -459,7 +462,9 @@ class StateManagerRedis(StateManager):
         client_token, _ = _split_substate_key(token)
         lock_held_ctx = contextlib.AsyncExitStack()
         try:
-            lock_id = await lock_held_ctx.enter_async_context(self._lock(token))
+            lock_id = await lock_held_ctx.enter_async_context(
+                self._lock(token, event_name=event_name)
+            )
         except OplockFound:
             # While waiting for the lock, another process has acquired it, but we can piggy back.
             pass
@@ -1000,11 +1005,14 @@ class StateManagerRedis(StateManager):
                 )
 
     @contextlib.asynccontextmanager
-    async def _lock(self, token: str):
+    async def _lock(
+        self, token: str, event_name: str | None = None
+    ) -> AsyncIterator[bytes]:
         """Obtain a redis lock for a token.
 
         Args:
             token: The token to obtain a lock for.
+            event_name: The name of the event associated with the lock.
 
         Yields:
             The ID of the lock (to be passed to set_state).
@@ -1013,7 +1021,9 @@ class StateManagerRedis(StateManager):
             LockExpiredError: If the lock has expired while processing the event.
         """
         lock_key = self._lock_key(token)
-        lock_id = uuid.uuid4().hex.encode()
+        lock_id = (
+            f"{event_name}:{uuid.uuid4().hex}" if event_name else uuid.uuid4().hex
+        ).encode()
 
         await self._wait_lock(lock_key, lock_id)
         state_is_locked = True
