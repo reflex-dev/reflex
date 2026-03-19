@@ -61,6 +61,10 @@ def _default_oplock_hold_time_ms() -> int:
     )
 
 
+# The lock waiter task should subscribe to lock channel updates within this period.
+LOCK_SUBSCRIBE_TASK_TIMEOUT = 2  # seconds
+
+
 SMR = f"[SMR:{os.getpid()}]"
 start = time.monotonic()
 
@@ -980,7 +984,12 @@ class StateManagerRedis(StateManager):
         # Make sure lock waiter task is running.
         self._ensure_lock_task()
         # Make sure the lock waiter is subscribed to avoid missing notifications.
-        await self._lock_updates_subscribed.wait()
+        await asyncio.wait_for(
+            self._lock_updates_subscribed.wait(),
+            timeout=min(
+                LOCK_SUBSCRIBE_TASK_TIMEOUT, max(self.lock_expiration / 1000, 0)
+            ),
+        )
         async with (
             self._lock_waiter(lock_key) as lock_released_event,
             self._request_lock_release(lock_key, lock_id),
