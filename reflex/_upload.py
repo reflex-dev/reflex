@@ -429,7 +429,7 @@ async def _upload_buffered_file(
             Each state update as newline-delimited JSON.
         """
         async with app.state_manager.modify_state_with_links(
-            event.substate_token
+            event.substate_token, event=event
         ) as state:
             async for update in state._process(event):
                 update = await app._postprocess(state, event, update)

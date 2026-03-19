@@ -38,6 +38,7 @@ from starlette.middleware import cors
 from starlette.requests import Request
 from starlette.responses import JSONResponse, Response
 from starlette.staticfiles import StaticFiles
+from typing_extensions import Unpack
 
 from reflex import constants
 from reflex._upload import UploadFile as UploadFile
@@ -81,6 +82,7 @@ from reflex.event import (
     get_hydrate_event,
     noop,
 )
+from reflex.istate.manager import StateModificationContext
 from reflex.istate.proxy import StateProxy
 from reflex.page import DECORATED_PAGES
 from reflex.route import (
@@ -566,11 +568,11 @@ class App(MiddlewareMixin, LifespanMixin):
     def __call__(self) -> ASGIApp:
         """Run the backend api instance.
 
-        Raises:
-            ValueError: If the app has not been initialized.
-
         Returns:
             The backend api.
+
+        Raises:
+            ValueError: If the app has not been initialized.
         """
         from reflex.assets import remove_stale_external_asset_symlinks
         from reflex.vars.base import GLOBAL_CACHE
@@ -885,11 +887,11 @@ class App(MiddlewareMixin, LifespanMixin):
 
         Based on conflicts that React Router would throw if not intercepted.
 
-        Raises:
-            RouteValueError: exception showing which conflict exist with the route to be added
-
         Args:
             new_route: the route being newly added.
+
+        Raises:
+            RouteValueError: exception showing which conflict exist with the route to be added
         """
         from reflex.utils.exceptions import RouteValueError
 
@@ -1528,6 +1530,7 @@ class App(MiddlewareMixin, LifespanMixin):
         token: str,
         background: bool = False,
         previous_dirty_vars: dict[str, set[str]] | None = None,
+        **context: Unpack[StateModificationContext],
     ) -> AsyncIterator[BaseState]:
         """Modify the state out of band.
 
@@ -1548,7 +1551,7 @@ class App(MiddlewareMixin, LifespanMixin):
 
         # Get exclusive access to the state.
         async with self.state_manager.modify_state_with_links(
-            token, previous_dirty_vars=previous_dirty_vars
+            token, previous_dirty_vars=previous_dirty_vars, **context
         ) as state:
             # No other event handler can modify the state while in this context.
             yield state
@@ -1581,7 +1584,7 @@ class App(MiddlewareMixin, LifespanMixin):
         if not handler.is_background:
             return None
 
-        substate = StateProxy(substate)
+        substate = StateProxy(substate, event)
 
         async def _coro():
             """Coroutine to process the event and emit updates inside an asyncio.Task.
@@ -1720,11 +1723,11 @@ async def process(
         headers: The client headers.
         client_ip: The client_ip.
 
-    Raises:
-        Exception: If a reflex specific error occurs during processing the event.
-
     Yields:
         The state updates after processing the event.
+
+    Raises:
+        Exception: If a reflex specific error occurs during processing the event.
     """
     from reflex.utils import telemetry
 
@@ -1976,14 +1979,12 @@ class EventNamespace(AsyncNamespace):
     async def on_event(self, sid: str, data: Any):
         """Event for receiving front-end websocket events.
 
-        Raises:
-            RuntimeError: If the Socket.IO is badly initialized.
-
         Args:
             sid: The Socket.IO session id.
             data: The event data.
 
         Raises:
+            RuntimeError: If the Socket.IO is badly initialized.
             EventDeserializationError: If the event data is not a dictionary.
         """
         fields = data

@@ -358,11 +358,11 @@ def _populate_demo_app(name_variants: NameVariants):
 def _get_default_library_name_parts() -> list[str]:
     """Get the default library name. Based on the current directory name, remove any non-alphanumeric characters.
 
-    Raises:
-        SystemExit: If the current directory name is not suitable for python projects, and we cannot find a valid library name based off it.
-
     Returns:
         The parts of default library name.
+
+    Raises:
+        SystemExit: If the current directory name is not suitable for python projects, and we cannot find a valid library name based off it.
     """
     current_dir_name = Path.cwd().name
 
@@ -407,11 +407,11 @@ def _validate_library_name(library_name: str | None) -> NameVariants:
     Args:
         library_name: The name of the library if picked otherwise None.
 
-    Raises:
-        SystemExit: If the library name is not suitable for python projects.
-
     Returns:
         A tuple containing the various names such as package name, class name, etc., needed for the project.
+
+    Raises:
+        SystemExit: If the library name is not suitable for python projects.
     """
     if library_name is not None and not re.match(
         r"^[a-zA-Z-]+[a-zA-Z0-9-]*$", library_name

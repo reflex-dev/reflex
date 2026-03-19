@@ -202,11 +202,11 @@ class VarData:
         Args:
             *all: The var data objects to merge.
 
-        Raises:
-            ReflexError: If trying to merge VarData with different positions.
-
         Returns:
             The merged var data object.
+
+        Raises:
+            ReflexError: If trying to merge VarData with different positions.
 
         # noqa: DAR102 *all
         """

@@ -990,11 +990,11 @@ class BaseState(EvenMoreBasicBaseState):
     def get_parent_state(cls) -> type[BaseState] | None:
         """Get the parent state.
 
-        Raises:
-            ValueError: If more than one parent state is found.
-
         Returns:
             The parent state.
+
+        Raises:
+            ValueError: If more than one parent state is found.
         """
         parent_states = [
             base
@@ -1796,7 +1796,7 @@ class BaseState(EvenMoreBasicBaseState):
 
         # For background tasks, proxy the state.
         if handler.is_background:
-            substate = StateProxy(substate)
+            substate = StateProxy(substate, event)
 
         # Run the event generator and yield state updates.
         async for update in self._process_event(
@@ -1813,11 +1813,11 @@ class BaseState(EvenMoreBasicBaseState):
             handler: EventHandler.
             events: The events to be checked.
 
-        Raises:
-            TypeError: If any of the events are not valid.
-
         Returns:
             The events as they are if valid.
+
+        Raises:
+            TypeError: If any of the events are not valid.
         """
 
         def _is_valid_type(events: Any) -> bool:

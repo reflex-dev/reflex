@@ -730,11 +730,11 @@ def format_data_editor_column(col: str | dict):
     Args:
         col: The column.
 
-    Raises:
-        ValueError: invalid type provided for column.
-
     Returns:
         The formatted column.
+
+    Raises:
+        ValueError: invalid type provided for column.
     """
     from reflex.vars import Var
 
