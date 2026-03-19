@@ -745,6 +745,61 @@ def test_button_accepts_mixed_event_handler_and_function_var():
     assert isinstance(button.event_triggers["on_click"], EventChain)
 
 
+def test_event_chain_codegen_uses_fast_path_for_backend_only_events():
+    """Backend-only chains should render through a single addEvents call."""
+
+    class FastPathState(BaseState):
+        @event
+        def do_a_thing(self):
+            pass
+
+    chain = EventChain.create(
+        [FastPathState.do_a_thing, FastPathState.do_a_thing],
+        args_spec=lambda: (),
+        event_actions={"preventDefault": True},
+    )
+    rendered = str(LiteralVar.create(chain))
+
+    assert "applyEventActions(" not in rendered
+    assert rendered.count("addEvents(") == 1
+    assert '["preventDefault"] : true' in rendered
+
+
+def test_event_chain_codegen_keeps_apply_event_actions_for_function_vars():
+    """Frontend handlers should keep the applyEventActions wrapper."""
+    log_after_timeout = make_timeout_logger()
+
+    chain = EventChain.create(
+        log_after_timeout,
+        args_spec=lambda: (),
+        event_actions={"preventDefault": True},
+    )
+    rendered = str(LiteralVar.create(chain))
+
+    assert "applyEventActions(" in rendered
+    assert "Timeout reached!" in rendered
+
+
+def test_event_chain_codegen_preserves_mixed_chain_order():
+    """Mixed chains should keep backend and frontend work in the original order."""
+
+    class MixedState(BaseState):
+        @event
+        def do_a_thing(self):
+            pass
+
+    log_after_timeout = make_timeout_logger()
+    chain = EventChain.create(
+        [MixedState.do_a_thing, log_after_timeout],
+        args_spec=lambda: (),
+        event_actions={"preventDefault": True},
+    )
+    rendered = str(LiteralVar.create(chain))
+
+    assert "applyEventActions(" in rendered
+    assert rendered.index("addEvents(") < rendered.index("Timeout reached!")
+
+
 def test_decentralized_event_with_args():
     """Test the decentralized event."""
 

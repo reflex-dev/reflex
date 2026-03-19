@@ -2093,17 +2093,16 @@ class LiteralEventChainVar(ArgsFunctionOperationBuilder, LiteralVar, EventChainV
             else value.args_spec
         )
         sig = inspect.signature(arg_spec)  # pyright: ignore [reportArgumentType]
+        arg_vars = ()
         if sig.parameters:
             arg_def = tuple(f"_{p}" for p in sig.parameters)
             arg_vars = tuple(Var(_js_expr=arg) for arg in arg_def)
             arg_def_expr = LiteralVar.create(list(arg_vars))
-            call_args = arg_vars
         else:
             # add a default argument for addEvents if none were specified in value.args_spec
             # used to trigger the preventDefault() on the event.
             arg_def = ("...args",)
             arg_def_expr = Var(_js_expr="args")
-            call_args = (Var(_js_expr="...args"),)
 
         if value.invocation is None:
             invocation = FunctionStringVar.create(
@@ -2121,6 +2120,23 @@ class LiteralEventChainVar(ArgsFunctionOperationBuilder, LiteralVar, EventChainV
             raise ValueError(msg)
         assert invocation is not None
 
+        if not any(isinstance(event, FunctionVar) for event in value.events):
+            return cls(
+                _js_expr="",
+                _var_type=EventChain,
+                _var_data=_var_data,
+                _args=FunctionArgs(arg_def),
+                _return_expr=invocation.call(
+                    LiteralVar.create([
+                        LiteralVar.create(event) for event in value.events
+                    ]),
+                    arg_def_expr,
+                    value.event_actions,
+                ),
+                _var_value=value,
+            )
+
+        call_args = arg_vars if sig.parameters else (Var(_js_expr="...args"),)
         statements = [
             (
                 event.call(*call_args)

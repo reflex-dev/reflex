@@ -53,7 +53,7 @@ def make_timeout_logger():
 
 
 def test_format_prop_event_chain_pure_eventspec_grouped():
-    """Pure EventSpec chains should emit one addEvents call per event."""
+    """Pure EventSpec chains should stay grouped in one addEvents call."""
     chain = EventChain(
         events=[
             EventSpec(handler=EventHandler(fn=mock_event)),
@@ -63,9 +63,8 @@ def test_format_prop_event_chain_pure_eventspec_grouped():
     )
 
     assert format.format_prop(LiteralVar.create(chain)) == (
-        '((_e) => {(addEvents([(ReflexEvent("mock_event", ({  }), ({  })))], '
-        '[_e], ({  })));(addEvents([(ReflexEvent("mock_event_two", ({  }), '
-        "({  })))], [_e], ({  })));})"
+        '((_e) => (addEvents([(ReflexEvent("mock_event", ({  }), ({  }))), '
+        '(ReflexEvent("mock_event_two", ({  }), ({  })))], [_e], ({  }))))'
     )
 
 
@@ -511,7 +510,7 @@ def test_format_match(
                 args_spec=no_args_event_spec,
                 event_actions={"stopPropagation": True},
             ),
-            '((...args) => (applyEventActions((() => {(addEvents([(ReflexEvent("mock_event", ({  }), ({  })))], args, ({  })));}), ({ ["stopPropagation"] : true }), ...args)))',
+            '((...args) => (addEvents([(ReflexEvent("mock_event", ({  }), ({  })))], args, ({ ["stopPropagation"] : true }))))',
         ),
         (
             EventChain(
@@ -531,7 +530,7 @@ def test_format_match(
                 args_spec=no_args_event_spec,
                 event_actions={"preventDefault": True},
             ),
-            '((...args) => (applyEventActions((() => {(addEvents([(ReflexEvent("mock_event", ({  }), ({  })))], args, ({  })));}), ({ ["preventDefault"] : true }), ...args)))',
+            '((...args) => (addEvents([(ReflexEvent("mock_event", ({  }), ({  })))], args, ({ ["preventDefault"] : true }))))',
         ),
         ({"a": "red", "b": "blue"}, '({ ["a"] : "red", ["b"] : "blue" })'),
         (Var(_js_expr="var", _var_type=int).guess_type(), "var"),
