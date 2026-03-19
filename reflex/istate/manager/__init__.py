@@ -39,11 +39,11 @@ class StateManager(ABC):
         Args:
             state: The state class to use.
 
-        Raises:
-            InvalidStateManagerModeError: If the state manager mode is invalid.
-
         Returns:
             The state manager (either disk, memory or redis).
+
+        Raises:
+            InvalidStateManagerModeError: If the state manager mode is invalid.
         """
         config = get_config()
         if prerequisites.parse_redis_url() is not None:

@@ -81,5 +81,4 @@ class StateManagerMemory(StateManager):
                     self._states_locks[token] = asyncio.Lock()
 
         async with self._states_locks[token]:
-            state = await self.get_state(token)
-            yield state
+            yield await self.get_state(token)

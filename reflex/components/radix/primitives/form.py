@@ -92,12 +92,12 @@ class FormControl(FormComponent):
             *children: The children of the form.
             **props: The properties of the form.
 
+        Returns:
+            The form control component.
+
         Raises:
             ValueError: If the number of children is greater than 1.
             TypeError: If a child exists but it is not a TextFieldInput.
-
-        Returns:
-            The form control component.
         """
         if len(children) > 1:
             msg = f"FormControl can only have at most one child, got {len(children)} children"

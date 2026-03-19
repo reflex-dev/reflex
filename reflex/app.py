@@ -611,11 +611,11 @@ class App(MiddlewareMixin, LifespanMixin):
     def __call__(self) -> ASGIApp:
         """Run the backend api instance.
 
-        Raises:
-            ValueError: If the app has not been initialized.
-
         Returns:
             The backend api.
+
+        Raises:
+            ValueError: If the app has not been initialized.
         """
         from reflex.assets import remove_stale_external_asset_symlinks
         from reflex.vars.base import GLOBAL_CACHE
@@ -930,11 +930,11 @@ class App(MiddlewareMixin, LifespanMixin):
 
         Based on conflicts that React Router would throw if not intercepted.
 
-        Raises:
-            RouteValueError: exception showing which conflict exist with the route to be added
-
         Args:
             new_route: the route being newly added.
+
+        Raises:
+            RouteValueError: exception showing which conflict exist with the route to be added
         """
         from reflex.utils.exceptions import RouteValueError
 
@@ -1766,11 +1766,11 @@ async def process(
         headers: The client headers.
         client_ip: The client_ip.
 
-    Raises:
-        Exception: If a reflex specific error occurs during processing the event.
-
     Yields:
         The state updates after processing the event.
+
+    Raises:
+        Exception: If a reflex specific error occurs during processing the event.
     """
     from reflex.utils import telemetry
 
@@ -2190,14 +2190,12 @@ class EventNamespace(AsyncNamespace):
     async def on_event(self, sid: str, data: Any):
         """Event for receiving front-end websocket events.
 
-        Raises:
-            RuntimeError: If the Socket.IO is badly initialized.
-
         Args:
             sid: The Socket.IO session id.
             data: The event data.
 
         Raises:
+            RuntimeError: If the Socket.IO is badly initialized.
             EventDeserializationError: If the event data is not a dictionary.
         """
         fields = data
