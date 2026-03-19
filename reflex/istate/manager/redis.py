@@ -1022,7 +1022,7 @@ class StateManagerRedis(StateManager):
         """
         lock_key = self._lock_key(token)
         lock_id = (
-            f"{event_name}_{uuid.uuid4().hex}" if event_name else uuid.uuid4().hex
+            f"{event_name}:{uuid.uuid4().hex}" if event_name else uuid.uuid4().hex
         ).encode()
 
         await self._wait_lock(lock_key, lock_id)
