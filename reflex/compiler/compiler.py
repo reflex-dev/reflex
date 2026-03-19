@@ -6,7 +6,7 @@ import sys
 from collections.abc import Callable, Iterable, Sequence
 from inspect import getmodule
 from pathlib import Path
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, TypeGuard
 
 from reflex import constants
 from reflex.compiler import templates, utils
@@ -387,6 +387,10 @@ def _compile_memo_components(
     )
 
 
+def is_stateful_component(component: BaseComponent) -> TypeGuard[StatefulComponent]:
+    return StatefulComponent in type(component).__mro__
+
+
 def _get_shared_components_recursive(
     component: BaseComponent,
     rendered_components: dict[str, None],
@@ -410,11 +414,7 @@ def _get_shared_components_recursive(
     # When the component is referenced by more than one page, render it
     # to be included in the STATEFUL_COMPONENTS module.
     # Skip this step in dev mode, thereby avoiding potential hot reload errors for larger apps
-    if (
-        isinstance(component, StatefulComponent)
-        and component.references > 1
-        and is_prod_mode()
-    ):
+    if is_stateful_component(component) and component.references > 1 and is_prod_mode():
         # Reset this flag to render the actual component.
         component.rendered_as_shared = False
 
