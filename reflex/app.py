@@ -83,6 +83,7 @@ from reflex.event import (
     get_hydrate_event,
     noop,
 )
+from reflex.experimental.memo import EXPERIMENTAL_MEMOS
 from reflex.istate.proxy import StateProxy
 from reflex.page import DECORATED_PAGES
 from reflex.route import (
@@ -1319,7 +1320,10 @@ class App(MiddlewareMixin, LifespanMixin):
             memo_components_output,
             memo_components_result,
             memo_components_imports,
-        ) = compiler.compile_memo_components(dict.fromkeys(CUSTOM_COMPONENTS.values()))
+        ) = compiler.compile_memo_components(
+            dict.fromkeys(CUSTOM_COMPONENTS.values()),
+            tuple(EXPERIMENTAL_MEMOS.values()),
+        )
         compile_results.append((memo_components_output, memo_components_result))
         all_imports.update(memo_components_imports)
         progress.advance(task)

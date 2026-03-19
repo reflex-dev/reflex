@@ -1,5 +1,5 @@
 {
-  "reflex/__init__.pyi": "0a3ae880e256b9fd3b960e12a2cb51a7",
+  "reflex/__init__.pyi": "224964f24351c79614ab9a4ae47560a0",
   "reflex/components/__init__.pyi": "ac05995852baa81062ba3d18fbc489fb",
   "reflex/components/base/__init__.pyi": "16e47bf19e0d62835a605baa3d039c5a",
   "reflex/components/base/app_wrap.pyi": "22e94feaa9fe675bcae51c412f5b67f1",
@@ -118,5 +118,6 @@
   "reflex/components/recharts/general.pyi": "d87ff9b85b2a204be01753690df4fb11",
   "reflex/components/recharts/polar.pyi": "b8b1a3e996e066facdf4f8c9eb363137",
   "reflex/components/recharts/recharts.pyi": "d5c9fc57a03b419748f0408c23319eee",
-  "reflex/components/sonner/toast.pyi": "3c27bad1aaeb5183eaa6a41e77e8d7f0"
+  "reflex/components/sonner/toast.pyi": "3c27bad1aaeb5183eaa6a41e77e8d7f0",
+  "reflex/experimental/memo.pyi": "a1c5c4682fc4dadbd82a0a5e8fd4bd32"
 }

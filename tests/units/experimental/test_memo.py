@@ -1,0 +1,348 @@
+"""Tests for experimental memo support."""
+
+from __future__ import annotations
+
+from typing import Any
+
+import pytest
+
+import reflex as rx
+from reflex.compiler import compiler
+from reflex.compiler import utils as compiler_utils
+from reflex.components.component import CUSTOM_COMPONENTS, Component
+from reflex.experimental.memo import (
+    EXPERIMENTAL_MEMOS,
+    ExperimentalMemoComponent,
+    ExperimentalMemoComponentDefinition,
+    ExperimentalMemoFunctionDefinition,
+)
+from reflex.utils.imports import ImportVar
+from reflex.vars import VarData
+from reflex.vars.base import Var
+from reflex.vars.function import FunctionVar
+
+
+@pytest.fixture(autouse=True)
+def restore_memo_registries():
+    """Restore the memo registries after each test."""
+    custom_components = dict(CUSTOM_COMPONENTS)
+    experimental_memos = dict(EXPERIMENTAL_MEMOS)
+
+    yield
+
+    CUSTOM_COMPONENTS.clear()
+    CUSTOM_COMPONENTS.update(custom_components)
+    EXPERIMENTAL_MEMOS.clear()
+    EXPERIMENTAL_MEMOS.update(experimental_memos)
+
+
+def test_var_returning_memo():
+    """Var-returning memos should behave like imported function vars."""
+
+    @rx._x.memo
+    def format_price(amount: rx.Var[int], currency: rx.Var[str]) -> rx.Var[str]:
+        return currency.to(str) + ": $" + amount.to(str)
+
+    price = Var(_js_expr="price", _var_type=int)
+    currency = Var(_js_expr="currency", _var_type=str)
+
+    assert (
+        str(format_price(amount=price, currency=currency))
+        == "(format_price(price, currency))"
+    )
+    assert isinstance(format_price._as_var(), FunctionVar)
+
+    definition = EXPERIMENTAL_MEMOS["format_price"]
+    assert isinstance(definition, ExperimentalMemoFunctionDefinition)
+    assert (
+        str(definition.function) == '((amount, currency) => ((currency+": $")+amount))'
+    )
+
+    with pytest.raises(TypeError, match="only accepts keyword props"):
+        format_price(price, currency)
+
+
+def test_component_returning_memo_with_children_and_rest():
+    """Component-returning memos should accept positional children and forwarded props."""
+
+    @rx._x.memo
+    def my_card(
+        children: rx.Var[rx.Component],
+        rest: rx.RestProp,
+        *,
+        title: rx.Var[str],
+    ) -> rx.Component:
+        return rx.box(
+            rx.heading(title),
+            children,
+            rest,
+        )
+
+    component = my_card(
+        rx.text("child 1"),
+        rx.text("child 2"),
+        title="Hello",
+        class_name="extra",
+    )
+
+    assert isinstance(component, ExperimentalMemoComponent)
+    assert len(component.children) == 2
+
+    rendered = component.render()
+    assert rendered["name"] == "MyCard"
+    assert 'title:"Hello"' in rendered["props"]
+    assert 'className:"extra"' in rendered["props"]
+
+    definition = EXPERIMENTAL_MEMOS["MyCard"]
+    assert isinstance(definition, ExperimentalMemoComponentDefinition)
+    assert any(str(prop) == "rest" for prop in definition.component.special_props)
+
+    _, code, _ = compiler.compile_memo_components(
+        (), tuple(EXPERIMENTAL_MEMOS.values())
+    )
+    assert "export const MyCard = memo(({children, title:title" in code
+    assert "...rest" in code
+    assert "jsx(RadixThemesBox,{...rest}" in code
+
+
+def test_var_returning_memo_with_rest_props():
+    """Var-returning memos should capture extra keyword args into RestProp."""
+
+    @rx._x.memo
+    def merge_styles(
+        base: rx.Var[dict[str, str]],
+        overrides: rx.RestProp,
+    ) -> rx.Var[Any]:
+        return base.to(dict).merge(overrides)
+
+    base = Var(_js_expr="base", _var_type=dict[str, str])
+    merged = merge_styles(base=base, color="red")
+
+    assert "merge_styles" in str(merged)
+    assert '["base"] : base' in str(merged)
+    assert '["color"] : "red"' in str(merged)
+
+    _, code, _ = compiler.compile_memo_components(
+        (), tuple(EXPERIMENTAL_MEMOS.values())
+    )
+    assert (
+        "export const merge_styles = (({base, ...overrides}) => ({...base, ...overrides}));"
+        in code
+    )
+
+    with pytest.raises(TypeError, match="Do not pass `overrides=` directly"):
+        merge_styles(base=base, overrides={"color": "red"})
+
+
+def test_var_returning_memo_with_children_and_rest():
+    """Var-returning memos should accept positional children plus keyword props."""
+
+    @rx._x.memo
+    def label_slot(
+        children: rx.Var[rx.Component],
+        rest: rx.RestProp,
+        *,
+        label: rx.Var[str],
+    ) -> rx.Var[str]:
+        return label
+
+    rendered = label_slot(
+        rx.text("child"),
+        label="Hello",
+        class_name="slot",
+    )
+
+    assert "label_slot" in str(rendered)
+    assert '["children"]' in str(rendered)
+    assert '["class_name"] : "slot"' in str(rendered)
+
+    _, code, _ = compiler.compile_memo_components(
+        (), tuple(EXPERIMENTAL_MEMOS.values())
+    )
+    assert "export const label_slot = (({children, label, ...rest}) => label);" in code
+
+
+def test_memo_requires_var_annotations():
+    """Experimental memos should require Var annotations on parameters."""
+    with pytest.raises(TypeError, match="must be annotated"):
+
+        @rx._x.memo
+        def bad_annotation(value: int) -> rx.Var[str]:
+            return rx.Var.create("x")
+
+    with pytest.raises(TypeError, match="Missing annotation"):
+
+        @rx._x.memo
+        def missing_annotation(value) -> rx.Var[str]:
+            return rx.Var.create("x")
+
+
+def test_memo_rejects_invalid_children_annotation():
+    """Component memos should validate the special children annotation."""
+    with pytest.raises(TypeError, match="children"):
+
+        @rx._x.memo
+        def bad_children(children: rx.Var[str]) -> rx.Component:
+            return rx.text(children)
+
+
+def test_memo_rejects_multiple_rest_props():
+    """Experimental memos should only allow a single RestProp."""
+    with pytest.raises(TypeError, match="only supports one"):
+
+        @rx._x.memo
+        def too_many_rest(
+            first: rx.RestProp,
+            second: rx.RestProp,
+        ) -> rx.Var[Any]:
+            return first
+
+
+def test_memo_rejects_varargs():
+    """Experimental memos should reject *args and **kwargs."""
+    with pytest.raises(TypeError, match=r"\*args"):
+
+        @rx._x.memo
+        def bad_args(*values: rx.Var[str]) -> rx.Var[str]:
+            return rx.Var.create("x")
+
+    with pytest.raises(TypeError, match=r"\*\*kwargs"):
+
+        @rx._x.memo
+        def bad_kwargs(**values: rx.Var[str]) -> rx.Var[str]:
+            return rx.Var.create("x")
+
+
+def test_component_memo_rejects_invalid_positional_usage():
+    """Component memos should only accept positional children."""
+
+    @rx._x.memo
+    def title_card(*, title: rx.Var[str]) -> rx.Component:
+        return rx.box(rx.heading(title))
+
+    with pytest.raises(TypeError, match="only accepts keyword props"):
+        title_card(rx.text("child"))
+
+    @rx._x.memo
+    def child_card(
+        children: rx.Var[rx.Component], *, title: rx.Var[str]
+    ) -> rx.Component:
+        return rx.box(rx.heading(title), children)
+
+    with pytest.raises(TypeError, match="only accepts positional children"):
+        child_card("not a component", title="Hello")
+
+
+def test_var_memo_rejects_invalid_positional_usage():
+    """Var memos should also reserve positional arguments for children only."""
+
+    @rx._x.memo
+    def format_price(amount: rx.Var[int], currency: rx.Var[str]) -> rx.Var[str]:
+        return currency.to(str) + ": $" + amount.to(str)
+
+    price = Var(_js_expr="price", _var_type=int)
+    currency = Var(_js_expr="currency", _var_type=str)
+
+    with pytest.raises(TypeError, match="only accepts keyword props"):
+        format_price(price, currency)
+
+    @rx._x.memo
+    def child_label(
+        children: rx.Var[rx.Component], *, label: rx.Var[str]
+    ) -> rx.Var[str]:
+        return label
+
+    with pytest.raises(TypeError, match="only accepts positional children"):
+        child_label("not a component", label="Hello")
+
+
+def test_var_returning_memo_rejects_hooks():
+    """Var-returning memos should reject hook-bearing expressions."""
+    with pytest.raises(TypeError, match="cannot depend on hooks"):
+
+        @rx._x.memo
+        def bad_hook(value: rx.Var[str]) -> rx.Var[str]:
+            return Var(
+                _js_expr="value",
+                _var_type=str,
+                _var_data=VarData(hooks={"const badHook = 1": None}),
+            )
+
+
+def test_var_returning_memo_rejects_non_bundled_imports():
+    """Var-returning memos should reject non-bundled imports."""
+    with pytest.raises(TypeError, match="not bundled"):
+
+        @rx._x.memo
+        def bad_import(value: rx.Var[str]) -> rx.Var[str]:
+            return Var(
+                _js_expr="value",
+                _var_type=str,
+                _var_data=VarData(imports={"some-lib": [ImportVar(tag="x")]}),
+            )
+
+
+def test_compile_memo_components_includes_experimental_functions_and_components():
+    """The shared memo output should include both experimental functions and components."""
+
+    @rx.memo
+    def old_wrapper(title: rx.Var[str]) -> rx.Component:
+        return rx.text(title)
+
+    @rx._x.memo
+    def format_price(amount: rx.Var[int], currency: rx.Var[str]) -> rx.Var[str]:
+        return currency.to(str) + ": $" + amount.to(str)
+
+    @rx._x.memo
+    def my_card(children: rx.Var[rx.Component], *, title: rx.Var[str]) -> rx.Component:
+        return rx.box(rx.heading(title), children)
+
+    _, code, _ = compiler.compile_memo_components(
+        dict.fromkeys(CUSTOM_COMPONENTS.values()),
+        tuple(EXPERIMENTAL_MEMOS.values()),
+    )
+
+    assert "export const OldWrapper = memo(" in code
+    assert "export const format_price =" in code
+    assert "export const MyCard = memo(" in code
+
+
+def test_experimental_component_memo_get_imports():
+    """Experimental component memos should resolve imports during compilation."""
+
+    class Inner(Component):
+        tag = "Inner"
+        library = "inner"
+
+    @rx._x.memo
+    def wrapper() -> rx.Component:
+        return Inner.create()
+
+    experimental_component = wrapper()
+
+    assert "inner" not in experimental_component._get_all_imports()
+
+    definition = EXPERIMENTAL_MEMOS["Wrapper"]
+    assert isinstance(definition, ExperimentalMemoComponentDefinition)
+    _, imports = compiler_utils.compile_experimental_component_memo(definition)
+    assert "inner" in imports
+
+
+def test_compile_memo_components_includes_experimental_custom_code():
+    """Experimental component memos should include custom code in compiled output."""
+
+    class FooComponent(rx.Fragment):
+        def add_custom_code(self) -> list[str]:
+            return [
+                "const foo = 'bar'",
+            ]
+
+    @rx._x.memo
+    def foo_component(label: rx.Var[str]) -> rx.Component:
+        return FooComponent.create(label, rx.Var("foo"))
+
+    _, code, _ = compiler.compile_memo_components(
+        (), tuple(EXPERIMENTAL_MEMOS.values())
+    )
+
+    assert "const foo = 'bar'" in code

@@ -362,6 +362,10 @@ class ObjectVar(Var[OBJECT_TYPE], python_types=PYTHON_TYPES):
         return object_has_own_property_operation(self, key)
 
 
+class RestProp(ObjectVar[dict[str, Any]]):
+    """A special object var representing forwarded rest props."""
+
+
 @dataclasses.dataclass(
     eq=False,
     frozen=True,

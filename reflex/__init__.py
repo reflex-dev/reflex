@@ -342,7 +342,7 @@ _MAPPING: dict = {
     "utils.imports": ["ImportDict", "ImportVar"],
     "utils.misc": ["run_in_thread"],
     "utils.serializers": ["serializer"],
-    "vars": ["Var", "field", "Field"],
+    "vars": ["Var", "field", "Field", "RestProp"],
 }
 
 _SUBMODULES: set[str] = {
