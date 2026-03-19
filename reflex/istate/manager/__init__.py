@@ -19,7 +19,7 @@ from reflex.utils.exceptions import InvalidStateManagerModeError
 class StateModificationContext(TypedDict, total=False):
     """The context for modifying state."""
 
-    event: ReadOnly[Event]
+    event: ReadOnly[Event | None]
 
 
 EmptyContext = StateModificationContext()

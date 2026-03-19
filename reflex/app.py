@@ -29,7 +29,15 @@ from itertools import chain
 from pathlib import Path
 from timeit import default_timer as timer
 from types import SimpleNamespace
-from typing import TYPE_CHECKING, Any, BinaryIO, ParamSpec, get_args, get_type_hints
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    BinaryIO,
+    ParamSpec,
+    Unpack,
+    get_args,
+    get_type_hints,
+)
 
 from rich.progress import MofNCompleteColumn, Progress, TimeElapsedColumn
 from socketio import ASGIApp as EngineIOApp
@@ -83,6 +91,7 @@ from reflex.event import (
     get_hydrate_event,
     noop,
 )
+from reflex.istate.manager import StateModificationContext
 from reflex.istate.proxy import StateProxy
 from reflex.page import DECORATED_PAGES
 from reflex.route import (
@@ -1571,6 +1580,7 @@ class App(MiddlewareMixin, LifespanMixin):
         token: str,
         background: bool = False,
         previous_dirty_vars: dict[str, set[str]] | None = None,
+        **context: Unpack[StateModificationContext],
     ) -> AsyncIterator[BaseState]:
         """Modify the state out of band.
 
@@ -1591,7 +1601,7 @@ class App(MiddlewareMixin, LifespanMixin):
 
         # Get exclusive access to the state.
         async with self.state_manager.modify_state_with_links(
-            token, previous_dirty_vars=previous_dirty_vars
+            token, previous_dirty_vars=previous_dirty_vars, **context
         ) as state:
             # No other event handler can modify the state while in this context.
             yield state
@@ -1624,7 +1634,7 @@ class App(MiddlewareMixin, LifespanMixin):
         if not handler.is_background:
             return None
 
-        substate = StateProxy(substate)
+        substate = StateProxy(substate, event)
 
         async def _coro():
             """Coroutine to process the event and emit updates inside an asyncio.Task.
@@ -2042,7 +2052,7 @@ def upload(app: App):
             """
             # Process the event.
             async with app.state_manager.modify_state_with_links(
-                event.substate_token
+                event.substate_token, event=event
             ) as state:
                 async for update in state._process(event):
                     # Postprocess the event.
