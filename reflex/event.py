@@ -88,6 +88,8 @@ class Event:
 
 
 _EVENT_FIELDS: set[str] = {f.name for f in dataclasses.fields(Event)}
+_EMPTY_EVENTS = LiteralVar.create([])
+_EMPTY_EVENT_ACTIONS = LiteralVar.create({})
 
 BACKGROUND_TASK_MARKER = "_reflex_background_task"
 EVENT_ACTIONS_MARKER = "_rx_event_actions"
@@ -2118,22 +2120,26 @@ class LiteralEventChainVar(ArgsFunctionOperationBuilder, LiteralVar, EventChainV
                 else invocation.call(
                     LiteralVar.create([LiteralVar.create(event)]),
                     arg_def_expr,
-                    {},
+                    _EMPTY_EVENT_ACTIONS,
                 )
             )
             for event in value.events
         ]
 
         if not statements:
-            statements.append(invocation.call(LiteralVar.create([]), arg_def_expr, {}))
+            statements.append(
+                invocation.call(
+                    _EMPTY_EVENTS,
+                    arg_def_expr,
+                    _EMPTY_EVENT_ACTIONS,
+                )
+            )
 
-        statement_var_data = [statement._get_all_var_data() for statement in statements]
         if len(statements) == 1 and not value.event_actions:
             return_expr = statements[0]
         else:
             statement_block = Var(
-                _js_expr=f"{{{''.join(f'{statement!s};' for statement in statements)}}}",
-                _var_data=VarData.merge(*statement_var_data),
+                _js_expr=f"{{{''.join(f'{statement};' for statement in statements)}}}",
             )
             if value.event_actions:
                 apply_event_actions = FunctionStringVar.create(

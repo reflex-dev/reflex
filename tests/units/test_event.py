@@ -480,6 +480,32 @@ def test_event_var_data():
     )
 
 
+def test_event_chain_statement_block_preserves_nested_var_data():
+    class S(BaseState):
+        x: Field[int] = field(0)
+
+        @event
+        def s(self, value: int):
+            pass
+
+    chain_var_data = Var.create(
+        EventChain(
+            events=[S.s(S.x), make_timeout_logger()],
+            args_spec=lambda: (),
+        )
+    )._get_all_var_data()
+
+    assert chain_var_data is not None
+
+    x_var_data = S.x._get_all_var_data()
+    assert x_var_data is not None
+
+    assert chain_var_data.state == x_var_data.state
+    assert chain_var_data.field_name == x_var_data.field_name
+    assert x_var_data.hooks[0] in chain_var_data.hooks
+    assert Hooks.EVENTS in chain_var_data.hooks
+
+
 def test_event_bound_method() -> None:
     class S(BaseState):
         @event
