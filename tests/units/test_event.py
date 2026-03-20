@@ -9,6 +9,7 @@ from reflex.event import (
     BACKGROUND_TASK_MARKER,
     Event,
     EventChain,
+    EventChainVar,
     EventHandler,
     EventSpec,
     call_event_handler,
@@ -32,7 +33,7 @@ def make_var(value) -> Var:
     return Var(_js_expr=value)
 
 
-def make_timeout_logger():
+def make_timeout_logger() -> EventChainVar:
     return rx.vars.FunctionStringVar.create(
         "(...args) => { setTimeout(() => console.log('Timeout reached!', args), 1000); }"
     ).to(EventChain)
@@ -683,7 +684,10 @@ def test_event_chain_create_allows_plain_function_var():
     chain = EventChain.create(frontend_handler, args_spec=lambda: ())
 
     assert isinstance(chain, EventChain)
-    assert chain.events == [frontend_handler]
+    assert len(chain.events) == 1
+    chain_event = chain.events[0]
+    assert isinstance(chain_event, Var)
+    assert frontend_handler.equals(chain_event)
 
 
 def test_event_chain_create_wraps_plain_function_var_kwargs():
@@ -699,7 +703,10 @@ def test_event_chain_create_wraps_plain_function_var_kwargs():
     )
 
     assert isinstance(chain, EventChain)
-    assert chain.events == [frontend_handler]
+    assert len(chain.events) == 1
+    chain_event = chain.events[0]
+    assert isinstance(chain_event, Var)
+    assert frontend_handler.equals(chain_event)
     assert chain.event_actions == {"preventDefault": True}
 
 
@@ -714,7 +721,10 @@ def test_event_chain_create_wraps_event_chain_typed_function_var_kwargs():
     )
 
     assert isinstance(chain, EventChain)
-    assert chain.events == [frontend_handler]
+    assert len(chain.events) == 1
+    chain_event = chain.events[0]
+    assert isinstance(chain_event, Var)
+    assert frontend_handler.equals(chain_event)
     assert chain.event_actions == {"preventDefault": True}
 
 
@@ -739,7 +749,10 @@ def test_event_chain_create_allows_function_var_in_list():
     chain = EventChain.create([frontend_handler], args_spec=lambda: ())
 
     assert isinstance(chain, EventChain)
-    assert chain.events == [frontend_handler]
+    assert len(chain.events) == 1
+    chain_event = chain.events[0]
+    assert isinstance(chain_event, Var)
+    assert frontend_handler.equals(chain_event)
 
 
 def test_button_accepts_mixed_event_handler_and_function_var():
