@@ -297,12 +297,14 @@ _MAPPING: dict = {
     "config": ["Config", "DBConfig"],
     "constants": ["Env"],
     "constants.colors": ["Color"],
+    "_upload": [
+        "UploadChunk",
+        "UploadChunkIterator",
+    ],
     "event": [
         "event",
         "EventChain",
         "EventHandler",
-        "UploadChunk",
-        "UploadChunkIterator",
         "call_script",
         "call_function",
         "run_script",

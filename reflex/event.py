@@ -7,7 +7,6 @@ import types
 from base64 import b64encode
 from collections.abc import Callable, Mapping, Sequence
 from functools import lru_cache, partial
-from importlib import import_module
 from typing import (
     TYPE_CHECKING,
     Annotated,
@@ -1099,11 +1098,6 @@ class UploadFilesChunk(FileUpload):
 
 # Alias for rx.upload_files_chunk
 upload_files_chunk = UploadFilesChunk
-
-
-_upload_module = import_module("reflex._upload")
-UploadChunk = _upload_module.UploadChunk
-UploadChunkIterator = _upload_module.UploadChunkIterator
 
 
 # Special server-side events.
@@ -2468,8 +2462,6 @@ class EventNamespace:
 
     # File Upload
     FileUpload = FileUpload
-    UploadChunk = UploadChunk
-    UploadChunkIterator = UploadChunkIterator
     UploadFilesChunk = UploadFilesChunk
 
     # Type Aliases
