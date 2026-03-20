@@ -186,7 +186,7 @@ class FunctionVar(Var[CALLABLE_TYPE], default_type=ReflexCallable[Any, Any]):
             The partially applied function.
         """
         if not args:
-            return ArgsFunctionOperation.create((), self)
+            return self
         return ArgsFunctionOperation.create(
             ("...args",),
             VarOperationCall.create(self, *args, Var(_js_expr="...args")),

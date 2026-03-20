@@ -520,21 +520,14 @@ class EventChain(EventActionsMixin):
                 if isinstance(v, (EventHandler, EventSpec)):
                     # Call the event handler to get the event.
                     events.append(call_event_handler(v, args_spec, key=key))
-                elif isinstance(v, (EventVar, FunctionVar)):
+                elif isinstance(v, (EventVar, EventChainVar)):
                     events.append(v)
+                elif isinstance(v, FunctionVar):
+                    # Apply the args_spec transformations as partial arguments to the function.
+                    events.append(v.partial(*parse_args_spec(args_spec)[0]))
                 elif isinstance(v, Callable):
                     # Call the lambda to get the event chain.
-                    result = call_event_fn(v, args_spec, key=key)
-                    if isinstance(result, Var):
-                        if isinstance(result, (EventVar, FunctionVar)):
-                            events.append(result)
-                            continue
-                        msg = (
-                            f"Invalid event chain: {v}. Cannot use a Var-returning "
-                            "lambda inside an EventChain list."
-                        )
-                        raise ValueError(msg)
-                    events.extend(result)
+                    events.extend(call_event_fn(v, args_spec, key=key))
                 else:
                     msg = f"Invalid event: {v}"
                     raise ValueError(msg)
@@ -1783,7 +1776,7 @@ def call_event_fn(
     fn: Callable,
     arg_spec: ArgsSpec | Sequence[ArgsSpec],
     key: str | None = None,
-) -> list[EventSpec] | Var:
+) -> list[EventSpec | FunctionVar]:
     """Call a function to a list of event specs.
 
     The function should return a single EventSpec, a list of EventSpecs, or a
@@ -1816,10 +1809,6 @@ def call_event_fn(
     # Call the function with the parsed args.
     out = fn(*[*parsed_args][:number_of_fn_args])
 
-    # If the function returns a Var, assume it's an EventChain and render it directly.
-    if isinstance(out, Var):
-        return out
-
     # Convert the output to a list.
     if not isinstance(out, list):
         out = [out]
@@ -1831,9 +1820,20 @@ def call_event_fn(
             # An un-called EventHandler gets all of the args of the event trigger.
             e = call_event_handler(e, arg_spec, key=key)
 
+        if isinstance(e, EventChain):
+            # Nested EventChain is treated like a FunctionVar.
+            e = Var.create(e)
+
         # Make sure the event spec is valid.
-        if not isinstance(e, EventSpec):
-            msg = f"Lambda {fn} returned an invalid event spec: {e}."
+        if not isinstance(e, (EventSpec, FunctionVar)):
+            hint = ""
+            if isinstance(e, VarOperationCall):
+                hint = " Hint: use `fn.partial(...)` instead of calling the FunctionVar directly."
+            msg = (
+                f"Invalid event chain for {key}: {fn} -> {e}: A lambda inside an EventChain "
+                "list must return `EventSpec | EventHandler | FunctionVar` or heterogeneous list of these types. "
+                f"Got: {type(e)}.{hint}"
+            )
             raise EventHandlerValueError(msg)
 
         # Add the event spec to the chain.
