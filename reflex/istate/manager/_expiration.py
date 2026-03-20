@@ -1,15 +1,18 @@
 """Internal helpers for in-memory state expiration."""
 
+from __future__ import annotations
+
 import asyncio
 import contextlib
 import dataclasses
 import heapq
 import time
-from typing import ClassVar
-
-from reflex.state import BaseState
+from typing import TYPE_CHECKING, ClassVar
 
 from . import _default_token_expiration
+
+if TYPE_CHECKING:
+    from reflex.state import BaseState
 
 
 @dataclasses.dataclass
@@ -32,12 +35,6 @@ class StateManagerExpiration:
 
     # The latest expiration deadline for each token.
     _token_expires_at: dict[str, float] = dataclasses.field(
-        default_factory=dict,
-        init=False,
-    )
-
-    # Last time a token was touched.
-    _token_last_touched: dict[str, float] = dataclasses.field(
         default_factory=dict,
         init=False,
     )
@@ -75,13 +72,10 @@ class StateManagerExpiration:
         Args:
             token: The token that was accessed.
         """
-        touched_at = time.time()
-        expires_at = touched_at + self.token_expiration
-        self._token_last_touched[token] = touched_at
+        expires_at = time.time() + self.token_expiration
         self._token_expires_at[token] = expires_at
         self._pending_locked_expirations.discard(token)
         heapq.heappush(self._token_expiration_heap, (expires_at, token))
-        self._maybe_compact_expiration_heap()
         if (
             self._scheduled_expiration_deadline is None
             or expires_at <= self._scheduled_expiration_deadline
@@ -124,7 +118,6 @@ class StateManagerExpiration:
         Args:
             token: The token to purge.
         """
-        self._token_last_touched.pop(token, None)
         self._token_expires_at.pop(token, None)
         self.states.pop(token, None)
         self._states_locks.pop(token, None)
@@ -133,7 +126,7 @@ class StateManagerExpiration:
     def _purge_expired_tokens(
         self,
         now: float | None = None,
-    ) -> list[str]:
+    ):
         """Purge expired in-memory state entries.
 
         If a token's state lock is currently held, defer cleanup until a later pass
@@ -141,12 +134,8 @@ class StateManagerExpiration:
 
         Args:
             now: The time to compare against.
-
-        Returns:
-            The list of purged tokens.
         """
         now = time.time() if now is None else now
-        expired_tokens = []
         while (
             next_expiration := self._next_expiration()
         ) is not None and next_expiration[0] <= now:
@@ -157,8 +146,7 @@ class StateManagerExpiration:
                 self._pending_locked_expirations.add(token)
                 continue
             self._purge_token(token)
-            expired_tokens.append(token)
-        return expired_tokens
+        self._maybe_compact_expiration_heap()
 
     def _next_expiration_in(
         self,

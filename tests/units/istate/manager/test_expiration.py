@@ -63,13 +63,13 @@ async def test_memory_state_manager_evicts_expired_state(
 
     assert token in state_manager_memory.states
     assert token in state_manager_memory._states_locks
-    assert token in state_manager_memory._token_last_touched
+    assert token in state_manager_memory._token_expires_at
 
     await _poll_until(
         lambda: (
             token not in state_manager_memory.states
             and token not in state_manager_memory._states_locks
-            and token not in state_manager_memory._token_last_touched
+            and token not in state_manager_memory._token_expires_at
         )
     )
 
@@ -84,13 +84,13 @@ async def test_memory_state_manager_get_state_refreshes_expiration(
     state = await state_manager_memory.get_state(state_token)
     assert isinstance(state, ExpiringState)
     state.value = 7
-    first_touch = state_manager_memory._token_last_touched[token]
+    first_expires_at = state_manager_memory._token_expires_at[token]
 
     await asyncio.sleep(0.6)
 
     same_state = await state_manager_memory.get_state(state_token)
     assert same_state is state
-    assert state_manager_memory._token_last_touched[token] > first_touch
+    assert state_manager_memory._token_expires_at[token] > first_expires_at
 
     await asyncio.sleep(0.6)
 
@@ -108,13 +108,13 @@ async def test_memory_state_manager_set_state_refreshes_expiration(
     state = await state_manager_memory.get_state(state_token)
     assert isinstance(state, ExpiringState)
     state.value = 17
-    first_touch = state_manager_memory._token_last_touched[token]
+    first_expires_at = state_manager_memory._token_expires_at[token]
 
     await asyncio.sleep(0.6)
 
     await state_manager_memory.set_state(state_token, state)
 
-    assert state_manager_memory._token_last_touched[token] > first_touch
+    assert state_manager_memory._token_expires_at[token] > first_expires_at
 
     await asyncio.sleep(0.6)
 

@@ -12,9 +12,7 @@ from typing_extensions import Unpack, override
 from reflex.istate.manager import StateManager, StateModificationContext
 from reflex.istate.manager._expiration import StateManagerExpiration
 from reflex.state import BaseState, _split_substate_key
-from reflex.utils import console
-
-_EXPIRATION_ERROR_RETRY_SECONDS = 1.0
+from reflex.utils.tasks import ensure_task
 
 
 @dataclasses.dataclass
@@ -26,41 +24,24 @@ class StateManagerMemory(StateManagerExpiration, StateManager):
     # The mutex ensures the dict of mutexes is updated exclusively
     _state_manager_lock: asyncio.Lock = dataclasses.field(default=asyncio.Lock())
 
-    _expiration_task: asyncio.Task | None = None
+    _expiration_task: asyncio.Task | None = dataclasses.field(default=None, init=False)
 
     async def _expire_states_once(self):
         """Perform one expiration pass and wait for the next check."""
-        try:
-            now = time.time()
-            self._purge_expired_tokens(now=now)
-            await self._wait_for_token_activity(
-                self._prepare_expiration_wait(now=now),
-            )
-        except asyncio.CancelledError:
-            raise
-        except Exception as err:
-            console.error(f"Error expiring in-memory states: {err!r}")
-            await asyncio.sleep(_EXPIRATION_ERROR_RETRY_SECONDS)
+        now = time.time()
+        self._purge_expired_tokens(now=now)
+        await self._wait_for_token_activity(
+            self._prepare_expiration_wait(now=now),
+        )
 
-    async def _expire_states(self):
-        """Long running task that removes expired states from memory.
-
-        Raises:
-            asyncio.CancelledError: When the task is cancelled.
-        """
-        while True:
-            await self._expire_states_once()
-
-    async def _schedule_expiration_task(self):
-        """Schedule the expiration task if it is not already running."""
-        if self._expiration_task is None or self._expiration_task.done():
-            async with self._state_manager_lock:
-                if self._expiration_task is None or self._expiration_task.done():
-                    self._expiration_task = asyncio.create_task(
-                        self._expire_states(),
-                        name="StateManagerMemory|ExpirationProcessor",
-                    )
-                    await asyncio.sleep(0)
+    def _ensure_expiration_task(self):
+        """Ensure the expiration background task is running."""
+        ensure_task(
+            self,
+            "_expiration_task",
+            self._expire_states_once,
+            suppress_exceptions=[Exception],
+        )
 
     @override
     async def get_state(self, token: str) -> BaseState:
@@ -74,10 +55,10 @@ class StateManagerMemory(StateManagerExpiration, StateManager):
         """
         # Memory state manager ignores the substate suffix and always returns the top-level state.
         token = _split_substate_key(token)[0]
-        self._touch_token(token)
-        await self._schedule_expiration_task()
         if token not in self.states:
             self.states[token] = self.state(_reflex_internal_init=True)
+        self._touch_token(token)
+        self._ensure_expiration_task()
         return self.states[token]
 
     @override
@@ -95,9 +76,9 @@ class StateManagerMemory(StateManagerExpiration, StateManager):
             context: The state modification context.
         """
         token = _split_substate_key(token)[0]
-        self._touch_token(token)
         self.states[token] = state
-        await self._schedule_expiration_task()
+        self._touch_token(token)
+        self._ensure_expiration_task()
 
     @override
     @contextlib.asynccontextmanager
