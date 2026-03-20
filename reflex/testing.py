@@ -143,11 +143,11 @@ class AppHarness:
                 If unspecified, then root must already contain a working reflex app and will be used directly.
             app_name: provide the name of the app, otherwise will be derived from app_source or root.
 
-        Raises:
-            ValueError: when app_source is a string and app_name is not provided.
-
         Returns:
             AppHarness instance
+
+        Raises:
+            ValueError: when app_source is a string and app_name is not provided.
         """
         if app_name is None:
             if app_source is None:

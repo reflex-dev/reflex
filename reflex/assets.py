@@ -72,12 +72,12 @@ def asset(
             the immediate caller 1. When using rx.asset via a helper function,
             increase this number for each helper function in the stack.
 
+    Returns:
+        The relative URL to the asset.
+
     Raises:
         FileNotFoundError: If the file does not exist.
         ValueError: If subfolder is provided for local assets.
-
-    Returns:
-        The relative URL to the asset.
     """
     assets = constants.Dirs.APP_ASSETS
     backend_only = EnvironmentVariables.REFLEX_BACKEND_ONLY.get()

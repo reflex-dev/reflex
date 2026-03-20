@@ -252,11 +252,11 @@ class Toaster(Component):
             fallback_to_alert: Whether to fallback to an alert if the toaster is not created.
             **props: The options for the toast.
 
-        Raises:
-            ValueError: If the Toaster component is not created.
-
         Returns:
             The toast event.
+
+        Raises:
+            ValueError: If the Toaster component is not created.
         """
         toast_command = (
             ObjectVar.__getattr__(toast_ref.to(dict), level) if level else toast_ref

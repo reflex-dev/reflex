@@ -467,11 +467,11 @@ class DataEditor(NoSSRComponent):
             *children: The children of the data editor.
             **props: The props of the data editor.
 
-        Raises:
-            ValueError: invalid input.
-
         Returns:
             The DataEditor component.&
+
+        Raises:
+            ValueError: invalid input.
         """
         from reflex.components.el import Div
 
