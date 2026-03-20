@@ -1124,6 +1124,9 @@ async def test_upload_empty_buffered_request_dispatches_alias_handler(
 
     assert updates[-1]["final"]
 
+    if environment.REFLEX_OPLOCK_ENABLED.get():
+        await app.state_manager.close()
+
     state = await app.state_manager.get_state(_substate_key(token, FileUploadState))
     substate = (
         state
