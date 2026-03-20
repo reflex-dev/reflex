@@ -73,11 +73,11 @@ class Link(RadixThemesComponent, A, MemoizationLeaf, MarkdownComponentMap):
             *children: The children of the component.
             **props: The props of the component.
 
-        Raises:
-            ValueError: in case of missing children
-
         Returns:
             Component: The link component
+
+        Raises:
+            ValueError: in case of missing children
         """
         props.setdefault("_hover", {"color": color("accent", 8)})
         href = props.get("href")

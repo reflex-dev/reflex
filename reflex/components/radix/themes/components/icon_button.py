@@ -55,11 +55,11 @@ class IconButton(elements.Button, RadixLoadingProp, RadixThemesComponent):
             *children: The children of the component.
             **props: The properties of the component.
 
-        Raises:
-            ValueError: If no children are passed.
-
         Returns:
             The IconButton component.
+
+        Raises:
+            ValueError: If no children are passed.
         """
         if children:
             if isinstance(children[0], str):

@@ -337,7 +337,7 @@ def test_create_component(component1):
         ),
         pytest.param(
             "text",
-            Var(_js_expr="hello", _var_type=None | str),  # noqa: RUF036
+            Var(_js_expr="hello", _var_type=None | str),
             None,
             id="text-union-none-str",
         ),
@@ -367,7 +367,7 @@ def test_create_component(component1):
         ),
         pytest.param(
             "number",
-            Var(_js_expr="1", _var_type=None | int),  # noqa: RUF036
+            Var(_js_expr="1", _var_type=None | int),
             None,
             id="number-union-none-int",
         ),
@@ -403,7 +403,7 @@ def test_create_component(component1):
         ),
         pytest.param(
             "text_or_number",
-            Var(_js_expr="hello", _var_type=None | str),  # noqa: RUF036
+            Var(_js_expr="hello", _var_type=None | str),
             None,
             id="text_or_number-union-none-str",
         ),
@@ -421,7 +421,7 @@ def test_create_component(component1):
         ),
         pytest.param(
             "text_or_number",
-            Var(_js_expr="1", _var_type=None | int),  # noqa: RUF036
+            Var(_js_expr="1", _var_type=None | int),
             None,
             id="text_or_number-union-none-int",
         ),
