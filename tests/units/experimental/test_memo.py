@@ -25,17 +25,8 @@ from reflex.vars.function import FunctionVar
 
 
 @pytest.fixture(autouse=True)
-def restore_memo_registries():
-    """Restore the memo registries after each test."""
-    custom_components = dict(CUSTOM_COMPONENTS)
-    experimental_memos = dict(EXPERIMENTAL_MEMOS)
-
-    yield
-
-    CUSTOM_COMPONENTS.clear()
-    CUSTOM_COMPONENTS.update(custom_components)
-    EXPERIMENTAL_MEMOS.clear()
-    EXPERIMENTAL_MEMOS.update(experimental_memos)
+def _restore_memo_registries(preserve_memo_registries):
+    """Autouse wrapper around the shared preserve_memo_registries fixture."""
 
 
 def test_var_returning_memo():

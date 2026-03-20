@@ -51,30 +51,16 @@ def test_app_harness(tmp_path):
 
 
 @pytest.fixture
-def preserve_memo_registries():
-    """Restore global memo registries after each test."""
-    custom_components = dict(CUSTOM_COMPONENTS)
-    experimental_memos = dict(EXPERIMENTAL_MEMOS)
-    try:
-        yield
-    finally:
-        CUSTOM_COMPONENTS.clear()
-        CUSTOM_COMPONENTS.update(custom_components)
-        EXPERIMENTAL_MEMOS.clear()
-        EXPERIMENTAL_MEMOS.update(experimental_memos)
-
-
-def test_app_harness_initialize_clears_memo_registries(
-    tmp_path, preserve_memo_registries, monkeypatch
-):
-    """Ensure app initialization clears leaked memo registries.
+def harness_mocks(monkeypatch):
+    """Common mocks for AppHarness initialization tests.
 
     Args:
-        tmp_path: pytest tmp_path fixture
-        preserve_memo_registries: restores global memo registries after the test
         monkeypatch: pytest monkeypatch fixture
+
+    Returns:
+        Namespace with fake_config and get_and_validate_app mock.
     """
-    fake_config = SimpleNamespace(loglevel=None, module="memo_app.memo_app")
+    fake_config = SimpleNamespace(loglevel=None, module="test_app.test_app")
     fake_app = mock.Mock(_state_manager=None)
     get_and_validate_app = mock.Mock(
         return_value=reflex.utils.prerequisites.AppInfo(
@@ -85,17 +71,33 @@ def test_app_harness_initialize_clears_memo_registries(
 
     monkeypatch.setattr(reflex_testing, "get_config", lambda: fake_config)
     monkeypatch.setattr(reflex.config, "get_config", lambda reload=False: fake_config)
-    monkeypatch.setattr(reflex_cli, "_init", lambda **kwargs: None)
     monkeypatch.setattr(
         reflex.utils.prerequisites,
         "get_and_validate_app",
         get_and_validate_app,
     )
+
+    return SimpleNamespace(
+        config=fake_config,
+        get_and_validate_app=get_and_validate_app,
+    )
+
+
+def test_app_harness_initialize_clears_memo_registries(
+    tmp_path, preserve_memo_registries, harness_mocks, monkeypatch
+):
+    """Ensure app initialization clears leaked memo registries.
+
+    Args:
+        tmp_path: pytest tmp_path fixture
+        preserve_memo_registries: restores global memo registries after the test
+        harness_mocks: shared AppHarness mock setup
+        monkeypatch: pytest monkeypatch fixture
+    """
+    monkeypatch.setattr(reflex_cli, "_init", lambda **kwargs: None)
+
     CUSTOM_COMPONENTS["FooComponent"] = mock.sentinel.component
     EXPERIMENTAL_MEMOS["format_value"] = mock.sentinel.memo
-
-    assert "FooComponent" in CUSTOM_COMPONENTS
-    assert "format_value" in EXPERIMENTAL_MEMOS
 
     harness = AppHarness.create(
         root=tmp_path / "memo_app",
@@ -107,43 +109,32 @@ def test_app_harness_initialize_clears_memo_registries(
 
     assert "FooComponent" not in CUSTOM_COMPONENTS
     assert "format_value" not in EXPERIMENTAL_MEMOS
-    get_and_validate_app.assert_called_once_with(reload=True)
+    harness_mocks.get_and_validate_app.assert_called_once_with(reload=True)
 
 
 def test_app_harness_initialize_reloads_existing_imported_app(
-    tmp_path, preserve_memo_registries, monkeypatch
+    tmp_path, preserve_memo_registries, harness_mocks, monkeypatch
 ):
     """Ensure pre-existing imported apps are reloaded after memo registry reset.
 
     Args:
         tmp_path: pytest tmp_path fixture
         preserve_memo_registries: restores global memo registries after the test
+        harness_mocks: shared AppHarness mock setup
         monkeypatch: pytest monkeypatch fixture
     """
-    fake_config = SimpleNamespace(loglevel=None, module="plain_app.plain_app")
-    fake_app = mock.Mock(_state_manager=None)
-    get_and_validate_app = mock.Mock(
-        return_value=reflex.utils.prerequisites.AppInfo(
-            app=fake_app,
-            module=ModuleType(fake_config.module),
-        )
-    )
-
-    monkeypatch.setattr(reflex_testing, "get_config", lambda: fake_config)
-    monkeypatch.setattr(reflex.config, "get_config", lambda reload=False: fake_config)
     monkeypatch.setattr(
         reflex.utils.prerequisites,
         "initialize_frontend_dependencies",
         lambda: None,
     )
-    monkeypatch.setattr(
-        reflex.utils.prerequisites,
-        "get_and_validate_app",
-        get_and_validate_app,
+    monkeypatch.setitem(
+        sys.modules,
+        harness_mocks.config.module,
+        ModuleType(harness_mocks.config.module),
     )
-    monkeypatch.setitem(sys.modules, fake_config.module, ModuleType(fake_config.module))
 
     harness = AppHarness.create(root=tmp_path / "plain_app")
     harness._initialize_app()
 
-    get_and_validate_app.assert_called_once_with(reload=True)
+    harness_mocks.get_and_validate_app.assert_called_once_with(reload=True)
