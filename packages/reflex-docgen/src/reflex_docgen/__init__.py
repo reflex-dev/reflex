@@ -4,13 +4,9 @@ from dataclasses import dataclass
 from typing import Annotated, Any, get_type_hints
 
 from typing_extensions import Doc
-from typing_inspection.introspection import (
-    AnnotationSource,
-    InspectedAnnotation,
-    inspect_annotation,
-)
 
-from reflex.components.component import Component
+from reflex.components.component import DEFAULT_TRIGGERS, Component
+from reflex.event import EventHandler
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
@@ -27,12 +23,29 @@ class PropDocumentation:
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
+class EventHandlerDocumentation:
+    """Hold information about an event handler."""
+
+    name: Annotated[str, Doc("The name of the event handler.")]
+
+    description: Annotated[str | None, Doc("The description of the event handler.")]
+
+    is_inherited: Annotated[
+        bool, Doc("Whether the event handler is inherited from DEFAULT_TRIGGERS.")
+    ]
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
 class ComponentDocumentation:
     """Documentation for a Reflex component."""
 
     name: Annotated[str, Doc("The name of the component.")]
     props: Annotated[
         tuple[PropDocumentation, ...], Doc("The list of props for the component.")
+    ] = ()
+    event_handlers: Annotated[
+        tuple[EventHandlerDocumentation, ...],
+        Doc("The list of event handlers for the component."),
     ] = ()
 
 
@@ -51,6 +64,8 @@ def get_component_props(
 
     result = []
     for prop_name, component_field in props.items():
+        if component_field.type_origin is EventHandler:
+            continue
         doc = component_field.doc
         default_value = None
 
@@ -76,6 +91,34 @@ def get_component_props(
     return tuple(result)
 
 
+def get_component_event_handlers(
+    component_cls: type[Component],
+) -> tuple[EventHandlerDocumentation, ...]:
+    """Get the event handlers for a Reflex component.
+
+    Args:
+        component_cls: The component class to get the event handlers for.
+
+    Returns:
+        The event handlers for the component.
+    """
+    event_triggers = component_cls.get_event_triggers()
+    fields = component_cls.get_fields()
+
+    return tuple(
+        EventHandlerDocumentation(
+            name=name,
+            description=(
+                field.doc.rstrip(".") + "."
+                if (field := fields.get(name)) is not None and field.doc
+                else None
+            ),
+            is_inherited=name in DEFAULT_TRIGGERS,
+        )
+        for name in event_triggers
+    )
+
+
 def generate_documentation(component_cls: type[Component]) -> ComponentDocumentation:
     """Generate documentation for a Reflex component.
 
@@ -86,5 +129,7 @@ def generate_documentation(component_cls: type[Component]) -> ComponentDocumenta
         The generated documentation for the component.
     """
     return ComponentDocumentation(
-        name=component_cls.__name__, props=get_component_props(component_cls)
+        name=component_cls.__name__,
+        props=get_component_props(component_cls),
+        event_handlers=get_component_event_handlers(component_cls),
     )
