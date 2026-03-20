@@ -1820,7 +1820,7 @@ def call_event_fn(
             e = Var.create(e)
 
         # Make sure the event spec is valid.
-        if not isinstance(e, (EventSpec, FunctionVar)):
+        if not isinstance(e, (EventSpec, FunctionVar, EventVar)):
             hint = ""
             if isinstance(e, VarOperationCall):
                 hint = " Hint: use `fn.partial(...)` instead of calling the FunctionVar directly."
