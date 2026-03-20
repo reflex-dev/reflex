@@ -513,9 +513,10 @@ class EventChain(EventActionsMixin):
         if isinstance(value, (EventHandler, EventSpec)):
             value = [value]
 
+        events: list[EventSpec | EventVar | FunctionVar] = []
+
         # If the input is a list of event handlers, create an event chain.
         if isinstance(value, list):
-            events: list[EventSpec | EventVar | FunctionVar] = []
             for v in value:
                 if isinstance(v, (EventHandler, EventSpec)):
                     # Call the event handler to get the event.
@@ -534,13 +535,7 @@ class EventChain(EventActionsMixin):
 
         # If the input is a callable, create an event chain.
         elif isinstance(value, Callable):
-            result = call_event_fn(value, args_spec, key=key)
-            if isinstance(result, Var):
-                # Recursively call this function if the lambda returned an EventChain Var.
-                return cls.create(
-                    value=result, args_spec=args_spec, key=key, **event_chain_kwargs
-                )
-            events = [*result]
+            events.extend(call_event_fn(value, args_spec, key=key))
 
         # Otherwise, raise an error.
         else:
