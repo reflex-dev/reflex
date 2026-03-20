@@ -388,7 +388,6 @@ class StateManagerRedis(StateManager):
         base_state = cast(BaseState, state)
 
         client_token = token.ident
-        substate_name = token.cls.get_full_name()
 
         if lock_id is not None and client_token not in self._local_leases:
             time_taken = (
@@ -406,19 +405,11 @@ class StateManagerRedis(StateManager):
                     dedupe=True,
                 )
 
-        # If the substate name on the token doesn't match the instance name, it cannot have a parent.
-        if (
-            base_state.parent_state is not None
-            and base_state.get_full_name() != substate_name
-        ):
-            msg = f"Cannot `set_state` with mismatching token {token} and substate {base_state.get_full_name()}."
-            raise RuntimeError(msg)
-
         # Recursively set_state on all known substates.
         tasks = [
             asyncio.create_task(
                 self.set_state(
-                    token.with_cls(type(substate)),
+                    token,
                     substate,
                     lock_id=lock_id,
                     **context,
@@ -432,7 +423,7 @@ class StateManagerRedis(StateManager):
             pickle_state = base_state._serialize()
             if pickle_state:
                 await self.redis.set(
-                    str(token),
+                    str(token.with_cls(type(base_state))),
                     pickle_state,
                     ex=self.token_expiration,
                 )

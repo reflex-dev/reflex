@@ -7,19 +7,14 @@ import builtins
 import contextlib
 import copy
 import dataclasses
-import datetime
 import functools
 import inspect
 import pickle
 import re
 import sys
 import time
-import uuid
-import warnings
-from collections.abc import AsyncIterator, Callable, Iterator, Sequence
-from enum import Enum
+from collections.abc import Callable, Iterator, Mapping, Sequence
 from hashlib import md5
-from importlib.util import find_spec
 from types import FunctionType
 from typing import (
     TYPE_CHECKING,
@@ -51,9 +46,8 @@ from reflex.event import (
 from reflex.istate import HANDLED_PICKLE_ERRORS, debug_failed_pickles
 from reflex.istate.data import RouterData
 from reflex.istate.proxy import ImmutableMutableProxy as ImmutableMutableProxy
-from reflex.istate.proxy import MutableProxy, StateProxy, is_mutable_type
+from reflex.istate.proxy import MutableProxy, is_mutable_type
 from reflex.istate.storage import ClientStorageBase
-from reflex.model import Model
 from reflex.utils import console, format, prerequisites, types
 from reflex.utils.exceptions import (
     ComputedVarShadowsBaseVarsError,
@@ -71,8 +65,7 @@ from reflex.utils.exceptions import (
 )
 from reflex.utils.exceptions import ImmutableStateError as ImmutableStateError
 from reflex.utils.exec import is_testing_env
-from reflex.utils.monitoring import is_pyleak_enabled, monitor_loopblocks
-from reflex.utils.types import _isinstance, is_union, value_inside_optional
+from reflex.utils.types import _isinstance
 from reflex.vars import Field, VarData, field
 from reflex.vars.base import (
     ComputedVar,
@@ -88,7 +81,8 @@ if TYPE_CHECKING:
     from reflex.components.component import Component
 
 
-Delta = dict[str, Any]
+Delta = dict[str, dict[str, Any]]
+DeltaMapping = Mapping[str, Mapping[str, Any]]
 var = computed_var
 
 
@@ -325,15 +319,6 @@ def _override_base_method(fn: Callable[PARAMS, RETURN]) -> Callable[PARAMS, RETU
     return fn
 
 
-_deserializers = {
-    int: int,
-    float: float,
-    datetime.datetime: datetime.datetime.fromisoformat,
-    datetime.date: datetime.date.fromisoformat,
-    datetime.time: datetime.time.fromisoformat,
-    uuid.UUID: uuid.UUID,
-}
-
 all_base_state_classes: dict[str, None] = {}
 
 CLASS_VAR_NAMES = frozenset({
@@ -518,6 +503,7 @@ class BaseState(EvenMoreBasicBaseState):
         Raises:
             StateValueError: If a substate class shadows another.
         """
+        from reflex.ievent.registry import register
         from reflex.utils.exceptions import StateValueError
 
         super().__init_subclass__(**kwargs)
@@ -642,6 +628,7 @@ class BaseState(EvenMoreBasicBaseState):
         for name, fn in events.items():
             handler = cls._create_event_handler(fn)
             cls.event_handlers[name] = handler
+            register(handler, states=(cls,))
             setattr(cls, name, handler)
 
         # Initialize per-class var dependency tracking.
@@ -662,9 +649,12 @@ class BaseState(EvenMoreBasicBaseState):
             name: The name of the event handler.
             fn: The function to call when the event is triggered.
         """
+        from reflex.ievent.registry import register
+
         handler = cls._create_event_handler(fn)
         cls.event_handlers[name] = handler
         setattr(cls, name, handler)
+        register(handler, states=(cls,))
 
     @staticmethod
     def _copy_fn(fn: Callable) -> Callable:
@@ -1177,7 +1167,10 @@ class BaseState(EvenMoreBasicBaseState):
     @classmethod
     def _create_setvar(cls):
         """Create the setvar method for the state."""
+        from reflex.ievent.registry import register
+
         cls.setvar = cls.event_handlers["setvar"] = EventHandlerSetVar(state_cls=cls)
+        register(cls.setvar, states=(cls,))
 
     @classmethod
     def _create_setter(cls, name: str, prop: Var):
@@ -1711,296 +1704,6 @@ class BaseState(EvenMoreBasicBaseState):
         )
         return getattr(other_state, var_data.field_name)
 
-    def _get_event_handler(self, event: Event | str) -> tuple[BaseState, EventHandler]:
-        """Get the event handler for the given event.
-
-        Args:
-            event: The event to get the handler for, or a dotted handler name string.
-
-
-        Returns:
-            The event handler.
-
-        Raises:
-            ValueError: If the event handler or substate is not found.
-        """
-        # Get the event handler.
-        name = event.name if isinstance(event, Event) else event
-        path = name.split(".")
-        path, name = path[:-1], path[-1]
-        substate = self.get_substate(path)
-        if not substate:
-            msg = "The value of state cannot be None when processing an event."
-            raise ValueError(msg)
-        handler = substate.event_handlers[name]
-
-        return substate, handler
-
-    async def _process(self, event: Event) -> AsyncIterator[StateUpdate]:
-        """Obtain event info and process event.
-
-        Args:
-            event: The event to process.
-
-        Yields:
-            The state update after processing the event.
-        """
-        # Get the event handler.
-        substate, handler = self._get_event_handler(event)
-
-        # For background tasks, proxy the state.
-        if handler.is_background:
-            substate = StateProxy(substate)
-
-        # Run the event generator and yield state updates.
-        async for update in self._process_event(
-            handler=handler,
-            state=substate,
-            payload=event.payload,
-        ):
-            yield update
-
-    def _check_valid(self, handler: EventHandler, events: Any) -> Any:
-        """Check if the events yielded are valid. They must be EventHandlers or EventSpecs.
-
-        Args:
-            handler: EventHandler.
-            events: The events to be checked.
-
-        Raises:
-            TypeError: If any of the events are not valid.
-
-        Returns:
-            The events as they are if valid.
-        """
-
-        def _is_valid_type(events: Any) -> bool:
-            return isinstance(events, (Event, EventHandler, EventSpec))
-
-        if events is None or _is_valid_type(events):
-            return events
-
-        if not (isinstance(events, Sequence) and not isinstance(events, (str, bytes))):
-            events = [events]
-
-        try:
-            if all(_is_valid_type(e) for e in events):
-                return events
-        except TypeError:
-            pass
-
-        coroutines = [e for e in events if inspect.iscoroutine(e)]
-
-        for coroutine in coroutines:
-            coroutine_name = coroutine.__qualname__
-            warnings.filterwarnings(
-                "ignore", message=f"coroutine '{coroutine_name}' was never awaited"
-            )
-
-        msg = (
-            f"Your handler {handler.fn.__qualname__} must only return/yield: None, Events or other EventHandlers referenced by their class (i.e. using `type(self)` or other class references)."
-            f" Returned events of types {', '.join(map(str, map(type, events)))!s}."
-        )
-        raise TypeError(msg)
-
-    async def _as_state_update(
-        self,
-        handler: EventHandler,
-        events: EventSpec | list[EventSpec] | None,
-        final: bool,
-    ) -> StateUpdate:
-        """Convert the events to a StateUpdate.
-
-        Fixes the events and checks for validity before converting.
-
-        Args:
-            handler: The handler where the events originated from.
-            events: The events to queue with the update.
-            final: Whether the handler is done processing.
-
-        Returns:
-            The valid StateUpdate containing the events and final flag.
-        """
-        # get the delta from the root of the state tree
-        state = self._get_root_state()
-
-        token = self.router.session.client_token
-
-        # Convert valid EventHandler and EventSpec into Event
-        fixed_events = fix_events(self._check_valid(handler, events), token)
-
-        try:
-            # Get the delta after processing the event.
-            delta = await state._get_resolved_delta()
-            state._clean()
-
-            return StateUpdate(
-                delta=delta,
-                events=fixed_events,
-                final=final if not handler.is_background else None,
-            )
-        except Exception as ex:
-            state._clean()
-
-            event_specs = (
-                prerequisites.get_and_validate_app().app.backend_exception_handler(ex)
-            )
-
-            if event_specs is None:
-                return StateUpdate()
-
-            event_specs_correct_type = cast(
-                list[EventSpec | EventHandler] | None,
-                [event_specs] if isinstance(event_specs, EventSpec) else event_specs,
-            )
-            fixed_events = fix_events(
-                event_specs_correct_type,
-                token,
-                router_data=state.router_data,
-            )
-            return StateUpdate(
-                events=fixed_events,
-                final=True,
-            )
-
-    async def _process_event(
-        self,
-        handler: EventHandler,
-        state: BaseState | StateProxy,
-        payload: builtins.dict,
-    ) -> AsyncIterator[StateUpdate]:
-        """Process event.
-
-        Args:
-            handler: EventHandler to process.
-            state: State to process the handler.
-            payload: The event payload.
-
-        Yields:
-            StateUpdate object
-
-        Raises:
-            ValueError: If a string value is received for an int or float type and cannot be converted.
-        """
-        from reflex.utils import telemetry
-
-        # Get the function to process the event.
-        if is_pyleak_enabled():
-            console.debug(f"Monitoring leaks for handler: {handler.fn.__qualname__}")
-            fn = functools.partial(monitor_loopblocks(handler.fn), state)
-        else:
-            fn = functools.partial(handler.fn, state)
-
-        try:
-            type_hints = types.get_type_hints(handler.fn)
-        except Exception:
-            type_hints = {}
-
-        for arg, value in list(payload.items()):
-            hinted_args = type_hints.get(arg, Any)
-            if hinted_args is Any:
-                continue
-            if is_union(hinted_args):
-                if value is None:
-                    continue
-                hinted_args = value_inside_optional(hinted_args)
-            if (
-                isinstance(value, dict)
-                and isinstance(hinted_args, type)
-                and not types.is_generic_alias(hinted_args)  # py3.10
-            ):
-                if issubclass(hinted_args, Model):
-                    # Remove non-fields from the payload
-                    payload[arg] = hinted_args(**{
-                        key: value
-                        for key, value in value.items()
-                        if key in hinted_args.__fields__
-                    })
-                elif dataclasses.is_dataclass(hinted_args):
-                    payload[arg] = hinted_args(**value)
-                elif find_spec("pydantic"):
-                    from pydantic import BaseModel as BaseModelV2
-                    from pydantic.v1 import BaseModel as BaseModelV1
-
-                    if issubclass(hinted_args, BaseModelV1):
-                        payload[arg] = hinted_args.parse_obj(value)
-                    elif issubclass(hinted_args, BaseModelV2):
-                        payload[arg] = hinted_args.model_validate(value)
-            elif isinstance(value, list) and (hinted_args is set or hinted_args is set):
-                payload[arg] = set(value)
-            elif isinstance(value, list) and (
-                hinted_args is tuple or hinted_args is tuple
-            ):
-                payload[arg] = tuple(value)
-            elif isinstance(hinted_args, type) and issubclass(hinted_args, Enum):
-                try:
-                    payload[arg] = hinted_args(value)
-                except ValueError:
-                    msg = f"Received an invalid enum value ({value}) for {arg} of type {hinted_args}"
-                    raise ValueError(msg) from None
-            elif (
-                isinstance(value, str)
-                and (deserializer := _deserializers.get(hinted_args)) is not None
-            ):
-                try:
-                    payload[arg] = deserializer(value)
-                except ValueError:
-                    msg = f"Received a string value ({value}) for {arg} but expected a {hinted_args}"
-                    raise ValueError(msg) from None
-                else:
-                    console.warn(
-                        f"Received a string value ({value}) for {arg} but expected a {hinted_args}. A simple conversion was successful."
-                    )
-
-        # Wrap the function in a try/except block.
-        try:
-            # Handle async functions.
-            if inspect.iscoroutinefunction(fn.func):
-                events = await fn(**payload)
-
-            # Handle regular functions.
-            else:
-                events = fn(**payload)
-            # Handle async generators.
-            if inspect.isasyncgen(events):
-                async for event in events:
-                    yield await state._as_state_update(handler, event, final=False)
-                yield await state._as_state_update(handler, events=None, final=True)
-
-            # Handle regular generators.
-            elif inspect.isgenerator(events):
-                try:
-                    while True:
-                        yield await state._as_state_update(
-                            handler, next(events), final=False
-                        )
-                except StopIteration as si:
-                    # the "return" value of the generator is not available
-                    # in the loop, we must catch StopIteration to access it
-                    if si.value is not None:
-                        yield await state._as_state_update(
-                            handler, si.value, final=False
-                        )
-                yield await state._as_state_update(handler, events=None, final=True)
-
-            # Handle regular event chains.
-            else:
-                yield await state._as_state_update(handler, events, final=True)
-
-        # If an error occurs, throw a window alert.
-        except Exception as ex:
-            telemetry.send_error(ex, context="backend")
-
-            event_specs = (
-                prerequisites.get_and_validate_app().app.backend_exception_handler(ex)
-            )
-
-            yield await state._as_state_update(
-                handler,
-                event_specs,
-                final=True,
-            )
-
     def _mark_dirty_computed_vars(self) -> None:
         """Mark ComputedVars that need to be recalculated based on dirty_vars."""
         # Append expired computed vars to dirty_vars to trigger recalculation
@@ -2507,6 +2210,25 @@ class State(BaseState):
         return state_instance
 
     @event
+    async def hydrate(self) -> None:
+        """Send the full state to the frontend to synchronize it with the backend."""
+        from reflex.ievent.context import event_context
+
+        # Clear client storage, to respect clearing cookies
+        self._reset_client_storage()
+
+        # Mark state as not hydrated (until on_loads are complete)
+        self.is_hydrated = False
+
+        # Get the initial state if needed.
+        ctx = event_context.get()
+        if ctx.emit_delta_impl is not None:
+            await ctx.emit_delta(delta=await _resolve_delta(self.dict()))
+
+        # since a full dict was captured, clean any dirtiness
+        self._clean()
+
+    @event
     def set_is_hydrated(self, value: bool) -> None:
         """Set the hydrated state.
 
@@ -2802,7 +2524,7 @@ class StateUpdate:
     """A state update sent to the frontend."""
 
     # The state delta.
-    delta: Delta = dataclasses.field(default_factory=dict)
+    delta: DeltaMapping = dataclasses.field(default_factory=dict)
 
     # Events to be added to the event queue.
     events: list[Event] = dataclasses.field(default_factory=list)

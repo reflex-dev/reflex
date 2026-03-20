@@ -6,7 +6,7 @@ import dataclasses
 import inspect
 
 from reflex.event import Event
-from reflex.middleware import HydrateMiddleware, Middleware
+from reflex.middleware import Middleware
 from reflex.state import BaseState, StateUpdate
 
 from .mixin import AppMixin
@@ -18,9 +18,6 @@ class MiddlewareMixin(AppMixin):
 
     # Middleware to add to the app. Users should use `add_middleware`.
     _middlewares: list[Middleware] = dataclasses.field(default_factory=list)
-
-    def _init_mixin(self):
-        self._middlewares.append(HydrateMiddleware())
 
     def add_middleware(self, middleware: Middleware, index: int | None = None):
         """Add middleware to the app.

@@ -16,7 +16,6 @@ import time
 import traceback
 import urllib.parse
 from collections.abc import (
-    AsyncGenerator,
     AsyncIterator,
     Awaitable,
     Callable,
@@ -89,11 +88,10 @@ from reflex.event import (
     EventSpec,
     EventType,
     IndividualEventType,
-    get_hydrate_event,
     noop,
 )
+from reflex.ievent.processor import EventProcessor
 from reflex.istate.manager.token import BaseStateToken
-from reflex.istate.proxy import StateProxy
 from reflex.page import DECORATED_PAGES
 from reflex.route import (
     get_route_args,
@@ -164,24 +162,26 @@ def default_backend_exception_handler(exception: Exception) -> EventSpec:
     """
     from reflex.components.sonner.toast import toast
 
-    error = traceback.format_exc()
+    error = traceback.format_exception(
+        type(exception), exception, exception.__traceback__
+    )
 
-    console.error(f"[Reflex Backend Exception]\n {error}\n")
+    console.error(f"[Reflex Backend Exception]\n {''.join(error)}\n")
 
     error_message = (
         ["Contact the website administrator."]
         if is_prod_mode()
-        else [f"{type(exception).__name__}: {exception}.", "See logs for details."]
+        else [f"{type(exception).__name__}: {exception}", "See logs for details."]
     )
 
     return toast(
         "An error occurred.",
         level="error",
         fallback_to_alert=True,
-        description="<br/>".join(error_message),
+        description="\n".join(error_message),
         position="top-center",
         id="backend_error",
-        style={"width": "500px"},
+        style={"width": "500px", "white-space": "pre-wrap"},
     )
 
 
@@ -440,8 +440,8 @@ class App(MiddlewareMixin, LifespanMixin):
     # The async server name space.
     _event_namespace: EventNamespace | None = None
 
-    # Background tasks that are currently running.
-    _background_tasks: set[asyncio.Task] = dataclasses.field(default_factory=set)
+    # The processor queue for handling events.
+    _event_processor: EventProcessor | None = None
 
     # Frontend Error Handler Function
     frontend_exception_handler: Callable[[Exception], None] = (
@@ -472,6 +472,18 @@ class App(MiddlewareMixin, LifespanMixin):
             The event namespace.
         """
         return self._event_namespace
+
+    @property
+    def event_processor(self) -> EventProcessor:
+        """Get the event processor.
+
+        Raises:
+            RuntimeError: If the event processor is not initialized.
+        """
+        if self._event_processor is None:
+            msg = "Event processor is not initialized."
+            raise RuntimeError(msg)
+        return self._event_processor
 
     def __post_init__(self):
         """Initialize the app.
@@ -605,6 +617,21 @@ class App(MiddlewareMixin, LifespanMixin):
 
         # Check the exception handlers
         self._validate_exception_handlers()
+
+        # Ensure the event processor starts and stops with the server.
+        self.register_lifespan_task(self._setup_event_processor)
+
+    @contextlib.asynccontextmanager
+    async def _setup_event_processor(self) -> AsyncIterator[None]:
+        # Create the event processor.
+        self._event_processor = EventProcessor(
+            middleware=self, backend_exception_handler=self.backend_exception_handler
+        )
+        async with self._event_processor.configure(
+            state_manager=self.state_manager,
+            event_namespace=self.event_namespace,
+        ):
+            yield
 
     def __repr__(self) -> str:
         """Get the string representation of the app.
@@ -1630,61 +1657,10 @@ class App(MiddlewareMixin, LifespanMixin):
                 await self.event_namespace.emit_update(
                     update=StateUpdate(
                         delta=delta,
-                        final=True if not background else None,
+                        final=True,
                     ),
                     token=token.ident,
                 )
-
-    def _process_background(
-        self, state: BaseState, event: Event
-    ) -> asyncio.Task | None:
-        """Process an event in the background and emit updates as they arrive.
-
-        Args:
-            state: The state to process the event for.
-            event: The event to process.
-
-        Returns:
-            Task if the event was backgroundable, otherwise None
-        """
-        substate, handler = state._get_event_handler(event)
-
-        if not handler.is_background:
-            return None
-
-        substate = StateProxy(substate)
-
-        async def _coro():
-            """Coroutine to process the event and emit updates inside an asyncio.Task.
-
-            Raises:
-                RuntimeError: If the app has not been initialized yet.
-            """
-            if self.event_namespace is None:
-                msg = "App has not been initialized yet."
-                raise RuntimeError(msg)
-
-            # Process the event.
-            async for update in state._process_event(
-                handler=handler, state=substate, payload=event.payload
-            ):
-                # Postprocess the event.
-                update = await self._postprocess(state, event, update)
-
-                # Send the update to the client.
-                await self.event_namespace.emit_update(
-                    update=update,
-                    token=event.token,
-                )
-
-        task = asyncio.create_task(
-            _coro(),
-            name=f"reflex_background_task|{event.name}|{time.time()}|{event.token}",
-        )
-        self._background_tasks.add(task)
-        # Clean up task from background_tasks set when complete.
-        task.add_done_callback(self._background_tasks.discard)
-        return task
 
     def _validate_exception_handlers(self):
         """Validate the custom event exception handlers for front- and backend.
@@ -1777,95 +1753,6 @@ class App(MiddlewareMixin, LifespanMixin):
                         f"Expected `EventSpec | list[EventSpec] | None` but got `{return_type}`"
                     )
                     raise ValueError(msg)
-
-
-async def process(
-    app: App, event: Event, sid: str, headers: dict, client_ip: str
-) -> AsyncGenerator[StateUpdate]:
-    """Process an event.
-
-    Args:
-        app: The app to process the event for.
-        event: The event to process.
-        sid: The Socket.IO session id.
-        headers: The client headers.
-        client_ip: The client_ip.
-
-    Raises:
-        Exception: If a reflex specific error occurs during processing the event.
-
-    Yields:
-        The state updates after processing the event.
-    """
-    from reflex.utils import telemetry
-
-    try:
-        # Add request data to the state.
-        router_data = event.router_data
-        router_data.update({
-            constants.RouteVar.QUERY: format.format_query_params(event.router_data),
-            constants.RouteVar.CLIENT_TOKEN: event.token,
-            constants.RouteVar.SESSION_ID: sid,
-            constants.RouteVar.HEADERS: headers,
-            constants.RouteVar.CLIENT_IP: client_ip,
-        })
-        # Get the state for the session exclusively.
-        async with app.state_manager.modify_state_with_links(
-            event.substate_token, event=event
-        ) as state:
-            # When this is a brand new instance of the state, signal the
-            # frontend to reload before processing it.
-            if (
-                not state.router_data
-                and event.name != get_hydrate_event(state)
-                and app.event_namespace is not None
-            ):
-                await asyncio.create_task(
-                    app.event_namespace.emit(
-                        "reload",
-                        data=event,
-                        to=sid,
-                    ),
-                    name=f"reflex_emit_reload|{event.name}|{time.time()}|{event.token}",
-                )
-                return
-            router_data[constants.RouteVar.PATH] = "/" + (
-                app.router(path) or "404"
-                if (path := router_data.get(constants.RouteVar.PATH))
-                else "404"
-            ).removeprefix("/")
-            # re-assign only when the value is different
-            if state.router_data != router_data:
-                # assignment will recurse into substates and force recalculation of
-                # dependent ComputedVar (dynamic route variables)
-                state.router_data = router_data
-                state.router = RouterData.from_router_data(router_data)
-
-            # Preprocess the event.
-            update = await app._preprocess(state, event)
-
-            # If there was an update, yield it.
-            if update is not None:
-                yield update
-
-            # Only process the event if there is no update.
-            else:
-                if app._process_background(state, event) is not None:
-                    # `final=True` allows the frontend send more events immediately.
-                    yield StateUpdate(final=True)
-                else:
-                    # Process the event synchronously.
-                    async for update in state._process(event):
-                        # Postprocess the event.
-                        update = await app._postprocess(state, event, update)
-
-                        # Yield the update.
-                        yield update
-    except Exception as ex:
-        telemetry.send_error(ex, context="backend")
-
-        app.backend_exception_handler(ex)
-        raise
 
 
 def ping(_request: Request) -> Response:
@@ -2290,14 +2177,20 @@ class EventNamespace(AsyncNamespace):
             .partition(",")[0]
             .strip()
         )
-
-        async with contextlib.aclosing(
-            process(self.app, event, sid, headers, client_ip)
-        ) as updates_gen:
-            # Process the events.
-            async for update in updates_gen:
-                # Emit the update from processing the event.
-                await self.emit_update(update=update, token=event.token)
+        router_data = event.router_data
+        router_data.update({
+            constants.RouteVar.QUERY: format.format_query_params(event.router_data),
+            constants.RouteVar.CLIENT_TOKEN: event.token,
+            constants.RouteVar.SESSION_ID: sid,
+            constants.RouteVar.HEADERS: headers,
+            constants.RouteVar.CLIENT_IP: client_ip,
+        })
+        router_data[constants.RouteVar.PATH] = "/" + (
+            self.app.router(path) or "404"
+            if (path := router_data.get(constants.RouteVar.PATH))
+            else "404"
+        ).removeprefix("/")
+        await self.app.event_processor.enqueue(token=event.token, event=event)
 
     async def on_ping(self, sid: str):
         """Event for testing the API endpoint.

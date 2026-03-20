@@ -8,6 +8,7 @@ import decimal
 import functools
 import inspect
 import json
+import uuid
 import warnings
 from collections.abc import Callable, Mapping, Sequence
 from datetime import date, datetime, time, timedelta
@@ -33,6 +34,16 @@ SERIALIZERS: dict[type, Serializer] = {}
 SERIALIZER_TYPES: dict[type, type] = {}
 
 SERIALIZED_FUNCTION = TypeVar("SERIALIZED_FUNCTION", bound=Serializer)
+
+
+deserializers = {
+    int: int,
+    float: float,
+    datetime: datetime.fromisoformat,
+    date: date.fromisoformat,
+    time: time.fromisoformat,
+    uuid.UUID: uuid.UUID,
+}
 
 
 @overload

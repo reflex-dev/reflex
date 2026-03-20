@@ -461,9 +461,9 @@ def get_event_handler_parts(handler: EventHandler) -> tuple[str, str]:
     # Get the function name
     name = parts[-1]
 
-    from reflex.state import State
+    from reflex.state import BaseState
 
-    if state_full_name == FRONTEND_EVENT_STATE and name not in State.__dict__:
+    if state_full_name == FRONTEND_EVENT_STATE and name not in BaseState.__dict__:
         return ("", to_snake_case(handler.fn.__qualname__))
 
     return (state_full_name, name)
