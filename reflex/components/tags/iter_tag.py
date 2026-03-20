@@ -71,12 +71,12 @@ class IterTag(Tag):
     def render_component(self) -> Component:
         """Render the component.
 
+        Returns:
+            The rendered component.
+
         Raises:
             ValueError: If the render function takes more than 2 arguments.
             ValueError: If the render function doesn't return a component.
-
-        Returns:
-            The rendered component.
         """
         # Import here to avoid circular imports.
         from reflex.compiler.compiler import _into_component_once

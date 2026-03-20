@@ -1259,12 +1259,12 @@ def download(
         data: The data to download.
         mime_type: The mime type of the data to download.
 
+    Returns:
+        EventSpec: An event to download the associated file.
+
     Raises:
         ValueError: If the URL provided is invalid, both URL and data are provided,
             or the data is not an expected type.
-
-    Returns:
-        EventSpec: An event to download the associated file.
     """
     from reflex.components.core.cond import cond
 
@@ -1667,11 +1667,11 @@ def resolve_annotation(annotations: dict[str, Any], arg_name: str, spec: ArgsSpe
         arg_name: The argument name.
         spec: The specs which the annotations come from.
 
-    Raises:
-        MissingAnnotationError: If the annotation is missing for non-lambda methods.
-
     Returns:
         The resolved annotation.
+
+    Raises:
+        MissingAnnotationError: If the annotation is missing for non-lambda methods.
     """
     annotation = annotations.get(arg_name)
     if annotation is None:
@@ -1876,11 +1876,11 @@ def fix_events(
         token: The user token.
         router_data: The optional router data to set in the event.
 
-    Raises:
-        ValueError: If the event type is not what was expected.
-
     Returns:
         The fixed events.
+
+    Raises:
+        ValueError: If the event type is not what was expected.
     """
     # If the event handler returns nothing, return an empty list.
     if events is None:
@@ -2452,11 +2452,11 @@ class EventNamespace:
             debounce: Debounce the event handler to delay calls (in milliseconds).
             temporal: Whether the event should be dropped when the backend is down.
 
-        Raises:
-            TypeError: If background is True and the function is not a coroutine or async generator. # noqa: DAR402
-
         Returns:
             The wrapped function.
+
+        Raises:
+            TypeError: If background is True and the function is not a coroutine or async generator. # noqa: DAR402
         """
 
         def _build_event_actions():

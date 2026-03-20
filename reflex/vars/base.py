@@ -202,11 +202,11 @@ class VarData:
         Args:
             *all: The var data objects to merge.
 
-        Raises:
-            ReflexError: If trying to merge VarData with different positions.
-
         Returns:
             The merged var data object.
+
+        Raises:
+            ReflexError: If trying to merge VarData with different positions.
 
         # noqa: DAR102 *all
         """
@@ -1731,10 +1731,10 @@ def var_operation(  # pyright: ignore [reportInconsistentOverload]
     Returns:
         The decorated function.
     """
+    func_args = list(inspect.signature(func).parameters)
 
     @functools.wraps(func)
     def wrapper(*args: P.args, **kwargs: P.kwargs) -> Var[T]:
-        func_args = list(inspect.signature(func).parameters)
         args_vars = {
             func_args[i]: (LiteralVar.create(arg) if not isinstance(arg, Var) else arg)
             for i, arg in enumerate(args)

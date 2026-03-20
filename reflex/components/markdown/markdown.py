@@ -289,11 +289,11 @@ class Markdown(Component):
             *children: The children of the component.
             **props: The properties of the component.
 
-        Raises:
-            ValueError: If the children are not valid.
-
         Returns:
             The markdown component.
+
+        Raises:
+            ValueError: If the children are not valid.
         """
         if len(children) != 1 or not isinstance(children[0], (str, Var)):
             msg = "Markdown component must have exactly one child containing the markdown source."
@@ -559,11 +559,11 @@ class MarkdownWrapper(Div):
             use_raw: Whether to use the raw HTML plugin.
             **props: The properties of the component.
 
-        Raises:
-            ValueError: If the children are not valid.
-
         Returns:
             The markdown component or div wrapping markdown component.
+
+        Raises:
+            ValueError: If the children are not valid.
         """
         # Assemble the plugin lists.
         builtin_remark_plugins = []
