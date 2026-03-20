@@ -11,6 +11,12 @@ resolution-markers = [
     "python_full_version < '3.11'",
 ]
 
+[manifest]
+members = [
+    "reflex",
+    "reflex-docgen",
+]
+
 [[package]]
 name = "alembic"
 version = "1.18.4"
@@ -2144,6 +2150,23 @@ dev = [
     { name = "starlette-admin" },
     { name = "toml" },
     { name = "uvicorn" },
+]
+
+[[package]]
+name = "reflex-docgen"
+version = "0.0.1"
+source = { editable = "packages/reflex-docgen" }
+dependencies = [
+    { name = "reflex" },
+    { name = "typing-extensions" },
+    { name = "typing-inspection" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "reflex", editable = "." },
+    { name = "typing-extensions" },
+    { name = "typing-inspection", specifier = ">=0.4.2" },
 ]
 
 [[package]]

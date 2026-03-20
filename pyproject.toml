@@ -286,3 +286,6 @@ hooks = [{ id = "prettier", require_serial = true }]
 
 [tool.uv]
 required-version = ">=0.7.0"
+
+[tool.uv.workspace]
+members = ["packages/*"]
