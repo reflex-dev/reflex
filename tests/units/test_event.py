@@ -792,8 +792,8 @@ def test_event_chain_codegen_preserves_backend_event_actions_per_spec():
 
     assert "applyEventActions(" not in rendered
     assert rendered.count("addEvents(") == 2
-    assert '["debounce"] : 1000' in rendered
-    assert '["debounce"] : 200' in rendered
+    assert rendered.count('["debounce"] : 1000') == 1
+    assert rendered.count('["debounce"] : 200') == 1
     assert rendered.index("first x 1000") < rendered.index("second x 200")
 
 
@@ -817,9 +817,9 @@ def test_event_chain_codegen_keeps_chain_event_actions_for_backend_only_events()
 
     assert "applyEventActions(" in rendered
     assert rendered.count("addEvents(") == 2
-    assert '["debounce"] : 1000' in rendered
-    assert '["debounce"] : 200' in rendered
-    assert '["preventDefault"] : true' in rendered
+    assert rendered.count('["debounce"] : 1000') == 1
+    assert rendered.count('["debounce"] : 200') == 1
+    assert rendered.count('["preventDefault"] : true') == 1
 
 
 def test_event_chain_codegen_keeps_apply_event_actions_for_function_vars():
