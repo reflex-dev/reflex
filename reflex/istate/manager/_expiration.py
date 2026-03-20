@@ -19,7 +19,7 @@ if TYPE_CHECKING:
 class StateManagerExpiration:
     """Internal base for managers with in-memory state expiration."""
 
-    _locked_expiration_poll_interval: ClassVar[float] = 0.1
+    _locked_expiration_poll_interval: ClassVar[float] = 0.1  # 100 ms
     _recheck_expired_locks_on_unlock: ClassVar[bool] = False
 
     token_expiration: int = dataclasses.field(default_factory=_default_token_expiration)
@@ -72,7 +72,8 @@ class StateManagerExpiration:
         Args:
             token: The token that was accessed.
         """
-        expires_at = time.time() + self.token_expiration
+        touched_at = time.time()
+        expires_at = touched_at + self.token_expiration  # seconds from last touch
         self._token_expires_at[token] = expires_at
         self._pending_locked_expirations.discard(token)
         heapq.heappush(self._token_expiration_heap, (expires_at, token))

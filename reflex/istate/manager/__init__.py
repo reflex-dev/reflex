@@ -46,7 +46,10 @@ class StateManager(ABC):
             InvalidStateManagerModeError: If the state manager mode is invalid.
         """
         config = get_config()
-        if prerequisites.parse_redis_url() is not None:
+        if (
+            "state_manager_mode" not in config._non_default_attributes
+            and prerequisites.parse_redis_url() is not None
+        ):
             config.state_manager_mode = constants.StateManagerMode.REDIS
         if config.state_manager_mode == constants.StateManagerMode.MEMORY:
             from reflex.istate.manager.memory import StateManagerMemory

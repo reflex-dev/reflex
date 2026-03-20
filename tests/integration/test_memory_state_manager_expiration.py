@@ -48,6 +48,7 @@ def memory_expiration_app(
         A running app harness configured to use StateManagerMemory.
     """
     monkeypatch.setenv("REFLEX_STATE_MANAGER_MODE", "memory")
+    # Memory expiration reuses the shared token_expiration config field.
     monkeypatch.setenv("REFLEX_REDIS_TOKEN_EXPIRATION", "1")
 
     with app_harness_env.create(
