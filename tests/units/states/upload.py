@@ -66,6 +66,10 @@ class _FileUploadMixin(BaseState, mixin=True):
             self.img_list.append(file.name)
             yield
 
+    async def upload_alias_handler(self, uploads: list[rx.UploadFile]):
+        """Handle uploaded files with a non-default parameter name."""
+        self.img_list = [f"count:{len(uploads)}"]
+
     @rx.event(background=True)
     async def bg_upload(self, files: list[rx.UploadFile]):
         """Background task cannot be upload handler.
@@ -123,6 +127,16 @@ class _ChunkUploadMixin(BaseState, mixin=True):
     @rx.event(background=True)
     async def chunk_handle_upload_missing_annotation(self, chunk_iter):
         """Invalid streaming upload handler missing the iterator annotation."""
+
+    @rx.event(background=True)
+    async def chunk_handle_upload_alias(self, stream: rx.UploadChunkIterator):
+        """Handle streamed upload chunks with a non-default parameter name."""
+        chunk_count = 0
+        async for _chunk in stream:
+            chunk_count += 1
+
+        async with self:
+            self.completed_files = [f"chunks:{chunk_count}"]
 
 
 class ChunkUploadState(_ChunkUploadMixin, State):

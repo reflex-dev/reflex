@@ -1,14 +1,13 @@
 """Define event classes to connect the frontend and backend."""
 
-import asyncio
 import dataclasses
 import inspect
 import sys
 import types
 from base64 import b64encode
-from collections import deque
-from collections.abc import AsyncIterator, Callable, Mapping, Sequence
+from collections.abc import Callable, Mapping, Sequence
 from functools import lru_cache, partial
+from importlib import import_module
 from typing import (
     TYPE_CHECKING,
     Annotated,
@@ -95,151 +94,6 @@ EVENT_ACTIONS_MARKER = "_rx_event_actions"
 UPLOAD_FILES_CLIENT_HANDLER = "uploadFiles"
 
 
-@dataclasses.dataclass(
-    init=True,
-    frozen=True,
-)
-class UploadChunk:
-    """A chunk of uploaded file data."""
-
-    filename: str
-    offset: int
-    content_type: str
-    data: bytes
-
-
-class UploadChunkIterator(AsyncIterator[UploadChunk]):
-    """An async iterator over uploaded file chunks."""
-
-    def __init__(self, *, maxsize: int = 8):
-        """Initialize the iterator.
-
-        Args:
-            maxsize: Maximum number of chunks to buffer before blocking producers.
-        """
-        self._maxsize = maxsize
-        self._chunks: deque[UploadChunk] = deque()
-        self._condition = asyncio.Condition()
-        self._closed = False
-        self._error: Exception | None = None
-        self._consumer_task: asyncio.Task[Any] | None = None
-
-    def __aiter__(self) -> Self:
-        """Return the iterator itself.
-
-        Returns:
-            The upload chunk iterator.
-        """
-        return self
-
-    async def __anext__(self) -> UploadChunk:
-        """Yield the next available upload chunk.
-
-        Returns:
-            The next upload chunk.
-
-        Raises:
-            _error: Any error forwarded from the upload producer.
-            StopAsyncIteration: When all chunks have been consumed.
-        """
-        async with self._condition:
-            while not self._chunks and not self._closed:
-                await self._condition.wait()
-
-            if self._chunks:
-                chunk = self._chunks.popleft()
-                self._condition.notify_all()
-                return chunk
-
-            if self._error is not None:
-                raise self._error
-            raise StopAsyncIteration
-
-    def set_consumer_task(self, task: asyncio.Task[Any]) -> None:
-        """Track the task consuming this iterator.
-
-        Args:
-            task: The background task consuming upload chunks.
-        """
-        self._consumer_task = task
-        task.add_done_callback(self._wake_waiters)
-
-    async def push(self, chunk: UploadChunk) -> None:
-        """Push a new chunk into the iterator.
-
-        Args:
-            chunk: The chunk to push.
-
-        Raises:
-            RuntimeError: If the iterator is already closed or the consumer exited early.
-        """
-        async with self._condition:
-            while len(self._chunks) >= self._maxsize and not self._closed:
-                self._raise_if_consumer_finished()
-                await self._condition.wait()
-
-            if self._closed:
-                msg = "Upload chunk iterator is closed."
-                raise RuntimeError(msg)
-
-            self._raise_if_consumer_finished()
-            self._chunks.append(chunk)
-            self._condition.notify_all()
-
-    async def finish(self) -> None:
-        """Mark the iterator as complete."""
-        async with self._condition:
-            if self._closed:
-                return
-            self._closed = True
-            self._condition.notify_all()
-
-    async def fail(self, error: Exception) -> None:
-        """Mark the iterator as failed.
-
-        Args:
-            error: The error to raise from the iterator.
-        """
-        async with self._condition:
-            if self._closed:
-                return
-            self._closed = True
-            self._error = error
-            self._condition.notify_all()
-
-    def _raise_if_consumer_finished(self) -> None:
-        """Raise if the consumer task exited before draining the iterator.
-
-        Raises:
-            RuntimeError: If the consumer task completed before draining the iterator.
-        """
-        if self._consumer_task is None or not self._consumer_task.done():
-            return
-
-        try:
-            task_exc = self._consumer_task.exception()
-        except asyncio.CancelledError as err:
-            task_exc = err
-
-        msg = "Upload handler returned before consuming all upload chunks."
-        if task_exc is not None:
-            raise RuntimeError(msg) from task_exc
-        raise RuntimeError(msg)
-
-    def _wake_waiters(self, task: asyncio.Task[Any]) -> None:
-        """Wake any producers or consumers blocked on the iterator condition.
-
-        Args:
-            task: The completed consumer task.
-        """
-        task.get_loop().create_task(self._notify_waiters())
-
-    async def _notify_waiters(self) -> None:
-        """Notify tasks waiting on the iterator condition."""
-        async with self._condition:
-            self._condition.notify_all()
-
-
 def _handler_name(handler: "EventHandler") -> str:
     """Get a stable fully qualified handler name for errors.
 
@@ -306,6 +160,7 @@ def resolve_upload_chunk_handler_param(handler: "EventHandler") -> tuple[str, ty
         UploadTypeError: If the handler is not a background task.
         UploadValueError: If the handler does not accept an UploadChunkIterator.
     """
+    from reflex._upload import UploadChunkIterator
     from reflex.utils.exceptions import UploadTypeError, UploadValueError
 
     handler_name = _handler_name(handler)
@@ -1244,6 +1099,11 @@ class UploadFilesChunk(FileUpload):
 
 # Alias for rx.upload_files_chunk
 upload_files_chunk = UploadFilesChunk
+
+
+_upload_module = import_module("reflex._upload")
+UploadChunk = _upload_module.UploadChunk
+UploadChunkIterator = _upload_module.UploadChunkIterator
 
 
 # Special server-side events.

@@ -6,7 +6,7 @@ import asyncio
 import contextlib
 import dataclasses
 from collections import deque
-from collections.abc import AsyncGenerator, Awaitable, Callable
+from collections.abc import AsyncGenerator, AsyncIterator, Awaitable, Callable
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, BinaryIO, cast
 
@@ -17,22 +17,16 @@ from starlette.exceptions import HTTPException
 from starlette.formparsers import MultiPartException, _user_safe_decode
 from starlette.requests import ClientDisconnect, Request
 from starlette.responses import JSONResponse, Response, StreamingResponse
+from typing_extensions import Self
 
 from reflex import constants
-from reflex.event import (
-    Event,
-    EventHandler,
-    UploadChunk,
-    UploadChunkIterator,
-    resolve_upload_chunk_handler_param,
-    resolve_upload_handler_param,
-)
-from reflex.state import BaseState, RouterData, StateUpdate, _substate_key
 from reflex.utils import exceptions
-from reflex.utils.types import Receive, Scope, Send
 
 if TYPE_CHECKING:
     from reflex.app import App
+    from reflex.event import EventHandler
+    from reflex.state import BaseState
+    from reflex.utils.types import Receive, Scope, Send
 
 
 @dataclasses.dataclass(frozen=True)
@@ -75,7 +69,158 @@ class UploadFile(StarletteUploadFile):
         return None
 
 
-@dataclasses.dataclass
+@dataclasses.dataclass(frozen=True, kw_only=True, slots=True)
+class UploadChunk:
+    """A chunk of uploaded file data."""
+
+    filename: str
+    offset: int
+    content_type: str
+    data: bytes
+
+
+class UploadChunkIterator(AsyncIterator[UploadChunk]):
+    """An async iterator over uploaded file chunks."""
+
+    __slots__ = (
+        "_chunks",
+        "_closed",
+        "_condition",
+        "_consumer_task",
+        "_error",
+        "_maxsize",
+    )
+
+    def __init__(self, *, maxsize: int = 8):
+        """Initialize the iterator.
+
+        Args:
+            maxsize: Maximum number of chunks to buffer before blocking producers.
+        """
+        self._maxsize = maxsize
+        self._chunks: deque[UploadChunk] = deque()
+        self._condition = asyncio.Condition()
+        self._closed = False
+        self._error: Exception | None = None
+        self._consumer_task: asyncio.Task[Any] | None = None
+
+    def __aiter__(self) -> Self:
+        """Return the iterator itself.
+
+        Returns:
+            The upload chunk iterator.
+        """
+        return self
+
+    async def __anext__(self) -> UploadChunk:
+        """Yield the next available upload chunk.
+
+        Returns:
+            The next upload chunk.
+
+        Raises:
+            _error: Any error forwarded from the upload producer.
+            StopAsyncIteration: When all chunks have been consumed.
+        """
+        async with self._condition:
+            while not self._chunks and not self._closed:
+                await self._condition.wait()
+
+            if self._chunks:
+                chunk = self._chunks.popleft()
+                self._condition.notify_all()
+                return chunk
+
+            if self._error is not None:
+                raise self._error
+            raise StopAsyncIteration
+
+    def set_consumer_task(self, task: asyncio.Task[Any]) -> None:
+        """Track the task consuming this iterator.
+
+        Args:
+            task: The background task consuming upload chunks.
+        """
+        self._consumer_task = task
+        task.add_done_callback(self._wake_waiters)
+
+    async def push(self, chunk: UploadChunk) -> None:
+        """Push a new chunk into the iterator.
+
+        Args:
+            chunk: The chunk to push.
+
+        Raises:
+            RuntimeError: If the iterator is already closed or the consumer exited early.
+        """
+        async with self._condition:
+            while len(self._chunks) >= self._maxsize and not self._closed:
+                self._raise_if_consumer_finished()
+                await self._condition.wait()
+
+            if self._closed:
+                msg = "Upload chunk iterator is closed."
+                raise RuntimeError(msg)
+
+            self._raise_if_consumer_finished()
+            self._chunks.append(chunk)
+            self._condition.notify_all()
+
+    async def finish(self) -> None:
+        """Mark the iterator as complete."""
+        async with self._condition:
+            if self._closed:
+                return
+            self._closed = True
+            self._condition.notify_all()
+
+    async def fail(self, error: Exception) -> None:
+        """Mark the iterator as failed.
+
+        Args:
+            error: The error to raise from the iterator.
+        """
+        async with self._condition:
+            if self._closed:
+                return
+            self._closed = True
+            self._error = error
+            self._condition.notify_all()
+
+    def _raise_if_consumer_finished(self) -> None:
+        """Raise if the consumer task exited before draining the iterator.
+
+        Raises:
+            RuntimeError: If the consumer task completed before draining the iterator.
+        """
+        if self._consumer_task is None or not self._consumer_task.done():
+            return
+
+        try:
+            task_exc = self._consumer_task.exception()
+        except asyncio.CancelledError as err:
+            task_exc = err
+
+        msg = "Upload handler returned before consuming all upload chunks."
+        if task_exc is not None:
+            raise RuntimeError(msg) from task_exc
+        raise RuntimeError(msg)
+
+    def _wake_waiters(self, task: asyncio.Task[Any]) -> None:
+        """Wake any producers or consumers blocked on the iterator condition.
+
+        Args:
+            task: The completed consumer task.
+        """
+        task.get_loop().create_task(self._notify_waiters())
+
+    async def _notify_waiters(self) -> None:
+        """Notify tasks waiting on the iterator condition."""
+        async with self._condition:
+            self._condition.notify_all()
+
+
+@dataclasses.dataclass(kw_only=True, slots=True)
 class _UploadChunkPart:
     """Track the current multipart file part for upload streaming."""
 
@@ -89,28 +234,25 @@ class _UploadChunkPart:
     is_upload_chunk: bool = False
 
 
+@dataclasses.dataclass(kw_only=True, slots=True)
 class _UploadChunkMultipartParser:
     """Streaming multipart parser for streamed upload files."""
 
-    def __init__(
-        self,
-        headers: Headers,
-        stream: AsyncGenerator[bytes, None],
-        chunk_iter: UploadChunkIterator,
-    ) -> None:
-        self.headers = headers
-        self.stream = stream
-        self.chunk_iter = chunk_iter
-        self._charset = ""
-        self._current_partial_header_name = b""
-        self._current_partial_header_value = b""
-        self._current_part = _UploadChunkPart()
-        self._chunks_to_emit: deque[UploadChunk] = deque()
-        self._seen_upload_chunk = False
-        self._part_count = 0
-        self._emitted_chunk_count = 0
-        self._emitted_bytes = 0
-        self._stream_chunk_count = 0
+    headers: Headers
+    stream: AsyncGenerator[bytes, None]
+    chunk_iter: UploadChunkIterator
+    _charset: str = ""
+    _current_partial_header_name: bytes = b""
+    _current_partial_header_value: bytes = b""
+    _current_part: _UploadChunkPart = dataclasses.field(
+        default_factory=_UploadChunkPart
+    )
+    _chunks_to_emit: deque[UploadChunk] = dataclasses.field(default_factory=deque)
+    _seen_upload_chunk: bool = False
+    _part_count: int = 0
+    _emitted_chunk_count: int = 0
+    _emitted_bytes: int = 0
+    _stream_chunk_count: int = 0
 
     def on_part_begin(self) -> None:
         """Reset parser state for a new multipart part."""
@@ -258,10 +400,6 @@ class _UploadChunkMultipartParser:
         parser.finalize()
         await self._flush_emitted_chunks()
 
-        if not self._seen_upload_chunk:
-            msg = "No file chunks were uploaded."
-            raise MultiPartException(msg)
-
 
 class _UploadStreamingResponse(StreamingResponse):
     """Streaming response that always releases upload form resources."""
@@ -323,6 +461,8 @@ async def _get_upload_runtime_handler(
     Returns:
         The root state instance and resolved event handler.
     """
+    from reflex.state import _substate_key
+
     substate_token = _substate_key(token, handler_name.rpartition(".")[0])
     state = await app.state_manager.get_state(substate_token)
     _current_state, event_handler = state._get_event_handler(handler_name)
@@ -340,6 +480,8 @@ def _seed_upload_router_data(state: BaseState, token: str) -> None:
         state: The root state instance.
         token: The client token from the upload request.
     """
+    from reflex.state import RouterData
+
     router_data = dict(state.router_data)
     if router_data.get(constants.RouteVar.CLIENT_TOKEN) == token:
         return
@@ -362,6 +504,7 @@ async def _upload_buffered_file(
     Returns:
         A streaming response for the buffered upload.
     """
+    from reflex.event import Event
     from reflex.utils.exceptions import UploadValueError
 
     try:
@@ -386,10 +529,6 @@ async def _upload_buffered_file(
             The upload event backed by the parsed files.
         """
         files = form_data.getlist("files")
-        if not files:
-            msg = "No files were uploaded."
-            raise UploadValueError(msg)
-
         file_uploads = []
         for file in files:
             if not isinstance(file, StarletteUploadFile):
@@ -444,6 +583,7 @@ async def _upload_buffered_file(
 
 def _background_upload_accepted_response() -> StreamingResponse:
     """Return a minimal ndjson response for background upload dispatch."""
+    from reflex.state import StateUpdate
 
     def _accepted_updates():
         yield StateUpdate(final=True).json() + "\n"
@@ -469,6 +609,8 @@ async def _upload_chunk_file(
     Returns:
         The streaming upload response.
     """
+    from reflex.event import Event
+
     chunk_iter = UploadChunkIterator(maxsize=8)
     event = Event(
         token=token,
@@ -490,9 +632,9 @@ async def _upload_chunk_file(
     chunk_iter.set_consumer_task(task)
 
     parser = _UploadChunkMultipartParser(
-        request.headers,
-        request.stream(),
-        chunk_iter,
+        headers=request.headers,
+        stream=request.stream(),
+        chunk_iter=chunk_iter,
     )
 
     try:
@@ -540,6 +682,11 @@ def upload(app: App):
             UploadTypeError: If a non-streaming upload is wired to a background task.
             HTTPException: when the request does not include token / handler headers.
         """
+        from reflex.event import (
+            resolve_upload_chunk_handler_param,
+            resolve_upload_handler_param,
+        )
+
         token, handler_name = _require_upload_headers(request)
         _state, event_handler = await _get_upload_runtime_handler(
             app, token, handler_name

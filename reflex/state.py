@@ -140,53 +140,6 @@ def _no_chain_background_task(state: BaseState, name: str, fn: Callable) -> Call
     raise TypeError(msg)
 
 
-async def _normalize_upload_payload(
-    handler: EventHandler,
-    payload: builtins.dict[str, Any],
-) -> None:
-    """Normalize upload payload keys before invoking a handler.
-
-    The frontend always uses the ``files`` key when it falls back to queueing an
-    empty upload event over the websocket. Server-side upload endpoints already
-    resolve the real handler parameter name for non-empty uploads, so this keeps
-    empty uploads working without extra frontend branching.
-
-    Args:
-        handler: The event handler receiving the payload.
-        payload: The event payload to normalize in place.
-
-    Raises:
-        ValueError: If a chunk upload handler is invoked outside the upload endpoint.
-    """
-    if "files" not in payload:
-        return
-
-    try:
-        upload_param_name, _annotation = event.resolve_upload_handler_param(handler)
-    except (TypeError, ValueError):
-        pass
-    else:
-        if upload_param_name != "files" and upload_param_name not in payload:
-            payload[upload_param_name] = payload.pop("files")
-        return
-
-    try:
-        upload_param_name, _annotation = event.resolve_upload_chunk_handler_param(
-            handler
-        )
-    except (TypeError, ValueError):
-        return
-
-    upload_value = payload.pop("files")
-    if upload_value != []:
-        msg = "Upload chunk handlers must be invoked through the upload endpoint."
-        raise ValueError(msg)
-
-    chunk_iter = event.UploadChunkIterator(maxsize=1)
-    await chunk_iter.finish()
-    payload[upload_param_name] = chunk_iter
-
-
 def _substate_key(
     token: str,
     state_cls_or_name: BaseState | type[BaseState] | str | Sequence[str],
@@ -1941,8 +1894,6 @@ class BaseState(EvenMoreBasicBaseState):
             type_hints = types.get_type_hints(handler.fn)
         except Exception:
             type_hints = {}
-
-        await _normalize_upload_payload(handler, payload)
 
         for arg, value in list(payload.items()):
             hinted_args = type_hints.get(arg, Any)

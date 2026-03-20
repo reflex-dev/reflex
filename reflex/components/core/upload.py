@@ -6,7 +6,7 @@ from collections.abc import Callable, Sequence
 from pathlib import Path
 from typing import Any, ClassVar
 
-from reflex._upload import UploadFile
+from reflex._upload import UploadChunkIterator, UploadFile
 from reflex.components.base.fragment import Fragment
 from reflex.components.component import (
     Component,
@@ -27,7 +27,6 @@ from reflex.event import (
     EventChain,
     EventHandler,
     EventSpec,
-    UploadChunkIterator,
     call_event_fn,
     call_event_handler,
     parse_args_spec,

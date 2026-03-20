@@ -1087,6 +1087,56 @@ async def test_upload_file_keeps_form_open_until_stream_completes(
 
 
 @pytest.mark.asyncio
+async def test_upload_empty_buffered_request_dispatches_alias_handler(
+    token: str,
+    mocker: MockerFixture,
+):
+    """Test that empty uploads still dispatch buffered alias handlers."""
+    mocker.patch(
+        "reflex.state.State.class_subclasses",
+        {FileUploadState},
+    )
+    app = App()
+    app.event_namespace.emit = AsyncMock()  # pyright: ignore [reportOptionalMemberAccess]
+
+    async with app.modify_state(_substate_key(token, FileUploadState)) as root_state:
+        substate = root_state.get_substate(FileUploadState.get_full_name().split("."))
+        substate.img_list = []
+
+    request_mock = unittest.mock.Mock()
+    request_mock.headers = {
+        "reflex-client-token": token,
+        "reflex-event-handler": f"{FileUploadState.get_full_name()}.upload_alias_handler",
+    }
+
+    async def form():  # noqa: RUF029
+        return FormData()
+
+    request_mock.form = form
+
+    upload_fn = upload(app)
+    streaming_response = await upload_fn(request_mock)
+    assert isinstance(streaming_response, StreamingResponse)
+
+    updates = []
+    async for state_update in streaming_response.body_iterator:
+        updates.append(json.loads(str(state_update)))
+
+    assert updates[-1]["final"]
+
+    state = await app.state_manager.get_state(_substate_key(token, FileUploadState))
+    substate = (
+        state
+        if isinstance(state, FileUploadState)
+        else state.get_substate(FileUploadState.get_full_name().split("."))
+    )
+    assert isinstance(substate, FileUploadState)
+    assert substate.img_list == ["count:0"]
+
+    await app.state_manager.close()
+
+
+@pytest.mark.asyncio
 async def test_upload_file_closes_form_on_event_creation_cancellation(
     token: str,
     mocker: MockerFixture,
@@ -1444,6 +1494,64 @@ async def test_upload_dispatches_chunk_handlers_on_upload_endpoint(
     assert (tmp_path / "alpha.txt").read_bytes() == b"abcde"
     assert (tmp_path / "beta.txt").read_bytes() == b"12345"
     assert app.event_namespace.emit_update.await_count >= 1  # pyright: ignore [reportOptionalMemberAccess]
+    assert not app._background_tasks
+
+    await app.state_manager.close()
+
+
+@pytest.mark.asyncio
+async def test_upload_empty_chunk_request_dispatches_alias_handler(
+    token: str,
+    mocker: MockerFixture,
+):
+    """Test that empty uploads still dispatch chunk alias handlers."""
+    mocker.patch(
+        "reflex.state.State.class_subclasses",
+        {ChunkUploadState},
+    )
+    app = App()
+    mocker.patch(
+        "reflex.utils.prerequisites.get_and_validate_app",
+        return_value=SimpleNamespace(app=app),
+    )
+    app.event_namespace.emit_update = AsyncMock()  # pyright: ignore [reportOptionalMemberAccess]
+
+    async with app.modify_state(_substate_key(token, ChunkUploadState)) as root_state:
+        substate = root_state.get_substate(ChunkUploadState.get_full_name().split("."))
+        substate.chunk_records = []
+        substate.completed_files = []
+
+    upload_fn = upload(app)
+    boundary = "chunk-upload-empty-alias-boundary"
+    response = await upload_fn(
+        _make_chunk_upload_request(
+            token,
+            f"{ChunkUploadState.get_full_name()}.chunk_handle_upload_alias",
+            _build_chunk_upload_multipart_body(boundary, []),
+            content_type=f"multipart/form-data; boundary={boundary}",
+        )
+    )
+
+    assert isinstance(response, StreamingResponse)
+    assert response.status_code == 202
+
+    updates = []
+    async for state_update in response.body_iterator:
+        updates.append(json.loads(str(state_update)))
+    assert updates == [{"delta": {}, "events": [], "final": True}]
+
+    task_results = await _drain_background_tasks(app)
+    assert all(result is None for result in task_results)
+
+    state = await app.state_manager.get_state(_substate_key(token, ChunkUploadState))
+    substate = (
+        state
+        if isinstance(state, ChunkUploadState)
+        else state.get_substate(ChunkUploadState.get_full_name().split("."))
+    )
+    assert isinstance(substate, ChunkUploadState)
+    assert substate.chunk_records == []
+    assert substate.completed_files == ["chunks:0"]
     assert not app._background_tasks
 
     await app.state_manager.close()
