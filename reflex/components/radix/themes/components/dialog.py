@@ -2,7 +2,7 @@
 
 from typing import Literal
 
-from reflex.components.component import ComponentNamespace
+from reflex.components.component import ComponentNamespace, field
 from reflex.components.core.breakpoints import Responsive
 from reflex.components.el import elements
 from reflex.components.radix.themes.base import (
@@ -19,14 +19,15 @@ class DialogRoot(RadixThemesComponent):
 
     tag = "Dialog.Root"
 
-    # The controlled open state of the dialog.
-    open: Var[bool]
+    open: Var[bool] = field(doc="The controlled open state of the dialog.")
 
-    # Fired when the open state changes.
-    on_open_change: EventHandler[passthrough_event_spec(bool)]
+    on_open_change: EventHandler[passthrough_event_spec(bool)] = field(
+        doc="Fired when the open state changes."
+    )
 
-    # The open state of the dialog when it is initially rendered. Use when you do not need to control its open state.
-    default_open: Var[bool]
+    default_open: Var[bool] = field(
+        doc="The open state of the dialog when it is initially rendered. Use when you do not need to control its open state."
+    )
 
 
 class DialogTrigger(RadixThemesTriggerComponent):
@@ -48,23 +49,29 @@ class DialogContent(elements.Div, RadixThemesComponent):
 
     tag = "Dialog.Content"
 
-    # DialogContent size "1" - "4"
-    size: Var[Responsive[Literal["1", "2", "3", "4"]]]
+    size: Var[Responsive[Literal["1", "2", "3", "4"]]] = field(
+        doc='DialogContent size "1" - "4"'
+    )
 
-    # Fired when the dialog is opened.
-    on_open_auto_focus: EventHandler[no_args_event_spec]
+    on_open_auto_focus: EventHandler[no_args_event_spec] = field(
+        doc="Fired when the dialog is opened."
+    )
 
-    # Fired when the dialog is closed.
-    on_close_auto_focus: EventHandler[no_args_event_spec]
+    on_close_auto_focus: EventHandler[no_args_event_spec] = field(
+        doc="Fired when the dialog is closed."
+    )
 
-    # Fired when the escape key is pressed.
-    on_escape_key_down: EventHandler[no_args_event_spec]
+    on_escape_key_down: EventHandler[no_args_event_spec] = field(
+        doc="Fired when the escape key is pressed."
+    )
 
-    # Fired when the pointer is down outside the dialog.
-    on_pointer_down_outside: EventHandler[no_args_event_spec]
+    on_pointer_down_outside: EventHandler[no_args_event_spec] = field(
+        doc="Fired when the pointer is down outside the dialog."
+    )
 
-    # Fired when the pointer interacts outside the dialog.
-    on_interact_outside: EventHandler[no_args_event_spec]
+    on_interact_outside: EventHandler[no_args_event_spec] = field(
+        doc="Fired when the pointer interacts outside the dialog."
+    )
 
 
 class DialogDescription(RadixThemesComponent):

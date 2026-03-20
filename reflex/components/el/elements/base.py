@@ -2,6 +2,7 @@
 
 from typing import Literal
 
+from reflex.components.component import field
 from reflex.components.el.element import Element
 from reflex.vars.base import Var
 
@@ -87,50 +88,54 @@ AriaRole = Literal[
 class BaseHTML(Element):
     """Base class for common attributes."""
 
-    # Provides a hint for generating a keyboard shortcut for the current element.
-    access_key: Var[str]
+    access_key: Var[str] = field(
+        doc="Provides a hint for generating a keyboard shortcut for the current element."
+    )
 
-    # Controls whether and how text input is automatically capitalized as it is entered/edited by the user.
-    auto_capitalize: Var[AutoCapitalize]
+    auto_capitalize: Var[AutoCapitalize] = field(
+        doc="Controls whether and how text input is automatically capitalized as it is entered/edited by the user."
+    )
 
-    # Indicates whether the element's content is editable.
-    content_editable: Var[ContentEditable]
+    content_editable: Var[ContentEditable] = field(
+        doc="Indicates whether the element's content is editable."
+    )
 
-    # Defines the ID of a <menu> element which will serve as the element's context menu.
-    context_menu: Var[str]
+    context_menu: Var[str] = field(
+        doc="Defines the ID of a <menu> element which will serve as the element's context menu."
+    )
 
-    # Defines the text direction. Allowed values are ltr (Left-To-Right) or rtl (Right-To-Left)
-    dir: Var[str]
+    dir: Var[str] = field(
+        doc="Defines the text direction. Allowed values are ltr (Left-To-Right) or rtl (Right-To-Left)"
+    )
 
-    # Defines whether the element can be dragged.
-    draggable: Var[bool]
+    draggable: Var[bool] = field(doc="Defines whether the element can be dragged.")
 
-    # Hints what media types the media element is able to play.
-    enter_key_hint: Var[EnterKeyHint]
+    enter_key_hint: Var[EnterKeyHint] = field(
+        doc="Hints what media types the media element is able to play."
+    )
 
-    # Defines whether the element is hidden.
-    hidden: Var[bool]
+    hidden: Var[bool] = field(doc="Defines whether the element is hidden.")
 
-    # Defines the type of the element.
-    input_mode: Var[InputMode]
+    input_mode: Var[InputMode] = field(doc="Defines the type of the element.")
 
-    # Defines the name of the element for metadata purposes.
-    item_prop: Var[str]
+    item_prop: Var[str] = field(
+        doc="Defines the name of the element for metadata purposes."
+    )
 
-    # Defines the language used in the element.
-    lang: Var[str]
+    lang: Var[str] = field(doc="Defines the language used in the element.")
 
-    # Defines the role of the element.
-    role: Var[AriaRole]
+    role: Var[AriaRole] = field(doc="Defines the role of the element.")
 
-    # Assigns a slot in a shadow DOM shadow tree to an element.
-    slot: Var[str]
+    slot: Var[str] = field(
+        doc="Assigns a slot in a shadow DOM shadow tree to an element."
+    )
 
-    # Defines whether the element may be checked for spelling errors.
-    spell_check: Var[bool]
+    spell_check: Var[bool] = field(
+        doc="Defines whether the element may be checked for spelling errors."
+    )
 
-    # Defines the position of the current element in the tabbing order.
-    tab_index: Var[int]
+    tab_index: Var[int] = field(
+        doc="Defines the position of the current element in the tabbing order."
+    )
 
-    # Defines a tooltip for the element.
-    title: Var[str]
+    title: Var[str] = field(doc="Defines a tooltip for the element.")

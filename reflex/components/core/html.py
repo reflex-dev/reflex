@@ -11,8 +11,7 @@ class Html(Div):
         The code to render the html component.
     """
 
-    # The HTML to render.
-    dangerouslySetInnerHTML: Var[dict[str, str]]  # noqa: N815
+    dangerouslySetInnerHTML: Var[dict[str, str]]  # noqa: N815 = field(doc="The HTML to render.")
 
     @classmethod
     def create(cls, *children, **props):

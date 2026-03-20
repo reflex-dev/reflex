@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from reflex.components.base.bare import Bare
+from reflex.components.component import field
 from reflex.components.el import elements
 from reflex.components.el.elements.metadata import Meta as Meta  # for compatibility
 from reflex.vars.base import Var
@@ -30,12 +31,14 @@ class Title(elements.Title):
 class Description(elements.Meta):
     """A component that displays the title of the current page."""
 
-    # The type of the description.
-    name: Var[str] = Var.create("description")
+    name: Var[str] = field(
+        default=Var.create("description"), doc="The type of the description."
+    )
 
 
 class Image(elements.Meta):
     """A component that displays the title of the current page."""
 
-    # The type of the image.
-    property: Var[str] = Var.create("og:image")
+    property: Var[str] = field(
+        default=Var.create("og:image"), doc="The type of the image."
+    )

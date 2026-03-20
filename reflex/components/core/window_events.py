@@ -55,8 +55,7 @@ def _on_storage_spec(e: ObjectVar) -> tuple[Var[str], Var[str], Var[str], Var[st
 class WindowEventListener(Fragment):
     """A component that listens for window events."""
 
-    # Event handlers
-    on_resize: rx.EventHandler[_on_resize_spec]
+    on_resize: rx.EventHandler[_on_resize_spec] = field(doc="Event handlers")
     on_scroll: rx.EventHandler[_on_scroll_spec]
     on_focus: rx.EventHandler[no_args_event_spec]
     on_blur: rx.EventHandler[no_args_event_spec]

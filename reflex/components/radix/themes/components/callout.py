@@ -3,7 +3,7 @@
 from typing import Literal
 
 import reflex as rx
-from reflex.components.component import Component, ComponentNamespace
+from reflex.components.component import Component, ComponentNamespace, field
 from reflex.components.core.breakpoints import Responsive
 from reflex.components.el import elements
 from reflex.components.lucide.icon import Icon
@@ -18,20 +18,21 @@ class CalloutRoot(elements.Div, RadixThemesComponent):
 
     tag = "Callout.Root"
 
-    # Change the default rendered element for the one passed as a child, merging their props and behavior.
-    as_child: Var[bool]
+    as_child: Var[bool] = field(
+        doc="Change the default rendered element for the one passed as a child, merging their props and behavior."
+    )
 
-    # Size "1" - "3"
-    size: Var[Responsive[Literal["1", "2", "3"]]]
+    size: Var[Responsive[Literal["1", "2", "3"]]] = field(doc='Size "1" - "3"')
 
-    # Variant of button: "soft" | "surface" | "outline"
-    variant: Var[CalloutVariant]
+    variant: Var[CalloutVariant] = field(
+        doc='Variant of button: "soft" | "surface" | "outline"'
+    )
 
-    # Override theme color for button
-    color_scheme: Var[LiteralAccentColor]
+    color_scheme: Var[LiteralAccentColor] = field(doc="Override theme color for button")
 
-    # Whether to render the button with higher contrast color against background
-    high_contrast: Var[bool]
+    high_contrast: Var[bool] = field(
+        doc="Whether to render the button with higher contrast color against background"
+    )
 
 
 class CalloutIcon(elements.Div, RadixThemesComponent):
@@ -49,11 +50,9 @@ class CalloutText(elements.P, RadixThemesComponent):
 class Callout(CalloutRoot):
     """A short message to attract user's attention."""
 
-    # The text of the callout.
-    text: Var[str]
+    text: Var[str] = field(doc="The text of the callout.")
 
-    # The icon of the callout.
-    icon: Var[str]
+    icon: Var[str] = field(doc="The icon of the callout.")
 
     @classmethod
     def create(cls, text: str | Var[str], **props) -> Component:

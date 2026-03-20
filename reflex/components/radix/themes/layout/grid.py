@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from typing import ClassVar, Literal
 
+from reflex.components.component import field
 from reflex.components.core.breakpoints import Responsive
 from reflex.components.el import elements
 from reflex.components.radix.themes.base import (
@@ -22,32 +23,37 @@ class Grid(elements.Div, RadixThemesComponent):
 
     tag = "Grid"
 
-    # Change the default rendered element for the one passed as a child, merging their props and behavior.
-    as_child: Var[bool]
+    as_child: Var[bool] = field(
+        doc="Change the default rendered element for the one passed as a child, merging their props and behavior."
+    )
 
-    # Number of columns
-    columns: Var[Responsive[str]]
+    columns: Var[Responsive[str]] = field(doc="Number of columns")
 
-    # Number of rows
-    rows: Var[Responsive[str]]
+    rows: Var[Responsive[str]] = field(doc="Number of rows")
 
-    # How the grid items are laid out: "row" | "column" | "dense" | "row-dense" | "column-dense"
-    flow: Var[Responsive[LiteralGridFlow]]
+    flow: Var[Responsive[LiteralGridFlow]] = field(
+        doc='How the grid items are laid out: "row" | "column" | "dense" | "row-dense" | "column-dense"'
+    )
 
-    # Alignment of children along the main axis: "start" | "center" | "end" | "baseline" | "stretch"
-    align: Var[Responsive[LiteralAlign]]
+    align: Var[Responsive[LiteralAlign]] = field(
+        doc='Alignment of children along the main axis: "start" | "center" | "end" | "baseline" | "stretch"'
+    )
 
-    # Alignment of children along the cross axis: "start" | "center" | "end" | "between"
-    justify: Var[Responsive[LiteralJustify]]
+    justify: Var[Responsive[LiteralJustify]] = field(
+        doc='Alignment of children along the cross axis: "start" | "center" | "end" | "between"'
+    )
 
-    # Gap between children: "0" - "9"
-    spacing: Var[Responsive[LiteralSpacing]]
+    spacing: Var[Responsive[LiteralSpacing]] = field(
+        doc='Gap between children: "0" - "9"'
+    )
 
-    # Gap between children horizontal: "0" - "9"
-    spacing_x: Var[Responsive[LiteralSpacing]]
+    spacing_x: Var[Responsive[LiteralSpacing]] = field(
+        doc='Gap between children horizontal: "0" - "9"'
+    )
 
-    # Gap between children vertical: "0" - "9"
-    spacing_y: Var[Responsive[LiteralSpacing]]
+    spacing_y: Var[Responsive[LiteralSpacing]] = field(
+        doc='Gap between children vertical: "0" - "9"'
+    )
 
     # Reflex maps the "spacing" prop to "gap" prop.
     _rename_props: ClassVar[dict[str, str]] = {

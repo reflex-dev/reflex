@@ -4,7 +4,7 @@ from collections.abc import Sequence
 from typing import ClassVar, Literal
 
 import reflex as rx
-from reflex.components.component import Component, ComponentNamespace
+from reflex.components.component import Component, ComponentNamespace, field
 from reflex.components.core.breakpoints import Responsive
 from reflex.components.radix.themes.base import (
     LiteralAccentColor,
@@ -21,38 +21,48 @@ class SelectRoot(RadixThemesComponent):
 
     tag = "Select.Root"
 
-    # The size of the select: "1" | "2" | "3"
-    size: Var[Responsive[Literal["1", "2", "3"]]]
+    size: Var[Responsive[Literal["1", "2", "3"]]] = field(
+        doc='The size of the select: "1" | "2" | "3"'
+    )
 
-    # The value of the select when initially rendered. Use when you do not need to control the state of the select.
-    default_value: Var[str]
+    default_value: Var[str] = field(
+        doc="The value of the select when initially rendered. Use when you do not need to control the state of the select."
+    )
 
-    # The controlled value of the select. Should be used in conjunction with on_change.
-    value: Var[str]
+    value: Var[str] = field(
+        doc="The controlled value of the select. Should be used in conjunction with on_change."
+    )
 
-    # The open state of the select when it is initially rendered. Use when you do not need to control its open state.
-    default_open: Var[bool]
+    default_open: Var[bool] = field(
+        doc="The open state of the select when it is initially rendered. Use when you do not need to control its open state."
+    )
 
-    # The controlled open state of the select. Must be used in conjunction with on_open_change.
-    open: Var[bool]
+    open: Var[bool] = field(
+        doc="The controlled open state of the select. Must be used in conjunction with on_open_change."
+    )
 
-    # The name of the select control when submitting the form.
-    name: Var[str]
+    name: Var[str] = field(
+        doc="The name of the select control when submitting the form."
+    )
 
-    # When True, prevents the user from interacting with select.
-    disabled: Var[bool]
+    disabled: Var[bool] = field(
+        doc="When True, prevents the user from interacting with select."
+    )
 
-    # When True, indicates that the user must select a value before the owning form can be submitted.
-    required: Var[bool]
+    required: Var[bool] = field(
+        doc="When True, indicates that the user must select a value before the owning form can be submitted."
+    )
 
     # Props to rename
     _rename_props = {"onChange": "onValueChange"}
 
-    # Fired when the value of the select changes.
-    on_change: rx.EventHandler[passthrough_event_spec(str)]
+    on_change: rx.EventHandler[passthrough_event_spec(str)] = field(
+        doc="Fired when the value of the select changes."
+    )
 
-    # Fired when the select is opened or closed.
-    on_open_change: rx.EventHandler[passthrough_event_spec(bool)]
+    on_open_change: rx.EventHandler[passthrough_event_spec(bool)] = field(
+        doc="Fired when the select is opened or closed."
+    )
 
 
 class SelectTrigger(RadixThemesComponent):
@@ -60,17 +70,15 @@ class SelectTrigger(RadixThemesComponent):
 
     tag = "Select.Trigger"
 
-    # Variant of the select trigger
-    variant: Var[Literal["classic", "surface", "soft", "ghost"]]
+    variant: Var[Literal["classic", "surface", "soft", "ghost"]] = field(
+        doc="Variant of the select trigger"
+    )
 
-    # The color of the select trigger
-    color_scheme: Var[LiteralAccentColor]
+    color_scheme: Var[LiteralAccentColor] = field(doc="The color of the select trigger")
 
-    # The radius of the select trigger
-    radius: Var[LiteralRadius]
+    radius: Var[LiteralRadius] = field(doc="The radius of the select trigger")
 
-    # The placeholder of the select trigger
-    placeholder: Var[str]
+    placeholder: Var[str] = field(doc="The placeholder of the select trigger")
 
     _valid_parents: ClassVar[list[str]] = ["SelectRoot"]
 
@@ -82,38 +90,47 @@ class SelectContent(RadixThemesComponent):
 
     tag = "Select.Content"
 
-    # The variant of the select content
-    variant: Var[Literal["solid", "soft"]]
+    variant: Var[Literal["solid", "soft"]] = field(
+        doc="The variant of the select content"
+    )
 
-    # The color of the select content
-    color_scheme: Var[LiteralAccentColor]
+    color_scheme: Var[LiteralAccentColor] = field(doc="The color of the select content")
 
-    # Whether to render the select content with higher contrast color against background
-    high_contrast: Var[bool]
+    high_contrast: Var[bool] = field(
+        doc="Whether to render the select content with higher contrast color against background"
+    )
 
-    # The positioning mode to use, item-aligned is the default and behaves similarly to a native MacOS menu by positioning content relative to the active item. popper positions content in the same way as our other primitives, for example Popover or DropdownMenu.
-    position: Var[Literal["item-aligned", "popper"]]
+    position: Var[Literal["item-aligned", "popper"]] = field(
+        doc="The positioning mode to use, item-aligned is the default and behaves similarly to a native MacOS menu by positioning content relative to the active item. popper positions content in the same way as our other primitives, for example Popover or DropdownMenu."
+    )
 
-    # The preferred side of the anchor to render against when open. Will be reversed when collisions occur and avoidCollisions is enabled. Only available when position is set to popper.
-    side: Var[Literal["top", "right", "bottom", "left"]]
+    side: Var[Literal["top", "right", "bottom", "left"]] = field(
+        doc="The preferred side of the anchor to render against when open. Will be reversed when collisions occur and avoidCollisions is enabled. Only available when position is set to popper."
+    )
 
-    # The distance in pixels from the anchor. Only available when position is set to popper.
-    side_offset: Var[int]
+    side_offset: Var[int] = field(
+        doc="The distance in pixels from the anchor. Only available when position is set to popper."
+    )
 
-    # The preferred alignment against the anchor. May change when collisions occur. Only available when position is set to popper.
-    align: Var[Literal["start", "center", "end"]]
+    align: Var[Literal["start", "center", "end"]] = field(
+        doc="The preferred alignment against the anchor. May change when collisions occur. Only available when position is set to popper."
+    )
 
-    # The vertical distance in pixels from the anchor. Only available when position is set to popper.
-    align_offset: Var[int]
+    align_offset: Var[int] = field(
+        doc="The vertical distance in pixels from the anchor. Only available when position is set to popper."
+    )
 
-    # Fired when the select content is closed.
-    on_close_auto_focus: rx.EventHandler[no_args_event_spec]
+    on_close_auto_focus: rx.EventHandler[no_args_event_spec] = field(
+        doc="Fired when the select content is closed."
+    )
 
-    # Fired when the escape key is pressed.
-    on_escape_key_down: rx.EventHandler[no_args_event_spec]
+    on_escape_key_down: rx.EventHandler[no_args_event_spec] = field(
+        doc="Fired when the escape key is pressed."
+    )
 
-    # Fired when a pointer down event happens outside the select content.
-    on_pointer_down_outside: rx.EventHandler[no_args_event_spec]
+    on_pointer_down_outside: rx.EventHandler[no_args_event_spec] = field(
+        doc="Fired when a pointer down event happens outside the select content."
+    )
 
 
 class SelectGroup(RadixThemesComponent):
@@ -129,11 +146,11 @@ class SelectItem(RadixThemesComponent):
 
     tag = "Select.Item"
 
-    # The value given as data when submitting a form with a name.
-    value: Var[str]
+    value: Var[str] = field(
+        doc="The value given as data when submitting a form with a name."
+    )
 
-    # Whether the select item is disabled
-    disabled: Var[bool]
+    disabled: Var[bool] = field(doc="Whether the select item is disabled")
 
     _valid_parents: ClassVar[list[str]] = ["SelectGroup", "SelectContent"]
 
@@ -155,32 +172,29 @@ class SelectSeparator(RadixThemesComponent):
 class HighLevelSelect(SelectRoot):
     """High level wrapper for the Select component."""
 
-    # The items of the select.
-    items: Var[Sequence[str]]
+    items: Var[Sequence[str]] = field(doc="The items of the select.")
 
-    # The placeholder of the select.
-    placeholder: Var[str]
+    placeholder: Var[str] = field(doc="The placeholder of the select.")
 
-    # The label of the select.
-    label: Var[str]
+    label: Var[str] = field(doc="The label of the select.")
 
-    # The color of the select.
-    color_scheme: Var[LiteralAccentColor]
+    color_scheme: Var[LiteralAccentColor] = field(doc="The color of the select.")
 
-    # Whether to render the select with higher contrast color against background.
-    high_contrast: Var[bool]
+    high_contrast: Var[bool] = field(
+        doc="Whether to render the select with higher contrast color against background."
+    )
 
-    # The variant of the select.
-    variant: Var[Literal["classic", "surface", "soft", "ghost"]]
+    variant: Var[Literal["classic", "surface", "soft", "ghost"]] = field(
+        doc="The variant of the select."
+    )
 
-    # The radius of the select.
-    radius: Var[LiteralRadius]
+    radius: Var[LiteralRadius] = field(doc="The radius of the select.")
 
-    # The width of the select.
-    width: Var[str]
+    width: Var[str] = field(doc="The width of the select.")
 
-    # The positioning mode to use. Default is "item-aligned".
-    position: Var[Literal["item-aligned", "popper"]]
+    position: Var[Literal["item-aligned", "popper"]] = field(
+        doc='The positioning mode to use. Default is "item-aligned".'
+    )
 
     @classmethod
     def create(cls, items: list[str] | Var[list[str]], **props) -> Component:

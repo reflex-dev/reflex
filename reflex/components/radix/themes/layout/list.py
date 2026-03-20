@@ -5,7 +5,7 @@ from __future__ import annotations
 from collections.abc import Iterable
 from typing import Any, Literal
 
-from reflex.components.component import ComponentNamespace
+from reflex.components.component import ComponentNamespace, field
 from reflex.components.core.foreach import Foreach
 from reflex.components.el.elements.base import BaseHTML
 from reflex.components.el.elements.typography import Li, Ol, Ul
@@ -44,13 +44,15 @@ class BaseList(BaseHTML, MarkdownComponentMap):
 
     tag = "ul"
 
-    # The style of the list. Default to "none".
     list_style_type: Var[
         LiteralListStyleTypeUnordered | LiteralListStyleTypeOrdered
-    ] = Var.create("none")
+    ] = field(
+        default=Var.create("none"), doc='The style of the list. Default to "none".'
+    )
 
-    # A list of items to add to the list.
-    items: Var[Iterable] = Var.create([])
+    items: Var[Iterable] = field(
+        default=Var.create([]), doc="A list of items to add to the list."
+    )
 
     @classmethod
     def create(

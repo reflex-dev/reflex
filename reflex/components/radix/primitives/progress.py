@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from reflex.components.component import Component, ComponentNamespace
+from reflex.components.component import Component, ComponentNamespace, field
 from reflex.components.core.colors import color
 from reflex.components.radix.primitives.accordion import DEFAULT_ANIMATION_DURATION
 from reflex.components.radix.primitives.base import RadixPrimitiveComponentWithClassName
@@ -24,8 +24,9 @@ class ProgressRoot(ProgressComponent):
     tag = "Root"
     alias = "RadixProgressRoot"
 
-    # Override theme radius for progress bar: "none" | "small" | "medium" | "large" | "full"
-    radius: Var[LiteralRadius]
+    radius: Var[LiteralRadius] = field(
+        doc='Override theme radius for progress bar: "none" | "small" | "medium" | "large" | "full"'
+    )
 
     def add_style(self) -> dict[str, Any] | None:
         """Add style to the component.
@@ -57,14 +58,13 @@ class ProgressIndicator(ProgressComponent):
 
     alias = "RadixProgressIndicator"
 
-    # The current progress value.
-    value: Var[int | None]
+    value: Var[int | None] = field(doc="The current progress value.")
 
-    # The maximum progress value.
-    max: Var[int | None]
+    max: Var[int | None] = field(doc="The maximum progress value.")
 
-    # The color scheme of the progress indicator.
-    color_scheme: Var[LiteralAccentColor]
+    color_scheme: Var[LiteralAccentColor] = field(
+        doc="The color scheme of the progress indicator."
+    )
 
     def add_style(self) -> dict[str, Any] | None:
         """Add style to the component.
@@ -94,14 +94,13 @@ class ProgressIndicator(ProgressComponent):
 class Progress(ProgressRoot):
     """The high-level Progress component."""
 
-    # Override theme color for progress bar indicator
-    color_scheme: Var[LiteralAccentColor]
+    color_scheme: Var[LiteralAccentColor] = field(
+        doc="Override theme color for progress bar indicator"
+    )
 
-    # The current progress value.
-    value: Var[int | None]
+    value: Var[int | None] = field(doc="The current progress value.")
 
-    # The maximum progress value.
-    max: Var[int | None]
+    max: Var[int | None] = field(doc="The maximum progress value.")
 
     @classmethod
     def create(cls, **props) -> Component:

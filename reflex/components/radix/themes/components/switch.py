@@ -2,6 +2,7 @@
 
 from typing import Literal
 
+from reflex.components.component import field
 from reflex.components.core.breakpoints import Responsive
 from reflex.components.radix.themes.base import LiteralAccentColor, RadixThemesComponent
 from reflex.event import EventHandler, passthrough_event_spec
@@ -15,47 +16,48 @@ class Switch(RadixThemesComponent):
 
     tag = "Switch"
 
-    # Change the default rendered element for the one passed as a child, merging their props and behavior.
-    as_child: Var[bool]
+    as_child: Var[bool] = field(
+        doc="Change the default rendered element for the one passed as a child, merging their props and behavior."
+    )
 
-    # Whether the switch is checked by default
-    default_checked: Var[bool]
+    default_checked: Var[bool] = field(doc="Whether the switch is checked by default")
 
-    # Whether the switch is checked
-    checked: Var[bool]
+    checked: Var[bool] = field(doc="Whether the switch is checked")
 
-    # If true, prevent the user from interacting with the switch
-    disabled: Var[bool]
+    disabled: Var[bool] = field(
+        doc="If true, prevent the user from interacting with the switch"
+    )
 
-    # If true, the user must interact with the switch to submit the form
-    required: Var[bool]
+    required: Var[bool] = field(
+        doc="If true, the user must interact with the switch to submit the form"
+    )
 
-    # The name of the switch (when submitting a form)
-    name: Var[str]
+    name: Var[str] = field(doc="The name of the switch (when submitting a form)")
 
-    # The value associated with the "on" position
-    value: Var[str]
+    value: Var[str] = field(doc='The value associated with the "on" position')
 
-    # Switch size "1" - "4"
-    size: Var[Responsive[LiteralSwitchSize]]
+    size: Var[Responsive[LiteralSwitchSize]] = field(doc='Switch size "1" - "4"')
 
-    # Variant of switch: "classic" | "surface" | "soft"
-    variant: Var[Literal["classic", "surface", "soft"]]
+    variant: Var[Literal["classic", "surface", "soft"]] = field(
+        doc='Variant of switch: "classic" | "surface" | "soft"'
+    )
 
-    # Override theme color for switch
-    color_scheme: Var[LiteralAccentColor]
+    color_scheme: Var[LiteralAccentColor] = field(doc="Override theme color for switch")
 
-    # Whether to render the switch with higher contrast color against background
-    high_contrast: Var[bool]
+    high_contrast: Var[bool] = field(
+        doc="Whether to render the switch with higher contrast color against background"
+    )
 
-    # Override theme radius for switch: "none" | "small" | "full"
-    radius: Var[Literal["none", "small", "full"]]
+    radius: Var[Literal["none", "small", "full"]] = field(
+        doc='Override theme radius for switch: "none" | "small" | "full"'
+    )
 
     # Props to rename
     _rename_props = {"onChange": "onCheckedChange"}
 
-    # Fired when the value of the switch changes
-    on_change: EventHandler[passthrough_event_spec(bool)]
+    on_change: EventHandler[passthrough_event_spec(bool)] = field(
+        doc="Fired when the value of the switch changes"
+    )
 
 
 switch = Switch.create

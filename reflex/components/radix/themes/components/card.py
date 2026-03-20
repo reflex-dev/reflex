@@ -2,6 +2,7 @@
 
 from typing import Literal
 
+from reflex.components.component import field
 from reflex.components.core.breakpoints import Responsive
 from reflex.components.el import elements
 from reflex.components.radix.themes.base import RadixThemesComponent
@@ -13,14 +14,17 @@ class Card(elements.Div, RadixThemesComponent):
 
     tag = "Card"
 
-    # Change the default rendered element for the one passed as a child, merging their props and behavior.
-    as_child: Var[bool]
+    as_child: Var[bool] = field(
+        doc="Change the default rendered element for the one passed as a child, merging their props and behavior."
+    )
 
-    # Card size: "1" - "5"
-    size: Var[Responsive[Literal["1", "2", "3", "4", "5"],]]
+    size: Var[Responsive[Literal["1", "2", "3", "4", "5"],]] = field(
+        doc='Card size: "1" - "5"'
+    )
 
-    # Variant of Card: "surface" | "classic" | "ghost"
-    variant: Var[Literal["surface", "classic", "ghost"]]
+    variant: Var[Literal["surface", "classic", "ghost"]] = field(
+        doc='Variant of Card: "surface" | "classic" | "ghost"'
+    )
 
 
 card = Card.create

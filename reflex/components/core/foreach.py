@@ -33,11 +33,13 @@ class Foreach(Component):
 
     _memoization_mode = MemoizationMode(recursive=False)
 
-    # The iterable to create components from.
-    iterable: Var[Iterable]
+    iterable: Var[Iterable] = field(doc="The iterable to create components from.")
 
-    # A function from the render args to the component.
-    render_fn: Callable = field(default=Fragment.create, is_javascript_property=False)
+    render_fn: Callable = field(
+        doc="A function from the render args to the component.",
+        default=Fragment.create,
+        is_javascript_property=False,
+    )
 
     @classmethod
     def create(

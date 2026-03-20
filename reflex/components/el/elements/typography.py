@@ -2,6 +2,7 @@
 
 from typing import ClassVar, Literal
 
+from reflex.components.component import field
 from reflex.vars.base import Var
 
 from .base import BaseHTML
@@ -12,8 +13,7 @@ class Blockquote(BaseHTML):
 
     tag = "blockquote"
 
-    # Define the title of a work.
-    cite: Var[str]
+    cite: Var[str] = field(doc="Define the title of a work.")
 
 
 class Dd(BaseHTML):
@@ -69,8 +69,7 @@ class Menu(BaseHTML):
 
     tag = "menu"
 
-    # Specifies that the menu element is a context menu.
-    type: Var[str]
+    type: Var[str] = field(doc="Specifies that the menu element is a context menu.")
 
 
 class Ol(BaseHTML):
@@ -78,14 +77,15 @@ class Ol(BaseHTML):
 
     tag = "ol"
 
-    # Reverses the order of the list.
-    reversed: Var[bool]
+    reversed: Var[bool] = field(doc="Reverses the order of the list.")
 
-    # Specifies the start value of the first list item in an ordered list.
-    start: Var[int]
+    start: Var[int] = field(
+        doc="Specifies the start value of the first list item in an ordered list."
+    )
 
-    # Specifies the kind of marker to use in the list (letters or numbers).
-    type: Var[Literal["1", "a", "A", "i", "I"]]
+    type: Var[Literal["1", "a", "A", "i", "I"]] = field(
+        doc="Specifies the kind of marker to use in the list (letters or numbers)."
+    )
 
 
 class P(BaseHTML):
@@ -113,11 +113,13 @@ class Ins(BaseHTML):
 
     tag = "ins"
 
-    # Specifies the URL of the document that explains the reason why the text was inserted/changed.
-    cite: Var[str]
+    cite: Var[str] = field(
+        doc="Specifies the URL of the document that explains the reason why the text was inserted/changed."
+    )
 
-    # Specifies the date and time of when the text was inserted/changed.
-    date_time: Var[str]
+    date_time: Var[str] = field(
+        doc="Specifies the date and time of when the text was inserted/changed."
+    )
 
 
 class Del(BaseHTML):
@@ -125,11 +127,13 @@ class Del(BaseHTML):
 
     tag = "del"
 
-    # Specifies the URL of the document that explains the reason why the text was deleted.
-    cite: Var[str]
+    cite: Var[str] = field(
+        doc="Specifies the URL of the document that explains the reason why the text was deleted."
+    )
 
-    # Specifies the date and time of when the text was deleted.
-    date_time: Var[str]
+    date_time: Var[str] = field(
+        doc="Specifies the date and time of when the text was deleted."
+    )
 
 
 blockquote = Blockquote.create

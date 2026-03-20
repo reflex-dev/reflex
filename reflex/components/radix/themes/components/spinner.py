@@ -2,6 +2,7 @@
 
 from typing import Literal
 
+from reflex.components.component import field
 from reflex.components.core.breakpoints import Responsive
 from reflex.components.radix.themes.base import RadixLoadingProp, RadixThemesComponent
 from reflex.vars.base import Var
@@ -16,8 +17,7 @@ class Spinner(RadixLoadingProp, RadixThemesComponent):
 
     is_default = False
 
-    # The size of the spinner.
-    size: Var[Responsive[LiteralSpinnerSize]]
+    size: Var[Responsive[LiteralSpinnerSize]] = field(doc="The size of the spinner.")
 
 
 spinner = Spinner.create

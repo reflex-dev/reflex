@@ -7,7 +7,7 @@ from __future__ import annotations
 
 from typing import Literal
 
-from reflex.components.component import ComponentNamespace
+from reflex.components.component import ComponentNamespace, field
 from reflex.components.core.breakpoints import Responsive
 from reflex.components.el import elements
 from reflex.components.markdown.markdown import MarkdownComponentMap
@@ -43,29 +43,36 @@ class Text(elements.Span, RadixThemesComponent, MarkdownComponentMap):
 
     tag = "Text"
 
-    # Change the default rendered element for the one passed as a child, merging their props and behavior.
-    as_child: Var[bool]
+    as_child: Var[bool] = field(
+        doc="Change the default rendered element for the one passed as a child, merging their props and behavior."
+    )
 
-    # Change the default rendered element into a semantically appropriate alternative (cannot be used with asChild)
-    as_: Var[LiteralType] = Var.create("p")
+    as_: Var[LiteralType] = field(
+        default=Var.create("p"),
+        doc="Change the default rendered element into a semantically appropriate alternative (cannot be used with asChild)",
+    )
 
-    # Text size: "1" - "9"
-    size: Var[Responsive[LiteralTextSize]]
+    size: Var[Responsive[LiteralTextSize]] = field(doc='Text size: "1" - "9"')
 
-    # Thickness of text: "light" | "regular" | "medium" | "bold"
-    weight: Var[Responsive[LiteralTextWeight]]
+    weight: Var[Responsive[LiteralTextWeight]] = field(
+        doc='Thickness of text: "light" | "regular" | "medium" | "bold"'
+    )
 
-    # Alignment of text in element: "left" | "center" | "right"
-    align: Var[Responsive[LiteralTextAlign]]
+    align: Var[Responsive[LiteralTextAlign]] = field(
+        doc='Alignment of text in element: "left" | "center" | "right"'
+    )
 
-    # Removes the leading trim space: "normal" | "start" | "end" | "both"
-    trim: Var[Responsive[LiteralTextTrim]]
+    trim: Var[Responsive[LiteralTextTrim]] = field(
+        doc='Removes the leading trim space: "normal" | "start" | "end" | "both"'
+    )
 
-    # Overrides the accent color inherited from the Theme.
-    color_scheme: Var[LiteralAccentColor]
+    color_scheme: Var[LiteralAccentColor] = field(
+        doc="Overrides the accent color inherited from the Theme."
+    )
 
-    # Whether to render the text with higher contrast color
-    high_contrast: Var[bool]
+    high_contrast: Var[bool] = field(
+        doc="Whether to render the text with higher contrast color"
+    )
 
 
 class Span(Text):
@@ -85,8 +92,7 @@ class Kbd(elements.Kbd, RadixThemesComponent):
 
     tag = "Kbd"
 
-    # Text size: "1" - "9"
-    size: Var[LiteralTextSize]
+    size: Var[LiteralTextSize] = field(doc='Text size: "1" - "9"')
 
 
 class Quote(elements.Q, RadixThemesComponent):

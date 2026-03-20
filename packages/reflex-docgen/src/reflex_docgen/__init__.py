@@ -36,44 +36,6 @@ class ComponentDocumentation:
     ] = ()
 
 
-def get_prop(
-    prop_name: str, prop_annotated_type: InspectedAnnotation
-) -> PropDocumentation:
-    """Get a Prop object from a prop name and annotated type.
-
-    Args:
-        prop_name: The name of the prop.
-        prop_annotated_type: The annotated type of the prop.
-
-    Returns:
-        The Prop object for the prop.
-    """
-    doc = next(
-        (
-            annotation.documentation
-            for annotation in prop_annotated_type.metadata
-            if isinstance(annotation, Doc)
-        ),
-        None,
-    )
-    if doc is not None:
-        default_value = None
-        for default_indicator in ["Defaults to", "Default:"]:
-            if default_indicator in doc:
-                doc, default_value = doc.split(default_indicator, maxsplit=1)
-                default_value = default_value.strip().rstrip(".")
-                doc = doc.strip().rstrip(".")
-                break
-    else:
-        default_value = None
-    return PropDocumentation(
-        name=prop_name,
-        type=prop_annotated_type.type,
-        description=doc.rstrip(".") + "." if doc else None,
-        default_value=default_value,
-    )
-
-
 def get_component_props(
     component_cls: type[Component],
 ) -> tuple[PropDocumentation, ...]:
@@ -85,18 +47,33 @@ def get_component_props(
     Returns:
         The props for the component.
     """
-    props = component_cls.get_props()
-    hints = get_type_hints(component_cls, include_extras=True)
+    props = component_cls.get_js_fields()
 
-    return tuple(
-        get_prop(
-            prop_name,
-            inspect_annotation(
-                hints[prop_name], annotation_source=AnnotationSource.CLASS
-            ),
+    result = []
+    for prop_name, component_field in props.items():
+        doc = component_field.doc
+        default_value = None
+
+        # If the field has a doc attribute and no Annotated[..., Doc(...)] was found,
+        # use the field's doc as the description.
+        if doc is not None:
+            for default_indicator in ["Defaults to", "Default:"]:
+                if default_indicator in doc:
+                    doc, default_value = doc.split(default_indicator, maxsplit=1)
+                    default_value = default_value.strip().rstrip(".")
+                    doc = doc.strip().rstrip(".")
+                    break
+
+        result.append(
+            PropDocumentation(
+                name=prop_name,
+                type=component_field.type_,
+                description=doc.rstrip(".") + "." if doc else None,
+                default_value=default_value,
+            )
         )
-        for prop_name in props
-    )
+
+    return tuple(result)
 
 
 def generate_documentation(component_cls: type[Component]) -> ComponentDocumentation:
