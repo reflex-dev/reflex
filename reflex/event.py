@@ -2115,22 +2115,6 @@ class LiteralEventChainVar(ArgsFunctionOperationBuilder, LiteralVar, EventChainV
             raise ValueError(msg)
         assert invocation is not None
 
-        if not any(isinstance(event, FunctionVar) for event in value.events):
-            return cls(
-                _js_expr="",
-                _var_type=EventChain,
-                _var_data=_var_data,
-                _args=FunctionArgs(arg_def),
-                _return_expr=invocation.call(
-                    LiteralVar.create([
-                        LiteralVar.create(event) for event in value.events
-                    ]),
-                    arg_def_expr,
-                    value.event_actions,
-                ),
-                _var_value=value,
-            )
-
         call_args = arg_vars if sig.parameters else (Var(_js_expr="...args"),)
         statements = [
             (

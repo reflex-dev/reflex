@@ -760,23 +760,52 @@ def test_button_accepts_mixed_event_handler_and_function_var():
     assert isinstance(button.event_triggers["on_click"], EventChain)
 
 
-def test_event_chain_codegen_uses_fast_path_for_backend_only_events():
-    """Backend-only chains should render through a single addEvents call."""
+def test_event_chain_codegen_preserves_backend_event_actions_per_spec():
+    """Backend-only chains should keep per-spec event actions separate."""
 
     class FastPathState(BaseState):
         @event
-        def do_a_thing(self):
+        def do_a_thing(self, value: str):
             pass
 
     chain = EventChain.create(
-        [FastPathState.do_a_thing, FastPathState.do_a_thing],
+        [
+            FastPathState.do_a_thing("first x 1000").debounce(1000),
+            FastPathState.do_a_thing("second x 200").debounce(200),
+        ],
+        args_spec=lambda: (),
+    )
+    rendered = str(LiteralVar.create(chain))
+
+    assert "applyEventActions(" not in rendered
+    assert rendered.count("addEvents(") == 2
+    assert '["debounce"] : 1000' in rendered
+    assert '["debounce"] : 200' in rendered
+    assert rendered.index("first x 1000") < rendered.index("second x 200")
+
+
+def test_event_chain_codegen_keeps_chain_event_actions_for_backend_only_events():
+    """Chain-level actions should still wrap backend-only event chains."""
+
+    class FastPathState(BaseState):
+        @event
+        def do_a_thing(self, value: str):
+            pass
+
+    chain = EventChain.create(
+        [
+            FastPathState.do_a_thing("first x 1000").debounce(1000),
+            FastPathState.do_a_thing("second x 200").debounce(200),
+        ],
         args_spec=lambda: (),
         event_actions={"preventDefault": True},
     )
     rendered = str(LiteralVar.create(chain))
 
-    assert "applyEventActions(" not in rendered
-    assert rendered.count("addEvents(") == 1
+    assert "applyEventActions(" in rendered
+    assert rendered.count("addEvents(") == 2
+    assert '["debounce"] : 1000' in rendered
+    assert '["debounce"] : 200' in rendered
     assert '["preventDefault"] : true' in rendered
 
 
