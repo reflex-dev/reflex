@@ -410,11 +410,7 @@ def _get_shared_components_recursive(
     # When the component is referenced by more than one page, render it
     # to be included in the STATEFUL_COMPONENTS module.
     # Skip this step in dev mode, thereby avoiding potential hot reload errors for larger apps
-    if (
-        isinstance(component, StatefulComponent)
-        and component.references > 1
-        and is_prod_mode()
-    ):
+    if isinstance(component, StatefulComponent) and component.references > 1:
         # Reset this flag to render the actual component.
         component.rendered_as_shared = False
 
@@ -620,7 +616,7 @@ def compile_stateful_components(
         progress_function()
         page_components.append(page_component)
 
-    code = _compile_stateful_components(page_components)
+    code = _compile_stateful_components(page_components) if is_prod_mode() else ""
     return output_path, code, page_components
 
 
