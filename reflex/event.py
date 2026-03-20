@@ -482,6 +482,9 @@ class EventChain(EventActionsMixin):
         """
         # If it's an event chain var, return it.
         if isinstance(value, Var):
+            # Only pass through literal/prebuilt chains. Other EventChainVar values may be
+            # FunctionVars cast with `.to(EventChain)` and still need wrapping so
+            # event_chain_kwargs can compose onto the resulting chain.
             if isinstance(value, LiteralEventChainVar):
                 if event_chain_kwargs:
                     warnings.warn(
@@ -492,14 +495,6 @@ class EventChain(EventActionsMixin):
                 return value
             if isinstance(value, (EventVar, FunctionVar)):
                 value = [value]
-            elif isinstance(value, EventChainVar):
-                if event_chain_kwargs:
-                    warnings.warn(
-                        f"event_chain_kwargs {event_chain_kwargs!r} are ignored for "
-                        "EventChainVar values.",
-                        stacklevel=2,
-                    )
-                return value
             elif safe_issubclass(value._var_type, (EventChain, EventSpec)):
                 return cls.create(
                     value=value.guess_type(),

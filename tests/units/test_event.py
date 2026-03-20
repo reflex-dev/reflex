@@ -703,6 +703,21 @@ def test_event_chain_create_wraps_plain_function_var_kwargs():
     assert chain.event_actions == {"preventDefault": True}
 
 
+def test_event_chain_create_wraps_event_chain_typed_function_var_kwargs():
+    """FunctionVars cast to EventChain should still compose with chain-level kwargs."""
+    frontend_handler = make_timeout_logger()
+
+    chain = EventChain.create(
+        frontend_handler,
+        args_spec=lambda: (),
+        event_actions={"preventDefault": True},
+    )
+
+    assert isinstance(chain, EventChain)
+    assert chain.events == [frontend_handler]
+    assert chain.event_actions == {"preventDefault": True}
+
+
 def test_event_chain_create_warns_for_event_chain_var_kwargs():
     """Prebuilt EventChainVars should also warn when extra kwargs are ignored."""
     prebuilt_chain = Var.create(EventChain(events=[], args_spec=lambda: ()))
