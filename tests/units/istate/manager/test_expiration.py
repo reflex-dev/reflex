@@ -75,72 +75,62 @@ async def test_memory_state_manager_evicts_expired_state(
 
 
 @pytest.mark.asyncio
-async def test_memory_state_manager_get_state_refreshes_expiration(
+async def test_memory_state_manager_get_state_does_not_refresh_expiration(
     state_manager_memory: StateManagerMemory,
     token: str,
 ):
-    """Accessing a state should extend its expiration window."""
+    """Accessing a state should not extend its expiration window."""
     state_token = _substate_key(token, ExpiringState)
     state = await state_manager_memory.get_state(state_token)
     assert isinstance(state, ExpiringState)
     state.value = 7
-    first_expires_at = state_manager_memory._token_expires_at[token]
+    expires_at = state_manager_memory._token_expires_at[token]
 
     await asyncio.sleep(0.6)
 
     same_state = await state_manager_memory.get_state(state_token)
     assert same_state is state
-    assert state_manager_memory._token_expires_at[token] > first_expires_at
+    assert state_manager_memory._token_expires_at[token] == expires_at
 
-    await asyncio.sleep(0.6)
-
-    assert token in state_manager_memory.states
-    assert state_manager_memory.states[token] is state
+    await _poll_until(lambda: token not in state_manager_memory.states)
 
 
 @pytest.mark.asyncio
-async def test_memory_state_manager_set_state_refreshes_expiration(
+async def test_memory_state_manager_set_state_does_not_refresh_expiration(
     state_manager_memory: StateManagerMemory,
     token: str,
 ):
-    """Persisting a state should extend its expiration window."""
+    """Persisting a state should not extend its expiration window."""
     state_token = _substate_key(token, ExpiringState)
     state = await state_manager_memory.get_state(state_token)
     assert isinstance(state, ExpiringState)
     state.value = 17
-    first_expires_at = state_manager_memory._token_expires_at[token]
+    expires_at = state_manager_memory._token_expires_at[token]
 
     await asyncio.sleep(0.6)
 
     await state_manager_memory.set_state(state_token, state)
 
-    assert state_manager_memory._token_expires_at[token] > first_expires_at
+    assert state_manager_memory._token_expires_at[token] == expires_at
 
-    await asyncio.sleep(0.6)
-
-    assert token in state_manager_memory.states
-    assert state_manager_memory.states[token] is state
+    await _poll_until(lambda: token not in state_manager_memory.states)
 
 
 @pytest.mark.asyncio
-async def test_memory_state_manager_multiple_touches_do_not_evict_early(
+async def test_memory_state_manager_multiple_accesses_do_not_extend_expiration(
     state_manager_memory: StateManagerMemory,
     token: str,
 ):
-    """Repeated touches should honor the latest expiration deadline."""
+    """Repeated accesses should still expire on the original deadline."""
     state_token = _substate_key(token, ExpiringState)
     state = await state_manager_memory.get_state(state_token)
     assert isinstance(state, ExpiringState)
+    expires_at = state_manager_memory._token_expires_at[token]
 
     for _ in range(3):
-        await asyncio.sleep(0.35)
+        await asyncio.sleep(0.25)
         assert await state_manager_memory.get_state(state_token) is state
-
-    # The first deadlines have passed, but the latest touch should still keep the
-    # token alive until its own expiration window ends.
-    await asyncio.sleep(0.2)
-
-    assert token in state_manager_memory.states
+        assert state_manager_memory._token_expires_at[token] == expires_at
 
     await _poll_until(lambda: token not in state_manager_memory.states)
 
@@ -189,15 +179,15 @@ async def test_memory_state_manager_evicts_expired_locked_state_after_unlock(
     state_manager_memory: StateManagerMemory,
     token: str,
 ):
-    """An expired locked state should be evicted once its lock is released."""
+    """Releasing an expired locked state should evict it without refreshing TTL."""
     state_token = _substate_key(token, ExpiringState)
 
     async with state_manager_memory.modify_state(state_token) as state:
         state.value = 5
-        await _poll_until(
-            lambda: token in state_manager_memory._pending_locked_expirations,
-            timeout=2.0,
-        )
+        expires_at = state_manager_memory._token_expires_at[token]
+        await asyncio.sleep(1.2)
         assert token in state_manager_memory.states
+
+    assert state_manager_memory._token_expires_at[token] == expires_at
 
     await _poll_until(lambda: token not in state_manager_memory.states)
