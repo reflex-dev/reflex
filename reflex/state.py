@@ -1295,6 +1295,15 @@ class BaseState(EvenMoreBasicBaseState):
         Args:
             args: a dict of args
         """
+        # Skip dynamic args that have already been registered by a previous route.
+        args = {
+            k: v
+            for k, v in args.items()
+            if not (
+                (computed_var := cls.computed_vars.get(k)) is not None
+                and isinstance(computed_var, DynamicRouteVar)
+            )
+        }
         if not args:
             return
 
