@@ -224,7 +224,9 @@ def _run(
         if should_use_granian():
             import concurrent.futures
 
-            compile_future = concurrent.futures.ProcessPoolExecutor(max_workers=1).submit(
+            compile_future = concurrent.futures.ProcessPoolExecutor(
+                max_workers=1
+            ).submit(
                 app_task,
                 *args,
                 **kwargs,
