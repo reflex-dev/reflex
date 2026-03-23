@@ -4,9 +4,9 @@ import contextlib
 import dataclasses
 from abc import ABC, abstractmethod
 from collections.abc import AsyncIterator
-from typing import TypedDict
+from typing import Annotated, TypedDict
 
-from typing_extensions import ReadOnly, Unpack
+from typing_extensions import Doc, ReadOnly, Unpack
 
 from reflex import constants
 from reflex.config import get_config
@@ -29,8 +29,7 @@ EmptyContext = StateModificationContext()
 class StateManager(ABC):
     """A class to manage many client states."""
 
-    # The state class to use.
-    state: type[BaseState]
+    state: Annotated[type[BaseState], Doc("The state class to use.")]
 
     @classmethod
     def create(cls, state: type[BaseState]):

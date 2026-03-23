@@ -22,7 +22,7 @@ from typing import (
     overload,
 )
 
-from typing_extensions import Self, TypeAliasType, TypedDict, TypeVarTuple, Unpack
+from typing_extensions import Doc, Self, TypeAliasType, TypedDict, TypeVarTuple, Unpack
 
 from reflex import constants
 from reflex.components.field import BaseField
@@ -63,17 +63,17 @@ from reflex.vars.object import ObjectVar
 class Event:
     """An event that describes any state change in the app."""
 
-    # The token to specify the client that the event is for.
-    token: str
+    token: Annotated[str, Doc("The token to specify the client that the event is for.")]
 
-    # The event name.
-    name: str
+    name: Annotated[str, Doc("The event name.")]
 
-    # The routing data where event occurred
-    router_data: dict[str, Any] = dataclasses.field(default_factory=dict)
+    router_data: Annotated[
+        dict[str, Any], Doc("The routing data where event occurred.")
+    ] = dataclasses.field(default_factory=dict)
 
-    # The event payload.
-    payload: dict[str, Any] = dataclasses.field(default_factory=dict)
+    payload: Annotated[dict[str, Any], Doc("The event payload.")] = dataclasses.field(
+        default_factory=dict
+    )
 
     @property
     def substate_token(self) -> str:
@@ -100,8 +100,10 @@ EVENT_ACTIONS_MARKER = "_rx_event_actions"
 class EventActionsMixin:
     """Mixin for DOM event actions."""
 
-    # Whether to `preventDefault` or `stopPropagation` on the event.
-    event_actions: dict[str, bool | int] = dataclasses.field(default_factory=dict)
+    event_actions: Annotated[
+        dict[str, bool | int],
+        Doc("Whether to `preventDefault` or `stopPropagation` on the event."),
+    ] = dataclasses.field(default_factory=dict)
 
     @property
     def stop_propagation(self) -> Self:
@@ -176,12 +178,17 @@ class EventActionsMixin:
 class EventHandler(EventActionsMixin):
     """An event handler responds to an event to update the state."""
 
-    # The function to call in response to the event.
-    fn: Any = dataclasses.field(default=None)
+    fn: Annotated[Any, Doc("The function to call in response to the event.")] = (
+        dataclasses.field(default=None)
+    )
 
-    # The full name of the state class this event handler is attached to.
-    # Empty string means this event handler is a server side event.
-    state_full_name: str = dataclasses.field(default="")
+    state_full_name: Annotated[
+        str,
+        Doc(
+            "The full name of the state class this event handler is attached to."
+            " Empty string means this event handler is a server side event."
+        ),
+    ] = dataclasses.field(default="")
 
     def __hash__(self):
         """Get the hash of the event handler.
@@ -311,14 +318,18 @@ class EventSpec(EventActionsMixin):
     during compile time to outline the structure of an event.
     """
 
-    # The event handler.
-    handler: EventHandler = dataclasses.field(default=None)  # pyright: ignore [reportAssignmentType]
+    handler: Annotated[EventHandler, Doc("The event handler.")] = dataclasses.field(
+        default=None
+    )  # pyright: ignore [reportAssignmentType]
 
-    # The handler on the client to process event.
-    client_handler_name: str = dataclasses.field(default="")
+    client_handler_name: Annotated[
+        str, Doc("The handler on the client to process event.")
+    ] = dataclasses.field(default="")
 
-    # The arguments to pass to the function.
-    args: tuple[tuple[Var, Var], ...] = dataclasses.field(default_factory=tuple)
+    args: Annotated[
+        tuple[tuple[Var, Var], ...],
+        Doc("The arguments to pass to the function."),
+    ] = dataclasses.field(default_factory=tuple)
 
     def __init__(
         self,

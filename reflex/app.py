@@ -29,7 +29,15 @@ from itertools import chain
 from pathlib import Path
 from timeit import default_timer as timer
 from types import SimpleNamespace
-from typing import TYPE_CHECKING, Any, BinaryIO, ParamSpec, get_args, get_type_hints
+from typing import (
+    TYPE_CHECKING,
+    Annotated,
+    Any,
+    BinaryIO,
+    ParamSpec,
+    get_args,
+    get_type_hints,
+)
 
 from rich.progress import MofNCompleteColumn, Progress, TimeElapsedColumn
 from socketio import ASGIApp as EngineIOApp
@@ -42,7 +50,7 @@ from starlette.middleware import cors
 from starlette.requests import ClientDisconnect, Request
 from starlette.responses import JSONResponse, Response, StreamingResponse
 from starlette.staticfiles import StaticFiles
-from typing_extensions import Unpack
+from typing_extensions import Doc, Unpack
 
 from reflex import constants
 from reflex.admin import AdminDash
@@ -347,58 +355,83 @@ class App(MiddlewareMixin, LifespanMixin):
     ```
     """
 
-    # The global [theme](https://reflex.dev/docs/styling/theming/#theme) for the entire app.
-    theme: Component | None = dataclasses.field(
-        default_factory=lambda: themes.theme(accent_color="blue")
+    theme: Annotated[
+        Component | None,
+        Doc(
+            "The global [theme](https://reflex.dev/docs/styling/theming/#theme) for the entire app."
+        ),
+    ] = dataclasses.field(default_factory=lambda: themes.theme(accent_color="blue"))
+
+    style: Annotated[
+        ComponentStyle,
+        Doc(
+            "The [global style](https://reflex.dev/docs/styling/overview/#global-styles}) for the app."
+        ),
+    ] = dataclasses.field(default_factory=dict)
+
+    stylesheets: Annotated[
+        list[str],
+        Doc(
+            "A list of URLs to [stylesheets](https://reflex.dev/docs/styling/custom-stylesheets/) to include in the app."
+        ),
+    ] = dataclasses.field(default_factory=list)
+
+    reset_style: Annotated[
+        bool,
+        Doc("Whether to include CSS reset for margin and padding. Defaults to True."),
+    ] = dataclasses.field(default=True)
+
+    overlay_component: Annotated[
+        Component | ComponentCallable | None,
+        Doc(
+            "A component that is present on every page. Defaults to the Connection Error banner."
+        ),
+    ] = dataclasses.field(default=None)
+
+    app_wraps: Annotated[
+        dict[tuple[int, str], Callable[[bool], Component | None]],
+        Doc(
+            "App wraps to be applied to the whole app."
+            " Expected to be a dictionary of (order, name) to a function that takes"
+            " whether the state is enabled and optionally returns a component."
+        ),
+    ] = dataclasses.field(
+        default_factory=lambda: {
+            (55, "ErrorBoundary"): (
+                lambda stateful: default_error_boundary(
+                    **({"on_error": noop()} if not stateful else {})
+                )
+            ),
+            (5, "Overlay"): (
+                lambda stateful: default_overlay_component() if stateful else None
+            ),
+            (4, "ExtraOverlay"): lambda stateful: extra_overlay_function(),
+        }
     )
 
-    # The [global style](https://reflex.dev/docs/styling/overview/#global-styles}) for the app.
-    style: ComponentStyle = dataclasses.field(default_factory=dict)
+    extra_app_wraps: Annotated[
+        dict[tuple[int, str], Callable[[bool], Component | None]],
+        Doc("Extra app wraps to be applied to the whole app."),
+    ] = dataclasses.field(default_factory=dict)
 
-    # A list of URLs to [stylesheets](https://reflex.dev/docs/styling/custom-stylesheets/) to include in the app.
-    stylesheets: list[str] = dataclasses.field(default_factory=list)
+    head_components: Annotated[
+        list[Component],
+        Doc("Components to add to the head of every page."),
+    ] = dataclasses.field(default_factory=list)
 
-    # Whether to include CSS reset for margin and padding (defaults to True).
-    reset_style: bool = dataclasses.field(default=True)
-
-    # A component that is present on every page (defaults to the Connection Error banner).
-    overlay_component: Component | ComponentCallable | None = dataclasses.field(
-        default=None
+    sio: Annotated[AsyncServer | None, Doc("The Socket.IO AsyncServer instance.")] = (
+        None
     )
 
-    # App wraps to be applied to the whole app. Expected to be a dictionary of (order, name) to a function that takes whether the state is enabled and optionally returns a component.
-    app_wraps: dict[tuple[int, str], Callable[[bool], Component | None]] = (
-        dataclasses.field(
-            default_factory=lambda: {
-                (55, "ErrorBoundary"): (
-                    lambda stateful: default_error_boundary(
-                        **({"on_error": noop()} if not stateful else {})
-                    )
-                ),
-                (5, "Overlay"): (
-                    lambda stateful: default_overlay_component() if stateful else None
-                ),
-                (4, "ExtraOverlay"): lambda stateful: extra_overlay_function(),
-            }
-        )
-    )
+    html_lang: Annotated[
+        str | None,
+        Doc("The language to add to the html root tag of every page."),
+    ] = None
 
-    # Extra app wraps to be applied to the whole app.
-    extra_app_wraps: dict[tuple[int, str], Callable[[bool], Component | None]] = (
-        dataclasses.field(default_factory=dict)
-    )
-
-    # Components to add to the head of every page.
-    head_components: list[Component] = dataclasses.field(default_factory=list)
-
-    # The Socket.IO AsyncServer instance.
-    sio: AsyncServer | None = None
-
-    # The language to add to the html root tag of every page.
-    html_lang: str | None = None
-
-    # Attributes to add to the html root tag of every page.
-    html_custom_attrs: dict[str, str] | None = None
+    html_custom_attrs: Annotated[
+        dict[str, str] | None,
+        Doc("Attributes to add to the html root tag of every page."),
+    ] = None
 
     # A map from a route to an unevaluated page.
     _unevaluated_pages: dict[str, UnevaluatedPage] = dataclasses.field(
@@ -417,8 +450,12 @@ class App(MiddlewareMixin, LifespanMixin):
     # The state class to use for the app.
     _state: type[BaseState] | None = None
 
-    # Whether to enable state for the app. If False, the app will not use state.
-    enable_state: bool = True
+    enable_state: Annotated[
+        bool,
+        Doc(
+            "Whether to enable state for the app. If False, the app will not use state."
+        ),
+    ] = True
 
     # Class to manage many client states.
     _state_manager: StateManager | None = None
@@ -428,8 +465,10 @@ class App(MiddlewareMixin, LifespanMixin):
         default_factory=dict
     )
 
-    # Admin dashboard to view and manage the database.
-    admin_dash: AdminDash | None = None
+    admin_dash: Annotated[
+        AdminDash | None,
+        Doc("Admin dashboard to view and manage the database."),
+    ] = None
 
     # The async server name space.
     _event_namespace: EventNamespace | None = None
@@ -437,26 +476,28 @@ class App(MiddlewareMixin, LifespanMixin):
     # Background tasks that are currently running.
     _background_tasks: set[asyncio.Task] = dataclasses.field(default_factory=set)
 
-    # Frontend Error Handler Function
-    frontend_exception_handler: Callable[[Exception], None] = (
-        default_frontend_exception_handler
-    )
+    frontend_exception_handler: Annotated[
+        Callable[[Exception], None],
+        Doc("Frontend error handler function."),
+    ] = default_frontend_exception_handler
 
-    # Backend Error Handler Function
-    backend_exception_handler: Callable[
-        [Exception], EventSpec | list[EventSpec] | None
+    backend_exception_handler: Annotated[
+        Callable[[Exception], EventSpec | list[EventSpec] | None],
+        Doc("Backend error handler function."),
     ] = default_backend_exception_handler
 
-    # Put the toast provider in the app wrap.
-    toaster: Component | None = dataclasses.field(default_factory=toast.provider)
+    toaster: Annotated[
+        Component | None,
+        Doc("Put the toast provider in the app wrap."),
+    ] = dataclasses.field(default_factory=toast.provider)
 
-    # Transform the ASGI app before running it.
-    api_transformer: (
+    api_transformer: Annotated[
         Sequence[Callable[[ASGIApp], ASGIApp] | Starlette]
         | Callable[[ASGIApp], ASGIApp]
         | Starlette
-        | None
-    ) = None
+        | None,
+        Doc("Transform the ASGI app before running it."),
+    ] = None
 
     @property
     def event_namespace(self) -> EventNamespace | None:

@@ -12,6 +12,8 @@ from pathlib import Path
 from types import ModuleType
 from typing import TYPE_CHECKING, Annotated, Any, ClassVar, Literal
 
+from typing_extensions import Doc
+
 from reflex import constants
 from reflex.constants.base import LogLevel
 from reflex.environment import EnvironmentVariables as EnvironmentVariables
@@ -151,119 +153,186 @@ _sensitive_env_vars = {"DB_URL", "ASYNC_DB_URL", "REDIS_URL"}
 class BaseConfig:
     """Base config for the Reflex app."""
 
-    # The name of the app (should match the name of the app directory).
-    app_name: str
+    app_name: Annotated[
+        str,
+        Doc("The name of the app (should match the name of the app directory)."),
+    ]
 
-    # The path to the app module.
-    app_module_import: str | None = None
+    app_module_import: Annotated[str | None, Doc("The path to the app module.")] = None
 
-    # The log level to use.
-    loglevel: constants.LogLevel = constants.LogLevel.DEFAULT
-
-    # The port to run the frontend on. NOTE: When running in dev mode, the next available port will be used if this is taken.
-    frontend_port: int | None = None
-
-    # The path to run the frontend on. For example, "/app" will run the frontend on http://localhost:3000/app
-    frontend_path: str = ""
-
-    # The port to run the backend on. NOTE: When running in dev mode, the next available port will be used if this is taken.
-    backend_port: int | None = None
-
-    # The backend url the frontend will connect to. This must be updated if the backend is hosted elsewhere, or in production.
-    api_url: str = f"http://localhost:{constants.DefaultPorts.BACKEND_PORT}"
-
-    # The url the frontend will be hosted on.
-    deploy_url: str | None = f"http://localhost:{constants.DefaultPorts.FRONTEND_PORT}"
-
-    # The url the backend will be hosted on.
-    backend_host: str = "0.0.0.0"
-
-    # The database url used by rx.Model.
-    db_url: str | None = "sqlite:///reflex.db"
-
-    # The async database url used by rx.Model.
-    async_db_url: str | None = None
-
-    # The redis url
-    redis_url: str | None = None
-
-    # Telemetry opt-in.
-    telemetry_enabled: bool = True
-
-    # PyLeak monitoring configuration for detecting event loop blocking and resource leaks.
-    enable_pyleak_monitoring: bool = False
-
-    # Threshold in seconds for detecting event loop blocking operations.
-    pyleak_blocking_threshold: float = 0.1
-
-    # Grace period in seconds for thread leak detection cleanup.
-    pyleak_thread_grace_period: float = 0.2
-
-    # Action to take when PyLeak detects issues
-    pyleak_action: "LeakAction | None" = None
-
-    # The bun path
-    bun_path: ExistingPath = constants.Bun.DEFAULT_PATH
-
-    # Timeout to do a production build of a frontend page.
-    static_page_generation_timeout: int = 60
-
-    # Comma separated list of origins that are allowed to connect to the backend API.
-    cors_allowed_origins: Annotated[Sequence[str], SequenceOptions(delimiter=",")] = (
-        dataclasses.field(default=("*",))
+    loglevel: Annotated[constants.LogLevel, Doc("The log level to use.")] = (
+        constants.LogLevel.DEFAULT
     )
 
-    # Allowed hosts for the Vite dev server. Set to True to allow all hosts,
-    # or provide a list of hostnames (e.g. ["myservice.local"]) to allow specific ones.
-    # Prevents 403 errors in Docker, Codespaces, reverse proxies, etc.
-    vite_allowed_hosts: bool | list[str] = False
+    frontend_port: Annotated[
+        int | None,
+        Doc(
+            "The port to run the frontend on."
+            " NOTE: When running in dev mode, the next available port will be used if this is taken."
+        ),
+    ] = None
 
-    # Whether to use React strict mode.
-    react_strict_mode: bool = True
+    frontend_path: Annotated[
+        str,
+        Doc(
+            "The path to run the frontend on."
+            ' For example, "/app" will run the frontend on http://localhost:3000/app'
+        ),
+    ] = ""
 
-    # Additional frontend packages to install.
-    frontend_packages: list[str] = dataclasses.field(default_factory=list)
+    backend_port: Annotated[
+        int | None,
+        Doc(
+            "The port to run the backend on."
+            " NOTE: When running in dev mode, the next available port will be used if this is taken."
+        ),
+    ] = None
 
-    # Indicate which type of state manager to use
-    state_manager_mode: constants.StateManagerMode = constants.StateManagerMode.DISK
+    api_url: Annotated[
+        str,
+        Doc(
+            "The backend url the frontend will connect to."
+            " This must be updated if the backend is hosted elsewhere, or in production."
+        ),
+    ] = f"http://localhost:{constants.DefaultPorts.BACKEND_PORT}"
 
-    # Maximum expiration lock time for redis state manager
-    redis_lock_expiration: int = constants.Expiration.LOCK
+    deploy_url: Annotated[
+        str | None, Doc("The url the frontend will be hosted on.")
+    ] = f"http://localhost:{constants.DefaultPorts.FRONTEND_PORT}"
 
-    # Maximum lock time before warning for redis state manager.
-    redis_lock_warning_threshold: int = constants.Expiration.LOCK_WARNING_THRESHOLD
+    backend_host: Annotated[str, Doc("The url the backend will be hosted on.")] = (
+        "0.0.0.0"
+    )
 
-    # Token expiration time for redis state manager
-    redis_token_expiration: int = constants.Expiration.TOKEN
+    db_url: Annotated[str | None, Doc("The database url used by rx.Model.")] = (
+        "sqlite:///reflex.db"
+    )
+
+    async_db_url: Annotated[
+        str | None, Doc("The async database url used by rx.Model.")
+    ] = None
+
+    redis_url: Annotated[str | None, Doc("The redis url.")] = None
+
+    telemetry_enabled: Annotated[bool, Doc("Telemetry opt-in.")] = True
+
+    enable_pyleak_monitoring: Annotated[
+        bool,
+        Doc(
+            "PyLeak monitoring configuration for detecting event loop blocking and resource leaks."
+        ),
+    ] = False
+
+    pyleak_blocking_threshold: Annotated[
+        float,
+        Doc("Threshold in seconds for detecting event loop blocking operations."),
+    ] = 0.1
+
+    pyleak_thread_grace_period: Annotated[
+        float,
+        Doc("Grace period in seconds for thread leak detection cleanup."),
+    ] = 0.2
+
+    pyleak_action: Annotated[
+        "LeakAction | None",
+        Doc("Action to take when PyLeak detects issues."),
+    ] = None
+
+    bun_path: Annotated[ExistingPath, Doc("The bun path.")] = constants.Bun.DEFAULT_PATH
+
+    static_page_generation_timeout: Annotated[
+        int, Doc("Timeout to do a production build of a frontend page.")
+    ] = 60
+
+    cors_allowed_origins: Annotated[
+        Sequence[str],
+        SequenceOptions(delimiter=","),
+        Doc(
+            "Comma separated list of origins that are allowed to connect to the backend API."
+        ),
+    ] = dataclasses.field(default=("*",))
+
+    vite_allowed_hosts: Annotated[
+        bool | list[str],
+        Doc(
+            "Allowed hosts for the Vite dev server. Set to True to allow all hosts,"
+            ' or provide a list of hostnames (e.g. ["myservice.local"]) to allow specific ones.'
+            " Prevents 403 errors in Docker, Codespaces, reverse proxies, etc."
+        ),
+    ] = False
+
+    react_strict_mode: Annotated[bool, Doc("Whether to use React strict mode.")] = True
+
+    frontend_packages: Annotated[
+        list[str], Doc("Additional frontend packages to install.")
+    ] = dataclasses.field(default_factory=list)
+
+    state_manager_mode: Annotated[
+        constants.StateManagerMode,
+        Doc("Indicate which type of state manager to use."),
+    ] = constants.StateManagerMode.DISK
+
+    redis_lock_expiration: Annotated[
+        int, Doc("Maximum expiration lock time for redis state manager.")
+    ] = constants.Expiration.LOCK
+
+    redis_lock_warning_threshold: Annotated[
+        int, Doc("Maximum lock time before warning for redis state manager.")
+    ] = constants.Expiration.LOCK_WARNING_THRESHOLD
+
+    redis_token_expiration: Annotated[
+        int, Doc("Token expiration time for redis state manager.")
+    ] = constants.Expiration.TOKEN
 
     # Attributes that were explicitly set by the user.
     _non_default_attributes: set[str] = dataclasses.field(
         default_factory=set, init=False
     )
 
-    # Path to file containing key-values pairs to override in the environment; Dotenv format.
-    env_file: str | None = None
+    env_file: Annotated[
+        str | None,
+        Doc(
+            "Path to file containing key-values pairs to override in the environment; Dotenv format."
+        ),
+    ] = None
 
-    # Whether to automatically create setters for state base vars
-    state_auto_setters: bool | None = None
+    state_auto_setters: Annotated[
+        bool | None,
+        Doc("Whether to automatically create setters for state base vars."),
+    ] = None
 
-    # Whether to display the sticky "Built with Reflex" badge on all pages.
-    show_built_with_reflex: bool | None = None
+    show_built_with_reflex: Annotated[
+        bool | None,
+        Doc('Whether to display the sticky "Built with Reflex" badge on all pages.'),
+    ] = None
 
-    # Whether the app is running in the reflex cloud environment.
-    is_reflex_cloud: bool = False
+    is_reflex_cloud: Annotated[
+        bool,
+        Doc("Whether the app is running in the reflex cloud environment."),
+    ] = False
 
-    # Extra overlay function to run after the app is built. Formatted such that `from path_0.path_1... import path[-1]`, and calling it with no arguments would work. For example, "reflex.components.moment.moment".
-    extra_overlay_function: str | None = None
+    extra_overlay_function: Annotated[
+        str | None,
+        Doc(
+            "Extra overlay function to run after the app is built."
+            " Formatted such that `from path_0.path_1... import path[-1]`,"
+            " and calling it with no arguments would work."
+            ' For example, "reflex.components.moment.moment".'
+        ),
+    ] = None
 
-    # List of plugins to use in the app.
-    plugins: list[Plugin] = dataclasses.field(default_factory=list)
+    plugins: Annotated[list[Plugin], Doc("List of plugins to use in the app.")] = (
+        dataclasses.field(default_factory=list)
+    )
 
-    # List of plugin types to disable in the app.
-    disable_plugins: list[type[Plugin]] = dataclasses.field(default_factory=list)
+    disable_plugins: Annotated[
+        list[type[Plugin]], Doc("List of plugin types to disable in the app.")
+    ] = dataclasses.field(default_factory=list)
 
-    # The transport method for client-server communication.
-    transport: Literal["websocket", "polling"] = "websocket"
+    transport: Annotated[
+        Literal["websocket", "polling"],
+        Doc("The transport method for client-server communication."),
+    ] = "websocket"
 
     # Whether to skip plugin checks.
     _skip_plugins_checks: bool = dataclasses.field(default=False, repr=False)

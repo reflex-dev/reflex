@@ -9,8 +9,10 @@ import functools
 import inspect
 import time
 from collections.abc import Callable, Coroutine
+from typing import Annotated
 
 from starlette.applications import Starlette
+from typing_extensions import Doc
 
 from reflex.utils import console
 from reflex.utils.exceptions import InvalidLifespanTaskTypeError
@@ -22,10 +24,10 @@ from .mixin import AppMixin
 class LifespanMixin(AppMixin):
     """A Mixin that allow tasks to run during the whole app lifespan."""
 
-    # Lifespan tasks that are planned to run.
-    lifespan_tasks: set[asyncio.Task | Callable] = dataclasses.field(
-        default_factory=set
-    )
+    lifespan_tasks: Annotated[
+        set[asyncio.Task | Callable],
+        Doc("Lifespan tasks that are planned to run."),
+    ] = dataclasses.field(default_factory=set)
 
     @contextlib.asynccontextmanager
     async def _run_lifespan_tasks(self, app: Starlette):
