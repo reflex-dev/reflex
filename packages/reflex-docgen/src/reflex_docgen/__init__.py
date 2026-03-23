@@ -40,6 +40,9 @@ class ComponentDocumentation:
     """Documentation for a Reflex component."""
 
     name: Annotated[str, Doc("The name of the component.")]
+    description: Annotated[str | None, Doc("The docstring of the component class.")] = (
+        None
+    )
     props: Annotated[
         tuple[PropDocumentation, ...], Doc("The list of props for the component.")
     ] = ()
@@ -134,6 +137,7 @@ def generate_documentation(component_cls: type[Component]) -> ComponentDocumenta
     """
     return ComponentDocumentation(
         name=component_cls.__name__,
+        description=component_cls.__doc__,
         props=get_component_props(component_cls),
         event_handlers=get_component_event_handlers(component_cls),
     )

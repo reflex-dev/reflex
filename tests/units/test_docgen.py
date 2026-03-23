@@ -1,6 +1,6 @@
 """Tests for reflex-docgen."""
 
-from reflex_docgen import get_component_event_handlers
+from reflex_docgen import generate_documentation, get_component_event_handlers
 
 from reflex.components.component import (
     DEFAULT_TRIGGERS_AND_DESC,
@@ -60,3 +60,23 @@ def test_custom_trigger_description_not_overridden():
     assert click.is_inherited is True
     assert click.description is not None
     assert "clicks" in click.description.lower()
+
+
+class _DocumentedComponent(Component):
+    """A component with a docstring for testing."""
+
+
+class _UndocumentedComponent(Component):
+    pass
+
+
+def test_description_from_docstring():
+    """generate_documentation should populate description from __doc__."""
+    doc = generate_documentation(_DocumentedComponent)
+    assert doc.description == _DocumentedComponent.__doc__
+
+
+def test_description_none_when_no_docstring():
+    """generate_documentation should set description to None when __doc__ is None."""
+    doc = generate_documentation(_UndocumentedComponent)
+    assert doc.description is None
