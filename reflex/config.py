@@ -32,9 +32,6 @@ from reflex.plugins.sitemap import SitemapPlugin
 from reflex.utils import console
 from reflex.utils.exceptions import ConfigError
 
-if TYPE_CHECKING:
-    from pyleak.base import LeakAction
-
 
 @dataclasses.dataclass(kw_only=True)
 class DBConfig:
@@ -215,28 +212,6 @@ class BaseConfig:
     redis_url: Annotated[str | None, Doc("The redis url.")] = None
 
     telemetry_enabled: Annotated[bool, Doc("Telemetry opt-in.")] = True
-
-    enable_pyleak_monitoring: Annotated[
-        bool,
-        Doc(
-            "PyLeak monitoring configuration for detecting event loop blocking and resource leaks."
-        ),
-    ] = False
-
-    pyleak_blocking_threshold: Annotated[
-        float,
-        Doc("Threshold in seconds for detecting event loop blocking operations."),
-    ] = 0.1
-
-    pyleak_thread_grace_period: Annotated[
-        float,
-        Doc("Grace period in seconds for thread leak detection cleanup."),
-    ] = 0.2
-
-    pyleak_action: Annotated[
-        "LeakAction | None",
-        Doc("Action to take when PyLeak detects issues."),
-    ] = None
 
     bun_path: Annotated[ExistingPath, Doc("The bun path.")] = constants.Bun.DEFAULT_PATH
 

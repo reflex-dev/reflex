@@ -56,7 +56,6 @@ db = [
   "pydantic >=1.10.21,<3.0",
   "sqlmodel >=0.0.24,<0.1",
 ]
-monitoring = ["pyleak >=0.1.14,<1.0"]
 
 [project.urls]
 homepage = "https://reflex.dev"
@@ -83,7 +82,6 @@ dev = [
   "pre-commit",
   "psutil",
   "psycopg[binary]",
-  "pyleak >=0.1.14,<1.0",
   "pyright",
   "pytest-asyncio",
   "pytest-benchmark",
