@@ -3,7 +3,6 @@
 from reflex_docgen import get_component_event_handlers
 
 from reflex.components.component import (
-    DEFAULT_TRIGGERS,
     DEFAULT_TRIGGERS_AND_DESC,
     Component,
     TriggerDefinition,
@@ -33,7 +32,7 @@ def test_get_component_event_handlers_returns_default_descriptions():
         assert name in handlers_by_name, f"Missing default trigger: {name}"
         handler = handlers_by_name[name]
         assert handler.is_inherited is True
-        assert handler.description == DEFAULT_TRIGGERS[name].description
+        assert handler.description == DEFAULT_TRIGGERS_AND_DESC[name].description
 
 
 class _ComponentWithCustomTrigger(Component):
