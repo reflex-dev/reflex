@@ -2,8 +2,10 @@
 
 import dataclasses
 import inspect
+import sys
 from typing import Annotated
 
+import pytest
 from reflex_docgen import (
     generate_class_documentation,
     generate_documentation,
@@ -288,17 +290,21 @@ def test_no_docstring_description_is_none():
     assert doc.description is None
 
 
-@dataclasses.dataclass
-class _DataclassWithFieldDoc:
-    """Test field.doc attribute priority."""
-
-    name: Annotated[str, Doc("From Annotated")] = dataclasses.field(
-        default="x", doc="From field.doc"
-    )
-
-
+@pytest.mark.skipif(
+    sys.version_info < (3, 14),
+    reason="Requires Python 3.14 for dataclass field doc support",
+)
 def test_field_doc_takes_priority():
     """field.doc takes priority over Doc() metadata."""
+
+    @dataclasses.dataclass
+    class _DataclassWithFieldDoc:
+        """Test field.doc attribute priority."""
+
+        name: Annotated[str, Doc("From Annotated")] = dataclasses.field(
+            default="x", doc="From field.doc"
+        )
+
     doc = generate_class_documentation(_DataclassWithFieldDoc)
     fields_by_name = {f.name: f for f in doc.fields}
     assert fields_by_name["name"].description == "From field.doc"

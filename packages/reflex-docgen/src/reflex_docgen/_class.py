@@ -15,7 +15,9 @@ class FieldDocumentation:
 
     name: Annotated[str, Doc("The name of the field.")]
 
-    type: Annotated[Any, Doc("The resolved type of the field, unwrapped from Annotated.")]
+    type: Annotated[
+        Any, Doc("The resolved type of the field, unwrapped from Annotated.")
+    ]
 
     type_display: Annotated[
         str,
@@ -40,15 +42,11 @@ class MethodDocumentation:
 
     name: Annotated[str, Doc("The name of the method.")]
 
-    signature: Annotated[
-        str, Doc("The string representation of the method signature.")
-    ]
+    signature: Annotated[str, Doc("The string representation of the method signature.")]
 
     description: Annotated[
         str | None,
-        Doc(
-            "The docstring, truncated before 'Args:' or 'Returns:' sections."
-        ),
+        Doc("The docstring, truncated before 'Args:' or 'Returns:' sections."),
     ]
 
 
@@ -61,9 +59,7 @@ class ClassDocumentation:
         Doc("The fully qualified name (module.qualname) of the class."),
     ]
 
-    description: Annotated[
-        str | None, Doc("The cleaned docstring of the class.")
-    ]
+    description: Annotated[str | None, Doc("The cleaned docstring of the class.")]
 
     fields: Annotated[
         tuple[FieldDocumentation, ...],
@@ -95,9 +91,7 @@ def _type_display(type_: Any) -> str:
     return getattr(type_, "__name__", str(type_))
 
 
-def _extract_field_doc(
-    hint: Any, field_doc: str | None
-) -> tuple[Any, str | None]:
+def _extract_field_doc(hint: Any, field_doc: str | None) -> tuple[Any, str | None]:
     """Extract the unwrapped type and description from a type hint.
 
     Args:
