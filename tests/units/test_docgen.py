@@ -4,6 +4,7 @@ from reflex_docgen import get_component_event_handlers
 
 from reflex.components.component import (
     DEFAULT_TRIGGERS,
+    DEFAULT_TRIGGERS_AND_DESC,
     Component,
     TriggerDefinition,
     field,
@@ -14,7 +15,7 @@ from reflex.event import EventHandler, no_args_event_spec
 
 def test_default_triggers_have_descriptions():
     """Every entry in DEFAULT_TRIGGERS should carry a non-empty description."""
-    for name, trigger in DEFAULT_TRIGGERS.items():
+    for name, trigger in DEFAULT_TRIGGERS_AND_DESC.items():
         assert isinstance(trigger, TriggerDefinition), (
             f"{name} should be a TriggerDefinition"
         )
@@ -28,7 +29,7 @@ def test_get_component_event_handlers_returns_default_descriptions():
     handlers_by_name = {h.name: h for h in handlers}
 
     # All default triggers should be present.
-    for name in DEFAULT_TRIGGERS:
+    for name in DEFAULT_TRIGGERS_AND_DESC:
         assert name in handlers_by_name, f"Missing default trigger: {name}"
         handler = handlers_by_name[name]
         assert handler.is_inherited is True
