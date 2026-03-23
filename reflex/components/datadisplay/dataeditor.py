@@ -257,9 +257,11 @@ class DataEditor(NoSSRComponent):
 
     smooth_scroll_y: Var[bool] = field(doc="Enable vertical smooth scrolling.")
 
-    vertical_border: Var[
+    vertical_border: Var[  # TODO: support a mapping (dict[int, bool])
         bool
-    ]  # TODO: support a mapping (dict[int, bool]) = field(doc="Controls the drawing of the left hand vertical border of a column. If set to a boolean value it controls all borders.")
+    ] = field(
+        doc="Controls the drawing of the left hand vertical border of a column. If set to a boolean value it controls all borders."
+    )
 
     column_select: Var[Literal["none", "single", "multi"]] = field(
         doc='Allow columns selections. ("none", "single", "multi")'
